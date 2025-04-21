@@ -33,7 +33,9 @@
     "clsx": "^2.1.1",
     "dotenv": "^16.5.0",
     "drizzle-orm": "^0.42.0",
+    "lodash.shuffle": "^4.2.0",
     "lucide-react": "^0.503.0",
+    "motion": "^12.7.4",
     "next": "^15.3.1",
     "next-intl": "^4.0.2",
     "next-themes": "^0.4.6",
@@ -48,6 +50,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.4",
+    "@types/lodash.shuffle": "^4.2.9",
     "@types/node": "^22",
     "@types/pg": "^8.11.13",
     "@types/react": "^19",
@@ -55,6 +58,8 @@
     "dotenv-cli": "^8.0.0",
     "drizzle-kit": "^0.31.0",
     "postcss": "^8.5.3",
+    "prettier": "^3.5.3",
+    "prettier-plugin-tailwindcss": "^0.6.11",
     "tsx": "^4.19.3",
     "typescript": "^5"
   }

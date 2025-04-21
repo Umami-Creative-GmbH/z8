@@ -1,19 +1,20 @@
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import Image from "next/image";
-import bgImage from "@/../public/ally-griffin-3hsrEvJi_gw-unsplash.jpg";
-import { Key } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import Image from 'next/image';
+import bgImage from '@/../public/ally-griffin-3hsrEvJi_gw-unsplash.jpg';
+import { Key, Quote } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import QuoteBox from './ui/quote-box';
 
-export function LoginForm({ className, ...props }: React.ComponentProps<"div">) {
+export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) {
   return (
-    <div className={cn("flex flex-col gap-6", className)} {...props}>
+    <div className={cn('flex flex-col gap-6', className)} {...props}>
       <Card className="overflow-hidden p-0">
-        <CardContent className="p-0 relative">
-          <form className="p-6 md:p-8 relative z-20 w-1/2">
+        <CardContent className="relative p-0">
+          <form className="relative z-20 w-1/2 p-6 md:p-8">
             <div className="flex flex-col gap-6">
               <div className="flex flex-col items-center text-center">
                 <h1 className="text-2xl font-bold">z8</h1>
@@ -35,10 +36,10 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
               <Button type="submit" className="w-full">
                 Login
               </Button>
-              <div className="text-center text-sm ">
-                <span className=" text-muted-foreground relative z-10 px-2">Or continue with</span>
+              <div className="text-center text-sm">
+                <span className="text-muted-foreground relative z-10 px-2">Or continue with</span>
               </div>
-              <div className="flex flex-wrap gap-2 *:w-1/4 justify-center">
+              <div className="flex flex-wrap justify-center gap-2 *:w-1/4">
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button variant="outline" type="button">
@@ -141,14 +142,14 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
                 </Tooltip>
               </div>
               <div className="text-center text-sm">
-                Don&apos;t have an account?{" "}
+                Don&apos;t have an account?{' '}
                 <a href="#" className="underline underline-offset-4">
                   Sign up
                 </a>
               </div>
             </div>
           </form>
-          <div className="bg-muted absolute inset-0 hidden z-10 md:block">
+          <div className="bg-muted absolute inset-0 z-10 hidden md:block">
             <Image
               alt="Background Image - Foto von Ally Griffin auf Unsplash"
               src={bgImage}
@@ -157,15 +158,10 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
               fill
               sizes="100vw"
               style={{
-                objectFit: "cover",
+                objectFit: 'cover',
               }}
             />
-            <div className="absolute bg-card/40 bottom-1 opacity-50 right-1 rounded-md text-xs text-muted-foreground backdrop-blur-lg p-1">
-              Foto von <a href="https://unsplash.com/de/@studio_a?utm_content=creditCopyText&utm_medium=referral&utm_source=unsplash">Ally Griffin</a> auf{" "}
-              <a href="https://unsplash.com/de/fotos/ein-abstrakter-weisser-hintergrund-mit-vertikalen-linien-3hsrEvJi_gw?utm_content=creditCopyText&utm_medium=referral&utm_source=unsplash">
-                Unsplash
-              </a>
-            </div>
+            <QuoteBox />
           </div>
         </CardContent>
       </Card>
