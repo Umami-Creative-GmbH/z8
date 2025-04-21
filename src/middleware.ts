@@ -5,8 +5,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionCookie } from "better-auth/cookies";
 
 export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-
   const handleI18nRouting = createMiddleware({
     locales: ALL_LANGUAGES,
     defaultLocale: DEFAULT_LANGUAGE,
