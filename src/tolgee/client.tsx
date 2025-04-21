@@ -25,7 +25,7 @@ export const TolgeeNextProvider = ({ language, staticData, children }: Props) =>
   }, [tolgee, router]);
 
   return (
-    <TolgeeProvider tolgee={tolgee} fallback="Loading" ssr={{ language, staticData }}>
+    <TolgeeProvider tolgee={tolgee} ssr={{ language, staticData }}>
       {children}
     </TolgeeProvider>
   );

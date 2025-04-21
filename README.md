@@ -10,6 +10,14 @@ bun --bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+### Generate Auth Schema
+
 ```bash
 bun dotenv -c dev -- bunx --bun @better-auth/cli generate --output ./src/db/schema.ts
+```
+
+## Secret Gen
+
+```bash
+bunx @better-auth/cli@latest secret
 ```
