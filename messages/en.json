@@ -1,9 +1,13 @@
 {
   "auth": {
+    "already-have-account": "Already have an account?",
+    "create-account": "Create your account",
     "dont-have-account": "Don't have an account?",
     "email": "Email",
     "email-placeholder": "m@example.com",
+    "enter-email-reset": "Enter your email address and we'll send you a link to reset your password.",
     "forgot-password": "Forgot your password?",
+    "forgot-password-error": "Failed to send reset email. Please try again.",
     "login": "Login",
     "login-to-account": "Login to your account",
     "login-with": {
@@ -14,9 +18,34 @@
       "microsoft": "Login with Microsoft",
       "passkey": "Login with Passkey"
     },
+    "confirm-password": "Confirm Password",
+    "name": "Name",
+    "name-placeholder": "John Doe",
     "or-continue-with": "Or continue with",
     "password": "Password",
+    "password-requirements": {
+      "digit": "At least 1 digit",
+      "lowercase": "At least 1 lowercase letter",
+      "special": "At least 1 special character",
+      "uppercase": "At least 1 uppercase letter"
+    },
+    "passwords-match": "Passwords match",
+    "passwords-no-match": "Passwords do not match",
+    "remember-password": "Remember your password?",
+    "reset-password-sent": "Reset link sent",
+    "reset-password-sent-message": "If an account exists with that email, we've sent a password reset link.",
+    "reset-your-password": "Reset your password",
+    "send-reset-link": "Send reset link",
+    "sign-in": "Sign in",
     "sign-up": "Sign up",
+    "sign-up-with": {
+      "apple": "Sign up with Apple",
+      "github": "Sign up with Github",
+      "google": "Sign up with Google",
+      "linkedin": "Sign up with LinkedIn",
+      "microsoft": "Sign up with Microsoft",
+      "passkey": "Sign up with Passkey"
+    },
     "terms": {
       "agreement": "By clicking continue, you agree to our",
       "and": "and",
@@ -56,6 +85,11 @@
   "generic": {
     "done": "Done",
     "submit": "Submit"
+  },
+  "info": {
+    "back-to-login": "Back to login",
+    "privacy-policy": "Privacy Policy",
+    "terms-of-service": "Terms of Service"
   },
   "meta": {
     "description": "z8 - time app",

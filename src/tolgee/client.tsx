@@ -1,9 +1,9 @@
 "use client";
 
-import { TolgeeBase } from "./shared";
-import { TolgeeProvider, TolgeeStaticData } from "@tolgee/react";
+import { TolgeeProvider, type TolgeeStaticData } from "@tolgee/react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { TolgeeBase } from "./shared";
 
 type Props = {
   language: string;
@@ -13,7 +13,11 @@ type Props = {
 
 const tolgee = TolgeeBase().init();
 
-export const TolgeeNextProvider = ({ language, staticData, children }: Props) => {
+export const TolgeeNextProvider = ({
+  language,
+  staticData,
+  children,
+}: Props) => {
   const router = useRouter();
 
   useEffect(() => {
@@ -25,7 +29,7 @@ export const TolgeeNextProvider = ({ language, staticData, children }: Props) =>
   }, [tolgee, router]);
 
   return (
-    <TolgeeProvider tolgee={tolgee} ssr={{ language, staticData }}>
+    <TolgeeProvider ssr={{ language, staticData }} tolgee={tolgee}>
       {children}
     </TolgeeProvider>
   );
