@@ -1,17 +1,5 @@
 import { LoginForm } from "@/components/login-form";
-import { ALL_LANGUAGES } from "@/tolgee/shared";
-
-// Generate static params for sign-in page to enable static generation
-export function generateStaticParams() {
-  return ALL_LANGUAGES.map((locale) => ({ locale }));
-}
 
 export default function Page() {
-  return (
-    <div className="flex min-h-svh flex-col items-center justify-center bg-muted p-6 md:p-10">
-      <div className="w-full max-w-sm md:max-w-3xl">
-        <LoginForm />
-      </div>
-    </div>
-  );
+  return <LoginForm />;
 }
