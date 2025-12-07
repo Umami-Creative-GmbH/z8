@@ -1,0 +1,92 @@
+---
+alwaysApply: true
+description: Project-specific rules and conventions for Next.js app with better-auth and i18n
+---
+
+# Project Technology Stack
+
+This project is built with:
+
+- **Next.js 16** (App Router) with `cacheComponents` enabled for optimized layout/component memoization
+- **better-auth** for authentication flows
+- **next-intl** for internationalization (i18n)
+- **Tolgee** for translation management
+- **Drizzle ORM** for database operations
+- **React 19** with React Compiler
+- **TypeScript** for type safety
+
+Both **Next.js** and **better-auth** provide MCP (Model Context Protocol) servers, which are enabled in this project for improved modularity, security, and flexibility.
+
+---
+
+## Navigation & Routing
+
+**CRITICAL**: Always use the locale-aware navigation utilities from `@/src/navigation.ts` instead of Next.js defaults.
+
+### Available Navigation Utilities
+
+The project exports locale-aware versions of Next.js navigation utilities:
+
+- `Link` - Locale-aware link component
+- `useRouter` - Locale-aware router hook
+- `usePathname` - Locale-aware pathname hook
+- `redirect` - Locale-aware redirect function
+
+### Usage Examples
+
+```typescript
+import { Link, useRouter, usePathname } from "@/navigation";
+
+// In a component:
+function Navigation() {
+  const router = useRouter();
+  const pathname = usePathname();
+
+  // Programmatic navigation (locale preserved automatically)
+  router.push("/dashboard");
+  router.replace("/settings");
+
+  // Links in JSX (locale injected into URL automatically)
+  return (
+    <nav>
+      <Link href="/about">About us</Link>
+      <Link href="/contact">Contact</Link>
+    </nav>
+  );
+}
+```
+
+### Why This Matters
+
+- Preserves locale in URLs (e.g., `/en/dashboard`, `/de/dashboard`)
+- Ensures consistent i18n behavior across the app
+- Prevents locale loss during navigation
+- Works seamlessly with `next-intl` routing
+
+**Never use** `next/link`, `next/navigation`, or `next/router` directly. Always import from `@/navigation`.
+
+---
+
+## Authentication
+
+This project uses **better-auth** (not NextAuth). When implementing authentication:
+
+- Use Better Auth APIs and patterns exclusively
+- Reference Better Auth documentation via MCP tools when needed
+- Never mix Better Auth with NextAuth patterns
+
+---
+
+## Internationalization (i18n)
+
+- Locales are managed through `next-intl` and Tolgee
+- All user-facing text should be internationalized
+- Use the translation utilities from `@/tolgee` modules
+- Navigation automatically preserves locale context
+
+---
+
+## Code Quality
+
+This project uses **Ultracite** (Biome-based) for formatting and linting. See `.cursor/rules/ultracite.mdc` for detailed coding standards.
+
