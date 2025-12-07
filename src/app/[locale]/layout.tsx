@@ -51,9 +51,17 @@ export default async function LocaleLayout({ children, params }: Props) {
       <head>
         <meta charSet="UTF-8" />
         <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-        <meta content={t("z8 - time app", { defaultValue: "z8 - time app" })} name="description" />
+        <meta
+          content={t("z8 - time app", { defaultValue: "z8 - time app" })}
+          name="description"
+        />
         <meta content="Umami Creative GmbH" name="author" />
-        <meta content={t("z8, time, app, productivity", { defaultValue: "z8, time, app, productivity" })} name="keywords" />
+        <meta
+          content={t("z8, time, app, productivity", {
+            defaultValue: "z8, time, app, productivity",
+          })}
+          name="keywords"
+        />
         <meta content="#000000" name="theme-color" />
         <link href="/favicon.ico" rel="icon" sizes="any" type="image/x-icon" />
         <link

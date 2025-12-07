@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslate } from "@tolgee/react";
 import { Key } from "lucide-react";
 import Image from "next/image";
 import bgImage from "@/../public/ally-griffin-3hsrEvJi_gw-unsplash.jpg";
@@ -13,7 +14,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { useTranslate } from "@tolgee/react";
 import QuoteBox from "./ui/quote-box";
 
 export function LoginForm({
@@ -30,26 +30,36 @@ export function LoginForm({
               <div className="flex flex-col items-center text-center">
                 <h1 className="font-bold text-2xl">z8</h1>
                 <p className="text-balance text-muted-foreground">
-                  {t("Login to your account", { defaultValue: "Login to your account" })}
+                  {t("Login to your account", {
+                    defaultValue: "Login to your account",
+                  })}
                 </p>
               </div>
               <div className="grid gap-3">
-                <Label htmlFor="email">{t("Email", { defaultValue: "Email" })}</Label>
+                <Label htmlFor="email">
+                  {t("Email", { defaultValue: "Email" })}
+                </Label>
                 <Input
                   id="email"
-                  placeholder={t("m@example.com", { defaultValue: "m@example.com" })}
+                  placeholder={t("m@example.com", {
+                    defaultValue: "m@example.com",
+                  })}
                   required
                   type="email"
                 />
               </div>
               <div className="grid gap-3">
                 <div className="flex items-center">
-                  <Label htmlFor="password">{t("Password", { defaultValue: "Password" })}</Label>
+                  <Label htmlFor="password">
+                    {t("Password", { defaultValue: "Password" })}
+                  </Label>
                   <a
                     className="ml-auto text-sm underline-offset-2 hover:underline"
                     href="#"
                   >
-                    {t("Forgot your password?", { defaultValue: "Forgot your password?" })}
+                    {t("Forgot your password?", {
+                      defaultValue: "Forgot your password?",
+                    })}
                   </a>
                 </div>
                 <Input id="password" required type="password" />
@@ -67,11 +77,19 @@ export function LoginForm({
                   <TooltipTrigger asChild>
                     <Button type="button" variant="outline">
                       <Key className="h-4 w-4" />
-                      <span className="sr-only">Login with Passkey</span>
+                      <span className="sr-only">
+                        {t("Login with Passkey", {
+                          defaultValue: "Login with Passkey",
+                        })}
+                      </span>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <span className="text-sm">Login with Passkey</span>
+                    <span className="text-sm">
+                      {t("Login with Passkey", {
+                        defaultValue: "Login with Passkey",
+                      })}
+                    </span>
                   </TooltipContent>
                 </Tooltip>
                 <Tooltip>
@@ -86,11 +104,19 @@ export function LoginForm({
                           fill="currentColor"
                         />
                       </svg>
-                      <span className="sr-only">Login with Apple</span>
+                      <span className="sr-only">
+                        {t("Login with Apple", {
+                          defaultValue: "Login with Apple",
+                        })}
+                      </span>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <span className="text-sm">Login with Apple</span>
+                    <span className="text-sm">
+                      {t("Login with Apple", {
+                        defaultValue: "Login with Apple",
+                      })}
+                    </span>
                   </TooltipContent>
                 </Tooltip>
                 <Tooltip>
@@ -119,11 +145,19 @@ export function LoginForm({
                           fill="#EB4335"
                         />
                       </svg>
-                      <span className="sr-only">Login with Google</span>
+                      <span className="sr-only">
+                        {t("Login with Google", {
+                          defaultValue: "Login with Google",
+                        })}
+                      </span>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <span className="text-sm">Login with Google</span>
+                    <span className="text-sm">
+                      {t("Login with Google", {
+                        defaultValue: "Login with Google",
+                      })}
+                    </span>
                   </TooltipContent>
                 </Tooltip>
                 <Tooltip>
@@ -140,11 +174,19 @@ export function LoginForm({
                           fill="currentColor"
                         />
                       </svg>
-                      <span className="sr-only">Login with Microsoft</span>
+                      <span className="sr-only">
+                        {t("Login with Microsoft", {
+                          defaultValue: "Login with Microsoft",
+                        })}
+                      </span>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <span className="text-sm">Login with Microsoft</span>
+                    <span className="text-sm">
+                      {t("Login with Microsoft", {
+                        defaultValue: "Login with Microsoft",
+                      })}
+                    </span>
                   </TooltipContent>
                 </Tooltip>
                 <Tooltip>
@@ -161,11 +203,19 @@ export function LoginForm({
                           fill="currentColor"
                         />
                       </svg>
-                      <span className="sr-only">Login with LinkedIn</span>
+                      <span className="sr-only">
+                        {t("Login with LinkedIn", {
+                          defaultValue: "Login with LinkedIn",
+                        })}
+                      </span>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <span className="text-sm">Login with LinkedIn</span>
+                    <span className="text-sm">
+                      {t("Login with LinkedIn", {
+                        defaultValue: "Login with LinkedIn",
+                      })}
+                    </span>
                   </TooltipContent>
                 </Tooltip>
                 <Tooltip>
@@ -182,18 +232,28 @@ export function LoginForm({
                           fill="currentColor"
                         />
                       </svg>
-                      <span className="sr-only">Login with Github</span>
+                      <span className="sr-only">
+                        {t("Login with Github", {
+                          defaultValue: "Login with Github",
+                        })}
+                      </span>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <span className="text-sm">Login with Github</span>
+                    <span className="text-sm">
+                      {t("Login with Github", {
+                        defaultValue: "Login with Github",
+                      })}
+                    </span>
                   </TooltipContent>
                 </Tooltip>
               </div>
               <div className="text-center text-sm">
-                Don&apos;t have an account?{" "}
+                {t("Don't have an account?", {
+                  defaultValue: "Don't have an account?",
+                })}{" "}
                 <a className="underline underline-offset-4" href="#">
-                  Sign up
+                  {t("Sign up", { defaultValue: "Sign up" })}
                 </a>
               </div>
             </div>
@@ -215,8 +275,17 @@ export function LoginForm({
         </CardContent>
       </Card>
       <div className="text-balance text-center text-muted-foreground text-xs *:[a]:underline *:[a]:underline-offset-4 *:[a]:hover:text-primary">
-        By clicking continue, you agree to our <a href="#">Terms of Service</a>{" "}
-        and <a href="#">Privacy Policy</a>.
+        {t("By clicking continue, you agree to our", {
+          defaultValue: "By clicking continue, you agree to our",
+        })}{" "}
+        <a href="#">
+          {t("Terms of Service", { defaultValue: "Terms of Service" })}
+        </a>{" "}
+        {t("and", { defaultValue: "and" })}{" "}
+        <a href="#">
+          {t("Privacy Policy", { defaultValue: "Privacy Policy" })}
+        </a>
+        .
       </div>
     </div>
   );

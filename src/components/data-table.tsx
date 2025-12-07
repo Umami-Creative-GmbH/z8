@@ -99,6 +99,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useTranslate } from "@tolgee/react";
 
 export const schema = z.object({
   id: z.number(),
@@ -637,6 +638,7 @@ const chartConfig = {
 
 function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
   const isMobile = useIsMobile();
+  const { t } = useTranslate();
 
   return (
     <Drawer direction={isMobile ? "bottom" : "right"}>
@@ -649,7 +651,7 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
         <DrawerHeader className="gap-1">
           <DrawerTitle>{item.header}</DrawerTitle>
           <DrawerDescription>
-            Showing total visitors for the last 6 months
+            {t("Showing total visitors for the last 6 months", { defaultValue: "Showing total visitors for the last 6 months" })}
           </DrawerDescription>
         </DrawerHeader>
         <div className="flex flex-col gap-4 overflow-y-auto px-4 text-sm">
@@ -698,13 +700,11 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
               <Separator />
               <div className="grid gap-2">
                 <div className="flex gap-2 font-medium leading-none">
-                  Trending up by 5.2% this month{" "}
+                  {t("Trending up by 5.2% this month", { defaultValue: "Trending up by 5.2% this month" })}{" "}
                   <IconTrendingUp className="size-4" />
                 </div>
                 <div className="text-muted-foreground">
-                  Showing total visitors for the last 6 months. This is just
-                  some random text to test the layout. It spans multiple lines
-                  and should wrap around.
+                  {t("Showing total visitors for the last 6 months. This is just some random text to test the layout. It spans multiple lines and should wrap around.", { defaultValue: "Showing total visitors for the last 6 months. This is just some random text to test the layout. It spans multiple lines and should wrap around." })}
                 </div>
               </div>
               <Separator />
@@ -712,65 +712,65 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
           )}
           <form className="flex flex-col gap-4">
             <div className="flex flex-col gap-3">
-              <Label htmlFor="header">Header</Label>
+              <Label htmlFor="header">{t("Header", { defaultValue: "Header" })}</Label>
               <Input defaultValue={item.header} id="header" />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-3">
-                <Label htmlFor="type">Type</Label>
+                <Label htmlFor="type">{t("Type", { defaultValue: "Type" })}</Label>
                 <Select defaultValue={item.type}>
                   <SelectTrigger className="w-full" id="type">
-                    <SelectValue placeholder="Select a type" />
+                    <SelectValue placeholder={t("Select a type", { defaultValue: "Select a type" })} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Table of Contents">
-                      Table of Contents
+                      {t("Table of Contents", { defaultValue: "Table of Contents" })}
                     </SelectItem>
                     <SelectItem value="Executive Summary">
-                      Executive Summary
+                      {t("Executive Summary", { defaultValue: "Executive Summary" })}
                     </SelectItem>
                     <SelectItem value="Technical Approach">
-                      Technical Approach
+                      {t("Technical Approach", { defaultValue: "Technical Approach" })}
                     </SelectItem>
-                    <SelectItem value="Design">Design</SelectItem>
-                    <SelectItem value="Capabilities">Capabilities</SelectItem>
+                    <SelectItem value="Design">{t("Design", { defaultValue: "Design" })}</SelectItem>
+                    <SelectItem value="Capabilities">{t("Capabilities", { defaultValue: "Capabilities" })}</SelectItem>
                     <SelectItem value="Focus Documents">
-                      Focus Documents
+                      {t("Focus Documents", { defaultValue: "Focus Documents" })}
                     </SelectItem>
-                    <SelectItem value="Narrative">Narrative</SelectItem>
-                    <SelectItem value="Cover Page">Cover Page</SelectItem>
+                    <SelectItem value="Narrative">{t("Narrative", { defaultValue: "Narrative" })}</SelectItem>
+                    <SelectItem value="Cover Page">{t("Cover Page", { defaultValue: "Cover Page" })}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="flex flex-col gap-3">
-                <Label htmlFor="status">Status</Label>
+                <Label htmlFor="status">{t("Status", { defaultValue: "Status" })}</Label>
                 <Select defaultValue={item.status}>
                   <SelectTrigger className="w-full" id="status">
-                    <SelectValue placeholder="Select a status" />
+                    <SelectValue placeholder={t("Select a status", { defaultValue: "Select a status" })} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Done">Done</SelectItem>
-                    <SelectItem value="In Progress">In Progress</SelectItem>
-                    <SelectItem value="Not Started">Not Started</SelectItem>
+                    <SelectItem value="Done">{t("Done", { defaultValue: "Done" })}</SelectItem>
+                    <SelectItem value="In Progress">{t("In Progress", { defaultValue: "In Progress" })}</SelectItem>
+                    <SelectItem value="Not Started">{t("Not Started", { defaultValue: "Not Started" })}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-3">
-                <Label htmlFor="target">Target</Label>
+                <Label htmlFor="target">{t("Target", { defaultValue: "Target" })}</Label>
                 <Input defaultValue={item.target} id="target" />
               </div>
               <div className="flex flex-col gap-3">
-                <Label htmlFor="limit">Limit</Label>
+                <Label htmlFor="limit">{t("Limit", { defaultValue: "Limit" })}</Label>
                 <Input defaultValue={item.limit} id="limit" />
               </div>
             </div>
             <div className="flex flex-col gap-3">
-              <Label htmlFor="reviewer">Reviewer</Label>
+              <Label htmlFor="reviewer">{t("Reviewer", { defaultValue: "Reviewer" })}</Label>
               <Select defaultValue={item.reviewer}>
                 <SelectTrigger className="w-full" id="reviewer">
-                  <SelectValue placeholder="Select a reviewer" />
+                  <SelectValue placeholder={t("Select a reviewer", { defaultValue: "Select a reviewer" })} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Eddie Lake">Eddie Lake</SelectItem>
@@ -784,9 +784,9 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
           </form>
         </div>
         <DrawerFooter>
-          <Button>Submit</Button>
+          <Button>{t("Submit", { defaultValue: "Submit" })}</Button>
           <DrawerClose asChild>
-            <Button variant="outline">Done</Button>
+            <Button variant="outline">{t("Done", { defaultValue: "Done" })}</Button>
           </DrawerClose>
         </DrawerFooter>
       </DrawerContent>

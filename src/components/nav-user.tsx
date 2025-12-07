@@ -24,6 +24,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { useTranslate } from "@tolgee/react";
 
 export function NavUser({
   user,
@@ -35,6 +36,7 @@ export function NavUser({
   };
 }) {
   const { isMobile } = useSidebar();
+  const { t } = useTranslate();
 
   return (
     <SidebarMenu>
@@ -82,21 +84,21 @@ export function NavUser({
             <DropdownMenuGroup>
               <DropdownMenuItem>
                 <IconUserCircle />
-                Account
+                {t("Account", { defaultValue: "Account" })}
               </DropdownMenuItem>
               <DropdownMenuItem>
                 <IconCreditCard />
-                Billing
+                {t("Billing", { defaultValue: "Billing" })}
               </DropdownMenuItem>
               <DropdownMenuItem>
                 <IconNotification />
-                Notifications
+                {t("Notifications", { defaultValue: "Notifications" })}
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem>
               <IconLogout />
-              Log out
+              {t("Log out", { defaultValue: "Log out" })}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
