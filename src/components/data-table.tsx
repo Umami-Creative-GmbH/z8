@@ -651,7 +651,7 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
         <DrawerHeader className="gap-1">
           <DrawerTitle>{item.header}</DrawerTitle>
           <DrawerDescription>
-            {t("Showing total visitors for the last 6 months", { defaultValue: "Showing total visitors for the last 6 months" })}
+            {t("table.showing-visitors", "Showing total visitors for the last 6 months")}
           </DrawerDescription>
         </DrawerHeader>
         <div className="flex flex-col gap-4 overflow-y-auto px-4 text-sm">
@@ -700,11 +700,11 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
               <Separator />
               <div className="grid gap-2">
                 <div className="flex gap-2 font-medium leading-none">
-                  {t("Trending up by 5.2% this month", { defaultValue: "Trending up by 5.2% this month" })}{" "}
+                  {t("table.trending-up", "Trending up by 5.2% this month")}{" "}
                   <IconTrendingUp className="size-4" />
                 </div>
                 <div className="text-muted-foreground">
-                  {t("Showing total visitors for the last 6 months. This is just some random text to test the layout. It spans multiple lines and should wrap around.", { defaultValue: "Showing total visitors for the last 6 months. This is just some random text to test the layout. It spans multiple lines and should wrap around." })}
+                  {t("table.description", "Showing total visitors for the last 6 months. This is just some random text to test the layout. It spans multiple lines and should wrap around.")}
                 </div>
               </div>
               <Separator />
@@ -712,65 +712,65 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
           )}
           <form className="flex flex-col gap-4">
             <div className="flex flex-col gap-3">
-              <Label htmlFor="header">{t("Header", { defaultValue: "Header" })}</Label>
+              <Label htmlFor="header">{t("table.header", "Header")}</Label>
               <Input defaultValue={item.header} id="header" />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-3">
-                <Label htmlFor="type">{t("Type", { defaultValue: "Type" })}</Label>
+                <Label htmlFor="type">{t("table.type", "Type")}</Label>
                 <Select defaultValue={item.type}>
                   <SelectTrigger className="w-full" id="type">
-                    <SelectValue placeholder={t("Select a type", { defaultValue: "Select a type" })} />
+                    <SelectValue placeholder={t("table.select-type", "Select a type")} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Table of Contents">
-                      {t("Table of Contents", { defaultValue: "Table of Contents" })}
+                      {t("table.type-options.table-of-contents", "Table of Contents")}
                     </SelectItem>
                     <SelectItem value="Executive Summary">
-                      {t("Executive Summary", { defaultValue: "Executive Summary" })}
+                      {t("table.type-options.executive-summary", "Executive Summary")}
                     </SelectItem>
                     <SelectItem value="Technical Approach">
-                      {t("Technical Approach", { defaultValue: "Technical Approach" })}
+                      {t("table.type-options.technical-approach", "Technical Approach")}
                     </SelectItem>
-                    <SelectItem value="Design">{t("Design", { defaultValue: "Design" })}</SelectItem>
-                    <SelectItem value="Capabilities">{t("Capabilities", { defaultValue: "Capabilities" })}</SelectItem>
+                    <SelectItem value="Design">{t("table.type-options.design", "Design")}</SelectItem>
+                    <SelectItem value="Capabilities">{t("table.type-options.capabilities", "Capabilities")}</SelectItem>
                     <SelectItem value="Focus Documents">
-                      {t("Focus Documents", { defaultValue: "Focus Documents" })}
+                      {t("table.type-options.focus-documents", "Focus Documents")}
                     </SelectItem>
-                    <SelectItem value="Narrative">{t("Narrative", { defaultValue: "Narrative" })}</SelectItem>
-                    <SelectItem value="Cover Page">{t("Cover Page", { defaultValue: "Cover Page" })}</SelectItem>
+                    <SelectItem value="Narrative">{t("table.type-options.narrative", "Narrative")}</SelectItem>
+                    <SelectItem value="Cover Page">{t("table.type-options.cover-page", "Cover Page")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="flex flex-col gap-3">
-                <Label htmlFor="status">{t("Status", { defaultValue: "Status" })}</Label>
+                <Label htmlFor="status">{t("table.status", "Status")}</Label>
                 <Select defaultValue={item.status}>
                   <SelectTrigger className="w-full" id="status">
-                    <SelectValue placeholder={t("Select a status", { defaultValue: "Select a status" })} />
+                    <SelectValue placeholder={t("table.select-status", "Select a status")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Done">{t("Done", { defaultValue: "Done" })}</SelectItem>
-                    <SelectItem value="In Progress">{t("In Progress", { defaultValue: "In Progress" })}</SelectItem>
-                    <SelectItem value="Not Started">{t("Not Started", { defaultValue: "Not Started" })}</SelectItem>
+                    <SelectItem value="Done">{t("table.status-options.done", "Done")}</SelectItem>
+                    <SelectItem value="In Progress">{t("table.status-options.in-progress", "In Progress")}</SelectItem>
+                    <SelectItem value="Not Started">{t("table.status-options.not-started", "Not Started")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-3">
-                <Label htmlFor="target">{t("Target", { defaultValue: "Target" })}</Label>
+                <Label htmlFor="target">{t("table.target", "Target")}</Label>
                 <Input defaultValue={item.target} id="target" />
               </div>
               <div className="flex flex-col gap-3">
-                <Label htmlFor="limit">{t("Limit", { defaultValue: "Limit" })}</Label>
+                <Label htmlFor="limit">{t("table.limit", "Limit")}</Label>
                 <Input defaultValue={item.limit} id="limit" />
               </div>
             </div>
             <div className="flex flex-col gap-3">
-              <Label htmlFor="reviewer">{t("Reviewer", { defaultValue: "Reviewer" })}</Label>
+              <Label htmlFor="reviewer">{t("table.reviewer", "Reviewer")}</Label>
               <Select defaultValue={item.reviewer}>
                 <SelectTrigger className="w-full" id="reviewer">
-                  <SelectValue placeholder={t("Select a reviewer", { defaultValue: "Select a reviewer" })} />
+                  <SelectValue placeholder={t("table.select-reviewer", "Select a reviewer")} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Eddie Lake">Eddie Lake</SelectItem>
@@ -784,9 +784,9 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
           </form>
         </div>
         <DrawerFooter>
-          <Button>{t("Submit", { defaultValue: "Submit" })}</Button>
+          <Button>{t("generic.submit", "Submit")}</Button>
           <DrawerClose asChild>
-            <Button variant="outline">{t("Done", { defaultValue: "Done" })}</Button>
+            <Button variant="outline">{t("generic.done", "Done")}</Button>
           </DrawerClose>
         </DrawerFooter>
       </DrawerContent>

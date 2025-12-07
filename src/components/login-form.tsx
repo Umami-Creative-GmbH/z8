@@ -30,20 +30,14 @@ export function LoginForm({
               <div className="flex flex-col items-center text-center">
                 <h1 className="font-bold text-2xl">z8</h1>
                 <p className="text-balance text-muted-foreground">
-                  {t("Login to your account", {
-                    defaultValue: "Login to your account",
-                  })}
+                  {t("auth.login-to-account", "Login to your account")}
                 </p>
               </div>
               <div className="grid gap-3">
-                <Label htmlFor="email">
-                  {t("Email", { defaultValue: "Email" })}
-                </Label>
+                <Label htmlFor="email">{t("auth.email", "Email")}</Label>
                 <Input
                   id="email"
-                  placeholder={t("m@example.com", {
-                    defaultValue: "m@example.com",
-                  })}
+                  placeholder={t("auth.email-placeholder", "m@example.com")}
                   required
                   type="email"
                 />
@@ -51,25 +45,23 @@ export function LoginForm({
               <div className="grid gap-3">
                 <div className="flex items-center">
                   <Label htmlFor="password">
-                    {t("Password", { defaultValue: "Password" })}
+                    {t("auth.password", "Password")}
                   </Label>
                   <a
                     className="ml-auto text-sm underline-offset-2 hover:underline"
                     href="#"
                   >
-                    {t("Forgot your password?", {
-                      defaultValue: "Forgot your password?",
-                    })}
+                    {t("auth.forgot-password", "Forgot your password?")}
                   </a>
                 </div>
                 <Input id="password" required type="password" />
               </div>
               <Button className="w-full" type="submit">
-                {t("Login", { defaultValue: "Login" })}
+                {t("auth.login", "Login")}
               </Button>
               <div className="text-center text-sm">
                 <span className="relative z-10 px-2 text-muted-foreground">
-                  {t("Or continue with", { defaultValue: "Or continue with" })}
+                  {t("auth.or-continue-with", "Or continue with")}
                 </span>
               </div>
               <div className="flex flex-wrap justify-center gap-2 *:w-1/4">
@@ -78,17 +70,13 @@ export function LoginForm({
                     <Button type="button" variant="outline">
                       <Key className="h-4 w-4" />
                       <span className="sr-only">
-                        {t("Login with Passkey", {
-                          defaultValue: "Login with Passkey",
-                        })}
+                        {t("auth.login-with.passkey", "Login with Passkey")}
                       </span>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
                     <span className="text-sm">
-                      {t("Login with Passkey", {
-                        defaultValue: "Login with Passkey",
-                      })}
+                      {t("auth.login-with.passkey", "Login with Passkey")}
                     </span>
                   </TooltipContent>
                 </Tooltip>
@@ -105,17 +93,13 @@ export function LoginForm({
                         />
                       </svg>
                       <span className="sr-only">
-                        {t("Login with Apple", {
-                          defaultValue: "Login with Apple",
-                        })}
+                        {t("auth.login-with.apple", "Login with Apple")}
                       </span>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
                     <span className="text-sm">
-                      {t("Login with Apple", {
-                        defaultValue: "Login with Apple",
-                      })}
+                      {t("auth.login-with.apple", "Login with Apple")}
                     </span>
                   </TooltipContent>
                 </Tooltip>
@@ -146,17 +130,13 @@ export function LoginForm({
                         />
                       </svg>
                       <span className="sr-only">
-                        {t("Login with Google", {
-                          defaultValue: "Login with Google",
-                        })}
+                        {t("auth.login-with.google", "Login with Google")}
                       </span>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
                     <span className="text-sm">
-                      {t("Login with Google", {
-                        defaultValue: "Login with Google",
-                      })}
+                      {t("auth.login-with.google", "Login with Google")}
                     </span>
                   </TooltipContent>
                 </Tooltip>
@@ -175,17 +155,13 @@ export function LoginForm({
                         />
                       </svg>
                       <span className="sr-only">
-                        {t("Login with Microsoft", {
-                          defaultValue: "Login with Microsoft",
-                        })}
+                        {t("auth.login-with.microsoft", "Login with Microsoft")}
                       </span>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
                     <span className="text-sm">
-                      {t("Login with Microsoft", {
-                        defaultValue: "Login with Microsoft",
-                      })}
+                      {t("auth.login-with.microsoft", "Login with Microsoft")}
                     </span>
                   </TooltipContent>
                 </Tooltip>
@@ -204,17 +180,13 @@ export function LoginForm({
                         />
                       </svg>
                       <span className="sr-only">
-                        {t("Login with LinkedIn", {
-                          defaultValue: "Login with LinkedIn",
-                        })}
+                        {t("auth.login-with.linkedin", "Login with LinkedIn")}
                       </span>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
                     <span className="text-sm">
-                      {t("Login with LinkedIn", {
-                        defaultValue: "Login with LinkedIn",
-                      })}
+                      {t("auth.login-with.linkedin", "Login with LinkedIn")}
                     </span>
                   </TooltipContent>
                 </Tooltip>
@@ -233,27 +205,21 @@ export function LoginForm({
                         />
                       </svg>
                       <span className="sr-only">
-                        {t("Login with Github", {
-                          defaultValue: "Login with Github",
-                        })}
+                        {t("auth.login-with.github", "Login with Github")}
                       </span>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
                     <span className="text-sm">
-                      {t("Login with Github", {
-                        defaultValue: "Login with Github",
-                      })}
+                      {t("auth.login-with.github", "Login with Github")}
                     </span>
                   </TooltipContent>
                 </Tooltip>
               </div>
               <div className="text-center text-sm">
-                {t("Don't have an account?", {
-                  defaultValue: "Don't have an account?",
-                })}{" "}
+                {t("auth.dont-have-account", "Don't have an account?")}{" "}
                 <a className="underline underline-offset-4" href="#">
-                  {t("Sign up", { defaultValue: "Sign up" })}
+                  {t("auth.sign-up", "Sign up")}
                 </a>
               </div>
             </div>
@@ -275,17 +241,10 @@ export function LoginForm({
         </CardContent>
       </Card>
       <div className="text-balance text-center text-muted-foreground text-xs *:[a]:underline *:[a]:underline-offset-4 *:[a]:hover:text-primary">
-        {t("By clicking continue, you agree to our", {
-          defaultValue: "By clicking continue, you agree to our",
-        })}{" "}
-        <a href="#">
-          {t("Terms of Service", { defaultValue: "Terms of Service" })}
-        </a>{" "}
-        {t("and", { defaultValue: "and" })}{" "}
-        <a href="#">
-          {t("Privacy Policy", { defaultValue: "Privacy Policy" })}
-        </a>
-        .
+        {t("auth.terms.agreement", "By clicking continue, you agree to our")}{" "}
+        <a href="#">{t("auth.terms.service", "Terms of Service")}</a>{" "}
+        {t("auth.terms.and", "and")}{" "}
+        <a href="#">{t("auth.terms.privacy", "Privacy Policy")}</a>.
       </div>
     </div>
   );

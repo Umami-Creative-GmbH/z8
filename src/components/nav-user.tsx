@@ -84,21 +84,21 @@ export function NavUser({
             <DropdownMenuGroup>
               <DropdownMenuItem>
                 <IconUserCircle />
-                {t("Account", { defaultValue: "Account" })}
+                {t("user.account", "Account")}
               </DropdownMenuItem>
               <DropdownMenuItem>
                 <IconCreditCard />
-                {t("Billing", { defaultValue: "Billing" })}
+                {t("user.billing", "Billing")}
               </DropdownMenuItem>
               <DropdownMenuItem>
                 <IconNotification />
-                {t("Notifications", { defaultValue: "Notifications" })}
+                {t("user.notifications", "Notifications")}
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem>
               <IconLogout />
-              {t("Log out", { defaultValue: "Log out" })}
+              {t("user.log-out", "Log out")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

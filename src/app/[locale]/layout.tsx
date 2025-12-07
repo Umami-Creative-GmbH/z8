@@ -52,14 +52,12 @@ export default async function LocaleLayout({ children, params }: Props) {
         <meta charSet="UTF-8" />
         <meta content="width=device-width, initial-scale=1.0" name="viewport" />
         <meta
-          content={t("z8 - time app", { defaultValue: "z8 - time app" })}
+          content={t("meta.description", "z8 - time app")}
           name="description"
         />
         <meta content="Umami Creative GmbH" name="author" />
         <meta
-          content={t("z8, time, app, productivity", {
-            defaultValue: "z8, time, app, productivity",
-          })}
+          content={t("meta.keywords", "z8, time, app, productivity")}
           name="keywords"
         />
         <meta content="#000000" name="theme-color" />
@@ -84,7 +82,7 @@ export default async function LocaleLayout({ children, params }: Props) {
         <link href="/site.webmanifest" rel="manifest" />
         <link color="#000000" href="/safari-pinned-tab.svg" rel="mask-icon" />
         <meta content="#000000" name="msapplication-TileColor" />
-        <title>{t("z8 - time app", { defaultValue: "z8 - time app" })}</title>
+        <title>{t("meta.title", "z8 - time app")}</title>
         <meta content="z8" name="apple-mobile-web-app-title" />
         <meta content="z8" name="application-name" />
         <meta content="yes" name="mobile-web-app-capable" />
@@ -102,7 +100,7 @@ export default async function LocaleLayout({ children, params }: Props) {
                 minHeight: "100vh",
               }}
             >
-              <div>{t("Loading...", { defaultValue: "Loading..." })}</div>
+              <div>{t("common.loading", "Loading...")}</div>
             </div>
           }
         >

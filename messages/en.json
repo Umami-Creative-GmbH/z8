@@ -1,1 +1,118 @@
-{}
+{
+  "auth": {
+    "dont-have-account": "Don't have an account?",
+    "email": "Email",
+    "email-placeholder": "m@example.com",
+    "forgot-password": "Forgot your password?",
+    "login": "Login",
+    "login-to-account": "Login to your account",
+    "login-with": {
+      "apple": "Login with Apple",
+      "github": "Login with Github",
+      "google": "Login with Google",
+      "linkedin": "Login with LinkedIn",
+      "microsoft": "Login with Microsoft",
+      "passkey": "Login with Passkey"
+    },
+    "or-continue-with": "Or continue with",
+    "password": "Password",
+    "sign-up": "Sign up",
+    "terms": {
+      "agreement": "By clicking continue, you agree to our",
+      "and": "and",
+      "privacy": "Privacy Policy",
+      "service": "Terms of Service"
+    }
+  },
+  "common": {
+    "loading": "Loading..."
+  },
+  "dashboard": {
+    "cards": {
+      "accounts": {
+        "active": "Active Accounts",
+        "engagement": "Engagement exceed targets",
+        "retention": "Strong user retention"
+      },
+      "customers": {
+        "acquisition": "Acquisition needs attention",
+        "down": "Down 20% this period",
+        "new": "New Customers"
+      },
+      "growth": {
+        "increase": "Steady performance increase",
+        "projections": "Meets growth projections",
+        "rate": "Growth Rate"
+      },
+      "revenue": {
+        "total": "Total Revenue",
+        "trending-up": "Trending up this month",
+        "visitors": "Visitors for the last 6 months"
+      }
+    },
+    "github": "GitHub",
+    "title": "Dashboard"
+  },
+  "generic": {
+    "done": "Done",
+    "submit": "Submit"
+  },
+  "meta": {
+    "description": "z8 - time app",
+    "keywords": "z8, time, app, productivity",
+    "title": "z8 - time app"
+  },
+  "nav": {
+    "active-proposals": "Active Proposals",
+    "analytics": "Analytics",
+    "archived": "Archived",
+    "capture": "Capture",
+    "dashboard": "Dashboard",
+    "data-library": "Data Library",
+    "get-help": "Get Help",
+    "lifecycle": "Lifecycle",
+    "projects": "Projects",
+    "prompts": "Prompts",
+    "proposal": "Proposal",
+    "reports": "Reports",
+    "search": "Search",
+    "settings": "Settings",
+    "team": "Team",
+    "word-assistant": "Word Assistant"
+  },
+  "table": {
+    "description": "Showing total visitors for the last 6 months. This is just some random text to test the layout. It spans multiple lines and should wrap around.",
+    "header": "Header",
+    "limit": "Limit",
+    "reviewer": "Reviewer",
+    "select-reviewer": "Select a reviewer",
+    "select-status": "Select a status",
+    "select-type": "Select a type",
+    "showing-visitors": "Showing total visitors for the last 6 months",
+    "status": "Status",
+    "status-options": {
+      "done": "Done",
+      "in-progress": "In Progress",
+      "not-started": "Not Started"
+    },
+    "target": "Target",
+    "trending-up": "Trending up by 5.2% this month",
+    "type": "Type",
+    "type-options": {
+      "capabilities": "Capabilities",
+      "cover-page": "Cover Page",
+      "design": "Design",
+      "executive-summary": "Executive Summary",
+      "focus-documents": "Focus Documents",
+      "narrative": "Narrative",
+      "table-of-contents": "Table of Contents",
+      "technical-approach": "Technical Approach"
+    }
+  },
+  "user": {
+    "account": "Account",
+    "billing": "Billing",
+    "log-out": "Log out",
+    "notifications": "Notifications"
+  }
+}

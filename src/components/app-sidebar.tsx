@@ -44,74 +44,74 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     },
     navMain: [
       {
-        title: t("Dashboard", { defaultValue: "Dashboard" }),
+        title: t("nav.dashboard", "Dashboard"),
         url: "#",
         icon: IconDashboard,
       },
       {
-        title: t("Lifecycle", { defaultValue: "Lifecycle" }),
+        title: t("nav.lifecycle", "Lifecycle"),
         url: "#",
         icon: IconListDetails,
       },
       {
-        title: t("Analytics", { defaultValue: "Analytics" }),
+        title: t("nav.analytics", "Analytics"),
         url: "#",
         icon: IconChartBar,
       },
       {
-        title: t("Projects", { defaultValue: "Projects" }),
+        title: t("nav.projects", "Projects"),
         url: "#",
         icon: IconFolder,
       },
       {
-        title: t("Team", { defaultValue: "Team" }),
+        title: t("nav.team", "Team"),
         url: "#",
         icon: IconUsers,
       },
     ],
     navClouds: [
       {
-        title: t("Capture", { defaultValue: "Capture" }),
+        title: t("nav.capture", "Capture"),
         icon: IconCamera,
         isActive: true,
         url: "#",
         items: [
           {
-            title: t("Active Proposals", { defaultValue: "Active Proposals" }),
+            title: t("nav.active-proposals", "Active Proposals"),
             url: "#",
           },
           {
-            title: t("Archived", { defaultValue: "Archived" }),
+            title: t("nav.archived", "Archived"),
             url: "#",
           },
         ],
       },
       {
-        title: t("Proposal", { defaultValue: "Proposal" }),
+        title: t("nav.proposal", "Proposal"),
         icon: IconFileDescription,
         url: "#",
         items: [
           {
-            title: t("Active Proposals", { defaultValue: "Active Proposals" }),
+            title: t("nav.active-proposals", "Active Proposals"),
             url: "#",
           },
           {
-            title: t("Archived", { defaultValue: "Archived" }),
+            title: t("nav.archived", "Archived"),
             url: "#",
           },
         ],
       },
       {
-        title: t("Prompts", { defaultValue: "Prompts" }),
+        title: t("nav.prompts", "Prompts"),
         icon: IconFileAi,
         url: "#",
         items: [
           {
-            title: t("Active Proposals", { defaultValue: "Active Proposals" }),
+            title: t("nav.active-proposals", "Active Proposals"),
             url: "#",
           },
           {
-            title: t("Archived", { defaultValue: "Archived" }),
+            title: t("nav.archived", "Archived"),
             url: "#",
           },
         ],
@@ -119,34 +119,34 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     ],
     navSecondary: [
       {
-        title: t("Settings", { defaultValue: "Settings" }),
+        title: t("nav.settings", "Settings"),
         url: "#",
         icon: IconSettings,
       },
       {
-        title: t("Get Help", { defaultValue: "Get Help" }),
+        title: t("nav.get-help", "Get Help"),
         url: "#",
         icon: IconHelp,
       },
       {
-        title: t("Search", { defaultValue: "Search" }),
+        title: t("nav.search", "Search"),
         url: "#",
         icon: IconSearch,
       },
     ],
     documents: [
       {
-        name: t("Data Library", { defaultValue: "Data Library" }),
+        name: t("nav.data-library", "Data Library"),
         url: "#",
         icon: IconDatabase,
       },
       {
-        name: t("Reports", { defaultValue: "Reports" }),
+        name: t("nav.reports", "Reports"),
         url: "#",
         icon: IconReport,
       },
       {
-        name: t("Word Assistant", { defaultValue: "Word Assistant" }),
+        name: t("nav.word-assistant", "Word Assistant"),
         url: "#",
         icon: IconFileWord,
       },

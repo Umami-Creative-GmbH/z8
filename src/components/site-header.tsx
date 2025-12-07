@@ -14,7 +14,7 @@ export async function SiteHeader() {
           className="mx-2 data-[orientation=vertical]:h-4"
           orientation="vertical"
         />
-        <h1 className="font-medium text-base">{t("Dashboard", { defaultValue: "Dashboard" })}</h1>
+        <h1 className="font-medium text-base">{t("dashboard.title", "Dashboard")}</h1>
         <div className="ml-auto flex items-center gap-2">
           <Button asChild className="hidden sm:flex" size="sm" variant="ghost">
             <a
@@ -23,7 +23,7 @@ export async function SiteHeader() {
               rel="noopener noreferrer"
               target="_blank"
             >
-              {t("GitHub", { defaultValue: "GitHub" })}
+              {t("dashboard.github", "GitHub")}
             </a>
           </Button>
         </div>
