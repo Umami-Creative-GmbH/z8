@@ -7,19 +7,21 @@ type InfoHeaderProps = {
   titleKey: string;
   titleDefault: string;
   backHref?: string;
+  locale: string;
 };
 
 export async function InfoHeader({
   titleKey,
   titleDefault,
   backHref = "/sign-in",
+  locale,
 }: InfoHeaderProps) {
   const t = await getTranslate();
 
   return (
     <div className="sticky top-0 z-30 flex shrink-0 items-center gap-4 pb-6">
       <Button asChild size="icon" variant="ghost">
-        <Link href={backHref}>
+        <Link href={backHref} locale={locale}>
           <ArrowLeft className="h-4 w-4" />
           <span className="sr-only">
             {t("info.back-to-login", "Back to login")}

@@ -40,7 +40,7 @@ export function AuthFormWrapper({
               alt="Background Image - Foto von Ally Griffin auf Unsplash"
               fill
               placeholder="blur"
-              quality={100}
+              quality={75}
               sizes="100vw"
               src={bgImage}
               style={{

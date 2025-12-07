@@ -1,6 +1,6 @@
 "use client";
 
-import { useTolgee } from "@tolgee/react";
+import { useLocale } from "next-intl";
 import { useTransition } from "react";
 import { usePathname, useRouter } from "@/navigation";
 import {
@@ -18,8 +18,7 @@ const LANGUAGE_NAMES: Record<string, string> = {
 };
 
 export function LanguageSwitcher() {
-  const tolgee = useTolgee(["language"]);
-  const locale = tolgee.getLanguage();
+  const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
   const [isPending, startTransition] = useTransition();

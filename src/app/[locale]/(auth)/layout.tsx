@@ -1,5 +1,10 @@
 import { InfoFooter } from "@/components/info-footer";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { ALL_LANGUAGES } from "@/tolgee/shared";
+
+export async function generateStaticParams() {
+  return ALL_LANGUAGES.map((locale) => ({ locale }));
+}
 
 export default function AuthLayout({
   children,

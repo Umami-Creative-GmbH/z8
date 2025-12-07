@@ -1,11 +1,8 @@
-"use cache";
-
 import type { TolgeeStaticData } from "@tolgee/react";
 import { NextIntlClientProvider } from "next-intl";
 import { type ReactNode, Suspense } from "react";
 import { TolgeeNextProvider } from "@/tolgee/client";
-import { getTolgee, getTranslate } from "@/tolgee/server";
-import { ALL_LANGUAGES } from "@/tolgee/shared";
+import { ALL_LANGUAGES, TolgeeBase } from "@/tolgee/shared";
 import "../globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
@@ -15,22 +12,21 @@ type Props = {
 };
 
 // Cache the translation loading function using "use cache" directive
-// Note: locale parameter is required for cache key differentiation per locale
-async function loadTranslations(_locale: string): Promise<TolgeeStaticData> {
+// Note: We use TolgeeBase directly with explicit locale to avoid getLocale() which uses headers()
+async function loadTranslations(locale: string): Promise<TolgeeStaticData> {
   "use cache";
-  // Locale is used implicitly for cache key, getTolgee gets it from context
-  const tolgee = await getTolgee();
+  // Create Tolgee instance with explicit locale (from route params) to avoid headers() access
+  const tolgee = TolgeeBase().init({
+    observerOptions: {
+      fullKeyEncode: true,
+    },
+    language: locale,
+  });
   return (await tolgee.loadRequired()) as unknown as TolgeeStaticData;
 }
 
-// Cache the getTranslate function to avoid duplicate async calls
-async function getCachedTranslate() {
-  "use cache";
-  return await getTranslate();
-}
-
 // Generate static params for all locales to enable static generation
-export function generateStaticParams() {
+export async function generateStaticParams() {
   return ALL_LANGUAGES.map((locale) => ({ locale }));
 }
 
@@ -50,10 +46,41 @@ async function TranslationProvider({
   );
 }
 
-// Component for translated title only
-async function TranslatedTitle() {
-  const t = await getCachedTranslate();
-  return <title>{t("meta.title", "z8 - time app")}</title>;
+// Component for translated meta tags (title, description, keywords)
+// This component is cached and does NOT access dynamic headers
+async function TranslatedMeta({ locale }: { locale: string }) {
+  "use cache";
+
+  // Reuse the cached translation data - this is efficient because loadTranslations is cached
+  const staticData = await loadTranslations(locale);
+
+  // Initialize a local Tolgee instance to resolve keys without using headers()
+  const tolgee = TolgeeBase().init({
+    observerOptions: {
+      fullKeyEncode: true,
+    },
+    language: locale,
+    staticData,
+  });
+
+  // Ensure Tolgee is ready
+  await tolgee.run();
+
+  const t = tolgee.t;
+
+  return (
+    <>
+      <title>{t("meta.title", "z8 - time app")}</title>
+      <meta
+        content={t("meta.description", "z8 - time app")}
+        name="description"
+      />
+      <meta
+        content={t("meta.keywords", "z8, time, app, productivity")}
+        name="keywords"
+      />
+    </>
+  );
 }
 
 export default async function LocaleLayout({ children, params }: Props) {
@@ -63,7 +90,6 @@ export default async function LocaleLayout({ children, params }: Props) {
     <html lang={locale}>
       <head>
         <meta charSet="UTF-8" />
-        <meta content="width=device-width, initial-scale=1.0" name="viewport" />
         <meta content="Umami Creative GmbH" name="author" />
         <meta content="#000000" name="theme-color" />
         <link href="/favicon.ico" rel="icon" sizes="any" type="image/x-icon" />
@@ -93,7 +119,7 @@ export default async function LocaleLayout({ children, params }: Props) {
         <meta content="yes" name="apple-mobile-web-app-capable" />
         <meta content="default" name="apple-mobile-web-app-status-bar-style" />
         <Suspense fallback={<title>z8 - time app</title>}>
-          <TranslatedTitle />
+          <TranslatedMeta locale={locale} />
         </Suspense>
       </head>
       <body>

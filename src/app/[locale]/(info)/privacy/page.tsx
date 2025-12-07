@@ -46,6 +46,7 @@ export default async function PrivacyPage({ params }: Props) {
       <InfoHeader
         titleDefault="Privacy Policy"
         titleKey="info.privacy-policy"
+        locale={locale}
       />
       <InfoContent content={content} />
     </div>

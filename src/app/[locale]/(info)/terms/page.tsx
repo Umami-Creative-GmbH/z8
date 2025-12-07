@@ -46,6 +46,7 @@ export default async function TermsPage({ params }: Props) {
       <InfoHeader
         titleDefault="Terms of Service"
         titleKey="info.terms-of-service"
+        locale={locale}
       />
       <InfoContent content={content} />
     </div>
