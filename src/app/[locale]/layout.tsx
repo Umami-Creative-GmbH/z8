@@ -1,8 +1,8 @@
-import React, { ReactNode } from "react";
 import { notFound } from "next/navigation";
+import { cache, type ReactNode, Suspense } from "react";
 import { TolgeeNextProvider } from "@/tolgee/client";
+import { getTolgee, getTranslate } from "@/tolgee/server";
 import { ALL_LANGUAGES } from "@/tolgee/shared";
-import { getTolgee } from "@/tolgee/server";
 import "../globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
@@ -11,41 +11,97 @@ type Props = {
   params: Promise<{ locale: string }>;
 };
 
+// Cache the translation loading function using React.cache
+const loadTranslations = cache(async (locale: string) => {
+  const tolgee = await getTolgee();
+  return (await tolgee.loadRequired()) as any;
+});
+
+// Generate static params for all locales to enable static generation
+export function generateStaticParams() {
+  return ALL_LANGUAGES.map((locale) => ({ locale }));
+}
+
+// Separate component for loading translations to wrap in Suspense
+async function TranslationProvider({
+  locale,
+  children,
+}: {
+  locale: string;
+  children: ReactNode;
+}) {
+  const records = await loadTranslations(locale);
+  return (
+    <TolgeeNextProvider language={locale} staticData={records}>
+      {children}
+    </TolgeeNextProvider>
+  );
+}
+
 export default async function LocaleLayout({ children, params }: Props) {
   const { locale } = await params;
   if (!ALL_LANGUAGES.includes(locale)) {
     notFound();
   }
-  const tolgee = await getTolgee();
-  const records = (await tolgee.loadRequired()) as any;
+
+  const t = await getTranslate();
 
   return (
     <html lang={locale}>
       <head>
         <meta charSet="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <meta name="description" content="z8 - time app" />
-        <meta name="author" content="Umami Creative GmbH" />
-        <meta name="keywords" content="z8, time, app, productivity" />
-        <meta name="theme-color" content="#000000" />
-        <link rel="icon" href="/favicon.ico" sizes="any" type="image/x-icon" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
-        <link rel="icon" href="/favicon-32x32.png" sizes="32x32" type="image/png" />
-        <link rel="icon" href="/favicon-16x16.png" sizes="16x16" type="image/png" />
-        <link rel="manifest" href="/site.webmanifest" />
-        <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#000000" />
-        <meta name="msapplication-TileColor" content="#000000" />
-        <title>z8 - time app</title>
-        <meta name="apple-mobile-web-app-title" content="z8" />
-        <meta name="application-name" content="z8" />
-        <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+        <meta content={t("z8 - time app", { defaultValue: "z8 - time app" })} name="description" />
+        <meta content="Umami Creative GmbH" name="author" />
+        <meta content={t("z8, time, app, productivity", { defaultValue: "z8, time, app, productivity" })} name="keywords" />
+        <meta content="#000000" name="theme-color" />
+        <link href="/favicon.ico" rel="icon" sizes="any" type="image/x-icon" />
+        <link
+          href="/apple-touch-icon.png"
+          rel="apple-touch-icon"
+          sizes="180x180"
+        />
+        <link
+          href="/favicon-32x32.png"
+          rel="icon"
+          sizes="32x32"
+          type="image/png"
+        />
+        <link
+          href="/favicon-16x16.png"
+          rel="icon"
+          sizes="16x16"
+          type="image/png"
+        />
+        <link href="/site.webmanifest" rel="manifest" />
+        <link color="#000000" href="/safari-pinned-tab.svg" rel="mask-icon" />
+        <meta content="#000000" name="msapplication-TileColor" />
+        <title>{t("z8 - time app", { defaultValue: "z8 - time app" })}</title>
+        <meta content="z8" name="apple-mobile-web-app-title" />
+        <meta content="z8" name="application-name" />
+        <meta content="yes" name="mobile-web-app-capable" />
+        <meta content="yes" name="apple-mobile-web-app-capable" />
+        <meta content="default" name="apple-mobile-web-app-status-bar-style" />
       </head>
       <body>
-        <TolgeeNextProvider language={locale} staticData={records}>
-          <TooltipProvider delayDuration={0}>{children}</TooltipProvider>
-        </TolgeeNextProvider>
+        <Suspense
+          fallback={
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                minHeight: "100vh",
+              }}
+            >
+              <div>{t("Loading...", { defaultValue: "Loading..." })}</div>
+            </div>
+          }
+        >
+          <TranslationProvider locale={locale}>
+            <TooltipProvider delayDuration={0}>{children}</TooltipProvider>
+          </TranslationProvider>
+        </Suspense>
       </body>
     </html>
   );
