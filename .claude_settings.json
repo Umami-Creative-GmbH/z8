@@ -1,0 +1,34 @@
+{
+  "sandbox": {
+    "enabled": true,
+    "autoAllowBashIfSandboxed": true
+  },
+  "permissions": {
+    "defaultMode": "acceptEdits",
+    "allow": [
+      "Read(./**)",
+      "Write(./**)",
+      "Edit(./**)",
+      "Glob(./**)",
+      "Grep(./**)",
+      "Read(X:\\umami-creative\\z8/**)",
+      "Write(X:\\umami-creative\\z8/**)",
+      "Edit(X:\\umami-creative\\z8/**)",
+      "Glob(X:\\umami-creative\\z8/**)",
+      "Grep(X:\\umami-creative\\z8/**)",
+      "Read(X:\\umami-creative\\z8\\.auto-claude\\specs\\002-create-a-document-for-agents-with-the-greater-goal/**)",
+      "Write(X:\\umami-creative\\z8\\.auto-claude\\specs\\002-create-a-document-for-agents-with-the-greater-goal/**)",
+      "Edit(X:\\umami-creative\\z8\\.auto-claude\\specs\\002-create-a-document-for-agents-with-the-greater-goal/**)",
+      "Bash(*)",
+      "WebFetch(*)",
+      "WebSearch(*)",
+      "mcp__context7__resolve-library-id(*)",
+      "mcp__context7__get-library-docs(*)",
+      "mcp__graphiti-memory__search_nodes(*)",
+      "mcp__graphiti-memory__search_facts(*)",
+      "mcp__graphiti-memory__add_episode(*)",
+      "mcp__graphiti-memory__get_episodes(*)",
+      "mcp__graphiti-memory__get_entity_edge(*)"
+    ]
+  }
+}
