@@ -9,15 +9,15 @@ export const ALL_LANGUAGES = ["de", "en"];
 export const DEFAULT_LANGUAGE = "de";
 
 export function TolgeeBase() {
-  return Tolgee()
-    .use(FormatIcu())
-    .use(DevTools())
-    .updateDefaults({
-      apiKey,
-      apiUrl,
-      staticData: {
-        de: () => import("../../messages/de.json"),
-        en: () => import("../../messages/en.json"),
-      },
-    });
+	return Tolgee()
+		.use(FormatIcu())
+		.use(DevTools())
+		.updateDefaults({
+			apiKey,
+			apiUrl,
+			staticData: {
+				de: () => import("../../messages/de.json"),
+				en: () => import("../../messages/en.json"),
+			},
+		});
 }
