@@ -1,0 +1,132 @@
+import { and, eq } from "drizzle-orm";
+import { headers } from "next/headers";
+import { type NextRequest, NextResponse } from "next/server";
+import { db } from "@/db";
+import { employee, holiday } from "@/db/schema";
+import { auth } from "@/lib/auth";
+
+/**
+ * PATCH /api/admin/holidays/[id]
+ * Update a holiday
+ */
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+	try {
+		const { id } = await params;
+		const session = await auth.api.getSession({ headers: await headers() });
+
+		if (!session?.user) {
+			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+		}
+
+		// Get employee record to check role and organization
+		const [employeeRecord] = await db
+			.select()
+			.from(employee)
+			.where(and(eq(employee.userId, session.user.id), eq(employee.isActive, true)))
+			.limit(1);
+
+		if (!employeeRecord || employeeRecord.role !== "admin") {
+			return NextResponse.json({ error: "Admin access required" }, { status: 403 });
+		}
+
+		// Verify holiday belongs to organization
+		const [existingHoliday] = await db
+			.select()
+			.from(holiday)
+			.where(and(eq(holiday.id, id), eq(holiday.organizationId, employeeRecord.organizationId)))
+			.limit(1);
+
+		if (!existingHoliday) {
+			return NextResponse.json({ error: "Holiday not found" }, { status: 404 });
+		}
+
+		const body = await request.json();
+		const {
+			name,
+			description,
+			categoryId,
+			startDate,
+			endDate,
+			recurrenceType,
+			recurrenceRule,
+			recurrenceEndDate,
+			isActive,
+		} = body;
+
+		// Update holiday
+		const [updatedHoliday] = await db
+			.update(holiday)
+			.set({
+				...(name && { name }),
+				...(description !== undefined && { description }),
+				...(categoryId && { categoryId }),
+				...(startDate && { startDate: new Date(startDate) }),
+				...(endDate && { endDate: new Date(endDate) }),
+				...(recurrenceType && { recurrenceType }),
+				...(recurrenceRule !== undefined && { recurrenceRule }),
+				...(recurrenceEndDate !== undefined && {
+					recurrenceEndDate: recurrenceEndDate ? new Date(recurrenceEndDate) : null,
+				}),
+				...(isActive !== undefined && { isActive }),
+				updatedBy: session.user.id,
+			})
+			.where(eq(holiday.id, id))
+			.returning();
+
+		return NextResponse.json({ holiday: updatedHoliday });
+	} catch (error) {
+		console.error("Error updating holiday:", error);
+		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+	}
+}
+
+/**
+ * DELETE /api/admin/holidays/[id]
+ * Delete a holiday
+ */
+export async function DELETE(
+	_request: NextRequest,
+	{ params }: { params: Promise<{ id: string }> },
+) {
+	try {
+		const { id } = await params;
+		const session = await auth.api.getSession({ headers: await headers() });
+
+		if (!session?.user) {
+			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+		}
+
+		// Get employee record to check role and organization
+		const [employeeRecord] = await db
+			.select()
+			.from(employee)
+			.where(and(eq(employee.userId, session.user.id), eq(employee.isActive, true)))
+			.limit(1);
+
+		if (!employeeRecord || employeeRecord.role !== "admin") {
+			return NextResponse.json({ error: "Admin access required" }, { status: 403 });
+		}
+
+		// Verify holiday belongs to organization
+		const [existingHoliday] = await db
+			.select()
+			.from(holiday)
+			.where(and(eq(holiday.id, id), eq(holiday.organizationId, employeeRecord.organizationId)))
+			.limit(1);
+
+		if (!existingHoliday) {
+			return NextResponse.json({ error: "Holiday not found" }, { status: 404 });
+		}
+
+		// Soft delete by setting isActive to false
+		await db
+			.update(holiday)
+			.set({ isActive: false, updatedBy: session.user.id })
+			.where(eq(holiday.id, id));
+
+		return NextResponse.json({ success: true });
+	} catch (error) {
+		console.error("Error deleting holiday:", error);
+		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+	}
+}
