@@ -69,7 +69,7 @@ bun dev --filter=webapp
 
 Generate auth schema:
 ```bash
-bun dotenv -c dev -- bunx --bun @better-auth/cli generate --output ./src/db/schema.ts
+bunx --bun @better-auth/cli generate --output ./src/db/schema.ts
 ```
 
 Generate auth secret:

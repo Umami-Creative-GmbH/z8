@@ -1,9 +1,42 @@
 {
   "permissions": {
     "allow": [
+      "Bash(xargs cat:*)",
+      "Bash(cat:*)",
       "Bash(ls:*)",
-      "Bash(mkdir:*)",
-      "Bash(bun install:*)"
+      "Bash(test:*)",
+      "Bash(rm:*)",
+      "Bash(npm view:*)",
+      "Bash(bun install)",
+      "Bash(bun list:*)",
+      "WebSearch",
+      "Bash(phase secrets list:*)",
+      "Bash(phase run:*)",
+      "Bash(find:*)",
+      "mcp__shadcn__search_items_in_registries",
+      "mcp__shadcn__view_items_in_registries",
+      "mcp__shadcn__get_item_examples_from_registries",
+      "Bash(bun run:*)",
+      "mcp__shadcn__get_project_registries",
+      "mcp__shadcn__get_add_command_for_items",
+      "Bash(bunx drizzle-kit:*)",
+      "Bash(bunx shadcn@latest add:*)",
+      "Bash(printf:*)",
+      "mcp__better-auth__search",
+      "Bash(bunx --bun npx @better-auth/cli generate:*)",
+      "mcp__better-auth__list_files",
+      "Bash(bun add:*)",
+      "WebFetch(domain:uppy.io)",
+      "WebFetch(domain:www.pronextjs.dev)",
+      "WebFetch(domain:strapi.io)",
+      "WebFetch(domain:github.com)",
+      "Bash(grep:*)",
+      "Bash(bunx @biomejs/biome check:*)",
+      "Bash(bunx @biomejs/biome format:*)"
     ]
-  }
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "shadcn"
+  ]
 }

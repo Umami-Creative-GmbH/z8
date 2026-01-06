@@ -1,15 +1,15 @@
 name: z8
 services:
   db:
-    image: timescale/timescaledb:latest-pg16
+    image: postgres:18-alpine
     ports:
       - 5432:5432
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mysecretpassword}
       POSTGRES_DB: ${POSTGRES_DB:-postgres}
     volumes:
-      - timescaledb_data:/var/lib/postgresql/data
+      - default_data:/var/lib/postgresql/data
 
 volumes:
-  timescaledb_data:
+  default_data:
