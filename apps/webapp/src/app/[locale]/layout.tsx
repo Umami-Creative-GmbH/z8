@@ -1,6 +1,8 @@
 import type { TolgeeStaticData } from "@tolgee/react";
 import { NextIntlClientProvider } from "next-intl";
+import { getMessages } from "next-intl/server";
 import { type ReactNode, Suspense } from "react";
+import { Toaster } from "sonner";
 import { TolgeeNextProvider } from "@/tolgee/client";
 import { ALL_LANGUAGES, TolgeeBase } from "@/tolgee/shared";
 import "../globals.css";
@@ -33,9 +35,13 @@ export async function generateStaticParams() {
 // Separate component for loading translations to wrap in Suspense
 async function TranslationProvider({ locale, children }: { locale: string; children: ReactNode }) {
 	const records = await loadTranslations(locale);
+	const messages = await getMessages({ locale });
+
 	return (
 		<TolgeeNextProvider language={locale} staticData={records}>
-			{children}
+			<NextIntlClientProvider locale={locale} messages={messages}>
+				{children}
+			</NextIntlClientProvider>
 		</TolgeeNextProvider>
 	);
 }
@@ -112,9 +118,10 @@ export default async function LocaleLayout({ children, params }: Props) {
 					}
 				>
 					<TranslationProvider locale={locale}>
-						<NextIntlClientProvider locale={locale} messages={{}}>
-							<TooltipProvider delayDuration={0}>{children}</TooltipProvider>
-						</NextIntlClientProvider>
+						<TooltipProvider delayDuration={0}>
+							{children}
+							<Toaster position="bottom-right" richColors />
+						</TooltipProvider>
 					</TranslationProvider>
 				</Suspense>
 			</body>

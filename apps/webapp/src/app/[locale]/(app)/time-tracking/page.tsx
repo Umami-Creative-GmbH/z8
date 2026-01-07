@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { ServerAppSidebar } from "@/components/server-app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { ClockInOutWidget } from "@/components/time-tracking/clock-in-out-widget";
@@ -17,22 +18,20 @@ export default async function TimeTrackingPage() {
 	}
 
 	const employee = await getCurrentEmployee();
-	if (!employee) {
-		return (
-			<div className="flex h-full items-center justify-center">
-				<p className="text-muted-foreground">
-					Employee profile not found. Please contact your administrator.
-				</p>
-			</div>
-		);
-	}
 
-	const { start, end } = getWeekRange(new Date());
-	const [activeWorkPeriod, workPeriods, summary] = await Promise.all([
-		getActiveWorkPeriod(employee.id),
-		getWorkPeriods(employee.id, start, end),
-		getTimeSummary(employee.id, new Date()),
-	]);
+	// Fetch data only if employee exists
+	let activeWorkPeriod = null;
+	let workPeriods = [];
+	let summary = null;
+
+	if (employee) {
+		const { start, end } = getWeekRange(new Date());
+		[activeWorkPeriod, workPeriods, summary] = await Promise.all([
+			getActiveWorkPeriod(employee.id),
+			getWorkPeriods(employee.id, start, end),
+			getTimeSummary(employee.id, new Date()),
+		]);
+	}
 
 	return (
 		<SidebarProvider
@@ -47,23 +46,29 @@ export default async function TimeTrackingPage() {
 			<SidebarInset>
 				<SiteHeader />
 				<div className="flex flex-1 flex-col">
-					<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
-						{/* Clock In/Out Widget */}
-						<div className="px-4 lg:px-6">
-							<ClockInOutWidget
-								activeWorkPeriod={activeWorkPeriod}
-								employeeName={session.user.name || "Employee"}
-							/>
+					{!employee ? (
+						<div className="@container/main flex flex-1 items-center justify-center p-6">
+							<NoEmployeeError feature="track time" />
 						</div>
+					) : (
+						<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
+							{/* Clock In/Out Widget */}
+							<div className="px-4 lg:px-6">
+								<ClockInOutWidget
+									activeWorkPeriod={activeWorkPeriod}
+									employeeName={session.user.name || "Employee"}
+								/>
+							</div>
 
-						{/* Summary Cards */}
-						<WeeklySummaryCards summary={summary} />
+							{/* Summary Cards */}
+							<WeeklySummaryCards summary={summary} />
 
-						{/* Time Entries Table */}
-						<div className="px-4 lg:px-6">
-							<TimeEntriesTable workPeriods={workPeriods} hasManager={!!employee.managerId} />
+							{/* Time Entries Table */}
+							<div className="px-4 lg:px-6">
+								<TimeEntriesTable workPeriods={workPeriods} hasManager={!!employee.managerId} />
+							</div>
 						</div>
-					</div>
+					)}
 				</div>
 			</SidebarInset>
 		</SidebarProvider>

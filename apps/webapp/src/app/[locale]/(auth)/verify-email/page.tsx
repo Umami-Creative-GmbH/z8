@@ -1,11 +1,12 @@
 "use client";
 
 import { useTranslate } from "@tolgee/react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { AuthFormWrapper } from "@/components/auth-form-wrapper";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
-import { Link } from "@/navigation";
+import { Link, useRouter } from "@/navigation";
 
 export default function VerifyEmailPage() {
 	const { t } = useTranslate();
@@ -53,62 +54,57 @@ export default function VerifyEmailPage() {
 		verifyEmail();
 	}, [searchParams, router, t]);
 
+	const getTitle = () => {
+		if (status === "loading") return t("auth.verifying-email", "Verifying your email...");
+		if (status === "success") return t("auth.email-verified", "Email Verified!");
+		return t("auth.verification-failed", "Verification Failed");
+	};
+
 	return (
-		<div className="flex min-h-screen items-center justify-center">
-			<div className="w-full max-w-md space-y-6 rounded-lg border bg-card p-8 text-card-foreground shadow-sm">
-				{status === "loading" && (
-					<div className="text-center">
-						<div className="mb-4 text-4xl">⏳</div>
-						<h1 className="mb-2 text-2xl font-semibold">
-							{t("auth.verifying-email", "Verifying your email...")}
-						</h1>
-						<p className="text-muted-foreground">
-							{t("auth.please-wait", "Please wait while we verify your email address.")}
-						</p>
-					</div>
-				)}
+		<AuthFormWrapper title={getTitle()}>
+			{status === "loading" && (
+				<div className="text-center">
+					<div className="mb-4 text-4xl">⏳</div>
+					<p className="text-muted-foreground">
+						{t("auth.please-wait", "Please wait while we verify your email address.")}
+					</p>
+				</div>
+			)}
 
-				{status === "success" && (
-					<div className="text-center">
-						<div className="mb-4 text-4xl">✅</div>
-						<h1 className="mb-2 text-2xl font-semibold">
-							{t("auth.email-verified", "Email Verified!")}
-						</h1>
-						<p className="mb-6 text-muted-foreground">
-							{t(
-								"auth.email-verified-message",
-								"Your email has been successfully verified. You can now sign in to your account.",
-							)}
-						</p>
-						<p className="text-sm text-muted-foreground">
-							{t("auth.redirecting-to-signin", "Redirecting to sign in page in 3 seconds...")}
-						</p>
-						<Button className="mt-4" onClick={() => router.push("/sign-in")}>
-							{t("auth.sign-in-now", "Sign in now")}
-						</Button>
-					</div>
-				)}
+			{status === "success" && (
+				<div className="text-center">
+					<div className="mb-4 text-4xl">✅</div>
+					<p className="mb-6 text-muted-foreground">
+						{t(
+							"auth.email-verified-message",
+							"Your email has been successfully verified. You can now sign in to your account.",
+						)}
+					</p>
+					<p className="text-sm text-muted-foreground">
+						{t("auth.redirecting-to-signin", "Redirecting to sign in page in 3 seconds...")}
+					</p>
+					<Button className="mt-4 w-full" onClick={() => router.push("/sign-in")}>
+						{t("auth.sign-in-now", "Sign in now")}
+					</Button>
+				</div>
+			)}
 
-				{status === "error" && (
-					<div className="text-center">
-						<div className="mb-4 text-4xl">❌</div>
-						<h1 className="mb-2 text-2xl font-semibold">
-							{t("auth.verification-failed", "Verification Failed")}
-						</h1>
-						<p className="mb-6 text-destructive">{errorMessage}</p>
-						<div className="space-y-2">
-							<Link href="/sign-up">
-								<Button variant="outline" className="w-full">
-									{t("auth.back-to-signup", "Back to Sign Up")}
-								</Button>
-							</Link>
-							<Link href="/sign-in">
-								<Button className="w-full">{t("auth.try-signin", "Try to Sign In")}</Button>
-							</Link>
-						</div>
+			{status === "error" && (
+				<div className="text-center">
+					<div className="mb-4 text-4xl">❌</div>
+					<p className="mb-6 text-destructive">{errorMessage}</p>
+					<div className="space-y-2">
+						<Link href="/sign-up">
+							<Button variant="outline" className="w-full">
+								{t("auth.back-to-signup", "Back to Sign Up")}
+							</Button>
+						</Link>
+						<Link href="/sign-in">
+							<Button className="w-full">{t("auth.try-signin", "Try to Sign In")}</Button>
+						</Link>
 					</div>
-				)}
-			</div>
-		</div>
+				</div>
+			)}
+		</AuthFormWrapper>
 	);
 }

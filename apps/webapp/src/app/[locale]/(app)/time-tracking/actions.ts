@@ -1,23 +1,25 @@
 "use server";
 
-import { SpanStatusCode, trace } from "@opentelemetry/api";
+import { DateTime } from "luxon";
 import { and, desc, eq, gte, isNull, lte } from "drizzle-orm";
 import { Effect } from "effect";
 import { headers } from "next/headers";
 import { db } from "@/db";
-import type { TimeEntry } from "@/db/schema";
 import { approvalRequest, employee, timeEntry, workPeriod } from "@/db/schema";
 import { auth } from "@/lib/auth";
+import { dateFromDB, dateToDB } from "@/lib/datetime/drizzle-adapter";
 import { NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
-import { DatabaseService } from "@/lib/effect/services/database.service";
+import { DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { EmailService } from "@/lib/effect/services/email.service";
 import { renderTimeCorrectionPendingApproval } from "@/lib/email/render";
 import { createLogger } from "@/lib/logger";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
+import { validateTimeEntry, validateTimeEntryRange } from "@/lib/time-tracking/validation";
 import type { TimeSummary, WorkPeriodWithEntries } from "./types";
-import { validateTimeEntry, validateTimeEntryRange } from "./validation";
+
 
 const logger = createLogger("TimeTrackingActionsEffect");
 
@@ -38,336 +40,346 @@ interface CorrectionRequest {
 export async function requestTimeCorrectionEffect(
 	data: CorrectionRequest,
 ): Promise<ServerActionResult<{ approvalId: string }>> {
-	const tracer = trace.getTracer("time-tracking");
+	const effect = Effect.gen(function* (_) {
+		// Step 1: Authenticate and get current employee
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
 
-	const effect = tracer.startActiveSpan(
-		"requestTimeCorrection",
-		{
+		yield* _(Effect.annotateCurrentSpan("user.id", session.user.id));
+
+		// Step 2: Get current employee profile
+		const dbService = yield* _(DatabaseService);
+		const currentEmployee = yield* _(
+			dbService.query("getEmployeeByUserId", async () => {
+				const emp = await dbService.db.query.employee.findFirst({
+					where: eq(employee.userId, session.user.id),
+				});
+
+				if (!emp) {
+					throw new Error("Employee not found");
+				}
+
+				return emp;
+			}),
+			Effect.mapError(
+				() =>
+					new NotFoundError({
+						message: "Employee profile not found",
+						entityType: "employee",
+					}),
+			),
+		);
+
+		yield* _(Effect.annotateCurrentSpan("employee.id", currentEmployee.id));
+		yield* _(Effect.annotateCurrentSpan("organization.id", currentEmployee.organizationId));
+
+		// Step 3: Check if employee has a manager
+		if (!currentEmployee.managerId) {
+			yield* _(
+				Effect.fail(
+					new ValidationError({
+						message: "No manager assigned to approve corrections",
+						field: "managerId",
+					}),
+				),
+			);
+		}
+
+		yield* _(Effect.annotateCurrentSpan("manager.id", currentEmployee.managerId!));
+
+		logger.info(
+			{
+				employeeId: currentEmployee.id,
+				workPeriodId: data.workPeriodId,
+				managerId: currentEmployee.managerId,
+			},
+			"Processing time correction request",
+		);
+
+		// Step 4: Get the work period to correct
+		const period = yield* _(
+			dbService.query("getWorkPeriod", async () => {
+				const [p] = await dbService.db
+					.select()
+					.from(workPeriod)
+					.where(eq(workPeriod.id, data.workPeriodId))
+					.limit(1);
+
+				if (!p) {
+					throw new Error("Work period not found");
+				}
+
+				return p;
+			}),
+			Effect.mapError(
+				() =>
+					new NotFoundError({
+						message: "Work period not found",
+						entityType: "workPeriod",
+						entityId: data.workPeriodId,
+					}),
+			),
+		);
+
+		yield* _(Effect.annotateCurrentSpan("correction.original_clock_in", period.startTime.toISOString()));
+		if (period.endTime) {
+			yield* _(Effect.annotateCurrentSpan("correction.original_clock_out", period.endTime.toISOString()));
+		}
+
+		// Step 5: Calculate corrected timestamps
+		const startDT = dateFromDB(period.startTime);
+		if (!startDT) {
+			yield* _(
+				Effect.fail(
+					new ValidationError({
+						message: "Invalid work period start time",
+						field: "startTime",
+					}),
+				),
+			);
+		}
+
+		const [hours, minutes] = data.newClockInTime.split(":");
+		const correctedClockInDT = startDT!.set({
+			hour: parseInt(hours, 10),
+			minute: parseInt(minutes, 10),
+			second: 0,
+			millisecond: 0
+		});
+		const correctedClockInDate = dateToDB(correctedClockInDT)!;
+
+		let correctedClockOutDate: Date | undefined;
+		if (data.newClockOutTime && period.endTime) {
+			const endDT = dateFromDB(period.endTime);
+			if (endDT) {
+				const [outHours, outMinutes] = data.newClockOutTime.split(":");
+				const correctedClockOutDT = endDT.set({
+					hour: parseInt(outHours, 10),
+					minute: parseInt(outMinutes, 10),
+					second: 0,
+					millisecond: 0
+				});
+				correctedClockOutDate = dateToDB(correctedClockOutDT)!;
+			}
+		}
+
+		yield* _(Effect.annotateCurrentSpan("correction.corrected_clock_in", correctedClockInDate.toISOString()));
+		if (correctedClockOutDate) {
+			yield* _(Effect.annotateCurrentSpan("correction.corrected_clock_out", correctedClockOutDate.toISOString()));
+		}
+
+		// Step 6: Validate the correction dates (check for holidays)
+		const validation = yield* _(
+			Effect.promise(() =>
+				validateTimeEntryRange(
+					currentEmployee.organizationId,
+					correctedClockInDate,
+					correctedClockOutDate || correctedClockInDate,
+				),
+			),
+		);
+
+		if (!validation.isValid) {
+			yield* _(
+				Effect.fail(
+					new ValidationError({
+						message: validation.error || "Cannot create time correction for this period",
+						field: "timestamp",
+						value: validation.holidayName,
+					}),
+				),
+			);
+		}
+
+		// Step 7: Create corrections in a transaction-like sequence
+		// (Note: Drizzle doesn't expose db.transaction directly, so we use sequential operations)
+		// The createTimeEntry function handles blockchain hash linking
+		const clockInCorrection = yield* _(
+			Effect.promise(() =>
+				createTimeEntry({
+					employeeId: currentEmployee.id,
+					type: "correction",
+					timestamp: correctedClockInDate,
+					createdBy: session.user.id,
+					replacesEntryId: period.clockInId,
+					notes: data.reason,
+				}),
+			),
+		);
+
+		yield* _(Effect.annotateCurrentSpan("correction.clock_in_correction_id", clockInCorrection.id));
+
+		// Step 8: Mark original clock in as superseded
+		yield* _(
+			dbService.query("markClockInSuperseded", async () => {
+				return await dbService.db
+					.update(timeEntry)
+					.set({
+						isSuperseded: true,
+						supersededById: clockInCorrection.id,
+					})
+					.where(eq(timeEntry.id, period.clockInId));
+			}),
+		);
+
+		// Step 9: If clock out time is provided, create correction for that too
+		let clockOutCorrectionId: string | undefined;
+		if (data.newClockOutTime && period.clockOutId && correctedClockOutDate) {
+			const clockOutCorrection = yield* _(
+				Effect.promise(() =>
+					createTimeEntry({
+						employeeId: currentEmployee.id,
+						type: "correction",
+						timestamp: correctedClockOutDate!,
+						createdBy: session.user.id,
+						replacesEntryId: period.clockOutId!,
+						notes: data.reason,
+					}),
+				),
+			);
+
+			clockOutCorrectionId = clockOutCorrection.id;
+			yield* _(Effect.annotateCurrentSpan("correction.clock_out_correction_id", clockOutCorrection.id));
+
+			// Mark original clock out as superseded
+			yield* _(
+				dbService.query("markClockOutSuperseded", async () => {
+					return await dbService.db
+						.update(timeEntry)
+						.set({
+							isSuperseded: true,
+							supersededById: clockOutCorrection.id,
+						})
+						.where(eq(timeEntry.id, period.clockOutId!));
+				}),
+			);
+		}
+
+		logger.info(
+			{
+				workPeriodId: data.workPeriodId,
+				clockInCorrectionId: clockInCorrection.id,
+				clockOutCorrectionId,
+			},
+			"Time correction entries created",
+		);
+
+		// Step 10: Create approval request
+		const [approval] = yield* _(
+			dbService.query("createApprovalRequest", async () => {
+				return await dbService.db
+					.insert(approvalRequest)
+					.values({
+						entityType: "time_entry",
+						entityId: period.id,
+						requestedBy: currentEmployee.id,
+						approverId: currentEmployee.managerId!,
+						status: "pending",
+						reason: data.reason,
+					})
+					.returning();
+			}),
+		);
+
+		yield* _(Effect.annotateCurrentSpan("correction.approval_id", approval.id));
+
+		// Step 11: Fetch manager and employee details for email
+		const [manager, empWithUser] = yield* _(
+			Effect.all([
+				dbService.query("getManagerWithUser", async () => {
+					const mgr = await dbService.db.query.employee.findFirst({
+						where: eq(employee.id, currentEmployee.managerId!),
+						with: { user: true },
+					});
+
+					if (!mgr) {
+						throw new Error("Manager not found");
+					}
+
+					return mgr;
+				}),
+				dbService.query("getEmployeeWithUser", async () => {
+					const emp = await dbService.db.query.employee.findFirst({
+						where: eq(employee.id, currentEmployee.id),
+						with: { user: true },
+					});
+
+					if (!emp) {
+						throw new Error("Employee not found");
+					}
+
+					return emp;
+				}),
+			]),
+		);
+
+		const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+		const formatDate = (date: Date) =>
+			date.toLocaleDateString("en-US", {
+				month: "short",
+				day: "numeric",
+				year: "numeric",
+			});
+		const formatTime = (date: Date) =>
+			date.toLocaleTimeString("en-US", {
+				hour: "numeric",
+				minute: "2-digit",
+				hour12: true,
+			});
+
+		// Step 12: Render email template
+		const html = yield* _(
+			Effect.promise(() =>
+				renderTimeCorrectionPendingApproval({
+					managerName: manager.user.name,
+					employeeName: empWithUser.user.name,
+					date: formatDate(period.startTime),
+					originalClockIn: formatTime(period.startTime),
+					originalClockOut: period.endTime ? formatTime(period.endTime) : "—",
+					correctedClockIn: formatTime(correctedClockInDate),
+					correctedClockOut: correctedClockOutDate ? formatTime(correctedClockOutDate) : "—",
+					reason: data.reason,
+					approvalUrl: `${appUrl}/approvals`,
+				}),
+			),
+		);
+
+		// Step 13: Send email with retry logic
+		const emailService = yield* _(EmailService);
+
+		yield* _(
+			emailService.send({
+				to: manager.user.email,
+				subject: `Time Correction Request from ${empWithUser.user.name}`,
+				html,
+			}),
+		);
+
+		logger.info(
+			{
+				approvalId: approval.id,
+				workPeriodId: data.workPeriodId,
+				managerEmail: manager.user.email,
+			},
+			"Time correction request submitted and notification sent",
+		);
+
+		return { approvalId: approval.id };
+	}).pipe(
+		Effect.tapError((error) =>
+			Effect.sync(() => {
+				logger.error({ error }, "Failed to process time correction request");
+			}),
+		),
+		Effect.withSpan("requestTimeCorrection", {
 			attributes: {
 				"correction.work_period_id": data.workPeriodId,
 				"correction.clock_in_time": data.newClockInTime,
 				"correction.clock_out_time": data.newClockOutTime || "none",
 			},
-		},
-		(span) => {
-			return Effect.gen(function* (_) {
-				// Step 1: Authenticate and get current employee
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
-
-				span.setAttribute("user.id", session.user.id);
-
-				// Step 2: Get current employee profile
-				const dbService = yield* _(DatabaseService);
-				const currentEmployee = yield* _(
-					dbService.query("getEmployeeByUserId", async () => {
-						const emp = await dbService.db.query.employee.findFirst({
-							where: eq(employee.userId, session.user.id),
-						});
-
-						if (!emp) {
-							throw new Error("Employee not found");
-						}
-
-						return emp;
-					}),
-					Effect.mapError(
-						() =>
-							new NotFoundError({
-								message: "Employee profile not found",
-								entityType: "employee",
-							}),
-					),
-				);
-
-				span.setAttribute("employee.id", currentEmployee.id);
-				span.setAttribute("organization.id", currentEmployee.organizationId);
-
-				// Step 3: Check if employee has a manager
-				if (!currentEmployee.managerId) {
-					yield* _(
-						Effect.fail(
-							new ValidationError({
-								message: "No manager assigned to approve corrections",
-								field: "managerId",
-							}),
-						),
-					);
-				}
-
-				span.setAttribute("manager.id", currentEmployee.managerId!);
-
-				logger.info(
-					{
-						employeeId: currentEmployee.id,
-						workPeriodId: data.workPeriodId,
-						managerId: currentEmployee.managerId,
-					},
-					"Processing time correction request",
-				);
-
-				// Step 4: Get the work period to correct
-				const period = yield* _(
-					dbService.query("getWorkPeriod", async () => {
-						const [p] = await dbService.db
-							.select()
-							.from(workPeriod)
-							.where(eq(workPeriod.id, data.workPeriodId))
-							.limit(1);
-
-						if (!p) {
-							throw new Error("Work period not found");
-						}
-
-						return p;
-					}),
-					Effect.mapError(
-						() =>
-							new NotFoundError({
-								message: "Work period not found",
-								entityType: "workPeriod",
-								entityId: data.workPeriodId,
-							}),
-					),
-				);
-
-				span.setAttribute("correction.original_clock_in", period.startTime.toISOString());
-				if (period.endTime) {
-					span.setAttribute("correction.original_clock_out", period.endTime.toISOString());
-				}
-
-				// Step 5: Calculate corrected timestamps
-				const correctedClockInDate = new Date(period.startTime);
-				const [hours, minutes] = data.newClockInTime.split(":");
-				correctedClockInDate.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
-
-				let correctedClockOutDate: Date | undefined;
-				if (data.newClockOutTime && period.endTime) {
-					correctedClockOutDate = new Date(period.endTime);
-					const [outHours, outMinutes] = data.newClockOutTime.split(":");
-					correctedClockOutDate.setHours(parseInt(outHours, 10), parseInt(outMinutes, 10), 0, 0);
-				}
-
-				span.setAttribute("correction.corrected_clock_in", correctedClockInDate.toISOString());
-				if (correctedClockOutDate) {
-					span.setAttribute("correction.corrected_clock_out", correctedClockOutDate.toISOString());
-				}
-
-				// Step 6: Validate the correction dates (check for holidays)
-				const validation = yield* _(
-					Effect.promise(() =>
-						validateTimeEntryRange(
-							currentEmployee.organizationId,
-							correctedClockInDate,
-							correctedClockOutDate || correctedClockInDate,
-						),
-					),
-				);
-
-				if (!validation.isValid) {
-					yield* _(
-						Effect.fail(
-							new ValidationError({
-								message: validation.error || "Cannot create time correction for this period",
-								field: "timestamp",
-								value: validation.holidayName,
-							}),
-						),
-					);
-				}
-
-				// Step 7: Create corrections in a transaction-like sequence
-				// (Note: Drizzle doesn't expose db.transaction directly, so we use sequential operations)
-				// The createTimeEntry function handles blockchain hash linking
-				const clockInCorrection = yield* _(
-					Effect.promise(() =>
-						createTimeEntry({
-							employeeId: currentEmployee.id,
-							type: "correction",
-							timestamp: correctedClockInDate,
-							replacesEntryId: period.clockInId,
-							notes: data.reason,
-						}),
-					),
-				);
-
-				span.setAttribute("correction.clock_in_correction_id", clockInCorrection.id);
-
-				// Step 8: Mark original clock in as superseded
-				yield* _(
-					dbService.query("markClockInSuperseded", async () => {
-						return await dbService.db
-							.update(timeEntry)
-							.set({
-								isSuperseded: true,
-								supersededById: clockInCorrection.id,
-							})
-							.where(eq(timeEntry.id, period.clockInId));
-					}),
-				);
-
-				// Step 9: If clock out time is provided, create correction for that too
-				let clockOutCorrectionId: string | undefined;
-				if (data.newClockOutTime && period.clockOutId && correctedClockOutDate) {
-					const clockOutCorrection = yield* _(
-						Effect.promise(() =>
-							createTimeEntry({
-								employeeId: currentEmployee.id,
-								type: "correction",
-								timestamp: correctedClockOutDate!,
-								replacesEntryId: period.clockOutId!,
-								notes: data.reason,
-							}),
-						),
-					);
-
-					clockOutCorrectionId = clockOutCorrection.id;
-					span.setAttribute("correction.clock_out_correction_id", clockOutCorrection.id);
-
-					// Mark original clock out as superseded
-					yield* _(
-						dbService.query("markClockOutSuperseded", async () => {
-							return await dbService.db
-								.update(timeEntry)
-								.set({
-									isSuperseded: true,
-									supersededById: clockOutCorrection.id,
-								})
-								.where(eq(timeEntry.id, period.clockOutId!));
-						}),
-					);
-				}
-
-				logger.info(
-					{
-						workPeriodId: data.workPeriodId,
-						clockInCorrectionId: clockInCorrection.id,
-						clockOutCorrectionId,
-					},
-					"Time correction entries created",
-				);
-
-				// Step 10: Create approval request
-				const [approval] = yield* _(
-					dbService.query("createApprovalRequest", async () => {
-						return await dbService.db
-							.insert(approvalRequest)
-							.values({
-								entityType: "time_entry",
-								entityId: period.id,
-								requestedBy: currentEmployee.id,
-								approverId: currentEmployee.managerId!,
-								status: "pending",
-								reason: data.reason,
-							})
-							.returning();
-					}),
-				);
-
-				span.setAttribute("correction.approval_id", approval.id);
-
-				// Step 11: Fetch manager and employee details for email
-				const [manager, empWithUser] = yield* _(
-					Effect.all([
-						dbService.query("getManagerWithUser", async () => {
-							const mgr = await dbService.db.query.employee.findFirst({
-								where: eq(employee.id, currentEmployee.managerId!),
-								with: { user: true },
-							});
-
-							if (!mgr) {
-								throw new Error("Manager not found");
-							}
-
-							return mgr;
-						}),
-						dbService.query("getEmployeeWithUser", async () => {
-							const emp = await dbService.db.query.employee.findFirst({
-								where: eq(employee.id, currentEmployee.id),
-								with: { user: true },
-							});
-
-							if (!emp) {
-								throw new Error("Employee not found");
-							}
-
-							return emp;
-						}),
-					]),
-				);
-
-				const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-				const formatDate = (date: Date) =>
-					date.toLocaleDateString("en-US", {
-						month: "short",
-						day: "numeric",
-						year: "numeric",
-					});
-				const formatTime = (date: Date) =>
-					date.toLocaleTimeString("en-US", {
-						hour: "numeric",
-						minute: "2-digit",
-						hour12: true,
-					});
-
-				// Step 12: Render email template
-				const html = yield* _(
-					Effect.promise(() =>
-						renderTimeCorrectionPendingApproval({
-							managerName: manager.user.name,
-							employeeName: empWithUser.user.name,
-							date: formatDate(period.startTime),
-							originalClockIn: formatTime(period.startTime),
-							originalClockOut: period.endTime ? formatTime(period.endTime) : "—",
-							correctedClockIn: formatTime(correctedClockInDate),
-							correctedClockOut: correctedClockOutDate ? formatTime(correctedClockOutDate) : "—",
-							reason: data.reason,
-							approvalUrl: `${appUrl}/approvals`,
-						}),
-					),
-				);
-
-				// Step 13: Send email with retry logic
-				const emailService = yield* _(EmailService);
-
-				yield* _(
-					emailService.send({
-						to: manager.user.email,
-						subject: `Time Correction Request from ${empWithUser.user.name}`,
-						html,
-					}),
-				);
-
-				logger.info(
-					{
-						approvalId: approval.id,
-						workPeriodId: data.workPeriodId,
-						managerEmail: manager.user.email,
-					},
-					"Time correction request submitted and notification sent",
-				);
-
-				span.setStatus({ code: SpanStatusCode.OK });
-				span.end();
-
-				return { approvalId: approval.id };
-			}).pipe(
-				Effect.catchAll((error) =>
-					Effect.sync(() => {
-						span.recordException(error as Error);
-						span.setStatus({
-							code: SpanStatusCode.ERROR,
-							message: String(error),
-						});
-						span.end();
-
-						logger.error({ error }, "Failed to process time correction request");
-
-						return Effect.fail(error);
-					}),
-				),
-			);
-		},
+		}),
+		Effect.provide(AppLayer),
+		Effect.provide(DatabaseServiceLive), // Explicitly provide DatabaseService to satisfy compiler
 	);
 
 	return runServerActionSafe(effect);
@@ -390,7 +402,7 @@ export async function getCurrentEmployee(): Promise<typeof employee.$inferSelect
 		where: eq(employee.userId, session.user.id),
 	});
 
-	return emp;
+	return emp || null;
 }
 
 /**
@@ -481,7 +493,7 @@ export async function getTimeSummary(
 /**
  * Clock in for current employee
  */
-export async function clockIn(): Promise<ServerActionResult<TimeEntry>> {
+export async function clockIn(): Promise<ServerActionResult<typeof timeEntry.$inferSelect>> {
 	const session = await auth.api.getSession({ headers: await headers() });
 	if (!session?.user) {
 		return { success: false, error: "Not authenticated" };
@@ -543,7 +555,8 @@ export async function clockIn(): Promise<ServerActionResult<TimeEntry>> {
 				hash,
 				previousHash: previousEntry?.hash || null,
 				ipAddress,
-				userAgent,
+				deviceInfo: userAgent,
+				createdBy: session.user.id,
 			})
 			.returning();
 
@@ -556,7 +569,7 @@ export async function clockIn(): Promise<ServerActionResult<TimeEntry>> {
 
 		return { success: true, data: entry };
 	} catch (error) {
-		console.error("Clock in error:", error);
+		logger.error({ error }, "Clock in error");
 		return { success: false, error: "Failed to clock in. Please try again." };
 	}
 }
@@ -564,7 +577,7 @@ export async function clockIn(): Promise<ServerActionResult<TimeEntry>> {
 /**
  * Clock out for current employee
  */
-export async function clockOut(): Promise<ServerActionResult<TimeEntry>> {
+export async function clockOut(): Promise<ServerActionResult<typeof timeEntry.$inferSelect>> {
 	const session = await auth.api.getSession({ headers: await headers() });
 	if (!session?.user) {
 		return { success: false, error: "Not authenticated" };
@@ -626,7 +639,8 @@ export async function clockOut(): Promise<ServerActionResult<TimeEntry>> {
 				hash,
 				previousHash: previousEntry?.hash || null,
 				ipAddress,
-				userAgent,
+				deviceInfo: userAgent,
+				createdBy: session.user.id,
 			})
 			.returning();
 
@@ -646,7 +660,7 @@ export async function clockOut(): Promise<ServerActionResult<TimeEntry>> {
 
 		return { success: true, data: entry };
 	} catch (error) {
-		console.error("Clock out error:", error);
+		logger.error({ error }, "Clock out error");
 		return { success: false, error: "Failed to clock out. Please try again." };
 	}
 }
@@ -659,10 +673,11 @@ export async function createTimeEntry(params: {
 	employeeId: string;
 	type: "clock_in" | "clock_out" | "correction";
 	timestamp: Date;
+	createdBy: string;
 	replacesEntryId?: string;
 	notes?: string;
 }): Promise<typeof timeEntry.$inferSelect> {
-	const { employeeId, type, timestamp, replacesEntryId, notes } = params;
+	const { employeeId, type, timestamp, createdBy, replacesEntryId, notes } = params;
 
 	// Get previous entry for blockchain linking
 	const [previousEntry] = await db
@@ -695,7 +710,8 @@ export async function createTimeEntry(params: {
 			hash,
 			previousHash: previousEntry?.hash || null,
 			ipAddress,
-			userAgent,
+			deviceInfo: userAgent,
+			createdBy,
 			replacesEntryId,
 			notes,
 		})

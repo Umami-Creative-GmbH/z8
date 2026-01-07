@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { AbsenceApprovalsTable } from "@/components/approvals/absence-approvals-table";
 import { TimeCorrectionApprovalsTable } from "@/components/approvals/time-correction-approvals-table";
+import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { ServerAppSidebar } from "@/components/server-app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { Badge } from "@/components/ui/badge";
@@ -14,9 +15,13 @@ import { getCurrentEmployee, getPendingApprovals } from "./actions";
 async function ApprovalsContent() {
 	const currentEmployee = await getCurrentEmployee();
 
-	// Redirect if no employee profile found
+	// Show error if no employee profile found
 	if (!currentEmployee) {
-		redirect("/");
+		return (
+			<div className="flex flex-1 items-center justify-center p-6">
+				<NoEmployeeError feature="approve requests" />
+			</div>
+		);
 	}
 
 	// Only managers and admins can access approvals

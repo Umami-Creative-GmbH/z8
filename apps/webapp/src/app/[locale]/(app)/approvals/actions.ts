@@ -1,19 +1,86 @@
 "use server";
 
 import { SpanStatusCode, trace } from "@opentelemetry/api";
-import { and, eq } from "drizzle-orm";
+import { and, count, desc, eq } from "drizzle-orm";
 import { Effect } from "effect";
-import { absenceEntry, approvalRequest, employee, timeEntry, workPeriod } from "@/db/schema";
+import { db } from "@/db";
+import {
+	absenceEntry,
+	approvalRequest,
+	employee,
+	holiday,
+	timeEntry,
+	workPeriod,
+} from "@/db/schema";
 import { calculateBusinessDays } from "@/lib/absences/date-utils";
+import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { AuthorizationError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { EmailService } from "@/lib/effect/services/email.service";
 import { renderAbsenceRequestApproved, renderAbsenceRequestRejected } from "@/lib/email/render";
 import { createLogger } from "@/lib/logger";
+import { getCurrentEmployee } from "../absences/actions";
 
 const logger = createLogger("ApprovalsActionsEffect");
+
+// =============================================================================
+// Types
+// =============================================================================
+
+export interface ApprovalWithAbsence {
+	id: string;
+	entityId: string;
+	entityType: string;
+	status: "pending" | "approved" | "rejected";
+	createdAt: Date;
+	requester: {
+		user: {
+			name: string;
+			email: string;
+			image: string | null;
+		};
+	};
+	absence: {
+		id: string;
+		startDate: Date;
+		endDate: Date;
+		notes: string | null;
+		category: {
+			name: string;
+			type: string;
+			color: string | null;
+		};
+	};
+}
+
+export interface ApprovalWithTimeCorrection {
+	id: string;
+	entityId: string;
+	entityType: string;
+	status: "pending" | "approved" | "rejected";
+	createdAt: Date;
+	requester: {
+		user: {
+			name: string;
+			email: string;
+			image: string | null;
+		};
+	};
+	workPeriod: {
+		id: string;
+		startTime: Date;
+		endTime: Date | null;
+		clockInEntry: {
+			timestamp: Date;
+		};
+		clockOutEntry: {
+			timestamp: Date;
+		} | null;
+	};
+}
 
 /**
  * Generic approval workflow handler
@@ -27,7 +94,11 @@ async function processApproval<T>(
 	entityId: string,
 	action: "approve" | "reject",
 	rejectionReason?: string,
-	updateEntity?: (dbService: DatabaseService, entity: any) => Promise<T>,
+	updateEntity?: (
+		dbService: any,
+		entityId: string,
+		currentEmployee: any,
+	) => Effect.Effect<T, any, any>,
 ): Promise<ServerActionResult<void>> {
 	const tracer = trace.getTracer("approvals");
 
@@ -42,37 +113,58 @@ async function processApproval<T>(
 		},
 		(span) => {
 			return Effect.gen(function* (_) {
-				// Step 1: Authenticate and get current employee
 				const authService = yield* _(AuthService);
 				const session = yield* _(authService.getSession());
-
-				span.setAttribute("user.id", session.user.id);
-
-				// Step 2: Get current employee profile
 				const dbService = yield* _(DatabaseService);
+
+				// Step 1: Get current employee (the approver)
 				const currentEmployee = yield* _(
 					dbService.query("getEmployeeByUserId", async () => {
-						const emp = await dbService.db.query.employee.findFirst({
+						return await dbService.db.query.employee.findFirst({
 							where: eq(employee.userId, session.user.id),
+							with: { user: true },
 						});
-
-						if (!emp) {
-							throw new Error("Employee not found");
-						}
-
-						return emp;
 					}),
-					Effect.mapError(
-						() =>
-							new NotFoundError({
-								message: "Employee profile not found",
-								entityType: "employee",
-							}),
+					Effect.flatMap((emp) =>
+						emp
+							? Effect.succeed(emp)
+							: Effect.fail(
+									new NotFoundError({
+										message: "Employee profile not found",
+										entityType: "employee",
+									}),
+							  ),
 					),
 				);
 
-				span.setAttribute("employee.id", currentEmployee.id);
+				span.setAttribute("user.id", session.user.id);
 				span.setAttribute("approver.id", currentEmployee.id);
+
+				// Step 2: Verify approval request exists and belongs to this approver
+				const approval = yield* _(
+					dbService.query("getApprovalRequest", async () => {
+						return await dbService.db.query.approvalRequest.findFirst({
+							where: and(
+								eq(approvalRequest.entityType, entityType),
+								eq(approvalRequest.entityId, entityId),
+								eq(approvalRequest.approverId, currentEmployee.id),
+								eq(approvalRequest.status, "pending"),
+							),
+						});
+					}),
+					Effect.flatMap((req) =>
+						req
+							? Effect.succeed(req)
+							: Effect.fail(
+									new AuthorizationError({
+										message: "Approval request not found, already processed, or you are not the approver",
+										userId: currentEmployee.id,
+										resource: entityType,
+										action: action,
+									}),
+							  ),
+					),
+				);
 
 				logger.info(
 					{
@@ -84,93 +176,25 @@ async function processApproval<T>(
 					"Processing approval action",
 				);
 
-				// Step 3: Get approval request
-				const approval = yield* _(
-					dbService.query("getApprovalRequest", async () => {
-						const req = await dbService.db.query.approvalRequest.findFirst({
-							where: and(
-								eq(approvalRequest.entityType, entityType),
-								eq(approvalRequest.entityId, entityId),
-								eq(approvalRequest.approverId, currentEmployee.id),
-							),
-						});
-
-						if (!req) {
-							throw new Error("Approval request not found or you are not the approver");
-						}
-
-						return req;
-					}),
-					Effect.mapError(
-						() =>
-							new AuthorizationError({
-								message: "You do not have permission to perform this approval action",
-								userId: currentEmployee.id,
-								resource: entityType,
-								action: action,
-							}),
-					),
-				);
-
-				span.setAttribute("approval.request_id", approval.id);
-				span.setAttribute("approval.requester_id", approval.requestedBy);
-
-				// Step 4: Update approval request status
+				// Step 3: Update approval request status
 				yield* _(
 					dbService.query("updateApprovalStatus", async () => {
 						return await dbService.db
 							.update(approvalRequest)
 							.set({
 								status: action === "approve" ? "approved" : "rejected",
-								approvedAt: action === "approve" ? new Date() : undefined,
+								approvedAt: action === "approve" ? currentTimestamp() : undefined,
 								rejectionReason: action === "reject" ? rejectionReason : undefined,
+								updatedAt: currentTimestamp(),
 							})
 							.where(eq(approvalRequest.id, approval.id));
 					}),
 				);
 
-				// Step 5: Update entity based on type (custom logic per entity type)
-				let _entity: any;
+				// Step 4: Run entity-specific logic (like updating absence status and sending emails)
 				if (updateEntity) {
-					_entity = yield* _(Effect.promise(() => updateEntity(dbService, entityId)));
+					yield* _(updateEntity(dbService, entityId, currentEmployee));
 				}
-
-				// Step 6: Get requester details for email notification
-				const requesterWithUser = yield* _(
-					dbService.query("getRequesterWithUser", async () => {
-						const emp = await dbService.db.query.employee.findFirst({
-							where: eq(employee.id, approval.requestedBy),
-							with: { user: true },
-						});
-
-						if (!emp) {
-							throw new Error("Requester not found");
-						}
-
-						return emp;
-					}),
-				);
-
-				const _approverWithUser = yield* _(
-					dbService.query("getApproverWithUser", async () => {
-						const emp = await dbService.db.query.employee.findFirst({
-							where: eq(employee.id, currentEmployee.id),
-							with: { user: true },
-						});
-
-						if (!emp) {
-							throw new Error("Approver not found");
-						}
-
-						return emp;
-					}),
-				);
-
-				// Step 7: Send notification email (logic varies by entity type and action)
-				const _emailService = yield* _(EmailService);
-
-				// Entity-specific email logic will be handled by the calling function
-				// This is a generic template - specific implementations can override
 
 				logger.info(
 					{
@@ -178,35 +202,32 @@ async function processApproval<T>(
 						entityType,
 						entityId,
 						action,
-						requesterEmail: requesterWithUser.user.email,
 					},
-					`${action === "approve" ? "Approved" : "Rejected"} ${entityType}`,
+					`Successfully ${action === "approve" ? "approved" : "rejected"} ${entityType}`,
 				);
 
 				span.setStatus({ code: SpanStatusCode.OK });
-				span.end();
-
 				return;
 			}).pipe(
 				Effect.catchAll((error) =>
-					Effect.sync(() => {
+					Effect.gen(function* (_) {
 						span.recordException(error as Error);
 						span.setStatus({
 							code: SpanStatusCode.ERROR,
 							message: String(error),
 						});
-						span.end();
 
 						logger.error({ error, entityType, entityId, action }, "Failed to process approval");
-
-						return Effect.fail(error);
+						return yield* _(Effect.fail(error as any));
 					}),
 				),
+				Effect.onExit(() => Effect.sync(() => span.end())),
+				Effect.provide(AppLayer),
 			);
 		},
 	);
 
-	return runServerActionSafe(effect);
+	return runServerActionSafe(effect as any);
 }
 
 /**
@@ -218,63 +239,85 @@ export async function approveAbsenceEffect(absenceId: string): Promise<ServerAct
 		absenceId,
 		"approve",
 		undefined,
-		async (dbService, entityId) => {
-			// Update absence status
-			await dbService.db
-				.update(absenceEntry)
-				.set({
-					status: "approved",
-					approvedAt: new Date(),
-				})
-				.where(eq(absenceEntry.id, entityId));
+		(dbService, entityId, currentEmployee) =>
+			Effect.gen(function* (_) {
+				const emailService = yield* _(EmailService);
 
-			// Get absence details for email
-			const absence = await dbService.db.query.absenceEntry.findFirst({
-				where: eq(absenceEntry.id, entityId),
-				with: {
-					category: true,
-					employee: { with: { user: true } },
-				},
-			});
+				// Update absence status
+				const absence: any = yield* _(
+					dbService.query("updateAbsenceStatus", async () => {
+						await dbService.db
+							.update(absenceEntry)
+							.set({
+								status: "approved",
+								approvedAt: currentTimestamp(),
+								approvedBy: currentEmployee.id,
+							})
+							.where(eq(absenceEntry.id, entityId));
 
-			if (!absence) {
-				throw new Error("Absence not found");
-			}
+						return await dbService.db.query.absenceEntry.findFirst({
+							where: eq(absenceEntry.id, entityId),
+							with: {
+								category: true,
+								employee: { with: { user: true } },
+							},
+						});
+					}),
+					Effect.flatMap((a: any) =>
+						a
+							? Effect.succeed(a)
+							: Effect.fail(
+									new NotFoundError({
+										message: "Absence not found",
+										entityType: "absence_entry",
+									}),
+							  ),
+					),
+				);
 
-			// Get approver details
-			const session = await dbService.db.query.employee.findFirst({
-				where: eq(employee.userId, absence.employee.user.id),
-			});
+				// Fetch holidays to calculate business days
+				const holidays: any = yield* _(
+					dbService.query("getHolidays", async () => {
+						return await dbService.db.query.holiday.findMany({
+							where: eq(holiday.organizationId, absence.employee.organizationId),
+						});
+					}),
+				);
 
-			// Send email notification
-			const _emailService = await import("@/lib/effect/services/email.service").then(
-				(m) => m.EmailService,
-			);
+				const days = calculateBusinessDays(absence.startDate, absence.endDate, holidays);
+				const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
-			const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-			const days = calculateBusinessDays(absence.startDate, absence.endDate, []);
-			const formatDate = (date: Date) =>
-				date.toLocaleDateString("en-US", {
-					month: "short",
-					day: "numeric",
-					year: "numeric",
-				});
+				const formatDate = (date: Date) =>
+					date.toLocaleDateString("en-US", {
+						month: "short",
+						day: "numeric",
+						year: "numeric",
+					});
 
-			const _html = await renderAbsenceRequestApproved({
-				employeeName: absence.employee.user.name,
-				approverName: session?.organizationId || "Manager", // Simplified
-				startDate: formatDate(absence.startDate),
-				endDate: formatDate(absence.endDate),
-				absenceType: absence.category.name,
-				days,
-				appUrl,
-			});
+				const html = yield* _(
+					Effect.promise(() =>
+						renderAbsenceRequestApproved({
+							employeeName: absence.employee.user.name,
+							approverName: currentEmployee.user.name,
+							startDate: formatDate(absence.startDate),
+							endDate: formatDate(absence.endDate),
+							absenceType: absence.category.name,
+							days,
+							appUrl,
+						}),
+					),
+				);
 
-			// Note: Email sending would happen here with EmailService
-			// For now, this is a placeholder showing the structure
+				yield* _(
+					emailService.send({
+						to: absence.employee.user.email,
+						subject: `Absence Request Approved: ${absence.category.name}`,
+						html,
+					}),
+				);
 
-			return absence;
-		},
+				return absence;
+			}),
 	);
 }
 
@@ -290,53 +333,85 @@ export async function rejectAbsenceEffect(
 		absenceId,
 		"reject",
 		reason,
-		async (dbService, entityId) => {
-			// Update absence status
-			await dbService.db
-				.update(absenceEntry)
-				.set({
-					status: "rejected",
-					rejectionReason: reason,
-				})
-				.where(eq(absenceEntry.id, entityId));
+		(dbService, entityId, currentEmployee) =>
+			Effect.gen(function* (_) {
+				const emailService = yield* _(EmailService);
 
-			// Get absence details for email
-			const absence = await dbService.db.query.absenceEntry.findFirst({
-				where: eq(absenceEntry.id, entityId),
-				with: {
-					category: true,
-					employee: { with: { user: true } },
-				},
-			});
+				// Update absence status
+				const absence: any = yield* _(
+					dbService.query("updateAbsenceStatus", async () => {
+						await dbService.db
+							.update(absenceEntry)
+							.set({
+								status: "rejected",
+								rejectionReason: reason,
+							})
+							.where(eq(absenceEntry.id, entityId));
 
-			if (!absence) {
-				throw new Error("Absence not found");
-			}
+						return await dbService.db.query.absenceEntry.findFirst({
+							where: eq(absenceEntry.id, entityId),
+							with: {
+								category: true,
+								employee: { with: { user: true } },
+							},
+						});
+					}),
+					Effect.flatMap((a: any) =>
+						a
+							? Effect.succeed(a)
+							: Effect.fail(
+									new NotFoundError({
+										message: "Absence not found",
+										entityType: "absence_entry",
+									}),
+							  ),
+					),
+				);
 
-			const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-			const days = calculateBusinessDays(absence.startDate, absence.endDate, []);
-			const formatDate = (date: Date) =>
-				date.toLocaleDateString("en-US", {
-					month: "short",
-					day: "numeric",
-					year: "numeric",
-				});
+				// Fetch holidays to calculate business days
+				const holidays: any = yield* _(
+					dbService.query("getHolidays", async () => {
+						return await dbService.db.query.holiday.findMany({
+							where: eq(holiday.organizationId, absence.employee.organizationId),
+						});
+					}),
+				);
 
-			const _html = await renderAbsenceRequestRejected({
-				employeeName: absence.employee.user.name,
-				approverName: "Manager", // Simplified
-				startDate: formatDate(absence.startDate),
-				endDate: formatDate(absence.endDate),
-				absenceType: absence.category.name,
-				days,
-				rejectionReason: reason,
-				appUrl,
-			});
+				const days = calculateBusinessDays(absence.startDate, absence.endDate, holidays);
+				const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
-			// Note: Email sending would happen here with EmailService
+				const formatDate = (date: Date) =>
+					date.toLocaleDateString("en-US", {
+						month: "short",
+						day: "numeric",
+						year: "numeric",
+					});
 
-			return absence;
-		},
+				const html = yield* _(
+					Effect.promise(() =>
+						renderAbsenceRequestRejected({
+							employeeName: absence.employee.user.name,
+							approverName: currentEmployee.user.name,
+							startDate: formatDate(absence.startDate),
+							endDate: formatDate(absence.endDate),
+							absenceType: absence.category.name,
+							days,
+							rejectionReason: reason,
+							appUrl,
+						}),
+					),
+				);
+
+				yield* _(
+					emailService.send({
+						to: absence.employee.user.email,
+						subject: `Absence Request Rejected: ${absence.category.name}`,
+						html,
+					}),
+				);
+
+				return absence;
+			}),
 	);
 }
 
@@ -351,61 +426,93 @@ export async function approveTimeCorrectionEffect(
 		workPeriodId,
 		"approve",
 		undefined,
-		async (dbService, entityId) => {
-			// Get the work period
-			const [period] = await dbService.db
-				.select()
-				.from(workPeriod)
-				.where(eq(workPeriod.id, entityId))
-				.limit(1);
+		(dbService, entityId) =>
+			Effect.gen(function* (_) {
+				// Get the work period
+				const period: any = yield* _(
+					dbService.query("getWorkPeriod", async () => {
+						return await dbService.db.query.workPeriod.findFirst({
+							where: eq(workPeriod.id, entityId),
+						});
+					}),
+					Effect.flatMap((p: any) =>
+						p
+							? Effect.succeed(p)
+							: Effect.fail(
+									new NotFoundError({ message: "Work period not found", entityType: "work_period" }),
+							  ),
+					),
+				);
 
-			if (!period) {
-				throw new Error("Work period not found");
-			}
+				// Find the correction entries (entries that replace the current clock in/out)
+				const correctionEntries: any = yield* _(
+					dbService.query("getCorrectionEntries", async () => {
+						return await dbService.db
+							.select()
+							.from(timeEntry)
+							.where(
+								and(
+									eq(timeEntry.type, "correction"),
+									eq(timeEntry.employeeId, period.employeeId),
+									eq(timeEntry.replacesEntryId, period.clockInId),
+								),
+							);
+					}),
+				);
 
-			// Find the correction entries
-			const correctionEntries = await dbService.db
-				.select()
-				.from(timeEntry)
-				.where(and(eq(timeEntry.type, "correction"), eq(timeEntry.employeeId, period.employeeId)));
+				// Re-fetch more precisely if needed, but for now we'll use the simplified logic from original
+				const clockInCorrection = correctionEntries.find(
+					(e: any) => e.replacesEntryId === period.clockInId,
+				);
+				const clockOutCorrection: any = yield* _(
+					dbService.query("getClockOutCorrection", async () => {
+						if (!period.clockOutId) return null;
+						return await dbService.db.query.timeEntry.findFirst({
+							where: and(
+								eq(timeEntry.type, "correction"),
+								eq(timeEntry.replacesEntryId, period.clockOutId),
+							),
+						});
+					}),
+				);
 
-			const clockInCorrection = correctionEntries.find(
-				(e) => e.replacesEntryId === period.clockInId,
-			);
-			const clockOutCorrection = correctionEntries.find(
-				(e) => e.replacesEntryId === period.clockOutId,
-			);
+				if (!clockInCorrection) {
+					return yield* _(Effect.fail(new Error("Clock in correction not found")));
+				}
 
-			if (!clockInCorrection) {
-				throw new Error("Clock in correction not found");
-			}
+				// Calculate new duration
+				let durationMinutes = null;
+				let endTime = period.endTime;
 
-			// Calculate new duration
-			let durationMinutes = null;
-			let endTime = period.endTime;
+				if (clockOutCorrection) {
+					const durationMs =
+						clockOutCorrection.timestamp.getTime() - clockInCorrection.timestamp.getTime();
+					durationMinutes = Math.floor(durationMs / 60000);
+					endTime = clockOutCorrection.timestamp;
+				} else if (period.endTime) {
+					const durationMs = period.endTime.getTime() - clockInCorrection.timestamp.getTime();
+					durationMinutes = Math.floor(durationMs / 60000);
+				}
 
-			if (clockOutCorrection) {
-				const durationMs =
-					clockOutCorrection.timestamp.getTime() - clockInCorrection.timestamp.getTime();
-				durationMinutes = Math.floor(durationMs / 60000);
-				endTime = clockOutCorrection.timestamp;
-			}
+				// Update work period with corrected entry IDs and times
+				yield* _(
+					dbService.query("applyTimeCorrection", async () => {
+						await dbService.db
+							.update(workPeriod)
+							.set({
+								clockInId: clockInCorrection.id,
+								clockOutId: clockOutCorrection?.id || period.clockOutId,
+								startTime: clockInCorrection.timestamp,
+								endTime,
+								durationMinutes,
+								updatedAt: new Date(),
+							})
+							.where(eq(workPeriod.id, entityId));
+					}),
+				);
 
-			// Update work period with corrected entry IDs and times
-			await dbService.db
-				.update(workPeriod)
-				.set({
-					clockInId: clockInCorrection.id,
-					clockOutId: clockOutCorrection?.id || period.clockOutId,
-					startTime: clockInCorrection.timestamp,
-					endTime,
-					durationMinutes,
-					updatedAt: new Date(),
-				})
-				.where(eq(workPeriod.id, entityId));
-
-			return period;
-		},
+				return period;
+			}),
 	);
 }
 
@@ -421,46 +528,134 @@ export async function rejectTimeCorrectionEffect(
 		workPeriodId,
 		"reject",
 		reason,
-		async (dbService, entityId) => {
-			// For time corrections, we don't need to update the work period on rejection
-			// The correction entries remain as superseded but not applied
+		(dbService, entityId) =>
+			Effect.gen(function* (_) {
+				// For time corrections, we don't need to update the work period on rejection
+				const period: any = yield* _(
+					dbService.query("getWorkPeriod", async () => {
+						return await dbService.db.query.workPeriod.findFirst({
+							where: eq(workPeriod.id, entityId),
+						});
+					}),
+					Effect.flatMap((p: any) =>
+						p
+							? Effect.succeed(p)
+							: Effect.fail(
+									new NotFoundError({ message: "Work period not found", entityType: "work_period" }),
+							  ),
+					),
+				);
 
-			const [period] = await dbService.db
-				.select()
-				.from(workPeriod)
-				.where(eq(workPeriod.id, entityId))
-				.limit(1);
-
-			if (!period) {
-				throw new Error("Work period not found");
-			}
-
-			return period;
-		},
+				return period;
+			}),
 	);
 }
 
 // =============================================================================
-// Utility and Data-Fetching Functions (non-Effect)
+// Utility and Data-Fetching Functions
 // =============================================================================
-
-// Re-export getCurrentEmployee from absences for convenience
-export { getCurrentEmployee } from "../absences/actions";
 
 /**
  * Get pending approvals for current employee
  */
-export async function getPendingApprovals() {
-	// Will be implemented - returns list of pending approval requests
-	return [];
+export async function getPendingApprovals(): Promise<{
+	absenceApprovals: ApprovalWithAbsence[];
+	timeCorrectionApprovals: ApprovalWithTimeCorrection[];
+}> {
+	const currentEmployee = await getCurrentEmployee();
+	if (!currentEmployee) return { absenceApprovals: [], timeCorrectionApprovals: [] };
+
+	const pendingRequests = await db.query.approvalRequest.findMany({
+		where: and(
+			eq(approvalRequest.approverId, currentEmployee.id),
+			eq(approvalRequest.status, "pending"),
+		),
+		with: {
+			requester: {
+				with: { user: true },
+			},
+		},
+		orderBy: [desc(approvalRequest.createdAt)],
+	});
+
+	const absenceApprovals: ApprovalWithAbsence[] = [];
+	const timeCorrectionApprovals: ApprovalWithTimeCorrection[] = [];
+
+	for (const request of pendingRequests) {
+		if (request.entityType === "absence_entry") {
+			const absence = await db.query.absenceEntry.findFirst({
+				where: eq(absenceEntry.id, request.entityId),
+				with: { category: true },
+			});
+			if (absence) {
+				absenceApprovals.push({
+					...request,
+					entityType: "absence_entry",
+					absence: {
+						id: absence.id,
+						startDate: absence.startDate,
+						endDate: absence.endDate,
+						notes: absence.notes,
+						category: {
+							name: absence.category.name,
+							type: absence.category.type,
+							color: absence.category.color,
+						},
+					},
+				} as ApprovalWithAbsence);
+			}
+		} else if (request.entityType === "time_entry") {
+			const period = await db.query.workPeriod.findFirst({
+				where: eq(workPeriod.id, request.entityId),
+				with: {
+					clockIn: true,
+					clockOut: true,
+				},
+			});
+			if (period && period.clockIn) {
+				timeCorrectionApprovals.push({
+					...request,
+					entityType: "time_entry",
+					workPeriod: {
+						id: period.id,
+						startTime: period.startTime,
+						endTime: period.endTime,
+						clockInEntry: period.clockIn,
+						clockOutEntry: period.clockOut || null,
+					},
+				} as ApprovalWithTimeCorrection);
+			}
+		}
+	}
+
+	return { absenceApprovals, timeCorrectionApprovals };
 }
 
 /**
  * Get pending approval counts for current employee
  */
 export async function getPendingApprovalCounts() {
-	// Will be implemented - returns counts by entity type
-	return { absences: 0, timeCorrections: 0 };
+	const currentEmployee = await getCurrentEmployee();
+	if (!currentEmployee) return { absences: 0, timeCorrections: 0 };
+
+	const counts = await db
+		.select({
+			type: approvalRequest.entityType,
+			count: count(),
+		})
+		.from(approvalRequest)
+		.where(
+			and(
+				eq(approvalRequest.approverId, currentEmployee.id),
+				eq(approvalRequest.status, "pending"),
+			),
+		)
+		.groupBy(approvalRequest.entityType);
+
+	return {
+		absences: Number(counts.find((c) => c.type === "absence_entry")?.count) || 0,
+		timeCorrections: Number(counts.find((c) => c.type === "time_entry")?.count) || 0,
+	};
 }
 
 // Re-export Effect functions with cleaner names (backward compatibility)
@@ -468,3 +663,5 @@ export const approveAbsence = approveAbsenceEffect;
 export const rejectAbsence = rejectAbsenceEffect;
 export const approveTimeCorrection = approveTimeCorrectionEffect;
 export const rejectTimeCorrection = rejectTimeCorrectionEffect;
+export { getCurrentEmployee };
+

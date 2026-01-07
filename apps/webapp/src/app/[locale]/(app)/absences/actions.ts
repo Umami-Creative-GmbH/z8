@@ -24,6 +24,7 @@ import type {
 } from "@/lib/absences/types";
 import { calculateVacationBalance } from "@/lib/absences/vacation-calculator";
 import { auth } from "@/lib/auth";
+import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { ConflictError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AuthService } from "@/lib/effect/services/auth.service";
@@ -330,7 +331,7 @@ export async function requestAbsenceEffect(
 								.update(absenceEntry)
 								.set({
 									status: "approved",
-									approvedAt: new Date(),
+									approvedAt: currentTimestamp(),
 								})
 								.where(eq(absenceEntry.id, newAbsence.id));
 						}),
@@ -472,7 +473,7 @@ export async function getVacationBalance(
 		organizationAllowance: orgAllowance,
 		employeeAllowance: empAllowance,
 		absences: absencesWithCategory,
-		currentDate: new Date(),
+		currentDate: currentTimestamp(),
 		year,
 	});
 

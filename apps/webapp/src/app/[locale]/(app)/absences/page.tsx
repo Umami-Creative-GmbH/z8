@@ -4,6 +4,7 @@ import { AbsenceCalendar } from "@/components/absences/absence-calendar";
 import { AbsenceEntriesTable } from "@/components/absences/absence-entries-table";
 import { RequestAbsenceDialog } from "@/components/absences/request-absence-dialog";
 import { VacationBalanceCard } from "@/components/absences/vacation-balance-card";
+import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { ServerAppSidebar } from "@/components/server-app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
@@ -26,11 +27,22 @@ export default async function AbsencesPage() {
 	const employee = await getCurrentEmployee();
 	if (!employee) {
 		return (
-			<div className="flex h-full items-center justify-center">
-				<p className="text-muted-foreground">
-					Employee profile not found. Please contact your administrator.
-				</p>
-			</div>
+			<SidebarProvider
+				style={
+					{
+						"--sidebar-width": "calc(var(--spacing) * 72)",
+						"--header-height": "calc(var(--spacing) * 12)",
+					} as React.CSSProperties
+				}
+			>
+				<ServerAppSidebar variant="inset" />
+				<SidebarInset>
+					<SiteHeader />
+					<div className="flex flex-1 items-center justify-center p-6">
+						<NoEmployeeError feature="manage absences" />
+					</div>
+				</SidebarInset>
+			</SidebarProvider>
 		);
 	}
 
