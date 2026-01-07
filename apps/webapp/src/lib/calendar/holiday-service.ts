@@ -1,8 +1,10 @@
 "use server";
 
+import { DateTime } from "luxon";
 import { and, eq, gte, lte } from "drizzle-orm";
 import { db } from "@/db";
 import { holiday, holidayCategory } from "@/db/schema";
+import { dateToDB, dateFromDB } from "@/lib/datetime/drizzle-adapter";
 import type { HolidayEvent } from "./types";
 
 interface HolidayWithCategory {
@@ -17,11 +19,12 @@ export async function isHolidayBlockingTimeEntry(
 	organizationId: string,
 	date: Date,
 ): Promise<{ isBlocked: boolean; holiday: HolidayWithCategory | null }> {
-	const dateStart = new Date(date);
-	dateStart.setHours(0, 0, 0, 0);
+	// Convert to DateTime and get day boundaries
+	const dateDT = dateFromDB(date);
+	if (!dateDT) return { isBlocked: false, holiday: null };
 
-	const dateEnd = new Date(date);
-	dateEnd.setHours(23, 59, 59, 999);
+	const dateStart = dateToDB(dateDT.startOf('day'))!;
+	const dateEnd = dateToDB(dateDT.endOf('day'))!;
 
 	// Query non-recurring holidays
 	const nonRecurringHolidays = await db
@@ -73,13 +76,16 @@ export async function isHolidayBlockingTimeEntry(
 	for (const { holiday: h, category } of recurringHolidays) {
 		if (h.recurrenceRule) {
 			const rule = JSON.parse(h.recurrenceRule);
-			const dateMonth = date.getMonth() + 1; // JS months are 0-indexed
-			const dateDay = date.getDate();
+			const dateMonth = dateDT.month; // Luxon months are 1-indexed
+			const dateDay = dateDT.day;
 
 			if (rule.month === dateMonth && rule.day === dateDay) {
 				// Check if recurrence has ended
-				if (h.recurrenceEndDate && date > h.recurrenceEndDate) {
-					continue;
+				if (h.recurrenceEndDate) {
+					const recurrenceEndDT = dateFromDB(h.recurrenceEndDate);
+					if (recurrenceEndDT && dateDT > recurrenceEndDT) {
+						continue;
+					}
 				}
 
 				return {
@@ -119,29 +125,37 @@ export async function expandRecurringHolidays(
 
 	const events: HolidayEvent[] = [];
 
+	// Convert date range to DateTime
+	const startDT = dateFromDB(startDate);
+	const endDT = dateFromDB(endDate);
+	if (!startDT || !endDT) return events;
+
 	for (const { holiday: h, category: cat } of recurringHolidays) {
 		if (!h.recurrenceRule) continue;
 
 		const rule = JSON.parse(h.recurrenceRule);
 
 		// Generate instances for each year in the date range
-		for (let year = startDate.getFullYear(); year <= endDate.getFullYear(); year++) {
-			const instanceDate = new Date(year, rule.month - 1, rule.day);
+		for (let year = startDT.year; year <= endDT.year; year++) {
+			const instanceDT = DateTime.utc(year, rule.month, rule.day);
 
 			// Check if instance is within the date range
-			if (instanceDate < startDate || instanceDate > endDate) {
+			if (instanceDT < startDT || instanceDT > endDT) {
 				continue;
 			}
 
 			// Check if recurrence has ended
-			if (h.recurrenceEndDate && instanceDate > h.recurrenceEndDate) {
-				continue;
+			if (h.recurrenceEndDate) {
+				const recurrenceEndDT = dateFromDB(h.recurrenceEndDate);
+				if (recurrenceEndDT && instanceDT > recurrenceEndDT) {
+					continue;
+				}
 			}
 
 			events.push({
 				id: `${h.id}-${year}`,
 				type: "holiday",
-				date: instanceDate,
+				date: dateToDB(instanceDT)!, // Convert back to Date for interface compatibility
 				title: h.name,
 				description: h.description || undefined,
 				color: cat.color || "#f59e0b",
@@ -166,8 +180,13 @@ export async function getHolidaysForMonth(
 	month: number, // 0-11 (JS month format)
 	year: number,
 ): Promise<HolidayEvent[]> {
-	const startDate = new Date(year, month, 1);
-	const endDate = new Date(year, month + 1, 0, 23, 59, 59, 999);
+	// Calculate date range for the month (month is 0-indexed in JavaScript, 1-indexed in Luxon)
+	const startDT = DateTime.utc(year, month + 1, 1).startOf('day');
+	const endDT = startDT.endOf('month');
+
+	// Convert to Date objects for Drizzle query
+	const startDate = dateToDB(startDT)!;
+	const endDate = dateToDB(endDT)!;
 
 	// Get non-recurring holidays
 	const nonRecurringHolidays = await db
@@ -216,11 +235,12 @@ export async function shouldExcludeFromCalculations(
 	organizationId: string,
 	date: Date,
 ): Promise<boolean> {
-	const dateStart = new Date(date);
-	dateStart.setHours(0, 0, 0, 0);
+	// Convert to DateTime and get day boundaries
+	const dateDT = dateFromDB(date);
+	if (!dateDT) return false;
 
-	const dateEnd = new Date(date);
-	dateEnd.setHours(23, 59, 59, 999);
+	const dateStart = dateToDB(dateDT.startOf('day'))!;
+	const dateEnd = dateToDB(dateDT.endOf('day'))!;
 
 	// Check non-recurring holidays
 	const nonRecurringHolidays = await db
@@ -265,12 +285,15 @@ export async function shouldExcludeFromCalculations(
 	for (const { holiday: h } of recurringHolidays) {
 		if (h.recurrenceRule) {
 			const rule = JSON.parse(h.recurrenceRule);
-			const dateMonth = date.getMonth() + 1;
-			const dateDay = date.getDate();
+			const dateMonth = dateDT.month; // Luxon months are 1-indexed
+			const dateDay = dateDT.day;
 
 			if (rule.month === dateMonth && rule.day === dateDay) {
-				if (h.recurrenceEndDate && date > h.recurrenceEndDate) {
-					continue;
+				if (h.recurrenceEndDate) {
+					const recurrenceEndDT = dateFromDB(h.recurrenceEndDate);
+					if (recurrenceEndDT && dateDT > recurrenceEndDT) {
+						continue;
+					}
 				}
 				return true;
 			}

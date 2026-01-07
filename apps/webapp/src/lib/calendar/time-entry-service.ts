@@ -1,8 +1,10 @@
 "use server";
 
+import { DateTime } from "luxon";
 import { and, eq, gte, lte } from "drizzle-orm";
 import { db } from "@/db";
 import { employee, timeEntry, user } from "@/db/schema";
+import { dateToDB } from "@/lib/datetime/drizzle-adapter";
 import type { TimeEntryEvent } from "./types";
 
 interface TimeEntryFilters {
@@ -19,13 +21,32 @@ export async function getTimeEntriesForMonth(
 	year: number,
 	filters: TimeEntryFilters,
 ): Promise<TimeEntryEvent[]> {
-	// Calculate date range for the month
-	const startDate = new Date(year, month, 1);
-	const endDate = new Date(year, month + 1, 0, 23, 59, 59, 999);
+	// Calculate date range for the month (month is 0-indexed in JavaScript, 1-indexed in Luxon)
+	const startDT = DateTime.utc(year, month + 1, 1).startOf('day');
+	const endDT = startDT.endOf('month');
+
+	// Convert to Date objects for Drizzle query
+	const startDate = dateToDB(startDT)!;
+	const endDate = dateToDB(endDT)!;
 
 	try {
-		// Build the query with filters
-		let query = db
+		// Prepare conditions
+		const conditions = [
+			// Organization filter via employee
+			eq(employee.organizationId, filters.organizationId),
+			// Date range filter
+			gte(timeEntry.timestamp, startDate),
+			lte(timeEntry.timestamp, endDate),
+			// Only show non-superseded entries
+			eq(timeEntry.isSuperseded, false),
+		];
+
+		// Add employee filter if provided
+		if (filters.employeeId) {
+			conditions.push(eq(timeEntry.employeeId, filters.employeeId));
+		}
+
+		const entries = await db
 			.select({
 				entry: timeEntry,
 				employee: employee,
@@ -34,32 +55,7 @@ export async function getTimeEntriesForMonth(
 			.from(timeEntry)
 			.innerJoin(employee, eq(timeEntry.employeeId, employee.id))
 			.innerJoin(user, eq(employee.userId, user.id))
-			.where(
-				and(
-					// Organization filter via employee
-					eq(employee.organizationId, filters.organizationId),
-					// Date range filter
-					gte(timeEntry.timestamp, startDate),
-					lte(timeEntry.timestamp, endDate),
-					// Only show non-superseded entries
-					eq(timeEntry.isSuperseded, false),
-				),
-			);
-
-		// Add employee filter if provided
-		if (filters.employeeId) {
-			query = query.where(
-				and(
-					eq(employee.organizationId, filters.organizationId),
-					eq(timeEntry.employeeId, filters.employeeId),
-					gte(timeEntry.timestamp, startDate),
-					lte(timeEntry.timestamp, endDate),
-					eq(timeEntry.isSuperseded, false),
-				),
-			);
-		}
-
-		const entries = await query;
+			.where(and(...conditions));
 
 		// Transform to TimeEntryEvent objects
 		return entries.map(({ entry, user }) => ({

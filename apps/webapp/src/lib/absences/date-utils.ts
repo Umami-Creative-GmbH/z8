@@ -1,3 +1,5 @@
+import { DateTime } from "luxon";
+import { fromJSDate, toDateKey, eachDayOfInterval } from "@/lib/datetime/luxon-utils";
 import type { Holiday } from "./types";
 
 /**
@@ -10,44 +12,39 @@ import type { Holiday } from "./types";
  * @returns Number of business days
  */
 export function calculateBusinessDays(
-	startDate: Date,
-	endDate: Date,
+	startDate: Date | DateTime,
+	endDate: Date | DateTime,
 	holidays: Holiday[] = [],
 ): number {
-	if (startDate > endDate) {
+	// Convert to DateTime if needed
+	const start = startDate instanceof Date ? fromJSDate(startDate, 'utc') : startDate;
+	const end = endDate instanceof Date ? fromJSDate(endDate, 'utc') : endDate;
+
+	if (start > end) {
 		throw new Error("Start date must be before or equal to end date");
 	}
 
 	// Create a set of holiday dates for fast lookup (YYYY-MM-DD format)
 	const holidayDates = new Set(
 		holidays.flatMap((h) => {
-			const dates: string[] = [];
-			const current = new Date(h.startDate);
-			const end = new Date(h.endDate);
-
-			while (current <= end) {
-				dates.push(current.toISOString().split("T")[0]);
-				current.setDate(current.getDate() + 1);
-			}
-			return dates;
+			const hStart = h.startDate instanceof Date ? fromJSDate(h.startDate, 'utc') : h.startDate as unknown as DateTime;
+			const hEnd = h.endDate instanceof Date ? fromJSDate(h.endDate, 'utc') : h.endDate as unknown as DateTime;
+			return eachDayOfInterval(hStart, hEnd).map(dt => toDateKey(dt));
 		}),
 	);
 
 	let businessDays = 0;
-	const current = new Date(startDate);
-	const end = new Date(endDate);
+	const days = eachDayOfInterval(start, end);
 
-	while (current <= end) {
-		const dayOfWeek = current.getDay();
-		const dateStr = current.toISOString().split("T")[0];
+	for (const day of days) {
+		const dayOfWeek = day.weekday; // Luxon: 1 = Monday, 7 = Sunday
+		const dateStr = toDateKey(day);
 
-		// Check if it's not a weekend (0 = Sunday, 6 = Saturday)
+		// Check if it's not a weekend (6 = Saturday, 7 = Sunday)
 		// and not a holiday
-		if (dayOfWeek !== 0 && dayOfWeek !== 6 && !holidayDates.has(dateStr)) {
+		if (dayOfWeek !== 6 && dayOfWeek !== 7 && !holidayDates.has(dateStr)) {
 			businessDays++;
 		}
-
-		current.setDate(current.getDate() + 1);
 	}
 
 	return businessDays;
@@ -57,12 +54,12 @@ export function calculateBusinessDays(
  * Get the start and end dates for a specific year
  *
  * @param year - Calendar year
- * @returns Start and end dates
+ * @returns Start and end dates as DateTime objects
  */
-export function getYearRange(year: number): { start: Date; end: Date } {
+export function getYearRange(year: number): { start: DateTime; end: DateTime } {
 	return {
-		start: new Date(year, 0, 1), // January 1st
-		end: new Date(year, 11, 31, 23, 59, 59, 999), // December 31st
+		start: DateTime.utc(year, 1, 1).startOf('day'), // January 1st
+		end: DateTime.utc(year, 12, 31).endOf('day'), // December 31st
 	};
 }
 
@@ -71,13 +68,21 @@ export function getYearRange(year: number): { start: Date; end: Date } {
  *
  * @param year - Current year
  * @param expiryMonths - Number of months until expiry
- * @returns Expiry date
+ * @returns Expiry date as DateTime
  */
-export function calculateCarryoverExpiryDate(year: number, expiryMonths: number): Date {
-	const expiryDate = new Date(year, 0, 1); // January 1st of current year
-	expiryDate.setMonth(expiryDate.getMonth() + expiryMonths);
-	expiryDate.setDate(expiryDate.getDate() - 1); // Last day of the month before
-	expiryDate.setHours(23, 59, 59, 999);
+export function calculateCarryoverExpiryDate(year: number, expiryMonths: number): DateTime {
+	// Start at January 1st of current year
+	let expiryDate = DateTime.utc(year, 1, 1);
+
+	// Add months
+	expiryDate = expiryDate.plus({ months: expiryMonths });
+
+	// Go to last day of previous month
+	expiryDate = expiryDate.minus({ days: 1 });
+
+	// Set to end of day
+	expiryDate = expiryDate.endOf('day');
+
 	return expiryDate;
 }
 
@@ -88,26 +93,24 @@ export function calculateCarryoverExpiryDate(year: number, expiryMonths: number)
  * @param endDate - End date
  * @returns Formatted date range string
  */
-export function formatDateRange(startDate: Date, endDate: Date): string {
-	const options: Intl.DateTimeFormatOptions = {
+export function formatDateRange(startDate: Date | DateTime, endDate: Date | DateTime): string {
+	// Convert to DateTime if needed
+	const start = startDate instanceof Date ? fromJSDate(startDate, 'utc') : startDate;
+	const end = endDate instanceof Date ? fromJSDate(endDate, 'utc') : endDate;
+
+	const startStr = start.toLocaleString({ month: "short", day: "numeric" });
+	const endStr = end.toLocaleString({
 		month: "short",
 		day: "numeric",
 		year: "numeric",
-	};
-
-	const start = startDate.toLocaleDateString("en-US", options);
-	const end = endDate.toLocaleDateString("en-US", options);
+	});
 
 	// If same day, return single date
-	if (
-		startDate.getFullYear() === endDate.getFullYear() &&
-		startDate.getMonth() === endDate.getMonth() &&
-		startDate.getDate() === endDate.getDate()
-	) {
-		return start;
+	if (start.hasSame(end, 'day')) {
+		return endStr;
 	}
 
-	return `${start} - ${end}`;
+	return `${startStr} - ${endStr}`;
 }
 
 /**
@@ -119,6 +122,17 @@ export function formatDateRange(startDate: Date, endDate: Date): string {
  * @param end2 - Second range end
  * @returns True if ranges overlap
  */
-export function dateRangesOverlap(start1: Date, end1: Date, start2: Date, end2: Date): boolean {
-	return start1 <= end2 && start2 <= end1;
+export function dateRangesOverlap(
+	start1: Date | DateTime,
+	end1: Date | DateTime,
+	start2: Date | DateTime,
+	end2: Date | DateTime
+): boolean {
+	// Convert to DateTime if needed
+	const s1 = start1 instanceof Date ? fromJSDate(start1, 'utc') : start1;
+	const e1 = end1 instanceof Date ? fromJSDate(end1, 'utc') : end1;
+	const s2 = start2 instanceof Date ? fromJSDate(start2, 'utc') : start2;
+	const e2 = end2 instanceof Date ? fromJSDate(end2, 'utc') : end2;
+
+	return s1 <= e2 && s2 <= e1;
 }

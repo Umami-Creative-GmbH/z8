@@ -1,8 +1,11 @@
 "use server";
 
+import { DateTime } from "luxon";
 import { and, eq, gte, lte } from "drizzle-orm";
 import { db } from "@/db";
 import { employee, user, workPeriod } from "@/db/schema";
+import { dateToDB, dateFromDB } from "@/lib/datetime/drizzle-adapter";
+import { toDateKey } from "@/lib/datetime/luxon-utils";
 import type { WorkPeriodEvent } from "./types";
 
 interface WorkPeriodFilters {
@@ -20,13 +23,32 @@ export async function getWorkPeriodsForMonth(
 	year: number,
 	filters: WorkPeriodFilters,
 ): Promise<WorkPeriodEvent[]> {
-	// Calculate date range for the month
-	const startDate = new Date(year, month, 1);
-	const endDate = new Date(year, month + 1, 0, 23, 59, 59, 999);
+	// Calculate date range for the month (month is 0-indexed in JavaScript, 1-indexed in Luxon)
+	const startDT = DateTime.utc(year, month + 1, 1).startOf('day');
+	const endDT = startDT.endOf('month');
+
+	// Convert to Date objects for Drizzle query
+	const startDate = dateToDB(startDT)!;
+	const endDate = dateToDB(endDT)!;
 
 	try {
-		// Build the query with filters
-		let query = db
+		// Prepare conditions
+		const conditions = [
+			// Organization filter via employee
+			eq(employee.organizationId, filters.organizationId),
+			// Date range filter
+			gte(workPeriod.startTime, startDate),
+			lte(workPeriod.startTime, endDate),
+			// Only completed work periods
+			eq(workPeriod.isActive, false),
+		];
+
+		// Add employee filter if provided
+		if (filters.employeeId) {
+			conditions.push(eq(workPeriod.employeeId, filters.employeeId));
+		}
+
+		const periods = await db
 			.select({
 				period: workPeriod,
 				employee: employee,
@@ -35,32 +57,7 @@ export async function getWorkPeriodsForMonth(
 			.from(workPeriod)
 			.innerJoin(employee, eq(workPeriod.employeeId, employee.id))
 			.innerJoin(user, eq(employee.userId, user.id))
-			.where(
-				and(
-					// Organization filter via employee
-					eq(employee.organizationId, filters.organizationId),
-					// Date range filter
-					gte(workPeriod.startTime, startDate),
-					lte(workPeriod.startTime, endDate),
-					// Only completed work periods
-					eq(workPeriod.isActive, false),
-				),
-			);
-
-		// Add employee filter if provided
-		if (filters.employeeId) {
-			query = query.where(
-				and(
-					eq(employee.organizationId, filters.organizationId),
-					eq(workPeriod.employeeId, filters.employeeId),
-					gte(workPeriod.startTime, startDate),
-					lte(workPeriod.startTime, endDate),
-					eq(workPeriod.isActive, false),
-				),
-			);
-		}
-
-		const periods = await query;
+			.where(and(...conditions));
 
 		// Aggregate by day and employee
 		const aggregated = aggregateByDay(periods);
@@ -97,15 +94,18 @@ function aggregateByDay(
 	for (const { period, user } of periods) {
 		if (!period.durationMinutes) continue; // Skip if no duration
 
-		// Get date key (YYYY-MM-DD)
-		const dateKey = period.startTime.toISOString().split("T")[0];
+		// Get date key (YYYY-MM-DD) using Luxon
+		const startDT = dateFromDB(period.startTime);
+		if (!startDT) continue;
+
+		const dateKey = toDateKey(startDT);
 		const groupKey = `${dateKey}_${period.employeeId}`;
 
 		if (!grouped.has(groupKey)) {
 			grouped.set(groupKey, {
 				employeeId: period.employeeId,
 				employeeName: user.name,
-				date: new Date(period.startTime.toISOString().split("T")[0]), // Date at midnight
+				date: period.startTime, // Keep as Date for now (interface compatibility)
 				totalMinutes: 0,
 				periodCount: 0,
 			});
@@ -117,19 +117,24 @@ function aggregateByDay(
 	}
 
 	// Transform to WorkPeriodEvent objects
-	return Array.from(grouped.values()).map((group) => ({
-		id: `${group.date.toISOString()}_${group.employeeId}`,
-		type: "work_period" as const,
-		date: group.date,
-		title: `${group.employeeName} - ${formatDuration(group.totalMinutes)}`,
-		description: `${group.periodCount} work ${group.periodCount === 1 ? "period" : "periods"}`,
-		color: "#6366f1", // Indigo-500
-		metadata: {
-			durationMinutes: group.totalMinutes,
-			employeeName: group.employeeName,
-			periodCount: group.periodCount,
-		},
-	}));
+	return Array.from(grouped.values()).map((group) => {
+		const dateDT = dateFromDB(group.date);
+		const dateKey = dateDT ? toDateKey(dateDT) : group.date.toISOString().split("T")[0];
+
+		return {
+			id: `${dateKey}_${group.employeeId}`,
+			type: "work_period" as const,
+			date: group.date,
+			title: `${group.employeeName} - ${formatDuration(group.totalMinutes)}`,
+			description: `${group.periodCount} work ${group.periodCount === 1 ? "period" : "periods"}`,
+			color: "#6366f1", // Indigo-500
+			metadata: {
+				durationMinutes: group.totalMinutes,
+				employeeName: group.employeeName,
+				periodCount: group.periodCount,
+			},
+		};
+	});
 }
 
 /**

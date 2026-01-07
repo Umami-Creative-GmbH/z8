@@ -1,3 +1,5 @@
+import { DateTime } from "luxon";
+import { fromJSDate } from "@/lib/datetime/luxon-utils";
 import { calculateCarryoverExpiryDate, getYearRange } from "./date-utils";
 import type { AbsenceWithCategory, VacationBalance } from "./types";
 
@@ -33,9 +35,12 @@ export function calculateVacationBalance({
 	organizationAllowance: VacationAllowanceData;
 	employeeAllowance?: EmployeeAllowanceData | null;
 	absences: AbsenceWithCategory[];
-	currentDate: Date;
+	currentDate: Date | DateTime;
 	year: number;
 }): VacationBalance {
+	// Convert currentDate to DateTime if needed
+	const current = currentDate instanceof Date ? fromJSDate(currentDate, 'utc') : currentDate;
+
 	// 1. Calculate total annual days
 	let totalDays = employeeAllowance?.customAnnualDays
 		? parseFloat(employeeAllowance.customAnnualDays)
@@ -49,16 +54,19 @@ export function calculateVacationBalance({
 		const carryover = parseFloat(employeeAllowance.customCarryoverDays);
 
 		if (organizationAllowance.carryoverExpiryMonths) {
-			carryoverExpiryDate = calculateCarryoverExpiryDate(
+			const carryoverExpiryDT = calculateCarryoverExpiryDate(
 				year,
 				organizationAllowance.carryoverExpiryMonths,
 			);
 
 			// Only add carryover if not expired
-			if (currentDate <= carryoverExpiryDate) {
+			if (current <= carryoverExpiryDT) {
 				carryoverDays = carryover;
 				totalDays += carryover;
 			}
+
+			// Convert back to Date for VacationBalance interface (will update later)
+			carryoverExpiryDate = carryoverExpiryDT.toJSDate();
 		} else {
 			// No expiry, add full carryover
 			carryoverDays = carryover;
@@ -77,16 +85,20 @@ export function calculateVacationBalance({
 		.filter((absence) => {
 			const isApproved = absence.status === "approved";
 			const countsAgainstVacation = absence.category.countsAgainstVacation;
-			const inYear = absence.startDate >= start && absence.startDate <= end;
+
+			// Convert absence dates to DateTime for comparison
+			const absenceStart = absence.startDate instanceof Date ? fromJSDate(absence.startDate, 'utc') : absence.startDate as unknown as DateTime;
+			const inYear = absenceStart >= start && absenceStart <= end;
+
 			return isApproved && countsAgainstVacation && inYear;
 		})
 		.reduce((sum, absence) => {
-			// For now, calculate days as simple date difference
-			// In production, would use business days calculation
-			const days =
-				Math.ceil(
-					(absence.endDate.getTime() - absence.startDate.getTime()) / (1000 * 60 * 60 * 24),
-				) + 1;
+			// Convert to DateTime for precise calculation
+			const absenceStart = absence.startDate instanceof Date ? fromJSDate(absence.startDate, 'utc') : absence.startDate as unknown as DateTime;
+			const absenceEnd = absence.endDate instanceof Date ? fromJSDate(absence.endDate, 'utc') : absence.endDate as unknown as DateTime;
+
+			// Calculate days as simple date difference
+			const days = Math.ceil(absenceEnd.diff(absenceStart, 'days').days) + 1;
 			return sum + days;
 		}, 0);
 
@@ -95,14 +107,19 @@ export function calculateVacationBalance({
 		.filter((absence) => {
 			const isPending = absence.status === "pending";
 			const countsAgainstVacation = absence.category.countsAgainstVacation;
-			const inYear = absence.startDate >= start && absence.startDate <= end;
+
+			// Convert absence dates to DateTime for comparison
+			const absenceStart = absence.startDate instanceof Date ? fromJSDate(absence.startDate, 'utc') : absence.startDate as unknown as DateTime;
+			const inYear = absenceStart >= start && absenceStart <= end;
+
 			return isPending && countsAgainstVacation && inYear;
 		})
 		.reduce((sum, absence) => {
-			const days =
-				Math.ceil(
-					(absence.endDate.getTime() - absence.startDate.getTime()) / (1000 * 60 * 60 * 24),
-				) + 1;
+			// Convert to DateTime for precise calculation
+			const absenceStart = absence.startDate instanceof Date ? fromJSDate(absence.startDate, 'utc') : absence.startDate as unknown as DateTime;
+			const absenceEnd = absence.endDate instanceof Date ? fromJSDate(absence.endDate, 'utc') : absence.endDate as unknown as DateTime;
+
+			const days = Math.ceil(absenceEnd.diff(absenceStart, 'days').days) + 1;
 			return sum + days;
 		}, 0);
 
@@ -139,23 +156,26 @@ export function hasSufficientBalance(balance: VacationBalance, requestedDays: nu
  * @param year - Current year
  * @returns Prorated days
  */
-export function prorateAnnualDays(annualDays: number, startDate: Date, year: number): number {
-	const yearStart = new Date(year, 0, 1);
-	const yearEnd = new Date(year, 11, 31);
+export function prorateAnnualDays(annualDays: number, startDate: Date | DateTime, year: number): number {
+	// Convert to DateTime if needed
+	const start = startDate instanceof Date ? fromJSDate(startDate, 'utc') : startDate;
+
+	const yearStart = DateTime.utc(year, 1, 1);
+	const yearEnd = DateTime.utc(year, 12, 31);
 
 	// If started before or at the beginning of the year, no proration
-	if (startDate <= yearStart) {
+	if (start <= yearStart) {
 		return annualDays;
 	}
 
 	// If started after the year, no days
-	if (startDate > yearEnd) {
+	if (start > yearEnd) {
 		return 0;
 	}
 
 	// Calculate proportion of year remaining
-	const totalDays = (yearEnd.getTime() - yearStart.getTime()) / (1000 * 60 * 60 * 24);
-	const remainingDays = (yearEnd.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24);
+	const totalDays = yearEnd.diff(yearStart, 'days').days;
+	const remainingDays = yearEnd.diff(start, 'days').days;
 	const proportion = remainingDays / totalDays;
 
 	return Math.floor(annualDays * proportion);

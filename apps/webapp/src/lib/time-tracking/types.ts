@@ -1,4 +1,6 @@
-import type { TimeEntry, WorkPeriod } from "@/db/schema";
+import type { timeEntry, workPeriod } from "@/db/schema";
+export type TimeEntry = typeof timeEntry.$inferSelect;
+export type WorkPeriod = typeof workPeriod.$inferSelect;
 
 export interface ActiveWorkPeriod {
 	workPeriod: WorkPeriod;

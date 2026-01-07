@@ -7,24 +7,23 @@ export interface SendEmailParams {
 	subject: string;
 	html: string;
 	from?: string;
+	actionUrl?: string; // Optional URL for verification, reset, etc.
 }
 
-export async function sendEmail({ to, subject, html, from }: SendEmailParams) {
-	// In development mode without API key, just log the email
-	if (process.env.NODE_ENV === "development" && !resend) {
-		console.log("📧 Email (dev mode):", {
-			to,
-			subject,
-			from: from || process.env.EMAIL_FROM || "noreply@yourdomain.com",
-			preview: `${html.substring(0, 100)}...`,
-		});
-		return { success: true, messageId: "dev-mode" };
-	}
-
-	// In production, require API key
+export async function sendEmail({ to, subject, html, from, actionUrl }: SendEmailParams) {
+	// Without API key, log email info to console
 	if (!resend) {
-		console.error("RESEND_API_KEY is not configured");
-		return { success: false, error: "Email service not configured" };
+		console.log("\n📧 Email (no API key - logging to console):");
+		console.log("━".repeat(50));
+		console.log("From:", from || process.env.EMAIL_FROM || "noreply@yourdomain.com");
+		console.log("To:", to);
+		console.log("Subject:", subject);
+		if (actionUrl) {
+			console.log("\n🔗 Action URL:", actionUrl);
+		}
+		console.log("\nHTML Length:", html.length, "characters");
+		console.log("━".repeat(50));
+		return { success: true, messageId: "console-logged" };
 	}
 
 	try {

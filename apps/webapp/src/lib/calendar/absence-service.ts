@@ -1,8 +1,10 @@
 "use server";
 
+import { DateTime } from "luxon";
 import { and, eq, gte, lte } from "drizzle-orm";
 import { db } from "@/db";
 import { absenceCategory, absenceEntry, employee, user } from "@/db/schema";
+import { dateToDB } from "@/lib/datetime/drizzle-adapter";
 import type { AbsenceEvent } from "./types";
 
 interface AbsenceFilters {
@@ -19,13 +21,30 @@ export async function getAbsencesForMonth(
 	year: number,
 	filters: AbsenceFilters,
 ): Promise<AbsenceEvent[]> {
-	// Calculate date range for the month
-	const startDate = new Date(year, month, 1);
-	const endDate = new Date(year, month + 1, 0, 23, 59, 59, 999);
+	// Calculate date range for the month (month is 0-indexed in JavaScript, 1-indexed in Luxon)
+	const startDT = DateTime.utc(year, month + 1, 1).startOf('day');
+	const endDT = startDT.endOf('month');
+
+	// Convert to Date objects for Drizzle query
+	const startDate = dateToDB(startDT)!;
+	const endDate = dateToDB(endDT)!;
 
 	try {
-		// Build the query with filters
-		let query = db
+		// Prepare conditions
+		const conditions = [
+			// Organization filter via employee
+			eq(employee.organizationId, filters.organizationId),
+			// Date range filter - absences that overlap with the month
+			lte(absenceEntry.startDate, endDate),
+			gte(absenceEntry.endDate, startDate),
+		];
+
+		// Add employee filter if provided
+		if (filters.employeeId) {
+			conditions.push(eq(absenceEntry.employeeId, filters.employeeId));
+		}
+
+		const absences = await db
 			.select({
 				absence: absenceEntry,
 				category: absenceCategory,
@@ -36,29 +55,7 @@ export async function getAbsencesForMonth(
 			.innerJoin(absenceCategory, eq(absenceEntry.categoryId, absenceCategory.id))
 			.innerJoin(employee, eq(absenceEntry.employeeId, employee.id))
 			.innerJoin(user, eq(employee.userId, user.id))
-			.where(
-				and(
-					// Organization filter via employee
-					eq(employee.organizationId, filters.organizationId),
-					// Date range filter - absences that overlap with the month
-					lte(absenceEntry.startDate, endDate),
-					gte(absenceEntry.endDate, startDate),
-				),
-			);
-
-		// Add employee filter if provided
-		if (filters.employeeId) {
-			query = query.where(
-				and(
-					eq(employee.organizationId, filters.organizationId),
-					eq(absenceEntry.employeeId, filters.employeeId),
-					lte(absenceEntry.startDate, endDate),
-					gte(absenceEntry.endDate, startDate),
-				),
-			);
-		}
-
-		const absences = await query;
+			.where(and(...conditions));
 
 		// Transform to AbsenceEvent objects
 		return absences.map(({ absence, category, user }) => ({

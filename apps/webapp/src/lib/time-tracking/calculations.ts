@@ -4,6 +4,8 @@ import { and, eq, gte, isNotNull, lte } from "drizzle-orm";
 import { db } from "@/db";
 import { workPeriod } from "@/db/schema";
 import { shouldExcludeFromCalculations } from "@/lib/calendar/holiday-service";
+import { startOfDay, endOfDay, fromJSDate, toDateKey } from "@/lib/datetime/luxon-utils";
+import { dateToDB, dateFromDB } from "@/lib/datetime/drizzle-adapter";
 
 export interface WorkHoursSummary {
 	totalMinutes: number;
@@ -24,11 +26,8 @@ export async function calculateWorkHours(
 	endDate: Date,
 ): Promise<WorkHoursSummary> {
 	// Ensure dates are at start/end of day
-	const rangeStart = new Date(startDate);
-	rangeStart.setHours(0, 0, 0, 0);
-
-	const rangeEnd = new Date(endDate);
-	rangeEnd.setHours(23, 59, 59, 999);
+	const rangeStart = dateToDB(startOfDay(fromJSDate(startDate)))!;
+	const rangeEnd = dateToDB(endOfDay(fromJSDate(endDate)))!;
 
 	// Fetch all completed work periods in the date range
 	const periods = await db
@@ -52,8 +51,9 @@ export async function calculateWorkHours(
 
 	// Process each work period
 	for (const period of periods) {
-		const periodDate = new Date(period.startTime);
-		const dateKey = periodDate.toISOString().split("T")[0]; // YYYY-MM-DD
+		const periodDT = dateFromDB(period.startTime);
+		if (!periodDT) continue;
+		const dateKey = toDateKey(periodDT); // YYYY-MM-DD
 
 		// Track unique work days
 		processedDates.add(dateKey);
@@ -109,8 +109,8 @@ export async function calculateExpectedWorkHours(
 	endDate: Date,
 	hoursPerDay: number = 8,
 ): Promise<WorkHoursSummary> {
-	const rangeStart = new Date(startDate);
-	const rangeEnd = new Date(endDate);
+	let currentDT = fromJSDate(startDate);
+	const endDT = fromJSDate(endDate);
 
 	let totalMinutes = 0;
 	let excludedMinutes = 0;
@@ -118,14 +118,13 @@ export async function calculateExpectedWorkHours(
 	let excludedDays = 0;
 
 	// Iterate through each day in the range
-	const currentDate = new Date(rangeStart);
-	while (currentDate <= rangeEnd) {
-		const dayOfWeek = currentDate.getDay(); // 0 = Sunday, 6 = Saturday
+	while (currentDT <= endDT) {
+		const dayOfWeek = currentDT.weekday % 7; // Luxon: 1=Mon, 7=Sun -> convert to JS: 0=Sun, 6=Sat
 
 		// Skip weekends (assuming 5-day work week)
 		if (dayOfWeek !== 0 && dayOfWeek !== 6) {
 			// Check if this is a holiday
-			const shouldExclude = await shouldExcludeFromCalculations(organizationId, currentDate);
+			const shouldExclude = await shouldExcludeFromCalculations(organizationId, dateToDB(currentDT)!);
 
 			if (shouldExclude) {
 				excludedDays++;
@@ -137,7 +136,7 @@ export async function calculateExpectedWorkHours(
 		}
 
 		// Move to next day
-		currentDate.setDate(currentDate.getDate() + 1);
+		currentDT = currentDT.plus({ days: 1 });
 	}
 
 	return {
