@@ -43,7 +43,7 @@ export function ReportFilters({
 		<Card>
 			<CardContent className="pt-6">
 				<div className="flex flex-col gap-4">
-					<div className="grid gap-4 md:grid-cols-2">
+					<div className={`grid gap-4 ${showEmployeeSelector ? "md:grid-cols-2" : "md:grid-cols-1"}`}>
 						{/* Employee Selector - only show if user has access to multiple employees */}
 						{showEmployeeSelector && (
 							<div className="space-y-2">

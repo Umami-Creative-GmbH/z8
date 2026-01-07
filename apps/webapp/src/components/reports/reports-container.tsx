@@ -56,7 +56,7 @@ export function ReportsContainer({
 	};
 
 	return (
-		<div className="space-y-6">
+		<div className="space-y-6 px-4 lg:px-6">
 			{/* Filters */}
 			<ReportFilters
 				employees={employees}
@@ -81,65 +81,57 @@ export function ReportsContainer({
 					<ReportSummaryCards reportData={reportData} />
 
 					{/* Export Actions */}
-					<div className="px-4 lg:px-6">
-						<Card>
-							<CardContent className="pt-6">
-								<div className="flex flex-col gap-4">
-									<div>
-										<h3 className="text-lg font-semibold">Export Report</h3>
-										<p className="text-sm text-muted-foreground">
-											Download this report in your preferred format
-										</p>
-									</div>
-									<ExportButtons reportData={reportData} />
+					<Card>
+						<CardContent className="pt-6">
+							<div className="flex flex-col gap-4">
+								<div>
+									<h3 className="text-lg font-semibold">Export Report</h3>
+									<p className="text-sm text-muted-foreground">
+										Download this report in your preferred format
+									</p>
 								</div>
-							</CardContent>
-						</Card>
-					</div>
+								<ExportButtons reportData={reportData} />
+							</div>
+						</CardContent>
+					</Card>
 
 					{/* Detailed Tables */}
-					<div className="px-4 lg:px-6">
-						<ReportPreviewTable reportData={reportData} />
-					</div>
+					<ReportPreviewTable reportData={reportData} />
 				</>
 			)}
 
 			{/* Loading State */}
 			{isGenerating && (
-				<div className="px-4 lg:px-6">
-					<Card>
-						<CardContent className="flex items-center justify-center py-12">
-							<div className="flex flex-col items-center gap-4">
-								<FileBarChart className="h-12 w-12 animate-pulse text-muted-foreground" />
-								<div className="text-center">
-									<p className="font-semibold">Generating Report...</p>
-									<p className="text-sm text-muted-foreground">
-										Please wait while we compile your data
-									</p>
-								</div>
+				<Card>
+					<CardContent className="flex items-center justify-center py-12">
+						<div className="flex flex-col items-center gap-4">
+							<FileBarChart className="h-12 w-12 animate-pulse text-muted-foreground" />
+							<div className="text-center">
+								<p className="font-semibold">Generating Report...</p>
+								<p className="text-sm text-muted-foreground">
+									Please wait while we compile your data
+								</p>
 							</div>
-						</CardContent>
-					</Card>
-				</div>
+						</div>
+					</CardContent>
+				</Card>
 			)}
 
 			{/* Empty State */}
 			{!reportData && !isGenerating && !error && (
-				<div className="px-4 lg:px-6">
-					<Card>
-						<CardContent className="flex items-center justify-center py-12">
-							<div className="flex flex-col items-center gap-4 text-center">
-								<FileBarChart className="h-12 w-12 text-muted-foreground" />
-								<div>
-									<p className="font-semibold">No report generated yet</p>
-									<p className="text-sm text-muted-foreground">
-										Select a period and click "Generate Report" to get started
-									</p>
-								</div>
+				<Card>
+					<CardContent className="flex items-center justify-center py-12">
+						<div className="flex flex-col items-center gap-4 text-center">
+							<FileBarChart className="h-12 w-12 text-muted-foreground" />
+							<div>
+								<p className="font-semibold">No report generated yet</p>
+								<p className="text-sm text-muted-foreground">
+									Select a period and click "Generate Report" to get started
+								</p>
 							</div>
-						</CardContent>
-					</Card>
-				</div>
+						</div>
+					</CardContent>
+				</Card>
 			)}
 		</div>
 	);

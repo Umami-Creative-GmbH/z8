@@ -50,7 +50,7 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
 	const currentYear = new Date().getFullYear();
 
 	return (
-		<div className="flex flex-col gap-2 sm:flex-row">
+		<div className="flex flex-col gap-2 sm:flex-row sm:items-center">
 			{/* Preset Selector */}
 			<Select value={preset} onValueChange={(v) => handlePresetChange(v as PeriodPreset)}>
 				<SelectTrigger className="w-full sm:w-[200px]">
@@ -114,8 +114,9 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
 
 			{/* Display current range for non-custom presets */}
 			{preset !== "custom" && (
-				<div className="flex items-center text-sm text-muted-foreground">
-					{format(value.start, "MMM d, yyyy")} - {format(value.end, "MMM d, yyyy")}
+				<div className="flex h-9 items-center rounded-md border border-input bg-transparent px-3 text-sm text-muted-foreground">
+					<CalendarIcon className="mr-2 h-4 w-4" />
+					{format(value.start, "MMM d, yyyy")} – {format(value.end, "MMM d, yyyy")}
 				</div>
 			)}
 		</div>
