@@ -57,26 +57,33 @@ export function TeamCard({
 							<CardDescription className="mt-1 line-clamp-2">{team.description}</CardDescription>
 						)}
 					</div>
-					{canManage && (
-						<DropdownMenu>
-							<DropdownMenuTrigger asChild>
-								<Button variant="ghost" size="sm">
-									<IconDots className="h-4 w-4" />
-								</Button>
-							</DropdownMenuTrigger>
-							<DropdownMenuContent align="end">
-								<DropdownMenuItem onClick={onEdit}>
-									<IconEdit className="mr-2 h-4 w-4" />
-									Edit Team
-								</DropdownMenuItem>
-								<DropdownMenuSeparator />
-								<DropdownMenuItem className="text-destructive" onClick={onDelete}>
-									<IconTrash className="mr-2 h-4 w-4" />
-									Delete Team
-								</DropdownMenuItem>
-							</DropdownMenuContent>
-						</DropdownMenu>
-					)}
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<Button variant="ghost" size="sm">
+								<IconDots className="h-4 w-4" />
+							</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent align="end">
+							<DropdownMenuItem onClick={onManageMembers}>
+								<IconUsers className="mr-2 h-4 w-4" />
+								Manage Members
+							</DropdownMenuItem>
+							{canManage && (
+								<>
+									<DropdownMenuSeparator />
+									<DropdownMenuItem onClick={onEdit}>
+										<IconEdit className="mr-2 h-4 w-4" />
+										Edit Team
+									</DropdownMenuItem>
+									<DropdownMenuSeparator />
+									<DropdownMenuItem className="text-destructive" onClick={onDelete}>
+										<IconTrash className="mr-2 h-4 w-4" />
+										Delete Team
+									</DropdownMenuItem>
+								</>
+							)}
+						</DropdownMenuContent>
+					</DropdownMenu>
 				</div>
 			</CardHeader>
 			<CardContent>
@@ -109,12 +116,6 @@ export function TeamCard({
 							</div>
 						</div>
 					)}
-
-					{/* Manage Members Button */}
-					<Button variant="outline" size="sm" className="w-full" onClick={onManageMembers}>
-						<IconUsers className="mr-2 h-4 w-4" />
-						Manage Members
-					</Button>
 				</div>
 			</CardContent>
 		</Card>

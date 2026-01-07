@@ -48,12 +48,17 @@ export function TeamMembersDialog({
 
 	if (!team) return null;
 
-	// Get current team members
-	const teamMembers = allMembers.filter((m) => m.employee?.teamId === team.id);
+	// Get current team members - must have employee record in this org
+	const teamMembers = allMembers.filter(
+		(m) => m.employee?.teamId === team.id && m.employee?.organizationId === team.organizationId,
+	);
 
-	// Get available employees (not in this team, but have employee record)
+	// Get available employees (not in this team, but have employee record in this org)
 	const availableEmployees = allMembers.filter(
-		(m) => m.employee && (!m.employee.teamId || m.employee.teamId !== team.id),
+		(m) =>
+			m.employee &&
+			m.employee.organizationId === team.organizationId &&
+			(!m.employee.teamId || m.employee.teamId !== team.id),
 	);
 
 	const getInitials = (name: string) => {

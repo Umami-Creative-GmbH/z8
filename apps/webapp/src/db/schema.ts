@@ -54,8 +54,8 @@ export const dayOfWeekEnum = pgEnum("day_of_week", [
 // ============================================
 
 // Import auth tables from auth-schema for references
-import { organization, user } from "./auth-schema";
-export { organization, user };
+import { organization, user, member } from "./auth-schema";
+export { organization, user, member };
 
 // Teams/departments within organizations
 export const team = pgTable(
@@ -643,7 +643,9 @@ export const employeeRelations = relations(employee, ({ one, many }) => ({
 	// Team permissions
 	teamPermissions: many(teamPermissions),
 	// Work schedules
-	workSchedules: many(employeeWorkSchedule),
+	workSchedules: many(employeeWorkSchedule, {
+		relationName: "employee_workSchedules",
+	}),
 	// Existing relations
 	timeEntries: many(timeEntry),
 	workPeriods: many(workPeriod),
@@ -836,14 +838,17 @@ export const employeeWorkScheduleRelations = relations(employeeWorkSchedule, ({ 
 	employee: one(employee, {
 		fields: [employeeWorkSchedule.employeeId],
 		references: [employee.id],
+		relationName: "employee_workSchedules",
 	}),
 	creator: one(employee, {
 		fields: [employeeWorkSchedule.createdBy],
 		references: [employee.id],
+		relationName: "workSchedule_creator",
 	}),
 	updater: one(employee, {
 		fields: [employeeWorkSchedule.updatedBy],
 		references: [employee.id],
+		relationName: "workSchedule_updater",
 	}),
 	days: many(employeeWorkScheduleDays),
 }));

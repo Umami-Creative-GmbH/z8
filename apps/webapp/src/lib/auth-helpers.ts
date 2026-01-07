@@ -4,7 +4,7 @@ import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { headers } from "next/headers";
 import { db } from "@/db";
-import { member, organization } from "@/db/auth-schema";
+import { member, organization, user } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
 import { AppLayer } from "@/lib/effect/runtime";
 import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
@@ -250,4 +250,38 @@ export async function canApproveFor(targetEmployeeId: string): Promise<boolean> 
 
 	// Check if current employee is a manager of the target employee
 	return await isManagerOf(targetEmployeeId);
+}
+
+export interface OnboardingStatus {
+	onboardingComplete: boolean;
+	onboardingStep: string | null;
+}
+
+/**
+ * Get current user's onboarding status
+ */
+export async function getOnboardingStatus(): Promise<OnboardingStatus | null> {
+	const session = await auth.api.getSession({ headers: await headers() });
+
+	if (!session?.user) {
+		return null;
+	}
+
+	const [userData] = await db
+		.select({
+			onboardingComplete: user.onboardingComplete,
+			onboardingStep: user.onboardingStep,
+		})
+		.from(user)
+		.where(eq(user.id, session.user.id))
+		.limit(1);
+
+	if (!userData) {
+		return null;
+	}
+
+	return {
+		onboardingComplete: userData.onboardingComplete,
+		onboardingStep: userData.onboardingStep,
+	};
 }

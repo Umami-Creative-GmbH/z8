@@ -13,6 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { authClient } from "@/lib/auth-client";
 import { useEnabledProviders } from "@/lib/hooks/use-enabled-providers";
+import { getOnboardingStepPath } from "@/lib/validations/onboarding";
 import { Link, useRouter } from "@/navigation";
 import { AuthFormWrapper } from "./auth-form-wrapper";
 
@@ -175,8 +176,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 
 						if (!onboardingComplete) {
 							// Resume onboarding from last step
-							const resumeStep = onboardingStep || "welcome";
-							router.push(`/onboarding/${resumeStep}`);
+							router.push(getOnboardingStepPath(onboardingStep));
 							return;
 						}
 					}
@@ -228,6 +228,21 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 				setError(result.error.message || "Failed to sign in with passkey");
 				setIsLoading(false);
 			} else {
+				// Check onboarding status first
+				try {
+					const userResponse = await fetch("/api/user/onboarding-status");
+					if (userResponse.ok) {
+						const { onboardingComplete, onboardingStep } = await userResponse.json();
+
+						if (!onboardingComplete) {
+							router.push(getOnboardingStepPath(onboardingStep));
+							return;
+						}
+					}
+				} catch (error) {
+					console.error("Error checking onboarding status:", error);
+				}
+
 				router.push("/");
 			}
 		} catch (error) {
@@ -263,8 +278,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 
 						if (!onboardingComplete) {
 							// Resume onboarding from last step
-							const resumeStep = onboardingStep || "welcome";
-							router.push(`/onboarding/${resumeStep}`);
+							router.push(getOnboardingStepPath(onboardingStep));
 							return;
 						}
 					}

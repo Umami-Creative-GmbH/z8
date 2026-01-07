@@ -51,7 +51,9 @@ export async function POST(request: NextRequest) {
 		// Update the session's active organization
 		await auth.api.setActiveOrganization({
 			headers: await headers(),
-			organizationId,
+			body: {
+				organizationId,
+			},
 		});
 
 		return NextResponse.json({

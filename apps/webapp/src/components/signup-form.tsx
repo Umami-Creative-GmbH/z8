@@ -12,6 +12,7 @@ import { authClient } from "@/lib/auth-client";
 import { useEnabledProviders } from "@/lib/hooks/use-enabled-providers";
 import { cn } from "@/lib/utils";
 import { checkPasswordRequirements, passwordSchema } from "@/lib/validations/password";
+import { getOnboardingStepPath } from "@/lib/validations/onboarding";
 import { Link, useRouter } from "@/navigation";
 import { AuthFormWrapper } from "./auth-form-wrapper";
 
@@ -205,6 +206,21 @@ export function SignupForm({ className, ...props }: React.ComponentProps<"div">)
 				setError(result.error.message || "Failed to sign up with passkey");
 				setIsLoading(false);
 			} else {
+				// Check onboarding status first
+				try {
+					const userResponse = await fetch("/api/user/onboarding-status");
+					if (userResponse.ok) {
+						const { onboardingComplete, onboardingStep } = await userResponse.json();
+
+						if (!onboardingComplete) {
+							router.push(getOnboardingStepPath(onboardingStep));
+							return;
+						}
+					}
+				} catch (error) {
+					console.error("Error checking onboarding status:", error);
+				}
+
 				router.push("/");
 			}
 		} catch (error) {

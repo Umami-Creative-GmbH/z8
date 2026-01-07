@@ -164,7 +164,7 @@ export const auth = betterAuth({
 							await db.insert(teamPermissions).values({
 								employeeId: newEmployee.id,
 								organizationId: organization.id,
-								teamId: organization.id, // Organization-wide permissions
+								teamId: null, // null = organization-wide permissions
 								canCreateTeams: true,
 								canManageTeamMembers: true,
 								canManageTeamSettings: true,
