@@ -21,7 +21,6 @@ export default function CompletePage() {
 		profileCompleted: boolean;
 		workScheduleSet: boolean;
 	} | null>(null);
-	const [autoRedirectSeconds, setAutoRedirectSeconds] = useState(5);
 
 	useEffect(() => {
 		async function finishOnboarding() {
@@ -48,24 +47,6 @@ export default function CompletePage() {
 
 		finishOnboarding();
 	}, []);
-
-	// Auto-redirect countdown
-	useEffect(() => {
-		if (loading || !summary) return;
-
-		const interval = setInterval(() => {
-			setAutoRedirectSeconds((prev) => {
-				if (prev <= 1) {
-					clearInterval(interval);
-					router.push("/");
-					return 0;
-				}
-				return prev - 1;
-			});
-		}, 1000);
-
-		return () => clearInterval(interval);
-	}, [loading, summary, router]);
 
 	const handleGoToDashboard = () => {
 		router.push("/");
@@ -240,13 +221,6 @@ export default function CompletePage() {
 					<Button size="lg" onClick={handleGoToDashboard} className="w-full sm:w-auto">
 						{t("onboarding.complete.goToDashboard", "Go to Dashboard")}
 					</Button>
-					<p className="mt-4 text-sm text-muted-foreground">
-						{t(
-							"onboarding.complete.autoRedirect",
-							`Automatically redirecting in ${autoRedirectSeconds} seconds...`,
-							{ seconds: autoRedirectSeconds }
-						)}
-					</p>
 				</div>
 			</div>
 		</>

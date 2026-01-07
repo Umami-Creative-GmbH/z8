@@ -26,3 +26,10 @@ export const ONBOARDING_STEPS: Record<OnboardingStep, { order: number; path: str
 	work_schedule: { order: 4, path: "/onboarding/work-schedule", required: false, label: "Schedule" },
 	complete: { order: 5, path: "/onboarding/complete", required: true, label: "Complete" },
 } as const;
+
+// Helper to get the correct path for a step
+export function getOnboardingStepPath(step: string | null): string {
+	if (!step) return ONBOARDING_STEPS.welcome.path;
+	const stepConfig = ONBOARDING_STEPS[step as OnboardingStep];
+	return stepConfig?.path ?? ONBOARDING_STEPS.welcome.path;
+}

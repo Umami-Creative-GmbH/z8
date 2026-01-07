@@ -1,8 +1,9 @@
 import { Context, Effect, Layer } from "effect";
-import { eq } from "drizzle-orm";
-import { user } from "@/db/auth-schema";
+import { and, eq } from "drizzle-orm";
+import { headers } from "next/headers";
+import { user, organization } from "@/db/auth-schema";
 import { employee, employeeWorkSchedule, member } from "@/db/schema";
-import { organization as betterAuthOrg } from "@/lib/auth-client";
+import { auth } from "@/lib/auth";
 import {
 	AuthenticationError,
 	DatabaseError,
@@ -128,33 +129,53 @@ export const OnboardingServiceLive = Layer.effect(
 				Effect.gen(function* () {
 					const session = yield* authService.getSession();
 
-					// Create organization using Better Auth
-					const result = yield* Effect.tryPromise({
-						try: async () => {
-							const result = await betterAuthOrg.create({
-								name: data.name,
-								slug: data.slug,
-							});
-
-							if (result.error) {
-								throw new Error(result.error.message || "Failed to create organization");
-							}
-
-							return result.data;
-						},
-						catch: (error) =>
-							new ValidationError({
-								message: error instanceof Error ? error.message : "Failed to create organization",
-								field: "slug",
-							}),
+					// First, temporarily enable organization creation for this user
+					yield* dbService.query("enableOrgCreation", async () => {
+						await dbService.db
+							.update(user)
+							.set({
+								canCreateOrganizations: true,
+							})
+							.where(eq(user.id, session.user.id));
 					});
 
-					// Update onboarding step
+					// Create organization using Better Auth server-side API
+					const result = yield* Effect.tryPromise({
+						try: async () => {
+							const hdrs = await headers();
+							const orgResult = await auth.api.createOrganization({
+								headers: hdrs,
+								body: {
+									name: data.name,
+									slug: data.slug,
+								},
+							});
+
+							return orgResult;
+						},
+						catch: (error) => {
+							// Reset permission on failure
+							dbService.db
+								.update(user)
+								.set({ canCreateOrganizations: false })
+								.where(eq(user.id, session.user.id))
+								.then(() => {})
+								.catch(() => {});
+
+							return new ValidationError({
+								message: error instanceof Error ? error.message : "Failed to create organization",
+								field: "slug",
+							});
+						},
+					});
+
+					// Update onboarding step and reset canCreateOrganizations
 					yield* dbService.query("updateOnboardingStepAfterOrgCreation", async () => {
 						await dbService.db
 							.update(user)
 							.set({
 								onboardingStep: "profile",
+								canCreateOrganizations: false, // Reset after creation
 							})
 							.where(eq(user.id, session.user.id));
 					});
@@ -181,12 +202,25 @@ export const OnboardingServiceLive = Layer.effect(
 			updateProfile: (data: OnboardingProfileFormValues) =>
 				Effect.gen(function* () {
 					const session = yield* authService.getSession();
+					const activeOrgId = session.session.activeOrganizationId;
 
 					yield* dbService.query("updateProfile", async () => {
-						// Get or create employee record
-						let emp = await dbService.db.query.employee.findFirst({
-							where: eq(employee.userId, session.user.id),
-						});
+						// Find employee record - prioritize the one with the active organization
+						let emp = activeOrgId
+							? await dbService.db.query.employee.findFirst({
+									where: and(
+										eq(employee.userId, session.user.id),
+										eq(employee.organizationId, activeOrgId),
+									),
+							  })
+							: null;
+
+						// Fallback: find any employee record for this user
+						if (!emp) {
+							emp = await dbService.db.query.employee.findFirst({
+								where: eq(employee.userId, session.user.id),
+							});
+						}
 
 						const profileData = {
 							firstName: data.firstName,
@@ -199,9 +233,10 @@ export const OnboardingServiceLive = Layer.effect(
 							// Update existing employee record
 							await dbService.db.update(employee).set(profileData).where(eq(employee.id, emp.id));
 						} else {
-							// Create new employee record
+							// Create new employee record with organizationId if available
 							await dbService.db.insert(employee).values({
 								userId: session.user.id,
+								organizationId: activeOrgId || null,
 								...profileData,
 							});
 						}
@@ -235,19 +270,33 @@ export const OnboardingServiceLive = Layer.effect(
 			setWorkSchedule: (data: OnboardingWorkScheduleFormValues) =>
 				Effect.gen(function* () {
 					const session = yield* authService.getSession();
+					const activeOrgId = session.session.activeOrganizationId;
 
 					yield* dbService.query("setWorkSchedule", async () => {
-						// Get or create employee record
-						let emp = await dbService.db.query.employee.findFirst({
-							where: eq(employee.userId, session.user.id),
-						});
+						// Find employee record - prioritize the one with the active organization
+						let emp = activeOrgId
+							? await dbService.db.query.employee.findFirst({
+									where: and(
+										eq(employee.userId, session.user.id),
+										eq(employee.organizationId, activeOrgId),
+									),
+							  })
+							: null;
+
+						// Fallback: find any employee record for this user
+						if (!emp) {
+							emp = await dbService.db.query.employee.findFirst({
+								where: eq(employee.userId, session.user.id),
+							});
+						}
 
 						if (!emp) {
-							// Create employee record if it doesn't exist
+							// Create employee record with organizationId if available
 							const result = await dbService.db
 								.insert(employee)
 								.values({
 									userId: session.user.id,
+									organizationId: activeOrgId || null,
 								})
 								.returning();
 							emp = result[0];
@@ -257,12 +306,14 @@ export const OnboardingServiceLive = Layer.effect(
 							throw new Error("Failed to create employee record");
 						}
 
-						// Create work schedule
+						// Create work schedule (simple mode for onboarding)
 						await dbService.db.insert(employeeWorkSchedule).values({
 							employeeId: emp.id,
-							hoursPerWeek: data.hoursPerWeek,
+							hoursPerWeek: String(data.hoursPerWeek),
 							workClassification: data.workClassification,
+							scheduleType: "simple",
 							effectiveFrom: data.effectiveFrom,
+							createdBy: emp.id,
 						});
 
 						// Update onboarding step
