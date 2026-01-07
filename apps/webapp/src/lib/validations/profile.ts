@@ -1,31 +1,31 @@
 import { z } from "zod";
+import { passwordSchema } from "./password";
 
-// Password validation patterns (reused from signup-form.tsx)
-const HAS_LOWERCASE = /[a-z]/;
-const HAS_UPPERCASE = /[A-Z]/;
-const HAS_DIGIT = /\d/;
-const HAS_SPECIAL = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/;
-
-export const passwordSchema = z
-	.string()
-	.min(8, "Password must be at least 8 characters")
-	.refine(
-		(password) => HAS_LOWERCASE.test(password),
-		"Password must contain at least one lowercase letter",
-	)
-	.refine(
-		(password) => HAS_UPPERCASE.test(password),
-		"Password must contain at least one uppercase letter",
-	)
-	.refine((password) => HAS_DIGIT.test(password), "Password must contain at least one digit")
-	.refine(
-		(password) => HAS_SPECIAL.test(password),
-		"Password must contain at least one special character",
-	);
+// Re-export passwordSchema for convenience
+export { passwordSchema } from "./password";
 
 export const profileUpdateSchema = z.object({
 	name: z.string().min(1, "Name is required"),
-	image: z.string().url("Invalid image URL").optional().or(z.literal("")),
+	image: z
+		.string()
+		.refine(
+			(val) => {
+				// Allow empty string, relative paths, or valid URLs
+				if (val === "" || val === undefined) return true;
+				// Allow paths starting with /
+				if (val.startsWith("/")) return true;
+				// Allow valid URLs
+				try {
+					new URL(val);
+					return true;
+				} catch {
+					return false;
+				}
+			},
+			{ message: "Invalid image URL or path" },
+		)
+		.optional()
+		.nullable(),
 });
 
 export const passwordChangeSchema = z
