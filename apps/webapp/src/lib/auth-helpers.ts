@@ -1,10 +1,14 @@
 "use server";
 
 import { and, eq } from "drizzle-orm";
+import { Effect } from "effect";
 import { headers } from "next/headers";
 import { db } from "@/db";
 import { member, organization } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
+import { AppLayer } from "@/lib/effect/runtime";
+import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
+import { ManagerService, ManagerServiceLive } from "@/lib/effect/services/manager.service";
 import { auth } from "@/lib/auth";
 
 export interface AuthContext {
@@ -90,6 +94,19 @@ export async function getAuthContext(): Promise<AuthContext | null> {
 				}
 			: null,
 	};
+}
+
+/**
+ * Require authenticated user (without requiring employee context)
+ */
+export async function requireUser(): Promise<AuthContext> {
+	const context = await getAuthContext();
+
+	if (!context) {
+		throw new Error("Authentication required");
+	}
+
+	return context;
 }
 
 /**
@@ -181,4 +198,56 @@ export async function getUserOrganizations(): Promise<UserOrganization[]> {
 	);
 
 	return orgsWithEmployeeStatus;
+}
+
+/**
+ * Check if current employee is a manager of the specified employee
+ * Uses the ManagerService to check the many-to-many manager relationship
+ */
+export async function isManagerOf(targetEmployeeId: string): Promise<boolean> {
+	const context = await getAuthContext();
+
+	if (!context?.employee) {
+		return false;
+	}
+
+	// Admins have manager privileges for all employees in their organization
+	if (context.employee.role === "admin") {
+		return true;
+	}
+
+	// Check manager relationship using ManagerService
+	const effect = Effect.gen(function* (_) {
+		const managerService = yield* _(ManagerService);
+		return yield* _(managerService.isManagerOf(context.employee!.id, targetEmployeeId));
+	});
+
+	try {
+		return await Effect.runPromise(
+			effect.pipe(Effect.provide(ManagerServiceLive), Effect.provide(DatabaseServiceLive)),
+		);
+	} catch (error) {
+		// If there's an error checking the relationship, return false
+		return false;
+	}
+}
+
+/**
+ * Check if current employee can approve requests for the specified employee
+ * This combines admin role check with manager relationship check
+ */
+export async function canApproveFor(targetEmployeeId: string): Promise<boolean> {
+	const context = await getAuthContext();
+
+	if (!context?.employee) {
+		return false;
+	}
+
+	// Admins can approve for anyone in their organization
+	if (context.employee.role === "admin") {
+		return true;
+	}
+
+	// Check if current employee is a manager of the target employee
+	return await isManagerOf(targetEmployeeId);
 }
