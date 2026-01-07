@@ -1,34 +1,37 @@
 "use client";
 
-import { IconLoader2 } from "@tabler/icons-react";
+import {
+	IconCalendar,
+	IconCamera,
+	IconGenderBigender,
+	IconGenderFemale,
+	IconGenderMale,
+	IconLoader2,
+	IconTrash,
+	IconUpload,
+} from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import Uppy from "@uppy/core";
-import { Dashboard } from "@uppy/react";
+import German from "@uppy/locales/lib/de_DE";
+import English from "@uppy/locales/lib/en_US";
 import XhrUpload from "@uppy/xhr-upload";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { format } from "@/lib/datetime/luxon-utils";
+import { useLocale } from "next-intl";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import "@uppy/core/dist/style.min.css";
-import "@uppy/dashboard/dist/style.min.css";
-import { changePassword, updateProfile } from "@/app/[locale]/(app)/settings/profile/actions";
+import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
+import { updateOwnProfile } from "@/app/[locale]/(app)/settings/employees/actions";
+import { updateProfile } from "@/app/[locale]/(app)/settings/profile/actions";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
-
-// Password validation patterns (matching signup-form.tsx)
-const HAS_LOWERCASE = /[a-z]/;
-const HAS_UPPERCASE = /[A-Z]/;
-const HAS_DIGIT = /\d/;
-const HAS_SPECIAL = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/;
-
-type PasswordRequirement = {
-	label: string;
-	met: boolean;
-};
+import { useRouter } from "@/navigation";
 
 interface ProfileFormProps {
 	user: {
@@ -42,63 +45,187 @@ interface ProfileFormProps {
 export function ProfileForm({ user }: ProfileFormProps) {
 	const { t } = useTranslate();
 	const router = useRouter();
+	const locale = useLocale();
 
 	// Profile form state
 	const [profileData, setProfileData] = useState({
 		name: user.name,
 		image: user.image || "",
+		firstName: "",
+		lastName: "",
+		gender: "",
+		birthday: null as Date | null,
 	});
 	const [isProfileLoading, setIsProfileLoading] = useState(false);
+	const [uploadProgress, setUploadProgress] = useState(0);
 
-	// Password form state
-	const [passwordData, setPasswordData] = useState({
-		currentPassword: "",
-		newPassword: "",
-		confirmPassword: "",
-	});
-	const [revokeOtherSessions, setRevokeOtherSessions] = useState(false);
-	const [isPasswordLoading, setIsPasswordLoading] = useState(false);
-	const [passwordErrors, setPasswordErrors] = useState<Record<string, string>>({});
+	// Use ref to track current profile data for async operations
+	const profileDataRef = useRef(profileData);
+	useEffect(() => {
+		profileDataRef.current = profileData;
+	}, [profileData]);
 
-	// Initialize Uppy
-	const [uppy] = useState(() => {
-		const instance = new Uppy({
+	// Load employee personal info
+	useEffect(() => {
+		async function loadEmployeeData() {
+			const emp = await getCurrentEmployee();
+			if (emp) {
+				setProfileData((prev) => ({
+					...prev,
+					firstName: emp.firstName || "",
+					lastName: emp.lastName || "",
+					gender: emp.gender || "",
+					birthday: emp.birthday ? new Date(emp.birthday) : null,
+				}));
+			}
+		}
+		loadEmployeeData();
+	}, []);
+
+	// Get the appropriate Uppy locale
+	const uppyLocale = locale === "de" ? German : English;
+
+	// Create ref for file input
+	const inputRef = useRef<HTMLInputElement>(null);
+
+	// Initialize Uppy instance
+	const uppy = useMemo(() => {
+		return new Uppy({
 			restrictions: {
 				maxFileSize: 5 * 1024 * 1024, // 5MB
 				maxNumberOfFiles: 1,
 				allowedFileTypes: ["image/*"],
 			},
-			autoProceed: false,
+			autoProceed: true, // Auto upload when file is added
+			locale: uppyLocale,
 		}).use(XhrUpload, {
 			endpoint: "/api/upload/avatar",
 			fieldName: "file",
 			method: "POST",
 		});
+	}, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-		// Listen to upload completion
-		instance.on("complete", (result) => {
-			if (result.successful.length > 0) {
+	// Update Uppy locale when language changes
+	useEffect(() => {
+		uppy.setOptions({ locale: uppyLocale });
+	}, [locale, uppy, uppyLocale]);
+
+	// Handle file input change
+	useEffect(() => {
+		const handleFileChange = (e: Event) => {
+			const input = e.target as HTMLInputElement;
+			const files = input.files;
+			if (files && files.length > 0) {
+				// Add files to Uppy
+				Array.from(files).forEach((file) => {
+					try {
+						uppy.addFile({
+							name: file.name,
+							type: file.type,
+							data: file,
+						});
+					} catch (err) {
+						// Uppy will handle validation errors
+						console.error("Error adding file to Uppy:", err);
+					}
+				});
+				// Reset input so the same file can be selected again
+				input.value = "";
+			}
+		};
+
+		const input = inputRef.current;
+		if (input) {
+			input.addEventListener("change", handleFileChange);
+		}
+
+		return () => {
+			if (input) {
+				input.removeEventListener("change", handleFileChange);
+			}
+		};
+	}, [uppy]);
+
+	// Listen to upload events
+	useEffect(() => {
+		const handleUploadStart = () => {
+			setUploadProgress(0);
+		};
+
+		const handleProgress = (
+			_file: any,
+			progress: { bytesUploaded: number; bytesTotal: number | null },
+		) => {
+			if (progress.bytesTotal && progress.bytesTotal > 0) {
+				setUploadProgress(Math.round((progress.bytesUploaded / progress.bytesTotal) * 100));
+			}
+		};
+
+		const handleComplete = async (result: any) => {
+			setUploadProgress(0);
+
+			if (result.successful && result.successful.length > 0) {
 				const uploadedFile = result.successful[0];
-				const responseBody = uploadedFile.response?.body as { url?: string };
-				if (responseBody?.url) {
-					setProfileData((prev) => ({ ...prev, image: responseBody.url }));
-					toast.success(t("profile.avatar-uploaded", "Avatar uploaded successfully"));
+				if (uploadedFile) {
+					const responseBody = uploadedFile.response?.body as { url?: string };
+					if (responseBody?.url) {
+						const imageUrl = responseBody.url;
+
+						// Get current name from ref
+						const currentName = profileDataRef.current.name;
+
+						// Update state
+						setProfileData((prev) => ({ ...prev, image: imageUrl }));
+
+						// Save to database
+						const saveResult = await updateProfile({
+							name: currentName,
+							image: imageUrl,
+						});
+
+						if (saveResult.success) {
+							toast.success(t("profile.avatar-uploaded", "Avatar uploaded successfully"));
+							router.refresh(); // Refresh to update user data everywhere
+						} else {
+							toast.error(
+								saveResult.error || t("profile.avatar-save-failed", "Failed to save avatar"),
+							);
+						}
+					}
 				}
 			}
-		});
 
-		// Listen to upload errors
-		instance.on("upload-error", (_file, error) => {
+			// Clear uppy files
+			uppy.cancelAll();
+		};
+
+		const handleError = (_file: any, error: any) => {
+			setUploadProgress(0);
 			toast.error(error?.message || t("profile.avatar-upload-failed", "Failed to upload avatar"));
-		});
+			uppy.cancelAll();
+		};
 
-		return instance;
-	});
+		uppy.on("upload", handleUploadStart);
+		uppy.on("upload-progress", handleProgress);
+		uppy.on("complete", handleComplete);
+		uppy.on("upload-error", handleError);
+
+		return () => {
+			uppy.off("upload", handleUploadStart);
+			uppy.off("upload-progress", handleProgress);
+			uppy.off("complete", handleComplete);
+			uppy.off("upload-error", handleError);
+		};
+	}, [uppy, t, router]);
 
 	// Cleanup Uppy on unmount
 	useEffect(() => {
-		return () => uppy.close();
+		return () => {
+			uppy.destroy();
+		};
 	}, [uppy]);
+
+	const isUploadingAvatar = uploadProgress > 0 && uploadProgress < 100;
 
 	const initials = user.name
 		? user.name
@@ -109,109 +236,58 @@ export function ProfileForm({ user }: ProfileFormProps) {
 				.slice(0, 2)
 		: "?";
 
-	// Password requirements checker
-	const checkPasswordRequirements = (password: string): PasswordRequirement[] => [
-		{
-			label: t("auth.password-requirements.length", "At least 8 characters"),
-			met: password.length >= 8,
-		},
-		{
-			label: t("auth.password-requirements.lowercase", "At least 1 lowercase letter"),
-			met: HAS_LOWERCASE.test(password),
-		},
-		{
-			label: t("auth.password-requirements.uppercase", "At least 1 uppercase letter"),
-			met: HAS_UPPERCASE.test(password),
-		},
-		{
-			label: t("auth.password-requirements.digit", "At least 1 digit"),
-			met: HAS_DIGIT.test(password),
-		},
-		{
-			label: t("auth.password-requirements.special", "At least 1 special character"),
-			met: HAS_SPECIAL.test(password),
-		},
-	];
+	// Handle avatar removal
+	const handleRemoveAvatar = async () => {
+		setIsProfileLoading(true);
 
-	const passwordRequirements = checkPasswordRequirements(passwordData.newPassword);
-	const passwordsMatch =
-		passwordData.confirmPassword &&
-		passwordData.newPassword &&
-		passwordData.confirmPassword === passwordData.newPassword;
+		const result = await updateProfile({
+			name: profileDataRef.current.name,
+			image: null,
+		});
+
+		if (result.success) {
+			setProfileData((prev) => ({ ...prev, image: "" }));
+			toast.success(t("profile.avatar-removed", "Avatar removed successfully"));
+			router.refresh();
+		} else {
+			toast.error(result.error || t("profile.avatar-remove-failed", "Failed to remove avatar"));
+		}
+
+		setIsProfileLoading(false);
+	};
 
 	// Handle profile update
 	const handleProfileSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		setIsProfileLoading(true);
 
-		const result = await updateProfile({
+		// Update user profile
+		const profileResult = await updateProfile({
 			name: profileData.name,
 			image: profileData.image,
 		});
 
-		if (result.success) {
+		// Update employee personal info
+		const employeeResult = await updateOwnProfile({
+			firstName: profileData.firstName || undefined,
+			lastName: profileData.lastName || undefined,
+			gender: profileData.gender as "male" | "female" | "other" | undefined,
+			birthday: profileData.birthday || undefined,
+		});
+
+		if (profileResult.success && employeeResult.success) {
 			toast.success(t("profile.update-success", "Profile updated successfully"));
 			router.refresh(); // Refresh to update user data
 		} else {
-			toast.error(result.error || t("profile.update-failed", "Failed to update profile"));
+			const errorMsg = !profileResult.success
+				? profileResult.error
+				: !employeeResult.success
+					? employeeResult.error
+					: t("profile.update-failed", "Failed to update profile");
+			toast.error(errorMsg);
 		}
 
 		setIsProfileLoading(false);
-	};
-
-	// Handle password change
-	const handlePasswordSubmit = async (e: React.FormEvent) => {
-		e.preventDefault();
-		setIsPasswordLoading(true);
-		setPasswordErrors({});
-
-		// Validate passwords match
-		if (passwordData.newPassword !== passwordData.confirmPassword) {
-			setPasswordErrors({
-				confirmPassword: t("auth.passwords-no-match", "Passwords do not match"),
-			});
-			setIsPasswordLoading(false);
-			return;
-		}
-
-		const result = await changePassword({
-			currentPassword: passwordData.currentPassword,
-			newPassword: passwordData.newPassword,
-			confirmPassword: passwordData.confirmPassword,
-			revokeOtherSessions,
-		});
-
-		if (result.success) {
-			toast.success(t("profile.password-changed", "Password changed successfully"));
-			// Reset form
-			setPasswordData({
-				currentPassword: "",
-				newPassword: "",
-				confirmPassword: "",
-			});
-			setRevokeOtherSessions(false);
-		} else {
-			if (result.error?.includes("incorrect") || result.error?.includes("Invalid")) {
-				setPasswordErrors({
-					currentPassword: t("profile.invalid-current-password", "Current password is incorrect"),
-				});
-			}
-			toast.error(result.error || t("profile.password-change-failed", "Failed to change password"));
-		}
-
-		setIsPasswordLoading(false);
-	};
-
-	const handlePasswordChange = (field: string, value: string) => {
-		setPasswordData((prev) => ({ ...prev, [field]: value }));
-		// Clear error for this field when user starts typing
-		if (passwordErrors[field]) {
-			setPasswordErrors((prev) => {
-				const newErrors = { ...prev };
-				delete newErrors[field];
-				return newErrors;
-			});
-		}
 	};
 
 	return (
@@ -229,31 +305,77 @@ export function ProfileForm({ user }: ProfileFormProps) {
 				</CardHeader>
 				<CardContent>
 					<form onSubmit={handleProfileSubmit} className="space-y-6">
-						{/* Current Avatar Preview */}
-						<div className="flex items-center gap-6">
-							<Avatar className="h-24 w-24">
-								<AvatarImage alt={user.name} src={profileData.image} />
-								<AvatarFallback className="text-2xl">{initials}</AvatarFallback>
-							</Avatar>
-							<div className="flex-1">
-								<Label className="text-sm font-medium">
-									{t("profile.current-avatar", "Current Profile Picture")}
-								</Label>
-								<p className="text-muted-foreground text-sm">
-									{t("profile.avatar-hint", "Upload a new image below")}
-								</p>
-							</div>
-						</div>
-
-						{/* Uppy Dashboard */}
-						<div>
-							<Label className="mb-2 block">{t("profile.upload-avatar", "Upload New Image")}</Label>
-							<Dashboard
-								uppy={uppy}
-								proudlyDisplayPoweredByUppy={false}
-								height={300}
-								note={t("profile.upload-note", "Images up to 5MB, will be optimized automatically")}
+						{/* Profile Picture Upload */}
+						<div className="space-y-4">
+							<Label className="text-sm font-medium">
+								{t("profile.profile-picture", "Profile Picture")}
+							</Label>
+							{/* Hidden file input */}
+							<input
+								ref={inputRef}
+								type="file"
+								accept="image/*"
+								className="hidden"
+								aria-label="Upload profile picture"
 							/>
+							<div className="flex items-center gap-6">
+								<div className="relative">
+									<Avatar className="h-24 w-24">
+										<AvatarImage alt={user.name} src={profileData.image || undefined} />
+										<AvatarFallback className="text-2xl">{initials}</AvatarFallback>
+									</Avatar>
+									{isUploadingAvatar && (
+										<div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50">
+											<IconLoader2 className="h-8 w-8 animate-spin text-white" />
+										</div>
+									)}
+									<button
+										type="button"
+										onClick={() => inputRef.current?.click()}
+										disabled={isUploadingAvatar}
+										className="absolute bottom-0 right-0 rounded-full bg-primary p-2 text-primary-foreground shadow-lg transition-transform hover:scale-110 disabled:opacity-50"
+									>
+										<IconCamera className="h-4 w-4" />
+									</button>
+								</div>
+								<div className="flex-1 space-y-2">
+									<div className="flex items-center gap-2">
+										<Button
+											type="button"
+											variant="outline"
+											size="sm"
+											onClick={() => inputRef.current?.click()}
+											disabled={isUploadingAvatar || isProfileLoading}
+										>
+											<IconUpload className="mr-2 h-4 w-4" />
+											{t("profile.change-picture", "Change Picture")}
+										</Button>
+										{profileData.image && (
+											<Button
+												type="button"
+												variant="outline"
+												size="sm"
+												onClick={handleRemoveAvatar}
+												disabled={isUploadingAvatar || isProfileLoading}
+											>
+												<IconTrash className="mr-2 h-4 w-4" />
+												{t("profile.remove-picture", "Remove Picture")}
+											</Button>
+										)}
+									</div>
+									<p className="text-muted-foreground text-sm">
+										{t("profile.picture-hint", "JPG, PNG or WebP. Max 5MB. Recommended 400x400px")}
+									</p>
+									{isUploadingAvatar && (
+										<div className="space-y-1">
+											<Progress value={uploadProgress} className="h-2" />
+											<p className="text-xs text-muted-foreground">
+												{t("profile.uploading", "Uploading")} {uploadProgress}%
+											</p>
+										</div>
+									)}
+								</div>
+							</div>
 						</div>
 
 						{/* Name Field */}
@@ -277,6 +399,129 @@ export function ProfileForm({ user }: ProfileFormProps) {
 							</p>
 						</div>
 
+						{/* Personal Information Section */}
+						<div className="space-y-4 pt-4">
+							<div className="border-t pt-4">
+								<h3 className="text-lg font-medium mb-4">Personal Information</h3>
+
+								<div className="grid gap-4 md:grid-cols-2">
+									{/* First Name */}
+									<div className="space-y-2">
+										<Label htmlFor="firstName">First Name</Label>
+										<Input
+											id="firstName"
+											value={profileData.firstName}
+											onChange={(e) =>
+												setProfileData((prev) => ({ ...prev, firstName: e.target.value }))
+											}
+											placeholder="Enter your first name"
+										/>
+									</div>
+
+									{/* Last Name */}
+									<div className="space-y-2">
+										<Label htmlFor="lastName">Last Name</Label>
+										<Input
+											id="lastName"
+											value={profileData.lastName}
+											onChange={(e) =>
+												setProfileData((prev) => ({ ...prev, lastName: e.target.value }))
+											}
+											placeholder="Enter your last name"
+										/>
+									</div>
+								</div>
+
+								{/* Gender */}
+								<div className="space-y-2">
+									<Label>Gender</Label>
+									<div className="grid grid-cols-3 gap-3">
+										<button
+											type="button"
+											onClick={() => setProfileData((prev) => ({ ...prev, gender: "male" }))}
+											className={cn(
+												"flex flex-col items-center justify-center gap-2 rounded-lg border-2 p-4 transition-all hover:border-primary/50",
+												profileData.gender === "male"
+													? "border-primary bg-primary/5 text-primary"
+													: "border-border bg-background",
+											)}
+										>
+											<IconGenderMale className="h-6 w-6" />
+											<span className="text-sm font-medium">Male</span>
+										</button>
+										<button
+											type="button"
+											onClick={() => setProfileData((prev) => ({ ...prev, gender: "female" }))}
+											className={cn(
+												"flex flex-col items-center justify-center gap-2 rounded-lg border-2 p-4 transition-all hover:border-primary/50",
+												profileData.gender === "female"
+													? "border-primary bg-primary/5 text-primary"
+													: "border-border bg-background",
+											)}
+										>
+											<IconGenderFemale className="h-6 w-6" />
+											<span className="text-sm font-medium">Female</span>
+										</button>
+										<button
+											type="button"
+											onClick={() => setProfileData((prev) => ({ ...prev, gender: "other" }))}
+											className={cn(
+												"flex flex-col items-center justify-center gap-2 rounded-lg border-2 p-4 transition-all hover:border-primary/50",
+												profileData.gender === "other"
+													? "border-primary bg-primary/5 text-primary"
+													: "border-border bg-background",
+											)}
+										>
+											<IconGenderBigender className="h-6 w-6" />
+											<span className="text-sm font-medium">Other</span>
+										</button>
+									</div>
+								</div>
+
+								{/* Birthday */}
+								<div className="space-y-2 mt-8">
+									<Label htmlFor="birthday">Birthday</Label>
+									<Popover>
+										<PopoverTrigger asChild>
+											<Button
+												id="birthday"
+												variant="outline"
+												className={cn(
+													"w-full justify-start text-left font-normal",
+													!profileData.birthday && "text-muted-foreground",
+												)}
+											>
+												<IconCalendar className="mr-2 h-4 w-4" />
+												{profileData.birthday ? (
+													format(profileData.birthday, "PPP")
+												) : (
+													<span>Pick your birthday</span>
+												)}
+											</Button>
+										</PopoverTrigger>
+										<PopoverContent className="w-auto p-0" align="start">
+											<Calendar
+												mode="single"
+												selected={profileData.birthday || undefined}
+												onSelect={(date) =>
+													setProfileData((prev) => ({ ...prev, birthday: date || null }))
+												}
+												disabled={(date) => date > new Date()}
+												initialFocus
+												captionLayout="dropdown-months"
+												startMonth={new Date(1940, 0)}
+												endMonth={new Date()}
+												defaultMonth={profileData.birthday || new Date(2000, 0)}
+											/>
+										</PopoverContent>
+									</Popover>
+									<p className="text-muted-foreground text-sm">
+										Your birthday helps us celebrate with you
+									</p>
+								</div>
+							</div>
+						</div>
+
 						{/* Submit Button */}
 						<Button type="submit" disabled={isProfileLoading}>
 							{isProfileLoading ? (
@@ -286,118 +531,6 @@ export function ProfileForm({ user }: ProfileFormProps) {
 								</>
 							) : (
 								t("profile.update-profile", "Update Profile")
-							)}
-						</Button>
-					</form>
-				</CardContent>
-			</Card>
-
-			{/* Password Change Section */}
-			<Card>
-				<CardHeader>
-					<CardTitle>{t("profile.change-password", "Change Password")}</CardTitle>
-					<CardDescription>
-						{t(
-							"profile.change-password-description",
-							"Update your password to keep your account secure",
-						)}
-					</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<form onSubmit={handlePasswordSubmit} className="space-y-4">
-						{/* Current Password */}
-						<div className="space-y-2">
-							<Label htmlFor="currentPassword">
-								{t("profile.current-password", "Current Password")}
-							</Label>
-							<Input
-								id="currentPassword"
-								type="password"
-								value={passwordData.currentPassword}
-								onChange={(e) => handlePasswordChange("currentPassword", e.target.value)}
-								placeholder={t("profile.current-password-placeholder", "Enter current password")}
-								required
-							/>
-							{passwordErrors.currentPassword ? (
-								<p className="text-destructive text-sm">{passwordErrors.currentPassword}</p>
-							) : null}
-						</div>
-
-						{/* New Password */}
-						<div className="space-y-2">
-							<Label htmlFor="newPassword">{t("profile.new-password", "New Password")}</Label>
-							<Input
-								id="newPassword"
-								type="password"
-								value={passwordData.newPassword}
-								onChange={(e) => handlePasswordChange("newPassword", e.target.value)}
-								placeholder={t("profile.new-password-placeholder", "Enter new password")}
-								required
-							/>
-							{passwordData.newPassword ? (
-								<div className="space-y-1.5 text-sm">
-									{passwordRequirements.map((req) => (
-										<div
-											className={cn(
-												"flex items-center gap-2",
-												req.met ? "text-green-600 dark:text-green-400" : "text-muted-foreground",
-											)}
-											key={req.label}
-										>
-											<span className={cn(req.met ? "text-green-600" : "text-muted-foreground")}>
-												{req.met ? "✓" : "○"}
-											</span>
-											<span>{req.label}</span>
-										</div>
-									))}
-								</div>
-							) : null}
-						</div>
-
-						{/* Confirm Password */}
-						<div className="space-y-2">
-							<Label htmlFor="confirmPassword">
-								{t("profile.confirm-password", "Confirm New Password")}
-							</Label>
-							<Input
-								id="confirmPassword"
-								type="password"
-								value={passwordData.confirmPassword}
-								onChange={(e) => handlePasswordChange("confirmPassword", e.target.value)}
-								placeholder={t("profile.confirm-password-placeholder", "Confirm new password")}
-								required
-							/>
-							{passwordErrors.confirmPassword ? (
-								<p className="text-destructive text-sm">{passwordErrors.confirmPassword}</p>
-							) : null}
-							{passwordsMatch ? (
-								<p className="text-green-600 text-sm dark:text-green-400">
-									{t("auth.passwords-match", "Passwords match")}
-								</p>
-							) : null}
-						</div>
-
-						{/* Revoke Other Sessions */}
-						<div className="flex items-center space-x-2">
-							<Switch
-								id="revokeOtherSessions"
-								checked={revokeOtherSessions}
-								onCheckedChange={setRevokeOtherSessions}
-							/>
-							<Label htmlFor="revokeOtherSessions" className="cursor-pointer">
-								{t("profile.revoke-sessions", "Log out other devices")}
-							</Label>
-						</div>
-
-						{/* Submit Button */}
-						<Button type="submit" disabled={isPasswordLoading}>
-							{isPasswordLoading ? (
-								<>
-									<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
-									{t("common.saving", "Saving...")}
-								</>
-							) : (
-								t("profile.update-password", "Change Password")
 							)}
 						</Button>
 					</form>
