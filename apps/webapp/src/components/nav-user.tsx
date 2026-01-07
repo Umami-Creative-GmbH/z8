@@ -10,9 +10,9 @@ import {
 	IconUserCircle,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useRouter } from "next/navigation";
 import { useLocale } from "next-intl";
 import { useEffect, useState, useTransition } from "react";
+import { createPortal } from "react-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
 	DropdownMenu,
@@ -36,7 +36,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { authClient } from "@/lib/auth-client";
-import { usePathname } from "@/navigation";
+import { usePathname, useRouter } from "@/navigation";
 import { ALL_LANGUAGES } from "@/tolgee/shared";
 
 const LANGUAGE_NAMES: Record<string, string> = {
@@ -62,26 +62,50 @@ export function NavUser({
 	const pathname = usePathname();
 	const [isLoggingOut, setIsLoggingOut] = useState(false);
 	const [isPending, startTransition] = useTransition();
+	const [dropdownOpen, setDropdownOpen] = useState(false);
+	const [previousEmail, setPreviousEmail] = useState(user.email);
 
-	// Reset logout modal when user logs back in
+	// Debug: Log when isLoggingOut changes
 	useEffect(() => {
-		if (user.email && isLoggingOut) {
+		console.log("isLoggingOut changed to:", isLoggingOut);
+	}, [isLoggingOut]);
+
+	// Reset logout overlay when user logs back in
+	// Only reset if user.email changes from empty to having a value
+	useEffect(() => {
+		if (!previousEmail && user.email && isLoggingOut) {
+			// User logged back in, reset the overlay
+			console.log("User logged back in, resetting overlay");
 			setIsLoggingOut(false);
 		}
-	}, [user.email, isLoggingOut]);
+		setPreviousEmail(user.email);
+	}, [user.email, previousEmail, isLoggingOut]);
 
 	const handleLogout = async () => {
+		console.log("Logout clicked - closing dropdown");
+		setDropdownOpen(false);
+		console.log("Setting isLoggingOut to true");
 		setIsLoggingOut(true);
-		await authClient.signOut({
-			fetchOptions: {
-				onSuccess: () => {
-					router.push("/sign-in");
+		console.log("isLoggingOut state:", isLoggingOut);
+		try {
+			await authClient.signOut({
+				fetchOptions: {
+					onSuccess: () => {
+						// Keep the overlay visible during navigation
+						setTimeout(() => {
+							router.push("/sign-in");
+						}, 100);
+					},
+					onError: (error) => {
+						console.error("Logout error:", error);
+						setIsLoggingOut(false);
+					},
 				},
-				onError: () => {
-					setIsLoggingOut(false);
-				},
-			},
-		});
+			});
+		} catch (error) {
+			console.error("Logout failed:", error);
+			setIsLoggingOut(false);
+		}
 	};
 
 	const handleLanguageChange = (newLocale: string) => {
@@ -120,7 +144,7 @@ export function NavUser({
 		<>
 			<SidebarMenu>
 				<SidebarMenuItem>
-					<DropdownMenu>
+					<DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
 						<DropdownMenuTrigger asChild>
 							<SidebarMenuButton
 								className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
@@ -196,15 +220,19 @@ export function NavUser({
 				</SidebarMenuItem>
 			</SidebarMenu>
 
-			{isLoggingOut && (
-				<div className="fixed inset-0 z-[100] flex items-center justify-center">
-					<div className="absolute inset-0 bg-black/20 backdrop-blur-md" />
-					<div className="relative flex flex-col items-center justify-center gap-4 rounded-lg border bg-card/95 px-12 py-8 shadow-2xl backdrop-blur-sm">
-						<IconLoader2 className="size-8 animate-spin text-primary" />
-						<span className="font-medium text-sm">{t("user.logging-out", "Logging out...")}</span>
-					</div>
-				</div>
-			)}
+			{isLoggingOut && typeof document !== "undefined" ? (
+				console.log("Rendering logout overlay portal"),
+				createPortal(
+					<div className="fixed inset-0 z-[9999] flex items-center justify-center">
+						<div className="absolute inset-0 bg-black/20 backdrop-blur-md" />
+						<div className="relative flex flex-col items-center justify-center gap-4 rounded-lg border bg-card/95 px-12 py-8 shadow-2xl backdrop-blur-sm">
+							<IconLoader2 className="size-8 animate-spin text-primary" />
+							<span className="font-medium text-sm">{t("user.logging-out", "Logging out...")}</span>
+						</div>
+					</div>,
+					document.body,
+				)
+			) : null}
 		</>
 	);
 }

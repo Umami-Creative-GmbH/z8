@@ -1,11 +1,14 @@
 "use client";
 
 import { IconCheck, IconX } from "@tabler/icons-react";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
-import { approveAbsence, rejectAbsence } from "@/app/[locale]/(app)/absences/actions";
-import type { ApprovalWithAbsence } from "@/app/[locale]/(app)/approvals/actions";
+import { useRouter } from "@/navigation";
+import {
+	approveAbsence,
+	rejectAbsence,
+} from "@/app/[locale]/(app)/approvals/actions";
+import type { ApprovalWithAbsence } from "@/lib/validations/approvals";
 import { CategoryBadge } from "@/components/absences/category-badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";

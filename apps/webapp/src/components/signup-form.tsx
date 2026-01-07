@@ -1,38 +1,19 @@
 "use client";
 
 import { useTranslate } from "@tolgee/react";
+import { Key } from "lucide-react";
 import { useState } from "react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { authClient } from "@/lib/auth-client";
+import { useEnabledProviders } from "@/lib/hooks/use-enabled-providers";
 import { cn } from "@/lib/utils";
+import { checkPasswordRequirements, passwordSchema } from "@/lib/validations/password";
 import { Link, useRouter } from "@/navigation";
 import { AuthFormWrapper } from "./auth-form-wrapper";
-
-// Regex patterns defined at top level for performance
-const HAS_LOWERCASE = /[a-z]/;
-const HAS_UPPERCASE = /[A-Z]/;
-const HAS_DIGIT = /\d/;
-const HAS_SPECIAL = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/;
-
-const passwordSchema = z
-	.string()
-	.min(8, "Password must be at least 8 characters")
-	.refine(
-		(password) => HAS_LOWERCASE.test(password),
-		"Password must contain at least one lowercase letter",
-	)
-	.refine(
-		(password) => HAS_UPPERCASE.test(password),
-		"Password must contain at least one uppercase letter",
-	)
-	.refine((password) => HAS_DIGIT.test(password), "Password must contain at least one digit")
-	.refine(
-		(password) => HAS_SPECIAL.test(password),
-		"Password must contain at least one special character",
-	);
 
 const signupSchema = z
 	.object({
@@ -46,11 +27,6 @@ const signupSchema = z
 		path: ["confirmPassword"],
 	});
 
-type PasswordRequirement = {
-	label: string;
-	met: boolean;
-};
-
 export function SignupForm({ className, ...props }: React.ComponentProps<"div">) {
 	const { t } = useTranslate();
 	const router = useRouter();
@@ -63,31 +39,9 @@ export function SignupForm({ className, ...props }: React.ComponentProps<"div">)
 		confirmPassword: "",
 	});
 	const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+	const { enabledProviders, isLoading: providersLoading } = useEnabledProviders();
 
-	const checkPasswordRequirements = (password: string): PasswordRequirement[] => [
-		{
-			label: t("auth.password-requirements.length", "At least 8 characters"),
-			met: password.length >= 8,
-		},
-		{
-			label: t("auth.password-requirements.lowercase", "At least 1 lowercase letter"),
-			met: HAS_LOWERCASE.test(password),
-		},
-		{
-			label: t("auth.password-requirements.uppercase", "At least 1 uppercase letter"),
-			met: HAS_UPPERCASE.test(password),
-		},
-		{
-			label: t("auth.password-requirements.digit", "At least 1 digit"),
-			met: HAS_DIGIT.test(password),
-		},
-		{
-			label: t("auth.password-requirements.special", "At least 1 special character"),
-			met: HAS_SPECIAL.test(password),
-		},
-	];
-
-	const passwordRequirements = checkPasswordRequirements(formData.password);
+	const passwordRequirements = checkPasswordRequirements(formData.password, t);
 	const passwordsMatch =
 		formData.confirmPassword && formData.password && formData.confirmPassword === formData.password;
 
@@ -219,6 +173,46 @@ export function SignupForm({ className, ...props }: React.ComponentProps<"div">)
 		}
 	};
 
+	const handleSocialSignup = async (provider: "google" | "github" | "linkedin" | "apple") => {
+		setIsLoading(true);
+		setError(null);
+
+		try {
+			await authClient.signIn.social({
+				provider,
+				callbackURL: "/",
+			});
+		} catch (err) {
+			setIsLoading(false);
+			setError(
+				err instanceof Error
+					? err.message
+					: t("auth.social-signup-error", "An error occurred during social sign-up"),
+			);
+		}
+	};
+
+	const handlePasskeySignup = async () => {
+		setIsLoading(true);
+		setError(null);
+
+		try {
+			const result = await authClient.signIn.passkey({
+				autoFill: false,
+			});
+
+			if (result.error) {
+				setError(result.error.message || "Failed to sign up with passkey");
+				setIsLoading(false);
+			} else {
+				router.push("/");
+			}
+		} catch (error) {
+			setError("Failed to sign up with passkey");
+			setIsLoading(false);
+		}
+	};
+
 	return (
 		<AuthFormWrapper
 			className={className}
@@ -325,6 +319,58 @@ export function SignupForm({ className, ...props }: React.ComponentProps<"div">)
 			<Button className="w-full" disabled={isLoading} type="submit">
 				{isLoading ? t("common.loading", "Loading...") : t("auth.sign-up", "Sign up")}
 			</Button>
+			<div className="text-center text-sm">
+				<span className="relative z-10 px-2 text-muted-foreground">
+					{t("auth.or-sign-up-with", "Or sign up with")}
+				</span>
+			</div>
+			<div className="flex flex-wrap justify-center gap-2 *:w-1/4">
+				{/* Passkey - always visible */}
+				<Tooltip>
+					<TooltipTrigger asChild>
+						<Button
+							type="button"
+							variant="outline"
+							onClick={handlePasskeySignup}
+							disabled={isLoading}
+						>
+							<Key className="h-4 w-4" />
+							<span className="sr-only">{t("auth.sign-up-with.passkey", "Sign up with Passkey")}</span>
+						</Button>
+					</TooltipTrigger>
+					<TooltipContent>
+						<span className="text-sm">{t("auth.sign-up-with.passkey", "Sign up with Passkey")}</span>
+					</TooltipContent>
+				</Tooltip>
+
+				{/* Dynamic social providers */}
+				{providersLoading
+					? Array.from({ length: 4 }).map((_, i) => (
+							<div key={i} className="h-10 bg-muted animate-pulse rounded-md" />
+						))
+					: enabledProviders.map((provider) => (
+							<Tooltip key={provider.id}>
+								<TooltipTrigger asChild>
+									<Button
+										type="button"
+										variant="outline"
+										onClick={() => handleSocialSignup(provider.id)}
+										disabled={isLoading}
+									>
+										<provider.icon className="h-4 w-4" />
+										<span className="sr-only">
+											{t(`auth.sign-up-with.${provider.id}`, `Sign up with ${provider.name}`)}
+										</span>
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent>
+									<span className="text-sm">
+										{t(`auth.sign-up-with.${provider.id}`, `Sign up with ${provider.name}`)}
+									</span>
+								</TooltipContent>
+							</Tooltip>
+						))}
+			</div>
 			<div className="text-center text-sm">
 				{t("auth.already-have-account", "Already have an account?")}{" "}
 				<Link className="underline underline-offset-4" href="/sign-in">

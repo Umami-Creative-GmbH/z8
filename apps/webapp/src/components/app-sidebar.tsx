@@ -71,7 +71,7 @@ export function AppSidebar({
 		},
 		{
 			title: t("nav.reports", "Reports"),
-			url: "#",
+			url: "/reports",
 			icon: IconReport,
 		},
 		{
@@ -84,7 +84,7 @@ export function AppSidebar({
 	const navSecondary = [
 		{
 			title: t("nav.settings", "Settings"),
-			url: "/settings/vacation",
+			url: "/settings",
 			icon: IconSettings,
 		},
 		{

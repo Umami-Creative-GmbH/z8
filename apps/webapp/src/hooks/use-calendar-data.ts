@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { format } from "@/lib/datetime/luxon-utils";
+import { z } from "zod";
+import { calendarEventSchema } from "@/lib/validations/calendar";
 import type { CalendarEvent } from "@/lib/calendar/types";
 
 export interface CalendarFilters {
@@ -67,13 +70,12 @@ export function useCalendarData({
 
 			const data = await response.json();
 
-			// Convert date strings back to Date objects
-			const eventsWithDates = data.events.map((event: any) => ({
-				...event,
-				date: new Date(event.date),
-			}));
+			// Validate and parse events with Zod schema
+			// This automatically converts date strings to Date objects
+			const eventsSchema = z.array(calendarEventSchema);
+			const parsedEvents = eventsSchema.parse(data.events);
 
-			setEvents(eventsWithDates);
+			setEvents(parsedEvents);
 		} catch (err) {
 			setError(err instanceof Error ? err : new Error("Unknown error"));
 			setEvents([]);
@@ -87,8 +89,9 @@ export function useCalendarData({
 	}, [fetchEvents]);
 
 	// Group events by date for easy lookup
+	// Use date-fns format instead of fragile string manipulation
 	const eventsByDate = events.reduce((acc, event) => {
-		const dateKey = event.date.toISOString().split("T")[0]; // YYYY-MM-DD
+		const dateKey = format(event.date, "yyyy-MM-dd"); // YYYY-MM-DD
 		if (!acc.has(dateKey)) {
 			acc.set(dateKey, []);
 		}

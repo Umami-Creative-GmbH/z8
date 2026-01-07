@@ -8,9 +8,10 @@ import {
 	IconPlus,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
+import { CreateOrganizationDialog } from "@/components/organization/create-organization-dialog";
+import { useRouter } from "@/navigation";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -40,6 +41,7 @@ export function OrganizationSwitcher({
 	const router = useRouter();
 	const { isMobile } = useSidebar();
 	const [switching, setSwitching] = useState(false);
+	const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
 	const handleSwitchOrganization = async (organizationId: string) => {
 		if (organizationId === currentOrganization?.id) return;
@@ -171,7 +173,7 @@ export function OrganizationSwitcher({
 							</DropdownMenuItem>
 						))}
 						<DropdownMenuSeparator />
-						<DropdownMenuItem className="gap-2 p-2">
+						<DropdownMenuItem className="gap-2 p-2" onClick={() => setCreateDialogOpen(true)}>
 							<div className="flex size-6 items-center justify-center rounded-md border border-dashed">
 								<IconPlus className="size-4" />
 							</div>
@@ -181,6 +183,12 @@ export function OrganizationSwitcher({
 						</DropdownMenuItem>
 					</DropdownMenuContent>
 				</DropdownMenu>
+
+				<CreateOrganizationDialog
+					open={createDialogOpen}
+					onOpenChange={setCreateDialogOpen}
+					onSuccess={() => router.refresh()}
+				/>
 			</SidebarMenuItem>
 		</SidebarMenu>
 	);
