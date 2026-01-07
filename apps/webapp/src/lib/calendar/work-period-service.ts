@@ -1,5 +1,3 @@
-"use server";
-
 import { DateTime } from "luxon";
 import { and, eq, gte, lte } from "drizzle-orm";
 import { db } from "@/db";

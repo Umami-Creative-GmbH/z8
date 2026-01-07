@@ -98,7 +98,7 @@ const TIMEZONE_GROUPS = [
 	},
 ];
 
-interface TimezonePicker Props {
+interface TimezonePickerProps {
 	value?: string;
 	onChange: (timezone: string) => void;
 	disabled?: boolean;

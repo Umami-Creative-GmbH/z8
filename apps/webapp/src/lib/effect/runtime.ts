@@ -5,16 +5,42 @@ import { EmailServiceLive } from "./services/email.service";
 import { AnalyticsService } from "./services/analytics.service";
 import { ReportingService } from "./services/reporting.service";
 import { OnboardingServiceLive } from "./services/onboarding.service";
+import { PermissionsServiceLive } from "./services/permissions.service";
+import { ManagerServiceLive } from "./services/manager.service";
+
+// Base layer with DatabaseService (no dependencies)
+const BaseLayer = DatabaseServiceLive;
+
+// Layer for AuthService (depends on nothing external)
+const AuthLayer = AuthServiceLive;
+
+// Layer for services that depend on DatabaseService and AuthService
+const OnboardingLayer = OnboardingServiceLive.pipe(
+	Layer.provide(AuthServiceLive),
+	Layer.provide(DatabaseServiceLive),
+);
+
+// Layer for PermissionsService (depends on DatabaseService)
+const PermissionsLayer = PermissionsServiceLive.pipe(
+	Layer.provide(DatabaseServiceLive),
+);
+
+// Layer for ManagerService (depends on DatabaseService)
+const ManagerLayer = ManagerServiceLive.pipe(
+	Layer.provide(DatabaseServiceLive),
+);
 
 // Combine all service layers
 export const AppLayer = Layer.mergeAll(
-	DatabaseServiceLive,
+	BaseLayer,
+	AuthLayer,
 	EmailServiceLive,
-	AuthServiceLive,
-	AnalyticsService.Live,
-	ReportingService.Live,
-	OnboardingServiceLive,
-).pipe(Layer.provide(DatabaseServiceLive)); // Provide DatabaseService where needed
+	AnalyticsService.Live.pipe(Layer.provide(DatabaseServiceLive)),
+	ReportingService.Live.pipe(Layer.provide(DatabaseServiceLive)),
+	OnboardingLayer,
+	PermissionsLayer,
+	ManagerLayer,
+);
 
 // Runtime for executing effects
 export const runtime = ManagedRuntime.make(AppLayer);

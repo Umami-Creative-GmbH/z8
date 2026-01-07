@@ -1,9 +1,13 @@
 import { DateTime } from "luxon";
 import { fromJSDate, parseISO } from "@/lib/datetime/luxon-utils";
 
-export function formatDuration(minutes: number): string {
-	const hours = Math.floor(minutes / 60);
-	const mins = minutes % 60;
+export function formatDuration(minutes: number | null | undefined): string {
+	const safeMinutes = minutes ?? 0;
+	if (Number.isNaN(safeMinutes)) {
+		return "0h 00m";
+	}
+	const hours = Math.floor(safeMinutes / 60);
+	const mins = safeMinutes % 60;
 	return `${hours}h ${mins.toString().padStart(2, "0")}m`;
 }
 

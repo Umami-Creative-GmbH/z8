@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { format } from "@/lib/datetime/luxon-utils";
 import { z } from "zod";
 import { calendarEventSchema } from "@/lib/validations/calendar";
@@ -42,7 +42,7 @@ export function useCalendarData({
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<Error | null>(null);
 
-	const fetchEvents = async () => {
+	const fetchEvents = useCallback(async () => {
 		setIsLoading(true);
 		setError(null);
 
@@ -82,7 +82,7 @@ export function useCalendarData({
 		} finally {
 			setIsLoading(false);
 		}
-	};
+	}, [organizationId, month, year, filters.showHolidays, filters.showAbsences, filters.showTimeEntries, filters.showWorkPeriods, filters.employeeId]);
 
 	useEffect(() => {
 		fetchEvents();
