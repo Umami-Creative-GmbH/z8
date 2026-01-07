@@ -20,6 +20,7 @@
   "dependencies": {
     "@react-email/components": "^1.0.3",
     "@react-email/render": "^2.0.1",
+    "@uppy/locales": "^5.1.0",
     "resend": "^6.6.0"
   }
 }

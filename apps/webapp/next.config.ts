@@ -10,6 +10,16 @@ const nextConfig: NextConfig = {
   experimental: {
     viewTransition: true,
   },
+  serverExternalPackages: [
+    "@opentelemetry/sdk-node",
+    "@opentelemetry/resources",
+    "@opentelemetry/semantic-conventions",
+    "@opentelemetry/sdk-trace-base",
+    "@opentelemetry/exporter-trace-otlp-http",
+    "@opentelemetry/exporter-metrics-otlp-http",
+    "@opentelemetry/auto-instrumentations-node",
+    "sharp",
+  ],
 };
 
 export default withNextIntl(nextConfig);

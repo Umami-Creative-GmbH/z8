@@ -22,6 +22,7 @@
     "name": "Name",
     "name-placeholder": "John Doe",
     "or-continue-with": "Or continue with",
+    "or-sign-up-with": "Or sign up with",
     "password": "Password",
     "password-requirements": {
       "digit": "At least 1 digit",
@@ -46,6 +47,8 @@
       "microsoft": "Sign up with Microsoft",
       "passkey": "Sign up with Passkey"
     },
+    "social-signup-error": "An error occurred during social sign-up",
+    "social-login-error": "An error occurred during social sign-in",
     "terms": {
       "agreement": "By clicking continue, you agree to our",
       "and": "and",
@@ -80,7 +83,212 @@
       }
     },
     "github": "GitHub",
-    "title": "Dashboard"
+    "title": "Dashboard",
+    "widgets": {
+      "upcomingTimeOff": {
+        "title": "Upcoming Time Off",
+        "description": "{count, plural, =0 {No upcoming absences} one {# day with absences} other {# days with absences}}",
+        "viewCalendar": "View Full Calendar",
+        "loading": "Loading upcoming absences...",
+        "error": "Failed to load upcoming time off",
+        "noData": "No upcoming absences",
+        "startsToday": "Starts today",
+        "startsTomorrow": "Starts tomorrow",
+        "startsIn": "Starts in {days} days"
+      },
+      "teamCalendar": {
+        "title": "Team Calendar",
+        "description": "{count, plural, =0 {No absences this month} one {# day with absences} other {# days with absences}}",
+        "loading": "Loading team calendar...",
+        "error": "Failed to load team calendar",
+        "today": "Today",
+        "previousMonth": "Previous month",
+        "nextMonth": "Next month",
+        "teamMembersOut": "{count, plural, =0 {No team members} one {# team member} other {# team members}} out",
+        "legend": "Team absences"
+      },
+      "recentlyApproved": {
+        "title": "Recently Approved",
+        "description": "Last {count} approved {count, plural, one {request} other {requests}}",
+        "viewAll": "View All Approvals",
+        "loading": "Loading recently approved...",
+        "error": "Failed to load recently approved requests",
+        "noData": "No recently approved requests",
+        "approvedBy": "Approved by {name}",
+        "absence": "Absence",
+        "timeCorrection": "Time Correction",
+        "andMore": "and {count} more..."
+      },
+      "quickStats": {
+        "title": "Quick Stats",
+        "thisWeek": "This Week",
+        "thisMonth": "This Month",
+        "loading": "Loading statistics...",
+        "error": "Failed to load quick stats",
+        "onTrack": "On track",
+        "under": "Under target",
+        "low": "Low hours"
+      },
+      "birthdays": {
+        "title": "Upcoming Birthdays",
+        "description": "{count, plural, =0 {No birthdays} one {# birthday} other {# birthdays}} in the next 30 days",
+        "loading": "Loading birthdays...",
+        "error": "Failed to load upcoming birthdays",
+        "noData": "No upcoming birthdays",
+        "today": "Today!",
+        "tomorrow": "Tomorrow",
+        "inDays": "in {days} days",
+        "andMore": "and {count} more..."
+      }
+    }
+  },
+  "analytics": {
+    "title": "Analytics",
+    "description": "Comprehensive insights into team performance, work hours, and absence patterns",
+    "accessRestricted": "Access Restricted",
+    "accessRestrictedMessage": "Analytics is only available to administrators and managers.",
+    "tabs": {
+      "overview": "Overview",
+      "teamPerformance": "Team Performance",
+      "vacationTrends": "Vacation Trends",
+      "workHours": "Work Hours"
+    },
+    "overview": {
+      "title": "Analytics Overview",
+      "kpis": {
+        "totalEmployees": {
+          "label": "Total Employees",
+          "description": "Active employees in organization"
+        },
+        "avgWorkHours": {
+          "label": "Avg Work Hours",
+          "description": "Per employee in selected period"
+        },
+        "absenceRate": {
+          "label": "Absence Rate",
+          "description": "Of total available work days"
+        },
+        "approvalRate": {
+          "label": "Approval Rate",
+          "description": "Of submitted requests approved"
+        }
+      },
+      "charts": {
+        "workHoursTrend": {
+          "title": "Work Hours Trend",
+          "description": "Total work hours logged over time"
+        },
+        "absencePatterns": {
+          "title": "Absence Patterns",
+          "description": "Absence distribution by category"
+        }
+      }
+    },
+    "teamPerformance": {
+      "title": "Team Performance",
+      "teamComparison": {
+        "title": "Team Comparison",
+        "description": "Total work hours by team for the selected period"
+      },
+      "performanceDetails": {
+        "title": "Team Performance Details",
+        "description": "Breakdown of work hours by team and employee",
+        "noData": "No data available for the selected period",
+        "columns": {
+          "team": "Team",
+          "totalHours": "Total Hours",
+          "avgPerEmployee": "Avg per Employee",
+          "employeeCount": "Employee Count",
+          "status": "Status"
+        },
+        "status": {
+          "onTrack": "On Track",
+          "under": "Under",
+          "low": "Low"
+        }
+      },
+      "overtime": {
+        "title": "Overtime & Undertime",
+        "description": "Hours variance from expected work hours"
+      }
+    },
+    "vacationTrends": {
+      "title": "Vacation Trends",
+      "utilization": {
+        "title": "Vacation Utilization",
+        "description": "Overall vacation days usage across organization",
+        "label": "Overall Utilization",
+        "daysTaken": "{count} days taken",
+        "daysRemaining": "{count} days remaining"
+      },
+      "monthlyUsage": {
+        "title": "Monthly Vacation Usage",
+        "description": "Vacation days taken per month"
+      },
+      "vacationBalance": {
+        "title": "Vacation Balance",
+        "description": "Days allocated, taken, and remaining by employee",
+        "noData": "No data available for the selected period",
+        "columns": {
+          "employee": "Employee",
+          "allocated": "Allocated",
+          "taken": "Taken",
+          "remaining": "Remaining",
+          "utilization": "Utilization"
+        }
+      },
+      "peakMonths": {
+        "title": "Peak Vacation Months",
+        "description": "Months with highest vacation activity"
+      }
+    },
+    "workHours": {
+      "title": "Work Hours",
+      "overtimeTrend": {
+        "title": "Overtime & Undertime Trend",
+        "description": "Hours variance from expected work hours over time"
+      },
+      "dailyHours": {
+        "title": "Daily Work Hours",
+        "description": "Actual vs expected work hours per day"
+      },
+      "employeeComparison": {
+        "title": "Employee Work Hours",
+        "description": "Total hours and variance from expected by employee",
+        "noData": "No data available for the selected period",
+        "columns": {
+          "employee": "Employee",
+          "totalHours": "Total Hours",
+          "expectedHours": "Expected Hours",
+          "variance": "Variance",
+          "status": "Status"
+        }
+      },
+      "distribution": {
+        "title": "Work Hours Distribution",
+        "description": "Employee work hours comparison (horizontal bar)"
+      }
+    },
+    "export": {
+      "button": "Export",
+      "exporting": "Exporting {format}...",
+      "csv": "Export as CSV",
+      "excel": "Export as Excel",
+      "success": "Exported as {format}",
+      "error": "Failed to export as {format}"
+    },
+    "dateRange": {
+      "label": "Date Range",
+      "custom": "Custom Range",
+      "pickRange": "Pick a date range",
+      "presets": {
+        "7d": "Last 7 Days",
+        "30d": "Last 30 Days",
+        "3m": "Last 3 Months",
+        "6m": "Last 6 Months",
+        "1y": "Last Year"
+      }
+    }
   },
   "generic": {
     "done": "Done",
@@ -141,6 +349,87 @@
       "narrative": "Narrative",
       "table-of-contents": "Table of Contents",
       "technical-approach": "Technical Approach"
+    }
+  },
+  "onboarding": {
+    "welcome": {
+      "title": "Welcome to Z8!",
+      "subtitle": "Let's get you started with a quick setup. This will only take a few minutes.",
+      "getStarted": "Get Started",
+      "features": {
+        "timeTracking": "Time Tracking",
+        "timeTrackingDesc": "Clock in and out, track work hours, and manage time corrections",
+        "absences": "Absence Management",
+        "absencesDesc": "Request time off, manage vacation days, and track holidays",
+        "team": "Team Collaboration",
+        "teamDesc": "Work with your team, approve requests, and manage employees"
+      }
+    },
+    "organization": {
+      "title": "Set up your organization",
+      "subtitle": "Create your organization to unlock all features, or skip if you're waiting for an invitation.",
+      "createTitle": "Create Organization",
+      "createDescription": "Set up your own organization and invite your team",
+      "create": "Create Organization",
+      "skipTitle": "Waiting for an Invitation?",
+      "skipDescription": "If your administrator will invite you to an organization, you can skip this step for now.",
+      "skip": "Skip for now"
+    },
+    "profile": {
+      "title": "Complete your profile",
+      "subtitle": "Help your team recognize you by adding some personal information.",
+      "personalInfo": "Personal Information",
+      "personalInfoDesc": "This information will be visible to your team members.",
+      "firstName": "First Name",
+      "firstNamePlaceholder": "John",
+      "lastName": "Last Name",
+      "lastNamePlaceholder": "Doe",
+      "gender": "Gender",
+      "genderDesc": "This helps personalize your experience.",
+      "birthday": "Birthday",
+      "birthdayDesc": "Your team can wish you a happy birthday!",
+      "pickDate": "Pick a date",
+      "skip": "Skip for now",
+      "continue": "Continue",
+      "success": "Profile updated successfully!",
+      "error": "Failed to update profile"
+    },
+    "workSchedule": {
+      "title": "Set your work schedule",
+      "subtitle": "Define your working hours to help track time and manage absences accurately.",
+      "scheduleTitle": "Work Schedule",
+      "scheduleDesc": "Set your default working hours. You can adjust this later in settings.",
+      "hoursPerWeek": "Hours per Week",
+      "hoursPerWeekDesc": "Typical full-time is 40 hours per week.",
+      "classification": "Work Classification",
+      "classificationDesc": "How you want to track your working hours.",
+      "daily": "Daily",
+      "weekly": "Weekly",
+      "monthly": "Monthly",
+      "skip": "Skip for now",
+      "continue": "Continue",
+      "success": "Work schedule set successfully!",
+      "error": "Failed to set work schedule"
+    },
+    "complete": {
+      "title": "You're all set!",
+      "subtitle": "Your account is ready to use. Welcome to the team!",
+      "loading": "Finalizing your setup...",
+      "summaryTitle": "What You've Set Up",
+      "summaryDesc": "Here's a summary of your configuration.",
+      "organizationCreated": "Organization created",
+      "organizationSkipped": "Waiting for invitation",
+      "profileCompleted": "Profile completed",
+      "profileSkipped": "Profile skipped",
+      "scheduleSet": "Work schedule set",
+      "scheduleSkipped": "You can set this later",
+      "nextStepsTitle": "Next Steps",
+      "exploreDashboard": "Explore your dashboard",
+      "exploreDashboardDesc": "Get started with time tracking and absence management",
+      "inviteTeam": "Invite your team members",
+      "inviteTeamDesc": "Add colleagues to collaborate and manage time together",
+      "goToDashboard": "Go to Dashboard",
+      "autoRedirect": "Automatically redirecting in {{seconds}} seconds..."
     }
   },
   "user": {

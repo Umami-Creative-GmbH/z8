@@ -1,42 +1,86 @@
-import { NodeSDK } from "@opentelemetry/sdk-node";
 import { getNodeAutoInstrumentations } from "@opentelemetry/auto-instrumentations-node";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
-import { Resource } from "@opentelemetry/resources";
-import { ATTR_SERVICE_NAME } from "@opentelemetry/semantic-conventions";
-import { ConsoleSpanExporter } from "@opentelemetry/sdk-trace-base";
-import { BatchSpanProcessor, SimpleSpanProcessor } from "@opentelemetry/sdk-trace-base";
+import { resourceFromAttributes } from "@opentelemetry/resources";
+import { NodeSDK } from "@opentelemetry/sdk-node";
+import {
+	BatchSpanProcessor,
+	ConsoleSpanExporter,
+	SimpleSpanProcessor,
+} from "@opentelemetry/sdk-trace-base";
+import type { ReadableSpan, SpanProcessor } from "@opentelemetry/sdk-trace-base";
+import { SpanStatusCode } from "@opentelemetry/api";
+import {
+	ATTR_SERVICE_NAME,
+} from "@opentelemetry/semantic-conventions";
+
+// Custom span processor that only logs exception spans to console
+class ExceptionOnlySpanProcessor implements SpanProcessor {
+	private exporter: ConsoleSpanExporter;
+
+	constructor() {
+		this.exporter = new ConsoleSpanExporter();
+	}
+
+	onStart(): void {
+		// No-op
+	}
+
+	onEnd(span: ReadableSpan): void {
+		// Only export spans with errors or exception events
+		const hasError = span.status.code === SpanStatusCode.ERROR;
+		const hasExceptionEvent = span.events.some(
+			(event) => event.name === "exception"
+		);
+
+		if (hasError || hasExceptionEvent) {
+			this.exporter.export([span], () => {});
+		}
+	}
+
+	shutdown(): Promise<void> {
+		return this.exporter.shutdown();
+	}
+
+	forceFlush(): Promise<void> {
+		return this.exporter.forceFlush();
+	}
+}
 
 export async function register() {
-  if (process.env.NEXT_RUNTIME === "nodejs") {
-    const isDev = process.env.NODE_ENV === "development";
+	if (process.env.NEXT_RUNTIME === "nodejs") {
+		const isDev = process.env.NODE_ENV === "development";
+		const hasRemoteOtel = !!process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
 
-    const resource = new Resource({
-      [ATTR_SERVICE_NAME]: "z8-webapp",
+		const resource = resourceFromAttributes({
+			[ATTR_SERVICE_NAME]: "z8-webapp",
       environment: process.env.NODE_ENV || "development",
-    });
+		});
 
-    const sdk = new NodeSDK({
-      resource,
-      spanProcessors: isDev
-        ? [new SimpleSpanProcessor(new ConsoleSpanExporter())]
-        : [
-            new BatchSpanProcessor(
-              new OTLPTraceExporter({
-                url: process.env.OTEL_EXPORTER_OTLP_ENDPOINT || "http://localhost:4318/v1/traces",
-              })
-            ),
-          ],
-      instrumentations: [
-        getNodeAutoInstrumentations({
-          "@opentelemetry/instrumentation-fs": { enabled: false },
-        }),
-      ],
-    });
+		// Determine span processors based on environment and configuration
+		const spanProcessors = isDev || !hasRemoteOtel
+			? [new ExceptionOnlySpanProcessor()]
+			: [
+					new BatchSpanProcessor(
+						new OTLPTraceExporter({
+							url: process.env.OTEL_EXPORTER_OTLP_ENDPOINT,
+						}),
+					),
+				];
 
-    sdk.start();
+		const sdk = new NodeSDK({
+			resource,
+			spanProcessors,
+			instrumentations: [
+				getNodeAutoInstrumentations({
+					"@opentelemetry/instrumentation-fs": { enabled: false },
+				}),
+			],
+		});
 
-    process.on("SIGTERM", () => {
-      sdk.shutdown().finally(() => process.exit(0));
-    });
-  }
+		sdk.start();
+
+		process.on("SIGTERM", () => {
+			sdk.shutdown().finally(() => process.exit(0));
+		});
+	}
 }
