@@ -1,0 +1,609 @@
+"use client";
+
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+	IconArrowBack,
+	IconCheck,
+	IconLoader2,
+	IconPlus,
+	IconTrash,
+	IconUserMinus,
+	IconUsers,
+	IconX,
+} from "@tabler/icons-react";
+import { use, useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import * as z from "zod";
+import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
+import { NoEmployeeError } from "@/components/errors/no-employee-error";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
+import {
+	Form,
+	FormControl,
+	FormField,
+	FormItem,
+	FormLabel,
+	FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
+import { Link, useRouter } from "@/navigation";
+import { listEmployees } from "../../employees/actions";
+import {
+	addTeamMember,
+	deleteTeam,
+	getTeam,
+	removeTeamMember,
+	updateTeam,
+} from "../actions";
+
+const teamFormSchema = z.object({
+	name: z.string().min(1, "Team name is required").max(100),
+	description: z.string().max(500).optional(),
+});
+
+export default function TeamDetailPage({
+	params,
+}: {
+	params: Promise<{ teamId: string }>;
+}) {
+	const { teamId } = use(params);
+	const router = useRouter();
+	const [loading, setLoading] = useState(false);
+	const [team, setTeam] = useState<any>(null);
+	const [currentEmployee, setCurrentEmployee] = useState<any>(null);
+	const [noEmployee, setNoEmployee] = useState(false);
+	const [canManageSettings, setCanManageSettings] = useState(false);
+	const [canManageMembers, setCanManageMembers] = useState(false);
+	const [isEditing, setIsEditing] = useState(false);
+	const [showAddMember, setShowAddMember] = useState(false);
+	const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+	const [selectedMemberToRemove, setSelectedMemberToRemove] = useState<
+		string | null
+	>(null);
+	const [availableEmployees, setAvailableEmployees] = useState<any[]>([]);
+	const [selectedEmployee, setSelectedEmployee] = useState<string>("");
+
+	const form = useForm<z.infer<typeof teamFormSchema>>({
+		resolver: zodResolver(teamFormSchema),
+		defaultValues: {
+			name: "",
+			description: "",
+		},
+	});
+
+	useEffect(() => {
+		async function loadData() {
+			const current = await getCurrentEmployee();
+			if (!current) {
+				setNoEmployee(true);
+				return;
+			}
+			setCurrentEmployee(current);
+
+			const result = await getTeam(teamId);
+			if (result.success && result.data) {
+				setTeam(result.data);
+				form.reset({
+					name: result.data.name,
+					description: result.data.description || "",
+				});
+
+				// Check permissions
+				const isAdmin = current.role === "admin";
+				setCanManageSettings(result.data.canManageSettings || isAdmin);
+				setCanManageMembers(result.data.canManageMembers || isAdmin);
+			} else {
+				toast.error(result.error || "Failed to load team");
+			}
+		}
+
+		loadData();
+	}, [teamId, form]);
+
+	async function loadAvailableEmployees() {
+		if (!team) return;
+
+		const result = await listEmployees(team.organizationId);
+		if (result.success && result.data) {
+			// Filter out employees already in the team
+			const teamMemberIds = new Set(
+				team.employees?.map((e: any) => e.id) || [],
+			);
+			const available = result.data.filter(
+				(emp) => !teamMemberIds.has(emp.id),
+			);
+			setAvailableEmployees(available);
+		}
+	}
+
+	async function onSubmit(values: z.infer<typeof teamFormSchema>) {
+		setLoading(true);
+
+		try {
+			const result = await updateTeam(teamId, values);
+
+			if (result.success) {
+				toast.success("Team updated successfully");
+				setIsEditing(false);
+				// Reload team data
+				const teamResult = await getTeam(teamId);
+				if (teamResult.success && teamResult.data) {
+					setTeam(teamResult.data);
+				}
+			} else {
+				toast.error(result.error || "Failed to update team");
+			}
+		} catch (error) {
+			toast.error("An unexpected error occurred");
+		} finally {
+			setLoading(false);
+		}
+	}
+
+	async function handleAddMember() {
+		if (!selectedEmployee) {
+			toast.error("Please select an employee");
+			return;
+		}
+
+		setLoading(true);
+
+		try {
+			const result = await addTeamMember(teamId, selectedEmployee);
+
+			if (result.success) {
+				toast.success("Team member added successfully");
+				setShowAddMember(false);
+				setSelectedEmployee("");
+				// Reload team data
+				const teamResult = await getTeam(teamId);
+				if (teamResult.success && teamResult.data) {
+					setTeam(teamResult.data);
+				}
+			} else {
+				toast.error(result.error || "Failed to add team member");
+			}
+		} catch (error) {
+			toast.error("An unexpected error occurred");
+		} finally {
+			setLoading(false);
+		}
+	}
+
+	async function handleRemoveMember(employeeId: string) {
+		setLoading(true);
+
+		try {
+			const result = await removeTeamMember(teamId, employeeId);
+
+			if (result.success) {
+				toast.success("Team member removed successfully");
+				setSelectedMemberToRemove(null);
+				// Reload team data
+				const teamResult = await getTeam(teamId);
+				if (teamResult.success && teamResult.data) {
+					setTeam(teamResult.data);
+				}
+			} else {
+				toast.error(result.error || "Failed to remove team member");
+			}
+		} catch (error) {
+			toast.error("An unexpected error occurred");
+		} finally {
+			setLoading(false);
+		}
+	}
+
+	async function handleDeleteTeam() {
+		setLoading(true);
+
+		try {
+			const result = await deleteTeam(teamId);
+
+			if (result.success) {
+				toast.success("Team deleted successfully");
+				router.push("/settings/teams");
+				router.refresh();
+			} else {
+				toast.error(result.error || "Failed to delete team");
+			}
+		} catch (error) {
+			toast.error("An unexpected error occurred");
+		} finally {
+			setLoading(false);
+			setShowDeleteDialog(false);
+		}
+	}
+
+	if (noEmployee) {
+		return (
+			<div className="flex flex-1 items-center justify-center p-6">
+				<NoEmployeeError feature="view teams" />
+			</div>
+		);
+	}
+
+	if (!team) {
+		return (
+			<div className="flex flex-1 flex-col gap-4 p-4">
+				<div className="flex items-center justify-center p-8">
+					<IconLoader2 className="size-8 animate-spin text-muted-foreground" />
+				</div>
+			</div>
+		);
+	}
+
+	return (
+		<div className="flex flex-1 flex-col gap-4 p-4">
+			<div className="flex items-center justify-between">
+				<div>
+					<div className="flex items-center gap-2">
+						<Button variant="ghost" size="sm" asChild>
+							<Link href="/settings/teams">
+								<IconArrowBack className="size-4" />
+							</Link>
+						</Button>
+						<h1 className="text-2xl font-semibold tracking-tight">
+							Team Details
+						</h1>
+					</div>
+					<p className="text-sm text-muted-foreground">
+						Manage team information and members
+					</p>
+				</div>
+				{canManageSettings && (
+					<div className="flex gap-2">
+						<Button
+							variant="destructive"
+							size="sm"
+							onClick={() => setShowDeleteDialog(true)}
+						>
+							<IconTrash className="mr-2 size-4" />
+							Delete Team
+						</Button>
+					</div>
+				)}
+			</div>
+
+			<div className="grid gap-4 lg:grid-cols-3">
+				{/* Team Info Card */}
+				<Card>
+					<CardHeader>
+						<div className="flex items-center justify-between">
+							<CardTitle>Team Information</CardTitle>
+							{canManageSettings && !isEditing && (
+								<Button
+									variant="ghost"
+									size="sm"
+									onClick={() => setIsEditing(true)}
+								>
+									Edit
+								</Button>
+							)}
+						</div>
+					</CardHeader>
+					<CardContent className="space-y-4">
+						{isEditing ? (
+							<Form {...form}>
+								<form
+									onSubmit={form.handleSubmit(onSubmit)}
+									className="space-y-4"
+								>
+									<FormField
+										control={form.control}
+										name="name"
+										render={({ field }) => (
+											<FormItem>
+												<FormLabel>Team Name</FormLabel>
+												<FormControl>
+													<Input placeholder="Enter team name" {...field} />
+												</FormControl>
+												<FormMessage />
+											</FormItem>
+										)}
+									/>
+
+									<FormField
+										control={form.control}
+										name="description"
+										render={({ field }) => (
+											<FormItem>
+												<FormLabel>Description</FormLabel>
+												<FormControl>
+													<Textarea
+														placeholder="Enter team description"
+														{...field}
+													/>
+												</FormControl>
+												<FormMessage />
+											</FormItem>
+										)}
+									/>
+
+									<div className="flex justify-end gap-2">
+										<Button
+											type="button"
+											variant="outline"
+											size="sm"
+											onClick={() => {
+												setIsEditing(false);
+												form.reset({
+													name: team.name,
+													description: team.description || "",
+												});
+											}}
+											disabled={loading}
+										>
+											<IconX className="mr-2 size-4" />
+											Cancel
+										</Button>
+										<Button type="submit" size="sm" disabled={loading}>
+											{loading && (
+												<IconLoader2 className="mr-2 size-4 animate-spin" />
+											)}
+											<IconCheck className="mr-2 size-4" />
+											Save
+										</Button>
+									</div>
+								</form>
+							</Form>
+						) : (
+							<>
+								<div className="space-y-2">
+									<div className="text-sm text-muted-foreground">Team Name</div>
+									<div className="font-medium">{team.name}</div>
+								</div>
+
+								{team.description && (
+									<>
+										<Separator />
+										<div className="space-y-2">
+											<div className="text-sm text-muted-foreground">
+												Description
+											</div>
+											<div className="text-sm">{team.description}</div>
+										</div>
+									</>
+								)}
+
+								<Separator />
+
+								<div className="space-y-2">
+									<div className="text-sm text-muted-foreground">Members</div>
+									<div className="flex items-center gap-2">
+										<IconUsers className="size-4 text-muted-foreground" />
+										<span className="font-medium">
+											{team.employees?.length || 0}
+										</span>
+									</div>
+								</div>
+							</>
+						)}
+					</CardContent>
+				</Card>
+
+				{/* Members List */}
+				<Card className="lg:col-span-2">
+					<CardHeader>
+						<div className="flex items-center justify-between">
+							<div>
+								<CardTitle>Team Members</CardTitle>
+								<CardDescription>
+									Employees assigned to this team
+								</CardDescription>
+							</div>
+							{canManageMembers && (
+								<Button
+									size="sm"
+									onClick={() => {
+										loadAvailableEmployees();
+										setShowAddMember(true);
+									}}
+								>
+									<IconPlus className="mr-2 size-4" />
+									Add Member
+								</Button>
+							)}
+						</div>
+					</CardHeader>
+					<CardContent>
+						{!team.employees || team.employees.length === 0 ? (
+							<div className="flex flex-col items-center justify-center py-8">
+								<IconUsers className="mb-4 size-12 text-muted-foreground" />
+								<p className="text-sm text-muted-foreground">
+									No members in this team
+								</p>
+							</div>
+						) : (
+							<div className="space-y-2">
+								{team.employees.map((emp: any) => (
+									<div
+										key={emp.id}
+										className="flex items-center justify-between rounded-lg border p-3"
+									>
+										<div className="flex items-center gap-3">
+											<Avatar className="size-10">
+												<AvatarImage src={emp.user.image || undefined} />
+												<AvatarFallback>
+													{emp.user.name
+														.split(" ")
+														.map((n: string) => n[0])
+														.join("")
+														.toUpperCase()}
+												</AvatarFallback>
+											</Avatar>
+											<div>
+												<div className="font-medium">{emp.user.name}</div>
+												<div className="text-sm text-muted-foreground">
+													{emp.user.email}
+												</div>
+											</div>
+											{emp.position && (
+												<Badge variant="secondary">{emp.position}</Badge>
+											)}
+										</div>
+										{canManageMembers && (
+											<Button
+												variant="ghost"
+												size="sm"
+												onClick={() => setSelectedMemberToRemove(emp.id)}
+											>
+												<IconUserMinus className="size-4" />
+											</Button>
+										)}
+									</div>
+								))}
+							</div>
+						)}
+					</CardContent>
+				</Card>
+			</div>
+
+			{/* Add Member Dialog */}
+			<Dialog open={showAddMember} onOpenChange={setShowAddMember}>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Add Team Member</DialogTitle>
+						<DialogDescription>
+							Select an employee to add to this team
+						</DialogDescription>
+					</DialogHeader>
+					<div className="space-y-4 py-4">
+						<Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
+							<SelectTrigger>
+								<SelectValue placeholder="Select employee" />
+							</SelectTrigger>
+							<SelectContent>
+								{availableEmployees.map((emp) => (
+									<SelectItem key={emp.id} value={emp.id}>
+										<div className="flex items-center gap-2">
+											<span>{emp.user.name}</span>
+											<span className="text-sm text-muted-foreground">
+												({emp.user.email})
+											</span>
+										</div>
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={() => {
+								setShowAddMember(false);
+								setSelectedEmployee("");
+							}}
+							disabled={loading}
+						>
+							Cancel
+						</Button>
+						<Button onClick={handleAddMember} disabled={loading}>
+							{loading && (
+								<IconLoader2 className="mr-2 size-4 animate-spin" />
+							)}
+							Add Member
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+
+			{/* Remove Member Confirmation */}
+			<Dialog
+				open={!!selectedMemberToRemove}
+				onOpenChange={(open) => !open && setSelectedMemberToRemove(null)}
+			>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Remove Team Member</DialogTitle>
+						<DialogDescription>
+							Are you sure you want to remove this employee from the team? They
+							will still have access to the organization.
+						</DialogDescription>
+					</DialogHeader>
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={() => setSelectedMemberToRemove(null)}
+							disabled={loading}
+						>
+							Cancel
+						</Button>
+						<Button
+							variant="destructive"
+							onClick={() =>
+								selectedMemberToRemove &&
+								handleRemoveMember(selectedMemberToRemove)
+							}
+							disabled={loading}
+						>
+							{loading && (
+								<IconLoader2 className="mr-2 size-4 animate-spin" />
+							)}
+							Remove
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+
+			{/* Delete Team Confirmation */}
+			<Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Delete Team</DialogTitle>
+						<DialogDescription>
+							Are you sure you want to delete this team? This action cannot be
+							undone. Team members will not be deleted.
+						</DialogDescription>
+					</DialogHeader>
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={() => setShowDeleteDialog(false)}
+							disabled={loading}
+						>
+							Cancel
+						</Button>
+						<Button
+							variant="destructive"
+							onClick={handleDeleteTeam}
+							disabled={loading}
+						>
+							{loading && (
+								<IconLoader2 className="mr-2 size-4 animate-spin" />
+							)}
+							Delete Team
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+		</div>
+	);
+}

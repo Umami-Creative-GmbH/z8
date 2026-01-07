@@ -1,10 +1,24 @@
 "use server";
 
 import { and, desc, eq } from "drizzle-orm";
+import { Effect } from "effect";
 import { headers } from "next/headers";
 import { db } from "@/db";
 import { employee, employeeVacationAllowance, member, vacationAllowance } from "@/db/schema";
 import { auth } from "@/lib/auth";
+import {
+	AuthenticationError,
+	AuthorizationError,
+	ConflictError,
+	DatabaseError,
+	NotFoundError,
+} from "@/lib/effect/errors";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import { AppLayer } from "@/lib/effect/runtime";
+import { AuthService } from "@/lib/effect/services/auth.service";
+import { DatabaseService } from "@/lib/effect/services/database.service";
+import { isManagerOf } from "@/lib/auth-helpers";
+import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 
 /**
  * Get current employee from session
@@ -41,34 +55,81 @@ async function isOrgAdmin(userId: string, organizationId: string): Promise<boole
 }
 
 /**
- * Get vacation policy for an organization and year
+ * Get vacation policy for an organization and year using Effect pattern
  */
-export async function getVacationPolicy(organizationId: string, year: number) {
-	const currentEmployee = await getCurrentEmployee();
-	if (!currentEmployee) {
-		return { success: false, error: "Not authenticated", data: null };
-	}
+export async function getVacationPolicy(
+	organizationId: string,
+	year: number,
+): Promise<ServerActionResult<typeof vacationAllowance.$inferSelect | null>> {
+	const effect = Effect.gen(function* (_) {
+		// Step 1: Get session via AuthService
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
 
-	// Verify user is org admin
-	if (!(await isOrgAdmin(currentEmployee.userId, organizationId))) {
-		return { success: false, error: "Insufficient permissions", data: null };
-	}
+		// Step 2: Get current employee
+		const dbService = yield* _(DatabaseService);
+		const currentEmployee = yield* _(
+			dbService.query("getCurrentEmployee", async () => {
+				const emp = await dbService.db.query.employee.findFirst({
+					where: eq(employee.userId, session.user.id),
+				});
 
-	const policy = await db.query.vacationAllowance.findFirst({
-		where: and(
-			eq(vacationAllowance.organizationId, organizationId),
-			eq(vacationAllowance.year, year),
-		),
-		with: {
-			creator: true,
-		},
-	});
+				if (!emp) {
+					throw new Error("Employee not found");
+				}
 
-	return { success: true, data: policy };
+				return emp;
+			}),
+			Effect.mapError(
+				() =>
+					new NotFoundError({
+						message: "Employee profile not found",
+						entityType: "employee",
+					}),
+			),
+		);
+
+		// Step 3: Verify user is org admin
+		const hasPermission = yield* _(
+			Effect.promise(() => isOrgAdmin(session.user.id, organizationId)),
+		);
+
+		if (!hasPermission) {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Insufficient permissions",
+						userId: session.user.id,
+						resource: "vacation_policy",
+						action: "read",
+					}),
+				),
+			);
+		}
+
+		// Step 4: Get vacation policy
+		const policy = yield* _(
+			dbService.query("getVacationPolicy", async () => {
+				return await dbService.db.query.vacationAllowance.findFirst({
+					where: and(
+						eq(vacationAllowance.organizationId, organizationId),
+						eq(vacationAllowance.year, year),
+					),
+					with: {
+						creator: true,
+					},
+				});
+			}),
+		);
+
+		return policy || null;
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
 }
 
 /**
- * Create vacation policy for an organization
+ * Create vacation policy for an organization using Effect pattern
  */
 export async function createVacationPolicy(data: {
 	organizationId: string;
@@ -79,59 +140,114 @@ export async function createVacationPolicy(data: {
 	allowCarryover: boolean;
 	maxCarryoverDays?: string;
 	carryoverExpiryMonths?: number;
-}) {
-	const session = await auth.api.getSession({ headers: await headers() });
-	if (!session?.user) {
-		return { success: false, error: "Not authenticated" };
-	}
+}): Promise<ServerActionResult<typeof vacationAllowance.$inferSelect>> {
+	const effect = Effect.gen(function* (_) {
+		// Step 1: Get session via AuthService
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
 
-	const currentEmployee = await getCurrentEmployee();
-	if (!currentEmployee) {
-		return { success: false, error: "Employee profile not found" };
-	}
+		// Step 2: Get current employee
+		const dbService = yield* _(DatabaseService);
+		const currentEmployee = yield* _(
+			dbService.query("getCurrentEmployee", async () => {
+				const emp = await dbService.db.query.employee.findFirst({
+					where: eq(employee.userId, session.user.id),
+				});
 
-	// Verify user is org admin
-	if (!(await isOrgAdmin(session.user.id, data.organizationId))) {
-		return { success: false, error: "Insufficient permissions" };
-	}
+				if (!emp) {
+					throw new Error("Employee not found");
+				}
 
-	// Check if policy already exists
-	const existing = await db.query.vacationAllowance.findFirst({
-		where: and(
-			eq(vacationAllowance.organizationId, data.organizationId),
-			eq(vacationAllowance.year, data.year),
-		),
-	});
+				return emp;
+			}),
+			Effect.mapError(
+				() =>
+					new NotFoundError({
+						message: "Employee profile not found",
+						entityType: "employee",
+					}),
+			),
+		);
 
-	if (existing) {
-		return { success: false, error: "Policy already exists for this year" };
-	}
+		// Step 3: Verify user is org admin
+		const hasPermission = yield* _(
+			Effect.promise(() => isOrgAdmin(session.user.id, data.organizationId)),
+		);
 
-	try {
-		const [policy] = await db
-			.insert(vacationAllowance)
-			.values({
-				organizationId: data.organizationId,
-				year: data.year,
-				defaultAnnualDays: data.defaultAnnualDays,
-				accrualType: data.accrualType,
-				accrualStartMonth: data.accrualStartMonth,
-				allowCarryover: data.allowCarryover,
-				maxCarryoverDays: data.maxCarryoverDays,
-				carryoverExpiryMonths: data.carryoverExpiryMonths,
-				createdBy: session.user.id,
-			})
-			.returning();
+		if (!hasPermission) {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Insufficient permissions",
+						userId: session.user.id,
+						resource: "vacation_policy",
+						action: "create",
+					}),
+				),
+			);
+		}
 
-		return { success: true, data: policy };
-	} catch (error) {
-		console.error("Create vacation policy error:", error);
-		return { success: false, error: "Failed to create vacation policy" };
-	}
+		// Step 4: Check if policy already exists
+		const existing = yield* _(
+			dbService.query("checkExistingPolicy", async () => {
+				return await dbService.db.query.vacationAllowance.findFirst({
+					where: and(
+						eq(vacationAllowance.organizationId, data.organizationId),
+						eq(vacationAllowance.year, data.year),
+					),
+				});
+			}),
+		);
+
+		if (existing) {
+			yield* _(
+				Effect.fail(
+					new ConflictError({
+						message: "Policy already exists for this year",
+						conflictType: "duplicate_policy",
+						details: { year: data.year },
+					}),
+				),
+			);
+		}
+
+		// Step 5: Create vacation policy
+		const [policy] = yield* _(
+			dbService.query("createVacationPolicy", async () => {
+				return await dbService.db
+					.insert(vacationAllowance)
+					.values({
+						organizationId: data.organizationId,
+						year: data.year,
+						defaultAnnualDays: data.defaultAnnualDays,
+						accrualType: data.accrualType,
+						accrualStartMonth: data.accrualStartMonth,
+						allowCarryover: data.allowCarryover,
+						maxCarryoverDays: data.maxCarryoverDays,
+						carryoverExpiryMonths: data.carryoverExpiryMonths,
+						createdBy: session.user.id,
+					})
+					.returning();
+			}),
+			Effect.mapError(
+				(error) =>
+					new DatabaseError({
+						message: "Failed to create vacation policy",
+						operation: "insert",
+						table: "vacation_allowance",
+						cause: error,
+					}),
+			),
+		);
+
+		return policy;
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
 }
 
 /**
- * Update vacation policy
+ * Update vacation policy using Effect pattern
  */
 export async function updateVacationPolicy(
 	policyId: string,
@@ -143,117 +259,234 @@ export async function updateVacationPolicy(
 		maxCarryoverDays?: string;
 		carryoverExpiryMonths?: number;
 	},
-) {
-	const session = await auth.api.getSession({ headers: await headers() });
-	if (!session?.user) {
-		return { success: false, error: "Not authenticated" };
-	}
+): Promise<ServerActionResult<typeof vacationAllowance.$inferSelect>> {
+	const effect = Effect.gen(function* (_) {
+		// Step 1: Get session via AuthService
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
 
-	const currentEmployee = await getCurrentEmployee();
-	if (!currentEmployee) {
-		return { success: false, error: "Employee profile not found" };
-	}
+		// Step 2: Get database service
+		const dbService = yield* _(DatabaseService);
 
-	// Get the policy to check permissions
-	const policy = await db.query.vacationAllowance.findFirst({
-		where: eq(vacationAllowance.id, policyId),
-	});
+		// Step 3: Get the policy to check permissions
+		const policy = yield* _(
+			dbService.query("getPolicy", async () => {
+				const p = await dbService.db.query.vacationAllowance.findFirst({
+					where: eq(vacationAllowance.id, policyId),
+				});
 
-	if (!policy) {
-		return { success: false, error: "Policy not found" };
-	}
+				if (!p) {
+					throw new Error("Policy not found");
+				}
 
-	// Verify user is org admin
-	if (!(await isOrgAdmin(session.user.id, policy.organizationId))) {
-		return { success: false, error: "Insufficient permissions" };
-	}
+				return p;
+			}),
+			Effect.mapError(
+				() =>
+					new NotFoundError({
+						message: "Policy not found",
+						entityType: "vacation_policy",
+						entityId: policyId,
+					}),
+			),
+		);
 
-	try {
-		const [updated] = await db
-			.update(vacationAllowance)
-			.set({
-				defaultAnnualDays: data.defaultAnnualDays,
-				accrualType: data.accrualType,
-				accrualStartMonth: data.accrualStartMonth,
-				allowCarryover: data.allowCarryover,
-				maxCarryoverDays: data.maxCarryoverDays,
-				carryoverExpiryMonths: data.carryoverExpiryMonths,
-			})
-			.where(eq(vacationAllowance.id, policyId))
-			.returning();
+		// Step 4: Verify user is org admin
+		const hasPermission = yield* _(
+			Effect.promise(() => isOrgAdmin(session.user.id, policy.organizationId)),
+		);
 
-		return { success: true, data: updated };
-	} catch (error) {
-		console.error("Update vacation policy error:", error);
-		return { success: false, error: "Failed to update vacation policy" };
-	}
+		if (!hasPermission) {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Insufficient permissions",
+						userId: session.user.id,
+						resource: "vacation_policy",
+						action: "update",
+					}),
+				),
+			);
+		}
+
+		// Step 5: Update vacation policy
+		const [updated] = yield* _(
+			dbService.query("updateVacationPolicy", async () => {
+				return await dbService.db
+					.update(vacationAllowance)
+					.set({
+						defaultAnnualDays: data.defaultAnnualDays,
+						accrualType: data.accrualType,
+						accrualStartMonth: data.accrualStartMonth,
+						allowCarryover: data.allowCarryover,
+						maxCarryoverDays: data.maxCarryoverDays,
+						carryoverExpiryMonths: data.carryoverExpiryMonths,
+					})
+					.where(eq(vacationAllowance.id, policyId))
+					.returning();
+			}),
+			Effect.mapError(
+				(error) =>
+					new DatabaseError({
+						message: "Failed to update vacation policy",
+						operation: "update",
+						table: "vacation_allowance",
+						cause: error,
+					}),
+			),
+		);
+
+		return updated;
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
 }
 
 /**
- * Get all employees with their vacation allowances
+ * Get all employees with their vacation allowances using Effect pattern
  */
-export async function getEmployeesWithAllowances(organizationId: string, year: number) {
-	const currentEmployee = await getCurrentEmployee();
-	if (!currentEmployee) {
-		return { success: false, error: "Not authenticated", data: [] };
-	}
+export async function getEmployeesWithAllowances(
+	organizationId: string,
+	year: number,
+): Promise<ServerActionResult<any[]>> {
+	const effect = Effect.gen(function* (_) {
+		// Step 1: Get session via AuthService
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
 
-	// Verify user is org admin
-	if (!(await isOrgAdmin(currentEmployee.userId, organizationId))) {
-		return { success: false, error: "Insufficient permissions", data: [] };
-	}
+		// Step 2: Verify user is org admin
+		const hasPermission = yield* _(
+			Effect.promise(() => isOrgAdmin(session.user.id, organizationId)),
+		);
 
-	const employees = await db.query.employee.findMany({
-		where: eq(employee.organizationId, organizationId),
-		with: {
-			user: true,
-			team: true,
-			vacationAllowances: {
-				where: eq(employeeVacationAllowance.year, year),
-			},
-		},
-	});
+		if (!hasPermission) {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Insufficient permissions",
+						userId: session.user.id,
+						resource: "employee_allowances",
+						action: "read",
+					}),
+				),
+			);
+		}
 
-	return { success: true, data: employees };
+		// Step 3: Get employees with allowances
+		const dbService = yield* _(DatabaseService);
+		const employees = yield* _(
+			dbService.query("getEmployeesWithAllowances", async () => {
+				return await dbService.db.query.employee.findMany({
+					where: eq(employee.organizationId, organizationId),
+					with: {
+						user: true,
+						team: true,
+						vacationAllowances: {
+							where: eq(employeeVacationAllowance.year, year),
+						},
+					},
+				});
+			}),
+		);
+
+		return employees;
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
 }
 
 /**
- * Get employee vacation allowance for a specific year
+ * Get employee vacation allowance for a specific year using Effect pattern
  */
-export async function getEmployeeAllowance(employeeId: string, year: number) {
-	const currentEmployee = await getCurrentEmployee();
-	if (!currentEmployee) {
-		return { success: false, error: "Not authenticated", data: null };
-	}
+export async function getEmployeeAllowance(
+	employeeId: string,
+	year: number,
+): Promise<ServerActionResult<any | null>> {
+	const effect = Effect.gen(function* (_) {
+		// Step 1: Get session via AuthService
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
 
-	const emp = await db.query.employee.findFirst({
-		where: eq(employee.id, employeeId),
-		with: {
-			user: true,
-			team: true,
-			vacationAllowances: {
-				where: eq(employeeVacationAllowance.year, year),
-			},
-		},
-	});
+		// Step 2: Get database service
+		const dbService = yield* _(DatabaseService);
 
-	if (!emp) {
-		return { success: false, error: "Employee not found", data: null };
-	}
+		// Step 3: Get employee
+		const emp = yield* _(
+			dbService.query("getEmployee", async () => {
+				const e = await dbService.db.query.employee.findFirst({
+					where: eq(employee.id, employeeId),
+					with: {
+						user: true,
+						team: true,
+						vacationAllowances: {
+							where: eq(employeeVacationAllowance.year, year),
+						},
+					},
+				});
 
-	// Verify user is org admin or manager of this employee
-	const isAdmin = await isOrgAdmin(currentEmployee.userId, emp.organizationId);
-	const isManager = currentEmployee.id === emp.managerId;
+				if (!e) {
+					throw new Error("Employee not found");
+				}
 
-	if (!isAdmin && !isManager && currentEmployee.role !== "admin") {
-		return { success: false, error: "Insufficient permissions", data: null };
-	}
+				return e;
+			}),
+			Effect.mapError(
+				() =>
+					new NotFoundError({
+						message: "Employee not found",
+						entityType: "employee",
+						entityId: employeeId,
+					}),
+			),
+		);
 
-	return { success: true, data: emp };
+		// Step 4: Get current employee for permission check
+		const currentEmployee = yield* _(
+			dbService.query("getCurrentEmployee", async () => {
+				const curr = await dbService.db.query.employee.findFirst({
+					where: eq(employee.userId, session.user.id),
+				});
+
+				if (!curr) {
+					throw new Error("Current employee not found");
+				}
+
+				return curr;
+			}),
+			Effect.mapError(
+				() =>
+					new NotFoundError({
+						message: "Employee profile not found",
+						entityType: "employee",
+					}),
+			),
+		);
+
+		// Step 5: Verify user is org admin or manager of this employee
+		const isAdmin = yield* _(Effect.promise(() => isOrgAdmin(session.user.id, emp.organizationId)));
+		const isManager = yield* _(Effect.promise(() => isManagerOf(emp.id)));
+
+		if (!isAdmin && !isManager && currentEmployee.role !== "admin") {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Insufficient permissions",
+						userId: session.user.id,
+						resource: "employee_allowance",
+						action: "read",
+					}),
+				),
+			);
+		}
+
+		return emp;
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
 }
 
 /**
- * Update employee vacation allowance
+ * Update employee vacation allowance using Effect pattern
  */
 export async function updateEmployeeAllowance(
 	employeeId: string,
@@ -264,122 +497,206 @@ export async function updateEmployeeAllowance(
 		adjustmentDays?: string;
 		adjustmentReason?: string;
 	},
-) {
-	const session = await auth.api.getSession({ headers: await headers() });
-	if (!session?.user) {
-		return { success: false, error: "Not authenticated" };
-	}
+): Promise<ServerActionResult<typeof employeeVacationAllowance.$inferSelect>> {
+	const effect = Effect.gen(function* (_) {
+		// Step 1: Get session via AuthService
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
 
-	const currentEmployee = await getCurrentEmployee();
-	if (!currentEmployee) {
-		return { success: false, error: "Employee profile not found" };
-	}
+		// Step 2: Get database service
+		const dbService = yield* _(DatabaseService);
 
-	const emp = await db.query.employee.findFirst({
-		where: eq(employee.id, employeeId),
-	});
+		// Step 3: Get current employee
+		const currentEmployee = yield* _(
+			dbService.query("getCurrentEmployee", async () => {
+				const curr = await dbService.db.query.employee.findFirst({
+					where: eq(employee.userId, session.user.id),
+				});
 
-	if (!emp) {
-		return { success: false, error: "Employee not found" };
-	}
+				if (!curr) {
+					throw new Error("Employee not found");
+				}
 
-	// Verify user is org admin or manager of this employee
-	const isAdmin = await isOrgAdmin(currentEmployee.userId, emp.organizationId);
-	const isManager = currentEmployee.id === emp.managerId;
-
-	if (!isAdmin && !isManager && currentEmployee.role !== "admin") {
-		return { success: false, error: "Insufficient permissions" };
-	}
-
-	try {
-		// Check if allowance exists
-		const existing = await db.query.employeeVacationAllowance.findFirst({
-			where: and(
-				eq(employeeVacationAllowance.employeeId, employeeId),
-				eq(employeeVacationAllowance.year, year),
+				return curr;
+			}),
+			Effect.mapError(
+				() =>
+					new NotFoundError({
+						message: "Employee profile not found",
+						entityType: "employee",
+					}),
 			),
-		});
+		);
 
-		let allowance: typeof employeeVacationAllowance.$inferSelect;
+		// Step 4: Get target employee
+		const emp = yield* _(
+			dbService.query("getTargetEmployee", async () => {
+				const e = await dbService.db.query.employee.findFirst({
+					where: eq(employee.id, employeeId),
+				});
 
-		if (existing) {
-			// Update existing
-			[allowance] = await db
-				.update(employeeVacationAllowance)
-				.set({
-					customAnnualDays: data.customAnnualDays,
-					customCarryoverDays: data.customCarryoverDays,
-					adjustmentDays: data.adjustmentDays,
-					adjustmentReason: data.adjustmentReason,
-					adjustedAt: data.adjustmentReason ? new Date() : existing.adjustedAt,
-					adjustedBy: data.adjustmentReason ? currentEmployee.id : existing.adjustedBy,
-				})
-				.where(eq(employeeVacationAllowance.id, existing.id))
-				.returning();
-		} else {
-			// Create new
-			[allowance] = await db
-				.insert(employeeVacationAllowance)
-				.values({
-					employeeId,
-					year,
-					customAnnualDays: data.customAnnualDays,
-					customCarryoverDays: data.customCarryoverDays,
-					adjustmentDays: data.adjustmentDays || "0",
-					adjustmentReason: data.adjustmentReason,
-					adjustedAt: data.adjustmentReason ? new Date() : null,
-					adjustedBy: data.adjustmentReason ? currentEmployee.id : null,
-				})
-				.returning();
+				if (!e) {
+					throw new Error("Employee not found");
+				}
+
+				return e;
+			}),
+			Effect.mapError(
+				() =>
+					new NotFoundError({
+						message: "Employee not found",
+						entityType: "employee",
+						entityId: employeeId,
+					}),
+			),
+		);
+
+		// Step 5: Verify user is org admin or manager of this employee
+		const isAdmin = yield* _(Effect.promise(() => isOrgAdmin(session.user.id, emp.organizationId)));
+		const isManager = yield* _(Effect.promise(() => isManagerOf(emp.id)));
+
+		if (!isAdmin && !isManager && currentEmployee.role !== "admin") {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Insufficient permissions",
+						userId: session.user.id,
+						resource: "employee_allowance",
+						action: "update",
+					}),
+				),
+			);
 		}
 
-		return { success: true, data: allowance };
-	} catch (error) {
-		console.error("Update employee allowance error:", error);
-		return { success: false, error: "Failed to update employee allowance" };
-	}
+		// Step 6: Check if allowance exists
+		const existing = yield* _(
+			dbService.query("checkExistingAllowance", async () => {
+				return await dbService.db.query.employeeVacationAllowance.findFirst({
+					where: and(
+						eq(employeeVacationAllowance.employeeId, employeeId),
+						eq(employeeVacationAllowance.year, year),
+					),
+				});
+			}),
+		);
+
+		// Step 7: Update or create allowance
+		const allowance = yield* _(
+			dbService.query("upsertEmployeeAllowance", async () => {
+				if (existing) {
+					// Update existing
+					const [updated] = await dbService.db
+						.update(employeeVacationAllowance)
+						.set({
+							customAnnualDays: data.customAnnualDays,
+							customCarryoverDays: data.customCarryoverDays,
+							adjustmentDays: data.adjustmentDays,
+							adjustmentReason: data.adjustmentReason,
+							adjustedAt: data.adjustmentReason ? currentTimestamp() : existing.adjustedAt,
+							adjustedBy: data.adjustmentReason ? currentEmployee.id : existing.adjustedBy,
+						})
+						.where(eq(employeeVacationAllowance.id, existing.id))
+						.returning();
+					return updated;
+				}
+
+				// Create new
+				const [created] = await dbService.db
+					.insert(employeeVacationAllowance)
+					.values({
+						employeeId,
+						year,
+						customAnnualDays: data.customAnnualDays,
+						customCarryoverDays: data.customCarryoverDays,
+						adjustmentDays: data.adjustmentDays || "0",
+						adjustmentReason: data.adjustmentReason,
+						adjustedAt: data.adjustmentReason ? currentTimestamp() : null,
+						adjustedBy: data.adjustmentReason ? currentEmployee.id : null,
+					})
+					.returning();
+				return created;
+			}),
+			Effect.mapError(
+				(error) =>
+					new DatabaseError({
+						message: "Failed to update employee allowance",
+						operation: existing ? "update" : "insert",
+						table: "employee_vacation_allowance",
+						cause: error,
+					}),
+			),
+		);
+
+		return allowance;
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
 }
 
 /**
- * Get adjustment history for an organization
+ * Get adjustment history for an organization using Effect pattern
  */
-export async function getAdjustmentHistory(organizationId: string, year: number) {
-	const currentEmployee = await getCurrentEmployee();
-	if (!currentEmployee) {
-		return { success: false, error: "Not authenticated", data: [] };
-	}
+export async function getAdjustmentHistory(
+	organizationId: string,
+	year: number,
+): Promise<ServerActionResult<any[]>> {
+	const effect = Effect.gen(function* (_) {
+		// Step 1: Get session via AuthService
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
 
-	// Verify user is org admin
-	if (!(await isOrgAdmin(currentEmployee.userId, organizationId))) {
-		return { success: false, error: "Insufficient permissions", data: [] };
-	}
+		// Step 2: Verify user is org admin
+		const hasPermission = yield* _(
+			Effect.promise(() => isOrgAdmin(session.user.id, organizationId)),
+		);
 
-	const adjustments = await db.query.employeeVacationAllowance.findMany({
-		where: and(
-			eq(employeeVacationAllowance.year, year),
-			// Only get records with adjustments
-		),
-		with: {
-			employee: {
-				with: {
-					user: true,
-					team: true,
-				},
-			},
-			adjuster: {
-				with: {
-					user: true,
-				},
-			},
-		},
-		orderBy: desc(employeeVacationAllowance.adjustedAt),
-	});
+		if (!hasPermission) {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Insufficient permissions",
+						userId: session.user.id,
+						resource: "adjustment_history",
+						action: "read",
+					}),
+				),
+			);
+		}
 
-	// Filter to only this organization and only records with adjustments
-	const filtered = adjustments.filter(
-		(adj) =>
-			adj.employee.organizationId === organizationId && adj.adjustmentReason && adj.adjustedAt,
-	);
+		// Step 3: Get adjustment history
+		const dbService = yield* _(DatabaseService);
+		const adjustments = yield* _(
+			dbService.query("getAdjustmentHistory", async () => {
+				return await dbService.db.query.employeeVacationAllowance.findMany({
+					where: eq(employeeVacationAllowance.year, year),
+					with: {
+						employee: {
+							with: {
+								user: true,
+								team: true,
+							},
+						},
+						adjuster: {
+							with: {
+								user: true,
+							},
+						},
+					},
+					orderBy: desc(employeeVacationAllowance.adjustedAt),
+				});
+			}),
+		);
 
-	return { success: true, data: filtered };
+		// Filter to only this organization and only records with adjustments
+		const filtered = adjustments.filter(
+			(adj) =>
+				adj.employee.organizationId === organizationId &&
+				adj.adjustmentReason &&
+				adj.adjustedAt,
+		);
+
+		return filtered;
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
 }

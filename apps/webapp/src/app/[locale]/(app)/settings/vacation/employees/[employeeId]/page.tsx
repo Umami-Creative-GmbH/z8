@@ -1,14 +1,13 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { IconArrowBack, IconLoader2, IconSave } from "@tabler/icons-react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { IconLoader2, IconSave } from "@tabler/icons-react";
 import { use, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
 import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
+import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,6 +24,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import { Link, useRouter } from "@/navigation";
 import { getEmployeeAllowance, getVacationPolicy, updateEmployeeAllowance } from "../../actions";
 
 const formSchema = z.object({
@@ -44,6 +44,7 @@ export default function EmployeeAllowanceEditPage({
 	const [loading, setLoading] = useState(false);
 	const [employee, setEmployee] = useState<any>(null);
 	const [orgPolicy, setOrgPolicy] = useState<any>(null);
+	const [noEmployee, setNoEmployee] = useState(false);
 	const [currentYear] = useState(new Date().getFullYear());
 
 	const form = useForm<z.infer<typeof formSchema>>({
@@ -59,7 +60,10 @@ export default function EmployeeAllowanceEditPage({
 	useEffect(() => {
 		async function loadData() {
 			const current = await getCurrentEmployee();
-			if (!current) return;
+			if (!current) {
+				setNoEmployee(true);
+				return;
+			}
 
 			const [empResult, policyResult] = await Promise.all([
 				getEmployeeAllowance(employeeId, currentYear),
@@ -130,18 +134,19 @@ export default function EmployeeAllowanceEditPage({
 	const adjustments = allowance?.adjustmentDays ? parseFloat(allowance.adjustmentDays) : 0;
 	const total = annualDays + carryover + adjustments;
 
+	if (noEmployee) {
+		return (
+			<div className="flex flex-1 items-center justify-center p-6">
+				<NoEmployeeError feature="manage employee vacation allowances" />
+			</div>
+		);
+	}
+
 	return (
 		<div className="flex flex-1 flex-col gap-4 p-4">
 			<div className="flex items-center justify-between">
 				<div>
-					<div className="flex items-center gap-2">
-						<Button variant="ghost" size="sm" asChild>
-							<Link href="/settings/vacation/employees">
-								<IconArrowBack className="size-4" />
-							</Link>
-						</Button>
-						<h1 className="text-2xl font-semibold tracking-tight">Edit Vacation Allowance</h1>
-					</div>
+					<h1 className="text-2xl font-semibold tracking-tight">Edit Vacation Allowance</h1>
 					<p className="text-sm text-muted-foreground">
 						Configure custom vacation allowance for {employee.user.name}
 					</p>
@@ -187,6 +192,27 @@ export default function EmployeeAllowanceEditPage({
 							<div className="text-sm text-muted-foreground">Role</div>
 							<Badge>{employee.role}</Badge>
 						</div>
+
+						{employee.managers && employee.managers.length > 0 && (
+							<>
+								<Separator />
+								<div className="space-y-2">
+									<div className="text-sm text-muted-foreground">Managers</div>
+									<div className="space-y-1">
+										{employee.managers.map((m: any) => (
+											<div key={m.id} className="flex items-center gap-2">
+												<span className="text-sm">{m.manager.user.name}</span>
+												{m.isPrimary && (
+													<Badge variant="secondary" className="text-xs">
+														Primary
+													</Badge>
+												)}
+											</div>
+										))}
+									</div>
+								</div>
+							</>
+						)}
 					</CardContent>
 				</Card>
 

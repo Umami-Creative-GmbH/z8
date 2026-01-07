@@ -1,19 +1,34 @@
 import { ProfileForm } from "@/components/settings/profile-form";
-import { requireAuth } from "@/lib/auth-helpers";
+import { TimezoneSettings } from "@/components/settings/timezone-settings";
+import { requireUser } from "@/lib/auth-helpers";
+import { getCurrentTimezone, updateTimezone } from "./actions";
 
 export default async function ProfilePage() {
-	const authContext = await requireAuth();
+	const authContext = await requireUser();
+	const currentTimezone = await getCurrentTimezone();
 
 	return (
-		<div className="flex-1 p-6">
-			<div className="mx-auto max-w-2xl">
-				<div className="mb-6">
+		<div className="p-6">
+			<div className="mx-auto max-w-2xl space-y-6">
+				<div>
 					<h1 className="text-2xl font-semibold">Profile Settings</h1>
 					<p className="text-muted-foreground">
-						Manage your account information and security settings
+						Manage your personal information and preferences
 					</p>
 				</div>
+
 				<ProfileForm user={authContext.user} />
+
+				<TimezoneSettings
+					currentTimezone={currentTimezone}
+					onUpdate={async (timezone) => {
+						"use server";
+						const result = await updateTimezone(timezone);
+						return result.success
+							? { success: true }
+							: { success: false, error: result.error?.message };
+					}}
+				/>
 			</div>
 		</div>
 	);

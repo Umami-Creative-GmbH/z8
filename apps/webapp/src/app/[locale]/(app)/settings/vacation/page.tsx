@@ -1,8 +1,9 @@
-import { IconArrowBack, IconCalendar, IconClockHour4, IconEdit } from "@tabler/icons-react";
+import { IconCalendar, IconClockHour4, IconEdit } from "@tabler/icons-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
+import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { VacationPolicyButton } from "@/components/settings/vacation-policy-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -91,24 +92,29 @@ async function VacationSettingsContent() {
 	const currentEmployee = await getCurrentEmployee();
 
 	if (!currentEmployee) {
+		return (
+			<div className="flex flex-1 items-center justify-center p-6">
+				<NoEmployeeError feature="manage vacation settings" />
+			</div>
+		);
+	}
+
+	// Check if user has admin role
+	const { getAuthContext } = await import("@/lib/auth-helpers");
+	const authContext = await getAuthContext();
+
+	if (!authContext?.employee || authContext.employee.role !== "admin") {
 		redirect("/");
 	}
 
 	const currentYear = new Date().getFullYear();
-	const { data: policy } = await getVacationPolicy(currentEmployee.organizationId, currentYear);
+	const { data: policy } = await getVacationPolicy(authContext.employee.organizationId, currentYear);
 
 	return (
 		<div className="flex flex-1 flex-col gap-4 p-4">
 			<div className="flex items-center justify-between">
 				<div>
-					<div className="flex items-center gap-2">
-						<Button variant="ghost" size="sm" asChild>
-							<Link href="/settings/holidays">
-								<IconArrowBack className="size-4" />
-							</Link>
-						</Button>
-						<h1 className="text-2xl font-semibold tracking-tight">Vacation Policy</h1>
-					</div>
+					<h1 className="text-2xl font-semibold tracking-tight">Vacation Policy</h1>
 					<p className="text-sm text-muted-foreground">
 						Manage organization-wide vacation allowance settings
 					</p>
@@ -128,7 +134,7 @@ async function VacationSettingsContent() {
 							</CardDescription>
 						</div>
 						<VacationPolicyButton
-							organizationId={currentEmployee.organizationId}
+							organizationId={authContext.employee.organizationId}
 							year={currentYear}
 							existingPolicy={policy || undefined}
 							variant="outline"
@@ -139,7 +145,7 @@ async function VacationSettingsContent() {
 						{policy ? (
 							<VacationPolicyCard
 								policy={policy}
-								organizationId={currentEmployee.organizationId}
+								organizationId={authContext.employee.organizationId}
 								year={currentYear}
 							/>
 						) : (
@@ -152,7 +158,7 @@ async function VacationSettingsContent() {
 										allowances.
 									</p>
 									<VacationPolicyButton
-										organizationId={currentEmployee.organizationId}
+										organizationId={authContext.employee.organizationId}
 										year={currentYear}
 									/>
 								</div>
@@ -208,7 +214,7 @@ async function VacationSettingsContent() {
 								Plan ahead by creating policies for upcoming years
 							</p>
 							<VacationPolicyButton
-								organizationId={currentEmployee.organizationId}
+								organizationId={authContext.employee.organizationId}
 								year={currentYear + 1}
 								variant="outline"
 								size="sm"

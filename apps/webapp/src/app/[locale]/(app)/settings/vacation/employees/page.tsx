@@ -1,8 +1,9 @@
-import { IconArrowBack, IconEdit, IconUser } from "@tabler/icons-react";
+import { IconEdit, IconUser } from "@tabler/icons-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
+import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,15 +23,27 @@ async function EmployeeAllowancesContent() {
 	const currentEmployee = await getCurrentEmployee();
 
 	if (!currentEmployee) {
+		return (
+			<div className="flex flex-1 items-center justify-center p-6">
+				<NoEmployeeError feature="manage employee vacation allowances" />
+			</div>
+		);
+	}
+
+	// Check if user has admin role
+	const { getAuthContext } = await import("@/lib/auth-helpers");
+	const authContext = await getAuthContext();
+
+	if (!authContext?.employee || authContext.employee.role !== "admin") {
 		redirect("/");
 	}
 
 	const currentYear = new Date().getFullYear();
 	const { data: employees } = await getEmployeesWithAllowances(
-		currentEmployee.organizationId,
+		authContext.employee.organizationId,
 		currentYear,
 	);
-	const { data: orgPolicy } = await getVacationPolicy(currentEmployee.organizationId, currentYear);
+	const { data: orgPolicy } = await getVacationPolicy(authContext.employee.organizationId, currentYear);
 
 	const defaultDays = orgPolicy?.defaultAnnualDays || "0";
 
@@ -38,14 +51,7 @@ async function EmployeeAllowancesContent() {
 		<div className="flex flex-1 flex-col gap-4 p-4">
 			<div className="flex items-center justify-between">
 				<div>
-					<div className="flex items-center gap-2">
-						<Button variant="ghost" size="sm" asChild>
-							<Link href="/settings/vacation">
-								<IconArrowBack className="size-4" />
-							</Link>
-						</Button>
-						<h1 className="text-2xl font-semibold tracking-tight">Employee Allowances</h1>
-					</div>
+					<h1 className="text-2xl font-semibold tracking-tight">Employee Allowances</h1>
 					<p className="text-sm text-muted-foreground">
 						Configure custom vacation allowances for individual employees
 					</p>
@@ -81,6 +87,7 @@ async function EmployeeAllowancesContent() {
 									<TableRow>
 										<TableHead>Employee</TableHead>
 										<TableHead>Team</TableHead>
+										<TableHead>Managers</TableHead>
 										<TableHead className="text-right">Default Days</TableHead>
 										<TableHead className="text-right">Custom Days</TableHead>
 										<TableHead className="text-right">Carryover</TableHead>
@@ -125,6 +132,24 @@ async function EmployeeAllowancesContent() {
 													</div>
 												</TableCell>
 												<TableCell>{emp.team?.name || "—"}</TableCell>
+												<TableCell>
+													{emp.managers && emp.managers.length > 0 ? (
+														<div className="flex flex-col gap-1">
+															{emp.managers.map((m: any) => (
+																<div key={m.id} className="flex items-center gap-1">
+																	<span className="text-sm">{m.manager.user.name}</span>
+																	{m.isPrimary && (
+																		<Badge variant="secondary" className="text-xs">
+																			Primary
+																		</Badge>
+																	)}
+																</div>
+															))}
+														</div>
+													) : (
+														<span className="text-muted-foreground">—</span>
+													)}
+												</TableCell>
 												<TableCell className="text-right tabular-nums">
 													{customDays === null ? (
 														<span className="text-muted-foreground">{defaultDays}</span>

@@ -1,86 +1,198 @@
 "use server";
 
+import { eq } from "drizzle-orm";
+import { Effect } from "effect";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
+import { db } from "@/db";
+import { user } from "@/db/auth-schema";
+import { ValidationError, AuthenticationError } from "@/lib/effect/errors";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import { AppLayer } from "@/lib/effect/runtime";
+import { AuthService } from "@/lib/effect/services/auth.service";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 import { passwordChangeSchema, profileUpdateSchema } from "@/lib/validations/profile";
 
 /**
- * Update user profile (name and/or image)
+ * Update user profile (name and/or image) using Effect pattern
  */
-export async function updateProfile(data: { name: string; image?: string }) {
-	try {
-		const session = await auth.api.getSession({ headers: await headers() });
-		if (!session?.user) {
-			return { success: false, error: "Not authenticated" };
-		}
+export async function updateProfile(data: {
+	name: string;
+	image?: string | null;
+}): Promise<ServerActionResult<void>> {
+	const effect = Effect.gen(function* (_) {
+		// Step 1: Get session via AuthService
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
 
-		// Validate input
+		// Step 2: Validate input
 		const result = profileUpdateSchema.safeParse(data);
 		if (!result.success) {
-			return { success: false, error: result.error.errors[0]?.message || "Invalid input" };
+			yield* _(
+				Effect.fail(
+					new ValidationError({
+						message: result.error?.errors?.[0]?.message || "Invalid input",
+						field: "profile",
+					}),
+				),
+			);
 		}
 
-		// Update user using Better Auth API
-		const updateData: { name: string; image?: string } = { name: data.name };
-		if (data.image) {
+		// Step 3: Prepare update data
+		const updateData: { name: string; image?: string | null } = { name: data.name };
+		// Handle image: if null, explicitly set to null to remove it
+		// if empty string, also set to null to remove it
+		// if has value, set it
+		if (data.image === null || data.image === "") {
+			updateData.image = null;
+		} else if (data.image) {
 			updateData.image = data.image;
 		}
 
-		await auth.api.updateUser({
-			body: updateData,
-			headers: await headers(),
-		});
+		// Step 4: Update user using Better Auth API
+		yield* _(
+			Effect.tryPromise({
+				try: async () => {
+					await auth.api.updateUser({
+						body: updateData,
+						headers: await headers(),
+					});
+				},
+				catch: (error) => {
+					return new ValidationError({
+						message:
+							error instanceof Error ? error.message : "Failed to update profile",
+						field: "profile",
+					});
+				},
+			}),
+		);
+	}).pipe(Effect.provide(AppLayer));
 
-		return { success: true };
-	} catch (error) {
-		console.error("Profile update error:", error);
-		return { success: false, error: "Failed to update profile" };
-	}
+	return runServerActionSafe(effect);
 }
 
 /**
- * Change user password
+ * Change user password using Effect pattern
  */
 export async function changePassword(data: {
 	currentPassword: string;
 	newPassword: string;
 	confirmPassword: string;
 	revokeOtherSessions?: boolean;
-}) {
-	try {
-		const session = await auth.api.getSession({ headers: await headers() });
-		if (!session?.user) {
-			return { success: false, error: "Not authenticated" };
-		}
+}): Promise<ServerActionResult<void>> {
+	const effect = Effect.gen(function* (_) {
+		// Step 1: Get session via AuthService
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
 
-		// Validate input
+		// Step 2: Validate input
 		const result = passwordChangeSchema.safeParse(data);
 		if (!result.success) {
-			return { success: false, error: result.error.errors[0]?.message || "Invalid input" };
+			yield* _(
+				Effect.fail(
+					new ValidationError({
+						message: result.error?.errors?.[0]?.message || "Invalid input",
+						field: "password",
+					}),
+				),
+			);
 		}
 
-		// Change password using Better Auth API
-		await auth.api.changePassword({
-			body: {
-				currentPassword: data.currentPassword,
-				newPassword: data.newPassword,
-				revokeOtherSessions: data.revokeOtherSessions ?? false,
-			},
-			headers: await headers(),
-		});
+		// Step 3: Change password with Better Auth
+		yield* _(
+			Effect.tryPromise({
+				try: async () => {
+					await auth.api.changePassword({
+						body: {
+							currentPassword: data.currentPassword,
+							newPassword: data.newPassword,
+							revokeOtherSessions: data.revokeOtherSessions ?? false,
+						},
+						headers: await headers(),
+					});
+				},
+				catch: (error: unknown) => {
+					// Better Auth returns specific error messages
+					if (error instanceof Error) {
+						if (
+							error.message?.includes("Invalid password") ||
+							error.message?.includes("Incorrect password")
+						) {
+							return new ValidationError({
+								message: "Current password is incorrect",
+								field: "currentPassword",
+							});
+						}
 
-		return { success: true };
-	} catch (error: any) {
-		console.error("Password change error:", error);
+						return new ValidationError({
+							message: error.message || "Failed to change password",
+							field: "password",
+						});
+					}
 
-		// Better Auth returns specific error messages
-		if (
-			error?.message?.includes("Invalid password") ||
-			error?.message?.includes("Incorrect password")
-		) {
-			return { success: false, error: "Current password is incorrect" };
+					return new ValidationError({
+						message: "Failed to change password",
+						field: "password",
+					});
+				},
+			}),
+		);
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
+}
+
+/**
+ * Update user's timezone preference
+ */
+export async function updateTimezone(timezone: string): Promise<ServerActionResult<void>> {
+	const effect = Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
+		const dbService = yield* _(DatabaseService);
+
+		// Validate timezone (basic check)
+		if (!timezone || timezone.length === 0) {
+			yield* _(
+				Effect.fail(
+					new ValidationError({
+						message: "Timezone is required",
+						field: "timezone",
+					}),
+				),
+			);
 		}
 
-		return { success: false, error: error?.message || "Failed to change password" };
+		// Update user's timezone
+		yield* _(
+			dbService.query("updateTimezone", async () => {
+				await dbService.db
+					.update(user)
+					.set({ timezone })
+					.where(eq(user.id, session.user.id));
+			}),
+		);
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
+}
+
+/**
+ * Get current user's timezone
+ */
+export async function getCurrentTimezone(): Promise<string> {
+	const session = await auth.api.getSession({ headers: await headers() });
+	if (!session?.user) {
+		return "UTC";
 	}
+
+	const userData = await db.query.user.findFirst({
+		where: eq(user.id, session.user.id),
+		columns: {
+			timezone: true,
+		},
+	});
+
+	return userData?.timezone || "UTC";
 }

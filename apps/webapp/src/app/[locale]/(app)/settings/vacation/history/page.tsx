@@ -1,8 +1,9 @@
-import { IconArrowBack, IconClockHour4 } from "@tabler/icons-react";
+import { IconClockHour4 } from "@tabler/icons-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
+import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,12 +23,24 @@ async function AdjustmentHistoryContent() {
 	const currentEmployee = await getCurrentEmployee();
 
 	if (!currentEmployee) {
+		return (
+			<div className="flex flex-1 items-center justify-center p-6">
+				<NoEmployeeError feature="view adjustment history" />
+			</div>
+		);
+	}
+
+	// Check if user has admin role
+	const { getAuthContext } = await import("@/lib/auth-helpers");
+	const authContext = await getAuthContext();
+
+	if (!authContext?.employee || authContext.employee.role !== "admin") {
 		redirect("/");
 	}
 
 	const currentYear = new Date().getFullYear();
 	const { data: adjustments } = await getAdjustmentHistory(
-		currentEmployee.organizationId,
+		authContext.employee.organizationId,
 		currentYear,
 	);
 
@@ -35,14 +48,7 @@ async function AdjustmentHistoryContent() {
 		<div className="flex flex-1 flex-col gap-4 p-4">
 			<div className="flex items-center justify-between">
 				<div>
-					<div className="flex items-center gap-2">
-						<Button variant="ghost" size="sm" asChild>
-							<Link href="/settings/vacation">
-								<IconArrowBack className="size-4" />
-							</Link>
-						</Button>
-						<h1 className="text-2xl font-semibold tracking-tight">Adjustment History</h1>
-					</div>
+					<h1 className="text-2xl font-semibold tracking-tight">Adjustment History</h1>
 					<p className="text-sm text-muted-foreground">
 						Audit trail of all manual vacation allowance adjustments
 					</p>
