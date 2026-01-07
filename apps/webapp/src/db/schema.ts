@@ -10,6 +10,7 @@ import {
 	timestamp,
 	uuid,
 } from "drizzle-orm/pg-core";
+import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 
 // ============================================
 // ENUMS
@@ -28,13 +29,25 @@ export const absenceTypeEnum = pgEnum("absence_type", [
 ]);
 export const approvalStatusEnum = pgEnum("approval_status", ["pending", "approved", "rejected"]);
 export const timeEntryTypeEnum = pgEnum("time_entry_type", ["clock_in", "clock_out", "correction"]);
-export const holidayCategoryEnum = pgEnum("holiday_category", [
+export const holidayCategoryEnum = pgEnum("holiday_category_type", [
 	"public_holiday",
 	"company_holiday",
 	"training_day",
 	"custom",
 ]);
 export const recurrenceTypeEnum = pgEnum("recurrence_type", ["none", "yearly", "custom"]);
+export const genderEnum = pgEnum("gender", ["male", "female", "other"]);
+export const workClassificationEnum = pgEnum("work_classification", ["daily", "weekly", "monthly"]);
+export const scheduleTypeEnum = pgEnum("schedule_type", ["simple", "detailed"]);
+export const dayOfWeekEnum = pgEnum("day_of_week", [
+	"monday",
+	"tuesday",
+	"wednesday",
+	"thursday",
+	"friday",
+	"saturday",
+	"sunday",
+]);
 
 // ============================================
 // ORGANIZATION STRUCTURE
@@ -42,6 +55,7 @@ export const recurrenceTypeEnum = pgEnum("recurrence_type", ["none", "yearly", "
 
 // Import auth tables from auth-schema for references
 import { organization, user } from "./auth-schema";
+export { organization, user };
 
 // Teams/departments within organizations
 export const team = pgTable(
@@ -55,7 +69,7 @@ export const team = pgTable(
 		description: text("description"),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at")
-			.$onUpdate(() => new Date())
+			.$onUpdate(() => currentTimestamp())
 			.notNull(),
 	},
 	(table) => [index("team_organizationId_idx").on(table.organizationId)],
@@ -74,16 +88,25 @@ export const employee = pgTable(
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
 		teamId: uuid("team_id").references(() => team.id, { onDelete: "set null" }),
-		managerId: uuid("manager_id"), // Self-reference to another employee
+		managerId: uuid("manager_id"), // DEPRECATED: Use employee_managers table instead
+
+		// Personal information
+		firstName: text("first_name"),
+		lastName: text("last_name"),
+		gender: genderEnum("gender"),
+		birthday: timestamp("birthday", { mode: "date" }),
+
+		// Job information
 		role: roleEnum("role").default("employee").notNull(),
 		employeeNumber: text("employee_number"),
 		position: text("position"),
 		startDate: timestamp("start_date"),
 		endDate: timestamp("end_date"),
 		isActive: boolean("is_active").default(true).notNull(),
+
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at")
-			.$onUpdate(() => new Date())
+			.$onUpdate(() => currentTimestamp())
 			.notNull(),
 	},
 	(table) => [
@@ -91,6 +114,136 @@ export const employee = pgTable(
 		index("employee_organizationId_idx").on(table.organizationId),
 		index("employee_teamId_idx").on(table.teamId),
 		index("employee_managerId_idx").on(table.managerId),
+	],
+);
+
+// ============================================
+// EMPLOYEE MANAGERS (Many-to-Many)
+// ============================================
+
+// Junction table for multiple managers per employee
+export const employeeManagers = pgTable(
+	"employee_managers",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		employeeId: uuid("employee_id")
+			.notNull()
+			.references(() => employee.id, { onDelete: "cascade" }),
+		managerId: uuid("manager_id")
+			.notNull()
+			.references(() => employee.id, { onDelete: "cascade" }),
+		isPrimary: boolean("is_primary").default(false).notNull(), // Exactly one primary per employee
+		assignedBy: text("assigned_by")
+			.notNull()
+			.references(() => user.id),
+		assignedAt: timestamp("assigned_at").defaultNow().notNull(),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+	},
+	(table) => [
+		index("employeeManagers_employeeId_idx").on(table.employeeId),
+		index("employeeManagers_managerId_idx").on(table.managerId),
+		// Prevent duplicate manager assignments
+		index("employeeManagers_unique_idx").on(table.employeeId, table.managerId),
+	],
+);
+
+// ============================================
+// TEAM PERMISSIONS (Granular Authorization)
+// ============================================
+
+// Granular permissions for team operations
+export const teamPermissions = pgTable(
+	"team_permissions",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		employeeId: uuid("employee_id")
+			.notNull()
+			.references(() => employee.id, { onDelete: "cascade" }),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		teamId: uuid("team_id").references(() => team.id, { onDelete: "cascade" }), // null = org-wide
+
+		// Four permission flags
+		canCreateTeams: boolean("can_create_teams").default(false).notNull(),
+		canManageTeamMembers: boolean("can_manage_team_members").default(false).notNull(),
+		canManageTeamSettings: boolean("can_manage_team_settings").default(false).notNull(),
+		canApproveTeamRequests: boolean("can_approve_team_requests").default(false).notNull(),
+
+		grantedBy: uuid("granted_by")
+			.notNull()
+			.references(() => employee.id),
+		grantedAt: timestamp("granted_at").defaultNow().notNull(),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+		updatedAt: timestamp("updated_at")
+			.$onUpdate(() => currentTimestamp())
+			.notNull(),
+	},
+	(table) => [
+		index("teamPermissions_employeeId_idx").on(table.employeeId),
+		index("teamPermissions_organizationId_idx").on(table.organizationId),
+		index("teamPermissions_teamId_idx").on(table.teamId),
+		// One permission record per employee per organization
+		index("teamPermissions_unique_idx").on(table.employeeId, table.organizationId),
+	],
+);
+
+// ============================================
+// WORK SCHEDULES
+// ============================================
+
+// Employee work schedule configuration
+export const employeeWorkSchedule = pgTable(
+	"employee_work_schedule",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		employeeId: uuid("employee_id")
+			.notNull()
+			.references(() => employee.id, { onDelete: "cascade" }),
+
+		// Classification & Type
+		workClassification: workClassificationEnum("work_classification").notNull(),
+		scheduleType: scheduleTypeEnum("schedule_type").notNull(),
+
+		// Simple mode only
+		hoursPerWeek: decimal("hours_per_week", { precision: 5, scale: 2 }),
+
+		// Effective dates
+		effectiveFrom: timestamp("effective_from").notNull(),
+		effectiveUntil: timestamp("effective_until"),
+
+		createdBy: uuid("created_by")
+			.notNull()
+			.references(() => employee.id),
+		updatedBy: uuid("updated_by").references(() => employee.id),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+		updatedAt: timestamp("updated_at")
+			.$onUpdate(() => currentTimestamp())
+			.notNull(),
+	},
+	(table) => [
+		index("employeeWorkSchedule_employeeId_idx").on(table.employeeId),
+		index("employeeWorkSchedule_effectiveFrom_idx").on(table.effectiveFrom),
+	],
+);
+
+// Detailed day-by-day schedule
+export const employeeWorkScheduleDays = pgTable(
+	"employee_work_schedule_days",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		scheduleId: uuid("schedule_id")
+			.notNull()
+			.references(() => employeeWorkSchedule.id, { onDelete: "cascade" }),
+		dayOfWeek: dayOfWeekEnum("day_of_week").notNull(),
+		hoursPerDay: decimal("hours_per_day", { precision: 4, scale: 2 }).notNull(),
+		isWorkDay: boolean("is_work_day").default(true).notNull(),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+	},
+	(table) => [
+		index("employeeWorkScheduleDays_scheduleId_idx").on(table.scheduleId),
+		// Ensure each day appears only once per schedule
+		index("employeeWorkScheduleDays_unique_idx").on(table.scheduleId, table.dayOfWeek),
 	],
 );
 
@@ -115,7 +268,7 @@ export const holidayCategory = pgTable(
 		isActive: boolean("is_active").default(true).notNull(),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at")
-			.$onUpdate(() => new Date())
+			.$onUpdate(() => currentTimestamp())
 			.notNull(),
 	},
 	(table) => [index("holidayCategory_organizationId_idx").on(table.organizationId)],
@@ -145,7 +298,7 @@ export const holiday = pgTable(
 			.notNull()
 			.references(() => user.id),
 		updatedAt: timestamp("updated_at")
-			.$onUpdate(() => new Date())
+			.$onUpdate(() => currentTimestamp())
 			.notNull(),
 		updatedBy: text("updated_by").references(() => user.id),
 	},
@@ -221,7 +374,7 @@ export const workPeriod = pgTable(
 
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at")
-			.$onUpdate(() => new Date())
+			.$onUpdate(() => currentTimestamp())
 			.notNull(),
 	},
 	(table) => [
@@ -252,7 +405,7 @@ export const absenceCategory = pgTable(
 		isActive: boolean("is_active").default(true).notNull(),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at")
-			.$onUpdate(() => new Date())
+			.$onUpdate(() => currentTimestamp())
 			.notNull(),
 	},
 	(table) => [index("absenceCategory_organizationId_idx").on(table.organizationId)],
@@ -283,7 +436,7 @@ export const absenceEntry = pgTable(
 
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at")
-			.$onUpdate(() => new Date())
+			.$onUpdate(() => currentTimestamp())
 			.notNull(),
 	},
 	(table) => [
@@ -323,7 +476,7 @@ export const vacationAllowance = pgTable(
 
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at")
-			.$onUpdate(() => new Date())
+			.$onUpdate(() => currentTimestamp())
 			.notNull(),
 		createdBy: text("created_by")
 			.notNull()
@@ -356,7 +509,7 @@ export const employeeVacationAllowance = pgTable(
 
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at")
-			.$onUpdate(() => new Date())
+			.$onUpdate(() => currentTimestamp())
 			.notNull(),
 	},
 	(table) => [index("employeeVacationAllowance_employeeId_idx").on(table.employeeId)],
@@ -391,7 +544,7 @@ export const approvalRequest = pgTable(
 
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at")
-			.$onUpdate(() => new Date())
+			.$onUpdate(() => currentTimestamp())
 			.notNull(),
 	},
 	(table) => [
@@ -480,6 +633,18 @@ export const employeeRelations = relations(employee, ({ one, many }) => ({
 	subordinates: many(employee, {
 		relationName: "manager_employee",
 	}),
+	// Multiple managers support
+	managers: many(employeeManagers, {
+		relationName: "employee_managers",
+	}),
+	managedEmployees: many(employeeManagers, {
+		relationName: "manager_employees",
+	}),
+	// Team permissions
+	teamPermissions: many(teamPermissions),
+	// Work schedules
+	workSchedules: many(employeeWorkSchedule),
+	// Existing relations
 	timeEntries: many(timeEntry),
 	workPeriods: many(workPeriod),
 	absenceEntries: many(absenceEntry),
@@ -627,3 +792,65 @@ export const employeeVacationAllowanceRelations = relations(
 		}),
 	}),
 );
+
+// Employee managers relations
+export const employeeManagersRelations = relations(employeeManagers, ({ one }) => ({
+	employee: one(employee, {
+		fields: [employeeManagers.employeeId],
+		references: [employee.id],
+		relationName: "employee_managers",
+	}),
+	manager: one(employee, {
+		fields: [employeeManagers.managerId],
+		references: [employee.id],
+		relationName: "manager_employees",
+	}),
+	assigner: one(user, {
+		fields: [employeeManagers.assignedBy],
+		references: [user.id],
+	}),
+}));
+
+// Team permissions relations
+export const teamPermissionsRelations = relations(teamPermissions, ({ one }) => ({
+	employee: one(employee, {
+		fields: [teamPermissions.employeeId],
+		references: [employee.id],
+	}),
+	organization: one(organization, {
+		fields: [teamPermissions.organizationId],
+		references: [organization.id],
+	}),
+	team: one(team, {
+		fields: [teamPermissions.teamId],
+		references: [team.id],
+	}),
+	grantor: one(employee, {
+		fields: [teamPermissions.grantedBy],
+		references: [employee.id],
+	}),
+}));
+
+// Work schedule relations
+export const employeeWorkScheduleRelations = relations(employeeWorkSchedule, ({ one, many }) => ({
+	employee: one(employee, {
+		fields: [employeeWorkSchedule.employeeId],
+		references: [employee.id],
+	}),
+	creator: one(employee, {
+		fields: [employeeWorkSchedule.createdBy],
+		references: [employee.id],
+	}),
+	updater: one(employee, {
+		fields: [employeeWorkSchedule.updatedBy],
+		references: [employee.id],
+	}),
+	days: many(employeeWorkScheduleDays),
+}));
+
+export const employeeWorkScheduleDaysRelations = relations(employeeWorkScheduleDays, ({ one }) => ({
+	schedule: one(employeeWorkSchedule, {
+		fields: [employeeWorkScheduleDays.scheduleId],
+		references: [employeeWorkSchedule.id],
+	}),
+}));
