@@ -131,13 +131,22 @@ function ApprovalsLoading() {
 
 export default function ApprovalsPage() {
 	return (
-		<SidebarProvider>
-			<ServerAppSidebar />
+		<SidebarProvider
+			style={
+				{
+					"--sidebar-width": "calc(var(--spacing) * 72)",
+					"--header-height": "calc(var(--spacing) * 12)",
+				} as React.CSSProperties
+			}
+		>
+			<ServerAppSidebar variant="inset" />
 			<SidebarInset>
 				<SiteHeader />
-				<Suspense fallback={<ApprovalsLoading />}>
-					<ApprovalsContent />
-				</Suspense>
+				<div className="flex flex-1 flex-col">
+					<Suspense fallback={<ApprovalsLoading />}>
+						<ApprovalsContent />
+					</Suspense>
+				</div>
 			</SidebarInset>
 		</SidebarProvider>
 	);

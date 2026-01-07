@@ -12,16 +12,29 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { formatDate, formatDuration, formatTime } from "@/lib/time-tracking/time-utils";
-import type { WorkPeriodWithEntries } from "@/lib/time-tracking/types";
 import { TimeCorrectionDialog } from "./time-correction-dialog";
 
+interface TimeEntry {
+	id: string;
+	isSuperseded: boolean | null;
+}
+
+interface WorkPeriodData {
+	id: string;
+	startTime: Date;
+	endTime: Date | null;
+	durationMinutes: number | null;
+	clockIn: TimeEntry;
+	clockOut: TimeEntry | undefined;
+}
+
 interface Props {
-	workPeriods: WorkPeriodWithEntries[];
+	workPeriods: WorkPeriodData[];
 	hasManager: boolean;
 }
 
 export function TimeEntriesTable({ workPeriods, hasManager }: Props) {
-	const columns: ColumnDef<WorkPeriodWithEntries>[] = [
+	const columns: ColumnDef<WorkPeriodData>[] = [
 		{
 			accessorKey: "startTime",
 			header: "Date",
@@ -33,7 +46,7 @@ export function TimeEntriesTable({ workPeriods, hasManager }: Props) {
 			cell: ({ row }) => (
 				<div className="flex flex-col gap-1">
 					<span>{formatTime(row.original.startTime)}</span>
-					{row.original.clockInEntry.isSuperseded && (
+					{row.original.clockIn?.isSuperseded && (
 						<Badge variant="outline" className="w-fit text-xs">
 							Corrected
 						</Badge>
@@ -51,7 +64,7 @@ export function TimeEntriesTable({ workPeriods, hasManager }: Props) {
 				return (
 					<div className="flex flex-col gap-1">
 						<span>{formatTime(row.original.endTime)}</span>
-						{row.original.clockOutEntry?.isSuperseded && (
+						{row.original.clockOut?.isSuperseded && (
 							<Badge variant="outline" className="w-fit text-xs">
 								Corrected
 							</Badge>

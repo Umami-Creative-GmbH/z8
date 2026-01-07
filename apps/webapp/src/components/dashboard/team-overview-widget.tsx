@@ -4,6 +4,7 @@ import { IconCalendar, IconLoader2, IconUserCheck, IconUsers } from "@tabler/ico
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
+import { getTeamOverviewStats } from "@/components/dashboard/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -43,14 +44,13 @@ export function TeamOverviewWidget() {
 				return;
 			}
 
-			// TODO: Fetch actual stats from API
-			// For now, using mock data
-			setStats({
-				totalEmployees: 42,
-				activeEmployees: 38,
-				teamsCount: 5,
-				avgWorkHours: 37.5,
-			});
+			// Fetch actual stats from database
+			const result = await getTeamOverviewStats();
+			if (result.success && result.data) {
+				setStats(result.data);
+			} else {
+				toast.error("Failed to load team statistics");
+			}
 
 			setLoading(false);
 		}

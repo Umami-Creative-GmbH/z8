@@ -18,7 +18,8 @@ import { renderTimeCorrectionPendingApproval } from "@/lib/email/render";
 import { createLogger } from "@/lib/logger";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
 import { validateTimeEntry, validateTimeEntryRange } from "@/lib/time-tracking/validation";
-import type { TimeSummary, WorkPeriodWithEntries } from "./types";
+import type { TimeSummary } from "@/lib/time-tracking/types";
+import type { WorkPeriodWithEntries } from "./types";
 
 
 const logger = createLogger("TimeTrackingActionsEffect");
@@ -465,28 +466,43 @@ export async function getWorkPeriods(
 }
 
 /**
- * Get time summary for an employee within a date range
+ * Get time summary for an employee (today, week, month)
  */
 export async function getTimeSummary(
 	employeeId: string,
-	startDate: Date,
-	endDate: Date,
 ): Promise<TimeSummary> {
+	const now = DateTime.now();
+	const todayStart = dateToDB(now.startOf("day"))!;
+	const todayEnd = dateToDB(now.endOf("day"))!;
+	const weekStart = dateToDB(now.startOf("week"))!;
+	const weekEnd = dateToDB(now.endOf("week"))!;
+	const monthStart = dateToDB(now.startOf("month"))!;
+	const monthEnd = dateToDB(now.endOf("month"))!;
+
+	// Fetch all periods for the month (superset of today and week)
 	const periods = await db.query.workPeriod.findMany({
 		where: and(
 			eq(workPeriod.employeeId, employeeId),
-			gte(workPeriod.startTime, startDate),
-			lte(workPeriod.startTime, endDate),
+			gte(workPeriod.startTime, monthStart),
+			lte(workPeriod.startTime, monthEnd),
 		),
 	});
 
-	const totalMinutes = periods.reduce((sum, p) => sum + (p.durationMinutes || 0), 0);
+	// Calculate minutes for each time range
+	const todayMinutes = periods
+		.filter((p) => p.startTime >= todayStart && p.startTime <= todayEnd)
+		.reduce((sum, p) => sum + (p.durationMinutes || 0), 0);
+
+	const weekMinutes = periods
+		.filter((p) => p.startTime >= weekStart && p.startTime <= weekEnd)
+		.reduce((sum, p) => sum + (p.durationMinutes || 0), 0);
+
+	const monthMinutes = periods.reduce((sum, p) => sum + (p.durationMinutes || 0), 0);
 
 	return {
-		totalMinutes,
-		totalHours: Math.floor(totalMinutes / 60),
-		periodCount: periods.length,
-		averageHoursPerDay: periods.length > 0 ? totalMinutes / 60 / periods.length : 0,
+		todayMinutes,
+		weekMinutes,
+		monthMinutes,
 	};
 }
 

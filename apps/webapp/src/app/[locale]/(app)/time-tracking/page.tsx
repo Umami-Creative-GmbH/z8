@@ -8,6 +8,7 @@ import { TimeEntriesTable } from "@/components/time-tracking/time-entries-table"
 import { WeeklySummaryCards } from "@/components/time-tracking/weekly-summary-cards";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { auth } from "@/lib/auth";
+import { dateToDB } from "@/lib/datetime/drizzle-adapter";
 import { getWeekRange } from "@/lib/time-tracking/time-utils";
 import { getActiveWorkPeriod, getCurrentEmployee, getTimeSummary, getWorkPeriods } from "./actions";
 
@@ -26,10 +27,12 @@ export default async function TimeTrackingPage() {
 
 	if (employee) {
 		const { start, end } = getWeekRange(new Date());
+		const startDate = dateToDB(start)!;
+		const endDate = dateToDB(end)!;
 		[activeWorkPeriod, workPeriods, summary] = await Promise.all([
 			getActiveWorkPeriod(employee.id),
-			getWorkPeriods(employee.id, start, end),
-			getTimeSummary(employee.id, new Date()),
+			getWorkPeriods(employee.id, startDate, endDate),
+			getTimeSummary(employee.id),
 		]);
 	}
 

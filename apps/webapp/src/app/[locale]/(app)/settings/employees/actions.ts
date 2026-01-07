@@ -553,7 +553,7 @@ export async function listEmployees(filters?: {
 						user: true,
 						team: true,
 					},
-					orderBy: (employee, { asc }) => [asc(employee.user.name)],
+					orderBy: (employee, { asc }) => [asc(employee.firstName), asc(employee.lastName)],
 				});
 
 				// Apply search filter if provided
@@ -561,12 +561,19 @@ export async function listEmployees(filters?: {
 					const searchLower = filters.search.toLowerCase();
 					query = query.filter(
 						(emp) =>
-							emp.user.name.toLowerCase().includes(searchLower) ||
-							emp.user.email.toLowerCase().includes(searchLower) ||
+							emp.user?.name?.toLowerCase().includes(searchLower) ||
+							emp.user?.email?.toLowerCase().includes(searchLower) ||
 							emp.firstName?.toLowerCase().includes(searchLower) ||
 							emp.lastName?.toLowerCase().includes(searchLower),
 					);
 				}
+
+				// Sort by user name (after fetch since we can't access relations in orderBy)
+				query.sort((a, b) => {
+					const nameA = a.user?.name || `${a.firstName || ""} ${a.lastName || ""}`.trim() || "";
+					const nameB = b.user?.name || `${b.firstName || ""} ${b.lastName || ""}`.trim() || "";
+					return nameA.localeCompare(nameB);
+				});
 
 				return query;
 			}),

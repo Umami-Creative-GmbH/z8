@@ -18,10 +18,15 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import type { WorkPeriodWithEntries } from "@/lib/time-tracking/types";
+
+interface WorkPeriodData {
+	id: string;
+	startTime: Date;
+	endTime: Date | null;
+}
 
 interface Props {
-	workPeriod: WorkPeriodWithEntries;
+	workPeriod: WorkPeriodData;
 }
 
 export function TimeCorrectionDialog({ workPeriod }: Props) {

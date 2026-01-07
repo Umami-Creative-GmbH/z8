@@ -1,11 +1,19 @@
+import { redirect } from "next/navigation";
 import { NoOrganizationError } from "@/components/errors/no-organization-error";
 import { SectionCards } from "@/components/section-cards";
 import { ServerAppSidebar } from "@/components/server-app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { getUserOrganizations } from "@/lib/auth-helpers";
+import { getOnboardingStatus, getUserOrganizations } from "@/lib/auth-helpers";
+import { getOnboardingStepPath } from "@/lib/validations/onboarding";
 
 export default async function Page() {
+	// Check onboarding status first - redirect if not complete
+	const onboardingStatus = await getOnboardingStatus();
+	if (onboardingStatus && !onboardingStatus.onboardingComplete) {
+		redirect(getOnboardingStepPath(onboardingStatus.onboardingStep));
+	}
+
 	const organizations = await getUserOrganizations();
 	const hasOrganizations = organizations.length > 0;
 

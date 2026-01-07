@@ -672,11 +672,34 @@ export async function addTeamMember(
 				const dbService = yield* _(DatabaseService);
 				const permissionsService = yield* _(PermissionsService);
 
-				// Get current employee
+				// Get the team first to know its organization
+				const targetTeam = yield* _(
+					dbService.query("getTeam", async () => {
+						return await dbService.db.query.team.findFirst({
+							where: eq(team.id, teamId),
+						});
+					}),
+					Effect.flatMap((t) =>
+						t
+							? Effect.succeed(t)
+							: Effect.fail(
+									new NotFoundError({
+										message: "Team not found",
+										entityType: "team",
+										entityId: teamId,
+									}),
+								),
+					),
+				);
+
+				// Get current employee - filter by the team's organization
 				const currentEmployee = yield* _(
 					dbService.query("getCurrentEmployee", async () => {
 						return await dbService.db.query.employee.findFirst({
-							where: eq(employee.userId, session.user.id),
+							where: and(
+								eq(employee.userId, session.user.id),
+								eq(employee.organizationId, targetTeam.organizationId),
+							),
 						});
 					}),
 					Effect.flatMap((emp) =>
@@ -684,7 +707,7 @@ export async function addTeamMember(
 							? Effect.succeed(emp)
 							: Effect.fail(
 									new NotFoundError({
-										message: "Employee profile not found",
+										message: "Employee profile not found in this organization",
 										entityType: "employee",
 									}),
 								),
@@ -713,11 +736,14 @@ export async function addTeamMember(
 					);
 				}
 
-				// Verify target employee exists and is in same organization
+				// Verify target employee exists and is in the same organization as the team
 				const targetEmployee = yield* _(
 					dbService.query("getTargetEmployee", async () => {
 						return await dbService.db.query.employee.findFirst({
-							where: eq(employee.id, employeeId),
+							where: and(
+								eq(employee.id, employeeId),
+								eq(employee.organizationId, targetTeam.organizationId),
+							),
 						});
 					}),
 					Effect.flatMap((emp) =>
@@ -725,26 +751,13 @@ export async function addTeamMember(
 							? Effect.succeed(emp)
 							: Effect.fail(
 									new NotFoundError({
-										message: "Target employee not found",
+										message: "Employee not found in this organization",
 										entityType: "employee",
 										entityId: employeeId,
 									}),
 								),
 					),
 				);
-
-				if (targetEmployee.organizationId !== currentEmployee.organizationId) {
-					yield* _(
-						Effect.fail(
-							new AuthorizationError({
-								message: "Cannot add employee from different organization",
-								userId: currentEmployee.id,
-								resource: "team_member",
-								action: "create",
-							}),
-						),
-					);
-				}
 
 				// Add employee to team
 				yield* _(
@@ -755,7 +768,7 @@ export async function addTeamMember(
 								teamId,
 								updatedAt: currentTimestamp(),
 							})
-							.where(eq(employee.id, employeeId));
+							.where(eq(employee.id, targetEmployee.id));
 					}),
 				);
 
@@ -808,11 +821,34 @@ export async function removeTeamMember(
 				const dbService = yield* _(DatabaseService);
 				const permissionsService = yield* _(PermissionsService);
 
-				// Get current employee
+				// Get the team first to know its organization
+				const targetTeam = yield* _(
+					dbService.query("getTeam", async () => {
+						return await dbService.db.query.team.findFirst({
+							where: eq(team.id, teamId),
+						});
+					}),
+					Effect.flatMap((t) =>
+						t
+							? Effect.succeed(t)
+							: Effect.fail(
+									new NotFoundError({
+										message: "Team not found",
+										entityType: "team",
+										entityId: teamId,
+									}),
+								),
+					),
+				);
+
+				// Get current employee - filter by the team's organization
 				const currentEmployee = yield* _(
 					dbService.query("getCurrentEmployee", async () => {
 						return await dbService.db.query.employee.findFirst({
-							where: eq(employee.userId, session.user.id),
+							where: and(
+								eq(employee.userId, session.user.id),
+								eq(employee.organizationId, targetTeam.organizationId),
+							),
 						});
 					}),
 					Effect.flatMap((emp) =>
@@ -820,7 +856,7 @@ export async function removeTeamMember(
 							? Effect.succeed(emp)
 							: Effect.fail(
 									new NotFoundError({
-										message: "Employee profile not found",
+										message: "Employee profile not found in this organization",
 										entityType: "employee",
 									}),
 								),

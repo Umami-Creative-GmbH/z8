@@ -8,17 +8,26 @@ import { clockIn, clockOut } from "@/app/[locale]/(app)/time-tracking/actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatDuration } from "@/lib/time-tracking/time-utils";
-import type { ActiveWorkPeriod } from "@/lib/time-tracking/types";
+
+interface ActiveWorkPeriodData {
+	id: string;
+	startTime: Date;
+	endTime: Date | null;
+}
 
 interface Props {
-	activeWorkPeriod: ActiveWorkPeriod | null;
+	activeWorkPeriod: ActiveWorkPeriodData | null;
 	employeeName: string;
 }
 
 export function ClockInOutWidget({ activeWorkPeriod: initial, employeeName }: Props) {
 	const { t } = useTranslate();
 	const [activeWorkPeriod, _setActiveWorkPeriod] = useState(initial);
-	const [elapsedTime, setElapsedTime] = useState(initial?.elapsedMinutes || 0);
+	const [elapsedTime, setElapsedTime] = useState(() => {
+		if (!initial?.startTime) return 0;
+		const start = new Date(initial.startTime);
+		return Math.floor((Date.now() - start.getTime()) / 60000);
+	});
 	const [loading, setLoading] = useState(false);
 
 	// Real-time elapsed time counter
@@ -26,7 +35,7 @@ export function ClockInOutWidget({ activeWorkPeriod: initial, employeeName }: Pr
 		if (!activeWorkPeriod) return;
 
 		const interval = setInterval(() => {
-			const start = new Date(activeWorkPeriod.workPeriod.startTime);
+			const start = new Date(activeWorkPeriod.startTime);
 			const now = new Date();
 			const minutes = Math.floor((now.getTime() - start.getTime()) / 60000);
 			setElapsedTime(minutes);
@@ -105,7 +114,7 @@ export function ClockInOutWidget({ activeWorkPeriod: initial, employeeName }: Pr
 						<div className="font-bold text-3xl tabular-nums">{formatDuration(elapsedTime)}</div>
 						<div className="text-muted-foreground text-sm">
 							{t("timeTracking.startedAt", "Started at")}{" "}
-							{new Date(activeWorkPeriod.workPeriod.startTime).toLocaleTimeString("en-US", {
+							{new Date(activeWorkPeriod.startTime).toLocaleTimeString("en-US", {
 								hour: "2-digit",
 								minute: "2-digit",
 							})}

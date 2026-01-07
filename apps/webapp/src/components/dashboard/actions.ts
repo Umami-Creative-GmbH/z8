@@ -109,12 +109,24 @@ export async function getUpcomingAbsences(
 
 		const now = currentTimestamp();
 
+		// Get all employee IDs in this organization
+		const orgEmployees = yield* _(
+			dbService.query("getOrgEmployeeIds", async () => {
+				return await dbService.db.query.employee.findMany({
+					where: eq(employee.organizationId, currentEmployee.organizationId),
+					columns: { id: true },
+				});
+			}),
+		);
+		const orgEmployeeIds = orgEmployees.map((e) => e.id);
+
 		// Get upcoming absences (approved, starting from today)
 		const absences = yield* _(
 			dbService.query("getUpcomingAbsences", async () => {
+				if (orgEmployeeIds.length === 0) return [];
 				return await dbService.db.query.absenceEntry.findMany({
 					where: and(
-						eq(absenceEntry.organizationId, currentEmployee.organizationId),
+						inArray(absenceEntry.employeeId, orgEmployeeIds),
 						eq(absenceEntry.status, "approved"),
 						gte(absenceEntry.startDate, now),
 					),
@@ -183,12 +195,24 @@ export async function getTeamCalendarData(
 		const monthStart = dateToDB(monthDT.startOf('month'))!;
 		const monthEnd = dateToDB(monthDT.endOf('month'))!;
 
+		// Get all employee IDs in this organization
+		const orgEmployees = yield* _(
+			dbService.query("getOrgEmployeeIds", async () => {
+				return await dbService.db.query.employee.findMany({
+					where: eq(employee.organizationId, currentEmployee.organizationId),
+					columns: { id: true },
+				});
+			}),
+		);
+		const orgEmployeeIds = orgEmployees.map((e) => e.id);
+
 		// Get all absences for this month
 		const absences = yield* _(
 			dbService.query("getMonthAbsences", async () => {
+				if (orgEmployeeIds.length === 0) return [];
 				return await dbService.db.query.absenceEntry.findMany({
 					where: and(
-						eq(absenceEntry.organizationId, currentEmployee.organizationId),
+						inArray(absenceEntry.employeeId, orgEmployeeIds),
 						eq(absenceEntry.status, "approved"),
 						or(
 							and(
@@ -297,18 +321,30 @@ export async function getRecentlyApprovedRequests(
 			),
 		);
 
+		// Get all employee IDs in this organization for filtering
+		const orgEmployees = yield* _(
+			dbService.query("getOrgEmployeeIds", async () => {
+				return await dbService.db.query.employee.findMany({
+					where: eq(employee.organizationId, currentEmployee.organizationId),
+					columns: { id: true },
+				});
+			}),
+		);
+		const orgEmployeeIds = orgEmployees.map((e) => e.id);
+
 		// Get recently approved requests
 		const requests = yield* _(
 			dbService.query("getRecentlyApproved", async () => {
+				if (orgEmployeeIds.length === 0) return [];
 				return await dbService.db.query.approvalRequest.findMany({
 					where: and(
-						eq(approvalRequest.organizationId, currentEmployee.organizationId),
+						inArray(approvalRequest.requestedBy, orgEmployeeIds),
 						eq(approvalRequest.status, "approved"),
 					),
 					orderBy: (approvalRequest, { desc }) => [desc(approvalRequest.updatedAt)],
 					limit,
 					with: {
-						requestedByEmployee: {
+						requester: {
 							with: {
 								user: {
 									columns: {
@@ -317,7 +353,7 @@ export async function getRecentlyApprovedRequests(
 								},
 							},
 						},
-						approverEmployee: {
+						approver: {
 							with: {
 								user: {
 									columns: {
@@ -352,7 +388,7 @@ export async function getQuickStats(): Promise<ServerActionResult<any>> {
 				return await dbService.db.query.employee.findFirst({
 					where: eq(employee.userId, session.user.id),
 					with: {
-						workSchedule: {
+						workSchedules: {
 							orderBy: (schedule, { desc }) => [desc(schedule.effectiveFrom)],
 							limit: 1,
 						},
@@ -424,8 +460,8 @@ export async function getQuickStats(): Promise<ServerActionResult<any>> {
 		let weekExpected = 40; // Default
 		let monthExpected = 160; // Default
 
-		if (currentEmployee.workSchedule && currentEmployee.workSchedule.length > 0) {
-			const schedule = currentEmployee.workSchedule[0];
+		if (currentEmployee.workSchedules && currentEmployee.workSchedules.length > 0) {
+			const schedule = currentEmployee.workSchedules[0];
 			if (schedule.scheduleType === "simple" && schedule.hoursPerWeek) {
 				weekExpected = Number.parseFloat(schedule.hoursPerWeek);
 				// Estimate monthly hours based on weekly hours
@@ -538,6 +574,123 @@ export async function getUpcomingBirthdays(
 		upcomingBirthdays.sort((a, b) => a.daysUntil - b.daysUntil);
 
 		return upcomingBirthdays;
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
+}
+
+/**
+ * Get team overview statistics for the organization
+ */
+export async function getTeamOverviewStats(): Promise<
+	ServerActionResult<{
+		totalEmployees: number;
+		activeEmployees: number;
+		teamsCount: number;
+		avgWorkHours: number;
+	}>
+> {
+	const effect = Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
+		const dbService = yield* _(DatabaseService);
+
+		// Get current employee
+		const currentEmployee = yield* _(
+			dbService.query("getCurrentEmployee", async () => {
+				return await dbService.db.query.employee.findFirst({
+					where: eq(employee.userId, session.user.id),
+				});
+			}),
+			Effect.flatMap((emp) =>
+				emp
+					? Effect.succeed(emp)
+					: Effect.fail(
+							new NotFoundError({
+								message: "Employee profile not found",
+								entityType: "employee",
+							}),
+						),
+			),
+		);
+
+		// Count total employees in organization
+		const totalEmployeesResult = yield* _(
+			dbService.query("getTotalEmployees", async () => {
+				const result = await dbService.db
+					.select({ count: sql<number>`count(*)::int` })
+					.from(employee)
+					.where(eq(employee.organizationId, currentEmployee.organizationId));
+				return result[0]?.count ?? 0;
+			}),
+		);
+
+		// Count active employees in organization
+		const activeEmployeesResult = yield* _(
+			dbService.query("getActiveEmployees", async () => {
+				const result = await dbService.db
+					.select({ count: sql<number>`count(*)::int` })
+					.from(employee)
+					.where(
+						and(
+							eq(employee.organizationId, currentEmployee.organizationId),
+							eq(employee.isActive, true),
+						),
+					);
+				return result[0]?.count ?? 0;
+			}),
+		);
+
+		// Count teams in organization
+		const teamsCountResult = yield* _(
+			dbService.query("getTeamsCount", async () => {
+				const result = await dbService.db
+					.select({ count: sql<number>`count(*)::int` })
+					.from(team)
+					.where(eq(team.organizationId, currentEmployee.organizationId));
+				return result[0]?.count ?? 0;
+			}),
+		);
+
+		// Calculate average work hours from work schedules
+		const avgWorkHoursResult = yield* _(
+			dbService.query("getAvgWorkHours", async () => {
+				// Get all employees with their latest work schedules
+				const employeesWithSchedules = await dbService.db.query.employee.findMany({
+					where: eq(employee.organizationId, currentEmployee.organizationId),
+					with: {
+						workSchedules: {
+							orderBy: (schedule, { desc }) => [desc(schedule.effectiveFrom)],
+							limit: 1,
+						},
+					},
+				});
+
+				// Calculate average from simple schedules that have hoursPerWeek
+				let totalHours = 0;
+				let countWithSchedule = 0;
+
+				for (const emp of employeesWithSchedules) {
+					if (emp.workSchedules && emp.workSchedules.length > 0) {
+						const schedule = emp.workSchedules[0];
+						if (schedule.scheduleType === "simple" && schedule.hoursPerWeek) {
+							totalHours += Number.parseFloat(schedule.hoursPerWeek);
+							countWithSchedule++;
+						}
+					}
+				}
+
+				// Default to 40 if no schedules found
+				return countWithSchedule > 0 ? totalHours / countWithSchedule : 40;
+			}),
+		);
+
+		return {
+			totalEmployees: totalEmployeesResult,
+			activeEmployees: activeEmployeesResult,
+			teamsCount: teamsCountResult,
+			avgWorkHours: Math.round(avgWorkHoursResult * 10) / 10, // Round to 1 decimal
+		};
 	}).pipe(Effect.provide(AppLayer));
 
 	return runServerActionSafe(effect);
