@@ -1,0 +1,233 @@
+"use client";
+
+import { IconLoader2, IconPlus, IconTrash, IconUsers } from "@tabler/icons-react";
+import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
+import { toast } from "sonner";
+import { addTeamMember, removeTeamMember } from "@/app/[locale]/(app)/settings/teams/actions";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import type { team } from "@/db/schema";
+import type { MemberWithUserAndEmployee } from "./organizations-page-client";
+
+interface TeamMembersDialogProps {
+	team: typeof team.$inferSelect | null;
+	allMembers: MemberWithUserAndEmployee[];
+	open: boolean;
+	onOpenChange: (open: boolean) => void;
+	canManageMembers: boolean;
+}
+
+export function TeamMembersDialog({
+	team,
+	allMembers,
+	open,
+	onOpenChange,
+	canManageMembers,
+}: TeamMembersDialogProps) {
+	const router = useRouter();
+	const [isPending, startTransition] = useTransition();
+	const [actioningId, setActioningId] = useState<string | null>(null);
+	const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>("");
+
+	if (!team) return null;
+
+	// Get current team members
+	const teamMembers = allMembers.filter((m) => m.employee?.teamId === team.id);
+
+	// Get available employees (not in this team, but have employee record)
+	const availableEmployees = allMembers.filter(
+		(m) => m.employee && (!m.employee.teamId || m.employee.teamId !== team.id),
+	);
+
+	const getInitials = (name: string) => {
+		return name
+			.split(" ")
+			.map((n) => n[0])
+			.join("")
+			.toUpperCase()
+			.slice(0, 2);
+	};
+
+	const handleAddMember = async () => {
+		if (!selectedEmployeeId) return;
+
+		setActioningId(selectedEmployeeId);
+		startTransition(async () => {
+			const result = await addTeamMember(team.id, selectedEmployeeId);
+
+			if (result.success) {
+				toast.success("Member added to team");
+				setSelectedEmployeeId("");
+				router.refresh();
+			} else {
+				toast.error(result.error || "Failed to add member");
+			}
+			setActioningId(null);
+		});
+	};
+
+	const handleRemoveMember = async (employeeId: string) => {
+		setActioningId(employeeId);
+		startTransition(async () => {
+			const result = await removeTeamMember(team.id, employeeId);
+
+			if (result.success) {
+				toast.success("Member removed from team");
+				router.refresh();
+			} else {
+				toast.error(result.error || "Failed to remove member");
+			}
+			setActioningId(null);
+		});
+	};
+
+	return (
+		<Dialog open={open} onOpenChange={onOpenChange}>
+			<DialogContent className="sm:max-w-[600px]">
+				<DialogHeader>
+					<DialogTitle className="flex items-center gap-2">
+						<IconUsers className="h-5 w-5" />
+						{team.name} - Team Members
+					</DialogTitle>
+					<DialogDescription>Manage who belongs to this team</DialogDescription>
+				</DialogHeader>
+
+				<div className="space-y-6">
+					{/* Add Member Section */}
+					{canManageMembers && availableEmployees.length > 0 && (
+						<div className="space-y-3">
+							<div className="flex items-center gap-2">
+								<div className="flex-1">
+									<Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
+										<SelectTrigger>
+											<SelectValue placeholder="Select an employee to add" />
+										</SelectTrigger>
+										<SelectContent>
+											{availableEmployees.map((member) => (
+												<SelectItem key={member.employee?.id} value={member.employee?.id}>
+													<div className="flex items-center gap-2">
+														<Avatar className="h-6 w-6">
+															<AvatarImage
+																src={member.user.image || undefined}
+																alt={member.user.name}
+															/>
+															<AvatarFallback className="text-xs">
+																{getInitials(member.user.name)}
+															</AvatarFallback>
+														</Avatar>
+														<span>{member.user.name}</span>
+														{member.employee?.position && (
+															<span className="text-xs text-muted-foreground">
+																({member.employee.position})
+															</span>
+														)}
+													</div>
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								</div>
+								<Button
+									onClick={handleAddMember}
+									disabled={!selectedEmployeeId || isPending}
+									size="sm"
+								>
+									{isPending && actioningId === selectedEmployeeId ? (
+										<IconLoader2 className="h-4 w-4 animate-spin" />
+									) : (
+										<>
+											<IconPlus className="mr-2 h-4 w-4" />
+											Add
+										</>
+									)}
+								</Button>
+							</div>
+							<Separator />
+						</div>
+					)}
+
+					{/* Current Members List */}
+					<div className="space-y-3">
+						<div className="flex items-center justify-between">
+							<h4 className="text-sm font-medium">Current Members ({teamMembers.length})</h4>
+						</div>
+
+						{teamMembers.length === 0 ? (
+							<div className="text-center py-8 text-muted-foreground">
+								<IconUsers className="h-12 w-12 mx-auto mb-2 opacity-50" />
+								<p className="text-sm">No members in this team yet</p>
+								{canManageMembers && (
+									<p className="text-xs mt-1">Add members using the dropdown above</p>
+								)}
+							</div>
+						) : (
+							<ScrollArea className="h-[300px] pr-4">
+								<div className="space-y-2">
+									{teamMembers.map((member) => (
+										<div
+											key={member.employee?.id}
+											className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+										>
+											<div className="flex items-center gap-3 flex-1 min-w-0">
+												<Avatar>
+													<AvatarImage
+														src={member.user.image || undefined}
+														alt={member.user.name}
+													/>
+													<AvatarFallback>{getInitials(member.user.name)}</AvatarFallback>
+												</Avatar>
+												<div className="flex-1 min-w-0">
+													<div className="font-medium truncate">{member.user.name}</div>
+													<div className="text-sm text-muted-foreground truncate">
+														{member.employee?.position || member.user.email}
+													</div>
+												</div>
+											</div>
+											{canManageMembers && (
+												<Button
+													variant="ghost"
+													size="sm"
+													onClick={() => handleRemoveMember(member.employee?.id)}
+													disabled={isPending && actioningId === member.employee?.id}
+												>
+													{isPending && actioningId === member.employee?.id ? (
+														<IconLoader2 className="h-4 w-4 animate-spin" />
+													) : (
+														<IconTrash className="h-4 w-4 text-destructive" />
+													)}
+												</Button>
+											)}
+										</div>
+									))}
+								</div>
+							</ScrollArea>
+						)}
+					</div>
+				</div>
+
+				<div className="flex justify-end">
+					<Button variant="outline" onClick={() => onOpenChange(false)}>
+						Close
+					</Button>
+				</div>
+			</DialogContent>
+		</Dialog>
+	);
+}

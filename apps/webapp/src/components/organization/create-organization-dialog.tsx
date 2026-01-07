@@ -1,0 +1,247 @@
+"use client";
+
+import { zodResolver } from "@hookform/resolvers/zod";
+import { IconBuilding, IconLoader2 } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import { checkSlugAvailability } from "@/app/[locale]/(app)/actions/organization";
+import { Button } from "@/components/ui/button";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
+import {
+	Form,
+	FormControl,
+	FormDescription,
+	FormField,
+	FormItem,
+	FormLabel,
+	FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { organization } from "@/lib/auth-client";
+import {
+	generateSlug,
+	type OrganizationFormValues,
+	organizationSchema,
+} from "@/lib/validations/organization";
+import { useRouter } from "@/navigation";
+
+interface CreateOrganizationDialogProps {
+	open: boolean;
+	onOpenChange: (open: boolean) => void;
+	onSuccess?: () => void;
+}
+
+export function CreateOrganizationDialog({
+	open,
+	onOpenChange,
+	onSuccess,
+}: CreateOrganizationDialogProps) {
+	const { t } = useTranslate();
+	const router = useRouter();
+	const [loading, setLoading] = useState(false);
+	const [checkingSlug, setCheckingSlug] = useState(false);
+	const [slugError, setSlugError] = useState<string | null>(null);
+
+	const form = useForm<OrganizationFormValues>({
+		resolver: zodResolver(organizationSchema),
+		defaultValues: {
+			name: "",
+			slug: "",
+		},
+	});
+
+	const name = form.watch("name");
+	const slug = form.watch("slug");
+
+	// Auto-generate slug from name
+	useEffect(() => {
+		if (name && !form.formState.dirtyFields.slug) {
+			const generatedSlug = generateSlug(name);
+			form.setValue("slug", generatedSlug, { shouldValidate: false });
+		}
+	}, [name, form]);
+
+	// Validate slug availability (debounced)
+	useEffect(() => {
+		if (!slug || slug.length < 2) {
+			setSlugError(null);
+			return;
+		}
+
+		// Don't validate if slug has validation errors from Zod
+		const slugFieldError = form.formState.errors.slug;
+		if (slugFieldError) {
+			setSlugError(null);
+			return;
+		}
+
+		const timeoutId = setTimeout(async () => {
+			setCheckingSlug(true);
+			try {
+				const isAvailable = await checkSlugAvailability(slug);
+				if (!isAvailable) {
+					setSlugError(
+						t(
+							"organization.slugTaken",
+							"This slug is already taken. Please choose a different one.",
+						),
+					);
+				} else {
+					setSlugError(null);
+				}
+			} catch (error) {
+				console.error("Error checking slug availability:", error);
+			} finally {
+				setCheckingSlug(false);
+			}
+		}, 500);
+
+		return () => clearTimeout(timeoutId);
+	}, [slug, form.formState.errors.slug, t]);
+
+	async function onSubmit(values: OrganizationFormValues) {
+		// Final slug availability check
+		if (slugError) {
+			return;
+		}
+
+		setLoading(true);
+
+		try {
+			// Create organization using Better Auth
+			const result = await organization.create({
+				name: values.name,
+				slug: values.slug,
+			});
+
+			if (result.error) {
+				throw new Error(result.error.message || "Failed to create organization");
+			}
+
+			toast.success(t("organization.createSuccess", "Organization created successfully!"));
+
+			// Reset form
+			form.reset();
+
+			// Close dialog
+			onOpenChange(false);
+
+			// Call success callback
+			onSuccess?.();
+
+			// Refresh the page to update organization context
+			router.refresh();
+		} catch (error: any) {
+			console.error("Error creating organization:", error);
+			toast.error(error.message || t("organization.createError", "Failed to create organization"));
+		} finally {
+			setLoading(false);
+		}
+	}
+
+	return (
+		<Dialog open={open} onOpenChange={onOpenChange}>
+			<DialogContent className="sm:max-w-[500px]">
+				<DialogHeader>
+					<div className="flex items-center gap-3">
+						<div className="flex size-10 items-center justify-center rounded-lg bg-primary/10">
+							<IconBuilding className="size-5 text-primary" />
+						</div>
+						<div>
+							<DialogTitle>
+								{t("organization.createDialog.title", "Create Organization")}
+							</DialogTitle>
+							<DialogDescription>
+								{t(
+									"organization.createDialog.description",
+									"Set up your organization to get started",
+								)}
+							</DialogDescription>
+						</div>
+					</div>
+				</DialogHeader>
+
+				<Form {...form}>
+					<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+						{/* Organization Name */}
+						<FormField
+							control={form.control}
+							name="name"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>{t("organization.nameLabel", "Organization Name")}</FormLabel>
+									<FormControl>
+										<Input
+											{...field}
+											placeholder={t("organization.namePlaceholder", "Acme Inc.")}
+											disabled={loading}
+										/>
+									</FormControl>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+
+						{/* Organization Slug */}
+						<FormField
+							control={form.control}
+							name="slug"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>{t("organization.slugLabel", "Organization Slug")}</FormLabel>
+									<FormControl>
+										<div className="relative">
+											<Input
+												{...field}
+												placeholder={t("organization.slugPlaceholder", "acme-inc")}
+												disabled={loading}
+												onChange={(e) => {
+													field.onChange(e);
+													form.trigger("slug"); // Trigger validation on change
+												}}
+											/>
+											{checkingSlug && (
+												<div className="absolute right-3 top-1/2 -translate-y-1/2">
+													<IconLoader2 className="size-4 animate-spin text-muted-foreground" />
+												</div>
+											)}
+										</div>
+									</FormControl>
+									<FormDescription>
+										{t("organization.slugDescription", "Used in URLs. Auto-generated from name.")}
+									</FormDescription>
+									{slugError && <p className="text-sm font-medium text-destructive">{slugError}</p>}
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+
+						<DialogFooter>
+							<Button
+								type="button"
+								variant="outline"
+								onClick={() => onOpenChange(false)}
+								disabled={loading}
+							>
+								{t("common.cancel", "Cancel")}
+							</Button>
+							<Button type="submit" disabled={loading || checkingSlug || !!slugError}>
+								{loading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
+								{t("common.create", "Create")}
+							</Button>
+						</DialogFooter>
+					</form>
+				</Form>
+			</DialogContent>
+		</Dialog>
+	);
+}
