@@ -1,21 +1,15 @@
 "use client";
 
-import { IconCalendar, IconLoader2, IconUserCheck, IconUsers } from "@tabler/icons-react";
+import { IconCalendar, IconUserCheck, IconUsers } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
 import { getTeamOverviewStats } from "@/components/dashboard/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Link } from "@/navigation";
+import { WidgetCard } from "./widget-card";
 
 interface TeamStats {
 	totalEmployees: number;
@@ -24,10 +18,12 @@ interface TeamStats {
 	avgWorkHours: number;
 }
 
+type EmployeeRole = "admin" | "manager" | "employee";
+
 export function TeamOverviewWidget() {
 	const [stats, setStats] = useState<TeamStats | null>(null);
 	const [loading, setLoading] = useState(true);
-	const [currentEmployee, setCurrentEmployee] = useState<any>(null);
+	const [role, setRole] = useState<EmployeeRole | null>(null);
 
 	useEffect(() => {
 		async function loadData() {
@@ -36,15 +32,14 @@ export function TeamOverviewWidget() {
 				setLoading(false);
 				return;
 			}
-			setCurrentEmployee(current);
 
-			// Only show for admins and managers
+			setRole(current.role);
+
 			if (current.role !== "admin" && current.role !== "manager") {
 				setLoading(false);
 				return;
 			}
 
-			// Fetch actual stats from database
 			const result = await getTeamOverviewStats();
 			if (result.success && result.data) {
 				setStats(result.data);
@@ -58,61 +53,29 @@ export function TeamOverviewWidget() {
 		loadData();
 	}, []);
 
-	// Don't show widget if not manager/admin
-	if (!loading && (!currentEmployee || (currentEmployee.role !== "admin" && currentEmployee.role !== "manager"))) {
+	if (!loading && (!role || (role !== "admin" && role !== "manager"))) {
 		return null;
 	}
 
-	if (loading) {
-		return (
-			<Card className="overflow-hidden gap-0 py-0">
-				<CardHeader className="bg-gradient-to-br from-indigo-500/10 via-violet-500/10 to-purple-500/10 py-4">
-					<CardTitle className="flex items-center gap-2">
-						<div className="flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-violet-500 text-white">
-							<IconUsers className="size-4" />
-						</div>
-						Team Overview
-					</CardTitle>
-					<CardDescription className="mt-1.5">
-						Organization statistics and metrics
-					</CardDescription>
-				</CardHeader>
-				<CardContent className="py-4">
-					<div className="flex items-center justify-center py-8">
-						<IconLoader2 className="size-8 animate-spin text-muted-foreground" />
-					</div>
-				</CardContent>
-			</Card>
-		);
-	}
+	if (!loading && !stats) return null;
 
-	if (!stats) {
-		return null;
-	}
-
-	const activePercentage = (stats.activeEmployees / stats.totalEmployees) * 100;
+	const activePercentage = stats
+		? (stats.activeEmployees / stats.totalEmployees) * 100
+		: 0;
 
 	return (
-		<Card className="overflow-hidden gap-0 py-0">
-			<CardHeader className="bg-gradient-to-br from-indigo-500/10 via-violet-500/10 to-purple-500/10 py-4">
-				<div className="flex items-center justify-between">
-					<div>
-						<CardTitle className="flex items-center gap-2">
-							<div className="flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-violet-500 text-white">
-								<IconUsers className="size-4" />
-							</div>
-							Team Overview
-						</CardTitle>
-						<CardDescription className="mt-1.5">
-							Organization statistics and metrics
-						</CardDescription>
-					</div>
-					<Button variant="ghost" size="sm" asChild>
-						<Link href="/settings/employees">Manage</Link>
-					</Button>
-				</div>
-			</CardHeader>
-			<CardContent className="py-4">
+		<WidgetCard
+			title="Team Overview"
+			description="Organization statistics and metrics"
+			icon={<IconUsers className="size-4 text-muted-foreground" />}
+			loading={loading}
+			action={
+				<Button variant="ghost" size="sm" asChild>
+					<Link href="/settings/employees">Manage</Link>
+				</Button>
+			}
+		>
+			{stats && (
 				<div className="space-y-6">
 					{/* Employee Count */}
 					<div className="space-y-2">
@@ -125,8 +88,8 @@ export function TeamOverviewWidget() {
 						</div>
 						<Progress value={activePercentage} className="h-2" />
 						<p className="text-xs text-muted-foreground">
-							{stats.activeEmployees} of {stats.totalEmployees} employees active (
-							{activePercentage.toFixed(0)}%)
+							{stats.activeEmployees} of {stats.totalEmployees} employees active
+							({activePercentage.toFixed(0)}%)
 						</p>
 					</div>
 
@@ -172,7 +135,7 @@ export function TeamOverviewWidget() {
 						</Button>
 					</div>
 				</div>
-			</CardContent>
-		</Card>
+			)}
+		</WidgetCard>
 	);
 }

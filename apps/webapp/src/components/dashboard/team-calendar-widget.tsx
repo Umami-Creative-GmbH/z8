@@ -1,17 +1,14 @@
 "use client";
 
-import { IconCalendar, IconLoader2, IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
+import {
+	IconCalendar,
+	IconChevronLeft,
+	IconChevronRight,
+} from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import {
 	Tooltip,
@@ -20,7 +17,9 @@ import {
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { format, isSameDay } from "@/lib/datetime/luxon-utils";
+import { pluralize } from "@/lib/utils";
 import { getTeamCalendarData } from "./actions";
+import { WidgetCard } from "./widget-card";
 
 type AbsenceDay = {
 	date: Date;
@@ -38,7 +37,9 @@ type TeamCalendarData = {
 };
 
 export function TeamCalendarWidget() {
-	const [calendarData, setCalendarData] = useState<TeamCalendarData | null>(null);
+	const [calendarData, setCalendarData] = useState<TeamCalendarData | null>(
+		null,
+	);
 	const [loading, setLoading] = useState(true);
 	const [currentDate, setCurrentDate] = useState(new Date());
 
@@ -46,13 +47,13 @@ export function TeamCalendarWidget() {
 		async function loadData() {
 			try {
 				setLoading(true);
-				const month = currentDate.getMonth() + 1; // JavaScript months are 0-indexed
+				const month = currentDate.getMonth() + 1;
 				const year = currentDate.getFullYear();
 				const result = await getTeamCalendarData(month, year);
 				if (result.success && result.data) {
 					setCalendarData(result.data);
 				}
-			} catch (error) {
+			} catch {
 				toast.error("Failed to load team calendar");
 			} finally {
 				setLoading(false);
@@ -61,35 +62,7 @@ export function TeamCalendarWidget() {
 		loadData();
 	}, [currentDate]);
 
-	// Auto-hide when no absences in current month
 	if (!loading && calendarData && calendarData.absenceDays.length === 0) {
-		return null;
-	}
-
-	if (loading) {
-		return (
-			<Card className="overflow-hidden gap-0 py-0">
-				<CardHeader className="bg-gradient-to-br from-sky-500/10 via-cyan-500/10 to-blue-500/10 py-4">
-					<CardTitle className="flex items-center gap-2">
-						<div className="flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-sky-500 to-cyan-500 text-white">
-							<IconCalendar className="size-4" />
-						</div>
-						Team Calendar
-					</CardTitle>
-					<CardDescription className="mt-1.5">
-						Monthly absence overview
-					</CardDescription>
-				</CardHeader>
-				<CardContent className="py-4">
-					<div className="flex items-center justify-center py-8">
-						<IconLoader2 className="size-8 animate-spin text-muted-foreground" />
-					</div>
-				</CardContent>
-			</Card>
-		);
-	}
-
-	if (!calendarData) {
 		return null;
 	}
 
@@ -113,31 +86,24 @@ export function TeamCalendarWidget() {
 		setCurrentDate(new Date());
 	};
 
-	// Helper to get absence data for a specific date
 	const getAbsenceForDate = (date: Date): AbsenceDay | undefined => {
-		return calendarData.absenceDays.find((absence) =>
-			isSameDay(new Date(absence.date), date)
+		return calendarData?.absenceDays.find((absence) =>
+			isSameDay(new Date(absence.date), date),
 		);
 	};
 
 	return (
-		<Card className="overflow-hidden gap-0 py-0">
-			<CardHeader className="bg-gradient-to-br from-sky-500/10 via-cyan-500/10 to-blue-500/10 py-4">
-				<div className="flex items-center justify-between">
-					<div>
-						<CardTitle className="flex items-center gap-2">
-							<div className="flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-sky-500 to-cyan-500 text-white">
-								<IconCalendar className="size-4" />
-							</div>
-							Team Calendar
-						</CardTitle>
-						<CardDescription className="mt-1.5">
-							{calendarData.absenceDays.length} day{calendarData.absenceDays.length !== 1 ? "s" : ""} with absences
-						</CardDescription>
-					</div>
-				</div>
-			</CardHeader>
-			<CardContent className="py-4">
+		<WidgetCard
+			title="Team Calendar"
+			description={
+				calendarData
+					? `${calendarData.absenceDays.length} ${pluralize(calendarData.absenceDays.length, "day")} with absences`
+					: "Monthly absence overview"
+			}
+			icon={<IconCalendar className="size-4 text-muted-foreground" />}
+			loading={loading}
+		>
+			{calendarData && (
 				<div className="space-y-4">
 					{/* Month Navigation */}
 					<div className="flex items-center justify-between">
@@ -180,10 +146,7 @@ export function TeamCalendarWidget() {
 							onMonthChange={setCurrentDate}
 							className="rounded-md border"
 							modifiers={{
-								hasAbsences: (date) => {
-									const absence = getAbsenceForDate(date);
-									return !!absence;
-								},
+								hasAbsences: (date) => !!getAbsenceForDate(date),
 							}}
 							modifiersClassNames={{
 								hasAbsences: "bg-orange-100 dark:bg-orange-900/20 font-bold",
@@ -211,7 +174,8 @@ export function TeamCalendarWidget() {
 												<TooltipContent>
 													<div className="space-y-1">
 														<div className="font-medium">
-															{absence.count} team member{absence.count !== 1 ? "s" : ""} out
+															{absence.count} team{" "}
+															{pluralize(absence.count, "member")} out
 														</div>
 														<ul className="text-xs space-y-0.5">
 															{absence.employees.map((emp) => (
@@ -238,7 +202,7 @@ export function TeamCalendarWidget() {
 						</div>
 					</div>
 				</div>
-			</CardContent>
-		</Card>
+			)}
+		</WidgetCard>
 	);
 }

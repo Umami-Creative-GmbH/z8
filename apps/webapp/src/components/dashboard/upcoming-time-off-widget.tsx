@@ -1,20 +1,14 @@
 "use client";
 
-import { IconCalendar, IconLoader2 } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
+import { IconCalendar } from "@tabler/icons-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
 import { Link } from "@/navigation";
 import { format, differenceInDays } from "@/lib/datetime/luxon-utils";
+import { pluralize } from "@/lib/utils";
 import { getUpcomingAbsences } from "./actions";
+import { useWidgetData } from "./use-widget-data";
+import { WidgetCard } from "./widget-card";
 
 type UpcomingAbsence = {
 	id: string;
@@ -32,72 +26,25 @@ type UpcomingAbsence = {
 };
 
 export function UpcomingTimeOffWidget() {
-	const [absences, setAbsences] = useState<UpcomingAbsence[]>([]);
-	const [loading, setLoading] = useState(true);
+	const { data: absences, loading } = useWidgetData<UpcomingAbsence[]>(
+		() => getUpcomingAbsences(5),
+		{ errorMessage: "Failed to load upcoming time off" },
+	);
 
-	useEffect(() => {
-		async function loadData() {
-			try {
-				const result = await getUpcomingAbsences(5);
-				if (result.success && result.data) {
-					setAbsences(result.data);
-				}
-			} catch (error) {
-				toast.error("Failed to load upcoming time off");
-			} finally {
-				setLoading(false);
-			}
-		}
-		loadData();
-	}, []);
-
-	// Auto-hide when no upcoming absences
-	if (!loading && absences.length === 0) {
-		return null;
-	}
-
-	if (loading) {
-		return (
-			<Card className="overflow-hidden gap-0 py-0">
-				<CardHeader className="bg-gradient-to-br from-teal-500/10 via-emerald-500/10 to-green-500/10 py-4">
-					<CardTitle className="flex items-center gap-2">
-						<div className="flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-teal-500 to-emerald-500 text-white">
-							<IconCalendar className="size-4" />
-						</div>
-						Upcoming Time Off
-					</CardTitle>
-					<CardDescription className="mt-1.5">
-						Scheduled team absences
-					</CardDescription>
-				</CardHeader>
-				<CardContent className="py-4">
-					<div className="flex items-center justify-center py-8">
-						<IconLoader2 className="size-8 animate-spin text-muted-foreground" />
-					</div>
-				</CardContent>
-			</Card>
-		);
-	}
+	if (!loading && (!absences || absences.length === 0)) return null;
 
 	return (
-		<Card className="overflow-hidden gap-0 py-0">
-			<CardHeader className="bg-gradient-to-br from-teal-500/10 via-emerald-500/10 to-green-500/10 py-4">
-				<div className="flex items-center justify-between">
-					<div>
-						<CardTitle className="flex items-center gap-2">
-							<div className="flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-teal-500 to-emerald-500 text-white">
-								<IconCalendar className="size-4" />
-							</div>
-							Upcoming Time Off
-						</CardTitle>
-						<CardDescription className="mt-1.5">
-							Next {absences.length} upcoming absence
-							{absences.length !== 1 ? "s" : ""}
-						</CardDescription>
-					</div>
-				</div>
-			</CardHeader>
-			<CardContent className="py-4">
+		<WidgetCard
+			title="Upcoming Time Off"
+			description={
+				absences
+					? `Next ${absences.length} upcoming ${pluralize(absences.length, "absence")}`
+					: "Scheduled team absences"
+			}
+			icon={<IconCalendar className="size-4 text-muted-foreground" />}
+			loading={loading}
+		>
+			{absences && (
 				<div className="space-y-3">
 					{absences.map((absence) => {
 						const daysUntil = differenceInDays(
@@ -123,7 +70,7 @@ export function UpcomingTimeOffWidget() {
 										{format(new Date(absence.startDate), "MMM d")} -{" "}
 										{format(new Date(absence.endDate), "MMM d, yyyy")}
 										<span className="ml-2">
-											({duration} day{duration !== 1 ? "s" : ""})
+											({duration} {pluralize(duration, "day")})
 										</span>
 									</div>
 									{daysUntil >= 0 && (
@@ -151,7 +98,7 @@ export function UpcomingTimeOffWidget() {
 						<Link href="/calendar">View Full Calendar</Link>
 					</Button>
 				</div>
-			</CardContent>
-		</Card>
+			)}
+		</WidgetCard>
 	);
 }
