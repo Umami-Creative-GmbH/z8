@@ -43,6 +43,12 @@ export function SettingsNav({ isAdmin }: SettingsNavProps) {
 			visible: true,
 		},
 		{
+			title: t("settings.security.title", "Security"),
+			url: "/settings/security",
+			icon: IconShield,
+			visible: true,
+		},
+		{
 			title: t("settings.organizations.title", "Organizations & Teams"),
 			url: "/settings/organizations",
 			icon: IconBuilding,
@@ -53,12 +59,6 @@ export function SettingsNav({ isAdmin }: SettingsNavProps) {
 			url: "/settings/employees",
 			icon: IconUsers,
 			visible: isAdmin,
-		},
-		{
-			title: t("settings.security.title", "Security"),
-			url: "/settings/security",
-			icon: IconShield,
-			visible: true,
 		},
 		{
 			title: t("settings.holidays.title", "Holidays"),

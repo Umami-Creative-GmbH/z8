@@ -1,7 +1,7 @@
 "use client";
 
 import type { Icon } from "@tabler/icons-react";
-import type { ReactNode } from "react";
+import { useTranslate } from "@tolgee/react";
 import {
 	SidebarGroup,
 	SidebarGroupContent,
@@ -12,20 +12,20 @@ import {
 } from "@/components/ui/sidebar";
 import { Link } from "@/navigation";
 
-export function NavMain({
+export function NavTeam({
 	items,
-	label,
 }: {
 	items: {
 		title: string;
 		url: string;
 		icon?: Icon;
 	}[];
-	label?: ReactNode;
 }) {
+	const { t } = useTranslate();
+
 	return (
 		<SidebarGroup>
-			{label && <SidebarGroupLabel>{label}</SidebarGroupLabel>}
+			<SidebarGroupLabel>{t("nav.team-label", "Team")}</SidebarGroupLabel>
 			<SidebarGroupContent>
 				<SidebarMenu>
 					{items.map((item) => (

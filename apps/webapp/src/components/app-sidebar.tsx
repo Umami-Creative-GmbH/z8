@@ -12,10 +12,10 @@ import {
 	IconUsers,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { Clock } from "lucide-react";
 import type * as React from "react";
 import { NavMain } from "@/components/nav-main";
 import { NavSecondary } from "@/components/nav-secondary";
+import { NavTeam } from "@/components/nav-team";
 import { NavUser } from "@/components/nav-user";
 import { OrganizationSwitcher } from "@/components/organization-switcher";
 import {
@@ -23,9 +23,6 @@ import {
 	SidebarContent,
 	SidebarFooter,
 	SidebarHeader,
-	SidebarMenu,
-	SidebarMenuButton,
-	SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { useSession } from "@/lib/auth-client";
 import type { UserOrganization } from "@/lib/auth-helpers";
@@ -33,17 +30,26 @@ import type { UserOrganization } from "@/lib/auth-helpers";
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
 	organizations?: UserOrganization[];
 	currentOrganization?: UserOrganization | null;
+	employeeRole?: "admin" | "manager" | "employee" | null;
 }
+
+const isManagerOrAbove = (
+	role: "admin" | "manager" | "employee" | null | undefined,
+): boolean => {
+	return role === "admin" || role === "manager";
+};
 
 export function AppSidebar({
 	organizations = [],
 	currentOrganization = null,
+	employeeRole = null,
 	...props
 }: AppSidebarProps) {
 	const { t } = useTranslate();
 	const { data: session, isPending } = useSession();
 
-	const navMain = [
+	// Personal section - visible to ALL users
+	const navPersonal = [
 		{
 			title: t("nav.dashboard", "Dashboard"),
 			url: "/",
@@ -65,19 +71,23 @@ export function AppSidebar({
 			icon: IconCalendarEvent,
 		},
 		{
-			title: t("nav.approvals", "Approvals"),
-			url: "/approvals",
-			icon: IconClipboardCheck,
-		},
-		{
 			title: t("nav.reports", "Reports"),
 			url: "/reports",
 			icon: IconReport,
 		},
+	];
+
+	// Team section - admin/manager only
+	const navTeam = [
 		{
 			title: t("nav.team", "Team"),
-			url: "#",
+			url: "/team",
 			icon: IconUsers,
+		},
+		{
+			title: t("nav.approvals", "Approvals"),
+			url: "/approvals",
+			icon: IconClipboardCheck,
 		},
 	];
 
@@ -101,19 +111,10 @@ export function AppSidebar({
 					organizations={organizations}
 					currentOrganization={currentOrganization}
 				/>
-				<SidebarMenu>
-					<SidebarMenuItem>
-						<SidebarMenuButton asChild className="data-[slot=sidebar-menu-button]:!p-1.5">
-							<a href="#">
-								<Clock className="!size-5" />
-								<span className="font-semibold text-base">z8</span>
-							</a>
-						</SidebarMenuButton>
-					</SidebarMenuItem>
-				</SidebarMenu>
 			</SidebarHeader>
 			<SidebarContent>
-				<NavMain items={navMain} />
+				<NavMain items={navPersonal} label="z8 app" />
+				{isManagerOrAbove(employeeRole) && <NavTeam items={navTeam} />}
 				<NavSecondary className="mt-auto" items={navSecondary} />
 			</SidebarContent>
 			<SidebarFooter>
