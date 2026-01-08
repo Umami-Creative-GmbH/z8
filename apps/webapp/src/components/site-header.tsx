@@ -1,8 +1,9 @@
 "use client";
 
-import { IconClock, IconPlus } from "@tabler/icons-react";
+import { IconPlus } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { usePathname } from "next/navigation";
+import { TimeClockPopover } from "@/components/time-tracking/time-clock-popover";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -59,10 +60,7 @@ export function SiteHeader() {
 							{t("header.request-absence", "Request Absence")}
 						</span>
 					</Button>
-					<Button size="sm">
-						<IconClock className="size-4" />
-						<span className="hidden sm:inline">{t("header.clock-in", "Clock In")}</span>
-					</Button>
+					<TimeClockPopover />
 				</div>
 			</div>
 		</header>
