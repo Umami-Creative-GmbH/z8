@@ -13,10 +13,8 @@ type Props = {
 	params: Promise<{ locale: string }>;
 };
 
-// Cache the translation loading function using "use cache" directive
-// Note: We use TolgeeBase directly with explicit locale to avoid getLocale() which uses headers()
+// Load translations without "use cache" to avoid hanging on Tolgee API calls
 async function loadTranslations(locale: string): Promise<TolgeeStaticData> {
-	"use cache";
 	// Create Tolgee instance with explicit locale (from route params) to avoid headers() access
 	const tolgee = TolgeeBase().init({
 		observerOptions: {
@@ -24,7 +22,22 @@ async function loadTranslations(locale: string): Promise<TolgeeStaticData> {
 		},
 		language: locale,
 	});
-	return (await tolgee.loadRequired()) as unknown as TolgeeStaticData;
+
+	try {
+		// Add timeout to prevent hanging
+		const timeoutPromise = new Promise<TolgeeStaticData>((_, reject) => {
+			setTimeout(() => reject(new Error("Tolgee load timeout")), 5000);
+		});
+
+		return await Promise.race([
+			tolgee.loadRequired() as Promise<TolgeeStaticData>,
+			timeoutPromise,
+		]);
+	} catch (error) {
+		console.warn("Failed to load Tolgee translations:", error);
+		// Return empty static data on failure
+		return {} as TolgeeStaticData;
+	}
 }
 
 // Generate static params for all locales to enable static generation
@@ -34,8 +47,20 @@ export async function generateStaticParams() {
 
 // Separate component for loading translations to wrap in Suspense
 async function TranslationProvider({ locale, children }: { locale: string; children: ReactNode }) {
-	const records = await loadTranslations(locale);
-	const messages = await getMessages({ locale });
+	let records: TolgeeStaticData = {};
+	let messages = {};
+
+	try {
+		records = await loadTranslations(locale);
+	} catch (error) {
+		console.warn("Failed to load Tolgee records:", error);
+	}
+
+	try {
+		messages = await getMessages({ locale });
+	} catch (error) {
+		console.warn("Failed to load next-intl messages:", error);
+	}
 
 	return (
 		<TolgeeNextProvider language={locale} staticData={records}>
@@ -47,34 +72,49 @@ async function TranslationProvider({ locale, children }: { locale: string; child
 }
 
 // Component for translated meta tags (title, description, keywords)
-// This component is cached and does NOT access dynamic headers
 async function TranslatedMeta({ locale }: { locale: string }) {
-	"use cache";
+	try {
+		const staticData = await loadTranslations(locale);
 
-	// Reuse the cached translation data - this is efficient because loadTranslations is cached
-	const staticData = await loadTranslations(locale);
+		// Initialize a local Tolgee instance to resolve keys without using headers()
+		const tolgee = TolgeeBase().init({
+			observerOptions: {
+				fullKeyEncode: true,
+			},
+			language: locale,
+			staticData,
+		});
 
-	// Initialize a local Tolgee instance to resolve keys without using headers()
-	const tolgee = TolgeeBase().init({
-		observerOptions: {
-			fullKeyEncode: true,
-		},
-		language: locale,
-		staticData,
-	});
+		// Add timeout for tolgee.run() to prevent hanging
+		const runWithTimeout = Promise.race([
+			tolgee.run(),
+			new Promise((_, reject) =>
+				setTimeout(() => reject(new Error("Tolgee run timeout")), 3000)
+			),
+		]);
 
-	// Ensure Tolgee is ready
-	await tolgee.run();
+		await runWithTimeout;
 
-	const t = tolgee.t;
+		const t = tolgee.t;
 
-	return (
-		<>
-			<title>{t("meta.title", "z8 - time app")}</title>
-			<meta content={t("meta.description", "z8 - time app")} name="description" />
-			<meta content={t("meta.keywords", "z8, time, app, productivity")} name="keywords" />
-		</>
-	);
+		return (
+			<>
+				<title>{t("meta.title", "z8 - time app")}</title>
+				<meta content={t("meta.description", "z8 - time app")} name="description" />
+				<meta content={t("meta.keywords", "z8, time, app, productivity")} name="keywords" />
+			</>
+		);
+	} catch (error) {
+		console.warn("Failed to load translated meta:", error);
+		// Return default meta tags on failure
+		return (
+			<>
+				<title>z8 - time app</title>
+				<meta content="z8 - time app" name="description" />
+				<meta content="z8, time, app, productivity" name="keywords" />
+			</>
+		);
+	}
 }
 
 export default async function LocaleLayout({ children, params }: Props) {
