@@ -227,6 +227,10 @@ export default function ProfilePage() {
 														selected={field.value}
 														onSelect={field.onChange}
 														disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
+														captionLayout="dropdown"
+														startMonth={new Date(1900, 0)}
+														endMonth={new Date()}
+														defaultMonth={field.value || new Date(2000, 0)}
 														initialFocus
 													/>
 												</PopoverContent>

@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { IconLoader2, IconSave } from "@tabler/icons-react";
+import { IconDeviceFloppy, IconLoader2 } from "@tabler/icons-react";
 import { use, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -344,7 +344,7 @@ export default function EmployeeAllowanceEditPage({
 									</Button>
 									<Button type="submit" disabled={loading}>
 										{loading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
-										<IconSave className="mr-2 size-4" />
+										<IconDeviceFloppy className="mr-2 size-4" />
 										Save Changes
 									</Button>
 								</div>

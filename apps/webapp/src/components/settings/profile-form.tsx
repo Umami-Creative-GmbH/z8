@@ -30,6 +30,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useRouter } from "@/navigation";
 
@@ -57,6 +58,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
 		birthday: null as Date | null,
 	});
 	const [isProfileLoading, setIsProfileLoading] = useState(false);
+	const [isInitialLoading, setIsInitialLoading] = useState(true);
 	const [uploadProgress, setUploadProgress] = useState(0);
 
 	// Use ref to track current profile data for async operations
@@ -68,15 +70,19 @@ export function ProfileForm({ user }: ProfileFormProps) {
 	// Load employee personal info
 	useEffect(() => {
 		async function loadEmployeeData() {
-			const emp = await getCurrentEmployee();
-			if (emp) {
-				setProfileData((prev) => ({
-					...prev,
-					firstName: emp.firstName || "",
-					lastName: emp.lastName || "",
-					gender: emp.gender || "",
-					birthday: emp.birthday ? new Date(emp.birthday) : null,
-				}));
+			try {
+				const emp = await getCurrentEmployee();
+				if (emp) {
+					setProfileData((prev) => ({
+						...prev,
+						firstName: emp.firstName || "",
+						lastName: emp.lastName || "",
+						gender: emp.gender || "",
+						birthday: emp.birthday ? new Date(emp.birthday) : null,
+					}));
+				}
+			} finally {
+				setIsInitialLoading(false);
 			}
 		}
 		loadEmployeeData();
@@ -111,10 +117,9 @@ export function ProfileForm({ user }: ProfileFormProps) {
 	}, [locale, uppy, uppyLocale]);
 
 	// Handle file input change
-	useEffect(() => {
-		const handleFileChange = (e: Event) => {
-			const input = e.target as HTMLInputElement;
-			const files = input.files;
+	const handleFileInputChange = useCallback(
+		(e: React.ChangeEvent<HTMLInputElement>) => {
+			const files = e.target.files;
 			if (files && files.length > 0) {
 				// Add files to Uppy
 				Array.from(files).forEach((file) => {
@@ -130,21 +135,11 @@ export function ProfileForm({ user }: ProfileFormProps) {
 					}
 				});
 				// Reset input so the same file can be selected again
-				input.value = "";
+				e.target.value = "";
 			}
-		};
-
-		const input = inputRef.current;
-		if (input) {
-			input.addEventListener("change", handleFileChange);
-		}
-
-		return () => {
-			if (input) {
-				input.removeEventListener("change", handleFileChange);
-			}
-		};
-	}, [uppy]);
+		},
+		[uppy],
+	);
 
 	// Listen to upload events
 	useEffect(() => {
@@ -304,7 +299,66 @@ export function ProfileForm({ user }: ProfileFormProps) {
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
-					<form onSubmit={handleProfileSubmit} className="space-y-6">
+					{isInitialLoading ? (
+						<div className="space-y-6">
+							{/* Avatar skeleton */}
+							<div className="space-y-4">
+								<Skeleton className="h-4 w-24" />
+								<div className="flex items-center gap-6">
+									<Skeleton className="h-24 w-24 rounded-full" />
+									<div className="flex-1 space-y-2">
+										<div className="flex items-center gap-2">
+											<Skeleton className="h-9 w-32" />
+										</div>
+										<Skeleton className="h-4 w-64" />
+									</div>
+								</div>
+							</div>
+							{/* Name field skeleton */}
+							<div className="space-y-2">
+								<Skeleton className="h-4 w-12" />
+								<Skeleton className="h-10 w-full" />
+							</div>
+							{/* Email field skeleton */}
+							<div className="space-y-2">
+								<Skeleton className="h-4 w-12" />
+								<Skeleton className="h-10 w-full" />
+								<Skeleton className="h-4 w-40" />
+							</div>
+							{/* Personal info skeleton */}
+							<div className="border-t pt-6 space-y-6">
+								<Skeleton className="h-6 w-40" />
+								<div className="grid gap-4 md:grid-cols-2">
+									<div className="space-y-2">
+										<Skeleton className="h-4 w-20" />
+										<Skeleton className="h-10 w-full" />
+									</div>
+									<div className="space-y-2">
+										<Skeleton className="h-4 w-20" />
+										<Skeleton className="h-10 w-full" />
+									</div>
+								</div>
+								{/* Gender skeleton */}
+								<div className="space-y-2">
+									<Skeleton className="h-4 w-16" />
+									<div className="grid grid-cols-3 gap-3">
+										<Skeleton className="h-20 w-full rounded-lg" />
+										<Skeleton className="h-20 w-full rounded-lg" />
+										<Skeleton className="h-20 w-full rounded-lg" />
+									</div>
+								</div>
+								{/* Birthday skeleton */}
+								<div className="space-y-2">
+									<Skeleton className="h-4 w-16" />
+									<Skeleton className="h-10 w-full" />
+									<Skeleton className="h-4 w-56" />
+								</div>
+							</div>
+							{/* Submit button skeleton */}
+							<Skeleton className="h-10 w-32" />
+						</div>
+					) : (
+						<form onSubmit={handleProfileSubmit} className="space-y-6">
 						{/* Profile Picture Upload */}
 						<div className="space-y-4">
 							<Label className="text-sm font-medium">
@@ -317,6 +371,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
 								accept="image/*"
 								className="hidden"
 								aria-label="Upload profile picture"
+								onChange={handleFileInputChange}
 							/>
 							<div className="flex items-center gap-6">
 								<div className="relative">
@@ -400,125 +455,123 @@ export function ProfileForm({ user }: ProfileFormProps) {
 						</div>
 
 						{/* Personal Information Section */}
-						<div className="space-y-4 pt-4">
-							<div className="border-t pt-4">
-								<h3 className="text-lg font-medium mb-4">Personal Information</h3>
+						<div className="border-t pt-6 space-y-6">
+							<h3 className="text-lg font-medium">Personal Information</h3>
 
-								<div className="grid gap-4 md:grid-cols-2">
-									{/* First Name */}
-									<div className="space-y-2">
-										<Label htmlFor="firstName">First Name</Label>
-										<Input
-											id="firstName"
-											value={profileData.firstName}
-											onChange={(e) =>
-												setProfileData((prev) => ({ ...prev, firstName: e.target.value }))
-											}
-											placeholder="Enter your first name"
-										/>
-									</div>
-
-									{/* Last Name */}
-									<div className="space-y-2">
-										<Label htmlFor="lastName">Last Name</Label>
-										<Input
-											id="lastName"
-											value={profileData.lastName}
-											onChange={(e) =>
-												setProfileData((prev) => ({ ...prev, lastName: e.target.value }))
-											}
-											placeholder="Enter your last name"
-										/>
-									</div>
-								</div>
-
-								{/* Gender */}
+							<div className="grid gap-4 md:grid-cols-2">
+								{/* First Name */}
 								<div className="space-y-2">
-									<Label>Gender</Label>
-									<div className="grid grid-cols-3 gap-3">
-										<button
-											type="button"
-											onClick={() => setProfileData((prev) => ({ ...prev, gender: "male" }))}
-											className={cn(
-												"flex flex-col items-center justify-center gap-2 rounded-lg border-2 p-4 transition-all hover:border-primary/50",
-												profileData.gender === "male"
-													? "border-primary bg-primary/5 text-primary"
-													: "border-border bg-background",
-											)}
-										>
-											<IconGenderMale className="h-6 w-6" />
-											<span className="text-sm font-medium">Male</span>
-										</button>
-										<button
-											type="button"
-											onClick={() => setProfileData((prev) => ({ ...prev, gender: "female" }))}
-											className={cn(
-												"flex flex-col items-center justify-center gap-2 rounded-lg border-2 p-4 transition-all hover:border-primary/50",
-												profileData.gender === "female"
-													? "border-primary bg-primary/5 text-primary"
-													: "border-border bg-background",
-											)}
-										>
-											<IconGenderFemale className="h-6 w-6" />
-											<span className="text-sm font-medium">Female</span>
-										</button>
-										<button
-											type="button"
-											onClick={() => setProfileData((prev) => ({ ...prev, gender: "other" }))}
-											className={cn(
-												"flex flex-col items-center justify-center gap-2 rounded-lg border-2 p-4 transition-all hover:border-primary/50",
-												profileData.gender === "other"
-													? "border-primary bg-primary/5 text-primary"
-													: "border-border bg-background",
-											)}
-										>
-											<IconGenderBigender className="h-6 w-6" />
-											<span className="text-sm font-medium">Other</span>
-										</button>
-									</div>
+									<Label htmlFor="firstName">First Name</Label>
+									<Input
+										id="firstName"
+										value={profileData.firstName}
+										onChange={(e) =>
+											setProfileData((prev) => ({ ...prev, firstName: e.target.value }))
+										}
+										placeholder="Enter your first name"
+									/>
 								</div>
 
-								{/* Birthday */}
-								<div className="space-y-2 mt-8">
-									<Label htmlFor="birthday">Birthday</Label>
-									<Popover>
-										<PopoverTrigger asChild>
-											<Button
-												id="birthday"
-												variant="outline"
-												className={cn(
-													"w-full justify-start text-left font-normal",
-													!profileData.birthday && "text-muted-foreground",
-												)}
-											>
-												<IconCalendar className="mr-2 h-4 w-4" />
-												{profileData.birthday ? (
-													format(profileData.birthday, "PPP")
-												) : (
-													<span>Pick your birthday</span>
-												)}
-											</Button>
-										</PopoverTrigger>
-										<PopoverContent className="w-auto p-0" align="start">
-											<Calendar
-												mode="single"
-												selected={profileData.birthday || undefined}
-												onSelect={(date) =>
-													setProfileData((prev) => ({ ...prev, birthday: date || null }))
-												}
-												disabled={(date) => date > new Date()}
-												initialFocus
-												captionLayout="dropdown-months"
-												startMonth={new Date(1940, 0)}
-												endMonth={new Date()}
-												defaultMonth={profileData.birthday || new Date(2000, 0)}
-											/>
-										</PopoverContent>
-									</Popover>
-									<p className="text-muted-foreground text-sm">
-										Your birthday helps us celebrate with you
-									</p>
+								{/* Last Name */}
+								<div className="space-y-2">
+									<Label htmlFor="lastName">Last Name</Label>
+									<Input
+										id="lastName"
+										value={profileData.lastName}
+										onChange={(e) =>
+											setProfileData((prev) => ({ ...prev, lastName: e.target.value }))
+										}
+										placeholder="Enter your last name"
+									/>
 								</div>
+							</div>
+
+							{/* Gender */}
+							<div className="space-y-2">
+								<Label>Gender</Label>
+								<div className="grid grid-cols-3 gap-3">
+									<button
+										type="button"
+										onClick={() => setProfileData((prev) => ({ ...prev, gender: "male" }))}
+										className={cn(
+											"flex flex-col items-center justify-center gap-2 rounded-lg border-2 p-4 transition-all hover:border-primary/50",
+											profileData.gender === "male"
+												? "border-primary bg-primary/5 text-primary"
+												: "border-border bg-background",
+										)}
+									>
+										<IconGenderMale className="h-6 w-6" />
+										<span className="text-sm font-medium">Male</span>
+									</button>
+									<button
+										type="button"
+										onClick={() => setProfileData((prev) => ({ ...prev, gender: "female" }))}
+										className={cn(
+											"flex flex-col items-center justify-center gap-2 rounded-lg border-2 p-4 transition-all hover:border-primary/50",
+											profileData.gender === "female"
+												? "border-primary bg-primary/5 text-primary"
+												: "border-border bg-background",
+										)}
+									>
+										<IconGenderFemale className="h-6 w-6" />
+										<span className="text-sm font-medium">Female</span>
+									</button>
+									<button
+										type="button"
+										onClick={() => setProfileData((prev) => ({ ...prev, gender: "other" }))}
+										className={cn(
+											"flex flex-col items-center justify-center gap-2 rounded-lg border-2 p-4 transition-all hover:border-primary/50",
+											profileData.gender === "other"
+												? "border-primary bg-primary/5 text-primary"
+												: "border-border bg-background",
+										)}
+									>
+										<IconGenderBigender className="h-6 w-6" />
+										<span className="text-sm font-medium">Other</span>
+									</button>
+								</div>
+							</div>
+
+							{/* Birthday */}
+							<div className="space-y-2">
+								<Label htmlFor="birthday">Birthday</Label>
+								<Popover>
+									<PopoverTrigger asChild>
+										<Button
+											id="birthday"
+											variant="outline"
+											className={cn(
+												"w-full justify-start text-left font-normal",
+												!profileData.birthday && "text-muted-foreground",
+											)}
+										>
+											<IconCalendar className="mr-2 h-4 w-4" />
+											{profileData.birthday ? (
+												format(profileData.birthday, "PPP")
+											) : (
+												<span>Pick your birthday</span>
+											)}
+										</Button>
+									</PopoverTrigger>
+									<PopoverContent className="w-auto p-0" align="start">
+										<Calendar
+											mode="single"
+											selected={profileData.birthday || undefined}
+											onSelect={(date) =>
+												setProfileData((prev) => ({ ...prev, birthday: date || null }))
+											}
+											disabled={(date) => date > new Date()}
+											initialFocus
+											captionLayout="dropdown"
+											startMonth={new Date(1940, 0)}
+											endMonth={new Date()}
+											defaultMonth={profileData.birthday || new Date(2000, 0)}
+										/>
+									</PopoverContent>
+								</Popover>
+								<p className="text-muted-foreground text-sm">
+									Your birthday helps us celebrate with you
+								</p>
 							</div>
 						</div>
 
@@ -533,7 +586,8 @@ export function ProfileForm({ user }: ProfileFormProps) {
 								t("profile.update-profile", "Update Profile")
 							)}
 						</Button>
-					</form>
+						</form>
+					)}
 				</CardContent>
 			</Card>
 		</div>

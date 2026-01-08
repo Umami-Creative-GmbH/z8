@@ -1,13 +1,14 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { IconArrowBack, IconLoader2, IconSave } from "@tabler/icons-react";
+import { IconArrowBack, IconDeviceFloppy, IconLoader2 } from "@tabler/icons-react";
 import { use, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
 import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
+import { ManagerAssignment } from "@/components/settings/manager-assignment";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -31,7 +32,7 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Link, useRouter } from "@/navigation";
-import { getEmployee, updateEmployee } from "../actions";
+import { getEmployee, listEmployees, updateEmployee } from "../actions";
 
 const formSchema = z.object({
 	firstName: z.string().optional(),
@@ -53,6 +54,7 @@ export default function EmployeeDetailPage({
 	const [currentEmployee, setCurrentEmployee] = useState<any>(null);
 	const [noEmployee, setNoEmployee] = useState(false);
 	const [isAdmin, setIsAdmin] = useState(false);
+	const [availableManagers, setAvailableManagers] = useState<any[]>([]);
 
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
@@ -65,6 +67,22 @@ export default function EmployeeDetailPage({
 		},
 	});
 
+	const loadEmployeeData = async () => {
+		const result = await getEmployee(employeeId);
+		if (result.success && result.data) {
+			setEmployee(result.data);
+			form.reset({
+				firstName: result.data.firstName || "",
+				lastName: result.data.lastName || "",
+				gender: result.data.gender || undefined,
+				position: result.data.position || "",
+				role: result.data.role || undefined,
+			});
+		} else {
+			toast.error(result.error || "Failed to load employee");
+		}
+	};
+
 	useEffect(() => {
 		async function loadData() {
 			const current = await getCurrentEmployee();
@@ -75,18 +93,19 @@ export default function EmployeeDetailPage({
 			setCurrentEmployee(current);
 			setIsAdmin(current.role === "admin");
 
-			const result = await getEmployee(employeeId);
-			if (result.success && result.data) {
-				setEmployee(result.data);
-				form.reset({
-					firstName: result.data.firstName || "",
-					lastName: result.data.lastName || "",
-					gender: result.data.gender || undefined,
-					position: result.data.position || "",
-					role: result.data.role || undefined,
-				});
-			} else {
-				toast.error(result.error || "Failed to load employee");
+			// Load employee data
+			await loadEmployeeData();
+
+			// Load available managers (admin and manager roles, excluding the current employee)
+			const managersResult = await listEmployees({ role: "admin" });
+			const managersResult2 = await listEmployees({ role: "manager" });
+
+			if (managersResult.success && managersResult2.success) {
+				const allManagers = [
+					...(managersResult.data || []),
+					...(managersResult2.data || []),
+				].filter((m) => m.id !== employeeId); // Exclude the employee being edited
+				setAvailableManagers(allManagers);
 			}
 		}
 
@@ -346,7 +365,7 @@ export default function EmployeeDetailPage({
 										</Button>
 										<Button type="submit" disabled={loading}>
 											{loading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
-											<IconSave className="mr-2 size-4" />
+											<IconDeviceFloppy className="mr-2 size-4" />
 											Save Changes
 										</Button>
 									</div>
@@ -356,6 +375,16 @@ export default function EmployeeDetailPage({
 					</CardContent>
 				</Card>
 			</div>
+
+			{/* Manager Assignment Section - Only for admins */}
+			{isAdmin && availableManagers.length > 0 && (
+				<ManagerAssignment
+					employeeId={employeeId}
+					currentManagers={employee.managers || []}
+					availableManagers={availableManagers}
+					onSuccess={loadEmployeeData}
+				/>
+			)}
 		</div>
 	);
 }
