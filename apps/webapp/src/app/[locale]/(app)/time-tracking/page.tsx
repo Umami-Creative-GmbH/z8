@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { getCurrentTimezone } from "@/app/[locale]/(app)/settings/profile/actions";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { ServerAppSidebar } from "@/components/server-app-sidebar";
 import { SiteHeader } from "@/components/site-header";
@@ -19,6 +20,9 @@ export default async function TimeTrackingPage() {
 	}
 
 	const employee = await getCurrentEmployee();
+
+	// Get user's timezone for same-day detection
+	const timezone = await getCurrentTimezone();
 
 	// Fetch data only if employee exists
 	let activeWorkPeriod = null;
@@ -68,7 +72,11 @@ export default async function TimeTrackingPage() {
 
 							{/* Time Entries Table */}
 							<div className="px-4 lg:px-6">
-								<TimeEntriesTable workPeriods={workPeriods} hasManager={!!employee.managerId} />
+								<TimeEntriesTable
+									workPeriods={workPeriods}
+									hasManager={!!employee.managerId}
+									employeeTimezone={timezone}
+								/>
 							</div>
 						</div>
 					)}

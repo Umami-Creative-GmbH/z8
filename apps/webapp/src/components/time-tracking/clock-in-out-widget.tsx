@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { clockIn, clockOut } from "@/app/[locale]/(app)/time-tracking/actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatDuration } from "@/lib/time-tracking/time-utils";
+import { formatDurationWithSeconds } from "@/lib/time-tracking/time-utils";
 
 interface ActiveWorkPeriodData {
 	id: string;
@@ -23,22 +23,23 @@ interface Props {
 export function ClockInOutWidget({ activeWorkPeriod: initial, employeeName }: Props) {
 	const { t } = useTranslate();
 	const [activeWorkPeriod, _setActiveWorkPeriod] = useState(initial);
-	const [elapsedTime, setElapsedTime] = useState(() => {
-		if (!initial?.startTime) return 0;
-		const start = new Date(initial.startTime);
-		return Math.floor((Date.now() - start.getTime()) / 60000);
-	});
+	const [elapsedSeconds, setElapsedSeconds] = useState(0);
 	const [loading, setLoading] = useState(false);
 
-	// Real-time elapsed time counter
+	// Real-time elapsed time counter - runs only on client to avoid hydration mismatch
 	useEffect(() => {
 		if (!activeWorkPeriod) return;
 
-		const interval = setInterval(() => {
+		// Calculate initial elapsed time on client
+		const calculateElapsed = () => {
 			const start = new Date(activeWorkPeriod.startTime);
-			const now = new Date();
-			const minutes = Math.floor((now.getTime() - start.getTime()) / 60000);
-			setElapsedTime(minutes);
+			return Math.floor((Date.now() - start.getTime()) / 1000);
+		};
+
+		setElapsedSeconds(calculateElapsed());
+
+		const interval = setInterval(() => {
+			setElapsedSeconds(calculateElapsed());
 		}, 1000);
 
 		return () => clearInterval(interval);
@@ -111,7 +112,7 @@ export function ClockInOutWidget({ activeWorkPeriod: initial, employeeName }: Pr
 			<CardContent className="flex flex-col gap-4">
 				{isClockedIn && (
 					<div className="flex flex-col gap-2">
-						<div className="font-bold text-3xl tabular-nums">{formatDuration(elapsedTime)}</div>
+						<div className="font-bold text-3xl tabular-nums">{formatDurationWithSeconds(elapsedSeconds)}</div>
 						<div className="text-muted-foreground text-sm">
 							{t("timeTracking.startedAt", "Started at")}{" "}
 							{new Date(activeWorkPeriod.startTime).toLocaleTimeString("en-US", {

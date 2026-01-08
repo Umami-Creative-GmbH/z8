@@ -11,6 +11,17 @@ export function formatDuration(minutes: number | null | undefined): string {
 	return `${hours}h ${mins.toString().padStart(2, "0")}m`;
 }
 
+export function formatDurationWithSeconds(totalSeconds: number | null | undefined): string {
+	const safeSeconds = totalSeconds ?? 0;
+	if (Number.isNaN(safeSeconds)) {
+		return "0:00:00";
+	}
+	const hours = Math.floor(safeSeconds / 3600);
+	const minutes = Math.floor((safeSeconds % 3600) / 60);
+	const seconds = safeSeconds % 60;
+	return `${hours}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+}
+
 export function formatDate(dateString: string | Date | DateTime): string {
 	let dt: DateTime;
 
@@ -83,4 +94,26 @@ export function calculateElapsedMinutes(startTime: Date | string | DateTime): nu
 
 	const now = DateTime.now();
 	return Math.floor(now.diff(start, 'minutes').minutes);
+}
+
+/**
+ * Check if a timestamp is from "today" in the given timezone
+ * Used to determine if a time entry can be edited directly or requires approval
+ */
+export function isSameDayInTimezone(timestamp: Date | string | DateTime, timezone: string): boolean {
+	let dt: DateTime;
+
+	if (typeof timestamp === 'string') {
+		dt = parseISO(timestamp, 'utc');
+	} else if (timestamp instanceof Date) {
+		dt = fromJSDate(timestamp, 'utc');
+	} else {
+		dt = timestamp;
+	}
+
+	// Convert both to the target timezone for comparison
+	const timestampInTz = dt.setZone(timezone);
+	const todayInTz = DateTime.now().setZone(timezone);
+
+	return timestampInTz.hasSame(todayInTz, 'day');
 }

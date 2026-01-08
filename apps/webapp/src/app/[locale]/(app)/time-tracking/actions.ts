@@ -5,6 +5,7 @@ import { and, desc, eq, gte, isNull, lte } from "drizzle-orm";
 import { Effect } from "effect";
 import { headers } from "next/headers";
 import { db } from "@/db";
+import { user } from "@/db/auth-schema";
 import { approvalRequest, employee, timeEntry, workPeriod } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { dateFromDB, dateToDB } from "@/lib/datetime/drizzle-adapter";
@@ -17,6 +18,7 @@ import { EmailService } from "@/lib/effect/services/email.service";
 import { renderTimeCorrectionPendingApproval } from "@/lib/email/render";
 import { createLogger } from "@/lib/logger";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
+import { isSameDayInTimezone } from "@/lib/time-tracking/time-utils";
 import { validateTimeEntry, validateTimeEntryRange } from "@/lib/time-tracking/validation";
 import type { TimeSummary } from "@/lib/time-tracking/types";
 import type { WorkPeriodWithEntries } from "./types";
@@ -29,6 +31,193 @@ interface CorrectionRequest {
 	newClockInTime: string; // HH:mm format
 	newClockOutTime?: string; // HH:mm format
 	reason: string;
+}
+
+interface SameDayEditRequest {
+	workPeriodId: string;
+	newClockInTime: string; // HH:mm format
+	newClockOutTime?: string; // HH:mm format
+	reason?: string; // Optional for same-day edits
+}
+
+/**
+ * Edit a same-day time entry directly without requiring manager approval
+ * Only works for completed work periods from the current day (based on user's timezone)
+ */
+export async function editSameDayTimeEntry(
+	data: SameDayEditRequest,
+): Promise<ServerActionResult<{ workPeriodId: string }>> {
+	const session = await auth.api.getSession({ headers: await headers() });
+	if (!session?.user) {
+		return { success: false, error: "Not authenticated" };
+	}
+
+	// Get employee profile
+	const emp = await getCurrentEmployee();
+	if (!emp) {
+		return { success: false, error: "Employee profile not found" };
+	}
+
+	// Get user's timezone
+	const userData = await db.query.user.findFirst({
+		where: eq(user.id, session.user.id),
+		columns: { timezone: true },
+	});
+	const timezone = userData?.timezone || "UTC";
+
+	// Get the work period
+	const [period] = await db
+		.select()
+		.from(workPeriod)
+		.where(eq(workPeriod.id, data.workPeriodId))
+		.limit(1);
+
+	if (!period) {
+		return { success: false, error: "Work period not found" };
+	}
+
+	// Verify ownership
+	if (period.employeeId !== emp.id) {
+		return { success: false, error: "You can only edit your own time entries" };
+	}
+
+	// Verify work period is completed
+	if (!period.endTime) {
+		return { success: false, error: "Cannot edit an active work period. Please clock out first." };
+	}
+
+	// Check if this is a same-day entry
+	if (!isSameDayInTimezone(period.startTime, timezone)) {
+		return { success: false, error: "Past entries require manager approval. Please use the correction request." };
+	}
+
+	// Calculate corrected timestamps
+	const startDT = dateFromDB(period.startTime);
+	if (!startDT) {
+		return { success: false, error: "Invalid work period start time" };
+	}
+
+	const [hours, minutes] = data.newClockInTime.split(":");
+	const correctedClockInDT = startDT.set({
+		hour: parseInt(hours, 10),
+		minute: parseInt(minutes, 10),
+		second: 0,
+		millisecond: 0,
+	});
+	const correctedClockInDate = dateToDB(correctedClockInDT)!;
+
+	let correctedClockOutDate: Date | undefined;
+	if (data.newClockOutTime && period.endTime) {
+		const endDT = dateFromDB(period.endTime);
+		if (endDT) {
+			const [outHours, outMinutes] = data.newClockOutTime.split(":");
+			const correctedClockOutDT = endDT.set({
+				hour: parseInt(outHours, 10),
+				minute: parseInt(outMinutes, 10),
+				second: 0,
+				millisecond: 0,
+			});
+			correctedClockOutDate = dateToDB(correctedClockOutDT)!;
+		}
+	}
+
+	// Validate time span - clock out must be after clock in
+	if (correctedClockOutDate && correctedClockOutDate <= correctedClockInDate) {
+		return { success: false, error: "Clock out time must be after clock in time" };
+	}
+
+	// Validate the correction dates (check for holidays)
+	const validation = await validateTimeEntryRange(
+		emp.organizationId,
+		correctedClockInDate,
+		correctedClockOutDate || correctedClockInDate,
+	);
+
+	if (!validation.isValid) {
+		return {
+			success: false,
+			error: validation.error || "Cannot update time entry for this period",
+			holidayName: validation.holidayName,
+		};
+	}
+
+	try {
+		// Create correction entry for clock in
+		const clockInCorrection = await createTimeEntry({
+			employeeId: emp.id,
+			type: "correction",
+			timestamp: correctedClockInDate,
+			createdBy: session.user.id,
+			replacesEntryId: period.clockInId,
+			notes: data.reason || "Same-day edit",
+		});
+
+		// Mark original clock in as superseded
+		await db
+			.update(timeEntry)
+			.set({
+				isSuperseded: true,
+				supersededById: clockInCorrection.id,
+			})
+			.where(eq(timeEntry.id, period.clockInId));
+
+		// Handle clock out correction if provided
+		let clockOutCorrectionId: string | undefined;
+		if (data.newClockOutTime && period.clockOutId && correctedClockOutDate) {
+			const clockOutCorrection = await createTimeEntry({
+				employeeId: emp.id,
+				type: "correction",
+				timestamp: correctedClockOutDate,
+				createdBy: session.user.id,
+				replacesEntryId: period.clockOutId,
+				notes: data.reason || "Same-day edit",
+			});
+
+			clockOutCorrectionId = clockOutCorrection.id;
+
+			// Mark original clock out as superseded
+			await db
+				.update(timeEntry)
+				.set({
+					isSuperseded: true,
+					supersededById: clockOutCorrection.id,
+				})
+				.where(eq(timeEntry.id, period.clockOutId));
+		}
+
+		// Calculate new duration
+		const finalClockOut = correctedClockOutDate || period.endTime;
+		const durationMs = finalClockOut.getTime() - correctedClockInDate.getTime();
+		const durationMinutes = Math.floor(durationMs / 60000);
+
+		// Update work period with corrected times
+		await db
+			.update(workPeriod)
+			.set({
+				clockInId: clockInCorrection.id,
+				clockOutId: clockOutCorrectionId || period.clockOutId,
+				startTime: correctedClockInDate,
+				endTime: correctedClockOutDate || period.endTime,
+				durationMinutes,
+				updatedAt: new Date(),
+			})
+			.where(eq(workPeriod.id, period.id));
+
+		logger.info(
+			{
+				workPeriodId: data.workPeriodId,
+				employeeId: emp.id,
+				clockInCorrectionId: clockInCorrection.id,
+				clockOutCorrectionId,
+			},
+			"Same-day time entry edited successfully",
+		);
+
+		return { success: true, data: { workPeriodId: period.id } };
+	} catch (error) {
+		logger.error({ error }, "Failed to edit same-day time entry");
+		return { success: false, error: "Failed to update time entry. Please try again." };
+	}
 }
 
 /**
@@ -404,6 +593,39 @@ export async function getCurrentEmployee(): Promise<typeof employee.$inferSelect
 	});
 
 	return emp || null;
+}
+
+/**
+ * Get time clock status for the current user (used by header popover)
+ * Returns clock status without requiring employeeId as parameter
+ */
+export async function getTimeClockStatus(): Promise<{
+	hasEmployee: boolean;
+	isClockedIn: boolean;
+	activeWorkPeriod: { id: string; startTime: Date } | null;
+}> {
+	const session = await auth.api.getSession({ headers: await headers() });
+	if (!session?.user) {
+		return { hasEmployee: false, isClockedIn: false, activeWorkPeriod: null };
+	}
+
+	const emp = await db.query.employee.findFirst({
+		where: eq(employee.userId, session.user.id),
+	});
+
+	if (!emp) {
+		return { hasEmployee: false, isClockedIn: false, activeWorkPeriod: null };
+	}
+
+	const period = await db.query.workPeriod.findFirst({
+		where: and(eq(workPeriod.employeeId, emp.id), isNull(workPeriod.endTime)),
+	});
+
+	return {
+		hasEmployee: true,
+		isClockedIn: !!period,
+		activeWorkPeriod: period ? { id: period.id, startTime: period.startTime } : null,
+	};
 }
 
 /**

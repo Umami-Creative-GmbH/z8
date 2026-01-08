@@ -11,7 +11,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { formatDate, formatDuration, formatTime } from "@/lib/time-tracking/time-utils";
+import { formatDate, formatDuration, formatTime, isSameDayInTimezone } from "@/lib/time-tracking/time-utils";
 import { TimeCorrectionDialog } from "./time-correction-dialog";
 
 interface TimeEntry {
@@ -31,9 +31,10 @@ interface WorkPeriodData {
 interface Props {
 	workPeriods: WorkPeriodData[];
 	hasManager: boolean;
+	employeeTimezone: string;
 }
 
-export function TimeEntriesTable({ workPeriods, hasManager }: Props) {
+export function TimeEntriesTable({ workPeriods, hasManager, employeeTimezone }: Props) {
 	const columns: ColumnDef<WorkPeriodData>[] = [
 		{
 			accessorKey: "startTime",
@@ -83,18 +84,35 @@ export function TimeEntriesTable({ workPeriods, hasManager }: Props) {
 		},
 	];
 
-	// Add actions column if user has a manager
-	if (hasManager) {
-		columns.push({
-			id: "actions",
-			header: "",
-			cell: ({ row }) => (
+	// Add actions column - show edit button based on:
+	// - Same day entries: always show (no manager required)
+	// - Past entries: only show if user has a manager
+	columns.push({
+		id: "actions",
+		header: "",
+		cell: ({ row }) => {
+			const period = row.original;
+
+			// Don't show edit for active (not clocked out) periods
+			if (!period.endTime) {
+				return null;
+			}
+
+			const isSameDay = isSameDayInTimezone(period.startTime, employeeTimezone);
+
+			// For same-day entries, always show edit button
+			// For past entries, only show if user has a manager (for approval workflow)
+			if (!isSameDay && !hasManager) {
+				return null;
+			}
+
+			return (
 				<div className="flex justify-end">
-					<TimeCorrectionDialog workPeriod={row.original} />
+					<TimeCorrectionDialog workPeriod={period} isSameDay={isSameDay} />
 				</div>
-			),
-		});
-	}
+			);
+		},
+	});
 
 	const table = useReactTable({
 		data: workPeriods,
