@@ -51,7 +51,12 @@
       "Bash(powershell -Command \"Get-ChildItem ''X:\\\\umami-creative\\\\z8\\\\apps\\\\webapp\\\\src\\\\app\\\\[locale]\\\\\\(auth\\)\\\\welcome\\\\''\")",
       "Bash(powershell -Command:*)",
       "Bash(ren \"\\(onboarding\\)\" \"onboarding\")",
-      "Bash(cmd /c \"cd /d X:\\\\umami-creative\\\\z8\\\\apps\\\\webapp\\\\src\\\\app\\\\[locale] && ren \\(onboarding\\) onboarding\")"
+      "Bash(cmd /c \"cd /d X:\\\\umami-creative\\\\z8\\\\apps\\\\webapp\\\\src\\\\app\\\\[locale] && ren \\(onboarding\\) onboarding\")",
+      "Bash(tree:*)",
+      "Bash(wc:*)",
+      "Bash(npx tsc:*)",
+      "Bash(node_modules/.bin/tsc:*)",
+      "Bash(bun biome:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

@@ -4,10 +4,22 @@
       "command": "cmd",
       "args": [
         "/c",
-        "npx",
+        "bunx",
         "shadcn@latest",
         "mcp"
       ]
+    },
+    "next-devtools": {
+      "command": "cmd",
+      "args": [
+        "/c",
+        "bunx",
+        "next-devtools-mcp@latest"
+      ]
+    },
+    "better-auth": {
+      "type": "http",
+      "url": "https://mcp.chonkie.ai/better-auth/better-auth-builder/mcp"
     }
   }
 }
