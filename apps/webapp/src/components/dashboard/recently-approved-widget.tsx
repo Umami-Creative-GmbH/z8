@@ -59,14 +59,19 @@ export function RecentlyApprovedWidget() {
 
 	if (loading) {
 		return (
-			<Card>
-				<CardHeader>
+			<Card className="overflow-hidden gap-0 py-0">
+				<CardHeader className="bg-gradient-to-br from-green-500/10 via-emerald-500/10 to-teal-500/10 py-4">
 					<CardTitle className="flex items-center gap-2">
-						<IconCheck className="size-5" />
+						<div className="flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-green-500 to-emerald-500 text-white">
+							<IconCheck className="size-4" />
+						</div>
 						Recently Approved
 					</CardTitle>
+					<CardDescription className="mt-1.5">
+						Latest approved requests
+					</CardDescription>
 				</CardHeader>
-				<CardContent>
+				<CardContent className="py-4">
 					<div className="flex items-center justify-center py-8">
 						<IconLoader2 className="size-8 animate-spin text-muted-foreground" />
 					</div>
@@ -76,22 +81,24 @@ export function RecentlyApprovedWidget() {
 	}
 
 	return (
-		<Card>
-			<CardHeader>
+		<Card className="overflow-hidden gap-0 py-0">
+			<CardHeader className="bg-gradient-to-br from-green-500/10 via-emerald-500/10 to-teal-500/10 py-4">
 				<div className="flex items-center justify-between">
 					<div>
 						<CardTitle className="flex items-center gap-2">
-							<IconCheck className="size-5" />
+							<div className="flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-green-500 to-emerald-500 text-white">
+								<IconCheck className="size-4" />
+							</div>
 							Recently Approved
 						</CardTitle>
-						<CardDescription>
+						<CardDescription className="mt-1.5">
 							Last {requests.length} approved request
 							{requests.length !== 1 ? "s" : ""}
 						</CardDescription>
 					</div>
 				</div>
 			</CardHeader>
-			<CardContent>
+			<CardContent className="py-4">
 				<div className="space-y-3">
 					<div className="space-y-2">
 						{requests.slice(0, 5).map((request) => (

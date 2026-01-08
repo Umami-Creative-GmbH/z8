@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import {
 	Card,
 	CardContent,
+	CardDescription,
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
@@ -45,14 +46,19 @@ export function QuickStatsWidget() {
 
 	if (loading) {
 		return (
-			<Card>
-				<CardHeader>
+			<Card className="overflow-hidden gap-0 py-0">
+				<CardHeader className="bg-gradient-to-br from-blue-500/10 via-cyan-500/10 to-sky-500/10 py-4">
 					<CardTitle className="flex items-center gap-2">
-						<IconClock className="size-5" />
+						<div className="flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 text-white">
+							<IconClock className="size-4" />
+						</div>
 						Quick Stats
 					</CardTitle>
+					<CardDescription className="mt-1.5">
+						Your weekly and monthly hours
+					</CardDescription>
 				</CardHeader>
-				<CardContent>
+				<CardContent className="py-4">
 					<div className="flex items-center justify-center py-8">
 						<IconLoader2 className="size-8 animate-spin text-muted-foreground" />
 					</div>
@@ -76,14 +82,19 @@ export function QuickStatsWidget() {
 	const monthStatus = monthPercentage >= 90 ? "on-track" : monthPercentage >= 75 ? "under" : "low";
 
 	return (
-		<Card>
-			<CardHeader>
+		<Card className="overflow-hidden gap-0 py-0">
+			<CardHeader className="bg-gradient-to-br from-blue-500/10 via-cyan-500/10 to-sky-500/10 py-4">
 				<CardTitle className="flex items-center gap-2">
-					<IconClock className="size-5" />
+					<div className="flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 text-white">
+						<IconClock className="size-4" />
+					</div>
 					Quick Stats
 				</CardTitle>
+				<CardDescription className="mt-1.5">
+					Your weekly and monthly hours
+				</CardDescription>
 			</CardHeader>
-			<CardContent>
+			<CardContent className="py-4">
 				<div className="space-y-6">
 					{/* This Week */}
 					<div className="space-y-2">

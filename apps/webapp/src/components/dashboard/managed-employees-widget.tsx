@@ -54,14 +54,19 @@ export function ManagedEmployeesWidget() {
 
 	if (loading) {
 		return (
-			<Card>
-				<CardHeader>
+			<Card className="overflow-hidden gap-0 py-0">
+				<CardHeader className="bg-gradient-to-br from-rose-500/10 via-red-500/10 to-orange-500/10 py-4">
 					<CardTitle className="flex items-center gap-2">
-						<IconUsers className="size-5" />
+						<div className="flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-rose-500 to-red-500 text-white">
+							<IconUsers className="size-4" />
+						</div>
 						Your Team
 					</CardTitle>
+					<CardDescription className="mt-1.5">
+						Employees you manage
+					</CardDescription>
 				</CardHeader>
-				<CardContent>
+				<CardContent className="py-4">
 					<div className="flex items-center justify-center py-8">
 						<IconLoader2 className="size-8 animate-spin text-muted-foreground" />
 					</div>
@@ -71,15 +76,17 @@ export function ManagedEmployeesWidget() {
 	}
 
 	return (
-		<Card>
-			<CardHeader>
+		<Card className="overflow-hidden gap-0 py-0">
+			<CardHeader className="bg-gradient-to-br from-rose-500/10 via-red-500/10 to-orange-500/10 py-4">
 				<div className="flex items-center justify-between">
 					<div>
 						<CardTitle className="flex items-center gap-2">
-							<IconUsers className="size-5" />
+							<div className="flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-rose-500 to-red-500 text-white">
+								<IconUsers className="size-4" />
+							</div>
 							Your Team
 						</CardTitle>
-						<CardDescription>
+						<CardDescription className="mt-1.5">
 							Employees you manage ({employees.length})
 						</CardDescription>
 					</div>
@@ -88,7 +95,7 @@ export function ManagedEmployeesWidget() {
 					</Button>
 				</div>
 			</CardHeader>
-			<CardContent>
+			<CardContent className="py-4">
 				{employees.length === 0 ? (
 					<div className="flex flex-col items-center justify-center py-8 text-center">
 						<IconUserCheck className="mb-4 size-12 text-muted-foreground" />

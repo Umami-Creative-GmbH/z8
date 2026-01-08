@@ -17,16 +17,6 @@ import {
 	team,
 } from "@/db/schema";
 import { NotFoundError } from "@/lib/effect/errors";
-import {
-	startOfMonth,
-	endOfMonth,
-	addDays,
-	startOfWeek,
-	endOfWeek,
-	startOfDay,
-	endOfDay,
-	differenceInDays,
-} from "date-fns";
 import { calculateWorkHours } from "@/lib/time-tracking/calculations";
 import { DateTime } from "luxon";
 import { currentTimestamp, dateToDB, dateFromDB } from "@/lib/datetime/drizzle-adapter";
@@ -408,10 +398,11 @@ export async function getQuickStats(): Promise<ServerActionResult<any>> {
 		);
 
 		const now = currentTimestamp();
-		const weekStart = startOfWeek(now, { weekStartsOn: 1 }); // Monday
-		const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
-		const monthStart = startOfMonth(now);
-		const monthEnd = endOfMonth(now);
+		const nowDT = DateTime.fromJSDate(now);
+		const weekStart = nowDT.startOf('week').toJSDate(); // Luxon uses Monday by default
+		const weekEnd = nowDT.endOf('week').toJSDate();
+		const monthStart = nowDT.startOf('month').toJSDate();
+		const monthEnd = nowDT.endOf('month').toJSDate();
 
 		// Get work periods for this week
 		const weekPeriods = yield* _(
@@ -465,7 +456,8 @@ export async function getQuickStats(): Promise<ServerActionResult<any>> {
 			if (schedule.scheduleType === "simple" && schedule.hoursPerWeek) {
 				weekExpected = Number.parseFloat(schedule.hoursPerWeek);
 				// Estimate monthly hours based on weekly hours
-				const weeksInMonth = differenceInDays(monthEnd, monthStart) / 7;
+				const daysInMonth = DateTime.fromJSDate(monthEnd).diff(DateTime.fromJSDate(monthStart), 'days').days;
+				const weeksInMonth = daysInMonth / 7;
 				monthExpected = weekExpected * weeksInMonth;
 			}
 		}
@@ -547,15 +539,18 @@ export async function getUpcomingBirthdays(
 			const nowDT = dateFromDB(now);
 			if (!nowDT) continue;
 
-			const thisYearBirthday = DateTime.utc(nowDT.year, birthdayDT.month, birthdayDT.day).toJSDate();
+			const thisYearBirthdayDT = DateTime.utc(nowDT.year, birthdayDT.month, birthdayDT.day);
+			const thisYearBirthday = thisYearBirthdayDT.toJSDate();
 
 			// Check if birthday already passed this year
-			let nextBirthday = thisYearBirthday;
+			let nextBirthdayDT = thisYearBirthdayDT;
 			if (thisYearBirthday < now) {
-				nextBirthday = DateTime.utc(nowDT.year + 1, birthdayDT.month, birthdayDT.day).toJSDate();
+				nextBirthdayDT = DateTime.utc(nowDT.year + 1, birthdayDT.month, birthdayDT.day);
 			}
+			const nextBirthday = nextBirthdayDT.toJSDate();
 
-			const daysUntil = differenceInDays(nextBirthday, startOfDay(now));
+			const todayStartDT = DateTime.fromJSDate(now).startOf('day');
+			const daysUntil = Math.floor(nextBirthdayDT.diff(todayStartDT, 'days').days);
 
 			if (daysUntil >= 0 && daysUntil <= days) {
 				upcomingBirthdays.push({

@@ -68,14 +68,19 @@ export function TeamCalendarWidget() {
 
 	if (loading) {
 		return (
-			<Card>
-				<CardHeader>
+			<Card className="overflow-hidden gap-0 py-0">
+				<CardHeader className="bg-gradient-to-br from-sky-500/10 via-cyan-500/10 to-blue-500/10 py-4">
 					<CardTitle className="flex items-center gap-2">
-						<IconCalendar className="size-5" />
+						<div className="flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-sky-500 to-cyan-500 text-white">
+							<IconCalendar className="size-4" />
+						</div>
 						Team Calendar
 					</CardTitle>
+					<CardDescription className="mt-1.5">
+						Monthly absence overview
+					</CardDescription>
 				</CardHeader>
-				<CardContent>
+				<CardContent className="py-4">
 					<div className="flex items-center justify-center py-8">
 						<IconLoader2 className="size-8 animate-spin text-muted-foreground" />
 					</div>
@@ -116,21 +121,23 @@ export function TeamCalendarWidget() {
 	};
 
 	return (
-		<Card>
-			<CardHeader>
+		<Card className="overflow-hidden gap-0 py-0">
+			<CardHeader className="bg-gradient-to-br from-sky-500/10 via-cyan-500/10 to-blue-500/10 py-4">
 				<div className="flex items-center justify-between">
 					<div>
 						<CardTitle className="flex items-center gap-2">
-							<IconCalendar className="size-5" />
+							<div className="flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-sky-500 to-cyan-500 text-white">
+								<IconCalendar className="size-4" />
+							</div>
 							Team Calendar
 						</CardTitle>
-						<CardDescription>
+						<CardDescription className="mt-1.5">
 							{calendarData.absenceDays.length} day{calendarData.absenceDays.length !== 1 ? "s" : ""} with absences
 						</CardDescription>
 					</div>
 				</div>
 			</CardHeader>
-			<CardContent>
+			<CardContent className="py-4">
 				<div className="space-y-4">
 					{/* Month Navigation */}
 					<div className="flex items-center justify-between">

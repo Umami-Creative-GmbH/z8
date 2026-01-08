@@ -47,14 +47,19 @@ export function PendingApprovalsWidget() {
 
 	if (loading) {
 		return (
-			<Card>
-				<CardHeader>
+			<Card className="overflow-hidden gap-0 py-0">
+				<CardHeader className="bg-gradient-to-br from-orange-500/10 via-amber-500/10 to-yellow-500/10 py-4">
 					<CardTitle className="flex items-center gap-2">
-						<IconClock className="size-5" />
+						<div className="flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-orange-500 to-amber-500 text-white">
+							<IconClock className="size-4" />
+						</div>
 						Pending Approvals
 					</CardTitle>
+					<CardDescription className="mt-1.5">
+						Requests awaiting your review
+					</CardDescription>
 				</CardHeader>
-				<CardContent>
+				<CardContent className="py-4">
 					<div className="flex items-center justify-center py-8">
 						<IconLoader2 className="size-8 animate-spin text-muted-foreground" />
 					</div>
@@ -64,24 +69,26 @@ export function PendingApprovalsWidget() {
 	}
 
 	return (
-		<Card>
-			<CardHeader>
+		<Card className="overflow-hidden gap-0 py-0">
+			<CardHeader className="bg-gradient-to-br from-orange-500/10 via-amber-500/10 to-yellow-500/10 py-4">
 				<div className="flex items-center justify-between">
 					<div>
 						<CardTitle className="flex items-center gap-2">
-							<IconClock className="size-5" />
+							<div className="flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-orange-500 to-amber-500 text-white">
+								<IconClock className="size-4" />
+							</div>
 							Pending Approvals
 						</CardTitle>
-						<CardDescription>
+						<CardDescription className="mt-1.5">
 							{totalPending} request{totalPending !== 1 ? "s" : ""} awaiting your approval
 						</CardDescription>
 					</div>
-					<Badge variant="destructive" className="text-lg">
+					<Badge className="bg-gradient-to-r from-orange-500 to-amber-500 text-white border-0 text-lg">
 						{totalPending}
 					</Badge>
 				</div>
 			</CardHeader>
-			<CardContent>
+			<CardContent className="py-4">
 				<div className="space-y-3">
 					{/* Absence Requests */}
 					{absenceApprovals.length > 0 && (

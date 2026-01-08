@@ -65,14 +65,19 @@ export function TeamOverviewWidget() {
 
 	if (loading) {
 		return (
-			<Card>
-				<CardHeader>
+			<Card className="overflow-hidden gap-0 py-0">
+				<CardHeader className="bg-gradient-to-br from-indigo-500/10 via-violet-500/10 to-purple-500/10 py-4">
 					<CardTitle className="flex items-center gap-2">
-						<IconUsers className="size-5" />
+						<div className="flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-violet-500 text-white">
+							<IconUsers className="size-4" />
+						</div>
 						Team Overview
 					</CardTitle>
+					<CardDescription className="mt-1.5">
+						Organization statistics and metrics
+					</CardDescription>
 				</CardHeader>
-				<CardContent>
+				<CardContent className="py-4">
 					<div className="flex items-center justify-center py-8">
 						<IconLoader2 className="size-8 animate-spin text-muted-foreground" />
 					</div>
@@ -88,15 +93,17 @@ export function TeamOverviewWidget() {
 	const activePercentage = (stats.activeEmployees / stats.totalEmployees) * 100;
 
 	return (
-		<Card>
-			<CardHeader>
+		<Card className="overflow-hidden gap-0 py-0">
+			<CardHeader className="bg-gradient-to-br from-indigo-500/10 via-violet-500/10 to-purple-500/10 py-4">
 				<div className="flex items-center justify-between">
 					<div>
 						<CardTitle className="flex items-center gap-2">
-							<IconUsers className="size-5" />
+							<div className="flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-violet-500 text-white">
+								<IconUsers className="size-4" />
+							</div>
 							Team Overview
 						</CardTitle>
-						<CardDescription>
+						<CardDescription className="mt-1.5">
 							Organization statistics and metrics
 						</CardDescription>
 					</div>
@@ -105,7 +112,7 @@ export function TeamOverviewWidget() {
 					</Button>
 				</div>
 			</CardHeader>
-			<CardContent>
+			<CardContent className="py-4">
 				<div className="space-y-6">
 					{/* Employee Count */}
 					<div className="space-y-2">
