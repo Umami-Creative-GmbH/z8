@@ -19,7 +19,15 @@ const nextConfig: NextConfig = {
     "@opentelemetry/exporter-metrics-otlp-http",
     "@opentelemetry/auto-instrumentations-node",
     "sharp",
+    "@img/sharp-win32-x64",
+    "@img/sharp-darwin-arm64",
+    "@img/sharp-darwin-x64",
+    "@img/sharp-linux-x64",
+    "@img/sharp-linux-arm64",
     "detect-libc",
+    "@tus/server",
+    "@tus/s3-store",
+    "@tus/file-store",
   ],
 };
 

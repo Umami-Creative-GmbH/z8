@@ -56,7 +56,11 @@
       "Bash(wc:*)",
       "Bash(npx tsc:*)",
       "Bash(node_modules/.bin/tsc:*)",
-      "Bash(bun biome:*)"
+      "Bash(bun biome:*)",
+      "Bash(biome check:*)",
+      "Bash(npx biome:*)",
+      "mcp__plugin_context7_context7__resolve-library-id",
+      "mcp__plugin_context7_context7__query-docs"
     ]
   },
   "enableAllProjectMcpServers": true,
