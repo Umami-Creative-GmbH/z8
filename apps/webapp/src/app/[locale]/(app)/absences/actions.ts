@@ -385,6 +385,7 @@ export async function requestAbsenceEffect(
 
 /**
  * Get current employee from session
+ * Uses activeOrganizationId to get the correct employee record for the active org
  */
 export async function getCurrentEmployee() {
 	const session = await auth.api.getSession({ headers: await headers() });
@@ -392,8 +393,23 @@ export async function getCurrentEmployee() {
 		return null;
 	}
 
+	const activeOrgId = session.session?.activeOrganizationId;
+
+	// If we have an active organization, get employee for that org
+	if (activeOrgId) {
+		const emp = await db.query.employee.findFirst({
+			where: and(
+				eq(employee.userId, session.user.id),
+				eq(employee.organizationId, activeOrgId),
+				eq(employee.isActive, true),
+			),
+		});
+		if (emp) return emp;
+	}
+
+	// Fall back to first active employee record (for backwards compatibility)
 	const emp = await db.query.employee.findFirst({
-		where: eq(employee.userId, session.user.id),
+		where: and(eq(employee.userId, session.user.id), eq(employee.isActive, true)),
 	});
 
 	return emp;

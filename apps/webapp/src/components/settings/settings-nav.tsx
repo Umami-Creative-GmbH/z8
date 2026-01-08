@@ -7,6 +7,7 @@ import {
 	IconCalendarEvent,
 	IconShield,
 	IconUserCircle,
+	IconUsers,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { usePathname } from "next/navigation";
@@ -46,6 +47,12 @@ export function SettingsNav({ isAdmin }: SettingsNavProps) {
 			url: "/settings/organizations",
 			icon: IconBuilding,
 			visible: true,
+		},
+		{
+			title: t("settings.employees.title", "Employees"),
+			url: "/settings/employees",
+			icon: IconUsers,
+			visible: isAdmin,
 		},
 		{
 			title: t("settings.security.title", "Security"),

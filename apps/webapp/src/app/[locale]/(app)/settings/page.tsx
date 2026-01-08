@@ -4,6 +4,7 @@ import {
 	IconCalendarEvent,
 	IconShield,
 	IconUserCircle,
+	IconUsers,
 } from "@tabler/icons-react";
 import { SettingsCard } from "@/components/settings/settings-card";
 import { requireUser } from "@/lib/auth-helpers";
@@ -46,6 +47,12 @@ export default async function SettingsPage() {
 					{/* Admin-only cards */}
 					{isAdmin && (
 						<>
+							<SettingsCard
+								title="Employees"
+								description="Manage employee profiles, roles, and manager assignments"
+								href="/settings/employees"
+								icon={IconUsers}
+							/>
 							<SettingsCard
 								title="Holidays"
 								description="Configure organization holidays and time off"

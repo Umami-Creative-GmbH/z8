@@ -8,7 +8,9 @@ import { requireUser } from "@/lib/auth-helpers";
 
 export default async function OrganizationsPage() {
 	const authContext = await requireUser();
-	const activeOrgId = authContext.session.activeOrganizationId;
+	// Use session's activeOrganizationId, or fall back to employee's organizationId
+	// This ensures consistency with how the sidebar determines the current org
+	const activeOrgId = authContext.session.activeOrganizationId || authContext.employee?.organizationId;
 
 	if (!activeOrgId) {
 		return (

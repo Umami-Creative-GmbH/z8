@@ -60,17 +60,27 @@ export function SettingsBreadcrumbs() {
 			label = t("settings.holidays.title", "Holidays");
 		} else if (segment === "vacation") {
 			label = t("settings.vacation.title", "Vacation");
+		} else if (segment === "teams") {
+			label = t("settings.teams.title", "Teams");
 		} else if (segment === "employees") {
-			label = t("settings.vacation.employees.title", "Employees");
+			label = t("settings.employees.title", "Employees");
+		} else if (segment === "permissions") {
+			label = t("settings.permissions.title", "Permissions");
 		} else if (segment === "history") {
 			label = t("settings.vacation.history.title", "History");
-		} else {
-			// For dynamic segments (like employee IDs), skip adding to breadcrumbs
-			// Instead, the last breadcrumb will show the actual page title
-			if (/^[a-f0-9-]{36}$/i.test(segment)) {
-				// This is a UUID, don't add it but mark it for "Edit" context
-				continue;
+		} else if (segment === "new") {
+			label = t("common.new", "New");
+		} else if (/^[a-f0-9-]{36}$/i.test(segment)) {
+			// This is a UUID - determine the context from the previous segment
+			const prevSegment = segments[i - 1];
+			if (prevSegment === "employees") {
+				label = t("settings.employees.details", "Employee Details");
+			} else if (prevSegment === "teams") {
+				label = t("settings.teams.details", "Team Details");
+			} else {
+				label = t("common.details", "Details");
 			}
+		} else {
 			// Capitalize first letter for other segments
 			label = segment.charAt(0).toUpperCase() + segment.slice(1);
 		}
