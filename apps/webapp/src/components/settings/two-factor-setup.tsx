@@ -31,8 +31,9 @@ interface TwoFactorSetupProps {
 	userEmail: string;
 }
 
-export function TwoFactorSetup({ isEnabled, userEmail }: TwoFactorSetupProps) {
+export function TwoFactorSetup({ isEnabled: initialIsEnabled, userEmail }: TwoFactorSetupProps) {
 	const [isPending, startTransition] = useTransition();
+	const [isEnabled, setIsEnabled] = useState(initialIsEnabled);
 	const [setupDialogOpen, setSetupDialogOpen] = useState(false);
 	const [backupCodesDialogOpen, setBackupCodesDialogOpen] = useState(false);
 	const [disableDialogOpen, setDisableDialogOpen] = useState(false);
@@ -102,9 +103,8 @@ export function TwoFactorSetup({ isEnabled, userEmail }: TwoFactorSetupProps) {
 					setSetupDialogOpen(false);
 					setBackupCodesDialogOpen(true);
 					setOtpValue("");
+					setIsEnabled(true);
 					toast.success("Two-factor authentication enabled");
-					// Reload the page to refresh the 2FA status
-					window.location.reload();
 				}
 			} catch (error) {
 				toast.error("Verification failed", {
@@ -135,9 +135,8 @@ export function TwoFactorSetup({ isEnabled, userEmail }: TwoFactorSetupProps) {
 				} else {
 					setDisableDialogOpen(false);
 					setDisablePassword("");
+					setIsEnabled(false);
 					toast.success("Two-factor authentication disabled");
-					// Reload the page to refresh the 2FA status
-					window.location.reload();
 				}
 			} catch (error) {
 				toast.error("Failed to disable 2FA", {

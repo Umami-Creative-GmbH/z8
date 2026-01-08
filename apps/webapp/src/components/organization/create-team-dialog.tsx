@@ -1,10 +1,11 @@
 "use client";
 
 import { IconLoader2 } from "@tabler/icons-react";
-import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { useState } from "react";
 import { toast } from "sonner";
 import { createTeam } from "@/app/[locale]/(app)/settings/teams/actions";
+import type { team } from "@/db/schema";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -22,35 +23,39 @@ interface CreateTeamDialogProps {
 	organizationId: string;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
+	onSuccess?: (team: typeof team.$inferSelect) => void;
 }
 
-export function CreateTeamDialog({ organizationId, open, onOpenChange }: CreateTeamDialogProps) {
-	const router = useRouter();
-	const [isPending, startTransition] = useTransition();
-
+export function CreateTeamDialog({ organizationId, open, onOpenChange, onSuccess }: CreateTeamDialogProps) {
 	const [formData, setFormData] = useState({
 		name: "",
 		description: "",
 	});
 
-	const handleSubmit = async (e: React.FormEvent) => {
-		e.preventDefault();
-
-		startTransition(async () => {
-			const result = await createTeam({
-				organizationId,
-				name: formData.name,
-				description: formData.description || undefined,
-			});
-
-			if (result.success) {
+	const createMutation = useMutation({
+		mutationFn: (data: { organizationId: string; name: string; description?: string }) =>
+			createTeam(data),
+		onSuccess: (result) => {
+			if (result.success && result.data) {
 				toast.success("Team created successfully");
 				setFormData({ name: "", description: "" });
 				onOpenChange(false);
-				router.refresh();
+				onSuccess?.(result.data);
 			} else {
 				toast.error(result.error || "Failed to create team");
 			}
+		},
+		onError: () => {
+			toast.error("Failed to create team");
+		},
+	});
+
+	const handleSubmit = (e: React.FormEvent) => {
+		e.preventDefault();
+		createMutation.mutate({
+			organizationId,
+			name: formData.name,
+			description: formData.description || undefined,
 		});
 	};
 
@@ -90,12 +95,12 @@ export function CreateTeamDialog({ organizationId, open, onOpenChange }: CreateT
 							type="button"
 							variant="outline"
 							onClick={() => onOpenChange(false)}
-							disabled={isPending}
+							disabled={createMutation.isPending}
 						>
 							Cancel
 						</Button>
-						<Button type="submit" disabled={isPending}>
-							{isPending && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
+						<Button type="submit" disabled={createMutation.isPending}>
+							{createMutation.isPending && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
 							Create Team
 						</Button>
 					</DialogFooter>

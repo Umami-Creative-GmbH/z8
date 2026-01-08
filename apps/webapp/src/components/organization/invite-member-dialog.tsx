@@ -1,10 +1,11 @@
 "use client";
 
 import { IconLoader2, IconMail } from "@tabler/icons-react";
-import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { toast } from "sonner";
 import { sendInvitation } from "@/app/[locale]/(app)/settings/organizations/actions";
+import { queryKeys } from "@/lib/query";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -40,8 +41,7 @@ export function InviteMemberDialog({
 	open,
 	onOpenChange,
 }: InviteMemberDialogProps) {
-	const router = useRouter();
-	const [isPending, startTransition] = useTransition();
+	const queryClient = useQueryClient();
 
 	const [formData, setFormData] = useState({
 		email: "",
@@ -49,17 +49,14 @@ export function InviteMemberDialog({
 		canCreateOrganizations: false,
 	});
 
-	const handleSubmit = async (e: React.FormEvent) => {
-		e.preventDefault();
-
-		startTransition(async () => {
-			const result = await sendInvitation({
-				organizationId,
-				email: formData.email,
-				role: formData.role,
-				canCreateOrganizations: formData.canCreateOrganizations,
-			});
-
+	const inviteMutation = useMutation({
+		mutationFn: (data: {
+			organizationId: string;
+			email: string;
+			role: "owner" | "admin" | "member";
+			canCreateOrganizations: boolean;
+		}) => sendInvitation(data),
+		onSuccess: (result) => {
 			if (result.success) {
 				toast.success("Invitation sent successfully");
 				setFormData({
@@ -68,10 +65,23 @@ export function InviteMemberDialog({
 					canCreateOrganizations: false,
 				});
 				onOpenChange(false);
-				router.refresh();
+				queryClient.invalidateQueries({ queryKey: queryKeys.invitations.list(organizationId) });
 			} else {
 				toast.error(result.error || "Failed to send invitation");
 			}
+		},
+		onError: () => {
+			toast.error("Failed to send invitation");
+		},
+	});
+
+	const handleSubmit = (e: React.FormEvent) => {
+		e.preventDefault();
+		inviteMutation.mutate({
+			organizationId,
+			email: formData.email,
+			role: formData.role,
+			canCreateOrganizations: formData.canCreateOrganizations,
 		});
 	};
 
@@ -165,12 +175,12 @@ export function InviteMemberDialog({
 							type="button"
 							variant="outline"
 							onClick={() => onOpenChange(false)}
-							disabled={isPending}
+							disabled={inviteMutation.isPending}
 						>
 							Cancel
 						</Button>
-						<Button type="submit" disabled={isPending}>
-							{isPending && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
+						<Button type="submit" disabled={inviteMutation.isPending}>
+							{inviteMutation.isPending && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
 							Send Invitation
 						</Button>
 					</DialogFooter>

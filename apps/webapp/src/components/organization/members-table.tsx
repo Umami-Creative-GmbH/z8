@@ -9,9 +9,9 @@ import {
 	IconTrash,
 	IconX,
 } from "@tabler/icons-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { formatRelative as formatDistanceToNow } from "@/lib/datetime/luxon-utils";
-import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import {
 	cancelInvitation,
@@ -19,6 +19,7 @@ import {
 	sendInvitation,
 	updateMemberRole,
 } from "@/app/[locale]/(app)/settings/organizations/actions";
+import { queryKeys } from "@/lib/query";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -67,92 +68,145 @@ interface MembersTableProps {
 
 export function MembersTable({
 	organizationId,
-	members,
-	invitations,
+	members: initialMembers,
+	invitations: initialInvitations,
 	currentMemberRole,
 	currentUserId,
 }: MembersTableProps) {
-	const router = useRouter();
-	const [isPending, startTransition] = useTransition();
-	const [actioningId, setActioningId] = useState<string | null>(null);
+	const queryClient = useQueryClient();
+	const [members, setMembers] = useState(initialMembers);
+	const [invitations, setInvitations] = useState(initialInvitations);
 	const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
 	const [memberToRemove, setMemberToRemove] = useState<MemberWithUserAndEmployee | null>(null);
+
+	// Sync with props when they change
+	if (initialMembers !== members && initialMembers.length !== members.length) {
+		setMembers(initialMembers);
+	}
+	if (initialInvitations !== invitations && initialInvitations.length !== invitations.length) {
+		setInvitations(initialInvitations);
+	}
 
 	const canManage = currentMemberRole === "owner";
 	const canInvite = currentMemberRole === "admin" || currentMemberRole === "owner";
 
-	const handleRoleChange = async (userId: string, newRole: "owner" | "admin" | "member") => {
-		setActioningId(userId);
-		startTransition(async () => {
-			const result = await updateMemberRole(organizationId, userId, { role: newRole });
-
+	// Update role mutation
+	const updateRoleMutation = useMutation({
+		mutationFn: ({ userId, role }: { userId: string; role: "owner" | "admin" | "member" }) =>
+			updateMemberRole(organizationId, userId, { role }),
+		onMutate: async ({ userId, role }) => {
+			const previousMembers = members;
+			setMembers((prev) =>
+				prev.map((m) => (m.user.id === userId ? { ...m, member: { ...m.member, role } } : m)),
+			);
+			return { previousMembers };
+		},
+		onSuccess: (result) => {
 			if (result.success) {
 				toast.success("Member role updated successfully");
-				router.refresh();
+				queryClient.invalidateQueries({ queryKey: queryKeys.members.list(organizationId) });
 			} else {
 				toast.error(result.error || "Failed to update member role");
 			}
-			setActioningId(null);
-		});
-	};
+		},
+		onError: (_error, _vars, context) => {
+			if (context?.previousMembers) setMembers(context.previousMembers);
+			toast.error("Failed to update member role");
+		},
+	});
 
-	const handleRemoveMember = async () => {
-		if (!memberToRemove) return;
-
-		setActioningId(memberToRemove.user.id);
-		startTransition(async () => {
-			const result = await removeMember(organizationId, memberToRemove.user.id);
-
+	// Remove member mutation
+	const removeMemberMutation = useMutation({
+		mutationFn: (userId: string) => removeMember(organizationId, userId),
+		onMutate: async (userId) => {
+			const previousMembers = members;
+			setMembers((prev) => prev.filter((m) => m.user.id !== userId));
+			setRemoveDialogOpen(false);
+			setMemberToRemove(null);
+			return { previousMembers };
+		},
+		onSuccess: (result) => {
 			if (result.success) {
 				toast.success("Member removed successfully");
-				setRemoveDialogOpen(false);
-				setMemberToRemove(null);
-				router.refresh();
+				queryClient.invalidateQueries({ queryKey: queryKeys.members.list(organizationId) });
 			} else {
 				toast.error(result.error || "Failed to remove member");
 			}
-			setActioningId(null);
-		});
-	};
+		},
+		onError: (_error, _userId, context) => {
+			if (context?.previousMembers) setMembers(context.previousMembers);
+			toast.error("Failed to remove member");
+		},
+	});
 
-	const handleCancelInvitation = async (invitationId: string) => {
-		setActioningId(invitationId);
-		startTransition(async () => {
-			const result = await cancelInvitation(invitationId);
-
+	// Cancel invitation mutation
+	const cancelInvitationMutation = useMutation({
+		mutationFn: (invitationId: string) => cancelInvitation(invitationId),
+		onMutate: async (invitationId) => {
+			const previousInvitations = invitations;
+			setInvitations((prev) => prev.filter((i) => i.id !== invitationId));
+			return { previousInvitations };
+		},
+		onSuccess: (result) => {
 			if (result.success) {
 				toast.success("Invitation cancelled");
-				router.refresh();
+				queryClient.invalidateQueries({ queryKey: queryKeys.invitations.list(organizationId) });
 			} else {
 				toast.error(result.error || "Failed to cancel invitation");
 			}
-			setActioningId(null);
-		});
-	};
+		},
+		onError: (_error, _invitationId, context) => {
+			if (context?.previousInvitations) setInvitations(context.previousInvitations);
+			toast.error("Failed to cancel invitation");
+		},
+	});
 
-	const handleResendInvitation = async (invitation: InvitationWithInviter) => {
-		setActioningId(invitation.id);
-		startTransition(async () => {
-			// First cancel the old invitation
+	// Resend invitation mutation
+	const resendInvitationMutation = useMutation({
+		mutationFn: async (invitation: InvitationWithInviter) => {
 			await cancelInvitation(invitation.id);
-
-			// Then send a new one
-			const result = await sendInvitation({
+			return sendInvitation({
 				organizationId,
 				email: invitation.email,
 				role: invitation.role as "owner" | "admin" | "member",
 				canCreateOrganizations: invitation.canCreateOrganizations,
 			});
-
+		},
+		onSuccess: (result) => {
 			if (result.success) {
 				toast.success("Invitation resent successfully");
-				router.refresh();
+				queryClient.invalidateQueries({ queryKey: queryKeys.invitations.list(organizationId) });
 			} else {
 				toast.error(result.error || "Failed to resend invitation");
 			}
-			setActioningId(null);
-		});
+		},
+		onError: () => {
+			toast.error("Failed to resend invitation");
+		},
+	});
+
+	const handleRoleChange = (userId: string, newRole: "owner" | "admin" | "member") => {
+		updateRoleMutation.mutate({ userId, role: newRole });
 	};
+
+	const handleRemoveMember = () => {
+		if (!memberToRemove) return;
+		removeMemberMutation.mutate(memberToRemove.user.id);
+	};
+
+	const handleCancelInvitation = (invitationId: string) => {
+		cancelInvitationMutation.mutate(invitationId);
+	};
+
+	const handleResendInvitation = (invitation: InvitationWithInviter) => {
+		resendInvitationMutation.mutate(invitation);
+	};
+
+	const isActioning = (id: string) =>
+		updateRoleMutation.variables?.userId === id ||
+		removeMemberMutation.variables === id ||
+		cancelInvitationMutation.variables === id ||
+		resendInvitationMutation.variables?.id === id;
 
 	const getRoleBadgeColor = (role: string) => {
 		switch (role) {
@@ -244,9 +298,9 @@ export function MembersTable({
 															<Button
 																variant="ghost"
 																size="sm"
-																disabled={isPending && actioningId === invitation.id}
+																disabled={isActioning === invitation.id}
 															>
-																{isPending && actioningId === invitation.id ? (
+																{isActioning === invitation.id ? (
 																	<IconLoader2 className="h-4 w-4 animate-spin" />
 																) : (
 																	<IconDots className="h-4 w-4" />
@@ -329,7 +383,7 @@ export function MembersTable({
 												<Select
 													value={member.role || "member"}
 													onValueChange={(value) => handleRoleChange(user.id, value as any)}
-													disabled={isPending && actioningId === user.id}
+													disabled={isActioning === user.id}
 												>
 													<SelectTrigger className="w-[120px]">
 														<SelectValue />
@@ -381,9 +435,9 @@ export function MembersTable({
 														setMemberToRemove(memberData);
 														setRemoveDialogOpen(true);
 													}}
-													disabled={isPending && actioningId === user.id}
+													disabled={isActioning === user.id}
 												>
-													{isPending && actioningId === user.id ? (
+													{isActioning === user.id ? (
 														<IconLoader2 className="h-4 w-4 animate-spin" />
 													) : (
 														<IconTrash className="h-4 w-4 text-destructive" />

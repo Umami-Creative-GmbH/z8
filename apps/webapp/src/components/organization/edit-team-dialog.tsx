@@ -1,8 +1,8 @@
 "use client";
 
 import { IconLoader2 } from "@tabler/icons-react";
-import { useRouter } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { updateTeam } from "@/app/[locale]/(app)/settings/teams/actions";
 import { Button } from "@/components/ui/button";
@@ -23,12 +23,10 @@ interface EditTeamDialogProps {
 	team: typeof team.$inferSelect | null;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
+	onSuccess?: (team: typeof team.$inferSelect) => void;
 }
 
-export function EditTeamDialog({ team, open, onOpenChange }: EditTeamDialogProps) {
-	const router = useRouter();
-	const [isPending, startTransition] = useTransition();
-
+export function EditTeamDialog({ team, open, onOpenChange, onSuccess }: EditTeamDialogProps) {
 	const [formData, setFormData] = useState({
 		name: "",
 		description: "",
@@ -44,24 +42,31 @@ export function EditTeamDialog({ team, open, onOpenChange }: EditTeamDialogProps
 		}
 	}, [team]);
 
-	const handleSubmit = async (e: React.FormEvent) => {
-		e.preventDefault();
-
-		if (!team) return;
-
-		startTransition(async () => {
-			const result = await updateTeam(team.id, {
-				name: formData.name !== team.name ? formData.name : undefined,
-				description: formData.description !== team.description ? formData.description : undefined,
-			});
-
-			if (result.success) {
+	const updateMutation = useMutation({
+		mutationFn: (data: { teamId: string; name?: string; description?: string }) =>
+			updateTeam(data.teamId, { name: data.name, description: data.description }),
+		onSuccess: (result) => {
+			if (result.success && result.data) {
 				toast.success("Team updated successfully");
 				onOpenChange(false);
-				router.refresh();
+				onSuccess?.(result.data);
 			} else {
 				toast.error(result.error || "Failed to update team");
 			}
+		},
+		onError: () => {
+			toast.error("Failed to update team");
+		},
+	});
+
+	const handleSubmit = (e: React.FormEvent) => {
+		e.preventDefault();
+		if (!team) return;
+
+		updateMutation.mutate({
+			teamId: team.id,
+			name: formData.name !== team.name ? formData.name : undefined,
+			description: formData.description !== team.description ? formData.description : undefined,
 		});
 	};
 
@@ -103,12 +108,12 @@ export function EditTeamDialog({ team, open, onOpenChange }: EditTeamDialogProps
 							type="button"
 							variant="outline"
 							onClick={() => onOpenChange(false)}
-							disabled={isPending}
+							disabled={updateMutation.isPending}
 						>
 							Cancel
 						</Button>
-						<Button type="submit" disabled={isPending}>
-							{isPending && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
+						<Button type="submit" disabled={updateMutation.isPending}>
+							{updateMutation.isPending && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
 							Save Changes
 						</Button>
 					</DialogFooter>

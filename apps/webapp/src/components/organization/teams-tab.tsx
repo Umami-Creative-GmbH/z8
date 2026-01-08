@@ -1,10 +1,11 @@
 "use client";
 
 import { IconPlus, IconUsers } from "@tabler/icons-react";
-import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { toast } from "sonner";
 import { deleteTeam } from "@/app/[locale]/(app)/settings/teams/actions";
+import { queryKeys } from "@/lib/query";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -31,9 +32,9 @@ interface TeamsTabProps {
 	organizationId: string;
 }
 
-export function TeamsTab({ teams, members, permissions, organizationId }: TeamsTabProps) {
-	const router = useRouter();
-	const [isPending, startTransition] = useTransition();
+export function TeamsTab({ teams: initialTeams, members, permissions, organizationId }: TeamsTabProps) {
+	const queryClient = useQueryClient();
+	const [teams, setTeams] = useState(initialTeams);
 
 	// Dialog states
 	const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -43,6 +44,49 @@ export function TeamsTab({ teams, members, permissions, organizationId }: TeamsT
 
 	// Selected team
 	const [selectedTeam, setSelectedTeam] = useState<typeof team.$inferSelect | null>(null);
+
+	// Sync with props when they change
+	if (initialTeams !== teams && initialTeams.length !== teams.length) {
+		setTeams(initialTeams);
+	}
+
+	// Delete mutation with optimistic update
+	const deleteMutation = useMutation({
+		mutationFn: (teamId: string) => deleteTeam(teamId),
+		onMutate: async (teamId) => {
+			const previousTeams = teams;
+			setTeams((prev) => prev.filter((t) => t.id !== teamId));
+			setDeleteDialogOpen(false);
+			setSelectedTeam(null);
+			return { previousTeams };
+		},
+		onSuccess: (result) => {
+			if (result.success) {
+				toast.success("Team deleted successfully");
+				queryClient.invalidateQueries({ queryKey: queryKeys.teams.list(organizationId) });
+			} else {
+				toast.error(result.error || "Failed to delete team");
+			}
+		},
+		onError: (_error, _teamId, context) => {
+			if (context?.previousTeams) {
+				setTeams(context.previousTeams);
+			}
+			toast.error("Failed to delete team");
+		},
+	});
+
+	// Callback for when a team is created
+	const handleTeamCreated = (newTeam: typeof team.$inferSelect) => {
+		setTeams((prev) => [...prev, newTeam]);
+		queryClient.invalidateQueries({ queryKey: queryKeys.teams.list(organizationId) });
+	};
+
+	// Callback for when a team is updated
+	const handleTeamUpdated = (updatedTeam: typeof team.$inferSelect) => {
+		setTeams((prev) => prev.map((t) => (t.id === updatedTeam.id ? updatedTeam : t)));
+		queryClient.invalidateQueries({ queryKey: queryKeys.teams.list(organizationId) });
+	};
 
 	// Handle team edit
 	const handleEdit = (team: typeof team.$inferSelect) => {
@@ -56,21 +100,9 @@ export function TeamsTab({ teams, members, permissions, organizationId }: TeamsT
 		setDeleteDialogOpen(true);
 	};
 
-	const handleDeleteConfirm = async () => {
+	const handleDeleteConfirm = () => {
 		if (!selectedTeam) return;
-
-		startTransition(async () => {
-			const result = await deleteTeam(selectedTeam.id);
-
-			if (result.success) {
-				toast.success("Team deleted successfully");
-				setDeleteDialogOpen(false);
-				setSelectedTeam(null);
-				router.refresh();
-			} else {
-				toast.error(result.error || "Failed to delete team");
-			}
-		});
+		deleteMutation.mutate(selectedTeam.id);
 	};
 
 	// Handle manage members
@@ -144,10 +176,16 @@ export function TeamsTab({ teams, members, permissions, organizationId }: TeamsT
 				organizationId={organizationId}
 				open={createDialogOpen}
 				onOpenChange={setCreateDialogOpen}
+				onSuccess={handleTeamCreated}
 			/>
 
 			{/* Edit Team Dialog */}
-			<EditTeamDialog team={selectedTeam} open={editDialogOpen} onOpenChange={setEditDialogOpen} />
+			<EditTeamDialog
+				team={selectedTeam}
+				open={editDialogOpen}
+				onOpenChange={setEditDialogOpen}
+				onSuccess={handleTeamUpdated}
+			/>
 
 			{/* Team Members Dialog */}
 			<TeamMembersDialog
@@ -174,13 +212,13 @@ export function TeamsTab({ teams, members, permissions, organizationId }: TeamsT
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
-						<AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>
+						<AlertDialogCancel disabled={deleteMutation.isPending}>Cancel</AlertDialogCancel>
 						<AlertDialogAction
 							onClick={handleDeleteConfirm}
-							disabled={isPending}
+							disabled={deleteMutation.isPending}
 							className="bg-destructive hover:bg-destructive/90"
 						>
-							{isPending ? "Deleting..." : "Delete Team"}
+							{deleteMutation.isPending ? "Deleting..." : "Delete Team"}
 						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>

@@ -7,6 +7,7 @@ import { TolgeeNextProvider } from "@/tolgee/client";
 import { ALL_LANGUAGES, TolgeeBase } from "@/tolgee/shared";
 import "../globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryProvider } from "@/lib/query";
 
 type Props = {
 	children: ReactNode;
@@ -158,10 +159,12 @@ export default async function LocaleLayout({ children, params }: Props) {
 					}
 				>
 					<TranslationProvider locale={locale}>
-						<TooltipProvider delayDuration={0}>
-							{children}
-							<Toaster position="bottom-right" richColors />
-						</TooltipProvider>
+						<QueryProvider>
+							<TooltipProvider delayDuration={0}>
+								{children}
+								<Toaster position="bottom-right" richColors />
+							</TooltipProvider>
+						</QueryProvider>
 					</TranslationProvider>
 				</Suspense>
 			</body>

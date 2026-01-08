@@ -1,10 +1,11 @@
 "use client";
 
 import { IconLoader2, IconPlus, IconTrash, IconUsers } from "@tabler/icons-react";
-import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { toast } from "sonner";
 import { addTeamMember, removeTeamMember } from "@/app/[locale]/(app)/settings/teams/actions";
+import { queryKeys } from "@/lib/query";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -41,10 +42,45 @@ export function TeamMembersDialog({
 	onOpenChange,
 	canManageMembers,
 }: TeamMembersDialogProps) {
-	const router = useRouter();
-	const [isPending, startTransition] = useTransition();
-	const [actioningId, setActioningId] = useState<string | null>(null);
+	const queryClient = useQueryClient();
 	const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>("");
+
+	// Add member mutation
+	const addMutation = useMutation({
+		mutationFn: ({ teamId, employeeId }: { teamId: string; employeeId: string }) =>
+			addTeamMember(teamId, employeeId),
+		onSuccess: (result) => {
+			if (result.success) {
+				toast.success("Member added to team");
+				setSelectedEmployeeId("");
+				queryClient.invalidateQueries({ queryKey: queryKeys.teams.all });
+				queryClient.invalidateQueries({ queryKey: queryKeys.members.all });
+			} else {
+				toast.error(result.error || "Failed to add member");
+			}
+		},
+		onError: () => {
+			toast.error("Failed to add member");
+		},
+	});
+
+	// Remove member mutation
+	const removeMutation = useMutation({
+		mutationFn: ({ teamId, employeeId }: { teamId: string; employeeId: string }) =>
+			removeTeamMember(teamId, employeeId),
+		onSuccess: (result) => {
+			if (result.success) {
+				toast.success("Member removed from team");
+				queryClient.invalidateQueries({ queryKey: queryKeys.teams.all });
+				queryClient.invalidateQueries({ queryKey: queryKeys.members.all });
+			} else {
+				toast.error(result.error || "Failed to remove member");
+			}
+		},
+		onError: () => {
+			toast.error("Failed to remove member");
+		},
+	});
 
 	if (!team) return null;
 
@@ -70,38 +106,18 @@ export function TeamMembersDialog({
 			.slice(0, 2);
 	};
 
-	const handleAddMember = async () => {
+	const handleAddMember = () => {
 		if (!selectedEmployeeId) return;
-
-		setActioningId(selectedEmployeeId);
-		startTransition(async () => {
-			const result = await addTeamMember(team.id, selectedEmployeeId);
-
-			if (result.success) {
-				toast.success("Member added to team");
-				setSelectedEmployeeId("");
-				router.refresh();
-			} else {
-				toast.error(result.error || "Failed to add member");
-			}
-			setActioningId(null);
-		});
+		addMutation.mutate({ teamId: team.id, employeeId: selectedEmployeeId });
 	};
 
-	const handleRemoveMember = async (employeeId: string) => {
-		setActioningId(employeeId);
-		startTransition(async () => {
-			const result = await removeTeamMember(team.id, employeeId);
-
-			if (result.success) {
-				toast.success("Member removed from team");
-				router.refresh();
-			} else {
-				toast.error(result.error || "Failed to remove member");
-			}
-			setActioningId(null);
-		});
+	const handleRemoveMember = (employeeId: string) => {
+		removeMutation.mutate({ teamId: team.id, employeeId });
 	};
+
+	const isActioning = (id: string) =>
+		(addMutation.isPending && addMutation.variables?.employeeId === id) ||
+		(removeMutation.isPending && removeMutation.variables?.employeeId === id);
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
@@ -151,10 +167,10 @@ export function TeamMembersDialog({
 								</div>
 								<Button
 									onClick={handleAddMember}
-									disabled={!selectedEmployeeId || isPending}
+									disabled={!selectedEmployeeId || addMutation.isPending}
 									size="sm"
 								>
-									{isPending && actioningId === selectedEmployeeId ? (
+									{addMutation.isPending ? (
 										<IconLoader2 className="h-4 w-4 animate-spin" />
 									) : (
 										<>
@@ -210,9 +226,9 @@ export function TeamMembersDialog({
 													variant="ghost"
 													size="sm"
 													onClick={() => handleRemoveMember(member.employee?.id)}
-													disabled={isPending && actioningId === member.employee?.id}
+													disabled={isActioning(member.employee?.id || "")}
 												>
-													{isPending && actioningId === member.employee?.id ? (
+													{isActioning(member.employee?.id || "") ? (
 														<IconLoader2 className="h-4 w-4 animate-spin" />
 													) : (
 														<IconTrash className="h-4 w-4 text-destructive" />
