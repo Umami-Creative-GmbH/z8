@@ -2,11 +2,10 @@
 
 import { IconClock, IconClockPause, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { clockIn, clockOut } from "@/app/[locale]/(app)/time-tracking/actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { type TimeClockState, useTimeClock } from "@/lib/query";
 import { formatDurationWithSeconds } from "@/lib/time-tracking/time-utils";
 
 interface ActiveWorkPeriodData {
@@ -20,38 +19,33 @@ interface Props {
 	employeeName: string;
 }
 
-export function ClockInOutWidget({ activeWorkPeriod: initial, employeeName }: Props) {
+export function ClockInOutWidget({ activeWorkPeriod: initialWorkPeriod, employeeName }: Props) {
 	const { t } = useTranslate();
-	const [activeWorkPeriod, _setActiveWorkPeriod] = useState(initial);
-	const [elapsedSeconds, setElapsedSeconds] = useState(0);
-	const [loading, setLoading] = useState(false);
 
-	// Real-time elapsed time counter - runs only on client to avoid hydration mismatch
-	useEffect(() => {
-		if (!activeWorkPeriod) return;
+	// Construct initial state from server-rendered props
+	const initialData: TimeClockState = {
+		hasEmployee: true, // Widget is only rendered for employees
+		isClockedIn: !!initialWorkPeriod,
+		activeWorkPeriod: initialWorkPeriod
+			? { id: initialWorkPeriod.id, startTime: initialWorkPeriod.startTime }
+			: null,
+	};
 
-		// Calculate initial elapsed time on client
-		const calculateElapsed = () => {
-			const start = new Date(activeWorkPeriod.startTime);
-			return Math.floor((Date.now() - start.getTime()) / 1000);
-		};
-
-		setElapsedSeconds(calculateElapsed());
-
-		const interval = setInterval(() => {
-			setElapsedSeconds(calculateElapsed());
-		}, 1000);
-
-		return () => clearInterval(interval);
-	}, [activeWorkPeriod]);
+	const {
+		isClockedIn,
+		activeWorkPeriod,
+		elapsedSeconds,
+		clockIn,
+		clockOut,
+		isClockingOut,
+		isMutating,
+	} = useTimeClock({ initialData });
 
 	const handleClockIn = async () => {
-		setLoading(true);
 		const result = await clockIn();
 
 		if (result.success) {
 			toast.success(t("timeTracking.clockInSuccess", "Clocked in successfully"));
-			window.location.reload();
 		} else {
 			const errorMessage = result.holidayName
 				? t("timeTracking.errors.holidayBlocked", "Cannot clock in on {holidayName}", {
@@ -67,17 +61,14 @@ export function ClockInOutWidget({ activeWorkPeriod: initial, employeeName }: Pr
 						)
 					: undefined,
 			});
-			setLoading(false);
 		}
 	};
 
 	const handleClockOut = async () => {
-		setLoading(true);
 		const result = await clockOut();
 
 		if (result.success) {
 			toast.success(t("timeTracking.clockOutSuccess", "Clocked out successfully"));
-			window.location.reload();
 		} else {
 			const errorMessage = result.holidayName
 				? t("timeTracking.errors.holidayBlocked", "Cannot clock out on {holidayName}", {
@@ -93,11 +84,8 @@ export function ClockInOutWidget({ activeWorkPeriod: initial, employeeName }: Pr
 						)
 					: undefined,
 			});
-			setLoading(false);
 		}
 	};
-
-	const isClockedIn = !!activeWorkPeriod;
 
 	return (
 		<Card className="@container/widget">
@@ -110,9 +98,11 @@ export function ClockInOutWidget({ activeWorkPeriod: initial, employeeName }: Pr
 				</CardDescription>
 			</CardHeader>
 			<CardContent className="flex flex-col gap-4">
-				{isClockedIn && (
+				{isClockedIn && activeWorkPeriod && (
 					<div className="flex flex-col gap-2">
-						<div className="font-bold text-3xl tabular-nums">{formatDurationWithSeconds(elapsedSeconds)}</div>
+						<div className="font-bold text-3xl tabular-nums">
+							{formatDurationWithSeconds(elapsedSeconds)}
+						</div>
 						<div className="text-muted-foreground text-sm">
 							{t("timeTracking.startedAt", "Started at")}{" "}
 							{new Date(activeWorkPeriod.startTime).toLocaleTimeString("en-US", {
@@ -127,13 +117,13 @@ export function ClockInOutWidget({ activeWorkPeriod: initial, employeeName }: Pr
 					size="lg"
 					variant={isClockedIn ? "destructive" : "default"}
 					onClick={isClockedIn ? handleClockOut : handleClockIn}
-					disabled={loading}
+					disabled={isMutating}
 					className="w-full"
 				>
-					{loading ? (
+					{isMutating ? (
 						<>
 							<IconLoader2 className="size-5 animate-spin" />
-							{isClockedIn
+							{isClockingOut
 								? t("timeTracking.clockingOut", "Clocking Out...")
 								: t("timeTracking.clockingIn", "Clocking In...")}
 						</>

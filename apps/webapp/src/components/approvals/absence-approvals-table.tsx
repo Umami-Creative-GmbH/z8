@@ -1,13 +1,14 @@
 "use client";
 
 import { IconCheck, IconX } from "@tabler/icons-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { useRouter } from "@/navigation";
 import {
 	approveAbsence,
 	rejectAbsence,
 } from "@/app/[locale]/(app)/approvals/actions";
+import { queryKeys } from "@/lib/query";
 import type { ApprovalWithAbsence } from "@/lib/validations/approvals";
 import { CategoryBadge } from "@/components/absences/category-badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -27,11 +28,66 @@ interface AbsenceApprovalsTableProps {
 	approvals: ApprovalWithAbsence[];
 }
 
-export function AbsenceApprovalsTable({ approvals }: AbsenceApprovalsTableProps) {
-	const router = useRouter();
+export function AbsenceApprovalsTable({ approvals: initialApprovals }: AbsenceApprovalsTableProps) {
+	const queryClient = useQueryClient();
+	const [approvals, setApprovals] = useState(initialApprovals);
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const [dialogAction, setDialogAction] = useState<"approve" | "reject">("approve");
 	const [selectedApproval, setSelectedApproval] = useState<ApprovalWithAbsence | null>(null);
+
+	// Sync with props when they change
+	if (initialApprovals !== approvals && initialApprovals.length !== approvals.length) {
+		setApprovals(initialApprovals);
+	}
+
+	// Approve mutation with optimistic update
+	const approveMutation = useMutation({
+		mutationFn: (absenceId: string) => approveAbsence(absenceId),
+		onMutate: async (absenceId) => {
+			const previousApprovals = approvals;
+			setApprovals((prev) => prev.filter((a) => a.absence.id !== absenceId));
+			return { previousApprovals };
+		},
+		onSuccess: (result) => {
+			if (result.success) {
+				toast.success("Absence request approved");
+				queryClient.invalidateQueries({ queryKey: queryKeys.approvals.absences() });
+			} else {
+				toast.error(result.error || "Failed to approve absence request");
+			}
+		},
+		onError: (_error, _absenceId, context) => {
+			if (context?.previousApprovals) {
+				setApprovals(context.previousApprovals);
+			}
+			toast.error("Failed to approve absence request");
+		},
+	});
+
+	// Reject mutation with optimistic update
+	const rejectMutation = useMutation({
+		mutationFn: ({ absenceId, reason }: { absenceId: string; reason: string }) =>
+			rejectAbsence(absenceId, reason),
+		onMutate: async ({ absenceId }) => {
+			const previousApprovals = approvals;
+			setApprovals((prev) => prev.filter((a) => a.absence.id !== absenceId));
+			return { previousApprovals };
+		},
+		onSuccess: (result) => {
+			if (result.success) {
+				toast.success("Absence request rejected");
+				queryClient.invalidateQueries({ queryKey: queryKeys.approvals.absences() });
+			} else {
+				toast.error(result.error || "Failed to reject absence request");
+			}
+		},
+		onError: (_error, _variables, context) => {
+			if (context?.previousApprovals) {
+				setApprovals(context.previousApprovals);
+			}
+			toast.error("Failed to reject absence request");
+		},
+	});
 
 	const handleApprove = (approval: ApprovalWithAbsence) => {
 		setSelectedApproval(approval);
@@ -48,18 +104,12 @@ export function AbsenceApprovalsTable({ approvals }: AbsenceApprovalsTableProps)
 	const handleConfirm = async (reason?: string) => {
 		if (!selectedApproval) return;
 
-		const result =
-			dialogAction === "approve"
-				? await approveAbsence(selectedApproval.absence.id)
-				: await rejectAbsence(selectedApproval.absence.id, reason!);
+		setDialogOpen(false);
 
-		if (result.success) {
-			toast.success(
-				dialogAction === "approve" ? "Absence request approved" : "Absence request rejected",
-			);
-			router.refresh();
+		if (dialogAction === "approve") {
+			approveMutation.mutate(selectedApproval.absence.id);
 		} else {
-			toast.error(result.error || `Failed to ${dialogAction} absence request`);
+			rejectMutation.mutate({ absenceId: selectedApproval.absence.id, reason: reason! });
 		}
 	};
 

@@ -1,13 +1,14 @@
 "use client";
 
 import { IconArrowRight, IconCheck, IconX } from "@tabler/icons-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { useRouter } from "@/navigation";
 import {
 	approveTimeCorrection,
 	rejectTimeCorrection,
 } from "@/app/[locale]/(app)/approvals/actions";
+import { queryKeys } from "@/lib/query";
 import type { ApprovalWithTimeCorrection } from "@/lib/validations/approvals";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -43,11 +44,68 @@ function formatDate(date: Date): string {
 	}).format(date);
 }
 
-export function TimeCorrectionApprovalsTable({ approvals }: TimeCorrectionApprovalsTableProps) {
-	const router = useRouter();
+export function TimeCorrectionApprovalsTable({ approvals: initialApprovals }: TimeCorrectionApprovalsTableProps) {
+	const queryClient = useQueryClient();
+	const [approvals, setApprovals] = useState(initialApprovals);
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const [dialogAction, setDialogAction] = useState<"approve" | "reject">("approve");
 	const [selectedApproval, setSelectedApproval] = useState<ApprovalWithTimeCorrection | null>(null);
+
+	// Sync with props when they change (e.g., after navigation)
+	if (initialApprovals !== approvals && initialApprovals.length !== approvals.length) {
+		setApprovals(initialApprovals);
+	}
+
+	// Approve mutation with optimistic update
+	const approveMutation = useMutation({
+		mutationFn: (workPeriodId: string) => approveTimeCorrection(workPeriodId),
+		onMutate: async (workPeriodId) => {
+			// Optimistically remove the approval from the list
+			const previousApprovals = approvals;
+			setApprovals((prev) => prev.filter((a) => a.workPeriod.id !== workPeriodId));
+			return { previousApprovals };
+		},
+		onSuccess: (result) => {
+			if (result.success) {
+				toast.success("Time correction approved");
+				queryClient.invalidateQueries({ queryKey: queryKeys.approvals.timeCorrections() });
+			} else {
+				toast.error(result.error || "Failed to approve time correction");
+			}
+		},
+		onError: (_error, _workPeriodId, context) => {
+			// Rollback on error
+			if (context?.previousApprovals) {
+				setApprovals(context.previousApprovals);
+			}
+			toast.error("Failed to approve time correction");
+		},
+	});
+
+	// Reject mutation with optimistic update
+	const rejectMutation = useMutation({
+		mutationFn: ({ workPeriodId, reason }: { workPeriodId: string; reason: string }) =>
+			rejectTimeCorrection(workPeriodId, reason),
+		onMutate: async ({ workPeriodId }) => {
+			const previousApprovals = approvals;
+			setApprovals((prev) => prev.filter((a) => a.workPeriod.id !== workPeriodId));
+			return { previousApprovals };
+		},
+		onSuccess: (result) => {
+			if (result.success) {
+				toast.success("Time correction rejected");
+				queryClient.invalidateQueries({ queryKey: queryKeys.approvals.timeCorrections() });
+			} else {
+				toast.error(result.error || "Failed to reject time correction");
+			}
+		},
+		onError: (_error, _variables, context) => {
+			if (context?.previousApprovals) {
+				setApprovals(context.previousApprovals);
+			}
+			toast.error("Failed to reject time correction");
+		},
+	});
 
 	const handleApprove = (approval: ApprovalWithTimeCorrection) => {
 		setSelectedApproval(approval);
@@ -64,18 +122,12 @@ export function TimeCorrectionApprovalsTable({ approvals }: TimeCorrectionApprov
 	const handleConfirm = async (reason?: string) => {
 		if (!selectedApproval) return;
 
-		const result =
-			dialogAction === "approve"
-				? await approveTimeCorrection(selectedApproval.workPeriod.id)
-				: await rejectTimeCorrection(selectedApproval.workPeriod.id, reason!);
+		setDialogOpen(false);
 
-		if (result.success) {
-			toast.success(
-				dialogAction === "approve" ? "Time correction approved" : "Time correction rejected",
-			);
-			router.refresh();
+		if (dialogAction === "approve") {
+			approveMutation.mutate(selectedApproval.workPeriod.id);
 		} else {
-			toast.error(result.error || `Failed to ${dialogAction} time correction`);
+			rejectMutation.mutate({ workPeriodId: selectedApproval.workPeriod.id, reason: reason! });
 		}
 	};
 
