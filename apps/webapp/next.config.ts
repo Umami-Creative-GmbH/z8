@@ -19,6 +19,7 @@ const nextConfig: NextConfig = {
     "@opentelemetry/exporter-metrics-otlp-http",
     "@opentelemetry/auto-instrumentations-node",
     "sharp",
+    "detect-libc",
   ],
 };
 
