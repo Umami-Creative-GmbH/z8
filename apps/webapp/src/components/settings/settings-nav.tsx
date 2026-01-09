@@ -3,8 +3,10 @@
 import {
 	type Icon,
 	IconBeach,
+	IconBell,
 	IconBuilding,
 	IconCalendarEvent,
+	IconHistory,
 	IconShield,
 	IconUserCircle,
 	IconUsers,
@@ -49,6 +51,12 @@ export function SettingsNav({ isAdmin }: SettingsNavProps) {
 			visible: true,
 		},
 		{
+			title: t("settings.notifications.title", "Notifications"),
+			url: "/settings/notifications",
+			icon: IconBell,
+			visible: true,
+		},
+		{
 			title: t("settings.organizations.title", "Organizations & Teams"),
 			url: "/settings/organizations",
 			icon: IconBuilding,
@@ -70,6 +78,12 @@ export function SettingsNav({ isAdmin }: SettingsNavProps) {
 			title: t("settings.vacation.title", "Vacation"),
 			url: "/settings/vacation",
 			icon: IconBeach,
+			visible: isAdmin,
+		},
+		{
+			title: t("settings.auditLog.title", "Audit Log"),
+			url: "/settings/audit-log",
+			icon: IconHistory,
 			visible: isAdmin,
 		},
 	];
