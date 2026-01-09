@@ -49,6 +49,32 @@ export const dayOfWeekEnum = pgEnum("day_of_week", [
 	"sunday",
 ]);
 
+// Notification enums
+export const notificationTypeEnum = pgEnum("notification_type", [
+	"approval_request_submitted",
+	"approval_request_approved",
+	"approval_request_rejected",
+	"time_correction_submitted",
+	"time_correction_approved",
+	"time_correction_rejected",
+	"absence_request_submitted",
+	"absence_request_approved",
+	"absence_request_rejected",
+	"team_member_added",
+	"team_member_removed",
+	"password_changed",
+	"two_factor_enabled",
+	"two_factor_disabled",
+	"birthday_reminder",
+	"vacation_balance_alert",
+]);
+
+export const notificationChannelEnum = pgEnum("notification_channel", [
+	"in_app",
+	"push",
+	"email",
+]);
+
 // ============================================
 // ORGANIZATION STRUCTURE
 // ============================================
@@ -590,6 +616,129 @@ export const auditLog = pgTable(
 	],
 );
 
+// Audit log relations
+export const auditLogRelations = relations(auditLog, ({ one }) => ({
+	performedByUser: one(user, {
+		fields: [auditLog.performedBy],
+		references: [user.id],
+	}),
+	employeeRecord: one(employee, {
+		fields: [auditLog.employeeId],
+		references: [employee.id],
+	}),
+}));
+
+// ============================================
+// NOTIFICATIONS
+// ============================================
+
+// In-app notifications for users
+export const notification = pgTable(
+	"notification",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		userId: text("user_id")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+
+		type: notificationTypeEnum("type").notNull(),
+		title: text("title").notNull(),
+		message: text("message").notNull(),
+
+		// Optional link to related entity
+		entityType: text("entity_type"), // "absence_entry" | "work_period" | "team" | etc.
+		entityId: uuid("entity_id"),
+		actionUrl: text("action_url"), // Deep link to relevant page
+
+		// Read status
+		isRead: boolean("is_read").default(false).notNull(),
+		readAt: timestamp("read_at"),
+
+		// Metadata
+		metadata: text("metadata"), // JSON for additional context
+
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+	},
+	(table) => [
+		index("notification_userId_idx").on(table.userId),
+		index("notification_organizationId_idx").on(table.organizationId),
+		index("notification_isRead_idx").on(table.isRead),
+		index("notification_createdAt_idx").on(table.createdAt),
+		index("notification_type_idx").on(table.type),
+	],
+);
+
+// User notification preferences per channel and type
+export const notificationPreference = pgTable(
+	"notification_preference",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		userId: text("user_id")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+
+		notificationType: notificationTypeEnum("notification_type").notNull(),
+		channel: notificationChannelEnum("channel").notNull(),
+		enabled: boolean("enabled").default(true).notNull(),
+
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+		updatedAt: timestamp("updated_at")
+			.$onUpdate(() => currentTimestamp())
+			.notNull(),
+	},
+	(table) => [
+		index("notificationPreference_userId_idx").on(table.userId),
+		index("notificationPreference_organizationId_idx").on(table.organizationId),
+		// Unique constraint: one preference per user per type per channel
+		index("notificationPreference_unique_idx").on(
+			table.userId,
+			table.organizationId,
+			table.notificationType,
+			table.channel,
+		),
+	],
+);
+
+// Push notification subscriptions (Web Push API)
+export const pushSubscription = pgTable(
+	"push_subscription",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		userId: text("user_id")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+
+		// Web Push subscription data
+		endpoint: text("endpoint").notNull(),
+		p256dh: text("p256dh").notNull(), // Public key
+		auth: text("auth").notNull(), // Auth secret
+
+		// Device/browser info for management
+		userAgent: text("user_agent"),
+		deviceName: text("device_name"), // User-friendly name
+
+		// Status
+		isActive: boolean("is_active").default(true).notNull(),
+		lastUsedAt: timestamp("last_used_at"),
+
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+		updatedAt: timestamp("updated_at")
+			.$onUpdate(() => currentTimestamp())
+			.notNull(),
+	},
+	(table) => [
+		index("pushSubscription_userId_idx").on(table.userId),
+		index("pushSubscription_endpoint_idx").on(table.endpoint),
+		index("pushSubscription_isActive_idx").on(table.isActive),
+	],
+);
+
 // ============================================
 // RELATIONS
 // ============================================
@@ -602,6 +751,8 @@ export const organizationRelations = relations(organization, ({ many }) => ({
 	holidayCategories: many(holidayCategory),
 	holidays: many(holiday),
 	vacationAllowances: many(vacationAllowance),
+	notifications: many(notification),
+	notificationPreferences: many(notificationPreference),
 }));
 
 export const teamRelations = relations(team, ({ one, many }) => ({
@@ -857,5 +1008,35 @@ export const employeeWorkScheduleDaysRelations = relations(employeeWorkScheduleD
 	schedule: one(employeeWorkSchedule, {
 		fields: [employeeWorkScheduleDays.scheduleId],
 		references: [employeeWorkSchedule.id],
+	}),
+}));
+
+// Notification relations
+export const notificationRelations = relations(notification, ({ one }) => ({
+	user: one(user, {
+		fields: [notification.userId],
+		references: [user.id],
+	}),
+	organization: one(organization, {
+		fields: [notification.organizationId],
+		references: [organization.id],
+	}),
+}));
+
+export const notificationPreferenceRelations = relations(notificationPreference, ({ one }) => ({
+	user: one(user, {
+		fields: [notificationPreference.userId],
+		references: [user.id],
+	}),
+	organization: one(organization, {
+		fields: [notificationPreference.organizationId],
+		references: [organization.id],
+	}),
+}));
+
+export const pushSubscriptionRelations = relations(pushSubscription, ({ one }) => ({
+	user: one(user, {
+		fields: [pushSubscription.userId],
+		references: [user.id],
 	}),
 }));

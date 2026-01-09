@@ -93,4 +93,13 @@ export {
 	vacationAllowanceRelations,
 	workPeriod,
 	workPeriodRelations,
+	// Notification tables
+	notification,
+	notificationRelations,
+	notificationPreference,
+	notificationPreferenceRelations,
+	pushSubscription,
+	pushSubscriptionRelations,
+	notificationTypeEnum,
+	notificationChannelEnum,
 } from "./schema";
