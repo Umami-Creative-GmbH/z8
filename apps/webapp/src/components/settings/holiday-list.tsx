@@ -1,10 +1,22 @@
 "use client";
 
-import { IconAlertCircle, IconLoader2, IconPencil, IconPlus, IconTrash } from "@tabler/icons-react";
+import {
+	IconAlertCircle,
+	IconLoader2,
+	IconPencil,
+	IconPlus,
+	IconRefresh,
+	IconTrash,
+} from "@tabler/icons-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
-import { deleteHoliday, getHolidays } from "@/app/[locale]/(app)/settings/holidays/actions";
+import {
+	bulkDeleteHolidays,
+	deleteHoliday,
+	getHolidays,
+} from "@/app/[locale]/(app)/settings/holidays/actions";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -17,6 +29,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
 	Table,
 	TableBody,
@@ -25,6 +38,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { queryKeys } from "@/lib/query";
 
 interface Holiday {
 	id: string;
@@ -51,53 +65,120 @@ interface HolidayListProps {
 
 export function HolidayList({ organizationId, onAddClick, onEditClick }: HolidayListProps) {
 	const { t } = useTranslate();
-	const [holidays, setHolidays] = useState<Holiday[]>([]);
-	const [loading, setLoading] = useState(true);
-	const [error, setError] = useState<string | null>(null);
-	const [deletingId, setDeletingId] = useState<string | null>(null);
+	const queryClient = useQueryClient();
+
+	// Selection state
+	const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+	// Delete confirmation state
 	const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 	const [holidayToDelete, setHolidayToDelete] = useState<Holiday | null>(null);
+	const [bulkDeleteConfirmOpen, setBulkDeleteConfirmOpen] = useState(false);
 
-	const fetchHolidays = async () => {
-		setLoading(true);
-		setError(null);
+	// Fetch holidays with TanStack Query
+	const {
+		data: holidays = [],
+		isLoading,
+		error,
+		refetch,
+		isFetching,
+	} = useQuery({
+		queryKey: queryKeys.holidays.list(organizationId),
+		queryFn: async () => {
+			const result = await getHolidays(organizationId);
+			if (!result.success) {
+				throw new Error(result.error || "Failed to load holidays");
+			}
+			return result.data as Holiday[];
+		},
+	});
 
-		const result = await getHolidays(organizationId);
+	// Single delete mutation
+	const deleteMutation = useMutation({
+		mutationFn: (holidayId: string) => deleteHoliday(holidayId),
+		onSuccess: (result) => {
+			if (result.success) {
+				toast.success(t("settings.holidays.deleted", "Holiday deleted successfully"));
+				queryClient.invalidateQueries({ queryKey: queryKeys.holidays.list(organizationId) });
+			} else {
+				toast.error(
+					result.error || t("settings.holidays.deleteFailed", "Failed to delete holiday"),
+				);
+			}
+			setDeleteConfirmOpen(false);
+			setHolidayToDelete(null);
+		},
+		onError: () => {
+			toast.error(t("settings.holidays.deleteFailed", "Failed to delete holiday"));
+			setDeleteConfirmOpen(false);
+			setHolidayToDelete(null);
+		},
+	});
 
-		if (result.success && result.data) {
-			setHolidays(result.data);
-		} else {
-			setError(result.error || "Failed to load holidays");
-		}
-
-		setLoading(false);
-	};
-
-	useEffect(() => {
-		fetchHolidays();
-	}, [fetchHolidays]);
+	// Bulk delete mutation
+	const bulkDeleteMutation = useMutation({
+		mutationFn: (ids: string[]) => bulkDeleteHolidays(ids),
+		onSuccess: (result) => {
+			if (result.success) {
+				toast.success(
+					t("settings.holidays.bulkDeleted", "{count} holidays deleted", {
+						count: result.data.deleted,
+					}),
+				);
+				queryClient.invalidateQueries({ queryKey: queryKeys.holidays.list(organizationId) });
+				setSelectedIds(new Set());
+			} else {
+				toast.error(
+					result.error || t("settings.holidays.bulkDeleteFailed", "Failed to delete holidays"),
+				);
+			}
+			setBulkDeleteConfirmOpen(false);
+		},
+		onError: () => {
+			toast.error(t("settings.holidays.bulkDeleteFailed", "Failed to delete holidays"));
+			setBulkDeleteConfirmOpen(false);
+		},
+	});
 
 	const handleDeleteClick = (holiday: Holiday) => {
 		setHolidayToDelete(holiday);
 		setDeleteConfirmOpen(true);
 	};
 
-	const handleDeleteConfirm = async () => {
-		if (!holidayToDelete) return;
-
-		setDeletingId(holidayToDelete.id);
-		const result = await deleteHoliday(holidayToDelete.id);
-
-		if (result.success) {
-			toast.success(t("settings.holidays.deleted", "Holiday deleted successfully"));
-			fetchHolidays(); // Refresh the list
-		} else {
-			toast.error(result.error || t("settings.holidays.deleteFailed", "Failed to delete holiday"));
+	const handleDeleteConfirm = () => {
+		if (holidayToDelete) {
+			deleteMutation.mutate(holidayToDelete.id);
 		}
+	};
 
-		setDeletingId(null);
-		setDeleteConfirmOpen(false);
-		setHolidayToDelete(null);
+	const handleBulkDeleteClick = () => {
+		if (selectedIds.size > 0) {
+			setBulkDeleteConfirmOpen(true);
+		}
+	};
+
+	const handleBulkDeleteConfirm = () => {
+		bulkDeleteMutation.mutate(Array.from(selectedIds));
+	};
+
+	const toggleSelection = (id: string) => {
+		setSelectedIds((prev) => {
+			const next = new Set(prev);
+			if (next.has(id)) {
+				next.delete(id);
+			} else {
+				next.add(id);
+			}
+			return next;
+		});
+	};
+
+	const toggleSelectAll = () => {
+		if (selectedIds.size === holidays.length) {
+			setSelectedIds(new Set());
+		} else {
+			setSelectedIds(new Set(holidays.map((h) => h.id)));
+		}
 	};
 
 	const formatDateRange = (startDate: Date | string, endDate: Date | string) => {
@@ -119,7 +200,10 @@ export function HolidayList({ organizationId, onAddClick, onEditClick }: Holiday
 		return `${start} - ${end}`;
 	};
 
-	if (loading) {
+	const isAllSelected = holidays.length > 0 && selectedIds.size === holidays.length;
+	const isSomeSelected = selectedIds.size > 0 && selectedIds.size < holidays.length;
+
+	if (isLoading) {
 		return (
 			<div className="space-y-4">
 				<div className="flex justify-between items-center">
@@ -152,9 +236,9 @@ export function HolidayList({ organizationId, onAddClick, onEditClick }: Holiday
 				<div className="rounded-md border border-destructive/50 bg-destructive/10 p-8 flex flex-col items-center justify-center gap-4">
 					<div className="flex items-center gap-2 text-destructive">
 						<IconAlertCircle className="h-5 w-5" />
-						<span>{error}</span>
+						<span>{error instanceof Error ? error.message : "Failed to load holidays"}</span>
 					</div>
-					<Button onClick={fetchHolidays} variant="outline" size="sm">
+					<Button onClick={() => refetch()} variant="outline" size="sm">
 						{t("common.retry", "Retry")}
 					</Button>
 				</div>
@@ -167,16 +251,56 @@ export function HolidayList({ organizationId, onAddClick, onEditClick }: Holiday
 			<div className="space-y-4">
 				<div className="flex justify-between items-center">
 					<h3 className="text-lg font-medium">{t("settings.holidays.list.title", "Holidays")}</h3>
-					<Button size="sm" onClick={onAddClick}>
-						<IconPlus className="mr-2 h-4 w-4" />
-						{t("settings.holidays.add", "Add Holiday")}
-					</Button>
+					<div className="flex items-center gap-2">
+						{selectedIds.size > 0 && (
+							<Button
+								size="sm"
+								variant="destructive"
+								onClick={handleBulkDeleteClick}
+								disabled={bulkDeleteMutation.isPending}
+							>
+								{bulkDeleteMutation.isPending ? (
+									<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+								) : (
+									<IconTrash className="mr-2 h-4 w-4" />
+								)}
+								{t("settings.holidays.deleteSelected", "Delete ({count})", {
+									count: selectedIds.size,
+								})}
+							</Button>
+						)}
+						<Button
+							size="sm"
+							variant="outline"
+							onClick={() => refetch()}
+							disabled={isFetching}
+						>
+							{isFetching ? (
+								<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+							) : (
+								<IconRefresh className="mr-2 h-4 w-4" />
+							)}
+							{t("common.refresh", "Refresh")}
+						</Button>
+						<Button size="sm" onClick={onAddClick}>
+							<IconPlus className="mr-2 h-4 w-4" />
+							{t("settings.holidays.add", "Add Holiday")}
+						</Button>
+					</div>
 				</div>
 
 				<div className="rounded-md border">
 					<Table>
 						<TableHeader>
 							<TableRow>
+								<TableHead className="w-12">
+									<Checkbox
+										checked={isAllSelected}
+										onCheckedChange={toggleSelectAll}
+										aria-label={t("common.selectAll", "Select all")}
+										className={isSomeSelected ? "data-[state=checked]:bg-primary/50" : ""}
+									/>
+								</TableHead>
 								<TableHead>{t("settings.holidays.list.name", "Name")}</TableHead>
 								<TableHead>{t("settings.holidays.list.category", "Category")}</TableHead>
 								<TableHead>{t("settings.holidays.list.date", "Date")}</TableHead>
@@ -189,7 +313,7 @@ export function HolidayList({ organizationId, onAddClick, onEditClick }: Holiday
 						<TableBody>
 							{holidays.length === 0 ? (
 								<TableRow>
-									<TableCell colSpan={5} className="text-center text-muted-foreground h-24">
+									<TableCell colSpan={6} className="text-center text-muted-foreground h-24">
 										{t(
 											"settings.holidays.list.empty",
 											"No holidays found. Add your first holiday to get started.",
@@ -198,12 +322,24 @@ export function HolidayList({ organizationId, onAddClick, onEditClick }: Holiday
 								</TableRow>
 							) : (
 								holidays.map((holiday) => (
-									<TableRow key={holiday.id}>
+									<TableRow
+										key={holiday.id}
+										className={selectedIds.has(holiday.id) ? "bg-muted/50" : ""}
+									>
+										<TableCell>
+											<Checkbox
+												checked={selectedIds.has(holiday.id)}
+												onCheckedChange={() => toggleSelection(holiday.id)}
+												aria-label={t("common.selectRow", "Select row")}
+											/>
+										</TableCell>
 										<TableCell>
 											<div>
 												<div className="font-medium">{holiday.name}</div>
 												{holiday.description && (
-													<div className="text-sm text-muted-foreground">{holiday.description}</div>
+													<div className="text-sm text-muted-foreground">
+														{holiday.description}
+													</div>
 												)}
 											</div>
 										</TableCell>
@@ -236,7 +372,7 @@ export function HolidayList({ organizationId, onAddClick, onEditClick }: Holiday
 													variant="ghost"
 													size="icon"
 													onClick={() => onEditClick(holiday)}
-													disabled={deletingId === holiday.id}
+													disabled={deleteMutation.isPending}
 												>
 													<IconPencil className="h-4 w-4" />
 												</Button>
@@ -244,9 +380,10 @@ export function HolidayList({ organizationId, onAddClick, onEditClick }: Holiday
 													variant="ghost"
 													size="icon"
 													onClick={() => handleDeleteClick(holiday)}
-													disabled={deletingId === holiday.id}
+													disabled={deleteMutation.isPending}
 												>
-													{deletingId === holiday.id ? (
+													{deleteMutation.isPending &&
+													holidayToDelete?.id === holiday.id ? (
 														<IconLoader2 className="h-4 w-4 animate-spin" />
 													) : (
 														<IconTrash className="h-4 w-4" />
@@ -262,6 +399,7 @@ export function HolidayList({ organizationId, onAddClick, onEditClick }: Holiday
 				</div>
 			</div>
 
+			{/* Single Delete Confirmation */}
 			<AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
@@ -277,12 +415,53 @@ export function HolidayList({ organizationId, onAddClick, onEditClick }: Holiday
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
-						<AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
+						<AlertDialogCancel disabled={deleteMutation.isPending}>
+							{t("common.cancel", "Cancel")}
+						</AlertDialogCancel>
 						<AlertDialogAction
 							onClick={handleDeleteConfirm}
+							disabled={deleteMutation.isPending}
 							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
 						>
+							{deleteMutation.isPending && (
+								<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+							)}
 							{t("common.delete", "Delete")}
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
+
+			{/* Bulk Delete Confirmation */}
+			<AlertDialog open={bulkDeleteConfirmOpen} onOpenChange={setBulkDeleteConfirmOpen}>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>
+							{t("settings.holidays.bulkDelete.title", "Delete Multiple Holidays")}
+						</AlertDialogTitle>
+						<AlertDialogDescription>
+							{t(
+								"settings.holidays.bulkDelete.description",
+								"Are you sure you want to delete {count} holidays? This action cannot be undone.",
+								{ count: selectedIds.size },
+							)}
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel disabled={bulkDeleteMutation.isPending}>
+							{t("common.cancel", "Cancel")}
+						</AlertDialogCancel>
+						<AlertDialogAction
+							onClick={handleBulkDeleteConfirm}
+							disabled={bulkDeleteMutation.isPending}
+							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+						>
+							{bulkDeleteMutation.isPending && (
+								<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+							)}
+							{t("settings.holidays.bulkDelete.confirm", "Delete {count} Holidays", {
+								count: selectedIds.size,
+							})}
 						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>

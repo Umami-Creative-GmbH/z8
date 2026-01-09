@@ -60,8 +60,24 @@ export function HolidayDialog({
 
 	const form = useForm<HolidayFormValues>({
 		resolver: zodResolver(holidayFormSchema),
-		defaultValues: editingHoliday
-			? {
+		defaultValues: {
+			name: "",
+			description: "",
+			categoryId: "",
+			startDate: new Date(),
+			endDate: new Date(),
+			recurrenceType: "none",
+			recurrenceRule: undefined,
+			recurrenceEndDate: null,
+			isActive: true,
+		},
+	});
+
+	// Reset form when editingHoliday changes or dialog opens
+	useEffect(() => {
+		if (open) {
+			if (editingHoliday) {
+				form.reset({
 					name: editingHoliday.name,
 					description: editingHoliday.description || "",
 					categoryId: editingHoliday.categoryId,
@@ -73,8 +89,9 @@ export function HolidayDialog({
 						? new Date(editingHoliday.recurrenceEndDate)
 						: null,
 					isActive: editingHoliday.isActive,
-				}
-			: {
+				});
+			} else {
+				form.reset({
 					name: "",
 					description: "",
 					categoryId: "",
@@ -84,8 +101,10 @@ export function HolidayDialog({
 					recurrenceRule: undefined,
 					recurrenceEndDate: null,
 					isActive: true,
-				},
-	});
+				});
+			}
+		}
+	}, [open, editingHoliday, form]);
 
 	// Fetch categories on mount
 	useEffect(() => {

@@ -58,7 +58,8 @@ export async function getAuditLogsAction(filters: {
 			};
 		}
 
-		if (!authContext.session.activeOrganizationId) {
+		const organizationId = authContext.session.activeOrganizationId || authContext.employee?.organizationId;
+		if (!organizationId) {
 			return {
 				success: false,
 				error: "No active organization",
@@ -66,7 +67,7 @@ export async function getAuditLogsAction(filters: {
 		}
 
 		const queryFilters: AuditLogFilters = {
-			organizationId: authContext.session.activeOrganizationId,
+			organizationId,
 			entityType: filters.entityType,
 			action: filters.action,
 			performedBy: filters.performedBy,
@@ -112,7 +113,8 @@ export async function getAuditStatsAction(
 			};
 		}
 
-		if (!authContext.session.activeOrganizationId) {
+		const organizationId = authContext.session.activeOrganizationId || authContext.employee?.organizationId;
+		if (!organizationId) {
 			return {
 				success: false,
 				error: "No active organization",
@@ -120,7 +122,7 @@ export async function getAuditStatsAction(
 		}
 
 		const stats = await getAuditLogStats(
-			authContext.session.activeOrganizationId,
+			organizationId,
 			new Date(startDate),
 			new Date(endDate)
 		);
@@ -158,7 +160,8 @@ export async function exportAuditLogsAction(
 			};
 		}
 
-		if (!authContext.session.activeOrganizationId) {
+		const organizationId = authContext.session.activeOrganizationId || authContext.employee?.organizationId;
+		if (!organizationId) {
 			return {
 				success: false,
 				error: "No active organization",
@@ -166,7 +169,7 @@ export async function exportAuditLogsAction(
 		}
 
 		const logs = await exportAuditLogs(
-			authContext.session.activeOrganizationId,
+			organizationId,
 			new Date(startDate),
 			new Date(endDate)
 		);

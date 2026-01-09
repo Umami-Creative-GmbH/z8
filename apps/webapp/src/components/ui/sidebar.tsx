@@ -19,8 +19,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
-const SIDEBAR_COOKIE_NAME = "sidebar_state";
-const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
+const SIDEBAR_STORAGE_KEY = "sidebar_state";
 const SIDEBAR_WIDTH = "16rem";
 const SIDEBAR_WIDTH_MOBILE = "18rem";
 const SIDEBAR_WIDTH_ICON = "3rem";
@@ -67,6 +66,20 @@ function SidebarProvider({
 	// We use openProp and setOpenProp for control from outside the component.
 	const [_open, _setOpen] = React.useState(defaultOpen);
 	const open = openProp ?? _open;
+
+	// Hydrate from localStorage on mount
+	React.useEffect(() => {
+		const stored = localStorage.getItem(SIDEBAR_STORAGE_KEY);
+		if (stored !== null) {
+			const storedOpen = stored === "true";
+			if (setOpenProp) {
+				setOpenProp(storedOpen);
+			} else {
+				_setOpen(storedOpen);
+			}
+		}
+	}, [setOpenProp]);
+
 	const setOpen = React.useCallback(
 		(value: boolean | ((value: boolean) => boolean)) => {
 			const openState = typeof value === "function" ? value(open) : value;
@@ -76,8 +89,8 @@ function SidebarProvider({
 				_setOpen(openState);
 			}
 
-			// This sets the cookie to keep the sidebar state.
-			document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
+			// Persist to localStorage
+			localStorage.setItem(SIDEBAR_STORAGE_KEY, String(openState));
 		},
 		[setOpenProp, open],
 	);
@@ -123,7 +136,7 @@ function SidebarProvider({
 			<TooltipProvider delayDuration={0}>
 				<div
 					className={cn(
-						"group/sidebar-wrapper flex min-h-svh w-full has-data-[variant=inset]:bg-sidebar",
+						"group/sidebar-wrapper flex h-svh w-full overflow-hidden has-data-[variant=inset]:bg-sidebar",
 						className,
 					)}
 					data-slot="sidebar-wrapper"
@@ -296,7 +309,7 @@ function SidebarInset({ className, ...props }: React.ComponentProps<"main">) {
 	return (
 		<main
 			className={cn(
-				"relative flex w-full flex-1 flex-col bg-background",
+				"relative flex w-full flex-1 flex-col overflow-hidden bg-background",
 				"md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ml-2 md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow-sm",
 				className,
 			)}

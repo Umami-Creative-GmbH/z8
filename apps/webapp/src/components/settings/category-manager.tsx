@@ -1,8 +1,16 @@
 "use client";
 
-import { IconAlertCircle, IconLoader2, IconPencil, IconPlus, IconTrash } from "@tabler/icons-react";
+import {
+	IconAlertCircle,
+	IconLoader2,
+	IconPencil,
+	IconPlus,
+	IconRefresh,
+	IconTrash,
+} from "@tabler/icons-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import {
 	deleteCategory,
@@ -28,6 +36,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { queryKeys } from "@/lib/query";
 
 interface HolidayCategory {
 	id: string;
@@ -48,55 +57,61 @@ interface CategoryManagerProps {
 
 export function CategoryManager({ organizationId, onAddClick, onEditClick }: CategoryManagerProps) {
 	const { t } = useTranslate();
-	const [categories, setCategories] = useState<HolidayCategory[]>([]);
-	const [loading, setLoading] = useState(true);
-	const [error, setError] = useState<string | null>(null);
-	const [deletingId, setDeletingId] = useState<string | null>(null);
+	const queryClient = useQueryClient();
+
+	// Delete confirmation state
 	const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 	const [categoryToDelete, setCategoryToDelete] = useState<HolidayCategory | null>(null);
 
-	const fetchCategories = async () => {
-		setLoading(true);
-		setError(null);
+	// Fetch categories with TanStack Query
+	const {
+		data: categories = [],
+		isLoading,
+		error,
+		refetch,
+		isFetching,
+	} = useQuery({
+		queryKey: queryKeys.holidayCategories.list(organizationId),
+		queryFn: async () => {
+			const result = await getHolidayCategories(organizationId);
+			if (!result.success) {
+				throw new Error(result.error || "Failed to load categories");
+			}
+			return result.data as HolidayCategory[];
+		},
+	});
 
-		const result = await getHolidayCategories(organizationId);
-
-		if (result.success && result.data) {
-			setCategories(result.data);
-		} else {
-			setError(result.error || "Failed to load categories");
-		}
-
-		setLoading(false);
-	};
-
-	useEffect(() => {
-		fetchCategories();
-	}, [fetchCategories]);
+	// Delete mutation
+	const deleteMutation = useMutation({
+		mutationFn: (categoryId: string) => deleteCategory(categoryId),
+		onSuccess: (result) => {
+			if (result.success) {
+				toast.success(t("settings.holidays.categories.deleted", "Category deleted successfully"));
+				queryClient.invalidateQueries({ queryKey: queryKeys.holidayCategories.list(organizationId) });
+			} else {
+				toast.error(
+					result.error || t("settings.holidays.categories.deleteFailed", "Failed to delete category"),
+				);
+			}
+			setDeleteConfirmOpen(false);
+			setCategoryToDelete(null);
+		},
+		onError: () => {
+			toast.error(t("settings.holidays.categories.deleteFailed", "Failed to delete category"));
+			setDeleteConfirmOpen(false);
+			setCategoryToDelete(null);
+		},
+	});
 
 	const handleDeleteClick = (category: HolidayCategory) => {
 		setCategoryToDelete(category);
 		setDeleteConfirmOpen(true);
 	};
 
-	const handleDeleteConfirm = async () => {
-		if (!categoryToDelete) return;
-
-		setDeletingId(categoryToDelete.id);
-		const result = await deleteCategory(categoryToDelete.id);
-
-		if (result.success) {
-			toast.success(t("settings.holidays.categories.deleted", "Category deleted successfully"));
-			fetchCategories(); // Refresh the list
-		} else {
-			toast.error(
-				result.error || t("settings.holidays.categories.deleteFailed", "Failed to delete category"),
-			);
+	const handleDeleteConfirm = () => {
+		if (categoryToDelete) {
+			deleteMutation.mutate(categoryToDelete.id);
 		}
-
-		setDeletingId(null);
-		setDeleteConfirmOpen(false);
-		setCategoryToDelete(null);
 	};
 
 	const formatCategoryType = (type: string) => {
@@ -109,7 +124,7 @@ export function CategoryManager({ organizationId, onAddClick, onEditClick }: Cat
 		return typeMap[type] || type;
 	};
 
-	if (loading) {
+	if (isLoading) {
 		return (
 			<div className="space-y-4">
 				<div className="flex justify-between items-center">
@@ -146,9 +161,9 @@ export function CategoryManager({ organizationId, onAddClick, onEditClick }: Cat
 				<div className="rounded-md border border-destructive/50 bg-destructive/10 p-8 flex flex-col items-center justify-center gap-4">
 					<div className="flex items-center gap-2 text-destructive">
 						<IconAlertCircle className="h-5 w-5" />
-						<span>{error}</span>
+						<span>{error instanceof Error ? error.message : "Failed to load categories"}</span>
 					</div>
-					<Button onClick={fetchCategories} variant="outline" size="sm">
+					<Button onClick={() => refetch()} variant="outline" size="sm">
 						{t("common.retry", "Retry")}
 					</Button>
 				</div>
@@ -163,10 +178,25 @@ export function CategoryManager({ organizationId, onAddClick, onEditClick }: Cat
 					<h3 className="text-lg font-medium">
 						{t("settings.holidays.categories.title", "Holiday Categories")}
 					</h3>
-					<Button size="sm" onClick={onAddClick}>
-						<IconPlus className="mr-2 h-4 w-4" />
-						{t("settings.holidays.categories.add", "Add Category")}
-					</Button>
+					<div className="flex items-center gap-2">
+						<Button
+							size="sm"
+							variant="outline"
+							onClick={() => refetch()}
+							disabled={isFetching}
+						>
+							{isFetching ? (
+								<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+							) : (
+								<IconRefresh className="mr-2 h-4 w-4" />
+							)}
+							{t("common.refresh", "Refresh")}
+						</Button>
+						<Button size="sm" onClick={onAddClick}>
+							<IconPlus className="mr-2 h-4 w-4" />
+							{t("settings.holidays.categories.add", "Add Category")}
+						</Button>
+					</div>
 				</div>
 
 				<div className="rounded-md border">
@@ -243,7 +273,7 @@ export function CategoryManager({ organizationId, onAddClick, onEditClick }: Cat
 													variant="ghost"
 													size="icon"
 													onClick={() => onEditClick(category)}
-													disabled={deletingId === category.id}
+													disabled={deleteMutation.isPending}
 												>
 													<IconPencil className="h-4 w-4" />
 												</Button>
@@ -251,9 +281,10 @@ export function CategoryManager({ organizationId, onAddClick, onEditClick }: Cat
 													variant="ghost"
 													size="icon"
 													onClick={() => handleDeleteClick(category)}
-													disabled={deletingId === category.id}
+													disabled={deleteMutation.isPending}
 												>
-													{deletingId === category.id ? (
+													{deleteMutation.isPending &&
+													categoryToDelete?.id === category.id ? (
 														<IconLoader2 className="h-4 w-4 animate-spin" />
 													) : (
 														<IconTrash className="h-4 w-4" />
@@ -284,11 +315,17 @@ export function CategoryManager({ organizationId, onAddClick, onEditClick }: Cat
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
-						<AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
+						<AlertDialogCancel disabled={deleteMutation.isPending}>
+							{t("common.cancel", "Cancel")}
+						</AlertDialogCancel>
 						<AlertDialogAction
 							onClick={handleDeleteConfirm}
+							disabled={deleteMutation.isPending}
 							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
 						>
+							{deleteMutation.isPending && (
+								<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+							)}
 							{t("common.delete", "Delete")}
 						</AlertDialogAction>
 					</AlertDialogFooter>

@@ -1,36 +1,38 @@
 "use client";
 
-import { IconPlus, IconUsers } from "@tabler/icons-react";
+import { IconLoader2, IconPlus, IconUsers } from "@tabler/icons-react";
+import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { queryKeys } from "@/lib/query";
 import { Link } from "@/navigation";
 import { getCurrentEmployee } from "../../approvals/actions";
 import { listTeams } from "./actions";
 
 export default function TeamsPage() {
-	const [teams, setTeams] = useState<any[]>([]);
-	const [loading, setLoading] = useState(true);
 	const [canCreate, setCanCreate] = useState(false);
 
+	// Fetch teams with TanStack Query
+	const { data: teams = [], isLoading } = useQuery({
+		queryKey: queryKeys.teams.all,
+		queryFn: async () => {
+			const result = await listTeams();
+			if (result.success && result.data) {
+				return result.data;
+			}
+			throw new Error(result.error || "Failed to load teams");
+		},
+	});
+
 	useEffect(() => {
-		async function loadData() {
+		async function loadCurrentEmployee() {
 			const currentEmp = await getCurrentEmployee();
 			if (currentEmp) {
 				setCanCreate(currentEmp.role === "admin");
 			}
-
-			const result = await listTeams();
-			if (result.success && result.data) {
-				setTeams(result.data);
-			} else {
-				toast.error(result.error || "Failed to load teams");
-			}
-			setLoading(false);
 		}
-
-		loadData();
+		loadCurrentEmployee();
 	}, []);
 
 	return (
@@ -53,8 +55,10 @@ export default function TeamsPage() {
 			</div>
 
 			<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-				{loading ? (
-					<p className="text-sm text-muted-foreground">Loading teams...</p>
+				{isLoading ? (
+					<div className="col-span-full flex items-center justify-center p-8">
+						<IconLoader2 className="size-8 animate-spin text-muted-foreground" />
+					</div>
 				) : teams.length === 0 ? (
 					<Card className="col-span-full">
 						<CardContent className="flex flex-col items-center justify-center py-8">
@@ -70,9 +74,7 @@ export default function TeamsPage() {
 									<span>{team.name}</span>
 									<IconUsers className="size-5 text-muted-foreground" />
 								</CardTitle>
-								{team.description && (
-									<CardDescription>{team.description}</CardDescription>
-								)}
+								{team.description && <CardDescription>{team.description}</CardDescription>}
 							</CardHeader>
 							<CardContent>
 								<div className="flex items-center justify-between">

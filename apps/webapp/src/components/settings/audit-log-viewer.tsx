@@ -32,7 +32,7 @@ import { IconSearch, IconDownload, IconLoader2, IconChevronLeft, IconChevronRigh
 import { toast } from "sonner";
 import { getAuditLogsAction, getAuditStatsAction, exportAuditLogsAction } from "@/app/[locale]/(app)/settings/audit-log/actions";
 import type { AuditLogResult } from "@/lib/query/audit.queries";
-import { formatDistanceToNow, format } from "date-fns";
+import { DateTime } from "luxon";
 
 const ENTITY_TYPES = [
 	{ value: "all", label: "All Types" },
@@ -299,10 +299,10 @@ export function AuditLogViewer() {
 										<TableRow key={log.id}>
 											<TableCell className="whitespace-nowrap">
 												<div className="text-sm">
-													{format(new Date(log.timestamp), "MMM d, yyyy")}
+													{DateTime.fromISO(log.timestamp).toFormat("MMM d, yyyy")}
 												</div>
 												<div className="text-xs text-muted-foreground">
-													{format(new Date(log.timestamp), "HH:mm:ss")}
+													{DateTime.fromISO(log.timestamp).toFormat("HH:mm:ss")}
 												</div>
 											</TableCell>
 											<TableCell>
@@ -352,7 +352,7 @@ export function AuditLogViewer() {
 																<div>
 																	<label className="text-sm font-medium">Timestamp</label>
 																	<p className="text-sm">
-																		{format(new Date(log.timestamp), "PPpp")}
+																		{DateTime.fromISO(log.timestamp).toLocaleString(DateTime.DATETIME_FULL)}
 																	</p>
 																</div>
 																<div>

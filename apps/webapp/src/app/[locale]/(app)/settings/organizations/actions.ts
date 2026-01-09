@@ -6,6 +6,7 @@ import { Effect } from "effect";
 import { headers } from "next/headers";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
+import { employee } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { AuthorizationError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
@@ -739,6 +740,152 @@ export async function updateOrganizationDetails(
 							message: String(error),
 						});
 						logger.error({ error, organizationId }, "Failed to update organization");
+						return yield* _(Effect.fail(error as any));
+					}),
+				),
+				Effect.onExit(() => Effect.sync(() => span.end())),
+				Effect.provide(AppLayer),
+			);
+		},
+	);
+
+	return runServerActionSafe(effect);
+}
+
+// =============================================================================
+// Employee Management Actions
+// =============================================================================
+
+/**
+ * Toggle employee active status (activate/deactivate)
+ * Requires admin or owner role
+ */
+export async function toggleEmployeeStatus(
+	organizationId: string,
+	employeeId: string,
+	isActive: boolean,
+): Promise<ServerActionResult<void>> {
+	const tracer = trace.getTracer("organizations");
+
+	const effect = tracer.startActiveSpan(
+		"toggleEmployeeStatus",
+		{
+			attributes: {
+				"organization.id": organizationId,
+				"employee.id": employeeId,
+				"employee.isActive": isActive,
+			},
+		},
+		(span) => {
+			return Effect.gen(function* (_) {
+				const authService = yield* _(AuthService);
+				const session = yield* _(authService.getSession());
+				const dbService = yield* _(DatabaseService);
+
+				// Check current user's role
+				const memberRecord = yield* _(
+					dbService.query("getCurrentMember", async () => {
+						return await db.query.member.findFirst({
+							where: and(
+								eq(authSchema.member.userId, session.user.id),
+								eq(authSchema.member.organizationId, organizationId),
+							),
+						});
+					}),
+					Effect.flatMap((member) =>
+						member
+							? Effect.succeed(member)
+							: Effect.fail(
+									new NotFoundError({
+										message: "You are not a member of this organization",
+										entityType: "member",
+									}),
+								),
+					),
+				);
+
+				// Verify admin/owner role
+				if (memberRecord.role !== "admin" && memberRecord.role !== "owner") {
+					yield* _(
+						Effect.fail(
+							new AuthorizationError({
+								message: "Only admins and owners can change employee status",
+								userId: session.user.id,
+								resource: "employee",
+								action: "update",
+							}),
+						),
+					);
+				}
+
+				// Get the employee record
+				const employeeRecord = yield* _(
+					dbService.query("getEmployee", async () => {
+						return await db.query.employee.findFirst({
+							where: and(eq(employee.id, employeeId), eq(employee.organizationId, organizationId)),
+						});
+					}),
+					Effect.flatMap((emp) =>
+						emp
+							? Effect.succeed(emp)
+							: Effect.fail(
+									new NotFoundError({
+										message: "Employee not found",
+										entityType: "employee",
+										entityId: employeeId,
+									}),
+								),
+					),
+				);
+
+				// Prevent deactivating yourself
+				if (employeeRecord.userId === session.user.id && !isActive) {
+					yield* _(
+						Effect.fail(
+							new ValidationError({
+								message: "You cannot deactivate yourself",
+								field: "employeeId",
+								value: employeeId,
+							}),
+						),
+					);
+				}
+
+				// Update the employee status
+				yield* _(
+					Effect.tryPromise({
+						try: async () => {
+							await db.update(employee).set({ isActive }).where(eq(employee.id, employeeId));
+						},
+						catch: (error) => {
+							return new ValidationError({
+								message:
+									error instanceof Error ? error.message : "Failed to update employee status",
+								field: "employee",
+							});
+						},
+					}),
+				);
+
+				logger.info(
+					{
+						organizationId,
+						employeeId,
+						isActive,
+					},
+					`Employee ${isActive ? "activated" : "deactivated"} successfully`,
+				);
+
+				span.setStatus({ code: SpanStatusCode.OK });
+			}).pipe(
+				Effect.catchAll((error) =>
+					Effect.gen(function* (_) {
+						span.recordException(error as Error);
+						span.setStatus({
+							code: SpanStatusCode.ERROR,
+							message: String(error),
+						});
+						logger.error({ error, organizationId, employeeId }, "Failed to toggle employee status");
 						return yield* _(Effect.fail(error as any));
 					}),
 				),

@@ -26,16 +26,18 @@ export default async function SettingsLayout({
 			<ServerAppSidebar variant="inset" />
 			<SidebarInset>
 				<SiteHeader />
-				<div className="flex flex-1">
+				<div className="flex flex-1 overflow-hidden">
 					{/* Settings navigation sidebar */}
-					<aside className="w-64 border-r bg-sidebar p-4 hidden md:block">
+					<aside className="w-64 border-r bg-card p-4 hidden md:block overflow-auto">
 						<SettingsNav isAdmin={isAdmin} />
 					</aside>
 
 					{/* Main content area */}
-					<main className="flex-1 overflow-auto">
+					<main className="flex-1 flex flex-col overflow-hidden">
 						<SettingsBreadcrumbs />
-						{children}
+						<div className="flex-1 overflow-auto">
+							{children}
+						</div>
 					</main>
 				</div>
 			</SidebarInset>
