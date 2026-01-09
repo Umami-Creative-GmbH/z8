@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
+import { VacationManagement } from "@/components/settings/vacation-management";
 import { VacationPolicyButton } from "@/components/settings/vacation-policy-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -111,16 +112,7 @@ async function VacationSettingsContent() {
 	const { data: policy } = await getVacationPolicy(authContext.employee.organizationId, currentYear);
 
 	return (
-		<div className="flex flex-1 flex-col gap-4 p-4">
-			<div className="flex items-center justify-between">
-				<div>
-					<h1 className="text-2xl font-semibold tracking-tight">Vacation Policy</h1>
-					<p className="text-sm text-muted-foreground">
-						Manage organization-wide vacation allowance settings
-					</p>
-				</div>
-			</div>
-
+		<VacationManagement organizationId={authContext.employee.organizationId}>
 			<div className="grid gap-4">
 				<Card>
 					<CardHeader className="flex flex-row items-center justify-between">
@@ -223,7 +215,7 @@ async function VacationSettingsContent() {
 					</Card>
 				</div>
 			</div>
-		</div>
+		</VacationManagement>
 	);
 }
 
