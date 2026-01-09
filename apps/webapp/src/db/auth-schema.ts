@@ -102,6 +102,8 @@ export const organization = pgTable(
     logo: text("logo"),
     createdAt: timestamp("created_at").notNull(),
     metadata: text("metadata"),
+    country: text("country"), // ISO 3166-1 alpha-2 (e.g., "DE", "US")
+    region: text("region"), // ISO 3166-2 subdivision (e.g., "BY" for Bavaria)
   },
   (table) => [uniqueIndex("organization_slug_uidx").on(table.slug)],
 );
