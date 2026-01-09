@@ -3,7 +3,8 @@ import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
 import { type ReactNode, Suspense } from "react";
 import { Toaster } from "sonner";
-import { ProgressBar } from "@/components/progress-bar";
+import { BProgressBar } from "@/components/bprogress/bprogress";
+import { ThemeProvider } from "@/components/theme-provider";
 import { TolgeeNextProvider } from "@/tolgee/client";
 import { ALL_LANGUAGES, TolgeeBase } from "@/tolgee/shared";
 import "../globals.css";
@@ -18,9 +19,10 @@ type Props = {
 // Load translations without "use cache" to avoid hanging on Tolgee API calls
 async function loadTranslations(locale: string): Promise<TolgeeStaticData> {
 	// Create Tolgee instance with explicit locale (from route params) to avoid headers() access
+	// Disable fullKeyEncode to prevent invisible character encoding in server-rendered content
 	const tolgee = TolgeeBase().init({
 		observerOptions: {
-			fullKeyEncode: true,
+			fullKeyEncode: false,
 		},
 		language: locale,
 	});
@@ -71,39 +73,21 @@ async function TranslationProvider({ locale, children }: { locale: string; child
 }
 
 // Component for translated meta tags (title, description, keywords)
+// Uses next-intl instead of Tolgee to avoid observer side effects (duplicate elements, invisible characters)
 async function TranslatedMeta({ locale }: { locale: string }) {
 	try {
-		const staticData = await loadTranslations(locale);
-
-		// Initialize a local Tolgee instance to resolve keys without using headers()
-		const tolgee = TolgeeBase().init({
-			observerOptions: {
-				fullKeyEncode: true,
-			},
-			language: locale,
-			staticData,
-		});
-
-		// Add timeout for tolgee.run() to prevent hanging
-		const runWithTimeout = Promise.race([
-			tolgee.run(),
-			new Promise((_, reject) => setTimeout(() => reject(new Error("Tolgee run timeout")), 3000)),
-		]);
-
-		await runWithTimeout;
-
-		const t = tolgee.t;
+		const messages = await getMessages({ locale });
+		const meta = (messages as Record<string, Record<string, string>>).meta || {};
 
 		return (
 			<>
-				<title>{t("meta.title", "z8 - time app")}</title>
-				<meta content={t("meta.description", "z8 - time app")} name="description" />
-				<meta content={t("meta.keywords", "z8, time, app, productivity")} name="keywords" />
+				<title>{meta.title || "z8 - time app"}</title>
+				<meta content={meta.description || "z8 - time app"} name="description" />
+				<meta content={meta.keywords || "z8, time, app, productivity"} name="keywords" />
 			</>
 		);
 	} catch (error) {
 		console.warn("Failed to load translated meta:", error);
-		// Return default meta tags on failure
 		return (
 			<>
 				<title>z8 - time app</title>
@@ -118,7 +102,7 @@ export default async function LocaleLayout({ children, params }: Props) {
 	const { locale } = await params;
 
 	return (
-		<html lang={locale}>
+		<html lang={locale} suppressHydrationWarning>
 			<head>
 				<meta charSet="UTF-8" />
 				<meta content="Umami Creative GmbH" name="author" />
@@ -140,7 +124,7 @@ export default async function LocaleLayout({ children, params }: Props) {
 				</Suspense>
 			</head>
 			<body>
-				<ProgressBar>
+				<ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
 					<Suspense
 						fallback={
 							<div
@@ -157,6 +141,7 @@ export default async function LocaleLayout({ children, params }: Props) {
 					>
 						<TranslationProvider locale={locale}>
 							<QueryProvider>
+								<BProgressBar />
 								<TooltipProvider delayDuration={0}>
 									{children}
 									<Toaster position="bottom-right" richColors />
@@ -164,7 +149,7 @@ export default async function LocaleLayout({ children, params }: Props) {
 							</QueryProvider>
 						</TranslationProvider>
 					</Suspense>
-				</ProgressBar>
+				</ThemeProvider>
 			</body>
 		</html>
 	);

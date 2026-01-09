@@ -10,6 +10,8 @@ export function InfoFooter() {
 			<Link href="/terms">{t("auth.terms.service", "Terms of Service")}</Link>
 			{" · "}
 			<Link href="/privacy">{t("auth.terms.privacy", "Privacy Policy")}</Link>
+			{" · "}
+			<Link href="/licenses">Open Source Licenses</Link>
 		</div>
 	);
 }

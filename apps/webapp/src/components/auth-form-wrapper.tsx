@@ -26,7 +26,7 @@ export function AuthFormWrapper({
 		<div className={cn("flex flex-col gap-6", className)} {...props}>
 			<Card className="overflow-hidden p-0">
 				<CardContent className="relative p-0">
-					<form className="relative z-20 w-full p-6 md:w-1/2 md:p-8" method="post" {...formProps}>
+					<form className="relative z-20 w-full bg-card p-6 md:w-1/2 md:p-8" method="post" {...formProps}>
 						<div className="flex flex-col gap-6">
 							<div className="flex flex-col items-center text-center">
 								<h1 className="font-bold text-2xl">z8</h1>

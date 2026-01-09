@@ -7,7 +7,7 @@ export const { getTolgee, getTranslate, T } = createServerInstance({
 	createTolgee: async (language) =>
 		TolgeeBase().init({
 			observerOptions: {
-				fullKeyEncode: true,
+				fullKeyEncode: false,
 			},
 			language,
 		}),
