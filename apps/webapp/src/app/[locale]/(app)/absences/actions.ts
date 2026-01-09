@@ -35,6 +35,10 @@ import {
 	renderAbsenceRequestSubmitted,
 } from "@/lib/email/render";
 import { createLogger } from "@/lib/logger";
+import {
+	onAbsenceRequestSubmitted,
+	onAbsenceRequestPendingApproval,
+} from "@/lib/notifications/triggers";
 
 const logger = createLogger("AbsenceActionsEffect");
 
@@ -314,6 +318,29 @@ export async function requestAbsenceEffect(
 							{ concurrency: 2 }, // Send both emails in parallel
 						),
 					);
+
+					// Trigger in-app notifications (fire-and-forget)
+					void onAbsenceRequestSubmitted({
+						absenceId: newAbsence.id,
+						employeeUserId: empWithUser.userId,
+						employeeName: empWithUser.user.name,
+						organizationId: empWithUser.organizationId,
+						categoryName: category.name,
+						startDate: data.startDate,
+						endDate: data.endDate,
+					});
+
+					void onAbsenceRequestPendingApproval({
+						absenceId: newAbsence.id,
+						employeeUserId: empWithUser.userId,
+						employeeName: empWithUser.user.name,
+						organizationId: empWithUser.organizationId,
+						categoryName: category.name,
+						startDate: data.startDate,
+						endDate: data.endDate,
+						managerUserId: manager.userId,
+						managerName: manager.user.name,
+					});
 
 					logger.info(
 						{

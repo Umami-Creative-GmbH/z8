@@ -18,6 +18,8 @@ import {
 } from "@/db/schema";
 import { NotFoundError } from "@/lib/effect/errors";
 import { calculateWorkHours } from "@/lib/time-tracking/calculations";
+import { getEnhancedVacationBalance } from "@/lib/absences/vacation.service";
+import { getVacationAllowance } from "@/lib/query/vacation.queries";
 import { DateTime } from "luxon";
 import { currentTimestamp, dateToDB, dateFromDB } from "@/lib/datetime/drizzle-adapter";
 import { toDateKey } from "@/lib/datetime/luxon-utils";
@@ -685,6 +687,113 @@ export async function getTeamOverviewStats(): Promise<
 			activeEmployees: activeEmployeesResult,
 			teamsCount: teamsCountResult,
 			avgWorkHours: Math.round(avgWorkHoursResult * 10) / 10, // Round to 1 decimal
+		};
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
+}
+
+/**
+ * Get vacation balance for the current user
+ */
+export async function getVacationBalance(): Promise<
+	ServerActionResult<{
+		totalDays: number;
+		usedDays: number;
+		pendingDays: number;
+		remainingDays: number;
+		carryoverDays: number;
+		carryoverExpiryDate: Date | null;
+		carryoverExpiryDaysRemaining: number | null;
+		hasCarryover: boolean;
+	}>
+> {
+	const effect = Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
+		const dbService = yield* _(DatabaseService);
+
+		// Get current employee
+		const currentEmployee = yield* _(
+			dbService.query("getCurrentEmployee", async () => {
+				return await dbService.db.query.employee.findFirst({
+					where: eq(employee.userId, session.user.id),
+				});
+			}),
+			Effect.flatMap((emp) =>
+				emp
+					? Effect.succeed(emp)
+					: Effect.fail(
+							new NotFoundError({
+								message: "Employee profile not found",
+								entityType: "employee",
+							}),
+						),
+			),
+		);
+
+		const currentYear = new Date().getFullYear();
+
+		// Check if organization has a vacation policy
+		const policy = yield* _(
+			Effect.tryPromise({
+				try: () => getVacationAllowance(currentEmployee.organizationId, currentYear),
+				catch: () => new NotFoundError({
+					message: "Vacation policy not found",
+					entityType: "vacationAllowance",
+				}),
+			}),
+		);
+
+		if (!policy) {
+			return {
+				totalDays: 0,
+				usedDays: 0,
+				pendingDays: 0,
+				remainingDays: 0,
+				carryoverDays: 0,
+				carryoverExpiryDate: null,
+				carryoverExpiryDaysRemaining: null,
+				hasCarryover: false,
+			};
+		}
+
+		// Get enhanced vacation balance
+		const balance = yield* _(
+			Effect.tryPromise({
+				try: () => getEnhancedVacationBalance({
+					employeeId: currentEmployee.id,
+					year: currentYear,
+				}),
+				catch: (error) => new NotFoundError({
+					message: `Failed to get vacation balance: ${error}`,
+					entityType: "vacationBalance",
+				}),
+			}),
+		);
+
+		if (!balance) {
+			return {
+				totalDays: parseFloat(policy.defaultAnnualDays),
+				usedDays: 0,
+				pendingDays: 0,
+				remainingDays: parseFloat(policy.defaultAnnualDays),
+				carryoverDays: 0,
+				carryoverExpiryDate: null,
+				carryoverExpiryDaysRemaining: null,
+				hasCarryover: policy.allowCarryover,
+			};
+		}
+
+		return {
+			totalDays: balance.totalDays,
+			usedDays: balance.usedDays,
+			pendingDays: balance.pendingDays,
+			remainingDays: balance.remainingDays,
+			carryoverDays: balance.carryoverDays || 0,
+			carryoverExpiryDate: balance.carryoverExpiryDate || null,
+			carryoverExpiryDaysRemaining: balance.carryoverExpiryDaysRemaining,
+			hasCarryover: policy.allowCarryover,
 		};
 	}).pipe(Effect.provide(AppLayer));
 
