@@ -1,0 +1,4 @@
+{
+  "only": "prod",
+  "fields": ["name", "version", "license", "repository", "author", "homepage"]
+}
