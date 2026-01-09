@@ -6,7 +6,12 @@ import { AbsenceRequestSubmitted } from "./templates/absence-request-submitted";
 import { EmailVerification } from "./templates/email-verification";
 import { OrganizationInvitation } from "./templates/organization-invitation";
 import { PasswordReset } from "./templates/password-reset";
+import { SecurityAlert } from "./templates/security-alert";
+import { TeamMemberAdded } from "./templates/team-member-added";
+import { TeamMemberRemoved } from "./templates/team-member-removed";
+import { TimeCorrectionApproved } from "./templates/time-correction-approved";
 import { TimeCorrectionPendingApproval } from "./templates/time-correction-pending-approval";
+import { TimeCorrectionRejected } from "./templates/time-correction-rejected";
 
 export async function renderAbsenceRequestSubmitted(props: {
 	employeeName: string;
@@ -92,4 +97,58 @@ export async function renderOrganizationInvitation(props: {
 
 export async function renderPasswordReset(props: { userName: string; resetUrl: string }) {
 	return render(PasswordReset(props));
+}
+
+export async function renderTimeCorrectionApproved(props: {
+	employeeName: string;
+	approverName: string;
+	date: string;
+	correctedClockIn: string;
+	correctedClockOut: string;
+	appUrl: string;
+}) {
+	return render(TimeCorrectionApproved(props));
+}
+
+export async function renderTimeCorrectionRejected(props: {
+	employeeName: string;
+	approverName: string;
+	date: string;
+	correctedClockIn: string;
+	correctedClockOut: string;
+	rejectionReason: string;
+	appUrl: string;
+}) {
+	return render(TimeCorrectionRejected(props));
+}
+
+export async function renderTeamMemberAdded(props: {
+	memberName: string;
+	teamName: string;
+	addedByName: string;
+	teamUrl: string;
+	appUrl: string;
+}) {
+	return render(TeamMemberAdded(props));
+}
+
+export async function renderTeamMemberRemoved(props: {
+	memberName: string;
+	teamName: string;
+	removedByName: string;
+	appUrl: string;
+}) {
+	return render(TeamMemberRemoved(props));
+}
+
+export async function renderSecurityAlert(props: {
+	userName: string;
+	eventType: "password_changed" | "two_factor_enabled" | "two_factor_disabled";
+	timestamp: string;
+	ipAddress?: string;
+	userAgent?: string;
+	securitySettingsUrl: string;
+	appUrl: string;
+}) {
+	return render(SecurityAlert(props));
 }

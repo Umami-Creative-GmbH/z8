@@ -48,14 +48,13 @@ export function ManagerAssignedEmail({
 
 					<Text style={text}>
 						<strong>{managerName}</strong> has been assigned as your{" "}
-						{isPrimary ? <strong>primary manager</strong> : "manager"} by{" "}
-						{assignedByName}.
+						{isPrimary ? <strong>primary manager</strong> : "manager"} by {assignedByName}.
 					</Text>
 
 					{isPrimary && (
 						<Text style={highlightText}>
-							As your primary manager, {managerName} will be the default
-							approver for your time-off requests and other approvals.
+							As your primary manager, {managerName} will be the default approver for your time-off
+							requests and other approvals.
 						</Text>
 					)}
 
@@ -68,8 +67,8 @@ export function ManagerAssignedEmail({
 					<Hr style={hr} />
 
 					<Text style={footer}>
-						This is an automated notification from {organizationName}. If you
-						have any questions, please contact your administrator.
+						This is an automated notification from {organizationName}. If you have any questions,
+						please contact your administrator.
 					</Text>
 				</Container>
 			</Body>
