@@ -58,3 +58,10 @@ apps/mobile/android/
 # Rust
 target/
 Cargo.lock
+
+# Generated license report
+apps/webapp/public/licenses.json
+
+# webapp stuff
+apps/webapp/.next/
+apps/webapp/public/uploads/

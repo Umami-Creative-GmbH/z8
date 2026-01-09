@@ -7,6 +7,9 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   reactCompiler: true,
   cacheComponents: true,
+  devIndicators: {
+    position: "bottom-right",
+  },
   experimental: {
     viewTransition: true,
   },
