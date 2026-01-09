@@ -3,6 +3,7 @@
 import { IconPlus } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { usePathname } from "next/navigation";
+import { NotificationBell } from "@/components/notifications";
 import { TimeClockPopover } from "@/components/time-tracking/time-clock-popover";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -60,6 +61,7 @@ export function SiteHeader() {
 							{t("header.request-absence", "Request Absence")}
 						</span>
 					</Button>
+					<NotificationBell />
 					<TimeClockPopover />
 				</div>
 			</div>
