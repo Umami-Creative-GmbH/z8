@@ -5,6 +5,8 @@
   "scripts": {
     "dev": "turbo dev",
     "build": "turbo build",
+    "test": "bun test apps/webapp/src",
+    "test:watch": "bun test --watch apps/webapp/src",
     "dev:webapp": "turbo dev --filter=webapp",
     "dev:desktop": "turbo dev --filter=desktop",
     "dev:mobile": "turbo dev --filter=mobile",

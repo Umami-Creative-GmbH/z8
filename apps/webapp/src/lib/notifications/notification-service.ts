@@ -23,7 +23,7 @@ const logger = createLogger("NotificationService");
 /**
  * Calculate relative time string (e.g., "2 hours ago", "3 days ago")
  */
-function getTimeAgo(date: Date): string {
+export function getTimeAgo(date: Date): string {
 	const now = new Date();
 	const diffMs = now.getTime() - date.getTime();
 	const diffSeconds = Math.floor(diffMs / 1000);
