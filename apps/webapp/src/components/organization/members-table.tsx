@@ -6,20 +6,22 @@ import {
 	IconDots,
 	IconLoader2,
 	IconMail,
+	IconPlayerPause,
+	IconPlayerPlay,
+	IconRefresh,
 	IconTrash,
 	IconX,
 } from "@tabler/icons-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { formatRelative as formatDistanceToNow } from "@/lib/datetime/luxon-utils";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
 	cancelInvitation,
 	removeMember,
 	sendInvitation,
+	toggleEmployeeStatus,
 	updateMemberRole,
 } from "@/app/[locale]/(app)/settings/organizations/actions";
-import { queryKeys } from "@/lib/query";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -56,6 +58,8 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { formatRelative as formatDistanceToNow } from "@/lib/datetime/luxon-utils";
+import { queryKeys } from "@/lib/query";
 import type { InvitationWithInviter, MemberWithUserAndEmployee } from "./organizations-page-client";
 
 interface MembersTableProps {
@@ -64,6 +68,8 @@ interface MembersTableProps {
 	invitations: InvitationWithInviter[];
 	currentMemberRole: "owner" | "admin" | "member";
 	currentUserId: string;
+	onRefresh?: () => void;
+	isRefreshing?: boolean;
 }
 
 export function MembersTable({
@@ -72,6 +78,8 @@ export function MembersTable({
 	invitations: initialInvitations,
 	currentMemberRole,
 	currentUserId,
+	onRefresh,
+	isRefreshing,
 }: MembersTableProps) {
 	const queryClient = useQueryClient();
 	const [members, setMembers] = useState(initialMembers);
@@ -87,8 +95,11 @@ export function MembersTable({
 		setInvitations(initialInvitations);
 	}
 
-	const canManage = currentMemberRole === "owner";
-	const canInvite = currentMemberRole === "admin" || currentMemberRole === "owner";
+	const isOwner = currentMemberRole === "owner";
+	const isAdmin = currentMemberRole === "admin";
+	const canManageMembers = isOwner; // Only owners can remove members and change roles
+	const canManageEmployees = isOwner || isAdmin; // Admins can toggle employee status
+	const canInvite = isOwner || isAdmin;
 
 	// Update role mutation
 	const updateRoleMutation = useMutation({
@@ -185,6 +196,35 @@ export function MembersTable({
 		},
 	});
 
+	// Toggle employee status mutation
+	const toggleStatusMutation = useMutation({
+		mutationFn: ({ employeeId, isActive }: { employeeId: string; isActive: boolean }) =>
+			toggleEmployeeStatus(organizationId, employeeId, isActive),
+		onMutate: async ({ employeeId, isActive }) => {
+			const previousMembers = members;
+			setMembers((prev) =>
+				prev.map((m) =>
+					m.employee?.id === employeeId
+						? { ...m, employee: m.employee ? { ...m.employee, isActive } : null }
+						: m,
+				),
+			);
+			return { previousMembers };
+		},
+		onSuccess: (result, { isActive }) => {
+			if (result.success) {
+				toast.success(`Employee ${isActive ? "activated" : "deactivated"} successfully`);
+				queryClient.invalidateQueries({ queryKey: queryKeys.members.list(organizationId) });
+			} else {
+				toast.error(result.error || "Failed to update employee status");
+			}
+		},
+		onError: (_error, _vars, context) => {
+			if (context?.previousMembers) setMembers(context.previousMembers);
+			toast.error("Failed to update employee status");
+		},
+	});
+
 	const handleRoleChange = (userId: string, newRole: "owner" | "admin" | "member") => {
 		updateRoleMutation.mutate({ userId, role: newRole });
 	};
@@ -202,11 +242,16 @@ export function MembersTable({
 		resendInvitationMutation.mutate(invitation);
 	};
 
+	const handleToggleStatus = (employeeId: string, currentlyActive: boolean) => {
+		toggleStatusMutation.mutate({ employeeId, isActive: !currentlyActive });
+	};
+
 	const isActioning = (id: string) =>
 		updateRoleMutation.variables?.userId === id ||
 		removeMemberMutation.variables === id ||
 		cancelInvitationMutation.variables === id ||
-		resendInvitationMutation.variables?.id === id;
+		resendInvitationMutation.variables?.id === id ||
+		toggleStatusMutation.variables?.employeeId === id;
 
 	const getRoleBadgeColor = (role: string) => {
 		switch (role) {
@@ -336,11 +381,23 @@ export function MembersTable({
 
 			{/* Active Members */}
 			<div className="space-y-4">
-				<div>
-					<h3 className="text-lg font-semibold">Active Members</h3>
-					<p className="text-sm text-muted-foreground">
-						{members.length} member{members.length === 1 ? "" : "s"} in this organization
-					</p>
+				<div className="flex items-center justify-between">
+					<div>
+						<h3 className="text-lg font-semibold">Active Members</h3>
+						<p className="text-sm text-muted-foreground">
+							{members.length} member{members.length === 1 ? "" : "s"} in this organization
+						</p>
+					</div>
+					{onRefresh && (
+						<Button variant="outline" size="sm" onClick={onRefresh} disabled={isRefreshing}>
+							{isRefreshing ? (
+								<IconLoader2 className="h-4 w-4 animate-spin" />
+							) : (
+								<IconRefresh className="h-4 w-4" />
+							)}
+							<span className="ml-2">Refresh</span>
+						</Button>
+					)}
 				</div>
 
 				<div className="border rounded-lg">
@@ -379,11 +436,11 @@ export function MembersTable({
 											</div>
 										</TableCell>
 										<TableCell>
-											{canManage && !isCurrentUser ? (
+											{canManageMembers && !isCurrentUser ? (
 												<Select
 													value={member.role || "member"}
 													onValueChange={(value) => handleRoleChange(user.id, value as any)}
-													disabled={isActioning === user.id}
+													disabled={isActioning(user.id)}
 												>
 													<SelectTrigger className="w-[120px]">
 														<SelectValue />
@@ -427,22 +484,57 @@ export function MembersTable({
 											)}
 										</TableCell>
 										<TableCell className="text-right">
-											{canManage && !isCurrentUser && (
-												<Button
-													variant="ghost"
-													size="sm"
-													onClick={() => {
-														setMemberToRemove(memberData);
-														setRemoveDialogOpen(true);
-													}}
-													disabled={isActioning === user.id}
-												>
-													{isActioning === user.id ? (
-														<IconLoader2 className="h-4 w-4 animate-spin" />
-													) : (
-														<IconTrash className="h-4 w-4 text-destructive" />
-													)}
-												</Button>
+											{(canManageEmployees || canManageMembers) && !isCurrentUser && (
+												<DropdownMenu>
+													<DropdownMenuTrigger asChild>
+														<Button
+															variant="ghost"
+															size="sm"
+															disabled={isActioning(user.id) || isActioning(employee?.id || "")}
+														>
+															{isActioning(user.id) || isActioning(employee?.id || "") ? (
+																<IconLoader2 className="h-4 w-4 animate-spin" />
+															) : (
+																<IconDots className="h-4 w-4" />
+															)}
+														</Button>
+													</DropdownMenuTrigger>
+													<DropdownMenuContent align="end">
+														<DropdownMenuLabel>Actions</DropdownMenuLabel>
+														{canManageEmployees && employee && (
+															<DropdownMenuItem
+																onClick={() => handleToggleStatus(employee.id, employee.isActive)}
+															>
+																{employee.isActive ? (
+																	<>
+																		<IconPlayerPause className="mr-2 h-4 w-4" />
+																		Deactivate
+																	</>
+																) : (
+																	<>
+																		<IconPlayerPlay className="mr-2 h-4 w-4" />
+																		Activate
+																	</>
+																)}
+															</DropdownMenuItem>
+														)}
+														{canManageMembers && (
+															<>
+																<DropdownMenuSeparator />
+																<DropdownMenuItem
+																	className="text-destructive"
+																	onClick={() => {
+																		setMemberToRemove(memberData);
+																		setRemoveDialogOpen(true);
+																	}}
+																>
+																	<IconTrash className="mr-2 h-4 w-4" />
+																	Remove from Organization
+																</DropdownMenuItem>
+															</>
+														)}
+													</DropdownMenuContent>
+												</DropdownMenu>
 											)}
 										</TableCell>
 									</TableRow>

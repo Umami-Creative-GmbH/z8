@@ -45,7 +45,6 @@ export function EditOrganizationDialog({
 	const [formData, setFormData] = useState({
 		name: organization.name,
 		slug: organization.slug || "",
-		logo: organization.logo || "",
 		description: existingMetadata.description || "",
 	});
 
@@ -61,7 +60,6 @@ export function EditOrganizationDialog({
 			const result = await updateOrganizationDetails(organization.id, {
 				name: formData.name !== organization.name ? formData.name : undefined,
 				slug: formData.slug !== organization.slug ? formData.slug : undefined,
-				logo: formData.logo !== organization.logo ? formData.logo || null : undefined,
 				metadata: formData.description !== existingMetadata.description ? metadata : undefined,
 			});
 
@@ -115,18 +113,6 @@ export function EditOrganizationDialog({
 						<p className="text-xs text-muted-foreground">
 							Only lowercase letters, numbers, and hyphens
 						</p>
-					</div>
-
-					<div className="space-y-2">
-						<Label htmlFor="logo">Logo URL</Label>
-						<Input
-							id="logo"
-							type="url"
-							value={formData.logo}
-							onChange={(e) => setFormData({ ...formData, logo: e.target.value })}
-							placeholder="https://example.com/logo.png"
-						/>
-						<p className="text-xs text-muted-foreground">Enter a URL to your organization's logo</p>
 					</div>
 
 					<div className="space-y-2">

@@ -26,7 +26,6 @@ export const updateOrganizationSchema = z.object({
 		.max(50, "Slug cannot exceed 50 characters")
 		.regex(/^[a-z0-9-]+$/, "Slug can only contain lowercase letters, numbers, and hyphens")
 		.optional(),
-	logo: z.string().url("Invalid logo URL").nullable().optional(),
 	metadata: z.string().optional(), // JSON string for additional data
 });
 

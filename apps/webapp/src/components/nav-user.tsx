@@ -2,15 +2,20 @@
 
 import {
 	IconClock,
+	IconDeviceDesktop,
 	IconDotsVertical,
 	IconLanguage,
 	IconLoader2,
 	IconLogout,
+	IconMoon,
+	IconPalette,
 	IconSettings,
+	IconSun,
 	IconUserCircle,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
+import { useTheme } from "next-themes";
 import { useEffect, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -60,6 +65,7 @@ export function NavUser({
 	const router = useRouter();
 	const locale = useLocale();
 	const pathname = usePathname();
+	const { theme, setTheme } = useTheme();
 	const [isLoggingOut, setIsLoggingOut] = useState(false);
 	const [isPending, startTransition] = useTransition();
 	const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -197,7 +203,7 @@ export function NavUser({
 							<DropdownMenuSeparator />
 							<DropdownMenuSub>
 								<DropdownMenuSubTrigger disabled={isPending}>
-									<IconLanguage />
+									<IconLanguage className="mr-2 size-4" stroke={1.5} />
 									{t("user.language", "Language")}
 								</DropdownMenuSubTrigger>
 								<DropdownMenuSubContent>
@@ -207,6 +213,28 @@ export function NavUser({
 												{LANGUAGE_NAMES[lang] || lang}
 											</DropdownMenuRadioItem>
 										))}
+									</DropdownMenuRadioGroup>
+								</DropdownMenuSubContent>
+							</DropdownMenuSub>
+							<DropdownMenuSub>
+								<DropdownMenuSubTrigger>
+									<IconPalette className="mr-2 size-4" stroke={1.5} />
+									{t("user.theme", "Theme")}
+								</DropdownMenuSubTrigger>
+								<DropdownMenuSubContent>
+									<DropdownMenuRadioGroup value={theme} onValueChange={setTheme}>
+										<DropdownMenuRadioItem value="light">
+											<IconSun className="mr-2 size-4" />
+											{t("user.theme-light", "Light")}
+										</DropdownMenuRadioItem>
+										<DropdownMenuRadioItem value="dark">
+											<IconMoon className="mr-2 size-4" />
+											{t("user.theme-dark", "Dark")}
+										</DropdownMenuRadioItem>
+										<DropdownMenuRadioItem value="system">
+											<IconDeviceDesktop className="mr-2 size-4" />
+											{t("user.theme-system", "System")}
+										</DropdownMenuRadioItem>
 									</DropdownMenuRadioGroup>
 								</DropdownMenuSubContent>
 							</DropdownMenuSub>

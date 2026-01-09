@@ -66,4 +66,41 @@ export const queryKeys = {
 		unreadCount: () => ["notifications", "unread-count"] as const,
 		preferences: () => ["notifications", "preferences"] as const,
 	},
+
+	// Holiday presets
+	holidayPresets: {
+		all: ["holiday-presets"] as const,
+		list: (orgId: string) => ["holiday-presets", orgId] as const,
+		detail: (presetId: string) => ["holiday-presets", "detail", presetId] as const,
+	},
+
+	// Holiday preset assignments
+	holidayPresetAssignments: {
+		all: ["holiday-preset-assignments"] as const,
+		list: (orgId: string) => ["holiday-preset-assignments", orgId] as const,
+	},
+
+	// Holidays (custom org-wide)
+	holidays: {
+		all: ["holidays"] as const,
+		list: (orgId: string) => ["holidays", orgId] as const,
+	},
+
+	// Holiday categories
+	holidayCategories: {
+		all: ["holiday-categories"] as const,
+		list: (orgId: string) => ["holiday-categories", orgId] as const,
+	},
+
+	// Holiday assignments (individual custom holidays to org/team/employee)
+	holidayAssignments: {
+		all: ["holiday-assignments"] as const,
+		list: (orgId: string) => ["holiday-assignments", orgId] as const,
+	},
+
+	// Vacation policy assignments (policies to org/team/employee)
+	vacationPolicyAssignments: {
+		all: ["vacation-policy-assignments"] as const,
+		list: (orgId: string) => ["vacation-policy-assignments", orgId] as const,
+	},
 } as const;

@@ -1,10 +1,12 @@
 "use client";
 
 import { IconBuilding, IconUserPlus } from "@tabler/icons-react";
-import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type * as authSchema from "@/db/auth-schema";
+import { queryKeys } from "@/lib/query";
 import { CreateOrganizationDialog } from "./create-organization-dialog";
 import { InviteMemberDialog } from "./invite-member-dialog";
 import { MembersTable } from "./members-table";
@@ -28,10 +30,19 @@ export function OrganizationTab({
 	currentUserId,
 	canCreateOrganizations,
 }: OrganizationTabProps) {
+	const queryClient = useQueryClient();
 	const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
 	const [createOrgDialogOpen, setCreateOrgDialogOpen] = useState(false);
+	const [isRefreshing, startTransition] = useTransition();
 
 	const canInvite = currentMemberRole === "admin" || currentMemberRole === "owner";
+
+	const handleRefresh = () => {
+		startTransition(() => {
+			queryClient.invalidateQueries({ queryKey: queryKeys.members.list(organization.id) });
+			queryClient.invalidateQueries({ queryKey: queryKeys.invitations.list(organization.id) });
+		});
+	};
 
 	return (
 		<div className="space-y-6">
@@ -75,6 +86,8 @@ export function OrganizationTab({
 						invitations={invitations}
 						currentMemberRole={currentMemberRole}
 						currentUserId={currentUserId}
+						onRefresh={handleRefresh}
+						isRefreshing={isRefreshing}
 					/>
 				</CardContent>
 			</Card>
