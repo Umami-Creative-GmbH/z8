@@ -3,6 +3,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
 import { type ReactNode, Suspense } from "react";
 import { Toaster } from "sonner";
+import { ProgressBar } from "@/components/progress-bar";
 import { TolgeeNextProvider } from "@/tolgee/client";
 import { ALL_LANGUAGES, TolgeeBase } from "@/tolgee/shared";
 import "../globals.css";
@@ -30,10 +31,7 @@ async function loadTranslations(locale: string): Promise<TolgeeStaticData> {
 			setTimeout(() => reject(new Error("Tolgee load timeout")), 5000);
 		});
 
-		return await Promise.race([
-			tolgee.loadRequired() as Promise<TolgeeStaticData>,
-			timeoutPromise,
-		]);
+		return await Promise.race([tolgee.loadRequired() as Promise<TolgeeStaticData>, timeoutPromise]);
 	} catch (error) {
 		console.warn("Failed to load Tolgee translations:", error);
 		// Return empty static data on failure
@@ -89,9 +87,7 @@ async function TranslatedMeta({ locale }: { locale: string }) {
 		// Add timeout for tolgee.run() to prevent hanging
 		const runWithTimeout = Promise.race([
 			tolgee.run(),
-			new Promise((_, reject) =>
-				setTimeout(() => reject(new Error("Tolgee run timeout")), 3000)
-			),
+			new Promise((_, reject) => setTimeout(() => reject(new Error("Tolgee run timeout")), 3000)),
 		]);
 
 		await runWithTimeout;
@@ -144,29 +140,31 @@ export default async function LocaleLayout({ children, params }: Props) {
 				</Suspense>
 			</head>
 			<body>
-				<Suspense
-					fallback={
-						<div
-							style={{
-								display: "flex",
-								justifyContent: "center",
-								alignItems: "center",
-								minHeight: "100vh",
-							}}
-						>
-							<div>Loading...</div>
-						</div>
-					}
-				>
-					<TranslationProvider locale={locale}>
-						<QueryProvider>
-							<TooltipProvider delayDuration={0}>
-								{children}
-								<Toaster position="bottom-right" richColors />
-							</TooltipProvider>
-						</QueryProvider>
-					</TranslationProvider>
-				</Suspense>
+				<ProgressBar>
+					<Suspense
+						fallback={
+							<div
+								style={{
+									display: "flex",
+									justifyContent: "center",
+									alignItems: "center",
+									minHeight: "100vh",
+								}}
+							>
+								<div>Loading...</div>
+							</div>
+						}
+					>
+						<TranslationProvider locale={locale}>
+							<QueryProvider>
+								<TooltipProvider delayDuration={0}>
+									{children}
+									<Toaster position="bottom-right" richColors />
+								</TooltipProvider>
+							</QueryProvider>
+						</TranslationProvider>
+					</Suspense>
+				</ProgressBar>
 			</body>
 		</html>
 	);
