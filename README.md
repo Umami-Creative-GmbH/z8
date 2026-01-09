@@ -1,90 +1,58 @@
-# Z8 - Time Tracking for German Compliance
+# Z8 - Professional Workforce Management & GoBD Compliance
 
-A comprehensive time tracking solution designed to meet German work hours documentation requirements (GoBD-compliant). Built as a monorepo with web, mobile, and desktop applications.
+Z8 is a modern, high-security workforce management platform designed specifically for the rigorous requirements of German labor laws and GoBD compliance (*Grundsätze zur ordnungsmäßigen Führung und Aufbewahrung von Büchern*). 
 
-## Overview
+Featuring a seamless experience across Web, Mobile, and Desktop, Z8 provides organizations with a tamper-proof source of truth for time tracking, absence management, and holiday planning.
 
-Z8 helps organizations track employee work hours in compliance with German labor regulations. The system provides tamper-proof time tracking with blockchain-style entry linking, ensuring audit compliance and data integrity.
+---
 
-## Key Features
+## 🛡️ GoBD & Legal Compliance
 
-### Time Tracking
-- Clock in/out with automatic time calculation
-- Blockchain-style entries: each entry links to the previous one, preventing deletion
-- To modify an entry, a new replacement entry must be created (requires manager approval for regular employees)
-- Full audit trail for regulatory compliance
+Z8 is engineered from the ground up to be audit-ready and legally compliant.
 
-### Absence Management
-- **Home Office** - Track remote work days
-- **Sick Days** - Record illness-related absences
-- **Vacation** - Manage and approve time off requests
-- **Custom Categories** - Define additional absence types as needed
-- Each category can be configured to indicate whether work time is required
+- **Immutable Ledger**: Time entries are cryptographically linked in a blockchain-style chain. Existing records cannot be deleted or stealthily modified.
+- **Traceable Corrections**: Any changes to time records require a replacement entry with a full audit trail and manager approval.
+- **Digital Integrity**: Automated background checks verify the integrity of the data chain to protect against database manipulation.
+- **Audit Logs**: Comprehensive event logging for all administrative actions, from user permission changes to organization settings.
 
-### Organization Structure
-- Multi-organization support
-- Team management within organizations
-- Employee-manager relationships
-- Managers approve vacation requests and time entry corrections
-- Powered by [better-auth](https://www.better-auth.com/) for authentication and authorization
+## ⏱️ Advanced Time Tracking
 
-## Architecture
+- **Multi-Platform Access**: Clock in via the full-featured **Web Dashboard**, the **Mobile App** (iOS/Android), or the low-profile **Tauri Desktop widget**.
+- **Correction Workflows**: Streamlined process for employees to request time corrections, with instantaneous manager notifications.
+- **Quick Actions**: Global "Time Clock" popover in the web header for friction-less clock-in/out even when navigating other modules.
+- **Live Status**: Real-time visibility into who is currently clocked in within your team.
 
-This is a **Turborepo monorepo** containing:
+## 🏖️ Absence & Holiday Management
 
-| App | Description |
-|-----|-------------|
-| `apps/webapp` | Next.js web application - full-featured admin and employee interface |
-| `apps/mobile` | Expo React Native app - time tracking on the go |
-| `apps/desktop` | Tauri desktop app - lightweight timer widget for quick clock in/out |
+- **Holiday Presets**: Automated import of country-specific and regional public holidays (Deutschland, Bundesländer support).
+- **Vacation Balance Tracking**: Sophisticated calculation of remaining leave days based on flexible assignment policies.
+- **Flexible Categories**: Pre-configured status types including Home Office, Sick Leave, Vacation, and custom absence types.
+- **Approval Engine**: Visual timeline for managers to review and approve absence requests while checking for team coverage conflicts.
 
-## German Compliance (GoBD)
+## 📊 Insights & Reporting
 
-Z8 is designed to meet the requirements of the *Grundsätze zur ordnungsmäßigen Führung und Aufbewahrung von Büchern, Aufzeichnungen und Unterlagen in elektronischer Form sowie zum Datenzugriff* (GoBD):
+- **Advanced Analytics**: Interactive dashboards for team performance, location trends, and workforce distribution.
+- **Export Ready**: Generate reports for payroll or regulatory audits with advanced filtering capabilities.
+- **Organization Management**: Manage multi-location setups, team structures, and distinct department hierarchies.
 
-- **Immutability**: Time entries cannot be deleted, only superseded by correction entries
-- **Traceability**: All changes require approval workflow and are logged
-- **Chain of Custody**: Entries are cryptographically linked like a blockchain
-- **Audit Trail**: Complete history of all modifications with timestamps and approvers
+## 🔔 Modern Experience
 
-## Getting Started
+- **Multi-Channel Notifications**: Stay informed via In-app alerts, Desktop Push notifications (Web Push), and Email templates.
+- **Dark Mode Support**: Fully responsive UI with automated and manual theme toggling.
+- **Real-Time Updates**: Notification center powered by Server-Sent Events (SSE) for instant feedback on approvals.
 
-### Prerequisites
-- [Bun](https://bun.sh/) runtime
+---
 
-### Development
+## 📖 Documentation & Resources
 
-```bash
-# Install dependencies
-bun install
+For deeper dives into specific areas of the platform, please refer to:
 
-# Run all apps in development mode
-bun dev
+- **[User Guide](USER_GUIDE.md)**: How to use Z8 as an employee or manager.
+- **[Admin Guide](ADMIN_GUIDE.md)**: Configuration, compliance settings, and organization setup.
+- **[Development Guide](DEVELOPMENT.md)**: Technical architecture, setup instructions, and contribution guidelines.
+- **[License](LICENSE)**: Open source license details.
 
-# Run specific app
-bun dev --filter=webapp
-```
+---
 
-### Useful Commands
+*Built with precision for the modern workforce.*
 
-Generate auth schema:
-```bash
-bunx --bun @better-auth/cli generate --output ./src/db/schema.ts
-```
-
-Generate auth secret:
-```bash
-bunx @better-auth/cli@latest secret
-```
-
-Generate VAPID keys for push notifications:
-```bash
-bunx web-push generate-vapid-keys
-```
-
-Then add to your environment variables:
-```env
-VAPID_PUBLIC_KEY=<generated-public-key>
-VAPID_PRIVATE_KEY=<generated-private-key>
-VAPID_SUBJECT=mailto:support@yourdomain.com
-```
