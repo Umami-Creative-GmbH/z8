@@ -1,15 +1,31 @@
 import crypto from "node:crypto";
-import { DateTime } from "luxon";
 import { dateFromDB } from "@/lib/datetime/drizzle-adapter";
 import type { timeEntry } from "@/db/schema";
 
 type TimeEntry = typeof timeEntry.$inferSelect;
 
-interface HashInput {
+export interface HashInput {
 	employeeId: string;
 	type: string;
 	timestamp: string;
 	previousHash: string | null;
+}
+
+export interface ChainValidationResult {
+	isValid: boolean;
+	totalEntries: number;
+	validEntries: number;
+	issues: ChainValidationIssue[];
+	chainHash: string | null;
+}
+
+export interface ChainValidationIssue {
+	entryId: string;
+	entryIndex: number;
+	type: "hash_mismatch" | "chain_break" | "invalid_genesis" | "invalid_timestamp";
+	message: string;
+	expectedValue?: string;
+	actualValue?: string;
 }
 
 /**
@@ -79,4 +95,160 @@ export async function validateChain(entries: TimeEntry[]): Promise<boolean> {
 	}
 
 	return true;
+}
+
+/**
+ * Verify a single time entry's hash integrity
+ * Returns true if the entry's hash matches the calculated hash
+ */
+export function verifyHash(entry: TimeEntry): {
+	isValid: boolean;
+	calculatedHash: string;
+	storedHash: string;
+} {
+	const timestampDT = dateFromDB(entry.timestamp);
+	if (!timestampDT) {
+		return {
+			isValid: false,
+			calculatedHash: "",
+			storedHash: entry.hash,
+		};
+	}
+
+	const calculatedHash = calculateHash({
+		employeeId: entry.employeeId,
+		type: entry.type,
+		timestamp: timestampDT.toISO()!,
+		previousHash: entry.previousHash,
+	});
+
+	return {
+		isValid: calculatedHash === entry.hash,
+		calculatedHash,
+		storedHash: entry.hash,
+	};
+}
+
+/**
+ * Calculate a single hash representing the entire chain's integrity
+ * This is useful for quick comparison to detect any changes in the chain
+ */
+export function getChainHash(entries: TimeEntry[]): string | null {
+	if (entries.length === 0) {
+		return null;
+	}
+
+	// Sort by creation order
+	const sorted = [...entries].sort((a, b) => {
+		const aDT = dateFromDB(a.createdAt);
+		const bDT = dateFromDB(b.createdAt);
+		if (!aDT || !bDT) return 0;
+		return aDT < bDT ? -1 : aDT > bDT ? 1 : 0;
+	});
+
+	// Concatenate all hashes and compute a final hash
+	const allHashes = sorted.map((e) => e.hash).join("|");
+	return crypto.createHash("sha256").update(allHashes).digest("hex");
+}
+
+/**
+ * Validate the entire blockchain chain with detailed issue reporting
+ * Returns comprehensive validation results including all issues found
+ */
+export function validateChainDetailed(entries: TimeEntry[]): ChainValidationResult {
+	if (entries.length === 0) {
+		return {
+			isValid: true,
+			totalEntries: 0,
+			validEntries: 0,
+			issues: [],
+			chainHash: null,
+		};
+	}
+
+	const issues: ChainValidationIssue[] = [];
+	let validEntries = 0;
+
+	// Sort by creation order
+	const sorted = [...entries].sort((a, b) => {
+		const aDT = dateFromDB(a.createdAt);
+		const bDT = dateFromDB(b.createdAt);
+		if (!aDT || !bDT) return 0;
+		return aDT < bDT ? -1 : aDT > bDT ? 1 : 0;
+	});
+
+	for (let i = 0; i < sorted.length; i++) {
+		const entry = sorted[i];
+		let entryValid = true;
+
+		const timestampDT = dateFromDB(entry.timestamp);
+		if (!timestampDT) {
+			issues.push({
+				entryId: entry.id,
+				entryIndex: i,
+				type: "invalid_timestamp",
+				message: `Entry has invalid or null timestamp`,
+			});
+			entryValid = false;
+			continue;
+		}
+
+		// Verify hash
+		const calculatedHash = calculateHash({
+			employeeId: entry.employeeId,
+			type: entry.type,
+			timestamp: timestampDT.toISO()!,
+			previousHash: entry.previousHash,
+		});
+
+		if (calculatedHash !== entry.hash) {
+			issues.push({
+				entryId: entry.id,
+				entryIndex: i,
+				type: "hash_mismatch",
+				message: `Hash mismatch: entry data may have been tampered with`,
+				expectedValue: calculatedHash,
+				actualValue: entry.hash,
+			});
+			entryValid = false;
+		}
+
+		// Verify chain link (except for first entry)
+		if (i > 0 && entry.previousHash !== sorted[i - 1].hash) {
+			issues.push({
+				entryId: entry.id,
+				entryIndex: i,
+				type: "chain_break",
+				message: `Chain link broken: previousHash does not match previous entry's hash`,
+				expectedValue: sorted[i - 1].hash,
+				actualValue: entry.previousHash ?? "null",
+			});
+			entryValid = false;
+		}
+
+		// Verify first entry has null previousHash
+		if (i === 0 && entry.previousHash !== null) {
+			issues.push({
+				entryId: entry.id,
+				entryIndex: i,
+				type: "invalid_genesis",
+				message: `First entry (genesis) should have null previousHash`,
+				expectedValue: "null",
+				actualValue: entry.previousHash,
+			});
+			entryValid = false;
+		}
+
+		if (entryValid) {
+			validEntries++;
+		}
+	}
+
+	return {
+		isValid: issues.length === 0,
+		totalEntries: entries.length,
+		validEntries,
+		issues,
+		chainHash: issues.length === 0 ? getChainHash(entries) : null,
+	};
 }
