@@ -32,8 +32,8 @@ export default function TeamPerformancePage() {
 		async function loadData() {
 			setLoading(true);
 			try {
-				const orgId = "placeholder-org-id"; // TODO: Get from auth context
-				const result = await getTeamPerformanceData(orgId, dateRange);
+				// Organization ID is now derived server-side from authenticated session
+				const result = await getTeamPerformanceData(dateRange);
 
 				if (result.success && result.data) {
 					setTeamData(result.data);
@@ -226,6 +226,8 @@ export default function TeamPerformancePage() {
 					)}
 				</CardContent>
 			</Card>
+				</>
+			)}
 		</div>
 	);
 }

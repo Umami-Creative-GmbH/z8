@@ -58,4 +58,12 @@ export const queryKeys = {
 	timeClock: {
 		status: () => ["time-clock", "status"] as const,
 	},
+
+	// Notifications
+	notifications: {
+		all: ["notifications"] as const,
+		list: (options?: { unreadOnly?: boolean }) => ["notifications", "list", options] as const,
+		unreadCount: () => ["notifications", "unread-count"] as const,
+		preferences: () => ["notifications", "preferences"] as const,
+	},
 } as const;

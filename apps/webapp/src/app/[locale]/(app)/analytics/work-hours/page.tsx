@@ -32,8 +32,8 @@ export default function WorkHoursPage() {
 		async function loadData() {
 			setLoading(true);
 			try {
-				const orgId = "placeholder-org-id"; // TODO: Get from auth context
-				const result = await getWorkHoursAnalyticsData(orgId, dateRange);
+				// Organization ID is now derived server-side from authenticated session
+				const result = await getWorkHoursAnalyticsData(dateRange);
 
 				if (result.success && result.data) {
 					setWorkHoursData(result.data);

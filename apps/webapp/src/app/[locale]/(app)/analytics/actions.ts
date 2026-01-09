@@ -5,6 +5,9 @@
  *
  * Server actions for analytics data retrieval with role-based access control.
  * All analytics endpoints are restricted to admins and managers only.
+ *
+ * SECURITY: Organization ID is always derived from the authenticated user's
+ * employee record, never from client input. This ensures multi-tenant isolation.
  */
 
 import { Effect } from "effect";
@@ -30,8 +33,9 @@ import type {
 
 /**
  * Get current employee and check if they're a manager or admin
+ * Returns the employee record which includes organizationId for secure data access
  */
-async function checkManagerOrAdminAccess() {
+function checkManagerOrAdminAccess() {
 	return Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
@@ -79,14 +83,15 @@ async function checkManagerOrAdminAccess() {
 
 /**
  * Get team performance analytics
+ * Organization ID is derived from authenticated user's employee record
  */
 export async function getTeamPerformanceData(
-	organizationId: string,
 	dateRange: DateRange,
 	teamId?: string,
 ): Promise<ServerActionResult<TeamPerformanceData>> {
 	const effect = Effect.gen(function* (_) {
-		yield* _(checkManagerOrAdminAccess());
+		const currentEmployee = yield* _(checkManagerOrAdminAccess());
+		const organizationId = currentEmployee.organizationId;
 
 		const analyticsService = yield* _(AnalyticsService);
 
@@ -106,13 +111,14 @@ export async function getTeamPerformanceData(
 
 /**
  * Get vacation trends analytics
+ * Organization ID is derived from authenticated user's employee record
  */
 export async function getVacationTrendsData(
-	organizationId: string,
 	dateRange: DateRange,
 ): Promise<ServerActionResult<VacationTrendsData>> {
 	const effect = Effect.gen(function* (_) {
-		yield* _(checkManagerOrAdminAccess());
+		const currentEmployee = yield* _(checkManagerOrAdminAccess());
+		const organizationId = currentEmployee.organizationId;
 
 		const analyticsService = yield* _(AnalyticsService);
 
@@ -131,14 +137,15 @@ export async function getVacationTrendsData(
 
 /**
  * Get work hours analytics
+ * Organization ID is derived from authenticated user's employee record
  */
 export async function getWorkHoursAnalyticsData(
-	organizationId: string,
 	dateRange: DateRange,
 	employeeId?: string,
 ): Promise<ServerActionResult<WorkHoursAnalyticsData>> {
 	const effect = Effect.gen(function* (_) {
-		yield* _(checkManagerOrAdminAccess());
+		const currentEmployee = yield* _(checkManagerOrAdminAccess());
+		const organizationId = currentEmployee.organizationId;
 
 		const analyticsService = yield* _(AnalyticsService);
 
@@ -158,13 +165,14 @@ export async function getWorkHoursAnalyticsData(
 
 /**
  * Get absence patterns analytics
+ * Organization ID is derived from authenticated user's employee record
  */
 export async function getAbsencePatternsData(
-	organizationId: string,
 	dateRange: DateRange,
 ): Promise<ServerActionResult<AbsencePatternsData>> {
 	const effect = Effect.gen(function* (_) {
-		yield* _(checkManagerOrAdminAccess());
+		const currentEmployee = yield* _(checkManagerOrAdminAccess());
+		const organizationId = currentEmployee.organizationId;
 
 		const analyticsService = yield* _(AnalyticsService);
 
@@ -183,14 +191,15 @@ export async function getAbsencePatternsData(
 
 /**
  * Get manager effectiveness analytics
+ * Organization ID is derived from authenticated user's employee record
  */
 export async function getManagerEffectivenessData(
-	organizationId: string,
 	dateRange: DateRange,
 	managerId?: string,
 ): Promise<ServerActionResult<ManagerEffectivenessData>> {
 	const effect = Effect.gen(function* (_) {
-		yield* _(checkManagerOrAdminAccess());
+		const currentEmployee = yield* _(checkManagerOrAdminAccess());
+		const organizationId = currentEmployee.organizationId;
 
 		const analyticsService = yield* _(AnalyticsService);
 

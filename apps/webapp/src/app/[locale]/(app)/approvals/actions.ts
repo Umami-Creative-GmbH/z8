@@ -22,6 +22,12 @@ import { DatabaseService } from "@/lib/effect/services/database.service";
 import { EmailService } from "@/lib/effect/services/email.service";
 import { renderAbsenceRequestApproved, renderAbsenceRequestRejected } from "@/lib/email/render";
 import { createLogger } from "@/lib/logger";
+import {
+	onAbsenceRequestApproved,
+	onAbsenceRequestRejected,
+	onTimeCorrectionApproved,
+	onTimeCorrectionRejected,
+} from "@/lib/notifications/triggers";
 import { getCurrentEmployee } from "../absences/actions";
 
 const logger = createLogger("ApprovalsActionsEffect");
@@ -316,6 +322,18 @@ export async function approveAbsenceEffect(absenceId: string): Promise<ServerAct
 					}),
 				);
 
+				// Trigger in-app notification (fire-and-forget)
+				void onAbsenceRequestApproved({
+					absenceId: entityId,
+					employeeUserId: absence.employee.userId,
+					employeeName: absence.employee.user.name,
+					organizationId: absence.employee.organizationId,
+					categoryName: absence.category.name,
+					startDate: absence.startDate,
+					endDate: absence.endDate,
+					approverName: currentEmployee.user.name,
+				});
+
 				return absence;
 			}),
 	);
@@ -410,6 +428,19 @@ export async function rejectAbsenceEffect(
 					}),
 				);
 
+				// Trigger in-app notification (fire-and-forget)
+				void onAbsenceRequestRejected({
+					absenceId: entityId,
+					employeeUserId: absence.employee.userId,
+					employeeName: absence.employee.user.name,
+					organizationId: absence.employee.organizationId,
+					categoryName: absence.category.name,
+					startDate: absence.startDate,
+					endDate: absence.endDate,
+					approverName: currentEmployee.user.name,
+					rejectionReason: reason,
+				});
+
 				return absence;
 			}),
 	);
@@ -426,13 +457,18 @@ export async function approveTimeCorrectionEffect(
 		workPeriodId,
 		"approve",
 		undefined,
-		(dbService, entityId) =>
+		(dbService, entityId, currentEmployee) =>
 			Effect.gen(function* (_) {
-				// Get the work period
+				// Get the work period with employee info
 				const period: any = yield* _(
 					dbService.query("getWorkPeriod", async () => {
 						return await dbService.db.query.workPeriod.findFirst({
 							where: eq(workPeriod.id, entityId),
+							with: {
+								employee: {
+									with: { user: true },
+								},
+							},
 						});
 					}),
 					Effect.flatMap((p: any) =>
@@ -511,6 +547,17 @@ export async function approveTimeCorrectionEffect(
 					}),
 				);
 
+				// Trigger in-app notification (fire-and-forget)
+				void onTimeCorrectionApproved({
+					workPeriodId: entityId,
+					employeeUserId: period.employee.userId,
+					employeeName: period.employee.user.name,
+					organizationId: period.employee.organizationId,
+					originalTime: period.startTime,
+					correctedTime: clockInCorrection.timestamp,
+					approverName: currentEmployee.user.name,
+				});
+
 				return period;
 			}),
 	);
@@ -528,13 +575,18 @@ export async function rejectTimeCorrectionEffect(
 		workPeriodId,
 		"reject",
 		reason,
-		(dbService, entityId) =>
+		(dbService, entityId, currentEmployee) =>
 			Effect.gen(function* (_) {
-				// For time corrections, we don't need to update the work period on rejection
+				// Get work period with employee info for notification
 				const period: any = yield* _(
 					dbService.query("getWorkPeriod", async () => {
 						return await dbService.db.query.workPeriod.findFirst({
 							where: eq(workPeriod.id, entityId),
+							with: {
+								employee: {
+									with: { user: true },
+								},
+							},
 						});
 					}),
 					Effect.flatMap((p: any) =>
@@ -545,6 +597,18 @@ export async function rejectTimeCorrectionEffect(
 							  ),
 					),
 				);
+
+				// Trigger in-app notification (fire-and-forget)
+				void onTimeCorrectionRejected({
+					workPeriodId: entityId,
+					employeeUserId: period.employee.userId,
+					employeeName: period.employee.user.name,
+					organizationId: period.employee.organizationId,
+					originalTime: period.startTime,
+					correctedTime: period.startTime, // Use original since rejected
+					approverName: currentEmployee.user.name,
+					rejectionReason: reason,
+				});
 
 				return period;
 			}),

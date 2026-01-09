@@ -13,6 +13,7 @@ import { DatabaseService } from "@/lib/effect/services/database.service";
 import { PermissionsService } from "@/lib/effect/services/permissions.service";
 import { createLogger } from "@/lib/logger";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
+import { onTeamMemberAdded, onTeamMemberRemoved } from "@/lib/notifications/triggers";
 
 const logger = createLogger("TeamActions");
 
@@ -692,7 +693,7 @@ export async function addTeamMember(
 					),
 				);
 
-				// Get current employee - filter by the team's organization
+				// Get current employee - filter by the team's organization (with user info for notification)
 				const currentEmployee = yield* _(
 					dbService.query("getCurrentEmployee", async () => {
 						return await dbService.db.query.employee.findFirst({
@@ -700,6 +701,7 @@ export async function addTeamMember(
 								eq(employee.userId, session.user.id),
 								eq(employee.organizationId, targetTeam.organizationId),
 							),
+							with: { user: true },
 						});
 					}),
 					Effect.flatMap((emp) =>
@@ -736,7 +738,7 @@ export async function addTeamMember(
 					);
 				}
 
-				// Verify target employee exists and is in the same organization as the team
+				// Verify target employee exists and is in the same organization as the team (with user info)
 				const targetEmployee = yield* _(
 					dbService.query("getTargetEmployee", async () => {
 						return await dbService.db.query.employee.findFirst({
@@ -744,6 +746,7 @@ export async function addTeamMember(
 								eq(employee.id, employeeId),
 								eq(employee.organizationId, targetTeam.organizationId),
 							),
+							with: { user: true },
 						});
 					}),
 					Effect.flatMap((emp) =>
@@ -771,6 +774,16 @@ export async function addTeamMember(
 							.where(eq(employee.id, targetEmployee.id));
 					}),
 				);
+
+				// Trigger in-app notification (fire-and-forget)
+				void onTeamMemberAdded({
+					teamId,
+					teamName: targetTeam.name,
+					memberUserId: targetEmployee.userId,
+					memberName: targetEmployee.user.name,
+					organizationId: targetTeam.organizationId,
+					performedByName: currentEmployee.user.name,
+				});
 
 				logger.info({ teamId, employeeId }, "Team member added successfully");
 
@@ -841,7 +854,7 @@ export async function removeTeamMember(
 					),
 				);
 
-				// Get current employee - filter by the team's organization
+				// Get current employee - filter by the team's organization (with user info for notification)
 				const currentEmployee = yield* _(
 					dbService.query("getCurrentEmployee", async () => {
 						return await dbService.db.query.employee.findFirst({
@@ -849,6 +862,7 @@ export async function removeTeamMember(
 								eq(employee.userId, session.user.id),
 								eq(employee.organizationId, targetTeam.organizationId),
 							),
+							with: { user: true },
 						});
 					}),
 					Effect.flatMap((emp) =>
@@ -885,6 +899,16 @@ export async function removeTeamMember(
 					);
 				}
 
+				// Get target employee info for notification before removal
+				const targetEmployee = yield* _(
+					dbService.query("getTargetEmployee", async () => {
+						return await dbService.db.query.employee.findFirst({
+							where: and(eq(employee.id, employeeId), eq(employee.teamId, teamId)),
+							with: { user: true },
+						});
+					}),
+				);
+
 				// Remove employee from team
 				yield* _(
 					dbService.query("removeTeamMember", async () => {
@@ -897,6 +921,18 @@ export async function removeTeamMember(
 							.where(and(eq(employee.id, employeeId), eq(employee.teamId, teamId)));
 					}),
 				);
+
+				// Trigger in-app notification (fire-and-forget)
+				if (targetEmployee) {
+					void onTeamMemberRemoved({
+						teamId,
+						teamName: targetTeam.name,
+						memberUserId: targetEmployee.userId,
+						memberName: targetEmployee.user.name,
+						organizationId: targetTeam.organizationId,
+						performedByName: currentEmployee.user.name,
+					});
+				}
 
 				logger.info({ teamId, employeeId }, "Team member removed successfully");
 

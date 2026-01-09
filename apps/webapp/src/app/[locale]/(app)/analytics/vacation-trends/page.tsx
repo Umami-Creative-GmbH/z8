@@ -32,8 +32,8 @@ export default function VacationTrendsPage() {
 		async function loadData() {
 			setLoading(true);
 			try {
-				const orgId = "placeholder-org-id"; // TODO: Get from auth context
-				const result = await getVacationTrendsData(orgId, dateRange);
+				// Organization ID is now derived server-side from authenticated session
+				const result = await getVacationTrendsData(dateRange);
 
 				if (result.success && result.data) {
 					setVacationData(result.data);

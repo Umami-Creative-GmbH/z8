@@ -162,8 +162,9 @@ export type ManagerEffectivenessData = {
 	}>;
 	trends: Array<{
 		month: string;
+		approvals: number;
+		rejections: number;
 		avgResponseTime: number;
-		approvalCount: number;
 	}>;
 };
 

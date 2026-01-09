@@ -7,6 +7,7 @@ import { ReportingService } from "./services/reporting.service";
 import { OnboardingServiceLive } from "./services/onboarding.service";
 import { PermissionsServiceLive } from "./services/permissions.service";
 import { ManagerServiceLive } from "./services/manager.service";
+import { TimeEntryServiceLive } from "./services/time-entry.service";
 
 // Base layer with DatabaseService (no dependencies)
 const BaseLayer = DatabaseServiceLive;
@@ -30,6 +31,11 @@ const ManagerLayer = ManagerServiceLive.pipe(
 	Layer.provide(DatabaseServiceLive),
 );
 
+// Layer for TimeEntryService (depends on DatabaseService)
+const TimeEntryLayer = TimeEntryServiceLive.pipe(
+	Layer.provide(DatabaseServiceLive),
+);
+
 // Combine all service layers
 export const AppLayer = Layer.mergeAll(
 	BaseLayer,
@@ -40,6 +46,7 @@ export const AppLayer = Layer.mergeAll(
 	OnboardingLayer,
 	PermissionsLayer,
 	ManagerLayer,
+	TimeEntryLayer,
 );
 
 // Runtime for executing effects

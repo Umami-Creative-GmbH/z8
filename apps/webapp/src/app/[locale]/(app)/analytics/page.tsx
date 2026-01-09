@@ -8,10 +8,9 @@ import { getDateRangeForPreset } from "@/lib/reports/date-ranges";
 import type { DateRange } from "@/lib/reports/types";
 import { IconUsers, IconClock, IconCalendarOff, IconCheck, IconLoader2 } from "@tabler/icons-react";
 import { toast } from "sonner";
-import { getTeamPerformanceData, getAbsencePatternsData } from "../actions";
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
-import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
-import { differenceInDays } from "@/lib/datetime/luxon-utils";
+import { getTeamPerformanceData, getAbsencePatternsData } from "./actions";
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 
 export default function AnalyticsOverviewPage() {
 	const [dateRange, setDateRange] = useState<DateRange>(
@@ -25,12 +24,10 @@ export default function AnalyticsOverviewPage() {
 		async function loadData() {
 			setLoading(true);
 			try {
-				// Get current organization from session (placeholder - will use actual org ID)
-				const orgId = "placeholder-org-id"; // TODO: Get from auth context
-
+				// Organization ID is now derived server-side from authenticated session
 				const [teamResult, absenceResult] = await Promise.all([
-					getTeamPerformanceData(orgId, dateRange),
-					getAbsencePatternsData(orgId, dateRange),
+					getTeamPerformanceData(dateRange),
+					getAbsencePatternsData(dateRange),
 				]);
 
 				if (teamResult.success && teamResult.data) {
