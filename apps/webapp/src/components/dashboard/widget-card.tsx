@@ -1,17 +1,15 @@
-import { IconLoader2 } from "@tabler/icons-react";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
+import { IconLoader2, IconRefresh } from "@tabler/icons-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 interface WidgetCardProps {
 	title: string;
 	description: string;
 	icon: React.ReactNode;
 	loading?: boolean;
+	refreshing?: boolean;
+	onRefresh?: () => void;
 	children?: React.ReactNode;
 	action?: React.ReactNode;
 }
@@ -21,9 +19,24 @@ export function WidgetCard({
 	description,
 	icon,
 	loading,
+	refreshing,
+	onRefresh,
 	children,
 	action,
 }: WidgetCardProps) {
+	const RefreshButton = onRefresh ? (
+		<Button
+			variant="ghost"
+			size="icon"
+			onClick={onRefresh}
+			disabled={refreshing}
+			className="size-8"
+			title="Refresh"
+		>
+			<IconRefresh className={cn("size-4", refreshing && "animate-spin")} />
+		</Button>
+	) : null;
+
 	if (loading) {
 		return (
 			<Card>
@@ -46,26 +59,19 @@ export function WidgetCard({
 	return (
 		<Card>
 			<CardHeader>
-				{action ? (
-					<div className="flex items-center justify-between">
-						<div>
-							<CardTitle className="flex items-center gap-2">
-								{icon}
-								{title}
-							</CardTitle>
-							<CardDescription>{description}</CardDescription>
-						</div>
-						{action}
-					</div>
-				) : (
-					<>
+				<div className="flex items-center justify-between">
+					<div>
 						<CardTitle className="flex items-center gap-2">
 							{icon}
 							{title}
 						</CardTitle>
 						<CardDescription>{description}</CardDescription>
-					</>
-				)}
+					</div>
+					<div className="flex items-center gap-2">
+						{RefreshButton}
+						{action}
+					</div>
+				</div>
 			</CardHeader>
 			<CardContent>{children}</CardContent>
 		</Card>

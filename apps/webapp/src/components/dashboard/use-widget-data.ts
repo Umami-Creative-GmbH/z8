@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 type ActionResult<T> = {
@@ -19,9 +19,13 @@ export function useWidgetData<T>(
 ) {
 	const [data, setData] = useState<T | null>(null);
 	const [loading, setLoading] = useState(true);
+	const [refreshing, setRefreshing] = useState(false);
 
-	useEffect(() => {
-		async function loadData() {
+	const loadData = useCallback(
+		async (isRefresh = false) => {
+			if (isRefresh) {
+				setRefreshing(true);
+			}
 			try {
 				const result = await fetcher();
 				if (result.success && result.data) {
@@ -31,10 +35,19 @@ export function useWidgetData<T>(
 				toast.error(options?.errorMessage ?? "Failed to load data");
 			} finally {
 				setLoading(false);
+				setRefreshing(false);
 			}
-		}
-		loadData();
-	}, []);
+		},
+		[fetcher, options?.errorMessage],
+	);
 
-	return { data, loading };
+	useEffect(() => {
+		loadData(false);
+	}, [loadData]);
+
+	const refetch = useCallback(() => {
+		loadData(true);
+	}, [loadData]);
+
+	return { data, loading, refreshing, refetch };
 }

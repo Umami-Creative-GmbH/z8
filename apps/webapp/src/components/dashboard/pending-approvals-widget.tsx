@@ -1,14 +1,14 @@
 "use client";
 
 import { IconAlertCircle, IconCheck, IconClock } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { getPendingApprovals } from "@/app/[locale]/(app)/approvals/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Link } from "@/navigation";
 import { format } from "@/lib/datetime/luxon-utils";
 import { pluralize } from "@/lib/utils";
+import { Link } from "@/navigation";
 import { WidgetCard } from "./widget-card";
 
 type AbsenceApproval = {
@@ -34,32 +34,37 @@ type TimeCorrectionApproval = {
 };
 
 export function PendingApprovalsWidget() {
-	const [absenceApprovals, setAbsenceApprovals] = useState<AbsenceApproval[]>(
+	const [absenceApprovals, setAbsenceApprovals] = useState<AbsenceApproval[]>([]);
+	const [timeCorrectionApprovals, setTimeCorrectionApprovals] = useState<TimeCorrectionApproval[]>(
 		[],
 	);
-	const [timeCorrectionApprovals, setTimeCorrectionApprovals] = useState<
-		TimeCorrectionApproval[]
-	>([]);
 	const [loading, setLoading] = useState(true);
+	const [refreshing, setRefreshing] = useState(false);
+
+	const loadData = useCallback(async (isRefresh = false) => {
+		if (isRefresh) {
+			setRefreshing(true);
+		}
+		try {
+			const { absenceApprovals: absences, timeCorrectionApprovals: corrections } =
+				await getPendingApprovals();
+			setAbsenceApprovals(absences);
+			setTimeCorrectionApprovals(corrections);
+		} catch {
+			toast.error("Failed to load pending approvals");
+		} finally {
+			setLoading(false);
+			setRefreshing(false);
+		}
+	}, []);
 
 	useEffect(() => {
-		async function loadData() {
-			try {
-				const {
-					absenceApprovals: absences,
-					timeCorrectionApprovals: corrections,
-				} = await getPendingApprovals();
-				setAbsenceApprovals(absences);
-				setTimeCorrectionApprovals(corrections);
-			} catch {
-				toast.error("Failed to load pending approvals");
-			} finally {
-				setLoading(false);
-			}
-		}
+		loadData(false);
+	}, [loadData]);
 
-		loadData();
-	}, []);
+	const refetch = useCallback(() => {
+		loadData(true);
+	}, [loadData]);
 
 	const totalPending = absenceApprovals.length + timeCorrectionApprovals.length;
 
@@ -71,6 +76,8 @@ export function PendingApprovalsWidget() {
 			description={`${totalPending} ${pluralize(totalPending, "request")} awaiting your approval`}
 			icon={<IconClock className="size-4 text-muted-foreground" />}
 			loading={loading}
+			refreshing={refreshing}
+			onRefresh={refetch}
 			action={
 				<Badge variant="secondary" className="text-lg">
 					{totalPending}
@@ -90,14 +97,9 @@ export function PendingApprovalsWidget() {
 						</div>
 						<div className="space-y-2">
 							{absenceApprovals.slice(0, 3).map((approval) => (
-								<div
-									key={approval.id}
-									className="flex items-center justify-between text-sm"
-								>
+								<div key={approval.id} className="flex items-center justify-between text-sm">
 									<div>
-										<div className="font-medium">
-											{approval.employee.user.name}
-										</div>
+										<div className="font-medium">{approval.employee.user.name}</div>
 										<div className="text-xs text-muted-foreground">
 											{format(new Date(approval.startDate), "MMM d")} -{" "}
 											{format(new Date(approval.endDate), "MMM d, yyyy")}
@@ -118,20 +120,13 @@ export function PendingApprovalsWidget() {
 								<IconCheck className="size-5 text-blue-500" />
 								<span className="font-medium">Time Corrections</span>
 							</div>
-							<Badge variant="secondary">
-								{timeCorrectionApprovals.length}
-							</Badge>
+							<Badge variant="secondary">{timeCorrectionApprovals.length}</Badge>
 						</div>
 						<div className="space-y-2">
 							{timeCorrectionApprovals.slice(0, 3).map((approval) => (
-								<div
-									key={approval.id}
-									className="flex items-center justify-between text-sm"
-								>
+								<div key={approval.id} className="flex items-center justify-between text-sm">
 									<div>
-										<div className="font-medium">
-											{approval.employee.user.name}
-										</div>
+										<div className="font-medium">{approval.employee.user.name}</div>
 										<div className="text-xs text-muted-foreground">
 											{format(new Date(approval.date), "MMM d, yyyy")}
 										</div>

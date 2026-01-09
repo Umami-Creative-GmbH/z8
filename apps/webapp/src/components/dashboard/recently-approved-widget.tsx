@@ -3,9 +3,9 @@
 import { IconCheck } from "@tabler/icons-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Link } from "@/navigation";
 import { format } from "@/lib/datetime/luxon-utils";
 import { pluralize } from "@/lib/utils";
+import { Link } from "@/navigation";
 import { getRecentlyApprovedRequests } from "./actions";
 import { useWidgetData } from "./use-widget-data";
 import { WidgetCard } from "./widget-card";
@@ -27,10 +27,14 @@ type RecentlyApproved = {
 };
 
 export function RecentlyApprovedWidget() {
-	const { data: requests, loading } = useWidgetData<RecentlyApproved[]>(
-		() => getRecentlyApprovedRequests(10),
-		{ errorMessage: "Failed to load recently approved requests" },
-	);
+	const {
+		data: requests,
+		loading,
+		refreshing,
+		refetch,
+	} = useWidgetData<RecentlyApproved[]>(() => getRecentlyApprovedRequests(10), {
+		errorMessage: "Failed to load recently approved requests",
+	});
 
 	if (!loading && (!requests || requests.length === 0)) return null;
 
@@ -44,6 +48,8 @@ export function RecentlyApprovedWidget() {
 			}
 			icon={<IconCheck className="size-4 text-muted-foreground" />}
 			loading={loading}
+			refreshing={refreshing}
+			onRefresh={refetch}
 		>
 			{requests && (
 				<div className="space-y-3">
@@ -58,8 +64,7 @@ export function RecentlyApprovedWidget() {
 										{request.requestedByEmployee.user.name || "Unknown"}
 									</div>
 									<div className="text-xs text-muted-foreground">
-										Approved by{" "}
-										{request.approverEmployee?.user.name || "Unknown"}
+										Approved by {request.approverEmployee?.user.name || "Unknown"}
 										{" • "}
 										{format(new Date(request.updatedAt), "MMM d, yyyy")}
 									</div>

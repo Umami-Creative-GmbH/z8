@@ -1,8 +1,8 @@
 "use client";
 
 import { IconCake } from "@tabler/icons-react";
-import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { format } from "@/lib/datetime/luxon-utils";
 import { pluralize } from "@/lib/utils";
 import { getUpcomingBirthdays } from "./actions";
@@ -34,8 +34,7 @@ export function BirthdayRemindersWidget() {
 	if (!loading && (!birthdays || birthdays.length === 0)) return null;
 
 	const todayBirthdays = birthdays?.filter((b) => b.daysUntil === 0) ?? [];
-	const upcomingBirthdays =
-		birthdays?.filter((b) => b.daysUntil > 0).slice(0, 5) ?? [];
+	const upcomingBirthdays = birthdays?.filter((b) => b.daysUntil > 0).slice(0, 5) ?? [];
 	const displayBirthdays = [...todayBirthdays, ...upcomingBirthdays];
 
 	return (
@@ -48,11 +47,7 @@ export function BirthdayRemindersWidget() {
 			}
 			icon={<IconCake className="size-4 text-muted-foreground" />}
 			loading={loading}
-			action={
-				todayBirthdays.length > 0 ? (
-					<Badge>{todayBirthdays.length} Today</Badge>
-				) : undefined
-			}
+			action={todayBirthdays.length > 0 ? <Badge>{todayBirthdays.length} Today</Badge> : undefined}
 		>
 			{birthdays && (
 				<div className="space-y-2">
@@ -90,9 +85,7 @@ export function BirthdayRemindersWidget() {
 
 					{birthdays.length > 5 + todayBirthdays.length && (
 						<div className="flex items-center justify-center gap-2 pt-1 text-xs text-muted-foreground">
-							<span>
-								+{birthdays.length - 5 - todayBirthdays.length} more
-							</span>
+							<span>+{birthdays.length - 5 - todayBirthdays.length} more</span>
 						</div>
 					)}
 				</div>

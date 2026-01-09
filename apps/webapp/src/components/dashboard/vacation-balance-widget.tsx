@@ -19,7 +19,12 @@ type VacationBalance = {
 };
 
 export function VacationBalanceWidget() {
-	const { data: balance, loading } = useWidgetData<VacationBalance>(getVacationBalance, {
+	const {
+		data: balance,
+		loading,
+		refreshing,
+		refetch,
+	} = useWidgetData<VacationBalance>(getVacationBalance, {
 		errorMessage: "Failed to load vacation balance",
 	});
 
@@ -49,6 +54,8 @@ export function VacationBalanceWidget() {
 			description={`${new Date().getFullYear()} vacation days`}
 			icon={<IconBeach className="size-4 text-muted-foreground" />}
 			loading={loading}
+			refreshing={refreshing}
+			onRefresh={refetch}
 		>
 			{balance && (
 				<div className="space-y-4">

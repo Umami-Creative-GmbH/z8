@@ -1,35 +1,32 @@
 "use server";
 
+import { and, eq, gte, inArray, isNull, lte, or, sql } from "drizzle-orm";
 import { Effect } from "effect";
-import { eq, and, gte, lte, inArray, or, isNull, sql } from "drizzle-orm";
-import { AppLayer } from "@/lib/effect/runtime";
+import { DateTime } from "luxon";
+import {
+	absenceCategory,
+	absenceEntry,
+	approvalRequest,
+	employee,
+	team,
+	user,
+	workPeriod,
+} from "@/db/schema";
+import { getEnhancedVacationBalance } from "@/lib/absences/vacation.service";
+import { currentTimestamp, dateFromDB, dateToDB } from "@/lib/datetime/drizzle-adapter";
+import { toDateKey } from "@/lib/datetime/luxon-utils";
+import { NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { ManagerService } from "@/lib/effect/services/manager.service";
+import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
-import {
-	employee,
-	absenceEntry,
-	absenceCategory,
-	approvalRequest,
-	workPeriod,
-	user,
-	team,
-} from "@/db/schema";
-import { NotFoundError } from "@/lib/effect/errors";
-import { calculateWorkHours } from "@/lib/time-tracking/calculations";
-import { getEnhancedVacationBalance } from "@/lib/absences/vacation.service";
+import { ManagerService } from "@/lib/effect/services/manager.service";
 import { getVacationAllowance } from "@/lib/query/vacation.queries";
-import { DateTime } from "luxon";
-import { currentTimestamp, dateToDB, dateFromDB } from "@/lib/datetime/drizzle-adapter";
-import { toDateKey } from "@/lib/datetime/luxon-utils";
 
 /**
  * Get all employees managed by a specific manager
  */
-export async function getManagedEmployees(
-	managerId: string,
-): Promise<ServerActionResult<any[]>> {
+export async function getManagedEmployees(managerId: string): Promise<ServerActionResult<any[]>> {
 	const effect = Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
@@ -56,9 +53,7 @@ export async function getManagedEmployees(
 		);
 
 		// Get managed employees using ManagerService
-		const managedEmployees = yield* _(
-			managerService.getManagedEmployees(managerId),
-		);
+		const managedEmployees = yield* _(managerService.getManagedEmployees(managerId));
 
 		return managedEmployees;
 	}).pipe(Effect.provide(AppLayer));
@@ -69,9 +64,7 @@ export async function getManagedEmployees(
 /**
  * Get upcoming absences for the organization
  */
-export async function getUpcomingAbsences(
-	limit: number = 5,
-): Promise<ServerActionResult<any[]>> {
+export async function getUpcomingAbsences(limit: number = 5): Promise<ServerActionResult<any[]>> {
 	const effect = Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
@@ -184,8 +177,8 @@ export async function getTeamCalendarData(
 
 		// Calculate date range for the month
 		const monthDT = DateTime.utc(year, month, 1);
-		const monthStart = dateToDB(monthDT.startOf('month'))!;
-		const monthEnd = dateToDB(monthDT.endOf('month'))!;
+		const monthStart = dateToDB(monthDT.startOf("month"))!;
+		const monthEnd = dateToDB(monthDT.endOf("month"))!;
 
 		// Get all employee IDs in this organization
 		const orgEmployees = yield* _(
@@ -207,18 +200,9 @@ export async function getTeamCalendarData(
 						inArray(absenceEntry.employeeId, orgEmployeeIds),
 						eq(absenceEntry.status, "approved"),
 						or(
-							and(
-								gte(absenceEntry.startDate, monthStart),
-								lte(absenceEntry.startDate, monthEnd),
-							),
-							and(
-								gte(absenceEntry.endDate, monthStart),
-								lte(absenceEntry.endDate, monthEnd),
-							),
-							and(
-								lte(absenceEntry.startDate, monthStart),
-								gte(absenceEntry.endDate, monthEnd),
-							),
+							and(gte(absenceEntry.startDate, monthStart), lte(absenceEntry.startDate, monthEnd)),
+							and(gte(absenceEntry.endDate, monthStart), lte(absenceEntry.endDate, monthEnd)),
+							and(lte(absenceEntry.startDate, monthStart), gte(absenceEntry.endDate, monthEnd)),
 						),
 					),
 					with: {
@@ -401,26 +385,12 @@ export async function getQuickStats(): Promise<ServerActionResult<any>> {
 
 		const now = currentTimestamp();
 		const nowDT = DateTime.fromJSDate(now);
-		const weekStart = nowDT.startOf('week').toJSDate(); // Luxon uses Monday by default
-		const weekEnd = nowDT.endOf('week').toJSDate();
-		const monthStart = nowDT.startOf('month').toJSDate();
-		const monthEnd = nowDT.endOf('month').toJSDate();
+		const weekStart = nowDT.startOf("week").toJSDate(); // Luxon uses Monday by default
+		const weekEnd = nowDT.endOf("week").toJSDate();
+		const monthStart = nowDT.startOf("month").toJSDate();
+		const monthEnd = nowDT.endOf("month").toJSDate();
 
-		// Get work periods for this week
-		const weekPeriods = yield* _(
-			dbService.query("getWeekWorkPeriods", async () => {
-				return await dbService.db.query.workPeriod.findMany({
-					where: and(
-						eq(workPeriod.employeeId, currentEmployee.id),
-						gte(workPeriod.startTime, weekStart),
-						lte(workPeriod.startTime, weekEnd),
-						eq(workPeriod.isActive, false),
-					),
-				});
-			}),
-		);
-
-		// Get work periods for this month
+		// Get all work periods for this month (includes this week)
 		const monthPeriods = yield* _(
 			dbService.query("getMonthWorkPeriods", async () => {
 				return await dbService.db.query.workPeriod.findMany({
@@ -428,26 +398,38 @@ export async function getQuickStats(): Promise<ServerActionResult<any>> {
 						eq(workPeriod.employeeId, currentEmployee.id),
 						gte(workPeriod.startTime, monthStart),
 						lte(workPeriod.startTime, monthEnd),
-						eq(workPeriod.isActive, false),
 					),
 				});
 			}),
 		);
 
-		// Calculate total hours
-		const weekActual = weekPeriods.reduce((total, period) => {
-			if (period.endTime) {
-				return total + calculateWorkHours(period.startTime, period.endTime, []);
+		// Calculate minutes for each period (including active ones)
+		const calculatePeriodMinutes = (period: (typeof monthPeriods)[0]) => {
+			// Completed periods have durationMinutes set
+			if (period.durationMinutes) {
+				return period.durationMinutes;
 			}
-			return total;
-		}, 0);
+			// For active periods (currently clocked in), calculate elapsed time
+			if (period.isActive && period.startTime) {
+				const elapsedMs = now.getTime() - period.startTime.getTime();
+				return Math.floor(elapsedMs / 60000);
+			}
+			return 0;
+		};
 
-		const monthActual = monthPeriods.reduce((total, period) => {
-			if (period.endTime) {
-				return total + calculateWorkHours(period.startTime, period.endTime, []);
-			}
-			return total;
-		}, 0);
+		// Filter for week periods
+		const weekPeriods = monthPeriods.filter(
+			(p) => p.startTime >= weekStart && p.startTime <= weekEnd,
+		);
+
+		// Calculate total minutes
+		const weekMinutes = weekPeriods.reduce((sum, p) => sum + calculatePeriodMinutes(p), 0);
+
+		const monthMinutes = monthPeriods.reduce((sum, p) => sum + calculatePeriodMinutes(p), 0);
+
+		// Convert to hours
+		const weekActual = weekMinutes / 60;
+		const monthActual = monthMinutes / 60;
 
 		// Get expected hours from work schedule
 		let weekExpected = 40; // Default
@@ -458,7 +440,10 @@ export async function getQuickStats(): Promise<ServerActionResult<any>> {
 			if (schedule.scheduleType === "simple" && schedule.hoursPerWeek) {
 				weekExpected = Number.parseFloat(schedule.hoursPerWeek);
 				// Estimate monthly hours based on weekly hours
-				const daysInMonth = DateTime.fromJSDate(monthEnd).diff(DateTime.fromJSDate(monthStart), 'days').days;
+				const daysInMonth = DateTime.fromJSDate(monthEnd).diff(
+					DateTime.fromJSDate(monthStart),
+					"days",
+				).days;
 				const weeksInMonth = daysInMonth / 7;
 				monthExpected = weekExpected * weeksInMonth;
 			}
@@ -482,9 +467,7 @@ export async function getQuickStats(): Promise<ServerActionResult<any>> {
 /**
  * Get upcoming birthdays
  */
-export async function getUpcomingBirthdays(
-	days: number = 30,
-): Promise<ServerActionResult<any[]>> {
+export async function getUpcomingBirthdays(days: number = 30): Promise<ServerActionResult<any[]>> {
 	const effect = Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
@@ -551,8 +534,8 @@ export async function getUpcomingBirthdays(
 			}
 			const nextBirthday = nextBirthdayDT.toJSDate();
 
-			const todayStartDT = DateTime.fromJSDate(now).startOf('day');
-			const daysUntil = Math.floor(nextBirthdayDT.diff(todayStartDT, 'days').days);
+			const todayStartDT = DateTime.fromJSDate(now).startOf("day");
+			const daysUntil = Math.floor(nextBirthdayDT.diff(todayStartDT, "days").days);
 
 			if (daysUntil >= 0 && daysUntil <= days) {
 				upcomingBirthdays.push({
@@ -738,10 +721,11 @@ export async function getVacationBalance(): Promise<
 		const policy = yield* _(
 			Effect.tryPromise({
 				try: () => getVacationAllowance(currentEmployee.organizationId, currentYear),
-				catch: () => new NotFoundError({
-					message: "Vacation policy not found",
-					entityType: "vacationAllowance",
-				}),
+				catch: () =>
+					new NotFoundError({
+						message: "Vacation policy not found",
+						entityType: "vacationAllowance",
+					}),
 			}),
 		);
 
@@ -761,14 +745,16 @@ export async function getVacationBalance(): Promise<
 		// Get enhanced vacation balance
 		const balance = yield* _(
 			Effect.tryPromise({
-				try: () => getEnhancedVacationBalance({
-					employeeId: currentEmployee.id,
-					year: currentYear,
-				}),
-				catch: (error) => new NotFoundError({
-					message: `Failed to get vacation balance: ${error}`,
-					entityType: "vacationBalance",
-				}),
+				try: () =>
+					getEnhancedVacationBalance({
+						employeeId: currentEmployee.id,
+						year: currentYear,
+					}),
+				catch: (error) =>
+					new NotFoundError({
+						message: `Failed to get vacation balance: ${error}`,
+						entityType: "vacationBalance",
+					}),
 			}),
 		);
 

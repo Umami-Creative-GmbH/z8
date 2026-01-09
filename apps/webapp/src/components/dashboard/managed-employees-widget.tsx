@@ -1,7 +1,7 @@
 "use client";
 
 import { IconUserCheck, IconUsers } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -27,29 +27,40 @@ type ManagedEmployee = {
 export function ManagedEmployeesWidget() {
 	const [employees, setEmployees] = useState<ManagedEmployee[]>([]);
 	const [loading, setLoading] = useState(true);
+	const [refreshing, setRefreshing] = useState(false);
 	const [isManager, setIsManager] = useState(false);
 
-	useEffect(() => {
-		async function loadData() {
-			const current = await getCurrentEmployee();
-			if (!current) {
-				setLoading(false);
-				return;
-			}
-
-			const result = await getManagedEmployees(current.id);
-			if (result.success && result.data) {
-				setEmployees(result.data);
-				setIsManager(result.data.length > 0 || current.role === "admin");
-			} else if (result.error) {
-				toast.error(result.error);
-			}
-
-			setLoading(false);
+	const loadData = useCallback(async (isRefresh = false) => {
+		if (isRefresh) {
+			setRefreshing(true);
 		}
 
-		loadData();
+		const current = await getCurrentEmployee();
+		if (!current) {
+			setLoading(false);
+			setRefreshing(false);
+			return;
+		}
+
+		const result = await getManagedEmployees(current.id);
+		if (result.success && result.data) {
+			setEmployees(result.data);
+			setIsManager(result.data.length > 0 || current.role === "admin");
+		} else if (result.error) {
+			toast.error(result.error);
+		}
+
+		setLoading(false);
+		setRefreshing(false);
 	}, []);
+
+	useEffect(() => {
+		loadData(false);
+	}, [loadData]);
+
+	const refetch = useCallback(() => {
+		loadData(true);
+	}, [loadData]);
 
 	if (!loading && !isManager) return null;
 
@@ -59,6 +70,8 @@ export function ManagedEmployeesWidget() {
 			description={`Employees you manage (${employees.length})`}
 			icon={<IconUsers className="size-4 text-muted-foreground" />}
 			loading={loading}
+			refreshing={refreshing}
+			onRefresh={refetch}
 			action={
 				<Button variant="ghost" size="sm" asChild>
 					<Link href="/settings/employees">View All</Link>
@@ -68,9 +81,7 @@ export function ManagedEmployeesWidget() {
 			{employees.length === 0 ? (
 				<div className="flex flex-col items-center justify-center py-8 text-center">
 					<IconUserCheck className="mb-4 size-12 text-muted-foreground" />
-					<p className="text-sm text-muted-foreground">
-						You don't manage any employees yet
-					</p>
+					<p className="text-sm text-muted-foreground">You don't manage any employees yet</p>
 				</div>
 			) : (
 				<div className="space-y-3">
@@ -98,9 +109,7 @@ export function ManagedEmployeesWidget() {
 								</div>
 							</div>
 							<div className="flex items-center gap-2">
-								{emp.team && (
-									<Badge variant="secondary">{emp.team.name}</Badge>
-								)}
+								{emp.team && <Badge variant="secondary">{emp.team.name}</Badge>}
 								<Button variant="ghost" size="sm" asChild>
 									<Link href={`/settings/employees/${emp.id}`}>View</Link>
 								</Button>
@@ -111,9 +120,7 @@ export function ManagedEmployeesWidget() {
 					{employees.length > 5 && (
 						<div className="pt-2 text-center">
 							<Button variant="outline" size="sm" asChild>
-								<Link href="/settings/employees">
-									View all {employees.length} employees
-								</Link>
+								<Link href="/settings/employees">View all {employees.length} employees</Link>
 							</Button>
 						</div>
 					)}

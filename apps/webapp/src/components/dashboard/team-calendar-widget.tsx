@@ -1,21 +1,12 @@
 "use client";
 
-import {
-	IconCalendar,
-	IconChevronLeft,
-	IconChevronRight,
-} from "@tabler/icons-react";
+import { IconCalendar, IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipProvider,
-	TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { format, isSameDay } from "@/lib/datetime/luxon-utils";
 import { pluralize } from "@/lib/utils";
 import { getTeamCalendarData } from "./actions";
@@ -37,9 +28,7 @@ type TeamCalendarData = {
 };
 
 export function TeamCalendarWidget() {
-	const [calendarData, setCalendarData] = useState<TeamCalendarData | null>(
-		null,
-	);
+	const [calendarData, setCalendarData] = useState<TeamCalendarData | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [currentDate, setCurrentDate] = useState(new Date());
 
@@ -87,9 +76,7 @@ export function TeamCalendarWidget() {
 	};
 
 	const getAbsenceForDate = (date: Date): AbsenceDay | undefined => {
-		return calendarData?.absenceDays.find((absence) =>
-			isSameDay(new Date(absence.date), date),
-		);
+		return calendarData?.absenceDays.find((absence) => isSameDay(new Date(absence.date), date));
 	};
 
 	return (
@@ -116,9 +103,7 @@ export function TeamCalendarWidget() {
 							<IconChevronLeft className="size-4" />
 						</Button>
 						<div className="flex flex-col items-center">
-							<div className="font-semibold">
-								{format(currentDate, "MMMM yyyy")}
-							</div>
+							<div className="font-semibold">{format(currentDate, "MMMM yyyy")}</div>
 							<Button
 								variant="ghost"
 								size="sm"
@@ -128,12 +113,7 @@ export function TeamCalendarWidget() {
 								Today
 							</Button>
 						</div>
-						<Button
-							variant="outline"
-							size="icon"
-							onClick={goToNextMonth}
-							aria-label="Next month"
-						>
+						<Button variant="outline" size="icon" onClick={goToNextMonth} aria-label="Next month">
 							<IconChevronRight className="size-4" />
 						</Button>
 					</div>
@@ -174,8 +154,7 @@ export function TeamCalendarWidget() {
 												<TooltipContent>
 													<div className="space-y-1">
 														<div className="font-medium">
-															{absence.count} team{" "}
-															{pluralize(absence.count, "member")} out
+															{absence.count} team {pluralize(absence.count, "member")} out
 														</div>
 														<ul className="text-xs space-y-0.5">
 															{absence.employees.map((emp) => (

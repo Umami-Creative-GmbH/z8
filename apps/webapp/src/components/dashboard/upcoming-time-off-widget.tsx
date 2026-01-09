@@ -3,9 +3,9 @@
 import { IconCalendar } from "@tabler/icons-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Link } from "@/navigation";
-import { format, differenceInDays } from "@/lib/datetime/luxon-utils";
+import { differenceInDays, format } from "@/lib/datetime/luxon-utils";
 import { pluralize } from "@/lib/utils";
+import { Link } from "@/navigation";
 import { getUpcomingAbsences } from "./actions";
 import { useWidgetData } from "./use-widget-data";
 import { WidgetCard } from "./widget-card";
@@ -26,10 +26,14 @@ type UpcomingAbsence = {
 };
 
 export function UpcomingTimeOffWidget() {
-	const { data: absences, loading } = useWidgetData<UpcomingAbsence[]>(
-		() => getUpcomingAbsences(5),
-		{ errorMessage: "Failed to load upcoming time off" },
-	);
+	const {
+		data: absences,
+		loading,
+		refreshing,
+		refetch,
+	} = useWidgetData<UpcomingAbsence[]>(() => getUpcomingAbsences(5), {
+		errorMessage: "Failed to load upcoming time off",
+	});
 
 	if (!loading && (!absences || absences.length === 0)) return null;
 
@@ -43,19 +47,15 @@ export function UpcomingTimeOffWidget() {
 			}
 			icon={<IconCalendar className="size-4 text-muted-foreground" />}
 			loading={loading}
+			refreshing={refreshing}
+			onRefresh={refetch}
 		>
 			{absences && (
 				<div className="space-y-3">
 					{absences.map((absence) => {
-						const daysUntil = differenceInDays(
-							new Date(absence.startDate),
-							new Date(),
-						);
+						const daysUntil = differenceInDays(new Date(absence.startDate), new Date());
 						const duration =
-							differenceInDays(
-								new Date(absence.endDate),
-								new Date(absence.startDate),
-							) + 1;
+							differenceInDays(new Date(absence.endDate), new Date(absence.startDate)) + 1;
 
 						return (
 							<div
@@ -63,9 +63,7 @@ export function UpcomingTimeOffWidget() {
 								className="flex items-center justify-between rounded-lg border p-3"
 							>
 								<div className="flex-1">
-									<div className="font-medium">
-										{absence.employee.user.name || "Unknown"}
-									</div>
+									<div className="font-medium">{absence.employee.user.name || "Unknown"}</div>
 									<div className="text-xs text-muted-foreground">
 										{format(new Date(absence.startDate), "MMM d")} -{" "}
 										{format(new Date(absence.endDate), "MMM d, yyyy")}
