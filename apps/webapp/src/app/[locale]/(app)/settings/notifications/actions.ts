@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { notificationPreference } from "@/db/schema";
 import { ValidationError } from "@/lib/effect/errors";
@@ -18,6 +18,7 @@ import {
 
 /**
  * Get all notification preferences for the current user
+ * Note: Notification preferences are user-level settings, not organization-specific
  */
 export async function getNotificationPreferences(): Promise<
 	ServerActionResult<UserPreferencesResponse>
@@ -27,30 +28,13 @@ export async function getNotificationPreferences(): Promise<
 		const session = yield* _(authService.getSession());
 		const dbService = yield* _(DatabaseService);
 
-		const orgId = session.session.activeOrganizationId;
-		if (!orgId) {
-			return yield* _(
-				Effect.fail(
-					new ValidationError({
-						message: "No active organization",
-						field: "organization",
-					}),
-				),
-			);
-		}
-
-		// Get all preferences for this user in this org
+		// Get all preferences for this user (user-level, not org-specific)
 		const preferences = yield* _(
 			dbService.query("getNotificationPreferences", async () => {
 				return dbService.db
 					.select()
 					.from(notificationPreference)
-					.where(
-						and(
-							eq(notificationPreference.userId, session.user.id),
-							eq(notificationPreference.organizationId, orgId),
-						),
-					);
+					.where(eq(notificationPreference.userId, session.user.id));
 			}),
 		);
 
@@ -86,6 +70,7 @@ export async function getNotificationPreferences(): Promise<
 
 /**
  * Update a single notification preference
+ * Note: Notification preferences are user-level settings, not organization-specific
  */
 export async function updateNotificationPreference(data: {
 	notificationType: NotificationType;
@@ -96,18 +81,6 @@ export async function updateNotificationPreference(data: {
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 		const dbService = yield* _(DatabaseService);
-
-		const orgId = session.session.activeOrganizationId;
-		if (!orgId) {
-			return yield* _(
-				Effect.fail(
-					new ValidationError({
-						message: "No active organization",
-						field: "organization",
-					}),
-				),
-			);
-		}
 
 		// Validate notification type
 		if (!NOTIFICATION_TYPES.includes(data.notificationType)) {
@@ -133,16 +106,16 @@ export async function updateNotificationPreference(data: {
 			);
 		}
 
-		// Upsert the preference
+		// Upsert the preference (user-level, not org-specific)
 		yield* _(
 			dbService.query("updateNotificationPreference", async () => {
 				const existing = await dbService.db.query.notificationPreference.findFirst({
-					where: and(
-						eq(notificationPreference.userId, session.user.id),
-						eq(notificationPreference.organizationId, orgId),
-						eq(notificationPreference.notificationType, data.notificationType),
-						eq(notificationPreference.channel, data.channel),
-					),
+					where: (pref, { and, eq }) =>
+						and(
+							eq(pref.userId, session.user.id),
+							eq(pref.notificationType, data.notificationType),
+							eq(pref.channel, data.channel),
+						),
 				});
 
 				if (existing) {
@@ -153,7 +126,6 @@ export async function updateNotificationPreference(data: {
 				} else {
 					await dbService.db.insert(notificationPreference).values({
 						userId: session.user.id,
-						organizationId: orgId,
 						notificationType: data.notificationType,
 						channel: data.channel,
 						enabled: data.enabled,
@@ -168,6 +140,7 @@ export async function updateNotificationPreference(data: {
 
 /**
  * Bulk update notification preferences
+ * Note: Notification preferences are user-level settings, not organization-specific
  */
 export async function bulkUpdateNotificationPreferences(
 	preferences: Array<{
@@ -180,18 +153,6 @@ export async function bulkUpdateNotificationPreferences(
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 		const dbService = yield* _(DatabaseService);
-
-		const orgId = session.session.activeOrganizationId;
-		if (!orgId) {
-			return yield* _(
-				Effect.fail(
-					new ValidationError({
-						message: "No active organization",
-						field: "organization",
-					}),
-				),
-			);
-		}
 
 		// Validate all preferences first
 		for (const pref of preferences) {
@@ -217,17 +178,17 @@ export async function bulkUpdateNotificationPreferences(
 			}
 		}
 
-		// Process each update
+		// Process each update (user-level, not org-specific)
 		yield* _(
 			dbService.query("bulkUpdateNotificationPreferences", async () => {
 				for (const update of preferences) {
 					const existing = await dbService.db.query.notificationPreference.findFirst({
-						where: and(
-							eq(notificationPreference.userId, session.user.id),
-							eq(notificationPreference.organizationId, orgId),
-							eq(notificationPreference.notificationType, update.notificationType),
-							eq(notificationPreference.channel, update.channel),
-						),
+						where: (pref, { and, eq }) =>
+							and(
+								eq(pref.userId, session.user.id),
+								eq(pref.notificationType, update.notificationType),
+								eq(pref.channel, update.channel),
+							),
 					});
 
 					if (existing) {
@@ -238,7 +199,6 @@ export async function bulkUpdateNotificationPreferences(
 					} else {
 						await dbService.db.insert(notificationPreference).values({
 							userId: session.user.id,
-							organizationId: orgId,
 							notificationType: update.notificationType,
 							channel: update.channel,
 							enabled: update.enabled,

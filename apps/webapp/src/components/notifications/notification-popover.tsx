@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 import { useNotifications } from "@/hooks/use-notifications";
+import { useOrganization } from "@/hooks/use-organization";
 import { NotificationList } from "./notification-list";
 
 interface NotificationPopoverProps {
@@ -15,6 +16,9 @@ interface NotificationPopoverProps {
 
 export function NotificationPopover({ children }: NotificationPopoverProps) {
 	const [open, setOpen] = useState(false);
+	const { organizationId } = useOrganization();
+	const hasOrganization = Boolean(organizationId);
+
 	const {
 		notifications,
 		unreadCount,
@@ -23,7 +27,7 @@ export function NotificationPopover({ children }: NotificationPopoverProps) {
 		markAllAsRead,
 		deleteNotification,
 		isMarkingAllRead,
-	} = useNotifications({ enabled: open });
+	} = useNotifications({ enabled: open && hasOrganization });
 
 	const handleMarkAsRead = async (id: string) => {
 		try {

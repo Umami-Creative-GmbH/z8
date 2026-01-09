@@ -2,8 +2,8 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
-import { queryKeys } from "@/lib/query/keys";
 import type { NotificationsListResponse, UnreadCountResponse } from "@/lib/notifications/types";
+import { queryKeys } from "@/lib/query/keys";
 
 interface UseNotificationsOptions {
 	limit?: number;
@@ -42,6 +42,7 @@ export function useNotifications(options: UseNotificationsOptions = {}) {
 	});
 
 	// Query for unread count (separate for badge updates)
+	// Note: Real-time updates come via SSE (useNotificationStream hook)
 	const unreadCountQuery = useQuery({
 		queryKey: queryKeys.notifications.unreadCount(),
 		queryFn: async (): Promise<UnreadCountResponse> => {
@@ -50,8 +51,7 @@ export function useNotifications(options: UseNotificationsOptions = {}) {
 			return res.json();
 		},
 		enabled,
-		staleTime: 10 * 1000, // 10 seconds
-		refetchInterval: 30 * 1000, // Poll every 30 seconds
+		staleTime: 30 * 1000, // 30 seconds - SSE handles real-time updates
 		refetchOnWindowFocus: true,
 	});
 

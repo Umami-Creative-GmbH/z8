@@ -1,12 +1,14 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef, useCallback } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { NotificationsListResponse, NotificationWithMeta } from "@/lib/notifications/types";
 import { queryKeys } from "@/lib/query/keys";
 
 interface UseNotificationStreamOptions {
 	enabled?: boolean;
 	onCountUpdate?: (count: number) => void;
+	onNewNotification?: (notification: NotificationWithMeta) => void;
 }
 
 /**
@@ -18,13 +20,19 @@ interface UseNotificationStreamOptions {
  * - Handles reconnection on disconnect
  */
 export function useNotificationStream(options: UseNotificationStreamOptions = {}) {
-	const { enabled = true, onCountUpdate } = options;
+	const { enabled = true, onCountUpdate, onNewNotification } = options;
 	const queryClient = useQueryClient();
 	const eventSourceRef = useRef<EventSource | null>(null);
 	const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 	const reconnectAttempts = useRef(0);
+	const [isConnected, setIsConnected] = useState(false);
 
 	const connect = useCallback(() => {
+		// Only run in browser
+		if (typeof window === "undefined" || typeof EventSource === "undefined") {
+			return;
+		}
+
 		if (!enabled) return;
 
 		// Clean up existing connection
@@ -51,6 +59,52 @@ export function useNotificationStream(options: UseNotificationStreamOptions = {}
 				}
 			});
 
+			eventSource.addEventListener("new_notification", (event) => {
+				try {
+					const notification = JSON.parse(event.data) as NotificationWithMeta;
+
+					// Update the notifications list cache by prepending the new notification
+					queryClient.setQueryData<NotificationsListResponse>(
+						queryKeys.notifications.list({ unreadOnly: false }),
+						(oldData) => {
+							if (!oldData) return oldData;
+							// Avoid duplicates
+							if (oldData.notifications.some((n) => n.id === notification.id)) {
+								return oldData;
+							}
+							return {
+								...oldData,
+								notifications: [notification, ...oldData.notifications],
+								total: oldData.total + 1,
+								unreadCount: oldData.unreadCount + 1,
+							};
+						},
+					);
+
+					// Also update unread-only list if it exists
+					queryClient.setQueryData<NotificationsListResponse>(
+						queryKeys.notifications.list({ unreadOnly: true }),
+						(oldData) => {
+							if (!oldData) return oldData;
+							if (oldData.notifications.some((n) => n.id === notification.id)) {
+								return oldData;
+							}
+							return {
+								...oldData,
+								notifications: [notification, ...oldData.notifications],
+								total: oldData.total + 1,
+								unreadCount: oldData.unreadCount + 1,
+							};
+						},
+					);
+
+					onNewNotification?.(notification);
+					reconnectAttempts.current = 0;
+				} catch {
+					// Ignore parse errors
+				}
+			});
+
 			eventSource.addEventListener("heartbeat", () => {
 				// Reset reconnect attempts on heartbeat
 				reconnectAttempts.current = 0;
@@ -59,6 +113,7 @@ export function useNotificationStream(options: UseNotificationStreamOptions = {}
 			eventSource.onerror = () => {
 				eventSource.close();
 				eventSourceRef.current = null;
+				setIsConnected(false);
 
 				// Exponential backoff for reconnection
 				reconnectAttempts.current += 1;
@@ -73,11 +128,13 @@ export function useNotificationStream(options: UseNotificationStreamOptions = {}
 
 			eventSource.onopen = () => {
 				reconnectAttempts.current = 0;
+				setIsConnected(true);
 			};
 		} catch {
 			// EventSource not supported or connection failed
+			setIsConnected(false);
 		}
-	}, [enabled, queryClient, onCountUpdate]);
+	}, [enabled, queryClient, onCountUpdate, onNewNotification]);
 
 	const disconnect = useCallback(() => {
 		if (reconnectTimeoutRef.current) {
@@ -88,6 +145,7 @@ export function useNotificationStream(options: UseNotificationStreamOptions = {}
 			eventSourceRef.current.close();
 			eventSourceRef.current = null;
 		}
+		setIsConnected(false);
 	}, []);
 
 	useEffect(() => {
@@ -101,7 +159,7 @@ export function useNotificationStream(options: UseNotificationStreamOptions = {}
 	}, [enabled, connect, disconnect]);
 
 	return {
-		isConnected: eventSourceRef.current?.readyState === EventSource.OPEN,
+		isConnected,
 		reconnect: connect,
 		disconnect,
 	};

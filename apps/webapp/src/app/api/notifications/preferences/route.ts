@@ -15,6 +15,7 @@ import {
 /**
  * GET /api/notifications/preferences
  * Get all notification preferences for the current user
+ * Note: Notification preferences are user-level settings, not organization-specific
  */
 export async function GET() {
 	try {
@@ -23,21 +24,11 @@ export async function GET() {
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 		}
 
-		const organizationId = session.session.activeOrganizationId;
-		if (!organizationId) {
-			return NextResponse.json({ error: "No active organization" }, { status: 400 });
-		}
-
-		// Get all preferences for this user in this org
+		// Get all preferences for this user (user-level, not org-specific)
 		const preferences = await db
 			.select()
 			.from(notificationPreference)
-			.where(
-				and(
-					eq(notificationPreference.userId, session.user.id),
-					eq(notificationPreference.organizationId, organizationId),
-				),
-			);
+			.where(eq(notificationPreference.userId, session.user.id));
 
 		// Build preference matrix (all types x all channels, defaulting to true)
 		const matrix: Record<NotificationType, Record<NotificationChannel, boolean>> = {} as Record<
@@ -75,6 +66,7 @@ export async function GET() {
 /**
  * PUT /api/notifications/preferences
  * Update a notification preference
+ * Note: Notification preferences are user-level settings, not organization-specific
  *
  * Body: {
  *   notificationType: NotificationType,
@@ -87,11 +79,6 @@ export async function PUT(request: NextRequest) {
 		const session = await auth.api.getSession({ headers: await headers() });
 		if (!session?.user) {
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-		}
-
-		const organizationId = session.session.activeOrganizationId;
-		if (!organizationId) {
-			return NextResponse.json({ error: "No active organization" }, { status: 400 });
 		}
 
 		const body = await request.json();
@@ -108,11 +95,10 @@ export async function PUT(request: NextRequest) {
 			return NextResponse.json({ error: "Invalid enabled value" }, { status: 400 });
 		}
 
-		// Upsert the preference
+		// Upsert the preference (user-level, not org-specific)
 		const existing = await db.query.notificationPreference.findFirst({
 			where: and(
 				eq(notificationPreference.userId, session.user.id),
-				eq(notificationPreference.organizationId, organizationId),
 				eq(notificationPreference.notificationType, notificationType),
 				eq(notificationPreference.channel, channel),
 			),
@@ -128,7 +114,6 @@ export async function PUT(request: NextRequest) {
 			// Create new
 			await db.insert(notificationPreference).values({
 				userId: session.user.id,
-				organizationId,
 				notificationType,
 				channel,
 				enabled,
@@ -145,6 +130,7 @@ export async function PUT(request: NextRequest) {
 /**
  * POST /api/notifications/preferences
  * Bulk update notification preferences
+ * Note: Notification preferences are user-level settings, not organization-specific
  *
  * Body: {
  *   preferences: Array<{
@@ -159,11 +145,6 @@ export async function POST(request: NextRequest) {
 		const session = await auth.api.getSession({ headers: await headers() });
 		if (!session?.user) {
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-		}
-
-		const organizationId = session.session.activeOrganizationId;
-		if (!organizationId) {
-			return NextResponse.json({ error: "No active organization" }, { status: 400 });
 		}
 
 		const body = await request.json();
@@ -186,12 +167,11 @@ export async function POST(request: NextRequest) {
 			}
 		}
 
-		// Process each update
+		// Process each update (user-level, not org-specific)
 		for (const update of updates) {
 			const existing = await db.query.notificationPreference.findFirst({
 				where: and(
 					eq(notificationPreference.userId, session.user.id),
-					eq(notificationPreference.organizationId, organizationId),
 					eq(notificationPreference.notificationType, update.notificationType),
 					eq(notificationPreference.channel, update.channel),
 				),
@@ -205,7 +185,6 @@ export async function POST(request: NextRequest) {
 			} else {
 				await db.insert(notificationPreference).values({
 					userId: session.user.id,
-					organizationId,
 					notificationType: update.notificationType,
 					channel: update.channel,
 					enabled: update.enabled,

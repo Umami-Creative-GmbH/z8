@@ -6,6 +6,7 @@ import {
 	IconCheck,
 	IconClock,
 	IconDeviceMobile,
+	IconExclamationCircle,
 	IconLoader2,
 	IconMail,
 	IconShield,
@@ -13,6 +14,7 @@ import {
 } from "@tabler/icons-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { PushPermissionModal } from "./push-permission-modal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -149,6 +151,19 @@ export function NotificationSettings() {
 	});
 
 	const [pendingToggle, setPendingToggle] = useState<string | null>(null);
+	const [showPermissionModal, setShowPermissionModal] = useState(false);
+
+	const handleRequestPermission = async (): Promise<boolean> => {
+		const success = await subscribeToPush();
+		if (success) {
+			setShowPermissionModal(false);
+		}
+		return success;
+	};
+
+	const handleEnablePush = async () => {
+		await subscribeToPush();
+	};
 
 	const handleToggle = async (
 		type: NotificationType,
@@ -187,10 +202,6 @@ export function NotificationSettings() {
 		}
 	};
 
-	const handleEnablePush = async () => {
-		await subscribeToPush();
-	};
-
 	if (isLoading) {
 		return <NotificationSettingsSkeleton />;
 	}
@@ -207,8 +218,8 @@ export function NotificationSettings() {
 
 	return (
 		<div className="space-y-6">
-			{/* Push notification setup card */}
-			{isPushSupported && !isPushSubscribed && (
+			{/* Push notification setup card - show when supported but not subscribed */}
+			{isPushSupported && !isPushSubscribed && pushPermission !== "denied" && (
 				<Card className="border-blue-200 bg-blue-50/50 dark:border-blue-900 dark:bg-blue-950/20">
 					<CardHeader className="pb-3">
 						<div className="flex items-center gap-2">
@@ -220,21 +231,32 @@ export function NotificationSettings() {
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
-						<Button
-							onClick={handleEnablePush}
-							disabled={isPushLoading || pushPermission === "denied"}
-							size="sm"
-						>
+						<Button onClick={() => setShowPermissionModal(true)} disabled={isPushLoading} size="sm">
 							{isPushLoading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
-							{pushPermission === "denied"
-								? "Push blocked by browser"
-								: "Enable Push Notifications"}
+							Enable Push Notifications
 						</Button>
-						{pushPermission === "denied" && (
-							<p className="mt-2 text-xs text-muted-foreground">
-								Push notifications are blocked. Please enable them in your browser settings.
-							</p>
-						)}
+					</CardContent>
+				</Card>
+			)}
+
+			{/* Push blocked warning - show when permission is denied */}
+			{isPushSupported && pushPermission === "denied" && (
+				<Card className="border-amber-200 bg-amber-50/50 dark:border-amber-900 dark:bg-amber-950/20">
+					<CardHeader className="pb-3">
+						<div className="flex items-center gap-2">
+							<IconExclamationCircle className="size-5 text-amber-600 dark:text-amber-400" />
+							<CardTitle className="text-base">Push Notifications Blocked</CardTitle>
+						</div>
+						<CardDescription>
+							Push notifications are blocked by your browser. To enable them, you need to update
+							your browser settings.
+						</CardDescription>
+					</CardHeader>
+					<CardContent>
+						<p className="text-sm text-muted-foreground">
+							Click the lock icon in your browser's address bar and allow notifications for this
+							site, then refresh the page.
+						</p>
 					</CardContent>
 				</Card>
 			)}
@@ -251,6 +273,15 @@ export function NotificationSettings() {
 					</Badge>
 				</div>
 			)}
+
+			{/* Push permission modal */}
+			<PushPermissionModal
+				open={showPermissionModal}
+				onOpenChange={setShowPermissionModal}
+				onEnable={handleRequestPermission}
+				onDismiss={() => setShowPermissionModal(false)}
+				isLoading={isPushLoading}
+			/>
 
 			{/* Channel legend */}
 			<div className="flex flex-wrap gap-4 text-sm text-muted-foreground">

@@ -1,5 +1,8 @@
+import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
+import { db } from "@/db";
+import { employee } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import {
 	deleteNotification,
@@ -20,10 +23,17 @@ export async function GET(request: NextRequest) {
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 		}
 
-		const organizationId = session.session.activeOrganizationId;
-		if (!organizationId) {
-			return NextResponse.json({ error: "No active organization" }, { status: 400 });
+		// Get organization from employee record (more reliable than session cache)
+		const [emp] = await db
+			.select({ organizationId: employee.organizationId })
+			.from(employee)
+			.where(and(eq(employee.userId, session.user.id), eq(employee.isActive, true)))
+			.limit(1);
+
+		if (!emp) {
+			return NextResponse.json({ error: "No active employee record" }, { status: 400 });
 		}
+		const organizationId = emp.organizationId;
 
 		const searchParams = request.nextUrl.searchParams;
 		const limit = parseInt(searchParams.get("limit") || "20", 10);
@@ -65,10 +75,17 @@ export async function PATCH(request: NextRequest) {
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 		}
 
-		const organizationId = session.session.activeOrganizationId;
-		if (!organizationId) {
-			return NextResponse.json({ error: "No active organization" }, { status: 400 });
+		// Get organization from employee record (more reliable than session cache)
+		const [emp] = await db
+			.select({ organizationId: employee.organizationId })
+			.from(employee)
+			.where(and(eq(employee.userId, session.user.id), eq(employee.isActive, true)))
+			.limit(1);
+
+		if (!emp) {
+			return NextResponse.json({ error: "No active employee record" }, { status: 400 });
 		}
+		const organizationId = emp.organizationId;
 
 		const body = await request.json();
 

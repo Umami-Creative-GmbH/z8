@@ -1,5 +1,8 @@
+import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
+import { db } from "@/db";
+import { employee } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { getUnreadCount } from "@/lib/notifications/notification-service";
 
@@ -14,12 +17,18 @@ export async function GET() {
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 		}
 
-		const organizationId = session.session.activeOrganizationId;
-		if (!organizationId) {
-			return NextResponse.json({ error: "No active organization" }, { status: 400 });
+		// Get organization from employee record (more reliable than session cache)
+		const [emp] = await db
+			.select({ organizationId: employee.organizationId })
+			.from(employee)
+			.where(and(eq(employee.userId, session.user.id), eq(employee.isActive, true)))
+			.limit(1);
+
+		if (!emp) {
+			return NextResponse.json({ error: "No active employee record" }, { status: 400 });
 		}
 
-		const count = await getUnreadCount(session.user.id, organizationId);
+		const count = await getUnreadCount(session.user.id, emp.organizationId);
 
 		return NextResponse.json({ count });
 	} catch (error) {
