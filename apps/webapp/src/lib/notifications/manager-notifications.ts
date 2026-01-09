@@ -5,8 +5,8 @@
  */
 
 import { render } from "@react-email/components";
-import { ManagerAssignedEmail } from "@/lib/email/templates/manager-assigned";
 import { sendEmail } from "@/lib/email/email-service";
+import { ManagerAssignedEmail } from "@/lib/email/templates/manager-assigned";
 import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("ManagerNotifications");
@@ -78,10 +78,7 @@ export async function sendManagerAssignedNotification(
 			"Manager assignment notifications sent successfully",
 		);
 	} catch (error) {
-		logger.error(
-			{ error, params },
-			"Failed to send manager assignment notification",
-		);
+		logger.error({ error, params }, "Failed to send manager assignment notification");
 		// Don't throw - notifications are non-critical
 	}
 }
@@ -118,10 +115,7 @@ export async function sendManagerRemovedNotification(
 						<p>Your current managers are:</p>
 						<ul>
 							${params.remainingManagers
-								.map(
-									(m) =>
-										`<li>${m.name}${m.isPrimary ? " <strong>(Primary)</strong>" : ""}</li>`,
-								)
+								.map((m) => `<li>${m.name}${m.isPrimary ? " <strong>(Primary)</strong>" : ""}</li>`)
 								.join("")}
 						</ul>
 					`
@@ -182,10 +176,7 @@ export async function sendManagerRemovedNotification(
 			"Manager removal notifications sent successfully",
 		);
 	} catch (error) {
-		logger.error(
-			{ error, params },
-			"Failed to send manager removal notification",
-		);
+		logger.error({ error, params }, "Failed to send manager removal notification");
 		// Don't throw - notifications are non-critical
 	}
 }
