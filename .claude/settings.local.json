@@ -62,7 +62,22 @@
       "mcp__plugin_context7_context7__resolve-library-id",
       "mcp__plugin_context7_context7__query-docs",
       "Bash(bun test:*)",
-      "Bash(X:)"
+      "Bash(X:)",
+      "Bash(pnpm biome check:*)",
+      "Bash(node -e:*)",
+      "Bash(bun x biome:*)",
+      "Bash(bun x @biomejs/biome check:*)",
+      "Bash(git diff:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git status:*)",
+      "WebFetch(domain:www.npmjs.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:commenthol.github.io)",
+      "WebFetch(domain:bprogress.vercel.app)",
+      "WebFetch(domain:ui.shadcn.com)",
+      "WebFetch(domain:tus.io)",
+      "Bash(head:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

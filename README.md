@@ -76,3 +76,15 @@ Generate auth secret:
 ```bash
 bunx @better-auth/cli@latest secret
 ```
+
+Generate VAPID keys for push notifications:
+```bash
+bunx web-push generate-vapid-keys
+```
+
+Then add to your environment variables:
+```env
+VAPID_PUBLIC_KEY=<generated-public-key>
+VAPID_PRIVATE_KEY=<generated-private-key>
+VAPID_SUBJECT=mailto:support@yourdomain.com
+```
