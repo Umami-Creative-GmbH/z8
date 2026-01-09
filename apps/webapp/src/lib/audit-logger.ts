@@ -2,10 +2,12 @@
  * Audit Logger
  *
  * Centralized audit logging for tracking important actions in the system.
- * Logs are structured and can be sent to external logging services.
+ * Logs are structured, persisted to database, and can be sent to external logging services.
  */
 
 import { createLogger } from "@/lib/logger";
+import { db } from "@/db";
+import { auditLog } from "@/db/schema";
 
 const logger = createLogger("AuditLog");
 
@@ -40,34 +42,187 @@ export enum AuditAction {
 	ORGANIZATION_CREATED = "organization.created",
 	INVITATION_SENT = "invitation.sent",
 	INVITATION_ACCEPTED = "invitation.accepted",
+
+	// Time Entry Operations
+	TIME_ENTRY_CREATED = "time_entry.created",
+	TIME_ENTRY_CORRECTED = "time_entry.corrected",
+	TIME_ENTRY_CHAIN_VERIFIED = "time_entry.chain_verified",
+
+	// Absence Operations
+	ABSENCE_REQUESTED = "absence.requested",
+	ABSENCE_APPROVED = "absence.approved",
+	ABSENCE_REJECTED = "absence.rejected",
+	ABSENCE_CANCELLED = "absence.cancelled",
+
+	// Approval Operations
+	APPROVAL_SUBMITTED = "approval.submitted",
+	APPROVAL_APPROVED = "approval.approved",
+	APPROVAL_REJECTED = "approval.rejected",
+
+	// Vacation Operations
+	VACATION_CARRYOVER_APPLIED = "vacation.carryover_applied",
+	VACATION_CARRYOVER_EXPIRED = "vacation.carryover_expired",
+	VACATION_ALLOWANCE_UPDATED = "vacation.allowance_updated",
+
+	// Authentication Operations
+	LOGIN_SUCCESS = "auth.login_success",
+	LOGIN_FAILED = "auth.login_failed",
+	LOGOUT = "auth.logout",
+	PASSWORD_CHANGED = "auth.password_changed",
+	TWO_FACTOR_ENABLED = "auth.two_factor_enabled",
+	TWO_FACTOR_DISABLED = "auth.two_factor_disabled",
 }
 
 export interface AuditLogEntry {
 	action: AuditAction;
-	actorId: string;
+	actorId: string; // User ID of who performed the action
 	actorEmail?: string;
-	targetId?: string;
-	targetType?: "employee" | "team" | "organization" | "permission" | "schedule";
+	employeeId?: string; // Employee ID if action is on behalf of an employee
+	targetId?: string; // Entity ID being affected
+	targetType?: "employee" | "team" | "organization" | "permission" | "schedule" | "time_entry" | "absence" | "approval" | "vacation";
 	organizationId: string;
-	metadata?: Record<string, any>;
+	metadata?: Record<string, unknown>;
+	changes?: Record<string, unknown>; // Before/after changes for updates
 	timestamp: Date;
 	ipAddress?: string;
 	userAgent?: string;
 }
 
 /**
- * Log an audit event
+ * Configuration for external audit services
  */
-export function logAudit(entry: AuditLogEntry): void {
+export interface ExternalAuditConfig {
+	service: "datadog" | "splunk" | "webhook" | "none";
+	endpoint?: string;
+	apiKey?: string;
+}
+
+/**
+ * Get external audit service configuration from environment
+ */
+function getExternalAuditConfig(): ExternalAuditConfig {
+	const service = (process.env.AUDIT_SERVICE as ExternalAuditConfig["service"]) || "none";
+	return {
+		service,
+		endpoint: process.env.AUDIT_ENDPOINT,
+		apiKey: process.env.AUDIT_API_KEY,
+	};
+}
+
+/**
+ * Send audit log to external service (DataDog, Splunk, or custom webhook)
+ */
+async function sendToExternalService(entry: AuditLogEntry): Promise<void> {
+	const config = getExternalAuditConfig();
+
+	if (config.service === "none" || !config.endpoint) {
+		return;
+	}
+
+	try {
+		const payload = {
+			timestamp: entry.timestamp.toISOString(),
+			action: entry.action,
+			actor: {
+				userId: entry.actorId,
+				email: entry.actorEmail,
+			},
+			target: {
+				type: entry.targetType,
+				id: entry.targetId,
+			},
+			organizationId: entry.organizationId,
+			metadata: entry.metadata,
+			changes: entry.changes,
+			context: {
+				ipAddress: entry.ipAddress,
+				userAgent: entry.userAgent,
+			},
+		};
+
+		const headers: Record<string, string> = {
+			"Content-Type": "application/json",
+		};
+
+		// Add service-specific headers
+		if (config.service === "datadog" && config.apiKey) {
+			headers["DD-API-KEY"] = config.apiKey;
+		} else if (config.service === "splunk" && config.apiKey) {
+			headers["Authorization"] = `Splunk ${config.apiKey}`;
+		}
+
+		await fetch(config.endpoint, {
+			method: "POST",
+			headers,
+			body: JSON.stringify(payload),
+		});
+	} catch (error) {
+		// Log error but don't fail the operation
+		logger.error({ error, action: entry.action }, "Failed to send audit log to external service");
+	}
+}
+
+/**
+ * Log an audit event
+ *
+ * Persists to database and optionally sends to external audit service.
+ * Never throws - audit logging should not break the application.
+ */
+export async function logAudit(entry: AuditLogEntry): Promise<void> {
 	const logEntry = {
 		...entry,
 		timestamp: entry.timestamp.toISOString(),
 	};
 
+	// Always log to console/structured logger
 	logger.info(logEntry, `Audit: ${entry.action}`);
 
-	// TODO: Send to external audit logging service (e.g., DataDog, Splunk)
-	// await sendToAuditService(logEntry);
+	// Persist to database
+	try {
+		await db.insert(auditLog).values({
+			entityType: entry.targetType || "unknown",
+			entityId: entry.targetId || "00000000-0000-0000-0000-000000000000", // Fallback UUID for non-entity actions
+			action: entry.action,
+			performedBy: entry.actorId,
+			employeeId: entry.employeeId,
+			changes: entry.changes ? JSON.stringify(entry.changes) : null,
+			metadata: JSON.stringify({
+				actorEmail: entry.actorEmail,
+				organizationId: entry.organizationId,
+				...entry.metadata,
+			}),
+			ipAddress: entry.ipAddress,
+			userAgent: entry.userAgent,
+			timestamp: entry.timestamp,
+		});
+	} catch (error) {
+		// Log error but don't fail the operation - audit logging should not break the app
+		logger.error({ error, action: entry.action }, "Failed to persist audit log to database");
+	}
+
+	// Send to external service (async, fire-and-forget)
+	sendToExternalService(entry).catch(() => {
+		// Already logged in sendToExternalService
+	});
+}
+
+/**
+ * Synchronous version of logAudit for backwards compatibility
+ * Deprecated: Use logAudit (async) instead
+ */
+export function logAuditSync(entry: AuditLogEntry): void {
+	// Fire and forget - don't await
+	logAudit(entry).catch((error) => {
+		logger.error({ error }, "Failed to log audit entry");
+	});
+}
+
+/**
+ * Common parameters for audit context (IP, User-Agent)
+ */
+export interface AuditContext {
+	ipAddress?: string;
+	userAgent?: string;
 }
 
 /**
@@ -82,8 +237,8 @@ export function logManagerAssignment(params: {
 	assignedBy: string;
 	assignedByEmail: string;
 	organizationId: string;
-}): void {
-	logAudit({
+} & AuditContext): Promise<void> {
+	return logAudit({
 		action: AuditAction.MANAGER_ASSIGNED,
 		actorId: params.assignedBy,
 		actorEmail: params.assignedByEmail,
@@ -97,6 +252,8 @@ export function logManagerAssignment(params: {
 			isPrimary: params.isPrimary,
 		},
 		timestamp: new Date(),
+		ipAddress: params.ipAddress,
+		userAgent: params.userAgent,
 	});
 }
 
@@ -111,8 +268,8 @@ export function logManagerRemoval(params: {
 	removedBy: string;
 	removedByEmail: string;
 	organizationId: string;
-}): void {
-	logAudit({
+} & AuditContext): Promise<void> {
+	return logAudit({
 		action: AuditAction.MANAGER_REMOVED,
 		actorId: params.removedBy,
 		actorEmail: params.removedByEmail,
@@ -125,6 +282,8 @@ export function logManagerRemoval(params: {
 			managerName: params.managerName,
 		},
 		timestamp: new Date(),
+		ipAddress: params.ipAddress,
+		userAgent: params.userAgent,
 	});
 }
 
@@ -141,8 +300,8 @@ export function logPermissionGrant(params: {
 	grantedBy: string;
 	grantedByEmail: string;
 	organizationId: string;
-}): void {
-	logAudit({
+} & AuditContext): Promise<void> {
+	return logAudit({
 		action: AuditAction.PERMISSION_GRANTED,
 		actorId: params.grantedBy,
 		actorEmail: params.grantedByEmail,
@@ -157,6 +316,8 @@ export function logPermissionGrant(params: {
 			teamName: params.teamName,
 		},
 		timestamp: new Date(),
+		ipAddress: params.ipAddress,
+		userAgent: params.userAgent,
 	});
 }
 
@@ -172,8 +333,8 @@ export function logPermissionRevocation(params: {
 	revokedBy: string;
 	revokedByEmail: string;
 	organizationId: string;
-}): void {
-	logAudit({
+} & AuditContext): Promise<void> {
+	return logAudit({
 		action: AuditAction.PERMISSION_REVOKED,
 		actorId: params.revokedBy,
 		actorEmail: params.revokedByEmail,
@@ -187,6 +348,8 @@ export function logPermissionRevocation(params: {
 			teamName: params.teamName,
 		},
 		timestamp: new Date(),
+		ipAddress: params.ipAddress,
+		userAgent: params.userAgent,
 	});
 }
 
@@ -203,8 +366,8 @@ export function logScheduleChange(params: {
 	createdBy: string;
 	createdByEmail: string;
 	organizationId: string;
-}): void {
-	logAudit({
+} & AuditContext): Promise<void> {
+	return logAudit({
 		action: AuditAction.SCHEDULE_CREATED,
 		actorId: params.createdBy,
 		actorEmail: params.createdByEmail,
@@ -219,6 +382,8 @@ export function logScheduleChange(params: {
 			effectiveFrom: params.effectiveFrom.toISOString(),
 		},
 		timestamp: new Date(),
+		ipAddress: params.ipAddress,
+		userAgent: params.userAgent,
 	});
 }
 
@@ -231,8 +396,8 @@ export function logTeamCreation(params: {
 	createdBy: string;
 	createdByEmail: string;
 	organizationId: string;
-}): void {
-	logAudit({
+} & AuditContext): Promise<void> {
+	return logAudit({
 		action: AuditAction.TEAM_CREATED,
 		actorId: params.createdBy,
 		actorEmail: params.createdByEmail,
@@ -243,6 +408,8 @@ export function logTeamCreation(params: {
 			teamName: params.teamName,
 		},
 		timestamp: new Date(),
+		ipAddress: params.ipAddress,
+		userAgent: params.userAgent,
 	});
 }
 
@@ -257,8 +424,8 @@ export function logTeamMemberAddition(params: {
 	addedBy: string;
 	addedByEmail: string;
 	organizationId: string;
-}): void {
-	logAudit({
+} & AuditContext): Promise<void> {
+	return logAudit({
 		action: AuditAction.TEAM_MEMBER_ADDED,
 		actorId: params.addedBy,
 		actorEmail: params.addedByEmail,
@@ -271,6 +438,8 @@ export function logTeamMemberAddition(params: {
 			employeeName: params.employeeName,
 		},
 		timestamp: new Date(),
+		ipAddress: params.ipAddress,
+		userAgent: params.userAgent,
 	});
 }
 
@@ -287,8 +456,8 @@ export function logEmployeeCreation(params: {
 	createdBy: string;
 	createdByEmail: string;
 	organizationId: string;
-}): void {
-	logAudit({
+} & AuditContext): Promise<void> {
+	return logAudit({
 		action: AuditAction.EMPLOYEE_CREATED,
 		actorId: params.createdBy,
 		actorEmail: params.createdByEmail,
@@ -303,5 +472,7 @@ export function logEmployeeCreation(params: {
 			teamName: params.teamName,
 		},
 		timestamp: new Date(),
+		ipAddress: params.ipAddress,
+		userAgent: params.userAgent,
 	});
 }
