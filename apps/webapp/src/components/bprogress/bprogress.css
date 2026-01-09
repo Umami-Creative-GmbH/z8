@@ -1,0 +1,15 @@
+/** biome-ignore-all lint/correctness/noInvalidPositionAtImportRule: biome tailwind 4 */
+@reference "../../app/globals.css";
+@import "@bprogress/core/css";
+
+.bprogress {
+	@apply pointer-events-none;
+}
+.bprogress .bar {
+	@apply bg-primary;
+}
+
+/* Fancy blur effect */
+.bprogress .peg {
+	@apply absolute right-0 block h-full w-24 translate-x-0 -translate-y-1 rotate-3 opacity-100 shadow-[0_0_10px_oklch(var(--primary)),0_0_5px_oklch(var(--primary))];
+}
