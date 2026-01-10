@@ -11,7 +11,6 @@ import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { CreateOrganizationDialog } from "@/components/organization/create-organization-dialog";
-import { useRouter } from "@/navigation";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -27,6 +26,7 @@ import {
 	useSidebar,
 } from "@/components/ui/sidebar";
 import type { UserOrganization } from "@/lib/auth-helpers";
+import { useRouter } from "@/navigation";
 
 interface OrganizationSwitcherProps {
 	organizations: UserOrganization[];

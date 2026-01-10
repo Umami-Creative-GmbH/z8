@@ -5,7 +5,6 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import { deleteTeam } from "@/app/[locale]/(app)/settings/teams/actions";
-import { queryKeys } from "@/lib/query";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -19,6 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { team } from "@/db/schema";
+import { queryKeys } from "@/lib/query";
 import { CreateTeamDialog } from "./create-team-dialog";
 import { EditTeamDialog } from "./edit-team-dialog";
 import type { MemberWithUserAndEmployee, TeamPermissions } from "./organizations-page-client";
@@ -32,7 +32,12 @@ interface TeamsTabProps {
 	organizationId: string;
 }
 
-export function TeamsTab({ teams: initialTeams, members, permissions, organizationId }: TeamsTabProps) {
+export function TeamsTab({
+	teams: initialTeams,
+	members,
+	permissions,
+	organizationId,
+}: TeamsTabProps) {
 	const queryClient = useQueryClient();
 	const [teams, setTeams] = useState(initialTeams);
 

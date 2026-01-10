@@ -5,7 +5,6 @@ import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import { createTeam } from "@/app/[locale]/(app)/settings/teams/actions";
-import type { team } from "@/db/schema";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -18,6 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import type { team } from "@/db/schema";
 
 interface CreateTeamDialogProps {
 	organizationId: string;
@@ -26,7 +26,12 @@ interface CreateTeamDialogProps {
 	onSuccess?: (team: typeof team.$inferSelect) => void;
 }
 
-export function CreateTeamDialog({ organizationId, open, onOpenChange, onSuccess }: CreateTeamDialogProps) {
+export function CreateTeamDialog({
+	organizationId,
+	open,
+	onOpenChange,
+	onSuccess,
+}: CreateTeamDialogProps) {
 	const [formData, setFormData] = useState({
 		name: "",
 		description: "",

@@ -77,10 +77,7 @@ export function OrganizationDetailsCard({
 							/>
 							<div className="relative h-16 w-16">
 								<Avatar className="h-16 w-16">
-									<AvatarImage
-										src={previewUrl || logoUrl || undefined}
-										alt={organization.name}
-									/>
+									<AvatarImage src={previewUrl || logoUrl || undefined} alt={organization.name} />
 									<AvatarFallback className="bg-primary/10">
 										<IconBuilding className="h-8 w-8 text-primary" />
 									</AvatarFallback>

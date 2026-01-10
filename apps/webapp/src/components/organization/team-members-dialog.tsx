@@ -5,7 +5,6 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import { addTeamMember, removeTeamMember } from "@/app/[locale]/(app)/settings/teams/actions";
-import { queryKeys } from "@/lib/query";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,6 +24,7 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import type { team } from "@/db/schema";
+import { queryKeys } from "@/lib/query";
 import type { MemberWithUserAndEmployee } from "./organizations-page-client";
 
 interface TeamMembersDialogProps {
