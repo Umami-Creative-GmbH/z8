@@ -1,17 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
 import {
 	type ColumnDef,
 	type ColumnFiltersState,
-	type SortingState,
 	flexRender,
 	getCoreRowModel,
 	getFilteredRowModel,
 	getSortedRowModel,
+	type SortingState,
 	useReactTable,
 } from "@tanstack/react-table";
 import { ArrowUpDown, ExternalLink, Search } from "lucide-react";
+import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -176,38 +176,38 @@ export function LicenseTable({ licenses }: LicenseTableProps) {
 			{/* Scrollable table section */}
 			<div className="min-h-0 flex-1 overflow-hidden rounded-lg border [&_[data-slot=table-container]]:h-full [&_[data-slot=table-container]]:overflow-y-auto">
 				<Table>
-						<TableHeader>
-							{table.getHeaderGroups().map((headerGroup) => (
-								<TableRow key={headerGroup.id}>
-									{headerGroup.headers.map((header) => (
-										<TableHead key={header.id} className="sticky top-0 z-10 bg-muted py-2">
-											{header.isPlaceholder
-												? null
-												: flexRender(header.column.columnDef.header, header.getContext())}
-										</TableHead>
+					<TableHeader>
+						{table.getHeaderGroups().map((headerGroup) => (
+							<TableRow key={headerGroup.id}>
+								{headerGroup.headers.map((header) => (
+									<TableHead key={header.id} className="sticky top-0 z-10 bg-muted py-2">
+										{header.isPlaceholder
+											? null
+											: flexRender(header.column.columnDef.header, header.getContext())}
+									</TableHead>
+								))}
+							</TableRow>
+						))}
+					</TableHeader>
+					<TableBody>
+						{table.getRowModel().rows?.length ? (
+							table.getRowModel().rows.map((row) => (
+								<TableRow key={row.id}>
+									{row.getVisibleCells().map((cell) => (
+										<TableCell key={cell.id}>
+											{flexRender(cell.column.columnDef.cell, cell.getContext())}
+										</TableCell>
 									))}
 								</TableRow>
-							))}
-						</TableHeader>
-						<TableBody>
-							{table.getRowModel().rows?.length ? (
-								table.getRowModel().rows.map((row) => (
-									<TableRow key={row.id}>
-										{row.getVisibleCells().map((cell) => (
-											<TableCell key={cell.id}>
-												{flexRender(cell.column.columnDef.cell, cell.getContext())}
-											</TableCell>
-										))}
-									</TableRow>
-								))
-							) : (
-								<TableRow>
-									<TableCell className="h-24 text-center" colSpan={columns.length}>
-										No packages found.
-									</TableCell>
-								</TableRow>
-							)}
-						</TableBody>
+							))
+						) : (
+							<TableRow>
+								<TableCell className="h-24 text-center" colSpan={columns.length}>
+									No packages found.
+								</TableCell>
+							</TableRow>
+						)}
+					</TableBody>
 				</Table>
 			</div>
 

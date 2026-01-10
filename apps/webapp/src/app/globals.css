@@ -130,3 +130,55 @@
 	@apply !bottom-16;
 }
 
+/* Schedule-X Calendar Customizations - must be in @layer components to override theme */
+@layer components {
+	/* Hide Schedule-X's built-in header and view selection - we use custom controls */
+	.sx__calendar-header {
+		display: none !important;
+	}
+
+	.sx__view-selection {
+		display: none !important;
+	}
+
+	/* Calendar container must constrain its children */
+	.sx-react-calendar-wrapper {
+		position: relative !important;
+		height: 100% !important;
+		max-height: 100% !important;
+	}
+
+	.sx__calendar-wrapper {
+		position: absolute !important;
+		inset: 0 !important;
+		height: auto !important;
+		display: flex !important;
+		flex-direction: column !important;
+	}
+
+	.sx__calendar {
+		flex: 1 !important;
+		min-height: 0 !important;
+		display: flex !important;
+		flex-direction: column !important;
+		overflow: hidden !important;
+	}
+
+	/* The view container should fill available space and scroll internally */
+	.sx__view-container {
+		flex: 1 !important;
+		min-height: 0 !important;
+		overflow: hidden !important;
+	}
+
+	.sx__week-wrapper,
+	.sx__time-grid-wrapper {
+		height: 100% !important;
+		overflow-y: auto !important;
+	}
+
+	.sx__month-grid-wrapper {
+		height: 100% !important;
+		overflow-y: auto !important;
+	}
+}

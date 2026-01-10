@@ -6,8 +6,7 @@ import { useState } from "react";
 import { CreateOrganizationDialog } from "@/components/organization/create-organization-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Link } from "@/navigation";
-import { useRouter } from "@/navigation";
+import { Link, useRouter } from "@/navigation";
 
 interface NoOrganizationErrorProps {
 	className?: string;
@@ -46,15 +45,15 @@ export function NoOrganizationError({ className }: NoOrganizationErrorProps) {
 							<span className="w-full border-t" />
 						</div>
 						<div className="relative flex justify-center text-xs uppercase">
-							<span className="bg-card px-2 text-muted-foreground">
-								{t("common.or", "Or")}
-							</span>
+							<span className="bg-card px-2 text-muted-foreground">{t("common.or", "Or")}</span>
 						</div>
 					</div>
 
 					<div className="rounded-lg border border-dashed p-4 text-center">
 						<IconInbox className="mx-auto mb-2 size-8 text-muted-foreground" />
-						<p className="mb-1 font-medium">{t("errors.noOrganization.waiting", "Waiting for an invitation?")}</p>
+						<p className="mb-1 font-medium">
+							{t("errors.noOrganization.waiting", "Waiting for an invitation?")}
+						</p>
 						<p className="text-sm text-muted-foreground">
 							{t(
 								"errors.noOrganization.waitingDesc",

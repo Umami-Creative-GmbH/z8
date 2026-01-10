@@ -25,7 +25,9 @@ export function NoEmployeeError({
 
 	const handleContactAdmin = () => {
 		// Open mailto link for contacting support/admin
-		const subject = encodeURIComponent(t("errors.noEmployee.emailSubject", "Employee Profile Setup Required"));
+		const subject = encodeURIComponent(
+			t("errors.noEmployee.emailSubject", "Employee Profile Setup Required"),
+		);
 		const body = encodeURIComponent(
 			t(
 				"errors.noEmployee.emailBody",

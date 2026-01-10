@@ -32,11 +32,7 @@ export default async function LicensesPage({ params }: Props) {
 
 	return (
 		<div className="flex h-full flex-col overflow-hidden">
-			<InfoHeader
-				locale={locale}
-				titleDefault="Open Source Licenses"
-				titleKey="info.licenses"
-			/>
+			<InfoHeader locale={locale} titleDefault="Open Source Licenses" titleKey="info.licenses" />
 			<div className="min-h-0 flex-1 p-4">
 				{licenses ? (
 					<LicenseTable licenses={licenses} />

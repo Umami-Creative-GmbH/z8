@@ -163,9 +163,15 @@ const getQuotes = (t: (key: string, defaultValue: string) => string) => [
 	},
 ];
 
-export default function QuoteBox() {
+interface QuoteBoxProps {
+	enabled?: boolean;
+	customQuotes?: Array<{ quote: string; author: string }> | null;
+}
+
+export default function QuoteBox({ enabled = true, customQuotes }: QuoteBoxProps) {
 	const { t } = useTranslate();
-	const quotes = getQuotes(t);
+	const defaultQuotes = getQuotes(t);
+	const quotes = customQuotes && customQuotes.length > 0 ? customQuotes : defaultQuotes;
 	const [mounted, setMounted] = useState(false);
 	const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -182,12 +188,17 @@ export default function QuoteBox() {
 		return () => clearInterval(interval);
 	}, [quotes.length]);
 
+	// Don't render if quotes are disabled
+	if (!enabled) {
+		return null;
+	}
+
 	// Don't render until mounted to prevent hydration mismatch
 	if (!mounted) {
 		return (
-			<div className="absolute right-1 bottom-1 flex max-w-1/2 flex-col items-end rounded-md bg-card/40 p-2 text-muted-foreground text-xs opacity-50 backdrop-blur-xs">
+			<div className="absolute right-1 bottom-1 flex max-w-1/2 flex-col items-end rounded-md bg-card/80 p-2 text-card-foreground text-xs backdrop-blur-sm">
 				<p className="text-justify font-semibold">„{quotes[0].quote}"</p>
-				<p className="text-gray-500 italic">- {quotes[0].author}</p>
+				<p className="opacity-70 italic">- {quotes[0].author}</p>
 			</div>
 		);
 	}
@@ -196,14 +207,14 @@ export default function QuoteBox() {
 		<AnimatePresence mode="wait">
 			<motion.div
 				animate={{ opacity: 1 }}
-				className="absolute right-1 bottom-1 flex max-w-1/2 flex-col items-end rounded-md bg-card/40 p-2 text-muted-foreground text-xs opacity-50 backdrop-blur-xs"
+				className="absolute right-1 bottom-1 flex max-w-1/2 flex-col items-end rounded-md bg-card/80 p-2 text-card-foreground text-xs backdrop-blur-sm"
 				exit={{ opacity: 0 }}
 				initial={{ opacity: 0 }}
 				key={currentIndex}
 				transition={{ duration: 0.8 }}
 			>
 				<p className="text-justify font-semibold">„{quotes[currentIndex].quote}"</p>
-				<p className="text-gray-500 italic">- {quotes[currentIndex].author}</p>
+				<p className="opacity-70 italic">- {quotes[currentIndex].author}</p>
 			</motion.div>
 		</AnimatePresence>
 	);

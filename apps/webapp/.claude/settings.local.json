@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find:*)",
+      "Bash(bun run tsc:*)",
+      "Bash(bun add:*)",
+      "WebFetch(domain:github.com)",
+      "mcp__better-auth__search",
+      "Bash(bunx tsc:*)"
+    ]
+  },
+  "enabledMcpjsonServers": [
+    "shadcn",
+    "next-devtools",
+    "better-auth"
+  ]
+}

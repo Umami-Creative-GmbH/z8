@@ -124,7 +124,12 @@ export default async function LocaleLayout({ children, params }: Props) {
 				</Suspense>
 			</head>
 			<body>
-				<ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+				<ThemeProvider
+					attribute="class"
+					defaultTheme="system"
+					enableSystem
+					disableTransitionOnChange
+				>
 					<Suspense
 						fallback={
 							<div
