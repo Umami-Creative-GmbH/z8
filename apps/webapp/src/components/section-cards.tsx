@@ -1,13 +1,13 @@
 "use client";
 
+import { BirthdayRemindersWidget } from "@/components/dashboard/birthday-reminders-widget";
 import { ManagedEmployeesWidget } from "@/components/dashboard/managed-employees-widget";
 import { PendingApprovalsWidget } from "@/components/dashboard/pending-approvals-widget";
-import { TeamOverviewWidget } from "@/components/dashboard/team-overview-widget";
-import { UpcomingTimeOffWidget } from "@/components/dashboard/upcoming-time-off-widget";
 import { QuickStatsWidget } from "@/components/dashboard/quick-stats-widget";
 import { RecentlyApprovedWidget } from "@/components/dashboard/recently-approved-widget";
-import { BirthdayRemindersWidget } from "@/components/dashboard/birthday-reminders-widget";
 import { TeamCalendarWidget } from "@/components/dashboard/team-calendar-widget";
+import { TeamOverviewWidget } from "@/components/dashboard/team-overview-widget";
+import { UpcomingTimeOffWidget } from "@/components/dashboard/upcoming-time-off-widget";
 
 export function SectionCards() {
 	return (

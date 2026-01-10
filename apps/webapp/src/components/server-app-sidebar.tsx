@@ -18,6 +18,7 @@ export async function ServerAppSidebar(props: React.ComponentProps<typeof AppSid
 			organizations={organizations}
 			currentOrganization={currentOrganization}
 			employeeRole={authContext?.employee?.role ?? null}
+			shiftsEnabled={currentOrganization?.shiftsEnabled ?? false}
 		/>
 	);
 }

@@ -2,6 +2,7 @@
 
 import {
 	IconBeach,
+	IconCalendar,
 	IconCalendarEvent,
 	IconClipboardCheck,
 	IconClock,
@@ -18,12 +19,7 @@ import { NavSecondary } from "@/components/nav-secondary";
 import { NavTeam } from "@/components/nav-team";
 import { NavUser } from "@/components/nav-user";
 import { OrganizationSwitcher } from "@/components/organization-switcher";
-import {
-	Sidebar,
-	SidebarContent,
-	SidebarFooter,
-	SidebarHeader,
-} from "@/components/ui/sidebar";
+import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader } from "@/components/ui/sidebar";
 import { useSession } from "@/lib/auth-client";
 import type { UserOrganization } from "@/lib/auth-helpers";
 
@@ -31,11 +27,10 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
 	organizations?: UserOrganization[];
 	currentOrganization?: UserOrganization | null;
 	employeeRole?: "admin" | "manager" | "employee" | null;
+	shiftsEnabled?: boolean;
 }
 
-const isManagerOrAbove = (
-	role: "admin" | "manager" | "employee" | null | undefined,
-): boolean => {
+const isManagerOrAbove = (role: "admin" | "manager" | "employee" | null | undefined): boolean => {
 	return role === "admin" || role === "manager";
 };
 
@@ -43,6 +38,7 @@ export function AppSidebar({
 	organizations = [],
 	currentOrganization = null,
 	employeeRole = null,
+	shiftsEnabled = false,
 	...props
 }: AppSidebarProps) {
 	const { t } = useTranslate();
@@ -84,6 +80,16 @@ export function AppSidebar({
 			url: "/team",
 			icon: IconUsers,
 		},
+		// Only show Scheduling when shifts are enabled for the organization
+		...(shiftsEnabled
+			? [
+					{
+						title: t("nav.scheduling", "Scheduling"),
+						url: "/scheduling",
+						icon: IconCalendar,
+					},
+				]
+			: []),
 		{
 			title: t("nav.approvals", "Approvals"),
 			url: "/approvals",

@@ -3,13 +3,13 @@
 import { and, eq, gte, inArray, isNull, lte, or, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
+import { user } from "@/db/auth-schema";
 import {
 	absenceCategory,
 	absenceEntry,
 	approvalRequest,
 	employee,
 	team,
-	user,
 	workPeriod,
 } from "@/db/schema";
 import { getEnhancedVacationBalance } from "@/lib/absences/vacation.service";
@@ -364,9 +364,13 @@ export async function getQuickStats(): Promise<ServerActionResult<any>> {
 				return await dbService.db.query.employee.findFirst({
 					where: eq(employee.userId, session.user.id),
 					with: {
-						workSchedules: {
-							orderBy: (schedule, { desc }) => [desc(schedule.effectiveFrom)],
+						workScheduleAssignments: {
+							where: (assignment, { eq }) => eq(assignment.isActive, true),
+							orderBy: (assignment, { desc }) => [desc(assignment.effectiveFrom)],
 							limit: 1,
+							with: {
+								template: true,
+							},
 						},
 					},
 				});
@@ -435,10 +439,21 @@ export async function getQuickStats(): Promise<ServerActionResult<any>> {
 		let weekExpected = 40; // Default
 		let monthExpected = 160; // Default
 
-		if (currentEmployee.workSchedules && currentEmployee.workSchedules.length > 0) {
-			const schedule = currentEmployee.workSchedules[0];
-			if (schedule.scheduleType === "simple" && schedule.hoursPerWeek) {
-				weekExpected = Number.parseFloat(schedule.hoursPerWeek);
+		if (currentEmployee.workScheduleAssignments && currentEmployee.workScheduleAssignments.length > 0) {
+			const assignment = currentEmployee.workScheduleAssignments[0];
+			const template = assignment.template;
+			if (template && template.scheduleType === "simple" && template.hoursPerCycle) {
+				// Convert hoursPerCycle to weekly hours based on scheduleCycle
+				const hoursPerCycle = Number.parseFloat(template.hoursPerCycle);
+				if (template.scheduleCycle === "weekly") {
+					weekExpected = hoursPerCycle;
+				} else if (template.scheduleCycle === "biweekly") {
+					weekExpected = hoursPerCycle / 2;
+				} else if (template.scheduleCycle === "monthly") {
+					weekExpected = (hoursPerCycle * 12) / 52;
+				} else {
+					weekExpected = hoursPerCycle; // default to treating as weekly
+				}
 				// Estimate monthly hours based on weekly hours
 				const daysInMonth = DateTime.fromJSDate(monthEnd).diff(
 					DateTime.fromJSDate(monthStart),
@@ -635,26 +650,39 @@ export async function getTeamOverviewStats(): Promise<
 		// Calculate average work hours from work schedules
 		const avgWorkHoursResult = yield* _(
 			dbService.query("getAvgWorkHours", async () => {
-				// Get all employees with their latest work schedules
+				// Get all employees with their work schedule assignments (includes template)
 				const employeesWithSchedules = await dbService.db.query.employee.findMany({
 					where: eq(employee.organizationId, currentEmployee.organizationId),
 					with: {
-						workSchedules: {
-							orderBy: (schedule, { desc }) => [desc(schedule.effectiveFrom)],
+						workScheduleAssignments: {
+							where: (assignment, { eq }) => eq(assignment.isActive, true),
+							orderBy: (assignment, { desc }) => [desc(assignment.effectiveFrom)],
 							limit: 1,
+							with: {
+								template: true,
+							},
 						},
 					},
 				});
 
-				// Calculate average from simple schedules that have hoursPerWeek
+				// Calculate average from simple schedules that have hoursPerCycle
 				let totalHours = 0;
 				let countWithSchedule = 0;
 
 				for (const emp of employeesWithSchedules) {
-					if (emp.workSchedules && emp.workSchedules.length > 0) {
-						const schedule = emp.workSchedules[0];
-						if (schedule.scheduleType === "simple" && schedule.hoursPerWeek) {
-							totalHours += Number.parseFloat(schedule.hoursPerWeek);
+					if (emp.workScheduleAssignments && emp.workScheduleAssignments.length > 0) {
+						const assignment = emp.workScheduleAssignments[0];
+						const template = assignment.template;
+						if (template && template.scheduleType === "simple" && template.hoursPerCycle) {
+							// Convert hoursPerCycle to weekly hours based on scheduleCycle
+							const hoursPerCycle = Number.parseFloat(template.hoursPerCycle);
+							let weeklyHours = hoursPerCycle;
+							if (template.scheduleCycle === "biweekly") {
+								weeklyHours = hoursPerCycle / 2;
+							} else if (template.scheduleCycle === "monthly") {
+								weeklyHours = (hoursPerCycle * 12) / 52;
+							}
+							totalHours += weeklyHours;
 							countWithSchedule++;
 						}
 					}

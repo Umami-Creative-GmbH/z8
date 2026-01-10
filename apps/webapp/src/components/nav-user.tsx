@@ -248,19 +248,21 @@ export function NavUser({
 				</SidebarMenuItem>
 			</SidebarMenu>
 
-			{isLoggingOut && typeof document !== "undefined" ? (
-				console.log("Rendering logout overlay portal"),
-				createPortal(
-					<div className="fixed inset-0 z-[9999] flex items-center justify-center">
-						<div className="absolute inset-0 bg-black/20 backdrop-blur-md" />
-						<div className="relative flex flex-col items-center justify-center gap-4 rounded-lg border bg-card/95 px-12 py-8 shadow-2xl backdrop-blur-sm">
-							<IconLoader2 className="size-8 animate-spin text-primary" />
-							<span className="font-medium text-sm">{t("user.logging-out", "Logging out...")}</span>
-						</div>
-					</div>,
-					document.body,
-				)
-			) : null}
+			{isLoggingOut && typeof document !== "undefined"
+				? (console.log("Rendering logout overlay portal"),
+					createPortal(
+						<div className="fixed inset-0 z-[9999] flex items-center justify-center">
+							<div className="absolute inset-0 bg-black/20 backdrop-blur-md" />
+							<div className="relative flex flex-col items-center justify-center gap-4 rounded-lg border bg-card/95 px-12 py-8 shadow-2xl backdrop-blur-sm">
+								<IconLoader2 className="size-8 animate-spin text-primary" />
+								<span className="font-medium text-sm">
+									{t("user.logging-out", "Logging out...")}
+								</span>
+							</div>
+						</div>,
+						document.body,
+					))
+				: null}
 		</>
 	);
 }
