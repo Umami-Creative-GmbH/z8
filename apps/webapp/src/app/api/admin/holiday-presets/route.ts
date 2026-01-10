@@ -54,12 +54,19 @@ export async function GET(_request: NextRequest) {
 		const presetsWithCounts = await Promise.all(
 			presets.map(async (preset) => {
 				const [holidayCount] = await db
-					.select({ count: db.$count(holidayPresetHoliday, eq(holidayPresetHoliday.presetId, preset.id)) })
+					.select({
+						count: db.$count(holidayPresetHoliday, eq(holidayPresetHoliday.presetId, preset.id)),
+					})
 					.from(holidayPresetHoliday)
 					.where(eq(holidayPresetHoliday.presetId, preset.id));
 
 				const [assignmentCount] = await db
-					.select({ count: db.$count(holidayPresetAssignment, eq(holidayPresetAssignment.presetId, preset.id)) })
+					.select({
+						count: db.$count(
+							holidayPresetAssignment,
+							eq(holidayPresetAssignment.presetId, preset.id),
+						),
+					})
 					.from(holidayPresetAssignment)
 					.where(
 						and(

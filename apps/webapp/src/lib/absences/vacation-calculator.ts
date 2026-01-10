@@ -13,7 +13,7 @@ interface VacationAllowanceData {
 interface EmployeeAllowanceData {
 	customAnnualDays: string | null; // decimal from DB
 	customCarryoverDays: string | null; // decimal from DB
-	adjustmentDays: string; // decimal from DB
+	adjustmentDays: string | null; // decimal from DB
 }
 
 /**
@@ -39,7 +39,7 @@ export function calculateVacationBalance({
 	year: number;
 }): VacationBalance {
 	// Convert currentDate to DateTime if needed
-	const current = currentDate instanceof Date ? fromJSDate(currentDate, 'utc') : currentDate;
+	const current = currentDate instanceof Date ? fromJSDate(currentDate, "utc") : currentDate;
 
 	// 1. Calculate total annual days
 	let totalDays = employeeAllowance?.customAnnualDays
@@ -87,18 +87,27 @@ export function calculateVacationBalance({
 			const countsAgainstVacation = absence.category.countsAgainstVacation;
 
 			// Convert absence dates to DateTime for comparison
-			const absenceStart = absence.startDate instanceof Date ? fromJSDate(absence.startDate, 'utc') : absence.startDate as unknown as DateTime;
+			const absenceStart =
+				absence.startDate instanceof Date
+					? fromJSDate(absence.startDate, "utc")
+					: (absence.startDate as unknown as DateTime);
 			const inYear = absenceStart >= start && absenceStart <= end;
 
 			return isApproved && countsAgainstVacation && inYear;
 		})
 		.reduce((sum, absence) => {
 			// Convert to DateTime for precise calculation
-			const absenceStart = absence.startDate instanceof Date ? fromJSDate(absence.startDate, 'utc') : absence.startDate as unknown as DateTime;
-			const absenceEnd = absence.endDate instanceof Date ? fromJSDate(absence.endDate, 'utc') : absence.endDate as unknown as DateTime;
+			const absenceStart =
+				absence.startDate instanceof Date
+					? fromJSDate(absence.startDate, "utc")
+					: (absence.startDate as unknown as DateTime);
+			const absenceEnd =
+				absence.endDate instanceof Date
+					? fromJSDate(absence.endDate, "utc")
+					: (absence.endDate as unknown as DateTime);
 
 			// Calculate days as simple date difference
-			const days = Math.ceil(absenceEnd.diff(absenceStart, 'days').days) + 1;
+			const days = Math.ceil(absenceEnd.diff(absenceStart, "days").days) + 1;
 			return sum + days;
 		}, 0);
 
@@ -109,17 +118,26 @@ export function calculateVacationBalance({
 			const countsAgainstVacation = absence.category.countsAgainstVacation;
 
 			// Convert absence dates to DateTime for comparison
-			const absenceStart = absence.startDate instanceof Date ? fromJSDate(absence.startDate, 'utc') : absence.startDate as unknown as DateTime;
+			const absenceStart =
+				absence.startDate instanceof Date
+					? fromJSDate(absence.startDate, "utc")
+					: (absence.startDate as unknown as DateTime);
 			const inYear = absenceStart >= start && absenceStart <= end;
 
 			return isPending && countsAgainstVacation && inYear;
 		})
 		.reduce((sum, absence) => {
 			// Convert to DateTime for precise calculation
-			const absenceStart = absence.startDate instanceof Date ? fromJSDate(absence.startDate, 'utc') : absence.startDate as unknown as DateTime;
-			const absenceEnd = absence.endDate instanceof Date ? fromJSDate(absence.endDate, 'utc') : absence.endDate as unknown as DateTime;
+			const absenceStart =
+				absence.startDate instanceof Date
+					? fromJSDate(absence.startDate, "utc")
+					: (absence.startDate as unknown as DateTime);
+			const absenceEnd =
+				absence.endDate instanceof Date
+					? fromJSDate(absence.endDate, "utc")
+					: (absence.endDate as unknown as DateTime);
 
-			const days = Math.ceil(absenceEnd.diff(absenceStart, 'days').days) + 1;
+			const days = Math.ceil(absenceEnd.diff(absenceStart, "days").days) + 1;
 			return sum + days;
 		}, 0);
 
@@ -156,9 +174,13 @@ export function hasSufficientBalance(balance: VacationBalance, requestedDays: nu
  * @param year - Current year
  * @returns Prorated days
  */
-export function prorateAnnualDays(annualDays: number, startDate: Date | DateTime, year: number): number {
+export function prorateAnnualDays(
+	annualDays: number,
+	startDate: Date | DateTime,
+	year: number,
+): number {
 	// Convert to DateTime if needed
-	const start = startDate instanceof Date ? fromJSDate(startDate, 'utc') : startDate;
+	const start = startDate instanceof Date ? fromJSDate(startDate, "utc") : startDate;
 
 	const yearStart = DateTime.utc(year, 1, 1);
 	const yearEnd = DateTime.utc(year, 12, 31);
@@ -174,8 +196,8 @@ export function prorateAnnualDays(annualDays: number, startDate: Date | DateTime
 	}
 
 	// Calculate proportion of year remaining
-	const totalDays = yearEnd.diff(yearStart, 'days').days;
-	const remainingDays = yearEnd.diff(start, 'days').days;
+	const totalDays = yearEnd.diff(yearStart, "days").days;
+	const remainingDays = yearEnd.diff(start, "days").days;
 	const proportion = remainingDays / totalDays;
 
 	return Math.floor(annualDays * proportion);

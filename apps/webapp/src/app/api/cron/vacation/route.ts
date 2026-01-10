@@ -8,13 +8,13 @@
  * - Manual admin triggers
  */
 
-import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
+import { type NextRequest, NextResponse } from "next/server";
 import {
-	runVacationAutomation,
 	runAnnualCarryover,
 	runCarryoverExpiry,
 	runMonthlyAccrual,
+	runVacationAutomation,
 } from "@/lib/jobs/carryover-automation";
 import { createLogger } from "@/lib/logger";
 
@@ -93,7 +93,7 @@ export async function GET(request: NextRequest) {
 							organizationsProcessed: results.expiry.organizationsProcessed,
 							employeesAffected: results.expiry.results.reduce(
 								(sum, r) => sum + (r.expiry?.employeesAffected || 0),
-								0
+								0,
 							),
 						}
 					: null,
@@ -117,7 +117,7 @@ export async function GET(request: NextRequest) {
 				error: errorMessage,
 				timestamp: new Date().toISOString(),
 			},
-			{ status: 500 }
+			{ status: 500 },
 		);
 	}
 }
@@ -164,7 +164,7 @@ export async function POST(request: NextRequest) {
 			default:
 				return NextResponse.json(
 					{ error: "Invalid job type. Use: carryover, expiry, accrual, or all" },
-					{ status: 400 }
+					{ status: 400 },
 				);
 		}
 
@@ -184,7 +184,7 @@ export async function POST(request: NextRequest) {
 				error: errorMessage,
 				timestamp: new Date().toISOString(),
 			},
-			{ status: 500 }
+			{ status: 500 },
 		);
 	}
 }

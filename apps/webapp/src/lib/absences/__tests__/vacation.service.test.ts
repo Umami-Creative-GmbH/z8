@@ -5,7 +5,7 @@
  * and accrual calculations.
  */
 
-import { describe, test, expect, mock, beforeEach } from "bun:test";
+import { beforeEach, describe, expect, mock, test } from "bun:test";
 import { DateTime } from "luxon";
 
 // Mock the database module
@@ -380,7 +380,7 @@ describe("Date Utils", () => {
 			const result = calculateBusinessDays(
 				new Date(2024, 0, 8), // Monday
 				new Date(2024, 0, 13), // Saturday (exclusive, so includes Fri)
-				[]
+				[],
 			);
 
 			expect(result).toBe(5);
@@ -394,7 +394,7 @@ describe("Date Utils", () => {
 			const result = calculateBusinessDays(
 				new Date(2024, 0, 8), // Monday
 				new Date(2024, 0, 16), // Tuesday (exclusive, so includes Mon)
-				[]
+				[],
 			);
 
 			expect(result).toBe(6);
@@ -414,7 +414,7 @@ describe("Date Utils", () => {
 						endDate: new Date(2024, 0, 11), // Thu (exclusive, so includes Wed)
 						categoryId: "cat-1",
 					},
-				]
+				],
 			);
 
 			expect(result).toBe(4); // 5 - 1 holiday
@@ -445,7 +445,7 @@ describe("Date Utils", () => {
 				new Date(2024, 0, 1),
 				new Date(2024, 0, 10),
 				new Date(2024, 0, 5),
-				new Date(2024, 0, 15)
+				new Date(2024, 0, 15),
 			);
 
 			expect(result).toBe(true);
@@ -458,7 +458,7 @@ describe("Date Utils", () => {
 				new Date(2024, 0, 1),
 				new Date(2024, 0, 10),
 				new Date(2024, 0, 15),
-				new Date(2024, 0, 20)
+				new Date(2024, 0, 20),
 			);
 
 			expect(result).toBe(false);
@@ -471,7 +471,7 @@ describe("Date Utils", () => {
 				new Date(2024, 0, 1),
 				new Date(2024, 0, 10),
 				new Date(2024, 0, 11),
-				new Date(2024, 0, 20)
+				new Date(2024, 0, 20),
 			);
 
 			expect(result).toBe(false);

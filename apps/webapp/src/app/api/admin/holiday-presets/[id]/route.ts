@@ -64,7 +64,9 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 
 		// Get assignment count
 		const [assignmentCount] = await db
-			.select({ count: db.$count(holidayPresetAssignment, eq(holidayPresetAssignment.presetId, id)) })
+			.select({
+				count: db.$count(holidayPresetAssignment, eq(holidayPresetAssignment.presetId, id)),
+			})
 			.from(holidayPresetAssignment)
 			.where(
 				and(eq(holidayPresetAssignment.presetId, id), eq(holidayPresetAssignment.isActive, true)),
@@ -199,7 +201,9 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
 
 		// Check if preset has active assignments
 		const [assignmentCount] = await db
-			.select({ count: db.$count(holidayPresetAssignment, eq(holidayPresetAssignment.presetId, id)) })
+			.select({
+				count: db.$count(holidayPresetAssignment, eq(holidayPresetAssignment.presetId, id)),
+			})
 			.from(holidayPresetAssignment)
 			.where(
 				and(eq(holidayPresetAssignment.presetId, id), eq(holidayPresetAssignment.isActive, true)),

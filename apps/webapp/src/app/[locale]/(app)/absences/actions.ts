@@ -27,6 +27,7 @@ import { auth } from "@/lib/auth";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { ConflictError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { EmailService } from "@/lib/effect/services/email.service";
@@ -36,8 +37,8 @@ import {
 } from "@/lib/email/render";
 import { createLogger } from "@/lib/logger";
 import {
-	onAbsenceRequestSubmitted,
 	onAbsenceRequestPendingApproval,
+	onAbsenceRequestSubmitted,
 } from "@/lib/notifications/triggers";
 
 const logger = createLogger("AbsenceActionsEffect");
@@ -385,20 +386,19 @@ export async function requestAbsenceEffect(
 
 				return { absenceId: newAbsence.id };
 			}).pipe(
-				Effect.catchAll((error) =>
-					Effect.sync(() => {
-						span.recordException(error as Error);
-						span.setStatus({
-							code: SpanStatusCode.ERROR,
-							message: String(error),
-						});
-						span.end();
+				Effect.catchAll((error) => {
+					span.recordException(error as Error);
+					span.setStatus({
+						code: SpanStatusCode.ERROR,
+						message: String(error),
+					});
+					span.end();
 
-						logger.error({ error }, "Failed to process absence request");
+					logger.error({ error }, "Failed to process absence request");
 
-						return Effect.fail(error);
-					}),
-				),
+					return Effect.fail(error);
+				}),
+				Effect.provide(AppLayer),
 			);
 		},
 	);
@@ -482,8 +482,8 @@ export async function getVacationBalance(
 	const absences = await db.query.absenceEntry.findMany({
 		where: and(
 			eq(absenceEntry.employeeId, employeeId),
-			gte(absenceEntry.startDate, start),
-			lte(absenceEntry.endDate, end),
+			gte(absenceEntry.startDate, start.toJSDate()),
+			lte(absenceEntry.endDate, end.toJSDate()),
 		),
 		with: {
 			category: true,
