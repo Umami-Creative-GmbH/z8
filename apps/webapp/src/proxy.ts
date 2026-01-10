@@ -3,6 +3,17 @@ import createMiddleware from "next-intl/middleware";
 import { auth } from "@/lib/auth";
 import { ALL_LANGUAGES, DEFAULT_LANGUAGE } from "@/tolgee/shared";
 
+// Main domain from environment variable
+const MAIN_DOMAIN = process.env.NEXT_PUBLIC_MAIN_DOMAIN || "localhost:3000";
+
+// Headers used to pass domain context to pages
+export const DOMAIN_HEADERS = {
+	ORG_ID: "x-z8-org-id",
+	DOMAIN: "x-z8-domain",
+	AUTH_CONFIG: "x-z8-auth-config",
+	BRANDING: "x-z8-branding",
+} as const;
+
 export async function proxy(request: NextRequest) {
 	const handleI18nRouting = createMiddleware({
 		locales: ALL_LANGUAGES,
@@ -16,6 +27,19 @@ export async function proxy(request: NextRequest) {
 	// return its response immediately
 	if (response.status === 307 || response.status === 308) {
 		return response;
+	}
+
+	// Custom domain detection
+	const hostname = request.headers.get("host") || "";
+	const normalizedHostname = hostname.toLowerCase().replace(/:\d+$/, "");
+	const isMainDomain =
+		normalizedHostname === MAIN_DOMAIN.toLowerCase().replace(/:\d+$/, "") ||
+		normalizedHostname === "localhost" ||
+		normalizedHostname.endsWith(".localhost");
+
+	// Set custom domain header for server components to read
+	if (!isMainDomain && normalizedHostname) {
+		response.headers.set(DOMAIN_HEADERS.DOMAIN, normalizedHostname);
 	}
 
 	const [, locale, ...segments] = request.nextUrl.pathname.split("/");
@@ -36,9 +60,10 @@ export async function proxy(request: NextRequest) {
 		"verify-email-pending",
 		"terms",
 		"privacy",
+		"accept-invitation",
 	];
 	if (segments.some((segment) => publicUrls.includes(segment))) {
-		return NextResponse.next();
+		return response;
 	}
 
 	// check auth - validate session properly
@@ -47,7 +72,7 @@ export async function proxy(request: NextRequest) {
 		return NextResponse.redirect(new URL(`/${locale}/sign-in`, request.url));
 	}
 
-	return NextResponse.next();
+	return response;
 }
 
 export const config = {

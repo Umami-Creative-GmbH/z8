@@ -1,17 +1,15 @@
+import { SpanStatusCode } from "@opentelemetry/api";
 import { getNodeAutoInstrumentations } from "@opentelemetry/auto-instrumentations-node";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import { resourceFromAttributes } from "@opentelemetry/resources";
 import { NodeSDK } from "@opentelemetry/sdk-node";
+import type { ReadableSpan, SpanProcessor } from "@opentelemetry/sdk-trace-base";
 import {
 	BatchSpanProcessor,
 	ConsoleSpanExporter,
 	SimpleSpanProcessor,
 } from "@opentelemetry/sdk-trace-base";
-import type { ReadableSpan, SpanProcessor } from "@opentelemetry/sdk-trace-base";
-import { SpanStatusCode } from "@opentelemetry/api";
-import {
-	ATTR_SERVICE_NAME,
-} from "@opentelemetry/semantic-conventions";
+import { ATTR_SERVICE_NAME } from "@opentelemetry/semantic-conventions";
 
 // Custom span processor that only logs exception spans to console
 class ExceptionOnlySpanProcessor implements SpanProcessor {
@@ -28,9 +26,7 @@ class ExceptionOnlySpanProcessor implements SpanProcessor {
 	onEnd(span: ReadableSpan): void {
 		// Only export spans with errors or exception events
 		const hasError = span.status.code === SpanStatusCode.ERROR;
-		const hasExceptionEvent = span.events.some(
-			(event) => event.name === "exception"
-		);
+		const hasExceptionEvent = span.events.some((event) => event.name === "exception");
 
 		if (hasError || hasExceptionEvent) {
 			this.exporter.export([span], () => {});
@@ -53,19 +49,20 @@ export async function register() {
 
 		const resource = resourceFromAttributes({
 			[ATTR_SERVICE_NAME]: "z8-webapp",
-      environment: process.env.NODE_ENV || "development",
+			environment: process.env.NODE_ENV || "development",
 		});
 
 		// Determine span processors based on environment and configuration
-		const spanProcessors = isDev || !hasRemoteOtel
-			? [new ExceptionOnlySpanProcessor()]
-			: [
-					new BatchSpanProcessor(
-						new OTLPTraceExporter({
-							url: process.env.OTEL_EXPORTER_OTLP_ENDPOINT,
-						}),
-					),
-				];
+		const spanProcessors =
+			isDev || !hasRemoteOtel
+				? [new ExceptionOnlySpanProcessor()]
+				: [
+						new BatchSpanProcessor(
+							new OTLPTraceExporter({
+								url: process.env.OTEL_EXPORTER_OTLP_ENDPOINT,
+							}),
+						),
+					];
 
 		const sdk = new NodeSDK({
 			resource,

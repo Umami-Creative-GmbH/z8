@@ -11,5 +11,13 @@ services:
     volumes:
       - default_data:/var/lib/postgresql/data
 
+  valkey:
+    image: valkey/valkey:9-alpine
+    ports:
+      - 6379:6379
+    volumes:
+      - valkey_data:/data
+
 volumes:
   default_data:
+  valkey_data:

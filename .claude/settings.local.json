@@ -77,7 +77,17 @@
       "WebFetch(domain:bprogress.vercel.app)",
       "WebFetch(domain:ui.shadcn.com)",
       "WebFetch(domain:tus.io)",
-      "Bash(head:*)"
+      "Bash(head:*)",
+      "Bash(git grep:*)",
+      "Bash(git -C \"X:\\\\umami-creative\\\\z8\" log --oneline --name-status -15)",
+      "Bash(pnpm add:*)",
+      "Bash(bun tsc:*)",
+      "Bash(comm:*)",
+      "Bash(while read file)",
+      "Bash(do if ! grep -q \"SidebarProvider\" \"$file\")",
+      "Bash(then echo \"$file\")",
+      "Bash(fi)",
+      "Bash(done)"
     ]
   },
   "enableAllProjectMcpServers": true,
