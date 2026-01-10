@@ -1,4 +1,4 @@
-export { QueryProvider } from "./provider";
 export { queryKeys } from "./keys";
-export { useTimeClock } from "./use-time-clock";
+export { QueryProvider } from "./provider";
 export type { TimeClockState } from "./use-time-clock";
+export { useTimeClock } from "./use-time-clock";

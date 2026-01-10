@@ -5,11 +5,8 @@
  * and helper functions.
  */
 
-import { describe, test, expect, mock, beforeEach, afterEach } from "bun:test";
-import {
-	AuditAction,
-	type AuditLogEntry,
-} from "../audit-logger";
+import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { AuditAction, type AuditLogEntry } from "../audit-logger";
 
 // Mock the database module
 const mockInsert = mock(() => ({
@@ -133,7 +130,7 @@ describe("Audit Context Middleware", () => {
 		const { parseUserAgent } = await import("../middleware/audit-context");
 
 		const result = parseUserAgent(
-			"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+			"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
 		);
 
 		expect(result.browser).toBe("Chrome");
@@ -145,7 +142,7 @@ describe("Audit Context Middleware", () => {
 		const { parseUserAgent } = await import("../middleware/audit-context");
 
 		const result = parseUserAgent(
-			"Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:121.0) Gecko/20100101 Firefox/121.0"
+			"Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:121.0) Gecko/20100101 Firefox/121.0",
 		);
 
 		expect(result.browser).toBe("Firefox");
@@ -157,7 +154,7 @@ describe("Audit Context Middleware", () => {
 		const { parseUserAgent } = await import("../middleware/audit-context");
 
 		const result = parseUserAgent(
-			"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15"
+			"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15",
 		);
 
 		expect(result.browser).toBe("Safari");
@@ -168,7 +165,7 @@ describe("Audit Context Middleware", () => {
 		const { parseUserAgent } = await import("../middleware/audit-context");
 
 		const result = parseUserAgent(
-			"Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1"
+			"Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
 		);
 
 		expect(result.os).toBe("iOS");
@@ -253,14 +250,14 @@ describe("Audit Context Middleware", () => {
 describe("Audit Report Generator", () => {
 	test("exportComplianceReportAsCsv should generate valid CSV", async () => {
 		const { exportComplianceReportAsCsv } = await import("../reporting/audit-report");
-		type ComplianceReport = Awaited<ReturnType<typeof import("../reporting/audit-report").generateComplianceReport>>;
+		type ComplianceReport = Awaited<
+			ReturnType<typeof import("../reporting/audit-report").generateComplianceReport>
+		>;
 
 		const mockReport: ComplianceReport = {
 			reportPeriod: { start: "2024-01-01", end: "2024-01-31" },
 			summary: { totalEvents: 100, uniqueUsers: 5, uniqueEntities: 20 },
-			dailySummaries: [
-				{ date: "2024-01-15", totalEvents: 50, uniqueUsers: 3, byAction: {} },
-			],
+			dailySummaries: [{ date: "2024-01-15", totalEvents: 50, uniqueUsers: 3, byAction: {} }],
 			topUsers: [
 				{
 					userId: "user-1",
@@ -291,7 +288,9 @@ describe("Audit Report Generator", () => {
 
 	test("formatComplianceReportAsHtml should generate valid HTML", async () => {
 		const { formatComplianceReportAsHtml } = await import("../reporting/audit-report");
-		type ComplianceReport = Awaited<ReturnType<typeof import("../reporting/audit-report").generateComplianceReport>>;
+		type ComplianceReport = Awaited<
+			ReturnType<typeof import("../reporting/audit-report").generateComplianceReport>
+		>;
 
 		const mockReport: ComplianceReport = {
 			reportPeriod: { start: "2024-01-01", end: "2024-01-31" },

@@ -5,9 +5,10 @@
  * Supports pagination, filtering by entity type, date range, and user.
  */
 
+import { and, desc, eq, gte, like, lte, or, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { auditLog, user, employee } from "@/db/schema";
-import { and, eq, gte, lte, desc, sql, or, like } from "drizzle-orm";
+import { auditLog, employee } from "@/db/schema";
+import { user } from "@/db/auth-schema";
 
 export interface AuditLogFilters {
 	organizationId: string;
@@ -53,9 +54,7 @@ export async function getAuditLogs(filters: AuditLogFilters): Promise<{
 	const conditions = [];
 
 	// Organization filter (from metadata)
-	conditions.push(
-		sql`${auditLog.metadata}::jsonb->>'organizationId' = ${filters.organizationId}`
-	);
+	conditions.push(sql`${auditLog.metadata}::jsonb->>'organizationId' = ${filters.organizationId}`);
 
 	if (filters.entityType) {
 		conditions.push(eq(auditLog.entityType, filters.entityType));
@@ -85,9 +84,9 @@ export async function getAuditLogs(filters: AuditLogFilters): Promise<{
 		conditions.push(
 			or(
 				like(auditLog.action, `%${filters.search}%`),
-				sql`${auditLog.metadata}::text ILIKE ${'%' + filters.search + '%'}`,
-				sql`${auditLog.changes}::text ILIKE ${'%' + filters.search + '%'}`
-			)
+				sql`${auditLog.metadata}::text ILIKE ${"%" + filters.search + "%"}`,
+				sql`${auditLog.changes}::text ILIKE ${"%" + filters.search + "%"}`,
+			),
 		);
 	}
 
@@ -146,7 +145,7 @@ export async function getUserAuditTrail(
 		offset?: number;
 		startDate?: Date;
 		endDate?: Date;
-	}
+	},
 ): Promise<AuditLogResult[]> {
 	const result = await getAuditLogs({
 		organizationId,
@@ -168,7 +167,7 @@ export async function getEntityAuditHistory(
 	options?: {
 		limit?: number;
 		offset?: number;
-	}
+	},
 ): Promise<AuditLogResult[]> {
 	const result = await getAuditLogs({
 		organizationId,
@@ -184,7 +183,7 @@ export async function getEntityAuditHistory(
  */
 export async function getRecentAuditLogs(
 	organizationId: string,
-	limit: number = 20
+	limit: number = 20,
 ): Promise<AuditLogResult[]> {
 	const result = await getAuditLogs({
 		organizationId,
@@ -199,7 +198,7 @@ export async function getRecentAuditLogs(
 export async function getAuditLogStats(
 	organizationId: string,
 	startDate: Date,
-	endDate: Date
+	endDate: Date,
 ): Promise<{
 	totalEvents: number;
 	byAction: Array<{ action: string; count: number }>;
@@ -208,10 +207,7 @@ export async function getAuditLogStats(
 	topIpAddresses: Array<{ ipAddress: string; count: number }>;
 }> {
 	const orgFilter = sql`${auditLog.metadata}::jsonb->>'organizationId' = ${organizationId}`;
-	const dateFilter = and(
-		gte(auditLog.timestamp, startDate),
-		lte(auditLog.timestamp, endDate)
-	);
+	const dateFilter = and(gte(auditLog.timestamp, startDate), lte(auditLog.timestamp, endDate));
 	const whereClause = and(orgFilter, dateFilter);
 
 	// Total events
@@ -295,7 +291,7 @@ export async function searchAuditLogs(
 	options?: {
 		limit?: number;
 		offset?: number;
-	}
+	},
 ): Promise<AuditLogResult[]> {
 	const result = await getAuditLogs({
 		organizationId,
@@ -317,7 +313,7 @@ export async function getAuditLogsByAction(
 		offset?: number;
 		startDate?: Date;
 		endDate?: Date;
-	}
+	},
 ): Promise<AuditLogResult[]> {
 	const result = await getAuditLogs({
 		organizationId,
@@ -336,7 +332,7 @@ export async function getAuditLogsByAction(
 export async function exportAuditLogs(
 	organizationId: string,
 	startDate: Date,
-	endDate: Date
+	endDate: Date,
 ): Promise<AuditLogResult[]> {
 	// Get all logs in date range (no pagination for export)
 	const result = await getAuditLogs({

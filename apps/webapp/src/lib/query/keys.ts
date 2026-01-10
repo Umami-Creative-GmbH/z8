@@ -103,4 +103,44 @@ export const queryKeys = {
 		all: ["vacation-policy-assignments"] as const,
 		list: (orgId: string) => ["vacation-policy-assignments", orgId] as const,
 	},
+
+	// Work schedule templates
+	workScheduleTemplates: {
+		all: ["work-schedule-templates"] as const,
+		list: (orgId: string) => ["work-schedule-templates", orgId] as const,
+		detail: (templateId: string) => ["work-schedule-templates", "detail", templateId] as const,
+	},
+
+	// Work schedule assignments (templates to org/team/employee)
+	workScheduleAssignments: {
+		all: ["work-schedule-assignments"] as const,
+		list: (orgId: string) => ["work-schedule-assignments", orgId] as const,
+		employee: (employeeId: string) =>
+			["work-schedule-assignments", "employee", employeeId] as const,
+	},
+
+	// Shift templates (Morning Shift, Night Shift, etc.)
+	shiftTemplates: {
+		all: ["shift-templates"] as const,
+		list: (orgId: string) => ["shift-templates", orgId] as const,
+	},
+
+	// Shifts (actual shift instances)
+	shifts: {
+		all: ["shifts"] as const,
+		list: (orgId: string, dateRange?: { start: Date; end: Date }) =>
+			["shifts", orgId, dateRange] as const,
+		detail: (shiftId: string) => ["shifts", "detail", shiftId] as const,
+		incomplete: (orgId: string, dateRange: { start: Date; end: Date }) =>
+			["shifts", "incomplete", orgId, dateRange] as const,
+		open: (orgId: string, dateRange: { start: Date; end: Date }) =>
+			["shifts", "open", orgId, dateRange] as const,
+	},
+
+	// Shift requests (swaps, pickups)
+	shiftRequests: {
+		all: ["shift-requests"] as const,
+		pending: (approverId: string) => ["shift-requests", "pending", approverId] as const,
+		byShift: (shiftId: string) => ["shift-requests", "shift", shiftId] as const,
+	},
 } as const;

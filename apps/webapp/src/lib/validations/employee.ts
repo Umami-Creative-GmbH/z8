@@ -8,14 +8,14 @@ export const employeeRoleSchema = z.enum(["employee", "manager", "admin"]);
 
 // Personal information schema (for self-service profile updates)
 export const personalInformationSchema = z.object({
-	firstName: z.string().min(1, "First name is required").max(100, "First name is too long").optional(),
+	firstName: z
+		.string()
+		.min(1, "First name is required")
+		.max(100, "First name is too long")
+		.optional(),
 	lastName: z.string().min(1, "Last name is required").max(100, "Last name is too long").optional(),
 	gender: genderSchema.optional(),
-	birthday: z
-		.date()
-		.max(new Date(), "Birthday must be in the past")
-		.optional()
-		.nullable(),
+	birthday: z.date().max(new Date(), "Birthday must be in the past").optional().nullable(),
 });
 
 // Full employee creation schema
@@ -24,17 +24,28 @@ export const createEmployeeSchema = z.object({
 	organizationId: z.string().min(1, "Organization ID is required"),
 	teamId: z.string().uuid("Invalid team ID").optional().nullable(),
 	role: employeeRoleSchema,
-	position: z.string().min(1, "Position is required").max(100, "Position is too long").optional().nullable(),
-
-	// Personal information
-	firstName: z.string().min(1, "First name is required").max(100, "First name is too long").optional().nullable(),
-	lastName: z.string().min(1, "Last name is required").max(100, "Last name is too long").optional().nullable(),
-	gender: genderSchema.optional().nullable(),
-	birthday: z
-		.date()
-		.max(new Date(), "Birthday must be in the past")
+	position: z
+		.string()
+		.min(1, "Position is required")
+		.max(100, "Position is too long")
 		.optional()
 		.nullable(),
+
+	// Personal information
+	firstName: z
+		.string()
+		.min(1, "First name is required")
+		.max(100, "First name is too long")
+		.optional()
+		.nullable(),
+	lastName: z
+		.string()
+		.min(1, "Last name is required")
+		.max(100, "Last name is too long")
+		.optional()
+		.nullable(),
+	gender: genderSchema.optional().nullable(),
+	birthday: z.date().max(new Date(), "Birthday must be in the past").optional().nullable(),
 
 	// Dates
 	startDate: z.date().optional().nullable(),
@@ -49,14 +60,20 @@ export const updateEmployeeSchema = z
 		position: z.string().max(100, "Position is too long").optional().nullable(),
 
 		// Personal information
-		firstName: z.string().min(1, "First name is required").max(100, "First name is too long").optional().nullable(),
-		lastName: z.string().min(1, "Last name is required").max(100, "Last name is too long").optional().nullable(),
-		gender: genderSchema.optional().nullable(),
-		birthday: z
-			.date()
-			.max(new Date(), "Birthday must be in the past")
+		firstName: z
+			.string()
+			.min(1, "First name is required")
+			.max(100, "First name is too long")
 			.optional()
 			.nullable(),
+		lastName: z
+			.string()
+			.min(1, "Last name is required")
+			.max(100, "Last name is too long")
+			.optional()
+			.nullable(),
+		gender: genderSchema.optional().nullable(),
+		birthday: z.date().max(new Date(), "Birthday must be in the past").optional().nullable(),
 
 		// Dates
 		startDate: z.date().optional().nullable(),

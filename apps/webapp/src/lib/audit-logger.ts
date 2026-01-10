@@ -5,9 +5,9 @@
  * Logs are structured, persisted to database, and can be sent to external logging services.
  */
 
-import { createLogger } from "@/lib/logger";
 import { db } from "@/db";
 import { auditLog } from "@/db/schema";
+import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("AuditLog");
 
@@ -79,7 +79,16 @@ export interface AuditLogEntry {
 	actorEmail?: string;
 	employeeId?: string; // Employee ID if action is on behalf of an employee
 	targetId?: string; // Entity ID being affected
-	targetType?: "employee" | "team" | "organization" | "permission" | "schedule" | "time_entry" | "absence" | "approval" | "vacation";
+	targetType?:
+		| "employee"
+		| "team"
+		| "organization"
+		| "permission"
+		| "schedule"
+		| "time_entry"
+		| "absence"
+		| "approval"
+		| "vacation";
 	organizationId: string;
 	metadata?: Record<string, unknown>;
 	changes?: Record<string, unknown>; // Before/after changes for updates
@@ -228,16 +237,18 @@ export interface AuditContext {
 /**
  * Log manager assignment
  */
-export function logManagerAssignment(params: {
-	employeeId: string;
-	employeeName: string;
-	managerId: string;
-	managerName: string;
-	isPrimary: boolean;
-	assignedBy: string;
-	assignedByEmail: string;
-	organizationId: string;
-} & AuditContext): Promise<void> {
+export function logManagerAssignment(
+	params: {
+		employeeId: string;
+		employeeName: string;
+		managerId: string;
+		managerName: string;
+		isPrimary: boolean;
+		assignedBy: string;
+		assignedByEmail: string;
+		organizationId: string;
+	} & AuditContext,
+): Promise<void> {
 	return logAudit({
 		action: AuditAction.MANAGER_ASSIGNED,
 		actorId: params.assignedBy,
@@ -260,15 +271,17 @@ export function logManagerAssignment(params: {
 /**
  * Log manager removal
  */
-export function logManagerRemoval(params: {
-	employeeId: string;
-	employeeName: string;
-	managerId: string;
-	managerName: string;
-	removedBy: string;
-	removedByEmail: string;
-	organizationId: string;
-} & AuditContext): Promise<void> {
+export function logManagerRemoval(
+	params: {
+		employeeId: string;
+		employeeName: string;
+		managerId: string;
+		managerName: string;
+		removedBy: string;
+		removedByEmail: string;
+		organizationId: string;
+	} & AuditContext,
+): Promise<void> {
 	return logAudit({
 		action: AuditAction.MANAGER_REMOVED,
 		actorId: params.removedBy,
@@ -290,17 +303,19 @@ export function logManagerRemoval(params: {
 /**
  * Log permission grant
  */
-export function logPermissionGrant(params: {
-	employeeId: string;
-	employeeName: string;
-	permissions: string[];
-	scope: "organization" | "team";
-	teamId?: string;
-	teamName?: string;
-	grantedBy: string;
-	grantedByEmail: string;
-	organizationId: string;
-} & AuditContext): Promise<void> {
+export function logPermissionGrant(
+	params: {
+		employeeId: string;
+		employeeName: string;
+		permissions: string[];
+		scope: "organization" | "team";
+		teamId?: string;
+		teamName?: string;
+		grantedBy: string;
+		grantedByEmail: string;
+		organizationId: string;
+	} & AuditContext,
+): Promise<void> {
 	return logAudit({
 		action: AuditAction.PERMISSION_GRANTED,
 		actorId: params.grantedBy,
@@ -324,16 +339,18 @@ export function logPermissionGrant(params: {
 /**
  * Log permission revocation
  */
-export function logPermissionRevocation(params: {
-	employeeId: string;
-	employeeName: string;
-	scope: "organization" | "team";
-	teamId?: string;
-	teamName?: string;
-	revokedBy: string;
-	revokedByEmail: string;
-	organizationId: string;
-} & AuditContext): Promise<void> {
+export function logPermissionRevocation(
+	params: {
+		employeeId: string;
+		employeeName: string;
+		scope: "organization" | "team";
+		teamId?: string;
+		teamName?: string;
+		revokedBy: string;
+		revokedByEmail: string;
+		organizationId: string;
+	} & AuditContext,
+): Promise<void> {
 	return logAudit({
 		action: AuditAction.PERMISSION_REVOKED,
 		actorId: params.revokedBy,
@@ -356,17 +373,19 @@ export function logPermissionRevocation(params: {
 /**
  * Log work schedule change
  */
-export function logScheduleChange(params: {
-	employeeId: string;
-	employeeName: string;
-	scheduleType: "simple" | "detailed";
-	hoursPerWeek?: number;
-	workClassification: string;
-	effectiveFrom: Date;
-	createdBy: string;
-	createdByEmail: string;
-	organizationId: string;
-} & AuditContext): Promise<void> {
+export function logScheduleChange(
+	params: {
+		employeeId: string;
+		employeeName: string;
+		scheduleType: "simple" | "detailed";
+		hoursPerWeek?: number;
+		workClassification: string;
+		effectiveFrom: Date;
+		createdBy: string;
+		createdByEmail: string;
+		organizationId: string;
+	} & AuditContext,
+): Promise<void> {
 	return logAudit({
 		action: AuditAction.SCHEDULE_CREATED,
 		actorId: params.createdBy,
@@ -390,13 +409,15 @@ export function logScheduleChange(params: {
 /**
  * Log team creation
  */
-export function logTeamCreation(params: {
-	teamId: string;
-	teamName: string;
-	createdBy: string;
-	createdByEmail: string;
-	organizationId: string;
-} & AuditContext): Promise<void> {
+export function logTeamCreation(
+	params: {
+		teamId: string;
+		teamName: string;
+		createdBy: string;
+		createdByEmail: string;
+		organizationId: string;
+	} & AuditContext,
+): Promise<void> {
 	return logAudit({
 		action: AuditAction.TEAM_CREATED,
 		actorId: params.createdBy,
@@ -416,15 +437,17 @@ export function logTeamCreation(params: {
 /**
  * Log team member addition
  */
-export function logTeamMemberAddition(params: {
-	teamId: string;
-	teamName: string;
-	employeeId: string;
-	employeeName: string;
-	addedBy: string;
-	addedByEmail: string;
-	organizationId: string;
-} & AuditContext): Promise<void> {
+export function logTeamMemberAddition(
+	params: {
+		teamId: string;
+		teamName: string;
+		employeeId: string;
+		employeeName: string;
+		addedBy: string;
+		addedByEmail: string;
+		organizationId: string;
+	} & AuditContext,
+): Promise<void> {
 	return logAudit({
 		action: AuditAction.TEAM_MEMBER_ADDED,
 		actorId: params.addedBy,
@@ -446,17 +469,19 @@ export function logTeamMemberAddition(params: {
 /**
  * Log employee creation
  */
-export function logEmployeeCreation(params: {
-	employeeId: string;
-	employeeName: string;
-	employeeEmail: string;
-	role: string;
-	teamId?: string;
-	teamName?: string;
-	createdBy: string;
-	createdByEmail: string;
-	organizationId: string;
-} & AuditContext): Promise<void> {
+export function logEmployeeCreation(
+	params: {
+		employeeId: string;
+		employeeName: string;
+		employeeEmail: string;
+		role: string;
+		teamId?: string;
+		teamName?: string;
+		createdBy: string;
+		createdByEmail: string;
+		organizationId: string;
+	} & AuditContext,
+): Promise<void> {
 	return logAudit({
 		action: AuditAction.EMPLOYEE_CREATED,
 		actorId: params.createdBy,
