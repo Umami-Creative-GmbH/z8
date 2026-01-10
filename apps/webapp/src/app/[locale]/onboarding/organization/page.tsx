@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { checkSlugAvailability } from "@/app/[locale]/(app)/actions/organization";
+import { ProgressIndicator } from "@/components/onboarding/progress-indicator";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -19,13 +20,12 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { ProgressIndicator } from "@/components/onboarding/progress-indicator";
-import { useRouter } from "@/navigation";
 import {
 	generateSlug,
 	type OrganizationFormValues,
 	organizationSchema,
 } from "@/lib/validations/organization";
+import { useRouter } from "@/navigation";
 import { createOrganizationOnboarding, skipOrganizationSetup } from "./actions";
 
 export default function OrganizationPage() {
@@ -151,7 +151,9 @@ export default function OrganizationPage() {
 									<IconBuilding className="size-5 text-primary" />
 								</div>
 								<div>
-									<CardTitle>{t("onboarding.organization.createTitle", "Create Organization")}</CardTitle>
+									<CardTitle>
+										{t("onboarding.organization.createTitle", "Create Organization")}
+									</CardTitle>
 									<CardDescription>
 										{t(
 											"onboarding.organization.createDescription",
@@ -211,9 +213,14 @@ export default function OrganizationPage() {
 														</div>
 													</FormControl>
 													<FormDescription>
-														{t("organization.slugDescription", "Used in URLs. Auto-generated from name.")}
+														{t(
+															"organization.slugDescription",
+															"Used in URLs. Auto-generated from name.",
+														)}
 													</FormDescription>
-													{slugError && <p className="text-sm font-medium text-destructive">{slugError}</p>}
+													{slugError && (
+														<p className="text-sm font-medium text-destructive">{slugError}</p>
+													)}
 													<FormMessage />
 												</FormItem>
 											)}
@@ -238,7 +245,9 @@ export default function OrganizationPage() {
 					{/* Skip Card */}
 					<Card>
 						<CardHeader>
-							<CardTitle>{t("onboarding.organization.skipTitle", "Waiting for an Invitation?")}</CardTitle>
+							<CardTitle>
+								{t("onboarding.organization.skipTitle", "Waiting for an Invitation?")}
+							</CardTitle>
 							<CardDescription>
 								{t(
 									"onboarding.organization.skipDescription",

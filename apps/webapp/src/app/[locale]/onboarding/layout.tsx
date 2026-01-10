@@ -1,11 +1,7 @@
 import { InfoFooter } from "@/components/info-footer";
 import { LanguageSwitcher } from "@/components/language-switcher";
 
-export default function OnboardingLayout({
-	children,
-}: {
-	children: React.ReactNode;
-}) {
+export default function OnboardingLayout({ children }: { children: React.ReactNode }) {
 	return (
 		<div className="flex min-h-svh flex-col bg-background">
 			<div className="container mx-auto px-6 py-8">

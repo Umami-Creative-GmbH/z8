@@ -1,6 +1,6 @@
 "use client";
 
-import { IconLoader2 } from "@tabler/icons-react";
+import { IconFingerprint, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { Key } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -11,6 +11,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useDomainAuth } from "@/lib/auth/domain-auth-context";
 import { authClient } from "@/lib/auth-client";
 import { useEnabledProviders } from "@/lib/hooks/use-enabled-providers";
 import { getOnboardingStepPath } from "@/lib/validations/onboarding";
@@ -36,6 +37,23 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 	const [otpValue, setOtpValue] = useState("");
 	const [trustDevice, setTrustDevice] = useState(false);
 	const { enabledProviders, isLoading: providersLoading } = useEnabledProviders();
+
+	// Domain auth context for custom domains
+	const domainAuth = useDomainAuth();
+	const authConfig = domainAuth?.authConfig;
+	const branding = domainAuth?.branding;
+
+	// Determine which auth methods are enabled
+	const showEmailPassword = authConfig?.emailPasswordEnabled ?? true;
+	const showPasskey = authConfig?.passkeyEnabled ?? true;
+	const showSSO = authConfig?.ssoEnabled ?? false;
+	const allowedSocialProviders = authConfig?.socialProvidersEnabled ?? [];
+
+	// Filter social providers based on auth config
+	const filteredProviders =
+		allowedSocialProviders.length > 0
+			? enabledProviders.filter((p) => allowedSocialProviders.includes(p.id))
+			: enabledProviders;
 
 	// Reset loading state when component mounts (e.g., after logout redirect)
 	useEffect(() => {
@@ -251,6 +269,30 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 		}
 	};
 
+	const handleSSOLogin = async () => {
+		if (!authConfig?.ssoProviderId) {
+			setError(t("auth.sso-not-configured", "SSO is not configured for this domain"));
+			return;
+		}
+
+		setIsLoading(true);
+		setError(null);
+
+		try {
+			await authClient.sso.signIn({
+				providerId: authConfig.ssoProviderId,
+				callbackURL: "/",
+			});
+		} catch (err) {
+			setIsLoading(false);
+			setError(
+				err instanceof Error
+					? err.message
+					: t("auth.sso-login-error", "An error occurred during SSO sign-in"),
+			);
+		}
+	};
+
 	const handleVerify2FA = async () => {
 		if (otpValue.length !== 6) {
 			setError(t("auth.invalid-2fa-code", "Please enter a valid 6-digit code"));
@@ -267,7 +309,9 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 			});
 
 			if (result.error) {
-				setError(result.error.message || t("auth.2fa-verification-failed", "2FA verification failed"));
+				setError(
+					result.error.message || t("auth.2fa-verification-failed", "2FA verification failed"),
+				);
 				setIsLoading(false);
 			} else {
 				// Check onboarding status first
@@ -305,48 +349,77 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 			className={className}
 			formProps={{ onSubmit: handleSubmit }}
 			title={t("auth.login-to-account", "Login to your account")}
+			branding={branding}
 			{...props}
 		>
 			{error ? (
 				<div className="rounded-md bg-destructive/15 p-3 text-destructive text-sm">{error}</div>
 			) : null}
-			<div className="grid gap-3">
-				<Label htmlFor="email">{t("auth.email", "Email")}</Label>
-				<Input
-					id="email"
-					name="email"
-					onBlur={(e) => validateField("email", e.target.value)}
-					onChange={(e) => {
-						handleChange("email", e.target.value);
-						validateField("email", e.target.value);
-					}}
-					placeholder={t("auth.email-placeholder", "m@example.com")}
-					required
-					type="email"
-					value={formData.email}
-					disabled={requires2FA}
-				/>
-				{fieldErrors.email ? <p className="text-destructive text-sm">{fieldErrors.email}</p> : null}
-			</div>
-			<div className="grid gap-3">
-				<Label htmlFor="password">{t("auth.password", "Password")}</Label>
-				<Input
-					id="password"
-					name="password"
-					onBlur={(e) => validateField("password", e.target.value)}
-					onChange={(e) => {
-						handleChange("password", e.target.value);
-						validateField("password", e.target.value);
-					}}
-					required
-					type="password"
-					value={formData.password}
-					disabled={requires2FA}
-				/>
-				{fieldErrors.password ? (
-					<p className="text-destructive text-sm">{fieldErrors.password}</p>
-				) : null}
-			</div>
+
+			{/* SSO Button - show prominently when SSO is the primary method */}
+			{showSSO && !requires2FA && (
+				<Button type="button" className="w-full" onClick={handleSSOLogin} disabled={isLoading}>
+					<IconFingerprint className="mr-2 h-4 w-4" />
+					{t("auth.login-with-sso", "Sign in with SSO")}
+				</Button>
+			)}
+
+			{/* Divider when showing both SSO and other methods */}
+			{showSSO && showEmailPassword && !requires2FA && (
+				<div className="relative">
+					<div className="absolute inset-0 flex items-center">
+						<span className="w-full border-t" />
+					</div>
+					<div className="relative flex justify-center text-xs uppercase">
+						<span className="bg-card px-2 text-muted-foreground">{t("auth.or", "or")}</span>
+					</div>
+				</div>
+			)}
+
+			{/* Email/Password fields - only show if enabled */}
+			{showEmailPassword && (
+				<>
+					<div className="grid gap-3">
+						<Label htmlFor="email">{t("auth.email", "Email")}</Label>
+						<Input
+							id="email"
+							name="email"
+							onBlur={(e) => validateField("email", e.target.value)}
+							onChange={(e) => {
+								handleChange("email", e.target.value);
+								validateField("email", e.target.value);
+							}}
+							placeholder={t("auth.email-placeholder", "m@example.com")}
+							required
+							type="email"
+							value={formData.email}
+							disabled={requires2FA}
+						/>
+						{fieldErrors.email ? (
+							<p className="text-destructive text-sm">{fieldErrors.email}</p>
+						) : null}
+					</div>
+					<div className="grid gap-3">
+						<Label htmlFor="password">{t("auth.password", "Password")}</Label>
+						<Input
+							id="password"
+							name="password"
+							onBlur={(e) => validateField("password", e.target.value)}
+							onChange={(e) => {
+								handleChange("password", e.target.value);
+								validateField("password", e.target.value);
+							}}
+							required
+							type="password"
+							value={formData.password}
+							disabled={requires2FA}
+						/>
+						{fieldErrors.password ? (
+							<p className="text-destructive text-sm">{fieldErrors.password}</p>
+						) : null}
+					</div>
+				</>
+			)}
 			{requires2FA ? (
 				<>
 					<div className="grid gap-3">
@@ -368,16 +441,16 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 						</p>
 					</div>
 					<div className="flex items-center justify-center space-x-2">
-						<Switch
-							id="trustDevice"
-							checked={trustDevice}
-							onCheckedChange={setTrustDevice}
-						/>
+						<Switch id="trustDevice" checked={trustDevice} onCheckedChange={setTrustDevice} />
 						<Label htmlFor="trustDevice" className="cursor-pointer">
 							{t("auth.remember-device", "Remember this device for 30 days")}
 						</Label>
 					</div>
-					<Button className="w-full" disabled={isLoading || otpValue.length !== 6} onClick={handleVerify2FA}>
+					<Button
+						className="w-full"
+						disabled={isLoading || otpValue.length !== 6}
+						onClick={handleVerify2FA}
+					>
 						{isLoading ? (
 							<>
 								<IconLoader2 className="size-4 animate-spin" />
@@ -388,7 +461,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 						)}
 					</Button>
 				</>
-			) : (
+			) : showEmailPassword ? (
 				<Button className="w-full" disabled={isLoading} type="submit">
 					{isLoading ? (
 						<>
@@ -399,74 +472,79 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 						t("auth.login", "Login")
 					)}
 				</Button>
-			)}
-			{!requires2FA && (
+			) : null}
+			{!requires2FA && showEmailPassword && (
 				<>
 					<div className="-mt-6 text-center">
 						<Link className="text-xs underline-offset-2 hover:underline" href="/forgot-password">
 							{t("auth.forgot-password", "Forgot your password?")}
 						</Link>
 					</div>
+				</>
+			)}
+			{!requires2FA && (showPasskey || filteredProviders.length > 0) && (
+				<>
 					<div className="text-center text-sm">
 						<span className="relative z-10 px-2 text-muted-foreground">
 							{t("auth.or-continue-with", "Or continue with")}
 						</span>
 					</div>
+					<div className="flex flex-wrap justify-center gap-2 *:w-1/4">
+						{/* Passkey - show if enabled */}
+						{showPasskey && (
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										type="button"
+										variant="outline"
+										onClick={handlePasskeyLogin}
+										disabled={isLoading}
+									>
+										<Key className="h-4 w-4" />
+										<span className="sr-only">
+											{t("auth.login-with.passkey", "Login with Passkey")}
+										</span>
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent>
+									<span className="text-sm">
+										{t("auth.login-with.passkey", "Login with Passkey")}
+									</span>
+								</TooltipContent>
+							</Tooltip>
+						)}
+
+						{/* Dynamic social providers - filtered based on auth config */}
+						{providersLoading
+							? Array.from({ length: filteredProviders.length || 4 }).map((_, i) => (
+									<div key={i} className="h-10 bg-muted animate-pulse rounded-md" />
+								))
+							: filteredProviders.map((provider) => (
+									<Tooltip key={provider.id}>
+										<TooltipTrigger asChild>
+											<Button
+												type="button"
+												variant="outline"
+												onClick={() => handleSocialLogin(provider.id)}
+												disabled={isLoading}
+											>
+												<provider.icon className="h-4 w-4" />
+												<span className="sr-only">
+													{t(`auth.login-with.${provider.id}`, `Login with ${provider.name}`)}
+												</span>
+											</Button>
+										</TooltipTrigger>
+										<TooltipContent>
+											<span className="text-sm">
+												{t(`auth.login-with.${provider.id}`, `Login with ${provider.name}`)}
+											</span>
+										</TooltipContent>
+									</Tooltip>
+								))}
+					</div>
 				</>
 			)}
-			{!requires2FA && (
-				<div className="flex flex-wrap justify-center gap-2 *:w-1/4">
-					{/* Passkey - always visible */}
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								type="button"
-								variant="outline"
-								onClick={handlePasskeyLogin}
-								disabled={isLoading}
-							>
-								<Key className="h-4 w-4" />
-								<span className="sr-only">{t("auth.login-with.passkey", "Login with Passkey")}</span>
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent>
-							<span className="text-sm">{t("auth.login-with.passkey", "Login with Passkey")}</span>
-						</TooltipContent>
-					</Tooltip>
-
-					{/* Dynamic social providers */}
-					{providersLoading
-						? Array.from({ length: 4 }).map((_, i) => (
-								<div key={i} className="h-10 bg-muted animate-pulse rounded-md" />
-							))
-						: enabledProviders.map((provider) => (
-								<Tooltip key={provider.id}>
-									<TooltipTrigger asChild>
-										<Button
-											type="button"
-											variant="outline"
-											onClick={() => handleSocialLogin(provider.id)}
-											disabled={isLoading}
-										>
-											<provider.icon className="h-4 w-4" />
-											<span className="sr-only">
-												{t(
-													`auth.login-with.${provider.id}`,
-													`Login with ${provider.name}`,
-												)}
-											</span>
-										</Button>
-									</TooltipTrigger>
-									<TooltipContent>
-										<span className="text-sm">
-											{t(`auth.login-with.${provider.id}`, `Login with ${provider.name}`)}
-										</span>
-									</TooltipContent>
-								</Tooltip>
-							))}
-				</div>
-			)}
-			{!requires2FA && (
+			{!requires2FA && showEmailPassword && (
 				<div className="text-center text-sm">
 					{t("auth.dont-have-account", "Don't have an account?")}{" "}
 					<Link className="underline underline-offset-4" href="/sign-up">

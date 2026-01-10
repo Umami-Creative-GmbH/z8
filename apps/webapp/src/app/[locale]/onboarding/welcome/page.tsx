@@ -3,9 +3,9 @@
 import { IconBriefcase, IconBuilding, IconClock, IconUsers } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useEffect } from "react";
+import { ProgressIndicator } from "@/components/onboarding/progress-indicator";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ProgressIndicator } from "@/components/onboarding/progress-indicator";
 import { useRouter } from "@/navigation";
 import { startOnboarding, updateOnboardingStep } from "./actions";
 

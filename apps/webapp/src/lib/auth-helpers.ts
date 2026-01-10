@@ -6,10 +6,10 @@ import { headers } from "next/headers";
 import { db } from "@/db";
 import { member, organization, user } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
+import { auth } from "@/lib/auth";
 import { AppLayer } from "@/lib/effect/runtime";
 import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { ManagerService, ManagerServiceLive } from "@/lib/effect/services/manager.service";
-import { auth } from "@/lib/auth";
 
 export interface AuthContext {
 	user: {
@@ -36,6 +36,7 @@ export interface UserOrganization {
 	logo: string | null;
 	memberRole: string;
 	hasEmployeeRecord: boolean;
+	shiftsEnabled: boolean;
 }
 
 /**
@@ -193,6 +194,7 @@ export async function getUserOrganizations(): Promise<UserOrganization[]> {
 				logo: org.logo,
 				memberRole: mbr.role,
 				hasEmployeeRecord: !!employeeRecord,
+				shiftsEnabled: org.shiftsEnabled ?? false,
 			};
 		}),
 	);

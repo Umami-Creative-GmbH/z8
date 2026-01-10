@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server";
 import { Effect } from "effect";
-import { OnboardingService } from "@/lib/effect/services/onboarding.service";
+import { NextResponse } from "next/server";
 import { runServerActionSafe } from "@/lib/effect/result";
+import { OnboardingService } from "@/lib/effect/services/onboarding.service";
 
 export async function GET() {
 	const result = await runServerActionSafe(

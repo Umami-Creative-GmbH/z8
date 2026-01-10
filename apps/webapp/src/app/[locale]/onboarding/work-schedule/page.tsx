@@ -6,6 +6,7 @@ import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { ProgressIndicator } from "@/components/onboarding/progress-indicator";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -25,10 +26,9 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { ProgressIndicator } from "@/components/onboarding/progress-indicator";
 import {
-	onboardingWorkScheduleSchema,
 	type OnboardingWorkScheduleFormValues,
+	onboardingWorkScheduleSchema,
 } from "@/lib/validations/onboarding";
 import { useRouter } from "@/navigation";
 import { setWorkScheduleOnboarding, skipWorkScheduleSetup } from "./actions";
@@ -54,11 +54,13 @@ export default function WorkSchedulePage() {
 
 		setLoading(false);
 
-		if (result.success) {
+		if (result.success && result.data) {
 			toast.success(t("onboarding.workSchedule.success", "Work schedule set successfully!"));
-			router.push("/onboarding/complete");
+			router.push(result.data.nextStep);
 		} else {
-			toast.error(result.error || t("onboarding.workSchedule.error", "Failed to set work schedule"));
+			toast.error(
+				result.error || t("onboarding.workSchedule.error", "Failed to set work schedule"),
+			);
 		}
 	}
 
@@ -69,8 +71,8 @@ export default function WorkSchedulePage() {
 
 		setLoading(false);
 
-		if (result.success) {
-			router.push("/onboarding/complete");
+		if (result.success && result.data) {
+			router.push(result.data.nextStep);
 		} else {
 			toast.error(result.error || "Failed to skip work schedule setup");
 		}
@@ -115,7 +117,9 @@ export default function WorkSchedulePage() {
 									name="hoursPerWeek"
 									render={({ field }) => (
 										<FormItem>
-											<FormLabel>{t("onboarding.workSchedule.hoursPerWeek", "Hours per Week")}</FormLabel>
+											<FormLabel>
+												{t("onboarding.workSchedule.hoursPerWeek", "Hours per Week")}
+											</FormLabel>
 											<FormControl>
 												<Input
 													{...field}
@@ -144,7 +148,9 @@ export default function WorkSchedulePage() {
 									name="workClassification"
 									render={({ field }) => (
 										<FormItem>
-											<FormLabel>{t("onboarding.workSchedule.classification", "Work Classification")}</FormLabel>
+											<FormLabel>
+												{t("onboarding.workSchedule.classification", "Work Classification")}
+											</FormLabel>
 											<Select
 												onValueChange={field.onChange}
 												defaultValue={field.value}
@@ -180,7 +186,13 @@ export default function WorkSchedulePage() {
 
 								{/* Action Buttons */}
 								<div className="flex gap-3 pt-4">
-									<Button type="button" variant="outline" onClick={handleSkip} disabled={loading} className="flex-1">
+									<Button
+										type="button"
+										variant="outline"
+										onClick={handleSkip}
+										disabled={loading}
+										className="flex-1"
+									>
 										{t("onboarding.workSchedule.skip", "Skip for now")}
 									</Button>
 									<Button type="submit" disabled={loading} className="flex-1">

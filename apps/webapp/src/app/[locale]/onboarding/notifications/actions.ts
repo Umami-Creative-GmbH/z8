@@ -3,24 +3,24 @@
 import { Effect } from "effect";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { OnboardingService } from "@/lib/effect/services/onboarding.service";
-import type { OrganizationFormValues } from "@/lib/validations/organization";
+import type { OnboardingNotificationsFormValues } from "@/lib/validations/onboarding";
 
-export async function createOrganizationOnboarding(
-	data: OrganizationFormValues,
-): Promise<ServerActionResult<{ organizationId: string }>> {
+export async function configureNotificationsOnboarding(
+	data: OnboardingNotificationsFormValues,
+): Promise<ServerActionResult<void>> {
 	return runServerActionSafe(
 		Effect.gen(function* () {
 			const onboardingService = yield* OnboardingService;
-			return yield* onboardingService.createOrganization(data);
+			yield* onboardingService.configureNotifications(data);
 		}),
 	);
 }
 
-export async function skipOrganizationSetup(): Promise<ServerActionResult<void>> {
+export async function skipNotificationsSetup(): Promise<ServerActionResult<void>> {
 	return runServerActionSafe(
 		Effect.gen(function* () {
 			const onboardingService = yield* OnboardingService;
-			yield* onboardingService.skipOrganizationSetup();
+			yield* onboardingService.skipNotificationsSetup();
 		}),
 	);
 }

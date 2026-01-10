@@ -1,8 +1,8 @@
 "use server";
 
 import { Effect } from "effect";
-import { OnboardingService } from "@/lib/effect/services/onboarding.service";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import { OnboardingService } from "@/lib/effect/services/onboarding.service";
 import type { OnboardingProfileFormValues } from "@/lib/validations/onboarding";
 
 export async function updateProfileOnboarding(

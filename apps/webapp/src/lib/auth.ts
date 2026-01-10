@@ -1,10 +1,11 @@
+import { passkey } from "@better-auth/passkey";
+import { sso } from "@better-auth/sso";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
 import { admin } from "better-auth/plugins/admin";
 import { organization } from "better-auth/plugins/organization";
 import { twoFactor } from "better-auth/plugins/two-factor";
-import { passkey } from "@better-auth/passkey";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import * as schema from "@/db/auth-schema";
@@ -15,9 +16,59 @@ import {
 	renderOrganizationInvitation,
 	renderPasswordReset,
 } from "./email/render";
+import { secondaryStorage } from "./valkey";
 
 export const auth = betterAuth({
 	baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
+
+	// Secondary storage for session caching (Valkey/Redis)
+	// This dramatically improves session retrieval performance
+	secondaryStorage,
+
+	// User additional fields - these will be included in the generated schema
+	user: {
+		additionalFields: {
+			canCreateOrganizations: {
+				type: "boolean",
+				required: false,
+				defaultValue: false,
+				input: false, // system-managed, not user-provided
+			},
+			invitedVia: {
+				type: "string",
+				required: false,
+				input: false,
+			},
+			onboardingComplete: {
+				type: "boolean",
+				required: false,
+				defaultValue: false,
+				input: false,
+			},
+			onboardingStep: {
+				type: "string",
+				required: false,
+				input: false,
+			},
+			onboardingStartedAt: {
+				type: "date",
+				required: false,
+				input: false,
+			},
+			onboardingCompletedAt: {
+				type: "date",
+				required: false,
+				input: false,
+			},
+			timezone: {
+				type: "string",
+				required: false,
+				defaultValue: "UTC",
+				input: true, // user can set their timezone
+			},
+		},
+	},
+
 	emailAndPassword: {
 		enabled: true,
 		requireEmailVerification: true,
@@ -58,7 +109,15 @@ export const auth = betterAuth({
 		cookieCache: {
 			enabled: true,
 			maxAge: 5 * 60, // Cache duration in seconds (5 minutes)
+			strategy: "compact", // Smallest cookie size, best performance
 		},
+		// When using secondary storage, don't store sessions in DB for performance
+		// Sessions are cached in Valkey which is much faster
+		storeSessionInDatabase: true, // Keep DB as source of truth for revocation
+	},
+	// Use secondary storage for rate limiting as well
+	rateLimit: {
+		storage: "secondary-storage",
 	},
 	socialProviders: {
 		google: {
@@ -102,8 +161,42 @@ export const auth = betterAuth({
 			},
 			organizationRoles: ["owner", "admin", "member"],
 			creatorRole: "owner",
+			// Schema customization for organization and invitation tables
+			schema: {
+				organization: {
+					additionalFields: {
+						country: {
+							type: "string",
+							required: false,
+							input: true,
+						},
+						region: {
+							type: "string",
+							required: false,
+							input: true,
+						},
+						shiftsEnabled: {
+							type: "boolean",
+							required: false,
+							defaultValue: false,
+							input: true,
+						},
+					},
+				},
+				invitation: {
+					additionalFields: {
+						canCreateOrganizations: {
+							type: "boolean",
+							required: false,
+							defaultValue: false,
+							input: true,
+						},
+					},
+				},
+			},
 			sendInvitationEmail: async (data) => {
-				const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.BETTER_AUTH_URL || "http://localhost:3000";
+				const appUrl =
+					process.env.NEXT_PUBLIC_APP_URL || process.env.BETTER_AUTH_URL || "http://localhost:3000";
 				const invitationUrl = `${appUrl}/accept-invitation/${data.invitation.id}`;
 
 				const html = await renderOrganizationInvitation({
@@ -184,6 +277,46 @@ export const auth = betterAuth({
 		passkey({
 			rpName: "Z8",
 			rpID: process.env.PASSKEY_RP_ID || "localhost",
+		}),
+		sso({
+			// Enable domain verification for SSO providers
+			domainVerification: {
+				enabled: true,
+				tokenPrefix: "z8-auth-",
+			},
+			// Organization provisioning: auto-add users to linked organizations
+			organizationProvisioning: {
+				disabled: false,
+				defaultRole: "member",
+				getRole: async ({ userInfo }) => {
+					// Default to member, can be customized based on userInfo attributes
+					// Example: check for admin role in SSO provider attributes
+					const role = userInfo?.attributes?.role;
+					if (role === "admin" || role === "manager") {
+						return "admin";
+					}
+					return "member";
+				},
+			},
+			// Provision user when they sign in through SSO
+			provisionUser: async ({ user, provider }) => {
+				// If provider is linked to an organization, check/create employee record
+				if (provider.organizationId) {
+					const existingEmployee = await db.query.employee.findFirst({
+						where: (emp, { eq, and }) =>
+							and(eq(emp.userId, user.id), eq(emp.organizationId, provider.organizationId!)),
+					});
+
+					if (!existingEmployee) {
+						await db.insert(employee).values({
+							userId: user.id,
+							organizationId: provider.organizationId,
+							role: "employee",
+							isActive: true,
+						});
+					}
+				}
+			},
 		}),
 	],
 });

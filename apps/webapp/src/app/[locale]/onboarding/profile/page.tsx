@@ -10,10 +10,10 @@ import {
 	IconUser,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { format } from "@/lib/datetime/luxon-utils";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { ProgressIndicator } from "@/components/onboarding/progress-indicator";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,14 +29,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ProgressIndicator } from "@/components/onboarding/progress-indicator";
+import { format } from "@/lib/datetime/luxon-utils";
 import { cn } from "@/lib/utils";
 import {
-	onboardingProfileSchema,
 	type OnboardingProfileFormValues,
+	onboardingProfileSchema,
 } from "@/lib/validations/onboarding";
 import { useRouter } from "@/navigation";
-import { updateProfileOnboarding, skipProfileSetup } from "./actions";
+import { skipProfileSetup, updateProfileOnboarding } from "./actions";
 
 export default function ProfilePage() {
 	const { t } = useTranslate();
@@ -187,7 +187,10 @@ export default function ProfilePage() {
 												</div>
 											</FormControl>
 											<FormDescription>
-												{t("onboarding.profile.genderDesc", "This helps personalize your experience.")}
+												{t(
+													"onboarding.profile.genderDesc",
+													"This helps personalize your experience.",
+												)}
 											</FormDescription>
 											<FormMessage />
 										</FormItem>
@@ -200,7 +203,9 @@ export default function ProfilePage() {
 									name="birthday"
 									render={({ field }) => (
 										<FormItem className="flex flex-col">
-											<FormLabel>{t("onboarding.profile.birthday", "Birthday")} (Optional)</FormLabel>
+											<FormLabel>
+												{t("onboarding.profile.birthday", "Birthday")} (Optional)
+											</FormLabel>
 											<Popover>
 												<PopoverTrigger asChild>
 													<FormControl>
@@ -208,7 +213,7 @@ export default function ProfilePage() {
 															variant="outline"
 															className={cn(
 																"w-full pl-3 text-left font-normal",
-																!field.value && "text-muted-foreground"
+																!field.value && "text-muted-foreground",
 															)}
 															disabled={loading}
 														>
@@ -236,7 +241,10 @@ export default function ProfilePage() {
 												</PopoverContent>
 											</Popover>
 											<FormDescription>
-												{t("onboarding.profile.birthdayDesc", "Your team can wish you a happy birthday!")}
+												{t(
+													"onboarding.profile.birthdayDesc",
+													"Your team can wish you a happy birthday!",
+												)}
 											</FormDescription>
 											<FormMessage />
 										</FormItem>
@@ -245,7 +253,13 @@ export default function ProfilePage() {
 
 								{/* Action Buttons */}
 								<div className="flex gap-3 pt-4">
-									<Button type="button" variant="outline" onClick={handleSkip} disabled={loading} className="flex-1">
+									<Button
+										type="button"
+										variant="outline"
+										onClick={handleSkip}
+										disabled={loading}
+										className="flex-1"
+									>
 										{t("onboarding.profile.skip", "Skip for now")}
 									</Button>
 									<Button type="submit" disabled={loading} className="flex-1">

@@ -1,22 +1,12 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
-import {
-	InputOTP,
-	InputOTPGroup,
-	InputOTPSlot,
-} from "@/components/ui/input-otp";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { Label } from "@/components/ui/label";
 import { twoFactor } from "@/lib/auth-client";
 
@@ -76,10 +66,7 @@ export function TwoFactorVerificationForm() {
 			}
 		} catch (error) {
 			toast.error("Verification failed", {
-				description:
-					error instanceof Error
-						? error.message
-						: "An unexpected error occurred",
+				description: error instanceof Error ? error.message : "An unexpected error occurred",
 			});
 		} finally {
 			setIsLoading(false);
@@ -114,12 +101,7 @@ export function TwoFactorVerificationForm() {
 					<div className="space-y-2">
 						<Label>Authentication Code</Label>
 						<div className="flex justify-center">
-							<InputOTP
-								maxLength={6}
-								value={otpValue}
-								onChange={setOtpValue}
-								disabled={isLoading}
-							>
+							<InputOTP maxLength={6} value={otpValue} onChange={setOtpValue} disabled={isLoading}>
 								<InputOTPGroup>
 									<InputOTPSlot index={0} />
 									<InputOTPSlot index={1} />
@@ -147,9 +129,7 @@ export function TwoFactorVerificationForm() {
 					disabled={isLoading}
 					className="w-full"
 				>
-					{useBackupCode
-						? "Use authenticator app instead"
-						: "Use backup code instead"}
+					{useBackupCode ? "Use authenticator app instead" : "Use backup code instead"}
 				</Button>
 			</CardContent>
 		</Card>

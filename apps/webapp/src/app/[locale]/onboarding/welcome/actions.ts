@@ -1,8 +1,8 @@
 "use server";
 
 import { Effect } from "effect";
-import { OnboardingService } from "@/lib/effect/services/onboarding.service";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import { OnboardingService } from "@/lib/effect/services/onboarding.service";
 
 export async function startOnboarding(): Promise<ServerActionResult<void>> {
 	return runServerActionSafe(
