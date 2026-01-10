@@ -1,7 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { SOCIAL_PROVIDERS, type SocialProvider, type SocialProviderId } from "@/lib/social-providers";
+import {
+	SOCIAL_PROVIDERS,
+	type SocialProvider,
+	type SocialProviderId,
+} from "@/lib/social-providers";
 
 interface UseEnabledProvidersReturn {
 	/** List of enabled social providers */

@@ -1,10 +1,5 @@
 import type { SVGProps } from "react";
-import {
-	AppleIcon,
-	GitHubIcon,
-	GoogleIcon,
-	LinkedInIcon,
-} from "@/components/icons/provider-icons";
+import { AppleIcon, GitHubIcon, GoogleIcon, LinkedInIcon } from "@/components/icons/provider-icons";
 
 /**
  * Social OAuth provider identifiers

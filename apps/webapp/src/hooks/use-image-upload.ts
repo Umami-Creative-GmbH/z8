@@ -1,15 +1,15 @@
 "use client";
 
 import Uppy from "@uppy/core";
-import Tus from "@uppy/tus";
 import German from "@uppy/locales/lib/de_DE";
 import English from "@uppy/locales/lib/en_US";
+import Tus from "@uppy/tus";
 import { useLocale } from "next-intl";
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useImageProcessMutation } from "@/lib/query/use-image-process";
 
 interface UseImageUploadOptions {
-	uploadType: "avatar" | "org-logo";
+	uploadType: "avatar" | "org-logo" | "branding-logo" | "branding-background";
 	organizationId?: string;
 	maxFileSize?: number;
 	onSuccess?: (url: string) => void;

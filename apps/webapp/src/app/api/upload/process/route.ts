@@ -1,14 +1,14 @@
-import { mkdir, readFile, writeFile, unlink } from "node:fs/promises";
+import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { type NextRequest, NextResponse } from "next/server";
+import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { headers } from "next/headers";
-import { GetObjectCommand, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { s3Client, S3_BUCKET, isS3Configured, getPublicUrl } from "@/lib/storage/s3-client";
+import { getPublicUrl, isS3Configured, S3_BUCKET, s3Client } from "@/lib/storage/s3-client";
 
 interface ProcessRequest {
 	tusFileKey: string;
-	uploadType: "avatar" | "org-logo";
+	uploadType: "avatar" | "org-logo" | "branding-logo" | "branding-background";
 	organizationId?: string;
 }
 
@@ -27,16 +27,21 @@ export async function POST(request: NextRequest) {
 			return NextResponse.json({ error: "Missing tusFileKey" }, { status: 400 });
 		}
 
-		if (!uploadType || !["avatar", "org-logo"].includes(uploadType)) {
+		const validUploadTypes = ["avatar", "org-logo", "branding-logo", "branding-background"];
+		if (!uploadType || !validUploadTypes.includes(uploadType)) {
 			return NextResponse.json({ error: "Invalid uploadType" }, { status: 400 });
 		}
 
-		if (uploadType === "org-logo" && !organizationId) {
-			return NextResponse.json({ error: "Missing organizationId for org-logo" }, { status: 400 });
+		const requiresOrgId = ["org-logo", "branding-logo", "branding-background"].includes(uploadType);
+		if (requiresOrgId && !organizationId) {
+			return NextResponse.json(
+				{ error: `Missing organizationId for ${uploadType}` },
+				{ status: 400 },
+			);
 		}
 
-		// For org-logo, verify user is owner of the organization
-		if (uploadType === "org-logo" && organizationId) {
+		// For org-logo and branding images, verify user is owner of the organization
+		if (requiresOrgId && organizationId) {
 			const member = await auth.api.getFullOrganization({
 				headers: await headers(),
 				query: { organizationId },
@@ -49,7 +54,7 @@ export async function POST(request: NextRequest) {
 			const currentMember = member.members.find((m) => m.userId === session.user.id);
 			if (!currentMember || currentMember.role !== "owner") {
 				return NextResponse.json(
-					{ error: "Only organization owners can update the logo" },
+					{ error: "Only organization owners can update branding images" },
 					{ status: 403 },
 				);
 			}
@@ -72,19 +77,33 @@ export async function POST(request: NextRequest) {
 
 		// Process with Sharp
 		const sharp = (await import("sharp")).default;
-		const maxSize = uploadType === "avatar" ? 2000 : 800;
+
+		// Different max sizes based on upload type
+		const maxSizeMap: Record<string, number> = {
+			avatar: 2000,
+			"org-logo": 800,
+			"branding-logo": 800,
+			"branding-background": 2560, // Larger for background images
+		};
+		const maxSize = maxSizeMap[uploadType] || 800;
 
 		const optimized = await sharp(buffer)
 			.resize(maxSize, maxSize, {
 				fit: "inside",
 				withoutEnlargement: true,
 			})
-			.webp({ quality: 85 })
+			.webp({ quality: uploadType === "branding-background" ? 90 : 85 })
 			.toBuffer();
 
 		// Generate final key/filename
 		const timestamp = Date.now();
-		const folder = uploadType === "avatar" ? "avatars" : "org-logos";
+		const folderMap: Record<string, string> = {
+			avatar: "avatars",
+			"org-logo": "org-logos",
+			"branding-logo": "branding/logos",
+			"branding-background": "branding/backgrounds",
+		};
+		const folder = folderMap[uploadType] || "uploads";
 		const id = uploadType === "avatar" ? session.user.id : organizationId;
 		const filename = `${id}-${timestamp}.webp`;
 		const finalKey = `${folder}/${filename}`;
@@ -151,6 +170,9 @@ export async function POST(request: NextRequest) {
 		});
 	} catch (error) {
 		console.error("Process upload error:", error);
-		return NextResponse.json({ error: "Processing failed", details: String(error) }, { status: 500 });
+		return NextResponse.json(
+			{ error: "Processing failed", details: String(error) },
+			{ status: 500 },
+		);
 	}
 }

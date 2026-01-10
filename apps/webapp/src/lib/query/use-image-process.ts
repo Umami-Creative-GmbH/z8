@@ -5,7 +5,7 @@ import { queryKeys } from "./keys";
 
 interface ProcessImageParams {
 	tusFileKey: string;
-	uploadType: "avatar" | "org-logo";
+	uploadType: "avatar" | "org-logo" | "branding-logo" | "branding-background";
 	organizationId?: string;
 }
 
@@ -45,6 +45,7 @@ export function useImageProcessMutation() {
 				});
 				queryClient.invalidateQueries({ queryKey: queryKeys.organizations.all });
 			}
+			// Branding images don't need query invalidation - handled by form state
 		},
 		retry: 1,
 	});
