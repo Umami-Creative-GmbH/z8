@@ -3,14 +3,17 @@ import {
 	IconBeach,
 	IconBell,
 	IconBuilding,
+	IconBuildingSkyscraper,
 	IconCalendarEvent,
+	IconClock,
 	IconHistory,
 	IconShield,
 	IconUserCircle,
 	IconUsers,
+	IconWorld,
 } from "@tabler/icons-react";
 
-export type SettingsGroup = "account" | "organization" | "administration";
+export type SettingsGroup = "account" | "organization" | "administration" | "enterprise";
 
 export interface SettingsEntry {
 	id: string;
@@ -48,6 +51,12 @@ export const SETTINGS_GROUPS: SettingsGroupConfig[] = [
 		id: "administration",
 		labelKey: "settings.group.administration",
 		labelDefault: "Administration",
+		adminOnly: true,
+	},
+	{
+		id: "enterprise",
+		labelKey: "settings.group.enterprise",
+		labelDefault: "Enterprise",
 		adminOnly: true,
 	},
 ];
@@ -131,15 +140,38 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		group: "administration",
 	},
 	{
+		id: "work-schedules",
+		titleKey: "settings.workSchedules.title",
+		titleDefault: "Work Schedules",
+		descriptionKey: "settings.workSchedules.description",
+		descriptionDefault: "Manage work schedule templates and assignments",
+		href: "/settings/work-schedules",
+		icon: IconClock,
+		adminOnly: true,
+		group: "administration",
+	},
+	// Enterprise settings
+	{
+		id: "custom-domains",
+		titleKey: "settings.customDomains.title",
+		titleDefault: "Domain & Branding",
+		descriptionKey: "settings.customDomains.description",
+		descriptionDefault: "Configure custom domain, branding, and SSO for your organization",
+		href: "/settings/enterprise/domains",
+		icon: IconWorld,
+		adminOnly: true,
+		group: "enterprise",
+	},
+	{
 		id: "audit-log",
 		titleKey: "settings.auditLog.title",
 		titleDefault: "Audit Log",
 		descriptionKey: "settings.auditLog.description",
 		descriptionDefault: "View activity history and security events",
-		href: "/settings/audit-log",
+		href: "/settings/enterprise/audit-log",
 		icon: IconHistory,
 		adminOnly: true,
-		group: "administration",
+		group: "enterprise",
 	},
 ];
 

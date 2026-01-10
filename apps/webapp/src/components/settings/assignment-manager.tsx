@@ -387,7 +387,11 @@ export function AssignmentManager({
 												<div>
 													<span className="font-medium">{assignment.holiday.name}</span>
 													<span className="text-sm text-muted-foreground ml-2">
-														({formatDateRange(assignment.holiday.startDate, assignment.holiday.endDate)}
+														(
+														{formatDateRange(
+															assignment.holiday.startDate,
+															assignment.holiday.endDate,
+														)}
 														)
 													</span>
 												</div>
@@ -763,7 +767,9 @@ export function AssignmentManager({
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
-						<AlertDialogCancel disabled={isDeleting}>{t("common.cancel", "Cancel")}</AlertDialogCancel>
+						<AlertDialogCancel disabled={isDeleting}>
+							{t("common.cancel", "Cancel")}
+						</AlertDialogCancel>
 						<AlertDialogAction
 							onClick={handleDeleteConfirm}
 							disabled={isDeleting}

@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
 import { IconLoader2 } from "@tabler/icons-react";
+import { useState } from "react";
 import { toast } from "sonner";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { TimezonePicker } from "./timezone-picker";
 
 interface TimezoneSettingsProps {
@@ -44,11 +44,7 @@ export function TimezoneSettings({ currentTimezone = "UTC", onUpdate }: Timezone
 			</CardHeader>
 			<CardContent className="space-y-4">
 				<div className="space-y-2">
-					<TimezonePicker
-						value={timezone}
-						onChange={setTimezone}
-						disabled={isLoading}
-					/>
+					<TimezonePicker value={timezone} onChange={setTimezone} disabled={isLoading} />
 					<p className="text-sm text-muted-foreground">
 						Current time in {timezone}:{" "}
 						{new Date().toLocaleString("en-US", {

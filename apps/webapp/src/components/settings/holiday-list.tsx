@@ -269,12 +269,7 @@ export function HolidayList({ organizationId, onAddClick, onEditClick }: Holiday
 								})}
 							</Button>
 						)}
-						<Button
-							size="sm"
-							variant="outline"
-							onClick={() => refetch()}
-							disabled={isFetching}
-						>
+						<Button size="sm" variant="outline" onClick={() => refetch()} disabled={isFetching}>
 							{isFetching ? (
 								<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
 							) : (
@@ -337,9 +332,7 @@ export function HolidayList({ organizationId, onAddClick, onEditClick }: Holiday
 											<div>
 												<div className="font-medium">{holiday.name}</div>
 												{holiday.description && (
-													<div className="text-sm text-muted-foreground">
-														{holiday.description}
-													</div>
+													<div className="text-sm text-muted-foreground">{holiday.description}</div>
 												)}
 											</div>
 										</TableCell>
@@ -382,8 +375,7 @@ export function HolidayList({ organizationId, onAddClick, onEditClick }: Holiday
 													onClick={() => handleDeleteClick(holiday)}
 													disabled={deleteMutation.isPending}
 												>
-													{deleteMutation.isPending &&
-													holidayToDelete?.id === holiday.id ? (
+													{deleteMutation.isPending && holidayToDelete?.id === holiday.id ? (
 														<IconLoader2 className="h-4 w-4 animate-spin" />
 													) : (
 														<IconTrash className="h-4 w-4" />
@@ -423,9 +415,7 @@ export function HolidayList({ organizationId, onAddClick, onEditClick }: Holiday
 							disabled={deleteMutation.isPending}
 							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
 						>
-							{deleteMutation.isPending && (
-								<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
-							)}
+							{deleteMutation.isPending && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
 							{t("common.delete", "Delete")}
 						</AlertDialogAction>
 					</AlertDialogFooter>

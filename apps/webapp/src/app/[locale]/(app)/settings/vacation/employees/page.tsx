@@ -18,6 +18,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { getEmployeesWithAllowances, getVacationPolicy } from "../actions";
+import { getVacationPolicyAssignments } from "../assignment-actions";
 
 async function EmployeeAllowancesContent() {
 	const currentEmployee = await getCurrentEmployee();
@@ -39,13 +40,23 @@ async function EmployeeAllowancesContent() {
 	}
 
 	const currentYear = new Date().getFullYear();
-	const { data: employees } = await getEmployeesWithAllowances(
-		authContext.employee.organizationId,
-		currentYear,
+	const [{ data: employees }, { data: orgPolicy }, { data: policyAssignments }] = await Promise.all(
+		[
+			getEmployeesWithAllowances(authContext.employee.organizationId, currentYear),
+			getVacationPolicy(authContext.employee.organizationId, currentYear),
+			getVacationPolicyAssignments(authContext.employee.organizationId),
+		],
 	);
-	const { data: orgPolicy } = await getVacationPolicy(authContext.employee.organizationId, currentYear);
 
 	const defaultDays = orgPolicy?.defaultAnnualDays || "0";
+
+	// Build a map of employeeId -> policy assignment (only employee-level assignments)
+	const employeePolicyMap = new Map<string, any>();
+	policyAssignments?.forEach((assignment: any) => {
+		if (assignment.assignmentType === "employee" && assignment.employeeId) {
+			employeePolicyMap.set(assignment.employeeId, assignment);
+		}
+	});
 
 	return (
 		<div className="flex flex-1 flex-col gap-4 p-4">
@@ -86,6 +97,7 @@ async function EmployeeAllowancesContent() {
 								<TableHeader>
 									<TableRow>
 										<TableHead>Employee</TableHead>
+										<TableHead>Policy</TableHead>
 										<TableHead>Team</TableHead>
 										<TableHead>Managers</TableHead>
 										<TableHead className="text-right">Default Days</TableHead>
@@ -110,6 +122,7 @@ async function EmployeeAllowancesContent() {
 											? parseFloat(allowance.adjustmentDays)
 											: 0;
 										const total = annualDays + carryover + adjustments;
+										const policyAssignment = employeePolicyMap.get(emp.id);
 
 										return (
 											<TableRow key={emp.id}>
@@ -130,6 +143,13 @@ async function EmployeeAllowancesContent() {
 															<div className="text-xs text-muted-foreground">{emp.user.email}</div>
 														</div>
 													</div>
+												</TableCell>
+												<TableCell>
+													{policyAssignment ? (
+														<Badge variant="outline">{policyAssignment.policy?.name}</Badge>
+													) : (
+														<span className="text-muted-foreground text-sm">Default</span>
+													)}
 												</TableCell>
 												<TableCell>{emp.team?.name || "—"}</TableCell>
 												<TableCell>

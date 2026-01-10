@@ -5,6 +5,7 @@ import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import * as z from "zod";
 import { employee, team } from "@/db/schema";
+import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { AuthorizationError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
@@ -12,7 +13,6 @@ import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { PermissionsService } from "@/lib/effect/services/permissions.service";
 import { createLogger } from "@/lib/logger";
-import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { onTeamMemberAdded, onTeamMemberRemoved } from "@/lib/notifications/triggers";
 
 const logger = createLogger("TeamActions");
@@ -43,7 +43,9 @@ type UpdateTeam = z.infer<typeof updateTeamSchema>;
  * Create a new team
  * Requires canCreateTeams permission
  */
-export async function createTeam(data: CreateTeam): Promise<ServerActionResult<typeof team.$inferSelect>> {
+export async function createTeam(
+	data: CreateTeam,
+): Promise<ServerActionResult<typeof team.$inferSelect>> {
 	const tracer = trace.getTracer("teams");
 
 	const effect = tracer.startActiveSpan(
@@ -268,11 +270,7 @@ export async function updateTeam(
 
 				// Check permission
 				const canManage = yield* _(
-					permissionsService.hasTeamPermission(
-						currentEmployee.id,
-						"canManageTeamSettings",
-						teamId,
-					),
+					permissionsService.hasTeamPermission(currentEmployee.id, "canManageTeamSettings", teamId),
 				);
 
 				if (!canManage) {
@@ -442,11 +440,7 @@ export async function deleteTeam(teamId: string): Promise<ServerActionResult<voi
 
 				// Check permission
 				const canManage = yield* _(
-					permissionsService.hasTeamPermission(
-						currentEmployee.id,
-						"canManageTeamSettings",
-						teamId,
-					),
+					permissionsService.hasTeamPermission(currentEmployee.id, "canManageTeamSettings", teamId),
 				);
 
 				if (!canManage) {
@@ -517,7 +511,9 @@ export async function deleteTeam(teamId: string): Promise<ServerActionResult<voi
 /**
  * Get team details with members
  */
-export async function getTeam(teamId: string): Promise<ServerActionResult<typeof team.$inferSelect>> {
+export async function getTeam(
+	teamId: string,
+): Promise<ServerActionResult<typeof team.$inferSelect>> {
 	const effect = Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
@@ -718,11 +714,7 @@ export async function addTeamMember(
 
 				// Check permission
 				const canManage = yield* _(
-					permissionsService.hasTeamPermission(
-						currentEmployee.id,
-						"canManageTeamMembers",
-						teamId,
-					),
+					permissionsService.hasTeamPermission(currentEmployee.id, "canManageTeamMembers", teamId),
 				);
 
 				if (!canManage) {
@@ -879,11 +871,7 @@ export async function removeTeamMember(
 
 				// Check permission
 				const canManage = yield* _(
-					permissionsService.hasTeamPermission(
-						currentEmployee.id,
-						"canManageTeamMembers",
-						teamId,
-					),
+					permissionsService.hasTeamPermission(currentEmployee.id, "canManageTeamMembers", teamId),
 				);
 
 				if (!canManage) {

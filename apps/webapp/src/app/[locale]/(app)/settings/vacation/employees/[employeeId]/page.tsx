@@ -22,12 +22,25 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { Link, useRouter } from "@/navigation";
-import { getEmployeeAllowance, getVacationPolicy, updateEmployeeAllowance } from "../../actions";
+import { getEmployeeAllowance, getVacationPolicies, updateEmployeeAllowance } from "../../actions";
+import {
+	getVacationPolicies as getAssignmentPolicies,
+	getEmployeePolicyAssignment,
+	setEmployeePolicyAssignment,
+} from "../../assignment-actions";
 
 const formSchema = z.object({
+	policyId: z.string().optional(),
 	customAnnualDays: z.string().optional(),
 	customCarryoverDays: z.string().optional(),
 	adjustmentDays: z.string().optional(),
@@ -44,12 +57,15 @@ export default function EmployeeAllowanceEditPage({
 	const [loading, setLoading] = useState(false);
 	const [employee, setEmployee] = useState<any>(null);
 	const [orgPolicy, setOrgPolicy] = useState<any>(null);
+	const [policies, setPolicies] = useState<any[]>([]);
+	const [currentAssignment, setCurrentAssignment] = useState<any>(null);
 	const [noEmployee, setNoEmployee] = useState(false);
 	const [currentYear] = useState(new Date().getFullYear());
 
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
 		defaultValues: {
+			policyId: "",
 			customAnnualDays: "",
 			customCarryoverDays: "",
 			adjustmentDays: "",
@@ -65,26 +81,40 @@ export default function EmployeeAllowanceEditPage({
 				return;
 			}
 
-			const [empResult, policyResult] = await Promise.all([
+			const [empResult, policyResult, policiesResult, assignmentResult] = await Promise.all([
 				getEmployeeAllowance(employeeId, currentYear),
-				getVacationPolicy(current.organizationId, currentYear),
+				getVacationPolicies(current.organizationId, currentYear),
+				getAssignmentPolicies(current.organizationId),
+				getEmployeePolicyAssignment(employeeId),
 			]);
 
 			if (empResult.success && empResult.data) {
 				setEmployee(empResult.data);
 				const allowance = empResult.data.vacationAllowances[0];
-				if (allowance) {
-					form.reset({
-						customAnnualDays: allowance.customAnnualDays || "",
-						customCarryoverDays: allowance.customCarryoverDays || "",
-						adjustmentDays: allowance.adjustmentDays || "",
-						adjustmentReason: allowance.adjustmentReason || "",
-					});
-				}
+				const policyId = assignmentResult.success ? assignmentResult.data?.policyId || "" : "";
+
+				form.reset({
+					policyId,
+					customAnnualDays: allowance?.customAnnualDays || "",
+					customCarryoverDays: allowance?.customCarryoverDays || "",
+					adjustmentDays: allowance?.adjustmentDays || "",
+					adjustmentReason: allowance?.adjustmentReason || "",
+				});
 			}
 
-			if (policyResult.success) {
-				setOrgPolicy(policyResult.data);
+			if (policyResult.success && policyResult.data) {
+				// Get the first policy for the current year as org default
+				setOrgPolicy(policyResult.data[0] || null);
+			}
+
+			if (policiesResult.success && policiesResult.data) {
+				// Filter to current year policies
+				const yearPolicies = policiesResult.data.filter((p: any) => p.year === currentYear);
+				setPolicies(yearPolicies);
+			}
+
+			if (assignmentResult.success) {
+				setCurrentAssignment(assignmentResult.data);
 			}
 		}
 
@@ -95,6 +125,20 @@ export default function EmployeeAllowanceEditPage({
 		setLoading(true);
 
 		try {
+			// Update policy assignment if changed
+			const currentPolicyId = currentAssignment?.policyId || "";
+			const newPolicyId = values.policyId || "";
+
+			if (currentPolicyId !== newPolicyId) {
+				const assignmentResult = await setEmployeePolicyAssignment(employeeId, newPolicyId || null);
+				if (!assignmentResult.success) {
+					toast.error(assignmentResult.error || "Failed to update policy assignment");
+					setLoading(false);
+					return;
+				}
+			}
+
+			// Update allowance
 			const result = await updateEmployeeAllowance(employeeId, currentYear, {
 				customAnnualDays: values.customAnnualDays || undefined,
 				customCarryoverDays: values.customCarryoverDays || undefined,
@@ -250,6 +294,39 @@ export default function EmployeeAllowanceEditPage({
 
 						<Form {...form}>
 							<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+								<FormField
+									control={form.control}
+									name="policyId"
+									render={({ field }) => (
+										<FormItem>
+											<FormLabel>Assigned Policy</FormLabel>
+											<Select onValueChange={field.onChange} value={field.value}>
+												<FormControl>
+													<SelectTrigger>
+														<SelectValue placeholder="Use organization/team default" />
+													</SelectTrigger>
+												</FormControl>
+												<SelectContent>
+													<SelectItem value="">Use default</SelectItem>
+													{policies.map((policy) => (
+														<SelectItem key={policy.id} value={policy.id}>
+															{policy.name} ({policy.defaultAnnualDays} days)
+														</SelectItem>
+													))}
+												</SelectContent>
+											</Select>
+											<FormDescription>
+												{currentAssignment
+													? `Currently assigned: ${currentAssignment.policy?.name}`
+													: "Falls back to team or organization default policy"}
+											</FormDescription>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+
+								<Separator />
+
 								<FormField
 									control={form.control}
 									name="customAnnualDays"

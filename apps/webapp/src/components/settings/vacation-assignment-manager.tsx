@@ -6,7 +6,6 @@ import {
 	IconLoader2,
 	IconPlus,
 	IconTrash,
-	IconUser,
 	IconUsers,
 } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -35,7 +34,7 @@ import { queryKeys } from "@/lib/query";
 
 interface VacationAssignmentManagerProps {
 	organizationId: string;
-	onAssignClick: (type: "organization" | "team" | "employee") => void;
+	onAssignClick: (type: "organization" | "team") => void;
 }
 
 interface VacationPolicyAssignmentData {
@@ -75,8 +74,9 @@ export function VacationAssignmentManager({
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-	const [selectedAssignment, setSelectedAssignment] =
-		useState<VacationPolicyAssignmentData | null>(null);
+	const [selectedAssignment, setSelectedAssignment] = useState<VacationPolicyAssignmentData | null>(
+		null,
+	);
 
 	// Fetch policy assignments
 	const {
@@ -99,9 +99,7 @@ export function VacationAssignmentManager({
 		mutationFn: (assignmentId: string) => deleteVacationPolicyAssignment(assignmentId),
 		onSuccess: (result) => {
 			if (result.success) {
-				toast.success(
-					t("settings.vacation.assignments.deleted", "Policy assignment removed"),
-				);
+				toast.success(t("settings.vacation.assignments.deleted", "Policy assignment removed"));
 				queryClient.invalidateQueries({
 					queryKey: queryKeys.vacationPolicyAssignments.list(organizationId),
 				});
@@ -110,10 +108,7 @@ export function VacationAssignmentManager({
 			} else {
 				toast.error(
 					result.error ||
-						t(
-							"settings.vacation.assignments.deleteFailed",
-							"Failed to remove policy assignment",
-						),
+						t("settings.vacation.assignments.deleteFailed", "Failed to remove policy assignment"),
 				);
 			}
 		},
@@ -135,16 +130,15 @@ export function VacationAssignmentManager({
 		}
 	};
 
-	// Group assignments by type
+	// Group assignments by type (only org and team levels - employee assignments managed via Employee Allowances page)
 	const policyAssignments = assignments || [];
 	const orgAssignment = policyAssignments.find((a) => a.assignmentType === "organization");
 	const teamAssignments = policyAssignments.filter((a) => a.assignmentType === "team");
-	const employeeAssignments = policyAssignments.filter((a) => a.assignmentType === "employee");
 
 	if (isLoading) {
 		return (
 			<div className="space-y-6">
-				{[1, 2, 3].map((i) => (
+				{[1, 2].map((i) => (
 					<Card key={i}>
 						<CardHeader>
 							<Skeleton className="h-6 w-40" />
@@ -312,80 +306,6 @@ export function VacationAssignmentManager({
 						)}
 					</CardContent>
 				</Card>
-
-				{/* Employee Level */}
-				<Card>
-					<CardHeader>
-						<div className="flex items-center gap-2">
-							<IconUser className="h-5 w-5 text-muted-foreground" />
-							<div>
-								<CardTitle className="text-base">
-									{t("settings.vacation.assignments.employeeLevel", "Employee Overrides")}
-									{employeeAssignments.length > 0 && (
-										<Badge variant="secondary" className="ml-2">
-											{employeeAssignments.length}
-										</Badge>
-									)}
-								</CardTitle>
-								<CardDescription>
-									{t(
-										"settings.vacation.assignments.employeeLevelDescription",
-										"Override team or organization policy for specific employees",
-									)}
-								</CardDescription>
-							</div>
-						</div>
-					</CardHeader>
-					<CardContent>
-						<div className="flex justify-end mb-2">
-							<Button onClick={() => onAssignClick("employee")} size="sm" variant="outline">
-								<IconPlus className="mr-2 h-4 w-4" />
-								{t("settings.vacation.assignments.assignEmployee", "Assign to Employee")}
-							</Button>
-						</div>
-						{employeeAssignments.length > 0 ? (
-							<div className="space-y-2">
-								{employeeAssignments.map((assignment) => (
-									<div
-										key={assignment.id}
-										className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent/50 transition-colors"
-									>
-										<div className="flex items-center gap-3">
-											<IconUser className="h-4 w-4 text-muted-foreground" />
-											<div>
-												<span className="font-medium">
-													{assignment.employee?.firstName} {assignment.employee?.lastName}
-												</span>
-												<span className="text-muted-foreground mx-2">→</span>
-												<span className="text-sm">{formatPolicy(assignment.policy)}</span>
-												{assignment.policy.allowCarryover && (
-													<Badge variant="secondary" className="ml-2 text-xs">
-														{t("settings.vacation.carryover", "Carryover")}
-													</Badge>
-												)}
-											</div>
-										</div>
-										<Button
-											variant="ghost"
-											size="icon"
-											className="h-8 w-8 text-muted-foreground hover:text-destructive"
-											onClick={() => handleDeleteClick(assignment)}
-										>
-											<IconTrash className="h-4 w-4" />
-										</Button>
-									</div>
-								))}
-							</div>
-						) : (
-							<p className="text-sm text-muted-foreground text-center py-4">
-								{t(
-									"settings.vacation.assignments.noEmployeePolicies",
-									"No employee-specific policies. All employees use their team or organization default.",
-								)}
-							</p>
-						)}
-					</CardContent>
-				</Card>
 			</div>
 
 			{/* Delete Confirmation Dialog */}
@@ -406,14 +326,6 @@ export function VacationAssignmentManager({
 									"settings.vacation.assignments.deleteTeamDescription",
 									'This will remove the policy from team "{team}". They will use the organization default.',
 									{ team: selectedAssignment.team?.name },
-								)}
-							{selectedAssignment?.assignmentType === "employee" &&
-								t(
-									"settings.vacation.assignments.deleteEmployeeDescription",
-									'This will remove the policy override for "{name}". They will use their team or organization default.',
-									{
-										name: `${selectedAssignment.employee?.firstName} ${selectedAssignment.employee?.lastName}`,
-									},
 								)}
 						</AlertDialogDescription>
 					</AlertDialogHeader>

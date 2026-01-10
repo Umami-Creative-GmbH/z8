@@ -12,6 +12,11 @@ import {
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import {
+	bulkAddHolidaysToPreset,
+	createHolidayPreset,
+	createPresetAssignment,
+} from "@/app/[locale]/(app)/settings/holidays/preset-actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -31,6 +36,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
@@ -50,12 +56,6 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import {
-	bulkAddHolidaysToPreset,
-	createHolidayPreset,
-	createPresetAssignment,
-} from "@/app/[locale]/(app)/settings/holidays/preset-actions";
-import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 // Searchable select component for location dropdowns
@@ -336,7 +336,8 @@ export function HolidayImportDialog({
 				setSelectedHolidays(new Set(nonDuplicates));
 
 				// Generate preset name from location
-				const countryName = countries.find((c) => c.code === selectedCountry)?.name || selectedCountry;
+				const countryName =
+					countries.find((c) => c.code === selectedCountry)?.name || selectedCountry;
 				const stateName = states.find((s) => s.code === selectedState)?.name;
 				const regionName = regions.find((r) => r.code === selectedRegion)?.name;
 				const nameParts = [countryName];
@@ -750,7 +751,10 @@ export function HolidayImportDialog({
 								<Input
 									value={presetName}
 									onChange={(e) => setPresetName(e.target.value)}
-									placeholder={t("settings.holidays.import.presetNamePlaceholder", "e.g., Germany - Bavaria")}
+									placeholder={t(
+										"settings.holidays.import.presetNamePlaceholder",
+										"e.g., Germany - Bavaria",
+									)}
 								/>
 								<p className="text-sm text-muted-foreground">
 									{t(

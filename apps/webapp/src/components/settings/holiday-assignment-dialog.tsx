@@ -205,10 +205,7 @@ export function HolidayAssignmentDialog({
 	const getDialogTitle = () => {
 		switch (assignmentType) {
 			case "organization":
-				return t(
-					"settings.holidays.assignments.addOrgHoliday",
-					"Add Organization-Wide Holiday",
-				);
+				return t("settings.holidays.assignments.addOrgHoliday", "Add Organization-Wide Holiday");
 			case "team":
 				return t("settings.holidays.assignments.addTeamHoliday", "Add Team Holiday");
 			case "employee":
@@ -422,10 +419,7 @@ export function HolidayAssignmentDialog({
 								>
 									{t("common.cancel", "Cancel")}
 								</Button>
-								<Button
-									type="submit"
-									disabled={createMutation.isPending || holidays?.length === 0}
-								>
+								<Button type="submit" disabled={createMutation.isPending || holidays?.length === 0}>
 									{createMutation.isPending && (
 										<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
 									)}

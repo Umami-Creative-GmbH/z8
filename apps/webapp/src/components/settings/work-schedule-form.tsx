@@ -1,7 +1,6 @@
 "use client";
 
 import { IconCalendar, IconCheck, IconLoader2, IconX } from "@tabler/icons-react";
-import { format } from "@/lib/datetime/luxon-utils";
 import { useState } from "react";
 import { toast } from "sonner";
 import { setWorkSchedule } from "@/app/[locale]/(app)/settings/employees/actions";
@@ -21,6 +20,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { format } from "@/lib/datetime/luxon-utils";
 import { cn } from "@/lib/utils";
 
 interface WorkScheduleFormProps {

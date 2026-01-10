@@ -753,6 +753,125 @@ export async function updateOrganizationDetails(
 }
 
 // =============================================================================
+// Organization Features Actions
+// =============================================================================
+
+/**
+ * Toggle organization features (e.g., shift scheduling)
+ * Requires owner role
+ */
+export async function toggleOrganizationFeature(
+	organizationId: string,
+	feature: "shiftsEnabled",
+	enabled: boolean,
+): Promise<ServerActionResult<void>> {
+	const tracer = trace.getTracer("organizations");
+
+	const effect = tracer.startActiveSpan(
+		"toggleOrganizationFeature",
+		{
+			attributes: {
+				"organization.id": organizationId,
+				feature,
+				enabled,
+			},
+		},
+		(span) => {
+			return Effect.gen(function* (_) {
+				const authService = yield* _(AuthService);
+				const session = yield* _(authService.getSession());
+				const dbService = yield* _(DatabaseService);
+
+				// Check current user's role
+				const memberRecord = yield* _(
+					dbService.query("getCurrentMember", async () => {
+						return await db.query.member.findFirst({
+							where: and(
+								eq(authSchema.member.userId, session.user.id),
+								eq(authSchema.member.organizationId, organizationId),
+							),
+						});
+					}),
+					Effect.flatMap((member) =>
+						member
+							? Effect.succeed(member)
+							: Effect.fail(
+									new NotFoundError({
+										message: "You are not a member of this organization",
+										entityType: "member",
+									}),
+								),
+					),
+				);
+
+				// Verify owner role (only owners can toggle features)
+				if (memberRecord.role !== "owner") {
+					yield* _(
+						Effect.fail(
+							new AuthorizationError({
+								message: "Only owners can change organization features",
+								userId: session.user.id,
+								resource: "organization",
+								action: "update",
+							}),
+						),
+					);
+				}
+
+				// Update the organization feature directly
+				yield* _(
+					Effect.tryPromise({
+						try: async () => {
+							await db
+								.update(authSchema.organization)
+								.set({ [feature]: enabled })
+								.where(eq(authSchema.organization.id, organizationId));
+						},
+						catch: (error) => {
+							return new ValidationError({
+								message:
+									error instanceof Error ? error.message : "Failed to update organization feature",
+								field: feature,
+							});
+						},
+					}),
+				);
+
+				logger.info(
+					{
+						organizationId,
+						feature,
+						enabled,
+					},
+					`Organization feature ${feature} ${enabled ? "enabled" : "disabled"}`,
+				);
+
+				span.setStatus({ code: SpanStatusCode.OK });
+			}).pipe(
+				Effect.catchAll((error) =>
+					Effect.gen(function* (_) {
+						span.recordException(error as Error);
+						span.setStatus({
+							code: SpanStatusCode.ERROR,
+							message: String(error),
+						});
+						logger.error(
+							{ error, organizationId, feature },
+							"Failed to toggle organization feature",
+						);
+						return yield* _(Effect.fail(error as any));
+					}),
+				),
+				Effect.onExit(() => Effect.sync(() => span.end())),
+				Effect.provide(AppLayer),
+			);
+		},
+	);
+
+	return runServerActionSafe(effect);
+}
+
+// =============================================================================
 // Employee Management Actions
 // =============================================================================
 

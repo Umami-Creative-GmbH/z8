@@ -52,12 +52,7 @@ export async function getHolidays(organizationId: string): Promise<ServerActionR
 					})
 					.from(holiday)
 					.innerJoin(holidayCategory, eq(holiday.categoryId, holidayCategory.id))
-					.where(
-						and(
-							eq(holiday.organizationId, organizationId),
-							eq(holiday.isActive, true),
-						),
-					)
+					.where(and(eq(holiday.organizationId, organizationId), eq(holiday.isActive, true)))
 					.orderBy(holiday.startDate);
 			}),
 			Effect.mapError(

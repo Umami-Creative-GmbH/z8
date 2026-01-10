@@ -3,10 +3,10 @@
 import { eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { headers } from "next/headers";
-import { auth } from "@/lib/auth";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
-import { ValidationError, AuthenticationError } from "@/lib/effect/errors";
+import { auth } from "@/lib/auth";
+import { AuthenticationError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
@@ -60,8 +60,7 @@ export async function updateProfile(data: {
 				},
 				catch: (error) => {
 					return new ValidationError({
-						message:
-							error instanceof Error ? error.message : "Failed to update profile",
+						message: error instanceof Error ? error.message : "Failed to update profile",
 						field: "profile",
 					});
 				},
@@ -167,10 +166,7 @@ export async function updateTimezone(timezone: string): Promise<ServerActionResu
 		// Update user's timezone
 		yield* _(
 			dbService.query("updateTimezone", async () => {
-				await dbService.db
-					.update(user)
-					.set({ timezone })
-					.where(eq(user.id, session.user.id));
+				await dbService.db.update(user).set({ timezone }).where(eq(user.id, session.user.id));
 			}),
 		);
 	}).pipe(Effect.provide(AppLayer));

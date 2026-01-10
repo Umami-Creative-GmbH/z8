@@ -5,22 +5,12 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
+import { PermissionEditor } from "@/components/settings/permission-editor";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
-import {
-	Dialog,
-	DialogContent,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
 	Table,
@@ -30,7 +20,6 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { PermissionEditor } from "@/components/settings/permission-editor";
 import { listEmployees } from "../employees/actions";
 import { listTeams } from "../teams/actions";
 import { listEmployeePermissions } from "./actions";
@@ -104,9 +93,7 @@ export default function PermissionsPage() {
 		setLoading(true);
 
 		// Reload permissions
-		const permResult = await listEmployeePermissions(
-			currentEmployee.organizationId,
-		);
+		const permResult = await listEmployeePermissions(currentEmployee.organizationId);
 		if (permResult.success && permResult.data) {
 			const permMap: Record<string, any> = {};
 			for (const item of permResult.data) {
@@ -169,9 +156,7 @@ export default function PermissionsPage() {
 				<Card>
 					<CardContent className="flex flex-col items-center justify-center py-8">
 						<IconShield className="mb-4 size-12 text-muted-foreground" />
-						<p className="text-sm text-muted-foreground">
-							Admin access required
-						</p>
+						<p className="text-sm text-muted-foreground">Admin access required</p>
 					</CardContent>
 				</Card>
 			</div>
@@ -182,9 +167,7 @@ export default function PermissionsPage() {
 		<div className="flex flex-1 flex-col gap-4 p-4">
 			<div className="flex items-center justify-between">
 				<div>
-					<h1 className="text-2xl font-semibold tracking-tight">
-						Team Permissions
-					</h1>
+					<h1 className="text-2xl font-semibold tracking-tight">Team Permissions</h1>
 					<p className="text-sm text-muted-foreground">
 						Manage employee permissions for team operations
 					</p>
@@ -196,16 +179,9 @@ export default function PermissionsPage() {
 					<div className="flex items-center justify-between">
 						<div>
 							<CardTitle>Employee Permissions</CardTitle>
-							<CardDescription>
-								Click on an employee to edit their permissions
-							</CardDescription>
+							<CardDescription>Click on an employee to edit their permissions</CardDescription>
 						</div>
-						<Button
-							variant="outline"
-							size="sm"
-							onClick={handleRefresh}
-							disabled={loading}
-						>
+						<Button variant="outline" size="sm" onClick={handleRefresh} disabled={loading}>
 							{loading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
 							Refresh
 						</Button>
@@ -229,9 +205,7 @@ export default function PermissionsPage() {
 						) : filteredEmployees.length === 0 ? (
 							<div className="flex flex-col items-center justify-center py-8">
 								<IconUserCog className="mb-4 size-12 text-muted-foreground" />
-								<p className="text-sm text-muted-foreground">
-									No employees found
-								</p>
+								<p className="text-sm text-muted-foreground">No employees found</p>
 							</div>
 						) : (
 							<Table>
@@ -253,9 +227,7 @@ export default function PermissionsPage() {
 												<TableCell>
 													<div className="flex items-center gap-3">
 														<Avatar className="size-8">
-															<AvatarImage
-																src={emp.user.image || undefined}
-															/>
+															<AvatarImage src={emp.user.image || undefined} />
 															<AvatarFallback>
 																{emp.user.name
 																	.split(" ")
@@ -266,23 +238,15 @@ export default function PermissionsPage() {
 														</Avatar>
 														<div>
 															<div className="font-medium">{emp.user.name}</div>
-															<div className="text-sm text-muted-foreground">
-																{emp.user.email}
-															</div>
+															<div className="text-sm text-muted-foreground">{emp.user.email}</div>
 														</div>
 													</div>
 												</TableCell>
 												<TableCell>
-													<span className="text-sm">
-														{emp.position || "—"}
-													</span>
+													<span className="text-sm">{emp.position || "—"}</span>
 												</TableCell>
 												<TableCell>
-													<Badge
-														variant={
-															emp.role === "admin" ? "default" : "secondary"
-														}
-													>
+													<Badge variant={emp.role === "admin" ? "default" : "secondary"}>
 														{emp.role}
 													</Badge>
 												</TableCell>
@@ -295,14 +259,10 @@ export default function PermissionsPage() {
 																{permSummary.count} permission
 																{permSummary.count !== 1 ? "s" : ""}
 															</Badge>
-															<Badge variant="outline">
-																{permSummary.scope}
-															</Badge>
+															<Badge variant="outline">{permSummary.scope}</Badge>
 														</div>
 													) : (
-														<span className="text-sm text-muted-foreground">
-															No permissions
-														</span>
+														<span className="text-sm text-muted-foreground">No permissions</span>
 													)}
 												</TableCell>
 												<TableCell className="text-right">
@@ -326,15 +286,10 @@ export default function PermissionsPage() {
 			</Card>
 
 			{/* Permission Editor Dialog */}
-			<Dialog
-				open={!!selectedEmployee}
-				onOpenChange={(open) => !open && setSelectedEmployee(null)}
-			>
+			<Dialog open={!!selectedEmployee} onOpenChange={(open) => !open && setSelectedEmployee(null)}>
 				<DialogContent className="max-w-2xl">
 					<DialogHeader>
-						<DialogTitle>
-							Edit Permissions - {selectedEmployee?.user.name}
-						</DialogTitle>
+						<DialogTitle>Edit Permissions - {selectedEmployee?.user.name}</DialogTitle>
 					</DialogHeader>
 					{selectedEmployee && (
 						<PermissionEditor

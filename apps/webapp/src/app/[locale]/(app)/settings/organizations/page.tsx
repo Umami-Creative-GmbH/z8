@@ -10,7 +10,8 @@ export default async function OrganizationsPage() {
 	const authContext = await requireUser();
 	// Use session's activeOrganizationId, or fall back to employee's organizationId
 	// This ensures consistency with how the sidebar determines the current org
-	const activeOrgId = authContext.session.activeOrganizationId || authContext.employee?.organizationId;
+	const activeOrgId =
+		authContext.session.activeOrganizationId || authContext.employee?.organizationId;
 
 	if (!activeOrgId) {
 		return (

@@ -3,7 +3,6 @@
 import { QRCodeSVG } from "qrcode.react";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { twoFactor } from "@/lib/auth-client";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -25,6 +24,7 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import { twoFactor } from "@/lib/auth-client";
 
 interface TwoFactorSetupProps {
 	isEnabled: boolean;
@@ -295,7 +295,10 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled, userEmail }: TwoFa
 						>
 							Cancel
 						</Button>
-						<Button onClick={handleRegenerateBackupCodes} disabled={isPending || !regeneratePassword}>
+						<Button
+							onClick={handleRegenerateBackupCodes}
+							disabled={isPending || !regeneratePassword}
+						>
 							Regenerate Codes
 						</Button>
 					</DialogFooter>
@@ -307,9 +310,7 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled, userEmail }: TwoFa
 				<DialogContent>
 					<DialogHeader>
 						<DialogTitle>Setup Two-Factor Authentication</DialogTitle>
-						<DialogDescription>
-							Scan the QR code with your authenticator app
-						</DialogDescription>
+						<DialogDescription>Scan the QR code with your authenticator app</DialogDescription>
 					</DialogHeader>
 
 					<div className="space-y-4">
@@ -394,7 +395,8 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled, userEmail }: TwoFa
 					<DialogHeader>
 						<DialogTitle>Disable Two-Factor Authentication?</DialogTitle>
 						<DialogDescription>
-							This will remove the extra layer of security from your account. Please enter your password to confirm.
+							This will remove the extra layer of security from your account. Please enter your
+							password to confirm.
 						</DialogDescription>
 					</DialogHeader>
 					<div className="space-y-4">

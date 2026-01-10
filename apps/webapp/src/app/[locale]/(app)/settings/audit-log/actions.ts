@@ -1,13 +1,13 @@
 "use server";
 
 import { Effect } from "effect";
-import { requireUser, getAuthContext } from "@/lib/auth-helpers";
+import { getAuthContext, requireUser } from "@/lib/auth-helpers";
 import {
-	getAuditLogs,
-	getAuditLogStats,
-	exportAuditLogs,
 	type AuditLogFilters,
 	type AuditLogResult,
+	exportAuditLogs,
+	getAuditLogStats,
+	getAuditLogs,
 } from "@/lib/query/audit.queries";
 
 export interface AuditLogResponse {
@@ -58,7 +58,8 @@ export async function getAuditLogsAction(filters: {
 			};
 		}
 
-		const organizationId = authContext.session.activeOrganizationId || authContext.employee?.organizationId;
+		const organizationId =
+			authContext.session.activeOrganizationId || authContext.employee?.organizationId;
 		if (!organizationId) {
 			return {
 				success: false,
@@ -99,7 +100,7 @@ export async function getAuditLogsAction(filters: {
  */
 export async function getAuditStatsAction(
 	startDate: string,
-	endDate: string
+	endDate: string,
 ): Promise<AuditStatsResponse> {
 	try {
 		const authContext = await requireUser();
@@ -113,7 +114,8 @@ export async function getAuditStatsAction(
 			};
 		}
 
-		const organizationId = authContext.session.activeOrganizationId || authContext.employee?.organizationId;
+		const organizationId =
+			authContext.session.activeOrganizationId || authContext.employee?.organizationId;
 		if (!organizationId) {
 			return {
 				success: false,
@@ -121,11 +123,7 @@ export async function getAuditStatsAction(
 			};
 		}
 
-		const stats = await getAuditLogStats(
-			organizationId,
-			new Date(startDate),
-			new Date(endDate)
-		);
+		const stats = await getAuditLogStats(organizationId, new Date(startDate), new Date(endDate));
 
 		return {
 			success: true,
@@ -146,7 +144,7 @@ export async function getAuditStatsAction(
  */
 export async function exportAuditLogsAction(
 	startDate: string,
-	endDate: string
+	endDate: string,
 ): Promise<{ success: boolean; data?: AuditLogResult[]; error?: string }> {
 	try {
 		const authContext = await requireUser();
@@ -160,7 +158,8 @@ export async function exportAuditLogsAction(
 			};
 		}
 
-		const organizationId = authContext.session.activeOrganizationId || authContext.employee?.organizationId;
+		const organizationId =
+			authContext.session.activeOrganizationId || authContext.employee?.organizationId;
 		if (!organizationId) {
 			return {
 				success: false,
@@ -168,11 +167,7 @@ export async function exportAuditLogsAction(
 			};
 		}
 
-		const logs = await exportAuditLogs(
-			organizationId,
-			new Date(startDate),
-			new Date(endDate)
-		);
+		const logs = await exportAuditLogs(organizationId, new Date(startDate), new Date(endDate));
 
 		return {
 			success: true,

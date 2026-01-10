@@ -1,8 +1,5 @@
-import { ServerAppSidebar } from "@/components/server-app-sidebar";
 import { SettingsBreadcrumbs } from "@/components/settings/settings-breadcrumbs";
 import { SettingsNav } from "@/components/settings/settings-nav";
-import { SiteHeader } from "@/components/site-header";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { getAuthContext } from "@/lib/auth-helpers";
 
 export default async function SettingsLayout({
@@ -15,32 +12,17 @@ export default async function SettingsLayout({
 	const isAdmin = authContext?.employee?.role === "admin";
 
 	return (
-		<SidebarProvider
-			style={
-				{
-					"--sidebar-width": "calc(var(--spacing) * 72)",
-					"--header-height": "calc(var(--spacing) * 12)",
-				} as React.CSSProperties
-			}
-		>
-			<ServerAppSidebar variant="inset" />
-			<SidebarInset>
-				<SiteHeader />
-				<div className="flex flex-1 overflow-hidden">
-					{/* Settings navigation sidebar */}
-					<aside className="w-64 border-r bg-card p-4 hidden md:block overflow-auto">
-						<SettingsNav isAdmin={isAdmin} />
-					</aside>
+		<div className="flex flex-1 overflow-hidden">
+			{/* Settings navigation sidebar */}
+			<aside className="w-64 border-r bg-card p-4 hidden md:block overflow-auto">
+				<SettingsNav isAdmin={isAdmin} />
+			</aside>
 
-					{/* Main content area */}
-					<main className="flex-1 flex flex-col overflow-hidden">
-						<SettingsBreadcrumbs />
-						<div className="flex-1 overflow-auto">
-							{children}
-						</div>
-					</main>
-				</div>
-			</SidebarInset>
-		</SidebarProvider>
+			{/* Main content area */}
+			<main className="flex-1 flex flex-col overflow-hidden">
+				<SettingsBreadcrumbs />
+				<div className="flex-1 overflow-auto">{children}</div>
+			</main>
+		</div>
 	);
 }

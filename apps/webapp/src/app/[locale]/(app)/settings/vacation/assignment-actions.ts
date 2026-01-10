@@ -4,11 +4,7 @@ import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { db } from "@/db";
 import { employee, team, vacationAllowance, vacationPolicyAssignment } from "@/db/schema";
-import {
-	AuthorizationError,
-	DatabaseError,
-	NotFoundError,
-} from "@/lib/effect/errors";
+import { AuthorizationError, DatabaseError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
@@ -90,6 +86,7 @@ export async function getVacationPolicyAssignments(
 						createdAt: vacationPolicyAssignment.createdAt,
 						policy: {
 							id: vacationAllowance.id,
+							name: vacationAllowance.name,
 							year: vacationAllowance.year,
 							defaultAnnualDays: vacationAllowance.defaultAnnualDays,
 							accrualType: vacationAllowance.accrualType,
@@ -221,7 +218,8 @@ export async function createVacationPolicyAssignment(data: {
 		);
 
 		// Step 6: Calculate priority based on assignment type
-		const priority = data.assignmentType === "organization" ? 0 : data.assignmentType === "team" ? 1 : 2;
+		const priority =
+			data.assignmentType === "organization" ? 0 : data.assignmentType === "team" ? 1 : 2;
 
 		// Step 7: Create the assignment
 		const newAssignment = yield* _(
@@ -253,6 +251,179 @@ export async function createVacationPolicyAssignment(data: {
 		);
 
 		return newAssignment;
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
+}
+
+/**
+ * Get a specific employee's direct policy assignment (if any)
+ */
+export async function getEmployeePolicyAssignment(
+	employeeId: string,
+): Promise<ServerActionResult<any | null>> {
+	const effect = Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
+
+		const dbService = yield* _(DatabaseService);
+
+		const assignment = yield* _(
+			dbService.query("getEmployeePolicyAssignment", async () => {
+				const [result] = await dbService.db
+					.select({
+						id: vacationPolicyAssignment.id,
+						policyId: vacationPolicyAssignment.policyId,
+						policy: {
+							id: vacationAllowance.id,
+							name: vacationAllowance.name,
+							year: vacationAllowance.year,
+							defaultAnnualDays: vacationAllowance.defaultAnnualDays,
+						},
+					})
+					.from(vacationPolicyAssignment)
+					.innerJoin(vacationAllowance, eq(vacationPolicyAssignment.policyId, vacationAllowance.id))
+					.where(
+						and(
+							eq(vacationPolicyAssignment.employeeId, employeeId),
+							eq(vacationPolicyAssignment.assignmentType, "employee"),
+							eq(vacationPolicyAssignment.isActive, true),
+						),
+					)
+					.limit(1);
+
+				return result || null;
+			}),
+		);
+
+		return assignment;
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
+}
+
+/**
+ * Set or clear an employee's direct policy assignment
+ */
+export async function setEmployeePolicyAssignment(
+	employeeId: string,
+	policyId: string | null,
+): Promise<ServerActionResult<void>> {
+	const effect = Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
+
+		const dbService = yield* _(DatabaseService);
+
+		// Get current user's employee record
+		const employeeRecord = yield* _(
+			dbService.query("getEmployeeRecord", async () => {
+				const [emp] = await dbService.db
+					.select()
+					.from(employee)
+					.where(and(eq(employee.userId, session.user.id), eq(employee.isActive, true)))
+					.limit(1);
+
+				if (!emp) {
+					throw new Error("Employee not found");
+				}
+
+				return emp;
+			}),
+			Effect.mapError(
+				() =>
+					new NotFoundError({
+						message: "Employee profile not found",
+						entityType: "employee",
+					}),
+			),
+		);
+
+		// Check admin role
+		if (employeeRecord.role !== "admin") {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Admin access required",
+						userId: session.user.id,
+						resource: "vacation_policy_assignment",
+						action: "update",
+					}),
+				),
+			);
+		}
+
+		// First, deactivate any existing employee assignment
+		yield* _(
+			dbService.query("deactivateExisting", async () => {
+				await dbService.db
+					.update(vacationPolicyAssignment)
+					.set({ isActive: false })
+					.where(
+						and(
+							eq(vacationPolicyAssignment.employeeId, employeeId),
+							eq(vacationPolicyAssignment.assignmentType, "employee"),
+							eq(vacationPolicyAssignment.isActive, true),
+						),
+					);
+			}),
+		);
+
+		// If policyId provided, create new assignment
+		if (policyId) {
+			// Verify policy exists and belongs to same org
+			const existingPolicy = yield* _(
+				dbService.query("verifyPolicy", async () => {
+					const [p] = await dbService.db
+						.select()
+						.from(vacationAllowance)
+						.where(
+							and(
+								eq(vacationAllowance.id, policyId),
+								eq(vacationAllowance.organizationId, employeeRecord.organizationId),
+							),
+						)
+						.limit(1);
+
+					if (!p) {
+						throw new Error("Policy not found");
+					}
+
+					return p;
+				}),
+				Effect.mapError(
+					() =>
+						new NotFoundError({
+							message: "Vacation policy not found",
+							entityType: "vacation_policy",
+							entityId: policyId,
+						}),
+				),
+			);
+
+			// Create new assignment
+			yield* _(
+				dbService.query("createAssignment", async () => {
+					await dbService.db.insert(vacationPolicyAssignment).values({
+						policyId,
+						organizationId: employeeRecord.organizationId,
+						assignmentType: "employee",
+						employeeId,
+						priority: 2, // Employee level = highest priority
+						createdBy: session.user.id,
+					});
+				}),
+				Effect.mapError(
+					(error) =>
+						new DatabaseError({
+							message: "Failed to create policy assignment",
+							operation: "insert",
+							table: "vacation_policy_assignment",
+							cause: error,
+						}),
+				),
+			);
+		}
 	}).pipe(Effect.provide(AppLayer));
 
 	return runServerActionSafe(effect);

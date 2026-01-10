@@ -26,28 +26,11 @@ import {
 } from "@/components/ui/table";
 import { Link } from "@/navigation";
 import { getCurrentEmployee } from "../../approvals/actions";
-import { listEmployees } from "./actions";
-
-type Employee = {
-	id: string;
-	firstName: string | null;
-	lastName: string | null;
-	position: string | null;
-	role: string;
-	isActive: boolean;
-	user: {
-		name: string;
-		email: string;
-		image: string | null;
-	};
-	team: {
-		name: string;
-	} | null;
-};
+import { type EmployeeWithRelations, listEmployees } from "./actions";
 
 export default function EmployeesPage() {
-	const [employees, setEmployees] = useState<Employee[]>([]);
-	const [filteredEmployees, setFilteredEmployees] = useState<Employee[]>([]);
+	const [employees, setEmployees] = useState<EmployeeWithRelations[]>([]);
+	const [filteredEmployees, setFilteredEmployees] = useState<EmployeeWithRelations[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [noEmployee, setNoEmployee] = useState(false);
 	const [isAdmin, setIsAdmin] = useState(false);
@@ -69,9 +52,9 @@ export default function EmployeesPage() {
 			setIsAdmin(currentEmp.role === "admin");
 
 			const result = await listEmployees();
-			if (result.success && result.data) {
-				setEmployees(result.data as Employee[]);
-				setFilteredEmployees(result.data as Employee[]);
+			if (result.success) {
+				setEmployees(result.data);
+				setFilteredEmployees(result.data);
 			} else {
 				toast.error(result.error || "Failed to load employees");
 			}
@@ -222,9 +205,7 @@ export default function EmployeesPage() {
 													</Avatar>
 													<div>
 														<div className="font-medium">{emp.user.name}</div>
-														<div className="text-sm text-muted-foreground">
-															{emp.user.email}
-														</div>
+														<div className="text-sm text-muted-foreground">{emp.user.email}</div>
 													</div>
 												</div>
 											</TableCell>

@@ -87,10 +87,13 @@ export function CategoryManager({ organizationId, onAddClick, onEditClick }: Cat
 		onSuccess: (result) => {
 			if (result.success) {
 				toast.success(t("settings.holidays.categories.deleted", "Category deleted successfully"));
-				queryClient.invalidateQueries({ queryKey: queryKeys.holidayCategories.list(organizationId) });
+				queryClient.invalidateQueries({
+					queryKey: queryKeys.holidayCategories.list(organizationId),
+				});
 			} else {
 				toast.error(
-					result.error || t("settings.holidays.categories.deleteFailed", "Failed to delete category"),
+					result.error ||
+						t("settings.holidays.categories.deleteFailed", "Failed to delete category"),
 				);
 			}
 			setDeleteConfirmOpen(false);
@@ -179,12 +182,7 @@ export function CategoryManager({ organizationId, onAddClick, onEditClick }: Cat
 						{t("settings.holidays.categories.title", "Holiday Categories")}
 					</h3>
 					<div className="flex items-center gap-2">
-						<Button
-							size="sm"
-							variant="outline"
-							onClick={() => refetch()}
-							disabled={isFetching}
-						>
+						<Button size="sm" variant="outline" onClick={() => refetch()} disabled={isFetching}>
 							{isFetching ? (
 								<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
 							) : (
@@ -283,8 +281,7 @@ export function CategoryManager({ organizationId, onAddClick, onEditClick }: Cat
 													onClick={() => handleDeleteClick(category)}
 													disabled={deleteMutation.isPending}
 												>
-													{deleteMutation.isPending &&
-													categoryToDelete?.id === category.id ? (
+													{deleteMutation.isPending && categoryToDelete?.id === category.id ? (
 														<IconLoader2 className="h-4 w-4 animate-spin" />
 													) : (
 														<IconTrash className="h-4 w-4" />
@@ -323,9 +320,7 @@ export function CategoryManager({ organizationId, onAddClick, onEditClick }: Cat
 							disabled={deleteMutation.isPending}
 							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
 						>
-							{deleteMutation.isPending && (
-								<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
-							)}
+							{deleteMutation.isPending && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
 							{t("common.delete", "Delete")}
 						</AlertDialogAction>
 					</AlertDialogFooter>

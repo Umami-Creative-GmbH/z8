@@ -1,10 +1,33 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import {
+	IconChevronLeft,
+	IconChevronRight,
+	IconDownload,
+	IconEye,
+	IconLoader2,
+	IconSearch,
+} from "@tabler/icons-react";
+import { DateTime } from "luxon";
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
+import {
+	exportAuditLogsAction,
+	getAuditLogsAction,
+	getAuditStatsAction,
+} from "@/app/[locale]/(app)/settings/audit-log/actions";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import {
 	Select,
 	SelectContent,
@@ -20,19 +43,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogHeader,
-	DialogTitle,
-	DialogTrigger,
-} from "@/components/ui/dialog";
-import { IconSearch, IconDownload, IconLoader2, IconChevronLeft, IconChevronRight, IconEye } from "@tabler/icons-react";
-import { toast } from "sonner";
-import { getAuditLogsAction, getAuditStatsAction, exportAuditLogsAction } from "@/app/[locale]/(app)/settings/audit-log/actions";
 import type { AuditLogResult } from "@/lib/query/audit.queries";
-import { DateTime } from "luxon";
 
 const ENTITY_TYPES = [
 	{ value: "all", label: "All Types" },
@@ -61,11 +72,18 @@ const ACTION_CATEGORIES = [
 	{ value: "auth", label: "Authentication" },
 ];
 
-function getActionBadgeVariant(action: string): "default" | "secondary" | "destructive" | "outline" {
+function getActionBadgeVariant(
+	action: string,
+): "default" | "secondary" | "destructive" | "outline" {
 	if (action.includes("created") || action.includes("granted") || action.includes("approved")) {
 		return "default";
 	}
-	if (action.includes("removed") || action.includes("revoked") || action.includes("rejected") || action.includes("deleted")) {
+	if (
+		action.includes("removed") ||
+		action.includes("revoked") ||
+		action.includes("rejected") ||
+		action.includes("deleted")
+	) {
 		return "destructive";
 	}
 	if (action.includes("updated") || action.includes("changed")) {
@@ -194,7 +212,13 @@ export function AuditLogViewer() {
 									className="w-full"
 								/>
 							</div>
-							<Select value={entityType} onValueChange={(v) => { setEntityType(v); setPage(0); }}>
+							<Select
+								value={entityType}
+								onValueChange={(v) => {
+									setEntityType(v);
+									setPage(0);
+								}}
+							>
 								<SelectTrigger className="w-[180px]">
 									<SelectValue placeholder="Entity Type" />
 								</SelectTrigger>
@@ -206,7 +230,13 @@ export function AuditLogViewer() {
 									))}
 								</SelectContent>
 							</Select>
-							<Select value={actionCategory} onValueChange={(v) => { setActionCategory(v); setPage(0); }}>
+							<Select
+								value={actionCategory}
+								onValueChange={(v) => {
+									setActionCategory(v);
+									setPage(0);
+								}}
+							>
 								<SelectTrigger className="w-[180px]">
 									<SelectValue placeholder="Action Category" />
 								</SelectTrigger>
@@ -225,7 +255,10 @@ export function AuditLogViewer() {
 								<Input
 									type="date"
 									value={startDate}
-									onChange={(e) => { setStartDate(e.target.value); setPage(0); }}
+									onChange={(e) => {
+										setStartDate(e.target.value);
+										setPage(0);
+									}}
 									className="w-[160px]"
 								/>
 							</div>
@@ -234,7 +267,10 @@ export function AuditLogViewer() {
 								<Input
 									type="date"
 									value={endDate}
-									onChange={(e) => { setEndDate(e.target.value); setPage(0); }}
+									onChange={(e) => {
+										setEndDate(e.target.value);
+										setPage(0);
+									}}
 									className="w-[160px]"
 								/>
 							</div>
@@ -242,12 +278,7 @@ export function AuditLogViewer() {
 								<IconSearch className="size-4 mr-2" />
 								Search
 							</Button>
-							<Button
-								type="button"
-								variant="outline"
-								onClick={handleExport}
-								disabled={exporting}
-							>
+							<Button type="button" variant="outline" onClick={handleExport} disabled={exporting}>
 								{exporting ? (
 									<IconLoader2 className="size-4 mr-2 animate-spin" />
 								) : (
@@ -312,9 +343,7 @@ export function AuditLogViewer() {
 											</TableCell>
 											<TableCell>
 												<div className="text-sm">{log.performedByName || "Unknown"}</div>
-												<div className="text-xs text-muted-foreground">
-													{log.performedByEmail}
-												</div>
+												<div className="text-xs text-muted-foreground">{log.performedByEmail}</div>
 											</TableCell>
 											<TableCell>
 												<div className="text-sm capitalize">{log.entityType}</div>
@@ -328,11 +357,7 @@ export function AuditLogViewer() {
 											<TableCell>
 												<Dialog>
 													<DialogTrigger asChild>
-														<Button
-															variant="ghost"
-															size="sm"
-															onClick={() => setSelectedLog(log)}
-														>
+														<Button variant="ghost" size="sm" onClick={() => setSelectedLog(log)}>
 															<IconEye className="size-4" />
 														</Button>
 													</DialogTrigger>
@@ -352,7 +377,9 @@ export function AuditLogViewer() {
 																<div>
 																	<label className="text-sm font-medium">Timestamp</label>
 																	<p className="text-sm">
-																		{DateTime.fromISO(log.timestamp).toLocaleString(DateTime.DATETIME_FULL)}
+																		{DateTime.fromISO(log.timestamp).toLocaleString(
+																			DateTime.DATETIME_FULL,
+																		)}
 																	</p>
 																</div>
 																<div>
@@ -373,7 +400,10 @@ export function AuditLogViewer() {
 																</div>
 																<div>
 																	<label className="text-sm font-medium">User Agent</label>
-																	<p className="text-sm truncate" title={log.userAgent || undefined}>
+																	<p
+																		className="text-sm truncate"
+																		title={log.userAgent || undefined}
+																	>
 																		{log.userAgent || "-"}
 																	</p>
 																</div>

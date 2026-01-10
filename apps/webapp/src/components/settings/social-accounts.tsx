@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { authClient } from "@/lib/auth-client";
+import { AppleIcon, GitHubIcon, GoogleIcon, LinkedInIcon } from "@/components/icons/provider-icons";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -16,12 +16,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-	GoogleIcon,
-	GitHubIcon,
-	LinkedInIcon,
-	AppleIcon,
-} from "@/components/icons/provider-icons";
+import { authClient } from "@/lib/auth-client";
 
 interface ConnectedAccount {
 	id: string;

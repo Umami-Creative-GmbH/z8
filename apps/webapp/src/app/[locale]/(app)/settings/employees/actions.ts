@@ -3,22 +3,16 @@
 import { SpanStatusCode, trace } from "@opentelemetry/api";
 import { and, eq, like, or } from "drizzle-orm";
 import { Effect } from "effect";
-import { employee } from "@/db/schema";
 import { user } from "@/db/auth-schema";
-import {
-	assignManagersSchema,
-	createEmployeeSchema,
-	personalInformationSchema,
-	updateEmployeeSchema,
-	type AssignManagers,
-	type CreateEmployee,
-	type PersonalInformation,
-	type UpdateEmployee,
-} from "@/lib/validations/employee";
-import {
-	createWorkScheduleSchema,
-	type CreateWorkSchedule,
-} from "@/lib/validations/work-schedule";
+import { employee, type team } from "@/db/schema";
+
+// Type for employee with user and team relations
+export type EmployeeWithRelations = typeof employee.$inferSelect & {
+	user: typeof user.$inferSelect;
+	team: typeof team.$inferSelect | null;
+};
+
+import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { AuthorizationError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
@@ -26,9 +20,17 @@ import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { ManagerService } from "@/lib/effect/services/manager.service";
 import { PermissionsService } from "@/lib/effect/services/permissions.service";
-import { WorkScheduleService } from "@/lib/effect/services/work-schedule.service";
 import { createLogger } from "@/lib/logger";
-import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
+import {
+	type AssignManagers,
+	assignManagersSchema,
+	type CreateEmployee,
+	createEmployeeSchema,
+	type PersonalInformation,
+	personalInformationSchema,
+	type UpdateEmployee,
+	updateEmployeeSchema,
+} from "@/lib/validations/employee";
 
 const logger = createLogger("EmployeeActions");
 
@@ -100,11 +102,11 @@ export async function createEmployee(
 				// Step 3: Validate data
 				const validationResult = createEmployeeSchema.safeParse(data);
 				if (!validationResult.success) {
-					yield* _(
+					return yield* _(
 						Effect.fail(
 							new ValidationError({
-								message: validationResult.error?.errors?.[0]?.message || "Invalid input",
-								field: validationResult.error?.errors?.[0]?.path?.join(".") || "data",
+								message: validationResult.error?.issues?.[0]?.message || "Invalid input",
+								field: validationResult.error?.issues?.[0]?.path?.join(".") || "data",
 							}),
 						),
 					);
@@ -271,11 +273,11 @@ export async function updateEmployee(
 				// Validate data
 				const validationResult = updateEmployeeSchema.safeParse(data);
 				if (!validationResult.success) {
-					yield* _(
+					return yield* _(
 						Effect.fail(
 							new ValidationError({
-								message: validationResult.error?.errors?.[0]?.message || "Invalid input",
-								field: validationResult.error?.errors?.[0]?.path?.join(".") || "data",
+								message: validationResult.error?.issues?.[0]?.message || "Invalid input",
+								field: validationResult.error?.issues?.[0]?.path?.join(".") || "data",
 							}),
 						),
 					);
@@ -324,7 +326,9 @@ export async function updateEmployee(
  * Update own profile (self-service)
  * Employees can update their own personal information
  */
-export async function updateOwnProfile(data: PersonalInformation): Promise<ServerActionResult<void>> {
+export async function updateOwnProfile(
+	data: PersonalInformation,
+): Promise<ServerActionResult<void>> {
 	const tracer = trace.getTracer("employees");
 
 	const effect = tracer.startActiveSpan("updateOwnProfile", (span) => {
@@ -357,10 +361,10 @@ export async function updateOwnProfile(data: PersonalInformation): Promise<Serve
 			// Validate data
 			const result = personalInformationSchema.safeParse(data);
 			if (!result.success) {
-				yield* _(
+				return yield* _(
 					Effect.fail(
 						new ValidationError({
-							message: result.error?.errors?.[0]?.message || "Invalid input",
+							message: result.error?.issues?.[0]?.message || "Invalid input",
 							field: "profile",
 						}),
 					),
@@ -455,9 +459,13 @@ export async function getEmployee(
 								},
 							},
 						},
-						workSchedules: {
+						workScheduleAssignments: {
 							with: {
-								days: true,
+								template: {
+									with: {
+										days: true,
+									},
+								},
 							},
 							orderBy: (schedule, { desc }) => [desc(schedule.effectiveFrom)],
 							limit: 1,
@@ -506,7 +514,7 @@ export async function listEmployees(filters?: {
 	teamId?: string;
 	role?: string;
 	search?: string;
-}): Promise<ServerActionResult<Array<typeof employee.$inferSelect>>> {
+}): Promise<ServerActionResult<EmployeeWithRelations[]>> {
 	const effect = Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
@@ -579,7 +587,7 @@ export async function listEmployees(filters?: {
 			}),
 		);
 
-		return employees;
+		return employees as EmployeeWithRelations[];
 	}).pipe(Effect.provide(AppLayer));
 
 	return runServerActionSafe(effect);
@@ -649,11 +657,11 @@ export async function assignManagers(
 				// Validate data
 				const validationResult = assignManagersSchema.safeParse(data);
 				if (!validationResult.success) {
-					yield* _(
+					return yield* _(
 						Effect.fail(
 							new ValidationError({
-								message: validationResult.error?.errors?.[0]?.message || "Invalid input",
-								field: validationResult.error?.errors?.[0]?.path?.join(".") || "data",
+								message: validationResult.error?.issues?.[0]?.message || "Invalid input",
+								field: validationResult.error?.issues?.[0]?.path?.join(".") || "data",
 							}),
 						),
 					);
@@ -718,138 +726,5 @@ export async function assignManagers(
 	return runServerActionSafe(effect);
 }
 
-// =============================================================================
-// Work Schedule Actions
-// =============================================================================
-
-/**
- * Set work schedule for an employee
- * Requires admin role or manager of the employee
- */
-export async function setWorkSchedule(
-	employeeId: string,
-	scheduleData: CreateWorkSchedule,
-): Promise<ServerActionResult<void>> {
-	const tracer = trace.getTracer("employees");
-
-	const effect = tracer.startActiveSpan(
-		"setWorkSchedule",
-		{
-			attributes: {
-				"employee.id": employeeId,
-				"schedule.type": scheduleData.scheduleType,
-			},
-		},
-		(span) => {
-			return Effect.gen(function* (_) {
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
-				const managerService = yield* _(ManagerService);
-				const scheduleService = yield* _(WorkScheduleService);
-
-				// Get current employee
-				const currentEmployee = yield* _(
-					dbService.query("getCurrentEmployee", async () => {
-						return await dbService.db.query.employee.findFirst({
-							where: eq(employee.userId, session.user.id),
-						});
-					}),
-					Effect.flatMap((emp) =>
-						emp
-							? Effect.succeed(emp)
-							: Effect.fail(
-									new NotFoundError({
-										message: "Employee profile not found",
-										entityType: "employee",
-									}),
-								),
-					),
-				);
-
-				// Check authorization: admin or manager of target employee
-				const isAdmin = currentEmployee.role === "admin";
-				const isManager = yield* _(
-					managerService.isManagerOf(currentEmployee.id, employeeId),
-				);
-
-				if (!isAdmin && !isManager) {
-					yield* _(
-						Effect.fail(
-							new AuthorizationError({
-								message: "Only admins or managers can set work schedules",
-								userId: currentEmployee.id,
-								resource: "work_schedule",
-								action: "create",
-							}),
-						),
-					);
-				}
-
-				// Validate schedule data
-				const validationResult = createWorkScheduleSchema.safeParse(scheduleData);
-				if (!validationResult.success) {
-					yield* _(
-						Effect.fail(
-							new ValidationError({
-								message: validationResult.error?.errors?.[0]?.message || "Invalid input",
-								field: validationResult.error?.errors?.[0]?.path?.join(".") || "data",
-							}),
-						),
-					);
-				}
-
-				const validatedData = validationResult.data;
-
-				// Create schedule based on type
-				if (validatedData.scheduleType === "simple") {
-					yield* _(
-						scheduleService.createSimpleSchedule(
-							employeeId,
-							validatedData.hoursPerWeek,
-							validatedData.workClassification,
-							validatedData.effectiveFrom,
-							currentEmployee.id,
-						),
-					);
-				} else {
-					yield* _(
-						scheduleService.createDetailedSchedule(
-							employeeId,
-							validatedData.workClassification,
-							validatedData.effectiveFrom,
-							validatedData.days,
-							currentEmployee.id,
-						),
-					);
-				}
-
-				logger.info(
-					{
-						employeeId,
-						scheduleType: validatedData.scheduleType,
-					},
-					"Work schedule set successfully",
-				);
-
-				span.setStatus({ code: SpanStatusCode.OK });
-			}).pipe(
-				Effect.catchAll((error) =>
-					Effect.gen(function* (_) {
-						span.recordException(error as Error);
-						span.setStatus({
-							code: SpanStatusCode.ERROR,
-							message: String(error),
-						});
-						logger.error({ error, employeeId }, "Failed to set work schedule");
-						return yield* _(Effect.fail(error as any));
-					}),
-				),
-				Effect.onExit(() => Effect.sync(() => span.end())),
-				Effect.provide(AppLayer),
-			);
-		},
-	);
-
-	return runServerActionSafe(effect);
-}
+// NOTE: Work schedule management is handled in settings/work-schedules/assignment-actions.ts
+// Use createWorkScheduleAssignment from that file to assign schedules to employees

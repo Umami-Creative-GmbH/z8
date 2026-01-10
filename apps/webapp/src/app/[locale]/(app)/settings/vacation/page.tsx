@@ -5,89 +5,11 @@ import { Suspense } from "react";
 import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { VacationManagement } from "@/components/settings/vacation-management";
-import { VacationPolicyButton } from "@/components/settings/vacation-policy-button";
-import { Badge } from "@/components/ui/badge";
+import { VacationPoliciesTable } from "@/components/settings/vacation-policies-table";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getVacationPolicy } from "./actions";
-
-interface VacationPolicyCardProps {
-	policy: {
-		id: string;
-		defaultAnnualDays: string;
-		accrualType: string;
-		accrualStartMonth: number | null;
-		allowCarryover: boolean;
-		maxCarryoverDays: string | null;
-		carryoverExpiryMonths: number | null;
-		createdAt: Date;
-		creator: {
-			name: string;
-			email: string;
-		};
-	};
-	organizationId: string;
-	year: number;
-}
-
-function VacationPolicyCard({ policy, organizationId, year }: VacationPolicyCardProps) {
-	return (
-		<div className="space-y-4">
-			<div className="grid gap-4 md:grid-cols-2">
-				<div className="space-y-2">
-					<div className="text-sm font-medium text-muted-foreground">Default Annual Days</div>
-					<div className="text-2xl font-bold">{policy.defaultAnnualDays} days</div>
-				</div>
-
-				<div className="space-y-2">
-					<div className="text-sm font-medium text-muted-foreground">Accrual Type</div>
-					<div className="text-2xl font-bold capitalize">{policy.accrualType}</div>
-				</div>
-
-				<div className="space-y-2">
-					<div className="text-sm font-medium text-muted-foreground">Accrual Starts</div>
-					<div className="text-lg">
-						{new Date(2000, (policy.accrualStartMonth || 1) - 1).toLocaleString("default", {
-							month: "long",
-						})}
-					</div>
-				</div>
-
-				<div className="space-y-2">
-					<div className="text-sm font-medium text-muted-foreground">Carryover</div>
-					<div className="flex items-center gap-2">
-						{policy.allowCarryover ? (
-							<>
-								<Badge variant="default">Enabled</Badge>
-								{policy.maxCarryoverDays && (
-									<span className="text-sm text-muted-foreground">
-										(max {policy.maxCarryoverDays} days)
-									</span>
-								)}
-							</>
-						) : (
-							<Badge variant="secondary">Disabled</Badge>
-						)}
-					</div>
-				</div>
-
-				{policy.allowCarryover && policy.carryoverExpiryMonths && (
-					<div className="space-y-2">
-						<div className="text-sm font-medium text-muted-foreground">Carryover Expiry</div>
-						<div className="text-lg">{policy.carryoverExpiryMonths} months</div>
-					</div>
-				)}
-			</div>
-
-			<div className="rounded-lg border bg-muted/50 p-4">
-				<div className="text-sm text-muted-foreground">
-					Created by {policy.creator.name} on {new Date(policy.createdAt).toLocaleDateString()}
-				</div>
-			</div>
-		</div>
-	);
-}
+import { getVacationPolicies } from "./actions";
 
 async function VacationSettingsContent() {
 	const currentEmployee = await getCurrentEmployee();
@@ -109,57 +31,33 @@ async function VacationSettingsContent() {
 	}
 
 	const currentYear = new Date().getFullYear();
-	const { data: policy } = await getVacationPolicy(authContext.employee.organizationId, currentYear);
+	const policiesResult = await getVacationPolicies(
+		authContext.employee.organizationId,
+		currentYear,
+	);
 
 	return (
 		<VacationManagement organizationId={authContext.employee.organizationId}>
 			<div className="grid gap-4">
 				<Card>
-					<CardHeader className="flex flex-row items-center justify-between">
-						<div>
-							<CardTitle className="flex items-center gap-2">
-								<IconCalendar className="size-5" />
-								{currentYear} Vacation Policy
-							</CardTitle>
-							<CardDescription>
-								Organization-wide vacation allowance for the current calendar year
-							</CardDescription>
-						</div>
-						<VacationPolicyButton
-							organizationId={authContext.employee.organizationId}
-							year={currentYear}
-							existingPolicy={policy || undefined}
-							variant="outline"
-							size="sm"
-						/>
+					<CardHeader>
+						<CardTitle className="flex items-center gap-2">
+							<IconCalendar className="size-5" />
+							Vacation Policies
+						</CardTitle>
+						<CardDescription>
+							Create different policies for various teams or employee groups
+						</CardDescription>
 					</CardHeader>
 					<CardContent>
-						{policy ? (
-							<VacationPolicyCard
-								policy={policy}
-								organizationId={authContext.employee.organizationId}
-								year={currentYear}
-							/>
-						) : (
-							<div className="rounded-lg border border-dashed p-8 text-center">
-								<div className="mx-auto flex max-w-[420px] flex-col items-center justify-center text-center">
-									<IconCalendar className="size-10 text-muted-foreground" />
-									<h3 className="mt-4 text-lg font-semibold">No policy configured</h3>
-									<p className="mb-4 mt-2 text-sm text-muted-foreground">
-										Create a vacation policy for {currentYear} to start managing employee
-										allowances.
-									</p>
-									<VacationPolicyButton
-										organizationId={authContext.employee.organizationId}
-										year={currentYear}
-									/>
-								</div>
-							</div>
-						)}
+						<VacationPoliciesTable
+							organizationId={authContext.employee.organizationId}
+							initialPolicies={policiesResult.data || []}
+						/>
 					</CardContent>
 				</Card>
 
-				<div className="grid gap-4 md:grid-cols-3">
+				<div className="grid gap-4 md:grid-cols-2">
 					<Card>
 						<CardHeader>
 							<CardTitle className="flex items-center gap-2 text-base">
@@ -169,7 +67,7 @@ async function VacationSettingsContent() {
 						</CardHeader>
 						<CardContent>
 							<p className="mb-4 text-sm text-muted-foreground">
-								Configure custom allowances for individual employees
+								Assign policies and configure custom allowances for individual employees
 							</p>
 							<Button variant="outline" size="sm" asChild className="w-full">
 								<Link href="/settings/vacation/employees">Manage Employees</Link>
@@ -191,26 +89,6 @@ async function VacationSettingsContent() {
 							<Button variant="outline" size="sm" asChild className="w-full">
 								<Link href="/settings/vacation/history">View History</Link>
 							</Button>
-						</CardContent>
-					</Card>
-
-					<Card>
-						<CardHeader>
-							<CardTitle className="flex items-center gap-2 text-base">
-								<IconCalendar className="size-4" />
-								Future Years
-							</CardTitle>
-						</CardHeader>
-						<CardContent>
-							<p className="mb-4 text-sm text-muted-foreground">
-								Plan ahead by creating policies for upcoming years
-							</p>
-							<VacationPolicyButton
-								organizationId={authContext.employee.organizationId}
-								year={currentYear + 1}
-								variant="outline"
-								size="sm"
-							/>
 						</CardContent>
 					</Card>
 				</div>

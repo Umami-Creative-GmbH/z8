@@ -1,7 +1,7 @@
+import { redirect } from "next/navigation";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { HolidayManagement } from "@/components/settings/holiday-management";
 import { getAuthContext } from "@/lib/auth-helpers";
-import { redirect } from "next/navigation";
 
 export default async function HolidaySettingsPage() {
 	const authContext = await getAuthContext();

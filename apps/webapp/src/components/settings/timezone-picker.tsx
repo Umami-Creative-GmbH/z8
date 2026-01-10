@@ -1,8 +1,7 @@
 "use client";
 
-import * as React from "react";
 import { Check, ChevronsUpDown, Globe } from "lucide-react";
-import { cn } from "@/lib/utils";
+import * as React from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Command,
@@ -12,11 +11,8 @@ import {
 	CommandItem,
 	CommandList,
 } from "@/components/ui/command";
-import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 /**
  * Common timezones grouped by region
@@ -92,9 +88,7 @@ const TIMEZONE_GROUPS = [
 	},
 	{
 		region: "UTC/Other",
-		timezones: [
-			{ value: "UTC", label: "Coordinated Universal Time (UTC)" },
-		],
+		timezones: [{ value: "UTC", label: "Coordinated Universal Time (UTC)" }],
 	},
 ];
 
@@ -152,7 +146,7 @@ export function TimezonePicker({ value = "UTC", onChange, disabled }: TimezonePi
 										<Check
 											className={cn(
 												"mr-2 h-4 w-4",
-												value === tz.value ? "opacity-100" : "opacity-0"
+												value === tz.value ? "opacity-100" : "opacity-0",
 											)}
 										/>
 										{tz.label}

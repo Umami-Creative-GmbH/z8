@@ -44,8 +44,8 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { type HolidayPresetFormValues, holidayPresetFormSchema } from "@/lib/holidays/validation";
 import { queryKeys } from "@/lib/query";
-import { holidayPresetFormSchema, type HolidayPresetFormValues } from "@/lib/holidays/validation";
 
 interface PresetDialogProps {
 	open: boolean;
@@ -150,7 +150,9 @@ export function PresetDialog({
 				onSuccess();
 				onOpenChange(false);
 			} else {
-				toast.error(result.error || t("settings.holidays.presets.updateFailed", "Failed to update preset"));
+				toast.error(
+					result.error || t("settings.holidays.presets.updateFailed", "Failed to update preset"),
+				);
 			}
 		},
 		onError: () => {
@@ -166,7 +168,10 @@ export function PresetDialog({
 				toast.success(t("settings.holidays.presets.holidayDeleted", "Holiday removed"));
 				queryClient.invalidateQueries({ queryKey: queryKeys.holidayPresets.detail(presetId!) });
 			} else {
-				toast.error(result.error || t("settings.holidays.presets.holidayDeleteFailed", "Failed to remove holiday"));
+				toast.error(
+					result.error ||
+						t("settings.holidays.presets.holidayDeleteFailed", "Failed to remove holiday"),
+				);
 			}
 		},
 	});
@@ -181,7 +186,9 @@ export function PresetDialog({
 
 	const formatLocation = () => {
 		if (!data?.preset) return null;
-		const parts = [data.preset.countryCode, data.preset.stateCode, data.preset.regionCode].filter(Boolean);
+		const parts = [data.preset.countryCode, data.preset.stateCode, data.preset.regionCode].filter(
+			Boolean,
+		);
 		return parts.length > 0 ? parts.join(" - ") : null;
 	};
 
@@ -191,7 +198,10 @@ export function PresetDialog({
 				<DialogHeader>
 					<DialogTitle>{t("settings.holidays.presets.editTitle", "Edit Preset")}</DialogTitle>
 					<DialogDescription>
-						{t("settings.holidays.presets.editDescription", "Update preset details and manage holidays")}
+						{t(
+							"settings.holidays.presets.editDescription",
+							"Update preset details and manage holidays",
+						)}
 					</DialogDescription>
 				</DialogHeader>
 
@@ -233,11 +243,7 @@ export function PresetDialog({
 															{...field}
 															className="w-12 h-10 p-1 cursor-pointer"
 														/>
-														<Input
-															{...field}
-															placeholder="#EF4444"
-															className="flex-1"
-														/>
+														<Input {...field} placeholder="#EF4444" className="flex-1" />
 													</div>
 												</FormControl>
 												<FormMessage />

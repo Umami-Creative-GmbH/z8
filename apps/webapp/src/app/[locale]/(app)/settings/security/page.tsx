@@ -1,12 +1,12 @@
 import { eq } from "drizzle-orm";
-import { requireUser } from "@/lib/auth-helpers";
+import { PasskeyManagement } from "@/components/settings/passkey-management";
 import { PasswordChangeForm } from "@/components/settings/password-change-form";
 import { SessionManagement } from "@/components/settings/session-management";
-import { TwoFactorSetup } from "@/components/settings/two-factor-setup";
-import { PasskeyManagement } from "@/components/settings/passkey-management";
 import { SocialAccounts } from "@/components/settings/social-accounts";
+import { TwoFactorSetup } from "@/components/settings/two-factor-setup";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
+import { requireUser } from "@/lib/auth-helpers";
 
 export default async function SecuritySettingsPage() {
 	const authContext = await requireUser();

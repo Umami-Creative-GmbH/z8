@@ -1,6 +1,6 @@
-import { requireUser } from "@/lib/auth-helpers";
 import { redirect } from "next/navigation";
 import { AuditLogViewer } from "@/components/settings/audit-log-viewer";
+import { requireUser } from "@/lib/auth-helpers";
 
 export default async function AuditLogPage() {
 	const authContext = await requireUser();

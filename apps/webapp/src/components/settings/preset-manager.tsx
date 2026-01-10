@@ -88,7 +88,9 @@ export function PresetManager({ organizationId, onImportClick, onEditClick }: Pr
 				setDeleteDialogOpen(false);
 				setSelectedPreset(null);
 			} else {
-				toast.error(result.error || t("settings.holidays.presets.deleteFailed", "Failed to delete preset"));
+				toast.error(
+					result.error || t("settings.holidays.presets.deleteFailed", "Failed to delete preset"),
+				);
 			}
 		},
 		onError: () => {
@@ -139,7 +141,9 @@ export function PresetManager({ organizationId, onImportClick, onEditClick }: Pr
 		return (
 			<Card>
 				<CardContent className="py-8 text-center">
-					<p className="text-destructive">{t("settings.holidays.presets.loadError", "Failed to load presets")}</p>
+					<p className="text-destructive">
+						{t("settings.holidays.presets.loadError", "Failed to load presets")}
+					</p>
 				</CardContent>
 			</Card>
 		);
@@ -237,8 +241,7 @@ export function PresetManager({ organizationId, onImportClick, onEditClick }: Pr
 										<div className="flex items-center gap-1">
 											<IconCalendar className="h-4 w-4" />
 											<span>
-												{preset.holidayCount}{" "}
-												{t("settings.holidays.presets.holidays", "holidays")}
+												{preset.holidayCount} {t("settings.holidays.presets.holidays", "holidays")}
 											</span>
 										</div>
 										{preset.assignmentCount > 0 && (
@@ -270,7 +273,7 @@ export function PresetManager({ organizationId, onImportClick, onEditClick }: Pr
 						<AlertDialogDescription>
 							{t(
 								"settings.holidays.presets.deleteDescription",
-								"This will permanently delete the preset \"{name}\" and all its holidays.",
+								'This will permanently delete the preset "{name}" and all its holidays.',
 								{ name: selectedPreset?.name },
 							)}
 							{selectedPreset?.assignmentCount ? (

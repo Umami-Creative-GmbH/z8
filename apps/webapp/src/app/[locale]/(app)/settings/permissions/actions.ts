@@ -11,9 +11,9 @@ import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import {
-	PermissionsService,
 	type EmployeePermissions,
 	type PermissionFlags,
+	PermissionsService,
 } from "@/lib/effect/services/permissions.service";
 import { createLogger } from "@/lib/logger";
 
@@ -219,9 +219,7 @@ export async function revokeTeamPermissions(
 				span.setAttribute("currentEmployee.id", currentEmployee.id);
 
 				// Revoke permissions using PermissionsService
-				yield* _(
-					permissionsService.revokePermissions(employeeId, organizationId, teamId || null),
-				);
+				yield* _(permissionsService.revokePermissions(employeeId, organizationId, teamId || null));
 
 				logger.info(
 					{
@@ -315,7 +313,11 @@ export async function getEmployeePermissions(
  */
 export async function hasTeamPermission(
 	employeeId: string,
-	permission: "canCreateTeams" | "canManageTeamMembers" | "canManageTeamSettings" | "canApproveTeamRequests",
+	permission:
+		| "canCreateTeams"
+		| "canManageTeamMembers"
+		| "canManageTeamSettings"
+		| "canApproveTeamRequests",
 	teamId?: string | null,
 ): Promise<ServerActionResult<boolean>> {
 	const effect = Effect.gen(function* (_) {
@@ -358,12 +360,14 @@ export async function hasTeamPermission(
  * List all employees with their permissions in an organization
  * Requires admin role
  */
-export async function listEmployeePermissions(
-	organizationId?: string,
-): Promise<ServerActionResult<Array<{
-	employee: typeof employee.$inferSelect;
-	permissions: EmployeePermissions[];
-}>>> {
+export async function listEmployeePermissions(organizationId?: string): Promise<
+	ServerActionResult<
+		Array<{
+			employee: typeof employee.$inferSelect;
+			permissions: EmployeePermissions[];
+		}>
+	>
+> {
 	const effect = Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());

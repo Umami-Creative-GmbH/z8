@@ -1,12 +1,22 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { IconArrowBack, IconDeviceFloppy, IconLoader2 } from "@tabler/icons-react";
+import {
+	IconArrowBack,
+	IconClock,
+	IconDeviceFloppy,
+	IconHome,
+	IconLoader2,
+} from "@tabler/icons-react";
 import { use, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
 import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
+import {
+	type EffectiveScheduleWithSource,
+	getEmployeeEffectiveScheduleDetails,
+} from "@/app/[locale]/(app)/settings/work-schedules/assignment-actions";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { ManagerAssignment } from "@/components/settings/manager-assignment";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -55,6 +65,7 @@ export default function EmployeeDetailPage({
 	const [noEmployee, setNoEmployee] = useState(false);
 	const [isAdmin, setIsAdmin] = useState(false);
 	const [availableManagers, setAvailableManagers] = useState<any[]>([]);
+	const [schedule, setSchedule] = useState<EffectiveScheduleWithSource | null>(null);
 
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
@@ -69,7 +80,7 @@ export default function EmployeeDetailPage({
 
 	const loadEmployeeData = async () => {
 		const result = await getEmployee(employeeId);
-		if (result.success && result.data) {
+		if (result.success) {
 			setEmployee(result.data);
 			form.reset({
 				firstName: result.data.firstName || "",
@@ -95,6 +106,12 @@ export default function EmployeeDetailPage({
 
 			// Load employee data
 			await loadEmployeeData();
+
+			// Load work schedule
+			const scheduleResult = await getEmployeeEffectiveScheduleDetails(employeeId);
+			if (scheduleResult.success && scheduleResult.data) {
+				setSchedule(scheduleResult.data);
+			}
 
 			// Load available managers (admin and manager roles, excluding the current employee)
 			const managersResult = await listEmployees({ role: "admin" });
@@ -162,9 +179,7 @@ export default function EmployeeDetailPage({
 						</Button>
 						<h1 className="text-2xl font-semibold tracking-tight">Employee Details</h1>
 					</div>
-					<p className="text-sm text-muted-foreground">
-						View and edit employee information
-					</p>
+					<p className="text-sm text-muted-foreground">View and edit employee information</p>
 				</div>
 			</div>
 
@@ -223,6 +238,68 @@ export default function EmployeeDetailPage({
 								</div>
 							</div>
 						)}
+
+						<Separator />
+
+						{/* Work Schedule Section */}
+						<div className="space-y-3">
+							<div className="flex items-center gap-2 text-sm text-muted-foreground">
+								<IconClock className="size-4" />
+								<span>Work Schedule</span>
+							</div>
+							{schedule ? (
+								<div className="space-y-2">
+									<div className="font-medium">{schedule.template.name}</div>
+									<div className="flex flex-wrap gap-2">
+										<Badge variant="outline">{schedule.weeklyHours}h / week</Badge>
+										{schedule.template.homeOfficeDaysPerCycle != null &&
+											schedule.template.homeOfficeDaysPerCycle > 0 && (
+												<Badge variant="outline" className="flex items-center gap-1">
+													<IconHome className="size-3" />
+													{schedule.template.homeOfficeDaysPerCycle} home office day
+													{schedule.template.homeOfficeDaysPerCycle > 1 ? "s" : ""}
+												</Badge>
+											)}
+									</div>
+									<div className="text-xs text-muted-foreground">
+										Assigned via: {schedule.assignedVia}
+									</div>
+									{schedule.template.scheduleType === "detailed" && schedule.template.days && (
+										<div className="mt-2 flex flex-wrap gap-1">
+											{["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day, index) => {
+												const dayName = [
+													"monday",
+													"tuesday",
+													"wednesday",
+													"thursday",
+													"friday",
+													"saturday",
+													"sunday",
+												][index];
+												const scheduleDay = schedule.template.days.find(
+													(d) => d.dayOfWeek === dayName,
+												);
+												const isWorkDay = scheduleDay?.isWorkDay ?? false;
+												return (
+													<div
+														key={day}
+														className={`rounded px-2 py-1 text-xs ${
+															isWorkDay
+																? "bg-primary/10 text-primary"
+																: "bg-muted text-muted-foreground"
+														}`}
+													>
+														{day}
+													</div>
+												);
+											})}
+										</div>
+									)}
+								</div>
+							) : (
+								<div className="text-sm text-muted-foreground">No schedule assigned</div>
+							)}
+						</div>
 					</CardContent>
 				</Card>
 
@@ -231,9 +308,7 @@ export default function EmployeeDetailPage({
 					<CardHeader>
 						<CardTitle>Edit Employee</CardTitle>
 						<CardDescription>
-							{isAdmin
-								? "Update employee details and permissions"
-								: "View employee details"}
+							{isAdmin ? "Update employee details and permissions" : "View employee details"}
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
@@ -345,9 +420,7 @@ export default function EmployeeDetailPage({
 													<SelectItem value="employee">Employee</SelectItem>
 												</SelectContent>
 											</Select>
-											<FormDescription>
-												Determines access level in the system
-											</FormDescription>
+											<FormDescription>Determines access level in the system</FormDescription>
 											<FormMessage />
 										</FormItem>
 									)}

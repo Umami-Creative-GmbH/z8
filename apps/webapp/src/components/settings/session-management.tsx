@@ -10,13 +10,13 @@ import {
 	IconTrash,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { formatRelative as formatDistanceToNow } from "@/lib/datetime/luxon-utils";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { authClient } from "@/lib/auth-client";
+import { formatRelative as formatDistanceToNow } from "@/lib/datetime/luxon-utils";
 
 interface Session {
 	id: string;

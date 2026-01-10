@@ -40,6 +40,7 @@ import { Switch } from "@/components/ui/switch";
 import { useRouter } from "@/navigation";
 
 const formSchema = z.object({
+	name: z.string().min(1, "Policy name is required").max(100, "Name too long"),
 	defaultAnnualDays: z
 		.string()
 		.refine((val) => !Number.isNaN(parseFloat(val)) && parseFloat(val) > 0, {
@@ -59,6 +60,7 @@ interface VacationPolicyFormProps {
 	year: number;
 	existingPolicy?: {
 		id: string;
+		name: string;
 		defaultAnnualDays: string;
 		accrualType: string;
 		accrualStartMonth: number | null;
@@ -82,6 +84,7 @@ export function VacationPolicyForm({
 		resolver: zodResolver(formSchema),
 		defaultValues: existingPolicy
 			? {
+					name: existingPolicy.name,
 					defaultAnnualDays: existingPolicy.defaultAnnualDays,
 					accrualType: existingPolicy.accrualType as "annual" | "monthly" | "biweekly",
 					accrualStartMonth: existingPolicy.accrualStartMonth || 1,
@@ -90,6 +93,7 @@ export function VacationPolicyForm({
 					carryoverExpiryMonths: existingPolicy.carryoverExpiryMonths || undefined,
 				}
 			: {
+					name: "",
 					defaultAnnualDays: "20",
 					accrualType: "annual",
 					accrualStartMonth: 1,
@@ -138,15 +142,35 @@ export function VacationPolicyForm({
 			<DialogContent className="sm:max-w-[600px]">
 				<DialogHeader>
 					<DialogTitle>
-						{existingPolicy ? "Edit" : "Create"} Vacation Policy for {year}
+						{existingPolicy
+							? `Edit "${existingPolicy.name}"`
+							: `Create Vacation Policy for ${year}`}
 					</DialogTitle>
 					<DialogDescription>
-						Configure organization-wide vacation allowance settings for the calendar year.
+						Configure vacation allowance settings. Each policy can be assigned to the organization,
+						specific teams, or individual employees.
 					</DialogDescription>
 				</DialogHeader>
 
 				<Form {...form}>
 					<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+						<FormField
+							control={form.control}
+							name="name"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Policy Name</FormLabel>
+									<FormControl>
+										<Input placeholder="e.g., Germany Standard, Senior Engineers" {...field} />
+									</FormControl>
+									<FormDescription>
+										A descriptive name to identify this vacation policy
+									</FormDescription>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+
 						<FormField
 							control={form.control}
 							name="defaultAnnualDays"

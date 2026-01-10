@@ -8,14 +8,11 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+import { getTeamsForAssignment } from "@/app/[locale]/(app)/settings/holidays/preset-actions";
 import {
 	createVacationPolicyAssignment,
 	getVacationPolicies,
 } from "@/app/[locale]/(app)/settings/vacation/assignment-actions";
-import {
-	getEmployeesForAssignment,
-	getTeamsForAssignment,
-} from "@/app/[locale]/(app)/settings/holidays/preset-actions";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -48,7 +45,7 @@ interface VacationAssignmentDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	organizationId: string;
-	assignmentType: "organization" | "team" | "employee";
+	assignmentType: "organization" | "team";
 	onSuccess: () => void;
 }
 
@@ -65,17 +62,9 @@ interface TeamOption {
 	name: string;
 }
 
-interface EmployeeOption {
-	id: string;
-	firstName: string | null;
-	lastName: string | null;
-	position: string | null;
-}
-
 const vacationAssignmentFormSchema = z.object({
 	policyId: z.string().min(1, "Please select a policy"),
 	teamId: z.string().optional(),
-	employeeId: z.string().optional(),
 });
 
 type VacationAssignmentFormValues = z.infer<typeof vacationAssignmentFormSchema>;
@@ -95,7 +84,6 @@ export function VacationAssignmentDialog({
 		defaultValues: {
 			policyId: "",
 			teamId: "",
-			employeeId: "",
 		},
 	});
 
@@ -105,7 +93,6 @@ export function VacationAssignmentDialog({
 			form.reset({
 				policyId: "",
 				teamId: "",
-				employeeId: "",
 			});
 		}
 	}, [open, form]);
@@ -136,19 +123,6 @@ export function VacationAssignmentDialog({
 		enabled: open && assignmentType === "team",
 	});
 
-	// Fetch employees (only for employee assignment type)
-	const { data: employees, isLoading: employeesLoading } = useQuery({
-		queryKey: queryKeys.employees.list(organizationId),
-		queryFn: async () => {
-			const result = await getEmployeesForAssignment(organizationId);
-			if (!result.success) {
-				throw new Error(result.error || "Failed to fetch employees");
-			}
-			return result.data as EmployeeOption[];
-		},
-		enabled: open && assignmentType === "employee",
-	});
-
 	// Create mutation
 	const createMutation = useMutation({
 		mutationFn: (values: VacationAssignmentFormValues) =>
@@ -156,13 +130,10 @@ export function VacationAssignmentDialog({
 				policyId: values.policyId,
 				assignmentType,
 				teamId: assignmentType === "team" ? values.teamId : undefined,
-				employeeId: assignmentType === "employee" ? values.employeeId : undefined,
 			}),
 		onSuccess: (result) => {
 			if (result.success) {
-				toast.success(
-					t("settings.vacation.assignments.created", "Policy assignment created"),
-				);
+				toast.success(t("settings.vacation.assignments.created", "Policy assignment created"));
 				queryClient.invalidateQueries({
 					queryKey: queryKeys.vacationPolicyAssignments.list(organizationId),
 				});
@@ -171,10 +142,7 @@ export function VacationAssignmentDialog({
 			} else {
 				toast.error(
 					result.error ||
-						t(
-							"settings.vacation.assignments.createFailed",
-							"Failed to create policy assignment",
-						),
+						t("settings.vacation.assignments.createFailed", "Failed to create policy assignment"),
 				);
 			}
 		},
@@ -191,10 +159,6 @@ export function VacationAssignmentDialog({
 			form.setError("teamId", { message: "Please select a team" });
 			return;
 		}
-		if (assignmentType === "employee" && !values.employeeId) {
-			form.setError("employeeId", { message: "Please select an employee" });
-			return;
-		}
 
 		createMutation.mutate(values);
 	};
@@ -205,8 +169,6 @@ export function VacationAssignmentDialog({
 				return t("settings.vacation.assignments.setOrgPolicy", "Set Organization Policy");
 			case "team":
 				return t("settings.vacation.assignments.assignTeamPolicy", "Assign Team Policy");
-			case "employee":
-				return t("settings.vacation.assignments.assignEmployeePolicy", "Assign Employee Policy");
 		}
 	};
 
@@ -222,11 +184,6 @@ export function VacationAssignmentDialog({
 					"settings.vacation.assignments.teamPolicyDescription",
 					"Select a vacation policy and team. This overrides the organization default for team members.",
 				);
-			case "employee":
-				return t(
-					"settings.vacation.assignments.employeePolicyDescription",
-					"Select a vacation policy and employee. This overrides team and organization defaults.",
-				);
 		}
 	};
 
@@ -234,7 +191,7 @@ export function VacationAssignmentDialog({
 		return `${policy.year} - ${policy.defaultAnnualDays} days (${policy.accrualType})`;
 	};
 
-	const isLoading = policiesLoading || teamsLoading || employeesLoading;
+	const isLoading = policiesLoading || teamsLoading;
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
@@ -314,9 +271,7 @@ export function VacationAssignmentDialog({
 									name="teamId"
 									render={({ field }) => (
 										<FormItem>
-											<FormLabel>
-												{t("settings.vacation.assignments.team", "Team")}
-											</FormLabel>
+											<FormLabel>{t("settings.vacation.assignments.team", "Team")}</FormLabel>
 											<Select onValueChange={field.onChange} value={field.value}>
 												<FormControl>
 													<SelectTrigger>
@@ -348,56 +303,6 @@ export function VacationAssignmentDialog({
 								/>
 							)}
 
-							{/* Employee Selection (for employee assignment) */}
-							{assignmentType === "employee" && (
-								<FormField
-									control={form.control}
-									name="employeeId"
-									render={({ field }) => (
-										<FormItem>
-											<FormLabel>
-												{t("settings.vacation.assignments.employee", "Employee")}
-											</FormLabel>
-											<Select onValueChange={field.onChange} value={field.value}>
-												<FormControl>
-													<SelectTrigger>
-														<SelectValue
-															placeholder={t(
-																"settings.vacation.assignments.selectEmployee",
-																"Select an employee",
-															)}
-														/>
-													</SelectTrigger>
-												</FormControl>
-												<SelectContent>
-													{employees?.map((emp) => (
-														<SelectItem key={emp.id} value={emp.id}>
-															<div className="flex flex-col">
-																<span>
-																	{emp.firstName} {emp.lastName}
-																</span>
-																{emp.position && (
-																	<span className="text-xs text-muted-foreground">
-																		{emp.position}
-																	</span>
-																)}
-															</div>
-														</SelectItem>
-													))}
-												</SelectContent>
-											</Select>
-											<FormDescription>
-												{t(
-													"settings.vacation.assignments.employeeNote",
-													"This policy will apply only to this employee",
-												)}
-											</FormDescription>
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
-							)}
-
 							<DialogFooter>
 								<Button
 									type="button"
@@ -407,10 +312,7 @@ export function VacationAssignmentDialog({
 								>
 									{t("common.cancel", "Cancel")}
 								</Button>
-								<Button
-									type="submit"
-									disabled={createMutation.isPending || policies?.length === 0}
-								>
+								<Button type="submit" disabled={createMutation.isPending || policies?.length === 0}>
 									{createMutation.isPending && (
 										<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
 									)}
