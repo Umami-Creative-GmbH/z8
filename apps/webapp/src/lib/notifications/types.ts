@@ -22,6 +22,14 @@ export const NOTIFICATION_TYPES = [
 	"two_factor_disabled",
 	"birthday_reminder",
 	"vacation_balance_alert",
+	// Shift scheduling notifications
+	"schedule_published",
+	"shift_assigned",
+	"shift_swap_requested",
+	"shift_swap_approved",
+	"shift_swap_rejected",
+	"shift_pickup_available",
+	"shift_pickup_approved",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];

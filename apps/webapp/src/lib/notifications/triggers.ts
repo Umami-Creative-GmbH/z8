@@ -433,3 +433,274 @@ export async function onVacationBalanceAlert(params: VacationBalanceAlertParams)
 		logger.error({ error, params }, "Failed to trigger vacation balance alert notification");
 	}
 }
+
+// =============================================================================
+// Shift Scheduling Notifications
+// =============================================================================
+
+interface SchedulePublishedParams {
+	employeeUserId: string;
+	employeeName: string;
+	organizationId: string;
+	shiftCount: number;
+	dateRange: { start: Date; end: Date };
+}
+
+interface ShiftAssignedParams {
+	shiftId: string;
+	employeeUserId: string;
+	organizationId: string;
+	shiftDate: Date;
+	startTime: string;
+	endTime: string;
+	assignedByName: string;
+}
+
+interface ShiftSwapRequestParams {
+	requestId: string;
+	shiftId: string;
+	organizationId: string;
+	requesterName: string;
+	shiftDate: Date;
+	startTime: string;
+	endTime: string;
+}
+
+interface ShiftSwapRequestToManagerParams extends ShiftSwapRequestParams {
+	managerUserId: string;
+	targetEmployeeName?: string;
+}
+
+interface ShiftSwapRequestToTargetParams extends ShiftSwapRequestParams {
+	targetEmployeeUserId: string;
+}
+
+interface ShiftSwapApprovalParams {
+	requestId: string;
+	shiftId: string;
+	organizationId: string;
+	requesterUserId: string;
+	approverName: string;
+	shiftDate: Date;
+}
+
+interface ShiftSwapRejectionParams extends ShiftSwapApprovalParams {
+	rejectionReason?: string;
+}
+
+interface ShiftPickupParams {
+	shiftId: string;
+	organizationId: string;
+	shiftDate: Date;
+	startTime: string;
+	endTime: string;
+}
+
+interface OpenShiftAvailableParams extends ShiftPickupParams {
+	teamMemberUserIds: string[];
+}
+
+interface ShiftPickupApprovedParams {
+	shiftId: string;
+	organizationId: string;
+	employeeUserId: string;
+	shiftDate: Date;
+	approverName: string;
+}
+
+/**
+ * Notify employee that their schedule was published (batched per employee)
+ */
+export async function onSchedulePublished(params: SchedulePublishedParams): Promise<void> {
+	try {
+		const formatDate = (date: Date) =>
+			date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+
+		await createNotification({
+			userId: params.employeeUserId,
+			organizationId: params.organizationId,
+			type: "schedule_published",
+			title: "New schedule published",
+			message: `${params.shiftCount} shift${params.shiftCount === 1 ? " has" : "s have"} been published for ${formatDate(params.dateRange.start)} - ${formatDate(params.dateRange.end)}.`,
+			actionUrl: "/scheduling",
+		});
+	} catch (error) {
+		logger.error({ error, params }, "Failed to trigger schedule published notification");
+	}
+}
+
+/**
+ * Notify employee they were assigned to a shift
+ */
+export async function onShiftAssigned(params: ShiftAssignedParams): Promise<void> {
+	try {
+		const formatDate = (date: Date) =>
+			date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+
+		await createNotification({
+			userId: params.employeeUserId,
+			organizationId: params.organizationId,
+			type: "shift_assigned",
+			title: "Shift assigned",
+			message: `You have been assigned a shift on ${formatDate(params.shiftDate)} from ${params.startTime} to ${params.endTime} by ${params.assignedByName}.`,
+			entityType: "shift",
+			entityId: params.shiftId,
+			actionUrl: "/scheduling",
+		});
+	} catch (error) {
+		logger.error({ error, params }, "Failed to trigger shift assigned notification");
+	}
+}
+
+/**
+ * Notify manager about a shift swap request
+ */
+export async function onShiftSwapRequestedToManager(
+	params: ShiftSwapRequestToManagerParams,
+): Promise<void> {
+	try {
+		const formatDate = (date: Date) =>
+			date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+
+		const targetText = params.targetEmployeeName
+			? ` to swap with ${params.targetEmployeeName}`
+			: "";
+
+		await createNotification({
+			userId: params.managerUserId,
+			organizationId: params.organizationId,
+			type: "shift_swap_requested",
+			title: "Shift swap request",
+			message: `${params.requesterName} requested${targetText} for the shift on ${formatDate(params.shiftDate)} (${params.startTime} - ${params.endTime}).`,
+			entityType: "shift_request",
+			entityId: params.requestId,
+			actionUrl: "/approvals",
+		});
+	} catch (error) {
+		logger.error({ error, params }, "Failed to trigger shift swap request manager notification");
+	}
+}
+
+/**
+ * Notify target employee about a shift swap request directed at them
+ */
+export async function onShiftSwapRequestedToTarget(
+	params: ShiftSwapRequestToTargetParams,
+): Promise<void> {
+	try {
+		const formatDate = (date: Date) =>
+			date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+
+		await createNotification({
+			userId: params.targetEmployeeUserId,
+			organizationId: params.organizationId,
+			type: "shift_swap_requested",
+			title: "Shift swap request",
+			message: `${params.requesterName} wants to swap shifts with you for ${formatDate(params.shiftDate)} (${params.startTime} - ${params.endTime}).`,
+			entityType: "shift_request",
+			entityId: params.requestId,
+			actionUrl: "/scheduling",
+		});
+	} catch (error) {
+		logger.error({ error, params }, "Failed to trigger shift swap request target notification");
+	}
+}
+
+/**
+ * Notify requester their shift swap was approved
+ */
+export async function onShiftSwapApproved(params: ShiftSwapApprovalParams): Promise<void> {
+	try {
+		const formatDate = (date: Date) =>
+			date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+
+		await createNotification({
+			userId: params.requesterUserId,
+			organizationId: params.organizationId,
+			type: "shift_swap_approved",
+			title: "Shift swap approved",
+			message: `Your shift swap request for ${formatDate(params.shiftDate)} was approved by ${params.approverName}.`,
+			entityType: "shift_request",
+			entityId: params.requestId,
+			actionUrl: "/scheduling",
+		});
+	} catch (error) {
+		logger.error({ error, params }, "Failed to trigger shift swap approved notification");
+	}
+}
+
+/**
+ * Notify requester their shift swap was rejected
+ */
+export async function onShiftSwapRejected(params: ShiftSwapRejectionParams): Promise<void> {
+	try {
+		const formatDate = (date: Date) =>
+			date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+
+		const reasonText = params.rejectionReason ? ` Reason: ${params.rejectionReason}` : "";
+
+		await createNotification({
+			userId: params.requesterUserId,
+			organizationId: params.organizationId,
+			type: "shift_swap_rejected",
+			title: "Shift swap rejected",
+			message: `Your shift swap request for ${formatDate(params.shiftDate)} was rejected by ${params.approverName}.${reasonText}`,
+			entityType: "shift_request",
+			entityId: params.requestId,
+			actionUrl: "/scheduling",
+		});
+	} catch (error) {
+		logger.error({ error, params }, "Failed to trigger shift swap rejected notification");
+	}
+}
+
+/**
+ * Notify team members about an open shift available for pickup
+ */
+export async function onOpenShiftAvailable(params: OpenShiftAvailableParams): Promise<void> {
+	try {
+		const formatDate = (date: Date) =>
+			date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+
+		// Create notifications for all eligible team members
+		await Promise.all(
+			params.teamMemberUserIds.map((userId) =>
+				createNotification({
+					userId,
+					organizationId: params.organizationId,
+					type: "shift_pickup_available",
+					title: "Open shift available",
+					message: `An open shift is available on ${formatDate(params.shiftDate)} from ${params.startTime} to ${params.endTime}.`,
+					entityType: "shift",
+					entityId: params.shiftId,
+					actionUrl: "/scheduling",
+				}),
+			),
+		);
+	} catch (error) {
+		logger.error({ error, params }, "Failed to trigger open shift available notification");
+	}
+}
+
+/**
+ * Notify employee their shift pickup was approved
+ */
+export async function onShiftPickupApproved(params: ShiftPickupApprovedParams): Promise<void> {
+	try {
+		const formatDate = (date: Date) =>
+			date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+
+		await createNotification({
+			userId: params.employeeUserId,
+			organizationId: params.organizationId,
+			type: "shift_pickup_approved",
+			title: "Shift pickup approved",
+			message: `Your request to pick up the shift on ${formatDate(params.shiftDate)} was approved by ${params.approverName}.`,
+			entityType: "shift",
+			entityId: params.shiftId,
+			actionUrl: "/scheduling",
+		});
+	} catch (error) {
+		logger.error({ error, params }, "Failed to trigger shift pickup approved notification");
+	}
+}

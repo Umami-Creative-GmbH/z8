@@ -3,6 +3,7 @@
 import {
 	IconBell,
 	IconCalendar,
+	IconCalendarEvent,
 	IconCheck,
 	IconClock,
 	IconDeviceMobile,
@@ -14,7 +15,6 @@ import {
 } from "@tabler/icons-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { PushPermissionModal } from "./push-permission-modal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,6 +27,7 @@ import {
 	type NotificationChannel,
 	type NotificationType,
 } from "@/lib/notifications/types";
+import { PushPermissionModal } from "./push-permission-modal";
 
 // Group notification types by category for better UX
 const NOTIFICATION_CATEGORIES = [
@@ -84,6 +85,21 @@ const NOTIFICATION_CATEGORIES = [
 		icon: IconBell,
 		types: ["birthday_reminder", "vacation_balance_alert"] as NotificationType[],
 	},
+	{
+		id: "scheduling",
+		title: "Shift Scheduling",
+		description: "Notifications about shift assignments and swaps",
+		icon: IconCalendarEvent,
+		types: [
+			"schedule_published",
+			"shift_assigned",
+			"shift_swap_requested",
+			"shift_swap_approved",
+			"shift_swap_rejected",
+			"shift_pickup_available",
+			"shift_pickup_approved",
+		] as NotificationType[],
+	},
 ];
 
 // Human-readable labels for notification types
@@ -104,6 +120,14 @@ const TYPE_LABELS: Record<NotificationType, string> = {
 	two_factor_disabled: "2FA disabled",
 	birthday_reminder: "Birthday reminders",
 	vacation_balance_alert: "Balance alerts",
+	// Shift scheduling notifications
+	schedule_published: "Schedule published",
+	shift_assigned: "Shift assigned",
+	shift_swap_requested: "Swap requested",
+	shift_swap_approved: "Swap approved",
+	shift_swap_rejected: "Swap rejected",
+	shift_pickup_available: "Open shift available",
+	shift_pickup_approved: "Pickup approved",
 };
 
 // Channel icons and labels

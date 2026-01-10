@@ -47,8 +47,8 @@ export function PushPermissionModal({
 					</div>
 					<DialogTitle>Stay Updated</DialogTitle>
 					<DialogDescription className="text-center">
-						Enable push notifications to receive instant updates about approvals, time
-						corrections, and important team changes - even when you're not using the app.
+						Enable push notifications to receive instant updates about approvals, time corrections,
+						and important team changes - even when you're not using the app.
 					</DialogDescription>
 				</DialogHeader>
 
@@ -65,17 +65,13 @@ export function PushPermissionModal({
 						<div className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
 							<span className="text-xs text-green-600 dark:text-green-400">2</span>
 						</div>
-						<p className="text-muted-foreground">
-							Receive alerts for pending approval requests
-						</p>
+						<p className="text-muted-foreground">Receive alerts for pending approval requests</p>
 					</div>
 					<div className="flex items-start gap-3">
 						<div className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
 							<span className="text-xs text-green-600 dark:text-green-400">3</span>
 						</div>
-						<p className="text-muted-foreground">
-							Stay informed about team and security updates
-						</p>
+						<p className="text-muted-foreground">Stay informed about team and security updates</p>
 					</div>
 				</div>
 

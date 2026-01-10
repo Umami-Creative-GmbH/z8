@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
+import { fetchApi } from "@/lib/fetch";
 import type { NotificationsListResponse, UnreadCountResponse } from "@/lib/notifications/types";
 import { queryKeys } from "@/lib/query/keys";
 
@@ -32,9 +33,7 @@ export function useNotifications(options: UseNotificationsOptions = {}) {
 				limit: limit.toString(),
 				unreadOnly: unreadOnly.toString(),
 			});
-			const res = await fetch(`/api/notifications?${params}`);
-			if (!res.ok) throw new Error("Failed to fetch notifications");
-			return res.json();
+			return fetchApi<NotificationsListResponse>(`/api/notifications?${params}`);
 		},
 		enabled,
 		staleTime: 30 * 1000, // 30 seconds
@@ -46,9 +45,7 @@ export function useNotifications(options: UseNotificationsOptions = {}) {
 	const unreadCountQuery = useQuery({
 		queryKey: queryKeys.notifications.unreadCount(),
 		queryFn: async (): Promise<UnreadCountResponse> => {
-			const res = await fetch("/api/notifications/count");
-			if (!res.ok) throw new Error("Failed to fetch unread count");
-			return res.json();
+			return fetchApi<UnreadCountResponse>("/api/notifications/count");
 		},
 		enabled,
 		staleTime: 30 * 1000, // 30 seconds - SSE handles real-time updates
@@ -58,13 +55,11 @@ export function useNotifications(options: UseNotificationsOptions = {}) {
 	// Mark single notification as read
 	const markAsReadMutation = useMutation({
 		mutationFn: async (notificationId: string) => {
-			const res = await fetch("/api/notifications", {
+			return fetchApi("/api/notifications", {
 				method: "PATCH",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ id: notificationId }),
 			});
-			if (!res.ok) throw new Error("Failed to mark as read");
-			return res.json();
 		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: queryKeys.notifications.all });
@@ -74,13 +69,11 @@ export function useNotifications(options: UseNotificationsOptions = {}) {
 	// Mark all notifications as read
 	const markAllAsReadMutation = useMutation({
 		mutationFn: async () => {
-			const res = await fetch("/api/notifications", {
+			return fetchApi("/api/notifications", {
 				method: "PATCH",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ markAllRead: true }),
 			});
-			if (!res.ok) throw new Error("Failed to mark all as read");
-			return res.json();
 		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: queryKeys.notifications.all });
@@ -90,13 +83,11 @@ export function useNotifications(options: UseNotificationsOptions = {}) {
 	// Delete notification
 	const deleteMutation = useMutation({
 		mutationFn: async (notificationId: string) => {
-			const res = await fetch("/api/notifications", {
+			return fetchApi("/api/notifications", {
 				method: "DELETE",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ id: notificationId }),
 			});
-			if (!res.ok) throw new Error("Failed to delete notification");
-			return res.json();
 		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: queryKeys.notifications.all });

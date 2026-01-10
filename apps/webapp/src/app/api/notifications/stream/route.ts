@@ -46,11 +46,20 @@ export async function GET() {
 		}
 
 		// Get organization from employee record (more reliable than session cache)
-		const [emp] = await db
-			.select({ organizationId: employee.organizationId })
-			.from(employee)
-			.where(and(eq(employee.userId, session.user.id), eq(employee.isActive, true)))
-			.limit(1);
+		let emp: { organizationId: string } | undefined;
+		try {
+			const result = await db
+				.select({ organizationId: employee.organizationId })
+				.from(employee)
+				.where(and(eq(employee.userId, session.user.id), eq(employee.isActive, true)))
+				.limit(1);
+			emp = result[0];
+		} catch (dbError) {
+			console.error("Database error querying employee:", dbError);
+			return new Response("Employee record not found - please complete onboarding", {
+				status: 400,
+			});
+		}
 
 		if (!emp) {
 			return new Response("No active employee record", { status: 400 });
@@ -109,12 +118,14 @@ export async function GET() {
 										.where(
 											and(
 												eq(notification.userId, userId),
-												gt(notification.createdAt,
-													db.select({ createdAt: notification.createdAt })
+												gt(
+													notification.createdAt,
+													db
+														.select({ createdAt: notification.createdAt })
 														.from(notification)
-														.where(eq(notification.id, lastNotificationId))
-												)
-											)
+														.where(eq(notification.id, lastNotificationId)),
+												),
+											),
 										)
 										.orderBy(desc(notification.createdAt))
 										.limit(10)
@@ -148,7 +159,7 @@ export async function GET() {
 					} catch {
 						// Ignore polling errors
 					}
-				}, 3000);
+				}, 5000);
 
 				// Send heartbeat every 30 seconds
 				const heartbeatInterval = setInterval(() => {
