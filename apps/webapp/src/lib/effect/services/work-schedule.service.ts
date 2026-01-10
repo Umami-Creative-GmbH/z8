@@ -1,7 +1,13 @@
-import { and, eq, gte, isNull, lte, or } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
-import { employee, employeeWorkSchedule, employeeWorkScheduleDays } from "@/db/schema";
-import { NotFoundError, ValidationError, DatabaseError } from "../errors";
+import {
+	employee,
+	team,
+	workScheduleAssignment,
+	workScheduleTemplate,
+	workScheduleTemplateDays,
+} from "@/db/schema";
+import { type DatabaseError, NotFoundError, ValidationError } from "../errors";
 import { DatabaseService } from "./database.service";
 
 export interface WorkScheduleDay {
@@ -10,54 +16,50 @@ export interface WorkScheduleDay {
 	isWorkDay: boolean;
 }
 
-export interface WorkSchedule {
-	id: string;
-	employeeId: string;
-	workClassification: "daily" | "weekly" | "monthly";
+export interface EffectiveWorkSchedule {
+	templateId: string;
+	templateName: string;
+	scheduleCycle: "daily" | "weekly" | "biweekly" | "monthly" | "yearly";
 	scheduleType: "simple" | "detailed";
-	hoursPerWeek: string | null;
-	effectiveFrom: Date;
-	effectiveUntil: Date | null;
-	createdBy: string;
-	updatedBy: string | null;
-	createdAt: Date;
-	updatedAt: Date;
-	days?: WorkScheduleDay[];
+	workingDaysPreset: "weekdays" | "weekends" | "all_days" | "custom";
+	hoursPerCycle: string | null;
+	homeOfficeDaysPerCycle: number;
+	days: WorkScheduleDay[];
+	assignmentType: "organization" | "team" | "employee";
+	assignedVia: string; // Organization name, team name, or "Individual"
 }
 
 export class WorkScheduleService extends Context.Tag("WorkScheduleService")<
 	WorkScheduleService,
 	{
-		readonly createSimpleSchedule: (
+		/**
+		 * Get the effective work schedule for an employee
+		 * Resolves based on priority: employee > team > organization
+		 */
+		readonly getEffectiveSchedule: (
 			employeeId: string,
-			hoursPerWeek: string,
-			classification: "daily" | "weekly" | "monthly",
-			effectiveFrom: Date,
-			createdBy: string,
-		) => Effect.Effect<WorkSchedule, NotFoundError | ValidationError | DatabaseError>;
-		readonly createDetailedSchedule: (
-			employeeId: string,
-			classification: "daily" | "weekly" | "monthly",
-			effectiveFrom: Date,
-			days: WorkScheduleDay[],
-			createdBy: string,
-		) => Effect.Effect<WorkSchedule, NotFoundError | ValidationError | DatabaseError>;
-		readonly getActiveSchedule: (
-			employeeId: string,
-			asOfDate: Date,
-		) => Effect.Effect<WorkSchedule | null, NotFoundError | DatabaseError>;
-		readonly getEmployeeSchedules: (
-			employeeId: string,
-		) => Effect.Effect<WorkSchedule[], NotFoundError | DatabaseError>;
-		readonly endSchedule: (
-			scheduleId: string,
-			effectiveUntil: Date,
-			updatedBy: string,
-		) => Effect.Effect<
-			void,
-			NotFoundError | ValidationError | DatabaseError
+		) => Effect.Effect<EffectiveWorkSchedule | null, NotFoundError | DatabaseError>;
+
+		/**
+		 * Get all work schedule templates for an organization
+		 */
+		readonly getOrganizationTemplates: (organizationId: string) => Effect.Effect<
+			Array<{
+				id: string;
+				name: string;
+				scheduleCycle: string;
+				scheduleType: string;
+				hoursPerCycle: string | null;
+				homeOfficeDaysPerCycle: number;
+				isDefault: boolean;
+			}>,
+			DatabaseError
 		>;
-		readonly calculateTotalHours: (schedule: WorkSchedule) => number;
+
+		/**
+		 * Calculate total hours per week for a schedule
+		 */
+		readonly calculateWeeklyHours: (schedule: EffectiveWorkSchedule) => number;
 	}
 >() {}
 
@@ -67,23 +69,9 @@ export const WorkScheduleServiceLive = Layer.effect(
 		const dbService = yield* _(DatabaseService);
 
 		return WorkScheduleService.of({
-			createSimpleSchedule: (employeeId, hoursPerWeek, classification, effectiveFrom, createdBy) =>
+			getEffectiveSchedule: (employeeId) =>
 				Effect.gen(function* (_) {
-					// Step 1: Validate hours per week
-					const hours = parseFloat(hoursPerWeek);
-					if (isNaN(hours) || hours < 0 || hours > 168) {
-						yield* _(
-							Effect.fail(
-								new ValidationError({
-									message: "Hours per week must be between 0 and 168",
-									field: "hoursPerWeek",
-									value: hoursPerWeek,
-								}),
-							),
-						);
-					}
-
-					// Step 2: Verify employee exists
+					// Step 1: Get employee and verify they exist
 					const emp = yield* _(
 						dbService.query("getEmployeeById", async () => {
 							return await dbService.db.query.employee.findFirst({
@@ -103,405 +91,193 @@ export const WorkScheduleServiceLive = Layer.effect(
 						),
 					);
 
-					// Step 3: End any existing active schedules
-					const activeSchedules = yield* _(
-						dbService.query("getActiveSchedules", async () => {
-							return await dbService.db.query.employeeWorkSchedule.findMany({
+					if (!emp.organizationId) {
+						return null; // Employee not associated with an organization
+					}
+
+					// Step 2: Check for employee-level assignment (highest priority)
+					const employeeAssignment = yield* _(
+						dbService.query("getEmployeeAssignment", async () => {
+							return await dbService.db.query.workScheduleAssignment.findFirst({
 								where: and(
-									eq(employeeWorkSchedule.employeeId, employeeId),
-									isNull(employeeWorkSchedule.effectiveUntil),
+									eq(workScheduleAssignment.employeeId, employeeId),
+									eq(workScheduleAssignment.assignmentType, "employee"),
+									eq(workScheduleAssignment.isActive, true),
 								),
+								with: {
+									template: {
+										with: {
+											days: true,
+										},
+									},
+								},
 							});
 						}),
 					);
 
-					if (activeSchedules.length > 0) {
-						yield* _(
-							dbService.query("endActiveSchedules", async () => {
-								for (const schedule of activeSchedules) {
-									await dbService.db
-										.update(employeeWorkSchedule)
-										.set({
-											effectiveUntil: new Date(effectiveFrom.getTime() - 1),
-											updatedBy: createdBy,
-											updatedAt: new Date(),
-										})
-										.where(eq(employeeWorkSchedule.id, schedule.id));
-								}
+					if (employeeAssignment?.template) {
+						return {
+							templateId: employeeAssignment.template.id,
+							templateName: employeeAssignment.template.name,
+							scheduleCycle: employeeAssignment.template.scheduleCycle,
+							scheduleType: employeeAssignment.template.scheduleType,
+							workingDaysPreset: employeeAssignment.template.workingDaysPreset,
+							hoursPerCycle: employeeAssignment.template.hoursPerCycle,
+							homeOfficeDaysPerCycle: employeeAssignment.template.homeOfficeDaysPerCycle,
+							days: employeeAssignment.template.days.map((d) => ({
+								dayOfWeek: d.dayOfWeek,
+								hoursPerDay: d.hoursPerDay,
+								isWorkDay: d.isWorkDay,
+							})),
+							assignmentType: "employee" as const,
+							assignedVia: "Individual",
+						};
+					}
+
+					// Step 3: Check for team-level assignment (if employee has a team)
+					if (emp.teamId) {
+						const teamAssignment = yield* _(
+							dbService.query("getTeamAssignment", async () => {
+								return await dbService.db.query.workScheduleAssignment.findFirst({
+									where: and(
+										eq(workScheduleAssignment.teamId, emp.teamId!),
+										eq(workScheduleAssignment.assignmentType, "team"),
+										eq(workScheduleAssignment.isActive, true),
+									),
+									with: {
+										template: {
+											with: {
+												days: true,
+											},
+										},
+										team: true,
+									},
+								});
 							}),
 						);
-					}
 
-					// Step 4: Create new simple schedule
-					const [newSchedule] = yield* _(
-						dbService.query("createSimpleSchedule", async () => {
-							return await dbService.db
-								.insert(employeeWorkSchedule)
-								.values({
-									employeeId,
-									workClassification: classification,
-									scheduleType: "simple",
-									hoursPerWeek,
-									effectiveFrom,
-									createdBy,
-								})
-								.returning();
-						}),
-					);
-
-					return {
-						...newSchedule,
-						days: undefined,
-					};
-				}),
-
-			createDetailedSchedule: (employeeId, classification, effectiveFrom, days, createdBy) =>
-				Effect.gen(function* (_) {
-					// Step 1: Validate days array
-					if (!days || days.length !== 7) {
-						yield* _(
-							Effect.fail(
-								new ValidationError({
-									message: "Detailed schedule must include all 7 days of the week",
-									field: "days",
-									value: days,
-								}),
-							),
-						);
-					}
-
-					// Step 2: Validate each day's hours
-					const dayNames = [
-						"monday",
-						"tuesday",
-						"wednesday",
-						"thursday",
-						"friday",
-						"saturday",
-						"sunday",
-					];
-					const providedDays = days.map((d) => d.dayOfWeek);
-					const missingDays = dayNames.filter((d) => !providedDays.includes(d as any));
-
-					if (missingDays.length > 0) {
-						yield* _(
-							Effect.fail(
-								new ValidationError({
-									message: `Missing days: ${missingDays.join(", ")}`,
-									field: "days",
-									value: days,
-								}),
-							),
-						);
-					}
-
-					for (const day of days) {
-						const hours = parseFloat(day.hoursPerDay);
-						if (isNaN(hours) || hours < 0 || hours > 24) {
-							yield* _(
-								Effect.fail(
-									new ValidationError({
-										message: `Hours per day must be between 0 and 24 for ${day.dayOfWeek}`,
-										field: "hoursPerDay",
-										value: day.hoursPerDay,
-									}),
-								),
-							);
+						if (teamAssignment?.template) {
+							return {
+								templateId: teamAssignment.template.id,
+								templateName: teamAssignment.template.name,
+								scheduleCycle: teamAssignment.template.scheduleCycle,
+								scheduleType: teamAssignment.template.scheduleType,
+								workingDaysPreset: teamAssignment.template.workingDaysPreset,
+								hoursPerCycle: teamAssignment.template.hoursPerCycle,
+								homeOfficeDaysPerCycle: teamAssignment.template.homeOfficeDaysPerCycle,
+								days: teamAssignment.template.days.map((d) => ({
+									dayOfWeek: d.dayOfWeek,
+									hoursPerDay: d.hoursPerDay,
+									isWorkDay: d.isWorkDay,
+								})),
+								assignmentType: "team" as const,
+								assignedVia: teamAssignment.team?.name || "Team",
+							};
 						}
 					}
 
-					// Step 3: Verify employee exists
-					const emp = yield* _(
-						dbService.query("getEmployeeById", async () => {
-							return await dbService.db.query.employee.findFirst({
-								where: eq(employee.id, employeeId),
-							});
-						}),
-						Effect.flatMap((e) =>
-							e
-								? Effect.succeed(e)
-								: Effect.fail(
-										new NotFoundError({
-											message: "Employee not found",
-											entityType: "employee",
-											entityId: employeeId,
-										}),
-									),
-						),
-					);
-
-					// Step 4: End any existing active schedules
-					const activeSchedules = yield* _(
-						dbService.query("getActiveSchedules", async () => {
-							return await dbService.db.query.employeeWorkSchedule.findMany({
+					// Step 4: Fall back to organization-level assignment
+					const orgAssignment = yield* _(
+						dbService.query("getOrgAssignment", async () => {
+							return await dbService.db.query.workScheduleAssignment.findFirst({
 								where: and(
-									eq(employeeWorkSchedule.employeeId, employeeId),
-									isNull(employeeWorkSchedule.effectiveUntil),
-								),
-							});
-						}),
-					);
-
-					if (activeSchedules.length > 0) {
-						yield* _(
-							dbService.query("endActiveSchedules", async () => {
-								for (const schedule of activeSchedules) {
-									await dbService.db
-										.update(employeeWorkSchedule)
-										.set({
-											effectiveUntil: new Date(effectiveFrom.getTime() - 1),
-											updatedBy: createdBy,
-											updatedAt: new Date(),
-										})
-										.where(eq(employeeWorkSchedule.id, schedule.id));
-								}
-							}),
-						);
-					}
-
-					// Step 5: Create new detailed schedule
-					const [newSchedule] = yield* _(
-						dbService.query("createDetailedSchedule", async () => {
-							return await dbService.db
-								.insert(employeeWorkSchedule)
-								.values({
-									employeeId,
-									workClassification: classification,
-									scheduleType: "detailed",
-									effectiveFrom,
-									createdBy,
-								})
-								.returning();
-						}),
-					);
-
-					// Step 6: Create schedule days
-					yield* _(
-						dbService.query("createScheduleDays", async () => {
-							await dbService.db.insert(employeeWorkScheduleDays).values(
-								days.map((day) => ({
-									scheduleId: newSchedule.id,
-									dayOfWeek: day.dayOfWeek,
-									hoursPerDay: day.hoursPerDay,
-									isWorkDay: day.isWorkDay,
-								})),
-							);
-						}),
-					);
-
-					// Step 7: Fetch complete schedule with days
-					const completeSchedule = yield* _(
-						dbService.query("getScheduleWithDays", async () => {
-							return await dbService.db.query.employeeWorkSchedule.findFirst({
-								where: eq(employeeWorkSchedule.id, newSchedule.id),
-								with: {
-									days: true,
-								},
-							});
-						}),
-					);
-
-					if (!completeSchedule) {
-						yield* _(
-							Effect.fail(
-								new NotFoundError({
-									message: "Failed to retrieve created schedule",
-									entityType: "work_schedule",
-									entityId: newSchedule.id,
-								}),
-							),
-						);
-					}
-
-					if (!completeSchedule) {
-						return yield* _(
-							Effect.fail(
-								new NotFoundError({
-									message: "Failed to retrieve created schedule",
-									entityType: "work_schedule",
-									entityId: newSchedule.id,
-								}),
-							),
-						);
-					}
-
-					return {
-						...completeSchedule,
-						days: completeSchedule.days.map((d) => ({
-							dayOfWeek: d.dayOfWeek,
-							hoursPerDay: d.hoursPerDay,
-							isWorkDay: d.isWorkDay,
-						})),
-					};
-				}),
-
-			getActiveSchedule: (employeeId, asOfDate) =>
-				Effect.gen(function* (_) {
-					// Verify employee exists
-					const emp = yield* _(
-						dbService.query("getEmployeeById", async () => {
-							return await dbService.db.query.employee.findFirst({
-								where: eq(employee.id, employeeId),
-							});
-						}),
-						Effect.flatMap((e) =>
-							e
-								? Effect.succeed(e)
-								: Effect.fail(
-										new NotFoundError({
-											message: "Employee not found",
-											entityType: "employee",
-											entityId: employeeId,
-										}),
-									),
-						),
-					);
-
-					// Get active schedule as of the specified date
-					const schedule = yield* _(
-						dbService.query("getActiveSchedule", async () => {
-							return await dbService.db.query.employeeWorkSchedule.findFirst({
-								where: and(
-									eq(employeeWorkSchedule.employeeId, employeeId),
-									lte(employeeWorkSchedule.effectiveFrom, asOfDate),
-									or(
-										isNull(employeeWorkSchedule.effectiveUntil),
-										gte(employeeWorkSchedule.effectiveUntil, asOfDate),
-									),
+									eq(workScheduleAssignment.organizationId, emp.organizationId!),
+									eq(workScheduleAssignment.assignmentType, "organization"),
+									eq(workScheduleAssignment.isActive, true),
 								),
 								with: {
-									days: true,
+									template: {
+										with: {
+											days: true,
+										},
+									},
 								},
-								orderBy: (schedule, { desc }) => [desc(schedule.effectiveFrom)],
 							});
 						}),
 					);
 
-					if (!schedule) {
-						return null;
+					if (orgAssignment?.template) {
+						return {
+							templateId: orgAssignment.template.id,
+							templateName: orgAssignment.template.name,
+							scheduleCycle: orgAssignment.template.scheduleCycle,
+							scheduleType: orgAssignment.template.scheduleType,
+							workingDaysPreset: orgAssignment.template.workingDaysPreset,
+							hoursPerCycle: orgAssignment.template.hoursPerCycle,
+							homeOfficeDaysPerCycle: orgAssignment.template.homeOfficeDaysPerCycle,
+							days: orgAssignment.template.days.map((d) => ({
+								dayOfWeek: d.dayOfWeek,
+								hoursPerDay: d.hoursPerDay,
+								isWorkDay: d.isWorkDay,
+							})),
+							assignmentType: "organization" as const,
+							assignedVia: "Organization Default",
+						};
 					}
 
-					return {
-						...schedule,
-						days: schedule.days?.map((d) => ({
-							dayOfWeek: d.dayOfWeek,
-							hoursPerDay: d.hoursPerDay,
-							isWorkDay: d.isWorkDay,
-						})),
-					};
+					// No schedule assigned at any level
+					return null;
 				}),
 
-			getEmployeeSchedules: (employeeId) =>
+			getOrganizationTemplates: (organizationId) =>
 				Effect.gen(function* (_) {
-					// Verify employee exists
-					const emp = yield* _(
-						dbService.query("getEmployeeById", async () => {
-							return await dbService.db.query.employee.findFirst({
-								where: eq(employee.id, employeeId),
-							});
-						}),
-						Effect.flatMap((e) =>
-							e
-								? Effect.succeed(e)
-								: Effect.fail(
-										new NotFoundError({
-											message: "Employee not found",
-											entityType: "employee",
-											entityId: employeeId,
-										}),
-									),
-						),
-					);
-
-					// Get all schedules for this employee
-					const schedules = yield* _(
-						dbService.query("getEmployeeSchedules", async () => {
-							return await dbService.db.query.employeeWorkSchedule.findMany({
-								where: eq(employeeWorkSchedule.employeeId, employeeId),
-								with: {
-									days: true,
-								},
-								orderBy: (schedule, { desc }) => [desc(schedule.effectiveFrom)],
+					const templates = yield* _(
+						dbService.query("getOrgTemplates", async () => {
+							return await dbService.db.query.workScheduleTemplate.findMany({
+								where: and(
+									eq(workScheduleTemplate.organizationId, organizationId),
+									eq(workScheduleTemplate.isActive, true),
+								),
+								orderBy: (t, { asc }) => [asc(t.name)],
 							});
 						}),
 					);
 
-					return schedules.map((s) => ({
-						...s,
-						days: s.days?.map((d) => ({
-							dayOfWeek: d.dayOfWeek,
-							hoursPerDay: d.hoursPerDay,
-							isWorkDay: d.isWorkDay,
-						})),
+					return templates.map((t) => ({
+						id: t.id,
+						name: t.name,
+						scheduleCycle: t.scheduleCycle,
+						scheduleType: t.scheduleType,
+						hoursPerCycle: t.hoursPerCycle,
+						homeOfficeDaysPerCycle: t.homeOfficeDaysPerCycle,
+						isDefault: t.isDefault,
 					}));
 				}),
 
-			endSchedule: (scheduleId, effectiveUntil, updatedBy) =>
-				Effect.gen(function* (_) {
-					// Verify schedule exists
-					const schedule = yield* _(
-						dbService.query("getScheduleById", async () => {
-							return await dbService.db.query.employeeWorkSchedule.findFirst({
-								where: eq(employeeWorkSchedule.id, scheduleId),
-							});
-						}),
-						Effect.flatMap((s) =>
-							s
-								? Effect.succeed(s)
-								: Effect.fail(
-										new NotFoundError({
-											message: "Work schedule not found",
-											entityType: "work_schedule",
-											entityId: scheduleId,
-										}),
-									),
-						),
-					);
+			calculateWeeklyHours: (schedule) => {
+				// For simple schedules, use hoursPerCycle divided by cycle length
+				if (schedule.scheduleType === "simple" && schedule.hoursPerCycle) {
+					const totalHours = parseFloat(schedule.hoursPerCycle);
+					if (isNaN(totalHours)) return 0;
 
-					// Validate effectiveUntil is after effectiveFrom
-					if (effectiveUntil <= schedule.effectiveFrom) {
-						yield* _(
-							Effect.fail(
-								new ValidationError({
-									message: "Effective until date must be after effective from date",
-									field: "effectiveUntil",
-									value: effectiveUntil,
-								}),
-							),
-						);
+					// Convert to weekly hours based on cycle
+					switch (schedule.scheduleCycle) {
+						case "daily":
+							return totalHours * 7; // Assuming 7 days
+						case "weekly":
+							return totalHours;
+						case "biweekly":
+							return totalHours / 2;
+						case "monthly":
+							return (totalHours * 12) / 52; // Convert monthly to weekly
+						case "yearly":
+							return totalHours / 52;
+						default:
+							return totalHours;
 					}
-
-					// Update schedule
-					yield* _(
-						dbService.query("endSchedule", async () => {
-							await dbService.db
-								.update(employeeWorkSchedule)
-								.set({
-									effectiveUntil,
-									updatedBy,
-									updatedAt: new Date(),
-								})
-								.where(eq(employeeWorkSchedule.id, scheduleId));
-						}),
-					);
-				}),
-
-			calculateTotalHours: (schedule) => {
-				if (schedule.scheduleType === "simple") {
-					return schedule.hoursPerWeek ? parseFloat(schedule.hoursPerWeek) : 0;
 				}
 
-				// Detailed schedule - sum up all work days
-				if (!schedule.days || schedule.days.length === 0) {
-					return 0;
+				// For detailed schedules, sum up weekly hours
+				if (schedule.days && schedule.days.length > 0) {
+					return schedule.days
+						.filter((d) => d.isWorkDay)
+						.reduce((total, day) => {
+							const hours = parseFloat(day.hoursPerDay);
+							return total + (isNaN(hours) ? 0 : hours);
+						}, 0);
 				}
 
-				return schedule.days
-					.filter((d) => d.isWorkDay)
-					.reduce((total, day) => {
-						const hours = parseFloat(day.hoursPerDay);
-						return total + (isNaN(hours) ? 0 : hours);
-					}, 0);
+				return 0;
 			},
 		});
 	}),

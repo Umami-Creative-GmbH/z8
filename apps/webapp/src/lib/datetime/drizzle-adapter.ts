@@ -8,8 +8,8 @@
  * Strategy: All database timestamps are stored in UTC
  */
 
-import { DateTime } from 'luxon';
-import { fromJSDate, toJSDate, toUTC } from './luxon-utils';
+import { DateTime } from "luxon";
+import { fromJSDate, toJSDate, toUTC } from "./luxon-utils";
 
 // ============================================================================
 // READING FROM DATABASE
@@ -23,8 +23,8 @@ import { fromJSDate, toJSDate, toUTC } from './luxon-utils';
  * @returns DateTime in UTC timezone
  */
 export function dateFromDB(date: Date | null | undefined): DateTime | null {
-  if (!date) return null;
-  return fromJSDate(date, 'utc');
+	if (!date) return null;
+	return fromJSDate(date, "utc");
 }
 
 /**
@@ -35,7 +35,7 @@ export function dateFromDB(date: Date | null | undefined): DateTime | null {
  * @returns Array of DateTimes in UTC timezone
  */
 export function datesFromDB(dates: (Date | null)[]): (DateTime | null)[] {
-  return dates.map(date => dateFromDB(date));
+	return dates.map((date) => dateFromDB(date));
 }
 
 /**
@@ -52,16 +52,16 @@ export function datesFromDB(dates: (Date | null)[]): (DateTime | null)[] {
  * // mapped.startDate is now DateTime instead of Date
  */
 export function mapRecordFromDB<T extends Record<string, any>>(
-  record: T,
-  dateFields: (keyof T)[]
+	record: T,
+	dateFields: (keyof T)[],
 ): T {
-  const result = { ...record };
-  for (const field of dateFields) {
-    if (record[field] instanceof Date) {
-      result[field] = dateFromDB(record[field]) as any;
-    }
-  }
-  return result;
+	const result = { ...record };
+	for (const field of dateFields) {
+		if (record[field] instanceof Date) {
+			result[field] = dateFromDB(record[field]) as any;
+		}
+	}
+	return result;
 }
 
 /**
@@ -76,10 +76,10 @@ export function mapRecordFromDB<T extends Record<string, any>>(
  * const mapped = mapRecordsFromDB(absences, ['startDate', 'endDate', 'createdAt', 'updatedAt']);
  */
 export function mapRecordsFromDB<T extends Record<string, any>>(
-  records: T[],
-  dateFields: (keyof T)[]
+	records: T[],
+	dateFields: (keyof T)[],
 ): T[] {
-  return records.map(record => mapRecordFromDB(record, dateFields));
+	return records.map((record) => mapRecordFromDB(record, dateFields));
 }
 
 // ============================================================================
@@ -94,8 +94,8 @@ export function mapRecordsFromDB<T extends Record<string, any>>(
  * @returns Date object for database (always in UTC)
  */
 export function dateToDB(dt: DateTime | null | undefined): Date | null {
-  if (!dt) return null;
-  return toJSDate(toUTC(dt));
+	if (!dt) return null;
+	return toJSDate(toUTC(dt));
 }
 
 /**
@@ -105,7 +105,7 @@ export function dateToDB(dt: DateTime | null | undefined): Date | null {
  * @returns Array of Date objects for database
  */
 export function datesToDB(dts: (DateTime | null)[]): (Date | null)[] {
-  return dts.map(dt => dateToDB(dt));
+	return dts.map((dt) => dateToDB(dt));
 }
 
 /**
@@ -125,19 +125,19 @@ export function datesToDB(dts: (DateTime | null)[]): (Date | null)[] {
  * await db.insert(absenceEntry).values(dbRecord);
  */
 export function prepareRecordForDB<T extends Record<string, any>>(
-  record: T,
-  dateFields: (keyof T)[]
+	record: T,
+	dateFields: (keyof T)[],
 ): T {
-  const result = { ...record };
-  for (const field of dateFields) {
-    if (record[field] && typeof record[field] === 'object') {
-      // Check if it's a Luxon DateTime
-      if ('toJSDate' in record[field]) {
-        result[field] = dateToDB(record[field]) as any;
-      }
-    }
-  }
-  return result;
+	const result = { ...record };
+	for (const field of dateFields) {
+		if (record[field] && typeof record[field] === "object") {
+			// Check if it's a Luxon DateTime
+			if ("toJSDate" in record[field]) {
+				result[field] = dateToDB(record[field]) as any;
+			}
+		}
+	}
+	return result;
 }
 
 // ============================================================================
@@ -152,7 +152,7 @@ export function prepareRecordForDB<T extends Record<string, any>>(
  * updatedAt: timestamp("updated_at").$onUpdate(() => currentTimestamp()).notNull()
  */
 export function currentTimestamp(): Date {
-  return DateTime.utc().toJSDate();
+	return DateTime.utc().toJSDate();
 }
 
 /**
@@ -163,7 +163,7 @@ export function currentTimestamp(): Date {
  * createdAt: timestamp("created_at").$default(() => defaultTimestamp()).notNull()
  */
 export function defaultTimestamp(): Date {
-  return DateTime.utc().toJSDate();
+	return DateTime.utc().toJSDate();
 }
 
 // ============================================================================
@@ -174,14 +174,14 @@ export function defaultTimestamp(): Date {
  * Check if value is a Luxon DateTime
  */
 export function isDateTime(value: any): value is DateTime {
-  return value && typeof value === 'object' && 'toJSDate' in value;
+	return value && typeof value === "object" && "toJSDate" in value;
 }
 
 /**
  * Check if value is a JavaScript Date
  */
 export function isDate(value: any): value is Date {
-  return value instanceof Date;
+	return value instanceof Date;
 }
 
 // ============================================================================
@@ -196,22 +196,22 @@ export function isDate(value: any): value is Date {
  * @returns DateTime in UTC or null
  */
 export function toDateTime(value: unknown): DateTime | null {
-  if (!value) return null;
+	if (!value) return null;
 
-  if (isDateTime(value)) {
-    return toUTC(value);
-  }
+	if (isDateTime(value)) {
+		return toUTC(value);
+	}
 
-  if (isDate(value)) {
-    return fromJSDate(value, 'utc');
-  }
+	if (isDate(value)) {
+		return fromJSDate(value, "utc");
+	}
 
-  if (typeof value === 'string') {
-    const dt = DateTime.fromISO(value);
-    return dt.isValid ? toUTC(dt) : null;
-  }
+	if (typeof value === "string") {
+		const dt = DateTime.fromISO(value);
+		return dt.isValid ? toUTC(dt) : null;
+	}
 
-  return null;
+	return null;
 }
 
 /**
@@ -221,6 +221,6 @@ export function toDateTime(value: unknown): DateTime | null {
  * @returns Date object or null
  */
 export function toDate(value: unknown): Date | null {
-  const dt = toDateTime(value);
-  return dt ? dateToDB(dt) : null;
+	const dt = toDateTime(value);
+	return dt ? dateToDB(dt) : null;
 }

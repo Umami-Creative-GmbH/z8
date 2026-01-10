@@ -1,4 +1,4 @@
-import { Effect, Exit, Cause, Option } from "effect";
+import { Cause, type Effect, Exit, Option } from "effect";
 import type { AnyAppError } from "./errors";
 import { runtime } from "./runtime";
 
@@ -28,7 +28,11 @@ export function toServerActionResult<T>(exit: Exit.Exit<T, AnyAppError>): Server
 					code: appError._tag,
 				};
 
-				if (appError._tag === "ValidationError" && "value" in appError && typeof appError.value === "string") {
+				if (
+					appError._tag === "ValidationError" &&
+					"value" in appError &&
+					typeof appError.value === "string"
+				) {
 					result.holidayName = appError.value;
 				}
 

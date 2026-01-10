@@ -1,7 +1,13 @@
 import { and, eq } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { employee, employeeManagers } from "@/db/schema";
-import { AuthorizationError, ConflictError, DatabaseError, NotFoundError, ValidationError } from "../errors";
+import {
+	AuthorizationError,
+	type ConflictError,
+	type DatabaseError,
+	NotFoundError,
+	ValidationError,
+} from "../errors";
 import { DatabaseService } from "./database.service";
 
 export interface ManagerAssignment {
@@ -32,17 +38,11 @@ export class ManagerService extends Context.Tag("ManagerService")<
 			managerId: string,
 			isPrimary: boolean,
 			assignedBy: string,
-		) => Effect.Effect<
-			void,
-			NotFoundError | ValidationError | ConflictError | DatabaseError
-		>;
+		) => Effect.Effect<void, NotFoundError | ValidationError | ConflictError | DatabaseError>;
 		readonly removeManager: (
 			employeeId: string,
 			managerId: string,
-		) => Effect.Effect<
-			void,
-			NotFoundError | ValidationError | DatabaseError
-		>;
+		) => Effect.Effect<void, NotFoundError | ValidationError | DatabaseError>;
 		readonly getManagers: (
 			employeeId: string,
 		) => Effect.Effect<Manager[], NotFoundError | DatabaseError>;
@@ -53,9 +53,7 @@ export class ManagerService extends Context.Tag("ManagerService")<
 			managerId: string,
 			employeeId: string,
 		) => Effect.Effect<boolean, DatabaseError>;
-		readonly getManagedEmployees: (
-			managerId: string,
-		) => Effect.Effect<any[], DatabaseError>;
+		readonly getManagedEmployees: (managerId: string) => Effect.Effect<any[], DatabaseError>;
 	}
 >() {}
 
@@ -210,7 +208,8 @@ export const ManagerServiceLive = Layer.effect(
 						yield* _(
 							Effect.fail(
 								new ValidationError({
-									message: "Cannot remove the last manager. Employee must have at least one manager.",
+									message:
+										"Cannot remove the last manager. Employee must have at least one manager.",
 									field: "managerId",
 								}),
 							),

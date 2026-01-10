@@ -6,39 +6,36 @@
  * absence patterns, and manager effectiveness metrics.
  */
 
+import { and, desc, eq, gte, isNotNull, lte, sql } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
-import { and, eq, gte, lte, desc, sql, isNotNull } from "drizzle-orm";
+import { DateTime } from "luxon";
+import {
+	absenceCategory,
+	absenceEntry,
+	approvalRequest,
+	employee,
+	employeeManagers,
+	employeeVacationAllowance,
+	team,
+	user,
+	workPeriod,
+} from "@/db/schema";
 import type {
+	AbsencePatternsData,
+	AbsencePatternsParams,
+	ManagerEffectivenessData,
+	ManagerEffectivenessParams,
 	TeamPerformanceData,
 	TeamPerformanceParams,
 	VacationTrendsData,
 	VacationTrendsParams,
 	WorkHoursAnalyticsData,
 	WorkHoursParams,
-	AbsencePatternsData,
-	AbsencePatternsParams,
-	ManagerEffectivenessData,
-	ManagerEffectivenessParams,
 } from "@/lib/analytics/types";
-import { DatabaseService } from "./database.service";
-import {
-	employee,
-	team,
-	user,
-	workPeriod,
-	absenceEntry,
-	absenceCategory,
-	approvalRequest,
-	employeeVacationAllowance,
-	employeeManagers,
-} from "@/db/schema";
-import {
-	calculateWorkHours,
-	calculateExpectedWorkHours,
-} from "@/lib/time-tracking/calculations";
-import { DatabaseError, NotFoundError, ValidationError } from "../errors";
 import { differenceInDays, format } from "@/lib/datetime/luxon-utils";
-import { DateTime } from "luxon";
+import { calculateExpectedWorkHours, calculateWorkHours } from "@/lib/time-tracking/calculations";
+import type { DatabaseError, NotFoundError, ValidationError } from "../errors";
+import { DatabaseService } from "./database.service";
 
 /**
  * Calculate clustering score for vacation absences (0-100)
@@ -97,34 +94,19 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 	{
 		readonly getTeamPerformance: (
 			params: TeamPerformanceParams,
-		) => Effect.Effect<
-			TeamPerformanceData,
-			NotFoundError | ValidationError | DatabaseError
-		>;
+		) => Effect.Effect<TeamPerformanceData, NotFoundError | ValidationError | DatabaseError>;
 		readonly getVacationTrends: (
 			params: VacationTrendsParams,
-		) => Effect.Effect<
-			VacationTrendsData,
-			NotFoundError | ValidationError | DatabaseError
-		>;
+		) => Effect.Effect<VacationTrendsData, NotFoundError | ValidationError | DatabaseError>;
 		readonly getWorkHoursAnalytics: (
 			params: WorkHoursParams,
-		) => Effect.Effect<
-			WorkHoursAnalyticsData,
-			NotFoundError | ValidationError | DatabaseError
-		>;
+		) => Effect.Effect<WorkHoursAnalyticsData, NotFoundError | ValidationError | DatabaseError>;
 		readonly getAbsencePatterns: (
 			params: AbsencePatternsParams,
-		) => Effect.Effect<
-			AbsencePatternsData,
-			NotFoundError | ValidationError | DatabaseError
-		>;
+		) => Effect.Effect<AbsencePatternsData, NotFoundError | ValidationError | DatabaseError>;
 		readonly getManagerEffectiveness: (
 			params: ManagerEffectivenessParams,
-		) => Effect.Effect<
-			ManagerEffectivenessData,
-			NotFoundError | ValidationError | DatabaseError
-		>;
+		) => Effect.Effect<ManagerEffectivenessData, NotFoundError | ValidationError | DatabaseError>;
 	}
 >() {
 	static readonly Live = Layer.effect(
@@ -147,10 +129,7 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 												eq(employee.teamId, teamId),
 												eq(employee.isActive, true),
 											)
-										: and(
-												eq(employee.organizationId, organizationId),
-												eq(employee.isActive, true),
-											),
+										: and(eq(employee.organizationId, organizationId), eq(employee.isActive, true)),
 									with: {
 										user: true,
 										team: true,
@@ -184,9 +163,7 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 								expectedHours: expected.totalHours,
 								variance: summary.totalHours - expected.totalHours,
 								percentageOfExpected:
-									expected.totalHours > 0
-										? (summary.totalHours / expected.totalHours) * 100
-										: 0,
+									expected.totalHours > 0 ? (summary.totalHours / expected.totalHours) * 100 : 0,
 							};
 						});
 
@@ -230,8 +207,7 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 							teamId: t.teamId,
 							teamName: t.teamName,
 							totalHours: Math.round(t.totalHours * 100) / 100,
-							avgHoursPerEmployee:
-								Math.round((t.totalHours / t.employeeCount) * 100) / 100,
+							avgHoursPerEmployee: Math.round((t.totalHours / t.employeeCount) * 100) / 100,
 							employeeCount: t.employeeCount,
 							employees: t.employees.map((e) => ({
 								employeeId: e.employeeId,
@@ -243,10 +219,7 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 							})),
 						}));
 
-						const organizationTotal = teams.reduce(
-							(sum, t) => sum + t.totalHours,
-							0,
-						);
+						const organizationTotal = teams.reduce((sum, t) => sum + t.totalHours, 0);
 
 						return {
 							teams,
@@ -306,39 +279,29 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 						}, 0);
 
 						const totalDaysTaken = absences.reduce((sum, absence) => {
-							const days = differenceInDays(
-								new Date(absence.endDate),
-								new Date(absence.startDate),
-							);
+							const days = differenceInDays(new Date(absence.endDate), new Date(absence.startDate));
 							return sum + Math.max(1, days);
 						}, 0);
 
 						const totalDaysRemaining = totalDaysAllocated - totalDaysTaken;
 						const utilizationRate =
-							totalDaysAllocated > 0
-								? (totalDaysTaken / totalDaysAllocated) * 100
-								: 0;
+							totalDaysAllocated > 0 ? (totalDaysTaken / totalDaysAllocated) * 100 : 0;
 
 						// Group by month
 						const monthlyMap = new Map<string, { taken: number; remaining: number }>();
 						for (const absence of absences) {
 							const month = format(new Date(absence.startDate), "yyyy-MM");
-							const days = differenceInDays(
-								new Date(absence.endDate),
-								new Date(absence.startDate),
-							);
+							const days = differenceInDays(new Date(absence.endDate), new Date(absence.startDate));
 							const existing = monthlyMap.get(month) || { taken: 0, remaining: 0 };
 							existing.taken += Math.max(1, days);
 							monthlyMap.set(month, existing);
 						}
 
-						const byMonth = Array.from(monthlyMap.entries()).map(
-							([month, data]) => ({
-								month,
-								daysTaken: data.taken,
-								daysRemaining: totalDaysAllocated - data.taken,
-							}),
-						);
+						const byMonth = Array.from(monthlyMap.entries()).map(([month, data]) => ({
+							month,
+							daysTaken: data.taken,
+							daysRemaining: totalDaysAllocated - data.taken,
+						}));
 
 						// By employee
 						const byEmployee = employees.map((emp) => {
@@ -352,10 +315,7 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 							const taken = absences
 								.filter((a) => a.employeeId === emp.id)
 								.reduce((sum, a) => {
-									const days = differenceInDays(
-										new Date(a.endDate),
-										new Date(a.startDate),
-									);
+									const days = differenceInDays(new Date(a.endDate), new Date(a.startDate));
 									return sum + Math.max(1, days);
 								}, 0);
 
@@ -424,14 +384,8 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 							dbService.query("getEmployeesForWorkAnalytics", async () => {
 								return await dbService.db.query.employee.findMany({
 									where: employeeId
-										? and(
-												eq(employee.organizationId, organizationId),
-												eq(employee.id, employeeId),
-											)
-										: and(
-												eq(employee.organizationId, organizationId),
-												eq(employee.isActive, true),
-											),
+										? and(eq(employee.organizationId, organizationId), eq(employee.id, employeeId))
+										: and(eq(employee.organizationId, organizationId), eq(employee.isActive, true)),
 									with: {
 										user: true,
 									},
@@ -454,14 +408,8 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 								dateRange.end,
 							);
 
-							const overtimeHours = Math.max(
-								0,
-								actual.totalHours - expected.totalHours,
-							);
-							const undertimeHours = Math.max(
-								0,
-								expected.totalHours - actual.totalHours,
-							);
+							const overtimeHours = Math.max(0, actual.totalHours - expected.totalHours);
+							const undertimeHours = Math.max(0, expected.totalHours - actual.totalHours);
 
 							return {
 								employeeId: emp.id,
@@ -471,32 +419,20 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 								overtimeHours,
 								undertimeHours,
 								avgHoursPerWeek:
-									expected.workDays > 0
-										? (actual.totalHours / expected.workDays) * 5
-										: 0,
+									expected.workDays > 0 ? (actual.totalHours / expected.workDays) * 5 : 0,
 							};
 						});
 
-						const employeeData = yield* _(
-							Effect.promise(() => Promise.all(employeeDataPromises)),
-						);
+						const employeeData = yield* _(Effect.promise(() => Promise.all(employeeDataPromises)));
 
 						// Calculate summary
-						const totalHours = employeeData.reduce(
-							(sum, e) => sum + e.totalHours,
-							0,
-						);
-						const totalExpected = employeeData.reduce(
-							(sum, e) => sum + e.expectedHours,
-							0,
-						);
+						const totalHours = employeeData.reduce((sum, e) => sum + e.totalHours, 0);
+						const totalExpected = employeeData.reduce((sum, e) => sum + e.expectedHours, 0);
 						const overtimeHours = Math.max(0, totalHours - totalExpected);
 						const undertimeHours = Math.max(0, totalExpected - totalHours);
 
 						const avgHoursPerWeek =
-							employeeData.length > 0
-								? totalHours / employeeData.length / 4
-								: 0;
+							employeeData.length > 0 ? totalHours / employeeData.length / 4 : 0;
 
 						// Get daily distribution by aggregating work periods per day
 						const workPeriods = yield* _(
@@ -518,7 +454,9 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 						for (const wp of workPeriods) {
 							if (!wp.endTime) continue;
 							const dateKey = DateTime.fromJSDate(new Date(wp.startTime)).toISODate()!;
-							const hours = (new Date(wp.endTime).getTime() - new Date(wp.startTime).getTime()) / (1000 * 60 * 60);
+							const hours =
+								(new Date(wp.endTime).getTime() - new Date(wp.startTime).getTime()) /
+								(1000 * 60 * 60);
 							dailyHoursMap.set(dateKey, (dailyHoursMap.get(dateKey) || 0) + hours);
 						}
 
@@ -587,43 +525,36 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 						// Calculate summary stats
 						const totalAbsences = orgAbsences.length;
 						const totalDays = orgAbsences.reduce((sum, a) => {
-							const days = differenceInDays(
-								new Date(a.endDate),
-								new Date(a.startDate),
-							);
+							const days = differenceInDays(new Date(a.endDate), new Date(a.startDate));
 							return sum + Math.max(1, days);
 						}, 0);
-						const avgDaysPerAbsence =
-							totalAbsences > 0 ? totalDays / totalAbsences : 0;
+						const avgDaysPerAbsence = totalAbsences > 0 ? totalDays / totalAbsences : 0;
 
 						// Calculate absence rate based on expected work days
 						const expectedWorkDays = calculateExpectedWorkDays(dateRange.start, dateRange.end);
-						const absenceRate = expectedWorkDays > 0
-							? Math.round((totalDays / expectedWorkDays) * 100 * 100) / 100
-							: 0;
+						const absenceRate =
+							expectedWorkDays > 0
+								? Math.round((totalDays / expectedWorkDays) * 100 * 100) / 100
+								: 0;
 
 						// Group by type (category)
 						const typeMap = new Map<string, { count: number; days: number }>();
 						for (const absence of orgAbsences) {
 							const categoryName = absence.category.name;
-							const days = differenceInDays(
-								new Date(absence.endDate),
-								new Date(absence.startDate),
-							);
+							const days = differenceInDays(new Date(absence.endDate), new Date(absence.startDate));
 							const existing = typeMap.get(categoryName) || { count: 0, days: 0 };
 							existing.count++;
 							existing.days += Math.max(1, days);
 							typeMap.set(categoryName, existing);
 						}
 
-						const byType = Array.from(typeMap.entries()).map(
-							([categoryName, data]) => ({
-								categoryName,
-								count: data.count,
-								totalDays: data.days,
-								percentage: totalAbsences > 0 ? Math.round((data.count / totalAbsences) * 100 * 100) / 100 : 0,
-							}),
-						);
+						const byType = Array.from(typeMap.entries()).map(([categoryName, data]) => ({
+							categoryName,
+							count: data.count,
+							totalDays: data.days,
+							percentage:
+								totalAbsences > 0 ? Math.round((data.count / totalAbsences) * 100 * 100) / 100 : 0,
+						}));
 
 						// Group by team
 						const teamMap = new Map<
@@ -635,10 +566,7 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 						for (const absence of orgAbsences) {
 							const teamId = absence.employee.teamId || "no-team";
 							const teamName = absence.employee.team?.name || "No Team";
-							const days = differenceInDays(
-								new Date(absence.endDate),
-								new Date(absence.startDate),
-							);
+							const days = differenceInDays(new Date(absence.endDate), new Date(absence.startDate));
 
 							// Track unique employees per team
 							if (!teamEmployeeCounts.has(teamId)) {
@@ -657,33 +585,36 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 							teamMap.set(teamId, existing);
 						}
 
-						const byTeam = Array.from(teamMap.entries()).map(
-							([teamId, data]) => {
-								const teamEmployees = teamEmployeeCounts.get(teamId)?.size || 1;
-								const teamAbsenceRate = expectedWorkDays > 0
+						const byTeam = Array.from(teamMap.entries()).map(([teamId, data]) => {
+							const teamEmployees = teamEmployeeCounts.get(teamId)?.size || 1;
+							const teamAbsenceRate =
+								expectedWorkDays > 0
 									? Math.round((data.days / (expectedWorkDays * teamEmployees)) * 100 * 100) / 100
 									: 0;
-								return {
-									teamId,
-									teamName: data.name,
-									absenceCount: data.count,
-									totalDays: data.days,
-									absenceRate: teamAbsenceRate,
-								};
-							},
-						);
+							return {
+								teamId,
+								teamName: data.name,
+								absenceCount: data.count,
+								totalDays: data.days,
+								absenceRate: teamAbsenceRate,
+							};
+						});
 
 						// Calculate sick leave patterns
 						const sickLeaveAbsences = orgAbsences.filter(
-							(a) => a.category.name.toLowerCase().includes("sick") ||
+							(a) =>
+								a.category.name.toLowerCase().includes("sick") ||
 								a.category.name.toLowerCase().includes("krank"),
 						);
 						const sickLeaveDays = sickLeaveAbsences.map((a) =>
 							Math.max(1, differenceInDays(new Date(a.endDate), new Date(a.startDate))),
 						);
-						const avgSickDuration = sickLeaveDays.length > 0
-							? Math.round((sickLeaveDays.reduce((a, b) => a + b, 0) / sickLeaveDays.length) * 100) / 100
-							: 0;
+						const avgSickDuration =
+							sickLeaveDays.length > 0
+								? Math.round(
+										(sickLeaveDays.reduce((a, b) => a + b, 0) / sickLeaveDays.length) * 100,
+									) / 100
+								: 0;
 
 						// Find peak months for sick leave
 						const sickMonthMap = new Map<string, number>();
@@ -711,7 +642,8 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 
 						// Calculate vacation clustering
 						const vacationAbsences = orgAbsences.filter(
-							(a) => a.category.name.toLowerCase().includes("vacation") ||
+							(a) =>
+								a.category.name.toLowerCase().includes("vacation") ||
 								a.category.name.toLowerCase().includes("urlaub") ||
 								a.category.name.toLowerCase().includes("holiday"),
 						);
@@ -736,21 +668,30 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 							.map(([date, count]) => ({ date, count }));
 
 						// Build timeline data
-						const timelineDateMap = new Map<string, { absence: number; sick: number; vacation: number }>();
+						const timelineDateMap = new Map<
+							string,
+							{ absence: number; sick: number; vacation: number }
+						>();
 						for (const absence of orgAbsences) {
 							const startDT = DateTime.fromJSDate(new Date(absence.startDate));
 							const endDT = DateTime.fromJSDate(new Date(absence.endDate));
 							let currentDT = startDT;
 
-							const isSick = absence.category.name.toLowerCase().includes("sick") ||
+							const isSick =
+								absence.category.name.toLowerCase().includes("sick") ||
 								absence.category.name.toLowerCase().includes("krank");
-							const isVacation = absence.category.name.toLowerCase().includes("vacation") ||
+							const isVacation =
+								absence.category.name.toLowerCase().includes("vacation") ||
 								absence.category.name.toLowerCase().includes("urlaub") ||
 								absence.category.name.toLowerCase().includes("holiday");
 
 							while (currentDT <= endDT) {
 								const dateKey = currentDT.toISODate()!;
-								const existing = timelineDateMap.get(dateKey) || { absence: 0, sick: 0, vacation: 0 };
+								const existing = timelineDateMap.get(dateKey) || {
+									absence: 0,
+									sick: 0,
+									vacation: 0,
+								};
 								existing.absence++;
 								if (isSick) existing.sick++;
 								if (isVacation) existing.vacation++;
@@ -808,9 +749,7 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 									where: and(
 										gte(approvalRequest.createdAt, dateRange.start),
 										lte(approvalRequest.createdAt, dateRange.end),
-										managerId
-											? eq(approvalRequest.approverId, managerId)
-											: undefined,
+										managerId ? eq(approvalRequest.approverId, managerId) : undefined,
 									),
 									with: {
 										approver: {
@@ -829,12 +768,8 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 						);
 
 						// Calculate metrics
-						const totalApprovals = approvals.filter(
-							(a) => a.status === "approved",
-						).length;
-						const totalRejections = approvals.filter(
-							(a) => a.status === "rejected",
-						).length;
+						const totalApprovals = approvals.filter((a) => a.status === "approved").length;
+						const totalRejections = approvals.filter((a) => a.status === "rejected").length;
 						const approvalRate =
 							approvals.length > 0 ? (totalApprovals / approvals.length) * 100 : 0;
 
@@ -849,8 +784,7 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 
 						const avgResponseTime =
 							responseTimes.length > 0
-								? responseTimes.reduce((sum, t) => sum + t, 0) /
-									responseTimes.length
+								? responseTimes.reduce((sum, t) => sum + t, 0) / responseTimes.length
 								: 0;
 
 						// Group by manager
@@ -908,26 +842,23 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 							teamSizeMap.set(ts.managerId, ts.count);
 						}
 
-						const byManager = Array.from(managerMap.entries()).map(
-							([managerId, data]) => {
-								const total = data.approvals + data.rejections;
-								const avgResponse =
-									data.responseTimes.length > 0
-										? data.responseTimes.reduce((sum, t) => sum + t, 0) /
-											data.responseTimes.length
-										: 0;
+						const byManager = Array.from(managerMap.entries()).map(([managerId, data]) => {
+							const total = data.approvals + data.rejections;
+							const avgResponse =
+								data.responseTimes.length > 0
+									? data.responseTimes.reduce((sum, t) => sum + t, 0) / data.responseTimes.length
+									: 0;
 
-								return {
-									managerId,
-									managerName: data.name,
-									avgResponseTime: Math.round(avgResponse * 100) / 100,
-									totalApprovals: data.approvals,
-									totalRejections: data.rejections,
-									approvalRate: total > 0 ? (data.approvals / total) * 100 : 0,
-									teamSize: teamSizeMap.get(managerId) || 0,
-								};
-							},
-						);
+							return {
+								managerId,
+								managerName: data.name,
+								avgResponseTime: Math.round(avgResponse * 100) / 100,
+								totalApprovals: data.approvals,
+								totalRejections: data.rejections,
+								approvalRate: total > 0 ? (data.approvals / total) * 100 : 0,
+								teamSize: teamSizeMap.get(managerId) || 0,
+							};
+						});
 
 						// Calculate response time distribution
 						const distributionBuckets = {
@@ -953,9 +884,8 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 							([bucket, count]) => ({
 								bucket,
 								count,
-								percentage: responseTimes.length > 0
-									? Math.round((count / responseTimes.length) * 100)
-									: 0,
+								percentage:
+									responseTimes.length > 0 ? Math.round((count / responseTimes.length) * 100) : 0,
 							}),
 						);
 

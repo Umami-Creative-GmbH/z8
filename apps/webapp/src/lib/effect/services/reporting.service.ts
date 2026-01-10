@@ -6,8 +6,8 @@
  */
 
 import { Context, Data, Effect, Layer } from "effect";
-import * as XLSX from "xlsx";
 import Papa from "papaparse";
+import * as XLSX from "xlsx";
 import type { ExportHeader } from "@/lib/analytics/types";
 
 // Since ValidationError is Data.TaggedError("ValidationError"), extending it directly isn't the best if we want a new tag.
@@ -17,7 +17,6 @@ export class ReportingError extends Data.TaggedError("ReportingError")<{
 	message: string;
 	details?: unknown;
 }> {}
-
 
 export class ReportingService extends Context.Tag("ReportingService")<
 	ReportingService,

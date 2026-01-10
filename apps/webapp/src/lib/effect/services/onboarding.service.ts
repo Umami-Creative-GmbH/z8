@@ -1,30 +1,51 @@
-import { Context, Effect, Layer } from "effect";
 import { and, eq } from "drizzle-orm";
+import { Context, Effect, Layer } from "effect";
 import { headers } from "next/headers";
-import { user, organization } from "@/db/auth-schema";
-import { employee, employeeWorkSchedule, member } from "@/db/schema";
-import { auth } from "@/lib/auth";
+import { member, organization, user } from "@/db/auth-schema";
 import {
-	AuthenticationError,
-	DatabaseError,
-	NotFoundError,
-	ValidationError,
+	employee,
+	holidayPreset,
+	holidayPresetAssignment,
+	notificationPreference,
+	vacationAllowance,
+	vacationPolicyAssignment,
+	workScheduleAssignment,
+	workScheduleTemplate,
+	workScheduleTemplateDays,
+} from "@/db/schema";
+import { auth } from "@/lib/auth";
+import type {
+	OnboardingHolidaySetupFormValues,
+	OnboardingNotificationsFormValues,
+	OnboardingProfileFormValues,
+	OnboardingStep,
+	OnboardingVacationPolicyFormValues,
+	OnboardingWorkScheduleFormValues,
+	OnboardingWorkTemplateFormValues,
+} from "@/lib/validations/onboarding";
+import type { OrganizationFormValues } from "@/lib/validations/organization";
+import {
+	type AuthenticationError,
 	ConflictError,
+	type DatabaseError,
+	type NotFoundError,
+	ValidationError,
 } from "../errors";
 import { AuthService } from "./auth.service";
 import { DatabaseService } from "./database.service";
-import type {
-	OnboardingProfileFormValues,
-	OnboardingWorkScheduleFormValues,
-	OnboardingStep,
-} from "@/lib/validations/onboarding";
-import type { OrganizationFormValues } from "@/lib/validations/organization";
 
 export interface OnboardingSummary {
 	hasOrganization: boolean;
 	organizationName?: string;
 	profileCompleted: boolean;
 	workScheduleSet: boolean;
+	// Admin setup summary (only present if user is admin)
+	isAdmin: boolean;
+	vacationPolicyCreated?: boolean;
+	holidayPresetCreated?: boolean;
+	workTemplateCreated?: boolean;
+	// Notifications
+	notificationsConfigured: boolean;
 }
 
 export class OnboardingService extends Context.Tag("OnboardingService")<
@@ -40,7 +61,10 @@ export class OnboardingService extends Context.Tag("OnboardingService")<
 		// Organization setup
 		readonly createOrganization: (
 			data: OrganizationFormValues,
-		) => Effect.Effect<{ organizationId: string }, AuthenticationError | DatabaseError | ValidationError>;
+		) => Effect.Effect<
+			{ organizationId: string },
+			AuthenticationError | DatabaseError | ValidationError
+		>;
 		readonly skipOrganizationSetup: () => Effect.Effect<void, AuthenticationError | DatabaseError>;
 
 		// Profile setup
@@ -55,6 +79,33 @@ export class OnboardingService extends Context.Tag("OnboardingService")<
 		) => Effect.Effect<void, AuthenticationError | DatabaseError | NotFoundError>;
 		readonly skipWorkScheduleSetup: () => Effect.Effect<void, AuthenticationError | DatabaseError>;
 
+		// Admin setup - Vacation Policy
+		readonly createVacationPolicy: (
+			data: OnboardingVacationPolicyFormValues,
+		) => Effect.Effect<void, AuthenticationError | DatabaseError>;
+		readonly skipVacationPolicySetup: () => Effect.Effect<
+			void,
+			AuthenticationError | DatabaseError
+		>;
+
+		// Admin setup - Holiday Setup
+		readonly createHolidayPreset: (
+			data: OnboardingHolidaySetupFormValues,
+		) => Effect.Effect<void, AuthenticationError | DatabaseError>;
+		readonly skipHolidaySetup: () => Effect.Effect<void, AuthenticationError | DatabaseError>;
+
+		// Admin setup - Work Schedule Templates
+		readonly createWorkTemplate: (
+			data: OnboardingWorkTemplateFormValues,
+		) => Effect.Effect<void, AuthenticationError | DatabaseError>;
+		readonly skipWorkTemplateSetup: () => Effect.Effect<void, AuthenticationError | DatabaseError>;
+
+		// Notifications setup
+		readonly configureNotifications: (
+			data: OnboardingNotificationsFormValues,
+		) => Effect.Effect<void, AuthenticationError | DatabaseError>;
+		readonly skipNotificationsSetup: () => Effect.Effect<void, AuthenticationError | DatabaseError>;
+
 		// Completion
 		readonly getOnboardingSummary: () => Effect.Effect<
 			OnboardingSummary,
@@ -66,6 +117,9 @@ export class OnboardingService extends Context.Tag("OnboardingService")<
 			{ onboardingComplete: boolean; onboardingStep: string | null },
 			AuthenticationError | DatabaseError
 		>;
+
+		// Check if user is admin of their organization
+		readonly isUserAdmin: () => Effect.Effect<boolean, AuthenticationError | DatabaseError>;
 	}
 >() {}
 
@@ -212,7 +266,7 @@ export const OnboardingServiceLive = Layer.effect(
 										eq(employee.userId, session.user.id),
 										eq(employee.organizationId, activeOrgId),
 									),
-							  })
+								})
 							: null;
 
 						// Fallback: find any employee record for this user
@@ -267,60 +321,60 @@ export const OnboardingServiceLive = Layer.effect(
 				}),
 
 			// Set work schedule
-			setWorkSchedule: (data: OnboardingWorkScheduleFormValues) =>
+			// Note: Work schedules are now template-based and managed at org/team/employee level by admins
+			// During onboarding, users will inherit their schedule from the organization default
+			setWorkSchedule: (_data: OnboardingWorkScheduleFormValues) =>
 				Effect.gen(function* () {
 					const session = yield* authService.getSession();
 					const activeOrgId = session.session.activeOrganizationId;
 
 					yield* dbService.query("setWorkSchedule", async () => {
-						// Find employee record - prioritize the one with the active organization
+						// Find or create employee record
 						let emp = activeOrgId
 							? await dbService.db.query.employee.findFirst({
 									where: and(
 										eq(employee.userId, session.user.id),
 										eq(employee.organizationId, activeOrgId),
 									),
-							  })
+								})
 							: null;
 
-						// Fallback: find any employee record for this user
 						if (!emp) {
 							emp = await dbService.db.query.employee.findFirst({
 								where: eq(employee.userId, session.user.id),
 							});
 						}
 
-						if (!emp) {
+						if (!emp && activeOrgId) {
 							// Create employee record with organizationId if available
 							const result = await dbService.db
 								.insert(employee)
 								.values({
 									userId: session.user.id,
-									organizationId: activeOrgId || null,
+									organizationId: activeOrgId,
 								})
 								.returning();
 							emp = result[0];
 						}
 
-						if (!emp) {
-							throw new Error("Failed to create employee record");
-						}
-
-						// Create work schedule (simple mode for onboarding)
-						await dbService.db.insert(employeeWorkSchedule).values({
-							employeeId: emp.id,
-							hoursPerWeek: String(data.hoursPerWeek),
-							workClassification: data.workClassification,
-							scheduleType: "simple",
-							effectiveFrom: data.effectiveFrom,
-							createdBy: emp.id,
-						});
+						// Determine next step based on admin status
+						// Admins go to vacation_policy, employees go to notifications
+						const membership = activeOrgId
+							? await dbService.db.query.member.findFirst({
+									where: and(
+										eq(member.userId, session.user.id),
+										eq(member.organizationId, activeOrgId),
+									),
+								})
+							: null;
+						const isAdmin = membership?.role === "owner" || membership?.role === "admin";
+						const nextStep = isAdmin ? "vacation_policy" : "notifications";
 
 						// Update onboarding step
 						await dbService.db
 							.update(user)
 							.set({
-								onboardingStep: "complete",
+								onboardingStep: nextStep,
 							})
 							.where(eq(user.id, session.user.id));
 					});
@@ -330,15 +384,325 @@ export const OnboardingServiceLive = Layer.effect(
 			skipWorkScheduleSetup: () =>
 				Effect.gen(function* () {
 					const session = yield* authService.getSession();
+					const activeOrgId = session.session.activeOrganizationId;
 
 					yield* dbService.query("skipWorkScheduleSetup", async () => {
+						// Determine next step based on admin status
+						const membership = activeOrgId
+							? await dbService.db.query.member.findFirst({
+									where: and(
+										eq(member.userId, session.user.id),
+										eq(member.organizationId, activeOrgId),
+									),
+								})
+							: null;
+						const isAdmin = membership?.role === "owner" || membership?.role === "admin";
+						const nextStep = isAdmin ? "vacation_policy" : "notifications";
+
 						await dbService.db
 							.update(user)
 							.set({
-								onboardingStep: "complete",
+								onboardingStep: nextStep,
 							})
 							.where(eq(user.id, session.user.id));
 					});
+				}),
+
+			// Admin setup - Create vacation policy
+			createVacationPolicy: (data: OnboardingVacationPolicyFormValues) =>
+				Effect.gen(function* () {
+					const session = yield* authService.getSession();
+					const activeOrgId = session.session.activeOrganizationId;
+
+					yield* dbService.query("createVacationPolicy", async () => {
+						if (!activeOrgId) {
+							// Skip if no active organization
+							await dbService.db
+								.update(user)
+								.set({ onboardingStep: "holiday_setup" })
+								.where(eq(user.id, session.user.id));
+							return;
+						}
+
+						const currentYear = new Date().getFullYear();
+
+						// Create vacation policy
+						const [policy] = await dbService.db
+							.insert(vacationAllowance)
+							.values({
+								organizationId: activeOrgId,
+								year: currentYear,
+								name: data.name,
+								defaultAnnualDays: data.defaultAnnualDays.toString(),
+								accrualType: data.accrualType,
+								accrualStartMonth: 1,
+								allowCarryover: data.allowCarryover,
+								maxCarryoverDays: data.maxCarryoverDays?.toString() || null,
+								carryoverExpiryMonths: data.allowCarryover ? 3 : null,
+							})
+							.returning();
+
+						// Assign policy to organization as default
+						if (policy) {
+							await dbService.db.insert(vacationPolicyAssignment).values({
+								policyId: policy.id,
+								organizationId: activeOrgId,
+								assignmentType: "organization",
+								isActive: true,
+							});
+						}
+
+						// Update onboarding step
+						await dbService.db
+							.update(user)
+							.set({ onboardingStep: "holiday_setup" })
+							.where(eq(user.id, session.user.id));
+					});
+				}),
+
+			// Skip vacation policy setup
+			skipVacationPolicySetup: () =>
+				Effect.gen(function* () {
+					const session = yield* authService.getSession();
+
+					yield* dbService.query("skipVacationPolicySetup", async () => {
+						await dbService.db
+							.update(user)
+							.set({ onboardingStep: "holiday_setup" })
+							.where(eq(user.id, session.user.id));
+					});
+				}),
+
+			// Admin setup - Create holiday preset
+			createHolidayPreset: (data: OnboardingHolidaySetupFormValues) =>
+				Effect.gen(function* () {
+					const session = yield* authService.getSession();
+					const activeOrgId = session.session.activeOrganizationId;
+
+					yield* dbService.query("createHolidayPreset", async () => {
+						if (!activeOrgId) {
+							await dbService.db
+								.update(user)
+								.set({ onboardingStep: "work_templates" })
+								.where(eq(user.id, session.user.id));
+							return;
+						}
+
+						// Create holiday preset
+						const [preset] = await dbService.db
+							.insert(holidayPreset)
+							.values({
+								organizationId: activeOrgId,
+								name: data.presetName,
+								description: `Holidays for ${data.countryCode}${data.stateCode ? ` - ${data.stateCode}` : ""}`,
+								countryCode: data.countryCode,
+								stateCode: data.stateCode || null,
+								color: "#4F46E5",
+								isActive: true,
+							})
+							.returning();
+
+						// Assign preset to organization if setAsDefault
+						if (preset && data.setAsDefault) {
+							await dbService.db.insert(holidayPresetAssignment).values({
+								presetId: preset.id,
+								organizationId: activeOrgId,
+								assignmentType: "organization",
+								isActive: true,
+							});
+						}
+
+						await dbService.db
+							.update(user)
+							.set({ onboardingStep: "work_templates" })
+							.where(eq(user.id, session.user.id));
+					});
+				}),
+
+			// Skip holiday setup
+			skipHolidaySetup: () =>
+				Effect.gen(function* () {
+					const session = yield* authService.getSession();
+
+					yield* dbService.query("skipHolidaySetup", async () => {
+						await dbService.db
+							.update(user)
+							.set({ onboardingStep: "work_templates" })
+							.where(eq(user.id, session.user.id));
+					});
+				}),
+
+			// Admin setup - Create work schedule template
+			createWorkTemplate: (data: OnboardingWorkTemplateFormValues) =>
+				Effect.gen(function* () {
+					const session = yield* authService.getSession();
+					const activeOrgId = session.session.activeOrganizationId;
+
+					yield* dbService.query("createWorkTemplate", async () => {
+						if (!activeOrgId) {
+							await dbService.db
+								.update(user)
+								.set({ onboardingStep: "notifications" })
+								.where(eq(user.id, session.user.id));
+							return;
+						}
+
+						// Create work schedule template
+						const [template] = await dbService.db
+							.insert(workScheduleTemplate)
+							.values({
+								organizationId: activeOrgId,
+								name: data.name,
+								description: "Created during onboarding",
+								scheduleCycle: "weekly",
+								scheduleType: "simple",
+								workingDaysPreset: "weekdays",
+								hoursPerCycle: data.hoursPerWeek.toString(),
+								homeOfficeDaysPerCycle: 0,
+								isActive: true,
+							})
+							.returning();
+
+						// Create template days
+						if (template) {
+							const allDays = [
+								"monday",
+								"tuesday",
+								"wednesday",
+								"thursday",
+								"friday",
+								"saturday",
+								"sunday",
+							] as const;
+							const hoursPerDay =
+								data.workingDays.length > 0 ? data.hoursPerWeek / data.workingDays.length : 0;
+
+							await dbService.db.insert(workScheduleTemplateDays).values(
+								allDays.map((day) => ({
+									templateId: template.id,
+									dayOfWeek: day,
+									hoursPerDay: data.workingDays.includes(day) ? hoursPerDay.toFixed(1) : "0",
+									isWorkDay: data.workingDays.includes(day),
+								})),
+							);
+
+							// Assign to organization if setAsDefault
+							if (data.setAsDefault) {
+								await dbService.db.insert(workScheduleAssignment).values({
+									templateId: template.id,
+									organizationId: activeOrgId,
+									assignmentType: "organization",
+									effectiveFrom: new Date(),
+									isActive: true,
+								});
+							}
+						}
+
+						await dbService.db
+							.update(user)
+							.set({ onboardingStep: "notifications" })
+							.where(eq(user.id, session.user.id));
+					});
+				}),
+
+			// Skip work template setup
+			skipWorkTemplateSetup: () =>
+				Effect.gen(function* () {
+					const session = yield* authService.getSession();
+
+					yield* dbService.query("skipWorkTemplateSetup", async () => {
+						await dbService.db
+							.update(user)
+							.set({ onboardingStep: "notifications" })
+							.where(eq(user.id, session.user.id));
+					});
+				}),
+
+			// Configure notifications
+			configureNotifications: (data: OnboardingNotificationsFormValues) =>
+				Effect.gen(function* () {
+					const session = yield* authService.getSession();
+
+					yield* dbService.query("configureNotifications", async () => {
+						// Save notification preferences
+						const notificationTypes = [
+							{ type: "approval_request", enabled: data.notifyApprovals },
+							{ type: "approval_approved", enabled: data.notifyStatusUpdates },
+							{ type: "approval_rejected", enabled: data.notifyStatusUpdates },
+							{ type: "team_member_added", enabled: data.notifyTeamChanges },
+							{ type: "team_member_removed", enabled: data.notifyTeamChanges },
+						] as const;
+
+						for (const { type, enabled } of notificationTypes) {
+							// Upsert notification preferences
+							const existing = await dbService.db.query.notificationPreference.findFirst({
+								where: and(
+									eq(notificationPreference.userId, session.user.id),
+									eq(notificationPreference.notificationType, type),
+								),
+							});
+
+							if (existing) {
+								await dbService.db
+									.update(notificationPreference)
+									.set({
+										inAppEnabled: enabled,
+										pushEnabled: data.enablePush && enabled,
+										emailEnabled: data.enableEmail && enabled,
+									})
+									.where(eq(notificationPreference.id, existing.id));
+							} else {
+								await dbService.db.insert(notificationPreference).values({
+									userId: session.user.id,
+									notificationType: type,
+									inAppEnabled: enabled,
+									pushEnabled: data.enablePush && enabled,
+									emailEnabled: data.enableEmail && enabled,
+								});
+							}
+						}
+
+						await dbService.db
+							.update(user)
+							.set({ onboardingStep: "complete" })
+							.where(eq(user.id, session.user.id));
+					});
+				}),
+
+			// Skip notifications setup
+			skipNotificationsSetup: () =>
+				Effect.gen(function* () {
+					const session = yield* authService.getSession();
+
+					yield* dbService.query("skipNotificationsSetup", async () => {
+						await dbService.db
+							.update(user)
+							.set({ onboardingStep: "complete" })
+							.where(eq(user.id, session.user.id));
+					});
+				}),
+
+			// Check if user is admin of their organization
+			isUserAdmin: () =>
+				Effect.gen(function* () {
+					const session = yield* authService.getSession();
+					const activeOrgId = session.session.activeOrganizationId;
+
+					if (!activeOrgId) {
+						return false;
+					}
+
+					const isAdmin = yield* dbService.query("isUserAdmin", async () => {
+						const membership = await dbService.db.query.member.findFirst({
+							where: and(
+								eq(member.userId, session.user.id),
+								eq(member.organizationId, activeOrgId),
+							),
+						});
+						return membership?.role === "owner" || membership?.role === "admin";
+					});
+
+					return isAdmin;
 				}),
 
 			// Get onboarding summary
@@ -360,18 +724,78 @@ export const OnboardingServiceLive = Layer.effect(
 							where: eq(employee.userId, session.user.id),
 						});
 
-						// Check if work schedule is set
-						const hasWorkSchedule = emp?.id
-							? await dbService.db.query.employeeWorkSchedule.findFirst({
-									where: eq(employeeWorkSchedule.employeeId, emp.id),
-							  })
-							: null;
+						// Check if user is admin
+						const isAdmin = membership?.role === "owner" || membership?.role === "admin";
+
+						// Check if work schedule is set (via org default or explicit assignment)
+						let hasWorkSchedule = false;
+						let hasVacationPolicy = false;
+						let hasHolidayPreset = false;
+						let hasWorkTemplate = false;
+
+						if (membership?.organizationId) {
+							// Check for org-level work schedule assignment
+							const orgAssignment = await dbService.db.query.workScheduleAssignment.findFirst({
+								where: and(
+									eq(workScheduleAssignment.organizationId, membership.organizationId),
+									eq(workScheduleAssignment.assignmentType, "organization"),
+									eq(workScheduleAssignment.isActive, true),
+								),
+							});
+							hasWorkSchedule = !!orgAssignment;
+
+							// Or check for employee-specific assignment
+							if (!hasWorkSchedule && emp?.id) {
+								const empAssignment = await dbService.db.query.workScheduleAssignment.findFirst({
+									where: and(
+										eq(workScheduleAssignment.employeeId, emp.id),
+										eq(workScheduleAssignment.assignmentType, "employee"),
+										eq(workScheduleAssignment.isActive, true),
+									),
+								});
+								hasWorkSchedule = !!empAssignment;
+							}
+
+							// Check for vacation policy (admin only)
+							if (isAdmin) {
+								const currentYear = new Date().getFullYear();
+								const vacPolicy = await dbService.db.query.vacationAllowance.findFirst({
+									where: and(
+										eq(vacationAllowance.organizationId, membership.organizationId),
+										eq(vacationAllowance.year, currentYear),
+									),
+								});
+								hasVacationPolicy = !!vacPolicy;
+
+								// Check for holiday preset
+								const holidayPresetRecord = await dbService.db.query.holidayPreset.findFirst({
+									where: eq(holidayPreset.organizationId, membership.organizationId),
+								});
+								hasHolidayPreset = !!holidayPresetRecord;
+
+								// Check for work schedule template
+								const workTemplate = await dbService.db.query.workScheduleTemplate.findFirst({
+									where: eq(workScheduleTemplate.organizationId, membership.organizationId),
+								});
+								hasWorkTemplate = !!workTemplate;
+							}
+						}
+
+						// Check if notifications are configured
+						const notifPrefs = await dbService.db.query.notificationPreference.findFirst({
+							where: eq(notificationPreference.userId, session.user.id),
+						});
 
 						const summaryData: OnboardingSummary = {
 							hasOrganization: !!membership,
 							organizationName: membership?.organization?.name,
 							profileCompleted: !!(emp?.firstName && emp?.lastName),
-							workScheduleSet: !!hasWorkSchedule,
+							workScheduleSet: hasWorkSchedule,
+							isAdmin,
+							vacationPolicyCreated: isAdmin ? hasVacationPolicy : undefined,
+							holidayPresetCreated: isAdmin ? hasHolidayPreset : undefined,
+							workTemplateCreated: isAdmin ? hasWorkTemplate : undefined,
+							notificationsConfigured: !!notifPrefs,
 						};
 
 						return summaryData;

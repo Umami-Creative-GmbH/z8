@@ -2,13 +2,13 @@ import { and, desc, eq, gte, lte } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { employee, timeEntry } from "@/db/schema";
 import {
+	type ChainValidationResult,
 	calculateHash,
 	getChainHash,
 	validateChainDetailed,
 	verifyHash,
-	type ChainValidationResult,
 } from "@/lib/time-tracking/blockchain";
-import { DatabaseError, NotFoundError, ValidationError } from "../errors";
+import { type DatabaseError, NotFoundError, ValidationError } from "../errors";
 import { DatabaseService } from "./database.service";
 
 type TimeEntry = typeof timeEntry.$inferSelect;
@@ -57,9 +57,7 @@ export class TimeEntryService extends Context.Tag("TimeEntryService")<
 			input: GetTimeEntriesInput,
 		) => Effect.Effect<TimeEntry[], DatabaseError>;
 
-		readonly getLatestEntry: (
-			employeeId: string,
-		) => Effect.Effect<TimeEntry | null, DatabaseError>;
+		readonly getLatestEntry: (employeeId: string) => Effect.Effect<TimeEntry | null, DatabaseError>;
 
 		readonly verifyTimeEntryChain: (
 			employeeId: string,
@@ -72,9 +70,7 @@ export class TimeEntryService extends Context.Tag("TimeEntryService")<
 			NotFoundError | DatabaseError
 		>;
 
-		readonly getChainHash: (
-			employeeId: string,
-		) => Effect.Effect<string | null, DatabaseError>;
+		readonly getChainHash: (employeeId: string) => Effect.Effect<string | null, DatabaseError>;
 	}
 >() {}
 

@@ -1,7 +1,7 @@
 import { and, eq, or } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { employee, teamPermissions } from "@/db/schema";
-import { AuthorizationError, DatabaseError, NotFoundError } from "../errors";
+import { AuthorizationError, type DatabaseError, NotFoundError } from "../errors";
 import { DatabaseService } from "./database.service";
 
 export interface PermissionFlags {
@@ -46,10 +46,7 @@ export class PermissionsService extends Context.Tag("PermissionsService")<
 			permissions: PermissionFlags,
 			teamId: string | null,
 			grantedBy: string,
-		) => Effect.Effect<
-			void,
-			NotFoundError | AuthorizationError | DatabaseError
-		>;
+		) => Effect.Effect<void, NotFoundError | AuthorizationError | DatabaseError>;
 		readonly revokePermissions: (
 			employeeId: string,
 			organizationId: string,

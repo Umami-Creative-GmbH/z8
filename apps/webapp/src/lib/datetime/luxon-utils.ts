@@ -5,7 +5,7 @@
  * Strategy: UTC for storage/computation, local for display
  */
 
-import { DateTime, Interval } from 'luxon';
+import { DateTime, Interval } from "luxon";
 
 // ============================================================================
 // PARSING & CREATION
@@ -16,8 +16,8 @@ import { DateTime, Interval } from 'luxon';
  * @param iso ISO string (e.g., "2024-01-15T10:30:00Z")
  * @param zone Timezone to interpret the date in (default: 'utc')
  */
-export function parseISO(iso: string, zone: string = 'utc'): DateTime {
-  return DateTime.fromISO(iso, { zone });
+export function parseISO(iso: string, zone: string = "utc"): DateTime {
+	return DateTime.fromISO(iso, { zone });
 }
 
 /**
@@ -25,22 +25,22 @@ export function parseISO(iso: string, zone: string = 'utc'): DateTime {
  * @param date JavaScript Date object
  * @param zone Timezone to interpret the date in (default: 'utc')
  */
-export function fromJSDate(date: Date, zone: string = 'utc'): DateTime {
-  return DateTime.fromJSDate(date, { zone });
+export function fromJSDate(date: Date, zone: string = "utc"): DateTime {
+	return DateTime.fromJSDate(date, { zone });
 }
 
 /**
  * Get current DateTime in local timezone
  */
 export function now(): DateTime {
-  return DateTime.now();
+	return DateTime.now();
 }
 
 /**
  * Get current DateTime in UTC
  */
 export function utcNow(): DateTime {
-  return DateTime.utc();
+	return DateTime.utc();
 }
 
 /**
@@ -50,14 +50,14 @@ export function utcNow(): DateTime {
  * @param day Day of month (1-31)
  */
 export function local(year: number, month: number, day: number = 1): DateTime {
-  return DateTime.local(year, month, day);
+	return DateTime.local(year, month, day);
 }
 
 /**
  * Create a DateTime for a specific UTC date
  */
 export function utc(year: number, month: number, day: number = 1): DateTime {
-  return DateTime.utc(year, month, day);
+	return DateTime.utc(year, month, day);
 }
 
 // ============================================================================
@@ -68,8 +68,8 @@ export function utc(year: number, month: number, day: number = 1): DateTime {
  * Format DateTime for display (uses date-fns format for now - will migrate later)
  * For now, this converts to Date and uses existing format functions
  */
-export function formatDate(dt: DateTime, locale: string = 'en-US'): string {
-  return dt.toLocaleString(DateTime.DATE_MED);
+export function formatDate(dt: DateTime, locale: string = "en-US"): string {
+	return dt.toLocaleString(DateTime.DATE_MED);
 }
 
 /**
@@ -78,30 +78,26 @@ export function formatDate(dt: DateTime, locale: string = 'en-US'): string {
  * @param end End DateTime
  * @param locale Locale for formatting
  */
-export function formatDateRange(
-  start: DateTime,
-  end: DateTime,
-  locale: string = 'en-US'
-): string {
-  const startStr = start.toLocaleString({ month: 'short', day: 'numeric' });
-  const endStr = end.toLocaleString({
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric'
-  });
+export function formatDateRange(start: DateTime, end: DateTime, locale: string = "en-US"): string {
+	const startStr = start.toLocaleString({ month: "short", day: "numeric" });
+	const endStr = end.toLocaleString({
+		month: "short",
+		day: "numeric",
+		year: "numeric",
+	});
 
-  if (start.hasSame(end, 'day')) {
-    return endStr;
-  }
+	if (start.hasSame(end, "day")) {
+		return endStr;
+	}
 
-  return `${startStr} - ${endStr}`;
+	return `${startStr} - ${endStr}`;
 }
 
 /**
  * Format time for display (HH:mm format)
  */
-export function formatTime(dt: DateTime, locale: string = 'en-US'): string {
-  return dt.toFormat('HH:mm');
+export function formatTime(dt: DateTime, locale: string = "en-US"): string {
+	return dt.toFormat("HH:mm");
 }
 
 /**
@@ -124,19 +120,19 @@ export function formatTime(dt: DateTime, locale: string = 'en-US'): string {
  * @param pattern Luxon format pattern or date-fns pattern
  */
 export function format(dt: DateTime | Date, pattern: string): string {
-  const dateTime = dt instanceof Date ? fromJSDate(dt) : dt;
+	const dateTime = dt instanceof Date ? fromJSDate(dt) : dt;
 
-  // Map common date-fns patterns to Luxon equivalents
-  const patternMap: Record<string, string> = {
-    'PPP': 'LLLL d, yyyy',      // April 29, 1453
-    'PP': 'LLL d, yyyy',         // Apr 29, 1453
-    'P': 'M/d/yyyy',             // 4/29/1453
-    'PPpp': 'LLLL d, yyyy, h:mm:ss a', // April 29, 1453, 12:00:00 AM
-    'Pp': 'M/d/yyyy, h:mm a',    // 4/29/1453, 12:00 AM
-  };
+	// Map common date-fns patterns to Luxon equivalents
+	const patternMap: Record<string, string> = {
+		PPP: "LLLL d, yyyy", // April 29, 1453
+		PP: "LLL d, yyyy", // Apr 29, 1453
+		P: "M/d/yyyy", // 4/29/1453
+		PPpp: "LLLL d, yyyy, h:mm:ss a", // April 29, 1453, 12:00:00 AM
+		Pp: "M/d/yyyy, h:mm a", // 4/29/1453, 12:00 AM
+	};
 
-  const luxonPattern = patternMap[pattern] || pattern;
-  return dateTime.toFormat(luxonPattern);
+	const luxonPattern = patternMap[pattern] || pattern;
+	return dateTime.toFormat(luxonPattern);
 }
 
 /**
@@ -144,8 +140,8 @@ export function format(dt: DateTime | Date, pattern: string): string {
  * @param dt DateTime or Date to format
  */
 export function formatRelative(dt: DateTime | Date): string {
-  const dateTime = dt instanceof Date ? fromJSDate(dt) : dt;
-  return dateTime.toRelative() || '';
+	const dateTime = dt instanceof Date ? fromJSDate(dt) : dt;
+	return dateTime.toRelative() || "";
 }
 
 /**
@@ -156,9 +152,9 @@ export function formatRelative(dt: DateTime | Date): string {
  * @returns Number of days between dates
  */
 export function differenceInDays(dt1: DateTime | Date, dt2: DateTime | Date): number {
-  const date1 = dt1 instanceof Date ? fromJSDate(dt1) : dt1;
-  const date2 = dt2 instanceof Date ? fromJSDate(dt2) : dt2;
-  return Math.floor(date1.diff(date2, 'days').days);
+	const date1 = dt1 instanceof Date ? fromJSDate(dt1) : dt1;
+	const date2 = dt2 instanceof Date ? fromJSDate(dt2) : dt2;
+	return Math.floor(date1.diff(date2, "days").days);
 }
 
 // ============================================================================
@@ -169,14 +165,14 @@ export function differenceInDays(dt1: DateTime | Date, dt2: DateTime | Date): nu
  * Get start of day (00:00:00.000)
  */
 export function startOfDay(dt: DateTime): DateTime {
-  return dt.startOf('day');
+	return dt.startOf("day");
 }
 
 /**
  * Get end of day (23:59:59.999)
  */
 export function endOfDay(dt: DateTime): DateTime {
-  return dt.endOf('day');
+	return dt.endOf("day");
 }
 
 /**
@@ -185,9 +181,9 @@ export function endOfDay(dt: DateTime): DateTime {
  * @returns Object with start and end DateTime
  */
 export function getYearRange(year: number): { start: DateTime; end: DateTime } {
-  const start = DateTime.utc(year, 1, 1).startOf('day');
-  const end = DateTime.utc(year, 12, 31).endOf('day');
-  return { start, end };
+	const start = DateTime.utc(year, 1, 1).startOf("day");
+	const end = DateTime.utc(year, 12, 31).endOf("day");
+	return { start, end };
 }
 
 /**
@@ -196,10 +192,10 @@ export function getYearRange(year: number): { start: DateTime; end: DateTime } {
  * @returns Object with start and end DateTime
  */
 export function getMonthRange(dt: DateTime): { start: DateTime; end: DateTime } {
-  return {
-    start: dt.startOf('month'),
-    end: dt.endOf('month')
-  };
+	return {
+		start: dt.startOf("month"),
+		end: dt.endOf("month"),
+	};
 }
 
 /**
@@ -208,21 +204,21 @@ export function getMonthRange(dt: DateTime): { start: DateTime; end: DateTime } 
  * @returns Object with start (Monday) and end (Sunday) DateTime
  */
 export function getWeekRange(dt: DateTime): { start: DateTime; end: DateTime } {
-  return {
-    start: dt.startOf('week'),
-    end: dt.endOf('week')
-  };
+	return {
+		start: dt.startOf("week"),
+		end: dt.endOf("week"),
+	};
 }
 
 /**
  * Get today's date range (start to end of current day)
  */
 export function getTodayRange(): { start: DateTime; end: DateTime } {
-  const today = DateTime.now();
-  return {
-    start: today.startOf('day'),
-    end: today.endOf('day')
-  };
+	const today = DateTime.now();
+	return {
+		start: today.startOf("day"),
+		end: today.endOf("day"),
+	};
 }
 
 // ============================================================================
@@ -234,14 +230,14 @@ export function getTodayRange(): { start: DateTime; end: DateTime } {
  * Useful for Map/Set keys and date grouping
  */
 export function toDateKey(dt: DateTime): string {
-  return dt.toISODate() || '';
+	return dt.toISODate() || "";
 }
 
 /**
  * Parse date key string (YYYY-MM-DD) to DateTime
  */
-export function fromDateKey(key: string, zone: string = 'utc'): DateTime {
-  return DateTime.fromISO(key, { zone });
+export function fromDateKey(key: string, zone: string = "utc"): DateTime {
+	return DateTime.fromISO(key, { zone });
 }
 
 // ============================================================================
@@ -252,28 +248,28 @@ export function fromDateKey(key: string, zone: string = 'utc'): DateTime {
  * Convert DateTime to ISO string (for API/storage)
  */
 export function toISO(dt: DateTime): string {
-  return dt.toISO() || '';
+	return dt.toISO() || "";
 }
 
 /**
  * Convert DateTime to JavaScript Date (for Drizzle ORM)
  */
 export function toJSDate(dt: DateTime): Date {
-  return dt.toJSDate();
+	return dt.toJSDate();
 }
 
 /**
  * Convert DateTime to UTC
  */
 export function toUTC(dt: DateTime): DateTime {
-  return dt.toUTC();
+	return dt.toUTC();
 }
 
 /**
  * Convert DateTime to local timezone
  */
 export function toLocal(dt: DateTime): DateTime {
-  return dt.toLocal();
+	return dt.toLocal();
 }
 
 // ============================================================================
@@ -284,21 +280,21 @@ export function toLocal(dt: DateTime): DateTime {
  * Check if two DateTimes represent the same calendar day
  */
 export function isSameDay(dt1: DateTime, dt2: DateTime): boolean {
-  return dt1.hasSame(dt2, 'day');
+	return dt1.hasSame(dt2, "day");
 }
 
 /**
  * Check if dt1 is after dt2
  */
 export function isAfter(dt1: DateTime, dt2: DateTime): boolean {
-  return dt1 > dt2;
+	return dt1 > dt2;
 }
 
 /**
  * Check if dt1 is before dt2
  */
 export function isBefore(dt1: DateTime, dt2: DateTime): boolean {
-  return dt1 < dt2;
+	return dt1 < dt2;
 }
 
 /**
@@ -309,23 +305,19 @@ export function isBefore(dt1: DateTime, dt2: DateTime): boolean {
  * @param end2 End of second range
  */
 export function dateRangesOverlap(
-  start1: DateTime,
-  end1: DateTime,
-  start2: DateTime,
-  end2: DateTime
+	start1: DateTime,
+	end1: DateTime,
+	start2: DateTime,
+	end2: DateTime,
 ): boolean {
-  return start1 <= end2 && start2 <= end1;
+	return start1 <= end2 && start2 <= end1;
 }
 
 /**
  * Check if a DateTime falls within a date range (inclusive)
  */
-export function isWithinRange(
-  dt: DateTime,
-  start: DateTime,
-  end: DateTime
-): boolean {
-  return dt >= start && dt <= end;
+export function isWithinRange(dt: DateTime, start: DateTime, end: DateTime): boolean {
+	return dt >= start && dt <= end;
 }
 
 // ============================================================================
@@ -338,20 +330,20 @@ export function isWithinRange(
  * @param duration Duration object (e.g., { days: 1, hours: 2 })
  */
 export function plus(
-  dt: DateTime,
-  duration: { years?: number; months?: number; days?: number; hours?: number; minutes?: number }
+	dt: DateTime,
+	duration: { years?: number; months?: number; days?: number; hours?: number; minutes?: number },
 ): DateTime {
-  return dt.plus(duration);
+	return dt.plus(duration);
 }
 
 /**
  * Subtract duration from DateTime
  */
 export function minus(
-  dt: DateTime,
-  duration: { years?: number; months?: number; days?: number; hours?: number; minutes?: number }
+	dt: DateTime,
+	duration: { years?: number; months?: number; days?: number; hours?: number; minutes?: number },
 ): DateTime {
-  return dt.minus(duration);
+	return dt.minus(duration);
 }
 
 /**
@@ -362,11 +354,11 @@ export function minus(
  * @returns Difference as a number
  */
 export function diff(
-  end: DateTime,
-  start: DateTime,
-  unit: 'years' | 'months' | 'days' | 'hours' | 'minutes' | 'seconds' = 'days'
+	end: DateTime,
+	start: DateTime,
+	unit: "years" | "months" | "days" | "hours" | "minutes" | "seconds" = "days",
 ): number {
-  return end.diff(start, unit).as(unit);
+	return end.diff(start, unit).as(unit);
 }
 
 // ============================================================================
@@ -377,7 +369,7 @@ export function diff(
  * Create an Interval between two DateTimes
  */
 export function createInterval(start: DateTime, end: DateTime): Interval {
-  return Interval.fromDateTimes(start, end);
+	return Interval.fromDateTimes(start, end);
 }
 
 /**
@@ -387,15 +379,15 @@ export function createInterval(start: DateTime, end: DateTime): Interval {
  * @returns Array of DateTimes for each day
  */
 export function eachDayOfInterval(start: DateTime, end: DateTime): DateTime[] {
-  const interval = Interval.fromDateTimes(start, end);
-  return interval.splitBy({ days: 1 }).map(i => i.start!);
+	const interval = Interval.fromDateTimes(start, end);
+	return interval.splitBy({ days: 1 }).map((i) => i.start!);
 }
 
 /**
  * Generate array of date keys (YYYY-MM-DD) for a range
  */
 export function generateDateKeys(start: DateTime, end: DateTime): string[] {
-  return eachDayOfInterval(start, end).map(dt => toDateKey(dt));
+	return eachDayOfInterval(start, end).map((dt) => toDateKey(dt));
 }
 
 // ============================================================================
@@ -406,14 +398,14 @@ export function generateDateKeys(start: DateTime, end: DateTime): string[] {
  * Check if a DateTime is valid
  */
 export function isValid(dt: DateTime): boolean {
-  return dt.isValid;
+	return dt.isValid;
 }
 
 /**
  * Get validation error message if DateTime is invalid
  */
 export function getInvalidReason(dt: DateTime): string | null {
-  return dt.invalidReason;
+	return dt.invalidReason;
 }
 
 // ============================================================================
@@ -424,14 +416,14 @@ export function getInvalidReason(dt: DateTime): string | null {
  * Get user's local timezone
  */
 export function getLocalTimezone(): string {
-  return DateTime.local().zoneName;
+	return DateTime.local().zoneName;
 }
 
 /**
  * Convert DateTime to specific timezone
  */
 export function toZone(dt: DateTime, zone: string): DateTime {
-  return dt.setZone(zone);
+	return dt.setZone(zone);
 }
 
 /**
@@ -439,5 +431,5 @@ export function toZone(dt: DateTime, zone: string): DateTime {
  * (e.g., convert "2024-01-15 10:00 EST" to "2024-01-15 10:00 PST")
  */
 export function setZoneKeepLocal(dt: DateTime, zone: string): DateTime {
-  return dt.setZone(zone, { keepLocalTime: true });
+	return dt.setZone(zone, { keepLocalTime: true });
 }
