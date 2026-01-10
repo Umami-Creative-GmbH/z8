@@ -4,12 +4,7 @@ import { IconCheck, IconX } from "@tabler/icons-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import {
-	approveAbsence,
-	rejectAbsence,
-} from "@/app/[locale]/(app)/approvals/actions";
-import { queryKeys } from "@/lib/query";
-import type { ApprovalWithAbsence } from "@/lib/validations/approvals";
+import { approveAbsence, rejectAbsence } from "@/app/[locale]/(app)/approvals/actions";
 import { CategoryBadge } from "@/components/absences/category-badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -22,6 +17,8 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { calculateBusinessDays, formatDateRange } from "@/lib/absences/date-utils";
+import { queryKeys } from "@/lib/query";
+import type { ApprovalWithAbsence } from "@/lib/validations/approvals";
 import { ApprovalActionDialog } from "./approval-action-dialog";
 
 interface AbsenceApprovalsTableProps {

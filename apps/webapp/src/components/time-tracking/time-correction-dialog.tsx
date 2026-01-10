@@ -4,7 +4,10 @@ import { IconEdit, IconLoader2 } from "@tabler/icons-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
-import { editSameDayTimeEntry, requestTimeCorrection } from "@/app/[locale]/(app)/time-tracking/actions";
+import {
+	editSameDayTimeEntry,
+	requestTimeCorrection,
+} from "@/app/[locale]/(app)/time-tracking/actions";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -119,7 +122,9 @@ export function TimeCorrectionDialog({ workPeriod, isSameDay }: Props) {
 			<DialogTrigger asChild>
 				<Button variant="ghost" size="icon">
 					<IconEdit className="size-4" />
-					<span className="sr-only">{isSameDay ? "Edit time entry" : "Request time correction"}</span>
+					<span className="sr-only">
+						{isSameDay ? "Edit time entry" : "Request time correction"}
+					</span>
 				</Button>
 			</DialogTrigger>
 			<DialogContent className="sm:max-w-md">
@@ -166,7 +171,11 @@ export function TimeCorrectionDialog({ workPeriod, isSameDay }: Props) {
 								id="reason"
 								value={formData.reason}
 								onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
-								placeholder={isSameDay ? "Add a note about this change..." : "Explain why this correction is needed..."}
+								placeholder={
+									isSameDay
+										? "Add a note about this change..."
+										: "Explain why this correction is needed..."
+								}
 								required={!isSameDay}
 								rows={2}
 							/>
@@ -185,8 +194,10 @@ export function TimeCorrectionDialog({ workPeriod, isSameDay }: Props) {
 									<IconLoader2 className="size-4 animate-spin" />
 									{isSameDay ? "Saving..." : "Submitting..."}
 								</>
+							) : isSameDay ? (
+								"Save Changes"
 							) : (
-								isSameDay ? "Save Changes" : "Submit Request"
+								"Submit Request"
 							)}
 						</Button>
 					</DialogFooter>

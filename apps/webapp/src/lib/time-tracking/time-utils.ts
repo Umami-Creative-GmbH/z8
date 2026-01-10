@@ -25,10 +25,10 @@ export function formatDurationWithSeconds(totalSeconds: number | null | undefine
 export function formatDate(dateString: string | Date | DateTime): string {
 	let dt: DateTime;
 
-	if (typeof dateString === 'string') {
-		dt = parseISO(dateString, 'utc');
+	if (typeof dateString === "string") {
+		dt = parseISO(dateString, "utc");
 	} else if (dateString instanceof Date) {
-		dt = fromJSDate(dateString, 'utc');
+		dt = fromJSDate(dateString, "utc");
 	} else {
 		dt = dateString;
 	}
@@ -43,10 +43,10 @@ export function formatDate(dateString: string | Date | DateTime): string {
 export function formatTime(dateString: string | Date | DateTime): string {
 	let dt: DateTime;
 
-	if (typeof dateString === 'string') {
-		dt = parseISO(dateString, 'utc');
+	if (typeof dateString === "string") {
+		dt = parseISO(dateString, "utc");
 	} else if (dateString instanceof Date) {
-		dt = fromJSDate(dateString, 'utc');
+		dt = fromJSDate(dateString, "utc");
 	} else {
 		dt = dateString;
 	}
@@ -55,20 +55,20 @@ export function formatTime(dateString: string | Date | DateTime): string {
 }
 
 export function getWeekRange(date: Date | DateTime): { start: DateTime; end: DateTime } {
-	const dt = date instanceof Date ? fromJSDate(date, 'utc') : date;
+	const dt = date instanceof Date ? fromJSDate(date, "utc") : date;
 
 	return {
-		start: dt.startOf('week'),
-		end: dt.endOf('week')
+		start: dt.startOf("week"),
+		end: dt.endOf("week"),
 	};
 }
 
 export function getMonthRange(date: Date | DateTime): { start: DateTime; end: DateTime } {
-	const dt = date instanceof Date ? fromJSDate(date, 'utc') : date;
+	const dt = date instanceof Date ? fromJSDate(date, "utc") : date;
 
 	return {
-		start: dt.startOf('month'),
-		end: dt.endOf('month')
+		start: dt.startOf("month"),
+		end: dt.endOf("month"),
 	};
 }
 
@@ -76,37 +76,40 @@ export function getTodayRange(): { start: DateTime; end: DateTime } {
 	const today = DateTime.now();
 
 	return {
-		start: today.startOf('day'),
-		end: today.endOf('day')
+		start: today.startOf("day"),
+		end: today.endOf("day"),
 	};
 }
 
 export function calculateElapsedMinutes(startTime: Date | string | DateTime): number {
 	let start: DateTime;
 
-	if (typeof startTime === 'string') {
-		start = parseISO(startTime, 'utc');
+	if (typeof startTime === "string") {
+		start = parseISO(startTime, "utc");
 	} else if (startTime instanceof Date) {
-		start = fromJSDate(startTime, 'utc');
+		start = fromJSDate(startTime, "utc");
 	} else {
 		start = startTime;
 	}
 
 	const now = DateTime.now();
-	return Math.floor(now.diff(start, 'minutes').minutes);
+	return Math.floor(now.diff(start, "minutes").minutes);
 }
 
 /**
  * Check if a timestamp is from "today" in the given timezone
  * Used to determine if a time entry can be edited directly or requires approval
  */
-export function isSameDayInTimezone(timestamp: Date | string | DateTime, timezone: string): boolean {
+export function isSameDayInTimezone(
+	timestamp: Date | string | DateTime,
+	timezone: string,
+): boolean {
 	let dt: DateTime;
 
-	if (typeof timestamp === 'string') {
-		dt = parseISO(timestamp, 'utc');
+	if (typeof timestamp === "string") {
+		dt = parseISO(timestamp, "utc");
 	} else if (timestamp instanceof Date) {
-		dt = fromJSDate(timestamp, 'utc');
+		dt = fromJSDate(timestamp, "utc");
 	} else {
 		dt = timestamp;
 	}
@@ -115,5 +118,5 @@ export function isSameDayInTimezone(timestamp: Date | string | DateTime, timezon
 	const timestampInTz = dt.setZone(timezone);
 	const todayInTz = DateTime.now().setZone(timezone);
 
-	return timestampInTz.hasSame(todayInTz, 'day');
+	return timestampInTz.hasSame(todayInTz, "day");
 }

@@ -5,9 +5,9 @@ import { type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { employee, timeEntry } from "@/db/schema";
 import { auth } from "@/lib/auth";
-import { TimeEntryService } from "@/lib/effect/services/time-entry.service";
-import { runtime } from "@/lib/effect/runtime";
 import { canApproveFor } from "@/lib/auth-helpers";
+import { runtime } from "@/lib/effect/runtime";
+import { TimeEntryService } from "@/lib/effect/services/time-entry.service";
 
 /**
  * POST /api/time-entries/corrections
@@ -34,10 +34,7 @@ export async function POST(request: NextRequest) {
 		}
 
 		if (!notes) {
-			return NextResponse.json(
-				{ error: "notes is required for corrections" },
-				{ status: 400 },
-			);
+			return NextResponse.json({ error: "notes is required for corrections" }, { status: 400 });
 		}
 
 		// Get current user's employee record
@@ -88,10 +85,7 @@ export async function POST(request: NextRequest) {
 		const canApprove = await canApproveFor(entryToCorrect.employeeId);
 
 		if (!isSelfCorrection && !canApprove) {
-			return NextResponse.json(
-				{ error: "Not authorized to correct this entry" },
-				{ status: 403 },
-			);
+			return NextResponse.json({ error: "Not authorized to correct this entry" }, { status: 403 });
 		}
 
 		// Get request metadata
@@ -120,9 +114,10 @@ export async function POST(request: NextRequest) {
 		return NextResponse.json(
 			{
 				entry: correctionEntry,
-				message: isSelfCorrection && !canApprove
-					? "Correction submitted. Awaiting manager approval."
-					: "Correction applied successfully.",
+				message:
+					isSelfCorrection && !canApprove
+						? "Correction submitted. Awaiting manager approval."
+						: "Correction applied successfully.",
 			},
 			{ status: 201 },
 		);

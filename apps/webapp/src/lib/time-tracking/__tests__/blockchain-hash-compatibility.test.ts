@@ -46,7 +46,7 @@ describe("Blockchain Hash Compatibility", () => {
 			"2024-01-15T10:30:00.999Z",
 		];
 
-		dates.forEach(dateStr => {
+		dates.forEach((dateStr) => {
 			const testDate = new Date(dateStr);
 			const dateISO = testDate.toISOString();
 			const luxonISO = DateTime.fromJSDate(testDate, { zone: "utc" }).toISO()!;

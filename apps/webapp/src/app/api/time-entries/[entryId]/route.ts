@@ -5,8 +5,8 @@ import { type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { employee, timeEntry } from "@/db/schema";
 import { auth } from "@/lib/auth";
-import { TimeEntryService } from "@/lib/effect/services/time-entry.service";
 import { runtime } from "@/lib/effect/runtime";
+import { TimeEntryService } from "@/lib/effect/services/time-entry.service";
 
 interface RouteParams {
 	params: Promise<{ entryId: string }>;
@@ -37,11 +37,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 		}
 
 		// Get the time entry
-		const [entry] = await db
-			.select()
-			.from(timeEntry)
-			.where(eq(timeEntry.id, entryId))
-			.limit(1);
+		const [entry] = await db.select().from(timeEntry).where(eq(timeEntry.id, entryId)).limit(1);
 
 		if (!entry) {
 			return NextResponse.json({ error: "Time entry not found" }, { status: 404 });
@@ -56,10 +52,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
 		// Check authorization - must be same organization
 		if (entryOwner?.organizationId !== currentEmployee.organizationId) {
-			return NextResponse.json(
-				{ error: "Not authorized to view this entry" },
-				{ status: 403 },
-			);
+			return NextResponse.json({ error: "Not authorized to view this entry" }, { status: 403 });
 		}
 
 		// Only allow viewing own entries unless admin/manager

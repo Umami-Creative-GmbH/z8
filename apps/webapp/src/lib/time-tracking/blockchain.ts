@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
-import { dateFromDB } from "@/lib/datetime/drizzle-adapter";
 import type { timeEntry } from "@/db/schema";
+import { dateFromDB } from "@/lib/datetime/drizzle-adapter";
 
 type TimeEntry = typeof timeEntry.$inferSelect;
 

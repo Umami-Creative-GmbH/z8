@@ -139,7 +139,7 @@ async function processApproval<T>(
 										message: "Employee profile not found",
 										entityType: "employee",
 									}),
-							  ),
+								),
 					),
 				);
 
@@ -163,12 +163,13 @@ async function processApproval<T>(
 							? Effect.succeed(req)
 							: Effect.fail(
 									new AuthorizationError({
-										message: "Approval request not found, already processed, or you are not the approver",
+										message:
+											"Approval request not found, already processed, or you are not the approver",
 										userId: currentEmployee.id,
 										resource: entityType,
 										action: action,
 									}),
-							  ),
+								),
 					),
 				);
 
@@ -277,7 +278,7 @@ export async function approveAbsenceEffect(absenceId: string): Promise<ServerAct
 										message: "Absence not found",
 										entityType: "absence_entry",
 									}),
-							  ),
+								),
 					),
 				);
 
@@ -382,7 +383,7 @@ export async function rejectAbsenceEffect(
 										message: "Absence not found",
 										entityType: "absence_entry",
 									}),
-							  ),
+								),
 					),
 				);
 
@@ -475,8 +476,11 @@ export async function approveTimeCorrectionEffect(
 						p
 							? Effect.succeed(p)
 							: Effect.fail(
-									new NotFoundError({ message: "Work period not found", entityType: "work_period" }),
-							  ),
+									new NotFoundError({
+										message: "Work period not found",
+										entityType: "work_period",
+									}),
+								),
 					),
 				);
 
@@ -593,8 +597,11 @@ export async function rejectTimeCorrectionEffect(
 						p
 							? Effect.succeed(p)
 							: Effect.fail(
-									new NotFoundError({ message: "Work period not found", entityType: "work_period" }),
-							  ),
+									new NotFoundError({
+										message: "Work period not found",
+										entityType: "work_period",
+									}),
+								),
 					),
 				);
 
@@ -728,4 +735,3 @@ export const rejectAbsence = rejectAbsenceEffect;
 export const approveTimeCorrection = approveTimeCorrectionEffect;
 export const rejectTimeCorrection = rejectTimeCorrectionEffect;
 export { getCurrentEmployee };
-

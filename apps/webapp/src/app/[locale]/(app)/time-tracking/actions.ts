@@ -1,8 +1,8 @@
 "use server";
 
-import { DateTime } from "luxon";
 import { and, desc, eq, gte, isNull, lte } from "drizzle-orm";
 import { Effect } from "effect";
+import { DateTime } from "luxon";
 import { headers } from "next/headers";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
@@ -19,10 +19,9 @@ import { renderTimeCorrectionPendingApproval } from "@/lib/email/render";
 import { createLogger } from "@/lib/logger";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
 import { isSameDayInTimezone } from "@/lib/time-tracking/time-utils";
-import { validateTimeEntry, validateTimeEntryRange } from "@/lib/time-tracking/validation";
 import type { TimeSummary } from "@/lib/time-tracking/types";
+import { validateTimeEntry, validateTimeEntryRange } from "@/lib/time-tracking/validation";
 import type { WorkPeriodWithEntries } from "./types";
-
 
 const logger = createLogger("TimeTrackingActionsEffect");
 
@@ -88,7 +87,10 @@ export async function editSameDayTimeEntry(
 
 	// Check if this is a same-day entry
 	if (!isSameDayInTimezone(period.startTime, timezone)) {
-		return { success: false, error: "Past entries require manager approval. Please use the correction request." };
+		return {
+			success: false,
+			error: "Past entries require manager approval. Please use the correction request.",
+		};
 	}
 
 	// Calculate corrected timestamps
@@ -311,9 +313,13 @@ export async function requestTimeCorrectionEffect(
 			),
 		);
 
-		yield* _(Effect.annotateCurrentSpan("correction.original_clock_in", period.startTime.toISOString()));
+		yield* _(
+			Effect.annotateCurrentSpan("correction.original_clock_in", period.startTime.toISOString()),
+		);
 		if (period.endTime) {
-			yield* _(Effect.annotateCurrentSpan("correction.original_clock_out", period.endTime.toISOString()));
+			yield* _(
+				Effect.annotateCurrentSpan("correction.original_clock_out", period.endTime.toISOString()),
+			);
 		}
 
 		// Step 5: Calculate corrected timestamps
@@ -334,7 +340,7 @@ export async function requestTimeCorrectionEffect(
 			hour: parseInt(hours, 10),
 			minute: parseInt(minutes, 10),
 			second: 0,
-			millisecond: 0
+			millisecond: 0,
 		});
 		const correctedClockInDate = dateToDB(correctedClockInDT)!;
 
@@ -347,15 +353,25 @@ export async function requestTimeCorrectionEffect(
 					hour: parseInt(outHours, 10),
 					minute: parseInt(outMinutes, 10),
 					second: 0,
-					millisecond: 0
+					millisecond: 0,
 				});
 				correctedClockOutDate = dateToDB(correctedClockOutDT)!;
 			}
 		}
 
-		yield* _(Effect.annotateCurrentSpan("correction.corrected_clock_in", correctedClockInDate.toISOString()));
+		yield* _(
+			Effect.annotateCurrentSpan(
+				"correction.corrected_clock_in",
+				correctedClockInDate.toISOString(),
+			),
+		);
 		if (correctedClockOutDate) {
-			yield* _(Effect.annotateCurrentSpan("correction.corrected_clock_out", correctedClockOutDate.toISOString()));
+			yield* _(
+				Effect.annotateCurrentSpan(
+					"correction.corrected_clock_out",
+					correctedClockOutDate.toISOString(),
+				),
+			);
 		}
 
 		// Step 6: Validate the correction dates (check for holidays)
@@ -429,7 +445,9 @@ export async function requestTimeCorrectionEffect(
 			);
 
 			clockOutCorrectionId = clockOutCorrection.id;
-			yield* _(Effect.annotateCurrentSpan("correction.clock_out_correction_id", clockOutCorrection.id));
+			yield* _(
+				Effect.annotateCurrentSpan("correction.clock_out_correction_id", clockOutCorrection.id),
+			);
 
 			// Mark original clock out as superseded
 			yield* _(
@@ -690,9 +708,7 @@ export async function getWorkPeriods(
 /**
  * Get time summary for an employee (today, week, month)
  */
-export async function getTimeSummary(
-	employeeId: string,
-): Promise<TimeSummary> {
+export async function getTimeSummary(employeeId: string): Promise<TimeSummary> {
 	const now = DateTime.now();
 	const todayStart = dateToDB(now.startOf("day"))!;
 	const todayEnd = dateToDB(now.endOf("day"))!;

@@ -3,11 +3,8 @@ import { Suspense } from "react";
 import { AbsenceApprovalsTable } from "@/components/approvals/absence-approvals-table";
 import { TimeCorrectionApprovalsTable } from "@/components/approvals/time-correction-approvals-table";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
-import { ServerAppSidebar } from "@/components/server-app-sidebar";
-import { SiteHeader } from "@/components/site-header";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getCurrentEmployee, getPendingApprovals } from "./actions";
@@ -131,23 +128,8 @@ function ApprovalsLoading() {
 
 export default function ApprovalsPage() {
 	return (
-		<SidebarProvider
-			style={
-				{
-					"--sidebar-width": "calc(var(--spacing) * 72)",
-					"--header-height": "calc(var(--spacing) * 12)",
-				} as React.CSSProperties
-			}
-		>
-			<ServerAppSidebar variant="inset" />
-			<SidebarInset>
-				<SiteHeader />
-				<div className="flex flex-1 flex-col">
-					<Suspense fallback={<ApprovalsLoading />}>
-						<ApprovalsContent />
-					</Suspense>
-				</div>
-			</SidebarInset>
-		</SidebarProvider>
+		<Suspense fallback={<ApprovalsLoading />}>
+			<ApprovalsContent />
+		</Suspense>
 	);
 }

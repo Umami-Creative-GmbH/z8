@@ -4,15 +4,15 @@
  */
 
 import { DateTime } from "luxon";
+import type { timeEntry } from "@/db/schema";
 import {
+	type ChainValidationResult,
 	calculateHash,
 	getChainHash,
 	validateChain,
 	validateChainDetailed,
 	verifyHash,
-	type ChainValidationResult,
 } from "../blockchain";
-import type { timeEntry } from "@/db/schema";
 
 type TimeEntry = typeof timeEntry.$inferSelect;
 
@@ -21,12 +21,14 @@ function createMockEntry(
 	overrides: Partial<TimeEntry> & { id: string; employeeId: string; type: string },
 ): TimeEntry {
 	const timestamp = overrides.timestamp || new Date();
-	const hash = overrides.hash || calculateHash({
-		employeeId: overrides.employeeId,
-		type: overrides.type,
-		timestamp: timestamp.toISOString(),
-		previousHash: overrides.previousHash || null,
-	});
+	const hash =
+		overrides.hash ||
+		calculateHash({
+			employeeId: overrides.employeeId,
+			type: overrides.type,
+			timestamp: timestamp.toISOString(),
+			previousHash: overrides.previousHash || null,
+		});
 
 	return {
 		id: overrides.id,
@@ -63,15 +65,17 @@ function createValidChain(employeeId: string, count: number): TimeEntry[] {
 			previousHash,
 		});
 
-		entries.push(createMockEntry({
-			id: `entry-${i}`,
-			employeeId,
-			type,
-			timestamp,
-			hash,
-			previousHash,
-			createdAt: timestamp,
-		}));
+		entries.push(
+			createMockEntry({
+				id: `entry-${i}`,
+				employeeId,
+				type,
+				timestamp,
+				hash,
+				previousHash,
+				createdAt: timestamp,
+			}),
+		);
 
 		previousHash = hash;
 	}

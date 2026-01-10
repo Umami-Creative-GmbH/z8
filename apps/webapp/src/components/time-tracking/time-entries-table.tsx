@@ -11,7 +11,12 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { formatDate, formatDuration, formatTime, isSameDayInTimezone } from "@/lib/time-tracking/time-utils";
+import {
+	formatDate,
+	formatDuration,
+	formatTime,
+	isSameDayInTimezone,
+} from "@/lib/time-tracking/time-utils";
 import { TimeCorrectionDialog } from "./time-correction-dialog";
 
 interface TimeEntry {

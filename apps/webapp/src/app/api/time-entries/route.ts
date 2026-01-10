@@ -5,8 +5,8 @@ import { type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { employee } from "@/db/schema";
 import { auth } from "@/lib/auth";
-import { TimeEntryService } from "@/lib/effect/services/time-entry.service";
 import { runtime } from "@/lib/effect/runtime";
+import { TimeEntryService } from "@/lib/effect/services/time-entry.service";
 
 /**
  * GET /api/time-entries

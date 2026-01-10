@@ -8,8 +8,6 @@ import {
 	approveTimeCorrection,
 	rejectTimeCorrection,
 } from "@/app/[locale]/(app)/approvals/actions";
-import { queryKeys } from "@/lib/query";
-import type { ApprovalWithTimeCorrection } from "@/lib/validations/approvals";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,6 +19,8 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { queryKeys } from "@/lib/query";
+import type { ApprovalWithTimeCorrection } from "@/lib/validations/approvals";
 import { ApprovalActionDialog } from "./approval-action-dialog";
 
 interface TimeCorrectionApprovalsTableProps {
@@ -44,7 +44,9 @@ function formatDate(date: Date): string {
 	}).format(date);
 }
 
-export function TimeCorrectionApprovalsTable({ approvals: initialApprovals }: TimeCorrectionApprovalsTableProps) {
+export function TimeCorrectionApprovalsTable({
+	approvals: initialApprovals,
+}: TimeCorrectionApprovalsTableProps) {
 	const queryClient = useQueryClient();
 	const [approvals, setApprovals] = useState(initialApprovals);
 	const [dialogOpen, setDialogOpen] = useState(false);
