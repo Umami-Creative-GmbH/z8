@@ -4,13 +4,23 @@
  */
 
 import { and, eq, gte, isNotNull, lte } from "drizzle-orm";
-import { eachDayOfInterval, format, isSameDay } from "@/lib/datetime/luxon-utils";
 import { db } from "@/db";
 import { absenceCategory, absenceEntry, employee, workPeriod } from "@/db/schema";
 import { calculateBusinessDays } from "@/lib/absences/date-utils";
-import { calculateWorkHours } from "@/lib/time-tracking/calculations";
-import { startOfDay, endOfDay, fromJSDate, toJSDate } from "@/lib/datetime/luxon-utils";
 import { dateToDB } from "@/lib/datetime/drizzle-adapter";
+import {
+	eachDayOfInterval,
+	endOfDay,
+	format,
+	fromJSDate,
+	startOfDay,
+	toJSDate,
+} from "@/lib/datetime/luxon-utils";
+import {
+	calculateExpectedWorkHoursForEmployee,
+	calculateWorkHours,
+} from "@/lib/time-tracking/calculations";
+import { formatDateRangeLabel } from "./date-ranges";
 import type {
 	AbsenceSummary,
 	AbsencesData,
@@ -21,7 +31,6 @@ import type {
 	WorkHoursData,
 	WorkHoursSummary,
 } from "./types";
-import { formatDateRangeLabel } from "./date-ranges";
 
 /**
  * Generate a comprehensive employee report
@@ -50,14 +59,15 @@ export async function generateEmployeeReport(
 	}
 
 	// Aggregate data in parallel
-	const [workHours, absences, homeOffice] = await Promise.all([
+	const [workHours, absences, homeOffice, expectedHours] = await Promise.all([
 		aggregateWorkHours(employeeId, organizationId, startDate, endDate),
 		aggregateAbsences(employeeId, startDate, endDate),
 		aggregateHomeOfficeDays(employeeId, startDate, endDate),
+		calculateExpectedWorkHoursForEmployee(employeeId, organizationId, startDate, endDate),
 	]);
 
-	// Calculate compliance metrics
-	const complianceMetrics = calculateComplianceMetrics(workHours, absences);
+	// Calculate compliance metrics using schedule-based expected hours
+	const complianceMetrics = calculateComplianceMetrics(workHours, absences, expectedHours);
 
 	return {
 		employee: {
@@ -195,7 +205,11 @@ export async function aggregateAbsences(
 
 	// Fetch all absences in date range
 	const absences = await db.query.absenceEntry.findMany({
-		where: and(eq(absenceEntry.employeeId, employeeId), lte(absenceEntry.startDate, rangeEnd), gte(absenceEntry.endDate, rangeStart)),
+		where: and(
+			eq(absenceEntry.employeeId, employeeId),
+			lte(absenceEntry.startDate, rangeEnd),
+			gte(absenceEntry.endDate, rangeStart),
+		),
 		with: {
 			category: true,
 		},
@@ -313,10 +327,7 @@ export async function aggregateHomeOfficeDays(
 	// Step 2: Extract all home office dates
 	const homeOfficeDates = new Set<string>();
 	for (const absence of homeOfficeAbsences) {
-		const days = eachDayOfInterval(
-			fromJSDate(absence.startDate),
-			fromJSDate(absence.endDate),
-		);
+		const days = eachDayOfInterval(fromJSDate(absence.startDate), fromJSDate(absence.endDate));
 
 		for (const day of days) {
 			// Only include dates within our report range
@@ -371,21 +382,28 @@ export async function aggregateHomeOfficeDays(
 
 /**
  * Calculate compliance metrics
+ * Uses employee's work schedule for accurate expected hours calculation
  * @param workHours - Work hours data
  * @param absences - Absences data
+ * @param expectedHoursData - Expected hours based on employee's schedule
  * @returns Compliance metrics
  */
 function calculateComplianceMetrics(
 	workHours: WorkHoursData,
 	absences: Omit<AbsencesData, "homeOffice">,
+	expectedHoursData: {
+		totalMinutes: number;
+		workDays: number;
+		scheduleInfo: { name: string; source: string } | null;
+	},
 ): ComplianceMetrics {
-	// Simple attendance percentage (can be enhanced with expected work days)
+	// Simple attendance percentage based on expected vs actual work days
 	const totalPossibleDays = workHours.workDays + absences.totalDays;
 	const attendancePercentage =
 		totalPossibleDays > 0 ? Math.round((workHours.workDays / totalPossibleDays) * 100) : 100;
 
-	// Overtime calculation (assuming 8 hours per day as standard)
-	const expectedMinutes = workHours.workDays * 8 * 60;
+	// Overtime/undertime calculation using schedule-based expected hours
+	const expectedMinutes = expectedHoursData.totalMinutes;
 	const overtimeMinutes = Math.max(0, workHours.totalMinutes - expectedMinutes);
 	const underTimeMinutes = Math.max(0, expectedMinutes - workHours.totalMinutes);
 
@@ -393,5 +411,8 @@ function calculateComplianceMetrics(
 		attendancePercentage,
 		overtimeMinutes: Math.round(overtimeMinutes),
 		underTimeMinutes: Math.round(underTimeMinutes),
+		// Add schedule info for context in reports
+		scheduleInfo: expectedHoursData.scheduleInfo,
+		expectedWorkMinutes: expectedMinutes,
 	};
 }

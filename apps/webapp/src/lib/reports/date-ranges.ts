@@ -12,10 +12,7 @@ import type { DateRange, PeriodPreset } from "./types";
  * @param year - Optional year for quarter presets (defaults to current year)
  * @returns Date range with start and end DateTime objects
  */
-export function getDateRangeForPreset(
-	preset: PeriodPreset,
-	year?: number,
-): DateRange {
+export function getDateRangeForPreset(preset: PeriodPreset, year?: number): DateRange {
 	const now = DateTime.now();
 	const targetYear = year ?? now.year;
 

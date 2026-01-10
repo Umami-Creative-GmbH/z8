@@ -5,7 +5,7 @@
  * Requires authentication and validates export requests.
  */
 
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { generateCsv } from "@/lib/reporting/csv-export";
 import { generateExcelBuffer } from "@/lib/reporting/excel-export";
@@ -30,34 +30,28 @@ export async function POST(request: NextRequest) {
 		});
 
 		if (!session?.user) {
-			return NextResponse.json(
-				{ error: "Unauthorized" },
-				{ status: 401 }
-			);
+			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 		}
 
 		// Parse and validate request body
-		const body = await request.json() as ExportRequestBody;
+		const body = (await request.json()) as ExportRequestBody;
 
 		if (!body.format || !body.data || !body.headers || !body.filename) {
 			return NextResponse.json(
 				{ error: "Missing required fields: format, data, headers, filename" },
-				{ status: 400 }
+				{ status: 400 },
 			);
 		}
 
 		if (body.format !== "csv" && body.format !== "excel") {
 			return NextResponse.json(
 				{ error: "Invalid format. Must be 'csv' or 'excel'" },
-				{ status: 400 }
+				{ status: 400 },
 			);
 		}
 
 		if (!Array.isArray(body.data) || !Array.isArray(body.headers)) {
-			return NextResponse.json(
-				{ error: "Data and headers must be arrays" },
-				{ status: 400 }
-			);
+			return NextResponse.json({ error: "Data and headers must be arrays" }, { status: 400 });
 		}
 
 		// Generate export based on format
@@ -86,15 +80,9 @@ export async function POST(request: NextRequest) {
 			});
 		}
 
-		return NextResponse.json(
-			{ error: "Invalid export format" },
-			{ status: 400 }
-		);
+		return NextResponse.json({ error: "Invalid export format" }, { status: 400 });
 	} catch (error) {
 		console.error("Export API error:", error);
-		return NextResponse.json(
-			{ error: "Failed to generate export" },
-			{ status: 500 }
-		);
+		return NextResponse.json({ error: "Failed to generate export" }, { status: 500 });
 	}
 }

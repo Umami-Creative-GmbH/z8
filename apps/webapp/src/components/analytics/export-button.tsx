@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { IconDownload, IconFileTypeCsv, IconFileTypeXls, IconLoader2 } from "@tabler/icons-react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -110,17 +110,11 @@ export function ExportButton<T = any>({ data, onExport, disabled }: ExportButton
 				</Button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="end">
-				<DropdownMenuItem
-					onClick={() => handleExport("csv")}
-					disabled={isExporting}
-				>
+				<DropdownMenuItem onClick={() => handleExport("csv")} disabled={isExporting}>
 					<IconFileTypeCsv className="mr-2 size-4" />
 					Export as CSV
 				</DropdownMenuItem>
-				<DropdownMenuItem
-					onClick={() => handleExport("excel")}
-					disabled={isExporting}
-				>
+				<DropdownMenuItem onClick={() => handleExport("excel")} disabled={isExporting}>
 					<IconFileTypeXls className="mr-2 size-4" />
 					Export as Excel
 				</DropdownMenuItem>

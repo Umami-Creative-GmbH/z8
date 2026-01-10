@@ -5,9 +5,8 @@
  * Next.js unstable_cache API with tag-based invalidation.
  */
 
-import { unstable_cache } from "next/cache";
-import { revalidateTag } from "next/cache";
 import { DateTime } from "luxon";
+import { revalidateTag, unstable_cache } from "next/cache";
 
 /**
  * Cache TTL configuration (in seconds)
@@ -37,10 +36,7 @@ export const ANALYTICS_CACHE_TAGS = {
  * @param params - Parameters that affect the query result
  * @returns Unique cache key
  */
-export function generateCacheKey(
-	baseKey: string,
-	params: Record<string, any>,
-): string {
+export function generateCacheKey(baseKey: string, params: Record<string, any>): string {
 	// Sort params to ensure consistent key generation
 	const sortedParams = Object.keys(params)
 		.sort()
@@ -79,14 +75,10 @@ export function createCachedQuery<TArgs extends any[], TResult>(
 			args.length === 1 && typeof args[0] === "object" ? args[0] : { args },
 		);
 
-		const cachedFn = unstable_cache(
-			async () => fn(...args),
-			[cacheKey],
-			{
-				tags: options.tags,
-				revalidate: options.revalidate ?? ANALYTICS_CACHE_TTL.MEDIUM,
-			},
-		);
+		const cachedFn = unstable_cache(async () => fn(...args), [cacheKey], {
+			tags: options.tags,
+			revalidate: options.revalidate ?? ANALYTICS_CACHE_TTL.MEDIUM,
+		});
 
 		return cachedFn();
 	};

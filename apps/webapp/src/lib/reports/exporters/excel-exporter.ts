@@ -40,10 +40,7 @@ async function createSummarySheet(
 	const sheet = workbook.addWorksheet("Summary");
 
 	// Set column widths
-	sheet.columns = [
-		{ width: 30 },
-		{ width: 25 },
-	];
+	sheet.columns = [{ width: 30 }, { width: 25 }];
 
 	// Title
 	sheet.mergeCells("A1:B1");
@@ -106,10 +103,7 @@ async function createSummarySheet(
 	sheet.addRow(["Vacation Days (Approved)", reportData.absences.vacation.approved]);
 	sheet.addRow(["Sick Days (Approved)", reportData.absences.sick.approved]);
 	sheet.addRow(["Home Office Days", reportData.absences.homeOffice.days]);
-	sheet.addRow([
-		"Home Office Hours Worked",
-		reportData.absences.homeOffice.hoursWorked,
-	]);
+	sheet.addRow(["Home Office Hours Worked", reportData.absences.homeOffice.hoursWorked]);
 
 	sheet.addRow([]);
 
@@ -122,10 +116,7 @@ async function createSummarySheet(
 		fgColor: { argb: "FFE0E0E0" },
 	};
 
-	sheet.addRow([
-		"Attendance Percentage",
-		`${reportData.complianceMetrics.attendancePercentage}%`,
-	]);
+	sheet.addRow(["Attendance Percentage", `${reportData.complianceMetrics.attendancePercentage}%`]);
 	sheet.addRow([
 		"Overtime Hours",
 		Math.round((reportData.complianceMetrics.overtimeMinutes / 60) * 100) / 100,
@@ -284,10 +275,7 @@ async function createHomeOfficeSheet(
 
 	// Summary
 	sheet.addRow(["Total Home Office Days", reportData.absences.homeOffice.days]);
-	sheet.addRow([
-		"Total Hours Worked from Home",
-		reportData.absences.homeOffice.hoursWorked,
-	]);
+	sheet.addRow(["Total Hours Worked from Home", reportData.absences.homeOffice.hoursWorked]);
 
 	sheet.addRow([]);
 	sheet.addRow([]);
@@ -313,10 +301,7 @@ async function createHomeOfficeSheet(
 
 	// Add total
 	sheet.addRow([]);
-	const totalRow = sheet.addRow([
-		"TOTAL",
-		reportData.absences.homeOffice.hoursWorked,
-	]);
+	const totalRow = sheet.addRow(["TOTAL", reportData.absences.homeOffice.hoursWorked]);
 	totalRow.font = { bold: true };
 	totalRow.fill = {
 		type: "pattern",

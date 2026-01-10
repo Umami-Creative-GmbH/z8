@@ -4,8 +4,8 @@
  * Generates various audit reports for compliance and analysis purposes.
  */
 
-import { getAuditLogs, getAuditLogStats, type AuditLogResult } from "@/lib/query/audit.queries";
 import { format } from "@/lib/datetime/luxon-utils";
+import { type AuditLogResult, getAuditLogStats, getAuditLogs } from "@/lib/query/audit.queries";
 
 export interface AuditReportOptions {
 	organizationId: string;
@@ -56,7 +56,7 @@ export interface ComplianceReport {
  */
 export async function generateDailySummary(
 	organizationId: string,
-	date: Date
+	date: Date,
 ): Promise<DailySummary> {
 	const startOfDay = new Date(date);
 	startOfDay.setHours(0, 0, 0, 0);
@@ -91,7 +91,7 @@ export async function generateDailySummary(
 export async function generateUserActivityReport(
 	organizationId: string,
 	startDate: Date,
-	endDate: Date
+	endDate: Date,
 ): Promise<UserActivityReport[]> {
 	const result = await getAuditLogs({
 		organizationId,
@@ -135,7 +135,7 @@ export async function generateUserActivityReport(
 		}
 
 		const sortedActions = data.actions.sort(
-			(a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+			(a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
 		);
 
 		reports.push({
@@ -157,7 +157,7 @@ export async function generateUserActivityReport(
  * Generate a comprehensive compliance report
  */
 export async function generateComplianceReport(
-	options: AuditReportOptions
+	options: AuditReportOptions,
 ): Promise<ComplianceReport> {
 	const { organizationId, startDate, endDate } = options;
 
@@ -209,7 +209,7 @@ export async function generateComplianceReport(
 			log.action.startsWith("auth.") ||
 			log.action.includes("permission") ||
 			log.action.includes("rejected") ||
-			log.action.includes("failed")
+			log.action.includes("failed"),
 	);
 
 	// Generate warnings
@@ -301,7 +301,7 @@ export function exportComplianceReportAsCsv(report: ComplianceReport): string {
 	lines.push("User,Email,Total Actions,First Action,Last Action");
 	for (const user of report.topUsers) {
 		lines.push(
-			`"${user.userName}","${user.userEmail}",${user.totalActions},"${format(user.firstAction, "yyyy-MM-dd HH:mm")}","${format(user.lastAction, "yyyy-MM-dd HH:mm")}"`
+			`"${user.userName}","${user.userEmail}",${user.totalActions},"${format(user.firstAction, "yyyy-MM-dd HH:mm")}","${format(user.lastAction, "yyyy-MM-dd HH:mm")}"`,
 		);
 	}
 	lines.push("");

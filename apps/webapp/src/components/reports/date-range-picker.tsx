@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { CalendarIcon } from "lucide-react";
-import { format } from "@/lib/datetime/luxon-utils";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -13,9 +12,10 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
+import { format } from "@/lib/datetime/luxon-utils";
 import { getDateRangeForPreset, getPresetLabel } from "@/lib/reports/date-ranges";
 import type { DateRange, PeriodPreset } from "@/lib/reports/types";
+import { cn } from "@/lib/utils";
 
 interface DateRangePickerProps {
 	value: DateRange;
@@ -85,8 +85,7 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
 							{value?.start ? (
 								value.end ? (
 									<>
-										{format(value.start, "LLL dd, y")} -{" "}
-										{format(value.end, "LLL dd, y")}
+										{format(value.start, "LLL dd, y")} - {format(value.end, "LLL dd, y")}
 									</>
 								) : (
 									format(value.start, "LLL dd, y")

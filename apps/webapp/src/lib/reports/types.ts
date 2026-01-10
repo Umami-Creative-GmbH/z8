@@ -84,6 +84,10 @@ export interface ComplianceMetrics {
 	attendancePercentage: number;
 	overtimeMinutes: number;
 	underTimeMinutes: number;
+	/** Work schedule info for context */
+	scheduleInfo?: { name: string; source: string } | null;
+	/** Expected work minutes based on schedule */
+	expectedWorkMinutes?: number;
 }
 
 export interface ReportData {

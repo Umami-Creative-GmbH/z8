@@ -1,21 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { DateRangePicker } from "@/components/reports/date-range-picker";
+import { IconCalendarOff, IconCheck, IconClock, IconLoader2, IconUsers } from "@tabler/icons-react";
+import { useEffect, useState } from "react";
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import { toast } from "sonner";
 import { ExportButton } from "@/components/analytics/export-button";
+import { DateRangePicker } from "@/components/reports/date-range-picker";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { getDateRangeForPreset } from "@/lib/reports/date-ranges";
 import type { DateRange } from "@/lib/reports/types";
-import { IconUsers, IconClock, IconCalendarOff, IconCheck, IconLoader2 } from "@tabler/icons-react";
-import { toast } from "sonner";
-import { getTeamPerformanceData, getAbsencePatternsData } from "./actions";
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { getAbsencePatternsData, getTeamPerformanceData } from "./actions";
 
 export default function AnalyticsOverviewPage() {
-	const [dateRange, setDateRange] = useState<DateRange>(
-		getDateRangeForPreset("current_month")
-	);
+	const [dateRange, setDateRange] = useState<DateRange>(getDateRangeForPreset("current_month"));
 	const [loading, setLoading] = useState(true);
 	const [teamData, setTeamData] = useState<any>(null);
 	const [absenceData, setAbsenceData] = useState<any>(null);
@@ -49,24 +47,28 @@ export default function AnalyticsOverviewPage() {
 
 	// Calculate KPIs from loaded data
 	const kpiData = {
-		totalEmployees: teamData?.teams.reduce((sum: number, team: any) => sum + team.employeeCount, 0) || 0,
+		totalEmployees:
+			teamData?.teams.reduce((sum: number, team: any) => sum + team.employeeCount, 0) || 0,
 		avgWorkHours: teamData?.organizationTotal
-			? teamData.organizationTotal / (teamData.teams.reduce((sum: number, team: any) => sum + team.employeeCount, 0) || 1)
+			? teamData.organizationTotal /
+				(teamData.teams.reduce((sum: number, team: any) => sum + team.employeeCount, 0) || 1)
 			: 0,
 		absenceRate: absenceData?.overall.totalDays || 0,
 		approvalRate: 95.0, // TODO: Calculate from manager effectiveness data
 	};
 
 	// Prepare chart data
-	const workHoursChartData = teamData?.teams.map((team: any) => ({
-		team: team.teamName,
-		hours: team.totalHours,
-	})) || [];
+	const workHoursChartData =
+		teamData?.teams.map((team: any) => ({
+			team: team.teamName,
+			hours: team.totalHours,
+		})) || [];
 
-	const absencePatternsChartData = absenceData?.byCategory.map((cat: any) => ({
-		category: cat.categoryName,
-		days: cat.totalDays,
-	})) || [];
+	const absencePatternsChartData =
+		absenceData?.byCategory.map((cat: any) => ({
+			category: cat.categoryName,
+			days: cat.totalDays,
+		})) || [];
 
 	return (
 		<div className="space-y-6 px-4 lg:px-6">
@@ -105,9 +107,7 @@ export default function AnalyticsOverviewPage() {
 							</CardHeader>
 							<CardContent>
 								<div className="text-2xl font-bold">{kpiData.totalEmployees}</div>
-								<p className="text-xs text-muted-foreground">
-									Active employees in organization
-								</p>
+								<p className="text-xs text-muted-foreground">Active employees in organization</p>
 							</CardContent>
 						</Card>
 
@@ -117,12 +117,8 @@ export default function AnalyticsOverviewPage() {
 								<IconClock className="size-4 text-muted-foreground" />
 							</CardHeader>
 							<CardContent>
-								<div className="text-2xl font-bold">
-									{kpiData.avgWorkHours.toFixed(1)}h
-								</div>
-								<p className="text-xs text-muted-foreground">
-									Per employee in selected period
-								</p>
+								<div className="text-2xl font-bold">{kpiData.avgWorkHours.toFixed(1)}h</div>
+								<p className="text-xs text-muted-foreground">Per employee in selected period</p>
 							</CardContent>
 						</Card>
 
@@ -132,12 +128,8 @@ export default function AnalyticsOverviewPage() {
 								<IconCalendarOff className="size-4 text-muted-foreground" />
 							</CardHeader>
 							<CardContent>
-								<div className="text-2xl font-bold">
-									{kpiData.absenceRate.toFixed(0)}
-								</div>
-								<p className="text-xs text-muted-foreground">
-									Total days in selected period
-								</p>
+								<div className="text-2xl font-bold">{kpiData.absenceRate.toFixed(0)}</div>
+								<p className="text-xs text-muted-foreground">Total days in selected period</p>
 							</CardContent>
 						</Card>
 
@@ -147,12 +139,8 @@ export default function AnalyticsOverviewPage() {
 								<IconCheck className="size-4 text-muted-foreground" />
 							</CardHeader>
 							<CardContent>
-								<div className="text-2xl font-bold">
-									{kpiData.approvalRate.toFixed(1)}%
-								</div>
-								<p className="text-xs text-muted-foreground">
-									Of submitted requests approved
-								</p>
+								<div className="text-2xl font-bold">{kpiData.approvalRate.toFixed(1)}%</div>
+								<p className="text-xs text-muted-foreground">Of submitted requests approved</p>
 							</CardContent>
 						</Card>
 					</div>
@@ -162,9 +150,7 @@ export default function AnalyticsOverviewPage() {
 						<Card>
 							<CardHeader>
 								<CardTitle>Work Hours by Team</CardTitle>
-								<CardDescription>
-									Total work hours logged per team
-								</CardDescription>
+								<CardDescription>Total work hours logged per team</CardDescription>
 							</CardHeader>
 							<CardContent>
 								{workHoursChartData.length > 0 ? (
@@ -179,12 +165,7 @@ export default function AnalyticsOverviewPage() {
 									>
 										<BarChart data={workHoursChartData}>
 											<CartesianGrid strokeDasharray="3 3" />
-											<XAxis
-												dataKey="team"
-												tickLine={false}
-												tickMargin={10}
-												axisLine={false}
-											/>
+											<XAxis dataKey="team" tickLine={false} tickMargin={10} axisLine={false} />
 											<YAxis tickLine={false} axisLine={false} />
 											<ChartTooltip content={<ChartTooltipContent />} />
 											<Bar dataKey="hours" fill="var(--color-hours)" radius={4} />
@@ -201,9 +182,7 @@ export default function AnalyticsOverviewPage() {
 						<Card>
 							<CardHeader>
 								<CardTitle>Absence Patterns</CardTitle>
-								<CardDescription>
-									Absence distribution by category
-								</CardDescription>
+								<CardDescription>Absence distribution by category</CardDescription>
 							</CardHeader>
 							<CardContent>
 								{absencePatternsChartData.length > 0 ? (
@@ -218,12 +197,7 @@ export default function AnalyticsOverviewPage() {
 									>
 										<BarChart data={absencePatternsChartData}>
 											<CartesianGrid strokeDasharray="3 3" />
-											<XAxis
-												dataKey="category"
-												tickLine={false}
-												tickMargin={10}
-												axisLine={false}
-											/>
+											<XAxis dataKey="category" tickLine={false} tickMargin={10} axisLine={false} />
 											<YAxis tickLine={false} axisLine={false} />
 											<ChartTooltip content={<ChartTooltipContent />} />
 											<Bar dataKey="days" fill="var(--color-days)" radius={4} />

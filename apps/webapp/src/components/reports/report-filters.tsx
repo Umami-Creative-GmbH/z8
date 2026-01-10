@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { FileBarChart } from "lucide-react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -29,9 +29,7 @@ export function ReportFilters({
 	isGenerating = false,
 }: ReportFiltersProps) {
 	const [selectedEmployeeId, setSelectedEmployeeId] = useState(currentEmployeeId);
-	const [dateRange, setDateRange] = useState<DateRange>(
-		getDateRangeForPreset("current_month"),
-	);
+	const [dateRange, setDateRange] = useState<DateRange>(getDateRangeForPreset("current_month"));
 
 	const showEmployeeSelector = employees.length > 1;
 
@@ -43,7 +41,9 @@ export function ReportFilters({
 		<Card>
 			<CardContent className="pt-6">
 				<div className="flex flex-col gap-4">
-					<div className={`grid gap-4 ${showEmployeeSelector ? "md:grid-cols-2" : "md:grid-cols-1"}`}>
+					<div
+						className={`grid gap-4 ${showEmployeeSelector ? "md:grid-cols-2" : "md:grid-cols-1"}`}
+					>
 						{/* Employee Selector - only show if user has access to multiple employees */}
 						{showEmployeeSelector && (
 							<div className="space-y-2">

@@ -1,15 +1,12 @@
 "use client";
 
-import { useState } from "react";
 import { Download, FileSpreadsheet, FileText } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useState } from "react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import { exportToCSV, generateCSVFilename } from "@/lib/reports/exporters/csv-exporter";
 import { exportToExcel, generateExcelFilename } from "@/lib/reports/exporters/excel-exporter";
-import {
-	exportToPDF,
-	generatePDFFilename,
-} from "@/lib/reports/exporters/pdf-exporter";
+import { exportToPDF, generatePDFFilename } from "@/lib/reports/exporters/pdf-exporter";
 import type { ReportData } from "@/lib/reports/types";
 
 interface ExportButtonsProps {
@@ -36,8 +33,7 @@ export function ExportButtons({ reportData }: ExportButtonsProps) {
 			} else if (format === "excel") {
 				data = await exportToExcel(reportData);
 				filename = generateExcelFilename(reportData);
-				mimeType =
-					"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+				mimeType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 			} else {
 				data = exportToCSV(reportData);
 				filename = generateCSVFilename(reportData);
@@ -62,9 +58,7 @@ export function ExportButtons({ reportData }: ExportButtonsProps) {
 			console.error("Export failed:", error);
 			toast.error("Export failed", {
 				description:
-					error instanceof Error
-						? error.message
-						: "An error occurred while exporting the report",
+					error instanceof Error ? error.message : "An error occurred while exporting the report",
 			});
 		} finally {
 			setLoading(null);

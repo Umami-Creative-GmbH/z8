@@ -3,7 +3,7 @@
  * Uses @react-pdf/renderer for React-based PDF generation
  */
 
-import { Document, Font, Page, StyleSheet, Text, View, pdf } from "@react-pdf/renderer";
+import { Document, Font, Page, pdf, StyleSheet, Text, View } from "@react-pdf/renderer";
 import { format } from "@/lib/datetime/luxon-utils";
 import type { ReportData } from "../types";
 
@@ -128,9 +128,7 @@ const EmployeeReportPDF = ({ reportData }: { reportData: ReportData }) => (
 			</View>
 			<View style={styles.row}>
 				<Text style={styles.label}>Generated On:</Text>
-				<Text style={styles.value}>
-					{format(new Date(), "yyyy-MM-dd HH:mm:ss")}
-				</Text>
+				<Text style={styles.value}>{format(new Date(), "yyyy-MM-dd HH:mm:ss")}</Text>
 			</View>
 
 			{/* Work Hours Summary */}
@@ -182,15 +180,11 @@ const EmployeeReportPDF = ({ reportData }: { reportData: ReportData }) => (
 			<Text style={{ fontWeight: "bold", marginBottom: 5 }}>By Type:</Text>
 			<View style={styles.row}>
 				<Text style={styles.label}>Vacation (Approved):</Text>
-				<Text style={styles.value}>
-					{reportData.absences.vacation.approved} days
-				</Text>
+				<Text style={styles.value}>{reportData.absences.vacation.approved} days</Text>
 			</View>
 			<View style={styles.row}>
 				<Text style={styles.label}>Vacation (Pending):</Text>
-				<Text style={styles.value}>
-					{reportData.absences.vacation.pending} days
-				</Text>
+				<Text style={styles.value}>{reportData.absences.vacation.pending} days</Text>
 			</View>
 			<View style={styles.row}>
 				<Text style={styles.label}>Sick Leave (Approved):</Text>
@@ -203,26 +197,20 @@ const EmployeeReportPDF = ({ reportData }: { reportData: ReportData }) => (
 
 			{/* HOME OFFICE SUMMARY - TAX RELEVANT */}
 			<View style={styles.taxSection}>
-				<Text style={styles.taxTitle}>
-					HOME OFFICE SUMMARY (TAX RELEVANT)
-				</Text>
+				<Text style={styles.taxTitle}>HOME OFFICE SUMMARY (TAX RELEVANT)</Text>
 				<View style={styles.row}>
 					<Text style={styles.label}>Total Home Office Days:</Text>
 					<Text style={styles.value}>{reportData.absences.homeOffice.days}</Text>
 				</View>
 				<View style={styles.row}>
 					<Text style={styles.label}>Hours Worked from Home:</Text>
-					<Text style={styles.value}>
-						{reportData.absences.homeOffice.hoursWorked}h
-					</Text>
+					<Text style={styles.value}>{reportData.absences.homeOffice.hoursWorked}h</Text>
 				</View>
 
 				{reportData.absences.homeOffice.dateDetails.length > 0 && (
 					<>
 						<View style={styles.spacer} />
-						<Text style={{ fontWeight: "bold", marginBottom: 5 }}>
-							Date-by-Date Breakdown:
-						</Text>
+						<Text style={{ fontWeight: "bold", marginBottom: 5 }}>Date-by-Date Breakdown:</Text>
 						<View style={styles.table}>
 							<View style={styles.tableHeader}>
 								<Text style={styles.tableCellLabel}>Date</Text>
@@ -230,9 +218,7 @@ const EmployeeReportPDF = ({ reportData }: { reportData: ReportData }) => (
 							</View>
 							{reportData.absences.homeOffice.dateDetails.map((detail) => (
 								<View key={detail.date.toISOString()} style={styles.tableRow}>
-									<Text style={styles.tableCellLabel}>
-										{format(detail.date, "yyyy-MM-dd")}
-									</Text>
+									<Text style={styles.tableCellLabel}>{format(detail.date, "yyyy-MM-dd")}</Text>
 									<Text style={styles.tableCell}>{detail.hours}h</Text>
 								</View>
 							))}
@@ -245,9 +231,7 @@ const EmployeeReportPDF = ({ reportData }: { reportData: ReportData }) => (
 			<Text style={styles.sectionHeader}>Compliance Metrics</Text>
 			<View style={styles.row}>
 				<Text style={styles.label}>Attendance Percentage:</Text>
-				<Text style={styles.value}>
-					{reportData.complianceMetrics.attendancePercentage}%
-				</Text>
+				<Text style={styles.value}>{reportData.complianceMetrics.attendancePercentage}%</Text>
 			</View>
 			<View style={styles.row}>
 				<Text style={styles.label}>Overtime:</Text>
@@ -258,8 +242,7 @@ const EmployeeReportPDF = ({ reportData }: { reportData: ReportData }) => (
 			<View style={styles.row}>
 				<Text style={styles.label}>Undertime:</Text>
 				<Text style={styles.value}>
-					{Math.round((reportData.complianceMetrics.underTimeMinutes / 60) * 100) / 100}
-					h
+					{Math.round((reportData.complianceMetrics.underTimeMinutes / 60) * 100) / 100}h
 				</Text>
 			</View>
 

@@ -98,9 +98,7 @@ export function exportToCSV(reportData: ReportData): string {
 	lines.push("HOME OFFICE SUMMARY (TAX RELEVANT)");
 	lines.push("========================================");
 	lines.push(`Total Home Office Days,${reportData.absences.homeOffice.days}`);
-	lines.push(
-		`Total Hours Worked from Home,${reportData.absences.homeOffice.hoursWorked}`,
-	);
+	lines.push(`Total Hours Worked from Home,${reportData.absences.homeOffice.hoursWorked}`);
 	lines.push("");
 
 	if (reportData.absences.homeOffice.dateDetails.length > 0) {

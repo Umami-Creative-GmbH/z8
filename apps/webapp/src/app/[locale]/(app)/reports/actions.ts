@@ -164,7 +164,7 @@ export async function generateReport(
 
 					return Effect.fail(error);
 				}),
-			Effect.provide(AppLayer),
+				Effect.provide(AppLayer),
 			);
 		},
 	);

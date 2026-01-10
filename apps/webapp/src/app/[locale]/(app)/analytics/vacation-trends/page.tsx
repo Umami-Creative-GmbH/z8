@@ -1,11 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { DateRangePicker } from "@/components/reports/date-range-picker";
+import { IconLoader2 } from "@tabler/icons-react";
+import { useEffect, useState } from "react";
+import { Bar, BarChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
+import { toast } from "sonner";
 import { ExportButton } from "@/components/analytics/export-button";
-import { getDateRangeForPreset } from "@/lib/reports/date-ranges";
-import type { DateRange } from "@/lib/reports/types";
+import { DateRangePicker } from "@/components/reports/date-range-picker";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	type ChartConfig,
+	ChartContainer,
+	ChartTooltip,
+	ChartTooltipContent,
+} from "@/components/ui/chart";
 import { Progress } from "@/components/ui/progress";
 import {
 	Table,
@@ -15,16 +22,12 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { IconLoader2 } from "@tabler/icons-react";
-import { toast } from "sonner";
+import { getDateRangeForPreset } from "@/lib/reports/date-ranges";
+import type { DateRange } from "@/lib/reports/types";
 import { getVacationTrendsData } from "../actions";
-import { Line, LineChart, Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
-import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 
 export default function VacationTrendsPage() {
-	const [dateRange, setDateRange] = useState<DateRange>(
-		getDateRangeForPreset("current_year")
-	);
+	const [dateRange, setDateRange] = useState<DateRange>(getDateRangeForPreset("current_year"));
 	const [loading, setLoading] = useState(true);
 	const [vacationData, setVacationData] = useState<any>(null);
 
@@ -95,18 +98,14 @@ export default function VacationTrendsPage() {
 					<Card>
 						<CardHeader>
 							<CardTitle>Vacation Utilization</CardTitle>
-							<CardDescription>
-								Overall vacation days usage across organization
-							</CardDescription>
+							<CardDescription>Overall vacation days usage across organization</CardDescription>
 						</CardHeader>
 						<CardContent>
 							<div className="space-y-4">
 								<div className="flex items-center justify-between">
 									<div className="space-y-1">
 										<p className="text-sm font-medium">Overall Utilization</p>
-										<p className="text-2xl font-bold">
-											{overallData.utilizationRate.toFixed(1)}%
-										</p>
+										<p className="text-2xl font-bold">{overallData.utilizationRate.toFixed(1)}%</p>
 									</div>
 									<div className="text-right text-sm text-muted-foreground">
 										<p>{overallData.totalDaysTaken} days taken</p>
@@ -122,9 +121,7 @@ export default function VacationTrendsPage() {
 					<Card>
 						<CardHeader>
 							<CardTitle>Monthly Vacation Usage</CardTitle>
-							<CardDescription>
-								Vacation days taken per month
-							</CardDescription>
+							<CardDescription>Vacation days taken per month</CardDescription>
 						</CardHeader>
 						<CardContent>
 							{monthlyUsageData.length > 0 ? (
@@ -139,12 +136,7 @@ export default function VacationTrendsPage() {
 								>
 									<LineChart data={monthlyUsageData}>
 										<CartesianGrid strokeDasharray="3 3" />
-										<XAxis
-											dataKey="month"
-											tickLine={false}
-											tickMargin={10}
-											axisLine={false}
-										/>
+										<XAxis dataKey="month" tickLine={false} tickMargin={10} axisLine={false} />
 										<YAxis tickLine={false} axisLine={false} />
 										<ChartTooltip content={<ChartTooltipContent />} />
 										<Line
@@ -168,9 +160,7 @@ export default function VacationTrendsPage() {
 					<Card>
 						<CardHeader>
 							<CardTitle>Vacation Balance</CardTitle>
-							<CardDescription>
-								Days allocated, taken, and remaining by employee
-							</CardDescription>
+							<CardDescription>Days allocated, taken, and remaining by employee</CardDescription>
 						</CardHeader>
 						<CardContent>
 							{employees.length === 0 ? (
@@ -191,24 +181,13 @@ export default function VacationTrendsPage() {
 									<TableBody>
 										{employees.map((emp: any) => (
 											<TableRow key={emp.employeeId}>
-												<TableCell className="font-medium">
-													{emp.employeeName}
-												</TableCell>
-												<TableCell className="text-right">
-													{emp.daysAllocated}
-												</TableCell>
-												<TableCell className="text-right">
-													{emp.daysTaken}
-												</TableCell>
-												<TableCell className="text-right">
-													{emp.daysRemaining}
-												</TableCell>
+												<TableCell className="font-medium">{emp.employeeName}</TableCell>
+												<TableCell className="text-right">{emp.daysAllocated}</TableCell>
+												<TableCell className="text-right">{emp.daysTaken}</TableCell>
+												<TableCell className="text-right">{emp.daysRemaining}</TableCell>
 												<TableCell>
 													<div className="flex items-center gap-2">
-														<Progress
-															value={emp.utilizationRate}
-															className="h-2 w-[100px]"
-														/>
+														<Progress value={emp.utilizationRate} className="h-2 w-[100px]" />
 														<span className="text-sm text-muted-foreground">
 															{emp.utilizationRate.toFixed(0)}%
 														</span>
@@ -226,9 +205,7 @@ export default function VacationTrendsPage() {
 					<Card>
 						<CardHeader>
 							<CardTitle>Peak Vacation Months</CardTitle>
-							<CardDescription>
-								Months with highest vacation activity
-							</CardDescription>
+							<CardDescription>Months with highest vacation activity</CardDescription>
 						</CardHeader>
 						<CardContent>
 							{peakMonthsData.length > 0 ? (
@@ -243,12 +220,7 @@ export default function VacationTrendsPage() {
 								>
 									<BarChart data={peakMonthsData}>
 										<CartesianGrid strokeDasharray="3 3" />
-										<XAxis
-											dataKey="month"
-											tickLine={false}
-											tickMargin={10}
-											axisLine={false}
-										/>
+										<XAxis dataKey="month" tickLine={false} tickMargin={10} axisLine={false} />
 										<YAxis tickLine={false} axisLine={false} />
 										<ChartTooltip content={<ChartTooltipContent />} />
 										<Bar dataKey="count" fill="var(--color-count)" radius={4} />

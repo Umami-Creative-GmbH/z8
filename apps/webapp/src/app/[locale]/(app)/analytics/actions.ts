@@ -10,26 +10,23 @@
  * employee record, never from client input. This ensures multi-tenant isolation.
  */
 
-import { Effect } from "effect";
 import { eq } from "drizzle-orm";
-import { AppLayer } from "@/lib/effect/runtime";
-import {
-	runServerActionSafe,
-	type ServerActionResult,
-} from "@/lib/effect/result";
-import { AnalyticsService } from "@/lib/effect/services/analytics.service";
-import { AuthService } from "@/lib/effect/services/auth.service";
-import { DatabaseService } from "@/lib/effect/services/database.service";
+import { Effect } from "effect";
 import { employee } from "@/db/schema";
-import { AuthorizationError, NotFoundError } from "@/lib/effect/errors";
 import type {
+	AbsencePatternsData,
+	DateRange,
+	ManagerEffectivenessData,
 	TeamPerformanceData,
 	VacationTrendsData,
 	WorkHoursAnalyticsData,
-	AbsencePatternsData,
-	ManagerEffectivenessData,
-	DateRange,
 } from "@/lib/analytics/types";
+import { AuthorizationError, NotFoundError } from "@/lib/effect/errors";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import { AppLayer } from "@/lib/effect/runtime";
+import { AnalyticsService } from "@/lib/effect/services/analytics.service";
+import { AuthService } from "@/lib/effect/services/auth.service";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 
 /**
  * Get current employee and check if they're a manager or admin
@@ -61,10 +58,7 @@ function checkManagerOrAdminAccess() {
 		);
 
 		// Check role
-		if (
-			currentEmployee.role !== "admin" &&
-			currentEmployee.role !== "manager"
-		) {
+		if (currentEmployee.role !== "admin" && currentEmployee.role !== "manager") {
 			yield* _(
 				Effect.fail(
 					new AuthorizationError({

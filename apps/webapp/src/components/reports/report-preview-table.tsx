@@ -1,6 +1,5 @@
 "use client";
 
-import { format } from "@/lib/datetime/luxon-utils";
 import { Home } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -11,6 +10,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { format } from "@/lib/datetime/luxon-utils";
 import type { ReportData } from "@/lib/reports/types";
 
 interface ReportPreviewTableProps {
@@ -45,12 +45,8 @@ export function ReportPreviewTable({ reportData }: ReportPreviewTableProps) {
 								))}
 								<TableRow className="bg-muted/50 font-bold">
 									<TableCell>Total</TableCell>
-									<TableCell className="text-right">
-										{reportData.workHours.totalHours}h
-									</TableCell>
-									<TableCell className="text-right">
-										{reportData.workHours.workDays}
-									</TableCell>
+									<TableCell className="text-right">{reportData.workHours.totalHours}h</TableCell>
+									<TableCell className="text-right">{reportData.workHours.workDays}</TableCell>
 								</TableRow>
 							</TableBody>
 						</Table>
@@ -81,9 +77,7 @@ export function ReportPreviewTable({ reportData }: ReportPreviewTableProps) {
 								))}
 								<TableRow className="bg-muted/50 font-bold">
 									<TableCell>Total</TableCell>
-									<TableCell className="text-right">
-										{reportData.absences.totalDays}
-									</TableCell>
+									<TableCell className="text-right">{reportData.absences.totalDays}</TableCell>
 								</TableRow>
 							</TableBody>
 						</Table>
@@ -106,17 +100,11 @@ export function ReportPreviewTable({ reportData }: ReportPreviewTableProps) {
 					<div className="mb-6 grid gap-4 md:grid-cols-2">
 						<div className="space-y-1">
 							<p className="text-sm text-muted-foreground">Total Home Office Days</p>
-							<p className="text-2xl font-bold">
-								{reportData.absences.homeOffice.days}
-							</p>
+							<p className="text-2xl font-bold">{reportData.absences.homeOffice.days}</p>
 						</div>
 						<div className="space-y-1">
-							<p className="text-sm text-muted-foreground">
-								Total Hours Worked from Home
-							</p>
-							<p className="text-2xl font-bold">
-								{reportData.absences.homeOffice.hoursWorked}h
-							</p>
+							<p className="text-sm text-muted-foreground">Total Hours Worked from Home</p>
+							<p className="text-2xl font-bold">{reportData.absences.homeOffice.hoursWorked}h</p>
 						</div>
 					</div>
 
@@ -174,18 +162,13 @@ export function ReportPreviewTable({ reportData }: ReportPreviewTableProps) {
 						<div className="flex items-center justify-between">
 							<span className="text-sm font-medium">Overtime</span>
 							<span className="text-lg font-bold">
-								{Math.round((reportData.complianceMetrics.overtimeMinutes / 60) * 100) /
-									100}
-								h
+								{Math.round((reportData.complianceMetrics.overtimeMinutes / 60) * 100) / 100}h
 							</span>
 						</div>
 						<div className="flex items-center justify-between">
 							<span className="text-sm font-medium">Undertime</span>
 							<span className="text-lg font-bold">
-								{Math.round(
-									(reportData.complianceMetrics.underTimeMinutes / 60) * 100,
-								) / 100}
-								h
+								{Math.round((reportData.complianceMetrics.underTimeMinutes / 60) * 100) / 100}h
 							</span>
 						</div>
 					</div>

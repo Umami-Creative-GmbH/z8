@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import { AlertCircle, FileBarChart } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Card, CardContent } from "@/components/ui/card";
+import { useState } from "react";
 import { toast } from "sonner";
 import { generateReport } from "@/app/[locale]/(app)/reports/actions";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Card, CardContent } from "@/components/ui/card";
 import type { AccessibleEmployee, DateRange, ReportData } from "@/lib/reports/types";
 import { ExportButtons } from "./export-buttons";
 import { ReportFilters } from "./report-filters";
@@ -17,10 +17,7 @@ interface ReportsContainerProps {
 	currentEmployeeId: string;
 }
 
-export function ReportsContainer({
-	employees,
-	currentEmployeeId,
-}: ReportsContainerProps) {
+export function ReportsContainer({ employees, currentEmployeeId }: ReportsContainerProps) {
 	const [reportData, setReportData] = useState<ReportData | null>(null);
 	const [isGenerating, setIsGenerating] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -44,8 +41,7 @@ export function ReportsContainer({
 				});
 			}
 		} catch (err) {
-			const errorMessage =
-				err instanceof Error ? err.message : "An unexpected error occurred";
+			const errorMessage = err instanceof Error ? err.message : "An unexpected error occurred";
 			setError(errorMessage);
 			toast.error("Failed to generate report", {
 				description: errorMessage,

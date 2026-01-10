@@ -19,9 +19,7 @@ export function ReportSummaryCards({ reportData }: ReportSummaryCardsProps) {
 				</CardHeader>
 				<CardContent>
 					<div className="text-2xl font-bold">{reportData.workHours.totalHours}h</div>
-					<p className="text-xs text-muted-foreground">
-						{reportData.workHours.workDays} work days
-					</p>
+					<p className="text-xs text-muted-foreground">{reportData.workHours.workDays} work days</p>
 					<p className="text-xs text-muted-foreground">
 						Avg: {reportData.workHours.averagePerDay}h/day
 					</p>
@@ -31,15 +29,11 @@ export function ReportSummaryCards({ reportData }: ReportSummaryCardsProps) {
 			{/* Home Office Days */}
 			<Card className="border-amber-500">
 				<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-					<CardTitle className="text-sm font-medium">
-						Home Office Days
-					</CardTitle>
+					<CardTitle className="text-sm font-medium">Home Office Days</CardTitle>
 					<Home className="h-4 w-4 text-amber-500" />
 				</CardHeader>
 				<CardContent>
-					<div className="text-2xl font-bold">
-						{reportData.absences.homeOffice.days}
-					</div>
+					<div className="text-2xl font-bold">{reportData.absences.homeOffice.days}</div>
 					<p className="text-xs text-muted-foreground">
 						{reportData.absences.homeOffice.hoursWorked}h worked from home
 					</p>
@@ -54,9 +48,7 @@ export function ReportSummaryCards({ reportData }: ReportSummaryCardsProps) {
 					<Umbrella className="h-4 w-4 text-muted-foreground" />
 				</CardHeader>
 				<CardContent>
-					<div className="text-2xl font-bold">
-						{reportData.absences.vacation.approved}
-					</div>
+					<div className="text-2xl font-bold">{reportData.absences.vacation.approved}</div>
 					<p className="text-xs text-muted-foreground">
 						{reportData.absences.vacation.pending} pending
 					</p>
