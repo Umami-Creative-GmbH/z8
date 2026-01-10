@@ -3,12 +3,7 @@ import { z } from "zod";
 /**
  * Schema for calendar event types
  */
-export const calendarEventTypeSchema = z.enum([
-	"holiday",
-	"absence",
-	"time_entry",
-	"work_period",
-]);
+export const calendarEventTypeSchema = z.enum(["holiday", "absence", "time_entry", "work_period"]);
 
 /**
  * Base calendar event schema
@@ -18,10 +13,11 @@ export const calendarEventSchema = z.object({
 	id: z.string(),
 	type: calendarEventTypeSchema,
 	date: z.coerce.date(),
+	endDate: z.coerce.date().optional(), // For multi-day events (absences, holidays)
 	title: z.string(),
 	description: z.string().optional(),
 	color: z.string(),
-	metadata: z.record(z.any()),
+	metadata: z.record(z.string(), z.any()),
 });
 
 /**

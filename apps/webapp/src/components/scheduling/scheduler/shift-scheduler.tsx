@@ -1,0 +1,369 @@
+"use client";
+
+// Temporal polyfill must be imported before Schedule-X
+import "temporal-polyfill/global";
+
+import { createViewMonthGrid, createViewWeek } from "@schedule-x/calendar";
+import { createDragAndDropPlugin } from "@schedule-x/drag-and-drop";
+import { createEventModalPlugin } from "@schedule-x/event-modal";
+import { ScheduleXCalendar, useCalendarApp } from "@schedule-x/react";
+import "@schedule-x/theme-default/dist/index.css";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTheme } from "next-themes";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
+import {
+	getIncompleteDays,
+	getShifts,
+	getShiftTemplates,
+	publishShifts,
+	upsertShift,
+} from "@/app/[locale]/(app)/scheduling/actions";
+import type {
+	DateRange,
+	ShiftTemplate,
+	ShiftWithRelations,
+} from "@/app/[locale]/(app)/scheduling/types";
+import { queryKeys } from "@/lib/query/keys";
+import { ShiftDialog } from "../shifts/shift-dialog";
+import { PublishFab } from "./publish-fab";
+import { TemplateSidebar } from "./template-sidebar";
+
+interface ShiftSchedulerProps {
+	organizationId: string;
+	employeeId: string;
+	isManager: boolean;
+}
+
+// Convert shift to Schedule-X event format
+function shiftToEvent(shift: ShiftWithRelations) {
+	const startDate = new Date(shift.date);
+	const [startHours, startMinutes] = shift.startTime.split(":").map(Number);
+	startDate.setHours(startHours, startMinutes, 0, 0);
+
+	const endDate = new Date(shift.date);
+	const [endHours, endMinutes] = shift.endTime.split(":").map(Number);
+	endDate.setHours(endHours, endMinutes, 0, 0);
+
+	const isOpenShift = !shift.employeeId;
+	const isDraft = shift.status === "draft";
+
+	let title = isOpenShift
+		? "Open Shift"
+		: `${shift.employee?.firstName || ""} ${shift.employee?.lastName || ""}`.trim() || "Assigned";
+
+	if (isDraft) {
+		title = `[Draft] ${title}`;
+	}
+
+	return {
+		id: shift.id,
+		title,
+		start: formatDateForScheduleX(startDate),
+		end: formatDateForScheduleX(endDate),
+		calendarId: isOpenShift ? "open" : isDraft ? "draft" : "published",
+		_shiftData: shift,
+	};
+}
+
+function formatDateForScheduleX(date: Date): string {
+	const year = date.getFullYear();
+	const month = String(date.getMonth() + 1).padStart(2, "0");
+	const day = String(date.getDate()).padStart(2, "0");
+	const hours = String(date.getHours()).padStart(2, "0");
+	const minutes = String(date.getMinutes()).padStart(2, "0");
+	return `${year}-${month}-${day} ${hours}:${minutes}`;
+}
+
+function getWeekDateRange(): DateRange {
+	const today = new Date();
+	const dayOfWeek = today.getDay();
+	const start = new Date(today);
+	start.setDate(today.getDate() - dayOfWeek);
+	start.setHours(0, 0, 0, 0);
+
+	const end = new Date(start);
+	end.setDate(start.getDate() + 6);
+	end.setHours(23, 59, 59, 999);
+
+	return { start, end };
+}
+
+export function ShiftScheduler({
+	organizationId,
+	employeeId: _employeeId,
+	isManager,
+}: ShiftSchedulerProps) {
+	const queryClient = useQueryClient();
+	const { resolvedTheme } = useTheme();
+	const [dateRange, setDateRange] = useState<DateRange>(getWeekDateRange);
+	const [selectedShift, setSelectedShift] = useState<ShiftWithRelations | null>(null);
+	const [isShiftDialogOpen, setIsShiftDialogOpen] = useState(false);
+	const [newShiftDate, setNewShiftDate] = useState<Date | null>(null);
+	const isDark = resolvedTheme === "dark";
+
+	// Fetch shifts
+	const { data: shiftsResult, isLoading: shiftsLoading } = useQuery({
+		queryKey: queryKeys.shifts.list(organizationId, dateRange),
+		queryFn: async () => {
+			const result = await getShifts({
+				startDate: dateRange.start,
+				endDate: dateRange.end,
+				includeOpenShifts: true,
+			});
+			if (!result.success) throw new Error(result.error);
+			return result.data;
+		},
+	});
+
+	// Fetch templates for sidebar
+	const { data: templatesResult } = useQuery({
+		queryKey: queryKeys.shiftTemplates.list(organizationId),
+		queryFn: async () => {
+			const result = await getShiftTemplates();
+			if (!result.success) throw new Error(result.error);
+			return result.data;
+		},
+		enabled: isManager,
+	});
+
+	// Fetch incomplete days for warnings
+	const { data: incompleteDaysResult } = useQuery({
+		queryKey: queryKeys.shifts.incomplete(organizationId, dateRange),
+		queryFn: async () => {
+			const result = await getIncompleteDays(dateRange);
+			if (!result.success) throw new Error(result.error);
+			return result.data;
+		},
+		enabled: isManager,
+	});
+
+	const shifts = shiftsResult || [];
+	const templates = templatesResult || [];
+	// Reserved for future use - will be used for day header warnings
+	const _incompleteDays = incompleteDaysResult || [];
+
+	// Convert shifts to Schedule-X events
+	const events = useMemo(() => shifts.map(shiftToEvent), [shifts]);
+
+	// Mutation for updating shifts
+	const updateShiftMutation = useMutation({
+		mutationFn: async (data: {
+			id: string;
+			employeeId?: string | null;
+			date: Date;
+			startTime: string;
+			endTime: string;
+		}) => {
+			const result = await upsertShift({
+				id: data.id,
+				employeeId: data.employeeId,
+				date: data.date,
+				startTime: data.startTime,
+				endTime: data.endTime,
+			});
+			if (!result.success) throw new Error(result.error);
+			return result.data;
+		},
+		onSuccess: (result) => {
+			if (result.metadata.hasOverlap) {
+				toast.warning("Shift saved with overlap warning", {
+					description: `This shift overlaps with ${result.metadata.overlappingShifts.length} other shift(s)`,
+				});
+			} else {
+				toast.success("Shift updated");
+			}
+			queryClient.invalidateQueries({ queryKey: queryKeys.shifts.all });
+		},
+		onError: (error) => {
+			toast.error("Failed to update shift", { description: error.message });
+		},
+	});
+
+	// Mutation for publishing shifts
+	const publishMutation = useMutation({
+		mutationFn: async () => {
+			const result = await publishShifts(dateRange);
+			if (!result.success) throw new Error(result.error);
+			return result.data;
+		},
+		onSuccess: (result) => {
+			toast.success(`Published ${result.count} shift(s)`);
+			queryClient.invalidateQueries({ queryKey: queryKeys.shifts.all });
+		},
+		onError: (error) => {
+			toast.error("Failed to publish shifts", { description: error.message });
+		},
+	});
+
+	// Count draft shifts for publish button
+	const draftCount = shifts.filter((s) => s.status === "draft").length;
+
+	// Handle event click - Schedule-X passes (event, uiEvent)
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	const handleEventClick = useCallback(
+		(event: any, _e: UIEvent) => {
+			const eventId = event?.id as string | undefined;
+			if (!eventId) return;
+			const shift = shifts.find((s) => s.id === eventId);
+			if (shift) {
+				setSelectedShift(shift);
+				setIsShiftDialogOpen(true);
+			}
+		},
+		[shifts],
+	);
+
+	// Handle drag end - Schedule-X passes the updated event
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	const handleEventUpdate = useCallback(
+		(updatedEvent: any) => {
+			if (!isManager) return;
+
+			const eventId = updatedEvent?.id as string | undefined;
+			const eventStart = updatedEvent?.start as string | undefined;
+			const eventEnd = updatedEvent?.end as string | undefined;
+			if (!eventId || !eventStart || !eventEnd) return;
+
+			const shift = shifts.find((s) => s.id === eventId);
+			if (!shift) return;
+
+			// Parse new times from Schedule-X format "YYYY-MM-DD HH:mm"
+			const [dateStr, startTime] = eventStart.split(" ");
+			const [, endTime] = eventEnd.split(" ");
+			const newDate = new Date(dateStr);
+
+			updateShiftMutation.mutate({
+				id: shift.id,
+				employeeId: shift.employeeId,
+				date: newDate,
+				startTime,
+				endTime,
+			});
+		},
+		[isManager, shifts, updateShiftMutation],
+	);
+
+	// Handle date range change from calendar
+	const handleRangeChange = useCallback((range: { start: string; end: string }) => {
+		setDateRange({
+			start: new Date(range.start),
+			end: new Date(range.end),
+		});
+	}, []);
+
+	// Handle template drop (create new shift)
+	const handleTemplateDrop = useCallback((_template: ShiftTemplate, date: Date) => {
+		setNewShiftDate(date);
+		setSelectedShift(null);
+		setIsShiftDialogOpen(true);
+	}, []);
+
+	// Create calendar
+	const calendar = useCalendarApp({
+		views: [createViewWeek(), createViewMonthGrid()],
+		events,
+		isDark,
+		calendars: {
+			published: {
+				colorName: "published",
+				lightColors: {
+					main: "#3b82f6",
+					container: "#dbeafe",
+					onContainer: "#1e40af",
+				},
+				darkColors: {
+					main: "#60a5fa",
+					container: "#1e3a8a",
+					onContainer: "#bfdbfe",
+				},
+			},
+			draft: {
+				colorName: "draft",
+				lightColors: {
+					main: "#9ca3af",
+					container: "#f3f4f6",
+					onContainer: "#374151",
+				},
+				darkColors: {
+					main: "#6b7280",
+					container: "#374151",
+					onContainer: "#d1d5db",
+				},
+			},
+			open: {
+				colorName: "open",
+				lightColors: {
+					main: "#f59e0b",
+					container: "#fef3c7",
+					onContainer: "#92400e",
+				},
+				darkColors: {
+					main: "#fbbf24",
+					container: "#78350f",
+					onContainer: "#fde68a",
+				},
+			},
+		},
+		plugins: [...(isManager ? [createDragAndDropPlugin()] : []), createEventModalPlugin()],
+		callbacks: {
+			onEventClick: handleEventClick,
+			onEventUpdate: handleEventUpdate,
+			onRangeUpdate: handleRangeChange,
+		},
+	});
+
+	// Update events when shifts change
+	useEffect(() => {
+		if (calendar) {
+			calendar.events.set(events);
+		}
+	}, [calendar, events]);
+
+	// Update dark mode when theme changes
+	useEffect(() => {
+		if (calendar) {
+			calendar.setTheme(isDark ? "dark" : "light");
+		}
+	}, [calendar, isDark]);
+
+	if (shiftsLoading) {
+		return (
+			<div className="flex items-center justify-center py-20">
+				<div className="animate-pulse text-muted-foreground">Loading schedule...</div>
+			</div>
+		);
+	}
+
+	return (
+		<div className="flex gap-4 h-[calc(100vh-200px)]">
+			{/* Template sidebar for managers */}
+			{isManager && <TemplateSidebar templates={templates} onTemplateDrop={handleTemplateDrop} />}
+
+			{/* Main calendar */}
+			<div className="flex-1 relative h-full overflow-hidden">
+				<ScheduleXCalendar calendarApp={calendar} />
+
+				{/* Publish FAB for managers with draft shifts */}
+				{isManager && draftCount > 0 && (
+					<PublishFab
+						draftCount={draftCount}
+						onPublish={() => publishMutation.mutate()}
+						isPublishing={publishMutation.isPending}
+					/>
+				)}
+			</div>
+
+			{/* Shift dialog */}
+			<ShiftDialog
+				open={isShiftDialogOpen}
+				onOpenChange={setIsShiftDialogOpen}
+				shift={selectedShift}
+				templates={templates}
+				isManager={isManager}
+				defaultDate={newShiftDate}
+				organizationId={organizationId}
+			/>
+		</div>
+	);
+}

@@ -1,9 +1,10 @@
 "use server";
 
-import { DateTime } from "luxon";
 import { and, eq, gte, lte } from "drizzle-orm";
+import { DateTime } from "luxon";
 import { db } from "@/db";
-import { absenceCategory, absenceEntry, employee, user } from "@/db/schema";
+import { absenceCategory, absenceEntry, employee } from "@/db/schema";
+import { user } from "@/db/auth-schema";
 import { dateToDB } from "@/lib/datetime/drizzle-adapter";
 import type { AbsenceEvent } from "./types";
 
@@ -22,8 +23,8 @@ export async function getAbsencesForMonth(
 	filters: AbsenceFilters,
 ): Promise<AbsenceEvent[]> {
 	// Calculate date range for the month (month is 0-indexed in JavaScript, 1-indexed in Luxon)
-	const startDT = DateTime.utc(year, month + 1, 1).startOf('day');
-	const endDT = startDT.endOf('month');
+	const startDT = DateTime.utc(year, month + 1, 1).startOf("day");
+	const endDT = startDT.endOf("month");
 
 	// Convert to Date objects for Drizzle query
 	const startDate = dateToDB(startDT)!;
@@ -62,6 +63,7 @@ export async function getAbsencesForMonth(
 			id: absence.id,
 			type: "absence" as const,
 			date: absence.startDate,
+			endDate: absence.endDate, // For multi-day display in schedule-x
 			title: `${user.name} - ${category.name}`,
 			description: absence.notes || undefined,
 			color: getColorByStatus(absence.status, category.color),

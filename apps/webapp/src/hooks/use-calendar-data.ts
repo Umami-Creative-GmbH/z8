@@ -1,10 +1,12 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { format } from "@/lib/datetime/luxon-utils";
 import { z } from "zod";
-import { calendarEventSchema } from "@/lib/validations/calendar";
 import type { CalendarEvent } from "@/lib/calendar/types";
+import { format } from "@/lib/datetime/luxon-utils";
+import { ApiError } from "@/lib/fetch";
+import { calendarEventSchema } from "@/lib/validations/calendar";
 
 export interface CalendarFilters {
 	showHolidays: boolean;
@@ -19,6 +21,7 @@ export interface UseCalendarDataOptions {
 	month: number; // 0-11 (JS month format)
 	year: number;
 	filters: CalendarFilters;
+	fullYear?: boolean; // Fetch all 12 months for year view
 }
 
 export interface UseCalendarDataResult {
@@ -37,7 +40,9 @@ export function useCalendarData({
 	month,
 	year,
 	filters,
+	fullYear = false,
 }: UseCalendarDataOptions): UseCalendarDataResult {
+	const router = useRouter();
 	const [events, setEvents] = useState<CalendarEvent[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<Error | null>(null);
@@ -49,13 +54,19 @@ export function useCalendarData({
 		try {
 			const params = new URLSearchParams({
 				organizationId,
-				month: month.toString(),
 				year: year.toString(),
 				showHolidays: filters.showHolidays.toString(),
 				showAbsences: filters.showAbsences.toString(),
 				showTimeEntries: filters.showTimeEntries.toString(),
 				showWorkPeriods: filters.showWorkPeriods.toString(),
 			});
+
+			// For year view, fetch all 12 months; otherwise fetch single month
+			if (fullYear) {
+				params.set("fullYear", "true");
+			} else {
+				params.set("month", month.toString());
+			}
 
 			// Add employeeId filter if specified
 			if (filters.employeeId) {
@@ -65,7 +76,16 @@ export function useCalendarData({
 			const response = await fetch(`/api/calendar/events?${params}`);
 
 			if (!response.ok) {
-				throw new Error(`Failed to fetch calendar events: ${response.statusText}`);
+				// Redirect to sign-in on 401 unauthorized
+				if (response.status === 401) {
+					router.replace("/sign-in");
+					return;
+				}
+				throw new ApiError(
+					`Failed to fetch calendar events: ${response.statusText}`,
+					response.status,
+					response.statusText,
+				);
 			}
 
 			const data = await response.json();
@@ -77,12 +97,28 @@ export function useCalendarData({
 
 			setEvents(parsedEvents);
 		} catch (err) {
+			// Also check for ApiError 401 in case it was thrown elsewhere
+			if (err instanceof ApiError && err.isUnauthorized()) {
+				router.replace("/sign-in");
+				return;
+			}
 			setError(err instanceof Error ? err : new Error("Unknown error"));
 			setEvents([]);
 		} finally {
 			setIsLoading(false);
 		}
-	}, [organizationId, month, year, filters.showHolidays, filters.showAbsences, filters.showTimeEntries, filters.showWorkPeriods, filters.employeeId]);
+	}, [
+		organizationId,
+		month,
+		year,
+		fullYear,
+		filters.showHolidays,
+		filters.showAbsences,
+		filters.showTimeEntries,
+		filters.showWorkPeriods,
+		filters.employeeId,
+		router,
+	]);
 
 	useEffect(() => {
 		fetchEvents();

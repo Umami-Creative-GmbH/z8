@@ -1,10 +1,10 @@
 "use server";
 
-import { DateTime } from "luxon";
 import { and, eq, gte, lte } from "drizzle-orm";
+import { DateTime } from "luxon";
 import { db } from "@/db";
 import { holiday, holidayCategory } from "@/db/schema";
-import { dateToDB, dateFromDB } from "@/lib/datetime/drizzle-adapter";
+import { dateFromDB, dateToDB } from "@/lib/datetime/drizzle-adapter";
 import type { HolidayEvent } from "./types";
 
 interface HolidayWithCategory {
@@ -23,8 +23,8 @@ export async function isHolidayBlockingTimeEntry(
 	const dateDT = dateFromDB(date);
 	if (!dateDT) return { isBlocked: false, holiday: null };
 
-	const dateStart = dateToDB(dateDT.startOf('day'))!;
-	const dateEnd = dateToDB(dateDT.endOf('day'))!;
+	const dateStart = dateToDB(dateDT.startOf("day"))!;
+	const dateEnd = dateToDB(dateDT.endOf("day"))!;
 
 	// Query non-recurring holidays
 	const nonRecurringHolidays = await db
@@ -181,8 +181,8 @@ export async function getHolidaysForMonth(
 	year: number,
 ): Promise<HolidayEvent[]> {
 	// Calculate date range for the month (month is 0-indexed in JavaScript, 1-indexed in Luxon)
-	const startDT = DateTime.utc(year, month + 1, 1).startOf('day');
-	const endDT = startDT.endOf('month');
+	const startDT = DateTime.utc(year, month + 1, 1).startOf("day");
+	const endDT = startDT.endOf("month");
 
 	// Convert to Date objects for Drizzle query
 	const startDate = dateToDB(startDT)!;
@@ -210,6 +210,7 @@ export async function getHolidaysForMonth(
 		id: h.id,
 		type: "holiday" as const,
 		date: h.startDate,
+		endDate: h.endDate, // For multi-day display in schedule-x
 		title: h.name,
 		description: h.description || undefined,
 		color: cat.color || "#f59e0b",
@@ -239,8 +240,8 @@ export async function shouldExcludeFromCalculations(
 	const dateDT = dateFromDB(date);
 	if (!dateDT) return false;
 
-	const dateStart = dateToDB(dateDT.startOf('day'))!;
-	const dateEnd = dateToDB(dateDT.endOf('day'))!;
+	const dateStart = dateToDB(dateDT.startOf("day"))!;
+	const dateEnd = dateToDB(dateDT.endOf("day"))!;
 
 	// Check non-recurring holidays
 	const nonRecurringHolidays = await db

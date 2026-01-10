@@ -7,6 +7,57 @@ import { getTimeEntriesForMonth } from "@/lib/calendar/time-entry-service";
 import type { CalendarEvent } from "@/lib/calendar/types";
 import { getWorkPeriodsForMonth } from "@/lib/calendar/work-period-service";
 
+/**
+ * Fetch events for a single month
+ */
+async function fetchMonthEvents(
+	organizationId: string,
+	month: number,
+	year: number,
+	employeeId: string | undefined,
+	showHolidays: boolean,
+	showAbsences: boolean,
+	showTimeEntries: boolean,
+	showWorkPeriods: boolean,
+): Promise<CalendarEvent[]> {
+	const events: CalendarEvent[] = [];
+
+	// Fetch holidays if requested
+	if (showHolidays) {
+		const holidays = await getHolidaysForMonth(organizationId, month, year);
+		events.push(...holidays);
+	}
+
+	// Fetch absences if requested
+	if (showAbsences) {
+		const absences = await getAbsencesForMonth(month, year, {
+			organizationId,
+			employeeId,
+		});
+		events.push(...absences);
+	}
+
+	// Fetch time entries if requested
+	if (showTimeEntries) {
+		const timeEntries = await getTimeEntriesForMonth(month, year, {
+			organizationId,
+			employeeId,
+		});
+		events.push(...timeEntries);
+	}
+
+	// Fetch work periods if requested
+	if (showWorkPeriods) {
+		const workPeriods = await getWorkPeriodsForMonth(month, year, {
+			organizationId,
+			employeeId,
+		});
+		events.push(...workPeriods);
+	}
+
+	return events;
+}
+
 export async function GET(request: NextRequest) {
 	try {
 		// Authenticate user
@@ -20,53 +71,54 @@ export async function GET(request: NextRequest) {
 		const organizationId = searchParams.get("organizationId");
 		const month = searchParams.get("month");
 		const year = searchParams.get("year");
-		const employeeId = searchParams.get("employeeId"); // Optional filter for specific employee
+		const fullYear = searchParams.get("fullYear") === "true"; // Fetch all 12 months
+		const employeeId = searchParams.get("employeeId") || undefined;
 		const showHolidays = searchParams.get("showHolidays") === "true";
 		const showAbsences = searchParams.get("showAbsences") === "true";
 		const showTimeEntries = searchParams.get("showTimeEntries") === "true";
 		const showWorkPeriods = searchParams.get("showWorkPeriods") === "true";
 
-		if (!organizationId || month === null || year === null) {
+		if (!organizationId || year === null) {
 			return NextResponse.json({ error: "Missing required parameters" }, { status: 400 });
 		}
 
-		const events: CalendarEvent[] = [];
+		// For single month, require month parameter
+		if (!fullYear && month === null) {
+			return NextResponse.json({ error: "Missing month parameter" }, { status: 400 });
+		}
 
-		// Fetch holidays if requested
-		if (showHolidays) {
-			const holidays = await getHolidaysForMonth(
-				organizationId,
-				parseInt(month, 10),
-				parseInt(year, 10),
+		const yearNum = parseInt(year, 10);
+		let events: CalendarEvent[] = [];
+
+		if (fullYear) {
+			// Fetch all 12 months in parallel
+			const monthPromises = Array.from({ length: 12 }, (_, monthIndex) =>
+				fetchMonthEvents(
+					organizationId,
+					monthIndex,
+					yearNum,
+					employeeId,
+					showHolidays,
+					showAbsences,
+					showTimeEntries,
+					showWorkPeriods,
+				),
 			);
-			events.push(...holidays);
-		}
 
-		// Fetch absences if requested
-		if (showAbsences) {
-			const absences = await getAbsencesForMonth(parseInt(month, 10), parseInt(year, 10), {
+			const monthResults = await Promise.all(monthPromises);
+			events = monthResults.flat();
+		} else {
+			// Fetch single month
+			events = await fetchMonthEvents(
 				organizationId,
-				employeeId: employeeId || undefined,
-			});
-			events.push(...absences);
-		}
-
-		// Fetch time entries if requested
-		if (showTimeEntries) {
-			const timeEntries = await getTimeEntriesForMonth(parseInt(month, 10), parseInt(year, 10), {
-				organizationId,
-				employeeId: employeeId || undefined,
-			});
-			events.push(...timeEntries);
-		}
-
-		// Fetch work periods if requested
-		if (showWorkPeriods) {
-			const workPeriods = await getWorkPeriodsForMonth(parseInt(month, 10), parseInt(year, 10), {
-				organizationId,
-				employeeId: employeeId || undefined,
-			});
-			events.push(...workPeriods);
+				parseInt(month!, 10),
+				yearNum,
+				employeeId,
+				showHolidays,
+				showAbsences,
+				showTimeEntries,
+				showWorkPeriods,
+			);
 		}
 
 		return NextResponse.json({

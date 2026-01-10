@@ -4,6 +4,7 @@ export interface CalendarEvent {
 	id: string;
 	type: CalendarEventType;
 	date: Date;
+	endDate?: Date; // For multi-day events (absences, holidays)
 	title: string;
 	description?: string;
 	color: string;

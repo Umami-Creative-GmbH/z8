@@ -1,8 +1,9 @@
-import { DateTime } from "luxon";
 import { and, eq, gte, lte } from "drizzle-orm";
+import { DateTime } from "luxon";
 import { db } from "@/db";
-import { employee, user, workPeriod } from "@/db/schema";
-import { dateToDB, dateFromDB } from "@/lib/datetime/drizzle-adapter";
+import { employee, workPeriod } from "@/db/schema";
+import { user } from "@/db/auth-schema";
+import { dateFromDB, dateToDB } from "@/lib/datetime/drizzle-adapter";
 import { toDateKey } from "@/lib/datetime/luxon-utils";
 import type { WorkPeriodEvent } from "./types";
 
@@ -22,8 +23,8 @@ export async function getWorkPeriodsForMonth(
 	filters: WorkPeriodFilters,
 ): Promise<WorkPeriodEvent[]> {
 	// Calculate date range for the month (month is 0-indexed in JavaScript, 1-indexed in Luxon)
-	const startDT = DateTime.utc(year, month + 1, 1).startOf('day');
-	const endDT = startDT.endOf('month');
+	const startDT = DateTime.utc(year, month + 1, 1).startOf("day");
+	const endDT = startDT.endOf("month");
 
 	// Convert to Date objects for Drizzle query
 	const startDate = dateToDB(startDT)!;
