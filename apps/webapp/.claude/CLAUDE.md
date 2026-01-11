@@ -130,3 +130,112 @@ export const authClient = createAuthClient({
   ],
 });
 ```
+
+---
+
+# Development Commands
+
+## Dev Server
+
+To run the development server with the bun SQL client properly loaded:
+
+```bash
+bun --bun dev
+```
+
+This command is required because the application uses bun's native SQL client which needs the `--bun` flag.
+
+---
+
+# Form Library: @tanstack/react-form
+
+For new features requiring forms, use `@tanstack/react-form` instead of `react-hook-form`.
+
+## Why TanStack Form?
+
+- **SSR compatible** - Serializable state, no proxy magic
+- **React compiler ready** - Works with React's upcoming compiler
+- **Granular re-renders** - Signals-like patterns for performance
+- **Native Zod integration** - Standard Schema support (Zod 3.24+)
+
+## Basic Usage
+
+```typescript
+import { useForm } from '@tanstack/react-form'
+
+// Define default values with explicit types
+const defaultValues = {
+  name: '',
+  email: '',
+  role: undefined as 'admin' | 'user' | undefined,
+}
+
+function MyForm() {
+  const form = useForm({
+    defaultValues,
+    onSubmit: async ({ value }) => {
+      // Handle form submission
+      console.log(value)
+    },
+  })
+
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault()
+        form.handleSubmit()
+      }}
+    >
+      <form.Field name="name">
+        {(field) => (
+          <input
+            value={field.state.value}
+            onChange={(e) => field.handleChange(e.target.value)}
+            onBlur={field.handleBlur}
+          />
+        )}
+      </form.Field>
+
+      {/* Dirty state detection for submit button */}
+      <form.Subscribe selector={(state) => [state.isDirty, state.isSubmitting]}>
+        {([isDirty, isSubmitting]) => (
+          <button type="submit" disabled={!isDirty || isSubmitting}>
+            Save Changes
+          </button>
+        )}
+      </form.Subscribe>
+    </form>
+  )
+}
+```
+
+## Form UI Components
+
+Use components from `src/components/ui/tanstack-form.tsx`:
+
+- `TFormItem` - Wrapper with ID context for accessibility
+- `TFormLabel` - Label with error state styling
+- `TFormControl` - Input wrapper with aria attributes
+- `TFormDescription` - Help text
+- `TFormMessage` - Error display
+- `fieldHasError` - Helper to check field errors
+
+## Key Differences from react-hook-form
+
+| react-hook-form | @tanstack/react-form |
+|-----------------|----------------------|
+| `useForm({ resolver: zodResolver(schema) })` | `useForm({ defaultValues })` |
+| `<Controller render={({ field }) => ...} />` | `<form.Field children={(field) => ...} />` |
+| `field.value` | `field.state.value` |
+| `field.onChange(e)` | `field.handleChange(e.target.value)` |
+| `form.formState.isDirty` | `<form.Subscribe selector={s => s.isDirty}>` |
+
+## Migration Status
+
+### Migrated to @tanstack/react-form
+- `src/app/[locale]/(app)/settings/employees/[employeeId]/page.tsx`
+
+### Pending Migration (use @tanstack/react-form for new work)
+- Export feature forms (`src/components/settings/export/`)
+- Break-rule feature (new feature to be implemented)
+- Other forms as they need updates

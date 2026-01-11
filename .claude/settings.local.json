@@ -67,7 +67,21 @@
       "Bash(comm:*)",
       "Bash(while read file)",
       "Bash(fi)",
-      "Bash(done)"
+      "Bash(done)",
+      "WebFetch(domain:fumadocs.dev)",
+      "Bash(bun build:docs:*)",
+      "Bash(timeout 30 bun run dev:*)",
+      "Bash(timeout 20 bun run dev:*)",
+      "Bash(timeout:*)",
+      "Bash(curl:*)",
+      "Bash(powershell -Command \"Start-Sleep -Seconds 5; Invoke-WebRequest -Uri ''http://localhost:3001/'' -UseBasicParsing | Select-Object -ExpandProperty Content | Select-Object -First 50\")",
+      "Bash(powershell -Command \"Start-Sleep -Seconds 10; Invoke-WebRequest -Uri ''http://localhost:3001/docs'' -UseBasicParsing | Select-Object -ExpandProperty StatusCode\")",
+      "Bash(powershell -Command \"Start-Sleep -Seconds 10; Invoke-WebRequest -Uri 'http://localhost:3001/docs' -UseBasicParsing -ErrorAction SilentlyContinue | Select-Object StatusCode, StatusDescription\":*)",
+      "Bash(powershell -Command \"Get-Process -Name node -ErrorAction SilentlyContinue | Stop-Process -Force\")",
+      "Bash(powershell -Command:*)",
+      "Bash(npx fumadocs-mdx)",
+      "Bash(netstat:*)",
+      "Bash(bun dev)"
     ]
   },
   "enableAllProjectMcpServers": true,

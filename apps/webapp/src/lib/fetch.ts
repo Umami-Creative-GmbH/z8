@@ -1,3 +1,5 @@
+import { parseSuperJsonResponse } from "./superjson";
+
 /**
  * Custom API error class that includes HTTP status code
  */
@@ -92,5 +94,6 @@ export async function fetchApi<T = unknown>(url: string, options: FetchOptions =
 		return {} as T;
 	}
 
-	return response.json();
+	// Use SuperJSON to parse response - handles both SuperJSON format and plain JSON
+	return parseSuperJsonResponse<T>(response);
 }

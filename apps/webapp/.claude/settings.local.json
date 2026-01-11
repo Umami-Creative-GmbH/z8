@@ -10,7 +10,12 @@
       "Bash(bunx --bun biome check:*)",
       "Bash(grep:*)",
       "Bash(bunx --bun biome lint:*)",
-      "Bash(bun tsc:*)"
+      "Bash(bun tsc:*)",
+      "mcp__plugin_context7_context7__resolve-library-id",
+      "mcp__plugin_context7_context7__query-docs",
+      "Bash(bunx biome check:*)",
+      "Bash(bunx biome:*)",
+      "Bash(bun run typecheck:*)"
     ]
   },
   "enabledMcpjsonServers": [

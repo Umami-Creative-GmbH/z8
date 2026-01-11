@@ -1,7 +1,7 @@
-import { db } from "@/db";
 import { sql } from "drizzle-orm";
-import { valkey } from "@/lib/valkey";
+import { db } from "@/db";
 import { createLogger } from "@/lib/logger";
+import { valkey } from "@/lib/valkey";
 
 const logger = createLogger("Health");
 
@@ -103,23 +103,14 @@ export async function runStartupChecks(): Promise<boolean> {
 
 	// Log database status
 	if (result.services.database.status === "healthy") {
-		logger.info(
-			{ latencyMs: result.services.database.latencyMs },
-			"Database connection verified",
-		);
+		logger.info({ latencyMs: result.services.database.latencyMs }, "Database connection verified");
 	} else {
-		logger.error(
-			{ error: result.services.database.error },
-			"Database connection failed",
-		);
+		logger.error({ error: result.services.database.error }, "Database connection failed");
 	}
 
 	// Log cache status (optional service)
 	if (result.services.cache.status === "healthy") {
-		logger.info(
-			{ latencyMs: result.services.cache.latencyMs },
-			"Cache connection verified",
-		);
+		logger.info({ latencyMs: result.services.cache.latencyMs }, "Cache connection verified");
 	} else {
 		logger.warn(
 			{ error: result.services.cache.error },

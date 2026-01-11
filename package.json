@@ -12,7 +12,9 @@
     "dev:mobile": "turbo dev --filter=mobile",
     "build:webapp": "turbo build --filter=webapp",
     "build:desktop": "turbo build --filter=desktop",
-    "build:mobile": "turbo build --filter=mobile"
+    "build:mobile": "turbo build --filter=mobile",
+    "dev:docs": "turbo dev --filter=docs",
+    "build:docs": "turbo build --filter=docs"
   },
   "devDependencies": {
     "shadcn": "^3.6.3",

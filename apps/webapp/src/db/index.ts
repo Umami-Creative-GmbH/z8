@@ -104,12 +104,18 @@ export {
 	// Audit tables
 	auditLog,
 	auditLogRelations,
+	// Data export tables
+	dataExport,
+	dataExportRelations,
 	employee,
 	employeeManagers,
 	employeeManagersRelations,
 	employeeRelations,
 	employeeVacationAllowance,
 	employeeVacationAllowanceRelations,
+	exportStatusEnum,
+	exportStorageConfig,
+	exportStorageConfigRelations,
 	holiday,
 	holidayAssignment,
 	holidayAssignmentRelations,
