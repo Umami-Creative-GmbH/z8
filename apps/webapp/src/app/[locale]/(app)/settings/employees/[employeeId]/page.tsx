@@ -1,6 +1,5 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
 import {
 	IconArrowBack,
 	IconClock,
@@ -8,30 +7,15 @@ import {
 	IconHome,
 	IconLoader2,
 } from "@tabler/icons-react";
-import { use, useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm } from "@tanstack/react-form";
+import { use, useEffect } from "react";
 import { toast } from "sonner";
-import * as z from "zod";
-import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
-import {
-	type EffectiveScheduleWithSource,
-	getEmployeeEffectiveScheduleDetails,
-} from "@/app/[locale]/(app)/settings/work-schedules/assignment-actions";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { ManagerAssignment } from "@/components/settings/manager-assignment";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { RoleSelector } from "@/components/settings/role-selector";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-	Form,
-	FormControl,
-	FormDescription,
-	FormField,
-	FormItem,
-	FormLabel,
-	FormMessage,
-} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import {
 	Select,
@@ -41,28 +25,26 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import {
+	fieldHasError,
+	TFormControl,
+	TFormDescription,
+	TFormItem,
+	TFormLabel,
+	TFormMessage,
+} from "@/components/ui/tanstack-form";
+import { UserAvatar } from "@/components/user-avatar";
+import { useEmployee } from "@/lib/query/use-employee";
 import { Link, useRouter } from "@/navigation";
-import { type EmployeeWithRelations, getEmployee, listEmployees, updateEmployee } from "../actions";
 
-const formSchema = z.object({
-	firstName: z.string().optional(),
-	lastName: z.string().optional(),
-	gender: z.enum(["male", "female", "other"]).optional(),
-	position: z.string().optional(),
-	role: z.enum(["admin", "manager", "employee"]).optional(),
-});
-
-type ManagerRelation = {
-	id: string;
-	isPrimary: boolean;
-	manager: {
-		id: string;
-		user: { name: string };
-	};
-};
-
-type EmployeeDetail = EmployeeWithRelations & {
-	managers?: ManagerRelation[];
+// Form default values with explicit types
+const defaultFormValues = {
+	firstName: "",
+	lastName: "",
+	gender: undefined as "male" | "female" | "other" | undefined,
+	position: "",
+	employeeNumber: "",
+	role: undefined as "admin" | "manager" | "employee" | undefined,
 };
 
 export default function EmployeeDetailPage({
@@ -72,97 +54,53 @@ export default function EmployeeDetailPage({
 }) {
 	const { employeeId } = use(params);
 	const router = useRouter();
-	const [loading, setLoading] = useState(false);
-	const [employee, setEmployee] = useState<EmployeeDetail | null>(null);
-	const [_currentEmployee, setCurrentEmployee] = useState<EmployeeWithRelations | null>(null);
-	const [noEmployee, setNoEmployee] = useState(false);
-	const [isAdmin, setIsAdmin] = useState(false);
-	const [availableManagers, setAvailableManagers] = useState<EmployeeWithRelations[]>([]);
-	const [schedule, setSchedule] = useState<EffectiveScheduleWithSource | null>(null);
 
-	const form = useForm<z.infer<typeof formSchema>>({
-		resolver: zodResolver(formSchema),
-		defaultValues: {
-			firstName: "",
-			lastName: "",
-			gender: undefined,
-			position: "",
-			role: undefined,
+	const {
+		employee,
+		schedule,
+		availableManagers,
+		isLoading,
+		hasEmployee,
+		isAdmin,
+		updateEmployee,
+		isUpdating,
+		refetch,
+	} = useEmployee({ employeeId });
+
+	// TanStack Form infers types from defaultValues
+	const form = useForm({
+		defaultValues: defaultFormValues,
+		onSubmit: async ({ value }) => {
+			try {
+				const result = await updateEmployee(value);
+
+				if (result.success) {
+					toast.success("Employee updated successfully");
+					router.push("/settings/employees");
+					router.refresh();
+				} else {
+					toast.error(result.error || "Failed to update employee");
+				}
+			} catch (_error) {
+				toast.error("An unexpected error occurred");
+			}
 		},
 	});
 
-	const loadEmployeeData = async () => {
-		const result = await getEmployee(employeeId);
-		if (result.success) {
-			setEmployee(result.data);
-			form.reset({
-				firstName: result.data.firstName || "",
-				lastName: result.data.lastName || "",
-				gender: result.data.gender || undefined,
-				position: result.data.position || "",
-				role: result.data.role || undefined,
-			});
-		} else {
-			toast.error(result.error || "Failed to load employee");
-		}
-	};
-
+	// Update form when employee data loads
 	useEffect(() => {
-		async function loadData() {
-			const current = await getCurrentEmployee();
-			if (!current) {
-				setNoEmployee(true);
-				return;
-			}
-			setCurrentEmployee(current);
-			setIsAdmin(current.role === "admin");
-
-			// Load employee data
-			await loadEmployeeData();
-
-			// Load work schedule
-			const scheduleResult = await getEmployeeEffectiveScheduleDetails(employeeId);
-			if (scheduleResult.success && scheduleResult.data) {
-				setSchedule(scheduleResult.data);
-			}
-
-			// Load available managers (admin and manager roles, excluding the current employee)
-			const managersResult = await listEmployees({ role: "admin" });
-			const managersResult2 = await listEmployees({ role: "manager" });
-
-			if (managersResult.success && managersResult2.success) {
-				const allManagers = [
-					...(managersResult.data || []),
-					...(managersResult2.data || []),
-				].filter((m) => m.id !== employeeId); // Exclude the employee being edited
-				setAvailableManagers(allManagers);
-			}
+		if (employee) {
+			form.reset();
+			form.setFieldValue("firstName", employee.firstName || "");
+			form.setFieldValue("lastName", employee.lastName || "");
+			form.setFieldValue("gender", employee.gender || undefined);
+			form.setFieldValue("position", employee.position || "");
+			form.setFieldValue("employeeNumber", employee.employeeNumber || "");
+			form.setFieldValue("role", employee.role || undefined);
 		}
+	}, [employee, form]);
 
-		loadData();
-	}, [employeeId, loadEmployeeData]);
-
-	async function onSubmit(values: z.infer<typeof formSchema>) {
-		setLoading(true);
-
-		try {
-			const result = await updateEmployee(employeeId, values);
-
-			if (result.success) {
-				toast.success("Employee updated successfully");
-				router.push("/settings/employees");
-				router.refresh();
-			} else {
-				toast.error(result.error || "Failed to update employee");
-			}
-		} catch (_error) {
-			toast.error("An unexpected error occurred");
-		} finally {
-			setLoading(false);
-		}
-	}
-
-	if (noEmployee) {
+	if (!hasEmployee && !isLoading) {
 		return (
 			<div className="flex flex-1 items-center justify-center p-6">
 				<NoEmployeeError feature="manage employees" />
@@ -170,7 +108,7 @@ export default function EmployeeDetailPage({
 		);
 	}
 
-	if (!employee) {
+	if (isLoading || !employee) {
 		return (
 			<div className="flex flex-1 flex-col gap-4 p-4">
 				<div className="flex items-center justify-center p-8">
@@ -204,16 +142,12 @@ export default function EmployeeDetailPage({
 					</CardHeader>
 					<CardContent className="space-y-4">
 						<div className="flex items-center gap-3">
-							<Avatar className="size-16">
-								<AvatarImage src={employee.user.image || undefined} />
-								<AvatarFallback>
-									{employee.user.name
-										.split(" ")
-										.map((n: string) => n[0])
-										.join("")
-										.toUpperCase()}
-								</AvatarFallback>
-							</Avatar>
+							<UserAvatar
+								image={employee.user.image}
+								seed={employee.user.id}
+								name={employee.user.name}
+								size="lg"
+							/>
 							<div>
 								<div className="font-medium">{employee.user.name}</div>
 								<div className="text-sm text-muted-foreground">{employee.user.email}</div>
@@ -233,6 +167,13 @@ export default function EmployeeDetailPage({
 								{employee.isActive ? "Active" : "Inactive"}
 							</Badge>
 						</div>
+
+						{employee.employeeNumber && (
+							<div className="space-y-2">
+								<div className="text-sm text-muted-foreground">Employee Number</div>
+								<div className="font-mono text-sm">{employee.employeeNumber}</div>
+							</div>
+						)}
 
 						{employee.managers && employee.managers.length > 0 && (
 							<div className="space-y-2">
@@ -325,139 +266,158 @@ export default function EmployeeDetailPage({
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
-						<Form {...form}>
-							<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-								<div className="grid gap-4 md:grid-cols-2">
-									<FormField
-										control={form.control}
-										name="firstName"
-										render={({ field }) => (
-											<FormItem>
-												<FormLabel>First Name</FormLabel>
-												<FormControl>
-													<Input
-														placeholder="Enter first name"
-														{...field}
-														disabled={!isAdmin || loading}
-													/>
-												</FormControl>
-												<FormMessage />
-											</FormItem>
-										)}
-									/>
-
-									<FormField
-										control={form.control}
-										name="lastName"
-										render={({ field }) => (
-											<FormItem>
-												<FormLabel>Last Name</FormLabel>
-												<FormControl>
-													<Input
-														placeholder="Enter last name"
-														{...field}
-														disabled={!isAdmin || loading}
-													/>
-												</FormControl>
-												<FormMessage />
-											</FormItem>
-										)}
-									/>
-								</div>
-
-								<FormField
-									control={form.control}
-									name="gender"
-									render={({ field }) => (
-										<FormItem>
-											<FormLabel>Gender</FormLabel>
-											<Select
-												onValueChange={field.onChange}
-												defaultValue={field.value}
-												disabled={!isAdmin || loading}
-											>
-												<FormControl>
-													<SelectTrigger>
-														<SelectValue placeholder="Select gender" />
-													</SelectTrigger>
-												</FormControl>
-												<SelectContent>
-													<SelectItem value="male">Male</SelectItem>
-													<SelectItem value="female">Female</SelectItem>
-													<SelectItem value="other">Other</SelectItem>
-												</SelectContent>
-											</Select>
-											<FormMessage />
-										</FormItem>
+						<form
+							onSubmit={(e) => {
+								e.preventDefault();
+								e.stopPropagation();
+								form.handleSubmit();
+							}}
+							className="space-y-6"
+						>
+							<div className="grid gap-4 md:grid-cols-2">
+								<form.Field name="firstName">
+									{(field) => (
+										<TFormItem>
+											<TFormLabel hasError={fieldHasError(field)}>First Name</TFormLabel>
+											<TFormControl hasError={fieldHasError(field)}>
+												<Input
+													placeholder="Enter first name"
+													value={field.state.value || ""}
+													onChange={(e) => field.handleChange(e.target.value)}
+													onBlur={field.handleBlur}
+													disabled={!isAdmin || isUpdating}
+												/>
+											</TFormControl>
+											<TFormMessage field={field} />
+										</TFormItem>
 									)}
-								/>
+								</form.Field>
 
-								<FormField
-									control={form.control}
-									name="position"
-									render={({ field }) => (
-										<FormItem>
-											<FormLabel>Position</FormLabel>
-											<FormControl>
+								<form.Field name="lastName">
+									{(field) => (
+										<TFormItem>
+											<TFormLabel hasError={fieldHasError(field)}>Last Name</TFormLabel>
+											<TFormControl hasError={fieldHasError(field)}>
+												<Input
+													placeholder="Enter last name"
+													value={field.state.value || ""}
+													onChange={(e) => field.handleChange(e.target.value)}
+													onBlur={field.handleBlur}
+													disabled={!isAdmin || isUpdating}
+												/>
+											</TFormControl>
+											<TFormMessage field={field} />
+										</TFormItem>
+									)}
+								</form.Field>
+							</div>
+
+							<form.Field name="gender">
+								{(field) => (
+									<TFormItem>
+										<TFormLabel hasError={fieldHasError(field)}>Gender</TFormLabel>
+										<Select
+											onValueChange={(value) =>
+												field.handleChange(value as "male" | "female" | "other")
+											}
+											value={field.state.value || ""}
+											disabled={!isAdmin || isUpdating}
+										>
+											<TFormControl hasError={fieldHasError(field)}>
+												<SelectTrigger>
+													<SelectValue placeholder="Select gender" />
+												</SelectTrigger>
+											</TFormControl>
+											<SelectContent>
+												<SelectItem value="male">Male</SelectItem>
+												<SelectItem value="female">Female</SelectItem>
+												<SelectItem value="other">Other</SelectItem>
+											</SelectContent>
+										</Select>
+										<TFormMessage field={field} />
+									</TFormItem>
+								)}
+							</form.Field>
+
+							<div className="grid gap-4 md:grid-cols-2">
+								<form.Field name="position">
+									{(field) => (
+										<TFormItem>
+											<TFormLabel hasError={fieldHasError(field)}>Position</TFormLabel>
+											<TFormControl hasError={fieldHasError(field)}>
 												<Input
 													placeholder="Enter position"
-													{...field}
-													disabled={!isAdmin || loading}
+													value={field.state.value || ""}
+													onChange={(e) => field.handleChange(e.target.value)}
+													onBlur={field.handleBlur}
+													disabled={!isAdmin || isUpdating}
 												/>
-											</FormControl>
-											<FormDescription>Job title or role</FormDescription>
-											<FormMessage />
-										</FormItem>
+											</TFormControl>
+											<TFormDescription>Job title or role</TFormDescription>
+											<TFormMessage field={field} />
+										</TFormItem>
 									)}
-								/>
+								</form.Field>
 
-								<FormField
-									control={form.control}
-									name="role"
-									render={({ field }) => (
-										<FormItem>
-											<FormLabel>System Role</FormLabel>
-											<Select
-												onValueChange={field.onChange}
-												defaultValue={field.value}
-												disabled={!isAdmin || loading}
-											>
-												<FormControl>
-													<SelectTrigger>
-														<SelectValue placeholder="Select role" />
-													</SelectTrigger>
-												</FormControl>
-												<SelectContent>
-													<SelectItem value="admin">Admin</SelectItem>
-													<SelectItem value="manager">Manager</SelectItem>
-													<SelectItem value="employee">Employee</SelectItem>
-												</SelectContent>
-											</Select>
-											<FormDescription>Determines access level in the system</FormDescription>
-											<FormMessage />
-										</FormItem>
+								<form.Field name="employeeNumber">
+									{(field) => (
+										<TFormItem>
+											<TFormLabel hasError={fieldHasError(field)}>Employee Number</TFormLabel>
+											<TFormControl hasError={fieldHasError(field)}>
+												<Input
+													placeholder="e.g., EMP-001"
+													value={field.state.value || ""}
+													onChange={(e) => field.handleChange(e.target.value)}
+													onBlur={field.handleBlur}
+													disabled={!isAdmin || isUpdating}
+												/>
+											</TFormControl>
+											<TFormDescription>External payroll system ID</TFormDescription>
+											<TFormMessage field={field} />
+										</TFormItem>
 									)}
-								/>
+								</form.Field>
+							</div>
 
-								{isAdmin && (
-									<div className="flex justify-end gap-2">
-										<Button
-											type="button"
-											variant="outline"
-											onClick={() => router.push("/settings/employees")}
-											disabled={loading}
-										>
-											Cancel
-										</Button>
-										<Button type="submit" disabled={loading}>
-											{loading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
-											<IconDeviceFloppy className="mr-2 size-4" />
-											Save Changes
-										</Button>
-									</div>
+							<form.Field name="role">
+								{(field) => (
+									<TFormItem>
+										<TFormLabel hasError={fieldHasError(field)}>System Role</TFormLabel>
+										<RoleSelector
+											value={field.state.value}
+											onChange={field.handleChange}
+											disabled={!isAdmin || isUpdating}
+										/>
+										<TFormDescription>Determines access level in the system</TFormDescription>
+										<TFormMessage field={field} />
+									</TFormItem>
 								)}
-							</form>
-						</Form>
+							</form.Field>
+
+							{isAdmin && (
+								<div className="flex justify-end gap-2">
+									<Button
+										type="button"
+										variant="outline"
+										onClick={() => router.push("/settings/employees")}
+										disabled={isUpdating}
+									>
+										Cancel
+									</Button>
+									<form.Subscribe selector={(state) => [state.isDirty, state.isSubmitting]}>
+										{([isDirty, isSubmitting]) => (
+											<Button type="submit" disabled={!isDirty || isSubmitting || isUpdating}>
+												{(isSubmitting || isUpdating) && (
+													<IconLoader2 className="mr-2 size-4 animate-spin" />
+												)}
+												<IconDeviceFloppy className="mr-2 size-4" />
+												Save Changes
+											</Button>
+										)}
+									</form.Subscribe>
+								</div>
+							)}
+						</form>
 					</CardContent>
 				</Card>
 			</div>
@@ -468,7 +428,7 @@ export default function EmployeeDetailPage({
 					employeeId={employeeId}
 					currentManagers={employee.managers || []}
 					availableManagers={availableManagers}
-					onSuccess={loadEmployeeData}
+					onSuccess={refetch}
 				/>
 			)}
 		</div>

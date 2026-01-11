@@ -17,7 +17,6 @@ import { toast } from "sonner";
 import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
 import { updateOwnProfile } from "@/app/[locale]/(app)/settings/employees/actions";
 import { updateProfile } from "@/app/[locale]/(app)/settings/profile/actions";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,6 +25,7 @@ import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import { UserAvatar } from "@/components/user-avatar";
 import { useImageUpload } from "@/hooks/use-image-upload";
 import { format } from "@/lib/datetime/luxon-utils";
 import { queryKeys } from "@/lib/query";
@@ -138,15 +138,6 @@ export function ProfileForm({ user }: ProfileFormProps) {
 		},
 		[addFile],
 	);
-
-	const initials = user.name
-		? user.name
-				.split(" ")
-				.map((n) => n[0])
-				.join("")
-				.toUpperCase()
-				.slice(0, 2)
-		: "?";
 
 	// Avatar removal mutation
 	const removeAvatarMutation = useMutation({
@@ -320,13 +311,12 @@ export function ProfileForm({ user }: ProfileFormProps) {
 								/>
 								<div className="flex items-center gap-6">
 									<div className="relative">
-										<Avatar className="h-24 w-24">
-											<AvatarImage
-												alt={user.name}
-												src={previewUrl || profileData.image || undefined}
-											/>
-											<AvatarFallback className="text-2xl">{initials}</AvatarFallback>
-										</Avatar>
+										<UserAvatar
+											seed={user.id}
+											image={previewUrl || profileData.image || undefined}
+											name={user.name}
+											size="xl"
+										/>
 										{isUploadingAvatar && (
 											<div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50">
 												<IconLoader2 className="h-8 w-8 animate-spin text-white" />

@@ -1,7 +1,6 @@
 "use client";
 
 import { IconDots, IconEdit, IconTrash, IconUsers } from "@tabler/icons-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -11,12 +10,13 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { UserAvatar } from "@/components/user-avatar";
 import type { team } from "@/db/schema";
 
 interface TeamCardProps {
 	team: typeof team.$inferSelect & { _count?: { employees: number } };
 	employees?: Array<{
-		user: { name: string; image: string | null };
+		user: { id: string; name: string; image: string | null };
 	}>;
 	canManage: boolean;
 	onEdit?: () => void;
@@ -33,15 +33,6 @@ export function TeamCard({
 	onManageMembers,
 }: TeamCardProps) {
 	const memberCount = team._count?.employees || employees.length || 0;
-
-	const getInitials = (name: string) => {
-		return name
-			.split(" ")
-			.map((n) => n[0])
-			.join("")
-			.toUpperCase()
-			.slice(0, 2);
-	};
 
 	// Show first 3 employees
 	const displayedEmployees = employees.slice(0, 3);
@@ -100,13 +91,15 @@ export function TeamCard({
 					{memberCount > 0 && (
 						<div className="flex items-center gap-2">
 							<div className="flex -space-x-2">
-								{displayedEmployees.map((emp, idx) => (
-									<Avatar key={idx} className="h-8 w-8 border-2 border-background">
-										<AvatarImage src={emp.user.image || undefined} alt={emp.user.name} />
-										<AvatarFallback className="text-xs">
-											{getInitials(emp.user.name)}
-										</AvatarFallback>
-									</Avatar>
+								{displayedEmployees.map((emp) => (
+									<UserAvatar
+										key={emp.user.id}
+										seed={emp.user.id}
+										image={emp.user.image}
+										name={emp.user.name}
+										size="sm"
+										bordered
+									/>
 								))}
 								{remainingCount > 0 && (
 									<div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-background bg-muted text-xs font-medium">

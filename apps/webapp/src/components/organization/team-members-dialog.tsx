@@ -5,7 +5,6 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import { addTeamMember, removeTeamMember } from "@/app/[locale]/(app)/settings/teams/actions";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -23,6 +22,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { UserAvatar } from "@/components/user-avatar";
 import type { team } from "@/db/schema";
 import { queryKeys } from "@/lib/query";
 import type { MemberWithUserAndEmployee } from "./organizations-page-client";
@@ -97,15 +97,6 @@ export function TeamMembersDialog({
 			(!m.employee.teamId || m.employee.teamId !== team.id),
 	);
 
-	const getInitials = (name: string) => {
-		return name
-			.split(" ")
-			.map((n) => n[0])
-			.join("")
-			.toUpperCase()
-			.slice(0, 2);
-	};
-
 	const handleAddMember = () => {
 		if (!selectedEmployeeId) return;
 		addMutation.mutate({ teamId: team.id, employeeId: selectedEmployeeId });
@@ -144,15 +135,12 @@ export function TeamMembersDialog({
 											{availableEmployees.map((member) => (
 												<SelectItem key={member.employee?.id} value={member.employee?.id}>
 													<div className="flex items-center gap-2">
-														<Avatar className="h-6 w-6">
-															<AvatarImage
-																src={member.user.image || undefined}
-																alt={member.user.name}
-															/>
-															<AvatarFallback className="text-xs">
-																{getInitials(member.user.name)}
-															</AvatarFallback>
-														</Avatar>
+														<UserAvatar
+															seed={member.user.id}
+															image={member.user.image}
+															name={member.user.name}
+															size="xs"
+														/>
 														<span>{member.user.name}</span>
 														{member.employee?.position && (
 															<span className="text-xs text-muted-foreground">
@@ -207,13 +195,12 @@ export function TeamMembersDialog({
 											className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
 										>
 											<div className="flex items-center gap-3 flex-1 min-w-0">
-												<Avatar>
-													<AvatarImage
-														src={member.user.image || undefined}
-														alt={member.user.name}
-													/>
-													<AvatarFallback>{getInitials(member.user.name)}</AvatarFallback>
-												</Avatar>
+												<UserAvatar
+													seed={member.user.id}
+													image={member.user.image}
+													name={member.user.name}
+													size="sm"
+												/>
 												<div className="flex-1 min-w-0">
 													<div className="font-medium truncate">{member.user.name}</div>
 													<div className="text-sm text-muted-foreground truncate">

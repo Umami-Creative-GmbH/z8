@@ -126,6 +126,7 @@ export function AppSidebar({
 			<SidebarFooter>
 				<NavUser
 					user={{
+						id: session?.user?.id || "",
 						name: session?.user?.name || "",
 						email: session?.user?.email || "",
 						avatar: session?.user?.image,

@@ -58,6 +58,7 @@ export const updateEmployeeSchema = z
 		teamId: z.string().uuid("Invalid team ID").optional().nullable(),
 		role: employeeRoleSchema.optional(),
 		position: z.string().max(100, "Position is too long").optional().nullable(),
+		employeeNumber: z.string().max(50, "Employee number is too long").optional().nullable(),
 
 		// Personal information
 		firstName: z

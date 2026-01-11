@@ -4,6 +4,8 @@ import { AbsenceRequestPendingApproval } from "./templates/absence-request-pendi
 import { AbsenceRequestRejected } from "./templates/absence-request-rejected";
 import { AbsenceRequestSubmitted } from "./templates/absence-request-submitted";
 import { EmailVerification } from "./templates/email-verification";
+import { ExportFailed } from "./templates/export-failed";
+import { ExportReady } from "./templates/export-ready";
 import { OrganizationInvitation } from "./templates/organization-invitation";
 import { PasswordReset } from "./templates/password-reset";
 import { SecurityAlert } from "./templates/security-alert";
@@ -151,4 +153,25 @@ export async function renderSecurityAlert(props: {
 	appUrl: string;
 }) {
 	return render(SecurityAlert(props));
+}
+
+export async function renderExportReady(props: {
+	recipientName: string;
+	organizationName: string;
+	categories: string[];
+	fileSize: string;
+	downloadUrl: string;
+	expiresAt: string;
+}) {
+	return render(ExportReady(props));
+}
+
+export async function renderExportFailed(props: {
+	recipientName: string;
+	organizationName: string;
+	categories: string[];
+	errorMessage: string;
+	retryUrl: string;
+}) {
+	return render(ExportFailed(props));
 }

@@ -4,7 +4,6 @@ import { IconPlus, IconSearch, IconUser } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,6 +23,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { UserAvatar } from "@/components/user-avatar";
 import { Link } from "@/navigation";
 import { getCurrentEmployee } from "../../approvals/actions";
 import { type EmployeeWithRelations, listEmployees } from "./actions";
@@ -193,16 +193,12 @@ export default function EmployeesPage() {
 										<TableRow key={emp.id}>
 											<TableCell>
 												<div className="flex items-center gap-3">
-													<Avatar className="size-8">
-														<AvatarImage src={emp.user.image || undefined} />
-														<AvatarFallback>
-															{emp.user.name
-																.split(" ")
-																.map((n) => n[0])
-																.join("")
-																.toUpperCase()}
-														</AvatarFallback>
-													</Avatar>
+													<UserAvatar
+														image={emp.user.image}
+														seed={emp.user.id}
+														name={emp.user.name}
+														size="sm"
+													/>
 													<div>
 														<div className="font-medium">{emp.user.name}</div>
 														<div className="text-sm text-muted-foreground">{emp.user.email}</div>

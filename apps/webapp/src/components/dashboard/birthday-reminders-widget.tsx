@@ -1,8 +1,8 @@
 "use client";
 
 import { IconCake } from "@tabler/icons-react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { UserAvatar } from "@/components/user-avatar";
 import { format } from "@/lib/datetime/luxon-utils";
 import { pluralize } from "@/lib/utils";
 import { getUpcomingBirthdays } from "./actions";
@@ -53,12 +53,6 @@ export function BirthdayRemindersWidget() {
 				<div className="space-y-2">
 					{displayBirthdays.map((birthday) => {
 						const name = birthday.user.name || "Unknown";
-						const initials = name
-							.split(" ")
-							.map((n) => n[0])
-							.join("")
-							.toUpperCase()
-							.slice(0, 2);
 
 						return (
 							<div
@@ -66,9 +60,7 @@ export function BirthdayRemindersWidget() {
 								className="flex items-center justify-between rounded-lg border p-3"
 							>
 								<div className="flex items-center gap-3">
-									<Avatar className="size-9">
-										<AvatarFallback>{initials}</AvatarFallback>
-									</Avatar>
+									<UserAvatar seed={birthday.id} name={name} className="size-9" />
 									<div>
 										<div className="font-medium text-sm">{name}</div>
 										<div className="text-xs text-muted-foreground">

@@ -4,15 +4,19 @@ import {
 	IconBell,
 	IconBuilding,
 	IconCalendarEvent,
+	IconChartBar,
 	IconClock,
+	IconDatabaseExport,
+	IconGavel,
 	IconHistory,
 	IconShield,
+	IconTestPipe,
 	IconUserCircle,
 	IconUsers,
 	IconWorld,
 } from "@tabler/icons-react";
 
-export type SettingsGroup = "account" | "organization" | "administration" | "enterprise";
+export type SettingsGroup = "account" | "organization" | "administration" | "enterprise" | "data";
 
 export interface SettingsEntry {
 	id: string;
@@ -56,6 +60,12 @@ export const SETTINGS_GROUPS: SettingsGroupConfig[] = [
 		id: "enterprise",
 		labelKey: "settings.group.enterprise",
 		labelDefault: "Enterprise",
+		adminOnly: true,
+	},
+	{
+		id: "data",
+		labelKey: "settings.group.data",
+		labelDefault: "Data",
 		adminOnly: true,
 	},
 ];
@@ -149,6 +159,17 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		adminOnly: true,
 		group: "administration",
 	},
+	{
+		id: "time-regulations",
+		titleKey: "settings.timeRegulations.title",
+		titleDefault: "Time Regulations",
+		descriptionKey: "settings.timeRegulations.description",
+		descriptionDefault: "Configure working time limits and break requirements",
+		href: "/settings/time-regulations",
+		icon: IconGavel,
+		adminOnly: true,
+		group: "administration",
+	},
 	// Enterprise settings
 	{
 		id: "custom-domains",
@@ -171,6 +192,40 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		icon: IconHistory,
 		adminOnly: true,
 		group: "enterprise",
+	},
+	// Data settings
+	{
+		id: "demo-data",
+		titleKey: "settings.demoData.title",
+		titleDefault: "Demo Data",
+		descriptionKey: "settings.demoData.description",
+		descriptionDefault: "Generate sample data for testing or clear all time-related data",
+		href: "/settings/demo",
+		icon: IconTestPipe,
+		adminOnly: true,
+		group: "data",
+	},
+	{
+		id: "datawarehousing",
+		titleKey: "settings.datawarehousing.title",
+		titleDefault: "Datawarehousing",
+		descriptionKey: "settings.datawarehousing.description",
+		descriptionDefault: "View statistics and metrics about your instance",
+		href: "/settings/datawarehousing",
+		icon: IconChartBar,
+		adminOnly: true,
+		group: "data",
+	},
+	{
+		id: "export",
+		titleKey: "settings.export.title",
+		titleDefault: "Data Export",
+		descriptionKey: "settings.export.description",
+		descriptionDefault: "Export organization data for backup or migration",
+		href: "/settings/export",
+		icon: IconDatabaseExport,
+		adminOnly: true,
+		group: "data",
 	},
 ];
 

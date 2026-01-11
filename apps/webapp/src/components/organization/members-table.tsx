@@ -32,7 +32,6 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -58,6 +57,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { UserAvatar } from "@/components/user-avatar";
 import { formatRelative as formatDistanceToNow } from "@/lib/datetime/luxon-utils";
 import { queryKeys } from "@/lib/query";
 import type { InvitationWithInviter, MemberWithUserAndEmployee } from "./organizations-page-client";
@@ -264,15 +264,6 @@ export function MembersTable({
 		}
 	};
 
-	const getInitials = (name: string) => {
-		return name
-			.split(" ")
-			.map((n) => n[0])
-			.join("")
-			.toUpperCase()
-			.slice(0, 2);
-	};
-
 	const isInvitationExpired = (expiresAt: Date) => {
 		return new Date(expiresAt) < new Date();
 	};
@@ -420,10 +411,7 @@ export function MembersTable({
 									<TableRow key={member.id}>
 										<TableCell>
 											<div className="flex items-center gap-3">
-												<Avatar>
-													<AvatarImage src={user.image || undefined} alt={user.name} />
-													<AvatarFallback>{getInitials(user.name)}</AvatarFallback>
-												</Avatar>
+												<UserAvatar seed={user.id} image={user.image} name={user.name} size="sm" />
 												<div>
 													<div className="font-medium">
 														{user.name}

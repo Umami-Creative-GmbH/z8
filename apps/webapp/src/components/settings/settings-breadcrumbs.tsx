@@ -66,6 +66,10 @@ export function SettingsBreadcrumbs() {
 			label = t("settings.employees.title", "Employees");
 		} else if (segment === "permissions") {
 			label = t("settings.permissions.title", "Permissions");
+		} else if (segment === "demo") {
+			label = t("settings.demoData.title", "Demo Data");
+		} else if (segment === "datawarehousing") {
+			label = t("settings.datawarehousing.title", "Datawarehousing");
 		} else if (segment === "history") {
 			label = t("settings.vacation.history.title", "History");
 		} else if (segment === "new") {
