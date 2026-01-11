@@ -1,4 +1,5 @@
-import { sql } from "@/db";
+import { db } from "@/db";
+import { sql } from "drizzle-orm";
 import { valkey } from "@/lib/valkey";
 import { createLogger } from "@/lib/logger";
 
@@ -27,7 +28,7 @@ export interface HealthCheckResult {
 export async function checkDatabase(): Promise<ServiceHealth> {
 	const start = performance.now();
 	try {
-		await sql.query("SELECT 1");
+		await db.execute(sql`SELECT 1`);
 		return {
 			status: "healthy",
 			latencyMs: Math.round(performance.now() - start),
