@@ -3,10 +3,8 @@
  * Tests hash calculation, verification, chain validation, and tamper detection
  */
 
-import { DateTime } from "luxon";
 import type { timeEntry } from "@/db/schema";
 import {
-	type ChainValidationResult,
 	calculateHash,
 	getChainHash,
 	validateChain,

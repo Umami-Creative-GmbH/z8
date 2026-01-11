@@ -336,7 +336,7 @@ export async function requestTimeCorrectionEffect(
 		}
 
 		const [hours, minutes] = data.newClockInTime.split(":");
-		const correctedClockInDT = startDT!.set({
+		const correctedClockInDT = startDT?.set({
 			hour: parseInt(hours, 10),
 			minute: parseInt(minutes, 10),
 			second: 0,

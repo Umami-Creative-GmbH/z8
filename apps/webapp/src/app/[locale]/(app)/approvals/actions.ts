@@ -14,7 +14,7 @@ import {
 } from "@/db/schema";
 import { calculateBusinessDays } from "@/lib/absences/date-utils";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
-import { AuthorizationError, NotFoundError } from "@/lib/effect/errors";
+import { type AnyAppError, AuthorizationError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
@@ -225,7 +225,7 @@ async function processApproval<T>(
 						});
 
 						logger.error({ error, entityType, entityId, action }, "Failed to process approval");
-						return yield* _(Effect.fail(error as any));
+						return yield* _(Effect.fail(error as AnyAppError));
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
@@ -683,7 +683,7 @@ export async function getPendingApprovals(): Promise<{
 					clockOut: true,
 				},
 			});
-			if (period && period.clockIn) {
+			if (period?.clockIn) {
 				timeCorrectionApprovals.push({
 					...request,
 					entityType: "time_entry",

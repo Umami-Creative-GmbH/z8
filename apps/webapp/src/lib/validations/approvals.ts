@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { workPeriodWithEntriesSchema } from "./time-tracking";
 
 /**
  * Schema for user information in approval requests

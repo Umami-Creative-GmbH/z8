@@ -16,7 +16,7 @@ interface RouteParams {
  * GET /api/time-entries/[entryId]
  * Get a specific time entry with verification status
  */
-export async function GET(request: NextRequest, { params }: RouteParams) {
+export async function GET(_request: NextRequest, { params }: RouteParams) {
 	try {
 		const { entryId } = await params;
 

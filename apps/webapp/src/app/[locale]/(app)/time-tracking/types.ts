@@ -1,4 +1,4 @@
-import { type timeEntry, workPeriod } from "@/db/schema";
+import type { timeEntry } from "@/db/schema";
 
 export interface WorkPeriodWithEntries {
 	id: string;

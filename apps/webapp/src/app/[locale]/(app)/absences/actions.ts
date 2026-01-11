@@ -215,7 +215,8 @@ export async function requestAbsenceEffect(
 				logger.info({ absenceId: newAbsence.id }, "Absence entry created");
 
 				// Step 8: Handle approval workflow and notifications
-				if (category.requiresApproval && currentEmployee.managerId) {
+				const managerId = currentEmployee.managerId;
+				if (category.requiresApproval && managerId) {
 					// Create approval request
 					yield* _(
 						dbService.query("createApprovalRequest", async () => {
@@ -223,21 +224,21 @@ export async function requestAbsenceEffect(
 								entityType: "absence_entry",
 								entityId: newAbsence.id,
 								requestedBy: currentEmployee.id,
-								approverId: currentEmployee.managerId!,
+								approverId: managerId,
 								status: "pending",
 							});
 						}),
 					);
 
 					span.setAttribute("absence.has_approval_request", true);
-					span.setAttribute("absence.approver_id", currentEmployee.managerId);
+					span.setAttribute("absence.approver_id", managerId);
 
 					// Step 9: Fetch manager and employee details for email
 					const [manager, empWithUser] = yield* _(
 						Effect.all([
 							dbService.query("getManagerWithUser", async () => {
 								const mgr = await dbService.db.query.employee.findFirst({
-									where: eq(employee.id, currentEmployee.managerId!),
+									where: eq(employee.id, managerId),
 									with: { user: true },
 								});
 
