@@ -9,7 +9,8 @@
       "Bash(bunx tsc:*)",
       "Bash(bunx --bun biome check:*)",
       "Bash(grep:*)",
-      "Bash(bunx --bun biome lint:*)"
+      "Bash(bunx --bun biome lint:*)",
+      "Bash(bun tsc:*)"
     ]
   },
   "enabledMcpjsonServers": [

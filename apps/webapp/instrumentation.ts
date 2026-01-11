@@ -76,6 +76,18 @@ export async function register() {
 
 		sdk.start();
 
+		// Run startup health checks after OpenTelemetry is initialized
+		const { runStartupChecks } = await import("@/lib/health");
+		const healthy = await runStartupChecks();
+
+		if (!healthy) {
+			console.error(
+				"[FATAL] Critical startup checks failed - database unavailable",
+			);
+			// In production, you may want to exit: process.exit(1)
+			// For now, we log and continue to allow debugging
+		}
+
 		process.on("SIGTERM", () => {
 			sdk.shutdown().finally(() => process.exit(0));
 		});
