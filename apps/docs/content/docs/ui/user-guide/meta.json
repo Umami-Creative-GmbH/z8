@@ -1,0 +1,16 @@
+{
+  "title": "User Guide",
+  "icon": "User",
+  "pages": [
+    "---Getting Started---",
+    "index",
+    "getting-started",
+    "---Features---",
+    "time-tracking",
+    "calendar",
+    "notifications",
+    "vacation",
+    "---Help---",
+    "faq"
+  ]
+}

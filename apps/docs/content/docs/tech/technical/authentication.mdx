@@ -1,0 +1,38 @@
+---
+title: Authentication
+description: Better-Auth integration, 2FA, passkeys, and OAuth configuration
+icon: Key
+---
+
+## Better-Auth Integration
+
+Z8 uses Better-Auth for authentication with support for:
+
+- **Email/Password**: Traditional authentication
+- **Two-Factor Authentication (2FA)**: TOTP-based
+- **Passkeys**: WebAuthn/FIDO2 passwordless authentication
+- **Social OAuth**: Google, Microsoft, GitHub providers
+
+---
+
+## Configuration
+
+```bash
+# Generate auth secret
+bunx @better-auth/cli@latest secret
+```
+
+Add to `.env`:
+```ini
+BETTER_AUTH_SECRET=<generated-secret>
+BETTER_AUTH_URL=http://localhost:3000
+```
+
+---
+
+## Social OAuth Setup
+
+Configure OAuth providers in `src/lib/auth/index.ts`:
+- Google OAuth credentials
+- Microsoft Azure AD
+- GitHub OAuth App

@@ -1,0 +1,35 @@
+---
+title: Database Schema
+description: Core tables, schema generation, and Drizzle ORM configuration
+icon: Database
+---
+
+## Core Tables
+
+The database uses Drizzle ORM with the following key entities:
+
+- **users** - Authentication and user accounts
+- **employees** - Employee profiles linked to users
+- **organizations** - Multi-tenant organization support
+- **teams** - Team structure and membership
+- **locations** - Physical work locations
+- **time_entries** - Clock in/out records
+- **absences** - Vacation and time-off requests
+- **holidays** - Public and custom holidays
+- **holiday_presets** - Reusable holiday collections
+- **vacation_assignments** - Flexible vacation allocation rules
+- **notifications** - Multi-channel notification records
+- **push_subscriptions** - Browser push notification subscriptions
+- **audit_logs** - Comprehensive audit trail
+
+---
+
+## Schema Generation
+
+```bash
+# Generate Better-Auth schema
+bunx --bun @better-auth/cli generate --output ./src/db/schema.ts
+
+# Run database migrations
+bun db:migrate
+```

@@ -1,0 +1,69 @@
+---
+title: Testing & Deployment
+description: Unit tests, E2E testing, and deployment configuration
+icon: TestPipe
+---
+
+## Unit Tests
+
+Run unit tests:
+```bash
+bun test
+```
+
+Test coverage includes:
+- Blockchain validation
+- Utility functions
+- Notification service
+- DateTime operations
+
+---
+
+## E2E Tests
+
+End-to-end tests use Playwright (when configured):
+```bash
+bun test:e2e
+```
+
+---
+
+## Deployment
+
+### Environment Variables
+
+Required environment variables:
+
+```ini
+# Database
+DATABASE_URL=postgresql://user:pass@host:5432/db
+
+# Authentication
+BETTER_AUTH_SECRET=<secret>
+BETTER_AUTH_URL=https://yourdomain.com
+
+# Push Notifications
+VAPID_PUBLIC_KEY=<key>
+VAPID_PRIVATE_KEY=<key>
+VAPID_SUBJECT=mailto:support@yourdomain.com
+
+# Storage (optional)
+S3_BUCKET=<bucket>
+S3_REGION=<region>
+S3_ACCESS_KEY_ID=<key>
+S3_SECRET_ACCESS_KEY=<secret>
+```
+
+### Health Checks
+
+Health check endpoints for orchestration:
+
+- `GET /api/health` - Overall health
+- `GET /api/health/db` - Database connectivity
+- `GET /api/health/ready` - Readiness probe
+
+---
+
+## License
+
+Z8 is licensed under a modified BSD 3-Clause license. See the LICENSE file and the open source licenses viewer at `/settings/licenses` for third-party attributions.

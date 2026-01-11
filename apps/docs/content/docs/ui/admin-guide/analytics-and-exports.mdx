@@ -1,0 +1,138 @@
+---
+title: Analytics & Exports
+description: Reports, data export, and data warehousing
+icon: ChartBar
+---
+
+## Analytics & Reports
+
+### Accessing Reports
+
+Go to **Analytics** from the main navigation to access comprehensive reporting.
+
+### Available Reports
+
+**Team Performance Reports:**
+- Work hours by team member
+- Overtime trends
+- Attendance patterns
+- Productivity metrics
+
+**Vacation Reports:**
+- Vacation balance summaries
+- Usage trends
+- Upcoming absences
+- Carryover analysis
+
+**Time Tracking Reports:**
+- Daily/weekly/monthly summaries
+- Clock in/out patterns
+- Late arrivals and early departures
+- Break time analysis
+
+### Exporting Data
+
+Export reports in multiple formats:
+
+1. Generate the desired report
+2. Click **"Export"** button
+3. Choose format:
+   - **CSV**: For spreadsheet analysis
+   - **Excel (.xlsx)**: With formatting preserved
+   - **PDF**: For printing and sharing
+4. Download the file
+
+### Report Filters
+
+Customize reports using filters:
+- **Date Range**: Select the period
+- **Team/Department**: Filter by group
+- **Employee**: Individual or multiple selection
+- **Location**: By work location
+- **Status**: Active/inactive employees
+
+### Scheduled Reports
+
+Set up automated report delivery:
+
+1. Go to **Analytics** → **"Scheduled Reports"**
+2. Click **"Create Schedule"**
+3. Configure:
+   - Report type
+   - Frequency (daily, weekly, monthly)
+   - Recipients (email addresses)
+   - Format (CSV, Excel, PDF)
+4. Save the schedule
+
+---
+
+## Data Export & Warehousing
+
+### Data Export System
+
+The export system allows you to export organization data for backup, compliance, or integration with external systems.
+
+### Creating an Export
+
+1. Go to **Settings** → **Export**
+2. Click **"New Export"**
+3. Select data to export:
+   - **Employees**: All employee records
+   - **Time Entries**: Clock in/out records
+   - **Absences**: Vacation and time-off records
+   - **Audit Logs**: System audit trail
+4. Choose date range (if applicable)
+5. Select format:
+   - **CSV**: Comma-separated values
+   - **JSON**: Structured JSON format
+6. Click **"Start Export"**
+
+### Asynchronous Processing
+
+Large exports are processed asynchronously:
+- Export job is queued for background processing
+- Email notification sent when export is ready
+- Download link available in export history
+
+### Export History
+
+View all previous exports:
+
+1. Go to **Settings** → **Export** → **"History"**
+2. See all exports with:
+   - Date created
+   - Data types included
+   - File size
+   - Status (processing, ready, expired)
+3. Download or delete exports
+
+### Storage Settings
+
+Configure external storage for exports:
+
+1. Go to **Settings** → **Export** → **"Storage"**
+2. Configure S3-compatible storage:
+   - Bucket name
+   - Region
+   - Access credentials
+3. Test the connection
+4. Save settings
+
+Exports will be stored in your configured storage instead of local storage.
+
+### Data Warehousing
+
+For advanced data warehousing needs:
+
+1. Go to **Settings** → **Data Warehousing**
+2. Configure automated data sync:
+   - Target warehouse (Snowflake, BigQuery, etc.)
+   - Sync frequency
+   - Data tables to sync
+3. Enable warehousing
+
+### Export Retention
+
+- Exports are retained for 30 days by default
+- Expired exports are automatically deleted
+- Configure retention period in settings

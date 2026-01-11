@@ -1,0 +1,243 @@
+---
+title: System Administration
+description: Audit logs, notifications, health monitoring, demo data, and organization settings
+icon: Settings
+---
+
+## Audit Logging
+
+### Understanding Audit Logs
+
+The system maintains comprehensive audit logs for compliance and security:
+- All user actions are recorded
+- Changes to data are tracked
+- Login/logout events captured
+- API access logged
+
+### Accessing Audit Logs
+
+1. Go to **Settings** → **"Audit Logs"**
+2. View the chronological list of events
+3. Each entry shows:
+   - Timestamp
+   - User who performed the action
+   - Action type
+   - Affected resource
+   - Old and new values (for changes)
+
+### Filtering Audit Logs
+
+Use filters to find specific events:
+
+- **Date Range**: Narrow down the time period
+- **User**: Filter by who performed the action
+- **Action Type**: Create, update, delete, login, etc.
+- **Resource**: Employees, teams, time entries, etc.
+- **Search**: Free-text search in log details
+
+### Exporting Audit Logs
+
+For compliance and external audits:
+
+1. Apply desired filters
+2. Click **"Export"**
+3. Choose format (CSV, JSON)
+4. Download for external review
+
+### Audit Log Retention
+
+- Logs are retained for the legally required period
+- Cannot be modified or deleted
+- Blockchain-verified for integrity (GoBD compliance)
+
+---
+
+## Notification System
+
+### Configuring Notifications
+
+Set up organization-wide notification preferences:
+
+1. Go to **Settings** → **"Notifications"**
+2. Configure channels:
+   - **Email**: SMTP settings for email notifications
+   - **Push**: Browser push notification settings
+   - **In-App**: Real-time notification center
+
+### Email Configuration
+
+To set up email notifications:
+
+1. Go to **Settings** → **Notifications** → **"Email"**
+2. Configure SMTP settings or use the built-in provider
+3. Customize email templates if needed
+4. Test the configuration
+
+### Push Notification Setup
+
+Enable browser push notifications:
+
+1. Go to **Settings** → **Notifications** → **"Push"**
+2. VAPID keys are auto-generated or can be configured
+3. Set notification preferences by type
+4. Users must grant browser permission
+
+### Notification Types
+
+Configure which events trigger notifications:
+
+| Event | Email | Push | In-App |
+|-------|-------|------|--------|
+| Absence Request | Yes | Yes | Yes |
+| Request Approved/Denied | Yes | Yes | Yes |
+| Time Entry Reminder | Yes | Yes | Yes |
+| Birthday Announcement | Yes | - | Yes |
+| System Alerts | Yes | Yes | Yes |
+
+### SSE Real-Time Updates
+
+The system uses Server-Sent Events for real-time notification delivery:
+- No polling required
+- Instant delivery
+- Low bandwidth usage
+- Automatic reconnection
+
+---
+
+## Health Monitoring
+
+### Application Health Checks
+
+Monitor system health and performance:
+
+1. Go to **Settings** → **"System Health"**
+2. View status of all components:
+   - Database connectivity
+   - Authentication services
+   - Email delivery
+   - Background jobs
+   - External integrations
+
+### Health Endpoints
+
+For automated monitoring, use the health check endpoints:
+
+- `/api/health` - Overall system health
+- `/api/health/db` - Database connectivity
+- `/api/health/ready` - Application readiness
+
+### Monitoring Alerts
+
+Set up alerts for system issues:
+
+1. Configure monitoring thresholds
+2. Set alert recipients
+3. Choose notification channels
+4. Define escalation procedures
+
+### Performance Metrics
+
+Track system performance:
+- Response times
+- Error rates
+- Active users
+- Database query performance
+- Background job queue status
+
+---
+
+## Demo Data Management
+
+### Demo Data Wizard
+
+For testing and demonstration purposes, you can generate realistic demo data:
+
+1. Go to **Settings** → **Demo**
+2. Click **"Generate Demo Data"**
+3. Configure generation options:
+   - **Number of Employees**: How many demo employees to create
+   - **Time Range**: Date range for time entries
+   - **Include Absences**: Generate vacation requests
+   - **Include Time Entries**: Generate clock in/out records
+4. Click **"Generate"**
+
+### Demo Data Contents
+
+The wizard generates:
+- **Employees**: Realistic names and profiles
+- **Teams**: Sample team structure
+- **Time Entries**: Realistic work patterns
+- **Absences**: Vacation and sick leave records
+- **Time Regulations**: Sample compliance rules
+
+### Cleaning Up Demo Data
+
+To remove demo data:
+
+1. Go to **Settings** → **Demo**
+2. Click **"Delete Demo Data"**
+3. Select what to remove:
+   - All demo employees
+   - Demo time entries only
+   - All non-admin users
+4. Confirm deletion
+
+**Warning**: This action cannot be undone. Always back up your data before cleanup.
+
+### Use Cases
+
+Demo data is useful for:
+- **Training**: Teaching new admins and managers
+- **Demonstrations**: Showing features to stakeholders
+- **Testing**: Verifying system behavior
+- **Development**: Testing with realistic data volumes
+
+### Best Practices
+
+- Use demo data only in test/staging environments
+- Never generate demo data in production
+- Clean up demo data before going live
+- Document which data is demo vs. real
+
+---
+
+## Organization Settings
+
+### User Invitations
+
+To invite new users to the organization:
+
+1. Go to **Settings** → **Members** → **"Invite"**
+2. Enter user information:
+   - **Email**: User's email address
+   - **Role**: Initial role (Member, Admin)
+   - **Can Create Organizations**: Special permission (usually NO for invited users)
+3. Click **"Send Invitation"**
+
+**Important Permission Notes:**
+- **Fresh signups** (not invited): CAN create new organizations
+- **Invited users**: CANNOT create new organizations by default
+- **Admins**: Can always create organizations regardless of invitation status
+
+This prevents invited users from creating competing organizations while allowing organic growth through direct signups.
+
+### Managing Invitations
+
+View pending invitations:
+1. Go to **Settings** → **Members** → **"Invitations"**
+2. See list of pending invitations
+3. Options:
+   - **Resend**: Send invitation email again
+   - **Cancel**: Revoke invitation before acceptance
+
+### Organization Profile
+
+To update organization information:
+
+1. Go to **Settings** → **Organization**
+2. Update:
+   - Organization name
+   - Logo
+   - Contact information
+   - Time zone
+3. Click **"Save"**

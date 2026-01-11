@@ -1,0 +1,175 @@
+---
+title: Features & Compliance
+description: Blockchain verification, time regulations, export system, and avatars
+icon: Server
+---
+
+## Blockchain Verification
+
+### GoBD Compliance
+
+Time entries are secured using blockchain-style hashing for GoBD (German record-keeping) compliance:
+
+- Each time entry receives a SHA-256 hash
+- Hashes chain together for tamper detection
+- Full audit trail with integrity verification
+
+### Hash Calculation
+
+```typescript
+import { calculateBlockchainHash } from '@/lib/blockchain';
+
+const hash = calculateBlockchainHash({
+  previousHash: entry.previousHash,
+  timestamp: entry.createdAt,
+  data: entry.data,
+});
+```
+
+### Validation
+
+```typescript
+import { validateBlockchainIntegrity } from '@/lib/blockchain';
+
+const isValid = await validateBlockchainIntegrity(entries);
+```
+
+---
+
+## Time Regulation Service
+
+### Labor Law Compliance
+
+The time regulation service enforces labor law compliance:
+
+```typescript
+import { TimeRegulationService } from '@/lib/effect/services/time-regulation.service';
+
+// Validate work period against regulations
+const result = await TimeRegulationService.validateWorkPeriod({
+  employeeId,
+  startTime,
+  endTime,
+  breaks,
+});
+```
+
+### Break Rules
+
+Break rules are configured per regulation:
+
+```typescript
+interface BreakRule {
+  afterHours: number;  // Hours threshold
+  minBreakMinutes: number;  // Required break duration
+}
+```
+
+### Compliance Validation
+
+```typescript
+// Check compliance for a date range
+const violations = await TimeRegulationService.checkCompliance({
+  employeeId,
+  startDate,
+  endDate,
+});
+```
+
+---
+
+## Export System
+
+### Export Service
+
+The export service handles asynchronous data exports:
+
+```typescript
+import { ExportService } from '@/lib/export/export-service';
+
+// Create export job
+const job = await ExportService.createExport({
+  types: ['employees', 'timeEntries'],
+  format: 'csv',
+  dateRange: { start, end },
+});
+```
+
+### Formatters
+
+Multiple export formats are supported:
+
+```
+src/lib/export/formatters/
+├── csv-formatter.ts   # CSV output
+├── json-formatter.ts  # JSON output
+└── zip-builder.ts     # ZIP archive creation
+```
+
+### Storage Integration
+
+Exports can be stored in S3-compatible storage:
+
+```typescript
+import { ExportS3Client } from '@/lib/storage/export-s3-client';
+
+await ExportS3Client.upload(exportBuffer, filename);
+```
+
+---
+
+## Avatar Generation
+
+### DiceBear Integration
+
+User avatars are generated using DiceBear:
+
+```typescript
+import { generateAvatar } from '@/lib/avatar';
+
+// Generate avatar URL from seed (e.g., user ID or email)
+const avatarUrl = generateAvatar(userId, {
+  style: 'initials',
+  backgroundColor: ['b6e3f4', 'c0aede'],
+});
+```
+
+### Avatar Styles
+
+Available styles:
+- `initials` - Letter-based avatars
+- `avataaars` - Cartoon-style avatars
+- `bottts` - Robot avatars
+- `identicon` - Geometric patterns
+
+---
+
+## Demo Data Generation
+
+### Employee Generator
+
+Generate realistic demo employees:
+
+```typescript
+import { EmployeeGenerator } from '@/lib/demo/employee-generator';
+
+const employees = EmployeeGenerator.generate(count, {
+  includeManagers: true,
+  locale: 'de',
+});
+```
+
+### Demo Data Service
+
+Full demo data generation:
+
+```typescript
+import { DemoDataService } from '@/lib/demo/demo-data.service';
+
+await DemoDataService.seed({
+  employees: 50,
+  timeEntries: true,
+  absences: true,
+  dateRange: { months: 6 },
+});
+```

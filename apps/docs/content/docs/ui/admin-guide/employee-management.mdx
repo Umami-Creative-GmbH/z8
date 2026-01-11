@@ -1,0 +1,95 @@
+---
+title: Employee Management
+description: Adding, editing, and deactivating employees in Z8
+icon: UserPlus
+---
+
+import { Steps, Step } from 'fumadocs-ui/components/steps';
+import { Callout } from 'fumadocs-ui/components/callout';
+
+## Adding a New Employee
+
+<Steps>
+  <Step>
+    Go to **Settings** → **Employees**
+  </Step>
+  <Step>
+    Click **"Add Employee"** button
+  </Step>
+  <Step>
+    Fill in the employee information:
+    - **User Account**: Select existing user or invite new user
+    - **First Name**: Employee's given name
+    - **Last Name**: Employee's family name
+    - **Gender**: Optional (Male, Female, Other)
+    - **Birthday**: Optional, for birthday tracking
+    - **Position**: Job title or role
+    - **Team**: Assign to a team (optional)
+    - **Role**: System role (Admin, Manager, Employee)
+    - **Start Date**: Employment start date
+  </Step>
+  <Step>
+    Click **"Create Employee"**
+  </Step>
+</Steps>
+
+<Callout type="info" title="Important Notes">
+- User accounts are separate from employee profiles
+- One user can only belong to one organization
+- Initial manager assignment can be done after creation
+- New employees are active by default
+</Callout>
+
+---
+
+## Editing Employee Information
+
+<Steps>
+  <Step>
+    Go to **Settings** → **Employees**
+  </Step>
+  <Step>
+    Find the employee (use search if needed)
+  </Step>
+  <Step>
+    Click on their name or **"View Details"**
+  </Step>
+  <Step>
+    Edit the information:
+    - Personal information (name, gender, birthday)
+    - Job information (position, team, role)
+    - Status (active/inactive)
+  </Step>
+  <Step>
+    Click **"Save Changes"**
+  </Step>
+</Steps>
+
+---
+
+## Deactivating Employees
+
+When an employee leaves:
+
+<Steps>
+  <Step>
+    Navigate to the employee's profile
+  </Step>
+  <Step>
+    Change status to **"Inactive"**
+  </Step>
+  <Step>
+    Click **"Save"**
+  </Step>
+</Steps>
+
+<Callout type="warn" title="What happens when deactivated">
+- Employee loses system access
+- Cannot submit new requests
+- Historical data remains intact
+- Can be reactivated later if needed
+</Callout>
+
+<Callout type="info">
+**Best Practice**: Keep employee records for at least one full year after departure for reporting and compliance purposes.
+</Callout>

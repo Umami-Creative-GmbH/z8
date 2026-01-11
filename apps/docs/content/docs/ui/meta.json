@@ -1,0 +1,12 @@
+{
+  "root": true,
+  "title": "UI Docs",
+  "description": "User, Manager, and Admin guides for using Z8",
+  "icon": "User",
+  "pages": [
+    "getting-started",
+    "user-guide",
+    "manager-guide",
+    "admin-guide"
+  ]
+}

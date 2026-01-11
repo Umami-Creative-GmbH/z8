@@ -1,0 +1,108 @@
+---
+title: Getting Started
+description: Prerequisites, development workflow, and code quality standards
+icon: PlayerPlay
+---
+
+import { Steps, Step } from 'fumadocs-ui/components/steps';
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
+
+## Prerequisites
+
+- [Bun](https://bun.sh/) runtime (recommended) or Node.js with pnpm.
+
+---
+
+## Development Workflow
+
+<Tabs items={['All Apps', 'Single App']}>
+  <Tab value="All Apps">
+    ```bash
+    # Install dependencies
+    bun install
+
+    # Run all apps in development mode
+    bun dev
+    ```
+  </Tab>
+  <Tab value="Single App">
+    ```bash
+    # Run specific app
+    bun dev --filter=webapp
+    bun dev --filter=mobile
+    bun dev --filter=docs
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## Infrastructure & Configuration
+
+### Authentication
+
+<Steps>
+  <Step>
+    Generate auth schema:
+    ```bash
+    bunx --bun @better-auth/cli generate --output ./src/db/schema.ts
+    ```
+  </Step>
+  <Step>
+    Generate auth secret:
+    ```bash
+    bunx @better-auth/cli@latest secret
+    ```
+  </Step>
+</Steps>
+
+### Push Notifications
+
+<Steps>
+  <Step>
+    Generate VAPID keys for push notifications:
+    ```bash
+    bunx web-push generate-vapid-keys
+    ```
+  </Step>
+  <Step>
+    Add these to your `.env` file:
+    ```ini
+    VAPID_PUBLIC_KEY=<generated-public-key>
+    VAPID_PRIVATE_KEY=<generated-private-key>
+    VAPID_SUBJECT=mailto:support@yourdomain.com
+    ```
+  </Step>
+</Steps>
+
+---
+
+## Code Quality Standards
+
+This project follows strict quality standards enforced by **Ultracite** (Biome preset).
+
+<Tabs items={['Format', 'Check', 'Types']}>
+  <Tab value="Format">
+    ```bash
+    npx ultracite fix
+    ```
+    Automatically format code and fix issues.
+  </Tab>
+  <Tab value="Check">
+    ```bash
+    npx ultracite check
+    ```
+    Check for issues without modifying files.
+  </Tab>
+  <Tab value="Types">
+    ```bash
+    bun x tsc --noEmit
+    ```
+    Type checking (run in respective app folders).
+  </Tab>
+</Tabs>
+
+<Callout type="info">
+For more details, see the internal Ultracite Code Standards documentation.
+</Callout>

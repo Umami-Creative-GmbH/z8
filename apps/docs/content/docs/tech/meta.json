@@ -1,0 +1,10 @@
+{
+  "root": true,
+  "title": "Tech Docs",
+  "description": "Technical documentation and deployment guides",
+  "icon": "Code",
+  "pages": [
+    "technical",
+    "deployment"
+  ]
+}

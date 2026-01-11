@@ -1,0 +1,23 @@
+{
+  "title": "Admin Guide",
+  "icon": "ShieldLock",
+  "pages": [
+    "---Overview---",
+    "index",
+    "---People---",
+    "employee-management",
+    "manager-assignments",
+    "teams",
+    "locations",
+    "permissions",
+    "---Configuration---",
+    "schedules",
+    "time-regulations",
+    "holidays-and-vacation",
+    "---Reports & Data---",
+    "analytics-and-exports",
+    "---System---",
+    "system-administration",
+    "troubleshooting"
+  ]
+}

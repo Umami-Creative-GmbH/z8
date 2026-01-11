@@ -1,0 +1,132 @@
+---
+title: Technical Documentation
+description: Technical information for developers working on the Z8 project
+icon: Code
+---
+
+import { Cards, Card } from "fumadocs-ui/components/card";
+import { File, Folder, Files } from 'fumadocs-ui/components/files';
+
+Technical documentation for developers working on Z8, a Turborepo monorepo with web, mobile, desktop, and documentation applications.
+
+<Cards>
+  <Card
+    title="Getting Started"
+    description="Prerequisites, development workflow, and code quality standards"
+    href="/docs/tech/technical/getting-started"
+  />
+  <Card
+    title="Database Schema"
+    description="Core tables, schema generation, and Drizzle ORM"
+    href="/docs/tech/technical/database"
+  />
+  <Card
+    title="Authentication"
+    description="Better-Auth, 2FA, passkeys, and OAuth configuration"
+    href="/docs/tech/technical/authentication"
+  />
+  <Card
+    title="Services & Infrastructure"
+    description="Notifications, storage, background jobs, analytics"
+    href="/docs/tech/technical/services"
+  />
+  <Card
+    title="Features & Compliance"
+    description="Blockchain verification, time regulations, export system"
+    href="/docs/tech/technical/features"
+  />
+  <Card
+    title="Testing & Deployment"
+    description="Unit tests, E2E testing, and deployment configuration"
+    href="/docs/tech/technical/testing"
+  />
+</Cards>
+
+---
+
+## Architecture
+
+Z8 is built as a **Turborepo monorepo**, managing shared logic and various application targets:
+
+| App | Path | Description |
+|-----|------|-------------|
+| **Web** | `apps/webapp` | Next.js web application - The primary administrative and employee interface. |
+| **Mobile** | `apps/mobile` | Expo React Native app - Native mobile companion for time tracking on the go. |
+| **Desktop** | `apps/desktop` | Tauri desktop app - Lightweight background widget for quick clock in/out operations. |
+| **Docs** | `apps/docs` | Fumadocs documentation site - Technical and user documentation. |
+
+### Monorepo Structure
+
+<Files>
+  <Folder name="apps" defaultOpen>
+    <Folder name="webapp">
+      <File name="package.json" />
+      <Folder name="src">
+        <File name="app/" />
+        <File name="lib/" />
+        <File name="components/" />
+      </Folder>
+    </Folder>
+    <Folder name="mobile">
+      <File name="package.json" />
+      <File name="app.json" />
+    </Folder>
+    <Folder name="desktop">
+      <File name="package.json" />
+      <File name="tauri.conf.json" />
+    </Folder>
+    <Folder name="docs">
+      <File name="package.json" />
+      <Folder name="content" />
+    </Folder>
+  </Folder>
+  <Folder name="packages">
+    <File name="ui/" />
+    <File name="config/" />
+    <File name="tsconfig/" />
+  </Folder>
+  <File name="turbo.json" />
+  <File name="package.json" />
+</Files>
+
+### Tech Stack
+
+- **Framework**: Next.js 16 (Web), Expo/React Native (Mobile), Tauri (Desktop), Fumadocs (Docs)
+- **Language**: TypeScript, Rust (Tauri Core)
+- **Database**: Drizzle ORM with PostgreSQL
+- **Auth**: Better-Auth (2FA, Passkeys, Social OAuth)
+- **Styling**: Tailwind CSS v4, Shadcn UI
+- **State Management**: Effect-TS for services
+- **Date/Time**: Luxon DateTime
+- **Monorepo Tooling**: Turborepo, Bun
+
+### Service Architecture
+
+The application uses **Effect-TS** for building type-safe, composable services:
+
+<Files>
+  <Folder name="src/lib/services" defaultOpen>
+    <File name="analytics-service.ts" />
+    <File name="audit-service.ts" />
+    <File name="blockchain-service.ts" />
+    <File name="email-service.ts" />
+    <File name="manager-service.ts" />
+    <File name="notification-service.ts" />
+    <File name="onboarding-service.ts" />
+    <File name="permissions-service.ts" />
+    <File name="reporting-service.ts" />
+    <File name="time-regulation-service.ts" />
+    <File name="work-schedule-service.ts" />
+  </Folder>
+</Files>
+
+### Key Libraries
+
+| Library | Purpose |
+|---------|---------|
+| Effect-TS | Type-safe service composition |
+| Luxon | Timezone-aware date/time handling |
+| SuperJSON | Extended JSON serialization |
+| DiceBear | Avatar generation |
+| TanStack Form | Form state management |
+| Temporal Polyfill | Future-proof date/time API |

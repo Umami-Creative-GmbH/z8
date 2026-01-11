@@ -1,0 +1,119 @@
+---
+title: Vacation & Time Off
+description: Requesting time off, checking balance, and manager approvals
+icon: Umbrella
+---
+
+import { Steps, Step } from 'fumadocs-ui/components/steps';
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
+
+## Requesting Time Off
+
+<Steps>
+  <Step>
+    Go to **Absences** → **"Request Time Off"**
+  </Step>
+  <Step>
+    Fill in the form:
+    - **Start Date** - When your time off begins
+    - **End Date** - When you return to work
+    - **Type** - Vacation, sick leave, personal day, etc.
+    - **Reason** - Brief explanation (optional but recommended)
+  </Step>
+  <Step>
+    Click **"Submit Request"**
+  </Step>
+</Steps>
+
+<Callout type="info">
+Your manager(s) will be notified and can approve or deny the request.
+</Callout>
+
+---
+
+## Checking Request Status
+
+<Steps>
+  <Step>
+    Go to **Absences**
+  </Step>
+  <Step>
+    View the **"My Requests"** tab
+  </Step>
+  <Step>
+    Check the status indicators:
+    - **Pending** - Awaiting manager approval
+    - **Approved** - Approved by your manager
+    - **Denied** - Not approved (reason included)
+  </Step>
+</Steps>
+
+---
+
+## Vacation Balance
+
+Your vacation allowance is calculated based on:
+- Organization policy (default days per year)
+- Your work schedule (full-time vs part-time)
+- Carryover from previous year
+- Any manual adjustments (bonuses, etc.)
+
+<Steps>
+  <Step>
+    Go to **Absences** → **"My Allowance"**
+  </Step>
+  <Step>
+    You'll see:
+    - Annual days granted
+    - Days carried over
+    - Adjustments (if any)
+    - Days used this year
+    - Remaining balance
+  </Step>
+</Steps>
+
+---
+
+## Approvals (For Managers)
+
+<Callout type="info">
+If you're a manager, you have additional responsibilities and permissions.
+</Callout>
+
+### Accessing Approvals
+
+<Steps>
+  <Step>
+    Go to **Approvals** from the main navigation
+  </Step>
+  <Step>
+    You'll see two tabs:
+    - **Absence Requests** - Time-off requests
+    - **Time Corrections** - Time entry corrections
+  </Step>
+</Steps>
+
+### Reviewing Requests
+
+<Tabs items={['View Details', 'Approve', 'Deny']}>
+  <Tab value="View Details">
+    See dates, reason, and employee information before making a decision.
+  </Tab>
+  <Tab value="Approve">
+    Grant the request - the employee will be notified immediately.
+  </Tab>
+  <Tab value="Deny">
+    Reject with a reason - always provide an explanation to help the employee understand.
+  </Tab>
+</Tabs>
+
+### Best Practices for Managers
+
+<Callout type="info" title="Manager Tips">
+- **Review requests promptly** - Employees plan based on approvals
+- **Be fair and consistent** - Apply the same standards to all team members
+- **Provide reasons for denials** - Help employees understand decisions
+- **Check team coverage** - Ensure adequate staffing before approving
+- **Communicate** - Talk to employees about complex scheduling issues
+</Callout>

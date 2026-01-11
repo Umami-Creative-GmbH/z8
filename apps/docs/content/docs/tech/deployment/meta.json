@@ -1,4 +1,5 @@
 {
   "title": "Deployment",
+  "icon": "Server",
   "pages": ["index"]
 }

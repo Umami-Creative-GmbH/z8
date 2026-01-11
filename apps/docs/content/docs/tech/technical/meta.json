@@ -1,0 +1,16 @@
+{
+  "title": "Technical Docs",
+  "icon": "Code",
+  "pages": [
+    "---Architecture---",
+    "index",
+    "getting-started",
+    "---Backend---",
+    "database",
+    "authentication",
+    "services",
+    "---Advanced---",
+    "features",
+    "testing"
+  ]
+}
