@@ -18,12 +18,7 @@ import { ExportButton } from "@/components/analytics/export-button";
 import { DateRangePicker } from "@/components/reports/date-range-picker";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-	type ChartConfig,
-	ChartContainer,
-	ChartTooltip,
-	ChartTooltipContent,
-} from "@/components/ui/chart";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import {
 	Table,
 	TableBody,
@@ -32,6 +27,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import type { WorkHoursAnalyticsData } from "@/lib/analytics/types";
 import { getDateRangeForPreset } from "@/lib/reports/date-ranges";
 import type { DateRange } from "@/lib/reports/types";
 import { getWorkHoursAnalyticsData } from "../actions";
@@ -39,7 +35,7 @@ import { getWorkHoursAnalyticsData } from "../actions";
 export default function WorkHoursPage() {
 	const [dateRange, setDateRange] = useState<DateRange>(getDateRangeForPreset("current_month"));
 	const [loading, setLoading] = useState(true);
-	const [workHoursData, setWorkHoursData] = useState<any>(null);
+	const [workHoursData, setWorkHoursData] = useState<WorkHoursAnalyticsData | null>(null);
 
 	useEffect(() => {
 		async function loadData() {
@@ -62,12 +58,12 @@ export default function WorkHoursPage() {
 		loadData();
 	}, [dateRange]);
 
-	const employees = workHoursData?.employees || [];
+	const employees = workHoursData?.byEmployee || [];
 
 	// Prepare chart data
-	const trendData = workHoursData?.overtimeTrend || [];
-	const dailyHoursData = workHoursData?.dailyHours || [];
-	const distributionData = employees.map((emp: any) => ({
+	const trendData = workHoursData?.distribution || [];
+	const dailyHoursData = workHoursData?.distribution || [];
+	const distributionData = employees.map((emp) => ({
 		employee: emp.employeeName,
 		hours: emp.totalHours,
 	}));
@@ -227,32 +223,34 @@ export default function WorkHoursPage() {
 										</TableRow>
 									</TableHeader>
 									<TableBody>
-										{employees.map((emp: any) => (
+										{employees.map((emp) => (
 											<TableRow key={emp.employeeId}>
 												<TableCell className="font-medium">{emp.employeeName}</TableCell>
 												<TableCell className="text-right">{emp.totalHours.toFixed(1)}h</TableCell>
 												<TableCell className="text-right">
-													{emp.expectedHours.toFixed(1)}h
+													{(emp.totalHours + emp.overtimeHours).toFixed(1)}h
 												</TableCell>
 												<TableCell className="text-right">
 													<span
-														className={emp.variance >= 0 ? "text-green-600" : "text-orange-600"}
+														className={
+															emp.overtimeHours >= 0 ? "text-green-600" : "text-orange-600"
+														}
 													>
-														{emp.variance >= 0 ? "+" : ""}
-														{emp.variance.toFixed(1)}h
+														{emp.overtimeHours >= 0 ? "+" : ""}
+														{emp.overtimeHours.toFixed(1)}h
 													</span>
 												</TableCell>
 												<TableCell>
 													<Badge
 														variant={
-															emp.percentageOfExpected >= 90
+															emp.avgHoursPerWeek >= 35
 																? "default"
-																: emp.percentageOfExpected >= 75
+																: emp.avgHoursPerWeek >= 30
 																	? "secondary"
 																	: "destructive"
 														}
 													>
-														{emp.percentageOfExpected.toFixed(0)}%
+														{emp.avgHoursPerWeek.toFixed(0)}h/wk
 													</Badge>
 												</TableCell>
 											</TableRow>

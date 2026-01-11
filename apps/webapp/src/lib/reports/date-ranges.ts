@@ -77,8 +77,6 @@ export function getDateRangeForPreset(preset: PeriodPreset, year?: number): Date
 				end: qStart.endOf("quarter").toJSDate(),
 			};
 		}
-
-		case "custom":
 		default:
 			// For custom, return current month as default
 			return {

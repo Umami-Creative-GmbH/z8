@@ -8,6 +8,7 @@ import { ExportButton } from "@/components/analytics/export-button";
 import { DateRangePicker } from "@/components/reports/date-range-picker";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import type { AbsencePatternsData, TeamPerformanceData } from "@/lib/analytics/types";
 import { getDateRangeForPreset } from "@/lib/reports/date-ranges";
 import type { DateRange } from "@/lib/reports/types";
 import { getAbsencePatternsData, getTeamPerformanceData } from "./actions";
@@ -15,8 +16,8 @@ import { getAbsencePatternsData, getTeamPerformanceData } from "./actions";
 export default function AnalyticsOverviewPage() {
 	const [dateRange, setDateRange] = useState<DateRange>(getDateRangeForPreset("current_month"));
 	const [loading, setLoading] = useState(true);
-	const [teamData, setTeamData] = useState<any>(null);
-	const [absenceData, setAbsenceData] = useState<any>(null);
+	const [teamData, setTeamData] = useState<TeamPerformanceData | null>(null);
+	const [absenceData, setAbsenceData] = useState<AbsencePatternsData | null>(null);
 
 	useEffect(() => {
 		async function loadData() {
@@ -47,25 +48,24 @@ export default function AnalyticsOverviewPage() {
 
 	// Calculate KPIs from loaded data
 	const kpiData = {
-		totalEmployees:
-			teamData?.teams.reduce((sum: number, team: any) => sum + team.employeeCount, 0) || 0,
+		totalEmployees: teamData?.teams.reduce((sum, team) => sum + team.employeeCount, 0) || 0,
 		avgWorkHours: teamData?.organizationTotal
 			? teamData.organizationTotal /
-				(teamData.teams.reduce((sum: number, team: any) => sum + team.employeeCount, 0) || 1)
+				(teamData.teams.reduce((sum, team) => sum + team.employeeCount, 0) || 1)
 			: 0,
-		absenceRate: absenceData?.overall.totalDays || 0,
+		absenceRate: absenceData?.summary.totalDays || 0,
 		approvalRate: 95.0, // TODO: Calculate from manager effectiveness data
 	};
 
 	// Prepare chart data
 	const workHoursChartData =
-		teamData?.teams.map((team: any) => ({
+		teamData?.teams.map((team) => ({
 			team: team.teamName,
 			hours: team.totalHours,
 		})) || [];
 
 	const absencePatternsChartData =
-		absenceData?.byCategory.map((cat: any) => ({
+		absenceData?.byType.map((cat) => ({
 			category: cat.categoryName,
 			days: cat.totalDays,
 		})) || [];

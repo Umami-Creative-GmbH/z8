@@ -7,7 +7,7 @@ import { headers } from "next/headers";
 import { db } from "@/db";
 import { employee } from "@/db/schema";
 import { auth } from "@/lib/auth";
-import { AuthorizationError, NotFoundError } from "@/lib/effect/errors";
+import { type AnyAppError, AuthorizationError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
@@ -32,7 +32,7 @@ export async function generateReport(
 ): Promise<ServerActionResult<ReportData>> {
 	const tracer = trace.getTracer("reports");
 
-	const effect = tracer.startActiveSpan(
+	const effect: Effect.Effect<ReportData, AnyAppError> = tracer.startActiveSpan(
 		"generateReport",
 		{
 			attributes: {
@@ -169,7 +169,7 @@ export async function generateReport(
 		},
 	);
 
-	return runServerActionSafe(effect as any);
+	return runServerActionSafe(effect);
 }
 
 /**
@@ -183,81 +183,84 @@ export async function getAccessibleEmployeesAction(): Promise<
 > {
 	const tracer = trace.getTracer("reports");
 
-	const effect = tracer.startActiveSpan("getAccessibleEmployees", (span) => {
-		return Effect.gen(function* (_) {
-			// Step 1: Authenticate and get current employee
-			const authService = yield* _(AuthService);
-			const session = yield* _(authService.getSession());
-			const dbService = yield* _(DatabaseService);
+	const effect: Effect.Effect<AccessibleEmployee[], AnyAppError> = tracer.startActiveSpan(
+		"getAccessibleEmployees",
+		(span) => {
+			return Effect.gen(function* (_) {
+				// Step 1: Authenticate and get current employee
+				const authService = yield* _(AuthService);
+				const session = yield* _(authService.getSession());
+				const dbService = yield* _(DatabaseService);
 
-			span.setAttribute("user.id", session.user.id);
+				span.setAttribute("user.id", session.user.id);
 
-			// Step 2: Get current employee profile
-			const currentEmployee = yield* _(
-				dbService.query("getEmployeeByUserId", async () => {
-					const emp = await dbService.db.query.employee.findFirst({
-						where: eq(employee.userId, session.user.id),
-					});
+				// Step 2: Get current employee profile
+				const currentEmployee = yield* _(
+					dbService.query("getEmployeeByUserId", async () => {
+						const emp = await dbService.db.query.employee.findFirst({
+							where: eq(employee.userId, session.user.id),
+						});
 
-					if (!emp) {
-						throw new Error("Employee not found");
-					}
+						if (!emp) {
+							throw new Error("Employee not found");
+						}
 
-					return emp;
-				}),
-				Effect.mapError(
-					() =>
-						new NotFoundError({
-							message: "Employee profile not found",
-							entityType: "employee",
-						}),
-				),
-			);
-
-			span.setAttribute("current_employee.id", currentEmployee.id);
-			span.setAttribute("current_employee.role", currentEmployee.role);
-
-			// Step 3: Get accessible employees
-			const accessibleEmployees = yield* _(
-				dbService.query("getAccessibleEmployees", async () => {
-					return await getAccessibleEmployees(currentEmployee.id);
-				}),
-			);
-
-			span.setAttribute("accessible_employees.count", accessibleEmployees.length);
-			span.setStatus({ code: SpanStatusCode.OK });
-
-			logger.info(
-				{
-					currentEmployeeId: currentEmployee.id,
-					count: accessibleEmployees.length,
-				},
-				"Retrieved accessible employees",
-			);
-
-			return yield* _(Effect.succeed(accessibleEmployees));
-		}).pipe(
-			Effect.catchAll((error) => {
-				span.setStatus({
-					code: SpanStatusCode.ERROR,
-					message: error.message || "Failed to get accessible employees",
-				});
-				span.recordException(error);
-
-				logger.error(
-					{
-						error: error.message,
-					},
-					"Failed to get accessible employees",
+						return emp;
+					}),
+					Effect.mapError(
+						() =>
+							new NotFoundError({
+								message: "Employee profile not found",
+								entityType: "employee",
+							}),
+					),
 				);
 
-				return Effect.fail(error);
-			}),
-			Effect.provide(AppLayer),
-		);
-	});
+				span.setAttribute("current_employee.id", currentEmployee.id);
+				span.setAttribute("current_employee.role", currentEmployee.role);
 
-	return runServerActionSafe(effect as any);
+				// Step 3: Get accessible employees
+				const accessibleEmployees = yield* _(
+					dbService.query("getAccessibleEmployees", async () => {
+						return await getAccessibleEmployees(currentEmployee.id);
+					}),
+				);
+
+				span.setAttribute("accessible_employees.count", accessibleEmployees.length);
+				span.setStatus({ code: SpanStatusCode.OK });
+
+				logger.info(
+					{
+						currentEmployeeId: currentEmployee.id,
+						count: accessibleEmployees.length,
+					},
+					"Retrieved accessible employees",
+				);
+
+				return yield* _(Effect.succeed(accessibleEmployees));
+			}).pipe(
+				Effect.catchAll((error) => {
+					span.setStatus({
+						code: SpanStatusCode.ERROR,
+						message: error.message || "Failed to get accessible employees",
+					});
+					span.recordException(error);
+
+					logger.error(
+						{
+							error: error.message,
+						},
+						"Failed to get accessible employees",
+					);
+
+					return Effect.fail(error);
+				}),
+				Effect.provide(AppLayer),
+			);
+		},
+	);
+
+	return runServerActionSafe(effect);
 }
 
 /**

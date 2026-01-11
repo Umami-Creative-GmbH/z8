@@ -13,7 +13,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { format } from "@/lib/datetime/luxon-utils";
-import { getDateRangeForPreset, getPresetLabel } from "@/lib/reports/date-ranges";
+import { getDateRangeForPreset } from "@/lib/reports/date-ranges";
 import type { DateRange, PeriodPreset } from "@/lib/reports/types";
 import { cn } from "@/lib/utils";
 

@@ -7,8 +7,8 @@
 
 import { and, desc, eq, gte, like, lte, or, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { auditLog, employee } from "@/db/schema";
 import { user } from "@/db/auth-schema";
+import { auditLog } from "@/db/schema";
 
 export interface AuditLogFilters {
 	organizationId: string;
@@ -84,8 +84,8 @@ export async function getAuditLogs(filters: AuditLogFilters): Promise<{
 		conditions.push(
 			or(
 				like(auditLog.action, `%${filters.search}%`),
-				sql`${auditLog.metadata}::text ILIKE ${"%" + filters.search + "%"}`,
-				sql`${auditLog.changes}::text ILIKE ${"%" + filters.search + "%"}`,
+				sql`${auditLog.metadata}::text ILIKE ${`%${filters.search}%`}`,
+				sql`${auditLog.changes}::text ILIKE ${`%${filters.search}%`}`,
 			),
 		);
 	}

@@ -154,14 +154,14 @@ async function createWorkHoursSheet(
 	headerRow.font = { color: { argb: "FFFFFFFF" }, bold: true };
 
 	// Add data
-	let rowIndex = 2;
+	let _rowIndex = 2;
 	for (const [month, data] of reportData.workHours.byMonth) {
 		sheet.addRow({
 			month,
 			hours: data.hours,
 			days: data.days,
 		});
-		rowIndex++;
+		_rowIndex++;
 	}
 
 	// Add totals
@@ -179,7 +179,7 @@ async function createWorkHoursSheet(
 	};
 
 	// Add borders
-	sheet.eachRow((row, rowNumber) => {
+	sheet.eachRow((row, _rowNumber) => {
 		row.eachCell((cell) => {
 			cell.border = {
 				top: { style: "thin" },
@@ -238,7 +238,7 @@ async function createAbsencesSheet(
 	};
 
 	// Add borders
-	sheet.eachRow((row, rowNumber) => {
+	sheet.eachRow((row, _rowNumber) => {
 		row.eachCell((cell) => {
 			cell.border = {
 				top: { style: "thin" },

@@ -3,7 +3,7 @@
  * Uses @react-pdf/renderer for React-based PDF generation
  */
 
-import { Document, Font, Page, pdf, StyleSheet, Text, View } from "@react-pdf/renderer";
+import { Document, Page, pdf, StyleSheet, Text, View } from "@react-pdf/renderer";
 import { format } from "@/lib/datetime/luxon-utils";
 import type { ReportData } from "../types";
 

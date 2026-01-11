@@ -7,12 +7,7 @@ import { toast } from "sonner";
 import { ExportButton } from "@/components/analytics/export-button";
 import { DateRangePicker } from "@/components/reports/date-range-picker";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-	type ChartConfig,
-	ChartContainer,
-	ChartTooltip,
-	ChartTooltipContent,
-} from "@/components/ui/chart";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Progress } from "@/components/ui/progress";
 import {
 	Table,
@@ -22,6 +17,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import type { VacationTrendsData } from "@/lib/analytics/types";
 import { getDateRangeForPreset } from "@/lib/reports/date-ranges";
 import type { DateRange } from "@/lib/reports/types";
 import { getVacationTrendsData } from "../actions";
@@ -29,7 +25,7 @@ import { getVacationTrendsData } from "../actions";
 export default function VacationTrendsPage() {
 	const [dateRange, setDateRange] = useState<DateRange>(getDateRangeForPreset("current_year"));
 	const [loading, setLoading] = useState(true);
-	const [vacationData, setVacationData] = useState<any>(null);
+	const [vacationData, setVacationData] = useState<VacationTrendsData | null>(null);
 
 	useEffect(() => {
 		async function loadData() {
@@ -59,11 +55,11 @@ export default function VacationTrendsPage() {
 		utilizationRate: 0,
 	};
 
-	const employees = vacationData?.employees || [];
+	const employees = vacationData?.byEmployee || [];
 
 	// Prepare chart data
-	const monthlyUsageData = vacationData?.monthlyUsage || [];
-	const peakMonthsData = vacationData?.peakMonths || [];
+	const monthlyUsageData = vacationData?.byMonth || [];
+	const peakMonthsData = vacationData?.patterns?.peakMonths || [];
 
 	return (
 		<div className="space-y-6 px-4 lg:px-6">
@@ -179,12 +175,12 @@ export default function VacationTrendsPage() {
 										</TableRow>
 									</TableHeader>
 									<TableBody>
-										{employees.map((emp: any) => (
+										{employees.map((emp) => (
 											<TableRow key={emp.employeeId}>
 												<TableCell className="font-medium">{emp.employeeName}</TableCell>
-												<TableCell className="text-right">{emp.daysAllocated}</TableCell>
-												<TableCell className="text-right">{emp.daysTaken}</TableCell>
-												<TableCell className="text-right">{emp.daysRemaining}</TableCell>
+												<TableCell className="text-right">{emp.allocated}</TableCell>
+												<TableCell className="text-right">{emp.taken}</TableCell>
+												<TableCell className="text-right">{emp.remaining}</TableCell>
 												<TableCell>
 													<div className="flex items-center gap-2">
 														<Progress value={emp.utilizationRate} className="h-2 w-[100px]" />

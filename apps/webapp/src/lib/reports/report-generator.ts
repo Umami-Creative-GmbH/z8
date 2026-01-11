@@ -131,7 +131,7 @@ export async function aggregateWorkHours(
 
 	for (const period of periods) {
 		const monthKey = format(period.startTime, "yyyy-MM");
-		const dateKey = format(period.startTime, "yyyy-MM-dd");
+		const _dateKey = format(period.startTime, "yyyy-MM-dd");
 
 		if (!byMonth.has(monthKey)) {
 			byMonth.set(monthKey, { hours: 0, days: 0 });
@@ -155,7 +155,7 @@ export async function aggregateWorkHours(
 		if (!monthDays.has(monthKey)) {
 			monthDays.set(monthKey, new Set());
 		}
-		monthDays.get(monthKey)!.add(dateKey);
+		monthDays.get(monthKey)?.add(dateKey);
 	}
 
 	// Update days count
