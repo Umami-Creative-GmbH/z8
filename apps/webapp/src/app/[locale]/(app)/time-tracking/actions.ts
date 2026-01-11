@@ -1,12 +1,20 @@
 "use server";
 
-import { and, desc, eq, gte, isNull, lte } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, isNull, lte, or } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
 import { headers } from "next/headers";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
-import { approvalRequest, employee, timeEntry, workPeriod } from "@/db/schema";
+import {
+	approvalRequest,
+	employee,
+	project,
+	projectAssignment,
+	surchargeCalculation,
+	timeEntry,
+	workPeriod,
+} from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { dateFromDB, dateToDB } from "@/lib/datetime/drizzle-adapter";
 import { NotFoundError, ValidationError } from "@/lib/effect/errors";
@@ -19,6 +27,10 @@ import {
 	TimeRegulationService,
 	TimeRegulationServiceLive,
 } from "@/lib/effect/services/time-regulation.service";
+import {
+	SurchargeService,
+	SurchargeServiceLive,
+} from "@/lib/effect/services/surcharge.service";
 import { renderTimeCorrectionPendingApproval } from "@/lib/email/render";
 import { createLogger } from "@/lib/logger";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
@@ -26,6 +38,10 @@ import { isSameDayInTimezone } from "@/lib/time-tracking/time-utils";
 import type { TimeSummary } from "@/lib/time-tracking/types";
 import type { ComplianceWarning } from "@/lib/time-regulations/validation";
 import { validateTimeEntry, validateTimeEntryRange } from "@/lib/time-tracking/validation";
+import {
+	checkProjectBudgetWarnings,
+	getProjectTotalHours,
+} from "@/lib/notifications/project-notification-triggers";
 import type { WorkPeriodWithEntries } from "./types";
 
 const logger = createLogger("TimeTrackingActionsEffect");
@@ -712,6 +728,7 @@ export async function getWorkPeriods(
 
 /**
  * Get time summary for an employee (today, week, month)
+ * Includes surcharge credits if surcharges are enabled
  */
 export async function getTimeSummary(employeeId: string): Promise<TimeSummary> {
 	const now = DateTime.now();
@@ -722,30 +739,59 @@ export async function getTimeSummary(employeeId: string): Promise<TimeSummary> {
 	const monthStart = dateToDB(now.startOf("month"))!;
 	const monthEnd = dateToDB(now.endOf("month"))!;
 
-	// Fetch all periods for the month (superset of today and week)
-	const periods = await db.query.workPeriod.findMany({
-		where: and(
-			eq(workPeriod.employeeId, employeeId),
-			gte(workPeriod.startTime, monthStart),
-			lte(workPeriod.startTime, monthEnd),
-		),
-	});
+	// Fetch all periods for the month with their surcharge calculations
+	const periodsWithSurcharges = await db
+		.select({
+			id: workPeriod.id,
+			startTime: workPeriod.startTime,
+			durationMinutes: workPeriod.durationMinutes,
+			surchargeMinutes: surchargeCalculation.surchargeMinutes,
+		})
+		.from(workPeriod)
+		.leftJoin(surchargeCalculation, eq(surchargeCalculation.workPeriodId, workPeriod.id))
+		.where(
+			and(
+				eq(workPeriod.employeeId, employeeId),
+				gte(workPeriod.startTime, monthStart),
+				lte(workPeriod.startTime, monthEnd),
+			),
+		);
 
-	// Calculate minutes for each time range
-	const todayMinutes = periods
+	// Calculate base minutes for each time range
+	const todayMinutes = periodsWithSurcharges
 		.filter((p) => p.startTime >= todayStart && p.startTime <= todayEnd)
 		.reduce((sum, p) => sum + (p.durationMinutes || 0), 0);
 
-	const weekMinutes = periods
+	const weekMinutes = periodsWithSurcharges
 		.filter((p) => p.startTime >= weekStart && p.startTime <= weekEnd)
 		.reduce((sum, p) => sum + (p.durationMinutes || 0), 0);
 
-	const monthMinutes = periods.reduce((sum, p) => sum + (p.durationMinutes || 0), 0);
+	const monthMinutes = periodsWithSurcharges.reduce((sum, p) => sum + (p.durationMinutes || 0), 0);
+
+	// Calculate surcharge minutes for each time range
+	const todaySurchargeMinutes = periodsWithSurcharges
+		.filter((p) => p.startTime >= todayStart && p.startTime <= todayEnd)
+		.reduce((sum, p) => sum + (p.surchargeMinutes || 0), 0);
+
+	const weekSurchargeMinutes = periodsWithSurcharges
+		.filter((p) => p.startTime >= weekStart && p.startTime <= weekEnd)
+		.reduce((sum, p) => sum + (p.surchargeMinutes || 0), 0);
+
+	const monthSurchargeMinutes = periodsWithSurcharges.reduce(
+		(sum, p) => sum + (p.surchargeMinutes || 0),
+		0,
+	);
 
 	return {
 		todayMinutes,
 		weekMinutes,
 		monthMinutes,
+		// Only include surcharge fields if there are any surcharges
+		...(monthSurchargeMinutes > 0 && {
+			todaySurchargeMinutes,
+			weekSurchargeMinutes,
+			monthSurchargeMinutes,
+		}),
 	};
 }
 
@@ -843,8 +889,11 @@ export type ClockOutResult = typeof timeEntry.$inferSelect & {
 /**
  * Clock out for current employee
  * Also checks compliance against time regulations and logs any violations
+ * @param projectId - Optional project ID to assign the work period to
  */
-export async function clockOut(): Promise<ServerActionResult<ClockOutResult>> {
+export async function clockOut(
+	projectId?: string,
+): Promise<ServerActionResult<ClockOutResult>> {
 	const session = await auth.api.getSession({ headers: await headers() });
 	if (!session?.user) {
 		return { success: false, error: "Not authenticated" };
@@ -871,6 +920,17 @@ export async function clockOut(): Promise<ServerActionResult<ClockOutResult>> {
 			error: validation.error || "Cannot clock out at this time",
 			holidayName: validation.holidayName,
 		};
+	}
+
+	// Validate project if provided
+	if (projectId) {
+		const projectValidation = await validateProjectAssignment(projectId, emp.id, emp.teamId);
+		if (!projectValidation.isValid) {
+			return {
+				success: false,
+				error: projectValidation.error || "Cannot assign to this project",
+			};
+		}
 	}
 
 	try {
@@ -921,9 +981,13 @@ export async function clockOut(): Promise<ServerActionResult<ClockOutResult>> {
 				clockOutId: entry.id,
 				endTime: now,
 				durationMinutes,
+				projectId: projectId || null,
 				updatedAt: new Date(),
 			})
 			.where(eq(workPeriod.id, activePeriod.id));
+
+		// Calculate and persist surcharge credits if feature is enabled
+		await calculateAndPersistSurcharges(activePeriod.id, emp.organizationId);
 
 		// Check compliance against time regulations
 		const complianceWarnings = await checkComplianceAfterClockOut(
@@ -932,6 +996,13 @@ export async function clockOut(): Promise<ServerActionResult<ClockOutResult>> {
 			activePeriod.id,
 			durationMinutes,
 		);
+
+		// Fire-and-forget: Check project budget warnings if project was assigned
+		if (projectId) {
+			checkProjectBudgetAfterClockOut(projectId, emp.organizationId).catch((err) => {
+				logger.error({ error: err, projectId }, "Failed to check project budget warnings");
+			});
+		}
 
 		return {
 			success: true,
@@ -944,6 +1015,62 @@ export async function clockOut(): Promise<ServerActionResult<ClockOutResult>> {
 		logger.error({ error }, "Clock out error");
 		return { success: false, error: "Failed to clock out. Please try again." };
 	}
+}
+
+/**
+ * Validate that an employee can assign time to a project
+ * Checks: project exists, is bookable (planned/active/paused), employee has access
+ */
+async function validateProjectAssignment(
+	projectId: string,
+	employeeId: string,
+	teamId: string | null,
+): Promise<{ isValid: boolean; error?: string }> {
+	// Get the project
+	const proj = await db.query.project.findFirst({
+		where: eq(project.id, projectId),
+	});
+
+	if (!proj) {
+		return { isValid: false, error: "Project not found" };
+	}
+
+	// Check if project is bookable
+	const bookableStatuses = ["planned", "active", "paused"];
+	if (!bookableStatuses.includes(proj.status)) {
+		return {
+			isValid: false,
+			error: `Cannot book time to ${proj.status} projects. Project must be planned, active, or paused.`,
+		};
+	}
+
+	// Check if employee has access to the project
+	// Either directly assigned or via team
+	const conditions = [
+		eq(projectAssignment.projectId, projectId),
+		eq(projectAssignment.employeeId, employeeId),
+	];
+
+	// Build OR condition for team assignment
+	const assignmentQuery = teamId
+		? or(
+				and(eq(projectAssignment.projectId, projectId), eq(projectAssignment.employeeId, employeeId)),
+				and(eq(projectAssignment.projectId, projectId), eq(projectAssignment.teamId, teamId)),
+			)
+		: and(eq(projectAssignment.projectId, projectId), eq(projectAssignment.employeeId, employeeId));
+
+	const assignment = await db.query.projectAssignment.findFirst({
+		where: assignmentQuery,
+	});
+
+	if (!assignment) {
+		return {
+			isValid: false,
+			error: "You are not assigned to this project. Contact your administrator.",
+		};
+	}
+
+	return { isValid: true };
 }
 
 /**
@@ -1057,6 +1184,39 @@ async function calculateBreaksTakenToday(employeeId: string): Promise<number> {
 	}
 
 	return totalBreakMinutes;
+}
+
+/**
+ * Calculate and persist surcharge credits for a work period
+ * Only runs if surcharges are enabled for the organization
+ * Errors are logged but don't fail the clock-out
+ */
+async function calculateAndPersistSurcharges(
+	workPeriodId: string,
+	organizationId: string,
+): Promise<void> {
+	try {
+		const surchargeEffect = Effect.gen(function* (_) {
+			const surchargeService = yield* _(SurchargeService);
+
+			// Check if surcharges are enabled for this organization
+			const isEnabled = yield* _(surchargeService.isSurchargesEnabled(organizationId));
+			if (!isEnabled) {
+				return;
+			}
+
+			// Persist the surcharge calculation
+			yield* _(surchargeService.persistSurchargeCalculation(workPeriodId));
+		}).pipe(
+			Effect.provide(SurchargeServiceLive),
+			Effect.provide(DatabaseServiceLive),
+		);
+
+		await Effect.runPromise(surchargeEffect);
+	} catch (error) {
+		// Log the error but don't fail the clock-out
+		logger.error({ error, workPeriodId }, "Failed to calculate surcharges after clock-out");
+	}
 }
 
 /**
@@ -1593,4 +1753,181 @@ export async function updateTimeEntryNotes(
 		logger.error({ error }, "Update time entry notes error");
 		return { success: false, error: "Failed to update notes. Please try again." };
 	}
+}
+
+export interface AssignedProject {
+	id: string;
+	name: string;
+	color: string | null;
+	status: string;
+}
+
+/**
+ * Get all projects the current employee can book time to
+ * Returns projects that:
+ * - Are in bookable status (planned, active, paused)
+ * - The employee is assigned to (directly or via team)
+ */
+export async function getAssignedProjects(): Promise<ServerActionResult<AssignedProject[]>> {
+	const session = await auth.api.getSession({ headers: await headers() });
+	if (!session?.user) {
+		return { success: false, error: "Not authenticated" };
+	}
+
+	const emp = await getCurrentEmployee();
+	if (!emp) {
+		return { success: false, error: "Employee profile not found" };
+	}
+
+	try {
+		// Bookable statuses
+		const bookableStatuses = ["planned", "active", "paused"];
+
+		// Get projects assigned directly to employee or via team
+		const directAssignments = await db.query.projectAssignment.findMany({
+			where: eq(projectAssignment.employeeId, emp.id),
+			with: {
+				project: true,
+			},
+		});
+
+		// Get projects assigned via team if employee is in a team
+		const teamAssignments = emp.teamId
+			? await db.query.projectAssignment.findMany({
+					where: eq(projectAssignment.teamId, emp.teamId),
+					with: {
+						project: true,
+					},
+				})
+			: [];
+
+		// Combine and deduplicate projects
+		const projectsMap = new Map<string, AssignedProject>();
+
+		for (const assignment of [...directAssignments, ...teamAssignments]) {
+			const proj = assignment.project;
+			if (proj && bookableStatuses.includes(proj.status) && !projectsMap.has(proj.id)) {
+				projectsMap.set(proj.id, {
+					id: proj.id,
+					name: proj.name,
+					color: proj.color,
+					status: proj.status,
+				});
+			}
+		}
+
+		// Sort by name
+		const projects = Array.from(projectsMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+
+		return { success: true, data: projects };
+	} catch (error) {
+		logger.error({ error }, "Failed to get assigned projects");
+		return { success: false, error: "Failed to load projects" };
+	}
+}
+
+/**
+ * Update the project assignment for a work period
+ * Allows changing or removing the project after the fact
+ */
+export async function updateWorkPeriodProject(
+	workPeriodId: string,
+	projectId: string | null,
+): Promise<ServerActionResult<{ workPeriodId: string; projectId: string | null }>> {
+	const session = await auth.api.getSession({ headers: await headers() });
+	if (!session?.user) {
+		return { success: false, error: "Not authenticated" };
+	}
+
+	const emp = await getCurrentEmployee();
+	if (!emp) {
+		return { success: false, error: "Employee profile not found" };
+	}
+
+	try {
+		// Get the work period
+		const [period] = await db
+			.select()
+			.from(workPeriod)
+			.where(eq(workPeriod.id, workPeriodId))
+			.limit(1);
+
+		if (!period) {
+			return { success: false, error: "Work period not found" };
+		}
+
+		// Verify ownership
+		if (period.employeeId !== emp.id) {
+			return { success: false, error: "You can only update your own work periods" };
+		}
+
+		// Validate project if provided
+		if (projectId) {
+			const projectValidation = await validateProjectAssignment(projectId, emp.id, emp.teamId);
+			if (!projectValidation.isValid) {
+				return {
+					success: false,
+					error: projectValidation.error || "Cannot assign to this project",
+				};
+			}
+		}
+
+		// Update the work period
+		await db
+			.update(workPeriod)
+			.set({
+				projectId: projectId,
+				updatedAt: new Date(),
+			})
+			.where(eq(workPeriod.id, workPeriodId));
+
+		return {
+			success: true,
+			data: { workPeriodId, projectId },
+		};
+	} catch (error) {
+		logger.error({ error }, "Failed to update work period project");
+		return { success: false, error: "Failed to update project assignment" };
+	}
+}
+
+/**
+ * Helper function to check project budget warnings after clock-out
+ * Gets project details and total hours, then triggers budget warning check
+ */
+async function checkProjectBudgetAfterClockOut(
+	projectId: string,
+	organizationId: string,
+): Promise<void> {
+	// Get project details
+	const proj = await db.query.project.findFirst({
+		where: eq(project.id, projectId),
+		columns: {
+			id: true,
+			name: true,
+			budgetHours: true,
+		},
+	});
+
+	// Skip if project not found or has no budget
+	if (!proj || !proj.budgetHours) {
+		return;
+	}
+
+	const budgetHours = parseFloat(proj.budgetHours);
+	if (isNaN(budgetHours) || budgetHours <= 0) {
+		return;
+	}
+
+	// Get total hours booked to this project
+	const totalHours = await getProjectTotalHours(projectId);
+
+	// Trigger budget warning check
+	await checkProjectBudgetWarnings({
+		projectId,
+		projectName: proj.name,
+		organizationId,
+		budgetHours,
+		usedHours: totalHours,
+	});
 }

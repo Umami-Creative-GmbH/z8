@@ -9,6 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Textarea } from "@/components/ui/textarea";
 import { useTimeClock } from "@/lib/query";
 import { formatDurationWithSeconds } from "@/lib/time-tracking/time-utils";
+import { ProjectSelector } from "./project-selector";
 
 export function TimeClockPopover() {
 	const { t } = useTranslate();
@@ -32,6 +33,8 @@ export function TimeClockPopover() {
 	const [showNotesInput, setShowNotesInput] = useState(false);
 	const [lastClockOutEntryId, setLastClockOutEntryId] = useState<string | null>(null);
 	const [notesText, setNotesText] = useState("");
+	// State for project selection
+	const [selectedProjectId, setSelectedProjectId] = useState<string | undefined>(undefined);
 
 	const handleClockIn = async () => {
 		const result = await clockIn();
@@ -58,10 +61,12 @@ export function TimeClockPopover() {
 	};
 
 	const handleClockOut = async () => {
-		const result = await clockOut();
+		const result = await clockOut(selectedProjectId);
 
 		if (result.success) {
 			toast.success(t("timeTracking.clockOutSuccess", "Clocked out successfully"));
+			// Reset project selection after successful clock out
+			setSelectedProjectId(undefined);
 			// Show notes input and store the entry ID for patching
 			if (result.data?.id) {
 				setLastClockOutEntryId(result.data.id);
@@ -211,6 +216,15 @@ export function TimeClockPopover() {
 										})}
 									</div>
 								</div>
+							)}
+
+							{/* Project selector - only shown when clocked in */}
+							{isClockedIn && (
+								<ProjectSelector
+									value={selectedProjectId}
+									onValueChange={setSelectedProjectId}
+									disabled={isMutating}
+								/>
 							)}
 
 							<Button

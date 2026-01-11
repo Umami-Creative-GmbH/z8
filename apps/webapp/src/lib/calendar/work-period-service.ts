@@ -2,10 +2,11 @@ import { and, eq, gte, lte } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
-import { employee, timeEntry, workPeriod } from "@/db/schema";
+import { employee, project, surchargeCalculation, timeEntry, workPeriod } from "@/db/schema";
+import type { SurchargeCalculationDetails } from "@/db/schema";
 import { dateFromDB, dateToDB } from "@/lib/datetime/drizzle-adapter";
 import { toDateKey } from "@/lib/datetime/luxon-utils";
-import type { WorkPeriodEvent } from "./types";
+import type { SurchargeBreakdown, WorkPeriodEvent } from "./types";
 
 interface WorkPeriodFilters {
 	organizationId: string;
@@ -53,21 +54,56 @@ export async function getWorkPeriodsForMonth(
 				employee: employee,
 				user: user,
 				clockOutEntry: timeEntry,
+				surcharge: surchargeCalculation,
+				project: project,
 			})
 			.from(workPeriod)
 			.innerJoin(employee, eq(workPeriod.employeeId, employee.id))
 			.innerJoin(user, eq(employee.userId, user.id))
 			.leftJoin(timeEntry, eq(workPeriod.clockOutId, timeEntry.id))
+			.leftJoin(surchargeCalculation, eq(surchargeCalculation.workPeriodId, workPeriod.id))
+			.leftJoin(project, eq(workPeriod.projectId, project.id))
 			.where(and(...conditions));
 
 		// Return individual work periods as timed events (not aggregated)
 		// This allows the calendar to show work blocks at specific times
 		// Breaks appear as gaps between the green work blocks
-		return periods.map(({ period, user, clockOutEntry }) => {
+		return periods.map(({ period, user, clockOutEntry, surcharge, project: proj }) => {
 			const notes = clockOutEntry?.notes?.trim();
-			const duration = formatDuration(period.durationMinutes ?? 0);
-			// Format: "Name - 4h 30m" or "Name - 4h 30m: Working on report"
-			const title = notes ? `${user.name} - ${duration}: ${notes}` : `${user.name} - ${duration}`;
+			const durationMinutes = period.durationMinutes ?? 0;
+			const surchargeMinutes = surcharge?.surchargeMinutes ?? 0;
+			const totalCreditedMinutes = durationMinutes + surchargeMinutes;
+
+			// Format duration, including surcharge if present
+			const baseDuration = formatDuration(durationMinutes);
+			const duration = surchargeMinutes > 0
+				? `${baseDuration} (+${formatDuration(surchargeMinutes)})`
+				: baseDuration;
+
+			// Build title parts
+			const projectPrefix = proj?.name ? `[${proj.name}] ` : "";
+			// Format: "[Project] Name - 4h 30m (+1h)" or "Name - 4h 30m: Working on report"
+			const title = notes
+				? `${projectPrefix}${user.name} - ${duration}: ${notes}`
+				: `${projectPrefix}${user.name} - ${duration}`;
+
+			// Parse surcharge breakdown from calculation details
+			let surchargeBreakdown: SurchargeBreakdown[] | undefined;
+			if (surcharge?.calculationDetails) {
+				const details = surcharge.calculationDetails as SurchargeCalculationDetails;
+				if (details.rulesApplied && details.rulesApplied.length > 0) {
+					surchargeBreakdown = details.rulesApplied.map((rule) => ({
+						ruleName: rule.ruleName,
+						ruleType: rule.ruleType as SurchargeBreakdown["ruleType"],
+						percentage: rule.percentage,
+						qualifyingMinutes: rule.qualifyingMinutes,
+						surchargeMinutes: rule.surchargeMinutes,
+					}));
+				}
+			}
+
+			// Use project color if available, otherwise default green
+			const eventColor = proj?.color || "#10b981"; // Green (emerald)
 
 			return {
 				id: period.id,
@@ -76,11 +112,23 @@ export async function getWorkPeriodsForMonth(
 				endDate: period.endTime ?? undefined,
 				title,
 				description: notes || "Work period",
-				color: "#10b981", // Green (emerald)
+				color: eventColor,
 				metadata: {
-					durationMinutes: period.durationMinutes ?? 0,
+					durationMinutes,
 					employeeName: user.name,
 					notes: notes || undefined,
+					// Project fields (only included if assigned to a project)
+					...(proj && {
+						projectId: proj.id,
+						projectName: proj.name,
+						projectColor: proj.color || undefined,
+					}),
+					// Surcharge fields (only included if surcharge calculation exists)
+					...(surcharge && {
+						surchargeMinutes,
+						totalCreditedMinutes,
+						surchargeBreakdown,
+					}),
 				},
 			};
 		});

@@ -143,7 +143,23 @@ export function EventDetailsPanel({ event, onClose }: EventDetailsPanelProps) {
 			startTime?: string;
 			endTime?: string;
 			periodCount?: number;
+			// Project fields
+			projectId?: string;
+			projectName?: string;
+			projectColor?: string;
+			// Surcharge fields
+			surchargeMinutes?: number;
+			totalCreditedMinutes?: number;
+			surchargeBreakdown?: Array<{
+				ruleName: string;
+				ruleType: "day_of_week" | "time_window" | "date_based";
+				percentage: number;
+				qualifyingMinutes: number;
+				surchargeMinutes: number;
+			}>;
 		};
+
+		const hasSurcharge = metadata.surchargeMinutes && metadata.surchargeMinutes > 0;
 
 		return (
 			<div className="space-y-3">
@@ -153,12 +169,79 @@ export function EventDetailsPanel({ event, onClose }: EventDetailsPanelProps) {
 					</span>
 					<p className="font-medium">{metadata.employeeName}</p>
 				</div>
+
+				{/* Project */}
+				{metadata.projectName && (
+					<div>
+						<span className="text-sm text-muted-foreground">
+							{t("calendar.details.project", "Project")}
+						</span>
+						<div className="flex items-center gap-2 mt-0.5">
+							{metadata.projectColor && (
+								<div
+									className="w-3 h-3 rounded-full"
+									style={{ backgroundColor: metadata.projectColor }}
+								/>
+							)}
+							<p className="font-medium">{metadata.projectName}</p>
+						</div>
+					</div>
+				)}
+
+				{/* Duration - with surcharge breakdown */}
 				<div>
 					<span className="text-sm text-muted-foreground">
 						{t("calendar.details.duration", "Duration")}
 					</span>
-					<p className="font-medium">{formatDuration(metadata.durationMinutes)}</p>
+					{hasSurcharge ? (
+						<div className="space-y-1 mt-1">
+							<div className="flex justify-between text-sm">
+								<span className="text-muted-foreground">
+									{t("calendar.details.baseWorked", "Base worked")}
+								</span>
+								<span className="tabular-nums">{formatDuration(metadata.durationMinutes)}</span>
+							</div>
+							<div className="flex justify-between text-sm text-emerald-600 dark:text-emerald-400">
+								<span>{t("calendar.details.surcharge", "Surcharge")}</span>
+								<span className="tabular-nums">+{formatDuration(metadata.surchargeMinutes!)}</span>
+							</div>
+							<div className="flex justify-between font-medium border-t pt-1">
+								<span>{t("calendar.details.credited", "Credited")}</span>
+								<span className="tabular-nums">
+									{formatDuration(metadata.totalCreditedMinutes!)}
+								</span>
+							</div>
+						</div>
+					) : (
+						<p className="font-medium">{formatDuration(metadata.durationMinutes)}</p>
+					)}
 				</div>
+
+				{/* Surcharge breakdown details */}
+				{metadata.surchargeBreakdown && metadata.surchargeBreakdown.length > 0 && (
+					<div>
+						<span className="text-sm text-muted-foreground">
+							{t("calendar.details.surchargeBreakdown", "Surcharge Breakdown")}
+						</span>
+						<div className="mt-1 space-y-1">
+							{metadata.surchargeBreakdown.map((rule, index) => (
+								<div
+									key={`${rule.ruleName}-${index}`}
+									className="flex justify-between text-sm bg-muted/50 rounded px-2 py-1"
+								>
+									<span>
+										{rule.ruleName}{" "}
+										<span className="text-muted-foreground">({rule.percentage}%)</span>
+									</span>
+									<span className="tabular-nums text-emerald-600 dark:text-emerald-400">
+										+{formatDuration(rule.surchargeMinutes)}
+									</span>
+								</div>
+							))}
+						</div>
+					</div>
+				)}
+
 				{metadata.startTime && metadata.endTime && (
 					<div>
 						<span className="text-sm text-muted-foreground">

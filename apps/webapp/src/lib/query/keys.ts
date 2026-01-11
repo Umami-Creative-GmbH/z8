@@ -161,4 +161,36 @@ export const queryKeys = {
 		},
 		effective: (employeeId: string) => ["time-regulations", "effective", employeeId] as const,
 	},
+
+	// Projects
+	projects: {
+		all: ["projects"] as const,
+		list: (orgId: string) => ["projects", "list", orgId] as const,
+		detail: (projectId: string) => ["projects", "detail", projectId] as const,
+		assignable: (orgId: string) => ["projects", "assignable", orgId] as const,
+	},
+
+	// Surcharges
+	surcharges: {
+		all: ["surcharges"] as const,
+		models: {
+			all: ["surcharges", "models"] as const,
+			list: (orgId: string) => ["surcharges", "models", "list", orgId] as const,
+			detail: (modelId: string) => ["surcharges", "models", "detail", modelId] as const,
+		},
+		assignments: {
+			all: ["surcharges", "assignments"] as const,
+			list: (orgId: string) => ["surcharges", "assignments", "list", orgId] as const,
+		},
+		calculations: {
+			all: ["surcharges", "calculations"] as const,
+			list: (orgId: string, dateRange: { start: Date; end: Date }) =>
+				["surcharges", "calculations", "list", orgId, dateRange] as const,
+			byEmployee: (employeeId: string, dateRange: { start: Date; end: Date }) =>
+				["surcharges", "calculations", "employee", employeeId, dateRange] as const,
+			byWorkPeriod: (workPeriodId: string) =>
+				["surcharges", "calculations", "work-period", workPeriodId] as const,
+		},
+		effective: (employeeId: string) => ["surcharges", "effective", employeeId] as const,
+	},
 } as const;

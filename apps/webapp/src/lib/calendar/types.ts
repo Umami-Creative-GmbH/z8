@@ -38,11 +38,29 @@ export interface TimeEntryEvent extends CalendarEvent {
 	};
 }
 
+export interface SurchargeBreakdown {
+	ruleName: string;
+	ruleType: "day_of_week" | "time_window" | "date_based";
+	percentage: number;
+	qualifyingMinutes: number;
+	surchargeMinutes: number;
+}
+
 export interface WorkPeriodEvent extends CalendarEvent {
 	type: "work_period";
 	metadata: {
 		durationMinutes: number;
 		employeeName: string;
+		notes?: string;
+		periodCount?: number;
+		// Project fields - optional, only present if work period is assigned to a project
+		projectId?: string;
+		projectName?: string;
+		projectColor?: string;
+		// Surcharge fields - optional, only present if surcharges are enabled
+		surchargeMinutes?: number;
+		totalCreditedMinutes?: number;
+		surchargeBreakdown?: SurchargeBreakdown[];
 	};
 }
 

@@ -68,6 +68,7 @@ export function OrganizationTab({
 			<OrganizationFeaturesCard
 				organizationId={organization.id}
 				shiftsEnabled={organization.shiftsEnabled ?? false}
+				projectsEnabled={organization.projectsEnabled ?? false}
 				currentMemberRole={currentMemberRole}
 			/>
 

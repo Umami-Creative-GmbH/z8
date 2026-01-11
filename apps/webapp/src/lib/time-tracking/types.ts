@@ -17,6 +17,10 @@ export interface TimeSummary {
 	todayMinutes: number;
 	weekMinutes: number;
 	monthMinutes: number;
+	// Surcharge credits (optional - only present when surcharges are enabled)
+	todaySurchargeMinutes?: number;
+	weekSurchargeMinutes?: number;
+	monthSurchargeMinutes?: number;
 }
 
 export interface CorrectionRequest {

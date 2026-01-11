@@ -30,6 +30,15 @@ export const NOTIFICATION_TYPES = [
 	"shift_swap_rejected",
 	"shift_pickup_available",
 	"shift_pickup_approved",
+	// Project notifications
+	"project_budget_warning_70",
+	"project_budget_warning_90",
+	"project_budget_warning_100",
+	"project_deadline_warning_14d",
+	"project_deadline_warning_7d",
+	"project_deadline_warning_1d",
+	"project_deadline_warning_0d",
+	"project_deadline_overdue",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];

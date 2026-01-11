@@ -90,7 +90,7 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 
 	// Clock out mutation
 	const clockOutMutation = useMutation({
-		mutationFn: clockOut,
+		mutationFn: (projectId?: string) => clockOut(projectId),
 		onSuccess: (result) => {
 			if (result.success) {
 				// Optimistically clear the active work period

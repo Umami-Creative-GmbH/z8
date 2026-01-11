@@ -31,6 +31,9 @@ interface WorkPeriodData {
 	durationMinutes: number | null;
 	clockIn: TimeEntry;
 	clockOut: TimeEntry | undefined;
+	// Surcharge fields (optional - only present when surcharges are enabled)
+	surchargeMinutes?: number | null;
+	totalCreditedMinutes?: number | null;
 }
 
 interface Props {
@@ -84,6 +87,20 @@ export function TimeEntriesTable({ workPeriods, hasManager, employeeTimezone }: 
 			header: "Duration",
 			cell: ({ row }) => {
 				if (!row.original.durationMinutes) return "-";
+				const hasSurcharge =
+					row.original.surchargeMinutes && row.original.surchargeMinutes > 0;
+				if (hasSurcharge) {
+					return (
+						<div className="flex flex-col gap-0.5">
+							<span className="tabular-nums">
+								{formatDuration(row.original.totalCreditedMinutes ?? row.original.durationMinutes)}
+							</span>
+							<span className="text-xs text-emerald-600 dark:text-emerald-400 tabular-nums">
+								+{formatDuration(row.original.surchargeMinutes!)}
+							</span>
+						</div>
+					);
+				}
 				return <span className="tabular-nums">{formatDuration(row.original.durationMinutes)}</span>;
 			},
 		},
