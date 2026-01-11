@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { and, eq, isNull, type SQL, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import {
 	employee,
@@ -26,6 +26,71 @@ import type {
 	HolidayPresetHolidayFormValues,
 } from "@/lib/holidays/validation";
 
+// Type definitions for return values
+type HolidayPresetListItem = {
+	id: string;
+	name: string;
+	description: string | null;
+	countryCode: string | null;
+	stateCode: string | null;
+	regionCode: string | null;
+	color: string | null;
+	isActive: boolean;
+	createdAt: Date;
+	holidayCount: number;
+	assignmentCount: number;
+};
+
+type HolidayPresetHolidayItem = {
+	id: string;
+	name: string;
+	description: string | null;
+	month: number;
+	day: number;
+	durationDays: number;
+	holidayType: string | null;
+	isFloating: boolean;
+	floatingRule: string | null;
+	categoryId: string | null;
+	isActive: boolean;
+	category: { id: string; name: string; color: string | null } | null;
+};
+
+type HolidayPresetDetail = {
+	preset: typeof holidayPreset.$inferSelect;
+	holidays: HolidayPresetHolidayItem[];
+};
+
+type PresetAssignmentListItem = {
+	id: string;
+	presetId: string;
+	assignmentType: "organization" | "team" | "employee";
+	teamId: string | null;
+	employeeId: string | null;
+	priority: number;
+	effectiveFrom: Date | null;
+	effectiveUntil: Date | null;
+	isActive: boolean;
+	createdAt: Date;
+	preset: {
+		id: string;
+		name: string;
+		color: string | null;
+		countryCode: string | null;
+		stateCode: string | null;
+	};
+	team: { id: string; name: string } | null;
+	employee: { id: string; firstName: string; lastName: string } | null;
+};
+
+type TeamListItem = { id: string; name: string };
+type EmployeeListItem = {
+	id: string;
+	firstName: string;
+	lastName: string;
+	position: string | null;
+};
+
 // ============================================
 // PRESET QUERIES
 // ============================================
@@ -35,7 +100,7 @@ import type {
  */
 export async function getHolidayPresets(
 	organizationId: string,
-): Promise<ServerActionResult<any[]>> {
+): Promise<ServerActionResult<HolidayPresetListItem[]>> {
 	const effect = Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
 		yield* _(authService.getSession());
@@ -108,7 +173,9 @@ export async function getHolidayPresets(
 /**
  * Get a single holiday preset with its holidays
  */
-export async function getHolidayPreset(presetId: string): Promise<ServerActionResult<any>> {
+export async function getHolidayPreset(
+	presetId: string,
+): Promise<ServerActionResult<HolidayPresetDetail>> {
 	const effect = Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
@@ -208,7 +275,7 @@ export async function getHolidayPreset(presetId: string): Promise<ServerActionRe
 export async function createHolidayPreset(
 	organizationId: string,
 	data: HolidayPresetFormValues,
-): Promise<ServerActionResult<any>> {
+): Promise<ServerActionResult<typeof holidayPreset.$inferSelect>> {
 	const effect = Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
@@ -335,7 +402,7 @@ export async function createHolidayPreset(
 export async function updateHolidayPreset(
 	presetId: string,
 	data: HolidayPresetFormValues,
-): Promise<ServerActionResult<any>> {
+): Promise<ServerActionResult<typeof holidayPreset.$inferSelect>> {
 	const effect = Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
@@ -573,7 +640,7 @@ export async function deleteHolidayPreset(presetId: string): Promise<ServerActio
 export async function addHolidayToPreset(
 	presetId: string,
 	data: HolidayPresetHolidayFormValues,
-): Promise<ServerActionResult<any>> {
+): Promise<ServerActionResult<typeof holidayPresetHoliday.$inferSelect>> {
 	const effect = Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
@@ -871,7 +938,7 @@ export async function deleteHolidayFromPreset(
  */
 export async function getPresetAssignments(
 	organizationId: string,
-): Promise<ServerActionResult<any[]>> {
+): Promise<ServerActionResult<PresetAssignmentListItem[]>> {
 	const effect = Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
 		yield* _(authService.getSession());
@@ -948,7 +1015,7 @@ export async function getPresetAssignments(
 export async function createPresetAssignment(
 	organizationId: string,
 	data: HolidayPresetAssignmentFormValues,
-): Promise<ServerActionResult<any>> {
+): Promise<ServerActionResult<typeof holidayPresetAssignment.$inferSelect>> {
 	const effect = Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
@@ -995,7 +1062,7 @@ export async function createPresetAssignment(
 			data.assignmentType === "employee" ? 2 : data.assignmentType === "team" ? 1 : 0;
 
 		// Check for existing assignment based on type
-		const existingConditions: any[] = [
+		const existingConditions: SQL[] = [
 			eq(holidayPresetAssignment.organizationId, organizationId),
 			eq(holidayPresetAssignment.isActive, true),
 		];
@@ -1147,7 +1214,7 @@ export async function deletePresetAssignment(
  */
 export async function getTeamsForAssignment(
 	organizationId: string,
-): Promise<ServerActionResult<any[]>> {
+): Promise<ServerActionResult<TeamListItem[]>> {
 	const effect = Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
 		yield* _(authService.getSession());
@@ -1178,7 +1245,7 @@ export async function getTeamsForAssignment(
  */
 export async function getEmployeesForAssignment(
 	organizationId: string,
-): Promise<ServerActionResult<any[]>> {
+): Promise<ServerActionResult<EmployeeListItem[]>> {
 	const effect = Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
 		yield* _(authService.getSession());

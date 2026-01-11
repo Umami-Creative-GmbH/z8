@@ -42,7 +42,7 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Link, useRouter } from "@/navigation";
-import { getEmployee, listEmployees, updateEmployee } from "../actions";
+import { type EmployeeWithRelations, getEmployee, listEmployees, updateEmployee } from "../actions";
 
 const formSchema = z.object({
 	firstName: z.string().optional(),
@@ -52,6 +52,19 @@ const formSchema = z.object({
 	role: z.enum(["admin", "manager", "employee"]).optional(),
 });
 
+type ManagerRelation = {
+	id: string;
+	isPrimary: boolean;
+	manager: {
+		id: string;
+		user: { name: string };
+	};
+};
+
+type EmployeeDetail = EmployeeWithRelations & {
+	managers?: ManagerRelation[];
+};
+
 export default function EmployeeDetailPage({
 	params,
 }: {
@@ -60,11 +73,11 @@ export default function EmployeeDetailPage({
 	const { employeeId } = use(params);
 	const router = useRouter();
 	const [loading, setLoading] = useState(false);
-	const [employee, setEmployee] = useState<any>(null);
-	const [currentEmployee, setCurrentEmployee] = useState<any>(null);
+	const [employee, setEmployee] = useState<EmployeeDetail | null>(null);
+	const [_currentEmployee, setCurrentEmployee] = useState<EmployeeWithRelations | null>(null);
 	const [noEmployee, setNoEmployee] = useState(false);
 	const [isAdmin, setIsAdmin] = useState(false);
-	const [availableManagers, setAvailableManagers] = useState<any[]>([]);
+	const [availableManagers, setAvailableManagers] = useState<EmployeeWithRelations[]>([]);
 	const [schedule, setSchedule] = useState<EffectiveScheduleWithSource | null>(null);
 
 	const form = useForm<z.infer<typeof formSchema>>({
@@ -127,7 +140,7 @@ export default function EmployeeDetailPage({
 		}
 
 		loadData();
-	}, [employeeId, form]);
+	}, [employeeId, loadEmployeeData]);
 
 	async function onSubmit(values: z.infer<typeof formSchema>) {
 		setLoading(true);
@@ -142,7 +155,7 @@ export default function EmployeeDetailPage({
 			} else {
 				toast.error(result.error || "Failed to update employee");
 			}
-		} catch (error) {
+		} catch (_error) {
 			toast.error("An unexpected error occurred");
 		} finally {
 			setLoading(false);
@@ -225,7 +238,7 @@ export default function EmployeeDetailPage({
 							<div className="space-y-2">
 								<div className="text-sm text-muted-foreground">Managers</div>
 								<div className="space-y-1">
-									{employee.managers.map((m: any) => (
+									{employee.managers.map((m) => (
 										<div key={m.id} className="flex items-center gap-2">
 											<span>{m.manager.user.name}</span>
 											{m.isPrimary && (

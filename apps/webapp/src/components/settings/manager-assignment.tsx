@@ -109,7 +109,7 @@ export function ManagerAssignment({
 			} else {
 				toast.error(result.error || "Failed to assign managers");
 			}
-		} catch (error) {
+		} catch (_error) {
 			toast.error("An unexpected error occurred");
 		} finally {
 			setLoading(false);

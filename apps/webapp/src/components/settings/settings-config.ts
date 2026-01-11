@@ -3,7 +3,6 @@ import {
 	IconBeach,
 	IconBell,
 	IconBuilding,
-	IconBuildingSkyscraper,
 	IconCalendarEvent,
 	IconClock,
 	IconHistory,

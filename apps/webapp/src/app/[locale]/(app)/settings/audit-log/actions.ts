@@ -1,7 +1,6 @@
 "use server";
 
-import { Effect } from "effect";
-import { getAuthContext, requireUser } from "@/lib/auth-helpers";
+import { requireUser } from "@/lib/auth-helpers";
 import {
 	type AuditLogFilters,
 	type AuditLogResult,

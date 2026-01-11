@@ -1,7 +1,7 @@
 "use server";
 
 import { SpanStatusCode, trace } from "@opentelemetry/api";
-import { and, eq, like, or } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { user } from "@/db/auth-schema";
 import { employee, type team } from "@/db/schema";
@@ -13,13 +13,17 @@ export type EmployeeWithRelations = typeof employee.$inferSelect & {
 };
 
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
-import { AuthorizationError, NotFoundError, ValidationError } from "@/lib/effect/errors";
+import {
+	type AnyAppError,
+	AuthorizationError,
+	NotFoundError,
+	ValidationError,
+} from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { ManagerService } from "@/lib/effect/services/manager.service";
-import { PermissionsService } from "@/lib/effect/services/permissions.service";
 import { createLogger } from "@/lib/logger";
 import {
 	type AssignManagers,
@@ -115,7 +119,7 @@ export async function createEmployee(
 				const validatedData = validationResult.data;
 
 				// Step 4: Verify user exists
-				const targetUser = yield* _(
+				const _targetUser = yield* _(
 					dbService.query("getTargetUser", async () => {
 						return await dbService.db.query.user.findFirst({
 							where: eq(user.id, validatedData.userId),
@@ -202,7 +206,7 @@ export async function createEmployee(
 							message: String(error),
 						});
 						logger.error({ error }, "Failed to create employee");
-						return yield* _(Effect.fail(error as any));
+						return yield* _(Effect.fail(error as AnyAppError));
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
@@ -310,7 +314,7 @@ export async function updateEmployee(
 							message: String(error),
 						});
 						logger.error({ error, employeeId }, "Failed to update employee");
-						return yield* _(Effect.fail(error as any));
+						return yield* _(Effect.fail(error as AnyAppError));
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
@@ -401,7 +405,7 @@ export async function updateOwnProfile(
 						message: String(error),
 					});
 					logger.error({ error }, "Failed to update own profile");
-					return yield* _(Effect.fail(error as any));
+					return yield* _(Effect.fail(error as AnyAppError));
 				}),
 			),
 			Effect.onExit(() => Effect.sync(() => span.end())),
@@ -714,7 +718,7 @@ export async function assignManagers(
 							message: String(error),
 						});
 						logger.error({ error, employeeId }, "Failed to assign managers");
-						return yield* _(Effect.fail(error as any));
+						return yield* _(Effect.fail(error as AnyAppError));
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),

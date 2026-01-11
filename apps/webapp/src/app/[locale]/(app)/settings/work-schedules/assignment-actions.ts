@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq, isNull, or } from "drizzle-orm";
+import { and, eq, or } from "drizzle-orm";
 import { Effect } from "effect";
 import { db } from "@/db";
 import { member } from "@/db/auth-schema";
@@ -466,7 +466,7 @@ export async function getEmployeeEffectiveSchedule(
 ): Promise<ServerActionResult<WorkScheduleTemplateWithDays | null>> {
 	const effect = Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+		const _session = yield* _(authService.getSession());
 
 		const dbService = yield* _(DatabaseService);
 

@@ -6,7 +6,7 @@ import { headers } from "next/headers";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import { auth } from "@/lib/auth";
-import { AuthenticationError, ValidationError } from "@/lib/effect/errors";
+import { ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
@@ -23,7 +23,7 @@ export async function updateProfile(data: {
 	const effect = Effect.gen(function* (_) {
 		// Step 1: Get session via AuthService
 		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+		const _session = yield* _(authService.getSession());
 
 		// Step 2: Validate input
 		const result = profileUpdateSchema.safeParse(data);
@@ -83,7 +83,7 @@ export async function changePassword(data: {
 	const effect = Effect.gen(function* (_) {
 		// Step 1: Get session via AuthService
 		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+		const _session = yield* _(authService.getSession());
 
 		// Step 2: Validate input
 		const result = passwordChangeSchema.safeParse(data);

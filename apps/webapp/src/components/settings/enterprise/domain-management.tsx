@@ -88,7 +88,7 @@ export function DomainManagement({ initialDomains }: DomainManagementProps) {
 			} else {
 				toast.error("Verification failed. Please check your DNS records.");
 			}
-		} catch (error) {
+		} catch (_error) {
 			toast.error("Failed to verify domain");
 		} finally {
 			setIsVerifying(false);
@@ -108,7 +108,7 @@ export function DomainManagement({ initialDomains }: DomainManagementProps) {
 					: null,
 			);
 			toast.success("New verification token generated");
-		} catch (error) {
+		} catch (_error) {
 			toast.error("Failed to regenerate token");
 		}
 	};
@@ -119,7 +119,7 @@ export function DomainManagement({ initialDomains }: DomainManagementProps) {
 			setDomain((prev) => (prev ? { ...prev, authConfig: config } : null));
 			toast.success("Auth configuration updated");
 			setAuthConfigDialog({ isOpen: false, domain: null });
-		} catch (error) {
+		} catch (_error) {
 			toast.error("Failed to update auth configuration");
 		}
 	};
@@ -131,7 +131,7 @@ export function DomainManagement({ initialDomains }: DomainManagementProps) {
 			await deleteDomainAction(deleteDialog.domain.id);
 			setDomain(null);
 			toast.success("Domain deleted");
-		} catch (error) {
+		} catch (_error) {
 			toast.error("Failed to delete domain");
 		} finally {
 			setDeleteDialog({ isOpen: false, domain: null });
@@ -269,8 +269,8 @@ export function DomainManagement({ initialDomains }: DomainManagementProps) {
 						<AlertDialogTitle>Delete Domain</AlertDialogTitle>
 						<AlertDialogDescription>
 							Are you sure you want to delete &quot;{deleteDialog.domain?.domain}
-							&quot;? This action cannot be undone. Users will no longer be able to sign in via
-							this custom domain.
+							&quot;? This action cannot be undone. Users will no longer be able to sign in via this
+							custom domain.
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>

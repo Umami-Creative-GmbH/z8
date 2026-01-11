@@ -201,7 +201,7 @@ export function WorkScheduleTemplateDialog({
 	// Update mutation
 	const updateMutation = useMutation({
 		mutationFn: (data: FormValues) =>
-			updateWorkScheduleTemplate(editingTemplate!.id, {
+			updateWorkScheduleTemplate(editingTemplate?.id, {
 				name: data.name,
 				description: data.description,
 				scheduleCycle: data.scheduleCycle,

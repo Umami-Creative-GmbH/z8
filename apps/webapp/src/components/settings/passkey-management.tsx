@@ -52,7 +52,7 @@ export function PasskeyManagement() {
 
 	useEffect(() => {
 		loadPasskeys();
-	}, []);
+	}, [loadPasskeys]);
 
 	const handleAddPasskey = async () => {
 		setIsAdding(true);

@@ -25,7 +25,7 @@ export function TimezoneSettings({ currentTimezone = "UTC", onUpdate }: Timezone
 			} else {
 				toast.error(result.error || "Failed to update timezone");
 			}
-		} catch (error) {
+		} catch (_error) {
 			toast.error("An error occurred while updating timezone");
 		} finally {
 			setIsLoading(false);

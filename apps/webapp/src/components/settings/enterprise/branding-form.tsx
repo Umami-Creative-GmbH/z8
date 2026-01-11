@@ -100,7 +100,7 @@ export function BrandingForm({ initialBranding, organizationId }: BrandingFormPr
 				customQuotes: customQuotes.length > 0 ? customQuotes : null,
 			});
 			toast.success("Branding settings saved");
-		} catch (error) {
+		} catch (_error) {
 			toast.error("Failed to save branding settings");
 		} finally {
 			setIsSaving(false);

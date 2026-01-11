@@ -185,7 +185,7 @@ export function NotificationSettings() {
 		return success;
 	};
 
-	const handleEnablePush = async () => {
+	const _handleEnablePush = async () => {
 		await subscribeToPush();
 	};
 

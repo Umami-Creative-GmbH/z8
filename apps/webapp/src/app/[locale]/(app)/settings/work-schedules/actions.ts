@@ -2,11 +2,9 @@
 
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
-import { headers } from "next/headers";
 import { db } from "@/db";
 import { member } from "@/db/auth-schema";
-import { employee, workScheduleTemplate, workScheduleTemplateDays } from "@/db/schema";
-import { auth } from "@/lib/auth";
+import { workScheduleTemplate, workScheduleTemplateDays } from "@/db/schema";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { AuthorizationError, ConflictError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
@@ -17,7 +15,6 @@ import {
 	type CreateWorkScheduleTemplate,
 	createWorkScheduleTemplateSchema,
 	type UpdateWorkScheduleTemplate,
-	updateWorkScheduleTemplateSchema,
 } from "@/lib/validations/work-schedule";
 
 // Types for return values
@@ -381,7 +378,7 @@ export async function updateWorkScheduleTemplate(
 			yield* _(
 				dbService.query("insertDays", async () => {
 					await dbService.db.insert(workScheduleTemplateDays).values(
-						data.days!.map((day) => ({
+						data.days?.map((day) => ({
 							templateId,
 							dayOfWeek: day.dayOfWeek,
 							hoursPerDay: day.hoursPerDay,

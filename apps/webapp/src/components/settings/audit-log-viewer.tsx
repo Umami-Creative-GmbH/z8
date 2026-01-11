@@ -14,7 +14,6 @@ import { toast } from "sonner";
 import {
 	exportAuditLogsAction,
 	getAuditLogsAction,
-	getAuditStatsAction,
 } from "@/app/[locale]/(app)/settings/audit-log/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -106,7 +105,7 @@ export function AuditLogViewer() {
 	const [total, setTotal] = useState(0);
 	const [loading, setLoading] = useState(true);
 	const [exporting, setExporting] = useState(false);
-	const [selectedLog, setSelectedLog] = useState<AuditLogResult | null>(null);
+	const [_selectedLog, setSelectedLog] = useState<AuditLogResult | null>(null);
 
 	// Filters
 	const [search, setSearch] = useState("");
@@ -144,7 +143,7 @@ export function AuditLogViewer() {
 			} else {
 				toast.error(result.error || "Failed to fetch audit logs");
 			}
-		} catch (error) {
+		} catch (_error) {
 			toast.error("Failed to fetch audit logs");
 		} finally {
 			setLoading(false);
@@ -178,7 +177,7 @@ export function AuditLogViewer() {
 			} else {
 				toast.error(result.error || "Failed to export audit logs");
 			}
-		} catch (error) {
+		} catch (_error) {
 			toast.error("Failed to export audit logs");
 		} finally {
 			setExporting(false);

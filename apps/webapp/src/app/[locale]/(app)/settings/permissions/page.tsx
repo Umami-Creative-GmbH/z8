@@ -20,20 +20,23 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { listEmployees } from "../employees/actions";
+import type { EmployeePermissions } from "@/lib/effect/services/permissions.service";
+import { type EmployeeWithRelations, listEmployees } from "../employees/actions";
 import { listTeams } from "../teams/actions";
 import { listEmployeePermissions } from "./actions";
 
+type TeamItem = { id: string; name: string };
+
 export default function PermissionsPage() {
-	const [employees, setEmployees] = useState<any[]>([]);
-	const [teams, setTeams] = useState<any[]>([]);
-	const [permissions, setPermissions] = useState<Record<string, any>>({});
+	const [employees, setEmployees] = useState<EmployeeWithRelations[]>([]);
+	const [teams, setTeams] = useState<TeamItem[]>([]);
+	const [permissions, setPermissions] = useState<Record<string, EmployeePermissions>>({});
 	const [loading, setLoading] = useState(true);
-	const [currentEmployee, setCurrentEmployee] = useState<any>(null);
+	const [currentEmployee, setCurrentEmployee] = useState<EmployeeWithRelations | null>(null);
 	const [noEmployee, setNoEmployee] = useState(false);
 	const [isAdmin, setIsAdmin] = useState(false);
 	const [searchQuery, setSearchQuery] = useState("");
-	const [selectedEmployee, setSelectedEmployee] = useState<any | null>(null);
+	const [selectedEmployee, setSelectedEmployee] = useState<EmployeeWithRelations | null>(null);
 
 	useEffect(() => {
 		async function loadData() {
@@ -69,7 +72,7 @@ export default function PermissionsPage() {
 			// Load permissions for all employees
 			const permResult = await listEmployeePermissions(current.organizationId);
 			if (permResult.success && permResult.data) {
-				const permMap: Record<string, any> = {};
+				const permMap: Record<string, EmployeePermissions> = {};
 				for (const item of permResult.data) {
 					// The action returns an array of { employee, permissions }
 					// We need to flatten permissions for display
@@ -95,7 +98,7 @@ export default function PermissionsPage() {
 		// Reload permissions
 		const permResult = await listEmployeePermissions(currentEmployee.organizationId);
 		if (permResult.success && permResult.data) {
-			const permMap: Record<string, any> = {};
+			const permMap: Record<string, EmployeePermissions> = {};
 			for (const item of permResult.data) {
 				if (item.permissions.length > 0) {
 					permMap[item.employee.id] = item.permissions[0];

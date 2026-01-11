@@ -24,7 +24,7 @@ export const templateDaySchema = z.object({
 		.refine(
 			(val) => {
 				const hours = parseFloat(val);
-				return !isNaN(hours) && hours >= 0 && hours <= 24;
+				return !Number.isNaN(hours) && hours >= 0 && hours <= 24;
 			},
 			{ message: "Hours per day must be between 0 and 24" },
 		),
@@ -45,7 +45,7 @@ export const simpleTemplateSchema = z.object({
 		.refine(
 			(val) => {
 				const hours = parseFloat(val);
-				return !isNaN(hours) && hours >= 0 && hours <= 744; // Max 24*31 for monthly
+				return !Number.isNaN(hours) && hours >= 0 && hours <= 744; // Max 24*31 for monthly
 			},
 			{ message: "Hours per cycle must be between 0 and 744" },
 		),
@@ -119,7 +119,7 @@ export const updateWorkScheduleTemplateSchema = z.object({
 		.refine(
 			(val) => {
 				const hours = parseFloat(val);
-				return !isNaN(hours) && hours >= 0 && hours <= 744;
+				return !Number.isNaN(hours) && hours >= 0 && hours <= 744;
 			},
 			{ message: "Hours per cycle must be between 0 and 744" },
 		)
@@ -183,7 +183,7 @@ export const scheduleDaySchema = z.object({
 		.refine(
 			(val) => {
 				const hours = parseFloat(val);
-				return !isNaN(hours) && hours >= 0 && hours <= 24;
+				return !Number.isNaN(hours) && hours >= 0 && hours <= 24;
 			},
 			{ message: "Hours per day must be between 0 and 24" },
 		),
@@ -199,7 +199,7 @@ export const simpleWorkScheduleSchema = z.object({
 		.refine(
 			(val) => {
 				const hours = parseFloat(val);
-				return !isNaN(hours) && hours >= 0 && hours <= 168; // Max hours in a week
+				return !Number.isNaN(hours) && hours >= 0 && hours <= 168; // Max hours in a week
 			},
 			{ message: "Hours per week must be between 0 and 168" },
 		),

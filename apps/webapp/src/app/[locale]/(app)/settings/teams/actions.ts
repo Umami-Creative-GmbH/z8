@@ -6,7 +6,12 @@ import { Effect } from "effect";
 import * as z from "zod";
 import { employee, team } from "@/db/schema";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
-import { AuthorizationError, NotFoundError, ValidationError } from "@/lib/effect/errors";
+import {
+	type AnyAppError,
+	AuthorizationError,
+	NotFoundError,
+	ValidationError,
+} from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
@@ -179,7 +184,7 @@ export async function createTeam(
 							message: String(error),
 						});
 						logger.error({ error }, "Failed to create team");
-						return yield* _(Effect.fail(error as any));
+						return yield* _(Effect.fail(error as AnyAppError));
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
@@ -352,7 +357,7 @@ export async function updateTeam(
 							message: String(error),
 						});
 						logger.error({ error, teamId }, "Failed to update team");
-						return yield* _(Effect.fail(error as any));
+						return yield* _(Effect.fail(error as AnyAppError));
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
@@ -496,7 +501,7 @@ export async function deleteTeam(teamId: string): Promise<ServerActionResult<voi
 							message: String(error),
 						});
 						logger.error({ error, teamId }, "Failed to delete team");
-						return yield* _(Effect.fail(error as any));
+						return yield* _(Effect.fail(error as AnyAppError));
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
@@ -789,7 +794,7 @@ export async function addTeamMember(
 							message: String(error),
 						});
 						logger.error({ error, teamId, employeeId }, "Failed to add team member");
-						return yield* _(Effect.fail(error as any));
+						return yield* _(Effect.fail(error as AnyAppError));
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
@@ -934,7 +939,7 @@ export async function removeTeamMember(
 							message: String(error),
 						});
 						logger.error({ error, teamId, employeeId }, "Failed to remove team member");
-						return yield* _(Effect.fail(error as any));
+						return yield* _(Effect.fail(error as AnyAppError));
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),

@@ -2,12 +2,8 @@
 
 import { and, eq, inArray } from "drizzle-orm";
 import { Effect } from "effect";
-import { headers } from "next/headers";
-import { db } from "@/db";
 import { employee, holiday, holidayAssignment, holidayCategory, team } from "@/db/schema";
-import { auth } from "@/lib/auth";
 import {
-	AuthenticationError,
 	AuthorizationError,
 	ConflictError,
 	DatabaseError,
@@ -25,7 +21,7 @@ export async function getHolidays(organizationId: string): Promise<ServerActionR
 	const effect = Effect.gen(function* (_) {
 		// Step 1: Get session via AuthService
 		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+		const _session = yield* _(authService.getSession());
 
 		// Step 2: Get holidays from database
 		const dbService = yield* _(DatabaseService);
@@ -81,7 +77,7 @@ export async function getHolidayCategories(
 	const effect = Effect.gen(function* (_) {
 		// Step 1: Get session via AuthService
 		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+		const _session = yield* _(authService.getSession());
 
 		// Step 2: Get categories from database
 		const dbService = yield* _(DatabaseService);
@@ -166,7 +162,7 @@ export async function deleteHoliday(holidayId: string): Promise<ServerActionResu
 		}
 
 		// Step 5: Verify holiday belongs to the same organization
-		const existingHoliday = yield* _(
+		const _existingHoliday = yield* _(
 			dbService.query("verifyHoliday", async () => {
 				const [h] = await dbService.db
 					.select()
@@ -354,7 +350,7 @@ export async function deleteCategory(categoryId: string): Promise<ServerActionRe
 		}
 
 		// Step 5: Verify category belongs to the same organization
-		const existingCategory = yield* _(
+		const _existingCategory = yield* _(
 			dbService.query("verifyCategory", async () => {
 				const [cat] = await dbService.db
 					.select()
@@ -442,7 +438,7 @@ export async function getHolidayAssignments(
 	const effect = Effect.gen(function* (_) {
 		// Step 1: Get session via AuthService
 		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+		const _session = yield* _(authService.getSession());
 
 		// Step 2: Get database service
 		const dbService = yield* _(DatabaseService);
@@ -563,7 +559,7 @@ export async function createHolidayAssignment(data: {
 		}
 
 		// Step 5: Verify holiday belongs to the same organization
-		const existingHoliday = yield* _(
+		const _existingHoliday = yield* _(
 			dbService.query("verifyHoliday", async () => {
 				const [h] = await dbService.db
 					.select()
@@ -680,7 +676,7 @@ export async function deleteHolidayAssignment(
 		}
 
 		// Step 5: Verify assignment belongs to the same organization
-		const existingAssignment = yield* _(
+		const _existingAssignment = yield* _(
 			dbService.query("verifyAssignment", async () => {
 				const [a] = await dbService.db
 					.select()

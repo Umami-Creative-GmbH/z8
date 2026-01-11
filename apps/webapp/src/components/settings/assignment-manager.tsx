@@ -755,15 +755,12 @@ export function AssignmentManager({
 										)}
 								</>
 							)}
-							{selectedHolidayAssignment && (
-								<>
-									{t(
-										"settings.holidays.assignments.deleteHolidayDescription",
-										'This will remove the custom holiday "{holiday}" from this assignment.',
-										{ holiday: selectedHolidayAssignment.holiday.name },
-									)}
-								</>
-							)}
+							{selectedHolidayAssignment &&
+								t(
+									"settings.holidays.assignments.deleteHolidayDescription",
+									'This will remove the custom holiday "{holiday}" from this assignment.',
+									{ holiday: selectedHolidayAssignment.holiday.name },
+								)}
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>

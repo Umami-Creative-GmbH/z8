@@ -2,7 +2,6 @@
 
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
-import { db } from "@/db";
 import { employee, team, vacationAllowance, vacationPolicyAssignment } from "@/db/schema";
 import { AuthorizationError, DatabaseError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
@@ -23,7 +22,7 @@ export async function getVacationPolicies(
 	const effect = Effect.gen(function* (_) {
 		// Step 1: Get session via AuthService
 		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+		const _session = yield* _(authService.getSession());
 
 		// Step 2: Get database service
 		const dbService = yield* _(DatabaseService);
@@ -63,7 +62,7 @@ export async function getVacationPolicyAssignments(
 	const effect = Effect.gen(function* (_) {
 		// Step 1: Get session via AuthService
 		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+		const _session = yield* _(authService.getSession());
 
 		// Step 2: Get database service
 		const dbService = yield* _(DatabaseService);
@@ -188,7 +187,7 @@ export async function createVacationPolicyAssignment(data: {
 		}
 
 		// Step 5: Verify policy belongs to the same organization
-		const existingPolicy = yield* _(
+		const _existingPolicy = yield* _(
 			dbService.query("verifyPolicy", async () => {
 				const [p] = await dbService.db
 					.select()
@@ -264,7 +263,7 @@ export async function getEmployeePolicyAssignment(
 ): Promise<ServerActionResult<any | null>> {
 	const effect = Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+		const _session = yield* _(authService.getSession());
 
 		const dbService = yield* _(DatabaseService);
 
@@ -372,7 +371,7 @@ export async function setEmployeePolicyAssignment(
 		// If policyId provided, create new assignment
 		if (policyId) {
 			// Verify policy exists and belongs to same org
-			const existingPolicy = yield* _(
+			const _existingPolicy = yield* _(
 				dbService.query("verifyPolicy", async () => {
 					const [p] = await dbService.db
 						.select()
@@ -482,7 +481,7 @@ export async function deleteVacationPolicyAssignment(
 		}
 
 		// Step 5: Verify assignment belongs to the same organization
-		const existingAssignment = yield* _(
+		const _existingAssignment = yield* _(
 			dbService.query("verifyAssignment", async () => {
 				const [a] = await dbService.db
 					.select()

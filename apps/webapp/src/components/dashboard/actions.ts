@@ -1,17 +1,9 @@
 "use server";
 
-import { and, eq, gte, inArray, isNull, lte, or, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, lte, or, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
-import { user } from "@/db/auth-schema";
-import {
-	absenceCategory,
-	absenceEntry,
-	approvalRequest,
-	employee,
-	team,
-	workPeriod,
-} from "@/db/schema";
+import { absenceEntry, approvalRequest, employee, team, workPeriod } from "@/db/schema";
 import { getEnhancedVacationBalance } from "@/lib/absences/vacation.service";
 import { currentTimestamp, dateFromDB, dateToDB } from "@/lib/datetime/drizzle-adapter";
 import { toDateKey } from "@/lib/datetime/luxon-utils";
@@ -34,7 +26,7 @@ export async function getManagedEmployees(managerId: string): Promise<ServerActi
 		const managerService = yield* _(ManagerService);
 
 		// Get current employee
-		const currentEmployee = yield* _(
+		const _currentEmployee = yield* _(
 			dbService.query("getCurrentEmployee", async () => {
 				return await dbService.db.query.employee.findFirst({
 					where: eq(employee.userId, session.user.id),
@@ -439,7 +431,10 @@ export async function getQuickStats(): Promise<ServerActionResult<any>> {
 		let weekExpected = 40; // Default
 		let monthExpected = 160; // Default
 
-		if (currentEmployee.workScheduleAssignments && currentEmployee.workScheduleAssignments.length > 0) {
+		if (
+			currentEmployee.workScheduleAssignments &&
+			currentEmployee.workScheduleAssignments.length > 0
+		) {
 			const assignment = currentEmployee.workScheduleAssignments[0];
 			const template = assignment.template;
 			if (template && template.scheduleType === "simple" && template.hoursPerCycle) {

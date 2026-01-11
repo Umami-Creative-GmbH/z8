@@ -31,7 +31,7 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import { Link, useRouter } from "@/navigation";
+import { useRouter } from "@/navigation";
 import { getEmployeeAllowance, getVacationPolicies, updateEmployeeAllowance } from "../../actions";
 import {
 	getVacationPolicies as getAssignmentPolicies,

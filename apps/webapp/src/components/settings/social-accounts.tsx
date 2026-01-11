@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { authClient } from "@/lib/auth-client";
 
 interface ConnectedAccount {
@@ -83,7 +83,7 @@ export function SocialAccounts() {
 
 	useEffect(() => {
 		loadAccounts();
-	}, []);
+	}, [loadAccounts]);
 
 	const handleConnect = (providerId: string) => {
 		setConnectingProvider(providerId);

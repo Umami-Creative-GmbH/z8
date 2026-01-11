@@ -113,7 +113,7 @@ export function PermissionEditor({
 			} else {
 				toast.error(result.error || "Failed to update permissions");
 			}
-		} catch (error) {
+		} catch (_error) {
 			toast.error("An unexpected error occurred");
 		} finally {
 			setLoading(false);
@@ -136,7 +136,7 @@ export function PermissionEditor({
 			} else {
 				toast.error(result.error || "Failed to revoke permissions");
 			}
-		} catch (error) {
+		} catch (_error) {
 			toast.error("An unexpected error occurred");
 		} finally {
 			setLoading(false);

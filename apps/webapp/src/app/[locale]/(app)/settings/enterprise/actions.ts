@@ -4,7 +4,6 @@ import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { ssoProvider } from "@/db/auth-schema";
-import { organizationBranding, organizationDomain } from "@/db/schema";
 import { requireUser } from "@/lib/auth-helpers";
 import type { AuthConfig, OrganizationBranding } from "@/lib/domain";
 import {

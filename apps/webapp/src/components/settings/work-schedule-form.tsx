@@ -11,7 +11,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
 	Select,
 	SelectContent,
@@ -97,7 +96,7 @@ export function WorkScheduleForm({
 			if (scheduleType === "simple") {
 				// Validate hours per week
 				const hours = parseFloat(hoursPerWeek);
-				if (isNaN(hours) || hours < 0 || hours > 168) {
+				if (Number.isNaN(hours) || hours < 0 || hours > 168) {
 					toast.error("Hours per week must be between 0 and 168");
 					setLoading(false);
 					return;
@@ -107,7 +106,7 @@ export function WorkScheduleForm({
 				// Validate detailed schedule
 				for (const day of detailedSchedule) {
 					const hours = parseFloat(day.hoursPerDay);
-					if (isNaN(hours) || hours < 0 || hours > 24) {
+					if (Number.isNaN(hours) || hours < 0 || hours > 24) {
 						toast.error(`Hours per day must be between 0 and 24 for ${day.dayOfWeek}`);
 						setLoading(false);
 						return;
@@ -124,7 +123,7 @@ export function WorkScheduleForm({
 			} else {
 				toast.error(result.error || "Failed to save work schedule");
 			}
-		} catch (error) {
+		} catch (_error) {
 			toast.error("An unexpected error occurred");
 		} finally {
 			setLoading(false);

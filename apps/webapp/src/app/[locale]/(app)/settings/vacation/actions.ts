@@ -10,7 +10,6 @@ import { auth } from "@/lib/auth";
 import { isManagerOf } from "@/lib/auth-helpers";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import {
-	AuthenticationError,
 	AuthorizationError,
 	ConflictError,
 	DatabaseError,
@@ -24,7 +23,7 @@ import { DatabaseService } from "@/lib/effect/services/database.service";
 /**
  * Get current employee from session
  */
-async function getCurrentEmployee() {
+async function _getCurrentEmployee() {
 	const session = await auth.api.getSession({ headers: await headers() });
 	if (!session?.user) {
 		return null;
@@ -69,7 +68,7 @@ export async function getVacationPolicy(
 
 		// Step 2: Get current employee
 		const dbService = yield* _(DatabaseService);
-		const currentEmployee = yield* _(
+		const _currentEmployee = yield* _(
 			dbService.query("getCurrentEmployee", async () => {
 				const emp = await dbService.db.query.employee.findFirst({
 					where: eq(employee.userId, session.user.id),
@@ -150,7 +149,7 @@ export async function createVacationPolicy(data: {
 
 		// Step 2: Get current employee
 		const dbService = yield* _(DatabaseService);
-		const currentEmployee = yield* _(
+		const _currentEmployee = yield* _(
 			dbService.query("getCurrentEmployee", async () => {
 				const emp = await dbService.db.query.employee.findFirst({
 					where: eq(employee.userId, session.user.id),

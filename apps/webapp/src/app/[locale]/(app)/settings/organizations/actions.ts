@@ -8,7 +8,12 @@ import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import { employee } from "@/db/schema";
 import { auth } from "@/lib/auth";
-import { AuthorizationError, NotFoundError, ValidationError } from "@/lib/effect/errors";
+import {
+	type AnyAppError,
+	AuthorizationError,
+	NotFoundError,
+	ValidationError,
+} from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
@@ -227,7 +232,7 @@ export async function sendInvitation(
 							message: String(error),
 						});
 						logger.error({ error }, "Failed to send invitation");
-						return yield* _(Effect.fail(error as any));
+						return yield* _(Effect.fail(error as AnyAppError));
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
@@ -353,7 +358,7 @@ export async function cancelInvitation(invitationId: string): Promise<ServerActi
 							message: String(error),
 						});
 						logger.error({ error, invitationId }, "Failed to cancel invitation");
-						return yield* _(Effect.fail(error as any));
+						return yield* _(Effect.fail(error as AnyAppError));
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
@@ -481,7 +486,7 @@ export async function removeMember(
 							message: String(error),
 						});
 						logger.error({ error, organizationId, userId }, "Failed to remove member");
-						return yield* _(Effect.fail(error as any));
+						return yield* _(Effect.fail(error as AnyAppError));
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
@@ -611,7 +616,7 @@ export async function updateMemberRole(
 							message: String(error),
 						});
 						logger.error({ error, organizationId, userId }, "Failed to update member role");
-						return yield* _(Effect.fail(error as any));
+						return yield* _(Effect.fail(error as AnyAppError));
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
@@ -740,7 +745,7 @@ export async function updateOrganizationDetails(
 							message: String(error),
 						});
 						logger.error({ error, organizationId }, "Failed to update organization");
-						return yield* _(Effect.fail(error as any));
+						return yield* _(Effect.fail(error as AnyAppError));
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
@@ -859,7 +864,7 @@ export async function toggleOrganizationFeature(
 							{ error, organizationId, feature },
 							"Failed to toggle organization feature",
 						);
-						return yield* _(Effect.fail(error as any));
+						return yield* _(Effect.fail(error as AnyAppError));
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
@@ -1005,7 +1010,7 @@ export async function toggleEmployeeStatus(
 							message: String(error),
 						});
 						logger.error({ error, organizationId, employeeId }, "Failed to toggle employee status");
-						return yield* _(Effect.fail(error as any));
+						return yield* _(Effect.fail(error as AnyAppError));
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),

@@ -54,9 +54,7 @@ export function DomainsAndBrandingTabs({
 				<TabsTrigger value="branding">
 					{t("settings.enterprise.tab.branding", "Branding")}
 				</TabsTrigger>
-				<TabsTrigger value="sso">
-					{t("settings.enterprise.tab.sso", "SSO Providers")}
-				</TabsTrigger>
+				<TabsTrigger value="sso">{t("settings.enterprise.tab.sso", "SSO Providers")}</TabsTrigger>
 			</TabsList>
 
 			<TabsContent value="domains" className="space-y-4">

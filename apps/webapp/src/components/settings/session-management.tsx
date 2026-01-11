@@ -107,7 +107,7 @@ export function SessionManagement() {
 
 	useEffect(() => {
 		loadSessions();
-	}, []);
+	}, [loadSessions]);
 
 	const handleRevokeSession = async (token: string, sessionId: string) => {
 		try {

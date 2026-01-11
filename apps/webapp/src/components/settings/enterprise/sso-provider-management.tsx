@@ -61,7 +61,7 @@ export function SSOProviderManagement({ initialProviders }: SSOProviderManagemen
 			await deleteSSOProviderAction(deleteDialog.provider.id);
 			setProviders((prev) => prev.filter((p) => p.id !== deleteDialog.provider?.id));
 			toast.success("SSO provider deleted");
-		} catch (error) {
+		} catch (_error) {
 			toast.error("Failed to delete SSO provider");
 		} finally {
 			setDeleteDialog({ isOpen: false, provider: null });

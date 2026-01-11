@@ -476,8 +476,8 @@ export function HolidayImportDialog({
 
 	const selectedCountryName = countries.find((c) => c.code === selectedCountry)?.name || "";
 	const selectedStateName = states.find((s) => s.code === selectedState)?.name || "";
-	const nonDuplicateCount = holidays.filter((h) => !h.isDuplicate).length;
-	const selectedNonDuplicateCount = holidays.filter(
+	const _nonDuplicateCount = holidays.filter((h) => !h.isDuplicate).length;
+	const _selectedNonDuplicateCount = holidays.filter(
 		(h) => !h.isDuplicate && selectedHolidays.has(h.name),
 	).length;
 

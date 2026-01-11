@@ -5,14 +5,13 @@ import { eq } from "drizzle-orm";
 import { Effect } from "effect";
 import * as z from "zod";
 import { employee } from "@/db/schema";
-import { AuthorizationError, NotFoundError } from "@/lib/effect/errors";
+import { type AnyAppError, AuthorizationError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import {
 	type EmployeePermissions,
-	type PermissionFlags,
 	PermissionsService,
 } from "@/lib/effect/services/permissions.service";
 import { createLogger } from "@/lib/logger";
@@ -146,7 +145,7 @@ export async function grantTeamPermissions(
 							message: String(error),
 						});
 						logger.error({ error, data }, "Failed to grant permissions");
-						return yield* _(Effect.fail(error as any));
+						return yield* _(Effect.fail(error as AnyAppError));
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
@@ -239,7 +238,7 @@ export async function revokeTeamPermissions(
 							message: String(error),
 						});
 						logger.error({ error, employeeId, teamId }, "Failed to revoke permissions");
-						return yield* _(Effect.fail(error as any));
+						return yield* _(Effect.fail(error as AnyAppError));
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
@@ -327,7 +326,7 @@ export async function hasTeamPermission(
 		const permissionsService = yield* _(PermissionsService);
 
 		// Get current employee (just to verify authentication)
-		const currentEmployee = yield* _(
+		const _currentEmployee = yield* _(
 			dbService.query("getCurrentEmployee", async () => {
 				return await dbService.db.query.employee.findFirst({
 					where: eq(employee.userId, session.user.id),
