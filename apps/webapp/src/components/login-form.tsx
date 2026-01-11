@@ -263,7 +263,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 
 				router.push("/");
 			}
-		} catch (error) {
+		} catch (_error) {
 			setError("Failed to sign in with passkey");
 			setIsLoading(false);
 		}
@@ -474,13 +474,11 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 				</Button>
 			) : null}
 			{!requires2FA && showEmailPassword && (
-				<>
-					<div className="-mt-6 text-center">
-						<Link className="text-xs underline-offset-2 hover:underline" href="/forgot-password">
-							{t("auth.forgot-password", "Forgot your password?")}
-						</Link>
-					</div>
-				</>
+				<div className="-mt-6 text-center">
+					<Link className="text-xs underline-offset-2 hover:underline" href="/forgot-password">
+						{t("auth.forgot-password", "Forgot your password?")}
+					</Link>
+				</div>
 			)}
 			{!requires2FA && (showPasskey || filteredProviders.length > 0) && (
 				<>

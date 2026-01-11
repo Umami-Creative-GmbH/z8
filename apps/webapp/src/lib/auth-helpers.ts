@@ -7,7 +7,6 @@ import { db } from "@/db";
 import { member, organization, user } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
 import { auth } from "@/lib/auth";
-import { AppLayer } from "@/lib/effect/runtime";
 import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { ManagerService, ManagerServiceLive } from "@/lib/effect/services/manager.service";
 
@@ -221,14 +220,14 @@ export async function isManagerOf(targetEmployeeId: string): Promise<boolean> {
 	// Check manager relationship using ManagerService
 	const effect = Effect.gen(function* (_) {
 		const managerService = yield* _(ManagerService);
-		return yield* _(managerService.isManagerOf(context.employee!.id, targetEmployeeId));
+		return yield* _(managerService.isManagerOf(context.employee?.id, targetEmployeeId));
 	});
 
 	try {
 		return await Effect.runPromise(
 			effect.pipe(Effect.provide(ManagerServiceLive), Effect.provide(DatabaseServiceLive)),
 		);
-	} catch (error) {
+	} catch (_error) {
 		// If there's an error checking the relationship, return false
 		return false;
 	}

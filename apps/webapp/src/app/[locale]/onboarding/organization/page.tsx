@@ -34,7 +34,7 @@ export default function OrganizationPage() {
 	const [loading, setLoading] = useState(false);
 	const [checkingSlug, setCheckingSlug] = useState(false);
 	const [slugError, setSlugError] = useState<string | null>(null);
-	const [showCreateForm, setShowCreateForm] = useState(true);
+	const [showCreateForm, _setShowCreateForm] = useState(true);
 
 	const form = useForm<OrganizationFormValues>({
 		resolver: zodResolver(organizationSchema),

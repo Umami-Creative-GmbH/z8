@@ -240,7 +240,7 @@ export function SignupForm({ className, ...props }: React.ComponentProps<"div">)
 
 				router.push("/");
 			}
-		} catch (error) {
+		} catch (_error) {
 			setError("Failed to sign up with passkey");
 			setIsLoading(false);
 		}

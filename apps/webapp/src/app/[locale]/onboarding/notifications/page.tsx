@@ -48,7 +48,7 @@ export default function NotificationsPage() {
 		},
 	});
 
-	const enablePush = form.watch("enablePush");
+	const _enablePush = form.watch("enablePush");
 
 	async function handleEnablePush() {
 		if (!isSupported) {

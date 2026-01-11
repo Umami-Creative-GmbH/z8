@@ -60,7 +60,7 @@ export function useEnabledProviders(): UseEnabledProvidersReturn {
 						setEnabledProviders(SOCIAL_PROVIDERS.filter((p) => ids.includes(p.id)));
 						setIsLoading(false);
 						return;
-					} catch (e) {
+					} catch (_e) {
 						// Invalid cache, continue to fetch
 						sessionStorage.removeItem("enabled-providers");
 					}

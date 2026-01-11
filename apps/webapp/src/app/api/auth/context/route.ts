@@ -1,4 +1,3 @@
-import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { getAuthContext } from "@/lib/auth-helpers";
 
