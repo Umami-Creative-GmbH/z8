@@ -1,0 +1,205 @@
+"use client";
+
+import { IconBriefcase } from "@tabler/icons-react";
+import { AlertCircle, FileBarChart } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
+import {
+	getProjectDetailedReport,
+	getProjectsOverview,
+} from "@/app/[locale]/(app)/reports/projects/actions";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getDateRangeForPreset } from "@/lib/reports/date-ranges";
+import type {
+	DateRange,
+	ProjectDetailedReport,
+	ProjectPortfolioData,
+} from "@/lib/reports/project-types";
+import { ProjectBudgetProgress } from "./project-budget-progress";
+import { ProjectFilters } from "./project-filters";
+import { ProjectHoursChart } from "./project-hours-chart";
+import { ProjectPortfolioTable } from "./project-portfolio-table";
+import { ProjectSummaryCards } from "./project-summary-cards";
+import { ProjectTeamBreakdown } from "./project-team-breakdown";
+
+export function ProjectReportsContainer() {
+	const [portfolioData, setPortfolioData] = useState<ProjectPortfolioData | null>(null);
+	const [detailedReport, setDetailedReport] = useState<ProjectDetailedReport | null>(null);
+	const [isLoading, setIsLoading] = useState(false);
+	const [error, setError] = useState<string | null>(null);
+	const [dateRange, setDateRange] = useState<DateRange>(getDateRangeForPreset("current_month"));
+	const [_selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+	const [activeTab, setActiveTab] = useState<"portfolio" | "project">("portfolio");
+
+	const handleGeneratePortfolio = async (range: DateRange, statusFilter?: string[]) => {
+		setIsLoading(true);
+		setError(null);
+		setDateRange(range);
+
+		try {
+			const result = await getProjectsOverview(range.start, range.end, statusFilter);
+
+			if (result.success && result.data) {
+				setPortfolioData(result.data);
+				setDetailedReport(null);
+				setSelectedProjectId(null);
+				setActiveTab("portfolio");
+				toast.success("Portfolio report generated");
+			} else {
+				setError(result.error || "Failed to generate portfolio report");
+				toast.error("Failed to generate report", {
+					description: result.error,
+				});
+			}
+		} catch (err) {
+			const errorMessage = err instanceof Error ? err.message : "An unexpected error occurred";
+			setError(errorMessage);
+			toast.error("Failed to generate report");
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
+	const handleSelectProject = async (projectId: string) => {
+		setIsLoading(true);
+		setError(null);
+		setSelectedProjectId(projectId);
+
+		try {
+			const result = await getProjectDetailedReport(projectId, dateRange.start, dateRange.end);
+
+			if (result.success && result.data) {
+				setDetailedReport(result.data);
+				setActiveTab("project");
+				toast.success(`Report generated for ${result.data.project.name}`);
+			} else {
+				setError(result.error || "Failed to generate project report");
+				toast.error("Failed to generate project report", {
+					description: result.error,
+				});
+			}
+		} catch (err) {
+			const errorMessage = err instanceof Error ? err.message : "An unexpected error occurred";
+			setError(errorMessage);
+			toast.error("Failed to generate project report");
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
+	return (
+		<div className="space-y-6 px-4 lg:px-6">
+			{/* Filters */}
+			<ProjectFilters onGenerate={handleGeneratePortfolio} isGenerating={isLoading} />
+
+			{/* Error Alert */}
+			{error && (
+				<Alert variant="destructive">
+					<AlertCircle className="h-4 w-4" />
+					<AlertTitle>Error</AlertTitle>
+					<AlertDescription>{error}</AlertDescription>
+				</Alert>
+			)}
+
+			{/* Loading State */}
+			{isLoading && (
+				<Card>
+					<CardContent className="flex items-center justify-center py-12">
+						<div className="flex flex-col items-center gap-4">
+							<IconBriefcase className="h-12 w-12 animate-pulse text-muted-foreground" />
+							<div className="text-center">
+								<p className="font-semibold">Generating Report...</p>
+								<p className="text-sm text-muted-foreground">
+									Please wait while we compile project data
+								</p>
+							</div>
+						</div>
+					</CardContent>
+				</Card>
+			)}
+
+			{/* Results */}
+			{!isLoading && portfolioData && (
+				<Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "portfolio" | "project")}>
+					<TabsList>
+						<TabsTrigger value="portfolio">Portfolio Overview</TabsTrigger>
+						<TabsTrigger value="project" disabled={!detailedReport}>
+							{detailedReport ? detailedReport.project.name : "Project Details"}
+						</TabsTrigger>
+					</TabsList>
+
+					<TabsContent value="portfolio" className="space-y-6">
+						{/* Summary Cards */}
+						<ProjectSummaryCards data={portfolioData.totals} />
+
+						{/* Portfolio Table */}
+						<ProjectPortfolioTable
+							projects={portfolioData.projects}
+							onProjectSelect={handleSelectProject}
+						/>
+					</TabsContent>
+
+					<TabsContent value="project" className="space-y-6">
+						{detailedReport && (
+							<>
+								{/* Project Summary Cards */}
+								<ProjectSummaryCards
+									data={{
+										totalProjects: 1,
+										activeProjects: detailedReport.project.status === "active" ? 1 : 0,
+										totalHours: detailedReport.summary.totalHours,
+										projectsOverBudget:
+											detailedReport.summary.percentBudgetUsed &&
+											detailedReport.summary.percentBudgetUsed > 100
+												? 1
+												: 0,
+										projectsOverdue: 0,
+									}}
+									isSingleProject
+									project={detailedReport.project}
+									summary={detailedReport.summary}
+								/>
+
+								{/* Budget Progress */}
+								{detailedReport.summary.budgetHours && (
+									<ProjectBudgetProgress
+										budgetHours={detailedReport.summary.budgetHours}
+										usedHours={detailedReport.summary.totalHours}
+									/>
+								)}
+
+								{/* Hours Chart */}
+								<ProjectHoursChart data={detailedReport.timeSeries} />
+
+								{/* Team Breakdown */}
+								<ProjectTeamBreakdown
+									teamBreakdown={detailedReport.teamBreakdown}
+									employeeBreakdown={detailedReport.employeeBreakdown}
+								/>
+							</>
+						)}
+					</TabsContent>
+				</Tabs>
+			)}
+
+			{/* Empty State */}
+			{!portfolioData && !isLoading && !error && (
+				<Card>
+					<CardContent className="flex items-center justify-center py-12">
+						<div className="flex flex-col items-center gap-4 text-center">
+							<FileBarChart className="h-12 w-12 text-muted-foreground" />
+							<div>
+								<p className="font-semibold">No report generated yet</p>
+								<p className="text-sm text-muted-foreground">
+									Select a period and click "Generate Report" to get started
+								</p>
+							</div>
+						</div>
+					</CardContent>
+				</Card>
+			)}
+		</div>
+	);
+}
