@@ -36,6 +36,7 @@ export interface UserOrganization {
 	memberRole: string;
 	hasEmployeeRecord: boolean;
 	shiftsEnabled: boolean;
+	projectsEnabled: boolean;
 }
 
 /**
@@ -194,6 +195,7 @@ export async function getUserOrganizations(): Promise<UserOrganization[]> {
 				memberRole: mbr.role,
 				hasEmployeeRecord: !!employeeRecord,
 				shiftsEnabled: org.shiftsEnabled ?? false,
+				projectsEnabled: org.projectsEnabled ?? false,
 			};
 		}),
 	);

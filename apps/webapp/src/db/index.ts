@@ -157,6 +157,17 @@ export {
 	shiftStatusEnum,
 	shiftTemplate,
 	shiftTemplateRelations,
+	// Surcharge tables
+	surchargeCalculation,
+	surchargeCalculationRelations,
+	surchargeModel,
+	surchargeModelAssignment,
+	surchargeModelAssignmentRelations,
+	surchargeModelRelations,
+	surchargeRule,
+	surchargeRuleRelations,
+	surchargeRuleTypeEnum,
+	type SurchargeCalculationDetails,
 	// Core tables
 	team,
 	teamPermissions,

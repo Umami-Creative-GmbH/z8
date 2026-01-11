@@ -181,6 +181,18 @@ export const auth = betterAuth({
 							defaultValue: false,
 							input: true,
 						},
+						projectsEnabled: {
+							type: "boolean",
+							required: false,
+							defaultValue: false,
+							input: true,
+						},
+						surchargesEnabled: {
+							type: "boolean",
+							required: false,
+							defaultValue: false,
+							input: true,
+						},
 					},
 				},
 				invitation: {

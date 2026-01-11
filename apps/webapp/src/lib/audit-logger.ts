@@ -71,6 +71,30 @@ export enum AuditAction {
 	PASSWORD_CHANGED = "auth.password_changed",
 	TWO_FACTOR_ENABLED = "auth.two_factor_enabled",
 	TWO_FACTOR_DISABLED = "auth.two_factor_disabled",
+
+	// Surcharge Operations
+	SURCHARGE_MODEL_CREATED = "surcharge.model_created",
+	SURCHARGE_MODEL_UPDATED = "surcharge.model_updated",
+	SURCHARGE_MODEL_DELETED = "surcharge.model_deleted",
+	SURCHARGE_RULE_CREATED = "surcharge.rule_created",
+	SURCHARGE_RULE_UPDATED = "surcharge.rule_updated",
+	SURCHARGE_RULE_DELETED = "surcharge.rule_deleted",
+	SURCHARGE_ASSIGNMENT_CREATED = "surcharge.assignment_created",
+	SURCHARGE_ASSIGNMENT_DELETED = "surcharge.assignment_deleted",
+	SURCHARGE_CALCULATION_CREATED = "surcharge.calculation_created",
+	SURCHARGE_CALCULATION_RECALCULATED = "surcharge.calculation_recalculated",
+
+	// Project Operations
+	PROJECT_CREATED = "project.created",
+	PROJECT_UPDATED = "project.updated",
+	PROJECT_STATUS_CHANGED = "project.status_changed",
+	PROJECT_ARCHIVED = "project.archived",
+	PROJECT_MANAGER_ASSIGNED = "project.manager_assigned",
+	PROJECT_MANAGER_REMOVED = "project.manager_removed",
+	PROJECT_ASSIGNMENT_ADDED = "project.assignment_added",
+	PROJECT_ASSIGNMENT_REMOVED = "project.assignment_removed",
+	WORK_PERIOD_PROJECT_ASSIGNED = "work_period.project_assigned",
+	WORK_PERIOD_PROJECT_UNASSIGNED = "work_period.project_unassigned",
 }
 
 export interface AuditLogEntry {
@@ -88,7 +112,14 @@ export interface AuditLogEntry {
 		| "time_entry"
 		| "absence"
 		| "approval"
-		| "vacation";
+		| "vacation"
+		| "surcharge_model"
+		| "surcharge_rule"
+		| "surcharge_assignment"
+		| "surcharge_calculation"
+		| "project"
+		| "project_assignment"
+		| "work_period";
 	organizationId: string;
 	metadata?: Record<string, unknown>;
 	changes?: Record<string, unknown>; // Before/after changes for updates
@@ -495,6 +526,661 @@ export function logEmployeeCreation(
 			role: params.role,
 			teamId: params.teamId,
 			teamName: params.teamName,
+		},
+		timestamp: new Date(),
+		ipAddress: params.ipAddress,
+		userAgent: params.userAgent,
+	});
+}
+
+// ============================================
+// SURCHARGE AUDIT HELPERS
+// ============================================
+
+/**
+ * Log surcharge model creation
+ */
+export function logSurchargeModelCreation(
+	params: {
+		modelId: string;
+		modelName: string;
+		rulesCount: number;
+		createdBy: string;
+		createdByEmail: string;
+		organizationId: string;
+	} & AuditContext,
+): Promise<void> {
+	return logAudit({
+		action: AuditAction.SURCHARGE_MODEL_CREATED,
+		actorId: params.createdBy,
+		actorEmail: params.createdByEmail,
+		targetId: params.modelId,
+		targetType: "surcharge_model",
+		organizationId: params.organizationId,
+		metadata: {
+			modelName: params.modelName,
+			rulesCount: params.rulesCount,
+		},
+		timestamp: new Date(),
+		ipAddress: params.ipAddress,
+		userAgent: params.userAgent,
+	});
+}
+
+/**
+ * Log surcharge model update
+ */
+export function logSurchargeModelUpdate(
+	params: {
+		modelId: string;
+		modelName: string;
+		changes: Record<string, unknown>;
+		updatedBy: string;
+		updatedByEmail: string;
+		organizationId: string;
+	} & AuditContext,
+): Promise<void> {
+	return logAudit({
+		action: AuditAction.SURCHARGE_MODEL_UPDATED,
+		actorId: params.updatedBy,
+		actorEmail: params.updatedByEmail,
+		targetId: params.modelId,
+		targetType: "surcharge_model",
+		organizationId: params.organizationId,
+		changes: params.changes,
+		metadata: {
+			modelName: params.modelName,
+		},
+		timestamp: new Date(),
+		ipAddress: params.ipAddress,
+		userAgent: params.userAgent,
+	});
+}
+
+/**
+ * Log surcharge model deletion (soft delete)
+ */
+export function logSurchargeModelDeletion(
+	params: {
+		modelId: string;
+		modelName: string;
+		deletedBy: string;
+		deletedByEmail: string;
+		organizationId: string;
+	} & AuditContext,
+): Promise<void> {
+	return logAudit({
+		action: AuditAction.SURCHARGE_MODEL_DELETED,
+		actorId: params.deletedBy,
+		actorEmail: params.deletedByEmail,
+		targetId: params.modelId,
+		targetType: "surcharge_model",
+		organizationId: params.organizationId,
+		metadata: {
+			modelName: params.modelName,
+		},
+		timestamp: new Date(),
+		ipAddress: params.ipAddress,
+		userAgent: params.userAgent,
+	});
+}
+
+/**
+ * Log surcharge rule creation
+ */
+export function logSurchargeRuleCreation(
+	params: {
+		ruleId: string;
+		ruleName: string;
+		ruleType: "day_of_week" | "time_window" | "date_based";
+		percentage: number;
+		modelId: string;
+		modelName: string;
+		createdBy: string;
+		createdByEmail: string;
+		organizationId: string;
+	} & AuditContext,
+): Promise<void> {
+	return logAudit({
+		action: AuditAction.SURCHARGE_RULE_CREATED,
+		actorId: params.createdBy,
+		actorEmail: params.createdByEmail,
+		targetId: params.ruleId,
+		targetType: "surcharge_rule",
+		organizationId: params.organizationId,
+		metadata: {
+			ruleName: params.ruleName,
+			ruleType: params.ruleType,
+			percentage: params.percentage,
+			modelId: params.modelId,
+			modelName: params.modelName,
+		},
+		timestamp: new Date(),
+		ipAddress: params.ipAddress,
+		userAgent: params.userAgent,
+	});
+}
+
+/**
+ * Log surcharge rule deletion
+ */
+export function logSurchargeRuleDeletion(
+	params: {
+		ruleId: string;
+		ruleName: string;
+		modelId: string;
+		modelName: string;
+		deletedBy: string;
+		deletedByEmail: string;
+		organizationId: string;
+	} & AuditContext,
+): Promise<void> {
+	return logAudit({
+		action: AuditAction.SURCHARGE_RULE_DELETED,
+		actorId: params.deletedBy,
+		actorEmail: params.deletedByEmail,
+		targetId: params.ruleId,
+		targetType: "surcharge_rule",
+		organizationId: params.organizationId,
+		metadata: {
+			ruleName: params.ruleName,
+			modelId: params.modelId,
+			modelName: params.modelName,
+		},
+		timestamp: new Date(),
+		ipAddress: params.ipAddress,
+		userAgent: params.userAgent,
+	});
+}
+
+/**
+ * Log surcharge assignment creation
+ */
+export function logSurchargeAssignmentCreation(
+	params: {
+		assignmentId: string;
+		assignmentType: "organization" | "team" | "employee";
+		modelId: string;
+		modelName: string;
+		targetName?: string; // Team or employee name (if applicable)
+		createdBy: string;
+		createdByEmail: string;
+		organizationId: string;
+	} & AuditContext,
+): Promise<void> {
+	return logAudit({
+		action: AuditAction.SURCHARGE_ASSIGNMENT_CREATED,
+		actorId: params.createdBy,
+		actorEmail: params.createdByEmail,
+		targetId: params.assignmentId,
+		targetType: "surcharge_assignment",
+		organizationId: params.organizationId,
+		metadata: {
+			assignmentType: params.assignmentType,
+			modelId: params.modelId,
+			modelName: params.modelName,
+			targetName: params.targetName,
+		},
+		timestamp: new Date(),
+		ipAddress: params.ipAddress,
+		userAgent: params.userAgent,
+	});
+}
+
+/**
+ * Log surcharge assignment deletion
+ */
+export function logSurchargeAssignmentDeletion(
+	params: {
+		assignmentId: string;
+		assignmentType: "organization" | "team" | "employee";
+		modelName: string;
+		targetName?: string;
+		deletedBy: string;
+		deletedByEmail: string;
+		organizationId: string;
+	} & AuditContext,
+): Promise<void> {
+	return logAudit({
+		action: AuditAction.SURCHARGE_ASSIGNMENT_DELETED,
+		actorId: params.deletedBy,
+		actorEmail: params.deletedByEmail,
+		targetId: params.assignmentId,
+		targetType: "surcharge_assignment",
+		organizationId: params.organizationId,
+		metadata: {
+			assignmentType: params.assignmentType,
+			modelName: params.modelName,
+			targetName: params.targetName,
+		},
+		timestamp: new Date(),
+		ipAddress: params.ipAddress,
+		userAgent: params.userAgent,
+	});
+}
+
+/**
+ * Log surcharge calculation (called on clock-out)
+ */
+export function logSurchargeCalculation(params: {
+	calculationId: string;
+	workPeriodId: string;
+	employeeId: string;
+	employeeName: string;
+	modelId: string;
+	modelName: string;
+	baseMinutes: number;
+	qualifyingMinutes: number;
+	surchargeMinutes: number;
+	rulesApplied: Array<{
+		ruleName: string;
+		ruleType: string;
+		percentage: number;
+		minutes: number;
+	}>;
+	organizationId: string;
+}): Promise<void> {
+	return logAudit({
+		action: AuditAction.SURCHARGE_CALCULATION_CREATED,
+		actorId: params.employeeId, // System action on behalf of employee
+		targetId: params.calculationId,
+		targetType: "surcharge_calculation",
+		employeeId: params.employeeId,
+		organizationId: params.organizationId,
+		metadata: {
+			workPeriodId: params.workPeriodId,
+			employeeName: params.employeeName,
+			modelId: params.modelId,
+			modelName: params.modelName,
+			baseMinutes: params.baseMinutes,
+			qualifyingMinutes: params.qualifyingMinutes,
+			surchargeMinutes: params.surchargeMinutes,
+			rulesApplied: params.rulesApplied,
+		},
+		timestamp: new Date(),
+	});
+}
+
+/**
+ * Log surcharge recalculation (manual recalculation by admin)
+ */
+export function logSurchargeRecalculation(
+	params: {
+		calculationId: string;
+		workPeriodId: string;
+		employeeId: string;
+		employeeName: string;
+		previousSurchargeMinutes: number;
+		newSurchargeMinutes: number;
+		reason?: string;
+		recalculatedBy: string;
+		recalculatedByEmail: string;
+		organizationId: string;
+	} & AuditContext,
+): Promise<void> {
+	return logAudit({
+		action: AuditAction.SURCHARGE_CALCULATION_RECALCULATED,
+		actorId: params.recalculatedBy,
+		actorEmail: params.recalculatedByEmail,
+		targetId: params.calculationId,
+		targetType: "surcharge_calculation",
+		employeeId: params.employeeId,
+		organizationId: params.organizationId,
+		changes: {
+			previous: { surchargeMinutes: params.previousSurchargeMinutes },
+			current: { surchargeMinutes: params.newSurchargeMinutes },
+		},
+		metadata: {
+			workPeriodId: params.workPeriodId,
+			employeeName: params.employeeName,
+			reason: params.reason,
+		},
+		timestamp: new Date(),
+		ipAddress: params.ipAddress,
+		userAgent: params.userAgent,
+	});
+}
+
+// ============================================
+// PROJECT AUDIT HELPERS
+// ============================================
+
+/**
+ * Log project creation
+ */
+export function logProjectCreation(
+	params: {
+		projectId: string;
+		projectName: string;
+		status: string;
+		budgetHours?: number | null;
+		deadline?: Date | null;
+		createdBy: string;
+		createdByEmail: string;
+		organizationId: string;
+	} & AuditContext,
+): Promise<void> {
+	return logAudit({
+		action: AuditAction.PROJECT_CREATED,
+		actorId: params.createdBy,
+		actorEmail: params.createdByEmail,
+		targetId: params.projectId,
+		targetType: "project",
+		organizationId: params.organizationId,
+		metadata: {
+			projectName: params.projectName,
+			status: params.status,
+			budgetHours: params.budgetHours,
+			deadline: params.deadline?.toISOString(),
+		},
+		timestamp: new Date(),
+		ipAddress: params.ipAddress,
+		userAgent: params.userAgent,
+	});
+}
+
+/**
+ * Log project update
+ */
+export function logProjectUpdate(
+	params: {
+		projectId: string;
+		projectName: string;
+		changes: Record<string, { from: unknown; to: unknown }>;
+		updatedBy: string;
+		updatedByEmail: string;
+		organizationId: string;
+	} & AuditContext,
+): Promise<void> {
+	return logAudit({
+		action: AuditAction.PROJECT_UPDATED,
+		actorId: params.updatedBy,
+		actorEmail: params.updatedByEmail,
+		targetId: params.projectId,
+		targetType: "project",
+		organizationId: params.organizationId,
+		changes: params.changes,
+		metadata: {
+			projectName: params.projectName,
+		},
+		timestamp: new Date(),
+		ipAddress: params.ipAddress,
+		userAgent: params.userAgent,
+	});
+}
+
+/**
+ * Log project status change
+ */
+export function logProjectStatusChange(
+	params: {
+		projectId: string;
+		projectName: string;
+		previousStatus: string;
+		newStatus: string;
+		changedBy: string;
+		changedByEmail: string;
+		organizationId: string;
+	} & AuditContext,
+): Promise<void> {
+	return logAudit({
+		action: AuditAction.PROJECT_STATUS_CHANGED,
+		actorId: params.changedBy,
+		actorEmail: params.changedByEmail,
+		targetId: params.projectId,
+		targetType: "project",
+		organizationId: params.organizationId,
+		changes: {
+			status: { from: params.previousStatus, to: params.newStatus },
+		},
+		metadata: {
+			projectName: params.projectName,
+		},
+		timestamp: new Date(),
+		ipAddress: params.ipAddress,
+		userAgent: params.userAgent,
+	});
+}
+
+/**
+ * Log project archive
+ */
+export function logProjectArchive(
+	params: {
+		projectId: string;
+		projectName: string;
+		archivedBy: string;
+		archivedByEmail: string;
+		organizationId: string;
+	} & AuditContext,
+): Promise<void> {
+	return logAudit({
+		action: AuditAction.PROJECT_ARCHIVED,
+		actorId: params.archivedBy,
+		actorEmail: params.archivedByEmail,
+		targetId: params.projectId,
+		targetType: "project",
+		organizationId: params.organizationId,
+		metadata: {
+			projectName: params.projectName,
+		},
+		timestamp: new Date(),
+		ipAddress: params.ipAddress,
+		userAgent: params.userAgent,
+	});
+}
+
+/**
+ * Log project manager assignment
+ */
+export function logProjectManagerAssignment(
+	params: {
+		projectId: string;
+		projectName: string;
+		managerId: string;
+		managerName: string;
+		assignedBy: string;
+		assignedByEmail: string;
+		organizationId: string;
+	} & AuditContext,
+): Promise<void> {
+	return logAudit({
+		action: AuditAction.PROJECT_MANAGER_ASSIGNED,
+		actorId: params.assignedBy,
+		actorEmail: params.assignedByEmail,
+		targetId: params.projectId,
+		targetType: "project",
+		organizationId: params.organizationId,
+		metadata: {
+			projectName: params.projectName,
+			managerId: params.managerId,
+			managerName: params.managerName,
+		},
+		timestamp: new Date(),
+		ipAddress: params.ipAddress,
+		userAgent: params.userAgent,
+	});
+}
+
+/**
+ * Log project manager removal
+ */
+export function logProjectManagerRemoval(
+	params: {
+		projectId: string;
+		projectName: string;
+		managerId: string;
+		managerName: string;
+		removedBy: string;
+		removedByEmail: string;
+		organizationId: string;
+	} & AuditContext,
+): Promise<void> {
+	return logAudit({
+		action: AuditAction.PROJECT_MANAGER_REMOVED,
+		actorId: params.removedBy,
+		actorEmail: params.removedByEmail,
+		targetId: params.projectId,
+		targetType: "project",
+		organizationId: params.organizationId,
+		metadata: {
+			projectName: params.projectName,
+			managerId: params.managerId,
+			managerName: params.managerName,
+		},
+		timestamp: new Date(),
+		ipAddress: params.ipAddress,
+		userAgent: params.userAgent,
+	});
+}
+
+/**
+ * Log project assignment addition (team or employee)
+ */
+export function logProjectAssignmentAdded(
+	params: {
+		projectId: string;
+		projectName: string;
+		assignmentType: "team" | "employee";
+		assignmentTargetId: string;
+		assignmentTargetName: string;
+		addedBy: string;
+		addedByEmail: string;
+		organizationId: string;
+	} & AuditContext,
+): Promise<void> {
+	return logAudit({
+		action: AuditAction.PROJECT_ASSIGNMENT_ADDED,
+		actorId: params.addedBy,
+		actorEmail: params.addedByEmail,
+		targetId: params.projectId,
+		targetType: "project_assignment",
+		organizationId: params.organizationId,
+		metadata: {
+			projectName: params.projectName,
+			assignmentType: params.assignmentType,
+			assignmentTargetId: params.assignmentTargetId,
+			assignmentTargetName: params.assignmentTargetName,
+		},
+		timestamp: new Date(),
+		ipAddress: params.ipAddress,
+		userAgent: params.userAgent,
+	});
+}
+
+/**
+ * Log project assignment removal
+ */
+export function logProjectAssignmentRemoved(
+	params: {
+		projectId: string;
+		projectName: string;
+		assignmentType: "team" | "employee";
+		assignmentTargetId: string;
+		assignmentTargetName: string;
+		removedBy: string;
+		removedByEmail: string;
+		organizationId: string;
+	} & AuditContext,
+): Promise<void> {
+	return logAudit({
+		action: AuditAction.PROJECT_ASSIGNMENT_REMOVED,
+		actorId: params.removedBy,
+		actorEmail: params.removedByEmail,
+		targetId: params.projectId,
+		targetType: "project_assignment",
+		organizationId: params.organizationId,
+		metadata: {
+			projectName: params.projectName,
+			assignmentType: params.assignmentType,
+			assignmentTargetId: params.assignmentTargetId,
+			assignmentTargetName: params.assignmentTargetName,
+		},
+		timestamp: new Date(),
+		ipAddress: params.ipAddress,
+		userAgent: params.userAgent,
+	});
+}
+
+/**
+ * Log work period project assignment
+ */
+export function logWorkPeriodProjectAssigned(
+	params: {
+		workPeriodId: string;
+		employeeId: string;
+		employeeName: string;
+		projectId: string;
+		projectName: string;
+		previousProjectId?: string | null;
+		previousProjectName?: string | null;
+		assignedBy: string;
+		assignedByEmail: string;
+		organizationId: string;
+	} & AuditContext,
+): Promise<void> {
+	return logAudit({
+		action: AuditAction.WORK_PERIOD_PROJECT_ASSIGNED,
+		actorId: params.assignedBy,
+		actorEmail: params.assignedByEmail,
+		targetId: params.workPeriodId,
+		targetType: "work_period",
+		employeeId: params.employeeId,
+		organizationId: params.organizationId,
+		changes: {
+			projectId: {
+				from: params.previousProjectId,
+				to: params.projectId,
+			},
+			projectName: {
+				from: params.previousProjectName,
+				to: params.projectName,
+			},
+		},
+		metadata: {
+			employeeName: params.employeeName,
+		},
+		timestamp: new Date(),
+		ipAddress: params.ipAddress,
+		userAgent: params.userAgent,
+	});
+}
+
+/**
+ * Log work period project unassignment
+ */
+export function logWorkPeriodProjectUnassigned(
+	params: {
+		workPeriodId: string;
+		employeeId: string;
+		employeeName: string;
+		previousProjectId: string;
+		previousProjectName: string;
+		unassignedBy: string;
+		unassignedByEmail: string;
+		organizationId: string;
+	} & AuditContext,
+): Promise<void> {
+	return logAudit({
+		action: AuditAction.WORK_PERIOD_PROJECT_UNASSIGNED,
+		actorId: params.unassignedBy,
+		actorEmail: params.unassignedByEmail,
+		targetId: params.workPeriodId,
+		targetType: "work_period",
+		employeeId: params.employeeId,
+		organizationId: params.organizationId,
+		changes: {
+			projectId: {
+				from: params.previousProjectId,
+				to: null,
+			},
+			projectName: {
+				from: params.previousProjectName,
+				to: null,
+			},
+		},
+		metadata: {
+			employeeName: params.employeeName,
 		},
 		timestamp: new Date(),
 		ipAddress: params.ipAddress,

@@ -15,7 +15,11 @@
       "mcp__plugin_context7_context7__query-docs",
       "Bash(bunx biome check:*)",
       "Bash(bunx biome:*)",
-      "Bash(bun run typecheck:*)"
+      "Bash(bun run typecheck:*)",
+      "Bash(bun next lint:*)",
+      "Bash(bunx --bun npx @better-auth/cli generate:*)",
+      "Bash(wc:*)",
+      "Bash(npx tsc:*)"
     ]
   },
   "enabledMcpjsonServers": [

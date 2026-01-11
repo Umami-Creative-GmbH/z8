@@ -93,6 +93,15 @@ export const notificationTypeEnum = pgEnum("notification_type", [
 	"shift_swap_rejected",
 	"shift_pickup_available",
 	"shift_pickup_approved",
+	// Project notifications
+	"project_budget_warning_70",
+	"project_budget_warning_90",
+	"project_budget_warning_100",
+	"project_deadline_warning_14d",
+	"project_deadline_warning_7d",
+	"project_deadline_warning_1d",
+	"project_deadline_warning_0d",
+	"project_deadline_overdue",
 ]);
 
 export const notificationChannelEnum = pgEnum("notification_channel", ["in_app", "push", "email"]);
@@ -101,12 +110,29 @@ export const notificationChannelEnum = pgEnum("notification_channel", ["in_app",
 export const shiftStatusEnum = pgEnum("shift_status", ["draft", "published"]);
 export const shiftRequestTypeEnum = pgEnum("shift_request_type", ["swap", "assignment", "pickup"]);
 
+// Project enums
+export const projectStatusEnum = pgEnum("project_status", [
+	"planned",
+	"active",
+	"paused",
+	"completed",
+	"archived",
+]);
+export const projectAssignmentTypeEnum = pgEnum("project_assignment_type", ["team", "employee"]);
+
 // Time regulation enums
 export const timeRegulationViolationTypeEnum = pgEnum("time_regulation_violation_type", [
 	"max_daily",
 	"max_weekly",
 	"max_uninterrupted",
 	"break_required",
+]);
+
+// Surcharge enums
+export const surchargeRuleTypeEnum = pgEnum("surcharge_rule_type", [
+	"day_of_week",
+	"time_window",
+	"date_based",
 ]);
 
 // ============================================
@@ -735,6 +761,138 @@ export const shiftRequest = pgTable(
 );
 
 // ============================================
+// PROJECTS
+// ============================================
+
+// Project entity for time tracking assignments
+export const project = pgTable(
+	"project",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+
+		// Core fields
+		name: text("name").notNull(),
+		description: text("description"),
+		status: projectStatusEnum("status").default("planned").notNull(),
+
+		// Visual customization
+		icon: text("icon"), // Tabler icon name
+		color: text("color"), // Hex color
+
+		// Budget tracking (optional)
+		budgetHours: decimal("budget_hours", { precision: 8, scale: 2 }), // null = unlimited
+
+		// Deadline tracking (optional)
+		deadline: timestamp("deadline"),
+
+		// Status
+		isActive: boolean("is_active").default(true).notNull(),
+
+		// Audit fields
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+		createdBy: text("created_by")
+			.notNull()
+			.references(() => user.id),
+		updatedAt: timestamp("updated_at")
+			.$onUpdate(() => currentTimestamp())
+			.notNull(),
+		updatedBy: text("updated_by").references(() => user.id),
+	},
+	(table) => [
+		index("project_organizationId_idx").on(table.organizationId),
+		index("project_status_idx").on(table.status),
+		index("project_deadline_idx").on(table.deadline),
+		index("project_isActive_idx").on(table.isActive),
+		uniqueIndex("project_org_name_idx").on(table.organizationId, table.name),
+	],
+);
+
+// Project managers (many-to-many) - receive budget/deadline notifications
+export const projectManager = pgTable(
+	"project_manager",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		projectId: uuid("project_id")
+			.notNull()
+			.references(() => project.id, { onDelete: "cascade" }),
+		employeeId: uuid("employee_id")
+			.notNull()
+			.references(() => employee.id, { onDelete: "cascade" }),
+		assignedAt: timestamp("assigned_at").defaultNow().notNull(),
+		assignedBy: text("assigned_by")
+			.notNull()
+			.references(() => user.id),
+	},
+	(table) => [
+		index("projectManager_projectId_idx").on(table.projectId),
+		index("projectManager_employeeId_idx").on(table.employeeId),
+		uniqueIndex("projectManager_unique_idx").on(table.projectId, table.employeeId),
+	],
+);
+
+// Project assignments - determines who can book time to a project
+export const projectAssignment = pgTable(
+	"project_assignment",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		projectId: uuid("project_id")
+			.notNull()
+			.references(() => project.id, { onDelete: "cascade" }),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+
+		// Assignment target (either team OR employee)
+		assignmentType: projectAssignmentTypeEnum("assignment_type").notNull(),
+		teamId: uuid("team_id").references(() => team.id, { onDelete: "cascade" }),
+		employeeId: uuid("employee_id").references(() => employee.id, { onDelete: "cascade" }),
+
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+		createdBy: text("created_by")
+			.notNull()
+			.references(() => user.id),
+	},
+	(table) => [
+		index("projectAssignment_projectId_idx").on(table.projectId),
+		index("projectAssignment_organizationId_idx").on(table.organizationId),
+		index("projectAssignment_teamId_idx").on(table.teamId),
+		index("projectAssignment_employeeId_idx").on(table.employeeId),
+		// Prevent duplicate team assignments
+		uniqueIndex("projectAssignment_team_unique_idx")
+			.on(table.projectId, table.teamId)
+			.where(sql`team_id IS NOT NULL`),
+		// Prevent duplicate employee assignments
+		uniqueIndex("projectAssignment_employee_unique_idx")
+			.on(table.projectId, table.employeeId)
+			.where(sql`employee_id IS NOT NULL`),
+	],
+);
+
+// Project notification state - tracks which thresholds have been notified (anti-spam)
+export const projectNotificationState = pgTable(
+	"project_notification_state",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		projectId: uuid("project_id")
+			.notNull()
+			.references(() => project.id, { onDelete: "cascade" }),
+
+		// Budget threshold notifications sent (as percentage integers: 70, 90, 100)
+		budgetThresholdsNotified: integer("budget_thresholds_notified").array().default([]),
+		// Deadline threshold notifications sent (days remaining: 14, 7, 1, 0, -1 for overdue)
+		deadlineThresholdsNotified: integer("deadline_thresholds_notified").array().default([]),
+
+		updatedAt: timestamp("updated_at")
+			.$onUpdate(() => currentTimestamp())
+			.notNull(),
+	},
+	(table) => [uniqueIndex("projectNotificationState_project_unique_idx").on(table.projectId)],
+);
+
+// ============================================
 // TIME TRACKING
 // ============================================
 
@@ -796,6 +954,9 @@ export const workPeriod = pgTable(
 			.references(() => timeEntry.id),
 		clockOutId: uuid("clock_out_id").references(() => timeEntry.id),
 
+		// Project assignment (optional)
+		projectId: uuid("project_id").references(() => project.id, { onDelete: "set null" }),
+
 		startTime: timestamp("start_time").notNull(),
 		endTime: timestamp("end_time"),
 		durationMinutes: integer("duration_minutes"), // Calculated when clocked out
@@ -810,6 +971,7 @@ export const workPeriod = pgTable(
 	(table) => [
 		index("workPeriod_employeeId_idx").on(table.employeeId),
 		index("workPeriod_startTime_idx").on(table.startTime),
+		index("workPeriod_projectId_idx").on(table.projectId),
 	],
 );
 
@@ -1238,6 +1400,210 @@ export const timeRegulationViolation = pgTable(
 );
 
 // ============================================
+// SURCHARGES
+// ============================================
+
+// Type for surcharge calculation details (stored as JSON)
+export type SurchargeCalculationDetails = {
+	workPeriodStartTime: string; // ISO timestamp
+	workPeriodEndTime: string; // ISO timestamp
+	rulesApplied: Array<{
+		ruleId: string;
+		ruleName: string;
+		ruleType: string;
+		percentage: number;
+		qualifyingMinutes: number;
+		surchargeMinutes: number;
+	}>;
+	overlapPolicy: "max_wins";
+	calculatedAt: string; // ISO timestamp
+};
+
+// Surcharge model (template for surcharge rules)
+export const surchargeModel = pgTable(
+	"surcharge_model",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+
+		name: text("name").notNull(),
+		description: text("description"),
+
+		isActive: boolean("is_active").default(true).notNull(),
+
+		// Audit fields
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+		createdBy: text("created_by")
+			.notNull()
+			.references(() => user.id),
+		updatedAt: timestamp("updated_at")
+			.$onUpdate(() => currentTimestamp())
+			.notNull(),
+		updatedBy: text("updated_by").references(() => user.id),
+	},
+	(table) => [
+		index("surchargeModel_organizationId_idx").on(table.organizationId),
+		index("surchargeModel_isActive_idx").on(table.isActive),
+		uniqueIndex("surchargeModel_org_name_idx").on(table.organizationId, table.name),
+	],
+);
+
+// Surcharge rules (child of model)
+export const surchargeRule = pgTable(
+	"surcharge_rule",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		modelId: uuid("model_id")
+			.notNull()
+			.references(() => surchargeModel.id, { onDelete: "cascade" }),
+
+		name: text("name").notNull(),
+		description: text("description"),
+
+		ruleType: surchargeRuleTypeEnum("rule_type").notNull(),
+
+		// Percentage as decimal (e.g., 0.50 = 50%, 1.00 = 100%)
+		percentage: decimal("percentage", { precision: 5, scale: 4 }).notNull(),
+
+		// For day_of_week type
+		dayOfWeek: dayOfWeekEnum("day_of_week"),
+
+		// For time_window type (time only, no date) - HH:mm format
+		windowStartTime: text("window_start_time"),
+		windowEndTime: text("window_end_time"),
+
+		// For date_based type
+		specificDate: timestamp("specific_date", { mode: "date" }),
+		dateRangeStart: timestamp("date_range_start", { mode: "date" }),
+		dateRangeEnd: timestamp("date_range_end", { mode: "date" }),
+
+		// Priority for overlap resolution (higher = applied first for "max wins")
+		priority: integer("priority").default(0).notNull(),
+
+		// Rule validity period
+		validFrom: timestamp("valid_from"),
+		validUntil: timestamp("valid_until"),
+
+		isActive: boolean("is_active").default(true).notNull(),
+
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+		createdBy: text("created_by")
+			.notNull()
+			.references(() => user.id),
+	},
+	(table) => [
+		index("surchargeRule_modelId_idx").on(table.modelId),
+		index("surchargeRule_ruleType_idx").on(table.ruleType),
+		index("surchargeRule_priority_idx").on(table.modelId, table.priority),
+		index("surchargeRule_isActive_idx").on(table.isActive),
+	],
+);
+
+// Hierarchical assignment of surcharge models (reuses pattern from time regulations)
+export const surchargeModelAssignment = pgTable(
+	"surcharge_model_assignment",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		modelId: uuid("model_id")
+			.notNull()
+			.references(() => surchargeModel.id, { onDelete: "cascade" }),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+
+		// Assignment target (reuses existing enum)
+		assignmentType: holidayPresetAssignmentTypeEnum("assignment_type").notNull(),
+		teamId: uuid("team_id").references(() => team.id, { onDelete: "cascade" }),
+		employeeId: uuid("employee_id").references(() => employee.id, { onDelete: "cascade" }),
+
+		// Priority: 0=org, 1=team, 2=employee (higher wins)
+		priority: integer("priority").default(0).notNull(),
+
+		// Effective dates
+		effectiveFrom: timestamp("effective_from"),
+		effectiveUntil: timestamp("effective_until"),
+
+		isActive: boolean("is_active").default(true).notNull(),
+
+		// Audit fields
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+		createdBy: text("created_by")
+			.notNull()
+			.references(() => user.id),
+		updatedAt: timestamp("updated_at")
+			.$onUpdate(() => currentTimestamp())
+			.notNull(),
+	},
+	(table) => [
+		index("surchargeModelAssignment_modelId_idx").on(table.modelId),
+		index("surchargeModelAssignment_organizationId_idx").on(table.organizationId),
+		index("surchargeModelAssignment_teamId_idx").on(table.teamId),
+		index("surchargeModelAssignment_employeeId_idx").on(table.employeeId),
+		// One org default per organization
+		uniqueIndex("surchargeModelAssignment_org_default_idx")
+			.on(table.organizationId, table.assignmentType)
+			.where(sql`assignment_type = 'organization' AND is_active = true`),
+		// One assignment per team
+		uniqueIndex("surchargeModelAssignment_team_idx")
+			.on(table.teamId)
+			.where(sql`team_id IS NOT NULL AND is_active = true`),
+		// One assignment per employee
+		uniqueIndex("surchargeModelAssignment_employee_idx")
+			.on(table.employeeId)
+			.where(sql`employee_id IS NOT NULL AND is_active = true`),
+	],
+);
+
+// Immutable surcharge calculation log (GoBD compliance)
+export const surchargeCalculation = pgTable(
+	"surcharge_calculation",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		employeeId: uuid("employee_id")
+			.notNull()
+			.references(() => employee.id, { onDelete: "cascade" }),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+
+		// Links to source data
+		workPeriodId: uuid("work_period_id")
+			.notNull()
+			.references(() => workPeriod.id, { onDelete: "cascade" }),
+		surchargeRuleId: uuid("surcharge_rule_id").references(() => surchargeRule.id, {
+			onDelete: "set null",
+		}),
+		surchargeModelId: uuid("surcharge_model_id").references(() => surchargeModel.id, {
+			onDelete: "set null",
+		}),
+
+		// Calculation results
+		calculationDate: timestamp("calculation_date").notNull(),
+		baseMinutes: integer("base_minutes").notNull(), // Original work period duration
+		qualifyingMinutes: integer("qualifying_minutes").notNull(), // Minutes that qualified for surcharge
+		surchargeMinutes: integer("surcharge_minutes").notNull(), // Extra minutes credited
+		appliedPercentage: decimal("applied_percentage", { precision: 5, scale: 4 }).notNull(),
+
+		// Full breakdown for audit (JSON)
+		calculationDetails: text("calculation_details").$type<SurchargeCalculationDetails>(),
+
+		// Immutable - createdAt only, no updatedAt
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+	},
+	(table) => [
+		index("surchargeCalculation_employeeId_idx").on(table.employeeId),
+		index("surchargeCalculation_organizationId_idx").on(table.organizationId),
+		index("surchargeCalculation_workPeriodId_idx").on(table.workPeriodId),
+		index("surchargeCalculation_calculationDate_idx").on(table.calculationDate),
+		index("surchargeCalculation_emp_date_idx").on(table.employeeId, table.calculationDate),
+		// Prevent duplicate calculations for same work period
+		uniqueIndex("surchargeCalculation_workPeriod_idx").on(table.workPeriodId),
+	],
+);
+
+// ============================================
 // APPROVAL WORKFLOWS
 // ============================================
 
@@ -1474,12 +1840,19 @@ export const organizationRelations = relations(organization, ({ one, many }) => 
 	// Shift scheduling
 	shiftTemplates: many(shiftTemplate),
 	shifts: many(shift),
+	// Projects
+	projects: many(project),
+	projectAssignments: many(projectAssignment),
 	// Notifications
 	notifications: many(notification),
 	notificationPreferences: many(notificationPreference),
 	// Enterprise features
 	domains: many(organizationDomain),
 	branding: one(organizationBranding),
+	// Surcharges
+	surchargeModels: many(surchargeModel),
+	surchargeModelAssignments: many(surchargeModelAssignment),
+	surchargeCalculations: many(surchargeCalculation),
 }));
 
 export const teamRelations = relations(team, ({ one, many }) => ({
@@ -1493,6 +1866,9 @@ export const teamRelations = relations(team, ({ one, many }) => ({
 	vacationPolicyAssignments: many(vacationPolicyAssignment),
 	workScheduleAssignments: many(workScheduleAssignment),
 	timeRegulationAssignments: many(timeRegulationAssignment),
+	projectAssignments: many(projectAssignment),
+	// Surcharges
+	surchargeModelAssignments: many(surchargeModelAssignment),
 }));
 
 export const employeeRelations = relations(employee, ({ one, many }) => ({
@@ -1557,6 +1933,12 @@ export const employeeRelations = relations(employee, ({ one, many }) => ({
 	shiftRequestsAsApprover: many(shiftRequest, {
 		relationName: "shift_request_approver",
 	}),
+	// Projects
+	projectManagements: many(projectManager),
+	projectAssignments: many(projectAssignment),
+	// Surcharges
+	surchargeModelAssignments: many(surchargeModelAssignment),
+	surchargeCalculations: many(surchargeCalculation),
 }));
 
 // Time tracking relations
@@ -1601,6 +1983,11 @@ export const workPeriodRelations = relations(workPeriod, ({ one }) => ({
 		references: [timeEntry.id],
 		relationName: "work_period_clock_out",
 	}),
+	project: one(project, {
+		fields: [workPeriod.projectId],
+		references: [project.id],
+	}),
+	surchargeCalculation: one(surchargeCalculation),
 }));
 
 // Absence relations
@@ -2022,6 +2409,71 @@ export const shiftRequestRelations = relations(shiftRequest, ({ one }) => ({
 	}),
 }));
 
+// Project relations
+export const projectRelations = relations(project, ({ one, many }) => ({
+	organization: one(organization, {
+		fields: [project.organizationId],
+		references: [organization.id],
+	}),
+	managers: many(projectManager),
+	assignments: many(projectAssignment),
+	workPeriods: many(workPeriod),
+	notificationState: one(projectNotificationState),
+	creator: one(user, {
+		fields: [project.createdBy],
+		references: [user.id],
+	}),
+	updater: one(user, {
+		fields: [project.updatedBy],
+		references: [user.id],
+	}),
+}));
+
+export const projectManagerRelations = relations(projectManager, ({ one }) => ({
+	project: one(project, {
+		fields: [projectManager.projectId],
+		references: [project.id],
+	}),
+	employee: one(employee, {
+		fields: [projectManager.employeeId],
+		references: [employee.id],
+	}),
+	assigner: one(user, {
+		fields: [projectManager.assignedBy],
+		references: [user.id],
+	}),
+}));
+
+export const projectAssignmentRelations = relations(projectAssignment, ({ one }) => ({
+	project: one(project, {
+		fields: [projectAssignment.projectId],
+		references: [project.id],
+	}),
+	organization: one(organization, {
+		fields: [projectAssignment.organizationId],
+		references: [organization.id],
+	}),
+	team: one(team, {
+		fields: [projectAssignment.teamId],
+		references: [team.id],
+	}),
+	employee: one(employee, {
+		fields: [projectAssignment.employeeId],
+		references: [employee.id],
+	}),
+	creator: one(user, {
+		fields: [projectAssignment.createdBy],
+		references: [user.id],
+	}),
+}));
+
+export const projectNotificationStateRelations = relations(projectNotificationState, ({ one }) => ({
+	project: one(project, {
+		fields: [projectNotificationState.projectId],
+		references: [project.id],
+	}),
+}));
+
 // Notification relations
 export const notificationRelations = relations(notification, ({ one }) => ({
 	user: one(user, {
@@ -2259,5 +2711,86 @@ export const exportStorageConfigRelations = relations(exportStorageConfig, ({ on
 	organization: one(organization, {
 		fields: [exportStorageConfig.organizationId],
 		references: [organization.id],
+	}),
+}));
+
+// ============================================
+// SURCHARGE RELATIONS
+// ============================================
+
+export const surchargeModelRelations = relations(surchargeModel, ({ one, many }) => ({
+	organization: one(organization, {
+		fields: [surchargeModel.organizationId],
+		references: [organization.id],
+	}),
+	rules: many(surchargeRule),
+	assignments: many(surchargeModelAssignment),
+	calculations: many(surchargeCalculation),
+	creator: one(user, {
+		fields: [surchargeModel.createdBy],
+		references: [user.id],
+		relationName: "surcharge_model_creator",
+	}),
+	updater: one(user, {
+		fields: [surchargeModel.updatedBy],
+		references: [user.id],
+		relationName: "surcharge_model_updater",
+	}),
+}));
+
+export const surchargeRuleRelations = relations(surchargeRule, ({ one }) => ({
+	model: one(surchargeModel, {
+		fields: [surchargeRule.modelId],
+		references: [surchargeModel.id],
+	}),
+	creator: one(user, {
+		fields: [surchargeRule.createdBy],
+		references: [user.id],
+	}),
+}));
+
+export const surchargeModelAssignmentRelations = relations(surchargeModelAssignment, ({ one }) => ({
+	model: one(surchargeModel, {
+		fields: [surchargeModelAssignment.modelId],
+		references: [surchargeModel.id],
+	}),
+	organization: one(organization, {
+		fields: [surchargeModelAssignment.organizationId],
+		references: [organization.id],
+	}),
+	team: one(team, {
+		fields: [surchargeModelAssignment.teamId],
+		references: [team.id],
+	}),
+	employee: one(employee, {
+		fields: [surchargeModelAssignment.employeeId],
+		references: [employee.id],
+	}),
+	creator: one(user, {
+		fields: [surchargeModelAssignment.createdBy],
+		references: [user.id],
+	}),
+}));
+
+export const surchargeCalculationRelations = relations(surchargeCalculation, ({ one }) => ({
+	employee: one(employee, {
+		fields: [surchargeCalculation.employeeId],
+		references: [employee.id],
+	}),
+	organization: one(organization, {
+		fields: [surchargeCalculation.organizationId],
+		references: [organization.id],
+	}),
+	workPeriod: one(workPeriod, {
+		fields: [surchargeCalculation.workPeriodId],
+		references: [workPeriod.id],
+	}),
+	rule: one(surchargeRule, {
+		fields: [surchargeCalculation.surchargeRuleId],
+		references: [surchargeRule.id],
+	}),
+	model: one(surchargeModel, {
+		fields: [surchargeCalculation.surchargeModelId],
+		references: [surchargeModel.id],
 	}),
 }));
