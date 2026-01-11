@@ -90,100 +90,88 @@ export { db, sql };
 export * from "./auth-schema";
 // Export business schema tables (excludes auth schema imports to avoid duplicates)
 export {
+	// Absence tables
+	absenceCategory,
+	absenceCategoryRelations,
+	absenceEntry,
+	absenceEntryRelations,
 	// Enums
 	absenceTypeEnum,
+	// Approval tables
+	approvalRequest,
+	approvalRequestRelations,
 	approvalStatusEnum,
-	holidayCategoryEnum,
-	notificationChannelEnum,
-	notificationTypeEnum,
-	recurrenceTypeEnum,
-	roleEnum,
-	timeEntryTypeEnum,
-
-	// Core tables
-	team,
+	// Audit tables
+	auditLog,
+	auditLogRelations,
 	employee,
 	employeeManagers,
+	employeeManagersRelations,
+	employeeRelations,
+	employeeVacationAllowance,
+	employeeVacationAllowanceRelations,
+	holiday,
+	holidayAssignment,
+	holidayAssignmentRelations,
+	// Holiday tables
+	holidayCategory,
+	holidayCategoryEnum,
+	holidayCategoryRelations,
+	holidayPreset,
+	holidayPresetAssignment,
+	holidayPresetAssignmentRelations,
+	holidayPresetHoliday,
+	holidayPresetHolidayRelations,
+	holidayPresetRelations,
+	holidayRelations,
+	// Notification tables
+	notification,
+	notificationChannelEnum,
+	notificationPreference,
+	notificationPreferenceRelations,
+	notificationRelations,
+	notificationTypeEnum,
+	organizationBranding,
+	organizationBrandingRelations,
+	// Enterprise tables
+	organizationDomain,
+	organizationDomainRelations,
+	// Relations - CRITICAL: All relations must be exported for Drizzle queries to work
+	organizationRelations,
+	pushSubscription,
+	pushSubscriptionRelations,
+	recurrenceTypeEnum,
+	roleEnum,
+	shift,
+	shiftRelations,
+	shiftRequest,
+	shiftRequestRelations,
+	shiftRequestTypeEnum,
+	// Shift scheduling enums and tables
+	shiftStatusEnum,
+	shiftTemplate,
+	shiftTemplateRelations,
+	// Core tables
+	team,
 	teamPermissions,
-
+	teamPermissionsRelations,
+	teamRelations,
+	// Time tracking tables
+	timeEntry,
+	timeEntryRelations,
+	timeEntryTypeEnum,
+	// Vacation tables
+	vacationAllowance,
+	vacationAllowanceRelations,
+	vacationPolicyAssignment,
+	vacationPolicyAssignmentRelations,
+	workPeriod,
+	workPeriodRelations,
+	workScheduleAssignment,
+	workScheduleAssignmentRelations,
 	// Work schedule tables
 	workScheduleTemplate,
 	workScheduleTemplateDays,
-	workScheduleAssignment,
-
-	// Holiday tables
-	holidayCategory,
-	holiday,
-	holidayPreset,
-	holidayPresetHoliday,
-	holidayPresetAssignment,
-	holidayAssignment,
-
-	// Time tracking tables
-	timeEntry,
-	workPeriod,
-
-	// Absence tables
-	absenceCategory,
-	absenceEntry,
-
-	// Vacation tables
-	vacationAllowance,
-	employeeVacationAllowance,
-	vacationPolicyAssignment,
-
-	// Approval tables
-	approvalRequest,
-
-	// Audit tables
-	auditLog,
-
-	// Notification tables
-	notification,
-	notificationPreference,
-	pushSubscription,
-
-	// Enterprise tables
-	organizationDomain,
-	organizationBranding,
-
-	// Shift scheduling enums and tables
-	shiftStatusEnum,
-	shiftRequestTypeEnum,
-	shiftTemplate,
-	shift,
-	shiftRequest,
-
-	// Relations - CRITICAL: All relations must be exported for Drizzle queries to work
-	organizationRelations,
-	teamRelations,
-	employeeRelations,
-	employeeManagersRelations,
-	teamPermissionsRelations,
-	workScheduleTemplateRelations,
 	workScheduleTemplateDaysRelations,
-	workScheduleAssignmentRelations,
-	holidayCategoryRelations,
-	holidayRelations,
-	holidayPresetRelations,
-	holidayPresetHolidayRelations,
-	holidayPresetAssignmentRelations,
-	holidayAssignmentRelations,
-	timeEntryRelations,
-	workPeriodRelations,
-	absenceCategoryRelations,
-	absenceEntryRelations,
-	vacationAllowanceRelations,
-	employeeVacationAllowanceRelations,
-	vacationPolicyAssignmentRelations,
-	approvalRequestRelations,
-	auditLogRelations,
-	notificationRelations,
-	notificationPreferenceRelations,
-	pushSubscriptionRelations,
-	organizationDomainRelations,
-	organizationBrandingRelations,
-	shiftTemplateRelations,
-	shiftRelations,
-	shiftRequestRelations,
+	workScheduleTemplateRelations,
 } from "./schema";

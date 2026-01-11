@@ -1,4 +1,4 @@
-import { and, eq, or } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { employee, teamPermissions } from "@/db/schema";
 import { AuthorizationError, type DatabaseError, NotFoundError } from "../errors";
@@ -95,7 +95,7 @@ export const PermissionsServiceLive = Layer.effect(
 							}),
 						);
 
-						if (teamPerms && teamPerms[permission]) {
+						if (teamPerms?.[permission]) {
 							return true;
 						}
 					}
@@ -112,7 +112,7 @@ export const PermissionsServiceLive = Layer.effect(
 						}),
 					);
 
-					if (orgPerms && orgPerms[permission]) {
+					if (orgPerms?.[permission]) {
 						return true;
 					}
 
@@ -123,7 +123,7 @@ export const PermissionsServiceLive = Layer.effect(
 			getEmployeePermissions: (employeeId) =>
 				Effect.gen(function* (_) {
 					// Verify employee exists
-					const emp = yield* _(
+					const _emp = yield* _(
 						dbService.query("getEmployeeById", async () => {
 							return await dbService.db.query.employee.findFirst({
 								where: eq(employee.id, employeeId),
@@ -291,7 +291,7 @@ export const PermissionsServiceLive = Layer.effect(
 			revokePermissions: (employeeId, organizationId, teamId = null) =>
 				Effect.gen(function* (_) {
 					// Verify employee exists
-					const emp = yield* _(
+					const _emp = yield* _(
 						dbService.query("getEmployeeById", async () => {
 							return await dbService.db.query.employee.findFirst({
 								where: eq(employee.id, employeeId),

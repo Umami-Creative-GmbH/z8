@@ -68,7 +68,7 @@ export function utc(year: number, month: number, day: number = 1): DateTime {
  * Format DateTime for display (uses date-fns format for now - will migrate later)
  * For now, this converts to Date and uses existing format functions
  */
-export function formatDate(dt: DateTime, locale: string = "en-US"): string {
+export function formatDate(dt: DateTime, _locale: string = "en-US"): string {
 	return dt.toLocaleString(DateTime.DATE_MED);
 }
 
@@ -78,7 +78,7 @@ export function formatDate(dt: DateTime, locale: string = "en-US"): string {
  * @param end End DateTime
  * @param locale Locale for formatting
  */
-export function formatDateRange(start: DateTime, end: DateTime, locale: string = "en-US"): string {
+export function formatDateRange(start: DateTime, end: DateTime, _locale: string = "en-US"): string {
 	const startStr = start.toLocaleString({ month: "short", day: "numeric" });
 	const endStr = end.toLocaleString({
 		month: "short",
@@ -96,7 +96,7 @@ export function formatDateRange(start: DateTime, end: DateTime, locale: string =
 /**
  * Format time for display (HH:mm format)
  */
-export function formatTime(dt: DateTime, locale: string = "en-US"): string {
+export function formatTime(dt: DateTime, _locale: string = "en-US"): string {
 	return dt.toFormat("HH:mm");
 }
 

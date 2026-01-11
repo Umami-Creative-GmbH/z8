@@ -7,8 +7,8 @@ import { ManagerServiceLive } from "./services/manager.service";
 import { OnboardingServiceLive } from "./services/onboarding.service";
 import { PermissionsServiceLive } from "./services/permissions.service";
 import { ReportingService } from "./services/reporting.service";
-import { ShiftRequestServiceLive } from "./services/shift-request.service";
 import { ShiftServiceLive } from "./services/shift.service";
+import { ShiftRequestServiceLive } from "./services/shift-request.service";
 import { TimeEntryServiceLive } from "./services/time-entry.service";
 import { WorkScheduleServiceLive } from "./services/work-schedule.service";
 

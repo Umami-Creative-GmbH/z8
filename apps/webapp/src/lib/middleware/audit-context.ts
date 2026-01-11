@@ -129,7 +129,7 @@ export function maskIpAddress(ipAddress?: string): string | undefined {
 	if (ipAddress.includes(":")) {
 		const parts = ipAddress.split(":");
 		if (parts.length >= 4) {
-			return parts.slice(0, 4).join(":") + ":xxxx:xxxx:xxxx:xxxx";
+			return `${parts.slice(0, 4).join(":")}:xxxx:xxxx:xxxx:xxxx`;
 		}
 	}
 

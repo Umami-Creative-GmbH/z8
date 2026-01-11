@@ -6,20 +6,10 @@
  * absence patterns, and manager effectiveness metrics.
  */
 
-import { and, desc, eq, gte, isNotNull, lte, sql } from "drizzle-orm";
+import { and, eq, gte, lte, sql } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { DateTime } from "luxon";
-import {
-	absenceCategory,
-	absenceEntry,
-	approvalRequest,
-	employee,
-	employeeManagers,
-	employeeVacationAllowance,
-	team,
-	user,
-	workPeriod,
-} from "@/db/schema";
+import { absenceEntry, approvalRequest, employee, employeeManagers, workPeriod } from "@/db/schema";
 import type {
 	AbsencePatternsData,
 	AbsencePatternsParams,
@@ -572,7 +562,7 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 							if (!teamEmployeeCounts.has(teamId)) {
 								teamEmployeeCounts.set(teamId, new Set());
 							}
-							teamEmployeeCounts.get(teamId)!.add(absence.employeeId);
+							teamEmployeeCounts.get(teamId)?.add(absence.employeeId);
 
 							const existing = teamMap.get(teamId) || {
 								count: 0,

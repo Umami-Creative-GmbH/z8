@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { headers } from "next/headers";
-import { member, organization, user } from "@/db/auth-schema";
+import { member, user } from "@/db/auth-schema";
 import {
 	employee,
 	holidayPreset,
@@ -26,7 +26,6 @@ import type {
 import type { OrganizationFormValues } from "@/lib/validations/organization";
 import {
 	type AuthenticationError,
-	ConflictError,
 	type DatabaseError,
 	type NotFoundError,
 	ValidationError,

@@ -157,7 +157,7 @@ async function sendToExternalService(entry: AuditLogEntry): Promise<void> {
 		if (config.service === "datadog" && config.apiKey) {
 			headers["DD-API-KEY"] = config.apiKey;
 		} else if (config.service === "splunk" && config.apiKey) {
-			headers["Authorization"] = `Splunk ${config.apiKey}`;
+			headers.Authorization = `Splunk ${config.apiKey}`;
 		}
 
 		await fetch(config.endpoint, {

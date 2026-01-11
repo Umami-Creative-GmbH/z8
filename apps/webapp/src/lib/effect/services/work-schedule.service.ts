@@ -1,13 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
-import {
-	employee,
-	team,
-	workScheduleAssignment,
-	workScheduleTemplate,
-	workScheduleTemplateDays,
-} from "@/db/schema";
-import { type DatabaseError, NotFoundError, ValidationError } from "../errors";
+import { employee, workScheduleAssignment, workScheduleTemplate } from "@/db/schema";
+import { type DatabaseError, NotFoundError } from "../errors";
 import { DatabaseService } from "./database.service";
 
 export interface WorkScheduleDay {
@@ -248,7 +242,7 @@ export const WorkScheduleServiceLive = Layer.effect(
 				// For simple schedules, use hoursPerCycle divided by cycle length
 				if (schedule.scheduleType === "simple" && schedule.hoursPerCycle) {
 					const totalHours = parseFloat(schedule.hoursPerCycle);
-					if (isNaN(totalHours)) return 0;
+					if (Number.isNaN(totalHours)) return 0;
 
 					// Convert to weekly hours based on cycle
 					switch (schedule.scheduleCycle) {
@@ -273,7 +267,7 @@ export const WorkScheduleServiceLive = Layer.effect(
 						.filter((d) => d.isWorkDay)
 						.reduce((total, day) => {
 							const hours = parseFloat(day.hoursPerDay);
-							return total + (isNaN(hours) ? 0 : hours);
+							return total + (Number.isNaN(hours) ? 0 : hours);
 						}, 0);
 				}
 

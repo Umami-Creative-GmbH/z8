@@ -135,7 +135,7 @@ export async function getDomainConfigByOrganization(
 export async function registerCustomDomain(
 	organizationId: string,
 	domain: string,
-	isPrimary = false,
+	_isPrimary = false,
 ): Promise<{ id: string; verificationToken: string }> {
 	// Check if organization already has a domain (limit: 1 per org)
 	const existingDomain = await db.query.organizationDomain.findFirst({
