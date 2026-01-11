@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
 			const getResponse = await s3Client.send(
 				new GetObjectCommand({ Bucket: S3_BUCKET, Key: tusFileKey }),
 			);
-			buffer = Buffer.from(await getResponse.Body!.transformToByteArray());
+			buffer = Buffer.from(await getResponse.Body?.transformToByteArray());
 		} else {
 			// Read from local temp storage
 			const tempPath = join(process.cwd(), "public", "uploads", "tus-temp", tusFileKey);

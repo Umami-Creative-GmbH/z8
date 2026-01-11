@@ -6,7 +6,7 @@ import { useState } from "react";
 import { CreateOrganizationDialog } from "@/components/organization/create-organization-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Link, useRouter } from "@/navigation";
+import { useRouter } from "@/navigation";
 
 interface NoOrganizationErrorProps {
 	className?: string;

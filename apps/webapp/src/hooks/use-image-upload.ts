@@ -56,12 +56,12 @@ export function useImageUpload({
 			chunkSize: 5 * 1024 * 1024, // 5MB chunks
 			// Credentials included automatically via cookies
 		});
-	}, []); // eslint-disable-line react-hooks/exhaustive-deps
+	}, [maxFileSize, uppyLocale]); // eslint-disable-line react-hooks/exhaustive-deps
 
 	// Update locale when it changes
 	useEffect(() => {
 		uppy.setOptions({ locale: uppyLocale });
-	}, [locale, uppy, uppyLocale]);
+	}, [uppy, uppyLocale]);
 
 	// Handle upload events
 	useEffect(() => {

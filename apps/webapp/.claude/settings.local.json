@@ -6,7 +6,10 @@
       "Bash(bun add:*)",
       "WebFetch(domain:github.com)",
       "mcp__better-auth__search",
-      "Bash(bunx tsc:*)"
+      "Bash(bunx tsc:*)",
+      "Bash(bunx --bun biome check:*)",
+      "Bash(grep:*)",
+      "Bash(bunx --bun biome lint:*)"
     ]
   },
   "enabledMcpjsonServers": [
