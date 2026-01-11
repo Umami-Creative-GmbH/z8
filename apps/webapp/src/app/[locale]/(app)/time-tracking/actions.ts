@@ -15,11 +15,16 @@ import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { EmailService } from "@/lib/effect/services/email.service";
+import {
+	TimeRegulationService,
+	TimeRegulationServiceLive,
+} from "@/lib/effect/services/time-regulation.service";
 import { renderTimeCorrectionPendingApproval } from "@/lib/email/render";
 import { createLogger } from "@/lib/logger";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
 import { isSameDayInTimezone } from "@/lib/time-tracking/time-utils";
 import type { TimeSummary } from "@/lib/time-tracking/types";
+import type { ComplianceWarning } from "@/lib/time-regulations/validation";
 import { validateTimeEntry, validateTimeEntryRange } from "@/lib/time-tracking/validation";
 import type { WorkPeriodWithEntries } from "./types";
 
@@ -829,9 +834,17 @@ export async function clockIn(): Promise<ServerActionResult<typeof timeEntry.$in
 }
 
 /**
- * Clock out for current employee
+ * Clock out result type with optional compliance warnings
  */
-export async function clockOut(): Promise<ServerActionResult<typeof timeEntry.$inferSelect>> {
+export type ClockOutResult = typeof timeEntry.$inferSelect & {
+	complianceWarnings?: ComplianceWarning[];
+};
+
+/**
+ * Clock out for current employee
+ * Also checks compliance against time regulations and logs any violations
+ */
+export async function clockOut(): Promise<ServerActionResult<ClockOutResult>> {
 	const session = await auth.api.getSession({ headers: await headers() });
 	if (!session?.user) {
 		return { success: false, error: "Not authenticated" };
@@ -912,11 +925,138 @@ export async function clockOut(): Promise<ServerActionResult<typeof timeEntry.$i
 			})
 			.where(eq(workPeriod.id, activePeriod.id));
 
-		return { success: true, data: entry };
+		// Check compliance against time regulations
+		const complianceWarnings = await checkComplianceAfterClockOut(
+			emp.id,
+			emp.organizationId,
+			activePeriod.id,
+			durationMinutes,
+		);
+
+		return {
+			success: true,
+			data: {
+				...entry,
+				complianceWarnings: complianceWarnings.length > 0 ? complianceWarnings : undefined,
+			},
+		};
 	} catch (error) {
 		logger.error({ error }, "Clock out error");
 		return { success: false, error: "Failed to clock out. Please try again." };
 	}
+}
+
+/**
+ * Check compliance after clocking out and log any violations
+ * This is a warning-only system - it logs violations but doesn't block actions
+ */
+async function checkComplianceAfterClockOut(
+	employeeId: string,
+	organizationId: string,
+	workPeriodId: string,
+	currentSessionMinutes: number,
+): Promise<ComplianceWarning[]> {
+	try {
+		// Get time summary for today and this week
+		const timeSummary = await getTimeSummary(employeeId);
+
+		// Calculate breaks taken today (gaps between work periods)
+		const breaksTaken = await calculateBreaksTakenToday(employeeId);
+
+		// Use Effect to check compliance
+		const complianceEffect = Effect.gen(function* (_) {
+			const regulationService = yield* _(TimeRegulationService);
+
+			const result = yield* _(
+				regulationService.checkCompliance({
+					employeeId,
+					currentSessionMinutes,
+					totalDailyMinutes: timeSummary.todayMinutes,
+					totalWeeklyMinutes: timeSummary.weekMinutes,
+					breaksTakenMinutes: breaksTaken,
+				}),
+			);
+
+			// Log violations if any
+			if (result.warnings.length > 0) {
+				const effectiveRegulation = yield* _(
+					regulationService.getEffectiveRegulation(employeeId),
+				);
+
+				if (effectiveRegulation) {
+					for (const warning of result.warnings) {
+						if (warning.severity === "violation") {
+							yield* _(
+								regulationService.logViolation({
+									employeeId,
+									organizationId,
+									regulationId: effectiveRegulation.regulationId,
+									workPeriodId,
+									violationType: warning.type,
+									details: {
+										actualMinutes: warning.actualValue,
+										limitMinutes: warning.limitValue,
+										warningShownAt: new Date().toISOString(),
+										userContinued: true,
+									},
+								}),
+							);
+						}
+					}
+				}
+			}
+
+			return result.warnings;
+		}).pipe(
+			Effect.provide(TimeRegulationServiceLive),
+			Effect.provide(DatabaseServiceLive),
+		);
+
+		const warnings = await Effect.runPromise(complianceEffect);
+		return warnings;
+	} catch (error) {
+		// Log the error but don't fail the clock-out
+		logger.error({ error }, "Failed to check compliance after clock-out");
+		return [];
+	}
+}
+
+/**
+ * Calculate total break minutes taken today (gaps between completed work periods)
+ */
+async function calculateBreaksTakenToday(employeeId: string): Promise<number> {
+	const now = DateTime.now();
+	const todayStart = dateToDB(now.startOf("day"))!;
+	const todayEnd = dateToDB(now.endOf("day"))!;
+
+	// Get all completed work periods for today, sorted by start time
+	const periods = await db.query.workPeriod.findMany({
+		where: and(
+			eq(workPeriod.employeeId, employeeId),
+			gte(workPeriod.startTime, todayStart),
+			lte(workPeriod.startTime, todayEnd),
+		),
+		orderBy: [workPeriod.startTime],
+	});
+
+	// Calculate gaps between consecutive work periods
+	let totalBreakMinutes = 0;
+
+	for (let i = 0; i < periods.length - 1; i++) {
+		const currentEnd = periods[i].endTime;
+		const nextStart = periods[i + 1].startTime;
+
+		if (currentEnd && nextStart) {
+			const gapMs = nextStart.getTime() - currentEnd.getTime();
+			const gapMinutes = Math.floor(gapMs / 60000);
+			// Only count gaps > 1 minute as breaks
+			if (gapMinutes > 1) {
+				totalBreakMinutes += gapMinutes;
+			}
+		}
+	}
+
+	return totalBreakMinutes;
 }
 
 /**
@@ -976,3 +1116,481 @@ export async function createTimeEntry(params: {
 
 // Re-export Effect functions with cleaner names (backward compatibility)
 export const requestTimeCorrection = requestTimeCorrectionEffect;
+
+// Re-export types for consumers
+export type { ComplianceWarning } from "@/lib/time-regulations/validation";
+
+/**
+ * Get break reminder status for the currently active session
+ * Returns information about break requirements and whether a break is needed soon
+ */
+export async function getBreakReminderStatus(): Promise<ServerActionResult<{
+	needsBreakSoon: boolean;
+	uninterruptedMinutes: number;
+	maxUninterrupted: number | null;
+	minutesUntilBreakRequired: number | null;
+	breakRequirement: {
+		isRequired: boolean;
+		totalNeeded: number;
+		taken: number;
+		remaining: number;
+	} | null;
+}>> {
+	const session = await auth.api.getSession({ headers: await headers() });
+	if (!session?.user) {
+		return { success: false, error: "Not authenticated" };
+	}
+
+	const emp = await getCurrentEmployee();
+	if (!emp) {
+		return { success: false, error: "Employee profile not found" };
+	}
+
+	// Get active work period
+	const activePeriod = await getActiveWorkPeriod(emp.id);
+	if (!activePeriod) {
+		return {
+			success: true,
+			data: {
+				needsBreakSoon: false,
+				uninterruptedMinutes: 0,
+				maxUninterrupted: null,
+				minutesUntilBreakRequired: null,
+				breakRequirement: null,
+			},
+		};
+	}
+
+	try {
+		// Calculate current session duration
+		const now = new Date();
+		const durationMs = now.getTime() - activePeriod.startTime.getTime();
+		const currentSessionMinutes = Math.floor(durationMs / 60000);
+
+		// Get time summary and breaks
+		const timeSummary = await getTimeSummary(emp.id);
+		const breaksTaken = await calculateBreaksTakenToday(emp.id);
+
+		// Use Effect to get regulation and check break requirements
+		const breakStatusEffect = Effect.gen(function* (_) {
+			const regulationService = yield* _(TimeRegulationService);
+
+			const regulation = yield* _(regulationService.getEffectiveRegulation(emp.id));
+
+			if (!regulation) {
+				return {
+					needsBreakSoon: false,
+					uninterruptedMinutes: currentSessionMinutes,
+					maxUninterrupted: null,
+					minutesUntilBreakRequired: null,
+					breakRequirement: null,
+				};
+			}
+
+			// Calculate break requirements
+			const breakReq = regulationService.calculateBreakRequirements({
+				regulation,
+				workedMinutes: timeSummary.todayMinutes + currentSessionMinutes,
+				breaksTakenMinutes: breaksTaken,
+			});
+
+			// Calculate time until break is required
+			const maxUninterrupted = regulation.maxUninterruptedMinutes;
+			let minutesUntilBreakRequired: number | null = null;
+			let needsBreakSoon = false;
+
+			if (maxUninterrupted) {
+				const remaining = maxUninterrupted - currentSessionMinutes;
+				minutesUntilBreakRequired = remaining;
+
+				// Warn when 15 minutes or less remaining
+				if (remaining <= 15 && remaining > 0) {
+					needsBreakSoon = true;
+				} else if (remaining <= 0) {
+					needsBreakSoon = true;
+				}
+			}
+
+			// Also check if break requirement is approaching
+			if (breakReq.isRequired && breakReq.remaining > 0) {
+				needsBreakSoon = true;
+			}
+
+			return {
+				needsBreakSoon,
+				uninterruptedMinutes: currentSessionMinutes,
+				maxUninterrupted: maxUninterrupted,
+				minutesUntilBreakRequired,
+				breakRequirement: breakReq.isRequired
+					? {
+							isRequired: true,
+							totalNeeded: breakReq.totalBreakNeeded,
+							taken: breakReq.breakTaken,
+							remaining: breakReq.remaining,
+						}
+					: null,
+			};
+		}).pipe(
+			Effect.provide(TimeRegulationServiceLive),
+			Effect.provide(DatabaseServiceLive),
+		);
+
+		const breakStatus = await Effect.runPromise(breakStatusEffect);
+		return { success: true, data: breakStatus };
+	} catch (error) {
+		logger.error({ error }, "Failed to get break reminder status");
+		return { success: false, error: "Failed to check break status" };
+	}
+}
+
+/**
+ * Update notes/description for a work period
+ * This updates the clock-out time entry's notes field
+ */
+export async function updateWorkPeriodNotes(
+	workPeriodId: string,
+	notes: string,
+): Promise<ServerActionResult<{ workPeriodId: string }>> {
+	const session = await auth.api.getSession({ headers: await headers() });
+	if (!session?.user) {
+		return { success: false, error: "Not authenticated" };
+	}
+
+	const emp = await getCurrentEmployee();
+	if (!emp) {
+		return { success: false, error: "Employee profile not found" };
+	}
+
+	try {
+		// Get the work period
+		const [period] = await db
+			.select()
+			.from(workPeriod)
+			.where(eq(workPeriod.id, workPeriodId))
+			.limit(1);
+
+		if (!period) {
+			return { success: false, error: "Work period not found" };
+		}
+
+		// Verify ownership
+		if (period.employeeId !== emp.id) {
+			return { success: false, error: "You can only update your own work periods" };
+		}
+
+		// Work period must be completed (have a clock-out entry)
+		if (!period.clockOutId) {
+			return { success: false, error: "Cannot add notes to an active work period" };
+		}
+
+		// Update the clock-out entry's notes
+		await db.update(timeEntry).set({ notes }).where(eq(timeEntry.id, period.clockOutId));
+
+		return { success: true, data: { workPeriodId } };
+	} catch (error) {
+		logger.error({ error }, "Update work period notes error");
+		return { success: false, error: "Failed to update notes. Please try again." };
+	}
+}
+
+/**
+ * Delete a work period (convert to break)
+ * Used to remove a work period, which creates a gap that appears as a break in the calendar
+ * The associated time entries are marked as superseded for audit trail
+ */
+export async function deleteWorkPeriod(
+	workPeriodId: string,
+): Promise<ServerActionResult<{ deleted: boolean }>> {
+	const session = await auth.api.getSession({ headers: await headers() });
+	if (!session?.user) {
+		return { success: false, error: "Not authenticated" };
+	}
+
+	const emp = await getCurrentEmployee();
+	if (!emp) {
+		return { success: false, error: "Employee profile not found" };
+	}
+
+	try {
+		// Get the work period
+		const [period] = await db
+			.select()
+			.from(workPeriod)
+			.where(eq(workPeriod.id, workPeriodId))
+			.limit(1);
+
+		if (!period) {
+			return { success: false, error: "Work period not found" };
+		}
+
+		// Verify ownership
+		if (period.employeeId !== emp.id) {
+			return { success: false, error: "You can only delete your own work periods" };
+		}
+
+		// Cannot delete active work periods
+		if (!period.endTime || !period.clockOutId) {
+			return {
+				success: false,
+				error: "Cannot delete an active work period. Please clock out first.",
+			};
+		}
+
+		// Mark time entries as superseded (audit trail)
+		// This keeps the time entry records for compliance/auditing
+		await db
+			.update(timeEntry)
+			.set({
+				isSuperseded: true,
+				notes: `[Deleted - converted to break by ${session.user.name || session.user.email}]`,
+			})
+			.where(eq(timeEntry.id, period.clockInId));
+
+		await db
+			.update(timeEntry)
+			.set({
+				isSuperseded: true,
+				notes: `[Deleted - converted to break by ${session.user.name || session.user.email}]`,
+			})
+			.where(eq(timeEntry.id, period.clockOutId));
+
+		// Delete the work period record
+		await db.delete(workPeriod).where(eq(workPeriod.id, workPeriodId));
+
+		logger.info(
+			{
+				workPeriodId,
+				employeeId: emp.id,
+				deletedBy: session.user.id,
+			},
+			"Work period deleted (converted to break)",
+		);
+
+		return { success: true, data: { deleted: true } };
+	} catch (error) {
+		logger.error({ error }, "Delete work period error");
+		return { success: false, error: "Failed to delete work period. Please try again." };
+	}
+}
+
+/**
+ * Split a work period into two separate periods at a given time
+ * Used to divide a single work session into multiple segments with distinct descriptions
+ */
+export async function splitWorkPeriod(
+	workPeriodId: string,
+	splitTime: string, // HH:mm format
+	beforeNotes?: string,
+	afterNotes?: string,
+): Promise<ServerActionResult<{ firstPeriodId: string; secondPeriodId: string }>> {
+	const session = await auth.api.getSession({ headers: await headers() });
+	if (!session?.user) {
+		return { success: false, error: "Not authenticated" };
+	}
+
+	const emp = await getCurrentEmployee();
+	if (!emp) {
+		return { success: false, error: "Employee profile not found" };
+	}
+
+	try {
+		// Get the work period with related entries
+		const [period] = await db
+			.select()
+			.from(workPeriod)
+			.where(eq(workPeriod.id, workPeriodId))
+			.limit(1);
+
+		if (!period) {
+			return { success: false, error: "Work period not found" };
+		}
+
+		// Verify ownership
+		if (period.employeeId !== emp.id) {
+			return { success: false, error: "You can only split your own work periods" };
+		}
+
+		// Work period must be completed (have an end time)
+		if (!period.endTime || !period.clockOutId) {
+			return { success: false, error: "Cannot split an active work period" };
+		}
+
+		// Calculate the split timestamp
+		const startDT = dateFromDB(period.startTime);
+		const endDT = dateFromDB(period.endTime);
+		if (!startDT || !endDT) {
+			return { success: false, error: "Invalid work period times" };
+		}
+
+		const [splitHours, splitMinutes] = splitTime.split(":");
+		const splitDT = startDT.set({
+			hour: parseInt(splitHours, 10),
+			minute: parseInt(splitMinutes, 10),
+			second: 0,
+			millisecond: 0,
+		});
+		const splitDate = dateToDB(splitDT);
+
+		if (!splitDate) {
+			return { success: false, error: "Invalid split time" };
+		}
+
+		// Validate split time is between start and end
+		if (splitDate <= period.startTime || splitDate >= period.endTime) {
+			return {
+				success: false,
+				error: "Split time must be between work period start and end times",
+			};
+		}
+
+		// Validate the split times (check for holidays)
+		const validation = await validateTimeEntryRange(
+			emp.organizationId,
+			period.startTime,
+			period.endTime,
+		);
+
+		if (!validation.isValid) {
+			return {
+				success: false,
+				error: validation.error || "Cannot split work period",
+				holidayName: validation.holidayName,
+			};
+		}
+
+		// Get request metadata
+		const headersList = await headers();
+		const ipAddress =
+			headersList.get("x-forwarded-for") || headersList.get("x-real-ip") || "unknown";
+		const userAgent = headersList.get("user-agent") || "unknown";
+
+		// Create clock-out entry for first period at split time
+		const firstClockOut = await createTimeEntry({
+			employeeId: emp.id,
+			type: "clock_out",
+			timestamp: splitDate,
+			createdBy: session.user.id,
+			notes: beforeNotes,
+		});
+
+		// Create clock-in entry for second period at split time
+		const secondClockIn = await createTimeEntry({
+			employeeId: emp.id,
+			type: "clock_in",
+			timestamp: splitDate,
+			createdBy: session.user.id,
+			notes: afterNotes,
+		});
+
+		// Update the original work period clock-out entry with notes if provided
+		if (beforeNotes && period.clockOutId) {
+			// Mark original clock-out as superseded
+			await db
+				.update(timeEntry)
+				.set({
+					isSuperseded: true,
+					supersededById: firstClockOut.id,
+				})
+				.where(eq(timeEntry.id, period.clockOutId));
+		}
+
+		// Calculate durations
+		const firstDurationMs = splitDate.getTime() - period.startTime.getTime();
+		const firstDurationMinutes = Math.floor(firstDurationMs / 60000);
+
+		const secondDurationMs = period.endTime.getTime() - splitDate.getTime();
+		const secondDurationMinutes = Math.floor(secondDurationMs / 60000);
+
+		// Update the original work period to end at split time
+		await db
+			.update(workPeriod)
+			.set({
+				clockOutId: firstClockOut.id,
+				endTime: splitDate,
+				durationMinutes: firstDurationMinutes,
+				updatedAt: new Date(),
+			})
+			.where(eq(workPeriod.id, period.id));
+
+		// Create a new work period for the second segment
+		const [secondPeriod] = await db
+			.insert(workPeriod)
+			.values({
+				employeeId: emp.id,
+				clockInId: secondClockIn.id,
+				clockOutId: period.clockOutId, // Use original clock-out for second period
+				startTime: splitDate,
+				endTime: period.endTime,
+				durationMinutes: secondDurationMinutes,
+				isActive: false,
+			})
+			.returning();
+
+		// Update the original clock-out entry with afterNotes if provided
+		if (afterNotes && period.clockOutId) {
+			await db
+				.update(timeEntry)
+				.set({ notes: afterNotes })
+				.where(eq(timeEntry.id, period.clockOutId));
+		}
+
+		logger.info(
+			{
+				originalPeriodId: workPeriodId,
+				firstPeriodId: period.id,
+				secondPeriodId: secondPeriod.id,
+				splitTime,
+			},
+			"Work period split successfully",
+		);
+
+		return {
+			success: true,
+			data: { firstPeriodId: period.id, secondPeriodId: secondPeriod.id },
+		};
+	} catch (error) {
+		logger.error({ error }, "Split work period error");
+		return { success: false, error: "Failed to split work period. Please try again." };
+	}
+}
+
+/**
+ * Update notes/description for a time entry
+ * Used after clock-out to add optional description about work done
+ */
+export async function updateTimeEntryNotes(
+	entryId: string,
+	notes: string,
+): Promise<ServerActionResult<{ entryId: string }>> {
+	const session = await auth.api.getSession({ headers: await headers() });
+	if (!session?.user) {
+		return { success: false, error: "Not authenticated" };
+	}
+
+	const emp = await getCurrentEmployee();
+	if (!emp) {
+		return { success: false, error: "Employee profile not found" };
+	}
+
+	try {
+		// Get the time entry
+		const [entry] = await db.select().from(timeEntry).where(eq(timeEntry.id, entryId)).limit(1);
+
+		if (!entry) {
+			return { success: false, error: "Time entry not found" };
+		}
+
+		// Verify ownership
+		if (entry.employeeId !== emp.id) {
+			return { success: false, error: "You can only update your own time entries" };
+		}
+
+		// Update the notes
+		await db.update(timeEntry).set({ notes }).where(eq(timeEntry.id, entryId));
+
+		return { success: true, data: { entryId } };
+	} catch (error) {
+		logger.error({ error }, "Update time entry notes error");
+		return { success: false, error: "Failed to update notes. Please try again." };
+	}
+}

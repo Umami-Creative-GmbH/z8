@@ -2,7 +2,12 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useState } from "react";
-import { clockIn, clockOut, getTimeClockStatus } from "@/app/[locale]/(app)/time-tracking/actions";
+import {
+	clockIn,
+	clockOut,
+	getTimeClockStatus,
+	updateTimeEntryNotes,
+} from "@/app/[locale]/(app)/time-tracking/actions";
 import { queryKeys } from "./keys";
 
 export interface TimeClockState {
@@ -106,6 +111,12 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 		},
 	});
 
+	// Update notes mutation
+	const updateNotesMutation = useMutation({
+		mutationFn: ({ entryId, notes }: { entryId: string; notes: string }) =>
+			updateTimeEntryNotes(entryId, notes),
+	});
+
 	// Refetch status manually
 	const refetchStatus = useCallback(() => {
 		return queryClient.invalidateQueries({ queryKey: queryKeys.timeClock.status() });
@@ -127,9 +138,12 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 		// Mutations
 		clockIn: clockInMutation.mutateAsync,
 		clockOut: clockOutMutation.mutateAsync,
+		updateNotes: updateNotesMutation.mutateAsync,
 		isClockingIn: clockInMutation.isPending,
 		isClockingOut: clockOutMutation.isPending,
-		isMutating: clockInMutation.isPending || clockOutMutation.isPending,
+		isUpdatingNotes: updateNotesMutation.isPending,
+		isMutating:
+			clockInMutation.isPending || clockOutMutation.isPending || updateNotesMutation.isPending,
 
 		// Utilities
 		refetchStatus,

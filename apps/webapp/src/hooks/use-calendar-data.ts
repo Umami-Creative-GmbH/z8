@@ -6,6 +6,7 @@ import { z } from "zod";
 import type { CalendarEvent } from "@/lib/calendar/types";
 import { format } from "@/lib/datetime/luxon-utils";
 import { ApiError } from "@/lib/fetch";
+import { parseSuperJsonResponse } from "@/lib/superjson";
 import { calendarEventSchema } from "@/lib/validations/calendar";
 
 export interface CalendarFilters {
@@ -88,10 +89,11 @@ export function useCalendarData({
 				);
 			}
 
-			const data = await response.json();
+			// Use SuperJSON to parse response - dates are now actual Date objects
+			const data = await parseSuperJsonResponse<{ events: unknown[]; total: number }>(response);
 
-			// Validate and parse events with Zod schema
-			// This automatically converts date strings to Date objects
+			// Validate events with Zod schema
+			// SuperJSON already preserves Date objects, Zod validates structure
 			const eventsSchema = z.array(calendarEventSchema);
 			const parsedEvents = eventsSchema.parse(data.events);
 

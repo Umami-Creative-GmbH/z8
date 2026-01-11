@@ -9,8 +9,12 @@ import { useOrganization } from "@/hooks/use-organization";
 import type { CalendarEvent } from "@/lib/calendar/types";
 import { CalendarFiltersComponent } from "./calendar-filters";
 import { CalendarLegend } from "./calendar-legend";
+import { DeleteWorkPeriodDialog } from "./delete-work-period-dialog";
 import { EventDetailsPanel } from "./event-details-panel";
-import { ScheduleXCalendarWrapper, type ViewMode } from "./schedule-x-calendar";
+import type { ViewMode } from "./schedule-x-calendar";
+import { ScheduleXWrapper } from "./schedule-x-wrapper";
+import { SplitWorkPeriodDialog } from "./split-work-period-dialog";
+import { WorkPeriodEditDialog } from "./work-period-edit-dialog";
 import { YearCalendarView } from "./year-calendar-view";
 
 interface CalendarViewProps {
@@ -34,6 +38,10 @@ export function CalendarView({ organizationId, currentEmployeeId }: CalendarView
 
 	// Selected event for details panel
 	const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+
+	// Dialog states for work period actions
+	const [showSplitDialog, setShowSplitDialog] = useState(false);
+	const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
 	// Event type filters
 	const [filters, setFilters] = useState<CalendarFilters>({
@@ -59,7 +67,7 @@ export function CalendarView({ organizationId, currentEmployeeId }: CalendarView
 
 	// Fetch calendar events
 	// When in year view, fetch all 12 months at once
-	const { events, isLoading, error } = useCalendarData({
+	const { events, isLoading, error, refetch } = useCalendarData({
 		organizationId,
 		month: currentMonth.getMonth(),
 		year: viewMode === "year" ? currentYear : currentMonth.getFullYear(),
@@ -105,7 +113,33 @@ export function CalendarView({ organizationId, currentEmployeeId }: CalendarView
 	// Close event details panel
 	const handleCloseDetails = useCallback(() => {
 		setSelectedEvent(null);
+		setShowSplitDialog(false);
+		setShowDeleteDialog(false);
 	}, []);
+
+	// Handle split click from edit dialog
+	const handleSplitClick = useCallback(() => {
+		setShowSplitDialog(true);
+	}, []);
+
+	// Handle split complete
+	const handleSplitComplete = useCallback(() => {
+		setShowSplitDialog(false);
+		setSelectedEvent(null);
+		refetch();
+	}, [refetch]);
+
+	// Handle delete click from edit dialog
+	const handleDeleteClick = useCallback(() => {
+		setShowDeleteDialog(true);
+	}, []);
+
+	// Handle delete complete
+	const handleDeleteComplete = useCallback(() => {
+		setShowDeleteDialog(false);
+		setSelectedEvent(null);
+		refetch();
+	}, [refetch]);
 
 	return (
 		<div className="flex flex-1 flex-col gap-4 p-4 overflow-hidden min-h-0">
@@ -172,7 +206,7 @@ export function CalendarView({ organizationId, currentEmployeeId }: CalendarView
 							workHoursData={workHoursData}
 						/>
 					) : (
-						<ScheduleXCalendarWrapper
+						<ScheduleXWrapper
 							events={events}
 							isLoading={isLoading}
 							viewMode={viewMode}
@@ -184,8 +218,45 @@ export function CalendarView({ organizationId, currentEmployeeId }: CalendarView
 				</div>
 			</div>
 
-			{/* Event details panel */}
-			{selectedEvent && <EventDetailsPanel event={selectedEvent} onClose={handleCloseDetails} />}
+			{/* Event details panel - for non-work-period events */}
+			{selectedEvent && selectedEvent.type !== "work_period" && (
+				<EventDetailsPanel event={selectedEvent} onClose={handleCloseDetails} />
+			)}
+
+			{/* Work period edit dialog - for work periods only */}
+			{selectedEvent &&
+				selectedEvent.type === "work_period" &&
+				!showSplitDialog &&
+				!showDeleteDialog && (
+					<WorkPeriodEditDialog
+						event={selectedEvent}
+						open={!!selectedEvent && !showSplitDialog && !showDeleteDialog}
+						onOpenChange={(open) => !open && handleCloseDetails()}
+						onNotesUpdated={refetch}
+						onSplitClick={handleSplitClick}
+						onDeleteClick={handleDeleteClick}
+					/>
+				)}
+
+			{/* Split work period dialog */}
+			{selectedEvent && selectedEvent.type === "work_period" && showSplitDialog && (
+				<SplitWorkPeriodDialog
+					event={selectedEvent}
+					open={showSplitDialog}
+					onOpenChange={(open) => !open && setShowSplitDialog(false)}
+					onSplitComplete={handleSplitComplete}
+				/>
+			)}
+
+			{/* Delete work period dialog (convert to break) */}
+			{selectedEvent && selectedEvent.type === "work_period" && showDeleteDialog && (
+				<DeleteWorkPeriodDialog
+					event={selectedEvent}
+					open={showDeleteDialog}
+					onOpenChange={(open) => !open && setShowDeleteDialog(false)}
+					onDeleteComplete={handleDeleteComplete}
+				/>
+			)}
 		</div>
 	);
 }

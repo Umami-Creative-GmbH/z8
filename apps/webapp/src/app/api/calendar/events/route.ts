@@ -6,6 +6,7 @@ import { getHolidaysForMonth } from "@/lib/calendar/holiday-service";
 import { getTimeEntriesForMonth } from "@/lib/calendar/time-entry-service";
 import type { CalendarEvent } from "@/lib/calendar/types";
 import { getWorkPeriodsForMonth } from "@/lib/calendar/work-period-service";
+import { superJsonResponse } from "@/lib/superjson";
 
 /**
  * Fetch events for a single month
@@ -121,7 +122,8 @@ export async function GET(request: NextRequest) {
 			);
 		}
 
-		return NextResponse.json({
+		// Use SuperJSON to preserve Date objects in the response
+		return superJsonResponse({
 			events,
 			total: events.length,
 		});

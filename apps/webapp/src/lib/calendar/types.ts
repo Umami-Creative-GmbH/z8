@@ -1,4 +1,4 @@
-export type CalendarEventType = "holiday" | "absence" | "time_entry" | "work_period";
+export type CalendarEventType = "holiday" | "absence" | "time_entry" | "work_period" | "break";
 
 export interface CalendarEvent {
 	id: string;
@@ -40,6 +40,14 @@ export interface TimeEntryEvent extends CalendarEvent {
 
 export interface WorkPeriodEvent extends CalendarEvent {
 	type: "work_period";
+	metadata: {
+		durationMinutes: number;
+		employeeName: string;
+	};
+}
+
+export interface BreakEvent extends CalendarEvent {
+	type: "break";
 	metadata: {
 		durationMinutes: number;
 		employeeName: string;

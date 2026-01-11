@@ -1,7 +1,7 @@
 "use client";
 
-// Temporal polyfill must be imported before Schedule-X
-import "temporal-polyfill/global";
+// Note: Temporal polyfill is imported in theme-provider.tsx to ensure
+// it loads early enough for Schedule-X. Do not add it here.
 
 import {
 	createViewDay,
@@ -50,11 +50,17 @@ import "@schedule-x/theme-default/dist/index.css";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { DateTime } from "luxon";
 import { useTheme } from "next-themes";
+
+// Use global Temporal (polyfilled via temporal-polyfill/global in schedule-x-wrapper.tsx)
+// Do NOT import from temporal-polyfill directly - Schedule-X requires the global instance
+declare const Temporal: typeof import("temporal-polyfill").Temporal;
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
 	calendarEventsToScheduleX,
+	generateBreakEvents,
 	getScheduleXCalendars,
 } from "@/lib/calendar/schedule-x-adapter";
 import type { CalendarEvent } from "@/lib/calendar/types";
@@ -99,7 +105,25 @@ export function ScheduleXCalendarWrapper({
 	const calendarContainerRef = useRef<HTMLDivElement>(null);
 
 	// Convert events to Schedule-X format
-	const scheduleXEvents = useMemo(() => calendarEventsToScheduleX(events), [events]);
+	const baseScheduleXEvents = useMemo(() => calendarEventsToScheduleX(events), [events]);
+
+	// Generate break events only for day/week view
+	const scheduleXEvents = useMemo(() => {
+		if (viewMode === "day" || viewMode === "week") {
+			const breakEvents = generateBreakEvents(baseScheduleXEvents);
+			return [...baseScheduleXEvents, ...breakEvents];
+		}
+		return baseScheduleXEvents;
+	}, [baseScheduleXEvents, viewMode]);
+
+	// Helper to convert Luxon DateTime to Temporal.PlainDate
+	const luxonToPlainDate = useCallback((dt: DateTime): Temporal.PlainDate => {
+		return Temporal.PlainDate.from({
+			year: dt.year,
+			month: dt.month,
+			day: dt.day,
+		});
+	}, []);
 
 	// Navigation functions
 	const navigatePrevious = useCallback(() => {
@@ -118,8 +142,8 @@ export function ScheduleXCalendarWrapper({
 				newDate = currentDate.minus({ days: 1 });
 		}
 		setCurrentDate(newDate);
-		calendarControls.setDate(newDate.toFormat("yyyy-MM-dd"));
-	}, [viewMode, currentDate, calendarControls]);
+		calendarControls.setDate(luxonToPlainDate(newDate));
+	}, [viewMode, currentDate, calendarControls, luxonToPlainDate]);
 
 	const navigateNext = useCallback(() => {
 		let newDate: DateTime;
@@ -137,14 +161,14 @@ export function ScheduleXCalendarWrapper({
 				newDate = currentDate.plus({ days: 1 });
 		}
 		setCurrentDate(newDate);
-		calendarControls.setDate(newDate.toFormat("yyyy-MM-dd"));
-	}, [viewMode, currentDate, calendarControls]);
+		calendarControls.setDate(luxonToPlainDate(newDate));
+	}, [viewMode, currentDate, calendarControls, luxonToPlainDate]);
 
 	const navigateToday = useCallback(() => {
 		const today = DateTime.now();
 		setCurrentDate(today);
-		calendarControls.setDate(today.toFormat("yyyy-MM-dd"));
-	}, [calendarControls]);
+		calendarControls.setDate(luxonToPlainDate(today));
+	}, [calendarControls, luxonToPlainDate]);
 
 	// Format the date range display based on view mode
 	const dateRangeDisplay = useMemo(() => {
@@ -234,8 +258,19 @@ export function ScheduleXCalendarWrapper({
 	// Update events when they change
 	useEffect(() => {
 		if (calendar) {
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			calendar.events.set(scheduleXEvents as any);
+			try {
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
+				calendar.events.set(scheduleXEvents as any);
+			} catch (error) {
+				console.error("[Schedule-X Calendar] Error setting events:", error);
+				console.error(
+					"[Schedule-X Calendar] Events that caused error:",
+					scheduleXEvents.slice(0, 5), // Log first 5 events for debugging
+					"... (total:",
+					scheduleXEvents.length,
+					")",
+				);
+			}
 		}
 	}, [calendar, scheduleXEvents]);
 

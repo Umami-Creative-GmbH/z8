@@ -1,10 +1,21 @@
 "use client";
 
-import { IconClock, IconClockPause, IconLoader2 } from "@tabler/icons-react";
+import {
+	IconAlertTriangle,
+	IconCheck,
+	IconClock,
+	IconClockPause,
+	IconLoader2,
+	IconX,
+} from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
+import { useState } from "react";
 import { toast } from "sonner";
+import type { ComplianceWarning } from "@/app/[locale]/(app)/time-tracking/actions";
+import { BreakReminder } from "@/components/time-tracking/break-reminder";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
 import { type TimeClockState, useTimeClock } from "@/lib/query";
 import { formatDurationWithSeconds } from "@/lib/time-tracking/time-utils";
 
@@ -37,9 +48,16 @@ export function ClockInOutWidget({ activeWorkPeriod: initialWorkPeriod, employee
 		elapsedSeconds,
 		clockIn,
 		clockOut,
+		updateNotes,
 		isClockingOut,
+		isUpdatingNotes,
 		isMutating,
 	} = useTimeClock({ initialData });
+
+	// State for showing notes input after clock-out
+	const [showNotesInput, setShowNotesInput] = useState(false);
+	const [lastClockOutEntryId, setLastClockOutEntryId] = useState<string | null>(null);
+	const [notesText, setNotesText] = useState("");
 
 	const handleClockIn = async () => {
 		const result = await clockIn();
@@ -69,6 +87,41 @@ export function ClockInOutWidget({ activeWorkPeriod: initialWorkPeriod, employee
 
 		if (result.success) {
 			toast.success(t("timeTracking.clockOutSuccess", "Clocked out successfully"));
+
+			// Show compliance warnings if any
+			const warnings = result.data?.complianceWarnings;
+			if (warnings && warnings.length > 0) {
+				// Show each warning as a separate toast
+				for (const warning of warnings) {
+					const isViolation = warning.severity === "violation";
+
+					if (isViolation) {
+						toast.warning(
+							t("timeTracking.compliance.violation", "Compliance Violation"),
+							{
+								description: warning.message,
+								duration: 8000, // Show longer for violations
+								icon: <IconAlertTriangle className="size-5 text-orange-500" />,
+							},
+						);
+					} else {
+						toast.info(
+							t("timeTracking.compliance.warning", "Compliance Notice"),
+							{
+								description: warning.message,
+								duration: 6000,
+							},
+						);
+					}
+				}
+			}
+
+			// Show notes input and store the entry ID for patching
+			if (result.data?.id) {
+				setLastClockOutEntryId(result.data.id);
+				setShowNotesInput(true);
+				setNotesText("");
+			}
 		} else {
 			const errorMessage = result.holidayName
 				? t("timeTracking.errors.holidayBlocked", "Cannot clock out on {holidayName}", {
@@ -85,6 +138,31 @@ export function ClockInOutWidget({ activeWorkPeriod: initialWorkPeriod, employee
 					: undefined,
 			});
 		}
+	};
+
+	const handleSaveNotes = async () => {
+		if (!lastClockOutEntryId || !notesText.trim()) {
+			setShowNotesInput(false);
+			return;
+		}
+
+		const result = await updateNotes({ entryId: lastClockOutEntryId, notes: notesText.trim() });
+
+		if (result.success) {
+			toast.success(t("timeTracking.notesSaved", "Notes saved"));
+		} else {
+			toast.error(result.error || t("timeTracking.errors.notesSaveFailed", "Failed to save notes"));
+		}
+
+		setShowNotesInput(false);
+		setLastClockOutEntryId(null);
+		setNotesText("");
+	};
+
+	const handleDismissNotes = () => {
+		setShowNotesInput(false);
+		setLastClockOutEntryId(null);
+		setNotesText("");
 	};
 
 	return (
@@ -113,32 +191,78 @@ export function ClockInOutWidget({ activeWorkPeriod: initialWorkPeriod, employee
 					</div>
 				)}
 
-				<Button
-					size="lg"
-					variant={isClockedIn ? "destructive" : "default"}
-					onClick={isClockedIn ? handleClockOut : handleClockIn}
-					disabled={isMutating}
-					className="w-full"
-				>
-					{isMutating ? (
-						<>
-							<IconLoader2 className="size-5 animate-spin" />
-							{isClockingOut
-								? t("timeTracking.clockingOut", "Clocking Out...")
-								: t("timeTracking.clockingIn", "Clocking In...")}
-						</>
-					) : isClockedIn ? (
-						<>
-							<IconClockPause className="size-5" />
-							{t("timeTracking.clockOut", "Clock Out")}
-						</>
-					) : (
-						<>
-							<IconClock className="size-5" />
-							{t("timeTracking.clockIn", "Clock In")}
-						</>
-					)}
-				</Button>
+				{/* Break reminder when clocked in */}
+				<BreakReminder isClockedIn={isClockedIn} />
+
+				{!showNotesInput && (
+					<Button
+						size="lg"
+						variant={isClockedIn ? "destructive" : "default"}
+						onClick={isClockedIn ? handleClockOut : handleClockIn}
+						disabled={isMutating}
+						className="w-full"
+					>
+						{isMutating ? (
+							<>
+								<IconLoader2 className="size-5 animate-spin" />
+								{isClockingOut
+									? t("timeTracking.clockingOut", "Clocking Out...")
+									: t("timeTracking.clockingIn", "Clocking In...")}
+							</>
+						) : isClockedIn ? (
+							<>
+								<IconClockPause className="size-5" />
+								{t("timeTracking.clockOut", "Clock Out")}
+							</>
+						) : (
+							<>
+								<IconClock className="size-5" />
+								{t("timeTracking.clockIn", "Clock In")}
+							</>
+						)}
+					</Button>
+				)}
+
+				{/* Notes input after clock-out */}
+				{showNotesInput && (
+					<div className="flex flex-col gap-3 animate-in fade-in slide-in-from-top-2 duration-200">
+						<div className="text-sm text-muted-foreground">
+							{t("timeTracking.addNotePrompt", "Add a note about your work (optional)")}
+						</div>
+						<Textarea
+							placeholder={t("timeTracking.notesPlaceholder", "What did you work on?")}
+							value={notesText}
+							onChange={(e) => setNotesText(e.target.value)}
+							rows={3}
+							className="resize-none"
+							autoFocus
+						/>
+						<div className="flex gap-2">
+							<Button
+								size="sm"
+								onClick={handleSaveNotes}
+								disabled={isUpdatingNotes}
+								className="flex-1"
+							>
+								{isUpdatingNotes ? (
+									<IconLoader2 className="size-4 animate-spin" />
+								) : (
+									<IconCheck className="size-4" />
+								)}
+								{t("common.save", "Save")}
+							</Button>
+							<Button
+								size="sm"
+								variant="outline"
+								onClick={handleDismissNotes}
+								disabled={isUpdatingNotes}
+							>
+								<IconX className="size-4" />
+								{t("common.skip", "Skip")}
+							</Button>
+						</div>
+					</div>
+				)}
 			</CardContent>
 		</Card>
 	);

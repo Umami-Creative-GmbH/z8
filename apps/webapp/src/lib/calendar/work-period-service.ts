@@ -2,7 +2,7 @@ import { and, eq, gte, lte } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
-import { employee, workPeriod } from "@/db/schema";
+import { employee, timeEntry, workPeriod } from "@/db/schema";
 import { dateFromDB, dateToDB } from "@/lib/datetime/drizzle-adapter";
 import { toDateKey } from "@/lib/datetime/luxon-utils";
 import type { WorkPeriodEvent } from "./types";
@@ -14,7 +14,7 @@ interface WorkPeriodFilters {
 
 /**
  * Get work periods for a specific month to display on the calendar
- * Aggregates by day and employee, showing total duration per day
+ * Returns individual work periods with start/end times for timed display
  * Only includes completed work periods (isActive = false)
  */
 export async function getWorkPeriodsForMonth(
@@ -52,16 +52,38 @@ export async function getWorkPeriodsForMonth(
 				period: workPeriod,
 				employee: employee,
 				user: user,
+				clockOutEntry: timeEntry,
 			})
 			.from(workPeriod)
 			.innerJoin(employee, eq(workPeriod.employeeId, employee.id))
 			.innerJoin(user, eq(employee.userId, user.id))
+			.leftJoin(timeEntry, eq(workPeriod.clockOutId, timeEntry.id))
 			.where(and(...conditions));
 
-		// Aggregate by day and employee
-		const aggregated = aggregateByDay(periods);
+		// Return individual work periods as timed events (not aggregated)
+		// This allows the calendar to show work blocks at specific times
+		// Breaks appear as gaps between the green work blocks
+		return periods.map(({ period, user, clockOutEntry }) => {
+			const notes = clockOutEntry?.notes?.trim();
+			const duration = formatDuration(period.durationMinutes ?? 0);
+			// Format: "Name - 4h 30m" or "Name - 4h 30m: Working on report"
+			const title = notes ? `${user.name} - ${duration}: ${notes}` : `${user.name} - ${duration}`;
 
-		return aggregated;
+			return {
+				id: period.id,
+				type: "work_period" as const,
+				date: period.startTime,
+				endDate: period.endTime ?? undefined,
+				title,
+				description: notes || "Work period",
+				color: "#10b981", // Green (emerald)
+				metadata: {
+					durationMinutes: period.durationMinutes ?? 0,
+					employeeName: user.name,
+					notes: notes || undefined,
+				},
+			};
+		});
 	} catch (error) {
 		console.error("Error fetching work periods for calendar:", error);
 		return [];

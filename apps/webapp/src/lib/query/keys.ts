@@ -57,6 +57,7 @@ export const queryKeys = {
 	// Time clock
 	timeClock: {
 		status: () => ["time-clock", "status"] as const,
+		breakStatus: () => ["time-clock", "break-status"] as const,
 	},
 
 	// Notifications
@@ -142,5 +143,22 @@ export const queryKeys = {
 		all: ["shift-requests"] as const,
 		pending: (approverId: string) => ["shift-requests", "pending", approverId] as const,
 		byShift: (shiftId: string) => ["shift-requests", "shift", shiftId] as const,
+	},
+
+	// Time regulations
+	timeRegulations: {
+		all: ["time-regulations"] as const,
+		list: (orgId: string) => ["time-regulations", "list", orgId] as const,
+		detail: (regulationId: string) => ["time-regulations", "detail", regulationId] as const,
+		assignments: (orgId: string) => ["time-regulations", "assignments", orgId] as const,
+		presets: () => ["time-regulations", "presets"] as const,
+		violations: {
+			all: ["time-regulations", "violations"] as const,
+			list: (orgId: string, dateRange: { start: Date; end: Date }) =>
+				["time-regulations", "violations", "list", orgId, dateRange] as const,
+			byEmployee: (employeeId: string, dateRange: { start: Date; end: Date }) =>
+				["time-regulations", "violations", "employee", employeeId, dateRange] as const,
+		},
+		effective: (employeeId: string) => ["time-regulations", "effective", employeeId] as const,
 	},
 } as const;
