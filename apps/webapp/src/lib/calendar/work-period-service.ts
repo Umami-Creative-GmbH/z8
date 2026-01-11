@@ -1,8 +1,8 @@
 import { and, eq, gte, lte } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { db } from "@/db";
-import { employee, workPeriod } from "@/db/schema";
 import { user } from "@/db/auth-schema";
+import { employee, workPeriod } from "@/db/schema";
 import { dateFromDB, dateToDB } from "@/lib/datetime/drizzle-adapter";
 import { toDateKey } from "@/lib/datetime/luxon-utils";
 import type { WorkPeriodEvent } from "./types";

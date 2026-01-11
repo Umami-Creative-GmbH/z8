@@ -3,8 +3,8 @@
 import { and, eq, gte, lte } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { db } from "@/db";
-import { employee, timeEntry } from "@/db/schema";
 import { user } from "@/db/auth-schema";
+import { employee, timeEntry } from "@/db/schema";
 import { dateToDB } from "@/lib/datetime/drizzle-adapter";
 import type { TimeEntryEvent } from "./types";
 

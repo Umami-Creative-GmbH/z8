@@ -3,7 +3,12 @@
 // Temporal polyfill must be imported before Schedule-X
 import "temporal-polyfill/global";
 
-import { createViewDay, createViewMonthAgenda, createViewMonthGrid, createViewWeek } from "@schedule-x/calendar";
+import {
+	createViewDay,
+	createViewMonthAgenda,
+	createViewMonthGrid,
+	createViewWeek,
+} from "@schedule-x/calendar";
 
 // CSS to constrain calendar height and enable internal scrolling
 // Applied via style tag since Tailwind layers don't work well with third-party class names
@@ -36,6 +41,7 @@ const scheduleXStyles = `
     min-height: 100% !important;
   }
 `;
+
 import { createCalendarControlsPlugin } from "@schedule-x/calendar-controls";
 import { createCurrentTimePlugin } from "@schedule-x/current-time";
 import { createEventModalPlugin } from "@schedule-x/event-modal";
@@ -47,11 +53,11 @@ import { useTheme } from "next-themes";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { CalendarEvent } from "@/lib/calendar/types";
 import {
 	calendarEventsToScheduleX,
 	getScheduleXCalendars,
 } from "@/lib/calendar/schedule-x-adapter";
+import type { CalendarEvent } from "@/lib/calendar/types";
 
 export type ViewMode = "day" | "week" | "month" | "year";
 
@@ -246,7 +252,9 @@ export function ScheduleXCalendarWrapper({
 		if (viewMode === "day" || viewMode === "week") {
 			// Wait for calendar to render, then scroll to current time indicator
 			const timer = setTimeout(() => {
-				const timeIndicator = calendarContainerRef.current?.querySelector(".sx__current-time-indicator");
+				const timeIndicator = calendarContainerRef.current?.querySelector(
+					".sx__current-time-indicator",
+				);
 				if (timeIndicator) {
 					timeIndicator.scrollIntoView({ behavior: "smooth", block: "center" });
 				} else {
@@ -263,7 +271,7 @@ export function ScheduleXCalendarWrapper({
 			}, 100);
 			return () => clearTimeout(timer);
 		}
-	}, [viewMode, currentDate, isLoading]);
+	}, [viewMode, isLoading]);
 
 	if (isLoading) {
 		return (
@@ -303,7 +311,10 @@ export function ScheduleXCalendarWrapper({
 			</div>
 
 			{/* Calendar with internal scroll - styles applied via style tag above */}
-			<div ref={calendarContainerRef} className="schedule-x-container flex-1 min-h-0 overflow-hidden">
+			<div
+				ref={calendarContainerRef}
+				className="schedule-x-container flex-1 min-h-0 overflow-hidden"
+			>
 				<ScheduleXCalendar calendarApp={calendar} />
 			</div>
 		</div>

@@ -5,8 +5,8 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { cn } from "@/lib/utils";
 import type { CalendarEvent } from "@/lib/calendar/types";
+import { cn } from "@/lib/utils";
 import type { ViewMode } from "./schedule-x-calendar";
 
 interface YearCalendarViewProps {
@@ -20,8 +20,18 @@ interface YearCalendarViewProps {
 }
 
 const MONTHS = [
-	"January", "February", "March", "April", "May", "June",
-	"July", "August", "September", "October", "November", "December",
+	"January",
+	"February",
+	"March",
+	"April",
+	"May",
+	"June",
+	"July",
+	"August",
+	"September",
+	"October",
+	"November",
+	"December",
 ];
 
 const WEEKDAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
@@ -166,7 +176,7 @@ export function YearCalendarView({
 			if (!map.has(dateKey)) {
 				map.set(dateKey, []);
 			}
-			map.get(dateKey)!.push(event);
+			map.get(dateKey)?.push(event);
 		}
 		return map;
 	}, [events]);
@@ -176,18 +186,10 @@ export function YearCalendarView({
 			{/* Year navigation header */}
 			<div className="flex items-center justify-between gap-4 pb-3 mb-3">
 				<div className="flex items-center gap-2">
-					<Button
-						variant="outline"
-						size="icon"
-						onClick={() => onYearChange(year - 1)}
-					>
+					<Button variant="outline" size="icon" onClick={() => onYearChange(year - 1)}>
 						<ChevronLeft className="h-4 w-4" />
 					</Button>
-					<Button
-						variant="outline"
-						size="icon"
-						onClick={() => onYearChange(year + 1)}
-					>
+					<Button variant="outline" size="icon" onClick={() => onYearChange(year + 1)}>
 						<ChevronRight className="h-4 w-4" />
 					</Button>
 					<Button

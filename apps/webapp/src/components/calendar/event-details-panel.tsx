@@ -1,8 +1,6 @@
 "use client";
 
 import { useTranslate } from "@tolgee/react";
-import { format } from "@/lib/datetime/luxon-utils";
-import type { CalendarEvent } from "@/lib/calendar/types";
 import { Badge } from "@/components/ui/badge";
 import {
 	Sheet,
@@ -11,6 +9,8 @@ import {
 	SheetHeader,
 	SheetTitle,
 } from "@/components/ui/sheet";
+import type { CalendarEvent } from "@/lib/calendar/types";
+import { format } from "@/lib/datetime/luxon-utils";
 
 interface EventDetailsPanelProps {
 	event: CalendarEvent;
@@ -39,7 +39,7 @@ export function EventDetailsPanel({ event, onClose }: EventDetailsPanelProps) {
 		return format(date, "PPP"); // e.g., "January 1, 2024"
 	};
 
-	const formatTime = (date: Date) => {
+	const _formatTime = (date: Date) => {
 		return format(date, "p"); // e.g., "2:30 PM"
 	};
 
@@ -250,10 +250,7 @@ export function EventDetailsPanel({ event, onClose }: EventDetailsPanelProps) {
 			<SheetContent>
 				<SheetHeader>
 					<div className="flex items-center gap-2">
-						<div
-							className="w-3 h-3 rounded-full"
-							style={{ backgroundColor: event.color }}
-						/>
+						<div className="w-3 h-3 rounded-full" style={{ backgroundColor: event.color }} />
 						<SheetTitle>{event.title}</SheetTitle>
 					</div>
 					<SheetDescription className="flex items-center gap-2">

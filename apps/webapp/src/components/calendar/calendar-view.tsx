@@ -134,7 +134,13 @@ export function CalendarView({ organizationId, currentEmployeeId }: CalendarView
 			)}
 
 			{/* Main content grid */}
-			<div className={viewMode === "year" ? "flex-1 min-h-0" : "grid gap-4 md:grid-cols-[250px_1fr] flex-1 min-h-0"}>
+			<div
+				className={
+					viewMode === "year"
+						? "flex-1 min-h-0"
+						: "grid gap-4 md:grid-cols-[250px_1fr] flex-1 min-h-0"
+				}
+			>
 				{/* Filters sidebar - hidden for year view */}
 				{viewMode !== "year" && (
 					<div className="space-y-4 order-2 md:order-1">
@@ -148,7 +154,13 @@ export function CalendarView({ organizationId, currentEmployeeId }: CalendarView
 				)}
 
 				{/* Calendar - flex-1 ensures it takes remaining space, overflow-hidden contains the scroll */}
-				<div className={viewMode === "year" ? "flex flex-col flex-1 min-h-0 overflow-hidden" : "flex flex-col flex-1 order-1 md:order-2 min-h-0 overflow-hidden"}>
+				<div
+					className={
+						viewMode === "year"
+							? "flex flex-col flex-1 min-h-0 overflow-hidden"
+							: "flex flex-col flex-1 order-1 md:order-2 min-h-0 overflow-hidden"
+					}
+				>
 					{viewMode === "year" ? (
 						<YearCalendarView
 							events={events}
@@ -173,9 +185,7 @@ export function CalendarView({ organizationId, currentEmployeeId }: CalendarView
 			</div>
 
 			{/* Event details panel */}
-			{selectedEvent && (
-				<EventDetailsPanel event={selectedEvent} onClose={handleCloseDetails} />
-			)}
+			{selectedEvent && <EventDetailsPanel event={selectedEvent} onClose={handleCloseDetails} />}
 		</div>
 	);
 }
