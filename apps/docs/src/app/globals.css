@@ -1,0 +1,6 @@
+@import 'tailwindcss';
+@import 'fumadocs-ui/style.css';
+
+:root {
+  --radius: 0.625rem;
+}
