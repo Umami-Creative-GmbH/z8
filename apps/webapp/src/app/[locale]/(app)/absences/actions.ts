@@ -3,6 +3,7 @@
 import { SpanStatusCode, trace } from "@opentelemetry/api";
 import { and, desc, eq, gte, lte } from "drizzle-orm";
 import { Effect } from "effect";
+import { DateTime } from "luxon";
 import { headers } from "next/headers";
 import { db } from "@/db";
 import {
@@ -14,7 +15,11 @@ import {
 	holiday,
 	vacationAllowance,
 } from "@/db/schema";
-import { calculateBusinessDays, dateRangesOverlap, getYearRange } from "@/lib/absences/date-utils";
+import {
+	calculateBusinessDaysWithHalfDays,
+	dateRangesOverlap,
+	getYearRange,
+} from "@/lib/absences/date-utils";
 import { canCancelAbsence } from "@/lib/absences/permissions";
 import type {
 	AbsenceRequest,
@@ -59,8 +64,10 @@ export async function requestAbsenceEffect(
 		"requestAbsence",
 		{
 			attributes: {
-				"absence.start_date": data.startDate.toISOString(),
-				"absence.end_date": data.endDate.toISOString(),
+				"absence.start_date": data.startDate,
+				"absence.end_date": data.endDate,
+				"absence.start_period": data.startPeriod,
+				"absence.end_period": data.endPeriod,
 				"absence.category_id": data.categoryId,
 			},
 		},
@@ -107,7 +114,7 @@ export async function requestAbsenceEffect(
 					"Processing absence request",
 				);
 
-				// Step 3: Validate dates
+				// Step 3: Validate dates (YYYY-MM-DD strings can be compared lexicographically)
 				if (data.startDate > data.endDate) {
 					yield* _(
 						Effect.fail(
@@ -118,6 +125,23 @@ export async function requestAbsenceEffect(
 							}),
 						),
 					);
+				}
+
+				// Validate same-day period logic
+				if (data.startDate === data.endDate) {
+					// If same day: AM start with PM end is fine, but PM start with AM end is invalid
+					if (data.startPeriod === "pm" && data.endPeriod === "am") {
+						yield* _(
+							Effect.fail(
+								new ValidationError({
+									message:
+										"Cannot end in the morning if starting in the afternoon on the same day",
+									field: "endPeriod",
+									value: data.endPeriod,
+								}),
+							),
+						);
+					}
 				}
 
 				// Step 4: Check for overlapping absences
@@ -178,8 +202,14 @@ export async function requestAbsenceEffect(
 				span.setAttribute("absence.category_name", category.name);
 				span.setAttribute("absence.requires_approval", category.requiresApproval);
 
-				// Step 6: Calculate business days
-				const businessDays = calculateBusinessDays(data.startDate, data.endDate, []);
+				// Step 6: Calculate business days (with half-day support)
+				const businessDays = calculateBusinessDaysWithHalfDays(
+					data.startDate,
+					data.startPeriod,
+					data.endDate,
+					data.endPeriod,
+					[],
+				);
 				span.setAttribute("absence.business_days", businessDays);
 
 				logger.info(
@@ -201,7 +231,9 @@ export async function requestAbsenceEffect(
 								employeeId: currentEmployee.id,
 								categoryId: data.categoryId,
 								startDate: data.startDate,
+								startPeriod: data.startPeriod,
 								endDate: data.endDate,
+								endPeriod: data.endPeriod,
 								notes: data.notes,
 								status: "pending",
 							})
@@ -264,12 +296,11 @@ export async function requestAbsenceEffect(
 					);
 
 					const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-					const formatDate = (date: Date) =>
-						date.toLocaleDateString("en-US", {
-							month: "short",
-							day: "numeric",
-							year: "numeric",
-						});
+					// Format YYYY-MM-DD date strings for display
+					const formatDate = (dateStr: string) => {
+						const dt = DateTime.fromISO(dateStr);
+						return dt.toLocaleString({ month: "short", day: "numeric", year: "numeric" });
+					};
 
 					// Step 10: Render email templates
 					const [employeeHtml, managerHtml] = yield* _(
@@ -479,12 +510,14 @@ export async function getVacationBalance(
 	});
 
 	// Get all absences for the employee in this year
-	const { start, end } = getYearRange(year);
+	// Date range as YYYY-MM-DD strings for comparison
+	const startOfYear = `${year}-01-01`;
+	const endOfYear = `${year}-12-31`;
 	const absences = await db.query.absenceEntry.findMany({
 		where: and(
 			eq(absenceEntry.employeeId, employeeId),
-			gte(absenceEntry.startDate, start.toJSDate()),
-			lte(absenceEntry.endDate, end.toJSDate()),
+			gte(absenceEntry.startDate, startOfYear),
+			lte(absenceEntry.endDate, endOfYear),
 		),
 		with: {
 			category: true,
@@ -496,7 +529,9 @@ export async function getVacationBalance(
 		id: a.id,
 		employeeId: a.employeeId,
 		startDate: a.startDate,
+		startPeriod: a.startPeriod,
 		endDate: a.endDate,
+		endPeriod: a.endPeriod,
 		status: a.status,
 		notes: a.notes,
 		category: {
@@ -526,11 +561,15 @@ export async function getVacationBalance(
 
 /**
  * Get absence entries for an employee within a date range
+ *
+ * @param employeeId - Employee ID
+ * @param startDate - Start date (YYYY-MM-DD)
+ * @param endDate - End date (YYYY-MM-DD)
  */
 export async function getAbsenceEntries(
 	employeeId: string,
-	startDate: Date,
-	endDate: Date,
+	startDate: string,
+	endDate: string,
 ): Promise<AbsenceWithCategory[]> {
 	const absences = await db.query.absenceEntry.findMany({
 		where: and(
@@ -548,7 +587,9 @@ export async function getAbsenceEntries(
 		id: a.id,
 		employeeId: a.employeeId,
 		startDate: a.startDate,
+		startPeriod: a.startPeriod,
 		endDate: a.endDate,
+		endPeriod: a.endPeriod,
 		status: a.status,
 		notes: a.notes,
 		category: {

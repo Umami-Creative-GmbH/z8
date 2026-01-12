@@ -1,3 +1,4 @@
+import { DateTime } from "luxon";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { AbsenceCalendar } from "@/components/absences/absence-calendar";
@@ -14,6 +15,11 @@ import {
 	getHolidays,
 	getVacationBalance,
 } from "./actions";
+
+// Helper to convert Date to YYYY-MM-DD string
+const toDateString = (date: Date): string => {
+	return DateTime.fromJSDate(date).toFormat("yyyy-MM-dd");
+};
 
 export default async function AbsencesPage() {
 	const session = await auth.api.getSession({ headers: await headers() });
@@ -40,7 +46,7 @@ export default async function AbsencesPage() {
 	// Fetch all data in parallel
 	const [vacationBalance, absences, holidays, categories] = await Promise.all([
 		getVacationBalance(employee.id, currentYear),
-		getAbsenceEntries(employee.id, threeMonthsAgo, threeMonthsAhead),
+		getAbsenceEntries(employee.id, toDateString(threeMonthsAgo), toDateString(threeMonthsAhead)),
 		getHolidays(employee.organizationId, threeMonthsAgo, threeMonthsAhead),
 		getAbsenceCategories(employee.organizationId),
 	]);

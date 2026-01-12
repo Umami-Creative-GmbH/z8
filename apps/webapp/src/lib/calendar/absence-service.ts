@@ -5,7 +5,6 @@ import { DateTime } from "luxon";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import { absenceCategory, absenceEntry, employee } from "@/db/schema";
-import { dateToDB } from "@/lib/datetime/drizzle-adapter";
 import type { AbsenceEvent } from "./types";
 
 interface AbsenceFilters {
@@ -26,9 +25,9 @@ export async function getAbsencesForMonth(
 	const startDT = DateTime.utc(year, month + 1, 1).startOf("day");
 	const endDT = startDT.endOf("month");
 
-	// Convert to Date objects for Drizzle query
-	const startDate = dateToDB(startDT)!;
-	const endDate = dateToDB(endDT)!;
+	// Convert to YYYY-MM-DD strings for date column comparison
+	const startDateStr = startDT.toFormat("yyyy-MM-dd");
+	const endDateStr = endDT.toFormat("yyyy-MM-dd");
 
 	try {
 		// Prepare conditions
@@ -36,8 +35,8 @@ export async function getAbsencesForMonth(
 			// Organization filter via employee
 			eq(employee.organizationId, filters.organizationId),
 			// Date range filter - absences that overlap with the month
-			lte(absenceEntry.startDate, endDate),
-			gte(absenceEntry.endDate, startDate),
+			lte(absenceEntry.startDate, endDateStr),
+			gte(absenceEntry.endDate, startDateStr),
 		];
 
 		// Add employee filter if provided
@@ -59,11 +58,12 @@ export async function getAbsencesForMonth(
 			.where(and(...conditions));
 
 		// Transform to AbsenceEvent objects
+		// Note: absence.startDate and absence.endDate are YYYY-MM-DD strings, convert to Date for calendar
 		return absences.map(({ absence, category, user }) => ({
 			id: absence.id,
 			type: "absence" as const,
-			date: absence.startDate,
-			endDate: absence.endDate, // For multi-day display in schedule-x
+			date: new Date(absence.startDate),
+			endDate: new Date(absence.endDate), // For multi-day display in schedule-x
 			title: `${user.name} - ${category.name}`,
 			description: absence.notes || undefined,
 			color: getColorByStatus(absence.status, category.color),

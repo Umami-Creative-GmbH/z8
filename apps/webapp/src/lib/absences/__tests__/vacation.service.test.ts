@@ -54,6 +54,7 @@ mock.module("@/db/schema", () => ({
 	employee: { id: "employee", organizationId: "organization_id" },
 	employeeVacationAllowance: { id: "employee_vacation_allowance" },
 	vacationAllowance: { id: "vacation_allowance" },
+	vacationAdjustment: { id: "vacation_adjustment", employeeId: "employee_id", year: "year" },
 	absenceEntry: { id: "absence_entry" },
 	absenceCategory: { id: "absence_category" },
 }));
@@ -114,7 +115,6 @@ describe("Vacation Calculator", () => {
 				employeeAllowance: {
 					customAnnualDays: "35",
 					customCarryoverDays: null,
-					adjustmentDays: "0",
 				},
 				absences: [],
 				currentDate: new Date(),
@@ -124,7 +124,7 @@ describe("Vacation Calculator", () => {
 			expect(result.totalDays).toBe(35);
 		});
 
-		test("should add adjustment days", async () => {
+		test("should add adjustment days from adjustmentTotal parameter", async () => {
 			const { calculateVacationBalance } = await import("../vacation-calculator");
 
 			const result = calculateVacationBalance({
@@ -137,11 +137,11 @@ describe("Vacation Calculator", () => {
 				employeeAllowance: {
 					customAnnualDays: null,
 					customCarryoverDays: null,
-					adjustmentDays: "5",
 				},
 				absences: [],
 				currentDate: new Date(),
 				year: 2024,
+				adjustmentTotal: 5, // Sum of adjustment events
 			});
 
 			expect(result.totalDays).toBe(35);
@@ -163,7 +163,6 @@ describe("Vacation Calculator", () => {
 				employeeAllowance: {
 					customAnnualDays: null,
 					customCarryoverDays: "5",
-					adjustmentDays: "0",
 				},
 				absences: [],
 				currentDate,
@@ -191,7 +190,6 @@ describe("Vacation Calculator", () => {
 				employeeAllowance: {
 					customAnnualDays: null,
 					customCarryoverDays: "5",
-					adjustmentDays: "0",
 				},
 				absences: [],
 				currentDate,
@@ -217,8 +215,10 @@ describe("Vacation Calculator", () => {
 					{
 						id: "absence-1",
 						employeeId: "emp-1",
-						startDate: new Date(2024, 5, 10),
-						endDate: new Date(2024, 5, 14), // 5 days
+						startDate: "2024-06-10",
+						startPeriod: "full_day" as const,
+						endDate: "2024-06-14", // 5 days
+						endPeriod: "full_day" as const,
 						status: "approved",
 						notes: null,
 						category: {
@@ -257,8 +257,10 @@ describe("Vacation Calculator", () => {
 					{
 						id: "absence-1",
 						employeeId: "emp-1",
-						startDate: new Date(2024, 7, 10),
-						endDate: new Date(2024, 7, 12), // 3 days
+						startDate: "2024-08-12", // Monday
+						startPeriod: "full_day" as const,
+						endDate: "2024-08-14", // Wednesday - 3 business days
+						endPeriod: "full_day" as const,
 						status: "pending",
 						notes: null,
 						category: {

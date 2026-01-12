@@ -1,6 +1,10 @@
 import { DateTime } from "luxon";
 import { fromJSDate } from "@/lib/datetime/luxon-utils";
-import { calculateCarryoverExpiryDate, getYearRange } from "./date-utils";
+import {
+	calculateBusinessDaysWithHalfDays,
+	calculateCarryoverExpiryDate,
+	getYearRange,
+} from "./date-utils";
 import type { AbsenceWithCategory, VacationBalance } from "./types";
 
 interface VacationAllowanceData {
@@ -13,7 +17,6 @@ interface VacationAllowanceData {
 interface EmployeeAllowanceData {
 	customAnnualDays: string | null; // decimal from DB
 	customCarryoverDays: string | null; // decimal from DB
-	adjustmentDays: string | null; // decimal from DB
 }
 
 /**
@@ -31,12 +34,14 @@ export function calculateVacationBalance({
 	absences,
 	currentDate,
 	year,
+	adjustmentTotal = 0,
 }: {
 	organizationAllowance: VacationAllowanceData;
 	employeeAllowance?: EmployeeAllowanceData | null;
 	absences: AbsenceWithCategory[];
 	currentDate: Date | DateTime;
 	year: number;
+	adjustmentTotal?: number; // Sum of all vacation adjustment events
 }): VacationBalance {
 	// Convert currentDate to DateTime if needed
 	const current = currentDate instanceof Date ? fromJSDate(currentDate, "utc") : currentDate;
@@ -74,10 +79,8 @@ export function calculateVacationBalance({
 		}
 	}
 
-	// 3. Add manual adjustments
-	if (employeeAllowance?.adjustmentDays) {
-		totalDays += parseFloat(employeeAllowance.adjustmentDays);
-	}
+	// 3. Add manual adjustments (sum of adjustment events)
+	totalDays += adjustmentTotal;
 
 	// 4. Calculate used days (approved absences that count against vacation)
 	const { start, end } = getYearRange(year);
@@ -86,28 +89,21 @@ export function calculateVacationBalance({
 			const isApproved = absence.status === "approved";
 			const countsAgainstVacation = absence.category.countsAgainstVacation;
 
-			// Convert absence dates to DateTime for comparison
-			const absenceStart =
-				absence.startDate instanceof Date
-					? fromJSDate(absence.startDate, "utc")
-					: (absence.startDate as unknown as DateTime);
+			// Absence dates are now YYYY-MM-DD strings
+			const absenceStart = DateTime.fromISO(absence.startDate);
 			const inYear = absenceStart >= start && absenceStart <= end;
 
 			return isApproved && countsAgainstVacation && inYear;
 		})
 		.reduce((sum, absence) => {
-			// Convert to DateTime for precise calculation
-			const absenceStart =
-				absence.startDate instanceof Date
-					? fromJSDate(absence.startDate, "utc")
-					: (absence.startDate as unknown as DateTime);
-			const absenceEnd =
-				absence.endDate instanceof Date
-					? fromJSDate(absence.endDate, "utc")
-					: (absence.endDate as unknown as DateTime);
-
-			// Calculate days as simple date difference
-			const days = Math.ceil(absenceEnd.diff(absenceStart, "days").days) + 1;
+			// Use half-day aware calculation
+			const days = calculateBusinessDaysWithHalfDays(
+				absence.startDate,
+				absence.startPeriod,
+				absence.endDate,
+				absence.endPeriod,
+				[], // holidays not applied at this level - they're handled upstream
+			);
 			return sum + days;
 		}, 0);
 
@@ -117,27 +113,21 @@ export function calculateVacationBalance({
 			const isPending = absence.status === "pending";
 			const countsAgainstVacation = absence.category.countsAgainstVacation;
 
-			// Convert absence dates to DateTime for comparison
-			const absenceStart =
-				absence.startDate instanceof Date
-					? fromJSDate(absence.startDate, "utc")
-					: (absence.startDate as unknown as DateTime);
+			// Absence dates are now YYYY-MM-DD strings
+			const absenceStart = DateTime.fromISO(absence.startDate);
 			const inYear = absenceStart >= start && absenceStart <= end;
 
 			return isPending && countsAgainstVacation && inYear;
 		})
 		.reduce((sum, absence) => {
-			// Convert to DateTime for precise calculation
-			const absenceStart =
-				absence.startDate instanceof Date
-					? fromJSDate(absence.startDate, "utc")
-					: (absence.startDate as unknown as DateTime);
-			const absenceEnd =
-				absence.endDate instanceof Date
-					? fromJSDate(absence.endDate, "utc")
-					: (absence.endDate as unknown as DateTime);
-
-			const days = Math.ceil(absenceEnd.diff(absenceStart, "days").days) + 1;
+			// Use half-day aware calculation
+			const days = calculateBusinessDaysWithHalfDays(
+				absence.startDate,
+				absence.startPeriod,
+				absence.endDate,
+				absence.endPeriod,
+				[], // holidays not applied at this level - they're handled upstream
+			);
 			return sum + days;
 		}, 0);
 

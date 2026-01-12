@@ -51,8 +51,10 @@ export interface ApprovalWithAbsence {
 	};
 	absence: {
 		id: string;
-		startDate: Date;
-		endDate: Date;
+		startDate: string; // YYYY-MM-DD
+		startPeriod: "full_day" | "am" | "pm";
+		endDate: string; // YYYY-MM-DD
+		endPeriod: "full_day" | "am" | "pm";
 		notes: string | null;
 		category: {
 			name: string;
@@ -665,7 +667,9 @@ export async function getPendingApprovals(): Promise<{
 					absence: {
 						id: absence.id,
 						startDate: absence.startDate,
+						startPeriod: absence.startPeriod,
 						endDate: absence.endDate,
+						endPeriod: absence.endPeriod,
 						notes: absence.notes,
 						category: {
 							name: absence.category.name,

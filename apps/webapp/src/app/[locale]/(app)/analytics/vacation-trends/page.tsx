@@ -71,9 +71,9 @@ export default function VacationTrendsPage() {
 						data: employees,
 						headers: [
 							{ key: "employeeName", label: "Employee" },
-							{ key: "daysAllocated", label: "Allocated" },
-							{ key: "daysTaken", label: "Taken" },
-							{ key: "daysRemaining", label: "Remaining" },
+							{ key: "allocated", label: "Allocated" },
+							{ key: "taken", label: "Taken" },
+							{ key: "remaining", label: "Remaining" },
 							{ key: "utilizationRate", label: "Utilization %" },
 						],
 						filename: `vacation-trends-${dateRange.start.toISOString().split("T")[0]}`,

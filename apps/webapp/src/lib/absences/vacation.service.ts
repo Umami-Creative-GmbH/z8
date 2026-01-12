@@ -12,6 +12,8 @@ import { employee, employeeVacationAllowance } from "@/db/schema";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
 import { createLogger } from "@/lib/logger";
 import {
+	createVacationAdjustment,
+	getAdjustmentTotal,
 	getCarryoverBalance,
 	getEmployeesWithVacationData,
 	getEmployeeVacationAllowance,
@@ -93,6 +95,9 @@ export async function getEnhancedVacationBalance(input: {
 	// Get employee-specific allowance
 	const empAllowance = await getEmployeeVacationAllowance(employeeId, year);
 
+	// Get sum of adjustment events
+	const adjustmentTotal = await getAdjustmentTotal(employeeId, year);
+
 	// Get absences
 	const absencesResult = await getVacationTakenInYear(employeeId, year);
 
@@ -101,7 +106,9 @@ export async function getEnhancedVacationBalance(input: {
 		id: e.id,
 		employeeId,
 		startDate: e.startDate,
+		startPeriod: e.startPeriod,
 		endDate: e.endDate,
+		endPeriod: e.endPeriod,
 		status: e.status as "approved" | "pending" | "rejected",
 		notes: null,
 		category: {
@@ -129,12 +136,12 @@ export async function getEnhancedVacationBalance(input: {
 			? {
 					customAnnualDays: empAllowance.customAnnualDays,
 					customCarryoverDays: empAllowance.customCarryoverDays,
-					adjustmentDays: empAllowance.adjustmentDays,
 				}
 			: null,
 		absences,
 		currentDate,
 		year,
+		adjustmentTotal,
 	});
 
 	// Calculate carryover expiry details
@@ -156,7 +163,7 @@ export async function getEnhancedVacationBalance(input: {
 		? parseFloat(empAllowance.customAnnualDays)
 		: parseFloat(policy.defaultAnnualDays);
 
-	const adjustments = empAllowance?.adjustmentDays ? parseFloat(empAllowance.adjustmentDays) : 0;
+	const adjustments = adjustmentTotal;
 
 	return {
 		...baseBalance,
@@ -224,9 +231,7 @@ export async function calculateAnnualCarryover(
 				previousCarryover = carryoverBalance.balance;
 			}
 
-			const adjustments = emp.allowance?.adjustmentDays
-				? parseFloat(emp.allowance.adjustmentDays)
-				: 0;
+			const adjustments = await getAdjustmentTotal(emp.id, fromYear);
 
 			const totalAllowance = baseAllowance + previousCarryover + adjustments;
 			const remaining = Math.max(0, totalAllowance - vacationTaken.totalDays);
@@ -252,8 +257,6 @@ export async function calculateAnnualCarryover(
 					employeeId: emp.id,
 					year: toYear,
 					customCarryoverDays: carryoverApplied,
-					adjustedBy: performedBy,
-					adjustmentReason: `Carryover from ${fromYear}: ${remaining.toFixed(1)} days remaining, ${carryoverApplied.toFixed(1)} carried over${carryoverCapped ? " (capped)" : ""}`,
 				});
 
 				// Log to audit
@@ -359,7 +362,6 @@ export async function expireCarryoverDays(
 			.update(employeeVacationAllowance)
 			.set({
 				customCarryoverDays: "0",
-				adjustmentReason: `${emp.allowance.adjustmentReason || ""} | Carryover of ${carryoverDays.toFixed(1)} days expired on ${expiryDate.toFormat("yyyy-MM-dd")}`,
 			})
 			.where(eq(employeeVacationAllowance.id, emp.allowance.id));
 
@@ -463,17 +465,13 @@ export async function accrueVacationDays(
 			}
 		}
 
-		// Add to adjustments
-		const currentAdjustments = emp.allowance?.adjustmentDays
-			? parseFloat(emp.allowance.adjustmentDays)
-			: 0;
-
-		await upsertEmployeeVacationAllowance({
+		// Create adjustment event for monthly accrual
+		await createVacationAdjustment({
 			employeeId: emp.id,
 			year,
-			adjustmentDays: currentAdjustments + monthlyAccrual,
+			days: monthlyAccrual.toFixed(2),
+			reason: `Monthly accrual for ${DateTime.utc(year, month, 1).toFormat("MMMM yyyy")}: +${monthlyAccrual.toFixed(2)} days`,
 			adjustedBy: performedBy,
-			adjustmentReason: `Monthly accrual for ${DateTime.utc(year, month, 1).toFormat("MMMM yyyy")}: +${monthlyAccrual.toFixed(2)} days`,
 		});
 
 		totalDaysAccrued += monthlyAccrual;
@@ -518,21 +516,32 @@ export async function updateVacationAllowance(input: {
 
 	const existing = await getEmployeeVacationAllowance(input.employeeId, input.year);
 
-	await upsertEmployeeVacationAllowance({
-		employeeId: input.employeeId,
-		year: input.year,
-		customAnnualDays: input.customAnnualDays,
-		adjustmentDays: input.adjustmentDays,
-		adjustmentReason: input.adjustmentReason,
-		adjustedBy: input.performedBy,
-	});
+	// Update base allowance if customAnnualDays provided
+	if (input.customAnnualDays !== undefined) {
+		await upsertEmployeeVacationAllowance({
+			employeeId: input.employeeId,
+			year: input.year,
+			customAnnualDays: input.customAnnualDays,
+		});
+	}
+
+	// Create adjustment event if adjustment provided
+	if (input.adjustmentDays !== undefined && input.adjustmentReason) {
+		await createVacationAdjustment({
+			employeeId: input.employeeId,
+			year: input.year,
+			days: input.adjustmentDays.toString(),
+			reason: input.adjustmentReason,
+			adjustedBy: input.performedBy,
+		});
+	}
 
 	// Log to audit
 	await logAudit({
 		action: AuditAction.VACATION_ALLOWANCE_UPDATED,
 		actorId: input.performedBy,
 		targetId: input.employeeId,
-		targetType: "employee",
+		targetType: "vacation",
 		organizationId: input.organizationId,
 		employeeId: input.employeeId,
 		timestamp: new Date(),
@@ -540,7 +549,6 @@ export async function updateVacationAllowance(input: {
 			before: existing
 				? {
 						customAnnualDays: existing.customAnnualDays,
-						adjustmentDays: existing.adjustmentDays,
 					}
 				: null,
 			after: {
@@ -550,6 +558,7 @@ export async function updateVacationAllowance(input: {
 		},
 		metadata: {
 			reason: input.adjustmentReason,
+			year: input.year,
 		},
 	});
 

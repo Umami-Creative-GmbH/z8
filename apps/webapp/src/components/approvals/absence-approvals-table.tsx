@@ -16,13 +16,21 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { calculateBusinessDays, formatDateRange } from "@/lib/absences/date-utils";
+import { calculateBusinessDaysWithHalfDays, formatDateRange } from "@/lib/absences/date-utils";
 import { queryKeys } from "@/lib/query";
 import type { ApprovalWithAbsence } from "@/lib/validations/approvals";
 import { ApprovalActionDialog } from "./approval-action-dialog";
 
 interface AbsenceApprovalsTableProps {
 	approvals: ApprovalWithAbsence[];
+}
+
+// Format days display (handle half days)
+function formatDays(days: number): string {
+	if (days === 1) return "1 day";
+	if (days === 0.5) return "0.5 day";
+	if (Number.isInteger(days)) return `${days} days`;
+	return `${days} days`;
 }
 
 export function AbsenceApprovalsTable({ approvals: initialApprovals }: AbsenceApprovalsTableProps) {
@@ -136,9 +144,11 @@ export function AbsenceApprovalsTable({ approvals: initialApprovals }: AbsenceAp
 					</TableHeader>
 					<TableBody>
 						{approvals.map((approval) => {
-							const days = calculateBusinessDays(
+							const days = calculateBusinessDaysWithHalfDays(
 								approval.absence.startDate,
+								approval.absence.startPeriod,
 								approval.absence.endDate,
+								approval.absence.endPeriod,
 								[],
 							);
 
@@ -174,7 +184,7 @@ export function AbsenceApprovalsTable({ approvals: initialApprovals }: AbsenceAp
 											color={approval.absence.category.color}
 										/>
 									</TableCell>
-									<TableCell className="text-right tabular-nums">{days}</TableCell>
+									<TableCell className="text-right tabular-nums">{formatDays(days)}</TableCell>
 									<TableCell className="max-w-[200px] truncate text-muted-foreground">
 										{approval.absence.notes || "—"}
 									</TableCell>
@@ -203,7 +213,7 @@ export function AbsenceApprovalsTable({ approvals: initialApprovals }: AbsenceAp
 					onOpenChange={setDialogOpen}
 					action={dialogAction}
 					title={dialogAction === "approve" ? "Approve Absence Request" : "Reject Absence Request"}
-					description={`${selectedApproval.requester.user.name} is requesting ${calculateBusinessDays(selectedApproval.absence.startDate, selectedApproval.absence.endDate, [])} days off from ${formatDateRange(selectedApproval.absence.startDate, selectedApproval.absence.endDate)}.`}
+					description={`${selectedApproval.requester.user.name} is requesting ${formatDays(calculateBusinessDaysWithHalfDays(selectedApproval.absence.startDate, selectedApproval.absence.startPeriod, selectedApproval.absence.endDate, selectedApproval.absence.endPeriod, []))} off from ${formatDateRange(selectedApproval.absence.startDate, selectedApproval.absence.endDate)}.`}
 					onConfirm={handleConfirm}
 				/>
 			)}

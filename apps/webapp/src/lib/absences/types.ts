@@ -1,3 +1,6 @@
+// Day period for half-day absences
+export type DayPeriod = "full_day" | "am" | "pm";
+
 export interface VacationBalance {
 	year: number;
 	totalDays: number; // Annual allowance (default + custom + carryover + adjustments)
@@ -10,8 +13,10 @@ export interface VacationBalance {
 
 export interface AbsenceRequest {
 	categoryId: string;
-	startDate: Date;
-	endDate: Date;
+	startDate: string; // YYYY-MM-DD format
+	startPeriod: DayPeriod;
+	endDate: string; // YYYY-MM-DD format
+	endPeriod: DayPeriod;
 	notes?: string;
 }
 
@@ -27,8 +32,10 @@ export interface EmployeeAllowanceUpdate {
 export interface AbsenceWithCategory {
 	id: string;
 	employeeId: string;
-	startDate: Date;
-	endDate: Date;
+	startDate: string; // YYYY-MM-DD format
+	startPeriod: DayPeriod;
+	endDate: string; // YYYY-MM-DD format
+	endPeriod: DayPeriod;
 	status: "pending" | "approved" | "rejected";
 	notes: string | null;
 	category: {
