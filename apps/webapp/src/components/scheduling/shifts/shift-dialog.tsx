@@ -1,6 +1,7 @@
 "use client";
 
 import { useForm } from "@tanstack/react-form";
+import { useStore } from "@tanstack/react-store";
 import { zodValidator } from "@tanstack/zod-form-adapter";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
@@ -117,7 +118,7 @@ export function ShiftDialog({
 	}, [open, shift, defaultDate, form]);
 
 	// Watch template selection to auto-fill times
-	const formValues = form.useStore((state) => state.values);
+	const formValues = useStore(form.store, (state) => state.values);
 	const selectedTemplateId = formValues.templateId;
 	useEffect(() => {
 		if (selectedTemplateId) {

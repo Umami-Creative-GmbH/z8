@@ -1,6 +1,5 @@
 "use client";
 
-import { useTranslate } from "@tolgee/react";
 import { useCallback, useMemo, useState } from "react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { CalendarFilters } from "@/hooks/use-calendar-data";
@@ -23,7 +22,6 @@ interface CalendarViewProps {
 }
 
 export function CalendarView({ organizationId, currentEmployeeId }: CalendarViewProps) {
-	const { t } = useTranslate();
 	const { isManagerOrAbove } = useOrganization();
 
 	// View mode state
@@ -146,24 +144,7 @@ export function CalendarView({ organizationId, currentEmployeeId }: CalendarView
 			{/* Error message */}
 			{error && (
 				<div className="bg-destructive/10 text-destructive px-4 py-2 rounded-md text-sm shrink-0">
-					{t("calendar.error.loadFailed", "Failed to load calendar events")}: {error.message}
-				</div>
-			)}
-
-			{/* Team toggle - only for managers and admins */}
-			{isManagerOrAbove && (
-				<div className="flex items-center justify-end shrink-0">
-					<Tabs
-						value={teamView ? "team" : "personal"}
-						onValueChange={(v) => handleTeamViewChange(v === "team")}
-					>
-						<TabsList>
-							<TabsTrigger value="personal">
-								{t("calendar.view.personal", "My Calendar")}
-							</TabsTrigger>
-							<TabsTrigger value="team">{t("calendar.view.team", "Team Calendar")}</TabsTrigger>
-						</TabsList>
-					</Tabs>
+					Failed to load calendar events: {error.message}
 				</div>
 			)}
 
@@ -178,6 +159,23 @@ export function CalendarView({ organizationId, currentEmployeeId }: CalendarView
 				{/* Filters sidebar - hidden for year view */}
 				{viewMode !== "year" && (
 					<div className="space-y-4 order-2 md:order-1">
+						{/* Team toggle - only for managers and admins */}
+						{isManagerOrAbove && (
+							<Tabs
+								value={teamView ? "team" : "personal"}
+								onValueChange={(v) => handleTeamViewChange(v === "team")}
+								className="w-full"
+							>
+								<TabsList className="w-full">
+									<TabsTrigger value="personal" className="flex-1">
+										My Calendar
+									</TabsTrigger>
+									<TabsTrigger value="team" className="flex-1">
+										Team Calendar
+									</TabsTrigger>
+								</TabsList>
+							</Tabs>
+						)}
 						<CalendarFiltersComponent
 							filters={filters}
 							onFiltersChange={setFilters}
@@ -213,6 +211,7 @@ export function CalendarView({ organizationId, currentEmployeeId }: CalendarView
 							onViewModeChange={setViewMode}
 							onEventClick={handleEventClick}
 							onRangeChange={handleRangeChange}
+							onRefresh={refetch}
 						/>
 					)}
 				</div>

@@ -40,6 +40,17 @@ const scheduleXStyles = `
     height: auto !important;
     min-height: 100% !important;
   }
+  /* Fix: Remove overflow from week-wrapper so sticky works relative to view-container */
+  .schedule-x-container .sx__week-wrapper {
+    overflow: visible !important;
+  }
+  /* Sticky day headers for week and day views */
+  .schedule-x-container .sx__week-header {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 10 !important;
+    background-color: var(--sx-color-background) !important;
+  }
 `;
 
 import { createCalendarControlsPlugin } from "@schedule-x/calendar-controls";
@@ -47,7 +58,7 @@ import { createCurrentTimePlugin } from "@schedule-x/current-time";
 import { createEventModalPlugin } from "@schedule-x/event-modal";
 import { ScheduleXCalendar, useCalendarApp } from "@schedule-x/react";
 import "@schedule-x/theme-default/dist/index.css";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
 import { DateTime } from "luxon";
 import { useTheme } from "next-themes";
 
@@ -74,6 +85,7 @@ interface ScheduleXCalendarWrapperProps {
 	onViewModeChange: (mode: ViewMode) => void;
 	onEventClick?: (event: CalendarEvent) => void;
 	onRangeChange?: (range: { start: Date; end: Date }) => void;
+	onRefresh?: () => void;
 }
 
 // Map view mode to Schedule-X view names
@@ -81,6 +93,7 @@ const viewModeToScheduleX: Record<ViewMode, string> = {
 	day: "day",
 	week: "week",
 	month: "month-grid",
+	year: "month-grid", // Year view is handled separately, fallback to month-grid
 };
 
 export function ScheduleXCalendarWrapper({
@@ -90,6 +103,7 @@ export function ScheduleXCalendarWrapper({
 	onViewModeChange,
 	onEventClick,
 	onRangeChange,
+	onRefresh,
 }: ScheduleXCalendarWrapperProps) {
 	const { resolvedTheme } = useTheme();
 	const isDark = resolvedTheme === "dark";
@@ -333,6 +347,11 @@ export function ScheduleXCalendarWrapper({
 					<Button variant="outline" size="sm" onClick={navigateToday}>
 						Today
 					</Button>
+					{onRefresh && (
+						<Button variant="outline" size="icon" onClick={onRefresh} title="Refresh">
+							<RefreshCw className="h-4 w-4" />
+						</Button>
+					)}
 				</div>
 				<h2 className="text-lg font-semibold">{dateRangeDisplay}</h2>
 				<Tabs value={viewMode} onValueChange={(v) => onViewModeChange(v as ViewMode)}>

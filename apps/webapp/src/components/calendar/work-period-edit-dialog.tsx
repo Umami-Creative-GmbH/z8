@@ -29,6 +29,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import type { CalendarEvent } from "@/lib/calendar/types";
 import { format } from "@/lib/datetime/luxon-utils";
+import { useProjectsEnabled } from "@/stores/organization-settings-store";
 
 interface WorkPeriodEditDialogProps {
 	event: CalendarEvent;
@@ -48,6 +49,7 @@ export function WorkPeriodEditDialog({
 	onDeleteClick,
 }: WorkPeriodEditDialogProps) {
 	const { t } = useTranslate();
+	const projectsEnabled = useProjectsEnabled();
 
 	// Get metadata with defaults
 	const metadata = event.metadata as {
@@ -236,77 +238,79 @@ export function WorkPeriodEditDialog({
 						)}
 					</div>
 
-					{/* Project section */}
-					<div>
-						<div className="flex items-center justify-between mb-1">
-							<span className="text-sm text-muted-foreground">
-								{t("calendar.details.project", "Project")}
-							</span>
-							{!isEditingProject && (
-								<Button
-									variant="ghost"
-									size="sm"
-									onClick={handleStartProjectEdit}
-									className="h-7 px-2"
-								>
-									<IconPencil className="size-4 mr-1" />
-									{t("common.edit", "Edit")}
-								</Button>
+					{/* Project section - only show if projects feature is enabled */}
+					{projectsEnabled && (
+						<div>
+							<div className="flex items-center justify-between mb-1">
+								<span className="text-sm text-muted-foreground">
+									{t("calendar.details.project", "Project")}
+								</span>
+								{!isEditingProject && (
+									<Button
+										variant="ghost"
+										size="sm"
+										onClick={handleStartProjectEdit}
+										className="h-7 px-2"
+									>
+										<IconPencil className="size-4 mr-1" />
+										{t("common.edit", "Edit")}
+									</Button>
+								)}
+							</div>
+
+							{isEditingProject ? (
+								<div className="space-y-2">
+									<ProjectSelector
+										value={selectedProjectId}
+										onValueChange={setSelectedProjectId}
+										disabled={isSavingProject}
+										showLabel={false}
+										autoSelectLast={false}
+									/>
+									<div className="flex gap-2">
+										<Button
+											size="sm"
+											onClick={handleSaveProject}
+											disabled={isSavingProject}
+											className="flex-1"
+										>
+											{isSavingProject ? (
+												<IconLoader2 className="size-4 animate-spin mr-1" />
+											) : (
+												<IconCheck className="size-4 mr-1" />
+											)}
+											{t("common.save", "Save")}
+										</Button>
+										<Button
+											size="sm"
+											variant="outline"
+											onClick={handleCancelProjectEdit}
+											disabled={isSavingProject}
+										>
+											<IconX className="size-4 mr-1" />
+											{t("common.cancel", "Cancel")}
+										</Button>
+									</div>
+								</div>
+							) : (
+								<div className="flex items-center gap-2">
+									{metadata.projectColor && (
+										<div
+											className="size-3 rounded-full"
+											style={{ backgroundColor: metadata.projectColor }}
+										/>
+									)}
+									{metadata.projectName ? (
+										<p className="font-medium">{metadata.projectName}</p>
+									) : (
+										<p className="text-sm text-muted-foreground italic">
+											{t("calendar.edit.noProject", "No project assigned")}
+										</p>
+									)}
+								</div>
 							)}
 						</div>
-
-						{isEditingProject ? (
-							<div className="space-y-2">
-								<ProjectSelector
-									value={selectedProjectId}
-									onValueChange={setSelectedProjectId}
-									disabled={isSavingProject}
-									showLabel={false}
-									autoSelectLast={false}
-								/>
-								<div className="flex gap-2">
-									<Button
-										size="sm"
-										onClick={handleSaveProject}
-										disabled={isSavingProject}
-										className="flex-1"
-									>
-										{isSavingProject ? (
-											<IconLoader2 className="size-4 animate-spin mr-1" />
-										) : (
-											<IconCheck className="size-4 mr-1" />
-										)}
-										{t("common.save", "Save")}
-									</Button>
-									<Button
-										size="sm"
-										variant="outline"
-										onClick={handleCancelProjectEdit}
-										disabled={isSavingProject}
-									>
-										<IconX className="size-4 mr-1" />
-										{t("common.cancel", "Cancel")}
-									</Button>
-								</div>
-							</div>
-						) : (
-							<div className="flex items-center gap-2">
-								{metadata.projectColor && (
-									<div
-										className="size-3 rounded-full"
-										style={{ backgroundColor: metadata.projectColor }}
-									/>
-								)}
-								{metadata.projectName ? (
-									<p className="font-medium">{metadata.projectName}</p>
-								) : (
-									<p className="text-sm text-muted-foreground italic">
-										{t("calendar.edit.noProject", "No project assigned")}
-									</p>
-								)}
-							</div>
-						)}
-					</div>
+					)}
 
 					{/* Notes section */}
 					<div>

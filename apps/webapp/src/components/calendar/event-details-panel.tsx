@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/sheet";
 import type { CalendarEvent } from "@/lib/calendar/types";
 import { format } from "@/lib/datetime/luxon-utils";
+import { useProjectsEnabled } from "@/stores/organization-settings-store";
 
 interface EventDetailsPanelProps {
 	event: CalendarEvent;
@@ -19,6 +20,7 @@ interface EventDetailsPanelProps {
 
 export function EventDetailsPanel({ event, onClose }: EventDetailsPanelProps) {
 	const { t } = useTranslate();
+	const projectsEnabled = useProjectsEnabled();
 
 	const getEventTypeLabel = () => {
 		switch (event.type) {
@@ -37,10 +39,6 @@ export function EventDetailsPanel({ event, onClose }: EventDetailsPanelProps) {
 
 	const formatDate = (date: Date) => {
 		return format(date, "PPP"); // e.g., "January 1, 2024"
-	};
-
-	const _formatTime = (date: Date) => {
-		return format(date, "p"); // e.g., "2:30 PM"
 	};
 
 	const formatDuration = (minutes: number) => {
@@ -170,8 +168,8 @@ export function EventDetailsPanel({ event, onClose }: EventDetailsPanelProps) {
 					<p className="font-medium">{metadata.employeeName}</p>
 				</div>
 
-				{/* Project */}
-				{metadata.projectName && (
+				{/* Project - only show if projects feature is enabled */}
+				{projectsEnabled && metadata.projectName && (
 					<div>
 						<span className="text-sm text-muted-foreground">
 							{t("calendar.details.project", "Project")}
