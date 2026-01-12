@@ -1,27 +1,19 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "@tanstack/react-form";
+import { zodValidator } from "@tanstack/zod-form-adapter";
 import { IconDeviceFloppy, IconLoader2 } from "@tabler/icons-react";
 import { use, useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import * as z from "zod";
+import { z } from "zod";
 import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-	Form,
-	FormControl,
-	FormDescription,
-	FormField,
-	FormItem,
-	FormLabel,
-	FormMessage,
-} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
 	Select,
 	SelectContent,
@@ -39,13 +31,13 @@ import {
 	setEmployeePolicyAssignment,
 } from "../../assignment-actions";
 
-const formSchema = z.object({
-	policyId: z.string().optional(),
-	customAnnualDays: z.string().optional(),
-	customCarryoverDays: z.string().optional(),
-	adjustmentDays: z.string().optional(),
-	adjustmentReason: z.string().optional(),
-});
+const defaultValues = {
+	policyId: "",
+	customAnnualDays: "",
+	customCarryoverDays: "",
+	adjustmentDays: "",
+	adjustmentReason: "",
+};
 
 export default function EmployeeAllowanceEditPage({
 	params,
@@ -62,14 +54,46 @@ export default function EmployeeAllowanceEditPage({
 	const [noEmployee, setNoEmployee] = useState(false);
 	const [currentYear] = useState(new Date().getFullYear());
 
-	const form = useForm<z.infer<typeof formSchema>>({
-		resolver: zodResolver(formSchema),
-		defaultValues: {
-			policyId: "",
-			customAnnualDays: "",
-			customCarryoverDays: "",
-			adjustmentDays: "",
-			adjustmentReason: "",
+	const form = useForm({
+		defaultValues,
+		validatorAdapter: zodValidator(),
+		onSubmit: async ({ value }) => {
+			setLoading(true);
+
+			try {
+				// Update policy assignment if changed
+				const currentPolicyId = currentAssignment?.policyId || "";
+				const newPolicyId = value.policyId || "";
+
+				if (currentPolicyId !== newPolicyId) {
+					const assignmentResult = await setEmployeePolicyAssignment(employeeId, newPolicyId || null);
+					if (!assignmentResult.success) {
+						toast.error(assignmentResult.error || "Failed to update policy assignment");
+						setLoading(false);
+						return;
+					}
+				}
+
+				// Update allowance
+				const result = await updateEmployeeAllowance(employeeId, currentYear, {
+					customAnnualDays: value.customAnnualDays || undefined,
+					customCarryoverDays: value.customCarryoverDays || undefined,
+					adjustmentDays: value.adjustmentDays || undefined,
+					adjustmentReason: value.adjustmentReason || undefined,
+				});
+
+				if (result.success) {
+					toast.success("Employee allowance updated successfully");
+					router.push("/settings/vacation/employees");
+					router.refresh();
+				} else {
+					toast.error(result.error || "Failed to update allowance");
+				}
+			} catch (_error) {
+				toast.error("An unexpected error occurred");
+			} finally {
+				setLoading(false);
+			}
 		},
 	});
 
@@ -93,13 +117,11 @@ export default function EmployeeAllowanceEditPage({
 				const allowance = empResult.data.vacationAllowances[0];
 				const policyId = assignmentResult.success ? assignmentResult.data?.policyId || "" : "";
 
-				form.reset({
-					policyId,
-					customAnnualDays: allowance?.customAnnualDays || "",
-					customCarryoverDays: allowance?.customCarryoverDays || "",
-					adjustmentDays: allowance?.adjustmentDays || "",
-					adjustmentReason: allowance?.adjustmentReason || "",
-				});
+				form.setFieldValue("policyId", policyId);
+				form.setFieldValue("customAnnualDays", allowance?.customAnnualDays || "");
+				form.setFieldValue("customCarryoverDays", allowance?.customCarryoverDays || "");
+				form.setFieldValue("adjustmentDays", allowance?.adjustmentDays || "");
+				form.setFieldValue("adjustmentReason", allowance?.adjustmentReason || "");
 			}
 
 			if (policyResult.success && policyResult.data) {
@@ -120,45 +142,6 @@ export default function EmployeeAllowanceEditPage({
 
 		loadData();
 	}, [employeeId, currentYear, form]);
-
-	async function onSubmit(values: z.infer<typeof formSchema>) {
-		setLoading(true);
-
-		try {
-			// Update policy assignment if changed
-			const currentPolicyId = currentAssignment?.policyId || "";
-			const newPolicyId = values.policyId || "";
-
-			if (currentPolicyId !== newPolicyId) {
-				const assignmentResult = await setEmployeePolicyAssignment(employeeId, newPolicyId || null);
-				if (!assignmentResult.success) {
-					toast.error(assignmentResult.error || "Failed to update policy assignment");
-					setLoading(false);
-					return;
-				}
-			}
-
-			// Update allowance
-			const result = await updateEmployeeAllowance(employeeId, currentYear, {
-				customAnnualDays: values.customAnnualDays || undefined,
-				customCarryoverDays: values.customCarryoverDays || undefined,
-				adjustmentDays: values.adjustmentDays || undefined,
-				adjustmentReason: values.adjustmentReason || undefined,
-			});
-
-			if (result.success) {
-				toast.success("Employee allowance updated successfully");
-				router.push("/settings/vacation/employees");
-				router.refresh();
-			} else {
-				toast.error(result.error || "Failed to update allowance");
-			}
-		} catch (_error) {
-			toast.error("An unexpected error occurred");
-		} finally {
-			setLoading(false);
-		}
-	}
 
 	if (!employee) {
 		return (
@@ -292,141 +275,170 @@ export default function EmployeeAllowanceEditPage({
 							</div>
 						</div>
 
-						<Form {...form}>
-							<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-								<FormField
-									control={form.control}
-									name="policyId"
-									render={({ field }) => (
-										<FormItem>
-											<FormLabel>Assigned Policy</FormLabel>
-											<Select onValueChange={field.onChange} value={field.value}>
-												<FormControl>
-													<SelectTrigger>
-														<SelectValue placeholder="Use organization/team default" />
-													</SelectTrigger>
-												</FormControl>
-												<SelectContent>
-													<SelectItem value="">Use default</SelectItem>
-													{policies.map((policy) => (
-														<SelectItem key={policy.id} value={policy.id}>
-															{policy.name} ({policy.defaultAnnualDays} days)
-														</SelectItem>
-													))}
-												</SelectContent>
-											</Select>
-											<FormDescription>
-												{currentAssignment
-													? `Currently assigned: ${currentAssignment.policy?.name}`
-													: "Falls back to team or organization default policy"}
-											</FormDescription>
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
+						<form
+							onSubmit={(e) => {
+								e.preventDefault();
+								form.handleSubmit();
+							}}
+							className="space-y-6"
+						>
+							<form.Field name="policyId">
+								{(field) => (
+									<div className="space-y-2">
+										<Label>Assigned Policy</Label>
+										<Select onValueChange={field.handleChange} value={field.state.value}>
+											<SelectTrigger>
+												<SelectValue placeholder="Use organization/team default" />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value="">Use default</SelectItem>
+												{policies.map((policy) => (
+													<SelectItem key={policy.id} value={policy.id}>
+														{policy.name} ({policy.defaultAnnualDays} days)
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+										<p className="text-sm text-muted-foreground">
+											{currentAssignment
+												? `Currently assigned: ${currentAssignment.policy?.name}`
+												: "Falls back to team or organization default policy"}
+										</p>
+									</div>
+								)}
+							</form.Field>
 
-								<Separator />
+							<Separator />
 
-								<FormField
-									control={form.control}
-									name="customAnnualDays"
-									render={({ field }) => (
-										<FormItem>
-											<FormLabel>Custom Annual Days (Optional)</FormLabel>
-											<FormControl>
-												<Input
-													type="number"
-													step="0.5"
-													placeholder={`Default: ${defaultDays} days`}
-													{...field}
-												/>
-											</FormControl>
-											<FormDescription>
-												Override the organization default ({defaultDays} days) for this employee
-											</FormDescription>
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
-
-								<FormField
-									control={form.control}
-									name="customCarryoverDays"
-									render={({ field }) => (
-										<FormItem>
-											<FormLabel>Carryover Days (Optional)</FormLabel>
-											<FormControl>
-												<Input type="number" step="0.5" placeholder="0" {...field} />
-											</FormControl>
-											<FormDescription>Days carried over from previous year</FormDescription>
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
-
-								<Separator />
-
-								<div className="space-y-4">
-									<h3 className="text-lg font-semibold">Manual Adjustments</h3>
-									<p className="text-sm text-muted-foreground">
-										Add or subtract days for special circumstances (e.g., bonus days, corrections)
-									</p>
-
-									<FormField
-										control={form.control}
-										name="adjustmentDays"
-										render={({ field }) => (
-											<FormItem>
-												<FormLabel>Adjustment Days</FormLabel>
-												<FormControl>
-													<Input type="number" step="0.5" placeholder="e.g., +5 or -2" {...field} />
-												</FormControl>
-												<FormDescription>
-													Use positive numbers to add days, negative to subtract
-												</FormDescription>
-												<FormMessage />
-											</FormItem>
+							<form.Field
+								name="customAnnualDays"
+								validators={{
+									onChange: z.string().optional(),
+								}}
+							>
+								{(field) => (
+									<div className="space-y-2">
+										<Label>Custom Annual Days (Optional)</Label>
+										<Input
+											type="number"
+											step="0.5"
+											placeholder={`Default: ${defaultDays} days`}
+											value={field.state.value}
+											onChange={(e) => field.handleChange(e.target.value)}
+											onBlur={field.handleBlur}
+										/>
+										<p className="text-sm text-muted-foreground">
+											Override the organization default ({defaultDays} days) for this employee
+										</p>
+										{field.state.meta.errors.length > 0 && (
+											<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
 										)}
-									/>
+									</div>
+								)}
+							</form.Field>
 
-									<FormField
-										control={form.control}
-										name="adjustmentReason"
-										render={({ field }) => (
-											<FormItem>
-												<FormLabel>Reason for Adjustment</FormLabel>
-												<FormControl>
-													<Textarea
-														placeholder="Explain why this adjustment is being made..."
-														{...field}
-													/>
-												</FormControl>
-												<FormDescription>
-													Required when making adjustments (for audit trail)
-												</FormDescription>
-												<FormMessage />
-											</FormItem>
+							<form.Field
+								name="customCarryoverDays"
+								validators={{
+									onChange: z.string().optional(),
+								}}
+							>
+								{(field) => (
+									<div className="space-y-2">
+										<Label>Carryover Days (Optional)</Label>
+										<Input
+											type="number"
+											step="0.5"
+											placeholder="0"
+											value={field.state.value}
+											onChange={(e) => field.handleChange(e.target.value)}
+											onBlur={field.handleBlur}
+										/>
+										<p className="text-sm text-muted-foreground">Days carried over from previous year</p>
+										{field.state.meta.errors.length > 0 && (
+											<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
 										)}
-									/>
-								</div>
+									</div>
+								)}
+							</form.Field>
 
-								<div className="flex justify-end gap-2">
-									<Button
-										type="button"
-										variant="outline"
-										onClick={() => router.push("/settings/vacation/employees")}
-										disabled={loading}
-									>
-										Cancel
-									</Button>
-									<Button type="submit" disabled={loading}>
-										{loading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
-										<IconDeviceFloppy className="mr-2 size-4" />
-										Save Changes
-									</Button>
-								</div>
-							</form>
-						</Form>
+							<Separator />
+
+							<div className="space-y-4">
+								<h3 className="text-lg font-semibold">Manual Adjustments</h3>
+								<p className="text-sm text-muted-foreground">
+									Add or subtract days for special circumstances (e.g., bonus days, corrections)
+								</p>
+
+								<form.Field
+									name="adjustmentDays"
+									validators={{
+										onChange: z.string().optional(),
+									}}
+								>
+									{(field) => (
+										<div className="space-y-2">
+											<Label>Adjustment Days</Label>
+											<Input
+												type="number"
+												step="0.5"
+												placeholder="e.g., +5 or -2"
+												value={field.state.value}
+												onChange={(e) => field.handleChange(e.target.value)}
+												onBlur={field.handleBlur}
+											/>
+											<p className="text-sm text-muted-foreground">
+												Use positive numbers to add days, negative to subtract
+											</p>
+											{field.state.meta.errors.length > 0 && (
+												<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
+											)}
+										</div>
+									)}
+								</form.Field>
+
+								<form.Field
+									name="adjustmentReason"
+									validators={{
+										onChange: z.string().optional(),
+									}}
+								>
+									{(field) => (
+										<div className="space-y-2">
+											<Label>Reason for Adjustment</Label>
+											<Textarea
+												placeholder="Explain why this adjustment is being made..."
+												value={field.state.value}
+												onChange={(e) => field.handleChange(e.target.value)}
+												onBlur={field.handleBlur}
+											/>
+											<p className="text-sm text-muted-foreground">
+												Required when making adjustments (for audit trail)
+											</p>
+											{field.state.meta.errors.length > 0 && (
+												<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
+											)}
+										</div>
+									)}
+								</form.Field>
+							</div>
+
+							<div className="flex justify-end gap-2">
+								<Button
+									type="button"
+									variant="outline"
+									onClick={() => router.push("/settings/vacation/employees")}
+									disabled={loading}
+								>
+									Cancel
+								</Button>
+								<Button type="submit" disabled={loading}>
+									{loading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
+									<IconDeviceFloppy className="mr-2 size-4" />
+									Save Changes
+								</Button>
+							</div>
+						</form>
 					</CardContent>
 				</Card>
 			</div>

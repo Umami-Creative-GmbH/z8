@@ -1,13 +1,13 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "@tanstack/react-form";
+import { zodValidator } from "@tanstack/zod-form-adapter";
 import { IconLoader2 } from "@tabler/icons-react";
+import { z } from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import * as z from "zod";
 import { getWorkScheduleTemplates } from "@/app/[locale]/(app)/settings/work-schedules/actions";
 import {
 	bulkCreateWorkScheduleAssignments,
@@ -25,15 +25,6 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import {
-	Form,
-	FormControl,
-	FormDescription,
-	FormField,
-	FormItem,
-	FormLabel,
-	FormMessage,
-} from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -55,12 +46,9 @@ interface WorkScheduleAssignmentDialogProps {
 }
 
 const formSchema = z.object({
-	templateId: z.string().uuid("Please select a template"),
-	teamId: z.string().uuid().optional().nullable(),
-	employeeId: z.string().uuid().optional().nullable(),
-	// Bulk mode fields
-	teamIds: z.array(z.string().uuid()).optional(),
-	employeeIds: z.array(z.string().uuid()).optional(),
+	templateId: z.string().min(1, "Please select a template"),
+	teamId: z.string().nullable(),
+	employeeId: z.string().nullable(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -85,31 +73,58 @@ export function WorkScheduleAssignmentDialog({
 	const [bulkMode, setBulkMode] = useState(false);
 	const [selectedTeamIds, setSelectedTeamIds] = useState<string[]>([]);
 	const [selectedEmployeeIds, setSelectedEmployeeIds] = useState<string[]>([]);
+	const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
 	const form = useForm<FormValues>({
-		resolver: zodResolver(formSchema),
 		defaultValues: {
 			templateId: "",
 			teamId: null,
 			employeeId: null,
-			teamIds: [],
-			employeeIds: [],
+		},
+		validatorAdapter: zodValidator(),
+		onSubmit: async ({ value }) => {
+			if (bulkMode) {
+				if (assignmentType === "team" && selectedTeamIds.length === 0) {
+					toast.error(t("settings.workSchedules.selectTeams", "Please select at least one team"));
+					return;
+				}
+				if (assignmentType === "employee" && selectedEmployeeIds.length === 0) {
+					toast.error(
+						t("settings.workSchedules.selectEmployees", "Please select at least one employee"),
+					);
+					return;
+				}
+
+				bulkCreateMutation.mutate({
+					templateId: value.templateId,
+					teamIds: selectedTeamIds,
+					employeeIds: selectedEmployeeIds,
+				});
+			} else {
+				// Validate based on assignment type
+				if (assignmentType === "team" && !value.teamId) {
+					setValidationErrors({ teamId: "Please select a team" });
+					return;
+				}
+				if (assignmentType === "employee" && !value.employeeId) {
+					setValidationErrors({ employeeId: "Please select an employee" });
+					return;
+				}
+
+				setValidationErrors({});
+				createMutation.mutate(value);
+			}
 		},
 	});
 
 	// Reset form when dialog opens
 	useEffect(() => {
 		if (open) {
-			form.reset({
-				templateId: "",
-				teamId: null,
-				employeeId: null,
-				teamIds: [],
-				employeeIds: [],
-			});
+			form.reset();
 			setBulkMode(false);
 			setSelectedTeamIds([]);
 			setSelectedEmployeeIds([]);
+			setValidationErrors({});
 		}
 	}, [open, form]);
 
@@ -214,40 +229,6 @@ export function WorkScheduleAssignmentDialog({
 		},
 	});
 
-	const onSubmit = (data: FormValues) => {
-		if (bulkMode) {
-			// Bulk mode validation
-			if (assignmentType === "team" && selectedTeamIds.length === 0) {
-				toast.error(t("settings.workSchedules.selectTeams", "Please select at least one team"));
-				return;
-			}
-			if (assignmentType === "employee" && selectedEmployeeIds.length === 0) {
-				toast.error(
-					t("settings.workSchedules.selectEmployees", "Please select at least one employee"),
-				);
-				return;
-			}
-
-			bulkCreateMutation.mutate({
-				templateId: data.templateId,
-				teamIds: selectedTeamIds,
-				employeeIds: selectedEmployeeIds,
-			});
-		} else {
-			// Single mode validation
-			if (assignmentType === "team" && !data.teamId) {
-				form.setError("teamId", { message: "Please select a team" });
-				return;
-			}
-			if (assignmentType === "employee" && !data.employeeId) {
-				form.setError("employeeId", { message: "Please select an employee" });
-				return;
-			}
-
-			createMutation.mutate(data);
-		}
-	};
-
 	// Helper functions for bulk selection
 	const toggleTeamSelection = (teamId: string) => {
 		setSelectedTeamIds((prev) =>
@@ -338,56 +319,64 @@ export function WorkScheduleAssignmentDialog({
 					<DialogDescription>{getDialogDescription()}</DialogDescription>
 				</DialogHeader>
 
-				<Form {...form}>
-					<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-						<FormField
-							control={form.control}
-							name="templateId"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>{t("settings.workSchedules.template", "Template")}</FormLabel>
-									<Select onValueChange={field.onChange} value={field.value}>
-										<FormControl>
-											<SelectTrigger>
-												<SelectValue
-													placeholder={t(
-														"settings.workSchedules.selectTemplate",
-														"Select a template",
-													)}
-												/>
-											</SelectTrigger>
-										</FormControl>
-										<SelectContent>
-											{loadingTemplates ? (
-												<SelectItem value="" disabled>
-													{t("common.loading", "Loading...")}
-												</SelectItem>
-											) : templates && templates.length > 0 ? (
-												templates.map((template) => (
-													<SelectItem key={template.id} value={template.id}>
-														{formatTemplate(template)}
-													</SelectItem>
-												))
-											) : (
-												<SelectItem value="" disabled>
-													{t(
-														"settings.workSchedules.noTemplatesAvailable",
-														"No templates available",
-													)}
-												</SelectItem>
+				<form
+					onSubmit={(e) => {
+						e.preventDefault();
+						form.handleSubmit();
+					}}
+					className="space-y-4"
+				>
+					<form.Field
+						name="templateId"
+						validators={{
+							onChange: z.string().min(1, "Please select a template"),
+						}}
+					>
+						{(field) => (
+							<div className="space-y-2">
+								<Label>{t("settings.workSchedules.template", "Template")}</Label>
+								<Select onValueChange={field.handleChange} value={field.state.value}>
+									<SelectTrigger>
+										<SelectValue
+											placeholder={t(
+												"settings.workSchedules.selectTemplate",
+												"Select a template",
 											)}
-										</SelectContent>
-									</Select>
-									<FormDescription>
-										{t(
-											"settings.workSchedules.templateDescription",
-											"Choose the work schedule template to assign",
+										/>
+									</SelectTrigger>
+									<SelectContent>
+										{loadingTemplates ? (
+											<SelectItem value="" disabled>
+												{t("common.loading", "Loading...")}
+											</SelectItem>
+										) : templates && templates.length > 0 ? (
+											templates.map((template) => (
+												<SelectItem key={template.id} value={template.id}>
+													{formatTemplate(template)}
+												</SelectItem>
+											))
+										) : (
+											<SelectItem value="" disabled>
+												{t(
+													"settings.workSchedules.noTemplatesAvailable",
+													"No templates available",
+												)}
+											</SelectItem>
 										)}
-									</FormDescription>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
+									</SelectContent>
+								</Select>
+								<p className="text-sm text-muted-foreground">
+									{t(
+										"settings.workSchedules.templateDescription",
+										"Choose the work schedule template to assign",
+									)}
+								</p>
+								{field.state.meta.errors.length > 0 && (
+									<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
+								)}
+							</div>
+						)}
+					</form.Field>
 
 						{/* Bulk Mode Toggle */}
 						{canUseBulkMode && (
@@ -417,45 +406,43 @@ export function WorkScheduleAssignmentDialog({
 							</div>
 						)}
 
-						{/* Single Team Selection */}
-						{assignmentType === "team" && !bulkMode && (
-							<FormField
-								control={form.control}
-								name="teamId"
-								render={({ field }) => (
-									<FormItem>
-										<FormLabel>{t("settings.workSchedules.team", "Team")}</FormLabel>
-										<Select onValueChange={field.onChange} value={field.value || ""}>
-											<FormControl>
-												<SelectTrigger>
-													<SelectValue
-														placeholder={t("settings.workSchedules.selectTeam", "Select a team")}
-													/>
-												</SelectTrigger>
-											</FormControl>
-											<SelectContent>
-												{loadingTeams ? (
-													<SelectItem value="" disabled>
-														{t("common.loading", "Loading...")}
+					{/* Single Team Selection */}
+					{assignmentType === "team" && !bulkMode && (
+						<form.Field name="teamId">
+							{(field) => (
+								<div className="space-y-2">
+									<Label>{t("settings.workSchedules.team", "Team")}</Label>
+									<Select onValueChange={field.handleChange} value={field.state.value || ""}>
+										<SelectTrigger>
+											<SelectValue
+												placeholder={t("settings.workSchedules.selectTeam", "Select a team")}
+											/>
+										</SelectTrigger>
+										<SelectContent>
+											{loadingTeams ? (
+												<SelectItem value="" disabled>
+													{t("common.loading", "Loading...")}
+												</SelectItem>
+											) : teams && teams.length > 0 ? (
+												teams.map((team) => (
+													<SelectItem key={team.id} value={team.id}>
+														{team.name}
 													</SelectItem>
-												) : teams && teams.length > 0 ? (
-													teams.map((team) => (
-														<SelectItem key={team.id} value={team.id}>
-															{team.name}
-														</SelectItem>
-													))
-												) : (
-													<SelectItem value="" disabled>
-														{t("settings.workSchedules.noTeamsAvailable", "No teams available")}
-													</SelectItem>
-												)}
-											</SelectContent>
-										</Select>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-						)}
+												))
+											) : (
+												<SelectItem value="" disabled>
+													{t("settings.workSchedules.noTeamsAvailable", "No teams available")}
+												</SelectItem>
+											)}
+										</SelectContent>
+									</Select>
+									{validationErrors.teamId && (
+										<p className="text-sm text-destructive">{validationErrors.teamId}</p>
+									)}
+								</div>
+							)}
+						</form.Field>
+					)}
 
 						{/* Bulk Team Selection */}
 						{assignmentType === "team" && bulkMode && (
@@ -517,53 +504,51 @@ export function WorkScheduleAssignmentDialog({
 							</div>
 						)}
 
-						{/* Single Employee Selection */}
-						{assignmentType === "employee" && !bulkMode && (
-							<FormField
-								control={form.control}
-								name="employeeId"
-								render={({ field }) => (
-									<FormItem>
-										<FormLabel>{t("settings.workSchedules.employee", "Employee")}</FormLabel>
-										<Select onValueChange={field.onChange} value={field.value || ""}>
-											<FormControl>
-												<SelectTrigger>
-													<SelectValue
-														placeholder={t(
-															"settings.workSchedules.selectEmployee",
-															"Select an employee",
-														)}
-													/>
-												</SelectTrigger>
-											</FormControl>
-											<SelectContent>
-												{loadingEmployees ? (
-													<SelectItem value="" disabled>
-														{t("common.loading", "Loading...")}
-													</SelectItem>
-												) : employees && employees.length > 0 ? (
-													employees.map((emp) => (
-														<SelectItem key={emp.id} value={emp.id}>
-															{`${emp.firstName || ""} ${emp.lastName || ""}`.trim() ||
-																emp.employeeNumber ||
-																"Unknown"}
-														</SelectItem>
-													))
-												) : (
-													<SelectItem value="" disabled>
-														{t(
-															"settings.workSchedules.noEmployeesAvailable",
-															"No employees available",
-														)}
-													</SelectItem>
+					{/* Single Employee Selection */}
+					{assignmentType === "employee" && !bulkMode && (
+						<form.Field name="employeeId">
+							{(field) => (
+								<div className="space-y-2">
+									<Label>{t("settings.workSchedules.employee", "Employee")}</Label>
+									<Select onValueChange={field.handleChange} value={field.state.value || ""}>
+										<SelectTrigger>
+											<SelectValue
+												placeholder={t(
+													"settings.workSchedules.selectEmployee",
+													"Select an employee",
 												)}
-											</SelectContent>
-										</Select>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-						)}
+											/>
+										</SelectTrigger>
+										<SelectContent>
+											{loadingEmployees ? (
+												<SelectItem value="" disabled>
+													{t("common.loading", "Loading...")}
+												</SelectItem>
+											) : employees && employees.length > 0 ? (
+												employees.map((emp) => (
+													<SelectItem key={emp.id} value={emp.id}>
+														{`${emp.firstName || ""} ${emp.lastName || ""}`.trim() ||
+															emp.employeeNumber ||
+															"Unknown"}
+													</SelectItem>
+												))
+											) : (
+												<SelectItem value="" disabled>
+													{t(
+														"settings.workSchedules.noEmployeesAvailable",
+														"No employees available",
+													)}
+												</SelectItem>
+											)}
+										</SelectContent>
+									</Select>
+									{validationErrors.employeeId && (
+										<p className="text-sm text-destructive">{validationErrors.employeeId}</p>
+									)}
+								</div>
+							)}
+						</form.Field>
+					)}
 
 						{/* Bulk Employee Selection */}
 						{assignmentType === "employee" && bulkMode && (
@@ -638,8 +623,7 @@ export function WorkScheduleAssignmentDialog({
 									: t("settings.workSchedules.assign", "Assign")}
 							</Button>
 						</DialogFooter>
-					</form>
-				</Form>
+				</form>
 			</DialogContent>
 		</Dialog>
 	);

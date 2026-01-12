@@ -1,13 +1,11 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "@tanstack/react-form";
 import { IconLoader2 } from "@tabler/icons-react";
 import { useMutation } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useMemo } from "react";
-import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import * as z from "zod";
 import {
 	createWorkScheduleTemplate,
 	updateWorkScheduleTemplate,
@@ -27,16 +25,8 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import {
-	Form,
-	FormControl,
-	FormDescription,
-	FormField,
-	FormItem,
-	FormLabel,
-	FormMessage,
-} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
 	Select,
 	SelectContent,
@@ -65,36 +55,26 @@ const DAYS_OF_WEEK = [
 	{ value: "sunday", label: "Sunday" },
 ] as const;
 
-const formSchema = z.object({
-	name: z.string().min(1, "Name is required").max(100),
-	description: z.string().max(500).optional(),
-	scheduleCycle: z.enum(["daily", "weekly", "biweekly", "monthly", "yearly"]),
-	scheduleType: z.enum(["simple", "detailed"]),
-	workingDaysPreset: z.enum(["weekdays", "weekends", "all_days", "custom"]),
-	hoursPerCycle: z.string().optional(),
-	homeOfficeDaysPerCycle: z.coerce.number().min(0).max(31),
-	days: z
-		.array(
-			z.object({
-				dayOfWeek: z.enum([
-					"monday",
-					"tuesday",
-					"wednesday",
-					"thursday",
-					"friday",
-					"saturday",
-					"sunday",
-				]),
-				hoursPerDay: z.string(),
-				isWorkDay: z.boolean(),
-			}),
-		)
-		.optional(),
-});
+type DayOfWeek = "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday";
 
-type FormValues = z.infer<typeof formSchema>;
+interface DayConfig {
+	dayOfWeek: DayOfWeek;
+	hoursPerDay: string;
+	isWorkDay: boolean;
+}
 
-const defaultDays = DAYS_OF_WEEK.map((day) => ({
+interface FormValues {
+	name: string;
+	description: string;
+	scheduleCycle: "daily" | "weekly" | "biweekly" | "monthly" | "yearly";
+	scheduleType: "simple" | "detailed";
+	workingDaysPreset: "weekdays" | "weekends" | "all_days" | "custom";
+	hoursPerCycle: string;
+	homeOfficeDaysPerCycle: number;
+	days: DayConfig[];
+}
+
+const defaultDays: DayConfig[] = DAYS_OF_WEEK.map((day) => ({
 	dayOfWeek: day.value,
 	hoursPerDay: day.value === "saturday" || day.value === "sunday" ? "0" : "8",
 	isWorkDay: day.value !== "saturday" && day.value !== "sunday",
@@ -111,7 +91,6 @@ export function WorkScheduleTemplateDialog({
 	const isEditing = !!editingTemplate;
 
 	const form = useForm<FormValues>({
-		resolver: zodResolver(formSchema),
 		defaultValues: {
 			name: "",
 			description: "",
@@ -122,40 +101,39 @@ export function WorkScheduleTemplateDialog({
 			homeOfficeDaysPerCycle: 0,
 			days: defaultDays,
 		},
+		onSubmit: async ({ value }) => {
+			if (isEditing) {
+				updateMutation.mutate(value);
+			} else {
+				createMutation.mutate(value);
+			}
+		},
 	});
 
 	// Reset form when opening/closing or when editing template changes
 	useEffect(() => {
 		if (open) {
 			if (editingTemplate) {
-				form.reset({
-					name: editingTemplate.name,
-					description: editingTemplate.description || "",
-					scheduleCycle: editingTemplate.scheduleCycle,
-					scheduleType: editingTemplate.scheduleType,
-					workingDaysPreset: editingTemplate.workingDaysPreset,
-					hoursPerCycle: editingTemplate.hoursPerCycle || "40",
-					homeOfficeDaysPerCycle: editingTemplate.homeOfficeDaysPerCycle || 0,
-					days:
-						editingTemplate.days.length > 0
-							? editingTemplate.days.map((d) => ({
-									dayOfWeek: d.dayOfWeek,
-									hoursPerDay: d.hoursPerDay,
-									isWorkDay: d.isWorkDay,
-								}))
-							: defaultDays,
-				});
+				form.reset();
+				form.setFieldValue("name", editingTemplate.name);
+				form.setFieldValue("description", editingTemplate.description || "");
+				form.setFieldValue("scheduleCycle", editingTemplate.scheduleCycle);
+				form.setFieldValue("scheduleType", editingTemplate.scheduleType);
+				form.setFieldValue("workingDaysPreset", editingTemplate.workingDaysPreset);
+				form.setFieldValue("hoursPerCycle", editingTemplate.hoursPerCycle || "40");
+				form.setFieldValue("homeOfficeDaysPerCycle", editingTemplate.homeOfficeDaysPerCycle || 0);
+				form.setFieldValue(
+					"days",
+					editingTemplate.days.length > 0
+						? editingTemplate.days.map((d) => ({
+								dayOfWeek: d.dayOfWeek as DayOfWeek,
+								hoursPerDay: d.hoursPerDay,
+								isWorkDay: d.isWorkDay,
+							}))
+						: defaultDays,
+				);
 			} else {
-				form.reset({
-					name: "",
-					description: "",
-					scheduleCycle: "weekly",
-					scheduleType: "simple",
-					workingDaysPreset: "weekdays",
-					hoursPerCycle: "40",
-					homeOfficeDaysPerCycle: 0,
-					days: defaultDays,
-				});
+				form.reset();
 			}
 		}
 	}, [open, editingTemplate, form]);
@@ -224,21 +202,15 @@ export function WorkScheduleTemplateDialog({
 		},
 	});
 
-	const onSubmit = (data: FormValues) => {
-		if (isEditing) {
-			updateMutation.mutate(data);
-		} else {
-			createMutation.mutate(data);
-		}
-	};
-
 	const isPending = createMutation.isPending || updateMutation.isPending;
-	const scheduleType = form.watch("scheduleType");
-	const days = form.watch("days") || defaultDays;
-	const workingDaysPreset = form.watch("workingDaysPreset");
-	const hoursPerCycle = form.watch("hoursPerCycle");
-	const scheduleCycle = form.watch("scheduleCycle");
-	const homeOfficeDaysPerCycle = form.watch("homeOfficeDaysPerCycle");
+
+	// Subscribe to form values for conditional rendering and preview
+	const scheduleType = form.useStore((state) => state.values.scheduleType);
+	const days = form.useStore((state) => state.values.days) || defaultDays;
+	const workingDaysPreset = form.useStore((state) => state.values.workingDaysPreset);
+	const hoursPerCycle = form.useStore((state) => state.values.hoursPerCycle);
+	const scheduleCycle = form.useStore((state) => state.values.scheduleCycle);
+	const homeOfficeDaysPerCycle = form.useStore((state) => state.values.homeOfficeDaysPerCycle);
 
 	// Calculate total hours for detailed mode
 	const totalHours = days
@@ -278,282 +250,278 @@ export function WorkScheduleTemplateDialog({
 					</DialogDescription>
 				</DialogHeader>
 
-				<Form {...form}>
-					<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-						{/* Basic Info */}
-						<div className="grid gap-4 sm:grid-cols-2">
-							<FormField
-								control={form.control}
-								name="name"
-								render={({ field }) => (
-									<FormItem className="sm:col-span-2">
-										<FormLabel>{t("settings.workSchedules.name", "Name")}</FormLabel>
-										<FormControl>
-											<Input
-												placeholder={t(
-													"settings.workSchedules.namePlaceholder",
-													"e.g., Full-Time 40h",
-												)}
-												{...field}
-											/>
-										</FormControl>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-
-							<FormField
-								control={form.control}
-								name="description"
-								render={({ field }) => (
-									<FormItem className="sm:col-span-2">
-										<FormLabel>
-											{t("settings.workSchedules.descriptionLabel", "Description")}
-										</FormLabel>
-										<FormControl>
-											<Textarea
-												placeholder={t(
-													"settings.workSchedules.descriptionPlaceholder",
-													"Optional description",
-												)}
-												{...field}
-											/>
-										</FormControl>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-						</div>
-
-						{/* Schedule Configuration */}
-						<div className="grid gap-4 sm:grid-cols-2">
-							<FormField
-								control={form.control}
-								name="scheduleCycle"
-								render={({ field }) => (
-									<FormItem>
-										<FormLabel>{t("settings.workSchedules.cycle", "Cycle")}</FormLabel>
-										<Select onValueChange={field.onChange} value={field.value}>
-											<FormControl>
-												<SelectTrigger>
-													<SelectValue />
-												</SelectTrigger>
-											</FormControl>
-											<SelectContent>
-												<SelectItem value="daily">
-													{t("settings.workSchedules.cycle.daily", "Daily")}
-												</SelectItem>
-												<SelectItem value="weekly">
-													{t("settings.workSchedules.cycle.weekly", "Weekly")}
-												</SelectItem>
-												<SelectItem value="biweekly">
-													{t("settings.workSchedules.cycle.biweekly", "Biweekly")}
-												</SelectItem>
-												<SelectItem value="monthly">
-													{t("settings.workSchedules.cycle.monthly", "Monthly")}
-												</SelectItem>
-												<SelectItem value="yearly">
-													{t("settings.workSchedules.cycle.yearly", "Yearly")}
-												</SelectItem>
-											</SelectContent>
-										</Select>
-										<FormDescription>
-											{t(
-												"settings.workSchedules.cycleDescription",
-												"The time period for this schedule",
-											)}
-										</FormDescription>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-
-							<FormField
-								control={form.control}
-								name="homeOfficeDaysPerCycle"
-								render={({ field }) => (
-									<FormItem>
-										<FormLabel>
-											{t("settings.workSchedules.homeOfficeDays", "Home Office Days")}
-										</FormLabel>
-										<FormControl>
-											<Input type="number" min="0" max="31" {...field} />
-										</FormControl>
-										<FormDescription>
-											{t(
-												"settings.workSchedules.homeOfficeDaysDescription",
-												"Allowed home office days per cycle",
-											)}
-										</FormDescription>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-						</div>
-
-						{/* Schedule Type Tabs */}
-						<FormField
-							control={form.control}
-							name="scheduleType"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>{t("settings.workSchedules.type", "Schedule Type")}</FormLabel>
-									<Tabs value={field.value} onValueChange={field.onChange} className="mt-2">
-										<TabsList className="grid w-full grid-cols-2">
-											<TabsTrigger value="simple">
-												{t("settings.workSchedules.type.simple", "Simple")}
-											</TabsTrigger>
-											<TabsTrigger value="detailed">
-												{t("settings.workSchedules.type.detailed", "Detailed")}
-											</TabsTrigger>
-										</TabsList>
-
-										<TabsContent value="simple" className="space-y-4 pt-4">
-											<FormField
-												control={form.control}
-												name="workingDaysPreset"
-												render={({ field: presetField }) => (
-													<FormItem>
-														<FormLabel>
-															{t("settings.workSchedules.workingDays", "Working Days")}
-														</FormLabel>
-														<Select onValueChange={presetField.onChange} value={presetField.value}>
-															<FormControl>
-																<SelectTrigger>
-																	<SelectValue />
-																</SelectTrigger>
-															</FormControl>
-															<SelectContent>
-																<SelectItem value="weekdays">
-																	{t(
-																		"settings.workSchedules.workingDays.weekdays",
-																		"Weekdays (Mon-Fri)",
-																	)}
-																</SelectItem>
-																<SelectItem value="weekends">
-																	{t(
-																		"settings.workSchedules.workingDays.weekends",
-																		"Weekends (Sat-Sun)",
-																	)}
-																</SelectItem>
-																<SelectItem value="all_days">
-																	{t("settings.workSchedules.workingDays.allDays", "All Days")}
-																</SelectItem>
-															</SelectContent>
-														</Select>
-														<FormMessage />
-													</FormItem>
-												)}
-											/>
-
-											<FormField
-												control={form.control}
-												name="hoursPerCycle"
-												render={({ field: hoursField }) => (
-													<FormItem>
-														<FormLabel>
-															{t("settings.workSchedules.hoursPerCycle", "Hours per Cycle")}
-														</FormLabel>
-														<FormControl>
-															<Input type="number" min="0" max="744" step="0.5" {...hoursField} />
-														</FormControl>
-														<FormDescription>
-															{t(
-																"settings.workSchedules.hoursPerCycleDescription",
-																"Total working hours per cycle (e.g., 40 for weekly)",
-															)}
-														</FormDescription>
-														<FormMessage />
-													</FormItem>
-												)}
-											/>
-										</TabsContent>
-
-										<TabsContent value="detailed" className="space-y-4 pt-4">
-											<div className="text-sm text-muted-foreground mb-4">
-												{t(
-													"settings.workSchedules.detailedDescription",
-													"Configure hours for each day of the week",
-												)}
-											</div>
-											<div className="space-y-3">
-												{DAYS_OF_WEEK.map((day, index) => (
-													<div
-														key={day.value}
-														className="flex items-center gap-4 p-3 rounded-lg border"
-													>
-														<FormField
-															control={form.control}
-															name={`days.${index}.isWorkDay`}
-															render={({ field: checkField }) => (
-																<FormItem className="flex items-center space-x-2 space-y-0">
-																	<FormControl>
-																		<Checkbox
-																			checked={checkField.value}
-																			onCheckedChange={checkField.onChange}
-																		/>
-																	</FormControl>
-																</FormItem>
-															)}
-														/>
-														<span className="w-24 font-medium">{day.label}</span>
-														<FormField
-															control={form.control}
-															name={`days.${index}.hoursPerDay`}
-															render={({ field: hoursField }) => (
-																<FormItem className="flex-1">
-																	<FormControl>
-																		<Input
-																			type="number"
-																			min="0"
-																			max="24"
-																			step="0.5"
-																			disabled={!days[index]?.isWorkDay}
-																			placeholder="0"
-																			{...hoursField}
-																		/>
-																	</FormControl>
-																</FormItem>
-															)}
-														/>
-														<span className="text-sm text-muted-foreground w-12">hours</span>
-													</div>
-												))}
-											</div>
-											<div className="text-right text-sm font-medium pt-2 border-t">
-												{t("settings.workSchedules.totalHours", "Total")}: {totalHours.toFixed(1)}{" "}
-												{t("settings.workSchedules.hoursUnit", "hours")}
-											</div>
-										</TabsContent>
-									</Tabs>
-									<FormMessage />
-								</FormItem>
+				<form
+					onSubmit={(e) => {
+						e.preventDefault();
+						form.handleSubmit();
+					}}
+					className="space-y-6"
+				>
+					{/* Basic Info */}
+					<div className="grid gap-4 sm:grid-cols-2">
+						<form.Field
+							name="name"
+							validators={{
+								onChange: ({ value }) => {
+									if (!value) return "Name is required";
+									if (value.length > 100) return "Name too long";
+									return undefined;
+								},
+							}}
+						>
+							{(field) => (
+								<div className="space-y-2 sm:col-span-2">
+									<Label>{t("settings.workSchedules.name", "Name")}</Label>
+									<Input
+										value={field.state.value}
+										onChange={(e) => field.handleChange(e.target.value)}
+										onBlur={field.handleBlur}
+										placeholder={t(
+											"settings.workSchedules.namePlaceholder",
+											"e.g., Full-Time 40h",
+										)}
+									/>
+									{field.state.meta.errors.length > 0 && (
+										<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
+									)}
+								</div>
 							)}
-						/>
+						</form.Field>
 
-						{/* Schedule Preview */}
-						<div className="space-y-2 rounded-lg border bg-muted/30 p-4">
-							<div className="text-sm font-medium">
-								{t("settings.workSchedules.preview", "Schedule Preview")}
+						<form.Field name="description">
+							{(field) => (
+								<div className="space-y-2 sm:col-span-2">
+									<Label>
+										{t("settings.workSchedules.descriptionLabel", "Description")}
+									</Label>
+									<Textarea
+										value={field.state.value}
+										onChange={(e) => field.handleChange(e.target.value)}
+										onBlur={field.handleBlur}
+										placeholder={t(
+											"settings.workSchedules.descriptionPlaceholder",
+											"Optional description",
+										)}
+									/>
+								</div>
+							)}
+						</form.Field>
+					</div>
+
+					{/* Schedule Configuration */}
+					<div className="grid gap-4 sm:grid-cols-2">
+						<form.Field name="scheduleCycle">
+							{(field) => (
+								<div className="space-y-2">
+									<Label>{t("settings.workSchedules.cycle", "Cycle")}</Label>
+									<Select value={field.state.value} onValueChange={field.handleChange}>
+										<SelectTrigger>
+											<SelectValue />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="daily">
+												{t("settings.workSchedules.cycle.daily", "Daily")}
+											</SelectItem>
+											<SelectItem value="weekly">
+												{t("settings.workSchedules.cycle.weekly", "Weekly")}
+											</SelectItem>
+											<SelectItem value="biweekly">
+												{t("settings.workSchedules.cycle.biweekly", "Biweekly")}
+											</SelectItem>
+											<SelectItem value="monthly">
+												{t("settings.workSchedules.cycle.monthly", "Monthly")}
+											</SelectItem>
+											<SelectItem value="yearly">
+												{t("settings.workSchedules.cycle.yearly", "Yearly")}
+											</SelectItem>
+										</SelectContent>
+									</Select>
+									<p className="text-sm text-muted-foreground">
+										{t(
+											"settings.workSchedules.cycleDescription",
+											"The time period for this schedule",
+										)}
+									</p>
+								</div>
+							)}
+						</form.Field>
+
+						<form.Field name="homeOfficeDaysPerCycle">
+							{(field) => (
+								<div className="space-y-2">
+									<Label>
+										{t("settings.workSchedules.homeOfficeDays", "Home Office Days")}
+									</Label>
+									<Input
+										type="number"
+										min="0"
+										max="31"
+										value={field.state.value}
+										onChange={(e) => field.handleChange(Number(e.target.value))}
+										onBlur={field.handleBlur}
+									/>
+									<p className="text-sm text-muted-foreground">
+										{t(
+											"settings.workSchedules.homeOfficeDaysDescription",
+											"Allowed home office days per cycle",
+										)}
+									</p>
+								</div>
+							)}
+						</form.Field>
+					</div>
+
+					{/* Schedule Type Tabs */}
+					<form.Field name="scheduleType">
+						{(field) => (
+							<div className="space-y-2">
+								<Label>{t("settings.workSchedules.type", "Schedule Type")}</Label>
+								<Tabs value={field.state.value} onValueChange={field.handleChange} className="mt-2">
+									<TabsList className="grid w-full grid-cols-2">
+										<TabsTrigger value="simple">
+											{t("settings.workSchedules.type.simple", "Simple")}
+										</TabsTrigger>
+										<TabsTrigger value="detailed">
+											{t("settings.workSchedules.type.detailed", "Detailed")}
+										</TabsTrigger>
+									</TabsList>
+
+									<TabsContent value="simple" className="space-y-4 pt-4">
+										<form.Field name="workingDaysPreset">
+											{(presetField) => (
+												<div className="space-y-2">
+													<Label>
+														{t("settings.workSchedules.workingDays", "Working Days")}
+													</Label>
+													<Select
+														value={presetField.state.value}
+														onValueChange={presetField.handleChange}
+													>
+														<SelectTrigger>
+															<SelectValue />
+														</SelectTrigger>
+														<SelectContent>
+															<SelectItem value="weekdays">
+																{t(
+																	"settings.workSchedules.workingDays.weekdays",
+																	"Weekdays (Mon-Fri)",
+																)}
+															</SelectItem>
+															<SelectItem value="weekends">
+																{t(
+																	"settings.workSchedules.workingDays.weekends",
+																	"Weekends (Sat-Sun)",
+																)}
+															</SelectItem>
+															<SelectItem value="all_days">
+																{t("settings.workSchedules.workingDays.allDays", "All Days")}
+															</SelectItem>
+														</SelectContent>
+													</Select>
+												</div>
+											)}
+										</form.Field>
+
+										<form.Field name="hoursPerCycle">
+											{(hoursField) => (
+												<div className="space-y-2">
+													<Label>
+														{t("settings.workSchedules.hoursPerCycle", "Hours per Cycle")}
+													</Label>
+													<Input
+														type="number"
+														min="0"
+														max="744"
+														step="0.5"
+														value={hoursField.state.value}
+														onChange={(e) => hoursField.handleChange(e.target.value)}
+														onBlur={hoursField.handleBlur}
+													/>
+													<p className="text-sm text-muted-foreground">
+														{t(
+															"settings.workSchedules.hoursPerCycleDescription",
+															"Total working hours per cycle (e.g., 40 for weekly)",
+														)}
+													</p>
+												</div>
+											)}
+										</form.Field>
+									</TabsContent>
+
+									<TabsContent value="detailed" className="space-y-4 pt-4">
+										<div className="text-sm text-muted-foreground mb-4">
+											{t(
+												"settings.workSchedules.detailedDescription",
+												"Configure hours for each day of the week",
+											)}
+										</div>
+										<div className="space-y-3">
+											{DAYS_OF_WEEK.map((day, index) => (
+												<div
+													key={day.value}
+													className="flex items-center gap-4 p-3 rounded-lg border"
+												>
+													<Checkbox
+														checked={days[index]?.isWorkDay ?? false}
+														onCheckedChange={(checked) => {
+															const newDays = [...days];
+															newDays[index] = { ...newDays[index], isWorkDay: !!checked };
+															form.setFieldValue("days", newDays);
+														}}
+													/>
+													<span className="w-24 font-medium">{day.label}</span>
+													<div className="flex-1">
+														<Input
+															type="number"
+															min="0"
+															max="24"
+															step="0.5"
+															disabled={!days[index]?.isWorkDay}
+															placeholder="0"
+															value={days[index]?.hoursPerDay ?? "0"}
+															onChange={(e) => {
+																const newDays = [...days];
+																newDays[index] = { ...newDays[index], hoursPerDay: e.target.value };
+																form.setFieldValue("days", newDays);
+															}}
+														/>
+													</div>
+													<span className="text-sm text-muted-foreground w-12">hours</span>
+												</div>
+											))}
+										</div>
+										<div className="text-right text-sm font-medium pt-2 border-t">
+											{t("settings.workSchedules.totalHours", "Total")}: {totalHours.toFixed(1)}{" "}
+											{t("settings.workSchedules.hoursUnit", "hours")}
+										</div>
+									</TabsContent>
+								</Tabs>
 							</div>
-							<WorkSchedulePreview
-								days={previewDays}
-								homeOfficeDaysPerCycle={homeOfficeDaysPerCycle}
-								scheduleCycle={scheduleCycle}
-							/>
-						</div>
+						)}
+					</form.Field>
 
-						<DialogFooter>
-							<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-								{t("common.cancel", "Cancel")}
-							</Button>
-							<Button type="submit" disabled={isPending}>
-								{isPending && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
-								{isEditing ? t("common.save", "Save") : t("common.create", "Create")}
-							</Button>
-						</DialogFooter>
-					</form>
-				</Form>
+					{/* Schedule Preview */}
+					<div className="space-y-2 rounded-lg border bg-muted/30 p-4">
+						<div className="text-sm font-medium">
+							{t("settings.workSchedules.preview", "Schedule Preview")}
+						</div>
+						<WorkSchedulePreview
+							days={previewDays}
+							homeOfficeDaysPerCycle={homeOfficeDaysPerCycle}
+							scheduleCycle={scheduleCycle}
+						/>
+					</div>
+
+					<DialogFooter>
+						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+							{t("common.cancel", "Cancel")}
+						</Button>
+						<Button type="submit" disabled={isPending}>
+							{isPending && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
+							{isEditing ? t("common.save", "Save") : t("common.create", "Create")}
+						</Button>
+					</DialogFooter>
+				</form>
 			</DialogContent>
 		</Dialog>
 	);

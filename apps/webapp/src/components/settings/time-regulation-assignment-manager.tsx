@@ -39,13 +39,7 @@ interface TimeRegulationAssignmentManagerProps {
 	onAssignClick: (type: "organization" | "team" | "employee") => void;
 }
 
-function formatMinutesToHours(minutes: number | null): string {
-	if (minutes === null) return "—";
-	const hours = Math.floor(minutes / 60);
-	const mins = minutes % 60;
-	if (mins === 0) return `${hours}h`;
-	return `${hours}h ${mins}m`;
-}
+// formatMinutesToHours helper is defined inside the component for i18n access
 
 export function TimeRegulationAssignmentManager({
 	organizationId,
@@ -56,6 +50,17 @@ export function TimeRegulationAssignmentManager({
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 	const [selectedAssignment, setSelectedAssignment] =
 		useState<TimeRegulationAssignmentWithRelations | null>(null);
+
+	// Helper function to format minutes to hours with translation
+	const formatMinutesToHours = (minutes: number | null): string => {
+		if (minutes === null) return "—";
+		const hours = Math.floor(minutes / 60);
+		const mins = minutes % 60;
+		if (mins === 0) {
+			return t("settings.timeRegulations.hoursFormat", "{hours}h", { hours });
+		}
+		return t("settings.timeRegulations.hoursMinutesFormat", "{hours}h {mins}m", { hours, mins });
+	};
 
 	// Fetch assignments
 	const {
@@ -71,6 +76,8 @@ export function TimeRegulationAssignmentManager({
 			}
 			return result.data as TimeRegulationAssignmentWithRelations[];
 		},
+		staleTime: 30 * 1000, // Consider data fresh for 30 seconds
+		refetchOnWindowFocus: false, // Don't refetch on window focus
 	});
 
 	// Delete mutation
@@ -147,16 +154,28 @@ export function TimeRegulationAssignmentManager({
 	const formatRegulation = (regulation: TimeRegulationAssignmentWithRelations["regulation"]) => {
 		const parts: string[] = [];
 		if (regulation.maxDailyMinutes) {
-			parts.push(`${formatMinutesToHours(regulation.maxDailyMinutes)}/day`);
+			parts.push(
+				t("settings.timeRegulations.perDay", "{hours}/day", {
+					hours: formatMinutesToHours(regulation.maxDailyMinutes),
+				}),
+			);
 		}
 		if (regulation.maxWeeklyMinutes) {
-			parts.push(`${formatMinutesToHours(regulation.maxWeeklyMinutes)}/week`);
+			parts.push(
+				t("settings.timeRegulations.perWeek", "{hours}/week", {
+					hours: formatMinutesToHours(regulation.maxWeeklyMinutes),
+				}),
+			);
 		}
 		const breakRulesCount = regulation.breakRules?.length || 0;
 		if (breakRulesCount > 0) {
-			parts.push(`${breakRulesCount} break rule${breakRulesCount > 1 ? "s" : ""}`);
+			parts.push(
+				t("settings.timeRegulations.breakRuleCount", "{count} break rule(s)", {
+					count: breakRulesCount,
+				}),
+			);
 		}
-		return parts.length > 0 ? parts.join(", ") : "No limits set";
+		return parts.length > 0 ? parts.join(", ") : t("settings.timeRegulations.noLimitsSet", "No limits set");
 	};
 
 	return (
@@ -259,7 +278,7 @@ export function TimeRegulationAssignmentManager({
 										<div className="flex items-center gap-3">
 											<IconUsers className="h-4 w-4 text-muted-foreground" />
 											<div>
-												<p className="font-medium">{assignment.team?.name || "Unknown Team"}</p>
+												<p className="font-medium">{assignment.team?.name || t("common.unknownTeam", "Unknown Team")}</p>
 												<p className="text-xs text-muted-foreground">
 													{assignment.regulation.name}
 												</p>
@@ -330,8 +349,8 @@ export function TimeRegulationAssignmentManager({
 												<p className="font-medium">
 													{assignment.employee
 														? `${assignment.employee.firstName || ""} ${assignment.employee.lastName || ""}`.trim() ||
-															"Unknown"
-														: "Unknown Employee"}
+															t("common.unknown", "Unknown")
+														: t("common.unknownEmployee", "Unknown Employee")}
 												</p>
 												<p className="text-xs text-muted-foreground">
 													{assignment.regulation.name}

@@ -1,11 +1,11 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "@tanstack/react-form";
+import { zodValidator } from "@tanstack/zod-form-adapter";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { CalendarIcon, Loader2, Trash2, Users } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import { deleteShift, upsertShift } from "@/app/[locale]/(app)/scheduling/actions";
@@ -22,16 +22,8 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import {
-	Form,
-	FormControl,
-	FormDescription,
-	FormField,
-	FormItem,
-	FormLabel,
-	FormMessage,
-} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
 	Select,
@@ -43,18 +35,6 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { queryKeys } from "@/lib/query/keys";
 import { cn } from "@/lib/utils";
-
-const shiftFormSchema = z.object({
-	employeeId: z.string().nullable(),
-	templateId: z.string().nullable(),
-	date: z.date(),
-	startTime: z.string().regex(/^\d{2}:\d{2}$/, "Invalid time format"),
-	endTime: z.string().regex(/^\d{2}:\d{2}$/, "Invalid time format"),
-	notes: z.string().optional(),
-	color: z.string().optional(),
-});
-
-type ShiftFormValues = z.infer<typeof shiftFormSchema>;
 
 interface ShiftDialogProps {
 	open: boolean;
@@ -97,16 +77,19 @@ export function ShiftDialog({
 
 	const employees = employeesResult || [];
 
-	const form = useForm<ShiftFormValues>({
-		resolver: zodResolver(shiftFormSchema),
+	const form = useForm({
 		defaultValues: {
-			employeeId: null,
-			templateId: null,
+			employeeId: null as string | null,
+			templateId: null as string | null,
 			date: new Date(),
 			startTime: "09:00",
 			endTime: "17:00",
 			notes: "",
-			color: undefined,
+			color: undefined as string | undefined,
+		},
+		validatorAdapter: zodValidator(),
+		onSubmit: async ({ value }) => {
+			upsertMutation.mutate(value);
 		},
 	});
 
@@ -114,46 +97,51 @@ export function ShiftDialog({
 	useEffect(() => {
 		if (open) {
 			if (shift) {
-				form.reset({
-					employeeId: shift.employeeId,
-					templateId: shift.templateId,
-					date: new Date(shift.date),
-					startTime: shift.startTime,
-					endTime: shift.endTime,
-					notes: shift.notes || "",
-					color: shift.color || undefined,
-				});
+				form.setFieldValue("employeeId", shift.employeeId);
+				form.setFieldValue("templateId", shift.templateId);
+				form.setFieldValue("date", new Date(shift.date));
+				form.setFieldValue("startTime", shift.startTime);
+				form.setFieldValue("endTime", shift.endTime);
+				form.setFieldValue("notes", shift.notes || "");
+				form.setFieldValue("color", shift.color || undefined);
 			} else {
-				form.reset({
-					employeeId: null,
-					templateId: null,
-					date: defaultDate || new Date(),
-					startTime: "09:00",
-					endTime: "17:00",
-					notes: "",
-					color: undefined,
-				});
+				form.setFieldValue("employeeId", null);
+				form.setFieldValue("templateId", null);
+				form.setFieldValue("date", defaultDate || new Date());
+				form.setFieldValue("startTime", "09:00");
+				form.setFieldValue("endTime", "17:00");
+				form.setFieldValue("notes", "");
+				form.setFieldValue("color", undefined);
 			}
 		}
 	}, [open, shift, defaultDate, form]);
 
 	// Watch template selection to auto-fill times
-	const selectedTemplateId = form.watch("templateId");
+	const formValues = form.useStore((state) => state.values);
+	const selectedTemplateId = formValues.templateId;
 	useEffect(() => {
 		if (selectedTemplateId) {
 			const template = templates.find((t) => t.id === selectedTemplateId);
 			if (template) {
-				form.setValue("startTime", template.startTime);
-				form.setValue("endTime", template.endTime);
+				form.setFieldValue("startTime", template.startTime);
+				form.setFieldValue("endTime", template.endTime);
 				if (template.color) {
-					form.setValue("color", template.color);
+					form.setFieldValue("color", template.color);
 				}
 			}
 		}
 	}, [selectedTemplateId, templates, form]);
 
 	const upsertMutation = useMutation({
-		mutationFn: async (values: ShiftFormValues) => {
+		mutationFn: async (values: {
+			employeeId: string | null;
+			templateId: string | null;
+			date: Date;
+			startTime: string;
+			endTime: string;
+			notes: string;
+			color: string | undefined;
+		}) => {
 			const result = await upsertShift({
 				id: shift?.id,
 				employeeId: values.employeeId,
@@ -200,10 +188,6 @@ export function ShiftDialog({
 		},
 	});
 
-	const onSubmit = (values: ShiftFormValues) => {
-		upsertMutation.mutate(values);
-	};
-
 	const handleDelete = () => {
 		if (showDeleteConfirm) {
 			deleteMutation.mutate();
@@ -222,230 +206,248 @@ export function ShiftDialog({
 					<DialogDescription>{description}</DialogDescription>
 				</DialogHeader>
 
-				<Form {...form}>
-					<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-						{/* Date picker */}
-						<FormField
-							control={form.control}
-							name="date"
-							render={({ field }) => (
-								<FormItem className="flex flex-col">
-									<FormLabel>Date</FormLabel>
-									<Popover>
-										<PopoverTrigger asChild>
-											<FormControl>
-												<Button
-													variant="outline"
-													className={cn(
-														"w-full pl-3 text-left font-normal",
-														!field.value && "text-muted-foreground",
-													)}
-													disabled={!isManager}
-												>
-													{field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
-													<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-												</Button>
-											</FormControl>
-										</PopoverTrigger>
-										<PopoverContent className="w-auto p-0" align="start">
-											<Calendar
-												mode="single"
-												selected={field.value}
-												onSelect={field.onChange}
-												initialFocus
-											/>
-										</PopoverContent>
-									</Popover>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
-
-						{/* Template selector (optional) */}
-						{isManager && templates.length > 0 && (
-							<FormField
-								control={form.control}
-								name="templateId"
-								render={({ field }) => (
-									<FormItem>
-										<FormLabel>Template (Optional)</FormLabel>
-										<Select
-											onValueChange={(value) => field.onChange(value === "none" ? null : value)}
-											value={field.value || "none"}
+				<form
+					onSubmit={(e) => {
+						e.preventDefault();
+						form.handleSubmit();
+					}}
+					className="space-y-4"
+				>
+					{/* Date picker */}
+					<form.Field
+						name="date"
+						validators={{
+							onChange: z.date(),
+						}}
+					>
+						{(field) => (
+							<div className="flex flex-col space-y-2">
+								<Label>Date</Label>
+								<Popover>
+									<PopoverTrigger asChild>
+										<Button
+											variant="outline"
+											className={cn(
+												"w-full pl-3 text-left font-normal",
+												!field.state.value && "text-muted-foreground",
+											)}
+											disabled={!isManager}
 										>
-											<FormControl>
-												<SelectTrigger>
-													<SelectValue placeholder="Select a template" />
-												</SelectTrigger>
-											</FormControl>
-											<SelectContent>
-												<SelectItem value="none">No template</SelectItem>
-												{templates
-													.filter((t) => t.isActive)
-													.map((template) => (
-														<SelectItem key={template.id} value={template.id}>
-															{template.name} ({template.startTime} - {template.endTime})
-														</SelectItem>
-													))}
-											</SelectContent>
-										</Select>
-										<FormDescription>Selecting a template will auto-fill the times</FormDescription>
-										<FormMessage />
-									</FormItem>
+											{field.state.value ? format(field.state.value, "PPP") : <span>Pick a date</span>}
+											<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+										</Button>
+									</PopoverTrigger>
+									<PopoverContent className="w-auto p-0" align="start">
+										<Calendar
+											mode="single"
+											selected={field.state.value}
+											onSelect={field.handleChange}
+											initialFocus
+										/>
+									</PopoverContent>
+								</Popover>
+								{field.state.meta.errors.length > 0 && (
+									<p className="text-sm font-medium text-destructive">
+										{field.state.meta.errors[0]}
+									</p>
 								)}
-							/>
-						)}
-
-						{/* Time inputs */}
-						<div className="grid grid-cols-2 gap-4">
-							<FormField
-								control={form.control}
-								name="startTime"
-								render={({ field }) => (
-									<FormItem>
-										<FormLabel>Start Time</FormLabel>
-										<FormControl>
-											<Input type="time" {...field} disabled={!isManager} />
-										</FormControl>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-
-							<FormField
-								control={form.control}
-								name="endTime"
-								render={({ field }) => (
-									<FormItem>
-										<FormLabel>End Time</FormLabel>
-										<FormControl>
-											<Input type="time" {...field} disabled={!isManager} />
-										</FormControl>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-						</div>
-
-						{/* Employee assignment (managers only) */}
-						{isManager && (
-							<FormField
-								control={form.control}
-								name="employeeId"
-								render={({ field }) => (
-									<FormItem>
-										<FormLabel>
-											<span className="flex items-center gap-2">
-												<Users className="h-4 w-4" />
-												Assign To
-											</span>
-										</FormLabel>
-										<Select
-											onValueChange={(value) => field.onChange(value === "open" ? null : value)}
-											value={field.value || "open"}
-										>
-											<FormControl>
-												<SelectTrigger>
-													<SelectValue placeholder="Select an employee" />
-												</SelectTrigger>
-											</FormControl>
-											<SelectContent>
-												<SelectItem value="open">
-													<span className="flex items-center gap-2">
-														<Badge variant="secondary">Open Shift</Badge>
-														<span className="text-muted-foreground">Anyone can pick up</span>
-													</span>
-												</SelectItem>
-												{employees.map((emp) => (
-													<SelectItem key={emp.id} value={emp.id}>
-														{emp.firstName} {emp.lastName}
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
-										<FormDescription>
-											Leave as "Open Shift" to allow employees to claim it
-										</FormDescription>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-						)}
-
-						{/* Notes */}
-						{isManager && (
-							<FormField
-								control={form.control}
-								name="notes"
-								render={({ field }) => (
-									<FormItem>
-										<FormLabel>Notes (Optional)</FormLabel>
-										<FormControl>
-											<Textarea
-												placeholder="Any special instructions or notes..."
-												className="resize-none"
-												{...field}
-											/>
-										</FormControl>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-						)}
-
-						{/* Shift status badge */}
-						{isEditing && shift && (
-							<div className="flex items-center gap-2 text-sm">
-								<span className="text-muted-foreground">Status:</span>
-								<Badge variant={shift.status === "published" ? "default" : "secondary"}>
-									{shift.status === "published" ? "Published" : "Draft"}
-								</Badge>
 							</div>
 						)}
+					</form.Field>
 
-						<DialogFooter className="gap-2 sm:gap-0">
-							{isEditing && isManager && (
-								<Button
-									type="button"
-									variant="destructive"
-									onClick={handleDelete}
-									disabled={isPending}
-								>
-									{deleteMutation.isPending ? (
-										<Loader2 className="h-4 w-4 animate-spin" />
-									) : (
-										<>
-											<Trash2 className="h-4 w-4 mr-2" />
-											{showDeleteConfirm ? "Confirm Delete" : "Delete"}
-										</>
-									)}
-								</Button>
+					{/* Template selector (optional) */}
+					{isManager && templates.length > 0 && (
+						<form.Field name="templateId">
+							{(field) => (
+								<div className="space-y-2">
+									<Label>Template (Optional)</Label>
+									<Select
+										onValueChange={(value) => field.handleChange(value === "none" ? null : value)}
+										value={field.state.value || "none"}
+									>
+										<SelectTrigger>
+											<SelectValue placeholder="Select a template" />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="none">No template</SelectItem>
+											{templates
+												.filter((t) => t.isActive)
+												.map((template) => (
+													<SelectItem key={template.id} value={template.id}>
+														{template.name} ({template.startTime} - {template.endTime})
+													</SelectItem>
+												))}
+										</SelectContent>
+									</Select>
+									<p className="text-sm text-muted-foreground">Selecting a template will auto-fill the times</p>
+								</div>
 							)}
+						</form.Field>
+					)}
+
+					{/* Time inputs */}
+					<div className="grid grid-cols-2 gap-4">
+						<form.Field
+							name="startTime"
+							validators={{
+								onChange: z.string().regex(/^\d{2}:\d{2}$/, "Invalid time format"),
+							}}
+						>
+							{(field) => (
+								<div className="space-y-2">
+									<Label>Start Time</Label>
+									<Input
+										type="time"
+										value={field.state.value}
+										onChange={(e) => field.handleChange(e.target.value)}
+										onBlur={field.handleBlur}
+										disabled={!isManager}
+									/>
+									{field.state.meta.errors.length > 0 && (
+										<p className="text-sm font-medium text-destructive">
+											{field.state.meta.errors[0]}
+										</p>
+									)}
+								</div>
+							)}
+						</form.Field>
+
+						<form.Field
+							name="endTime"
+							validators={{
+								onChange: z.string().regex(/^\d{2}:\d{2}$/, "Invalid time format"),
+							}}
+						>
+							{(field) => (
+								<div className="space-y-2">
+									<Label>End Time</Label>
+									<Input
+										type="time"
+										value={field.state.value}
+										onChange={(e) => field.handleChange(e.target.value)}
+										onBlur={field.handleBlur}
+										disabled={!isManager}
+									/>
+									{field.state.meta.errors.length > 0 && (
+										<p className="text-sm font-medium text-destructive">
+											{field.state.meta.errors[0]}
+										</p>
+									)}
+								</div>
+							)}
+						</form.Field>
+					</div>
+
+					{/* Employee assignment (managers only) */}
+					{isManager && (
+						<form.Field name="employeeId">
+							{(field) => (
+								<div className="space-y-2">
+									<Label>
+										<span className="flex items-center gap-2">
+											<Users className="h-4 w-4" />
+											Assign To
+										</span>
+									</Label>
+									<Select
+										onValueChange={(value) => field.handleChange(value === "open" ? null : value)}
+										value={field.state.value || "open"}
+									>
+										<SelectTrigger>
+											<SelectValue placeholder="Select an employee" />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="open">
+												<span className="flex items-center gap-2">
+													<Badge variant="secondary">Open Shift</Badge>
+													<span className="text-muted-foreground">Anyone can pick up</span>
+												</span>
+											</SelectItem>
+											{employees.map((emp) => (
+												<SelectItem key={emp.id} value={emp.id}>
+													{emp.firstName} {emp.lastName}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+									<p className="text-sm text-muted-foreground">
+										Leave as "Open Shift" to allow employees to claim it
+									</p>
+								</div>
+							)}
+						</form.Field>
+					)}
+
+					{/* Notes */}
+					{isManager && (
+						<form.Field name="notes">
+							{(field) => (
+								<div className="space-y-2">
+									<Label>Notes (Optional)</Label>
+									<Textarea
+										placeholder="Any special instructions or notes..."
+										className="resize-none"
+										value={field.state.value}
+										onChange={(e) => field.handleChange(e.target.value)}
+										onBlur={field.handleBlur}
+									/>
+								</div>
+							)}
+						</form.Field>
+					)}
+
+					{/* Shift status badge */}
+					{isEditing && shift && (
+						<div className="flex items-center gap-2 text-sm">
+							<span className="text-muted-foreground">Status:</span>
+							<Badge variant={shift.status === "published" ? "default" : "secondary"}>
+								{shift.status === "published" ? "Published" : "Draft"}
+							</Badge>
+						</div>
+					)}
+
+					<DialogFooter className="gap-2 sm:gap-0">
+						{isEditing && isManager && (
 							<Button
 								type="button"
-								variant="outline"
-								onClick={() => onOpenChange(false)}
+								variant="destructive"
+								onClick={handleDelete}
 								disabled={isPending}
 							>
-								Cancel
+								{deleteMutation.isPending ? (
+									<Loader2 className="h-4 w-4 animate-spin" />
+								) : (
+									<>
+										<Trash2 className="h-4 w-4 mr-2" />
+										{showDeleteConfirm ? "Confirm Delete" : "Delete"}
+									</>
+								)}
 							</Button>
-							{isManager && (
-								<Button type="submit" disabled={isPending}>
-									{upsertMutation.isPending ? (
-										<>
-											<Loader2 className="h-4 w-4 mr-2 animate-spin" />
-											Saving...
-										</>
-									) : isEditing ? (
-										"Update Shift"
-									) : (
-										"Create Shift"
-									)}
-								</Button>
-							)}
-						</DialogFooter>
-					</form>
-				</Form>
+						)}
+						<Button
+							type="button"
+							variant="outline"
+							onClick={() => onOpenChange(false)}
+							disabled={isPending}
+						>
+							Cancel
+						</Button>
+						{isManager && (
+							<Button type="submit" disabled={isPending}>
+								{upsertMutation.isPending ? (
+									<>
+										<Loader2 className="h-4 w-4 mr-2 animate-spin" />
+										Saving...
+									</>
+								) : isEditing ? (
+									"Update Shift"
+								) : (
+									"Create Shift"
+								)}
+							</Button>
+						)}
+					</DialogFooter>
+				</form>
 			</DialogContent>
 		</Dialog>
 	);

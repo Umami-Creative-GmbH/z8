@@ -1,11 +1,10 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "@tanstack/react-form";
 import { IconCalendar, IconLoader2, IconMapPin, IconTrash } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useEffect } from "react";
-import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import {
 	deleteHolidayFromPreset,
@@ -22,16 +21,8 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import {
-	Form,
-	FormControl,
-	FormDescription,
-	FormField,
-	FormItem,
-	FormLabel,
-	FormMessage,
-} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
@@ -44,7 +35,6 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { type HolidayPresetFormValues, holidayPresetFormSchema } from "@/lib/holidays/validation";
 import { queryKeys } from "@/lib/query";
 
 interface PresetDialogProps {
@@ -97,8 +87,7 @@ export function PresetDialog({
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 
-	const form = useForm<HolidayPresetFormValues>({
-		resolver: zodResolver(holidayPresetFormSchema),
+	const form = useForm({
 		defaultValues: {
 			name: "",
 			description: "",
@@ -107,6 +96,9 @@ export function PresetDialog({
 			regionCode: "",
 			color: "",
 			isActive: true,
+		},
+		onSubmit: async ({ value }) => {
+			updateMutation.mutate(value);
 		},
 	});
 
@@ -127,21 +119,27 @@ export function PresetDialog({
 	// Update form when data loads
 	useEffect(() => {
 		if (data?.preset) {
-			form.reset({
-				name: data.preset.name,
-				description: data.preset.description || "",
-				countryCode: data.preset.countryCode || "",
-				stateCode: data.preset.stateCode || "",
-				regionCode: data.preset.regionCode || "",
-				color: data.preset.color || "",
-				isActive: data.preset.isActive,
-			});
+			form.setFieldValue("name", data.preset.name);
+			form.setFieldValue("description", data.preset.description || "");
+			form.setFieldValue("countryCode", data.preset.countryCode || "");
+			form.setFieldValue("stateCode", data.preset.stateCode || "");
+			form.setFieldValue("regionCode", data.preset.regionCode || "");
+			form.setFieldValue("color", data.preset.color || "");
+			form.setFieldValue("isActive", data.preset.isActive);
 		}
 	}, [data, form]);
 
 	// Update mutation
 	const updateMutation = useMutation({
-		mutationFn: (values: HolidayPresetFormValues) => updateHolidayPreset(presetId!, values),
+		mutationFn: (values: {
+			name: string;
+			description: string;
+			countryCode: string;
+			stateCode: string;
+			regionCode: string;
+			color: string;
+			isActive: boolean;
+		}) => updateHolidayPreset(presetId!, values),
 		onSuccess: (result) => {
 			if (result.success) {
 				toast.success(t("settings.holidays.presets.updated", "Preset updated successfully"));
@@ -176,10 +174,6 @@ export function PresetDialog({
 		},
 	});
 
-	const onSubmit = (values: HolidayPresetFormValues) => {
-		updateMutation.mutate(values);
-	};
-
 	const formatDate = (month: number, day: number) => {
 		return `${MONTH_NAMES[month - 1]} ${day}`;
 	};
@@ -213,92 +207,105 @@ export function PresetDialog({
 					</div>
 				) : (
 					<>
-						<Form {...form}>
-							<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-								{/* Preset Info */}
-								<div className="grid grid-cols-2 gap-4">
-									<FormField
-										control={form.control}
-										name="name"
-										render={({ field }) => (
-											<FormItem>
-												<FormLabel>{t("settings.holidays.presets.name", "Name")}</FormLabel>
-												<FormControl>
-													<Input {...field} placeholder="e.g., Germany - Bavaria" />
-												</FormControl>
-												<FormMessage />
-											</FormItem>
-										)}
-									/>
-									<FormField
-										control={form.control}
-										name="color"
-										render={({ field }) => (
-											<FormItem>
-												<FormLabel>{t("settings.holidays.presets.color", "Color")}</FormLabel>
-												<FormControl>
-													<div className="flex gap-2">
-														<Input
-															type="color"
-															{...field}
-															className="w-12 h-10 p-1 cursor-pointer"
-														/>
-														<Input {...field} placeholder="#EF4444" className="flex-1" />
-													</div>
-												</FormControl>
-												<FormMessage />
-											</FormItem>
-										)}
-									/>
-								</div>
-
-								<FormField
-									control={form.control}
-									name="description"
-									render={({ field }) => (
-										<FormItem>
-											<FormLabel>
-												{t("settings.holidays.presets.description", "Description")} (
-												{t("common.optional", "optional")})
-											</FormLabel>
-											<FormControl>
-												<Textarea {...field} rows={2} />
-											</FormControl>
-											<FormMessage />
-										</FormItem>
+						<form
+							onSubmit={(e) => {
+								e.preventDefault();
+								form.handleSubmit();
+							}}
+							className="space-y-4"
+						>
+							{/* Preset Info */}
+							<div className="grid grid-cols-2 gap-4">
+								<form.Field
+									name="name"
+									validators={{
+										onChange: ({ value }) => {
+											if (!value) return "Name is required";
+											if (value.length > 255) return "Name is too long";
+											return undefined;
+										},
+									}}
+								>
+									{(field) => (
+										<div className="space-y-2">
+											<Label>{t("settings.holidays.presets.name", "Name")}</Label>
+											<Input
+												value={field.state.value}
+												onChange={(e) => field.handleChange(e.target.value)}
+												onBlur={field.handleBlur}
+												placeholder="e.g., Germany - Bavaria"
+											/>
+											{field.state.meta.errors.length > 0 && (
+												<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
+											)}
+										</div>
 									)}
-								/>
+								</form.Field>
+								<form.Field name="color">
+									{(field) => (
+										<div className="space-y-2">
+											<Label>{t("settings.holidays.presets.color", "Color")}</Label>
+											<div className="flex gap-2">
+												<Input
+													type="color"
+													value={field.state.value || "#3B82F6"}
+													onChange={(e) => field.handleChange(e.target.value)}
+													className="w-12 h-10 p-1 cursor-pointer"
+												/>
+												<Input
+													value={field.state.value}
+													onChange={(e) => field.handleChange(e.target.value)}
+													placeholder="#EF4444"
+													className="flex-1"
+												/>
+											</div>
+										</div>
+									)}
+								</form.Field>
+							</div>
 
-								{/* Location Info (read-only) */}
-								{formatLocation() && (
-									<div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 rounded-md px-3 py-2">
-										<IconMapPin className="h-4 w-4" />
-										<span>{formatLocation()}</span>
+							<form.Field name="description">
+								{(field) => (
+									<div className="space-y-2">
+										<Label>
+											{t("settings.holidays.presets.description", "Description")} (
+											{t("common.optional", "optional")})
+										</Label>
+										<Textarea
+											value={field.state.value}
+											onChange={(e) => field.handleChange(e.target.value)}
+											onBlur={field.handleBlur}
+											rows={2}
+										/>
 									</div>
 								)}
+							</form.Field>
 
-								<FormField
-									control={form.control}
-									name="isActive"
-									render={({ field }) => (
-										<FormItem className="flex items-center justify-between rounded-lg border p-3">
-											<div className="space-y-0.5">
-												<FormLabel>{t("settings.holidays.presets.active", "Active")}</FormLabel>
-												<FormDescription>
-													{t(
-														"settings.holidays.presets.activeDescription",
-														"Inactive presets won't apply to employees",
-													)}
-												</FormDescription>
-											</div>
-											<FormControl>
-												<Switch checked={field.value} onCheckedChange={field.onChange} />
-											</FormControl>
-										</FormItem>
-									)}
-								/>
-							</form>
-						</Form>
+							{/* Location Info (read-only) */}
+							{formatLocation() && (
+								<div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 rounded-md px-3 py-2">
+									<IconMapPin className="h-4 w-4" />
+									<span>{formatLocation()}</span>
+								</div>
+							)}
+
+							<form.Field name="isActive">
+								{(field) => (
+									<div className="flex items-center justify-between rounded-lg border p-3">
+										<div className="space-y-0.5">
+											<Label>{t("settings.holidays.presets.active", "Active")}</Label>
+											<p className="text-sm text-muted-foreground">
+												{t(
+													"settings.holidays.presets.activeDescription",
+													"Inactive presets won't apply to employees",
+												)}
+											</p>
+										</div>
+										<Switch checked={field.state.value} onCheckedChange={field.handleChange} />
+									</div>
+								)}
+							</form.Field>
+						</form>
 
 						{/* Holidays List */}
 						<div className="border-t pt-4">
@@ -384,7 +391,7 @@ export function PresetDialog({
 							</Button>
 							<Button
 								type="submit"
-								onClick={form.handleSubmit(onSubmit)}
+								onClick={() => form.handleSubmit()}
 								disabled={updateMutation.isPending}
 							>
 								{updateMutation.isPending && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}

@@ -12,6 +12,7 @@ import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getAuthContext } from "@/lib/auth-helpers";
+import { getTranslate } from "@/tolgee/server";
 import { getInstanceStats } from "./actions";
 
 interface StatCardProps {
@@ -49,13 +50,14 @@ function StatCard({ title, value, description, icon, trend }: StatCardProps) {
 	);
 }
 
-async function DatawarehouseContent() {
+async function StatisticsContent() {
+	const t = await getTranslate();
 	const authContext = await getAuthContext();
 
 	if (!authContext?.employee) {
 		return (
 			<div className="flex flex-1 items-center justify-center p-6">
-				<NoEmployeeError feature="view instance statistics" />
+				<NoEmployeeError feature={t("settings.statistics.feature", "view instance statistics")} />
 			</div>
 		);
 	}
@@ -70,12 +72,18 @@ async function DatawarehouseContent() {
 		return (
 			<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
 				<div className="space-y-1">
-					<h1 className="text-2xl font-semibold">Datawarehousing</h1>
-					<p className="text-muted-foreground">View statistics and metrics about your instance</p>
+					<h1 className="text-2xl font-semibold">
+						{t("settings.statistics.title", "Statistics")}
+					</h1>
+					<p className="text-muted-foreground">
+						{t("settings.statistics.description", "View statistics and metrics about your instance")}
+					</p>
 				</div>
 				<Card className="border-destructive">
 					<CardContent className="pt-6">
-						<p className="text-destructive">Failed to load statistics: {statsResult.error}</p>
+						<p className="text-destructive">
+							{t("settings.statistics.loadError", "Failed to load statistics")}: {statsResult.error}
+						</p>
 					</CardContent>
 				</Card>
 			</div>
@@ -89,11 +97,15 @@ async function DatawarehouseContent() {
 		<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
 			<div className="flex items-start justify-between">
 				<div className="space-y-1">
-					<h1 className="text-2xl font-semibold">Datawarehousing</h1>
-					<p className="text-muted-foreground">View statistics and metrics about your instance</p>
+					<h1 className="text-2xl font-semibold">
+						{t("settings.statistics.title", "Statistics")}
+					</h1>
+					<p className="text-muted-foreground">
+						{t("settings.statistics.description", "View statistics and metrics about your instance")}
+					</p>
 				</div>
 				<p className="text-xs text-muted-foreground">
-					Last updated: {new Date(stats.fetchedAt).toLocaleString()}
+					{t("settings.statistics.lastUpdated", "Last updated")}: {new Date(stats.fetchedAt).toLocaleString()}
 				</p>
 			</div>
 
@@ -101,27 +113,31 @@ async function DatawarehouseContent() {
 			<section>
 				<h2 className="text-lg font-medium mb-4 flex items-center gap-2">
 					<IconUsers className="size-5" />
-					Core Counts
+					{t("settings.statistics.sections.coreCounts", "Core Counts")}
 				</h2>
 				<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
 					<StatCard
-						title="Total Users"
+						title={t("settings.statistics.cards.totalUsers", "Total Users")}
 						value={stats.totalUsers}
 						icon={<IconUsers className="size-4" />}
 					/>
 					<StatCard
-						title="Organizations"
+						title={t("settings.statistics.cards.organizations", "Organizations")}
 						value={stats.totalOrganizations}
 						icon={<IconBuilding className="size-4" />}
 					/>
 					<StatCard
-						title="Employees"
+						title={t("settings.statistics.cards.employees", "Employees")}
 						value={stats.totalEmployees}
-						description={`${stats.activeEmployees} active, ${stats.inactiveEmployees} inactive`}
+						description={t(
+							"settings.statistics.cards.employeesDescription",
+							"{active} active, {inactive} inactive",
+							{ active: stats.activeEmployees, inactive: stats.inactiveEmployees }
+						)}
 						icon={<IconUsers className="size-4" />}
 					/>
 					<StatCard
-						title="Teams"
+						title={t("settings.statistics.cards.teams", "Teams")}
 						value={stats.totalTeams}
 						icon={<IconUsers className="size-4" />}
 					/>
@@ -132,35 +148,43 @@ async function DatawarehouseContent() {
 			<section>
 				<h2 className="text-lg font-medium mb-4 flex items-center gap-2">
 					<IconCalendarStats className="size-5" />
-					Activity Metrics
+					{t("settings.statistics.sections.activityMetrics", "Activity Metrics")}
 				</h2>
 				<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
 					<StatCard
-						title="Total Time Entries"
+						title={t("settings.statistics.cards.totalTimeEntries", "Total Time Entries")}
 						value={stats.totalTimeEntries}
 						icon={<IconClock className="size-4" />}
 						trend={{
 							value: timeEntryChange,
-							label: "vs last month",
+							label: t("settings.statistics.cards.vsLastMonth", "vs last month"),
 							positive: timeEntryChange > 0 ? true : timeEntryChange < 0 ? false : undefined,
 						}}
 					/>
 					<StatCard
-						title="This Month"
+						title={t("settings.statistics.cards.thisMonth", "This Month")}
 						value={stats.timeEntriesThisMonth}
-						description="Time entries"
+						description={t("settings.statistics.cards.timeEntries", "Time entries")}
 						icon={<IconClock className="size-4" />}
 					/>
 					<StatCard
-						title="Total Absences"
+						title={t("settings.statistics.cards.totalAbsences", "Total Absences")}
 						value={stats.totalAbsences}
-						description={`${stats.pendingAbsences} pending`}
+						description={t(
+							"settings.statistics.cards.pendingCount",
+							"{count} pending",
+							{ count: stats.pendingAbsences }
+						)}
 						icon={<IconCalendarStats className="size-4" />}
 					/>
 					<StatCard
-						title="Approval Requests"
+						title={t("settings.statistics.cards.approvalRequests", "Approval Requests")}
 						value={stats.totalApprovals}
-						description={`${stats.pendingApprovals} pending`}
+						description={t(
+							"settings.statistics.cards.pendingCount",
+							"{count} pending",
+							{ count: stats.pendingApprovals }
+						)}
 						icon={<IconChartBar className="size-4" />}
 					/>
 				</div>
@@ -170,21 +194,21 @@ async function DatawarehouseContent() {
 			<section>
 				<h2 className="text-lg font-medium mb-4 flex items-center gap-2">
 					<IconChartBar className="size-5" />
-					Absence Breakdown
+					{t("settings.statistics.sections.absenceBreakdown", "Absence Breakdown")}
 				</h2>
 				<div className="grid gap-4 md:grid-cols-3">
 					<StatCard
-						title="Pending Absences"
+						title={t("settings.statistics.cards.pendingAbsences", "Pending Absences")}
 						value={stats.pendingAbsences}
 						icon={<div className="h-3 w-3 rounded-full bg-yellow-500" />}
 					/>
 					<StatCard
-						title="Approved Absences"
+						title={t("settings.statistics.cards.approvedAbsences", "Approved Absences")}
 						value={stats.approvedAbsences}
 						icon={<div className="h-3 w-3 rounded-full bg-green-500" />}
 					/>
 					<StatCard
-						title="Rejected Absences"
+						title={t("settings.statistics.cards.rejectedAbsences", "Rejected Absences")}
 						value={stats.rejectedAbsences}
 						icon={<div className="h-3 w-3 rounded-full bg-red-500" />}
 					/>
@@ -195,13 +219,13 @@ async function DatawarehouseContent() {
 			<section>
 				<h2 className="text-lg font-medium mb-4 flex items-center gap-2">
 					<IconRefresh className="size-5" />
-					System Health
+					{t("settings.statistics.sections.systemHealth", "System Health")}
 				</h2>
 				<div className="grid gap-4 md:grid-cols-3">
 					<StatCard
-						title="Active Sessions"
+						title={t("settings.statistics.cards.activeSessions", "Active Sessions")}
 						value={stats.activeSessions}
-						description="Current database sessions"
+						description={t("settings.statistics.cards.activeSessionsDescription", "Current database sessions")}
 						icon={<IconRefresh className="size-4" />}
 					/>
 				</div>
@@ -210,7 +234,7 @@ async function DatawarehouseContent() {
 	);
 }
 
-function DatawarehouseLoading() {
+function StatisticsLoading() {
 	return (
 		<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
 			<div className="space-y-2">
@@ -257,10 +281,10 @@ function DatawarehouseLoading() {
 	);
 }
 
-export default function DatawarehousePage() {
+export default function StatisticsPage() {
 	return (
-		<Suspense fallback={<DatawarehouseLoading />}>
-			<DatawarehouseContent />
+		<Suspense fallback={<StatisticsLoading />}>
+			<StatisticsContent />
 		</Suspense>
 	);
 }

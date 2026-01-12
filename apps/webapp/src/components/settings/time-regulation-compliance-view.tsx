@@ -3,13 +3,14 @@
 import {
 	IconAlertTriangle,
 	IconCheck,
+	IconDownload,
 	IconLoader2,
 	IconRefresh,
 } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { format, subDays } from "date-fns";
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
 	acknowledgeViolation,
@@ -44,18 +45,10 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { queryKeys } from "@/lib/query";
 
 interface TimeRegulationComplianceViewProps {
 	organizationId: string;
 }
-
-const violationTypeLabels: Record<string, string> = {
-	max_daily: "Max Daily Exceeded",
-	max_weekly: "Max Weekly Exceeded",
-	max_uninterrupted: "Max Continuous Exceeded",
-	break_required: "Required Break Missing",
-};
 
 const violationTypeColors: Record<string, "destructive" | "secondary" | "outline"> = {
 	max_daily: "destructive",
@@ -64,25 +57,44 @@ const violationTypeColors: Record<string, "destructive" | "secondary" | "outline
 	break_required: "outline",
 };
 
-function formatMinutesToHours(minutes: number): string {
-	const hours = Math.floor(minutes / 60);
-	const mins = minutes % 60;
-	if (mins === 0) return `${hours}h`;
-	return `${hours}h ${mins}m`;
-}
-
 export function TimeRegulationComplianceView({
 	organizationId,
 }: TimeRegulationComplianceViewProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const [dateRange, setDateRange] = useState<"7d" | "30d" | "90d">("30d");
+
+	// Helper function to get translated violation type labels
+	const getViolationTypeLabel = (type: string): string => {
+		switch (type) {
+			case "max_daily":
+				return t("settings.timeRegulations.violationType.maxDaily", "Max Daily Exceeded");
+			case "max_weekly":
+				return t("settings.timeRegulations.violationType.maxWeekly", "Max Weekly Exceeded");
+			case "max_uninterrupted":
+				return t("settings.timeRegulations.violationType.maxUninterrupted", "Max Continuous Exceeded");
+			case "break_required":
+				return t("settings.timeRegulations.violationType.breakRequired", "Required Break Missing");
+			default:
+				return type;
+		}
+	};
+
+	// Helper function to format minutes to hours with translation
+	const formatMinutesToHours = (minutes: number): string => {
+		const hours = Math.floor(minutes / 60);
+		const mins = minutes % 60;
+		if (mins === 0) {
+			return t("settings.timeRegulations.hoursFormat", "{hours}h", { hours });
+		}
+		return t("settings.timeRegulations.hoursMinutesFormat", "{hours}h {mins}m", { hours, mins });
+	};
 	const [acknowledgeDialogOpen, setAcknowledgeDialogOpen] = useState(false);
 	const [selectedViolation, setSelectedViolation] = useState<ViolationSummary | null>(null);
 	const [acknowledgeNote, setAcknowledgeNote] = useState("");
 
-	// Calculate date range
-	const getDateRange = () => {
+	// Calculate date range - memoized to prevent infinite refetch
+	const range = useMemo(() => {
 		const end = new Date();
 		let start: Date;
 		switch (dateRange) {
@@ -99,9 +111,13 @@ export function TimeRegulationComplianceView({
 				start = subDays(end, 30);
 		}
 		return { start, end };
-	};
+	}, [dateRange]);
 
-	const range = getDateRange();
+	// Create stable query key using ISO strings instead of Date objects
+	const queryKey = useMemo(
+		() => ["time-regulations", "violations", "list", organizationId, dateRange] as const,
+		[organizationId, dateRange],
+	);
 
 	// Fetch violations
 	const {
@@ -110,7 +126,7 @@ export function TimeRegulationComplianceView({
 		error,
 		refetch,
 	} = useQuery({
-		queryKey: queryKeys.timeRegulations.violations.list(organizationId, range),
+		queryKey,
 		queryFn: async () => {
 			const result = await getViolationsSummary(organizationId, range.start, range.end);
 			if (!result.success) {
@@ -118,6 +134,8 @@ export function TimeRegulationComplianceView({
 			}
 			return result.data;
 		},
+		staleTime: 30 * 1000, // Consider data fresh for 30 seconds
+		refetchOnWindowFocus: false, // Don't refetch on window focus
 	});
 
 	// Acknowledge mutation
@@ -127,9 +145,7 @@ export function TimeRegulationComplianceView({
 		onSuccess: (result) => {
 			if (result.success) {
 				toast.success(t("settings.timeRegulations.violationAcknowledged", "Violation acknowledged"));
-				queryClient.invalidateQueries({
-					queryKey: queryKeys.timeRegulations.violations.list(organizationId, range),
-				});
+				queryClient.invalidateQueries({ queryKey });
 				setAcknowledgeDialogOpen(false);
 				setSelectedViolation(null);
 				setAcknowledgeNote("");
@@ -152,6 +168,85 @@ export function TimeRegulationComplianceView({
 		setAcknowledgeNote("");
 		setAcknowledgeDialogOpen(true);
 	};
+
+	// CSV Export function
+	const handleExportCSV = useCallback(() => {
+		if (!violations || violations.length === 0) {
+			toast.error(t("settings.timeRegulations.noDataToExport", "No data to export"));
+			return;
+		}
+
+		const headers = [
+			t("settings.timeRegulations.csv.employee", "Employee"),
+			t("settings.timeRegulations.csv.date", "Date"),
+			t("settings.timeRegulations.csv.violationType", "Violation Type"),
+			t("settings.timeRegulations.csv.actualMinutes", "Actual Minutes"),
+			t("settings.timeRegulations.csv.limitMinutes", "Limit Minutes"),
+			t("settings.timeRegulations.csv.breakTaken", "Break Taken (min)"),
+			t("settings.timeRegulations.csv.breakRequired", "Break Required (min)"),
+			t("settings.timeRegulations.csv.status", "Status"),
+			t("settings.timeRegulations.csv.acknowledgedAt", "Acknowledged At"),
+			t("settings.timeRegulations.csv.acknowledgedNote", "Acknowledged Note"),
+		];
+
+		const unknownLabel = t("common.unknown", "Unknown");
+		const acknowledgedLabel = t("settings.timeRegulations.acknowledged", "Acknowledged");
+		const pendingLabel = t("settings.timeRegulations.pending", "Pending");
+
+		const rows = violations.map((v) => {
+			const details =
+				typeof v.details === "object" && v.details !== null
+					? (v.details as Record<string, number | string | undefined>)
+					: {};
+
+			const employeeName = v.employee
+				? `${v.employee.firstName || ""} ${v.employee.lastName || ""}`.trim() || unknownLabel
+				: unknownLabel;
+
+			return [
+				employeeName,
+				format(new Date(v.violationDate), "yyyy-MM-dd"),
+				getViolationTypeLabel(v.violationType) || v.violationType,
+				details.actualMinutes ?? "",
+				details.limitMinutes ?? "",
+				details.breakTakenMinutes ?? "",
+				details.breakRequiredMinutes ?? "",
+				v.acknowledgedAt ? acknowledgedLabel : pendingLabel,
+				v.acknowledgedAt ? format(new Date(v.acknowledgedAt), "yyyy-MM-dd HH:mm") : "",
+				v.acknowledgedNote || "",
+			];
+		});
+
+		// Build CSV content
+		const csvContent = [
+			headers.join(","),
+			...rows.map((row) =>
+				row
+					.map((cell) => {
+						const str = String(cell);
+						// Escape quotes and wrap in quotes if contains comma, quote, or newline
+						if (str.includes(",") || str.includes('"') || str.includes("\n")) {
+							return `"${str.replace(/"/g, '""')}"`;
+						}
+						return str;
+					})
+					.join(","),
+			),
+		].join("\n");
+
+		// Download file
+		const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+		const url = URL.createObjectURL(blob);
+		const link = document.createElement("a");
+		link.href = url;
+		link.download = `violations-${dateRange}-${format(new Date(), "yyyy-MM-dd")}.csv`;
+		document.body.appendChild(link);
+		link.click();
+		document.body.removeChild(link);
+		URL.revokeObjectURL(url);
+
+		toast.success(t("settings.timeRegulations.exportSuccess", "Violations exported successfully"));
+	}, [violations, dateRange, t, getViolationTypeLabel]);
 
 	const handleAcknowledgeConfirm = () => {
 		if (selectedViolation) {
@@ -232,10 +327,21 @@ export function TimeRegulationComplianceView({
 					</SelectContent>
 				</Select>
 
-				<Button variant="ghost" size="icon" onClick={() => refetch()}>
-					<IconRefresh className="h-4 w-4" />
-					<span className="sr-only">{t("common.refresh", "Refresh")}</span>
-				</Button>
+				<div className="flex items-center gap-2">
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={handleExportCSV}
+						disabled={!violations || violations.length === 0}
+					>
+						<IconDownload className="mr-2 h-4 w-4" />
+						{t("settings.timeRegulations.exportCsv", "Export CSV")}
+					</Button>
+					<Button variant="ghost" size="icon" onClick={() => refetch()}>
+						<IconRefresh className="h-4 w-4" />
+						<span className="sr-only">{t("common.refresh", "Refresh")}</span>
+					</Button>
+				</div>
 			</div>
 
 			{/* Summary Cards */}
@@ -323,13 +429,13 @@ export function TimeRegulationComplianceView({
 										<TableCell className="font-medium">
 											{violation.employee
 												? `${violation.employee.firstName || ""} ${violation.employee.lastName || ""}`.trim() ||
-													"Unknown"
-												: "Unknown"}
+													t("common.unknown", "Unknown")
+												: t("common.unknown", "Unknown")}
 										</TableCell>
 										<TableCell>{format(new Date(violation.violationDate), "MMM d, yyyy")}</TableCell>
 										<TableCell>
 											<Badge variant={violationTypeColors[violation.violationType] || "outline"}>
-												{violationTypeLabels[violation.violationType] || violation.violationType}
+												{getViolationTypeLabel(violation.violationType) || violation.violationType}
 											</Badge>
 										</TableCell>
 										<TableCell className="text-sm text-muted-foreground">
@@ -342,7 +448,14 @@ export function TimeRegulationComplianceView({
 											{details.breakTakenMinutes !== undefined &&
 												details.breakRequiredMinutes !== undefined && (
 													<span>
-														Took {details.breakTakenMinutes}m, needed {details.breakRequiredMinutes}m
+														{t(
+															"settings.timeRegulations.breakTookNeeded",
+															"Took {taken}m, needed {needed}m",
+															{
+																taken: details.breakTakenMinutes,
+																needed: details.breakRequiredMinutes,
+															},
+														)}
 													</span>
 												)}
 										</TableCell>
@@ -398,25 +511,32 @@ export function TimeRegulationComplianceView({
 							<div className="rounded-lg border p-4 bg-muted/30">
 								<div className="grid grid-cols-2 gap-2 text-sm">
 									<div>
-										<span className="text-muted-foreground">Employee:</span>{" "}
+										<span className="text-muted-foreground">
+											{t("settings.timeRegulations.employeeLabel", "Employee:")}
+										</span>{" "}
 										<span className="font-medium">
 											{selectedViolation.employee
-												? `${selectedViolation.employee.firstName || ""} ${selectedViolation.employee.lastName || ""}`.trim()
-												: "Unknown"}
+												? `${selectedViolation.employee.firstName || ""} ${selectedViolation.employee.lastName || ""}`.trim() ||
+													t("common.unknown", "Unknown")
+												: t("common.unknown", "Unknown")}
 										</span>
 									</div>
 									<div>
-										<span className="text-muted-foreground">Date:</span>{" "}
+										<span className="text-muted-foreground">
+											{t("settings.timeRegulations.dateLabel", "Date:")}
+										</span>{" "}
 										<span className="font-medium">
 											{format(new Date(selectedViolation.violationDate), "MMM d, yyyy")}
 										</span>
 									</div>
 									<div className="col-span-2">
-										<span className="text-muted-foreground">Type:</span>{" "}
+										<span className="text-muted-foreground">
+											{t("settings.timeRegulations.typeLabel", "Type:")}
+										</span>{" "}
 										<Badge
 											variant={violationTypeColors[selectedViolation.violationType] || "outline"}
 										>
-											{violationTypeLabels[selectedViolation.violationType] ||
+											{getViolationTypeLabel(selectedViolation.violationType) ||
 												selectedViolation.violationType}
 										</Badge>
 									</div>

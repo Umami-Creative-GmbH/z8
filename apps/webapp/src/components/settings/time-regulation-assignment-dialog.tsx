@@ -115,6 +115,7 @@ export function TimeRegulationAssignmentDialog({
 			return result.data;
 		},
 		enabled: open,
+		staleTime: 30 * 1000,
 	});
 
 	// Fetch teams (only for team assignments)
@@ -128,6 +129,7 @@ export function TimeRegulationAssignmentDialog({
 			return result.data;
 		},
 		enabled: open && assignmentType === "team",
+		staleTime: 30 * 1000,
 	});
 
 	// Fetch employees (only for employee assignments)
@@ -141,6 +143,7 @@ export function TimeRegulationAssignmentDialog({
 			return result.data;
 		},
 		enabled: open && assignmentType === "employee",
+		staleTime: 30 * 1000,
 	});
 
 	// Create assignment mutation
@@ -360,7 +363,7 @@ export function TimeRegulationAssignmentDialog({
 														<SelectItem key={emp.id} value={emp.id}>
 															{`${emp.firstName || ""} ${emp.lastName || ""}`.trim() ||
 																emp.employeeNumber ||
-																"Unknown"}
+																t("common.unknown", "Unknown")}
 														</SelectItem>
 													))
 												) : (

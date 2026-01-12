@@ -36,14 +36,6 @@ const defaultBreakOption: BreakOptionFormValues = {
 	minimumLongestSplitMinutes: null,
 };
 
-function formatMinutesToDisplay(minutes: number): string {
-	if (minutes < 60) return `${minutes} min`;
-	const hours = Math.floor(minutes / 60);
-	const mins = minutes % 60;
-	if (mins === 0) return `${hours}h`;
-	return `${hours}h ${mins}m`;
-}
-
 export function BreakRuleEditor({ ruleIndex, form, onRemove }: BreakRuleEditorProps) {
 	const { t } = useTranslate();
 
@@ -232,7 +224,7 @@ export function BreakRuleEditor({ ruleIndex, form, onRemove }: BreakRuleEditorPr
 																}}
 																className="w-16"
 															/>
-															<span className="text-xs text-muted-foreground">min</span>
+															<span className="text-xs text-muted-foreground">{t("settings.timeRegulations.minUnit", "min")}</span>
 														</div>
 													)}
 												</form.Field>
@@ -259,7 +251,7 @@ export function BreakRuleEditor({ ruleIndex, form, onRemove }: BreakRuleEditorPr
 																}}
 																className="w-16"
 															/>
-															<span className="text-xs text-muted-foreground">min</span>
+															<span className="text-xs text-muted-foreground">{t("settings.timeRegulations.minUnit", "min")}</span>
 														</div>
 													)}
 												</form.Field>

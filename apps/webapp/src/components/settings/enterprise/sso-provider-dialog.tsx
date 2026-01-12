@@ -1,10 +1,8 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "@tanstack/react-form";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { z } from "zod";
 import {
 	type OIDCProviderInput,
 	registerSSOProviderAction,
@@ -18,35 +16,8 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import {
-	Form,
-	FormControl,
-	FormDescription,
-	FormField,
-	FormItem,
-	FormLabel,
-	FormMessage,
-} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-
-const providerSchema = z.object({
-	providerId: z
-		.string()
-		.min(1, "Provider ID is required")
-		.regex(/^[a-z0-9-]+$/, "Provider ID must contain only lowercase letters, numbers, and hyphens"),
-	issuer: z.string().url("Please enter a valid URL").min(1, "Issuer URL is required"),
-	domain: z
-		.string()
-		.min(1, "Domain is required")
-		.regex(
-			/^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/,
-			"Please enter a valid domain (e.g., example.com)",
-		),
-	clientId: z.string().min(1, "Client ID is required"),
-	clientSecret: z.string().min(1, "Client Secret is required"),
-});
-
-type ProviderFormData = z.infer<typeof providerSchema>;
+import { Label } from "@/components/ui/label";
 
 interface SSOProviderDialogProps {
 	open: boolean;
@@ -61,11 +32,13 @@ interface SSOProviderDialogProps {
 	}) => void;
 }
 
+const DOMAIN_REGEX = /^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
+const PROVIDER_ID_REGEX = /^[a-z0-9-]+$/;
+
 export function SSOProviderDialog({ open, onOpenChange, onProviderAdded }: SSOProviderDialogProps) {
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
-	const form = useForm<ProviderFormData>({
-		resolver: zodResolver(providerSchema),
+	const form = useForm({
 		defaultValues: {
 			providerId: "",
 			issuer: "",
@@ -73,31 +46,30 @@ export function SSOProviderDialog({ open, onOpenChange, onProviderAdded }: SSOPr
 			clientId: "",
 			clientSecret: "",
 		},
-	});
-
-	const onSubmit = async (data: ProviderFormData) => {
-		setIsSubmitting(true);
-		try {
-			await registerSSOProviderAction(data as OIDCProviderInput);
-			onProviderAdded({
-				id: crypto.randomUUID(),
-				issuer: data.issuer,
-				domain: data.domain.toLowerCase(),
-				providerId: data.providerId,
-				domainVerified: false,
-				createdAt: new Date(),
-			});
-			form.reset();
-		} catch (error) {
-			if (error instanceof Error) {
-				toast.error(error.message);
-			} else {
-				toast.error("Failed to add SSO provider");
+		onSubmit: async ({ value }) => {
+			setIsSubmitting(true);
+			try {
+				await registerSSOProviderAction(value as OIDCProviderInput);
+				onProviderAdded({
+					id: crypto.randomUUID(),
+					issuer: value.issuer,
+					domain: value.domain.toLowerCase(),
+					providerId: value.providerId,
+					domainVerified: false,
+					createdAt: new Date(),
+				});
+				form.reset();
+			} catch (error) {
+				if (error instanceof Error) {
+					toast.error(error.message);
+				} else {
+					toast.error("Failed to add SSO provider");
+				}
+			} finally {
+				setIsSubmitting(false);
 			}
-		} finally {
-			setIsSubmitting(false);
-		}
-	};
+		},
+	});
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
@@ -108,95 +80,174 @@ export function SSOProviderDialog({ open, onOpenChange, onProviderAdded }: SSOPr
 						Configure an OIDC identity provider for enterprise single sign-on.
 					</DialogDescription>
 				</DialogHeader>
-				<Form {...form}>
-					<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-						<FormField
-							control={form.control}
-							name="providerId"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>Provider ID</FormLabel>
-									<FormControl>
-										<Input placeholder="acme-okta" {...field} />
-									</FormControl>
-									<FormDescription>
-										A unique identifier for this provider (lowercase, no spaces)
-									</FormDescription>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
+				<form
+					onSubmit={(e) => {
+						e.preventDefault();
+						form.handleSubmit();
+					}}
+					className="space-y-4"
+				>
+					<form.Field
+						name="providerId"
+						validators={{
+							onChange: ({ value }) => {
+								if (!value) return "Provider ID is required";
+								if (!PROVIDER_ID_REGEX.test(value)) {
+									return "Provider ID must contain only lowercase letters, numbers, and hyphens";
+								}
+								return undefined;
+							},
+						}}
+					>
+						{(field) => (
+							<div className="space-y-2">
+								<Label htmlFor="providerId">Provider ID</Label>
+								<Input
+									id="providerId"
+									placeholder="acme-okta"
+									value={field.state.value}
+									onChange={(e) => field.handleChange(e.target.value)}
+									onBlur={field.handleBlur}
+								/>
+								<p className="text-sm text-muted-foreground">
+									A unique identifier for this provider (lowercase, no spaces)
+								</p>
+								{field.state.meta.errors.length > 0 && (
+									<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
+								)}
+							</div>
+						)}
+					</form.Field>
 
-						<FormField
-							control={form.control}
-							name="issuer"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>Issuer URL</FormLabel>
-									<FormControl>
-										<Input placeholder="https://example.okta.com" type="url" {...field} />
-									</FormControl>
-									<FormDescription>The OIDC issuer URL from your identity provider</FormDescription>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
+					<form.Field
+						name="issuer"
+						validators={{
+							onChange: ({ value }) => {
+								if (!value) return "Issuer URL is required";
+								try {
+									new URL(value);
+								} catch {
+									return "Please enter a valid URL";
+								}
+								return undefined;
+							},
+						}}
+					>
+						{(field) => (
+							<div className="space-y-2">
+								<Label htmlFor="issuer">Issuer URL</Label>
+								<Input
+									id="issuer"
+									type="url"
+									placeholder="https://example.okta.com"
+									value={field.state.value}
+									onChange={(e) => field.handleChange(e.target.value)}
+									onBlur={field.handleBlur}
+								/>
+								<p className="text-sm text-muted-foreground">
+									The OIDC issuer URL from your identity provider
+								</p>
+								{field.state.meta.errors.length > 0 && (
+									<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
+								)}
+							</div>
+						)}
+					</form.Field>
 
-						<FormField
-							control={form.control}
-							name="domain"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>Email Domain</FormLabel>
-									<FormControl>
-										<Input placeholder="example.com" {...field} />
-									</FormControl>
-									<FormDescription>
-										Users with this email domain will be able to use SSO
-									</FormDescription>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
+					<form.Field
+						name="domain"
+						validators={{
+							onChange: ({ value }) => {
+								if (!value) return "Domain is required";
+								if (!DOMAIN_REGEX.test(value)) {
+									return "Please enter a valid domain (e.g., example.com)";
+								}
+								return undefined;
+							},
+						}}
+					>
+						{(field) => (
+							<div className="space-y-2">
+								<Label htmlFor="domain">Email Domain</Label>
+								<Input
+									id="domain"
+									placeholder="example.com"
+									value={field.state.value}
+									onChange={(e) => field.handleChange(e.target.value)}
+									onBlur={field.handleBlur}
+								/>
+								<p className="text-sm text-muted-foreground">
+									Users with this email domain will be able to use SSO
+								</p>
+								{field.state.meta.errors.length > 0 && (
+									<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
+								)}
+							</div>
+						)}
+					</form.Field>
 
-						<FormField
-							control={form.control}
-							name="clientId"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>Client ID</FormLabel>
-									<FormControl>
-										<Input placeholder="Your OIDC client ID" {...field} />
-									</FormControl>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
+					<form.Field
+						name="clientId"
+						validators={{
+							onChange: ({ value }) => {
+								if (!value) return "Client ID is required";
+								return undefined;
+							},
+						}}
+					>
+						{(field) => (
+							<div className="space-y-2">
+								<Label htmlFor="clientId">Client ID</Label>
+								<Input
+									id="clientId"
+									placeholder="Your OIDC client ID"
+									value={field.state.value}
+									onChange={(e) => field.handleChange(e.target.value)}
+									onBlur={field.handleBlur}
+								/>
+								{field.state.meta.errors.length > 0 && (
+									<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
+								)}
+							</div>
+						)}
+					</form.Field>
 
-						<FormField
-							control={form.control}
-							name="clientSecret"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>Client Secret</FormLabel>
-									<FormControl>
-										<Input type="password" placeholder="Your OIDC client secret" {...field} />
-									</FormControl>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
+					<form.Field
+						name="clientSecret"
+						validators={{
+							onChange: ({ value }) => {
+								if (!value) return "Client Secret is required";
+								return undefined;
+							},
+						}}
+					>
+						{(field) => (
+							<div className="space-y-2">
+								<Label htmlFor="clientSecret">Client Secret</Label>
+								<Input
+									id="clientSecret"
+									type="password"
+									placeholder="Your OIDC client secret"
+									value={field.state.value}
+									onChange={(e) => field.handleChange(e.target.value)}
+									onBlur={field.handleBlur}
+								/>
+								{field.state.meta.errors.length > 0 && (
+									<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
+								)}
+							</div>
+						)}
+					</form.Field>
 
-						<DialogFooter>
-							<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-								Cancel
-							</Button>
-							<Button type="submit" disabled={isSubmitting}>
-								{isSubmitting ? "Adding..." : "Add Provider"}
-							</Button>
-						</DialogFooter>
-					</form>
-				</Form>
+					<DialogFooter>
+						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+							Cancel
+						</Button>
+						<Button type="submit" disabled={isSubmitting}>
+							{isSubmitting ? "Adding..." : "Add Provider"}
+						</Button>
+					</DialogFooter>
+				</form>
 			</DialogContent>
 		</Dialog>
 	);

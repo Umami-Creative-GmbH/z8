@@ -1,6 +1,7 @@
 "use client";
 
 import { IconDownload, IconLoader2 } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -9,17 +10,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import {
-	CATEGORY_LABELS,
-	EXPORT_CATEGORIES,
-	type ExportCategory,
-} from "@/lib/export/data-fetchers";
+import { EXPORT_CATEGORIES, type ExportCategory } from "@/lib/export/data-fetchers";
 
 interface ExportFormProps {
 	organizationId: string;
 }
 
 export function ExportForm({ organizationId }: ExportFormProps) {
+	const { t } = useTranslate();
 	const router = useRouter();
 	const [selectedCategories, setSelectedCategories] = useState<Set<ExportCategory>>(new Set());
 	const [isSubmitting, setIsSubmitting] = useState(false);
@@ -47,7 +45,7 @@ export function ExportForm({ organizationId }: ExportFormProps) {
 
 	const handleSubmit = async () => {
 		if (selectedCategories.size === 0) {
-			toast.error("Please select at least one data category to export");
+			toast.error(t("settings.dataExport.form.selectAtLeastOne"));
 			return;
 		}
 
@@ -59,16 +57,14 @@ export function ExportForm({ organizationId }: ExportFormProps) {
 			});
 
 			if (result.success) {
-				toast.success(
-					"Export request submitted! You will receive an email when it's ready for download.",
-				);
+				toast.success(t("settings.dataExport.form.submitSuccess"));
 				// Switch to history tab
 				router.refresh();
 			} else {
-				toast.error(result.error || "Failed to start export");
+				toast.error(result.error || t("settings.dataExport.form.submitError"));
 			}
 		} catch (error) {
-			toast.error("An unexpected error occurred");
+			toast.error(t("settings.dataExport.form.unexpectedError"));
 			console.error("Export error:", error);
 		} finally {
 			setIsSubmitting(false);
@@ -78,11 +74,8 @@ export function ExportForm({ organizationId }: ExportFormProps) {
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>Create New Export</CardTitle>
-				<CardDescription>
-					Select the data categories you want to export. The export will be processed in the
-					background and you'll receive an email with a download link when it's ready.
-				</CardDescription>
+				<CardTitle>{t("settings.dataExport.form.title")}</CardTitle>
+				<CardDescription>{t("settings.dataExport.form.description")}</CardDescription>
 			</CardHeader>
 			<CardContent>
 				<div className="space-y-6">
@@ -98,7 +91,7 @@ export function ExportForm({ organizationId }: ExportFormProps) {
 							htmlFor="select-all"
 							className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
 						>
-							Select All
+							{t("settings.dataExport.form.selectAll")}
 						</Label>
 					</div>
 
@@ -116,10 +109,10 @@ export function ExportForm({ organizationId }: ExportFormProps) {
 										htmlFor={category}
 										className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
 									>
-										{CATEGORY_LABELS[category]}
+										{t(`settings.dataExport.categories.${category}.label`)}
 									</Label>
 									<p className="text-xs text-muted-foreground">
-										{getCategoryDescription(category)}
+										{t(`settings.dataExport.categories.${category}.description`)}
 									</p>
 								</div>
 							</div>
@@ -128,13 +121,13 @@ export function ExportForm({ organizationId }: ExportFormProps) {
 
 					{/* Info Box */}
 					<div className="rounded-lg border bg-muted/50 p-4 text-sm">
-						<h4 className="font-medium">About Data Exports</h4>
+						<h4 className="font-medium">{t("settings.dataExport.form.aboutTitle")}</h4>
 						<ul className="mt-2 list-inside list-disc space-y-1 text-muted-foreground">
-							<li>Exports are processed asynchronously and may take a few minutes</li>
-							<li>You will receive an email with a download link when ready</li>
-							<li>Download links are valid for 24 hours</li>
-							<li>Export files are stored for 30 days</li>
-							<li>Only data from your organization is included</li>
+							<li>{t("settings.dataExport.form.aboutAsync")}</li>
+							<li>{t("settings.dataExport.form.aboutEmail")}</li>
+							<li>{t("settings.dataExport.form.aboutLinkValidity")}</li>
+							<li>{t("settings.dataExport.form.aboutStorageDuration")}</li>
+							<li>{t("settings.dataExport.form.aboutOrgDataOnly")}</li>
 						</ul>
 					</div>
 
@@ -147,13 +140,14 @@ export function ExportForm({ organizationId }: ExportFormProps) {
 						{isSubmitting ? (
 							<>
 								<IconLoader2 className="mr-2 size-4 animate-spin" />
-								Starting Export...
+								{t("settings.dataExport.form.startingExport")}
 							</>
 						) : (
 							<>
 								<IconDownload className="mr-2 size-4" />
-								Start Export ({selectedCategories.size}{" "}
-								{selectedCategories.size === 1 ? "category" : "categories"})
+								{t("settings.dataExport.form.startExport", {
+									count: selectedCategories.size,
+								})}
 							</>
 						)}
 					</Button>
@@ -161,20 +155,4 @@ export function ExportForm({ organizationId }: ExportFormProps) {
 			</CardContent>
 		</Card>
 	);
-}
-
-function getCategoryDescription(category: ExportCategory): string {
-	const descriptions: Record<ExportCategory, string> = {
-		employees: "Names, positions, roles, and team assignments",
-		teams: "Team structure and permissions",
-		time_entries: "Clock in/out records (CSV format)",
-		work_periods: "Aggregated work sessions (CSV format)",
-		absences: "Leave records and approvals (CSV format)",
-		holidays: "Holiday calendar and recurrence rules",
-		vacation: "Vacation policies and balances",
-		schedules: "Work schedule templates and assignments",
-		shifts: "Shift scheduling data (CSV format)",
-		audit_logs: "Activity history (CSV format)",
-	};
-	return descriptions[category];
 }

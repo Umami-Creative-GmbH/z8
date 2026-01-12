@@ -1,13 +1,11 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "@tanstack/react-form";
 import { IconLoader2 } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { z } from "zod";
 import { getTeamsForAssignment } from "@/app/[locale]/(app)/settings/holidays/preset-actions";
 import {
 	createVacationPolicyAssignment,
@@ -22,15 +20,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import {
-	Form,
-	FormControl,
-	FormDescription,
-	FormField,
-	FormItem,
-	FormLabel,
-	FormMessage,
-} from "@/components/ui/form";
+import { Label } from "@/components/ui/label";
 import {
 	Select,
 	SelectContent,
@@ -62,13 +52,6 @@ interface TeamOption {
 	name: string;
 }
 
-const vacationAssignmentFormSchema = z.object({
-	policyId: z.string().min(1, "Please select a policy"),
-	teamId: z.string().optional(),
-});
-
-type VacationAssignmentFormValues = z.infer<typeof vacationAssignmentFormSchema>;
-
 export function VacationAssignmentDialog({
 	open,
 	onOpenChange,
@@ -78,22 +61,38 @@ export function VacationAssignmentDialog({
 }: VacationAssignmentDialogProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
+	const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
-	const form = useForm<VacationAssignmentFormValues>({
-		resolver: zodResolver(vacationAssignmentFormSchema),
+	const form = useForm({
 		defaultValues: {
 			policyId: "",
 			teamId: "",
+		},
+		onSubmit: async ({ value }) => {
+			// Validate target based on assignment type
+			const errors: Record<string, string> = {};
+			if (!value.policyId) {
+				errors.policyId = "Please select a policy";
+			}
+			if (assignmentType === "team" && !value.teamId) {
+				errors.teamId = "Please select a team";
+			}
+
+			if (Object.keys(errors).length > 0) {
+				setValidationErrors(errors);
+				return;
+			}
+
+			setValidationErrors({});
+			createMutation.mutate(value);
 		},
 	});
 
 	// Reset form when dialog opens
 	useEffect(() => {
 		if (open) {
-			form.reset({
-				policyId: "",
-				teamId: "",
-			});
+			form.reset();
+			setValidationErrors({});
 		}
 	}, [open, form]);
 
@@ -125,7 +124,7 @@ export function VacationAssignmentDialog({
 
 	// Create mutation
 	const createMutation = useMutation({
-		mutationFn: (values: VacationAssignmentFormValues) =>
+		mutationFn: (values: { policyId: string; teamId: string }) =>
 			createVacationPolicyAssignment({
 				policyId: values.policyId,
 				assignmentType,
@@ -152,16 +151,6 @@ export function VacationAssignmentDialog({
 			);
 		},
 	});
-
-	const onSubmit = (values: VacationAssignmentFormValues) => {
-		// Validate target based on assignment type
-		if (assignmentType === "team" && !values.teamId) {
-			form.setError("teamId", { message: "Please select a team" });
-			return;
-		}
-
-		createMutation.mutate(values);
-	};
 
 	const getDialogTitle = () => {
 		switch (assignmentType) {
@@ -207,120 +196,116 @@ export function VacationAssignmentDialog({
 						{assignmentType !== "organization" && <Skeleton className="h-10 w-full" />}
 					</div>
 				) : (
-					<Form {...form}>
-						<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-							{/* Policy Selection */}
-							<FormField
-								control={form.control}
-								name="policyId"
-								render={({ field }) => (
-									<FormItem>
-										<FormLabel>
-											{t("settings.vacation.assignments.policy", "Vacation Policy")}
-										</FormLabel>
-										<Select onValueChange={field.onChange} value={field.value}>
-											<FormControl>
-												<SelectTrigger>
-													<SelectValue
-														placeholder={t(
-															"settings.vacation.assignments.selectPolicy",
-															"Select a policy",
-														)}
-													/>
-												</SelectTrigger>
-											</FormControl>
-											<SelectContent>
-												{policies?.length === 0 ? (
-													<div className="p-2 text-sm text-muted-foreground text-center">
-														{t(
-															"settings.vacation.assignments.noPolicies",
-															"No vacation policies available. Create one first.",
-														)}
-													</div>
-												) : (
-													policies?.map((policy) => (
-														<SelectItem key={policy.id} value={policy.id}>
-															<div className="flex items-center gap-2">
-																<span>{formatPolicy(policy)}</span>
-																{policy.allowCarryover && (
-																	<span className="text-xs bg-secondary px-1 rounded">
-																		{t("settings.vacation.carryover", "Carryover")}
-																	</span>
-																)}
-															</div>
-														</SelectItem>
-													))
+					<form
+						onSubmit={(e) => {
+							e.preventDefault();
+							form.handleSubmit();
+						}}
+						className="space-y-4"
+					>
+						{/* Policy Selection */}
+						<form.Field name="policyId">
+							{(field) => (
+								<div className="space-y-2">
+									<Label>{t("settings.vacation.assignments.policy", "Vacation Policy")}</Label>
+									<Select value={field.state.value} onValueChange={field.handleChange}>
+										<SelectTrigger>
+											<SelectValue
+												placeholder={t(
+													"settings.vacation.assignments.selectPolicy",
+													"Select a policy",
 												)}
+											/>
+										</SelectTrigger>
+										<SelectContent>
+											{policies?.length === 0 ? (
+												<div className="p-2 text-sm text-muted-foreground text-center">
+													{t(
+														"settings.vacation.assignments.noPolicies",
+														"No vacation policies available. Create one first.",
+													)}
+												</div>
+											) : (
+												policies?.map((policy) => (
+													<SelectItem key={policy.id} value={policy.id}>
+														<div className="flex items-center gap-2">
+															<span>{formatPolicy(policy)}</span>
+															{policy.allowCarryover && (
+																<span className="text-xs bg-secondary px-1 rounded">
+																	{t("settings.vacation.carryover", "Carryover")}
+																</span>
+															)}
+														</div>
+													</SelectItem>
+												))
+											)}
+										</SelectContent>
+									</Select>
+									<p className="text-sm text-muted-foreground">
+										{t(
+											"settings.vacation.assignments.policyDescription",
+											"The vacation policy to assign",
+										)}
+									</p>
+									{validationErrors.policyId && (
+										<p className="text-sm text-destructive">{validationErrors.policyId}</p>
+									)}
+								</div>
+							)}
+						</form.Field>
+
+						{/* Team Selection (for team assignment) */}
+						{assignmentType === "team" && (
+							<form.Field name="teamId">
+								{(field) => (
+									<div className="space-y-2">
+										<Label>{t("settings.vacation.assignments.team", "Team")}</Label>
+										<Select value={field.state.value} onValueChange={field.handleChange}>
+											<SelectTrigger>
+												<SelectValue
+													placeholder={t(
+														"settings.vacation.assignments.selectTeam",
+														"Select a team",
+													)}
+												/>
+											</SelectTrigger>
+											<SelectContent>
+												{teams?.map((team) => (
+													<SelectItem key={team.id} value={team.id}>
+														{team.name}
+													</SelectItem>
+												))}
 											</SelectContent>
 										</Select>
-										<FormDescription>
+										<p className="text-sm text-muted-foreground">
 											{t(
-												"settings.vacation.assignments.policyDescription",
-												"The vacation policy to assign",
+												"settings.vacation.assignments.teamNote",
+												"This policy will apply to all employees in this team",
 											)}
-										</FormDescription>
-										<FormMessage />
-									</FormItem>
+										</p>
+										{validationErrors.teamId && (
+											<p className="text-sm text-destructive">{validationErrors.teamId}</p>
+										)}
+									</div>
 								)}
-							/>
+							</form.Field>
+						)}
 
-							{/* Team Selection (for team assignment) */}
-							{assignmentType === "team" && (
-								<FormField
-									control={form.control}
-									name="teamId"
-									render={({ field }) => (
-										<FormItem>
-											<FormLabel>{t("settings.vacation.assignments.team", "Team")}</FormLabel>
-											<Select onValueChange={field.onChange} value={field.value}>
-												<FormControl>
-													<SelectTrigger>
-														<SelectValue
-															placeholder={t(
-																"settings.vacation.assignments.selectTeam",
-																"Select a team",
-															)}
-														/>
-													</SelectTrigger>
-												</FormControl>
-												<SelectContent>
-													{teams?.map((team) => (
-														<SelectItem key={team.id} value={team.id}>
-															{team.name}
-														</SelectItem>
-													))}
-												</SelectContent>
-											</Select>
-											<FormDescription>
-												{t(
-													"settings.vacation.assignments.teamNote",
-													"This policy will apply to all employees in this team",
-												)}
-											</FormDescription>
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
-							)}
-
-							<DialogFooter>
-								<Button
-									type="button"
-									variant="outline"
-									onClick={() => onOpenChange(false)}
-									disabled={createMutation.isPending}
-								>
-									{t("common.cancel", "Cancel")}
-								</Button>
-								<Button type="submit" disabled={createMutation.isPending || policies?.length === 0}>
-									{createMutation.isPending && (
-										<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
-									)}
-									{t("common.assign", "Assign")}
-								</Button>
-							</DialogFooter>
-						</form>
-					</Form>
+						<DialogFooter>
+							<Button
+								type="button"
+								variant="outline"
+								onClick={() => onOpenChange(false)}
+								disabled={createMutation.isPending}
+							>
+								{t("common.cancel", "Cancel")}
+							</Button>
+							<Button type="submit" disabled={createMutation.isPending || policies?.length === 0}>
+								{createMutation.isPending && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
+								{t("common.assign", "Assign")}
+							</Button>
+						</DialogFooter>
+					</form>
 				)}
 			</DialogContent>
 		</Dialog>

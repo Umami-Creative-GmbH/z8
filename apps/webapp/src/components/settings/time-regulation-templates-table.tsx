@@ -53,13 +53,7 @@ interface TimeRegulationTemplatesTableProps {
 	onEditClick: (regulation: TimeRegulationWithBreakRules) => void;
 }
 
-function formatMinutesToHours(minutes: number | null): string {
-	if (minutes === null) return "—";
-	const hours = Math.floor(minutes / 60);
-	const mins = minutes % 60;
-	if (mins === 0) return `${hours}h`;
-	return `${hours}h ${mins}m`;
-}
+// formatMinutesToHours helper is defined inside the component for i18n access
 
 export function TimeRegulationTemplatesTable({
 	organizationId,
@@ -71,6 +65,17 @@ export function TimeRegulationTemplatesTable({
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 	const [regulationToDelete, setRegulationToDelete] =
 		useState<TimeRegulationWithBreakRules | null>(null);
+
+	// Helper function to format minutes to hours with translation
+	const formatMinutesToHours = (minutes: number | null): string => {
+		if (minutes === null) return "—";
+		const hours = Math.floor(minutes / 60);
+		const mins = minutes % 60;
+		if (mins === 0) {
+			return t("settings.timeRegulations.hoursFormat", "{hours}h", { hours });
+		}
+		return t("settings.timeRegulations.hoursMinutesFormat", "{hours}h {mins}m", { hours, mins });
+	};
 
 	// Fetch regulations
 	const {
@@ -87,6 +92,8 @@ export function TimeRegulationTemplatesTable({
 			}
 			return result.data;
 		},
+		staleTime: 30 * 1000, // Consider data fresh for 30 seconds
+		refetchOnWindowFocus: false, // Don't refetch on window focus
 	});
 
 	// Delete mutation

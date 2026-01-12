@@ -1,13 +1,11 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "@tanstack/react-form";
 import { IconLoader2 } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { z } from "zod";
 import {
 	createHolidayAssignment,
 	getHolidays,
@@ -25,15 +23,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import {
-	Form,
-	FormControl,
-	FormDescription,
-	FormField,
-	FormItem,
-	FormLabel,
-	FormMessage,
-} from "@/components/ui/form";
+import { Label } from "@/components/ui/label";
 import {
 	Select,
 	SelectContent,
@@ -72,14 +62,6 @@ interface EmployeeOption {
 	position: string | null;
 }
 
-const holidayAssignmentFormSchema = z.object({
-	holidayId: z.string().min(1, "Please select a holiday"),
-	teamId: z.string().optional(),
-	employeeId: z.string().optional(),
-});
-
-type HolidayAssignmentFormValues = z.infer<typeof holidayAssignmentFormSchema>;
-
 export function HolidayAssignmentDialog({
 	open,
 	onOpenChange,
@@ -89,24 +71,42 @@ export function HolidayAssignmentDialog({
 }: HolidayAssignmentDialogProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
+	const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
-	const form = useForm<HolidayAssignmentFormValues>({
-		resolver: zodResolver(holidayAssignmentFormSchema),
+	const form = useForm({
 		defaultValues: {
 			holidayId: "",
 			teamId: "",
 			employeeId: "",
+		},
+		onSubmit: async ({ value }) => {
+			// Validate target based on assignment type
+			const errors: Record<string, string> = {};
+			if (!value.holidayId) {
+				errors.holidayId = "Please select a holiday";
+			}
+			if (assignmentType === "team" && !value.teamId) {
+				errors.teamId = "Please select a team";
+			}
+			if (assignmentType === "employee" && !value.employeeId) {
+				errors.employeeId = "Please select an employee";
+			}
+
+			if (Object.keys(errors).length > 0) {
+				setValidationErrors(errors);
+				return;
+			}
+
+			setValidationErrors({});
+			createMutation.mutate(value);
 		},
 	});
 
 	// Reset form when dialog opens
 	useEffect(() => {
 		if (open) {
-			form.reset({
-				holidayId: "",
-				teamId: "",
-				employeeId: "",
-			});
+			form.reset();
+			setValidationErrors({});
 		}
 	}, [open, form]);
 
@@ -151,7 +151,7 @@ export function HolidayAssignmentDialog({
 
 	// Create mutation
 	const createMutation = useMutation({
-		mutationFn: (values: HolidayAssignmentFormValues) =>
+		mutationFn: (values: { holidayId: string; teamId: string; employeeId: string }) =>
 			createHolidayAssignment({
 				holidayId: values.holidayId,
 				assignmentType,
@@ -187,20 +187,6 @@ export function HolidayAssignmentDialog({
 			);
 		},
 	});
-
-	const onSubmit = (values: HolidayAssignmentFormValues) => {
-		// Validate target based on assignment type
-		if (assignmentType === "team" && !values.teamId) {
-			form.setError("teamId", { message: "Please select a team" });
-			return;
-		}
-		if (assignmentType === "employee" && !values.employeeId) {
-			form.setError("employeeId", { message: "Please select an employee" });
-			return;
-		}
-
-		createMutation.mutate(values);
-	};
 
 	const getDialogTitle = () => {
 		switch (assignmentType) {
@@ -261,173 +247,165 @@ export function HolidayAssignmentDialog({
 						{assignmentType !== "organization" && <Skeleton className="h-10 w-full" />}
 					</div>
 				) : (
-					<Form {...form}>
-						<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-							{/* Holiday Selection */}
-							<FormField
-								control={form.control}
-								name="holidayId"
-								render={({ field }) => (
-									<FormItem>
-										<FormLabel>
-											{t("settings.holidays.assignments.holiday", "Custom Holiday")}
-										</FormLabel>
-										<Select onValueChange={field.onChange} value={field.value}>
-											<FormControl>
-												<SelectTrigger>
-													<SelectValue
-														placeholder={t(
-															"settings.holidays.assignments.selectHoliday",
-															"Select a holiday",
-														)}
-													/>
-												</SelectTrigger>
-											</FormControl>
-											<SelectContent>
-												{holidays?.length === 0 ? (
-													<div className="p-2 text-sm text-muted-foreground text-center">
-														{t(
-															"settings.holidays.assignments.noHolidays",
-															"No custom holidays available. Create one first.",
-														)}
-													</div>
-												) : (
-													holidays?.map((holiday) => (
-														<SelectItem key={holiday.id} value={holiday.id}>
-															<div className="flex items-center gap-2">
-																<span>{holiday.name}</span>
-																<span className="text-muted-foreground text-xs">
-																	({formatDateRange(holiday.startDate, holiday.endDate)})
-																</span>
-																{holiday.recurrenceType === "yearly" && (
-																	<span className="text-xs bg-secondary px-1 rounded">
-																		{t("settings.holidays.recurrence.yearly", "Yearly")}
-																	</span>
-																)}
-															</div>
-														</SelectItem>
-													))
+					<form
+						onSubmit={(e) => {
+							e.preventDefault();
+							form.handleSubmit();
+						}}
+						className="space-y-4"
+					>
+						{/* Holiday Selection */}
+						<form.Field name="holidayId">
+							{(field) => (
+								<div className="space-y-2">
+									<Label>{t("settings.holidays.assignments.holiday", "Custom Holiday")}</Label>
+									<Select value={field.state.value} onValueChange={field.handleChange}>
+										<SelectTrigger>
+											<SelectValue
+												placeholder={t(
+													"settings.holidays.assignments.selectHoliday",
+													"Select a holiday",
 												)}
+											/>
+										</SelectTrigger>
+										<SelectContent>
+											{holidays?.length === 0 ? (
+												<div className="p-2 text-sm text-muted-foreground text-center">
+													{t(
+														"settings.holidays.assignments.noHolidays",
+														"No custom holidays available. Create one first.",
+													)}
+												</div>
+											) : (
+												holidays?.map((holiday) => (
+													<SelectItem key={holiday.id} value={holiday.id}>
+														<div className="flex items-center gap-2">
+															<span>{holiday.name}</span>
+															<span className="text-muted-foreground text-xs">
+																({formatDateRange(holiday.startDate, holiday.endDate)})
+															</span>
+															{holiday.recurrenceType === "yearly" && (
+																<span className="text-xs bg-secondary px-1 rounded">
+																	{t("settings.holidays.recurrence.yearly", "Yearly")}
+																</span>
+															)}
+														</div>
+													</SelectItem>
+												))
+											)}
+										</SelectContent>
+									</Select>
+									<p className="text-sm text-muted-foreground">
+										{t(
+											"settings.holidays.assignments.holidayDescription",
+											"The custom holiday to assign",
+										)}
+									</p>
+									{validationErrors.holidayId && (
+										<p className="text-sm text-destructive">{validationErrors.holidayId}</p>
+									)}
+								</div>
+							)}
+						</form.Field>
+
+						{/* Team Selection (for team assignment) */}
+						{assignmentType === "team" && (
+							<form.Field name="teamId">
+								{(field) => (
+									<div className="space-y-2">
+										<Label>{t("settings.holidays.assignments.team", "Team")}</Label>
+										<Select value={field.state.value} onValueChange={field.handleChange}>
+											<SelectTrigger>
+												<SelectValue
+													placeholder={t(
+														"settings.holidays.assignments.selectTeam",
+														"Select a team",
+													)}
+												/>
+											</SelectTrigger>
+											<SelectContent>
+												{teams?.map((team) => (
+													<SelectItem key={team.id} value={team.id}>
+														{team.name}
+													</SelectItem>
+												))}
 											</SelectContent>
 										</Select>
-										<FormDescription>
+										<p className="text-sm text-muted-foreground">
 											{t(
-												"settings.holidays.assignments.holidayDescription",
-												"The custom holiday to assign",
+												"settings.holidays.assignments.teamHolidayNote",
+												"This holiday will apply only to employees in this team",
 											)}
-										</FormDescription>
-										<FormMessage />
-									</FormItem>
+										</p>
+										{validationErrors.teamId && (
+											<p className="text-sm text-destructive">{validationErrors.teamId}</p>
+										)}
+									</div>
 								)}
-							/>
+							</form.Field>
+						)}
 
-							{/* Team Selection (for team assignment) */}
-							{assignmentType === "team" && (
-								<FormField
-									control={form.control}
-									name="teamId"
-									render={({ field }) => (
-										<FormItem>
-											<FormLabel>{t("settings.holidays.assignments.team", "Team")}</FormLabel>
-											<Select onValueChange={field.onChange} value={field.value}>
-												<FormControl>
-													<SelectTrigger>
-														<SelectValue
-															placeholder={t(
-																"settings.holidays.assignments.selectTeam",
-																"Select a team",
-															)}
-														/>
-													</SelectTrigger>
-												</FormControl>
-												<SelectContent>
-													{teams?.map((team) => (
-														<SelectItem key={team.id} value={team.id}>
-															{team.name}
-														</SelectItem>
-													))}
-												</SelectContent>
-											</Select>
-											<FormDescription>
-												{t(
-													"settings.holidays.assignments.teamHolidayNote",
-													"This holiday will apply only to employees in this team",
-												)}
-											</FormDescription>
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
-							)}
-
-							{/* Employee Selection (for employee assignment) */}
-							{assignmentType === "employee" && (
-								<FormField
-									control={form.control}
-									name="employeeId"
-									render={({ field }) => (
-										<FormItem>
-											<FormLabel>
-												{t("settings.holidays.assignments.employee", "Employee")}
-											</FormLabel>
-											<Select onValueChange={field.onChange} value={field.value}>
-												<FormControl>
-													<SelectTrigger>
-														<SelectValue
-															placeholder={t(
-																"settings.holidays.assignments.selectEmployee",
-																"Select an employee",
-															)}
-														/>
-													</SelectTrigger>
-												</FormControl>
-												<SelectContent>
-													{employees?.map((emp) => (
-														<SelectItem key={emp.id} value={emp.id}>
-															<div className="flex flex-col">
-																<span>
-																	{emp.firstName} {emp.lastName}
+						{/* Employee Selection (for employee assignment) */}
+						{assignmentType === "employee" && (
+							<form.Field name="employeeId">
+								{(field) => (
+									<div className="space-y-2">
+										<Label>{t("settings.holidays.assignments.employee", "Employee")}</Label>
+										<Select value={field.state.value} onValueChange={field.handleChange}>
+											<SelectTrigger>
+												<SelectValue
+													placeholder={t(
+														"settings.holidays.assignments.selectEmployee",
+														"Select an employee",
+													)}
+												/>
+											</SelectTrigger>
+											<SelectContent>
+												{employees?.map((emp) => (
+													<SelectItem key={emp.id} value={emp.id}>
+														<div className="flex flex-col">
+															<span>
+																{emp.firstName} {emp.lastName}
+															</span>
+															{emp.position && (
+																<span className="text-xs text-muted-foreground">
+																	{emp.position}
 																</span>
-																{emp.position && (
-																	<span className="text-xs text-muted-foreground">
-																		{emp.position}
-																	</span>
-																)}
-															</div>
-														</SelectItem>
-													))}
-												</SelectContent>
-											</Select>
-											<FormDescription>
-												{t(
-													"settings.holidays.assignments.employeeHolidayNote",
-													"This holiday will apply only to this employee",
-												)}
-											</FormDescription>
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
-							)}
+															)}
+														</div>
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+										<p className="text-sm text-muted-foreground">
+											{t(
+												"settings.holidays.assignments.employeeHolidayNote",
+												"This holiday will apply only to this employee",
+											)}
+										</p>
+										{validationErrors.employeeId && (
+											<p className="text-sm text-destructive">{validationErrors.employeeId}</p>
+										)}
+									</div>
+								)}
+							</form.Field>
+						)}
 
-							<DialogFooter>
-								<Button
-									type="button"
-									variant="outline"
-									onClick={() => onOpenChange(false)}
-									disabled={createMutation.isPending}
-								>
-									{t("common.cancel", "Cancel")}
-								</Button>
-								<Button type="submit" disabled={createMutation.isPending || holidays?.length === 0}>
-									{createMutation.isPending && (
-										<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
-									)}
-									{t("common.assign", "Assign")}
-								</Button>
-							</DialogFooter>
-						</form>
-					</Form>
+						<DialogFooter>
+							<Button
+								type="button"
+								variant="outline"
+								onClick={() => onOpenChange(false)}
+								disabled={createMutation.isPending}
+							>
+								{t("common.cancel", "Cancel")}
+							</Button>
+							<Button type="submit" disabled={createMutation.isPending || holidays?.length === 0}>
+								{createMutation.isPending && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
+								{t("common.assign", "Assign")}
+							</Button>
+						</DialogFooter>
+					</form>
 				)}
 			</DialogContent>
 		</Dialog>

@@ -64,6 +64,8 @@ export function TimeRegulationPresetImport({
 			}
 			return result.data;
 		},
+		staleTime: 5 * 60 * 1000, // Presets rarely change, keep for 5 minutes
+		refetchOnWindowFocus: false, // Don't refetch on window focus
 	});
 
 	// Import mutation

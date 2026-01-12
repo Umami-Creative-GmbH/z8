@@ -1,6 +1,7 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "@tanstack/react-form";
+import { zodValidator } from "@tanstack/zod-form-adapter";
 import {
 	IconArrowBack,
 	IconCheck,
@@ -13,9 +14,8 @@ import {
 } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { use, useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import * as z from "zod";
+import { z } from "zod";
 import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -30,15 +30,8 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import {
-	Form,
-	FormControl,
-	FormField,
-	FormItem,
-	FormLabel,
-	FormMessage,
-} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
 	Select,
 	SelectContent,
@@ -54,9 +47,11 @@ import { listEmployees } from "../../employees/actions";
 import { addTeamMember, deleteTeam, getTeam, removeTeamMember, updateTeam } from "../actions";
 
 const teamFormSchema = z.object({
-	name: z.string().min(1, "Team name is required").max(100),
-	description: z.string().max(500).optional(),
+	name: z.string().min(1, "Team name is required").max(100, "Team name is too long"),
+	description: z.string().max(500, "Description is too long").optional(),
 });
+
+type TeamFormValues = z.infer<typeof teamFormSchema>;
 
 export default function TeamDetailPage({ params }: { params: Promise<{ teamId: string }> }) {
 	const { teamId } = use(params);
@@ -73,11 +68,14 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
 	const [availableEmployees, setAvailableEmployees] = useState<any[]>([]);
 	const [selectedEmployee, setSelectedEmployee] = useState<string>("");
 
-	const form = useForm<z.infer<typeof teamFormSchema>>({
-		resolver: zodResolver(teamFormSchema),
+	const form = useForm<TeamFormValues>({
 		defaultValues: {
 			name: "",
 			description: "",
+		},
+		validatorAdapter: zodValidator(),
+		onSubmit: async ({ value }) => {
+			updateTeamMutation.mutate(value);
 		},
 	});
 
@@ -109,10 +107,8 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
 	// Update form and permissions when team data changes
 	useEffect(() => {
 		if (team && currentEmployee) {
-			form.reset({
-				name: team.name,
-				description: team.description || "",
-			});
+			form.setFieldValue("name", team.name);
+			form.setFieldValue("description", team.description || "");
 			const isAdmin = currentEmployee.role === "admin";
 			setCanManageSettings((team as any).canManageSettings || isAdmin);
 			setCanManageMembers((team as any).canManageMembers || isAdmin);
@@ -133,7 +129,7 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
 
 	// Update team mutation
 	const updateTeamMutation = useMutation({
-		mutationFn: async (values: z.infer<typeof teamFormSchema>) => {
+		mutationFn: async (values: TeamFormValues) => {
 			const result = await updateTeam(teamId, values);
 			if (!result.success) {
 				throw new Error(result.error || "Failed to update team");
@@ -243,10 +239,6 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
 		},
 	});
 
-	function onSubmit(values: z.infer<typeof teamFormSchema>) {
-		updateTeamMutation.mutate(values);
-	}
-
 	function handleAddMember() {
 		if (!selectedEmployee) {
 			toast.error("Please select an employee");
@@ -326,61 +318,79 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
 					</CardHeader>
 					<CardContent className="space-y-4">
 						{isEditing ? (
-							<Form {...form}>
-								<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-									<FormField
-										control={form.control}
-										name="name"
-										render={({ field }) => (
-											<FormItem>
-												<FormLabel>Team Name</FormLabel>
-												<FormControl>
-													<Input placeholder="Enter team name" {...field} />
-												</FormControl>
-												<FormMessage />
-											</FormItem>
-										)}
-									/>
+							<form
+								onSubmit={(e) => {
+									e.preventDefault();
+									form.handleSubmit();
+								}}
+								className="space-y-4"
+							>
+								<form.Field
+									name="name"
+									validators={{
+										onChange: z.string().min(1, "Team name is required").max(100, "Team name is too long"),
+									}}
+								>
+									{(field) => (
+										<div className="space-y-2">
+											<Label>Team Name</Label>
+											<Input
+												placeholder="Enter team name"
+												value={field.state.value}
+												onChange={(e) => field.handleChange(e.target.value)}
+												onBlur={field.handleBlur}
+											/>
+											{field.state.meta.errors.length > 0 && (
+												<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
+											)}
+										</div>
+									)}
+								</form.Field>
 
-									<FormField
-										control={form.control}
-										name="description"
-										render={({ field }) => (
-											<FormItem>
-												<FormLabel>Description</FormLabel>
-												<FormControl>
-													<Textarea placeholder="Enter team description" {...field} />
-												</FormControl>
-												<FormMessage />
-											</FormItem>
-										)}
-									/>
+								<form.Field
+									name="description"
+									validators={{
+										onChange: z.string().max(500, "Description is too long").optional(),
+									}}
+								>
+									{(field) => (
+										<div className="space-y-2">
+											<Label>Description</Label>
+											<Textarea
+												placeholder="Enter team description"
+												value={field.state.value}
+												onChange={(e) => field.handleChange(e.target.value)}
+												onBlur={field.handleBlur}
+											/>
+											{field.state.meta.errors.length > 0 && (
+												<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
+											)}
+										</div>
+									)}
+								</form.Field>
 
-									<div className="flex justify-end gap-2">
-										<Button
-											type="button"
-											variant="outline"
-											size="sm"
-											onClick={() => {
-												setIsEditing(false);
-												form.reset({
-													name: team.name,
-													description: team.description || "",
-												});
-											}}
-											disabled={loading}
-										>
-											<IconX className="mr-2 size-4" />
-											Cancel
-										</Button>
-										<Button type="submit" size="sm" disabled={loading}>
-											{loading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
-											<IconCheck className="mr-2 size-4" />
-											Save
-										</Button>
-									</div>
-								</form>
-							</Form>
+								<div className="flex justify-end gap-2">
+									<Button
+										type="button"
+										variant="outline"
+										size="sm"
+										onClick={() => {
+											setIsEditing(false);
+											form.setFieldValue("name", team.name);
+											form.setFieldValue("description", team.description || "");
+										}}
+										disabled={loading}
+									>
+										<IconX className="mr-2 size-4" />
+										Cancel
+									</Button>
+									<Button type="submit" size="sm" disabled={loading}>
+										{loading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
+										<IconCheck className="mr-2 size-4" />
+										Save
+									</Button>
+								</div>
+							</form>
 						) : (
 							<>
 								<div className="space-y-2">

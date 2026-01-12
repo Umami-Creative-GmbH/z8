@@ -1,9 +1,10 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "@tanstack/react-form";
+import { zodValidator } from "@tanstack/zod-form-adapter";
 import { IconCheck, IconLoader2, IconPlugConnected, IconTrash, IconX } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { useEffect, useState, useTransition } from "react";
-import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import {
@@ -35,23 +36,15 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import {
-	Form,
-	FormControl,
-	FormDescription,
-	FormField,
-	FormItem,
-	FormLabel,
-	FormMessage,
-} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 const storageConfigSchema = z.object({
 	bucket: z.string().min(1, "Bucket name is required"),
-	accessKeyId: z.string().min(1, "Access Key ID is required"),
-	secretAccessKey: z.string().min(1, "Secret Access Key is required"),
+	accessKeyId: z.string(),
+	secretAccessKey: z.string(),
 	region: z.string().min(1, "Region is required"),
-	endpoint: z.string().optional(),
+	endpoint: z.string(),
 });
 
 type StorageConfigFormValues = z.infer<typeof storageConfigSchema>;
@@ -67,6 +60,7 @@ export function StorageSettingsForm({
 	initialConfig,
 	onConfigChange,
 }: StorageSettingsFormProps) {
+	const { t } = useTranslate();
 	const [isPending, startTransition] = useTransition();
 	const [isTesting, setIsTesting] = useState(false);
 	const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
@@ -74,7 +68,6 @@ export function StorageSettingsForm({
 	const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
 	const form = useForm<StorageConfigFormValues>({
-		resolver: zodResolver(storageConfigSchema),
 		defaultValues: {
 			bucket: initialConfig?.bucket ?? "",
 			accessKeyId: "",
@@ -82,7 +75,53 @@ export function StorageSettingsForm({
 			region: initialConfig?.region ?? "us-east-1",
 			endpoint: initialConfig?.endpoint ?? "",
 		},
+		validatorAdapter: zodValidator(),
+		onSubmit: async ({ value }) => {
+			// Only require credentials if there's no existing config
+			if (!config && (!value.accessKeyId || !value.secretAccessKey)) {
+				return;
+			}
+
+			startTransition(async () => {
+				const result = await saveStorageConfigAction({
+					organizationId,
+					bucket: value.bucket,
+					accessKeyId: value.accessKeyId,
+					secretAccessKey: value.secretAccessKey,
+					region: value.region,
+					endpoint: value.endpoint || undefined,
+				});
+
+				if (result.success) {
+					setConfig(result.data);
+					setHasUnsavedChanges(false);
+					setTestResult(null);
+					form.reset();
+					form.setFieldValue("bucket", result.data.bucket);
+					form.setFieldValue("accessKeyId", "");
+					form.setFieldValue("secretAccessKey", "");
+					form.setFieldValue("region", result.data.region);
+					form.setFieldValue("endpoint", result.data.endpoint ?? "");
+					toast.success(t("settings.dataExport.storage.saveSuccess"), {
+						description: t("settings.dataExport.storage.saveSuccessDescription"),
+					});
+					onConfigChange?.(true);
+				} else {
+					toast.error(t("settings.dataExport.storage.saveError"), {
+						description: result.error ?? t("settings.dataExport.storage.unexpectedError"),
+					});
+				}
+			});
+		},
 	});
+
+	// Subscribe to form values for validation
+	const formValues = form.useStore((state) => state.values);
+	const isFormValid = Boolean(
+		formValues.bucket &&
+			formValues.region &&
+			(config || (formValues.accessKeyId && formValues.secretAccessKey)),
+	);
 
 	// Load config on mount if not provided
 	useEffect(() => {
@@ -91,57 +130,21 @@ export function StorageSettingsForm({
 				const result = await getStorageConfigAction(organizationId);
 				if (result.success && result.data) {
 					setConfig(result.data);
-					form.reset({
-						bucket: result.data.bucket,
-						accessKeyId: "",
-						secretAccessKey: "",
-						region: result.data.region,
-						endpoint: result.data.endpoint ?? "",
-					});
+					form.setFieldValue("bucket", result.data.bucket);
+					form.setFieldValue("accessKeyId", "");
+					form.setFieldValue("secretAccessKey", "");
+					form.setFieldValue("region", result.data.region);
+					form.setFieldValue("endpoint", result.data.endpoint ?? "");
 				}
 			});
 		}
 	}, [organizationId, initialConfig, form]);
 
-	const onSubmit = (data: StorageConfigFormValues) => {
-		startTransition(async () => {
-			const result = await saveStorageConfigAction({
-				organizationId,
-				bucket: data.bucket,
-				accessKeyId: data.accessKeyId,
-				secretAccessKey: data.secretAccessKey,
-				region: data.region,
-				endpoint: data.endpoint || undefined,
-			});
-
-			if (result.success) {
-				setConfig(result.data);
-				setHasUnsavedChanges(false);
-				setTestResult(null);
-				form.reset({
-					bucket: result.data.bucket,
-					accessKeyId: "",
-					secretAccessKey: "",
-					region: result.data.region,
-					endpoint: result.data.endpoint ?? "",
-				});
-				toast.success("Storage configuration saved", {
-					description: "Your S3 storage settings have been saved. Test the connection to verify.",
-				});
-				onConfigChange?.(true);
-			} else {
-				toast.error("Failed to save configuration", {
-					description: result.error ?? "An unexpected error occurred",
-				});
-			}
-		});
-	};
-
 	const handleTestConnection = () => {
 		setIsTesting(true);
 		setTestResult(null);
 
-		const values = form.getValues();
+		const values = formValues;
 
 		startTransition(async () => {
 			try {
@@ -172,7 +175,7 @@ export function StorageSettingsForm({
 				} else {
 					setTestResult({
 						success: false,
-						message: result.error ?? "Connection test failed",
+						message: result.error ?? t("settings.dataExport.storage.testFailed"),
 					});
 				}
 			} finally {
@@ -188,18 +191,17 @@ export function StorageSettingsForm({
 			if (result.success) {
 				setConfig(null);
 				setTestResult(null);
-				form.reset({
-					bucket: "",
-					accessKeyId: "",
-					secretAccessKey: "",
-					region: "us-east-1",
-					endpoint: "",
-				});
-				toast.success("Storage configuration deleted");
+				form.reset();
+				form.setFieldValue("bucket", "");
+				form.setFieldValue("accessKeyId", "");
+				form.setFieldValue("secretAccessKey", "");
+				form.setFieldValue("region", "us-east-1");
+				form.setFieldValue("endpoint", "");
+				toast.success(t("settings.dataExport.storage.deleteSuccess"));
 				onConfigChange?.(false);
 			} else {
-				toast.error("Failed to delete configuration", {
-					description: result.error ?? "An unexpected error occurred",
+				toast.error(t("settings.dataExport.storage.deleteError"), {
+					description: result.error ?? t("settings.dataExport.storage.unexpectedError"),
 				});
 			}
 		});
@@ -211,17 +213,16 @@ export function StorageSettingsForm({
 				<div className="flex items-center justify-between">
 					<div>
 						<CardTitle className="flex items-center gap-2">
-							S3 Storage Configuration
+							{t("settings.dataExport.storage.title")}
 							{config?.isVerified && (
 								<Badge variant="secondary" className="gap-1">
 									<IconCheck className="h-3 w-3" />
-									Verified
+									{t("settings.dataExport.storage.verified")}
 								</Badge>
 							)}
 						</CardTitle>
 						<CardDescription>
-							Configure S3-compatible storage for data exports. Supports AWS S3, MinIO, and other
-							S3-compatible services.
+							{t("settings.dataExport.storage.description")}
 						</CardDescription>
 					</div>
 					{config && (
@@ -233,20 +234,18 @@ export function StorageSettingsForm({
 							</AlertDialogTrigger>
 							<AlertDialogContent>
 								<AlertDialogHeader>
-									<AlertDialogTitle>Delete Storage Configuration?</AlertDialogTitle>
+									<AlertDialogTitle>{t("settings.dataExport.storage.deleteDialogTitle")}</AlertDialogTitle>
 									<AlertDialogDescription>
-										This will remove the S3 storage configuration. You won&apos;t be able to create
-										new exports until you configure storage again. Existing exports will remain in
-										S3 but may become inaccessible.
+										{t("settings.dataExport.storage.deleteDialogDescription")}
 									</AlertDialogDescription>
 								</AlertDialogHeader>
 								<AlertDialogFooter>
-									<AlertDialogCancel>Cancel</AlertDialogCancel>
+									<AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
 									<AlertDialogAction
 										onClick={handleDelete}
 										className="bg-destructive text-destructive-foreground"
 									>
-										Delete
+										{t("common.delete")}
 									</AlertDialogAction>
 								</AlertDialogFooter>
 							</AlertDialogContent>
@@ -254,8 +253,12 @@ export function StorageSettingsForm({
 					)}
 				</div>
 			</CardHeader>
-			<Form {...form}>
-				<form onSubmit={form.handleSubmit(onSubmit)}>
+			<form
+				onSubmit={(e) => {
+					e.preventDefault();
+					form.handleSubmit();
+				}}
+			>
 					<CardContent className="space-y-4">
 						{testResult && (
 							<Alert variant={testResult.success ? "default" : "destructive"}>
@@ -265,174 +268,181 @@ export function StorageSettingsForm({
 									<IconX className="h-4 w-4" />
 								)}
 								<AlertTitle>
-									{testResult.success ? "Connection Successful" : "Connection Failed"}
+									{testResult.success
+										? t("settings.dataExport.storage.connectionSuccess")
+										: t("settings.dataExport.storage.connectionFailed")}
 								</AlertTitle>
 								<AlertDescription>{testResult.message}</AlertDescription>
 							</Alert>
 						)}
 
 						<div className="grid gap-4 md:grid-cols-2">
-							<FormField
-								control={form.control}
+							<form.Field
 								name="bucket"
-								render={({ field }) => (
-									<FormItem>
-										<FormLabel>Bucket Name</FormLabel>
-										<FormControl>
-											<Input
-												placeholder="my-export-bucket"
-												{...field}
-												onChange={(e) => {
-													field.onChange(e);
-													setHasUnsavedChanges(true);
-												}}
-											/>
-										</FormControl>
-										<FormDescription>The S3 bucket where exports will be stored</FormDescription>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-
-							<FormField
-								control={form.control}
-								name="region"
-								render={({ field }) => (
-									<FormItem>
-										<FormLabel>Region</FormLabel>
-										<FormControl>
-											<Input
-												placeholder="us-east-1"
-												{...field}
-												onChange={(e) => {
-													field.onChange(e);
-													setHasUnsavedChanges(true);
-												}}
-											/>
-										</FormControl>
-										<FormDescription>AWS region or MinIO region</FormDescription>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-						</div>
-
-						<FormField
-							control={form.control}
-							name="endpoint"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>Custom Endpoint (Optional)</FormLabel>
-									<FormControl>
+								validators={{
+									onChange: z.string().min(1, "Bucket name is required"),
+								}}
+							>
+								{(field) => (
+									<div className="space-y-2">
+										<Label>{t("settings.dataExport.storage.bucketName")}</Label>
 										<Input
-											placeholder="https://minio.example.com"
-											{...field}
+											placeholder={t("settings.dataExport.storage.bucketPlaceholder")}
+											value={field.state.value}
 											onChange={(e) => {
-												field.onChange(e);
+												field.handleChange(e.target.value);
 												setHasUnsavedChanges(true);
 											}}
+											onBlur={field.handleBlur}
 										/>
-									</FormControl>
-									<FormDescription>
-										For MinIO or other S3-compatible services. Leave empty for AWS S3.
-									</FormDescription>
-									<FormMessage />
-								</FormItem>
+										<p className="text-sm text-muted-foreground">
+											{t("settings.dataExport.storage.bucketDescription")}
+										</p>
+										{field.state.meta.errors.length > 0 && (
+											<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
+										)}
+									</div>
+								)}
+							</form.Field>
+
+							<form.Field
+								name="region"
+								validators={{
+									onChange: z.string().min(1, "Region is required"),
+								}}
+							>
+								{(field) => (
+									<div className="space-y-2">
+										<Label>{t("settings.dataExport.storage.region")}</Label>
+										<Input
+											placeholder={t("settings.dataExport.storage.regionPlaceholder")}
+											value={field.state.value}
+											onChange={(e) => {
+												field.handleChange(e.target.value);
+												setHasUnsavedChanges(true);
+											}}
+											onBlur={field.handleBlur}
+										/>
+										<p className="text-sm text-muted-foreground">
+											{t("settings.dataExport.storage.regionDescription")}
+										</p>
+										{field.state.meta.errors.length > 0 && (
+											<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
+										)}
+									</div>
+								)}
+							</form.Field>
+						</div>
+
+						<form.Field name="endpoint">
+							{(field) => (
+								<div className="space-y-2">
+									<Label>{t("settings.dataExport.storage.endpoint")}</Label>
+									<Input
+										placeholder={t("settings.dataExport.storage.endpointPlaceholder")}
+										value={field.state.value}
+										onChange={(e) => {
+											field.handleChange(e.target.value);
+											setHasUnsavedChanges(true);
+										}}
+										onBlur={field.handleBlur}
+									/>
+									<p className="text-sm text-muted-foreground">
+										{t("settings.dataExport.storage.endpointDescription")}
+									</p>
+								</div>
 							)}
-						/>
+						</form.Field>
 
 						<div className="grid gap-4 md:grid-cols-2">
-							<FormField
-								control={form.control}
-								name="accessKeyId"
-								render={({ field }) => (
-									<FormItem>
-										<FormLabel>Access Key ID</FormLabel>
-										<FormControl>
-											<Input
-												type="password"
-												placeholder={config ? "••••••••••••" : "AKIAIOSFODNN7EXAMPLE"}
-												{...field}
-												onChange={(e) => {
-													field.onChange(e);
-													setHasUnsavedChanges(true);
-												}}
-											/>
-										</FormControl>
-										<FormDescription>
-											{config ? "Leave empty to keep existing credentials" : "Your S3 access key"}
-										</FormDescription>
-										<FormMessage />
-									</FormItem>
+							<form.Field name="accessKeyId">
+								{(field) => (
+									<div className="space-y-2">
+										<Label>{t("settings.dataExport.storage.accessKeyId")}</Label>
+										<Input
+											type="password"
+											placeholder={config ? "••••••••••••" : "AKIAIOSFODNN7EXAMPLE"}
+											value={field.state.value}
+											onChange={(e) => {
+												field.handleChange(e.target.value);
+												setHasUnsavedChanges(true);
+											}}
+											onBlur={field.handleBlur}
+										/>
+										<p className="text-sm text-muted-foreground">
+											{config
+												? t("settings.dataExport.storage.keepExistingCredentials")
+												: t("settings.dataExport.storage.accessKeyDescription")}
+										</p>
+									</div>
 								)}
-							/>
+							</form.Field>
 
-							<FormField
-								control={form.control}
-								name="secretAccessKey"
-								render={({ field }) => (
-									<FormItem>
-										<FormLabel>Secret Access Key</FormLabel>
-										<FormControl>
-											<Input
-												type="password"
-												placeholder={
-													config ? "••••••••••••" : "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
-												}
-												{...field}
-												onChange={(e) => {
-													field.onChange(e);
-													setHasUnsavedChanges(true);
-												}}
-											/>
-										</FormControl>
-										<FormDescription>
-											{config ? "Leave empty to keep existing credentials" : "Your S3 secret key"}
-										</FormDescription>
-										<FormMessage />
-									</FormItem>
+							<form.Field name="secretAccessKey">
+								{(field) => (
+									<div className="space-y-2">
+										<Label>{t("settings.dataExport.storage.secretAccessKey")}</Label>
+										<Input
+											type="password"
+											placeholder={
+												config ? "••••••••••••" : "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+											}
+											value={field.state.value}
+											onChange={(e) => {
+												field.handleChange(e.target.value);
+												setHasUnsavedChanges(true);
+											}}
+											onBlur={field.handleBlur}
+										/>
+										<p className="text-sm text-muted-foreground">
+											{config
+												? t("settings.dataExport.storage.keepExistingCredentials")
+												: t("settings.dataExport.storage.secretKeyDescription")}
+										</p>
+									</div>
 								)}
-							/>
+							</form.Field>
 						</div>
 
 						{config?.lastVerifiedAt && (
 							<p className="text-muted-foreground text-sm">
-								Last verified: {new Date(config.lastVerifiedAt).toLocaleString()}
+								{t("settings.dataExport.storage.lastVerified", {
+									date: new Date(config.lastVerifiedAt).toLocaleString(),
+								})}
 							</p>
 						)}
 					</CardContent>
-					<CardFooter className="flex justify-between">
-						<Button
-							type="button"
-							variant="outline"
-							onClick={handleTestConnection}
-							disabled={isPending || isTesting || (!config && !form.formState.isValid)}
-						>
-							{isTesting ? (
-								<>
-									<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
-									Testing...
-								</>
-							) : (
-								<>
-									<IconPlugConnected className="mr-2 h-4 w-4" />
-									Test Connection
-								</>
-							)}
-						</Button>
-						<Button type="submit" disabled={isPending || !form.formState.isValid}>
-							{isPending ? (
-								<>
-									<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
-									Saving...
-								</>
-							) : (
-								"Save Configuration"
-							)}
-						</Button>
-					</CardFooter>
-				</form>
-			</Form>
+				<CardFooter className="flex justify-between">
+					<Button
+						type="button"
+						variant="outline"
+						onClick={handleTestConnection}
+						disabled={isPending || isTesting || (!config && !isFormValid)}
+					>
+						{isTesting ? (
+							<>
+								<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+								{t("settings.dataExport.storage.testing")}
+							</>
+						) : (
+							<>
+								<IconPlugConnected className="mr-2 h-4 w-4" />
+								{t("settings.dataExport.storage.testConnection")}
+							</>
+						)}
+					</Button>
+					<Button type="submit" disabled={isPending || !isFormValid}>
+						{isPending ? (
+							<>
+								<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+								{t("settings.dataExport.storage.saving")}
+							</>
+						) : (
+							t("settings.dataExport.storage.saveConfiguration")
+						)}
+					</Button>
+				</CardFooter>
+			</form>
 		</Card>
 	);
 }

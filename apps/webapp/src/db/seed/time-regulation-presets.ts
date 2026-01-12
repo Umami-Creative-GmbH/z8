@@ -190,18 +190,23 @@ export const timeRegulationPresetsData = [
 
 /**
  * Seeds the time regulation presets into the database
+ * This function is idempotent - safe to run multiple times
  */
 export async function seedTimeRegulationPresets() {
-	console.log("Seeding time regulation presets...");
+	console.log("  Seeding time regulation presets...");
+
+	let created = 0;
+	let skipped = 0;
 
 	for (const preset of timeRegulationPresetsData) {
-		// Check if preset already exists
+		// Check if preset already exists (idempotent)
 		const existing = await db.query.timeRegulationPreset.findFirst({
 			where: (table, { eq }) => eq(table.name, preset.name),
 		});
 
 		if (existing) {
-			console.log(`  Preset "${preset.name}" already exists, skipping.`);
+			console.log(`    ○ "${preset.name}" already exists, skipping`);
+			skipped++;
 			continue;
 		}
 
@@ -216,18 +221,9 @@ export async function seedTimeRegulationPresets() {
 			isActive: true,
 		});
 
-		console.log(`  Seeded preset: ${preset.name}`);
+		console.log(`    + Created preset: ${preset.name}`);
+		created++;
 	}
 
-	console.log("Time regulation presets seeding complete.");
-}
-
-// Run directly if this file is executed
-if (require.main === module) {
-	seedTimeRegulationPresets()
-		.then(() => process.exit(0))
-		.catch((error) => {
-			console.error("Error seeding presets:", error);
-			process.exit(1);
-		});
+	console.log(`  Done: ${created} created, ${skipped} skipped`);
 }
