@@ -19,7 +19,7 @@ async function ExportSettingsContent() {
 	if (!currentEmployee) {
 		return (
 			<div className="flex flex-1 items-center justify-center p-6">
-				<NoEmployeeError feature={t("settings.dataExport.featureName")} />
+				<NoEmployeeError feature={t("settings.dataExport.featureName", "Data Export")} />
 			</div>
 		);
 	}
@@ -48,15 +48,15 @@ async function ExportSettingsContent() {
 	return (
 		<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
 			<div className="space-y-1">
-				<h1 className="text-2xl font-semibold">{t("settings.dataExport.title")}</h1>
-				<p className="text-muted-foreground">{t("settings.dataExport.description")}</p>
+				<h1 className="text-2xl font-semibold">{t("settings.dataExport.title", "Data Export")}</h1>
+				<p className="text-muted-foreground">{t("settings.dataExport.description", "Export your organization's data")}</p>
 			</div>
 
 			<Tabs defaultValue={s3Configured ? "export" : "storage"} className="w-full">
 				<TabsList>
-					<TabsTrigger value="export">{t("settings.dataExport.tabs.newExport")}</TabsTrigger>
-					<TabsTrigger value="history">{t("settings.dataExport.tabs.exportHistory")}</TabsTrigger>
-					<TabsTrigger value="storage">{t("settings.dataExport.tabs.storageSettings")}</TabsTrigger>
+					<TabsTrigger value="export">{t("settings.dataExport.tabs.newExport", "New Export")}</TabsTrigger>
+					<TabsTrigger value="history">{t("settings.dataExport.tabs.exportHistory", "Export History")}</TabsTrigger>
+					<TabsTrigger value="storage">{t("settings.dataExport.tabs.storageSettings", "Storage Settings")}</TabsTrigger>
 				</TabsList>
 				<TabsContent value="export" className="mt-4">
 					{s3Configured ? (
@@ -64,9 +64,9 @@ async function ExportSettingsContent() {
 					) : (
 						<Card className="border-warning">
 							<CardHeader>
-								<CardTitle>{t("settings.dataExport.storageNotConfigured.title")}</CardTitle>
+								<CardTitle>{t("settings.dataExport.storageNotConfigured.title", "Storage Not Configured")}</CardTitle>
 								<CardDescription>
-									{t("settings.dataExport.storageNotConfigured.description")}
+									{t("settings.dataExport.storageNotConfigured.description", "Configure S3 storage before creating exports")}
 								</CardDescription>
 							</CardHeader>
 						</Card>

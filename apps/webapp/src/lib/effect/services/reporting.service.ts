@@ -6,7 +6,6 @@
  */
 
 import { Context, Data, Effect, Layer } from "effect";
-import ExcelJS from "exceljs";
 import Papa from "papaparse";
 import type { ExportHeader } from "@/lib/analytics/types";
 
@@ -126,7 +125,9 @@ export class ReportingService extends Context.Tag("ReportingService")<
 				}
 
 				try {
-					const workbook = new ExcelJS.Workbook();
+					// Dynamic import to avoid Turbopack bundling issues
+					const ExcelJS = await import("exceljs");
+					const workbook = new ExcelJS.default.Workbook();
 					const worksheet = workbook.addWorksheet(sheetName);
 
 					// Set up columns with headers and auto-sized widths

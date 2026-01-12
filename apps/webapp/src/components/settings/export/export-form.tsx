@@ -45,7 +45,7 @@ export function ExportForm({ organizationId }: ExportFormProps) {
 
 	const handleSubmit = async () => {
 		if (selectedCategories.size === 0) {
-			toast.error(t("settings.dataExport.form.selectAtLeastOne"));
+			toast.error(t("settings.dataExport.form.selectAtLeastOne", "Please select at least one category"));
 			return;
 		}
 
@@ -57,14 +57,14 @@ export function ExportForm({ organizationId }: ExportFormProps) {
 			});
 
 			if (result.success) {
-				toast.success(t("settings.dataExport.form.submitSuccess"));
+				toast.success(t("settings.dataExport.form.submitSuccess", "Export started successfully"));
 				// Switch to history tab
 				router.refresh();
 			} else {
-				toast.error(result.error || t("settings.dataExport.form.submitError"));
+				toast.error(result.error || t("settings.dataExport.form.submitError", "Failed to start export"));
 			}
 		} catch (error) {
-			toast.error(t("settings.dataExport.form.unexpectedError"));
+			toast.error(t("settings.dataExport.form.unexpectedError", "An unexpected error occurred"));
 			console.error("Export error:", error);
 		} finally {
 			setIsSubmitting(false);
@@ -74,8 +74,8 @@ export function ExportForm({ organizationId }: ExportFormProps) {
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>{t("settings.dataExport.form.title")}</CardTitle>
-				<CardDescription>{t("settings.dataExport.form.description")}</CardDescription>
+				<CardTitle>{t("settings.dataExport.form.title", "Export Data")}</CardTitle>
+				<CardDescription>{t("settings.dataExport.form.description", "Select the data categories you want to export")}</CardDescription>
 			</CardHeader>
 			<CardContent>
 				<div className="space-y-6">
@@ -91,7 +91,7 @@ export function ExportForm({ organizationId }: ExportFormProps) {
 							htmlFor="select-all"
 							className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
 						>
-							{t("settings.dataExport.form.selectAll")}
+							{t("settings.dataExport.form.selectAll", "Select All")}
 						</Label>
 					</div>
 
@@ -109,10 +109,10 @@ export function ExportForm({ organizationId }: ExportFormProps) {
 										htmlFor={category}
 										className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
 									>
-										{t(`settings.dataExport.categories.${category}.label`)}
+										{t(`settings.dataExport.categories.${category}.label`, category)}
 									</Label>
 									<p className="text-xs text-muted-foreground">
-										{t(`settings.dataExport.categories.${category}.description`)}
+										{t(`settings.dataExport.categories.${category}.description`, `Export ${category} data`)}
 									</p>
 								</div>
 							</div>
@@ -121,13 +121,13 @@ export function ExportForm({ organizationId }: ExportFormProps) {
 
 					{/* Info Box */}
 					<div className="rounded-lg border bg-muted/50 p-4 text-sm">
-						<h4 className="font-medium">{t("settings.dataExport.form.aboutTitle")}</h4>
+						<h4 className="font-medium">{t("settings.dataExport.form.aboutTitle", "About Data Export")}</h4>
 						<ul className="mt-2 list-inside list-disc space-y-1 text-muted-foreground">
-							<li>{t("settings.dataExport.form.aboutAsync")}</li>
-							<li>{t("settings.dataExport.form.aboutEmail")}</li>
-							<li>{t("settings.dataExport.form.aboutLinkValidity")}</li>
-							<li>{t("settings.dataExport.form.aboutStorageDuration")}</li>
-							<li>{t("settings.dataExport.form.aboutOrgDataOnly")}</li>
+							<li>{t("settings.dataExport.form.aboutAsync", "Exports are processed asynchronously")}</li>
+							<li>{t("settings.dataExport.form.aboutEmail", "You'll receive an email when ready")}</li>
+							<li>{t("settings.dataExport.form.aboutLinkValidity", "Download links are valid for 24 hours")}</li>
+							<li>{t("settings.dataExport.form.aboutStorageDuration", "Export files are stored for 7 days")}</li>
+							<li>{t("settings.dataExport.form.aboutOrgDataOnly", "Only your organization's data is included")}</li>
 						</ul>
 					</div>
 
@@ -140,12 +140,12 @@ export function ExportForm({ organizationId }: ExportFormProps) {
 						{isSubmitting ? (
 							<>
 								<IconLoader2 className="mr-2 size-4 animate-spin" />
-								{t("settings.dataExport.form.startingExport")}
+								{t("settings.dataExport.form.startingExport", "Starting Export...")}
 							</>
 						) : (
 							<>
 								<IconDownload className="mr-2 size-4" />
-								{t("settings.dataExport.form.startExport", {
+								{t("settings.dataExport.form.startExport", `Start Export (${selectedCategories.size})`, {
 									count: selectedCategories.size,
 								})}
 							</>

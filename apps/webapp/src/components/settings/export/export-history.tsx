@@ -40,7 +40,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import type { ExportCategory } from "@/lib/export/data-fetchers";
-import { type ExportRecord, formatFileSize } from "@/lib/export/export-service";
+import { type ExportRecord, formatFileSize } from "@/lib/export/utils";
 
 interface ExportHistoryProps {
 	exports: ExportRecord[];
@@ -59,12 +59,12 @@ export function ExportHistory({ exports, organizationId }: ExportHistoryProps) {
 			if (result.success) {
 				// Open download URL in new tab
 				window.open(result.data, "_blank");
-				toast.success(t("settings.dataExport.history.downloadSuccess"));
+				toast.success(t("settings.dataExport.history.downloadSuccess", "Download started"));
 			} else {
-				toast.error(result.error || t("settings.dataExport.history.downloadError"));
+				toast.error(result.error || t("settings.dataExport.history.downloadError", "Failed to download"));
 			}
 		} catch (error) {
-			toast.error(t("settings.dataExport.history.unexpectedError"));
+			toast.error(t("settings.dataExport.history.unexpectedError", "An unexpected error occurred"));
 			console.error("Download error:", error);
 		} finally {
 			setLoadingAction(null);
@@ -76,13 +76,13 @@ export function ExportHistory({ exports, organizationId }: ExportHistoryProps) {
 		try {
 			const result = await deleteExportAction(exportId, organizationId);
 			if (result.success) {
-				toast.success(t("settings.dataExport.history.deleteSuccess"));
+				toast.success(t("settings.dataExport.history.deleteSuccess", "Export deleted"));
 				router.refresh();
 			} else {
-				toast.error(result.error || t("settings.dataExport.history.deleteError"));
+				toast.error(result.error || t("settings.dataExport.history.deleteError", "Failed to delete export"));
 			}
 		} catch (error) {
-			toast.error(t("settings.dataExport.history.unexpectedError"));
+			toast.error(t("settings.dataExport.history.unexpectedError", "An unexpected error occurred"));
 			console.error("Delete error:", error);
 		} finally {
 			setLoadingAction(null);
@@ -93,12 +93,12 @@ export function ExportHistory({ exports, organizationId }: ExportHistoryProps) {
 		return (
 			<Card>
 				<CardHeader>
-					<CardTitle>{t("settings.dataExport.history.title")}</CardTitle>
-					<CardDescription>{t("settings.dataExport.history.emptyDescription")}</CardDescription>
+					<CardTitle>{t("settings.dataExport.history.title", "Export History")}</CardTitle>
+					<CardDescription>{t("settings.dataExport.history.emptyDescription", "No exports yet")}</CardDescription>
 				</CardHeader>
 				<CardContent>
 					<p className="text-muted-foreground text-sm">
-						{t("settings.dataExport.history.emptyHint")}
+						{t("settings.dataExport.history.emptyHint", "Create your first export using the form above")}
 					</p>
 				</CardContent>
 			</Card>
@@ -109,23 +109,23 @@ export function ExportHistory({ exports, organizationId }: ExportHistoryProps) {
 		<Card>
 			<CardHeader className="flex flex-row items-center justify-between">
 				<div>
-					<CardTitle>{t("settings.dataExport.history.title")}</CardTitle>
-					<CardDescription>{t("settings.dataExport.history.description")}</CardDescription>
+					<CardTitle>{t("settings.dataExport.history.title", "Export History")}</CardTitle>
+					<CardDescription>{t("settings.dataExport.history.description", "Your previous data exports")}</CardDescription>
 				</div>
 				<Button variant="outline" size="sm" onClick={() => router.refresh()}>
 					<IconRefresh className="mr-2 size-4" />
-					{t("common.refresh")}
+					{t("common.refresh", "Refresh")}
 				</Button>
 			</CardHeader>
 			<CardContent>
 				<Table>
 					<TableHeader>
 						<TableRow>
-							<TableHead>{t("settings.dataExport.history.columnDate")}</TableHead>
-							<TableHead>{t("settings.dataExport.history.columnCategories")}</TableHead>
-							<TableHead>{t("settings.dataExport.history.columnStatus")}</TableHead>
-							<TableHead>{t("settings.dataExport.history.columnSize")}</TableHead>
-							<TableHead className="text-right">{t("settings.dataExport.history.columnActions")}</TableHead>
+							<TableHead>{t("settings.dataExport.history.columnDate", "Date")}</TableHead>
+							<TableHead>{t("settings.dataExport.history.columnCategories", "Categories")}</TableHead>
+							<TableHead>{t("settings.dataExport.history.columnStatus", "Status")}</TableHead>
+							<TableHead>{t("settings.dataExport.history.columnSize", "Size")}</TableHead>
+							<TableHead className="text-right">{t("settings.dataExport.history.columnActions", "Actions")}</TableHead>
 						</TableRow>
 					</TableHeader>
 					<TableBody>
@@ -150,7 +150,7 @@ export function ExportHistory({ exports, organizationId }: ExportHistoryProps) {
 										))}
 										{exp.categories.length > 3 && (
 											<Badge variant="outline" className="text-xs">
-												{t("settings.dataExport.history.moreCategories", {
+												{t("settings.dataExport.history.moreCategories", `+${exp.categories.length - 3} more`, {
 													count: exp.categories.length - 3,
 												})}
 											</Badge>
@@ -175,7 +175,7 @@ export function ExportHistory({ exports, organizationId }: ExportHistoryProps) {
 												) : (
 													<IconDownload className="size-4" />
 												)}
-												<span className="sr-only">{t("settings.dataExport.history.download")}</span>
+												<span className="sr-only">{t("settings.dataExport.history.download", "Download")}</span>
 											</Button>
 										)}
 										<AlertDialog>
@@ -191,23 +191,23 @@ export function ExportHistory({ exports, organizationId }: ExportHistoryProps) {
 													) : (
 														<IconTrash className="size-4" />
 													)}
-													<span className="sr-only">{t("common.delete")}</span>
+													<span className="sr-only">{t("common.delete", "Delete")}</span>
 												</Button>
 											</AlertDialogTrigger>
 											<AlertDialogContent>
 												<AlertDialogHeader>
-													<AlertDialogTitle>{t("settings.dataExport.history.deleteDialogTitle")}</AlertDialogTitle>
+													<AlertDialogTitle>{t("settings.dataExport.history.deleteDialogTitle", "Delete Export")}</AlertDialogTitle>
 													<AlertDialogDescription>
-														{t("settings.dataExport.history.deleteDialogDescription")}
+														{t("settings.dataExport.history.deleteDialogDescription", "Are you sure you want to delete this export? This action cannot be undone.")}
 													</AlertDialogDescription>
 												</AlertDialogHeader>
 												<AlertDialogFooter>
-													<AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+													<AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
 													<AlertDialogAction
 														onClick={() => handleDelete(exp.id)}
 														className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
 													>
-														{t("common.delete")}
+														{t("common.delete", "Delete")}
 													</AlertDialogAction>
 												</AlertDialogFooter>
 											</AlertDialogContent>
@@ -237,28 +237,28 @@ function StatusBadge({
 			return (
 				<Badge variant="outline" className="gap-1">
 					<IconClock className="size-3" />
-					{t("settings.dataExport.history.statusPending")}
+					{t("settings.dataExport.history.statusPending", "Pending")}
 				</Badge>
 			);
 		case "processing":
 			return (
 				<Badge variant="secondary" className="gap-1">
 					<IconLoader2 className="size-3 animate-spin" />
-					{t("settings.dataExport.history.statusProcessing")}
+					{t("settings.dataExport.history.statusProcessing", "Processing")}
 				</Badge>
 			);
 		case "completed":
 			return (
 				<Badge className="gap-1 bg-green-600 hover:bg-green-600">
 					<IconCheck className="size-3" />
-					{t("settings.dataExport.history.statusCompleted")}
+					{t("settings.dataExport.history.statusCompleted", "Completed")}
 				</Badge>
 			);
 		case "failed":
 			return (
 				<Badge variant="destructive" className="gap-1" title={errorMessage || undefined}>
 					<IconX className="size-3" />
-					{t("settings.dataExport.history.statusFailed")}
+					{t("settings.dataExport.history.statusFailed", "Failed")}
 				</Badge>
 			);
 		default:

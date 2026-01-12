@@ -10,6 +10,8 @@ import {
 } from "@/lib/storage/export-s3-client";
 import { type ExportCategory, fetchExportData } from "./data-fetchers";
 import { buildExportZip } from "./zip-builder";
+// Re-export client-safe utilities from utils.ts
+export { formatFileSize, type ExportRecord } from "./utils";
 
 const logger = createLogger("ExportService");
 
@@ -17,20 +19,6 @@ export interface CreateExportParams {
 	organizationId: string;
 	requestedById: string;
 	categories: ExportCategory[];
-}
-
-export interface ExportRecord {
-	id: string;
-	organizationId: string;
-	requestedById: string;
-	categories: string[];
-	status: "pending" | "processing" | "completed" | "failed";
-	errorMessage: string | null;
-	s3Key: string | null;
-	fileSizeBytes: number | null;
-	createdAt: Date;
-	completedAt: Date | null;
-	expiresAt: Date | null;
 }
 
 /**
@@ -291,20 +279,3 @@ export async function cleanupExpiredExports(): Promise<number> {
 	return deletedCount;
 }
 
-/**
- * Format file size for display
- */
-export function formatFileSize(bytes: number | null): string {
-	if (bytes === null || bytes === 0) return "0 B";
-
-	const units = ["B", "KB", "MB", "GB"];
-	let size = bytes;
-	let unitIndex = 0;
-
-	while (size >= 1024 && unitIndex < units.length - 1) {
-		size /= 1024;
-		unitIndex++;
-	}
-
-	return `${size.toFixed(unitIndex > 0 ? 1 : 0)} ${units[unitIndex]}`;
-}
