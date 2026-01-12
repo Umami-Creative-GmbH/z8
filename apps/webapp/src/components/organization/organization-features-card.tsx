@@ -9,6 +9,7 @@ import { toggleOrganizationFeature } from "@/app/[locale]/(app)/settings/organiz
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { useOrganizationSettings } from "@/stores/organization-settings-store";
 
 interface OrganizationFeaturesCardProps {
 	organizationId: string;
@@ -28,6 +29,7 @@ export function OrganizationFeaturesCard({
 	const [isPending, startTransition] = useTransition();
 	const [isShiftsEnabled, setIsShiftsEnabled] = useState(shiftsEnabled);
 	const [isProjectsEnabled, setIsProjectsEnabled] = useState(projectsEnabled);
+	const setOrgSettings = useOrganizationSettings((state) => state.setSettings);
 
 	const canEdit = currentMemberRole === "owner";
 
@@ -36,14 +38,15 @@ export function OrganizationFeaturesCard({
 
 		// Optimistic update
 		setIsShiftsEnabled(enabled);
+		setOrgSettings({ shiftsEnabled: enabled });
 
 		const result = await toggleOrganizationFeature(organizationId, "shiftsEnabled", enabled);
 
 		if (result.success) {
 			toast.success(
 				enabled
-					? t("organization.features.shifts-enabled", "Shift scheduling enabled")
-					: t("organization.features.shifts-disabled", "Shift scheduling disabled"),
+					? t("organization.features.shifts-enabled", "Work Shifts enabled")
+					: t("organization.features.shifts-disabled", "Work Shifts disabled"),
 			);
 			startTransition(() => {
 				router.refresh();
@@ -51,6 +54,7 @@ export function OrganizationFeaturesCard({
 		} else {
 			// Revert optimistic update
 			setIsShiftsEnabled(!enabled);
+			setOrgSettings({ shiftsEnabled: !enabled });
 			toast.error(
 				result.error?.message ||
 					t("organization.features.update-failed", "Failed to update feature"),
@@ -63,6 +67,7 @@ export function OrganizationFeaturesCard({
 
 		// Optimistic update
 		setIsProjectsEnabled(enabled);
+		setOrgSettings({ projectsEnabled: enabled });
 
 		const result = await toggleOrganizationFeature(organizationId, "projectsEnabled", enabled);
 
@@ -78,6 +83,7 @@ export function OrganizationFeaturesCard({
 		} else {
 			// Revert optimistic update
 			setIsProjectsEnabled(!enabled);
+			setOrgSettings({ projectsEnabled: !enabled });
 			toast.error(
 				result.error?.message ||
 					t("organization.features.update-failed", "Failed to update feature"),
@@ -97,7 +103,7 @@ export function OrganizationFeaturesCard({
 				</CardDescription>
 			</CardHeader>
 			<CardContent className="space-y-6">
-				{/* Shift Scheduling Feature */}
+				{/* Work Shifts Feature */}
 				<div className="flex items-center justify-between">
 					<div className="flex items-start gap-3">
 						<div className="mt-0.5 rounded-lg bg-primary/10 p-2">
@@ -108,12 +114,12 @@ export function OrganizationFeaturesCard({
 								htmlFor="shifts-toggle"
 								className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
 							>
-								{t("organization.features.shift-scheduling", "Shift Scheduling")}
+								{t("organization.features.work-shifts", "Work Shifts")}
 							</Label>
 							<p className="text-sm text-muted-foreground">
 								{t(
-									"organization.features.shift-scheduling-description",
-									"Enable shift scheduling with drag-and-drop planning, open shifts, and swap requests.",
+									"organization.features.work-shifts-description",
+									"Enable work shifts with drag-and-drop planning, open shifts, and swap requests.",
 								)}
 							</p>
 						</div>
@@ -126,8 +132,8 @@ export function OrganizationFeaturesCard({
 							onCheckedChange={handleToggleShifts}
 							disabled={!canEdit || isPending}
 							aria-label={t(
-								"organization.features.toggle-shift-scheduling",
-								"Toggle shift scheduling",
+								"organization.features.toggle-work-shifts",
+								"Toggle work shifts",
 							)}
 						/>
 					</div>

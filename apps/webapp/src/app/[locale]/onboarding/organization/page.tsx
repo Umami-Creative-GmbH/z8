@@ -1,6 +1,7 @@
 "use client";
 
 import { useForm } from "@tanstack/react-form";
+import { useStore } from "@tanstack/react-store";
 import { zodValidator } from "@tanstack/zod-form-adapter";
 import { IconBuilding, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
@@ -55,7 +56,7 @@ export default function OrganizationPage() {
 	});
 
 	// Subscribe to form values
-	const formValues = form.useStore((state) => state.values);
+	const formValues = useStore(form.store, (state) => state.values);
 	const name = formValues.name;
 	const slug = formValues.slug;
 

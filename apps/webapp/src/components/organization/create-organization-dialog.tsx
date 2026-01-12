@@ -1,6 +1,7 @@
 "use client";
 
 import { useForm } from "@tanstack/react-form";
+import { useStore } from "@tanstack/react-store";
 import { zodValidator } from "@tanstack/zod-form-adapter";
 import { IconBuilding, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
@@ -89,7 +90,7 @@ export function CreateOrganizationDialog({
 		},
 	});
 
-	const formValues = form.useStore((state) => state.values);
+	const formValues = useStore(form.store, (state) => state.values);
 	const name = formValues.name;
 	const slug = formValues.slug;
 

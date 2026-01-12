@@ -1,4 +1,7 @@
+import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
+import { db } from "@/db";
+import { organization } from "@/db/auth-schema";
 import { getAuthContext } from "@/lib/auth-helpers";
 
 /**
@@ -12,6 +15,31 @@ export async function GET() {
 
 		if (!context) {
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+		}
+
+		// Fetch organization settings if there's an active organization
+		let organizationSettings = null;
+		const orgId = context.session.activeOrganizationId || context.employee?.organizationId;
+
+		if (orgId) {
+			const org = await db.query.organization.findFirst({
+				where: eq(organization.id, orgId),
+				columns: {
+					id: true,
+					shiftsEnabled: true,
+					projectsEnabled: true,
+					surchargesEnabled: true,
+				},
+			});
+
+			if (org) {
+				organizationSettings = {
+					organizationId: org.id,
+					shiftsEnabled: org.shiftsEnabled ?? false,
+					projectsEnabled: org.projectsEnabled ?? false,
+					surchargesEnabled: org.surchargesEnabled ?? false,
+				};
+			}
 		}
 
 		return NextResponse.json({
@@ -31,6 +59,7 @@ export async function GET() {
 						teamId: context.employee.teamId,
 					}
 				: null,
+			organizationSettings,
 		});
 	} catch (error) {
 		console.error("Error getting auth context:", error);

@@ -26,7 +26,9 @@ import {
 	useSidebar,
 } from "@/components/ui/sidebar";
 import type { UserOrganization } from "@/lib/auth-helpers";
+import { useSession } from "@/lib/auth-client";
 import { useRouter } from "@/navigation";
+import { useOrganizationSettings } from "@/stores/organization-settings-store";
 
 interface OrganizationSwitcherProps {
 	organizations: UserOrganization[];
@@ -42,11 +44,15 @@ export function OrganizationSwitcher({
 	const { isMobile } = useSidebar();
 	const [switching, setSwitching] = useState(false);
 	const [createDialogOpen, setCreateDialogOpen] = useState(false);
+	const resetOrgSettings = useOrganizationSettings((state) => state.reset);
+	const { refetch: refetchSession } = useSession();
 
 	const handleSwitchOrganization = async (organizationId: string) => {
 		if (organizationId === currentOrganization?.id) return;
 
 		setSwitching(true);
+		// Reset org settings store immediately to show loading state
+		resetOrgSettings();
 
 		try {
 			const response = await fetch("/api/organizations/switch", {
@@ -71,7 +77,10 @@ export function OrganizationSwitcher({
 				);
 			}
 
-			// Refresh the page to update context
+			// Refetch the session to update activeOrganizationId which triggers useOrganization re-fetch
+			await refetchSession();
+
+			// Refresh the page to update server components
 			router.refresh();
 		} catch (error: any) {
 			toast.error(error.message || t("organization.switchFailed", "Failed to switch organization"));
