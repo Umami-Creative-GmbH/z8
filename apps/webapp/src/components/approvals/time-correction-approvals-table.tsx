@@ -223,7 +223,7 @@ export function TimeCorrectionApprovalsTable({
 										</div>
 									</TableCell>
 									<TableCell className="max-w-[200px] truncate text-muted-foreground">
-										{approval.reason || "—"}
+										{(approval as any).reason || "—"}
 									</TableCell>
 									<TableCell className="text-right">
 										<div className="flex justify-end gap-2">
