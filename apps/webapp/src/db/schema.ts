@@ -1,6 +1,7 @@
 import { relations, sql } from "drizzle-orm";
 import {
 	boolean,
+	date,
 	decimal,
 	index,
 	integer,
@@ -66,6 +67,9 @@ export const dayOfWeekEnum = pgEnum("day_of_week", [
 	"saturday",
 	"sunday",
 ]);
+
+// Day period for half-day absences
+export const dayPeriodEnum = pgEnum("day_period", ["full_day", "am", "pm"]);
 
 // Notification enums
 export const notificationTypeEnum = pgEnum("notification_type", [
@@ -1015,8 +1019,11 @@ export const absenceEntry = pgTable(
 			.notNull()
 			.references(() => absenceCategory.id),
 
-		startDate: timestamp("start_date").notNull(),
-		endDate: timestamp("end_date").notNull(),
+		// Logical calendar dates (YYYY-MM-DD) - timezone-independent
+		startDate: date("start_date").notNull(),
+		startPeriod: dayPeriodEnum("start_period").default("full_day").notNull(),
+		endDate: date("end_date").notNull(),
+		endPeriod: dayPeriodEnum("end_period").default("full_day").notNull(),
 
 		status: approvalStatusEnum("status").default("pending").notNull(),
 		notes: text("notes"),
@@ -1102,13 +1109,7 @@ export const employeeVacationAllowance = pgTable(
 		customAnnualDays: decimal("custom_annual_days"), // Override for specific employee
 		customCarryoverDays: decimal("custom_carryover_days"), // Carried from previous year
 
-		// Adjustment tracking
-		adjustmentDays: decimal("adjustment_days").default("0"), // Manual +/- adjustments
-		adjustmentReason: text("adjustment_reason"),
-		adjustedAt: timestamp("adjusted_at"),
-		adjustedBy: uuid("adjusted_by").references(() => employee.id),
-
-		createdAt: timestamp("created_at").defaultNow().notNull(),
+			createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at")
 			.$onUpdate(() => currentTimestamp())
 			.notNull(),
@@ -1116,6 +1117,27 @@ export const employeeVacationAllowance = pgTable(
 	(table) => [
 		index("employeeVacationAllowance_employeeId_idx").on(table.employeeId),
 		index("employeeVacationAllowance_employeeId_year_idx").on(table.employeeId, table.year),
+	],
+);
+
+// Individual vacation adjustment events (tracks all manual adjustments with full history)
+export const vacationAdjustment = pgTable(
+	"vacation_adjustment",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		employeeId: uuid("employee_id")
+			.notNull()
+			.references(() => employee.id, { onDelete: "cascade" }),
+		year: integer("year").notNull(),
+		days: decimal("days", { precision: 5, scale: 2 }).notNull(), // +/- days adjustment
+		reason: text("reason").notNull(),
+		adjustedBy: uuid("adjusted_by")
+			.notNull()
+			.references(() => employee.id),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+	},
+	(table) => [
+		index("vacationAdjustment_employee_year_idx").on(table.employeeId, table.year),
 	],
 );
 
@@ -2153,12 +2175,19 @@ export const employeeVacationAllowanceRelations = relations(
 			fields: [employeeVacationAllowance.employeeId],
 			references: [employee.id],
 		}),
-		adjuster: one(employee, {
-			fields: [employeeVacationAllowance.adjustedBy],
-			references: [employee.id],
-		}),
 	}),
 );
+
+export const vacationAdjustmentRelations = relations(vacationAdjustment, ({ one }) => ({
+	employee: one(employee, {
+		fields: [vacationAdjustment.employeeId],
+		references: [employee.id],
+	}),
+	adjuster: one(employee, {
+		fields: [vacationAdjustment.adjustedBy],
+		references: [employee.id],
+	}),
+}));
 
 // Vacation policy assignment relations
 export const vacationPolicyAssignmentRelations = relations(vacationPolicyAssignment, ({ one }) => ({

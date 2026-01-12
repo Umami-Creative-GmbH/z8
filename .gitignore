@@ -65,3 +65,6 @@ apps/webapp/public/licenses.json
 # webapp stuff
 apps/webapp/.next/
 apps/webapp/public/uploads/
+
+# claude tmp files
+tmpclaude*-cwd

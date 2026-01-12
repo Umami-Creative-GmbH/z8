@@ -107,6 +107,7 @@ export const organization = pgTable(
     shiftsEnabled: boolean("shifts_enabled").default(false),
     projectsEnabled: boolean("projects_enabled").default(false),
     surchargesEnabled: boolean("surcharges_enabled").default(false),
+    timezone: text("timezone").default("UTC"),
   },
   (table) => [uniqueIndex("organization_slug_uidx").on(table.slug)],
 );
@@ -249,7 +250,7 @@ export const invitationRelations = relations(invitation, ({ one }) => ({
     fields: [invitation.organizationId],
     references: [organization.id],
   }),
-  inviter: one(user, {
+  user: one(user, {
     fields: [invitation.inviterId],
     references: [user.id],
   }),

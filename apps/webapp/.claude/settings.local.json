@@ -26,7 +26,12 @@
       "Bash(bunx --bun tsc:*)",
       "WebSearch",
       "Bash(done)",
-      "Bash(tasklist:*)"
+      "Bash(tasklist:*)",
+      "Bash(git log:*)",
+      "Bash(bunx @biomejs/biome check:*)",
+      "Bash(git checkout:*)",
+      "Bash(bun -e:*)",
+      "Bash(bun test:*)"
     ]
   },
   "enabledMcpjsonServers": [
