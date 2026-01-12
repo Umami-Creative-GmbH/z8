@@ -7,7 +7,7 @@ import { TimeEntriesTable } from "@/components/time-tracking/time-entries-table"
 import { WeeklySummaryCards } from "@/components/time-tracking/weekly-summary-cards";
 import { auth } from "@/lib/auth";
 import { dateToDB } from "@/lib/datetime/drizzle-adapter";
-import { getWeekRange } from "@/lib/time-tracking/time-utils";
+import { getWeekRangeInTimezone } from "@/lib/time-tracking/timezone-utils";
 import { getActiveWorkPeriod, getCurrentEmployee, getTimeSummary, getWorkPeriods } from "./actions";
 
 export default async function TimeTrackingPage() {
@@ -26,16 +26,17 @@ export default async function TimeTrackingPage() {
 		);
 	}
 
-	// Get user's timezone for same-day detection
+	// Get user's timezone for timezone-aware calculations
 	const timezone = await getCurrentTimezone();
 
-	const { start, end } = getWeekRange(new Date());
+	// Use timezone-aware week range so work periods are fetched for the employee's local week
+	const { start, end } = getWeekRangeInTimezone(new Date(), timezone);
 	const startDate = dateToDB(start)!;
 	const endDate = dateToDB(end)!;
 	const [activeWorkPeriod, workPeriods, summary] = await Promise.all([
 		getActiveWorkPeriod(employee.id),
 		getWorkPeriods(employee.id, startDate, endDate),
-		getTimeSummary(employee.id),
+		getTimeSummary(employee.id, timezone),
 	]);
 
 	return (

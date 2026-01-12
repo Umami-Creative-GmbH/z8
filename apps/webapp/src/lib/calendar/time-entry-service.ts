@@ -5,7 +5,7 @@ import { DateTime } from "luxon";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import { employee, timeEntry } from "@/db/schema";
-import { dateToDB } from "@/lib/datetime/drizzle-adapter";
+import { dateFromDB, dateToDB } from "@/lib/datetime/drizzle-adapter";
 import type { TimeEntryEvent } from "./types";
 
 interface TimeEntryFilters {
@@ -59,19 +59,25 @@ export async function getTimeEntriesForMonth(
 			.where(and(...conditions));
 
 		// Transform to TimeEntryEvent objects
-		return entries.map(({ entry, user }) => ({
-			id: entry.id,
-			type: "time_entry" as const,
-			date: entry.timestamp,
-			title: `${user.name} - ${formatEntryType(entry.type)}`,
-			description: entry.notes || undefined,
-			color: getColorByEntryType(entry.type),
-			metadata: {
-				entryType: entry.type,
-				employeeName: user.name,
-				timestamp: entry.timestamp,
-			},
-		}));
+		return entries.map(({ entry, user }) => {
+			// Format time for display
+			const entryDT = dateFromDB(entry.timestamp);
+			const timeFormatted = entryDT?.toLocaleString(DateTime.TIME_SIMPLE) ?? undefined;
+
+			return {
+				id: entry.id,
+				type: "time_entry" as const,
+				date: entry.timestamp,
+				title: `${user.name} - ${formatEntryType(entry.type)}`,
+				description: entry.notes || undefined,
+				color: getColorByEntryType(entry.type),
+				metadata: {
+					entryType: entry.type,
+					employeeName: user.name,
+					time: timeFormatted,
+				},
+			};
+		});
 	} catch (error) {
 		console.error("Error fetching time entries for calendar:", error);
 		return [];

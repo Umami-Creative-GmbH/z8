@@ -12,16 +12,20 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import {
-	formatDate,
 	formatDuration,
-	formatTime,
 	isSameDayInTimezone,
 } from "@/lib/time-tracking/time-utils";
+import {
+	formatDateInZone,
+	formatTimeInZone,
+	getTimezoneAbbreviation,
+} from "@/lib/time-tracking/timezone-utils";
 import { TimeCorrectionDialog } from "./time-correction-dialog";
 
 interface TimeEntry {
 	id: string;
 	isSuperseded: boolean | null;
+	notes: string | null;
 }
 
 interface WorkPeriodData {
@@ -43,18 +47,25 @@ interface Props {
 }
 
 export function TimeEntriesTable({ workPeriods, hasManager, employeeTimezone }: Props) {
+	const timezoneAbbr = getTimezoneAbbreviation(employeeTimezone);
+
 	const columns: ColumnDef<WorkPeriodData>[] = [
 		{
 			accessorKey: "startTime",
 			header: "Date",
-			cell: ({ row }) => formatDate(row.original.startTime),
+			cell: ({ row }) => formatDateInZone(row.original.startTime, employeeTimezone),
 		},
 		{
 			id: "clockIn",
-			header: "Clock In",
+			header: () => (
+				<div className="flex items-baseline gap-1">
+					<span>Clock In</span>
+					<span className="text-xs text-muted-foreground">({timezoneAbbr})</span>
+				</div>
+			),
 			cell: ({ row }) => (
 				<div className="flex flex-col gap-1">
-					<span>{formatTime(row.original.startTime)}</span>
+					<span>{formatTimeInZone(row.original.startTime, employeeTimezone)}</span>
 					{row.original.clockIn?.isSuperseded && (
 						<Badge variant="outline" className="w-fit text-xs">
 							Corrected
@@ -65,14 +76,19 @@ export function TimeEntriesTable({ workPeriods, hasManager, employeeTimezone }: 
 		},
 		{
 			id: "clockOut",
-			header: "Clock Out",
+			header: () => (
+				<div className="flex items-baseline gap-1">
+					<span>Clock Out</span>
+					<span className="text-xs text-muted-foreground">({timezoneAbbr})</span>
+				</div>
+			),
 			cell: ({ row }) => {
 				if (!row.original.endTime) {
 					return <Badge variant="secondary">Active</Badge>;
 				}
 				return (
 					<div className="flex flex-col gap-1">
-						<span>{formatTime(row.original.endTime)}</span>
+						<span>{formatTimeInZone(row.original.endTime, employeeTimezone)}</span>
 						{row.original.clockOut?.isSuperseded && (
 							<Badge variant="outline" className="w-fit text-xs">
 								Corrected
@@ -104,6 +120,20 @@ export function TimeEntriesTable({ workPeriods, hasManager, employeeTimezone }: 
 				return <span className="tabular-nums">{formatDuration(row.original.durationMinutes)}</span>;
 			},
 		},
+		{
+			id: "description",
+			header: "Description",
+			cell: ({ row }) => {
+				// Show notes from clock-out entry (where descriptions are typically stored)
+				const notes = row.original.clockOut?.notes;
+				if (!notes) return <span className="text-muted-foreground">-</span>;
+				return (
+					<span className="max-w-[200px] truncate text-sm" title={notes}>
+						{notes}
+					</span>
+				);
+			},
+		},
 	];
 
 	// Add actions column - show edit button based on:
@@ -130,7 +160,11 @@ export function TimeEntriesTable({ workPeriods, hasManager, employeeTimezone }: 
 
 			return (
 				<div className="flex justify-end">
-					<TimeCorrectionDialog workPeriod={period} isSameDay={isSameDay} />
+					<TimeCorrectionDialog
+						workPeriod={period}
+						isSameDay={isSameDay}
+						employeeTimezone={employeeTimezone}
+					/>
 				</div>
 			);
 		},

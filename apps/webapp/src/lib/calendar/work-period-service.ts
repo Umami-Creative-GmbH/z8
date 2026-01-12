@@ -1,4 +1,4 @@
-import { and, eq, gte, lte } from "drizzle-orm";
+import { and, eq, gte, isNull, lte, not } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
@@ -39,8 +39,9 @@ export async function getWorkPeriodsForMonth(
 			// Date range filter
 			gte(workPeriod.startTime, startDate),
 			lte(workPeriod.startTime, endDate),
-			// Only completed work periods
-			eq(workPeriod.isActive, false),
+			// Only completed work periods (those with an end time)
+			// Note: We check endTime instead of isActive because older entries may not have isActive set correctly
+			not(isNull(workPeriod.endTime)),
 		];
 
 		// Add employee filter if provided
@@ -105,6 +106,12 @@ export async function getWorkPeriodsForMonth(
 			// Use project color if available, otherwise default green
 			const eventColor = proj?.color || "#10b981"; // Green (emerald)
 
+			// Format start and end times for display
+			const startDT = dateFromDB(period.startTime);
+			const endDT = period.endTime ? dateFromDB(period.endTime) : null;
+			const startTimeFormatted = startDT?.toLocaleString(DateTime.TIME_SIMPLE) ?? undefined;
+			const endTimeFormatted = endDT?.toLocaleString(DateTime.TIME_SIMPLE) ?? undefined;
+
 			return {
 				id: period.id,
 				type: "work_period" as const,
@@ -117,6 +124,8 @@ export async function getWorkPeriodsForMonth(
 					durationMinutes,
 					employeeName: user.name,
 					notes: notes || undefined,
+					startTime: startTimeFormatted,
+					endTime: endTimeFormatted,
 					// Project fields (only included if assigned to a project)
 					...(proj && {
 						projectId: proj.id,

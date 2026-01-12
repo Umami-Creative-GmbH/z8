@@ -22,34 +22,42 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { formatTimeInZone, getTimezoneAbbreviation } from "@/lib/time-tracking/timezone-utils";
 
 interface WorkPeriodData {
 	id: string;
 	startTime: Date;
 	endTime: Date | null;
+	clockOut?: { notes: string | null } | null;
 }
 
 interface Props {
 	workPeriod: WorkPeriodData;
 	isSameDay: boolean;
+	employeeTimezone: string;
 }
 
-export function TimeCorrectionDialog({ workPeriod, isSameDay }: Props) {
+export function TimeCorrectionDialog({ workPeriod, isSameDay, employeeTimezone }: Props) {
 	const [open, setOpen] = useState(false);
 	const [loading, setLoading] = useState(false);
 	const router = useRouter();
+	const timezoneAbbr = getTimezoneAbbreviation(employeeTimezone);
 
-	// Extract time from ISO string for input initial value
-	const getTimeFromDate = (date: Date | string) => {
-		const d = new Date(date);
-		return d.toTimeString().substring(0, 5); // HH:MM
-	};
-
-	const [formData, setFormData] = useState({
-		clockInTime: getTimeFromDate(workPeriod.startTime),
-		clockOutTime: workPeriod.endTime ? getTimeFromDate(workPeriod.endTime) : "",
-		reason: "",
+	const getInitialFormData = () => ({
+		clockInTime: formatTimeInZone(workPeriod.startTime, employeeTimezone),
+		clockOutTime: workPeriod.endTime ? formatTimeInZone(workPeriod.endTime, employeeTimezone) : "",
+		reason: workPeriod.clockOut?.notes || "",
 	});
+
+	const [formData, setFormData] = useState(getInitialFormData);
+
+	// Reset form data when dialog opens to get latest values
+	const handleOpenChange = (isOpen: boolean) => {
+		if (isOpen) {
+			setFormData(getInitialFormData());
+		}
+		setOpen(isOpen);
+	};
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -81,12 +89,6 @@ export function TimeCorrectionDialog({ workPeriod, isSameDay }: Props) {
 			if (result.success) {
 				toast.success("Time entry updated successfully");
 				setOpen(false);
-				// Reset form
-				setFormData({
-					clockInTime: getTimeFromDate(workPeriod.startTime),
-					clockOutTime: workPeriod.endTime ? getTimeFromDate(workPeriod.endTime) : "",
-					reason: "",
-				});
 				router.refresh();
 			} else {
 				toast.error(result.error || "Failed to update time entry");
@@ -103,12 +105,6 @@ export function TimeCorrectionDialog({ workPeriod, isSameDay }: Props) {
 			if (result.success) {
 				toast.success("Correction request submitted for manager approval");
 				setOpen(false);
-				// Reset form
-				setFormData({
-					clockInTime: getTimeFromDate(workPeriod.startTime),
-					clockOutTime: workPeriod.endTime ? getTimeFromDate(workPeriod.endTime) : "",
-					reason: "",
-				});
 			} else {
 				toast.error(result.error || "Failed to submit correction");
 			}
@@ -118,7 +114,7 @@ export function TimeCorrectionDialog({ workPeriod, isSameDay }: Props) {
 	};
 
 	return (
-		<Dialog open={open} onOpenChange={setOpen}>
+		<Dialog open={open} onOpenChange={handleOpenChange}>
 			<DialogTrigger asChild>
 				<Button variant="ghost" size="icon">
 					<IconEdit className="size-4" />
@@ -138,6 +134,9 @@ export function TimeCorrectionDialog({ workPeriod, isSameDay }: Props) {
 				</DialogHeader>
 				<form onSubmit={handleSubmit}>
 					<div className="grid gap-4 py-4">
+						<p className="text-xs text-muted-foreground">
+							Times are in your local timezone ({timezoneAbbr})
+						</p>
 						<div className="grid grid-cols-2 gap-4">
 							<div className="flex flex-col gap-2">
 								<Label htmlFor="clockIn">Clock In</Label>

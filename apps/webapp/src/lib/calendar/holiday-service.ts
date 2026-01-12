@@ -14,17 +14,23 @@ interface HolidayWithCategory {
 
 /**
  * Check if a date is a holiday that blocks time entry
+ * Uses employee's timezone to determine the calendar day for holiday matching
  */
 export async function isHolidayBlockingTimeEntry(
 	organizationId: string,
 	date: Date,
+	employeeTimezone: string = "UTC",
 ): Promise<{ isBlocked: boolean; holiday: HolidayWithCategory | null }> {
-	// Convert to DateTime and get day boundaries
+	// Convert to DateTime (UTC from database)
 	const dateDT = dateFromDB(date);
 	if (!dateDT) return { isBlocked: false, holiday: null };
 
-	const dateStart = dateToDB(dateDT.startOf("day"))!;
-	const dateEnd = dateToDB(dateDT.endOf("day"))!;
+	// Convert to employee's timezone to get their calendar day
+	const employeeLocalDT = dateDT.setZone(employeeTimezone);
+
+	// Get day boundaries in employee's timezone, then convert back to UTC for DB query
+	const dateStart = dateToDB(employeeLocalDT.startOf("day").toUTC())!;
+	const dateEnd = dateToDB(employeeLocalDT.endOf("day").toUTC())!;
 
 	// Query non-recurring holidays
 	const nonRecurringHolidays = await db
@@ -72,12 +78,13 @@ export async function isHolidayBlockingTimeEntry(
 			),
 		);
 
-	// Check if date matches any recurring holiday
+	// Check if date matches any recurring holiday (using employee's local calendar day)
 	for (const { holiday: h, category } of recurringHolidays) {
 		if (h.recurrenceRule) {
 			const rule = JSON.parse(h.recurrenceRule);
-			const dateMonth = dateDT.month; // Luxon months are 1-indexed
-			const dateDay = dateDT.day;
+			// Use employee's local date for recurring holiday matching
+			const dateMonth = employeeLocalDT.month; // Luxon months are 1-indexed
+			const dateDay = employeeLocalDT.day;
 
 			if (rule.month === dateMonth && rule.day === dateDay) {
 				// Check if recurrence has ended

@@ -35,6 +35,11 @@ import { renderTimeCorrectionPendingApproval } from "@/lib/email/render";
 import { createLogger } from "@/lib/logger";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
 import { isSameDayInTimezone } from "@/lib/time-tracking/time-utils";
+import {
+	getMonthRangeInTimezone,
+	getTodayRangeInTimezone,
+	getWeekRangeInTimezone,
+} from "@/lib/time-tracking/timezone-utils";
 import type { TimeSummary } from "@/lib/time-tracking/types";
 import type { ComplianceWarning } from "@/lib/time-regulations/validation";
 import { validateTimeEntry, validateTimeEntryRange } from "@/lib/time-tracking/validation";
@@ -115,32 +120,55 @@ export async function editSameDayTimeEntry(
 	}
 
 	// Calculate corrected timestamps
+	// The user provides times in their local timezone, so we need to:
+	// 1. Get the date portion in the user's timezone
+	// 2. Set the new time in that timezone
+	// 3. Convert back to UTC for storage
 	const startDT = dateFromDB(period.startTime);
 	if (!startDT) {
 		return { success: false, error: "Invalid work period start time" };
 	}
 
+	// Convert to user's timezone to get the correct date
+	const startInUserTz = startDT.setZone(timezone);
 	const [hours, minutes] = data.newClockInTime.split(":");
-	const correctedClockInDT = startDT.set({
-		hour: parseInt(hours, 10),
-		minute: parseInt(minutes, 10),
-		second: 0,
-		millisecond: 0,
-	});
+	const correctedClockInDT = startInUserTz
+		.set({
+			hour: parseInt(hours, 10),
+			minute: parseInt(minutes, 10),
+			second: 0,
+			millisecond: 0,
+		})
+		.toUTC(); // Convert back to UTC for storage
 	const correctedClockInDate = dateToDB(correctedClockInDT)!;
+
+	// Validate: clock in time cannot be in the future
+	const now = new Date();
+	if (correctedClockInDate > now) {
+		return { success: false, error: "Clock in time cannot be in the future" };
+	}
 
 	let correctedClockOutDate: Date | undefined;
 	if (data.newClockOutTime && period.endTime) {
 		const endDT = dateFromDB(period.endTime);
 		if (endDT) {
+			// Convert to user's timezone to get the correct date
+			const endInUserTz = endDT.setZone(timezone);
 			const [outHours, outMinutes] = data.newClockOutTime.split(":");
-			const correctedClockOutDT = endDT.set({
-				hour: parseInt(outHours, 10),
-				minute: parseInt(outMinutes, 10),
-				second: 0,
-				millisecond: 0,
-			});
+			const correctedClockOutDT = endInUserTz
+				.set({
+					hour: parseInt(outHours, 10),
+					minute: parseInt(outMinutes, 10),
+					second: 0,
+					millisecond: 0,
+				})
+				.toUTC(); // Convert back to UTC for storage
 			correctedClockOutDate = dateToDB(correctedClockOutDT)!;
+
+			// Validate: clock out time cannot be in the future
+			if (correctedClockOutDate > now) {
+				return { success: false, error: "Clock out time cannot be in the future" };
+			}
 		}
 	}
 
@@ -205,6 +233,13 @@ export async function editSameDayTimeEntry(
 					isSuperseded: true,
 					supersededById: clockOutCorrection.id,
 				})
+				.where(eq(timeEntry.id, period.clockOutId));
+		} else if (data.reason && period.clockOutId) {
+			// Update the clock-out entry's notes even if time wasn't changed
+			// This allows users to add descriptions without changing times
+			await db
+				.update(timeEntry)
+				.set({ notes: data.reason })
 				.where(eq(timeEntry.id, period.clockOutId));
 		}
 
@@ -300,11 +335,23 @@ export async function requestTimeCorrectionEffect(
 
 		yield* _(Effect.annotateCurrentSpan("manager.id", currentEmployee.managerId!));
 
+		// Get user's timezone for time conversion
+		const userData = yield* _(
+			dbService.query("getUserTimezone", async () => {
+				return await dbService.db.query.user.findFirst({
+					where: eq(user.id, session.user.id),
+					columns: { timezone: true },
+				});
+			}),
+		);
+		const timezone = userData?.timezone || "UTC";
+
 		logger.info(
 			{
 				employeeId: currentEmployee.id,
 				workPeriodId: data.workPeriodId,
 				managerId: currentEmployee.managerId,
+				timezone,
 			},
 			"Processing time correction request",
 		);
@@ -344,6 +391,10 @@ export async function requestTimeCorrectionEffect(
 		}
 
 		// Step 5: Calculate corrected timestamps
+		// The user provides times in their local timezone, so we need to:
+		// 1. Get the date portion in the user's timezone
+		// 2. Set the new time in that timezone
+		// 3. Convert back to UTC for storage
 		const startDT = dateFromDB(period.startTime);
 		if (!startDT) {
 			yield* _(
@@ -356,27 +407,60 @@ export async function requestTimeCorrectionEffect(
 			);
 		}
 
+		// Convert to user's timezone to get the correct date
+		const startInUserTz = startDT!.setZone(timezone);
 		const [hours, minutes] = data.newClockInTime.split(":");
-		const correctedClockInDT = startDT?.set({
-			hour: parseInt(hours, 10),
-			minute: parseInt(minutes, 10),
-			second: 0,
-			millisecond: 0,
-		});
+		const correctedClockInDT = startInUserTz
+			.set({
+				hour: parseInt(hours, 10),
+				minute: parseInt(minutes, 10),
+				second: 0,
+				millisecond: 0,
+			})
+			.toUTC(); // Convert back to UTC for storage
 		const correctedClockInDate = dateToDB(correctedClockInDT)!;
+
+		// Validate: clock in time cannot be in the future
+		const now = new Date();
+		if (correctedClockInDate > now) {
+			yield* _(
+				Effect.fail(
+					new ValidationError({
+						message: "Clock in time cannot be in the future",
+						field: "newClockInTime",
+					}),
+				),
+			);
+		}
 
 		let correctedClockOutDate: Date | undefined;
 		if (data.newClockOutTime && period.endTime) {
 			const endDT = dateFromDB(period.endTime);
 			if (endDT) {
+				// Convert to user's timezone to get the correct date
+				const endInUserTz = endDT.setZone(timezone);
 				const [outHours, outMinutes] = data.newClockOutTime.split(":");
-				const correctedClockOutDT = endDT.set({
-					hour: parseInt(outHours, 10),
-					minute: parseInt(outMinutes, 10),
-					second: 0,
-					millisecond: 0,
-				});
+				const correctedClockOutDT = endInUserTz
+					.set({
+						hour: parseInt(outHours, 10),
+						minute: parseInt(outMinutes, 10),
+						second: 0,
+						millisecond: 0,
+					})
+					.toUTC(); // Convert back to UTC for storage
 				correctedClockOutDate = dateToDB(correctedClockOutDT)!;
+
+				// Validate: clock out time cannot be in the future
+				if (correctedClockOutDate > now) {
+					yield* _(
+						Effect.fail(
+							new ValidationError({
+								message: "Clock out time cannot be in the future",
+								field: "newClockOutTime",
+							}),
+						),
+					);
+				}
 			}
 		}
 
@@ -728,16 +812,24 @@ export async function getWorkPeriods(
 
 /**
  * Get time summary for an employee (today, week, month)
+ * Uses employee's timezone for day/week/month boundaries
  * Includes surcharge credits if surcharges are enabled
  */
-export async function getTimeSummary(employeeId: string): Promise<TimeSummary> {
-	const now = DateTime.now();
-	const todayStart = dateToDB(now.startOf("day"))!;
-	const todayEnd = dateToDB(now.endOf("day"))!;
-	const weekStart = dateToDB(now.startOf("week"))!;
-	const weekEnd = dateToDB(now.endOf("week"))!;
-	const monthStart = dateToDB(now.startOf("month"))!;
-	const monthEnd = dateToDB(now.endOf("month"))!;
+export async function getTimeSummary(
+	employeeId: string,
+	timezone: string = "UTC",
+): Promise<TimeSummary> {
+	// Use timezone-aware boundaries for accurate day/week/month calculations
+	const { start: todayStartDT, end: todayEndDT } = getTodayRangeInTimezone(timezone);
+	const { start: weekStartDT, end: weekEndDT } = getWeekRangeInTimezone(new Date(), timezone);
+	const { start: monthStartDT, end: monthEndDT } = getMonthRangeInTimezone(new Date(), timezone);
+
+	const todayStart = dateToDB(todayStartDT)!;
+	const todayEnd = dateToDB(todayEndDT)!;
+	const weekStart = dateToDB(weekStartDT)!;
+	const weekEnd = dateToDB(weekEndDT)!;
+	const monthStart = dateToDB(monthStartDT)!;
+	const monthEnd = dateToDB(monthEndDT)!;
 
 	// Fetch all periods for the month with their surcharge calculations
 	const periodsWithSurcharges = await db
@@ -809,6 +901,13 @@ export async function clockIn(): Promise<ServerActionResult<typeof timeEntry.$in
 		return { success: false, error: "Employee profile not found" };
 	}
 
+	// Get user's timezone for holiday validation
+	const userData = await db.query.user.findFirst({
+		where: eq(user.id, session.user.id),
+		columns: { timezone: true },
+	});
+	const timezone = userData?.timezone || "UTC";
+
 	// Check for active work period
 	const activePeriod = await getActiveWorkPeriod(emp.id);
 	if (activePeriod) {
@@ -817,8 +916,8 @@ export async function clockIn(): Promise<ServerActionResult<typeof timeEntry.$in
 
 	const now = new Date();
 
-	// Validate the time entry
-	const validation = await validateTimeEntry(emp.organizationId, now);
+	// Validate the time entry (pass timezone for holiday checks)
+	const validation = await validateTimeEntry(emp.organizationId, now, timezone);
 	if (!validation.isValid) {
 		return {
 			success: false,
@@ -904,6 +1003,13 @@ export async function clockOut(
 		return { success: false, error: "Employee profile not found" };
 	}
 
+	// Get user's timezone for compliance calculations
+	const userData = await db.query.user.findFirst({
+		where: eq(user.id, session.user.id),
+		columns: { timezone: true },
+	});
+	const timezone = userData?.timezone || "UTC";
+
 	// Check for active work period
 	const activePeriod = await getActiveWorkPeriod(emp.id);
 	if (!activePeriod) {
@@ -912,8 +1018,8 @@ export async function clockOut(
 
 	const now = new Date();
 
-	// Validate the time entry
-	const validation = await validateTimeEntry(emp.organizationId, now);
+	// Validate the time entry (pass timezone for holiday checks)
+	const validation = await validateTimeEntry(emp.organizationId, now, timezone);
 	if (!validation.isValid) {
 		return {
 			success: false,
@@ -982,6 +1088,7 @@ export async function clockOut(
 				endTime: now,
 				durationMinutes,
 				projectId: projectId || null,
+				isActive: false,
 				updatedAt: new Date(),
 			})
 			.where(eq(workPeriod.id, activePeriod.id));
@@ -995,6 +1102,7 @@ export async function clockOut(
 			emp.organizationId,
 			activePeriod.id,
 			durationMinutes,
+			timezone,
 		);
 
 		// Fire-and-forget: Check project budget warnings if project was assigned
@@ -1082,13 +1190,14 @@ async function checkComplianceAfterClockOut(
 	organizationId: string,
 	workPeriodId: string,
 	currentSessionMinutes: number,
+	timezone: string = "UTC",
 ): Promise<ComplianceWarning[]> {
 	try {
-		// Get time summary for today and this week
-		const timeSummary = await getTimeSummary(employeeId);
+		// Get time summary for today and this week using employee's timezone
+		const timeSummary = await getTimeSummary(employeeId, timezone);
 
 		// Calculate breaks taken today (gaps between work periods)
-		const breaksTaken = await calculateBreaksTakenToday(employeeId);
+		const breaksTaken = await calculateBreaksTakenToday(employeeId, timezone);
 
 		// Use Effect to check compliance
 		const complianceEffect = Effect.gen(function* (_) {
@@ -1150,11 +1259,15 @@ async function checkComplianceAfterClockOut(
 
 /**
  * Calculate total break minutes taken today (gaps between completed work periods)
+ * Uses employee's timezone for "today" calculation
  */
-async function calculateBreaksTakenToday(employeeId: string): Promise<number> {
-	const now = DateTime.now();
-	const todayStart = dateToDB(now.startOf("day"))!;
-	const todayEnd = dateToDB(now.endOf("day"))!;
+async function calculateBreaksTakenToday(
+	employeeId: string,
+	timezone: string = "UTC",
+): Promise<number> {
+	const { start: todayStartDT, end: todayEndDT } = getTodayRangeInTimezone(timezone);
+	const todayStart = dateToDB(todayStartDT)!;
+	const todayEnd = dateToDB(todayEndDT)!;
 
 	// Get all completed work periods for today, sorted by start time
 	const periods = await db.query.workPeriod.findMany({
@@ -1306,6 +1419,13 @@ export async function getBreakReminderStatus(): Promise<ServerActionResult<{
 		return { success: false, error: "Employee profile not found" };
 	}
 
+	// Get user's timezone for calculations
+	const userData = await db.query.user.findFirst({
+		where: eq(user.id, session.user.id),
+		columns: { timezone: true },
+	});
+	const timezone = userData?.timezone || "UTC";
+
 	// Get active work period
 	const activePeriod = await getActiveWorkPeriod(emp.id);
 	if (!activePeriod) {
@@ -1327,9 +1447,9 @@ export async function getBreakReminderStatus(): Promise<ServerActionResult<{
 		const durationMs = now.getTime() - activePeriod.startTime.getTime();
 		const currentSessionMinutes = Math.floor(durationMs / 60000);
 
-		// Get time summary and breaks
-		const timeSummary = await getTimeSummary(emp.id);
-		const breaksTaken = await calculateBreaksTakenToday(emp.id);
+		// Get time summary and breaks using employee's timezone
+		const timeSummary = await getTimeSummary(emp.id, timezone);
+		const breaksTaken = await calculateBreaksTakenToday(emp.id, timezone);
 
 		// Use Effect to get regulation and check break requirements
 		const breakStatusEffect = Effect.gen(function* (_) {
