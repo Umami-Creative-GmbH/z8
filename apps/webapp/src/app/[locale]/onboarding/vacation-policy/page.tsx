@@ -1,6 +1,7 @@
 "use client";
 
 import { useForm } from "@tanstack/react-form";
+import { useStore } from "@tanstack/react-store";
 import { zodValidator } from "@tanstack/zod-form-adapter";
 import { IconBeach, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
@@ -74,7 +75,7 @@ export default function VacationPolicyPage() {
 		checkAdmin();
 	}, [router]);
 
-	const allowCarryover = form.useStore((state) => state.values.allowCarryover);
+	const allowCarryover = useStore(form.store, (state) => state.values.allowCarryover);
 
 	async function handleSkip() {
 		setLoading(true);

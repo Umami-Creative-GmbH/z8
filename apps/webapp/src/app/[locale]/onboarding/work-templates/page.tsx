@@ -1,6 +1,7 @@
 "use client";
 
 import { useForm } from "@tanstack/react-form";
+import { useStore } from "@tanstack/react-store";
 import { zodValidator } from "@tanstack/zod-form-adapter";
 import { IconClock, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
@@ -62,7 +63,7 @@ export default function WorkTemplatesPage() {
 		},
 	});
 
-	const formValues = form.useStore((state) => state.values);
+	const formValues = useStore(form.store, (state) => state.values);
 	const workingDays = formValues.workingDays;
 	const hoursPerWeek = formValues.hoursPerWeek;
 

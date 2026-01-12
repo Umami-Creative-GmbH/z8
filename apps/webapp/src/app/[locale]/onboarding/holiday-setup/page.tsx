@@ -1,6 +1,7 @@
 "use client";
 
 import { useForm } from "@tanstack/react-form";
+import { useStore } from "@tanstack/react-store";
 import { zodValidator } from "@tanstack/zod-form-adapter";
 import { IconCalendarEvent, IconCheck, IconLoader2, IconSelector } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
@@ -66,7 +67,7 @@ export default function HolidaySetupPage() {
 		},
 	});
 
-	const selectedCountry = form.useStore((state) => state.values.countryCode);
+	const selectedCountry = useStore(form.store, (state) => state.values.countryCode);
 
 	// Check if user is admin, redirect if not
 	useEffect(() => {
