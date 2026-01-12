@@ -219,6 +219,138 @@
 				"weekends": "Weekends (Sat-Sun)",
 				"allDays": "All Days"
 			}
+		},
+		"dataExport": {
+			"title": "Data Export",
+			"description": "Export organization data for backup or migration",
+			"featureName": "manage data exports",
+			"tabs": {
+				"newExport": "New Export",
+				"exportHistory": "Export History",
+				"storageSettings": "Storage Settings"
+			},
+			"storageNotConfigured": {
+				"title": "Storage Not Configured",
+				"description": "Please configure S3 storage in the \"Storage Settings\" tab before creating exports."
+			},
+			"categories": {
+				"employees": {
+					"label": "Employees",
+					"description": "Names, positions, roles, and team assignments"
+				},
+				"teams": {
+					"label": "Teams",
+					"description": "Team structure and permissions"
+				},
+				"time_entries": {
+					"label": "Time Tracking",
+					"description": "Clock in/out records (CSV format)"
+				},
+				"work_periods": {
+					"label": "Work Periods",
+					"description": "Aggregated work sessions (CSV format)"
+				},
+				"absences": {
+					"label": "Absences",
+					"description": "Leave records and approvals (CSV format)"
+				},
+				"holidays": {
+					"label": "Holidays",
+					"description": "Holiday calendar and recurrence rules"
+				},
+				"vacation": {
+					"label": "Vacation Policies",
+					"description": "Vacation policies and balances"
+				},
+				"schedules": {
+					"label": "Work Schedules",
+					"description": "Work schedule templates and assignments"
+				},
+				"shifts": {
+					"label": "Shifts",
+					"description": "Shift scheduling data (CSV format)"
+				},
+				"audit_logs": {
+					"label": "Audit Logs",
+					"description": "Activity history (CSV format)"
+				}
+			},
+			"form": {
+				"title": "Create New Export",
+				"description": "Select the data categories you want to export. The export will be processed in the background and you'll receive an email with a download link when it's ready.",
+				"selectAll": "Select All",
+				"selectAtLeastOne": "Please select at least one data category to export",
+				"submitSuccess": "Export request submitted! You will receive an email when it's ready for download.",
+				"submitError": "Failed to start export",
+				"unexpectedError": "An unexpected error occurred",
+				"aboutTitle": "About Data Exports",
+				"aboutAsync": "Exports are processed asynchronously and may take a few minutes",
+				"aboutEmail": "You will receive an email with a download link when ready",
+				"aboutLinkValidity": "Download links are valid for 24 hours",
+				"aboutStorageDuration": "Export files are stored for 30 days",
+				"aboutOrgDataOnly": "Only data from your organization is included",
+				"startingExport": "Starting Export...",
+				"startExport": "Start Export ({count} {count, plural, one {category} other {categories}})"
+			},
+			"history": {
+				"title": "Export History",
+				"description": "View and manage your previous exports",
+				"emptyDescription": "No exports have been created yet.",
+				"emptyHint": "Create a new export from the \"New Export\" tab to get started.",
+				"columnDate": "Date",
+				"columnCategories": "Categories",
+				"columnStatus": "Status",
+				"columnSize": "Size",
+				"columnActions": "Actions",
+				"moreCategories": "+{count} more",
+				"download": "Download",
+				"downloadSuccess": "Download link generated. A new email has also been sent.",
+				"downloadError": "Failed to generate download link",
+				"deleteSuccess": "Export deleted successfully",
+				"deleteError": "Failed to delete export",
+				"unexpectedError": "An unexpected error occurred",
+				"deleteDialogTitle": "Delete Export",
+				"deleteDialogDescription": "Are you sure you want to delete this export? This will remove the file from storage and cannot be undone.",
+				"statusPending": "Pending",
+				"statusProcessing": "Processing",
+				"statusCompleted": "Completed",
+				"statusFailed": "Failed"
+			},
+			"storage": {
+				"title": "S3 Storage Configuration",
+				"description": "Configure S3-compatible storage for data exports. Supports AWS S3, MinIO, and other S3-compatible services.",
+				"verified": "Verified",
+				"deleteDialogTitle": "Delete Storage Configuration?",
+				"deleteDialogDescription": "This will remove the S3 storage configuration. You won't be able to create new exports until you configure storage again. Existing exports will remain in S3 but may become inaccessible.",
+				"connectionSuccess": "Connection Successful",
+				"connectionFailed": "Connection Failed",
+				"bucketName": "Bucket Name",
+				"bucketPlaceholder": "my-export-bucket",
+				"bucketDescription": "The S3 bucket where exports will be stored",
+				"region": "Region",
+				"regionPlaceholder": "us-east-1",
+				"regionDescription": "AWS region or MinIO region",
+				"endpoint": "Custom Endpoint (Optional)",
+				"endpointPlaceholder": "https://minio.example.com",
+				"endpointDescription": "For MinIO or other S3-compatible services. Leave empty for AWS S3.",
+				"accessKeyId": "Access Key ID",
+				"accessKeyDescription": "Your S3 access key",
+				"secretAccessKey": "Secret Access Key",
+				"secretKeyDescription": "Your S3 secret key",
+				"keepExistingCredentials": "Leave empty to keep existing credentials",
+				"lastVerified": "Last verified: {date}",
+				"testing": "Testing...",
+				"testConnection": "Test Connection",
+				"testFailed": "Connection test failed",
+				"saving": "Saving...",
+				"saveConfiguration": "Save Configuration",
+				"saveSuccess": "Storage configuration saved",
+				"saveSuccessDescription": "Your S3 storage settings have been saved. Test the connection to verify.",
+				"saveError": "Failed to save configuration",
+				"deleteSuccess": "Storage configuration deleted",
+				"deleteError": "Failed to delete configuration",
+				"unexpectedError": "An unexpected error occurred"
+			}
 		}
 	},
 	"dashboard": {

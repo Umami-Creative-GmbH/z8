@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslate } from "@tolgee/react";
 import { FileBarChart } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -20,17 +21,21 @@ interface ProjectFiltersProps {
 	isGenerating?: boolean;
 }
 
-const STATUS_OPTIONS = [
-	{ value: "all", label: "All Statuses" },
-	{ value: "active", label: "Active Only" },
-	{ value: "active,planned", label: "Active & Planned" },
-	{ value: "completed", label: "Completed" },
-	{ value: "archived", label: "Archived" },
-];
-
 export function ProjectFilters({ onGenerate, isGenerating = false }: ProjectFiltersProps) {
+	const { t } = useTranslate();
 	const [dateRange, setDateRange] = useState<DateRange>(getDateRangeForPreset("current_month"));
 	const [statusFilter, setStatusFilter] = useState<string>("all");
+
+	const STATUS_OPTIONS = [
+		{ value: "all", label: t("reports.projects.filter.allStatuses", "All Statuses") },
+		{ value: "active", label: t("reports.projects.filter.activeOnly", "Active Only") },
+		{
+			value: "active,planned",
+			label: t("reports.projects.filter.activePlanned", "Active & Planned"),
+		},
+		{ value: "completed", label: t("reports.projects.filter.completed", "Completed") },
+		{ value: "archived", label: t("reports.projects.filter.archived", "Archived") },
+	];
 
 	const handleGenerate = () => {
 		const statusArray = statusFilter === "all" ? undefined : statusFilter.split(",");
@@ -44,16 +49,22 @@ export function ProjectFilters({ onGenerate, isGenerating = false }: ProjectFilt
 					<div className="grid gap-4 md:grid-cols-2">
 						{/* Date Range Picker */}
 						<div className="space-y-2">
-							<label className="text-sm font-medium leading-none">Period</label>
+							<label className="text-sm font-medium leading-none">
+								{t("reports.projects.filter.period", "Period")}
+							</label>
 							<DateRangePicker value={dateRange} onChange={setDateRange} />
 						</div>
 
 						{/* Status Filter */}
 						<div className="space-y-2">
-							<label className="text-sm font-medium leading-none">Status</label>
+							<label className="text-sm font-medium leading-none">
+								{t("reports.projects.filter.status", "Status")}
+							</label>
 							<Select value={statusFilter} onValueChange={setStatusFilter} disabled={isGenerating}>
 								<SelectTrigger>
-									<SelectValue placeholder="Select status filter" />
+									<SelectValue
+										placeholder={t("reports.projects.filter.selectStatus", "Select status filter")}
+									/>
 								</SelectTrigger>
 								<SelectContent>
 									{STATUS_OPTIONS.map((option) => (
@@ -75,7 +86,9 @@ export function ProjectFilters({ onGenerate, isGenerating = false }: ProjectFilt
 							className="w-full sm:w-auto"
 						>
 							<FileBarChart className="mr-2 h-4 w-4" />
-							{isGenerating ? "Generating Report..." : "Generate Report"}
+							{isGenerating
+								? t("reports.projects.generating", "Generating Report...")
+								: t("reports.projects.generate", "Generate Report")}
 						</Button>
 					</div>
 				</div>

@@ -1,8 +1,7 @@
 "use server";
 
-import { trace } from "@opentelemetry/api";
-import { SpanStatusCode } from "@opentelemetry/api";
-import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
+import { SpanStatusCode, trace } from "@opentelemetry/api";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
@@ -16,17 +15,14 @@ import {
 	workPeriod,
 } from "@/db/schema";
 import { logAudit } from "@/lib/audit-logger";
-import { AuthService, AuthServiceLive } from "@/lib/effect/services/auth.service";
-import {
-	DatabaseService,
-	DatabaseServiceLive,
-	DatabaseError,
-} from "@/lib/effect/services/database.service";
 import {
 	AuthorizationError,
+	DatabaseError,
 	NotFoundError,
 	ValidationError,
-} from "@/lib/effect/services/errors";
+} from "@/lib/effect/errors";
+import { AuthService, AuthServiceLive } from "@/lib/effect/services/auth.service";
+import { DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { logger } from "@/lib/logger";
 import type { ServerActionResult } from "@/lib/types";
 
@@ -106,7 +102,7 @@ export async function getProjects(
 				const dbService = yield* _(DatabaseService);
 
 				// Verify admin access
-				const employeeRecord = yield* _(
+				yield* _(
 					dbService.query("getEmployee", async () => {
 						return await db.query.employee.findFirst({
 							where: and(
@@ -142,48 +138,57 @@ export async function getProjects(
 
 				// Fetch managers for all projects
 				const projectIds = projects.map((p) => p.id);
-				const managers =
-					projectIds.length > 0
-						? await db.query.projectManager.findMany({
-								where: inArray(projectManager.projectId, projectIds),
-								with: {
-									employee: {
-										with: {
-											user: true,
+				const managers = yield* _(
+					dbService.query("getProjectManagers", async () => {
+						return projectIds.length > 0
+							? await db.query.projectManager.findMany({
+									where: inArray(projectManager.projectId, projectIds),
+									with: {
+										employee: {
+											with: {
+												user: true,
+											},
 										},
 									},
-								},
-							})
-						: [];
+								})
+							: [];
+					}),
+				);
 
 				// Fetch assignments for all projects
-				const assignments =
-					projectIds.length > 0
-						? await db.query.projectAssignment.findMany({
-								where: inArray(projectAssignment.projectId, projectIds),
-								with: {
-									team: true,
-									employee: {
-										with: {
-											user: true,
+				const assignments = yield* _(
+					dbService.query("getProjectAssignments", async () => {
+						return projectIds.length > 0
+							? await db.query.projectAssignment.findMany({
+									where: inArray(projectAssignment.projectId, projectIds),
+									with: {
+										team: true,
+										employee: {
+											with: {
+												user: true,
+											},
 										},
 									},
-								},
-							})
-						: [];
+								})
+							: [];
+					}),
+				);
 
 				// Fetch total hours booked per project
-				const hoursBooked =
-					projectIds.length > 0
-						? await db
-								.select({
-									projectId: workPeriod.projectId,
-									totalMinutes: sql<number>`COALESCE(SUM(${workPeriod.durationMinutes}), 0)`,
-								})
-								.from(workPeriod)
-								.where(inArray(workPeriod.projectId, projectIds))
-								.groupBy(workPeriod.projectId)
-						: [];
+				const hoursBooked = yield* _(
+					dbService.query("getProjectHours", async () => {
+						return projectIds.length > 0
+							? await db
+									.select({
+										projectId: workPeriod.projectId,
+										totalMinutes: sql<number>`COALESCE(SUM(${workPeriod.durationMinutes}), 0)`,
+									})
+									.from(workPeriod)
+									.where(inArray(workPeriod.projectId, projectIds))
+									.groupBy(workPeriod.projectId)
+							: [];
+					}),
+				);
 
 				const hoursMap = new Map(
 					hoursBooked.map((h) => [h.projectId, Math.round((h.totalMinutes / 60) * 100) / 100]),
@@ -365,24 +370,22 @@ export async function createProject(
 						catch: (error) =>
 							new DatabaseError({
 								message:
-									error instanceof Error
-										? error.message
-										: "Failed to create notification state",
+									error instanceof Error ? error.message : "Failed to create notification state",
 								operation: "insert",
 								table: "projectNotificationState",
 							}),
 					}),
 				);
 
-				// Log audit
-				await logAudit({
+				// Log audit (fire-and-forget)
+				logAudit({
 					entityType: "project",
 					entityId: created.id,
 					action: "project.created",
 					performedBy: session.user.id,
 					changes: JSON.stringify({ name: input.name, status: input.status || "planned" }),
 					metadata: JSON.stringify({ organizationId: input.organizationId }),
-				});
+				}).catch((err) => logger.error({ err }, "Failed to log audit"));
 
 				revalidatePath("/settings/projects");
 				span.setStatus({ code: SpanStatusCode.OK });
@@ -529,15 +532,15 @@ export async function updateProject(
 					}),
 				);
 
-				// Log audit
-				await logAudit({
+				// Log audit (fire-and-forget)
+				logAudit({
 					entityType: "project",
 					entityId: projectId,
 					action: "project.updated",
 					performedBy: session.user.id,
 					changes: JSON.stringify(input),
 					metadata: JSON.stringify({ previousName: existingProject.name }),
-				});
+				}).catch((err) => logger.error({ err }, "Failed to log audit"));
 
 				revalidatePath("/settings/projects");
 				span.setStatus({ code: SpanStatusCode.OK });
@@ -671,23 +674,22 @@ export async function addProjectManager(
 						},
 						catch: (error) =>
 							new DatabaseError({
-								message:
-									error instanceof Error ? error.message : "Failed to add project manager",
+								message: error instanceof Error ? error.message : "Failed to add project manager",
 								operation: "insert",
 								table: "projectManager",
 							}),
 					}),
 				);
 
-				// Log audit
-				await logAudit({
+				// Log audit (fire-and-forget)
+				logAudit({
 					entityType: "project",
 					entityId: projectId,
 					action: "project.manager_assigned",
 					performedBy: session.user.id,
 					employeeId,
 					changes: JSON.stringify({ employeeId }),
-				});
+				}).catch((err) => logger.error({ err }, "Failed to log audit"));
 
 				revalidatePath("/settings/projects");
 				span.setStatus({ code: SpanStatusCode.OK });
@@ -802,15 +804,15 @@ export async function removeProjectManager(
 					}),
 				);
 
-				// Log audit
-				await logAudit({
+				// Log audit (fire-and-forget)
+				logAudit({
 					entityType: "project",
 					entityId: projectId,
 					action: "project.manager_removed",
 					performedBy: session.user.id,
 					employeeId,
 					changes: JSON.stringify({ employeeId }),
-				});
+				}).catch((err) => logger.error({ err }, "Failed to log audit"));
 
 				revalidatePath("/settings/projects");
 				span.setStatus({ code: SpanStatusCode.OK });
@@ -906,7 +908,10 @@ export async function addProjectAssignment(
 				// Check if already assigned
 				const existingCondition =
 					type === "team"
-						? and(eq(projectAssignment.projectId, projectId), eq(projectAssignment.teamId, targetId))
+						? and(
+								eq(projectAssignment.projectId, projectId),
+								eq(projectAssignment.teamId, targetId),
+							)
 						: and(
 								eq(projectAssignment.projectId, projectId),
 								eq(projectAssignment.employeeId, targetId),
@@ -954,14 +959,14 @@ export async function addProjectAssignment(
 					}),
 				);
 
-				// Log audit
-				await logAudit({
+				// Log audit (fire-and-forget)
+				logAudit({
 					entityType: "project",
 					entityId: projectId,
 					action: "project.assignment_added",
 					performedBy: session.user.id,
 					changes: JSON.stringify({ type, targetId }),
-				});
+				}).catch((err) => logger.error({ err }, "Failed to log audit"));
 
 				revalidatePath("/settings/projects");
 				span.setStatus({ code: SpanStatusCode.OK });
@@ -1061,17 +1066,15 @@ export async function removeProjectAssignment(
 						catch: (error) =>
 							new DatabaseError({
 								message:
-									error instanceof Error
-										? error.message
-										: "Failed to remove project assignment",
+									error instanceof Error ? error.message : "Failed to remove project assignment",
 								operation: "delete",
 								table: "projectAssignment",
 							}),
 					}),
 				);
 
-				// Log audit
-				await logAudit({
+				// Log audit (fire-and-forget)
+				logAudit({
 					entityType: "project",
 					entityId: existingAssignment.projectId,
 					action: "project.assignment_removed",
@@ -1081,7 +1084,7 @@ export async function removeProjectAssignment(
 						teamId: existingAssignment.teamId,
 						employeeId: existingAssignment.employeeId,
 					}),
-				});
+				}).catch((err) => logger.error({ err }, "Failed to log audit"));
 
 				revalidatePath("/settings/projects");
 				span.setStatus({ code: SpanStatusCode.OK });
@@ -1186,10 +1189,7 @@ export async function getEmployeesForSelection(
 				const employees = yield* _(
 					dbService.query("getEmployees", async () => {
 						return await db.query.employee.findMany({
-							where: and(
-								eq(employee.organizationId, organizationId),
-								eq(employee.isActive, true),
-							),
+							where: and(eq(employee.organizationId, organizationId), eq(employee.isActive, true)),
 							with: {
 								user: {
 									columns: { name: true },

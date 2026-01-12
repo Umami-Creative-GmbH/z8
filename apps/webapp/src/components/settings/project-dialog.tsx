@@ -1,14 +1,15 @@
 "use client";
 
+import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
 	createProject,
-	updateProject,
 	type ProjectStatus,
 	type ProjectWithDetails,
+	updateProject,
 } from "@/app/[locale]/(app)/settings/projects/actions";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,7 +30,6 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { IconLoader2 } from "@tabler/icons-react";
 
 interface ProjectDialogProps {
 	organizationId: string;
@@ -110,7 +110,10 @@ export function ProjectDialog({
 						toast.success(t("settings.projects.updated", "Project updated"));
 						onSuccess();
 					} else {
-						toast.error(result.error?.message || t("settings.projects.updateFailed", "Failed to update project"));
+						toast.error(
+							result.error?.message ||
+								t("settings.projects.updateFailed", "Failed to update project"),
+						);
 					}
 				} else {
 					const result = await createProject({
@@ -127,7 +130,10 @@ export function ProjectDialog({
 						toast.success(t("settings.projects.created", "Project created"));
 						onSuccess();
 					} else {
-						toast.error(result.error?.message || t("settings.projects.createFailed", "Failed to create project"));
+						toast.error(
+							result.error?.message ||
+								t("settings.projects.createFailed", "Failed to create project"),
+						);
 					}
 				}
 			} finally {
@@ -148,7 +154,10 @@ export function ProjectDialog({
 					<DialogDescription>
 						{isEditing
 							? t("settings.projects.dialog.editDescription", "Update project details")
-							: t("settings.projects.dialog.createDescription", "Create a new project for time tracking")}
+							: t(
+									"settings.projects.dialog.createDescription",
+									"Create a new project for time tracking",
+								)}
 					</DialogDescription>
 				</DialogHeader>
 
@@ -163,9 +172,7 @@ export function ProjectDialog({
 						<form.Field name="name">
 							{(field) => (
 								<div className="grid gap-2">
-									<Label htmlFor="name">
-										{t("settings.projects.field.name", "Name")} *
-									</Label>
+									<Label htmlFor="name">{t("settings.projects.field.name", "Name")} *</Label>
 									<Input
 										id="name"
 										value={field.state.value}
@@ -189,7 +196,10 @@ export function ProjectDialog({
 										value={field.state.value}
 										onChange={(e) => field.handleChange(e.target.value)}
 										onBlur={field.handleBlur}
-										placeholder={t("settings.projects.field.descriptionPlaceholder", "Optional project description")}
+										placeholder={t(
+											"settings.projects.field.descriptionPlaceholder",
+											"Optional project description",
+										)}
 										rows={2}
 									/>
 								</div>
@@ -200,9 +210,7 @@ export function ProjectDialog({
 						<form.Field name="status">
 							{(field) => (
 								<div className="grid gap-2">
-									<Label htmlFor="status">
-										{t("settings.projects.field.status", "Status")}
-									</Label>
+									<Label htmlFor="status">{t("settings.projects.field.status", "Status")}</Label>
 									<Select
 										value={field.state.value}
 										onValueChange={(value) => field.handleChange(value as ProjectStatus)}

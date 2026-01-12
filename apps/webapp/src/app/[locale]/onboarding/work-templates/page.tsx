@@ -1,30 +1,19 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "@tanstack/react-form";
+import { zodValidator } from "@tanstack/zod-form-adapter";
 import { IconClock, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { z } from "zod";
 import { ProgressIndicator } from "@/components/onboarding/progress-indicator";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-	Form,
-	FormControl,
-	FormDescription,
-	FormField,
-	FormItem,
-	FormLabel,
-	FormMessage,
-} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import {
-	type OnboardingWorkTemplateFormValues,
-	onboardingWorkTemplateSchema,
-} from "@/lib/validations/onboarding";
 import { useRouter } from "@/navigation";
 import { checkIsAdmin, createWorkTemplateOnboarding, skipWorkTemplateSetup } from "./actions";
 
@@ -46,18 +35,36 @@ export default function WorkTemplatesPage() {
 	const [loading, setLoading] = useState(false);
 	const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
 
-	const form = useForm<OnboardingWorkTemplateFormValues>({
-		resolver: zodResolver(onboardingWorkTemplateSchema),
+	const form = useForm({
 		defaultValues: {
 			name: t("onboarding.workTemplates.defaultName", "Standard"),
 			hoursPerWeek: 40,
-			workingDays: ["monday", "tuesday", "wednesday", "thursday", "friday"],
+			workingDays: ["monday", "tuesday", "wednesday", "thursday", "friday"] as DayOfWeek[],
 			setAsDefault: true,
+		},
+		validatorAdapter: zodValidator(),
+		onSubmit: async ({ value }) => {
+			setLoading(true);
+
+			const result = await createWorkTemplateOnboarding(value);
+
+			setLoading(false);
+
+			if (result.success) {
+				toast.success(t("onboarding.workTemplates.success", "Work schedule template created!"));
+				router.push("/onboarding/notifications");
+			} else {
+				toast.error(
+					result.error ||
+						t("onboarding.workTemplates.error", "Failed to create work schedule template"),
+				);
+			}
 		},
 	});
 
-	const workingDays = form.watch("workingDays");
-	const hoursPerWeek = form.watch("hoursPerWeek");
+	const formValues = form.useStore((state) => state.values);
+	const workingDays = formValues.workingDays;
+	const hoursPerWeek = formValues.hoursPerWeek;
 
 	// Check if user is admin, redirect if not
 	useEffect(() => {
@@ -74,24 +81,6 @@ export default function WorkTemplatesPage() {
 		}
 		checkAdmin();
 	}, [router]);
-
-	async function onSubmit(values: OnboardingWorkTemplateFormValues) {
-		setLoading(true);
-
-		const result = await createWorkTemplateOnboarding(values);
-
-		setLoading(false);
-
-		if (result.success) {
-			toast.success(t("onboarding.workTemplates.success", "Work schedule template created!"));
-			router.push("/onboarding/notifications");
-		} else {
-			toast.error(
-				result.error ||
-					t("onboarding.workTemplates.error", "Failed to create work schedule template"),
-			);
-		}
-	}
 
 	async function handleSkip() {
 		setLoading(true);
@@ -155,192 +144,193 @@ export default function WorkTemplatesPage() {
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
-						<Form {...form}>
-							<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-								{/* Template Name */}
-								<FormField
-									control={form.control}
-									name="name"
-									render={({ field }) => (
-										<FormItem>
-											<FormLabel>{t("onboarding.workTemplates.name", "Template Name")}</FormLabel>
-											<FormControl>
-												<Input
-													{...field}
-													placeholder={t(
-														"onboarding.workTemplates.namePlaceholder",
-														"e.g., Full-Time, Part-Time",
-													)}
-													disabled={loading}
-												/>
-											</FormControl>
-											<FormDescription>
-												{t(
-													"onboarding.workTemplates.nameDesc",
-													"A name to identify this work schedule.",
-												)}
-											</FormDescription>
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
-
-								{/* Hours Per Week */}
-								<FormField
-									control={form.control}
-									name="hoursPerWeek"
-									render={({ field }) => (
-										<FormItem>
-											<FormLabel>
-												{t("onboarding.workTemplates.hoursPerWeek", "Hours per Week")}
-											</FormLabel>
-											<FormControl>
-												<Input
-													{...field}
-													type="number"
-													min={0}
-													max={168}
-													placeholder="40"
-													disabled={loading}
-													onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-												/>
-											</FormControl>
-											<FormDescription>
-												{t(
-													"onboarding.workTemplates.hoursPerWeekDesc",
-													"Total working hours per week. Typical full-time is 40 hours.",
-												)}
-											</FormDescription>
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
-
-								{/* Working Days */}
-								<FormField
-									control={form.control}
-									name="workingDays"
-									render={() => (
-										<FormItem>
-											<FormLabel>
-												{t("onboarding.workTemplates.workingDays", "Working Days")}
-											</FormLabel>
-											<div className="grid grid-cols-7 gap-2">
-												{DAYS_OF_WEEK.map((day) => (
-													<FormField
-														key={day.value}
-														control={form.control}
-														name="workingDays"
-														render={({ field }) => (
-															<FormItem className="flex flex-col items-center space-y-2">
-																<FormControl>
-																	<Checkbox
-																		checked={field.value?.includes(day.value)}
-																		onCheckedChange={(checked) => {
-																			const currentValue = field.value || [];
-																			if (checked) {
-																				field.onChange([...currentValue, day.value]);
-																			} else {
-																				field.onChange(
-																					currentValue.filter((v: DayOfWeek) => v !== day.value),
-																				);
-																			}
-																		}}
-																		disabled={loading}
-																		className="size-6"
-																	/>
-																</FormControl>
-																<FormLabel className="text-xs font-normal">
-																	{day.shortLabel}
-																</FormLabel>
-															</FormItem>
-														)}
-													/>
-												))}
-											</div>
-											<FormDescription>
-												{t(
-													"onboarding.workTemplates.workingDaysDesc",
-													"Select which days are working days. Hours will be distributed evenly.",
-												)}
-											</FormDescription>
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
-
-								{/* Summary Preview */}
-								{workingDays.length > 0 && (
-									<div className="rounded-lg border bg-muted/50 p-4">
-										<p className="text-sm font-medium">
-											{t("onboarding.workTemplates.preview", "Schedule Preview")}
-										</p>
-										<p className="mt-1 text-sm text-muted-foreground">
+						<form
+							onSubmit={(e) => {
+								e.preventDefault();
+								form.handleSubmit();
+							}}
+							className="space-y-6"
+						>
+							{/* Template Name */}
+							<form.Field
+								name="name"
+								validators={{
+									onChange: z.string().min(1, "Template name is required").max(100),
+								}}
+							>
+								{(field) => (
+									<div className="space-y-2">
+										<Label>{t("onboarding.workTemplates.name", "Template Name")}</Label>
+										<Input
+											value={field.state.value}
+											onChange={(e) => field.handleChange(e.target.value)}
+											onBlur={field.handleBlur}
+											placeholder={t(
+												"onboarding.workTemplates.namePlaceholder",
+												"e.g., Full-Time, Part-Time",
+											)}
+											disabled={loading}
+										/>
+										<p className="text-sm text-muted-foreground">
 											{t(
-												"onboarding.workTemplates.previewText",
-												"{days} working days, {hoursPerDay} hours per day",
-												{
-													days: workingDays.length,
-													hoursPerDay,
-												},
+												"onboarding.workTemplates.nameDesc",
+												"A name to identify this work schedule.",
+											)}
+										</p>
+										{field.state.meta.errors.length > 0 && (
+											<p className="text-sm font-medium text-destructive">
+												{field.state.meta.errors[0]}
+											</p>
+										)}
+									</div>
+								)}
+							</form.Field>
+
+							{/* Hours Per Week */}
+							<form.Field
+								name="hoursPerWeek"
+								validators={{
+									onChange: z.number().min(0).max(168),
+								}}
+							>
+								{(field) => (
+									<div className="space-y-2">
+										<Label>
+											{t("onboarding.workTemplates.hoursPerWeek", "Hours per Week")}
+										</Label>
+										<Input
+											type="number"
+											min={0}
+											max={168}
+											placeholder="40"
+											disabled={loading}
+											value={field.state.value}
+											onChange={(e) => field.handleChange(parseFloat(e.target.value) || 0)}
+											onBlur={field.handleBlur}
+										/>
+										<p className="text-sm text-muted-foreground">
+											{t(
+												"onboarding.workTemplates.hoursPerWeekDesc",
+												"Total working hours per week. Typical full-time is 40 hours.",
+											)}
+										</p>
+										{field.state.meta.errors.length > 0 && (
+											<p className="text-sm font-medium text-destructive">
+												{field.state.meta.errors[0]}
+											</p>
+										)}
+									</div>
+								)}
+							</form.Field>
+
+							{/* Working Days */}
+							<form.Field name="workingDays">
+								{(field) => (
+									<div className="space-y-2">
+										<Label>
+											{t("onboarding.workTemplates.workingDays", "Working Days")}
+										</Label>
+										<div className="grid grid-cols-7 gap-2">
+											{DAYS_OF_WEEK.map((day) => (
+												<div key={day.value} className="flex flex-col items-center space-y-2">
+													<Checkbox
+														checked={field.state.value?.includes(day.value)}
+														onCheckedChange={(checked) => {
+															const currentValue = field.state.value || [];
+															if (checked) {
+																field.handleChange([...currentValue, day.value]);
+															} else {
+																field.handleChange(
+																	currentValue.filter((v: DayOfWeek) => v !== day.value),
+																);
+															}
+														}}
+														disabled={loading}
+														className="size-6"
+													/>
+													<Label className="text-xs font-normal">
+														{day.shortLabel}
+													</Label>
+												</div>
+											))}
+										</div>
+										<p className="text-sm text-muted-foreground">
+											{t(
+												"onboarding.workTemplates.workingDaysDesc",
+												"Select which days are working days. Hours will be distributed evenly.",
 											)}
 										</p>
 									</div>
 								)}
+							</form.Field>
 
-								{/* Set as Default */}
-								<FormField
-									control={form.control}
-									name="setAsDefault"
-									render={({ field }) => (
-										<FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-											<div className="space-y-0.5">
-												<FormLabel className="text-base">
-													{t(
-														"onboarding.workTemplates.setAsDefault",
-														"Set as organization default",
-													)}
-												</FormLabel>
-												<FormDescription>
-													{t(
-														"onboarding.workTemplates.setAsDefaultDesc",
-														"Apply this schedule to all employees.",
-													)}
-												</FormDescription>
-											</div>
-											<FormControl>
-												<Switch
-													checked={field.value}
-													onCheckedChange={field.onChange}
-													disabled={loading}
-												/>
-											</FormControl>
-										</FormItem>
-									)}
-								/>
-
-								{/* Action Buttons */}
-								<div className="flex gap-3 pt-4">
-									<Button
-										type="button"
-										variant="outline"
-										onClick={handleSkip}
-										disabled={loading}
-										className="flex-1"
-									>
-										{t("onboarding.workTemplates.skip", "Skip for now")}
-									</Button>
-									<Button
-										type="submit"
-										disabled={loading || workingDays.length === 0}
-										className="flex-1"
-									>
-										{loading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
-										{t("onboarding.workTemplates.continue", "Continue")}
-									</Button>
+							{/* Summary Preview */}
+							{workingDays.length > 0 && (
+								<div className="rounded-lg border bg-muted/50 p-4">
+									<p className="text-sm font-medium">
+										{t("onboarding.workTemplates.preview", "Schedule Preview")}
+									</p>
+									<p className="mt-1 text-sm text-muted-foreground">
+										{t(
+											"onboarding.workTemplates.previewText",
+											"{days} working days, {hoursPerDay} hours per day",
+											{
+												days: workingDays.length,
+												hoursPerDay,
+											},
+										)}
+									</p>
 								</div>
-							</form>
-						</Form>
+							)}
+
+							{/* Set as Default */}
+							<form.Field name="setAsDefault">
+								{(field) => (
+									<div className="flex flex-row items-center justify-between rounded-lg border p-4">
+										<div className="space-y-0.5">
+											<Label className="text-base">
+												{t(
+													"onboarding.workTemplates.setAsDefault",
+													"Set as organization default",
+												)}
+											</Label>
+											<p className="text-sm text-muted-foreground">
+												{t(
+													"onboarding.workTemplates.setAsDefaultDesc",
+													"Apply this schedule to all employees.",
+												)}
+											</p>
+										</div>
+										<Switch
+											checked={field.state.value}
+											onCheckedChange={field.handleChange}
+											disabled={loading}
+										/>
+									</div>
+								)}
+							</form.Field>
+
+							{/* Action Buttons */}
+							<div className="flex gap-3 pt-4">
+								<Button
+									type="button"
+									variant="outline"
+									onClick={handleSkip}
+									disabled={loading}
+									className="flex-1"
+								>
+									{t("onboarding.workTemplates.skip", "Skip for now")}
+								</Button>
+								<Button
+									type="submit"
+									disabled={loading || workingDays.length === 0}
+									className="flex-1"
+								>
+									{loading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
+									{t("onboarding.workTemplates.continue", "Continue")}
+								</Button>
+							</div>
+						</form>
 					</CardContent>
 				</Card>
 			</div>

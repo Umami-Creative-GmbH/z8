@@ -3,9 +3,11 @@ import { redirect } from "next/navigation";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { ProjectReportsContainer } from "@/components/reports/projects/project-reports-container";
 import { auth } from "@/lib/auth";
+import { getTranslate } from "@/tolgee/server";
 import { getCurrentEmployeeForReports } from "./actions";
 
 export default async function ProjectReportsPage() {
+	const t = await getTranslate();
 	const session = await auth.api.getSession({ headers: await headers() });
 	if (!session?.user) {
 		redirect("/sign-in");
@@ -16,7 +18,7 @@ export default async function ProjectReportsPage() {
 	if (!employee) {
 		return (
 			<div className="@container/main flex flex-1 items-center justify-center p-6">
-				<NoEmployeeError feature="view project reports" />
+				<NoEmployeeError feature={t("reports.projects.page.feature", "view project reports")} />
 			</div>
 		);
 	}
@@ -26,9 +28,14 @@ export default async function ProjectReportsPage() {
 		return (
 			<div className="@container/main flex flex-1 items-center justify-center p-6">
 				<div className="text-center">
-					<h2 className="text-xl font-semibold">Access Denied</h2>
+					<h2 className="text-xl font-semibold">
+						{t("reports.projects.page.accessDenied", "Access Denied")}
+					</h2>
 					<p className="text-muted-foreground mt-2">
-						You don't have permission to view project reports.
+						{t(
+							"reports.projects.page.noPermission",
+							"You don't have permission to view project reports.",
+						)}
 					</p>
 				</div>
 			</div>
@@ -39,9 +46,14 @@ export default async function ProjectReportsPage() {
 		<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
 			{/* Page Header */}
 			<div className="px-4 lg:px-6">
-				<h1 className="text-3xl font-bold tracking-tight">Project Reports</h1>
+				<h1 className="text-3xl font-bold tracking-tight">
+					{t("reports.projects.page.title", "Project Reports")}
+				</h1>
 				<p className="text-muted-foreground">
-					Analyze project hours, budget usage, and team contributions
+					{t(
+						"reports.projects.page.description",
+						"Analyze project hours, budget usage, and team contributions",
+					)}
 				</p>
 			</div>
 

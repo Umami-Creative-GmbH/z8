@@ -81,7 +81,8 @@
       "Bash(powershell -Command:*)",
       "Bash(npx fumadocs-mdx)",
       "Bash(netstat:*)",
-      "Bash(bun dev)"
+      "Bash(bun dev)",
+      "WebFetch(domain:api.github.com)"
     ]
   },
   "enableAllProjectMcpServers": true,

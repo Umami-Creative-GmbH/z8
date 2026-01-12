@@ -1,32 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
 import { IconPencil, IconPercentage, IconPlus, IconTrash } from "@tabler/icons-react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-	deleteSurchargeAssignment,
 	deleteSurchargeModel,
-	getSurchargeAssignments,
 	getSurchargeModels,
 } from "@/app/[locale]/(app)/settings/surcharges/actions";
-import type {
-	SurchargeAssignmentWithDetails,
-	SurchargeModelWithRules,
-} from "@/lib/surcharges/validation";
-import { SurchargeModelDialog } from "./surcharge-model-dialog";
-import { SurchargeAssignmentDialog } from "./surcharge-assignment-dialog";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -37,6 +19,15 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { queryKeys } from "@/lib/query";
+import type { SurchargeModelWithRules } from "@/lib/surcharges/validation";
+import { SurchargeAssignmentDialog } from "./surcharge-assignment-dialog";
+import { SurchargeAssignmentManager } from "./surcharge-assignment-manager";
+import { SurchargeModelDialog } from "./surcharge-model-dialog";
 
 interface SurchargeManagementProps {
 	organizationId: string;
@@ -44,8 +35,8 @@ interface SurchargeManagementProps {
 
 export function SurchargeManagement({ organizationId }: SurchargeManagementProps) {
 	const { t } = useTranslate();
+	const queryClient = useQueryClient();
 	const [models, setModels] = useState<SurchargeModelWithRules[]>([]);
-	const [assignments, setAssignments] = useState<SurchargeAssignmentWithDetails[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const [activeTab, setActiveTab] = useState("models");
 
@@ -53,24 +44,20 @@ export function SurchargeManagement({ organizationId }: SurchargeManagementProps
 	const [modelDialogOpen, setModelDialogOpen] = useState(false);
 	const [editingModel, setEditingModel] = useState<SurchargeModelWithRules | null>(null);
 	const [assignmentDialogOpen, setAssignmentDialogOpen] = useState(false);
+	const [assignmentType, setAssignmentType] = useState<"organization" | "team" | "employee">(
+		"organization",
+	);
 
 	// Delete confirmation states
 	const [deleteModelId, setDeleteModelId] = useState<string | null>(null);
-	const [deleteAssignmentId, setDeleteAssignmentId] = useState<string | null>(null);
 
 	const loadData = useCallback(async () => {
 		setIsLoading(true);
 		try {
-			const [modelsResult, assignmentsResult] = await Promise.all([
-				getSurchargeModels(organizationId),
-				getSurchargeAssignments(organizationId),
-			]);
+			const modelsResult = await getSurchargeModels(organizationId);
 
 			if (modelsResult.success) {
 				setModels(modelsResult.data);
-			}
-			if (assignmentsResult.success) {
-				setAssignments(assignmentsResult.data);
 			}
 		} catch (error) {
 			console.error("Failed to load surcharge data:", error);
@@ -98,24 +85,6 @@ export function SurchargeManagement({ organizationId }: SurchargeManagementProps
 		onError: () => {
 			toast.error(t("settings.surcharges.deleteFailed", "Failed to delete model"));
 			setDeleteModelId(null);
-		},
-	});
-
-	// Delete assignment mutation
-	const deleteAssignmentMutation = useMutation({
-		mutationFn: (assignmentId: string) => deleteSurchargeAssignment(assignmentId),
-		onSuccess: (result) => {
-			if (result.success) {
-				toast.success(t("settings.surcharges.assignmentDeleted", "Assignment removed"));
-				loadData();
-			} else {
-				toast.error(result.error || t("settings.surcharges.deleteFailed", "Failed to delete"));
-			}
-			setDeleteAssignmentId(null);
-		},
-		onError: () => {
-			toast.error(t("settings.surcharges.deleteFailed", "Failed to delete assignment"));
-			setDeleteAssignmentId(null);
 		},
 	});
 
@@ -155,7 +124,15 @@ export function SurchargeManagement({ organizationId }: SurchargeManagementProps
 
 	const handleAssignmentDialogSuccess = () => {
 		setAssignmentDialogOpen(false);
-		loadData();
+		// Invalidate assignments query to refresh the list
+		queryClient.invalidateQueries({
+			queryKey: queryKeys.surcharges.assignments.list(organizationId),
+		});
+	};
+
+	const handleAssignClick = (type: "organization" | "team" | "employee") => {
+		setAssignmentType(type);
+		setAssignmentDialogOpen(true);
 	};
 
 	if (isLoading) {
@@ -171,26 +148,20 @@ export function SurchargeManagement({ organizationId }: SurchargeManagementProps
 	const activeModels = models.filter((m) => m.isActive);
 
 	return (
-		<div className="space-y-6">
-			<div className="flex items-center justify-between">
-				<div>
-					<h2 className="text-2xl font-bold tracking-tight">
-						{t("settings.surcharges.title", "Surcharges")}
-					</h2>
-					<p className="text-muted-foreground">
-						{t(
-							"settings.surcharges.description",
-							"Configure time surcharges for overtime, night work, weekends, and holidays.",
-						)}
-					</p>
-				</div>
+		<div className="flex flex-1 flex-col gap-4 p-4">
+			<div className="flex flex-col gap-2">
+				<h1 className="text-2xl font-bold">{t("settings.surcharges.title", "Surcharges")}</h1>
+				<p className="text-muted-foreground">
+					{t(
+						"settings.surcharges.description",
+						"Configure time surcharges for overtime, night work, weekends, and holidays.",
+					)}
+				</p>
 			</div>
 
-			<Tabs value={activeTab} onValueChange={setActiveTab}>
+			<Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
 				<TabsList>
-					<TabsTrigger value="models">
-						{t("settings.surcharges.tabModels", "Models")}
-					</TabsTrigger>
+					<TabsTrigger value="models">{t("settings.surcharges.tabModels", "Models")}</TabsTrigger>
 					<TabsTrigger value="assignments">
 						{t("settings.surcharges.tabAssignments", "Assignments")}
 					</TabsTrigger>
@@ -263,14 +234,15 @@ export function SurchargeManagement({ organizationId }: SurchargeManagementProps
 									<CardContent>
 										<div className="space-y-2">
 											<div className="text-muted-foreground text-sm">
-												{model.rules.length} {t("settings.surcharges.ruleCount", "rule")}{model.rules.length !== 1 ? "s" : ""}
+												{t(
+													"settings.surcharges.ruleCountLabel",
+													"{count, plural, one {# rule} other {# rules}}",
+													{ count: model.rules.length },
+												)}
 											</div>
 											<div className="space-y-1">
 												{model.rules.slice(0, 3).map((rule) => (
-													<div
-														key={rule.id}
-														className="flex items-center justify-between text-sm"
-													>
+													<div key={rule.id} className="flex items-center justify-between text-sm">
 														<span className="truncate mr-2">{rule.name}</span>
 														<div className="flex items-center gap-2 flex-shrink-0">
 															<Badge variant="outline" className="text-xs">
@@ -284,7 +256,8 @@ export function SurchargeManagement({ organizationId }: SurchargeManagementProps
 												))}
 												{model.rules.length > 3 && (
 													<div className="text-muted-foreground text-xs">
-														+{model.rules.length - 3} {t("settings.surcharges.moreRules", "more rules")}
+														+{model.rules.length - 3}{" "}
+														{t("settings.surcharges.moreRules", "more rules")}
 													</div>
 												)}
 											</div>
@@ -297,174 +270,10 @@ export function SurchargeManagement({ organizationId }: SurchargeManagementProps
 				</TabsContent>
 
 				<TabsContent value="assignments" className="space-y-4">
-					<div className="flex justify-end">
-						<Button
-							onClick={() => setAssignmentDialogOpen(true)}
-							disabled={activeModels.length === 0}
-						>
-							<IconPlus className="mr-2 h-4 w-4" />
-							{t("settings.surcharges.createAssignment", "Create Assignment")}
-						</Button>
-					</div>
-
-					{assignments.length === 0 ? (
-						<Card>
-							<CardContent className="flex flex-col items-center justify-center py-12">
-								<h3 className="mb-2 text-lg font-semibold">
-									{t("settings.surcharges.noAssignments", "No assignments")}
-								</h3>
-								<p className="text-muted-foreground mb-4 text-center">
-									{t(
-										"settings.surcharges.noAssignmentsDescription",
-										"Assign surcharge models to your organization, teams, or individual employees.",
-									)}
-								</p>
-							</CardContent>
-						</Card>
-					) : (
-						<div className="space-y-4">
-							{/* Organization-level assignments */}
-							<Card>
-								<CardHeader>
-									<CardTitle className="text-lg">
-										{t("settings.surcharges.orgDefault", "Organization Default")}
-									</CardTitle>
-									<CardDescription>
-										{t("settings.surcharges.orgDefaultDesc", "Applied to all employees unless overridden")}
-									</CardDescription>
-								</CardHeader>
-								<CardContent>
-									{assignments.filter((a) => a.assignmentType === "organization" && a.isActive)
-										.length === 0 ? (
-										<p className="text-muted-foreground text-sm">
-											{t("settings.surcharges.noOrgAssignment", "No organization-level assignment")}
-										</p>
-									) : (
-										assignments
-											.filter((a) => a.assignmentType === "organization" && a.isActive)
-											.map((assignment) => (
-												<div
-													key={assignment.id}
-													className="flex items-center justify-between"
-												>
-													<span>{assignment.model.name}</span>
-													<div className="flex items-center gap-2">
-														<Badge>Active</Badge>
-														<Button
-															variant="ghost"
-															size="icon"
-															className="h-8 w-8 text-destructive hover:text-destructive"
-															onClick={() => setDeleteAssignmentId(assignment.id)}
-														>
-															<IconTrash className="h-4 w-4" />
-														</Button>
-													</div>
-												</div>
-											))
-									)}
-								</CardContent>
-							</Card>
-
-							{/* Team-level assignments */}
-							<Card>
-								<CardHeader>
-									<CardTitle className="text-lg">
-										{t("settings.surcharges.teamAssignments", "Team Assignments")}
-									</CardTitle>
-									<CardDescription>
-										{t("settings.surcharges.teamAssignmentsDesc", "Override organization default for specific teams")}
-									</CardDescription>
-								</CardHeader>
-								<CardContent>
-									{assignments.filter((a) => a.assignmentType === "team" && a.isActive)
-										.length === 0 ? (
-										<p className="text-muted-foreground text-sm">
-											{t("settings.surcharges.noTeamAssignments", "No team assignments")}
-										</p>
-									) : (
-										<div className="space-y-2">
-											{assignments
-												.filter((a) => a.assignmentType === "team" && a.isActive)
-												.map((assignment) => (
-													<div
-														key={assignment.id}
-														className="flex items-center justify-between rounded-md border p-2"
-													>
-														<div>
-															<span className="font-medium">{assignment.team?.name}</span>
-															<span className="text-muted-foreground mx-2">→</span>
-															<span>{assignment.model.name}</span>
-														</div>
-														<div className="flex items-center gap-2">
-															<Badge variant="outline">Team</Badge>
-															<Button
-																variant="ghost"
-																size="icon"
-																className="h-8 w-8 text-destructive hover:text-destructive"
-																onClick={() => setDeleteAssignmentId(assignment.id)}
-															>
-																<IconTrash className="h-4 w-4" />
-															</Button>
-														</div>
-													</div>
-												))}
-										</div>
-									)}
-								</CardContent>
-							</Card>
-
-							{/* Employee-level assignments */}
-							<Card>
-								<CardHeader>
-									<CardTitle className="text-lg">
-										{t("settings.surcharges.individualAssignments", "Individual Assignments")}
-									</CardTitle>
-									<CardDescription>
-										{t("settings.surcharges.individualAssignmentsDesc", "Override for specific employees")}
-									</CardDescription>
-								</CardHeader>
-								<CardContent>
-									{assignments.filter((a) => a.assignmentType === "employee" && a.isActive)
-										.length === 0 ? (
-										<p className="text-muted-foreground text-sm">
-											{t("settings.surcharges.noIndividualAssignments", "No individual assignments")}
-										</p>
-									) : (
-										<div className="space-y-2">
-											{assignments
-												.filter((a) => a.assignmentType === "employee" && a.isActive)
-												.map((assignment) => (
-													<div
-														key={assignment.id}
-														className="flex items-center justify-between rounded-md border p-2"
-													>
-														<div>
-															<span className="font-medium">
-																{assignment.employee?.firstName}{" "}
-																{assignment.employee?.lastName}
-															</span>
-															<span className="text-muted-foreground mx-2">→</span>
-															<span>{assignment.model.name}</span>
-														</div>
-														<div className="flex items-center gap-2">
-															<Badge variant="outline">Individual</Badge>
-															<Button
-																variant="ghost"
-																size="icon"
-																className="h-8 w-8 text-destructive hover:text-destructive"
-																onClick={() => setDeleteAssignmentId(assignment.id)}
-															>
-																<IconTrash className="h-4 w-4" />
-															</Button>
-														</div>
-													</div>
-												))}
-										</div>
-									)}
-								</CardContent>
-							</Card>
-						</div>
-					)}
+					<SurchargeAssignmentManager
+						organizationId={organizationId}
+						onAssignClick={handleAssignClick}
+					/>
 				</TabsContent>
 
 				<TabsContent value="reports" className="space-y-4">
@@ -500,6 +309,7 @@ export function SurchargeManagement({ organizationId }: SurchargeManagementProps
 				open={assignmentDialogOpen}
 				onOpenChange={setAssignmentDialogOpen}
 				organizationId={organizationId}
+				assignmentType={assignmentType}
 				onSuccess={handleAssignmentDialogSuccess}
 			/>
 
@@ -524,32 +334,6 @@ export function SurchargeManagement({ organizationId }: SurchargeManagementProps
 							onClick={() => deleteModelId && deleteModelMutation.mutate(deleteModelId)}
 						>
 							{t("common.delete", "Delete")}
-						</AlertDialogAction>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>
-
-			{/* Delete Assignment Confirmation */}
-			<AlertDialog open={!!deleteAssignmentId} onOpenChange={() => setDeleteAssignmentId(null)}>
-				<AlertDialogContent>
-					<AlertDialogHeader>
-						<AlertDialogTitle>
-							{t("settings.surcharges.deleteAssignmentTitle", "Remove Assignment?")}
-						</AlertDialogTitle>
-						<AlertDialogDescription>
-							{t(
-								"settings.surcharges.deleteAssignmentDescription",
-								"This will remove this surcharge assignment. The model will remain available.",
-							)}
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<AlertDialogFooter>
-						<AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
-						<AlertDialogAction
-							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-							onClick={() => deleteAssignmentId && deleteAssignmentMutation.mutate(deleteAssignmentId)}
-						>
-							{t("common.remove", "Remove")}
 						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>

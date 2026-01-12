@@ -1,8 +1,8 @@
 "use client";
 
 import { IconLoader2 } from "@tabler/icons-react";
-import { useMutation, useQuery } from "@tanstack/react-query";
 import { useForm } from "@tanstack/react-form";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { toast } from "sonner";
 import {
@@ -11,7 +11,6 @@ import {
 	getSurchargeModels,
 	getTeamsForAssignment,
 } from "@/app/[locale]/(app)/settings/surcharges/actions";
-import { surchargeAssignmentFormSchema } from "@/lib/surcharges/validation";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -29,27 +28,26 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import {
+	fieldHasError,
 	TFormControl,
-	TFormDescription,
 	TFormItem,
 	TFormLabel,
 	TFormMessage,
-	fieldHasError,
 } from "@/components/ui/tanstack-form";
 
 interface SurchargeAssignmentDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	organizationId: string;
+	assignmentType: "organization" | "team" | "employee";
 	onSuccess: () => void;
 }
-
-type AssignmentType = "organization" | "team" | "employee";
 
 export function SurchargeAssignmentDialog({
 	open,
 	onOpenChange,
 	organizationId,
+	assignmentType,
 	onSuccess,
 }: SurchargeAssignmentDialogProps) {
 	const { t } = useTranslate();
@@ -61,24 +59,23 @@ export function SurchargeAssignmentDialog({
 		enabled: open,
 	});
 
-	// Fetch teams
+	// Fetch teams (only for team assignments)
 	const teamsQuery = useQuery({
 		queryKey: ["teams-for-assignment", organizationId],
 		queryFn: () => getTeamsForAssignment(organizationId),
-		enabled: open,
+		enabled: open && assignmentType === "team",
 	});
 
-	// Fetch employees
+	// Fetch employees (only for employee assignments)
 	const employeesQuery = useQuery({
 		queryKey: ["employees-for-assignment", organizationId],
 		queryFn: () => getEmployeesForAssignment(organizationId),
-		enabled: open,
+		enabled: open && assignmentType === "employee",
 	});
 
 	const form = useForm({
 		defaultValues: {
 			modelId: "",
-			assignmentType: "organization" as AssignmentType,
 			teamId: null as string | null,
 			employeeId: null as string | null,
 			effectiveFrom: null as Date | null,
@@ -87,22 +84,33 @@ export function SurchargeAssignmentDialog({
 		},
 		validators: {
 			onChange: ({ value }) => {
-				const result = surchargeAssignmentFormSchema.safeParse(value);
-				if (!result.success) {
-					return result.error.issues[0]?.message || "Validation error";
+				// Validate model is selected
+				if (!value.modelId) {
+					return t("settings.surcharges.validation.selectModel", "Please select a surcharge model");
+				}
+				// Validate team is selected for team assignments
+				if (assignmentType === "team" && !value.teamId) {
+					return t("settings.surcharges.validation.selectTeam", "Please select a team");
+				}
+				// Validate employee is selected for employee assignments
+				if (assignmentType === "employee" && !value.employeeId) {
+					return t("settings.surcharges.validation.selectEmployee", "Please select an employee");
 				}
 				return undefined;
 			},
 		},
 		onSubmit: async ({ value }) => {
-			createMutation.mutate(value);
+			createMutation.mutate({
+				...value,
+				assignmentType,
+			});
 		},
 	});
 
 	const createMutation = useMutation({
 		mutationFn: (data: {
 			modelId: string;
-			assignmentType: AssignmentType;
+			assignmentType: "organization" | "team" | "employee";
 			teamId: string | null;
 			employeeId: string | null;
 			effectiveFrom: Date | null;
@@ -114,7 +122,9 @@ export function SurchargeAssignmentDialog({
 				toast.success(t("settings.surcharges.assignmentCreated", "Assignment created"));
 				onSuccess();
 			} else {
-				toast.error(result.error || t("settings.surcharges.assignmentFailed", "Failed to create assignment"));
+				toast.error(
+					result.error || t("settings.surcharges.assignmentFailed", "Failed to create assignment"),
+				);
 			}
 		},
 		onError: () => {
@@ -128,19 +138,43 @@ export function SurchargeAssignmentDialog({
 	const teams = teamsQuery.data?.success ? teamsQuery.data.data : [];
 	const employees = employeesQuery.data?.success ? employeesQuery.data.data : [];
 
+	const getDialogTitle = () => {
+		switch (assignmentType) {
+			case "organization":
+				return t("settings.surcharges.setOrgDefault", "Set Organization Default");
+			case "team":
+				return t("settings.surcharges.assignToTeam", "Assign to Team");
+			case "employee":
+				return t("settings.surcharges.assignToEmployee", "Assign to Employee");
+		}
+	};
+
+	const getDialogDescription = () => {
+		switch (assignmentType) {
+			case "organization":
+				return t(
+					"settings.surcharges.orgDialogDescription",
+					"Select a surcharge model to be the default for all employees in the organization",
+				);
+			case "team":
+				return t(
+					"settings.surcharges.teamDialogDescription",
+					"Select a surcharge model and team to override the organization default",
+				);
+			case "employee":
+				return t(
+					"settings.surcharges.employeeDialogDescription",
+					"Select a surcharge model and employee to override team or organization defaults",
+				);
+		}
+	};
+
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="max-w-md">
 				<DialogHeader>
-					<DialogTitle>
-						{t("settings.surcharges.createAssignment", "Create Assignment")}
-					</DialogTitle>
-					<DialogDescription>
-						{t(
-							"settings.surcharges.assignmentDescription",
-							"Assign a surcharge model to your organization, a team, or an individual employee.",
-						)}
-					</DialogDescription>
+					<DialogTitle>{getDialogTitle()}</DialogTitle>
+					<DialogDescription>{getDialogDescription()}</DialogDescription>
 				</DialogHeader>
 
 				<form
@@ -158,13 +192,15 @@ export function SurchargeAssignmentDialog({
 								<TFormLabel hasError={fieldHasError(field)}>
 									{t("settings.surcharges.selectModel", "Surcharge Model")}
 								</TFormLabel>
-								<Select
-									value={field.state.value}
-									onValueChange={field.handleChange}
-								>
+								<Select value={field.state.value} onValueChange={field.handleChange}>
 									<TFormControl hasError={fieldHasError(field)}>
 										<SelectTrigger>
-											<SelectValue placeholder={t("settings.surcharges.selectModelPlaceholder", "Select a model")} />
+											<SelectValue
+												placeholder={t(
+													"settings.surcharges.selectModelPlaceholder",
+													"Select a model",
+												)}
+											/>
 										</SelectTrigger>
 									</TFormControl>
 									<SelectContent>
@@ -173,7 +209,11 @@ export function SurchargeAssignmentDialog({
 												<div>
 													<div>{model.name}</div>
 													<div className="text-xs text-muted-foreground">
-														{model.rules.length} rule{model.rules.length !== 1 ? "s" : ""}
+														{t(
+															"settings.surcharges.ruleCountLabel",
+															"{count, plural, one {# rule} other {# rules}}",
+															{ count: model.rules.length },
+														)}
 													</div>
 												</div>
 											</SelectItem>
@@ -185,128 +225,71 @@ export function SurchargeAssignmentDialog({
 						)}
 					</form.Field>
 
-					{/* Assignment Type */}
-					<form.Field name="assignmentType">
-						{(field) => (
-							<TFormItem>
-								<TFormLabel hasError={fieldHasError(field)}>
-									{t("settings.surcharges.assignTo", "Assign To")}
-								</TFormLabel>
-								<Select
-									value={field.state.value}
-									onValueChange={(value) => {
-										field.handleChange(value as AssignmentType);
-										// Clear team/employee selection when type changes
-										form.setFieldValue("teamId", null);
-										form.setFieldValue("employeeId", null);
-									}}
-								>
-									<TFormControl hasError={fieldHasError(field)}>
-										<SelectTrigger>
-											<SelectValue />
-										</SelectTrigger>
-									</TFormControl>
-									<SelectContent>
-										<SelectItem value="organization">
-											<div>
-												<div>{t("settings.surcharges.organization", "Organization")}</div>
-												<div className="text-xs text-muted-foreground">
-													{t("settings.surcharges.organizationDesc", "Default for all employees")}
-												</div>
-											</div>
-										</SelectItem>
-										<SelectItem value="team">
-											<div>
-												<div>{t("settings.surcharges.team", "Team")}</div>
-												<div className="text-xs text-muted-foreground">
-													{t("settings.surcharges.teamDesc", "Override for a specific team")}
-												</div>
-											</div>
-										</SelectItem>
-										<SelectItem value="employee">
-											<div>
-												<div>{t("settings.surcharges.employee", "Employee")}</div>
-												<div className="text-xs text-muted-foreground">
-													{t("settings.surcharges.employeeDesc", "Override for a specific employee")}
-												</div>
-											</div>
-										</SelectItem>
-									</SelectContent>
-								</Select>
-								<TFormDescription>
-									{t("settings.surcharges.priorityNote", "Employee overrides team, which overrides organization")}
-								</TFormDescription>
-								<TFormMessage field={field} />
-							</TFormItem>
-						)}
-					</form.Field>
+					{/* Team Selection - only for team assignments */}
+					{assignmentType === "team" && (
+						<form.Field name="teamId">
+							{(field) => (
+								<TFormItem>
+									<TFormLabel hasError={fieldHasError(field)}>
+										{t("settings.surcharges.selectTeam", "Select Team")}
+									</TFormLabel>
+									<Select value={field.state.value || ""} onValueChange={field.handleChange}>
+										<TFormControl hasError={fieldHasError(field)}>
+											<SelectTrigger>
+												<SelectValue
+													placeholder={t(
+														"settings.surcharges.selectTeamPlaceholder",
+														"Select a team",
+													)}
+												/>
+											</SelectTrigger>
+										</TFormControl>
+										<SelectContent>
+											{teams.map((team) => (
+												<SelectItem key={team.id} value={team.id}>
+													{team.name}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+									<TFormMessage field={field} />
+								</TFormItem>
+							)}
+						</form.Field>
+					)}
 
-					{/* Team Selection */}
-					<form.Subscribe selector={(state) => state.values.assignmentType}>
-						{(assignmentType) => (
-							<>
-								{assignmentType === "team" && (
-									<form.Field name="teamId">
-										{(field) => (
-											<TFormItem>
-												<TFormLabel hasError={fieldHasError(field)}>
-													{t("settings.surcharges.selectTeam", "Select Team")}
-												</TFormLabel>
-												<Select
-													value={field.state.value || ""}
-													onValueChange={field.handleChange}
-												>
-													<TFormControl hasError={fieldHasError(field)}>
-														<SelectTrigger>
-															<SelectValue placeholder={t("settings.surcharges.selectTeamPlaceholder", "Select a team")} />
-														</SelectTrigger>
-													</TFormControl>
-													<SelectContent>
-														{teams.map((team) => (
-															<SelectItem key={team.id} value={team.id}>
-																{team.name}
-															</SelectItem>
-														))}
-													</SelectContent>
-												</Select>
-												<TFormMessage field={field} />
-											</TFormItem>
-										)}
-									</form.Field>
-								)}
-
-								{assignmentType === "employee" && (
-									<form.Field name="employeeId">
-										{(field) => (
-											<TFormItem>
-												<TFormLabel hasError={fieldHasError(field)}>
-													{t("settings.surcharges.selectEmployee", "Select Employee")}
-												</TFormLabel>
-												<Select
-													value={field.state.value || ""}
-													onValueChange={field.handleChange}
-												>
-													<TFormControl hasError={fieldHasError(field)}>
-														<SelectTrigger>
-															<SelectValue placeholder={t("settings.surcharges.selectEmployeePlaceholder", "Select an employee")} />
-														</SelectTrigger>
-													</TFormControl>
-													<SelectContent>
-														{employees.map((emp) => (
-															<SelectItem key={emp.id} value={emp.id}>
-																{emp.firstName} {emp.lastName}
-															</SelectItem>
-														))}
-													</SelectContent>
-												</Select>
-												<TFormMessage field={field} />
-											</TFormItem>
-										)}
-									</form.Field>
-								)}
-							</>
-						)}
-					</form.Subscribe>
+					{/* Employee Selection - only for employee assignments */}
+					{assignmentType === "employee" && (
+						<form.Field name="employeeId">
+							{(field) => (
+								<TFormItem>
+									<TFormLabel hasError={fieldHasError(field)}>
+										{t("settings.surcharges.selectEmployee", "Select Employee")}
+									</TFormLabel>
+									<Select value={field.state.value || ""} onValueChange={field.handleChange}>
+										<TFormControl hasError={fieldHasError(field)}>
+											<SelectTrigger>
+												<SelectValue
+													placeholder={t(
+														"settings.surcharges.selectEmployeePlaceholder",
+														"Select an employee",
+													)}
+												/>
+											</SelectTrigger>
+										</TFormControl>
+										<SelectContent>
+											{employees.map((emp) => (
+												<SelectItem key={emp.id} value={emp.id}>
+													{emp.firstName} {emp.lastName}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+									<TFormMessage field={field} />
+								</TFormItem>
+							)}
+						</form.Field>
+					)}
 
 					<DialogFooter>
 						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

@@ -1,32 +1,26 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "@tanstack/react-form";
+import { zodValidator } from "@tanstack/zod-form-adapter";
 import { IconBuilding, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { z } from "zod";
 import { checkSlugAvailability } from "@/app/[locale]/(app)/actions/organization";
 import { ProgressIndicator } from "@/components/onboarding/progress-indicator";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-	Form,
-	FormControl,
-	FormDescription,
-	FormField,
-	FormItem,
-	FormLabel,
-	FormMessage,
-} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import {
-	generateSlug,
-	type OrganizationFormValues,
-	organizationSchema,
-} from "@/lib/validations/organization";
+import { Label } from "@/components/ui/label";
+import { generateSlug } from "@/lib/validations/organization";
 import { useRouter } from "@/navigation";
 import { createOrganizationOnboarding, skipOrganizationSetup } from "./actions";
+
+const defaultValues = {
+	name: "",
+	slug: "",
+};
 
 export default function OrganizationPage() {
 	const { t } = useTranslate();
@@ -35,35 +29,47 @@ export default function OrganizationPage() {
 	const [checkingSlug, setCheckingSlug] = useState(false);
 	const [slugError, setSlugError] = useState<string | null>(null);
 	const [showCreateForm, _setShowCreateForm] = useState(true);
+	const slugManuallyEdited = useRef(false);
 
-	const form = useForm<OrganizationFormValues>({
-		resolver: zodResolver(organizationSchema),
-		defaultValues: {
-			name: "",
-			slug: "",
+	const form = useForm({
+		defaultValues,
+		validatorAdapter: zodValidator(),
+		onSubmit: async ({ value }) => {
+			if (slugError) {
+				return;
+			}
+
+			setLoading(true);
+
+			const result = await createOrganizationOnboarding(value);
+
+			setLoading(false);
+
+			if (result.success) {
+				toast.success(t("organization.createSuccess", "Organization created successfully!"));
+				router.push("/onboarding/profile");
+			} else {
+				toast.error(result.error || t("organization.createError", "Failed to create organization"));
+			}
 		},
 	});
 
-	const name = form.watch("name");
-	const slug = form.watch("slug");
+	// Subscribe to form values
+	const formValues = form.useStore((state) => state.values);
+	const name = formValues.name;
+	const slug = formValues.slug;
 
 	// Auto-generate slug from name
 	useEffect(() => {
-		if (name && !form.formState.dirtyFields.slug) {
+		if (name && !slugManuallyEdited.current) {
 			const generatedSlug = generateSlug(name);
-			form.setValue("slug", generatedSlug, { shouldValidate: false });
+			form.setFieldValue("slug", generatedSlug);
 		}
 	}, [name, form]);
 
 	// Validate slug availability (debounced)
 	useEffect(() => {
 		if (!slug || slug.length < 2) {
-			setSlugError(null);
-			return;
-		}
-
-		const slugFieldError = form.formState.errors.slug;
-		if (slugFieldError) {
 			setSlugError(null);
 			return;
 		}
@@ -90,26 +96,7 @@ export default function OrganizationPage() {
 		}, 500);
 
 		return () => clearTimeout(timeoutId);
-	}, [slug, form.formState.errors.slug, t]);
-
-	async function onSubmit(values: OrganizationFormValues) {
-		if (slugError) {
-			return;
-		}
-
-		setLoading(true);
-
-		const result = await createOrganizationOnboarding(values);
-
-		setLoading(false);
-
-		if (result.success) {
-			toast.success(t("organization.createSuccess", "Organization created successfully!"));
-			router.push("/onboarding/profile");
-		} else {
-			toast.error(result.error || t("organization.createError", "Failed to create organization"));
-		}
-	}
+	}, [slug, t]);
 
 	async function handleSkip() {
 		setLoading(true);
@@ -166,78 +153,108 @@ export default function OrganizationPage() {
 
 						{showCreateForm && (
 							<CardContent>
-								<Form {...form}>
-									<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-										{/* Organization Name */}
-										<FormField
-											control={form.control}
-											name="name"
-											render={({ field }) => (
-												<FormItem>
-													<FormLabel>{t("organization.nameLabel", "Organization Name")}</FormLabel>
-													<FormControl>
-														<Input
-															{...field}
-															placeholder={t("organization.namePlaceholder", "Acme Inc.")}
-															disabled={loading}
-														/>
-													</FormControl>
-													<FormMessage />
-												</FormItem>
-											)}
-										/>
+								<form
+									onSubmit={(e) => {
+										e.preventDefault();
+										form.handleSubmit();
+									}}
+									className="space-y-4"
+								>
+									{/* Organization Name */}
+									<form.Field
+										name="name"
+										validators={{
+											onChange: z
+												.string()
+												.min(2, "Organization name must be at least 2 characters")
+												.max(100, "Organization name must be less than 100 characters"),
+										}}
+									>
+										{(field) => (
+											<div className="space-y-2">
+												<Label>{t("organization.nameLabel", "Organization Name")}</Label>
+												<Input
+													value={field.state.value}
+													onChange={(e) => field.handleChange(e.target.value)}
+													onBlur={field.handleBlur}
+													placeholder={t("organization.namePlaceholder", "Acme Inc.")}
+													disabled={loading}
+												/>
+												{field.state.meta.errors.length > 0 && (
+													<p className="text-sm font-medium text-destructive">
+														{field.state.meta.errors[0]}
+													</p>
+												)}
+											</div>
+										)}
+									</form.Field>
 
-										{/* Organization Slug */}
-										<FormField
-											control={form.control}
-											name="slug"
-											render={({ field }) => (
-												<FormItem>
-													<FormLabel>{t("organization.slugLabel", "Organization Slug")}</FormLabel>
-													<FormControl>
-														<div className="relative">
-															<Input
-																{...field}
-																placeholder={t("organization.slugPlaceholder", "acme-inc")}
-																disabled={loading}
-																onChange={(e) => {
-																	field.onChange(e);
-																	form.trigger("slug");
-																}}
-															/>
-															{checkingSlug && (
-																<div className="absolute right-3 top-1/2 -translate-y-1/2">
-																	<IconLoader2 className="size-4 animate-spin text-muted-foreground" />
-																</div>
-															)}
+									{/* Organization Slug */}
+									<form.Field
+										name="slug"
+										validators={{
+											onChange: z
+												.string()
+												.min(2, "Slug must be at least 2 characters")
+												.max(50, "Slug must be less than 50 characters")
+												.regex(
+													/^[a-z0-9-]+$/,
+													"Slug must contain only lowercase letters, numbers, and hyphens",
+												)
+												.refine((slug) => !slug.startsWith("-") && !slug.endsWith("-"), {
+													message: "Slug cannot start or end with a hyphen",
+												}),
+										}}
+									>
+										{(field) => (
+											<div className="space-y-2">
+												<Label>{t("organization.slugLabel", "Organization Slug")}</Label>
+												<div className="relative">
+													<Input
+														value={field.state.value}
+														onChange={(e) => {
+															slugManuallyEdited.current = true;
+															field.handleChange(e.target.value);
+														}}
+														onBlur={field.handleBlur}
+														placeholder={t("organization.slugPlaceholder", "acme-inc")}
+														disabled={loading}
+													/>
+													{checkingSlug && (
+														<div className="absolute right-3 top-1/2 -translate-y-1/2">
+															<IconLoader2 className="size-4 animate-spin text-muted-foreground" />
 														</div>
-													</FormControl>
-													<FormDescription>
-														{t(
-															"organization.slugDescription",
-															"Used in URLs. Auto-generated from name.",
-														)}
-													</FormDescription>
-													{slugError && (
-														<p className="text-sm font-medium text-destructive">{slugError}</p>
 													)}
-													<FormMessage />
-												</FormItem>
-											)}
-										/>
+												</div>
+												<p className="text-sm text-muted-foreground">
+													{t(
+														"organization.slugDescription",
+														"Used in URLs. Auto-generated from name.",
+													)}
+												</p>
+												{slugError && (
+													<p className="text-sm font-medium text-destructive">{slugError}</p>
+												)}
+												{field.state.meta.errors.length > 0 && (
+													<p className="text-sm font-medium text-destructive">
+														{field.state.meta.errors[0]}
+													</p>
+												)}
+											</div>
+										)}
+									</form.Field>
 
-										<div className="flex gap-3 pt-2">
-											<Button
-												type="submit"
-												disabled={loading || checkingSlug || !!slugError}
-												className="flex-1"
-											>
-												{loading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
-												{t("onboarding.organization.create", "Create Organization")}
-											</Button>
-										</div>
-									</form>
-								</Form>
+									<div className="flex gap-3 pt-2">
+										<Button
+											type="submit"
+											disabled={loading || checkingSlug || !!slugError}
+											className="flex-1"
+										>
+											{loading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
+											{t("onboarding.organization.create", "Create Organization")}
+										</Button>
+									</div>
+								</form>
 							</CardContent>
 						)}
 					</Card>

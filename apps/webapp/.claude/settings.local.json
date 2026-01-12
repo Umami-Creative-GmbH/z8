@@ -19,7 +19,9 @@
       "Bash(bun next lint:*)",
       "Bash(bunx --bun npx @better-auth/cli generate:*)",
       "Bash(wc:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(bun biome:*)",
+      "Bash(bun run build:*)"
     ]
   },
   "enabledMcpjsonServers": [

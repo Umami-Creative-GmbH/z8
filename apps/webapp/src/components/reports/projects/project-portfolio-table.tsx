@@ -1,6 +1,7 @@
 "use client";
 
 import { IconChartBar, IconChevronRight } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,31 +31,54 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export function ProjectPortfolioTable({ projects, onProjectSelect }: ProjectPortfolioTableProps) {
+	const { t } = useTranslate();
+
 	const formatDeadlineStatus = (daysUntilDeadline: number | null) => {
 		if (daysUntilDeadline === null) return null;
 
 		if (daysUntilDeadline < 0) {
 			return (
 				<Badge variant="destructive" className="text-xs">
-					{Math.abs(daysUntilDeadline)}d overdue
+					{t("reports.projects.table.daysOverdue", "{days}d overdue", {
+						days: Math.abs(daysUntilDeadline),
+					})}
 				</Badge>
 			);
 		}
 		if (daysUntilDeadline === 0) {
 			return (
 				<Badge variant="destructive" className="text-xs">
-					Due today
+					{t("reports.projects.table.dueToday", "Due today")}
 				</Badge>
 			);
 		}
 		if (daysUntilDeadline <= 7) {
 			return (
 				<Badge className="text-xs bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300">
-					{daysUntilDeadline}d left
+					{t("reports.projects.table.daysLeft", "{days}d left", {
+						days: daysUntilDeadline,
+					})}
 				</Badge>
 			);
 		}
-		return <span className="text-sm text-muted-foreground">{daysUntilDeadline}d left</span>;
+		return (
+			<span className="text-sm text-muted-foreground">
+				{t("reports.projects.table.daysLeft", "{days}d left", {
+					days: daysUntilDeadline,
+				})}
+			</span>
+		);
+	};
+
+	const getStatusLabel = (status: string) => {
+		const statusLabels: Record<string, string> = {
+			planned: t("reports.projects.status.planned", "Planned"),
+			active: t("reports.projects.status.active", "Active"),
+			paused: t("reports.projects.status.paused", "Paused"),
+			completed: t("reports.projects.status.completed", "Completed"),
+			archived: t("reports.projects.status.archived", "Archived"),
+		};
+		return statusLabels[status] || status;
 	};
 
 	const getBudgetProgressColor = (percent: number | null) => {
@@ -72,9 +96,14 @@ export function ProjectPortfolioTable({ projects, onProjectSelect }: ProjectPort
 					<div className="flex flex-col items-center gap-4 text-center">
 						<IconChartBar className="h-12 w-12 text-muted-foreground" />
 						<div>
-							<p className="font-semibold">No projects found</p>
+							<p className="font-semibold">
+								{t("reports.projects.table.noProjectsFound", "No projects found")}
+							</p>
 							<p className="text-sm text-muted-foreground">
-								No projects match the selected filters
+								{t(
+									"reports.projects.table.noProjectsMatch",
+									"No projects match the selected filters",
+								)}
 							</p>
 						</div>
 					</div>
@@ -86,21 +115,28 @@ export function ProjectPortfolioTable({ projects, onProjectSelect }: ProjectPort
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>Project Portfolio</CardTitle>
+				<CardTitle>{t("reports.projects.table.portfolioTitle", "Project Portfolio")}</CardTitle>
 				<CardDescription>
-					Overview of all projects with budget and time tracking metrics
+					{t(
+						"reports.projects.table.portfolioDescription",
+						"Overview of all projects with budget and time tracking metrics",
+					)}
 				</CardDescription>
 			</CardHeader>
 			<CardContent>
 				<Table>
 					<TableHeader>
 						<TableRow>
-							<TableHead>Project</TableHead>
-							<TableHead>Status</TableHead>
-							<TableHead className="text-right">Hours</TableHead>
-							<TableHead>Budget</TableHead>
-							<TableHead>Deadline</TableHead>
-							<TableHead className="text-right">Team</TableHead>
+							<TableHead>{t("reports.projects.table.project", "Project")}</TableHead>
+							<TableHead>{t("reports.projects.table.status", "Status")}</TableHead>
+							<TableHead className="text-right">
+								{t("reports.projects.table.hours", "Hours")}
+							</TableHead>
+							<TableHead>{t("reports.projects.table.budget", "Budget")}</TableHead>
+							<TableHead>{t("reports.projects.table.deadline", "Deadline")}</TableHead>
+							<TableHead className="text-right">
+								{t("reports.projects.table.team", "Team")}
+							</TableHead>
 							<TableHead className="w-[50px]" />
 						</TableRow>
 					</TableHeader>
@@ -126,11 +162,8 @@ export function ProjectPortfolioTable({ projects, onProjectSelect }: ProjectPort
 									</div>
 								</TableCell>
 								<TableCell>
-									<Badge
-										variant="secondary"
-										className={cn("capitalize", STATUS_COLORS[project.status])}
-									>
-										{project.status}
+									<Badge variant="secondary" className={cn(STATUS_COLORS[project.status])}>
+										{getStatusLabel(project.status)}
 									</Badge>
 								</TableCell>
 								<TableCell className="text-right tabular-nums">

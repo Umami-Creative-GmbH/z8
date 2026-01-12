@@ -54,24 +54,47 @@ interface SurchargeRuleEditorProps {
 	onRemove: () => void;
 }
 
-const DAYS_OF_WEEK = [
-	{ value: "monday", label: "Monday" },
-	{ value: "tuesday", label: "Tuesday" },
-	{ value: "wednesday", label: "Wednesday" },
-	{ value: "thursday", label: "Thursday" },
-	{ value: "friday", label: "Friday" },
-	{ value: "saturday", label: "Saturday" },
-	{ value: "sunday", label: "Sunday" },
-] as const;
-
-const RULE_TYPES = [
-	{ value: "day_of_week", label: "Day of Week", description: "Apply on specific days" },
-	{ value: "time_window", label: "Time Window", description: "Apply during time ranges" },
-	{ value: "date_based", label: "Date-Based", description: "Apply on specific dates" },
-] as const;
-
 export function SurchargeRuleEditor({ ruleIndex, form, onRemove }: SurchargeRuleEditorProps) {
 	const { t } = useTranslate();
+
+	// Translated day of week options
+	const daysOfWeek = [
+		{ value: "monday", label: t("common.days.monday", "Monday") },
+		{ value: "tuesday", label: t("common.days.tuesday", "Tuesday") },
+		{ value: "wednesday", label: t("common.days.wednesday", "Wednesday") },
+		{ value: "thursday", label: t("common.days.thursday", "Thursday") },
+		{ value: "friday", label: t("common.days.friday", "Friday") },
+		{ value: "saturday", label: t("common.days.saturday", "Saturday") },
+		{ value: "sunday", label: t("common.days.sunday", "Sunday") },
+	];
+
+	// Translated rule type options
+	const ruleTypes = [
+		{
+			value: "day_of_week",
+			label: t("settings.surcharges.ruleTypes.dayOfWeek.label", "Day of Week"),
+			description: t(
+				"settings.surcharges.ruleTypes.dayOfWeek.description",
+				"Apply on specific days",
+			),
+		},
+		{
+			value: "time_window",
+			label: t("settings.surcharges.ruleTypes.timeWindow.label", "Time Window"),
+			description: t(
+				"settings.surcharges.ruleTypes.timeWindow.description",
+				"Apply during time ranges",
+			),
+		},
+		{
+			value: "date_based",
+			label: t("settings.surcharges.ruleTypes.dateBased.label", "Date-Based"),
+			description: t(
+				"settings.surcharges.ruleTypes.dateBased.description",
+				"Apply on specific dates",
+			),
+		},
+	];
 
 	return (
 		<Card>
@@ -132,7 +155,7 @@ export function SurchargeRuleEditor({ ruleIndex, form, onRemove }: SurchargeRule
 										/>
 									</SelectTrigger>
 									<SelectContent>
-										{RULE_TYPES.map((type) => (
+										{ruleTypes.map((type) => (
 											<SelectItem key={type.value} value={type.value}>
 												<div>
 													<div>{type.label}</div>
@@ -204,7 +227,7 @@ export function SurchargeRuleEditor({ ruleIndex, form, onRemove }: SurchargeRule
 													<SelectValue />
 												</SelectTrigger>
 												<SelectContent>
-													{DAYS_OF_WEEK.map((day) => (
+													{daysOfWeek.map((day) => (
 														<SelectItem key={day.value} value={day.value}>
 															{day.label}
 														</SelectItem>

@@ -75,7 +75,7 @@ export function SurchargeModelDialog({
 			onChange: ({ value }) => {
 				const result = surchargeModelFormSchema.safeParse(value);
 				if (!result.success) {
-					return result.error.issues[0]?.message || "Validation error";
+					return result.error.issues[0]?.message || t("common.validationError", "Validation error");
 				}
 				return undefined;
 			},
@@ -287,6 +287,7 @@ export function SurchargeModelDialog({
 										</div>
 									) : (
 										field.state.value.map((_, ruleIndex) => (
+											// biome-ignore lint/suspicious/noArrayIndexKey: Dynamic form array - no stable IDs for new rules
 											<form.Field key={ruleIndex} name={`rules[${ruleIndex}]`}>
 												{() => (
 													<SurchargeRuleEditor

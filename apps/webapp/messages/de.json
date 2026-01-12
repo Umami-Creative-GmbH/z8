@@ -197,6 +197,143 @@
 	},
 	"common": {
 		"loading": "Laden...",
-		"enabled": "Aktiviert"
+		"enabled": "Aktiviert",
+		"cancel": "Abbrechen",
+		"delete": "Löschen",
+		"refresh": "Aktualisieren"
+	},
+	"settings": {
+		"dataExport": {
+			"title": "Datenexport",
+			"description": "Organisationsdaten für Backup oder Migration exportieren",
+			"featureName": "Datenexporte verwalten",
+			"tabs": {
+				"newExport": "Neuer Export",
+				"exportHistory": "Exportverlauf",
+				"storageSettings": "Speichereinstellungen"
+			},
+			"storageNotConfigured": {
+				"title": "Speicher nicht konfiguriert",
+				"description": "Bitte konfigurieren Sie S3-Speicher im Tab \"Speichereinstellungen\", bevor Sie Exporte erstellen."
+			},
+			"categories": {
+				"employees": {
+					"label": "Mitarbeiter",
+					"description": "Namen, Positionen, Rollen und Teamzuweisungen"
+				},
+				"teams": {
+					"label": "Teams",
+					"description": "Teamstruktur und Berechtigungen"
+				},
+				"time_entries": {
+					"label": "Zeiterfassung",
+					"description": "Ein-/Ausstempelzeiten (CSV-Format)"
+				},
+				"work_periods": {
+					"label": "Arbeitsperioden",
+					"description": "Aggregierte Arbeitssitzungen (CSV-Format)"
+				},
+				"absences": {
+					"label": "Abwesenheiten",
+					"description": "Urlaubsaufzeichnungen und Genehmigungen (CSV-Format)"
+				},
+				"holidays": {
+					"label": "Feiertage",
+					"description": "Feiertagskalender und Wiederholungsregeln"
+				},
+				"vacation": {
+					"label": "Urlaubsrichtlinien",
+					"description": "Urlaubsrichtlinien und Kontingente"
+				},
+				"schedules": {
+					"label": "Arbeitszeitpläne",
+					"description": "Arbeitszeitvorlagen und Zuweisungen"
+				},
+				"shifts": {
+					"label": "Schichten",
+					"description": "Schichtplanungsdaten (CSV-Format)"
+				},
+				"audit_logs": {
+					"label": "Protokolle",
+					"description": "Aktivitätsverlauf (CSV-Format)"
+				}
+			},
+			"form": {
+				"title": "Neuen Export erstellen",
+				"description": "Wählen Sie die Datenkategorien aus, die Sie exportieren möchten. Der Export wird im Hintergrund verarbeitet und Sie erhalten eine E-Mail mit einem Download-Link, wenn er bereit ist.",
+				"selectAll": "Alle auswählen",
+				"selectAtLeastOne": "Bitte wählen Sie mindestens eine Datenkategorie zum Exportieren aus",
+				"submitSuccess": "Exportanfrage eingereicht! Sie erhalten eine E-Mail, wenn der Download bereit ist.",
+				"submitError": "Export konnte nicht gestartet werden",
+				"unexpectedError": "Ein unerwarteter Fehler ist aufgetreten",
+				"aboutTitle": "Über Datenexporte",
+				"aboutAsync": "Exporte werden asynchron verarbeitet und können einige Minuten dauern",
+				"aboutEmail": "Sie erhalten eine E-Mail mit einem Download-Link, wenn der Export bereit ist",
+				"aboutLinkValidity": "Download-Links sind 24 Stunden gültig",
+				"aboutStorageDuration": "Exportdateien werden 30 Tage lang gespeichert",
+				"aboutOrgDataOnly": "Es werden nur Daten Ihrer Organisation einbezogen",
+				"startingExport": "Export wird gestartet...",
+				"startExport": "Export starten ({count} {count, plural, one {Kategorie} other {Kategorien}})"
+			},
+			"history": {
+				"title": "Exportverlauf",
+				"description": "Ihre bisherigen Exporte anzeigen und verwalten",
+				"emptyDescription": "Es wurden noch keine Exporte erstellt.",
+				"emptyHint": "Erstellen Sie einen neuen Export im Tab \"Neuer Export\", um zu beginnen.",
+				"columnDate": "Datum",
+				"columnCategories": "Kategorien",
+				"columnStatus": "Status",
+				"columnSize": "Größe",
+				"columnActions": "Aktionen",
+				"moreCategories": "+{count} weitere",
+				"download": "Herunterladen",
+				"downloadSuccess": "Download-Link generiert. Eine neue E-Mail wurde ebenfalls gesendet.",
+				"downloadError": "Download-Link konnte nicht generiert werden",
+				"deleteSuccess": "Export erfolgreich gelöscht",
+				"deleteError": "Export konnte nicht gelöscht werden",
+				"unexpectedError": "Ein unerwarteter Fehler ist aufgetreten",
+				"deleteDialogTitle": "Export löschen",
+				"deleteDialogDescription": "Sind Sie sicher, dass Sie diesen Export löschen möchten? Dies entfernt die Datei aus dem Speicher und kann nicht rückgängig gemacht werden.",
+				"statusPending": "Ausstehend",
+				"statusProcessing": "Wird verarbeitet",
+				"statusCompleted": "Abgeschlossen",
+				"statusFailed": "Fehlgeschlagen"
+			},
+			"storage": {
+				"title": "S3-Speicherkonfiguration",
+				"description": "Konfigurieren Sie S3-kompatiblen Speicher für Datenexporte. Unterstützt AWS S3, MinIO und andere S3-kompatible Dienste.",
+				"verified": "Verifiziert",
+				"deleteDialogTitle": "Speicherkonfiguration löschen?",
+				"deleteDialogDescription": "Dies entfernt die S3-Speicherkonfiguration. Sie können keine neuen Exporte erstellen, bis Sie den Speicher erneut konfigurieren. Bestehende Exporte bleiben in S3, können aber unzugänglich werden.",
+				"connectionSuccess": "Verbindung erfolgreich",
+				"connectionFailed": "Verbindung fehlgeschlagen",
+				"bucketName": "Bucket-Name",
+				"bucketPlaceholder": "mein-export-bucket",
+				"bucketDescription": "Der S3-Bucket, in dem Exporte gespeichert werden",
+				"region": "Region",
+				"regionPlaceholder": "eu-central-1",
+				"regionDescription": "AWS-Region oder MinIO-Region",
+				"endpoint": "Benutzerdefinierter Endpunkt (Optional)",
+				"endpointPlaceholder": "https://minio.beispiel.de",
+				"endpointDescription": "Für MinIO oder andere S3-kompatible Dienste. Für AWS S3 leer lassen.",
+				"accessKeyId": "Access Key ID",
+				"accessKeyDescription": "Ihr S3-Zugriffsschlüssel",
+				"secretAccessKey": "Secret Access Key",
+				"secretKeyDescription": "Ihr S3-Geheimschlüssel",
+				"keepExistingCredentials": "Leer lassen, um bestehende Anmeldedaten zu behalten",
+				"lastVerified": "Zuletzt verifiziert: {date}",
+				"testing": "Wird getestet...",
+				"testConnection": "Verbindung testen",
+				"testFailed": "Verbindungstest fehlgeschlagen",
+				"saving": "Wird gespeichert...",
+				"saveConfiguration": "Konfiguration speichern",
+				"saveSuccess": "Speicherkonfiguration gespeichert",
+				"saveSuccessDescription": "Ihre S3-Speichereinstellungen wurden gespeichert. Testen Sie die Verbindung zur Überprüfung.",
+				"saveError": "Konfiguration konnte nicht gespeichert werden",
+				"deleteSuccess": "Speicherkonfiguration gelöscht",
+				"deleteError": "Konfiguration konnte nicht gelöscht werden",
+				"unexpectedError": "Ein unerwarteter Fehler ist aufgetreten"
+			}
+		}
 	}
 }

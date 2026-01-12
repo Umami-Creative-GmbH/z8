@@ -1,28 +1,17 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "@tanstack/react-form";
+import { zodValidator } from "@tanstack/zod-form-adapter";
 import { IconBell, IconLoader2, IconMail } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { ProgressIndicator } from "@/components/onboarding/progress-indicator";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-	Form,
-	FormControl,
-	FormDescription,
-	FormField,
-	FormItem,
-	FormLabel,
-} from "@/components/ui/form";
+import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { usePushNotifications } from "@/hooks/use-push-notifications";
-import {
-	type OnboardingNotificationsFormValues,
-	onboardingNotificationsSchema,
-} from "@/lib/validations/onboarding";
 import { useRouter } from "@/navigation";
 import { configureNotificationsOnboarding, skipNotificationsSetup } from "./actions";
 
@@ -37,8 +26,7 @@ export default function NotificationsPage() {
 		isLoading: pushLoading,
 	} = usePushNotifications();
 
-	const form = useForm<OnboardingNotificationsFormValues>({
-		resolver: zodResolver(onboardingNotificationsSchema),
+	const form = useForm({
 		defaultValues: {
 			enablePush: false,
 			enableEmail: true,
@@ -46,9 +34,25 @@ export default function NotificationsPage() {
 			notifyStatusUpdates: true,
 			notifyTeamChanges: true,
 		},
-	});
+		validatorAdapter: zodValidator(),
+		onSubmit: async ({ value }) => {
+			setLoading(true);
 
-	const _enablePush = form.watch("enablePush");
+			const result = await configureNotificationsOnboarding(value);
+
+			setLoading(false);
+
+			if (result.success) {
+				toast.success(t("onboarding.notifications.success", "Notification preferences saved!"));
+				router.push("/onboarding/complete");
+			} else {
+				toast.error(
+					result.error ||
+						t("onboarding.notifications.error", "Failed to save notification preferences"),
+				);
+			}
+		},
+	});
 
 	async function handleEnablePush() {
 		if (!isSupported) {
@@ -63,28 +67,10 @@ export default function NotificationsPage() {
 
 		const success = await requestPermission();
 		if (success) {
-			form.setValue("enablePush", true);
+			form.setFieldValue("enablePush", true);
 			toast.success(t("onboarding.notifications.pushEnabled", "Push notifications enabled!"));
 		} else {
 			toast.error(t("onboarding.notifications.pushDenied", "Push notification permission denied"));
-		}
-	}
-
-	async function onSubmit(values: OnboardingNotificationsFormValues) {
-		setLoading(true);
-
-		const result = await configureNotificationsOnboarding(values);
-
-		setLoading(false);
-
-		if (result.success) {
-			toast.success(t("onboarding.notifications.success", "Notification preferences saved!"));
-			router.push("/onboarding/complete");
-		} else {
-			toast.error(
-				result.error ||
-					t("onboarding.notifications.error", "Failed to save notification preferences"),
-			);
 		}
 	}
 
@@ -197,144 +183,132 @@ export default function NotificationsPage() {
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
-						<Form {...form}>
-							<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-								{/* Email Notifications */}
-								<FormField
-									control={form.control}
-									name="enableEmail"
-									render={({ field }) => (
-										<FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+						<form
+							onSubmit={(e) => {
+								e.preventDefault();
+								form.handleSubmit();
+							}}
+							className="space-y-6"
+						>
+							{/* Email Notifications */}
+							<form.Field name="enableEmail">
+								{(field) => (
+									<div className="flex flex-row items-center justify-between rounded-lg border p-4">
+										<div className="space-y-0.5">
+											<Label className="text-base">
+												{t("onboarding.notifications.emailNotifications", "Email Notifications")}
+											</Label>
+											<p className="text-sm text-muted-foreground">
+												{t(
+													"onboarding.notifications.emailNotificationsDesc",
+													"Receive important updates via email.",
+												)}
+											</p>
+										</div>
+										<Switch
+											checked={field.state.value}
+											onCheckedChange={field.handleChange}
+											disabled={loading}
+										/>
+									</div>
+								)}
+							</form.Field>
+
+							<div className="space-y-4">
+								<h4 className="text-sm font-medium">
+									{t("onboarding.notifications.notifyAbout", "Notify me about:")}
+								</h4>
+
+								{/* Approval Requests */}
+								<form.Field name="notifyApprovals">
+									{(field) => (
+										<div className="flex flex-row items-center justify-between rounded-lg border p-3">
 											<div className="space-y-0.5">
-												<FormLabel className="text-base">
-													{t("onboarding.notifications.emailNotifications", "Email Notifications")}
-												</FormLabel>
-												<FormDescription>
+												<Label>
+													{t("onboarding.notifications.approvals", "Approval requests")}
+												</Label>
+												<p className="text-xs text-muted-foreground">
 													{t(
-														"onboarding.notifications.emailNotificationsDesc",
-														"Receive important updates via email.",
+														"onboarding.notifications.approvalsDesc",
+														"When someone needs your approval.",
 													)}
-												</FormDescription>
+												</p>
 											</div>
-											<FormControl>
-												<Switch
-													checked={field.value}
-													onCheckedChange={field.onChange}
-													disabled={loading}
-												/>
-											</FormControl>
-										</FormItem>
+											<Switch
+												checked={field.state.value}
+												onCheckedChange={field.handleChange}
+												disabled={loading}
+											/>
+										</div>
 									)}
-								/>
+								</form.Field>
 
-								<div className="space-y-4">
-									<h4 className="text-sm font-medium">
-										{t("onboarding.notifications.notifyAbout", "Notify me about:")}
-									</h4>
+								{/* Status Updates */}
+								<form.Field name="notifyStatusUpdates">
+									{(field) => (
+										<div className="flex flex-row items-center justify-between rounded-lg border p-3">
+											<div className="space-y-0.5">
+												<Label>
+													{t("onboarding.notifications.statusUpdates", "Status updates")}
+												</Label>
+												<p className="text-xs text-muted-foreground">
+													{t(
+														"onboarding.notifications.statusUpdatesDesc",
+														"When your requests are approved or rejected.",
+													)}
+												</p>
+											</div>
+											<Switch
+												checked={field.state.value}
+												onCheckedChange={field.handleChange}
+												disabled={loading}
+											/>
+										</div>
+									)}
+								</form.Field>
 
-									{/* Approval Requests */}
-									<FormField
-										control={form.control}
-										name="notifyApprovals"
-										render={({ field }) => (
-											<FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-												<div className="space-y-0.5">
-													<FormLabel>
-														{t("onboarding.notifications.approvals", "Approval requests")}
-													</FormLabel>
-													<FormDescription className="text-xs">
-														{t(
-															"onboarding.notifications.approvalsDesc",
-															"When someone needs your approval.",
-														)}
-													</FormDescription>
-												</div>
-												<FormControl>
-													<Switch
-														checked={field.value}
-														onCheckedChange={field.onChange}
-														disabled={loading}
-													/>
-												</FormControl>
-											</FormItem>
-										)}
-									/>
+								{/* Team Changes */}
+								<form.Field name="notifyTeamChanges">
+									{(field) => (
+										<div className="flex flex-row items-center justify-between rounded-lg border p-3">
+											<div className="space-y-0.5">
+												<Label>
+													{t("onboarding.notifications.teamChanges", "Team changes")}
+												</Label>
+												<p className="text-xs text-muted-foreground">
+													{t(
+														"onboarding.notifications.teamChangesDesc",
+														"When team members are added or removed.",
+													)}
+												</p>
+											</div>
+											<Switch
+												checked={field.state.value}
+												onCheckedChange={field.handleChange}
+												disabled={loading}
+											/>
+										</div>
+									)}
+								</form.Field>
+							</div>
 
-									{/* Status Updates */}
-									<FormField
-										control={form.control}
-										name="notifyStatusUpdates"
-										render={({ field }) => (
-											<FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-												<div className="space-y-0.5">
-													<FormLabel>
-														{t("onboarding.notifications.statusUpdates", "Status updates")}
-													</FormLabel>
-													<FormDescription className="text-xs">
-														{t(
-															"onboarding.notifications.statusUpdatesDesc",
-															"When your requests are approved or rejected.",
-														)}
-													</FormDescription>
-												</div>
-												<FormControl>
-													<Switch
-														checked={field.value}
-														onCheckedChange={field.onChange}
-														disabled={loading}
-													/>
-												</FormControl>
-											</FormItem>
-										)}
-									/>
-
-									{/* Team Changes */}
-									<FormField
-										control={form.control}
-										name="notifyTeamChanges"
-										render={({ field }) => (
-											<FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-												<div className="space-y-0.5">
-													<FormLabel>
-														{t("onboarding.notifications.teamChanges", "Team changes")}
-													</FormLabel>
-													<FormDescription className="text-xs">
-														{t(
-															"onboarding.notifications.teamChangesDesc",
-															"When team members are added or removed.",
-														)}
-													</FormDescription>
-												</div>
-												<FormControl>
-													<Switch
-														checked={field.value}
-														onCheckedChange={field.onChange}
-														disabled={loading}
-													/>
-												</FormControl>
-											</FormItem>
-										)}
-									/>
-								</div>
-
-								{/* Action Buttons */}
-								<div className="flex gap-3 pt-4">
-									<Button
-										type="button"
-										variant="outline"
-										onClick={handleSkip}
-										disabled={loading}
-										className="flex-1"
-									>
-										{t("onboarding.notifications.skip", "Skip for now")}
-									</Button>
-									<Button type="submit" disabled={loading} className="flex-1">
-										{loading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
-										{t("onboarding.notifications.continue", "Continue")}
-									</Button>
-								</div>
-							</form>
-						</Form>
+							{/* Action Buttons */}
+							<div className="flex gap-3 pt-4">
+								<Button
+									type="button"
+									variant="outline"
+									onClick={handleSkip}
+									disabled={loading}
+									className="flex-1"
+								>
+									{t("onboarding.notifications.skip", "Skip for now")}
+								</Button>
+								<Button type="submit" disabled={loading} className="flex-1">
+									{loading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
+									{t("onboarding.notifications.continue", "Continue")}
+								</Button>
+							</div>
+						</form>
 					</CardContent>
 				</Card>
 			</div>

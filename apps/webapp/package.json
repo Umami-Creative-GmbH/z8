@@ -7,7 +7,8 @@
 		"dev:webpack": "next dev",
 		"build": "bun run generate-licenses && next build",
 		"start": "next start",
-		"generate-licenses": "bunx license-report --only=prod --output=json --config license-report-config.json > ./public/licenses.json"
+		"generate-licenses": "bunx license-report --only=prod --output=json --config license-report-config.json > ./public/licenses.json",
+		"db:seed": "bun --bun run src/db/seed/do-seed.ts"
 	},
 	"dependencies": {
 		"@aws-sdk/client-s3": "^3.966.0",
@@ -25,7 +26,6 @@
 		"@effect/platform": "^0.94.1",
 		"@effect/schema": "^0.75.5",
 		"@faker-js/faker": "^10.2.0",
-		"@hookform/resolvers": "^5.2.2",
 		"@opentelemetry/api": "^1.9.0",
 		"@opentelemetry/auto-instrumentations-node": "^0.67.3",
 		"@opentelemetry/exporter-metrics-otlp-http": "^0.209.0",
@@ -119,7 +119,6 @@
 		"react": "19.2.3",
 		"react-day-picker": "^9.13.0",
 		"react-dom": "19.2.3",
-		"react-hook-form": "^7.71.0",
 		"react-resizable-panels": "^4.3.3",
 		"recharts": "3.6.0",
 		"resend": "^6.7.0",

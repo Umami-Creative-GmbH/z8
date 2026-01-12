@@ -1,5 +1,6 @@
 "use client";
 
+import { IconBriefcase, IconCalendar, IconEdit, IconPlus, IconUsers } from "@tabler/icons-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
@@ -21,14 +22,6 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { queryKeys } from "@/lib/query";
-import {
-	IconBriefcase,
-	IconCalendar,
-	IconClock,
-	IconEdit,
-	IconPlus,
-	IconUsers,
-} from "@tabler/icons-react";
 import { ProjectDialog } from "./project-dialog";
 
 interface ProjectManagementProps {

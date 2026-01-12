@@ -1,6 +1,7 @@
 "use client";
 
 import { IconBriefcase } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { AlertCircle, FileBarChart } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -25,6 +26,7 @@ import { ProjectSummaryCards } from "./project-summary-cards";
 import { ProjectTeamBreakdown } from "./project-team-breakdown";
 
 export function ProjectReportsContainer() {
+	const { t } = useTranslate();
 	const [portfolioData, setPortfolioData] = useState<ProjectPortfolioData | null>(null);
 	const [detailedReport, setDetailedReport] = useState<ProjectDetailedReport | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
@@ -46,17 +48,23 @@ export function ProjectReportsContainer() {
 				setDetailedReport(null);
 				setSelectedProjectId(null);
 				setActiveTab("portfolio");
-				toast.success("Portfolio report generated");
+				toast.success(t("reports.projects.toast.portfolioGenerated", "Portfolio report generated"));
 			} else {
-				setError(result.error || "Failed to generate portfolio report");
-				toast.error("Failed to generate report", {
+				setError(
+					result.error ||
+						t("reports.projects.toast.failedPortfolio", "Failed to generate portfolio report"),
+				);
+				toast.error(t("reports.projects.toast.failedGenerate", "Failed to generate report"), {
 					description: result.error,
 				});
 			}
 		} catch (err) {
-			const errorMessage = err instanceof Error ? err.message : "An unexpected error occurred";
+			const errorMessage =
+				err instanceof Error
+					? err.message
+					: t("reports.projects.toast.unexpectedError", "An unexpected error occurred");
 			setError(errorMessage);
-			toast.error("Failed to generate report");
+			toast.error(t("reports.projects.toast.failedGenerate", "Failed to generate report"));
 		} finally {
 			setIsLoading(false);
 		}
@@ -73,17 +81,32 @@ export function ProjectReportsContainer() {
 			if (result.success && result.data) {
 				setDetailedReport(result.data);
 				setActiveTab("project");
-				toast.success(`Report generated for ${result.data.project.name}`);
+				toast.success(
+					t("reports.projects.toast.projectGenerated", "Report generated for {name}", {
+						name: result.data.project.name,
+					}),
+				);
 			} else {
-				setError(result.error || "Failed to generate project report");
-				toast.error("Failed to generate project report", {
-					description: result.error,
-				});
+				setError(
+					result.error ||
+						t("reports.projects.toast.failedProject", "Failed to generate project report"),
+				);
+				toast.error(
+					t("reports.projects.toast.failedProjectReport", "Failed to generate project report"),
+					{
+						description: result.error,
+					},
+				);
 			}
 		} catch (err) {
-			const errorMessage = err instanceof Error ? err.message : "An unexpected error occurred";
+			const errorMessage =
+				err instanceof Error
+					? err.message
+					: t("reports.projects.toast.unexpectedError", "An unexpected error occurred");
 			setError(errorMessage);
-			toast.error("Failed to generate project report");
+			toast.error(
+				t("reports.projects.toast.failedProjectReport", "Failed to generate project report"),
+			);
 		} finally {
 			setIsLoading(false);
 		}
@@ -98,7 +121,7 @@ export function ProjectReportsContainer() {
 			{error && (
 				<Alert variant="destructive">
 					<AlertCircle className="h-4 w-4" />
-					<AlertTitle>Error</AlertTitle>
+					<AlertTitle>{t("reports.projects.container.error", "Error")}</AlertTitle>
 					<AlertDescription>{error}</AlertDescription>
 				</Alert>
 			)}
@@ -110,9 +133,14 @@ export function ProjectReportsContainer() {
 						<div className="flex flex-col items-center gap-4">
 							<IconBriefcase className="h-12 w-12 animate-pulse text-muted-foreground" />
 							<div className="text-center">
-								<p className="font-semibold">Generating Report...</p>
+								<p className="font-semibold">
+									{t("reports.projects.container.generating", "Generating Report...")}
+								</p>
 								<p className="text-sm text-muted-foreground">
-									Please wait while we compile project data
+									{t(
+										"reports.projects.container.pleaseWait",
+										"Please wait while we compile project data",
+									)}
 								</p>
 							</div>
 						</div>
@@ -124,9 +152,13 @@ export function ProjectReportsContainer() {
 			{!isLoading && portfolioData && (
 				<Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "portfolio" | "project")}>
 					<TabsList>
-						<TabsTrigger value="portfolio">Portfolio Overview</TabsTrigger>
+						<TabsTrigger value="portfolio">
+							{t("reports.projects.container.portfolioOverview", "Portfolio Overview")}
+						</TabsTrigger>
 						<TabsTrigger value="project" disabled={!detailedReport}>
-							{detailedReport ? detailedReport.project.name : "Project Details"}
+							{detailedReport
+								? detailedReport.project.name
+								: t("reports.projects.container.projectDetails", "Project Details")}
 						</TabsTrigger>
 					</TabsList>
 
@@ -191,9 +223,14 @@ export function ProjectReportsContainer() {
 						<div className="flex flex-col items-center gap-4 text-center">
 							<FileBarChart className="h-12 w-12 text-muted-foreground" />
 							<div>
-								<p className="font-semibold">No report generated yet</p>
+								<p className="font-semibold">
+									{t("reports.projects.container.noReportYet", "No report generated yet")}
+								</p>
 								<p className="text-sm text-muted-foreground">
-									Select a period and click "Generate Report" to get started
+									{t(
+										"reports.projects.container.selectPeriod",
+										'Select a period and click "Generate Report" to get started',
+									)}
 								</p>
 							</div>
 						</div>

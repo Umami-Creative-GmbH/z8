@@ -1,6 +1,7 @@
 "use client";
 
 import { IconUsers } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, XAxis, YAxis } from "recharts";
 import { Badge } from "@/components/ui/badge";
@@ -47,6 +48,7 @@ export function ProjectTeamBreakdown({
 	teamBreakdown,
 	employeeBreakdown,
 }: ProjectTeamBreakdownProps) {
+	const { t } = useTranslate();
 	const [activeTab, setActiveTab] = useState<"employees" | "teams">("employees");
 
 	// Prepare chart data
@@ -83,9 +85,14 @@ export function ProjectTeamBreakdown({
 				<CardHeader>
 					<CardTitle className="flex items-center gap-2">
 						<IconUsers className="h-5 w-5" />
-						Team Breakdown
+						{t("reports.projects.team.title", "Team Breakdown")}
 					</CardTitle>
-					<CardDescription>No team members have logged time to this project</CardDescription>
+					<CardDescription>
+						{t(
+							"reports.projects.team.noMembers",
+							"No team members have logged time to this project",
+						)}
+					</CardDescription>
 				</CardHeader>
 			</Card>
 		);
@@ -96,15 +103,22 @@ export function ProjectTeamBreakdown({
 			<CardHeader>
 				<CardTitle className="flex items-center gap-2">
 					<IconUsers className="h-5 w-5" />
-					Team Breakdown
+					{t("reports.projects.team.title", "Team Breakdown")}
 				</CardTitle>
-				<CardDescription>Hours distribution across team members and teams</CardDescription>
+				<CardDescription>
+					{t(
+						"reports.projects.team.description",
+						"Hours distribution across team members and teams",
+					)}
+				</CardDescription>
 			</CardHeader>
 			<CardContent>
 				<Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "employees" | "teams")}>
 					<TabsList className="mb-4">
-						<TabsTrigger value="employees">By Employee</TabsTrigger>
-						<TabsTrigger value="teams">By Team</TabsTrigger>
+						<TabsTrigger value="employees">
+							{t("reports.projects.team.byEmployee", "By Employee")}
+						</TabsTrigger>
+						<TabsTrigger value="teams">{t("reports.projects.team.byTeam", "By Team")}</TabsTrigger>
 					</TabsList>
 
 					<TabsContent value="employees" className="space-y-4">
@@ -115,7 +129,10 @@ export function ProjectTeamBreakdown({
 									<ChartTooltip
 										content={
 											<ChartTooltipContent
-												formatter={(value) => [`${Number(value).toFixed(1)}h`, "Hours"]}
+												formatter={(value) => [
+													`${Number(value).toFixed(1)}h`,
+													t("reports.projects.team.hoursLabel", "Hours"),
+												]}
 											/>
 										}
 									/>
@@ -141,10 +158,14 @@ export function ProjectTeamBreakdown({
 								<Table>
 									<TableHeader>
 										<TableRow>
-											<TableHead>Employee</TableHead>
-											<TableHead className="text-right">Hours</TableHead>
+											<TableHead>{t("reports.projects.team.employee", "Employee")}</TableHead>
+											<TableHead className="text-right">
+												{t("reports.projects.team.hours", "Hours")}
+											</TableHead>
 											<TableHead className="text-right">%</TableHead>
-											<TableHead className="text-right">Sessions</TableHead>
+											<TableHead className="text-right">
+												{t("reports.projects.team.sessions", "Sessions")}
+											</TableHead>
 										</TableRow>
 									</TableHeader>
 									<TableBody>
@@ -199,7 +220,10 @@ export function ProjectTeamBreakdown({
 									<ChartTooltip
 										content={
 											<ChartTooltipContent
-												formatter={(value) => [`${Number(value).toFixed(1)}h`, "Hours"]}
+												formatter={(value) => [
+													`${Number(value).toFixed(1)}h`,
+													t("reports.projects.team.hoursLabel", "Hours"),
+												]}
 											/>
 										}
 									/>

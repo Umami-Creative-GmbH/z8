@@ -1,6 +1,7 @@
 "use client";
 
 import { IconAlertTriangle, IconCheck, IconTrendingDown } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
@@ -11,6 +12,8 @@ interface ProjectBudgetProgressProps {
 }
 
 export function ProjectBudgetProgress({ budgetHours, usedHours }: ProjectBudgetProgressProps) {
+	const { t } = useTranslate();
+
 	const percentUsed = (usedHours / budgetHours) * 100;
 	const remainingHours = budgetHours - usedHours;
 	const isOverBudget = percentUsed > 100;
@@ -28,23 +31,29 @@ export function ProjectBudgetProgress({ budgetHours, usedHours }: ProjectBudgetP
 
 	const getStatusText = () => {
 		if (isOverBudget) {
-			return "Over Budget";
+			return t("reports.projects.budget.overBudget", "Over Budget");
 		}
 		if (isNearBudget) {
-			return "Near Budget Limit";
+			return t("reports.projects.budget.nearLimit", "Near Budget Limit");
 		}
-		return "On Track";
+		return t("reports.projects.budget.onTrack", "On Track");
 	};
 
 	const getStatusDescription = () => {
 		if (isOverBudget) {
 			const overBy = usedHours - budgetHours;
-			return `Exceeded budget by ${overBy.toFixed(1)} hours`;
+			return t("reports.projects.budget.exceededBy", "Exceeded budget by {hours} hours", {
+				hours: overBy.toFixed(1),
+			});
 		}
 		if (isNearBudget) {
-			return `Only ${remainingHours.toFixed(1)} hours remaining`;
+			return t("reports.projects.budget.onlyRemaining", "Only {hours} hours remaining", {
+				hours: remainingHours.toFixed(1),
+			});
 		}
-		return `${remainingHours.toFixed(1)} hours remaining in budget`;
+		return t("reports.projects.budget.hoursRemaining", "{hours} hours remaining in budget", {
+			hours: remainingHours.toFixed(1),
+		});
 	};
 
 	const getProgressColor = () => {
@@ -58,7 +67,7 @@ export function ProjectBudgetProgress({ budgetHours, usedHours }: ProjectBudgetP
 		<Card>
 			<CardHeader>
 				<CardTitle className="flex items-center gap-2">
-					Budget Progress
+					{t("reports.projects.budget.title", "Budget Progress")}
 					{getStatusIcon()}
 				</CardTitle>
 				<CardDescription>{getStatusDescription()}</CardDescription>
@@ -67,8 +76,16 @@ export function ProjectBudgetProgress({ budgetHours, usedHours }: ProjectBudgetP
 				{/* Main Progress Bar */}
 				<div className="space-y-2">
 					<div className="flex justify-between text-sm">
-						<span className="text-muted-foreground">{usedHours.toFixed(1)}h used</span>
-						<span className="font-medium">{budgetHours.toFixed(1)}h budget</span>
+						<span className="text-muted-foreground">
+							{t("reports.projects.budget.hoursUsed", "{hours}h used", {
+								hours: usedHours.toFixed(1),
+							})}
+						</span>
+						<span className="font-medium">
+							{t("reports.projects.budget.hoursBudget", "{hours}h budget", {
+								hours: budgetHours.toFixed(1),
+							})}
+						</span>
 					</div>
 					<div className="relative">
 						<Progress
@@ -102,11 +119,15 @@ export function ProjectBudgetProgress({ budgetHours, usedHours }: ProjectBudgetP
 				<div className="grid grid-cols-3 gap-4 pt-4 border-t">
 					<div className="text-center">
 						<div className="text-2xl font-bold tabular-nums">{percentUsed.toFixed(0)}%</div>
-						<div className="text-xs text-muted-foreground">Used</div>
+						<div className="text-xs text-muted-foreground">
+							{t("reports.projects.budget.used", "Used")}
+						</div>
 					</div>
 					<div className="text-center">
 						<div className="text-2xl font-bold tabular-nums">{usedHours.toFixed(1)}h</div>
-						<div className="text-xs text-muted-foreground">Hours Logged</div>
+						<div className="text-xs text-muted-foreground">
+							{t("reports.projects.budget.hoursLogged", "Hours Logged")}
+						</div>
 					</div>
 					<div className="text-center">
 						<div
@@ -121,7 +142,9 @@ export function ProjectBudgetProgress({ budgetHours, usedHours }: ProjectBudgetP
 							h
 						</div>
 						<div className="text-xs text-muted-foreground">
-							{remainingHours >= 0 ? "Remaining" : "Over"}
+							{remainingHours >= 0
+								? t("reports.projects.budget.remaining", "Remaining")
+								: t("reports.projects.budget.over", "Over")}
 						</div>
 					</div>
 				</div>

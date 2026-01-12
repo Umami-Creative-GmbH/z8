@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslate } from "@tolgee/react";
 import { Area, AreaChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -14,28 +15,38 @@ interface ProjectHoursChartProps {
 	data: ProjectTimeSeriesPoint[];
 }
 
-const chartConfig = {
-	hours: {
-		label: "Daily Hours",
-		color: "hsl(var(--chart-1))",
-	},
-	cumulativeHours: {
-		label: "Cumulative Hours",
-		color: "hsl(var(--chart-2))",
-	},
-} satisfies ChartConfig;
-
 export function ProjectHoursChart({ data }: ProjectHoursChartProps) {
+	const { t } = useTranslate();
+
+	const chartConfig = {
+		hours: {
+			label: t("reports.projects.chart.dailyHours", "Daily Hours"),
+			color: "hsl(var(--chart-1))",
+		},
+		cumulativeHours: {
+			label: t("reports.projects.chart.cumulativeHours", "Cumulative Hours"),
+			color: "hsl(var(--chart-2))",
+		},
+	} satisfies ChartConfig;
+
 	if (data.length === 0) {
 		return (
 			<Card>
 				<CardHeader>
-					<CardTitle>Hours Over Time</CardTitle>
-					<CardDescription>No time tracking data available for this period</CardDescription>
+					<CardTitle>{t("reports.projects.chart.hoursOverTime", "Hours Over Time")}</CardTitle>
+					<CardDescription>
+						{t(
+							"reports.projects.chart.noDataAvailable",
+							"No time tracking data available for this period",
+						)}
+					</CardDescription>
 				</CardHeader>
 				<CardContent className="flex items-center justify-center py-12">
 					<p className="text-sm text-muted-foreground">
-						No work periods recorded in the selected date range
+						{t(
+							"reports.projects.chart.noWorkPeriods",
+							"No work periods recorded in the selected date range",
+						)}
 					</p>
 				</CardContent>
 			</Card>
@@ -56,8 +67,13 @@ export function ProjectHoursChart({ data }: ProjectHoursChartProps) {
 			{/* Daily Hours Chart */}
 			<Card>
 				<CardHeader>
-					<CardTitle>Daily Hours</CardTitle>
-					<CardDescription>Hours worked per day during the selected period</CardDescription>
+					<CardTitle>{t("reports.projects.chart.dailyHours", "Daily Hours")}</CardTitle>
+					<CardDescription>
+						{t(
+							"reports.projects.chart.dailyDescription",
+							"Hours worked per day during the selected period",
+						)}
+					</CardDescription>
 				</CardHeader>
 				<CardContent>
 					<ChartContainer config={chartConfig} className="h-[300px] w-full">
@@ -79,7 +95,10 @@ export function ProjectHoursChart({ data }: ProjectHoursChartProps) {
 							<ChartTooltip
 								content={
 									<ChartTooltipContent
-										formatter={(value) => [`${Number(value).toFixed(1)}h`, "Hours"]}
+										formatter={(value) => [
+											`${Number(value).toFixed(1)}h`,
+											t("reports.projects.chart.hoursLabel", "Hours"),
+										]}
 									/>
 								}
 							/>
@@ -99,8 +118,10 @@ export function ProjectHoursChart({ data }: ProjectHoursChartProps) {
 			{/* Cumulative Hours Chart */}
 			<Card>
 				<CardHeader>
-					<CardTitle>Cumulative Hours</CardTitle>
-					<CardDescription>Total hours accumulated over time</CardDescription>
+					<CardTitle>{t("reports.projects.chart.cumulativeHours", "Cumulative Hours")}</CardTitle>
+					<CardDescription>
+						{t("reports.projects.chart.cumulativeDescription", "Total hours accumulated over time")}
+					</CardDescription>
 				</CardHeader>
 				<CardContent>
 					<ChartContainer config={chartConfig} className="h-[300px] w-full">
@@ -122,7 +143,10 @@ export function ProjectHoursChart({ data }: ProjectHoursChartProps) {
 							<ChartTooltip
 								content={
 									<ChartTooltipContent
-										formatter={(value) => [`${Number(value).toFixed(1)}h`, "Cumulative"]}
+										formatter={(value) => [
+											`${Number(value).toFixed(1)}h`,
+											t("reports.projects.chart.cumulativeLabel", "Cumulative"),
+										]}
 									/>
 								}
 							/>
