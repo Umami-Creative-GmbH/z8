@@ -1,0 +1,222 @@
+---
+title: Project Reports
+description: Analytics dashboards for project tracking, budgets, and team performance
+icon: ChartBar
+---
+
+import { Steps, Step } from 'fumadocs-ui/components/steps';
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
+
+## Overview
+
+Project Reports provide comprehensive analytics for tracking project health, budget utilization, and team performance. Two report views are available:
+
+- **Portfolio Overview** - Aggregate metrics across all projects
+- **Project Details** - Deep dive into a single project
+
+---
+
+## Accessing Project Reports
+
+<Steps>
+  <Step>
+    Go to **Reports** → **Projects** from the main navigation
+  </Step>
+  <Step>
+    Select a date range using the date picker
+  </Step>
+  <Step>
+    Optionally filter by project status
+  </Step>
+  <Step>
+    Click **"Generate Report"**
+  </Step>
+</Steps>
+
+---
+
+## Portfolio Overview
+
+The portfolio view shows aggregate metrics and a summary of all projects.
+
+### Summary Cards
+
+Five key metrics are displayed at the top:
+
+| Metric | Description |
+|--------|-------------|
+| **Total Projects** | Count of all projects in the portfolio |
+| **Active Projects** | Projects currently in "Active" status |
+| **Total Hours** | Sum of all hours logged across projects |
+| **Over Budget** | Count of projects exceeding their budget |
+| **Overdue** | Count of projects past their deadline |
+
+<Callout type="warn">
+Projects showing as "Over Budget" or "Overdue" are highlighted in red and should be reviewed.
+</Callout>
+
+### Project Portfolio Table
+
+The portfolio table lists all projects with key metrics:
+
+| Column | Description |
+|--------|-------------|
+| **Project** | Name with color indicator |
+| **Status** | Lifecycle status badge |
+| **Hours** | Total hours logged |
+| **Budget** | Progress bar showing utilization |
+| **Deadline** | Target date with status indicator |
+| **Team** | Number of contributors |
+
+#### Status Badges
+
+- **Blue**: Planned
+- **Green**: Active
+- **Yellow**: Paused
+- **Gray**: Completed
+- **Dark Gray**: Archived
+
+#### Deadline Indicators
+
+- **Red badge**: Overdue or due today
+- **Amber badge**: Due within 7 days
+- **Plain text**: More than 7 days remaining
+
+---
+
+## Project Details
+
+Click any project in the portfolio table to view detailed analytics.
+
+### Summary Metrics
+
+| Metric | Description |
+|--------|-------------|
+| **Total Hours** | Hours logged in the selected period |
+| **Team Members** | Unique contributors to the project |
+| **Budget Used** | Percentage of budget consumed |
+| **Daily Average** | Mean hours logged per day |
+
+### Budget Progress
+
+A detailed budget visualization shows:
+
+- **Progress bar** with color coding
+- **Percentage used** of total budget
+- **Hours logged** vs hours remaining
+- **Status indicator**:
+  - "On Track" (green): Under 90%
+  - "Near Budget Limit" (amber): 90-100%
+  - "Over Budget" (red): Above 100%
+
+<Callout type="info">
+Projects without a budget show "N/A" for budget metrics.
+</Callout>
+
+### Hours Over Time
+
+A time series chart shows hours logged across the selected date range, helping identify:
+- Peak work periods
+- Trends in activity
+- Days with no logged time
+
+### Team Breakdown
+
+<Tabs items={['By Employee', 'By Team']}>
+  <Tab value="By Employee">
+    ### Employee Breakdown
+
+    A pie chart and table show how work is distributed across team members:
+
+    | Column | Description |
+    |--------|-------------|
+    | **Employee** | Contributor name |
+    | **Hours** | Total hours logged |
+    | **Percentage** | Share of project total |
+    | **Sessions** | Number of work periods |
+
+    Sorted by hours descending to show top contributors first.
+  </Tab>
+  <Tab value="By Team">
+    ### Team Breakdown
+
+    A horizontal bar chart and cards show team-level contributions:
+
+    - **Total hours per team** with percentage badge
+    - **Team members** with individual hour breakdowns
+    - **Visual comparison** across teams
+
+    Useful for understanding which teams are driving project progress.
+  </Tab>
+</Tabs>
+
+---
+
+## Filtering Reports
+
+### Date Range
+
+Select the reporting period using the date picker. Common presets:
+- Current week
+- Current month
+- Current quarter
+- Current year
+- Custom range
+
+### Status Filter
+
+Filter the portfolio by project status to focus on:
+- Only active projects
+- Completed projects for review
+- All projects regardless of status
+
+---
+
+## Using Reports Effectively
+
+### Weekly Check-ins
+
+Review the portfolio weekly to:
+1. Identify projects approaching budget limits
+2. Check for overdue deadlines
+3. Verify active projects have recent time entries
+
+### Project Health Indicators
+
+**Healthy Project**:
+- Budget under 70% with proportional timeline progress
+- Recent time entries
+- Multiple team members contributing
+
+**At-Risk Project**:
+- Budget over 90% before deadline
+- No time entries in recent days
+- Single contributor (bus factor risk)
+
+**Problem Project**:
+- Over budget
+- Past deadline
+- No recent activity despite "Active" status
+
+### End-of-Project Review
+
+When completing a project:
+1. Generate a final report for the full project duration
+2. Compare actual hours to budgeted hours
+3. Review team breakdown to understand resource allocation
+4. Document findings in the project description for future reference
+
+---
+
+## Exporting Data
+
+Project report data can be exported for further analysis:
+
+- **CSV** - Spreadsheet-compatible format
+- **Excel** - Formatted workbook with charts
+- **PDF** - Print-ready report document
+
+<Callout type="info">
+Export options are available via the export button in the report header.
+</Callout>

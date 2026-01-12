@@ -1,8 +1,8 @@
 {
   "root": true,
-  "title": "UI Docs",
+  "title": "Docs",
   "description": "User, Manager, and Admin guides for using Z8",
-  "icon": "User",
+  "icon": "Book",
   "pages": [
     "getting-started",
     "user-guide",

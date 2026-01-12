@@ -30,6 +30,9 @@ import {
   IconBell,
   IconUmbrella,
   IconHelp,
+  IconBriefcase,
+  IconPercentage,
+  IconBook,
 } from '@tabler/icons-react';
 
 // Map icon names to Tabler icon components
@@ -41,6 +44,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   ShieldLock: IconShieldLock,
   Code: IconCode,
   Server: IconServer,
+  Book: IconBook,
   // Admin Guide
   UserPlus: IconUserPlus,
   UserCog: IconUserCog,
@@ -53,6 +57,8 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   ChartBar: IconChartBar,
   Settings: IconSettings,
   Bug: IconBug,
+  Briefcase: IconBriefcase,
+  Percent: IconPercentage,
   // Technical
   PlayerPlay: IconPlayerPlay,
   Database: IconDatabase,

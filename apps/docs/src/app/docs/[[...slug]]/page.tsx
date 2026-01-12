@@ -5,7 +5,7 @@ import {
   DocsTitle,
   DocsDescription,
 } from 'fumadocs-ui/page';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 import { mdxComponents } from '@/mdx-components';
 
@@ -15,6 +15,12 @@ interface PageProps {
 
 export default async function Page({ params }: PageProps) {
   const { slug } = await params;
+
+  // Redirect /docs to /docs/guide
+  if (!slug || slug.length === 0) {
+    redirect('/docs/guide');
+  }
+
   const page = source.getPage(slug);
 
   if (!page) notFound();

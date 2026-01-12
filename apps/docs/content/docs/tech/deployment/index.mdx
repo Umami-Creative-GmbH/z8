@@ -84,6 +84,52 @@ cd apps/webapp
 bun run db:migrate
 ```
 
+### Database Seeding
+
+After running migrations, seed the database with initial data (time regulation presets, etc.):
+
+```bash
+cd apps/webapp
+bun run db:seed
+```
+
+#### Seed CLI Options
+
+| Command | Description |
+|---------|-------------|
+| `bun run db:seed` | Run all seeders |
+| `bun run db:seed --list` | List available seeders |
+| `bun run db:seed --only=<name>` | Run a specific seeder |
+| `bun run db:seed --help` | Show help |
+
+#### Available Seeders
+
+| Seeder | Description |
+|--------|-------------|
+| `time-regulation-presets` | Labor law presets (German, EU, French, UK, Swiss, Austrian) |
+
+#### Idempotent Seeding
+
+All seeders are **idempotent**—safe to run multiple times. Existing records are skipped, so you can re-run seeding without duplicating data.
+
+#### Production Seeding
+
+For production deployments, run seeding as part of your deployment pipeline:
+
+```bash
+# After migrations
+bun run db:migrate
+
+# Seed initial data
+bun run db:seed
+```
+
+Or run directly:
+
+```bash
+bun --bun run src/db/seed/do-seed.ts
+```
+
 ## Storage (Optional)
 
 For file uploads and exports, configure S3-compatible storage:
@@ -110,9 +156,12 @@ Configure your orchestrator to use these health endpoints:
 
 Set up scheduled jobs for:
 
-- `/api/cron/reminders` - Daily time tracking reminders
-- `/api/cron/reports` - Weekly scheduled report generation
-- `/api/cron/cleanup` - Daily cleanup of expired data
+| Endpoint | Schedule | Description |
+|----------|----------|-------------|
+| `/api/cron/reminders` | Daily | Time tracking reminders |
+| `/api/cron/reports` | Weekly | Scheduled report generation |
+| `/api/cron/cleanup` | Daily | Cleanup of expired data |
+| `/api/cron/project-deadlines` | Daily | Project deadline notifications |
 
 ## Monitoring
 
@@ -125,6 +174,6 @@ The application includes instrumentation for monitoring:
 
 ## Additional Resources
 
-- [Technical Docs](/docs/technical) - Development setup and architecture
-- [Admin Guide](/docs/admin-guide) - System configuration after deployment
-- [Health Monitoring](/docs/admin-guide#health-monitoring) - Monitoring setup
+- [Technical Docs](/docs/tech/technical) - Development setup and architecture
+- [Admin Guide](/docs/ui/admin-guide) - System configuration after deployment
+- [Health Monitoring](/docs/ui/admin-guide/system-administration) - Monitoring setup

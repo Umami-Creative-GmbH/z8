@@ -1,0 +1,327 @@
+---
+title: Surcharge System
+description: Premium pay rules for overtime, night work, weekends, and holidays
+icon: Percent
+---
+
+import { Steps, Step } from 'fumadocs-ui/components/steps';
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
+import { Accordions, Accordion } from 'fumadocs-ui/components/accordion';
+
+## Overview
+
+The surcharge system allows you to define premium pay rules that grant additional time credits for work performed during specific periods—such as nights, weekends, or holidays. Surcharges automatically calculate bonus time based on when employees work.
+
+<Callout type="info">
+Surcharges add **time credits**, not direct monetary bonuses. A 50% surcharge on 2 hours of work adds 1 hour of credited time.
+</Callout>
+
+---
+
+## Key Concepts
+
+### Surcharge Models
+
+A **surcharge model** is a collection of rules that define when premium time applies. Examples:
+- "Weekend Premium" - Rules for Saturday and Sunday
+- "Night Shift" - Rules for work between 22:00-06:00
+- "Holiday Pay" - Rules for specific holiday dates
+
+### Surcharge Rules
+
+Rules define the conditions and percentages for surcharges. Three rule types are available:
+
+<Tabs items={['Day-of-Week', 'Time Window', 'Date-Based']}>
+  <Tab value="Day-of-Week">
+    ### Day-of-Week Rules
+    Apply surcharges on specific days of the week.
+
+    **Example**: 50% surcharge on Sundays
+    - Rule type: Day-of-Week
+    - Day: Sunday
+    - Percentage: 50%
+  </Tab>
+  <Tab value="Time Window">
+    ### Time Window Rules
+    Apply surcharges during specific hours.
+
+    **Example**: 25% surcharge for night work
+    - Rule type: Time Window
+    - Start time: 22:00
+    - End time: 06:00
+    - Percentage: 25%
+
+    <Callout type="info">
+    Time windows can span midnight. A 22:00-06:00 window covers late evening AND early morning.
+    </Callout>
+  </Tab>
+  <Tab value="Date-Based">
+    ### Date-Based Rules
+    Apply surcharges on specific dates or date ranges.
+
+    **Example**: 100% surcharge on Christmas
+    - Rule type: Date-Based
+    - Date: December 25
+    - Percentage: 100%
+
+    **Example**: 75% surcharge during summer shutdown
+    - Rule type: Date-Based
+    - Date range: August 1-15
+    - Percentage: 75%
+  </Tab>
+</Tabs>
+
+### Assignment Hierarchy
+
+Surcharge models are assigned at three levels, with the most specific taking precedence:
+
+1. **Employee Level** (highest priority) - Individual override
+2. **Team Level** - Applies to all team members
+3. **Organization Level** (lowest priority) - Default for everyone
+
+<Callout type="info">
+If an employee has both a team and organization assignment, the **team assignment** takes precedence. Employee-level assignments override both.
+</Callout>
+
+---
+
+## Creating a Surcharge Model
+
+<Steps>
+  <Step>
+    Go to **Settings** → **Surcharges**
+  </Step>
+  <Step>
+    Click **"Create Model"**
+  </Step>
+  <Step>
+    Enter the model details:
+    - **Name** - Descriptive identifier (e.g., "Night Shift Premium")
+    - **Description** - Explanation of when it applies
+    - **Active** - Toggle to enable/disable
+  </Step>
+  <Step>
+    Add rules to the model (see next section)
+  </Step>
+  <Step>
+    Click **"Save"**
+  </Step>
+</Steps>
+
+---
+
+## Adding Surcharge Rules
+
+<Steps>
+  <Step>
+    In the surcharge model dialog, click **"Add Rule"**
+  </Step>
+  <Step>
+    Configure the rule:
+    - **Name** - Rule identifier (e.g., "Sunday Premium")
+    - **Type** - Day-of-Week, Time Window, or Date-Based
+    - **Percentage** - Surcharge amount (e.g., 50 for 50%)
+    - **Priority** - Higher priority rules take precedence when overlapping
+  </Step>
+  <Step>
+    Configure type-specific fields:
+
+    **Day-of-Week**: Select the day (Monday-Sunday)
+
+    **Time Window**: Enter start and end times (HH:MM)
+
+    **Date-Based**: Enter a specific date OR a date range
+  </Step>
+  <Step>
+    Optionally set validity period (From/Until dates)
+  </Step>
+  <Step>
+    Add more rules as needed
+  </Step>
+</Steps>
+
+---
+
+## Assigning Surcharge Models
+
+### Organization-Wide Assignment
+
+Apply a surcharge model to all employees:
+
+<Steps>
+  <Step>
+    Go to **Settings** → **Surcharges** → **Assignments** tab
+  </Step>
+  <Step>
+    Click **"Add Assignment"**
+  </Step>
+  <Step>
+    Select **Organization** as the assignment type
+  </Step>
+  <Step>
+    Select the surcharge model
+  </Step>
+  <Step>
+    Optionally set effective dates
+  </Step>
+  <Step>
+    Click **"Save"**
+  </Step>
+</Steps>
+
+### Team Assignment
+
+Apply a surcharge model to a specific team:
+
+<Steps>
+  <Step>
+    Go to **Settings** → **Surcharges** → **Assignments** tab
+  </Step>
+  <Step>
+    Click **"Add Assignment"**
+  </Step>
+  <Step>
+    Select **Team** as the assignment type
+  </Step>
+  <Step>
+    Select the team
+  </Step>
+  <Step>
+    Select the surcharge model
+  </Step>
+  <Step>
+    Click **"Save"**
+  </Step>
+</Steps>
+
+### Employee Override
+
+Override surcharges for a specific employee:
+
+<Steps>
+  <Step>
+    Go to **Settings** → **Surcharges** → **Assignments** tab
+  </Step>
+  <Step>
+    Click **"Add Assignment"**
+  </Step>
+  <Step>
+    Select **Employee** as the assignment type
+  </Step>
+  <Step>
+    Select the employee
+  </Step>
+  <Step>
+    Select the surcharge model
+  </Step>
+  <Step>
+    Click **"Save"**
+  </Step>
+</Steps>
+
+---
+
+## How Surcharges Are Calculated
+
+The system evaluates each minute of a work period to determine applicable surcharges:
+
+1. **Rule Evaluation**: Each minute is checked against all active rules
+2. **Max Wins Policy**: When multiple rules apply, the highest percentage wins
+3. **Aggregation**: Minutes are summed per rule for the final calculation
+
+### Calculation Example
+
+An employee works 8:00 PM to 2:00 AM (6 hours) with these rules:
+- Night Premium (22:00-06:00): 25%
+- Sunday Premium (all day): 50%
+
+If the shift is on Sunday night:
+- 8:00 PM - 10:00 PM: Sunday rule applies (50%)
+- 10:00 PM - 2:00 AM: Both rules apply, Sunday wins (50%)
+
+**Result**: 6 hours × 50% = 3 hours surcharge credit
+
+<Callout type="info">
+The "max wins" policy means you never get double surcharges for overlapping rules—only the highest percentage applies.
+</Callout>
+
+---
+
+## Viewing Surcharge Calculations
+
+Surcharge calculations are computed when employees clock out. The calculation includes:
+
+| Metric | Description |
+|--------|-------------|
+| **Base Minutes** | Total work period duration |
+| **Qualifying Minutes** | Minutes where rules applied |
+| **Surcharge Minutes** | Additional time credit earned |
+| **Total Credited** | Base + Surcharge minutes |
+
+---
+
+## Best Practices
+
+<Accordions>
+  <Accordion title="Use descriptive names">
+    Name models and rules clearly so their purpose is obvious. "Sunday Night Shift Premium" is better than "Model 1 Rule A".
+  </Accordion>
+
+  <Accordion title="Set appropriate priorities">
+    When rules might overlap, use priority to control which one wins. Higher priority rules take precedence.
+  </Accordion>
+
+  <Accordion title="Use validity dates for temporary rules">
+    For seasonal or temporary surcharges, set validity dates instead of creating and deleting rules.
+  </Accordion>
+
+  <Accordion title="Test before going live">
+    Create models as inactive first, verify the configuration, then activate when ready.
+  </Accordion>
+
+  <Accordion title="Document rule logic">
+    Use the description field to explain the business rationale for each model.
+  </Accordion>
+</Accordions>
+
+---
+
+## Common Surcharge Patterns
+
+### Standard Night Shift
+
+```
+Model: Night Shift Premium
+Rules:
+  - Night Hours (22:00-06:00): 25%
+```
+
+### Weekend Premium
+
+```
+Model: Weekend Premium
+Rules:
+  - Saturday: 25%
+  - Sunday: 50%
+```
+
+### Holiday Pay
+
+```
+Model: Holiday Premium
+Rules:
+  - Christmas Day (Dec 25): 100%
+  - New Year's Day (Jan 1): 100%
+  - Easter Sunday: 100%
+```
+
+### Combined Night + Weekend
+
+```
+Model: Shift Premium
+Rules:
+  - Night Hours (22:00-06:00): 25% (priority: 1)
+  - Saturday: 25% (priority: 2)
+  - Sunday: 50% (priority: 2)
+```
