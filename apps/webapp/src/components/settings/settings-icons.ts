@@ -1,0 +1,38 @@
+import {
+	IconBeach,
+	IconBell,
+	IconBriefcase,
+	IconBuilding,
+	IconCalendarEvent,
+	IconChartBar,
+	IconClock,
+	IconDatabaseExport,
+	IconGavel,
+	IconHistory,
+	IconPercentage,
+	IconShield,
+	IconTestPipe,
+	IconUserCircle,
+	IconUsers,
+	IconWorld,
+} from "@tabler/icons-react";
+import type { SettingsIconName } from "./settings-config";
+
+export const SETTINGS_ICON_MAP: Record<SettingsIconName, React.ComponentType<{ className?: string }>> = {
+	"user-circle": IconUserCircle,
+	shield: IconShield,
+	bell: IconBell,
+	building: IconBuilding,
+	users: IconUsers,
+	"calendar-event": IconCalendarEvent,
+	beach: IconBeach,
+	clock: IconClock,
+	gavel: IconGavel,
+	percentage: IconPercentage,
+	briefcase: IconBriefcase,
+	world: IconWorld,
+	history: IconHistory,
+	"chart-bar": IconChartBar,
+	"database-export": IconDatabaseExport,
+	"test-pipe": IconTestPipe,
+};

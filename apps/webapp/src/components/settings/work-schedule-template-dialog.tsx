@@ -1,6 +1,7 @@
 "use client";
 
 import { useForm } from "@tanstack/react-form";
+import { useStore } from "@tanstack/react-store";
 import { IconLoader2 } from "@tabler/icons-react";
 import { useMutation } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
@@ -205,12 +206,12 @@ export function WorkScheduleTemplateDialog({
 	const isPending = createMutation.isPending || updateMutation.isPending;
 
 	// Subscribe to form values for conditional rendering and preview
-	const scheduleType = form.useStore((state) => state.values.scheduleType);
-	const days = form.useStore((state) => state.values.days) || defaultDays;
-	const workingDaysPreset = form.useStore((state) => state.values.workingDaysPreset);
-	const hoursPerCycle = form.useStore((state) => state.values.hoursPerCycle);
-	const scheduleCycle = form.useStore((state) => state.values.scheduleCycle);
-	const homeOfficeDaysPerCycle = form.useStore((state) => state.values.homeOfficeDaysPerCycle);
+	const scheduleType = useStore(form.store, (state) => state.values.scheduleType);
+	const days = useStore(form.store, (state) => state.values.days) || defaultDays;
+	const workingDaysPreset = useStore(form.store, (state) => state.values.workingDaysPreset);
+	const hoursPerCycle = useStore(form.store, (state) => state.values.hoursPerCycle);
+	const scheduleCycle = useStore(form.store, (state) => state.values.scheduleCycle);
+	const homeOfficeDaysPerCycle = useStore(form.store, (state) => state.values.homeOfficeDaysPerCycle);
 
 	// Calculate total hours for detailed mode
 	const totalHours = days

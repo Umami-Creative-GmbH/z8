@@ -513,6 +513,30 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 				</CardContent>
 			</Card>
 
+			{/* Coming Soon Card */}
+			<Card className="border-dashed">
+				<CardHeader>
+					<CardTitle className="flex items-center gap-2 text-muted-foreground">
+						<IconDatabase className="size-5" />
+						More Data Coming Soon
+					</CardTitle>
+					<CardDescription>
+						Additional demo data generators will be available in future updates
+					</CardDescription>
+				</CardHeader>
+				<CardContent>
+					<div className="space-y-3 text-sm text-muted-foreground">
+						<p>Planned generators:</p>
+						<ul className="list-inside list-disc space-y-1">
+							<li>Shift schedules</li>
+							<li>Holiday calendars</li>
+							<li>Overtime records</li>
+							<li>Project assignments</li>
+						</ul>
+					</div>
+				</CardContent>
+			</Card>
+
 			{/* Danger Zone Card */}
 			<Card className="border-destructive/50 lg:col-span-2">
 				<CardHeader>

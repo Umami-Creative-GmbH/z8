@@ -1,6 +1,7 @@
 "use client";
 
 import { useForm } from "@tanstack/react-form";
+import { useStore } from "@tanstack/react-store";
 import { zodValidator } from "@tanstack/zod-form-adapter";
 import { IconLoader2 } from "@tabler/icons-react";
 import { useState } from "react";
@@ -113,7 +114,7 @@ export function VacationPolicyForm({
 	});
 
 	// Subscribe to allowCarryover for conditional fields
-	const allowCarryover = form.useStore((state) => state.values.allowCarryover);
+	const allowCarryover = useStore(form.store, (state) => state.values.allowCarryover);
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
