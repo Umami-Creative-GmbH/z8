@@ -29,6 +29,7 @@ export async function GET() {
 					shiftsEnabled: true,
 					projectsEnabled: true,
 					surchargesEnabled: true,
+					timezone: true,
 				},
 			});
 
@@ -38,6 +39,7 @@ export async function GET() {
 					shiftsEnabled: org.shiftsEnabled ?? false,
 					projectsEnabled: org.projectsEnabled ?? false,
 					surchargesEnabled: org.surchargesEnabled ?? false,
+					timezone: org.timezone ?? "UTC",
 				};
 			}
 		}

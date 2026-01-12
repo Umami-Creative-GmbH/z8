@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { format, isSameDay } from "@/lib/datetime/luxon-utils";
+import { format } from "@/lib/datetime/luxon-utils";
 import { pluralize } from "@/lib/utils";
 import { getTeamCalendarData } from "./actions";
 import { WidgetCard } from "./widget-card";
@@ -76,7 +76,9 @@ export function TeamCalendarWidget() {
 	};
 
 	const getAbsenceForDate = (date: Date): AbsenceDay | undefined => {
-		return calendarData?.absenceDays.find((absence) => isSameDay(new Date(absence.date), date));
+		return calendarData?.absenceDays.find(
+			(absence) => new Date(absence.date).toDateString() === date.toDateString(),
+		);
 	};
 
 	return (
@@ -132,15 +134,17 @@ export function TeamCalendarWidget() {
 								hasAbsences: "bg-orange-100 dark:bg-orange-900/20 font-bold",
 							}}
 							components={{
-								Day: ({ date, ...props }) => {
+								Day: ({ day, ...props }) => {
+									const date = day.date;
 									const absence = getAbsenceForDate(date);
+									const { className, ...divProps } = props;
 
 									if (absence) {
 										return (
 											<Tooltip>
 												<TooltipTrigger asChild>
 													<div className="relative">
-														<button {...props} className="relative">
+														<button className={`relative ${className || ""}`}>
 															{format(date, "d")}
 															<Badge
 																variant="secondary"
@@ -167,7 +171,7 @@ export function TeamCalendarWidget() {
 										);
 									}
 
-									return <button {...props}>{format(date, "d")}</button>;
+									return <button className={className}>{format(date, "d")}</button>;
 								},
 							}}
 						/>

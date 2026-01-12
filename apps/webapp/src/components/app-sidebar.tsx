@@ -57,14 +57,14 @@ export function AppSidebar({
 			icon: IconClock,
 		},
 		{
-			title: t("nav.absences", "Absences"),
-			url: "/absences",
-			icon: IconBeach,
-		},
-		{
 			title: t("nav.calendar", "Calendar"),
 			url: "/calendar",
 			icon: IconCalendarEvent,
+		},
+		{
+			title: t("nav.absences", "Absences"),
+			url: "/absences",
+			icon: IconBeach,
 		},
 		{
 			title: t("nav.reports", "Reports"),
@@ -129,7 +129,7 @@ export function AppSidebar({
 						id: session?.user?.id || "",
 						name: session?.user?.name || "",
 						email: session?.user?.email || "",
-						avatar: session?.user?.image,
+						avatar: session?.user?.image ?? undefined,
 					}}
 					isLoading={isPending}
 				/>

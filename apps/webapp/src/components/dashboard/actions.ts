@@ -84,7 +84,8 @@ export async function getUpcomingAbsences(limit: number = 5): Promise<ServerActi
 			),
 		);
 
-		const now = currentTimestamp();
+		// Get today's date as YYYY-MM-DD string for absence date comparison
+		const todayStr = DateTime.now().toFormat("yyyy-MM-dd");
 
 		// Get all employee IDs in this organization
 		const orgEmployees = yield* _(
@@ -105,7 +106,7 @@ export async function getUpcomingAbsences(limit: number = 5): Promise<ServerActi
 					where: and(
 						inArray(absenceEntry.employeeId, orgEmployeeIds),
 						eq(absenceEntry.status, "approved"),
-						gte(absenceEntry.startDate, now),
+						gte(absenceEntry.startDate, todayStr),
 					),
 					orderBy: (absenceEntry, { asc }) => [asc(absenceEntry.startDate)],
 					limit,
@@ -167,10 +168,10 @@ export async function getTeamCalendarData(
 			),
 		);
 
-		// Calculate date range for the month
+		// Calculate date range for the month (as YYYY-MM-DD strings)
 		const monthDT = DateTime.utc(year, month, 1);
-		const monthStart = dateToDB(monthDT.startOf("month"))!;
-		const monthEnd = dateToDB(monthDT.endOf("month"))!;
+		const monthStartStr = monthDT.startOf("month").toFormat("yyyy-MM-dd");
+		const monthEndStr = monthDT.endOf("month").toFormat("yyyy-MM-dd");
 
 		// Get all employee IDs in this organization
 		const orgEmployees = yield* _(
@@ -192,9 +193,9 @@ export async function getTeamCalendarData(
 						inArray(absenceEntry.employeeId, orgEmployeeIds),
 						eq(absenceEntry.status, "approved"),
 						or(
-							and(gte(absenceEntry.startDate, monthStart), lte(absenceEntry.startDate, monthEnd)),
-							and(gte(absenceEntry.endDate, monthStart), lte(absenceEntry.endDate, monthEnd)),
-							and(lte(absenceEntry.startDate, monthStart), gte(absenceEntry.endDate, monthEnd)),
+							and(gte(absenceEntry.startDate, monthStartStr), lte(absenceEntry.startDate, monthEndStr)),
+							and(gte(absenceEntry.endDate, monthStartStr), lte(absenceEntry.endDate, monthEndStr)),
+							and(lte(absenceEntry.startDate, monthStartStr), gte(absenceEntry.endDate, monthEndStr)),
 						),
 					),
 					with: {
@@ -213,26 +214,27 @@ export async function getTeamCalendarData(
 		);
 
 		// Group absences by date
-		const absenceDayMap = new Map<string, { date: Date; employees: any[]; count: number }>();
+		const absenceDayMap = new Map<string, { date: string; employees: any[]; count: number }>();
+		const monthStartDT = DateTime.fromISO(monthStartStr);
+		const monthEndDT = DateTime.fromISO(monthEndStr);
 
 		for (const absence of absences) {
-			const startDT = dateFromDB(absence.startDate);
-			const endDT = dateFromDB(absence.endDate);
-			const monthStartDT = dateFromDB(monthStart);
-			const monthEndDT = dateFromDB(monthEnd);
+			// absence.startDate and absence.endDate are now YYYY-MM-DD strings
+			const startDT = DateTime.fromISO(absence.startDate);
+			const endDT = DateTime.fromISO(absence.endDate);
 
-			if (!startDT || !endDT || !monthStartDT || !monthEndDT) continue;
+			if (!startDT.isValid || !endDT.isValid) continue;
 
 			// Iterate through each day of the absence
 			let currentDT = startDT > monthStartDT ? startDT : monthStartDT;
 			const lastDT = endDT < monthEndDT ? endDT : monthEndDT;
 
 			while (currentDT <= lastDT) {
-				const dateKey = toDateKey(currentDT);
+				const dateKey = currentDT.toFormat("yyyy-MM-dd");
 
 				if (!absenceDayMap.has(dateKey)) {
 					absenceDayMap.set(dateKey, {
-						date: dateToDB(currentDT)!,
+						date: dateKey,
 						employees: [],
 						count: 0,
 					});

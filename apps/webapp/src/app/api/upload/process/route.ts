@@ -68,7 +68,11 @@ export async function POST(request: NextRequest) {
 			const getResponse = await s3Client.send(
 				new GetObjectCommand({ Bucket: S3_BUCKET, Key: tusFileKey }),
 			);
-			buffer = Buffer.from(await getResponse.Body?.transformToByteArray());
+			const byteArray = await getResponse.Body?.transformToByteArray();
+			if (!byteArray) {
+				return NextResponse.json({ error: "Failed to read file from S3" }, { status: 500 });
+			}
+			buffer = Buffer.from(byteArray);
 		} else {
 			// Read from local temp storage
 			const tempPath = join(process.cwd(), "public", "uploads", "tus-temp", tusFileKey);

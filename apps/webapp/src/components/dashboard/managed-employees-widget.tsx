@@ -43,10 +43,10 @@ export function ManagedEmployeesWidget() {
 		}
 
 		const result = await getManagedEmployees(current.id);
-		if (result.success && result.data) {
+		if (result.success) {
 			setEmployees(result.data);
 			setIsManager(result.data.length > 0 || current.role === "admin");
-		} else if (result.error) {
+		} else {
 			toast.error(result.error);
 		}
 

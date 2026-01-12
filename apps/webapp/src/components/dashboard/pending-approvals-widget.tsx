@@ -1,43 +1,31 @@
 "use client";
 
 import { IconAlertCircle, IconCheck, IconClock } from "@tabler/icons-react";
+import { DateTime } from "luxon";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { getPendingApprovals } from "@/app/[locale]/(app)/approvals/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { format } from "@/lib/datetime/luxon-utils";
 import { pluralize } from "@/lib/utils";
+import type { ApprovalWithAbsence, ApprovalWithTimeCorrection } from "@/lib/validations/approvals";
 import { Link } from "@/navigation";
 import { WidgetCard } from "./widget-card";
 
-type AbsenceApproval = {
-	id: string;
-	startDate: Date;
-	endDate: Date;
-	type: string;
-	employee: {
-		user: {
-			name: string | null;
-		};
-	};
+// Format date string (YYYY-MM-DD) to display format
+const formatDateStr = (dateStr: string): string => {
+	return DateTime.fromISO(dateStr).toFormat("MMM d");
 };
 
-type TimeCorrectionApproval = {
-	id: string;
-	date: Date;
-	employee: {
-		user: {
-			name: string | null;
-		};
-	};
+const formatDateStrFull = (dateStr: string): string => {
+	return DateTime.fromISO(dateStr).toFormat("MMM d, yyyy");
 };
 
 export function PendingApprovalsWidget() {
-	const [absenceApprovals, setAbsenceApprovals] = useState<AbsenceApproval[]>([]);
-	const [timeCorrectionApprovals, setTimeCorrectionApprovals] = useState<TimeCorrectionApproval[]>(
-		[],
-	);
+	const [absenceApprovals, setAbsenceApprovals] = useState<ApprovalWithAbsence[]>([]);
+	const [timeCorrectionApprovals, setTimeCorrectionApprovals] = useState<
+		ApprovalWithTimeCorrection[]
+	>([]);
 	const [loading, setLoading] = useState(true);
 	const [refreshing, setRefreshing] = useState(false);
 
@@ -99,13 +87,13 @@ export function PendingApprovalsWidget() {
 							{absenceApprovals.slice(0, 3).map((approval) => (
 								<div key={approval.id} className="flex items-center justify-between text-sm">
 									<div>
-										<div className="font-medium">{approval.employee.user.name}</div>
+										<div className="font-medium">{approval.requester.user.name}</div>
 										<div className="text-xs text-muted-foreground">
-											{format(new Date(approval.startDate), "MMM d")} -{" "}
-											{format(new Date(approval.endDate), "MMM d, yyyy")}
+											{formatDateStr(approval.absence.startDate)} -{" "}
+											{formatDateStrFull(approval.absence.endDate)}
 										</div>
 									</div>
-									<Badge variant="outline">{approval.type}</Badge>
+									<Badge variant="outline">{approval.absence.category.name}</Badge>
 								</div>
 							))}
 						</div>
@@ -126,9 +114,9 @@ export function PendingApprovalsWidget() {
 							{timeCorrectionApprovals.slice(0, 3).map((approval) => (
 								<div key={approval.id} className="flex items-center justify-between text-sm">
 									<div>
-										<div className="font-medium">{approval.employee.user.name}</div>
+										<div className="font-medium">{approval.requester.user.name}</div>
 										<div className="text-xs text-muted-foreground">
-											{format(new Date(approval.date), "MMM d, yyyy")}
+											{DateTime.fromJSDate(approval.workPeriod.startTime).toFormat("MMM d, yyyy")}
 										</div>
 									</div>
 									<Badge variant="outline">Correction</Badge>

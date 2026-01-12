@@ -5,10 +5,17 @@
  * These are fire-and-forget - they don't throw on failure.
  */
 
+import { DateTime } from "luxon";
 import { createLogger } from "@/lib/logger";
 import { createNotification } from "./notification-service";
 
 const logger = createLogger("NotificationTriggers");
+
+// Helper to format YYYY-MM-DD date strings
+const formatDateStr = (dateStr: string) => {
+	const dt = DateTime.fromISO(dateStr);
+	return dt.toLocaleString({ month: "short", day: "numeric" });
+};
 
 // =============================================================================
 // Absence Request Notifications
@@ -20,8 +27,8 @@ interface AbsenceRequestParams {
 	employeeName: string;
 	organizationId: string;
 	categoryName: string;
-	startDate: Date;
-	endDate: Date;
+	startDate: string; // YYYY-MM-DD
+	endDate: string; // YYYY-MM-DD
 }
 
 interface AbsenceApprovalParams extends AbsenceRequestParams {
@@ -42,15 +49,12 @@ interface AbsenceSubmittedToManagerParams extends AbsenceRequestParams {
  */
 export async function onAbsenceRequestSubmitted(params: AbsenceRequestParams): Promise<void> {
 	try {
-		const formatDate = (date: Date) =>
-			date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-
 		await createNotification({
 			userId: params.employeeUserId,
 			organizationId: params.organizationId,
 			type: "absence_request_submitted",
 			title: "Absence request submitted",
-			message: `Your ${params.categoryName} request for ${formatDate(params.startDate)} - ${formatDate(params.endDate)} has been submitted and is pending approval.`,
+			message: `Your ${params.categoryName} request for ${formatDateStr(params.startDate)} - ${formatDateStr(params.endDate)} has been submitted and is pending approval.`,
 			entityType: "absence_entry",
 			entityId: params.absenceId,
 			actionUrl: "/absences",
@@ -67,15 +71,12 @@ export async function onAbsenceRequestPendingApproval(
 	params: AbsenceSubmittedToManagerParams,
 ): Promise<void> {
 	try {
-		const formatDate = (date: Date) =>
-			date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-
 		await createNotification({
 			userId: params.managerUserId,
 			organizationId: params.organizationId,
 			type: "approval_request_submitted",
 			title: "New absence request",
-			message: `${params.employeeName} requested ${params.categoryName} for ${formatDate(params.startDate)} - ${formatDate(params.endDate)}.`,
+			message: `${params.employeeName} requested ${params.categoryName} for ${formatDateStr(params.startDate)} - ${formatDateStr(params.endDate)}.`,
 			entityType: "absence_entry",
 			entityId: params.absenceId,
 			actionUrl: "/approvals",
@@ -90,15 +91,12 @@ export async function onAbsenceRequestPendingApproval(
  */
 export async function onAbsenceRequestApproved(params: AbsenceApprovalParams): Promise<void> {
 	try {
-		const formatDate = (date: Date) =>
-			date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-
 		await createNotification({
 			userId: params.employeeUserId,
 			organizationId: params.organizationId,
 			type: "absence_request_approved",
 			title: "Absence request approved",
-			message: `Your ${params.categoryName} request for ${formatDate(params.startDate)} - ${formatDate(params.endDate)} was approved by ${params.approverName}.`,
+			message: `Your ${params.categoryName} request for ${formatDateStr(params.startDate)} - ${formatDateStr(params.endDate)} was approved by ${params.approverName}.`,
 			entityType: "absence_entry",
 			entityId: params.absenceId,
 			actionUrl: "/absences",
@@ -113,9 +111,6 @@ export async function onAbsenceRequestApproved(params: AbsenceApprovalParams): P
  */
 export async function onAbsenceRequestRejected(params: AbsenceRejectionParams): Promise<void> {
 	try {
-		const formatDate = (date: Date) =>
-			date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-
 		const reasonText = params.rejectionReason ? ` Reason: ${params.rejectionReason}` : "";
 
 		await createNotification({
@@ -123,7 +118,7 @@ export async function onAbsenceRequestRejected(params: AbsenceRejectionParams): 
 			organizationId: params.organizationId,
 			type: "absence_request_rejected",
 			title: "Absence request rejected",
-			message: `Your ${params.categoryName} request for ${formatDate(params.startDate)} - ${formatDate(params.endDate)} was rejected by ${params.approverName}.${reasonText}`,
+			message: `Your ${params.categoryName} request for ${formatDateStr(params.startDate)} - ${formatDateStr(params.endDate)} was rejected by ${params.approverName}.${reasonText}`,
 			entityType: "absence_entry",
 			entityId: params.absenceId,
 			actionUrl: "/absences",

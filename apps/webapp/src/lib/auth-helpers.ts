@@ -16,6 +16,7 @@ export interface AuthContext {
 		email: string;
 		name: string;
 		image?: string;
+		canCreateOrganizations: boolean;
 	};
 	session: {
 		activeOrganizationId: string | null;
@@ -82,6 +83,7 @@ export async function getAuthContext(): Promise<AuthContext | null> {
 			email: session.user.email,
 			name: session.user.name,
 			image: session.user.image ?? undefined,
+			canCreateOrganizations: session.user.canCreateOrganizations ?? false,
 		},
 		session: {
 			activeOrganizationId,

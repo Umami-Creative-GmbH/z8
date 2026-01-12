@@ -78,7 +78,7 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
 
 	const handleValidationErrors = (errors: z.ZodError) => {
 		const errorMap: Record<string, string> = {};
-		for (const err of errors.errors) {
+		for (const err of errors.issues) {
 			if (err.path[0]) {
 				errorMap[err.path[0] as string] = err.message;
 			}

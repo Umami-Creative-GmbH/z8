@@ -17,12 +17,20 @@ const requesterSchema = z.object({
 });
 
 /**
+ * Day period enum for half-day absences
+ */
+const dayPeriodSchema = z.enum(["full_day", "am", "pm"]);
+
+/**
  * Schema for absence information in approval requests
+ * Note: startDate/endDate are YYYY-MM-DD strings (logical calendar dates)
  */
 const absenceInfoSchema = z.object({
 	id: z.string().uuid(),
-	startDate: z.coerce.date(),
-	endDate: z.coerce.date(),
+	startDate: z.string(), // YYYY-MM-DD
+	startPeriod: dayPeriodSchema,
+	endDate: z.string(), // YYYY-MM-DD
+	endPeriod: dayPeriodSchema,
 	notes: z.string().nullable(),
 	category: z.object({
 		name: z.string(),

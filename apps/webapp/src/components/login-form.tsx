@@ -123,7 +123,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 
 	const handleValidationErrors = (errors: z.ZodError) => {
 		const errorMap: Record<string, string> = {};
-		for (const err of errors.errors) {
+		for (const err of errors.issues) {
 			if (err.path[0]) {
 				errorMap[err.path[0] as string] = err.message;
 			}
@@ -180,7 +180,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 				}
 			} else {
 				// Check if 2FA is required
-				if (signInResult.data?.twoFactorRedirect) {
+				if ((signInResult.data as any)?.twoFactorRedirect) {
 					setRequires2FA(true);
 					setIsLoading(false);
 					return;
@@ -279,7 +279,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 		setError(null);
 
 		try {
-			await authClient.sso.signIn({
+			await (authClient.sso as any).signIn({
 				providerId: authConfig.ssoProviderId,
 				callbackURL: "/",
 			});

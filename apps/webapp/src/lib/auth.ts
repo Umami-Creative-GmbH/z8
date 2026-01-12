@@ -193,6 +193,12 @@ export const auth = betterAuth({
 							defaultValue: false,
 							input: true,
 						},
+						timezone: {
+							type: "string",
+							required: false,
+							defaultValue: "UTC",
+							input: true, // admin can set organization timezone
+						},
 					},
 				},
 				invitation: {
