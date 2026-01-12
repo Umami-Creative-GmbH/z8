@@ -200,15 +200,16 @@ export async function aggregateAbsences(
 	startDate: Date,
 	endDate: Date,
 ): Promise<Omit<AbsencesData, "homeOffice">> {
-	const rangeStart = dateToDB(startOfDay(fromJSDate(startDate)))!;
-	const rangeEnd = dateToDB(endOfDay(fromJSDate(endDate)))!;
+	// Convert dates to YYYY-MM-DD strings for date column comparison
+	const rangeStartStr = format(startOfDay(fromJSDate(startDate)), "yyyy-MM-dd");
+	const rangeEndStr = format(endOfDay(fromJSDate(endDate)), "yyyy-MM-dd");
 
 	// Fetch all absences in date range
 	const absences = await db.query.absenceEntry.findMany({
 		where: and(
 			eq(absenceEntry.employeeId, employeeId),
-			lte(absenceEntry.startDate, rangeEnd),
-			gte(absenceEntry.endDate, rangeStart),
+			lte(absenceEntry.startDate, rangeEndStr),
+			gte(absenceEntry.endDate, rangeStartStr),
 		),
 		with: {
 			category: true,
@@ -297,8 +298,12 @@ export async function aggregateHomeOfficeDays(
 	startDate: Date,
 	endDate: Date,
 ): Promise<HomeOfficeData> {
-	const rangeStart = dateToDB(startOfDay(fromJSDate(startDate)))!;
-	const rangeEnd = dateToDB(endOfDay(fromJSDate(endDate)))!;
+	// Convert dates to YYYY-MM-DD strings for date column comparison
+	const rangeStartStr = format(startOfDay(fromJSDate(startDate)), "yyyy-MM-dd");
+	const rangeEndStr = format(endOfDay(fromJSDate(endDate)), "yyyy-MM-dd");
+	// Keep Date versions for comparison in iteration
+	const rangeStartDT = startOfDay(fromJSDate(startDate));
+	const rangeEndDT = endOfDay(fromJSDate(endDate));
 
 	// Step 1: Get approved home office absences
 	const homeOfficeCategory = await db.query.absenceCategory.findFirst({
@@ -318,21 +323,23 @@ export async function aggregateHomeOfficeDays(
 			eq(absenceEntry.employeeId, employeeId),
 			eq(absenceEntry.categoryId, homeOfficeCategory.id),
 			eq(absenceEntry.status, "approved"),
-			lte(absenceEntry.startDate, rangeEnd),
-			gte(absenceEntry.endDate, rangeStart),
+			lte(absenceEntry.startDate, rangeEndStr),
+			gte(absenceEntry.endDate, rangeStartStr),
 		),
 		orderBy: (absences, { asc }) => [asc(absences.startDate)],
 	});
 
 	// Step 2: Extract all home office dates
+	// Note: absence.startDate and absence.endDate are now YYYY-MM-DD strings
 	const homeOfficeDates = new Set<string>();
 	for (const absence of homeOfficeAbsences) {
-		const days = eachDayOfInterval(fromJSDate(absence.startDate), fromJSDate(absence.endDate));
+		const absenceStart = fromJSDate(new Date(absence.startDate));
+		const absenceEnd = fromJSDate(new Date(absence.endDate));
+		const days = eachDayOfInterval(absenceStart, absenceEnd);
 
 		for (const day of days) {
 			// Only include dates within our report range
-			const dayJS = toJSDate(day);
-			if (dayJS >= rangeStart && dayJS <= rangeEnd) {
+			if (day >= rangeStartDT && day <= rangeEndDT) {
 				homeOfficeDates.add(format(day, "yyyy-MM-dd"));
 			}
 		}

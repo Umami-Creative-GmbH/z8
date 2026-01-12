@@ -1,7 +1,6 @@
 "use client";
 
 import { useForm } from "@tanstack/react-form";
-import { zodValidator } from "@tanstack/zod-form-adapter";
 import {
 	IconArrowBack,
 	IconCheck,
@@ -68,12 +67,11 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
 	const [availableEmployees, setAvailableEmployees] = useState<any[]>([]);
 	const [selectedEmployee, setSelectedEmployee] = useState<string>("");
 
-	const form = useForm<TeamFormValues>({
+	const form = useForm({
 		defaultValues: {
 			name: "",
 			description: "",
 		},
-		validatorAdapter: zodValidator(),
 		onSubmit: async ({ value }) => {
 			updateTeamMutation.mutate(value);
 		},
@@ -84,10 +82,10 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
 		queryKey: queryKeys.teams.detail(teamId),
 		queryFn: async () => {
 			const result = await getTeam(teamId);
-			if (result.success && result.data) {
-				return result.data;
+			if (!result.success) {
+				throw new Error(result.error || "Failed to load team");
 			}
-			throw new Error(result.error || "Failed to load team");
+			return result.data;
 		},
 	});
 
@@ -118,7 +116,7 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
 	async function loadAvailableEmployees() {
 		if (!team) return;
 
-		const result = await listEmployees(team.organizationId);
+		const result = await listEmployees({ organizationId: team.organizationId });
 		if (result.success && result.data) {
 			// Filter out employees already in the team
 			const teamMemberIds = new Set((team as any).employees?.map((e: any) => e.id) || []);
@@ -341,18 +339,17 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
 												onBlur={field.handleBlur}
 											/>
 											{field.state.meta.errors.length > 0 && (
-												<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
+												<p className="text-sm text-destructive">
+													{typeof field.state.meta.errors[0] === 'string'
+														? field.state.meta.errors[0]
+														: (field.state.meta.errors[0] as any)?.message || 'Invalid input'}
+												</p>
 											)}
 										</div>
 									)}
 								</form.Field>
 
-								<form.Field
-									name="description"
-									validators={{
-										onChange: z.string().max(500, "Description is too long").optional(),
-									}}
-								>
+								<form.Field name="description">
 									{(field) => (
 										<div className="space-y-2">
 											<Label>Description</Label>
@@ -363,7 +360,11 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
 												onBlur={field.handleBlur}
 											/>
 											{field.state.meta.errors.length > 0 && (
-												<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
+												<p className="text-sm text-destructive">
+													{typeof field.state.meta.errors[0] === 'string'
+														? field.state.meta.errors[0]
+														: (field.state.meta.errors[0] as any)?.message || 'Invalid input'}
+												</p>
 											)}
 										</div>
 									)}
@@ -414,7 +415,7 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
 									<div className="text-sm text-muted-foreground">Members</div>
 									<div className="flex items-center gap-2">
 										<IconUsers className="size-4 text-muted-foreground" />
-										<span className="font-medium">{team.employees?.length || 0}</span>
+										<span className="font-medium">{(team as any).employees?.length || 0}</span>
 									</div>
 								</div>
 							</>
@@ -445,14 +446,14 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
 						</div>
 					</CardHeader>
 					<CardContent>
-						{!team.employees || team.employees.length === 0 ? (
+						{!(team as any).employees || (team as any).employees.length === 0 ? (
 							<div className="flex flex-col items-center justify-center py-8">
 								<IconUsers className="mb-4 size-12 text-muted-foreground" />
 								<p className="text-sm text-muted-foreground">No members in this team</p>
 							</div>
 						) : (
 							<div className="space-y-2">
-								{team.employees.map((emp: any) => (
+								{(team as any).employees.map((emp: any) => (
 									<div
 										key={emp.id}
 										className="flex items-center justify-between rounded-lg border p-3"

@@ -5,10 +5,10 @@ import { Effect } from "effect";
 import { headers } from "next/headers";
 import { db } from "@/db";
 import { member } from "@/db/auth-schema";
-import { employee, employeeVacationAllowance, vacationAllowance } from "@/db/schema";
+import { employee, employeeVacationAllowance, vacationAdjustment, vacationAllowance } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { isManagerOf } from "@/lib/auth-helpers";
-import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
+import { AuditAction, logAudit } from "@/lib/audit-logger";
 import {
 	AuthorizationError,
 	ConflictError,
@@ -499,8 +499,6 @@ export async function updateEmployeeAllowance(
 	data: {
 		customAnnualDays?: string;
 		customCarryoverDays?: string;
-		adjustmentDays?: string;
-		adjustmentReason?: string;
 	},
 ): Promise<ServerActionResult<typeof employeeVacationAllowance.$inferSelect>> {
 	const effect = Effect.gen(function* (_) {
@@ -595,10 +593,6 @@ export async function updateEmployeeAllowance(
 						.set({
 							customAnnualDays: data.customAnnualDays,
 							customCarryoverDays: data.customCarryoverDays,
-							adjustmentDays: data.adjustmentDays,
-							adjustmentReason: data.adjustmentReason,
-							adjustedAt: data.adjustmentReason ? currentTimestamp() : existing.adjustedAt,
-							adjustedBy: data.adjustmentReason ? currentEmployee.id : existing.adjustedBy,
 						})
 						.where(eq(employeeVacationAllowance.id, existing.id))
 						.returning();
@@ -613,10 +607,6 @@ export async function updateEmployeeAllowance(
 						year,
 						customAnnualDays: data.customAnnualDays,
 						customCarryoverDays: data.customCarryoverDays,
-						adjustmentDays: data.adjustmentDays || "0",
-						adjustmentReason: data.adjustmentReason,
-						adjustedAt: data.adjustmentReason ? currentTimestamp() : null,
-						adjustedBy: data.adjustmentReason ? currentEmployee.id : null,
 					})
 					.returning();
 				return created;
@@ -639,66 +629,138 @@ export async function updateEmployeeAllowance(
 }
 
 /**
- * Get adjustment history for an organization using Effect pattern
+ * Create a vacation adjustment for an employee
  */
-export async function getAdjustmentHistory(
-	organizationId: string,
+export async function createVacationAdjustmentAction(
+	employeeId: string,
 	year: number,
-): Promise<ServerActionResult<any[]>> {
+	data: {
+		days: string;
+		reason: string;
+	},
+): Promise<ServerActionResult<typeof vacationAdjustment.$inferSelect>> {
 	const effect = Effect.gen(function* (_) {
 		// Step 1: Get session via AuthService
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		// Step 2: Verify user is org admin
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, organizationId)),
+		// Step 2: Get database service
+		const dbService = yield* _(DatabaseService);
+
+		// Step 3: Get current employee
+		const currentEmployee = yield* _(
+			dbService.query("getCurrentEmployee", async () => {
+				const curr = await dbService.db.query.employee.findFirst({
+					where: eq(employee.userId, session.user.id),
+				});
+
+				if (!curr) {
+					throw new Error("Employee not found");
+				}
+
+				return curr;
+			}),
+			Effect.mapError(
+				() =>
+					new NotFoundError({
+						message: "Employee profile not found",
+						entityType: "employee",
+					}),
+			),
 		);
 
-		if (!hasPermission) {
+		// Step 4: Get target employee
+		const emp = yield* _(
+			dbService.query("getTargetEmployee", async () => {
+				const e = await dbService.db.query.employee.findFirst({
+					where: eq(employee.id, employeeId),
+				});
+
+				if (!e) {
+					throw new Error("Employee not found");
+				}
+
+				return e;
+			}),
+			Effect.mapError(
+				() =>
+					new NotFoundError({
+						message: "Employee not found",
+						entityType: "employee",
+						entityId: employeeId,
+					}),
+			),
+		);
+
+		// Step 5: Verify user is org admin or manager of this employee
+		const isAdmin = yield* _(Effect.promise(() => isOrgAdmin(session.user.id, emp.organizationId)));
+		const isManager = yield* _(Effect.promise(() => isManagerOf(emp.id)));
+
+		if (!isAdmin && !isManager && currentEmployee.role !== "admin") {
 			yield* _(
 				Effect.fail(
 					new AuthorizationError({
 						message: "Insufficient permissions",
 						userId: session.user.id,
-						resource: "adjustment_history",
-						action: "read",
+						resource: "vacation_adjustment",
+						action: "create",
 					}),
 				),
 			);
 		}
 
-		// Step 3: Get adjustment history
-		const dbService = yield* _(DatabaseService);
-		const adjustments = yield* _(
-			dbService.query("getAdjustmentHistory", async () => {
-				return await dbService.db.query.employeeVacationAllowance.findMany({
-					where: eq(employeeVacationAllowance.year, year),
-					with: {
-						employee: {
-							with: {
-								user: true,
-								team: true,
-							},
-						},
-						adjuster: {
-							with: {
-								user: true,
-							},
-						},
+		// Step 6: Create the adjustment event
+		const adjustment = yield* _(
+			dbService.query("createVacationAdjustment", async () => {
+				const [created] = await dbService.db
+					.insert(vacationAdjustment)
+					.values({
+						employeeId,
+						year,
+						days: data.days,
+						reason: data.reason,
+						adjustedBy: currentEmployee.id,
+					})
+					.returning();
+				return created;
+			}),
+			Effect.mapError(
+				(error) =>
+					new DatabaseError({
+						message: "Failed to create vacation adjustment",
+						operation: "insert",
+						table: "vacation_adjustment",
+						cause: error,
+					}),
+			),
+		);
+
+		// Step 7: Log to central audit log
+		yield* _(
+			Effect.promise(async () => {
+				await logAudit({
+					action: AuditAction.VACATION_ALLOWANCE_UPDATED,
+					actorId: session.user.id,
+					actorEmail: session.user.email,
+					targetId: employeeId,
+					targetType: "vacation",
+					organizationId: emp.organizationId,
+					employeeId: employeeId,
+					timestamp: new Date(),
+					changes: {
+						adjustmentDays: data.days,
 					},
-					orderBy: desc(employeeVacationAllowance.adjustedAt),
+					metadata: {
+						year,
+						reason: data.reason,
+						employeeName: emp.name,
+						adjustmentId: adjustment.id,
+					},
 				});
 			}),
 		);
 
-		// Filter to only this organization and only records with adjustments
-		const filtered = adjustments.filter(
-			(adj) =>
-				adj.employee.organizationId === organizationId && adj.adjustmentReason && adj.adjustedAt,
-		);
-
-		return filtered;
+		return adjustment;
 	}).pipe(Effect.provide(AppLayer));
 
 	return runServerActionSafe(effect);
@@ -878,6 +940,81 @@ export async function deleteVacationPolicy(policyId: string): Promise<ServerActi
 					}),
 			),
 		);
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
+}
+
+/**
+ * Get the sum of vacation adjustments for an employee in a specific year
+ */
+export async function getEmployeeAdjustmentTotal(
+	employeeId: string,
+	year: number,
+): Promise<ServerActionResult<number>> {
+	const effect = Effect.gen(function* (_) {
+		// Step 1: Get session via AuthService
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
+
+		// Step 2: Get database service
+		const dbService = yield* _(DatabaseService);
+
+		// Step 3: Get target employee for permission check
+		const emp = yield* _(
+			dbService.query("getTargetEmployee", async () => {
+				const e = await dbService.db.query.employee.findFirst({
+					where: eq(employee.id, employeeId),
+				});
+
+				if (!e) {
+					throw new Error("Employee not found");
+				}
+
+				return e;
+			}),
+			Effect.mapError(
+				() =>
+					new NotFoundError({
+						message: "Employee not found",
+						entityType: "employee",
+						entityId: employeeId,
+					}),
+			),
+		);
+
+		// Step 4: Verify user is org admin or manager
+		const isAdmin = yield* _(Effect.promise(() => isOrgAdmin(session.user.id, emp.organizationId)));
+		const isManager = yield* _(Effect.promise(() => isManagerOf(emp.id)));
+
+		if (!isAdmin && !isManager) {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Insufficient permissions",
+						userId: session.user.id,
+						resource: "vacation_adjustment",
+						action: "read",
+					}),
+				),
+			);
+		}
+
+		// Step 5: Get adjustment total
+		const result = yield* _(
+			dbService.query("getAdjustmentTotal", async () => {
+				const rows = await dbService.db
+					.select()
+					.from(vacationAdjustment)
+					.where(
+						and(eq(vacationAdjustment.employeeId, employeeId), eq(vacationAdjustment.year, year)),
+					);
+
+				return rows.reduce((sum, row) => sum + parseFloat(row.days), 0);
+			}),
+		);
+
+		return result;
 	}).pipe(Effect.provide(AppLayer));
 
 	return runServerActionSafe(effect);

@@ -5,7 +5,12 @@ import { eq } from "drizzle-orm";
 import { Effect } from "effect";
 import * as z from "zod";
 import { employee } from "@/db/schema";
-import { type AnyAppError, AuthorizationError, NotFoundError } from "@/lib/effect/errors";
+import {
+	type AnyAppError,
+	AuthorizationError,
+	NotFoundError,
+	ValidationError,
+} from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
@@ -103,11 +108,11 @@ export async function grantTeamPermissions(
 				// Validate data
 				const validationResult = grantPermissionsSchema.safeParse(data);
 				if (!validationResult.success) {
-					yield* _(
+					return yield* _(
 						Effect.fail(
 							new ValidationError({
-								message: validationResult.error?.errors?.[0]?.message || "Invalid input",
-								field: validationResult.error?.errors?.[0]?.path?.join(".") || "data",
+								message: validationResult.error.issues[0]?.message || "Invalid input",
+								field: validationResult.error.issues[0]?.path?.join(".") || "data",
 							}),
 						),
 					);
@@ -415,7 +420,7 @@ export async function listEmployeePermissions(organizationId?: string): Promise<
 					with: {
 						user: true,
 					},
-					orderBy: (employee, { asc }) => [asc(employee.user.name)],
+					orderBy: (employee, { asc }) => [asc(employee.firstName), asc(employee.lastName)],
 				});
 			}),
 		);

@@ -26,9 +26,9 @@ export default async function CustomDomainsPage() {
 					</p>
 				</div>
 				<DomainsAndBrandingTabs
-					initialDomains={domains}
+					initialDomains={domains as any}
 					initialBranding={branding}
-					initialProviders={providers}
+					initialProviders={providers as any}
 					organizationId={authContext.employee?.organizationId ?? ""}
 				/>
 			</div>

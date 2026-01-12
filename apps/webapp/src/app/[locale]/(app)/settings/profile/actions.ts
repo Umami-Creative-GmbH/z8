@@ -28,10 +28,10 @@ export async function updateProfile(data: {
 		// Step 2: Validate input
 		const result = profileUpdateSchema.safeParse(data);
 		if (!result.success) {
-			yield* _(
+			return yield* _(
 				Effect.fail(
 					new ValidationError({
-						message: result.error?.errors?.[0]?.message || "Invalid input",
+						message: result.error.issues[0]?.message || "Invalid input",
 						field: "profile",
 					}),
 				),
@@ -88,10 +88,10 @@ export async function changePassword(data: {
 		// Step 2: Validate input
 		const result = passwordChangeSchema.safeParse(data);
 		if (!result.success) {
-			yield* _(
+			return yield* _(
 				Effect.fail(
 					new ValidationError({
-						message: result.error?.errors?.[0]?.message || "Invalid input",
+						message: result.error.issues[0]?.message || "Invalid input",
 						field: "password",
 					}),
 				),

@@ -101,11 +101,11 @@ export async function sendInvitation(
 				// Validate input
 				const validationResult = invitationSchema.safeParse(data);
 				if (!validationResult.success) {
-					yield* _(
+					return yield* _(
 						Effect.fail(
 							new ValidationError({
-								message: validationResult.error.errors[0]?.message || "Invalid input",
-								field: validationResult.error.errors[0]?.path?.join(".") || "data",
+								message: validationResult.error.issues[0]?.message || "Invalid input",
+								field: validationResult.error.issues[0]?.path?.join(".") || "data",
 							}),
 						),
 					);
@@ -172,24 +172,24 @@ export async function sendInvitation(
 					}
 				}
 
-				// Use Better Auth organization.inviteMember API
+				// Use Better Auth organization.createInvitation API
 				yield* _(
 					Effect.tryPromise({
 						try: async () => {
-							await auth.api.inviteMember({
+							await auth.api.createInvitation({
 								body: {
 									organizationId: data.organizationId,
-									email: validatedData.email,
-									role: validatedData.role,
+									email: validatedData!.email,
+									role: validatedData!.role,
 								},
 								headers: await headers(),
 							});
 
 							// Update invitation record with canCreateOrganizations flag if specified
-							if (validatedData.canCreateOrganizations) {
+							if (validatedData!.canCreateOrganizations) {
 								const newInvitation = await db.query.invitation.findFirst({
 									where: and(
-										eq(authSchema.invitation.email, validatedData.email),
+										eq(authSchema.invitation.email, validatedData!.email),
 										eq(authSchema.invitation.organizationId, data.organizationId),
 										eq(authSchema.invitation.status, "pending"),
 									),
@@ -216,8 +216,8 @@ export async function sendInvitation(
 				logger.info(
 					{
 						organizationId: data.organizationId,
-						email: validatedData.email,
-						role: validatedData.role,
+						email: validatedData!.email,
+						role: validatedData!.role,
 					},
 					"Invitation sent successfully",
 				);
@@ -454,7 +454,7 @@ export async function removeMember(
 							await auth.api.removeMember({
 								body: {
 									organizationId,
-									memberIdOrUserId: userId,
+									memberIdOrEmail: userId,
 								},
 								headers: await headers(),
 							});
@@ -563,11 +563,11 @@ export async function updateMemberRole(
 				// Validate input
 				const validationResult = updateMemberRoleSchema.safeParse(data);
 				if (!validationResult.success) {
-					yield* _(
+					return yield* _(
 						Effect.fail(
 							new ValidationError({
-								message: validationResult.error.errors[0]?.message || "Invalid input",
-								field: validationResult.error.errors[0]?.path?.join(".") || "data",
+								message: validationResult.error.issues[0]?.message || "Invalid input",
+								field: validationResult.error.issues[0]?.path?.join(".") || "data",
 							}),
 						),
 					);
@@ -575,14 +575,14 @@ export async function updateMemberRole(
 
 				const validatedData = validationResult.data;
 
-				// Use Better Auth organization.setMemberRole API
+				// Use Better Auth organization.updateMemberRole API
 				yield* _(
 					Effect.tryPromise({
 						try: async () => {
-							await auth.api.setMemberRole({
+							await auth.api.updateMemberRole({
 								body: {
 									organizationId,
-									userId,
+									memberId: userId,
 									role: validatedData.role,
 								},
 								headers: await headers(),
@@ -694,17 +694,33 @@ export async function updateOrganizationDetails(
 				// Validate input
 				const validationResult = updateOrganizationSchema.safeParse(data);
 				if (!validationResult.success) {
-					yield* _(
+					return yield* _(
 						Effect.fail(
 							new ValidationError({
-								message: validationResult.error.errors[0]?.message || "Invalid input",
-								field: validationResult.error.errors[0]?.path?.join(".") || "data",
+								message: validationResult.error.issues[0]?.message || "Invalid input",
+								field: validationResult.error.issues[0]?.path?.join(".") || "data",
 							}),
 						),
 					);
 				}
 
-				const validatedData = validationResult.data;
+				const validatedData = validationResult.data!;
+
+				// Build the update data object, only including defined fields
+				const updateData: {
+					name?: string;
+					slug?: string;
+					metadata?: Record<string, unknown>;
+				} = {};
+				if (validatedData.name !== undefined) updateData.name = validatedData.name;
+				if (validatedData.slug !== undefined) updateData.slug = validatedData.slug;
+				if (validatedData.metadata !== undefined) {
+					try {
+						updateData.metadata = JSON.parse(validatedData.metadata) as Record<string, unknown>;
+					} catch {
+						// If metadata is not valid JSON, skip it
+					}
+				}
 
 				// Use Better Auth organization.updateOrganization API
 				yield* _(
@@ -713,7 +729,7 @@ export async function updateOrganizationDetails(
 							await auth.api.updateOrganization({
 								body: {
 									organizationId,
-									data: validatedData,
+									data: updateData,
 								},
 								headers: await headers(),
 							});
@@ -767,7 +783,7 @@ export async function updateOrganizationDetails(
  */
 export async function toggleOrganizationFeature(
 	organizationId: string,
-	feature: "shiftsEnabled" | "projectsEnabled",
+	feature: "shiftsEnabled" | "projectsEnabled" | "surchargesEnabled",
 	enabled: boolean,
 ): Promise<ServerActionResult<void>> {
 	const tracer = trace.getTracer("organizations");
@@ -864,6 +880,115 @@ export async function toggleOrganizationFeature(
 							{ error, organizationId, feature },
 							"Failed to toggle organization feature",
 						);
+						return yield* _(Effect.fail(error as AnyAppError));
+					}),
+				),
+				Effect.onExit(() => Effect.sync(() => span.end())),
+				Effect.provide(AppLayer),
+			);
+		},
+	);
+
+	return runServerActionSafe(effect);
+}
+
+/**
+ * Update organization timezone
+ * Requires owner role
+ */
+export async function updateOrganizationTimezone(
+	organizationId: string,
+	timezone: string,
+): Promise<ServerActionResult<void>> {
+	const tracer = trace.getTracer("organizations");
+
+	const effect = tracer.startActiveSpan(
+		"updateOrganizationTimezone",
+		{
+			attributes: {
+				"organization.id": organizationId,
+				timezone,
+			},
+		},
+		(span) => {
+			return Effect.gen(function* (_) {
+				const authService = yield* _(AuthService);
+				const session = yield* _(authService.getSession());
+				const dbService = yield* _(DatabaseService);
+
+				// Check current user's role
+				const memberRecord = yield* _(
+					dbService.query("getCurrentMember", async () => {
+						return await db.query.member.findFirst({
+							where: and(
+								eq(authSchema.member.userId, session.user.id),
+								eq(authSchema.member.organizationId, organizationId),
+							),
+						});
+					}),
+					Effect.flatMap((member) =>
+						member
+							? Effect.succeed(member)
+							: Effect.fail(
+									new NotFoundError({
+										message: "You are not a member of this organization",
+										entityType: "member",
+									}),
+								),
+					),
+				);
+
+				// Verify owner role (only owners can update timezone)
+				if (memberRecord.role !== "owner") {
+					yield* _(
+						Effect.fail(
+							new AuthorizationError({
+								message: "Only owners can change organization timezone",
+								userId: session.user.id,
+								resource: "organization",
+								action: "update",
+							}),
+						),
+					);
+				}
+
+				// Update the organization timezone
+				yield* _(
+					Effect.tryPromise({
+						try: async () => {
+							await db
+								.update(authSchema.organization)
+								.set({ timezone })
+								.where(eq(authSchema.organization.id, organizationId));
+						},
+						catch: (error) => {
+							return new ValidationError({
+								message:
+									error instanceof Error ? error.message : "Failed to update organization timezone",
+								field: "timezone",
+							});
+						},
+					}),
+				);
+
+				logger.info(
+					{
+						organizationId,
+						timezone,
+					},
+					`Organization timezone updated to ${timezone}`,
+				);
+
+				span.setStatus({ code: SpanStatusCode.OK });
+			}).pipe(
+				Effect.catchAll((error) =>
+					Effect.gen(function* (_) {
+						span.recordException(error as Error);
+						span.setStatus({
+							code: SpanStatusCode.ERROR,
+							message: String(error),
+						});
+						logger.error({ error, organizationId, timezone }, "Failed to update organization timezone");
 						return yield* _(Effect.fail(error as AnyAppError));
 					}),
 				),

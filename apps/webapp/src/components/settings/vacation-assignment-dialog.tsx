@@ -1,12 +1,15 @@
 "use client";
 
-import { useForm } from "@tanstack/react-form";
 import { IconLoader2 } from "@tabler/icons-react";
+import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { getTeamsForAssignment } from "@/app/[locale]/(app)/settings/holidays/preset-actions";
+import {
+	getEmployeesForAssignment,
+	getTeamsForAssignment,
+} from "@/app/[locale]/(app)/settings/holidays/preset-actions";
 import {
 	createVacationPolicyAssignment,
 	getVacationPolicies,
@@ -35,7 +38,7 @@ interface VacationAssignmentDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	organizationId: string;
-	assignmentType: "organization" | "team";
+	assignmentType: "organization" | "team" | "employee";
 	onSuccess: () => void;
 }
 
@@ -50,6 +53,13 @@ interface PolicyOption {
 interface TeamOption {
 	id: string;
 	name: string;
+}
+
+interface EmployeeOption {
+	id: string;
+	firstName: string | null;
+	lastName: string | null;
+	position: string | null;
 }
 
 export function VacationAssignmentDialog({
@@ -67,6 +77,7 @@ export function VacationAssignmentDialog({
 		defaultValues: {
 			policyId: "",
 			teamId: "",
+			employeeId: "",
 		},
 		onSubmit: async ({ value }) => {
 			// Validate target based on assignment type
@@ -76,6 +87,9 @@ export function VacationAssignmentDialog({
 			}
 			if (assignmentType === "team" && !value.teamId) {
 				errors.teamId = "Please select a team";
+			}
+			if (assignmentType === "employee" && !value.employeeId) {
+				errors.employeeId = "Please select an employee";
 			}
 
 			if (Object.keys(errors).length > 0) {
@@ -122,13 +136,27 @@ export function VacationAssignmentDialog({
 		enabled: open && assignmentType === "team",
 	});
 
+	// Fetch employees (only for employee assignment type)
+	const { data: employees, isLoading: employeesLoading } = useQuery({
+		queryKey: queryKeys.employees.list(organizationId),
+		queryFn: async () => {
+			const result = await getEmployeesForAssignment(organizationId);
+			if (!result.success) {
+				throw new Error(result.error || "Failed to fetch employees");
+			}
+			return result.data as EmployeeOption[];
+		},
+		enabled: open && assignmentType === "employee",
+	});
+
 	// Create mutation
 	const createMutation = useMutation({
-		mutationFn: (values: { policyId: string; teamId: string }) =>
+		mutationFn: (values: { policyId: string; teamId: string; employeeId: string }) =>
 			createVacationPolicyAssignment({
 				policyId: values.policyId,
 				assignmentType,
 				teamId: assignmentType === "team" ? values.teamId : undefined,
+				employeeId: assignmentType === "employee" ? values.employeeId : undefined,
 			}),
 		onSuccess: (result) => {
 			if (result.success) {
@@ -158,6 +186,8 @@ export function VacationAssignmentDialog({
 				return t("settings.vacation.assignments.setOrgPolicy", "Set Organization Policy");
 			case "team":
 				return t("settings.vacation.assignments.assignTeamPolicy", "Assign Team Policy");
+			case "employee":
+				return t("settings.vacation.assignments.assignEmployeePolicy", "Assign Employee Policy");
 		}
 	};
 
@@ -173,6 +203,11 @@ export function VacationAssignmentDialog({
 					"settings.vacation.assignments.teamPolicyDescription",
 					"Select a vacation policy and team. This overrides the organization default for team members.",
 				);
+			case "employee":
+				return t(
+					"settings.vacation.assignments.employeePolicyDescription",
+					"Select a vacation policy and employee. This overrides team and organization defaults.",
+				);
 		}
 	};
 
@@ -180,7 +215,7 @@ export function VacationAssignmentDialog({
 		return `${policy.year} - ${policy.defaultAnnualDays} days (${policy.accrualType})`;
 	};
 
-	const isLoading = policiesLoading || teamsLoading;
+	const isLoading = policiesLoading || teamsLoading || employeesLoading;
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
@@ -285,6 +320,46 @@ export function VacationAssignmentDialog({
 										</p>
 										{validationErrors.teamId && (
 											<p className="text-sm text-destructive">{validationErrors.teamId}</p>
+										)}
+									</div>
+								)}
+							</form.Field>
+						)}
+
+						{/* Employee Selection (for employee assignment) */}
+						{assignmentType === "employee" && (
+							<form.Field name="employeeId">
+								{(field) => (
+									<div className="space-y-2">
+										<Label>{t("settings.vacation.assignments.employee", "Employee")}</Label>
+										<Select value={field.state.value} onValueChange={field.handleChange}>
+											<SelectTrigger>
+												<SelectValue
+													placeholder={t(
+														"settings.vacation.assignments.selectEmployee",
+														"Select an employee",
+													)}
+												/>
+											</SelectTrigger>
+											<SelectContent>
+												{employees?.map((emp) => (
+													<SelectItem key={emp.id} value={emp.id}>
+														{emp.firstName} {emp.lastName}
+														{emp.position && (
+															<span className="text-muted-foreground ml-1">({emp.position})</span>
+														)}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+										<p className="text-sm text-muted-foreground">
+											{t(
+												"settings.vacation.assignments.employeeNote",
+												"This policy will override team and organization defaults for this employee",
+											)}
+										</p>
+										{validationErrors.employeeId && (
+											<p className="text-sm text-destructive">{validationErrors.employeeId}</p>
 										)}
 									</div>
 								)}

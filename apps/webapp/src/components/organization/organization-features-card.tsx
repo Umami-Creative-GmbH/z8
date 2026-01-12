@@ -1,6 +1,6 @@
 "use client";
 
-import { IconBriefcase, IconCalendarTime, IconLoader2 } from "@tabler/icons-react";
+import { IconBriefcase, IconCalendarTime, IconLoader2, IconPercentage } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
@@ -15,6 +15,7 @@ interface OrganizationFeaturesCardProps {
 	organizationId: string;
 	shiftsEnabled: boolean;
 	projectsEnabled: boolean;
+	surchargesEnabled: boolean;
 	currentMemberRole: "owner" | "admin" | "member";
 }
 
@@ -22,6 +23,7 @@ export function OrganizationFeaturesCard({
 	organizationId,
 	shiftsEnabled,
 	projectsEnabled,
+	surchargesEnabled,
 	currentMemberRole,
 }: OrganizationFeaturesCardProps) {
 	const { t } = useTranslate();
@@ -29,6 +31,7 @@ export function OrganizationFeaturesCard({
 	const [isPending, startTransition] = useTransition();
 	const [isShiftsEnabled, setIsShiftsEnabled] = useState(shiftsEnabled);
 	const [isProjectsEnabled, setIsProjectsEnabled] = useState(projectsEnabled);
+	const [isSurchargesEnabled, setIsSurchargesEnabled] = useState(surchargesEnabled);
 	const setOrgSettings = useOrganizationSettings((state) => state.setSettings);
 
 	const canEdit = currentMemberRole === "owner";
@@ -56,8 +59,7 @@ export function OrganizationFeaturesCard({
 			setIsShiftsEnabled(!enabled);
 			setOrgSettings({ shiftsEnabled: !enabled });
 			toast.error(
-				result.error?.message ||
-					t("organization.features.update-failed", "Failed to update feature"),
+				result.error || t("organization.features.update-failed", "Failed to update feature"),
 			);
 		}
 	};
@@ -85,8 +87,35 @@ export function OrganizationFeaturesCard({
 			setIsProjectsEnabled(!enabled);
 			setOrgSettings({ projectsEnabled: !enabled });
 			toast.error(
-				result.error?.message ||
-					t("organization.features.update-failed", "Failed to update feature"),
+				result.error || t("organization.features.update-failed", "Failed to update feature"),
+			);
+		}
+	};
+
+	const handleToggleSurcharges = async (enabled: boolean) => {
+		if (!canEdit) return;
+
+		// Optimistic update
+		setIsSurchargesEnabled(enabled);
+		setOrgSettings({ surchargesEnabled: enabled });
+
+		const result = await toggleOrganizationFeature(organizationId, "surchargesEnabled", enabled);
+
+		if (result.success) {
+			toast.success(
+				enabled
+					? t("organization.features.surcharges-enabled", "Surcharges enabled")
+					: t("organization.features.surcharges-disabled", "Surcharges disabled"),
+			);
+			startTransition(() => {
+				router.refresh();
+			});
+		} else {
+			// Revert optimistic update
+			setIsSurchargesEnabled(!enabled);
+			setOrgSettings({ surchargesEnabled: !enabled });
+			toast.error(
+				result.error || t("organization.features.update-failed", "Failed to update feature"),
 			);
 		}
 	};
@@ -168,6 +197,39 @@ export function OrganizationFeaturesCard({
 							onCheckedChange={handleToggleProjects}
 							disabled={!canEdit || isPending}
 							aria-label={t("organization.features.toggle-projects", "Toggle projects")}
+						/>
+					</div>
+				</div>
+
+				{/* Surcharges Feature */}
+				<div className="flex items-center justify-between">
+					<div className="flex items-start gap-3">
+						<div className="mt-0.5 rounded-lg bg-primary/10 p-2">
+							<IconPercentage className="h-5 w-5 text-primary" />
+						</div>
+						<div className="space-y-1">
+							<Label
+								htmlFor="surcharges-toggle"
+								className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+							>
+								{t("organization.features.surcharges", "Surcharges")}
+							</Label>
+							<p className="text-sm text-muted-foreground">
+								{t(
+									"organization.features.surcharges-description",
+									"Configure time surcharges for overtime, night work, weekends, and holidays.",
+								)}
+							</p>
+						</div>
+					</div>
+					<div className="flex items-center gap-2">
+						{isPending && <IconLoader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+						<Switch
+							id="surcharges-toggle"
+							checked={isSurchargesEnabled}
+							onCheckedChange={handleToggleSurcharges}
+							disabled={!canEdit || isPending}
+							aria-label={t("organization.features.toggle-surcharges", "Toggle surcharges")}
 						/>
 					</div>
 				</div>

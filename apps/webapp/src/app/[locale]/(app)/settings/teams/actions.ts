@@ -113,11 +113,11 @@ export async function createTeam(
 				// Validate data
 				const validationResult = createTeamSchema.safeParse(data);
 				if (!validationResult.success) {
-					yield* _(
+					return yield* _(
 						Effect.fail(
 							new ValidationError({
-								message: validationResult.error?.errors?.[0]?.message || "Invalid input",
-								field: validationResult.error?.errors?.[0]?.path?.join(".") || "data",
+								message: validationResult.error.issues[0]?.message || "Invalid input",
+								field: validationResult.error.issues[0]?.path?.join(".") || "data",
 							}),
 						),
 					);
@@ -294,11 +294,11 @@ export async function updateTeam(
 				// Validate data
 				const validationResult = updateTeamSchema.safeParse(data);
 				if (!validationResult.success) {
-					yield* _(
+					return yield* _(
 						Effect.fail(
 							new ValidationError({
-								message: validationResult.error?.errors?.[0]?.message || "Invalid input",
-								field: validationResult.error?.errors?.[0]?.path?.join(".") || "data",
+								message: validationResult.error.issues[0]?.message || "Invalid input",
+								field: validationResult.error.issues[0]?.path?.join(".") || "data",
 							}),
 						),
 					);

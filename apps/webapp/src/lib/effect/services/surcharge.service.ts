@@ -588,13 +588,23 @@ export const SurchargeServiceLive = Layer.effect(
 						return null;
 					}
 
+					// Get organization timezone
+					const org = yield* _(
+						dbService.query("getOrgTimezone", async () => {
+							return await dbService.db.query.organization.findFirst({
+								where: eq(organization.id, emp.organizationId),
+								columns: { timezone: true },
+							});
+						}),
+					);
+					const timezone = org?.timezone ?? "UTC";
+
 					// Calculate surcharges
-					// TODO: Get timezone from organization settings
 					const result = calculateSurchargesInternal(
 						period.startTime,
 						period.endTime,
 						effectiveModel.rules,
-						"UTC",
+						timezone,
 					);
 
 					return result;
@@ -747,12 +757,23 @@ export const SurchargeServiceLive = Layer.effect(
 						return null;
 					}
 
+					// Get organization timezone
+					const org = yield* _(
+						dbService.query("getOrgTimezoneForPersist", async () => {
+							return await dbService.db.query.organization.findFirst({
+								where: eq(organization.id, emp.organizationId),
+								columns: { timezone: true },
+							});
+						}),
+					);
+					const timezone = org?.timezone ?? "UTC";
+
 					// Calculate surcharges
 					const result = calculateSurchargesInternal(
 						period.startTime,
 						period.endTime,
 						effectiveModel.rules,
-						"UTC",
+						timezone,
 					);
 
 					if (result.surchargeMinutes === 0) {
@@ -925,11 +946,22 @@ export const SurchargeServiceLive = Layer.effect(
 						return null;
 					}
 
+					// Get organization timezone
+					const org = yield* _(
+						dbService.query("getOrgTimezoneForRecalc", async () => {
+							return await dbService.db.query.organization.findFirst({
+								where: eq(organization.id, emp.organizationId),
+								columns: { timezone: true },
+							});
+						}),
+					);
+					const timezone = org?.timezone ?? "UTC";
+
 					const result = calculateSurchargesInternal(
 						period.startTime,
 						period.endTime,
 						effectiveModel.rules,
-						"UTC",
+						timezone,
 					);
 
 					if (result.surchargeMinutes > 0) {

@@ -18,10 +18,10 @@ export default function TeamsPage() {
 		queryKey: queryKeys.teams.all,
 		queryFn: async () => {
 			const result = await listTeams();
-			if (result.success && result.data) {
-				return result.data;
+			if (!result.success) {
+				throw new Error(result.error || "Failed to load teams");
 			}
-			throw new Error(result.error || "Failed to load teams");
+			return result.data;
 		},
 	});
 
@@ -79,7 +79,7 @@ export default function TeamsPage() {
 							<CardContent>
 								<div className="flex items-center justify-between">
 									<span className="text-sm text-muted-foreground">
-										{team.employees?.length || 0} members
+										{(team as any).employees?.length || 0} members
 									</span>
 									<Button variant="ghost" size="sm" asChild>
 										<Link href={`/settings/teams/${team.id}`}>View Details</Link>

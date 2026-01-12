@@ -15,7 +15,7 @@ export interface MemberWithUserAndEmployee {
 }
 
 export type InvitationWithInviter = typeof authSchema.invitation.$inferSelect & {
-	inviter: typeof authSchema.user.$inferSelect;
+	user: typeof authSchema.user.$inferSelect; // The inviter - relation named "user" in auth-schema
 };
 
 export interface TeamPermissions {

@@ -10,6 +10,7 @@ import {
 	IconRefresh,
 	IconTrash,
 } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -65,16 +66,20 @@ interface VacationPoliciesTableProps {
 	initialPolicies: VacationPolicy[];
 }
 
-const accrualTypeLabels: Record<string, string> = {
-	annual: "Annual",
-	monthly: "Monthly",
-	biweekly: "Biweekly",
+const getAccrualTypeLabel = (t: ReturnType<typeof useTranslate>["t"], type: string) => {
+	const labels: Record<string, string> = {
+		annual: t("vacation.accrual-type.annual", "Annual"),
+		monthly: t("vacation.accrual-type.monthly", "Monthly"),
+		biweekly: t("vacation.accrual-type.biweekly", "Biweekly"),
+	};
+	return labels[type] || type;
 };
 
 export function VacationPoliciesTable({
 	organizationId,
 	initialPolicies,
 }: VacationPoliciesTableProps) {
+	const { t } = useTranslate();
 	const currentYear = new Date().getFullYear();
 	const [selectedYear, setSelectedYear] = useState<number>(currentYear);
 	const [policies, setPolicies] = useState<VacationPolicy[]>(initialPolicies);
@@ -182,7 +187,7 @@ export function VacationPoliciesTable({
 					</Button>
 					{!isCurrentYear && (
 						<Button variant="ghost" size="sm" onClick={goToCurrentYear}>
-							Current Year
+							{t("vacation.policies.current-year", "Current Year")}
 						</Button>
 					)}
 				</div>
@@ -193,7 +198,7 @@ export function VacationPoliciesTable({
 					</Button>
 					<Button onClick={handleCreateClick}>
 						<IconPlus className="mr-2 h-4 w-4" />
-						Add Policy
+						{t("vacation.policies.add-policy", "Add Policy")}
 					</Button>
 				</div>
 			</div>
@@ -206,13 +211,15 @@ export function VacationPoliciesTable({
 				</div>
 			) : policies.length === 0 ? (
 				<div className="flex flex-col items-center justify-center py-12 text-center border rounded-lg">
-					<p className="text-muted-foreground">No vacation policies for {selectedYear}</p>
+					<p className="text-muted-foreground">
+						{t("vacation.policies.no-policies", "No vacation policies for {{year}}", { year: selectedYear })}
+					</p>
 					<p className="text-muted-foreground text-sm mt-1">
-						Create a policy to define vacation allowances for your team.
+						{t("vacation.policies.create-description", "Create a policy to define vacation allowances for your team.")}
 					</p>
 					<Button className="mt-4" onClick={handleCreateClick}>
 						<IconPlus className="mr-2 h-4 w-4" />
-						Create Policy
+						{t("vacation.policies.create-policy", "Create Policy")}
 					</Button>
 				</div>
 			) : (
@@ -220,11 +227,11 @@ export function VacationPoliciesTable({
 					<Table>
 						<TableHeader>
 							<TableRow>
-								<TableHead>Name</TableHead>
-								<TableHead>Year</TableHead>
-								<TableHead className="text-right">Annual Days</TableHead>
-								<TableHead>Accrual</TableHead>
-								<TableHead>Carryover</TableHead>
+								<TableHead>{t("vacation.policies.header.name", "Name")}</TableHead>
+								<TableHead>{t("vacation.policies.header.year", "Year")}</TableHead>
+								<TableHead className="text-right">{t("vacation.policies.header.annual-days", "Annual Days")}</TableHead>
+								<TableHead>{t("vacation.policies.header.accrual", "Accrual")}</TableHead>
+								<TableHead>{t("vacation.policies.header.carryover", "Carryover")}</TableHead>
 								<TableHead className="w-[70px]" />
 							</TableRow>
 						</TableHeader>
@@ -238,18 +245,18 @@ export function VacationPoliciesTable({
 									<TableCell className="text-right">{policy.defaultAnnualDays}</TableCell>
 									<TableCell>
 										<Badge variant="secondary">
-											{accrualTypeLabels[policy.accrualType] || policy.accrualType}
+											{getAccrualTypeLabel(t, policy.accrualType)}
 										</Badge>
 									</TableCell>
 									<TableCell>
 										{policy.allowCarryover ? (
 											<Badge variant="outline">
 												{policy.maxCarryoverDays
-													? `Max ${policy.maxCarryoverDays} days`
-													: "Unlimited"}
+													? t("vacation.policies.max-days", "Max {{days}} days", { days: policy.maxCarryoverDays })
+													: t("vacation.policies.unlimited", "Unlimited")}
 											</Badge>
 										) : (
-											<span className="text-muted-foreground text-sm">None</span>
+											<span className="text-muted-foreground text-sm">{t("vacation.policies.none", "None")}</span>
 										)}
 									</TableCell>
 									<TableCell>
@@ -263,14 +270,14 @@ export function VacationPoliciesTable({
 											<DropdownMenuContent align="end">
 												<DropdownMenuItem onClick={() => handleEditClick(policy)}>
 													<IconPencil className="mr-2 h-4 w-4" />
-													Edit
+													{t("common.edit", "Edit")}
 												</DropdownMenuItem>
 												<DropdownMenuItem
 													className="text-destructive"
 													onClick={() => handleDeleteClick(policy)}
 												>
 													<IconTrash className="mr-2 h-4 w-4" />
-													Delete
+													{t("common.delete", "Delete")}
 												</DropdownMenuItem>
 											</DropdownMenuContent>
 										</DropdownMenu>
@@ -285,21 +292,24 @@ export function VacationPoliciesTable({
 			<AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
-						<AlertDialogTitle>Delete Vacation Policy</AlertDialogTitle>
+						<AlertDialogTitle>{t("vacation.policies.delete-title", "Delete Vacation Policy")}</AlertDialogTitle>
 						<AlertDialogDescription>
-							Are you sure you want to delete "{policyToDelete?.name}" ({policyToDelete?.year})?
-							This will also remove all assignments for this policy. This action cannot be undone.
+							{t(
+								"vacation.policies.delete-description",
+								"Are you sure you want to delete \"{{name}}\" ({{year}})? This will also remove all assignments for this policy. This action cannot be undone.",
+								{ name: policyToDelete?.name, year: policyToDelete?.year },
+							)}
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
-						<AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+						<AlertDialogCancel disabled={deleting}>{t("common.cancel", "Cancel")}</AlertDialogCancel>
 						<AlertDialogAction
 							onClick={handleDeleteConfirm}
 							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
 							disabled={deleting}
 						>
 							{deleting && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
-							Delete
+							{t("common.delete", "Delete")}
 						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>

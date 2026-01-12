@@ -14,17 +14,17 @@ import {
 	team,
 	workPeriod,
 } from "@/db/schema";
-import { logAudit } from "@/lib/audit-logger";
+import { AuditAction, logAudit } from "@/lib/audit-logger";
 import {
 	AuthorizationError,
 	DatabaseError,
 	NotFoundError,
 	ValidationError,
 } from "@/lib/effect/errors";
+import type { ServerActionResult } from "@/lib/effect/result";
 import { AuthService, AuthServiceLive } from "@/lib/effect/services/auth.service";
 import { DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { logger } from "@/lib/logger";
-import type { ServerActionResult } from "@/lib/types";
 
 // Types for project data
 export type ProjectStatus = "planned" | "active" | "paused" | "completed" | "archived";
@@ -249,10 +249,10 @@ export async function getProjects(
 	);
 
 	return Effect.runPromise(effect)
-		.then((data) => ({ success: true, data }))
+		.then((data) => ({ success: true as const, data }))
 		.catch((error) => ({
-			success: false,
-			error: { message: error?.message || "Failed to get projects" },
+			success: false as const,
+			error: error?.message || "Failed to get projects",
 		}));
 }
 
@@ -379,12 +379,14 @@ export async function createProject(
 
 				// Log audit (fire-and-forget)
 				logAudit({
-					entityType: "project",
-					entityId: created.id,
-					action: "project.created",
-					performedBy: session.user.id,
-					changes: JSON.stringify({ name: input.name, status: input.status || "planned" }),
-					metadata: JSON.stringify({ organizationId: input.organizationId }),
+					action: AuditAction.PROJECT_CREATED,
+					actorId: session.user.id,
+					targetId: created.id,
+					targetType: "project",
+					organizationId: input.organizationId,
+					changes: { name: input.name, status: input.status || "planned" },
+					metadata: { projectName: input.name },
+					timestamp: new Date(),
 				}).catch((err) => logger.error({ err }, "Failed to log audit"));
 
 				revalidatePath("/settings/projects");
@@ -407,10 +409,10 @@ export async function createProject(
 	);
 
 	return Effect.runPromise(effect)
-		.then((data) => ({ success: true, data }))
+		.then((data) => ({ success: true as const, data }))
 		.catch((error) => ({
-			success: false,
-			error: { message: error?.message || "Failed to create project" },
+			success: false as const,
+			error: error?.message || "Failed to create project",
 		}));
 }
 
@@ -534,12 +536,14 @@ export async function updateProject(
 
 				// Log audit (fire-and-forget)
 				logAudit({
-					entityType: "project",
-					entityId: projectId,
-					action: "project.updated",
-					performedBy: session.user.id,
-					changes: JSON.stringify(input),
-					metadata: JSON.stringify({ previousName: existingProject.name }),
+					action: AuditAction.PROJECT_UPDATED,
+					actorId: session.user.id,
+					targetId: projectId,
+					targetType: "project",
+					organizationId: existingProject.organizationId,
+					changes: input as Record<string, unknown>,
+					metadata: { previousName: existingProject.name },
+					timestamp: new Date(),
 				}).catch((err) => logger.error({ err }, "Failed to log audit"));
 
 				revalidatePath("/settings/projects");
@@ -561,10 +565,10 @@ export async function updateProject(
 	);
 
 	return Effect.runPromise(effect)
-		.then(() => ({ success: true, data: undefined }))
+		.then(() => ({ success: true as const, data: undefined }))
 		.catch((error) => ({
-			success: false,
-			error: { message: error?.message || "Failed to update project" },
+			success: false as const,
+			error: error?.message || "Failed to update project",
 		}));
 }
 
@@ -683,12 +687,14 @@ export async function addProjectManager(
 
 				// Log audit (fire-and-forget)
 				logAudit({
-					entityType: "project",
-					entityId: projectId,
-					action: "project.manager_assigned",
-					performedBy: session.user.id,
+					action: AuditAction.PROJECT_MANAGER_ASSIGNED,
+					actorId: session.user.id,
+					targetId: projectId,
+					targetType: "project",
+					organizationId: existingProject.organizationId,
 					employeeId,
-					changes: JSON.stringify({ employeeId }),
+					changes: { employeeId },
+					timestamp: new Date(),
 				}).catch((err) => logger.error({ err }, "Failed to log audit"));
 
 				revalidatePath("/settings/projects");
@@ -710,10 +716,10 @@ export async function addProjectManager(
 	);
 
 	return Effect.runPromise(effect)
-		.then(() => ({ success: true, data: undefined }))
+		.then(() => ({ success: true as const, data: undefined }))
 		.catch((error) => ({
-			success: false,
-			error: { message: error?.message || "Failed to add project manager" },
+			success: false as const,
+			error: error?.message || "Failed to add project manager",
 		}));
 }
 
@@ -806,12 +812,14 @@ export async function removeProjectManager(
 
 				// Log audit (fire-and-forget)
 				logAudit({
-					entityType: "project",
-					entityId: projectId,
-					action: "project.manager_removed",
-					performedBy: session.user.id,
+					action: AuditAction.PROJECT_MANAGER_REMOVED,
+					actorId: session.user.id,
+					targetId: projectId,
+					targetType: "project",
+					organizationId: existingProject.organizationId,
 					employeeId,
-					changes: JSON.stringify({ employeeId }),
+					changes: { employeeId },
+					timestamp: new Date(),
 				}).catch((err) => logger.error({ err }, "Failed to log audit"));
 
 				revalidatePath("/settings/projects");
@@ -833,10 +841,10 @@ export async function removeProjectManager(
 	);
 
 	return Effect.runPromise(effect)
-		.then(() => ({ success: true, data: undefined }))
+		.then(() => ({ success: true as const, data: undefined }))
 		.catch((error) => ({
-			success: false,
-			error: { message: error?.message || "Failed to remove project manager" },
+			success: false as const,
+			error: error?.message || "Failed to remove project manager",
 		}));
 }
 
@@ -961,11 +969,13 @@ export async function addProjectAssignment(
 
 				// Log audit (fire-and-forget)
 				logAudit({
-					entityType: "project",
-					entityId: projectId,
-					action: "project.assignment_added",
-					performedBy: session.user.id,
-					changes: JSON.stringify({ type, targetId }),
+					action: AuditAction.PROJECT_ASSIGNMENT_ADDED,
+					actorId: session.user.id,
+					targetId: projectId,
+					targetType: "project_assignment",
+					organizationId: existingProject.organizationId,
+					changes: { type, targetId },
+					timestamp: new Date(),
 				}).catch((err) => logger.error({ err }, "Failed to log audit"));
 
 				revalidatePath("/settings/projects");
@@ -987,10 +997,10 @@ export async function addProjectAssignment(
 	);
 
 	return Effect.runPromise(effect)
-		.then(() => ({ success: true, data: undefined }))
+		.then(() => ({ success: true as const, data: undefined }))
 		.catch((error) => ({
-			success: false,
-			error: { message: error?.message || "Failed to add project assignment" },
+			success: false as const,
+			error: error?.message || "Failed to add project assignment",
 		}));
 }
 
@@ -1075,15 +1085,17 @@ export async function removeProjectAssignment(
 
 				// Log audit (fire-and-forget)
 				logAudit({
-					entityType: "project",
-					entityId: existingAssignment.projectId,
-					action: "project.assignment_removed",
-					performedBy: session.user.id,
-					changes: JSON.stringify({
+					action: AuditAction.PROJECT_ASSIGNMENT_REMOVED,
+					actorId: session.user.id,
+					targetId: existingAssignment.projectId,
+					targetType: "project_assignment",
+					organizationId: existingAssignment.organizationId,
+					changes: {
 						type: existingAssignment.assignmentType,
 						teamId: existingAssignment.teamId,
 						employeeId: existingAssignment.employeeId,
-					}),
+					},
+					timestamp: new Date(),
 				}).catch((err) => logger.error({ err }, "Failed to log audit"));
 
 				revalidatePath("/settings/projects");
@@ -1105,10 +1117,10 @@ export async function removeProjectAssignment(
 	);
 
 	return Effect.runPromise(effect)
-		.then(() => ({ success: true, data: undefined }))
+		.then(() => ({ success: true as const, data: undefined }))
 		.catch((error) => ({
-			success: false,
-			error: { message: error?.message || "Failed to remove project assignment" },
+			success: false as const,
+			error: error?.message || "Failed to remove project assignment",
 		}));
 }
 
@@ -1160,10 +1172,10 @@ export async function getTeamsForSelection(
 	);
 
 	return Effect.runPromise(effect)
-		.then((data) => ({ success: true, data }))
+		.then((data) => ({ success: true as const, data }))
 		.catch((error) => ({
-			success: false,
-			error: { message: error?.message || "Failed to get teams" },
+			success: false as const,
+			error: error?.message || "Failed to get teams",
 		}));
 }
 
@@ -1225,9 +1237,9 @@ export async function getEmployeesForSelection(
 	);
 
 	return Effect.runPromise(effect)
-		.then((data) => ({ success: true, data }))
+		.then((data) => ({ success: true as const, data }))
 		.catch((error) => ({
-			success: false,
-			error: { message: error?.message || "Failed to get employees" },
+			success: false as const,
+			error: error?.message || "Failed to get employees",
 		}));
 }

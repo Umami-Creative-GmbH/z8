@@ -7,6 +7,7 @@ export interface OrganizationSettings {
 	shiftsEnabled: boolean;
 	projectsEnabled: boolean;
 	surchargesEnabled: boolean;
+	timezone: string;
 	isHydrated: boolean;
 }
 
@@ -23,6 +24,7 @@ const initialState: OrganizationSettings = {
 	shiftsEnabled: false,
 	projectsEnabled: false,
 	surchargesEnabled: false,
+	timezone: "UTC",
 	isHydrated: false,
 };
 
@@ -48,3 +50,4 @@ export const useOrganizationSettings = create<OrganizationSettingsStore>((set) =
 export const useProjectsEnabled = () => useOrganizationSettings((state) => state.projectsEnabled);
 export const useShiftsEnabled = () => useOrganizationSettings((state) => state.shiftsEnabled);
 export const useSurchargesEnabled = () => useOrganizationSettings((state) => state.surchargesEnabled);
+export const useOrganizationTimezone = () => useOrganizationSettings((state) => state.timezone);

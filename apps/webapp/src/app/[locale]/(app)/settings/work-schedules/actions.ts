@@ -165,12 +165,12 @@ export async function createWorkScheduleTemplate(
 		// Validate input
 		const validationResult = createWorkScheduleTemplateSchema.safeParse(data);
 		if (!validationResult.success) {
-			yield* _(
+			return yield* _(
 				Effect.fail(
 					new ConflictError({
-						message: validationResult.error.errors[0]?.message || "Validation failed",
-						entityType: "work_schedule_template",
-						conflictField: "validation",
+						message: validationResult.error.issues[0]?.message || "Validation failed",
+						conflictType: "validation",
+						details: { entityType: "work_schedule_template" },
 					}),
 				),
 			);
@@ -192,12 +192,12 @@ export async function createWorkScheduleTemplate(
 		);
 
 		if (existingTemplate) {
-			yield* _(
+			return yield* _(
 				Effect.fail(
 					new ConflictError({
 						message: "A template with this name already exists",
-						entityType: "work_schedule_template",
-						conflictField: "name",
+						conflictType: "duplicate_name",
+						details: { entityType: "work_schedule_template", field: "name" },
 					}),
 				),
 			);
@@ -254,7 +254,7 @@ export async function createWorkScheduleTemplate(
 		);
 
 		if (!completeTemplate) {
-			yield* _(
+			return yield* _(
 				Effect.fail(
 					new NotFoundError({
 						message: "Failed to fetch created template",
@@ -306,11 +306,11 @@ export async function updateWorkScheduleTemplate(
 
 		// Verify user is org admin
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, existingTemplate.organizationId)),
+			Effect.promise(() => isOrgAdmin(session.user.id, existingTemplate!.organizationId)),
 		);
 
 		if (!hasPermission) {
-			yield* _(
+			return yield* _(
 				Effect.fail(
 					new AuthorizationError({
 						message: "Insufficient permissions",
@@ -323,12 +323,12 @@ export async function updateWorkScheduleTemplate(
 		}
 
 		// Check for duplicate name if name is being changed
-		if (data.name && data.name !== existingTemplate.name) {
+		if (data.name && data.name !== existingTemplate!.name) {
 			const duplicateTemplate = yield* _(
 				dbService.query("checkDuplicate", async () => {
 					return await dbService.db.query.workScheduleTemplate.findFirst({
 						where: and(
-							eq(workScheduleTemplate.organizationId, existingTemplate.organizationId),
+							eq(workScheduleTemplate.organizationId, existingTemplate!.organizationId),
 							eq(workScheduleTemplate.name, data.name!),
 							eq(workScheduleTemplate.isActive, true),
 						),
@@ -337,12 +337,12 @@ export async function updateWorkScheduleTemplate(
 			);
 
 			if (duplicateTemplate && duplicateTemplate.id !== templateId) {
-				yield* _(
+				return yield* _(
 					Effect.fail(
 						new ConflictError({
 							message: "A template with this name already exists",
-							entityType: "work_schedule_template",
-							conflictField: "name",
+							conflictType: "duplicate_name",
+							details: { entityType: "work_schedule_template", field: "name" },
 						}),
 					),
 				);
@@ -375,19 +375,21 @@ export async function updateWorkScheduleTemplate(
 			);
 
 			// Insert new days
-			yield* _(
-				dbService.query("insertDays", async () => {
-					await dbService.db.insert(workScheduleTemplateDays).values(
-						data.days?.map((day) => ({
-							templateId,
-							dayOfWeek: day.dayOfWeek,
-							hoursPerDay: day.hoursPerDay,
-							isWorkDay: day.isWorkDay,
-							cycleWeek: day.cycleWeek ?? 1,
-						})),
-					);
-				}),
-			);
+			if (data.days && data.days.length > 0) {
+				yield* _(
+					dbService.query("insertDays", async () => {
+						await dbService.db.insert(workScheduleTemplateDays).values(
+							data.days!.map((day) => ({
+								templateId,
+								dayOfWeek: day.dayOfWeek,
+								hoursPerDay: day.hoursPerDay,
+								isWorkDay: day.isWorkDay,
+								cycleWeek: day.cycleWeek ?? 1,
+							})),
+						);
+					}),
+				);
+			}
 		}
 
 		// Fetch updated template
@@ -403,7 +405,7 @@ export async function updateWorkScheduleTemplate(
 		);
 
 		if (!updatedTemplate) {
-			yield* _(
+			return yield* _(
 				Effect.fail(
 					new NotFoundError({
 						message: "Failed to fetch updated template",
@@ -441,7 +443,7 @@ export async function deleteWorkScheduleTemplate(
 		);
 
 		if (!existingTemplate) {
-			yield* _(
+			return yield* _(
 				Effect.fail(
 					new NotFoundError({
 						message: "Template not found",
@@ -458,7 +460,7 @@ export async function deleteWorkScheduleTemplate(
 		);
 
 		if (!hasPermission) {
-			yield* _(
+			return yield* _(
 				Effect.fail(
 					new AuthorizationError({
 						message: "Insufficient permissions",
@@ -511,7 +513,7 @@ export async function setDefaultTemplate(templateId: string): Promise<ServerActi
 		);
 
 		if (!template) {
-			yield* _(
+			return yield* _(
 				Effect.fail(
 					new NotFoundError({
 						message: "Template not found",
@@ -528,7 +530,7 @@ export async function setDefaultTemplate(templateId: string): Promise<ServerActi
 		);
 
 		if (!hasPermission) {
-			yield* _(
+			return yield* _(
 				Effect.fail(
 					new AuthorizationError({
 						message: "Insufficient permissions",
@@ -605,7 +607,7 @@ export async function duplicateWorkScheduleTemplate(
 		);
 
 		if (!existingTemplate) {
-			yield* _(
+			return yield* _(
 				Effect.fail(
 					new NotFoundError({
 						message: "Template not found",
@@ -622,7 +624,7 @@ export async function duplicateWorkScheduleTemplate(
 		);
 
 		if (!hasPermission) {
-			yield* _(
+			return yield* _(
 				Effect.fail(
 					new AuthorizationError({
 						message: "Insufficient permissions",
@@ -713,7 +715,7 @@ export async function duplicateWorkScheduleTemplate(
 		);
 
 		if (!completeTemplate) {
-			yield* _(
+			return yield* _(
 				Effect.fail(
 					new NotFoundError({
 						message: "Failed to fetch duplicated template",

@@ -80,14 +80,14 @@ type PresetAssignmentListItem = {
 		stateCode: string | null;
 	};
 	team: { id: string; name: string } | null;
-	employee: { id: string; firstName: string; lastName: string } | null;
+	employee: { id: string; firstName: string | null; lastName: string | null } | null;
 };
 
 type TeamListItem = { id: string; name: string };
 type EmployeeListItem = {
 	id: string;
-	firstName: string;
-	lastName: string;
+	firstName: string | null;
+	lastName: string | null;
 	position: string | null;
 };
 

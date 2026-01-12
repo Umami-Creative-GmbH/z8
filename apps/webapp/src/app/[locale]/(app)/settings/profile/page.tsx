@@ -24,7 +24,7 @@ export default async function ProfilePage() {
 						const result = await updateTimezone(timezone);
 						return result.success
 							? { success: true }
-							: { success: false, error: result.error?.message };
+							: { success: false, error: result.error };
 					}}
 				/>
 			</div>

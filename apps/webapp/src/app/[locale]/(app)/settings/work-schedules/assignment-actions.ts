@@ -123,12 +123,12 @@ export async function createWorkScheduleAssignment(
 		// Validate input
 		const validationResult = createWorkScheduleAssignmentSchema.safeParse(data);
 		if (!validationResult.success) {
-			yield* _(
+			return yield* _(
 				Effect.fail(
 					new ConflictError({
-						message: validationResult.error.errors[0]?.message || "Validation failed",
-						entityType: "work_schedule_assignment",
-						conflictField: "validation",
+						message: validationResult.error.issues[0]?.message || "Validation failed",
+						conflictType: "validation",
+						details: { entityType: "work_schedule_assignment" },
 					}),
 				),
 			);
@@ -149,7 +149,7 @@ export async function createWorkScheduleAssignment(
 		);
 
 		if (!template) {
-			yield* _(
+			return yield* _(
 				Effect.fail(
 					new NotFoundError({
 						message: "Template not found",
@@ -199,12 +199,12 @@ export async function createWorkScheduleAssignment(
 		}
 
 		if (existingAssignment) {
-			yield* _(
+			return yield* _(
 				Effect.fail(
 					new ConflictError({
 						message: `An assignment already exists at this ${data.assignmentType} level`,
-						entityType: "work_schedule_assignment",
-						conflictField: data.assignmentType,
+						conflictType: "duplicate_assignment",
+						details: { entityType: "work_schedule_assignment", field: data.assignmentType },
 					}),
 				),
 			);
@@ -292,7 +292,7 @@ export async function deleteWorkScheduleAssignment(
 		);
 
 		if (!existingAssignment) {
-			yield* _(
+			return yield* _(
 				Effect.fail(
 					new NotFoundError({
 						message: "Assignment not found",
@@ -309,7 +309,7 @@ export async function deleteWorkScheduleAssignment(
 		);
 
 		if (!hasPermission) {
-			yield* _(
+			return yield* _(
 				Effect.fail(
 					new AuthorizationError({
 						message: "Insufficient permissions",
@@ -497,13 +497,13 @@ export async function getEmployeeEffectiveSchedule(
 			dbService.query("getAssignments", async () => {
 				return await dbService.db.query.workScheduleAssignment.findMany({
 					where: and(
-						eq(workScheduleAssignment.organizationId, emp.organizationId),
+						eq(workScheduleAssignment.organizationId, emp!.organizationId),
 						eq(workScheduleAssignment.isActive, true),
 						or(
 							// Employee-specific assignment
 							eq(workScheduleAssignment.employeeId, employeeId),
 							// Team assignment (if employee has a team)
-							emp.teamId ? eq(workScheduleAssignment.teamId, emp.teamId) : undefined,
+							emp!.teamId ? eq(workScheduleAssignment.teamId, emp!.teamId) : undefined,
 							// Organization-wide assignment
 							eq(workScheduleAssignment.assignmentType, "organization"),
 						),

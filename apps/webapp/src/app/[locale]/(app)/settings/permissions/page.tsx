@@ -32,7 +32,7 @@ export default function PermissionsPage() {
 	const [teams, setTeams] = useState<TeamItem[]>([]);
 	const [permissions, setPermissions] = useState<Record<string, EmployeePermissions>>({});
 	const [loading, setLoading] = useState(true);
-	const [currentEmployee, setCurrentEmployee] = useState<EmployeeWithRelations | null>(null);
+	const [currentEmployee, setCurrentEmployee] = useState<{ id: string; role: string; organizationId: string } | null>(null);
 	const [noEmployee, setNoEmployee] = useState(false);
 	const [isAdmin, setIsAdmin] = useState(false);
 	const [searchQuery, setSearchQuery] = useState("");
@@ -56,10 +56,10 @@ export default function PermissionsPage() {
 			setIsAdmin(true);
 
 			// Load employees
-			const empResult = await listEmployees(current.organizationId);
+			const empResult = await listEmployees({ organizationId: current.organizationId });
 			if (empResult.success && empResult.data) {
 				setEmployees(empResult.data);
-			} else {
+			} else if (!empResult.success) {
 				toast.error(empResult.error || "Failed to load employees");
 			}
 
@@ -108,7 +108,7 @@ export default function PermissionsPage() {
 		}
 
 		// Reload employees
-		const empResult = await listEmployees(currentEmployee.organizationId);
+		const empResult = await listEmployees({ organizationId: currentEmployee.organizationId });
 		if (empResult.success && empResult.data) {
 			setEmployees(empResult.data);
 		}
@@ -294,7 +294,7 @@ export default function PermissionsPage() {
 					<DialogHeader>
 						<DialogTitle>Edit Permissions - {selectedEmployee?.user.name}</DialogTitle>
 					</DialogHeader>
-					{selectedEmployee && (
+					{selectedEmployee && currentEmployee && (
 						<PermissionEditor
 							employeeId={selectedEmployee.id}
 							employeeName={selectedEmployee.user.name}

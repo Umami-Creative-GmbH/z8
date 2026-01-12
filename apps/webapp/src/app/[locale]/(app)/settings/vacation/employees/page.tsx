@@ -40,14 +40,15 @@ async function EmployeeAllowancesContent() {
 	}
 
 	const currentYear = new Date().getFullYear();
-	const [{ data: employees }, { data: orgPolicy }, { data: policyAssignments }] = await Promise.all(
-		[
-			getEmployeesWithAllowances(authContext.employee.organizationId, currentYear),
-			getVacationPolicy(authContext.employee.organizationId, currentYear),
-			getVacationPolicyAssignments(authContext.employee.organizationId),
-		],
-	);
+	const [employeesResult, policyResult, policyAssignmentsResult] = await Promise.all([
+		getEmployeesWithAllowances(authContext.employee.organizationId, currentYear),
+		getVacationPolicy(authContext.employee.organizationId, currentYear),
+		getVacationPolicyAssignments(authContext.employee.organizationId),
+	]);
 
+	const employees = employeesResult.success ? employeesResult.data : [];
+	const orgPolicy = policyResult.success ? policyResult.data : null;
+	const policyAssignments = policyAssignmentsResult.success ? policyAssignmentsResult.data : [];
 	const defaultDays = orgPolicy?.defaultAnnualDays || "0";
 
 	// Build a map of employeeId -> policy assignment (only employee-level assignments)

@@ -1,11 +1,9 @@
 "use client";
 
 import { useForm } from "@tanstack/react-form";
-import { zodValidator } from "@tanstack/zod-form-adapter";
 import { IconDeviceFloppy, IconLoader2 } from "@tabler/icons-react";
 import { use, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { z } from "zod";
 import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -24,7 +22,13 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { useRouter } from "@/navigation";
-import { getEmployeeAllowance, getVacationPolicies, updateEmployeeAllowance } from "../../actions";
+import {
+	createVacationAdjustmentAction,
+	getEmployeeAdjustmentTotal,
+	getEmployeeAllowance,
+	getVacationPolicies,
+	updateEmployeeAllowance,
+} from "../../actions";
 import {
 	getVacationPolicies as getAssignmentPolicies,
 	getEmployeePolicyAssignment,
@@ -53,10 +57,10 @@ export default function EmployeeAllowanceEditPage({
 	const [currentAssignment, setCurrentAssignment] = useState<any>(null);
 	const [noEmployee, setNoEmployee] = useState(false);
 	const [currentYear] = useState(new Date().getFullYear());
+	const [adjustmentTotal, setAdjustmentTotal] = useState(0);
 
 	const form = useForm({
 		defaultValues,
-		validatorAdapter: zodValidator(),
 		onSubmit: async ({ value }) => {
 			setLoading(true);
 
@@ -74,21 +78,41 @@ export default function EmployeeAllowanceEditPage({
 					}
 				}
 
-				// Update allowance
-				const result = await updateEmployeeAllowance(employeeId, currentYear, {
-					customAnnualDays: value.customAnnualDays || undefined,
-					customCarryoverDays: value.customCarryoverDays || undefined,
-					adjustmentDays: value.adjustmentDays || undefined,
-					adjustmentReason: value.adjustmentReason || undefined,
-				});
+				// Update base allowance if customAnnualDays or customCarryoverDays changed
+				if (value.customAnnualDays || value.customCarryoverDays) {
+					const result = await updateEmployeeAllowance(employeeId, currentYear, {
+						customAnnualDays: value.customAnnualDays || undefined,
+						customCarryoverDays: value.customCarryoverDays || undefined,
+					});
 
-				if (result.success) {
-					toast.success("Employee allowance updated successfully");
-					router.push("/settings/vacation/employees");
-					router.refresh();
-				} else {
-					toast.error(result.error || "Failed to update allowance");
+					if (!result.success) {
+						toast.error(result.error || "Failed to update allowance");
+						setLoading(false);
+						return;
+					}
 				}
+
+				// Create adjustment event if adjustment provided
+				if (value.adjustmentDays && value.adjustmentReason) {
+					const adjustmentResult = await createVacationAdjustmentAction(
+						employeeId,
+						currentYear,
+						{
+							days: value.adjustmentDays,
+							reason: value.adjustmentReason,
+						},
+					);
+
+					if (!adjustmentResult.success) {
+						toast.error(adjustmentResult.error || "Failed to create adjustment");
+						setLoading(false);
+						return;
+					}
+				}
+
+				toast.success("Employee allowance updated successfully");
+				router.push("/settings/vacation/employees");
+				router.refresh();
 			} catch (_error) {
 				toast.error("An unexpected error occurred");
 			} finally {
@@ -105,12 +129,14 @@ export default function EmployeeAllowanceEditPage({
 				return;
 			}
 
-			const [empResult, policyResult, policiesResult, assignmentResult] = await Promise.all([
-				getEmployeeAllowance(employeeId, currentYear),
-				getVacationPolicies(current.organizationId, currentYear),
-				getAssignmentPolicies(current.organizationId),
-				getEmployeePolicyAssignment(employeeId),
-			]);
+			const [empResult, policyResult, policiesResult, assignmentResult, adjustmentTotalResult] =
+				await Promise.all([
+					getEmployeeAllowance(employeeId, currentYear),
+					getVacationPolicies(current.organizationId, currentYear),
+					getAssignmentPolicies(current.organizationId),
+					getEmployeePolicyAssignment(employeeId),
+					getEmployeeAdjustmentTotal(employeeId, currentYear),
+				]);
 
 			if (empResult.success && empResult.data) {
 				setEmployee(empResult.data);
@@ -120,8 +146,9 @@ export default function EmployeeAllowanceEditPage({
 				form.setFieldValue("policyId", policyId);
 				form.setFieldValue("customAnnualDays", allowance?.customAnnualDays || "");
 				form.setFieldValue("customCarryoverDays", allowance?.customCarryoverDays || "");
-				form.setFieldValue("adjustmentDays", allowance?.adjustmentDays || "");
-				form.setFieldValue("adjustmentReason", allowance?.adjustmentReason || "");
+				// Don't set adjustment fields - they are for new adjustments only
+				form.setFieldValue("adjustmentDays", "");
+				form.setFieldValue("adjustmentReason", "");
 			}
 
 			if (policyResult.success && policyResult.data) {
@@ -137,6 +164,10 @@ export default function EmployeeAllowanceEditPage({
 
 			if (assignmentResult.success) {
 				setCurrentAssignment(assignmentResult.data);
+			}
+
+			if (adjustmentTotalResult.success) {
+				setAdjustmentTotal(adjustmentTotalResult.data);
 			}
 		}
 
@@ -158,7 +189,7 @@ export default function EmployeeAllowanceEditPage({
 	const customDays = allowance?.customAnnualDays ? parseFloat(allowance.customAnnualDays) : null;
 	const annualDays = customDays !== null ? customDays : parseFloat(defaultDays);
 	const carryover = allowance?.customCarryoverDays ? parseFloat(allowance.customCarryoverDays) : 0;
-	const adjustments = allowance?.adjustmentDays ? parseFloat(allowance.adjustmentDays) : 0;
+	const adjustments = adjustmentTotal;
 	const total = annualDays + carryover + adjustments;
 
 	if (noEmployee) {
@@ -310,12 +341,7 @@ export default function EmployeeAllowanceEditPage({
 
 							<Separator />
 
-							<form.Field
-								name="customAnnualDays"
-								validators={{
-									onChange: z.string().optional(),
-								}}
-							>
+							<form.Field name="customAnnualDays">
 								{(field) => (
 									<div className="space-y-2">
 										<Label>Custom Annual Days (Optional)</Label>
@@ -337,12 +363,7 @@ export default function EmployeeAllowanceEditPage({
 								)}
 							</form.Field>
 
-							<form.Field
-								name="customCarryoverDays"
-								validators={{
-									onChange: z.string().optional(),
-								}}
-							>
+							<form.Field name="customCarryoverDays">
 								{(field) => (
 									<div className="space-y-2">
 										<Label>Carryover Days (Optional)</Label>
@@ -365,17 +386,13 @@ export default function EmployeeAllowanceEditPage({
 							<Separator />
 
 							<div className="space-y-4">
-								<h3 className="text-lg font-semibold">Manual Adjustments</h3>
+								<h3 className="text-lg font-semibold">Add Manual Adjustment</h3>
 								<p className="text-sm text-muted-foreground">
-									Add or subtract days for special circumstances (e.g., bonus days, corrections)
+									Create a new adjustment entry for special circumstances (e.g., bonus days,
+									corrections). Each adjustment is recorded in the audit log.
 								</p>
 
-								<form.Field
-									name="adjustmentDays"
-									validators={{
-										onChange: z.string().optional(),
-									}}
-								>
+								<form.Field name="adjustmentDays">
 									{(field) => (
 										<div className="space-y-2">
 											<Label>Adjustment Days</Label>
@@ -397,12 +414,7 @@ export default function EmployeeAllowanceEditPage({
 									)}
 								</form.Field>
 
-								<form.Field
-									name="adjustmentReason"
-									validators={{
-										onChange: z.string().optional(),
-									}}
-								>
+								<form.Field name="adjustmentReason">
 									{(field) => (
 										<div className="space-y-2">
 											<Label>Reason for Adjustment</Label>

@@ -55,7 +55,7 @@ export default async function OrganizationsPage() {
 				eq(authSchema.invitation.status, "pending"),
 			),
 			with: {
-				inviter: true,
+				user: true, // The inviter - relation named "user" in auth-schema
 			},
 			orderBy: (invitation, { desc }) => [desc(invitation.createdAt)],
 		}),

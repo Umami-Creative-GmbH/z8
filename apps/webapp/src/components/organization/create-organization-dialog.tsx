@@ -2,7 +2,6 @@
 
 import { useForm } from "@tanstack/react-form";
 import { useStore } from "@tanstack/react-store";
-import { zodValidator } from "@tanstack/zod-form-adapter";
 import { IconBuilding, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useRef, useState } from "react";
@@ -47,7 +46,6 @@ export function CreateOrganizationDialog({
 			name: "",
 			slug: "",
 		},
-		validatorAdapter: zodValidator(),
 		onSubmit: async ({ value }) => {
 			// Final slug availability check
 			if (slugError) {

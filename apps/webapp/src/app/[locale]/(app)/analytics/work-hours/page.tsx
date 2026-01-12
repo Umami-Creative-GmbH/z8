@@ -79,9 +79,9 @@ export default function WorkHoursPage() {
 						headers: [
 							{ key: "employeeName", label: "Employee" },
 							{ key: "totalHours", label: "Total Hours" },
-							{ key: "expectedHours", label: "Expected Hours" },
-							{ key: "variance", label: "Variance" },
-							{ key: "percentageOfExpected", label: "% of Expected" },
+							{ key: "overtimeHours", label: "Overtime Hours" },
+							{ key: "undertimeHours", label: "Undertime Hours" },
+							{ key: "avgHoursPerWeek", label: "Avg Hours/Week" },
 						],
 						filename: `work-hours-${dateRange.start.toISOString().split("T")[0]}`,
 					}}

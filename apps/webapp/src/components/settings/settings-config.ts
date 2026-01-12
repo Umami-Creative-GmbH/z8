@@ -153,6 +153,17 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		group: "administration",
 	},
 	{
+		id: "time-regulations",
+		titleKey: "settings.timeRegulations.title",
+		titleDefault: "Time Regulations",
+		descriptionKey: "settings.timeRegulations.description",
+		descriptionDefault: "Configure working time limits and break requirements",
+		href: "/settings/time-regulations",
+		icon: "gavel",
+		adminOnly: true,
+		group: "administration",
+	},
+	{
 		id: "work-schedules",
 		titleKey: "settings.workSchedules.title",
 		titleDefault: "Work Shifts",
@@ -165,17 +176,6 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		requiredFeature: "shiftsEnabled",
 	},
 	{
-		id: "time-regulations",
-		titleKey: "settings.timeRegulations.title",
-		titleDefault: "Time Regulations",
-		descriptionKey: "settings.timeRegulations.description",
-		descriptionDefault: "Configure working time limits and break requirements",
-		href: "/settings/time-regulations",
-		icon: "gavel",
-		adminOnly: true,
-		group: "administration",
-	},
-	{
 		id: "surcharges",
 		titleKey: "settings.surcharges.title",
 		titleDefault: "Surcharges",
@@ -185,6 +185,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		icon: "percentage",
 		adminOnly: true,
 		group: "administration",
+		requiredFeature: "surchargesEnabled",
 	},
 	{
 		id: "projects",

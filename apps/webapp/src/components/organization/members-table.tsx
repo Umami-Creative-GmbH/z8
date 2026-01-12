@@ -311,7 +311,7 @@ export function MembersTable({
 												</Badge>
 											</TableCell>
 											<TableCell className="text-sm text-muted-foreground">
-												{invitation.inviter.name}
+												{invitation.user.name}
 											</TableCell>
 											<TableCell className="text-sm text-muted-foreground">
 												{formatDistanceToNow(new Date(invitation.createdAt), { addSuffix: true })}

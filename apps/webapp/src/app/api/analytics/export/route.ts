@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
 		if (body.format === "excel") {
 			const buffer = await generateExcelBuffer(body.data, body.headers, "Data");
 
-			return new NextResponse(buffer, {
+			return new NextResponse(new Uint8Array(buffer), {
 				status: 200,
 				headers: {
 					"Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

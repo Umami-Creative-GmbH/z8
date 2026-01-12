@@ -17,12 +17,14 @@ export function VacationManagement({ organizationId, children }: VacationManagem
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 
-	// Assignment dialog state (employee assignments moved to Employee Allowances page)
+	// Assignment dialog state
 	const [assignmentDialogOpen, setAssignmentDialogOpen] = useState(false);
-	const [assignmentType, setAssignmentType] = useState<"organization" | "team">("organization");
+	const [assignmentType, setAssignmentType] = useState<"organization" | "team" | "employee">(
+		"organization",
+	);
 
 	// Assignment handlers
-	const handleAssignClick = (type: "organization" | "team") => {
+	const handleAssignClick = (type: "organization" | "team" | "employee") => {
 		setAssignmentType(type);
 		setAssignmentDialogOpen(true);
 	};

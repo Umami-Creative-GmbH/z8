@@ -12,6 +12,7 @@ import { InviteMemberDialog } from "./invite-member-dialog";
 import { MembersTable } from "./members-table";
 import { OrganizationDetailsCard } from "./organization-details-card";
 import { OrganizationFeaturesCard } from "./organization-features-card";
+import { OrganizationTimezoneCard } from "./organization-timezone-card";
 import type { InvitationWithInviter, MemberWithUserAndEmployee } from "./organizations-page-client";
 
 interface OrganizationTabProps {
@@ -69,6 +70,14 @@ export function OrganizationTab({
 				organizationId={organization.id}
 				shiftsEnabled={organization.shiftsEnabled ?? false}
 				projectsEnabled={organization.projectsEnabled ?? false}
+				surchargesEnabled={organization.surchargesEnabled ?? false}
+				currentMemberRole={currentMemberRole}
+			/>
+
+			{/* Organization Timezone Card */}
+			<OrganizationTimezoneCard
+				organizationId={organization.id}
+				timezone={organization.timezone ?? "UTC"}
 				currentMemberRole={currentMemberRole}
 			/>
 
