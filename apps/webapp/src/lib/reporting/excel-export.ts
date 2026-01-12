@@ -1,11 +1,11 @@
 /**
  * Excel Export Utility
  *
- * Generates Excel files (.xlsx) from structured data using the xlsx library.
+ * Generates Excel files (.xlsx) from structured data using ExcelJS.
  * Supports auto-sized columns and formatted headers.
  */
 
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 
 export type ExcelHeader<T> = {
 	key: keyof T;
@@ -14,66 +14,82 @@ export type ExcelHeader<T> = {
 };
 
 /**
+ * Transform a value for Excel cell
+ */
+function transformValue(value: unknown): string | number | boolean | Date {
+	if (value === null || value === undefined) {
+		return "";
+	}
+	if (value instanceof Date) {
+		return value;
+	}
+	if (typeof value === "boolean") {
+		return value ? "Yes" : "No";
+	}
+	if (typeof value === "object") {
+		return JSON.stringify(value);
+	}
+	return value as string | number;
+}
+
+/**
+ * Calculate column width based on content
+ */
+function calculateColumnWidth<T extends Record<string, unknown>>(
+	header: ExcelHeader<T>,
+	data: T[],
+): number {
+	if (header.width) {
+		return header.width;
+	}
+
+	const headerWidth = header.label.length;
+	const dataWidth = Math.max(
+		0,
+		...data.map((row) => {
+			const value = row[header.key];
+			return value ? String(value).length : 0;
+		}),
+	);
+
+	// Use the larger of header or data width, with a max of 50 characters
+	return Math.min(Math.max(headerWidth, dataWidth) + 2, 50);
+}
+
+/**
  * Generate Excel workbook from data array
  * @param data - Array of objects to export
  * @param headers - Array of header definitions with keys and labels
  * @param sheetName - Name of the worksheet (default: "Sheet1")
- * @returns XLSX Workbook object
+ * @returns ExcelJS Workbook object
  */
-export function generateExcelWorkbook<T extends Record<string, any>>(
+export function generateExcelWorkbook<T extends Record<string, unknown>>(
 	data: T[],
 	headers: ExcelHeader<T>[],
 	sheetName: string = "Sheet1",
-): XLSX.WorkBook {
-	// Transform data to match header keys and labels
-	const transformedData = data.map((row) => {
-		const transformedRow: Record<string, any> = {};
+): ExcelJS.Workbook {
+	const workbook = new ExcelJS.Workbook();
+	const worksheet = workbook.addWorksheet(sheetName);
+
+	// Set up columns with headers and widths
+	worksheet.columns = headers.map((header) => ({
+		header: header.label,
+		key: String(header.key),
+		width: calculateColumnWidth(header, data),
+	}));
+
+	// Style header row
+	const headerRow = worksheet.getRow(1);
+	headerRow.font = { bold: true };
+
+	// Add data rows
+	for (const row of data) {
+		const rowData: Record<string, string | number | boolean | Date> = {};
 		for (const header of headers) {
-			const value = row[header.key];
-			// Handle different data types
-			if (value === null || value === undefined) {
-				transformedRow[header.label] = "";
-			} else if (value && typeof value === "object" && value.constructor === Date) {
-				transformedRow[header.label] = value;
-			} else if (typeof value === "boolean") {
-				transformedRow[header.label] = value ? "Yes" : "No";
-			} else if (typeof value === "object") {
-				transformedRow[header.label] = JSON.stringify(value);
-			} else {
-				transformedRow[header.label] = value;
-			}
+			rowData[String(header.key)] = transformValue(row[header.key]);
 		}
-		return transformedRow;
-	});
-
-	// Create worksheet from data
-	const worksheet = XLSX.utils.json_to_sheet(transformedData);
-
-	// Auto-size columns based on content or specified width
-	const columnWidths: XLSX.ColInfo[] = headers.map((header) => {
-		if (header.width) {
-			return { wch: header.width };
-		}
-
-		// Calculate max width from header label and data
-		const headerWidth = header.label.length;
-		const dataWidth = Math.max(
-			...transformedData.map((row) => {
-				const value = row[header.label];
-				return value ? String(value).length : 0;
-			}),
-		);
-
-		// Use the larger of header or data width, with a max of 50 characters
-		const width = Math.min(Math.max(headerWidth, dataWidth) + 2, 50);
-		return { wch: width };
-	});
-
-	worksheet["!cols"] = columnWidths;
-
-	// Create workbook and add worksheet
-	const workbook = XLSX.utils.book_new();
-	XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+		worksheet.addRow(rowData);
+	}
 
 	return workbook;
 }
@@ -83,16 +99,16 @@ export function generateExcelWorkbook<T extends Record<string, any>>(
  * @param data - Array of objects to export
  * @param headers - Array of header definitions with keys and labels
  * @param sheetName - Name of the worksheet (default: "Sheet1")
- * @returns Buffer with Excel file content
+ * @returns Promise<Buffer> with Excel file content
  */
-export function generateExcelBuffer<T extends Record<string, any>>(
+export async function generateExcelBuffer<T extends Record<string, unknown>>(
 	data: T[],
 	headers: ExcelHeader<T>[],
 	sheetName: string = "Sheet1",
-): Buffer {
+): Promise<Buffer> {
 	const workbook = generateExcelWorkbook(data, headers, sheetName);
-	const buffer = XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
-	return buffer;
+	const arrayBuffer = await workbook.xlsx.writeBuffer();
+	return Buffer.from(arrayBuffer);
 }
 
 /**
@@ -100,15 +116,15 @@ export function generateExcelBuffer<T extends Record<string, any>>(
  * @param data - Array of objects to export
  * @param headers - Array of header definitions with keys and labels
  * @param sheetName - Name of the worksheet (default: "Sheet1")
- * @returns Blob with Excel file content and proper MIME type
+ * @returns Promise<Blob> with Excel file content and proper MIME type
  */
-export function generateExcelBlob<T extends Record<string, any>>(
+export async function generateExcelBlob<T extends Record<string, unknown>>(
 	data: T[],
 	headers: ExcelHeader<T>[],
 	sheetName: string = "Sheet1",
-): Blob {
+): Promise<Blob> {
 	const workbook = generateExcelWorkbook(data, headers, sheetName);
-	const arrayBuffer = XLSX.write(workbook, { type: "array", bookType: "xlsx" });
+	const arrayBuffer = await workbook.xlsx.writeBuffer();
 	return new Blob([arrayBuffer], {
 		type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 	});
@@ -121,13 +137,13 @@ export function generateExcelBlob<T extends Record<string, any>>(
  * @param filename - Name of the file to download (without extension)
  * @param sheetName - Name of the worksheet (default: "Sheet1")
  */
-export function downloadExcel<T extends Record<string, any>>(
+export async function downloadExcel<T extends Record<string, unknown>>(
 	data: T[],
 	headers: ExcelHeader<T>[],
 	filename: string,
 	sheetName: string = "Sheet1",
-): void {
-	const blob = generateExcelBlob(data, headers, sheetName);
+): Promise<void> {
+	const blob = await generateExcelBlob(data, headers, sheetName);
 	const url = window.URL.createObjectURL(blob);
 	const link = document.createElement("a");
 	link.href = url;

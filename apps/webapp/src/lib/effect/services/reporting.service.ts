@@ -6,12 +6,9 @@
  */
 
 import { Context, Data, Effect, Layer } from "effect";
+import ExcelJS from "exceljs";
 import Papa from "papaparse";
-import * as XLSX from "xlsx";
 import type { ExportHeader } from "@/lib/analytics/types";
-
-// Since ValidationError is Data.TaggedError("ValidationError"), extending it directly isn't the best if we want a new tag.
-// But if we want to alias it, we can create a new class.
 
 export class ReportingError extends Data.TaggedError("ReportingError")<{
 	message: string;
@@ -21,12 +18,12 @@ export class ReportingError extends Data.TaggedError("ReportingError")<{
 export class ReportingService extends Context.Tag("ReportingService")<
 	ReportingService,
 	{
-		readonly exportToCsv: <T extends Record<string, any>>(
+		readonly exportToCsv: <T extends Record<string, unknown>>(
 			data: T[],
 			headers: ExportHeader<T>[],
 			filename: string,
 		) => Effect.Effect<string, ReportingError>;
-		readonly exportToExcel: <T extends Record<string, any>>(
+		readonly exportToExcel: <T extends Record<string, unknown>>(
 			data: T[],
 			headers: ExportHeader<T>[],
 			filename: string,
@@ -35,7 +32,7 @@ export class ReportingService extends Context.Tag("ReportingService")<
 	}
 >() {
 	static readonly Live = Layer.succeed(ReportingService, {
-		exportToCsv: <T extends Record<string, any>>(
+		exportToCsv: <T extends Record<string, unknown>>(
 			data: T[],
 			headers: ExportHeader<T>[],
 			filename: string,
@@ -66,10 +63,10 @@ export class ReportingService extends Context.Tag("ReportingService")<
 
 				// Transform data to use header labels as keys
 				const formattedData = data.map((row) => {
-					const formattedRow: Record<string, any> = {};
-					headers.forEach((header) => {
+					const formattedRow: Record<string, unknown> = {};
+					for (const header of headers) {
 						formattedRow[header.label] = row[header.key];
-					});
+					}
 					return formattedRow;
 				});
 
@@ -98,7 +95,7 @@ export class ReportingService extends Context.Tag("ReportingService")<
 				}
 			}),
 
-		exportToExcel: <T extends Record<string, any>>(
+		exportToExcel: <T extends Record<string, unknown>>(
 			data: T[],
 			headers: ExportHeader<T>[],
 			filename: string,
@@ -128,44 +125,54 @@ export class ReportingService extends Context.Tag("ReportingService")<
 					);
 				}
 
-				// Transform data to use header labels as keys
-				const formattedData = data.map((row) => {
-					const formattedRow: Record<string, any> = {};
-					headers.forEach((header) => {
-						formattedRow[header.label] = row[header.key];
-					});
-					return formattedRow;
-				});
-
 				try {
-					// Create worksheet from data
-					const worksheet = XLSX.utils.json_to_sheet(formattedData);
+					const workbook = new ExcelJS.Workbook();
+					const worksheet = workbook.addWorksheet(sheetName);
 
-					// Auto-size columns based on header and data
-					const columnWidths = headers.map((header) => {
+					// Set up columns with headers and auto-sized widths
+					worksheet.columns = headers.map((header) => {
 						const headerLength = header.label.length;
 						const maxDataLength = Math.max(
-							...formattedData.map((row) => {
-								const value = row[header.label];
+							0,
+							...data.map((row) => {
+								const value = row[header.key];
 								return value ? String(value).length : 0;
 							}),
 						);
-						return { wch: Math.max(headerLength, maxDataLength, 10) };
+						return {
+							header: header.label,
+							key: String(header.key),
+							width: Math.max(headerLength, maxDataLength, 10),
+						};
 					});
 
-					worksheet["!cols"] = columnWidths;
+					// Style header row
+					const headerRow = worksheet.getRow(1);
+					headerRow.font = { bold: true };
 
-					// Create workbook
-					const workbook = XLSX.utils.book_new();
-					XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+					// Add data rows
+					for (const row of data) {
+						const rowData: Record<string, unknown> = {};
+						for (const header of headers) {
+							rowData[String(header.key)] = row[header.key] ?? "";
+						}
+						worksheet.addRow(rowData);
+					}
 
 					// Generate buffer
-					const buffer = XLSX.write(workbook, {
-						type: "buffer",
-						bookType: "xlsx",
-					}) as Buffer;
+					const arrayBuffer = yield* _(
+						Effect.tryPromise({
+							try: () => workbook.xlsx.writeBuffer(),
+							catch: (error) =>
+								new ReportingError({
+									message: "Failed to write Excel buffer",
+									details: { filename, error: String(error) },
+								}),
+						}),
+					);
 
-					if (!buffer) throw new Error("Empty Excel buffer generated");
+					const buffer = Buffer.from(arrayBuffer);
+					if (!buffer.length) throw new Error("Empty Excel buffer generated");
 					return buffer;
 				} catch (error) {
 					return yield* _(

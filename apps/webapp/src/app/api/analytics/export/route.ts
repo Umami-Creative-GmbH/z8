@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
 		}
 
 		if (body.format === "excel") {
-			const buffer = generateExcelBuffer(body.data, body.headers, "Data");
+			const buffer = await generateExcelBuffer(body.data, body.headers, "Data");
 
 			return new NextResponse(buffer, {
 				status: 200,
