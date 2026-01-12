@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { employee } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import {
+	deleteAllNotifications,
 	deleteNotification,
 	getUnreadCount,
 	getUserNotifications,
@@ -111,9 +112,11 @@ export async function PATCH(request: NextRequest) {
 
 /**
  * DELETE /api/notifications
- * Delete a notification
+ * Delete notification(s)
  *
- * Body: { id: string }
+ * Body:
+ * - { id: string } - Delete single notification
+ * - { deleteAll: true } - Delete all notifications
  */
 export async function DELETE(request: NextRequest) {
 	try {
@@ -124,6 +127,24 @@ export async function DELETE(request: NextRequest) {
 
 		const body = await request.json();
 
+		// Delete all notifications
+		if (body.deleteAll) {
+			// Get organization from employee record
+			const [emp] = await db
+				.select({ organizationId: employee.organizationId })
+				.from(employee)
+				.where(and(eq(employee.userId, session.user.id), eq(employee.isActive, true)))
+				.limit(1);
+
+			if (!emp) {
+				return NextResponse.json({ error: "No active employee record" }, { status: 400 });
+			}
+
+			const count = await deleteAllNotifications(session.user.id, emp.organizationId);
+			return NextResponse.json({ success: true, deletedCount: count });
+		}
+
+		// Delete single notification
 		if (!body.id) {
 			return NextResponse.json({ error: "Notification ID required" }, { status: 400 });
 		}

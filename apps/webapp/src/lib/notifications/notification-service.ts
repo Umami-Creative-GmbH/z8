@@ -326,6 +326,25 @@ export async function deleteNotification(notificationId: string, userId: string)
 }
 
 /**
+ * Delete all notifications for a user
+ */
+export async function deleteAllNotifications(userId: string, organizationId: string): Promise<number> {
+	try {
+		const result = await db
+			.delete(notification)
+			.where(and(eq(notification.userId, userId), eq(notification.organizationId, organizationId)));
+
+		const deletedCount = result.rowCount ?? 0;
+		logger.info({ userId, deletedCount }, "All notifications deleted");
+
+		return deletedCount;
+	} catch (error) {
+		logger.error({ error, userId }, "Failed to delete all notifications");
+		return 0;
+	}
+}
+
+/**
  * Delete old notifications (cleanup job)
  */
 export async function deleteOldNotifications(olderThanDays: number = 90): Promise<number> {

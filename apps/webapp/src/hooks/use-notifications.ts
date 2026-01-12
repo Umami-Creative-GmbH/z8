@@ -94,6 +94,20 @@ export function useNotifications(options: UseNotificationsOptions = {}) {
 		},
 	});
 
+	// Delete all notifications
+	const deleteAllMutation = useMutation({
+		mutationFn: async () => {
+			return fetchApi("/api/notifications", {
+				method: "DELETE",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ deleteAll: true }),
+			});
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: queryKeys.notifications.all });
+		},
+	});
+
 	// Refresh all notification data
 	const refresh = useCallback(() => {
 		queryClient.invalidateQueries({ queryKey: queryKeys.notifications.all });
@@ -116,9 +130,11 @@ export function useNotifications(options: UseNotificationsOptions = {}) {
 		markAsRead: markAsReadMutation.mutateAsync,
 		markAllAsRead: markAllAsReadMutation.mutateAsync,
 		deleteNotification: deleteMutation.mutateAsync,
+		deleteAllNotifications: deleteAllMutation.mutateAsync,
 		isMarkingRead: markAsReadMutation.isPending,
 		isMarkingAllRead: markAllAsReadMutation.isPending,
 		isDeleting: deleteMutation.isPending,
+		isDeletingAll: deleteAllMutation.isPending,
 
 		// Utilities
 		refresh,

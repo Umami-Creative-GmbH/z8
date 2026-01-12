@@ -1,6 +1,6 @@
 "use client";
 
-import { IconCheck, IconSettings } from "@tabler/icons-react";
+import { IconCheck, IconSettings, IconTrash } from "@tabler/icons-react";
 import Link from "next/link";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -26,7 +26,9 @@ export function NotificationPopover({ children }: NotificationPopoverProps) {
 		markAsRead,
 		markAllAsRead,
 		deleteNotification,
+		deleteAllNotifications,
 		isMarkingAllRead,
+		isDeletingAll,
 	} = useNotifications({ enabled: open && hasOrganization });
 
 	const handleMarkAsRead = async (id: string) => {
@@ -48,6 +50,14 @@ export function NotificationPopover({ children }: NotificationPopoverProps) {
 	const handleDelete = async (id: string) => {
 		try {
 			await deleteNotification(id);
+		} catch {
+			// Error is handled by the hook
+		}
+	};
+
+	const handleDeleteAll = async () => {
+		try {
+			await deleteAllNotifications();
 		} catch {
 			// Error is handled by the hook
 		}
@@ -82,6 +92,18 @@ export function NotificationPopover({ children }: NotificationPopoverProps) {
 							>
 								<IconCheck className="mr-1 size-3.5" />
 								Mark all read
+							</Button>
+						)}
+						{notifications.length > 0 && (
+							<Button
+								size="sm"
+								variant="ghost"
+								className="h-8 text-xs text-muted-foreground hover:text-destructive"
+								onClick={handleDeleteAll}
+								disabled={isDeletingAll}
+							>
+								<IconTrash className="mr-1 size-3.5" />
+								Delete all
 							</Button>
 						)}
 						<Button size="icon" variant="ghost" className="size-8" asChild onClick={handleClose}>
