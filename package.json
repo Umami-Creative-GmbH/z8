@@ -1,24 +1,27 @@
 {
-  "name": "z8",
-  "private": true,
-  "workspaces": ["apps/*", "packages/*"],
-  "scripts": {
-    "dev": "turbo dev",
-    "build": "turbo build",
-    "test": "bun test apps/webapp/src",
-    "test:watch": "bun test --watch apps/webapp/src",
-    "dev:webapp": "turbo dev --filter=webapp",
-    "dev:desktop": "turbo dev --filter=desktop",
-    "dev:mobile": "turbo dev --filter=mobile",
-    "build:webapp": "turbo build --filter=webapp",
-    "build:desktop": "turbo build --filter=desktop",
-    "build:mobile": "turbo build --filter=mobile",
-    "dev:docs": "turbo dev --filter=docs",
-    "build:docs": "turbo build --filter=docs"
-  },
-  "devDependencies": {
-    "shadcn": "^3.6.3",
-    "turbo": "^2.7.4"
-  },
-  "packageManager": "bun@1.3.5"
+	"name": "z8",
+	"private": true,
+	"workspaces": [
+		"apps/*",
+		"packages/*"
+	],
+	"scripts": {
+		"dev": "turbo dev",
+		"build": "turbo build",
+		"test": "bun test apps/webapp/src",
+		"test:watch": "bun test --watch apps/webapp/src",
+		"dev:webapp": "turbo dev --filter=webapp",
+		"dev:desktop": "turbo dev --filter=desktop",
+		"dev:mobile": "turbo dev --filter=mobile",
+		"build:webapp": "turbo build --filter=webapp",
+		"build:desktop": "turbo build --filter=desktop",
+		"build:mobile": "turbo build --filter=mobile",
+		"dev:docs": "turbo dev --filter=docs",
+		"build:docs": "turbo build --filter=docs"
+	},
+	"devDependencies": {
+		"shadcn": "^3.6.3",
+		"turbo": "^2.7.4"
+	},
+	"packageManager": "bun@1.3.5"
 }

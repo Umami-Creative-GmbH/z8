@@ -23,7 +23,10 @@
       "Bash(bun biome:*)",
       "Bash(bun run build:*)",
       "Bash(bun remove:*)",
-      "Bash(bunx --bun tsc:*)"
+      "Bash(bunx --bun tsc:*)",
+      "WebSearch",
+      "Bash(done)",
+      "Bash(tasklist:*)"
     ]
   },
   "enabledMcpjsonServers": [

@@ -82,7 +82,8 @@
       "Bash(npx fumadocs-mdx)",
       "Bash(netstat:*)",
       "Bash(bun dev)",
-      "WebFetch(domain:api.github.com)"
+      "WebFetch(domain:api.github.com)",
+      "Bash(xargs -I {} bash -c \"echo ''{}'' && sed -n ''{}p'' ./apps/webapp/src/db/schema.ts\")"
     ]
   },
   "enableAllProjectMcpServers": true,
