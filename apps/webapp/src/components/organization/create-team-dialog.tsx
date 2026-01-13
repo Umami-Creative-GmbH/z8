@@ -23,7 +23,7 @@ interface CreateTeamDialogProps {
 	organizationId: string;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
-	onSuccess?: (team: typeof team.$inferSelect) => void;
+	onSuccess?: (createdTeam: typeof team.$inferSelect) => void;
 }
 
 export function CreateTeamDialog({
@@ -41,14 +41,14 @@ export function CreateTeamDialog({
 		mutationFn: (data: { organizationId: string; name: string; description?: string }) =>
 			createTeam(data),
 		onSuccess: (result) => {
-			if (result.success && result.data) {
-				toast.success("Team created successfully");
-				setFormData({ name: "", description: "" });
-				onOpenChange(false);
-				onSuccess?.(result.data);
-			} else {
+			if (!result.success) {
 				toast.error(result.error || "Failed to create team");
+				return;
 			}
+			toast.success("Team created successfully");
+			setFormData({ name: "", description: "" });
+			onOpenChange(false);
+			onSuccess?.(result.data);
 		},
 		onError: () => {
 			toast.error("Failed to create team");

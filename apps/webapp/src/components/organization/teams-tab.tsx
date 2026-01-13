@@ -94,14 +94,14 @@ export function TeamsTab({
 	};
 
 	// Handle team edit
-	const handleEdit = (team: typeof team.$inferSelect) => {
-		setSelectedTeam(team);
+	const handleEdit = (teamToEdit: typeof team.$inferSelect) => {
+		setSelectedTeam(teamToEdit);
 		setEditDialogOpen(true);
 	};
 
 	// Handle team deletion
-	const handleDeleteRequest = (team: typeof team.$inferSelect) => {
-		setSelectedTeam(team);
+	const handleDeleteRequest = (teamToDelete: typeof team.$inferSelect) => {
+		setSelectedTeam(teamToDelete);
 		setDeleteDialogOpen(true);
 	};
 
@@ -111,8 +111,8 @@ export function TeamsTab({
 	};
 
 	// Handle manage members
-	const handleManageMembers = (team: typeof team.$inferSelect) => {
-		setSelectedTeam(team);
+	const handleManageMembers = (teamToManage: typeof team.$inferSelect) => {
+		setSelectedTeam(teamToManage);
 		setMembersDialogOpen(true);
 	};
 
@@ -160,15 +160,15 @@ export function TeamsTab({
 					) : (
 						// Teams grid
 						<div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-							{teams.map((team) => (
+							{teams.map((t) => (
 								<TeamCard
-									key={team.id}
-									team={team}
-									employees={getTeamEmployees(team.id)}
+									key={t.id}
+									team={t}
+									employees={getTeamEmployees(t.id)}
 									canManage={permissions.canManageTeamSettings}
-									onEdit={() => handleEdit(team)}
-									onDelete={() => handleDeleteRequest(team)}
-									onManageMembers={() => handleManageMembers(team)}
+									onEdit={() => handleEdit(t)}
+									onDelete={() => handleDeleteRequest(t)}
+									onManageMembers={() => handleManageMembers(t)}
 								/>
 							))}
 						</div>

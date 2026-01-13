@@ -23,7 +23,7 @@ interface EditTeamDialogProps {
 	team: typeof team.$inferSelect | null;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
-	onSuccess?: (team: typeof team.$inferSelect) => void;
+	onSuccess?: (updatedTeam: typeof team.$inferSelect) => void;
 }
 
 export function EditTeamDialog({ team, open, onOpenChange, onSuccess }: EditTeamDialogProps) {
@@ -46,13 +46,13 @@ export function EditTeamDialog({ team, open, onOpenChange, onSuccess }: EditTeam
 		mutationFn: (data: { teamId: string; name?: string; description?: string }) =>
 			updateTeam(data.teamId, { name: data.name, description: data.description }),
 		onSuccess: (result) => {
-			if (result.success && result.data) {
-				toast.success("Team updated successfully");
-				onOpenChange(false);
-				onSuccess?.(result.data);
-			} else {
+			if (!result.success) {
 				toast.error(result.error || "Failed to update team");
+				return;
 			}
+			toast.success("Team updated successfully");
+			onOpenChange(false);
+			onSuccess?.(result.data);
 		},
 		onError: () => {
 			toast.error("Failed to update team");

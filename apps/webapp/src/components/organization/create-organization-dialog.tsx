@@ -179,7 +179,9 @@ export function CreateOrganizationDialog({
 								/>
 								{field.state.meta.errors.length > 0 && (
 									<p className="text-sm font-medium text-destructive">
-										{field.state.meta.errors[0]}
+										{typeof field.state.meta.errors[0] === "string"
+											? field.state.meta.errors[0]
+											: (field.state.meta.errors[0] as any)?.message}
 									</p>
 								)}
 							</div>
@@ -226,7 +228,9 @@ export function CreateOrganizationDialog({
 								{slugError && <p className="text-sm font-medium text-destructive">{slugError}</p>}
 								{field.state.meta.errors.length > 0 && (
 									<p className="text-sm font-medium text-destructive">
-										{field.state.meta.errors[0]}
+										{typeof field.state.meta.errors[0] === "string"
+											? field.state.meta.errors[0]
+											: (field.state.meta.errors[0] as any)?.message}
 									</p>
 								)}
 							</div>

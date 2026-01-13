@@ -180,7 +180,7 @@ export function MembersTable({
 				organizationId,
 				email: invitation.email,
 				role: invitation.role as "owner" | "admin" | "member",
-				canCreateOrganizations: invitation.canCreateOrganizations,
+				canCreateOrganizations: invitation.canCreateOrganizations ?? undefined,
 			});
 		},
 		onSuccess: (result) => {
@@ -314,16 +314,14 @@ export function MembersTable({
 												{invitation.user.name}
 											</TableCell>
 											<TableCell className="text-sm text-muted-foreground">
-												{formatDistanceToNow(new Date(invitation.createdAt), { addSuffix: true })}
+												{formatDistanceToNow(new Date(invitation.createdAt))}
 											</TableCell>
 											<TableCell>
 												{expired ? (
 													<Badge variant="destructive">Expired</Badge>
 												) : (
 													<span className="text-sm text-muted-foreground">
-														{formatDistanceToNow(new Date(invitation.expiresAt), {
-															addSuffix: true,
-														})}
+														{formatDistanceToNow(new Date(invitation.expiresAt))}
 													</span>
 												)}
 											</TableCell>
@@ -334,9 +332,9 @@ export function MembersTable({
 															<Button
 																variant="ghost"
 																size="sm"
-																disabled={isActioning === invitation.id}
+																disabled={isActioning(invitation.id)}
 															>
-																{isActioning === invitation.id ? (
+																{isActioning(invitation.id) ? (
 																	<IconLoader2 className="h-4 w-4 animate-spin" />
 																) : (
 																	<IconDots className="h-4 w-4" />

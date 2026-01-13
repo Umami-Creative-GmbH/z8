@@ -133,7 +133,7 @@ export function TeamMembersDialog({
 										</SelectTrigger>
 										<SelectContent>
 											{availableEmployees.map((member) => (
-												<SelectItem key={member.employee?.id} value={member.employee?.id}>
+												<SelectItem key={member.employee!.id} value={member.employee!.id}>
 													<div className="flex items-center gap-2">
 														<UserAvatar
 															seed={member.user.id}
@@ -212,10 +212,10 @@ export function TeamMembersDialog({
 												<Button
 													variant="ghost"
 													size="sm"
-													onClick={() => handleRemoveMember(member.employee?.id)}
-													disabled={isActioning(member.employee?.id || "")}
+													onClick={() => handleRemoveMember(member.employee!.id)}
+													disabled={isActioning(member.employee!.id)}
 												>
-													{isActioning(member.employee?.id || "") ? (
+													{isActioning(member.employee!.id) ? (
 														<IconLoader2 className="h-4 w-4 animate-spin" />
 													) : (
 														<IconTrash className="h-4 w-4 text-destructive" />
