@@ -1,13 +1,12 @@
 "use client";
 
 import {
-	IconChevronLeft,
-	IconChevronRight,
 	IconDots,
 	IconLoader2,
 	IconPencil,
 	IconPlus,
 	IconRefresh,
+	IconStar,
 	IconTrash,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
@@ -49,7 +48,10 @@ import { VacationPolicyForm } from "./vacation-policy-form";
 interface VacationPolicy {
 	id: string;
 	name: string;
-	year: number;
+	startDate: string; // YYYY-MM-DD
+	validUntil: string | null; // YYYY-MM-DD or null
+	isCompanyDefault: boolean;
+	isActive: boolean;
 	defaultAnnualDays: string;
 	accrualType: string;
 	accrualStartMonth: number | null;
@@ -75,13 +77,26 @@ const getAccrualTypeLabel = (t: ReturnType<typeof useTranslate>["t"], type: stri
 	return labels[type] || type;
 };
 
+const formatDate = (dateStr: string) => {
+	const date = new Date(dateStr);
+	return date.toLocaleDateString(undefined, {
+		year: "numeric",
+		month: "short",
+		day: "numeric",
+	});
+};
+
+const isPolicySuperseded = (policy: VacationPolicy) => {
+	if (!policy.validUntil) return false;
+	const today = new Date().toISOString().split("T")[0];
+	return policy.validUntil < today;
+};
+
 export function VacationPoliciesTable({
 	organizationId,
 	initialPolicies,
 }: VacationPoliciesTableProps) {
 	const { t } = useTranslate();
-	const currentYear = new Date().getFullYear();
-	const [selectedYear, setSelectedYear] = useState<number>(currentYear);
 	const [policies, setPolicies] = useState<VacationPolicy[]>(initialPolicies);
 	const [loading, setLoading] = useState(false);
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -89,14 +104,13 @@ export function VacationPoliciesTable({
 	const [deleting, setDeleting] = useState(false);
 	const [editingPolicy, setEditingPolicy] = useState<VacationPolicy | null>(null);
 	const [createFormOpen, setCreateFormOpen] = useState(false);
-	const [createYear, setCreateYear] = useState<number>(currentYear);
 
 	const fetchPolicies = useCallback(async () => {
 		setLoading(true);
 		try {
-			const result = await getVacationPolicies(organizationId, selectedYear);
-			if (result.success && result.data) {
-				setPolicies(result.data);
+			const result = await getVacationPolicies(organizationId);
+			if (result.success) {
+				setPolicies(result.data as VacationPolicy[]);
 			} else {
 				toast.error(result.error || "Failed to load policies");
 			}
@@ -105,25 +119,11 @@ export function VacationPoliciesTable({
 		} finally {
 			setLoading(false);
 		}
-	}, [organizationId, selectedYear]);
+	}, [organizationId]);
 
 	useEffect(() => {
 		fetchPolicies();
 	}, [fetchPolicies]);
-
-	const goToPreviousYear = () => {
-		setSelectedYear((prev) => prev - 1);
-	};
-
-	const goToNextYear = () => {
-		setSelectedYear((prev) => prev + 1);
-	};
-
-	const goToCurrentYear = () => {
-		setSelectedYear(currentYear);
-	};
-
-	const isCurrentYear = selectedYear === currentYear;
 
 	const handleRefresh = () => {
 		fetchPolicies();
@@ -160,7 +160,6 @@ export function VacationPoliciesTable({
 	};
 
 	const handleCreateClick = () => {
-		setCreateYear(selectedYear);
 		setCreateFormOpen(true);
 	};
 
@@ -175,21 +174,8 @@ export function VacationPoliciesTable({
 	return (
 		<div className="space-y-4">
 			<div className="flex items-center justify-between gap-4">
-				<div className="flex items-center gap-2">
-					<Button variant="outline" size="icon" onClick={goToPreviousYear}>
-						<IconChevronLeft className="h-4 w-4" />
-						<span className="sr-only">Previous year</span>
-					</Button>
-					<span className="min-w-[80px] text-center font-medium tabular-nums">{selectedYear}</span>
-					<Button variant="outline" size="icon" onClick={goToNextYear}>
-						<IconChevronRight className="h-4 w-4" />
-						<span className="sr-only">Next year</span>
-					</Button>
-					{!isCurrentYear && (
-						<Button variant="ghost" size="sm" onClick={goToCurrentYear}>
-							{t("vacation.policies.current-year", "Current Year")}
-						</Button>
-					)}
+				<div className="text-sm text-muted-foreground">
+					{t("vacation.policies.list-description", "Manage vacation policies for your organization")}
 				</div>
 				<div className="flex items-center gap-2">
 					<Button variant="ghost" size="icon" onClick={handleRefresh} disabled={loading}>
@@ -212,10 +198,10 @@ export function VacationPoliciesTable({
 			) : policies.length === 0 ? (
 				<div className="flex flex-col items-center justify-center py-12 text-center border rounded-lg">
 					<p className="text-muted-foreground">
-						{t("vacation.policies.no-policies", "No vacation policies for {{year}}", { year: selectedYear })}
+						{t("vacation.policies.no-policies-created", "No vacation policies created yet")}
 					</p>
 					<p className="text-muted-foreground text-sm mt-1">
-						{t("vacation.policies.create-description", "Create a policy to define vacation allowances for your team.")}
+						{t("vacation.policies.create-first", "Create a policy to define vacation allowances for your team.")}
 					</p>
 					<Button className="mt-4" onClick={handleCreateClick}>
 						<IconPlus className="mr-2 h-4 w-4" />
@@ -228,62 +214,88 @@ export function VacationPoliciesTable({
 						<TableHeader>
 							<TableRow>
 								<TableHead>{t("vacation.policies.header.name", "Name")}</TableHead>
-								<TableHead>{t("vacation.policies.header.year", "Year")}</TableHead>
+								<TableHead>{t("vacation.policies.header.start-date", "Start Date")}</TableHead>
+								<TableHead>{t("vacation.policies.header.valid-until", "Valid Until")}</TableHead>
 								<TableHead className="text-right">{t("vacation.policies.header.annual-days", "Annual Days")}</TableHead>
 								<TableHead>{t("vacation.policies.header.accrual", "Accrual")}</TableHead>
 								<TableHead>{t("vacation.policies.header.carryover", "Carryover")}</TableHead>
+								<TableHead>{t("vacation.policies.header.status", "Status")}</TableHead>
 								<TableHead className="w-[70px]" />
 							</TableRow>
 						</TableHeader>
 						<TableBody>
-							{policies.map((policy) => (
-								<TableRow key={policy.id}>
-									<TableCell className="font-medium">{policy.name}</TableCell>
-									<TableCell>
-										<Badge variant="outline">{policy.year}</Badge>
-									</TableCell>
-									<TableCell className="text-right">{policy.defaultAnnualDays}</TableCell>
-									<TableCell>
-										<Badge variant="secondary">
-											{getAccrualTypeLabel(t, policy.accrualType)}
-										</Badge>
-									</TableCell>
-									<TableCell>
-										{policy.allowCarryover ? (
-											<Badge variant="outline">
-												{policy.maxCarryoverDays
-													? t("vacation.policies.max-days", "Max {{days}} days", { days: policy.maxCarryoverDays })
-													: t("vacation.policies.unlimited", "Unlimited")}
+							{policies.map((policy) => {
+								const isSuperseded = isPolicySuperseded(policy);
+								return (
+									<TableRow key={policy.id} className={isSuperseded ? "opacity-60" : ""}>
+										<TableCell className="font-medium">{policy.name}</TableCell>
+										<TableCell>{formatDate(policy.startDate)}</TableCell>
+										<TableCell>
+											{policy.validUntil ? (
+												formatDate(policy.validUntil)
+											) : (
+												<span className="text-muted-foreground">—</span>
+											)}
+										</TableCell>
+										<TableCell className="text-right">{policy.defaultAnnualDays}</TableCell>
+										<TableCell>
+											<Badge variant="secondary">
+												{getAccrualTypeLabel(t, policy.accrualType)}
 											</Badge>
-										) : (
-											<span className="text-muted-foreground text-sm">{t("vacation.policies.none", "None")}</span>
-										)}
-									</TableCell>
-									<TableCell>
-										<DropdownMenu>
-											<DropdownMenuTrigger asChild>
-												<Button variant="ghost" size="icon" className="h-8 w-8">
-													<IconDots className="h-4 w-4" />
-													<span className="sr-only">Open menu</span>
-												</Button>
-											</DropdownMenuTrigger>
-											<DropdownMenuContent align="end">
-												<DropdownMenuItem onClick={() => handleEditClick(policy)}>
-													<IconPencil className="mr-2 h-4 w-4" />
-													{t("common.edit", "Edit")}
-												</DropdownMenuItem>
-												<DropdownMenuItem
-													className="text-destructive"
-													onClick={() => handleDeleteClick(policy)}
-												>
-													<IconTrash className="mr-2 h-4 w-4" />
-													{t("common.delete", "Delete")}
-												</DropdownMenuItem>
-											</DropdownMenuContent>
-										</DropdownMenu>
-									</TableCell>
-								</TableRow>
-							))}
+										</TableCell>
+										<TableCell>
+											{policy.allowCarryover ? (
+												<Badge variant="outline">
+													{policy.maxCarryoverDays
+														? t("vacation.policies.max-days", "Max {{days}} days", { days: policy.maxCarryoverDays })
+														: t("vacation.policies.unlimited", "Unlimited")}
+												</Badge>
+											) : (
+												<span className="text-muted-foreground text-sm">{t("vacation.policies.none", "None")}</span>
+											)}
+										</TableCell>
+										<TableCell>
+											{policy.isCompanyDefault ? (
+												<Badge className="bg-primary">
+													<IconStar className="mr-1 h-3 w-3" />
+													{t("vacation.policies.company-default", "Company Default")}
+												</Badge>
+											) : isSuperseded ? (
+												<Badge variant="secondary" className="text-muted-foreground">
+													{t("vacation.policies.superseded", "Superseded")}
+												</Badge>
+											) : (
+												<Badge variant="outline">
+													{t("vacation.policies.active", "Active")}
+												</Badge>
+											)}
+										</TableCell>
+										<TableCell>
+											<DropdownMenu>
+												<DropdownMenuTrigger asChild>
+													<Button variant="ghost" size="icon" className="h-8 w-8">
+														<IconDots className="h-4 w-4" />
+														<span className="sr-only">Open menu</span>
+													</Button>
+												</DropdownMenuTrigger>
+												<DropdownMenuContent align="end">
+													<DropdownMenuItem onClick={() => handleEditClick(policy)}>
+														<IconPencil className="mr-2 h-4 w-4" />
+														{t("common.edit", "Edit")}
+													</DropdownMenuItem>
+													<DropdownMenuItem
+														className="text-destructive"
+														onClick={() => handleDeleteClick(policy)}
+													>
+														<IconTrash className="mr-2 h-4 w-4" />
+														{t("common.delete", "Delete")}
+													</DropdownMenuItem>
+												</DropdownMenuContent>
+											</DropdownMenu>
+										</TableCell>
+									</TableRow>
+								);
+							})}
 						</TableBody>
 					</Table>
 				</div>
@@ -294,11 +306,17 @@ export function VacationPoliciesTable({
 					<AlertDialogHeader>
 						<AlertDialogTitle>{t("vacation.policies.delete-title", "Delete Vacation Policy")}</AlertDialogTitle>
 						<AlertDialogDescription>
-							{t(
-								"vacation.policies.delete-description",
-								"Are you sure you want to delete \"{{name}}\" ({{year}})? This will also remove all assignments for this policy. This action cannot be undone.",
-								{ name: policyToDelete?.name, year: policyToDelete?.year },
-							)}
+							{policyToDelete?.isCompanyDefault
+								? t(
+										"vacation.policies.delete-default-warning",
+										'Warning: "{{name}}" is the company default policy. You must set another policy as default before deleting this one.',
+										{ name: policyToDelete?.name },
+									)
+								: t(
+										"vacation.policies.delete-description-v2",
+										'Are you sure you want to delete "{{name}}"? This will also remove all assignments for this policy.',
+										{ name: policyToDelete?.name },
+									)}
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
@@ -320,7 +338,6 @@ export function VacationPoliciesTable({
 					open={!!editingPolicy}
 					onOpenChange={handleFormClose}
 					organizationId={organizationId}
-					year={editingPolicy.year}
 					existingPolicy={editingPolicy}
 				/>
 			)}
@@ -330,7 +347,6 @@ export function VacationPoliciesTable({
 					open={createFormOpen}
 					onOpenChange={handleFormClose}
 					organizationId={organizationId}
-					year={createYear}
 				/>
 			)}
 		</div>

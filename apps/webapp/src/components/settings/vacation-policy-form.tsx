@@ -2,8 +2,8 @@
 
 import { useForm } from "@tanstack/react-form";
 import { useStore } from "@tanstack/react-store";
-import { zodValidator } from "@tanstack/zod-form-adapter";
-import { IconLoader2 } from "@tabler/icons-react";
+import { IconCalendar, IconLoader2 } from "@tabler/icons-react";
+import { format } from "date-fns";
 import { useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -12,6 +12,8 @@ import {
 	updateVacationPolicy,
 } from "@/app/[locale]/(app)/settings/vacation/actions";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
 	Dialog,
 	DialogContent,
@@ -23,6 +25,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
+import {
 	Select,
 	SelectContent,
 	SelectItem,
@@ -30,16 +37,19 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { cn } from "@/lib/utils";
 import { useRouter } from "@/navigation";
 
 interface VacationPolicyFormProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	organizationId: string;
-	year: number;
 	existingPolicy?: {
 		id: string;
 		name: string;
+		startDate: string; // YYYY-MM-DD
+		validUntil: string | null; // YYYY-MM-DD or null
+		isCompanyDefault: boolean;
 		defaultAnnualDays: string;
 		accrualType: string;
 		accrualStartMonth: number | null;
@@ -49,20 +59,41 @@ interface VacationPolicyFormProps {
 	};
 }
 
+// Helper to format date string to Date object
+const parseDate = (dateStr: string): Date => {
+	const [year, month, day] = dateStr.split("-").map(Number);
+	return new Date(year, month - 1, day);
+};
+
+// Helper to format Date to YYYY-MM-DD string
+const formatDateStr = (date: Date): string => {
+	return format(date, "yyyy-MM-dd");
+};
+
+// Get default start date (Jan 1 of next year)
+const getDefaultStartDate = (): Date => {
+	const now = new Date();
+	return new Date(now.getFullYear() + 1, 0, 1);
+};
+
 export function VacationPolicyForm({
 	open,
 	onOpenChange,
 	organizationId,
-	year,
 	existingPolicy,
 }: VacationPolicyFormProps) {
 	const router = useRouter();
 	const [loading, setLoading] = useState(false);
+	const [startDateOpen, setStartDateOpen] = useState(false);
+	const [validUntilOpen, setValidUntilOpen] = useState(false);
 
 	const form = useForm({
 		defaultValues: existingPolicy
 			? {
 					name: existingPolicy.name,
+					startDate: parseDate(existingPolicy.startDate),
+					validUntil: existingPolicy.validUntil ? parseDate(existingPolicy.validUntil) : (null as Date | null),
+					isCompanyDefault: existingPolicy.isCompanyDefault,
 					defaultAnnualDays: existingPolicy.defaultAnnualDays,
 					accrualType: existingPolicy.accrualType as "annual" | "monthly" | "biweekly",
 					accrualStartMonth: existingPolicy.accrualStartMonth || 1,
@@ -72,6 +103,9 @@ export function VacationPolicyForm({
 				}
 			: {
 					name: "",
+					startDate: getDefaultStartDate(),
+					validUntil: null as Date | null,
+					isCompanyDefault: false,
 					defaultAnnualDays: "20",
 					accrualType: "annual" as "annual" | "monthly" | "biweekly",
 					accrualStartMonth: 1,
@@ -79,21 +113,35 @@ export function VacationPolicyForm({
 					maxCarryoverDays: "",
 					carryoverExpiryMonths: undefined as number | undefined,
 				},
-		validatorAdapter: zodValidator(),
 		onSubmit: async ({ value }) => {
 			setLoading(true);
 
 			try {
 				const result = existingPolicy
 					? await updateVacationPolicy(existingPolicy.id, {
-							...value,
+							name: value.name,
+							startDate: formatDateStr(value.startDate),
+							validUntil: value.validUntil ? formatDateStr(value.validUntil) : undefined,
+							isCompanyDefault: value.isCompanyDefault,
+							defaultAnnualDays: value.defaultAnnualDays,
+							accrualType: value.accrualType,
+							accrualStartMonth: value.accrualStartMonth,
+							allowCarryover: value.allowCarryover,
 							maxCarryoverDays: value.maxCarryoverDays || undefined,
+							carryoverExpiryMonths: value.carryoverExpiryMonths,
 						})
 					: await createVacationPolicy({
 							organizationId,
-							year,
-							...value,
+							startDate: formatDateStr(value.startDate),
+							validUntil: value.validUntil ? formatDateStr(value.validUntil) : undefined,
+							isCompanyDefault: value.isCompanyDefault,
+							name: value.name,
+							defaultAnnualDays: value.defaultAnnualDays,
+							accrualType: value.accrualType,
+							accrualStartMonth: value.accrualStartMonth,
+							allowCarryover: value.allowCarryover,
 							maxCarryoverDays: value.maxCarryoverDays || undefined,
+							carryoverExpiryMonths: value.carryoverExpiryMonths,
 						});
 
 				if (result.success) {
@@ -123,7 +171,7 @@ export function VacationPolicyForm({
 					<DialogTitle>
 						{existingPolicy
 							? `Edit "${existingPolicy.name}"`
-							: `Create Vacation Policy for ${year}`}
+							: "Create Vacation Policy"}
 					</DialogTitle>
 					<DialogDescription>
 						Configure vacation allowance settings. Each policy can be assigned to the organization,
@@ -157,8 +205,130 @@ export function VacationPolicyForm({
 									A descriptive name to identify this vacation policy
 								</p>
 								{field.state.meta.errors.length > 0 && (
-									<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
+									<p className="text-sm text-destructive">
+									{typeof field.state.meta.errors[0] === "string"
+										? field.state.meta.errors[0]
+										: (field.state.meta.errors[0] as any)?.message}
+								</p>
 								)}
+							</div>
+						)}
+					</form.Field>
+
+					<div className="grid grid-cols-2 gap-4">
+						<form.Field name="startDate">
+							{(field) => (
+								<div className="space-y-2">
+									<Label>Effective From</Label>
+									<Popover open={startDateOpen} onOpenChange={setStartDateOpen}>
+										<PopoverTrigger asChild>
+											<Button
+												variant="outline"
+												className={cn(
+													"w-full justify-start text-left font-normal",
+													!field.state.value && "text-muted-foreground"
+												)}
+											>
+												<IconCalendar className="mr-2 h-4 w-4" />
+												{field.state.value ? (
+													format(field.state.value, "PPP")
+												) : (
+													<span>Pick a date</span>
+												)}
+											</Button>
+										</PopoverTrigger>
+										<PopoverContent className="w-auto p-0" align="start">
+											<Calendar
+												mode="single"
+												selected={field.state.value}
+												onSelect={(date) => {
+													if (date) {
+														field.handleChange(date);
+														setStartDateOpen(false);
+													}
+												}}
+												initialFocus
+											/>
+										</PopoverContent>
+									</Popover>
+									<p className="text-sm text-muted-foreground">
+										When this policy becomes effective
+									</p>
+								</div>
+							)}
+						</form.Field>
+
+						<form.Field name="validUntil">
+							{(field) => (
+								<div className="space-y-2">
+									<Label>Valid Until (optional)</Label>
+									<Popover open={validUntilOpen} onOpenChange={setValidUntilOpen}>
+										<PopoverTrigger asChild>
+											<Button
+												variant="outline"
+												className={cn(
+													"w-full justify-start text-left font-normal",
+													!field.state.value && "text-muted-foreground"
+												)}
+											>
+												<IconCalendar className="mr-2 h-4 w-4" />
+												{field.state.value ? (
+													format(field.state.value, "PPP")
+												) : (
+													<span>No end date</span>
+												)}
+											</Button>
+										</PopoverTrigger>
+										<PopoverContent className="w-auto p-0" align="start">
+											<div className="p-2 border-b">
+												<Button
+													variant="ghost"
+													size="sm"
+													className="w-full"
+													onClick={() => {
+														field.handleChange(null);
+														setValidUntilOpen(false);
+													}}
+												>
+													Clear date
+												</Button>
+											</div>
+											<Calendar
+												mode="single"
+												selected={field.state.value || undefined}
+												onSelect={(date) => {
+													field.handleChange(date || null);
+													setValidUntilOpen(false);
+												}}
+												initialFocus
+											/>
+										</PopoverContent>
+									</Popover>
+									<p className="text-sm text-muted-foreground">
+										Leave empty for ongoing policy
+									</p>
+								</div>
+							)}
+						</form.Field>
+					</div>
+
+					<form.Field name="isCompanyDefault">
+						{(field) => (
+							<div className="flex flex-row items-start space-x-3 rounded-lg border p-4">
+								<Checkbox
+									id="isCompanyDefault"
+									checked={field.state.value}
+									onCheckedChange={(checked) => field.handleChange(checked === true)}
+								/>
+								<div className="space-y-1 leading-none">
+									<Label htmlFor="isCompanyDefault" className="cursor-pointer">
+										Set as Company Default
+									</Label>
+									<p className="text-sm text-muted-foreground">
+										This policy will apply to all employees without specific overrides.
+										Setting this will supersede any existing company default.
+									</p>
+								</div>
 							</div>
 						)}
 					</form.Field>
@@ -187,7 +357,11 @@ export function VacationPolicyForm({
 									Default number of vacation days per year for all employees
 								</p>
 								{field.state.meta.errors.length > 0 && (
-									<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
+									<p className="text-sm text-destructive">
+									{typeof field.state.meta.errors[0] === "string"
+										? field.state.meta.errors[0]
+										: (field.state.meta.errors[0] as any)?.message}
+								</p>
 								)}
 							</div>
 						)}
@@ -197,7 +371,10 @@ export function VacationPolicyForm({
 						{(field) => (
 							<div className="space-y-2">
 								<Label>Accrual Type</Label>
-								<Select value={field.state.value} onValueChange={field.handleChange}>
+								<Select
+									value={field.state.value}
+									onValueChange={(value) => field.handleChange(value as "annual" | "monthly" | "biweekly")}
+								>
 									<SelectTrigger>
 										<SelectValue placeholder="Select accrual type" />
 									</SelectTrigger>

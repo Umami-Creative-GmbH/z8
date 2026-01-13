@@ -8,10 +8,12 @@ import { VacationPolicyForm } from "./vacation-policy-form";
 
 interface VacationPolicyButtonProps {
 	organizationId: string;
-	year: number;
 	existingPolicy?: {
 		id: string;
 		name: string;
+		startDate: string; // YYYY-MM-DD
+		validUntil: string | null; // YYYY-MM-DD or null
+		isCompanyDefault: boolean;
 		defaultAnnualDays: string;
 		accrualType: string;
 		accrualStartMonth: number | null;
@@ -26,7 +28,6 @@ interface VacationPolicyButtonProps {
 
 export function VacationPolicyButton({
 	organizationId,
-	year,
 	existingPolicy,
 	variant = "default",
 	size = "default",
@@ -54,7 +55,6 @@ export function VacationPolicyButton({
 				open={open}
 				onOpenChange={setOpen}
 				organizationId={organizationId}
-				year={year}
 				existingPolicy={existingPolicy}
 			/>
 		</>
