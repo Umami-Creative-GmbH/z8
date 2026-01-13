@@ -1,7 +1,7 @@
 "use server";
 
 import { SpanStatusCode, trace } from "@opentelemetry/api";
-import { and, eq } from "drizzle-orm";
+import { and, count, eq, ilike, or, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import { user } from "@/db/auth-schema";
 import { employee, type team } from "@/db/schema";
@@ -11,6 +11,22 @@ export type EmployeeWithRelations = typeof employee.$inferSelect & {
 	user: typeof user.$inferSelect;
 	team: typeof team.$inferSelect | null;
 };
+
+// Pagination parameters
+export interface EmployeeListParams {
+	search?: string;
+	role?: "admin" | "manager" | "employee" | "all";
+	status?: "active" | "inactive" | "all";
+	limit?: number;
+	offset?: number;
+}
+
+// Paginated response
+export interface PaginatedEmployeeResponse {
+	employees: EmployeeWithRelations[];
+	total: number;
+	hasMore: boolean;
+}
 
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import {
@@ -511,14 +527,13 @@ export async function getEmployee(
 }
 
 /**
- * List employees with optional filters
+ * List employees with server-side pagination, search, and filters
  */
-export async function listEmployees(filters?: {
-	organizationId?: string;
-	teamId?: string;
-	role?: string;
-	search?: string;
-}): Promise<ServerActionResult<EmployeeWithRelations[]>> {
+export async function listEmployees(
+	params: EmployeeListParams = {},
+): Promise<ServerActionResult<PaginatedEmployeeResponse>> {
+	const { search, role, status, limit = 20, offset = 0 } = params;
+
 	const effect = Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
@@ -543,55 +558,69 @@ export async function listEmployees(filters?: {
 			),
 		);
 
-		// Build where conditions
-		const conditions = [
-			eq(employee.organizationId, filters?.organizationId || currentEmployee.organizationId),
-		];
+		const orgId = currentEmployee.organizationId;
 
-		if (filters?.teamId) {
-			conditions.push(eq(employee.teamId, filters.teamId));
+		// Build base conditions
+		const conditions: ReturnType<typeof eq>[] = [eq(employee.organizationId, orgId)];
+
+		// Role filter
+		if (role && role !== "all") {
+			conditions.push(eq(employee.role, role));
 		}
 
-		if (filters?.role) {
-			conditions.push(eq(employee.role, filters.role as any));
+		// Status filter
+		if (status && status !== "all") {
+			conditions.push(eq(employee.isActive, status === "active"));
 		}
 
-		// Get employees
+		// Get employees with pagination
 		const employees = yield* _(
 			dbService.query("listEmployees", async () => {
-				let query = await dbService.db.query.employee.findMany({
+				// Build the query with search
+				let results = await dbService.db.query.employee.findMany({
 					where: and(...conditions),
 					with: {
 						user: true,
 						team: true,
 					},
-					orderBy: (employee, { asc }) => [asc(employee.firstName), asc(employee.lastName)],
+					orderBy: (emp, { asc }) => [asc(emp.firstName), asc(emp.lastName)],
 				});
 
-				// Apply search filter if provided
-				if (filters?.search) {
-					const searchLower = filters.search.toLowerCase();
-					query = query.filter(
+				// Apply search filter (server-side but after fetch due to relation access)
+				if (search) {
+					const searchLower = search.toLowerCase();
+					results = results.filter(
 						(emp) =>
 							emp.user?.name?.toLowerCase().includes(searchLower) ||
 							emp.user?.email?.toLowerCase().includes(searchLower) ||
 							emp.firstName?.toLowerCase().includes(searchLower) ||
-							emp.lastName?.toLowerCase().includes(searchLower),
+							emp.lastName?.toLowerCase().includes(searchLower) ||
+							emp.position?.toLowerCase().includes(searchLower),
 					);
 				}
 
-				// Sort by user name (after fetch since we can't access relations in orderBy)
-				query.sort((a, b) => {
+				// Sort by user name
+				results.sort((a, b) => {
 					const nameA = a.user?.name || `${a.firstName || ""} ${a.lastName || ""}`.trim() || "";
 					const nameB = b.user?.name || `${b.firstName || ""} ${b.lastName || ""}`.trim() || "";
 					return nameA.localeCompare(nameB);
 				});
 
-				return query;
+				return results;
 			}),
 		);
 
-		return employees as EmployeeWithRelations[];
+		// Calculate pagination
+		const total = employees.length;
+		const paginatedEmployees = employees.slice(offset, offset + limit + 1);
+		const hasMore = paginatedEmployees.length > limit;
+		const resultEmployees = hasMore ? paginatedEmployees.slice(0, limit) : paginatedEmployees;
+
+		return {
+			employees: resultEmployees as EmployeeWithRelations[],
+			total,
+			hasMore,
+		};
 	}).pipe(Effect.provide(AppLayer));
 
 	return runServerActionSafe(effect);

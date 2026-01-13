@@ -38,6 +38,10 @@ export interface GenerateDemoDataInput {
 	dateRangeType: "last30" | "last60" | "last90" | "thisYear";
 	includeTimeEntries: boolean;
 	includeAbsences: boolean;
+	includeTeams: boolean;
+	teamCount?: number;
+	includeProjects: boolean;
+	projectCount?: number;
 	employeeIds?: string[];
 }
 
@@ -130,6 +134,10 @@ export async function generateDemoDataAction(
 					},
 					includeTimeEntries: input.includeTimeEntries,
 					includeAbsences: input.includeAbsences,
+					includeTeams: input.includeTeams,
+					teamCount: input.teamCount,
+					includeProjects: input.includeProjects,
+					projectCount: input.projectCount,
 					employeeIds: input.employeeIds,
 					createdBy: session.user.id,
 				}),

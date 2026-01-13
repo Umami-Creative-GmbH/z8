@@ -203,7 +203,7 @@ export async function createTeam(
 export async function updateTeam(
 	teamId: string,
 	data: UpdateTeam,
-): Promise<ServerActionResult<void>> {
+): Promise<ServerActionResult<typeof team.$inferSelect>> {
 	const tracer = trace.getTracer("teams");
 
 	const effect = tracer.startActiveSpan(
@@ -345,9 +345,31 @@ export async function updateTeam(
 					}),
 				);
 
+				// Fetch and return the updated team
+				const updatedTeam = yield* _(
+					dbService.query("getUpdatedTeam", async () => {
+						return await dbService.db.query.team.findFirst({
+							where: eq(team.id, teamId),
+						});
+					}),
+					Effect.flatMap((t) =>
+						t
+							? Effect.succeed(t)
+							: Effect.fail(
+									new NotFoundError({
+										message: "Updated team not found",
+										entityType: "team",
+										entityId: teamId,
+									}),
+								),
+					),
+				);
+
 				logger.info({ teamId }, "Team updated successfully");
 
 				span.setStatus({ code: SpanStatusCode.OK });
+
+				return updatedTeam;
 			}).pipe(
 				Effect.catchAll((error) =>
 					Effect.gen(function* (_) {

@@ -34,7 +34,7 @@ export async function getVacationPolicies(
 					.select()
 					.from(vacationAllowance)
 					.where(eq(vacationAllowance.organizationId, organizationId))
-					.orderBy(vacationAllowance.year);
+					.orderBy(vacationAllowance.startDate);
 			}),
 			Effect.mapError(
 				(error) =>
@@ -86,7 +86,9 @@ export async function getVacationPolicyAssignments(
 						policy: {
 							id: vacationAllowance.id,
 							name: vacationAllowance.name,
-							year: vacationAllowance.year,
+							startDate: vacationAllowance.startDate,
+							validUntil: vacationAllowance.validUntil,
+							isCompanyDefault: vacationAllowance.isCompanyDefault,
 							defaultAnnualDays: vacationAllowance.defaultAnnualDays,
 							accrualType: vacationAllowance.accrualType,
 							allowCarryover: vacationAllowance.allowCarryover,
@@ -112,7 +114,7 @@ export async function getVacationPolicyAssignments(
 							eq(vacationPolicyAssignment.isActive, true),
 						),
 					)
-					.orderBy(vacationAllowance.year);
+					.orderBy(vacationAllowance.startDate);
 			}),
 			Effect.mapError(
 				(error) =>
@@ -276,7 +278,8 @@ export async function getEmployeePolicyAssignment(
 						policy: {
 							id: vacationAllowance.id,
 							name: vacationAllowance.name,
-							year: vacationAllowance.year,
+							startDate: vacationAllowance.startDate,
+							validUntil: vacationAllowance.validUntil,
 							defaultAnnualDays: vacationAllowance.defaultAnnualDays,
 						},
 					})
@@ -528,6 +531,73 @@ export async function deleteVacationPolicyAssignment(
 					}),
 			),
 		);
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
+}
+
+/**
+ * Get company default policies (current and next scheduled)
+ * Returns policies marked as isCompanyDefault=true, grouped by current/next
+ */
+export async function getCompanyDefaultPolicies(
+	organizationId: string,
+): Promise<ServerActionResult<{
+	current: any | null;
+	next: any | null;
+}>> {
+	const effect = Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		const _session = yield* _(authService.getSession());
+
+		const dbService = yield* _(DatabaseService);
+
+		const today = new Date().toISOString().split("T")[0];
+
+		// Get all company default policies
+		const policies = yield* _(
+			dbService.query("getCompanyDefaultPolicies", async () => {
+				return await dbService.db
+					.select({
+						id: vacationAllowance.id,
+						name: vacationAllowance.name,
+						startDate: vacationAllowance.startDate,
+						validUntil: vacationAllowance.validUntil,
+						isCompanyDefault: vacationAllowance.isCompanyDefault,
+						isActive: vacationAllowance.isActive,
+						defaultAnnualDays: vacationAllowance.defaultAnnualDays,
+						accrualType: vacationAllowance.accrualType,
+						allowCarryover: vacationAllowance.allowCarryover,
+						maxCarryoverDays: vacationAllowance.maxCarryoverDays,
+					})
+					.from(vacationAllowance)
+					.where(
+						and(
+							eq(vacationAllowance.organizationId, organizationId),
+							eq(vacationAllowance.isCompanyDefault, true),
+							eq(vacationAllowance.isActive, true),
+						),
+					)
+					.orderBy(vacationAllowance.startDate);
+			}),
+		);
+
+		// Find current policy (startDate <= today AND (validUntil IS NULL OR validUntil >= today))
+		const currentPolicy = policies.find((p) => {
+			const isStarted = p.startDate <= today;
+			const isNotExpired = !p.validUntil || p.validUntil >= today;
+			return isStarted && isNotExpired;
+		});
+
+		// Find next scheduled policy (startDate > today AND validUntil IS NULL)
+		const nextPolicy = policies.find((p) => {
+			return p.startDate > today && !p.validUntil;
+		});
+
+		return {
+			current: currentPolicy || null,
+			next: nextPolicy || null,
+		};
 	}).pipe(Effect.provide(AppLayer));
 
 	return runServerActionSafe(effect);

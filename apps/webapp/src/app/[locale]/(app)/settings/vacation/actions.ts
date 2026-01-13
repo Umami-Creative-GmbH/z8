@@ -55,41 +55,71 @@ async function isOrgAdmin(userId: string, organizationId: string): Promise<boole
 }
 
 /**
- * Get vacation policy for an organization and year using Effect pattern
+ * Get a vacation policy by ID using Effect pattern
  */
 export async function getVacationPolicy(
-	organizationId: string,
-	year: number,
+	policyId: string,
 ): Promise<ServerActionResult<typeof vacationAllowance.$inferSelect | null>> {
 	const effect = Effect.gen(function* (_) {
 		// Step 1: Get session via AuthService
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		// Step 2: Get current employee
+		// Step 2: Get database service
 		const dbService = yield* _(DatabaseService);
-		const _currentEmployee = yield* _(
-			dbService.query("getCurrentEmployee", async () => {
-				const emp = await dbService.db.query.employee.findFirst({
-					where: eq(employee.userId, session.user.id),
+
+		// Step 3: Get vacation policy
+		const policy = yield* _(
+			dbService.query("getVacationPolicy", async () => {
+				return await dbService.db.query.vacationAllowance.findFirst({
+					where: eq(vacationAllowance.id, policyId),
+					with: {
+						creator: true,
+					},
 				});
-
-				if (!emp) {
-					throw new Error("Employee not found");
-				}
-
-				return emp;
 			}),
-			Effect.mapError(
-				() =>
-					new NotFoundError({
-						message: "Employee profile not found",
-						entityType: "employee",
-					}),
-			),
 		);
 
-		// Step 3: Verify user is org admin
+		if (!policy) {
+			return null;
+		}
+
+		// Step 4: Verify user is org admin
+		const hasPermission = yield* _(
+			Effect.promise(() => isOrgAdmin(session.user.id, policy.organizationId)),
+		);
+
+		if (!hasPermission) {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Insufficient permissions",
+						userId: session.user.id,
+						resource: "vacation_policy",
+						action: "read",
+					}),
+				),
+			);
+		}
+
+		return policy;
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
+}
+
+/**
+ * Get the current company default policy for an organization
+ */
+export async function getCompanyDefaultVacationPolicy(
+	organizationId: string,
+): Promise<ServerActionResult<typeof vacationAllowance.$inferSelect | null>> {
+	const effect = Effect.gen(function* (_) {
+		// Step 1: Get session via AuthService
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
+
+		// Step 2: Verify user is org admin
 		const hasPermission = yield* _(
 			Effect.promise(() => isOrgAdmin(session.user.id, organizationId)),
 		);
@@ -107,17 +137,23 @@ export async function getVacationPolicy(
 			);
 		}
 
-		// Step 4: Get vacation policy
+		// Step 3: Get current company default policy
+		const dbService = yield* _(DatabaseService);
+		const today = new Date().toISOString().split("T")[0];
+
 		const policy = yield* _(
-			dbService.query("getVacationPolicy", async () => {
+			dbService.query("getCompanyDefaultPolicy", async () => {
+				// Get the active company default where startDate <= today and (validUntil is null or >= today)
 				return await dbService.db.query.vacationAllowance.findFirst({
 					where: and(
 						eq(vacationAllowance.organizationId, organizationId),
-						eq(vacationAllowance.year, year),
+						eq(vacationAllowance.isCompanyDefault, true),
+						eq(vacationAllowance.isActive, true),
 					),
 					with: {
 						creator: true,
 					},
+					orderBy: desc(vacationAllowance.startDate),
 				});
 			}),
 		);
@@ -134,7 +170,9 @@ export async function getVacationPolicy(
 export async function createVacationPolicy(data: {
 	organizationId: string;
 	name: string;
-	year: number;
+	startDate: string; // YYYY-MM-DD
+	validUntil?: string | null; // YYYY-MM-DD or null for ongoing
+	isCompanyDefault?: boolean;
 	defaultAnnualDays: string;
 	accrualType: "annual" | "monthly" | "biweekly";
 	accrualStartMonth?: number;
@@ -188,28 +226,35 @@ export async function createVacationPolicy(data: {
 			);
 		}
 
-		// Step 4: Check if policy with same name already exists for this year
-		const existingWithName = yield* _(
-			dbService.query("checkExistingPolicyName", async () => {
-				return await dbService.db.query.vacationAllowance.findFirst({
-					where: and(
-						eq(vacationAllowance.organizationId, data.organizationId),
-						eq(vacationAllowance.year, data.year),
-						eq(vacationAllowance.name, data.name),
-					),
-				});
-			}),
-		);
-
-		if (existingWithName) {
+		// Step 4: If this is a company default, close the previous default
+		if (data.isCompanyDefault) {
 			yield* _(
-				Effect.fail(
-					new ConflictError({
-						message: "A policy with this name already exists for this year",
-						conflictType: "duplicate_policy_name",
-						details: { year: data.year, name: data.name },
-					}),
-				),
+				dbService.query("closePreviousDefault", async () => {
+					// Find current active default
+					const currentDefault = await dbService.db.query.vacationAllowance.findFirst({
+						where: and(
+							eq(vacationAllowance.organizationId, data.organizationId),
+							eq(vacationAllowance.isCompanyDefault, true),
+							eq(vacationAllowance.isActive, true),
+						),
+					});
+
+					if (currentDefault && !currentDefault.validUntil) {
+						// Calculate validUntil as day before new policy starts
+						const newStartDate = new Date(data.startDate);
+						newStartDate.setDate(newStartDate.getDate() - 1);
+						const validUntil = newStartDate.toISOString().split("T")[0];
+
+						// Update the old policy
+						await dbService.db
+							.update(vacationAllowance)
+							.set({
+								validUntil,
+								isCompanyDefault: false,
+							})
+							.where(eq(vacationAllowance.id, currentDefault.id));
+					}
+				}),
 			);
 		}
 
@@ -221,7 +266,10 @@ export async function createVacationPolicy(data: {
 					.values({
 						organizationId: data.organizationId,
 						name: data.name,
-						year: data.year,
+						startDate: data.startDate,
+						validUntil: data.validUntil || null,
+						isCompanyDefault: data.isCompanyDefault || false,
+						isActive: true,
 						defaultAnnualDays: data.defaultAnnualDays,
 						accrualType: data.accrualType,
 						accrualStartMonth: data.accrualStartMonth,
@@ -256,6 +304,9 @@ export async function updateVacationPolicy(
 	policyId: string,
 	data: {
 		name: string;
+		startDate?: string; // YYYY-MM-DD
+		validUntil?: string | null;
+		isCompanyDefault?: boolean;
 		defaultAnnualDays: string;
 		accrualType: "annual" | "monthly" | "biweekly";
 		accrualStartMonth?: number;
@@ -313,13 +364,34 @@ export async function updateVacationPolicy(
 			);
 		}
 
-		// Step 5: Update vacation policy
+		// Step 5: If setting as company default, unset previous default
+		if (data.isCompanyDefault && !policy.isCompanyDefault) {
+			yield* _(
+				dbService.query("unsetPreviousDefault", async () => {
+					await dbService.db
+						.update(vacationAllowance)
+						.set({ isCompanyDefault: false })
+						.where(
+							and(
+								eq(vacationAllowance.organizationId, policy.organizationId),
+								eq(vacationAllowance.isCompanyDefault, true),
+								eq(vacationAllowance.isActive, true),
+							),
+						);
+				}),
+			);
+		}
+
+		// Step 6: Update vacation policy
 		const [updated] = yield* _(
 			dbService.query("updateVacationPolicy", async () => {
 				return await dbService.db
 					.update(vacationAllowance)
 					.set({
 						name: data.name,
+						startDate: data.startDate,
+						validUntil: data.validUntil,
+						isCompanyDefault: data.isCompanyDefault,
 						defaultAnnualDays: data.defaultAnnualDays,
 						accrualType: data.accrualType,
 						accrualStartMonth: data.accrualStartMonth,
@@ -753,7 +825,7 @@ export async function createVacationAdjustmentAction(
 					metadata: {
 						year,
 						reason: data.reason,
-						employeeName: emp.name,
+						employeeId: emp.id,
 						adjustmentId: adjustment.id,
 					},
 				});
@@ -767,11 +839,10 @@ export async function createVacationAdjustmentAction(
 }
 
 /**
- * Get all vacation policies for an organization, optionally filtered by year
+ * Get all vacation policies for an organization, ordered by startDate descending
  */
 export async function getVacationPolicies(
 	organizationId: string,
-	year?: number,
 ): Promise<ServerActionResult<(typeof vacationAllowance.$inferSelect)[]>> {
 	const effect = Effect.gen(function* (_) {
 		// Step 1: Get session via AuthService
@@ -796,23 +867,22 @@ export async function getVacationPolicies(
 			);
 		}
 
-		// Step 3: Get vacation policies, optionally filtered by year
+		// Step 3: Get all active vacation policies, ordered by startDate descending
 		const dbService = yield* _(DatabaseService);
 		const policies = yield* _(
 			dbService.query("getVacationPolicies", async () => {
-				const whereConditions = year
-					? and(
-							eq(vacationAllowance.organizationId, organizationId),
-							eq(vacationAllowance.year, year),
-						)
-					: eq(vacationAllowance.organizationId, organizationId);
-
 				return await dbService.db.query.vacationAllowance.findMany({
-					where: whereConditions,
+					where: and(
+						eq(vacationAllowance.organizationId, organizationId),
+						eq(vacationAllowance.isActive, true),
+					),
 					with: {
 						creator: true,
 					},
-					orderBy: (table, { desc: descOrder, asc }) => [descOrder(table.year), asc(table.name)],
+					orderBy: (table, { desc: descOrder, asc }) => [
+						descOrder(table.startDate),
+						asc(table.name),
+					],
 				});
 			}),
 		);
@@ -824,56 +894,18 @@ export async function getVacationPolicies(
 }
 
 /**
+ * @deprecated No longer needed - policies are now date-based, not year-based
  * Get available years for vacation policies in an organization
  */
 export async function getVacationPolicyYears(
-	organizationId: string,
+	_organizationId: string,
 ): Promise<ServerActionResult<number[]>> {
-	const effect = Effect.gen(function* (_) {
-		// Step 1: Get session via AuthService
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-
-		// Step 2: Verify user is org admin
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, organizationId)),
-		);
-
-		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions",
-						userId: session.user.id,
-						resource: "vacation_policies",
-						action: "read",
-					}),
-				),
-			);
-		}
-
-		// Step 3: Get distinct years
-		const dbService = yield* _(DatabaseService);
-		const years = yield* _(
-			dbService.query("getVacationPolicyYears", async () => {
-				const results = await dbService.db
-					.selectDistinct({ year: vacationAllowance.year })
-					.from(vacationAllowance)
-					.where(eq(vacationAllowance.organizationId, organizationId))
-					.orderBy(desc(vacationAllowance.year));
-
-				return results.map((r) => r.year);
-			}),
-		);
-
-		return years;
-	}).pipe(Effect.provide(AppLayer));
-
-	return runServerActionSafe(effect);
+	// Return empty array - this function is deprecated
+	return { success: true, data: [] };
 }
 
 /**
- * Delete a vacation policy using Effect pattern
+ * Delete a vacation policy using Effect pattern (soft delete - sets isActive=false)
  */
 export async function deleteVacationPolicy(policyId: string): Promise<ServerActionResult<void>> {
 	const effect = Effect.gen(function* (_) {
@@ -925,16 +957,47 @@ export async function deleteVacationPolicy(policyId: string): Promise<ServerActi
 			);
 		}
 
-		// Step 5: Delete the policy (cascade will remove assignments)
+		// Step 5: Prevent deleting the only active company default
+		if (policy.isCompanyDefault) {
+			// Check if there's another active company default
+			const otherDefaults = yield* _(
+				dbService.query("checkOtherDefaults", async () => {
+					return await dbService.db.query.vacationAllowance.findMany({
+						where: and(
+							eq(vacationAllowance.organizationId, policy.organizationId),
+							eq(vacationAllowance.isCompanyDefault, true),
+							eq(vacationAllowance.isActive, true),
+						),
+					});
+				}),
+			);
+
+			if (otherDefaults.length <= 1) {
+				yield* _(
+					Effect.fail(
+						new ConflictError({
+							message: "Cannot delete the only company default policy. Set another policy as default first.",
+							conflictType: "last_company_default",
+							details: { policyId },
+						}),
+					),
+				);
+			}
+		}
+
+		// Step 6: Soft delete the policy (set isActive=false)
 		yield* _(
 			dbService.query("deleteVacationPolicy", async () => {
-				await dbService.db.delete(vacationAllowance).where(eq(vacationAllowance.id, policyId));
+				await dbService.db
+					.update(vacationAllowance)
+					.set({ isActive: false })
+					.where(eq(vacationAllowance.id, policyId));
 			}),
 			Effect.mapError(
 				(error) =>
 					new DatabaseError({
 						message: "Failed to delete vacation policy",
-						operation: "delete",
+						operation: "update",
 						table: "vacation_allowance",
 						cause: error,
 					}),
