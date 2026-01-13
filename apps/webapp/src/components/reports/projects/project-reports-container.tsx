@@ -43,13 +43,7 @@ export function ProjectReportsContainer() {
 		try {
 			const result = await getProjectsOverview(range.start, range.end, statusFilter);
 
-			if (result.success && result.data) {
-				setPortfolioData(result.data);
-				setDetailedReport(null);
-				setSelectedProjectId(null);
-				setActiveTab("portfolio");
-				toast.success(t("reports.projects.toast.portfolioGenerated", "Portfolio report generated"));
-			} else {
+			if (!result.success) {
 				setError(
 					result.error ||
 						t("reports.projects.toast.failedPortfolio", "Failed to generate portfolio report"),
@@ -57,7 +51,13 @@ export function ProjectReportsContainer() {
 				toast.error(t("reports.projects.toast.failedGenerate", "Failed to generate report"), {
 					description: result.error,
 				});
+				return;
 			}
+			setPortfolioData(result.data);
+			setDetailedReport(null);
+			setSelectedProjectId(null);
+			setActiveTab("portfolio");
+			toast.success(t("reports.projects.toast.portfolioGenerated", "Portfolio report generated"));
 		} catch (err) {
 			const errorMessage =
 				err instanceof Error
@@ -78,15 +78,7 @@ export function ProjectReportsContainer() {
 		try {
 			const result = await getProjectDetailedReport(projectId, dateRange.start, dateRange.end);
 
-			if (result.success && result.data) {
-				setDetailedReport(result.data);
-				setActiveTab("project");
-				toast.success(
-					t("reports.projects.toast.projectGenerated", "Report generated for {name}", {
-						name: result.data.project.name,
-					}),
-				);
-			} else {
+			if (!result.success) {
 				setError(
 					result.error ||
 						t("reports.projects.toast.failedProject", "Failed to generate project report"),
@@ -97,7 +89,15 @@ export function ProjectReportsContainer() {
 						description: result.error,
 					},
 				);
+				return;
 			}
+			setDetailedReport(result.data);
+			setActiveTab("project");
+			toast.success(
+				t("reports.projects.toast.projectGenerated", "Report generated for {name}", {
+					name: result.data.project.name,
+				}),
+			);
 		} catch (err) {
 			const errorMessage =
 				err instanceof Error
