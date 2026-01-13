@@ -59,20 +59,21 @@ function shiftToEvent(shift: ShiftWithRelations) {
 	return {
 		id: shift.id,
 		title,
-		start: formatDateForScheduleX(startDate),
-		end: formatDateForScheduleX(endDate),
+		start: dateToPlainDateTime(startDate),
+		end: dateToPlainDateTime(endDate),
 		calendarId: isOpenShift ? "open" : isDraft ? "draft" : "published",
 		_shiftData: shift,
 	};
 }
 
-function formatDateForScheduleX(date: Date): string {
-	const year = date.getFullYear();
-	const month = String(date.getMonth() + 1).padStart(2, "0");
-	const day = String(date.getDate()).padStart(2, "0");
-	const hours = String(date.getHours()).padStart(2, "0");
-	const minutes = String(date.getMinutes()).padStart(2, "0");
-	return `${year}-${month}-${day} ${hours}:${minutes}`;
+function dateToPlainDateTime(date: Date): Temporal.PlainDateTime {
+	return Temporal.PlainDateTime.from({
+		year: date.getFullYear(),
+		month: date.getMonth() + 1,
+		day: date.getDate(),
+		hour: date.getHours(),
+		minute: date.getMinutes(),
+	});
 }
 
 function getWeekDateRange(): DateRange {
@@ -144,7 +145,8 @@ export function ShiftScheduler({
 	const _incompleteDays = incompleteDaysResult || [];
 
 	// Convert shifts to Schedule-X events
-	const events = useMemo(() => shifts.map(shiftToEvent), [shifts]);
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	const events = useMemo(() => shifts.map(shiftToEvent) as any[], [shifts]);
 
 	// Mutation for updating shifts
 	const updateShiftMutation = useMutation({
@@ -214,24 +216,24 @@ export function ShiftScheduler({
 		[shifts],
 	);
 
-	// Handle drag end - Schedule-X passes the updated event
+	// Handle drag end - Schedule-X passes the updated event with Temporal types
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const handleEventUpdate = useCallback(
 		(updatedEvent: any) => {
 			if (!isManager) return;
 
 			const eventId = updatedEvent?.id as string | undefined;
-			const eventStart = updatedEvent?.start as string | undefined;
-			const eventEnd = updatedEvent?.end as string | undefined;
+			const eventStart = updatedEvent?.start as Temporal.PlainDateTime | undefined;
+			const eventEnd = updatedEvent?.end as Temporal.PlainDateTime | undefined;
 			if (!eventId || !eventStart || !eventEnd) return;
 
 			const shift = shifts.find((s) => s.id === eventId);
 			if (!shift) return;
 
-			// Parse new times from Schedule-X format "YYYY-MM-DD HH:mm"
-			const [dateStr, startTime] = eventStart.split(" ");
-			const [, endTime] = eventEnd.split(" ");
-			const newDate = new Date(dateStr);
+			// Extract date and time from Temporal PlainDateTime
+			const newDate = new Date(eventStart.year, eventStart.month - 1, eventStart.day);
+			const startTime = `${String(eventStart.hour).padStart(2, "0")}:${String(eventStart.minute).padStart(2, "0")}`;
+			const endTime = `${String(eventEnd.hour).padStart(2, "0")}:${String(eventEnd.minute).padStart(2, "0")}`;
 
 			updateShiftMutation.mutate({
 				id: shift.id,
@@ -245,12 +247,15 @@ export function ShiftScheduler({
 	);
 
 	// Handle date range change from calendar
-	const handleRangeChange = useCallback((range: { start: string; end: string }) => {
-		setDateRange({
-			start: new Date(range.start),
-			end: new Date(range.end),
-		});
-	}, []);
+	const handleRangeChange = useCallback(
+		(range: { start: Temporal.ZonedDateTime; end: Temporal.ZonedDateTime }) => {
+			setDateRange({
+				start: new Date(range.start.epochMilliseconds),
+				end: new Date(range.end.epochMilliseconds),
+			});
+		},
+		[],
+	);
 
 	// Handle template drop (create new shift)
 	const handleTemplateDrop = useCallback((_template: ShiftTemplate, date: Date) => {

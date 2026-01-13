@@ -128,6 +128,15 @@ const TYPE_LABELS: Record<NotificationType, string> = {
 	shift_swap_rejected: "Swap rejected",
 	shift_pickup_available: "Open shift available",
 	shift_pickup_approved: "Pickup approved",
+	// Project notifications
+	project_budget_warning_70: "Budget 70% used",
+	project_budget_warning_90: "Budget 90% used",
+	project_budget_warning_100: "Budget exceeded",
+	project_deadline_warning_14d: "Deadline in 14 days",
+	project_deadline_warning_7d: "Deadline in 7 days",
+	project_deadline_warning_1d: "Deadline in 1 day",
+	project_deadline_warning_0d: "Deadline today",
+	project_deadline_overdue: "Project overdue",
 };
 
 // Channel icons and labels

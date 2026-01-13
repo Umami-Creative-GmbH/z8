@@ -1,8 +1,8 @@
 "use client";
 
 import { IconCheck, IconSettings, IconTrash } from "@tabler/icons-react";
-import Link from "next/link";
 import { useState } from "react";
+import { Link } from "@/navigation";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";

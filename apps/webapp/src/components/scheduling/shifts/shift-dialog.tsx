@@ -2,7 +2,6 @@
 
 import { useForm } from "@tanstack/react-form";
 import { useStore } from "@tanstack/react-store";
-import { zodValidator } from "@tanstack/zod-form-adapter";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { CalendarIcon, Loader2, Trash2, Users } from "lucide-react";
@@ -69,14 +68,14 @@ export function ShiftDialog({
 	const { data: employeesResult } = useQuery({
 		queryKey: queryKeys.employees.list(organizationId),
 		queryFn: async () => {
-			const result = await listEmployees();
+			const result = await listEmployees({ limit: 1000 });
 			if (!result.success) throw new Error(result.error);
 			return result.data;
 		},
 		enabled: open && isManager,
 	});
 
-	const employees = employeesResult || [];
+	const employees = employeesResult?.employees || [];
 
 	const form = useForm({
 		defaultValues: {
@@ -88,7 +87,6 @@ export function ShiftDialog({
 			notes: "",
 			color: undefined as string | undefined,
 		},
-		validatorAdapter: zodValidator(),
 		onSubmit: async ({ value }) => {
 			upsertMutation.mutate(value);
 		},
@@ -242,14 +240,16 @@ export function ShiftDialog({
 										<Calendar
 											mode="single"
 											selected={field.state.value}
-											onSelect={field.handleChange}
+											onSelect={(date) => date && field.handleChange(date)}
 											initialFocus
 										/>
 									</PopoverContent>
 								</Popover>
 								{field.state.meta.errors.length > 0 && (
 									<p className="text-sm font-medium text-destructive">
-										{field.state.meta.errors[0]}
+										{typeof field.state.meta.errors[0] === "string"
+											? field.state.meta.errors[0]
+											: (field.state.meta.errors[0] as any)?.message}
 									</p>
 								)}
 							</div>
@@ -306,7 +306,9 @@ export function ShiftDialog({
 									/>
 									{field.state.meta.errors.length > 0 && (
 										<p className="text-sm font-medium text-destructive">
-											{field.state.meta.errors[0]}
+											{typeof field.state.meta.errors[0] === "string"
+											? field.state.meta.errors[0]
+											: (field.state.meta.errors[0] as any)?.message}
 										</p>
 									)}
 								</div>
@@ -331,7 +333,9 @@ export function ShiftDialog({
 									/>
 									{field.state.meta.errors.length > 0 && (
 										<p className="text-sm font-medium text-destructive">
-											{field.state.meta.errors[0]}
+											{typeof field.state.meta.errors[0] === "string"
+											? field.state.meta.errors[0]
+											: (field.state.meta.errors[0] as any)?.message}
 										</p>
 									)}
 								</div>
