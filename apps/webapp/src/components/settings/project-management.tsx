@@ -1,6 +1,13 @@
 "use client";
 
-import { IconBriefcase, IconCalendar, IconEdit, IconPlus, IconUsers } from "@tabler/icons-react";
+import {
+	IconBriefcase,
+	IconCalendar,
+	IconEdit,
+	IconPlus,
+	IconRefresh,
+	IconUsers,
+} from "@tabler/icons-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
@@ -50,7 +57,7 @@ export function ProjectManagement({ organizationId }: ProjectManagementProps) {
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const [editingProject, setEditingProject] = useState<ProjectWithDetails | null>(null);
 
-	const { data: projectsResult, isLoading } = useQuery({
+	const { data: projectsResult, isLoading, isFetching, refetch } = useQuery({
 		queryKey: queryKeys.projects.list(organizationId),
 		queryFn: async () => {
 			const result = await getProjects(organizationId);
@@ -113,10 +120,21 @@ export function ProjectManagement({ organizationId }: ProjectManagementProps) {
 						)}
 					</p>
 				</div>
-				<Button onClick={handleCreate}>
-					<IconPlus className="mr-2 h-4 w-4" />
-					{t("settings.projects.create", "Create Project")}
-				</Button>
+				<div className="flex items-center gap-2">
+					<Button
+						variant="ghost"
+						size="icon"
+						onClick={() => refetch()}
+						disabled={isFetching}
+					>
+						<IconRefresh className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
+						<span className="sr-only">{t("common.refresh", "Refresh")}</span>
+					</Button>
+					<Button onClick={handleCreate}>
+						<IconPlus className="mr-2 h-4 w-4" />
+						{t("settings.projects.create", "Create Project")}
+					</Button>
+				</div>
 			</div>
 
 			{isLoading ? (
@@ -132,7 +150,7 @@ export function ProjectManagement({ organizationId }: ProjectManagementProps) {
 			) : projects.length === 0 ? (
 				<Card>
 					<CardContent className="flex flex-col items-center justify-center py-12">
-						<IconBriefcase className="h-12 w-12 text-muted-foreground/50" />
+						<IconBriefcase className="h-12 w-12 text-muted-foreground" />
 						<h3 className="mt-4 text-lg font-medium">
 							{t("settings.projects.empty.title", "No projects yet")}
 						</h3>
