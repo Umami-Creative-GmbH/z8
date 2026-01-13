@@ -263,5 +263,34 @@ To update organization information:
    - Organization name
    - Logo
    - Contact information
-   - Time zone
 3. Click **"Save"**
+
+### Organization Timezone
+
+Set the default timezone for your organization:
+
+1. Go to **Settings** → **Organization**
+2. Find the **Timezone** card
+3. Select your organization's timezone from the picker
+4. The change saves automatically
+
+**Timezone Resolution Hierarchy:**
+
+The system uses a cascading timezone resolution:
+
+1. **User timezone** (highest priority) - If a user has set a personal timezone in their profile
+2. **Organization timezone** - Falls back to the organization's default timezone
+3. **UTC** (default) - Used if neither user nor organization timezone is set
+
+**Who can change the timezone:**
+
+- Only **organization owners** can modify the organization timezone
+- Admins and members can view the current timezone but cannot change it
+- Individual users can override the organization timezone by setting their own in **Settings** → **Profile**
+
+**What timezone affects:**
+
+- Absence tracking and calendar displays
+- Time entry displays and calculations
+- Report generation and date filtering
+- All date-based features throughout the application

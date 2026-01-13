@@ -62,29 +62,111 @@ Holidays affect:
 
 ## Vacation Policies
 
-### Organization Default Policy
+Vacation policies define vacation allowances, accrual methods, and carryover rules. Policies use an **effective date model** rather than being year-based, allowing you to schedule policy changes in advance.
 
-To set the organization-wide vacation policy:
+### Understanding the Policy Model
 
-1. Go to **Settings** → **Vacation** → **"Policy"**
-2. Configure default settings:
-   - **Default Annual Days**: Base vacation days per year (e.g., 20)
-   - **Carryover Policy**: Allow/disallow carryover
-   - **Max Carryover Days**: If allowed, maximum days that can carry over
-   - **Accrual Method**: Front-loaded, accrual, or custom
-3. Click **"Save Policy"**
+Each vacation policy has:
 
-**This policy applies to all employees by default** unless overridden individually.
+- **Name**: A descriptive name (e.g., "Standard 2025", "Executive Policy")
+- **Effective From**: When the policy becomes active
+- **Valid Until**: Optional end date (leave empty for ongoing policies)
+- **Company Default**: Whether this is the default for all employees
+- **Annual Days**: Base vacation days per year
+- **Accrual Type**: How vacation is accrued (annual, monthly, biweekly)
+- **Carryover Settings**: Whether unused days can carry over
+
+### Policy Inheritance
+
+Policies are applied in priority order:
+
+1. **Employee Override** (highest priority) - Specific policy assigned to an individual
+2. **Team Override** - Policy assigned to a team
+3. **Company Default** (lowest priority) - The policy marked as company default
+
+This means an employee with a personal override will use that policy, regardless of their team's policy or the company default.
+
+### Creating a Vacation Policy
+
+1. Go to **Settings** → **Vacation** → **"Policies"** tab
+2. Click **"Create Policy"**
+3. Configure the policy:
+   - **Name**: Descriptive name for the policy
+   - **Effective From**: Start date (defaults to January 1 of next year)
+   - **Valid Until**: Optional end date (leave empty for ongoing)
+   - **Set as Company Default**: Check to make this the default for all employees
+   - **Annual Days**: Base vacation allowance
+   - **Accrual Type**: Annual (all at once), Monthly, or Biweekly
+   - **Accrual Start Month**: When accrual begins (for monthly/biweekly)
+   - **Allow Carryover**: Enable to allow unused days to roll over
+   - **Max Carryover Days**: Limit on carried-over days (leave empty for unlimited)
+   - **Carryover Expiry**: Months after which carried-over days expire
+4. Click **"Create"**
+
+### Setting the Company Default
+
+The company default policy applies to all employees who don't have a team or individual override.
+
+**To set a policy as company default:**
+1. Create or edit a policy
+2. Check **"Set as Company Default"**
+3. Save the policy
+
+**Important**: Setting a new policy as company default will automatically remove the default flag from any existing default policy.
+
+### Scheduling Policy Changes
+
+You can schedule future policy changes by setting effective dates:
+
+**Example - Increasing vacation for next year:**
+1. Create a new policy "Standard 2026" with **Effective From** set to January 1, 2026
+2. Mark it as **Company Default**
+3. The system will show both the current and next scheduled default
+
+The **Assignments** tab shows:
+- **Current**: The active company default with its start date
+- **Next**: The upcoming default (if scheduled) with when it takes effect
+
+### Policy Statuses
+
+Policies display one of three statuses:
+
+| Status | Description |
+|--------|-------------|
+| **Company Default** | The active default policy for all employees |
+| **Active** | A valid policy that can be assigned to teams/employees |
+| **Superseded** | Policy whose Valid Until date has passed |
+
+Superseded policies appear dimmed in the list but remain visible for historical reference.
+
+### Team and Employee Overrides
+
+Use the **Assignments** tab to override the company default for specific teams or employees.
+
+**Assigning a Policy to a Team:**
+1. Go to **Settings** → **Vacation** → **"Assignments"** tab
+2. Under **Team Overrides**, click **"Assign to Team"**
+3. Select the policy and team
+4. Click **"Assign"**
+
+**Assigning a Policy to an Employee:**
+1. Under **Employee Overrides**, click **"Assign to Employee"**
+2. Select the policy and employee
+3. Click **"Assign"**
+
+**Removing an Override:**
+- Click the trash icon next to any team or employee override
+- The entity will revert to using the company default (or team policy, for employees)
 
 ### Employee-Specific Allowances
 
 To customize vacation allowance for an individual employee:
 
-1. Go to **Settings** → **Vacation** → **"Employees"**
+1. Go to **Settings** → **Vacation** → **"Employees"** tab
 2. Find the employee
 3. Click **"Edit"** next to their name
 4. Configure custom allowance:
-   - **Custom Annual Days**: Override org default (leave blank to use default)
+   - **Custom Annual Days**: Override policy default (leave blank to use policy)
    - **Carryover Days**: Days brought forward from previous year
    - **Adjustment Days**: Add or subtract days (can be positive or negative)
    - **Adjustment Reason**: Required explanation for adjustments
@@ -99,7 +181,7 @@ Total = Annual Days + Carryover + Adjustments
 ```
 
 **Example:**
-- Annual Days: 20 (org default)
+- Annual Days: 20 (from policy)
 - Carryover: 5 (from last year)
 - Adjustments: +2 (bonus days)
 - **Total Available: 27 days**
@@ -108,28 +190,28 @@ Total = Annual Days + Carryover + Adjustments
 
 **New Employee Mid-Year:**
 1. Create employee profile
-2. Set appropriate annual days (may be prorated)
-3. Note: Some organizations prorate first-year vacation
+2. The policy's accrual settings handle prorating automatically
+3. Or: Add a negative adjustment with reason "Pro-rated first year"
 
 **Long-Service Bonus:**
-1. Go to employee's vacation allowance
+1. Go to employee's vacation settings
 2. Add adjustment days (e.g., +5)
 3. Enter reason: "10-year service bonus"
 4. Save changes
 
-**Correction (Employee Miscounting):**
-1. Review actual usage
-2. Add/subtract correction via adjustments
-3. Document reason clearly
-4. Communicate with employee
+**Different Policy for a Department:**
+1. Create a new policy (e.g., "Sales Team - 25 Days")
+2. Do NOT mark as company default
+3. Assign the policy to the Sales team in the Assignments tab
 
-### Vacation Assignment System
+**Scheduled Policy Increase:**
+1. Create new policy with increased days
+2. Set **Effective From** to the desired start date
+3. Mark as **Company Default**
+4. Current employees continue with existing policy until the effective date
 
-For flexible policy allocation, use the vacation assignment system:
+### Deleting Policies
 
-1. Go to **Settings** → **Vacation** → **"Assignments"**
-2. Create assignment rules:
-   - By tenure (e.g., +2 days after 5 years)
-   - By position level
-   - By team or department
-3. Assignments automatically calculate based on employee attributes
+- **Active policies** with team/employee assignments cannot be deleted until assignments are removed
+- **Company default** policies cannot be deleted - first set another policy as default
+- **Superseded policies** can be deleted if no longer needed for records
