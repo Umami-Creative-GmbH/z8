@@ -1,7 +1,6 @@
 "use client";
 
 import { useForm } from "@tanstack/react-form";
-import { zodValidator } from "@tanstack/zod-form-adapter";
 import { IconLoader2 } from "@tabler/icons-react";
 import { z } from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -81,7 +80,6 @@ export function WorkScheduleAssignmentDialog({
 			teamId: null,
 			employeeId: null,
 		},
-		validatorAdapter: zodValidator(),
 		onSubmit: async ({ value }) => {
 			if (bulkMode) {
 				if (assignmentType === "team" && selectedTeamIds.length === 0) {
@@ -372,7 +370,11 @@ export function WorkScheduleAssignmentDialog({
 									)}
 								</p>
 								{field.state.meta.errors.length > 0 && (
-									<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
+									<p className="text-sm text-destructive">
+									{typeof field.state.meta.errors[0] === "string"
+										? field.state.meta.errors[0]
+										: (field.state.meta.errors[0] as any)?.message}
+								</p>
 								)}
 							</div>
 						)}

@@ -2,7 +2,6 @@
 
 import { useForm } from "@tanstack/react-form";
 import { useStore } from "@tanstack/react-store";
-import { zodValidator } from "@tanstack/zod-form-adapter";
 import { IconCheck, IconLoader2, IconPlugConnected, IconTrash, IconX } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useState, useTransition } from "react";
@@ -76,7 +75,6 @@ export function StorageSettingsForm({
 			region: initialConfig?.region ?? "us-east-1",
 			endpoint: initialConfig?.endpoint ?? "",
 		},
-		validatorAdapter: zodValidator(),
 		onSubmit: async ({ value }) => {
 			// Only require credentials if there's no existing config
 			if (!config && (!value.accessKeyId || !value.secretAccessKey)) {
@@ -300,7 +298,11 @@ export function StorageSettingsForm({
 											{t("settings.dataExport.storage.bucketDescription", "The name of your S3 bucket")}
 										</p>
 										{field.state.meta.errors.length > 0 && (
-											<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
+											<p className="text-sm text-destructive">
+											{typeof field.state.meta.errors[0] === "string"
+												? field.state.meta.errors[0]
+												: (field.state.meta.errors[0] as any)?.message}
+										</p>
 										)}
 									</div>
 								)}
@@ -328,7 +330,11 @@ export function StorageSettingsForm({
 											{t("settings.dataExport.storage.regionDescription", "AWS region where your bucket is located")}
 										</p>
 										{field.state.meta.errors.length > 0 && (
-											<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
+											<p className="text-sm text-destructive">
+											{typeof field.state.meta.errors[0] === "string"
+												? field.state.meta.errors[0]
+												: (field.state.meta.errors[0] as any)?.message}
+										</p>
 										)}
 									</div>
 								)}
