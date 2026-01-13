@@ -43,6 +43,17 @@ Z8 is engineered from the ground up to be audit-ready and legally compliant.
 
 ---
 
+## 👍 Fair Usage Policy
+
+Z8 is free for deployments with up to 25 concurrent active users. Organizations exceeding this threshold require an enterprise license to support sustainable development and continued innovation. Read the [Fair Usage Policy](FairUsagePolicy.md) for details on:
+
+- Free tier eligibility and active user counting
+- Anonymous telemetry and privacy guarantees
+- Enterprise licensing options
+- Open-source commitment and code access
+
+---
+
 ## 📖 Documentation & Resources
 
 For deeper dives into specific areas of the platform, please refer to:
@@ -50,6 +61,7 @@ For deeper dives into specific areas of the platform, please refer to:
 - **[User Guide](USER_GUIDE.md)**: How to use Z8 as an employee or manager.
 - **[Admin Guide](ADMIN_GUIDE.md)**: Configuration, compliance settings, and organization setup.
 - **[Development Guide](DEVELOPMENT.md)**: Technical architecture, setup instructions, and contribution guidelines.
+- **[Fair Usage Policy](FairUsagePolicy.md)**: Licensing terms for deployments exceeding 25 users.
 - **[License](LICENSE)**: Open source license details.
 
 ---

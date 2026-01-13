@@ -76,7 +76,6 @@
 		"@tanstack/react-query-devtools": "^5.91.2",
 		"@tanstack/react-store": "^0.8.0",
 		"@tanstack/react-table": "^8.21.3",
-		"@tanstack/zod-form-adapter": "^0.42.1",
 		"@tolgee/format-icu": "^6.2.7",
 		"@tolgee/react": "^6.2.7",
 		"@tolgee/web": "^6.2.7",

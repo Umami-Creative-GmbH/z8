@@ -1,6 +1,8 @@
 Copyright (c) 2026 Umami Creative GmbH
 All rights reserved.
 
+**Note**: This project is subject to a Fair Usage Policy for deployments with more than 25 concurrent active users. See [FairUsagePolicy.md](FairUsagePolicy.md) for details. The Fair Usage Policy complements this BSD 3-Clause License and does not restrict open-source usage rights.
+
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
 
@@ -29,7 +31,7 @@ modification, are permitted provided that the following conditions are met:
 
 5. Deployments or distributions where the total number of end users (defined
    as individual natural persons with direct access to the application)
-   exceeds fifty (50) within any rolling thirty (30) day period require a duly
+   exceeds twenty-five (25) within any rolling thirty (30) day period require a duly
    executed enterprise license from the copyright holder. Use of this software
    by organizations exceeding this threshold without an enterprise license
    constitutes a material breach of this license.
