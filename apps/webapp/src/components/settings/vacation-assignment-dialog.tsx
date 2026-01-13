@@ -4,6 +4,7 @@ import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
+import { format } from "date-fns";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -38,16 +39,20 @@ interface VacationAssignmentDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	organizationId: string;
-	assignmentType: "organization" | "team" | "employee";
+	assignmentType: "team" | "employee";
 	onSuccess: () => void;
 }
 
 interface PolicyOption {
 	id: string;
-	year: number;
+	name: string;
+	startDate: string; // YYYY-MM-DD
+	validUntil: string | null;
+	isCompanyDefault: boolean;
 	defaultAnnualDays: string;
 	accrualType: string;
 	allowCarryover: boolean;
+	isActive: boolean;
 }
 
 interface TeamOption {
@@ -61,6 +66,12 @@ interface EmployeeOption {
 	lastName: string | null;
 	position: string | null;
 }
+
+// Helper to format date for display
+const formatDate = (dateStr: string) => {
+	const [year, month, day] = dateStr.split("-").map(Number);
+	return format(new Date(year, month - 1, day), "MMM yyyy");
+};
 
 export function VacationAssignmentDialog({
 	open,
@@ -112,13 +123,14 @@ export function VacationAssignmentDialog({
 
 	// Fetch vacation policies
 	const { data: policies, isLoading: policiesLoading } = useQuery({
-		queryKey: ["vacation-policies", organizationId],
+		queryKey: queryKeys.vacationPolicies.list(organizationId),
 		queryFn: async () => {
 			const result = await getVacationPolicies(organizationId);
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch policies");
 			}
-			return result.data as PolicyOption[];
+			// Filter to only show active policies
+			return (result.data as PolicyOption[]).filter((p) => p.isActive);
 		},
 		enabled: open,
 	});
@@ -182,8 +194,6 @@ export function VacationAssignmentDialog({
 
 	const getDialogTitle = () => {
 		switch (assignmentType) {
-			case "organization":
-				return t("settings.vacation.assignments.setOrgPolicy", "Set Organization Policy");
 			case "team":
 				return t("settings.vacation.assignments.assignTeamPolicy", "Assign Team Policy");
 			case "employee":
@@ -193,26 +203,22 @@ export function VacationAssignmentDialog({
 
 	const getDialogDescription = () => {
 		switch (assignmentType) {
-			case "organization":
-				return t(
-					"settings.vacation.assignments.orgPolicyDescription",
-					"Select a vacation policy to apply as the default for all employees",
-				);
 			case "team":
 				return t(
 					"settings.vacation.assignments.teamPolicyDescription",
-					"Select a vacation policy and team. This overrides the organization default for team members.",
+					"Select a vacation policy and team. This overrides the company default for team members.",
 				);
 			case "employee":
 				return t(
 					"settings.vacation.assignments.employeePolicyDescription",
-					"Select a vacation policy and employee. This overrides team and organization defaults.",
+					"Select a vacation policy and employee. This overrides team and company defaults.",
 				);
 		}
 	};
 
 	const formatPolicy = (policy: PolicyOption) => {
-		return `${policy.year} - ${policy.defaultAnnualDays} days (${policy.accrualType})`;
+		const dateInfo = `(from ${formatDate(policy.startDate)})`;
+		return `${policy.name} - ${policy.defaultAnnualDays} days ${dateInfo}`;
 	};
 
 	const isLoading = policiesLoading || teamsLoading || employeesLoading;
@@ -228,7 +234,7 @@ export function VacationAssignmentDialog({
 				{isLoading ? (
 					<div className="space-y-4 py-4">
 						<Skeleton className="h-10 w-full" />
-						{assignmentType !== "organization" && <Skeleton className="h-10 w-full" />}
+						<Skeleton className="h-10 w-full" />
 					</div>
 				) : (
 					<form
@@ -265,6 +271,11 @@ export function VacationAssignmentDialog({
 													<SelectItem key={policy.id} value={policy.id}>
 														<div className="flex items-center gap-2">
 															<span>{formatPolicy(policy)}</span>
+															{policy.isCompanyDefault && (
+																<span className="text-xs bg-primary text-primary-foreground px-1 rounded">
+																	{t("settings.vacation.default", "Default")}
+																</span>
+															)}
 															{policy.allowCarryover && (
 																<span className="text-xs bg-secondary px-1 rounded">
 																	{t("settings.vacation.carryover", "Carryover")}
@@ -355,7 +366,7 @@ export function VacationAssignmentDialog({
 										<p className="text-sm text-muted-foreground">
 											{t(
 												"settings.vacation.assignments.employeeNote",
-												"This policy will override team and organization defaults for this employee",
+												"This policy will override team and company defaults for this employee",
 											)}
 										</p>
 										{validationErrors.employeeId && (

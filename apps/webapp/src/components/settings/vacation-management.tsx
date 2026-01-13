@@ -19,12 +19,10 @@ export function VacationManagement({ organizationId, children }: VacationManagem
 
 	// Assignment dialog state
 	const [assignmentDialogOpen, setAssignmentDialogOpen] = useState(false);
-	const [assignmentType, setAssignmentType] = useState<"organization" | "team" | "employee">(
-		"organization",
-	);
+	const [assignmentType, setAssignmentType] = useState<"team" | "employee">("team");
 
 	// Assignment handlers
-	const handleAssignClick = (type: "organization" | "team" | "employee") => {
+	const handleAssignClick = (type: "team" | "employee") => {
 		setAssignmentType(type);
 		setAssignmentDialogOpen(true);
 	};
