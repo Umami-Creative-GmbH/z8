@@ -1,7 +1,6 @@
 "use client";
 
 import { useForm } from "@tanstack/react-form";
-import { zodValidator } from "@tanstack/zod-form-adapter";
 import { IconClock, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
@@ -35,7 +34,6 @@ export default function WorkSchedulePage() {
 
 	const form = useForm({
 		defaultValues,
-		validatorAdapter: zodValidator(),
 		onSubmit: async ({ value }) => {
 			setLoading(true);
 
@@ -43,14 +41,14 @@ export default function WorkSchedulePage() {
 
 			setLoading(false);
 
-			if (result.success && result.data) {
-				toast.success(t("onboarding.workSchedule.success", "Work schedule set successfully!"));
-				router.push(result.data.nextStep);
-			} else {
+			if (!result.success) {
 				toast.error(
 					result.error || t("onboarding.workSchedule.error", "Failed to set work schedule"),
 				);
+				return;
 			}
+			toast.success(t("onboarding.workSchedule.success", "Work schedule set successfully!"));
+			router.push(result.data.nextStep);
 		},
 	});
 
@@ -61,11 +59,11 @@ export default function WorkSchedulePage() {
 
 		setLoading(false);
 
-		if (result.success && result.data) {
-			router.push(result.data.nextStep);
-		} else {
+		if (!result.success) {
 			toast.error(result.error || "Failed to skip work schedule setup");
+			return;
 		}
+		router.push(result.data.nextStep);
 	}
 
 	return (
@@ -136,7 +134,9 @@ export default function WorkSchedulePage() {
 										</p>
 										{field.state.meta.errors.length > 0 && (
 											<p className="text-sm font-medium text-destructive">
-												{field.state.meta.errors[0]}
+												{typeof field.state.meta.errors[0] === "string"
+												? field.state.meta.errors[0]
+												: (field.state.meta.errors[0] as any)?.message}
 											</p>
 										)}
 									</div>

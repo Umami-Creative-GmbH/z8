@@ -2,7 +2,6 @@
 
 import { useForm } from "@tanstack/react-form";
 import { useStore } from "@tanstack/react-store";
-import { zodValidator } from "@tanstack/zod-form-adapter";
 import { IconClock, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useState } from "react";
@@ -43,7 +42,6 @@ export default function WorkTemplatesPage() {
 			workingDays: ["monday", "tuesday", "wednesday", "thursday", "friday"] as DayOfWeek[],
 			setAsDefault: true,
 		},
-		validatorAdapter: zodValidator(),
 		onSubmit: async ({ value }) => {
 			setLoading(true);
 
@@ -180,7 +178,9 @@ export default function WorkTemplatesPage() {
 										</p>
 										{field.state.meta.errors.length > 0 && (
 											<p className="text-sm font-medium text-destructive">
-												{field.state.meta.errors[0]}
+												{typeof field.state.meta.errors[0] === "string"
+												? field.state.meta.errors[0]
+												: (field.state.meta.errors[0] as any)?.message}
 											</p>
 										)}
 									</div>
@@ -217,7 +217,9 @@ export default function WorkTemplatesPage() {
 										</p>
 										{field.state.meta.errors.length > 0 && (
 											<p className="text-sm font-medium text-destructive">
-												{field.state.meta.errors[0]}
+												{typeof field.state.meta.errors[0] === "string"
+												? field.state.meta.errors[0]
+												: (field.state.meta.errors[0] as any)?.message}
 											</p>
 										)}
 									</div>

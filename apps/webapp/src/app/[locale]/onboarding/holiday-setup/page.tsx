@@ -2,7 +2,6 @@
 
 import { useForm } from "@tanstack/react-form";
 import { useStore } from "@tanstack/react-store";
-import { zodValidator } from "@tanstack/zod-form-adapter";
 import { IconCalendarEvent, IconCheck, IconLoader2, IconSelector } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useState } from "react";
@@ -48,7 +47,6 @@ export default function HolidaySetupPage() {
 			presetName: "",
 			setAsDefault: true,
 		},
-		validatorAdapter: zodValidator(),
 		onSubmit: async ({ value }) => {
 			setLoading(true);
 
@@ -250,7 +248,9 @@ export default function HolidaySetupPage() {
 										</p>
 										{field.state.meta.errors.length > 0 && (
 											<p className="text-sm font-medium text-destructive">
-												{field.state.meta.errors[0]}
+												{typeof field.state.meta.errors[0] === "string"
+													? field.state.meta.errors[0]
+													: (field.state.meta.errors[0] as any)?.message}
 											</p>
 										)}
 									</div>
@@ -287,7 +287,9 @@ export default function HolidaySetupPage() {
 										</p>
 										{field.state.meta.errors.length > 0 && (
 											<p className="text-sm font-medium text-destructive">
-												{field.state.meta.errors[0]}
+												{typeof field.state.meta.errors[0] === "string"
+													? field.state.meta.errors[0]
+													: (field.state.meta.errors[0] as any)?.message}
 											</p>
 										)}
 									</div>
