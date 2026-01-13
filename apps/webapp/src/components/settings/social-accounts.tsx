@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { toast } from "sonner";
 import { AppleIcon, GitHubIcon, GoogleIcon, LinkedInIcon } from "@/components/icons/provider-icons";
 import {
@@ -17,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { authClient } from "@/lib/auth-client";
+import { queryKeys } from "@/lib/query/keys";
 
 interface ConnectedAccount {
 	id: string;
@@ -55,35 +57,48 @@ const providers: Provider[] = [
 ];
 
 export function SocialAccounts() {
-	const [isPending, startTransition] = useTransition();
-	const [accounts, setAccounts] = useState<ConnectedAccount[]>([]);
+	const queryClient = useQueryClient();
 	const [unlinkDialogOpen, setUnlinkDialogOpen] = useState(false);
-	const [accountToUnlink, setAccountToUnlink] = useState<string | null>(null);
+	const [accountToUnlink, setAccountToUnlink] = useState<{
+		providerId: string;
+		accountId: string;
+	} | null>(null);
 	const [connectingProvider, setConnectingProvider] = useState<string | null>(null);
 
-	const loadAccounts = () => {
-		startTransition(async () => {
-			try {
-				const result = await authClient.listAccounts();
-
-				if (result.data) {
-					setAccounts(result.data);
-				} else if (result.error) {
-					toast.error("Failed to load connected accounts", {
-						description: result.error.message,
-					});
-				}
-			} catch (error) {
-				toast.error("Failed to load connected accounts", {
-					description: error instanceof Error ? error.message : "An unexpected error occurred",
-				});
+	// Query for connected accounts
+	const accountsQuery = useQuery({
+		queryKey: queryKeys.auth.accounts(),
+		queryFn: async () => {
+			const result = await authClient.listAccounts();
+			if (result.error) {
+				throw new Error(result.error.message);
 			}
-		});
-	};
+			return (result.data || []) as ConnectedAccount[];
+		},
+		staleTime: 30 * 1000, // 30 seconds
+	});
 
-	useEffect(() => {
-		loadAccounts();
-	}, [loadAccounts]);
+	// Mutation for unlinking an account
+	const unlinkMutation = useMutation({
+		mutationFn: async ({ providerId, accountId }: { providerId: string; accountId: string }) => {
+			const result = await authClient.unlinkAccount({ providerId, accountId });
+			if (result.error) {
+				throw new Error(result.error.message);
+			}
+			return result;
+		},
+		onSuccess: () => {
+			toast.success("Account disconnected successfully");
+			setUnlinkDialogOpen(false);
+			setAccountToUnlink(null);
+			queryClient.invalidateQueries({ queryKey: queryKeys.auth.accounts() });
+		},
+		onError: (error) => {
+			toast.error("Failed to disconnect account", {
+				description: error instanceof Error ? error.message : "An unexpected error occurred",
+			});
+		},
+	});
 
 	const handleConnect = (providerId: string) => {
 		setConnectingProvider(providerId);
@@ -94,35 +109,16 @@ export function SocialAccounts() {
 
 	const handleUnlink = () => {
 		if (!accountToUnlink) return;
-
-		startTransition(async () => {
-			try {
-				const result = await authClient.unlinkAccount({
-					accountId: accountToUnlink,
-				});
-
-				if (result.error) {
-					toast.error("Failed to disconnect account", {
-						description: result.error.message,
-					});
-				} else {
-					toast.success("Account disconnected successfully");
-					setUnlinkDialogOpen(false);
-					setAccountToUnlink(null);
-					loadAccounts();
-				}
-			} catch (error) {
-				toast.error("Failed to disconnect account", {
-					description: error instanceof Error ? error.message : "An unexpected error occurred",
-				});
-			}
-		});
+		unlinkMutation.mutate(accountToUnlink);
 	};
 
-	const confirmUnlink = (accountId: string) => {
-		setAccountToUnlink(accountId);
+	const confirmUnlink = (providerId: string, accountId: string) => {
+		setAccountToUnlink({ providerId, accountId });
 		setUnlinkDialogOpen(true);
 	};
+
+	const accounts = accountsQuery.data || [];
+	const isPending = accountsQuery.isLoading || unlinkMutation.isPending;
 
 	const getConnectedAccount = (providerId: string) => {
 		return accounts.find((account) => account.providerId === providerId);
@@ -154,20 +150,22 @@ export function SocialAccounts() {
 										<div>
 											<CardTitle className="text-base">{provider.name}</CardTitle>
 											<CardDescription>
-												{isConnected
+												{isConnected && connectedAccount
 													? `Connected as ${connectedAccount.accountId}`
 													: `Connect your ${provider.name} account`}
 											</CardDescription>
 										</div>
 									</div>
 									<div className="flex items-center gap-2">
-										{isConnected ? (
+										{isConnected && connectedAccount ? (
 											<>
 												<Badge variant="default">Connected</Badge>
 												<Button
 													variant="outline"
 													size="sm"
-													onClick={() => confirmUnlink(connectedAccount.id)}
+													onClick={() =>
+														confirmUnlink(connectedAccount.providerId, connectedAccount.id)
+													}
 													disabled={isPending}
 												>
 													Disconnect
@@ -201,10 +199,10 @@ export function SocialAccounts() {
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
-						<AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>
+						<AlertDialogCancel disabled={unlinkMutation.isPending}>Cancel</AlertDialogCancel>
 						<AlertDialogAction
 							onClick={handleUnlink}
-							disabled={isPending}
+							disabled={unlinkMutation.isPending}
 							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
 						>
 							Disconnect

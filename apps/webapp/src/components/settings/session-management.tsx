@@ -9,14 +9,16 @@ import {
 	IconMapPin,
 	IconTrash,
 } from "@tabler/icons-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { authClient } from "@/lib/auth-client";
 import { formatRelative as formatDistanceToNow } from "@/lib/datetime/luxon-utils";
+import { queryKeys } from "@/lib/query/keys";
 
 interface Session {
 	id: string;
@@ -83,60 +85,68 @@ function parseUserAgent(userAgent: string | null | undefined): {
 
 export function SessionManagement() {
 	const { t } = useTranslate();
-	const [sessions, setSessions] = useState<Session[]>([]);
-	const [currentSessionToken, setCurrentSessionToken] = useState<string | null>(null);
-	const [isLoading, setIsLoading] = useState(true);
+	const queryClient = useQueryClient();
 	const [revokingSessionId, setRevokingSessionId] = useState<string | null>(null);
-	const [isRevokingAll, setIsRevokingAll] = useState(false);
 
-	const loadSessions = async () => {
-		try {
-			setIsLoading(true);
-			const { data: currentSession } = await authClient.getSession();
-			setCurrentSessionToken(currentSession?.session?.token || null);
+	// Query for current session token
+	const currentSessionQuery = useQuery({
+		queryKey: ["auth", "current-session"],
+		queryFn: async () => {
+			const { data } = await authClient.getSession();
+			return data?.session?.token || null;
+		},
+		staleTime: 5 * 60 * 1000, // 5 minutes
+	});
 
-			const { data: sessionsList } = await authClient.listSessions();
-			setSessions(sessionsList || []);
-		} catch (error) {
-			toast.error(t("sessions.load-failed", "Failed to load sessions"));
-			console.error("Failed to load sessions:", error);
-		} finally {
-			setIsLoading(false);
-		}
-	};
+	// Query for sessions list
+	const sessionsQuery = useQuery({
+		queryKey: queryKeys.auth.sessions(),
+		queryFn: async () => {
+			const { data } = await authClient.listSessions();
+			return (data || []) as Session[];
+		},
+		staleTime: 30 * 1000, // 30 seconds
+	});
 
-	useEffect(() => {
-		loadSessions();
-	}, [loadSessions]);
-
-	const handleRevokeSession = async (token: string, sessionId: string) => {
-		try {
-			setRevokingSessionId(sessionId);
+	// Mutation for revoking a single session
+	const revokeSessionMutation = useMutation({
+		mutationFn: async ({ token }: { token: string; sessionId: string }) => {
 			await authClient.revokeSession({ token });
+		},
+		onMutate: ({ sessionId }) => {
+			setRevokingSessionId(sessionId);
+		},
+		onSuccess: () => {
 			toast.success(t("sessions.revoked", "Session revoked successfully"));
-			await loadSessions();
-		} catch (error) {
+			queryClient.invalidateQueries({ queryKey: queryKeys.auth.sessions() });
+		},
+		onError: (error) => {
 			toast.error(t("sessions.revoke-failed", "Failed to revoke session"));
 			console.error("Failed to revoke session:", error);
-		} finally {
+		},
+		onSettled: () => {
 			setRevokingSessionId(null);
-		}
-	};
+		},
+	});
 
-	const handleRevokeOtherSessions = async () => {
-		try {
-			setIsRevokingAll(true);
+	// Mutation for revoking all other sessions
+	const revokeOtherSessionsMutation = useMutation({
+		mutationFn: async () => {
 			await authClient.revokeOtherSessions();
+		},
+		onSuccess: () => {
 			toast.success(t("sessions.others-revoked", "All other sessions revoked successfully"));
-			await loadSessions();
-		} catch (error) {
+			queryClient.invalidateQueries({ queryKey: queryKeys.auth.sessions() });
+		},
+		onError: (error) => {
 			toast.error(t("sessions.revoke-all-failed", "Failed to revoke other sessions"));
 			console.error("Failed to revoke other sessions:", error);
-		} finally {
-			setIsRevokingAll(false);
-		}
-	};
+		},
+	});
 
+	const sessions = sessionsQuery.data || [];
+	const currentSessionToken = currentSessionQuery.data;
+	const isLoading = sessionsQuery.isLoading || currentSessionQuery.isLoading;
 	const otherSessionsCount = sessions.filter((s) => s.token !== currentSessionToken).length;
 
 	if (isLoading) {
@@ -171,10 +181,10 @@ export function SessionManagement() {
 						<Button
 							variant="outline"
 							size="sm"
-							onClick={handleRevokeOtherSessions}
-							disabled={isRevokingAll}
+							onClick={() => revokeOtherSessionsMutation.mutate()}
+							disabled={revokeOtherSessionsMutation.isPending}
 						>
-							{isRevokingAll ? (
+							{revokeOtherSessionsMutation.isPending ? (
 								<>
 									<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
 									{t("sessions.revoking", "Revoking...")}
@@ -228,7 +238,7 @@ export function SessionManagement() {
 													)}
 													<span>
 														{t("sessions.signed-in", "Signed in")}{" "}
-														{formatDistanceToNow(new Date(session.createdAt), { addSuffix: true })}
+														{formatDistanceToNow(new Date(session.createdAt))}
 													</span>
 												</div>
 											</div>
@@ -237,7 +247,12 @@ export function SessionManagement() {
 											<Button
 												variant="ghost"
 												size="sm"
-												onClick={() => handleRevokeSession(session.token, session.id)}
+												onClick={() =>
+													revokeSessionMutation.mutate({
+														token: session.token,
+														sessionId: session.id,
+													})
+												}
 												disabled={revokingSessionId === session.id}
 											>
 												{revokingSessionId === session.id ? (

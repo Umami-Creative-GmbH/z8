@@ -1,7 +1,8 @@
 "use client";
 
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Trash2 } from "lucide-react";
-import { useEffect, useState, useTransition } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import {
 	AlertDialog,
@@ -16,6 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { passkey } from "@/lib/auth-client";
+import { queryKeys } from "@/lib/query/keys";
 
 interface Passkey {
 	id: string;
@@ -24,92 +26,79 @@ interface Passkey {
 }
 
 export function PasskeyManagement() {
-	const [isPending, startTransition] = useTransition();
-	const [isAdding, setIsAdding] = useState(false);
-	const [passkeys, setPasskeys] = useState<Passkey[]>([]);
+	const queryClient = useQueryClient();
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 	const [passkeyToDelete, setPasskeyToDelete] = useState<string | null>(null);
 
-	const loadPasskeys = () => {
-		startTransition(async () => {
-			try {
-				const result = await passkey.listUserPasskeys();
-
-				if (result.data) {
-					setPasskeys(result.data);
-				} else if (result.error) {
-					toast.error("Failed to load passkeys", {
-						description: result.error.message,
-					});
-				}
-			} catch (error) {
-				toast.error("Failed to load passkeys", {
-					description: error instanceof Error ? error.message : "An unexpected error occurred",
-				});
+	// Query for passkeys list
+	const passkeysQuery = useQuery({
+		queryKey: queryKeys.auth.passkeys(),
+		queryFn: async () => {
+			const result = await passkey.listUserPasskeys();
+			if (result.error) {
+				throw new Error(result.error.message);
 			}
-		});
-	};
+			return (result.data || []) as Passkey[];
+		},
+		staleTime: 30 * 1000, // 30 seconds
+	});
 
-	useEffect(() => {
-		loadPasskeys();
-	}, [loadPasskeys]);
-
-	const handleAddPasskey = async () => {
-		setIsAdding(true);
-
-		try {
+	// Mutation for adding a passkey
+	const addPasskeyMutation = useMutation({
+		mutationFn: async () => {
 			const result = await passkey.addPasskey({
 				name: `Passkey ${new Date().toLocaleDateString()}`,
 			});
-
 			if (result.error) {
-				toast.error("Failed to add passkey", {
-					description: result.error.message,
-				});
-			} else {
-				toast.success("Passkey added successfully");
-				loadPasskeys();
+				throw new Error(result.error.message);
 			}
-		} catch (error) {
+			return result;
+		},
+		onSuccess: () => {
+			toast.success("Passkey added successfully");
+			queryClient.invalidateQueries({ queryKey: queryKeys.auth.passkeys() });
+		},
+		onError: (error) => {
 			toast.error("Failed to add passkey", {
 				description: error instanceof Error ? error.message : "An unexpected error occurred",
 			});
-		} finally {
-			setIsAdding(false);
-		}
-	};
+		},
+	});
+
+	// Mutation for deleting a passkey
+	const deletePasskeyMutation = useMutation({
+		mutationFn: async (id: string) => {
+			const result = await passkey.deletePasskey({ id });
+			if (result.error) {
+				throw new Error(result.error.message);
+			}
+			return result;
+		},
+		onSuccess: () => {
+			toast.success("Passkey deleted successfully");
+			setDeleteDialogOpen(false);
+			setPasskeyToDelete(null);
+			queryClient.invalidateQueries({ queryKey: queryKeys.auth.passkeys() });
+		},
+		onError: (error) => {
+			toast.error("Failed to delete passkey", {
+				description: error instanceof Error ? error.message : "An unexpected error occurred",
+			});
+		},
+	});
 
 	const handleDeletePasskey = () => {
 		if (!passkeyToDelete) return;
-
-		startTransition(async () => {
-			try {
-				const result = await passkey.deletePasskey({
-					id: passkeyToDelete,
-				});
-
-				if (result.error) {
-					toast.error("Failed to delete passkey", {
-						description: result.error.message,
-					});
-				} else {
-					toast.success("Passkey deleted successfully");
-					setDeleteDialogOpen(false);
-					setPasskeyToDelete(null);
-					loadPasskeys();
-				}
-			} catch (error) {
-				toast.error("Failed to delete passkey", {
-					description: error instanceof Error ? error.message : "An unexpected error occurred",
-				});
-			}
-		});
+		deletePasskeyMutation.mutate(passkeyToDelete);
 	};
 
 	const confirmDelete = (passkeyId: string) => {
 		setPasskeyToDelete(passkeyId);
 		setDeleteDialogOpen(true);
 	};
+
+	const passkeys = passkeysQuery.data || [];
+	const isPending = passkeysQuery.isLoading || deletePasskeyMutation.isPending;
 
 	return (
 		<div className="space-y-4">
@@ -120,8 +109,11 @@ export function PasskeyManagement() {
 						Manage passkeys for passwordless authentication
 					</p>
 				</div>
-				<Button onClick={handleAddPasskey} disabled={isAdding || isPending}>
-					{isAdding ? "Adding..." : "Add Passkey"}
+				<Button
+					onClick={() => addPasskeyMutation.mutate()}
+					disabled={addPasskeyMutation.isPending || isPending}
+				>
+					{addPasskeyMutation.isPending ? "Adding..." : "Add Passkey"}
 				</Button>
 			</div>
 
@@ -173,10 +165,10 @@ export function PasskeyManagement() {
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
-						<AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>
+						<AlertDialogCancel disabled={deletePasskeyMutation.isPending}>Cancel</AlertDialogCancel>
 						<AlertDialogAction
 							onClick={handleDeletePasskey}
-							disabled={isPending}
+							disabled={deletePasskeyMutation.isPending}
 							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
 						>
 							Delete
