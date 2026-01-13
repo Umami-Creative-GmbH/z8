@@ -60,7 +60,8 @@ export function toServerActionResult<T>(exit: Exit.Exit<T, AnyAppError>): Server
 }
 
 export async function runServerActionSafe<T>(
-	effect: Effect.Effect<T, AnyAppError>,
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	effect: Effect.Effect<T, AnyAppError, any>,
 ): Promise<ServerActionResult<T>> {
 	// Use the runtime which provides all required layers
 	const exit = await runtime.runPromiseExit(effect);

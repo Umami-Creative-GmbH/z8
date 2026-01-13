@@ -62,7 +62,8 @@ export const AppLayer = Layer.mergeAll(
 export const runtime = ManagedRuntime.make(AppLayer);
 
 // Helper to run effects in server actions
-export function runServerAction<A, E>(effect: Effect.Effect<A, E>): Promise<A> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function runServerAction<A, E>(effect: Effect.Effect<A, E, any>): Promise<A> {
 	return runtime.runPromise(effect);
 }
 
