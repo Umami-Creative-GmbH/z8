@@ -64,10 +64,10 @@ export async function deleteNonAdminEmployeesData(
 
 	// Step 2: Delete approval requests for these employees
 	const approvalRequestsToDelete = await db.query.approvalRequest.findMany({
-		where: inArray(approvalRequest.requesterId, employeeIds),
+		where: inArray(approvalRequest.requestedBy, employeeIds),
 	});
 	if (approvalRequestsToDelete.length > 0) {
-		await db.delete(approvalRequest).where(inArray(approvalRequest.requesterId, employeeIds));
+		await db.delete(approvalRequest).where(inArray(approvalRequest.requestedBy, employeeIds));
 		result.approvalRequestsDeleted = approvalRequestsToDelete.length;
 	}
 

@@ -8,7 +8,10 @@ import {
 	absenceCategory,
 	absenceEntry,
 	employee,
+	employeeManagers,
 	employeeVacationAllowance,
+	project,
+	team,
 	timeEntry,
 	workPeriod,
 } from "@/db/schema";
@@ -83,6 +86,10 @@ export interface DemoDataOptions {
 	};
 	includeTimeEntries: boolean;
 	includeAbsences: boolean;
+	includeTeams: boolean;
+	teamCount?: number; // Number of teams to create (default: 3-5)
+	includeProjects: boolean;
+	projectCount?: number; // Number of projects to create (default: 5-8)
 	employeeIds?: string[];
 	createdBy: string;
 }
@@ -91,6 +98,10 @@ export interface DemoDataResult {
 	timeEntriesCreated: number;
 	workPeriodsCreated: number;
 	absencesCreated: number;
+	teamsCreated: number;
+	employeesAssignedToTeams: number;
+	projectsCreated: number;
+	managerAssignmentsCreated: number;
 }
 
 export interface ClearDataResult {
@@ -98,6 +109,10 @@ export interface ClearDataResult {
 	workPeriodsDeleted: number;
 	absencesDeleted: number;
 	vacationAllowancesReset: number;
+	teamsDeleted: number;
+	employeesUnassignedFromTeams: number;
+	projectsDeleted: number;
+	managerAssignmentsDeleted: number;
 }
 
 /**
@@ -669,9 +684,9 @@ function generateRandomAbsence(
 	const duration = Math.floor(Math.random() * (maxDays - minDays + 1)) + minDays;
 	const endDT = startDT.plus({ days: duration - 1 });
 
-	// Convert to Date objects for database
-	const startDate = dateToDB(startDT)!;
-	const endDate = dateToDB(endDT)!;
+	// Convert to ISO date strings for database (date columns expect YYYY-MM-DD)
+	const startDate = startDT.toISODate()!;
+	const endDate = endDT.toISODate()!;
 
 	// Determine status: 70% approved, 20% pending, 10% rejected
 	const statusRand = Math.random();
@@ -711,9 +726,331 @@ function generateRandomAbsence(
 }
 
 /**
+ * Team name generators for realistic department/team names
+ */
+const teamNameGenerators = [
+	() => `${faker.company.buzzAdjective()} ${faker.commerce.department()}`,
+	() => `${faker.commerce.department()} Team`,
+	() => `${faker.company.buzzNoun()} Division`,
+	() => `${faker.hacker.adjective()} ${faker.hacker.noun()} Team`,
+];
+
+const defaultTeamNames = [
+	"Engineering",
+	"Product",
+	"Design",
+	"Marketing",
+	"Sales",
+	"Customer Success",
+	"Operations",
+	"HR & People",
+	"Finance",
+	"Legal",
+];
+
+/**
+ * Generate demo teams and assign random employees to them
+ */
+export async function generateDemoTeams(
+	options: DemoDataOptions,
+): Promise<{ teamsCreated: number; employeesAssignedToTeams: number }> {
+	if (!options.includeTeams) {
+		return { teamsCreated: 0, employeesAssignedToTeams: 0 };
+	}
+
+	// Get employees for the organization
+	const employees = await db.query.employee.findMany({
+		where: options.employeeIds
+			? inArray(employee.id, options.employeeIds)
+			: eq(employee.organizationId, options.organizationId),
+	});
+
+	if (employees.length === 0) {
+		return { teamsCreated: 0, employeesAssignedToTeams: 0 };
+	}
+
+	// Determine number of teams to create (default: 3-5, max based on employee count)
+	const maxTeams = Math.min(Math.ceil(employees.length / 2), defaultTeamNames.length);
+	const teamCount = options.teamCount ?? Math.min(Math.floor(Math.random() * 3) + 3, maxTeams);
+
+	if (teamCount <= 0) {
+		return { teamsCreated: 0, employeesAssignedToTeams: 0 };
+	}
+
+	// Use default team names first, then generate random ones if needed
+	const teamNames: string[] = [];
+	const shuffledDefaults = faker.helpers.shuffle([...defaultTeamNames]);
+
+	for (let i = 0; i < teamCount; i++) {
+		if (i < shuffledDefaults.length) {
+			teamNames.push(shuffledDefaults[i]);
+		} else {
+			const generator = faker.helpers.arrayElement(teamNameGenerators);
+			teamNames.push(generator());
+		}
+	}
+
+	// Create teams
+	const createdTeams: { id: string; name: string }[] = [];
+	for (const name of teamNames) {
+		const [newTeam] = await db
+			.insert(team)
+			.values({
+				organizationId: options.organizationId,
+				name,
+				description: `Demo team - ${name}`,
+			})
+			.returning({ id: team.id, name: team.name });
+
+		if (newTeam) {
+			createdTeams.push(newTeam);
+		}
+	}
+
+	if (createdTeams.length === 0) {
+		return { teamsCreated: 0, employeesAssignedToTeams: 0 };
+	}
+
+	// Shuffle employees and assign to teams
+	const shuffledEmployees = faker.helpers.shuffle([...employees]);
+	let employeesAssigned = 0;
+
+	// Ensure each team gets at least one employee
+	for (let i = 0; i < createdTeams.length && i < shuffledEmployees.length; i++) {
+		await db
+			.update(employee)
+			.set({ teamId: createdTeams[i].id })
+			.where(eq(employee.id, shuffledEmployees[i].id));
+		employeesAssigned++;
+	}
+
+	// Assign remaining employees randomly to teams
+	for (let i = createdTeams.length; i < shuffledEmployees.length; i++) {
+		const randomTeam = faker.helpers.arrayElement(createdTeams);
+		await db
+			.update(employee)
+			.set({ teamId: randomTeam.id })
+			.where(eq(employee.id, shuffledEmployees[i].id));
+		employeesAssigned++;
+	}
+
+	return {
+		teamsCreated: createdTeams.length,
+		employeesAssignedToTeams: employeesAssigned,
+	};
+}
+
+/**
+ * Project name generators for realistic project names
+ */
+const projectNameGenerators = [
+	() => `${faker.company.buzzAdjective()} ${faker.company.buzzNoun()}`,
+	() => `Project ${faker.word.adjective({ capitalize: true })}`,
+	() => `${faker.hacker.verb()} ${faker.hacker.noun()}`,
+	() => `${faker.commerce.productAdjective()} ${faker.commerce.product()}`,
+];
+
+const defaultProjectNames = [
+	"Website Redesign",
+	"Mobile App Development",
+	"API Integration",
+	"Database Migration",
+	"Customer Portal",
+	"Internal Tools",
+	"Analytics Dashboard",
+	"Security Audit",
+	"Performance Optimization",
+	"Documentation Update",
+	"Cloud Migration",
+	"Payment System",
+];
+
+const projectColors = [
+	"#ef4444", // red
+	"#f97316", // orange
+	"#eab308", // yellow
+	"#22c55e", // green
+	"#14b8a6", // teal
+	"#06b6d4", // cyan
+	"#3b82f6", // blue
+	"#6366f1", // indigo
+	"#8b5cf6", // violet
+	"#a855f7", // purple
+	"#ec4899", // pink
+	"#f43f5e", // rose
+];
+
+const projectIcons = [
+	"IconCode",
+	"IconDevices",
+	"IconDatabase",
+	"IconCloud",
+	"IconLock",
+	"IconChartBar",
+	"IconUsers",
+	"IconSettings",
+	"IconRocket",
+	"IconBulb",
+	"IconPalette",
+	"IconShoppingCart",
+];
+
+/**
+ * Generate demo projects
+ */
+export async function generateDemoProjects(
+	options: DemoDataOptions,
+): Promise<{ projectsCreated: number }> {
+	if (!options.includeProjects) {
+		return { projectsCreated: 0 };
+	}
+
+	// Determine number of projects to create (default: 5-8)
+	const projectCount = options.projectCount ?? Math.floor(Math.random() * 4) + 5;
+
+	if (projectCount <= 0) {
+		return { projectsCreated: 0 };
+	}
+
+	// Use default project names first, then generate random ones if needed
+	const projectNames: string[] = [];
+	const shuffledDefaults = faker.helpers.shuffle([...defaultProjectNames]);
+
+	for (let i = 0; i < projectCount; i++) {
+		if (i < shuffledDefaults.length) {
+			projectNames.push(shuffledDefaults[i]);
+		} else {
+			const generator = faker.helpers.arrayElement(projectNameGenerators);
+			projectNames.push(generator());
+		}
+	}
+
+	// Create projects
+	let projectsCreated = 0;
+	// Valid statuses from projectStatusEnum: planned, active, paused, completed, archived
+	const statuses: Array<"planned" | "active" | "paused" | "completed" | "archived"> = [
+		"planned",
+		"active",
+		"active",
+		"active",
+		"paused",
+		"completed",
+	];
+
+	for (let i = 0; i < projectNames.length; i++) {
+		const name = projectNames[i];
+		const color = projectColors[i % projectColors.length];
+		const icon = projectIcons[i % projectIcons.length];
+		const status = faker.helpers.arrayElement(statuses);
+
+		// Generate optional budget (60% chance)
+		const hasBudget = Math.random() < 0.6;
+		const budgetHours = hasBudget
+			? String(Math.floor(Math.random() * 500) + 50) // 50-550 hours
+			: null;
+
+		// Generate optional deadline (50% chance, only for non-completed projects)
+		const hasDeadline = status !== "completed" && Math.random() < 0.5;
+		const deadline = hasDeadline
+			? faker.date.future({ years: 1 })
+			: null;
+
+		await db.insert(project).values({
+			organizationId: options.organizationId,
+			name,
+			description: `Demo project - ${name}`,
+			status,
+			icon,
+			color,
+			budgetHours,
+			deadline,
+			isActive: status !== "archived",
+			createdBy: options.createdBy,
+			updatedAt: new Date(),
+		});
+
+		projectsCreated++;
+	}
+
+	return { projectsCreated };
+}
+
+/**
+ * Generate manager assignments - assign employees to the owner/admin
+ */
+export async function generateDemoManagerAssignments(
+	options: DemoDataOptions,
+): Promise<{ managerAssignmentsCreated: number }> {
+	// Get the current user's employee record (the owner/admin)
+	const ownerEmployee = await db.query.employee.findFirst({
+		where: eq(employee.userId, options.createdBy),
+	});
+
+	if (!ownerEmployee) {
+		return { managerAssignmentsCreated: 0 };
+	}
+
+	// Get all other employees in the organization (excluding the owner)
+	const otherEmployees = await db.query.employee.findMany({
+		where: and(
+			eq(employee.organizationId, options.organizationId),
+			options.employeeIds?.length
+				? inArray(employee.id, options.employeeIds)
+				: undefined,
+		),
+	});
+
+	// Filter out the owner and get employees without managers
+	const employeesWithoutOwner = otherEmployees.filter((e) => e.id !== ownerEmployee.id);
+
+	if (employeesWithoutOwner.length === 0) {
+		return { managerAssignmentsCreated: 0 };
+	}
+
+	// Check existing manager assignments to avoid duplicates
+	const existingAssignments = await db.query.employeeManagers.findMany({
+		where: inArray(
+			employeeManagers.employeeId,
+			employeesWithoutOwner.map((e) => e.id),
+		),
+	});
+
+	const employeesWithManagers = new Set(existingAssignments.map((a) => a.employeeId));
+
+	// Assign ~60-80% of employees without managers to the owner
+	const employeesNeedingManagers = employeesWithoutOwner.filter(
+		(e) => !employeesWithManagers.has(e.id),
+	);
+
+	const assignmentRate = 0.6 + Math.random() * 0.2; // 60-80%
+	const employeesToAssign = faker.helpers.shuffle(employeesNeedingManagers).slice(
+		0,
+		Math.ceil(employeesNeedingManagers.length * assignmentRate),
+	);
+
+	let managerAssignmentsCreated = 0;
+
+	for (const emp of employeesToAssign) {
+		await db.insert(employeeManagers).values({
+			employeeId: emp.id,
+			managerId: ownerEmployee.id,
+			isPrimary: true,
+			assignedBy: options.createdBy,
+		});
+		managerAssignmentsCreated++;
+	}
+
+	return { managerAssignmentsCreated };
+}
+
+/**
  * Generate all demo data
  */
 export async function generateDemoData(options: DemoDataOptions): Promise<DemoDataResult> {
+	// Generate teams first (so employees have teams before other data)
+	const teamResult = await generateDemoTeams(options);
+	const projectResult = await generateDemoProjects(options);
+	const managerResult = await generateDemoManagerAssignments(options);
 	const timeResult = await generateDemoTimeEntries(options);
 	const absenceResult = await generateDemoAbsences(options);
 
@@ -721,6 +1058,10 @@ export async function generateDemoData(options: DemoDataOptions): Promise<DemoDa
 		timeEntriesCreated: timeResult.timeEntriesCreated,
 		workPeriodsCreated: timeResult.workPeriodsCreated,
 		absencesCreated: absenceResult.absencesCreated,
+		teamsCreated: teamResult.teamsCreated,
+		employeesAssignedToTeams: teamResult.employeesAssignedToTeams,
+		projectsCreated: projectResult.projectsCreated,
+		managerAssignmentsCreated: managerResult.managerAssignmentsCreated,
 	};
 }
 
@@ -739,6 +1080,10 @@ export async function clearOrganizationTimeData(organizationId: string): Promise
 			workPeriodsDeleted: 0,
 			absencesDeleted: 0,
 			vacationAllowancesReset: 0,
+			teamsDeleted: 0,
+			employeesUnassignedFromTeams: 0,
+			projectsDeleted: 0,
+			managerAssignmentsDeleted: 0,
 		};
 	}
 
@@ -778,10 +1123,54 @@ export async function clearOrganizationTimeData(organizationId: string): Promise
 			.where(inArray(employeeVacationAllowance.employeeId, employeeIds));
 	}
 
+	// Unassign employees from teams
+	const employeesWithTeams = employees.filter((e) => e.teamId !== null);
+	if (employeesWithTeams.length > 0) {
+		await db
+			.update(employee)
+			.set({ teamId: null })
+			.where(inArray(employee.id, employeesWithTeams.map((e) => e.id)));
+	}
+
+	// Delete demo teams (teams with description starting with "Demo team")
+	const allTeams = await db.query.team.findMany({
+		where: eq(team.organizationId, organizationId),
+	});
+	const teamsToDelete = allTeams.filter((t) => t.description?.startsWith("Demo team - "));
+
+	if (teamsToDelete.length > 0) {
+		await db.delete(team).where(inArray(team.id, teamsToDelete.map((t) => t.id)));
+	}
+
+	// Delete demo projects (projects with description starting with "Demo project")
+	const allProjects = await db.query.project.findMany({
+		where: eq(project.organizationId, organizationId),
+	});
+	const projectsToDelete = allProjects.filter((p) => p.description?.startsWith("Demo project - "));
+
+	if (projectsToDelete.length > 0) {
+		await db.delete(project).where(inArray(project.id, projectsToDelete.map((p) => p.id)));
+	}
+
+	// Delete manager assignments for these employees
+	const managerAssignmentsToDelete = await db.query.employeeManagers.findMany({
+		where: inArray(employeeManagers.employeeId, employeeIds),
+	});
+
+	if (managerAssignmentsToDelete.length > 0) {
+		await db
+			.delete(employeeManagers)
+			.where(inArray(employeeManagers.employeeId, employeeIds));
+	}
+
 	return {
 		timeEntriesDeleted: timeEntriesToDelete.length,
 		workPeriodsDeleted: workPeriodsToDelete.length,
 		absencesDeleted: absencesToDelete.length,
 		vacationAllowancesReset: allowancesToDelete.length,
+		teamsDeleted: teamsToDelete.length,
+		employeesUnassignedFromTeams: employeesWithTeams.length,
+		projectsDeleted: projectsToDelete.length,
+		managerAssignmentsDeleted: managerAssignmentsToDelete.length,
 	};
 }
