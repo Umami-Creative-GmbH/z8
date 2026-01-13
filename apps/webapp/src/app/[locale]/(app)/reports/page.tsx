@@ -3,9 +3,11 @@ import { redirect } from "next/navigation";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { ReportsContainer } from "@/components/reports/reports-container";
 import { auth } from "@/lib/auth";
+import { getTranslate } from "@/tolgee/server";
 import { getAccessibleEmployeesAction, getCurrentEmployee } from "./actions";
 
 export default async function ReportsPage() {
+	const t = await getTranslate();
 	const session = await auth.api.getSession({ headers: await headers() });
 	if (!session?.user) {
 		redirect("/sign-in");
@@ -16,7 +18,7 @@ export default async function ReportsPage() {
 	if (!employee) {
 		return (
 			<div className="@container/main flex flex-1 items-center justify-center p-6">
-				<NoEmployeeError feature="generate reports" />
+				<NoEmployeeError feature={t("reports.feature", "generate reports")} />
 			</div>
 		);
 	}
@@ -29,9 +31,14 @@ export default async function ReportsPage() {
 		<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
 			{/* Page Header */}
 			<div className="px-4 lg:px-6">
-				<h1 className="text-3xl font-bold tracking-tight">Employee Reports</h1>
+				<h1 className="text-3xl font-bold tracking-tight">
+					{t("reports.title", "Employee Reports")}
+				</h1>
 				<p className="text-muted-foreground">
-					Generate comprehensive work hour and absence reports with tax-relevant home office data
+					{t(
+						"reports.description",
+						"Generate comprehensive work hour and absence reports with tax-relevant home office data",
+					)}
 				</p>
 			</div>
 

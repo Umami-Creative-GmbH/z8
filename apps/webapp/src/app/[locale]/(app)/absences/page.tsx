@@ -1,13 +1,12 @@
-import { DateTime } from "luxon";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { AbsenceCalendar } from "@/components/absences/absence-calendar";
-import { AbsenceEntriesTable } from "@/components/absences/absence-entries-table";
+import { AbsencesViewContainer } from "@/components/absences/absences-view-container";
 import { RequestAbsenceDialog } from "@/components/absences/request-absence-dialog";
 import { VacationBalanceCard } from "@/components/absences/vacation-balance-card";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/lib/auth";
+import { getTranslate } from "@/tolgee/server";
 import {
 	getAbsenceCategories,
 	getAbsenceEntries,
@@ -16,12 +15,8 @@ import {
 	getVacationBalance,
 } from "./actions";
 
-// Helper to convert Date to YYYY-MM-DD string
-const toDateString = (date: Date): string => {
-	return DateTime.fromJSDate(date).toFormat("yyyy-MM-dd");
-};
-
 export default async function AbsencesPage() {
+	const t = await getTranslate();
 	const session = await auth.api.getSession({ headers: await headers() });
 	if (!session?.user) {
 		redirect("/sign-in");
@@ -31,23 +26,24 @@ export default async function AbsencesPage() {
 	if (!employee) {
 		return (
 			<div className="flex flex-1 items-center justify-center p-6">
-				<NoEmployeeError feature="manage absences" />
+				<NoEmployeeError feature={t("absences.featureName", "manage absences")} />
 			</div>
 		);
 	}
 
 	const currentYear = new Date().getFullYear();
-	const currentDate = new Date();
-	const threeMonthsAgo = new Date(currentDate);
-	threeMonthsAgo.setMonth(currentDate.getMonth() - 3);
-	const threeMonthsAhead = new Date(currentDate);
-	threeMonthsAhead.setMonth(currentDate.getMonth() + 3);
+
+	// Fetch full year data for the year calendar view
+	const startOfYear = `${currentYear}-01-01`;
+	const endOfYear = `${currentYear}-12-31`;
+	const yearStart = new Date(currentYear, 0, 1);
+	const yearEnd = new Date(currentYear, 11, 31);
 
 	// Fetch all data in parallel
 	const [vacationBalance, absences, holidays, categories] = await Promise.all([
 		getVacationBalance(employee.id, currentYear),
-		getAbsenceEntries(employee.id, toDateString(threeMonthsAgo), toDateString(threeMonthsAhead)),
-		getHolidays(employee.organizationId, threeMonthsAgo, threeMonthsAhead),
+		getAbsenceEntries(employee.id, startOfYear, endOfYear),
+		getHolidays(employee.organizationId, yearStart, yearEnd),
 		getAbsenceCategories(employee.organizationId),
 	]);
 
@@ -56,11 +52,11 @@ export default async function AbsencesPage() {
 		return (
 			<div className="flex flex-1 items-center justify-center p-6">
 				<div className="text-center">
-					<h2 className="text-2xl font-semibold mb-2">Vacation Allowance Not Configured</h2>
+					<h2 className="text-2xl font-semibold mb-2">{t("absences.errors.allowanceNotConfigured", "Vacation Allowance Not Configured")}</h2>
 					<p className="text-muted-foreground">
-						Your organization hasn't set up vacation allowances for {currentYear} yet.
+						{t("absences.errors.allowanceNotConfiguredMessage", "Your organization hasn't set up vacation allowances for {currentYear} yet.", { currentYear })}
 						<br />
-						Please contact your administrator to configure vacation policies.
+						{t("absences.errors.contactAdmin", "Please contact your administrator to configure vacation policies.")}
 					</p>
 				</div>
 			</div>
@@ -69,34 +65,31 @@ export default async function AbsencesPage() {
 
 	return (
 		<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
-			{/* Vacation Balance Card */}
+			{/* Header with Vacation Balance */}
 			<div className="px-4 lg:px-6">
 				<div className="flex items-center justify-between mb-4">
 					<div>
-						<h1 className="text-2xl font-semibold">Absences</h1>
-						<p className="text-muted-foreground">Manage your time off and vacation days</p>
+						<h1 className="text-2xl font-semibold">{t("absences.title", "Absences")}</h1>
+						<p className="text-muted-foreground">{t("absences.subtitle", "Manage your time off and vacation days")}</p>
 					</div>
 					<RequestAbsenceDialog
 						categories={categories}
 						remainingDays={vacationBalance.remainingDays}
-						trigger={<Button>Request Absence</Button>}
+						trigger={<Button>{t("absences.requestAbsence", "Request Absence")}</Button>}
 					/>
 				</div>
 				<VacationBalanceCard balance={vacationBalance} />
 			</div>
 
-			{/* Calendar View */}
+			{/* Calendar/Table View Container with Toggle */}
 			<div className="px-4 lg:px-6">
-				<AbsenceCalendar absences={absences} holidays={holidays} />
-			</div>
-
-			{/* Absences Table */}
-			<div className="px-4 lg:px-6">
-				<div className="mb-4">
-					<h2 className="text-lg font-semibold">Your Absence Requests</h2>
-					<p className="text-sm text-muted-foreground">Recent and upcoming absence requests</p>
-				</div>
-				<AbsenceEntriesTable absences={absences} />
+				<AbsencesViewContainer
+					absences={absences}
+					holidays={holidays}
+					categories={categories}
+					remainingDays={vacationBalance.remainingDays}
+					currentYear={currentYear}
+				/>
 			</div>
 		</div>
 	);

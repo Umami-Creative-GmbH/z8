@@ -1,7 +1,7 @@
 "use server";
 
 import { SpanStatusCode, trace } from "@opentelemetry/api";
-import { and, desc, eq, gte, lte } from "drizzle-orm";
+import { and, desc, eq, gte, isNull, lte, or } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
 import { headers } from "next/headers";
@@ -489,12 +489,23 @@ export async function getVacationBalance(
 		return null;
 	}
 
-	// Get organization vacation allowance for the year
+	// Get organization vacation allowance for the year (date-based)
+	// Find the active company default policy that covers the given year
+	const startOfYear = `${year}-01-01`;
+	const endOfYear = `${year}-12-31`;
+
 	const orgAllowance = await db.query.vacationAllowance.findFirst({
 		where: and(
 			eq(vacationAllowance.organizationId, emp.organizationId),
-			eq(vacationAllowance.year, year),
+			eq(vacationAllowance.isCompanyDefault, true),
+			eq(vacationAllowance.isActive, true),
+			lte(vacationAllowance.startDate, endOfYear), // Policy started before or during the year
+			or(
+				isNull(vacationAllowance.validUntil), // Policy is ongoing
+				gte(vacationAllowance.validUntil, startOfYear), // Policy ends during or after the year
+			),
 		),
+		orderBy: desc(vacationAllowance.startDate), // Get the most recent matching policy
 	});
 
 	if (!orgAllowance) {
@@ -510,9 +521,6 @@ export async function getVacationBalance(
 	});
 
 	// Get all absences for the employee in this year
-	// Date range as YYYY-MM-DD strings for comparison
-	const startOfYear = `${year}-01-01`;
-	const endOfYear = `${year}-12-31`;
 	const absences = await db.query.absenceEntry.findMany({
 		where: and(
 			eq(absenceEntry.employeeId, employeeId),
