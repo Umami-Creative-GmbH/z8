@@ -1,6 +1,7 @@
 "use client";
 
 import { IconX } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { cancelAbsenceRequest } from "@/app/[locale]/(app)/absences/actions";
@@ -26,28 +27,29 @@ interface AbsenceEntriesTableProps {
 	onUpdate?: () => void;
 }
 
-// Format period for display
-function formatPeriod(period: DayPeriod): string {
-	switch (period) {
-		case "am":
-			return " (AM)";
-		case "pm":
-			return " (PM)";
-		default:
-			return "";
-	}
-}
-
-// Format days display (handle half days)
-function formatDays(days: number): string {
-	if (days === 1) return "1 day";
-	if (days === 0.5) return "0.5 day";
-	if (Number.isInteger(days)) return `${days} days`;
-	return `${days} days`;
-}
-
 export function AbsenceEntriesTable({ absences, onUpdate }: AbsenceEntriesTableProps) {
+	const { t } = useTranslate();
 	const [cancelingId, setCancelingId] = useState<string | null>(null);
+
+	// Format period for display
+	const formatPeriod = (period: DayPeriod): string => {
+		switch (period) {
+			case "am":
+				return ` (${t("absences.period.am", "AM")})`;
+			case "pm":
+				return ` (${t("absences.period.pm", "PM")})`;
+			default:
+				return "";
+		}
+	};
+
+	// Format days display (handle half days)
+	const formatDays = (days: number): string => {
+		if (days === 1) return t("common.days.one", "1 day");
+		if (days === 0.5) return t("common.days.half", "0.5 day");
+		if (Number.isInteger(days)) return t("common.days.count", "{count} days", { count: days });
+		return t("common.days.count", "{count} days", { count: days });
+	};
 
 	const handleCancel = async (absenceId: string) => {
 		setCancelingId(absenceId);
@@ -57,17 +59,17 @@ export function AbsenceEntriesTable({ absences, onUpdate }: AbsenceEntriesTableP
 		setCancelingId(null);
 
 		if (result.success) {
-			toast.success("Absence request cancelled");
+			toast.success(t("absences.toast.requestCancelled", "Absence request cancelled"));
 			onUpdate?.();
 		} else {
-			toast.error(result.error || "Failed to cancel absence request");
+			toast.error(result.error || t("absences.toast.cancelFailed", "Failed to cancel absence request"));
 		}
 	};
 
 	if (absences.length === 0) {
 		return (
 			<div className="rounded-md border">
-				<div className="p-8 text-center text-muted-foreground">No absence requests found.</div>
+				<div className="p-8 text-center text-muted-foreground">{t("absences.table.noRequests", "No absence requests found.")}</div>
 			</div>
 		);
 	}
@@ -77,12 +79,12 @@ export function AbsenceEntriesTable({ absences, onUpdate }: AbsenceEntriesTableP
 			<Table>
 				<TableHeader>
 					<TableRow>
-						<TableHead>Date Range</TableHead>
-						<TableHead>Type</TableHead>
-						<TableHead className="text-right">Days</TableHead>
-						<TableHead>Status</TableHead>
-						<TableHead>Notes</TableHead>
-						<TableHead className="text-right">Actions</TableHead>
+						<TableHead>{t("absences.table.headers.dateRange", "Date Range")}</TableHead>
+						<TableHead>{t("absences.table.headers.type", "Type")}</TableHead>
+						<TableHead className="text-right">{t("absences.table.headers.days", "Days")}</TableHead>
+						<TableHead>{t("absences.table.headers.status", "Status")}</TableHead>
+						<TableHead>{t("absences.table.headers.notes", "Notes")}</TableHead>
+						<TableHead className="text-right">{t("absences.table.headers.actions", "Actions")}</TableHead>
 					</TableRow>
 				</TableHeader>
 				<TableBody>
@@ -108,13 +110,13 @@ export function AbsenceEntriesTable({ absences, onUpdate }: AbsenceEntriesTableP
 										{showPeriods && (
 											<span className="text-xs text-muted-foreground">
 												{formatPeriod(absence.startPeriod) && (
-													<>Start{formatPeriod(absence.startPeriod)}</>
+													<>{t("absences.table.start", "Start")}{formatPeriod(absence.startPeriod)}</>
 												)}
 												{formatPeriod(absence.startPeriod) && formatPeriod(absence.endPeriod) && (
 													<> &middot; </>
 												)}
 												{formatPeriod(absence.endPeriod) && (
-													<>End{formatPeriod(absence.endPeriod)}</>
+													<>{t("absences.table.end", "End")}{formatPeriod(absence.endPeriod)}</>
 												)}
 											</span>
 										)}

@@ -1,6 +1,7 @@
 "use client";
 
 import { IconAlertTriangle, IconBeach, IconCalendarCheck, IconClock } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { VacationBalance } from "@/lib/absences/types";
 
@@ -9,6 +10,7 @@ interface VacationBalanceCardProps {
 }
 
 export function VacationBalanceCard({ balance }: VacationBalanceCardProps) {
+	const { t } = useTranslate();
 	const hasCarryover = balance.carryoverDays && balance.carryoverDays > 0;
 	const carryoverExpiringSoon =
 		hasCarryover &&
@@ -18,8 +20,8 @@ export function VacationBalanceCard({ balance }: VacationBalanceCardProps) {
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>Vacation Balance {balance.year}</CardTitle>
-				<CardDescription>Your vacation days for the current year</CardDescription>
+				<CardTitle>{t("absences.balance.title", "Vacation Balance {year}", { year: balance.year })}</CardTitle>
+				<CardDescription>{t("absences.balance.description", "Your vacation days for the current year")}</CardDescription>
 			</CardHeader>
 			<CardContent>
 				<div className="@container/card grid gap-4 @xl/card:grid-cols-4 grid-cols-2">
@@ -27,12 +29,12 @@ export function VacationBalanceCard({ balance }: VacationBalanceCardProps) {
 					<div className="@xl/card:col-span-2 rounded-lg border bg-card p-6">
 						<div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
 							<IconBeach className="size-4" />
-							Days Remaining
+							{t("absences.balance.daysRemaining", "Days Remaining")}
 						</div>
 						<div className="mt-2">
 							<div className="text-4xl font-bold tabular-nums">{balance.remainingDays}</div>
 							<div className="mt-1 text-sm text-muted-foreground">
-								out of {balance.totalDays} total days
+								{t("absences.balance.outOfTotalDays", "out of {totalDays} total days", { totalDays: balance.totalDays })}
 							</div>
 						</div>
 					</div>
@@ -41,11 +43,11 @@ export function VacationBalanceCard({ balance }: VacationBalanceCardProps) {
 					<div className="rounded-lg border bg-card p-4">
 						<div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
 							<IconCalendarCheck className="size-4" />
-							Used
+							{t("absences.balance.used", "Used")}
 						</div>
 						<div className="mt-2">
 							<div className="text-2xl font-bold tabular-nums">{balance.usedDays}</div>
-							<div className="text-xs text-muted-foreground">days</div>
+							<div className="text-xs text-muted-foreground">{t("common.days.label", "days")}</div>
 						</div>
 					</div>
 
@@ -53,11 +55,11 @@ export function VacationBalanceCard({ balance }: VacationBalanceCardProps) {
 					<div className="rounded-lg border bg-card p-4">
 						<div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
 							<IconClock className="size-4" />
-							Pending
+							{t("absences.balance.pending", "Pending")}
 						</div>
 						<div className="mt-2">
 							<div className="text-2xl font-bold tabular-nums">{balance.pendingDays}</div>
-							<div className="text-xs text-muted-foreground">days</div>
+							<div className="text-xs text-muted-foreground">{t("common.days.label", "days")}</div>
 						</div>
 					</div>
 
@@ -69,15 +71,13 @@ export function VacationBalanceCard({ balance }: VacationBalanceCardProps) {
 									className={`size-5 mt-0.5 ${carryoverExpiringSoon ? "text-destructive" : "text-muted-foreground"}`}
 								/>
 								<div className="flex-1">
-									<div className="text-sm font-medium">Carryover from {balance.year - 1}</div>
+									<div className="text-sm font-medium">{t("absences.balance.carryoverFrom", "Carryover from {year}", { year: balance.year - 1 })}</div>
 									<div className="mt-1 text-sm text-muted-foreground">
-										You have{" "}
-										<span className="font-semibold tabular-nums">{balance.carryoverDays}</span> days
-										carried over
+										{t("absences.balance.carryoverDays", "You have {count} days carried over", { count: balance.carryoverDays })}
 										{balance.carryoverExpiryDate && (
 											<>
 												{" "}
-												that will expire on{" "}
+												{t("absences.balance.carryoverExpiry", "that will expire on")}{" "}
 												<span className={carryoverExpiringSoon ? "text-destructive" : ""}>
 													{balance.carryoverExpiryDate.toLocaleDateString("en-US", {
 														month: "long",
