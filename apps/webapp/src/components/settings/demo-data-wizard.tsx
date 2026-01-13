@@ -2,6 +2,7 @@
 
 import {
 	IconAlertTriangle,
+	IconBriefcase,
 	IconCheck,
 	IconClock,
 	IconDatabase,
@@ -9,8 +10,11 @@ import {
 	IconPlayerPlay,
 	IconSettings,
 	IconTrash,
+	IconUserCheck,
 	IconUsers,
+	IconUsersGroup,
 } from "@tabler/icons-react";
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import {
 	clearTimeDataAction,
@@ -47,10 +51,21 @@ interface DemoDataWizardProps {
 }
 
 type WizardStep = "configure" | "generating" | "complete";
-type GenerationPhase = "initializing" | "time-entries" | "work-periods" | "absences" | "complete";
+type GenerationPhase =
+	| "initializing"
+	| "teams"
+	| "projects"
+	| "managers"
+	| "time-entries"
+	| "work-periods"
+	| "absences"
+	| "complete";
 
 const PHASE_MESSAGES: Record<GenerationPhase, string> = {
 	initializing: "Initializing...",
+	teams: "Creating teams and assigning employees...",
+	projects: "Creating demo projects...",
+	managers: "Assigning employees to managers...",
 	"time-entries": "Creating time entries with blockchain hashes...",
 	"work-periods": "Generating work periods...",
 	absences: "Creating absence records...",
@@ -58,14 +73,18 @@ const PHASE_MESSAGES: Record<GenerationPhase, string> = {
 };
 
 const PHASE_PROGRESS: Record<GenerationPhase, number> = {
-	initializing: 10,
-	"time-entries": 40,
+	initializing: 5,
+	teams: 12,
+	projects: 20,
+	managers: 28,
+	"time-entries": 50,
 	"work-periods": 70,
 	absences: 90,
 	complete: 100,
 };
 
 export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProps) {
+	const router = useRouter();
 	const [step, setStep] = useState<WizardStep>("configure");
 	const [phase, setPhase] = useState<GenerationPhase>("initializing");
 	const [_isPending, startTransition] = useTransition();
@@ -77,6 +96,10 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 	);
 	const [includeTimeEntries, setIncludeTimeEntries] = useState(true);
 	const [includeAbsences, setIncludeAbsences] = useState(true);
+	const [includeTeams, setIncludeTeams] = useState(false);
+	const [teamCount, setTeamCount] = useState(4);
+	const [includeProjects, setIncludeProjects] = useState(false);
+	const [projectCount, setProjectCount] = useState(6);
 	const [selectedEmployees, setSelectedEmployees] = useState<"all" | "selected">("all");
 
 	// Results
@@ -106,10 +129,19 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 
 		startTransition(async () => {
 			// Simulate phases for visual feedback
-			await new Promise((r) => setTimeout(r, 500));
+			await new Promise((r) => setTimeout(r, 300));
+			setPhase("teams");
+
+			await new Promise((r) => setTimeout(r, 200));
+			setPhase("projects");
+
+			await new Promise((r) => setTimeout(r, 200));
+			setPhase("managers");
+
+			await new Promise((r) => setTimeout(r, 200));
 			setPhase("time-entries");
 
-			await new Promise((r) => setTimeout(r, 300));
+			await new Promise((r) => setTimeout(r, 200));
 			setPhase("work-periods");
 
 			await new Promise((r) => setTimeout(r, 200));
@@ -121,6 +153,10 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 				dateRangeType,
 				includeTimeEntries,
 				includeAbsences,
+				includeTeams,
+				teamCount: includeTeams ? teamCount : undefined,
+				includeProjects,
+				projectCount: includeProjects ? projectCount : undefined,
 				employeeIds: selectedEmployees === "all" ? undefined : [],
 			});
 
@@ -169,6 +205,8 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 				setEmployeeError(response.error);
 			} else {
 				setEmployeeResult(response.data);
+				// Refresh the page to update the employees dropdown
+				router.refresh();
 			}
 		});
 	};
@@ -180,6 +218,8 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 				setError(response.error);
 			} else {
 				setDeleteNonAdminResult(response.data);
+				// Refresh the page to update the employees dropdown
+				router.refresh();
 			}
 			setDeleteNonAdminConfirmText("");
 		});
@@ -310,13 +350,93 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 											</p>
 										</div>
 									</div>
+
+									{/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: Checkbox handles keyboard interaction */}
+									<div
+										className={cn(
+											"flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors",
+											includeTeams ? "border-primary bg-primary/5" : "hover:bg-muted/50",
+										)}
+										onClick={() => setIncludeTeams(!includeTeams)}
+									>
+										<Checkbox
+											checked={includeTeams}
+											onCheckedChange={(v) => setIncludeTeams(v === true)}
+										/>
+										<div className="flex-1 space-y-1">
+											<div className="flex items-center gap-2 font-medium">
+												<IconUsersGroup className="size-4" />
+												Teams
+											</div>
+											<p className="text-xs text-muted-foreground">
+												Create department teams and randomly assign employees to them
+											</p>
+											{includeTeams && (
+												<div className="mt-2 flex items-center gap-2">
+													<Label htmlFor="teamCount" className="text-xs whitespace-nowrap">
+														Number of teams:
+													</Label>
+													<Input
+														id="teamCount"
+														type="number"
+														min={1}
+														max={10}
+														value={teamCount}
+														onChange={(e) => setTeamCount(parseInt(e.target.value, 10) || 4)}
+														className="h-7 w-16 text-xs"
+														onClick={(e) => e.stopPropagation()}
+													/>
+												</div>
+											)}
+										</div>
+									</div>
+
+									{/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: Checkbox handles keyboard interaction */}
+									<div
+										className={cn(
+											"flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors",
+											includeProjects ? "border-primary bg-primary/5" : "hover:bg-muted/50",
+										)}
+										onClick={() => setIncludeProjects(!includeProjects)}
+									>
+										<Checkbox
+											checked={includeProjects}
+											onCheckedChange={(v) => setIncludeProjects(v === true)}
+										/>
+										<div className="flex-1 space-y-1">
+											<div className="flex items-center gap-2 font-medium">
+												<IconBriefcase className="size-4" />
+												Projects
+											</div>
+											<p className="text-xs text-muted-foreground">
+												Create demo projects with various statuses, budgets, and deadlines
+											</p>
+											{includeProjects && (
+												<div className="mt-2 flex items-center gap-2">
+													<Label htmlFor="projectCount" className="text-xs whitespace-nowrap">
+														Number of projects:
+													</Label>
+													<Input
+														id="projectCount"
+														type="number"
+														min={1}
+														max={15}
+														value={projectCount}
+														onChange={(e) => setProjectCount(parseInt(e.target.value, 10) || 6)}
+														className="h-7 w-16 text-xs"
+														onClick={(e) => e.stopPropagation()}
+													/>
+												</div>
+											)}
+										</div>
+									</div>
 								</div>
 							</div>
 
 							<div className="flex justify-end">
 								<Button
 									onClick={handleGenerate}
-									disabled={!includeTimeEntries && !includeAbsences}
+									disabled={!includeTimeEntries && !includeAbsences && !includeTeams && !includeProjects}
 									className="gap-2"
 								>
 									<IconPlayerPlay className="size-4" />
@@ -345,9 +465,18 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 
 								<Progress value={PHASE_PROGRESS[phase]} className="h-2" />
 
-								<div className="grid grid-cols-4 gap-2 text-center text-xs text-muted-foreground">
+								<div className="grid grid-cols-7 gap-2 text-center text-xs text-muted-foreground">
 									<div className={cn(phase === "initializing" && "font-medium text-primary")}>
 										Initializing
+									</div>
+									<div className={cn(phase === "teams" && "font-medium text-primary")}>
+										Teams
+									</div>
+									<div className={cn(phase === "projects" && "font-medium text-primary")}>
+										Projects
+									</div>
+									<div className={cn(phase === "managers" && "font-medium text-primary")}>
+										Managers
 									</div>
 									<div className={cn(phase === "time-entries" && "font-medium text-primary")}>
 										Time Entries
@@ -382,7 +511,7 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 								</div>
 								<p className="text-center text-lg font-medium">Demo data generated successfully!</p>
 
-								<div className="grid gap-4 md:grid-cols-3">
+								<div className="grid gap-4 grid-cols-2 md:grid-cols-4 lg:grid-cols-7">
 									<ResultCard
 										icon={<IconClock className="size-5" />}
 										label="Time Entries"
@@ -397,6 +526,26 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 										icon={<IconUsers className="size-5" />}
 										label="Absences"
 										value={result.absencesCreated}
+									/>
+									<ResultCard
+										icon={<IconUsersGroup className="size-5" />}
+										label="Teams"
+										value={result.teamsCreated}
+									/>
+									<ResultCard
+										icon={<IconBriefcase className="size-5" />}
+										label="Projects"
+										value={result.projectsCreated}
+									/>
+									<ResultCard
+										icon={<IconUserCheck className="size-5" />}
+										label="Managers"
+										value={result.managerAssignmentsCreated}
+									/>
+									<ResultCard
+										icon={<IconUsers className="size-5" />}
+										label="Team Assigned"
+										value={result.employeesAssignedToTeams}
 									/>
 								</div>
 
@@ -531,7 +680,6 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 							<li>Shift schedules</li>
 							<li>Holiday calendars</li>
 							<li>Overtime records</li>
-							<li>Project assignments</li>
 						</ul>
 					</div>
 				</CardContent>
@@ -549,80 +697,85 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
-					<div className="space-y-4">
-						{clearResult && (
-							<div className="rounded-lg border border-green-500/50 bg-green-50 p-4 dark:bg-green-950/20">
-								<p className="font-medium text-green-700 dark:text-green-400">
-									Data cleared successfully!
-								</p>
-								<ul className="mt-2 space-y-1 text-sm text-green-600 dark:text-green-500">
-									<li>{clearResult.timeEntriesDeleted} time entries deleted</li>
-									<li>{clearResult.workPeriodsDeleted} work periods deleted</li>
-									<li>{clearResult.absencesDeleted} absences deleted</li>
-									<li>{clearResult.vacationAllowancesReset} vacation allowances reset</li>
+					<div className="grid gap-6 md:grid-cols-2">
+						{/* Clear Time Data Section */}
+						<div className="space-y-4">
+							<h3 className="font-medium text-destructive">Clear Time Data</h3>
+
+							{clearResult && (
+								<div className="rounded-lg border border-green-500/50 bg-green-50 p-4 dark:bg-green-950/20">
+									<p className="font-medium text-green-700 dark:text-green-400">
+										Data cleared successfully!
+									</p>
+									<ul className="mt-2 space-y-1 text-sm text-green-600 dark:text-green-500">
+										<li>{clearResult.timeEntriesDeleted} time entries deleted</li>
+										<li>{clearResult.workPeriodsDeleted} work periods deleted</li>
+										<li>{clearResult.absencesDeleted} absences deleted</li>
+										<li>{clearResult.vacationAllowancesReset} vacation allowances reset</li>
+										<li>{clearResult.teamsDeleted} demo teams deleted</li>
+										<li>{clearResult.projectsDeleted} demo projects deleted</li>
+										<li>{clearResult.managerAssignmentsDeleted} manager assignments deleted</li>
+									</ul>
+								</div>
+							)}
+
+							<div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+								<p className="text-sm text-muted-foreground">This will permanently delete:</p>
+								<ul className="mt-2 list-inside list-disc space-y-1 text-sm">
+									<li>All time entries and work periods</li>
+									<li>All absence entries</li>
+									<li>Vacation allowance overrides</li>
+									<li>Demo teams, projects, and manager assignments</li>
 								</ul>
 							</div>
-						)}
 
-						<div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
-							<p className="text-sm text-muted-foreground">This action will permanently delete:</p>
-							<ul className="mt-2 list-inside list-disc space-y-1 text-sm">
-								<li>All time entries (clock-in/out records)</li>
-								<li>All work periods</li>
-								<li>All absence entries (vacation, sick, personal)</li>
-								<li>All employee vacation allowance overrides (reset to org defaults)</li>
-							</ul>
+							<AlertDialog>
+								<AlertDialogTrigger asChild>
+									<Button variant="destructive" className="gap-2">
+										<IconTrash className="size-4" />
+										Clear All Time Data
+									</Button>
+								</AlertDialogTrigger>
+								<AlertDialogContent>
+									<AlertDialogHeader>
+										<AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+										<AlertDialogDescription>
+											This action cannot be undone. This will permanently delete all time-related data
+											for this organization.
+										</AlertDialogDescription>
+									</AlertDialogHeader>
+									<div className="py-4">
+										<Label htmlFor="confirm">
+											Type <span className="font-mono font-bold">DELETE</span> to confirm
+										</Label>
+										<Input
+											id="confirm"
+											value={confirmText}
+											onChange={(e) => setConfirmText(e.target.value)}
+											placeholder="Type DELETE"
+											className="mt-2"
+										/>
+									</div>
+									<AlertDialogFooter>
+										<AlertDialogCancel onClick={() => setConfirmText("")}>Cancel</AlertDialogCancel>
+										<AlertDialogAction
+											onClick={handleClear}
+											disabled={confirmText !== "DELETE" || isClearing}
+											className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+										>
+											{isClearing ? (
+												<>
+													<IconLoader2 className="mr-2 size-4 animate-spin" />
+													Clearing...
+												</>
+											) : (
+												"Clear All Data"
+											)}
+										</AlertDialogAction>
+									</AlertDialogFooter>
+								</AlertDialogContent>
+							</AlertDialog>
 						</div>
-
-						<AlertDialog>
-							<AlertDialogTrigger asChild>
-								<Button variant="destructive" className="gap-2">
-									<IconTrash className="size-4" />
-									Clear All Time Data
-								</Button>
-							</AlertDialogTrigger>
-							<AlertDialogContent>
-								<AlertDialogHeader>
-									<AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-									<AlertDialogDescription>
-										This action cannot be undone. This will permanently delete all time-related data
-										for this organization.
-									</AlertDialogDescription>
-								</AlertDialogHeader>
-								<div className="py-4">
-									<Label htmlFor="confirm">
-										Type <span className="font-mono font-bold">DELETE</span> to confirm
-									</Label>
-									<Input
-										id="confirm"
-										value={confirmText}
-										onChange={(e) => setConfirmText(e.target.value)}
-										placeholder="Type DELETE"
-										className="mt-2"
-									/>
-								</div>
-								<AlertDialogFooter>
-									<AlertDialogCancel onClick={() => setConfirmText("")}>Cancel</AlertDialogCancel>
-									<AlertDialogAction
-										onClick={handleClear}
-										disabled={confirmText !== "DELETE" || isClearing}
-										className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-									>
-										{isClearing ? (
-											<>
-												<IconLoader2 className="mr-2 size-4 animate-spin" />
-												Clearing...
-											</>
-										) : (
-											"Clear All Data"
-										)}
-									</AlertDialogAction>
-								</AlertDialogFooter>
-							</AlertDialogContent>
-						</AlertDialog>
-
-						{/* Divider */}
-						<div className="my-6 border-t border-destructive/30" />
 
 						{/* Delete Non-Admin Employees Section */}
 						<div className="space-y-4">
@@ -638,25 +791,21 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 										<li>{deleteNonAdminResult.usersDeleted} user accounts deleted</li>
 										<li>{deleteNonAdminResult.membersDeleted} memberships deleted</li>
 										<li>{deleteNonAdminResult.timeEntriesDeleted} time entries deleted</li>
-										<li>{deleteNonAdminResult.workPeriodsDeleted} work periods deleted</li>
 										<li>{deleteNonAdminResult.absencesDeleted} absences deleted</li>
 									</ul>
 								</div>
 							)}
 
 							<div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
-								<p className="text-sm text-muted-foreground">
-									This action will permanently delete all non-admin employees and their data:
-								</p>
+								<p className="text-sm text-muted-foreground">This will permanently delete:</p>
 								<ul className="mt-2 list-inside list-disc space-y-1 text-sm">
 									<li>All non-admin employee records</li>
-									<li>All associated user accounts (demo accounts only)</li>
-									<li>All time entries and work periods</li>
-									<li>All absence entries</li>
+									<li>Demo user accounts only</li>
+									<li>All their time entries and absences</li>
 									<li>All manager assignments</li>
 								</ul>
 								<p className="mt-2 text-xs text-muted-foreground">
-									Admin users and the current user are always preserved.
+									Admin users are always preserved.
 								</p>
 							</div>
 
@@ -664,7 +813,7 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 								<AlertDialogTrigger asChild>
 									<Button variant="destructive" className="gap-2">
 										<IconUsers className="size-4" />
-										Delete All Non-Admin Employees
+										Delete Non-Admin Employees
 									</Button>
 								</AlertDialogTrigger>
 								<AlertDialogContent>

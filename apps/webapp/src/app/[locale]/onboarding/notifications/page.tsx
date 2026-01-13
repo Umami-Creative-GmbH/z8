@@ -1,7 +1,6 @@
 "use client";
 
 import { useForm } from "@tanstack/react-form";
-import { zodValidator } from "@tanstack/zod-form-adapter";
 import { IconBell, IconLoader2, IconMail } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
@@ -34,7 +33,6 @@ export default function NotificationsPage() {
 			notifyStatusUpdates: true,
 			notifyTeamChanges: true,
 		},
-		validatorAdapter: zodValidator(),
 		onSubmit: async ({ value }) => {
 			setLoading(true);
 

@@ -1,7 +1,6 @@
 "use client";
 
 import { useForm } from "@tanstack/react-form";
-import { zodValidator } from "@tanstack/zod-form-adapter";
 import {
 	IconCalendar,
 	IconGenderBigender,
@@ -40,7 +39,6 @@ export default function ProfilePage() {
 
 	const form = useForm({
 		defaultValues,
-		validatorAdapter: zodValidator(),
 		onSubmit: async ({ value }) => {
 			setLoading(true);
 
@@ -134,7 +132,9 @@ export default function ProfilePage() {
 										/>
 										{field.state.meta.errors.length > 0 && (
 											<p className="text-sm font-medium text-destructive">
-												{field.state.meta.errors[0]}
+												{typeof field.state.meta.errors[0] === "string"
+												? field.state.meta.errors[0]
+												: (field.state.meta.errors[0] as any)?.message}
 											</p>
 										)}
 									</div>
@@ -160,7 +160,9 @@ export default function ProfilePage() {
 										/>
 										{field.state.meta.errors.length > 0 && (
 											<p className="text-sm font-medium text-destructive">
-												{field.state.meta.errors[0]}
+												{typeof field.state.meta.errors[0] === "string"
+												? field.state.meta.errors[0]
+												: (field.state.meta.errors[0] as any)?.message}
 											</p>
 										)}
 									</div>
