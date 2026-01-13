@@ -45,8 +45,15 @@ export const queryKeys = {
 	// Employees
 	employees: {
 		all: ["employees"] as const,
-		list: (orgId: string) => ["employees", orgId] as const,
+		list: (orgId: string, params?: Record<string, unknown>) =>
+			["employees", orgId, params] as const,
 		detail: (employeeId: string) => ["employees", "detail", employeeId] as const,
+	},
+
+	// Managed employees (team page - direct reports)
+	managedEmployees: {
+		all: ["managed-employees"] as const,
+		list: (managerId: string) => ["managed-employees", managerId] as const,
 	},
 
 	// User profile
@@ -97,6 +104,14 @@ export const queryKeys = {
 	holidayAssignments: {
 		all: ["holiday-assignments"] as const,
 		list: (orgId: string) => ["holiday-assignments", orgId] as const,
+	},
+
+	// Vacation policies
+	vacationPolicies: {
+		all: ["vacation-policies"] as const,
+		list: (orgId: string) => ["vacation-policies", orgId] as const,
+		detail: (policyId: string) => ["vacation-policies", "detail", policyId] as const,
+		companyDefault: (orgId: string) => ["vacation-policies", "company-default", orgId] as const,
 	},
 
 	// Vacation policy assignments (policies to org/team/employee)
@@ -192,5 +207,12 @@ export const queryKeys = {
 				["surcharges", "calculations", "work-period", workPeriodId] as const,
 		},
 		effective: (employeeId: string) => ["surcharges", "effective", employeeId] as const,
+	},
+	// Auth / Security settings
+	auth: {
+		all: ["auth"] as const,
+		sessions: () => ["auth", "sessions"] as const,
+		accounts: () => ["auth", "accounts"] as const,
+		passkeys: () => ["auth", "passkeys"] as const,
 	},
 } as const;
