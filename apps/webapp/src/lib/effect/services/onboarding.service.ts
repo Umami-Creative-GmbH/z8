@@ -423,33 +423,25 @@ export const OnboardingServiceLive = Layer.effect(
 							return;
 						}
 
-						const currentYear = new Date().getFullYear();
+						// Get current date as start date
+						const today = new Date().toISOString().split("T")[0];
 
-						// Create vacation policy
-						const [policy] = await dbService.db
-							.insert(vacationAllowance)
-							.values({
-								organizationId: activeOrgId,
-								year: currentYear,
-								name: data.name,
-								defaultAnnualDays: data.defaultAnnualDays.toString(),
-								accrualType: data.accrualType,
-								accrualStartMonth: 1,
-								allowCarryover: data.allowCarryover,
-								maxCarryoverDays: data.maxCarryoverDays?.toString() || null,
-								carryoverExpiryMonths: data.allowCarryover ? 3 : null,
-							})
-							.returning();
-
-						// Assign policy to organization as default
-						if (policy) {
-							await dbService.db.insert(vacationPolicyAssignment).values({
-								policyId: policy.id,
-								organizationId: activeOrgId,
-								assignmentType: "organization",
-								isActive: true,
-							});
-						}
+						// Create vacation policy with isCompanyDefault=true (no separate assignment needed)
+						await dbService.db.insert(vacationAllowance).values({
+							organizationId: activeOrgId,
+							startDate: today,
+							validUntil: null, // Ongoing policy
+							isCompanyDefault: true, // This is the company default
+							isActive: true,
+							name: data.name,
+							defaultAnnualDays: data.defaultAnnualDays.toString(),
+							accrualType: data.accrualType,
+							accrualStartMonth: 1,
+							allowCarryover: data.allowCarryover,
+							maxCarryoverDays: data.maxCarryoverDays?.toString() || null,
+							carryoverExpiryMonths: data.allowCarryover ? 3 : null,
+							createdBy: session.user.id,
+						});
 
 						// Update onboarding step
 						await dbService.db
@@ -757,11 +749,12 @@ export const OnboardingServiceLive = Layer.effect(
 
 							// Check for vacation policy (admin only)
 							if (isAdmin) {
-								const currentYear = new Date().getFullYear();
+								// Check for an active company default vacation policy
 								const vacPolicy = await dbService.db.query.vacationAllowance.findFirst({
 									where: and(
 										eq(vacationAllowance.organizationId, membership.organizationId),
-										eq(vacationAllowance.year, currentYear),
+										eq(vacationAllowance.isCompanyDefault, true),
+										eq(vacationAllowance.isActive, true),
 									),
 								});
 								hasVacationPolicy = !!vacPolicy;

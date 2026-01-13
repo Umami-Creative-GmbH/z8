@@ -4,7 +4,7 @@
  * Database query functions for vacation allowance, balance, and carryover management.
  */
 
-import { and, desc, eq, gte, lte } from "drizzle-orm";
+import { and, asc, desc, eq, gte, isNull, lte, or } from "drizzle-orm";
 import { db } from "@/db";
 import { sql } from "drizzle-orm";
 import {
@@ -21,7 +21,11 @@ import type { DayPeriod } from "@/lib/absences/types";
 export interface VacationAllowanceRecord {
 	id: string;
 	organizationId: string;
-	year: number;
+	name: string;
+	startDate: string; // YYYY-MM-DD
+	validUntil: string | null; // YYYY-MM-DD or null if active
+	isCompanyDefault: boolean;
+	isActive: boolean;
 	defaultAnnualDays: string;
 	allowCarryover: boolean;
 	maxCarryoverDays: string | null;
@@ -29,6 +33,7 @@ export interface VacationAllowanceRecord {
 	accrualType: "annual" | "monthly" | "biweekly";
 	accrualStartMonth: number;
 	createdAt: Date;
+	updatedAt: Date;
 	createdBy: string;
 }
 
@@ -74,24 +79,145 @@ export interface PendingVacationRequest {
 	createdAt: Date;
 }
 
+// ============================================
+// Date-Based Policy Queries
+// ============================================
+
 /**
- * Get vacation allowance policy for an organization and year
+ * Get all vacation policies for an organization, ordered by startDate descending
  */
-export async function getVacationAllowance(
+export async function getAllVacationPolicies(
 	organizationId: string,
-	year: number,
+): Promise<VacationAllowanceRecord[]> {
+	const results = await db.query.vacationAllowance.findMany({
+		where: and(
+			eq(vacationAllowance.organizationId, organizationId),
+			eq(vacationAllowance.isActive, true),
+		),
+		orderBy: desc(vacationAllowance.startDate),
+	});
+
+	return results as VacationAllowanceRecord[];
+}
+
+/**
+ * Get the current company default policy for an organization
+ * Returns the active policy where isCompanyDefault=true and validUntil is null or in the future
+ */
+export async function getCompanyDefaultPolicy(
+	organizationId: string,
+	asOfDate: string = new Date().toISOString().split("T")[0],
 ): Promise<VacationAllowanceRecord | null> {
 	const result = await db.query.vacationAllowance.findFirst({
 		where: and(
 			eq(vacationAllowance.organizationId, organizationId),
-			eq(vacationAllowance.year, year),
+			eq(vacationAllowance.isCompanyDefault, true),
+			eq(vacationAllowance.isActive, true),
+			lte(vacationAllowance.startDate, asOfDate),
+			or(
+				isNull(vacationAllowance.validUntil),
+				gte(vacationAllowance.validUntil, asOfDate),
+			),
 		),
+		orderBy: desc(vacationAllowance.startDate),
 	});
 
 	return result as VacationAllowanceRecord | null;
 }
 
 /**
+ * Get the next scheduled company default policy (starts in the future)
+ */
+export async function getNextCompanyDefaultPolicy(
+	organizationId: string,
+	asOfDate: string = new Date().toISOString().split("T")[0],
+): Promise<VacationAllowanceRecord | null> {
+	const result = await db.query.vacationAllowance.findFirst({
+		where: and(
+			eq(vacationAllowance.organizationId, organizationId),
+			eq(vacationAllowance.isCompanyDefault, true),
+			eq(vacationAllowance.isActive, true),
+			// Starts after today
+			sql`${vacationAllowance.startDate} > ${asOfDate}`,
+		),
+		orderBy: asc(vacationAllowance.startDate),
+	});
+
+	return result as VacationAllowanceRecord | null;
+}
+
+/**
+ * Get a policy that is active at a specific date
+ */
+export async function getActivePolicyForDate(
+	organizationId: string,
+	date: string, // YYYY-MM-DD
+): Promise<VacationAllowanceRecord | null> {
+	const result = await db.query.vacationAllowance.findFirst({
+		where: and(
+			eq(vacationAllowance.organizationId, organizationId),
+			eq(vacationAllowance.isActive, true),
+			lte(vacationAllowance.startDate, date),
+			or(isNull(vacationAllowance.validUntil), gte(vacationAllowance.validUntil, date)),
+		),
+		orderBy: desc(vacationAllowance.startDate),
+	});
+
+	return result as VacationAllowanceRecord | null;
+}
+
+/**
+ * Get all policies that were active at any point in a date range
+ * Used for calculating balance across policy changes
+ */
+export async function getPoliciesInDateRange(
+	organizationId: string,
+	startDate: string, // YYYY-MM-DD
+	endDate: string, // YYYY-MM-DD
+): Promise<VacationAllowanceRecord[]> {
+	const results = await db.query.vacationAllowance.findMany({
+		where: and(
+			eq(vacationAllowance.organizationId, organizationId),
+			eq(vacationAllowance.isActive, true),
+			// Policy started before range ended
+			lte(vacationAllowance.startDate, endDate),
+			// Policy ended after range started (or hasn't ended)
+			or(isNull(vacationAllowance.validUntil), gte(vacationAllowance.validUntil, startDate)),
+		),
+		orderBy: asc(vacationAllowance.startDate),
+	});
+
+	return results as VacationAllowanceRecord[];
+}
+
+/**
+ * Get a policy by ID
+ */
+export async function getVacationPolicyById(
+	policyId: string,
+): Promise<VacationAllowanceRecord | null> {
+	const result = await db.query.vacationAllowance.findFirst({
+		where: eq(vacationAllowance.id, policyId),
+	});
+
+	return result as VacationAllowanceRecord | null;
+}
+
+/**
+ * @deprecated Use getCompanyDefaultPolicy or getActivePolicyForDate instead
+ * Get vacation allowance policy for an organization and year (legacy)
+ */
+export async function getVacationAllowance(
+	organizationId: string,
+	year: number,
+): Promise<VacationAllowanceRecord | null> {
+	// Legacy compatibility: find policy active on Jan 1 of the given year
+	const startOfYear = `${year}-01-01`;
+	return getActivePolicyForDate(organizationId, startOfYear);
+}
+
+/**
+ * @deprecated Use getPoliciesInDateRange instead
  * Get vacation allowance for multiple years (for carryover calculations)
  */
 export async function getVacationAllowanceRange(
@@ -99,16 +225,9 @@ export async function getVacationAllowanceRange(
 	startYear: number,
 	endYear: number,
 ): Promise<VacationAllowanceRecord[]> {
-	const results = await db.query.vacationAllowance.findMany({
-		where: and(
-			eq(vacationAllowance.organizationId, organizationId),
-			gte(vacationAllowance.year, startYear),
-			lte(vacationAllowance.year, endYear),
-		),
-		orderBy: desc(vacationAllowance.year),
-	});
-
-	return results as VacationAllowanceRecord[];
+	const startDate = `${startYear}-01-01`;
+	const endDate = `${endYear}-12-31`;
+	return getPoliciesInDateRange(organizationId, startDate, endDate);
 }
 
 /**
@@ -134,7 +253,7 @@ export async function getEmployeeVacationAllowance(
 export async function getAllEmployeeVacationAllowances(
 	organizationId: string,
 	year: number,
-): Promise<(EmployeeVacationAllowanceRecord & { employeeName: string; employeeEmail: string })[]> {
+): Promise<(EmployeeVacationAllowanceRecord & { employeeName: string | null; employeeFirstName: string | null; employeeLastName: string | null })[]> {
 	const results = await db
 		.select({
 			id: employeeVacationAllowance.id,
@@ -144,8 +263,9 @@ export async function getAllEmployeeVacationAllowances(
 			customCarryoverDays: employeeVacationAllowance.customCarryoverDays,
 			createdAt: employeeVacationAllowance.createdAt,
 			updatedAt: employeeVacationAllowance.updatedAt,
-			employeeName: employee.name,
-			employeeEmail: employee.workEmail,
+			employeeName: sql<string | null>`COALESCE(${employee.firstName} || ' ' || ${employee.lastName}, ${employee.firstName}, ${employee.lastName})`,
+			employeeFirstName: employee.firstName,
+			employeeLastName: employee.lastName,
 		})
 		.from(employeeVacationAllowance)
 		.innerJoin(employee, eq(employeeVacationAllowance.employeeId, employee.id))
@@ -154,8 +274,9 @@ export async function getAllEmployeeVacationAllowances(
 		);
 
 	return results as (EmployeeVacationAllowanceRecord & {
-		employeeName: string;
-		employeeEmail: string;
+		employeeName: string | null;
+		employeeFirstName: string | null;
+		employeeLastName: string | null;
 	})[];
 }
 
@@ -313,7 +434,8 @@ export async function getPendingVacationRequests(
 		.select({
 			id: absenceEntry.id,
 			employeeId: absenceEntry.employeeId,
-			employeeName: employee.name,
+			employeeFirstName: employee.firstName,
+			employeeLastName: employee.lastName,
 			startDate: absenceEntry.startDate,
 			startPeriod: absenceEntry.startPeriod,
 			endDate: absenceEntry.endDate,
@@ -336,7 +458,7 @@ export async function getPendingVacationRequests(
 	return results.map((r) => ({
 		id: r.id,
 		employeeId: r.employeeId,
-		employeeName: r.employeeName,
+		employeeName: [r.employeeFirstName, r.employeeLastName].filter(Boolean).join(" ") || "Unknown",
 		startDate: r.startDate,
 		startPeriod: r.startPeriod,
 		endDate: r.endDate,
@@ -363,8 +485,7 @@ export async function getEmployeesWithVacationData(
 	Array<{
 		id: string;
 		name: string;
-		email: string;
-		hireDate: Date | null;
+		startDate: Date | null;
 		isActive: boolean;
 		allowance: EmployeeVacationAllowanceRecord | null;
 	}>
@@ -378,9 +499,8 @@ export async function getEmployeesWithVacationData(
 
 	return employees.map((emp) => ({
 		id: emp.id,
-		name: emp.name,
-		email: emp.workEmail || "",
-		hireDate: emp.hireDate,
+		name: [emp.firstName, emp.lastName].filter(Boolean).join(" ") || "Unknown",
+		startDate: emp.startDate,
 		isActive: emp.isActive,
 		allowance: allowanceMap.get(emp.id) || null,
 	}));
@@ -429,7 +549,7 @@ export async function getEmployeesWithExpiringCarryover(
 		.filter((a) => a.customCarryoverDays && parseFloat(a.customCarryoverDays) > 0)
 		.map((a) => ({
 			employeeId: a.employeeId,
-			employeeName: a.employeeName,
+			employeeName: a.employeeName || "Unknown",
 			carryoverDays: parseFloat(a.customCarryoverDays || "0"),
 			expiresAt,
 			daysUntilExpiry: Math.ceil((expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)),
@@ -525,7 +645,6 @@ export interface VacationAdjustmentRecord {
 
 export interface VacationAdjustmentWithAdjuster extends VacationAdjustmentRecord {
 	adjusterName: string;
-	adjusterEmail: string;
 }
 
 /**
@@ -566,8 +685,8 @@ export async function getEmployeeAdjustments(
 			reason: vacationAdjustment.reason,
 			adjustedBy: vacationAdjustment.adjustedBy,
 			createdAt: vacationAdjustment.createdAt,
-			adjusterName: employee.name,
-			adjusterEmail: employee.workEmail,
+			adjusterFirstName: employee.firstName,
+			adjusterLastName: employee.lastName,
 		})
 		.from(vacationAdjustment)
 		.innerJoin(employee, eq(vacationAdjustment.adjustedBy, employee.id))
@@ -579,7 +698,16 @@ export async function getEmployeeAdjustments(
 		)
 		.orderBy(desc(vacationAdjustment.createdAt));
 
-	return results as VacationAdjustmentWithAdjuster[];
+	return results.map((r) => ({
+		id: r.id,
+		employeeId: r.employeeId,
+		year: r.year,
+		days: r.days,
+		reason: r.reason,
+		adjustedBy: r.adjustedBy,
+		createdAt: r.createdAt,
+		adjusterName: [r.adjusterFirstName, r.adjusterLastName].filter(Boolean).join(" ") || "Unknown",
+	}));
 }
 
 /**
@@ -617,7 +745,6 @@ export async function getOrganizationAdjustments(
 	Array<
 		VacationAdjustmentWithAdjuster & {
 			employeeName: string;
-			employeeEmail: string;
 		}
 	>
 > {
@@ -630,8 +757,8 @@ export async function getOrganizationAdjustments(
 	const adjusterAlias = db
 		.select({
 			id: employee.id,
-			name: employee.name,
-			email: employee.workEmail,
+			firstName: employee.firstName,
+			lastName: employee.lastName,
 		})
 		.from(employee)
 		.as("adjuster");
@@ -645,10 +772,10 @@ export async function getOrganizationAdjustments(
 			reason: vacationAdjustment.reason,
 			adjustedBy: vacationAdjustment.adjustedBy,
 			createdAt: vacationAdjustment.createdAt,
-			employeeName: employee.name,
-			employeeEmail: employee.workEmail,
-			adjusterName: adjusterAlias.name,
-			adjusterEmail: adjusterAlias.email,
+			employeeFirstName: employee.firstName,
+			employeeLastName: employee.lastName,
+			adjusterFirstName: adjusterAlias.firstName,
+			adjusterLastName: adjusterAlias.lastName,
 		})
 		.from(vacationAdjustment)
 		.innerJoin(employee, eq(vacationAdjustment.employeeId, employee.id))
@@ -661,10 +788,15 @@ export async function getOrganizationAdjustments(
 		)
 		.orderBy(desc(vacationAdjustment.createdAt));
 
-	return results as Array<
-		VacationAdjustmentWithAdjuster & {
-			employeeName: string;
-			employeeEmail: string;
-		}
-	>;
+	return results.map((r) => ({
+		id: r.id,
+		employeeId: r.employeeId,
+		year: r.year,
+		days: r.days,
+		reason: r.reason,
+		adjustedBy: r.adjustedBy,
+		createdAt: r.createdAt,
+		employeeName: [r.employeeFirstName, r.employeeLastName].filter(Boolean).join(" ") || "Unknown",
+		adjusterName: [r.adjusterFirstName, r.adjusterLastName].filter(Boolean).join(" ") || "Unknown",
+	}));
 }
