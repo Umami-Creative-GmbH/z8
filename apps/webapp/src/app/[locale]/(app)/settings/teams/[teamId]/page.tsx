@@ -116,11 +116,11 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
 	async function loadAvailableEmployees() {
 		if (!team) return;
 
-		const result = await listEmployees({ organizationId: team.organizationId });
+		const result = await listEmployees({ limit: 1000 });
 		if (result.success && result.data) {
 			// Filter out employees already in the team
 			const teamMemberIds = new Set((team as any).employees?.map((e: any) => e.id) || []);
-			const available = result.data.filter((emp) => !teamMemberIds.has(emp.id));
+			const available = result.data.employees.filter((emp) => !teamMemberIds.has(emp.id));
 			setAvailableEmployees(available);
 		}
 	}

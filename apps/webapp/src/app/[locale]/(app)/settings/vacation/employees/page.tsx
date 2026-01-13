@@ -1,6 +1,6 @@
 import { IconEdit, IconUser } from "@tabler/icons-react";
-import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Link } from "@/navigation";
 import { Suspense } from "react";
 import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
@@ -17,7 +17,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { getEmployeesWithAllowances, getVacationPolicy } from "../actions";
+import { getCompanyDefaultVacationPolicy, getEmployeesWithAllowances } from "../actions";
 import { getVacationPolicyAssignments } from "../assignment-actions";
 
 async function EmployeeAllowancesContent() {
@@ -42,7 +42,7 @@ async function EmployeeAllowancesContent() {
 	const currentYear = new Date().getFullYear();
 	const [employeesResult, policyResult, policyAssignmentsResult] = await Promise.all([
 		getEmployeesWithAllowances(authContext.employee.organizationId, currentYear),
-		getVacationPolicy(authContext.employee.organizationId, currentYear),
+		getCompanyDefaultVacationPolicy(authContext.employee.organizationId),
 		getVacationPolicyAssignments(authContext.employee.organizationId),
 	]);
 
@@ -134,7 +134,7 @@ async function EmployeeAllowancesContent() {
 															<AvatarFallback>
 																{emp.user.name
 																	.split(" ")
-																	.map((n) => n[0])
+																	.map((n: string) => n[0])
 																	.join("")
 																	.toUpperCase()}
 															</AvatarFallback>

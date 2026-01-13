@@ -77,7 +77,6 @@ export default function EmployeeDetailPage({
 				if (result.success) {
 					toast.success("Employee updated successfully");
 					router.push("/settings/employees");
-					router.refresh();
 				} else {
 					toast.error(result.error || "Failed to update employee");
 				}

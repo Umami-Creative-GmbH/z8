@@ -112,7 +112,6 @@ export default function EmployeeAllowanceEditPage({
 
 				toast.success("Employee allowance updated successfully");
 				router.push("/settings/vacation/employees");
-				router.refresh();
 			} catch (_error) {
 				toast.error("An unexpected error occurred");
 			} finally {
@@ -132,7 +131,7 @@ export default function EmployeeAllowanceEditPage({
 			const [empResult, policyResult, policiesResult, assignmentResult, adjustmentTotalResult] =
 				await Promise.all([
 					getEmployeeAllowance(employeeId, currentYear),
-					getVacationPolicies(current.organizationId, currentYear),
+					getVacationPolicies(current.organizationId),
 					getAssignmentPolicies(current.organizationId),
 					getEmployeePolicyAssignment(employeeId),
 					getEmployeeAdjustmentTotal(employeeId, currentYear),
@@ -152,14 +151,15 @@ export default function EmployeeAllowanceEditPage({
 			}
 
 			if (policyResult.success && policyResult.data) {
-				// Get the first policy for the current year as org default
-				setOrgPolicy(policyResult.data[0] || null);
+				// Get the company default policy
+				const defaultPolicy = policyResult.data.find((p: any) => p.isCompanyDefault && p.isActive);
+				setOrgPolicy(defaultPolicy || policyResult.data[0] || null);
 			}
 
 			if (policiesResult.success && policiesResult.data) {
-				// Filter to current year policies
-				const yearPolicies = policiesResult.data.filter((p: any) => p.year === currentYear);
-				setPolicies(yearPolicies);
+				// Filter to active policies only
+				const activePolicies = policiesResult.data.filter((p: any) => p.isActive);
+				setPolicies(activePolicies);
 			}
 
 			if (assignmentResult.success) {

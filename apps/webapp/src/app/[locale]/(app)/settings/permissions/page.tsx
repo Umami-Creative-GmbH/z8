@@ -56,9 +56,9 @@ export default function PermissionsPage() {
 			setIsAdmin(true);
 
 			// Load employees
-			const empResult = await listEmployees({ organizationId: current.organizationId });
+			const empResult = await listEmployees({ limit: 1000 });
 			if (empResult.success && empResult.data) {
-				setEmployees(empResult.data);
+				setEmployees(empResult.data.employees);
 			} else if (!empResult.success) {
 				toast.error(empResult.error || "Failed to load employees");
 			}
@@ -108,9 +108,9 @@ export default function PermissionsPage() {
 		}
 
 		// Reload employees
-		const empResult = await listEmployees({ organizationId: currentEmployee.organizationId });
+		const empResult = await listEmployees({ limit: 1000 });
 		if (empResult.success && empResult.data) {
-			setEmployees(empResult.data);
+			setEmployees(empResult.data.employees);
 		}
 
 		setLoading(false);

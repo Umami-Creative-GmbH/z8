@@ -28,11 +28,7 @@ async function VacationSettingsContent() {
 		redirect("/");
 	}
 
-	const currentYear = new Date().getFullYear();
-	const policiesResult = await getVacationPolicies(
-		authContext.employee.organizationId,
-		currentYear,
-	);
+	const policiesResult = await getVacationPolicies(authContext.employee.organizationId);
 
 	return (
 		<VacationManagement organizationId={authContext.employee.organizationId}>
@@ -50,7 +46,7 @@ async function VacationSettingsContent() {
 					<CardContent>
 						<VacationPoliciesTable
 							organizationId={authContext.employee.organizationId}
-							initialPolicies={policiesResult.data || []}
+							initialPolicies={policiesResult.success ? policiesResult.data : []}
 						/>
 					</CardContent>
 				</Card>
