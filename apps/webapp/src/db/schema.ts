@@ -29,20 +29,31 @@ export const absenceTypeEnum = pgEnum("absence_type", [
 	"bereavement",
 	"custom",
 ]);
-export const approvalStatusEnum = pgEnum("approval_status", ["pending", "approved", "rejected"]);
-export const timeEntryTypeEnum = pgEnum("time_entry_type", ["clock_in", "clock_out", "correction"]);
+export const approvalStatusEnum = pgEnum("approval_status", [
+	"pending",
+	"approved",
+	"rejected",
+]);
+export const timeEntryTypeEnum = pgEnum("time_entry_type", [
+	"clock_in",
+	"clock_out",
+	"correction",
+]);
 export const holidayCategoryEnum = pgEnum("holiday_category_type", [
 	"public_holiday",
 	"company_holiday",
 	"training_day",
 	"custom",
 ]);
-export const recurrenceTypeEnum = pgEnum("recurrence_type", ["none", "yearly", "custom"]);
-export const holidayPresetAssignmentTypeEnum = pgEnum("holiday_preset_assignment_type", [
-	"organization",
-	"team",
-	"employee",
+export const recurrenceTypeEnum = pgEnum("recurrence_type", [
+	"none",
+	"yearly",
+	"custom",
 ]);
+export const holidayPresetAssignmentTypeEnum = pgEnum(
+	"holiday_preset_assignment_type",
+	["organization", "team", "employee"],
+);
 export const genderEnum = pgEnum("gender", ["male", "female", "other"]);
 export const scheduleCycleEnum = pgEnum("schedule_cycle", [
 	"daily",
@@ -108,11 +119,19 @@ export const notificationTypeEnum = pgEnum("notification_type", [
 	"project_deadline_overdue",
 ]);
 
-export const notificationChannelEnum = pgEnum("notification_channel", ["in_app", "push", "email"]);
+export const notificationChannelEnum = pgEnum("notification_channel", [
+	"in_app",
+	"push",
+	"email",
+]);
 
 // Shift scheduling enums
 export const shiftStatusEnum = pgEnum("shift_status", ["draft", "published"]);
-export const shiftRequestTypeEnum = pgEnum("shift_request_type", ["swap", "assignment", "pickup"]);
+export const shiftRequestTypeEnum = pgEnum("shift_request_type", [
+	"swap",
+	"assignment",
+	"pickup",
+]);
 
 // Project enums
 export const projectStatusEnum = pgEnum("project_status", [
@@ -122,15 +141,16 @@ export const projectStatusEnum = pgEnum("project_status", [
 	"completed",
 	"archived",
 ]);
-export const projectAssignmentTypeEnum = pgEnum("project_assignment_type", ["team", "employee"]);
+export const projectAssignmentTypeEnum = pgEnum("project_assignment_type", [
+	"team",
+	"employee",
+]);
 
 // Time regulation enums
-export const timeRegulationViolationTypeEnum = pgEnum("time_regulation_violation_type", [
-	"max_daily",
-	"max_weekly",
-	"max_uninterrupted",
-	"break_required",
-]);
+export const timeRegulationViolationTypeEnum = pgEnum(
+	"time_regulation_violation_type",
+	["max_daily", "max_weekly", "max_uninterrupted", "break_required"],
+);
 
 // Surcharge enums
 export const surchargeRuleTypeEnum = pgEnum("surcharge_rule_type", [
@@ -236,7 +256,10 @@ export const employeeManagers = pgTable(
 		index("employeeManagers_managerId_idx").on(table.managerId),
 		// Prevent duplicate manager assignments
 		index("employeeManagers_unique_idx").on(table.employeeId, table.managerId),
-		index("employeeManagers_managerId_isPrimary_idx").on(table.managerId, table.isPrimary),
+		index("employeeManagers_managerId_isPrimary_idx").on(
+			table.managerId,
+			table.isPrimary,
+		),
 	],
 );
 
@@ -259,9 +282,15 @@ export const teamPermissions = pgTable(
 
 		// Four permission flags
 		canCreateTeams: boolean("can_create_teams").default(false).notNull(),
-		canManageTeamMembers: boolean("can_manage_team_members").default(false).notNull(),
-		canManageTeamSettings: boolean("can_manage_team_settings").default(false).notNull(),
-		canApproveTeamRequests: boolean("can_approve_team_requests").default(false).notNull(),
+		canManageTeamMembers: boolean("can_manage_team_members")
+			.default(false)
+			.notNull(),
+		canManageTeamSettings: boolean("can_manage_team_settings")
+			.default(false)
+			.notNull(),
+		canApproveTeamRequests: boolean("can_approve_team_requests")
+			.default(false)
+			.notNull(),
 
 		grantedBy: uuid("granted_by")
 			.notNull()
@@ -277,7 +306,10 @@ export const teamPermissions = pgTable(
 		index("teamPermissions_organizationId_idx").on(table.organizationId),
 		index("teamPermissions_teamId_idx").on(table.teamId),
 		// One permission record per employee per organization
-		index("teamPermissions_unique_idx").on(table.employeeId, table.organizationId),
+		index("teamPermissions_unique_idx").on(
+			table.employeeId,
+			table.organizationId,
+		),
 	],
 );
 
@@ -299,11 +331,15 @@ export const workScheduleTemplate = pgTable(
 		description: text("description"),
 
 		// Schedule configuration
-		scheduleCycle: scheduleCycleEnum("schedule_cycle").default("weekly").notNull(),
+		scheduleCycle: scheduleCycleEnum("schedule_cycle")
+			.default("weekly")
+			.notNull(),
 		scheduleType: scheduleTypeEnum("schedule_type").default("simple").notNull(),
 
 		// Working days configuration
-		workingDaysPreset: workingDaysPresetEnum("working_days_preset").default("weekdays").notNull(),
+		workingDaysPreset: workingDaysPresetEnum("working_days_preset")
+			.default("weekdays")
+			.notNull(),
 
 		// Simple mode: total hours per cycle
 		hoursPerCycle: decimal("hours_per_cycle", { precision: 6, scale: 2 }),
@@ -328,7 +364,10 @@ export const workScheduleTemplate = pgTable(
 	(table) => [
 		index("workScheduleTemplate_organizationId_idx").on(table.organizationId),
 		index("workScheduleTemplate_isActive_idx").on(table.isActive),
-		uniqueIndex("workScheduleTemplate_org_name_idx").on(table.organizationId, table.name),
+		uniqueIndex("workScheduleTemplate_org_name_idx").on(
+			table.organizationId,
+			table.name,
+		),
 	],
 );
 
@@ -374,9 +413,12 @@ export const workScheduleAssignment = pgTable(
 			.references(() => organization.id, { onDelete: "cascade" }),
 
 		// Assignment target
-		assignmentType: holidayPresetAssignmentTypeEnum("assignment_type").notNull(),
+		assignmentType:
+			holidayPresetAssignmentTypeEnum("assignment_type").notNull(),
 		teamId: uuid("team_id").references(() => team.id, { onDelete: "cascade" }),
-		employeeId: uuid("employee_id").references(() => employee.id, { onDelete: "cascade" }),
+		employeeId: uuid("employee_id").references(() => employee.id, {
+			onDelete: "cascade",
+		}),
 
 		// Priority: 0=org, 1=team, 2=employee (higher wins)
 		priority: integer("priority").default(0).notNull(),
@@ -434,14 +476,18 @@ export const holidayCategory = pgTable(
 		description: text("description"),
 		color: text("color"), // Hex color for calendar display
 		blocksTimeEntry: boolean("blocks_time_entry").default(true).notNull(),
-		excludeFromCalculations: boolean("exclude_from_calculations").default(true).notNull(),
+		excludeFromCalculations: boolean("exclude_from_calculations")
+			.default(true)
+			.notNull(),
 		isActive: boolean("is_active").default(true).notNull(),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at")
 			.$onUpdate(() => currentTimestamp())
 			.notNull(),
 	},
-	(table) => [index("holidayCategory_organizationId_idx").on(table.organizationId)],
+	(table) => [
+		index("holidayCategory_organizationId_idx").on(table.organizationId),
+	],
 );
 
 // Holidays and closing days with recurrence support
@@ -459,7 +505,9 @@ export const holiday = pgTable(
 		description: text("description"),
 		startDate: timestamp("start_date").notNull(),
 		endDate: timestamp("end_date").notNull(),
-		recurrenceType: recurrenceTypeEnum("recurrence_type").default("none").notNull(),
+		recurrenceType: recurrenceTypeEnum("recurrence_type")
+			.default("none")
+			.notNull(),
 		recurrenceRule: text("recurrence_rule"), // JSON: { month: 12, day: 25 }
 		recurrenceEndDate: timestamp("recurrence_end_date"),
 		isActive: boolean("is_active").default(true).notNull(),
@@ -548,7 +596,10 @@ export const holidayPresetHoliday = pgTable(
 		index("holidayPresetHoliday_presetId_idx").on(table.presetId),
 		index("holidayPresetHoliday_categoryId_idx").on(table.categoryId),
 		// Unique holiday name per preset
-		uniqueIndex("holidayPresetHoliday_preset_name_idx").on(table.presetId, table.name),
+		uniqueIndex("holidayPresetHoliday_preset_name_idx").on(
+			table.presetId,
+			table.name,
+		),
 	],
 );
 
@@ -563,9 +614,12 @@ export const holidayPresetAssignment = pgTable(
 		organizationId: text("organization_id")
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
-		assignmentType: holidayPresetAssignmentTypeEnum("assignment_type").notNull(),
+		assignmentType:
+			holidayPresetAssignmentTypeEnum("assignment_type").notNull(),
 		teamId: uuid("team_id").references(() => team.id, { onDelete: "cascade" }),
-		employeeId: uuid("employee_id").references(() => employee.id, { onDelete: "cascade" }),
+		employeeId: uuid("employee_id").references(() => employee.id, {
+			onDelete: "cascade",
+		}),
 		priority: integer("priority").default(0).notNull(), // 0=org, 1=team, 2=employee
 		effectiveFrom: timestamp("effective_from"),
 		effectiveUntil: timestamp("effective_until"),
@@ -580,7 +634,9 @@ export const holidayPresetAssignment = pgTable(
 	},
 	(table) => [
 		index("holidayPresetAssignment_presetId_idx").on(table.presetId),
-		index("holidayPresetAssignment_organizationId_idx").on(table.organizationId),
+		index("holidayPresetAssignment_organizationId_idx").on(
+			table.organizationId,
+		),
 		index("holidayPresetAssignment_teamId_idx").on(table.teamId),
 		index("holidayPresetAssignment_employeeId_idx").on(table.employeeId),
 		// One org default per organization
@@ -610,9 +666,12 @@ export const holidayAssignment = pgTable(
 		organizationId: text("organization_id")
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
-		assignmentType: holidayPresetAssignmentTypeEnum("assignment_type").notNull(),
+		assignmentType:
+			holidayPresetAssignmentTypeEnum("assignment_type").notNull(),
 		teamId: uuid("team_id").references(() => team.id, { onDelete: "cascade" }),
-		employeeId: uuid("employee_id").references(() => employee.id, { onDelete: "cascade" }),
+		employeeId: uuid("employee_id").references(() => employee.id, {
+			onDelete: "cascade",
+		}),
 		isActive: boolean("is_active").default(true).notNull(),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		createdBy: text("created_by")
@@ -669,7 +728,10 @@ export const shiftTemplate = pgTable(
 	},
 	(table) => [
 		index("shiftTemplate_organizationId_idx").on(table.organizationId),
-		uniqueIndex("shiftTemplate_org_name_idx").on(table.organizationId, table.name),
+		uniqueIndex("shiftTemplate_org_name_idx").on(
+			table.organizationId,
+			table.name,
+		),
 	],
 );
 
@@ -681,8 +743,12 @@ export const shift = pgTable(
 		organizationId: text("organization_id")
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
-		employeeId: uuid("employee_id").references(() => employee.id, { onDelete: "set null" }), // nullable = Open Shift
-		templateId: uuid("template_id").references(() => shiftTemplate.id, { onDelete: "set null" }),
+		employeeId: uuid("employee_id").references(() => employee.id, {
+			onDelete: "set null",
+		}), // nullable = Open Shift
+		templateId: uuid("template_id").references(() => shiftTemplate.id, {
+			onDelete: "set null",
+		}),
 
 		// Shift timing
 		date: timestamp("date", { mode: "date" }).notNull(),
@@ -712,8 +778,16 @@ export const shift = pgTable(
 		index("shift_templateId_idx").on(table.templateId),
 		index("shift_date_idx").on(table.date),
 		index("shift_status_idx").on(table.status),
-		index("shift_org_date_status_idx").on(table.organizationId, table.date, table.status),
-		index("shift_org_employee_date_idx").on(table.organizationId, table.employeeId, table.date),
+		index("shift_org_date_status_idx").on(
+			table.organizationId,
+			table.date,
+			table.status,
+		),
+		index("shift_org_employee_date_idx").on(
+			table.organizationId,
+			table.employeeId,
+			table.date,
+		),
 	],
 );
 
@@ -833,7 +907,10 @@ export const projectManager = pgTable(
 	(table) => [
 		index("projectManager_projectId_idx").on(table.projectId),
 		index("projectManager_employeeId_idx").on(table.employeeId),
-		uniqueIndex("projectManager_unique_idx").on(table.projectId, table.employeeId),
+		uniqueIndex("projectManager_unique_idx").on(
+			table.projectId,
+			table.employeeId,
+		),
 	],
 );
 
@@ -852,7 +929,9 @@ export const projectAssignment = pgTable(
 		// Assignment target (either team OR employee)
 		assignmentType: projectAssignmentTypeEnum("assignment_type").notNull(),
 		teamId: uuid("team_id").references(() => team.id, { onDelete: "cascade" }),
-		employeeId: uuid("employee_id").references(() => employee.id, { onDelete: "cascade" }),
+		employeeId: uuid("employee_id").references(() => employee.id, {
+			onDelete: "cascade",
+		}),
 
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		createdBy: text("created_by")
@@ -885,15 +964,23 @@ export const projectNotificationState = pgTable(
 			.references(() => project.id, { onDelete: "cascade" }),
 
 		// Budget threshold notifications sent (as percentage integers: 70, 90, 100)
-		budgetThresholdsNotified: integer("budget_thresholds_notified").array().default([]),
+		budgetThresholdsNotified: integer("budget_thresholds_notified")
+			.array()
+			.default([]),
 		// Deadline threshold notifications sent (days remaining: 14, 7, 1, 0, -1 for overdue)
-		deadlineThresholdsNotified: integer("deadline_thresholds_notified").array().default([]),
+		deadlineThresholdsNotified: integer("deadline_thresholds_notified")
+			.array()
+			.default([]),
 
 		updatedAt: timestamp("updated_at")
 			.$onUpdate(() => currentTimestamp())
 			.notNull(),
 	},
-	(table) => [uniqueIndex("projectNotificationState_project_unique_idx").on(table.projectId)],
+	(table) => [
+		uniqueIndex("projectNotificationState_project_unique_idx").on(
+			table.projectId,
+		),
+	],
 );
 
 // ============================================
@@ -959,7 +1046,9 @@ export const workPeriod = pgTable(
 		clockOutId: uuid("clock_out_id").references(() => timeEntry.id),
 
 		// Project assignment (optional)
-		projectId: uuid("project_id").references(() => project.id, { onDelete: "set null" }),
+		projectId: uuid("project_id").references(() => project.id, {
+			onDelete: "set null",
+		}),
 
 		startTime: timestamp("start_time").notNull(),
 		endTime: timestamp("end_time"),
@@ -996,7 +1085,9 @@ export const absenceCategory = pgTable(
 		description: text("description"),
 		requiresWorkTime: boolean("requires_work_time").default(false).notNull(), // Does work need to be logged on this day?
 		requiresApproval: boolean("requires_approval").default(true).notNull(),
-		countsAgainstVacation: boolean("counts_against_vacation").default(true).notNull(), // Determines if absence deducts from vacation balance
+		countsAgainstVacation: boolean("counts_against_vacation")
+			.default(true)
+			.notNull(), // Determines if absence deducts from vacation balance
 		color: text("color"), // For UI display
 		isActive: boolean("is_active").default(true).notNull(),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -1004,7 +1095,9 @@ export const absenceCategory = pgTable(
 			.$onUpdate(() => currentTimestamp())
 			.notNull(),
 	},
-	(table) => [index("absenceCategory_organizationId_idx").on(table.organizationId)],
+	(table) => [
+		index("absenceCategory_organizationId_idx").on(table.organizationId),
+	],
 );
 
 // Absence entries (sick days, vacation, etc.)
@@ -1042,7 +1135,10 @@ export const absenceEntry = pgTable(
 		index("absenceEntry_employeeId_idx").on(table.employeeId),
 		index("absenceEntry_startDate_idx").on(table.startDate),
 		index("absenceEntry_status_idx").on(table.status),
-		index("absenceEntry_employeeId_status_idx").on(table.employeeId, table.status),
+		index("absenceEntry_employeeId_status_idx").on(
+			table.employeeId,
+			table.status,
+		),
 	],
 );
 
@@ -1050,7 +1146,7 @@ export const absenceEntry = pgTable(
 // VACATION ALLOWANCE MANAGEMENT
 // ============================================
 
-// Organization-wide vacation policies per year
+// Organization-wide vacation policies (date-based)
 export const vacationAllowance = pgTable(
 	"vacation_allowance",
 	{
@@ -1059,11 +1155,18 @@ export const vacationAllowance = pgTable(
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
 
-		// Policy name for identification (e.g., "Germany Standard", "Senior Engineers")
+		// Policy name for identification (e.g., "5-day workers", "4-day workers", "Part-time")
 		name: text("name").notNull(),
 
-		// Calendar year this allowance applies to
-		year: integer("year").notNull(),
+		// Date-based validity (replaces year)
+		startDate: date("start_date").notNull(), // When policy becomes effective
+		validUntil: date("valid_until"), // Nullable - auto-set when superseded, null = active
+
+		// Company-wide default flag - only one active default per org
+		isCompanyDefault: boolean("is_company_default").default(false).notNull(),
+
+		// Soft delete flag
+		isActive: boolean("is_active").default(true).notNull(),
 
 		// Default days for the organization
 		defaultAnnualDays: decimal("default_annual_days").notNull(),
@@ -1086,12 +1189,18 @@ export const vacationAllowance = pgTable(
 			.references(() => user.id),
 	},
 	(table) => [
-		index("vacationAllowance_organizationId_year_idx").on(table.organizationId, table.year),
-		uniqueIndex("vacationAllowance_org_year_name_idx").on(
-			table.organizationId,
-			table.year,
-			table.name,
-		),
+		index("vacationAllowance_organizationId_idx").on(table.organizationId),
+		index("vacationAllowance_startDate_idx").on(table.startDate),
+		// Unique policy name per org (active policies only)
+		uniqueIndex("vacationAllowance_org_name_active_idx")
+			.on(table.organizationId, table.name)
+			.where(sql`is_active = true AND valid_until IS NULL`),
+		// Only one company default per org at a time (active and not superseded)
+		uniqueIndex("vacationAllowance_org_company_default_idx")
+			.on(table.organizationId)
+			.where(
+				sql`is_company_default = true AND is_active = true AND valid_until IS NULL`,
+			),
 	],
 );
 
@@ -1109,14 +1218,17 @@ export const employeeVacationAllowance = pgTable(
 		customAnnualDays: decimal("custom_annual_days"), // Override for specific employee
 		customCarryoverDays: decimal("custom_carryover_days"), // Carried from previous year
 
-			createdAt: timestamp("created_at").defaultNow().notNull(),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at")
 			.$onUpdate(() => currentTimestamp())
 			.notNull(),
 	},
 	(table) => [
 		index("employeeVacationAllowance_employeeId_idx").on(table.employeeId),
-		index("employeeVacationAllowance_employeeId_year_idx").on(table.employeeId, table.year),
+		index("employeeVacationAllowance_employeeId_year_idx").on(
+			table.employeeId,
+			table.year,
+		),
 	],
 );
 
@@ -1137,7 +1249,10 @@ export const vacationAdjustment = pgTable(
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 	},
 	(table) => [
-		index("vacationAdjustment_employee_year_idx").on(table.employeeId, table.year),
+		index("vacationAdjustment_employee_year_idx").on(
+			table.employeeId,
+			table.year,
+		),
 	],
 );
 
@@ -1153,9 +1268,12 @@ export const vacationPolicyAssignment = pgTable(
 		organizationId: text("organization_id")
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
-		assignmentType: holidayPresetAssignmentTypeEnum("assignment_type").notNull(),
+		assignmentType:
+			holidayPresetAssignmentTypeEnum("assignment_type").notNull(),
 		teamId: uuid("team_id").references(() => team.id, { onDelete: "cascade" }),
-		employeeId: uuid("employee_id").references(() => employee.id, { onDelete: "cascade" }),
+		employeeId: uuid("employee_id").references(() => employee.id, {
+			onDelete: "cascade",
+		}),
 		priority: integer("priority").default(0).notNull(), // 0=org, 1=team, 2=employee
 		effectiveFrom: timestamp("effective_from"),
 		effectiveUntil: timestamp("effective_until"),
@@ -1170,7 +1288,9 @@ export const vacationPolicyAssignment = pgTable(
 	},
 	(table) => [
 		index("vacationPolicyAssignment_policyId_idx").on(table.policyId),
-		index("vacationPolicyAssignment_organizationId_idx").on(table.organizationId),
+		index("vacationPolicyAssignment_organizationId_idx").on(
+			table.organizationId,
+		),
 		index("vacationPolicyAssignment_teamId_idx").on(table.teamId),
 		index("vacationPolicyAssignment_employeeId_idx").on(table.employeeId),
 		// One org default per organization per policy
@@ -1247,7 +1367,10 @@ export const timeRegulation = pgTable(
 	(table) => [
 		index("timeRegulation_organizationId_idx").on(table.organizationId),
 		index("timeRegulation_isActive_idx").on(table.isActive),
-		uniqueIndex("timeRegulation_org_name_idx").on(table.organizationId, table.name),
+		uniqueIndex("timeRegulation_org_name_idx").on(
+			table.organizationId,
+			table.name,
+		),
 	],
 );
 
@@ -1273,7 +1396,10 @@ export const timeRegulationBreakRule = pgTable(
 	},
 	(table) => [
 		index("timeRegulationBreakRule_regulationId_idx").on(table.regulationId),
-		index("timeRegulationBreakRule_sortOrder_idx").on(table.regulationId, table.sortOrder),
+		index("timeRegulationBreakRule_sortOrder_idx").on(
+			table.regulationId,
+			table.sortOrder,
+		),
 	],
 );
 
@@ -1296,7 +1422,9 @@ export const timeRegulationBreakOption = pgTable(
 		sortOrder: integer("sort_order").default(0).notNull(),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 	},
-	(table) => [index("timeRegulationBreakOption_breakRuleId_idx").on(table.breakRuleId)],
+	(table) => [
+		index("timeRegulationBreakOption_breakRuleId_idx").on(table.breakRuleId),
+	],
 );
 
 // Hierarchical assignment (reuses pattern from work schedules and holidays)
@@ -1312,9 +1440,12 @@ export const timeRegulationAssignment = pgTable(
 			.references(() => organization.id, { onDelete: "cascade" }),
 
 		// Assignment target
-		assignmentType: holidayPresetAssignmentTypeEnum("assignment_type").notNull(),
+		assignmentType:
+			holidayPresetAssignmentTypeEnum("assignment_type").notNull(),
 		teamId: uuid("team_id").references(() => team.id, { onDelete: "cascade" }),
-		employeeId: uuid("employee_id").references(() => employee.id, { onDelete: "cascade" }),
+		employeeId: uuid("employee_id").references(() => employee.id, {
+			onDelete: "cascade",
+		}),
 
 		// Priority: 0=org, 1=team, 2=employee (higher wins)
 		priority: integer("priority").default(0).notNull(),
@@ -1336,7 +1467,9 @@ export const timeRegulationAssignment = pgTable(
 	},
 	(table) => [
 		index("timeRegulationAssignment_regulationId_idx").on(table.regulationId),
-		index("timeRegulationAssignment_organizationId_idx").on(table.organizationId),
+		index("timeRegulationAssignment_organizationId_idx").on(
+			table.organizationId,
+		),
 		index("timeRegulationAssignment_teamId_idx").on(table.teamId),
 		index("timeRegulationAssignment_employeeId_idx").on(table.employeeId),
 		// One org default per organization
@@ -1370,7 +1503,8 @@ export const timeRegulationPreset = pgTable(
 		maxUninterruptedMinutes: integer("max_uninterrupted_minutes"),
 
 		// JSON blob for break rules (denormalized for simplicity in presets)
-		breakRulesJson: text("break_rules_json").$type<TimeRegulationBreakRulesPreset>(),
+		breakRulesJson:
+			text("break_rules_json").$type<TimeRegulationBreakRulesPreset>(),
 
 		isActive: boolean("is_active").default(true).notNull(),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -1392,10 +1526,14 @@ export const timeRegulationViolation = pgTable(
 		organizationId: text("organization_id")
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
-		regulationId: uuid("regulation_id").references(() => timeRegulation.id, { onDelete: "set null" }),
+		regulationId: uuid("regulation_id").references(() => timeRegulation.id, {
+			onDelete: "set null",
+		}),
 
 		// What triggered the violation
-		workPeriodId: uuid("work_period_id").references(() => workPeriod.id, { onDelete: "set null" }),
+		workPeriodId: uuid("work_period_id").references(() => workPeriod.id, {
+			onDelete: "set null",
+		}),
 		violationDate: timestamp("violation_date").notNull(),
 
 		violationType: timeRegulationViolationTypeEnum("violation_type").notNull(),
@@ -1412,12 +1550,20 @@ export const timeRegulationViolation = pgTable(
 	},
 	(table) => [
 		index("timeRegulationViolation_employeeId_idx").on(table.employeeId),
-		index("timeRegulationViolation_organizationId_idx").on(table.organizationId),
+		index("timeRegulationViolation_organizationId_idx").on(
+			table.organizationId,
+		),
 		index("timeRegulationViolation_regulationId_idx").on(table.regulationId),
 		index("timeRegulationViolation_violationDate_idx").on(table.violationDate),
 		index("timeRegulationViolation_violationType_idx").on(table.violationType),
-		index("timeRegulationViolation_org_date_idx").on(table.organizationId, table.violationDate),
-		index("timeRegulationViolation_emp_date_idx").on(table.employeeId, table.violationDate),
+		index("timeRegulationViolation_org_date_idx").on(
+			table.organizationId,
+			table.violationDate,
+		),
+		index("timeRegulationViolation_emp_date_idx").on(
+			table.employeeId,
+			table.violationDate,
+		),
 	],
 );
 
@@ -1468,7 +1614,10 @@ export const surchargeModel = pgTable(
 	(table) => [
 		index("surchargeModel_organizationId_idx").on(table.organizationId),
 		index("surchargeModel_isActive_idx").on(table.isActive),
-		uniqueIndex("surchargeModel_org_name_idx").on(table.organizationId, table.name),
+		uniqueIndex("surchargeModel_org_name_idx").on(
+			table.organizationId,
+			table.name,
+		),
 	],
 );
 
@@ -1536,9 +1685,12 @@ export const surchargeModelAssignment = pgTable(
 			.references(() => organization.id, { onDelete: "cascade" }),
 
 		// Assignment target (reuses existing enum)
-		assignmentType: holidayPresetAssignmentTypeEnum("assignment_type").notNull(),
+		assignmentType:
+			holidayPresetAssignmentTypeEnum("assignment_type").notNull(),
 		teamId: uuid("team_id").references(() => team.id, { onDelete: "cascade" }),
-		employeeId: uuid("employee_id").references(() => employee.id, { onDelete: "cascade" }),
+		employeeId: uuid("employee_id").references(() => employee.id, {
+			onDelete: "cascade",
+		}),
 
 		// Priority: 0=org, 1=team, 2=employee (higher wins)
 		priority: integer("priority").default(0).notNull(),
@@ -1560,7 +1712,9 @@ export const surchargeModelAssignment = pgTable(
 	},
 	(table) => [
 		index("surchargeModelAssignment_modelId_idx").on(table.modelId),
-		index("surchargeModelAssignment_organizationId_idx").on(table.organizationId),
+		index("surchargeModelAssignment_organizationId_idx").on(
+			table.organizationId,
+		),
 		index("surchargeModelAssignment_teamId_idx").on(table.teamId),
 		index("surchargeModelAssignment_employeeId_idx").on(table.employeeId),
 		// One org default per organization
@@ -1594,22 +1748,33 @@ export const surchargeCalculation = pgTable(
 		workPeriodId: uuid("work_period_id")
 			.notNull()
 			.references(() => workPeriod.id, { onDelete: "cascade" }),
-		surchargeRuleId: uuid("surcharge_rule_id").references(() => surchargeRule.id, {
-			onDelete: "set null",
-		}),
-		surchargeModelId: uuid("surcharge_model_id").references(() => surchargeModel.id, {
-			onDelete: "set null",
-		}),
+		surchargeRuleId: uuid("surcharge_rule_id").references(
+			() => surchargeRule.id,
+			{
+				onDelete: "set null",
+			},
+		),
+		surchargeModelId: uuid("surcharge_model_id").references(
+			() => surchargeModel.id,
+			{
+				onDelete: "set null",
+			},
+		),
 
 		// Calculation results
 		calculationDate: timestamp("calculation_date").notNull(),
 		baseMinutes: integer("base_minutes").notNull(), // Original work period duration
 		qualifyingMinutes: integer("qualifying_minutes").notNull(), // Minutes that qualified for surcharge
 		surchargeMinutes: integer("surcharge_minutes").notNull(), // Extra minutes credited
-		appliedPercentage: decimal("applied_percentage", { precision: 5, scale: 4 }).notNull(),
+		appliedPercentage: decimal("applied_percentage", {
+			precision: 5,
+			scale: 4,
+		}).notNull(),
 
 		// Full breakdown for audit (JSON)
-		calculationDetails: text("calculation_details").$type<SurchargeCalculationDetails>(),
+		calculationDetails: text(
+			"calculation_details",
+		).$type<SurchargeCalculationDetails>(),
 
 		// Immutable - createdAt only, no updatedAt
 		createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -1619,7 +1784,10 @@ export const surchargeCalculation = pgTable(
 		index("surchargeCalculation_organizationId_idx").on(table.organizationId),
 		index("surchargeCalculation_workPeriodId_idx").on(table.workPeriodId),
 		index("surchargeCalculation_calculationDate_idx").on(table.calculationDate),
-		index("surchargeCalculation_emp_date_idx").on(table.employeeId, table.calculationDate),
+		index("surchargeCalculation_emp_date_idx").on(
+			table.employeeId,
+			table.calculationDate,
+		),
 		// Prevent duplicate calculations for same work period
 		uniqueIndex("surchargeCalculation_workPeriod_idx").on(table.workPeriodId),
 	],
@@ -1658,7 +1826,10 @@ export const approvalRequest = pgTable(
 			.notNull(),
 	},
 	(table) => [
-		index("approvalRequest_entityType_entityId_idx").on(table.entityType, table.entityId),
+		index("approvalRequest_entityType_entityId_idx").on(
+			table.entityType,
+			table.entityId,
+		),
 		index("approvalRequest_approverId_idx").on(table.approverId),
 		index("approvalRequest_status_idx").on(table.status),
 	],
@@ -1694,7 +1865,10 @@ export const auditLog = pgTable(
 		timestamp: timestamp("timestamp").defaultNow().notNull(),
 	},
 	(table) => [
-		index("auditLog_entityType_entityId_idx").on(table.entityType, table.entityId),
+		index("auditLog_entityType_entityId_idx").on(
+			table.entityType,
+			table.entityId,
+		),
 		index("auditLog_performedBy_idx").on(table.performedBy),
 		index("auditLog_timestamp_idx").on(table.timestamp),
 	],
@@ -1829,7 +2003,10 @@ export const pushSubscription = pgTable(
 		index("pushSubscription_userId_idx").on(table.userId),
 		index("pushSubscription_endpoint_idx").on(table.endpoint),
 		index("pushSubscription_isActive_idx").on(table.isActive),
-		index("pushSubscription_userId_isActive_idx").on(table.userId, table.isActive),
+		index("pushSubscription_userId_isActive_idx").on(
+			table.userId,
+			table.isActive,
+		),
 	],
 );
 
@@ -1838,44 +2015,47 @@ export const pushSubscription = pgTable(
 // ============================================
 
 // Organization relations (includes auth relations: members, invitations)
-export const organizationRelations = relations(organization, ({ one, many }) => ({
-	// Auth relations (from auth-schema tables)
-	members: many(member),
-	invitations: many(invitation),
-	// Business relations
-	teams: many(team),
-	employees: many(employee),
-	absenceCategories: many(absenceCategory),
-	holidayCategories: many(holidayCategory),
-	holidays: many(holiday),
-	holidayPresets: many(holidayPreset),
-	holidayPresetAssignments: many(holidayPresetAssignment),
-	holidayAssignments: many(holidayAssignment),
-	vacationAllowances: many(vacationAllowance),
-	vacationPolicyAssignments: many(vacationPolicyAssignment),
-	workScheduleTemplates: many(workScheduleTemplate),
-	workScheduleAssignments: many(workScheduleAssignment),
-	// Time regulations
-	timeRegulations: many(timeRegulation),
-	timeRegulationAssignments: many(timeRegulationAssignment),
-	timeRegulationViolations: many(timeRegulationViolation),
-	// Shift scheduling
-	shiftTemplates: many(shiftTemplate),
-	shifts: many(shift),
-	// Projects
-	projects: many(project),
-	projectAssignments: many(projectAssignment),
-	// Notifications
-	notifications: many(notification),
-	notificationPreferences: many(notificationPreference),
-	// Enterprise features
-	domains: many(organizationDomain),
-	branding: one(organizationBranding),
-	// Surcharges
-	surchargeModels: many(surchargeModel),
-	surchargeModelAssignments: many(surchargeModelAssignment),
-	surchargeCalculations: many(surchargeCalculation),
-}));
+export const organizationRelations = relations(
+	organization,
+	({ one, many }) => ({
+		// Auth relations (from auth-schema tables)
+		members: many(member),
+		invitations: many(invitation),
+		// Business relations
+		teams: many(team),
+		employees: many(employee),
+		absenceCategories: many(absenceCategory),
+		holidayCategories: many(holidayCategory),
+		holidays: many(holiday),
+		holidayPresets: many(holidayPreset),
+		holidayPresetAssignments: many(holidayPresetAssignment),
+		holidayAssignments: many(holidayAssignment),
+		vacationAllowances: many(vacationAllowance),
+		vacationPolicyAssignments: many(vacationPolicyAssignment),
+		workScheduleTemplates: many(workScheduleTemplate),
+		workScheduleAssignments: many(workScheduleAssignment),
+		// Time regulations
+		timeRegulations: many(timeRegulation),
+		timeRegulationAssignments: many(timeRegulationAssignment),
+		timeRegulationViolations: many(timeRegulationViolation),
+		// Shift scheduling
+		shiftTemplates: many(shiftTemplate),
+		shifts: many(shift),
+		// Projects
+		projects: many(project),
+		projectAssignments: many(projectAssignment),
+		// Notifications
+		notifications: many(notification),
+		notificationPreferences: many(notificationPreference),
+		// Enterprise features
+		domains: many(organizationDomain),
+		branding: one(organizationBranding),
+		// Surcharges
+		surchargeModels: many(surchargeModel),
+		surchargeModelAssignments: many(surchargeModelAssignment),
+		surchargeCalculations: many(surchargeCalculation),
+	}),
+);
 
 export const teamRelations = relations(team, ({ one, many }) => ({
 	organization: one(organization, {
@@ -2013,13 +2193,16 @@ export const workPeriodRelations = relations(workPeriod, ({ one }) => ({
 }));
 
 // Absence relations
-export const absenceCategoryRelations = relations(absenceCategory, ({ one, many }) => ({
-	organization: one(organization, {
-		fields: [absenceCategory.organizationId],
-		references: [organization.id],
+export const absenceCategoryRelations = relations(
+	absenceCategory,
+	({ one, many }) => ({
+		organization: one(organization, {
+			fields: [absenceCategory.organizationId],
+			references: [organization.id],
+		}),
+		absenceEntries: many(absenceEntry),
 	}),
-	absenceEntries: many(absenceEntry),
-}));
+);
 
 export const absenceEntryRelations = relations(absenceEntry, ({ one }) => ({
 	employee: one(employee, {
@@ -2037,28 +2220,34 @@ export const absenceEntryRelations = relations(absenceEntry, ({ one }) => ({
 }));
 
 // Approval relations
-export const approvalRequestRelations = relations(approvalRequest, ({ one }) => ({
-	requester: one(employee, {
-		fields: [approvalRequest.requestedBy],
-		references: [employee.id],
-		relationName: "approval_requester",
+export const approvalRequestRelations = relations(
+	approvalRequest,
+	({ one }) => ({
+		requester: one(employee, {
+			fields: [approvalRequest.requestedBy],
+			references: [employee.id],
+			relationName: "approval_requester",
+		}),
+		approver: one(employee, {
+			fields: [approvalRequest.approverId],
+			references: [employee.id],
+			relationName: "approval_approver",
+		}),
 	}),
-	approver: one(employee, {
-		fields: [approvalRequest.approverId],
-		references: [employee.id],
-		relationName: "approval_approver",
-	}),
-}));
+);
 
 // Holiday relations
-export const holidayCategoryRelations = relations(holidayCategory, ({ one, many }) => ({
-	organization: one(organization, {
-		fields: [holidayCategory.organizationId],
-		references: [organization.id],
+export const holidayCategoryRelations = relations(
+	holidayCategory,
+	({ one, many }) => ({
+		organization: one(organization, {
+			fields: [holidayCategory.organizationId],
+			references: [organization.id],
+		}),
+		holidays: many(holiday),
+		presetHolidays: many(holidayPresetHoliday),
 	}),
-	holidays: many(holiday),
-	presetHolidays: many(holidayPresetHoliday),
-}));
+);
 
 export const holidayRelations = relations(holiday, ({ one, many }) => ({
 	organization: one(organization, {
@@ -2081,92 +2270,107 @@ export const holidayRelations = relations(holiday, ({ one, many }) => ({
 }));
 
 // Holiday preset relations
-export const holidayPresetRelations = relations(holidayPreset, ({ one, many }) => ({
-	organization: one(organization, {
-		fields: [holidayPreset.organizationId],
-		references: [organization.id],
+export const holidayPresetRelations = relations(
+	holidayPreset,
+	({ one, many }) => ({
+		organization: one(organization, {
+			fields: [holidayPreset.organizationId],
+			references: [organization.id],
+		}),
+		holidays: many(holidayPresetHoliday),
+		assignments: many(holidayPresetAssignment),
+		creator: one(user, {
+			fields: [holidayPreset.createdBy],
+			references: [user.id],
+		}),
+		updater: one(user, {
+			fields: [holidayPreset.updatedBy],
+			references: [user.id],
+		}),
 	}),
-	holidays: many(holidayPresetHoliday),
-	assignments: many(holidayPresetAssignment),
-	creator: one(user, {
-		fields: [holidayPreset.createdBy],
-		references: [user.id],
-	}),
-	updater: one(user, {
-		fields: [holidayPreset.updatedBy],
-		references: [user.id],
-	}),
-}));
+);
 
-export const holidayPresetHolidayRelations = relations(holidayPresetHoliday, ({ one }) => ({
-	preset: one(holidayPreset, {
-		fields: [holidayPresetHoliday.presetId],
-		references: [holidayPreset.id],
+export const holidayPresetHolidayRelations = relations(
+	holidayPresetHoliday,
+	({ one }) => ({
+		preset: one(holidayPreset, {
+			fields: [holidayPresetHoliday.presetId],
+			references: [holidayPreset.id],
+		}),
+		category: one(holidayCategory, {
+			fields: [holidayPresetHoliday.categoryId],
+			references: [holidayCategory.id],
+		}),
 	}),
-	category: one(holidayCategory, {
-		fields: [holidayPresetHoliday.categoryId],
-		references: [holidayCategory.id],
-	}),
-}));
+);
 
-export const holidayPresetAssignmentRelations = relations(holidayPresetAssignment, ({ one }) => ({
-	preset: one(holidayPreset, {
-		fields: [holidayPresetAssignment.presetId],
-		references: [holidayPreset.id],
+export const holidayPresetAssignmentRelations = relations(
+	holidayPresetAssignment,
+	({ one }) => ({
+		preset: one(holidayPreset, {
+			fields: [holidayPresetAssignment.presetId],
+			references: [holidayPreset.id],
+		}),
+		organization: one(organization, {
+			fields: [holidayPresetAssignment.organizationId],
+			references: [organization.id],
+		}),
+		team: one(team, {
+			fields: [holidayPresetAssignment.teamId],
+			references: [team.id],
+		}),
+		employee: one(employee, {
+			fields: [holidayPresetAssignment.employeeId],
+			references: [employee.id],
+		}),
+		creator: one(user, {
+			fields: [holidayPresetAssignment.createdBy],
+			references: [user.id],
+		}),
 	}),
-	organization: one(organization, {
-		fields: [holidayPresetAssignment.organizationId],
-		references: [organization.id],
-	}),
-	team: one(team, {
-		fields: [holidayPresetAssignment.teamId],
-		references: [team.id],
-	}),
-	employee: one(employee, {
-		fields: [holidayPresetAssignment.employeeId],
-		references: [employee.id],
-	}),
-	creator: one(user, {
-		fields: [holidayPresetAssignment.createdBy],
-		references: [user.id],
-	}),
-}));
+);
 
-export const holidayAssignmentRelations = relations(holidayAssignment, ({ one }) => ({
-	holiday: one(holiday, {
-		fields: [holidayAssignment.holidayId],
-		references: [holiday.id],
+export const holidayAssignmentRelations = relations(
+	holidayAssignment,
+	({ one }) => ({
+		holiday: one(holiday, {
+			fields: [holidayAssignment.holidayId],
+			references: [holiday.id],
+		}),
+		organization: one(organization, {
+			fields: [holidayAssignment.organizationId],
+			references: [organization.id],
+		}),
+		team: one(team, {
+			fields: [holidayAssignment.teamId],
+			references: [team.id],
+		}),
+		employee: one(employee, {
+			fields: [holidayAssignment.employeeId],
+			references: [employee.id],
+		}),
+		creator: one(user, {
+			fields: [holidayAssignment.createdBy],
+			references: [user.id],
+		}),
 	}),
-	organization: one(organization, {
-		fields: [holidayAssignment.organizationId],
-		references: [organization.id],
-	}),
-	team: one(team, {
-		fields: [holidayAssignment.teamId],
-		references: [team.id],
-	}),
-	employee: one(employee, {
-		fields: [holidayAssignment.employeeId],
-		references: [employee.id],
-	}),
-	creator: one(user, {
-		fields: [holidayAssignment.createdBy],
-		references: [user.id],
-	}),
-}));
+);
 
 // Vacation allowance relations
-export const vacationAllowanceRelations = relations(vacationAllowance, ({ one, many }) => ({
-	organization: one(organization, {
-		fields: [vacationAllowance.organizationId],
-		references: [organization.id],
+export const vacationAllowanceRelations = relations(
+	vacationAllowance,
+	({ one, many }) => ({
+		organization: one(organization, {
+			fields: [vacationAllowance.organizationId],
+			references: [organization.id],
+		}),
+		creator: one(user, {
+			fields: [vacationAllowance.createdBy],
+			references: [user.id],
+		}),
+		assignments: many(vacationPolicyAssignment),
 	}),
-	creator: one(user, {
-		fields: [vacationAllowance.createdBy],
-		references: [user.id],
-	}),
-	assignments: many(vacationPolicyAssignment),
-}));
+);
 
 export const employeeVacationAllowanceRelations = relations(
 	employeeVacationAllowance,
@@ -2178,219 +2382,258 @@ export const employeeVacationAllowanceRelations = relations(
 	}),
 );
 
-export const vacationAdjustmentRelations = relations(vacationAdjustment, ({ one }) => ({
-	employee: one(employee, {
-		fields: [vacationAdjustment.employeeId],
-		references: [employee.id],
+export const vacationAdjustmentRelations = relations(
+	vacationAdjustment,
+	({ one }) => ({
+		employee: one(employee, {
+			fields: [vacationAdjustment.employeeId],
+			references: [employee.id],
+		}),
+		adjuster: one(employee, {
+			fields: [vacationAdjustment.adjustedBy],
+			references: [employee.id],
+		}),
 	}),
-	adjuster: one(employee, {
-		fields: [vacationAdjustment.adjustedBy],
-		references: [employee.id],
-	}),
-}));
+);
 
 // Vacation policy assignment relations
-export const vacationPolicyAssignmentRelations = relations(vacationPolicyAssignment, ({ one }) => ({
-	policy: one(vacationAllowance, {
-		fields: [vacationPolicyAssignment.policyId],
-		references: [vacationAllowance.id],
+export const vacationPolicyAssignmentRelations = relations(
+	vacationPolicyAssignment,
+	({ one }) => ({
+		policy: one(vacationAllowance, {
+			fields: [vacationPolicyAssignment.policyId],
+			references: [vacationAllowance.id],
+		}),
+		organization: one(organization, {
+			fields: [vacationPolicyAssignment.organizationId],
+			references: [organization.id],
+		}),
+		team: one(team, {
+			fields: [vacationPolicyAssignment.teamId],
+			references: [team.id],
+		}),
+		employee: one(employee, {
+			fields: [vacationPolicyAssignment.employeeId],
+			references: [employee.id],
+		}),
+		creator: one(user, {
+			fields: [vacationPolicyAssignment.createdBy],
+			references: [user.id],
+		}),
 	}),
-	organization: one(organization, {
-		fields: [vacationPolicyAssignment.organizationId],
-		references: [organization.id],
-	}),
-	team: one(team, {
-		fields: [vacationPolicyAssignment.teamId],
-		references: [team.id],
-	}),
-	employee: one(employee, {
-		fields: [vacationPolicyAssignment.employeeId],
-		references: [employee.id],
-	}),
-	creator: one(user, {
-		fields: [vacationPolicyAssignment.createdBy],
-		references: [user.id],
-	}),
-}));
+);
 
 // Time regulation relations
-export const timeRegulationRelations = relations(timeRegulation, ({ one, many }) => ({
-	organization: one(organization, {
-		fields: [timeRegulation.organizationId],
-		references: [organization.id],
+export const timeRegulationRelations = relations(
+	timeRegulation,
+	({ one, many }) => ({
+		organization: one(organization, {
+			fields: [timeRegulation.organizationId],
+			references: [organization.id],
+		}),
+		breakRules: many(timeRegulationBreakRule),
+		assignments: many(timeRegulationAssignment),
+		violations: many(timeRegulationViolation),
+		creator: one(user, {
+			fields: [timeRegulation.createdBy],
+			references: [user.id],
+		}),
+		updater: one(user, {
+			fields: [timeRegulation.updatedBy],
+			references: [user.id],
+		}),
 	}),
-	breakRules: many(timeRegulationBreakRule),
-	assignments: many(timeRegulationAssignment),
-	violations: many(timeRegulationViolation),
-	creator: one(user, {
-		fields: [timeRegulation.createdBy],
-		references: [user.id],
-	}),
-	updater: one(user, {
-		fields: [timeRegulation.updatedBy],
-		references: [user.id],
-	}),
-}));
+);
 
-export const timeRegulationBreakRuleRelations = relations(timeRegulationBreakRule, ({ one, many }) => ({
-	regulation: one(timeRegulation, {
-		fields: [timeRegulationBreakRule.regulationId],
-		references: [timeRegulation.id],
+export const timeRegulationBreakRuleRelations = relations(
+	timeRegulationBreakRule,
+	({ one, many }) => ({
+		regulation: one(timeRegulation, {
+			fields: [timeRegulationBreakRule.regulationId],
+			references: [timeRegulation.id],
+		}),
+		options: many(timeRegulationBreakOption),
 	}),
-	options: many(timeRegulationBreakOption),
-}));
+);
 
-export const timeRegulationBreakOptionRelations = relations(timeRegulationBreakOption, ({ one }) => ({
-	breakRule: one(timeRegulationBreakRule, {
-		fields: [timeRegulationBreakOption.breakRuleId],
-		references: [timeRegulationBreakRule.id],
+export const timeRegulationBreakOptionRelations = relations(
+	timeRegulationBreakOption,
+	({ one }) => ({
+		breakRule: one(timeRegulationBreakRule, {
+			fields: [timeRegulationBreakOption.breakRuleId],
+			references: [timeRegulationBreakRule.id],
+		}),
 	}),
-}));
+);
 
-export const timeRegulationAssignmentRelations = relations(timeRegulationAssignment, ({ one }) => ({
-	regulation: one(timeRegulation, {
-		fields: [timeRegulationAssignment.regulationId],
-		references: [timeRegulation.id],
+export const timeRegulationAssignmentRelations = relations(
+	timeRegulationAssignment,
+	({ one }) => ({
+		regulation: one(timeRegulation, {
+			fields: [timeRegulationAssignment.regulationId],
+			references: [timeRegulation.id],
+		}),
+		organization: one(organization, {
+			fields: [timeRegulationAssignment.organizationId],
+			references: [organization.id],
+		}),
+		team: one(team, {
+			fields: [timeRegulationAssignment.teamId],
+			references: [team.id],
+		}),
+		employee: one(employee, {
+			fields: [timeRegulationAssignment.employeeId],
+			references: [employee.id],
+		}),
+		creator: one(user, {
+			fields: [timeRegulationAssignment.createdBy],
+			references: [user.id],
+		}),
 	}),
-	organization: one(organization, {
-		fields: [timeRegulationAssignment.organizationId],
-		references: [organization.id],
-	}),
-	team: one(team, {
-		fields: [timeRegulationAssignment.teamId],
-		references: [team.id],
-	}),
-	employee: one(employee, {
-		fields: [timeRegulationAssignment.employeeId],
-		references: [employee.id],
-	}),
-	creator: one(user, {
-		fields: [timeRegulationAssignment.createdBy],
-		references: [user.id],
-	}),
-}));
+);
 
-export const timeRegulationViolationRelations = relations(timeRegulationViolation, ({ one }) => ({
-	employee: one(employee, {
-		fields: [timeRegulationViolation.employeeId],
-		references: [employee.id],
+export const timeRegulationViolationRelations = relations(
+	timeRegulationViolation,
+	({ one }) => ({
+		employee: one(employee, {
+			fields: [timeRegulationViolation.employeeId],
+			references: [employee.id],
+		}),
+		organization: one(organization, {
+			fields: [timeRegulationViolation.organizationId],
+			references: [organization.id],
+		}),
+		regulation: one(timeRegulation, {
+			fields: [timeRegulationViolation.regulationId],
+			references: [timeRegulation.id],
+		}),
+		workPeriod: one(workPeriod, {
+			fields: [timeRegulationViolation.workPeriodId],
+			references: [workPeriod.id],
+		}),
+		acknowledger: one(employee, {
+			fields: [timeRegulationViolation.acknowledgedBy],
+			references: [employee.id],
+		}),
 	}),
-	organization: one(organization, {
-		fields: [timeRegulationViolation.organizationId],
-		references: [organization.id],
-	}),
-	regulation: one(timeRegulation, {
-		fields: [timeRegulationViolation.regulationId],
-		references: [timeRegulation.id],
-	}),
-	workPeriod: one(workPeriod, {
-		fields: [timeRegulationViolation.workPeriodId],
-		references: [workPeriod.id],
-	}),
-	acknowledger: one(employee, {
-		fields: [timeRegulationViolation.acknowledgedBy],
-		references: [employee.id],
-	}),
-}));
+);
 
 // Employee managers relations
-export const employeeManagersRelations = relations(employeeManagers, ({ one }) => ({
-	employee: one(employee, {
-		fields: [employeeManagers.employeeId],
-		references: [employee.id],
-		relationName: "employee_managers",
+export const employeeManagersRelations = relations(
+	employeeManagers,
+	({ one }) => ({
+		employee: one(employee, {
+			fields: [employeeManagers.employeeId],
+			references: [employee.id],
+			relationName: "employee_managers",
+		}),
+		manager: one(employee, {
+			fields: [employeeManagers.managerId],
+			references: [employee.id],
+			relationName: "manager_employees",
+		}),
+		assigner: one(user, {
+			fields: [employeeManagers.assignedBy],
+			references: [user.id],
+		}),
 	}),
-	manager: one(employee, {
-		fields: [employeeManagers.managerId],
-		references: [employee.id],
-		relationName: "manager_employees",
-	}),
-	assigner: one(user, {
-		fields: [employeeManagers.assignedBy],
-		references: [user.id],
-	}),
-}));
+);
 
 // Team permissions relations
-export const teamPermissionsRelations = relations(teamPermissions, ({ one }) => ({
-	employee: one(employee, {
-		fields: [teamPermissions.employeeId],
-		references: [employee.id],
+export const teamPermissionsRelations = relations(
+	teamPermissions,
+	({ one }) => ({
+		employee: one(employee, {
+			fields: [teamPermissions.employeeId],
+			references: [employee.id],
+		}),
+		organization: one(organization, {
+			fields: [teamPermissions.organizationId],
+			references: [organization.id],
+		}),
+		team: one(team, {
+			fields: [teamPermissions.teamId],
+			references: [team.id],
+		}),
+		grantor: one(employee, {
+			fields: [teamPermissions.grantedBy],
+			references: [employee.id],
+		}),
 	}),
-	organization: one(organization, {
-		fields: [teamPermissions.organizationId],
-		references: [organization.id],
-	}),
-	team: one(team, {
-		fields: [teamPermissions.teamId],
-		references: [team.id],
-	}),
-	grantor: one(employee, {
-		fields: [teamPermissions.grantedBy],
-		references: [employee.id],
-	}),
-}));
+);
 
 // Work schedule template relations
-export const workScheduleTemplateRelations = relations(workScheduleTemplate, ({ one, many }) => ({
-	organization: one(organization, {
-		fields: [workScheduleTemplate.organizationId],
-		references: [organization.id],
+export const workScheduleTemplateRelations = relations(
+	workScheduleTemplate,
+	({ one, many }) => ({
+		organization: one(organization, {
+			fields: [workScheduleTemplate.organizationId],
+			references: [organization.id],
+		}),
+		days: many(workScheduleTemplateDays),
+		assignments: many(workScheduleAssignment),
+		creator: one(user, {
+			fields: [workScheduleTemplate.createdBy],
+			references: [user.id],
+		}),
+		updater: one(user, {
+			fields: [workScheduleTemplate.updatedBy],
+			references: [user.id],
+		}),
 	}),
-	days: many(workScheduleTemplateDays),
-	assignments: many(workScheduleAssignment),
-	creator: one(user, {
-		fields: [workScheduleTemplate.createdBy],
-		references: [user.id],
-	}),
-	updater: one(user, {
-		fields: [workScheduleTemplate.updatedBy],
-		references: [user.id],
-	}),
-}));
+);
 
-export const workScheduleTemplateDaysRelations = relations(workScheduleTemplateDays, ({ one }) => ({
-	template: one(workScheduleTemplate, {
-		fields: [workScheduleTemplateDays.templateId],
-		references: [workScheduleTemplate.id],
+export const workScheduleTemplateDaysRelations = relations(
+	workScheduleTemplateDays,
+	({ one }) => ({
+		template: one(workScheduleTemplate, {
+			fields: [workScheduleTemplateDays.templateId],
+			references: [workScheduleTemplate.id],
+		}),
 	}),
-}));
+);
 
-export const workScheduleAssignmentRelations = relations(workScheduleAssignment, ({ one }) => ({
-	template: one(workScheduleTemplate, {
-		fields: [workScheduleAssignment.templateId],
-		references: [workScheduleTemplate.id],
+export const workScheduleAssignmentRelations = relations(
+	workScheduleAssignment,
+	({ one }) => ({
+		template: one(workScheduleTemplate, {
+			fields: [workScheduleAssignment.templateId],
+			references: [workScheduleTemplate.id],
+		}),
+		organization: one(organization, {
+			fields: [workScheduleAssignment.organizationId],
+			references: [organization.id],
+		}),
+		team: one(team, {
+			fields: [workScheduleAssignment.teamId],
+			references: [team.id],
+		}),
+		employee: one(employee, {
+			fields: [workScheduleAssignment.employeeId],
+			references: [employee.id],
+		}),
+		creator: one(user, {
+			fields: [workScheduleAssignment.createdBy],
+			references: [user.id],
+		}),
 	}),
-	organization: one(organization, {
-		fields: [workScheduleAssignment.organizationId],
-		references: [organization.id],
-	}),
-	team: one(team, {
-		fields: [workScheduleAssignment.teamId],
-		references: [team.id],
-	}),
-	employee: one(employee, {
-		fields: [workScheduleAssignment.employeeId],
-		references: [employee.id],
-	}),
-	creator: one(user, {
-		fields: [workScheduleAssignment.createdBy],
-		references: [user.id],
-	}),
-}));
+);
 
 // Shift scheduling relations
-export const shiftTemplateRelations = relations(shiftTemplate, ({ one, many }) => ({
-	organization: one(organization, {
-		fields: [shiftTemplate.organizationId],
-		references: [organization.id],
+export const shiftTemplateRelations = relations(
+	shiftTemplate,
+	({ one, many }) => ({
+		organization: one(organization, {
+			fields: [shiftTemplate.organizationId],
+			references: [organization.id],
+		}),
+		shifts: many(shift),
+		creator: one(user, {
+			fields: [shiftTemplate.createdBy],
+			references: [user.id],
+		}),
 	}),
-	shifts: many(shift),
-	creator: one(user, {
-		fields: [shiftTemplate.createdBy],
-		references: [user.id],
-	}),
-}));
+);
 
 export const shiftRelations = relations(shift, ({ one, many }) => ({
 	organization: one(organization, {
@@ -2473,35 +2716,41 @@ export const projectManagerRelations = relations(projectManager, ({ one }) => ({
 	}),
 }));
 
-export const projectAssignmentRelations = relations(projectAssignment, ({ one }) => ({
-	project: one(project, {
-		fields: [projectAssignment.projectId],
-		references: [project.id],
+export const projectAssignmentRelations = relations(
+	projectAssignment,
+	({ one }) => ({
+		project: one(project, {
+			fields: [projectAssignment.projectId],
+			references: [project.id],
+		}),
+		organization: one(organization, {
+			fields: [projectAssignment.organizationId],
+			references: [organization.id],
+		}),
+		team: one(team, {
+			fields: [projectAssignment.teamId],
+			references: [team.id],
+		}),
+		employee: one(employee, {
+			fields: [projectAssignment.employeeId],
+			references: [employee.id],
+		}),
+		creator: one(user, {
+			fields: [projectAssignment.createdBy],
+			references: [user.id],
+		}),
 	}),
-	organization: one(organization, {
-		fields: [projectAssignment.organizationId],
-		references: [organization.id],
-	}),
-	team: one(team, {
-		fields: [projectAssignment.teamId],
-		references: [team.id],
-	}),
-	employee: one(employee, {
-		fields: [projectAssignment.employeeId],
-		references: [employee.id],
-	}),
-	creator: one(user, {
-		fields: [projectAssignment.createdBy],
-		references: [user.id],
-	}),
-}));
+);
 
-export const projectNotificationStateRelations = relations(projectNotificationState, ({ one }) => ({
-	project: one(project, {
-		fields: [projectNotificationState.projectId],
-		references: [project.id],
+export const projectNotificationStateRelations = relations(
+	projectNotificationState,
+	({ one }) => ({
+		project: one(project, {
+			fields: [projectNotificationState.projectId],
+			references: [project.id],
+		}),
 	}),
-}));
+);
 
 // Notification relations
 export const notificationRelations = relations(notification, ({ one }) => ({
@@ -2515,23 +2764,29 @@ export const notificationRelations = relations(notification, ({ one }) => ({
 	}),
 }));
 
-export const notificationPreferenceRelations = relations(notificationPreference, ({ one }) => ({
-	user: one(user, {
-		fields: [notificationPreference.userId],
-		references: [user.id],
+export const notificationPreferenceRelations = relations(
+	notificationPreference,
+	({ one }) => ({
+		user: one(user, {
+			fields: [notificationPreference.userId],
+			references: [user.id],
+		}),
+		organization: one(organization, {
+			fields: [notificationPreference.organizationId],
+			references: [organization.id],
+		}),
 	}),
-	organization: one(organization, {
-		fields: [notificationPreference.organizationId],
-		references: [organization.id],
-	}),
-}));
+);
 
-export const pushSubscriptionRelations = relations(pushSubscription, ({ one }) => ({
-	user: one(user, {
-		fields: [pushSubscription.userId],
-		references: [user.id],
+export const pushSubscriptionRelations = relations(
+	pushSubscription,
+	({ one }) => ({
+		user: one(user, {
+			fields: [pushSubscription.userId],
+			references: [user.id],
+		}),
 	}),
-}));
+);
 
 // ============================================
 // ENTERPRISE: CUSTOM DOMAINS
@@ -2627,23 +2882,31 @@ export const organizationBranding = pgTable(
 			.$onUpdate(() => currentTimestamp())
 			.notNull(),
 	},
-	(table) => [index("organizationBranding_organizationId_idx").on(table.organizationId)],
+	(table) => [
+		index("organizationBranding_organizationId_idx").on(table.organizationId),
+	],
 );
 
 // Enterprise relations
-export const organizationDomainRelations = relations(organizationDomain, ({ one }) => ({
-	organization: one(organization, {
-		fields: [organizationDomain.organizationId],
-		references: [organization.id],
+export const organizationDomainRelations = relations(
+	organizationDomain,
+	({ one }) => ({
+		organization: one(organization, {
+			fields: [organizationDomain.organizationId],
+			references: [organization.id],
+		}),
 	}),
-}));
+);
 
-export const organizationBrandingRelations = relations(organizationBranding, ({ one }) => ({
-	organization: one(organization, {
-		fields: [organizationBranding.organizationId],
-		references: [organization.id],
+export const organizationBrandingRelations = relations(
+	organizationBranding,
+	({ one }) => ({
+		organization: one(organization, {
+			fields: [organizationBranding.organizationId],
+			references: [organization.id],
+		}),
 	}),
-}));
+);
 
 // ============================================
 // DATA EXPORT
@@ -2733,39 +2996,47 @@ export const exportStorageConfig = pgTable(
 			.notNull()
 			.references(() => user.id),
 	},
-	(table) => [index("exportStorageConfig_organizationId_idx").on(table.organizationId)],
+	(table) => [
+		index("exportStorageConfig_organizationId_idx").on(table.organizationId),
+	],
 );
 
-export const exportStorageConfigRelations = relations(exportStorageConfig, ({ one }) => ({
-	organization: one(organization, {
-		fields: [exportStorageConfig.organizationId],
-		references: [organization.id],
+export const exportStorageConfigRelations = relations(
+	exportStorageConfig,
+	({ one }) => ({
+		organization: one(organization, {
+			fields: [exportStorageConfig.organizationId],
+			references: [organization.id],
+		}),
 	}),
-}));
+);
 
 // ============================================
 // SURCHARGE RELATIONS
 // ============================================
 
-export const surchargeModelRelations = relations(surchargeModel, ({ one, many }) => ({
-	organization: one(organization, {
-		fields: [surchargeModel.organizationId],
-		references: [organization.id],
+export const surchargeModelRelations = relations(
+	surchargeModel,
+	({ one, many }) => ({
+		organization: one(organization, {
+			fields: [surchargeModel.organizationId],
+			references: [organization.id],
+		}),
+		rules: many(surchargeRule),
+		assignments: many(surchargeModelAssignment),
+		calculations: many(surchargeCalculation),
+		creator: one(user, {
+			fields: [surchargeModel.createdBy],
+			references: [user.id],
+			relationName: "surcharge_model_creator",
+		}),
+		updater: one(user, {
+			fields: [surchargeModel.updatedBy],
+			references: [user.id],
+			relationName: "surcharge_model_updater",
+		}),
 	}),
-	rules: many(surchargeRule),
-	assignments: many(surchargeModelAssignment),
-	calculations: many(surchargeCalculation),
-	creator: one(user, {
-		fields: [surchargeModel.createdBy],
-		references: [user.id],
-		relationName: "surcharge_model_creator",
-	}),
-	updater: one(user, {
-		fields: [surchargeModel.updatedBy],
-		references: [user.id],
-		relationName: "surcharge_model_updater",
-	}),
-}));
+);
 
 export const surchargeRuleRelations = relations(surchargeRule, ({ one }) => ({
 	model: one(surchargeModel, {
@@ -2778,48 +3049,69 @@ export const surchargeRuleRelations = relations(surchargeRule, ({ one }) => ({
 	}),
 }));
 
-export const surchargeModelAssignmentRelations = relations(surchargeModelAssignment, ({ one }) => ({
-	model: one(surchargeModel, {
-		fields: [surchargeModelAssignment.modelId],
-		references: [surchargeModel.id],
+export const surchargeModelAssignmentRelations = relations(
+	surchargeModelAssignment,
+	({ one }) => ({
+		model: one(surchargeModel, {
+			fields: [surchargeModelAssignment.modelId],
+			references: [surchargeModel.id],
+		}),
+		organization: one(organization, {
+			fields: [surchargeModelAssignment.organizationId],
+			references: [organization.id],
+		}),
+		team: one(team, {
+			fields: [surchargeModelAssignment.teamId],
+			references: [team.id],
+		}),
+		employee: one(employee, {
+			fields: [surchargeModelAssignment.employeeId],
+			references: [employee.id],
+		}),
+		creator: one(user, {
+			fields: [surchargeModelAssignment.createdBy],
+			references: [user.id],
+		}),
 	}),
-	organization: one(organization, {
-		fields: [surchargeModelAssignment.organizationId],
-		references: [organization.id],
-	}),
-	team: one(team, {
-		fields: [surchargeModelAssignment.teamId],
-		references: [team.id],
-	}),
-	employee: one(employee, {
-		fields: [surchargeModelAssignment.employeeId],
-		references: [employee.id],
-	}),
-	creator: one(user, {
-		fields: [surchargeModelAssignment.createdBy],
-		references: [user.id],
-	}),
-}));
+);
 
-export const surchargeCalculationRelations = relations(surchargeCalculation, ({ one }) => ({
-	employee: one(employee, {
-		fields: [surchargeCalculation.employeeId],
-		references: [employee.id],
+export const surchargeCalculationRelations = relations(
+	surchargeCalculation,
+	({ one }) => ({
+		employee: one(employee, {
+			fields: [surchargeCalculation.employeeId],
+			references: [employee.id],
+		}),
+		organization: one(organization, {
+			fields: [surchargeCalculation.organizationId],
+			references: [organization.id],
+		}),
+		workPeriod: one(workPeriod, {
+			fields: [surchargeCalculation.workPeriodId],
+			references: [workPeriod.id],
+		}),
+		rule: one(surchargeRule, {
+			fields: [surchargeCalculation.surchargeRuleId],
+			references: [surchargeRule.id],
+		}),
+		model: one(surchargeModel, {
+			fields: [surchargeCalculation.surchargeModelId],
+			references: [surchargeModel.id],
+		}),
 	}),
-	organization: one(organization, {
-		fields: [surchargeCalculation.organizationId],
-		references: [organization.id],
-	}),
-	workPeriod: one(workPeriod, {
-		fields: [surchargeCalculation.workPeriodId],
-		references: [workPeriod.id],
-	}),
-	rule: one(surchargeRule, {
-		fields: [surchargeCalculation.surchargeRuleId],
-		references: [surchargeRule.id],
-	}),
-	model: one(surchargeModel, {
-		fields: [surchargeCalculation.surchargeModelId],
-		references: [surchargeModel.id],
-	}),
-}));
+);
+
+// ============================================
+// SYSTEM CONFIGURATION
+// ============================================
+
+// Global system-wide configuration (deployment ID, etc)
+export const systemConfig = pgTable("system_config", {
+	key: text("key").primaryKey().notNull(),
+	value: text("value").notNull(),
+	description: text("description"),
+	createdAt: timestamp("created_at").defaultNow().notNull(),
+	updatedAt: timestamp("updated_at")
+		.$onUpdate(() => currentTimestamp())
+		.notNull(),
+});
