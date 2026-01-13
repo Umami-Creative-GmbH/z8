@@ -448,8 +448,8 @@ export async function accrueVacationDays(
 		}
 
 		// Handle proration for new employees
-		if (emp.hireDate) {
-			const hireDate = DateTime.fromJSDate(emp.hireDate);
+		if (emp.startDate) {
+			const hireDate = DateTime.fromJSDate(emp.startDate);
 			const accrualMonth = DateTime.utc(year, month, 1);
 
 			// If hired after this month, no accrual
