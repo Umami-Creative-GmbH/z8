@@ -5,6 +5,7 @@
  */
 
 import { and, asc, desc, eq, gte, isNull, lte, or, sql } from "drizzle-orm";
+import { cacheLife, cacheTag } from "next/cache";
 import { db } from "@/db";
 import {
 	absenceCategory,
@@ -88,6 +89,10 @@ export interface PendingVacationRequest {
 export async function getAllVacationPolicies(
 	organizationId: string,
 ): Promise<VacationAllowanceRecord[]> {
+	"use cache";
+	cacheLife("hours");
+	cacheTag(`vacation-policy:${organizationId}`);
+
 	const results = await db.query.vacationAllowance.findMany({
 		where: and(
 			eq(vacationAllowance.organizationId, organizationId),
@@ -107,6 +112,10 @@ export async function getCompanyDefaultPolicy(
 	organizationId: string,
 	asOfDate: string = new Date().toISOString().split("T")[0],
 ): Promise<VacationAllowanceRecord | null> {
+	"use cache";
+	cacheLife("hours");
+	cacheTag(`vacation-policy:${organizationId}`);
+
 	const result = await db.query.vacationAllowance.findFirst({
 		where: and(
 			eq(vacationAllowance.organizationId, organizationId),
@@ -171,6 +180,10 @@ export async function getPoliciesInDateRange(
 	startDate: string, // YYYY-MM-DD
 	endDate: string, // YYYY-MM-DD
 ): Promise<VacationAllowanceRecord[]> {
+	"use cache";
+	cacheLife("hours");
+	cacheTag(`vacation-policy:${organizationId}`);
+
 	const results = await db.query.vacationAllowance.findMany({
 		where: and(
 			eq(vacationAllowance.organizationId, organizationId),

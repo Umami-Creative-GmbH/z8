@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { AbsencesViewContainer } from "@/components/absences/absences-view-container";
@@ -16,6 +17,7 @@ import {
 } from "./actions";
 
 export default async function AbsencesPage() {
+	await connection(); // Mark as fully dynamic for cacheComponents mode
 	const t = await getTranslate();
 	const session = await auth.api.getSession({ headers: await headers() });
 	if (!session?.user) {

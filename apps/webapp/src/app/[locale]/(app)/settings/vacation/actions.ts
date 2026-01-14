@@ -2,6 +2,7 @@
 
 import { and, desc, eq } from "drizzle-orm";
 import { Effect } from "effect";
+import { revalidateTag } from "next/cache";
 import { headers } from "next/headers";
 import { db } from "@/db";
 import { member } from "@/db/auth-schema";
@@ -12,6 +13,7 @@ import {
 	vacationAllowance,
 } from "@/db/schema";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
+import { CACHE_TAGS } from "@/lib/cache/tags";
 import { auth } from "@/lib/auth";
 import { isManagerOf } from "@/lib/auth-helpers";
 import {
@@ -296,6 +298,8 @@ export async function createVacationPolicy(data: {
 			),
 		);
 
+		revalidateTag(CACHE_TAGS.VACATION_POLICY(data.organizationId), "max");
+
 		return policy;
 	}).pipe(Effect.provide(AppLayer));
 
@@ -417,6 +421,8 @@ export async function updateVacationPolicy(
 					}),
 			),
 		);
+
+		revalidateTag(CACHE_TAGS.VACATION_POLICY(policy.organizationId), "max");
 
 		return updated;
 	}).pipe(Effect.provide(AppLayer));
@@ -1009,6 +1015,8 @@ export async function deleteVacationPolicy(policyId: string): Promise<ServerActi
 					}),
 			),
 		);
+
+		revalidateTag(CACHE_TAGS.VACATION_POLICY(policy.organizationId), "max");
 	}).pipe(Effect.provide(AppLayer));
 
 	return runServerActionSafe(effect);
