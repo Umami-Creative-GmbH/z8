@@ -224,7 +224,7 @@ export async function isManagerOf(targetEmployeeId: string): Promise<boolean> {
 	// Check manager relationship using ManagerService
 	const effect = Effect.gen(function* (_) {
 		const managerService = yield* _(ManagerService);
-		return yield* _(managerService.isManagerOf(context.employee?.id, targetEmployeeId));
+		return yield* _(managerService.isManagerOf(context.employee!.id, targetEmployeeId));
 	});
 
 	try {
@@ -286,7 +286,7 @@ export async function getOnboardingStatus(): Promise<OnboardingStatus | null> {
 	}
 
 	return {
-		onboardingComplete: userData.onboardingComplete,
+		onboardingComplete: userData.onboardingComplete ?? false,
 		onboardingStep: userData.onboardingStep,
 	};
 }

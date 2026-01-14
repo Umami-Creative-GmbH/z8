@@ -68,8 +68,7 @@ export async function getOrCreateDeploymentId(): Promise<string> {
 			.values({
 				key: "deployment_id",
 				value: newId,
-				description:
-					"Unique identifier for this deployment, used for telemetry reporting",
+				description: "Unique identifier for this deployment, used for telemetry reporting",
 			})
 			.onConflictDoUpdate({
 				target: systemConfig.key,
@@ -94,25 +93,21 @@ export async function calculateTelemetryMetrics(): Promise<TelemetryMetrics> {
 		const now = new Date();
 		const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
-		const [activeUsersResult, orgsResult, employeesResult, newSessionsResult] =
-			await Promise.all([
-				db
-					.select({ count: count() })
-					.from(authSchema.session)
-					.where(gte(authSchema.session.updatedAt, twentyFourHoursAgo)),
+		const [activeUsersResult, orgsResult, employeesResult, newSessionsResult] = await Promise.all([
+			db
+				.select({ count: count() })
+				.from(authSchema.session)
+				.where(gte(authSchema.session.updatedAt, twentyFourHoursAgo)),
 
-				db.select({ count: count() }).from(authSchema.organization),
+			db.select({ count: count() }).from(authSchema.organization),
 
-				db
-					.select({ count: count() })
-					.from(employee)
-					.where(eq(employee.isActive, true)),
+			db.select({ count: count() }).from(employee).where(eq(employee.isActive, true)),
 
-				db
-					.select({ count: count() })
-					.from(authSchema.session)
-					.where(gte(authSchema.session.createdAt, twentyFourHoursAgo)),
-			]);
+			db
+				.select({ count: count() })
+				.from(authSchema.session)
+				.where(gte(authSchema.session.createdAt, twentyFourHoursAgo)),
+		]);
 
 		const activeUsers24h = activeUsersResult[0]?.count || 0;
 		const totalOrganizations = orgsResult[0]?.count || 0;
@@ -169,13 +164,8 @@ export async function sendTelemetryReport(
 				return true;
 			},
 			catch: (error) => {
-				if (
-					error instanceof TypeError &&
-					error.message.includes("fetch failed")
-				) {
-					return new TelemetryNetworkError(
-						"Failed to connect to telemetry server",
-					);
+				if (error instanceof TypeError && error.message.includes("fetch failed")) {
+					return new TelemetryNetworkError("Failed to connect to telemetry server");
 				}
 				if (error instanceof Error && error.name === "AbortError") {
 					return new TelemetryTimeoutError("Telemetry request timeout");
@@ -183,12 +173,7 @@ export async function sendTelemetryReport(
 				return new TelemetryNetworkError("Failed to send telemetry");
 			},
 		}),
-		Effect.retry(
-			pipe(
-				Schedule.exponential("1 second"),
-				Schedule.compose(Schedule.recurs(2)),
-			),
-		),
+		Effect.retry(pipe(Schedule.exponential("1 second"), Schedule.compose(Schedule.recurs(2)))),
 		Effect.tap(() =>
 			Effect.sync(() => {
 				logger.info({ deploymentId }, "Telemetry sent successfully");
