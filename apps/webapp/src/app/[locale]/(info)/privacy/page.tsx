@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { notFound } from "next/navigation";
 import { InfoContent } from "@/components/info-content";
@@ -9,27 +9,22 @@ type Props = {
 	params: Promise<{ locale: string }>;
 };
 
-// Cache the content fetching function using "use cache" directive
-async function getPrivacyContent(locale: string): Promise<string> {
-	"use cache";
+// Read at module load time (build time) - fully static
+function getPrivacyContent(locale: string): string {
+	const basePath = join(process.cwd(), "src", "data", "info");
 	try {
-		const filePath = join(process.cwd(), "public", "info", `privacy.${locale}.md`);
-		const content = await readFile(filePath, "utf-8");
-		return content;
+		return readFileSync(join(basePath, `privacy.${locale}.md`), "utf-8");
 	} catch {
-		// Fallback to English if locale file doesn't exist
-		if (locale !== "en") {
-			try {
-				const filePath = join(process.cwd(), "public", "info", "privacy.en.md");
-				const content = await readFile(filePath, "utf-8");
-				return content;
-			} catch {
-				throw new Error("Privacy content not found");
-			}
-		}
-		throw new Error("Privacy content not found");
+		// Fallback to English
+		return readFileSync(join(basePath, "privacy.en.md"), "utf-8");
 	}
 }
+
+// Pre-load content at build time
+const privacyContent = {
+	de: getPrivacyContent("de"),
+	en: getPrivacyContent("en"),
+} as const;
 
 export default async function PrivacyPage({ params }: Props) {
 	const { locale } = await params;
@@ -38,7 +33,7 @@ export default async function PrivacyPage({ params }: Props) {
 		notFound();
 	}
 
-	const content = await getPrivacyContent(locale);
+	const content = privacyContent[locale as keyof typeof privacyContent] ?? privacyContent.en;
 
 	return (
 		<div className="flex h-full flex-col">
