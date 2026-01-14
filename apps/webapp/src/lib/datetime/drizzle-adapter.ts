@@ -57,8 +57,9 @@ export function mapRecordFromDB<T extends Record<string, any>>(
 ): T {
 	const result = { ...record };
 	for (const field of dateFields) {
-		if (record[field] instanceof Date) {
-			result[field] = dateFromDB(record[field]) as any;
+		const value = record[field] as unknown;
+		if (value instanceof Date) {
+			result[field] = dateFromDB(value) as any;
 		}
 	}
 	return result;

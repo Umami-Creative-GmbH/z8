@@ -106,9 +106,10 @@ export function useEmployee(options: UseEmployeeOptions) {
 				return [];
 			}
 
-			const allManagers = [...(adminsResult.data || []), ...(managersResult.data || [])].filter(
-				(m) => m.id !== employeeId,
-			);
+			const allManagers = [
+				...(adminsResult.data?.employees || []),
+				...(managersResult.data?.employees || []),
+			].filter((m) => m.id !== employeeId);
 
 			return allManagers;
 		},

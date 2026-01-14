@@ -292,9 +292,10 @@ export async function markAllAsRead(userId: string, organizationId: string): Pro
 					eq(notification.organizationId, organizationId),
 					eq(notification.isRead, false),
 				),
-			);
+			)
+			.returning({ id: notification.id });
 
-		const updatedCount = result.rowCount ?? 0;
+		const updatedCount = result.length;
 		logger.info({ userId, updatedCount }, "All notifications marked as read");
 
 		return updatedCount;
@@ -311,9 +312,10 @@ export async function deleteNotification(notificationId: string, userId: string)
 	try {
 		const result = await db
 			.delete(notification)
-			.where(and(eq(notification.id, notificationId), eq(notification.userId, userId)));
+			.where(and(eq(notification.id, notificationId), eq(notification.userId, userId)))
+			.returning({ id: notification.id });
 
-		const deleted = (result.rowCount ?? 0) > 0;
+		const deleted = result.length > 0;
 		if (deleted) {
 			logger.debug({ notificationId }, "Notification deleted");
 		}
@@ -328,13 +330,17 @@ export async function deleteNotification(notificationId: string, userId: string)
 /**
  * Delete all notifications for a user
  */
-export async function deleteAllNotifications(userId: string, organizationId: string): Promise<number> {
+export async function deleteAllNotifications(
+	userId: string,
+	organizationId: string,
+): Promise<number> {
 	try {
 		const result = await db
 			.delete(notification)
-			.where(and(eq(notification.userId, userId), eq(notification.organizationId, organizationId)));
+			.where(and(eq(notification.userId, userId), eq(notification.organizationId, organizationId)))
+			.returning({ id: notification.id });
 
-		const deletedCount = result.rowCount ?? 0;
+		const deletedCount = result.length;
 		logger.info({ userId, deletedCount }, "All notifications deleted");
 
 		return deletedCount;
@@ -354,9 +360,10 @@ export async function deleteOldNotifications(olderThanDays: number = 90): Promis
 
 		const result = await db
 			.delete(notification)
-			.where(sql`${notification.createdAt} < ${cutoffDate}`);
+			.where(sql`${notification.createdAt} < ${cutoffDate}`)
+			.returning({ id: notification.id });
 
-		const deletedCount = result.rowCount ?? 0;
+		const deletedCount = result.length;
 		logger.info({ deletedCount, olderThanDays }, "Old notifications cleaned up");
 
 		return deletedCount;

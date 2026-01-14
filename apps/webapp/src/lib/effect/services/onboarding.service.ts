@@ -285,14 +285,16 @@ export const OnboardingServiceLive = Layer.effect(
 						if (emp) {
 							// Update existing employee record
 							await dbService.db.update(employee).set(profileData).where(eq(employee.id, emp.id));
-						} else {
-							// Create new employee record with organizationId if available
+						} else if (activeOrgId) {
+							// Create new employee record (only if we have an organization)
 							await dbService.db.insert(employee).values({
 								userId: session.user.id,
-								organizationId: activeOrgId || null,
+								organizationId: activeOrgId,
 								...profileData,
 							});
 						}
+						// If no existing employee and no active org, skip employee creation
+						// The employee will be created when they join an organization
 
 						// Update onboarding step
 						await dbService.db
@@ -490,6 +492,7 @@ export const OnboardingServiceLive = Layer.effect(
 								stateCode: data.stateCode || null,
 								color: "#4F46E5",
 								isActive: true,
+								createdBy: session.user.id,
 							})
 							.returning();
 
@@ -500,6 +503,7 @@ export const OnboardingServiceLive = Layer.effect(
 								organizationId: activeOrgId,
 								assignmentType: "organization",
 								isActive: true,
+								createdBy: session.user.id,
 							});
 						}
 
@@ -551,6 +555,7 @@ export const OnboardingServiceLive = Layer.effect(
 								hoursPerCycle: data.hoursPerWeek.toString(),
 								homeOfficeDaysPerCycle: 0,
 								isActive: true,
+								createdBy: session.user.id,
 							})
 							.returning();
 
@@ -585,6 +590,7 @@ export const OnboardingServiceLive = Layer.effect(
 									assignmentType: "organization",
 									effectiveFrom: new Date(),
 									isActive: true,
+									createdBy: session.user.id,
 								});
 							}
 						}
@@ -616,40 +622,47 @@ export const OnboardingServiceLive = Layer.effect(
 
 					yield* dbService.query("configureNotifications", async () => {
 						// Save notification preferences
+						// Schema uses (type, channel, enabled) per row, not columns per channel
 						const notificationTypes = [
-							{ type: "approval_request", enabled: data.notifyApprovals },
-							{ type: "approval_approved", enabled: data.notifyStatusUpdates },
-							{ type: "approval_rejected", enabled: data.notifyStatusUpdates },
-							{ type: "team_member_added", enabled: data.notifyTeamChanges },
-							{ type: "team_member_removed", enabled: data.notifyTeamChanges },
-						] as const;
+							{ type: "approval_request_submitted" as const, enabled: data.notifyApprovals },
+							{ type: "approval_request_approved" as const, enabled: data.notifyStatusUpdates },
+							{ type: "approval_request_rejected" as const, enabled: data.notifyStatusUpdates },
+							{ type: "team_member_added" as const, enabled: data.notifyTeamChanges },
+							{ type: "team_member_removed" as const, enabled: data.notifyTeamChanges },
+						];
+
+						const channels = [
+							{ channel: "in_app" as const, isEnabled: true },
+							{ channel: "push" as const, isEnabled: data.enablePush },
+							{ channel: "email" as const, isEnabled: data.enableEmail },
+						];
 
 						for (const { type, enabled } of notificationTypes) {
-							// Upsert notification preferences
-							const existing = await dbService.db.query.notificationPreference.findFirst({
-								where: and(
-									eq(notificationPreference.userId, session.user.id),
-									eq(notificationPreference.notificationType, type),
-								),
-							});
-
-							if (existing) {
-								await dbService.db
-									.update(notificationPreference)
-									.set({
-										inAppEnabled: enabled,
-										pushEnabled: data.enablePush && enabled,
-										emailEnabled: data.enableEmail && enabled,
-									})
-									.where(eq(notificationPreference.id, existing.id));
-							} else {
-								await dbService.db.insert(notificationPreference).values({
-									userId: session.user.id,
-									notificationType: type,
-									inAppEnabled: enabled,
-									pushEnabled: data.enablePush && enabled,
-									emailEnabled: data.enableEmail && enabled,
+							for (const { channel, isEnabled } of channels) {
+								// Upsert notification preferences
+								const existing = await dbService.db.query.notificationPreference.findFirst({
+									where: and(
+										eq(notificationPreference.userId, session.user.id),
+										eq(notificationPreference.notificationType, type),
+										eq(notificationPreference.channel, channel),
+									),
 								});
+
+								if (existing) {
+									await dbService.db
+										.update(notificationPreference)
+										.set({
+											enabled: enabled && isEnabled,
+										})
+										.where(eq(notificationPreference.id, existing.id));
+								} else {
+									await dbService.db.insert(notificationPreference).values({
+										userId: session.user.id,
+										notificationType: type,
+										channel,
+										enabled: enabled && isEnabled,
+									});
+								}
 							}
 						}
 

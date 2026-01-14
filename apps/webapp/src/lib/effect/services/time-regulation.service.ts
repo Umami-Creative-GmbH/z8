@@ -3,10 +3,10 @@ import { Context, Effect, Layer } from "effect";
 import {
 	employee,
 	team,
-	timeRegulation,
+	type timeRegulation,
 	timeRegulationAssignment,
-	timeRegulationBreakOption,
-	timeRegulationBreakRule,
+	type timeRegulationBreakOption,
+	type timeRegulationBreakRule,
 	timeRegulationPreset,
 	timeRegulationViolation,
 	workPeriod,
@@ -37,7 +37,10 @@ function buildBreakOptionDescription(option: {
 	minimumSplitMinutes: number | null;
 	minimumLongestSplitMinutes: number | null;
 }): string {
-	if (option.splitCount === 1 || (option.splitCount === null && !option.minimumLongestSplitMinutes)) {
+	if (
+		option.splitCount === 1 ||
+		(option.splitCount === null && !option.minimumLongestSplitMinutes)
+	) {
 		return "Take entire break at once";
 	}
 	if (option.splitCount === null && option.minimumLongestSplitMinutes) {
@@ -181,7 +184,10 @@ export class TimeRegulationService extends Context.Tag("TimeRegulationService")<
 		/**
 		 * Get all available presets for import.
 		 */
-		readonly getPresets: () => Effect.Effect<(typeof timeRegulationPreset.$inferSelect)[], DatabaseError>;
+		readonly getPresets: () => Effect.Effect<
+			(typeof timeRegulationPreset.$inferSelect)[],
+			DatabaseError
+		>;
 
 		/**
 		 * Acknowledge a violation.
@@ -498,7 +504,11 @@ export const TimeRegulationServiceLive = Layer.effect(
 						});
 
 						if (orgAssignment?.regulation?.isActive) {
-							return mapToEffective(orgAssignment.regulation, "organization", "Organization Default");
+							return mapToEffective(
+								orgAssignment.regulation,
+								"organization",
+								"Organization Default",
+							);
 						}
 
 						return null;
@@ -528,7 +538,10 @@ export const TimeRegulationServiceLive = Layer.effect(
 					}
 
 					// Check max weekly
-					if (regulation.maxWeeklyMinutes && input.totalWeeklyMinutes > regulation.maxWeeklyMinutes) {
+					if (
+						regulation.maxWeeklyMinutes &&
+						input.totalWeeklyMinutes > regulation.maxWeeklyMinutes
+					) {
 						warnings.push({
 							type: "max_weekly",
 							message: `Weekly working time (${formatMinutes(input.totalWeeklyMinutes)}) exceeds limit (${formatMinutes(regulation.maxWeeklyMinutes)})`,

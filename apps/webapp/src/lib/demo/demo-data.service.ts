@@ -845,7 +845,10 @@ export async function generateDemoTeams(
  */
 const projectNameGenerators = [
 	() => `${faker.company.buzzAdjective()} ${faker.company.buzzNoun()}`,
-	() => `Project ${faker.word.adjective({ capitalize: true })}`,
+	() => {
+		const adj = faker.word.adjective();
+		return `Project ${adj.charAt(0).toUpperCase() + adj.slice(1)}`;
+	},
 	() => `${faker.hacker.verb()} ${faker.hacker.noun()}`,
 	() => `${faker.commerce.productAdjective()} ${faker.commerce.product()}`,
 ];
@@ -951,9 +954,7 @@ export async function generateDemoProjects(
 
 		// Generate optional deadline (50% chance, only for non-completed projects)
 		const hasDeadline = status !== "completed" && Math.random() < 0.5;
-		const deadline = hasDeadline
-			? faker.date.future({ years: 1 })
-			: null;
+		const deadline = hasDeadline ? faker.date.future({ years: 1 }) : null;
 
 		await db.insert(project).values({
 			organizationId: options.organizationId,
@@ -994,9 +995,7 @@ export async function generateDemoManagerAssignments(
 	const otherEmployees = await db.query.employee.findMany({
 		where: and(
 			eq(employee.organizationId, options.organizationId),
-			options.employeeIds?.length
-				? inArray(employee.id, options.employeeIds)
-				: undefined,
+			options.employeeIds?.length ? inArray(employee.id, options.employeeIds) : undefined,
 		),
 	});
 
@@ -1023,10 +1022,9 @@ export async function generateDemoManagerAssignments(
 	);
 
 	const assignmentRate = 0.6 + Math.random() * 0.2; // 60-80%
-	const employeesToAssign = faker.helpers.shuffle(employeesNeedingManagers).slice(
-		0,
-		Math.ceil(employeesNeedingManagers.length * assignmentRate),
-	);
+	const employeesToAssign = faker.helpers
+		.shuffle(employeesNeedingManagers)
+		.slice(0, Math.ceil(employeesNeedingManagers.length * assignmentRate));
 
 	let managerAssignmentsCreated = 0;
 
@@ -1129,7 +1127,12 @@ export async function clearOrganizationTimeData(organizationId: string): Promise
 		await db
 			.update(employee)
 			.set({ teamId: null })
-			.where(inArray(employee.id, employeesWithTeams.map((e) => e.id)));
+			.where(
+				inArray(
+					employee.id,
+					employeesWithTeams.map((e) => e.id),
+				),
+			);
 	}
 
 	// Delete demo teams (teams with description starting with "Demo team")
@@ -1139,7 +1142,12 @@ export async function clearOrganizationTimeData(organizationId: string): Promise
 	const teamsToDelete = allTeams.filter((t) => t.description?.startsWith("Demo team - "));
 
 	if (teamsToDelete.length > 0) {
-		await db.delete(team).where(inArray(team.id, teamsToDelete.map((t) => t.id)));
+		await db.delete(team).where(
+			inArray(
+				team.id,
+				teamsToDelete.map((t) => t.id),
+			),
+		);
 	}
 
 	// Delete demo projects (projects with description starting with "Demo project")
@@ -1149,7 +1157,12 @@ export async function clearOrganizationTimeData(organizationId: string): Promise
 	const projectsToDelete = allProjects.filter((p) => p.description?.startsWith("Demo project - "));
 
 	if (projectsToDelete.length > 0) {
-		await db.delete(project).where(inArray(project.id, projectsToDelete.map((p) => p.id)));
+		await db.delete(project).where(
+			inArray(
+				project.id,
+				projectsToDelete.map((p) => p.id),
+			),
+		);
 	}
 
 	// Delete manager assignments for these employees
@@ -1158,9 +1171,7 @@ export async function clearOrganizationTimeData(organizationId: string): Promise
 	});
 
 	if (managerAssignmentsToDelete.length > 0) {
-		await db
-			.delete(employeeManagers)
-			.where(inArray(employeeManagers.employeeId, employeeIds));
+		await db.delete(employeeManagers).where(inArray(employeeManagers.employeeId, employeeIds));
 	}
 
 	return {

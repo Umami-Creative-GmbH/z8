@@ -126,6 +126,8 @@ export async function getAuditLogs(filters: AuditLogFilters): Promise<{
 	return {
 		logs: logs.map((log) => ({
 			...log,
+			performedByName: log.performedByName ?? undefined,
+			performedByEmail: log.performedByEmail ?? undefined,
 			changes: log.changes ? JSON.parse(log.changes as string) : null,
 			metadata: log.metadata ? JSON.parse(log.metadata as string) : null,
 		})),

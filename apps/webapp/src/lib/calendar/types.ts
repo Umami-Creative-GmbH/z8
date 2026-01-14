@@ -18,6 +18,10 @@ export interface HolidayEvent extends CalendarEvent {
 		categoryType: string;
 		blocksTimeEntry: boolean;
 		isRecurring: boolean;
+		// Preset information (when holiday comes from a preset)
+		presetId?: string;
+		presetName?: string;
+		presetSource?: string;
 	};
 }
 

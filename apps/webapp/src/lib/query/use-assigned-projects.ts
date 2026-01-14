@@ -2,8 +2,8 @@
 
 import { useQuery } from "@tanstack/react-query";
 import {
-	getAssignedProjects,
 	type AssignedProject,
+	getAssignedProjects,
 } from "@/app/[locale]/(app)/time-tracking/actions";
 import { queryKeys } from "./keys";
 

@@ -2,8 +2,8 @@ import { and, eq, gte, isNull, lte, not } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
-import { employee, project, surchargeCalculation, timeEntry, workPeriod } from "@/db/schema";
 import type { SurchargeCalculationDetails } from "@/db/schema";
+import { employee, project, surchargeCalculation, timeEntry, workPeriod } from "@/db/schema";
 import { dateFromDB, dateToDB } from "@/lib/datetime/drizzle-adapter";
 import { toDateKey } from "@/lib/datetime/luxon-utils";
 import type { SurchargeBreakdown, WorkPeriodEvent } from "./types";
@@ -77,9 +77,10 @@ export async function getWorkPeriodsForMonth(
 
 			// Format duration, including surcharge if present
 			const baseDuration = formatDuration(durationMinutes);
-			const duration = surchargeMinutes > 0
-				? `${baseDuration} (+${formatDuration(surchargeMinutes)})`
-				: baseDuration;
+			const duration =
+				surchargeMinutes > 0
+					? `${baseDuration} (+${formatDuration(surchargeMinutes)})`
+					: baseDuration;
 
 			// Build title parts
 			const projectPrefix = proj?.name ? `[${proj.name}] ` : "";

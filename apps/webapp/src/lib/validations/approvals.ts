@@ -4,6 +4,7 @@ import { z } from "zod";
  * Schema for user information in approval requests
  */
 const approvalUserSchema = z.object({
+	id: z.string(),
 	name: z.string(),
 	email: z.string().email(),
 	image: z.string().nullable(),

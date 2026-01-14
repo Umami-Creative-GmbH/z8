@@ -4,9 +4,8 @@
  * Database query functions for vacation allowance, balance, and carryover management.
  */
 
-import { and, asc, desc, eq, gte, isNull, lte, or } from "drizzle-orm";
+import { and, asc, desc, eq, gte, isNull, lte, or, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { sql } from "drizzle-orm";
 import {
 	absenceCategory,
 	absenceEntry,
@@ -114,10 +113,7 @@ export async function getCompanyDefaultPolicy(
 			eq(vacationAllowance.isCompanyDefault, true),
 			eq(vacationAllowance.isActive, true),
 			lte(vacationAllowance.startDate, asOfDate),
-			or(
-				isNull(vacationAllowance.validUntil),
-				gte(vacationAllowance.validUntil, asOfDate),
-			),
+			or(isNull(vacationAllowance.validUntil), gte(vacationAllowance.validUntil, asOfDate)),
 		),
 		orderBy: desc(vacationAllowance.startDate),
 	});
@@ -253,7 +249,13 @@ export async function getEmployeeVacationAllowance(
 export async function getAllEmployeeVacationAllowances(
 	organizationId: string,
 	year: number,
-): Promise<(EmployeeVacationAllowanceRecord & { employeeName: string | null; employeeFirstName: string | null; employeeLastName: string | null })[]> {
+): Promise<
+	(EmployeeVacationAllowanceRecord & {
+		employeeName: string | null;
+		employeeFirstName: string | null;
+		employeeLastName: string | null;
+	})[]
+> {
 	const results = await db
 		.select({
 			id: employeeVacationAllowance.id,
@@ -263,7 +265,9 @@ export async function getAllEmployeeVacationAllowances(
 			customCarryoverDays: employeeVacationAllowance.customCarryoverDays,
 			createdAt: employeeVacationAllowance.createdAt,
 			updatedAt: employeeVacationAllowance.updatedAt,
-			employeeName: sql<string | null>`COALESCE(${employee.firstName} || ' ' || ${employee.lastName}, ${employee.firstName}, ${employee.lastName})`,
+			employeeName: sql<
+				string | null
+			>`COALESCE(${employee.firstName} || ' ' || ${employee.lastName}, ${employee.firstName}, ${employee.lastName})`,
 			employeeFirstName: employee.firstName,
 			employeeLastName: employee.lastName,
 		})
@@ -650,21 +654,13 @@ export interface VacationAdjustmentWithAdjuster extends VacationAdjustmentRecord
 /**
  * Get sum of all vacation adjustments for an employee in a specific year
  */
-export async function getAdjustmentTotal(
-	employeeId: string,
-	year: number,
-): Promise<number> {
+export async function getAdjustmentTotal(employeeId: string, year: number): Promise<number> {
 	const result = await db
 		.select({
 			total: sql<string>`COALESCE(SUM(${vacationAdjustment.days}), '0')`,
 		})
 		.from(vacationAdjustment)
-		.where(
-			and(
-				eq(vacationAdjustment.employeeId, employeeId),
-				eq(vacationAdjustment.year, year),
-			),
-		);
+		.where(and(eq(vacationAdjustment.employeeId, employeeId), eq(vacationAdjustment.year, year)));
 
 	return parseFloat(result[0]?.total || "0");
 }
@@ -690,12 +686,7 @@ export async function getEmployeeAdjustments(
 		})
 		.from(vacationAdjustment)
 		.innerJoin(employee, eq(vacationAdjustment.adjustedBy, employee.id))
-		.where(
-			and(
-				eq(vacationAdjustment.employeeId, employeeId),
-				eq(vacationAdjustment.year, year),
-			),
-		)
+		.where(and(eq(vacationAdjustment.employeeId, employeeId), eq(vacationAdjustment.year, year)))
 		.orderBy(desc(vacationAdjustment.createdAt));
 
 	return results.map((r) => ({

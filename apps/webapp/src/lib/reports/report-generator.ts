@@ -231,7 +231,7 @@ export async function aggregateAbsences(
 		const categoryType = absence.category.type;
 
 		// Calculate business days for this absence
-		const days = calculateBusinessDays(absence.startDate, absence.endDate);
+		const days = calculateBusinessDays(new Date(absence.startDate), new Date(absence.endDate));
 
 		// Update category totals
 		if (!byCategory.has(categoryName)) {

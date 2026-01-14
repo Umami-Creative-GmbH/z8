@@ -10,8 +10,10 @@ import {
 } from "@/lib/storage/export-s3-client";
 import { type ExportCategory, fetchExportData } from "./data-fetchers";
 import { buildExportZip } from "./zip-builder";
-// Re-export client-safe utilities from utils.ts
-export { formatFileSize, type ExportRecord } from "./utils";
+
+// Import and re-export client-safe utilities from utils.ts
+import { type ExportRecord, formatFileSize } from "./utils";
+export { type ExportRecord, formatFileSize };
 
 const logger = createLogger("ExportService");
 
@@ -278,4 +280,3 @@ export async function cleanupExpiredExports(): Promise<number> {
 
 	return deletedCount;
 }
-

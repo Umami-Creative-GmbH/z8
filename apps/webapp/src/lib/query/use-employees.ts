@@ -6,8 +6,8 @@ import { useCallback, useState } from "react";
 import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
 import {
 	type EmployeeListParams,
-	type PaginatedEmployeeResponse,
 	listEmployees,
+	type PaginatedEmployeeResponse,
 } from "@/app/[locale]/(app)/settings/employees/actions";
 import { queryKeys } from "./keys";
 

@@ -45,7 +45,7 @@ export const queryKeys = {
 	// Employees
 	employees: {
 		all: ["employees"] as const,
-		list: (orgId: string, params?: Record<string, unknown>) =>
+		list: <T extends object>(orgId: string, params?: T) =>
 			["employees", orgId, params] as const,
 		detail: (employeeId: string) => ["employees", "detail", employeeId] as const,
 	},

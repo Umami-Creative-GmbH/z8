@@ -117,7 +117,7 @@ export const WorkScheduleServiceLive = Layer.effect(
 							scheduleType: employeeAssignment.template.scheduleType,
 							workingDaysPreset: employeeAssignment.template.workingDaysPreset,
 							hoursPerCycle: employeeAssignment.template.hoursPerCycle,
-							homeOfficeDaysPerCycle: employeeAssignment.template.homeOfficeDaysPerCycle,
+							homeOfficeDaysPerCycle: employeeAssignment.template.homeOfficeDaysPerCycle ?? 0,
 							days: employeeAssignment.template.days.map((d) => ({
 								dayOfWeek: d.dayOfWeek,
 								hoursPerDay: d.hoursPerDay,
@@ -158,7 +158,7 @@ export const WorkScheduleServiceLive = Layer.effect(
 								scheduleType: teamAssignment.template.scheduleType,
 								workingDaysPreset: teamAssignment.template.workingDaysPreset,
 								hoursPerCycle: teamAssignment.template.hoursPerCycle,
-								homeOfficeDaysPerCycle: teamAssignment.template.homeOfficeDaysPerCycle,
+								homeOfficeDaysPerCycle: teamAssignment.template.homeOfficeDaysPerCycle ?? 0,
 								days: teamAssignment.template.days.map((d) => ({
 									dayOfWeek: d.dayOfWeek,
 									hoursPerDay: d.hoursPerDay,
@@ -198,7 +198,7 @@ export const WorkScheduleServiceLive = Layer.effect(
 							scheduleType: orgAssignment.template.scheduleType,
 							workingDaysPreset: orgAssignment.template.workingDaysPreset,
 							hoursPerCycle: orgAssignment.template.hoursPerCycle,
-							homeOfficeDaysPerCycle: orgAssignment.template.homeOfficeDaysPerCycle,
+							homeOfficeDaysPerCycle: orgAssignment.template.homeOfficeDaysPerCycle ?? 0,
 							days: orgAssignment.template.days.map((d) => ({
 								dayOfWeek: d.dayOfWeek,
 								hoursPerDay: d.hoursPerDay,
@@ -233,7 +233,7 @@ export const WorkScheduleServiceLive = Layer.effect(
 						scheduleCycle: t.scheduleCycle,
 						scheduleType: t.scheduleType,
 						hoursPerCycle: t.hoursPerCycle,
-						homeOfficeDaysPerCycle: t.homeOfficeDaysPerCycle,
+						homeOfficeDaysPerCycle: t.homeOfficeDaysPerCycle ?? 0,
 						isDefault: t.isDefault,
 					}));
 				}),

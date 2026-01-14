@@ -244,8 +244,8 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 								return await dbService.db.query.absenceEntry.findMany({
 									where: and(
 										eq(absenceEntry.status, "approved"),
-										gte(absenceEntry.startDate, dateRange.start),
-										lte(absenceEntry.endDate, dateRange.end),
+										gte(absenceEntry.startDate, dateRange.start.toISOString().split("T")[0]),
+										lte(absenceEntry.endDate, dateRange.end.toISOString().split("T")[0]),
 									),
 									with: {
 										employee: true, // Filter by organization in memory
@@ -262,8 +262,7 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 								sum +
 								(allowance
 									? (Number(allowance.customAnnualDays) || 0) +
-										(Number(allowance.customCarryoverDays) || 0) +
-										(Number(allowance.adjustmentDays) || 0)
+										(Number(allowance.customCarryoverDays) || 0)
 									: 0)
 							);
 						}, 0);
@@ -298,8 +297,7 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 							const allowance = emp.vacationAllowances?.[0];
 							const allocated = allowance
 								? (Number(allowance.customAnnualDays) || 0) +
-									(Number(allowance.customCarryoverDays) || 0) +
-									(Number(allowance.adjustmentDays) || 0)
+									(Number(allowance.customCarryoverDays) || 0)
 								: 0;
 
 							const taken = absences
@@ -327,7 +325,12 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 
 						// Calculate clustering score (0-100)
 						// Higher score means more clustered vacation patterns
-						const clusteringScore = calculateClusteringScore(absences);
+						const clusteringScore = calculateClusteringScore(
+							absences.map((a) => ({
+								startDate: new Date(a.startDate),
+								endDate: new Date(a.endDate),
+							})),
+						);
 
 						return {
 							overall: {
@@ -340,9 +343,9 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 							byEmployee: byEmployee.map((e) => ({
 								employeeId: e.employeeId,
 								employeeName: e.employeeName,
-								daysAllocated: e.allocated,
-								daysTaken: e.taken,
-								daysRemaining: e.remaining,
+								allocated: e.allocated,
+								taken: e.taken,
+								remaining: e.remaining,
 								utilizationRate: Math.round(e.utilizationRate * 100) / 100,
 							})),
 							monthlyUsage: byMonth.map((m) => ({
@@ -491,8 +494,8 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 							dbService.query("getAbsencesForPatterns", async () => {
 								return await dbService.db.query.absenceEntry.findMany({
 									where: and(
-										gte(absenceEntry.startDate, dateRange.start),
-										lte(absenceEntry.endDate, dateRange.end),
+										gte(absenceEntry.startDate, dateRange.start.toISOString().split("T")[0]),
+										lte(absenceEntry.endDate, dateRange.end.toISOString().split("T")[0]),
 									),
 									with: {
 										employee: {
@@ -637,7 +640,12 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 								a.category.name.toLowerCase().includes("urlaub") ||
 								a.category.name.toLowerCase().includes("holiday"),
 						);
-						const vacationClusteringScore = calculateClusteringScore(vacationAbsences);
+						const vacationClusteringScore = calculateClusteringScore(
+							vacationAbsences.map((a) => ({
+								startDate: new Date(a.startDate),
+								endDate: new Date(a.endDate),
+							})),
+						);
 
 						// Find vacation hotspots (dates with multiple people off)
 						const vacationDateMap = new Map<string, number>();

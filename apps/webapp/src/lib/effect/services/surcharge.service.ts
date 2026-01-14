@@ -592,7 +592,7 @@ export const SurchargeServiceLive = Layer.effect(
 					const org = yield* _(
 						dbService.query("getOrgTimezone", async () => {
 							return await dbService.db.query.organization.findFirst({
-								where: eq(organization.id, emp.organizationId),
+								where: eq(organization.id, period.employee!.organizationId),
 								columns: { timezone: true },
 							});
 						}),

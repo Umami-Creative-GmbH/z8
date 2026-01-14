@@ -3,7 +3,12 @@ import dns from "node:dns";
 import { promisify } from "node:util";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
-import { type AuthConfig, organizationBranding, organizationDomain } from "@/db/schema";
+import {
+	type AuthConfig,
+	type CustomQuote,
+	organizationBranding,
+	organizationDomain,
+} from "@/db/schema";
 import { domainCache } from "./domain-cache";
 import {
 	DEFAULT_AUTH_CONFIG,
@@ -163,7 +168,7 @@ export async function registerCustomDomain(
 			verificationToken,
 			verificationTokenExpiresAt: expiresAt,
 			isPrimary: true, // Always primary since only 1 domain per org
-			authConfig: JSON.stringify(DEFAULT_AUTH_CONFIG),
+			authConfig: JSON.stringify(DEFAULT_AUTH_CONFIG) as unknown as AuthConfig,
 		})
 		.returning();
 
@@ -266,7 +271,7 @@ export async function updateDomainAuthConfig(domainId: string, config: AuthConfi
 	await db
 		.update(organizationDomain)
 		.set({
-			authConfig: JSON.stringify(config),
+			authConfig: JSON.stringify(config) as unknown as AuthConfig,
 		})
 		.where(eq(organizationDomain.id, domainId));
 
@@ -382,7 +387,7 @@ export async function updateOrganizationBranding(
 				primaryColor: branding.primaryColor ?? existingBranding.primaryColor,
 				accentColor: branding.accentColor ?? existingBranding.accentColor,
 				quotesEnabled: branding.quotesEnabled ?? existingBranding.quotesEnabled,
-				customQuotes: customQuotes as string | null,
+				customQuotes: customQuotes as unknown as CustomQuote[] | null,
 			})
 			.where(eq(organizationBranding.organizationId, organizationId));
 	} else {
@@ -394,7 +399,7 @@ export async function updateOrganizationBranding(
 			primaryColor: branding.primaryColor ?? null,
 			accentColor: branding.accentColor ?? null,
 			quotesEnabled: branding.quotesEnabled ?? true,
-			customQuotes: customQuotes as string | null,
+			customQuotes: customQuotes as unknown as CustomQuote[] | null,
 		});
 	}
 

@@ -5,8 +5,9 @@
  * the analytics system for team performance, vacation trends, work hours, etc.
  */
 
-// Re-export DateRange and PeriodPreset from reports module for consistency
-export type { DateRange, PeriodPreset } from "@/lib/reports/types";
+// Import and re-export DateRange and PeriodPreset from reports module for consistency
+import type { DateRange, PeriodPreset } from "@/lib/reports/types";
+export type { DateRange, PeriodPreset };
 
 /**
  * Team Performance Analytics

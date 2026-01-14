@@ -82,8 +82,8 @@ export async function generateTeamVacationCalendar(
 		.map((r) => ({
 			employeeId: r.employeeId,
 			employeeName: r.employeeName,
-			startDate: r.startDate,
-			endDate: r.endDate,
+			startDate: new Date(r.startDate),
+			endDate: new Date(r.endDate),
 			days: r.days,
 			status: "pending" as const,
 		}));

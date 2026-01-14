@@ -68,10 +68,9 @@ export const dateBasedRuleSchema = z
 		validUntil: z.date().optional().nullable(),
 		isActive: z.boolean().default(true),
 	})
-	.refine(
-		(data) => data.specificDate || (data.dateRangeStart && data.dateRangeEnd),
-		{ message: "Either a specific date or a date range is required" },
-	)
+	.refine((data) => data.specificDate || (data.dateRangeStart && data.dateRangeEnd), {
+		message: "Either a specific date or a date range is required",
+	})
 	.refine(
 		(data) => {
 			if (data.dateRangeStart && data.dateRangeEnd) {
@@ -99,14 +98,9 @@ export type SurchargeRuleFormData = z.infer<typeof surchargeRuleSchema>;
 // ============================================
 
 export const surchargeModelFormSchema = z.object({
-	name: z
-		.string()
-		.min(1, "Name is required")
-		.max(255, "Name cannot exceed 255 characters"),
+	name: z.string().min(1, "Name is required").max(255, "Name cannot exceed 255 characters"),
 	description: z.string().max(1000).optional().nullable(),
-	rules: z
-		.array(surchargeRuleSchema)
-		.min(1, "At least one rule is required"),
+	rules: z.array(surchargeRuleSchema).min(1, "At least one rule is required"),
 	isActive: z.boolean().default(true),
 });
 

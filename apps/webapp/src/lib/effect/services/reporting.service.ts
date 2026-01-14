@@ -126,7 +126,7 @@ export class ReportingService extends Context.Tag("ReportingService")<
 
 				try {
 					// Dynamic import to avoid Turbopack bundling issues
-					const ExcelJS = await import("exceljs");
+					const ExcelJS = yield* _(Effect.promise(() => import("exceljs")));
 					const workbook = new ExcelJS.default.Workbook();
 					const worksheet = workbook.addWorksheet(sheetName);
 

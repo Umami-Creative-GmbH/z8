@@ -88,14 +88,14 @@ export function createCachedQuery<TArgs extends any[], TResult>(
  * @param tag - Cache tag to revalidate (from ANALYTICS_CACHE_TAGS)
  */
 export function revalidateAnalyticsCache(tag: string): void {
-	revalidateTag(tag);
+	revalidateTag(tag, { expire: 0 });
 }
 
 /**
  * Revalidate all analytics caches
  */
 export function revalidateAllAnalytics(): void {
-	revalidateTag(ANALYTICS_CACHE_TAGS.ALL);
+	revalidateTag(ANALYTICS_CACHE_TAGS.ALL, { expire: 0 });
 }
 
 /**
@@ -103,10 +103,10 @@ export function revalidateAllAnalytics(): void {
  * Call this after work period create/update/delete operations
  */
 export function revalidateWorkDataCache(organizationId: string): void {
-	revalidateTag(ANALYTICS_CACHE_TAGS.WORK_HOURS);
-	revalidateTag(ANALYTICS_CACHE_TAGS.TEAM_PERFORMANCE);
-	revalidateTag(ANALYTICS_CACHE_TAGS.DASHBOARD_WIDGETS);
-	revalidateTag(`${ANALYTICS_CACHE_TAGS.WORK_HOURS}:org:${organizationId}`);
+	revalidateTag(ANALYTICS_CACHE_TAGS.WORK_HOURS, { expire: 0 });
+	revalidateTag(ANALYTICS_CACHE_TAGS.TEAM_PERFORMANCE, { expire: 0 });
+	revalidateTag(ANALYTICS_CACHE_TAGS.DASHBOARD_WIDGETS, { expire: 0 });
+	revalidateTag(`${ANALYTICS_CACHE_TAGS.WORK_HOURS}:org:${organizationId}`, { expire: 0 });
 }
 
 /**
@@ -114,10 +114,10 @@ export function revalidateWorkDataCache(organizationId: string): void {
  * Call this after absence entry create/update/delete operations
  */
 export function revalidateAbsenceDataCache(organizationId: string): void {
-	revalidateTag(ANALYTICS_CACHE_TAGS.VACATION_TRENDS);
-	revalidateTag(ANALYTICS_CACHE_TAGS.ABSENCE_PATTERNS);
-	revalidateTag(ANALYTICS_CACHE_TAGS.DASHBOARD_WIDGETS);
-	revalidateTag(`${ANALYTICS_CACHE_TAGS.VACATION_TRENDS}:org:${organizationId}`);
+	revalidateTag(ANALYTICS_CACHE_TAGS.VACATION_TRENDS, { expire: 0 });
+	revalidateTag(ANALYTICS_CACHE_TAGS.ABSENCE_PATTERNS, { expire: 0 });
+	revalidateTag(ANALYTICS_CACHE_TAGS.DASHBOARD_WIDGETS, { expire: 0 });
+	revalidateTag(`${ANALYTICS_CACHE_TAGS.VACATION_TRENDS}:org:${organizationId}`, { expire: 0 });
 }
 
 /**
@@ -125,9 +125,11 @@ export function revalidateAbsenceDataCache(organizationId: string): void {
  * Call this after approval request create/update operations
  */
 export function revalidateApprovalDataCache(organizationId: string): void {
-	revalidateTag(ANALYTICS_CACHE_TAGS.MANAGER_EFFECTIVENESS);
-	revalidateTag(ANALYTICS_CACHE_TAGS.DASHBOARD_WIDGETS);
-	revalidateTag(`${ANALYTICS_CACHE_TAGS.MANAGER_EFFECTIVENESS}:org:${organizationId}`);
+	revalidateTag(ANALYTICS_CACHE_TAGS.MANAGER_EFFECTIVENESS, { expire: 0 });
+	revalidateTag(ANALYTICS_CACHE_TAGS.DASHBOARD_WIDGETS, { expire: 0 });
+	revalidateTag(`${ANALYTICS_CACHE_TAGS.MANAGER_EFFECTIVENESS}:org:${organizationId}`, {
+		expire: 0,
+	});
 }
 
 /**
@@ -135,9 +137,9 @@ export function revalidateApprovalDataCache(organizationId: string): void {
  * Call this after employee create/update/delete operations
  */
 export function revalidateEmployeeDataCache(organizationId: string): void {
-	revalidateTag(ANALYTICS_CACHE_TAGS.TEAM_PERFORMANCE);
-	revalidateTag(ANALYTICS_CACHE_TAGS.DASHBOARD_WIDGETS);
-	revalidateTag(`${ANALYTICS_CACHE_TAGS.TEAM_PERFORMANCE}:org:${organizationId}`);
+	revalidateTag(ANALYTICS_CACHE_TAGS.TEAM_PERFORMANCE, { expire: 0 });
+	revalidateTag(ANALYTICS_CACHE_TAGS.DASHBOARD_WIDGETS, { expire: 0 });
+	revalidateTag(`${ANALYTICS_CACHE_TAGS.TEAM_PERFORMANCE}:org:${organizationId}`, { expire: 0 });
 }
 
 /**

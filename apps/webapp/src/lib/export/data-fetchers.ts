@@ -489,7 +489,9 @@ export async function fetchVacation(organizationId: string) {
 		allowances: allowances.map((a) => ({
 			id: a.id,
 			name: a.name,
-			year: a.year,
+			startDate: a.startDate,
+			validUntil: a.validUntil,
+			isCompanyDefault: a.isCompanyDefault,
 			defaultAnnualDays: a.defaultAnnualDays,
 			accrualType: a.accrualType,
 			accrualStartMonth: a.accrualStartMonth,
@@ -502,10 +504,6 @@ export async function fetchVacation(organizationId: string) {
 			year: ea.year,
 			customAnnualDays: ea.customAnnualDays,
 			customCarryoverDays: ea.customCarryoverDays,
-			adjustmentDays: ea.adjustmentDays,
-			adjustmentReason: ea.adjustmentReason,
-			adjustedAt: ea.adjustedAt,
-			adjustedBy: ea.adjustedBy,
 		})),
 		policyAssignments: policyAssignments.map((pa) => ({
 			policyId: pa.policyId,
