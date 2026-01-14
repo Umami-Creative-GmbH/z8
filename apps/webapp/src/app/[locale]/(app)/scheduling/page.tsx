@@ -1,12 +1,15 @@
 import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { ShiftScheduler } from "@/components/scheduling/scheduler/shift-scheduler";
 import { db } from "@/db";
 import { employee } from "@/db/schema";
 import { auth } from "@/lib/auth";
 
 export default async function SchedulingPage() {
+	await connection(); // Mark as fully dynamic for cacheComponents mode
+
 	const session = await auth.api.getSession({ headers: await headers() });
 	if (!session?.user) {
 		redirect("/sign-in");

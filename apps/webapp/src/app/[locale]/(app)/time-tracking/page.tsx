@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { getCurrentTimezone } from "@/app/[locale]/(app)/settings/profile/actions";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { ClockInOutWidget } from "@/components/time-tracking/clock-in-out-widget";
@@ -11,6 +12,8 @@ import { getWeekRangeInTimezone } from "@/lib/time-tracking/timezone-utils";
 import { getActiveWorkPeriod, getCurrentEmployee, getTimeSummary, getWorkPeriods } from "./actions";
 
 export default async function TimeTrackingPage() {
+	await connection(); // Mark as fully dynamic for cacheComponents mode
+
 	const session = await auth.api.getSession({ headers: await headers() });
 	if (!session?.user) {
 		redirect("/sign-in");

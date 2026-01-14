@@ -253,8 +253,8 @@ export function WorkScheduleTemplatesTable({
 						<TableHeader>
 							<TableRow>
 								<TableHead>{t("settings.workSchedules.name", "Name")}</TableHead>
-								<TableHead>{t("settings.workSchedules.cycle", "Cycle")}</TableHead>
-								<TableHead>{t("settings.workSchedules.workingDays", "Working Days")}</TableHead>
+								<TableHead>{t("settings.workSchedules.cycle.label", "Cycle")}</TableHead>
+								<TableHead>{t("settings.workSchedules.workingDays.label", "Working Days")}</TableHead>
 								<TableHead className="text-right">
 									{t("settings.workSchedules.hours", "Hours")}
 								</TableHead>

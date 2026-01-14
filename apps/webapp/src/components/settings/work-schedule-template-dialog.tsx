@@ -315,7 +315,7 @@ export function WorkScheduleTemplateDialog({
 						<form.Field name="scheduleCycle">
 							{(field) => (
 								<div className="space-y-2">
-									<Label>{t("settings.workSchedules.cycle", "Cycle")}</Label>
+									<Label>{t("settings.workSchedules.cycle.label", "Cycle")}</Label>
 									<Select
 										value={field.state.value}
 										onValueChange={(v) => field.handleChange(v as typeof field.state.value)}
@@ -343,7 +343,7 @@ export function WorkScheduleTemplateDialog({
 									</Select>
 									<p className="text-sm text-muted-foreground">
 										{t(
-											"settings.workSchedules.cycleDescription",
+											"settings.workSchedules.cycle.description",
 											"The time period for this schedule",
 										)}
 									</p>
@@ -378,7 +378,7 @@ export function WorkScheduleTemplateDialog({
 					<form.Field name="scheduleType">
 						{(field) => (
 							<div className="space-y-2">
-								<Label>{t("settings.workSchedules.type", "Schedule Type")}</Label>
+								<Label>{t("settings.workSchedules.type.label", "Schedule Type")}</Label>
 								<Tabs
 									value={field.state.value}
 									onValueChange={(v) => field.handleChange(v as typeof field.state.value)}
@@ -397,7 +397,7 @@ export function WorkScheduleTemplateDialog({
 										<form.Field name="workingDaysPreset">
 											{(presetField) => (
 												<div className="space-y-2">
-													<Label>{t("settings.workSchedules.workingDays", "Working Days")}</Label>
+													<Label>{t("settings.workSchedules.workingDays.label", "Working Days")}</Label>
 													<Select
 														value={presetField.state.value}
 														onValueChange={(v) =>
