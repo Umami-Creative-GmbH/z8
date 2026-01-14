@@ -133,7 +133,10 @@ async function main() {
 	// Run seeders
 	log("\n🌱 Database Seeding", "bright");
 	log("─".repeat(50), "dim");
-	log(`Database: ${process.env.POSTGRES_DB}@${process.env.POSTGRES_HOST}:${process.env.POSTGRES_PORT || 5432}`, "dim");
+	log(
+		`Database: ${process.env.POSTGRES_DB}@${process.env.POSTGRES_HOST}:${process.env.POSTGRES_PORT || 5432}`,
+		"dim",
+	);
 	log(`Seeders to run: ${seedersToRun.length}`, "dim");
 
 	const results: Array<{ success: boolean; name: string; duration: number; error?: unknown }> = [];

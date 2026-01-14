@@ -148,6 +148,7 @@ export {
 	pushSubscriptionRelations,
 	recurrenceTypeEnum,
 	roleEnum,
+	type SurchargeCalculationDetails,
 	shift,
 	shiftRelations,
 	shiftRequest,
@@ -167,7 +168,6 @@ export {
 	surchargeRule,
 	surchargeRuleRelations,
 	surchargeRuleTypeEnum,
-	type SurchargeCalculationDetails,
 	// Core tables
 	team,
 	teamPermissions,

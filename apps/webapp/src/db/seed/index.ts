@@ -19,7 +19,8 @@ export interface Seeder {
 export const seeders: Seeder[] = [
 	{
 		name: "time-regulation-presets",
-		description: "Seed time regulation presets (German, EU, French, UK, Swiss, Austrian labor laws)",
+		description:
+			"Seed time regulation presets (German, EU, French, UK, Swiss, Austrian labor laws)",
 		run: seedTimeRegulationPresets,
 	},
 	// Add future seeders here:

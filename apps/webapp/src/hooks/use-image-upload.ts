@@ -70,12 +70,10 @@ export function useImageUpload({
 			setProgress(1);
 		};
 
-		const handleProgress = (progress: { bytesUploaded: number; bytesTotal: number }) => {
-			if (progress.bytesTotal > 0) {
-				// Show 0-85% for upload, reserve 15% for processing
-				const uploadPercent = Math.round((progress.bytesUploaded / progress.bytesTotal) * 85);
-				setProgress(Math.max(1, uploadPercent));
-			}
+		const handleProgress = (progress: number) => {
+			// progress is a percentage 0-100, reserve 15% for processing
+			const uploadPercent = Math.round((progress / 100) * 85);
+			setProgress(Math.max(1, uploadPercent));
 		};
 
 		const handleFileProgress = (

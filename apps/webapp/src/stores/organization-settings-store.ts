@@ -49,5 +49,6 @@ export const useOrganizationSettings = create<OrganizationSettingsStore>((set) =
 // Selector hooks for specific settings
 export const useProjectsEnabled = () => useOrganizationSettings((state) => state.projectsEnabled);
 export const useShiftsEnabled = () => useOrganizationSettings((state) => state.shiftsEnabled);
-export const useSurchargesEnabled = () => useOrganizationSettings((state) => state.surchargesEnabled);
+export const useSurchargesEnabled = () =>
+	useOrganizationSettings((state) => state.surchargesEnabled);
 export const useOrganizationTimezone = () => useOrganizationSettings((state) => state.timezone);

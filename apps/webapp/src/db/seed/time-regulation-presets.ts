@@ -7,7 +7,7 @@
  */
 
 import { db } from "@/db";
-import { timeRegulationPreset, type TimeRegulationBreakRulesPreset } from "@/db/schema";
+import { type TimeRegulationBreakRulesPreset, timeRegulationPreset } from "@/db/schema";
 
 // German Labor Law (Arbeitszeitgesetz - ArbZG)
 const germanLaborLaw: TimeRegulationBreakRulesPreset = {
@@ -41,9 +41,7 @@ const euWorkingTimeDirective: TimeRegulationBreakRulesPreset = {
 			// More than 6 hours: break required (duration varies by member state)
 			workingMinutesThreshold: 360,
 			requiredBreakMinutes: 20,
-			options: [
-				{ splitCount: 1, minimumSplitMinutes: null, minimumLongestSplitMinutes: null },
-			],
+			options: [{ splitCount: 1, minimumSplitMinutes: null, minimumLongestSplitMinutes: null }],
 		},
 	],
 };
@@ -55,9 +53,7 @@ const frenchLaborCode: TimeRegulationBreakRulesPreset = {
 			// More than 6 hours: 20 min break minimum
 			workingMinutesThreshold: 360,
 			requiredBreakMinutes: 20,
-			options: [
-				{ splitCount: 1, minimumSplitMinutes: null, minimumLongestSplitMinutes: null },
-			],
+			options: [{ splitCount: 1, minimumSplitMinutes: null, minimumLongestSplitMinutes: null }],
 		},
 	],
 };
@@ -69,9 +65,7 @@ const ukWorkingTimeRegs: TimeRegulationBreakRulesPreset = {
 			// More than 6 hours: 20 min break
 			workingMinutesThreshold: 360,
 			requiredBreakMinutes: 20,
-			options: [
-				{ splitCount: 1, minimumSplitMinutes: null, minimumLongestSplitMinutes: null },
-			],
+			options: [{ splitCount: 1, minimumSplitMinutes: null, minimumLongestSplitMinutes: null }],
 		},
 	],
 };
@@ -83,9 +77,7 @@ const swissSecoGuidelines: TimeRegulationBreakRulesPreset = {
 			// More than 5.5 hours: 15 min break
 			workingMinutesThreshold: 330,
 			requiredBreakMinutes: 15,
-			options: [
-				{ splitCount: 1, minimumSplitMinutes: null, minimumLongestSplitMinutes: null },
-			],
+			options: [{ splitCount: 1, minimumSplitMinutes: null, minimumLongestSplitMinutes: null }],
 		},
 		{
 			// More than 7 hours: 30 min break
