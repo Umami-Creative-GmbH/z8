@@ -1,10 +1,13 @@
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { SurchargeManagement } from "@/components/settings/surcharge-management";
 import { getAuthContext } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
 
 export default async function SurchargeSettingsPage() {
+	await connection(); // Mark as fully dynamic for cacheComponents mode
+
 	const t = await getTranslate();
 	const authContext = await getAuthContext();
 
