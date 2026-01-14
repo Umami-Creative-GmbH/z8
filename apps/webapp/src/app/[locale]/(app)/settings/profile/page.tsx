@@ -22,9 +22,7 @@ export default async function ProfilePage() {
 					onUpdate={async (timezone) => {
 						"use server";
 						const result = await updateTimezone(timezone);
-						return result.success
-							? { success: true }
-							: { success: false, error: result.error };
+						return result.success ? { success: true } : { success: false, error: result.error };
 					}}
 				/>
 			</div>

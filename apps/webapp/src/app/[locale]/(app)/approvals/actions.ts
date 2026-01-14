@@ -44,6 +44,7 @@ export interface ApprovalWithAbsence {
 	createdAt: Date;
 	requester: {
 		user: {
+			id: string;
 			name: string;
 			email: string;
 			image: string | null;
@@ -72,6 +73,7 @@ export interface ApprovalWithTimeCorrection {
 	createdAt: Date;
 	requester: {
 		user: {
+			id: string;
 			name: string;
 			email: string;
 			image: string | null;

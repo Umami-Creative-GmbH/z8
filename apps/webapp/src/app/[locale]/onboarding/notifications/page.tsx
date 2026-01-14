@@ -1,7 +1,7 @@
 "use client";
 
-import { useForm } from "@tanstack/react-form";
 import { IconBell, IconLoader2, IconMail } from "@tabler/icons-react";
+import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -270,9 +270,7 @@ export default function NotificationsPage() {
 									{(field) => (
 										<div className="flex flex-row items-center justify-between rounded-lg border p-3">
 											<div className="space-y-0.5">
-												<Label>
-													{t("onboarding.notifications.teamChanges", "Team changes")}
-												</Label>
+												<Label>{t("onboarding.notifications.teamChanges", "Team changes")}</Label>
 												<p className="text-xs text-muted-foreground">
 													{t(
 														"onboarding.notifications.teamChangesDesc",

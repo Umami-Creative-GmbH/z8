@@ -988,7 +988,10 @@ export async function updateOrganizationTimezone(
 							code: SpanStatusCode.ERROR,
 							message: String(error),
 						});
-						logger.error({ error, organizationId, timezone }, "Failed to update organization timezone");
+						logger.error(
+							{ error, organizationId, timezone },
+							"Failed to update organization timezone",
+						);
 						return yield* _(Effect.fail(error as AnyAppError));
 					}),
 				),

@@ -6,7 +6,6 @@ import { toast } from "sonner";
 import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { PermissionEditor } from "@/components/settings/permission-editor";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,6 +19,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { UserAvatar } from "@/components/user-avatar";
 import type { EmployeePermissions } from "@/lib/effect/services/permissions.service";
 import { type EmployeeWithRelations, listEmployees } from "../employees/actions";
 import { listTeams } from "../teams/actions";
@@ -32,7 +32,11 @@ export default function PermissionsPage() {
 	const [teams, setTeams] = useState<TeamItem[]>([]);
 	const [permissions, setPermissions] = useState<Record<string, EmployeePermissions>>({});
 	const [loading, setLoading] = useState(true);
-	const [currentEmployee, setCurrentEmployee] = useState<{ id: string; role: string; organizationId: string } | null>(null);
+	const [currentEmployee, setCurrentEmployee] = useState<{
+		id: string;
+		role: string;
+		organizationId: string;
+	} | null>(null);
 	const [noEmployee, setNoEmployee] = useState(false);
 	const [isAdmin, setIsAdmin] = useState(false);
 	const [searchQuery, setSearchQuery] = useState("");
@@ -229,16 +233,12 @@ export default function PermissionsPage() {
 											<TableRow key={emp.id}>
 												<TableCell>
 													<div className="flex items-center gap-3">
-														<Avatar className="size-8">
-															<AvatarImage src={emp.user.image || undefined} />
-															<AvatarFallback>
-																{emp.user.name
-																	.split(" ")
-																	.map((n: string) => n[0])
-																	.join("")
-																	.toUpperCase()}
-															</AvatarFallback>
-														</Avatar>
+														<UserAvatar
+															image={emp.user.image}
+															seed={emp.id}
+															name={emp.user.name}
+															size="sm"
+														/>
 														<div>
 															<div className="font-medium">{emp.user.name}</div>
 															<div className="text-sm text-muted-foreground">{emp.user.email}</div>

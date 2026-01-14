@@ -1,12 +1,11 @@
 "use client";
 
-import { useForm } from "@tanstack/react-form";
 import { IconDeviceFloppy, IconLoader2 } from "@tabler/icons-react";
+import { useForm } from "@tanstack/react-form";
 import { use, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,6 +20,7 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import { UserAvatar } from "@/components/user-avatar";
 import { useRouter } from "@/navigation";
 import {
 	createVacationAdjustmentAction,
@@ -70,7 +70,10 @@ export default function EmployeeAllowanceEditPage({
 				const newPolicyId = value.policyId || "";
 
 				if (currentPolicyId !== newPolicyId) {
-					const assignmentResult = await setEmployeePolicyAssignment(employeeId, newPolicyId || null);
+					const assignmentResult = await setEmployeePolicyAssignment(
+						employeeId,
+						newPolicyId || null,
+					);
 					if (!assignmentResult.success) {
 						toast.error(assignmentResult.error || "Failed to update policy assignment");
 						setLoading(false);
@@ -94,14 +97,10 @@ export default function EmployeeAllowanceEditPage({
 
 				// Create adjustment event if adjustment provided
 				if (value.adjustmentDays && value.adjustmentReason) {
-					const adjustmentResult = await createVacationAdjustmentAction(
-						employeeId,
-						currentYear,
-						{
-							days: value.adjustmentDays,
-							reason: value.adjustmentReason,
-						},
-					);
+					const adjustmentResult = await createVacationAdjustmentAction(employeeId, currentYear, {
+						days: value.adjustmentDays,
+						reason: value.adjustmentReason,
+					});
 
 					if (!adjustmentResult.success) {
 						toast.error(adjustmentResult.error || "Failed to create adjustment");
@@ -218,16 +217,12 @@ export default function EmployeeAllowanceEditPage({
 					</CardHeader>
 					<CardContent className="space-y-4">
 						<div className="flex items-center gap-3">
-							<Avatar className="size-12">
-								<AvatarImage src={employee.user.image || undefined} />
-								<AvatarFallback>
-									{employee.user.name
-										.split(" ")
-										.map((n: string) => n[0])
-										.join("")
-										.toUpperCase()}
-								</AvatarFallback>
-							</Avatar>
+							<UserAvatar
+								image={employee.user.image}
+								seed={employeeId}
+								name={employee.user.name}
+								size="lg"
+							/>
 							<div>
 								<div className="font-medium">{employee.user.name}</div>
 								<div className="text-sm text-muted-foreground">{employee.user.email}</div>
@@ -375,7 +370,9 @@ export default function EmployeeAllowanceEditPage({
 											onChange={(e) => field.handleChange(e.target.value)}
 											onBlur={field.handleBlur}
 										/>
-										<p className="text-sm text-muted-foreground">Days carried over from previous year</p>
+										<p className="text-sm text-muted-foreground">
+											Days carried over from previous year
+										</p>
 										{field.state.meta.errors.length > 0 && (
 											<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
 										)}

@@ -72,11 +72,12 @@ async function StatisticsContent() {
 		return (
 			<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
 				<div className="space-y-1">
-					<h1 className="text-2xl font-semibold">
-						{t("settings.statistics.title", "Statistics")}
-					</h1>
+					<h1 className="text-2xl font-semibold">{t("settings.statistics.title", "Statistics")}</h1>
 					<p className="text-muted-foreground">
-						{t("settings.statistics.description", "View statistics and metrics about your instance")}
+						{t(
+							"settings.statistics.description",
+							"View statistics and metrics about your instance",
+						)}
 					</p>
 				</div>
 				<Card className="border-destructive">
@@ -97,15 +98,17 @@ async function StatisticsContent() {
 		<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
 			<div className="flex items-start justify-between">
 				<div className="space-y-1">
-					<h1 className="text-2xl font-semibold">
-						{t("settings.statistics.title", "Statistics")}
-					</h1>
+					<h1 className="text-2xl font-semibold">{t("settings.statistics.title", "Statistics")}</h1>
 					<p className="text-muted-foreground">
-						{t("settings.statistics.description", "View statistics and metrics about your instance")}
+						{t(
+							"settings.statistics.description",
+							"View statistics and metrics about your instance",
+						)}
 					</p>
 				</div>
 				<p className="text-xs text-muted-foreground">
-					{t("settings.statistics.lastUpdated", "Last updated")}: {new Date(stats.fetchedAt).toLocaleString()}
+					{t("settings.statistics.lastUpdated", "Last updated")}:{" "}
+					{new Date(stats.fetchedAt).toLocaleString()}
 				</p>
 			</div>
 
@@ -132,7 +135,7 @@ async function StatisticsContent() {
 						description={t(
 							"settings.statistics.cards.employeesDescription",
 							"{active} active, {inactive} inactive",
-							{ active: stats.activeEmployees, inactive: stats.inactiveEmployees }
+							{ active: stats.activeEmployees, inactive: stats.inactiveEmployees },
 						)}
 						icon={<IconUsers className="size-4" />}
 					/>
@@ -170,21 +173,17 @@ async function StatisticsContent() {
 					<StatCard
 						title={t("settings.statistics.cards.totalAbsences", "Total Absences")}
 						value={stats.totalAbsences}
-						description={t(
-							"settings.statistics.cards.pendingCount",
-							"{count} pending",
-							{ count: stats.pendingAbsences }
-						)}
+						description={t("settings.statistics.cards.pendingCount", "{count} pending", {
+							count: stats.pendingAbsences,
+						})}
 						icon={<IconCalendarStats className="size-4" />}
 					/>
 					<StatCard
 						title={t("settings.statistics.cards.approvalRequests", "Approval Requests")}
 						value={stats.totalApprovals}
-						description={t(
-							"settings.statistics.cards.pendingCount",
-							"{count} pending",
-							{ count: stats.pendingApprovals }
-						)}
+						description={t("settings.statistics.cards.pendingCount", "{count} pending", {
+							count: stats.pendingApprovals,
+						})}
 						icon={<IconChartBar className="size-4" />}
 					/>
 				</div>
@@ -225,7 +224,10 @@ async function StatisticsContent() {
 					<StatCard
 						title={t("settings.statistics.cards.activeSessions", "Active Sessions")}
 						value={stats.activeSessions}
-						description={t("settings.statistics.cards.activeSessionsDescription", "Current database sessions")}
+						description={t(
+							"settings.statistics.cards.activeSessionsDescription",
+							"Current database sessions",
+						)}
 						icon={<IconRefresh className="size-4" />}
 					/>
 				</div>

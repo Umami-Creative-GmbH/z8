@@ -540,12 +540,12 @@ export async function deleteVacationPolicyAssignment(
  * Get company default policies (current and next scheduled)
  * Returns policies marked as isCompanyDefault=true, grouped by current/next
  */
-export async function getCompanyDefaultPolicies(
-	organizationId: string,
-): Promise<ServerActionResult<{
-	current: any | null;
-	next: any | null;
-}>> {
+export async function getCompanyDefaultPolicies(organizationId: string): Promise<
+	ServerActionResult<{
+		current: any | null;
+		next: any | null;
+	}>
+> {
 	const effect = Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
 		const _session = yield* _(authService.getSession());

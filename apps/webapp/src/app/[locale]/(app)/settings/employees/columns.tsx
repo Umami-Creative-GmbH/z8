@@ -1,7 +1,7 @@
 "use client";
 
-import type { ColumnDef } from "@tanstack/react-table";
 import { IconArrowsSort } from "@tabler/icons-react";
+import type { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/user-avatar";
@@ -12,10 +12,7 @@ export const columns: ColumnDef<EmployeeWithRelations>[] = [
 	{
 		accessorKey: "user.name",
 		header: ({ column }) => (
-			<Button
-				variant="ghost"
-				onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-			>
+			<Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
 				Employee
 				<IconArrowsSort className="ml-2 size-4" />
 			</Button>

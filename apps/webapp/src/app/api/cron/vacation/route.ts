@@ -70,11 +70,14 @@ export async function GET(request: NextRequest) {
 	try {
 		const results = await runVacationAutomation();
 
-		logger.info("Vacation automation cron job completed", {
-			hasCarryover: !!results.carryover,
-			hasExpiry: !!results.expiry,
-			hasAccrual: !!results.accrual,
-		});
+		logger.info(
+			{
+				hasCarryover: !!results.carryover,
+				hasExpiry: !!results.expiry,
+				hasAccrual: !!results.accrual,
+			},
+			"Vacation automation cron job completed",
+		);
 
 		return NextResponse.json({
 			success: true,

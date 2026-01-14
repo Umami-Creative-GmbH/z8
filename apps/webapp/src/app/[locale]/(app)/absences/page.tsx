@@ -52,11 +52,20 @@ export default async function AbsencesPage() {
 		return (
 			<div className="flex flex-1 items-center justify-center p-6">
 				<div className="text-center">
-					<h2 className="text-2xl font-semibold mb-2">{t("absences.errors.allowanceNotConfigured", "Vacation Allowance Not Configured")}</h2>
+					<h2 className="text-2xl font-semibold mb-2">
+						{t("absences.errors.allowanceNotConfigured", "Vacation Allowance Not Configured")}
+					</h2>
 					<p className="text-muted-foreground">
-						{t("absences.errors.allowanceNotConfiguredMessage", "Your organization hasn't set up vacation allowances for {currentYear} yet.", { currentYear })}
+						{t(
+							"absences.errors.allowanceNotConfiguredMessage",
+							"Your organization hasn't set up vacation allowances for {currentYear} yet.",
+							{ currentYear },
+						)}
 						<br />
-						{t("absences.errors.contactAdmin", "Please contact your administrator to configure vacation policies.")}
+						{t(
+							"absences.errors.contactAdmin",
+							"Please contact your administrator to configure vacation policies.",
+						)}
 					</p>
 				</div>
 			</div>
@@ -70,7 +79,9 @@ export default async function AbsencesPage() {
 				<div className="flex items-center justify-between mb-4">
 					<div>
 						<h1 className="text-2xl font-semibold">{t("absences.title", "Absences")}</h1>
-						<p className="text-muted-foreground">{t("absences.subtitle", "Manage your time off and vacation days")}</p>
+						<p className="text-muted-foreground">
+							{t("absences.subtitle", "Manage your time off and vacation days")}
+						</p>
 					</div>
 					<RequestAbsenceDialog
 						categories={categories}

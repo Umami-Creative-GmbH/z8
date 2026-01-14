@@ -134,8 +134,7 @@ export async function requestAbsenceEffect(
 						yield* _(
 							Effect.fail(
 								new ValidationError({
-									message:
-										"Cannot end in the morning if starting in the afternoon on the same day",
+									message: "Cannot end in the morning if starting in the afternoon on the same day",
 									field: "endPeriod",
 									value: data.endPeriod,
 								}),

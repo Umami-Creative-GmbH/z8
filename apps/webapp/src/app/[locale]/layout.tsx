@@ -16,28 +16,20 @@ type Props = {
 	params: Promise<{ locale: string }>;
 };
 
-// Load translations without "use cache" to avoid hanging on Tolgee API calls
+// Load translations from static JSON files
 async function loadTranslations(locale: string): Promise<TolgeeStaticData> {
-	// Create Tolgee instance with explicit locale (from route params) to avoid headers() access
-	// Disable fullKeyEncode to prevent invisible character encoding in server-rendered content
-	const tolgee = TolgeeBase().init({
-		observerOptions: {
-			fullKeyEncode: false,
-		},
-		language: locale,
-	});
-
 	try {
-		// Add timeout to prevent hanging
-		const timeoutPromise = new Promise<TolgeeStaticData>((_, reject) => {
-			setTimeout(() => reject(new Error("Tolgee load timeout")), 5000);
-		});
+		// Import translations directly from static JSON files
+		const translations = await (locale === "de"
+			? import("../../../messages/de.json")
+			: import("../../../messages/en.json"));
 
-		return await Promise.race([tolgee.loadRequired() as Promise<TolgeeStaticData>, timeoutPromise]);
+		return {
+			[locale]: translations.default || translations,
+		};
 	} catch (error) {
-		console.warn("Failed to load Tolgee translations:", error);
-		// Return empty static data on failure
-		return {} as TolgeeStaticData;
+		console.warn("Failed to load translations:", error);
+		return {};
 	}
 }
 

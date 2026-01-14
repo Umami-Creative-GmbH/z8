@@ -10,12 +10,12 @@ import {
 } from "@tabler/icons-react";
 import {
 	type ColumnDef,
-	type SortingState,
 	flexRender,
 	getCoreRowModel,
 	getFilteredRowModel,
 	getPaginationRowModel,
 	getSortedRowModel,
+	type SortingState,
 	useReactTable,
 } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
@@ -80,9 +80,7 @@ export function TeamMembersList({ employees }: TeamMembersListProps) {
 					<div>
 						<div className="flex items-center gap-1.5 font-medium">
 							{row.original.user.name}
-							{row.original.isPrimaryManager && (
-								<IconUserCheck className="size-4 text-primary" />
-							)}
+							{row.original.isPrimaryManager && <IconUserCheck className="size-4 text-primary" />}
 						</div>
 						<div className="text-sm text-muted-foreground">{row.original.user.email}</div>
 					</div>
@@ -98,11 +96,7 @@ export function TeamMembersList({ employees }: TeamMembersListProps) {
 			accessorKey: "team.name",
 			header: t("team.table.team", "Team"),
 			cell: ({ row }) =>
-				row.original.team ? (
-					<Badge variant="secondary">{row.original.team.name}</Badge>
-				) : (
-					"—"
-				),
+				row.original.team ? <Badge variant="secondary">{row.original.team.name}</Badge> : "—",
 		},
 		{
 			accessorKey: "role",
@@ -181,7 +175,10 @@ export function TeamMembersList({ employees }: TeamMembersListProps) {
 				<div className="relative max-w-md flex-1">
 					<IconSearch className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
 					<Input
-						placeholder={t("team.search.placeholder", "Search by name, email, position, or team...")}
+						placeholder={t(
+							"team.search.placeholder",
+							"Search by name, email, position, or team...",
+						)}
 						value={searchQuery}
 						onChange={(e) => setSearchQuery(e.target.value)}
 						className="pl-10"
@@ -227,13 +224,9 @@ export function TeamMembersList({ employees }: TeamMembersListProps) {
 														/>
 													)}
 												</div>
-												<p className="truncate text-xs text-muted-foreground">
-													{emp.user.email}
-												</p>
+												<p className="truncate text-xs text-muted-foreground">{emp.user.email}</p>
 												{emp.position && (
-													<p className="truncate text-xs text-muted-foreground">
-														{emp.position}
-													</p>
+													<p className="truncate text-xs text-muted-foreground">{emp.position}</p>
 												)}
 											</div>
 										</div>
@@ -301,8 +294,7 @@ export function TeamMembersList({ employees }: TeamMembersListProps) {
 								<p className="text-sm text-muted-foreground">
 									{t("team.pagination.showing", "Showing {from} to {to} of {total}", {
 										from:
-											table.getState().pagination.pageIndex *
-												table.getState().pagination.pageSize +
+											table.getState().pagination.pageIndex * table.getState().pagination.pageSize +
 											1,
 										to: Math.min(
 											(table.getState().pagination.pageIndex + 1) *
@@ -344,12 +336,7 @@ export function TeamMembersList({ employees }: TeamMembersListProps) {
 								query: searchQuery,
 							})}
 						</p>
-						<Button
-							variant="ghost"
-							size="sm"
-							className="mt-4"
-							onClick={() => setSearchQuery("")}
-						>
+						<Button variant="ghost" size="sm" className="mt-4" onClick={() => setSearchQuery("")}>
 							{t("team.noResults.action", "Clear search")}
 						</Button>
 					</CardContent>

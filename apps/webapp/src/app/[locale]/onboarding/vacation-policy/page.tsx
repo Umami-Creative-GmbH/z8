@@ -1,8 +1,8 @@
 "use client";
 
+import { IconBeach, IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useStore } from "@tanstack/react-store";
-import { IconBeach, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -165,8 +165,8 @@ export default function VacationPolicyPage() {
 										{field.state.meta.errors.length > 0 && (
 											<p className="text-sm font-medium text-destructive">
 												{typeof field.state.meta.errors[0] === "string"
-												? field.state.meta.errors[0]
-												: (field.state.meta.errors[0] as any)?.message}
+													? field.state.meta.errors[0]
+													: (field.state.meta.errors[0] as any)?.message}
 											</p>
 										)}
 									</div>
@@ -204,8 +204,8 @@ export default function VacationPolicyPage() {
 										{field.state.meta.errors.length > 0 && (
 											<p className="text-sm font-medium text-destructive">
 												{typeof field.state.meta.errors[0] === "string"
-												? field.state.meta.errors[0]
-												: (field.state.meta.errors[0] as any)?.message}
+													? field.state.meta.errors[0]
+													: (field.state.meta.errors[0] as any)?.message}
 											</p>
 										)}
 									</div>
@@ -216,9 +216,7 @@ export default function VacationPolicyPage() {
 							<form.Field name="accrualType">
 								{(field) => (
 									<div className="space-y-2">
-										<Label>
-											{t("onboarding.vacationPolicy.accrualType", "Accrual Type")}
-										</Label>
+										<Label>{t("onboarding.vacationPolicy.accrualType", "Accrual Type")}</Label>
 										<Select
 											onValueChange={(value) =>
 												field.handleChange(value as "annual" | "monthly" | "biweekly")
@@ -307,8 +305,8 @@ export default function VacationPolicyPage() {
 											{field.state.meta.errors.length > 0 && (
 												<p className="text-sm font-medium text-destructive">
 													{typeof field.state.meta.errors[0] === "string"
-												? field.state.meta.errors[0]
-												: (field.state.meta.errors[0] as any)?.message}
+														? field.state.meta.errors[0]
+														: (field.state.meta.errors[0] as any)?.message}
 												</p>
 											)}
 										</div>

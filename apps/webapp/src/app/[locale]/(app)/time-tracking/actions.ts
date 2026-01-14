@@ -23,16 +23,18 @@ import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { EmailService } from "@/lib/effect/services/email.service";
+import { SurchargeService, SurchargeServiceLive } from "@/lib/effect/services/surcharge.service";
 import {
 	TimeRegulationService,
 	TimeRegulationServiceLive,
 } from "@/lib/effect/services/time-regulation.service";
-import {
-	SurchargeService,
-	SurchargeServiceLive,
-} from "@/lib/effect/services/surcharge.service";
 import { renderTimeCorrectionPendingApproval } from "@/lib/email/render";
 import { createLogger } from "@/lib/logger";
+import {
+	checkProjectBudgetWarnings,
+	getProjectTotalHours,
+} from "@/lib/notifications/project-notification-triggers";
+import type { ComplianceWarning } from "@/lib/time-regulations/validation";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
 import { isSameDayInTimezone } from "@/lib/time-tracking/time-utils";
 import {
@@ -41,12 +43,7 @@ import {
 	getWeekRangeInTimezone,
 } from "@/lib/time-tracking/timezone-utils";
 import type { TimeSummary } from "@/lib/time-tracking/types";
-import type { ComplianceWarning } from "@/lib/time-regulations/validation";
 import { validateTimeEntry, validateTimeEntryRange } from "@/lib/time-tracking/validation";
-import {
-	checkProjectBudgetWarnings,
-	getProjectTotalHours,
-} from "@/lib/notifications/project-notification-triggers";
 import type { WorkPeriodWithEntries } from "./types";
 
 const logger = createLogger("TimeTrackingActionsEffect");
@@ -990,9 +987,7 @@ export type ClockOutResult = typeof timeEntry.$inferSelect & {
  * Also checks compliance against time regulations and logs any violations
  * @param projectId - Optional project ID to assign the work period to
  */
-export async function clockOut(
-	projectId?: string,
-): Promise<ServerActionResult<ClockOutResult>> {
+export async function clockOut(projectId?: string): Promise<ServerActionResult<ClockOutResult>> {
 	const session = await auth.api.getSession({ headers: await headers() });
 	if (!session?.user) {
 		return { success: false, error: "Not authenticated" };
@@ -1162,7 +1157,10 @@ async function validateProjectAssignment(
 	// Build OR condition for team assignment
 	const assignmentQuery = teamId
 		? or(
-				and(eq(projectAssignment.projectId, projectId), eq(projectAssignment.employeeId, employeeId)),
+				and(
+					eq(projectAssignment.projectId, projectId),
+					eq(projectAssignment.employeeId, employeeId),
+				),
 				and(eq(projectAssignment.projectId, projectId), eq(projectAssignment.teamId, teamId)),
 			)
 		: and(eq(projectAssignment.projectId, projectId), eq(projectAssignment.employeeId, employeeId));
@@ -1215,9 +1213,7 @@ async function checkComplianceAfterClockOut(
 
 			// Log violations if any
 			if (result.warnings.length > 0) {
-				const effectiveRegulation = yield* _(
-					regulationService.getEffectiveRegulation(employeeId),
-				);
+				const effectiveRegulation = yield* _(regulationService.getEffectiveRegulation(employeeId));
 
 				if (effectiveRegulation) {
 					for (const warning of result.warnings) {
@@ -1243,10 +1239,7 @@ async function checkComplianceAfterClockOut(
 			}
 
 			return result.warnings;
-		}).pipe(
-			Effect.provide(TimeRegulationServiceLive),
-			Effect.provide(DatabaseServiceLive),
-		);
+		}).pipe(Effect.provide(TimeRegulationServiceLive), Effect.provide(DatabaseServiceLive));
 
 		const warnings = await Effect.runPromise(complianceEffect);
 		return warnings;
@@ -1320,10 +1313,7 @@ async function calculateAndPersistSurcharges(
 
 			// Persist the surcharge calculation
 			yield* _(surchargeService.persistSurchargeCalculation(workPeriodId));
-		}).pipe(
-			Effect.provide(SurchargeServiceLive),
-			Effect.provide(DatabaseServiceLive),
-		);
+		}).pipe(Effect.provide(SurchargeServiceLive), Effect.provide(DatabaseServiceLive));
 
 		await Effect.runPromise(surchargeEffect);
 	} catch (error) {
@@ -1397,18 +1387,20 @@ export type { ComplianceWarning } from "@/lib/time-regulations/validation";
  * Get break reminder status for the currently active session
  * Returns information about break requirements and whether a break is needed soon
  */
-export async function getBreakReminderStatus(): Promise<ServerActionResult<{
-	needsBreakSoon: boolean;
-	uninterruptedMinutes: number;
-	maxUninterrupted: number | null;
-	minutesUntilBreakRequired: number | null;
-	breakRequirement: {
-		isRequired: boolean;
-		totalNeeded: number;
-		taken: number;
-		remaining: number;
-	} | null;
-}>> {
+export async function getBreakReminderStatus(): Promise<
+	ServerActionResult<{
+		needsBreakSoon: boolean;
+		uninterruptedMinutes: number;
+		maxUninterrupted: number | null;
+		minutesUntilBreakRequired: number | null;
+		breakRequirement: {
+			isRequired: boolean;
+			totalNeeded: number;
+			taken: number;
+			remaining: number;
+		} | null;
+	}>
+> {
 	const session = await auth.api.getSession({ headers: await headers() });
 	if (!session?.user) {
 		return { success: false, error: "Not authenticated" };
@@ -1510,10 +1502,7 @@ export async function getBreakReminderStatus(): Promise<ServerActionResult<{
 						}
 					: null,
 			};
-		}).pipe(
-			Effect.provide(TimeRegulationServiceLive),
-			Effect.provide(DatabaseServiceLive),
-		);
+		}).pipe(Effect.provide(TimeRegulationServiceLive), Effect.provide(DatabaseServiceLive));
 
 		const breakStatus = await Effect.runPromise(breakStatusEffect);
 		return { success: true, data: breakStatus };

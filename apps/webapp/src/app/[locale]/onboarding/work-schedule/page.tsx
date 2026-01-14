@@ -1,7 +1,7 @@
 "use client";
 
-import { useForm } from "@tanstack/react-form";
 import { IconClock, IconLoader2 } from "@tabler/icons-react";
+import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -113,9 +113,7 @@ export default function WorkSchedulePage() {
 							>
 								{(field) => (
 									<div className="space-y-2">
-										<Label>
-											{t("onboarding.workSchedule.hoursPerWeek", "Hours per Week")}
-										</Label>
+										<Label>{t("onboarding.workSchedule.hoursPerWeek", "Hours per Week")}</Label>
 										<Input
 											type="number"
 											min={0}
@@ -135,8 +133,8 @@ export default function WorkSchedulePage() {
 										{field.state.meta.errors.length > 0 && (
 											<p className="text-sm font-medium text-destructive">
 												{typeof field.state.meta.errors[0] === "string"
-												? field.state.meta.errors[0]
-												: (field.state.meta.errors[0] as any)?.message}
+													? field.state.meta.errors[0]
+													: (field.state.meta.errors[0] as any)?.message}
 											</p>
 										)}
 									</div>

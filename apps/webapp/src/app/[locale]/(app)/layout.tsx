@@ -24,7 +24,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
 					<ServerAppSidebar variant="inset" />
 					<SidebarInset>
 						<SiteHeader />
-						<div className="flex flex-1 flex-col min-h-0">{children}</div>
+						<div className="flex flex-1 flex-col min-h-0 overflow-y-auto">{children}</div>
 					</SidebarInset>
 				</SidebarProvider>
 			</OrganizationSettingsProvider>

@@ -5,10 +5,15 @@ import { Effect } from "effect";
 import { headers } from "next/headers";
 import { db } from "@/db";
 import { member } from "@/db/auth-schema";
-import { employee, employeeVacationAllowance, vacationAdjustment, vacationAllowance } from "@/db/schema";
+import {
+	employee,
+	employeeVacationAllowance,
+	vacationAdjustment,
+	vacationAllowance,
+} from "@/db/schema";
+import { AuditAction, logAudit } from "@/lib/audit-logger";
 import { auth } from "@/lib/auth";
 import { isManagerOf } from "@/lib/auth-helpers";
-import { AuditAction, logAudit } from "@/lib/audit-logger";
 import {
 	AuthorizationError,
 	ConflictError,
@@ -976,7 +981,8 @@ export async function deleteVacationPolicy(policyId: string): Promise<ServerActi
 				yield* _(
 					Effect.fail(
 						new ConflictError({
-							message: "Cannot delete the only company default policy. Set another policy as default first.",
+							message:
+								"Cannot delete the only company default policy. Set another policy as default first.",
 							conflictType: "last_company_default",
 							details: { policyId },
 						}),

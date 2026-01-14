@@ -1,8 +1,8 @@
 "use client";
 
+import { IconClock, IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useStore } from "@tanstack/react-store";
-import { IconClock, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -179,8 +179,8 @@ export default function WorkTemplatesPage() {
 										{field.state.meta.errors.length > 0 && (
 											<p className="text-sm font-medium text-destructive">
 												{typeof field.state.meta.errors[0] === "string"
-												? field.state.meta.errors[0]
-												: (field.state.meta.errors[0] as any)?.message}
+													? field.state.meta.errors[0]
+													: (field.state.meta.errors[0] as any)?.message}
 											</p>
 										)}
 									</div>
@@ -196,9 +196,7 @@ export default function WorkTemplatesPage() {
 							>
 								{(field) => (
 									<div className="space-y-2">
-										<Label>
-											{t("onboarding.workTemplates.hoursPerWeek", "Hours per Week")}
-										</Label>
+										<Label>{t("onboarding.workTemplates.hoursPerWeek", "Hours per Week")}</Label>
 										<Input
 											type="number"
 											min={0}
@@ -218,8 +216,8 @@ export default function WorkTemplatesPage() {
 										{field.state.meta.errors.length > 0 && (
 											<p className="text-sm font-medium text-destructive">
 												{typeof field.state.meta.errors[0] === "string"
-												? field.state.meta.errors[0]
-												: (field.state.meta.errors[0] as any)?.message}
+													? field.state.meta.errors[0]
+													: (field.state.meta.errors[0] as any)?.message}
 											</p>
 										)}
 									</div>
@@ -230,9 +228,7 @@ export default function WorkTemplatesPage() {
 							<form.Field name="workingDays">
 								{(field) => (
 									<div className="space-y-2">
-										<Label>
-											{t("onboarding.workTemplates.workingDays", "Working Days")}
-										</Label>
+										<Label>{t("onboarding.workTemplates.workingDays", "Working Days")}</Label>
 										<div className="grid grid-cols-7 gap-2">
 											{DAYS_OF_WEEK.map((day) => (
 												<div key={day.value} className="flex flex-col items-center space-y-2">
@@ -251,9 +247,7 @@ export default function WorkTemplatesPage() {
 														disabled={loading}
 														className="size-6"
 													/>
-													<Label className="text-xs font-normal">
-														{day.shortLabel}
-													</Label>
+													<Label className="text-xs font-normal">{day.shortLabel}</Label>
 												</div>
 											))}
 										</div>
@@ -292,10 +286,7 @@ export default function WorkTemplatesPage() {
 									<div className="flex flex-row items-center justify-between rounded-lg border p-4">
 										<div className="space-y-0.5">
 											<Label className="text-base">
-												{t(
-													"onboarding.workTemplates.setAsDefault",
-													"Set as organization default",
-												)}
+												{t("onboarding.workTemplates.setAsDefault", "Set as organization default")}
 											</Label>
 											<p className="text-sm text-muted-foreground">
 												{t(

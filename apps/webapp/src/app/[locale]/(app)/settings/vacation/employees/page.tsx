@@ -1,10 +1,8 @@
 import { IconEdit, IconUser } from "@tabler/icons-react";
 import { redirect } from "next/navigation";
-import { Link } from "@/navigation";
 import { Suspense } from "react";
 import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,6 +15,8 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { UserAvatar } from "@/components/user-avatar";
+import { Link } from "@/navigation";
 import { getCompanyDefaultVacationPolicy, getEmployeesWithAllowances } from "../actions";
 import { getVacationPolicyAssignments } from "../assignment-actions";
 
@@ -129,16 +129,12 @@ async function EmployeeAllowancesContent() {
 											<TableRow key={emp.id}>
 												<TableCell>
 													<div className="flex items-center gap-3">
-														<Avatar className="size-8">
-															<AvatarImage src={emp.user.image || undefined} />
-															<AvatarFallback>
-																{emp.user.name
-																	.split(" ")
-																	.map((n: string) => n[0])
-																	.join("")
-																	.toUpperCase()}
-															</AvatarFallback>
-														</Avatar>
+														<UserAvatar
+															image={emp.user.image}
+															seed={emp.id}
+															name={emp.user.name}
+															size="sm"
+														/>
 														<div>
 															<div className="font-medium">{emp.user.name}</div>
 															<div className="text-xs text-muted-foreground">{emp.user.email}</div>

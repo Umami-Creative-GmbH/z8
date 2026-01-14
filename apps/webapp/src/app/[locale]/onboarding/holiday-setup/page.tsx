@@ -1,8 +1,8 @@
 "use client";
 
+import { IconCalendarEvent, IconCheck, IconLoader2, IconSelector } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useStore } from "@tanstack/react-store";
-import { IconCalendarEvent, IconCheck, IconLoader2, IconSelector } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -229,7 +229,9 @@ export default function HolidaySetupPage() {
 																	<IconCheck
 																		className={cn(
 																			"mr-2 h-4 w-4",
-																			field.state.value === country.code ? "opacity-100" : "opacity-0",
+																			field.state.value === country.code
+																				? "opacity-100"
+																				: "opacity-0",
 																		)}
 																	/>
 																	{country.name}
@@ -266,9 +268,7 @@ export default function HolidaySetupPage() {
 							>
 								{(field) => (
 									<div className="space-y-2">
-										<Label>
-											{t("onboarding.holidaySetup.presetName", "Preset Name")}
-										</Label>
+										<Label>{t("onboarding.holidaySetup.presetName", "Preset Name")}</Label>
 										<Input
 											value={field.state.value}
 											onChange={(e) => field.handleChange(e.target.value)}

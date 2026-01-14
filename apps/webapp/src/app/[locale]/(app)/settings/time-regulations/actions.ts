@@ -4,6 +4,7 @@ import { and, desc, eq, gte, lte } from "drizzle-orm";
 import { Effect } from "effect";
 import {
 	employee,
+	type TimeRegulationBreakRulesPreset,
 	team,
 	timeRegulation,
 	timeRegulationAssignment,
@@ -11,18 +12,22 @@ import {
 	timeRegulationBreakRule,
 	timeRegulationPreset,
 	timeRegulationViolation,
-	type TimeRegulationBreakRulesPreset,
 } from "@/db/schema";
-import { AuthorizationError, DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
+import {
+	AuthorizationError,
+	DatabaseError,
+	NotFoundError,
+	ValidationError,
+} from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import {
-	timeRegulationAssignmentFormSchema,
-	timeRegulationFormSchema,
 	type TimeRegulationAssignmentFormValues,
 	type TimeRegulationFormValues,
+	timeRegulationAssignmentFormSchema,
+	timeRegulationFormSchema,
 } from "@/lib/time-regulations/validation";
 
 // ============================================
@@ -420,7 +425,9 @@ export async function updateTimeRegulation(
 /**
  * Soft delete a time regulation
  */
-export async function deleteTimeRegulation(regulationId: string): Promise<ServerActionResult<void>> {
+export async function deleteTimeRegulation(
+	regulationId: string,
+): Promise<ServerActionResult<void>> {
 	const effect = Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
@@ -581,7 +588,8 @@ export async function createTimeRegulationAssignment(
 		}
 
 		// Determine priority based on assignment type
-		const priority = data.assignmentType === "employee" ? 2 : data.assignmentType === "team" ? 1 : 0;
+		const priority =
+			data.assignmentType === "employee" ? 2 : data.assignmentType === "team" ? 1 : 0;
 
 		// Create assignment
 		const [assignment] = yield* _(

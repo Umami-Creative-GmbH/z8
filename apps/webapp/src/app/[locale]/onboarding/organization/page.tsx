@@ -1,8 +1,8 @@
 "use client";
 
+import { IconBuilding, IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useStore } from "@tanstack/react-store";
-import { IconBuilding, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -182,8 +182,8 @@ export default function OrganizationPage() {
 												{field.state.meta.errors.length > 0 && (
 													<p className="text-sm font-medium text-destructive">
 														{typeof field.state.meta.errors[0] === "string"
-													? field.state.meta.errors[0]
-													: (field.state.meta.errors[0] as any)?.message}
+															? field.state.meta.errors[0]
+															: (field.state.meta.errors[0] as any)?.message}
 													</p>
 												)}
 											</div>
@@ -239,8 +239,8 @@ export default function OrganizationPage() {
 												{field.state.meta.errors.length > 0 && (
 													<p className="text-sm font-medium text-destructive">
 														{typeof field.state.meta.errors[0] === "string"
-													? field.state.meta.errors[0]
-													: (field.state.meta.errors[0] as any)?.message}
+															? field.state.meta.errors[0]
+															: (field.state.meta.errors[0] as any)?.message}
 													</p>
 												)}
 											</div>

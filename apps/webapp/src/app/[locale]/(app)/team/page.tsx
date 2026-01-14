@@ -30,9 +30,7 @@ export default async function TeamPage() {
 		return (
 			<div className="@container/main flex flex-1 items-center justify-center p-6">
 				<div className="text-center">
-					<h2 className="text-lg font-semibold">
-						{t("team.error.title", "Something went wrong")}
-					</h2>
+					<h2 className="text-lg font-semibold">{t("team.error.title", "Something went wrong")}</h2>
 					<p className="text-sm text-muted-foreground">
 						{t("team.error.description", "Unable to load your team members.")}
 					</p>
@@ -48,9 +46,7 @@ export default async function TeamPage() {
 			{/* Page Header */}
 			<div className="flex items-center justify-between px-4 lg:px-6">
 				<div>
-					<h1 className="text-3xl font-bold tracking-tight">
-						{t("team.title", "Your Team")}
-					</h1>
+					<h1 className="text-3xl font-bold tracking-tight">{t("team.title", "Your Team")}</h1>
 					<p className="text-muted-foreground">
 						{t("team.description", "View and manage employees you directly supervise")}
 					</p>
@@ -58,9 +54,7 @@ export default async function TeamPage() {
 				{employees.length > 0 && (
 					<Badge variant="secondary" className="text-sm">
 						{employees.length}{" "}
-						{employees.length === 1
-							? t("team.member", "member")
-							: t("team.members", "members")}
+						{employees.length === 1 ? t("team.member", "member") : t("team.members", "members")}
 					</Badge>
 				)}
 			</div>

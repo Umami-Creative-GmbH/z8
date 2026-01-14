@@ -1,6 +1,5 @@
 "use client";
 
-import { useForm } from "@tanstack/react-form";
 import {
 	IconArrowBack,
 	IconCheck,
@@ -11,13 +10,13 @@ import {
 	IconUsers,
 	IconX,
 } from "@tabler/icons-react";
+import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { use, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,6 +39,7 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import { UserAvatar } from "@/components/user-avatar";
 import { queryKeys } from "@/lib/query";
 import { Link, useRouter } from "@/navigation";
 import { listEmployees } from "../../employees/actions";
@@ -326,7 +326,10 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
 								<form.Field
 									name="name"
 									validators={{
-										onChange: z.string().min(1, "Team name is required").max(100, "Team name is too long"),
+										onChange: z
+											.string()
+											.min(1, "Team name is required")
+											.max(100, "Team name is too long"),
 									}}
 								>
 									{(field) => (
@@ -340,9 +343,9 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
 											/>
 											{field.state.meta.errors.length > 0 && (
 												<p className="text-sm text-destructive">
-													{typeof field.state.meta.errors[0] === 'string'
+													{typeof field.state.meta.errors[0] === "string"
 														? field.state.meta.errors[0]
-														: (field.state.meta.errors[0] as any)?.message || 'Invalid input'}
+														: (field.state.meta.errors[0] as any)?.message || "Invalid input"}
 												</p>
 											)}
 										</div>
@@ -361,9 +364,9 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
 											/>
 											{field.state.meta.errors.length > 0 && (
 												<p className="text-sm text-destructive">
-													{typeof field.state.meta.errors[0] === 'string'
+													{typeof field.state.meta.errors[0] === "string"
 														? field.state.meta.errors[0]
-														: (field.state.meta.errors[0] as any)?.message || 'Invalid input'}
+														: (field.state.meta.errors[0] as any)?.message || "Invalid input"}
 												</p>
 											)}
 										</div>
@@ -459,16 +462,12 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
 										className="flex items-center justify-between rounded-lg border p-3"
 									>
 										<div className="flex items-center gap-3">
-											<Avatar className="size-10">
-												<AvatarImage src={emp.user.image || undefined} />
-												<AvatarFallback>
-													{emp.user.name
-														.split(" ")
-														.map((n: string) => n[0])
-														.join("")
-														.toUpperCase()}
-												</AvatarFallback>
-											</Avatar>
+											<UserAvatar
+												image={emp.user.image}
+												seed={emp.id}
+												name={emp.user.name}
+												size="md"
+											/>
 											<div>
 												<div className="font-medium">{emp.user.name}</div>
 												<div className="text-sm text-muted-foreground">{emp.user.email}</div>

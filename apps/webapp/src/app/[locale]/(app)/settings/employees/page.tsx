@@ -1,13 +1,6 @@
 "use client";
 
 import {
-	flexRender,
-	getCoreRowModel,
-	getSortedRowModel,
-	useReactTable,
-	type SortingState,
-} from "@tanstack/react-table";
-import {
 	IconChevronLeft,
 	IconChevronRight,
 	IconPlus,
@@ -15,6 +8,13 @@ import {
 	IconSearch,
 	IconUser,
 } from "@tabler/icons-react";
+import {
+	flexRender,
+	getCoreRowModel,
+	getSortedRowModel,
+	type SortingState,
+	useReactTable,
+} from "@tanstack/react-table";
 import { useEffect, useState } from "react";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { Button } from "@/components/ui/button";
@@ -120,7 +120,9 @@ export default function EmployeesPage() {
 			<Card>
 				<CardHeader>
 					<CardTitle>Employee Directory</CardTitle>
-					<CardDescription>{total} employee{total !== 1 ? "s" : ""} found</CardDescription>
+					<CardDescription>
+						{total} employee{total !== 1 ? "s" : ""} found
+					</CardDescription>
 				</CardHeader>
 				<CardContent>
 					{/* Filters */}
@@ -173,10 +175,7 @@ export default function EmployeesPage() {
 													<TableHead key={header.id}>
 														{header.isPlaceholder
 															? null
-															: flexRender(
-																	header.column.columnDef.header,
-																	header.getContext(),
-																)}
+															: flexRender(header.column.columnDef.header, header.getContext())}
 													</TableHead>
 												))}
 											</TableRow>
