@@ -3,6 +3,7 @@
 import { IconCalendar } from "@tabler/icons-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { UserAvatar } from "@/components/user-avatar";
 import { differenceInDays, format } from "@/lib/datetime/luxon-utils";
 import { pluralize } from "@/lib/utils";
 import { Link } from "@/navigation";
@@ -16,7 +17,9 @@ type UpcomingAbsence = {
 	endDate: Date;
 	employee: {
 		user: {
+			id: string;
 			name: string | null;
+			image: string | null;
 		};
 	};
 	category: {
@@ -58,12 +61,17 @@ export function UpcomingTimeOffWidget() {
 							differenceInDays(new Date(absence.endDate), new Date(absence.startDate)) + 1;
 
 						return (
-							<div
-								key={absence.id}
-								className="flex items-center justify-between rounded-lg border p-3"
-							>
-								<div className="flex-1">
-									<div className="font-medium">{absence.employee.user.name || "Unknown"}</div>
+							<div key={absence.id} className="flex items-center gap-3 rounded-lg border p-3">
+								<UserAvatar
+									seed={absence.employee.user.id}
+									image={absence.employee.user.image}
+									name={absence.employee.user.name}
+									size="sm"
+								/>
+								<div className="flex-1 min-w-0">
+									<div className="font-medium truncate">
+										{absence.employee.user.name || "Unknown"}
+									</div>
 									<div className="text-xs text-muted-foreground">
 										{format(new Date(absence.startDate), "MMM d")} -{" "}
 										{format(new Date(absence.endDate), "MMM d, yyyy")}
@@ -82,10 +90,12 @@ export function UpcomingTimeOffWidget() {
 									)}
 								</div>
 								<Badge
+									variant="secondary"
+									className="shrink-0 text-xs"
 									style={{
 										backgroundColor: absence.category.color || undefined,
+										color: absence.category.color ? "#fff" : undefined,
 									}}
-									className="ml-3"
 								>
 									{absence.category.name}
 								</Badge>

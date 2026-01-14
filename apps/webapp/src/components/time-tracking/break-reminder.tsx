@@ -67,7 +67,8 @@ export function BreakReminder({ isClockedIn, onDismiss }: BreakReminderProps) {
 		? Math.min(100, (breakStatus.uninterruptedMinutes / breakStatus.maxUninterrupted) * 100)
 		: 0;
 
-	const isOverLimit = breakStatus.minutesUntilBreakRequired !== null && breakStatus.minutesUntilBreakRequired <= 0;
+	const isOverLimit =
+		breakStatus.minutesUntilBreakRequired !== null && breakStatus.minutesUntilBreakRequired <= 0;
 	const minutesRemaining = breakStatus.minutesUntilBreakRequired ?? 0;
 
 	return (
@@ -88,27 +89,23 @@ export function BreakReminder({ isClockedIn, onDismiss }: BreakReminderProps) {
 							: t("timeTracking.breakReminder.title", "Break Reminder")}
 					</AlertTitle>
 					<AlertDescription>
-						{isOverLimit ? (
-							t(
-								"timeTracking.breakReminder.overLimitMessage",
-								"You've exceeded the maximum uninterrupted working time. Please take a break soon.",
-							)
-						) : (
-							t(
-								"timeTracking.breakReminder.warningMessage",
-								"You have {minutes} minutes until a break is required.",
-								{ minutes: minutesRemaining },
-							)
-						)}
+						{isOverLimit
+							? t(
+									"timeTracking.breakReminder.overLimitMessage",
+									"You've exceeded the maximum uninterrupted working time. Please take a break soon.",
+								)
+							: t(
+									"timeTracking.breakReminder.warningMessage",
+									"You have {minutes} minutes until a break is required.",
+									{ minutes: minutesRemaining },
+								)}
 					</AlertDescription>
 
 					{/* Progress bar for uninterrupted time */}
 					{breakStatus.maxUninterrupted && (
 						<div className="space-y-1 pt-1">
 							<div className="flex justify-between text-xs text-muted-foreground">
-								<span>
-									{t("timeTracking.breakReminder.uninterrupted", "Uninterrupted work")}
-								</span>
+								<span>{t("timeTracking.breakReminder.uninterrupted", "Uninterrupted work")}</span>
 								<span>
 									{formatMinutes(breakStatus.uninterruptedMinutes)} /{" "}
 									{formatMinutes(breakStatus.maxUninterrupted)}
@@ -137,12 +134,7 @@ export function BreakReminder({ isClockedIn, onDismiss }: BreakReminderProps) {
 				</div>
 
 				{/* Dismiss button */}
-				<Button
-					variant="ghost"
-					size="icon"
-					className="size-6 shrink-0"
-					onClick={handleDismiss}
-				>
+				<Button variant="ghost" size="icon" className="size-6 shrink-0" onClick={handleDismiss}>
 					<IconX className="size-4" />
 					<span className="sr-only">{t("common.dismiss", "Dismiss")}</span>
 				</Button>

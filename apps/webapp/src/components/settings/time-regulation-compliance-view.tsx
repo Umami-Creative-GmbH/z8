@@ -72,7 +72,10 @@ export function TimeRegulationComplianceView({
 			case "max_weekly":
 				return t("settings.timeRegulations.violationType.maxWeekly", "Max Weekly Exceeded");
 			case "max_uninterrupted":
-				return t("settings.timeRegulations.violationType.maxUninterrupted", "Max Continuous Exceeded");
+				return t(
+					"settings.timeRegulations.violationType.maxUninterrupted",
+					"Max Continuous Exceeded",
+				);
 			case "break_required":
 				return t("settings.timeRegulations.violationType.breakRequired", "Required Break Missing");
 			default:
@@ -144,7 +147,9 @@ export function TimeRegulationComplianceView({
 			acknowledgeViolation(violationId, note),
 		onSuccess: (result) => {
 			if (result.success) {
-				toast.success(t("settings.timeRegulations.violationAcknowledged", "Violation acknowledged"));
+				toast.success(
+					t("settings.timeRegulations.violationAcknowledged", "Violation acknowledged"),
+				);
 				queryClient.invalidateQueries({ queryKey });
 				setAcknowledgeDialogOpen(false);
 				setSelectedViolation(null);
@@ -432,7 +437,9 @@ export function TimeRegulationComplianceView({
 													t("common.unknown", "Unknown")
 												: t("common.unknown", "Unknown")}
 										</TableCell>
-										<TableCell>{format(new Date(violation.violationDate), "MMM d, yyyy")}</TableCell>
+										<TableCell>
+											{format(new Date(violation.violationDate), "MMM d, yyyy")}
+										</TableCell>
 										<TableCell>
 											<Badge variant={violationTypeColors[violation.violationType] || "outline"}>
 												{getViolationTypeLabel(violation.violationType) || violation.violationType}
@@ -561,11 +568,7 @@ export function TimeRegulationComplianceView({
 					</div>
 
 					<DialogFooter>
-						<Button
-							type="button"
-							variant="outline"
-							onClick={() => setAcknowledgeDialogOpen(false)}
-						>
+						<Button type="button" variant="outline" onClick={() => setAcknowledgeDialogOpen(false)}>
 							{t("common.cancel", "Cancel")}
 						</Button>
 						<Button onClick={handleAcknowledgeConfirm} disabled={acknowledgeMutation.isPending}>

@@ -4,13 +4,13 @@ import { IconCheck, IconLoader2, IconX } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { assignManagers } from "@/app/[locale]/(app)/settings/employees/actions";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { UserAvatar } from "@/components/user-avatar";
 
 interface Manager {
 	id: string;
@@ -162,16 +162,12 @@ export function ManagerAssignment({
 												htmlFor={`manager-${manager.id}`}
 												className="flex flex-1 items-center gap-3 cursor-pointer"
 											>
-												<Avatar className="size-8">
-													<AvatarImage src={manager.user.image || undefined} />
-													<AvatarFallback>
-														{manager.user.name
-															.split(" ")
-															.map((n) => n[0])
-															.join("")
-															.toUpperCase()}
-													</AvatarFallback>
-												</Avatar>
+												<UserAvatar
+													image={manager.user.image}
+													seed={manager.id}
+													name={manager.user.name}
+													size="sm"
+												/>
 												<div className="flex-1">
 													<div className="font-medium">{displayName}</div>
 													<div className="text-sm text-muted-foreground">{manager.user.email}</div>
@@ -210,16 +206,12 @@ export function ManagerAssignment({
 												htmlFor={`primary-${manager.id}`}
 												className="flex flex-1 items-center gap-3 cursor-pointer"
 											>
-												<Avatar className="size-8">
-													<AvatarImage src={manager.user.image || undefined} />
-													<AvatarFallback>
-														{manager.user.name
-															.split(" ")
-															.map((n) => n[0])
-															.join("")
-															.toUpperCase()}
-													</AvatarFallback>
-												</Avatar>
+												<UserAvatar
+													image={manager.user.image}
+													seed={manager.id}
+													name={manager.user.name}
+													size="sm"
+												/>
 												<div className="flex-1">
 													<div className="font-medium">{displayName}</div>
 													<div className="text-sm text-muted-foreground">{manager.user.email}</div>

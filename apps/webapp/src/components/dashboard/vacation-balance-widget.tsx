@@ -44,9 +44,9 @@ export function VacationBalanceWidget() {
 
 	// Check if carryover is expiring soon (within 30 days)
 	const carryoverExpiringSoon =
-		balance?.carryoverExpiryDaysRemaining !== null &&
-		balance?.carryoverExpiryDaysRemaining <= 30 &&
-		balance?.carryoverDays > 0;
+		balance?.carryoverExpiryDaysRemaining != null &&
+		balance.carryoverExpiryDaysRemaining <= 30 &&
+		(balance.carryoverDays ?? 0) > 0;
 
 	return (
 		<WidgetCard

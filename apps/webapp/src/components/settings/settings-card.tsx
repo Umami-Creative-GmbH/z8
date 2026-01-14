@@ -1,8 +1,8 @@
 import { IconLoader2 } from "@tabler/icons-react";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { SettingsIconName } from "@/components/settings/settings-config";
 import { SETTINGS_ICON_MAP } from "@/components/settings/settings-icons";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "@/navigation";
 
 interface SettingsCardProps {
@@ -14,7 +14,14 @@ interface SettingsCardProps {
 	loading?: boolean;
 }
 
-export function SettingsCard({ title, description, href, icon, disabled, loading }: SettingsCardProps) {
+export function SettingsCard({
+	title,
+	description,
+	href,
+	icon,
+	disabled,
+	loading,
+}: SettingsCardProps) {
 	const Icon = SETTINGS_ICON_MAP[icon];
 
 	if (loading) {

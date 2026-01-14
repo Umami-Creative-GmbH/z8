@@ -57,11 +57,16 @@ export function ProjectManagement({ organizationId }: ProjectManagementProps) {
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const [editingProject, setEditingProject] = useState<ProjectWithDetails | null>(null);
 
-	const { data: projectsResult, isLoading, isFetching, refetch } = useQuery({
+	const {
+		data: projectsResult,
+		isLoading,
+		isFetching,
+		refetch,
+	} = useQuery({
 		queryKey: queryKeys.projects.list(organizationId),
 		queryFn: async () => {
 			const result = await getProjects(organizationId);
-			if (!result.success) throw new Error(result.error?.message);
+			if (!result.success) throw new Error(result.error ?? "Unknown error");
 			return result.data;
 		},
 	});
@@ -121,12 +126,7 @@ export function ProjectManagement({ organizationId }: ProjectManagementProps) {
 					</p>
 				</div>
 				<div className="flex items-center gap-2">
-					<Button
-						variant="ghost"
-						size="icon"
-						onClick={() => refetch()}
-						disabled={isFetching}
-					>
+					<Button variant="ghost" size="icon" onClick={() => refetch()} disabled={isFetching}>
 						<IconRefresh className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
 						<span className="sr-only">{t("common.refresh", "Refresh")}</span>
 					</Button>

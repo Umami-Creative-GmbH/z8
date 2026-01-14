@@ -11,6 +11,8 @@ import { WidgetCard } from "./widget-card";
 
 type UpcomingBirthday = {
 	id: string;
+	userId: string;
+	image: string | null;
 	user: {
 		name: string | null;
 	};
@@ -60,7 +62,7 @@ export function BirthdayRemindersWidget() {
 								className="flex items-center justify-between rounded-lg border p-3"
 							>
 								<div className="flex items-center gap-3">
-									<UserAvatar seed={birthday.id} name={name} className="size-9" />
+									<UserAvatar seed={birthday.userId} image={birthday.image} name={name} size="sm" />
 									<div>
 										<div className="font-medium text-sm">{name}</div>
 										<div className="text-xs text-muted-foreground">

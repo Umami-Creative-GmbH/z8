@@ -111,8 +111,7 @@ export function ProjectDialog({
 						onSuccess();
 					} else {
 						toast.error(
-							result.error?.message ||
-								t("settings.projects.updateFailed", "Failed to update project"),
+							result.error || t("settings.projects.updateFailed", "Failed to update project"),
 						);
 					}
 				} else {
@@ -131,8 +130,7 @@ export function ProjectDialog({
 						onSuccess();
 					} else {
 						toast.error(
-							result.error?.message ||
-								t("settings.projects.createFailed", "Failed to create project"),
+							result.error || t("settings.projects.createFailed", "Failed to create project"),
 						);
 					}
 				}

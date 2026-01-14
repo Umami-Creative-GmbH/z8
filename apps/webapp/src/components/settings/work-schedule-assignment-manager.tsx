@@ -183,7 +183,7 @@ export function WorkScheduleAssignmentManager({
 									<IconClock className="h-5 w-5 text-muted-foreground" />
 									<div>
 										<p className="font-medium">{formatSchedule(orgAssignment.template)}</p>
-										{orgAssignment.template.homeOfficeDaysPerCycle > 0 && (
+										{(orgAssignment.template.homeOfficeDaysPerCycle ?? 0) > 0 && (
 											<p className="text-xs text-muted-foreground">
 												{orgAssignment.template.homeOfficeDaysPerCycle}{" "}
 												{t("settings.workSchedules.homeOfficeDaysPerCycle", "home office days")}

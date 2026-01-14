@@ -329,10 +329,10 @@ export function AuditLogViewer() {
 										<TableRow key={log.id}>
 											<TableCell className="whitespace-nowrap">
 												<div className="text-sm">
-													{DateTime.fromISO(log.timestamp).toFormat("MMM d, yyyy")}
+													{DateTime.fromJSDate(log.timestamp).toFormat("MMM d, yyyy")}
 												</div>
 												<div className="text-xs text-muted-foreground">
-													{DateTime.fromISO(log.timestamp).toFormat("HH:mm:ss")}
+													{DateTime.fromJSDate(log.timestamp).toFormat("HH:mm:ss")}
 												</div>
 											</TableCell>
 											<TableCell>
@@ -376,7 +376,7 @@ export function AuditLogViewer() {
 																<div>
 																	<label className="text-sm font-medium">Timestamp</label>
 																	<p className="text-sm">
-																		{DateTime.fromISO(log.timestamp).toLocaleString(
+																		{DateTime.fromJSDate(log.timestamp).toLocaleString(
 																			DateTime.DATETIME_FULL,
 																		)}
 																	</p>

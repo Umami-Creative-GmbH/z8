@@ -1,8 +1,8 @@
 "use client";
 
 import { useForm } from "@tanstack/react-form";
-import { useStore } from "@tanstack/react-store";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useStore } from "@tanstack/react-store";
 import { format } from "date-fns";
 import { CalendarIcon, Loader2, Trash2, Users } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -232,7 +232,11 @@ export function ShiftDialog({
 											)}
 											disabled={!isManager}
 										>
-											{field.state.value ? format(field.state.value, "PPP") : <span>Pick a date</span>}
+											{field.state.value ? (
+												format(field.state.value, "PPP")
+											) : (
+												<span>Pick a date</span>
+											)}
 											<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
 										</Button>
 									</PopoverTrigger>
@@ -280,7 +284,9 @@ export function ShiftDialog({
 												))}
 										</SelectContent>
 									</Select>
-									<p className="text-sm text-muted-foreground">Selecting a template will auto-fill the times</p>
+									<p className="text-sm text-muted-foreground">
+										Selecting a template will auto-fill the times
+									</p>
 								</div>
 							)}
 						</form.Field>
@@ -307,8 +313,8 @@ export function ShiftDialog({
 									{field.state.meta.errors.length > 0 && (
 										<p className="text-sm font-medium text-destructive">
 											{typeof field.state.meta.errors[0] === "string"
-											? field.state.meta.errors[0]
-											: (field.state.meta.errors[0] as any)?.message}
+												? field.state.meta.errors[0]
+												: (field.state.meta.errors[0] as any)?.message}
 										</p>
 									)}
 								</div>
@@ -334,8 +340,8 @@ export function ShiftDialog({
 									{field.state.meta.errors.length > 0 && (
 										<p className="text-sm font-medium text-destructive">
 											{typeof field.state.meta.errors[0] === "string"
-											? field.state.meta.errors[0]
-											: (field.state.meta.errors[0] as any)?.message}
+												? field.state.meta.errors[0]
+												: (field.state.meta.errors[0] as any)?.message}
 										</p>
 									)}
 								</div>

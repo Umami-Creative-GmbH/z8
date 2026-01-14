@@ -226,7 +226,9 @@ export function AbsenceCalendar({ absences, holidays }: AbsenceCalendarProps) {
 							<div className="h-1 flex-1 rounded-full bg-current opacity-50" />
 							{status.type === "absence" && status.period !== "full_day" && (
 								<span className="text-[10px] uppercase opacity-70">
-									{status.period === "am" ? t("absences.period.am", "AM") : t("absences.period.pm", "PM")}
+									{status.period === "am"
+										? t("absences.period.am", "AM")
+										: t("absences.period.pm", "PM")}
 								</span>
 							)}
 						</div>
@@ -270,28 +272,39 @@ export function AbsenceCalendar({ absences, holidays }: AbsenceCalendarProps) {
 				<div className="mt-6 pt-6 border-t flex flex-wrap gap-4 text-sm">
 					<div className="flex items-center gap-2">
 						<div className="size-3 rounded bg-blue-500/20" />
-						<span className="text-muted-foreground">{t("absences.calendar.legend.approved", "Approved")}</span>
+						<span className="text-muted-foreground">
+							{t("absences.calendar.legend.approved", "Approved")}
+						</span>
 					</div>
 					<div className="flex items-center gap-2">
 						<div className="size-3 rounded bg-yellow-500/20" />
-						<span className="text-muted-foreground">{t("absences.calendar.legend.pending", "Pending")}</span>
+						<span className="text-muted-foreground">
+							{t("absences.calendar.legend.pending", "Pending")}
+						</span>
 					</div>
 					<div className="flex items-center gap-2">
 						<div className="size-3 rounded bg-red-500/20" />
-						<span className="text-muted-foreground">{t("absences.calendar.legend.rejected", "Rejected")}</span>
+						<span className="text-muted-foreground">
+							{t("absences.calendar.legend.rejected", "Rejected")}
+						</span>
 					</div>
 					<div className="flex items-center gap-2">
 						<div className="size-3 rounded bg-muted" />
-						<span className="text-muted-foreground">{t("absences.calendar.legend.holiday", "Holiday")}</span>
+						<span className="text-muted-foreground">
+							{t("absences.calendar.legend.holiday", "Holiday")}
+						</span>
 					</div>
 					<div className="flex items-center gap-2">
 						<div
 							className="size-3 rounded"
 							style={{
-								background: "linear-gradient(to bottom, rgba(59, 130, 246, 0.2) 50%, transparent 50%)",
+								background:
+									"linear-gradient(to bottom, rgba(59, 130, 246, 0.2) 50%, transparent 50%)",
 							}}
 						/>
-						<span className="text-muted-foreground">{t("absences.calendar.legend.halfDayAm", "Half day (AM)")}</span>
+						<span className="text-muted-foreground">
+							{t("absences.calendar.legend.halfDayAm", "Half day (AM)")}
+						</span>
 					</div>
 					<div className="flex items-center gap-2">
 						<div
@@ -300,7 +313,9 @@ export function AbsenceCalendar({ absences, holidays }: AbsenceCalendarProps) {
 								background: "linear-gradient(to top, rgba(59, 130, 246, 0.2) 50%, transparent 50%)",
 							}}
 						/>
-						<span className="text-muted-foreground">{t("absences.calendar.legend.halfDayPm", "Half day (PM)")}</span>
+						<span className="text-muted-foreground">
+							{t("absences.calendar.legend.halfDayPm", "Half day (PM)")}
+						</span>
 					</div>
 				</div>
 			</CardContent>

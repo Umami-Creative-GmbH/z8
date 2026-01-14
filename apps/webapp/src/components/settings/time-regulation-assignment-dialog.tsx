@@ -1,8 +1,8 @@
 "use client";
 
 import { IconLoader2 } from "@tabler/icons-react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "@tanstack/react-form";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useEffect } from "react";
 import { toast } from "sonner";
@@ -31,12 +31,12 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import {
+	fieldHasError,
 	TFormControl,
 	TFormDescription,
 	TFormItem,
 	TFormLabel,
 	TFormMessage,
-	fieldHasError,
 } from "@/components/ui/tanstack-form";
 import { queryKeys } from "@/lib/query";
 import { timeRegulationAssignmentFormSchema } from "@/lib/time-regulations/validation";
@@ -244,10 +244,7 @@ export function TimeRegulationAssignmentDialog({
 									{t("settings.timeRegulations.regulation", "Regulation")}
 								</TFormLabel>
 								<TFormControl hasError={fieldHasError(field)}>
-									<Select
-										value={field.state.value}
-										onValueChange={field.handleChange}
-									>
+									<Select value={field.state.value} onValueChange={field.handleChange}>
 										<SelectTrigger>
 											<SelectValue
 												placeholder={t(
@@ -298,10 +295,7 @@ export function TimeRegulationAssignmentDialog({
 										{t("settings.timeRegulations.team", "Team")}
 									</TFormLabel>
 									<TFormControl hasError={fieldHasError(field)}>
-										<Select
-											value={field.state.value || ""}
-											onValueChange={field.handleChange}
-										>
+										<Select value={field.state.value || ""} onValueChange={field.handleChange}>
 											<SelectTrigger>
 												<SelectValue
 													placeholder={t("settings.timeRegulations.selectTeam", "Select a team")}
@@ -341,10 +335,7 @@ export function TimeRegulationAssignmentDialog({
 										{t("settings.timeRegulations.employee", "Employee")}
 									</TFormLabel>
 									<TFormControl hasError={fieldHasError(field)}>
-										<Select
-											value={field.state.value || ""}
-											onValueChange={field.handleChange}
-										>
+										<Select value={field.state.value || ""} onValueChange={field.handleChange}>
 											<SelectTrigger>
 												<SelectValue
 													placeholder={t(
@@ -389,7 +380,10 @@ export function TimeRegulationAssignmentDialog({
 						</Button>
 						<form.Subscribe selector={(state) => [state.isSubmitting, state.canSubmit]}>
 							{([isSubmitting, canSubmit]) => (
-								<Button type="submit" disabled={isPending || isSubmitting || isLoading || !canSubmit}>
+								<Button
+									type="submit"
+									disabled={isPending || isSubmitting || isLoading || !canSubmit}
+								>
 									{(isPending || isSubmitting) && (
 										<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
 									)}

@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { passkey } from "@/lib/auth-client";
+import { authClient } from "@/lib/auth-client";
 import { queryKeys } from "@/lib/query/keys";
 
 interface Passkey {
@@ -34,7 +34,7 @@ export function PasskeyManagement() {
 	const passkeysQuery = useQuery({
 		queryKey: queryKeys.auth.passkeys(),
 		queryFn: async () => {
-			const result = await passkey.listUserPasskeys();
+			const result = await authClient.passkey.listUserPasskeys();
 			if (result.error) {
 				throw new Error(result.error.message);
 			}
@@ -46,7 +46,7 @@ export function PasskeyManagement() {
 	// Mutation for adding a passkey
 	const addPasskeyMutation = useMutation({
 		mutationFn: async () => {
-			const result = await passkey.addPasskey({
+			const result = await authClient.passkey.addPasskey({
 				name: `Passkey ${new Date().toLocaleDateString()}`,
 			});
 			if (result.error) {
@@ -68,7 +68,7 @@ export function PasskeyManagement() {
 	// Mutation for deleting a passkey
 	const deletePasskeyMutation = useMutation({
 		mutationFn: async (id: string) => {
-			const result = await passkey.deletePasskey({ id });
+			const result = await authClient.passkey.deletePasskey({ id });
 			if (result.error) {
 				throw new Error(result.error.message);
 			}

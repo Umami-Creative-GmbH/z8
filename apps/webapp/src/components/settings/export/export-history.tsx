@@ -61,7 +61,9 @@ export function ExportHistory({ exports, organizationId }: ExportHistoryProps) {
 				window.open(result.data, "_blank");
 				toast.success(t("settings.dataExport.history.downloadSuccess", "Download started"));
 			} else {
-				toast.error(result.error || t("settings.dataExport.history.downloadError", "Failed to download"));
+				toast.error(
+					result.error || t("settings.dataExport.history.downloadError", "Failed to download"),
+				);
 			}
 		} catch (error) {
 			toast.error(t("settings.dataExport.history.unexpectedError", "An unexpected error occurred"));
@@ -79,7 +81,9 @@ export function ExportHistory({ exports, organizationId }: ExportHistoryProps) {
 				toast.success(t("settings.dataExport.history.deleteSuccess", "Export deleted"));
 				router.refresh();
 			} else {
-				toast.error(result.error || t("settings.dataExport.history.deleteError", "Failed to delete export"));
+				toast.error(
+					result.error || t("settings.dataExport.history.deleteError", "Failed to delete export"),
+				);
 			}
 		} catch (error) {
 			toast.error(t("settings.dataExport.history.unexpectedError", "An unexpected error occurred"));
@@ -94,11 +98,16 @@ export function ExportHistory({ exports, organizationId }: ExportHistoryProps) {
 			<Card>
 				<CardHeader>
 					<CardTitle>{t("settings.dataExport.history.title", "Export History")}</CardTitle>
-					<CardDescription>{t("settings.dataExport.history.emptyDescription", "No exports yet")}</CardDescription>
+					<CardDescription>
+						{t("settings.dataExport.history.emptyDescription", "No exports yet")}
+					</CardDescription>
 				</CardHeader>
 				<CardContent>
 					<p className="text-muted-foreground text-sm">
-						{t("settings.dataExport.history.emptyHint", "Create your first export using the form above")}
+						{t(
+							"settings.dataExport.history.emptyHint",
+							"Create your first export using the form above",
+						)}
 					</p>
 				</CardContent>
 			</Card>
@@ -110,7 +119,9 @@ export function ExportHistory({ exports, organizationId }: ExportHistoryProps) {
 			<CardHeader className="flex flex-row items-center justify-between">
 				<div>
 					<CardTitle>{t("settings.dataExport.history.title", "Export History")}</CardTitle>
-					<CardDescription>{t("settings.dataExport.history.description", "Your previous data exports")}</CardDescription>
+					<CardDescription>
+						{t("settings.dataExport.history.description", "Your previous data exports")}
+					</CardDescription>
 				</div>
 				<Button variant="outline" size="sm" onClick={() => router.refresh()}>
 					<IconRefresh className="mr-2 size-4" />
@@ -122,10 +133,14 @@ export function ExportHistory({ exports, organizationId }: ExportHistoryProps) {
 					<TableHeader>
 						<TableRow>
 							<TableHead>{t("settings.dataExport.history.columnDate", "Date")}</TableHead>
-							<TableHead>{t("settings.dataExport.history.columnCategories", "Categories")}</TableHead>
+							<TableHead>
+								{t("settings.dataExport.history.columnCategories", "Categories")}
+							</TableHead>
 							<TableHead>{t("settings.dataExport.history.columnStatus", "Status")}</TableHead>
 							<TableHead>{t("settings.dataExport.history.columnSize", "Size")}</TableHead>
-							<TableHead className="text-right">{t("settings.dataExport.history.columnActions", "Actions")}</TableHead>
+							<TableHead className="text-right">
+								{t("settings.dataExport.history.columnActions", "Actions")}
+							</TableHead>
 						</TableRow>
 					</TableHeader>
 					<TableBody>
@@ -150,9 +165,13 @@ export function ExportHistory({ exports, organizationId }: ExportHistoryProps) {
 										))}
 										{exp.categories.length > 3 && (
 											<Badge variant="outline" className="text-xs">
-												{t("settings.dataExport.history.moreCategories", `+${exp.categories.length - 3} more`, {
-													count: exp.categories.length - 3,
-												})}
+												{t(
+													"settings.dataExport.history.moreCategories",
+													`+${exp.categories.length - 3} more`,
+													{
+														count: exp.categories.length - 3,
+													},
+												)}
 											</Badge>
 										)}
 									</div>
@@ -175,7 +194,9 @@ export function ExportHistory({ exports, organizationId }: ExportHistoryProps) {
 												) : (
 													<IconDownload className="size-4" />
 												)}
-												<span className="sr-only">{t("settings.dataExport.history.download", "Download")}</span>
+												<span className="sr-only">
+													{t("settings.dataExport.history.download", "Download")}
+												</span>
 											</Button>
 										)}
 										<AlertDialog>
@@ -196,9 +217,14 @@ export function ExportHistory({ exports, organizationId }: ExportHistoryProps) {
 											</AlertDialogTrigger>
 											<AlertDialogContent>
 												<AlertDialogHeader>
-													<AlertDialogTitle>{t("settings.dataExport.history.deleteDialogTitle", "Delete Export")}</AlertDialogTitle>
+													<AlertDialogTitle>
+														{t("settings.dataExport.history.deleteDialogTitle", "Delete Export")}
+													</AlertDialogTitle>
 													<AlertDialogDescription>
-														{t("settings.dataExport.history.deleteDialogDescription", "Are you sure you want to delete this export? This action cannot be undone.")}
+														{t(
+															"settings.dataExport.history.deleteDialogDescription",
+															"Are you sure you want to delete this export? This action cannot be undone.",
+														)}
 													</AlertDialogDescription>
 												</AlertDialogHeader>
 												<AlertDialogFooter>

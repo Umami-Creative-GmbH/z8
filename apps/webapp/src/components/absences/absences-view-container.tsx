@@ -1,7 +1,7 @@
 "use client";
 
-import { Calendar, Table as TableIcon } from "lucide-react";
 import { useTranslate } from "@tolgee/react";
+import { Calendar, Table as TableIcon } from "lucide-react";
 import { useCallback, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { AbsenceWithCategory, Holiday } from "@/lib/absences/types";
@@ -78,8 +78,12 @@ export function AbsencesViewContainer({
 
 				<TabsContent value="table" className="mt-4">
 					<div className="mb-4">
-						<h2 className="text-lg font-semibold">{t("absences.table.title", "Your Absence Requests")}</h2>
-						<p className="text-sm text-muted-foreground">{t("absences.table.subtitle", "Recent and upcoming absence requests")}</p>
+						<h2 className="text-lg font-semibold">
+							{t("absences.table.title", "Your Absence Requests")}
+						</h2>
+						<p className="text-sm text-muted-foreground">
+							{t("absences.table.subtitle", "Recent and upcoming absence requests")}
+						</p>
 					</div>
 					<AbsenceEntriesTable absences={absences} />
 				</TabsContent>

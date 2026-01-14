@@ -11,7 +11,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { useAssignedProjects, type AssignedProject } from "@/lib/query/use-assigned-projects";
+import { type AssignedProject, useAssignedProjects } from "@/lib/query/use-assigned-projects";
 
 const LAST_PROJECT_KEY = "z8-last-project-id";
 
@@ -113,11 +113,7 @@ export function ProjectSelector({
 					{t("timeTracking.project", "Project")}
 				</Label>
 			)}
-			<Select
-				value={value ?? "none"}
-				onValueChange={handleValueChange}
-				disabled={disabled}
-			>
+			<Select value={value ?? "none"} onValueChange={handleValueChange} disabled={disabled}>
 				<SelectTrigger className="w-full">
 					<SelectValue placeholder={t("timeTracking.selectProject", "Select a project")}>
 						{value ? (
@@ -155,10 +151,7 @@ function ProjectOption({ project }: { project: AssignedProject | undefined }) {
 	return (
 		<div className="flex items-center gap-2">
 			{project.color ? (
-				<div
-					className="size-3 rounded-full"
-					style={{ backgroundColor: project.color }}
-				/>
+				<div className="size-3 rounded-full" style={{ backgroundColor: project.color }} />
 			) : (
 				<IconBriefcase className="size-3 text-muted-foreground" />
 			)}

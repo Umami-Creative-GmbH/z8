@@ -15,10 +15,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import {
-	calculateBusinessDaysWithHalfDays,
-	formatDateRange,
-} from "@/lib/absences/date-utils";
+import { calculateBusinessDaysWithHalfDays, formatDateRange } from "@/lib/absences/date-utils";
 import type { AbsenceWithCategory, DayPeriod } from "@/lib/absences/types";
 import { CategoryBadge } from "./category-badge";
 
@@ -62,14 +59,18 @@ export function AbsenceEntriesTable({ absences, onUpdate }: AbsenceEntriesTableP
 			toast.success(t("absences.toast.requestCancelled", "Absence request cancelled"));
 			onUpdate?.();
 		} else {
-			toast.error(result.error || t("absences.toast.cancelFailed", "Failed to cancel absence request"));
+			toast.error(
+				result.error || t("absences.toast.cancelFailed", "Failed to cancel absence request"),
+			);
 		}
 	};
 
 	if (absences.length === 0) {
 		return (
 			<div className="rounded-md border">
-				<div className="p-8 text-center text-muted-foreground">{t("absences.table.noRequests", "No absence requests found.")}</div>
+				<div className="p-8 text-center text-muted-foreground">
+					{t("absences.table.noRequests", "No absence requests found.")}
+				</div>
 			</div>
 		);
 	}
@@ -84,7 +85,9 @@ export function AbsenceEntriesTable({ absences, onUpdate }: AbsenceEntriesTableP
 						<TableHead className="text-right">{t("absences.table.headers.days", "Days")}</TableHead>
 						<TableHead>{t("absences.table.headers.status", "Status")}</TableHead>
 						<TableHead>{t("absences.table.headers.notes", "Notes")}</TableHead>
-						<TableHead className="text-right">{t("absences.table.headers.actions", "Actions")}</TableHead>
+						<TableHead className="text-right">
+							{t("absences.table.headers.actions", "Actions")}
+						</TableHead>
 					</TableRow>
 				</TableHeader>
 				<TableBody>
@@ -110,13 +113,19 @@ export function AbsenceEntriesTable({ absences, onUpdate }: AbsenceEntriesTableP
 										{showPeriods && (
 											<span className="text-xs text-muted-foreground">
 												{formatPeriod(absence.startPeriod) && (
-													<>{t("absences.table.start", "Start")}{formatPeriod(absence.startPeriod)}</>
+													<>
+														{t("absences.table.start", "Start")}
+														{formatPeriod(absence.startPeriod)}
+													</>
 												)}
 												{formatPeriod(absence.startPeriod) && formatPeriod(absence.endPeriod) && (
 													<> &middot; </>
 												)}
 												{formatPeriod(absence.endPeriod) && (
-													<>{t("absences.table.end", "End")}{formatPeriod(absence.endPeriod)}</>
+													<>
+														{t("absences.table.end", "End")}
+														{formatPeriod(absence.endPeriod)}
+													</>
 												)}
 											</span>
 										)}

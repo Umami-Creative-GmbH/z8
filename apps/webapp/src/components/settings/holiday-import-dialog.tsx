@@ -394,7 +394,7 @@ export function HolidayImportDialog({
 						month: startDate.getMonth() + 1,
 						day: startDate.getDate(),
 						durationDays,
-						holidayType: h.type,
+						holidayType: h.type as "optional" | "public" | "bank" | "school" | "observance",
 						isFloating: false,
 						isActive: true,
 					};

@@ -160,10 +160,7 @@ export function OrganizationFeaturesCard({
 							checked={isShiftsEnabled}
 							onCheckedChange={handleToggleShifts}
 							disabled={!canEdit || isPending}
-							aria-label={t(
-								"organization.features.toggle-work-shifts",
-								"Toggle work shifts",
-							)}
+							aria-label={t("organization.features.toggle-work-shifts", "Toggle work shifts")}
 						/>
 					</div>
 				</div>

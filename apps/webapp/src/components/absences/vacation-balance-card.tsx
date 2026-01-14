@@ -20,8 +20,12 @@ export function VacationBalanceCard({ balance }: VacationBalanceCardProps) {
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>{t("absences.balance.title", "Vacation Balance {year}", { year: balance.year })}</CardTitle>
-				<CardDescription>{t("absences.balance.description", "Your vacation days for the current year")}</CardDescription>
+				<CardTitle>
+					{t("absences.balance.title", "Vacation Balance {year}", { year: balance.year })}
+				</CardTitle>
+				<CardDescription>
+					{t("absences.balance.description", "Your vacation days for the current year")}
+				</CardDescription>
 			</CardHeader>
 			<CardContent>
 				<div className="@container/card grid gap-4 @xl/card:grid-cols-4 grid-cols-2">
@@ -34,7 +38,9 @@ export function VacationBalanceCard({ balance }: VacationBalanceCardProps) {
 						<div className="mt-2">
 							<div className="text-4xl font-bold tabular-nums">{balance.remainingDays}</div>
 							<div className="mt-1 text-sm text-muted-foreground">
-								{t("absences.balance.outOfTotalDays", "out of {totalDays} total days", { totalDays: balance.totalDays })}
+								{t("absences.balance.outOfTotalDays", "out of {totalDays} total days", {
+									totalDays: balance.totalDays,
+								})}
 							</div>
 						</div>
 					</div>
@@ -71,9 +77,15 @@ export function VacationBalanceCard({ balance }: VacationBalanceCardProps) {
 									className={`size-5 mt-0.5 ${carryoverExpiringSoon ? "text-destructive" : "text-muted-foreground"}`}
 								/>
 								<div className="flex-1">
-									<div className="text-sm font-medium">{t("absences.balance.carryoverFrom", "Carryover from {year}", { year: balance.year - 1 })}</div>
+									<div className="text-sm font-medium">
+										{t("absences.balance.carryoverFrom", "Carryover from {year}", {
+											year: balance.year - 1,
+										})}
+									</div>
 									<div className="mt-1 text-sm text-muted-foreground">
-										{t("absences.balance.carryoverDays", "You have {count} days carried over", { count: balance.carryoverDays })}
+										{t("absences.balance.carryoverDays", "You have {count} days carried over", {
+											count: balance.carryoverDays,
+										})}
 										{balance.carryoverExpiryDate && (
 											<>
 												{" "}

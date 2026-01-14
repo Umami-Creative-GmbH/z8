@@ -2,12 +2,12 @@
 
 import { IconCheck, IconSettings, IconTrash } from "@tabler/icons-react";
 import { useState } from "react";
-import { Link } from "@/navigation";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 import { useNotifications } from "@/hooks/use-notifications";
 import { useOrganization } from "@/hooks/use-organization";
+import { Link } from "@/navigation";
 import { NotificationList } from "./notification-list";
 
 interface NotificationPopoverProps {

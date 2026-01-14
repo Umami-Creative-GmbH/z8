@@ -105,11 +105,9 @@ export function CategoryDialog({
 				onOpenChange(false);
 				form.reset();
 			} catch (error: unknown) {
-				const errorMessage =
-					error instanceof Error ? error.message : "Failed to save category";
+				const errorMessage = error instanceof Error ? error.message : "Failed to save category";
 				toast.error(
-					errorMessage ||
-						t("settings.holidays.categories.saveFailed", "Failed to save category"),
+					errorMessage || t("settings.holidays.categories.saveFailed", "Failed to save category"),
 				);
 			} finally {
 				setLoading(false);
@@ -248,10 +246,7 @@ export function CategoryDialog({
 										type="text"
 										value={field.state.value}
 										onChange={(e) => field.handleChange(e.target.value)}
-										placeholder={t(
-											"settings.holidays.categories.form.colorPlaceholder",
-											"#3B82F6",
-										)}
+										placeholder={t("settings.holidays.categories.form.colorPlaceholder", "#3B82F6")}
 										className="flex-1"
 									/>
 								</div>
@@ -271,10 +266,7 @@ export function CategoryDialog({
 							<div className="flex items-center justify-between rounded-lg border p-3">
 								<div className="space-y-0.5">
 									<Label>
-										{t(
-											"settings.holidays.categories.form.blocksTimeEntry",
-											"Blocks Time Entry",
-										)}
+										{t("settings.holidays.categories.form.blocksTimeEntry", "Blocks Time Entry")}
 									</Label>
 									<p className="text-sm text-muted-foreground">
 										{t(
@@ -283,10 +275,7 @@ export function CategoryDialog({
 										)}
 									</p>
 								</div>
-								<Switch
-									checked={field.state.value}
-									onCheckedChange={field.handleChange}
-								/>
+								<Switch checked={field.state.value} onCheckedChange={field.handleChange} />
 							</div>
 						)}
 					</form.Field>
@@ -309,10 +298,7 @@ export function CategoryDialog({
 										)}
 									</p>
 								</div>
-								<Switch
-									checked={field.state.value}
-									onCheckedChange={field.handleChange}
-								/>
+								<Switch checked={field.state.value} onCheckedChange={field.handleChange} />
 							</div>
 						)}
 					</form.Field>
@@ -322,9 +308,7 @@ export function CategoryDialog({
 						{(field) => (
 							<div className="flex items-center justify-between rounded-lg border p-3">
 								<div className="space-y-0.5">
-									<Label>
-										{t("settings.holidays.categories.form.active", "Active")}
-									</Label>
+									<Label>{t("settings.holidays.categories.form.active", "Active")}</Label>
 									<p className="text-sm text-muted-foreground">
 										{t(
 											"settings.holidays.categories.form.activeDescription",
@@ -332,10 +316,7 @@ export function CategoryDialog({
 										)}
 									</p>
 								</div>
-								<Switch
-									checked={field.state.value}
-									onCheckedChange={field.handleChange}
-								/>
+								<Switch checked={field.state.value} onCheckedChange={field.handleChange} />
 							</div>
 						)}
 					</form.Field>

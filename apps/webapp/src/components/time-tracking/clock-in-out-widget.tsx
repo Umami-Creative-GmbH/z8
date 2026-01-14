@@ -83,7 +83,7 @@ export function ClockInOutWidget({ activeWorkPeriod: initialWorkPeriod, employee
 	};
 
 	const handleClockOut = async () => {
-		const result = await clockOut();
+		const result = await clockOut(undefined);
 
 		if (result.success) {
 			toast.success(t("timeTracking.clockOutSuccess", "Clocked out successfully"));
@@ -96,22 +96,16 @@ export function ClockInOutWidget({ activeWorkPeriod: initialWorkPeriod, employee
 					const isViolation = warning.severity === "violation";
 
 					if (isViolation) {
-						toast.warning(
-							t("timeTracking.compliance.violation", "Compliance Violation"),
-							{
-								description: warning.message,
-								duration: 8000, // Show longer for violations
-								icon: <IconAlertTriangle className="size-5 text-orange-500" />,
-							},
-						);
+						toast.warning(t("timeTracking.compliance.violation", "Compliance Violation"), {
+							description: warning.message,
+							duration: 8000, // Show longer for violations
+							icon: <IconAlertTriangle className="size-5 text-orange-500" />,
+						});
 					} else {
-						toast.info(
-							t("timeTracking.compliance.warning", "Compliance Notice"),
-							{
-								description: warning.message,
-								duration: 6000,
-							},
-						);
+						toast.info(t("timeTracking.compliance.warning", "Compliance Notice"), {
+							description: warning.message,
+							duration: 6000,
+						});
 					}
 				}
 			}

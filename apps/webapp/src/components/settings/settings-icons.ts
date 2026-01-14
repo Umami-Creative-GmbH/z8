@@ -18,7 +18,10 @@ import {
 } from "@tabler/icons-react";
 import type { SettingsIconName } from "./settings-config";
 
-export const SETTINGS_ICON_MAP: Record<SettingsIconName, React.ComponentType<{ className?: string }>> = {
+export const SETTINGS_ICON_MAP: Record<
+	SettingsIconName,
+	React.ComponentType<{ className?: string }>
+> = {
 	"user-circle": IconUserCircle,
 	shield: IconShield,
 	bell: IconBell,

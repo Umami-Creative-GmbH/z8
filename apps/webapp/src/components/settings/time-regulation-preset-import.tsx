@@ -74,9 +74,7 @@ export function TimeRegulationPresetImport({
 			importPresetToOrganization(presetId, organizationId, setAsDefault),
 		onSuccess: (result) => {
 			if (result.success) {
-				toast.success(
-					t("settings.timeRegulations.presetImported", "Preset imported successfully"),
-				);
+				toast.success(t("settings.timeRegulations.presetImported", "Preset imported successfully"));
 				queryClient.invalidateQueries({
 					queryKey: queryKeys.timeRegulations.list(organizationId),
 				});
@@ -177,7 +175,9 @@ export function TimeRegulationPresetImport({
 								<div className="flex items-center justify-between">
 									<CardTitle className="text-base flex items-center gap-2">
 										<span className="text-lg">
-											{preset.countryCode ? countryFlags[preset.countryCode] ?? countryFlags.INT : countryFlags.INT}
+											{preset.countryCode
+												? (countryFlags[preset.countryCode] ?? countryFlags.INT)
+												: countryFlags.INT}
 										</span>
 										{preset.name}
 									</CardTitle>

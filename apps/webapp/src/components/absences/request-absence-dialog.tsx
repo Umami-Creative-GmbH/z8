@@ -120,7 +120,9 @@ export function RequestAbsenceDialog({
 		e.preventDefault();
 
 		if (!formData.categoryId || !formData.startDate || !formData.endDate) {
-			toast.error(t("absences.form.errors.fillRequiredFields", "Please fill in all required fields"));
+			toast.error(
+				t("absences.form.errors.fillRequiredFields", "Please fill in all required fields"),
+			);
 			return;
 		}
 
@@ -130,7 +132,12 @@ export function RequestAbsenceDialog({
 		}
 
 		if (invalidSameDayPeriod) {
-			toast.error(t("absences.form.errors.invalidSameDayPeriod", "Cannot end in the morning if starting in the afternoon on the same day"));
+			toast.error(
+				t(
+					"absences.form.errors.invalidSameDayPeriod",
+					"Cannot end in the morning if starting in the afternoon on the same day",
+				),
+			);
 			return;
 		}
 
@@ -160,7 +167,9 @@ export function RequestAbsenceDialog({
 			});
 			onSuccess?.();
 		} else {
-			toast.error(result.error || t("absences.toast.requestFailed", "Failed to submit absence request"));
+			toast.error(
+				result.error || t("absences.toast.requestFailed", "Failed to submit absence request"),
+			);
 		}
 	};
 
@@ -178,14 +187,19 @@ export function RequestAbsenceDialog({
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
 			{showTrigger && (
-				<DialogTrigger asChild>{trigger || <Button>{t("absences.requestAbsence", "Request Absence")}</Button>}</DialogTrigger>
+				<DialogTrigger asChild>
+					{trigger || <Button>{t("absences.requestAbsence", "Request Absence")}</Button>}
+				</DialogTrigger>
 			)}
 			<DialogContent className="sm:max-w-[500px]">
 				<form onSubmit={handleSubmit}>
 					<DialogHeader>
 						<DialogTitle>{t("absences.form.title", "Request Absence")}</DialogTitle>
 						<DialogDescription>
-							{t("absences.form.description", "Submit a request for time off. Your manager will be notified for approval.")}
+							{t(
+								"absences.form.description",
+								"Submit a request for time off. Your manager will be notified for approval.",
+							)}
 						</DialogDescription>
 					</DialogHeader>
 
@@ -198,7 +212,9 @@ export function RequestAbsenceDialog({
 								onValueChange={(value) => setFormData({ ...formData, categoryId: value })}
 							>
 								<SelectTrigger id="category">
-									<SelectValue placeholder={t("absences.form.selectAbsenceType", "Select absence type")} />
+									<SelectValue
+										placeholder={t("absences.form.selectAbsenceType", "Select absence type")}
+									/>
 								</SelectTrigger>
 								<SelectContent>
 									{categories.map((category) => (
@@ -210,7 +226,9 @@ export function RequestAbsenceDialog({
 													color={category.color}
 												/>
 												{!category.requiresApproval && (
-													<span className="text-xs text-muted-foreground">{t("absences.form.autoApproved", "(Auto-approved)")}</span>
+													<span className="text-xs text-muted-foreground">
+														{t("absences.form.autoApproved", "(Auto-approved)")}
+													</span>
 												)}
 											</div>
 										</SelectItem>
@@ -282,7 +300,10 @@ export function RequestAbsenceDialog({
 							</div>
 							{invalidSameDayPeriod && (
 								<p className="text-xs text-destructive">
-									{t("absences.form.errors.invalidSameDayPeriod", "Cannot end in the morning if starting in the afternoon on the same day")}
+									{t(
+										"absences.form.errors.invalidSameDayPeriod",
+										"Cannot end in the morning if starting in the afternoon on the same day",
+									)}
 								</p>
 							)}
 						</div>
@@ -291,17 +312,25 @@ export function RequestAbsenceDialog({
 						{requestedDays > 0 && (
 							<div className="rounded-md border p-3 text-sm">
 								<div className="flex justify-between items-center">
-									<span className="text-muted-foreground">{t("absences.form.businessDays", "Business days:")}</span>
+									<span className="text-muted-foreground">
+										{t("absences.form.businessDays", "Business days:")}
+									</span>
 									<span className="font-semibold tabular-nums">{formatDays(requestedDays)}</span>
 								</div>
 								{selectedCategory?.countsAgainstVacation && (
 									<>
 										<div className="flex justify-between items-center mt-1">
-											<span className="text-muted-foreground">{t("absences.form.daysRemaining", "Days remaining:")}</span>
-											<span className="font-semibold tabular-nums">{formatDays(remainingDays)}</span>
+											<span className="text-muted-foreground">
+												{t("absences.form.daysRemaining", "Days remaining:")}
+											</span>
+											<span className="font-semibold tabular-nums">
+												{formatDays(remainingDays)}
+											</span>
 										</div>
 										<div className="flex justify-between items-center mt-1 pt-2 border-t">
-											<span className="font-medium">{t("absences.form.balanceAfterRequest", "Balance after request:")}</span>
+											<span className="font-medium">
+												{t("absences.form.balanceAfterRequest", "Balance after request:")}
+											</span>
 											<span
 												className={`font-bold tabular-nums ${insufficientBalance ? "text-destructive" : ""}`}
 											>
@@ -310,7 +339,10 @@ export function RequestAbsenceDialog({
 										</div>
 										{insufficientBalance && (
 											<div className="mt-2 text-xs text-destructive">
-												{t("absences.form.errors.insufficientBalanceForRequest", "Insufficient vacation balance for this request")}
+												{t(
+													"absences.form.errors.insufficientBalanceForRequest",
+													"Insufficient vacation balance for this request",
+												)}
 											</div>
 										)}
 									</>
@@ -323,7 +355,10 @@ export function RequestAbsenceDialog({
 							<Label htmlFor="notes">{t("absences.form.notesOptional", "Notes (Optional)")}</Label>
 							<Textarea
 								id="notes"
-								placeholder={t("absences.form.notesPlaceholder", "Add any additional information...")}
+								placeholder={t(
+									"absences.form.notesPlaceholder",
+									"Add any additional information...",
+								)}
 								value={formData.notes}
 								onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
 								rows={3}
@@ -340,10 +375,7 @@ export function RequestAbsenceDialog({
 						>
 							{t("common.cancel", "Cancel")}
 						</Button>
-						<Button
-							type="submit"
-							disabled={loading || insufficientBalance || invalidSameDayPeriod}
-						>
+						<Button type="submit" disabled={loading || insufficientBalance || invalidSameDayPeriod}>
 							{loading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
 							{t("absences.form.submitRequest", "Submit Request")}
 						</Button>

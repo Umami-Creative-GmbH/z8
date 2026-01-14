@@ -115,7 +115,9 @@ export async function getUpcomingAbsences(limit: number = 5): Promise<ServerActi
 							with: {
 								user: {
 									columns: {
+										id: true,
 										name: true,
+										image: true,
 									},
 								},
 							},
@@ -193,9 +195,15 @@ export async function getTeamCalendarData(
 						inArray(absenceEntry.employeeId, orgEmployeeIds),
 						eq(absenceEntry.status, "approved"),
 						or(
-							and(gte(absenceEntry.startDate, monthStartStr), lte(absenceEntry.startDate, monthEndStr)),
+							and(
+								gte(absenceEntry.startDate, monthStartStr),
+								lte(absenceEntry.startDate, monthEndStr),
+							),
 							and(gte(absenceEntry.endDate, monthStartStr), lte(absenceEntry.endDate, monthEndStr)),
-							and(lte(absenceEntry.startDate, monthStartStr), gte(absenceEntry.endDate, monthEndStr)),
+							and(
+								lte(absenceEntry.startDate, monthStartStr),
+								gte(absenceEntry.endDate, monthEndStr),
+							),
 						),
 					),
 					with: {
@@ -516,7 +524,9 @@ export async function getUpcomingBirthdays(days: number = 30): Promise<ServerAct
 					with: {
 						user: {
 							columns: {
+								id: true,
 								name: true,
+								image: true,
 							},
 						},
 					},
@@ -552,6 +562,8 @@ export async function getUpcomingBirthdays(days: number = 30): Promise<ServerAct
 			if (daysUntil >= 0 && daysUntil <= days) {
 				upcomingBirthdays.push({
 					id: emp.id,
+					userId: emp.user.id,
+					image: emp.user.image,
 					user: {
 						name: emp.user.name,
 					},
@@ -695,6 +707,168 @@ export async function getTeamOverviewStats(): Promise<
 			activeEmployees: activeEmployeesResult,
 			teamsCount: teamsCountResult,
 			avgWorkHours: Math.round(avgWorkHoursResult * 10) / 10, // Round to 1 decimal
+		};
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
+}
+
+/**
+ * Get who's out today
+ */
+export async function getWhosOutToday(): Promise<
+	ServerActionResult<{
+		outToday: Array<{
+			id: string;
+			userId: string;
+			name: string;
+			image: string | null;
+			category: string;
+			categoryColor: string | null;
+			endsToday: boolean;
+			returnDate: string;
+		}>;
+		returningTomorrow: Array<{
+			id: string;
+			userId: string;
+			name: string;
+			image: string | null;
+			category: string;
+			categoryColor: string | null;
+			endsToday: boolean;
+			returnDate: string;
+		}>;
+		totalOut: number;
+	}>
+> {
+	const effect = Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
+		const dbService = yield* _(DatabaseService);
+
+		// Get current employee with organization
+		const currentEmployee = yield* _(
+			dbService.query("getCurrentEmployee", async () => {
+				return await dbService.db.query.employee.findFirst({
+					where: eq(employee.userId, session.user.id),
+				});
+			}),
+			Effect.flatMap((emp) =>
+				emp
+					? Effect.succeed(emp)
+					: Effect.fail(
+							new NotFoundError({
+								message: "Employee profile not found",
+								entityType: "employee",
+							}),
+						),
+			),
+		);
+
+		// Get today's date as YYYY-MM-DD string
+		const todayDT = DateTime.now();
+		const todayStr = todayDT.toFormat("yyyy-MM-dd");
+		const tomorrowStr = todayDT.plus({ days: 1 }).toFormat("yyyy-MM-dd");
+
+		// Get all employee IDs in this organization
+		const orgEmployees = yield* _(
+			dbService.query("getOrgEmployeeIds", async () => {
+				return await dbService.db.query.employee.findMany({
+					where: eq(employee.organizationId, currentEmployee.organizationId),
+					columns: { id: true },
+				});
+			}),
+		);
+		const orgEmployeeIds = orgEmployees.map((e) => e.id);
+
+		// Get absences that overlap with today
+		const todayAbsences = yield* _(
+			dbService.query("getTodayAbsences", async () => {
+				if (orgEmployeeIds.length === 0) return [];
+				return await dbService.db.query.absenceEntry.findMany({
+					where: and(
+						inArray(absenceEntry.employeeId, orgEmployeeIds),
+						eq(absenceEntry.status, "approved"),
+						lte(absenceEntry.startDate, todayStr),
+						gte(absenceEntry.endDate, todayStr),
+					),
+					with: {
+						employee: {
+							with: {
+								user: {
+									columns: {
+										id: true,
+										name: true,
+										image: true,
+									},
+								},
+							},
+						},
+						category: {
+							columns: {
+								name: true,
+								color: true,
+							},
+						},
+					},
+				});
+			}),
+		);
+
+		// Process absences
+		const outToday: Array<{
+			id: string;
+			userId: string;
+			name: string;
+			image: string | null;
+			category: string;
+			categoryColor: string | null;
+			endsToday: boolean;
+			returnDate: string;
+		}> = [];
+
+		const returningTomorrow: Array<{
+			id: string;
+			userId: string;
+			name: string;
+			image: string | null;
+			category: string;
+			categoryColor: string | null;
+			endsToday: boolean;
+			returnDate: string;
+		}> = [];
+
+		for (const absence of todayAbsences) {
+			const endsToday = absence.endDate === todayStr;
+			const endDT = DateTime.fromISO(absence.endDate);
+			const returnDate = endDT.plus({ days: 1 }).toFormat("MMM d");
+
+			const employeeData = {
+				id: absence.employee.id,
+				userId: absence.employee.user.id,
+				name: absence.employee.user.name || "Unknown",
+				image: absence.employee.user.image,
+				category: absence.category.name,
+				categoryColor: absence.category.color,
+				endsToday,
+				returnDate,
+			};
+
+			outToday.push(employeeData);
+
+			if (endsToday) {
+				returningTomorrow.push(employeeData);
+			}
+		}
+
+		// Sort by name
+		outToday.sort((a, b) => a.name.localeCompare(b.name));
+		returningTomorrow.sort((a, b) => a.name.localeCompare(b.name));
+
+		return {
+			outToday,
+			returningTomorrow,
+			totalOut: outToday.length,
 		};
 	}).pipe(Effect.provide(AppLayer));
 

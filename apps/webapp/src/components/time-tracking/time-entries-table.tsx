@@ -11,10 +11,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import {
-	formatDuration,
-	isSameDayInTimezone,
-} from "@/lib/time-tracking/time-utils";
+import { formatDuration, isSameDayInTimezone } from "@/lib/time-tracking/time-utils";
 import {
 	formatDateInZone,
 	formatTimeInZone,
@@ -103,8 +100,7 @@ export function TimeEntriesTable({ workPeriods, hasManager, employeeTimezone }: 
 			header: "Duration",
 			cell: ({ row }) => {
 				if (!row.original.durationMinutes) return "-";
-				const hasSurcharge =
-					row.original.surchargeMinutes && row.original.surchargeMinutes > 0;
+				const hasSurcharge = row.original.surchargeMinutes && row.original.surchargeMinutes > 0;
 				if (hasSurcharge) {
 					return (
 						<div className="flex flex-col gap-0.5">

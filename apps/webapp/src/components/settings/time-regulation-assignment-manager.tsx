@@ -175,7 +175,9 @@ export function TimeRegulationAssignmentManager({
 				}),
 			);
 		}
-		return parts.length > 0 ? parts.join(", ") : t("settings.timeRegulations.noLimitsSet", "No limits set");
+		return parts.length > 0
+			? parts.join(", ")
+			: t("settings.timeRegulations.noLimitsSet", "No limits set");
 	};
 
 	return (
@@ -278,7 +280,9 @@ export function TimeRegulationAssignmentManager({
 										<div className="flex items-center gap-3">
 											<IconUsers className="h-4 w-4 text-muted-foreground" />
 											<div>
-												<p className="font-medium">{assignment.team?.name || t("common.unknownTeam", "Unknown Team")}</p>
+												<p className="font-medium">
+													{assignment.team?.name || t("common.unknownTeam", "Unknown Team")}
+												</p>
 												<p className="text-xs text-muted-foreground">
 													{assignment.regulation.name}
 												</p>

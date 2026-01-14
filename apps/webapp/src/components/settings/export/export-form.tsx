@@ -45,7 +45,9 @@ export function ExportForm({ organizationId }: ExportFormProps) {
 
 	const handleSubmit = async () => {
 		if (selectedCategories.size === 0) {
-			toast.error(t("settings.dataExport.form.selectAtLeastOne", "Please select at least one category"));
+			toast.error(
+				t("settings.dataExport.form.selectAtLeastOne", "Please select at least one category"),
+			);
 			return;
 		}
 
@@ -61,7 +63,9 @@ export function ExportForm({ organizationId }: ExportFormProps) {
 				// Switch to history tab
 				router.refresh();
 			} else {
-				toast.error(result.error || t("settings.dataExport.form.submitError", "Failed to start export"));
+				toast.error(
+					result.error || t("settings.dataExport.form.submitError", "Failed to start export"),
+				);
 			}
 		} catch (error) {
 			toast.error(t("settings.dataExport.form.unexpectedError", "An unexpected error occurred"));
@@ -75,7 +79,12 @@ export function ExportForm({ organizationId }: ExportFormProps) {
 		<Card>
 			<CardHeader>
 				<CardTitle>{t("settings.dataExport.form.title", "Export Data")}</CardTitle>
-				<CardDescription>{t("settings.dataExport.form.description", "Select the data categories you want to export")}</CardDescription>
+				<CardDescription>
+					{t(
+						"settings.dataExport.form.description",
+						"Select the data categories you want to export",
+					)}
+				</CardDescription>
 			</CardHeader>
 			<CardContent>
 				<div className="space-y-6">
@@ -112,7 +121,10 @@ export function ExportForm({ organizationId }: ExportFormProps) {
 										{t(`settings.dataExport.categories.${category}.label`, category)}
 									</Label>
 									<p className="text-xs text-muted-foreground">
-										{t(`settings.dataExport.categories.${category}.description`, `Export ${category} data`)}
+										{t(
+											`settings.dataExport.categories.${category}.description`,
+											`Export ${category} data`,
+										)}
 									</p>
 								</div>
 							</div>
@@ -121,13 +133,34 @@ export function ExportForm({ organizationId }: ExportFormProps) {
 
 					{/* Info Box */}
 					<div className="rounded-lg border bg-muted/50 p-4 text-sm">
-						<h4 className="font-medium">{t("settings.dataExport.form.aboutTitle", "About Data Export")}</h4>
+						<h4 className="font-medium">
+							{t("settings.dataExport.form.aboutTitle", "About Data Export")}
+						</h4>
 						<ul className="mt-2 list-inside list-disc space-y-1 text-muted-foreground">
-							<li>{t("settings.dataExport.form.aboutAsync", "Exports are processed asynchronously")}</li>
-							<li>{t("settings.dataExport.form.aboutEmail", "You'll receive an email when ready")}</li>
-							<li>{t("settings.dataExport.form.aboutLinkValidity", "Download links are valid for 24 hours")}</li>
-							<li>{t("settings.dataExport.form.aboutStorageDuration", "Export files are stored for 7 days")}</li>
-							<li>{t("settings.dataExport.form.aboutOrgDataOnly", "Only your organization's data is included")}</li>
+							<li>
+								{t("settings.dataExport.form.aboutAsync", "Exports are processed asynchronously")}
+							</li>
+							<li>
+								{t("settings.dataExport.form.aboutEmail", "You'll receive an email when ready")}
+							</li>
+							<li>
+								{t(
+									"settings.dataExport.form.aboutLinkValidity",
+									"Download links are valid for 24 hours",
+								)}
+							</li>
+							<li>
+								{t(
+									"settings.dataExport.form.aboutStorageDuration",
+									"Export files are stored for 7 days",
+								)}
+							</li>
+							<li>
+								{t(
+									"settings.dataExport.form.aboutOrgDataOnly",
+									"Only your organization's data is included",
+								)}
+							</li>
 						</ul>
 					</div>
 
@@ -145,9 +178,13 @@ export function ExportForm({ organizationId }: ExportFormProps) {
 						) : (
 							<>
 								<IconDownload className="mr-2 size-4" />
-								{t("settings.dataExport.form.startExport", `Start Export (${selectedCategories.size})`, {
-									count: selectedCategories.size,
-								})}
+								{t(
+									"settings.dataExport.form.startExport",
+									`Start Export (${selectedCategories.size})`,
+									{
+										count: selectedCategories.size,
+									},
+								)}
 							</>
 						)}
 					</Button>

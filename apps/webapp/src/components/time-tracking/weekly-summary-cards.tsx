@@ -22,9 +22,7 @@ function SummaryCard({ label, baseMinutes, surchargeMinutes }: SummaryCardProps)
 		<Card>
 			<CardHeader className={hasSurcharge ? "pb-2" : undefined}>
 				<CardDescription>{label}</CardDescription>
-				<CardTitle className="tabular-nums text-2xl">
-					{formatDuration(totalCredited)}
-				</CardTitle>
+				<CardTitle className="tabular-nums text-2xl">{formatDuration(totalCredited)}</CardTitle>
 			</CardHeader>
 			{hasSurcharge && (
 				<CardContent className="pt-0">

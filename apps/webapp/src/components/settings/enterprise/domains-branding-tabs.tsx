@@ -2,7 +2,7 @@
 
 import { useTranslate } from "@tolgee/react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { OrganizationBranding } from "@/lib/domain";
+import type { AuthConfig, OrganizationBranding } from "@/lib/domain";
 import { BrandingForm } from "./branding-form";
 import { DomainManagement } from "./domain-management";
 import { SSOProviderManagement } from "./sso-provider-management";
@@ -13,11 +13,8 @@ interface Domain {
 	domainVerified: boolean;
 	isPrimary: boolean;
 	verificationToken: string | null;
-	authConfig: {
-		ssoEnabled: boolean;
-		passwordEnabled: boolean;
-		ssoProvider: string | null;
-	};
+	verificationTokenExpiresAt: Date | null;
+	authConfig: AuthConfig;
 	createdAt: Date;
 }
 

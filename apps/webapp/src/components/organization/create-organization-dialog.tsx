@@ -1,8 +1,8 @@
 "use client";
 
+import { IconBuilding, IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useStore } from "@tanstack/react-store";
-import { IconBuilding, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { organization } from "@/lib/auth-client";
+import { authClient } from "@/lib/auth-client";
 import { generateSlug } from "@/lib/validations/organization";
 import { useRouter } from "@/navigation";
 
@@ -56,7 +56,7 @@ export function CreateOrganizationDialog({
 
 			try {
 				// Create organization using Better Auth
-				const result = await organization.create({
+				const result = await authClient.organization.create({
 					name: value.name,
 					slug: value.slug,
 				});
@@ -81,7 +81,9 @@ export function CreateOrganizationDialog({
 				router.refresh();
 			} catch (error: any) {
 				console.error("Error creating organization:", error);
-				toast.error(error.message || t("organization.createError", "Failed to create organization"));
+				toast.error(
+					error.message || t("organization.createError", "Failed to create organization"),
+				);
 			} finally {
 				setLoading(false);
 			}
@@ -164,7 +166,10 @@ export function CreateOrganizationDialog({
 					<form.Field
 						name="name"
 						validators={{
-							onChange: z.string().min(2, "Organization name must be at least 2 characters").max(100),
+							onChange: z
+								.string()
+								.min(2, "Organization name must be at least 2 characters")
+								.max(100),
 						}}
 					>
 						{(field) => (
@@ -196,7 +201,10 @@ export function CreateOrganizationDialog({
 								.string()
 								.min(2, "Slug must be at least 2 characters")
 								.max(50, "Slug must be less than 50 characters")
-								.regex(/^[a-z0-9-]+$/, "Slug must contain only lowercase letters, numbers, and hyphens")
+								.regex(
+									/^[a-z0-9-]+$/,
+									"Slug must contain only lowercase letters, numbers, and hyphens",
+								)
 								.refine((slug) => !slug.startsWith("-") && !slug.endsWith("-"), {
 									message: "Slug cannot start or end with a hyphen",
 								}),

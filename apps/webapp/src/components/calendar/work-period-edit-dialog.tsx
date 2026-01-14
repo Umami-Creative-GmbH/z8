@@ -202,7 +202,9 @@ export function WorkPeriodEditDialog({
 								</div>
 								<div className="flex justify-between text-sm text-emerald-600 dark:text-emerald-400">
 									<span>{t("calendar.details.surcharge", "Surcharge")}</span>
-									<span className="tabular-nums">+{formatDuration(metadata.surchargeMinutes!)}</span>
+									<span className="tabular-nums">
+										+{formatDuration(metadata.surchargeMinutes!)}
+									</span>
 								</div>
 								<div className="flex justify-between font-medium border-t pt-1">
 									<span>{t("calendar.details.credited", "Credited")}</span>

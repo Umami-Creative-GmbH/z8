@@ -436,7 +436,9 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 							<div className="flex justify-end">
 								<Button
 									onClick={handleGenerate}
-									disabled={!includeTimeEntries && !includeAbsences && !includeTeams && !includeProjects}
+									disabled={
+										!includeTimeEntries && !includeAbsences && !includeTeams && !includeProjects
+									}
 									className="gap-2"
 								>
 									<IconPlayerPlay className="size-4" />
@@ -469,9 +471,7 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 									<div className={cn(phase === "initializing" && "font-medium text-primary")}>
 										Initializing
 									</div>
-									<div className={cn(phase === "teams" && "font-medium text-primary")}>
-										Teams
-									</div>
+									<div className={cn(phase === "teams" && "font-medium text-primary")}>Teams</div>
 									<div className={cn(phase === "projects" && "font-medium text-primary")}>
 										Projects
 									</div>
@@ -740,8 +740,8 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 									<AlertDialogHeader>
 										<AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
 										<AlertDialogDescription>
-											This action cannot be undone. This will permanently delete all time-related data
-											for this organization.
+											This action cannot be undone. This will permanently delete all time-related
+											data for this organization.
 										</AlertDialogDescription>
 									</AlertDialogHeader>
 									<div className="py-4">

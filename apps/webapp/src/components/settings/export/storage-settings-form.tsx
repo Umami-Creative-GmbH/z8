@@ -1,8 +1,8 @@
 "use client";
 
+import { IconCheck, IconLoader2, IconPlugConnected, IconTrash, IconX } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useStore } from "@tanstack/react-store";
-import { IconCheck, IconLoader2, IconPlugConnected, IconTrash, IconX } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -67,7 +67,7 @@ export function StorageSettingsForm({
 	const [config, setConfig] = useState<StorageConfigResult | null>(initialConfig ?? null);
 	const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-	const form = useForm<StorageConfigFormValues>({
+	const form = useForm({
 		defaultValues: {
 			bucket: initialConfig?.bucket ?? "",
 			accessKeyId: "",
@@ -102,12 +102,17 @@ export function StorageSettingsForm({
 					form.setFieldValue("region", result.data.region);
 					form.setFieldValue("endpoint", result.data.endpoint ?? "");
 					toast.success(t("settings.dataExport.storage.saveSuccess", "Configuration saved"), {
-						description: t("settings.dataExport.storage.saveSuccessDescription", "Your S3 storage settings have been saved"),
+						description: t(
+							"settings.dataExport.storage.saveSuccessDescription",
+							"Your S3 storage settings have been saved",
+						),
 					});
 					onConfigChange?.(true);
 				} else {
 					toast.error(t("settings.dataExport.storage.saveError", "Failed to save configuration"), {
-						description: result.error ?? t("settings.dataExport.storage.unexpectedError", "An unexpected error occurred"),
+						description:
+							result.error ??
+							t("settings.dataExport.storage.unexpectedError", "An unexpected error occurred"),
 					});
 				}
 			});
@@ -174,7 +179,8 @@ export function StorageSettingsForm({
 				} else {
 					setTestResult({
 						success: false,
-						message: result.error ?? t("settings.dataExport.storage.testFailed", "Connection test failed"),
+						message:
+							result.error ?? t("settings.dataExport.storage.testFailed", "Connection test failed"),
 					});
 				}
 			} finally {
@@ -199,9 +205,14 @@ export function StorageSettingsForm({
 				toast.success(t("settings.dataExport.storage.deleteSuccess", "Configuration deleted"));
 				onConfigChange?.(false);
 			} else {
-				toast.error(t("settings.dataExport.storage.deleteError", "Failed to delete configuration"), {
-					description: result.error ?? t("settings.dataExport.storage.unexpectedError", "An unexpected error occurred"),
-				});
+				toast.error(
+					t("settings.dataExport.storage.deleteError", "Failed to delete configuration"),
+					{
+						description:
+							result.error ??
+							t("settings.dataExport.storage.unexpectedError", "An unexpected error occurred"),
+					},
+				);
 			}
 		});
 	};
@@ -221,7 +232,10 @@ export function StorageSettingsForm({
 							)}
 						</CardTitle>
 						<CardDescription>
-							{t("settings.dataExport.storage.description", "Configure your own S3-compatible storage for exports")}
+							{t(
+								"settings.dataExport.storage.description",
+								"Configure your own S3-compatible storage for exports",
+							)}
 						</CardDescription>
 					</div>
 					{config && (
@@ -233,9 +247,14 @@ export function StorageSettingsForm({
 							</AlertDialogTrigger>
 							<AlertDialogContent>
 								<AlertDialogHeader>
-									<AlertDialogTitle>{t("settings.dataExport.storage.deleteDialogTitle", "Delete Configuration")}</AlertDialogTitle>
+									<AlertDialogTitle>
+										{t("settings.dataExport.storage.deleteDialogTitle", "Delete Configuration")}
+									</AlertDialogTitle>
 									<AlertDialogDescription>
-										{t("settings.dataExport.storage.deleteDialogDescription", "Are you sure you want to delete this storage configuration?")}
+										{t(
+											"settings.dataExport.storage.deleteDialogDescription",
+											"Are you sure you want to delete this storage configuration?",
+										)}
 									</AlertDialogDescription>
 								</AlertDialogHeader>
 								<AlertDialogFooter>
@@ -258,95 +277,38 @@ export function StorageSettingsForm({
 					form.handleSubmit();
 				}}
 			>
-					<CardContent className="space-y-4">
-						{testResult && (
-							<Alert variant={testResult.success ? "default" : "destructive"}>
-								{testResult.success ? (
-									<IconCheck className="h-4 w-4" />
-								) : (
-									<IconX className="h-4 w-4" />
-								)}
-								<AlertTitle>
-									{testResult.success
-										? t("settings.dataExport.storage.connectionSuccess", "Connection Successful")
-										: t("settings.dataExport.storage.connectionFailed", "Connection Failed")}
-								</AlertTitle>
-								<AlertDescription>{testResult.message}</AlertDescription>
-							</Alert>
-						)}
+				<CardContent className="space-y-4">
+					{testResult && (
+						<Alert variant={testResult.success ? "default" : "destructive"}>
+							{testResult.success ? (
+								<IconCheck className="h-4 w-4" />
+							) : (
+								<IconX className="h-4 w-4" />
+							)}
+							<AlertTitle>
+								{testResult.success
+									? t("settings.dataExport.storage.connectionSuccess", "Connection Successful")
+									: t("settings.dataExport.storage.connectionFailed", "Connection Failed")}
+							</AlertTitle>
+							<AlertDescription>{testResult.message}</AlertDescription>
+						</Alert>
+					)}
 
-						<div className="grid gap-4 md:grid-cols-2">
-							<form.Field
-								name="bucket"
-								validators={{
-									onChange: z.string().min(1, "Bucket name is required"),
-								}}
-							>
-								{(field) => (
-									<div className="space-y-2">
-										<Label>{t("settings.dataExport.storage.bucketName", "Bucket Name")}</Label>
-										<Input
-											placeholder={t("settings.dataExport.storage.bucketPlaceholder", "my-export-bucket")}
-											value={field.state.value}
-											onChange={(e) => {
-												field.handleChange(e.target.value);
-												setHasUnsavedChanges(true);
-											}}
-											onBlur={field.handleBlur}
-										/>
-										<p className="text-sm text-muted-foreground">
-											{t("settings.dataExport.storage.bucketDescription", "The name of your S3 bucket")}
-										</p>
-										{field.state.meta.errors.length > 0 && (
-											<p className="text-sm text-destructive">
-											{typeof field.state.meta.errors[0] === "string"
-												? field.state.meta.errors[0]
-												: (field.state.meta.errors[0] as any)?.message}
-										</p>
-										)}
-									</div>
-								)}
-							</form.Field>
-
-							<form.Field
-								name="region"
-								validators={{
-									onChange: z.string().min(1, "Region is required"),
-								}}
-							>
-								{(field) => (
-									<div className="space-y-2">
-										<Label>{t("settings.dataExport.storage.region", "Region")}</Label>
-										<Input
-											placeholder={t("settings.dataExport.storage.regionPlaceholder", "us-east-1")}
-											value={field.state.value}
-											onChange={(e) => {
-												field.handleChange(e.target.value);
-												setHasUnsavedChanges(true);
-											}}
-											onBlur={field.handleBlur}
-										/>
-										<p className="text-sm text-muted-foreground">
-											{t("settings.dataExport.storage.regionDescription", "AWS region where your bucket is located")}
-										</p>
-										{field.state.meta.errors.length > 0 && (
-											<p className="text-sm text-destructive">
-											{typeof field.state.meta.errors[0] === "string"
-												? field.state.meta.errors[0]
-												: (field.state.meta.errors[0] as any)?.message}
-										</p>
-										)}
-									</div>
-								)}
-							</form.Field>
-						</div>
-
-						<form.Field name="endpoint">
+					<div className="grid gap-4 md:grid-cols-2">
+						<form.Field
+							name="bucket"
+							validators={{
+								onChange: z.string().min(1, "Bucket name is required"),
+							}}
+						>
 							{(field) => (
 								<div className="space-y-2">
-									<Label>{t("settings.dataExport.storage.endpoint", "Custom Endpoint (Optional)")}</Label>
+									<Label>{t("settings.dataExport.storage.bucketName", "Bucket Name")}</Label>
 									<Input
-										placeholder={t("settings.dataExport.storage.endpointPlaceholder", "https://s3.example.com")}
+										placeholder={t(
+											"settings.dataExport.storage.bucketPlaceholder",
+											"my-export-bucket",
+										)}
 										value={field.state.value}
 										onChange={(e) => {
 											field.handleChange(e.target.value);
@@ -355,70 +317,162 @@ export function StorageSettingsForm({
 										onBlur={field.handleBlur}
 									/>
 									<p className="text-sm text-muted-foreground">
-										{t("settings.dataExport.storage.endpointDescription", "For S3-compatible services like MinIO")}
+										{t(
+											"settings.dataExport.storage.bucketDescription",
+											"The name of your S3 bucket",
+										)}
+									</p>
+									{field.state.meta.errors.length > 0 && (
+										<p className="text-sm text-destructive">
+											{typeof field.state.meta.errors[0] === "string"
+												? field.state.meta.errors[0]
+												: (field.state.meta.errors[0] as any)?.message}
+										</p>
+									)}
+								</div>
+							)}
+						</form.Field>
+
+						<form.Field
+							name="region"
+							validators={{
+								onChange: z.string().min(1, "Region is required"),
+							}}
+						>
+							{(field) => (
+								<div className="space-y-2">
+									<Label>{t("settings.dataExport.storage.region", "Region")}</Label>
+									<Input
+										placeholder={t("settings.dataExport.storage.regionPlaceholder", "us-east-1")}
+										value={field.state.value}
+										onChange={(e) => {
+											field.handleChange(e.target.value);
+											setHasUnsavedChanges(true);
+										}}
+										onBlur={field.handleBlur}
+									/>
+									<p className="text-sm text-muted-foreground">
+										{t(
+											"settings.dataExport.storage.regionDescription",
+											"AWS region where your bucket is located",
+										)}
+									</p>
+									{field.state.meta.errors.length > 0 && (
+										<p className="text-sm text-destructive">
+											{typeof field.state.meta.errors[0] === "string"
+												? field.state.meta.errors[0]
+												: (field.state.meta.errors[0] as any)?.message}
+										</p>
+									)}
+								</div>
+							)}
+						</form.Field>
+					</div>
+
+					<form.Field name="endpoint">
+						{(field) => (
+							<div className="space-y-2">
+								<Label>
+									{t("settings.dataExport.storage.endpoint", "Custom Endpoint (Optional)")}
+								</Label>
+								<Input
+									placeholder={t(
+										"settings.dataExport.storage.endpointPlaceholder",
+										"https://s3.example.com",
+									)}
+									value={field.state.value}
+									onChange={(e) => {
+										field.handleChange(e.target.value);
+										setHasUnsavedChanges(true);
+									}}
+									onBlur={field.handleBlur}
+								/>
+								<p className="text-sm text-muted-foreground">
+									{t(
+										"settings.dataExport.storage.endpointDescription",
+										"For S3-compatible services like MinIO",
+									)}
+								</p>
+							</div>
+						)}
+					</form.Field>
+
+					<div className="grid gap-4 md:grid-cols-2">
+						<form.Field name="accessKeyId">
+							{(field) => (
+								<div className="space-y-2">
+									<Label>{t("settings.dataExport.storage.accessKeyId", "Access Key ID")}</Label>
+									<Input
+										type="password"
+										placeholder={config ? "••••••••••••" : "AKIAIOSFODNN7EXAMPLE"}
+										value={field.state.value}
+										onChange={(e) => {
+											field.handleChange(e.target.value);
+											setHasUnsavedChanges(true);
+										}}
+										onBlur={field.handleBlur}
+									/>
+									<p className="text-sm text-muted-foreground">
+										{config
+											? t(
+													"settings.dataExport.storage.keepExistingCredentials",
+													"Leave blank to keep existing credentials",
+												)
+											: t(
+													"settings.dataExport.storage.accessKeyDescription",
+													"Your AWS access key ID",
+												)}
 									</p>
 								</div>
 							)}
 						</form.Field>
 
-						<div className="grid gap-4 md:grid-cols-2">
-							<form.Field name="accessKeyId">
-								{(field) => (
-									<div className="space-y-2">
-										<Label>{t("settings.dataExport.storage.accessKeyId", "Access Key ID")}</Label>
-										<Input
-											type="password"
-											placeholder={config ? "••••••••••••" : "AKIAIOSFODNN7EXAMPLE"}
-											value={field.state.value}
-											onChange={(e) => {
-												field.handleChange(e.target.value);
-												setHasUnsavedChanges(true);
-											}}
-											onBlur={field.handleBlur}
-										/>
-										<p className="text-sm text-muted-foreground">
-											{config
-												? t("settings.dataExport.storage.keepExistingCredentials", "Leave blank to keep existing credentials")
-												: t("settings.dataExport.storage.accessKeyDescription", "Your AWS access key ID")}
-										</p>
-									</div>
-								)}
-							</form.Field>
+						<form.Field name="secretAccessKey">
+							{(field) => (
+								<div className="space-y-2">
+									<Label>
+										{t("settings.dataExport.storage.secretAccessKey", "Secret Access Key")}
+									</Label>
+									<Input
+										type="password"
+										placeholder={
+											config ? "••••••••••••" : "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+										}
+										value={field.state.value}
+										onChange={(e) => {
+											field.handleChange(e.target.value);
+											setHasUnsavedChanges(true);
+										}}
+										onBlur={field.handleBlur}
+									/>
+									<p className="text-sm text-muted-foreground">
+										{config
+											? t(
+													"settings.dataExport.storage.keepExistingCredentials",
+													"Leave blank to keep existing credentials",
+												)
+											: t(
+													"settings.dataExport.storage.secretKeyDescription",
+													"Your AWS secret access key",
+												)}
+									</p>
+								</div>
+							)}
+						</form.Field>
+					</div>
 
-							<form.Field name="secretAccessKey">
-								{(field) => (
-									<div className="space-y-2">
-										<Label>{t("settings.dataExport.storage.secretAccessKey", "Secret Access Key")}</Label>
-										<Input
-											type="password"
-											placeholder={
-												config ? "••••••••••••" : "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
-											}
-											value={field.state.value}
-											onChange={(e) => {
-												field.handleChange(e.target.value);
-												setHasUnsavedChanges(true);
-											}}
-											onBlur={field.handleBlur}
-										/>
-										<p className="text-sm text-muted-foreground">
-											{config
-												? t("settings.dataExport.storage.keepExistingCredentials", "Leave blank to keep existing credentials")
-												: t("settings.dataExport.storage.secretKeyDescription", "Your AWS secret access key")}
-										</p>
-									</div>
-								)}
-							</form.Field>
-						</div>
-
-						{config?.lastVerifiedAt && (
-							<p className="text-muted-foreground text-sm">
-								{t("settings.dataExport.storage.lastVerified", `Last verified: ${new Date(config.lastVerifiedAt).toLocaleString()}`, {
+					{config?.lastVerifiedAt && (
+						<p className="text-muted-foreground text-sm">
+							{t(
+								"settings.dataExport.storage.lastVerified",
+								`Last verified: ${new Date(config.lastVerifiedAt).toLocaleString()}`,
+								{
 									date: new Date(config.lastVerifiedAt).toLocaleString(),
-								})}
-							</p>
-						)}
-					</CardContent>
+								},
+							)}
+						</p>
+					)}
+				</CardContent>
 				<CardFooter className="flex justify-between">
 					<Button
 						type="button"

@@ -110,10 +110,7 @@ export function VacationAssignmentManager({
 	);
 
 	// Fetch company default policies (current and next)
-	const {
-		data: companyDefaults,
-		isLoading: defaultsLoading,
-	} = useQuery({
+	const { data: companyDefaults, isLoading: defaultsLoading } = useQuery({
 		queryKey: queryKeys.vacationPolicies.companyDefault(organizationId),
 		queryFn: async () => {
 			const result = await getCompanyDefaultPolicies(organizationId);
@@ -275,7 +272,8 @@ export function VacationAssignmentManager({
 											{t("settings.vacation.current", "Current")}
 										</Badge>
 										<span>
-											{t("settings.vacation.since", "since")} {formatDate(companyDefaults.current.startDate)}
+											{t("settings.vacation.since", "since")}{" "}
+											{formatDate(companyDefaults.current.startDate)}
 										</span>
 									</div>
 									<div className="flex items-center gap-3">
@@ -298,7 +296,8 @@ export function VacationAssignmentManager({
 											</Badge>
 											<IconChevronRight className="h-3 w-3" />
 											<span>
-												{t("settings.vacation.startingOn", "starting on")} {formatDate(companyDefaults.next.startDate)}
+												{t("settings.vacation.startingOn", "starting on")}{" "}
+												{formatDate(companyDefaults.next.startDate)}
 											</span>
 										</div>
 										<div className="flex items-center gap-3">
@@ -374,10 +373,12 @@ export function VacationAssignmentManager({
 													{t("settings.vacation.current", "Current")}
 												</Badge>
 												<span className="text-muted-foreground">
-													{assignment.policy.name} — {assignment.policy.defaultAnnualDays} {t("settings.vacation.days", "days")}
+													{assignment.policy.name} — {assignment.policy.defaultAnnualDays}{" "}
+													{t("settings.vacation.days", "days")}
 												</span>
 												<span className="text-xs text-muted-foreground">
-													({t("settings.vacation.since", "since")} {formatDate(assignment.policy.startDate)})
+													({t("settings.vacation.since", "since")}{" "}
+													{formatDate(assignment.policy.startDate)})
 												</span>
 											</div>
 											{assignment.policy.validUntil && (
@@ -386,7 +387,11 @@ export function VacationAssignmentManager({
 														{t("settings.vacation.expires", "Expires")}
 													</Badge>
 													<span>
-														{formatDate(assignment.policy.validUntil)} → {t("settings.vacation.fallsBackToDefault", "Falls back to company default")}
+														{formatDate(assignment.policy.validUntil)} →{" "}
+														{t(
+															"settings.vacation.fallsBackToDefault",
+															"Falls back to company default",
+														)}
 													</span>
 												</div>
 											)}
@@ -464,10 +469,12 @@ export function VacationAssignmentManager({
 													{t("settings.vacation.current", "Current")}
 												</Badge>
 												<span className="text-muted-foreground">
-													{assignment.policy.name} — {assignment.policy.defaultAnnualDays} {t("settings.vacation.days", "days")}
+													{assignment.policy.name} — {assignment.policy.defaultAnnualDays}{" "}
+													{t("settings.vacation.days", "days")}
 												</span>
 												<span className="text-xs text-muted-foreground">
-													({t("settings.vacation.since", "since")} {formatDate(assignment.policy.startDate)})
+													({t("settings.vacation.since", "since")}{" "}
+													{formatDate(assignment.policy.startDate)})
 												</span>
 											</div>
 											{assignment.policy.validUntil && (
@@ -476,7 +483,11 @@ export function VacationAssignmentManager({
 														{t("settings.vacation.expires", "Expires")}
 													</Badge>
 													<span>
-														{formatDate(assignment.policy.validUntil)} → {t("settings.vacation.fallsBackToTeamOrDefault", "Falls back to team or company default")}
+														{formatDate(assignment.policy.validUntil)} →{" "}
+														{t(
+															"settings.vacation.fallsBackToTeamOrDefault",
+															"Falls back to team or company default",
+														)}
 													</span>
 												</div>
 											)}

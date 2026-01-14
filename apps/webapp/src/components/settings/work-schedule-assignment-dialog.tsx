@@ -1,12 +1,12 @@
 "use client";
 
-import { useForm } from "@tanstack/react-form";
 import { IconLoader2 } from "@tabler/icons-react";
-import { z } from "zod";
+import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { z } from "zod";
 import { getWorkScheduleTemplates } from "@/app/[locale]/(app)/settings/work-schedules/actions";
 import {
 	bulkCreateWorkScheduleAssignments,
@@ -74,11 +74,11 @@ export function WorkScheduleAssignmentDialog({
 	const [selectedEmployeeIds, setSelectedEmployeeIds] = useState<string[]>([]);
 	const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
-	const form = useForm<FormValues>({
+	const form = useForm({
 		defaultValues: {
 			templateId: "",
-			teamId: null,
-			employeeId: null,
+			teamId: null as string | null,
+			employeeId: null as string | null,
 		},
 		onSubmit: async ({ value }) => {
 			if (bulkMode) {
@@ -198,7 +198,7 @@ export function WorkScheduleAssignmentDialog({
 		mutationFn: (data: { templateId: string; teamIds?: string[]; employeeIds?: string[] }) =>
 			bulkCreateWorkScheduleAssignments(organizationId, {
 				templateId: data.templateId,
-				assignmentType,
+				assignmentType: assignmentType as "team" | "employee",
 				teamIds: assignmentType === "team" ? data.teamIds : undefined,
 				employeeIds: assignmentType === "employee" ? data.employeeIds : undefined,
 			}),
@@ -288,7 +288,7 @@ export function WorkScheduleAssignmentDialog({
 		}
 	};
 
-	const formatTemplate = (template: (typeof templates)[number]) => {
+	const formatTemplate = (template: NonNullable<typeof templates>[number]) => {
 		const hours =
 			template.scheduleType === "simple"
 				? template.hoursPerCycle
@@ -336,10 +336,7 @@ export function WorkScheduleAssignmentDialog({
 								<Select onValueChange={field.handleChange} value={field.state.value}>
 									<SelectTrigger>
 										<SelectValue
-											placeholder={t(
-												"settings.workSchedules.selectTemplate",
-												"Select a template",
-											)}
+											placeholder={t("settings.workSchedules.selectTemplate", "Select a template")}
 										/>
 									</SelectTrigger>
 									<SelectContent>
@@ -355,10 +352,7 @@ export function WorkScheduleAssignmentDialog({
 											))
 										) : (
 											<SelectItem value="" disabled>
-												{t(
-													"settings.workSchedules.noTemplatesAvailable",
-													"No templates available",
-												)}
+												{t("settings.workSchedules.noTemplatesAvailable", "No templates available")}
 											</SelectItem>
 										)}
 									</SelectContent>
@@ -371,42 +365,42 @@ export function WorkScheduleAssignmentDialog({
 								</p>
 								{field.state.meta.errors.length > 0 && (
 									<p className="text-sm text-destructive">
-									{typeof field.state.meta.errors[0] === "string"
-										? field.state.meta.errors[0]
-										: (field.state.meta.errors[0] as any)?.message}
-								</p>
+										{typeof field.state.meta.errors[0] === "string"
+											? field.state.meta.errors[0]
+											: (field.state.meta.errors[0] as any)?.message}
+									</p>
 								)}
 							</div>
 						)}
 					</form.Field>
 
-						{/* Bulk Mode Toggle */}
-						{canUseBulkMode && (
-							<div className="flex items-center justify-between rounded-lg border p-3">
-								<div className="space-y-0.5">
-									<Label htmlFor="bulk-mode">
-										{t("settings.workSchedules.bulkMode", "Bulk Assignment")}
-									</Label>
-									<p className="text-xs text-muted-foreground">
-										{t(
-											"settings.workSchedules.bulkModeDescription",
-											"Assign to multiple {type}s at once",
-											{ type: assignmentType },
-										)}
-									</p>
-								</div>
-								<Switch
-									id="bulk-mode"
-									checked={bulkMode}
-									onCheckedChange={(checked) => {
-										setBulkMode(checked);
-										if (!checked) {
-											clearSelection();
-										}
-									}}
-								/>
+					{/* Bulk Mode Toggle */}
+					{canUseBulkMode && (
+						<div className="flex items-center justify-between rounded-lg border p-3">
+							<div className="space-y-0.5">
+								<Label htmlFor="bulk-mode">
+									{t("settings.workSchedules.bulkMode", "Bulk Assignment")}
+								</Label>
+								<p className="text-xs text-muted-foreground">
+									{t(
+										"settings.workSchedules.bulkModeDescription",
+										"Assign to multiple {type}s at once",
+										{ type: assignmentType },
+									)}
+								</p>
 							</div>
-						)}
+							<Switch
+								id="bulk-mode"
+								checked={bulkMode}
+								onCheckedChange={(checked) => {
+									setBulkMode(checked);
+									if (!checked) {
+										clearSelection();
+									}
+								}}
+							/>
+						</div>
+					)}
 
 					{/* Single Team Selection */}
 					{assignmentType === "team" && !bulkMode && (
@@ -446,65 +440,65 @@ export function WorkScheduleAssignmentDialog({
 						</form.Field>
 					)}
 
-						{/* Bulk Team Selection */}
-						{assignmentType === "team" && bulkMode && (
-							<div className="space-y-2">
-								<div className="flex items-center justify-between">
-									<Label>{t("settings.workSchedules.selectTeams", "Select Teams")}</Label>
-									<div className="flex gap-2">
-										<Button
-											type="button"
-											variant="ghost"
-											size="sm"
-											onClick={selectAllTeams}
-											disabled={loadingTeams}
-										>
-											{t("common.selectAll", "Select All")}
-										</Button>
-										<Button
-											type="button"
-											variant="ghost"
-											size="sm"
-											onClick={clearSelection}
-											disabled={selectedTeamIds.length === 0}
-										>
-											{t("common.clearSelection", "Clear")}
-										</Button>
-									</div>
+					{/* Bulk Team Selection */}
+					{assignmentType === "team" && bulkMode && (
+						<div className="space-y-2">
+							<div className="flex items-center justify-between">
+								<Label>{t("settings.workSchedules.selectTeams", "Select Teams")}</Label>
+								<div className="flex gap-2">
+									<Button
+										type="button"
+										variant="ghost"
+										size="sm"
+										onClick={selectAllTeams}
+										disabled={loadingTeams}
+									>
+										{t("common.selectAll", "Select All")}
+									</Button>
+									<Button
+										type="button"
+										variant="ghost"
+										size="sm"
+										onClick={clearSelection}
+										disabled={selectedTeamIds.length === 0}
+									>
+										{t("common.clearSelection", "Clear")}
+									</Button>
 								</div>
-								<ScrollArea className="h-48 rounded-md border p-2">
-									{loadingTeams ? (
-										<div className="flex items-center justify-center h-full">
-											<IconLoader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-										</div>
-									) : teams && teams.length > 0 ? (
-										<div className="space-y-2">
-											{teams.map((team) => (
-												<div key={team.id} className="flex items-center space-x-2">
-													<Checkbox
-														id={`team-${team.id}`}
-														checked={selectedTeamIds.includes(team.id)}
-														onCheckedChange={() => toggleTeamSelection(team.id)}
-													/>
-													<Label htmlFor={`team-${team.id}`} className="font-normal cursor-pointer">
-														{team.name}
-													</Label>
-												</div>
-											))}
-										</div>
-									) : (
-										<p className="text-sm text-muted-foreground text-center py-4">
-											{t("settings.workSchedules.noTeamsAvailable", "No teams available")}
-										</p>
-									)}
-								</ScrollArea>
-								<p className="text-xs text-muted-foreground">
-									{t("settings.workSchedules.selectedCount", "{count} selected", {
-										count: selectedTeamIds.length,
-									})}
-								</p>
 							</div>
-						)}
+							<ScrollArea className="h-48 rounded-md border p-2">
+								{loadingTeams ? (
+									<div className="flex items-center justify-center h-full">
+										<IconLoader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+									</div>
+								) : teams && teams.length > 0 ? (
+									<div className="space-y-2">
+										{teams.map((team) => (
+											<div key={team.id} className="flex items-center space-x-2">
+												<Checkbox
+													id={`team-${team.id}`}
+													checked={selectedTeamIds.includes(team.id)}
+													onCheckedChange={() => toggleTeamSelection(team.id)}
+												/>
+												<Label htmlFor={`team-${team.id}`} className="font-normal cursor-pointer">
+													{team.name}
+												</Label>
+											</div>
+										))}
+									</div>
+								) : (
+									<p className="text-sm text-muted-foreground text-center py-4">
+										{t("settings.workSchedules.noTeamsAvailable", "No teams available")}
+									</p>
+								)}
+							</ScrollArea>
+							<p className="text-xs text-muted-foreground">
+								{t("settings.workSchedules.selectedCount", "{count} selected", {
+									count: selectedTeamIds.length,
+								})}
+							</p>
+						</div>
+					)}
 
 					{/* Single Employee Selection */}
 					{assignmentType === "employee" && !bulkMode && (
@@ -552,79 +546,79 @@ export function WorkScheduleAssignmentDialog({
 						</form.Field>
 					)}
 
-						{/* Bulk Employee Selection */}
-						{assignmentType === "employee" && bulkMode && (
-							<div className="space-y-2">
-								<div className="flex items-center justify-between">
-									<Label>{t("settings.workSchedules.selectEmployees", "Select Employees")}</Label>
-									<div className="flex gap-2">
-										<Button
-											type="button"
-											variant="ghost"
-											size="sm"
-											onClick={selectAllEmployees}
-											disabled={loadingEmployees}
-										>
-											{t("common.selectAll", "Select All")}
-										</Button>
-										<Button
-											type="button"
-											variant="ghost"
-											size="sm"
-											onClick={clearSelection}
-											disabled={selectedEmployeeIds.length === 0}
-										>
-											{t("common.clearSelection", "Clear")}
-										</Button>
-									</div>
+					{/* Bulk Employee Selection */}
+					{assignmentType === "employee" && bulkMode && (
+						<div className="space-y-2">
+							<div className="flex items-center justify-between">
+								<Label>{t("settings.workSchedules.selectEmployees", "Select Employees")}</Label>
+								<div className="flex gap-2">
+									<Button
+										type="button"
+										variant="ghost"
+										size="sm"
+										onClick={selectAllEmployees}
+										disabled={loadingEmployees}
+									>
+										{t("common.selectAll", "Select All")}
+									</Button>
+									<Button
+										type="button"
+										variant="ghost"
+										size="sm"
+										onClick={clearSelection}
+										disabled={selectedEmployeeIds.length === 0}
+									>
+										{t("common.clearSelection", "Clear")}
+									</Button>
 								</div>
-								<ScrollArea className="h-48 rounded-md border p-2">
-									{loadingEmployees ? (
-										<div className="flex items-center justify-center h-full">
-											<IconLoader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-										</div>
-									) : employees && employees.length > 0 ? (
-										<div className="space-y-2">
-											{employees.map((emp) => (
-												<div key={emp.id} className="flex items-center space-x-2">
-													<Checkbox
-														id={`emp-${emp.id}`}
-														checked={selectedEmployeeIds.includes(emp.id)}
-														onCheckedChange={() => toggleEmployeeSelection(emp.id)}
-													/>
-													<Label htmlFor={`emp-${emp.id}`} className="font-normal cursor-pointer">
-														{`${emp.firstName || ""} ${emp.lastName || ""}`.trim() ||
-															emp.employeeNumber ||
-															"Unknown"}
-													</Label>
-												</div>
-											))}
-										</div>
-									) : (
-										<p className="text-sm text-muted-foreground text-center py-4">
-											{t("settings.workSchedules.noEmployeesAvailable", "No employees available")}
-										</p>
-									)}
-								</ScrollArea>
-								<p className="text-xs text-muted-foreground">
-									{t("settings.workSchedules.selectedCount", "{count} selected", {
-										count: selectedEmployeeIds.length,
-									})}
-								</p>
 							</div>
-						)}
+							<ScrollArea className="h-48 rounded-md border p-2">
+								{loadingEmployees ? (
+									<div className="flex items-center justify-center h-full">
+										<IconLoader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+									</div>
+								) : employees && employees.length > 0 ? (
+									<div className="space-y-2">
+										{employees.map((emp) => (
+											<div key={emp.id} className="flex items-center space-x-2">
+												<Checkbox
+													id={`emp-${emp.id}`}
+													checked={selectedEmployeeIds.includes(emp.id)}
+													onCheckedChange={() => toggleEmployeeSelection(emp.id)}
+												/>
+												<Label htmlFor={`emp-${emp.id}`} className="font-normal cursor-pointer">
+													{`${emp.firstName || ""} ${emp.lastName || ""}`.trim() ||
+														emp.employeeNumber ||
+														"Unknown"}
+												</Label>
+											</div>
+										))}
+									</div>
+								) : (
+									<p className="text-sm text-muted-foreground text-center py-4">
+										{t("settings.workSchedules.noEmployeesAvailable", "No employees available")}
+									</p>
+								)}
+							</ScrollArea>
+							<p className="text-xs text-muted-foreground">
+								{t("settings.workSchedules.selectedCount", "{count} selected", {
+									count: selectedEmployeeIds.length,
+								})}
+							</p>
+						</div>
+					)}
 
-						<DialogFooter>
-							<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-								{t("common.cancel", "Cancel")}
-							</Button>
-							<Button type="submit" disabled={isPending || isLoading}>
-								{isPending && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
-								{bulkMode
-									? t("settings.workSchedules.assignSelected", "Assign to Selected")
-									: t("settings.workSchedules.assign", "Assign")}
-							</Button>
-						</DialogFooter>
+					<DialogFooter>
+						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+							{t("common.cancel", "Cancel")}
+						</Button>
+						<Button type="submit" disabled={isPending || isLoading}>
+							{isPending && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
+							{bulkMode
+								? t("settings.workSchedules.assignSelected", "Assign to Selected")
+								: t("settings.workSchedules.assign", "Assign")}
+						</Button>
+					</DialogFooter>
 				</form>
 			</DialogContent>
 		</Dialog>

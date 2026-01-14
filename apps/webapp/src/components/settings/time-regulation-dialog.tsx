@@ -1,15 +1,15 @@
 "use client";
 
 import { IconLoader2, IconPlus, IconTrash } from "@tabler/icons-react";
-import { useMutation } from "@tanstack/react-query";
 import { useForm } from "@tanstack/react-form";
+import { useMutation } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useEffect } from "react";
 import { toast } from "sonner";
 import {
 	createTimeRegulation,
-	updateTimeRegulation,
 	type TimeRegulationWithBreakRules,
+	updateTimeRegulation,
 } from "@/app/[locale]/(app)/settings/time-regulations/actions";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,18 +24,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import {
+	fieldHasError,
 	TFormControl,
 	TFormDescription,
 	TFormItem,
 	TFormLabel,
 	TFormMessage,
-	fieldHasError,
 } from "@/components/ui/tanstack-form";
 import { Textarea } from "@/components/ui/textarea";
 import {
-	timeRegulationFormSchema,
 	type BreakRuleFormValues,
 	type TimeRegulationFormValues,
+	timeRegulationFormSchema,
 } from "@/lib/time-regulations/validation";
 import { BreakRuleEditor } from "./break-rule-editor";
 
@@ -136,16 +136,13 @@ export function TimeRegulationDialog({
 
 	// Create mutation
 	const createMutation = useMutation({
-		mutationFn: (data: TimeRegulationFormValues) =>
-			createTimeRegulation(organizationId, data),
+		mutationFn: (data: TimeRegulationFormValues) => createTimeRegulation(organizationId, data),
 		onSuccess: (result) => {
 			if (result.success) {
 				toast.success(t("settings.timeRegulations.created", "Regulation created"));
 				onSuccess();
 			} else {
-				toast.error(
-					result.error || t("settings.timeRegulations.createFailed", "Failed to create"),
-				);
+				toast.error(result.error || t("settings.timeRegulations.createFailed", "Failed to create"));
 			}
 		},
 		onError: () => {
@@ -162,9 +159,7 @@ export function TimeRegulationDialog({
 				toast.success(t("settings.timeRegulations.updated", "Regulation updated"));
 				onSuccess();
 			} else {
-				toast.error(
-					result.error || t("settings.timeRegulations.updateFailed", "Failed to update"),
-				);
+				toast.error(result.error || t("settings.timeRegulations.updateFailed", "Failed to update"));
 			}
 		},
 		onError: () => {
@@ -342,10 +337,7 @@ export function TimeRegulationDialog({
 											</div>
 										</TFormControl>
 										<TFormDescription>
-											{t(
-												"settings.timeRegulations.maxUninterruptedDescription",
-												"Without a break",
-											)}
+											{t("settings.timeRegulations.maxUninterruptedDescription", "Without a break")}
 										</TFormDescription>
 										<TFormMessage field={field} />
 									</TFormItem>
@@ -383,10 +375,7 @@ export function TimeRegulationDialog({
 									{field.state.value.length === 0 ? (
 										<div className="flex flex-col items-center justify-center py-8 text-center border rounded-lg border-dashed">
 											<p className="text-sm text-muted-foreground">
-												{t(
-													"settings.timeRegulations.noBreakRules",
-													"No break rules defined",
-												)}
+												{t("settings.timeRegulations.noBreakRules", "No break rules defined")}
 											</p>
 											<p className="text-xs text-muted-foreground mt-1">
 												{t(

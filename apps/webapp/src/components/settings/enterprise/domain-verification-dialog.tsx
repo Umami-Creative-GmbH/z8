@@ -150,7 +150,7 @@ export function DomainVerificationDialog({
 						<IconRefresh className="mr-2 h-4 w-4" />
 						{isRegenerating ? "Regenerating..." : "Regenerate Token"}
 					</Button>
-					<Button onClick={() => onVerify(domain.id)} disabled={isVerifying || isExpired}>
+					<Button onClick={() => onVerify(domain.id)} disabled={isVerifying || !!isExpired}>
 						{isVerifying ? "Verifying..." : "Verify Domain"}
 					</Button>
 				</DialogFooter>

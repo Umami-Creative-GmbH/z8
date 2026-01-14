@@ -1,8 +1,8 @@
 "use client";
 
+import { IconCalendar, IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useStore } from "@tanstack/react-store";
-import { IconCalendar, IconLoader2 } from "@tabler/icons-react";
 import { format } from "date-fns";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -24,11 +24,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
 	Select,
 	SelectContent,
@@ -92,14 +88,17 @@ export function VacationPolicyForm({
 			? {
 					name: existingPolicy.name,
 					startDate: parseDate(existingPolicy.startDate),
-					validUntil: existingPolicy.validUntil ? parseDate(existingPolicy.validUntil) : (null as Date | null),
+					validUntil: existingPolicy.validUntil
+						? parseDate(existingPolicy.validUntil)
+						: (null as Date | null),
 					isCompanyDefault: existingPolicy.isCompanyDefault,
 					defaultAnnualDays: existingPolicy.defaultAnnualDays,
 					accrualType: existingPolicy.accrualType as "annual" | "monthly" | "biweekly",
 					accrualStartMonth: existingPolicy.accrualStartMonth || 1,
 					allowCarryover: existingPolicy.allowCarryover,
 					maxCarryoverDays: existingPolicy.maxCarryoverDays || "",
-					carryoverExpiryMonths: existingPolicy.carryoverExpiryMonths || (undefined as number | undefined),
+					carryoverExpiryMonths:
+						existingPolicy.carryoverExpiryMonths || (undefined as number | undefined),
 				}
 			: {
 					name: "",
@@ -169,9 +168,7 @@ export function VacationPolicyForm({
 			<DialogContent className="sm:max-w-[600px]">
 				<DialogHeader>
 					<DialogTitle>
-						{existingPolicy
-							? `Edit "${existingPolicy.name}"`
-							: "Create Vacation Policy"}
+						{existingPolicy ? `Edit "${existingPolicy.name}"` : "Create Vacation Policy"}
 					</DialogTitle>
 					<DialogDescription>
 						Configure vacation allowance settings. Each policy can be assigned to the organization,
@@ -206,10 +203,10 @@ export function VacationPolicyForm({
 								</p>
 								{field.state.meta.errors.length > 0 && (
 									<p className="text-sm text-destructive">
-									{typeof field.state.meta.errors[0] === "string"
-										? field.state.meta.errors[0]
-										: (field.state.meta.errors[0] as any)?.message}
-								</p>
+										{typeof field.state.meta.errors[0] === "string"
+											? field.state.meta.errors[0]
+											: (field.state.meta.errors[0] as any)?.message}
+									</p>
 								)}
 							</div>
 						)}
@@ -226,7 +223,7 @@ export function VacationPolicyForm({
 												variant="outline"
 												className={cn(
 													"w-full justify-start text-left font-normal",
-													!field.state.value && "text-muted-foreground"
+													!field.state.value && "text-muted-foreground",
 												)}
 											>
 												<IconCalendar className="mr-2 h-4 w-4" />
@@ -268,7 +265,7 @@ export function VacationPolicyForm({
 												variant="outline"
 												className={cn(
 													"w-full justify-start text-left font-normal",
-													!field.state.value && "text-muted-foreground"
+													!field.state.value && "text-muted-foreground",
 												)}
 											>
 												<IconCalendar className="mr-2 h-4 w-4" />
@@ -304,9 +301,7 @@ export function VacationPolicyForm({
 											/>
 										</PopoverContent>
 									</Popover>
-									<p className="text-sm text-muted-foreground">
-										Leave empty for ongoing policy
-									</p>
+									<p className="text-sm text-muted-foreground">Leave empty for ongoing policy</p>
 								</div>
 							)}
 						</form.Field>
@@ -325,8 +320,8 @@ export function VacationPolicyForm({
 										Set as Company Default
 									</Label>
 									<p className="text-sm text-muted-foreground">
-										This policy will apply to all employees without specific overrides.
-										Setting this will supersede any existing company default.
+										This policy will apply to all employees without specific overrides. Setting this
+										will supersede any existing company default.
 									</p>
 								</div>
 							</div>
@@ -336,10 +331,12 @@ export function VacationPolicyForm({
 					<form.Field
 						name="defaultAnnualDays"
 						validators={{
-							onChange: z.string().refine(
-								(val) => val && !Number.isNaN(parseFloat(val)) && parseFloat(val) > 0,
-								"Must be a positive number"
-							),
+							onChange: z
+								.string()
+								.refine(
+									(val) => val && !Number.isNaN(parseFloat(val)) && parseFloat(val) > 0,
+									"Must be a positive number",
+								),
 						}}
 					>
 						{(field) => (
@@ -358,10 +355,10 @@ export function VacationPolicyForm({
 								</p>
 								{field.state.meta.errors.length > 0 && (
 									<p className="text-sm text-destructive">
-									{typeof field.state.meta.errors[0] === "string"
-										? field.state.meta.errors[0]
-										: (field.state.meta.errors[0] as any)?.message}
-								</p>
+										{typeof field.state.meta.errors[0] === "string"
+											? field.state.meta.errors[0]
+											: (field.state.meta.errors[0] as any)?.message}
+									</p>
 								)}
 							</div>
 						)}
@@ -373,7 +370,9 @@ export function VacationPolicyForm({
 								<Label>Accrual Type</Label>
 								<Select
 									value={field.state.value}
-									onValueChange={(value) => field.handleChange(value as "annual" | "monthly" | "biweekly")}
+									onValueChange={(value) =>
+										field.handleChange(value as "annual" | "monthly" | "biweekly")
+									}
 								>
 									<SelectTrigger>
 										<SelectValue placeholder="Select accrual type" />

@@ -63,8 +63,9 @@ export function TimeRegulationTemplatesTable({
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-	const [regulationToDelete, setRegulationToDelete] =
-		useState<TimeRegulationWithBreakRules | null>(null);
+	const [regulationToDelete, setRegulationToDelete] = useState<TimeRegulationWithBreakRules | null>(
+		null,
+	);
 
 	// Helper function to format minutes to hours with translation
 	const formatMinutesToHours = (minutes: number | null): string => {
@@ -108,9 +109,7 @@ export function TimeRegulationTemplatesTable({
 				setDeleteDialogOpen(false);
 				setRegulationToDelete(null);
 			} else {
-				toast.error(
-					result.error || t("settings.timeRegulations.deleteFailed", "Failed to delete"),
-				);
+				toast.error(result.error || t("settings.timeRegulations.deleteFailed", "Failed to delete"));
 			}
 		},
 		onError: () => {

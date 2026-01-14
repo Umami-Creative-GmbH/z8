@@ -12,7 +12,12 @@ import {
 } from "@/components/ui/sidebar";
 import { Link, usePathname } from "@/navigation";
 import { useOrganizationSettings } from "@/stores/organization-settings-store";
-import { type FeatureFlag, getEntriesByGroup, getVisibleGroups, getVisibleSettings } from "./settings-config";
+import {
+	type FeatureFlag,
+	getEntriesByGroup,
+	getVisibleGroups,
+	getVisibleSettings,
+} from "./settings-config";
 import { SETTINGS_ICON_MAP } from "./settings-icons";
 
 interface SettingsNavProps {
@@ -51,7 +56,8 @@ export function SettingsNav({ isAdmin }: SettingsNavProps) {
 									const Icon = SETTINGS_ICON_MAP[item.icon];
 									const hasFeatureFlag = !!item.requiredFeature;
 									const isLoading = hasFeatureFlag && !isHydrated;
-									const isDisabled = hasFeatureFlag && isHydrated && !isFeatureEnabled(item.requiredFeature);
+									const isDisabled =
+										hasFeatureFlag && isHydrated && !isFeatureEnabled(item.requiredFeature);
 
 									if (isLoading) {
 										return (

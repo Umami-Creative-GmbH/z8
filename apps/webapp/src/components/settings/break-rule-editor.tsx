@@ -1,7 +1,6 @@
 "use client";
 
 import { IconPlus, IconTrash } from "@tabler/icons-react";
-import type { FormApi } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,18 +14,22 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import {
+	fieldHasError,
 	TFormControl,
 	TFormDescription,
 	TFormItem,
 	TFormLabel,
 	TFormMessage,
-	fieldHasError,
 } from "@/components/ui/tanstack-form";
-import type { BreakOptionFormValues, TimeRegulationFormValues } from "@/lib/time-regulations/validation";
+import type {
+	BreakOptionFormValues,
+	TimeRegulationFormValues,
+} from "@/lib/time-regulations/validation";
 
 interface BreakRuleEditorProps {
 	ruleIndex: number;
-	form: FormApi<TimeRegulationFormValues>;
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	form: any;
 	onRemove: () => void;
 }
 
@@ -61,7 +64,7 @@ export function BreakRuleEditor({ ruleIndex, form, onRemove }: BreakRuleEditorPr
 				{/* Threshold and Required Break */}
 				<div className="grid gap-4 sm:grid-cols-2">
 					<form.Field name={`breakRules[${ruleIndex}].workingMinutesThreshold`}>
-						{(field) => (
+						{(field: any) => (
 							<TFormItem>
 								<TFormLabel hasError={fieldHasError(field)}>
 									{t("settings.timeRegulations.afterWorking", "After working")}
@@ -98,7 +101,7 @@ export function BreakRuleEditor({ ruleIndex, form, onRemove }: BreakRuleEditorPr
 					</form.Field>
 
 					<form.Field name={`breakRules[${ruleIndex}].requiredBreakMinutes`}>
-						{(field) => (
+						{(field: any) => (
 							<TFormItem>
 								<TFormLabel hasError={fieldHasError(field)}>
 									{t("settings.timeRegulations.breakRequired", "Break required")}
@@ -138,7 +141,7 @@ export function BreakRuleEditor({ ruleIndex, form, onRemove }: BreakRuleEditorPr
 							{t("settings.timeRegulations.breakOptions", "Break Options")}
 						</Label>
 						<form.Field name={`breakRules[${ruleIndex}].options`}>
-							{(field) => (
+							{(field: any) => (
 								<Button
 									type="button"
 									variant="ghost"
@@ -155,7 +158,7 @@ export function BreakRuleEditor({ ruleIndex, form, onRemove }: BreakRuleEditorPr
 					</div>
 
 					<form.Field name={`breakRules[${ruleIndex}].options`} mode="array">
-						{(optionsField) => (
+						{(optionsField: any) => (
 							<div className="space-y-2">
 								{optionsField.state.value.length === 0 ? (
 									<p className="text-sm text-muted-foreground text-center py-4 border rounded-lg border-dashed">
@@ -165,7 +168,7 @@ export function BreakRuleEditor({ ruleIndex, form, onRemove }: BreakRuleEditorPr
 										)}
 									</p>
 								) : (
-									optionsField.state.value.map((option, optionIndex) => (
+									optionsField.state.value.map((option: any, optionIndex: number) => (
 										<div
 											key={optionIndex}
 											className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30"
@@ -173,7 +176,7 @@ export function BreakRuleEditor({ ruleIndex, form, onRemove }: BreakRuleEditorPr
 											<form.Field
 												name={`breakRules[${ruleIndex}].options[${optionIndex}].splitCount`}
 											>
-												{(field) => (
+												{(field: any) => (
 													<div className="flex-1">
 														<Select
 															value={field.state.value?.toString() ?? "null"}
@@ -208,7 +211,7 @@ export function BreakRuleEditor({ ruleIndex, form, onRemove }: BreakRuleEditorPr
 												<form.Field
 													name={`breakRules[${ruleIndex}].options[${optionIndex}].minimumSplitMinutes`}
 												>
-													{(field) => (
+													{(field: any) => (
 														<div className="flex items-center gap-2">
 															<span className="text-xs text-muted-foreground whitespace-nowrap">
 																{t("settings.timeRegulations.minPerSplit", "min each")}:
@@ -224,7 +227,9 @@ export function BreakRuleEditor({ ruleIndex, form, onRemove }: BreakRuleEditorPr
 																}}
 																className="w-16"
 															/>
-															<span className="text-xs text-muted-foreground">{t("settings.timeRegulations.minUnit", "min")}</span>
+															<span className="text-xs text-muted-foreground">
+																{t("settings.timeRegulations.minUnit", "min")}
+															</span>
 														</div>
 													)}
 												</form.Field>
@@ -235,7 +240,7 @@ export function BreakRuleEditor({ ruleIndex, form, onRemove }: BreakRuleEditorPr
 												<form.Field
 													name={`breakRules[${ruleIndex}].options[${optionIndex}].minimumLongestSplitMinutes`}
 												>
-													{(field) => (
+													{(field: any) => (
 														<div className="flex items-center gap-2">
 															<span className="text-xs text-muted-foreground whitespace-nowrap">
 																{t("settings.timeRegulations.longestMin", "longest min")}:
@@ -251,7 +256,9 @@ export function BreakRuleEditor({ ruleIndex, form, onRemove }: BreakRuleEditorPr
 																}}
 																className="w-16"
 															/>
-															<span className="text-xs text-muted-foreground">{t("settings.timeRegulations.minUnit", "min")}</span>
+															<span className="text-xs text-muted-foreground">
+																{t("settings.timeRegulations.minUnit", "min")}
+															</span>
 														</div>
 													)}
 												</form.Field>

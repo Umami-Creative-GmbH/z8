@@ -4,9 +4,9 @@ import { IconUserCheck, IconUsers } from "@tabler/icons-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { UserAvatar } from "@/components/user-avatar";
 import { Link } from "@/navigation";
 import { getManagedEmployees } from "./actions";
 import { WidgetCard } from "./widget-card";
@@ -15,6 +15,7 @@ type ManagedEmployee = {
 	id: string;
 	position: string | null;
 	user: {
+		id: string;
 		name: string;
 		email: string;
 		image: string | null;
@@ -91,16 +92,12 @@ export function ManagedEmployeesWidget() {
 							className="flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-accent"
 						>
 							<div className="flex items-center gap-3">
-								<Avatar className="size-10">
-									<AvatarImage src={emp.user.image || undefined} />
-									<AvatarFallback>
-										{emp.user.name
-											.split(" ")
-											.map((n: string) => n[0])
-											.join("")
-											.toUpperCase()}
-									</AvatarFallback>
-								</Avatar>
+								<UserAvatar
+									image={emp.user.image}
+									seed={emp.user.id}
+									name={emp.user.name}
+									size="md"
+								/>
 								<div>
 									<div className="font-medium">{emp.user.name}</div>
 									<div className="text-sm text-muted-foreground">

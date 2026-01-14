@@ -1,9 +1,9 @@
 "use client";
 
-import { useForm } from "@tanstack/react-form";
-import { useStore } from "@tanstack/react-store";
 import { IconLoader2 } from "@tabler/icons-react";
+import { useForm } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";
+import { useStore } from "@tanstack/react-store";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useMemo } from "react";
 import { toast } from "sonner";
@@ -62,6 +62,7 @@ interface DayConfig {
 	dayOfWeek: DayOfWeek;
 	hoursPerDay: string;
 	isWorkDay: boolean;
+	cycleWeek: number;
 }
 
 interface FormValues {
@@ -79,6 +80,7 @@ const defaultDays: DayConfig[] = DAYS_OF_WEEK.map((day) => ({
 	dayOfWeek: day.value,
 	hoursPerDay: day.value === "saturday" || day.value === "sunday" ? "0" : "8",
 	isWorkDay: day.value !== "saturday" && day.value !== "sunday",
+	cycleWeek: 1,
 }));
 
 export function WorkScheduleTemplateDialog({
@@ -91,13 +93,13 @@ export function WorkScheduleTemplateDialog({
 	const { t } = useTranslate();
 	const isEditing = !!editingTemplate;
 
-	const form = useForm<FormValues>({
+	const form = useForm({
 		defaultValues: {
 			name: "",
 			description: "",
-			scheduleCycle: "weekly",
-			scheduleType: "simple",
-			workingDaysPreset: "weekdays",
+			scheduleCycle: "weekly" as "daily" | "weekly" | "biweekly" | "monthly" | "yearly",
+			scheduleType: "simple" as "simple" | "detailed",
+			workingDaysPreset: "weekdays" as "weekdays" | "weekends" | "all_days" | "custom",
 			hoursPerCycle: "40",
 			homeOfficeDaysPerCycle: 0,
 			days: defaultDays,
@@ -130,6 +132,7 @@ export function WorkScheduleTemplateDialog({
 								dayOfWeek: d.dayOfWeek as DayOfWeek,
 								hoursPerDay: d.hoursPerDay,
 								isWorkDay: d.isWorkDay,
+								cycleWeek: d.cycleWeek ?? 1,
 							}))
 						: defaultDays,
 				);
@@ -180,7 +183,7 @@ export function WorkScheduleTemplateDialog({
 	// Update mutation
 	const updateMutation = useMutation({
 		mutationFn: (data: FormValues) =>
-			updateWorkScheduleTemplate(editingTemplate?.id, {
+			updateWorkScheduleTemplate(editingTemplate!.id, {
 				name: data.name,
 				description: data.description,
 				scheduleCycle: data.scheduleCycle,
@@ -211,7 +214,10 @@ export function WorkScheduleTemplateDialog({
 	const workingDaysPreset = useStore(form.store, (state) => state.values.workingDaysPreset);
 	const hoursPerCycle = useStore(form.store, (state) => state.values.hoursPerCycle);
 	const scheduleCycle = useStore(form.store, (state) => state.values.scheduleCycle);
-	const homeOfficeDaysPerCycle = useStore(form.store, (state) => state.values.homeOfficeDaysPerCycle);
+	const homeOfficeDaysPerCycle = useStore(
+		form.store,
+		(state) => state.values.homeOfficeDaysPerCycle,
+	);
 
 	// Calculate total hours for detailed mode
 	const totalHours = days
@@ -277,10 +283,7 @@ export function WorkScheduleTemplateDialog({
 										value={field.state.value}
 										onChange={(e) => field.handleChange(e.target.value)}
 										onBlur={field.handleBlur}
-										placeholder={t(
-											"settings.workSchedules.namePlaceholder",
-											"e.g., Full-Time 40h",
-										)}
+										placeholder={t("settings.workSchedules.namePlaceholder", "e.g., Full-Time 40h")}
 									/>
 									{field.state.meta.errors.length > 0 && (
 										<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
@@ -292,9 +295,7 @@ export function WorkScheduleTemplateDialog({
 						<form.Field name="description">
 							{(field) => (
 								<div className="space-y-2 sm:col-span-2">
-									<Label>
-										{t("settings.workSchedules.descriptionLabel", "Description")}
-									</Label>
+									<Label>{t("settings.workSchedules.descriptionLabel", "Description")}</Label>
 									<Textarea
 										value={field.state.value}
 										onChange={(e) => field.handleChange(e.target.value)}
@@ -315,7 +316,10 @@ export function WorkScheduleTemplateDialog({
 							{(field) => (
 								<div className="space-y-2">
 									<Label>{t("settings.workSchedules.cycle", "Cycle")}</Label>
-									<Select value={field.state.value} onValueChange={field.handleChange}>
+									<Select
+										value={field.state.value}
+										onValueChange={(v) => field.handleChange(v as typeof field.state.value)}
+									>
 										<SelectTrigger>
 											<SelectValue />
 										</SelectTrigger>
@@ -350,9 +354,7 @@ export function WorkScheduleTemplateDialog({
 						<form.Field name="homeOfficeDaysPerCycle">
 							{(field) => (
 								<div className="space-y-2">
-									<Label>
-										{t("settings.workSchedules.homeOfficeDays", "Home Office Days")}
-									</Label>
+									<Label>{t("settings.workSchedules.homeOfficeDays", "Home Office Days")}</Label>
 									<Input
 										type="number"
 										min="0"
@@ -377,7 +379,11 @@ export function WorkScheduleTemplateDialog({
 						{(field) => (
 							<div className="space-y-2">
 								<Label>{t("settings.workSchedules.type", "Schedule Type")}</Label>
-								<Tabs value={field.state.value} onValueChange={field.handleChange} className="mt-2">
+								<Tabs
+									value={field.state.value}
+									onValueChange={(v) => field.handleChange(v as typeof field.state.value)}
+									className="mt-2"
+								>
 									<TabsList className="grid w-full grid-cols-2">
 										<TabsTrigger value="simple">
 											{t("settings.workSchedules.type.simple", "Simple")}
@@ -391,12 +397,12 @@ export function WorkScheduleTemplateDialog({
 										<form.Field name="workingDaysPreset">
 											{(presetField) => (
 												<div className="space-y-2">
-													<Label>
-														{t("settings.workSchedules.workingDays", "Working Days")}
-													</Label>
+													<Label>{t("settings.workSchedules.workingDays", "Working Days")}</Label>
 													<Select
 														value={presetField.state.value}
-														onValueChange={presetField.handleChange}
+														onValueChange={(v) =>
+															presetField.handleChange(v as typeof presetField.state.value)
+														}
 													>
 														<SelectTrigger>
 															<SelectValue />

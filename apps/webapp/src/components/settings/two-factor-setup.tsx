@@ -14,7 +14,7 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
-import { twoFactor } from "@/lib/auth-client";
+import { authClient } from "@/lib/auth-client";
 
 interface TwoFactorSetupProps {
 	isEnabled: boolean;
@@ -48,7 +48,7 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled, userEmail }: TwoFa
 
 		startTransition(async () => {
 			try {
-				const result = await twoFactor.enable({
+				const result = await authClient.twoFactor.enable({
 					password,
 				});
 
@@ -81,7 +81,7 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled, userEmail }: TwoFa
 
 		startTransition(async () => {
 			try {
-				const result = await twoFactor.verifyTotp({
+				const result = await authClient.twoFactor.verifyTotp({
 					code: otpValue,
 				});
 
@@ -114,7 +114,7 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled, userEmail }: TwoFa
 
 		startTransition(async () => {
 			try {
-				const result = await twoFactor.disable({
+				const result = await authClient.twoFactor.disable({
 					password: disablePassword,
 				});
 
@@ -151,7 +151,7 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled, userEmail }: TwoFa
 
 		startTransition(async () => {
 			try {
-				const result = await twoFactor.generateBackupCodes({
+				const result = await authClient.twoFactor.generateBackupCodes({
 					password: regeneratePassword,
 				});
 

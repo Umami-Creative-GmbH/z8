@@ -175,7 +175,10 @@ export function VacationPoliciesTable({
 		<div className="space-y-4">
 			<div className="flex items-center justify-between gap-4">
 				<div className="text-sm text-muted-foreground">
-					{t("vacation.policies.list-description", "Manage vacation policies for your organization")}
+					{t(
+						"vacation.policies.list-description",
+						"Manage vacation policies for your organization",
+					)}
 				</div>
 				<div className="flex items-center gap-2">
 					<Button variant="ghost" size="icon" onClick={handleRefresh} disabled={loading}>
@@ -201,7 +204,10 @@ export function VacationPoliciesTable({
 						{t("vacation.policies.no-policies-created", "No vacation policies created yet")}
 					</p>
 					<p className="text-muted-foreground text-sm mt-1">
-						{t("vacation.policies.create-first", "Create a policy to define vacation allowances for your team.")}
+						{t(
+							"vacation.policies.create-first",
+							"Create a policy to define vacation allowances for your team.",
+						)}
 					</p>
 					<Button className="mt-4" onClick={handleCreateClick}>
 						<IconPlus className="mr-2 h-4 w-4" />
@@ -216,7 +222,9 @@ export function VacationPoliciesTable({
 								<TableHead>{t("vacation.policies.header.name", "Name")}</TableHead>
 								<TableHead>{t("vacation.policies.header.start-date", "Start Date")}</TableHead>
 								<TableHead>{t("vacation.policies.header.valid-until", "Valid Until")}</TableHead>
-								<TableHead className="text-right">{t("vacation.policies.header.annual-days", "Annual Days")}</TableHead>
+								<TableHead className="text-right">
+									{t("vacation.policies.header.annual-days", "Annual Days")}
+								</TableHead>
 								<TableHead>{t("vacation.policies.header.accrual", "Accrual")}</TableHead>
 								<TableHead>{t("vacation.policies.header.carryover", "Carryover")}</TableHead>
 								<TableHead>{t("vacation.policies.header.status", "Status")}</TableHead>
@@ -247,11 +255,15 @@ export function VacationPoliciesTable({
 											{policy.allowCarryover ? (
 												<Badge variant="outline">
 													{policy.maxCarryoverDays
-														? t("vacation.policies.max-days", "Max {{days}} days", { days: policy.maxCarryoverDays })
+														? t("vacation.policies.max-days", "Max {{days}} days", {
+																days: policy.maxCarryoverDays,
+															})
 														: t("vacation.policies.unlimited", "Unlimited")}
 												</Badge>
 											) : (
-												<span className="text-muted-foreground text-sm">{t("vacation.policies.none", "None")}</span>
+												<span className="text-muted-foreground text-sm">
+													{t("vacation.policies.none", "None")}
+												</span>
 											)}
 										</TableCell>
 										<TableCell>
@@ -265,9 +277,7 @@ export function VacationPoliciesTable({
 													{t("vacation.policies.superseded", "Superseded")}
 												</Badge>
 											) : (
-												<Badge variant="outline">
-													{t("vacation.policies.active", "Active")}
-												</Badge>
+												<Badge variant="outline">{t("vacation.policies.active", "Active")}</Badge>
 											)}
 										</TableCell>
 										<TableCell>
@@ -304,7 +314,9 @@ export function VacationPoliciesTable({
 			<AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
-						<AlertDialogTitle>{t("vacation.policies.delete-title", "Delete Vacation Policy")}</AlertDialogTitle>
+						<AlertDialogTitle>
+							{t("vacation.policies.delete-title", "Delete Vacation Policy")}
+						</AlertDialogTitle>
 						<AlertDialogDescription>
 							{policyToDelete?.isCompanyDefault
 								? t(
@@ -320,7 +332,9 @@ export function VacationPoliciesTable({
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
-						<AlertDialogCancel disabled={deleting}>{t("common.cancel", "Cancel")}</AlertDialogCancel>
+						<AlertDialogCancel disabled={deleting}>
+							{t("common.cancel", "Cancel")}
+						</AlertDialogCancel>
 						<AlertDialogAction
 							onClick={handleDeleteConfirm}
 							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"

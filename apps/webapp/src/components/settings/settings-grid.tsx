@@ -37,7 +37,8 @@ export function SettingsGrid({ visibleSettings, visibleGroups }: SettingsGridPro
 							{groupEntries.map((entry) => {
 								const hasFeatureFlag = !!entry.requiredFeature;
 								const isLoading = hasFeatureFlag && !isHydrated;
-								const isDisabled = hasFeatureFlag && isHydrated && !isFeatureEnabled(entry.requiredFeature);
+								const isDisabled =
+									hasFeatureFlag && isHydrated && !isFeatureEnabled(entry.requiredFeature);
 
 								return (
 									<SettingsCard
