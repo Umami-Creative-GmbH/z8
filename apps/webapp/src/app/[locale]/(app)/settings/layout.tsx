@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import { SettingsBreadcrumbs } from "@/components/settings/settings-breadcrumbs";
 import { SettingsNav } from "@/components/settings/settings-nav";
 import { getAuthContext } from "@/lib/auth-helpers";
@@ -8,6 +9,8 @@ export default async function SettingsLayout({
 	children: React.ReactNode;
 	params: Promise<{ locale: string }>;
 }) {
+	await connection(); // Mark as fully dynamic for cacheComponents mode
+
 	const authContext = await getAuthContext();
 	const isAdmin = authContext?.employee?.role === "admin";
 

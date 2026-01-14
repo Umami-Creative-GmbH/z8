@@ -1,6 +1,6 @@
 "use client";
 
-import { IconPlus, IconTrash, IconUpload, IconX } from "@tabler/icons-react";
+import { IconUpload, IconX } from "@tabler/icons-react";
 import Image from "next/image";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
@@ -9,9 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
 import { useImageUpload } from "@/hooks/use-image-upload";
 import type { OrganizationBranding } from "@/lib/domain";
 
@@ -20,18 +17,9 @@ interface BrandingFormProps {
 	organizationId: string;
 }
 
-interface CustomQuote {
-	quote: string;
-	author: string;
-}
-
 export function BrandingForm({ initialBranding, organizationId }: BrandingFormProps) {
 	const [branding, setBranding] = useState<OrganizationBranding>(initialBranding);
 	const [isSaving, setIsSaving] = useState(false);
-	const [customQuotes, setCustomQuotes] = useState<CustomQuote[]>(
-		initialBranding.customQuotes ?? [],
-	);
-	const [newQuote, setNewQuote] = useState({ quote: "", author: "" });
 
 	// Logo upload
 	const logoUpload = useImageUpload({
@@ -81,24 +69,10 @@ export function BrandingForm({ initialBranding, organizationId }: BrandingFormPr
 		[backgroundUpload],
 	);
 
-	const handleAddQuote = () => {
-		if (newQuote.quote.trim() && newQuote.author.trim()) {
-			setCustomQuotes((prev) => [...prev, { ...newQuote }]);
-			setNewQuote({ quote: "", author: "" });
-		}
-	};
-
-	const handleRemoveQuote = (index: number) => {
-		setCustomQuotes((prev) => prev.filter((_, i) => i !== index));
-	};
-
 	const handleSave = async () => {
 		setIsSaving(true);
 		try {
-			await updateBrandingAction({
-				...branding,
-				customQuotes: customQuotes.length > 0 ? customQuotes : null,
-			});
+			await updateBrandingAction(branding);
 			toast.success("Branding settings saved");
 		} catch (_error) {
 			toast.error("Failed to save branding settings");
@@ -319,85 +293,6 @@ export function BrandingForm({ initialBranding, organizationId }: BrandingFormPr
 							</div>
 						</div>
 					</div>
-				</CardContent>
-			</Card>
-
-			{/* Quotes */}
-			<Card>
-				<CardHeader>
-					<CardTitle>Quotes</CardTitle>
-					<CardDescription>
-						Configure the inspirational quotes displayed on the login page.
-					</CardDescription>
-				</CardHeader>
-				<CardContent className="space-y-4">
-					<div className="flex items-center justify-between">
-						<div className="space-y-0.5">
-							<Label htmlFor="quotesEnabled">Enable Quotes</Label>
-							<p className="text-sm text-muted-foreground">
-								Show inspirational quotes on the login page
-							</p>
-						</div>
-						<Switch
-							id="quotesEnabled"
-							checked={branding.quotesEnabled}
-							onCheckedChange={(checked) =>
-								setBranding((prev) => ({ ...prev, quotesEnabled: checked }))
-							}
-						/>
-					</div>
-
-					{branding.quotesEnabled && (
-						<>
-							<Separator />
-							<div className="space-y-4">
-								<Label>Custom Quotes</Label>
-								<p className="text-sm text-muted-foreground">
-									Add your own quotes to replace the defaults. Leave empty to use default quotes.
-								</p>
-
-								{customQuotes.length > 0 && (
-									<div className="space-y-3">
-										{customQuotes.map((quote, index) => (
-											<div key={index} className="flex items-start gap-3 p-3 bg-muted rounded-lg">
-												<div className="flex-1">
-													<p className="text-sm italic">&ldquo;{quote.quote}&rdquo;</p>
-													<p className="text-sm text-muted-foreground">- {quote.author}</p>
-												</div>
-												<Button variant="ghost" size="sm" onClick={() => handleRemoveQuote(index)}>
-													<IconTrash className="h-4 w-4 text-destructive" />
-												</Button>
-											</div>
-										))}
-									</div>
-								)}
-
-								<div className="space-y-3 p-4 border rounded-lg">
-									<Textarea
-										placeholder="Enter quote..."
-										value={newQuote.quote}
-										onChange={(e) => setNewQuote((prev) => ({ ...prev, quote: e.target.value }))}
-										rows={2}
-									/>
-									<div className="flex items-center gap-3">
-										<Input
-											placeholder="Author"
-											value={newQuote.author}
-											onChange={(e) => setNewQuote((prev) => ({ ...prev, author: e.target.value }))}
-											className="flex-1"
-										/>
-										<Button
-											onClick={handleAddQuote}
-											disabled={!newQuote.quote.trim() || !newQuote.author.trim()}
-										>
-											<IconPlus className="mr-2 h-4 w-4" />
-											Add Quote
-										</Button>
-									</div>
-								</div>
-							</div>
-						</>
-					)}
 				</CardContent>
 			</Card>
 

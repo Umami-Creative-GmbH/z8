@@ -1,6 +1,7 @@
 "use server";
 
 import { SpanStatusCode, trace } from "@opentelemetry/api";
+import { revalidateTag } from "next/cache";
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import * as z from "zod";
@@ -17,6 +18,7 @@ import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { PermissionsService } from "@/lib/effect/services/permissions.service";
+import { CACHE_TAGS } from "@/lib/cache/tags";
 import { createLogger } from "@/lib/logger";
 import { onTeamMemberAdded, onTeamMemberRemoved } from "@/lib/notifications/triggers";
 
@@ -171,6 +173,9 @@ export async function createTeam(
 					},
 					"Team created successfully",
 				);
+
+				// Invalidate teams cache
+				revalidateTag(CACHE_TAGS.TEAMS(newTeam.organizationId), "max");
 
 				span.setAttribute("team.id", newTeam.id);
 				span.setStatus({ code: SpanStatusCode.OK });
@@ -367,6 +372,9 @@ export async function updateTeam(
 
 				logger.info({ teamId }, "Team updated successfully");
 
+				// Invalidate teams cache
+				revalidateTag(CACHE_TAGS.TEAMS(updatedTeam.organizationId), "max");
+
 				span.setStatus({ code: SpanStatusCode.OK });
 
 				return updatedTeam;
@@ -512,6 +520,9 @@ export async function deleteTeam(teamId: string): Promise<ServerActionResult<voi
 				);
 
 				logger.info({ teamId }, "Team deleted successfully");
+
+				// Invalidate teams cache
+				revalidateTag(CACHE_TAGS.TEAMS(targetTeam.organizationId), "max");
 
 				span.setStatus({ code: SpanStatusCode.OK });
 			}).pipe(

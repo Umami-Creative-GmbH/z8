@@ -8,6 +8,7 @@ export type SettingsIconName =
 	| "bell"
 	| "building"
 	| "users"
+	| "map-pin"
 	| "calendar-event"
 	| "beach"
 	| "clock"
@@ -127,6 +128,17 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Manage employee profiles, roles, and manager assignments",
 		href: "/settings/employees",
 		icon: "users",
+		adminOnly: true,
+		group: "administration",
+	},
+	{
+		id: "locations",
+		titleKey: "settings.locations.title",
+		titleDefault: "Locations",
+		descriptionKey: "settings.locations.description",
+		descriptionDefault: "Manage organization locations and subareas",
+		href: "/settings/locations",
+		icon: "map-pin",
 		adminOnly: true,
 		group: "administration",
 	},

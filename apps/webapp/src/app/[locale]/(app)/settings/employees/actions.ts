@@ -1,6 +1,7 @@
 "use server";
 
 import { SpanStatusCode, trace } from "@opentelemetry/api";
+import { revalidateTag } from "next/cache";
 import { and, count, eq, ilike, or, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import { user } from "@/db/auth-schema";
@@ -40,6 +41,7 @@ import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { ManagerService } from "@/lib/effect/services/manager.service";
+import { CACHE_TAGS } from "@/lib/cache/tags";
 import { createLogger } from "@/lib/logger";
 import {
 	type AssignManagers,
@@ -210,6 +212,9 @@ export async function createEmployee(
 					"Employee created successfully",
 				);
 
+				// Invalidate employees cache
+				revalidateTag(CACHE_TAGS.EMPLOYEES(newEmployee.organizationId), "max");
+
 				span.setAttribute("employee.id", newEmployee.id);
 				span.setStatus({ code: SpanStatusCode.OK });
 				return newEmployee;
@@ -319,6 +324,9 @@ export async function updateEmployee(
 				);
 
 				logger.info({ employeeId }, "Employee updated successfully");
+
+				// Invalidate employees cache
+				revalidateTag(CACHE_TAGS.EMPLOYEES(currentEmployee.organizationId), "max");
 
 				span.setStatus({ code: SpanStatusCode.OK });
 			}).pipe(

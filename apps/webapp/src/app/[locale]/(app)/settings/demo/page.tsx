@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
@@ -8,6 +9,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { getOrganizationEmployees } from "./actions";
 
 async function DemoSettingsContent() {
+	await connection(); // Mark as fully dynamic for cacheComponents mode
+
 	const currentEmployee = await getCurrentEmployee();
 
 	if (!currentEmployee) {
