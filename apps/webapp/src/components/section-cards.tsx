@@ -5,9 +5,9 @@ import { ManagedEmployeesWidget } from "@/components/dashboard/managed-employees
 import { PendingApprovalsWidget } from "@/components/dashboard/pending-approvals-widget";
 import { QuickStatsWidget } from "@/components/dashboard/quick-stats-widget";
 import { RecentlyApprovedWidget } from "@/components/dashboard/recently-approved-widget";
-import { TeamCalendarWidget } from "@/components/dashboard/team-calendar-widget";
 import { TeamOverviewWidget } from "@/components/dashboard/team-overview-widget";
 import { UpcomingTimeOffWidget } from "@/components/dashboard/upcoming-time-off-widget";
+import { WhosOutTodayWidget } from "@/components/dashboard/whos-out-today-widget";
 
 export function SectionCards() {
 	return (
@@ -19,8 +19,8 @@ export function SectionCards() {
 
 			{/* New widgets - Phase 2 */}
 			<QuickStatsWidget />
+			<WhosOutTodayWidget />
 			<UpcomingTimeOffWidget />
-			<TeamCalendarWidget />
 			<RecentlyApprovedWidget />
 			<BirthdayRemindersWidget />
 		</div>

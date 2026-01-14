@@ -97,7 +97,7 @@ export function SignupForm({ className, ...props }: React.ComponentProps<"div">)
 		} else {
 			setFieldError(
 				"password",
-				result.error?.errors?.[0]?.message || t("validation.invalid-password", "Invalid password"),
+				result.error?.issues?.[0]?.message || t("validation.invalid-password", "Invalid password"),
 			);
 		}
 	};
@@ -149,7 +149,7 @@ export function SignupForm({ className, ...props }: React.ComponentProps<"div">)
 
 	const handleValidationErrors = (errors: z.ZodError) => {
 		const errorMap: Record<string, string> = {};
-		for (const err of errors.errors) {
+		for (const err of errors.issues) {
 			if (err.path[0]) {
 				errorMap[err.path[0] as string] = err.message;
 			}

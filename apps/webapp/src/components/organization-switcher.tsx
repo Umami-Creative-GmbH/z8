@@ -25,8 +25,8 @@ import {
 	SidebarMenuItem,
 	useSidebar,
 } from "@/components/ui/sidebar";
-import type { UserOrganization } from "@/lib/auth-helpers";
 import { useSession } from "@/lib/auth-client";
+import type { UserOrganization } from "@/lib/auth-helpers";
 import { useRouter } from "@/navigation";
 import { useOrganizationSettings } from "@/stores/organization-settings-store";
 

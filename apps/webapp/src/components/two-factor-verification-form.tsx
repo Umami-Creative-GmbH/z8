@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { Label } from "@/components/ui/label";
-import { twoFactor } from "@/lib/auth-client";
+import { authClient } from "@/lib/auth-client";
 
 export function TwoFactorVerificationForm() {
 	const router = useRouter();
@@ -30,7 +30,7 @@ export function TwoFactorVerificationForm() {
 					return;
 				}
 
-				const result = await twoFactor.verifyBackupCode({
+				const result = await authClient.twoFactor.verifyBackupCode({
 					code: backupCode,
 				});
 
@@ -51,7 +51,7 @@ export function TwoFactorVerificationForm() {
 					return;
 				}
 
-				const result = await twoFactor.verifyTotp({
+				const result = await authClient.twoFactor.verifyTotp({
 					code: otpValue,
 				});
 
