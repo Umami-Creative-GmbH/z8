@@ -1,5 +1,6 @@
 import { and, desc, eq, gt } from "drizzle-orm";
 import { headers } from "next/headers";
+import { connection } from "next/server";
 import { db } from "@/db";
 import { employee, notification } from "@/db/schema";
 import { auth } from "@/lib/auth";
@@ -39,6 +40,7 @@ function getTimeAgo(date: Date): string {
  * - heartbeat: Every 30 seconds to keep connection alive
  */
 export async function GET() {
+	await connection();
 	try {
 		const session = await auth.api.getSession({ headers: await headers() });
 		if (!session?.user) {

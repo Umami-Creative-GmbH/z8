@@ -1,5 +1,5 @@
 import { headers } from "next/headers";
-import { type NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse, connection } from "next/server";
 import { auth } from "@/lib/auth";
 import {
 	deactivatePushSubscription,
@@ -11,6 +11,7 @@ import {
  * Get all push subscriptions for the current user
  */
 export async function GET() {
+	await connection();
 	try {
 		const session = await auth.api.getSession({ headers: await headers() });
 		if (!session?.user) {
@@ -35,6 +36,7 @@ export async function GET() {
  * }
  */
 export async function DELETE(request: NextRequest) {
+	await connection();
 	try {
 		const session = await auth.api.getSession({ headers: await headers() });
 		if (!session?.user) {

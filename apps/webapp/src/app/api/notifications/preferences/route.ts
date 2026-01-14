@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
-import { type NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse, connection } from "next/server";
 import { db } from "@/db";
 import { notificationPreference } from "@/db/schema";
 import { auth } from "@/lib/auth";
@@ -18,6 +18,7 @@ import {
  * Note: Notification preferences are user-level settings, not organization-specific
  */
 export async function GET() {
+	await connection();
 	try {
 		const session = await auth.api.getSession({ headers: await headers() });
 		if (!session?.user) {
@@ -75,6 +76,7 @@ export async function GET() {
  * }
  */
 export async function PUT(request: NextRequest) {
+	await connection();
 	try {
 		const session = await auth.api.getSession({ headers: await headers() });
 		if (!session?.user) {
@@ -141,6 +143,7 @@ export async function PUT(request: NextRequest) {
  * }
  */
 export async function POST(request: NextRequest) {
+	await connection();
 	try {
 		const session = await auth.api.getSession({ headers: await headers() });
 		if (!session?.user) {

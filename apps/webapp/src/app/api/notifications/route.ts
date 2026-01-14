@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
-import { type NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse, connection } from "next/server";
 import { db } from "@/db";
 import { employee } from "@/db/schema";
 import { auth } from "@/lib/auth";
@@ -18,6 +18,7 @@ import {
  * Get paginated list of notifications for the current user
  */
 export async function GET(request: NextRequest) {
+	await connection();
 	try {
 		const session = await auth.api.getSession({ headers: await headers() });
 		if (!session?.user) {
@@ -70,6 +71,7 @@ export async function GET(request: NextRequest) {
  * - { markAllRead: true } - Mark all notifications as read
  */
 export async function PATCH(request: NextRequest) {
+	await connection();
 	try {
 		const session = await auth.api.getSession({ headers: await headers() });
 		if (!session?.user) {
@@ -119,6 +121,7 @@ export async function PATCH(request: NextRequest) {
  * - { deleteAll: true } - Delete all notifications
  */
 export async function DELETE(request: NextRequest) {
+	await connection();
 	try {
 		const session = await auth.api.getSession({ headers: await headers() });
 		if (!session?.user) {

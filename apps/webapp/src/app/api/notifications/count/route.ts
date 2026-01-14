@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
-import { NextResponse } from "next/server";
+import { NextResponse, connection } from "next/server";
 import { db } from "@/db";
 import { employee } from "@/db/schema";
 import { auth } from "@/lib/auth";
@@ -11,6 +11,7 @@ import { getUnreadCount } from "@/lib/notifications/notification-service";
  * Get unread notification count for the current user
  */
 export async function GET() {
+	await connection();
 	try {
 		const session = await auth.api.getSession({ headers: await headers() });
 		if (!session?.user) {

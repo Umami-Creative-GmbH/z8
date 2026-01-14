@@ -1,5 +1,5 @@
 import { headers } from "next/headers";
-import { type NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse, connection } from "next/server";
 import { auth } from "@/lib/auth";
 import { isPushAvailable, savePushSubscription } from "@/lib/notifications/push-service";
 
@@ -19,6 +19,7 @@ import { isPushAvailable, savePushSubscription } from "@/lib/notifications/push-
  * }
  */
 export async function POST(request: NextRequest) {
+	await connection();
 	try {
 		if (!isPushAvailable()) {
 			return NextResponse.json({ error: "Push notifications not configured" }, { status: 503 });

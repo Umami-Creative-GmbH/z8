@@ -1,5 +1,5 @@
 import { headers } from "next/headers";
-import { type NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse, connection } from "next/server";
 import { auth } from "@/lib/auth";
 import { removePushSubscription } from "@/lib/notifications/push-service";
 
@@ -12,6 +12,7 @@ import { removePushSubscription } from "@/lib/notifications/push-service";
  * }
  */
 export async function POST(request: NextRequest) {
+	await connection();
 	try {
 		const session = await auth.api.getSession({ headers: await headers() });
 		if (!session?.user) {
