@@ -7,6 +7,7 @@ import {
 	IconUsers,
 } from "@tabler/icons-react";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -51,6 +52,8 @@ function StatCard({ title, value, description, icon, trend }: StatCardProps) {
 }
 
 async function StatisticsContent() {
+	await connection(); // Mark as fully dynamic for cacheComponents mode
+
 	const t = await getTranslate();
 	const authContext = await getAuthContext();
 

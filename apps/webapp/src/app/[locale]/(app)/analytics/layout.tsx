@@ -2,6 +2,7 @@ import { IconCalendar, IconChartBar, IconChartLine, IconUsers } from "@tabler/ic
 import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { db } from "@/db";
@@ -21,6 +22,8 @@ async function getCurrentEmployee() {
 }
 
 export default async function AnalyticsLayout({ children }: { children: React.ReactNode }) {
+	await connection(); // Mark as fully dynamic for cacheComponents mode
+
 	const session = await auth.api.getSession({ headers: await headers() });
 	if (!session?.user) {
 		redirect("/sign-in");

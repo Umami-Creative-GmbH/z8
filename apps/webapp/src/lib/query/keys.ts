@@ -215,4 +215,18 @@ export const queryKeys = {
 		accounts: () => ["auth", "accounts"] as const,
 		passkeys: () => ["auth", "passkeys"] as const,
 	},
+
+	// Locations
+	locations: {
+		all: ["locations"] as const,
+		list: (orgId: string) => ["locations", "list", orgId] as const,
+		detail: (locationId: string) => ["locations", "detail", locationId] as const,
+		employees: (locationId: string) => ["locations", locationId, "employees"] as const,
+		subareas: {
+			all: (locationId: string) => ["locations", locationId, "subareas"] as const,
+			detail: (subareaId: string) => ["locations", "subareas", "detail", subareaId] as const,
+			employees: (subareaId: string) =>
+				["locations", "subareas", subareaId, "employees"] as const,
+		},
+	},
 } as const;
