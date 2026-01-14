@@ -1,5 +1,25 @@
 {
 	"auth": {
+		"2fa": {
+			"title": "Two-Factor Authentication",
+			"backup-code-prompt": "Enter one of your backup codes",
+			"authenticator-prompt": "Enter the code from your authenticator app",
+			"backup-code-label": "Backup Code",
+			"backup-code-placeholder": "Enter backup code",
+			"code-label": "Authentication Code",
+			"verify": "Verify",
+			"verifying": "Verifying...",
+			"use-authenticator": "Use authenticator app instead",
+			"use-backup": "Use backup code instead",
+			"invalid-backup-code": "Invalid backup code",
+			"enter-valid-backup-code": "Please enter a valid backup code",
+			"verification-failed": "Verification failed",
+			"verification-successful": "Verification successful",
+			"invalid-code": "Invalid code",
+			"enter-6-digit-code": "Please enter a 6-digit code",
+			"invalid-verification-code": "Invalid verification code",
+			"unexpected-error": "An unexpected error occurred"
+		},
 		"already-have-account": "Already have an account?",
 		"create-account": "Create your account",
 		"dont-have-account": "Don't have an account?",
@@ -40,6 +60,7 @@
 		"sign-in": "Sign in",
 		"sign-up": "Sign up",
 		"sign-up-with": {
+			"label": "Sign up with",
 			"apple": "Sign up with Apple",
 			"github": "Sign up with Github",
 			"google": "Sign up with Google",
@@ -53,7 +74,8 @@
 		"sso-not-configured": "SSO is not configured for this domain",
 		"sso-login-error": "An error occurred during SSO sign-in",
 		"or": "or",
-		"sign-up-with": "Sign up with",
+		"passkey-login-failed": "Failed to sign in with passkey",
+		"passkey-signup-failed": "Failed to sign up with passkey",
 		"terms": {
 			"agreement": "By clicking continue, you agree to our",
 			"and": "and",
@@ -71,18 +93,110 @@
 		"remove": "Remove",
 		"refresh": "Refresh",
 		"retry": "Retry",
-		"openMenu": "Open menu"
+		"openMenu": "Open menu",
+		"add": "Add",
+		"assign": "Assign",
+		"active": "Active",
+		"inactive": "Inactive",
+		"status": "Status"
 	},
 	"settings": {
 		"group": {
 			"account": "Account",
 			"organization": "Organization",
 			"administration": "Administration",
-			"enterprise": "Enterprise"
+			"enterprise": "Enterprise",
+			"data": "Data"
 		},
 		"profile": {
 			"title": "Profile",
 			"description": "Manage your personal information and profile picture"
+		},
+		"locations": {
+			"title": "Locations",
+			"description": "Manage organization locations and subareas",
+			"create": "Create Location",
+			"created": "Location created",
+			"createFailed": "Failed to create location",
+			"updated": "Location updated",
+			"updateFailed": "Failed to update location",
+			"deleted": "Location deleted",
+			"deleteFailed": "Failed to delete location",
+			"deleteTitle": "Delete Location",
+			"deleteDescription": "Are you sure you want to delete this location? This will also delete all subareas and employee assignments.",
+			"noLocations": "No locations yet",
+			"noLocationsDescription": "Create your first location to organize your workspace.",
+			"notFound": "Location not found",
+			"backToList": "Back to Locations",
+			"details": "Location Details",
+			"name": "Name",
+			"address": "Address",
+			"subareas": "Subareas",
+			"supervisors": "Supervisors",
+			"supervisorsDescription": "Employees assigned to this location",
+			"noSupervisors": "No supervisors assigned",
+			"subareasDescription": "Areas within this location",
+			"noSubareas": "No subareas yet",
+			"primary": "Primary",
+			"field": {
+				"name": "Name",
+				"namePlaceholder": "e.g., Main Office",
+				"street": "Street",
+				"streetPlaceholder": "e.g., 123 Main St",
+				"city": "City",
+				"cityPlaceholder": "e.g., New York",
+				"postalCode": "Postal Code",
+				"postalCodePlaceholder": "e.g., 10001",
+				"country": "Country Code",
+				"countryPlaceholder": "e.g., US, DE",
+				"countryHelp": "ISO 3166-1 alpha-2 code",
+				"cityPostal": "City / Postal Code",
+				"active": "Active",
+				"activeHelp": "Inactive locations won't appear in selection lists",
+				"subareaName": "Name",
+				"subareaNamePlaceholder": "e.g., Cashier, Storage, Bistro",
+				"subareaActiveHelp": "Inactive subareas won't appear in selection lists"
+			},
+			"dialog": {
+				"createTitle": "Create Location",
+				"createDescription": "Create a new location for your organization",
+				"editTitle": "Edit Location",
+				"editDescription": "Update location details",
+				"save": "Save Changes",
+				"create": "Create Location"
+			},
+			"subareaCreated": "Subarea created",
+			"subareaCreateFailed": "Failed to create subarea",
+			"subareaUpdated": "Subarea updated",
+			"subareaUpdateFailed": "Failed to update subarea",
+			"subareaDeleted": "Subarea deleted",
+			"subareaDeleteFailed": "Failed to delete subarea",
+			"deleteSubareaTitle": "Delete Subarea",
+			"deleteSubareaDescription": "Are you sure you want to delete this subarea? This will also remove all employee assignments.",
+			"subareaDialog": {
+				"createTitle": "Add Subarea",
+				"createDescription": "Add a new subarea to this location",
+				"editTitle": "Edit Subarea",
+				"editDescription": "Update subarea details",
+				"save": "Save Changes",
+				"create": "Add Subarea"
+			},
+			"assignEmployee": "Assign Employee",
+			"assignEmployeeDescription": "Assign an employee as a supervisor for this location",
+			"assignEmployeeToSubarea": "Assign Employee to Subarea",
+			"assignEmployeeToSubareaDescription": "Assign an employee as a supervisor for {subareaName}",
+			"employee": "Employee",
+			"selectEmployee": "Please select an employee",
+			"selectEmployeePlaceholder": "Select an employee",
+			"primarySupervisor": "Primary Supervisor",
+			"primarySupervisorHelp": "Mark as the main supervisor for this location",
+			"primarySupervisorSubareaHelp": "Mark as the main supervisor for this subarea",
+			"employeeAssigned": "Employee assigned",
+			"employeeAssignFailed": "Failed to assign employee",
+			"employeeRemoved": "Employee removed",
+			"employeeRemoveFailed": "Failed to remove employee",
+			"noAvailableEmployees": "All employees are already assigned to this location",
+			"noAvailableEmployeesSubarea": "All employees are already assigned to this subarea"
 		},
 		"security": {
 			"title": "Security",
@@ -138,10 +252,6 @@
 			"namePlaceholder": "e.g., Full-Time 40h",
 			"descriptionLabel": "Description",
 			"descriptionPlaceholder": "Optional description",
-			"cycle": "Cycle",
-			"cycleDescription": "The time period for this schedule",
-			"type": "Schedule Type",
-			"workingDays": "Working Days",
 			"hoursPerCycle": "Hours per Cycle",
 			"hoursPerCycleDescription": "Total working hours per cycle (e.g., 40 for weekly)",
 			"detailedDescription": "Configure hours for each day of the week",
@@ -204,6 +314,8 @@
 			"removeAssignmentDescription": "Are you sure you want to remove this schedule assignment? The affected employees will inherit their schedule from the next level up.",
 			"assignmentsLoadError": "Failed to load assignments",
 			"cycle": {
+				"label": "Cycle",
+				"description": "The time period for this schedule",
 				"daily": "Daily",
 				"weekly": "Weekly",
 				"biweekly": "Biweekly",
@@ -211,10 +323,12 @@
 				"yearly": "Yearly"
 			},
 			"type": {
+				"label": "Schedule Type",
 				"simple": "Simple",
 				"detailed": "Detailed"
 			},
 			"workingDays": {
+				"label": "Working Days",
 				"weekdays": "Weekdays (Mon-Fri)",
 				"weekends": "Weekends (Sat-Sun)",
 				"allDays": "All Days"
@@ -851,5 +965,8 @@
 		"billing": "Billing",
 		"log-out": "Log out",
 		"notifications": "Notifications"
+	},
+	"validation": {
+		"invalid-email": "Invalid email address"
 	}
 }
