@@ -7,7 +7,7 @@
 		"dev:webpack": "next dev",
 		"build": "bun run generate-licenses && bun --bun next build",
 		"start": "bun --bun next start",
-		"generate-licenses": "bunx license-report --only=prod --output=json --config license-report-config.json > ./public/licenses.json",
+		"generate-licenses": "bunx license-report --only=prod --output=json --config license-report-config.json > ./src/data/licenses.json",
 		"db:seed": "bun --bun run src/db/seed/do-seed.ts"
 	},
 	"dependencies": {

@@ -89,7 +89,8 @@
       "mcp__MCP_DOCKER__mcp-find",
       "mcp__MCP_DOCKER__mcp-add",
       "mcp__MCP_DOCKER__mcp-exec",
-      "mcp__MCP_DOCKER__get-library-docs"
+      "mcp__MCP_DOCKER__get-library-docs",
+      "mcp__MCP_DOCKER__nextjs_docs"
     ]
   },
   "enableAllProjectMcpServers": true,
