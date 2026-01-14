@@ -1,8 +1,11 @@
+import { connection } from "next/server";
 import { CalendarView } from "@/components/calendar/calendar-view";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { getAuthContext } from "@/lib/auth-helpers";
 
 export default async function CalendarPage() {
+	await connection(); // Mark as fully dynamic for cacheComponents mode
+
 	const authContext = await getAuthContext();
 
 	if (!authContext?.employee) {

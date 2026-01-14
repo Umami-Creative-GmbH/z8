@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
@@ -13,6 +14,8 @@ import { getTranslate } from "@/tolgee/server";
 import { getExportHistoryAction, getStorageConfigAction } from "./actions";
 
 async function ExportSettingsContent() {
+	await connection(); // Mark as fully dynamic for cacheComponents mode
+
 	const t = await getTranslate();
 	const currentEmployee = await getCurrentEmployee();
 

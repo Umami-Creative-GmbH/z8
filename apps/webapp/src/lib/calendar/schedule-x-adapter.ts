@@ -247,19 +247,6 @@ export function calendarEventToScheduleX(event: CalendarEvent): ScheduleXEvent |
 			const start = toTemporalZonedDateTime(startDate);
 			const end = start.add({ minutes: 30 });
 
-			// Debug: Log the time entry transformation
-			if (process.env.NODE_ENV === "development") {
-				console.log(`[Schedule-X Adapter] Time entry ${event.id}:`, {
-					originalDate: event.date,
-					originalDateType: Object.prototype.toString.call(event.date),
-					safeDate: startDate.toISOString(),
-					safeDateHours: startDate.getHours(),
-					safeDateMinutes: startDate.getMinutes(),
-					temporalStart: start.toString(),
-					temporalEnd: end.toString(),
-				});
-			}
-
 			return {
 				id: event.id,
 				title: event.title,
