@@ -2,7 +2,7 @@ import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { headers } from "next/headers";
-import { type NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse, connection } from "next/server";
 import { auth } from "@/lib/auth";
 import { getPublicUrl, isS3Configured, S3_BUCKET, s3Client } from "@/lib/storage/s3-client";
 
@@ -13,6 +13,7 @@ interface ProcessRequest {
 }
 
 export async function POST(request: NextRequest) {
+	await connection();
 	try {
 		// Verify authentication
 		const session = await auth.api.getSession({ headers: await headers() });

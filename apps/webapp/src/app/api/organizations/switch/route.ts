@@ -1,12 +1,13 @@
 import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
-import { type NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse, connection } from "next/server";
 import { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
 import { auth } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
+	await connection();
 	try {
 		const session = await auth.api.getSession({ headers: await headers() });
 

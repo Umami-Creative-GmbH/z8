@@ -1,6 +1,5 @@
-import { type NextRequest, NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 import createMiddleware from "next-intl/middleware";
-import { auth } from "@/lib/auth";
 import { ALL_LANGUAGES, DEFAULT_LANGUAGE } from "@/tolgee/shared";
 
 // Main domain from environment variable
@@ -14,7 +13,7 @@ export const DOMAIN_HEADERS = {
 	BRANDING: "x-z8-branding",
 } as const;
 
-export async function proxy(request: NextRequest) {
+export function proxy(request: NextRequest) {
 	const handleI18nRouting = createMiddleware({
 		locales: ALL_LANGUAGES,
 		defaultLocale: DEFAULT_LANGUAGE,
@@ -40,36 +39,6 @@ export async function proxy(request: NextRequest) {
 	// Set custom domain header for server components to read
 	if (!isMainDomain && normalizedHostname) {
 		response.headers.set(DOMAIN_HEADERS.DOMAIN, normalizedHostname);
-	}
-
-	const [, locale, ...segments] = request.nextUrl.pathname.split("/");
-	const isLocale = ALL_LANGUAGES.includes(locale);
-	if (!isLocale) {
-		// This should not happen as next-intl middleware handles invalid locales,
-		// but return response as fallback
-		return response;
-	}
-
-	// public urls
-	const publicUrls = [
-		"sign-in",
-		"sign-up",
-		"forgot-password",
-		"reset-password",
-		"verify-email",
-		"verify-email-pending",
-		"terms",
-		"privacy",
-		"accept-invitation",
-	];
-	if (segments.some((segment) => publicUrls.includes(segment))) {
-		return response;
-	}
-
-	// check auth - validate session properly
-	const session = await auth.api.getSession({ headers: request.headers });
-	if (!session) {
-		return NextResponse.redirect(new URL(`/${locale}/sign-in`, request.url));
 	}
 
 	return response;
