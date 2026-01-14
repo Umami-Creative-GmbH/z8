@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { headers } from "next/headers";
-import { type NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse, connection } from "next/server";
 import { db } from "@/db";
 import { employee, timeEntry } from "@/db/schema";
 import { auth } from "@/lib/auth";
@@ -15,6 +15,7 @@ import { TimeEntryService } from "@/lib/effect/services/time-entry.service";
  * Requires approval from a manager/admin
  */
 export async function POST(request: NextRequest) {
+	await connection();
 	try {
 		const session = await auth.api.getSession({ headers: await headers() });
 		if (!session?.user) {
@@ -143,6 +144,7 @@ export async function POST(request: NextRequest) {
  * Get correction history for an entry or all corrections for an employee
  */
 export async function GET(request: NextRequest) {
+	await connection();
 	try {
 		const session = await auth.api.getSession({ headers: await headers() });
 		if (!session?.user) {

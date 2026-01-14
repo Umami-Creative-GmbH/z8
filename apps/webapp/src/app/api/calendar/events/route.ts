@@ -1,5 +1,5 @@
 import { headers } from "next/headers";
-import { type NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse, connection } from "next/server";
 import { auth } from "@/lib/auth";
 import { getAbsencesForMonth } from "@/lib/calendar/absence-service";
 import { getHolidaysForMonth } from "@/lib/calendar/holiday-service";
@@ -60,6 +60,7 @@ async function fetchMonthEvents(
 }
 
 export async function GET(request: NextRequest) {
+	await connection();
 	try {
 		// Authenticate user
 		const session = await auth.api.getSession({ headers: await headers() });

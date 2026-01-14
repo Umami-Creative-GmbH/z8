@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { headers } from "next/headers";
-import { type NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse, connection } from "next/server";
 import { db } from "@/db";
 import { employee } from "@/db/schema";
 import { auth } from "@/lib/auth";
@@ -14,6 +14,7 @@ import { TimeEntryService } from "@/lib/effect/services/time-entry.service";
  * Query params: employeeId, from, to, includeSuperseded
  */
 export async function GET(request: NextRequest) {
+	await connection();
 	try {
 		const session = await auth.api.getSession({ headers: await headers() });
 		if (!session?.user) {
@@ -92,6 +93,7 @@ export async function GET(request: NextRequest) {
  * Create a new time entry (clock in/out)
  */
 export async function POST(request: NextRequest) {
+	await connection();
 	try {
 		const session = await auth.api.getSession({ headers: await headers() });
 		if (!session?.user) {

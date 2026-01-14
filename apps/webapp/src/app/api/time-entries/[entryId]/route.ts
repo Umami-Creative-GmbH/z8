@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { headers } from "next/headers";
-import { type NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse, connection } from "next/server";
 import { db } from "@/db";
 import { employee, timeEntry } from "@/db/schema";
 import { auth } from "@/lib/auth";
@@ -17,6 +17,7 @@ interface RouteParams {
  * Get a specific time entry with verification status
  */
 export async function GET(_request: NextRequest, { params }: RouteParams) {
+	await connection();
 	try {
 		const { entryId } = await params;
 
