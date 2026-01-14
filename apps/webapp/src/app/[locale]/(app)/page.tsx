@@ -1,10 +1,13 @@
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { NoOrganizationError } from "@/components/errors/no-organization-error";
 import { SectionCards } from "@/components/section-cards";
 import { getOnboardingStatus, getUserOrganizations } from "@/lib/auth-helpers";
 import { getOnboardingStepPath } from "@/lib/validations/onboarding";
 
 export default async function Page() {
+	await connection(); // Mark as fully dynamic for cacheComponents mode
+
 	// Check onboarding status first - redirect if not complete
 	const onboardingStatus = await getOnboardingStatus();
 	if (onboardingStatus && !onboardingStatus.onboardingComplete) {

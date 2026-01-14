@@ -72,28 +72,18 @@ export function NavUser({
 	const [dropdownOpen, setDropdownOpen] = useState(false);
 	const [previousEmail, setPreviousEmail] = useState(user.email);
 
-	// Debug: Log when isLoggingOut changes
-	useEffect(() => {
-		console.log("isLoggingOut changed to:", isLoggingOut);
-	}, [isLoggingOut]);
-
 	// Reset logout overlay when user logs back in
 	// Only reset if user.email changes from empty to having a value
 	useEffect(() => {
 		if (!previousEmail && user.email && isLoggingOut) {
-			// User logged back in, reset the overlay
-			console.log("User logged back in, resetting overlay");
 			setIsLoggingOut(false);
 		}
 		setPreviousEmail(user.email);
 	}, [user.email, previousEmail, isLoggingOut]);
 
 	const handleLogout = async () => {
-		console.log("Logout clicked - closing dropdown");
 		setDropdownOpen(false);
-		console.log("Setting isLoggingOut to true");
 		setIsLoggingOut(true);
-		console.log("isLoggingOut state:", isLoggingOut);
 		try {
 			await authClient.signOut({
 				fetchOptions: {
@@ -247,8 +237,7 @@ export function NavUser({
 			</SidebarMenu>
 
 			{isLoggingOut && typeof document !== "undefined"
-				? (console.log("Rendering logout overlay portal"),
-					createPortal(
+				? createPortal(
 						<div className="fixed inset-0 z-[9999] flex items-center justify-center">
 							<div className="absolute inset-0 bg-black/20 backdrop-blur-md" />
 							<div className="relative flex flex-col items-center justify-center gap-4 rounded-lg border bg-card/95 px-12 py-8 shadow-2xl backdrop-blur-sm">
@@ -259,7 +248,7 @@ export function NavUser({
 							</div>
 						</div>,
 						document.body,
-					))
+					)
 				: null}
 		</>
 	);
