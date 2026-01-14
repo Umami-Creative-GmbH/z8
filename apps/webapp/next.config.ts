@@ -32,6 +32,8 @@ const nextConfig: NextConfig = {
 		"@tus/s3-store",
 		"@tus/file-store",
 		"exceljs",
+		"better-auth",
+		"kysely",
 	],
 };
 

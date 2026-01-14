@@ -4,8 +4,8 @@
 
 The file `src/db/auth-schema.ts` is **auto-generated** by Better Auth CLI and will be overwritten on every:
 - Better Auth package update
-- Running `bunx @better-auth/cli generate`
-- Running `bunx @better-auth/cli migrate`
+- Running `bunx --bun @better-auth/cli generate`
+- Running `bunx --bun @better-auth/cli migrate`
 
 **Never manually add, modify, or remove fields from this file.**
 

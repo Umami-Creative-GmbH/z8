@@ -84,7 +84,12 @@
       "Bash(bun dev)",
       "WebFetch(domain:api.github.com)",
       "Bash(xargs -I {} bash -c \"echo ''{}'' && sed -n ''{}p'' ./apps/webapp/src/db/schema.ts\")",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "mcp__MCP_DOCKER__browser_eval",
+      "mcp__MCP_DOCKER__mcp-find",
+      "mcp__MCP_DOCKER__mcp-add",
+      "mcp__MCP_DOCKER__mcp-exec",
+      "mcp__MCP_DOCKER__get-library-docs"
     ]
   },
   "enableAllProjectMcpServers": true,
