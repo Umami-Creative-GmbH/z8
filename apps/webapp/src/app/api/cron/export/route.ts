@@ -9,7 +9,7 @@
  */
 
 import { headers } from "next/headers";
-import { type NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse, connection } from "next/server";
 import { runExportProcessor } from "@/lib/jobs/export-processor";
 import { createLogger } from "@/lib/logger";
 
@@ -53,6 +53,7 @@ async function verifyCronAuth(request: NextRequest): Promise<boolean> {
  * Processes all pending exports
  */
 export async function GET(request: NextRequest) {
+	await connection();
 	const isAuthorized = await verifyCronAuth(request);
 
 	if (!isAuthorized) {
@@ -107,6 +108,7 @@ export async function GET(request: NextRequest) {
  * Body: { cleanupOnly?: boolean }
  */
 export async function POST(request: NextRequest) {
+	await connection();
 	const isAuthorized = await verifyCronAuth(request);
 
 	if (!isAuthorized) {

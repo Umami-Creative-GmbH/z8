@@ -1,5 +1,5 @@
 import { headers } from "next/headers";
-import { type NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse, connection } from "next/server";
 import { createLogger } from "@/lib/logger";
 import {
 	calculateTelemetryMetrics,
@@ -41,6 +41,7 @@ async function verifyCronAuth(request: NextRequest): Promise<boolean> {
  * GET /api/cron/telemetry
  */
 export async function GET(request: NextRequest) {
+	await connection();
 	const isAuthorized = await verifyCronAuth(request);
 
 	if (!isAuthorized) {
@@ -98,6 +99,7 @@ export async function GET(request: NextRequest) {
  * POST /api/cron/telemetry
  */
 export async function POST(request: NextRequest) {
+	await connection();
 	const isAuthorized = await verifyCronAuth(request);
 
 	if (!isAuthorized) {

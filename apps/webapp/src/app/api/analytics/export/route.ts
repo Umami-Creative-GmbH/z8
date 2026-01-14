@@ -5,7 +5,7 @@
  * Requires authentication and validates export requests.
  */
 
-import { type NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse, connection } from "next/server";
 import { auth } from "@/lib/auth";
 import { generateCsv } from "@/lib/reporting/csv-export";
 import { generateExcelBuffer } from "@/lib/reporting/excel-export";
@@ -23,6 +23,7 @@ type ExportRequestBody = {
 };
 
 export async function POST(request: NextRequest) {
+	await connection();
 	try {
 		// Authentication check
 		const session = await auth.api.getSession({

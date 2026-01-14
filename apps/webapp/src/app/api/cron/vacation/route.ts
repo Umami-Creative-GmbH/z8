@@ -9,7 +9,7 @@
  */
 
 import { headers } from "next/headers";
-import { type NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse, connection } from "next/server";
 import {
 	runAnnualCarryover,
 	runCarryoverExpiry,
@@ -58,6 +58,7 @@ async function verifyCronAuth(request: NextRequest): Promise<boolean> {
  * Runs all vacation automation jobs based on the current date
  */
 export async function GET(request: NextRequest) {
+	await connection();
 	const isAuthorized = await verifyCronAuth(request);
 
 	if (!isAuthorized) {
@@ -132,6 +133,7 @@ export async function GET(request: NextRequest) {
  * Body: { job: "carryover" | "expiry" | "accrual", year?: number, month?: number }
  */
 export async function POST(request: NextRequest) {
+	await connection();
 	const isAuthorized = await verifyCronAuth(request);
 
 	if (!isAuthorized) {
