@@ -31,7 +31,10 @@
       "Bash(bunx @biomejs/biome check:*)",
       "Bash(git checkout:*)",
       "Bash(bun -e:*)",
-      "Bash(bun test:*)"
+      "Bash(bun test:*)",
+      "Bash(for pkg in \"detect-libc\" \"semver\")",
+      "Bash(do echo \"=== $pkg ===\")",
+      "Bash(for pkg in \"lodash\" \"semver\" \"papaparse\" \"dotenv\" \"detect-libc\" \"tw-animate-css\" \"streamdown\")"
     ]
   },
   "enabledMcpjsonServers": [

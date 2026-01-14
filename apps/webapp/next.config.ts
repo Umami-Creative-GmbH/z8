@@ -7,13 +7,20 @@ const nextConfig: NextConfig = {
 	reactStrictMode: true,
 	reactCompiler: true,
 	cacheComponents: true,
+	// Use Valkey for distributed caching (enabled when VALKEY_HOST is set)
+	...(process.env.VALKEY_HOST
+		? {
+				cacheHandlers: {
+					default: require.resolve("./cache-handler.ts"),
+				},
+				cacheMaxMemorySize: 0, // Disable in-memory cache, use Valkey only
+			}
+		: {}),
 	devIndicators: {
 		position: "bottom-right",
 	},
-	experimental: {
-		viewTransition: true,
-	},
 	serverExternalPackages: [
+		"@opentelemetry/api",
 		"@opentelemetry/sdk-node",
 		"@opentelemetry/resources",
 		"@opentelemetry/semantic-conventions",
@@ -21,19 +28,23 @@ const nextConfig: NextConfig = {
 		"@opentelemetry/exporter-trace-otlp-http",
 		"@opentelemetry/exporter-metrics-otlp-http",
 		"@opentelemetry/auto-instrumentations-node",
+		"better-auth",
+		"pino",
+		"pino-pretty",
+		"pino-opentelemetry-transport",
 		"sharp",
 		"@img/sharp-win32-x64",
 		"@img/sharp-darwin-arm64",
 		"@img/sharp-darwin-x64",
 		"@img/sharp-linux-x64",
 		"@img/sharp-linux-arm64",
-		"detect-libc",
 		"@tus/server",
 		"@tus/s3-store",
 		"@tus/file-store",
 		"exceljs",
-		"better-auth",
 		"kysely",
+		"@react-email/render",
+		"@react-email/components",
 	],
 };
 

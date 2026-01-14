@@ -1,4 +1,6 @@
+import { getCookieCache } from "better-auth/cookies";
 import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 import createMiddleware from "next-intl/middleware";
 import { ALL_LANGUAGES, DEFAULT_LANGUAGE } from "@/tolgee/shared";
 
@@ -13,19 +15,81 @@ export const DOMAIN_HEADERS = {
 	BRANDING: "x-z8-branding",
 } as const;
 
-export function proxy(request: NextRequest) {
-	const handleI18nRouting = createMiddleware({
-		locales: ALL_LANGUAGES,
-		defaultLocale: DEFAULT_LANGUAGE,
-		localePrefix: "always",
-		localeDetection: true,
-	});
-	const response = handleI18nRouting(request);
+// Routes that don't require authentication
+const PUBLIC_ROUTES = [
+	"/sign-in",
+	"/sign-up",
+	"/forgot-password",
+	"/reset-password",
+	"/verify-email",
+	"/verify-email-pending",
+	"/verify-2fa",
+	"/welcome",
+	"/privacy",
+	"/terms",
+	"/imprint",
+];
 
-	// If next-intl middleware already handled the redirect (e.g., for invalid locales),
-	// return its response immediately
+// Routes that authenticated users should be redirected away from
+const AUTH_ROUTES = ["/sign-in", "/sign-up", "/forgot-password", "/welcome"];
+
+const i18nMiddleware = createMiddleware({
+	locales: ALL_LANGUAGES,
+	defaultLocale: DEFAULT_LANGUAGE,
+	localePrefix: "always",
+	localeDetection: true,
+});
+
+export async function proxy(request: NextRequest) {
+	const { pathname } = request.nextUrl;
+
+	// Handle i18n routing first
+	const response = i18nMiddleware(request);
+
+	// If i18n middleware redirected (e.g., for locale prefix), return immediately
 	if (response.status === 307 || response.status === 308) {
 		return response;
+	}
+
+	// Extract the path without locale prefix for route matching
+	const pathWithoutLocale = pathname.replace(/^\/[a-z]{2}(?:\/|$)/, "/");
+
+	// Check if this is a public route
+	const isPublicRoute = PUBLIC_ROUTES.some(
+		(route) =>
+			pathWithoutLocale === route ||
+			pathWithoutLocale.startsWith(`${route}/`),
+	);
+
+	// Check if this is an auth route (sign-in, sign-up, etc.)
+	const isAuthRoute = AUTH_ROUTES.some(
+		(route) =>
+			pathWithoutLocale === route ||
+			pathWithoutLocale.startsWith(`${route}/`),
+	);
+
+	// Get session from cookie cache - returns full session object without DB call
+	// This is an optimistic check - actual validation happens in pages/routes
+	const session = await getCookieCache(request);
+
+	// Handle authentication redirects
+	if (!session) {
+		// Not authenticated - redirect to sign-in if trying to access protected route
+		if (!isPublicRoute) {
+			const locale =
+				pathname.match(/^\/([a-z]{2})(?:\/|$)/)?.[1] || DEFAULT_LANGUAGE;
+			const signInUrl = new URL(`/${locale}/sign-in`, request.url);
+			signInUrl.searchParams.set("callbackUrl", pathname);
+			return NextResponse.redirect(signInUrl);
+		}
+	} else {
+		// Authenticated - redirect away from auth routes
+		if (isAuthRoute) {
+			const locale =
+				pathname.match(/^\/([a-z]{2})(?:\/|$)/)?.[1] || DEFAULT_LANGUAGE;
+			const dashboardUrl = new URL(`/${locale}/`, request.url);
+			return NextResponse.redirect(dashboardUrl);
+		}
 	}
 
 	// Custom domain detection
@@ -45,6 +109,6 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-	// Skip all paths that should not be internationalized
+	// Match all routes except API, static files, and Next.js internals
 	matcher: ["/((?!api|_next|.*\\..*).*)"],
 };

@@ -90,7 +90,10 @@
       "mcp__MCP_DOCKER__mcp-add",
       "mcp__MCP_DOCKER__mcp-exec",
       "mcp__MCP_DOCKER__get-library-docs",
-      "mcp__MCP_DOCKER__nextjs_docs"
+      "mcp__MCP_DOCKER__nextjs_docs",
+      "mcp__MCP_DOCKER__resolve-library-id",
+      "mcp__MCP_DOCKER__nextjs_runtime",
+      "Bash(powershell.exe:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
