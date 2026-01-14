@@ -1,4 +1,4 @@
-import type { AuthConfig, CustomQuote } from "@/db/schema";
+import type { AuthConfig } from "@/db/schema";
 
 // Re-export AuthConfig for consumers of this module
 export type { AuthConfig };
@@ -23,8 +23,6 @@ export interface OrganizationBranding {
 	appName: string | null;
 	primaryColor: string | null;
 	accentColor: string | null;
-	quotesEnabled: boolean;
-	customQuotes: CustomQuote[] | null;
 }
 
 /**
@@ -56,6 +54,4 @@ export const DEFAULT_BRANDING: OrganizationBranding = {
 	appName: null,
 	primaryColor: null,
 	accentColor: null,
-	quotesEnabled: true,
-	customQuotes: null,
 };

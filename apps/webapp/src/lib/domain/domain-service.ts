@@ -3,12 +3,7 @@ import dns from "node:dns";
 import { promisify } from "node:util";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
-import {
-	type AuthConfig,
-	type CustomQuote,
-	organizationBranding,
-	organizationDomain,
-} from "@/db/schema";
+import { type AuthConfig, organizationBranding, organizationDomain } from "@/db/schema";
 import { domainCache } from "./domain-cache";
 import {
 	DEFAULT_AUTH_CONFIG,
@@ -64,24 +59,12 @@ export async function getDomainConfig(hostname: string): Promise<DomainAuthConte
 	// Build branding object
 	let branding: OrganizationBranding | null = null;
 	if (brandingRecord) {
-		// Parse custom quotes from JSON string
-		let customQuotes = brandingRecord.customQuotes;
-		if (typeof customQuotes === "string") {
-			try {
-				customQuotes = JSON.parse(customQuotes);
-			} catch {
-				customQuotes = null;
-			}
-		}
-
 		branding = {
 			logoUrl: brandingRecord.logoUrl,
 			backgroundImageUrl: brandingRecord.backgroundImageUrl,
 			appName: brandingRecord.appName,
 			primaryColor: brandingRecord.primaryColor,
 			accentColor: brandingRecord.accentColor,
-			quotesEnabled: brandingRecord.quotesEnabled,
-			customQuotes: customQuotes as OrganizationBranding["customQuotes"],
 		};
 	}
 
@@ -342,23 +325,12 @@ export async function getOrganizationBranding(
 		return DEFAULT_BRANDING;
 	}
 
-	let customQuotes = brandingRecord.customQuotes;
-	if (typeof customQuotes === "string") {
-		try {
-			customQuotes = JSON.parse(customQuotes);
-		} catch {
-			customQuotes = null;
-		}
-	}
-
 	return {
 		logoUrl: brandingRecord.logoUrl,
 		backgroundImageUrl: brandingRecord.backgroundImageUrl,
 		appName: brandingRecord.appName,
 		primaryColor: brandingRecord.primaryColor,
 		accentColor: brandingRecord.accentColor,
-		quotesEnabled: brandingRecord.quotesEnabled,
-		customQuotes: customQuotes as OrganizationBranding["customQuotes"],
 	};
 }
 
@@ -373,10 +345,6 @@ export async function updateOrganizationBranding(
 		where: eq(organizationBranding.organizationId, organizationId),
 	});
 
-	const customQuotes = branding.customQuotes
-		? JSON.stringify(branding.customQuotes)
-		: existingBranding?.customQuotes;
-
 	if (existingBranding) {
 		await db
 			.update(organizationBranding)
@@ -386,8 +354,6 @@ export async function updateOrganizationBranding(
 				appName: branding.appName ?? existingBranding.appName,
 				primaryColor: branding.primaryColor ?? existingBranding.primaryColor,
 				accentColor: branding.accentColor ?? existingBranding.accentColor,
-				quotesEnabled: branding.quotesEnabled ?? existingBranding.quotesEnabled,
-				customQuotes: customQuotes as unknown as CustomQuote[] | null,
 			})
 			.where(eq(organizationBranding.organizationId, organizationId));
 	} else {
@@ -398,8 +364,6 @@ export async function updateOrganizationBranding(
 			appName: branding.appName ?? null,
 			primaryColor: branding.primaryColor ?? null,
 			accentColor: branding.accentColor ?? null,
-			quotesEnabled: branding.quotesEnabled ?? true,
-			customQuotes: customQuotes as unknown as CustomQuote[] | null,
 		});
 	}
 
