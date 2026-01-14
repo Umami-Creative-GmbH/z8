@@ -6,7 +6,6 @@ import bgImage from "@/../public/ally-griffin-3hsrEvJi_gw-unsplash.jpg";
 import { Card, CardContent } from "@/components/ui/card";
 import type { OrganizationBranding } from "@/lib/domain";
 import { cn } from "@/lib/utils";
-import QuoteBox from "./ui/quote-box";
 
 interface AuthFormWrapperProps extends React.ComponentProps<"div"> {
 	title: string;
@@ -27,8 +26,6 @@ export function AuthFormWrapper({
 
 	// Determine what to display
 	const appName = branding?.appName || "z8";
-	const showQuotes = branding?.quotesEnabled ?? true;
-	const customQuotes = branding?.customQuotes;
 
 	// Generate custom CSS for primary color
 	const customStyles = branding?.primaryColor
@@ -71,8 +68,9 @@ export function AuthFormWrapper({
 							<Image
 								alt={`${appName} background`}
 								fill
+								priority
 								quality={85}
-								sizes="100vw"
+								sizes="50vw"
 								src={branding.backgroundImageUrl}
 								style={{
 									objectFit: "cover",
@@ -86,17 +84,15 @@ export function AuthFormWrapper({
 								)}
 								fill
 								placeholder="blur"
+								priority
 								quality={75}
-								sizes="100vw"
+								sizes="50vw"
 								src={bgImage}
 								style={{
 									objectFit: "cover",
 								}}
 							/>
 						)}
-						<div className="hidden md:block">
-							<QuoteBox enabled={showQuotes} customQuotes={customQuotes} />
-						</div>
 					</div>
 				</CardContent>
 			</Card>

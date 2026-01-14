@@ -243,7 +243,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 			});
 
 			if (result.error) {
-				setError(result.error.message || "Failed to sign in with passkey");
+				setError(result.error.message || t("auth.passkey-login-failed", "Failed to sign in with passkey"));
 				setIsLoading(false);
 			} else {
 				// Check onboarding status first
@@ -264,7 +264,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 				router.push("/");
 			}
 		} catch (_error) {
-			setError("Failed to sign in with passkey");
+			setError(t("auth.passkey-login-failed", "Failed to sign in with passkey"));
 			setIsLoading(false);
 		}
 	};

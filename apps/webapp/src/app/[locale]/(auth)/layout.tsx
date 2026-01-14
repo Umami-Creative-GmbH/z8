@@ -1,4 +1,5 @@
 import { headers } from "next/headers";
+import { connection } from "next/server";
 import { InfoFooter } from "@/components/info-footer";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -12,6 +13,8 @@ export async function generateStaticParams() {
 }
 
 export default async function AuthLayout({ children }: { children: React.ReactNode }) {
+	await connection(); // Mark as fully dynamic for cacheComponents mode
+
 	// Get domain from proxy headers
 	const headersList = await headers();
 	const customDomain = headersList.get(DOMAIN_HEADERS.DOMAIN);

@@ -46,14 +46,11 @@ let _authClient: AuthClient | null = null;
 /**
  * Get the auth client instance.
  * This function lazily initializes the client only on the client-side.
- * @throws Error if called on the server side
+ * Returns null on server side - callers must handle this case.
  */
-export function getAuthClient(): AuthClient {
+export function getAuthClient(): AuthClient | null {
 	if (!isClient) {
-		throw new Error(
-			"getAuthClient() can only be called on the client side. " +
-			"For server-side session access, use auth.api.getSession() from @/lib/auth instead."
-		);
+		return null;
 	}
 
 	if (!_authClient) {
@@ -61,6 +58,21 @@ export function getAuthClient(): AuthClient {
 	}
 
 	return _authClient;
+}
+
+/**
+ * Get the auth client instance, throwing if called on server.
+ * Use this for operations that should never happen during SSR.
+ */
+function requireAuthClient(): AuthClient {
+	const client = getAuthClient();
+	if (!client) {
+		throw new Error(
+			"Auth client operations can only be performed on the client side. " +
+			"For server-side session access, use auth.api.getSession() from @/lib/auth instead."
+		);
+	}
+	return client;
 }
 
 /**
@@ -72,32 +84,47 @@ export function getAuthClient(): AuthClient {
  */
 export const authClient = new Proxy({} as AuthClient, {
 	get(_, prop: keyof AuthClient) {
-		return getAuthClient()[prop];
+		return requireAuthClient()[prop];
 	},
 });
 
 /**
  * Hook to get the current session.
  * Must be used in a client component.
+ * Returns loading state during SSR to prevent hydration mismatches.
  */
 export function useSession() {
-	return getAuthClient().useSession();
+	const client = getAuthClient();
+
+	// During SSR, return a loading state
+	// This matches what the client will show initially during hydration
+	if (!client) {
+		return {
+			data: null,
+			isPending: true,
+			error: null,
+			refetch: () => Promise.resolve(),
+		};
+	}
+
+	return client.useSession();
 }
 
 // Re-export commonly used methods via getters for convenience
 // These will only be evaluated when accessed (lazy)
+// These use requireAuthClient() because they should never be called during SSR
 export const signIn = new Proxy({} as AuthClient["signIn"], {
 	get(_, prop) {
-		return (getAuthClient().signIn as any)[prop];
+		return (requireAuthClient().signIn as any)[prop];
 	},
 });
 
 export const signUp = new Proxy({} as AuthClient["signUp"], {
 	get(_, prop) {
-		return (getAuthClient().signUp as any)[prop];
+		return (requireAuthClient().signUp as any)[prop];
 	},
 });
 
 export const signOut: AuthClient["signOut"] = (...args: any[]) => {
-	return (getAuthClient().signOut as any)(...args);
+	return (requireAuthClient().signOut as any)(...args);
 };

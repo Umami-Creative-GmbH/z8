@@ -166,6 +166,79 @@ export const team = pgTable(
 	(table) => [index("team_organizationId_idx").on(table.organizationId)],
 );
 
+// ============================================
+// LOCATIONS
+// ============================================
+
+// Physical locations within an organization
+export const location = pgTable(
+	"location",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+
+		// Basic info
+		name: text("name").notNull(),
+
+		// Address fields
+		street: text("street"),
+		city: text("city"),
+		postalCode: text("postal_code"),
+		country: text("country"), // ISO 3166-1 alpha-2 code
+
+		// Status
+		isActive: boolean("is_active").default(true).notNull(),
+
+		// Audit fields
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+		createdBy: text("created_by")
+			.notNull()
+			.references(() => user.id),
+		updatedAt: timestamp("updated_at")
+			.$onUpdate(() => currentTimestamp())
+			.notNull(),
+		updatedBy: text("updated_by").references(() => user.id),
+	},
+	(table) => [
+		index("location_organizationId_idx").on(table.organizationId),
+		index("location_isActive_idx").on(table.isActive),
+		uniqueIndex("location_org_name_idx").on(table.organizationId, table.name),
+	],
+);
+
+// Subareas within locations (cashier, storage, bistro, etc.)
+export const locationSubarea = pgTable(
+	"location_subarea",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		locationId: uuid("location_id")
+			.notNull()
+			.references(() => location.id, { onDelete: "cascade" }),
+
+		name: text("name").notNull(),
+
+		// Status
+		isActive: boolean("is_active").default(true).notNull(),
+
+		// Audit fields
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+		createdBy: text("created_by")
+			.notNull()
+			.references(() => user.id),
+		updatedAt: timestamp("updated_at")
+			.$onUpdate(() => currentTimestamp())
+			.notNull(),
+		updatedBy: text("updated_by").references(() => user.id),
+	},
+	(table) => [
+		index("locationSubarea_locationId_idx").on(table.locationId),
+		index("locationSubarea_isActive_idx").on(table.isActive),
+		uniqueIndex("locationSubarea_location_name_idx").on(table.locationId, table.name),
+	],
+);
+
 // Employee profile - extends Better Auth user with business-specific fields
 // Better Auth member table handles organization membership and roles
 export const employee = pgTable(
@@ -237,6 +310,58 @@ export const employeeManagers = pgTable(
 		// Prevent duplicate manager assignments
 		index("employeeManagers_unique_idx").on(table.employeeId, table.managerId),
 		index("employeeManagers_managerId_isPrimary_idx").on(table.managerId, table.isPrimary),
+	],
+);
+
+// ============================================
+// LOCATION EMPLOYEE ASSIGNMENTS
+// ============================================
+
+// Junction table for employees assigned to locations (supervisors)
+export const locationEmployee = pgTable(
+	"location_employee",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		locationId: uuid("location_id")
+			.notNull()
+			.references(() => location.id, { onDelete: "cascade" }),
+		employeeId: uuid("employee_id")
+			.notNull()
+			.references(() => employee.id, { onDelete: "cascade" }),
+		isPrimary: boolean("is_primary").default(false).notNull(), // Primary supervisor
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+		createdBy: text("created_by")
+			.notNull()
+			.references(() => user.id),
+	},
+	(table) => [
+		index("locationEmployee_locationId_idx").on(table.locationId),
+		index("locationEmployee_employeeId_idx").on(table.employeeId),
+		uniqueIndex("locationEmployee_unique_idx").on(table.locationId, table.employeeId),
+	],
+);
+
+// Junction table for employees assigned to subareas (supervisors)
+export const subareaEmployee = pgTable(
+	"subarea_employee",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		subareaId: uuid("subarea_id")
+			.notNull()
+			.references(() => locationSubarea.id, { onDelete: "cascade" }),
+		employeeId: uuid("employee_id")
+			.notNull()
+			.references(() => employee.id, { onDelete: "cascade" }),
+		isPrimary: boolean("is_primary").default(false).notNull(), // Primary supervisor
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+		createdBy: text("created_by")
+			.notNull()
+			.references(() => user.id),
+	},
+	(table) => [
+		index("subareaEmployee_subareaId_idx").on(table.subareaId),
+		index("subareaEmployee_employeeId_idx").on(table.employeeId),
+		uniqueIndex("subareaEmployee_unique_idx").on(table.subareaId, table.employeeId),
 	],
 );
 
@@ -1911,6 +2036,8 @@ export const organizationRelations = relations(organization, ({ one, many }) => 
 	surchargeModels: many(surchargeModel),
 	surchargeModelAssignments: many(surchargeModelAssignment),
 	surchargeCalculations: many(surchargeCalculation),
+	// Locations
+	locations: many(location),
 }));
 
 export const teamRelations = relations(team, ({ one, many }) => ({
@@ -1927,6 +2054,74 @@ export const teamRelations = relations(team, ({ one, many }) => ({
 	projectAssignments: many(projectAssignment),
 	// Surcharges
 	surchargeModelAssignments: many(surchargeModelAssignment),
+}));
+
+// Location relations
+export const locationRelations = relations(location, ({ one, many }) => ({
+	organization: one(organization, {
+		fields: [location.organizationId],
+		references: [organization.id],
+	}),
+	subareas: many(locationSubarea),
+	employees: many(locationEmployee),
+	creator: one(user, {
+		fields: [location.createdBy],
+		references: [user.id],
+		relationName: "location_creator",
+	}),
+	updater: one(user, {
+		fields: [location.updatedBy],
+		references: [user.id],
+		relationName: "location_updater",
+	}),
+}));
+
+export const locationSubareaRelations = relations(locationSubarea, ({ one, many }) => ({
+	location: one(location, {
+		fields: [locationSubarea.locationId],
+		references: [location.id],
+	}),
+	employees: many(subareaEmployee),
+	creator: one(user, {
+		fields: [locationSubarea.createdBy],
+		references: [user.id],
+		relationName: "subarea_creator",
+	}),
+	updater: one(user, {
+		fields: [locationSubarea.updatedBy],
+		references: [user.id],
+		relationName: "subarea_updater",
+	}),
+}));
+
+export const locationEmployeeRelations = relations(locationEmployee, ({ one }) => ({
+	location: one(location, {
+		fields: [locationEmployee.locationId],
+		references: [location.id],
+	}),
+	employee: one(employee, {
+		fields: [locationEmployee.employeeId],
+		references: [employee.id],
+	}),
+	creator: one(user, {
+		fields: [locationEmployee.createdBy],
+		references: [user.id],
+	}),
+}));
+
+export const subareaEmployeeRelations = relations(subareaEmployee, ({ one }) => ({
+	subarea: one(locationSubarea, {
+		fields: [subareaEmployee.subareaId],
+		references: [locationSubarea.id],
+	}),
+	employee: one(employee, {
+		fields: [subareaEmployee.employeeId],
+		references: [employee.id],
+	}),
+	creator: one(user, {
+		fields: [subareaEmployee.createdBy],
+		references: [user.id],
+	}),
 }));
 
 export const employeeRelations = relations(employee, ({ one, many }) => ({
@@ -1997,6 +2192,9 @@ export const employeeRelations = relations(employee, ({ one, many }) => ({
 	// Surcharges
 	surchargeModelAssignments: many(surchargeModelAssignment),
 	surchargeCalculations: many(surchargeCalculation),
+	// Location assignments
+	locationAssignments: many(locationEmployee),
+	subareaAssignments: many(subareaEmployee),
 }));
 
 // Time tracking relations
@@ -2630,12 +2828,6 @@ export const organizationDomain = pgTable(
 // ENTERPRISE: ORGANIZATION BRANDING
 // ============================================
 
-// Custom quote type
-export type CustomQuote = {
-	quote: string;
-	author: string;
-};
-
 // Custom branding for organization login pages
 export const organizationBranding = pgTable(
 	"organization_branding",
@@ -2654,10 +2846,6 @@ export const organizationBranding = pgTable(
 		// Theme customization
 		primaryColor: text("primary_color"), // e.g., "#3b82f6" or "oklch(0.6 0.2 250)"
 		accentColor: text("accent_color"), // Optional secondary color
-
-		// Quote settings
-		quotesEnabled: boolean("quotes_enabled").default(true).notNull(),
-		customQuotes: text("custom_quotes").$type<CustomQuote[]>(), // JSON array of quotes
 
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at")

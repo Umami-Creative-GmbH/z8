@@ -62,7 +62,7 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
 		if (result.success) {
 			clearFieldError("email");
 		} else {
-			setFieldError("email", "Invalid email address");
+			setFieldError("email", t("validation.invalid-email", "Invalid email address"));
 		}
 	};
 

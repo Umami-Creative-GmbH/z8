@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslate } from "@tolgee/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -11,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { authClient } from "@/lib/auth-client";
 
 export function TwoFactorVerificationForm() {
+	const { t } = useTranslate();
 	const router = useRouter();
 	const [isLoading, setIsLoading] = useState(false);
 	const [useBackupCode, setUseBackupCode] = useState(false);
@@ -23,8 +25,8 @@ export function TwoFactorVerificationForm() {
 		try {
 			if (useBackupCode) {
 				if (backupCode.length < 6) {
-					toast.error("Invalid backup code", {
-						description: "Please enter a valid backup code",
+					toast.error(t("auth.2fa.invalid-backup-code", "Invalid backup code"), {
+						description: t("auth.2fa.enter-valid-backup-code", "Please enter a valid backup code"),
 					});
 					setIsLoading(false);
 					return;
@@ -35,17 +37,17 @@ export function TwoFactorVerificationForm() {
 				});
 
 				if (result.error) {
-					toast.error("Verification failed", {
-						description: result.error.message || "Invalid backup code",
+					toast.error(t("auth.2fa.verification-failed", "Verification failed"), {
+						description: result.error.message || t("auth.2fa.invalid-backup-code", "Invalid backup code"),
 					});
 				} else {
-					toast.success("Verification successful");
+					toast.success(t("auth.2fa.verification-successful", "Verification successful"));
 					router.push("/");
 				}
 			} else {
 				if (otpValue.length !== 6) {
-					toast.error("Invalid code", {
-						description: "Please enter a 6-digit code",
+					toast.error(t("auth.2fa.invalid-code", "Invalid code"), {
+						description: t("auth.2fa.enter-6-digit-code", "Please enter a 6-digit code"),
 					});
 					setIsLoading(false);
 					return;
@@ -56,17 +58,17 @@ export function TwoFactorVerificationForm() {
 				});
 
 				if (result.error) {
-					toast.error("Verification failed", {
-						description: result.error.message || "Invalid verification code",
+					toast.error(t("auth.2fa.verification-failed", "Verification failed"), {
+						description: result.error.message || t("auth.2fa.invalid-verification-code", "Invalid verification code"),
 					});
 				} else {
-					toast.success("Verification successful");
+					toast.success(t("auth.2fa.verification-successful", "Verification successful"));
 					router.push("/");
 				}
 			}
 		} catch (error) {
-			toast.error("Verification failed", {
-				description: error instanceof Error ? error.message : "An unexpected error occurred",
+			toast.error(t("auth.2fa.verification-failed", "Verification failed"), {
+				description: error instanceof Error ? error.message : t("auth.2fa.unexpected-error", "An unexpected error occurred"),
 			});
 		} finally {
 			setIsLoading(false);
@@ -76,21 +78,21 @@ export function TwoFactorVerificationForm() {
 	return (
 		<Card className="w-full max-w-md">
 			<CardHeader>
-				<CardTitle>Two-Factor Authentication</CardTitle>
+				<CardTitle>{t("auth.2fa.title", "Two-Factor Authentication")}</CardTitle>
 				<CardDescription>
 					{useBackupCode
-						? "Enter one of your backup codes"
-						: "Enter the code from your authenticator app"}
+						? t("auth.2fa.backup-code-prompt", "Enter one of your backup codes")
+						: t("auth.2fa.authenticator-prompt", "Enter the code from your authenticator app")}
 				</CardDescription>
 			</CardHeader>
 			<CardContent className="space-y-4">
 				{useBackupCode ? (
 					<div className="space-y-2">
-						<Label htmlFor="backup-code">Backup Code</Label>
+						<Label htmlFor="backup-code">{t("auth.2fa.backup-code-label", "Backup Code")}</Label>
 						<Input
 							id="backup-code"
 							type="text"
-							placeholder="Enter backup code"
+							placeholder={t("auth.2fa.backup-code-placeholder", "Enter backup code")}
 							value={backupCode}
 							onChange={(e) => setBackupCode(e.target.value)}
 							disabled={isLoading}
@@ -99,7 +101,7 @@ export function TwoFactorVerificationForm() {
 					</div>
 				) : (
 					<div className="space-y-2">
-						<Label>Authentication Code</Label>
+						<Label>{t("auth.2fa.code-label", "Authentication Code")}</Label>
 						<div className="flex justify-center">
 							<InputOTP maxLength={6} value={otpValue} onChange={setOtpValue} disabled={isLoading}>
 								<InputOTPGroup>
@@ -116,7 +118,7 @@ export function TwoFactorVerificationForm() {
 				)}
 
 				<Button onClick={handleVerify} disabled={isLoading} className="w-full">
-					{isLoading ? "Verifying..." : "Verify"}
+					{isLoading ? t("auth.2fa.verifying", "Verifying...") : t("auth.2fa.verify", "Verify")}
 				</Button>
 
 				<Button
@@ -129,7 +131,9 @@ export function TwoFactorVerificationForm() {
 					disabled={isLoading}
 					className="w-full"
 				>
-					{useBackupCode ? "Use authenticator app instead" : "Use backup code instead"}
+					{useBackupCode
+						? t("auth.2fa.use-authenticator", "Use authenticator app instead")
+						: t("auth.2fa.use-backup", "Use backup code instead")}
 				</Button>
 			</CardContent>
 		</Card>

@@ -1,6 +1,6 @@
 import { passkey } from "@better-auth/passkey";
 import { sso } from "@better-auth/sso";
-import { betterAuth } from "better-auth";
+import { betterAuth } from "better-auth/minimal";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
 import { admin } from "better-auth/plugins/admin";
@@ -20,6 +20,11 @@ import { secondaryStorage } from "./valkey";
 
 export const auth = betterAuth({
 	baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
+
+	// Enable experimental database joins for 2-3x faster queries
+	experimental: {
+		joins: true,
+	},
 
 	// Secondary storage for session caching (Valkey/Redis)
 	// This dramatically improves session retrieval performance
@@ -110,6 +115,9 @@ export const auth = betterAuth({
 			enabled: true,
 			maxAge: 5 * 60, // Cache duration in seconds (5 minutes)
 			strategy: "compact", // Smallest cookie size, best performance
+			refreshCache: {
+				updateAge: 60, // Refresh cookie when 60 seconds from expiry
+			},
 		},
 		// When using secondary storage, don't store sessions in DB for performance
 		// Sessions are cached in Valkey which is much faster

@@ -95,6 +95,18 @@ export enum AuditAction {
 	PROJECT_ASSIGNMENT_REMOVED = "project.assignment_removed",
 	WORK_PERIOD_PROJECT_ASSIGNED = "work_period.project_assigned",
 	WORK_PERIOD_PROJECT_UNASSIGNED = "work_period.project_unassigned",
+
+	// Location Operations
+	LOCATION_CREATED = "location.created",
+	LOCATION_UPDATED = "location.updated",
+	LOCATION_DELETED = "location.deleted",
+	LOCATION_EMPLOYEE_ASSIGNED = "location.employee_assigned",
+	LOCATION_EMPLOYEE_REMOVED = "location.employee_removed",
+	SUBAREA_CREATED = "subarea.created",
+	SUBAREA_UPDATED = "subarea.updated",
+	SUBAREA_DELETED = "subarea.deleted",
+	SUBAREA_EMPLOYEE_ASSIGNED = "subarea.employee_assigned",
+	SUBAREA_EMPLOYEE_REMOVED = "subarea.employee_removed",
 }
 
 export interface AuditLogEntry {
@@ -119,7 +131,11 @@ export interface AuditLogEntry {
 		| "surcharge_calculation"
 		| "project"
 		| "project_assignment"
-		| "work_period";
+		| "work_period"
+		| "location"
+		| "subarea"
+		| "location_employee"
+		| "subarea_employee";
 	organizationId: string;
 	metadata?: Record<string, unknown>;
 	changes?: Record<string, unknown>; // Before/after changes for updates

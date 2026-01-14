@@ -220,7 +220,7 @@ export function SignupForm({ className, ...props }: React.ComponentProps<"div">)
 			});
 
 			if (result.error) {
-				setError(result.error.message || "Failed to sign up with passkey");
+				setError(result.error.message || t("auth.passkey-signup-failed", "Failed to sign up with passkey"));
 				setIsLoading(false);
 			} else {
 				// Check onboarding status first
@@ -241,7 +241,7 @@ export function SignupForm({ className, ...props }: React.ComponentProps<"div">)
 				router.push("/");
 			}
 		} catch (_error) {
-			setError("Failed to sign up with passkey");
+			setError(t("auth.passkey-signup-failed", "Failed to sign up with passkey"));
 			setIsLoading(false);
 		}
 	};
@@ -373,7 +373,7 @@ export function SignupForm({ className, ...props }: React.ComponentProps<"div">)
 						<span className="relative z-10 px-2 text-muted-foreground">
 							{showEmailPassword
 								? t("auth.or-sign-up-with", "Or sign up with")
-								: t("auth.sign-up-with", "Sign up with")}
+								: t("auth.sign-up-with.label", "Sign up with")}
 						</span>
 					</div>
 					<div className="flex flex-wrap justify-center gap-2 *:w-1/4">
