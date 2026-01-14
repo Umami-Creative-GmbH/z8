@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
-import { type NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse, connection } from "next/server";
 import { db } from "@/db";
 import {
 	employee,
@@ -20,6 +20,7 @@ interface RouteParams {
  * Get a specific holiday preset with its holidays
  */
 export async function GET(_request: NextRequest, { params }: RouteParams) {
+	await connection();
 	try {
 		const session = await auth.api.getSession({ headers: await headers() });
 		if (!session?.user) {
@@ -88,6 +89,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
  * Update a holiday preset
  */
 export async function PUT(request: NextRequest, { params }: RouteParams) {
+	await connection();
 	try {
 		const session = await auth.api.getSession({ headers: await headers() });
 		if (!session?.user) {
@@ -164,6 +166,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
  * Delete a holiday preset (soft delete by setting isActive to false)
  */
 export async function DELETE(_request: NextRequest, { params }: RouteParams) {
+	await connection();
 	try {
 		const session = await auth.api.getSession({ headers: await headers() });
 		if (!session?.user) {

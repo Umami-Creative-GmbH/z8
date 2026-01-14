@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
-import { type NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse, connection } from "next/server";
 import { db } from "@/db";
 import { employee, holidayCategory } from "@/db/schema";
 import { auth } from "@/lib/auth";
@@ -10,6 +10,7 @@ import { auth } from "@/lib/auth";
  * Update a holiday category
  */
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+	await connection();
 	try {
 		const { id } = await params;
 		const session = await auth.api.getSession({ headers: await headers() });
@@ -79,6 +80,7 @@ export async function DELETE(
 	_request: NextRequest,
 	{ params }: { params: Promise<{ id: string }> },
 ) {
+	await connection();
 	try {
 		const { id } = await params;
 		const session = await auth.api.getSession({ headers: await headers() });

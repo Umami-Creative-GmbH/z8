@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
-import { type NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse, connection } from "next/server";
 import { db } from "@/db";
 import { employee, holidayCategory } from "@/db/schema";
 import { auth } from "@/lib/auth";
@@ -10,6 +10,7 @@ import { auth } from "@/lib/auth";
  * List all holiday categories for the organization
  */
 export async function GET(_request: NextRequest) {
+	await connection();
 	try {
 		const session = await auth.api.getSession({ headers: await headers() });
 		if (!session?.user) {
@@ -46,6 +47,7 @@ export async function GET(_request: NextRequest) {
  * Create a new holiday category
  */
 export async function POST(request: NextRequest) {
+	await connection();
 	try {
 		const session = await auth.api.getSession({ headers: await headers() });
 		if (!session?.user) {
