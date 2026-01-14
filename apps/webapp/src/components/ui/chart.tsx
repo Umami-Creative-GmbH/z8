@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import * as RechartsPrimitive from "recharts";
+import type { NameType, Payload, ValueType } from "recharts/types/component/DefaultTooltipContent";
 
 import { cn } from "@/lib/utils";
 
@@ -117,6 +118,10 @@ function ChartTooltipContent({
 		indicator?: "line" | "dot" | "dashed";
 		nameKey?: string;
 		labelKey?: string;
+		// These props are injected by the parent Tooltip component
+		active?: boolean;
+		payload?: Payload<ValueType, NameType>[];
+		label?: string | number;
 	}) {
 	const { config } = useChart();
 
@@ -172,7 +177,7 @@ function ChartTooltipContent({
 								"flex w-full flex-wrap items-stretch gap-2 [&>svg]:h-2.5 [&>svg]:w-2.5 [&>svg]:text-muted-foreground",
 								indicator === "dot" && "items-center",
 							)}
-							key={item.dataKey}
+							key={typeof item.dataKey === "function" ? index : item.dataKey}
 						>
 							{formatter && item?.value !== undefined && item.name ? (
 								formatter(item.value, item.name, item, index, item.payload)
@@ -238,11 +243,18 @@ function ChartLegendContent({
 	payload,
 	verticalAlign = "bottom",
 	nameKey,
-}: React.ComponentProps<"div"> &
-	Pick<RechartsPrimitive.LegendProps, "payload" | "verticalAlign"> & {
-		hideIcon?: boolean;
-		nameKey?: string;
-	}) {
+}: React.ComponentProps<"div"> & {
+	hideIcon?: boolean;
+	nameKey?: string;
+	// These props are injected by the parent Legend component
+	payload?: Array<{
+		value?: string;
+		type?: string;
+		color?: string;
+		dataKey?: string | number;
+	}>;
+	verticalAlign?: "top" | "bottom" | "middle";
+}) {
 	const { config } = useChart();
 
 	if (!payload?.length) {
