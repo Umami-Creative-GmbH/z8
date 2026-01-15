@@ -1,15 +1,17 @@
 {
   "mcpServers": {
     "shadcn": {
-      "command": "bunx",
+      "command": "pnpm",
       "args": [
+        "dlx",
         "shadcn@latest",
         "mcp"
       ]
     },
     "next-devtools": {
-      "command": "bunx",
+      "command": "pnpm",
       "args": [
+        "dlx",
         "next-devtools-mcp@latest"
       ]
     },
