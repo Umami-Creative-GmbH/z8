@@ -1,7 +1,6 @@
 "use server";
 
 import { and, eq } from "drizzle-orm";
-import { cacheLife, cacheTag } from "next/cache";
 import { Effect } from "effect";
 import { headers } from "next/headers";
 import { db } from "@/db";
@@ -46,10 +45,6 @@ export interface UserOrganization {
  * Uses activeOrganizationId from session to get the correct employee record
  */
 export async function getAuthContext(): Promise<AuthContext | null> {
-	"use cache: private";
-	cacheLife("minutes");
-	cacheTag("auth-context");
-
 	const session = await auth.api.getSession({ headers: await headers() });
 
 	if (!session?.user) {
@@ -163,10 +158,6 @@ export async function isManagerOrAbove(): Promise<boolean> {
  * Get all organizations the current user is a member of
  */
 export async function getUserOrganizations(): Promise<UserOrganization[]> {
-	"use cache: private";
-	cacheLife("minutes");
-	cacheTag("user-organizations");
-
 	const session = await auth.api.getSession({ headers: await headers() });
 
 	if (!session?.user) {
@@ -275,10 +266,6 @@ export interface OnboardingStatus {
  * Get current user's onboarding status
  */
 export async function getOnboardingStatus(): Promise<OnboardingStatus | null> {
-	"use cache: private";
-	cacheLife("minutes");
-	cacheTag("onboarding-status");
-
 	const session = await auth.api.getSession({ headers: await headers() });
 
 	if (!session?.user) {

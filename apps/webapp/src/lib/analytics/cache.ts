@@ -84,18 +84,24 @@ export function createCachedQuery<TArgs extends any[], TResult>(
 }
 
 /**
+ * Default cache profile for revalidation
+ * In Next.js 16+, revalidateTag requires a profile parameter
+ */
+const DEFAULT_CACHE_PROFILE = "default";
+
+/**
  * Revalidate analytics cache by tag
  * @param tag - Cache tag to revalidate (from ANALYTICS_CACHE_TAGS)
  */
 export function revalidateAnalyticsCache(tag: string): void {
-	revalidateTag(tag, { expire: 0 });
+	revalidateTag(tag, DEFAULT_CACHE_PROFILE);
 }
 
 /**
  * Revalidate all analytics caches
  */
 export function revalidateAllAnalytics(): void {
-	revalidateTag(ANALYTICS_CACHE_TAGS.ALL, { expire: 0 });
+	revalidateTag(ANALYTICS_CACHE_TAGS.ALL, DEFAULT_CACHE_PROFILE);
 }
 
 /**
@@ -103,10 +109,10 @@ export function revalidateAllAnalytics(): void {
  * Call this after work period create/update/delete operations
  */
 export function revalidateWorkDataCache(organizationId: string): void {
-	revalidateTag(ANALYTICS_CACHE_TAGS.WORK_HOURS, { expire: 0 });
-	revalidateTag(ANALYTICS_CACHE_TAGS.TEAM_PERFORMANCE, { expire: 0 });
-	revalidateTag(ANALYTICS_CACHE_TAGS.DASHBOARD_WIDGETS, { expire: 0 });
-	revalidateTag(`${ANALYTICS_CACHE_TAGS.WORK_HOURS}:org:${organizationId}`, { expire: 0 });
+	revalidateTag(ANALYTICS_CACHE_TAGS.WORK_HOURS, DEFAULT_CACHE_PROFILE);
+	revalidateTag(ANALYTICS_CACHE_TAGS.TEAM_PERFORMANCE, DEFAULT_CACHE_PROFILE);
+	revalidateTag(ANALYTICS_CACHE_TAGS.DASHBOARD_WIDGETS, DEFAULT_CACHE_PROFILE);
+	revalidateTag(`${ANALYTICS_CACHE_TAGS.WORK_HOURS}:org:${organizationId}`, DEFAULT_CACHE_PROFILE);
 }
 
 /**
@@ -114,10 +120,10 @@ export function revalidateWorkDataCache(organizationId: string): void {
  * Call this after absence entry create/update/delete operations
  */
 export function revalidateAbsenceDataCache(organizationId: string): void {
-	revalidateTag(ANALYTICS_CACHE_TAGS.VACATION_TRENDS, { expire: 0 });
-	revalidateTag(ANALYTICS_CACHE_TAGS.ABSENCE_PATTERNS, { expire: 0 });
-	revalidateTag(ANALYTICS_CACHE_TAGS.DASHBOARD_WIDGETS, { expire: 0 });
-	revalidateTag(`${ANALYTICS_CACHE_TAGS.VACATION_TRENDS}:org:${organizationId}`, { expire: 0 });
+	revalidateTag(ANALYTICS_CACHE_TAGS.VACATION_TRENDS, DEFAULT_CACHE_PROFILE);
+	revalidateTag(ANALYTICS_CACHE_TAGS.ABSENCE_PATTERNS, DEFAULT_CACHE_PROFILE);
+	revalidateTag(ANALYTICS_CACHE_TAGS.DASHBOARD_WIDGETS, DEFAULT_CACHE_PROFILE);
+	revalidateTag(`${ANALYTICS_CACHE_TAGS.VACATION_TRENDS}:org:${organizationId}`, DEFAULT_CACHE_PROFILE);
 }
 
 /**
@@ -125,11 +131,9 @@ export function revalidateAbsenceDataCache(organizationId: string): void {
  * Call this after approval request create/update operations
  */
 export function revalidateApprovalDataCache(organizationId: string): void {
-	revalidateTag(ANALYTICS_CACHE_TAGS.MANAGER_EFFECTIVENESS, { expire: 0 });
-	revalidateTag(ANALYTICS_CACHE_TAGS.DASHBOARD_WIDGETS, { expire: 0 });
-	revalidateTag(`${ANALYTICS_CACHE_TAGS.MANAGER_EFFECTIVENESS}:org:${organizationId}`, {
-		expire: 0,
-	});
+	revalidateTag(ANALYTICS_CACHE_TAGS.MANAGER_EFFECTIVENESS, DEFAULT_CACHE_PROFILE);
+	revalidateTag(ANALYTICS_CACHE_TAGS.DASHBOARD_WIDGETS, DEFAULT_CACHE_PROFILE);
+	revalidateTag(`${ANALYTICS_CACHE_TAGS.MANAGER_EFFECTIVENESS}:org:${organizationId}`, DEFAULT_CACHE_PROFILE);
 }
 
 /**
@@ -137,9 +141,9 @@ export function revalidateApprovalDataCache(organizationId: string): void {
  * Call this after employee create/update/delete operations
  */
 export function revalidateEmployeeDataCache(organizationId: string): void {
-	revalidateTag(ANALYTICS_CACHE_TAGS.TEAM_PERFORMANCE, { expire: 0 });
-	revalidateTag(ANALYTICS_CACHE_TAGS.DASHBOARD_WIDGETS, { expire: 0 });
-	revalidateTag(`${ANALYTICS_CACHE_TAGS.TEAM_PERFORMANCE}:org:${organizationId}`, { expire: 0 });
+	revalidateTag(ANALYTICS_CACHE_TAGS.TEAM_PERFORMANCE, DEFAULT_CACHE_PROFILE);
+	revalidateTag(ANALYTICS_CACHE_TAGS.DASHBOARD_WIDGETS, DEFAULT_CACHE_PROFILE);
+	revalidateTag(`${ANALYTICS_CACHE_TAGS.TEAM_PERFORMANCE}:org:${organizationId}`, DEFAULT_CACHE_PROFILE);
 }
 
 /**

@@ -1,3 +1,7 @@
+/**
+ * Data fetchers for export functionality
+ * This file contains server-only code that accesses the database
+ */
 import { and, eq } from "drizzle-orm";
 import {
 	absenceCategory,
@@ -28,49 +32,13 @@ import {
 } from "@/db";
 import { createLogger } from "@/lib/logger";
 
+// Import types for internal use
+import type { ExportCategory } from "./types";
+
+// Re-export types for backward compatibility with server-side code
+export { CATEGORY_LABELS, EXPORT_CATEGORIES, type ExportCategory } from "./types";
+
 const logger = createLogger("ExportDataFetchers");
-
-// Types for exported data
-export type ExportCategory =
-	| "employees"
-	| "teams"
-	| "time_entries"
-	| "work_periods"
-	| "absences"
-	| "holidays"
-	| "vacation"
-	| "schedules"
-	| "shifts"
-	| "audit_logs";
-
-export const EXPORT_CATEGORIES: ExportCategory[] = [
-	"employees",
-	"teams",
-	"time_entries",
-	"work_periods",
-	"absences",
-	"holidays",
-	"vacation",
-	"schedules",
-	"shifts",
-	"audit_logs",
-];
-
-export const CATEGORY_LABELS: Record<ExportCategory, string> = {
-	employees: "Employees",
-	teams: "Teams",
-	time_entries: "Time Tracking",
-	work_periods: "Work Periods",
-	absences: "Absences",
-	holidays: "Holidays",
-	vacation: "Vacation Policies",
-	schedules: "Work Schedules",
-	shifts: "Shifts",
-	audit_logs: "Audit Logs",
-};
-
-// Fields to exclude from exports (sensitive data)
-const EXCLUDED_EMPLOYEE_FIELDS = ["createdAt", "updatedAt"] as const;
 
 /**
  * Fetch all employees for an organization
