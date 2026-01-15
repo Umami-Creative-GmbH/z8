@@ -4,8 +4,8 @@
 
 The file `src/db/auth-schema.ts` is **auto-generated** by Better Auth CLI and will be overwritten on every:
 - Better Auth package update
-- Running `bunx --bun @better-auth/cli generate`
-- Running `bunx --bun @better-auth/cli migrate`
+- Running `pnpm dlx @better-auth/cli generate`
+- Running `pnpm dlx @better-auth/cli migrate`
 
 **Never manually add, modify, or remove fields from this file.**
 
@@ -64,7 +64,7 @@ organization({
 
 1. Run CLI to regenerate schema (use `--output` to specify location):
    ```bash
-   bunx --bun npx @better-auth/cli generate -y --output src/db/auth-schema.ts
+   pnpm dlx @better-auth/cli generate -y --output src/db/auth-schema.ts
    ```
 
 2. Add FK constraint and indexes to ssoProvider (CLI doesn't generate these):
@@ -74,7 +74,7 @@ organization({
 
 3. Push schema to database:
    ```bash
-   bun drizzle-kit push
+   pnpm drizzle-kit push
    ```
 
 ---
@@ -135,15 +135,39 @@ export const authClient = createAuthClient({
 
 # Development Commands
 
+## Package Manager
+
+This project uses **pnpm** as the package manager. Do not use bun for running scripts.
+
 ## Dev Server
 
-To run the development server with the bun SQL client properly loaded:
-
 ```bash
-bun --bun dev
+pnpm dev
 ```
 
-This command is required because the application uses bun's native SQL client which needs the `--bun` flag.
+## Testing
+
+Tests use **vitest**. Run tests with:
+
+```bash
+pnpm test           # Run all tests once
+pnpm test:watch     # Run tests in watch mode
+pnpm test:coverage  # Run tests with coverage
+```
+
+## Database
+
+```bash
+pnpm drizzle-kit push    # Push schema changes to database
+pnpm db:seed             # Seed the database
+```
+
+## Build
+
+```bash
+pnpm build    # Build for production
+pnpm start    # Start production server
+```
 
 ---
 

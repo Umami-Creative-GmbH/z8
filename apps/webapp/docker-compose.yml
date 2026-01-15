@@ -18,6 +18,16 @@ services:
     volumes:
       - valkey_data:/data
 
+  redisinsight:
+    image: redis/redisinsight:latest
+    ports:
+      - "5540:5540"
+    volumes:
+      - redisinsight-data:/data
+    depends_on:
+      - valkey
+
 volumes:
   default_data:
   valkey_data:
+  redisinsight-data:

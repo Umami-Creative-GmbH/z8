@@ -6,7 +6,7 @@ const withNextIntl = createNextIntlPlugin();
 const nextConfig: NextConfig = {
 	reactStrictMode: true,
 	reactCompiler: true,
-	cacheComponents: true,
+	cacheComponents: false,
 	// Use Valkey for distributed caching (enabled when VALKEY_HOST is set)
 	...(process.env.VALKEY_HOST
 		? {
@@ -28,7 +28,8 @@ const nextConfig: NextConfig = {
 		"@opentelemetry/exporter-trace-otlp-http",
 		"@opentelemetry/exporter-metrics-otlp-http",
 		"@opentelemetry/auto-instrumentations-node",
-		"better-auth",
+		"pg",
+		"ioredis",
 		"pino",
 		"pino-pretty",
 		"pino-opentelemetry-transport",
@@ -42,7 +43,6 @@ const nextConfig: NextConfig = {
 		"@tus/s3-store",
 		"@tus/file-store",
 		"exceljs",
-		"kysely",
 		"@react-email/render",
 		"@react-email/components",
 	],

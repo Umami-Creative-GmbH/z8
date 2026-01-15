@@ -1,5 +1,5 @@
 /**
- * Custom Cache Handler for Next.js 16 cacheComponents using Bun's native Redis client
+ * Custom Cache Handler for Next.js 16
  *
  * This handler uses Valkey/Redis for distributed caching across Next.js instances.
  * Connection is configured from environment variables:
@@ -8,20 +8,25 @@
  *   - VALKEY_PASSWORD (optional) - Valkey authentication password
  */
 
-// Build connection URL from environment variables
+import Redis from "ioredis";
+
 const host = process.env.VALKEY_HOST || "localhost";
-const port = process.env.VALKEY_PORT || "6379";
+const port = Number(process.env.VALKEY_PORT || "6379");
 const password = process.env.VALKEY_PASSWORD;
 
-const connectionUrl = password
-	? `valkey://:${encodeURIComponent(password)}@${host}:${port}`
-	: `valkey://${host}:${port}`;
+const redis = new Redis({
+	host,
+	port,
+	password: password || undefined,
+	maxRetriesPerRequest: 3,
+	lazyConnect: false, // Connect immediately for cache handler
+	enableReadyCheck: false,
+	enableOfflineQueue: true,
+});
 
-// Set the URL for Bun's auto-detection
-process.env.VALKEY_URL = connectionUrl;
-
-// Use Bun's native Redis client - faster than ioredis
-const redis = Bun.redis;
+redis.on("error", (err) => {
+	console.error("[CacheHandler] Redis connection error:", err);
+});
 
 const CACHE_PREFIX = "nextjs:cache:";
 const TAG_PREFIX = "nextjs:tag:";
@@ -34,7 +39,9 @@ interface CacheEntry {
 
 export default class CacheHandler {
 	constructor() {
-		console.log(`[CacheHandler] Initialized with Bun native Redis client → ${host}:${port}`);
+		console.log(
+			`[CacheHandler] Initialized with ioredis client → ${host}:${port}`,
+		);
 	}
 
 	async get(key: string): Promise<CacheEntry | null> {
@@ -57,7 +64,11 @@ export default class CacheHandler {
 		}
 	}
 
-	async set(key: string, value: unknown, options?: { tags?: string[]; ttl?: number }): Promise<void> {
+	async set(
+		key: string,
+		value: unknown,
+		options?: { tags?: string[]; ttl?: number },
+	): Promise<void> {
 		try {
 			const entry: CacheEntry = {
 				value,
@@ -114,7 +125,9 @@ export default class CacheHandler {
 			// Clear the tag set
 			await redis.del(TAG_PREFIX + tag);
 
-			console.log(`[CacheHandler] Revalidated tag: ${tag}, cleared ${keys.length} entries`);
+			console.log(
+				`[CacheHandler] Revalidated tag: ${tag}, cleared ${keys.length} entries`,
+			);
 		} catch (error) {
 			console.error("[CacheHandler] RevalidateTag error:", error);
 		}
