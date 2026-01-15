@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { EXPORT_CATEGORIES, type ExportCategory } from "@/lib/export/data-fetchers";
+import { EXPORT_CATEGORIES, type ExportCategory } from "@/lib/export/types";
 
 interface ExportFormProps {
 	organizationId: string;

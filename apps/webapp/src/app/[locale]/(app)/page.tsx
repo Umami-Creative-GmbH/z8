@@ -5,6 +5,8 @@ import { SectionCards } from "@/components/section-cards";
 import { getOnboardingStatus, getUserOrganizations } from "@/lib/auth-helpers";
 import { getOnboardingStepPath } from "@/lib/validations/onboarding";
 
+export const dynamic = "force-dynamic";
+
 export default async function Page() {
 	await connection(); // Mark as fully dynamic for cacheComponents mode
 

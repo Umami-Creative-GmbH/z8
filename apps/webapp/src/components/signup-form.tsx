@@ -1,7 +1,6 @@
 "use client";
 
 import { useTranslate } from "@tolgee/react";
-import { Key } from "lucide-react";
 import { useState } from "react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -12,7 +11,6 @@ import { useDomainAuth } from "@/lib/auth/domain-auth-context";
 import { authClient } from "@/lib/auth-client";
 import { useEnabledProviders } from "@/lib/hooks/use-enabled-providers";
 import { cn } from "@/lib/utils";
-import { getOnboardingStepPath } from "@/lib/validations/onboarding";
 import { checkPasswordRequirements, passwordSchema } from "@/lib/validations/password";
 import { Link, useRouter } from "@/navigation";
 import { AuthFormWrapper } from "./auth-form-wrapper";
@@ -50,7 +48,6 @@ export function SignupForm({ className, ...props }: React.ComponentProps<"div">)
 
 	// Determine which auth methods are enabled
 	const showEmailPassword = authConfig?.emailPasswordEnabled ?? true;
-	const showPasskey = authConfig?.passkeyEnabled ?? true;
 	const allowedSocialProviders = authConfig?.socialProvidersEnabled ?? [];
 
 	// Filter social providers based on auth config
@@ -210,42 +207,6 @@ export function SignupForm({ className, ...props }: React.ComponentProps<"div">)
 		}
 	};
 
-	const handlePasskeySignup = async () => {
-		setIsLoading(true);
-		setError(null);
-
-		try {
-			const result = await authClient.signIn.passkey({
-				autoFill: false,
-			});
-
-			if (result.error) {
-				setError(result.error.message || t("auth.passkey-signup-failed", "Failed to sign up with passkey"));
-				setIsLoading(false);
-			} else {
-				// Check onboarding status first
-				try {
-					const userResponse = await fetch("/api/user/onboarding-status");
-					if (userResponse.ok) {
-						const { onboardingComplete, onboardingStep } = await userResponse.json();
-
-						if (!onboardingComplete) {
-							router.push(getOnboardingStepPath(onboardingStep));
-							return;
-						}
-					}
-				} catch (error) {
-					console.error("Error checking onboarding status:", error);
-				}
-
-				router.push("/");
-			}
-		} catch (_error) {
-			setError(t("auth.passkey-signup-failed", "Failed to sign up with passkey"));
-			setIsLoading(false);
-		}
-	};
-
 	return (
 		<AuthFormWrapper
 			className={className}
@@ -367,7 +328,7 @@ export function SignupForm({ className, ...props }: React.ComponentProps<"div">)
 			)}
 
 			{/* Alternative auth methods */}
-			{(showPasskey || filteredProviders.length > 0) && (
+			{filteredProviders.length > 0 && (
 				<>
 					<div className="text-center text-sm">
 						<span className="relative z-10 px-2 text-muted-foreground">
@@ -377,30 +338,6 @@ export function SignupForm({ className, ...props }: React.ComponentProps<"div">)
 						</span>
 					</div>
 					<div className="flex flex-wrap justify-center gap-2 *:w-1/4">
-						{/* Passkey - show if enabled */}
-						{showPasskey && (
-							<Tooltip>
-								<TooltipTrigger asChild>
-									<Button
-										type="button"
-										variant="outline"
-										onClick={handlePasskeySignup}
-										disabled={isLoading}
-									>
-										<Key className="h-4 w-4" />
-										<span className="sr-only">
-											{t("auth.sign-up-with.passkey", "Sign up with Passkey")}
-										</span>
-									</Button>
-								</TooltipTrigger>
-								<TooltipContent>
-									<span className="text-sm">
-										{t("auth.sign-up-with.passkey", "Sign up with Passkey")}
-									</span>
-								</TooltipContent>
-							</Tooltip>
-						)}
-
 						{/* Dynamic social providers - filtered based on auth config */}
 						{providersLoading
 							? Array.from({ length: filteredProviders.length || 4 }).map((_, i) => (

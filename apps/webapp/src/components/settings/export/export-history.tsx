@@ -39,7 +39,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import type { ExportCategory } from "@/lib/export/data-fetchers";
+import type { ExportCategory } from "@/lib/export/types";
 import { type ExportRecord, formatFileSize } from "@/lib/export/utils";
 
 interface ExportHistoryProps {
