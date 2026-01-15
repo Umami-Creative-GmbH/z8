@@ -1,6 +1,6 @@
 import { trace } from "@opentelemetry/api";
-import { SQL } from "bun";
-import { drizzle } from "drizzle-orm/bun-sql";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { Pool } from "pg";
 import { createLogger } from "@/lib/logger";
 import * as authSchema from "./auth-schema";
 import * as schema from "./schema";
@@ -15,42 +15,44 @@ type DbInstance = ReturnType<typeof drizzle<typeof combinedSchema>>;
 
 // Singleton pattern to prevent connection pool exhaustion during hot reloading
 const globalForDb = globalThis as unknown as {
-	sql: SQL | undefined;
+	pool: Pool | undefined;
 	db: DbInstance | undefined;
 };
 
-function createSqlClient(): SQL {
-	return new SQL({
+function createPool(): Pool {
+	return new Pool({
 		host: process.env.POSTGRES_HOST!,
 		port: Number(process.env.POSTGRES_PORT!),
 		database: process.env.POSTGRES_DB!,
-		username: process.env.POSTGRES_USER!,
+		user: process.env.POSTGRES_USER!,
 		password: process.env.POSTGRES_PASSWORD!,
 		max: 10, // Reduced from 20 to prevent exhaustion
-		idleTimeout: 60, // Increased from 30 to reduce connection churn
-		connectionTimeout: 5, // Increased from 2 for more reliability
+		idleTimeoutMillis: 60000, // 60 seconds - Increased from 30 to reduce connection churn
+		connectionTimeoutMillis: 5000, // 5 seconds - Increased from 2 for more reliability
 	});
 }
 
-function createInstrumentedSql(baseSql: SQL): SQL {
-	return new Proxy(baseSql, {
+function createInstrumentedPool(basePool: Pool): Pool {
+	return new Proxy(basePool, {
 		get(target, prop) {
-			// Intercept query methods to add tracing
-			if (prop === "query" || prop === "run" || prop === "all" || prop === "get") {
-				return (...args: unknown[]) => {
+			// Intercept query method to add tracing
+			if (prop === "query") {
+				return async (...args: unknown[]) => {
 					const tracer = trace.getTracer("database");
 					return tracer.startActiveSpan(
-						`db.${String(prop)}`,
+						"db.query",
 						{
 							attributes: {
 								"db.system": "postgresql",
-								"db.operation": String(prop),
+								"db.operation": "query",
 								"db.name": process.env.POSTGRES_DB || "unknown",
 							},
 						},
-						(span) => {
+						async (span) => {
 							try {
-								const result = (target as any)[prop](...args);
+								const result = await (target as Pool).query(
+									...(args as Parameters<Pool["query"]>),
+								);
 								span.setStatus({ code: 1 }); // OK
 								span.end();
 								return result;
@@ -58,7 +60,10 @@ function createInstrumentedSql(baseSql: SQL): SQL {
 								span.recordException(error as Error);
 								span.setStatus({ code: 2, message: String(error) }); // ERROR
 								span.end();
-								logger.error({ error, operation: String(prop) }, "Database query failed");
+								logger.error(
+									{ error, operation: "query" },
+									"Database query failed",
+								);
 								throw error;
 							}
 						},
@@ -67,25 +72,25 @@ function createInstrumentedSql(baseSql: SQL): SQL {
 			}
 			return target[prop as keyof typeof target];
 		},
-	}) as SQL;
+	}) as Pool;
 }
 
 function createDb(): DbInstance {
-	const sqlClient = createInstrumentedSql(createSqlClient());
-	return drizzle({ client: sqlClient, schema: combinedSchema });
+	const pool = createInstrumentedPool(createPool());
+	return drizzle({ client: pool, schema: combinedSchema });
 }
 
 // Use existing instances or create new ones
-const sql = globalForDb.sql ?? createInstrumentedSql(createSqlClient());
+const pool = globalForDb.pool ?? createInstrumentedPool(createPool());
 const db: DbInstance = globalForDb.db ?? createDb();
 
 // Store in global for reuse during hot reloading (development only)
 if (process.env.NODE_ENV !== "production") {
-	globalForDb.sql = sql;
+	globalForDb.pool = pool;
 	globalForDb.db = db;
 }
 
-export { db, sql };
+export { db, pool };
 // Export auth schema tables
 export * from "./auth-schema";
 // Export business schema tables (excludes auth schema imports to avoid duplicates)

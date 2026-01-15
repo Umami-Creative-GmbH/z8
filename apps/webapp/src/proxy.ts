@@ -1,4 +1,3 @@
-import { getCookieCache } from "better-auth/cookies";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import createMiddleware from "next-intl/middleware";
@@ -28,6 +27,7 @@ const PUBLIC_ROUTES = [
 	"/privacy",
 	"/terms",
 	"/imprint",
+	"/licenses",
 ];
 
 // Routes that authenticated users should be redirected away from
@@ -57,23 +57,25 @@ export async function proxy(request: NextRequest) {
 	// Check if this is a public route
 	const isPublicRoute = PUBLIC_ROUTES.some(
 		(route) =>
-			pathWithoutLocale === route ||
-			pathWithoutLocale.startsWith(`${route}/`),
+			pathWithoutLocale === route || pathWithoutLocale.startsWith(`${route}/`),
 	);
 
 	// Check if this is an auth route (sign-in, sign-up, etc.)
 	const isAuthRoute = AUTH_ROUTES.some(
 		(route) =>
-			pathWithoutLocale === route ||
-			pathWithoutLocale.startsWith(`${route}/`),
+			pathWithoutLocale === route || pathWithoutLocale.startsWith(`${route}/`),
 	);
 
-	// Get session from cookie cache - returns full session object without DB call
-	// This is an optimistic check - actual validation happens in pages/routes
-	const session = await getCookieCache(request);
+	// Check for session cookie presence
+	// NOTE: We only check cookie existence, not signature validity.
+	// getCookieCache signature verification fails with externalized better-auth.
+	// Real authentication happens server-side in pages/API routes via auth.api.getSession()
+	const hasSessionCookie =
+		request.cookies.has("better-auth.session_token") ||
+		request.cookies.has("better-auth.session_data");
 
 	// Handle authentication redirects
-	if (!session) {
+	if (!hasSessionCookie) {
 		// Not authenticated - redirect to sign-in if trying to access protected route
 		if (!isPublicRoute) {
 			const locale =
