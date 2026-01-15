@@ -3,6 +3,7 @@
  * Tests hash calculation, verification, chain validation, and tamper detection
  */
 
+import { describe, expect, it } from "vitest";
 import type { timeEntry } from "@/db/schema";
 import {
 	calculateHash,

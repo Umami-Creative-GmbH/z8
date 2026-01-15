@@ -5,29 +5,29 @@
  * and helper functions.
  */
 
-import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { AuditAction, type AuditLogEntry } from "../audit-logger";
 
-// Mock the database module
-const mockInsert = mock(() => ({
-	values: mock(() => Promise.resolve()),
+// Use vi.hoisted() for variables that need to be available in vi.mock factories
+const { mockInsert, mockLoggerInfo, mockLoggerError } = vi.hoisted(() => ({
+	mockInsert: vi.fn(() => ({
+		values: vi.fn(() => Promise.resolve()),
+	})),
+	mockLoggerInfo: vi.fn(),
+	mockLoggerError: vi.fn(),
 }));
 
-mock.module("@/db", () => ({
+vi.mock("@/db", () => ({
 	db: {
 		insert: mockInsert,
 	},
 }));
 
-mock.module("@/db/schema", () => ({
+vi.mock("@/db/schema", () => ({
 	auditLog: { id: "audit_log" },
 }));
 
-// Mock the logger
-const mockLoggerInfo = mock(() => {});
-const mockLoggerError = mock(() => {});
-
-mock.module("@/lib/logger", () => ({
+vi.mock("@/lib/logger", () => ({
 	createLogger: () => ({
 		info: mockLoggerInfo,
 		error: mockLoggerError,
@@ -39,9 +39,7 @@ const originalFetch = globalThis.fetch;
 
 describe("Audit Logger", () => {
 	beforeEach(() => {
-		mockInsert.mockClear();
-		mockLoggerInfo.mockClear();
-		mockLoggerError.mockClear();
+		vi.clearAllMocks();
 	});
 
 	afterEach(() => {

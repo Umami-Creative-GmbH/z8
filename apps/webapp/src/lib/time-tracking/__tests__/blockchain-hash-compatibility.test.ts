@@ -3,6 +3,7 @@
  * This ensures blockchain integrity is maintained after migration
  */
 
+import { describe, expect, it } from "vitest";
 import { DateTime } from "luxon";
 import { calculateHash } from "../blockchain";
 

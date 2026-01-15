@@ -3,7 +3,7 @@
  * These are pure function tests - no mocking required
  */
 
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it } from "vitest";
 import { getTimeAgo } from "../notification-service";
 import {
 	dateDaysAgo,
