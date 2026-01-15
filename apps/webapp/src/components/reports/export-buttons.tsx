@@ -6,7 +6,6 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { exportToCSV, generateCSVFilename } from "@/lib/reports/exporters/csv-exporter";
 import { exportToExcel, generateExcelFilename } from "@/lib/reports/exporters/excel-exporter";
-import { exportToPDF, generatePDFFilename } from "@/lib/reports/exporters/pdf-exporter";
 import type { ReportData } from "@/lib/reports/types";
 
 interface ExportButtonsProps {
@@ -27,6 +26,10 @@ export function ExportButtons({ reportData }: ExportButtonsProps) {
 			let mimeType: string;
 
 			if (format === "pdf") {
+				// Dynamic import to avoid bundling @react-pdf/renderer in the main bundle
+				const { exportToPDF, generatePDFFilename } = await import(
+					"@/lib/reports/exporters/pdf-exporter"
+				);
 				data = await exportToPDF(reportData);
 				filename = generatePDFFilename(reportData);
 				mimeType = "application/pdf";

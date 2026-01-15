@@ -1,6 +1,11 @@
 {
 	"name": "z8",
 	"private": true,
+	"pnpm": {
+		"overrides": {
+			"pako": "1.0.11"
+		}
+	},
 	"workspaces": [
 		"apps/*",
 		"packages/*"
