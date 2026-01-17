@@ -49,10 +49,19 @@ import {
 	type VisibilityState,
 } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
+import dynamic from "next/dynamic";
 import React from "react";
-import { Area, AreaChart, CartesianGrid, XAxis } from "recharts";
 import { toast } from "sonner";
 import { z } from "zod";
+
+// Dynamically import heavy chart components - only loaded when drawer opens
+const Area = dynamic(() => import("recharts").then((mod) => mod.Area), { ssr: false });
+const AreaChart = dynamic(() => import("recharts").then((mod) => mod.AreaChart), { ssr: false });
+const CartesianGrid = dynamic(() => import("recharts").then((mod) => mod.CartesianGrid), {
+	ssr: false,
+});
+const XAxis = dynamic(() => import("recharts").then((mod) => mod.XAxis), { ssr: false });
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -593,9 +602,112 @@ const chartConfig = {
 	},
 } satisfies ChartConfig;
 
-function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
+// Memoized chart section - only renders on desktop, extracted for performance
+const ChartSection = React.memo(function ChartSection({
+	trendingText,
+	descriptionText,
+}: {
+	trendingText: string;
+	descriptionText: string;
+}) {
+	return (
+		<>
+			<ChartContainer config={chartConfig}>
+				<AreaChart
+					accessibilityLayer
+					data={chartData}
+					margin={{
+						left: 0,
+						right: 10,
+					}}
+				>
+					<CartesianGrid vertical={false} />
+					<XAxis
+						axisLine={false}
+						dataKey="month"
+						hide
+						tickFormatter={(value) => value.slice(0, 3)}
+						tickLine={false}
+						tickMargin={8}
+					/>
+					<ChartTooltip content={<ChartTooltipContent indicator="dot" />} cursor={false} />
+					<Area
+						dataKey="mobile"
+						fill="var(--color-mobile)"
+						fillOpacity={0.6}
+						stackId="a"
+						stroke="var(--color-mobile)"
+						type="natural"
+					/>
+					<Area
+						dataKey="desktop"
+						fill="var(--color-desktop)"
+						fillOpacity={0.4}
+						stackId="a"
+						stroke="var(--color-desktop)"
+						type="natural"
+					/>
+				</AreaChart>
+			</ChartContainer>
+			<Separator />
+			<div className="grid gap-2">
+				<div className="flex gap-2 font-medium leading-none">
+					{trendingText} <IconTrendingUp className="size-4" />
+				</div>
+				<div className="text-muted-foreground">{descriptionText}</div>
+			</div>
+			<Separator />
+		</>
+	);
+});
+
+// Memoized TableCellViewer to prevent unnecessary re-renders
+const TableCellViewer = React.memo(function TableCellViewer({
+	item,
+}: {
+	item: z.infer<typeof schema>;
+}) {
 	const isMobile = useIsMobile();
 	const { t } = useTranslate();
+
+	// Pre-compute translations to avoid recalculating in render
+	const translations = React.useMemo(
+		() => ({
+			showingVisitors: t("table.showing-visitors", "Showing total visitors for the last 6 months"),
+			trendingUp: t("table.trending-up", "Trending up by 5.2% this month"),
+			description: t(
+				"table.description",
+				"Showing total visitors for the last 6 months. This is just some random text to test the layout. It spans multiple lines and should wrap around.",
+			),
+			header: t("table.header", "Header"),
+			type: t("table.type", "Type"),
+			selectType: t("table.select-type", "Select a type"),
+			status: t("table.status", "Status"),
+			selectStatus: t("table.select-status", "Select a status"),
+			target: t("table.target", "Target"),
+			limit: t("table.limit", "Limit"),
+			reviewer: t("table.reviewer", "Reviewer"),
+			selectReviewer: t("table.select-reviewer", "Select a reviewer"),
+			submit: t("generic.submit", "Submit"),
+			done: t("generic.done", "Done"),
+			typeOptions: {
+				tableOfContents: t("table.type-options.table-of-contents", "Table of Contents"),
+				executiveSummary: t("table.type-options.executive-summary", "Executive Summary"),
+				technicalApproach: t("table.type-options.technical-approach", "Technical Approach"),
+				design: t("table.type-options.design", "Design"),
+				capabilities: t("table.type-options.capabilities", "Capabilities"),
+				focusDocuments: t("table.type-options.focus-documents", "Focus Documents"),
+				narrative: t("table.type-options.narrative", "Narrative"),
+				coverPage: t("table.type-options.cover-page", "Cover Page"),
+			},
+			statusOptions: {
+				done: t("table.status-options.done", "Done"),
+				inProgress: t("table.status-options.in-progress", "In Progress"),
+				notStarted: t("table.status-options.not-started", "Not Started"),
+			},
+		}),
+		[t],
+	);
 
 	return (
 		<Drawer direction={isMobile ? "bottom" : "right"}>
@@ -607,119 +719,62 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
 			<DrawerContent>
 				<DrawerHeader className="gap-1">
 					<DrawerTitle>{item.header}</DrawerTitle>
-					<DrawerDescription>
-						{t("table.showing-visitors", "Showing total visitors for the last 6 months")}
-					</DrawerDescription>
+					<DrawerDescription>{translations.showingVisitors}</DrawerDescription>
 				</DrawerHeader>
 				<div className="flex flex-col gap-4 overflow-y-auto px-4 text-sm">
 					{!isMobile && (
-						<>
-							<ChartContainer config={chartConfig}>
-								<AreaChart
-									accessibilityLayer
-									data={chartData}
-									margin={{
-										left: 0,
-										right: 10,
-									}}
-								>
-									<CartesianGrid vertical={false} />
-									<XAxis
-										axisLine={false}
-										dataKey="month"
-										hide
-										tickFormatter={(value) => value.slice(0, 3)}
-										tickLine={false}
-										tickMargin={8}
-									/>
-									<ChartTooltip content={<ChartTooltipContent indicator="dot" />} cursor={false} />
-									<Area
-										dataKey="mobile"
-										fill="var(--color-mobile)"
-										fillOpacity={0.6}
-										stackId="a"
-										stroke="var(--color-mobile)"
-										type="natural"
-									/>
-									<Area
-										dataKey="desktop"
-										fill="var(--color-desktop)"
-										fillOpacity={0.4}
-										stackId="a"
-										stroke="var(--color-desktop)"
-										type="natural"
-									/>
-								</AreaChart>
-							</ChartContainer>
-							<Separator />
-							<div className="grid gap-2">
-								<div className="flex gap-2 font-medium leading-none">
-									{t("table.trending-up", "Trending up by 5.2% this month")}{" "}
-									<IconTrendingUp className="size-4" />
-								</div>
-								<div className="text-muted-foreground">
-									{t(
-										"table.description",
-										"Showing total visitors for the last 6 months. This is just some random text to test the layout. It spans multiple lines and should wrap around.",
-									)}
-								</div>
-							</div>
-							<Separator />
-						</>
+						<ChartSection
+							trendingText={translations.trendingUp}
+							descriptionText={translations.description}
+						/>
 					)}
 					<form className="flex flex-col gap-4">
 						<div className="flex flex-col gap-3">
-							<Label htmlFor="header">{t("table.header", "Header")}</Label>
+							<Label htmlFor="header">{translations.header}</Label>
 							<Input defaultValue={item.header} id="header" />
 						</div>
 						<div className="grid grid-cols-2 gap-4">
 							<div className="flex flex-col gap-3">
-								<Label htmlFor="type">{t("table.type", "Type")}</Label>
+								<Label htmlFor="type">{translations.type}</Label>
 								<Select defaultValue={item.type}>
 									<SelectTrigger className="w-full" id="type">
-										<SelectValue placeholder={t("table.select-type", "Select a type")} />
+										<SelectValue placeholder={translations.selectType} />
 									</SelectTrigger>
 									<SelectContent>
 										<SelectItem value="Table of Contents">
-											{t("table.type-options.table-of-contents", "Table of Contents")}
+											{translations.typeOptions.tableOfContents}
 										</SelectItem>
 										<SelectItem value="Executive Summary">
-											{t("table.type-options.executive-summary", "Executive Summary")}
+											{translations.typeOptions.executiveSummary}
 										</SelectItem>
 										<SelectItem value="Technical Approach">
-											{t("table.type-options.technical-approach", "Technical Approach")}
+											{translations.typeOptions.technicalApproach}
 										</SelectItem>
-										<SelectItem value="Design">
-											{t("table.type-options.design", "Design")}
-										</SelectItem>
+										<SelectItem value="Design">{translations.typeOptions.design}</SelectItem>
 										<SelectItem value="Capabilities">
-											{t("table.type-options.capabilities", "Capabilities")}
+											{translations.typeOptions.capabilities}
 										</SelectItem>
 										<SelectItem value="Focus Documents">
-											{t("table.type-options.focus-documents", "Focus Documents")}
+											{translations.typeOptions.focusDocuments}
 										</SelectItem>
-										<SelectItem value="Narrative">
-											{t("table.type-options.narrative", "Narrative")}
-										</SelectItem>
-										<SelectItem value="Cover Page">
-											{t("table.type-options.cover-page", "Cover Page")}
-										</SelectItem>
+										<SelectItem value="Narrative">{translations.typeOptions.narrative}</SelectItem>
+										<SelectItem value="Cover Page">{translations.typeOptions.coverPage}</SelectItem>
 									</SelectContent>
 								</Select>
 							</div>
 							<div className="flex flex-col gap-3">
-								<Label htmlFor="status">{t("table.status", "Status")}</Label>
+								<Label htmlFor="status">{translations.status}</Label>
 								<Select defaultValue={item.status}>
 									<SelectTrigger className="w-full" id="status">
-										<SelectValue placeholder={t("table.select-status", "Select a status")} />
+										<SelectValue placeholder={translations.selectStatus} />
 									</SelectTrigger>
 									<SelectContent>
-										<SelectItem value="Done">{t("table.status-options.done", "Done")}</SelectItem>
+										<SelectItem value="Done">{translations.statusOptions.done}</SelectItem>
 										<SelectItem value="In Progress">
-											{t("table.status-options.in-progress", "In Progress")}
+											{translations.statusOptions.inProgress}
 										</SelectItem>
 										<SelectItem value="Not Started">
-											{t("table.status-options.not-started", "Not Started")}
+											{translations.statusOptions.notStarted}
 										</SelectItem>
 									</SelectContent>
 								</Select>
@@ -727,19 +782,19 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
 						</div>
 						<div className="grid grid-cols-2 gap-4">
 							<div className="flex flex-col gap-3">
-								<Label htmlFor="target">{t("table.target", "Target")}</Label>
+								<Label htmlFor="target">{translations.target}</Label>
 								<Input defaultValue={item.target} id="target" />
 							</div>
 							<div className="flex flex-col gap-3">
-								<Label htmlFor="limit">{t("table.limit", "Limit")}</Label>
+								<Label htmlFor="limit">{translations.limit}</Label>
 								<Input defaultValue={item.limit} id="limit" />
 							</div>
 						</div>
 						<div className="flex flex-col gap-3">
-							<Label htmlFor="reviewer">{t("table.reviewer", "Reviewer")}</Label>
+							<Label htmlFor="reviewer">{translations.reviewer}</Label>
 							<Select defaultValue={item.reviewer}>
 								<SelectTrigger className="w-full" id="reviewer">
-									<SelectValue placeholder={t("table.select-reviewer", "Select a reviewer")} />
+									<SelectValue placeholder={translations.selectReviewer} />
 								</SelectTrigger>
 								<SelectContent>
 									<SelectItem value="Eddie Lake">Eddie Lake</SelectItem>
@@ -751,12 +806,12 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
 					</form>
 				</div>
 				<DrawerFooter>
-					<Button>{t("generic.submit", "Submit")}</Button>
+					<Button>{translations.submit}</Button>
 					<DrawerClose asChild>
-						<Button variant="outline">{t("generic.done", "Done")}</Button>
+						<Button variant="outline">{translations.done}</Button>
 					</DrawerClose>
 				</DrawerFooter>
 			</DrawerContent>
 		</Drawer>
 	);
-}
+});

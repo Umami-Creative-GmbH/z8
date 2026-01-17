@@ -3,7 +3,7 @@
 import { IconFingerprint, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { Key } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useReducer } from "react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,20 +23,91 @@ const loginSchema = z.object({
 	password: z.string().min(1, "Password is required"),
 });
 
+// Consolidated form state to reduce re-renders (rerender-functional-setstate)
+type FormState = {
+	email: string;
+	password: string;
+	fieldErrors: Record<string, string>;
+	error: string | null;
+	isLoading: boolean;
+	requires2FA: boolean;
+	otpValue: string;
+	trustDevice: boolean;
+};
+
+type FormAction =
+	| { type: "SET_FIELD"; field: "email" | "password"; value: string }
+	| { type: "SET_FIELD_ERROR"; field: string; error: string }
+	| { type: "CLEAR_FIELD_ERROR"; field: string }
+	| { type: "SET_FIELD_ERRORS"; errors: Record<string, string> }
+	| { type: "SET_ERROR"; error: string | null }
+	| { type: "SET_LOADING"; loading: boolean }
+	| { type: "SET_REQUIRES_2FA"; requires2FA: boolean }
+	| { type: "SET_OTP"; value: string }
+	| { type: "SET_TRUST_DEVICE"; trustDevice: boolean }
+	| { type: "RESET_LOADING" };
+
+const initialState: FormState = {
+	email: "",
+	password: "",
+	fieldErrors: {},
+	error: null,
+	isLoading: false,
+	requires2FA: false,
+	otpValue: "",
+	trustDevice: false,
+};
+
+function formReducer(state: FormState, action: FormAction): FormState {
+	switch (action.type) {
+		case "SET_FIELD": {
+			const newFieldErrors = { ...state.fieldErrors };
+			delete newFieldErrors[action.field];
+			return {
+				...state,
+				[action.field]: action.value,
+				fieldErrors: newFieldErrors,
+				error: null, // Clear general error when typing
+			};
+		}
+		case "SET_FIELD_ERROR":
+			return {
+				...state,
+				fieldErrors: { ...state.fieldErrors, [action.field]: action.error },
+			};
+		case "CLEAR_FIELD_ERROR": {
+			const newFieldErrors = { ...state.fieldErrors };
+			delete newFieldErrors[action.field];
+			return { ...state, fieldErrors: newFieldErrors };
+		}
+		case "SET_FIELD_ERRORS":
+			return { ...state, fieldErrors: action.errors };
+		case "SET_ERROR":
+			return { ...state, error: action.error };
+		case "SET_LOADING":
+			return { ...state, isLoading: action.loading };
+		case "SET_REQUIRES_2FA":
+			return { ...state, requires2FA: action.requires2FA, isLoading: false };
+		case "SET_OTP":
+			return { ...state, otpValue: action.value };
+		case "SET_TRUST_DEVICE":
+			return { ...state, trustDevice: action.trustDevice };
+		case "RESET_LOADING":
+			return { ...state, isLoading: false };
+		default:
+			return state;
+	}
+}
+
 export function LoginForm({ className, ...props }: React.ComponentProps<"div">) {
 	const { t } = useTranslate();
 	const router = useRouter();
-	const [isLoading, setIsLoading] = useState(false);
-	const [error, setError] = useState<string | null>(null);
-	const [formData, setFormData] = useState({
-		email: "",
-		password: "",
-	});
-	const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-	const [requires2FA, setRequires2FA] = useState(false);
-	const [otpValue, setOtpValue] = useState("");
-	const [trustDevice, setTrustDevice] = useState(false);
+	const [state, dispatch] = useReducer(formReducer, initialState);
 	const { enabledProviders, isLoading: providersLoading } = useEnabledProviders();
+
+	// Destructure for easier access
+	const { email, password, fieldErrors, error, isLoading, requires2FA, otpValue, trustDevice } =
+		state;
 
 	// Domain auth context for custom domains
 	const domainAuth = useDomainAuth();
@@ -57,132 +128,129 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 
 	// Reset loading state when component mounts (e.g., after logout redirect)
 	useEffect(() => {
-		setIsLoading(false);
+		dispatch({ type: "RESET_LOADING" });
 	}, []);
 
-	const handleChange = (field: string, value: string) => {
-		setFormData((prev) => ({ ...prev, [field]: value }));
-		// Clear error for this field when user starts typing
-		if (fieldErrors[field]) {
-			setFieldErrors((prev) => {
-				const newErrors = { ...prev };
-				delete newErrors[field];
-				return newErrors;
-			});
-		}
-		// Clear general error when user starts typing
-		if (error) {
-			setError(null);
-		}
-	};
+	// Memoized handlers to prevent unnecessary re-renders
+	const handleChange = useCallback((field: "email" | "password", value: string) => {
+		dispatch({ type: "SET_FIELD", field, value });
+	}, []);
 
-	const clearFieldError = (field: string) => {
-		setFieldErrors((prev) => {
-			const newErrors = { ...prev };
-			delete newErrors[field];
-			return newErrors;
-		});
-	};
+	const validateEmail = useCallback(
+		(value: string) => {
+			const result = z.string().email().safeParse(value);
+			if (result.success) {
+				dispatch({ type: "CLEAR_FIELD_ERROR", field: "email" });
+			} else {
+				dispatch({
+					type: "SET_FIELD_ERROR",
+					field: "email",
+					error: t("validation.invalid-email", "Invalid email address"),
+				});
+			}
+		},
+		[t],
+	);
 
-	const setFieldError = (field: string, message: string) => {
-		setFieldErrors((prev) => ({
-			...prev,
-			[field]: message,
-		}));
-	};
+	const validatePassword = useCallback(
+		(value: string) => {
+			if (value.length === 0) {
+				dispatch({
+					type: "SET_FIELD_ERROR",
+					field: "password",
+					error: t("validation.password-required", "Password is required"),
+				});
+			} else {
+				dispatch({ type: "CLEAR_FIELD_ERROR", field: "password" });
+			}
+		},
+		[t],
+	);
 
-	const validateEmail = (value: string) => {
-		const result = z.string().email().safeParse(value);
-		if (result.success) {
-			clearFieldError("email");
-		} else {
-			setFieldError("email", t("validation.invalid-email", "Invalid email address"));
-		}
-	};
+	const validateField = useCallback(
+		(field: string, value: string) => {
+			switch (field) {
+				case "email":
+					validateEmail(value);
+					break;
+				case "password":
+					validatePassword(value);
+					break;
+				default:
+					break;
+			}
+		},
+		[validateEmail, validatePassword],
+	);
 
-	const validatePassword = (value: string) => {
-		if (value.length === 0) {
-			setFieldError("password", t("validation.password-required", "Password is required"));
-		} else {
-			clearFieldError("password");
-		}
-	};
-
-	const validateField = (field: string, value: string) => {
-		switch (field) {
-			case "email":
-				validateEmail(value);
-				break;
-			case "password":
-				validatePassword(value);
-				break;
-			default:
-				break;
-		}
-	};
-
-	const handleValidationErrors = (errors: z.ZodError) => {
+	const handleValidationErrors = useCallback((errors: z.ZodError) => {
 		const errorMap: Record<string, string> = {};
 		for (const err of errors.issues) {
 			if (err.path[0]) {
 				errorMap[err.path[0] as string] = err.message;
 			}
 		}
-		setFieldErrors(errorMap);
-	};
+		dispatch({ type: "SET_FIELD_ERRORS", errors: errorMap });
+	}, []);
 
 	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
-		setIsLoading(true);
-		setError(null);
+		dispatch({ type: "SET_LOADING", loading: true });
+		dispatch({ type: "SET_ERROR", error: null });
 
-		const result = loginSchema.safeParse(formData);
+		const result = loginSchema.safeParse({ email, password });
 
 		if (!result.success) {
 			handleValidationErrors(result.error);
-			setIsLoading(false);
+			dispatch({ type: "SET_LOADING", loading: false });
 			return;
 		}
 
 		try {
 			const signInResult = await authClient.signIn.email(
 				{
-					email: formData.email,
-					password: formData.password,
+					email,
+					password,
 				},
 				{
 					onError: (ctx) => {
-						setIsLoading(false);
+						dispatch({ type: "SET_LOADING", loading: false });
 						if (ctx.error.status === 403) {
 							// Email not verified
-							setError(
-								t(
+							dispatch({
+								type: "SET_ERROR",
+								error: t(
 									"auth.email-not-verified",
 									"Please verify your email address before signing in. Check your inbox for the verification link.",
 								),
-							);
+							});
 							// Optionally redirect to verification pending page
 							setTimeout(() => {
 								router.push("/verify-email-pending");
 							}, 3000);
 						} else {
-							setError(ctx.error.message || t("auth.login-failed", "Failed to sign in"));
+							dispatch({
+								type: "SET_ERROR",
+								error: ctx.error.message || t("auth.login-failed", "Failed to sign in"),
+							});
 						}
 					},
 				},
 			);
 
 			if (signInResult.error) {
-				setIsLoading(false);
+				dispatch({ type: "SET_LOADING", loading: false });
 				// Error already handled in onError callback
 				if (signInResult.error.status !== 403) {
-					setError(signInResult.error.message || t("auth.login-failed", "Failed to sign in"));
+					dispatch({
+						type: "SET_ERROR",
+						error: signInResult.error.message || t("auth.login-failed", "Failed to sign in"),
+					});
 				}
 			} else {
 				// Check if 2FA is required
 				if ((signInResult.data as any)?.twoFactorRedirect) {
-					setRequires2FA(true);
-					setIsLoading(false);
+					dispatch({ type: "SET_REQUIRES_2FA", requires2FA: true });
 					return;
 				}
 
@@ -198,8 +266,8 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 							return;
 						}
 					}
-				} catch (error) {
-					console.error("Error checking onboarding status:", error);
+				} catch (fetchError) {
+					console.error("Error checking onboarding status:", fetchError);
 					// Continue to dashboard if check fails
 				}
 
@@ -207,44 +275,56 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 				router.push("/");
 			}
 		} catch (err) {
-			setIsLoading(false);
-			setError(
-				err instanceof Error
-					? err.message
-					: t("auth.login-error", "An error occurred during sign in"),
-			);
-		}
-	};
-
-	const handleSocialLogin = async (provider: "google" | "github" | "linkedin" | "apple") => {
-		setIsLoading(true);
-		setError(null);
-
-		try {
-			await authClient.signIn.social({
-				provider,
-				callbackURL: "/",
+			dispatch({ type: "SET_LOADING", loading: false });
+			dispatch({
+				type: "SET_ERROR",
+				error:
+					err instanceof Error
+						? err.message
+						: t("auth.login-error", "An error occurred during sign in"),
 			});
-		} catch (err) {
-			setIsLoading(false);
-			setError(
-				err instanceof Error
-					? err.message
-					: t("auth.social-login-error", "An error occurred during social sign-in"),
-			);
 		}
 	};
 
-	const handlePasskeyLogin = async () => {
-		setIsLoading(true);
+	const handleSocialLogin = useCallback(
+		async (provider: "google" | "github" | "linkedin" | "apple") => {
+			dispatch({ type: "SET_LOADING", loading: true });
+			dispatch({ type: "SET_ERROR", error: null });
+
+			try {
+				await authClient.signIn.social({
+					provider,
+					callbackURL: "/",
+				});
+			} catch (err) {
+				dispatch({ type: "SET_LOADING", loading: false });
+				dispatch({
+					type: "SET_ERROR",
+					error:
+						err instanceof Error
+							? err.message
+							: t("auth.social-login-error", "An error occurred during social sign-in"),
+				});
+			}
+		},
+		[t],
+	);
+
+	const handlePasskeyLogin = useCallback(async () => {
+		dispatch({ type: "SET_LOADING", loading: true });
 		try {
 			const result = await authClient.signIn.passkey({
 				autoFill: false,
 			});
 
 			if (result.error) {
-				setError(result.error.message || t("auth.passkey-login-failed", "Failed to sign in with passkey"));
-				setIsLoading(false);
+				dispatch({
+					type: "SET_ERROR",
+					error:
+						result.error.message ||
+						t("auth.passkey-login-failed", "Failed to sign in with passkey"),
+				});
+				dispatch({ type: "SET_LOADING", loading: false });
 			} else {
 				// Check onboarding status first
 				try {
@@ -257,26 +337,32 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 							return;
 						}
 					}
-				} catch (error) {
-					console.error("Error checking onboarding status:", error);
+				} catch (fetchError) {
+					console.error("Error checking onboarding status:", fetchError);
 				}
 
 				router.push("/");
 			}
 		} catch (_error) {
-			setError(t("auth.passkey-login-failed", "Failed to sign in with passkey"));
-			setIsLoading(false);
+			dispatch({
+				type: "SET_ERROR",
+				error: t("auth.passkey-login-failed", "Failed to sign in with passkey"),
+			});
+			dispatch({ type: "SET_LOADING", loading: false });
 		}
-	};
+	}, [t, router]);
 
-	const handleSSOLogin = async () => {
+	const handleSSOLogin = useCallback(async () => {
 		if (!authConfig?.ssoProviderId) {
-			setError(t("auth.sso-not-configured", "SSO is not configured for this domain"));
+			dispatch({
+				type: "SET_ERROR",
+				error: t("auth.sso-not-configured", "SSO is not configured for this domain"),
+			});
 			return;
 		}
 
-		setIsLoading(true);
-		setError(null);
+		dispatch({ type: "SET_LOADING", loading: true });
+		dispatch({ type: "SET_ERROR", error: null });
 
 		try {
 			await (authClient.sso as any).signIn({
@@ -284,23 +370,28 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 				callbackURL: "/",
 			});
 		} catch (err) {
-			setIsLoading(false);
-			setError(
-				err instanceof Error
-					? err.message
-					: t("auth.sso-login-error", "An error occurred during SSO sign-in"),
-			);
+			dispatch({ type: "SET_LOADING", loading: false });
+			dispatch({
+				type: "SET_ERROR",
+				error:
+					err instanceof Error
+						? err.message
+						: t("auth.sso-login-error", "An error occurred during SSO sign-in"),
+			});
 		}
-	};
+	}, [authConfig?.ssoProviderId, t]);
 
-	const handleVerify2FA = async () => {
+	const handleVerify2FA = useCallback(async () => {
 		if (otpValue.length !== 6) {
-			setError(t("auth.invalid-2fa-code", "Please enter a valid 6-digit code"));
+			dispatch({
+				type: "SET_ERROR",
+				error: t("auth.invalid-2fa-code", "Please enter a valid 6-digit code"),
+			});
 			return;
 		}
 
-		setIsLoading(true);
-		setError(null);
+		dispatch({ type: "SET_LOADING", loading: true });
+		dispatch({ type: "SET_ERROR", error: null });
 
 		try {
 			const result = await authClient.twoFactor.verifyTotp({
@@ -309,10 +400,12 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 			});
 
 			if (result.error) {
-				setError(
-					result.error.message || t("auth.2fa-verification-failed", "2FA verification failed"),
-				);
-				setIsLoading(false);
+				dispatch({
+					type: "SET_ERROR",
+					error:
+						result.error.message || t("auth.2fa-verification-failed", "2FA verification failed"),
+				});
+				dispatch({ type: "SET_LOADING", loading: false });
 			} else {
 				// Check onboarding status first
 				try {
@@ -326,8 +419,8 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 							return;
 						}
 					}
-				} catch (error) {
-					console.error("Error checking onboarding status:", error);
+				} catch (fetchError) {
+					console.error("Error checking onboarding status:", fetchError);
 					// Continue to dashboard if check fails
 				}
 
@@ -335,14 +428,16 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 				router.push("/");
 			}
 		} catch (err) {
-			setError(
-				err instanceof Error
-					? err.message
-					: t("auth.2fa-verification-error", "An error occurred during 2FA verification"),
-			);
-			setIsLoading(false);
+			dispatch({
+				type: "SET_ERROR",
+				error:
+					err instanceof Error
+						? err.message
+						: t("auth.2fa-verification-error", "An error occurred during 2FA verification"),
+			});
+			dispatch({ type: "SET_LOADING", loading: false });
 		}
-	};
+	}, [otpValue, trustDevice, t, router]);
 
 	return (
 		<AuthFormWrapper
@@ -392,7 +487,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 							placeholder={t("auth.email-placeholder", "m@example.com")}
 							required
 							type="email"
-							value={formData.email}
+							value={email}
 							disabled={requires2FA}
 						/>
 						{fieldErrors.email ? (
@@ -411,7 +506,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 							}}
 							required
 							type="password"
-							value={formData.password}
+							value={password}
 							disabled={requires2FA}
 						/>
 						{fieldErrors.password ? (
@@ -425,7 +520,11 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 					<div className="grid gap-3">
 						<Label htmlFor="otp">{t("auth.2fa-code", "Two-Factor Authentication Code")}</Label>
 						<div className="flex justify-center">
-							<InputOTP maxLength={6} value={otpValue} onChange={setOtpValue}>
+							<InputOTP
+								maxLength={6}
+								value={otpValue}
+								onChange={(value) => dispatch({ type: "SET_OTP", value })}
+							>
 								<InputOTPGroup>
 									<InputOTPSlot index={0} />
 									<InputOTPSlot index={1} />
@@ -441,7 +540,13 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 						</p>
 					</div>
 					<div className="flex items-center justify-center space-x-2">
-						<Switch id="trustDevice" checked={trustDevice} onCheckedChange={setTrustDevice} />
+						<Switch
+							id="trustDevice"
+							checked={trustDevice}
+							onCheckedChange={(checked) =>
+								dispatch({ type: "SET_TRUST_DEVICE", trustDevice: checked })
+							}
+						/>
 						<Label htmlFor="trustDevice" className="cursor-pointer">
 							{t("auth.remember-device", "Remember this device for 30 days")}
 						</Label>
