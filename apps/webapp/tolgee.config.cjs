@@ -10,7 +10,7 @@ module.exports = {
 	patterns: ["./src/**/*.ts?(x)"],
 	push: {
 		filesTemplate: "./messages/{languageTag}.json",
-		language: ["en", "de"],
+		language: ["en", "de", "fr", "es", "it", "pt"],
 	},
 	pull: {
 		path: "./messages",

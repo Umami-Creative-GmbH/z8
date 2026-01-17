@@ -1,3 +1,16 @@
+# Code Validation Requirements
+
+## IMPORTANT: Validate All Changes
+
+Every code change should be validated using the following skills before considering work complete:
+
+1. **`/vercel-react-best-practices`** - Validates React and Next.js performance optimization patterns
+2. **`/web-design-guidelines`** - Reviews UI code for accessibility, design, and UX best practices
+
+Run these validations after implementing changes to ensure code quality and adherence to best practices.
+
+---
+
 # Better Auth Schema Instructions
 
 ## CRITICAL: Do NOT Manually Edit auth-schema.ts

@@ -7,6 +7,15 @@ const nextConfig: NextConfig = {
 	reactStrictMode: true,
 	reactCompiler: true,
 	cacheComponents: false,
+	experimental: {
+		optimizePackageImports: [
+			"@tabler/icons-react",
+			"lucide-react",
+			"recharts",
+			"date-fns",
+			"@radix-ui/react-icons",
+		],
+	},
 	// Use Valkey for distributed caching (enabled when VALKEY_HOST is set)
 	...(process.env.VALKEY_HOST
 		? {
