@@ -111,10 +111,6 @@ These fields are automatically included when their plugins are enabled - do NOT 
 ### User table
 - `canCreateOrganizations` - Permission to create organizations
 - `invitedVia` - Tracks which invitation was used
-- `onboardingComplete` - Onboarding completion status
-- `onboardingStep` - Current onboarding step
-- `onboardingStartedAt` - When onboarding started
-- `onboardingCompletedAt` - When onboarding finished
 - `timezone` - User's timezone preference (e.g., "UTC", "America/New_York")
 
 ### Organization table
@@ -123,6 +119,8 @@ These fields are automatically included when their plugins are enabled - do NOT 
 
 ### Invitation table
 - `canCreateOrganizations` - Permission grant during invitation
+
+**Note:** Onboarding and wellness fields are stored in `userSettings` table, not the auth user table.
 
 ---
 
@@ -143,6 +141,31 @@ export const authClient = createAuthClient({
   ],
 });
 ```
+
+---
+
+# User Settings Pattern
+
+## When to Use userSettings vs User table
+
+Use the **userSettings table** (`src/db/schema.ts`) for:
+- User preferences that are NOT part of authentication
+- UI/UX preferences (dashboard layout, theme preferences)
+- Feature-specific settings (notification intervals, widget order)
+- Data that may grow or change frequently
+
+Use the **User table** (via Better Auth) for:
+- Core user identity (name, email, image)
+- Authentication-related fields
+- Permissions and roles
+- Fields needed during auth flow
+
+## Adding New User Preferences
+
+1. Define a typed interface for the preference data
+2. Add a new column with `text("column_name").$type<YourType>()`
+3. Add server actions in the relevant actions file
+4. Add query keys to `src/lib/query/keys.ts`
 
 ---
 
@@ -276,3 +299,34 @@ Use components from `src/components/ui/tanstack-form.tsx`:
 - Export feature forms (`src/components/settings/export/`)
 - Break-rule feature (new feature to be implemented)
 - Other forms as they need updates
+
+---
+
+# Date/Time Library: Luxon
+
+This project uses **Luxon** for all date and time operations. Do not use native JavaScript `Date` or other date libraries.
+
+## Why Luxon?
+
+- Immutable, chainable API
+- Excellent timezone support
+- Built-in internationalization
+- Works well with ISO 8601 formats
+
+## Basic Usage
+
+```typescript
+import { DateTime } from 'luxon'
+
+// Current time
+const now = DateTime.now()
+
+// Parse ISO string
+const dt = DateTime.fromISO('2024-01-15T10:30:00')
+
+// Format for display
+dt.toLocaleString(DateTime.DATE_MED)
+
+// Timezone conversion
+dt.setZone('America/New_York')
+```

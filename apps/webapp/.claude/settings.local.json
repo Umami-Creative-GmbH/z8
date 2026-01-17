@@ -40,7 +40,13 @@
       "Bash(pnpm build:*)",
       "Bash(pnpm tsc:*)",
       "Bash(pnpm test:*)",
-      "Bash(pnpm exec tsc:*)"
+      "Bash(pnpm exec tsc:*)",
+      "Bash(pnpm dlx:*)",
+      "Bash(pnpm drizzle-kit push:*)",
+      "Bash(cd:*)",
+      "Skill(vercel-react-best-practices)",
+      "Skill(web-design-guidelines)",
+      "Bash(pnpm list:*)"
     ]
   },
   "enabledMcpjsonServers": [
