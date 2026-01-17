@@ -1,0 +1,111 @@
+---
+title: Telemetry & Analytics
+description: Understanding what data is collected and how privacy is protected
+icon: ChartPie
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+## Overview
+
+Z8 collects minimal, anonymous telemetry data to help improve the product. This page explains what data is collected, how it's used, and your privacy rights.
+
+<Callout type="info">
+All telemetry data is anonymized and aggregated. No personally identifiable information (PII) is ever collected or transmitted.
+</Callout>
+
+---
+
+## What We Collect
+
+### Anonymous Usage Metrics
+
+The following aggregated metrics help us understand how Z8 is used:
+
+| Metric | Purpose |
+|--------|---------|
+| **Feature usage counts** | Identify popular features and prioritize development |
+| **Error rates** | Detect and fix bugs proactively |
+| **Performance metrics** | Monitor and optimize application speed |
+| **Browser/OS distribution** | Ensure compatibility with common platforms |
+
+### What We Do NOT Collect
+
+- Employee names or personal information
+- Time entry content or notes
+- Project names or descriptions
+- IP addresses or location data
+- Any content you enter into the system
+
+---
+
+## Deployment ID
+
+Each Z8 installation has a unique **Deployment ID**:
+
+- Generated randomly during installation
+- Used to differentiate between deployments in aggregated data
+- Contains no information about your organization
+- Cannot be traced back to your company or users
+
+<Callout type="info">
+The Deployment ID is a random UUID (e.g., `a1b2c3d4-e5f6-7890-abcd-ef1234567890`) with no embedded information.
+</Callout>
+
+---
+
+## Privacy & GDPR Compliance
+
+### Data Protection Principles
+
+Z8 telemetry follows strict privacy principles:
+
+1. **Data Minimization**: Only essential metrics are collected
+2. **Anonymization**: All data is anonymized before transmission
+3. **Aggregation**: Data is aggregated across deployments
+4. **No PII**: No personally identifiable information is ever collected
+5. **Transparency**: This documentation explains exactly what is collected
+
+### GDPR Compliance
+
+Telemetry data collection is compliant with GDPR requirements:
+
+- **Legal Basis**: Legitimate interest in product improvement
+- **Data Subject Rights**: Not applicable as no personal data is collected
+- **Data Retention**: Aggregated metrics retained for product analytics
+- **Data Location**: Processed in accordance with applicable data protection laws
+
+<Callout type="info">
+Since telemetry contains no personal data, GDPR data subject rights (access, deletion, portability) do not apply to this anonymized data.
+</Callout>
+
+---
+
+## Opting Out
+
+If your organization prefers not to send telemetry data, you can disable it:
+
+1. Go to **Settings** → **System** → **Telemetry**
+2. Toggle **"Send anonymous usage data"** to off
+3. Click **Save**
+
+<Callout type="warn">
+Disabling telemetry means we cannot proactively detect issues affecting your deployment. Consider leaving it enabled to help us improve the product.
+</Callout>
+
+---
+
+## Data Security
+
+All telemetry data is:
+
+- Transmitted over encrypted HTTPS connections
+- Stored in secure, access-controlled systems
+- Never sold or shared with third parties
+- Used exclusively for product improvement
+
+---
+
+## Questions?
+
+If you have questions about telemetry or data privacy, contact your Z8 representative or refer to the full privacy policy.
