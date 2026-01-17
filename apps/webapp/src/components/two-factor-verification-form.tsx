@@ -1,5 +1,6 @@
 "use client";
 
+import { IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -92,6 +93,7 @@ export function TwoFactorVerificationForm() {
 						<Input
 							id="backup-code"
 							type="text"
+							autoComplete="one-time-code"
 							placeholder={t("auth.2fa.backup-code-placeholder", "Enter backup code")}
 							value={backupCode}
 							onChange={(e) => setBackupCode(e.target.value)}
@@ -103,7 +105,7 @@ export function TwoFactorVerificationForm() {
 					<div className="space-y-2">
 						<Label>{t("auth.2fa.code-label", "Authentication Code")}</Label>
 						<div className="flex justify-center">
-							<InputOTP maxLength={6} value={otpValue} onChange={setOtpValue} disabled={isLoading}>
+							<InputOTP maxLength={6} value={otpValue} onChange={setOtpValue} disabled={isLoading} autoComplete="one-time-code">
 								<InputOTPGroup>
 									<InputOTPSlot index={0} />
 									<InputOTPSlot index={1} />
@@ -118,7 +120,14 @@ export function TwoFactorVerificationForm() {
 				)}
 
 				<Button onClick={handleVerify} disabled={isLoading} className="w-full">
-					{isLoading ? t("auth.2fa.verifying", "Verifying...") : t("auth.2fa.verify", "Verify")}
+					{isLoading ? (
+						<>
+							<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+							{t("auth.2fa.verifying", "Verifying...")}
+						</>
+					) : (
+						t("auth.2fa.verify", "Verify")
+					)}
 				</Button>
 
 				<Button

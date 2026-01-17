@@ -76,7 +76,7 @@ export function ProgressIndicator({
 
 					{/* Progress Line */}
 					<div
-						className="absolute left-0 top-5 h-0.5 bg-primary transition-all duration-500"
+						className="absolute left-0 top-5 h-0.5 bg-primary transition-[width] duration-500"
 						style={{ width: `${((currentDisplayOrder - 1) / (steps.length - 1)) * 100}%` }}
 					/>
 
@@ -91,7 +91,7 @@ export function ProgressIndicator({
 									{/* Step Circle */}
 									<div
 										className={cn(
-											"flex h-10 w-10 items-center justify-center rounded-full border-2 bg-background transition-all duration-300",
+											"flex h-10 w-10 items-center justify-center rounded-full border-2 bg-background transition-[border-color,background-color,color] duration-300",
 											{
 												"border-primary bg-primary text-primary-foreground": isCompleted,
 												"border-primary bg-background text-primary": isCurrent,
