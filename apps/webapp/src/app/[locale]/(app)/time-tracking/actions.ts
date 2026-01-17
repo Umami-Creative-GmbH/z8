@@ -5,7 +5,6 @@ import { Effect } from "effect";
 import { DateTime } from "luxon";
 import { headers } from "next/headers";
 import { db } from "@/db";
-import { user } from "@/db/auth-schema";
 import {
 	approvalRequest,
 	employee,
@@ -13,6 +12,7 @@ import {
 	projectAssignment,
 	surchargeCalculation,
 	timeEntry,
+	userSettings,
 	workPeriod,
 } from "@/db/schema";
 import { auth } from "@/lib/auth";
@@ -85,12 +85,12 @@ export async function editSameDayTimeEntry(
 		return { success: false, error: "Employee profile not found" };
 	}
 
-	// Get user's timezone
-	const userData = await db.query.user.findFirst({
-		where: eq(user.id, session.user.id),
+	// Get user's timezone from userSettings
+	const settingsData = await db.query.userSettings.findFirst({
+		where: eq(userSettings.userId, session.user.id),
 		columns: { timezone: true },
 	});
-	const timezone = userData?.timezone || "UTC";
+	const timezone = settingsData?.timezone || "UTC";
 
 	// Get the work period
 	const [period] = await db
@@ -337,16 +337,16 @@ export async function requestTimeCorrectionEffect(
 
 		yield* _(Effect.annotateCurrentSpan("manager.id", currentEmployee.managerId!));
 
-		// Get user's timezone for time conversion
-		const userData = yield* _(
+		// Get user's timezone for time conversion from userSettings
+		const settingsData = yield* _(
 			dbService.query("getUserTimezone", async () => {
-				return await dbService.db.query.user.findFirst({
-					where: eq(user.id, session.user.id),
+				return await dbService.db.query.userSettings.findFirst({
+					where: eq(userSettings.userId, session.user.id),
 					columns: { timezone: true },
 				});
 			}),
 		);
-		const timezone = userData?.timezone || "UTC";
+		const timezone = settingsData?.timezone || "UTC";
 
 		logger.info(
 			{
@@ -903,12 +903,12 @@ export async function clockIn(): Promise<ServerActionResult<typeof timeEntry.$in
 		return { success: false, error: "Employee profile not found" };
 	}
 
-	// Get user's timezone for holiday validation
-	const userData = await db.query.user.findFirst({
-		where: eq(user.id, session.user.id),
+	// Get user's timezone for holiday validation from userSettings
+	const settingsData = await db.query.userSettings.findFirst({
+		where: eq(userSettings.userId, session.user.id),
 		columns: { timezone: true },
 	});
-	const timezone = userData?.timezone || "UTC";
+	const timezone = settingsData?.timezone || "UTC";
 
 	// Check for active work period
 	const activePeriod = await getActiveWorkPeriod(emp.id);
@@ -1015,12 +1015,12 @@ export async function clockOut(projectId?: string): Promise<ServerActionResult<C
 		return { success: false, error: "Employee profile not found" };
 	}
 
-	// Get user's timezone for compliance calculations
-	const userData = await db.query.user.findFirst({
-		where: eq(user.id, session.user.id),
+	// Get user's timezone for compliance calculations from userSettings
+	const settingsData = await db.query.userSettings.findFirst({
+		where: eq(userSettings.userId, session.user.id),
 		columns: { timezone: true },
 	});
-	const timezone = userData?.timezone || "UTC";
+	const timezone = settingsData?.timezone || "UTC";
 
 	// Check for active work period
 	const activePeriod = await getActiveWorkPeriod(emp.id);
@@ -1476,12 +1476,12 @@ export async function getBreakReminderStatus(): Promise<
 		return { success: false, error: "Employee profile not found" };
 	}
 
-	// Get user's timezone for calculations
-	const userData = await db.query.user.findFirst({
-		where: eq(user.id, session.user.id),
+	// Get user's timezone for calculations from userSettings
+	const settingsData = await db.query.userSettings.findFirst({
+		where: eq(userSettings.userId, session.user.id),
 		columns: { timezone: true },
 	});
-	const timezone = userData?.timezone || "UTC";
+	const timezone = settingsData?.timezone || "UTC";
 
 	// Get active work period
 	const activePeriod = await getActiveWorkPeriod(emp.id);

@@ -2,8 +2,7 @@ import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { connection } from "next/server";
 import { db } from "@/db";
-import { user } from "@/db/auth-schema";
-import { employee } from "@/db/schema";
+import { employee, userSettings } from "@/db/schema";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { ClockInOutWidget } from "@/components/time-tracking/clock-in-out-widget";
 import { TimeEntriesTable } from "@/components/time-tracking/time-entries-table";
@@ -20,12 +19,12 @@ export default async function TimeTrackingPage() {
 	const session = (await auth.api.getSession({ headers: await headers() }))!;
 
 	// Parallelize employee and timezone queries - both only need session.user.id
-	const [emp, userData] = await Promise.all([
+	const [emp, settingsData] = await Promise.all([
 		db.query.employee.findFirst({
 			where: eq(employee.userId, session.user.id),
 		}),
-		db.query.user.findFirst({
-			where: eq(user.id, session.user.id),
+		db.query.userSettings.findFirst({
+			where: eq(userSettings.userId, session.user.id),
 			columns: { timezone: true },
 		}),
 	]);
@@ -38,7 +37,7 @@ export default async function TimeTrackingPage() {
 		);
 	}
 
-	const timezone = userData?.timezone || "UTC";
+	const timezone = settingsData?.timezone || "UTC";
 
 	// Use timezone-aware week range so work periods are fetched for the employee's local week
 	const { start, end } = getWeekRangeInTimezone(new Date(), timezone);
