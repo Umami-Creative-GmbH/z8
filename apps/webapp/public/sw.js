@@ -76,6 +76,39 @@ self.addEventListener("push", (event) => {
 	event.waitUntil(self.registration.showNotification(title, options));
 });
 
+// Handle water reminder actions via API
+async function handleWaterReminderAction(actionType) {
+	try {
+		const response = await fetch(new URL("/api/wellness/water-action", self.location.origin).href, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify({
+				action: actionType === "log_water" ? "log" : "snooze",
+				amount: 1,
+			}),
+			credentials: "include",
+		});
+
+		if (response.ok) {
+			const result = await response.json();
+			// Show feedback notification
+			if (actionType === "log_water" && result.goalJustMet) {
+				await self.registration.showNotification("Daily goal reached!", {
+					body: "Keep up the great hydration habit!",
+					icon: "/android-chrome-192x192.png",
+					badge: "/favicon-32x32.png",
+					tag: "water-goal-met",
+					silent: true,
+				});
+			}
+		}
+	} catch (error) {
+		console.error("Failed to process water reminder action:", error);
+	}
+}
+
 // Notification click event - handle user clicking on notification
 self.addEventListener("notificationclick", (event) => {
 	const notification = event.notification;
@@ -84,6 +117,12 @@ self.addEventListener("notificationclick", (event) => {
 
 	// Close the notification
 	notification.close();
+
+	// Handle water reminder specific actions
+	if (data.type === "water_reminder" && (action === "log_water" || action === "snooze_water")) {
+		event.waitUntil(handleWaterReminderAction(action));
+		return;
+	}
 
 	// Determine the URL to open
 	let urlToOpen = data.actionUrl || data.url || "/";

@@ -106,6 +106,8 @@ export const notificationTypeEnum = pgEnum("notification_type", [
 	"project_deadline_warning_1d",
 	"project_deadline_warning_0d",
 	"project_deadline_overdue",
+	// Wellness notifications
+	"water_reminder",
 ]);
 
 export const notificationChannelEnum = pgEnum("notification_channel", ["in_app", "push", "email"]);
@@ -137,6 +139,13 @@ export const surchargeRuleTypeEnum = pgEnum("surcharge_rule_type", [
 	"day_of_week",
 	"time_window",
 	"date_based",
+]);
+
+// Water intake / hydration tracking enums
+export const waterIntakeSourceEnum = pgEnum("water_intake_source", [
+	"reminder_action",
+	"manual",
+	"widget",
 ]);
 
 // ============================================
@@ -3085,3 +3094,112 @@ export const systemConfig = pgTable("system_config", {
 		.$onUpdate(() => currentTimestamp())
 		.notNull(),
 });
+
+// ============================================
+// WELLNESS / HYDRATION TRACKING
+// ============================================
+
+// Individual water intake logs
+export const waterIntakeLog = pgTable(
+	"water_intake_log",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		userId: text("user_id")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+		loggedAt: timestamp("logged_at").defaultNow().notNull(),
+		amount: integer("amount").default(1).notNull(), // number of glasses
+		source: waterIntakeSourceEnum("source").notNull(),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+	},
+	(table) => [
+		index("water_intake_log_userId_idx").on(table.userId),
+		index("water_intake_log_loggedAt_idx").on(table.loggedAt),
+	],
+);
+
+// Hydration stats - user-level, global across all organizations
+export const hydrationStats = pgTable(
+	"hydration_stats",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		userId: text("user_id")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" })
+			.unique(),
+		currentStreak: integer("current_streak").default(0).notNull(),
+		longestStreak: integer("longest_streak").default(0).notNull(),
+		lastGoalMetDate: date("last_goal_met_date"), // last date user met daily goal
+		totalIntakeAllTime: integer("total_intake_all_time").default(0).notNull(),
+		snoozedUntil: timestamp("snoozed_until"), // for "snooze for today"
+		updatedAt: timestamp("updated_at")
+			.$onUpdate(() => currentTimestamp())
+			.notNull(),
+	},
+	(table) => [index("hydration_stats_userId_idx").on(table.userId)],
+);
+
+// Hydration relations
+export const waterIntakeLogRelations = relations(waterIntakeLog, ({ one }) => ({
+	user: one(user, {
+		fields: [waterIntakeLog.userId],
+		references: [user.id],
+	}),
+}));
+
+export const hydrationStatsRelations = relations(hydrationStats, ({ one }) => ({
+	user: one(user, {
+		fields: [hydrationStats.userId],
+		references: [user.id],
+	}),
+}));
+
+// ============================================
+// USER SETTINGS (Dashboard preferences, etc.)
+// ============================================
+
+// Type for dashboard widget order preferences
+export type DashboardWidgetOrder = {
+	order: string[];
+	version: number;
+};
+
+// User-level settings (per-user, not per-organization)
+export const userSettings = pgTable(
+	"user_settings",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		userId: text("user_id")
+			.notNull()
+			.unique()
+			.references(() => user.id, { onDelete: "cascade" }),
+
+		// Dashboard preferences
+		dashboardWidgetOrder: text("dashboard_widget_order").$type<DashboardWidgetOrder>(),
+
+		// Onboarding state
+		onboardingComplete: boolean("onboarding_complete").default(false).notNull(),
+		onboardingStep: text("onboarding_step"),
+		onboardingStartedAt: timestamp("onboarding_started_at"),
+		onboardingCompletedAt: timestamp("onboarding_completed_at"),
+
+		// Water reminder / hydration tracking settings
+		waterReminderEnabled: boolean("water_reminder_enabled").default(false).notNull(),
+		waterReminderPreset: text("water_reminder_preset").default("moderate").notNull(), // light|moderate|active|custom
+		waterReminderIntervalMinutes: integer("water_reminder_interval_minutes").default(45).notNull(),
+		waterReminderDailyGoal: integer("water_reminder_daily_goal").default(8).notNull(), // glasses per day
+
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+		updatedAt: timestamp("updated_at")
+			.$onUpdate(() => currentTimestamp())
+			.notNull(),
+	},
+	(table) => [index("userSettings_userId_idx").on(table.userId)],
+);
+
+export const userSettingsRelations = relations(userSettings, ({ one }) => ({
+	user: one(user, {
+		fields: [userSettings.userId],
+		references: [user.id],
+	}),
+}));

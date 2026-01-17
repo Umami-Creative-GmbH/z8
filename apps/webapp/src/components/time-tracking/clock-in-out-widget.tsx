@@ -12,6 +12,7 @@ import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { BreakReminder } from "@/components/time-tracking/break-reminder";
+import { WaterReminder } from "@/components/wellness/water-reminder";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -207,6 +208,12 @@ export function ClockInOutWidget({ activeWorkPeriod: initialWorkPeriod, employee
 
 				{/* Break reminder when clocked in */}
 				<BreakReminder
+					isClockedIn={isClockedIn}
+					sessionStartTime={activeWorkPeriod?.startTime ?? null}
+				/>
+
+				{/* Water reminder when clocked in */}
+				<WaterReminder
 					isClockedIn={isClockedIn}
 					sessionStartTime={activeWorkPeriod?.startTime ?? null}
 				/>

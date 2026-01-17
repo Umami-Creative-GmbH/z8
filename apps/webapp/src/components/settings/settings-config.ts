@@ -6,6 +6,7 @@ export type SettingsIconName =
 	| "user-circle"
 	| "shield"
 	| "bell"
+	| "droplet"
 	| "building"
 	| "users"
 	| "map-pin"
@@ -106,6 +107,17 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Configure how you receive notifications",
 		href: "/settings/notifications",
 		icon: "bell",
+		adminOnly: false,
+		group: "account",
+	},
+	{
+		id: "wellness",
+		titleKey: "settings.wellness.title",
+		titleDefault: "Wellness",
+		descriptionKey: "settings.wellness.description",
+		descriptionDefault: "Configure water reminders and hydration tracking",
+		href: "/settings/wellness",
+		icon: "droplet",
 		adminOnly: false,
 		group: "account",
 	},
