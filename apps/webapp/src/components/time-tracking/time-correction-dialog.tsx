@@ -1,6 +1,8 @@
 "use client";
 
+import { useForm } from "@tanstack/react-form";
 import { IconEdit, IconLoader2 } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -20,8 +22,14 @@ import {
 	DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+	fieldHasError,
+	TFormControl,
+	TFormItem,
+	TFormLabel,
+	TFormMessage,
+} from "@/components/ui/tanstack-form";
 import { formatTimeInZone, getTimezoneAbbreviation } from "@/lib/time-tracking/timezone-utils";
 
 interface WorkPeriodData {
@@ -37,80 +45,99 @@ interface Props {
 	employeeTimezone: string;
 }
 
+interface FormValues {
+	clockInTime: string;
+	clockOutTime: string;
+	reason: string;
+}
+
 export function TimeCorrectionDialog({ workPeriod, isSameDay, employeeTimezone }: Props) {
+	const { t } = useTranslate();
 	const [open, setOpen] = useState(false);
-	const [loading, setLoading] = useState(false);
 	const router = useRouter();
 	const timezoneAbbr = getTimezoneAbbreviation(employeeTimezone);
 
-	const getInitialFormData = () => ({
+	const getDefaultValues = (): FormValues => ({
 		clockInTime: formatTimeInZone(workPeriod.startTime, employeeTimezone),
 		clockOutTime: workPeriod.endTime ? formatTimeInZone(workPeriod.endTime, employeeTimezone) : "",
 		reason: workPeriod.clockOut?.notes || "",
 	});
 
-	const [formData, setFormData] = useState(getInitialFormData);
+	const form = useForm({
+		defaultValues: getDefaultValues(),
+		onSubmit: async ({ value }) => {
+			// Validate time span - clock out must be after clock in
+			if (value.clockOutTime) {
+				const [inHours, inMinutes] = value.clockInTime.split(":").map(Number);
+				const [outHours, outMinutes] = value.clockOutTime.split(":").map(Number);
+				const clockInMinutes = inHours * 60 + inMinutes;
+				const clockOutMinutes = outHours * 60 + outMinutes;
 
-	// Reset form data when dialog opens to get latest values
+				if (clockOutMinutes <= clockInMinutes) {
+					toast.error(
+						t(
+							"timeTracking.correction.errors.invalidTimeRange",
+							"Clock out time must be after clock in time",
+						),
+					);
+					return;
+				}
+			}
+
+			if (isSameDay) {
+				const result = await editSameDayTimeEntry({
+					workPeriodId: workPeriod.id,
+					newClockInTime: value.clockInTime,
+					newClockOutTime: value.clockOutTime || undefined,
+					reason: value.reason || undefined,
+				});
+
+				if (result.success) {
+					toast.success(
+						t("timeTracking.correction.success.updated", "Time entry updated successfully"),
+					);
+					setOpen(false);
+					router.refresh();
+				} else {
+					toast.error(
+						result.error ||
+							t("timeTracking.correction.errors.updateFailed", "Failed to update time entry"),
+					);
+				}
+			} else {
+				const result = await requestTimeCorrection({
+					workPeriodId: workPeriod.id,
+					newClockInTime: value.clockInTime,
+					newClockOutTime: value.clockOutTime || undefined,
+					reason: value.reason,
+				});
+
+				if (result.success) {
+					toast.success(
+						t(
+							"timeTracking.correction.success.submitted",
+							"Correction request submitted for manager approval",
+						),
+					);
+					setOpen(false);
+				} else {
+					toast.error(
+						result.error ||
+							t(
+								"timeTracking.correction.errors.submitFailed",
+								"Failed to submit correction",
+							),
+					);
+				}
+			}
+		},
+	});
+
 	const handleOpenChange = (isOpen: boolean) => {
 		if (isOpen) {
-			setFormData(getInitialFormData());
+			form.reset(getDefaultValues());
 		}
 		setOpen(isOpen);
-	};
-
-	const handleSubmit = async (e: React.FormEvent) => {
-		e.preventDefault();
-
-		// Validate time span - clock out must be after clock in
-		if (formData.clockOutTime) {
-			const [inHours, inMinutes] = formData.clockInTime.split(":").map(Number);
-			const [outHours, outMinutes] = formData.clockOutTime.split(":").map(Number);
-			const clockInMinutes = inHours * 60 + inMinutes;
-			const clockOutMinutes = outHours * 60 + outMinutes;
-
-			if (clockOutMinutes <= clockInMinutes) {
-				toast.error("Clock out time must be after clock in time");
-				return;
-			}
-		}
-
-		setLoading(true);
-
-		if (isSameDay) {
-			// Direct edit for same-day entries
-			const result = await editSameDayTimeEntry({
-				workPeriodId: workPeriod.id,
-				newClockInTime: formData.clockInTime,
-				newClockOutTime: formData.clockOutTime || undefined,
-				reason: formData.reason || undefined,
-			});
-
-			if (result.success) {
-				toast.success("Time entry updated successfully");
-				setOpen(false);
-				router.refresh();
-			} else {
-				toast.error(result.error || "Failed to update time entry");
-			}
-		} else {
-			// Approval required for past entries
-			const result = await requestTimeCorrection({
-				workPeriodId: workPeriod.id,
-				newClockInTime: formData.clockInTime,
-				newClockOutTime: formData.clockOutTime || undefined,
-				reason: formData.reason,
-			});
-
-			if (result.success) {
-				toast.success("Correction request submitted for manager approval");
-				setOpen(false);
-			} else {
-				toast.error(result.error || "Failed to submit correction");
-			}
-		}
-
-		setLoading(false);
 	};
 
 	return (
@@ -119,86 +146,151 @@ export function TimeCorrectionDialog({ workPeriod, isSameDay, employeeTimezone }
 				<Button variant="ghost" size="icon">
 					<IconEdit className="size-4" />
 					<span className="sr-only">
-						{isSameDay ? "Edit time entry" : "Request time correction"}
+						{isSameDay
+							? t("timeTracking.correction.editEntry", "Edit time entry")
+							: t("timeTracking.correction.requestCorrection", "Request time correction")}
 					</span>
 				</Button>
 			</DialogTrigger>
 			<DialogContent className="sm:max-w-md">
 				<DialogHeader>
-					<DialogTitle>{isSameDay ? "Edit Time Entry" : "Request Time Correction"}</DialogTitle>
+					<DialogTitle>
+						{isSameDay
+							? t("timeTracking.correction.editTitle", "Edit Time Entry")
+							: t("timeTracking.correction.requestTitle", "Request Time Correction")}
+					</DialogTitle>
 					<DialogDescription>
 						{isSameDay
-							? "Make changes to your time entry for today."
-							: "Submit a correction request for this time entry. Your manager will need to approve it."}
+							? t(
+									"timeTracking.correction.editDescription",
+									"Make changes to your time entry for today.",
+								)
+							: t(
+									"timeTracking.correction.requestDescription",
+									"Submit a correction request for this time entry. Your manager will need to approve it.",
+								)}
 					</DialogDescription>
 				</DialogHeader>
-				<form onSubmit={handleSubmit}>
+				<form
+					onSubmit={(e) => {
+						e.preventDefault();
+						form.handleSubmit();
+					}}
+				>
 					<div className="grid gap-4 py-4">
 						<p className="text-xs text-muted-foreground">
-							Times are in your local timezone ({timezoneAbbr})
+							{t(
+								"timeTracking.correction.timezoneNote",
+								"Times are in your local timezone ({timezone})",
+								{ timezone: timezoneAbbr },
+							)}
 						</p>
 						<div className="grid grid-cols-2 gap-4">
-							<div className="flex flex-col gap-2">
-								<Label htmlFor="clockIn">Clock In</Label>
-								<Input
-									type="time"
-									id="clockIn"
-									value={formData.clockInTime}
-									onChange={(e) => setFormData({ ...formData, clockInTime: e.target.value })}
-									required
-								/>
-							</div>
+							<form.Field name="clockInTime">
+								{(field) => (
+									<TFormItem>
+										<TFormLabel hasError={fieldHasError(field)}>
+											{t("timeTracking.correction.clockIn", "Clock In")}
+										</TFormLabel>
+										<TFormControl hasError={fieldHasError(field)}>
+											<Input
+												type="time"
+												name="clockInTime"
+												autoComplete="off"
+												value={field.state.value}
+												onChange={(e) => field.handleChange(e.target.value)}
+												onBlur={field.handleBlur}
+												required
+											/>
+										</TFormControl>
+										<TFormMessage field={field} />
+									</TFormItem>
+								)}
+							</form.Field>
 
 							{workPeriod.endTime && (
-								<div className="flex flex-col gap-2">
-									<Label htmlFor="clockOut">Clock Out</Label>
-									<Input
-										type="time"
-										id="clockOut"
-										value={formData.clockOutTime}
-										onChange={(e) => setFormData({ ...formData, clockOutTime: e.target.value })}
-									/>
-								</div>
+								<form.Field name="clockOutTime">
+									{(field) => (
+										<TFormItem>
+											<TFormLabel hasError={fieldHasError(field)}>
+												{t("timeTracking.correction.clockOut", "Clock Out")}
+											</TFormLabel>
+											<TFormControl hasError={fieldHasError(field)}>
+												<Input
+													type="time"
+													name="clockOutTime"
+													autoComplete="off"
+													value={field.state.value}
+													onChange={(e) => field.handleChange(e.target.value)}
+													onBlur={field.handleBlur}
+												/>
+											</TFormControl>
+											<TFormMessage field={field} />
+										</TFormItem>
+									)}
+								</form.Field>
 							)}
 						</div>
 
-						<div className="flex flex-col gap-2">
-							<Label htmlFor="reason">
-								{isSameDay ? "Note (optional)" : "Reason for Correction"}
-							</Label>
-							<Textarea
-								id="reason"
-								value={formData.reason}
-								onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
-								placeholder={
-									isSameDay
-										? "Add a note about this change..."
-										: "Explain why this correction is needed..."
-								}
-								required={!isSameDay}
-								rows={2}
-							/>
-						</div>
+						<form.Field name="reason">
+							{(field) => (
+								<TFormItem>
+									<TFormLabel hasError={fieldHasError(field)}>
+										{isSameDay
+											? t("timeTracking.correction.noteLabel", "Note (optional)")
+											: t("timeTracking.correction.reasonLabel", "Reason for Correction")}
+									</TFormLabel>
+									<TFormControl hasError={fieldHasError(field)}>
+										<Textarea
+											name="reason"
+											value={field.state.value}
+											onChange={(e) => field.handleChange(e.target.value)}
+											onBlur={field.handleBlur}
+											placeholder={
+												isSameDay
+													? t(
+															"timeTracking.correction.notePlaceholder",
+															"Add a note about this change…",
+														)
+													: t(
+															"timeTracking.correction.reasonPlaceholder",
+															"Explain why this correction is needed…",
+														)
+											}
+											required={!isSameDay}
+											rows={2}
+										/>
+									</TFormControl>
+									<TFormMessage field={field} />
+								</TFormItem>
+							)}
+						</form.Field>
 					</div>
 
 					<DialogFooter className="gap-2 sm:gap-0">
 						<DialogClose asChild>
 							<Button type="button" variant="outline">
-								Cancel
+								{t("common.cancel", "Cancel")}
 							</Button>
 						</DialogClose>
-						<Button type="submit" disabled={loading}>
-							{loading ? (
-								<>
-									<IconLoader2 className="size-4 animate-spin" />
-									{isSameDay ? "Saving..." : "Submitting..."}
-								</>
-							) : isSameDay ? (
-								"Save Changes"
-							) : (
-								"Submit Request"
+						<form.Subscribe selector={(state) => state.isSubmitting}>
+							{(isSubmitting) => (
+								<Button type="submit" disabled={isSubmitting}>
+									{isSubmitting ? (
+										<>
+											<IconLoader2 className="size-4 animate-spin" />
+											{isSameDay
+												? t("timeTracking.correction.saving", "Saving…")
+												: t("timeTracking.correction.submitting", "Submitting…")}
+										</>
+									) : isSameDay ? (
+										t("timeTracking.correction.saveChanges", "Save Changes")
+									) : (
+										t("timeTracking.correction.submitRequest", "Submit Request")
+									)}
+								</Button>
 							)}
-						</Button>
+						</form.Subscribe>
 					</DialogFooter>
 				</form>
 			</DialogContent>

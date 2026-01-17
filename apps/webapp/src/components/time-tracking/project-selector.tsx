@@ -2,7 +2,7 @@
 
 import { IconBriefcase, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Label } from "@/components/ui/label";
 import {
 	Select,
@@ -14,6 +14,9 @@ import {
 import { type AssignedProject, useAssignedProjects } from "@/lib/query/use-assigned-projects";
 
 const LAST_PROJECT_KEY = "z8-last-project-id";
+
+// Cache localStorage read at module level to avoid repeated access
+let cachedLastProjectId: string | null | undefined;
 
 interface ProjectSelectorProps {
 	/**
@@ -53,28 +56,39 @@ export function ProjectSelector({
 	const { projects, isLoading, isError } = useAssignedProjects();
 	const [hasAutoSelected, setHasAutoSelected] = useState(false);
 
+	// Read localStorage once and cache at module level (js-cache-storage)
+	const lastProjectIdRef = useRef<string | null>(null);
+	if (cachedLastProjectId === undefined) {
+		cachedLastProjectId = localStorage.getItem(LAST_PROJECT_KEY);
+	}
+	lastProjectIdRef.current = cachedLastProjectId;
+
+	// Build a Map for O(1) project lookups (js-index-maps)
+	const projectsMap = useMemo(
+		() => new Map(projects.map((p) => [p.id, p])),
+		[projects],
+	);
+
 	// Auto-select last used project on initial load
 	useEffect(() => {
 		if (autoSelectLast && !hasAutoSelected && projects.length > 0 && value === undefined) {
-			const lastProjectId = localStorage.getItem(LAST_PROJECT_KEY);
-			if (lastProjectId) {
-				// Check if the last project is still in the list
-				const lastProject = projects.find((p) => p.id === lastProjectId);
-				if (lastProject) {
-					onValueChange(lastProjectId);
-				}
+			const lastProjectId = lastProjectIdRef.current;
+			if (lastProjectId && projectsMap.has(lastProjectId)) {
+				onValueChange(lastProjectId);
 			}
 			setHasAutoSelected(true);
 		}
-	}, [autoSelectLast, hasAutoSelected, projects, value, onValueChange]);
+	}, [autoSelectLast, hasAutoSelected, projects.length, projectsMap, value, onValueChange]);
 
-	// Save selected project to localStorage
+	// Save selected project to localStorage and update cache
 	const handleValueChange = (newValue: string) => {
 		if (newValue === "none") {
 			localStorage.removeItem(LAST_PROJECT_KEY);
+			cachedLastProjectId = null;
 			onValueChange(undefined);
 		} else {
 			localStorage.setItem(LAST_PROJECT_KEY, newValue);
+			cachedLastProjectId = newValue;
 			onValueChange(newValue);
 		}
 	};
@@ -95,7 +109,7 @@ export function ProjectSelector({
 				)}
 				<div className="flex h-9 items-center gap-2 text-sm text-muted-foreground">
 					<IconLoader2 className="size-4 animate-spin" />
-					{t("common.loading", "Loading...")}
+					{t("common.loading", "Loading…")}
 				</div>
 			</div>
 		);
@@ -117,7 +131,7 @@ export function ProjectSelector({
 				<SelectTrigger className="w-full">
 					<SelectValue placeholder={t("timeTracking.selectProject", "Select a project")}>
 						{value ? (
-							<ProjectOption project={projects.find((p) => p.id === value)} />
+							<ProjectOption project={projectsMap.get(value)} />
 						) : (
 							<span className="text-muted-foreground">
 								{t("timeTracking.noProject", "No project")}

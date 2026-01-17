@@ -7,9 +7,15 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
-import { useTimeClock } from "@/lib/query";
+import { useElapsedTimer, useTimeClock } from "@/lib/query";
 import { formatDurationWithSeconds } from "@/lib/time-tracking/time-utils";
 import { ProjectSelector } from "./project-selector";
+
+// Hoist DateTimeFormat to avoid recreation on each render (js-hoist-regexp)
+const timeFormatter = new Intl.DateTimeFormat(undefined, {
+	hour: "2-digit",
+	minute: "2-digit",
+});
 
 export function TimeClockPopover() {
 	const { t } = useTranslate();
@@ -19,7 +25,6 @@ export function TimeClockPopover() {
 		hasEmployee,
 		isClockedIn,
 		activeWorkPeriod,
-		elapsedSeconds,
 		isLoading,
 		clockIn,
 		clockOut,
@@ -28,6 +33,9 @@ export function TimeClockPopover() {
 		isUpdatingNotes,
 		isMutating,
 	} = useTimeClock();
+
+	// Separate timer hook to isolate per-second re-renders to this component only
+	const elapsedSeconds = useElapsedTimer(activeWorkPeriod?.startTime ?? null);
 
 	// State for showing notes input after clock-out
 	const [showNotesInput, setShowNotesInput] = useState(false);
@@ -145,7 +153,7 @@ export function TimeClockPopover() {
 						{isClockedIn ? t("header.clock-out", "Clock Out") : t("header.clock-in", "Clock In")}
 					</span>
 					{isClockedIn && (
-						<span className="hidden md:inline text-xs opacity-80">
+						<span className="hidden md:inline text-xs tabular-nums opacity-80">
 							{formatDurationWithSeconds(elapsedSeconds)}
 						</span>
 					)}
@@ -163,6 +171,8 @@ export function TimeClockPopover() {
 								{t("timeTracking.addNotePrompt", "Add a note about your work (optional)")}
 							</div>
 							<Textarea
+								name="notes"
+								autoComplete="off"
 								placeholder={t("timeTracking.notesPlaceholder", "What did you work on?")}
 								value={notesText}
 								onChange={(e) => setNotesText(e.target.value)}
@@ -210,10 +220,7 @@ export function TimeClockPopover() {
 									</div>
 									<div className="text-muted-foreground text-sm">
 										{t("timeTracking.startedAt", "Started at")}{" "}
-										{new Date(activeWorkPeriod.startTime).toLocaleTimeString("en-US", {
-											hour: "2-digit",
-											minute: "2-digit",
-										})}
+										{timeFormatter.format(new Date(activeWorkPeriod.startTime))}
 									</div>
 								</div>
 							)}
@@ -238,8 +245,8 @@ export function TimeClockPopover() {
 									<>
 										<IconLoader2 className="size-4 animate-spin" />
 										{isClockingOut
-											? t("timeTracking.clockingOut", "Clocking Out...")
-											: t("timeTracking.clockingIn", "Clocking In...")}
+											? t("timeTracking.clockingOut", "Clocking Out…")
+											: t("timeTracking.clockingIn", "Clocking In…")}
 									</>
 								) : isClockedIn ? (
 									<>

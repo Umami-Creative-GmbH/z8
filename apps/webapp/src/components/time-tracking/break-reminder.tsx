@@ -3,16 +3,21 @@
 import { IconAlertTriangle, IconCoffee, IconX } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import { getBreakReminderStatus } from "@/app/[locale]/(app)/time-tracking/actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { queryKeys } from "@/lib/query";
+import { queryKeys, useElapsedTimer } from "@/lib/query";
+
+/** Warning threshold: show reminder when this many minutes remain */
+const WARNING_THRESHOLD_MINUTES = 15;
 
 interface BreakReminderProps {
 	/** Whether the user is currently clocked in */
 	isClockedIn: boolean;
+	/** Start time of current work session (for calculating elapsed time) */
+	sessionStartTime: Date | null;
 	/** Callback when user dismisses the reminder */
 	onDismiss?: () => void;
 }
@@ -24,21 +29,20 @@ interface BreakReminderProps {
  * - User is approaching maximum uninterrupted work time
  * - User has outstanding break requirements
  *
- * The reminder is shown as an alert within the time tracking widget.
+ * Optimization: Fetches break rules once when clocked in, then calculates
+ * status client-side using useElapsedTimer. No polling required.
  */
-export function BreakReminder({ isClockedIn, onDismiss }: BreakReminderProps) {
+export function BreakReminder({ isClockedIn, sessionStartTime, onDismiss }: BreakReminderProps) {
 	const { t } = useTranslate();
 	const [dismissed, setDismissed] = useState(false);
 
-	// Reset dismissed state when user clocks in again
-	useEffect(() => {
-		if (isClockedIn) {
-			setDismissed(false);
-		}
-	}, [isClockedIn]);
+	// Use elapsed timer for real-time updates (only causes re-renders in this component)
+	const elapsedSeconds = useElapsedTimer(isClockedIn ? sessionStartTime : null);
+	const elapsedMinutes = Math.floor(elapsedSeconds / 60);
 
-	// Query break status every minute while clocked in
-	const { data: breakStatus } = useQuery({
+	// Fetch break rules ONCE when clocked in (no polling!)
+	// The server returns static config: maxUninterrupted, breakRequirement baseline
+	const { data: serverData } = useQuery({
 		queryKey: queryKeys.timeClock.breakStatus(),
 		queryFn: async () => {
 			const result = await getBreakReminderStatus();
@@ -48,9 +52,53 @@ export function BreakReminder({ isClockedIn, onDismiss }: BreakReminderProps) {
 			return result.data;
 		},
 		enabled: isClockedIn && !dismissed,
-		refetchInterval: 60 * 1000, // Refresh every minute
-		staleTime: 30 * 1000, // Consider stale after 30 seconds
+		// No refetchInterval - fetch once, calculate locally
+		staleTime: Infinity, // Never consider stale during this session
+		gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes after unmount
 	});
+
+	// Calculate current break status client-side using elapsed time
+	const breakStatus = useMemo(() => {
+		if (!serverData) return null;
+
+		const maxUninterrupted = serverData.maxUninterrupted;
+		// Use elapsed minutes from client-side timer instead of server's snapshot
+		const uninterruptedMinutes = elapsedMinutes;
+
+		let minutesUntilBreakRequired: number | null = null;
+		let needsBreakSoon = false;
+
+		if (maxUninterrupted) {
+			minutesUntilBreakRequired = maxUninterrupted - uninterruptedMinutes;
+
+			// Show warning when approaching limit
+			if (minutesUntilBreakRequired <= WARNING_THRESHOLD_MINUTES) {
+				needsBreakSoon = true;
+			}
+		}
+
+		// Also check if break requirement exists
+		if (serverData.breakRequirement && serverData.breakRequirement.remaining > 0) {
+			needsBreakSoon = true;
+		}
+
+		return {
+			needsBreakSoon,
+			uninterruptedMinutes,
+			maxUninterrupted,
+			minutesUntilBreakRequired,
+			breakRequirement: serverData.breakRequirement,
+		};
+	}, [serverData, elapsedMinutes]);
+
+	// Reset dismissed state when user clocks in again
+	// Using a key based on sessionStartTime would be cleaner, but this works
+	const sessionKey = sessionStartTime?.getTime() ?? 0;
+	useMemo(() => {
+		if (isClockedIn && sessionKey > 0) {
+			setDismissed(false);
+		}
+	}, [isClockedIn, sessionKey]);
 
 	// Don't show if not clocked in, dismissed, or no break needed
 	if (!isClockedIn || dismissed || !breakStatus?.needsBreakSoon) {
