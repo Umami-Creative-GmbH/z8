@@ -21,7 +21,7 @@ export function PublishFab({ draftCount, onPublish, isPublishing }: PublishFabPr
 					disabled={isPublishing}
 					className={cn(
 						"fixed bottom-6 right-6 h-14 rounded-full shadow-lg",
-						"hover:shadow-xl transition-all",
+						"hover:shadow-xl transition-shadow",
 						"bg-primary hover:bg-primary/90",
 						draftCount > 0 && "animate-pulse",
 					)}

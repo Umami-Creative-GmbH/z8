@@ -9,51 +9,10 @@ import {
 	createViewMonthGrid,
 	createViewWeek,
 } from "@schedule-x/calendar";
-
-// CSS to constrain calendar height and enable internal scrolling
-// Applied via style tag since Tailwind layers don't work well with third-party class names
-const scheduleXStyles = `
-  .sx__calendar-header,
-  .sx__view-selection {
-    display: none !important;
-  }
-  .schedule-x-container .sx-react-calendar-wrapper {
-    height: 100% !important;
-  }
-  .schedule-x-container .sx__calendar-wrapper {
-    height: 100% !important;
-  }
-  .schedule-x-container .sx__calendar {
-    height: 100% !important;
-    display: flex !important;
-    flex-direction: column !important;
-    overflow: hidden !important;
-  }
-  .schedule-x-container .sx__view-container {
-    flex: 1 !important;
-    min-height: 0 !important;
-    overflow-y: auto !important;
-  }
-  .schedule-x-container .sx__week-wrapper,
-  .schedule-x-container .sx__time-grid-wrapper,
-  .schedule-x-container .sx__month-grid-wrapper {
-    height: auto !important;
-    min-height: 100% !important;
-  }
-  /* Fix: Remove overflow from week-wrapper so sticky works relative to view-container */
-  .schedule-x-container .sx__week-wrapper {
-    overflow: visible !important;
-  }
-  /* Sticky day headers for week and day views */
-  .schedule-x-container .sx__week-header {
-    position: sticky !important;
-    top: 0 !important;
-    z-index: 10 !important;
-    background-color: var(--sx-color-background) !important;
-  }
-`;
-
 import { createCalendarControlsPlugin } from "@schedule-x/calendar-controls";
+
+// Schedule-X CSS customizations (extracted to separate file for performance)
+import "./schedule-x-calendar.css";
 import { createCurrentTimePlugin } from "@schedule-x/current-time";
 import { createEventModalPlugin } from "@schedule-x/event-modal";
 import { ScheduleXCalendar, useCalendarApp } from "@schedule-x/react";
@@ -332,9 +291,6 @@ export function ScheduleXCalendarWrapper({
 
 	return (
 		<div className="flex flex-col h-full min-h-[500px]">
-			{/* Inject CSS for Schedule-X customizations */}
-			<style dangerouslySetInnerHTML={{ __html: scheduleXStyles }} />
-
 			{/* Custom navigation header */}
 			<div className="flex items-center justify-between gap-4 pb-3 mb-3">
 				<div className="flex items-center gap-2">

@@ -1,11 +1,11 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMemo } from "react";
 import { z } from "zod";
 import type { CalendarEvent } from "@/lib/calendar/types";
 import { format } from "@/lib/datetime/luxon-utils";
-import { ApiError } from "@/lib/fetch";
+import { queryKeys } from "@/lib/query/keys";
 import { parseSuperJsonResponse } from "@/lib/superjson";
 import { calendarEventSchema } from "@/lib/validations/calendar";
 
@@ -14,7 +14,7 @@ export interface CalendarFilters {
 	showAbsences: boolean;
 	showTimeEntries: boolean;
 	showWorkPeriods: boolean;
-	employeeId?: string; // Optional filter for specific employee
+	employeeId?: string;
 }
 
 export interface UseCalendarDataOptions {
@@ -34,7 +34,57 @@ export interface UseCalendarDataResult {
 }
 
 /**
- * Hook to fetch and manage calendar events
+ * Fetch calendar events from API
+ */
+async function fetchCalendarEvents(
+	organizationId: string,
+	year: number,
+	month: number | undefined,
+	fullYear: boolean,
+	filters: CalendarFilters,
+): Promise<CalendarEvent[]> {
+	const params = new URLSearchParams({
+		organizationId,
+		year: year.toString(),
+		showHolidays: filters.showHolidays.toString(),
+		showAbsences: filters.showAbsences.toString(),
+		showTimeEntries: filters.showTimeEntries.toString(),
+		showWorkPeriods: filters.showWorkPeriods.toString(),
+	});
+
+	if (fullYear) {
+		params.set("fullYear", "true");
+	} else if (month !== undefined) {
+		params.set("month", month.toString());
+	}
+
+	if (filters.employeeId) {
+		params.set("employeeId", filters.employeeId);
+	}
+
+	const response = await fetch(`/api/calendar/events?${params}`);
+
+	if (!response.ok) {
+		throw new Error(`Failed to fetch calendar events: ${response.statusText}`);
+	}
+
+	// Use SuperJSON to parse response - dates are now actual Date objects
+	const data = await parseSuperJsonResponse<{ events: unknown[]; total: number }>(response);
+
+	// Validate events with Zod schema
+	const eventsSchema = z.array(calendarEventSchema);
+	return eventsSchema.parse(data.events);
+}
+
+/**
+ * Hook to fetch and manage calendar events using React Query
+ *
+ * Benefits over manual fetch:
+ * - Automatic request deduplication
+ * - Caching with stale-while-revalidate
+ * - Built-in loading/error states
+ * - Automatic refetch on window focus (configurable)
+ * - Auth error handling via QueryProvider
  */
 export function useCalendarData({
 	organizationId,
@@ -43,105 +93,52 @@ export function useCalendarData({
 	filters,
 	fullYear = false,
 }: UseCalendarDataOptions): UseCalendarDataResult {
-	const router = useRouter();
-	const [events, setEvents] = useState<CalendarEvent[]>([]);
-	const [isLoading, setIsLoading] = useState(true);
-	const [error, setError] = useState<Error | null>(null);
+	const queryClient = useQueryClient();
 
-	const fetchEvents = useCallback(async () => {
-		setIsLoading(true);
-		setError(null);
-
-		try {
-			const params = new URLSearchParams({
-				organizationId,
-				year: year.toString(),
-				showHolidays: filters.showHolidays.toString(),
-				showAbsences: filters.showAbsences.toString(),
-				showTimeEntries: filters.showTimeEntries.toString(),
-				showWorkPeriods: filters.showWorkPeriods.toString(),
-			});
-
-			// For year view, fetch all 12 months; otherwise fetch single month
-			if (fullYear) {
-				params.set("fullYear", "true");
-			} else {
-				params.set("month", month.toString());
-			}
-
-			// Add employeeId filter if specified
-			if (filters.employeeId) {
-				params.set("employeeId", filters.employeeId);
-			}
-
-			const response = await fetch(`/api/calendar/events?${params}`);
-
-			if (!response.ok) {
-				// Redirect to sign-in on 401 unauthorized
-				if (response.status === 401) {
-					router.replace("/sign-in");
-					return;
-				}
-				throw new ApiError(
-					`Failed to fetch calendar events: ${response.statusText}`,
-					response.status,
-					response.statusText,
-				);
-			}
-
-			// Use SuperJSON to parse response - dates are now actual Date objects
-			const data = await parseSuperJsonResponse<{ events: unknown[]; total: number }>(response);
-
-			// Validate events with Zod schema
-			// SuperJSON already preserves Date objects, Zod validates structure
-			const eventsSchema = z.array(calendarEventSchema);
-			const parsedEvents = eventsSchema.parse(data.events);
-
-			setEvents(parsedEvents);
-		} catch (err) {
-			// Also check for ApiError 401 in case it was thrown elsewhere
-			if (err instanceof ApiError && err.isUnauthorized()) {
-				router.replace("/sign-in");
-				return;
-			}
-			setError(err instanceof Error ? err : new Error("Unknown error"));
-			setEvents([]);
-		} finally {
-			setIsLoading(false);
-		}
-	}, [
-		organizationId,
-		month,
+	const queryParams = {
 		year,
+		month: fullYear ? undefined : month,
 		fullYear,
-		filters.showHolidays,
-		filters.showAbsences,
-		filters.showTimeEntries,
-		filters.showWorkPeriods,
-		filters.employeeId,
-		router,
-	]);
+		filters,
+	};
 
-	useEffect(() => {
-		fetchEvents();
-	}, [fetchEvents]);
+	const { data: events = [], isLoading, error } = useQuery({
+		queryKey: queryKeys.calendar.events(organizationId, queryParams),
+		queryFn: () => fetchCalendarEvents(
+			organizationId,
+			year,
+			fullYear ? undefined : month,
+			fullYear,
+			filters,
+		),
+		staleTime: 30 * 1000, // 30 seconds - calendar data can change frequently
+		enabled: !!organizationId,
+	});
 
-	// Group events by date for easy lookup
-	// Use date-fns format instead of fragile string manipulation
-	const eventsByDate = events.reduce((acc, event) => {
-		const dateKey = format(event.date, "yyyy-MM-dd"); // YYYY-MM-DD
-		if (!acc.has(dateKey)) {
-			acc.set(dateKey, []);
-		}
-		acc.get(dateKey)?.push(event);
-		return acc;
-	}, new Map<string, CalendarEvent[]>());
+	// Group events by date for easy lookup (memoized)
+	const eventsByDate = useMemo(() => {
+		return events.reduce((acc, event) => {
+			const dateKey = format(event.date, "yyyy-MM-dd");
+			if (!acc.has(dateKey)) {
+				acc.set(dateKey, []);
+			}
+			acc.get(dateKey)?.push(event);
+			return acc;
+		}, new Map<string, CalendarEvent[]>());
+	}, [events]);
+
+	// Refetch function that invalidates the query cache
+	const refetch = () => {
+		queryClient.invalidateQueries({
+			queryKey: queryKeys.calendar.events(organizationId, queryParams),
+		});
+	};
 
 	return {
 		events,
 		eventsByDate,
 		isLoading,
-		error,
-		refetch: fetchEvents,
+		error: error instanceof Error ? error : null,
+		refetch,
 	};
 }

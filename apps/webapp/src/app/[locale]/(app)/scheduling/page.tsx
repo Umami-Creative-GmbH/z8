@@ -10,10 +10,8 @@ import { auth } from "@/lib/auth";
 export default async function SchedulingPage() {
 	await connection(); // Mark as fully dynamic for cacheComponents mode
 
-	const session = await auth.api.getSession({ headers: await headers() });
-	if (!session?.user) {
-		redirect("/sign-in");
-	}
+	// Auth is checked in layout - session is guaranteed to exist
+	const session = (await auth.api.getSession({ headers: await headers() }))!;
 
 	// Get current employee
 	const emp = await db.query.employee.findFirst({

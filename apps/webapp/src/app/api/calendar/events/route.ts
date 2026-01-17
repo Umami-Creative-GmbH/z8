@@ -10,6 +10,7 @@ import { superJsonResponse } from "@/lib/superjson";
 
 /**
  * Fetch events for a single month
+ * Uses Promise.all for parallel fetching to eliminate waterfalls
  */
 async function fetchMonthEvents(
 	organizationId: string,
@@ -21,42 +22,21 @@ async function fetchMonthEvents(
 	showTimeEntries: boolean,
 	showWorkPeriods: boolean,
 ): Promise<CalendarEvent[]> {
-	const events: CalendarEvent[] = [];
+	// Fetch all event types in parallel - conditional fetches return empty arrays
+	const [holidays, absences, timeEntries, workPeriods] = await Promise.all([
+		showHolidays ? getHolidaysForMonth(organizationId, month, year) : [],
+		showAbsences
+			? getAbsencesForMonth(month, year, { organizationId, employeeId })
+			: [],
+		showTimeEntries
+			? getTimeEntriesForMonth(month, year, { organizationId, employeeId })
+			: [],
+		showWorkPeriods
+			? getWorkPeriodsForMonth(month, year, { organizationId, employeeId })
+			: [],
+	]);
 
-	// Fetch holidays if requested
-	if (showHolidays) {
-		const holidays = await getHolidaysForMonth(organizationId, month, year);
-		events.push(...holidays);
-	}
-
-	// Fetch absences if requested
-	if (showAbsences) {
-		const absences = await getAbsencesForMonth(month, year, {
-			organizationId,
-			employeeId,
-		});
-		events.push(...absences);
-	}
-
-	// Fetch time entries if requested
-	if (showTimeEntries) {
-		const timeEntries = await getTimeEntriesForMonth(month, year, {
-			organizationId,
-			employeeId,
-		});
-		events.push(...timeEntries);
-	}
-
-	// Fetch work periods if requested
-	if (showWorkPeriods) {
-		const workPeriods = await getWorkPeriodsForMonth(month, year, {
-			organizationId,
-			employeeId,
-		});
-		events.push(...workPeriods);
-	}
-
-	return events;
+	return [...holidays, ...absences, ...timeEntries, ...workPeriods];
 }
 
 export async function GET(request: NextRequest) {

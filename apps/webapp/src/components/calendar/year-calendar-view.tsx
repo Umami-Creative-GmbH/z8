@@ -2,10 +2,11 @@
 
 import { useTranslate } from "@tolgee/react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { CalendarEvent } from "@/lib/calendar/types";
+import { format } from "@/lib/datetime/luxon-utils";
 import { cn } from "@/lib/utils";
 import type { ViewMode } from "./schedule-x-calendar";
 
@@ -50,26 +51,21 @@ function getFirstDayOfMonth(year: number, month: number): number {
 	return new Date(year, month, 1).getDay();
 }
 
-function formatDateKey(date: Date): string {
-	const year = date.getFullYear();
-	const month = String(date.getMonth() + 1).padStart(2, "0");
-	const day = String(date.getDate()).padStart(2, "0");
-	return `${year}-${month}-${day}`;
-}
-
-function MiniMonth({
-	year,
-	month,
-	eventsByDate,
-	workHoursData,
-	onDayClick,
-}: {
+interface MiniMonthProps {
 	year: number;
 	month: number;
 	eventsByDate: Map<string, CalendarEvent[]>;
 	workHoursData?: Map<string, { expected: number; actual: number }>;
 	onDayClick?: (date: Date) => void;
-}) {
+}
+
+const MiniMonth = memo(function MiniMonth({
+	year,
+	month,
+	eventsByDate,
+	workHoursData,
+	onDayClick,
+}: MiniMonthProps) {
 	const days = getDaysInMonth(year, month);
 	const firstDay = getFirstDayOfMonth(year, month);
 	const today = new Date();
@@ -100,7 +96,7 @@ function MiniMonth({
 
 				{/* Actual days */}
 				{days.map((date) => {
-					const dateKey = formatDateKey(date);
+					const dateKey = format(date, "yyyy-MM-dd");
 					const dayEvents = eventsByDate.get(dateKey) || [];
 					const workHours = workHoursData?.get(dateKey);
 					const isToday = isCurrentMonth && date.getDate() === today.getDate();
@@ -155,7 +151,7 @@ function MiniMonth({
 			</div>
 		</div>
 	);
-}
+});
 
 export function YearCalendarView({
 	events,
@@ -172,7 +168,7 @@ export function YearCalendarView({
 	const eventsByDate = useMemo(() => {
 		const map = new Map<string, CalendarEvent[]>();
 		for (const event of events) {
-			const dateKey = formatDateKey(event.date);
+			const dateKey = format(event.date, "yyyy-MM-dd");
 			if (!map.has(dateKey)) {
 				map.set(dateKey, []);
 			}
