@@ -59,8 +59,10 @@ const {
 	const mockSelectFrom = vi.fn(() => ({ where: mockSelectWhere }));
 	const mockSelect = vi.fn(() => ({ from: mockSelectFrom }));
 
-	const mockFindFirst = vi.fn(() => Promise.resolve(null));
-	const mockFindMany = vi.fn(() => Promise.resolve([]));
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	const mockFindFirst = vi.fn((): any => Promise.resolve(null));
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	const mockFindMany = vi.fn((): any => Promise.resolve([]));
 
 	const mockLoggerInfo = vi.fn();
 	const mockLoggerDebug = vi.fn();

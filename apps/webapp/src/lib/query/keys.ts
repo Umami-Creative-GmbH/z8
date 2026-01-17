@@ -249,4 +249,26 @@ export const queryKeys = {
 			},
 		) => ["calendar", "events", orgId, params] as const,
 	},
+
+	// Hydration / Water reminders
+	hydration: {
+		all: ["hydration"] as const,
+		stats: () => ["hydration", "stats"] as const,
+		settings: () => ["hydration", "settings"] as const,
+		todayIntake: () => ["hydration", "today-intake"] as const,
+		reminderStatus: () => ["hydration", "reminder-status"] as const,
+	},
+
+	// Dashboard
+	dashboard: {
+		all: ["dashboard"] as const,
+		userSettings: () => ["dashboard", "user-settings"] as const,
+		widgetOrder: () => ["dashboard", "widget-order"] as const,
+	},
+
+	// User settings (global user preferences)
+	userSettings: {
+		all: ["user-settings"] as const,
+		current: () => ["user-settings", "current"] as const,
+	},
 } as const;

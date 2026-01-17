@@ -20,6 +20,7 @@ const STEP_I18N_KEYS: Record<OnboardingStep, string> = {
 	vacation_policy: "onboarding.steps.vacationPolicy",
 	holiday_setup: "onboarding.steps.holidaySetup",
 	work_templates: "onboarding.steps.workTemplates",
+	wellness: "onboarding.steps.wellness",
 	notifications: "onboarding.steps.notifications",
 	complete: "onboarding.steps.complete",
 };

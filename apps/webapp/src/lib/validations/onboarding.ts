@@ -61,6 +61,7 @@ export type OnboardingStep =
 	| "vacation_policy"
 	| "holiday_setup"
 	| "work_templates"
+	| "wellness"
 	| "notifications"
 	| "complete";
 
@@ -125,15 +126,22 @@ export const ONBOARDING_STEPS: Record<
 		label: "Templates",
 		adminOnly: true,
 	},
-	notifications: {
+	wellness: {
 		order: 8,
+		path: "/onboarding/wellness",
+		required: false,
+		label: "Wellness",
+		adminOnly: false,
+	},
+	notifications: {
+		order: 9,
 		path: "/onboarding/notifications",
 		required: false,
 		label: "Notifications",
 		adminOnly: false,
 	},
 	complete: {
-		order: 9,
+		order: 10,
 		path: "/onboarding/complete",
 		required: true,
 		label: "Complete",
