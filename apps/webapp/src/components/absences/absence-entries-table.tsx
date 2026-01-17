@@ -2,9 +2,21 @@
 
 import { IconX } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { cancelAbsenceRequest } from "@/app/[locale]/(app)/absences/actions";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+	AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,7 +27,11 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { calculateBusinessDaysWithHalfDays, formatDateRange } from "@/lib/absences/date-utils";
+import {
+	calculateBusinessDaysWithHalfDays,
+	formatDateRange,
+	formatDays,
+} from "@/lib/absences/date-utils";
 import type { AbsenceWithCategory, DayPeriod } from "@/lib/absences/types";
 import { CategoryBadge } from "./category-badge";
 
@@ -26,6 +42,7 @@ interface AbsenceEntriesTableProps {
 
 export function AbsenceEntriesTable({ absences, onUpdate }: AbsenceEntriesTableProps) {
 	const { t } = useTranslate();
+	const router = useRouter();
 	const [cancelingId, setCancelingId] = useState<string | null>(null);
 
 	// Format period for display
@@ -40,12 +57,16 @@ export function AbsenceEntriesTable({ absences, onUpdate }: AbsenceEntriesTableP
 		}
 	};
 
-	// Format days display (handle half days)
-	const formatDays = (days: number): string => {
-		if (days === 1) return t("common.days.one", "1 day");
-		if (days === 0.5) return t("common.days.half", "0.5 day");
-		if (Number.isInteger(days)) return t("common.days.count", "{count} days", { count: days });
-		return t("common.days.count", "{count} days", { count: days });
+	// Translate status for display
+	const getStatusLabel = (status: "pending" | "approved" | "rejected"): string => {
+		switch (status) {
+			case "pending":
+				return t("absences.status.pending", "Pending");
+			case "approved":
+				return t("absences.status.approved", "Approved");
+			case "rejected":
+				return t("absences.status.rejected", "Rejected");
+		}
 	};
 
 	const handleCancel = async (absenceId: string) => {
@@ -57,6 +78,8 @@ export function AbsenceEntriesTable({ absences, onUpdate }: AbsenceEntriesTableP
 
 		if (result.success) {
 			toast.success(t("absences.toast.requestCancelled", "Absence request cancelled"));
+			// Revalidate the page data to reflect the cancelled absence
+			router.refresh();
 			onUpdate?.();
 		} else {
 			toast.error(
@@ -138,7 +161,7 @@ export function AbsenceEntriesTable({ absences, onUpdate }: AbsenceEntriesTableP
 										color={absence.category.color}
 									/>
 								</TableCell>
-								<TableCell className="text-right tabular-nums">{formatDays(days)}</TableCell>
+								<TableCell className="text-right tabular-nums">{formatDays(days, t)}</TableCell>
 								<TableCell>
 									<Badge
 										variant={
@@ -149,7 +172,7 @@ export function AbsenceEntriesTable({ absences, onUpdate }: AbsenceEntriesTableP
 													: "destructive"
 										}
 									>
-										{absence.status}
+										{getStatusLabel(absence.status)}
 									</Badge>
 								</TableCell>
 								<TableCell className="max-w-[200px] truncate text-muted-foreground">
@@ -157,14 +180,42 @@ export function AbsenceEntriesTable({ absences, onUpdate }: AbsenceEntriesTableP
 								</TableCell>
 								<TableCell className="text-right">
 									{absence.status === "pending" && (
-										<Button
-											variant="ghost"
-											size="sm"
-											onClick={() => handleCancel(absence.id)}
-											disabled={cancelingId === absence.id}
-										>
-											<IconX className="size-4" />
-										</Button>
+										<AlertDialog>
+											<AlertDialogTrigger asChild>
+												<Button
+													variant="ghost"
+													size="sm"
+													disabled={cancelingId === absence.id}
+													aria-label={t("absences.table.cancelRequest", "Cancel request")}
+												>
+													<IconX className="size-4" />
+												</Button>
+											</AlertDialogTrigger>
+											<AlertDialogContent>
+												<AlertDialogHeader>
+													<AlertDialogTitle>
+														{t("absences.dialog.cancelTitle", "Cancel Absence Request")}
+													</AlertDialogTitle>
+													<AlertDialogDescription>
+														{t(
+															"absences.dialog.cancelDescription",
+															"Are you sure you want to cancel this absence request? This action cannot be undone.",
+														)}
+													</AlertDialogDescription>
+												</AlertDialogHeader>
+												<AlertDialogFooter>
+													<AlertDialogCancel>
+														{t("common.cancel", "Cancel")}
+													</AlertDialogCancel>
+													<AlertDialogAction
+														onClick={() => handleCancel(absence.id)}
+														className="bg-destructive text-white hover:bg-destructive/90"
+													>
+														{t("absences.dialog.confirmCancel", "Yes, cancel request")}
+													</AlertDialogAction>
+												</AlertDialogFooter>
+											</AlertDialogContent>
+										</AlertDialog>
 									)}
 								</TableCell>
 							</TableRow>

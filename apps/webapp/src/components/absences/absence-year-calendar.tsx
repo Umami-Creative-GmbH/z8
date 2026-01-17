@@ -2,7 +2,7 @@
 
 import { useTranslate } from "@tolgee/react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { toCalendarEvents } from "@/lib/absences/absence-calendar-adapter";
 import type { AbsenceWithCategory, Holiday } from "@/lib/absences/types";
@@ -38,7 +38,7 @@ function formatDateKey(date: Date): string {
 	return `${year}-${month}-${day}`;
 }
 
-function MiniMonth({
+const MiniMonth = memo(function MiniMonth({
 	year,
 	month,
 	monthName,
@@ -129,7 +129,7 @@ function MiniMonth({
 			</div>
 		</div>
 	);
-}
+});
 
 export function AbsenceYearCalendar({
 	absences,
@@ -141,30 +141,38 @@ export function AbsenceYearCalendar({
 	const { t } = useTranslate();
 	const [year, setYear] = useState(initialYear);
 
-	const MONTHS = [
-		t("common.months.january", "January"),
-		t("common.months.february", "February"),
-		t("common.months.march", "March"),
-		t("common.months.april", "April"),
-		t("common.months.may", "May"),
-		t("common.months.june", "June"),
-		t("common.months.july", "July"),
-		t("common.months.august", "August"),
-		t("common.months.september", "September"),
-		t("common.months.october", "October"),
-		t("common.months.november", "November"),
-		t("common.months.december", "December"),
-	];
+	// Memoize translated month names to avoid recreating on every render
+	const MONTHS = useMemo(
+		() => [
+			t("common.months.january", "January"),
+			t("common.months.february", "February"),
+			t("common.months.march", "March"),
+			t("common.months.april", "April"),
+			t("common.months.may", "May"),
+			t("common.months.june", "June"),
+			t("common.months.july", "July"),
+			t("common.months.august", "August"),
+			t("common.months.september", "September"),
+			t("common.months.october", "October"),
+			t("common.months.november", "November"),
+			t("common.months.december", "December"),
+		],
+		[t],
+	);
 
-	const WEEKDAYS = [
-		t("common.weekdays.su", "Su"),
-		t("common.weekdays.mo", "Mo"),
-		t("common.weekdays.tu", "Tu"),
-		t("common.weekdays.we", "We"),
-		t("common.weekdays.th", "Th"),
-		t("common.weekdays.fr", "Fr"),
-		t("common.weekdays.sa", "Sa"),
-	];
+	// Memoize translated weekday names to avoid recreating on every render
+	const WEEKDAYS = useMemo(
+		() => [
+			t("common.weekdays.su", "Su"),
+			t("common.weekdays.mo", "Mo"),
+			t("common.weekdays.tu", "Tu"),
+			t("common.weekdays.we", "We"),
+			t("common.weekdays.th", "Th"),
+			t("common.weekdays.fr", "Fr"),
+			t("common.weekdays.sa", "Sa"),
+		],
+		[t],
+	);
 
 	// Transform data to CalendarEvent format
 	const events = useMemo(() => {
@@ -194,10 +202,20 @@ export function AbsenceYearCalendar({
 			{/* Year navigation header */}
 			<div className="flex items-center justify-between gap-4 pb-3 mb-3">
 				<div className="flex items-center gap-2">
-					<Button variant="outline" size="icon" onClick={() => handleYearChange(year - 1)}>
+					<Button
+						variant="outline"
+						size="icon"
+						onClick={() => handleYearChange(year - 1)}
+						aria-label={t("absences.calendar.previousYear", "Previous year")}
+					>
 						<ChevronLeft className="h-4 w-4" />
 					</Button>
-					<Button variant="outline" size="icon" onClick={() => handleYearChange(year + 1)}>
+					<Button
+						variant="outline"
+						size="icon"
+						onClick={() => handleYearChange(year + 1)}
+						aria-label={t("absences.calendar.nextYear", "Next year")}
+					>
 						<ChevronRight className="h-4 w-4" />
 					</Button>
 					<Button

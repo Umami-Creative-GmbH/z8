@@ -1,12 +1,9 @@
 import { connection } from "next/server";
-import { headers } from "next/headers";
-import { redirect } from "next/navigation";
 import { AbsencesViewContainer } from "@/components/absences/absences-view-container";
 import { RequestAbsenceDialog } from "@/components/absences/request-absence-dialog";
 import { VacationBalanceCard } from "@/components/absences/vacation-balance-card";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { Button } from "@/components/ui/button";
-import { auth } from "@/lib/auth";
 import { getTranslate } from "@/tolgee/server";
 import {
 	getAbsenceCategories,
@@ -18,11 +15,9 @@ import {
 
 export default async function AbsencesPage() {
 	await connection(); // Mark as fully dynamic for cacheComponents mode
+
+	// Auth is checked in layout - session is guaranteed to exist
 	const t = await getTranslate();
-	const session = await auth.api.getSession({ headers: await headers() });
-	if (!session?.user) {
-		redirect("/sign-in");
-	}
 
 	const employee = await getCurrentEmployee();
 	if (!employee) {
@@ -88,6 +83,7 @@ export default async function AbsencesPage() {
 					<RequestAbsenceDialog
 						categories={categories}
 						remainingDays={vacationBalance.remainingDays}
+						holidays={holidays}
 						trigger={<Button>{t("absences.requestAbsence", "Request Absence")}</Button>}
 					/>
 				</div>

@@ -139,13 +139,16 @@ export async function requestAbsenceEffect(
 					}
 				}
 
-				// Step 4: Check for overlapping absences
+				// Step 4: Check for overlapping absences (both approved and pending)
 				const overlappingAbsences = yield* _(
 					dbService.query("checkAbsenceOverlaps", async () => {
 						return await dbService.db.query.absenceEntry.findMany({
 							where: and(
 								eq(absenceEntry.employeeId, currentEmployee.id),
-								eq(absenceEntry.status, "approved"),
+								or(
+									eq(absenceEntry.status, "approved"),
+									eq(absenceEntry.status, "pending"),
+								),
 							),
 						});
 					}),
@@ -155,15 +158,19 @@ export async function requestAbsenceEffect(
 					if (
 						dateRangesOverlap(data.startDate, data.endDate, existing.startDate, existing.endDate)
 					) {
+						const isPending = existing.status === "pending";
 						yield* _(
 							Effect.fail(
 								new ConflictError({
-									message: "Absence request overlaps with an existing approved absence",
+									message: isPending
+										? "Absence request overlaps with an existing pending request"
+										: "Absence request overlaps with an existing approved absence",
 									conflictType: "absence_overlap",
 									details: {
 										existingAbsenceId: existing.id,
 										existingStart: existing.startDate,
 										existingEnd: existing.endDate,
+										existingStatus: existing.status,
 									},
 								}),
 							),
@@ -396,15 +403,29 @@ export async function requestAbsenceEffect(
 
 					logger.info({ absenceId: newAbsence.id }, "Absence auto-approved (no approval required)");
 				} else {
-					// No manager assigned
+					// No manager assigned - auto-approve since there's no one to approve
+					yield* _(
+						dbService.query("autoApproveNoManager", async () => {
+							return await dbService.db
+								.update(absenceEntry)
+								.set({
+									status: "approved",
+									approvedAt: currentTimestamp(),
+									// Note: approvedBy is left null to indicate system auto-approval
+								})
+								.where(eq(absenceEntry.id, newAbsence.id));
+						}),
+					);
+
+					span.setAttribute("absence.auto_approved", true);
 					span.setAttribute("absence.no_manager", true);
 
-					logger.warn(
+					logger.info(
 						{
 							absenceId: newAbsence.id,
 							employeeId: currentEmployee.id,
 						},
-						"Absence requires approval but employee has no manager",
+						"Absence auto-approved (no manager assigned)",
 					);
 				}
 
