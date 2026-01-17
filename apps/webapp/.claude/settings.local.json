@@ -46,7 +46,9 @@
       "Bash(cd:*)",
       "Skill(vercel-react-best-practices)",
       "Skill(web-design-guidelines)",
-      "Bash(pnpm list:*)"
+      "Bash(pnpm list:*)",
+      "Bash(pnpm drizzle-kit generate:*)",
+      "Bash(pnpm biome:*)"
     ]
   },
   "enabledMcpjsonServers": [

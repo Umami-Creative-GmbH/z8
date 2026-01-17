@@ -82,7 +82,8 @@
       "Bash(pnpm tsc:*)",
       "Bash(pnpm exec tsc:*)",
       "Bash(pnpm eslint:*)",
-      "Bash(pnpm biome format:*)"
+      "Bash(pnpm biome format:*)",
+      "Bash(git show:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
