@@ -488,7 +488,7 @@ export const BreakEnforcementServiceLive = Layer.effect(
 											organizationId: true,
 										},
 										with: {
-											user: {
+											userSettings: {
 												columns: {
 													timezone: true,
 												},
@@ -519,7 +519,7 @@ export const BreakEnforcementServiceLive = Layer.effect(
 							organizationId: period.employee?.organizationId || "",
 							workPeriodId: period.id,
 							sessionDurationMinutes: period.durationMinutes || 0,
-							timezone: period.employee?.user?.timezone || "UTC",
+							timezone: period.employee?.userSettings?.timezone || "UTC",
 							createdBy: "system-cron",
 						});
 

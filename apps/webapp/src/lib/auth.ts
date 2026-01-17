@@ -44,12 +44,6 @@ export const auth = betterAuth({
 				required: false,
 				input: false,
 			},
-			timezone: {
-				type: "string",
-				required: false,
-				defaultValue: "UTC",
-				input: true, // user can set their timezone
-			},
 		},
 	},
 
