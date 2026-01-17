@@ -1106,6 +1106,13 @@ export const workPeriod = pgTable(
 
 		isActive: boolean("is_active").default(true).notNull(), // False when clocked out
 
+		// Auto-adjustment tracking for break enforcement
+		wasAutoAdjusted: boolean("was_auto_adjusted").default(false).notNull(),
+		autoAdjustmentReason: text("auto_adjustment_reason").$type<WorkPeriodAutoAdjustmentReason>(),
+		autoAdjustedAt: timestamp("auto_adjusted_at", { withTimezone: true }),
+		originalEndTime: timestamp("original_end_time", { withTimezone: true }), // Audit trail
+		originalDurationMinutes: integer("original_duration_minutes"),
+
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at")
 			.$onUpdate(() => currentTimestamp())
@@ -1363,6 +1370,21 @@ export type TimeRegulationViolationDetails = {
 	uninterruptedMinutes?: number;
 	warningShownAt?: string;
 	userContinued?: boolean;
+};
+
+// Type for work period auto-adjustment reason (break enforcement)
+export type WorkPeriodAutoAdjustmentReason = {
+	type: "break_enforcement";
+	regulationId: string;
+	regulationName: string;
+	breakInsertedMinutes: number;
+	breakInsertedAt: string; // ISO timestamp
+	originalDurationMinutes: number;
+	adjustedDurationMinutes: number;
+	ruleApplied: {
+		workingMinutesThreshold: number;
+		requiredBreakMinutes: number;
+	};
 };
 
 // Main regulation template

@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { Effect } from "effect";
 import { headers } from "next/headers";
 import { db } from "@/db";
@@ -156,6 +156,7 @@ export async function isManagerOrAbove(): Promise<boolean> {
 
 /**
  * Get all organizations the current user is a member of
+ * Optimized: Uses single batch query instead of N+1 pattern
  */
 export async function getUserOrganizations(): Promise<UserOrganization[]> {
 	const session = await auth.api.getSession({ headers: await headers() });
@@ -174,35 +175,37 @@ export async function getUserOrganizations(): Promise<UserOrganization[]> {
 		.innerJoin(organization, eq(member.organizationId, organization.id))
 		.where(eq(member.userId, session.user.id));
 
-	// For each organization, check if user has an employee record
-	const orgsWithEmployeeStatus = await Promise.all(
-		memberships.map(async ({ organization: org, member: mbr }) => {
-			const [employeeRecord] = await db
-				.select()
-				.from(employee)
-				.where(
-					and(
-						eq(employee.userId, session.user.id),
-						eq(employee.organizationId, org.id),
-						eq(employee.isActive, true),
-					),
-				)
-				.limit(1);
+	if (memberships.length === 0) {
+		return [];
+	}
 
-			return {
-				id: org.id,
-				name: org.name,
-				slug: org.slug,
-				logo: org.logo,
-				memberRole: mbr.role,
-				hasEmployeeRecord: !!employeeRecord,
-				shiftsEnabled: org.shiftsEnabled ?? false,
-				projectsEnabled: org.projectsEnabled ?? false,
-			};
-		}),
-	);
+	// Single batch query for all employee records (instead of N queries)
+	const orgIds = memberships.map((m) => m.organization.id);
+	const employeeRecords = await db
+		.select({ organizationId: employee.organizationId })
+		.from(employee)
+		.where(
+			and(
+				eq(employee.userId, session.user.id),
+				inArray(employee.organizationId, orgIds),
+				eq(employee.isActive, true),
+			),
+		);
 
-	return orgsWithEmployeeStatus;
+	// O(1) lookup with Set
+	const orgsWithEmployee = new Set(employeeRecords.map((e) => e.organizationId));
+
+	// Map without additional queries
+	return memberships.map(({ organization: org, member: mbr }) => ({
+		id: org.id,
+		name: org.name,
+		slug: org.slug,
+		logo: org.logo,
+		memberRole: mbr.role,
+		hasEmployeeRecord: orgsWithEmployee.has(org.id),
+		shiftsEnabled: org.shiftsEnabled ?? false,
+		projectsEnabled: org.projectsEnabled ?? false,
+	}));
 }
 
 /**

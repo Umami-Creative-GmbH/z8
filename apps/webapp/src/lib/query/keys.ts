@@ -229,4 +229,24 @@ export const queryKeys = {
 				["locations", "subareas", subareaId, "employees"] as const,
 		},
 	},
+
+	// Calendar events
+	calendar: {
+		all: ["calendar"] as const,
+		events: (
+			orgId: string,
+			params: {
+				year: number;
+				month?: number;
+				fullYear?: boolean;
+				filters: {
+					showHolidays: boolean;
+					showAbsences: boolean;
+					showTimeEntries: boolean;
+					showWorkPeriods: boolean;
+					employeeId?: string;
+				};
+			},
+		) => ["calendar", "events", orgId, params] as const,
+	},
 } as const;

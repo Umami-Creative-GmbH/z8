@@ -6,8 +6,8 @@ import { getCurrentEmployee, getManagedEmployees } from "./actions";
 import { TeamMembersList } from "./team-members-list";
 
 export default async function TeamPage() {
-	const t = await getTranslate();
-	const currentEmployee = await getCurrentEmployee();
+	// Parallelize independent async operations to eliminate waterfall
+	const [t, currentEmployee] = await Promise.all([getTranslate(), getCurrentEmployee()]);
 
 	// Show error if no employee profile found
 	if (!currentEmployee) {

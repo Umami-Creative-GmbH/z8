@@ -99,6 +99,7 @@ export default async function LocaleLayout({ children, params }: Props) {
 				<meta charSet="UTF-8" />
 				<meta content="Umami Creative GmbH" name="author" />
 				<meta content="#000000" name="theme-color" />
+				<meta content="light dark" name="color-scheme" />
 				<link href="/favicon.ico" rel="icon" sizes="any" type="image/x-icon" />
 				<link href="/apple-touch-icon.png" rel="apple-touch-icon" sizes="180x180" />
 				<link href="/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png" />

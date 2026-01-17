@@ -205,7 +205,7 @@ export function TeamMembersList({ employees }: TeamMembersListProps) {
 					<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
 						{filteredEmployees.map((emp) => (
 							<Link key={emp.id} href={`/settings/employees/${emp.id}`}>
-								<Card className="group relative h-full overflow-hidden py-0 transition-all hover:shadow-md">
+								<Card className="group relative h-full overflow-hidden py-0 transition-shadow hover:shadow-md">
 									<CardContent className="p-3">
 										<div className="flex items-center gap-3">
 											<UserAvatar
