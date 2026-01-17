@@ -1,8 +1,19 @@
 "use client";
 
 import { useTranslate } from "@tolgee/react";
-import { Area, AreaChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
+import dynamic from "next/dynamic";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+
+// Dynamic imports for recharts to reduce initial bundle size
+const Area = dynamic(() => import("recharts").then((mod) => mod.Area), { ssr: false });
+const AreaChart = dynamic(() => import("recharts").then((mod) => mod.AreaChart), { ssr: false });
+const CartesianGrid = dynamic(() => import("recharts").then((mod) => mod.CartesianGrid), {
+	ssr: false,
+});
+const Line = dynamic(() => import("recharts").then((mod) => mod.Line), { ssr: false });
+const LineChart = dynamic(() => import("recharts").then((mod) => mod.LineChart), { ssr: false });
+const XAxis = dynamic(() => import("recharts").then((mod) => mod.XAxis), { ssr: false });
+const YAxis = dynamic(() => import("recharts").then((mod) => mod.YAxis), { ssr: false });
 import {
 	type ChartConfig,
 	ChartContainer,

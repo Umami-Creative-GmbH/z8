@@ -1,20 +1,14 @@
-import { headers } from "next/headers";
-import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { ReportsContainer } from "@/components/reports/reports-container";
-import { auth } from "@/lib/auth";
 import { getTranslate } from "@/tolgee/server";
 import { getAccessibleEmployeesAction, getCurrentEmployee } from "./actions";
 
 export default async function ReportsPage() {
 	await connection(); // Mark as fully dynamic for cacheComponents mode
 
+	// Auth is checked in layout
 	const t = await getTranslate();
-	const session = await auth.api.getSession({ headers: await headers() });
-	if (!session?.user) {
-		redirect("/sign-in");
-	}
 
 	const employee = await getCurrentEmployee();
 
