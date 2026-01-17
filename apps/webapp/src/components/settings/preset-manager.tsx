@@ -11,7 +11,7 @@ import {
 } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import {
 	deleteHolidayPreset,
@@ -109,10 +109,11 @@ export function PresetManager({ organizationId, onImportClick, onEditClick }: Pr
 		}
 	};
 
-	const formatLocation = (preset: PresetData) => {
+	// Memoized to prevent recreation on every render
+	const formatLocation = useCallback((preset: PresetData) => {
 		const parts = [preset.countryCode, preset.stateCode, preset.regionCode].filter(Boolean);
 		return parts.length > 0 ? parts.join(" - ") : null;
-	};
+	}, []);
 
 	if (isLoading) {
 		return (

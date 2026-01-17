@@ -81,7 +81,7 @@ export function RoleSelector({ value, onChange, disabled }: RoleSelectorProps) {
 						onClick={() => !disabled && onChange(option.value)}
 						disabled={disabled}
 						className={cn(
-							"relative flex flex-col items-center gap-2 rounded-lg border-2 p-4 transition-all",
+							"relative flex flex-col items-center gap-2 rounded-lg border-2 p-4 transition-[border-color,background-color,transform]",
 							"hover:scale-[1.02] active:scale-[0.98]",
 							"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
 							disabled && "cursor-not-allowed opacity-50",

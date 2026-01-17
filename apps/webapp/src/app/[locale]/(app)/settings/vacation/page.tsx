@@ -8,12 +8,17 @@ import { VacationManagement } from "@/components/settings/vacation-management";
 import { VacationPoliciesTable } from "@/components/settings/vacation-policies-table";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getAuthContext } from "@/lib/auth-helpers";
 import { getVacationPolicies } from "./actions";
 
 async function VacationSettingsContent() {
 	await connection(); // Mark as fully dynamic for cacheComponents mode
 
-	const currentEmployee = await getCurrentEmployee();
+	// Parallelize employee and auth context fetches
+	const [currentEmployee, authContext] = await Promise.all([
+		getCurrentEmployee(),
+		getAuthContext(),
+	]);
 
 	if (!currentEmployee) {
 		return (
@@ -22,10 +27,6 @@ async function VacationSettingsContent() {
 			</div>
 		);
 	}
-
-	// Check if user has admin role
-	const { getAuthContext } = await import("@/lib/auth-helpers");
-	const authContext = await getAuthContext();
 
 	if (!authContext?.employee || authContext.employee.role !== "admin") {
 		redirect("/");

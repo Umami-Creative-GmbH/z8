@@ -4,8 +4,11 @@ import { requireUser } from "@/lib/auth-helpers";
 import { getCurrentTimezone, updateTimezone } from "./actions";
 
 export default async function ProfilePage() {
-	const authContext = await requireUser();
-	const currentTimezone = await getCurrentTimezone();
+	// Parallelize auth and timezone fetches
+	const [authContext, currentTimezone] = await Promise.all([
+		requireUser(),
+		getCurrentTimezone(),
+	]);
 
 	return (
 		<div className="p-6">

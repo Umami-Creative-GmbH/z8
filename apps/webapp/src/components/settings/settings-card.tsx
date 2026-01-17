@@ -67,7 +67,7 @@ export function SettingsCard({
 
 	return (
 		<Link href={href} className="block group">
-			<Card className="opacity-75 hover:opacity-100 transition-all duration-300 hover:shadow-md hover:border-primary/50 cursor-pointer">
+			<Card className="opacity-75 hover:opacity-100 transition-[opacity,box-shadow,border-color] duration-300 hover:shadow-md hover:border-primary/50 cursor-pointer">
 				<CardHeader>
 					<div className="flex items-start justify-between gap-4">
 						<div className="flex-1 min-w-0">

@@ -2,6 +2,7 @@
 
 import { IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
+import { useCallback } from "react";
 import {
 	SidebarGroup,
 	SidebarGroupContent,
@@ -33,10 +34,14 @@ export function SettingsNav({ isAdmin }: SettingsNavProps) {
 	const visibleItems = getVisibleSettings(isAdmin);
 	const visibleGroups = getVisibleGroups(isAdmin);
 
-	const isFeatureEnabled = (feature: FeatureFlag | undefined): boolean => {
-		if (!feature) return true;
-		return orgSettings[feature] ?? false;
-	};
+	// Memoize to prevent recreation on every render
+	const isFeatureEnabled = useCallback(
+		(feature: FeatureFlag | undefined): boolean => {
+			if (!feature) return true;
+			return orgSettings[feature] ?? false;
+		},
+		[orgSettings],
+	);
 
 	return (
 		<>

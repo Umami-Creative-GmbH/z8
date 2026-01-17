@@ -2,7 +2,7 @@
 
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { queryKeys } from "@/lib/query";
 import { AssignmentDialog } from "./assignment-dialog";
@@ -20,17 +20,59 @@ interface HolidayManagementProps {
 	organizationId: string;
 }
 
+// Type definitions for entities used in handlers
+interface Holiday {
+	id: string;
+	name: string;
+	description: string | null;
+	startDate: Date;
+	endDate: Date;
+	recurrenceType: string;
+	isActive: boolean;
+	categoryId: string;
+	category: {
+		id: string;
+		name: string;
+		type: string;
+		color: string | null;
+	};
+}
+
+interface HolidayCategory {
+	id: string;
+	name: string;
+	description: string | null;
+	type: string;
+	color: string | null;
+	blocksTimeEntry: boolean;
+	excludeFromCalculations: boolean;
+	isActive: boolean;
+}
+
+interface Preset {
+	id: string;
+	name: string;
+	description: string | null;
+	countryCode: string | null;
+	stateCode: string | null;
+	regionCode: string | null;
+	color: string | null;
+	isActive: boolean;
+}
+
+type AssignmentType = "organization" | "team" | "employee";
+
 export function HolidayManagement({ organizationId }: HolidayManagementProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 
 	// Holiday dialog state
 	const [holidayDialogOpen, setHolidayDialogOpen] = useState(false);
-	const [editingHoliday, setEditingHoliday] = useState<any>(null);
+	const [editingHoliday, setEditingHoliday] = useState<Holiday | undefined>(undefined);
 
 	// Category dialog state
 	const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
-	const [editingCategory, setEditingCategory] = useState<any>(null);
+	const [editingCategory, setEditingCategory] = useState<HolidayCategory | undefined>(undefined);
 
 	// Import dialog state
 	const [importDialogOpen, setImportDialogOpen] = useState(false);
@@ -41,83 +83,79 @@ export function HolidayManagement({ organizationId }: HolidayManagementProps) {
 
 	// Preset assignment dialog state
 	const [assignmentDialogOpen, setAssignmentDialogOpen] = useState(false);
-	const [assignmentType, setAssignmentType] = useState<"organization" | "team" | "employee">(
-		"organization",
-	);
+	const [assignmentType, setAssignmentType] = useState<AssignmentType>("organization");
 
 	// Holiday assignment dialog state
 	const [holidayAssignmentDialogOpen, setHolidayAssignmentDialogOpen] = useState(false);
-	const [holidayAssignmentType, setHolidayAssignmentType] = useState<
-		"organization" | "team" | "employee"
-	>("organization");
+	const [holidayAssignmentType, setHolidayAssignmentType] = useState<AssignmentType>("organization");
 
-	// Holiday handlers
-	const handleAddHolidayClick = () => {
-		setEditingHoliday(null);
+	// Holiday handlers - memoized to prevent unnecessary child re-renders
+	const handleAddHolidayClick = useCallback(() => {
+		setEditingHoliday(undefined);
 		setHolidayDialogOpen(true);
-	};
+	}, []);
 
-	const handleEditHolidayClick = (holiday: any) => {
+	const handleEditHolidayClick = useCallback((holiday: Holiday) => {
 		setEditingHoliday(holiday);
 		setHolidayDialogOpen(true);
-	};
+	}, []);
 
-	const handleHolidaySuccess = () => {
+	const handleHolidaySuccess = useCallback(() => {
 		queryClient.invalidateQueries({ queryKey: queryKeys.holidays.list(organizationId) });
-	};
+	}, [queryClient, organizationId]);
 
-	// Category handlers
-	const handleAddCategoryClick = () => {
-		setEditingCategory(null);
+	// Category handlers - memoized
+	const handleAddCategoryClick = useCallback(() => {
+		setEditingCategory(undefined);
 		setCategoryDialogOpen(true);
-	};
+	}, []);
 
-	const handleEditCategoryClick = (category: any) => {
+	const handleEditCategoryClick = useCallback((category: HolidayCategory) => {
 		setEditingCategory(category);
 		setCategoryDialogOpen(true);
-	};
+	}, []);
 
-	const handleCategorySuccess = () => {
+	const handleCategorySuccess = useCallback(() => {
 		queryClient.invalidateQueries({ queryKey: queryKeys.holidayCategories.list(organizationId) });
-	};
+	}, [queryClient, organizationId]);
 
-	// Preset handlers
-	const handleImportClick = () => {
+	// Preset handlers - memoized
+	const handleImportClick = useCallback(() => {
 		setImportDialogOpen(true);
-	};
+	}, []);
 
-	const handleEditPresetClick = (preset: any) => {
+	const handleEditPresetClick = useCallback((preset: Preset) => {
 		setEditingPresetId(preset.id);
 		setPresetDialogOpen(true);
-	};
+	}, []);
 
-	const handlePresetSuccess = () => {
+	const handlePresetSuccess = useCallback(() => {
 		queryClient.invalidateQueries({ queryKey: queryKeys.holidayPresets.list(organizationId) });
-	};
+	}, [queryClient, organizationId]);
 
-	// Preset assignment handlers
-	const handleAssignClick = (type: "organization" | "team" | "employee") => {
+	// Preset assignment handlers - memoized
+	const handleAssignClick = useCallback((type: AssignmentType) => {
 		setAssignmentType(type);
 		setAssignmentDialogOpen(true);
-	};
+	}, []);
 
-	const handleAssignmentSuccess = () => {
+	const handleAssignmentSuccess = useCallback(() => {
 		queryClient.invalidateQueries({
 			queryKey: queryKeys.holidayPresetAssignments.list(organizationId),
 		});
-	};
+	}, [queryClient, organizationId]);
 
-	// Holiday assignment handlers
-	const handleHolidayAssignClick = (type: "organization" | "team" | "employee") => {
+	// Holiday assignment handlers - memoized
+	const handleHolidayAssignClick = useCallback((type: AssignmentType) => {
 		setHolidayAssignmentType(type);
 		setHolidayAssignmentDialogOpen(true);
-	};
+	}, []);
 
-	const handleHolidayAssignmentSuccess = () => {
+	const handleHolidayAssignmentSuccess = useCallback(() => {
 		queryClient.invalidateQueries({
 			queryKey: queryKeys.holidayAssignments.list(organizationId),
 		});
-	};
+	}, [queryClient, organizationId]);
 
 	return (
 		<div className="flex flex-1 flex-col gap-4 p-4">
