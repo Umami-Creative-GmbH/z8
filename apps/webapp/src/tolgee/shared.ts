@@ -8,9 +8,9 @@ const isDevelopment = process.env.NODE_ENV === "development";
 const apiKey = isDevelopment ? process.env.NEXT_PUBLIC_TOLGEE_API_KEY : undefined;
 const apiUrl = isDevelopment ? process.env.NEXT_PUBLIC_TOLGEE_API_URL : undefined;
 
-export const ALL_LANGUAGES = ["de", "en"];
+export const ALL_LANGUAGES = ["en", "de", "fr", "es", "it", "pt"];
 
-export const DEFAULT_LANGUAGE = "de";
+export const DEFAULT_LANGUAGE = "en";
 
 export function TolgeeBase() {
 	const tolgee = Tolgee().use(FormatIcu());
@@ -28,8 +28,12 @@ export function TolgeeBase() {
 			fullKeyEncode: false,
 		},
 		staticData: {
-			de: () => import("../../messages/de.json"),
 			en: () => import("../../messages/en.json"),
+			de: () => import("../../messages/de.json"),
+			fr: () => import("../../messages/fr.json"),
+			es: () => import("../../messages/es.json"),
+			it: () => import("../../messages/it.json"),
+			pt: () => import("../../messages/pt.json"),
 		},
 	});
 }

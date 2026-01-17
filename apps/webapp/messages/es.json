@@ -1,0 +1,972 @@
+{
+  "analytics": {
+    "accessRestricted": "Acceso Restringido",
+    "accessRestrictedMessage": "La analítica solo está disponible para administradores y gerentes.",
+    "dateRange": {
+      "custom": "Rango Personalizado",
+      "label": "Rango de Fechas",
+      "pickRange": "Seleccionar un rango de fechas",
+      "presets": {
+        "1y": "Último Año",
+        "30d": "Últimos 30 Días",
+        "3m": "Últimos 3 Meses",
+        "6m": "Últimos 6 Meses",
+        "7d": "Últimos 7 Días"
+      }
+    },
+    "description": "Información completa sobre el rendimiento del equipo, horas de trabajo y patrones de ausencia",
+    "export": {
+      "button": "Exportar",
+      "csv": "Exportar como CSV",
+      "error": "Error al exportar como {format}",
+      "excel": "Exportar como Excel",
+      "exporting": "Exportando {format}...",
+      "success": "Exportado como {format}"
+    },
+    "overview": {
+      "charts": {
+        "absencePatterns": {
+          "description": "Distribución de ausencias por categoría",
+          "title": "Patrones de Ausencia"
+        },
+        "workHoursTrend": {
+          "description": "Total de horas de trabajo registradas a lo largo del tiempo",
+          "title": "Tendencia de Horas de Trabajo"
+        }
+      },
+      "kpis": {
+        "absenceRate": {
+          "description": "Del total de días laborales disponibles",
+          "label": "Tasa de Ausencia"
+        },
+        "approvalRate": {
+          "description": "De las solicitudes enviadas aprobadas",
+          "label": "Tasa de Aprobación"
+        },
+        "avgWorkHours": {
+          "description": "Por empleado en el período seleccionado",
+          "label": "Promedio de Horas de Trabajo"
+        },
+        "totalEmployees": {
+          "description": "Empleados activos en la organización",
+          "label": "Total de Empleados"
+        }
+      },
+      "title": "Resumen de Analítica"
+    },
+    "tabs": {
+      "overview": "Resumen",
+      "teamPerformance": "Rendimiento del Equipo",
+      "vacationTrends": "Tendencias de Vacaciones",
+      "workHours": "Horas de Trabajo"
+    },
+    "teamPerformance": {
+      "overtime": {
+        "description": "Variación de horas respecto a las horas de trabajo esperadas",
+        "title": "Horas Extra y Faltantes"
+      },
+      "performanceDetails": {
+        "columns": {
+          "avgPerEmployee": "Prom. por Empleado",
+          "employeeCount": "Cantidad de Empleados",
+          "status": "Estado",
+          "team": "Equipo",
+          "totalHours": "Horas Totales"
+        },
+        "description": "Desglose de horas de trabajo por equipo y empleado",
+        "noData": "No hay datos disponibles para el período seleccionado",
+        "status": {
+          "low": "Bajo",
+          "onTrack": "En Camino",
+          "under": "Por Debajo"
+        },
+        "title": "Detalles de Rendimiento del Equipo"
+      },
+      "teamComparison": {
+        "description": "Total de horas de trabajo por equipo para el período seleccionado",
+        "title": "Comparación de Equipos"
+      },
+      "title": "Rendimiento del Equipo"
+    },
+    "title": "Analítica",
+    "vacationTrends": {
+      "monthlyUsage": {
+        "description": "Días de vacaciones tomados por mes",
+        "title": "Uso Mensual de Vacaciones"
+      },
+      "peakMonths": {
+        "description": "Meses con mayor actividad de vacaciones",
+        "title": "Meses Pico de Vacaciones"
+      },
+      "title": "Tendencias de Vacaciones",
+      "utilization": {
+        "daysRemaining": "{count} días restantes",
+        "daysTaken": "{count} días tomados",
+        "description": "Uso general de días de vacaciones en la organización",
+        "label": "Utilización General",
+        "title": "Utilización de Vacaciones"
+      },
+      "vacationBalance": {
+        "columns": {
+          "allocated": "Asignado",
+          "employee": "Empleado",
+          "remaining": "Restante",
+          "taken": "Tomado",
+          "utilization": "Utilización"
+        },
+        "description": "Días asignados, tomados y restantes por empleado",
+        "noData": "No hay datos disponibles para el período seleccionado",
+        "title": "Saldo de Vacaciones"
+      }
+    },
+    "workHours": {
+      "dailyHours": {
+        "description": "Horas de trabajo reales vs esperadas por día",
+        "title": "Horas de Trabajo Diarias"
+      },
+      "distribution": {
+        "description": "Comparación de horas de trabajo de empleados (barra horizontal)",
+        "title": "Distribución de Horas de Trabajo"
+      },
+      "employeeComparison": {
+        "columns": {
+          "employee": "Empleado",
+          "expectedHours": "Horas Esperadas",
+          "status": "Estado",
+          "totalHours": "Horas Totales",
+          "variance": "Variación"
+        },
+        "description": "Horas totales y variación respecto a lo esperado por empleado",
+        "noData": "No hay datos disponibles para el período seleccionado",
+        "title": "Horas de Trabajo de Empleados"
+      },
+      "overtimeTrend": {
+        "description": "Variación de horas respecto a las horas esperadas a lo largo del tiempo",
+        "title": "Tendencia de Horas Extra y Faltantes"
+      },
+      "title": "Horas de Trabajo"
+    }
+  },
+  "auth": {
+    "2fa": {
+      "authenticator-prompt": "Rellene con el código de su aplicación de autenticación",
+      "backup-code-label": "Código de Respaldo",
+      "backup-code-placeholder": "Ingrese código de respaldo",
+      "backup-code-prompt": "Ingrese uno de sus códigos de respaldo",
+      "code-label": "Código de Autenticación",
+      "enter-6-digit-code": "Por favor ingrese un código de 6 dígitos",
+      "enter-valid-backup-code": "Por favor ingrese un código de respaldo válido",
+      "invalid-backup-code": "Código de respaldo inválido",
+      "invalid-code": "Código inválido",
+      "invalid-verification-code": "Código de verificación inválido",
+      "title": "Autenticación de Dos Factores",
+      "unexpected-error": "Ocurrió un error inesperado",
+      "use-authenticator": "Usar aplicación de autenticación en su lugar",
+      "use-backup": "Usar código de respaldo en su lugar",
+      "verification-failed": "Verificación fallida",
+      "verification-successful": "Verificación exitosa",
+      "verify": "Verificar",
+      "verifying": "Verificando..."
+    },
+    "already-have-account": "¿Ya tienes una cuenta?",
+    "confirm-password": "Confirmar Contraseña",
+    "create-account": "Crea tu cuenta",
+    "dont-have-account": "¿No tienes una cuenta?",
+    "email": "Correo electrónico",
+    "email-placeholder": "m@ejemplo.com",
+    "enter-email-reset": "Ingrese su dirección de correo electrónico y le enviaremos un enlace para restablecer su contraseña.",
+    "forgot-password": "¿Olvidaste tu contraseña?",
+    "forgot-password-error": "Error al enviar el correo de restablecimiento. Por favor intente de nuevo.",
+    "login": "Iniciar Sesión",
+    "login-to-account": "Inicia sesión en tu cuenta",
+    "login-with": {
+      "apple": "Iniciar sesión con Apple",
+      "github": "Iniciar sesión con Github",
+      "google": "Iniciar sesión con Google",
+      "linkedin": "Iniciar sesión con LinkedIn",
+      "microsoft": "Iniciar sesión con Microsoft",
+      "passkey": "Iniciar sesión con Passkey"
+    },
+    "login-with-sso": "Iniciar sesión con SSO",
+    "name": "Nombre",
+    "name-placeholder": "Juan Pérez",
+    "or": "o",
+    "or-continue-with": "O continuar con",
+    "or-sign-up-with": "O registrarse con",
+    "passkey-login-failed": "Error al iniciar sesión con passkey",
+    "passkey-signup-failed": "Error al registrarse con passkey",
+    "password": "Contraseña",
+    "password-requirements": {
+      "digit": "Al menos 1 dígito",
+      "lowercase": "Al menos 1 letra minúscula",
+      "special": "Al menos 1 carácter especial",
+      "uppercase": "Al menos 1 letra mayúscula"
+    },
+    "passwords-match": "Las contraseñas coinciden",
+    "passwords-no-match": "Las contraseñas no coinciden",
+    "remember-password": "¿Recordar constraseña?",
+    "reset-password-sent": "Enlace de restablecimiento enviado",
+    "reset-password-sent-message": "Si existe una cuenta con ese correo, hemos enviado un enlace para restablecer la contraseña.",
+    "reset-your-password": "Restablecer tu contraseña",
+    "send-reset-link": "Enviar enlace",
+    "sign-in": "Iniciar sesión",
+    "sign-up": "Registrarse",
+    "sign-up-with": {
+      "apple": "Registrarse con Apple",
+      "github": "Registrarse con Github",
+      "google": "Registrarse con Google",
+      "label": "Registrarse con",
+      "linkedin": "Registrarse con LinkedIn",
+      "microsoft": "Registrarse con Microsoft",
+      "passkey": "Registrarse con Passkey"
+    },
+    "social-login-error": "Ocurrió un error durante el inicio de sesión social",
+    "social-signup-error": "Ocurrió un error durante el registro social",
+    "sso-login-error": "Ocurrió un error durante el inicio de sesión SSO",
+    "sso-not-configured": "SSO no está configurado para este dominio",
+    "terms": {
+      "agreement": "Al hacer clic en continuar, aceptas nuestra",
+      "and": "y",
+      "privacy": "Política de Privacidad",
+      "service": "Términos de Servicio"
+    }
+  },
+  "common": {
+    "active": "Activo",
+    "add": "Agregar",
+    "assign": "Asignar",
+    "cancel": "Cancelar",
+    "create": "Crear",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "inactive": "Inactivo",
+    "loading": "Cargando...",
+    "openMenu": "Abrir menú",
+    "refresh": "Actualizar",
+    "remove": "Quitar",
+    "retry": "Reintentar",
+    "save": "Guardar",
+    "status": "Estado"
+  },
+  "dashboard": {
+    "cards": {
+      "accounts": {
+        "active": "Cuentas Activas",
+        "engagement": "El compromiso supera objetivos",
+        "retention": "Fuerte retención de usuarios"
+      },
+      "customers": {
+        "acquisition": "La adquisición necesita atención",
+        "down": "Bajó 20% este período",
+        "new": "Nuevos Clientes"
+      },
+      "growth": {
+        "increase": "Aumento constante del rendimiento",
+        "projections": "Cumple con las proyecciones de crecimiento",
+        "rate": "Tasa de Crecimiento"
+      },
+      "revenue": {
+        "total": "Ingresos Totales",
+        "trending-up": "Tendencia al alza este mes",
+        "visitors": "Visitantes de los últimos 6 meses"
+      }
+    },
+    "github": "GitHub",
+    "title": "Tablero",
+    "widgets": {
+      "birthdays": {
+        "andMore": "y {count} más...",
+        "description": "{count, plural, one {# cumpleaños en los próximos 30 días} other {# cumpleaños en los próximos 30 días} =0 {No hay cumpleaños en los próximos 30 días}}",
+        "error": "Error al cargar cumpleaños próximos",
+        "inDays": "en {days} días",
+        "loading": "Cargando cumpleaños...",
+        "noData": "No hay cumpleaños próximos",
+        "title": "Próximos Cumpleaños",
+        "today": "¡Hoy!",
+        "tomorrow": "Mañana"
+      },
+      "quickStats": {
+        "error": "Error al cargar estadísticas rápidas",
+        "loading": "Cargando estadísticas...",
+        "low": "Horas bajas",
+        "onTrack": "En camino",
+        "thisMonth": "Este Mes",
+        "thisWeek": "Esta Semana",
+        "title": "Estadísticas Rápidas",
+        "under": "Bajo objetivo"
+      },
+      "recentlyApproved": {
+        "absence": "Ausencia",
+        "andMore": "y {count} más...",
+        "approvedBy": "Aprobado por {name}",
+        "description": "{count, plural, one {Última solicitud aprobada} other {Últimas {count} solicitudes aprobadas}}",
+        "error": "Error al cargar solicitudes aprobadas recientemente",
+        "loading": "Cargando aprobados recientemente...",
+        "noData": "No hay solicitudes aprobadas recientemente",
+        "timeCorrection": "Corrección de Tiempo",
+        "title": "Aprobado Recientemente",
+        "viewAll": "Ver Todas las Aprobaciones"
+      },
+      "teamCalendar": {
+        "description": "{count, plural, one {# día con ausencias} other {# días con ausencias} =0 {No hubo ausencias este mes}}",
+        "error": "Error al cargar calendario del equipo",
+        "legend": "Ausencias del equipo",
+        "loading": "Cargando calendario del equipo...",
+        "nextMonth": "Mes siguente",
+        "previousMonth": "Mes anterior",
+        "teamMembersOut": "{count, plural, one {# miembro del equipo fuera} other {# miembros del equipo fuera} =0 {No hay miembros del equipo fuera}}",
+        "title": "Calendario del Equipo",
+        "today": "Hoy"
+      },
+      "upcomingTimeOff": {
+        "description": "{count, plural, one {# día con ausencias} other {# días con ausencias} =0 {No hay ausencias próximas}}",
+        "error": "Error al cargar tiempo libre próximo",
+        "loading": "Cargando ausencias próximas...",
+        "noData": "No hay ausencias próximas",
+        "startsIn": "Comienza en {days} días",
+        "startsToday": "Comienza hoy",
+        "startsTomorrow": "Comienza mañana",
+        "title": "Próximo Tiempo Libre",
+        "viewCalendar": "Ver Calendario Completo"
+      }
+    }
+  },
+  "generic": {
+    "done": "Hecho",
+    "submit": "Enviar"
+  },
+  "info": {
+    "back-to-login": "Volver al inicio de sesión",
+    "privacy-policy": "Política de Privacidad",
+    "terms-of-service": "Términos de Servicio"
+  },
+  "meta": {
+    "description": "z8 - aplicación de tiempo",
+    "keywords": "z8, tiempo, app, productividad",
+    "title": "z8 - aplicación de tiempo"
+  },
+  "nav": {
+    "absences": "Ausencias",
+    "active-proposals": "Propuestas Activas",
+    "analytics": "Analítica",
+    "approvals": "Aprobaciones",
+    "archived": "Archivado",
+    "calendar": "Calendario",
+    "capture": "Captura",
+    "dashboard": "Tablero",
+    "data-library": "Biblioteca de Datos",
+    "get-help": "Obtener Ayuda",
+    "lifecycle": "Ciclo de Vida",
+    "projects": "Proyectos",
+    "prompts": "Indicaciones",
+    "proposal": "Propuesta",
+    "reports": "Informes",
+    "scheduling": "Programación",
+    "search": "Buscar",
+    "settings": "Configuración",
+    "team": "Equipo",
+    "time-tracking": "Seguimiento de Tiempo",
+    "word-assistant": "Asistente de Word"
+  },
+  "onboarding": {
+    "complete": {
+      "autoRedirect": "Redirigiendo automáticamente en {{seconds}} segundos...",
+      "exploreDashboard": "Explora tu tablero",
+      "exploreDashboardDesc": "Comienza con el seguimiento de tiempo y gestión de ausencias",
+      "goToDashboard": "Ir al Tablero",
+      "holidayPresetCreated": "Días festivos configurados",
+      "holidayPresetSkipped": "Días festivos omitidos",
+      "inviteTeam": "Invita a los miembros de tu equipo",
+      "inviteTeamDesc": "Agrega colegas para colaborar y gestionar el tiempo juntos",
+      "loading": "Finalizando tu configuración...",
+      "nextStepsTitle": "Próximos Pasos",
+      "notificationsConfigured": "Notificaciones configuradas",
+      "notificationsSkipped": "Usando notificaciones predeterminadas",
+      "organizationCreated": "Organización creada",
+      "organizationSkipped": "Esperando invitación",
+      "profileCompleted": "Perfil completado",
+      "profileSkipped": "Perfil omitido",
+      "scheduleSet": "Horario de trabajo establecido",
+      "scheduleSkipped": "Puedes configurar esto más tarde",
+      "subtitle": "Tu cuenta está lista para usar. ¡Bienvenido al equipo!",
+      "summaryDesc": "Aquí tienes un resumen de tu configuración.",
+      "summaryTitle": "Lo Que Has Configurado",
+      "title": "¡Todo listo!",
+      "vacationPolicyCreated": "Política de vacaciones creada",
+      "vacationPolicySkipped": "Política de vacaciones omitida",
+      "workTemplateCreated": "Plantilla de horario de trabajo creada",
+      "workTemplateSkipped": "Plantilla de trabajo omitida"
+    },
+    "holidaySetup": {
+      "cardDesc": "Selecciona tu país para importar días festivos. Puedes personalizar esto más tarde en la configuración.",
+      "cardTitle": "Preajuste de Días Festivos",
+      "continue": "Continuar",
+      "country": "País",
+      "countryDesc": "Selecciona el país para días festivos.",
+      "error": "Error al crear preajuste de días festivos",
+      "noCountry": "No se encontró país.",
+      "presetName": "Nombre del Preajuste",
+      "presetNameDesc": "Un nombre para identificar este preajuste de días festivos.",
+      "presetNamePlaceholder": "ej., Días Festivos España 2024",
+      "searchCountry": "Buscar país...",
+      "selectCountry": "Seleccionar un país",
+      "setAsDefault": "Establecer como Predeterminado de la Organización",
+      "setAsDefaultDesc": "Aplicar este preajuste de días festivos a todos los empleados por defecto.",
+      "skip": "Omitir por ahora",
+      "subtitle": "Importa días festivos para tu ubicación. Esto ayuda a rastrear el tiempo libre correctamente.",
+      "success": "¡Preajuste de días festivos creado!",
+      "title": "Configurar días festivos"
+    },
+    "notifications": {
+      "approvals": "Solicitudes de aprobación",
+      "approvalsDesc": "Cuando alguien necesita tu aprobación.",
+      "continue": "Continuar",
+      "emailNotifications": "Notificaciones por Correo Electrónico",
+      "emailNotificationsDesc": "Recibe actualizaciones importantes por correo electrónico.",
+      "enable": "Habilitar",
+      "error": "Error al guardar preferencias de notificación",
+      "notifyAbout": "Notificarme sobre:",
+      "preferencesDesc": "Elige qué notificaciones quieres recibir.",
+      "preferencesTitle": "Preferencias de Notificación",
+      "pushDenied": "Permiso de notificación push denegado",
+      "pushDesc": "Recibe actualizaciones instantáneas incluso cuando no usas la aplicación.",
+      "pushEnabled": "¡Notificaciones push habilitadas!",
+      "pushGranted": "Notificaciones push habilitadas",
+      "pushGrantedDesc": "Recibirás notificaciones push",
+      "pushNotSupported": "Las notificaciones push no son compatibles en este navegador",
+      "pushPrompt": "Habilitar notificaciones push",
+      "pushPromptDesc": "Haz clic para habilitar notificaciones push",
+      "pushTitle": "Notificaciones Push",
+      "skip": "Omitir por ahora",
+      "statusUpdates": "Actualizaciones de estado",
+      "statusUpdatesDesc": "Cuando tus solicitudes son aprobadas o rechazadas.",
+      "subtitle": "Elige cómo quieres recibir actualizaciones sobre aprobaciones, cambios de estado y actividades del equipo.",
+      "success": "¡Preferencias de notificación guardadas!",
+      "teamChanges": "Cambios de equipo",
+      "teamChangesDesc": "Cuando se agregan o eliminan miembros del equipo.",
+      "title": "Configurar notificaciones"
+    },
+    "organization": {
+      "create": "Crear Organización",
+      "createDescription": "Configura tu propia organización e invita a tu equipo",
+      "createTitle": "Crear Organización",
+      "skip": "Omitir por ahora",
+      "skipDescription": "Si tu administrador te invitará a una organización, puedes omitir este paso por ahora.",
+      "skipTitle": "¿Esperando una invitación?",
+      "subtitle": "Crea tu organización para desbloquear todas las funciones, o salta si estás esperando una invitación.",
+      "title": "Configurar tu organización"
+    },
+    "profile": {
+      "birthday": "Cumpleaños",
+      "birthdayDesc": "¡Tu equipo puede desearte un feliz cumpleaños!",
+      "continue": "Continuar",
+      "error": "Error al actualizar perfil",
+      "firstName": "Nombre",
+      "firstNamePlaceholder": "Juan",
+      "gender": "Género",
+      "genderDesc": "Esto ayuda a personalizar tu experiencia.",
+      "lastName": "Apellido",
+      "lastNamePlaceholder": "Pérez",
+      "personalInfo": "Información Personal",
+      "personalInfoDesc": "Esta información será visible para los miembros de tu equipo.",
+      "pickDate": "Seleccionar una fecha",
+      "skip": "Omitir por ahora",
+      "subtitle": "Ayuda a tu equipo a reconocerte agregando información personal.",
+      "success": "¡Perfil actualizado con éxito!",
+      "title": "Completa tu perfil"
+    },
+    "steps": {
+      "complete": "Completar",
+      "holidaySetup": "Días Festivos",
+      "notifications": "Notificaciones",
+      "organization": "Organización",
+      "profile": "Perfil",
+      "vacationPolicy": "Vacaciones",
+      "welcome": "Bienvenido",
+      "workSchedule": "Horario",
+      "workTemplates": "Plantillas"
+    },
+    "vacationPolicy": {
+      "accrualType": "Tipo de Acumulación",
+      "accrualTypeDesc": "Cómo se otorgan los días de vacaciones a lo largo del año.",
+      "allowCarryover": "Permitir Traspaso",
+      "allowCarryoverDesc": "Permitir que los días no utilizados se traspasen al año siguiente.",
+      "annual": "Anual (todo de una vez)",
+      "annualDays": "Días de Vacaciones Anuales",
+      "annualDaysDesc": "Número de días de vacaciones por año.",
+      "biweekly": "Acumulación quincenal",
+      "cardDesc": "Configura la asignación de vacaciones para tu equipo. Puedes personalizar esto más tarde en la configuración.",
+      "cardTitle": "Política de Vacaciones",
+      "continue": "Continuar",
+      "defaultName": "Estándar",
+      "error": "Error al crear política de vacaciones",
+      "maxCarryover": "Días Máximos de Traspaso",
+      "maxCarryoverDesc": "Días máximos que se pueden traspasar.",
+      "monthly": "Acumulación mensual",
+      "name": "Nombre de la Política",
+      "nameDesc": "Un nombre para identificar esta política.",
+      "namePlaceholder": "ej., Estándar, Senior",
+      "skip": "Omitir por ahora",
+      "subtitle": "Crea una política de vacaciones para tu organización. Esto determina cuántos días libres obtienen los empleados.",
+      "success": "¡Política de vacaciones creada!",
+      "title": "Configurar política de vacaciones"
+    },
+    "welcome": {
+      "features": {
+        "absences": "Gestión de Ausencias",
+        "absencesDesc": "Solicita tiempo libre, gestiona días de vacaciones y rastrea días festivos",
+        "team": "Colaboración en Equipo",
+        "teamDesc": "Trabaja con tu equipo, aprueba solicitudes y gestiona empleados",
+        "timeTracking": "Seguimiento de Tiempo",
+        "timeTrackingDesc": "Registra entradas y salidas, rastrea horas de trabajo y gestiona correcciones de tiempo"
+      },
+      "getStarted": "Comenzar",
+      "subtitle": "Empecemos con una configuración rápida. Esto solo tomará unos minutos.",
+      "title": "¡Bienvenido a Z8!"
+    },
+    "workSchedule": {
+      "classification": "Clasificación de Trabajo",
+      "classificationDesc": "Cómo quieres rastrear tus horas de trabajo.",
+      "continue": "Continuar",
+      "daily": "Diario",
+      "error": "Error al establecer horario de trabajo",
+      "hoursPerWeek": "Horas por Semana",
+      "hoursPerWeekDesc": "El tiempo completo típico es de 40 horas por semana.",
+      "monthly": "Mensual",
+      "scheduleDesc": "Establece tus horas de trabajo predeterminadas. Puedes ajustar esto más tarde en la configuración.",
+      "scheduleTitle": "Horario de Trabajo",
+      "skip": "Omitir por ahora",
+      "subtitle": "Define tus horas de trabajo para ayudar a rastrear el tiempo y gestionar ausencias con precisión.",
+      "success": "¡Horario de trabajo establecido con éxito!",
+      "title": "Establece tu horario de trabajo",
+      "weekly": "Semanal"
+    },
+    "workTemplates": {
+      "cardDesc": "Define un horario de trabajo estándar. Puedes personalizar esto más tarde en la configuración.",
+      "cardTitle": "Plantilla de Horario de Trabajo",
+      "continue": "Continuar",
+      "defaultName": "Estándar",
+      "error": "Error al crear plantilla de horario de trabajo",
+      "hoursPerDay": "horas por día",
+      "hoursPerWeek": "Horas por Semana",
+      "hoursPerWeekDesc": "Total de horas de trabajo por semana.",
+      "name": "Nombre de la Plantilla",
+      "nameDesc": "Un nombre para identificar esta plantilla.",
+      "namePlaceholder": "ej., Tiempo Completo, Medio Tiempo",
+      "schedulePreview": "Vista Previa del Horario",
+      "setAsDefault": "Establecer como Predeterminado de la Organización",
+      "setAsDefaultDesc": "Aplicar esta plantilla a todos los empleados por defecto.",
+      "skip": "Omitir por ahora",
+      "subtitle": "Configura una plantilla de horario de trabajo para tu organización. Esto define las horas de trabajo para tu equipo.",
+      "success": "¡Plantilla de horario de trabajo creada!",
+      "title": "Crear plantilla de horario de trabajo",
+      "workingDays": "Días Laborables",
+      "workingDaysDesc": "Selecciona qué días son días laborales."
+    }
+  },
+  "settings": {
+    "auditLog": {
+      "description": "Ver historial de actividad y eventos de seguridad",
+      "title": "Registro de Auditoría"
+    },
+    "branding": {
+      "description": "Personalizar la apariencia de la página de inicio de sesión y la marca",
+      "title": "Marca"
+    },
+    "customDomains": {
+      "description": "Configurar dominios de inicio de sesión personalizados para tu organización",
+      "title": "Dominios Personalizados"
+    },
+    "dataExport": {
+      "categories": {
+        "absences": {
+          "description": "Registros de ausencias y aprobaciones (formato CSV)",
+          "label": "Ausencias"
+        },
+        "audit_logs": {
+          "description": "Historial de actividad (formato CSV)",
+          "label": "Registros de Auditoría"
+        },
+        "employees": {
+          "description": "Nombres, posiciones, roles y asignaciones de equipo",
+          "label": "Empleados"
+        },
+        "holidays": {
+          "description": "Calendario de días festivos y reglas de recurrencia",
+          "label": "Días Festivos"
+        },
+        "schedules": {
+          "description": "Plantillas de horarios de trabajo y asignaciones",
+          "label": "Horarios de Trabajo"
+        },
+        "shifts": {
+          "description": "Datos de programación de turnos (formato CSV)",
+          "label": "Turnos"
+        },
+        "teams": {
+          "description": "Estructura del equipo y permisos",
+          "label": "Equipos"
+        },
+        "time_entries": {
+          "description": "Registros de entrada/salida (formato CSV)",
+          "label": "Seguimiento de Tiempo"
+        },
+        "vacation": {
+          "description": "Políticas de vacaciones y saldos",
+          "label": "Políticas de Vacaciones"
+        },
+        "work_periods": {
+          "description": "Sesiones de trabajo agregadas (formato CSV)",
+          "label": "Períodos de Trabajo"
+        }
+      },
+      "description": "Exportar datos de la organización para respaldo o migración",
+      "featureName": "gestionar exportaciones de datos",
+      "form": {
+        "aboutAsync": "Las exportaciones se procesan de forma asíncrona y pueden tardar unos minutos",
+        "aboutEmail": "Recibirás un correo electrónico con un enlace de descarga cuando esté listo",
+        "aboutLinkValidity": "Los enlaces de descarga son válidos por 24 horas",
+        "aboutOrgDataOnly": "Solo se incluyen datos de tu organización",
+        "aboutStorageDuration": "Los archivos de exportación se almacenan durante 30 días",
+        "aboutTitle": "Acerca de las Exportaciones de Datos",
+        "description": "Selecciona las categorías de datos que deseas exportar. La exportación se procesará en segundo plano y recibirás un correo electrónico con un enlace de descarga cuando esté lista.",
+        "selectAll": "Seleccionar Todo",
+        "selectAtLeastOne": "Por favor selecciona al menos una categoría de datos para exportar",
+        "startExport": "{count, plural, one {Iniciar Exportación ({count} categoría)} other {Iniciar Exportación ({count} categorías)}}",
+        "startingExport": "Iniciando Exportación...",
+        "submitError": "Error al iniciar exportación",
+        "submitSuccess": "¡Solicitud de exportación enviada! Recibirás un correo electrónico cuando esté lista para descargar.",
+        "title": "Crear Nueva Exportación",
+        "unexpectedError": "Ocurrió un error inesperado"
+      },
+      "history": {
+        "columnActions": "Acciones",
+        "columnCategories": "Categorías",
+        "columnDate": "Fecha",
+        "columnSize": "Tamaño",
+        "columnStatus": "Estado",
+        "deleteDialogDescription": "¿Estás seguro de que deseas eliminar esta exportación? Esto eliminará el archivo del almacenamiento y no se puede deshacer.",
+        "deleteDialogTitle": "Eliminar Exportación",
+        "deleteError": "Error al eliminar exportación",
+        "deleteSuccess": "Exportación eliminada con éxito",
+        "description": "Ver y gestionar tus exportaciones anteriores",
+        "download": "Descargar",
+        "downloadError": "Error al generar enlace de descarga",
+        "downloadSuccess": "Enlace de descarga generado. Se ha enviado también un nuevo correo electrónico.",
+        "emptyDescription": "Aún no se han creado exportaciones.",
+        "emptyHint": "Crea una nueva exportación desde la pestaña \"Nueva Exportación\" para comenzar.",
+        "moreCategories": "+{count} más",
+        "statusCompleted": "Completado",
+        "statusFailed": "Fallido",
+        "statusPending": "Pendiente",
+        "statusProcessing": "Procesando",
+        "title": "Historial de Exportación",
+        "unexpectedError": "Ocurrió un error inesperado"
+      },
+      "storage": {
+        "accessKeyDescription": "Tu clave de acceso S3",
+        "accessKeyId": "ID de Clave de Acceso",
+        "bucketDescription": "El bucket S3 donde se almacenarán las exportaciones",
+        "bucketName": "Nombre del Bucket",
+        "bucketPlaceholder": "mi-bucket-exportacion",
+        "connectionFailed": "Conexión Fallida",
+        "connectionSuccess": "Conexión Exitosa",
+        "deleteDialogDescription": "Esto eliminará la configuración de almacenamiento S3. No podrás crear nuevas exportaciones hasta que configures el almacenamiento nuevamente. Las exportaciones existentes permanecerán en S3 pero pueden volverse inaccesibles.",
+        "deleteDialogTitle": "¿Eliminar Configuración de Almacenamiento?",
+        "deleteError": "Error al eliminar configuración",
+        "deleteSuccess": "Configuración de almacenamiento eliminada",
+        "description": "Configurar almacenamiento compatible con S3 para exportaciones de datos. Soporta AWS S3, MinIO y otros servicios compatibles con S3.",
+        "endpoint": "Punto Final Personalizado (Opcional)",
+        "endpointDescription": "Para MinIO u otros servicios compatibles con S3. Dejar vacío para AWS S3.",
+        "endpointPlaceholder": "https://minio.ejemplo.com",
+        "keepExistingCredentials": "Dejar vacío para mantener las credenciales existentes",
+        "lastVerified": "Verificado por última vez: {date}",
+        "region": "Región",
+        "regionDescription": "Región AWS o región MinIO",
+        "regionPlaceholder": "us-east-1",
+        "saveConfiguration": "Guardar Configuración",
+        "saveError": "Error al guardar configuración",
+        "saveSuccess": "Configuración de almacenamiento guardada",
+        "saveSuccessDescription": "Tus configuraciones de almacenamiento S3 han sido guardadas. Prueba la conexión para verificar.",
+        "saving": "Guardando...",
+        "secretAccessKey": "Clave de Acceso Secreta",
+        "secretKeyDescription": "Tu clave secreta S3",
+        "testConnection": "Probar Conexión",
+        "testFailed": "Prueba de conexión fallida",
+        "testing": "Probando...",
+        "title": "Configuración de Almacenamiento S3",
+        "unexpectedError": "Ocurrió un error inesperado",
+        "verified": "Verificado"
+      },
+      "storageNotConfigured": {
+        "description": "Por favor configura el almacenamiento S3 en la pestaña \"Configuración de Almacenamiento\" antes de crear exportaciones.",
+        "title": "Almacenamiento No Configurado"
+      },
+      "tabs": {
+        "exportHistory": "Historial de Exportación",
+        "newExport": "Nueva Exportación",
+        "storageSettings": "Configuración de Almacenamiento"
+      },
+      "title": "Exportación de Datos"
+    },
+    "employees": {
+      "description": "Gestionar perfiles de empleados, roles y asignaciones de gerentes",
+      "title": "Empleados"
+    },
+    "group": {
+      "account": "Cuenta",
+      "administration": "Administración",
+      "data": "Datos",
+      "enterprise": "Empresa",
+      "organization": "Organización"
+    },
+    "holidays": {
+      "description": "Configurar días festivos de la organización y tiempo libre",
+      "title": "Días Festivos"
+    },
+    "locations": {
+      "address": "Dirección",
+      "assignEmployee": "Asignar Empleado",
+      "assignEmployeeDescription": "Asignar un empleado como supervisor para esta ubicación",
+      "assignEmployeeToSubarea": "Asignar Empleado a Subárea",
+      "assignEmployeeToSubareaDescription": "Asignar un empleado como supervisor para {subareaName}",
+      "backToList": "Volver a Ubicaciones",
+      "create": "Crear Ubicación",
+      "created": "Ubicación creada",
+      "createFailed": "Error al crear ubicación",
+      "deleted": "Ubicación eliminada",
+      "deleteDescription": "¿Estás seguro de que deseas eliminar esta ubicación? Esto también eliminará todas las subáreas y asignaciones de empleados.",
+      "deleteFailed": "Error al eliminar ubicación",
+      "deleteSubareaDescription": "¿Estás seguro de que deseas eliminar esta subárea? Esto también eliminará todas las asignaciones de empleados.",
+      "deleteSubareaTitle": "Eliminar Subárea",
+      "deleteTitle": "Eliminar Ubicación",
+      "description": "Gestionar ubicaciones de la organización y subáreas",
+      "details": "Detalles de Ubicación",
+      "dialog": {
+        "create": "Crear Ubicación",
+        "createDescription": "Crear una nueva ubicación para tu organización",
+        "createTitle": "Crear Ubicación",
+        "editDescription": "Actualizar detalles de ubicación",
+        "editTitle": "Editar Ubicación",
+        "save": "Guardar Cambios"
+      },
+      "employee": "Empleado",
+      "employeeAssigned": "Empleado asignado",
+      "employeeAssignFailed": "Error al asignar empleado",
+      "employeeRemoved": "Empleado eliminado",
+      "employeeRemoveFailed": "Error al eliminar empleado",
+      "field": {
+        "active": "Activo",
+        "activeHelp": "Las ubicaciones inactivas no aparecerán en las listas de selección",
+        "city": "Ciudad",
+        "cityPlaceholder": "ej., Madrid",
+        "cityPostal": "Ciudad / Código Postal",
+        "country": "Código de País",
+        "countryHelp": "Código ISO 3166-1 alpha-2",
+        "countryPlaceholder": "ej., ES, MX",
+        "name": "Nombre",
+        "namePlaceholder": "ej., Oficina Principal",
+        "postalCode": "Código Postal",
+        "postalCodePlaceholder": "ej., 28001",
+        "street": "Calle",
+        "streetPlaceholder": "ej., Calle Principal 123",
+        "subareaActiveHelp": "Las subáreas inactivas no aparecerán en las listas de selección",
+        "subareaName": "Nombre",
+        "subareaNamePlaceholder": "ej., Caja, Almacén, Bistro"
+      },
+      "name": "Nombre",
+      "noAvailableEmployees": "Todos los empleados ya están asignados a esta ubicación",
+      "noAvailableEmployeesSubarea": "Todos los empleados ya están asignados a esta subárea",
+      "noLocations": "Aún no hay ubicaciones",
+      "noLocationsDescription": "Crea tu primera ubicación para organizar tu espacio de trabajo.",
+      "noSubareas": "Aún no hay subáreas",
+      "noSupervisors": "No hay supervisores asignados",
+      "notFound": "Ubicación no encontrada",
+      "primary": "Principal",
+      "primarySupervisor": "Supervisor Principal",
+      "primarySupervisorHelp": "Marcar como supervisor principal para esta ubicación",
+      "primarySupervisorSubareaHelp": "Marcar como supervisor principal para esta subárea",
+      "selectEmployee": "Por favor selecciona un empleado",
+      "selectEmployeePlaceholder": "Seleccionar un empleado",
+      "subareaCreated": "Subárea creada",
+      "subareaCreateFailed": "Error al crear subárea",
+      "subareaDeleted": "Subárea eliminada",
+      "subareaDeleteFailed": "Error al eliminar subárea",
+      "subareaDialog": {
+        "create": "Agregar Subárea",
+        "createDescription": "Agregar una nueva subárea a esta ubicación",
+        "createTitle": "Agregar Subárea",
+        "editDescription": "Actualizar detalles de subárea",
+        "editTitle": "Editar Subárea",
+        "save": "Guardar Cambios"
+      },
+      "subareas": "Subáreas",
+      "subareasDescription": "Áreas dentro de esta ubicación",
+      "subareaUpdated": "Subárea actualizada",
+      "subareaUpdateFailed": "Error al actualizar subárea",
+      "supervisors": "Supervisores",
+      "supervisorsDescription": "Empleados asignados a esta ubicación",
+      "title": "Ubicaciones",
+      "updated": "Ubicación actualizada",
+      "updateFailed": "Error al actualizar ubicación"
+    },
+    "notifications": {
+      "description": "Configurar cómo recibes notificaciones",
+      "title": "Notificaciones"
+    },
+    "organizations": {
+      "description": "Gestionar miembros de la organización, invitaciones y equipos",
+      "title": "Organizaciones y Equipos"
+    },
+    "profile": {
+      "description": "Gestionar tu información personal y foto de perfil",
+      "title": "Perfil"
+    },
+    "security": {
+      "description": "Gestionar tu contraseña y sesiones activas",
+      "title": "Seguridad"
+    },
+    "ssoProviders": {
+      "description": "Gestionar proveedores de inicio de sesión único para tu organización",
+      "title": "Proveedores SSO"
+    },
+    "vacation": {
+      "description": "Gestionar políticas de vacaciones y asignaciones",
+      "title": "Vacaciones"
+    },
+    "workSchedules": {
+      "addEmployee": "Agregar Empleado",
+      "addTeam": "Agregar Equipo",
+      "assign": "Asignar",
+      "assignEmployee": "Asignar a Empleado",
+      "assignEmployeeDescription": "Sobrescribir el horario para un empleado específico.",
+      "assignmentCreated": "Horario asignado",
+      "assignmentDeleted": "Asignación eliminada",
+      "assignmentDeleteFailed": "Error al eliminar asignación",
+      "assignmentFailed": "Error al asignar horario",
+      "assignmentsLoadError": "Error al cargar asignaciones",
+      "assignOrg": "Establecer Predeterminado de Organización",
+      "assignOrgDescription": "Establecer el horario de trabajo predeterminado para todos los empleados en tu organización.",
+      "assignSchedule": "Asignar Horario",
+      "assignTeam": "Asignar a Equipo",
+      "assignTeamDescription": "Sobrescribir el predeterminado de la organización para un equipo específico.",
+      "created": "Plantilla creada",
+      "createFailed": "Error al crear plantilla",
+      "createTemplate": "Crear Plantilla",
+      "cycle": {
+        "biweekly": "Quincenal",
+        "daily": "Diario",
+        "description": "El período de tiempo para este horario",
+        "label": "Ciclo",
+        "monthly": "Mensual",
+        "weekly": "Semanal",
+        "yearly": "Anual"
+      },
+      "daysShort": "d",
+      "default": "Predeterminado",
+      "defaultFailed": "Error al establecer plantilla predeterminada",
+      "defaultSet": "Plantilla predeterminada establecida",
+      "deleted": "Plantilla eliminada",
+      "deleteDescription": "¿Estás seguro de que deseas eliminar \"{name}\"? Esto también eliminará todas las asignaciones para esta plantilla. Esta acción no se puede deshacer.",
+      "deleteFailed": "Error al eliminar plantilla",
+      "deleteTitle": "Eliminar Plantilla",
+      "description": "Gestionar plantillas de horarios de trabajo y asignaciones para tu organización",
+      "descriptionLabel": "Descripción",
+      "descriptionPlaceholder": "Descripción opcional",
+      "detailedDescription": "Configurar horas para cada día de la semana",
+      "editTemplate": "Editar Plantilla",
+      "employee": "Empleado",
+      "employeeLevel": "Sobreescrituras de Empleado",
+      "employeeLevelDescription": "Sobrescribir horarios para empleados específicos",
+      "homeOffice": "Oficina en Casa",
+      "homeOfficeDays": "Días de Oficina en Casa",
+      "homeOfficeDaysDescription": "Días de oficina en casa permitidos por ciclo",
+      "homeOfficeDaysPerCycle": "días de oficina en casa",
+      "hours": "Horas",
+      "hoursPerCycle": "Horas por Ciclo",
+      "hoursPerCycleDescription": "Total de horas de trabajo por ciclo (ej., 40 para semanal)",
+      "hoursUnit": "horas",
+      "loadError": "Error al cargar plantillas",
+      "name": "Nombre",
+      "namePlaceholder": "ej., Tiempo Completo 40h",
+      "noEmployeeAssignments": "No hay horarios específicos de empleados",
+      "noEmployeesAvailable": "No hay empleados disponibles",
+      "noOrgAssignment": "No hay predeterminado de organización establecido",
+      "noTeamAssignments": "No hay horarios específicos de equipos",
+      "noTeamsAvailable": "No hay equipos disponibles",
+      "noTemplates": "No hay plantillas de horarios de trabajo",
+      "noTemplatesAvailable": "No hay plantillas disponibles",
+      "noTemplatesDescription": "Crea una plantilla para definir horarios de trabajo para tu equipo.",
+      "orgLevel": "Predeterminado de Organización",
+      "orgLevelDescription": "Horario de trabajo predeterminado aplicado a todos los empleados a menos que se sobrescriba",
+      "removeAssignment": "Eliminar Asignación",
+      "removeAssignmentDescription": "¿Estás seguro de que deseas eliminar esta asignación de horario? Los empleados afectados heredarán su horario del siguiente nivel.",
+      "selectEmployee": "Seleccionar un empleado",
+      "selectTeam": "Seleccionar un equipo",
+      "selectTemplate": "Seleccionar una plantilla",
+      "setDefault": "Establecer como Predeterminado",
+      "tab": {
+        "assignments": "Asignaciones",
+        "templates": "Plantillas"
+      },
+      "team": "Equipo",
+      "teamLevel": "Sobreescrituras de Equipo",
+      "teamLevelDescription": "Sobrescribir el predeterminado de la organización para equipos específicos",
+      "template": "Plantilla",
+      "templateDescription": "Definir una plantilla de horario de trabajo que se puede asignar a tu organización, equipos o empleados individuales.",
+      "title": "Horarios de Trabajo",
+      "totalHours": "Total",
+      "type": {
+        "detailed": "Detallado",
+        "label": "Tipo de Horario",
+        "simple": "Simple"
+      },
+      "updated": "Plantilla actualizada",
+      "updateFailed": "Error al actualizar plantilla",
+      "workingDays": {
+        "allDays": "Todos los Días",
+        "label": "Días Laborables",
+        "weekdays": "Días de Semana (Lun-Vie)",
+        "weekends": "Fines de Semana (Sáb-Dom)"
+      }
+    }
+  },
+  "table": {
+    "description": "Mostrando total de visitantes de los últimos 6 meses. Esto es solo un texto aleatorio para probar el diseño. Se extiende a múltiples líneas y debería ajustarse.",
+    "header": "Encabezado",
+    "limit": "Límite",
+    "reviewer": "Revisor",
+    "select-reviewer": "Seleccionar un revisor",
+    "select-status": "Seleccionar un estado",
+    "select-type": "Seleccionar un tipo",
+    "showing-visitors": "Mostrando total de visitantes de los últimos 6 meses",
+    "status": "Estado",
+    "status-options": {
+      "done": "Hecho",
+      "in-progress": "En Progreso",
+      "not-started": "No Iniciado"
+    },
+    "target": "Objetivo",
+    "trending-up": "Tendencia alcista de 5.2% este mes",
+    "type": "Tipo",
+    "type-options": {
+      "capabilities": "Capacidades",
+      "cover-page": "Portada",
+      "design": "Diseño",
+      "executive-summary": "Resumen Ejecutivo",
+      "focus-documents": "Documentos de Enfoque",
+      "narrative": "Narrativa",
+      "table-of-contents": "Tabla de Contenidos",
+      "technical-approach": "Enfoque Técnico"
+    }
+  },
+  "user": {
+    "account": "Cuenta",
+    "billing": "Facturación",
+    "log-out": "Cerrar Sesión",
+    "notifications": "Notificaciones"
+  },
+  "validation": {
+    "invalid-email": "Dirección de correo electrónico inválida"
+  }
+}
