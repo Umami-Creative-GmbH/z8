@@ -479,6 +479,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 						<Input
 							id="email"
 							name="email"
+							autoComplete="email"
 							onBlur={(e) => validateField("email", e.target.value)}
 							onChange={(e) => {
 								handleChange("email", e.target.value);
@@ -499,6 +500,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 						<Input
 							id="password"
 							name="password"
+							autoComplete="current-password"
 							onBlur={(e) => validateField("password", e.target.value)}
 							onChange={(e) => {
 								handleChange("password", e.target.value);

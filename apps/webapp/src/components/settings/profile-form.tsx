@@ -326,6 +326,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
 											type="button"
 											onClick={() => inputRef.current?.click()}
 											disabled={isUploadingAvatar}
+											aria-label={t("profile.change-picture", "Change Picture")}
 											className="absolute bottom-0 right-0 rounded-full bg-primary p-2 text-primary-foreground shadow-lg transition-transform hover:scale-110 disabled:opacity-50"
 										>
 											<IconCamera className="h-4 w-4" />
@@ -417,6 +418,8 @@ export function ProfileForm({ user }: ProfileFormProps) {
 										<Label htmlFor="firstName">First Name</Label>
 										<Input
 											id="firstName"
+											name="firstName"
+											autoComplete="given-name"
 											value={profileData.firstName}
 											onChange={(e) =>
 												setProfileData((prev) => ({ ...prev, firstName: e.target.value }))
@@ -430,6 +433,8 @@ export function ProfileForm({ user }: ProfileFormProps) {
 										<Label htmlFor="lastName">Last Name</Label>
 										<Input
 											id="lastName"
+											name="lastName"
+											autoComplete="family-name"
 											value={profileData.lastName}
 											onChange={(e) =>
 												setProfileData((prev) => ({ ...prev, lastName: e.target.value }))
@@ -441,13 +446,19 @@ export function ProfileForm({ user }: ProfileFormProps) {
 
 								{/* Gender */}
 								<div className="space-y-2">
-									<Label>Gender</Label>
-									<div className="grid grid-cols-3 gap-3">
+									<Label id="gender-label">Gender</Label>
+									<div
+										role="radiogroup"
+										aria-labelledby="gender-label"
+										className="grid grid-cols-3 gap-3"
+									>
 										<button
 											type="button"
+											role="radio"
+											aria-checked={profileData.gender === "male"}
 											onClick={() => setProfileData((prev) => ({ ...prev, gender: "male" }))}
 											className={cn(
-												"flex flex-col items-center justify-center gap-2 rounded-lg border-2 p-4 transition-all hover:border-primary/50",
+												"flex flex-col items-center justify-center gap-2 rounded-lg border-2 p-4 transition-all hover:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
 												profileData.gender === "male"
 													? "border-primary bg-primary/5 text-primary"
 													: "border-border bg-background",
@@ -458,9 +469,11 @@ export function ProfileForm({ user }: ProfileFormProps) {
 										</button>
 										<button
 											type="button"
+											role="radio"
+											aria-checked={profileData.gender === "female"}
 											onClick={() => setProfileData((prev) => ({ ...prev, gender: "female" }))}
 											className={cn(
-												"flex flex-col items-center justify-center gap-2 rounded-lg border-2 p-4 transition-all hover:border-primary/50",
+												"flex flex-col items-center justify-center gap-2 rounded-lg border-2 p-4 transition-all hover:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
 												profileData.gender === "female"
 													? "border-primary bg-primary/5 text-primary"
 													: "border-border bg-background",
@@ -471,9 +484,11 @@ export function ProfileForm({ user }: ProfileFormProps) {
 										</button>
 										<button
 											type="button"
+											role="radio"
+											aria-checked={profileData.gender === "other"}
 											onClick={() => setProfileData((prev) => ({ ...prev, gender: "other" }))}
 											className={cn(
-												"flex flex-col items-center justify-center gap-2 rounded-lg border-2 p-4 transition-all hover:border-primary/50",
+												"flex flex-col items-center justify-center gap-2 rounded-lg border-2 p-4 transition-all hover:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
 												profileData.gender === "other"
 													? "border-primary bg-primary/5 text-primary"
 													: "border-border bg-background",
