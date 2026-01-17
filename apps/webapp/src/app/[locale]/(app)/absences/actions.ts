@@ -15,11 +15,7 @@ import {
 	holiday,
 	vacationAllowance,
 } from "@/db/schema";
-import {
-	calculateBusinessDaysWithHalfDays,
-	dateRangesOverlap,
-	getYearRange,
-} from "@/lib/absences/date-utils";
+import { calculateBusinessDaysWithHalfDays, dateRangesOverlap } from "@/lib/absences/date-utils";
 import { canCancelAbsence } from "@/lib/absences/permissions";
 import type {
 	AbsenceRequest,
@@ -475,6 +471,7 @@ export async function getCurrentEmployee() {
 
 /**
  * Get vacation balance for an employee
+ * Optimized with parallel database queries for better performance
  */
 export async function getVacationBalance(
 	employeeId: string,
@@ -493,43 +490,45 @@ export async function getVacationBalance(
 	const startOfYear = `${year}-01-01`;
 	const endOfYear = `${year}-12-31`;
 
-	const orgAllowance = await db.query.vacationAllowance.findFirst({
-		where: and(
-			eq(vacationAllowance.organizationId, emp.organizationId),
-			eq(vacationAllowance.isCompanyDefault, true),
-			eq(vacationAllowance.isActive, true),
-			lte(vacationAllowance.startDate, endOfYear), // Policy started before or during the year
-			or(
-				isNull(vacationAllowance.validUntil), // Policy is ongoing
-				gte(vacationAllowance.validUntil, startOfYear), // Policy ends during or after the year
+	// Run all three independent queries in parallel for better performance
+	const [orgAllowance, empAllowance, absences] = await Promise.all([
+		// Query 1: Organization vacation allowance
+		db.query.vacationAllowance.findFirst({
+			where: and(
+				eq(vacationAllowance.organizationId, emp.organizationId),
+				eq(vacationAllowance.isCompanyDefault, true),
+				eq(vacationAllowance.isActive, true),
+				lte(vacationAllowance.startDate, endOfYear), // Policy started before or during the year
+				or(
+					isNull(vacationAllowance.validUntil), // Policy is ongoing
+					gte(vacationAllowance.validUntil, startOfYear), // Policy ends during or after the year
+				),
 			),
-		),
-		orderBy: desc(vacationAllowance.startDate), // Get the most recent matching policy
-	});
+			orderBy: desc(vacationAllowance.startDate), // Get the most recent matching policy
+		}),
+		// Query 2: Employee-specific allowance
+		db.query.employeeVacationAllowance.findFirst({
+			where: and(
+				eq(employeeVacationAllowance.employeeId, employeeId),
+				eq(employeeVacationAllowance.year, year),
+			),
+		}),
+		// Query 3: All absences for the employee in this year
+		db.query.absenceEntry.findMany({
+			where: and(
+				eq(absenceEntry.employeeId, employeeId),
+				gte(absenceEntry.startDate, startOfYear),
+				lte(absenceEntry.endDate, endOfYear),
+			),
+			with: {
+				category: true,
+			},
+		}),
+	]);
 
 	if (!orgAllowance) {
 		return null;
 	}
-
-	// Get employee-specific allowance
-	const empAllowance = await db.query.employeeVacationAllowance.findFirst({
-		where: and(
-			eq(employeeVacationAllowance.employeeId, employeeId),
-			eq(employeeVacationAllowance.year, year),
-		),
-	});
-
-	// Get all absences for the employee in this year
-	const absences = await db.query.absenceEntry.findMany({
-		where: and(
-			eq(absenceEntry.employeeId, employeeId),
-			gte(absenceEntry.startDate, startOfYear),
-			lte(absenceEntry.endDate, endOfYear),
-		),
-		with: {
-			category: true,
-		},
-	});
 
 	// Transform to AbsenceWithCategory type
 	const absencesWithCategory: AbsenceWithCategory[] = absences.map((a) => ({

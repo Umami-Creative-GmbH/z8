@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { headers } from "next/headers";
-import { type NextRequest, NextResponse, connection } from "next/server";
+import { connection, type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { employee } from "@/db/schema";
 import { auth } from "@/lib/auth";
@@ -12,20 +12,28 @@ import { TimeEntryService } from "@/lib/effect/services/time-entry.service";
  * GET /api/time-entries
  * Retrieve time entries for an employee
  * Query params: employeeId, from, to, includeSuperseded
+ * Optimized: start promises early, await late
  */
 export async function GET(request: NextRequest) {
-	await connection();
-	try {
-		const session = await auth.api.getSession({ headers: await headers() });
-		if (!session?.user) {
-			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-		}
+	// Start connection and headers promises early (don't await yet)
+	const connectionPromise = connection();
+	const headersPromise = headers();
 
+	try {
+		// Parse search params while promises are in flight
 		const searchParams = request.nextUrl.searchParams;
 		const employeeId = searchParams.get("employeeId");
 		const from = searchParams.get("from");
 		const to = searchParams.get("to");
 		const includeSuperseded = searchParams.get("includeSuperseded") === "true";
+
+		// Now await connection and session in parallel
+		const [, resolvedHeaders] = await Promise.all([connectionPromise, headersPromise]);
+		const session = await auth.api.getSession({ headers: resolvedHeaders });
+
+		if (!session?.user) {
+			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+		}
 
 		// Get current user's employee record
 		const [currentEmployee] = await db
@@ -91,16 +99,27 @@ export async function GET(request: NextRequest) {
 /**
  * POST /api/time-entries
  * Create a new time entry (clock in/out)
+ * Optimized: start promises early, await late
  */
 export async function POST(request: NextRequest) {
-	await connection();
+	// Start all promises early in parallel
+	const connectionPromise = connection();
+	const headersPromise = headers();
+	const bodyPromise = request.json();
+
 	try {
-		const session = await auth.api.getSession({ headers: await headers() });
+		// Await all initial promises in parallel
+		const [, resolvedHeaders, body] = await Promise.all([
+			connectionPromise,
+			headersPromise,
+			bodyPromise,
+		]);
+
+		const session = await auth.api.getSession({ headers: resolvedHeaders });
 		if (!session?.user) {
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 		}
 
-		const body = await request.json();
 		const { type, timestamp, notes, location } = body;
 
 		// Validate required fields
@@ -122,11 +141,10 @@ export async function POST(request: NextRequest) {
 			return NextResponse.json({ error: "Employee record not found" }, { status: 404 });
 		}
 
-		// Get request metadata
-		const headersList = await headers();
+		// Extract request metadata from already-resolved headers
 		const ipAddress =
-			headersList.get("x-forwarded-for") || headersList.get("x-real-ip") || "unknown";
-		const deviceInfo = headersList.get("user-agent") || "unknown";
+			resolvedHeaders.get("x-forwarded-for") || resolvedHeaders.get("x-real-ip") || "unknown";
+		const deviceInfo = resolvedHeaders.get("user-agent") || "unknown";
 
 		const effect = Effect.gen(function* (_) {
 			const timeEntryService = yield* _(TimeEntryService);
