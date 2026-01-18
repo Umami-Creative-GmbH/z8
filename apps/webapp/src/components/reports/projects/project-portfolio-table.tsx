@@ -1,19 +1,14 @@
 "use client";
 
 import { IconChartBar, IconChevronRight } from "@tabler/icons-react";
+import type { ColumnDef } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
+import { useMemo, useState } from "react";
+import { DataTable, DataTableToolbar } from "@/components/data-table-server";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "@/components/ui/table";
 import type { ProjectSummary } from "@/lib/reports/project-types";
 import { cn } from "@/lib/utils";
 
@@ -32,6 +27,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 export function ProjectPortfolioTable({ projects, onProjectSelect }: ProjectPortfolioTableProps) {
 	const { t } = useTranslate();
+	const [search, setSearch] = useState("");
 
 	const formatDeadlineStatus = (daysUntilDeadline: number | null) => {
 		if (daysUntilDeadline === null) return null;
@@ -89,28 +85,127 @@ export function ProjectPortfolioTable({ projects, onProjectSelect }: ProjectPort
 		return "bg-green-500";
 	};
 
-	if (projects.length === 0) {
-		return (
-			<Card>
-				<CardContent className="flex items-center justify-center py-12">
-					<div className="flex flex-col items-center gap-4 text-center">
-						<IconChartBar className="h-12 w-12 text-muted-foreground" />
+	// Filter projects by search
+	const filteredProjects = useMemo(() => {
+		if (!search) return projects;
+		const searchLower = search.toLowerCase();
+		return projects.filter(
+			(project) =>
+				project.name.toLowerCase().includes(searchLower) ||
+				project.description?.toLowerCase().includes(searchLower) ||
+				project.status.toLowerCase().includes(searchLower),
+		);
+	}, [projects, search]);
+
+	// Column definitions
+	const columns = useMemo<ColumnDef<ProjectSummary>[]>(
+		() => [
+			{
+				accessorKey: "name",
+				header: t("reports.projects.table.project", "Project"),
+				cell: ({ row }) => (
+					<div className="flex items-center gap-2">
+						{row.original.color && (
+							<div
+								className="h-3 w-3 rounded-full flex-shrink-0"
+								style={{ backgroundColor: row.original.color }}
+							/>
+						)}
 						<div>
-							<p className="font-semibold">
-								{t("reports.projects.table.noProjectsFound", "No projects found")}
-							</p>
-							<p className="text-sm text-muted-foreground">
-								{t(
-									"reports.projects.table.noProjectsMatch",
-									"No projects match the selected filters",
-								)}
-							</p>
+							<div className="font-medium">{row.original.name}</div>
+							{row.original.description && (
+								<div className="text-xs text-muted-foreground line-clamp-1">
+									{row.original.description}
+								</div>
+							)}
 						</div>
 					</div>
-				</CardContent>
-			</Card>
-		);
-	}
+				),
+			},
+			{
+				accessorKey: "status",
+				header: t("reports.projects.table.status", "Status"),
+				cell: ({ row }) => (
+					<Badge variant="secondary" className={cn(STATUS_COLORS[row.original.status])}>
+						{getStatusLabel(row.original.status)}
+					</Badge>
+				),
+			},
+			{
+				accessorKey: "totalHours",
+				header: () => (
+					<div className="text-right">{t("reports.projects.table.hours", "Hours")}</div>
+				),
+				cell: ({ row }) => (
+					<div className="text-right tabular-nums">{row.original.totalHours.toFixed(1)}h</div>
+				),
+			},
+			{
+				accessorKey: "budgetHours",
+				header: t("reports.projects.table.budget", "Budget"),
+				cell: ({ row }) => {
+					const project = row.original;
+					if (project.budgetHours === null) {
+						return <span className="text-sm text-muted-foreground">—</span>;
+					}
+					return (
+						<div className="w-32 space-y-1">
+							<div className="flex justify-between text-xs">
+								<span className="text-muted-foreground">
+									{project.percentBudgetUsed?.toFixed(0)}%
+								</span>
+								<span className="text-muted-foreground">{project.budgetHours}h</span>
+							</div>
+							<Progress
+								value={Math.min(project.percentBudgetUsed ?? 0, 100)}
+								className={cn("h-2", getBudgetProgressColor(project.percentBudgetUsed))}
+							/>
+						</div>
+					);
+				},
+			},
+			{
+				accessorKey: "deadline",
+				header: t("reports.projects.table.deadline", "Deadline"),
+				cell: ({ row }) => {
+					const project = row.original;
+					if (!project.deadline) {
+						return <span className="text-sm text-muted-foreground">—</span>;
+					}
+					return (
+						<div className="flex flex-col gap-1">
+							<span className="text-sm">{project.deadline.toLocaleDateString()}</span>
+							{formatDeadlineStatus(project.daysUntilDeadline)}
+						</div>
+					);
+				},
+			},
+			{
+				accessorKey: "uniqueEmployees",
+				header: () => (
+					<div className="text-right">{t("reports.projects.table.team", "Team")}</div>
+				),
+				cell: ({ row }) => (
+					<div className="text-right tabular-nums">{row.original.uniqueEmployees}</div>
+				),
+			},
+			{
+				id: "actions",
+				cell: ({ row }) => (
+					<Button
+						variant="ghost"
+						size="sm"
+						onClick={() => onProjectSelect(row.original.id)}
+						className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
+						aria-label={t("reports.projects.table.viewProject", "View project details")}
+					>
+						<IconChevronRight className="h-4 w-4" />
+					</Button>
+				),
+			},
+		],
+		[t, onProjectSelect],
+	);
 
 	return (
 		<Card>
@@ -123,97 +218,25 @@ export function ProjectPortfolioTable({ projects, onProjectSelect }: ProjectPort
 					)}
 				</CardDescription>
 			</CardHeader>
-			<CardContent>
-				<Table>
-					<TableHeader>
-						<TableRow>
-							<TableHead>{t("reports.projects.table.project", "Project")}</TableHead>
-							<TableHead>{t("reports.projects.table.status", "Status")}</TableHead>
-							<TableHead className="text-right">
-								{t("reports.projects.table.hours", "Hours")}
-							</TableHead>
-							<TableHead>{t("reports.projects.table.budget", "Budget")}</TableHead>
-							<TableHead>{t("reports.projects.table.deadline", "Deadline")}</TableHead>
-							<TableHead className="text-right">
-								{t("reports.projects.table.team", "Team")}
-							</TableHead>
-							<TableHead className="w-[50px]" />
-						</TableRow>
-					</TableHeader>
-					<TableBody>
-						{projects.map((project) => (
-							<TableRow key={project.id} className="group">
-								<TableCell>
-									<div className="flex items-center gap-2">
-										{project.color && (
-											<div
-												className="h-3 w-3 rounded-full"
-												style={{ backgroundColor: project.color }}
-											/>
-										)}
-										<div>
-											<div className="font-medium">{project.name}</div>
-											{project.description && (
-												<div className="text-xs text-muted-foreground line-clamp-1">
-													{project.description}
-												</div>
-											)}
-										</div>
-									</div>
-								</TableCell>
-								<TableCell>
-									<Badge variant="secondary" className={cn(STATUS_COLORS[project.status])}>
-										{getStatusLabel(project.status)}
-									</Badge>
-								</TableCell>
-								<TableCell className="text-right tabular-nums">
-									{project.totalHours.toFixed(1)}h
-								</TableCell>
-								<TableCell>
-									{project.budgetHours !== null ? (
-										<div className="w-32 space-y-1">
-											<div className="flex justify-between text-xs">
-												<span className="text-muted-foreground">
-													{project.percentBudgetUsed?.toFixed(0)}%
-												</span>
-												<span className="text-muted-foreground">{project.budgetHours}h</span>
-											</div>
-											<Progress
-												value={Math.min(project.percentBudgetUsed ?? 0, 100)}
-												className={cn("h-2", getBudgetProgressColor(project.percentBudgetUsed))}
-											/>
-										</div>
-									) : (
-										<span className="text-sm text-muted-foreground">—</span>
-									)}
-								</TableCell>
-								<TableCell>
-									{project.deadline ? (
-										<div className="flex flex-col gap-1">
-											<span className="text-sm">{project.deadline.toLocaleDateString()}</span>
-											{formatDeadlineStatus(project.daysUntilDeadline)}
-										</div>
-									) : (
-										<span className="text-sm text-muted-foreground">—</span>
-									)}
-								</TableCell>
-								<TableCell className="text-right">
-									<span className="text-sm tabular-nums">{project.uniqueEmployees}</span>
-								</TableCell>
-								<TableCell>
-									<Button
-										variant="ghost"
-										size="sm"
-										onClick={() => onProjectSelect(project.id)}
-										className="opacity-0 group-hover:opacity-100 transition-opacity"
-									>
-										<IconChevronRight className="h-4 w-4" />
-									</Button>
-								</TableCell>
-							</TableRow>
-						))}
-					</TableBody>
-				</Table>
+			<CardContent className="space-y-4">
+				<DataTableToolbar
+					search={search}
+					onSearchChange={setSearch}
+					searchPlaceholder={t(
+						"reports.projects.table.searchPlaceholder",
+						"Search by name, description, or status...",
+					)}
+				/>
+
+				<DataTable
+					columns={columns}
+					data={filteredProjects}
+					emptyMessage={
+						search
+							? t("reports.projects.table.noProjectsMatch", "No projects match the selected filters")
+							: t("reports.projects.table.noProjectsFound", "No projects found")
+					}
+				/>
 			</CardContent>
 		</Card>
 	);

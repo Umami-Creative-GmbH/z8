@@ -13,7 +13,9 @@ import {
 	IconX,
 } from "@tabler/icons-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import type { ColumnDef } from "@tanstack/react-table";
+import { useTranslate } from "@tolgee/react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
 	cancelInvitation,
@@ -22,6 +24,7 @@ import {
 	toggleEmployeeStatus,
 	updateMemberRole,
 } from "@/app/[locale]/(app)/settings/organizations/actions";
+import { DataTable, DataTableToolbar } from "@/components/data-table-server";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -49,14 +52,6 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "@/components/ui/table";
 import { UserAvatar } from "@/components/user-avatar";
 import { formatRelative as formatDistanceToNow } from "@/lib/datetime/luxon-utils";
 import { queryKeys } from "@/lib/query";
@@ -81,11 +76,14 @@ export function MembersTable({
 	onRefresh,
 	isRefreshing,
 }: MembersTableProps) {
+	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const [members, setMembers] = useState(initialMembers);
 	const [invitations, setInvitations] = useState(initialInvitations);
 	const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
 	const [memberToRemove, setMemberToRemove] = useState<MemberWithUserAndEmployee | null>(null);
+	const [memberSearch, setMemberSearch] = useState("");
+	const [invitationSearch, setInvitationSearch] = useState("");
 
 	// Sync with props when they change
 	if (initialMembers !== members && initialMembers.length !== members.length) {
@@ -268,103 +266,325 @@ export function MembersTable({
 		return new Date(expiresAt) < new Date();
 	};
 
+	// Filter members by search
+	const filteredMembers = useMemo(() => {
+		if (!memberSearch) return members;
+		const searchLower = memberSearch.toLowerCase();
+		return members.filter(
+			(m) =>
+				m.user.name.toLowerCase().includes(searchLower) ||
+				m.user.email.toLowerCase().includes(searchLower),
+		);
+	}, [members, memberSearch]);
+
+	// Filter invitations by search
+	const filteredInvitations = useMemo(() => {
+		if (!invitationSearch) return invitations;
+		const searchLower = invitationSearch.toLowerCase();
+		return invitations.filter((i) => i.email.toLowerCase().includes(searchLower));
+	}, [invitations, invitationSearch]);
+
+	// Invitation columns
+	const invitationColumns = useMemo<ColumnDef<InvitationWithInviter>[]>(
+		() => [
+			{
+				accessorKey: "email",
+				header: t("organization.members.email", "Email"),
+				cell: ({ row }) => (
+					<div className="flex items-center gap-2">
+						<IconMail className="h-4 w-4 text-muted-foreground" />
+						{row.original.email}
+					</div>
+				),
+			},
+			{
+				accessorKey: "role",
+				header: t("organization.members.role", "Role"),
+				cell: ({ row }) => (
+					<Badge className={getRoleBadgeColor(row.original.role || "member")}>
+						{row.original.role || "member"}
+					</Badge>
+				),
+			},
+			{
+				accessorKey: "invitedBy",
+				header: t("organization.members.invitedBy", "Invited By"),
+				cell: ({ row }) => (
+					<span className="text-sm text-muted-foreground">{row.original.user.name}</span>
+				),
+			},
+			{
+				accessorKey: "createdAt",
+				header: t("organization.members.sent", "Sent"),
+				cell: ({ row }) => (
+					<span className="text-sm text-muted-foreground">
+						{formatDistanceToNow(new Date(row.original.createdAt))}
+					</span>
+				),
+			},
+			{
+				accessorKey: "expiresAt",
+				header: t("organization.members.expires", "Expires"),
+				cell: ({ row }) => {
+					const expired = isInvitationExpired(row.original.expiresAt);
+					return expired ? (
+						<Badge variant="destructive">{t("organization.members.expired", "Expired")}</Badge>
+					) : (
+						<span className="text-sm text-muted-foreground">
+							{formatDistanceToNow(new Date(row.original.expiresAt))}
+						</span>
+					);
+				},
+			},
+			{
+				id: "actions",
+				cell: ({ row }) =>
+					canInvite && (
+						<div className="text-right">
+							<DropdownMenu>
+								<DropdownMenuTrigger asChild>
+									<Button variant="ghost" size="sm" disabled={isActioning(row.original.id)}>
+										{isActioning(row.original.id) ? (
+											<IconLoader2 className="h-4 w-4 animate-spin" />
+										) : (
+											<IconDots className="h-4 w-4" />
+										)}
+									</Button>
+								</DropdownMenuTrigger>
+								<DropdownMenuContent align="end">
+									<DropdownMenuLabel>{t("common.actions", "Actions")}</DropdownMenuLabel>
+									<DropdownMenuItem onClick={() => handleResendInvitation(row.original)}>
+										<IconMail className="mr-2 h-4 w-4" />
+										{t("organization.members.resend", "Resend")}
+									</DropdownMenuItem>
+									<DropdownMenuSeparator />
+									<DropdownMenuItem
+										className="text-destructive"
+										onClick={() => handleCancelInvitation(row.original.id)}
+									>
+										<IconX className="mr-2 h-4 w-4" />
+										{t("organization.members.cancel", "Cancel")}
+									</DropdownMenuItem>
+								</DropdownMenuContent>
+							</DropdownMenu>
+						</div>
+					),
+			},
+		],
+		[t, canInvite, isActioning, getRoleBadgeColor, handleResendInvitation, handleCancelInvitation],
+	);
+
+	// Member columns
+	const memberColumns = useMemo<ColumnDef<MemberWithUserAndEmployee>[]>(
+		() => [
+			{
+				accessorKey: "user",
+				header: t("organization.members.member", "Member"),
+				cell: ({ row }) => {
+					const isCurrentUser = row.original.user.id === currentUserId;
+					return (
+						<div className="flex items-center gap-3">
+							<UserAvatar
+								seed={row.original.user.id}
+								image={row.original.user.image}
+								name={row.original.user.name}
+								size="sm"
+							/>
+							<div>
+								<div className="font-medium">
+									{row.original.user.name}
+									{isCurrentUser && (
+										<span className="ml-2 text-xs text-muted-foreground">
+											({t("organization.members.you", "You")})
+										</span>
+									)}
+								</div>
+								<div className="text-sm text-muted-foreground">{row.original.user.email}</div>
+							</div>
+						</div>
+					);
+				},
+			},
+			{
+				accessorKey: "role",
+				header: t("organization.members.role", "Role"),
+				cell: ({ row }) => {
+					const isCurrentUser = row.original.user.id === currentUserId;
+					return canManageMembers && !isCurrentUser ? (
+						<Select
+							value={row.original.member.role || "member"}
+							onValueChange={(value) => handleRoleChange(row.original.user.id, value as any)}
+							disabled={isActioning(row.original.user.id)}
+						>
+							<SelectTrigger className="w-[120px]">
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="member">
+									{t("organization.members.roles.member", "Member")}
+								</SelectItem>
+								<SelectItem value="admin">
+									{t("organization.members.roles.admin", "Admin")}
+								</SelectItem>
+								<SelectItem value="owner">
+									{t("organization.members.roles.owner", "Owner")}
+								</SelectItem>
+							</SelectContent>
+						</Select>
+					) : (
+						<Badge className={getRoleBadgeColor(row.original.member.role || "member")}>
+							{row.original.member.role || "member"}
+						</Badge>
+					);
+				},
+			},
+			{
+				accessorKey: "emailVerified",
+				header: t("organization.members.emailVerified", "Email Verified"),
+				cell: ({ row }) =>
+					row.original.user.emailVerified ? (
+						<div className="flex items-center gap-1 text-green-600">
+							<IconCheck className="h-4 w-4" />
+							<span className="text-sm">{t("organization.members.verified", "Verified")}</span>
+						</div>
+					) : (
+						<div className="flex items-center gap-1 text-amber-600">
+							<IconClock className="h-4 w-4" />
+							<span className="text-sm">{t("organization.members.pending", "Pending")}</span>
+						</div>
+					),
+			},
+			{
+				accessorKey: "status",
+				header: t("organization.members.status", "Status"),
+				cell: ({ row }) =>
+					row.original.employee?.isActive ? (
+						<div className="flex items-center gap-2">
+							<div className="h-2 w-2 rounded-full bg-green-500" />
+							<span className="text-sm">{t("organization.members.active", "Active")}</span>
+						</div>
+					) : (
+						<div className="flex items-center gap-2">
+							<div className="h-2 w-2 rounded-full bg-gray-400" />
+							<span className="text-sm text-muted-foreground">
+								{t("organization.members.inactive", "Inactive")}
+							</span>
+						</div>
+					),
+			},
+			{
+				id: "actions",
+				cell: ({ row }) => {
+					const isCurrentUser = row.original.user.id === currentUserId;
+					const employee = row.original.employee;
+					return (
+						(canManageEmployees || canManageMembers) &&
+						!isCurrentUser && (
+							<div className="text-right">
+								<DropdownMenu>
+									<DropdownMenuTrigger asChild>
+										<Button
+											variant="ghost"
+											size="sm"
+											disabled={
+												isActioning(row.original.user.id) || isActioning(employee?.id || "")
+											}
+										>
+											{isActioning(row.original.user.id) || isActioning(employee?.id || "") ? (
+												<IconLoader2 className="h-4 w-4 animate-spin" />
+											) : (
+												<IconDots className="h-4 w-4" />
+											)}
+										</Button>
+									</DropdownMenuTrigger>
+									<DropdownMenuContent align="end">
+										<DropdownMenuLabel>{t("common.actions", "Actions")}</DropdownMenuLabel>
+										{canManageEmployees && employee && (
+											<DropdownMenuItem
+												onClick={() => handleToggleStatus(employee.id, employee.isActive)}
+											>
+												{employee.isActive ? (
+													<>
+														<IconPlayerPause className="mr-2 h-4 w-4" />
+														{t("organization.members.deactivate", "Deactivate")}
+													</>
+												) : (
+													<>
+														<IconPlayerPlay className="mr-2 h-4 w-4" />
+														{t("organization.members.activate", "Activate")}
+													</>
+												)}
+											</DropdownMenuItem>
+										)}
+										{canManageMembers && (
+											<>
+												<DropdownMenuSeparator />
+												<DropdownMenuItem
+													className="text-destructive"
+													onClick={() => {
+														setMemberToRemove(row.original);
+														setRemoveDialogOpen(true);
+													}}
+												>
+													<IconTrash className="mr-2 h-4 w-4" />
+													{t("organization.members.remove", "Remove from Organization")}
+												</DropdownMenuItem>
+											</>
+										)}
+									</DropdownMenuContent>
+								</DropdownMenu>
+							</div>
+						)
+					);
+				},
+			},
+		],
+		[
+			t,
+			currentUserId,
+			canManageMembers,
+			canManageEmployees,
+			isActioning,
+			getRoleBadgeColor,
+			handleRoleChange,
+			handleToggleStatus,
+		],
+	);
+
 	return (
 		<div className="space-y-6">
 			{/* Pending Invitations */}
 			{invitations.length > 0 && (
 				<div className="space-y-4">
 					<div>
-						<h3 className="text-lg font-semibold">Pending Invitations</h3>
+						<h3 className="text-lg font-semibold">
+							{t("organization.members.pendingInvitations", "Pending Invitations")}
+						</h3>
 						<p className="text-sm text-muted-foreground">
-							{invitations.length} invitation{invitations.length === 1 ? "" : "s"} waiting to be
-							accepted
+							{t("organization.members.invitationsWaiting", "{count} invitation(s) waiting to be accepted", {
+								count: invitations.length,
+							})}
 						</p>
 					</div>
 
-					<div className="border rounded-lg">
-						<Table>
-							<TableHeader>
-								<TableRow>
-									<TableHead>Email</TableHead>
-									<TableHead>Role</TableHead>
-									<TableHead>Invited By</TableHead>
-									<TableHead>Sent</TableHead>
-									<TableHead>Expires</TableHead>
-									<TableHead className="text-right">Actions</TableHead>
-								</TableRow>
-							</TableHeader>
-							<TableBody>
-								{invitations.map((invitation) => {
-									const expired = isInvitationExpired(invitation.expiresAt);
+					<DataTableToolbar
+						search={invitationSearch}
+						onSearchChange={setInvitationSearch}
+						searchPlaceholder={t(
+							"organization.members.searchInvitations",
+							"Search invitations...",
+						)}
+					/>
 
-									return (
-										<TableRow key={invitation.id}>
-											<TableCell className="font-medium">
-												<div className="flex items-center gap-2">
-													<IconMail className="h-4 w-4 text-muted-foreground" />
-													{invitation.email}
-												</div>
-											</TableCell>
-											<TableCell>
-												<Badge className={getRoleBadgeColor(invitation.role || "member")}>
-													{invitation.role || "member"}
-												</Badge>
-											</TableCell>
-											<TableCell className="text-sm text-muted-foreground">
-												{invitation.user.name}
-											</TableCell>
-											<TableCell className="text-sm text-muted-foreground">
-												{formatDistanceToNow(new Date(invitation.createdAt))}
-											</TableCell>
-											<TableCell>
-												{expired ? (
-													<Badge variant="destructive">Expired</Badge>
-												) : (
-													<span className="text-sm text-muted-foreground">
-														{formatDistanceToNow(new Date(invitation.expiresAt))}
-													</span>
-												)}
-											</TableCell>
-											<TableCell className="text-right">
-												{canInvite && (
-													<DropdownMenu>
-														<DropdownMenuTrigger asChild>
-															<Button
-																variant="ghost"
-																size="sm"
-																disabled={isActioning(invitation.id)}
-															>
-																{isActioning(invitation.id) ? (
-																	<IconLoader2 className="h-4 w-4 animate-spin" />
-																) : (
-																	<IconDots className="h-4 w-4" />
-																)}
-															</Button>
-														</DropdownMenuTrigger>
-														<DropdownMenuContent align="end">
-															<DropdownMenuLabel>Actions</DropdownMenuLabel>
-															<DropdownMenuItem onClick={() => handleResendInvitation(invitation)}>
-																<IconMail className="mr-2 h-4 w-4" />
-																Resend
-															</DropdownMenuItem>
-															<DropdownMenuSeparator />
-															<DropdownMenuItem
-																className="text-destructive"
-																onClick={() => handleCancelInvitation(invitation.id)}
-															>
-																<IconX className="mr-2 h-4 w-4" />
-																Cancel
-															</DropdownMenuItem>
-														</DropdownMenuContent>
-													</DropdownMenu>
-												)}
-											</TableCell>
-										</TableRow>
-									);
-								})}
-							</TableBody>
-						</Table>
-					</div>
+					<DataTable
+						columns={invitationColumns}
+						data={filteredInvitations}
+						emptyMessage={
+							invitationSearch
+								? t("organization.members.noInvitationResults", "No invitations match your search.")
+								: t("organization.members.noInvitations", "No pending invitations.")
+						}
+					/>
 				</div>
 			)}
 
@@ -372,163 +592,45 @@ export function MembersTable({
 			<div className="space-y-4">
 				<div className="flex items-center justify-between">
 					<div>
-						<h3 className="text-lg font-semibold">Active Members</h3>
+						<h3 className="text-lg font-semibold">
+							{t("organization.members.activeMembers", "Active Members")}
+						</h3>
 						<p className="text-sm text-muted-foreground">
-							{members.length} member{members.length === 1 ? "" : "s"} in this organization
+							{t("organization.members.memberCount", "{count} member(s) in this organization", {
+								count: members.length,
+							})}
 						</p>
 					</div>
-					{onRefresh && (
-						<Button variant="outline" size="sm" onClick={onRefresh} disabled={isRefreshing}>
-							{isRefreshing ? (
-								<IconLoader2 className="h-4 w-4 animate-spin" />
-							) : (
-								<IconRefresh className="h-4 w-4" />
-							)}
-							<span className="ml-2">Refresh</span>
-						</Button>
-					)}
 				</div>
 
-				<div className="border rounded-lg">
-					<Table>
-						<TableHeader>
-							<TableRow>
-								<TableHead>Member</TableHead>
-								<TableHead>Role</TableHead>
-								<TableHead>Email Verified</TableHead>
-								<TableHead>Status</TableHead>
-								<TableHead className="text-right">Actions</TableHead>
-							</TableRow>
-						</TableHeader>
-						<TableBody>
-							{members.map((memberData) => {
-								const { member, user, employee } = memberData;
-								const isCurrentUser = user.id === currentUserId;
+				<DataTableToolbar
+					search={memberSearch}
+					onSearchChange={setMemberSearch}
+					searchPlaceholder={t("organization.members.searchMembers", "Search members...")}
+					actions={
+						onRefresh && (
+							<Button variant="outline" size="sm" onClick={onRefresh} disabled={isRefreshing}>
+								{isRefreshing ? (
+									<IconLoader2 className="h-4 w-4 animate-spin" />
+								) : (
+									<IconRefresh className="h-4 w-4" />
+								)}
+								<span className="ml-2">{t("common.refresh", "Refresh")}</span>
+							</Button>
+						)
+					}
+				/>
 
-								return (
-									<TableRow key={member.id}>
-										<TableCell>
-											<div className="flex items-center gap-3">
-												<UserAvatar seed={user.id} image={user.image} name={user.name} size="sm" />
-												<div>
-													<div className="font-medium">
-														{user.name}
-														{isCurrentUser && (
-															<span className="ml-2 text-xs text-muted-foreground">(You)</span>
-														)}
-													</div>
-													<div className="text-sm text-muted-foreground">{user.email}</div>
-												</div>
-											</div>
-										</TableCell>
-										<TableCell>
-											{canManageMembers && !isCurrentUser ? (
-												<Select
-													value={member.role || "member"}
-													onValueChange={(value) => handleRoleChange(user.id, value as any)}
-													disabled={isActioning(user.id)}
-												>
-													<SelectTrigger className="w-[120px]">
-														<SelectValue />
-													</SelectTrigger>
-													<SelectContent>
-														<SelectItem value="member">Member</SelectItem>
-														<SelectItem value="admin">Admin</SelectItem>
-														<SelectItem value="owner">Owner</SelectItem>
-													</SelectContent>
-												</Select>
-											) : (
-												<Badge className={getRoleBadgeColor(member.role || "member")}>
-													{member.role || "member"}
-												</Badge>
-											)}
-										</TableCell>
-										<TableCell>
-											{user.emailVerified ? (
-												<div className="flex items-center gap-1 text-green-600">
-													<IconCheck className="h-4 w-4" />
-													<span className="text-sm">Verified</span>
-												</div>
-											) : (
-												<div className="flex items-center gap-1 text-amber-600">
-													<IconClock className="h-4 w-4" />
-													<span className="text-sm">Pending</span>
-												</div>
-											)}
-										</TableCell>
-										<TableCell>
-											{employee?.isActive ? (
-												<div className="flex items-center gap-2">
-													<div className="h-2 w-2 rounded-full bg-green-500" />
-													<span className="text-sm">Active</span>
-												</div>
-											) : (
-												<div className="flex items-center gap-2">
-													<div className="h-2 w-2 rounded-full bg-gray-400" />
-													<span className="text-sm text-muted-foreground">Inactive</span>
-												</div>
-											)}
-										</TableCell>
-										<TableCell className="text-right">
-											{(canManageEmployees || canManageMembers) && !isCurrentUser && (
-												<DropdownMenu>
-													<DropdownMenuTrigger asChild>
-														<Button
-															variant="ghost"
-															size="sm"
-															disabled={isActioning(user.id) || isActioning(employee?.id || "")}
-														>
-															{isActioning(user.id) || isActioning(employee?.id || "") ? (
-																<IconLoader2 className="h-4 w-4 animate-spin" />
-															) : (
-																<IconDots className="h-4 w-4" />
-															)}
-														</Button>
-													</DropdownMenuTrigger>
-													<DropdownMenuContent align="end">
-														<DropdownMenuLabel>Actions</DropdownMenuLabel>
-														{canManageEmployees && employee && (
-															<DropdownMenuItem
-																onClick={() => handleToggleStatus(employee.id, employee.isActive)}
-															>
-																{employee.isActive ? (
-																	<>
-																		<IconPlayerPause className="mr-2 h-4 w-4" />
-																		Deactivate
-																	</>
-																) : (
-																	<>
-																		<IconPlayerPlay className="mr-2 h-4 w-4" />
-																		Activate
-																	</>
-																)}
-															</DropdownMenuItem>
-														)}
-														{canManageMembers && (
-															<>
-																<DropdownMenuSeparator />
-																<DropdownMenuItem
-																	className="text-destructive"
-																	onClick={() => {
-																		setMemberToRemove(memberData);
-																		setRemoveDialogOpen(true);
-																	}}
-																>
-																	<IconTrash className="mr-2 h-4 w-4" />
-																	Remove from Organization
-																</DropdownMenuItem>
-															</>
-														)}
-													</DropdownMenuContent>
-												</DropdownMenu>
-											)}
-										</TableCell>
-									</TableRow>
-								);
-							})}
-						</TableBody>
-					</Table>
-				</div>
+				<DataTable
+					columns={memberColumns}
+					data={filteredMembers}
+					isFetching={isRefreshing}
+					emptyMessage={
+						memberSearch
+							? t("organization.members.noMemberResults", "No members match your search.")
+							: t("organization.members.noMembers", "No members in this organization.")
+					}
+				/>
 			</div>
 
 			{/* Remove Member Confirmation Dialog */}

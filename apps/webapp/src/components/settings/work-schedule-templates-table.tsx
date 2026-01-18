@@ -11,8 +11,9 @@ import {
 	IconTrash,
 } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { ColumnDef } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
 	deleteWorkScheduleTemplate,
@@ -21,6 +22,11 @@ import {
 	setDefaultTemplate,
 	type WorkScheduleTemplateWithDays,
 } from "@/app/[locale]/(app)/settings/work-schedules/actions";
+import {
+	DataTable,
+	DataTableSkeleton,
+	DataTableToolbar,
+} from "@/components/data-table-server";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -40,15 +46,6 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "@/components/ui/table";
 import { queryKeys } from "@/lib/query";
 
 interface WorkScheduleTemplatesTableProps {
@@ -83,12 +80,14 @@ export function WorkScheduleTemplatesTable({
 	const [templateToDelete, setTemplateToDelete] = useState<WorkScheduleTemplateWithDays | null>(
 		null,
 	);
+	const [search, setSearch] = useState("");
 
 	// Fetch templates
 	const {
 		data: templates,
 		isLoading,
-		error,
+		isFetching,
+		isError,
 		refetch,
 	} = useQuery({
 		queryKey: queryKeys.workScheduleTemplates.list(organizationId),
@@ -187,24 +186,146 @@ export function WorkScheduleTemplatesTable({
 		}
 		const total = template.days
 			.filter((d) => d.isWorkDay)
-			.reduce((sum, d) => sum + parseFloat(d.hoursPerDay || "0"), 0);
+			.reduce((sum, d) => sum + Number.parseFloat(d.hoursPerDay || "0"), 0);
 		return total.toFixed(1);
 	};
 
+	// Filter templates by search (client-side since typically small list)
+	const filteredTemplates = useMemo(() => {
+		if (!templates) return [];
+		if (!search) return templates;
+
+		const searchLower = search.toLowerCase();
+		return templates.filter(
+			(tpl) =>
+				tpl.name.toLowerCase().includes(searchLower) ||
+				tpl.description?.toLowerCase().includes(searchLower),
+		);
+	}, [templates, search]);
+
+	// Column definitions
+	const columns = useMemo<ColumnDef<WorkScheduleTemplateWithDays>[]>(
+		() => [
+			{
+				accessorKey: "name",
+				header: t("settings.workSchedules.name", "Name"),
+				cell: ({ row }) => (
+					<div>
+						<div className="flex items-center gap-2">
+							<span className="font-medium">{row.original.name}</span>
+							{row.original.isDefault && (
+								<Badge variant="secondary" className="text-xs">
+									<IconStar className="h-3 w-3 mr-1" />
+									{t("settings.workSchedules.default", "Default")}
+								</Badge>
+							)}
+						</div>
+						{row.original.description && (
+							<p className="text-xs text-muted-foreground mt-0.5">
+								{row.original.description}
+							</p>
+						)}
+					</div>
+				),
+			},
+			{
+				accessorKey: "scheduleCycle",
+				header: t("settings.workSchedules.cycle.label", "Cycle"),
+				cell: ({ row }) => (
+					<Badge variant="outline">
+						{cycleLabels[row.original.scheduleCycle] || row.original.scheduleCycle}
+					</Badge>
+				),
+			},
+			{
+				accessorKey: "workingDaysPreset",
+				header: t("settings.workSchedules.workingDays.label", "Working Days"),
+				cell: ({ row }) => (
+					<Badge variant="secondary">
+						{workingDaysLabels[row.original.workingDaysPreset] || row.original.workingDaysPreset}
+					</Badge>
+				),
+			},
+			{
+				accessorKey: "hours",
+				header: () => (
+					<div className="text-right">{t("settings.workSchedules.hours", "Hours")}</div>
+				),
+				cell: ({ row }) => (
+					<div className="text-right tabular-nums">{calculateTotalHours(row.original)}h</div>
+				),
+			},
+			{
+				accessorKey: "homeOfficeDaysPerCycle",
+				header: () => (
+					<div className="text-right">{t("settings.workSchedules.homeOffice", "Home Office")}</div>
+				),
+				cell: ({ row }) => (
+					<div className="text-right tabular-nums">
+						{row.original.homeOfficeDaysPerCycle || 0}{" "}
+						{t("settings.workSchedules.daysShort", "d")}
+					</div>
+				),
+			},
+			{
+				id: "actions",
+				cell: ({ row }) => (
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<Button variant="ghost" size="icon" className="h-8 w-8">
+								<IconDots className="h-4 w-4" />
+								<span className="sr-only">{t("common.openMenu", "Open menu")}</span>
+							</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent align="end">
+							<DropdownMenuItem onClick={() => onEditClick(row.original)}>
+								<IconPencil className="mr-2 h-4 w-4" />
+								{t("common.edit", "Edit")}
+							</DropdownMenuItem>
+							<DropdownMenuItem
+								onClick={() => handleDuplicate(row.original.id)}
+								disabled={duplicateMutation.isPending}
+							>
+								<IconCopy className="mr-2 h-4 w-4" />
+								{t("settings.workSchedules.duplicate", "Duplicate")}
+							</DropdownMenuItem>
+							{!row.original.isDefault && (
+								<DropdownMenuItem onClick={() => handleSetDefault(row.original.id)}>
+									<IconStar className="mr-2 h-4 w-4" />
+									{t("settings.workSchedules.setDefault", "Set as Default")}
+								</DropdownMenuItem>
+							)}
+							<DropdownMenuSeparator />
+							<DropdownMenuItem
+								className="text-destructive"
+								onClick={() => handleDeleteClick(row.original)}
+							>
+								<IconTrash className="mr-2 h-4 w-4" />
+								{t("common.delete", "Delete")}
+							</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>
+				),
+			},
+		],
+		[t, onEditClick, duplicateMutation.isPending, calculateTotalHours],
+	);
+
 	if (isLoading) {
 		return (
-			<div className="space-y-2">
+			<div className="space-y-4">
 				<div className="flex justify-end">
-					<Skeleton className="h-10 w-32" />
+					<Button onClick={onCreateClick}>
+						<IconPlus className="mr-2 h-4 w-4" />
+						{t("settings.workSchedules.createTemplate", "Create Template")}
+					</Button>
 				</div>
-				<Skeleton className="h-10 w-full" />
-				<Skeleton className="h-10 w-full" />
-				<Skeleton className="h-10 w-full" />
+				<DataTableSkeleton columnCount={6} rowCount={5} />
 			</div>
 		);
 	}
 
-	if (error) {
+	if (isError) {
 		return (
 			<div className="flex flex-col items-center justify-center py-12 text-center border rounded-lg">
 				<p className="text-destructive">
@@ -220,127 +341,44 @@ export function WorkScheduleTemplatesTable({
 
 	return (
 		<div className="space-y-4">
-			<div className="flex items-center justify-end gap-2">
-				<Button variant="ghost" size="icon" onClick={() => refetch()}>
-					<IconRefresh className="h-4 w-4" />
-					<span className="sr-only">{t("common.refresh", "Refresh")}</span>
-				</Button>
-				<Button onClick={onCreateClick}>
-					<IconPlus className="mr-2 h-4 w-4" />
-					{t("settings.workSchedules.createTemplate", "Create Template")}
-				</Button>
-			</div>
+			<DataTableToolbar
+				search={search}
+				onSearchChange={setSearch}
+				searchPlaceholder={t(
+					"settings.workSchedules.searchPlaceholder",
+					"Search templates...",
+				)}
+				actions={
+					<div className="flex items-center gap-2">
+						<Button variant="ghost" size="icon" onClick={() => refetch()} disabled={isFetching}>
+							{isFetching ? (
+								<IconLoader2 className="h-4 w-4 animate-spin" />
+							) : (
+								<IconRefresh className="h-4 w-4" />
+							)}
+							<span className="sr-only">{t("common.refresh", "Refresh")}</span>
+						</Button>
+						<Button onClick={onCreateClick}>
+							<IconPlus className="mr-2 h-4 w-4" />
+							{t("settings.workSchedules.createTemplate", "Create Template")}
+						</Button>
+					</div>
+				}
+			/>
 
-			{!templates || templates.length === 0 ? (
-				<div className="flex flex-col items-center justify-center py-12 text-center border rounded-lg">
-					<p className="text-muted-foreground">
-						{t("settings.workSchedules.noTemplates", "No work schedule templates")}
-					</p>
-					<p className="text-muted-foreground text-sm mt-1">
-						{t(
-							"settings.workSchedules.noTemplatesDescription",
-							"Create a template to define work schedules for your team.",
-						)}
-					</p>
-					<Button className="mt-4" onClick={onCreateClick}>
-						<IconPlus className="mr-2 h-4 w-4" />
-						{t("settings.workSchedules.createTemplate", "Create Template")}
-					</Button>
-				</div>
-			) : (
-				<div className="rounded-md border">
-					<Table>
-						<TableHeader>
-							<TableRow>
-								<TableHead>{t("settings.workSchedules.name", "Name")}</TableHead>
-								<TableHead>{t("settings.workSchedules.cycle.label", "Cycle")}</TableHead>
-								<TableHead>{t("settings.workSchedules.workingDays.label", "Working Days")}</TableHead>
-								<TableHead className="text-right">
-									{t("settings.workSchedules.hours", "Hours")}
-								</TableHead>
-								<TableHead className="text-right">
-									{t("settings.workSchedules.homeOffice", "Home Office")}
-								</TableHead>
-								<TableHead className="w-[70px]" />
-							</TableRow>
-						</TableHeader>
-						<TableBody>
-							{templates.map((template) => (
-								<TableRow key={template.id}>
-									<TableCell className="font-medium">
-										<div className="flex items-center gap-2">
-											{template.name}
-											{template.isDefault && (
-												<Badge variant="secondary" className="text-xs">
-													<IconStar className="h-3 w-3 mr-1" />
-													{t("settings.workSchedules.default", "Default")}
-												</Badge>
-											)}
-										</div>
-										{template.description && (
-											<p className="text-xs text-muted-foreground mt-0.5">{template.description}</p>
-										)}
-									</TableCell>
-									<TableCell>
-										<Badge variant="outline">
-											{cycleLabels[template.scheduleCycle] || template.scheduleCycle}
-										</Badge>
-									</TableCell>
-									<TableCell>
-										<Badge variant="secondary">
-											{workingDaysLabels[template.workingDaysPreset] || template.workingDaysPreset}
-										</Badge>
-									</TableCell>
-									<TableCell className="text-right tabular-nums">
-										{calculateTotalHours(template)}h
-									</TableCell>
-									<TableCell className="text-right tabular-nums">
-										{template.homeOfficeDaysPerCycle || 0}{" "}
-										{t("settings.workSchedules.daysShort", "d")}
-									</TableCell>
-									<TableCell>
-										<DropdownMenu>
-											<DropdownMenuTrigger asChild>
-												<Button variant="ghost" size="icon" className="h-8 w-8">
-													<IconDots className="h-4 w-4" />
-													<span className="sr-only">{t("common.openMenu", "Open menu")}</span>
-												</Button>
-											</DropdownMenuTrigger>
-											<DropdownMenuContent align="end">
-												<DropdownMenuItem onClick={() => onEditClick(template)}>
-													<IconPencil className="mr-2 h-4 w-4" />
-													{t("common.edit", "Edit")}
-												</DropdownMenuItem>
-												<DropdownMenuItem
-													onClick={() => handleDuplicate(template.id)}
-													disabled={duplicateMutation.isPending}
-												>
-													<IconCopy className="mr-2 h-4 w-4" />
-													{t("settings.workSchedules.duplicate", "Duplicate")}
-												</DropdownMenuItem>
-												{!template.isDefault && (
-													<DropdownMenuItem onClick={() => handleSetDefault(template.id)}>
-														<IconStar className="mr-2 h-4 w-4" />
-														{t("settings.workSchedules.setDefault", "Set as Default")}
-													</DropdownMenuItem>
-												)}
-												<DropdownMenuSeparator />
-												<DropdownMenuItem
-													className="text-destructive"
-													onClick={() => handleDeleteClick(template)}
-												>
-													<IconTrash className="mr-2 h-4 w-4" />
-													{t("common.delete", "Delete")}
-												</DropdownMenuItem>
-											</DropdownMenuContent>
-										</DropdownMenu>
-									</TableCell>
-								</TableRow>
-							))}
-						</TableBody>
-					</Table>
-				</div>
-			)}
+			<DataTable
+				columns={columns}
+				data={filteredTemplates}
+				isFetching={isFetching}
+				emptyMessage={
+					search
+						? t("settings.workSchedules.noSearchResults", "No templates match your search.")
+						: t(
+								"settings.workSchedules.noTemplates",
+								"No work schedule templates. Create a template to define work schedules for your team.",
+							)
+				}
+			/>
 
 			<AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
 				<AlertDialogContent>

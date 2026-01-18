@@ -1,11 +1,13 @@
 "use client";
 
 import { IconX } from "@tabler/icons-react";
+import type { ColumnDef } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { cancelAbsenceRequest } from "@/app/[locale]/(app)/absences/actions";
+import { DataTable, DataTableToolbar } from "@/components/data-table-server";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -19,14 +21,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "@/components/ui/table";
 import {
 	calculateBusinessDaysWithHalfDays,
 	formatDateRange,
@@ -44,6 +38,7 @@ export function AbsenceEntriesTable({ absences, onUpdate }: AbsenceEntriesTableP
 	const { t } = useTranslate();
 	const router = useRouter();
 	const [cancelingId, setCancelingId] = useState<string | null>(null);
+	const [search, setSearch] = useState("");
 
 	// Format period for display
 	const formatPeriod = (period: DayPeriod): string => {
@@ -88,141 +83,179 @@ export function AbsenceEntriesTable({ absences, onUpdate }: AbsenceEntriesTableP
 		}
 	};
 
-	if (absences.length === 0) {
-		return (
-			<div className="rounded-md border">
-				<div className="p-8 text-center text-muted-foreground">
-					{t("absences.table.noRequests", "No absence requests found.")}
-				</div>
-			</div>
+	// Filter absences by search
+	const filteredAbsences = useMemo(() => {
+		if (!search) return absences;
+		const searchLower = search.toLowerCase();
+		return absences.filter(
+			(absence) =>
+				absence.category.name.toLowerCase().includes(searchLower) ||
+				absence.notes?.toLowerCase().includes(searchLower) ||
+				absence.status.toLowerCase().includes(searchLower),
 		);
-	}
+	}, [absences, search]);
+
+	// Column definitions
+	const columns = useMemo<ColumnDef<AbsenceWithCategory>[]>(
+		() => [
+			{
+				accessorKey: "dateRange",
+				header: t("absences.table.headers.dateRange", "Date Range"),
+				cell: ({ row }) => {
+					const absence = row.original;
+					const dateRangeText = formatDateRange(absence.startDate, absence.endDate);
+					const showPeriods =
+						absence.startPeriod !== "full_day" || absence.endPeriod !== "full_day";
+
+					return (
+						<div className="flex flex-col">
+							<span className="font-medium">{dateRangeText}</span>
+							{showPeriods && (
+								<span className="text-xs text-muted-foreground">
+									{formatPeriod(absence.startPeriod) && (
+										<>
+											{t("absences.table.start", "Start")}
+											{formatPeriod(absence.startPeriod)}
+										</>
+									)}
+									{formatPeriod(absence.startPeriod) && formatPeriod(absence.endPeriod) && (
+										<> &middot; </>
+									)}
+									{formatPeriod(absence.endPeriod) && (
+										<>
+											{t("absences.table.end", "End")}
+											{formatPeriod(absence.endPeriod)}
+										</>
+									)}
+								</span>
+							)}
+						</div>
+					);
+				},
+			},
+			{
+				accessorKey: "type",
+				header: t("absences.table.headers.type", "Type"),
+				cell: ({ row }) => (
+					<CategoryBadge
+						name={row.original.category.name}
+						type={row.original.category.type}
+						color={row.original.category.color}
+					/>
+				),
+			},
+			{
+				accessorKey: "days",
+				header: () => (
+					<div className="text-right">{t("absences.table.headers.days", "Days")}</div>
+				),
+				cell: ({ row }) => {
+					const days = calculateBusinessDaysWithHalfDays(
+						row.original.startDate,
+						row.original.startPeriod,
+						row.original.endDate,
+						row.original.endPeriod,
+						[],
+					);
+					return <div className="text-right tabular-nums">{formatDays(days, t)}</div>;
+				},
+			},
+			{
+				accessorKey: "status",
+				header: t("absences.table.headers.status", "Status"),
+				cell: ({ row }) => (
+					<Badge
+						variant={
+							row.original.status === "approved"
+								? "default"
+								: row.original.status === "pending"
+									? "secondary"
+									: "destructive"
+						}
+					>
+						{getStatusLabel(row.original.status)}
+					</Badge>
+				),
+			},
+			{
+				accessorKey: "notes",
+				header: t("absences.table.headers.notes", "Notes"),
+				cell: ({ row }) => (
+					<span className="max-w-[200px] truncate text-muted-foreground block">
+						{row.original.notes || "—"}
+					</span>
+				),
+			},
+			{
+				id: "actions",
+				header: () => (
+					<div className="text-right">{t("absences.table.headers.actions", "Actions")}</div>
+				),
+				cell: ({ row }) => {
+					const absence = row.original;
+					if (absence.status !== "pending") return null;
+
+					return (
+						<div className="flex justify-end">
+							<AlertDialog>
+								<AlertDialogTrigger asChild>
+									<Button
+										variant="ghost"
+										size="sm"
+										disabled={cancelingId === absence.id}
+										aria-label={t("absences.table.cancelRequest", "Cancel request")}
+									>
+										<IconX className="size-4" />
+									</Button>
+								</AlertDialogTrigger>
+								<AlertDialogContent>
+									<AlertDialogHeader>
+										<AlertDialogTitle>
+											{t("absences.dialog.cancelTitle", "Cancel Absence Request")}
+										</AlertDialogTitle>
+										<AlertDialogDescription>
+											{t(
+												"absences.dialog.cancelDescription",
+												"Are you sure you want to cancel this absence request? This action cannot be undone.",
+											)}
+										</AlertDialogDescription>
+									</AlertDialogHeader>
+									<AlertDialogFooter>
+										<AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
+										<AlertDialogAction
+											onClick={() => handleCancel(absence.id)}
+											className="bg-destructive text-white hover:bg-destructive/90"
+										>
+											{t("absences.dialog.confirmCancel", "Yes, cancel request")}
+										</AlertDialogAction>
+									</AlertDialogFooter>
+								</AlertDialogContent>
+							</AlertDialog>
+						</div>
+					);
+				},
+			},
+		],
+		[t, cancelingId],
+	);
 
 	return (
-		<div className="rounded-md border">
-			<Table>
-				<TableHeader>
-					<TableRow>
-						<TableHead>{t("absences.table.headers.dateRange", "Date Range")}</TableHead>
-						<TableHead>{t("absences.table.headers.type", "Type")}</TableHead>
-						<TableHead className="text-right">{t("absences.table.headers.days", "Days")}</TableHead>
-						<TableHead>{t("absences.table.headers.status", "Status")}</TableHead>
-						<TableHead>{t("absences.table.headers.notes", "Notes")}</TableHead>
-						<TableHead className="text-right">
-							{t("absences.table.headers.actions", "Actions")}
-						</TableHead>
-					</TableRow>
-				</TableHeader>
-				<TableBody>
-					{absences.map((absence) => {
-						const days = calculateBusinessDaysWithHalfDays(
-							absence.startDate,
-							absence.startPeriod,
-							absence.endDate,
-							absence.endPeriod,
-							[],
-						);
+		<div className="space-y-4">
+			<DataTableToolbar
+				search={search}
+				onSearchChange={setSearch}
+				searchPlaceholder={t("absences.table.searchPlaceholder", "Search by type, status, or notes...")}
+			/>
 
-						// Build date range display with periods
-						const dateRangeText = formatDateRange(absence.startDate, absence.endDate);
-						const showPeriods =
-							absence.startPeriod !== "full_day" || absence.endPeriod !== "full_day";
-
-						return (
-							<TableRow key={absence.id}>
-								<TableCell className="font-medium">
-									<div className="flex flex-col">
-										<span>{dateRangeText}</span>
-										{showPeriods && (
-											<span className="text-xs text-muted-foreground">
-												{formatPeriod(absence.startPeriod) && (
-													<>
-														{t("absences.table.start", "Start")}
-														{formatPeriod(absence.startPeriod)}
-													</>
-												)}
-												{formatPeriod(absence.startPeriod) && formatPeriod(absence.endPeriod) && (
-													<> &middot; </>
-												)}
-												{formatPeriod(absence.endPeriod) && (
-													<>
-														{t("absences.table.end", "End")}
-														{formatPeriod(absence.endPeriod)}
-													</>
-												)}
-											</span>
-										)}
-									</div>
-								</TableCell>
-								<TableCell>
-									<CategoryBadge
-										name={absence.category.name}
-										type={absence.category.type}
-										color={absence.category.color}
-									/>
-								</TableCell>
-								<TableCell className="text-right tabular-nums">{formatDays(days, t)}</TableCell>
-								<TableCell>
-									<Badge
-										variant={
-											absence.status === "approved"
-												? "default"
-												: absence.status === "pending"
-													? "secondary"
-													: "destructive"
-										}
-									>
-										{getStatusLabel(absence.status)}
-									</Badge>
-								</TableCell>
-								<TableCell className="max-w-[200px] truncate text-muted-foreground">
-									{absence.notes || "—"}
-								</TableCell>
-								<TableCell className="text-right">
-									{absence.status === "pending" && (
-										<AlertDialog>
-											<AlertDialogTrigger asChild>
-												<Button
-													variant="ghost"
-													size="sm"
-													disabled={cancelingId === absence.id}
-													aria-label={t("absences.table.cancelRequest", "Cancel request")}
-												>
-													<IconX className="size-4" />
-												</Button>
-											</AlertDialogTrigger>
-											<AlertDialogContent>
-												<AlertDialogHeader>
-													<AlertDialogTitle>
-														{t("absences.dialog.cancelTitle", "Cancel Absence Request")}
-													</AlertDialogTitle>
-													<AlertDialogDescription>
-														{t(
-															"absences.dialog.cancelDescription",
-															"Are you sure you want to cancel this absence request? This action cannot be undone.",
-														)}
-													</AlertDialogDescription>
-												</AlertDialogHeader>
-												<AlertDialogFooter>
-													<AlertDialogCancel>
-														{t("common.cancel", "Cancel")}
-													</AlertDialogCancel>
-													<AlertDialogAction
-														onClick={() => handleCancel(absence.id)}
-														className="bg-destructive text-white hover:bg-destructive/90"
-													>
-														{t("absences.dialog.confirmCancel", "Yes, cancel request")}
-													</AlertDialogAction>
-												</AlertDialogFooter>
-											</AlertDialogContent>
-										</AlertDialog>
-									)}
-								</TableCell>
-							</TableRow>
-						);
-					})}
-				</TableBody>
-			</Table>
+			<DataTable
+				columns={columns}
+				data={filteredAbsences}
+				emptyMessage={
+					search
+						? t("absences.table.noSearchResults", "No absences match your search.")
+						: t("absences.table.noRequests", "No absence requests found.")
+				}
+			/>
 		</div>
 	);
 }

@@ -1,10 +1,11 @@
 "use client";
 
-import { type ColumnDef, flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
+import type { ColumnDef } from "@tanstack/react-table";
 import { IconInfoCircle } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import dynamic from "next/dynamic";
 import { useMemo } from "react";
+import { DataTable } from "@/components/data-table-server";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -14,14 +15,6 @@ import {
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { WorkPeriodAutoAdjustmentReason } from "@/db/schema";
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "@/components/ui/table";
 import { formatDuration, isSameDayInTimezone } from "@/lib/time-tracking/time-utils";
 import {
 	formatDateInZone,
@@ -258,67 +251,20 @@ export function TimeEntriesTable({ workPeriods, hasManager, employeeTimezone }: 
 		[t, timezoneAbbr, employeeTimezone, hasManager],
 	);
 
-	const table = useReactTable({
-		data: workPeriods,
-		columns,
-		getCoreRowModel: getCoreRowModel(),
-	});
-
 	return (
 		<Card>
 			<CardHeader>
 				<CardTitle>{t("timeTracking.table.title", "Time Entries")}</CardTitle>
 			</CardHeader>
 			<CardContent>
-				<div className="rounded-md border">
-					<Table>
-						<TableHeader>
-							{table.getHeaderGroups().map((headerGroup) => (
-								<TableRow key={headerGroup.id}>
-									{headerGroup.headers.map((header) => (
-										<TableHead key={header.id}>
-											{header.isPlaceholder
-												? null
-												: flexRender(header.column.columnDef.header, header.getContext())}
-										</TableHead>
-									))}
-								</TableRow>
-							))}
-						</TableHeader>
-						<TableBody>
-							{table.getRowModel().rows?.length ? (
-								table.getRowModel().rows.map((row) => (
-									<TableRow key={row.id}>
-										{row.getVisibleCells().map((cell) => (
-											<TableCell key={cell.id}>
-												{flexRender(cell.column.columnDef.cell, cell.getContext())}
-											</TableCell>
-										))}
-									</TableRow>
-								))
-							) : (
-								<TableRow>
-									<TableCell colSpan={columns.length} className="h-24 text-center">
-										<div className="flex flex-col items-center gap-2 text-muted-foreground">
-											<p>
-												{t(
-													"timeTracking.table.emptyState",
-													"No time entries found for this week.",
-												)}
-											</p>
-											<p className="text-sm">
-												{t(
-													"timeTracking.table.emptyStateHint",
-													"Clock in to start tracking your time.",
-												)}
-											</p>
-										</div>
-									</TableCell>
-								</TableRow>
-							)}
-						</TableBody>
-					</Table>
-				</div>
+				<DataTable
+					columns={columns}
+					data={workPeriods}
+					emptyMessage={t(
+						"timeTracking.table.emptyState",
+						"No time entries found for this week. Clock in to start tracking your time.",
+					)}
+				/>
 			</CardContent>
 		</Card>
 	);

@@ -3,11 +3,10 @@ import { Suspense } from "react";
 import { AbsenceApprovalsTable } from "@/components/approvals/absence-approvals-table";
 import { TimeCorrectionApprovalsTable } from "@/components/approvals/time-correction-approvals-table";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getCurrentEmployee, getPendingApprovals } from "./actions";
+import { getCurrentEmployee } from "./actions";
 
 async function ApprovalsContent() {
 	const currentEmployee = await getCurrentEmployee();
@@ -26,8 +25,6 @@ async function ApprovalsContent() {
 		redirect("/");
 	}
 
-	const { absenceApprovals, timeCorrectionApprovals } = await getPendingApprovals();
-
 	return (
 		<div className="flex flex-1 flex-col gap-4 p-4 pt-0">
 			<div className="flex items-center justify-between">
@@ -37,30 +34,15 @@ async function ApprovalsContent() {
 						Review and approve pending requests from your team
 					</p>
 				</div>
-				<div className="flex items-center gap-2">
-					<Badge variant="secondary">
-						{absenceApprovals.length + timeCorrectionApprovals.length} pending
-					</Badge>
-				</div>
 			</div>
 
 			<Tabs defaultValue="absences" className="space-y-4">
 				<TabsList>
 					<TabsTrigger value="absences" className="relative">
 						Absence Requests
-						{absenceApprovals.length > 0 && (
-							<Badge variant="destructive" className="ml-2 size-5 rounded-full p-0 text-xs">
-								{absenceApprovals.length}
-							</Badge>
-						)}
 					</TabsTrigger>
 					<TabsTrigger value="corrections" className="relative">
 						Time Corrections
-						{timeCorrectionApprovals.length > 0 && (
-							<Badge variant="destructive" className="ml-2 size-5 rounded-full p-0 text-xs">
-								{timeCorrectionApprovals.length}
-							</Badge>
-						)}
 					</TabsTrigger>
 				</TabsList>
 
@@ -73,7 +55,7 @@ async function ApprovalsContent() {
 							</CardDescription>
 						</CardHeader>
 						<CardContent>
-							<AbsenceApprovalsTable approvals={absenceApprovals} />
+							<AbsenceApprovalsTable />
 						</CardContent>
 					</Card>
 				</TabsContent>
@@ -87,7 +69,7 @@ async function ApprovalsContent() {
 							</CardDescription>
 						</CardHeader>
 						<CardContent>
-							<TimeCorrectionApprovalsTable approvals={timeCorrectionApprovals} />
+							<TimeCorrectionApprovalsTable />
 						</CardContent>
 					</Card>
 				</TabsContent>

@@ -1,7 +1,6 @@
 "use client";
 
 import {
-	IconAlertCircle,
 	IconLoader2,
 	IconPencil,
 	IconPlus,
@@ -9,13 +8,19 @@ import {
 	IconTrash,
 } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { ColumnDef } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
 	deleteCategory,
 	getHolidayCategories,
 } from "@/app/[locale]/(app)/settings/holidays/actions";
+import {
+	DataTable,
+	DataTableSkeleton,
+	DataTableToolbar,
+} from "@/components/data-table-server";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -28,14 +33,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "@/components/ui/table";
 import { queryKeys } from "@/lib/query";
 
 interface HolidayCategory {
@@ -58,6 +55,7 @@ interface CategoryManagerProps {
 export function CategoryManager({ organizationId, onAddClick, onEditClick }: CategoryManagerProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
+	const [search, setSearch] = useState("");
 
 	// Delete confirmation state
 	const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -65,9 +63,9 @@ export function CategoryManager({ organizationId, onAddClick, onEditClick }: Cat
 
 	// Fetch categories with TanStack Query
 	const {
-		data: categories = [],
+		data: categories,
 		isLoading,
-		error,
+		isError,
 		refetch,
 		isFetching,
 	} = useQuery({
@@ -127,49 +125,132 @@ export function CategoryManager({ organizationId, onAddClick, onEditClick }: Cat
 		return typeMap[type] || type;
 	};
 
+	// Filter categories by search (client-side since typically small list)
+	const filteredCategories = useMemo(() => {
+		if (!categories) return [];
+		if (!search) return categories;
+
+		const searchLower = search.toLowerCase();
+		return categories.filter(
+			(cat) =>
+				cat.name.toLowerCase().includes(searchLower) ||
+				cat.description?.toLowerCase().includes(searchLower),
+		);
+	}, [categories, search]);
+
+	// Column definitions
+	const columns = useMemo<ColumnDef<HolidayCategory>[]>(
+		() => [
+			{
+				accessorKey: "name",
+				header: t("settings.holidays.categories.name", "Name"),
+				cell: ({ row }) => (
+					<div>
+						<div className="font-medium">{row.original.name}</div>
+						{row.original.description && (
+							<div className="text-sm text-muted-foreground">{row.original.description}</div>
+						)}
+					</div>
+				),
+			},
+			{
+				accessorKey: "type",
+				header: t("settings.holidays.categories.type", "Type"),
+				cell: ({ row }) => (
+					<Badge variant="outline">{formatCategoryType(row.original.type)}</Badge>
+				),
+			},
+			{
+				accessorKey: "color",
+				header: t("settings.holidays.categories.color", "Color"),
+				cell: ({ row }) =>
+					row.original.color ? (
+						<div className="flex items-center gap-2">
+							<div
+								className="h-4 w-4 rounded-full border"
+								style={{ backgroundColor: row.original.color }}
+							/>
+							<span className="text-sm text-muted-foreground">{row.original.color}</span>
+						</div>
+					) : (
+						<span className="text-sm text-muted-foreground">
+							{t("settings.holidays.categories.noColor", "No color")}
+						</span>
+					),
+			},
+			{
+				accessorKey: "settings",
+				header: t("settings.holidays.categories.settings", "Settings"),
+				cell: ({ row }) => (
+					<div className="flex gap-2">
+						{row.original.blocksTimeEntry && (
+							<Badge variant="secondary" className="text-xs">
+								{t("settings.holidays.categories.blocks", "Blocks Time Entry")}
+							</Badge>
+						)}
+						{row.original.excludeFromCalculations && (
+							<Badge variant="secondary" className="text-xs">
+								{t("settings.holidays.categories.excludes", "Excludes from Calc")}
+							</Badge>
+						)}
+					</div>
+				),
+			},
+			{
+				id: "actions",
+				cell: ({ row }) => (
+					<div className="flex justify-end gap-2">
+						<Button
+							variant="ghost"
+							size="icon"
+							onClick={() => onEditClick(row.original)}
+							disabled={deleteMutation.isPending}
+						>
+							<IconPencil className="h-4 w-4" />
+						</Button>
+						<Button
+							variant="ghost"
+							size="icon"
+							onClick={() => handleDeleteClick(row.original)}
+							disabled={deleteMutation.isPending}
+						>
+							{deleteMutation.isPending && categoryToDelete?.id === row.original.id ? (
+								<IconLoader2 className="h-4 w-4 animate-spin" />
+							) : (
+								<IconTrash className="h-4 w-4" />
+							)}
+						</Button>
+					</div>
+				),
+			},
+		],
+		[t, onEditClick, deleteMutation.isPending, categoryToDelete?.id, formatCategoryType],
+	);
+
 	if (isLoading) {
 		return (
 			<div className="space-y-4">
-				<div className="flex justify-between items-center">
-					<h3 className="text-lg font-medium">
-						{t("settings.holidays.categories.title", "Holiday Categories")}
-					</h3>
-					<Button size="sm" onClick={onAddClick}>
+				<div className="flex justify-end">
+					<Button onClick={onAddClick}>
 						<IconPlus className="mr-2 h-4 w-4" />
 						{t("settings.holidays.categories.add", "Add Category")}
 					</Button>
 				</div>
-				<div className="rounded-md border p-8 flex items-center justify-center">
-					<div className="flex items-center gap-2 text-muted-foreground">
-						<IconLoader2 className="h-5 w-5 animate-spin" />
-						<span>{t("settings.holidays.categories.loading", "Loading categories...")}</span>
-					</div>
-				</div>
+				<DataTableSkeleton columnCount={5} rowCount={5} />
 			</div>
 		);
 	}
 
-	if (error) {
+	if (isError) {
 		return (
-			<div className="space-y-4">
-				<div className="flex justify-between items-center">
-					<h3 className="text-lg font-medium">
-						{t("settings.holidays.categories.title", "Holiday Categories")}
-					</h3>
-					<Button size="sm" onClick={onAddClick}>
-						<IconPlus className="mr-2 h-4 w-4" />
-						{t("settings.holidays.categories.add", "Add Category")}
-					</Button>
-				</div>
-				<div className="rounded-md border border-destructive/50 bg-destructive/10 p-8 flex flex-col items-center justify-center gap-4">
-					<div className="flex items-center gap-2 text-destructive">
-						<IconAlertCircle className="h-5 w-5" />
-						<span>{error instanceof Error ? error.message : "Failed to load categories"}</span>
-					</div>
-					<Button onClick={() => refetch()} variant="outline" size="sm">
-						{t("common.retry", "Retry")}
-					</Button>
-				</div>
+			<div className="flex flex-col items-center justify-center py-12 text-center border rounded-lg">
+				<p className="text-destructive">
+					{t("settings.holidays.categories.loadError", "Failed to load categories")}
+				</p>
+				<Button className="mt-4" variant="outline" onClick={() => refetch()}>
+					<IconRefresh className="mr-2 h-4 w-4" />
+					{t("common.retry", "Retry")}
+				</Button>
 			</div>
 		);
 	}
@@ -177,124 +258,44 @@ export function CategoryManager({ organizationId, onAddClick, onEditClick }: Cat
 	return (
 		<>
 			<div className="space-y-4">
-				<div className="flex justify-between items-center">
-					<h3 className="text-lg font-medium">
-						{t("settings.holidays.categories.title", "Holiday Categories")}
-					</h3>
-					<div className="flex items-center gap-2">
-						<Button size="sm" variant="outline" onClick={() => refetch()} disabled={isFetching}>
-							{isFetching ? (
-								<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
-							) : (
-								<IconRefresh className="mr-2 h-4 w-4" />
-							)}
-							{t("common.refresh", "Refresh")}
-						</Button>
-						<Button size="sm" onClick={onAddClick}>
-							<IconPlus className="mr-2 h-4 w-4" />
-							{t("settings.holidays.categories.add", "Add Category")}
-						</Button>
-					</div>
-				</div>
+				<DataTableToolbar
+					search={search}
+					onSearchChange={setSearch}
+					searchPlaceholder={t(
+						"settings.holidays.categories.searchPlaceholder",
+						"Search categories...",
+					)}
+					actions={
+						<div className="flex items-center gap-2">
+							<Button variant="ghost" size="icon" onClick={() => refetch()} disabled={isFetching}>
+								{isFetching ? (
+									<IconLoader2 className="h-4 w-4 animate-spin" />
+								) : (
+									<IconRefresh className="h-4 w-4" />
+								)}
+								<span className="sr-only">{t("common.refresh", "Refresh")}</span>
+							</Button>
+							<Button onClick={onAddClick}>
+								<IconPlus className="mr-2 h-4 w-4" />
+								{t("settings.holidays.categories.add", "Add Category")}
+							</Button>
+						</div>
+					}
+				/>
 
-				<div className="rounded-md border">
-					<Table>
-						<TableHeader>
-							<TableRow>
-								<TableHead>{t("settings.holidays.categories.name", "Name")}</TableHead>
-								<TableHead>{t("settings.holidays.categories.type", "Type")}</TableHead>
-								<TableHead>{t("settings.holidays.categories.color", "Color")}</TableHead>
-								<TableHead>{t("settings.holidays.categories.settings", "Settings")}</TableHead>
-								<TableHead className="text-right">
-									{t("settings.holidays.categories.actions", "Actions")}
-								</TableHead>
-							</TableRow>
-						</TableHeader>
-						<TableBody>
-							{categories.length === 0 ? (
-								<TableRow>
-									<TableCell colSpan={5} className="text-center text-muted-foreground h-24">
-										{t(
-											"settings.holidays.categories.empty",
-											"No categories found. Add your first category to get started.",
-										)}
-									</TableCell>
-								</TableRow>
-							) : (
-								categories.map((category) => (
-									<TableRow key={category.id}>
-										<TableCell>
-											<div>
-												<div className="font-medium">{category.name}</div>
-												{category.description && (
-													<div className="text-sm text-muted-foreground">
-														{category.description}
-													</div>
-												)}
-											</div>
-										</TableCell>
-										<TableCell>
-											<Badge variant="outline">{formatCategoryType(category.type)}</Badge>
-										</TableCell>
-										<TableCell>
-											{category.color ? (
-												<div className="flex items-center gap-2">
-													<div
-														className="h-4 w-4 rounded-full border"
-														style={{ backgroundColor: category.color }}
-													/>
-													<span className="text-sm text-muted-foreground">{category.color}</span>
-												</div>
-											) : (
-												<span className="text-sm text-muted-foreground">
-													{t("settings.holidays.categories.noColor", "No color")}
-												</span>
-											)}
-										</TableCell>
-										<TableCell>
-											<div className="flex gap-2">
-												{category.blocksTimeEntry && (
-													<Badge variant="secondary" className="text-xs">
-														{t("settings.holidays.categories.blocks", "Blocks Time Entry")}
-													</Badge>
-												)}
-												{category.excludeFromCalculations && (
-													<Badge variant="secondary" className="text-xs">
-														{t("settings.holidays.categories.excludes", "Excludes from Calc")}
-													</Badge>
-												)}
-											</div>
-										</TableCell>
-										<TableCell className="text-right">
-											<div className="flex justify-end gap-2">
-												<Button
-													variant="ghost"
-													size="icon"
-													onClick={() => onEditClick(category)}
-													disabled={deleteMutation.isPending}
-												>
-													<IconPencil className="h-4 w-4" />
-												</Button>
-												<Button
-													variant="ghost"
-													size="icon"
-													onClick={() => handleDeleteClick(category)}
-													disabled={deleteMutation.isPending}
-												>
-													{deleteMutation.isPending && categoryToDelete?.id === category.id ? (
-														<IconLoader2 className="h-4 w-4 animate-spin" />
-													) : (
-														<IconTrash className="h-4 w-4" />
-													)}
-												</Button>
-											</div>
-										</TableCell>
-									</TableRow>
-								))
-							)}
-						</TableBody>
-					</Table>
-				</div>
+				<DataTable
+					columns={columns}
+					data={filteredCategories}
+					isFetching={isFetching}
+					emptyMessage={
+						search
+							? t("settings.holidays.categories.noSearchResults", "No categories match your search.")
+							: t(
+									"settings.holidays.categories.empty",
+									"No categories found. Add your first category to get started.",
+								)
+					}
+				/>
 			</div>
 
 			<AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
