@@ -1,9 +1,18 @@
-import { boolean, index, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import {
+	boolean,
+	decimal,
+	index,
+	pgTable,
+	text,
+	timestamp,
+	uniqueIndex,
+	uuid,
+} from "drizzle-orm/pg-core";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 
 // Import auth tables for FK references
 import { organization, user } from "../auth-schema";
-import { genderEnum, roleEnum } from "./enums";
+import { contractTypeEnum, genderEnum, roleEnum } from "./enums";
 
 // ============================================
 // ORGANIZATION STRUCTURE
@@ -96,7 +105,10 @@ export const locationSubarea = pgTable(
 	(table) => [
 		index("locationSubarea_locationId_idx").on(table.locationId),
 		index("locationSubarea_isActive_idx").on(table.isActive),
-		uniqueIndex("locationSubarea_location_name_idx").on(table.locationId, table.name),
+		uniqueIndex("locationSubarea_location_name_idx").on(
+			table.locationId,
+			table.name,
+		),
 	],
 );
 
@@ -129,6 +141,13 @@ export const employee = pgTable(
 		endDate: timestamp("end_date"),
 		isActive: boolean("is_active").default(true).notNull(),
 
+		// Contract type and hourly rate
+		contractType: contractTypeEnum("contract_type").default("fixed").notNull(),
+		currentHourlyRate: decimal("current_hourly_rate", {
+			precision: 10,
+			scale: 2,
+		}),
+
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at")
 			.$onUpdate(() => currentTimestamp())
@@ -140,6 +159,45 @@ export const employee = pgTable(
 		index("employee_teamId_idx").on(table.teamId),
 		index("employee_managerId_idx").on(table.managerId),
 		index("employee_userId_isActive_idx").on(table.userId, table.isActive),
+	],
+);
+
+// ============================================
+// EMPLOYEE RATE HISTORY
+// ============================================
+
+// Tracks historical hourly rates for employees
+export const employeeRateHistory = pgTable(
+	"employee_rate_history",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		employeeId: uuid("employee_id")
+			.notNull()
+			.references(() => employee.id, { onDelete: "cascade" }),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+
+		hourlyRate: decimal("hourly_rate", { precision: 10, scale: 2 }).notNull(),
+		currency: text("currency").default("EUR").notNull(),
+
+		effectiveFrom: timestamp("effective_from").notNull(),
+		effectiveTo: timestamp("effective_to"), // null = currently active rate
+
+		reason: text("reason"), // optional note explaining rate change
+
+		createdBy: text("created_by")
+			.notNull()
+			.references(() => user.id),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+	},
+	(table) => [
+		index("employeeRateHistory_employeeId_idx").on(table.employeeId),
+		index("employeeRateHistory_organizationId_idx").on(table.organizationId),
+		index("employeeRateHistory_employeeId_effectiveFrom_idx").on(
+			table.employeeId,
+			table.effectiveFrom,
+		),
 	],
 );
 
@@ -170,7 +228,10 @@ export const employeeManagers = pgTable(
 		index("employeeManagers_managerId_idx").on(table.managerId),
 		// Prevent duplicate manager assignments
 		index("employeeManagers_unique_idx").on(table.employeeId, table.managerId),
-		index("employeeManagers_managerId_isPrimary_idx").on(table.managerId, table.isPrimary),
+		index("employeeManagers_managerId_isPrimary_idx").on(
+			table.managerId,
+			table.isPrimary,
+		),
 	],
 );
 
@@ -198,7 +259,10 @@ export const locationEmployee = pgTable(
 	(table) => [
 		index("locationEmployee_locationId_idx").on(table.locationId),
 		index("locationEmployee_employeeId_idx").on(table.employeeId),
-		uniqueIndex("locationEmployee_unique_idx").on(table.locationId, table.employeeId),
+		uniqueIndex("locationEmployee_unique_idx").on(
+			table.locationId,
+			table.employeeId,
+		),
 	],
 );
 
@@ -222,7 +286,10 @@ export const subareaEmployee = pgTable(
 	(table) => [
 		index("subareaEmployee_subareaId_idx").on(table.subareaId),
 		index("subareaEmployee_employeeId_idx").on(table.employeeId),
-		uniqueIndex("subareaEmployee_unique_idx").on(table.subareaId, table.employeeId),
+		uniqueIndex("subareaEmployee_unique_idx").on(
+			table.subareaId,
+			table.employeeId,
+		),
 	],
 );
 
@@ -245,9 +312,15 @@ export const teamPermissions = pgTable(
 
 		// Four permission flags
 		canCreateTeams: boolean("can_create_teams").default(false).notNull(),
-		canManageTeamMembers: boolean("can_manage_team_members").default(false).notNull(),
-		canManageTeamSettings: boolean("can_manage_team_settings").default(false).notNull(),
-		canApproveTeamRequests: boolean("can_approve_team_requests").default(false).notNull(),
+		canManageTeamMembers: boolean("can_manage_team_members")
+			.default(false)
+			.notNull(),
+		canManageTeamSettings: boolean("can_manage_team_settings")
+			.default(false)
+			.notNull(),
+		canApproveTeamRequests: boolean("can_approve_team_requests")
+			.default(false)
+			.notNull(),
 
 		grantedBy: uuid("granted_by")
 			.notNull()
@@ -263,6 +336,9 @@ export const teamPermissions = pgTable(
 		index("teamPermissions_organizationId_idx").on(table.organizationId),
 		index("teamPermissions_teamId_idx").on(table.teamId),
 		// One permission record per employee per organization
-		index("teamPermissions_unique_idx").on(table.employeeId, table.organizationId),
+		index("teamPermissions_unique_idx").on(
+			table.employeeId,
+			table.organizationId,
+		),
 	],
 );
