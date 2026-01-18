@@ -254,25 +254,25 @@ export default function WellnessPage() {
 											<li>
 												{t(
 													"onboarding.wellness.feature1",
-													"• Gentle reminders while clocked in",
+													"Gentle reminders while clocked in",
 												)}
 											</li>
 											<li>
 												{t(
 													"onboarding.wellness.feature2",
-													"• Track your daily water intake",
+													"Track your daily water intake",
 												)}
 											</li>
 											<li>
 												{t(
 													"onboarding.wellness.feature3",
-													"• Build healthy streaks with gamification",
+													"Build healthy streaks with gamification",
 												)}
 											</li>
 											<li>
 												{t(
 													"onboarding.wellness.feature4",
-													"• Dashboard widget to track progress",
+													"Dashboard widget to track progress",
 												)}
 											</li>
 										</ul>

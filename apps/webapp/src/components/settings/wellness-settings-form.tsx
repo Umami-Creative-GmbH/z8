@@ -1,30 +1,18 @@
 "use client";
 
-import { IconDroplet, IconLoader2 } from "@tabler/icons-react";
+import { IconDropletFilled, IconLoader2, IconMinus, IconPlus } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { updateWellnessSettings } from "@/app/[locale]/(app)/settings/wellness/actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
-import {
-	CUSTOM_INTERVAL_RANGE,
-	DAILY_GOAL_RANGE,
-	WATER_PRESETS,
-	type WaterReminderPreset,
-} from "@/lib/wellness/water-presets";
 import type { WaterReminderSettings } from "@/lib/validations/wellness";
-import { updateWellnessSettings } from "@/app/[locale]/(app)/settings/wellness/actions";
+import { CUSTOM_INTERVAL_RANGE, DAILY_GOAL_RANGE } from "@/lib/wellness/water-presets";
 
 interface WellnessSettingsFormProps {
 	initialSettings: WaterReminderSettings;
@@ -60,188 +48,190 @@ export function WellnessSettingsForm({ initialSettings }: WellnessSettingsFormPr
 
 	// Track form values for conditional rendering
 	const [isEnabled, setIsEnabled] = useState(initialSettings.enabled);
-	const [selectedPreset, setSelectedPreset] = useState<WaterReminderPreset>(initialSettings.preset);
 	const [isDirty, setIsDirty] = useState(false);
-	const isCustom = selectedPreset === "custom";
 
 	// Sync form state to component state for conditional rendering
 	useEffect(() => {
 		return form.store.subscribe(() => {
 			const state = form.store.state;
 			setIsEnabled(state.values.enabled);
-			setSelectedPreset(state.values.preset);
 			setIsDirty(state.isDirty);
 		});
 	}, [form.store]);
 
-	function handlePresetChange(preset: WaterReminderPreset) {
-		form.setFieldValue("preset", preset);
-		if (preset !== "custom") {
-			form.setFieldValue("intervalMinutes", WATER_PRESETS[preset].intervalMinutes);
-		}
-	}
-
 	return (
-		<Card>
-			<CardHeader>
-				<CardTitle className="flex items-center gap-2">
-					<IconDroplet className="size-5" />
-					{t("settings.wellness.cardTitle", "Water Reminders")}
-				</CardTitle>
-				<CardDescription>
-					{t(
-						"settings.wellness.cardDesc",
-						"Configure hydration reminders during your work sessions. Reminders appear while you're clocked in.",
-					)}
-				</CardDescription>
-			</CardHeader>
-			<CardContent>
-				<form
-					onSubmit={(e) => {
-						e.preventDefault();
-						form.handleSubmit();
-					}}
-					className="space-y-6"
-				>
-					{/* Enable Toggle */}
-					<form.Field name="enabled">
-						{(field) => (
-							<div className="flex flex-row items-center justify-between rounded-lg border p-4">
-								<div className="space-y-0.5">
-									<Label className="text-base">
-										{t("settings.wellness.enableReminder", "Enable Water Reminders")}
-									</Label>
-									<p className="text-sm text-muted-foreground">
-										{t(
-											"settings.wellness.enableReminderDesc",
-											"Receive gentle reminders to drink water while clocked in.",
-										)}
-									</p>
-								</div>
+		<form
+			onSubmit={(e) => {
+				e.preventDefault();
+				form.handleSubmit();
+			}}
+		>
+			<Card>
+				<CardHeader className="pb-4">
+					<div className="flex items-center justify-between">
+						<div className="flex items-center gap-3">
+							<div className="flex size-10 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
+								<IconDropletFilled className="size-5 text-blue-500" />
+							</div>
+							<div>
+								<CardTitle>{t("settings.wellness.cardTitle", "Water Reminders")}</CardTitle>
+								<CardDescription className="mt-0.5">
+									{t("settings.wellness.cardDescShort", "Stay hydrated while you work")}
+								</CardDescription>
+							</div>
+						</div>
+						<form.Field name="enabled">
+							{(field) => (
 								<Switch
 									checked={field.state.value}
 									onCheckedChange={field.handleChange}
 									disabled={loading}
 								/>
+							)}
+						</form.Field>
+					</div>
+				</CardHeader>
+
+				<CardContent
+					className={`space-y-6 transition-opacity ${!isEnabled ? "opacity-40 pointer-events-none" : ""}`}
+				>
+					{/* Frequency */}
+					<form.Field name="intervalMinutes">
+						{(field) => {
+							const value = field.state.value;
+							const presetLabel =
+								value === 30
+									? "Active"
+									: value === 45
+										? "Moderate"
+										: value === 60
+											? "Light"
+											: "Custom";
+							const isRecommended = value === 45;
+
+							return (
+								<div className="space-y-3">
+									<div className="flex items-center justify-between">
+										<Label className="text-sm font-medium">
+											{t("settings.wellness.reminderFrequency", "Reminder Frequency")}
+										</Label>
+										<div className="flex items-center gap-2">
+											<span className="text-sm tabular-nums">{value} min</span>
+											<span
+												className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+													isRecommended
+														? "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300"
+														: "bg-muted text-muted-foreground"
+												}`}
+											>
+												{presetLabel}
+											</span>
+										</div>
+									</div>
+									<div className="relative pt-1 pb-6">
+										<Slider
+											value={[value]}
+											onValueChange={(v) => {
+												field.handleChange(v[0]);
+												const newPreset =
+													v[0] === 30
+														? "active"
+														: v[0] === 45
+															? "moderate"
+															: v[0] === 60
+																? "light"
+																: "custom";
+												form.setFieldValue("preset", newPreset);
+											}}
+											min={CUSTOM_INTERVAL_RANGE.min}
+											max={CUSTOM_INTERVAL_RANGE.max}
+											step={5}
+											disabled={loading || !isEnabled}
+										/>
+										{/* Markers */}
+										<div className="absolute bottom-0 left-0 right-0 flex justify-between text-[10px] text-muted-foreground">
+											<span>{CUSTOM_INTERVAL_RANGE.min}m</span>
+											{[30, 45, 60].map((val) => {
+												const percent =
+													((val - CUSTOM_INTERVAL_RANGE.min) /
+														(CUSTOM_INTERVAL_RANGE.max - CUSTOM_INTERVAL_RANGE.min)) *
+													100;
+												return (
+													<span
+														key={val}
+														className="absolute -translate-x-1/2"
+														style={{ left: `${percent}%` }}
+													>
+														{val}m
+													</span>
+												);
+											})}
+											<span>{CUSTOM_INTERVAL_RANGE.max}m</span>
+										</div>
+									</div>
+								</div>
+							);
+						}}
+					</form.Field>
+
+					<div className="h-px bg-border" />
+
+					{/* Daily Goal */}
+					<form.Field name="dailyGoal">
+						{(field) => (
+							<div className="space-y-3">
+								<div className="flex items-center justify-between">
+									<Label className="text-sm font-medium">
+										{t("settings.wellness.dailyGoal", "Daily Goal")}
+									</Label>
+									<span className="text-sm tabular-nums">
+										{field.state.value} {t("settings.wellness.glasses", "glasses")}
+									</span>
+								</div>
+								<div className="flex items-center gap-3">
+									<Button
+										type="button"
+										variant="outline"
+										size="icon"
+										className="size-9 shrink-0 rounded-full"
+										onClick={() =>
+											field.handleChange(Math.max(DAILY_GOAL_RANGE.min, field.state.value - 1))
+										}
+										disabled={loading || !isEnabled || field.state.value <= DAILY_GOAL_RANGE.min}
+									>
+										<IconMinus className="size-4" />
+									</Button>
+									<div className="flex flex-wrap gap-1 flex-1 justify-center">
+										{Array.from({ length: field.state.value }, (_, i) => (
+											<IconDropletFilled key={i} className="size-5 text-blue-500" />
+										))}
+									</div>
+									<Button
+										type="button"
+										variant="outline"
+										size="icon"
+										className="size-9 shrink-0 rounded-full"
+										onClick={() =>
+											field.handleChange(Math.min(DAILY_GOAL_RANGE.max, field.state.value + 1))
+										}
+										disabled={loading || !isEnabled || field.state.value >= DAILY_GOAL_RANGE.max}
+									>
+										<IconPlus className="size-4" />
+									</Button>
+								</div>
 							</div>
 						)}
 					</form.Field>
 
-					{/* Settings when enabled */}
-					{isEnabled && (
-						<div className="space-y-4 rounded-lg bg-muted/50 p-4">
-							{/* Preset Selection */}
-							<div className="space-y-2">
-								<Label>{t("settings.wellness.reminderFrequency", "Reminder Frequency")}</Label>
-								<Select value={selectedPreset} onValueChange={handlePresetChange}>
-									<SelectTrigger>
-										<SelectValue />
-									</SelectTrigger>
-									<SelectContent>
-										{Object.values(WATER_PRESETS).map((preset) => (
-											<SelectItem key={preset.id} value={preset.id}>
-												<span className="flex items-center gap-2">
-													{preset.label}
-													{preset.recommended && (
-														<span className="text-xs text-primary">(Recommended)</span>
-													)}
-												</span>
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-								<p className="text-xs text-muted-foreground">
-									{WATER_PRESETS[selectedPreset].description}
-								</p>
-							</div>
-
-							{/* Custom Interval Slider */}
-							{isCustom && (
-								<form.Field name="intervalMinutes">
-									{(field) => (
-										<div className="space-y-2">
-											<div className="flex items-center justify-between">
-												<Label>{t("settings.wellness.customInterval", "Custom Interval")}</Label>
-												<span className="text-sm font-medium">{field.state.value} min</span>
-											</div>
-											<Slider
-												value={[field.state.value]}
-												onValueChange={(value) => field.handleChange(value[0])}
-												min={CUSTOM_INTERVAL_RANGE.min}
-												max={CUSTOM_INTERVAL_RANGE.max}
-												step={5}
-												disabled={loading}
-											/>
-											<div className="flex justify-between text-xs text-muted-foreground">
-												<span>{CUSTOM_INTERVAL_RANGE.min} min</span>
-												<span>{CUSTOM_INTERVAL_RANGE.max} min</span>
-											</div>
-										</div>
-									)}
-								</form.Field>
-							)}
-
-							{/* Daily Goal */}
-							<form.Field name="dailyGoal">
-								{(field) => (
-									<div className="space-y-2">
-										<div className="flex items-center justify-between">
-											<Label>{t("settings.wellness.dailyGoal", "Daily Goal")}</Label>
-											<span className="text-sm font-medium">
-												{field.state.value} {t("settings.wellness.glasses", "glasses")}
-											</span>
-										</div>
-										<Slider
-											value={[field.state.value]}
-											onValueChange={(value) => field.handleChange(value[0])}
-											min={DAILY_GOAL_RANGE.min}
-											max={DAILY_GOAL_RANGE.max}
-											step={1}
-											disabled={loading}
-										/>
-										<div className="flex justify-between text-xs text-muted-foreground">
-											<span>
-												{DAILY_GOAL_RANGE.min} {t("settings.wellness.glass", "glass")}
-											</span>
-											<span>
-												{DAILY_GOAL_RANGE.max} {t("settings.wellness.glasses", "glasses")}
-											</span>
-										</div>
-									</div>
-								)}
-							</form.Field>
-
-							{/* Feature Info */}
-							<div className="rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-900/20">
-								<h4 className="mb-1 text-sm font-medium text-blue-900 dark:text-blue-100">
-									{t("settings.wellness.features", "What you'll get")}
-								</h4>
-								<ul className="space-y-1 text-xs text-blue-800 dark:text-blue-200">
-									<li>
-										{t("settings.wellness.feature1", "• Gentle reminders while clocked in")}
-									</li>
-									<li>{t("settings.wellness.feature2", "• Track your daily water intake")}</li>
-									<li>
-										{t(
-											"settings.wellness.feature3",
-											"• Build healthy streaks with gamification",
-										)}
-									</li>
-									<li>
-										{t("settings.wellness.feature4", "• Dashboard widget to track progress")}
-									</li>
-								</ul>
-							</div>
-						</div>
-					)}
+					<div className="h-px bg-border" />
 
 					{/* Save Button */}
-					<Button type="submit" disabled={loading || !isDirty}>
+					<Button type="submit" disabled={loading || !isDirty} className="w-full">
 						{loading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
 						{t("common.saveChanges", "Save Changes")}
 					</Button>
-				</form>
-			</CardContent>
-		</Card>
+				</CardContent>
+			</Card>
+		</form>
 	);
 }

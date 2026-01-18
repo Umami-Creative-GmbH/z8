@@ -1,4 +1,4 @@
-import { boolean, index, integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { boolean, index, integer, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 
 // Import auth tables for FK references
@@ -20,7 +20,7 @@ export const userSettings = pgTable(
 			.references(() => user.id, { onDelete: "cascade" }),
 
 		// Dashboard preferences
-		dashboardWidgetOrder: text("dashboard_widget_order").$type<DashboardWidgetOrder>(),
+		dashboardWidgetOrder: jsonb("dashboard_widget_order").$type<DashboardWidgetOrder>(),
 
 		// Onboarding state
 		onboardingComplete: boolean("onboarding_complete").default(false).notNull(),
