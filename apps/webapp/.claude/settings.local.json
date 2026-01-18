@@ -48,7 +48,23 @@
       "Skill(web-design-guidelines)",
       "Bash(pnpm list:*)",
       "Bash(pnpm drizzle-kit generate:*)",
-      "Bash(pnpm biome:*)"
+      "Bash(pnpm biome:*)",
+      "Bash(pnpm exec eslint:*)",
+      "Bash(pnpm add:*)",
+      "mcp__MCP_DOCKER__resolve-library-id",
+      "mcp__MCP_DOCKER__get-library-docs",
+      "WebFetch(domain:tolgee.io)",
+      "WebFetch(domain:docs.tolgee.io)",
+      "Bash(pnpm tolgee extract print:*)",
+      "Bash(npx tolgee:*)",
+      "Bash(npx @tolgee/cli extract print)",
+      "Bash(npx @tolgee/cli sync:*)",
+      "Bash(npx @tolgee/cli --help)",
+      "Bash(npx @tolgee/cli compare:*)",
+      "Bash(npx @tolgee/cli push:*)",
+      "Bash(npx @tolgee/cli extract:*)",
+      "Bash(npx @tolgee/cli pull:*)",
+      "Bash(node -e:*)"
     ]
   },
   "enabledMcpjsonServers": [
