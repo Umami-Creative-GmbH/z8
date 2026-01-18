@@ -50,9 +50,6 @@
     "login-failed": "Error al iniciar sesión",
     "login-to-account": "Inicia sesión en tu cuenta",
     "login-with": {
-      "${provider": {
-        "id}": "Iniciar sesión con ${provider.name}"
-      },
       "passkey": "Iniciar sesión con Passkey"
     },
     "login-with-sso": "Iniciar sesión con SSO",
@@ -92,9 +89,6 @@
     "sign-up": "Registrarse",
     "signup-failed": "Error al registrarse",
     "sign-up-with": {
-      "${provider": {
-        "id}": "Registrarse con ${provider.name}"
-      },
       "label": "Registrarse con"
     },
     "social-login-error": "Ocurrió un error durante el inicio de sesión social",

@@ -50,9 +50,6 @@
     "login-failed": "Falha ao iniciar sessão",
     "login-to-account": "Entrar na sua conta",
     "login-with": {
-      "${provider": {
-        "id}": "Entrar com ${provider.name}"
-      },
       "passkey": "Entrar com Passkey"
     },
     "login-with-sso": "Entrar com SSO",
@@ -92,9 +89,6 @@
     "sign-up": "Registar",
     "signup-failed": "Falha no registo",
     "sign-up-with": {
-      "${provider": {
-        "id}": "Registar com ${provider.name}"
-      },
       "label": "Registar com"
     },
     "social-login-error": "Ocorreu um erro durante o acesso social",

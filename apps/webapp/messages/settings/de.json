@@ -56,10 +56,6 @@
     }
   },
   "settings": {
-    "auditLog": {
-      "description": "Aktivitätsverlauf und Sicherheitsereignisse anzeigen",
-      "title": "Aktivitätsprotokoll"
-    },
     "branding": {
       "appName": {
         "description": "Überschreiben Sie den Standard-App-Namen, der auf der Anmeldeseite angezeigt wird.",
@@ -85,7 +81,6 @@
         "primaryHint": "Wird für Schaltflächen, Links und Fokusstatus verwendet",
         "title": "Themenfarben"
       },
-      "description": "Passen Sie das Erscheinungsbild der Anmeldeseite an",
       "logo": {
         "description": "Laden Sie Ihr Organisationslogo hoch, um es auf der Anmeldeseite anzuzeigen.",
         "hint": "Empfohlen: 200x200px, PNG oder SVG mit transparentem Hintergrund",
@@ -98,59 +93,9 @@
       "logoUploadSuccess": "Logo erfolgreich hochgeladen",
       "save": "Branding-Einstellungen speichern",
       "saveFailed": "Speichern der Branding-Einstellungen fehlgeschlagen",
-      "saveSuccess": "Branding-Einstellungen gespeichert",
-      "title": "Branding"
-    },
-    "customDomains": {
-      "description": "Konfigurieren Sie benutzerdefinierte Anmeldedomains für Ihre Organisation",
-      "title": "Benutzerdefinierte Domains"
+      "saveSuccess": "Branding-Einstellungen gespeichert"
     },
     "dataExport": {
-      "categories": {
-        "${category}": {
-          "description": "Exportieren von ${category}-Daten"
-        },
-        "absences": {
-          "description": "Urlaubsaufzeichnungen und Genehmigungen (CSV-Format)",
-          "label": "Abwesenheiten"
-        },
-        "audit_logs": {
-          "description": "Aktivitätsverlauf (CSV-Format)",
-          "label": "Protokolle"
-        },
-        "employees": {
-          "description": "Namen, Positionen, Rollen und Teamzuweisungen",
-          "label": "Mitarbeiter"
-        },
-        "holidays": {
-          "description": "Feiertagskalender und Wiederholungsregeln",
-          "label": "Feiertage"
-        },
-        "schedules": {
-          "description": "Arbeitszeitvorlagen und Zuweisungen",
-          "label": "Arbeitszeitpläne"
-        },
-        "shifts": {
-          "description": "Schichtplanungsdaten (CSV-Format)",
-          "label": "Schichten"
-        },
-        "teams": {
-          "description": "Teamstruktur und Berechtigungen",
-          "label": "Teams"
-        },
-        "time_entries": {
-          "description": "Ein-/Ausstempelzeiten (CSV-Format)",
-          "label": "Zeiterfassung"
-        },
-        "vacation": {
-          "description": "Urlaubsrichtlinien und Kontingente",
-          "label": "Urlaubsrichtlinien"
-        },
-        "work_periods": {
-          "description": "Aggregierte Arbeitssitzungen (CSV-Format)",
-          "label": "Arbeitsperioden"
-        }
-      },
       "description": "Exportieren Sie die Daten Ihrer Organisation",
       "featureName": "Datenexport",
       "form": {
@@ -244,7 +189,6 @@
       "title": "Demodaten"
     },
     "employees": {
-      "description": "Verwalten Sie Mitarbeiterprofile, Rollen und Vorgesetztenzuweisungen",
       "details": "Mitarbeiterdetails",
       "title": "Mitarbeiter"
     },
@@ -254,13 +198,6 @@
         "domains": "Benutzerdefinierte Domain",
         "sso": "SSO-Anbieter"
       }
-    },
-    "group": {
-      "account": "Konto",
-      "administration": "Verwaltung",
-      "data": "Daten",
-      "enterprise": "Enterprise",
-      "organization": "Organisation"
     },
     "holidays": {
       "add": "Feiertag hinzufügen",
@@ -403,11 +340,12 @@
         "namePlaceholder": "z.B. Weihnachten",
         "optional": "optional",
         "recurrence": {
+          "title": "Wiederholung",
           "none": "Einmalig",
+          "placeholder": "Wiederholungstyp auswählen",
           "yearly": "Jährlich",
           "yearlyDesc": "Dieser Feiertag wiederholt sich jedes Jahr am gleichen Datum"
         },
-        "recurrencePlaceholder": "Wiederholungstyp auswählen",
         "startDate": "Startdatum"
       },
       "import": {
@@ -597,19 +535,13 @@
       "updated": "Standort aktualisiert",
       "updateFailed": "Standort konnte nicht aktualisiert werden"
     },
-    "notifications": {
-      "description": "Konfigurieren Sie, wie Sie Benachrichtigungen erhalten",
-      "title": "Benachrichtigungen"
-    },
     "organizations": {
-      "description": "Verwalten Sie Organisationsmitglieder, Einladungen und Teams",
       "title": "Organisationen & Teams"
     },
     "permissions": {
       "title": "Berechtigungen"
     },
     "profile": {
-      "description": "Verwalten Sie Ihre persönlichen Informationen und Ihr Profilbild",
       "title": "Profil"
     },
     "projects": {
@@ -657,12 +589,7 @@
       "updateFailed": "Aktualisieren des Projekts fehlgeschlagen"
     },
     "security": {
-      "description": "Verwalten Sie Ihr Passwort und aktive Sitzungen",
       "title": "Sicherheit"
-    },
-    "ssoProviders": {
-      "description": "Verwalten Sie Single-Sign-On-Anbieter für Ihre Organisation",
-      "title": "SSO-Anbieter"
     },
     "statistics": {
       "cards": {

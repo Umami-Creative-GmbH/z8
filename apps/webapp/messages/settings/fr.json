@@ -96,11 +96,6 @@
       "saveSuccess": "Paramètres de marque enregistrés"
     },
     "dataExport": {
-      "categories": {
-        "${category}": {
-          "description": "Exporter les données de ${category}"
-        }
-      },
       "description": "Exportez les données de votre organisation",
       "featureName": "Exportation de données",
       "form": {
@@ -345,11 +340,12 @@
         "namePlaceholder": "par ex., Jour de Noël",
         "optional": "optionnel",
         "recurrence": {
+          "title": "Récurrence",
           "none": "Une fois",
+          "placeholder": "Sélectionner le type de récurrence",
           "yearly": "Annuel",
           "yearlyDesc": "Ce jour férié se répétera chaque année à la même date"
         },
-        "recurrencePlaceholder": "Sélectionner le type de récurrence",
         "startDate": "Date de début"
       },
       "import": {

@@ -96,11 +96,6 @@
       "saveSuccess": "Branding settings saved"
     },
     "dataExport": {
-      "categories": {
-        "${category}": {
-          "description": "Export ${category} data"
-        }
-      },
       "description": "Export your organization's data",
       "featureName": "Data Export",
       "form": {
@@ -344,11 +339,13 @@
         "name": "Name",
         "namePlaceholder": "e.g., Christmas Day",
         "optional": "optional",
-        "recurrence": "Recurrence",
-        "recurrence.none": "One-time",
-        "recurrencePlaceholder": "Select recurrence type",
-        "recurrence.yearly": "Yearly",
-        "recurrence.yearlyDesc": "This holiday will repeat every year on the same date",
+        "recurrence": {
+          "title": "Recurrence",
+          "none": "One-time",
+          "placeholder": "Select recurrence type",
+          "yearly": "Yearly",
+          "yearlyDesc": "This holiday will repeat every year on the same date"
+        },
         "startDate": "Start Date"
       },
       "import": {

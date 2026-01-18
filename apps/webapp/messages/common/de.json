@@ -1,152 +1,4 @@
 {
-  "analytics": {
-    "accessRestricted": "Zugriff eingeschränkt",
-    "accessRestrictedMessage": "Analysen sind nur für Administratoren und Manager verfügbar.",
-    "dateRange": {
-      "custom": "Benutzerdefinierter Zeitraum",
-      "label": "Zeitraum",
-      "pickRange": "Zeitraum auswählen",
-      "presets": {
-        "1y": "Letztes Jahr",
-        "30d": "Letzte 30 Tage",
-        "3m": "Letzte 3 Monate",
-        "6m": "Letzte 6 Monate",
-        "7d": "Letzte 7 Tage"
-      }
-    },
-    "description": "Umfassende Einblicke in Teamleistung, Arbeitszeiten und Abwesenheitsmuster",
-    "export": {
-      "button": "Exportieren",
-      "csv": "Als CSV exportieren",
-      "error": "Export als {format} fehlgeschlagen",
-      "excel": "Als Excel exportieren",
-      "exporting": "Exportiere {format}...",
-      "success": "Als {format} exportiert"
-    },
-    "overview": {
-      "charts": {
-        "absencePatterns": {
-          "description": "Abwesenheitsverteilung nach Kategorie",
-          "title": "Abwesenheitsmuster"
-        },
-        "workHoursTrend": {
-          "description": "Erfasste Arbeitsstunden im Zeitverlauf",
-          "title": "Arbeitsstundentrend"
-        }
-      },
-      "kpis": {
-        "absenceRate": {
-          "description": "Der gesamten verfügbaren Arbeitstage",
-          "label": "Abwesenheitsrate"
-        },
-        "approvalRate": {
-          "description": "Der eingereichten Anfragen genehmigt",
-          "label": "Genehmigungsrate"
-        },
-        "avgWorkHours": {
-          "description": "Pro Mitarbeiter im ausgewählten Zeitraum",
-          "label": "Ø Arbeitsstunden"
-        },
-        "totalEmployees": {
-          "description": "Aktive Mitarbeiter in der Organisation",
-          "label": "Mitarbeiter gesamt"
-        }
-      },
-      "title": "Analyseübersicht"
-    },
-    "tabs": {
-      "overview": "Übersicht",
-      "teamPerformance": "Teamleistung",
-      "vacationTrends": "Urlaubstrends",
-      "workHours": "Arbeitszeiten"
-    },
-    "teamPerformance": {
-      "overtime": {
-        "description": "Stundenabweichung von erwarteten Arbeitsstunden",
-        "title": "Über- & Unterstunden"
-      },
-      "performanceDetails": {
-        "columns": {
-          "avgPerEmployee": "Ø pro Mitarbeiter",
-          "employeeCount": "Mitarbeiteranzahl",
-          "status": "Status",
-          "team": "Team",
-          "totalHours": "Stunden gesamt"
-        },
-        "description": "Aufschlüsselung der Arbeitsstunden nach Team und Mitarbeiter",
-        "noData": "Keine Daten für den ausgewählten Zeitraum verfügbar",
-        "status": {
-          "low": "Niedrig",
-          "onTrack": "Im Plan",
-          "under": "Unter"
-        },
-        "title": "Teamleistungsdetails"
-      },
-      "teamComparison": {
-        "description": "Gesamte Arbeitsstunden pro Team im ausgewählten Zeitraum",
-        "title": "Teamvergleich"
-      },
-      "title": "Teamleistung"
-    },
-    "title": "Analysen",
-    "vacationTrends": {
-      "monthlyUsage": {
-        "description": "Genommene Urlaubstage pro Monat",
-        "title": "Monatliche Urlaubsnutzung"
-      },
-      "peakMonths": {
-        "description": "Monate mit höchster Urlaubsaktivität",
-        "title": "Urlaubsspitzenmonate"
-      },
-      "title": "Urlaubstrends",
-      "utilization": {
-        "daysRemaining": "{count} Tage verbleibend",
-        "daysTaken": "{count} Tage genommen",
-        "description": "Gesamte Urlaubstagenutzung in der Organisation",
-        "label": "Gesamtnutzung",
-        "title": "Urlaubsnutzung"
-      },
-      "vacationBalance": {
-        "columns": {
-          "allocated": "Zugewiesen",
-          "employee": "Mitarbeiter",
-          "remaining": "Verbleibend",
-          "taken": "Genommen",
-          "utilization": "Nutzung"
-        },
-        "description": "Zugewiesene, genommene und verbleibende Tage pro Mitarbeiter",
-        "noData": "Keine Daten für den ausgewählten Zeitraum verfügbar",
-        "title": "Urlaubskontingent"
-      }
-    },
-    "workHours": {
-      "dailyHours": {
-        "description": "Tatsächliche vs. erwartete Arbeitsstunden pro Tag",
-        "title": "Tägliche Arbeitszeiten"
-      },
-      "distribution": {
-        "description": "Arbeitsstundenvergleich der Mitarbeiter (horizontales Balkendiagramm)",
-        "title": "Arbeitszeitenverteilung"
-      },
-      "employeeComparison": {
-        "columns": {
-          "employee": "Mitarbeiter",
-          "expectedHours": "Erwartete Stunden",
-          "status": "Status",
-          "totalHours": "Stunden gesamt",
-          "variance": "Abweichung"
-        },
-        "description": "Gesamtstunden und Abweichung vom Erwarteten pro Mitarbeiter",
-        "noData": "Keine Daten für den ausgewählten Zeitraum verfügbar",
-        "title": "Mitarbeiter-Arbeitszeiten"
-      },
-      "overtimeTrend": {
-        "description": "Stundenabweichung von erwarteten Arbeitsstunden im Zeitverlauf",
-        "title": "Über- & Unterstundentrend"
-      },
-      "title": "Arbeitszeiten"
-    }
-  },
   "common": {
     "active": "Aktiv",
     "add": "Hinzufügen",
@@ -266,38 +118,20 @@
     "request-absence": "Abwesenheit beantragen"
   },
   "info": {
-    "back-to-login": "Zurück zur Anmeldung",
-    "privacy-policy": "Datenschutzrichtlinie",
-    "terms-of-service": "Nutzungsbedingungen"
-  },
-  "meta": {
-    "description": "z8 - Zeiterfassungs-App",
-    "keywords": "z8, Zeit, App, Produktivität",
-    "title": "z8 - Zeiterfassungs-App"
+    "back-to-login": "Zurück zur Anmeldung"
   },
   "nav": {
     "absences": "Abwesenheiten",
-    "active-proposals": "Aktive Vorschläge",
-    "analytics": "Analysen",
     "approvals": "Genehmigungen",
-    "archived": "Archiviert",
     "calendar": "Kalender",
-    "capture": "Erfassung",
     "dashboard": "Dashboard",
-    "data-library": "Datenbibliothek",
     "get-help": "Hilfe",
-    "lifecycle": "Lebenszyklus",
-    "projects": "Projekte",
-    "prompts": "Prompts",
-    "proposal": "Vorschlag",
     "reports": "Berichte",
     "scheduling": "Planung",
-    "search": "Suche",
     "settings": "Einstellungen",
     "team": "Team",
     "team-label": "Team",
-    "time-tracking": "Zeiterfassung",
-    "word-assistant": "Word-Assistent"
+    "time-tracking": "Zeiterfassung"
   },
   "table": {
     "description": "Zeigt die Gesamtbesucherzahl der letzten 6 Monate an. Dies ist nur ein zufälliger Text, um das Layout zu testen. Er erstreckt sich über mehrere Zeilen und sollte umbrechen.",
@@ -329,12 +163,9 @@
     }
   },
   "user": {
-    "account": "Konto",
-    "billing": "Abrechnung",
     "language": "Sprache",
     "logging-out": "Logge aus...",
     "log-out": "Abmelden",
-    "notifications": "Benachrichtigungen",
     "profile": "Profil",
     "theme": "Design",
     "theme-dark": "Dunkel",

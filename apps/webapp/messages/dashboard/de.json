@@ -13,29 +13,6 @@
       "today": "Heute!",
       "tomorrow": "Morgen"
     },
-    "cards": {
-      "accounts": {
-        "active": "Aktive Konten",
-        "engagement": "Engagement übertrifft Ziele",
-        "retention": "Starke Nutzerbindung"
-      },
-      "customers": {
-        "acquisition": "Akquise benötigt Aufmerksamkeit",
-        "down": "20% weniger in diesem Zeitraum",
-        "new": "Neue Kunden"
-      },
-      "growth": {
-        "increase": "Stetige Leistungssteigerung",
-        "projections": "Erfüllt Wachstumsprognosen",
-        "rate": "Wachstumsrate"
-      },
-      "revenue": {
-        "total": "Gesamtumsatz",
-        "trending-up": "Aufwärtstrend diesen Monat",
-        "visitors": "Besucher der letzten 6 Monate"
-      }
-    },
-    "github": "GitHub",
     "hydration": {
       "description": "Verfolgen Sie Ihre tägliche Wasseraufnahme",
       "error": "Fehler beim Laden der Wasseraufnahme-Statistiken",
@@ -104,7 +81,6 @@
       "teams-button": "Teams",
       "title": "Organisation"
     },
-    "title": "Dashboard",
     "upcoming-time-off": {
       "days": "Tage",
       "description": "Geplante Teamabwesenheiten",
@@ -148,63 +124,6 @@
       "title": "Wer ist heute abwesend",
       "until-date": "Bis {date}",
       "view-calendar": "Vollständigen Kalender anzeigen"
-    },
-    "widgets": {
-      "birthdays": {
-        "andMore": "und {count} weitere...",
-        "description": "{count, plural, one {# Geburtstag in den nächsten 30 Tagen} other {# Geburtstage in den nächsten 30 Tagen} =0 {Keine Geburtstage in den nächsten 30 Tagen}}",
-        "error": "Bevorstehende Geburtstage konnten nicht geladen werden",
-        "inDays": "in {days} Tagen",
-        "loading": "Lade Geburtstage...",
-        "noData": "Keine bevorstehenden Geburtstage",
-        "title": "Bevorstehende Geburtstage",
-        "today": "Heute!",
-        "tomorrow": "Morgen"
-      },
-      "quickStats": {
-        "error": "Schnellstatistiken konnten nicht geladen werden",
-        "loading": "Lade Statistiken...",
-        "low": "Wenig Stunden",
-        "onTrack": "Im Plan",
-        "thisMonth": "Dieser Monat",
-        "thisWeek": "Diese Woche",
-        "title": "Schnellstatistiken",
-        "under": "Unter Ziel"
-      },
-      "recentlyApproved": {
-        "absence": "Abwesenheit",
-        "andMore": "und {count} weitere...",
-        "approvedBy": "Genehmigt von {name}",
-        "description": "{count, plural, one {Letzte {count} genehmigte Anfrage} other {Letzte {count} genehmigte Anfragen}}",
-        "error": "Kürzlich genehmigte Anfragen konnten nicht geladen werden",
-        "loading": "Lade kürzlich genehmigte...",
-        "noData": "Keine kürzlich genehmigten Anfragen",
-        "timeCorrection": "Zeitkorrektur",
-        "title": "Kürzlich genehmigt",
-        "viewAll": "Alle Genehmigungen anzeigen"
-      },
-      "teamCalendar": {
-        "description": "{count, plural, one {# Tag mit Abwesenheiten} other {# Tage mit Abwesenheiten} =0 {Keine Abwesenheiten diesen Monat}}",
-        "error": "Teamkalender konnte nicht geladen werden",
-        "legend": "Team-Abwesenheiten",
-        "loading": "Lade Teamkalender...",
-        "nextMonth": "Nächster Monat",
-        "previousMonth": "Vorheriger Monat",
-        "teamMembersOut": "{count, plural, one {# Teammitglied abwesend} other {# Teammitglieder abwesend} =0 {Keine Teammitglieder abwesend}}",
-        "title": "Teamkalender",
-        "today": "Heute"
-      },
-      "upcomingTimeOff": {
-        "description": "{count, plural, one {# Tag mit Abwesenheiten} other {# Tage mit Abwesenheiten} =0 {Keine bevorstehenden Abwesenheiten}}",
-        "error": "Bevorstehende Abwesenheiten konnten nicht geladen werden",
-        "loading": "Lade bevorstehende Abwesenheiten...",
-        "noData": "Keine bevorstehenden Abwesenheiten",
-        "startsIn": "Beginnt in {days} Tagen",
-        "startsToday": "Beginnt heute",
-        "startsTomorrow": "Beginnt morgen",
-        "title": "Bevorstehende Abwesenheiten",
-        "viewCalendar": "Vollständigen Kalender anzeigen"
-      }
     }
   }
 }

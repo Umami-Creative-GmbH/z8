@@ -50,9 +50,6 @@
     "login-failed": "Accesso fallito",
     "login-to-account": "Accedi al tuo account",
     "login-with": {
-      "${provider": {
-        "id}": "Accedi con ${provider.name}"
-      },
       "passkey": "Accedi con Passkey"
     },
     "login-with-sso": "Accedi con SSO",
@@ -92,9 +89,6 @@
     "sign-up": "Registrati",
     "signup-failed": "Registrazione fallita",
     "sign-up-with": {
-      "${provider": {
-        "id}": "Iscriviti con ${provider.name}"
-      },
       "label": "Registrati con"
     },
     "social-login-error": "Si è verificato un errore durante l'accesso social",

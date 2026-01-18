@@ -50,9 +50,6 @@
     "login-failed": "Failed to sign in",
     "login-to-account": "Login to your account",
     "login-with": {
-      "${provider": {
-        "id}": "Login with ${provider.name}"
-      },
       "passkey": "Login with Passkey"
     },
     "login-with-sso": "Sign in with SSO",
@@ -92,9 +89,6 @@
     "sign-up": "Sign up",
     "signup-failed": "Failed to sign up",
     "sign-up-with": {
-      "${provider": {
-        "id}": "Sign up with ${provider.name}"
-      },
       "label": "Sign up with"
     },
     "social-login-error": "An error occurred during social sign-in",

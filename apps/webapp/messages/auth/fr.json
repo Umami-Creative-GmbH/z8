@@ -50,9 +50,6 @@
     "login-failed": "Échec de la connexion",
     "login-to-account": "Connectez-vous à votre compte",
     "login-with": {
-      "${provider": {
-        "id}": "Se connecter avec ${provider.name}"
-      },
       "passkey": "Se connecter avec Passkey"
     },
     "login-with-sso": "Se connecter avec SSO",
@@ -92,9 +89,6 @@
     "sign-up": "S'inscrire",
     "signup-failed": "Échec de l'inscription",
     "sign-up-with": {
-      "${provider": {
-        "id}": "S'inscrire avec ${provider.name}"
-      },
       "label": "S'inscrire avec"
     },
     "social-login-error": "Une erreur s'est produite lors de la connexion sociale",

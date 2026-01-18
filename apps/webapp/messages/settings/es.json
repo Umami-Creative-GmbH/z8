@@ -96,11 +96,6 @@
       "saveSuccess": "Configuración de marca guardada"
     },
     "dataExport": {
-      "categories": {
-        "${category}": {
-          "description": "Exportar datos de ${category}"
-        }
-      },
       "description": "Exporta los datos de tu organización",
       "featureName": "Exportación de datos",
       "form": {
@@ -345,11 +340,12 @@
         "namePlaceholder": "p. ej., Navidad",
         "optional": "opcional",
         "recurrence": {
+          "title": "Repetición",
           "none": "Una vez",
+          "placeholder": "Seleccionar tipo de repetición",
           "yearly": "Anual",
           "yearlyDesc": "Este festivo se repetirá cada año en la misma fecha"
         },
-        "recurrencePlaceholder": "Seleccionar tipo de repetición",
         "startDate": "Fecha de inicio"
       },
       "import": {

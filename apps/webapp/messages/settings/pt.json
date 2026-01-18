@@ -96,11 +96,6 @@
       "saveSuccess": "Definições de marca guardadas"
     },
     "dataExport": {
-      "categories": {
-        "${category}": {
-          "description": "Exportar dados de ${category}"
-        }
-      },
       "description": "Exporte os dados da sua organização",
       "featureName": "Exportação de dados",
       "form": {
@@ -345,11 +340,12 @@
         "namePlaceholder": "ex., Natal",
         "optional": "opcional",
         "recurrence": {
+          "title": "Recorrência",
           "none": "Uma vez",
+          "placeholder": "Selecionar tipo de recorrência",
           "yearly": "Anual",
           "yearlyDesc": "Este feriado repetir-se-á todos os anos na mesma data"
         },
-        "recurrencePlaceholder": "Selecionar tipo de recorrência",
         "startDate": "Data de início"
       },
       "import": {

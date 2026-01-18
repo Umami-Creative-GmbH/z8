@@ -1,7 +1,6 @@
 {
   "onboarding": {
     "complete": {
-      "autoRedirect": "Automatische Weiterleitung in {{seconds}} Sekunden...",
       "exploreDashboard": "Dashboard erkunden",
       "exploreDashboardDesc": "Beginnen Sie mit der Zeiterfassung und Abwesenheitsverwaltung",
       "goToDashboard": "Zum Dashboard",
@@ -201,7 +200,6 @@
       "continue": "Weiter",
       "defaultName": "Standard",
       "error": "Arbeitszeitvorlage konnte nicht erstellt werden",
-      "hoursPerDay": "Stunden pro Tag",
       "hoursPerWeek": "Stunden pro Woche",
       "hoursPerWeekDesc": "Gesamtarbeitsstunden pro Woche. Typische Vollzeit beträgt 40 Stunden.",
       "name": "Vorlagenname",
@@ -209,7 +207,6 @@
       "namePlaceholder": "z.B. Vollzeit, Teilzeit",
       "preview": "Zeitplanvorschau",
       "previewText": "{days} Arbeitstage, {hoursPerDay} Stunden pro Tag",
-      "schedulePreview": "Zeitplanvorschau",
       "setAsDefault": "Als Organisationsstandard festlegen",
       "setAsDefaultDesc": "Diesen Zeitplan auf alle Mitarbeiter anwenden.",
       "skip": "Vorerst überspringen",

@@ -96,11 +96,6 @@
       "saveSuccess": "Impostazioni branding salvate"
     },
     "dataExport": {
-      "categories": {
-        "${category}": {
-          "description": "Esporta dati ${category}"
-        }
-      },
       "description": "Esporta i dati della tua organizzazione",
       "featureName": "Esportazione dati",
       "form": {
@@ -345,11 +340,12 @@
         "namePlaceholder": "es., Natale",
         "optional": "opzionale",
         "recurrence": {
+          "title": "Ricorrenza",
           "none": "Una volta",
+          "placeholder": "Seleziona tipo ricorrenza",
           "yearly": "Annuale",
           "yearlyDesc": "Questa festività si ripeterà ogni anno nella stessa data"
         },
-        "recurrencePlaceholder": "Seleziona tipo ricorrenza",
         "startDate": "Data di inizio"
       },
       "import": {

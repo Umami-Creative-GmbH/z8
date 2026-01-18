@@ -50,14 +50,6 @@
     "login-failed": "Anmeldung fehlgeschlagen",
     "login-to-account": "Bei Ihrem Konto anmelden",
     "login-with": {
-      "${provider": {
-        "id}": "Anmelden mit ${provider.name}"
-      },
-      "apple": "Mit Apple anmelden",
-      "github": "Mit Github anmelden",
-      "google": "Mit Google anmelden",
-      "linkedin": "Mit LinkedIn anmelden",
-      "microsoft": "Mit Microsoft anmelden",
       "passkey": "Mit Passkey anmelden"
     },
     "login-with-sso": "Mit SSO anmelden",
@@ -69,14 +61,7 @@
     "or-continue-with": "Oder fortfahren mit",
     "or-sign-up-with": "Oder registrieren mit",
     "passkey-login-failed": "Anmeldung mit Passkey fehlgeschlagen",
-    "passkey-signup-failed": "Registrierung mit Passkey fehlgeschlagen",
     "password": "Passwort",
-    "password-requirements": {
-      "digit": "Mindestens 1 Ziffer",
-      "lowercase": "Mindestens 1 Kleinbuchstabe",
-      "special": "Mindestens 1 Sonderzeichen",
-      "uppercase": "Mindestens 1 Großbuchstabe"
-    },
     "password-reset-success": "Passwort erfolgreich zurückgesetzt",
     "password-reset-success-message": "Ihr Passwort wurde erfolgreich zurückgesetzt. Sie können sich jetzt mit Ihrem neuen Passwort anmelden.",
     "passwords-match": "Passwörter stimmen überein",
@@ -104,24 +89,13 @@
     "sign-up": "Registrieren",
     "signup-failed": "Registrierung fehlgeschlagen",
     "sign-up-with": {
-      "${provider": {
-        "id}": "Registrieren mit ${provider.name}"
-      },
-      "apple": "Mit Apple registrieren",
-      "github": "Mit Github registrieren",
-      "google": "Mit Google registrieren",
-      "label": "Registrieren mit",
-      "linkedin": "Mit LinkedIn registrieren",
-      "microsoft": "Mit Microsoft registrieren",
-      "passkey": "Mit Passkey registrieren"
+      "label": "Registrieren mit"
     },
     "social-login-error": "Fehler bei der Social-Anmeldung",
     "social-signup-error": "Fehler bei der Social-Registrierung",
     "sso-login-error": "Fehler bei der SSO-Anmeldung",
     "sso-not-configured": "SSO ist für diese Domain nicht konfiguriert",
     "terms": {
-      "agreement": "Durch Klicken auf Weiter stimmen Sie unseren",
-      "and": "und",
       "privacy": "Datenschutzrichtlinie",
       "service": "Nutzungsbedingungen"
     },
