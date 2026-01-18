@@ -362,40 +362,40 @@ export async function aggregateHomeOfficeDays(
 		}
 	}
 
-	// Step 3: For each home office day, get actual hours worked
-	const dateDetails: HomeOfficeDetail[] = [];
-	let totalHoursWorked = 0;
+	// Step 3: For each home office day, get actual hours worked (parallelized)
+	const sortedDates = Array.from(homeOfficeDates).sort();
 
-	for (const dateStr of Array.from(homeOfficeDates).sort()) {
-		const date = new Date(dateStr);
-		const dayStart = dateToDB(startOfDay(fromJSDate(date)))!;
-		const dayEnd = dateToDB(endOfDay(fromJSDate(date)))!;
+	// Fetch all work periods in parallel instead of sequential loop
+	const periodResults = await Promise.all(
+		sortedDates.map(async (dateStr) => {
+			const date = new Date(dateStr);
+			const dayStart = dateToDB(startOfDay(fromJSDate(date)))!;
+			const dayEnd = dateToDB(endOfDay(fromJSDate(date)))!;
 
-		// Get work periods for this day
-		const dayPeriods = await db
-			.select()
-			.from(workPeriod)
-			.where(
-				and(
-					eq(workPeriod.employeeId, employeeId),
-					eq(workPeriod.isActive, false),
-					isNotNull(workPeriod.durationMinutes),
-					gte(workPeriod.startTime, dayStart),
-					lte(workPeriod.startTime, dayEnd),
-				),
-			);
+			const dayPeriods = await db
+				.select()
+				.from(workPeriod)
+				.where(
+					and(
+						eq(workPeriod.employeeId, employeeId),
+						eq(workPeriod.isActive, false),
+						isNotNull(workPeriod.durationMinutes),
+						gte(workPeriod.startTime, dayStart),
+						lte(workPeriod.startTime, dayEnd),
+					),
+				);
 
-		// Calculate total hours for this day
-		const dayMinutes = dayPeriods.reduce((sum, period) => sum + (period.durationMinutes || 0), 0);
-		const dayHours = Math.round((dayMinutes / 60) * 100) / 100;
+			// Calculate total hours for this day
+			const dayMinutes = dayPeriods.reduce((sum, period) => sum + (period.durationMinutes || 0), 0);
+			const dayHours = Math.round((dayMinutes / 60) * 100) / 100;
 
-		totalHoursWorked += dayHours;
+			return { date, hours: dayHours };
+		}),
+	);
 
-		dateDetails.push({
-			date,
-			hours: dayHours,
-		});
-	}
+	// Aggregate results
+	const dateDetails: HomeOfficeDetail[] = periodResults;
+	const totalHoursWorked = periodResults.reduce((sum, result) => sum + result.hours, 0);
 
 	return {
 		days: homeOfficeDates.size,
