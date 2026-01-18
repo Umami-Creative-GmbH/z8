@@ -121,8 +121,8 @@ export default function EmployeeDetailPage({
 	if (isLoading || !employee) {
 		return (
 			<div className="flex flex-1 flex-col gap-4 p-4">
-				<div className="flex items-center justify-center p-8">
-					<IconLoader2 className="size-8 animate-spin text-muted-foreground" />
+				<div className="flex items-center justify-center p-8" role="status" aria-label="Loading employee data">
+					<IconLoader2 className="size-8 animate-spin text-muted-foreground" aria-hidden="true" />
 				</div>
 			</div>
 		);
@@ -133,9 +133,9 @@ export default function EmployeeDetailPage({
 			<div className="flex items-center justify-between">
 				<div>
 					<div className="flex items-center gap-2">
-						<Button variant="ghost" size="sm" asChild>
+						<Button variant="ghost" size="sm" asChild aria-label="Back to employee list">
 							<Link href="/settings/employees">
-								<IconArrowBack className="size-4" />
+								<IconArrowBack className="size-4" aria-hidden="true" />
 							</Link>
 						</Button>
 						<h1 className="text-2xl font-semibold tracking-tight">Employee Details</h1>
@@ -208,7 +208,7 @@ export default function EmployeeDetailPage({
 						{/* Work Schedule Section */}
 						<div className="space-y-3">
 							<div className="flex items-center gap-2 text-sm text-muted-foreground">
-								<IconClock className="size-4" />
+								<IconClock className="size-4" aria-hidden="true" />
 								<span>Work Schedule</span>
 							</div>
 							{schedule ? (
@@ -219,7 +219,7 @@ export default function EmployeeDetailPage({
 										{schedule.template.homeOfficeDaysPerCycle != null &&
 											schedule.template.homeOfficeDaysPerCycle > 0 && (
 												<Badge variant="outline" className="flex items-center gap-1">
-													<IconHome className="size-3" />
+													<IconHome className="size-3" aria-hidden="true" />
 													{schedule.template.homeOfficeDaysPerCycle} home office day
 													{schedule.template.homeOfficeDaysPerCycle > 1 ? "s" : ""}
 												</Badge>
@@ -462,9 +462,9 @@ export default function EmployeeDetailPage({
 										{([isDirty, isSubmitting]) => (
 											<Button type="submit" disabled={!isDirty || isSubmitting || isUpdating}>
 												{(isSubmitting || isUpdating) && (
-													<IconLoader2 className="mr-2 size-4 animate-spin" />
+													<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 												)}
-												<IconDeviceFloppy className="mr-2 size-4" />
+												<IconDeviceFloppy className="mr-2 size-4" aria-hidden="true" />
 												Save Changes
 											</Button>
 										)}

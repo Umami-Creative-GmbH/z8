@@ -96,8 +96,8 @@ export function ReportFilters({
 							size="lg"
 							className="w-full sm:w-auto"
 						>
-							<FileBarChart className="mr-2 h-4 w-4" />
-							{isGenerating ? "Generating Report..." : "Generate Report"}
+							<FileBarChart className="mr-2 h-4 w-4" aria-hidden="true" />
+							{isGenerating ? "Generating Report…" : "Generate Report"}
 						</Button>
 					</div>
 				</div>

@@ -24,7 +24,7 @@ export function ReportSummaryCards({ reportData }: ReportSummaryCardsProps) {
 			<Card>
 				<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
 					<CardTitle className="text-sm font-medium">Total Work Hours</CardTitle>
-					<Clock className="h-4 w-4 text-muted-foreground" />
+					<Clock className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
 				</CardHeader>
 				<CardContent>
 					<div className="text-2xl font-bold">{reportData.workHours.totalHours}h</div>
@@ -39,7 +39,7 @@ export function ReportSummaryCards({ reportData }: ReportSummaryCardsProps) {
 			<Card className="border-amber-500">
 				<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
 					<CardTitle className="text-sm font-medium">Home Office Days</CardTitle>
-					<Home className="h-4 w-4 text-amber-500" />
+					<Home className="h-4 w-4 text-amber-500" aria-hidden="true" />
 				</CardHeader>
 				<CardContent>
 					<div className="text-2xl font-bold">{reportData.absences.homeOffice.days}</div>
@@ -54,7 +54,7 @@ export function ReportSummaryCards({ reportData }: ReportSummaryCardsProps) {
 			<Card>
 				<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
 					<CardTitle className="text-sm font-medium">Vacation Days</CardTitle>
-					<Umbrella className="h-4 w-4 text-muted-foreground" />
+					<Umbrella className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
 				</CardHeader>
 				<CardContent>
 					<div className="text-2xl font-bold">{reportData.absences.vacation.approved}</div>
@@ -68,7 +68,7 @@ export function ReportSummaryCards({ reportData }: ReportSummaryCardsProps) {
 			<Card>
 				<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
 					<CardTitle className="text-sm font-medium">Total Absences</CardTitle>
-					<Calendar className="h-4 w-4 text-muted-foreground" />
+					<Calendar className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
 				</CardHeader>
 				<CardContent>
 					<div className="text-2xl font-bold">{reportData.absences.totalDays}</div>
@@ -86,7 +86,7 @@ export function ReportSummaryCards({ reportData }: ReportSummaryCardsProps) {
 				<Card className="border-green-500">
 					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
 						<CardTitle className="text-sm font-medium">Total Earnings</CardTitle>
-						<Wallet className="h-4 w-4 text-green-500" />
+						<Wallet className="h-4 w-4 text-green-500" aria-hidden="true" />
 					</CardHeader>
 					<CardContent>
 						<div className="text-2xl font-bold">

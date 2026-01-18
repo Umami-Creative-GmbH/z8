@@ -8,13 +8,17 @@ import { UserAvatar } from "@/components/user-avatar";
 import { Link } from "@/navigation";
 import type { EmployeeWithRelations } from "./actions";
 
+// Hoisted static JSX elements (rendering-hoist-jsx)
+const SortIcon = <IconArrowsSort className="ml-2 size-4" aria-hidden="true" />;
+const ActionsHeaderLabel = <span className="sr-only">Actions</span>;
+
 export const columns: ColumnDef<EmployeeWithRelations>[] = [
 	{
 		accessorKey: "user.name",
 		header: ({ column }) => (
 			<Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
 				Employee
-				<IconArrowsSort className="ml-2 size-4" />
+				{SortIcon}
 			</Button>
 		),
 		cell: ({ row }) => (
@@ -86,7 +90,7 @@ export const columns: ColumnDef<EmployeeWithRelations>[] = [
 	},
 	{
 		id: "actions",
-		header: () => <span className="sr-only">Actions</span>,
+		header: () => ActionsHeaderLabel,
 		cell: ({ row }) => (
 			<div className="text-right">
 				<Button variant="ghost" size="sm" asChild>
