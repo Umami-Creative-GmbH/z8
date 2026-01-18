@@ -59,6 +59,16 @@ function inferNamespace(keyName) {
 	return NAMESPACE_PREFIXES[prefix];
 }
 
+/**
+ * Check if a key is dynamic (contains template literal interpolation)
+ * Dynamic keys like `settings.${category}.label` cannot be statically extracted
+ * @param {string} keyName - The key to check
+ * @returns {boolean} - True if the key is dynamic
+ */
+function isDynamicKey(keyName) {
+	return keyName.includes('${') || keyName.includes('}');
+}
+
 export default function extractor(code, fileName) {
 	const keys = [];
 	const warnings = [];
@@ -250,6 +260,12 @@ function extractTCalls(code) {
 			}
 		}
 
+		// Skip dynamic keys with template literal interpolation
+		if (isDynamicKey(finalKeyName)) {
+			i = pos;
+			continue;
+		}
+
 		// If namespace not explicitly set, infer from key prefix
 		const finalNamespace = namespace || inferNamespace(finalKeyName);
 
@@ -322,6 +338,11 @@ function extractTComponents(code) {
 			}
 		}
 
+		// Skip dynamic keys with template literal interpolation
+		if (isDynamicKey(keyName)) {
+			continue;
+		}
+
 		// If namespace not explicitly set, infer from key prefix
 		const finalNamespace = namespace || inferNamespace(keyName);
 
@@ -366,7 +387,7 @@ function extractKeyMappingObjects(code) {
 			const keyValue = nestedMatch[2];
 			const defaultValue = nestedMatch[3];
 
-			if (keyValue.includes('.')) {
+			if (keyValue.includes('.') && !isDynamicKey(keyValue)) {
 				results.push({
 					keyName: keyValue,
 					defaultValue,
@@ -386,8 +407,8 @@ function extractKeyMappingObjects(code) {
 			// Skip if this looks like it's part of a nested object (key: or default:)
 			if (valueMatch[1] === 'key' || valueMatch[1] === 'default') continue;
 
-			// Only include if it looks like a translation key (has at least one dot)
-			if (keyValue.includes('.')) {
+			// Only include if it looks like a translation key (has at least one dot) and is not dynamic
+			if (keyValue.includes('.') && !isDynamicKey(keyValue)) {
 				// Check if we already added this from nested pattern
 				const alreadyAdded = results.some(r => r.keyName === keyValue && r.line === lineNumber);
 				if (!alreadyAdded) {
@@ -417,7 +438,7 @@ function extractKeyMappingObjects(code) {
 		while ((stringMatch = stringPattern.exec(arrayContent)) !== null) {
 			const keyValue = stringMatch[1];
 
-			if (keyValue.includes('.')) {
+			if (keyValue.includes('.') && !isDynamicKey(keyValue)) {
 				results.push({
 					keyName: keyValue,
 					defaultValue: undefined,
