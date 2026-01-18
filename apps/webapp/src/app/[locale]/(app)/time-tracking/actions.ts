@@ -5,7 +5,6 @@ import { Effect } from "effect";
 import { DateTime } from "luxon";
 import { headers } from "next/headers";
 import { db } from "@/db";
-import { user } from "@/db/auth-schema";
 import {
 	approvalRequest,
 	employee,
@@ -13,6 +12,7 @@ import {
 	projectAssignment,
 	surchargeCalculation,
 	timeEntry,
+	userSettings,
 	workPeriod,
 } from "@/db/schema";
 import { auth } from "@/lib/auth";
@@ -28,6 +28,11 @@ import {
 	TimeRegulationService,
 	TimeRegulationServiceLive,
 } from "@/lib/effect/services/time-regulation.service";
+import {
+	BreakEnforcementService,
+	BreakEnforcementServiceLive,
+	type BreakEnforcementResult,
+} from "@/lib/effect/services/break-enforcement.service";
 import { renderTimeCorrectionPendingApproval } from "@/lib/email/render";
 import { createLogger } from "@/lib/logger";
 import {
@@ -80,12 +85,12 @@ export async function editSameDayTimeEntry(
 		return { success: false, error: "Employee profile not found" };
 	}
 
-	// Get user's timezone
-	const userData = await db.query.user.findFirst({
-		where: eq(user.id, session.user.id),
+	// Get user's timezone from userSettings
+	const settingsData = await db.query.userSettings.findFirst({
+		where: eq(userSettings.userId, session.user.id),
 		columns: { timezone: true },
 	});
-	const timezone = userData?.timezone || "UTC";
+	const timezone = settingsData?.timezone || "UTC";
 
 	// Get the work period
 	const [period] = await db
@@ -332,16 +337,16 @@ export async function requestTimeCorrectionEffect(
 
 		yield* _(Effect.annotateCurrentSpan("manager.id", currentEmployee.managerId!));
 
-		// Get user's timezone for time conversion
-		const userData = yield* _(
+		// Get user's timezone for time conversion from userSettings
+		const settingsData = yield* _(
 			dbService.query("getUserTimezone", async () => {
-				return await dbService.db.query.user.findFirst({
-					where: eq(user.id, session.user.id),
+				return await dbService.db.query.userSettings.findFirst({
+					where: eq(userSettings.userId, session.user.id),
 					columns: { timezone: true },
 				});
 			}),
 		);
-		const timezone = userData?.timezone || "UTC";
+		const timezone = settingsData?.timezone || "UTC";
 
 		logger.info(
 			{
@@ -898,12 +903,12 @@ export async function clockIn(): Promise<ServerActionResult<typeof timeEntry.$in
 		return { success: false, error: "Employee profile not found" };
 	}
 
-	// Get user's timezone for holiday validation
-	const userData = await db.query.user.findFirst({
-		where: eq(user.id, session.user.id),
+	// Get user's timezone for holiday validation from userSettings
+	const settingsData = await db.query.userSettings.findFirst({
+		where: eq(userSettings.userId, session.user.id),
 		columns: { timezone: true },
 	});
-	const timezone = userData?.timezone || "UTC";
+	const timezone = settingsData?.timezone || "UTC";
 
 	// Check for active work period
 	const activePeriod = await getActiveWorkPeriod(emp.id);
@@ -976,10 +981,22 @@ export async function clockIn(): Promise<ServerActionResult<typeof timeEntry.$in
 }
 
 /**
- * Clock out result type with optional compliance warnings
+ * Break adjustment info returned when break was auto-enforced
+ */
+export interface BreakAdjustmentInfo {
+	breakMinutes: number;
+	breakInsertedAt: string;
+	regulationName: string;
+	originalDurationMinutes: number;
+	adjustedDurationMinutes: number;
+}
+
+/**
+ * Clock out result type with optional compliance warnings and break adjustment
  */
 export type ClockOutResult = typeof timeEntry.$inferSelect & {
 	complianceWarnings?: ComplianceWarning[];
+	breakAdjustment?: BreakAdjustmentInfo;
 };
 
 /**
@@ -998,12 +1015,12 @@ export async function clockOut(projectId?: string): Promise<ServerActionResult<C
 		return { success: false, error: "Employee profile not found" };
 	}
 
-	// Get user's timezone for compliance calculations
-	const userData = await db.query.user.findFirst({
-		where: eq(user.id, session.user.id),
+	// Get user's timezone for compliance calculations from userSettings
+	const settingsData = await db.query.userSettings.findFirst({
+		where: eq(userSettings.userId, session.user.id),
 		columns: { timezone: true },
 	});
-	const timezone = userData?.timezone || "UTC";
+	const timezone = settingsData?.timezone || "UTC";
 
 	// Check for active work period
 	const activePeriod = await getActiveWorkPeriod(emp.id);
@@ -1100,6 +1117,16 @@ export async function clockOut(projectId?: string): Promise<ServerActionResult<C
 			timezone,
 		);
 
+		// Check and enforce breaks if needed (auto-adjust for break violations)
+		const breakEnforcementResult = await enforceBreaksAfterClockOut({
+			employeeId: emp.id,
+			organizationId: emp.organizationId,
+			workPeriodId: activePeriod.id,
+			sessionDurationMinutes: durationMinutes,
+			timezone,
+			createdBy: session.user.id,
+		});
+
 		// Fire-and-forget: Check project budget warnings if project was assigned
 		if (projectId) {
 			checkProjectBudgetAfterClockOut(projectId, emp.organizationId).catch((err) => {
@@ -1112,6 +1139,9 @@ export async function clockOut(projectId?: string): Promise<ServerActionResult<C
 			data: {
 				...entry,
 				complianceWarnings: complianceWarnings.length > 0 ? complianceWarnings : undefined,
+				breakAdjustment: breakEnforcementResult.wasAdjusted
+					? breakEnforcementResult.adjustment
+					: undefined,
 			},
 		};
 	} catch (error) {
@@ -1323,6 +1353,41 @@ async function calculateAndPersistSurcharges(
 }
 
 /**
+ * Enforce breaks after clock-out by automatically splitting work periods
+ * if they violate break requirements.
+ * Errors are logged but don't fail the clock-out.
+ */
+async function enforceBreaksAfterClockOut(input: {
+	employeeId: string;
+	organizationId: string;
+	workPeriodId: string;
+	sessionDurationMinutes: number;
+	timezone: string;
+	createdBy: string;
+}): Promise<BreakEnforcementResult> {
+	try {
+		const enforcementEffect = Effect.gen(function* (_) {
+			const breakService = yield* _(BreakEnforcementService);
+
+			return yield* _(breakService.enforceBreaksAfterClockOut(input));
+		}).pipe(
+			Effect.provide(BreakEnforcementServiceLive),
+			Effect.provide(TimeRegulationServiceLive),
+			Effect.provide(DatabaseServiceLive),
+		);
+
+		return await Effect.runPromise(enforcementEffect);
+	} catch (error) {
+		// Log the error but don't fail the clock-out
+		logger.error(
+			{ error, workPeriodId: input.workPeriodId },
+			"Failed to enforce breaks after clock-out",
+		);
+		return { wasAdjusted: false };
+	}
+}
+
+/**
  * Create a time entry with blockchain hash linking
  * Used for creating correction entries in the requestTimeCorrection workflow
  */
@@ -1411,12 +1476,12 @@ export async function getBreakReminderStatus(): Promise<
 		return { success: false, error: "Employee profile not found" };
 	}
 
-	// Get user's timezone for calculations
-	const userData = await db.query.user.findFirst({
-		where: eq(user.id, session.user.id),
+	// Get user's timezone for calculations from userSettings
+	const settingsData = await db.query.userSettings.findFirst({
+		where: eq(userSettings.userId, session.user.id),
 		columns: { timezone: true },
 	});
-	const timezone = userData?.timezone || "UTC";
+	const timezone = settingsData?.timezone || "UTC";
 
 	// Get active work period
 	const activePeriod = await getActiveWorkPeriod(emp.id);

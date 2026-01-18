@@ -57,6 +57,10 @@ export async function fetchEmployees(organizationId: string) {
 					name: true,
 					email: true,
 					image: true,
+				},
+			},
+			userSettings: {
+				columns: {
 					timezone: true,
 				},
 			},
@@ -96,7 +100,7 @@ export async function fetchEmployees(organizationId: string) {
 			teamName: emp.team?.name,
 			email: emp.user?.email,
 			name: emp.user?.name,
-			timezone: emp.user?.timezone,
+			timezone: emp.userSettings?.timezone,
 		})),
 		managerRelations: relevantManagerRelations.map((mr) => ({
 			employeeId: mr.employeeId,

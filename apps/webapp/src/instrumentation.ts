@@ -7,7 +7,6 @@ import type { ReadableSpan, SpanProcessor } from "@opentelemetry/sdk-trace-base"
 import {
 	BatchSpanProcessor,
 	ConsoleSpanExporter,
-	SimpleSpanProcessor,
 } from "@opentelemetry/sdk-trace-base";
 import { ATTR_SERVICE_NAME } from "@opentelemetry/semantic-conventions";
 

@@ -1,0 +1,121 @@
+---
+title: Account Security
+description: Password reset, security settings, and best practices for keeping your account safe
+icon: ShieldCheck
+---
+
+import { Steps, Step } from 'fumadocs-ui/components/steps';
+import { Callout } from 'fumadocs-ui/components/callout';
+
+## Password Reset
+
+If you've forgotten your password or need to reset it for security reasons, follow these steps:
+
+### Requesting a Password Reset
+
+![Forgot Password Form](/images/user-guide/forgot-password-form.png)
+
+<Steps>
+  <Step>
+    Go to the **login page**
+  </Step>
+  <Step>
+    Click **"Forgot password?"** below the login form
+  </Step>
+  <Step>
+    Enter your **email address** associated with your account
+  </Step>
+  <Step>
+    Click **"Send Reset Link"**
+  </Step>
+  <Step>
+    Check your email inbox for the reset link
+  </Step>
+</Steps>
+
+<Callout type="info">
+The reset link expires after 24 hours for security reasons. If expired, request a new one.
+</Callout>
+
+### Setting a New Password
+
+![Reset Password Form](/images/user-guide/reset-password-form.png)
+
+<Steps>
+  <Step>
+    Click the reset link in your email
+  </Step>
+  <Step>
+    Enter your **new password**
+  </Step>
+  <Step>
+    **Confirm** your new password by typing it again
+  </Step>
+  <Step>
+    Click **"Reset Password"**
+  </Step>
+  <Step>
+    You'll be redirected to login with your new password
+  </Step>
+</Steps>
+
+---
+
+## Password Requirements
+
+Your password must meet the following security requirements:
+
+| Requirement | Description |
+|-------------|-------------|
+| **Minimum length** | At least 8 characters |
+| **Uppercase letter** | At least one capital letter (A-Z) |
+| **Lowercase letter** | At least one lowercase letter (a-z) |
+| **Number** | At least one digit (0-9) |
+| **Special character** | At least one special character (!@#$%^&*) |
+
+<Callout type="warn">
+Avoid using common passwords like "password123" or personal information like birthdays that could be easily guessed.
+</Callout>
+
+---
+
+## Security Best Practices
+
+### Protect Your Account
+
+- **Use a unique password**: Don't reuse passwords from other services
+- **Update regularly**: Change your password every 90 days
+- **Keep it private**: Never share your password with anyone, including IT staff
+- **Log out on shared devices**: Always log out when using public or shared computers
+
+### Recognize Phishing Attempts
+
+Be cautious of emails that:
+- Ask you to verify your password urgently
+- Contain suspicious links or attachments
+- Come from addresses that don't match official Z8 domains
+- Have spelling errors or unusual formatting
+
+<Callout type="warn">
+Z8 will never ask for your password via email. If you receive such a request, report it to your administrator.
+</Callout>
+
+### Session Security
+
+- Sessions automatically expire after a period of inactivity
+- You can log out of all devices from your profile settings
+- The system tracks login locations for security monitoring
+
+---
+
+## Account Locked?
+
+If your account becomes locked due to too many failed login attempts:
+
+1. Wait 15 minutes for the automatic unlock
+2. Or contact your organization's administrator
+3. They can manually unlock your account from the admin panel
+
+<Callout type="info">
+Account lockouts help protect against brute-force attacks on your account.
+</Callout>

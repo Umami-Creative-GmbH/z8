@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback } from "react";
 import { SettingsCard } from "@/components/settings/settings-card";
 import {
 	type FeatureFlag,
@@ -18,10 +19,14 @@ export function SettingsGrid({ visibleSettings, visibleGroups }: SettingsGridPro
 	const orgSettings = useOrganizationSettings();
 	const isHydrated = orgSettings.isHydrated;
 
-	const isFeatureEnabled = (feature: FeatureFlag | undefined): boolean => {
-		if (!feature) return true;
-		return orgSettings[feature] ?? false;
-	};
+	// Memoize to prevent recreation on every render
+	const isFeatureEnabled = useCallback(
+		(feature: FeatureFlag | undefined): boolean => {
+			if (!feature) return true;
+			return orgSettings[feature] ?? false;
+		},
+		[orgSettings],
+	);
 
 	return (
 		<div className="space-y-8">

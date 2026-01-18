@@ -27,6 +27,16 @@ export function useNotificationStream(options: UseNotificationStreamOptions = {}
 	const reconnectAttempts = useRef(0);
 	const [isConnected, setIsConnected] = useState(false);
 
+	// Store callbacks in refs to avoid dependency churn and prevent unnecessary reconnects
+	const onCountUpdateRef = useRef(onCountUpdate);
+	const onNewNotificationRef = useRef(onNewNotification);
+
+	// Keep refs up to date
+	useEffect(() => {
+		onCountUpdateRef.current = onCountUpdate;
+		onNewNotificationRef.current = onNewNotification;
+	});
+
 	const connect = useCallback(() => {
 		// Only run in browser
 		if (typeof window === "undefined" || typeof EventSource === "undefined") {
@@ -51,7 +61,7 @@ export function useNotificationStream(options: UseNotificationStreamOptions = {}
 					queryClient.setQueryData(queryKeys.notifications.unreadCount(), {
 						count: data.count,
 					});
-					onCountUpdate?.(data.count);
+					onCountUpdateRef.current?.(data.count);
 					// Reset reconnect attempts on successful message
 					reconnectAttempts.current = 0;
 				} catch {
@@ -98,7 +108,7 @@ export function useNotificationStream(options: UseNotificationStreamOptions = {}
 						},
 					);
 
-					onNewNotification?.(notification);
+					onNewNotificationRef.current?.(notification);
 					reconnectAttempts.current = 0;
 				} catch {
 					// Ignore parse errors
@@ -134,7 +144,7 @@ export function useNotificationStream(options: UseNotificationStreamOptions = {}
 			// EventSource not supported or connection failed
 			setIsConnected(false);
 		}
-	}, [enabled, queryClient, onCountUpdate, onNewNotification]);
+	}, [enabled, queryClient]);
 
 	const disconnect = useCallback(() => {
 		if (reconnectTimeoutRef.current) {

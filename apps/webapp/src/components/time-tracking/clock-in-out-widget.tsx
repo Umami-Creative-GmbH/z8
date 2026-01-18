@@ -11,13 +11,19 @@ import {
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
-import type { ComplianceWarning } from "@/app/[locale]/(app)/time-tracking/actions";
 import { BreakReminder } from "@/components/time-tracking/break-reminder";
+import { WaterReminder } from "@/components/wellness/water-reminder";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { type TimeClockState, useTimeClock } from "@/lib/query";
+import { type TimeClockState, useElapsedTimer, useTimeClock } from "@/lib/query";
 import { formatDurationWithSeconds } from "@/lib/time-tracking/time-utils";
+
+// Hoist DateTimeFormat to avoid recreation on each render (js-hoist-regexp)
+const timeFormatter = new Intl.DateTimeFormat(undefined, {
+	hour: "2-digit",
+	minute: "2-digit",
+});
 
 interface ActiveWorkPeriodData {
 	id: string;
@@ -45,7 +51,6 @@ export function ClockInOutWidget({ activeWorkPeriod: initialWorkPeriod, employee
 	const {
 		isClockedIn,
 		activeWorkPeriod,
-		elapsedSeconds,
 		clockIn,
 		clockOut,
 		updateNotes,
@@ -53,6 +58,9 @@ export function ClockInOutWidget({ activeWorkPeriod: initialWorkPeriod, employee
 		isUpdatingNotes,
 		isMutating,
 	} = useTimeClock({ initialData });
+
+	// Separate timer hook to isolate per-second re-renders to this component only
+	const elapsedSeconds = useElapsedTimer(activeWorkPeriod?.startTime ?? null);
 
 	// State for showing notes input after clock-out
 	const [showNotesInput, setShowNotesInput] = useState(false);
@@ -108,6 +116,22 @@ export function ClockInOutWidget({ activeWorkPeriod: initialWorkPeriod, employee
 						});
 					}
 				}
+			}
+
+			// Show break adjustment notification if a break was auto-added
+			const breakAdjustment = result.data?.breakAdjustment;
+			if (breakAdjustment) {
+				toast.info(
+					t("timeTracking.autoAdjusted.toast.title", "Break auto-added for compliance"),
+					{
+						description: t(
+							"timeTracking.autoAdjusted.toast.description",
+							"A {breakMinutes}-minute break was added to comply with time regulations.",
+							{ breakMinutes: breakAdjustment.breakMinutes },
+						),
+						duration: 8000,
+					},
+				);
 			}
 
 			// Show notes input and store the entry ID for patching
@@ -177,16 +201,22 @@ export function ClockInOutWidget({ activeWorkPeriod: initialWorkPeriod, employee
 						</div>
 						<div className="text-muted-foreground text-sm">
 							{t("timeTracking.startedAt", "Started at")}{" "}
-							{new Date(activeWorkPeriod.startTime).toLocaleTimeString("en-US", {
-								hour: "2-digit",
-								minute: "2-digit",
-							})}
+							{timeFormatter.format(new Date(activeWorkPeriod.startTime))}
 						</div>
 					</div>
 				)}
 
 				{/* Break reminder when clocked in */}
-				<BreakReminder isClockedIn={isClockedIn} />
+				<BreakReminder
+					isClockedIn={isClockedIn}
+					sessionStartTime={activeWorkPeriod?.startTime ?? null}
+				/>
+
+				{/* Water reminder when clocked in */}
+				<WaterReminder
+					isClockedIn={isClockedIn}
+					sessionStartTime={activeWorkPeriod?.startTime ?? null}
+				/>
 
 				{!showNotesInput && (
 					<Button
@@ -200,8 +230,8 @@ export function ClockInOutWidget({ activeWorkPeriod: initialWorkPeriod, employee
 							<>
 								<IconLoader2 className="size-5 animate-spin" />
 								{isClockingOut
-									? t("timeTracking.clockingOut", "Clocking Out...")
-									: t("timeTracking.clockingIn", "Clocking In...")}
+									? t("timeTracking.clockingOut", "Clocking Out…")
+									: t("timeTracking.clockingIn", "Clocking In…")}
 							</>
 						) : isClockedIn ? (
 							<>
@@ -219,12 +249,14 @@ export function ClockInOutWidget({ activeWorkPeriod: initialWorkPeriod, employee
 
 				{/* Notes input after clock-out */}
 				{showNotesInput && (
-					<div className="flex flex-col gap-3 animate-in fade-in slide-in-from-top-2 duration-200">
+					<div className="flex flex-col gap-3 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-top-2 motion-safe:duration-200">
 						<div className="text-sm text-muted-foreground">
 							{t("timeTracking.addNotePrompt", "Add a note about your work (optional)")}
 						</div>
 						<Textarea
-							placeholder={t("timeTracking.notesPlaceholder", "What did you work on?")}
+							name="notes"
+							autoComplete="off"
+							placeholder={t("timeTracking.notesPlaceholder", "What did you work on…")}
 							value={notesText}
 							onChange={(e) => setNotesText(e.target.value)}
 							rows={3}

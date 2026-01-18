@@ -18,7 +18,8 @@ export const queryKeys = {
 	// Organization members
 	members: {
 		all: ["members"] as const,
-		list: (orgId: string) => ["members", orgId] as const,
+		list: <T extends object>(orgId: string, params?: T) =>
+			["members", orgId, params] as const,
 	},
 
 	// Invitations
@@ -38,8 +39,9 @@ export const queryKeys = {
 	// Approvals
 	approvals: {
 		all: ["approvals"] as const,
-		absences: () => ["approvals", "absences"] as const,
-		timeCorrections: () => ["approvals", "time-corrections"] as const,
+		absences: <T extends object>(params?: T) => ["approvals", "absences", params] as const,
+		timeCorrections: <T extends object>(params?: T) =>
+			["approvals", "time-corrections", params] as const,
 	},
 
 	// Employees
@@ -100,13 +102,15 @@ export const queryKeys = {
 	// Holidays (custom org-wide)
 	holidays: {
 		all: ["holidays"] as const,
-		list: (orgId: string) => ["holidays", orgId] as const,
+		list: <T extends object>(orgId: string, params?: T) =>
+			["holidays", orgId, params] as const,
 	},
 
 	// Holiday categories
 	holidayCategories: {
 		all: ["holiday-categories"] as const,
-		list: (orgId: string) => ["holiday-categories", orgId] as const,
+		list: <T extends object>(orgId: string, params?: T) =>
+			["holiday-categories", orgId, params] as const,
 	},
 
 	// Holiday assignments (individual custom holidays to org/team/employee)
@@ -118,7 +122,8 @@ export const queryKeys = {
 	// Vacation policies
 	vacationPolicies: {
 		all: ["vacation-policies"] as const,
-		list: (orgId: string) => ["vacation-policies", orgId] as const,
+		list: <T extends object>(orgId: string, params?: T) =>
+			["vacation-policies", orgId, params] as const,
 		detail: (policyId: string) => ["vacation-policies", "detail", policyId] as const,
 		companyDefault: (orgId: string) => ["vacation-policies", "company-default", orgId] as const,
 	},
@@ -132,7 +137,8 @@ export const queryKeys = {
 	// Work schedule templates
 	workScheduleTemplates: {
 		all: ["work-schedule-templates"] as const,
-		list: (orgId: string) => ["work-schedule-templates", orgId] as const,
+		list: <T extends object>(orgId: string, params?: T) =>
+			["work-schedule-templates", orgId, params] as const,
 		detail: (templateId: string) => ["work-schedule-templates", "detail", templateId] as const,
 	},
 
@@ -172,7 +178,8 @@ export const queryKeys = {
 	// Time regulations
 	timeRegulations: {
 		all: ["time-regulations"] as const,
-		list: (orgId: string) => ["time-regulations", "list", orgId] as const,
+		list: <T extends object>(orgId: string, params?: T) =>
+			["time-regulations", "list", orgId, params] as const,
 		detail: (regulationId: string) => ["time-regulations", "detail", regulationId] as const,
 		assignments: (orgId: string) => ["time-regulations", "assignments", orgId] as const,
 		presets: () => ["time-regulations", "presets"] as const,
@@ -189,7 +196,8 @@ export const queryKeys = {
 	// Projects
 	projects: {
 		all: ["projects"] as const,
-		list: (orgId: string) => ["projects", "list", orgId] as const,
+		list: <T extends object>(orgId: string, params?: T) =>
+			["projects", "list", orgId, params] as const,
 		detail: (projectId: string) => ["projects", "detail", projectId] as const,
 		assignable: (orgId: string) => ["projects", "assignable", orgId] as const,
 	},
@@ -237,5 +245,47 @@ export const queryKeys = {
 			employees: (subareaId: string) =>
 				["locations", "subareas", subareaId, "employees"] as const,
 		},
+	},
+
+	// Calendar events
+	calendar: {
+		all: ["calendar"] as const,
+		events: (
+			orgId: string,
+			params: {
+				year: number;
+				month?: number;
+				fullYear?: boolean;
+				filters: {
+					showHolidays: boolean;
+					showAbsences: boolean;
+					showTimeEntries: boolean;
+					showWorkPeriods: boolean;
+					employeeId?: string;
+				};
+			},
+		) => ["calendar", "events", orgId, params] as const,
+	},
+
+	// Hydration / Water reminders
+	hydration: {
+		all: ["hydration"] as const,
+		stats: () => ["hydration", "stats"] as const,
+		settings: () => ["hydration", "settings"] as const,
+		todayIntake: () => ["hydration", "today-intake"] as const,
+		reminderStatus: () => ["hydration", "reminder-status"] as const,
+	},
+
+	// Dashboard
+	dashboard: {
+		all: ["dashboard"] as const,
+		userSettings: () => ["dashboard", "user-settings"] as const,
+		widgetOrder: () => ["dashboard", "widget-order"] as const,
+	},
+
+	// User settings (global user preferences)
+	userSettings: {
+		all: ["user-settings"] as const,
+		current: () => ["user-settings", "current"] as const,
 	},
 } as const;

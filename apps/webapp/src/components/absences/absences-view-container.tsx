@@ -4,6 +4,7 @@ import { useTranslate } from "@tolgee/react";
 import { Calendar, Table as TableIcon } from "lucide-react";
 import { useCallback, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toLocalDateString } from "@/lib/absences/date-utils";
 import type { AbsenceWithCategory, Holiday } from "@/lib/absences/types";
 import { AbsenceEntriesTable } from "./absence-entries-table";
 import { AbsenceYearCalendar } from "./absence-year-calendar";
@@ -40,7 +41,8 @@ export function AbsencesViewContainer({
 
 	// Handle day click in year calendar - open request dialog with date prefilled
 	const handleDayClick = useCallback((date: Date) => {
-		const dateStr = date.toISOString().split("T")[0]; // YYYY-MM-DD format
+		// Use local date string to avoid timezone issues with toISOString()
+		const dateStr = toLocalDateString(date);
 		setPrefilledDate(dateStr);
 		setRequestDialogOpen(true);
 	}, []);
@@ -95,6 +97,7 @@ export function AbsencesViewContainer({
 				onOpenChange={handleDialogOpenChange}
 				categories={categories}
 				remainingDays={remainingDays}
+				holidays={holidays}
 				initialDate={prefilledDate}
 			/>
 		</div>

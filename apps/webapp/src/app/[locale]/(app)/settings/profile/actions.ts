@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { headers } from "next/headers";
 import { db } from "@/db";
-import { user } from "@/db/auth-schema";
+import { userSettings } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
@@ -143,7 +143,7 @@ export async function changePassword(data: {
 }
 
 /**
- * Update user's timezone preference
+ * Update user's timezone preference in userSettings
  */
 export async function updateTimezone(timezone: string): Promise<ServerActionResult<void>> {
 	const effect = Effect.gen(function* (_) {
@@ -163,10 +163,19 @@ export async function updateTimezone(timezone: string): Promise<ServerActionResu
 			);
 		}
 
-		// Update user's timezone
+		// Update timezone in userSettings with upsert
 		yield* _(
 			dbService.query("updateTimezone", async () => {
-				await dbService.db.update(user).set({ timezone }).where(eq(user.id, session.user.id));
+				await dbService.db
+					.insert(userSettings)
+					.values({
+						userId: session.user.id,
+						timezone,
+					})
+					.onConflictDoUpdate({
+						target: userSettings.userId,
+						set: { timezone },
+					});
 			}),
 		);
 	}).pipe(Effect.provide(AppLayer));
@@ -183,12 +192,12 @@ export async function getCurrentTimezone(): Promise<string> {
 		return "UTC";
 	}
 
-	const userData = await db.query.user.findFirst({
-		where: eq(user.id, session.user.id),
+	const settingsData = await db.query.userSettings.findFirst({
+		where: eq(userSettings.userId, session.user.id),
 		columns: {
 			timezone: true,
 		},
 	});
 
-	return userData?.timezone || "UTC";
+	return settingsData?.timezone || "UTC";
 }

@@ -1,0 +1,129 @@
+{
+  "dashboard": {
+    "birthday": {
+      "birthday": "birthday",
+      "birthdays": "birthdays",
+      "count-today": "{count} {birthday} today!",
+      "description": "Celebrations in the next 30 days",
+      "description-count": "{count} {celebration} in the next 30 days",
+      "error": "Failed to load upcoming birthdays",
+      "in-days": "In {days} days",
+      "more-celebrations": "+{count} more celebrations",
+      "title": "Upcoming Birthdays",
+      "today": "Today!",
+      "tomorrow": "Tomorrow"
+    },
+    "hydration": {
+      "description": "Track your daily water intake",
+      "error": "Failed to load hydration stats",
+      "log-error": "Failed to log water intake",
+      "of-goal": "of {goal}",
+      "title": "Hydration"
+    },
+    "managed-employees": {
+      "direct-reports": "{count} direct reports",
+      "no-reports": "No direct reports yet",
+      "no-reports-description": "You'll see your team members here once assigned",
+      "people-you-manage": "People you manage",
+      "reporting-to-you": "reporting to you",
+      "team-members": "{count} team members",
+      "title": "Your Team",
+      "view-all": "View All",
+      "view-all-members": "View all {count} team members"
+    },
+    "pending-approvals": {
+      "absence-requests": "Absence Requests",
+      "awaiting-approval": "Awaiting your approval",
+      "correction": "Correction",
+      "description": "Requests awaiting your decision",
+      "error": "Failed to load pending approvals",
+      "more-requests": "+{count} more requests",
+      "pending-requests": "{count} pending {request}",
+      "requires-attention": "Requires immediate attention",
+      "review-all": "Review All Approvals",
+      "time-corrections": "Time Corrections",
+      "title": "Pending Approvals"
+    },
+    "quick-stats": {
+      "behind": "Behind",
+      "description": "Your weekly and monthly progress",
+      "error": "Failed to load quick stats",
+      "good-pace": "Good pace",
+      "hours": "hours",
+      "on-track": "On track",
+      "progress": "{actual}h of {expected}h ({percent}%)",
+      "this-month": "This Month",
+      "this-week": "This Week",
+      "title": "Time Tracking"
+    },
+    "recently-approved": {
+      "absence": "Absence",
+      "all-caught-up": "All caught up!",
+      "approved-recently": "{count} {request} approved recently",
+      "by": "by {name}",
+      "description": "Latest approved requests",
+      "description-count": "Last {count} approved {request}",
+      "error": "Failed to load recently approved requests",
+      "more-approved": "+{count} more approved",
+      "time": "Time",
+      "title": "Recently Approved",
+      "view-all": "View All Approvals"
+    },
+    "team-overview": {
+      "active-count": "{active} of {total} employees ({percent}%)",
+      "active-employees": "Active Employees",
+      "avg-hours": "Avg. Hours",
+      "description": "Team statistics at a glance",
+      "employees-button": "Employees",
+      "error": "Failed to load team statistics",
+      "per-week": "/week",
+      "teams": "Teams",
+      "teams-button": "Teams",
+      "title": "Organization"
+    },
+    "upcoming-time-off": {
+      "days": "days",
+      "description": "Scheduled team absences",
+      "description-count": "Next {count} scheduled {absence}",
+      "error": "Failed to load upcoming time off",
+      "title": "Upcoming Time Off",
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "view-calendar": "View Full Calendar"
+    },
+    "vacation": {
+      "available": "{days} available",
+      "carryover": "Carryover",
+      "carryover-days": "{days} days",
+      "days-remaining": "days remaining",
+      "description": "{year} vacation days",
+      "error": "Failed to load vacation balance",
+      "expires-in": "Expires in {days} days",
+      "label-available": "Available",
+      "label-pending": "Pending",
+      "label-used": "Used",
+      "no-policy": "No vacation policy configured for this year",
+      "pending": "{days} pending",
+      "percent-used": "{percent}% used",
+      "title": "Vacation Balance",
+      "total": "{days} total",
+      "used": "{days} used"
+    },
+    "whos-out": {
+      "error": "Failed to load today's absences",
+      "everyone-in": "Everyone is in the office today",
+      "everyones-in": "Everyone's in!",
+      "full-team": "Full team available!",
+      "members-out": "{count} team {member} out",
+      "more-members": "+{count} more team members",
+      "out-count": "{count} out",
+      "out-today": "Out Today",
+      "returning-tomorrow": "Returning Tomorrow",
+      "returns-tomorrow": "Returns tomorrow",
+      "team-availability": "Team availability",
+      "title": "Who's Out Today",
+      "until-date": "Until {date}",
+      "view-calendar": "View Full Calendar"
+    }
+  }
+}

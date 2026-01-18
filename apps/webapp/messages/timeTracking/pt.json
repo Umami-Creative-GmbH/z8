@@ -1,0 +1,107 @@
+{
+  "timeTracking": {
+    "addNotePrompt": "Adicionar nota sobre seu trabalho (opcional)",
+    "autoAdjusted": {
+      "description": "Uma pausa de {breakMinutes} minutos foi adicionada automaticamente para cumprir com {regulationName}.",
+      "indicator": "Ajustado automaticamente para conformidade",
+      "originalDuration": "Original: {duration}",
+      "title": "Ajustado automaticamente para conformidade",
+      "toast": {
+        "description": "Uma pausa de {breakMinutes} minutos foi adicionada para cumprir as regulamentações de tempo.",
+        "title": "Pausa adicionada automaticamente para conformidade"
+      }
+    },
+    "breakReminder": {
+      "breakNeeded": "Pausa necessária: restam {remaining} minutos de um total de {total}",
+      "overLimitMessage": "Você excedeu o tempo máximo de trabalho ininterrupto. Faça uma pausa em breve.",
+      "overLimitTitle": "Pausa Necessária",
+      "title": "Lembrete de Pausa",
+      "uninterrupted": "Trabalho ininterrupto",
+      "warningMessage": "Você tem {minutes} minutos até que uma pausa seja necessária."
+    },
+    "clockedOutSuccess": "Você registrou a saída!",
+    "clockIn": "Registrar Entrada",
+    "clockingIn": "Registrando entrada...",
+    "clockingOut": "Registrando saída...",
+    "clockInSuccess": "Entrada registrada com sucesso",
+    "clockOut": "Registrar Saída",
+    "clockOutSuccess": "Saída registrada com sucesso",
+    "compliance": {
+      "violation": "Violação de Conformidade",
+      "warning": "Aviso de Conformidade"
+    },
+    "correction": {
+      "clockIn": "Entrada",
+      "clockOut": "Saída",
+      "editDescription": "Faça alterações no seu registro de tempo para hoje.",
+      "editEntry": "Editar registro de tempo",
+      "editTitle": "Editar Registro de Tempo",
+      "errors": {
+        "invalidTimeRange": "O horário de saída deve ser posterior ao horário de entrada",
+        "submitFailed": "Falha ao enviar correção",
+        "updateFailed": "Falha ao atualizar registro de tempo"
+      },
+      "noteLabel": "Nota (opcional)",
+      "notePlaceholder": "Adicione uma nota sobre esta alteração...",
+      "reasonLabel": "Motivo da Correção",
+      "reasonPlaceholder": "Explique por que esta correção é necessária...",
+      "requestCorrection": "Solicitar correção de tempo",
+      "requestDescription": "Envie uma solicitação de correção para este registro. Seu gerente precisará aprová-la.",
+      "requestTitle": "Solicitar Correção de Tempo",
+      "saveChanges": "Salvar Alterações",
+      "saving": "Salvando...",
+      "submitRequest": "Enviar Solicitação",
+      "submitting": "Enviando...",
+      "success": {
+        "submitted": "Solicitação de correção enviada para aprovação do gerente",
+        "updated": "Registro de tempo atualizado com sucesso"
+      },
+      "timezoneNote": "Os horários estão no seu fuso horário local ({timezone})"
+    },
+    "currentlyClockedIn": "Você registrou a entrada atualmente",
+    "errors": {
+      "clockInFailed": "Falha ao registrar entrada",
+      "clockOutFailed": "Falha ao registrar saída",
+      "holidayBlocked": "Não é possível registrar saída em {holidayName}",
+      "holidayBlockedDesc": "Este dia está marcado como feriado e registros de tempo não são permitidos",
+      "notesSaveFailed": "Falha ao salvar notas"
+    },
+    "noProject": "Sem projeto",
+    "notesPlaceholder": "Em que você trabalhou?",
+    "notesSaved": "Notas salvas",
+    "project": "Projeto",
+    "readyToClockIn": "Pronto para começar a trabalhar?",
+    "selectProject": "Selecione um projeto",
+    "startedAt": "Iniciado às",
+    "table": {
+      "active": "Ativo",
+      "clockIn": "Entrada",
+      "clockOut": "Saída",
+      "corrected": "Corrigido",
+      "date": "Data",
+      "description": "Descrição",
+      "duration": "Duração",
+      "emptyState": "Nenhum registro de tempo encontrado para esta semana.",
+      "emptyStateHint": "Registre entrada para começar a rastrear seu tempo.",
+      "title": "Registros de Tempo"
+    },
+    "title": "Controle de Ponto",
+    "welcomeBack": "Bem-vindo de volta, {name}"
+  },
+  "wellness": {
+    "water": {
+      "goalMet": "Meta diária alcançada! Continue assim!",
+      "logError": "Falha ao registrar a ingestão de água",
+      "logged": "Água registrada! {progress}% da meta diária",
+      "logOne": "+1 Copo",
+      "logTwo": "+2 Copos",
+      "reminderMessage": "Mantenha-se saudável - beba água. Você bebeu {intake} de {goal} copos hoje.",
+      "reminderTitle": "Hora de se hidratar!",
+      "snoozed": "Lembretes de água adiados para hoje",
+      "snoozeError": "Falha ao adiar lembretes",
+      "snoozeToday": "Adiar hoje",
+      "streak": "Sequência atual: {days} dias",
+      "todayProgress": "Progresso de hoje"
+    }
+  }
+}

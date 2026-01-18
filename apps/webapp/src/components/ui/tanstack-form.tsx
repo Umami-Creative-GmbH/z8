@@ -163,6 +163,8 @@ function TFormMessage({
 
 	return (
 		<p
+			role="alert"
+			aria-live="polite"
 			data-slot="form-message"
 			id={`${id}-form-item-message`}
 			className={cn("text-destructive text-sm", className)}

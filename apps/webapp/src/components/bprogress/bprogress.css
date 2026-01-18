@@ -13,3 +13,10 @@
 .bprogress .peg {
 	@apply absolute right-0 block h-full w-24 translate-x-0 -translate-y-1 rotate-3 opacity-100 shadow-[0_0_10px_oklch(var(--primary)),0_0_5px_oklch(var(--primary))];
 }
+
+/* Respect reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+	.bprogress .peg {
+		@apply opacity-0 shadow-none;
+	}
+}

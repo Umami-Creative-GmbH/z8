@@ -303,8 +303,9 @@ export function StorageSettingsForm({
 						>
 							{(field) => (
 								<div className="space-y-2">
-									<Label>{t("settings.dataExport.storage.bucketName", "Bucket Name")}</Label>
+									<Label htmlFor="bucket">{t("settings.dataExport.storage.bucketName", "Bucket Name")}</Label>
 									<Input
+										id="bucket"
 										placeholder={t(
 											"settings.dataExport.storage.bucketPlaceholder",
 											"my-export-bucket",
@@ -341,8 +342,9 @@ export function StorageSettingsForm({
 						>
 							{(field) => (
 								<div className="space-y-2">
-									<Label>{t("settings.dataExport.storage.region", "Region")}</Label>
+									<Label htmlFor="region">{t("settings.dataExport.storage.region", "Region")}</Label>
 									<Input
+										id="region"
 										placeholder={t("settings.dataExport.storage.regionPlaceholder", "us-east-1")}
 										value={field.state.value}
 										onChange={(e) => {
@@ -372,10 +374,11 @@ export function StorageSettingsForm({
 					<form.Field name="endpoint">
 						{(field) => (
 							<div className="space-y-2">
-								<Label>
+								<Label htmlFor="endpoint">
 									{t("settings.dataExport.storage.endpoint", "Custom Endpoint (Optional)")}
 								</Label>
 								<Input
+									id="endpoint"
 									placeholder={t(
 										"settings.dataExport.storage.endpointPlaceholder",
 										"https://s3.example.com",
@@ -401,8 +404,9 @@ export function StorageSettingsForm({
 						<form.Field name="accessKeyId">
 							{(field) => (
 								<div className="space-y-2">
-									<Label>{t("settings.dataExport.storage.accessKeyId", "Access Key ID")}</Label>
+									<Label htmlFor="accessKeyId">{t("settings.dataExport.storage.accessKeyId", "Access Key ID")}</Label>
 									<Input
+										id="accessKeyId"
 										type="password"
 										placeholder={config ? "••••••••••••" : "AKIAIOSFODNN7EXAMPLE"}
 										value={field.state.value}
@@ -430,10 +434,11 @@ export function StorageSettingsForm({
 						<form.Field name="secretAccessKey">
 							{(field) => (
 								<div className="space-y-2">
-									<Label>
+									<Label htmlFor="secretAccessKey">
 										{t("settings.dataExport.storage.secretAccessKey", "Secret Access Key")}
 									</Label>
 									<Input
+										id="secretAccessKey"
 										type="password"
 										placeholder={
 											config ? "••••••••••••" : "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"

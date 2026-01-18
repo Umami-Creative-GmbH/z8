@@ -6,12 +6,13 @@ import { ALL_LANGUAGES, DEFAULT_LANGUAGE } from "@/tolgee/shared";
 // Main domain from environment variable
 const MAIN_DOMAIN = process.env.NEXT_PUBLIC_MAIN_DOMAIN || "localhost:3000";
 
-// Headers used to pass domain context to pages
+// Headers used to pass context to pages
 export const DOMAIN_HEADERS = {
 	ORG_ID: "x-z8-org-id",
 	DOMAIN: "x-z8-domain",
 	AUTH_CONFIG: "x-z8-auth-config",
 	BRANDING: "x-z8-branding",
+	PATHNAME: "x-pathname",
 } as const;
 
 // Routes that don't require authentication
@@ -93,6 +94,9 @@ export async function proxy(request: NextRequest) {
 			return NextResponse.redirect(dashboardUrl);
 		}
 	}
+
+	// Set pathname header for server components (used for callback URLs)
+	response.headers.set(DOMAIN_HEADERS.PATHNAME, pathname);
 
 	// Custom domain detection
 	const hostname = request.headers.get("host") || "";

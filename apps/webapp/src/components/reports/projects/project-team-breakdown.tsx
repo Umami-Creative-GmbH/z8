@@ -2,9 +2,21 @@
 
 import { IconUsers } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
+import dynamic from "next/dynamic";
 import { useState } from "react";
-import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, XAxis, YAxis } from "recharts";
 import { Badge } from "@/components/ui/badge";
+
+// Dynamic imports for recharts to reduce initial bundle size
+const Bar = dynamic(() => import("recharts").then((mod) => mod.Bar), { ssr: false });
+const BarChart = dynamic(() => import("recharts").then((mod) => mod.BarChart), { ssr: false });
+const CartesianGrid = dynamic(() => import("recharts").then((mod) => mod.CartesianGrid), {
+	ssr: false,
+});
+const Cell = dynamic(() => import("recharts").then((mod) => mod.Cell), { ssr: false });
+const Pie = dynamic(() => import("recharts").then((mod) => mod.Pie), { ssr: false });
+const PieChart = dynamic(() => import("recharts").then((mod) => mod.PieChart), { ssr: false });
+const XAxis = dynamic(() => import("recharts").then((mod) => mod.XAxis), { ssr: false });
+const YAxis = dynamic(() => import("recharts").then((mod) => mod.YAxis), { ssr: false });
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
 	type ChartConfig,

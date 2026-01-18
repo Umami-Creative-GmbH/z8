@@ -1,0 +1,205 @@
+{
+  "absences": {
+    "balance": {
+      "carryoverDays": "Hai {count} giorni riportati",
+      "carryoverExpiry": "che scadranno il",
+      "carryoverFrom": "Riporto dal {year}",
+      "daysRemaining": "Giorni rimanenti",
+      "description": "I tuoi giorni di ferie per l'anno corrente",
+      "outOfTotalDays": "su un totale di {totalDays} giorni",
+      "pending": "In attesa",
+      "title": "Saldo ferie {year}",
+      "used": "Usato"
+    },
+    "calendar": {
+      "legend": {
+        "approved": "Approvato",
+        "halfDayAm": "Mezza giornata (mattina)",
+        "halfDayPm": "Mezza giornata (pomeriggio)",
+        "holiday": "Festivo",
+        "pending": "In attesa",
+        "rejected": "Rifiutato"
+      },
+      "nextYear": "Anno prossimo",
+      "previousYear": "Anno precedente"
+    },
+    "dialog": {
+      "cancelDescription": "Sei sicuro di voler annullare questa richiesta di assenza? Questa azione non può essere annullata.",
+      "cancelTitle": "Annulla richiesta di assenza",
+      "confirmCancel": "Sì, annulla richiesta"
+    },
+    "errors": {
+      "allowanceNotConfigured": "Indennità ferie non configurata",
+      "allowanceNotConfiguredMessage": "La tua organizzazione non ha ancora configurato le indennità ferie per il {currentYear}.",
+      "contactAdmin": "Contatta il tuo amministratore per configurare le politiche delle ferie."
+    },
+    "featureName": "gestisci assenze",
+    "form": {
+      "absenceType": "Tipo di assenza *",
+      "autoApproved": "(Approvato automaticamente)",
+      "balanceAfterRequest": "Saldo dopo la richiesta:",
+      "businessDays": "Giorni lavorativi:",
+      "daysRemaining": "Giorni rimanenti:",
+      "description": "Invia una richiesta di ferie. Il tuo manager riceverà una notifica per l'approvazione.",
+      "endDate": "Data di fine *",
+      "errors": {
+        "fillRequiredFields": "Si prega di compilare tutti i campi obbligatori",
+        "insufficientBalance": "Saldo ferie insufficiente",
+        "insufficientBalanceForRequest": "Saldo ferie insufficiente per questa richiesta",
+        "invalidSameDayPeriod": "Non può terminare al mattino se inizia al pomeriggio dello stesso giorno"
+      },
+      "notesOptional": "Note (Opzionale)",
+      "notesPlaceholder": "Aggiungi ulteriori informazioni...",
+      "period": {
+        "afternoonOnly": "Solo pomeriggio",
+        "fullDay": "Giornata intera",
+        "morningOnly": "Solo mattina"
+      },
+      "selectAbsenceType": "Seleziona tipo di assenza",
+      "startDate": "Data di inizio *",
+      "submitRequest": "Invia richiesta",
+      "title": "Richiedi assenza"
+    },
+    "period": {
+      "am": "AM",
+      "pm": "PM"
+    },
+    "requestAbsence": "Richiedi assenza",
+    "status": {
+      "approved": "Approvato",
+      "pending": "In attesa",
+      "rejected": "Rifiutato"
+    },
+    "subtitle": "Gestisci il tuo tempo libero e i giorni di ferie",
+    "table": {
+      "cancelRequest": "Annulla richiesta",
+      "end": "Fine",
+      "headers": {
+        "actions": "Azioni",
+        "dateRange": "Intervallo date",
+        "days": "Giorni",
+        "notes": "Note",
+        "status": "Stato",
+        "type": "Tipo"
+      },
+      "noRequests": "Nessuna richiesta di assenza trovata.",
+      "start": "Inizio",
+      "subtitle": "Richieste di assenza recenti e future",
+      "title": "Le tue richieste di assenza"
+    },
+    "title": "Assenze",
+    "toast": {
+      "cancelFailed": "Impossibile annullare la richiesta di assenza",
+      "requestCancelled": "Richiesta di assenza annullata",
+      "requestFailed": "Impossibile inviare la richiesta di assenza",
+      "requestSubmitted": "Richiesta di assenza inviata con successo"
+    },
+    "view": {
+      "calendar": "Calendario",
+      "table": "Tabella"
+    }
+  },
+  "calendar": {
+    "dayDetails": {
+      "blocksTimeEntry": "Inserimento orari bloccato",
+      "category": "Categoria",
+      "duration": "Durata",
+      "employee": "Dipendente",
+      "noEvents": "Nessun evento per questo giorno",
+      "recurring": "Festività ricorrente",
+      "selectDate": "Seleziona una data per visualizzare i dettagli",
+      "status": "Stato",
+      "title": "Dettagli del giorno"
+    },
+    "delete": {
+      "auditNote": "Le voci di tempo verranno contrassegnate come eliminate a fini di audit.",
+      "confirm": "Converti in pausa",
+      "description": "Questo eliminerà definitivamente questo periodo di lavoro. Il vuoto apparirà come una pausa nel calendario.",
+      "failed": "Impossibile eliminare il periodo di lavoro",
+      "success": "Periodo di lavoro convertito in pausa",
+      "title": "Converti in pausa?"
+    },
+    "details": {
+      "baseWorked": "Base lavorata",
+      "blocksTimeEntry": "Blocca tracciamento tempo",
+      "category": "Categoria",
+      "credited": "Accreditato",
+      "dateRange": "Intervallo date",
+      "duration": "Durata",
+      "employee": "Dipendente",
+      "notes": "Note",
+      "periods": "Periodi di lavoro",
+      "project": "Progetto",
+      "recurring": "Ricorrente annualmente",
+      "status": "Stato",
+      "surcharge": "Supplemento",
+      "surchargeBreakdown": "Dettaglio supplementi",
+      "time": "Tempo",
+      "type": "Tipo"
+    },
+    "edit": {
+      "convertToBreak": "Converti in pausa",
+      "noNotes": "Nessuna nota aggiunta",
+      "noProject": "Nessun progetto assegnato",
+      "notesSaved": "Note salvate",
+      "notesSaveFailed": "Impossibile salvare le note",
+      "projectSaved": "Progetto aggiornato",
+      "projectSaveFailed": "Impossibile aggiornare il progetto",
+      "split": "Dividi",
+      "title": "Periodo di lavoro"
+    },
+    "entryType": {
+      "clockIn": "Ingresso",
+      "clockOut": "Uscita",
+      "correction": "Correzione"
+    },
+    "eventType": {
+      "absence": "Assenza",
+      "holiday": "Festivo",
+      "timeEntry": "Voce di tempo",
+      "workPeriod": "Periodo di lavoro"
+    },
+    "filter": {
+      "absences": "Assenze",
+      "allEmployees": "Tutti i dipendenti",
+      "employee": "Filtra per dipendente",
+      "holidays": "Festività",
+      "myDataOnly": "Solo i miei dati",
+      "timeEntries": "Voci di tempo",
+      "workPeriods": "Periodi di lavoro"
+    },
+    "filters": {
+      "title": "Filtri"
+    },
+    "legend": {
+      "absence": "Assenza",
+      "holiday": "Festivo",
+      "hoursMet": "Ore raggiunte",
+      "overtime": "Straordinari",
+      "timeEntry": "Voce di tempo",
+      "title": "Legenda",
+      "undertime": "Ore mancanti",
+      "workPeriod": "Periodo di lavoro"
+    },
+    "split": {
+      "confirm": "Dividi periodo di lavoro",
+      "currentPeriod": "Periodo di lavoro attuale",
+      "description": "Dividi questo periodo di lavoro in due sessioni separate.",
+      "failed": "Impossibile dividere il periodo di lavoro",
+      "firstNotes": "Note per il primo periodo (opzionale)",
+      "firstPeriod": "Primo periodo",
+      "invalidTime": "L'ora di divisione deve essere compresa tra l'ora di inizio e di fine",
+      "preview": "Anteprima",
+      "secondNotes": "Note per il secondo periodo (opzionale)",
+      "secondPeriod": "Secondo periodo",
+      "splitAt": "Dividi a",
+      "success": "Periodo di lavoro diviso con successo",
+      "title": "Dividi periodo di lavoro"
+    },
+    "status": {
+      "approved": "Approvato",
+      "pending": "In attesa",
+      "rejected": "Rifiutato"
+    }
+  }
+}

@@ -1,7 +1,8 @@
 import { eq } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { db } from "@/db";
-import { organization, user } from "@/db/auth-schema";
+import { organization } from "@/db/auth-schema";
+import { userSettings } from "@/db/schema";
 
 /**
  * Check if a timezone string is valid
@@ -51,16 +52,16 @@ export async function getEffectiveTimezone(
 	userId: string,
 	organizationId: string,
 ): Promise<string> {
-	// Get user timezone
-	const userData = await db.query.user.findFirst({
-		where: eq(user.id, userId),
+	// Get user timezone from userSettings
+	const settingsData = await db.query.userSettings.findFirst({
+		where: eq(userSettings.userId, userId),
 		columns: { timezone: true },
 	});
 
 	// User timezone takes precedence if explicitly set
-	if (userData?.timezone && userData.timezone !== "UTC") {
-		if (isValidTimezone(userData.timezone)) {
-			return userData.timezone;
+	if (settingsData?.timezone && settingsData.timezone !== "UTC") {
+		if (isValidTimezone(settingsData.timezone)) {
+			return settingsData.timezone;
 		}
 	}
 
@@ -94,9 +95,9 @@ export async function getEffectiveTimezoneWithContext(
 	source: "user" | "organization" | "default";
 }> {
 	// Fetch both in parallel
-	const [userData, orgData] = await Promise.all([
-		db.query.user.findFirst({
-			where: eq(user.id, userId),
+	const [settingsData, orgData] = await Promise.all([
+		db.query.userSettings.findFirst({
+			where: eq(userSettings.userId, userId),
 			columns: { timezone: true },
 		}),
 		db.query.organization.findFirst({
@@ -105,7 +106,7 @@ export async function getEffectiveTimezoneWithContext(
 		}),
 	]);
 
-	const userTimezone = userData?.timezone ?? null;
+	const userTimezone = settingsData?.timezone ?? null;
 	const orgTimezone = orgData?.timezone ?? null;
 
 	// User timezone takes precedence

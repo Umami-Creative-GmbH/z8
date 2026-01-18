@@ -1,5 +1,6 @@
 "use client";
 
+import { IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
@@ -246,6 +247,7 @@ export function ResetPasswordForm({ className, ...props }: React.ComponentProps<
 				<Input
 					id="password"
 					name="password"
+					autoComplete="new-password"
 					onBlur={(e) => validateField("password", e.target.value)}
 					onChange={(e) => {
 						handleChange("password", e.target.value);
@@ -284,6 +286,7 @@ export function ResetPasswordForm({ className, ...props }: React.ComponentProps<
 				<Input
 					id="confirmPassword"
 					name="confirmPassword"
+					autoComplete="new-password"
 					onBlur={(e) => validateField("confirmPassword", e.target.value)}
 					onChange={(e) => {
 						handleChange("confirmPassword", e.target.value);
@@ -303,9 +306,14 @@ export function ResetPasswordForm({ className, ...props }: React.ComponentProps<
 				) : null}
 			</div>
 			<Button className="w-full" disabled={isLoading} type="submit">
-				{isLoading
-					? t("common.loading", "Loading...")
-					: t("auth.reset-password-button", "Reset Password")}
+				{isLoading ? (
+					<>
+						<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+						{t("common.loading", "Loading...")}
+					</>
+				) : (
+					t("auth.reset-password-button", "Reset Password")
+				)}
 			</Button>
 			<div className="text-center text-sm">
 				{t("auth.remember-password", "Remember your password?")}{" "}

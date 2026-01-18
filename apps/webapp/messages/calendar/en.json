@@ -1,0 +1,205 @@
+{
+  "absences": {
+    "balance": {
+      "carryoverDays": "You have {count} days carried over",
+      "carryoverExpiry": "that will expire on",
+      "carryoverFrom": "Carryover from {year}",
+      "daysRemaining": "Days Remaining",
+      "description": "Your vacation days for the current year",
+      "outOfTotalDays": "out of {totalDays} total days",
+      "pending": "Pending",
+      "title": "Vacation Balance {year}",
+      "used": "Used"
+    },
+    "calendar": {
+      "legend": {
+        "approved": "Approved",
+        "halfDayAm": "Half day (AM)",
+        "halfDayPm": "Half day (PM)",
+        "holiday": "Holiday",
+        "pending": "Pending",
+        "rejected": "Rejected"
+      },
+      "nextYear": "Next year",
+      "previousYear": "Previous year"
+    },
+    "dialog": {
+      "cancelDescription": "Are you sure you want to cancel this absence request? This action cannot be undone.",
+      "cancelTitle": "Cancel Absence Request",
+      "confirmCancel": "Yes, cancel request"
+    },
+    "errors": {
+      "allowanceNotConfigured": "Vacation Allowance Not Configured",
+      "allowanceNotConfiguredMessage": "Your organization hasn't set up vacation allowances for {currentYear} yet.",
+      "contactAdmin": "Please contact your administrator to configure vacation policies."
+    },
+    "featureName": "manage absences",
+    "form": {
+      "absenceType": "Absence Type *",
+      "autoApproved": "(Auto-approved)",
+      "balanceAfterRequest": "Balance after request:",
+      "businessDays": "Business days:",
+      "daysRemaining": "Days remaining:",
+      "description": "Submit a request for time off. Your manager will be notified for approval.",
+      "endDate": "End Date *",
+      "errors": {
+        "fillRequiredFields": "Please fill in all required fields",
+        "insufficientBalance": "Insufficient vacation balance",
+        "insufficientBalanceForRequest": "Insufficient vacation balance for this request",
+        "invalidSameDayPeriod": "Cannot end in the morning if starting in the afternoon on the same day"
+      },
+      "notesOptional": "Notes (Optional)",
+      "notesPlaceholder": "Add any additional information...",
+      "period": {
+        "afternoonOnly": "Afternoon Only",
+        "fullDay": "Full Day",
+        "morningOnly": "Morning Only"
+      },
+      "selectAbsenceType": "Select absence type",
+      "startDate": "Start Date *",
+      "submitRequest": "Submit Request",
+      "title": "Request Absence"
+    },
+    "period": {
+      "am": "AM",
+      "pm": "PM"
+    },
+    "requestAbsence": "Request Absence",
+    "status": {
+      "approved": "Approved",
+      "pending": "Pending",
+      "rejected": "Rejected"
+    },
+    "subtitle": "Manage your time off and vacation days",
+    "table": {
+      "cancelRequest": "Cancel request",
+      "end": "End",
+      "headers": {
+        "actions": "Actions",
+        "dateRange": "Date Range",
+        "days": "Days",
+        "notes": "Notes",
+        "status": "Status",
+        "type": "Type"
+      },
+      "noRequests": "No absence requests found.",
+      "start": "Start",
+      "subtitle": "Recent and upcoming absence requests",
+      "title": "Your Absence Requests"
+    },
+    "title": "Absences",
+    "toast": {
+      "cancelFailed": "Failed to cancel absence request",
+      "requestCancelled": "Absence request cancelled",
+      "requestFailed": "Failed to submit absence request",
+      "requestSubmitted": "Absence request submitted successfully"
+    },
+    "view": {
+      "calendar": "Calendar",
+      "table": "Table"
+    }
+  },
+  "calendar": {
+    "dayDetails": {
+      "blocksTimeEntry": "Time entries blocked",
+      "category": "Category",
+      "duration": "Duration",
+      "employee": "Employee",
+      "noEvents": "No events for this day",
+      "recurring": "Recurring holiday",
+      "selectDate": "Select a date to view details",
+      "status": "Status",
+      "title": "Day Details"
+    },
+    "delete": {
+      "auditNote": "Time entries will be marked as deleted for audit purposes.",
+      "confirm": "Convert to Break",
+      "description": "This will permanently delete this work period. The gap will appear as a break in the calendar.",
+      "failed": "Failed to delete work period",
+      "success": "Work period converted to break",
+      "title": "Convert to Break?"
+    },
+    "details": {
+      "baseWorked": "Base worked",
+      "blocksTimeEntry": "Blocks time tracking",
+      "category": "Category",
+      "credited": "Credited",
+      "dateRange": "Date Range",
+      "duration": "Duration",
+      "employee": "Employee",
+      "notes": "Notes",
+      "periods": "Work Periods",
+      "project": "Project",
+      "recurring": "Recurring yearly",
+      "status": "Status",
+      "surcharge": "Surcharge",
+      "surchargeBreakdown": "Surcharge Breakdown",
+      "time": "Time",
+      "type": "Type"
+    },
+    "edit": {
+      "convertToBreak": "Convert to Break",
+      "noNotes": "No notes added",
+      "noProject": "No project assigned",
+      "notesSaved": "Notes saved",
+      "notesSaveFailed": "Failed to save notes",
+      "projectSaved": "Project updated",
+      "projectSaveFailed": "Failed to update project",
+      "split": "Split",
+      "title": "Work Period"
+    },
+    "entryType": {
+      "clockIn": "Clock In",
+      "clockOut": "Clock Out",
+      "correction": "Correction"
+    },
+    "eventType": {
+      "absence": "Absence",
+      "holiday": "Holiday",
+      "timeEntry": "Time Entry",
+      "workPeriod": "Work Period"
+    },
+    "filter": {
+      "absences": "Absences",
+      "allEmployees": "All Employees",
+      "employee": "Filter by employee",
+      "holidays": "Holidays",
+      "myDataOnly": "My Data Only",
+      "timeEntries": "Time Entries",
+      "workPeriods": "Work Periods"
+    },
+    "filters": {
+      "title": "Filters"
+    },
+    "legend": {
+      "absence": "Absence",
+      "holiday": "Holiday",
+      "hoursMet": "Hours Met",
+      "overtime": "Overtime",
+      "timeEntry": "Time Entry",
+      "title": "Legend",
+      "undertime": "Undertime",
+      "workPeriod": "Work Period"
+    },
+    "split": {
+      "confirm": "Split Work Period",
+      "currentPeriod": "Current Work Period",
+      "description": "Divide this work period into two separate sessions.",
+      "failed": "Failed to split work period",
+      "firstNotes": "Notes for first period (optional)",
+      "firstPeriod": "First Period",
+      "invalidTime": "Split time must be between start and end times",
+      "preview": "Preview",
+      "secondNotes": "Notes for second period (optional)",
+      "secondPeriod": "Second Period",
+      "splitAt": "Split at",
+      "success": "Work period split successfully",
+      "title": "Split Work Period"
+    },
+    "status": {
+      "approved": "Approved",
+      "pending": "Pending",
+      "rejected": "Rejected"
+    }
+  }
+}

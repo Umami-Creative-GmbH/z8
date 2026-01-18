@@ -12,25 +12,22 @@ import { auth } from "@/lib/auth";
 export default async function WorkSchedulesPage() {
 	await connection(); // Mark as fully dynamic for cacheComponents mode
 
-	const session = await auth.api.getSession({ headers: await headers() });
+	// Auth is checked in layout - session is guaranteed to exist
+	const session = (await auth.api.getSession({ headers: await headers() }))!;
 
-	if (!session?.user) {
-		redirect("/sign-in");
-	}
-
-	// Get employee record
-	const emp = await db.query.employee.findFirst({
-		where: eq(employee.userId, session.user.id),
-	});
+	// Parallelize independent queries to eliminate waterfall
+	const [emp, membership] = await Promise.all([
+		db.query.employee.findFirst({
+			where: eq(employee.userId, session.user.id),
+		}),
+		db.query.member.findFirst({
+			where: eq(member.userId, session.user.id),
+		}),
+	]);
 
 	if (!emp) {
 		return <NoEmployeeError />;
 	}
-
-	// Check if user is admin or owner
-	const membership = await db.query.member.findFirst({
-		where: eq(member.userId, session.user.id),
-	});
 
 	const isAdmin = membership?.role === "admin" || membership?.role === "owner";
 

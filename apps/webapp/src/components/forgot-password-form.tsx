@@ -1,5 +1,6 @@
 "use client";
 
+import { IconLoader2 } from "@tabler/icons-react";
 import { useTolgee, useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { z } from "zod";
@@ -169,6 +170,7 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
 				<Input
 					id="email"
 					name="email"
+					autoComplete="email"
 					onBlur={(e) => validateField("email", e.target.value)}
 					onChange={(e) => {
 						handleChange("email", e.target.value);
@@ -182,9 +184,14 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
 				{fieldErrors.email ? <p className="text-destructive text-sm">{fieldErrors.email}</p> : null}
 			</div>
 			<Button className="w-full" disabled={isLoading} type="submit">
-				{isLoading
-					? t("common.loading", "Loading...")
-					: t("auth.send-reset-link", "Send reset link")}
+				{isLoading ? (
+					<>
+						<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+						{t("common.loading", "Loading...")}
+					</>
+				) : (
+					t("auth.send-reset-link", "Send reset link")
+				)}
 			</Button>
 			<div className="text-center text-sm">
 				{t("auth.remember-password", "Remember your password?")}{" "}

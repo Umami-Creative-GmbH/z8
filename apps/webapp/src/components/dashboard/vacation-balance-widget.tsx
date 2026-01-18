@@ -1,6 +1,7 @@
 "use client";
 
 import { IconAlertTriangle, IconBeach, IconCalendarTime, IconClock } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { getVacationBalance } from "./actions";
@@ -19,13 +20,14 @@ type VacationBalance = {
 };
 
 export function VacationBalanceWidget() {
+	const { t } = useTranslate();
 	const {
 		data: balance,
 		loading,
 		refreshing,
 		refetch,
 	} = useWidgetData<VacationBalance>(getVacationBalance, {
-		errorMessage: "Failed to load vacation balance",
+		errorMessage: t("dashboard.vacation.error", "Failed to load vacation balance"),
 	});
 
 	if (!balance && !loading) return null;
@@ -50,8 +52,8 @@ export function VacationBalanceWidget() {
 
 	return (
 		<WidgetCard
-			title="Vacation Balance"
-			description={`${new Date().getFullYear()} vacation days`}
+			title={t("dashboard.vacation.title", "Vacation Balance")}
+			description={t("dashboard.vacation.description", "{year} vacation days", { year: new Date().getFullYear() })}
 			icon={<IconBeach className="size-4 text-muted-foreground" />}
 			loading={loading}
 			refreshing={refreshing}
@@ -63,13 +65,13 @@ export function VacationBalanceWidget() {
 					<div className="flex items-center justify-between">
 						<div>
 							<p className="text-3xl font-bold">{balance.remainingDays.toFixed(1)}</p>
-							<p className="text-sm text-muted-foreground">days remaining</p>
+							<p className="text-sm text-muted-foreground">{t("dashboard.vacation.days-remaining", "days remaining")}</p>
 						</div>
 						<div className="text-right">
-							<p className="text-sm font-medium">{balance.totalDays.toFixed(1)} total</p>
+							<p className="text-sm font-medium">{t("dashboard.vacation.total", "{days} total", { days: balance.totalDays.toFixed(1) })}</p>
 							<p className="text-xs text-muted-foreground">
-								{balance.usedDays.toFixed(1)} used
-								{balance.pendingDays > 0 && <>, {balance.pendingDays.toFixed(1)} pending</>}
+								{t("dashboard.vacation.used", "{days} used", { days: balance.usedDays.toFixed(1) })}
+								{balance.pendingDays > 0 && <>, {t("dashboard.vacation.pending", "{days} pending", { days: balance.pendingDays.toFixed(1) })}</>}
 							</p>
 						</div>
 					</div>
@@ -78,9 +80,9 @@ export function VacationBalanceWidget() {
 					<div className="space-y-1">
 						<Progress value={Math.min(usedPercentage, 100)} className="h-2" />
 						<div className="flex items-center justify-between text-xs">
-							<span className="text-muted-foreground">{usedPercentage.toFixed(0)}% used</span>
+							<span className="text-muted-foreground">{t("dashboard.vacation.percent-used", "{percent}% used", { percent: usedPercentage.toFixed(0) })}</span>
 							<span className={getUsageColor(usedPercentage)}>
-								{balance.remainingDays.toFixed(1)} available
+								{t("dashboard.vacation.available", "{days} available", { days: balance.remainingDays.toFixed(1) })}
 							</span>
 						</div>
 					</div>
@@ -89,17 +91,17 @@ export function VacationBalanceWidget() {
 					<div className="grid grid-cols-3 gap-2 pt-2 border-t">
 						<div className="text-center">
 							<p className="text-lg font-semibold">{balance.usedDays.toFixed(1)}</p>
-							<p className="text-xs text-muted-foreground">Used</p>
+							<p className="text-xs text-muted-foreground">{t("dashboard.vacation.label-used", "Used")}</p>
 						</div>
 						<div className="text-center">
 							<p className="text-lg font-semibold">{balance.pendingDays.toFixed(1)}</p>
-							<p className="text-xs text-muted-foreground">Pending</p>
+							<p className="text-xs text-muted-foreground">{t("dashboard.vacation.label-pending", "Pending")}</p>
 						</div>
 						<div className="text-center">
 							<p className="text-lg font-semibold text-green-600">
 								{balance.remainingDays.toFixed(1)}
 							</p>
-							<p className="text-xs text-muted-foreground">Available</p>
+							<p className="text-xs text-muted-foreground">{t("dashboard.vacation.label-available", "Available")}</p>
 						</div>
 					</div>
 
@@ -109,9 +111,9 @@ export function VacationBalanceWidget() {
 							<div className="flex items-center justify-between">
 								<div className="flex items-center gap-2">
 									<IconCalendarTime className="size-4 text-muted-foreground" />
-									<span className="text-sm">Carryover</span>
+									<span className="text-sm">{t("dashboard.vacation.carryover", "Carryover")}</span>
 								</div>
-								<Badge variant="secondary">{balance.carryoverDays.toFixed(1)} days</Badge>
+								<Badge variant="secondary">{t("dashboard.vacation.carryover-days", "{days} days", { days: balance.carryoverDays.toFixed(1) })}</Badge>
 							</div>
 
 							{balance.carryoverExpiryDaysRemaining !== null && (
@@ -120,13 +122,13 @@ export function VacationBalanceWidget() {
 										<div className="flex items-center gap-2 p-2 text-sm bg-amber-50 dark:bg-amber-950 rounded-md border border-amber-200 dark:border-amber-800">
 											<IconAlertTriangle className="size-4 text-amber-500 flex-shrink-0" />
 											<span className="text-amber-700 dark:text-amber-300">
-												Expires in {balance.carryoverExpiryDaysRemaining} days
+												{t("dashboard.vacation.expires-in", "Expires in {days} days", { days: balance.carryoverExpiryDaysRemaining })}
 											</span>
 										</div>
 									) : (
 										<p className="text-xs text-muted-foreground flex items-center gap-1">
 											<IconClock className="size-3" />
-											Expires in {balance.carryoverExpiryDaysRemaining} days
+											{t("dashboard.vacation.expires-in", "Expires in {days} days", { days: balance.carryoverExpiryDaysRemaining })}
 										</p>
 									)}
 								</div>
@@ -137,7 +139,7 @@ export function VacationBalanceWidget() {
 					{/* No vacation policy message */}
 					{balance.totalDays === 0 && (
 						<div className="p-3 text-sm text-muted-foreground bg-muted rounded-md text-center">
-							No vacation policy configured for this year
+							{t("dashboard.vacation.no-policy", "No vacation policy configured for this year")}
 						</div>
 					)}
 				</div>

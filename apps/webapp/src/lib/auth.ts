@@ -44,33 +44,6 @@ export const auth = betterAuth({
 				required: false,
 				input: false,
 			},
-			onboardingComplete: {
-				type: "boolean",
-				required: false,
-				defaultValue: false,
-				input: false,
-			},
-			onboardingStep: {
-				type: "string",
-				required: false,
-				input: false,
-			},
-			onboardingStartedAt: {
-				type: "date",
-				required: false,
-				input: false,
-			},
-			onboardingCompletedAt: {
-				type: "date",
-				required: false,
-				input: false,
-			},
-			timezone: {
-				type: "string",
-				required: false,
-				defaultValue: "UTC",
-				input: true, // user can set their timezone
-			},
 		},
 	},
 

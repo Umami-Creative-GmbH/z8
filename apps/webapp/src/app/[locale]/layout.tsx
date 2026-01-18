@@ -1,4 +1,5 @@
 import type { TolgeeStaticData } from "@tolgee/react";
+import { headers } from "next/headers";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
 import { type ReactNode, Suspense } from "react";
@@ -6,7 +7,12 @@ import { Toaster } from "sonner";
 import { BProgressBar } from "@/components/bprogress/bprogress";
 import { ThemeProvider } from "@/components/theme-provider";
 import { TolgeeNextProvider } from "@/tolgee/client";
-import { ALL_LANGUAGES, TolgeeBase } from "@/tolgee/shared";
+import {
+	ALL_LANGUAGES,
+	loadNamespaces,
+	getNamespacesForRoute,
+} from "@/tolgee/shared";
+import { DOMAIN_HEADERS } from "@/proxy";
 import "../globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryProvider } from "@/lib/query";
@@ -16,17 +22,15 @@ type Props = {
 	params: Promise<{ locale: string }>;
 };
 
-// Load translations from static JSON files
-async function loadTranslations(locale: string): Promise<TolgeeStaticData> {
+// Load translations for the current route's required namespaces
+async function loadRouteTranslations(
+	locale: string,
+	pathname: string
+): Promise<TolgeeStaticData> {
 	try {
-		// Import translations directly from static JSON files
-		const translations = await (locale === "de"
-			? import("../../../messages/de.json")
-			: import("../../../messages/en.json"));
-
-		return {
-			[locale]: translations.default || translations,
-		};
+		// Get namespaces for this route
+		const namespaces = getNamespacesForRoute(pathname);
+		return loadNamespaces(locale, namespaces);
 	} catch (error) {
 		console.warn("Failed to load translations:", error);
 		return {};
@@ -43,8 +47,14 @@ async function TranslationProvider({ locale, children }: { locale: string; child
 	let records: TolgeeStaticData = {};
 	let messages = {};
 
+	// Get the current pathname to determine which namespaces to load
+	const headersList = await headers();
+	const pathname = headersList.get(DOMAIN_HEADERS.PATHNAME) || "/";
+	// Strip locale prefix from pathname (e.g., /en/settings -> /settings)
+	const pathnameWithoutLocale = pathname.replace(new RegExp(`^/${locale}`), "") || "/";
+
 	try {
-		records = await loadTranslations(locale);
+		records = await loadRouteTranslations(locale, pathnameWithoutLocale);
 	} catch (error) {
 		console.warn("Failed to load Tolgee records:", error);
 	}
@@ -99,6 +109,7 @@ export default async function LocaleLayout({ children, params }: Props) {
 				<meta charSet="UTF-8" />
 				<meta content="Umami Creative GmbH" name="author" />
 				<meta content="#000000" name="theme-color" />
+				<meta content="light dark" name="color-scheme" />
 				<link href="/favicon.ico" rel="icon" sizes="any" type="image/x-icon" />
 				<link href="/apple-touch-icon.png" rel="apple-touch-icon" sizes="180x180" />
 				<link href="/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png" />

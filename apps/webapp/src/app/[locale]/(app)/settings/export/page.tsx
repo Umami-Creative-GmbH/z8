@@ -9,6 +9,7 @@ import { StorageSettingsForm } from "@/components/settings/export/storage-settin
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getAuthContext } from "@/lib/auth-helpers";
 import { isExportS3Configured } from "@/lib/storage/export-s3-client";
 import { getTranslate } from "@/tolgee/server";
 import { getExportHistoryAction, getStorageConfigAction } from "./actions";
@@ -16,8 +17,8 @@ import { getExportHistoryAction, getStorageConfigAction } from "./actions";
 async function ExportSettingsContent() {
 	await connection(); // Mark as fully dynamic for cacheComponents mode
 
-	const t = await getTranslate();
-	const currentEmployee = await getCurrentEmployee();
+	// Parallelize initial fetches (translate + employee check)
+	const [t, currentEmployee] = await Promise.all([getTranslate(), getCurrentEmployee()]);
 
 	if (!currentEmployee) {
 		return (
@@ -28,7 +29,6 @@ async function ExportSettingsContent() {
 	}
 
 	// Check if user has admin role
-	const { getAuthContext } = await import("@/lib/auth-helpers");
 	const authContext = await getAuthContext();
 
 	if (!authContext?.employee || authContext.employee.role !== "admin") {
@@ -37,15 +37,14 @@ async function ExportSettingsContent() {
 
 	const organizationId = authContext.employee.organizationId;
 
-	// Check S3 configuration (async, from database)
-	const s3Configured = await isExportS3Configured(organizationId);
+	// Parallelize S3 config, storage config, and export history fetches
+	const [s3Configured, storageConfigResult, historyResult] = await Promise.all([
+		isExportS3Configured(organizationId),
+		getStorageConfigAction(organizationId),
+		getExportHistoryAction(organizationId),
+	]);
 
-	// Get storage config for the form
-	const storageConfigResult = await getStorageConfigAction(organizationId);
 	const storageConfig = storageConfigResult.success ? storageConfigResult.data : null;
-
-	// Get export history
-	const historyResult = await getExportHistoryAction(organizationId);
 	const exports = historyResult.success ? historyResult.data : [];
 
 	return (

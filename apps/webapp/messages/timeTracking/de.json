@@ -1,0 +1,107 @@
+{
+  "timeTracking": {
+    "addNotePrompt": "Notiz zu Ihrer Arbeit hinzufügen (optional)",
+    "autoAdjusted": {
+      "description": "Eine {breakMinutes}-minütige Pause wurde automatisch hinzugefügt, um {regulationName} zu entsprechen.",
+      "indicator": "Automatisch angepasst für Compliance",
+      "originalDuration": "Original: {duration}",
+      "title": "Automatisch angepasst für Compliance",
+      "toast": {
+        "description": "Eine {breakMinutes}-minütige Pause wurde hinzugefügt, um den Zeitvorschriften zu entsprechen.",
+        "title": "Pause automatisch hinzugefügt für Compliance"
+      }
+    },
+    "breakReminder": {
+      "breakNeeded": "Pause erforderlich: {remaining} Minuten verbleiben von insgesamt {total}",
+      "overLimitMessage": "Sie haben die maximale ununterbrochene Arbeitszeit überschritten. Bitte machen Sie bald eine Pause.",
+      "overLimitTitle": "Pause erforderlich",
+      "title": "Pausenerinnerung",
+      "uninterrupted": "Ununterbrochene Arbeit",
+      "warningMessage": "Sie haben noch {minutes} Minuten, bis eine Pause erforderlich ist."
+    },
+    "clockedOutSuccess": "Sie haben ausgestempelt!",
+    "clockIn": "Einstempeln",
+    "clockingIn": "Stemple ein...",
+    "clockingOut": "Stemple aus...",
+    "clockInSuccess": "Erfolgreich eingestempelt",
+    "clockOut": "Ausstempeln",
+    "clockOutSuccess": "Erfolgreich ausgestempelt",
+    "compliance": {
+      "violation": "Compliance-Verstoß",
+      "warning": "Compliance-Hinweis"
+    },
+    "correction": {
+      "clockIn": "Einstempeln",
+      "clockOut": "Ausstempeln",
+      "editDescription": "Änderungen an Ihrem Zeiteintrag für heute vornehmen.",
+      "editEntry": "Zeiteintrag bearbeiten",
+      "editTitle": "Zeiteintrag bearbeiten",
+      "errors": {
+        "invalidTimeRange": "Ausstempelzeit muss nach der Einstempelzeit liegen",
+        "submitFailed": "Fehler beim Senden der Korrektur",
+        "updateFailed": "Fehler beim Aktualisieren des Zeiteintrags"
+      },
+      "noteLabel": "Notiz (optional)",
+      "notePlaceholder": "Notiz zu dieser Änderung hinzufügen...",
+      "reasonLabel": "Grund für Korrektur",
+      "reasonPlaceholder": "Erklären Sie, warum diese Korrektur nötig ist...",
+      "requestCorrection": "Zeitkorrektur anfordern",
+      "requestDescription": "Eine Korrekturanfrage für diesen Zeiteintrag senden. Ihr Manager muss sie genehmigen.",
+      "requestTitle": "Zeitkorrektur anfordern",
+      "saveChanges": "Änderungen speichern",
+      "saving": "Speichere...",
+      "submitRequest": "Anfrage senden",
+      "submitting": "Sende...",
+      "success": {
+        "submitted": "Korrekturanfrage zur Genehmigung durch Manager gesendet",
+        "updated": "Zeiteintrag erfolgreich aktualisiert"
+      },
+      "timezoneNote": "Zeiten sind in Ihrer lokalen Zeitzone ({timezone})"
+    },
+    "currentlyClockedIn": "Sie sind derzeit eingestempelt",
+    "errors": {
+      "clockInFailed": "Fehler beim Einstempeln",
+      "clockOutFailed": "Fehler beim Ausstempeln",
+      "holidayBlocked": "Ausstempeln am {holidayName} nicht möglich",
+      "holidayBlockedDesc": "Dieser Tag ist als Feiertag markiert und Zeiteinträge sind nicht erlaubt",
+      "notesSaveFailed": "Fehler beim Speichern der Notizen"
+    },
+    "noProject": "Kein Projekt",
+    "notesPlaceholder": "Woran haben Sie gearbeitet?",
+    "notesSaved": "Notizen gespeichert",
+    "project": "Projekt",
+    "readyToClockIn": "Bereit zum Arbeiten?",
+    "selectProject": "Projekt auswählen",
+    "startedAt": "Begonnen um",
+    "table": {
+      "active": "Aktiv",
+      "clockIn": "Einstempeln",
+      "clockOut": "Ausstempeln",
+      "corrected": "Korrigiert",
+      "date": "Datum",
+      "description": "Beschreibung",
+      "duration": "Dauer",
+      "emptyState": "Keine Zeiteinträge für diese Woche gefunden.",
+      "emptyStateHint": "Stempeln Sie ein, um Ihre Zeit zu erfassen.",
+      "title": "Zeiteinträge"
+    },
+    "title": "Zeiterfassung",
+    "welcomeBack": "Willkommen zurück, {name}"
+  },
+  "wellness": {
+    "water": {
+      "goalMet": "Tagesziel erreicht! Weiter so!",
+      "logError": "Fehler beim Protokollieren der Wasseraufnahme",
+      "logged": "Wasser protokolliert! {progress}% des Tagesziels",
+      "logOne": "+1 Glas",
+      "logTwo": "+2 Gläser",
+      "reminderMessage": "Bleiben Sie gesund - trinken Sie etwas Wasser. Sie haben heute {intake} von {goal} Gläsern getrunken.",
+      "reminderTitle": "Zeit zu trinken!",
+      "snoozed": "Wassererinnerungen für heute stummgeschaltet",
+      "snoozeError": "Fehler beim Stummschalten der Erinnerungen",
+      "snoozeToday": "Heute stummschalten",
+      "streak": "Aktuelle Serie: {days} Tage",
+      "todayProgress": "Heutiger Fortschritt"
+    }
+  }
+}

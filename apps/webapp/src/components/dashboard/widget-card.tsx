@@ -31,9 +31,11 @@ export function WidgetCard({
 			onClick={onRefresh}
 			disabled={refreshing}
 			className="size-8"
-			title="Refresh"
+			aria-label="Refresh"
 		>
-			<IconRefresh className={cn("size-4", refreshing && "animate-spin")} />
+			<IconRefresh
+				className={cn("size-4", refreshing && "animate-spin motion-reduce:animate-none")}
+			/>
 		</Button>
 	) : null;
 
@@ -49,7 +51,7 @@ export function WidgetCard({
 				</CardHeader>
 				<CardContent>
 					<div className="flex items-center justify-center py-8">
-						<IconLoader2 className="size-8 animate-spin text-muted-foreground" />
+						<IconLoader2 className="size-8 animate-spin motion-reduce:animate-none text-muted-foreground" />
 					</div>
 				</CardContent>
 			</Card>

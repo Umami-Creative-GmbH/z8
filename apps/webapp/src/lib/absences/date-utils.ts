@@ -276,3 +276,35 @@ export function dateRangesOverlap(
 
 	return s1 <= e2 && s2 <= e1;
 }
+
+/**
+ * Format days for display with proper pluralization.
+ * Handles half days (0.5) and integer/decimal values.
+ *
+ * @param days - Number of days to format
+ * @param t - Translation function from useTranslate()
+ * @returns Formatted string (e.g., "1 day", "0.5 day", "5 days")
+ */
+export function formatDays(
+	days: number,
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	t: (key: string, defaultValue: string, params?: any) => string,
+): string {
+	if (days === 1) return t("common.days.one", "1 day");
+	if (days === 0.5) return t("common.days.half", "0.5 day");
+	return t("common.days.count", "{count} days", { count: days });
+}
+
+/**
+ * Convert a Date object to a YYYY-MM-DD string in local timezone.
+ * This avoids timezone issues that occur with toISOString().
+ *
+ * @param date - Date object to convert
+ * @returns Date string in YYYY-MM-DD format
+ */
+export function toLocalDateString(date: Date): string {
+	const year = date.getFullYear();
+	const month = String(date.getMonth() + 1).padStart(2, "0");
+	const day = String(date.getDate()).padStart(2, "0");
+	return `${year}-${month}-${day}`;
+}

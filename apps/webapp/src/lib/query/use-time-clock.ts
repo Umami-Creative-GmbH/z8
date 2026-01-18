@@ -16,6 +16,44 @@ export interface TimeClockState {
 	activeWorkPeriod: { id: string; startTime: Date } | null;
 }
 
+/**
+ * Separate hook for elapsed time counter (rerender-derived-state)
+ * Only components that need the real-time counter should use this hook.
+ * This prevents unnecessary re-renders in components that only need
+ * clock status without the per-second timer updates.
+ *
+ * @param startTime - The start time to calculate elapsed seconds from, or null if not clocked in
+ * @returns The elapsed seconds since startTime, updating every second
+ */
+export function useElapsedTimer(startTime: Date | null): number {
+	const [elapsedSeconds, setElapsedSeconds] = useState(() => {
+		if (!startTime) return 0;
+		return Math.floor((Date.now() - new Date(startTime).getTime()) / 1000);
+	});
+
+	useEffect(() => {
+		if (!startTime) {
+			setElapsedSeconds(0);
+			return;
+		}
+
+		const calculateElapsed = () => {
+			const start = new Date(startTime);
+			return Math.floor((Date.now() - start.getTime()) / 1000);
+		};
+
+		setElapsedSeconds(calculateElapsed());
+
+		const interval = setInterval(() => {
+			setElapsedSeconds(calculateElapsed());
+		}, 1000);
+
+		return () => clearInterval(interval);
+	}, [startTime]);
+
+	return elapsedSeconds;
+}
+
 interface UseTimeClockOptions {
 	/**
 	 * Initial data from server-side rendering
@@ -35,7 +73,9 @@ interface UseTimeClockOptions {
  * Provides:
  * - Time clock status query with caching
  * - Clock in/out mutations with automatic cache invalidation
- * - Real-time elapsed seconds counter
+ *
+ * Note: For real-time elapsed seconds, use `useElapsedTimer` separately.
+ * This prevents unnecessary re-renders in components that don't need the timer.
  */
 export function useTimeClock(options: UseTimeClockOptions = {}) {
 	const { initialData, enabled = true } = options;
@@ -52,30 +92,6 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 	});
 
 	const status = statusQuery.data;
-
-	// Real-time elapsed seconds counter
-	const [elapsedSeconds, setElapsedSeconds] = useState(0);
-
-	useEffect(() => {
-		if (!status?.activeWorkPeriod) {
-			setElapsedSeconds(0);
-			return;
-		}
-
-		const calculateElapsed = () => {
-			if (!status?.activeWorkPeriod) return 0;
-			const start = new Date(status.activeWorkPeriod.startTime);
-			return Math.floor((Date.now() - start.getTime()) / 1000);
-		};
-
-		setElapsedSeconds(calculateElapsed());
-
-		const interval = setInterval(() => {
-			setElapsedSeconds(calculateElapsed());
-		}, 1000);
-
-		return () => clearInterval(interval);
-	}, [status?.activeWorkPeriod]);
 
 	// Clock in mutation
 	const clockInMutation = useMutation({
@@ -133,7 +149,6 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 		hasEmployee: status?.hasEmployee ?? false,
 		isClockedIn: status?.isClockedIn ?? false,
 		activeWorkPeriod: status?.activeWorkPeriod ?? null,
-		elapsedSeconds,
 
 		// Mutations
 		clockIn: clockInMutation.mutateAsync,

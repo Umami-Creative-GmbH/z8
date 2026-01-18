@@ -4,7 +4,15 @@
 	"pnpm": {
 		"overrides": {
 			"pako": "1.0.11"
-		}
+		},
+		"onlyBuiltDependencies": [
+			"@parcel/watcher",
+			"@swc/core",
+			"esbuild",
+			"msw",
+			"protobufjs",
+			"sharp"
+		]
 	},
 	"workspaces": [
 		"apps/*",
@@ -27,7 +35,8 @@
 	"devDependencies": {
 		"@esbuild/win32-x64": "^0.27.2",
 		"puppeteer-core": "^24.35.0",
-		"shadcn": "^3.6.3",
-		"turbo": "^2.7.4"
-	}
+		"shadcn": "^3.7.0",
+		"turbo": "^2.7.5"
+	},
+	"packageManager": "pnpm@10.28.0+sha512.05df71d1421f21399e053fde567cea34d446fa02c76571441bfc1c7956e98e363088982d940465fd34480d4d90a0668bc12362f8aa88000a64e83d0b0e47be48"
 }

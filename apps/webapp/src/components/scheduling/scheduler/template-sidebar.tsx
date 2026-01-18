@@ -59,7 +59,7 @@ function TemplateCard({ template, onDragStart }: TemplateCardProps) {
 			role="listitem"
 			draggable
 			onDragStart={(e) => onDragStart(e, template)}
-			className="group cursor-grab active:cursor-grabbing rounded-lg border bg-card p-3 shadow-sm transition-all hover:shadow-md hover:scale-[1.02]"
+			className="group cursor-grab active:cursor-grabbing rounded-lg border bg-card p-3 shadow-sm transition-[box-shadow,transform] hover:shadow-md hover:scale-[1.02]"
 			style={{
 				borderLeftWidth: "4px",
 				borderLeftColor: backgroundColor,

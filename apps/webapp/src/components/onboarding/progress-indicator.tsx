@@ -11,17 +11,18 @@ import {
 	type OnboardingStep,
 } from "@/lib/validations/onboarding";
 
-// Map step keys to i18n keys
-const STEP_I18N_KEYS: Record<OnboardingStep, string> = {
-	welcome: "onboarding.steps.welcome",
-	organization: "onboarding.steps.organization",
-	profile: "onboarding.steps.profile",
-	work_schedule: "onboarding.steps.workSchedule",
-	vacation_policy: "onboarding.steps.vacationPolicy",
-	holiday_setup: "onboarding.steps.holidaySetup",
-	work_templates: "onboarding.steps.workTemplates",
-	notifications: "onboarding.steps.notifications",
-	complete: "onboarding.steps.complete",
+// Map step keys to i18n keys with defaults
+const STEP_I18N_KEYS: Record<OnboardingStep, { key: string; default: string }> = {
+	welcome: { key: "onboarding.steps.welcome", default: "Welcome" },
+	organization: { key: "onboarding.steps.organization", default: "Organization" },
+	profile: { key: "onboarding.steps.profile", default: "Profile" },
+	work_schedule: { key: "onboarding.steps.workSchedule", default: "Schedule" },
+	vacation_policy: { key: "onboarding.steps.vacationPolicy", default: "Vacation" },
+	holiday_setup: { key: "onboarding.steps.holidaySetup", default: "Holidays" },
+	work_templates: { key: "onboarding.steps.workTemplates", default: "Templates" },
+	wellness: { key: "onboarding.steps.wellness", default: "Wellness" },
+	notifications: { key: "onboarding.steps.notifications", default: "Notifications" },
+	complete: { key: "onboarding.steps.complete", default: "Complete" },
 };
 
 interface ProgressIndicatorProps {
@@ -76,7 +77,7 @@ export function ProgressIndicator({
 
 					{/* Progress Line */}
 					<div
-						className="absolute left-0 top-5 h-0.5 bg-primary transition-all duration-500"
+						className="absolute left-0 top-5 h-0.5 bg-primary transition-[width] duration-500"
 						style={{ width: `${((currentDisplayOrder - 1) / (steps.length - 1)) * 100}%` }}
 					/>
 
@@ -91,7 +92,7 @@ export function ProgressIndicator({
 									{/* Step Circle */}
 									<div
 										className={cn(
-											"flex h-10 w-10 items-center justify-center rounded-full border-2 bg-background transition-all duration-300",
+											"flex h-10 w-10 items-center justify-center rounded-full border-2 bg-background transition-[border-color,background-color,color] duration-300",
 											{
 												"border-primary bg-primary text-primary-foreground": isCompleted,
 												"border-primary bg-background text-primary": isCurrent,
@@ -114,7 +115,7 @@ export function ProgressIndicator({
 											"text-muted-foreground": !isCompleted && !isCurrent,
 										})}
 									>
-										{t(STEP_I18N_KEYS[step.key], step.label)}
+										{t(STEP_I18N_KEYS[step.key].key, STEP_I18N_KEYS[step.key].default)}
 									</span>
 								</div>
 							);

@@ -3,6 +3,7 @@
 import { IconCalendar, IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useStore } from "@tanstack/react-store";
+import { useTranslate } from "@tolgee/react";
 import { format } from "date-fns";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -78,6 +79,7 @@ export function VacationPolicyForm({
 	organizationId,
 	existingPolicy,
 }: VacationPolicyFormProps) {
+	const { t } = useTranslate();
 	const router = useRouter();
 	const [loading, setLoading] = useState(false);
 	const [startDateOpen, setStartDateOpen] = useState(false);
@@ -145,15 +147,17 @@ export function VacationPolicyForm({
 
 				if (result.success) {
 					toast.success(
-						existingPolicy ? "Policy updated successfully" : "Policy created successfully",
+						existingPolicy
+							? t("settings.vacation.policyUpdated", "Policy updated successfully")
+							: t("settings.vacation.policyCreated", "Policy created successfully"),
 					);
 					onOpenChange(false);
 					router.refresh();
 				} else {
-					toast.error(result.error || "Failed to save policy");
+					toast.error(result.error || t("settings.vacation.saveFailed", "Failed to save policy"));
 				}
 			} catch (_error) {
-				toast.error("An unexpected error occurred");
+				toast.error(t("common.unexpectedError", "An unexpected error occurred"));
 			} finally {
 				setLoading(false);
 			}
@@ -168,11 +172,15 @@ export function VacationPolicyForm({
 			<DialogContent className="sm:max-w-[600px]">
 				<DialogHeader>
 					<DialogTitle>
-						{existingPolicy ? `Edit "${existingPolicy.name}"` : "Create Vacation Policy"}
+						{existingPolicy
+							? t("settings.vacation.editPolicy", 'Edit "{name}"', { name: existingPolicy.name })
+							: t("settings.vacation.createPolicy", "Create Vacation Policy")}
 					</DialogTitle>
 					<DialogDescription>
-						Configure vacation allowance settings. Each policy can be assigned to the organization,
-						specific teams, or individual employees.
+						{t(
+							"settings.vacation.policyDescription",
+							"Configure vacation allowance settings. Each policy can be assigned to the organization, specific teams, or individual employees.",
+						)}
 					</DialogDescription>
 				</DialogHeader>
 
@@ -191,8 +199,9 @@ export function VacationPolicyForm({
 					>
 						{(field) => (
 							<div className="space-y-2">
-								<Label>Policy Name</Label>
+								<Label htmlFor="policyName">Policy Name</Label>
 								<Input
+									id="policyName"
 									value={field.state.value}
 									onChange={(e) => field.handleChange(e.target.value)}
 									onBlur={field.handleBlur}
@@ -341,8 +350,9 @@ export function VacationPolicyForm({
 					>
 						{(field) => (
 							<div className="space-y-2">
-								<Label>Default Annual Days</Label>
+								<Label htmlFor="defaultAnnualDays">Default Annual Days</Label>
 								<Input
+									id="defaultAnnualDays"
 									type="number"
 									step="0.5"
 									value={field.state.value}
@@ -367,14 +377,14 @@ export function VacationPolicyForm({
 					<form.Field name="accrualType">
 						{(field) => (
 							<div className="space-y-2">
-								<Label>Accrual Type</Label>
+								<Label htmlFor="accrualType">Accrual Type</Label>
 								<Select
 									value={field.state.value}
 									onValueChange={(value) =>
 										field.handleChange(value as "annual" | "monthly" | "biweekly")
 									}
 								>
-									<SelectTrigger>
+									<SelectTrigger id="accrualType">
 										<SelectValue placeholder="Select accrual type" />
 									</SelectTrigger>
 									<SelectContent>
@@ -393,12 +403,12 @@ export function VacationPolicyForm({
 					<form.Field name="accrualStartMonth">
 						{(field) => (
 							<div className="space-y-2">
-								<Label>Accrual Start Month</Label>
+								<Label htmlFor="accrualStartMonth">Accrual Start Month</Label>
 								<Select
 									value={field.state.value?.toString() || "1"}
 									onValueChange={(val) => field.handleChange(parseInt(val, 10))}
 								>
-									<SelectTrigger>
+									<SelectTrigger id="accrualStartMonth">
 										<SelectValue placeholder="Select month" />
 									</SelectTrigger>
 									<SelectContent>
@@ -437,8 +447,9 @@ export function VacationPolicyForm({
 							<form.Field name="maxCarryoverDays">
 								{(field) => (
 									<div className="space-y-2">
-										<Label>Max Carryover Days (optional)</Label>
+										<Label htmlFor="maxCarryoverDays">Max Carryover Days (optional)</Label>
 										<Input
+											id="maxCarryoverDays"
 											type="number"
 											step="0.5"
 											value={field.state.value}
@@ -456,8 +467,9 @@ export function VacationPolicyForm({
 							<form.Field name="carryoverExpiryMonths">
 								{(field) => (
 									<div className="space-y-2">
-										<Label>Carryover Expiry (months, optional)</Label>
+										<Label htmlFor="carryoverExpiryMonths">Carryover Expiry (months, optional)</Label>
 										<Input
+											id="carryoverExpiryMonths"
 											type="number"
 											min="1"
 											max="12"
@@ -486,11 +498,13 @@ export function VacationPolicyForm({
 							onClick={() => onOpenChange(false)}
 							disabled={loading}
 						>
-							Cancel
+							{t("common.cancel", "Cancel")}
 						</Button>
 						<Button type="submit" disabled={loading}>
 							{loading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
-							{existingPolicy ? "Update Policy" : "Create Policy"}
+							{existingPolicy
+								? t("settings.vacation.updatePolicy", "Update Policy")
+								: t("settings.vacation.createPolicyBtn", "Create Policy")}
 						</Button>
 					</DialogFooter>
 				</form>

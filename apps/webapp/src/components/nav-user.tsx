@@ -9,7 +9,6 @@ import {
 	IconLogout,
 	IconMoon,
 	IconPalette,
-	IconSettings,
 	IconSun,
 	IconUserCircle,
 } from "@tabler/icons-react";
@@ -41,13 +40,9 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserAvatar } from "@/components/user-avatar";
 import { authClient } from "@/lib/auth-client";
+import { LANGUAGE_CONFIG } from "@/lib/language-config";
 import { usePathname, useRouter } from "@/navigation";
 import { ALL_LANGUAGES } from "@/tolgee/shared";
-
-const LANGUAGE_NAMES: Record<string, string> = {
-	de: "Deutsch",
-	en: "English",
-};
 
 export function NavUser({
 	user,
@@ -183,10 +178,6 @@ export function NavUser({
 									<IconClock />
 									{t("user.time-settings", "Time Settings")}
 								</DropdownMenuItem>
-								<DropdownMenuItem>
-									<IconSettings />
-									{t("user.preferences", "Preferences")}
-								</DropdownMenuItem>
 							</DropdownMenuGroup>
 							<DropdownMenuSeparator />
 							<DropdownMenuSub>
@@ -196,11 +187,19 @@ export function NavUser({
 								</DropdownMenuSubTrigger>
 								<DropdownMenuSubContent>
 									<DropdownMenuRadioGroup value={locale} onValueChange={handleLanguageChange}>
-										{ALL_LANGUAGES.map((lang) => (
-											<DropdownMenuRadioItem key={lang} value={lang}>
-												{LANGUAGE_NAMES[lang] || lang}
-											</DropdownMenuRadioItem>
-										))}
+										{ALL_LANGUAGES.map((lang) => {
+											const config = LANGUAGE_CONFIG[lang];
+											const FlagIcon = config?.Flag;
+											const name = config?.name ?? lang;
+											return (
+												<DropdownMenuRadioItem key={lang} value={lang}>
+													<span className="flex items-center gap-2">
+														{FlagIcon && <FlagIcon className="h-4 w-auto" title={name} />}
+														{name}
+													</span>
+												</DropdownMenuRadioItem>
+											);
+										})}
 									</DropdownMenuRadioGroup>
 								</DropdownMenuSubContent>
 							</DropdownMenuSub>

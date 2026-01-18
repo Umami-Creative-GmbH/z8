@@ -108,6 +108,7 @@ export function PasswordChangeForm() {
 						<Input
 							id="currentPassword"
 							type="password"
+							autoComplete="current-password"
 							value={passwordData.currentPassword}
 							onChange={(e) => handlePasswordChange("currentPassword", e.target.value)}
 							placeholder={t("profile.current-password-placeholder", "Enter current password")}
@@ -124,6 +125,7 @@ export function PasswordChangeForm() {
 						<Input
 							id="newPassword"
 							type="password"
+							autoComplete="new-password"
 							value={passwordData.newPassword}
 							onChange={(e) => handlePasswordChange("newPassword", e.target.value)}
 							placeholder={t("profile.new-password-placeholder", "Enter new password")}
@@ -157,6 +159,7 @@ export function PasswordChangeForm() {
 						<Input
 							id="confirmPassword"
 							type="password"
+							autoComplete="new-password"
 							value={passwordData.confirmPassword}
 							onChange={(e) => handlePasswordChange("confirmPassword", e.target.value)}
 							placeholder={t("profile.confirm-password-placeholder", "Confirm new password")}

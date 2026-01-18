@@ -8,6 +8,7 @@ import {
 	IconPlus,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
+import Image from "next/image";
 import { useState } from "react";
 import { toast } from "sonner";
 import { CreateOrganizationDialog } from "@/components/organization/create-organization-dialog";
@@ -125,9 +126,11 @@ export function OrganizationSwitcher({
 						>
 							<div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
 								{activeOrg.logo ? (
-									<img
+									<Image
 										src={activeOrg.logo}
 										alt={activeOrg.name}
+										width={32}
+										height={32}
 										className="size-8 rounded-lg object-cover"
 									/>
 								) : (
@@ -169,7 +172,7 @@ export function OrganizationSwitcher({
 							>
 								<div className="flex size-6 items-center justify-center rounded-sm border">
 									{org.logo ? (
-										<img src={org.logo} alt={org.name} className="size-6 rounded-sm object-cover" />
+										<Image src={org.logo} alt={org.name} width={24} height={24} className="size-6 rounded-sm object-cover" />
 									) : (
 										<IconBuilding className="size-4" />
 									)}

@@ -1,6 +1,7 @@
 "use client";
 
-import { IconUpload, IconX } from "@tabler/icons-react";
+import { IconLoader2, IconUpload, IconX } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import Image from "next/image";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
@@ -18,6 +19,7 @@ interface BrandingFormProps {
 }
 
 export function BrandingForm({ initialBranding, organizationId }: BrandingFormProps) {
+	const { t } = useTranslate();
 	const [branding, setBranding] = useState<OrganizationBranding>(initialBranding);
 	const [isSaving, setIsSaving] = useState(false);
 
@@ -28,10 +30,10 @@ export function BrandingForm({ initialBranding, organizationId }: BrandingFormPr
 		maxFileSize: 2 * 1024 * 1024, // 2MB
 		onSuccess: (url) => {
 			setBranding((prev) => ({ ...prev, logoUrl: url }));
-			toast.success("Logo uploaded successfully");
+			toast.success(t("settings.branding.logoUploadSuccess", "Logo uploaded successfully"));
 		},
 		onError: (error) => {
-			toast.error(error.message || "Failed to upload logo");
+			toast.error(error.message || t("settings.branding.logoUploadFailed", "Failed to upload logo"));
 		},
 	});
 
@@ -42,10 +44,10 @@ export function BrandingForm({ initialBranding, organizationId }: BrandingFormPr
 		maxFileSize: 5 * 1024 * 1024, // 5MB
 		onSuccess: (url) => {
 			setBranding((prev) => ({ ...prev, backgroundImageUrl: url }));
-			toast.success("Background image uploaded successfully");
+			toast.success(t("settings.branding.backgroundUploadSuccess", "Background image uploaded successfully"));
 		},
 		onError: (error) => {
-			toast.error(error.message || "Failed to upload background image");
+			toast.error(error.message || t("settings.branding.backgroundUploadFailed", "Failed to upload background image"));
 		},
 	});
 
@@ -73,9 +75,9 @@ export function BrandingForm({ initialBranding, organizationId }: BrandingFormPr
 		setIsSaving(true);
 		try {
 			await updateBrandingAction(branding);
-			toast.success("Branding settings saved");
+			toast.success(t("settings.branding.saveSuccess", "Branding settings saved"));
 		} catch (_error) {
-			toast.error("Failed to save branding settings");
+			toast.error(t("settings.branding.saveFailed", "Failed to save branding settings"));
 		} finally {
 			setIsSaving(false);
 		}
@@ -86,9 +88,9 @@ export function BrandingForm({ initialBranding, organizationId }: BrandingFormPr
 			{/* Logo */}
 			<Card>
 				<CardHeader>
-					<CardTitle>Logo</CardTitle>
+					<CardTitle>{t("settings.branding.logo.title", "Logo")}</CardTitle>
 					<CardDescription>
-						Upload your organization logo to display on the login page.
+						{t("settings.branding.logo.description", "Upload your organization logo to display on the login page.")}
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
@@ -97,7 +99,7 @@ export function BrandingForm({ initialBranding, organizationId }: BrandingFormPr
 							{logoUpload.previewUrl || branding.logoUrl ? (
 								<Image
 									src={logoUpload.previewUrl || branding.logoUrl || ""}
-									alt="Logo preview"
+									alt={t("settings.branding.logo.preview", "Logo preview")}
 									fill
 									className="object-contain"
 								/>
@@ -112,12 +114,15 @@ export function BrandingForm({ initialBranding, organizationId }: BrandingFormPr
 								onChange={handleLogoChange}
 								disabled={logoUpload.isUploading}
 								className="max-w-xs"
+								aria-label={t("settings.branding.logo.upload", "Upload logo image")}
 							/>
 							<p className="text-sm text-muted-foreground mt-2">
-								Recommended: 200x200px, PNG or SVG with transparent background
+								{t("settings.branding.logo.hint", "Recommended: 200x200px, PNG or SVG with transparent background")}
 							</p>
 							{logoUpload.isUploading && (
-								<p className="text-sm text-muted-foreground">Uploading... {logoUpload.progress}%</p>
+								<p className="text-sm text-muted-foreground">
+									{t("common.uploading", "Uploading...")} {logoUpload.progress}%
+								</p>
 							)}
 						</div>
 						{branding.logoUrl && (
@@ -125,6 +130,7 @@ export function BrandingForm({ initialBranding, organizationId }: BrandingFormPr
 								variant="ghost"
 								size="sm"
 								onClick={() => setBranding((prev) => ({ ...prev, logoUrl: null }))}
+								aria-label={t("settings.branding.logo.remove", "Remove logo")}
 							>
 								<IconX className="h-4 w-4" />
 							</Button>
@@ -136,8 +142,10 @@ export function BrandingForm({ initialBranding, organizationId }: BrandingFormPr
 			{/* Background Image */}
 			<Card>
 				<CardHeader>
-					<CardTitle>Background Image</CardTitle>
-					<CardDescription>Upload a custom background image for the login page.</CardDescription>
+					<CardTitle>{t("settings.branding.background.title", "Background Image")}</CardTitle>
+					<CardDescription>
+						{t("settings.branding.background.description", "Upload a custom background image for the login page.")}
+					</CardDescription>
 				</CardHeader>
 				<CardContent>
 					<div className="flex items-start gap-6">
@@ -145,7 +153,7 @@ export function BrandingForm({ initialBranding, organizationId }: BrandingFormPr
 							{backgroundUpload.previewUrl || branding.backgroundImageUrl ? (
 								<Image
 									src={backgroundUpload.previewUrl || branding.backgroundImageUrl || ""}
-									alt="Background preview"
+									alt={t("settings.branding.background.preview", "Background preview")}
 									fill
 									className="object-cover"
 								/>
@@ -160,13 +168,14 @@ export function BrandingForm({ initialBranding, organizationId }: BrandingFormPr
 								onChange={handleBackgroundChange}
 								disabled={backgroundUpload.isUploading}
 								className="max-w-xs"
+								aria-label={t("settings.branding.background.upload", "Upload background image")}
 							/>
 							<p className="text-sm text-muted-foreground mt-2">
-								Recommended: 1920x1080px or larger, high quality JPEG or PNG
+								{t("settings.branding.background.hint", "Recommended: 1920x1080px or larger, high quality JPEG or PNG")}
 							</p>
 							{backgroundUpload.isUploading && (
 								<p className="text-sm text-muted-foreground">
-									Uploading... {backgroundUpload.progress}%
+									{t("common.uploading", "Uploading...")} {backgroundUpload.progress}%
 								</p>
 							)}
 						</div>
@@ -175,6 +184,7 @@ export function BrandingForm({ initialBranding, organizationId }: BrandingFormPr
 								variant="ghost"
 								size="sm"
 								onClick={() => setBranding((prev) => ({ ...prev, backgroundImageUrl: null }))}
+								aria-label={t("settings.branding.background.remove", "Remove background")}
 							>
 								<IconX className="h-4 w-4" />
 							</Button>
@@ -186,11 +196,17 @@ export function BrandingForm({ initialBranding, organizationId }: BrandingFormPr
 			{/* App Name */}
 			<Card>
 				<CardHeader>
-					<CardTitle>App Name</CardTitle>
-					<CardDescription>Override the default app name shown on the login page.</CardDescription>
+					<CardTitle>{t("settings.branding.appName.title", "App Name")}</CardTitle>
+					<CardDescription>
+						{t("settings.branding.appName.description", "Override the default app name shown on the login page.")}
+					</CardDescription>
 				</CardHeader>
 				<CardContent>
+					<Label htmlFor="appName" className="sr-only">
+						{t("settings.branding.appName.title", "App Name")}
+					</Label>
 					<Input
+						id="appName"
 						placeholder="z8"
 						value={branding.appName || ""}
 						onChange={(e) =>
@@ -207,17 +223,19 @@ export function BrandingForm({ initialBranding, organizationId }: BrandingFormPr
 			{/* Theme Colors */}
 			<Card>
 				<CardHeader>
-					<CardTitle>Theme Colors</CardTitle>
+					<CardTitle>{t("settings.branding.colors.title", "Theme Colors")}</CardTitle>
 					<CardDescription>
-						Customize the primary and accent colors for your login page.
+						{t("settings.branding.colors.description", "Customize the primary and accent colors for your login page.")}
 					</CardDescription>
 				</CardHeader>
 				<CardContent className="space-y-4">
 					<div className="flex items-center gap-4">
 						<div className="flex-1">
-							<Label htmlFor="primaryColor">Primary Color</Label>
+							<Label htmlFor="primaryColor">
+								{t("settings.branding.colors.primary", "Primary Color")}
+							</Label>
 							<p className="text-sm text-muted-foreground mb-2">
-								Used for buttons, links, and focus states
+								{t("settings.branding.colors.primaryHint", "Used for buttons, links, and focus states")}
 							</p>
 							<div className="flex items-center gap-3">
 								<Input
@@ -242,6 +260,7 @@ export function BrandingForm({ initialBranding, organizationId }: BrandingFormPr
 										}))
 									}
 									className="max-w-32"
+									aria-label={t("settings.branding.colors.primaryHex", "Primary color hex value")}
 								/>
 								{branding.primaryColor && (
 									<Button
@@ -249,14 +268,18 @@ export function BrandingForm({ initialBranding, organizationId }: BrandingFormPr
 										size="sm"
 										onClick={() => setBranding((prev) => ({ ...prev, primaryColor: null }))}
 									>
-										Reset
+										{t("common.reset", "Reset")}
 									</Button>
 								)}
 							</div>
 						</div>
 						<div className="flex-1">
-							<Label htmlFor="accentColor">Accent Color (Optional)</Label>
-							<p className="text-sm text-muted-foreground mb-2">Secondary color for highlights</p>
+							<Label htmlFor="accentColor">
+								{t("settings.branding.colors.accent", "Accent Color (Optional)")}
+							</Label>
+							<p className="text-sm text-muted-foreground mb-2">
+								{t("settings.branding.colors.accentHint", "Secondary color for highlights")}
+							</p>
 							<div className="flex items-center gap-3">
 								<Input
 									id="accentColor"
@@ -280,6 +303,7 @@ export function BrandingForm({ initialBranding, organizationId }: BrandingFormPr
 										}))
 									}
 									className="max-w-32"
+									aria-label={t("settings.branding.colors.accentHex", "Accent color hex value")}
 								/>
 								{branding.accentColor && (
 									<Button
@@ -287,7 +311,7 @@ export function BrandingForm({ initialBranding, organizationId }: BrandingFormPr
 										size="sm"
 										onClick={() => setBranding((prev) => ({ ...prev, accentColor: null }))}
 									>
-										Reset
+										{t("common.reset", "Reset")}
 									</Button>
 								)}
 							</div>
@@ -299,7 +323,14 @@ export function BrandingForm({ initialBranding, organizationId }: BrandingFormPr
 			{/* Save Button */}
 			<div className="flex justify-end">
 				<Button onClick={handleSave} disabled={isSaving} size="lg">
-					{isSaving ? "Saving..." : "Save Branding Settings"}
+					{isSaving ? (
+						<>
+							<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+							{t("common.saving", "Saving...")}
+						</>
+					) : (
+						t("settings.branding.save", "Save Branding Settings")
+					)}
 				</Button>
 			</div>
 		</div>

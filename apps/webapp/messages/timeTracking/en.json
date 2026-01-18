@@ -1,0 +1,107 @@
+{
+  "timeTracking": {
+    "addNotePrompt": "Add a note about your work (optional)",
+    "autoAdjusted": {
+      "description": "A {breakMinutes}-minute break was automatically added to comply with {regulationName}.",
+      "indicator": "Auto-adjusted for compliance",
+      "originalDuration": "Original: {duration}",
+      "title": "Auto-adjusted for compliance",
+      "toast": {
+        "description": "A {breakMinutes}-minute break was added to comply with time regulations.",
+        "title": "Break auto-added for compliance"
+      }
+    },
+    "breakReminder": {
+      "breakNeeded": "Break required: {remaining} minutes remaining of {total} total",
+      "overLimitMessage": "You've exceeded the maximum uninterrupted working time. Please take a break soon.",
+      "overLimitTitle": "Break Required",
+      "title": "Break Reminder",
+      "uninterrupted": "Uninterrupted work",
+      "warningMessage": "You have {minutes} minutes until a break is required."
+    },
+    "clockedOutSuccess": "You've clocked out!",
+    "clockIn": "Clock In",
+    "clockingIn": "Clocking In…",
+    "clockingOut": "Clocking Out…",
+    "clockInSuccess": "Clocked in successfully",
+    "clockOut": "Clock Out",
+    "clockOutSuccess": "Clocked out successfully",
+    "compliance": {
+      "violation": "Compliance Violation",
+      "warning": "Compliance Notice"
+    },
+    "correction": {
+      "clockIn": "Clock In",
+      "clockOut": "Clock Out",
+      "editDescription": "Make changes to your time entry for today.",
+      "editEntry": "Edit time entry",
+      "editTitle": "Edit Time Entry",
+      "errors": {
+        "invalidTimeRange": "Clock out time must be after clock in time",
+        "submitFailed": "Failed to submit correction",
+        "updateFailed": "Failed to update time entry"
+      },
+      "noteLabel": "Note (optional)",
+      "notePlaceholder": "Add a note about this change…",
+      "reasonLabel": "Reason for Correction",
+      "reasonPlaceholder": "Explain why this correction is needed…",
+      "requestCorrection": "Request time correction",
+      "requestDescription": "Submit a correction request for this time entry. Your manager will need to approve it.",
+      "requestTitle": "Request Time Correction",
+      "saveChanges": "Save Changes",
+      "saving": "Saving…",
+      "submitRequest": "Submit Request",
+      "submitting": "Submitting…",
+      "success": {
+        "submitted": "Correction request submitted for manager approval",
+        "updated": "Time entry updated successfully"
+      },
+      "timezoneNote": "Times are in your local timezone ({timezone})"
+    },
+    "currentlyClockedIn": "You're currently clocked in",
+    "errors": {
+      "clockInFailed": "Failed to clock in",
+      "clockOutFailed": "Failed to clock out",
+      "holidayBlocked": "Cannot clock out on {holidayName}",
+      "holidayBlockedDesc": "This day is marked as a holiday and time entries are not allowed",
+      "notesSaveFailed": "Failed to save notes"
+    },
+    "noProject": "No project",
+    "notesPlaceholder": "What did you work on?",
+    "notesSaved": "Notes saved",
+    "project": "Project",
+    "readyToClockIn": "Ready to start working?",
+    "selectProject": "Select a project",
+    "startedAt": "Started at",
+    "table": {
+      "active": "Active",
+      "clockIn": "Clock In",
+      "clockOut": "Clock Out",
+      "corrected": "Corrected",
+      "date": "Date",
+      "description": "Description",
+      "duration": "Duration",
+      "emptyState": "No time entries found for this week.",
+      "emptyStateHint": "Clock in to start tracking your time.",
+      "title": "Time Entries"
+    },
+    "title": "Time Tracking",
+    "welcomeBack": "Welcome back, {name}"
+  },
+  "wellness": {
+    "water": {
+      "goalMet": "Daily goal reached! Keep up the great work!",
+      "logError": "Failed to log water intake",
+      "logged": "Water logged! {progress}% of daily goal",
+      "logOne": "+1 Glass",
+      "logTwo": "+2 Glasses",
+      "reminderMessage": "Stay healthy - drink some water. You've had {intake} of {goal} glasses today.",
+      "reminderTitle": "Time to hydrate!",
+      "snoozed": "Water reminders snoozed for today",
+      "snoozeError": "Failed to snooze reminders",
+      "snoozeToday": "Snooze today",
+      "streak": "Current streak: {days} days",
+      "todayProgress": "Today's progress"
+    }
+  }
+}

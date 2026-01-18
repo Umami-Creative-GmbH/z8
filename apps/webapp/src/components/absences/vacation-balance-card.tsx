@@ -1,7 +1,7 @@
 "use client";
 
 import { IconAlertTriangle, IconBeach, IconCalendarCheck, IconClock } from "@tabler/icons-react";
-import { useTranslate } from "@tolgee/react";
+import { useTolgee, useTranslate } from "@tolgee/react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { VacationBalance } from "@/lib/absences/types";
 
@@ -11,6 +11,8 @@ interface VacationBalanceCardProps {
 
 export function VacationBalanceCard({ balance }: VacationBalanceCardProps) {
 	const { t } = useTranslate();
+	const tolgee = useTolgee(["language"]);
+	const locale = tolgee.getLanguage() || "en";
 	const hasCarryover = balance.carryoverDays && balance.carryoverDays > 0;
 	const carryoverExpiringSoon =
 		hasCarryover &&
@@ -91,7 +93,7 @@ export function VacationBalanceCard({ balance }: VacationBalanceCardProps) {
 												{" "}
 												{t("absences.balance.carryoverExpiry", "that will expire on")}{" "}
 												<span className={carryoverExpiringSoon ? "text-destructive" : ""}>
-													{balance.carryoverExpiryDate.toLocaleDateString("en-US", {
+													{balance.carryoverExpiryDate.toLocaleDateString(locale, {
 														month: "long",
 														day: "numeric",
 														year: "numeric",

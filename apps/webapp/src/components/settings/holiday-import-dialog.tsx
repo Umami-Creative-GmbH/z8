@@ -7,7 +7,6 @@ import {
 	IconChevronRight,
 	IconDownload,
 	IconLoader2,
-	IconSelector,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useState } from "react";
@@ -21,14 +20,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-	Command,
-	CommandEmpty,
-	CommandGroup,
-	CommandInput,
-	CommandItem,
-	CommandList,
-} from "@/components/ui/command";
-import {
 	Dialog,
 	DialogContent,
 	DialogDescription,
@@ -38,7 +29,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
 	Select,
 	SelectContent,
@@ -57,93 +48,6 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
-
-// Searchable select component for location dropdowns
-interface SearchableSelectProps {
-	options: { code: string; name: string }[];
-	value: string;
-	onValueChange: (value: string) => void;
-	placeholder: string;
-	searchPlaceholder: string;
-	emptyText: string;
-	disabled?: boolean;
-	allowEmpty?: boolean;
-	emptyLabel?: string;
-}
-
-function SearchableSelect({
-	options,
-	value,
-	onValueChange,
-	placeholder,
-	searchPlaceholder,
-	emptyText,
-	disabled,
-	allowEmpty,
-	emptyLabel,
-}: SearchableSelectProps) {
-	const [open, setOpen] = useState(false);
-	const selectedOption = options.find((opt) => opt.code === value);
-
-	return (
-		<Popover open={open} onOpenChange={setOpen}>
-			<PopoverTrigger asChild>
-				<Button
-					variant="outline"
-					role="combobox"
-					aria-expanded={open}
-					className="w-full justify-between font-normal"
-					disabled={disabled}
-				>
-					{selectedOption ? selectedOption.name : placeholder}
-					<IconSelector className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-				</Button>
-			</PopoverTrigger>
-			<PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-				<Command>
-					<CommandInput placeholder={searchPlaceholder} />
-					<CommandList>
-						<CommandEmpty>{emptyText}</CommandEmpty>
-						<CommandGroup>
-							{allowEmpty && (
-								<CommandItem
-									value=""
-									onSelect={() => {
-										onValueChange("");
-										setOpen(false);
-									}}
-								>
-									<IconCheck
-										className={cn("mr-2 h-4 w-4", value === "" ? "opacity-100" : "opacity-0")}
-									/>
-									{emptyLabel}
-								</CommandItem>
-							)}
-							{options.map((option) => (
-								<CommandItem
-									key={option.code}
-									value={option.name}
-									onSelect={() => {
-										onValueChange(option.code);
-										setOpen(false);
-									}}
-								>
-									<IconCheck
-										className={cn(
-											"mr-2 h-4 w-4",
-											value === option.code ? "opacity-100" : "opacity-0",
-										)}
-									/>
-									{option.name}
-								</CommandItem>
-							))}
-						</CommandGroup>
-					</CommandList>
-				</Command>
-			</PopoverContent>
-		</Popover>
-	);
-}
 
 interface HolidayImportDialogProps {
 	open: boolean;
@@ -379,7 +283,7 @@ export function HolidayImportDialog({
 
 			const presetId = presetResult.data.id;
 
-			// Step 2: Add selected holidays to the preset
+			// Prepare holidays data for import
 			const holidaysToImport = holidays
 				.filter((h) => selectedHolidays.has(h.name))
 				.map((h) => {
@@ -400,24 +304,45 @@ export function HolidayImportDialog({
 					};
 				});
 
+			// Step 2 & 3: Run in parallel - adding holidays and creating assignment are independent
+			const parallelOperations: Promise<{ success: boolean; error?: string }>[] = [];
+
+			// Add holidays to preset (if any selected)
 			if (holidaysToImport.length > 0) {
-				const bulkResult = await bulkAddHolidaysToPreset(presetId, holidaysToImport);
+				parallelOperations.push(bulkAddHolidaysToPreset(presetId, holidaysToImport));
+			}
+
+			// Create org default assignment (if requested)
+			if (setAsOrgDefault) {
+				parallelOperations.push(
+					createPresetAssignment(organizationId, {
+						presetId,
+						assignmentType: "organization",
+						isActive: true,
+					}),
+				);
+			}
+
+			// Await all parallel operations
+			const results = await Promise.all(parallelOperations);
+
+			// Check results
+			let bulkAddFailed = false;
+			let assignmentFailed = false;
+
+			if (holidaysToImport.length > 0) {
+				const bulkResult = results[0];
 				if (!bulkResult.success) {
+					bulkAddFailed = true;
 					toast.error(bulkResult.error || "Failed to add holidays to preset");
-					return;
 				}
 			}
 
-			// Step 3: Optionally set as organization default
 			if (setAsOrgDefault) {
-				const assignResult = await createPresetAssignment(organizationId, {
-					presetId,
-					assignmentType: "organization",
-					isActive: true,
-				});
-
+				const assignResultIndex = holidaysToImport.length > 0 ? 1 : 0;
+				const assignResult = results[assignResultIndex];
 				if (!assignResult.success) {
-					// Don't fail the whole operation, just notify
+					assignmentFailed = true;
 					toast.warning(
 						t(
 							"settings.holidays.import.defaultWarning",
@@ -425,6 +350,11 @@ export function HolidayImportDialog({
 						),
 					);
 				}
+			}
+
+			// Only fail completely if bulk add failed (assignment failure is non-critical)
+			if (bulkAddFailed) {
+				return;
 			}
 
 			toast.success(

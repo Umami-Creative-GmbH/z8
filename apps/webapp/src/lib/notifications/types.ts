@@ -39,6 +39,8 @@ export const NOTIFICATION_TYPES = [
 	"project_deadline_warning_1d",
 	"project_deadline_warning_0d",
 	"project_deadline_overdue",
+	// Wellness notifications
+	"water_reminder",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];

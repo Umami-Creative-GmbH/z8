@@ -1,0 +1,205 @@
+{
+  "absences": {
+    "balance": {
+      "carryoverDays": "Sie haben {count} Tage übertragen",
+      "carryoverExpiry": "die ablaufen am",
+      "carryoverFrom": "Übertrag aus {year}",
+      "daysRemaining": "Verbleibende Tage",
+      "description": "Ihre Urlaubstage für das aktuelle Jahr",
+      "outOfTotalDays": "von insgesamt {totalDays} Tagen",
+      "pending": "Ausstehend",
+      "title": "Urlaubssaldo {year}",
+      "used": "Verbraucht"
+    },
+    "calendar": {
+      "legend": {
+        "approved": "Genehmigt",
+        "halfDayAm": "Halber Tag (Vormittag)",
+        "halfDayPm": "Halber Tag (Nachmittag)",
+        "holiday": "Feiertag",
+        "pending": "Ausstehend",
+        "rejected": "Abgelehnt"
+      },
+      "nextYear": "Nächstes Jahr",
+      "previousYear": "Vorheriges Jahr"
+    },
+    "dialog": {
+      "cancelDescription": "Sind Sie sicher, dass Sie diesen Abwesenheitsantrag stornieren möchten? Diese Aktion kann nicht rückgängig gemacht werden.",
+      "cancelTitle": "Abwesenheitsantrag stornieren",
+      "confirmCancel": "Ja, Antrag stornieren"
+    },
+    "errors": {
+      "allowanceNotConfigured": "Urlaubsanspruch nicht konfiguriert",
+      "allowanceNotConfiguredMessage": "Ihre Organisation hat noch keine Urlaubsansprüche für {currentYear} eingerichtet.",
+      "contactAdmin": "Bitte wenden Sie sich an Ihren Administrator, um Urlaubsrichtlinien zu konfigurieren."
+    },
+    "featureName": "Abwesenheiten verwalten",
+    "form": {
+      "absenceType": "Abwesenheitstyp *",
+      "autoApproved": "(Automatisch genehmigt)",
+      "balanceAfterRequest": "Saldo nach Antrag:",
+      "businessDays": "Arbeitstage:",
+      "daysRemaining": "Verbleibende Tage:",
+      "description": "Reichen Sie einen Antrag auf Freistellung ein. Ihr Manager wird zur Genehmigung benachrichtigt.",
+      "endDate": "Enddatum *",
+      "errors": {
+        "fillRequiredFields": "Bitte füllen Sie alle Pflichtfelder aus",
+        "insufficientBalance": "Unzureichender Urlaubssaldo",
+        "insufficientBalanceForRequest": "Unzureichender Urlaubssaldo für diesen Antrag",
+        "invalidSameDayPeriod": "Kann nicht morgens enden, wenn am selben Tag nachmittags begonnen wird"
+      },
+      "notesOptional": "Notizen (Optional)",
+      "notesPlaceholder": "Zusätzliche Informationen hinzufügen...",
+      "period": {
+        "afternoonOnly": "Nur Nachmittag",
+        "fullDay": "Ganzer Tag",
+        "morningOnly": "Nur Vormittag"
+      },
+      "selectAbsenceType": "Abwesenheitstyp auswählen",
+      "startDate": "Startdatum *",
+      "submitRequest": "Antrag einreichen",
+      "title": "Abwesenheit beantragen"
+    },
+    "period": {
+      "am": "VM",
+      "pm": "NM"
+    },
+    "requestAbsence": "Abwesenheit beantragen",
+    "status": {
+      "approved": "Genehmigt",
+      "pending": "Ausstehend",
+      "rejected": "Abgelehnt"
+    },
+    "subtitle": "Verwalten Sie Ihre Freizeit und Urlaubstage",
+    "table": {
+      "cancelRequest": "Antrag stornieren",
+      "end": "Ende",
+      "headers": {
+        "actions": "Aktionen",
+        "dateRange": "Datumsbereich",
+        "days": "Tage",
+        "notes": "Notizen",
+        "status": "Status",
+        "type": "Typ"
+      },
+      "noRequests": "Keine Abwesenheitsanträge gefunden.",
+      "start": "Start",
+      "subtitle": "Kürzliche und kommende Abwesenheitsanträge",
+      "title": "Ihre Abwesenheitsanträge"
+    },
+    "title": "Abwesenheiten",
+    "toast": {
+      "cancelFailed": "Stornierung des Abwesenheitsantrags fehlgeschlagen",
+      "requestCancelled": "Abwesenheitsantrag storniert",
+      "requestFailed": "Einreichen des Abwesenheitsantrags fehlgeschlagen",
+      "requestSubmitted": "Abwesenheitsantrag erfolgreich eingereicht"
+    },
+    "view": {
+      "calendar": "Kalender",
+      "table": "Tabelle"
+    }
+  },
+  "calendar": {
+    "dayDetails": {
+      "blocksTimeEntry": "Zeiteinträge blockiert",
+      "category": "Kategorie",
+      "duration": "Dauer",
+      "employee": "Mitarbeiter",
+      "noEvents": "Keine Ereignisse für diesen Tag",
+      "recurring": "Wiederkehrender Feiertag",
+      "selectDate": "Wählen Sie ein Datum aus, um Details anzuzeigen",
+      "status": "Status",
+      "title": "Tagesdetails"
+    },
+    "delete": {
+      "auditNote": "Zeiteinträge werden für Auditzwecke als gelöscht markiert.",
+      "confirm": "In Pause umwandeln",
+      "description": "Dies wird diesen Arbeitszeitraum dauerhaft löschen. Die Lücke erscheint als Pause im Kalender.",
+      "failed": "Löschen des Arbeitszeitraums fehlgeschlagen",
+      "success": "Arbeitszeitraum in Pause umgewandelt",
+      "title": "In Pause umwandeln?"
+    },
+    "details": {
+      "baseWorked": "Basis Arbeitszeit",
+      "blocksTimeEntry": "Blockiert Zeiterfassung",
+      "category": "Kategorie",
+      "credited": "Angerechnet",
+      "dateRange": "Datumsbereich",
+      "duration": "Dauer",
+      "employee": "Mitarbeiter",
+      "notes": "Notizen",
+      "periods": "Arbeitszeiträume",
+      "project": "Projekt",
+      "recurring": "Jährlich wiederkehrend",
+      "status": "Status",
+      "surcharge": "Zuschlag",
+      "surchargeBreakdown": "Aufschlüsselung der Zuschläge",
+      "time": "Zeit",
+      "type": "Typ"
+    },
+    "edit": {
+      "convertToBreak": "In Pause umwandeln",
+      "noNotes": "Keine Notizen hinzugefügt",
+      "noProject": "Kein Projekt zugewiesen",
+      "notesSaved": "Notizen gespeichert",
+      "notesSaveFailed": "Speichern der Notizen fehlgeschlagen",
+      "projectSaved": "Projekt aktualisiert",
+      "projectSaveFailed": "Aktualisieren des Projekts fehlgeschlagen",
+      "split": "Teilen",
+      "title": "Arbeitszeitraum"
+    },
+    "entryType": {
+      "clockIn": "Einstempeln",
+      "clockOut": "Ausstempeln",
+      "correction": "Korrektur"
+    },
+    "eventType": {
+      "absence": "Abwesenheit",
+      "holiday": "Feiertag",
+      "timeEntry": "Zeiteintrag",
+      "workPeriod": "Arbeitszeitraum"
+    },
+    "filter": {
+      "absences": "Abwesenheiten",
+      "allEmployees": "Alle Mitarbeiter",
+      "employee": "Nach Mitarbeiter filtern",
+      "holidays": "Feiertage",
+      "myDataOnly": "Nur meine Daten",
+      "timeEntries": "Zeiteinträge",
+      "workPeriods": "Arbeitszeiträume"
+    },
+    "filters": {
+      "title": "Filter"
+    },
+    "legend": {
+      "absence": "Abwesenheit",
+      "holiday": "Feiertag",
+      "hoursMet": "Stunden erreicht",
+      "overtime": "Überstunden",
+      "timeEntry": "Zeiteintrag",
+      "title": "Legende",
+      "undertime": "Minusstunden",
+      "workPeriod": "Arbeitszeitraum"
+    },
+    "split": {
+      "confirm": "Arbeitszeitraum teilen",
+      "currentPeriod": "Aktueller Arbeitszeitraum",
+      "description": "Teilen Sie diesen Arbeitszeitraum in zwei separate Sitzungen auf.",
+      "failed": "Teilen des Arbeitszeitraums fehlgeschlagen",
+      "firstNotes": "Notizen für den ersten Zeitraum (optional)",
+      "firstPeriod": "Erster Zeitraum",
+      "invalidTime": "Der Teilungszeitpunkt muss zwischen Start- und Endzeit liegen",
+      "preview": "Vorschau",
+      "secondNotes": "Notizen für den zweiten Zeitraum (optional)",
+      "secondPeriod": "Zweiter Zeitraum",
+      "splitAt": "Teilen um",
+      "success": "Arbeitszeitraum erfolgreich geteilt",
+      "title": "Arbeitszeitraum teilen"
+    },
+    "status": {
+      "approved": "Genehmigt",
+      "pending": "Ausstehend",
+      "rejected": "Abgelehnt"
+    }
+  }
+}

@@ -9,14 +9,20 @@ import {
 	IconTrash,
 } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { ColumnDef } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
 	deleteTimeRegulation,
 	getTimeRegulations,
 	type TimeRegulationWithBreakRules,
 } from "@/app/[locale]/(app)/settings/time-regulations/actions";
+import {
+	DataTable,
+	DataTableSkeleton,
+	DataTableToolbar,
+} from "@/components/data-table-server";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -36,15 +42,6 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "@/components/ui/table";
 import { queryKeys } from "@/lib/query";
 
 interface TimeRegulationTemplatesTableProps {
@@ -52,8 +49,6 @@ interface TimeRegulationTemplatesTableProps {
 	onCreateClick: () => void;
 	onEditClick: (regulation: TimeRegulationWithBreakRules) => void;
 }
-
-// formatMinutesToHours helper is defined inside the component for i18n access
 
 export function TimeRegulationTemplatesTable({
 	organizationId,
@@ -66,6 +61,7 @@ export function TimeRegulationTemplatesTable({
 	const [regulationToDelete, setRegulationToDelete] = useState<TimeRegulationWithBreakRules | null>(
 		null,
 	);
+	const [search, setSearch] = useState("");
 
 	// Helper function to format minutes to hours with translation
 	const formatMinutesToHours = (minutes: number | null): string => {
@@ -82,7 +78,8 @@ export function TimeRegulationTemplatesTable({
 	const {
 		data: regulations,
 		isLoading,
-		error,
+		isFetching,
+		isError,
 		refetch,
 	} = useQuery({
 		queryKey: queryKeys.timeRegulations.list(organizationId),
@@ -93,8 +90,7 @@ export function TimeRegulationTemplatesTable({
 			}
 			return result.data;
 		},
-		staleTime: 30 * 1000, // Consider data fresh for 30 seconds
-		refetchOnWindowFocus: false, // Don't refetch on window focus
+		staleTime: 30 * 1000,
 	});
 
 	// Delete mutation
@@ -128,20 +124,141 @@ export function TimeRegulationTemplatesTable({
 		}
 	};
 
+	// Filter regulations by search (client-side since typically small list)
+	const filteredRegulations = useMemo(() => {
+		if (!regulations) return [];
+		if (!search) return regulations;
+
+		const searchLower = search.toLowerCase();
+		return regulations.filter(
+			(reg) =>
+				reg.name.toLowerCase().includes(searchLower) ||
+				reg.description?.toLowerCase().includes(searchLower),
+		);
+	}, [regulations, search]);
+
+	// Column definitions
+	const columns = useMemo<ColumnDef<TimeRegulationWithBreakRules>[]>(
+		() => [
+			{
+				accessorKey: "name",
+				header: t("settings.timeRegulations.name", "Name"),
+				cell: ({ row }) => (
+					<div>
+						<div className="flex items-center gap-2">
+							<span className="font-medium">{row.original.name}</span>
+							{!row.original.isActive && (
+								<Badge variant="secondary" className="text-xs">
+									{t("common.inactive", "Inactive")}
+								</Badge>
+							)}
+						</div>
+						{row.original.description && (
+							<p className="text-xs text-muted-foreground mt-0.5">
+								{row.original.description}
+							</p>
+						)}
+					</div>
+				),
+			},
+			{
+				accessorKey: "maxDailyMinutes",
+				header: () => (
+					<div className="text-center">
+						{t("settings.timeRegulations.maxDaily", "Max Daily")}
+					</div>
+				),
+				cell: ({ row }) => (
+					<div className="text-center tabular-nums">
+						{formatMinutesToHours(row.original.maxDailyMinutes)}
+					</div>
+				),
+			},
+			{
+				accessorKey: "maxWeeklyMinutes",
+				header: () => (
+					<div className="text-center">
+						{t("settings.timeRegulations.maxWeekly", "Max Weekly")}
+					</div>
+				),
+				cell: ({ row }) => (
+					<div className="text-center tabular-nums">
+						{formatMinutesToHours(row.original.maxWeeklyMinutes)}
+					</div>
+				),
+			},
+			{
+				accessorKey: "maxUninterruptedMinutes",
+				header: () => (
+					<div className="text-center">
+						{t("settings.timeRegulations.maxUninterrupted", "Max Uninterrupted")}
+					</div>
+				),
+				cell: ({ row }) => (
+					<div className="text-center tabular-nums">
+						{formatMinutesToHours(row.original.maxUninterruptedMinutes)}
+					</div>
+				),
+			},
+			{
+				accessorKey: "breakRules",
+				header: () => (
+					<div className="text-center">
+						{t("settings.timeRegulations.breakRules", "Break Rules")}
+					</div>
+				),
+				cell: ({ row }) => (
+					<div className="text-center">
+						<Badge variant="outline">{row.original.breakRules?.length || 0}</Badge>
+					</div>
+				),
+			},
+			{
+				id: "actions",
+				cell: ({ row }) => (
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<Button variant="ghost" size="icon" className="h-8 w-8">
+								<IconDots className="h-4 w-4" />
+								<span className="sr-only">{t("common.openMenu", "Open menu")}</span>
+							</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent align="end">
+							<DropdownMenuItem onClick={() => onEditClick(row.original)}>
+								<IconPencil className="mr-2 h-4 w-4" />
+								{t("common.edit", "Edit")}
+							</DropdownMenuItem>
+							<DropdownMenuSeparator />
+							<DropdownMenuItem
+								className="text-destructive"
+								onClick={() => handleDeleteClick(row.original)}
+							>
+								<IconTrash className="mr-2 h-4 w-4" />
+								{t("common.delete", "Delete")}
+							</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>
+				),
+			},
+		],
+		[t, onEditClick, formatMinutesToHours],
+	);
+
 	if (isLoading) {
 		return (
-			<div className="space-y-2">
+			<div className="space-y-4">
 				<div className="flex justify-end">
-					<Skeleton className="h-10 w-32" />
+					<Button onClick={onCreateClick}>
+						<IconPlus className="mr-2 h-4 w-4" />
+						{t("settings.timeRegulations.create", "Create Regulation")}
+					</Button>
 				</div>
-				<Skeleton className="h-10 w-full" />
-				<Skeleton className="h-10 w-full" />
-				<Skeleton className="h-10 w-full" />
+				<DataTableSkeleton columnCount={6} rowCount={5} />
 			</div>
 		);
 	}
 
-	if (error) {
+	if (isError) {
 		return (
 			<div className="flex flex-col items-center justify-center py-12 text-center border rounded-lg">
 				<p className="text-destructive">
@@ -157,114 +274,44 @@ export function TimeRegulationTemplatesTable({
 
 	return (
 		<div className="space-y-4">
-			<div className="flex items-center justify-end gap-2">
-				<Button variant="ghost" size="icon" onClick={() => refetch()}>
-					<IconRefresh className="h-4 w-4" />
-					<span className="sr-only">{t("common.refresh", "Refresh")}</span>
-				</Button>
-				<Button onClick={onCreateClick}>
-					<IconPlus className="mr-2 h-4 w-4" />
-					{t("settings.timeRegulations.create", "Create Regulation")}
-				</Button>
-			</div>
+			<DataTableToolbar
+				search={search}
+				onSearchChange={setSearch}
+				searchPlaceholder={t(
+					"settings.timeRegulations.searchPlaceholder",
+					"Search regulations...",
+				)}
+				actions={
+					<div className="flex items-center gap-2">
+						<Button variant="ghost" size="icon" onClick={() => refetch()} disabled={isFetching}>
+							{isFetching ? (
+								<IconLoader2 className="h-4 w-4 animate-spin" />
+							) : (
+								<IconRefresh className="h-4 w-4" />
+							)}
+							<span className="sr-only">{t("common.refresh", "Refresh")}</span>
+						</Button>
+						<Button onClick={onCreateClick}>
+							<IconPlus className="mr-2 h-4 w-4" />
+							{t("settings.timeRegulations.create", "Create Regulation")}
+						</Button>
+					</div>
+				}
+			/>
 
-			{!regulations || regulations.length === 0 ? (
-				<div className="flex flex-col items-center justify-center py-12 text-center border rounded-lg">
-					<p className="text-muted-foreground">
-						{t("settings.timeRegulations.noRegulations", "No time regulations")}
-					</p>
-					<p className="text-muted-foreground text-sm mt-1">
-						{t(
-							"settings.timeRegulations.noRegulationsDescription",
-							"Create a regulation to define working time limits and break requirements.",
-						)}
-					</p>
-					<Button className="mt-4" onClick={onCreateClick}>
-						<IconPlus className="mr-2 h-4 w-4" />
-						{t("settings.timeRegulations.create", "Create Regulation")}
-					</Button>
-				</div>
-			) : (
-				<div className="rounded-md border">
-					<Table>
-						<TableHeader>
-							<TableRow>
-								<TableHead>{t("settings.timeRegulations.name", "Name")}</TableHead>
-								<TableHead className="text-center">
-									{t("settings.timeRegulations.maxDaily", "Max Daily")}
-								</TableHead>
-								<TableHead className="text-center">
-									{t("settings.timeRegulations.maxWeekly", "Max Weekly")}
-								</TableHead>
-								<TableHead className="text-center">
-									{t("settings.timeRegulations.maxUninterrupted", "Max Uninterrupted")}
-								</TableHead>
-								<TableHead className="text-center">
-									{t("settings.timeRegulations.breakRules", "Break Rules")}
-								</TableHead>
-								<TableHead className="w-[70px]" />
-							</TableRow>
-						</TableHeader>
-						<TableBody>
-							{regulations.map((regulation) => (
-								<TableRow key={regulation.id}>
-									<TableCell className="font-medium">
-										<div className="flex items-center gap-2">
-											{regulation.name}
-											{!regulation.isActive && (
-												<Badge variant="secondary" className="text-xs">
-													{t("common.inactive", "Inactive")}
-												</Badge>
-											)}
-										</div>
-										{regulation.description && (
-											<p className="text-xs text-muted-foreground mt-0.5">
-												{regulation.description}
-											</p>
-										)}
-									</TableCell>
-									<TableCell className="text-center tabular-nums">
-										{formatMinutesToHours(regulation.maxDailyMinutes)}
-									</TableCell>
-									<TableCell className="text-center tabular-nums">
-										{formatMinutesToHours(regulation.maxWeeklyMinutes)}
-									</TableCell>
-									<TableCell className="text-center tabular-nums">
-										{formatMinutesToHours(regulation.maxUninterruptedMinutes)}
-									</TableCell>
-									<TableCell className="text-center">
-										<Badge variant="outline">{regulation.breakRules?.length || 0}</Badge>
-									</TableCell>
-									<TableCell>
-										<DropdownMenu>
-											<DropdownMenuTrigger asChild>
-												<Button variant="ghost" size="icon" className="h-8 w-8">
-													<IconDots className="h-4 w-4" />
-													<span className="sr-only">{t("common.openMenu", "Open menu")}</span>
-												</Button>
-											</DropdownMenuTrigger>
-											<DropdownMenuContent align="end">
-												<DropdownMenuItem onClick={() => onEditClick(regulation)}>
-													<IconPencil className="mr-2 h-4 w-4" />
-													{t("common.edit", "Edit")}
-												</DropdownMenuItem>
-												<DropdownMenuSeparator />
-												<DropdownMenuItem
-													className="text-destructive"
-													onClick={() => handleDeleteClick(regulation)}
-												>
-													<IconTrash className="mr-2 h-4 w-4" />
-													{t("common.delete", "Delete")}
-												</DropdownMenuItem>
-											</DropdownMenuContent>
-										</DropdownMenu>
-									</TableCell>
-								</TableRow>
-							))}
-						</TableBody>
-					</Table>
-				</div>
-			)}
+			<DataTable
+				columns={columns}
+				data={filteredRegulations}
+				isFetching={isFetching}
+				emptyMessage={
+					search
+						? t("settings.timeRegulations.noSearchResults", "No regulations match your search.")
+						: t(
+								"settings.timeRegulations.noRegulations",
+								"No time regulations. Create a regulation to define working time limits and break requirements.",
+							)
+				}
+			/>
 
 			<AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
 				<AlertDialogContent>

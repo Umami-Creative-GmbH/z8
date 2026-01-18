@@ -8,12 +8,16 @@ import { VacationManagement } from "@/components/settings/vacation-management";
 import { VacationPoliciesTable } from "@/components/settings/vacation-policies-table";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getVacationPolicies } from "./actions";
+import { getAuthContext } from "@/lib/auth-helpers";
 
 async function VacationSettingsContent() {
 	await connection(); // Mark as fully dynamic for cacheComponents mode
 
-	const currentEmployee = await getCurrentEmployee();
+	// Parallelize employee and auth context fetches
+	const [currentEmployee, authContext] = await Promise.all([
+		getCurrentEmployee(),
+		getAuthContext(),
+	]);
 
 	if (!currentEmployee) {
 		return (
@@ -23,15 +27,9 @@ async function VacationSettingsContent() {
 		);
 	}
 
-	// Check if user has admin role
-	const { getAuthContext } = await import("@/lib/auth-helpers");
-	const authContext = await getAuthContext();
-
 	if (!authContext?.employee || authContext.employee.role !== "admin") {
 		redirect("/");
 	}
-
-	const policiesResult = await getVacationPolicies(authContext.employee.organizationId);
 
 	return (
 		<VacationManagement organizationId={authContext.employee.organizationId}>
@@ -47,10 +45,7 @@ async function VacationSettingsContent() {
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
-						<VacationPoliciesTable
-							organizationId={authContext.employee.organizationId}
-							initialPolicies={policiesResult.success ? policiesResult.data : []}
-						/>
+						<VacationPoliciesTable organizationId={authContext.employee.organizationId} />
 					</CardContent>
 				</Card>
 			</div>

@@ -329,7 +329,7 @@ export function HolidayDialog({
 					<form.Field name="recurrenceType">
 						{(field) => (
 							<div className="space-y-2">
-								<Label>{t("settings.holidays.form.recurrence", "Recurrence")}</Label>
+								<Label>{t("settings.holidays.form.recurrence.title", "Recurrence")}</Label>
 								<Select
 									value={field.state.value}
 									onValueChange={(value) => field.handleChange(value as RecurrenceType)}
@@ -337,7 +337,7 @@ export function HolidayDialog({
 									<SelectTrigger>
 										<SelectValue
 											placeholder={t(
-												"settings.holidays.form.recurrencePlaceholder",
+												"settings.holidays.form.recurrence.placeholder",
 												"Select recurrence type",
 											)}
 										/>

@@ -1,0 +1,126 @@
+{
+  "reports": {
+    "description": "Erstellen Sie umfassende Arbeitszeit- und Abwesenheitsberichte mit steuerrelevanten Homeoffice-Daten",
+    "feature": "Berichte generieren",
+    "projects": {
+      "budget": {
+        "exceededBy": "Budget um {hours} Stunden überschritten",
+        "hoursBudget": "{hours}h Budget",
+        "hoursLogged": "Erfasste Stunden",
+        "hoursRemaining": "{hours} Stunden im Budget verbleibend",
+        "hoursUsed": "{hours}h verbraucht",
+        "nearLimit": "Nahe der Budgetgrenze",
+        "onlyRemaining": "Nur noch {hours} Stunden verbleibend",
+        "onTrack": "Auf Kurs",
+        "over": "Über",
+        "overBudget": "Über Budget",
+        "remaining": "Verbleibend",
+        "title": "Budgetfortschritt",
+        "used": "Verbraucht"
+      },
+      "cards": {
+        "acrossAllProjects": "Über alle Projekte hinweg",
+        "activeContributors": "Aktive Mitwirkende",
+        "activeCount": "{count} aktiv",
+        "activeProjects": "Aktive Projekte",
+        "budgetUsed": "Verbrauchtes Budget",
+        "currentlyInProgress": "Derzeit in Arbeit",
+        "dailyAverage": "Tagesdurchschnitt",
+        "exceededBudget": "Budget überschritten",
+        "hoursOfBudget": "{used}h von {total}h",
+        "hoursPerDay": "Stunden pro Tag",
+        "na": "N/A",
+        "noBudgetSet": "Kein Budget festgelegt",
+        "overBudget": "Über Budget",
+        "overdue": "Überfällig",
+        "pastDeadline": "Frist überschritten",
+        "teamMembers": "Teammitglieder",
+        "totalHours": "Gesamtstunden",
+        "totalProjects": "Gesamtprojekte",
+        "workPeriods": "{count} Arbeitszeiträume"
+      },
+      "chart": {
+        "cumulativeDescription": "Gesamtstunden über die Zeit akkumuliert",
+        "cumulativeHours": "Kumulierte Stunden",
+        "cumulativeLabel": "Kumulativ",
+        "dailyDescription": "Gearbeitete Stunden pro Tag im gewählten Zeitraum",
+        "dailyHours": "Tägliche Stunden",
+        "hoursLabel": "Stunden",
+        "hoursOverTime": "Stunden im Zeitverlauf",
+        "noDataAvailable": "Keine Zeiterfassungsdaten für diesen Zeitraum verfügbar",
+        "noWorkPeriods": "Keine Arbeitszeiträume im ausgewählten Datumsbereich aufgezeichnet"
+      },
+      "container": {
+        "error": "Fehler",
+        "generating": "Bericht wird generiert...",
+        "noReportYet": "Noch kein Bericht generiert",
+        "pleaseWait": "Bitte warten Sie, während wir Projektdaten zusammenstellen",
+        "portfolioOverview": "Portfolio-Übersicht",
+        "projectDetails": "Projektdetails",
+        "selectPeriod": "Wählen Sie einen Zeitraum und klicken Sie auf \"Bericht generieren\", um zu beginnen"
+      },
+      "filter": {
+        "activeOnly": "Nur Aktive",
+        "activePlanned": "Aktiv & Geplant",
+        "allStatuses": "Alle Status",
+        "archived": "Archiviert",
+        "completed": "Abgeschlossen",
+        "period": "Zeitraum",
+        "selectStatus": "Statusfilter auswählen",
+        "status": "Status"
+      },
+      "generate": "Bericht generieren",
+      "generating": "Bericht wird generiert...",
+      "page": {
+        "accessDenied": "Zugriff verweigert",
+        "description": "Analysieren Sie Projektstunden, Budgetnutzung und Teambeiträge",
+        "feature": "Projektberichte ansehen",
+        "noPermission": "Sie haben keine Berechtigung, Projektberichte anzuzeigen.",
+        "title": "Projektberichte"
+      },
+      "status": {
+        "active": "Aktiv",
+        "archived": "Archiviert",
+        "completed": "Abgeschlossen",
+        "paused": "Pausiert",
+        "planned": "Geplant"
+      },
+      "table": {
+        "budget": "Budget",
+        "daysLeft": "{days}T übrig",
+        "daysOverdue": "{days}T überfällig",
+        "deadline": "Frist",
+        "dueToday": "Heute fällig",
+        "hours": "Stunden",
+        "noProjectsFound": "Keine Projekte gefunden",
+        "noProjectsMatch": "Keine Projekte entsprechen den ausgewählten Filtern",
+        "portfolioDescription": "Übersicht aller Projekte mit Budget- und Zeiterfassungsmetriken",
+        "portfolioTitle": "Projektportfolio",
+        "project": "Projekt",
+        "status": "Status",
+        "team": "Team"
+      },
+      "team": {
+        "byEmployee": "Nach Mitarbeiter",
+        "byTeam": "Nach Team",
+        "description": "Stundenverteilung über Teammitglieder und Teams",
+        "employee": "Mitarbeiter",
+        "hours": "Stunden",
+        "hoursLabel": "Stunden",
+        "noMembers": "Keine Teammitglieder haben Zeit für dieses Projekt erfasst",
+        "sessions": "Sitzungen",
+        "title": "Teamaufschlüsselung"
+      },
+      "toast": {
+        "failedGenerate": "Bericht konnte nicht generiert werden",
+        "failedPortfolio": "Portfoliobericht konnte nicht generiert werden",
+        "failedProject": "Projektbericht konnte nicht generiert werden",
+        "failedProjectReport": "Projektbericht konnte nicht generiert werden",
+        "portfolioGenerated": "Portfoliobericht generiert",
+        "projectGenerated": "Bericht generiert für {name}",
+        "unexpectedError": "Ein unerwarteter Fehler ist aufgetreten"
+      }
+    },
+    "title": "Mitarbeiterberichte"
+  }
+}

@@ -6,6 +6,7 @@ import type { CalendarFilters } from "@/hooks/use-calendar-data";
 import { useCalendarData } from "@/hooks/use-calendar-data";
 import { useOrganization } from "@/hooks/use-organization";
 import type { CalendarEvent } from "@/lib/calendar/types";
+import { format } from "@/lib/datetime/luxon-utils";
 import { CalendarFiltersComponent } from "./calendar-filters";
 import { CalendarLegend } from "./calendar-legend";
 import { DeleteWorkPeriodDialog } from "./delete-work-period-dialog";
@@ -80,7 +81,7 @@ export function CalendarView({ organizationId, currentEmployeeId }: CalendarView
 		// Group work periods by date and sum up actual hours
 		for (const event of events) {
 			if (event.type === "work_period") {
-				const dateKey = formatDateKey(event.date);
+				const dateKey = format(event.date, "yyyy-MM-dd");
 				const existing = map.get(dateKey) || { expected: 8 * 60, actual: 0 }; // Default 8h expected
 				existing.actual += event.metadata.durationMinutes || 0;
 				map.set(dateKey, existing);
@@ -258,12 +259,4 @@ export function CalendarView({ organizationId, currentEmployeeId }: CalendarView
 			)}
 		</div>
 	);
-}
-
-// Helper function to format date key
-function formatDateKey(date: Date): string {
-	const year = date.getFullYear();
-	const month = String(date.getMonth() + 1).padStart(2, "0");
-	const day = String(date.getDate()).padStart(2, "0");
-	return `${year}-${month}-${day}`;
 }

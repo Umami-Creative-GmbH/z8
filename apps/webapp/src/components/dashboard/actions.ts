@@ -3,7 +3,8 @@
 import { and, eq, gte, inArray, lte, or, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
-import { absenceEntry, approvalRequest, employee, team, workPeriod } from "@/db/schema";
+import { absenceEntry, approvalRequest, employee, hydrationStats, team, userSettings, waterIntakeLog, workPeriod } from "@/db/schema";
+import type { DashboardWidgetOrder } from "@/db/schema";
 import { getEnhancedVacationBalance } from "@/lib/absences/vacation.service";
 import { currentTimestamp, dateFromDB, dateToDB } from "@/lib/datetime/drizzle-adapter";
 import { toDateKey } from "@/lib/datetime/luxon-utils";
@@ -980,6 +981,177 @@ export async function getVacationBalance(): Promise<
 			carryoverExpiryDaysRemaining: balance.carryoverExpiryDaysRemaining,
 			hasCarryover: policy.allowCarryover,
 		};
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
+}
+
+/**
+ * Get hydration widget data for dashboard
+ */
+export async function getHydrationWidgetData(): Promise<
+	ServerActionResult<{
+		enabled: boolean;
+		currentStreak: number;
+		longestStreak: number;
+		todayIntake: number;
+		dailyGoal: number;
+		goalProgress: number;
+	}>
+> {
+	const effect = Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
+		const dbService = yield* _(DatabaseService);
+
+		// Get user's water reminder settings from userSettings
+		const settings = yield* _(
+			dbService.query("getWaterReminderSettings", async () => {
+				return dbService.db.query.userSettings.findFirst({
+					where: eq(userSettings.userId, session.user.id),
+				});
+			}),
+		);
+
+		// If not enabled, return early with enabled: false
+		if (!settings?.waterReminderEnabled) {
+			return {
+				enabled: false,
+				currentStreak: 0,
+				longestStreak: 0,
+				todayIntake: 0,
+				dailyGoal: 8,
+				goalProgress: 0,
+			};
+		}
+
+		const dailyGoal = settings.waterReminderDailyGoal ?? 8;
+
+		// Get hydration stats
+		const stats = yield* _(
+			dbService.query("getHydrationStats", async () => {
+				return dbService.db.query.hydrationStats.findFirst({
+					where: eq(hydrationStats.userId, session.user.id),
+				});
+			}),
+		);
+
+		// Get today's intake using Luxon for date boundaries
+		const todayStart = DateTime.now().startOf("day").toJSDate();
+		const todayEnd = DateTime.now().endOf("day").toJSDate();
+
+		const todayIntakeResult = yield* _(
+			dbService.query("getTodayIntake", async () => {
+				return dbService.db
+					.select({
+						total: sql<number>`COALESCE(SUM(${waterIntakeLog.amount}), 0)::int`,
+					})
+					.from(waterIntakeLog)
+					.where(
+						and(
+							eq(waterIntakeLog.userId, session.user.id),
+							gte(waterIntakeLog.loggedAt, todayStart),
+							lte(waterIntakeLog.loggedAt, todayEnd),
+						),
+					);
+			}),
+		);
+
+		const todayIntake = todayIntakeResult[0]?.total ?? 0;
+		const goalProgress = Math.min(100, Math.round((todayIntake / dailyGoal) * 100));
+
+		return {
+			enabled: true,
+			currentStreak: stats?.currentStreak ?? 0,
+			longestStreak: stats?.longestStreak ?? 0,
+			todayIntake,
+			dailyGoal,
+			goalProgress,
+		};
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
+}
+
+/**
+ * Get user settings (creates if not exists)
+ */
+export async function getUserSettings(): Promise<
+	ServerActionResult<{
+		dashboardWidgetOrder: DashboardWidgetOrder | null;
+	}>
+> {
+	const effect = Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
+		const dbService = yield* _(DatabaseService);
+
+		// Get or create user settings
+		const settings = yield* _(
+			dbService.query("getUserSettings", async () => {
+				return dbService.db.query.userSettings.findFirst({
+					where: eq(userSettings.userId, session.user.id),
+				});
+			}),
+		);
+
+		// If no settings exist, return null (will use defaults)
+		return {
+			dashboardWidgetOrder: settings?.dashboardWidgetOrder ?? null,
+		};
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
+}
+
+/**
+ * Update dashboard widget order
+ */
+export async function updateWidgetOrder(
+	order: string[],
+): Promise<ServerActionResult<{ success: boolean }>> {
+	const effect = Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
+		const dbService = yield* _(DatabaseService);
+
+		const widgetOrder: DashboardWidgetOrder = {
+			order,
+			version: 1,
+		};
+
+		// Upsert user settings with the new widget order
+		yield* _(
+			Effect.tryPromise({
+				try: async () => {
+					// Try to update existing settings first
+					const updated = await dbService.db
+						.update(userSettings)
+						.set({
+							dashboardWidgetOrder: widgetOrder,
+							updatedAt: currentTimestamp(),
+						})
+						.where(eq(userSettings.userId, session.user.id))
+						.returning();
+
+					// If no row was updated, insert a new one
+					if (updated.length === 0) {
+						await dbService.db.insert(userSettings).values({
+							userId: session.user.id,
+							dashboardWidgetOrder: widgetOrder,
+							updatedAt: currentTimestamp(),
+						});
+					}
+				},
+				catch: (error) =>
+					new NotFoundError({
+						message: `Failed to update widget order: ${error}`,
+						entityType: "userSettings",
+					}),
+			}),
+		);
+
+		return { success: true };
 	}).pipe(Effect.provide(AppLayer));
 
 	return runServerActionSafe(effect);

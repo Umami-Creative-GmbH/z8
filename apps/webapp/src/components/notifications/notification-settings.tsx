@@ -137,6 +137,8 @@ const TYPE_LABELS: Record<NotificationType, string> = {
 	project_deadline_warning_1d: "Deadline in 1 day",
 	project_deadline_warning_0d: "Deadline today",
 	project_deadline_overdue: "Project overdue",
+	// Wellness notifications
+	water_reminder: "Water reminders",
 };
 
 // Channel icons and labels

@@ -1,0 +1,84 @@
+---
+title: Language Preferences
+description: Change the interface language and manage language settings
+icon: Globe
+---
+
+import { Steps, Step } from 'fumadocs-ui/components/steps';
+import { Callout } from 'fumadocs-ui/components/callout';
+
+![Language Switcher](/images/user-guide/language-switcher.png)
+
+## Supported Languages
+
+Z8 is available in the following languages:
+
+| Language | Code |
+|----------|------|
+| English | en |
+| German (Deutsch) | de |
+| Spanish (Español) | es |
+| French (Français) | fr |
+| Italian (Italiano) | it |
+| Portuguese (Português) | pt |
+
+---
+
+## Using the Language Switcher
+
+To change the interface language:
+
+<Steps>
+  <Step>
+    Click on your **profile avatar** in the top-right corner
+  </Step>
+  <Step>
+    Select **"Language"** from the dropdown menu
+  </Step>
+  <Step>
+    Choose your preferred language from the list
+  </Step>
+  <Step>
+    The interface will update immediately
+  </Step>
+</Steps>
+
+<Callout type="info">
+The language switcher is also accessible from the login page for new users.
+</Callout>
+
+---
+
+## Language Persistence
+
+Your language preference is saved automatically:
+
+- **Logged-in users**: Your preference is stored in your account settings and syncs across all devices
+- **Guest users**: The preference is saved in your browser and remembered for future visits
+
+<Callout type="info">
+Changing your language does not affect the language of content created by other users, such as project names or notes.
+</Callout>
+
+---
+
+## Date and Number Formatting
+
+When you select a language, the following formatting adjusts automatically:
+
+| Element | Example (English) | Example (German) |
+|---------|-------------------|------------------|
+| Date | 01/15/2025 | 15.01.2025 |
+| Time | 2:30 PM | 14:30 |
+| Numbers | 1,234.56 | 1.234,56 |
+| Currency | $1,234.00 | 1.234,00 € |
+
+---
+
+## Browser Language Detection
+
+On your first visit, Z8 attempts to detect your preferred language from your browser settings. If your browser language matches one of our supported languages, the interface will display in that language automatically.
+
+To override automatic detection:
+1. Use the language switcher as described above
+2. Your explicit choice will always take precedence over browser detection

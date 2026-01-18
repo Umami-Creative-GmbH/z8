@@ -1,5 +1,6 @@
 "use client";
 
+import { IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { z } from "zod";
@@ -227,6 +228,7 @@ export function SignupForm({ className, ...props }: React.ComponentProps<"div">)
 						<Input
 							id="name"
 							name="name"
+							autoComplete="name"
 							onBlur={(e) => validateField("name", e.target.value)}
 							onChange={(e) => {
 								handleChange("name", e.target.value);
@@ -246,6 +248,7 @@ export function SignupForm({ className, ...props }: React.ComponentProps<"div">)
 						<Input
 							id="email"
 							name="email"
+							autoComplete="email"
 							onBlur={(e) => validateField("email", e.target.value)}
 							onChange={(e) => {
 								handleChange("email", e.target.value);
@@ -265,6 +268,7 @@ export function SignupForm({ className, ...props }: React.ComponentProps<"div">)
 						<Input
 							id="password"
 							name="password"
+							autoComplete="new-password"
 							onBlur={(e) => validateField("password", e.target.value)}
 							onChange={(e) => {
 								handleChange("password", e.target.value);
@@ -303,6 +307,7 @@ export function SignupForm({ className, ...props }: React.ComponentProps<"div">)
 						<Input
 							id="confirmPassword"
 							name="confirmPassword"
+							autoComplete="new-password"
 							onBlur={(e) => validateField("confirmPassword", e.target.value)}
 							onChange={(e) => {
 								handleChange("confirmPassword", e.target.value);
@@ -322,7 +327,14 @@ export function SignupForm({ className, ...props }: React.ComponentProps<"div">)
 						) : null}
 					</div>
 					<Button className="w-full" disabled={isLoading} type="submit">
-						{isLoading ? t("common.loading", "Loading...") : t("auth.sign-up", "Sign up")}
+						{isLoading ? (
+							<>
+								<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+								{t("common.loading", "Loading...")}
+							</>
+						) : (
+							t("auth.sign-up", "Sign up")
+						)}
 					</Button>
 				</>
 			)}

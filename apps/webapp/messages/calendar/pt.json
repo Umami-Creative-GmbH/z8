@@ -1,0 +1,205 @@
+{
+  "absences": {
+    "balance": {
+      "carryoverDays": "Tem {count} dias transitados",
+      "carryoverExpiry": "que expiram em",
+      "carryoverFrom": "Transitado de {year}",
+      "daysRemaining": "Dias restantes",
+      "description": "Os seus dias de férias para o ano atual",
+      "outOfTotalDays": "de um total de {totalDays} dias",
+      "pending": "Pendente",
+      "title": "Saldo de férias {year}",
+      "used": "Usado"
+    },
+    "calendar": {
+      "legend": {
+        "approved": "Aprovado",
+        "halfDayAm": "Meio dia (Manhã)",
+        "halfDayPm": "Meio dia (Tarde)",
+        "holiday": "Feriado",
+        "pending": "Pendente",
+        "rejected": "Rejeitado"
+      },
+      "nextYear": "Próximo ano",
+      "previousYear": "Ano anterior"
+    },
+    "dialog": {
+      "cancelDescription": "Tem a certeza que deseja cancelar este pedido de ausência? Esta ação não pode ser desfeita.",
+      "cancelTitle": "Cancelar pedido de ausência",
+      "confirmCancel": "Sim, cancelar pedido"
+    },
+    "errors": {
+      "allowanceNotConfigured": "Subsídio de férias não configurado",
+      "allowanceNotConfiguredMessage": "A sua organização ainda não configurou os subsídios de férias para {currentYear}.",
+      "contactAdmin": "Contacte o seu administrador para configurar as políticas de férias."
+    },
+    "featureName": "gerir ausências",
+    "form": {
+      "absenceType": "Tipo de ausência *",
+      "autoApproved": "(Aprovado automaticamente)",
+      "balanceAfterRequest": "Saldo após o pedido:",
+      "businessDays": "Dias úteis:",
+      "daysRemaining": "Dias restantes:",
+      "description": "Envie um pedido de folga. O seu gerente será notificado para aprovação.",
+      "endDate": "Data de fim *",
+      "errors": {
+        "fillRequiredFields": "Preencha todos os campos obrigatórios",
+        "insufficientBalance": "Saldo de férias insuficiente",
+        "insufficientBalanceForRequest": "Saldo de férias insuficiente para este pedido",
+        "invalidSameDayPeriod": "Não pode terminar de manhã se começar à tarde no mesmo dia"
+      },
+      "notesOptional": "Notas (Opcional)",
+      "notesPlaceholder": "Adicionar informações adicionais...",
+      "period": {
+        "afternoonOnly": "Apenas tarde",
+        "fullDay": "Dia inteiro",
+        "morningOnly": "Apenas manhã"
+      },
+      "selectAbsenceType": "Selecionar tipo de ausência",
+      "startDate": "Data de início *",
+      "submitRequest": "Submeter pedido",
+      "title": "Pedir ausência"
+    },
+    "period": {
+      "am": "AM",
+      "pm": "PM"
+    },
+    "requestAbsence": "Pedir ausência",
+    "status": {
+      "approved": "Aprovado",
+      "pending": "Pendente",
+      "rejected": "Rejeitado"
+    },
+    "subtitle": "Gerir os seus dias de folga e férias",
+    "table": {
+      "cancelRequest": "Cancelar pedido",
+      "end": "Fim",
+      "headers": {
+        "actions": "Ações",
+        "dateRange": "Intervalo de datas",
+        "days": "Dias",
+        "notes": "Notas",
+        "status": "Estado",
+        "type": "Tipo"
+      },
+      "noRequests": "Nenhum pedido de ausência encontrado.",
+      "start": "Início",
+      "subtitle": "Pedidos de ausência recentes e futuros",
+      "title": "Os seus pedidos de ausência"
+    },
+    "title": "Ausências",
+    "toast": {
+      "cancelFailed": "Falha ao cancelar o pedido de ausência",
+      "requestCancelled": "Pedido de ausência cancelado",
+      "requestFailed": "Falha ao submeter o pedido de ausência",
+      "requestSubmitted": "Pedido de ausência submetido com sucesso"
+    },
+    "view": {
+      "calendar": "Calendário",
+      "table": "Tabela"
+    }
+  },
+  "calendar": {
+    "dayDetails": {
+      "blocksTimeEntry": "Entradas de tempo bloqueadas",
+      "category": "Categoria",
+      "duration": "Duração",
+      "employee": "Funcionário",
+      "noEvents": "Sem eventos para este dia",
+      "recurring": "Feriado recorrente",
+      "selectDate": "Selecione uma data para ver detalhes",
+      "status": "Estado",
+      "title": "Detalhes do dia"
+    },
+    "delete": {
+      "auditNote": "As entradas de tempo serão marcadas como eliminadas para fins de auditoria.",
+      "confirm": "Converter para pausa",
+      "description": "Isto eliminará permanentemente este período de trabalho. O intervalo aparecerá como uma pausa no calendário.",
+      "failed": "Falha ao eliminar período de trabalho",
+      "success": "Período de trabalho convertido em pausa",
+      "title": "Converter para pausa?"
+    },
+    "details": {
+      "baseWorked": "Base trabalhada",
+      "blocksTimeEntry": "Bloqueia registo de tempo",
+      "category": "Categoria",
+      "credited": "Creditado",
+      "dateRange": "Intervalo de datas",
+      "duration": "Duração",
+      "employee": "Funcionário",
+      "notes": "Notas",
+      "periods": "Períodos de trabalho",
+      "project": "Projeto",
+      "recurring": "Recorrente anualmente",
+      "status": "Estado",
+      "surcharge": "Sobretaxa",
+      "surchargeBreakdown": "Detalhamento de sobretaxas",
+      "time": "Tempo",
+      "type": "Tipo"
+    },
+    "edit": {
+      "convertToBreak": "Converter para pausa",
+      "noNotes": "Nenhuma nota adicionada",
+      "noProject": "Nenhum projeto atribuído",
+      "notesSaved": "Notas guardadas",
+      "notesSaveFailed": "Falha ao guardar notas",
+      "projectSaved": "Projeto atualizado",
+      "projectSaveFailed": "Falha ao atualizar o projeto",
+      "split": "Dividir",
+      "title": "Período de trabalho"
+    },
+    "entryType": {
+      "clockIn": "Entrada",
+      "clockOut": "Saída",
+      "correction": "Correção"
+    },
+    "eventType": {
+      "absence": "Ausência",
+      "holiday": "Feriado",
+      "timeEntry": "Registo de tempo",
+      "workPeriod": "Período de trabalho"
+    },
+    "filter": {
+      "absences": "Ausências",
+      "allEmployees": "Todos os funcionários",
+      "employee": "Filtrar por funcionário",
+      "holidays": "Feriados",
+      "myDataOnly": "Apenas os meus dados",
+      "timeEntries": "Registos de tempo",
+      "workPeriods": "Períodos de trabalho"
+    },
+    "filters": {
+      "title": "Filtros"
+    },
+    "legend": {
+      "absence": "Ausência",
+      "holiday": "Feriado",
+      "hoursMet": "Horas atingidas",
+      "overtime": "Horas extra",
+      "timeEntry": "Registo de tempo",
+      "title": "Legenda",
+      "undertime": "Horas em falta",
+      "workPeriod": "Período de trabalho"
+    },
+    "split": {
+      "confirm": "Dividir período de trabalho",
+      "currentPeriod": "Período de trabalho atual",
+      "description": "Divida este período de trabalho em duas sessões separadas.",
+      "failed": "Falha ao dividir o período de trabalho",
+      "firstNotes": "Notas para o primeiro período (opcional)",
+      "firstPeriod": "Primeiro período",
+      "invalidTime": "A hora de divisão deve estar entre a hora de início e de fim",
+      "preview": "Pré-visualização",
+      "secondNotes": "Notas para o segundo período (opcional)",
+      "secondPeriod": "Segundo período",
+      "splitAt": "Dividir às",
+      "success": "Período de trabalho dividido com sucesso",
+      "title": "Dividir período de trabalho"
+    },
+    "status": {
+      "approved": "Aprovado",
+      "pending": "Pendente",
+      "rejected": "Rejeitado"
+    }
+  }
+}

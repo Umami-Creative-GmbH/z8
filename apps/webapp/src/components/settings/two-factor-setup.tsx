@@ -1,10 +1,20 @@
 "use client";
 
-import { QRCodeSVG } from "qrcode.react";
+import dynamic from "next/dynamic";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+
+// Dynamic import QRCode (~30KB) - only loaded when 2FA setup dialog opens
+const QRCodeSVG = dynamic(
+	() => import("qrcode.react").then((mod) => mod.QRCodeSVG),
+	{
+		loading: () => <Skeleton className="h-[200px] w-[200px]" />,
+		ssr: false,
+	},
+);
 import {
 	Dialog,
 	DialogContent,

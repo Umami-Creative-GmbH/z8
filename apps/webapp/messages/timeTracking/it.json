@@ -1,0 +1,107 @@
+{
+  "timeTracking": {
+    "addNotePrompt": "Aggiungi una nota sul tuo lavoro (opzionale)",
+    "autoAdjusted": {
+      "description": "È stata aggiunta automaticamente una pausa di {breakMinutes} minuti per conformità a {regulationName}.",
+      "indicator": "Adattato automaticamente per conformità",
+      "originalDuration": "Originale: {duration}",
+      "title": "Adattato automaticamente per conformità",
+      "toast": {
+        "description": "È stata aggiunta una pausa di {breakMinutes} minuti per conformità alle normative orarie.",
+        "title": "Pausa aggiunta automaticamente per conformità"
+      }
+    },
+    "breakReminder": {
+      "breakNeeded": "Pausa richiesta: {remaining} minuti rimanenti su un totale di {total}",
+      "overLimitMessage": "Hai superato il tempo massimo di lavoro ininterrotto. Per favore fai una pausa presto.",
+      "overLimitTitle": "Pausa richiesta",
+      "title": "Promemoria pausa",
+      "uninterrupted": "Lavoro ininterrotto",
+      "warningMessage": "Hai {minutes} minuti prima che sia richiesta una pausa."
+    },
+    "clockedOutSuccess": "Hai timbrato l'uscita!",
+    "clockIn": "Entrata",
+    "clockingIn": "Timbratura entrata...",
+    "clockingOut": "Timbratura uscita...",
+    "clockInSuccess": "Entrata timbrata con successo",
+    "clockOut": "Uscita",
+    "clockOutSuccess": "Uscita timbrata con successo",
+    "compliance": {
+      "violation": "Violazione conformità",
+      "warning": "Avviso conformità"
+    },
+    "correction": {
+      "clockIn": "Entrata",
+      "clockOut": "Uscita",
+      "editDescription": "Modifica la tua voce oraria per oggi.",
+      "editEntry": "Modifica voce oraria",
+      "editTitle": "Modifica voce oraria",
+      "errors": {
+        "invalidTimeRange": "L'ora di uscita deve essere successiva all'ora di entrata",
+        "submitFailed": "Invio correzione non riuscito",
+        "updateFailed": "Aggiornamento voce oraria non riuscito"
+      },
+      "noteLabel": "Nota (opzionale)",
+      "notePlaceholder": "Aggiungi una nota su questa modifica...",
+      "reasonLabel": "Motivo della correzione",
+      "reasonPlaceholder": "Spiega perché questa correzione è necessaria...",
+      "requestCorrection": "Richiedi correzione oraria",
+      "requestDescription": "Invia una richiesta di correzione per questa voce. Il tuo manager dovrà approvarla.",
+      "requestTitle": "Richiedi correzione oraria",
+      "saveChanges": "Salva modifiche",
+      "saving": "Salvataggio...",
+      "submitRequest": "Invia richiesta",
+      "submitting": "Invio...",
+      "success": {
+        "submitted": "Richiesta di correzione inviata per approvazione del manager",
+        "updated": "Voce oraria aggiornata con successo"
+      },
+      "timezoneNote": "Gli orari sono nel tuo fuso orario locale ({timezone})"
+    },
+    "currentlyClockedIn": "Attualmente hai timbrato l'entrata",
+    "errors": {
+      "clockInFailed": "Timbratura entrata non riuscita",
+      "clockOutFailed": "Timbratura uscita non riuscita",
+      "holidayBlocked": "Impossibile timbrare l'uscita il {holidayName}",
+      "holidayBlockedDesc": "Questo giorno è segnato come festivo e le voci orarie non sono consentite",
+      "notesSaveFailed": "Salvataggio note non riuscito"
+    },
+    "noProject": "Nessun progetto",
+    "notesPlaceholder": "Su cosa hai lavorato?",
+    "notesSaved": "Note salvate",
+    "project": "Progetto",
+    "readyToClockIn": "Pronto a lavorare?",
+    "selectProject": "Seleziona un progetto",
+    "startedAt": "Iniziato alle",
+    "table": {
+      "active": "Attivo",
+      "clockIn": "Entrata",
+      "clockOut": "Uscita",
+      "corrected": "Corretto",
+      "date": "Data",
+      "description": "Descrizione",
+      "duration": "Durata",
+      "emptyState": "Nessuna voce oraria trovata per questa settimana.",
+      "emptyStateHint": "Timbra per iniziare a tracciare il tuo tempo.",
+      "title": "Voci orarie"
+    },
+    "title": "Rilevazione presenze",
+    "welcomeBack": "Bentornato, {name}"
+  },
+  "wellness": {
+    "water": {
+      "goalMet": "Obiettivo giornaliero raggiunto! Continua così!",
+      "logError": "Impossibile registrare l'assunzione di acqua",
+      "logged": "Acqua registrata! {progress}% dell'obiettivo giornaliero",
+      "logOne": "+1 Bicchiere",
+      "logTwo": "+2 Bicchieri",
+      "reminderMessage": "Resta in salute - bevi un po' d'acqua. Hai bevuto {intake} di {goal} bicchieri oggi.",
+      "reminderTitle": "È ora di idratarsi!",
+      "snoozed": "Promemoria acqua posticipati per oggi",
+      "snoozeError": "Impossibile posticipare i promemoria",
+      "snoozeToday": "Posticipa oggi",
+      "streak": "Serie attuale: {days} giorni",
+      "todayProgress": "Progresso di oggi"
+    }
+  }
+}

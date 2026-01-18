@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback } from "react";
 import { useTranslate } from "@tolgee/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -26,19 +27,25 @@ export function CalendarFiltersComponent({
 }: CalendarFiltersProps) {
 	const { t } = useTranslate();
 
-	const handleToggle = (key: keyof CalendarFilters) => {
-		onFiltersChange({
-			...filters,
-			[key]: !filters[key],
-		});
-	};
+	const handleToggle = useCallback(
+		(key: keyof CalendarFilters) => {
+			onFiltersChange({
+				...filters,
+				[key]: !filters[key],
+			});
+		},
+		[filters, onFiltersChange],
+	);
 
-	const handleEmployeeFilterChange = (value: string) => {
-		onFiltersChange({
-			...filters,
-			employeeId: value === "all" ? undefined : value,
-		});
-	};
+	const handleEmployeeFilterChange = useCallback(
+		(value: string) => {
+			onFiltersChange({
+				...filters,
+				employeeId: value === "all" ? undefined : value,
+			});
+		},
+		[filters, onFiltersChange],
+	);
 
 	return (
 		<Card>
