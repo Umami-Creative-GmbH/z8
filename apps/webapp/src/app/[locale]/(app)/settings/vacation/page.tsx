@@ -9,7 +9,6 @@ import { VacationPoliciesTable } from "@/components/settings/vacation-policies-t
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getAuthContext } from "@/lib/auth-helpers";
-import { getVacationPolicies } from "./actions";
 
 async function VacationSettingsContent() {
 	await connection(); // Mark as fully dynamic for cacheComponents mode
@@ -32,8 +31,6 @@ async function VacationSettingsContent() {
 		redirect("/");
 	}
 
-	const policiesResult = await getVacationPolicies(authContext.employee.organizationId);
-
 	return (
 		<VacationManagement organizationId={authContext.employee.organizationId}>
 			<div className="grid gap-4">
@@ -48,10 +45,7 @@ async function VacationSettingsContent() {
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
-						<VacationPoliciesTable
-							organizationId={authContext.employee.organizationId}
-							initialPolicies={policiesResult.success ? policiesResult.data : []}
-						/>
+						<VacationPoliciesTable organizationId={authContext.employee.organizationId} />
 					</CardContent>
 				</Card>
 			</div>

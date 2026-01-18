@@ -65,7 +65,8 @@
       "Bash(npx @tolgee/cli extract:*)",
       "Bash(npx @tolgee/cli pull:*)",
       "Bash(node -e:*)",
-      "Bash(node scripts/split-translations.mjs:*)"
+      "Bash(node scripts/split-translations.mjs:*)",
+      "Bash(move data-table data-table-server)"
     ]
   },
   "enabledMcpjsonServers": [

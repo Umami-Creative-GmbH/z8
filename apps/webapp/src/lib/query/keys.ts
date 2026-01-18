@@ -18,7 +18,8 @@ export const queryKeys = {
 	// Organization members
 	members: {
 		all: ["members"] as const,
-		list: (orgId: string) => ["members", orgId] as const,
+		list: <T extends object>(orgId: string, params?: T) =>
+			["members", orgId, params] as const,
 	},
 
 	// Invitations
@@ -38,8 +39,9 @@ export const queryKeys = {
 	// Approvals
 	approvals: {
 		all: ["approvals"] as const,
-		absences: () => ["approvals", "absences"] as const,
-		timeCorrections: () => ["approvals", "time-corrections"] as const,
+		absences: <T extends object>(params?: T) => ["approvals", "absences", params] as const,
+		timeCorrections: <T extends object>(params?: T) =>
+			["approvals", "time-corrections", params] as const,
 	},
 
 	// Employees
@@ -91,13 +93,15 @@ export const queryKeys = {
 	// Holidays (custom org-wide)
 	holidays: {
 		all: ["holidays"] as const,
-		list: (orgId: string) => ["holidays", orgId] as const,
+		list: <T extends object>(orgId: string, params?: T) =>
+			["holidays", orgId, params] as const,
 	},
 
 	// Holiday categories
 	holidayCategories: {
 		all: ["holiday-categories"] as const,
-		list: (orgId: string) => ["holiday-categories", orgId] as const,
+		list: <T extends object>(orgId: string, params?: T) =>
+			["holiday-categories", orgId, params] as const,
 	},
 
 	// Holiday assignments (individual custom holidays to org/team/employee)
@@ -109,7 +113,8 @@ export const queryKeys = {
 	// Vacation policies
 	vacationPolicies: {
 		all: ["vacation-policies"] as const,
-		list: (orgId: string) => ["vacation-policies", orgId] as const,
+		list: <T extends object>(orgId: string, params?: T) =>
+			["vacation-policies", orgId, params] as const,
 		detail: (policyId: string) => ["vacation-policies", "detail", policyId] as const,
 		companyDefault: (orgId: string) => ["vacation-policies", "company-default", orgId] as const,
 	},
@@ -123,7 +128,8 @@ export const queryKeys = {
 	// Work schedule templates
 	workScheduleTemplates: {
 		all: ["work-schedule-templates"] as const,
-		list: (orgId: string) => ["work-schedule-templates", orgId] as const,
+		list: <T extends object>(orgId: string, params?: T) =>
+			["work-schedule-templates", orgId, params] as const,
 		detail: (templateId: string) => ["work-schedule-templates", "detail", templateId] as const,
 	},
 
@@ -163,7 +169,8 @@ export const queryKeys = {
 	// Time regulations
 	timeRegulations: {
 		all: ["time-regulations"] as const,
-		list: (orgId: string) => ["time-regulations", "list", orgId] as const,
+		list: <T extends object>(orgId: string, params?: T) =>
+			["time-regulations", "list", orgId, params] as const,
 		detail: (regulationId: string) => ["time-regulations", "detail", regulationId] as const,
 		assignments: (orgId: string) => ["time-regulations", "assignments", orgId] as const,
 		presets: () => ["time-regulations", "presets"] as const,
@@ -180,7 +187,8 @@ export const queryKeys = {
 	// Projects
 	projects: {
 		all: ["projects"] as const,
-		list: (orgId: string) => ["projects", "list", orgId] as const,
+		list: <T extends object>(orgId: string, params?: T) =>
+			["projects", "list", orgId, params] as const,
 		detail: (projectId: string) => ["projects", "detail", projectId] as const,
 		assignable: (orgId: string) => ["projects", "assignable", orgId] as const,
 	},
