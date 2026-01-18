@@ -9,8 +9,13 @@ import {
 	listEmployees,
 	updateEmployee,
 } from "@/app/[locale]/(app)/settings/employees/actions";
+import {
+	createRateHistoryEntry,
+	getEmployeeRateHistory,
+	type RateHistoryEntry,
+} from "@/app/[locale]/(app)/settings/employees/rate-actions";
 import { getEmployeeEffectiveScheduleDetails } from "@/app/[locale]/(app)/settings/work-schedules/assignment-actions";
-import type { UpdateEmployee } from "@/lib/validations/employee";
+import type { CreateRateHistory, UpdateEmployee } from "@/lib/validations/employee";
 import { queryKeys } from "./keys";
 
 type Manager = {
@@ -117,6 +122,36 @@ export function useEmployee(options: UseEmployeeOptions) {
 		staleTime: 60 * 1000, // 1 minute
 	});
 
+	// Query for rate history (only for hourly employees)
+	const rateHistoryQuery = useQuery({
+		queryKey: queryKeys.employees.rateHistory(employeeId),
+		queryFn: async () => {
+			const result = await getEmployeeRateHistory(employeeId);
+			if (!result.success) {
+				return [];
+			}
+			return result.data;
+		},
+		enabled: enabled && hasEmployee && employeeQuery.data?.contractType === "hourly",
+		staleTime: 30 * 1000, // 30 seconds
+	});
+
+	// Update rate mutation
+	const updateRateMutation = useMutation({
+		mutationFn: (data: CreateRateHistory) => createRateHistoryEntry(employeeId, data),
+		onSuccess: (result) => {
+			if (result.success) {
+				// Invalidate rate history and employee queries
+				queryClient.invalidateQueries({
+					queryKey: queryKeys.employees.rateHistory(employeeId),
+				});
+				queryClient.invalidateQueries({
+					queryKey: queryKeys.employees.detail(employeeId),
+				});
+			}
+		},
+	});
+
 	// Update employee mutation
 	const updateMutation = useMutation({
 		mutationFn: (data: UpdateEmployee) => updateEmployee(employeeId, data),
@@ -145,10 +180,12 @@ export function useEmployee(options: UseEmployeeOptions) {
 		employee: employeeQuery.data ?? null,
 		schedule: scheduleQuery.data ?? null,
 		availableManagers: managersQuery.data ?? [],
+		rateHistory: (rateHistoryQuery.data ?? []) as RateHistoryEntry[],
 
 		// Loading states
 		isLoading: currentEmployeeQuery.isLoading || employeeQuery.isLoading || scheduleQuery.isLoading,
 		isFetching: employeeQuery.isFetching,
+		isLoadingRateHistory: rateHistoryQuery.isLoading,
 		isError: employeeQuery.isError,
 		error: employeeQuery.error,
 
@@ -159,6 +196,8 @@ export function useEmployee(options: UseEmployeeOptions) {
 		// Mutations
 		updateEmployee: updateMutation.mutateAsync,
 		isUpdating: updateMutation.isPending,
+		updateRate: updateRateMutation.mutateAsync,
+		isUpdatingRate: updateRateMutation.isPending,
 
 		// Utilities
 		refetch,

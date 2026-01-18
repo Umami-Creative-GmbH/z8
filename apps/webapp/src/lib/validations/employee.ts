@@ -6,6 +6,37 @@ export const genderSchema = z.enum(["male", "female", "other"]);
 // Employee role enum
 export const employeeRoleSchema = z.enum(["employee", "manager", "admin"]);
 
+// Contract type enum
+export const contractTypeSchema = z.enum(["fixed", "hourly"]);
+
+// Hourly rate schema (optional positive decimal)
+export const hourlyRateSchema = z
+	.string()
+	.refine(
+		(val) => {
+			if (!val || val === "") return true; // optional
+			const num = parseFloat(val);
+			return !isNaN(num) && num > 0;
+		},
+		{ message: "Hourly rate must be a positive number" },
+	)
+	.optional()
+	.nullable();
+
+// Rate history entry schema
+export const createRateHistorySchema = z.object({
+	hourlyRate: z.string().refine(
+		(val) => {
+			const num = parseFloat(val);
+			return !isNaN(num) && num > 0;
+		},
+		{ message: "Hourly rate must be a positive number" },
+	),
+	currency: z.string().default("EUR"),
+	effectiveFrom: z.date(),
+	reason: z.string().max(500, "Reason is too long").optional().nullable(),
+});
+
 // Personal information schema (for self-service profile updates)
 export const personalInformationSchema = z.object({
 	firstName: z
@@ -50,6 +81,10 @@ export const createEmployeeSchema = z.object({
 	// Dates
 	startDate: z.date().optional().nullable(),
 	endDate: z.date().optional().nullable(),
+
+	// Contract type and hourly rate
+	contractType: contractTypeSchema.optional(),
+	hourlyRate: hourlyRateSchema,
 });
 
 // Employee update schema (more permissive, all fields optional)
@@ -80,6 +115,10 @@ export const updateEmployeeSchema = z
 		startDate: z.date().optional().nullable(),
 		endDate: z.date().optional().nullable(),
 		isActive: z.boolean().optional(),
+
+		// Contract type and hourly rate
+		contractType: contractTypeSchema.optional(),
+		hourlyRate: hourlyRateSchema,
 	})
 	.refine(
 		(data) => {
@@ -133,8 +172,10 @@ export const assignManagersSchema = z
 // Types derived from schemas
 export type Gender = z.infer<typeof genderSchema>;
 export type EmployeeRole = z.infer<typeof employeeRoleSchema>;
+export type ContractType = z.infer<typeof contractTypeSchema>;
 export type PersonalInformation = z.infer<typeof personalInformationSchema>;
 export type CreateEmployee = z.infer<typeof createEmployeeSchema>;
 export type UpdateEmployee = z.infer<typeof updateEmployeeSchema>;
 export type ManagerAssignment = z.infer<typeof managerAssignmentSchema>;
 export type AssignManagers = z.infer<typeof assignManagersSchema>;
+export type CreateRateHistory = z.infer<typeof createRateHistorySchema>;
