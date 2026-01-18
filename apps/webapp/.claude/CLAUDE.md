@@ -367,6 +367,92 @@ Use components from `src/components/ui/tanstack-form.tsx`:
 
 ---
 
+# Tolgee Translations (Namespaced)
+
+This project uses **Tolgee** for i18n with namespace-based code splitting for optimal performance.
+
+## Namespace Structure
+
+Translations are split into 8 namespaces based on route/feature:
+
+| Namespace | Key Prefixes | Routes |
+|-----------|-------------|--------|
+| `common` | common, generic, nav, header, user, table, validation, errors, info, meta | All pages (always loaded) |
+| `auth` | auth, profile, sessions | /sign-in, /sign-up, etc. |
+| `dashboard` | dashboard | / |
+| `calendar` | absences, calendar | /calendar, /absences |
+| `timeTracking` | timeTracking, wellness | /time-tracking |
+| `reports` | reports | /reports |
+| `settings` | settings, organization, vacation, team | /settings/** |
+| `onboarding` | onboarding | /onboarding/** |
+
+## File Structure
+
+```
+messages/
+├── common/en.json, de.json, ...     # ~5 KB - always loaded
+├── auth/en.json, de.json, ...       # ~8 KB
+├── dashboard/en.json, de.json, ...  # ~5 KB
+├── calendar/en.json, de.json, ...   # ~7 KB
+├── timeTracking/en.json, de.json, ... # ~4 KB
+├── reports/en.json, de.json, ...    # ~5 KB
+├── settings/en.json, de.json, ...   # ~52 KB - only loaded on /settings
+├── onboarding/en.json, de.json, ... # ~10 KB
+```
+
+## How It Works
+
+1. **SSR**: The root layout (`src/app/[locale]/layout.tsx`) loads only the namespaces needed for the current route using `loadNamespaces()` from `src/tolgee/shared.ts`
+2. **Client-side lazy loading**: Additional namespaces are loaded on demand via Tolgee's staticData configuration using `lang:namespace` format
+3. **Namespace inference**: The extractor (`tolgee-extractor.mjs`) automatically infers namespaces from key prefixes
+
+## Adding New Translation Keys
+
+Keys are automatically assigned to namespaces based on their prefix:
+- `settings.employees.title` → `settings` namespace
+- `dashboard.widgets.vacation` → `dashboard` namespace
+- `common.cancel` → `common` namespace
+
+## Loading Namespaces Client-Side
+
+Use the `useNamespaces` hook from `src/tolgee/client.tsx`:
+
+```typescript
+import { useNamespaces } from "@/tolgee/client";
+
+function MyComponent() {
+  const { isLoading, isLoaded } = useNamespaces(["settings", "calendar"]);
+  if (isLoading) return <Spinner />;
+  return <div>{t("settings.title")}</div>;
+}
+```
+
+## Key Files
+
+- `tolgee.config.cjs` - CLI config with namespace support
+- `src/tolgee/shared.ts` - Namespace loaders and route mappings
+- `src/tolgee/client.tsx` - Provider and `useNamespaces` hook
+- `tolgee-extractor.mjs` - Custom extractor with namespace inference
+- `scripts/split-translations.mjs` - Migration script (one-time use)
+
+## Tolgee CLI Commands
+
+```bash
+# Extract keys from code
+pnpm dlx @tolgee/cli extract print
+
+# Sync with Tolgee server
+pnpm dlx @tolgee/cli sync
+
+# Pull translations
+pnpm dlx @tolgee/cli pull
+
+# Push translations
+pnpm dlx @tolgee/cli push
+```
+
+---
+
 # Date/Time Library: Luxon
 
 This project uses **Luxon** for all date and time operations. Do not use native JavaScript `Date` or other date libraries.
