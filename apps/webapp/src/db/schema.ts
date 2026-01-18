@@ -44,6 +44,7 @@ export const holidayPresetAssignmentTypeEnum = pgEnum("holiday_preset_assignment
 	"employee",
 ]);
 export const genderEnum = pgEnum("gender", ["male", "female", "other"]);
+export const contractTypeEnum = pgEnum("contract_type", ["fixed", "hourly"]);
 export const scheduleCycleEnum = pgEnum("schedule_cycle", [
 	"daily",
 	"weekly",
@@ -268,6 +269,10 @@ export const employee = pgTable(
 		endDate: timestamp("end_date"),
 		isActive: boolean("is_active").default(true).notNull(),
 
+		// Contract type and hourly rate
+		contractType: contractTypeEnum("contract_type").default("fixed").notNull(),
+		currentHourlyRate: decimal("current_hourly_rate", { precision: 10, scale: 2 }),
+
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at")
 			.$onUpdate(() => currentTimestamp())
@@ -279,6 +284,45 @@ export const employee = pgTable(
 		index("employee_teamId_idx").on(table.teamId),
 		index("employee_managerId_idx").on(table.managerId),
 		index("employee_userId_isActive_idx").on(table.userId, table.isActive),
+	],
+);
+
+// ============================================
+// EMPLOYEE RATE HISTORY
+// ============================================
+
+// Tracks historical hourly rates for employees
+export const employeeRateHistory = pgTable(
+	"employee_rate_history",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		employeeId: uuid("employee_id")
+			.notNull()
+			.references(() => employee.id, { onDelete: "cascade" }),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+
+		hourlyRate: decimal("hourly_rate", { precision: 10, scale: 2 }).notNull(),
+		currency: text("currency").default("EUR").notNull(),
+
+		effectiveFrom: timestamp("effective_from").notNull(),
+		effectiveTo: timestamp("effective_to"), // null = currently active rate
+
+		reason: text("reason"), // optional note explaining rate change
+
+		createdBy: text("created_by")
+			.notNull()
+			.references(() => user.id),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+	},
+	(table) => [
+		index("employeeRateHistory_employeeId_idx").on(table.employeeId),
+		index("employeeRateHistory_organizationId_idx").on(table.organizationId),
+		index("employeeRateHistory_employeeId_effectiveFrom_idx").on(
+			table.employeeId,
+			table.effectiveFrom,
+		),
 	],
 );
 
@@ -2195,6 +2239,24 @@ export const employeeRelations = relations(employee, ({ one, many }) => ({
 	// Location assignments
 	locationAssignments: many(locationEmployee),
 	subareaAssignments: many(subareaEmployee),
+	// Rate history (for hourly employees)
+	rateHistory: many(employeeRateHistory),
+}));
+
+// Employee rate history relations
+export const employeeRateHistoryRelations = relations(employeeRateHistory, ({ one }) => ({
+	employee: one(employee, {
+		fields: [employeeRateHistory.employeeId],
+		references: [employee.id],
+	}),
+	organization: one(organization, {
+		fields: [employeeRateHistory.organizationId],
+		references: [organization.id],
+	}),
+	creator: one(user, {
+		fields: [employeeRateHistory.createdBy],
+		references: [user.id],
+	}),
 }));
 
 // Time tracking relations
