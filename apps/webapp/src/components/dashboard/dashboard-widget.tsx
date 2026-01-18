@@ -9,30 +9,44 @@ import { cn } from "@/lib/utils";
 import type { WidgetId } from "./widget-registry";
 import { useRegisterVisibleWidget } from "./widget-visibility-context";
 
-interface SortableWidgetProps {
+interface DashboardWidgetProps {
+	/** Unique widget ID for sorting */
 	id: WidgetId;
+	/** Widget content - if null/undefined, widget won't render */
 	children: ReactNode;
 }
 
 /**
- * Wrapper component that makes a widget sortable via drag-and-drop.
- * Adds a drag handle to the widget that appears on hover.
- * Registers itself as visible for the sortable context.
+ * Dashboard widget wrapper that handles:
+ * - Drag and drop sorting
+ * - Visibility registration
+ * - Conditional rendering (returns null if no children)
+ *
+ * Use this wrapper in your widget components:
+ * ```tsx
+ * function MyWidget() {
+ *   const { data } = useQuery(...);
+ *   if (!data) return null;
+ *
+ *   return (
+ *     <DashboardWidget id="my-widget">
+ *       <Card>...</Card>
+ *     </DashboardWidget>
+ *   );
+ * }
+ * ```
  */
-export function SortableWidget({ id, children }: SortableWidgetProps) {
-	// Register this widget as visible
+export function DashboardWidget({ id, children }: DashboardWidgetProps) {
+	// Register as visible when mounted
 	useRegisterVisibleWidget(id);
 
 	const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
 		id,
 	});
 
-	// Use Translate instead of Transform for grid layouts
-	// This only applies translation, not scale/rotation which can break grids
 	const style: CSSProperties = {
 		transform: CSS.Translate.toString(transform),
 		transition,
-		// Hide the original item while dragging (DragOverlay shows the preview)
 		opacity: isDragging ? 0.4 : 1,
 	};
 
@@ -41,9 +55,9 @@ export function SortableWidget({ id, children }: SortableWidgetProps) {
 			ref={setNodeRef}
 			style={style}
 			className={cn("relative group", isDragging && "z-50")}
+			data-widget-id={id}
 			data-dragging={isDragging}
 		>
-			{/* Drag handle - positioned absolutely at top-right of widget */}
 			<Button
 				variant="ghost"
 				size="icon"

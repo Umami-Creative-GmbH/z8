@@ -33,7 +33,9 @@ export function WidgetCard({
 			className="size-8"
 			aria-label="Refresh"
 		>
-			<IconRefresh className={cn("size-4", refreshing && "animate-spin motion-reduce:animate-none")} />
+			<IconRefresh
+				className={cn("size-4", refreshing && "animate-spin motion-reduce:animate-none")}
+			/>
 		</Button>
 	) : null;
 

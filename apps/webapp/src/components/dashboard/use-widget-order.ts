@@ -61,11 +61,9 @@ export function useWidgetOrder() {
 		},
 		onSuccess: () => {
 			toast.success("Dashboard layout saved");
+			// Don't invalidate on success - optimistic update is already correct
 		},
-		onSettled: () => {
-			// Always refetch after error or success
-			queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.widgetOrder() });
-		},
+		// Only refetch on error (handled in onError with rollback)
 	});
 
 	// Get the current widget order, normalized to handle new/removed widgets
