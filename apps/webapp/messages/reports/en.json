@@ -1,0 +1,126 @@
+{
+  "reports": {
+    "description": "Generate comprehensive work hour and absence reports with tax-relevant home office data",
+    "feature": "generate reports",
+    "projects": {
+      "budget": {
+        "exceededBy": "Exceeded budget by {hours} hours",
+        "hoursBudget": "{hours}h budget",
+        "hoursLogged": "Hours Logged",
+        "hoursRemaining": "{hours} hours remaining in budget",
+        "hoursUsed": "{hours}h used",
+        "nearLimit": "Near Budget Limit",
+        "onlyRemaining": "Only {hours} hours remaining",
+        "onTrack": "On Track",
+        "over": "Over",
+        "overBudget": "Over Budget",
+        "remaining": "Remaining",
+        "title": "Budget Progress",
+        "used": "Used"
+      },
+      "cards": {
+        "acrossAllProjects": "Across all projects",
+        "activeContributors": "Active contributors",
+        "activeCount": "{count} active",
+        "activeProjects": "Active Projects",
+        "budgetUsed": "Budget Used",
+        "currentlyInProgress": "Currently in progress",
+        "dailyAverage": "Daily Average",
+        "exceededBudget": "Exceeded budget",
+        "hoursOfBudget": "{used}h of {total}h",
+        "hoursPerDay": "Hours per day",
+        "na": "N/A",
+        "noBudgetSet": "No budget set",
+        "overBudget": "Over Budget",
+        "overdue": "Overdue",
+        "pastDeadline": "Past deadline",
+        "teamMembers": "Team Members",
+        "totalHours": "Total Hours",
+        "totalProjects": "Total Projects",
+        "workPeriods": "{count} work periods"
+      },
+      "chart": {
+        "cumulativeDescription": "Total hours accumulated over time",
+        "cumulativeHours": "Cumulative Hours",
+        "cumulativeLabel": "Cumulative",
+        "dailyDescription": "Hours worked per day during the selected period",
+        "dailyHours": "Daily Hours",
+        "hoursLabel": "Hours",
+        "hoursOverTime": "Hours Over Time",
+        "noDataAvailable": "No time tracking data available for this period",
+        "noWorkPeriods": "No work periods recorded in the selected date range"
+      },
+      "container": {
+        "error": "Error",
+        "generating": "Generating Report...",
+        "noReportYet": "No report generated yet",
+        "pleaseWait": "Please wait while we compile project data",
+        "portfolioOverview": "Portfolio Overview",
+        "projectDetails": "Project Details",
+        "selectPeriod": "Select a period and click \"Generate Report\" to get started"
+      },
+      "filter": {
+        "activeOnly": "Active Only",
+        "activePlanned": "Active & Planned",
+        "allStatuses": "All Statuses",
+        "archived": "Archived",
+        "completed": "Completed",
+        "period": "Period",
+        "selectStatus": "Select status filter",
+        "status": "Status"
+      },
+      "generate": "Generate Report",
+      "generating": "Generating Report...",
+      "page": {
+        "accessDenied": "Access Denied",
+        "description": "Analyze project hours, budget usage, and team contributions",
+        "feature": "view project reports",
+        "noPermission": "You don't have permission to view project reports.",
+        "title": "Project Reports"
+      },
+      "status": {
+        "active": "Active",
+        "archived": "Archived",
+        "completed": "Completed",
+        "paused": "Paused",
+        "planned": "Planned"
+      },
+      "table": {
+        "budget": "Budget",
+        "daysLeft": "{days}d left",
+        "daysOverdue": "{days}d overdue",
+        "deadline": "Deadline",
+        "dueToday": "Due today",
+        "hours": "Hours",
+        "noProjectsFound": "No projects found",
+        "noProjectsMatch": "No projects match the selected filters",
+        "portfolioDescription": "Overview of all projects with budget and time tracking metrics",
+        "portfolioTitle": "Project Portfolio",
+        "project": "Project",
+        "status": "Status",
+        "team": "Team"
+      },
+      "team": {
+        "byEmployee": "By Employee",
+        "byTeam": "By Team",
+        "description": "Hours distribution across team members and teams",
+        "employee": "Employee",
+        "hours": "Hours",
+        "hoursLabel": "Hours",
+        "noMembers": "No team members have logged time to this project",
+        "sessions": "Sessions",
+        "title": "Team Breakdown"
+      },
+      "toast": {
+        "failedGenerate": "Failed to generate report",
+        "failedPortfolio": "Failed to generate portfolio report",
+        "failedProject": "Failed to generate project report",
+        "failedProjectReport": "Failed to generate project report",
+        "portfolioGenerated": "Portfolio report generated",
+        "projectGenerated": "Report generated for {name}",
+        "unexpectedError": "An unexpected error occurred"
+      }
+    },
+    "title": "Employee Reports"
+  }
+}

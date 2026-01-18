@@ -1,0 +1,182 @@
+{
+  "common": {
+    "active": "Active",
+    "add": "Add",
+    "assign": "Assign",
+    "back": "Back",
+    "background-image-alt": "Background Image - Foto von Ally Griffin auf Unsplash",
+    "cancel": "Cancel",
+    "clearSelection": "Clear",
+    "create": "Create",
+    "days": {
+      "friday": "Friday",
+      "label": "days",
+      "monday": "Monday",
+      "saturday": "Saturday",
+      "sunday": "Sunday",
+      "thursday": "Thursday",
+      "tuesday": "Tuesday",
+      "wednesday": "Wednesday"
+    },
+    "delete": "Delete",
+    "deleting": "Deleting...",
+    "deselectAll": "Deselect All",
+    "details": "Details",
+    "dismiss": "Dismiss",
+    "edit": "Edit",
+    "enabled": "Enabled",
+    "error-occurred": "An error occurred",
+    "gender": {
+      "female": "Female",
+      "male": "Male",
+      "other": "Other"
+    },
+    "inactive": "Inactive",
+    "loading": "Loading...",
+    "months": {
+      "april": "April",
+      "august": "August",
+      "december": "December",
+      "february": "February",
+      "january": "January",
+      "july": "July",
+      "june": "June",
+      "march": "March",
+      "may": "May",
+      "november": "November",
+      "october": "October",
+      "september": "September"
+    },
+    "name": "Name",
+    "new": "New",
+    "next": "Next",
+    "openMenu": "Open menu",
+    "optional": "optional",
+    "or": "Or",
+    "refresh": "Refresh",
+    "remove": "Remove",
+    "removing": "Removing...",
+    "reset": "Reset",
+    "retry": "Retry",
+    "save": "Save",
+    "saveChanges": "Save Changes",
+    "saving": "Saving...",
+    "selectAll": "Select All",
+    "select-language": "Select language",
+    "selectRow": "Select row",
+    "skip": "Skip",
+    "status": "Status",
+    "today": "Today",
+    "unexpectedError": "An unexpected error occurred",
+    "unknown": "Unknown",
+    "unknownEmployee": "Unknown Employee",
+    "unknownTeam": "Unknown Team",
+    "uploading": "Uploading...",
+    "validationError": "Validation error",
+    "weekdays": {
+      "fr": "Fr",
+      "fri": "Fri",
+      "mo": "Mo",
+      "mon": "Mon",
+      "sa": "Sa",
+      "sat": "Sat",
+      "su": "Su",
+      "sun": "Sun",
+      "th": "Th",
+      "thu": "Thu",
+      "tu": "Tu",
+      "tue": "Tue",
+      "we": "We",
+      "wed": "Wed"
+    }
+  },
+  "errors": {
+    "noEmployee": {
+      "contactAdmin": "Contact Administrator",
+      "createOrg": "Create Organization",
+      "description": "You need an employee profile to ${feature}. Please create an organization or contact your administrator.",
+      "emailBody": "Hi,nnI need an employee profile set up to access the platform features. Could you please assist me with this?nnThank you!",
+      "emailSubject": "Employee Profile Setup Required",
+      "helpText": "If you were invited to an organization, ask your administrator to set up your employee profile.",
+      "title": "Employee Profile Required"
+    },
+    "noOrganization": {
+      "createOrg": "Create Organization",
+      "description": "You're not part of any organization yet. Create one to get started or wait for an invitation.",
+      "title": "No Organization Found",
+      "waiting": "Waiting for an invitation?",
+      "waitingDesc": "Your administrator will send you an invitation email. Check your inbox and spam folder."
+    }
+  },
+  "generic": {
+    "done": "Done",
+    "submit": "Submit"
+  },
+  "header": {
+    "clock-in": "Clock In",
+    "clock-out": "Clock Out",
+    "request-absence": "Request Absence"
+  },
+  "info": {
+    "back-to-login": "Back to login"
+  },
+  "nav": {
+    "absences": "Absences",
+    "approvals": "Approvals",
+    "calendar": "Calendar",
+    "dashboard": "Dashboard",
+    "get-help": "Get Help",
+    "reports": "Reports",
+    "scheduling": "Scheduling",
+    "settings": "Settings",
+    "team": "Team",
+    "team-label": "Team",
+    "time-tracking": "Time Tracking"
+  },
+  "table": {
+    "description": "Showing total visitors for the last 6 months. This is just some random text to test the layout. It spans multiple lines and should wrap around.",
+    "header": "Header",
+    "limit": "Limit",
+    "reviewer": "Reviewer",
+    "select-reviewer": "Select a reviewer",
+    "select-status": "Select a status",
+    "select-type": "Select a type",
+    "showing-visitors": "Showing total visitors for the last 6 months",
+    "status": "Status",
+    "status-options": {
+      "done": "Done",
+      "in-progress": "In Progress",
+      "not-started": "Not Started"
+    },
+    "target": "Target",
+    "trending-up": "Trending up by 5.2% this month",
+    "type": "Type",
+    "type-options": {
+      "capabilities": "Capabilities",
+      "cover-page": "Cover Page",
+      "design": "Design",
+      "executive-summary": "Executive Summary",
+      "focus-documents": "Focus Documents",
+      "narrative": "Narrative",
+      "table-of-contents": "Table of Contents",
+      "technical-approach": "Technical Approach"
+    }
+  },
+  "user": {
+    "language": "Language",
+    "logging-out": "Logging out...",
+    "log-out": "Log out",
+    "profile": "Profile",
+    "theme": "Theme",
+    "theme-dark": "Dark",
+    "theme-light": "Light",
+    "theme-system": "System",
+    "time-settings": "Time Settings"
+  },
+  "validation": {
+    "invalid-email": "Invalid email address",
+    "invalid-password": "Invalid password",
+    "name-required": "Name is required",
+    "password-required": "Password is required"
+  }
+}

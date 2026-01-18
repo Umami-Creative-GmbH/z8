@@ -1,0 +1,129 @@
+{
+  "dashboard": {
+    "birthday": {
+      "birthday": "anniversaire",
+      "birthdays": "anniversaires",
+      "count-today": "{count} {birthday} aujourd'hui !",
+      "description": "Célébrations dans les 30 prochains jours",
+      "description-count": "{count} {celebration} dans les 30 prochains jours",
+      "error": "Échec du chargement des prochains anniversaires",
+      "in-days": "Dans {days} jours",
+      "more-celebrations": "+{count} autres célébrations",
+      "title": "Anniversaires à venir",
+      "today": "Aujourd'hui !",
+      "tomorrow": "Demain"
+    },
+    "hydration": {
+      "description": "Suivez votre consommation d'eau quotidienne",
+      "error": "Échec du chargement des statistiques d'hydratation",
+      "log-error": "Échec de l'enregistrement de la consommation d'eau",
+      "of-goal": "sur {goal}",
+      "title": "Hydratation"
+    },
+    "managed-employees": {
+      "direct-reports": "{count} subordonnés directs",
+      "no-reports": "Pas encore de subordonnés directs",
+      "no-reports-description": "Vous verrez les membres de votre équipe ici une fois assignés",
+      "people-you-manage": "Personnes que vous gérez",
+      "reporting-to-you": "sous votre responsabilité",
+      "team-members": "{count} membres de l'équipe",
+      "title": "Votre équipe",
+      "view-all": "Voir tout",
+      "view-all-members": "Voir tous les {count} membres de l'équipe"
+    },
+    "pending-approvals": {
+      "absence-requests": "Demandes d'absence",
+      "awaiting-approval": "En attente de votre approbation",
+      "correction": "Correction",
+      "description": "Demandes en attente de votre décision",
+      "error": "Échec du chargement des approbations en attente",
+      "more-requests": "+{count} autres demandes",
+      "pending-requests": "{count} {request} en attente",
+      "requires-attention": "Nécessite une attention immédiate",
+      "review-all": "Examiner toutes les approbations",
+      "time-corrections": "Corrections de temps",
+      "title": "Approbations en attente"
+    },
+    "quick-stats": {
+      "behind": "En retard",
+      "description": "Votre progression hebdomadaire et mensuelle",
+      "error": "Échec du chargement des statistiques rapides",
+      "good-pace": "Bon rythme",
+      "hours": "heures",
+      "on-track": "Sur la bonne voie",
+      "progress": "{actual}h sur {expected}h ({percent}%)",
+      "this-month": "Ce mois-ci",
+      "this-week": "Cette semaine",
+      "title": "Suivi du temps"
+    },
+    "recently-approved": {
+      "absence": "Absence",
+      "all-caught-up": "Tout est à jour !",
+      "approved-recently": "{count} {request} approuvées récemment",
+      "by": "par {name}",
+      "description": "Dernières demandes approuvées",
+      "description-count": "{count} dernières {request} approuvées",
+      "error": "Échec du chargement des demandes récemment approuvées",
+      "more-approved": "+{count} autres approuvées",
+      "time": "Temps",
+      "title": "Récemment approuvé",
+      "view-all": "Voir toutes les approbations"
+    },
+    "team-overview": {
+      "active-count": "{active} sur {total} employés ({percent}%)",
+      "active-employees": "Employés actifs",
+      "avg-hours": "Heures moy.",
+      "description": "Statistiques de l'équipe en un coup d'œil",
+      "employees-button": "Employés",
+      "error": "Échec du chargement des statistiques de l'équipe",
+      "per-week": "/semaine",
+      "teams": "Équipes",
+      "teams-button": "Équipes",
+      "title": "Organisation"
+    },
+    "upcoming-time-off": {
+      "days": "jours",
+      "description": "Absences de l'équipe planifiées",
+      "description-count": "{count} prochaines {absence} prévues",
+      "error": "Échec du chargement des absences à venir",
+      "title": "Congés à venir",
+      "today": "Aujourd'hui",
+      "tomorrow": "Demain",
+      "view-calendar": "Voir le calendrier complet"
+    },
+    "vacation": {
+      "available": "{days} disponibles",
+      "carryover": "Report",
+      "carryover-days": "{days} jours",
+      "days-remaining": "jours restants",
+      "description": "Jours de vacances {year}",
+      "error": "Échec du chargement du solde de vacances",
+      "expires-in": "Expire dans {days} jours",
+      "label-available": "Disponible",
+      "label-pending": "En attente",
+      "label-used": "Utilisé",
+      "no-policy": "Aucune politique de vacances configurée pour cette année",
+      "pending": "{days} en attente",
+      "percent-used": "{percent}% utilisé",
+      "title": "Solde de vacances",
+      "total": "{days} total",
+      "used": "{days} utilisés"
+    },
+    "whos-out": {
+      "error": "Échec du chargement des absences d'aujourd'hui",
+      "everyone-in": "Tout le monde est au bureau aujourd'hui",
+      "everyones-in": "Tout le monde est là !",
+      "full-team": "Équipe au complet disponible !",
+      "members-out": "{count} membres de l'équipe absents",
+      "more-members": "+{count} autres membres de l'équipe",
+      "out-count": "{count} absents",
+      "out-today": "Absents aujourd'hui",
+      "returning-tomorrow": "Retournent demain",
+      "returns-tomorrow": "Retourne demain",
+      "team-availability": "Disponibilité de l'équipe",
+      "title": "Qui est absent aujourd'hui",
+      "until-date": "Jusqu'au {date}",
+      "view-calendar": "Voir le calendrier complet"
+    }
+  }
+}

@@ -5,9 +5,60 @@
  * 3. Parallelized Promise.all patterns
  * 4. Multi-line t() calls
  * 5. i18n key mapping objects
+ * 6. Namespace inference from key prefixes
  *
  * @type {import('@tolgee/cli/extractor').Extractor}
  */
+
+// Map of top-level key prefixes to their namespace
+// Must match the NAMESPACE_MAP in scripts/split-translations.mjs
+const NAMESPACE_PREFIXES = {
+	// common namespace
+	common: 'common',
+	generic: 'common',
+	nav: 'common',
+	header: 'common',
+	user: 'common',
+	table: 'common',
+	validation: 'common',
+	errors: 'common',
+	info: 'common',
+	meta: 'common',
+	// auth namespace
+	auth: 'auth',
+	profile: 'auth',
+	sessions: 'auth',
+	// dashboard namespace
+	dashboard: 'dashboard',
+	// calendar namespace
+	absences: 'calendar',
+	calendar: 'calendar',
+	// timeTracking namespace
+	timeTracking: 'timeTracking',
+	wellness: 'timeTracking',
+	// reports namespace
+	reports: 'reports',
+	// settings namespace
+	settings: 'settings',
+	organization: 'settings',
+	vacation: 'settings',
+	team: 'settings',
+	// onboarding namespace
+	onboarding: 'onboarding',
+};
+
+/**
+ * Infer namespace from a translation key
+ * @param {string} keyName - The full key name (e.g., "settings.employees.title")
+ * @returns {string|undefined} - The namespace or undefined for default
+ */
+function inferNamespace(keyName) {
+	// Get the top-level prefix (first segment before the dot)
+	const firstDot = keyName.indexOf('.');
+	const prefix = firstDot > 0 ? keyName.substring(0, firstDot) : keyName;
+	return NAMESPACE_PREFIXES[prefix];
+}
+
 export default function extractor(code, fileName) {
 	const keys = [];
 	const warnings = [];
@@ -199,10 +250,13 @@ function extractTCalls(code) {
 			}
 		}
 
+		// If namespace not explicitly set, infer from key prefix
+		const finalNamespace = namespace || inferNamespace(finalKeyName);
+
 		results.push({
 			keyName: finalKeyName,
 			defaultValue,
-			namespace,
+			namespace: finalNamespace,
 			line: lineNumber,
 		});
 
@@ -268,10 +322,13 @@ function extractTComponents(code) {
 			}
 		}
 
+		// If namespace not explicitly set, infer from key prefix
+		const finalNamespace = namespace || inferNamespace(keyName);
+
 		results.push({
 			keyName,
 			defaultValue,
-			namespace,
+			namespace: finalNamespace,
 			line: lineNumber,
 		});
 	}
@@ -313,7 +370,7 @@ function extractKeyMappingObjects(code) {
 				results.push({
 					keyName: keyValue,
 					defaultValue,
-					namespace: undefined,
+					namespace: inferNamespace(keyValue),
 					line: lineNumber,
 				});
 			}
@@ -337,7 +394,7 @@ function extractKeyMappingObjects(code) {
 					results.push({
 						keyName: keyValue,
 						defaultValue: undefined,
-						namespace: undefined,
+						namespace: inferNamespace(keyValue),
 						line: lineNumber,
 					});
 				}
@@ -364,7 +421,7 @@ function extractKeyMappingObjects(code) {
 				results.push({
 					keyName: keyValue,
 					defaultValue: undefined,
-					namespace: undefined,
+					namespace: inferNamespace(keyValue),
 					line: lineNumber,
 				});
 			}

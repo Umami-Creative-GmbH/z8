@@ -1,0 +1,126 @@
+{
+  "reports": {
+    "description": "Générez des rapports complets sur les heures de travail et les absences avec des données de télétravail pertinentes pour les impôts",
+    "feature": "générer des rapports",
+    "projects": {
+      "budget": {
+        "exceededBy": "Budget dépassé de {hours} heures",
+        "hoursBudget": "Budget de {hours}h",
+        "hoursLogged": "Heures enregistrées",
+        "hoursRemaining": "{hours} heures restantes dans le budget",
+        "hoursUsed": "{hours}h utilisées",
+        "nearLimit": "Proche de la limite du budget",
+        "onlyRemaining": "Il ne reste que {hours} heures",
+        "onTrack": "Sur la bonne voie",
+        "over": "Au-dessus",
+        "overBudget": "Budget dépassé",
+        "remaining": "Restant",
+        "title": "Progression du budget",
+        "used": "Utilisé"
+      },
+      "cards": {
+        "acrossAllProjects": "Sur tous les projets",
+        "activeContributors": "Contributeurs actifs",
+        "activeCount": "{count} actifs",
+        "activeProjects": "Projets actifs",
+        "budgetUsed": "Budget utilisé",
+        "currentlyInProgress": "Actuellement en cours",
+        "dailyAverage": "Moyenne quotidienne",
+        "exceededBudget": "Budget dépassé",
+        "hoursOfBudget": "{used}h sur {total}h",
+        "hoursPerDay": "Heures par jour",
+        "na": "N/A",
+        "noBudgetSet": "Aucun budget défini",
+        "overBudget": "Budget dépassé",
+        "overdue": "En retard",
+        "pastDeadline": "Date limite dépassée",
+        "teamMembers": "Membres de l'équipe",
+        "totalHours": "Heures totales",
+        "totalProjects": "Total des projets",
+        "workPeriods": "{count} périodes de travail"
+      },
+      "chart": {
+        "cumulativeDescription": "Heures totales cumulées au fil du temps",
+        "cumulativeHours": "Heures cumulées",
+        "cumulativeLabel": "Cumulatif",
+        "dailyDescription": "Heures travaillées par jour pendant la période sélectionnée",
+        "dailyHours": "Heures quotidiennes",
+        "hoursLabel": "Heures",
+        "hoursOverTime": "Heures au fil du temps",
+        "noDataAvailable": "Aucune donnée de suivi du temps disponible pour cette période",
+        "noWorkPeriods": "Aucune période de travail enregistrée dans la plage de dates sélectionnée"
+      },
+      "container": {
+        "error": "Erreur",
+        "generating": "Génération du rapport...",
+        "noReportYet": "Aucun rapport généré pour l'instant",
+        "pleaseWait": "Veuillez patienter pendant que nous compilons les données du projet",
+        "portfolioOverview": "Aperçu du portefeuille",
+        "projectDetails": "Détails du projet",
+        "selectPeriod": "Sélectionnez une période et cliquez sur \"Générer le rapport\" pour commencer"
+      },
+      "filter": {
+        "activeOnly": "Actifs seulement",
+        "activePlanned": "Actifs & Planifiés",
+        "allStatuses": "Tous les statuts",
+        "archived": "Archivé",
+        "completed": "Terminé",
+        "period": "Période",
+        "selectStatus": "Sélectionner le filtre de statut",
+        "status": "Statut"
+      },
+      "generate": "Générer le rapport",
+      "generating": "Génération du rapport...",
+      "page": {
+        "accessDenied": "Accès refusé",
+        "description": "Analysez les heures de projet, l'utilisation du budget et les contributions de l'équipe",
+        "feature": "voir les rapports de projet",
+        "noPermission": "Vous n'avez pas la permission de voir les rapports de projet.",
+        "title": "Rapports de projet"
+      },
+      "status": {
+        "active": "Actif",
+        "archived": "Archivé",
+        "completed": "Terminé",
+        "paused": "En pause",
+        "planned": "Planifié"
+      },
+      "table": {
+        "budget": "Budget",
+        "daysLeft": "{days}j restants",
+        "daysOverdue": "{days}j de retard",
+        "deadline": "Date limite",
+        "dueToday": "À rendre aujourd'hui",
+        "hours": "Heures",
+        "noProjectsFound": "Aucun projet trouvé",
+        "noProjectsMatch": "Aucun projet ne correspond aux filtres sélectionnés",
+        "portfolioDescription": "Aperçu de tous les projets avec métriques de budget et de suivi du temps",
+        "portfolioTitle": "Portefeuille de projets",
+        "project": "Projet",
+        "status": "Statut",
+        "team": "Équipe"
+      },
+      "team": {
+        "byEmployee": "Par employé",
+        "byTeam": "Par équipe",
+        "description": "Répartition des heures entre les membres de l'équipe et les équipes",
+        "employee": "Employé",
+        "hours": "Heures",
+        "hoursLabel": "Heures",
+        "noMembers": "Aucun membre de l'équipe n'a enregistré de temps pour ce projet",
+        "sessions": "Sessions",
+        "title": "Répartition de l'équipe"
+      },
+      "toast": {
+        "failedGenerate": "Échec de la génération du rapport",
+        "failedPortfolio": "Échec de la génération du rapport de portefeuille",
+        "failedProject": "Échec de la génération du rapport de projet",
+        "failedProjectReport": "Échec de la génération du rapport de projet",
+        "portfolioGenerated": "Rapport de portefeuille généré",
+        "projectGenerated": "Rapport généré pour {name}",
+        "unexpectedError": "Une erreur inattendue s'est produite"
+      }
+    },
+    "title": "Rapports des employés"
+  }
+}

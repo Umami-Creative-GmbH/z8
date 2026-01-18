@@ -1,0 +1,126 @@
+{
+  "reports": {
+    "description": "Genera report completi su ore lavorative e assenze con dati su smart working rilevanti ai fini fiscali",
+    "feature": "generare report",
+    "projects": {
+      "budget": {
+        "exceededBy": "Budget superato di {hours} ore",
+        "hoursBudget": "Budget di {hours}h",
+        "hoursLogged": "Ore registrate",
+        "hoursRemaining": "{hours} ore rimanenti nel budget",
+        "hoursUsed": "{hours}h usate",
+        "nearLimit": "Vicino al limite del budget",
+        "onlyRemaining": "Solo {hours} ore rimanenti",
+        "onTrack": "In linea",
+        "over": "Oltre",
+        "overBudget": "Fuori budget",
+        "remaining": "Rimanente",
+        "title": "Progresso del budget",
+        "used": "Usato"
+      },
+      "cards": {
+        "acrossAllProjects": "In tutti i progetti",
+        "activeContributors": "Collaboratori attivi",
+        "activeCount": "{count} attivi",
+        "activeProjects": "Progetti attivi",
+        "budgetUsed": "Budget usato",
+        "currentlyInProgress": "Attualmente in corso",
+        "dailyAverage": "Media giornaliera",
+        "exceededBudget": "Budget superato",
+        "hoursOfBudget": "{used}h su {total}h",
+        "hoursPerDay": "Ore al giorno",
+        "na": "N/D",
+        "noBudgetSet": "Nessun budget impostato",
+        "overBudget": "Fuori budget",
+        "overdue": "In ritardo",
+        "pastDeadline": "Scadenza passata",
+        "teamMembers": "Membri del team",
+        "totalHours": "Ore totali",
+        "totalProjects": "Progetti totali",
+        "workPeriods": "{count} periodi di lavoro"
+      },
+      "chart": {
+        "cumulativeDescription": "Ore totali accumulate nel tempo",
+        "cumulativeHours": "Ore cumulative",
+        "cumulativeLabel": "Cumulativo",
+        "dailyDescription": "Ore lavorate al giorno durante il periodo selezionato",
+        "dailyHours": "Ore giornaliere",
+        "hoursLabel": "Ore",
+        "hoursOverTime": "Ore nel tempo",
+        "noDataAvailable": "Nessun dato di tracciamento del tempo disponibile per questo periodo",
+        "noWorkPeriods": "Nessun periodo di lavoro registrato nell'intervallo di date selezionato"
+      },
+      "container": {
+        "error": "Errore",
+        "generating": "Generazione report...",
+        "noReportYet": "Nessun report ancora generato",
+        "pleaseWait": "Attendi mentre compiliamo i dati del progetto",
+        "portfolioOverview": "Panoramica portafoglio",
+        "projectDetails": "Dettagli progetto",
+        "selectPeriod": "Seleziona un periodo e clicca su \"Genera report\" per iniziare"
+      },
+      "filter": {
+        "activeOnly": "Solo attivi",
+        "activePlanned": "Attivi e Pianificati",
+        "allStatuses": "Tutti gli stati",
+        "archived": "Archiviato",
+        "completed": "Completato",
+        "period": "Periodo",
+        "selectStatus": "Seleziona filtro stato",
+        "status": "Stato"
+      },
+      "generate": "Genera report",
+      "generating": "Generazione report...",
+      "page": {
+        "accessDenied": "Accesso negato",
+        "description": "Analizza le ore del progetto, l'utilizzo del budget e i contributi del team",
+        "feature": "visualizza report progetti",
+        "noPermission": "Non hai il permesso di visualizzare i report dei progetti.",
+        "title": "Report progetti"
+      },
+      "status": {
+        "active": "Attivo",
+        "archived": "Archiviato",
+        "completed": "Completato",
+        "paused": "In pausa",
+        "planned": "Pianificato"
+      },
+      "table": {
+        "budget": "Budget",
+        "daysLeft": "{days}g rimanenti",
+        "daysOverdue": "{days}g di ritardo",
+        "deadline": "Scadenza",
+        "dueToday": "Scade oggi",
+        "hours": "Ore",
+        "noProjectsFound": "Nessun progetto trovato",
+        "noProjectsMatch": "Nessun progetto corrisponde ai filtri selezionati",
+        "portfolioDescription": "Panoramica di tutti i progetti con metriche di budget e tracciamento del tempo",
+        "portfolioTitle": "Portafoglio progetti",
+        "project": "Progetto",
+        "status": "Stato",
+        "team": "Team"
+      },
+      "team": {
+        "byEmployee": "Per dipendente",
+        "byTeam": "Per team",
+        "description": "Distribuzione delle ore tra membri del team e team",
+        "employee": "Dipendente",
+        "hours": "Ore",
+        "hoursLabel": "Ore",
+        "noMembers": "Nessun membro del team ha registrato tempo per questo progetto",
+        "sessions": "Sessioni",
+        "title": "Ripartizione team"
+      },
+      "toast": {
+        "failedGenerate": "Impossibile generare report",
+        "failedPortfolio": "Impossibile generare report portafoglio",
+        "failedProject": "Impossibile generare report progetto",
+        "failedProjectReport": "Impossibile generare report progetto",
+        "portfolioGenerated": "Report portafoglio generato",
+        "projectGenerated": "Report generato per {name}",
+        "unexpectedError": "Si è verificato un errore imprevisto"
+      }
+    },
+    "title": "Report dipendenti"
+  }
+}

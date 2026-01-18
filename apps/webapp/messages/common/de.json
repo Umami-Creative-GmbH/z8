@@ -1,0 +1,351 @@
+{
+  "analytics": {
+    "accessRestricted": "Zugriff eingeschränkt",
+    "accessRestrictedMessage": "Analysen sind nur für Administratoren und Manager verfügbar.",
+    "dateRange": {
+      "custom": "Benutzerdefinierter Zeitraum",
+      "label": "Zeitraum",
+      "pickRange": "Zeitraum auswählen",
+      "presets": {
+        "1y": "Letztes Jahr",
+        "30d": "Letzte 30 Tage",
+        "3m": "Letzte 3 Monate",
+        "6m": "Letzte 6 Monate",
+        "7d": "Letzte 7 Tage"
+      }
+    },
+    "description": "Umfassende Einblicke in Teamleistung, Arbeitszeiten und Abwesenheitsmuster",
+    "export": {
+      "button": "Exportieren",
+      "csv": "Als CSV exportieren",
+      "error": "Export als {format} fehlgeschlagen",
+      "excel": "Als Excel exportieren",
+      "exporting": "Exportiere {format}...",
+      "success": "Als {format} exportiert"
+    },
+    "overview": {
+      "charts": {
+        "absencePatterns": {
+          "description": "Abwesenheitsverteilung nach Kategorie",
+          "title": "Abwesenheitsmuster"
+        },
+        "workHoursTrend": {
+          "description": "Erfasste Arbeitsstunden im Zeitverlauf",
+          "title": "Arbeitsstundentrend"
+        }
+      },
+      "kpis": {
+        "absenceRate": {
+          "description": "Der gesamten verfügbaren Arbeitstage",
+          "label": "Abwesenheitsrate"
+        },
+        "approvalRate": {
+          "description": "Der eingereichten Anfragen genehmigt",
+          "label": "Genehmigungsrate"
+        },
+        "avgWorkHours": {
+          "description": "Pro Mitarbeiter im ausgewählten Zeitraum",
+          "label": "Ø Arbeitsstunden"
+        },
+        "totalEmployees": {
+          "description": "Aktive Mitarbeiter in der Organisation",
+          "label": "Mitarbeiter gesamt"
+        }
+      },
+      "title": "Analyseübersicht"
+    },
+    "tabs": {
+      "overview": "Übersicht",
+      "teamPerformance": "Teamleistung",
+      "vacationTrends": "Urlaubstrends",
+      "workHours": "Arbeitszeiten"
+    },
+    "teamPerformance": {
+      "overtime": {
+        "description": "Stundenabweichung von erwarteten Arbeitsstunden",
+        "title": "Über- & Unterstunden"
+      },
+      "performanceDetails": {
+        "columns": {
+          "avgPerEmployee": "Ø pro Mitarbeiter",
+          "employeeCount": "Mitarbeiteranzahl",
+          "status": "Status",
+          "team": "Team",
+          "totalHours": "Stunden gesamt"
+        },
+        "description": "Aufschlüsselung der Arbeitsstunden nach Team und Mitarbeiter",
+        "noData": "Keine Daten für den ausgewählten Zeitraum verfügbar",
+        "status": {
+          "low": "Niedrig",
+          "onTrack": "Im Plan",
+          "under": "Unter"
+        },
+        "title": "Teamleistungsdetails"
+      },
+      "teamComparison": {
+        "description": "Gesamte Arbeitsstunden pro Team im ausgewählten Zeitraum",
+        "title": "Teamvergleich"
+      },
+      "title": "Teamleistung"
+    },
+    "title": "Analysen",
+    "vacationTrends": {
+      "monthlyUsage": {
+        "description": "Genommene Urlaubstage pro Monat",
+        "title": "Monatliche Urlaubsnutzung"
+      },
+      "peakMonths": {
+        "description": "Monate mit höchster Urlaubsaktivität",
+        "title": "Urlaubsspitzenmonate"
+      },
+      "title": "Urlaubstrends",
+      "utilization": {
+        "daysRemaining": "{count} Tage verbleibend",
+        "daysTaken": "{count} Tage genommen",
+        "description": "Gesamte Urlaubstagenutzung in der Organisation",
+        "label": "Gesamtnutzung",
+        "title": "Urlaubsnutzung"
+      },
+      "vacationBalance": {
+        "columns": {
+          "allocated": "Zugewiesen",
+          "employee": "Mitarbeiter",
+          "remaining": "Verbleibend",
+          "taken": "Genommen",
+          "utilization": "Nutzung"
+        },
+        "description": "Zugewiesene, genommene und verbleibende Tage pro Mitarbeiter",
+        "noData": "Keine Daten für den ausgewählten Zeitraum verfügbar",
+        "title": "Urlaubskontingent"
+      }
+    },
+    "workHours": {
+      "dailyHours": {
+        "description": "Tatsächliche vs. erwartete Arbeitsstunden pro Tag",
+        "title": "Tägliche Arbeitszeiten"
+      },
+      "distribution": {
+        "description": "Arbeitsstundenvergleich der Mitarbeiter (horizontales Balkendiagramm)",
+        "title": "Arbeitszeitenverteilung"
+      },
+      "employeeComparison": {
+        "columns": {
+          "employee": "Mitarbeiter",
+          "expectedHours": "Erwartete Stunden",
+          "status": "Status",
+          "totalHours": "Stunden gesamt",
+          "variance": "Abweichung"
+        },
+        "description": "Gesamtstunden und Abweichung vom Erwarteten pro Mitarbeiter",
+        "noData": "Keine Daten für den ausgewählten Zeitraum verfügbar",
+        "title": "Mitarbeiter-Arbeitszeiten"
+      },
+      "overtimeTrend": {
+        "description": "Stundenabweichung von erwarteten Arbeitsstunden im Zeitverlauf",
+        "title": "Über- & Unterstundentrend"
+      },
+      "title": "Arbeitszeiten"
+    }
+  },
+  "common": {
+    "active": "Aktiv",
+    "add": "Hinzufügen",
+    "assign": "Zuweisen",
+    "back": "Zurück",
+    "background-image-alt": "Hintergrundbild - Foto von Ally Griffin auf Unsplash",
+    "cancel": "Abbrechen",
+    "clearSelection": "Löschen",
+    "create": "Erstellen",
+    "days": {
+      "friday": "Freitag",
+      "label": "Tage",
+      "monday": "Montag",
+      "saturday": "Samstag",
+      "sunday": "Sonntag",
+      "thursday": "Donnerstag",
+      "tuesday": "Dienstag",
+      "wednesday": "Mittwoch"
+    },
+    "delete": "Löschen",
+    "deleting": "Löschen...",
+    "deselectAll": "Alle abwählen",
+    "details": "Details",
+    "dismiss": "Schließen",
+    "edit": "Bearbeiten",
+    "enabled": "Aktiviert",
+    "error-occurred": "Ein Fehler ist aufgetreten",
+    "gender": {
+      "female": "Weiblich",
+      "male": "Männlich",
+      "other": "Andere"
+    },
+    "inactive": "Inaktiv",
+    "loading": "Laden...",
+    "months": {
+      "april": "April",
+      "august": "August",
+      "december": "Dezember",
+      "february": "Februar",
+      "january": "Januar",
+      "july": "Juli",
+      "june": "Juni",
+      "march": "März",
+      "may": "Mai",
+      "november": "November",
+      "october": "Oktober",
+      "september": "September"
+    },
+    "name": "Name",
+    "new": "Neu",
+    "next": "Weiter",
+    "openMenu": "Menü öffnen",
+    "optional": "optional",
+    "or": "Oder",
+    "refresh": "Aktualisieren",
+    "remove": "Entfernen",
+    "removing": "Entfernen...",
+    "reset": "Zurücksetzen",
+    "retry": "Erneut versuchen",
+    "save": "Speichern",
+    "saveChanges": "Änderungen speichern",
+    "saving": "Speichern...",
+    "selectAll": "Alle auswählen",
+    "select-language": "Sprache auswählen",
+    "selectRow": "Zeile auswählen",
+    "skip": "Überspringen",
+    "status": "Status",
+    "today": "Heute",
+    "unexpectedError": "Ein unerwarteter Fehler ist aufgetreten",
+    "unknown": "Unbekannt",
+    "unknownEmployee": "Unbekannter Mitarbeiter",
+    "unknownTeam": "Unbekanntes Team",
+    "uploading": "Hochladen...",
+    "validationError": "Validierungsfehler",
+    "weekdays": {
+      "fr": "Fr",
+      "fri": "Fr",
+      "mo": "Mo",
+      "mon": "Mo",
+      "sa": "Sa",
+      "sat": "Sa",
+      "su": "So",
+      "sun": "So",
+      "th": "Do",
+      "thu": "Do",
+      "tu": "Di",
+      "tue": "Di",
+      "we": "Mi",
+      "wed": "Mi"
+    }
+  },
+  "errors": {
+    "noEmployee": {
+      "contactAdmin": "Administrator kontaktieren",
+      "createOrg": "Organisation erstellen",
+      "description": "Sie benötigen ein Mitarbeiterprofil, um ${feature}. Bitte erstellen Sie eine Organisation oder wenden Sie sich an Ihren Administrator.",
+      "emailBody": "Hallo,\n\nich benötige ein eingerichtetes Mitarbeiterprofil, um auf die Plattformfunktionen zugreifen zu können. Könnten Sie mir bitte dabei helfen?\n\nVielen Dank!",
+      "emailSubject": "Einrichtung des Mitarbeiterprofils erforderlich",
+      "helpText": "Wenn Sie zu einer Organisation eingeladen wurden, bitten Sie Ihren Administrator, Ihr Mitarbeiterprofil einzurichten.",
+      "title": "Mitarbeiterprofil erforderlich"
+    },
+    "noOrganization": {
+      "createOrg": "Organisation erstellen",
+      "description": "Sie sind noch Teil keiner Organisation. Erstellen Sie eine, um zu beginnen, oder warten Sie auf eine Einladung.",
+      "title": "Keine Organisation gefunden",
+      "waiting": "Warten Sie auf eine Einladung?",
+      "waitingDesc": "Ihr Administrator wird Ihnen eine Einladungs-E-Mail senden. Überprüfen Sie Ihren Posteingang und Spam-Ordner."
+    }
+  },
+  "generic": {
+    "done": "Fertig",
+    "submit": "Absenden"
+  },
+  "header": {
+    "clock-in": "Einstempeln",
+    "clock-out": "Ausstempeln",
+    "request-absence": "Abwesenheit beantragen"
+  },
+  "info": {
+    "back-to-login": "Zurück zur Anmeldung",
+    "privacy-policy": "Datenschutzrichtlinie",
+    "terms-of-service": "Nutzungsbedingungen"
+  },
+  "meta": {
+    "description": "z8 - Zeiterfassungs-App",
+    "keywords": "z8, Zeit, App, Produktivität",
+    "title": "z8 - Zeiterfassungs-App"
+  },
+  "nav": {
+    "absences": "Abwesenheiten",
+    "active-proposals": "Aktive Vorschläge",
+    "analytics": "Analysen",
+    "approvals": "Genehmigungen",
+    "archived": "Archiviert",
+    "calendar": "Kalender",
+    "capture": "Erfassung",
+    "dashboard": "Dashboard",
+    "data-library": "Datenbibliothek",
+    "get-help": "Hilfe",
+    "lifecycle": "Lebenszyklus",
+    "projects": "Projekte",
+    "prompts": "Prompts",
+    "proposal": "Vorschlag",
+    "reports": "Berichte",
+    "scheduling": "Planung",
+    "search": "Suche",
+    "settings": "Einstellungen",
+    "team": "Team",
+    "team-label": "Team",
+    "time-tracking": "Zeiterfassung",
+    "word-assistant": "Word-Assistent"
+  },
+  "table": {
+    "description": "Zeigt die Gesamtbesucherzahl der letzten 6 Monate an. Dies ist nur ein zufälliger Text, um das Layout zu testen. Er erstreckt sich über mehrere Zeilen und sollte umbrechen.",
+    "header": "Kopfzeile",
+    "limit": "Limit",
+    "reviewer": "Prüfer",
+    "select-reviewer": "Prüfer auswählen",
+    "select-status": "Status auswählen",
+    "select-type": "Typ auswählen",
+    "showing-visitors": "Zeigt die Gesamtbesucher der letzten 6 Monate",
+    "status": "Status",
+    "status-options": {
+      "done": "Erledigt",
+      "in-progress": "In Bearbeitung",
+      "not-started": "Nicht begonnen"
+    },
+    "target": "Ziel",
+    "trending-up": "Aufwärtstrend um 5,2% diesen Monat",
+    "type": "Typ",
+    "type-options": {
+      "capabilities": "Fähigkeiten",
+      "cover-page": "Deckblatt",
+      "design": "Design",
+      "executive-summary": "Zusammenfassung",
+      "focus-documents": "Fokus-Dokumente",
+      "narrative": "Erzählung",
+      "table-of-contents": "Inhaltsverzeichnis",
+      "technical-approach": "Technischer Ansatz"
+    }
+  },
+  "user": {
+    "account": "Konto",
+    "billing": "Abrechnung",
+    "language": "Sprache",
+    "logging-out": "Logge aus...",
+    "log-out": "Abmelden",
+    "notifications": "Benachrichtigungen",
+    "profile": "Profil",
+    "theme": "Design",
+    "theme-dark": "Dunkel",
+    "theme-light": "Hell",
+    "theme-system": "System",
+    "time-settings": "Zeiteinstellungen"
+  },
+  "validation": {
+    "invalid-email": "Ungültige E-Mail-Adresse",
+    "invalid-password": "Ungültiges Passwort",
+    "name-required": "Name ist erforderlich",
+    "password-required": "Passwort ist erforderlich"
+  }
+}

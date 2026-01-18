@@ -1,0 +1,126 @@
+{
+  "reports": {
+    "description": "Gere relatórios completos de horas de trabalho e ausências com dados de teletrabalho relevantes para impostos",
+    "feature": "gerar relatórios",
+    "projects": {
+      "budget": {
+        "exceededBy": "Orçamento excedido em {hours} horas",
+        "hoursBudget": "Orçamento de {hours}h",
+        "hoursLogged": "Horas registadas",
+        "hoursRemaining": "{hours} horas restantes no orçamento",
+        "hoursUsed": "{hours}h usadas",
+        "nearLimit": "Perto do limite do orçamento",
+        "onlyRemaining": "Apenas {hours} horas restantes",
+        "onTrack": "No caminho certo",
+        "over": "Acima",
+        "overBudget": "Acima do orçamento",
+        "remaining": "Restante",
+        "title": "Progresso do orçamento",
+        "used": "Usado"
+      },
+      "cards": {
+        "acrossAllProjects": "Em todos os projetos",
+        "activeContributors": "Colaboradores ativos",
+        "activeCount": "{count} ativos",
+        "activeProjects": "Projetos ativos",
+        "budgetUsed": "Orçamento usado",
+        "currentlyInProgress": "Atualmente em progresso",
+        "dailyAverage": "Média diária",
+        "exceededBudget": "Orçamento excedido",
+        "hoursOfBudget": "{used}h de {total}h",
+        "hoursPerDay": "Horas por dia",
+        "na": "N/A",
+        "noBudgetSet": "Sem orçamento definido",
+        "overBudget": "Acima do orçamento",
+        "overdue": "Em atraso",
+        "pastDeadline": "Prazo ultrapassado",
+        "teamMembers": "Membros da equipa",
+        "totalHours": "Total de horas",
+        "totalProjects": "Total de projetos",
+        "workPeriods": "{count} períodos de trabalho"
+      },
+      "chart": {
+        "cumulativeDescription": "Total de horas acumuladas ao longo do tempo",
+        "cumulativeHours": "Horas acumuladas",
+        "cumulativeLabel": "Acumulado",
+        "dailyDescription": "Horas trabalhadas por dia durante o período selecionado",
+        "dailyHours": "Horas diárias",
+        "hoursLabel": "Horas",
+        "hoursOverTime": "Horas ao longo do tempo",
+        "noDataAvailable": "Sem dados de registo de tempo disponíveis para este período",
+        "noWorkPeriods": "Nenhum período de trabalho registado no intervalo de datas selecionado"
+      },
+      "container": {
+        "error": "Erro",
+        "generating": "A gerar relatório...",
+        "noReportYet": "Ainda nenhum relatório gerado",
+        "pleaseWait": "Por favor aguarde enquanto compilamos os dados do projeto",
+        "portfolioOverview": "Visão geral do portefólio",
+        "projectDetails": "Detalhes do projeto",
+        "selectPeriod": "Selecione um período e clique em \"Gerar Relatório\" para começar"
+      },
+      "filter": {
+        "activeOnly": "Apenas ativos",
+        "activePlanned": "Ativos e Planeados",
+        "allStatuses": "Todos os estados",
+        "archived": "Arquivado",
+        "completed": "Concluído",
+        "period": "Período",
+        "selectStatus": "Selecionar filtro de estado",
+        "status": "Estado"
+      },
+      "generate": "Gerar Relatório",
+      "generating": "A gerar relatório...",
+      "page": {
+        "accessDenied": "Acesso negado",
+        "description": "Analise horas do projeto, utilização do orçamento e contribuições da equipa",
+        "feature": "ver relatórios de projeto",
+        "noPermission": "Não tem permissão para ver relatórios de projeto.",
+        "title": "Relatórios de projeto"
+      },
+      "status": {
+        "active": "Ativo",
+        "archived": "Arquivado",
+        "completed": "Concluído",
+        "paused": "Em pausa",
+        "planned": "Planeado"
+      },
+      "table": {
+        "budget": "Orçamento",
+        "daysLeft": "{days}d restantes",
+        "daysOverdue": "{days}d em atraso",
+        "deadline": "Prazo",
+        "dueToday": "Vence hoje",
+        "hours": "Horas",
+        "noProjectsFound": "Nenhum projeto encontrado",
+        "noProjectsMatch": "Nenhum projeto corresponde aos filtros selecionados",
+        "portfolioDescription": "Visão geral de todos os projetos com métricas de orçamento e registo de tempo",
+        "portfolioTitle": "Portefólio de projetos",
+        "project": "Projeto",
+        "status": "Estado",
+        "team": "Equipa"
+      },
+      "team": {
+        "byEmployee": "Por funcionário",
+        "byTeam": "Por equipa",
+        "description": "Distribuição de horas entre membros da equipa e equipas",
+        "employee": "Funcionário",
+        "hours": "Horas",
+        "hoursLabel": "Horas",
+        "noMembers": "Nenhum membro da equipa registou tempo para este projeto",
+        "sessions": "Sessões",
+        "title": "Detalhamento da equipa"
+      },
+      "toast": {
+        "failedGenerate": "Falha ao gerar relatório",
+        "failedPortfolio": "Falha ao gerar relatório de portefólio",
+        "failedProject": "Falha ao gerar relatório do projeto",
+        "failedProjectReport": "Falha ao gerar relatório do projeto",
+        "portfolioGenerated": "Relatório de portefólio gerado",
+        "projectGenerated": "Relatório gerado para {name}",
+        "unexpectedError": "Ocorreu um erro inesperado"
+      }
+    },
+    "title": "Relatórios de funcionários"
+  }
+}

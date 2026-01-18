@@ -1,0 +1,210 @@
+{
+  "dashboard": {
+    "birthday": {
+      "birthday": "Geburtstag",
+      "birthdays": "Geburtstage",
+      "count-today": "{count} {birthday} heute!",
+      "description": "Feiern in den nächsten 30 Tagen",
+      "description-count": "{count} {celebration} in den nächsten 30 Tagen",
+      "error": "Fehler beim Laden der kommenden Geburtstage",
+      "in-days": "In {days} Tagen",
+      "more-celebrations": "+{count} weitere Feiern",
+      "title": "Kommende Geburtstage",
+      "today": "Heute!",
+      "tomorrow": "Morgen"
+    },
+    "cards": {
+      "accounts": {
+        "active": "Aktive Konten",
+        "engagement": "Engagement übertrifft Ziele",
+        "retention": "Starke Nutzerbindung"
+      },
+      "customers": {
+        "acquisition": "Akquise benötigt Aufmerksamkeit",
+        "down": "20% weniger in diesem Zeitraum",
+        "new": "Neue Kunden"
+      },
+      "growth": {
+        "increase": "Stetige Leistungssteigerung",
+        "projections": "Erfüllt Wachstumsprognosen",
+        "rate": "Wachstumsrate"
+      },
+      "revenue": {
+        "total": "Gesamtumsatz",
+        "trending-up": "Aufwärtstrend diesen Monat",
+        "visitors": "Besucher der letzten 6 Monate"
+      }
+    },
+    "github": "GitHub",
+    "hydration": {
+      "description": "Verfolgen Sie Ihre tägliche Wasseraufnahme",
+      "error": "Fehler beim Laden der Wasseraufnahme-Statistiken",
+      "log-error": "Fehler beim Protokollieren der Wasseraufnahme",
+      "of-goal": "von {goal}",
+      "title": "Hydratation"
+    },
+    "managed-employees": {
+      "direct-reports": "{count} direkte Mitarbeiter",
+      "no-reports": "Noch keine direkten Mitarbeiter",
+      "no-reports-description": "Sie sehen Ihre Teammitglieder hier, sobald sie zugewiesen sind",
+      "people-you-manage": "Personen, die Sie verwalten",
+      "reporting-to-you": "berichten Ihnen",
+      "team-members": "{count} Teammitglieder",
+      "title": "Ihr Team",
+      "view-all": "Alle anzeigen",
+      "view-all-members": "Alle {count} Teammitglieder anzeigen"
+    },
+    "pending-approvals": {
+      "absence-requests": "Abwesenheitsanträge",
+      "awaiting-approval": "Wartet auf Ihre Genehmigung",
+      "correction": "Korrektur",
+      "description": "Anträge, die auf Ihre Entscheidung warten",
+      "error": "Fehler beim Laden der ausstehenden Genehmigungen",
+      "more-requests": "+{count} weitere Anträge",
+      "pending-requests": "{count} ausstehende {request}",
+      "requires-attention": "Erfordert sofortige Aufmerksamkeit",
+      "review-all": "Alle Genehmigungen überprüfen",
+      "time-corrections": "Zeitkorrekturen",
+      "title": "Ausstehende Genehmigungen"
+    },
+    "quick-stats": {
+      "behind": "Im Rückstand",
+      "description": "Ihr wöchentlicher und monatlicher Fortschritt",
+      "error": "Fehler beim Laden der Schnellstatistiken",
+      "good-pace": "Gutes Tempo",
+      "hours": "Stunden",
+      "on-track": "Auf Kurs",
+      "progress": "{actual}h von {expected}h ({percent}%)",
+      "this-month": "Diesen Monat",
+      "this-week": "Diese Woche",
+      "title": "Zeiterfassung"
+    },
+    "recently-approved": {
+      "absence": "Abwesenheit",
+      "all-caught-up": "Alles erledigt!",
+      "approved-recently": "{count} {request} kürzlich genehmigt",
+      "by": "von {name}",
+      "description": "Zuletzt genehmigte Anträge",
+      "description-count": "Letzte {count} genehmigte {request}",
+      "error": "Fehler beim Laden der kürzlich genehmigten Anträge",
+      "more-approved": "+{count} weitere genehmigt",
+      "time": "Zeit",
+      "title": "Kürzlich genehmigt",
+      "view-all": "Alle Genehmigungen anzeigen"
+    },
+    "team-overview": {
+      "active-count": "{active} von {total} Mitarbeitern ({percent}%)",
+      "active-employees": "Aktive Mitarbeiter",
+      "avg-hours": "Ø Stunden",
+      "description": "Teamstatistiken auf einen Blick",
+      "employees-button": "Mitarbeiter",
+      "error": "Fehler beim Laden der Teamstatistiken",
+      "per-week": "/Woche",
+      "teams": "Teams",
+      "teams-button": "Teams",
+      "title": "Organisation"
+    },
+    "title": "Dashboard",
+    "upcoming-time-off": {
+      "days": "Tage",
+      "description": "Geplante Teamabwesenheiten",
+      "description-count": "Nächste {count} geplante {absence}",
+      "error": "Fehler beim Laden der kommenden Abwesenheiten",
+      "title": "Kommende Abwesenheiten",
+      "today": "Heute",
+      "tomorrow": "Morgen",
+      "view-calendar": "Vollständigen Kalender anzeigen"
+    },
+    "vacation": {
+      "available": "{days} verfügbar",
+      "carryover": "Übertrag",
+      "carryover-days": "{days} Tage",
+      "days-remaining": "verbleibende Tage",
+      "description": "{year} Urlaubstage",
+      "error": "Fehler beim Laden des Urlaubssaldos",
+      "expires-in": "Läuft in {days} Tagen ab",
+      "label-available": "Verfügbar",
+      "label-pending": "Ausstehend",
+      "label-used": "Verbraucht",
+      "no-policy": "Keine Urlaubsrichtlinie für dieses Jahr konfiguriert",
+      "pending": "{days} ausstehend",
+      "percent-used": "{percent}% verbraucht",
+      "title": "Urlaubssaldo",
+      "total": "{days} gesamt",
+      "used": "{days} verbraucht"
+    },
+    "whos-out": {
+      "error": "Fehler beim Laden der heutigen Abwesenheiten",
+      "everyone-in": "Alle sind heute im Büro",
+      "everyones-in": "Alle da!",
+      "full-team": "Volles Team verfügbar!",
+      "members-out": "{count} Teammitglieder abwesend",
+      "more-members": "+{count} weitere Teammitglieder",
+      "out-count": "{count} abwesend",
+      "out-today": "Heute abwesend",
+      "returning-tomorrow": "Kehren morgen zurück",
+      "returns-tomorrow": "Kehrt morgen zurück",
+      "team-availability": "Teamverfügbarkeit",
+      "title": "Wer ist heute abwesend",
+      "until-date": "Bis {date}",
+      "view-calendar": "Vollständigen Kalender anzeigen"
+    },
+    "widgets": {
+      "birthdays": {
+        "andMore": "und {count} weitere...",
+        "description": "{count, plural, one {# Geburtstag in den nächsten 30 Tagen} other {# Geburtstage in den nächsten 30 Tagen} =0 {Keine Geburtstage in den nächsten 30 Tagen}}",
+        "error": "Bevorstehende Geburtstage konnten nicht geladen werden",
+        "inDays": "in {days} Tagen",
+        "loading": "Lade Geburtstage...",
+        "noData": "Keine bevorstehenden Geburtstage",
+        "title": "Bevorstehende Geburtstage",
+        "today": "Heute!",
+        "tomorrow": "Morgen"
+      },
+      "quickStats": {
+        "error": "Schnellstatistiken konnten nicht geladen werden",
+        "loading": "Lade Statistiken...",
+        "low": "Wenig Stunden",
+        "onTrack": "Im Plan",
+        "thisMonth": "Dieser Monat",
+        "thisWeek": "Diese Woche",
+        "title": "Schnellstatistiken",
+        "under": "Unter Ziel"
+      },
+      "recentlyApproved": {
+        "absence": "Abwesenheit",
+        "andMore": "und {count} weitere...",
+        "approvedBy": "Genehmigt von {name}",
+        "description": "{count, plural, one {Letzte {count} genehmigte Anfrage} other {Letzte {count} genehmigte Anfragen}}",
+        "error": "Kürzlich genehmigte Anfragen konnten nicht geladen werden",
+        "loading": "Lade kürzlich genehmigte...",
+        "noData": "Keine kürzlich genehmigten Anfragen",
+        "timeCorrection": "Zeitkorrektur",
+        "title": "Kürzlich genehmigt",
+        "viewAll": "Alle Genehmigungen anzeigen"
+      },
+      "teamCalendar": {
+        "description": "{count, plural, one {# Tag mit Abwesenheiten} other {# Tage mit Abwesenheiten} =0 {Keine Abwesenheiten diesen Monat}}",
+        "error": "Teamkalender konnte nicht geladen werden",
+        "legend": "Team-Abwesenheiten",
+        "loading": "Lade Teamkalender...",
+        "nextMonth": "Nächster Monat",
+        "previousMonth": "Vorheriger Monat",
+        "teamMembersOut": "{count, plural, one {# Teammitglied abwesend} other {# Teammitglieder abwesend} =0 {Keine Teammitglieder abwesend}}",
+        "title": "Teamkalender",
+        "today": "Heute"
+      },
+      "upcomingTimeOff": {
+        "description": "{count, plural, one {# Tag mit Abwesenheiten} other {# Tage mit Abwesenheiten} =0 {Keine bevorstehenden Abwesenheiten}}",
+        "error": "Bevorstehende Abwesenheiten konnten nicht geladen werden",
+        "loading": "Lade bevorstehende Abwesenheiten...",
+        "noData": "Keine bevorstehenden Abwesenheiten",
+        "startsIn": "Beginnt in {days} Tagen",
+        "startsToday": "Beginnt heute",
+        "startsTomorrow": "Beginnt morgen",
+        "title": "Bevorstehende Abwesenheiten",
+        "viewCalendar": "Vollständigen Kalender anzeigen"
+      }
+    }
+  }
+}

@@ -1,0 +1,129 @@
+{
+  "dashboard": {
+    "birthday": {
+      "birthday": "compleanno",
+      "birthdays": "compleanni",
+      "count-today": "{count} {birthday} oggi!",
+      "description": "Celebrazioni nei prossimi 30 giorni",
+      "description-count": "{count} {celebration} nei prossimi 30 giorni",
+      "error": "Impossibile caricare i prossimi compleanni",
+      "in-days": "Tra {days} giorni",
+      "more-celebrations": "+{count} altre celebrazioni",
+      "title": "Compleanni imminenti",
+      "today": "Oggi!",
+      "tomorrow": "Domani"
+    },
+    "hydration": {
+      "description": "Monitora la tua assunzione giornaliera di acqua",
+      "error": "Impossibile caricare le statistiche di idratazione",
+      "log-error": "Impossibile registrare l'assunzione di acqua",
+      "of-goal": "di {goal}",
+      "title": "Idratazione"
+    },
+    "managed-employees": {
+      "direct-reports": "{count} subordinati diretti",
+      "no-reports": "Nessun subordinato diretto ancora",
+      "no-reports-description": "Vedrai i membri del tuo team qui una volta assegnati",
+      "people-you-manage": "Persone che gestisci",
+      "reporting-to-you": "che riportano a te",
+      "team-members": "{count} membri del team",
+      "title": "Il tuo team",
+      "view-all": "Vedi tutti",
+      "view-all-members": "Vedi tutti i {count} membri del team"
+    },
+    "pending-approvals": {
+      "absence-requests": "Richieste di assenza",
+      "awaiting-approval": "In attesa della tua approvazione",
+      "correction": "Correzione",
+      "description": "Richieste in attesa della tua decisione",
+      "error": "Impossibile caricare le approvazioni in sospeso",
+      "more-requests": "+{count} altre richieste",
+      "pending-requests": "{count} {request} in sospeso",
+      "requires-attention": "Richiede attenzione immediata",
+      "review-all": "Rivedi tutte le approvazioni",
+      "time-corrections": "Correzioni di tempo",
+      "title": "Approvazioni in sospeso"
+    },
+    "quick-stats": {
+      "behind": "In ritardo",
+      "description": "Il tuo progresso settimanale e mensile",
+      "error": "Impossibile caricare le statistiche rapide",
+      "good-pace": "Buon ritmo",
+      "hours": "ore",
+      "on-track": "In linea",
+      "progress": "{actual}h su {expected}h ({percent}%)",
+      "this-month": "Questo mese",
+      "this-week": "Questa settimana",
+      "title": "Tracciamento del tempo"
+    },
+    "recently-approved": {
+      "absence": "Assenza",
+      "all-caught-up": "Tutto aggiornato!",
+      "approved-recently": "{count} {request} approvate di recente",
+      "by": "da {name}",
+      "description": "Ultime richieste approvate",
+      "description-count": "Ultime {count} {request} approvate",
+      "error": "Impossibile caricare le richieste approvate di recente",
+      "more-approved": "+{count} altre approvate",
+      "time": "Tempo",
+      "title": "Approvato di recente",
+      "view-all": "Vedi tutte le approvazioni"
+    },
+    "team-overview": {
+      "active-count": "{active} di {total} dipendenti ({percent}%)",
+      "active-employees": "Dipendenti attivi",
+      "avg-hours": "Ore medie",
+      "description": "Statistiche del team in sintesi",
+      "employees-button": "Dipendenti",
+      "error": "Impossibile caricare le statistiche del team",
+      "per-week": "/settimana",
+      "teams": "Team",
+      "teams-button": "Team",
+      "title": "Organizzazione"
+    },
+    "upcoming-time-off": {
+      "days": "giorni",
+      "description": "Assenze del team programmate",
+      "description-count": "Prossime {count} {absence} programmate",
+      "error": "Impossibile caricare le prossime assenze",
+      "title": "Prossime ferie",
+      "today": "Oggi",
+      "tomorrow": "Domani",
+      "view-calendar": "Vedi calendario completo"
+    },
+    "vacation": {
+      "available": "{days} disponibili",
+      "carryover": "Riporto",
+      "carryover-days": "{days} giorni",
+      "days-remaining": "giorni rimanenti",
+      "description": "Giorni di ferie {year}",
+      "error": "Impossibile caricare il saldo ferie",
+      "expires-in": "Scade tra {days} giorni",
+      "label-available": "Disponibile",
+      "label-pending": "In attesa",
+      "label-used": "Usato",
+      "no-policy": "Nessuna politica ferie configurata per quest'anno",
+      "pending": "{days} in attesa",
+      "percent-used": "{percent}% usato",
+      "title": "Saldo ferie",
+      "total": "{days} totale",
+      "used": "{days} usati"
+    },
+    "whos-out": {
+      "error": "Impossibile caricare le assenze di oggi",
+      "everyone-in": "Sono tutti in ufficio oggi",
+      "everyones-in": "Tutti presenti!",
+      "full-team": "Team al completo disponibile!",
+      "members-out": "{count} membri del team assenti",
+      "more-members": "+{count} altri membri del team",
+      "out-count": "{count} assenti",
+      "out-today": "Assenti oggi",
+      "returning-tomorrow": "Ritornano domani",
+      "returns-tomorrow": "Ritorna domani",
+      "team-availability": "Disponibilità del team",
+      "title": "Chi è assente oggi",
+      "until-date": "Fino al {date}",
+      "view-calendar": "Vedi calendario completo"
+    }
+  }
+}

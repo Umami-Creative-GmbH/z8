@@ -1,0 +1,107 @@
+{
+  "timeTracking": {
+    "addNotePrompt": "Ajouter une note sur votre travail (optionnel)",
+    "autoAdjusted": {
+      "description": "Une pause de {breakMinutes} minutes a été ajoutée automatiquement pour se conformer à {regulationName}.",
+      "indicator": "Ajusté automatiquement pour conformité",
+      "originalDuration": "Original : {duration}",
+      "title": "Ajusté automatiquement pour conformité",
+      "toast": {
+        "description": "Une pause de {breakMinutes} minutes a été ajoutée pour se conformer aux réglementations horaires.",
+        "title": "Pause ajoutée automatiquement pour conformité"
+      }
+    },
+    "breakReminder": {
+      "breakNeeded": "Pause requise : {remaining} minutes restantes sur {total} au total",
+      "overLimitMessage": "Vous avez dépassé le temps de travail ininterrompu maximum. Veuillez faire une pause bientôt.",
+      "overLimitTitle": "Pause requise",
+      "title": "Rappel de pause",
+      "uninterrupted": "Travail ininterrompu",
+      "warningMessage": "Il vous reste {minutes} minutes avant qu'une pause soit requise."
+    },
+    "clockedOutSuccess": "Vous avez pointé votre départ !",
+    "clockIn": "Pointer l'entrée",
+    "clockingIn": "Pointage de l'entrée...",
+    "clockingOut": "Pointage de la sortie...",
+    "clockInSuccess": "Entrée pointée avec succès",
+    "clockOut": "Pointer la sortie",
+    "clockOutSuccess": "Sortie pointée avec succès",
+    "compliance": {
+      "violation": "Violation de conformité",
+      "warning": "Avis de conformité"
+    },
+    "correction": {
+      "clockIn": "Entrée",
+      "clockOut": "Sortie",
+      "editDescription": "Apporter des modifications à votre entrée de temps pour aujourd'hui.",
+      "editEntry": "Modifier l'entrée de temps",
+      "editTitle": "Modifier l'entrée de temps",
+      "errors": {
+        "invalidTimeRange": "L'heure de sortie doit être postérieure à l'heure d'entrée",
+        "submitFailed": "Échec de l'envoi de la correction",
+        "updateFailed": "Échec de la mise à jour de l'entrée de temps"
+      },
+      "noteLabel": "Note (optionnel)",
+      "notePlaceholder": "Ajouter une note sur ce changement...",
+      "reasonLabel": "Motif de la correction",
+      "reasonPlaceholder": "Expliquez pourquoi cette correction est nécessaire...",
+      "requestCorrection": "Demander une correction de temps",
+      "requestDescription": "Soumettre une demande de correction pour cette entrée. Votre manager devra l'approuver.",
+      "requestTitle": "Demander une correction de temps",
+      "saveChanges": "Enregistrer les modifications",
+      "saving": "Enregistrement...",
+      "submitRequest": "Soumettre la demande",
+      "submitting": "Envoi...",
+      "success": {
+        "submitted": "Demande de correction soumise pour approbation du manager",
+        "updated": "Entrée de temps mise à jour avec succès"
+      },
+      "timezoneNote": "Les heures sont dans votre fuseau horaire local ({timezone})"
+    },
+    "currentlyClockedIn": "Vous êtes actuellement pointé à l'entrée",
+    "errors": {
+      "clockInFailed": "Échec du pointage de l'entrée",
+      "clockOutFailed": "Échec du pointage de la sortie",
+      "holidayBlocked": "Impossible de pointer la sortie le {holidayName}",
+      "holidayBlockedDesc": "Ce jour est marqué comme férié et les entrées de temps ne sont pas autorisées",
+      "notesSaveFailed": "Échec de l'enregistrement des notes"
+    },
+    "noProject": "Aucun projet",
+    "notesPlaceholder": "Sur quoi avez-vous travaillé ?",
+    "notesSaved": "Notes enregistrées",
+    "project": "Projet",
+    "readyToClockIn": "Prêt à travailler ?",
+    "selectProject": "Sélectionner un projet",
+    "startedAt": "Commencé à",
+    "table": {
+      "active": "Actif",
+      "clockIn": "Entrée",
+      "clockOut": "Sortie",
+      "corrected": "Corrigé",
+      "date": "Date",
+      "description": "Description",
+      "duration": "Durée",
+      "emptyState": "Aucune entrée de temps trouvée pour cette semaine.",
+      "emptyStateHint": "Pointez pour commencer à suivre votre temps.",
+      "title": "Entrées de temps"
+    },
+    "title": "Suivi du temps",
+    "welcomeBack": "Bon retour, {name}"
+  },
+  "wellness": {
+    "water": {
+      "goalMet": "Objectif quotidien atteint ! Continuez comme ça !",
+      "logError": "Échec de l'enregistrement de la consommation d'eau",
+      "logged": "Eau enregistrée ! {progress}% de l'objectif quotidien",
+      "logOne": "+1 Verre",
+      "logTwo": "+2 Verres",
+      "reminderMessage": "Restez en bonne santé - buvez de l'eau. Vous avez bu {intake} verres sur {goal} aujourd'hui.",
+      "reminderTitle": "Il est temps de s'hydrater !",
+      "snoozed": "Rappels d'eau mis en pause pour aujourd'hui",
+      "snoozeError": "Échec de la mise en pause des rappels",
+      "snoozeToday": "Mettre en pause aujourd'hui",
+      "streak": "Série actuelle : {days} jours",
+      "todayProgress": "Progrès d'aujourd'hui"
+    }
+  }
+}

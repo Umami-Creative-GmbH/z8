@@ -9,11 +9,13 @@ module.exports = {
 	apiKey: process.env.TOLGEE_API_KEY,
 	patterns: ["./src/**/*.ts?(x)"],
 	extractor: "./tolgee-extractor.mjs",
+	defaultNamespace: "common",
 	push: {
-		filesTemplate: "./messages/{languageTag}.json",
+		filesTemplate: "./messages/{namespace}/{languageTag}.json",
 		language: ["en", "de", "fr", "es", "it", "pt"],
 	},
 	pull: {
 		path: "./messages",
+		filesTemplate: "./{namespace}/{languageTag}.json",
 	},
 };
