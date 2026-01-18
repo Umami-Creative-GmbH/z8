@@ -1,11 +1,5 @@
 "use client";
 
-import DE from "country-flag-icons/react/3x2/DE";
-import ES from "country-flag-icons/react/3x2/ES";
-import FR from "country-flag-icons/react/3x2/FR";
-import GB from "country-flag-icons/react/3x2/GB";
-import IT from "country-flag-icons/react/3x2/IT";
-import PT from "country-flag-icons/react/3x2/PT";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
 import { useTransition } from "react";
@@ -16,20 +10,9 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { LANGUAGE_CONFIG } from "@/lib/language-config";
 import { usePathname, useRouter } from "@/navigation";
 import { ALL_LANGUAGES } from "@/tolgee/shared";
-
-// Use inferred type from the flag library (FlagComponent type)
-type FlagComponent = typeof DE;
-
-const LANGUAGE_CONFIG: Record<string, { name: string; Flag: FlagComponent }> = {
-	de: { name: "Deutsch", Flag: DE },
-	en: { name: "English", Flag: GB },
-	fr: { name: "Français", Flag: FR },
-	es: { name: "Español", Flag: ES },
-	it: { name: "Italiano", Flag: IT },
-	pt: { name: "Português", Flag: PT },
-};
 
 export function LanguageSwitcher() {
 	const { t } = useTranslate();
@@ -49,7 +32,7 @@ export function LanguageSwitcher() {
 
 	return (
 		<Select value={locale} onValueChange={handleLanguageChange} disabled={isPending}>
-			<SelectTrigger className="w-[160px]">
+			<SelectTrigger className="w-[160px] bg-background">
 				<SelectValue placeholder={t("common.select-language", "Select language")}>
 					<span className="flex items-center gap-2">
 						{CurrentFlag && <CurrentFlag className="h-4 w-auto" title={currentConfig.name} />}

@@ -8,6 +8,7 @@ module.exports = {
 	apiUrl: process.env.TOLGEE_API_URL,
 	apiKey: process.env.TOLGEE_API_KEY,
 	patterns: ["./src/**/*.ts?(x)"],
+	extractor: "./tolgee-extractor.mjs",
 	push: {
 		filesTemplate: "./messages/{languageTag}.json",
 		language: ["en", "de", "fr", "es", "it", "pt"],

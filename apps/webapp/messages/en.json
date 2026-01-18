@@ -1,150 +1,102 @@
 {
-  "analytics": {
-    "accessRestricted": "Access Restricted",
-    "accessRestrictedMessage": "Analytics is only available to administrators and managers.",
-    "dateRange": {
-      "custom": "Custom Range",
-      "label": "Date Range",
-      "pickRange": "Pick a date range",
-      "presets": {
-        "1y": "Last Year",
-        "30d": "Last 30 Days",
-        "3m": "Last 3 Months",
-        "6m": "Last 6 Months",
-        "7d": "Last 7 Days"
-      }
+  "absences": {
+    "balance": {
+      "carryoverDays": "You have {count} days carried over",
+      "carryoverExpiry": "that will expire on",
+      "carryoverFrom": "Carryover from {year}",
+      "daysRemaining": "Days Remaining",
+      "description": "Your vacation days for the current year",
+      "outOfTotalDays": "out of {totalDays} total days",
+      "pending": "Pending",
+      "title": "Vacation Balance {year}",
+      "used": "Used"
     },
-    "description": "Comprehensive insights into team performance, work hours, and absence patterns",
-    "export": {
-      "button": "Export",
-      "csv": "Export as CSV",
-      "error": "Failed to export as {format}",
-      "excel": "Export as Excel",
-      "exporting": "Exporting {format}...",
-      "success": "Exported as {format}"
+    "calendar": {
+      "legend": {
+        "approved": "Approved",
+        "halfDayAm": "Half day (AM)",
+        "halfDayPm": "Half day (PM)",
+        "holiday": "Holiday",
+        "pending": "Pending",
+        "rejected": "Rejected"
+      },
+      "nextYear": "Next year",
+      "previousYear": "Previous year"
     },
-    "overview": {
-      "charts": {
-        "absencePatterns": {
-          "description": "Absence distribution by category",
-          "title": "Absence Patterns"
-        },
-        "workHoursTrend": {
-          "description": "Total work hours logged over time",
-          "title": "Work Hours Trend"
-        }
-      },
-      "kpis": {
-        "absenceRate": {
-          "description": "Of total available work days",
-          "label": "Absence Rate"
-        },
-        "approvalRate": {
-          "description": "Of submitted requests approved",
-          "label": "Approval Rate"
-        },
-        "avgWorkHours": {
-          "description": "Per employee in selected period",
-          "label": "Avg Work Hours"
-        },
-        "totalEmployees": {
-          "description": "Active employees in organization",
-          "label": "Total Employees"
-        }
-      },
-      "title": "Analytics Overview"
+    "dialog": {
+      "cancelDescription": "Are you sure you want to cancel this absence request? This action cannot be undone.",
+      "cancelTitle": "Cancel Absence Request",
+      "confirmCancel": "Yes, cancel request"
     },
-    "tabs": {
-      "overview": "Overview",
-      "teamPerformance": "Team Performance",
-      "vacationTrends": "Vacation Trends",
-      "workHours": "Work Hours"
+    "errors": {
+      "allowanceNotConfigured": "Vacation Allowance Not Configured",
+      "allowanceNotConfiguredMessage": "Your organization hasn't set up vacation allowances for {currentYear} yet.",
+      "contactAdmin": "Please contact your administrator to configure vacation policies."
     },
-    "teamPerformance": {
-      "overtime": {
-        "description": "Hours variance from expected work hours",
-        "title": "Overtime & Undertime"
+    "featureName": "manage absences",
+    "form": {
+      "absenceType": "Absence Type *",
+      "autoApproved": "(Auto-approved)",
+      "balanceAfterRequest": "Balance after request:",
+      "businessDays": "Business days:",
+      "daysRemaining": "Days remaining:",
+      "description": "Submit a request for time off. Your manager will be notified for approval.",
+      "endDate": "End Date *",
+      "errors": {
+        "fillRequiredFields": "Please fill in all required fields",
+        "insufficientBalance": "Insufficient vacation balance",
+        "insufficientBalanceForRequest": "Insufficient vacation balance for this request",
+        "invalidSameDayPeriod": "Cannot end in the morning if starting in the afternoon on the same day"
       },
-      "performanceDetails": {
-        "columns": {
-          "avgPerEmployee": "Avg per Employee",
-          "employeeCount": "Employee Count",
-          "status": "Status",
-          "team": "Team",
-          "totalHours": "Total Hours"
-        },
-        "description": "Breakdown of work hours by team and employee",
-        "noData": "No data available for the selected period",
-        "status": {
-          "low": "Low",
-          "onTrack": "On Track",
-          "under": "Under"
-        },
-        "title": "Team Performance Details"
+      "notesOptional": "Notes (Optional)",
+      "notesPlaceholder": "Add any additional information...",
+      "period": {
+        "afternoonOnly": "Afternoon Only",
+        "fullDay": "Full Day",
+        "morningOnly": "Morning Only"
       },
-      "teamComparison": {
-        "description": "Total work hours by team for the selected period",
-        "title": "Team Comparison"
-      },
-      "title": "Team Performance"
+      "selectAbsenceType": "Select absence type",
+      "startDate": "Start Date *",
+      "submitRequest": "Submit Request",
+      "title": "Request Absence"
     },
-    "title": "Analytics",
-    "vacationTrends": {
-      "monthlyUsage": {
-        "description": "Vacation days taken per month",
-        "title": "Monthly Vacation Usage"
-      },
-      "peakMonths": {
-        "description": "Months with highest vacation activity",
-        "title": "Peak Vacation Months"
-      },
-      "title": "Vacation Trends",
-      "utilization": {
-        "daysRemaining": "{count} days remaining",
-        "daysTaken": "{count} days taken",
-        "description": "Overall vacation days usage across organization",
-        "label": "Overall Utilization",
-        "title": "Vacation Utilization"
-      },
-      "vacationBalance": {
-        "columns": {
-          "allocated": "Allocated",
-          "employee": "Employee",
-          "remaining": "Remaining",
-          "taken": "Taken",
-          "utilization": "Utilization"
-        },
-        "description": "Days allocated, taken, and remaining by employee",
-        "noData": "No data available for the selected period",
-        "title": "Vacation Balance"
-      }
+    "period": {
+      "am": "AM",
+      "pm": "PM"
     },
-    "workHours": {
-      "dailyHours": {
-        "description": "Actual vs expected work hours per day",
-        "title": "Daily Work Hours"
+    "requestAbsence": "Request Absence",
+    "status": {
+      "approved": "Approved",
+      "pending": "Pending",
+      "rejected": "Rejected"
+    },
+    "subtitle": "Manage your time off and vacation days",
+    "table": {
+      "cancelRequest": "Cancel request",
+      "end": "End",
+      "headers": {
+        "actions": "Actions",
+        "dateRange": "Date Range",
+        "days": "Days",
+        "notes": "Notes",
+        "status": "Status",
+        "type": "Type"
       },
-      "distribution": {
-        "description": "Employee work hours comparison (horizontal bar)",
-        "title": "Work Hours Distribution"
-      },
-      "employeeComparison": {
-        "columns": {
-          "employee": "Employee",
-          "expectedHours": "Expected Hours",
-          "status": "Status",
-          "totalHours": "Total Hours",
-          "variance": "Variance"
-        },
-        "description": "Total hours and variance from expected by employee",
-        "noData": "No data available for the selected period",
-        "title": "Employee Work Hours"
-      },
-      "overtimeTrend": {
-        "description": "Hours variance from expected work hours over time",
-        "title": "Overtime & Undertime Trend"
-      },
-      "title": "Work Hours"
+      "noRequests": "No absence requests found.",
+      "start": "Start",
+      "subtitle": "Recent and upcoming absence requests",
+      "title": "Your Absence Requests"
+    },
+    "title": "Absences",
+    "toast": {
+      "cancelFailed": "Failed to cancel absence request",
+      "requestCancelled": "Absence request cancelled",
+      "requestFailed": "Failed to submit absence request",
+      "requestSubmitted": "Absence request submitted successfully"
+    },
+    "view": {
+      "calendar": "Calendar",
+      "table": "Table"
     }
   },
   "auth": {
@@ -168,209 +120,467 @@
       "verify": "Verify",
       "verifying": "Verifying..."
     },
+    "2fa-code": "Two-Factor Authentication Code",
+    "2fa-enter-code": "Enter the 6-digit code from your authenticator app",
+    "2fa-verification-error": "An error occurred during 2FA verification",
+    "2fa-verification-failed": "2FA verification failed",
     "already-have-account": "Already have an account?",
+    "back-to-signin": "Back to Sign In",
+    "back-to-signup": "Back to Sign Up",
+    "check-console": "Development Mode:",
+    "check-console-message": "Since no email provider is configured, check your server console for the verification link.",
+    "confirm-new-password": "Confirm New Password",
     "confirm-password": "Confirm Password",
     "create-account": "Create your account",
+    "didnt-receive-email": "Didn't receive the email?",
     "dont-have-account": "Don't have an account?",
     "email": "Email",
+    "email-not-verified": "Please verify your email address before signing in. Check your inbox for the verification link.",
     "email-placeholder": "m@example.com",
+    "email-verified": "Email Verified!",
+    "email-verified-message": "Your email has been successfully verified. You can now sign in to your account.",
     "enter-email-reset": "Enter your email address and we'll send you a link to reset your password.",
+    "enter-new-password": "Enter your new password below.",
     "forgot-password": "Forgot your password?",
     "forgot-password-error": "Failed to send reset email. Please try again.",
+    "invalid-2fa-code": "Please enter a valid 6-digit code",
+    "logging-in": "Logging in...",
     "login": "Login",
+    "login-error": "An error occurred during sign in",
+    "login-failed": "Failed to sign in",
     "login-to-account": "Login to your account",
     "login-with": {
-      "apple": "Login with Apple",
-      "github": "Login with Github",
-      "google": "Login with Google",
-      "linkedin": "Login with LinkedIn",
-      "microsoft": "Login with Microsoft",
+      "${provider": {
+        "id}": "Login with ${provider.name}"
+      },
       "passkey": "Login with Passkey"
     },
     "login-with-sso": "Sign in with SSO",
+    "missing-verification-token": "Missing verification token",
     "name": "Name",
     "name-placeholder": "John Doe",
+    "new-password": "New Password",
     "or": "or",
     "or-continue-with": "Or continue with",
     "or-sign-up-with": "Or sign up with",
     "passkey-login-failed": "Failed to sign in with passkey",
-    "passkey-signup-failed": "Failed to sign up with passkey",
     "password": "Password",
-    "password-requirements": {
-      "digit": "At least 1 digit",
-      "lowercase": "At least 1 lowercase letter",
-      "special": "At least 1 special character",
-      "uppercase": "At least 1 uppercase letter"
-    },
+    "password-reset-success": "Password reset successful",
+    "password-reset-success-message": "Your password has been reset successfully. You can now sign in with your new password.",
     "passwords-match": "Passwords match",
     "passwords-no-match": "Passwords do not match",
+    "please-wait": "Please wait while we verify your email address.",
+    "redirecting-to-signin": "Redirecting to sign in page in 3 seconds...",
+    "remember-device": "Remember this device for 30 days",
     "remember-password": "Remember your password?",
+    "request-new-reset": "Request a new reset link",
+    "resend-verification": "Resend Verification Email",
+    "resend-verification-failed": "Failed to resend verification email",
+    "reset-password-button": "Reset Password",
+    "reset-password-error": "An error occurred. Please try again.",
+    "reset-password-failed": "Failed to reset password. Please try again.",
+    "reset-password-invalid": "Invalid reset link",
+    "reset-password-invalid-message": "This password reset link is invalid or has expired. Please request a new one.",
+    "reset-password-no-token": "Invalid reset link. Please request a new one.",
+    "reset-password-no-token-message": "No reset token found. Please request a new password reset link.",
     "reset-password-sent": "Reset link sent",
     "reset-password-sent-message": "If an account exists with that email, we've sent a password reset link.",
     "reset-your-password": "Reset your password",
     "send-reset-link": "Send reset link",
     "sign-in": "Sign in",
+    "sign-in-now": "Sign in now",
     "sign-up": "Sign up",
+    "signup-failed": "Failed to sign up",
     "sign-up-with": {
-      "apple": "Sign up with Apple",
-      "github": "Sign up with Github",
-      "google": "Sign up with Google",
-      "label": "Sign up with",
-      "linkedin": "Sign up with LinkedIn",
-      "microsoft": "Sign up with Microsoft",
-      "passkey": "Sign up with Passkey"
+      "${provider": {
+        "id}": "Sign up with ${provider.name}"
+      },
+      "label": "Sign up with"
     },
     "social-login-error": "An error occurred during social sign-in",
     "social-signup-error": "An error occurred during social sign-up",
     "sso-login-error": "An error occurred during SSO sign-in",
     "sso-not-configured": "SSO is not configured for this domain",
     "terms": {
-      "agreement": "By clicking continue, you agree to our",
-      "and": "and",
       "privacy": "Privacy Policy",
       "service": "Terms of Service"
+    },
+    "try-signin": "Try to Sign In",
+    "verification-email-resent": "Verification email has been resent! Please check your inbox.",
+    "verification-email-sent": "We've sent a verification link to your email address. Please check your inbox and click the link to verify your account.",
+    "verification-failed": "Verification Failed",
+    "verification-failed-error": "Verification failed",
+    "verify-and-login": "Verify and Login",
+    "verify-email-title": "Verify Your Email Address",
+    "verifying": "Verifying...",
+    "verifying-email": "Verifying your email..."
+  },
+  "calendar": {
+    "dayDetails": {
+      "blocksTimeEntry": "Time entries blocked",
+      "category": "Category",
+      "duration": "Duration",
+      "employee": "Employee",
+      "noEvents": "No events for this day",
+      "recurring": "Recurring holiday",
+      "selectDate": "Select a date to view details",
+      "status": "Status",
+      "title": "Day Details"
+    },
+    "delete": {
+      "auditNote": "Time entries will be marked as deleted for audit purposes.",
+      "confirm": "Convert to Break",
+      "description": "This will permanently delete this work period. The gap will appear as a break in the calendar.",
+      "failed": "Failed to delete work period",
+      "success": "Work period converted to break",
+      "title": "Convert to Break?"
+    },
+    "details": {
+      "baseWorked": "Base worked",
+      "blocksTimeEntry": "Blocks time tracking",
+      "category": "Category",
+      "credited": "Credited",
+      "dateRange": "Date Range",
+      "duration": "Duration",
+      "employee": "Employee",
+      "notes": "Notes",
+      "periods": "Work Periods",
+      "project": "Project",
+      "recurring": "Recurring yearly",
+      "status": "Status",
+      "surcharge": "Surcharge",
+      "surchargeBreakdown": "Surcharge Breakdown",
+      "time": "Time",
+      "type": "Type"
+    },
+    "edit": {
+      "convertToBreak": "Convert to Break",
+      "noNotes": "No notes added",
+      "noProject": "No project assigned",
+      "notesSaved": "Notes saved",
+      "notesSaveFailed": "Failed to save notes",
+      "projectSaved": "Project updated",
+      "projectSaveFailed": "Failed to update project",
+      "split": "Split",
+      "title": "Work Period"
+    },
+    "entryType": {
+      "clockIn": "Clock In",
+      "clockOut": "Clock Out",
+      "correction": "Correction"
+    },
+    "eventType": {
+      "absence": "Absence",
+      "holiday": "Holiday",
+      "timeEntry": "Time Entry",
+      "workPeriod": "Work Period"
+    },
+    "filter": {
+      "absences": "Absences",
+      "allEmployees": "All Employees",
+      "employee": "Filter by employee",
+      "holidays": "Holidays",
+      "myDataOnly": "My Data Only",
+      "timeEntries": "Time Entries",
+      "workPeriods": "Work Periods"
+    },
+    "filters": {
+      "title": "Filters"
+    },
+    "legend": {
+      "absence": "Absence",
+      "holiday": "Holiday",
+      "hoursMet": "Hours Met",
+      "overtime": "Overtime",
+      "timeEntry": "Time Entry",
+      "title": "Legend",
+      "undertime": "Undertime",
+      "workPeriod": "Work Period"
+    },
+    "split": {
+      "confirm": "Split Work Period",
+      "currentPeriod": "Current Work Period",
+      "description": "Divide this work period into two separate sessions.",
+      "failed": "Failed to split work period",
+      "firstNotes": "Notes for first period (optional)",
+      "firstPeriod": "First Period",
+      "invalidTime": "Split time must be between start and end times",
+      "preview": "Preview",
+      "secondNotes": "Notes for second period (optional)",
+      "secondPeriod": "Second Period",
+      "splitAt": "Split at",
+      "success": "Work period split successfully",
+      "title": "Split Work Period"
+    },
+    "status": {
+      "approved": "Approved",
+      "pending": "Pending",
+      "rejected": "Rejected"
     }
   },
   "common": {
     "active": "Active",
     "add": "Add",
     "assign": "Assign",
+    "back": "Back",
+    "background-image-alt": "Background Image - Foto von Ally Griffin auf Unsplash",
     "cancel": "Cancel",
+    "clearSelection": "Clear",
     "create": "Create",
+    "days": {
+      "friday": "Friday",
+      "label": "days",
+      "monday": "Monday",
+      "saturday": "Saturday",
+      "sunday": "Sunday",
+      "thursday": "Thursday",
+      "tuesday": "Tuesday",
+      "wednesday": "Wednesday"
+    },
     "delete": "Delete",
+    "deleting": "Deleting...",
+    "deselectAll": "Deselect All",
+    "details": "Details",
+    "dismiss": "Dismiss",
     "edit": "Edit",
+    "enabled": "Enabled",
+    "error-occurred": "An error occurred",
+    "gender": {
+      "female": "Female",
+      "male": "Male",
+      "other": "Other"
+    },
     "inactive": "Inactive",
     "loading": "Loading...",
+    "months": {
+      "april": "April",
+      "august": "August",
+      "december": "December",
+      "february": "February",
+      "january": "January",
+      "july": "July",
+      "june": "June",
+      "march": "March",
+      "may": "May",
+      "november": "November",
+      "october": "October",
+      "september": "September"
+    },
+    "name": "Name",
+    "new": "New",
+    "next": "Next",
     "openMenu": "Open menu",
+    "optional": "optional",
+    "or": "Or",
     "refresh": "Refresh",
     "remove": "Remove",
+    "removing": "Removing...",
+    "reset": "Reset",
     "retry": "Retry",
     "save": "Save",
-    "status": "Status"
+    "saveChanges": "Save Changes",
+    "saving": "Saving...",
+    "selectAll": "Select All",
+    "select-language": "Select language",
+    "selectRow": "Select row",
+    "skip": "Skip",
+    "status": "Status",
+    "today": "Today",
+    "unexpectedError": "An unexpected error occurred",
+    "unknown": "Unknown",
+    "unknownEmployee": "Unknown Employee",
+    "unknownTeam": "Unknown Team",
+    "uploading": "Uploading...",
+    "validationError": "Validation error",
+    "weekdays": {
+      "fr": "Fr",
+      "fri": "Fri",
+      "mo": "Mo",
+      "mon": "Mon",
+      "sa": "Sa",
+      "sat": "Sat",
+      "su": "Su",
+      "sun": "Sun",
+      "th": "Th",
+      "thu": "Thu",
+      "tu": "Tu",
+      "tue": "Tue",
+      "we": "We",
+      "wed": "Wed"
+    }
   },
   "dashboard": {
-    "cards": {
-      "accounts": {
-        "active": "Active Accounts",
-        "engagement": "Engagement exceed targets",
-        "retention": "Strong user retention"
-      },
-      "customers": {
-        "acquisition": "Acquisition needs attention",
-        "down": "Down 20% this period",
-        "new": "New Customers"
-      },
-      "growth": {
-        "increase": "Steady performance increase",
-        "projections": "Meets growth projections",
-        "rate": "Growth Rate"
-      },
-      "revenue": {
-        "total": "Total Revenue",
-        "trending-up": "Trending up this month",
-        "visitors": "Visitors for the last 6 months"
-      }
+    "birthday": {
+      "birthday": "birthday",
+      "birthdays": "birthdays",
+      "count-today": "{count} {birthday} today!",
+      "description": "Celebrations in the next 30 days",
+      "description-count": "{count} {celebration} in the next 30 days",
+      "error": "Failed to load upcoming birthdays",
+      "in-days": "In {days} days",
+      "more-celebrations": "+{count} more celebrations",
+      "title": "Upcoming Birthdays",
+      "today": "Today!",
+      "tomorrow": "Tomorrow"
     },
-    "github": "GitHub",
-    "title": "Dashboard",
-    "widgets": {
-      "birthdays": {
-        "andMore": "and {count} more...",
-        "description": "{count, plural, one {# birthday in the next 30 days} other {# birthdays in the next 30 days} =0 {No birthdays in the next 30 days}}",
-        "error": "Failed to load upcoming birthdays",
-        "inDays": "in {days} days",
-        "loading": "Loading birthdays...",
-        "noData": "No upcoming birthdays",
-        "title": "Upcoming Birthdays",
-        "today": "Today!",
-        "tomorrow": "Tomorrow"
-      },
-      "quickStats": {
-        "error": "Failed to load quick stats",
-        "loading": "Loading statistics...",
-        "low": "Low hours",
-        "onTrack": "On track",
-        "thisMonth": "This Month",
-        "thisWeek": "This Week",
-        "title": "Quick Stats",
-        "under": "Under target"
-      },
-      "recentlyApproved": {
-        "absence": "Absence",
-        "andMore": "and {count} more...",
-        "approvedBy": "Approved by {name}",
-        "description": "{count, plural, one {Last {count} approved request} other {Last {count} approved requests}}",
-        "error": "Failed to load recently approved requests",
-        "loading": "Loading recently approved...",
-        "noData": "No recently approved requests",
-        "timeCorrection": "Time Correction",
-        "title": "Recently Approved",
-        "viewAll": "View All Approvals"
-      },
-      "teamCalendar": {
-        "description": "{count, plural, one {# day with absences} other {# days with absences} =0 {No absences this month}}",
-        "error": "Failed to load team calendar",
-        "legend": "Team absences",
-        "loading": "Loading team calendar...",
-        "nextMonth": "Next month",
-        "previousMonth": "Previous month",
-        "teamMembersOut": "{count, plural, one {# team member out} other {# team members out} =0 {No team members out}}",
-        "title": "Team Calendar",
-        "today": "Today"
-      },
-      "upcomingTimeOff": {
-        "description": "{count, plural, one {# day with absences} other {# days with absences} =0 {No upcoming absences}}",
-        "error": "Failed to load upcoming time off",
-        "loading": "Loading upcoming absences...",
-        "noData": "No upcoming absences",
-        "startsIn": "Starts in {days} days",
-        "startsToday": "Starts today",
-        "startsTomorrow": "Starts tomorrow",
-        "title": "Upcoming Time Off",
-        "viewCalendar": "View Full Calendar"
-      }
+    "hydration": {
+      "description": "Track your daily water intake",
+      "error": "Failed to load hydration stats",
+      "log-error": "Failed to log water intake",
+      "of-goal": "of {goal}",
+      "title": "Hydration"
+    },
+    "managed-employees": {
+      "direct-reports": "{count} direct reports",
+      "no-reports": "No direct reports yet",
+      "no-reports-description": "You'll see your team members here once assigned",
+      "people-you-manage": "People you manage",
+      "reporting-to-you": "reporting to you",
+      "team-members": "{count} team members",
+      "title": "Your Team",
+      "view-all": "View All",
+      "view-all-members": "View all {count} team members"
+    },
+    "pending-approvals": {
+      "absence-requests": "Absence Requests",
+      "awaiting-approval": "Awaiting your approval",
+      "correction": "Correction",
+      "description": "Requests awaiting your decision",
+      "error": "Failed to load pending approvals",
+      "more-requests": "+{count} more requests",
+      "pending-requests": "{count} pending {request}",
+      "requires-attention": "Requires immediate attention",
+      "review-all": "Review All Approvals",
+      "time-corrections": "Time Corrections",
+      "title": "Pending Approvals"
+    },
+    "quick-stats": {
+      "behind": "Behind",
+      "description": "Your weekly and monthly progress",
+      "error": "Failed to load quick stats",
+      "good-pace": "Good pace",
+      "hours": "hours",
+      "on-track": "On track",
+      "progress": "{actual}h of {expected}h ({percent}%)",
+      "this-month": "This Month",
+      "this-week": "This Week",
+      "title": "Time Tracking"
+    },
+    "recently-approved": {
+      "absence": "Absence",
+      "all-caught-up": "All caught up!",
+      "approved-recently": "{count} {request} approved recently",
+      "by": "by {name}",
+      "description": "Latest approved requests",
+      "description-count": "Last {count} approved {request}",
+      "error": "Failed to load recently approved requests",
+      "more-approved": "+{count} more approved",
+      "time": "Time",
+      "title": "Recently Approved",
+      "view-all": "View All Approvals"
+    },
+    "team-overview": {
+      "active-count": "{active} of {total} employees ({percent}%)",
+      "active-employees": "Active Employees",
+      "avg-hours": "Avg. Hours",
+      "description": "Team statistics at a glance",
+      "employees-button": "Employees",
+      "error": "Failed to load team statistics",
+      "per-week": "/week",
+      "teams": "Teams",
+      "teams-button": "Teams",
+      "title": "Organization"
+    },
+    "upcoming-time-off": {
+      "days": "days",
+      "description": "Scheduled team absences",
+      "description-count": "Next {count} scheduled {absence}",
+      "error": "Failed to load upcoming time off",
+      "title": "Upcoming Time Off",
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "view-calendar": "View Full Calendar"
+    },
+    "vacation": {
+      "available": "{days} available",
+      "carryover": "Carryover",
+      "carryover-days": "{days} days",
+      "days-remaining": "days remaining",
+      "description": "{year} vacation days",
+      "error": "Failed to load vacation balance",
+      "expires-in": "Expires in {days} days",
+      "label-available": "Available",
+      "label-pending": "Pending",
+      "label-used": "Used",
+      "no-policy": "No vacation policy configured for this year",
+      "pending": "{days} pending",
+      "percent-used": "{percent}% used",
+      "title": "Vacation Balance",
+      "total": "{days} total",
+      "used": "{days} used"
+    },
+    "whos-out": {
+      "error": "Failed to load today's absences",
+      "everyone-in": "Everyone is in the office today",
+      "everyones-in": "Everyone's in!",
+      "full-team": "Full team available!",
+      "members-out": "{count} team {member} out",
+      "more-members": "+{count} more team members",
+      "out-count": "{count} out",
+      "out-today": "Out Today",
+      "returning-tomorrow": "Returning Tomorrow",
+      "returns-tomorrow": "Returns tomorrow",
+      "team-availability": "Team availability",
+      "title": "Who's Out Today",
+      "until-date": "Until {date}",
+      "view-calendar": "View Full Calendar"
+    }
+  },
+  "errors": {
+    "noEmployee": {
+      "contactAdmin": "Contact Administrator",
+      "createOrg": "Create Organization",
+      "description": "You need an employee profile to ${feature}. Please create an organization or contact your administrator.",
+      "emailBody": "Hi,nnI need an employee profile set up to access the platform features. Could you please assist me with this?nnThank you!",
+      "emailSubject": "Employee Profile Setup Required",
+      "helpText": "If you were invited to an organization, ask your administrator to set up your employee profile.",
+      "title": "Employee Profile Required"
+    },
+    "noOrganization": {
+      "createOrg": "Create Organization",
+      "description": "You're not part of any organization yet. Create one to get started or wait for an invitation.",
+      "title": "No Organization Found",
+      "waiting": "Waiting for an invitation?",
+      "waitingDesc": "Your administrator will send you an invitation email. Check your inbox and spam folder."
     }
   },
   "generic": {
     "done": "Done",
     "submit": "Submit"
   },
-  "info": {
-    "back-to-login": "Back to login",
-    "privacy-policy": "Privacy Policy",
-    "terms-of-service": "Terms of Service"
+  "header": {
+    "clock-in": "Clock In",
+    "clock-out": "Clock Out",
+    "request-absence": "Request Absence"
   },
-  "meta": {
-    "description": "z8 - time app",
-    "keywords": "z8, time, app, productivity",
-    "title": "z8 - time app"
+  "info": {
+    "back-to-login": "Back to login"
   },
   "nav": {
     "absences": "Absences",
-    "active-proposals": "Active Proposals",
-    "analytics": "Analytics",
     "approvals": "Approvals",
-    "archived": "Archived",
     "calendar": "Calendar",
-    "capture": "Capture",
     "dashboard": "Dashboard",
-    "data-library": "Data Library",
     "get-help": "Get Help",
-    "lifecycle": "Lifecycle",
-    "projects": "Projects",
-    "prompts": "Prompts",
-    "proposal": "Proposal",
     "reports": "Reports",
     "scheduling": "Scheduling",
-    "search": "Search",
     "settings": "Settings",
     "team": "Team",
-    "time-tracking": "Time Tracking",
-    "word-assistant": "Word Assistant"
+    "team-label": "Team",
+    "time-tracking": "Time Tracking"
   },
   "onboarding": {
     "complete": {
-      "autoRedirect": "Automatically redirecting in {{seconds}} seconds...",
       "exploreDashboard": "Explore your dashboard",
       "exploreDashboardDesc": "Get started with time tracking and absence management",
       "goToDashboard": "Go to Dashboard",
@@ -398,22 +608,22 @@
       "workTemplateSkipped": "Work template skipped"
     },
     "holidaySetup": {
-      "cardDesc": "Select your country to import public holidays. You can customize this later in settings.",
+      "cardDesc": "Choose your country to import public holidays. You can customize holidays later in settings.",
       "cardTitle": "Holiday Preset",
       "continue": "Continue",
       "country": "Country",
-      "countryDesc": "Select the country for public holidays.",
+      "countryDesc": "Public holidays will be imported based on your selection.",
       "error": "Failed to create holiday preset",
       "noCountry": "No country found.",
       "presetName": "Preset Name",
       "presetNameDesc": "A name to identify this holiday preset.",
-      "presetNamePlaceholder": "e.g., US Holidays 2024",
-      "searchCountry": "Search country...",
+      "presetNamePlaceholder": "e.g., Germany Holidays",
+      "searchCountry": "Search countries...",
       "selectCountry": "Select a country",
       "setAsDefault": "Set as Organization Default",
-      "setAsDefaultDesc": "Apply this holiday preset to all employees by default.",
+      "setAsDefaultDesc": "Apply this holiday preset to all employees.",
       "skip": "Skip for now",
-      "subtitle": "Import public holidays for your location. This helps track time off correctly.",
+      "subtitle": "Select your country to import public holidays. This helps track time off accurately.",
       "success": "Holiday preset created!",
       "title": "Set up holidays"
     },
@@ -483,6 +693,7 @@
       "profile": "Profile",
       "vacationPolicy": "Vacation",
       "welcome": "Welcome",
+      "wellness": "Wellness",
       "workSchedule": "Schedule",
       "workTemplates": "Templates"
     },
@@ -524,6 +735,28 @@
       "subtitle": "Let's get you started with a quick setup. This will only take a few minutes.",
       "title": "Welcome to Z8!"
     },
+    "wellness": {
+      "cardDesc": "Enable optional hydration reminders while you work. You can always adjust these settings later.",
+      "cardTitle": "Water Reminders",
+      "continue": "Continue",
+      "customInterval": "Custom Interval",
+      "dailyGoal": "Daily Goal",
+      "enableReminder": "Enable Water Reminders",
+      "enableReminderDesc": "Receive gentle reminders to drink water during work hours.",
+      "error": "Failed to save wellness settings",
+      "feature1": "Gentle reminders while clocked in",
+      "feature2": "Track your daily water intake",
+      "feature3": "Build healthy streaks with gamification",
+      "feature4": "Dashboard widget to track progress",
+      "features": "What you'll get",
+      "glass": "glass",
+      "glasses": "glasses",
+      "reminderFrequency": "Reminder Frequency",
+      "skip": "Skip for now",
+      "subtitle": "Set up water reminders to stay healthy during your workday. You'll receive gentle notifications to drink water while clocked in.",
+      "success": "Water reminder enabled!",
+      "title": "Stay Hydrated"
+    },
     "workSchedule": {
       "classification": "Work Classification",
       "classificationDesc": "How you want to track your working hours.",
@@ -542,97 +775,316 @@
       "weekly": "Weekly"
     },
     "workTemplates": {
-      "cardDesc": "Define a standard work schedule. You can customize this later in settings.",
+      "cardDesc": "Create a default work schedule. You can add more templates later in settings.",
       "cardTitle": "Work Schedule Template",
       "continue": "Continue",
       "defaultName": "Standard",
       "error": "Failed to create work schedule template",
-      "hoursPerDay": "hours per day",
       "hoursPerWeek": "Hours per Week",
-      "hoursPerWeekDesc": "Total working hours per week.",
+      "hoursPerWeekDesc": "Total working hours per week. Typical full-time is 40 hours.",
       "name": "Template Name",
-      "nameDesc": "A name to identify this template.",
+      "nameDesc": "A name to identify this work schedule.",
       "namePlaceholder": "e.g., Full-Time, Part-Time",
-      "schedulePreview": "Schedule Preview",
+      "preview": "Schedule Preview",
+      "previewText": "{days} working days, {hoursPerDay} hours per day",
       "setAsDefault": "Set as Organization Default",
-      "setAsDefaultDesc": "Apply this template to all employees by default.",
+      "setAsDefaultDesc": "Apply this schedule to all employees.",
       "skip": "Skip for now",
       "subtitle": "Set up a work schedule template for your organization. This defines working hours for your team.",
       "success": "Work schedule template created!",
       "title": "Create work schedule template",
       "workingDays": "Working Days",
-      "workingDaysDesc": "Select which days are work days."
+      "workingDaysDesc": "Select which days are working days. Hours will be distributed evenly."
     }
   },
+  "organization": {
+    "create": "Create Organization",
+    "createDialog": {
+      "description": "Set up your organization to get started",
+      "title": "Create Organization"
+    },
+    "createError": "Failed to create organization",
+    "createSuccess": "Organization created successfully!",
+    "features": {
+      "description": "Enable or disable optional features for your organization",
+      "owner-only": "Only organization owners can change feature settings.",
+      "projects": "Projects",
+      "projects-description": "Assign time entries to projects, track budgets and deadlines, and generate project reports.",
+      "projects-disabled": "Projects disabled",
+      "projects-enabled": "Projects enabled",
+      "shifts-disabled": "Work Shifts disabled",
+      "shifts-enabled": "Work Shifts enabled",
+      "surcharges": "Surcharges",
+      "surcharges-description": "Configure time surcharges for overtime, night work, weekends, and holidays.",
+      "surcharges-disabled": "Surcharges disabled",
+      "surcharges-enabled": "Surcharges enabled",
+      "title": "Features",
+      "toggle-projects": "Toggle projects",
+      "toggle-surcharges": "Toggle surcharges",
+      "toggle-work-shifts": "Toggle work shifts",
+      "update-failed": "Failed to update feature",
+      "work-shifts": "Work Shifts",
+      "work-shifts-description": "Enable work shifts with drag-and-drop planning, open shifts, and swap requests."
+    },
+    "joinOrCreate": "Join or create one",
+    "logo-uploaded": "Logo uploaded successfully",
+    "logo-upload-failed": "Failed to upload logo",
+    "nameLabel": "Organization Name",
+    "namePlaceholder": "Acme Inc.",
+    "noEmployeeRecord": "You are not set up as an employee in this organization yet.",
+    "noOrganizations": "No Organizations",
+    "role": {
+      "admin": "Admin",
+      "member": "Member",
+      "owner": "Owner"
+    },
+    "slugDescription": "Used in URLs. Auto-generated from name.",
+    "slugLabel": "Organization Slug",
+    "slugPlaceholder": "acme-inc",
+    "slugTaken": "This slug is already taken. Please choose a different one.",
+    "switchFailed": "Failed to switch organization",
+    "switchTo": "Switch Organization",
+    "timezone": {
+      "default": "Default Timezone",
+      "description": "Set the default timezone for your organization. This is used for absence tracking, reports, and other date-based features. Individual users can override this in their profile settings.",
+      "owner-only": "Only organization owners can change the timezone setting.",
+      "title": "Timezone",
+      "updated": "Organization timezone updated to {{timezone}}",
+      "update-failed": "Failed to update organization timezone"
+    }
+  },
+  "profile": {
+    "avatar-removed": "Avatar removed successfully",
+    "avatar-remove-failed": "Failed to remove avatar",
+    "avatar-save-failed": "Failed to save avatar",
+    "avatar-uploaded": "Avatar uploaded successfully",
+    "avatar-upload-failed": "Failed to upload avatar",
+    "change-password": "Change Password",
+    "change-password-description": "Update your password to keep your account secure",
+    "change-picture": "Change Picture",
+    "confirm-password": "Confirm New Password",
+    "confirm-password-placeholder": "Confirm new password",
+    "current-password": "Current Password",
+    "current-password-placeholder": "Enter current password",
+    "email": "Email",
+    "email-readonly": "Email cannot be changed",
+    "information": "Profile Information",
+    "information-description": "Update your personal information and profile picture",
+    "invalid-current-password": "Current password is incorrect",
+    "name": "Name",
+    "name-placeholder": "Enter your name",
+    "new-password": "New Password",
+    "new-password-placeholder": "Enter new password",
+    "password-changed": "Password changed successfully",
+    "password-change-failed": "Failed to change password",
+    "picture-hint": "JPG, PNG or WebP. Max 5MB. Recommended 400x400px",
+    "profile-picture": "Profile Picture",
+    "remove-picture": "Remove Picture",
+    "revoke-sessions": "Log out other devices",
+    "update-failed": "Failed to update profile",
+    "update-password": "Change Password",
+    "update-profile": "Update Profile",
+    "update-success": "Profile updated successfully",
+    "uploading": "Uploading"
+  },
+  "reports": {
+    "description": "Generate comprehensive work hour and absence reports with tax-relevant home office data",
+    "feature": "generate reports",
+    "projects": {
+      "budget": {
+        "exceededBy": "Exceeded budget by {hours} hours",
+        "hoursBudget": "{hours}h budget",
+        "hoursLogged": "Hours Logged",
+        "hoursRemaining": "{hours} hours remaining in budget",
+        "hoursUsed": "{hours}h used",
+        "nearLimit": "Near Budget Limit",
+        "onlyRemaining": "Only {hours} hours remaining",
+        "onTrack": "On Track",
+        "over": "Over",
+        "overBudget": "Over Budget",
+        "remaining": "Remaining",
+        "title": "Budget Progress",
+        "used": "Used"
+      },
+      "cards": {
+        "acrossAllProjects": "Across all projects",
+        "activeContributors": "Active contributors",
+        "activeCount": "{count} active",
+        "activeProjects": "Active Projects",
+        "budgetUsed": "Budget Used",
+        "currentlyInProgress": "Currently in progress",
+        "dailyAverage": "Daily Average",
+        "exceededBudget": "Exceeded budget",
+        "hoursOfBudget": "{used}h of {total}h",
+        "hoursPerDay": "Hours per day",
+        "na": "N/A",
+        "noBudgetSet": "No budget set",
+        "overBudget": "Over Budget",
+        "overdue": "Overdue",
+        "pastDeadline": "Past deadline",
+        "teamMembers": "Team Members",
+        "totalHours": "Total Hours",
+        "totalProjects": "Total Projects",
+        "workPeriods": "{count} work periods"
+      },
+      "chart": {
+        "cumulativeDescription": "Total hours accumulated over time",
+        "cumulativeHours": "Cumulative Hours",
+        "cumulativeLabel": "Cumulative",
+        "dailyDescription": "Hours worked per day during the selected period",
+        "dailyHours": "Daily Hours",
+        "hoursLabel": "Hours",
+        "hoursOverTime": "Hours Over Time",
+        "noDataAvailable": "No time tracking data available for this period",
+        "noWorkPeriods": "No work periods recorded in the selected date range"
+      },
+      "container": {
+        "error": "Error",
+        "generating": "Generating Report...",
+        "noReportYet": "No report generated yet",
+        "pleaseWait": "Please wait while we compile project data",
+        "portfolioOverview": "Portfolio Overview",
+        "projectDetails": "Project Details",
+        "selectPeriod": "Select a period and click \"Generate Report\" to get started"
+      },
+      "filter": {
+        "activeOnly": "Active Only",
+        "activePlanned": "Active & Planned",
+        "allStatuses": "All Statuses",
+        "archived": "Archived",
+        "completed": "Completed",
+        "period": "Period",
+        "selectStatus": "Select status filter",
+        "status": "Status"
+      },
+      "generate": "Generate Report",
+      "generating": "Generating Report...",
+      "page": {
+        "accessDenied": "Access Denied",
+        "description": "Analyze project hours, budget usage, and team contributions",
+        "feature": "view project reports",
+        "noPermission": "You don't have permission to view project reports.",
+        "title": "Project Reports"
+      },
+      "status": {
+        "active": "Active",
+        "archived": "Archived",
+        "completed": "Completed",
+        "paused": "Paused",
+        "planned": "Planned"
+      },
+      "table": {
+        "budget": "Budget",
+        "daysLeft": "{days}d left",
+        "daysOverdue": "{days}d overdue",
+        "deadline": "Deadline",
+        "dueToday": "Due today",
+        "hours": "Hours",
+        "noProjectsFound": "No projects found",
+        "noProjectsMatch": "No projects match the selected filters",
+        "portfolioDescription": "Overview of all projects with budget and time tracking metrics",
+        "portfolioTitle": "Project Portfolio",
+        "project": "Project",
+        "status": "Status",
+        "team": "Team"
+      },
+      "team": {
+        "byEmployee": "By Employee",
+        "byTeam": "By Team",
+        "description": "Hours distribution across team members and teams",
+        "employee": "Employee",
+        "hours": "Hours",
+        "hoursLabel": "Hours",
+        "noMembers": "No team members have logged time to this project",
+        "sessions": "Sessions",
+        "title": "Team Breakdown"
+      },
+      "toast": {
+        "failedGenerate": "Failed to generate report",
+        "failedPortfolio": "Failed to generate portfolio report",
+        "failedProject": "Failed to generate project report",
+        "failedProjectReport": "Failed to generate project report",
+        "portfolioGenerated": "Portfolio report generated",
+        "projectGenerated": "Report generated for {name}",
+        "unexpectedError": "An unexpected error occurred"
+      }
+    },
+    "title": "Employee Reports"
+  },
+  "sessions": {
+    "current": "Current Session",
+    "description": "Manage your active sessions across different devices",
+    "none": "No active sessions",
+    "others-revoked": "All other sessions revoked successfully",
+    "revoke": "Revoke",
+    "revoke-all-failed": "Failed to revoke other sessions",
+    "revoke-all-others": "Revoke All Other Sessions",
+    "revoked": "Session revoked successfully",
+    "revoke-failed": "Failed to revoke session",
+    "revoking": "Revoking...",
+    "security-tip": "If you see a session you don't recognize, revoke it immediately and change your password.",
+    "signed-in": "Signed in",
+    "title": "Active Sessions"
+  },
   "settings": {
-    "auditLog": {
-      "description": "View activity history and security events",
-      "title": "Audit Log"
-    },
     "branding": {
-      "description": "Customize login page appearance and branding",
-      "title": "Branding"
-    },
-    "customDomains": {
-      "description": "Configure custom login domains for your organization",
-      "title": "Custom Domains"
+      "appName": {
+        "description": "Override the default app name shown on the login page.",
+        "title": "App Name"
+      },
+      "background": {
+        "description": "Upload a custom background image for the login page.",
+        "hint": "Recommended: 1920x1080px or larger, high quality JPEG or PNG",
+        "preview": "Background preview",
+        "remove": "Remove background",
+        "title": "Background Image",
+        "upload": "Upload background image"
+      },
+      "backgroundUploadFailed": "Failed to upload background image",
+      "backgroundUploadSuccess": "Background image uploaded successfully",
+      "colors": {
+        "accent": "Accent Color (Optional)",
+        "accentHex": "Accent color hex value",
+        "accentHint": "Secondary color for highlights",
+        "description": "Customize the primary and accent colors for your login page.",
+        "primary": "Primary Color",
+        "primaryHex": "Primary color hex value",
+        "primaryHint": "Used for buttons, links, and focus states",
+        "title": "Theme Colors"
+      },
+      "logo": {
+        "description": "Upload your organization logo to display on the login page.",
+        "hint": "Recommended: 200x200px, PNG or SVG with transparent background",
+        "preview": "Logo preview",
+        "remove": "Remove logo",
+        "title": "Logo",
+        "upload": "Upload logo image"
+      },
+      "logoUploadFailed": "Failed to upload logo",
+      "logoUploadSuccess": "Logo uploaded successfully",
+      "save": "Save Branding Settings",
+      "saveFailed": "Failed to save branding settings",
+      "saveSuccess": "Branding settings saved"
     },
     "dataExport": {
       "categories": {
-        "absences": {
-          "description": "Leave records and approvals (CSV format)",
-          "label": "Absences"
-        },
-        "audit_logs": {
-          "description": "Activity history (CSV format)",
-          "label": "Audit Logs"
-        },
-        "employees": {
-          "description": "Names, positions, roles, and team assignments",
-          "label": "Employees"
-        },
-        "holidays": {
-          "description": "Holiday calendar and recurrence rules",
-          "label": "Holidays"
-        },
-        "schedules": {
-          "description": "Work schedule templates and assignments",
-          "label": "Work Schedules"
-        },
-        "shifts": {
-          "description": "Shift scheduling data (CSV format)",
-          "label": "Shifts"
-        },
-        "teams": {
-          "description": "Team structure and permissions",
-          "label": "Teams"
-        },
-        "time_entries": {
-          "description": "Clock in/out records (CSV format)",
-          "label": "Time Tracking"
-        },
-        "vacation": {
-          "description": "Vacation policies and balances",
-          "label": "Vacation Policies"
-        },
-        "work_periods": {
-          "description": "Aggregated work sessions (CSV format)",
-          "label": "Work Periods"
+        "${category}": {
+          "description": "Export ${category} data"
         }
       },
-      "description": "Export organization data for backup or migration",
-      "featureName": "manage data exports",
+      "description": "Export your organization's data",
+      "featureName": "Data Export",
       "form": {
         "aboutAsync": "Exports are processed asynchronously and may take a few minutes",
-        "aboutEmail": "You will receive an email with a download link when ready",
+        "aboutEmail": "You'll receive an email when ready",
         "aboutLinkValidity": "Download links are valid for 24 hours",
-        "aboutOrgDataOnly": "Only data from your organization is included",
-        "aboutStorageDuration": "Export files are stored for 30 days",
+        "aboutOrgDataOnly": "Only your organization's data is included",
+        "aboutStorageDuration": "Export files are stored for 7 days",
         "aboutTitle": "About Data Exports",
-        "description": "Select the data categories you want to export. The export will be processed in the background and you'll receive an email with a download link when it's ready.",
+        "description": "Select the data categories you want to export",
         "selectAll": "Select All",
         "selectAtLeastOne": "Please select at least one data category to export",
-        "startExport": "{count, plural, one {Start Export ({count} category)} other {Start Export ({count} categories)}}",
+        "startExport": "Start Export (${selectedCategories.size})",
         "startingExport": "Starting Export...",
         "submitError": "Failed to start export",
         "submitSuccess": "Export request submitted! You will receive an email when it's ready for download.",
@@ -645,7 +1097,7 @@
         "columnDate": "Date",
         "columnSize": "Size",
         "columnStatus": "Status",
-        "deleteDialogDescription": "Are you sure you want to delete this export? This will remove the file from storage and cannot be undone.",
+        "deleteDialogDescription": "Are you sure you want to delete this export? This action cannot be undone.",
         "deleteDialogTitle": "Delete Export",
         "deleteError": "Failed to delete export",
         "deleteSuccess": "Export deleted successfully",
@@ -654,8 +1106,8 @@
         "downloadError": "Failed to generate download link",
         "downloadSuccess": "Download link generated. A new email has also been sent.",
         "emptyDescription": "No exports have been created yet.",
-        "emptyHint": "Create a new export from the \"New Export\" tab to get started.",
-        "moreCategories": "+{count} more",
+        "emptyHint": "Create your first export using the form above",
+        "moreCategories": "+${exp.categories.length - 3} more",
         "statusCompleted": "Completed",
         "statusFailed": "Failed",
         "statusPending": "Pending",
@@ -664,33 +1116,33 @@
         "unexpectedError": "An unexpected error occurred"
       },
       "storage": {
-        "accessKeyDescription": "Your S3 access key",
+        "accessKeyDescription": "Your AWS access key ID",
         "accessKeyId": "Access Key ID",
-        "bucketDescription": "The S3 bucket where exports will be stored",
+        "bucketDescription": "The name of your S3 bucket",
         "bucketName": "Bucket Name",
         "bucketPlaceholder": "my-export-bucket",
         "connectionFailed": "Connection Failed",
         "connectionSuccess": "Connection Successful",
-        "deleteDialogDescription": "This will remove the S3 storage configuration. You won't be able to create new exports until you configure storage again. Existing exports will remain in S3 but may become inaccessible.",
+        "deleteDialogDescription": "Are you sure you want to delete this storage configuration?",
         "deleteDialogTitle": "Delete Storage Configuration?",
         "deleteError": "Failed to delete configuration",
         "deleteSuccess": "Storage configuration deleted",
-        "description": "Configure S3-compatible storage for data exports. Supports AWS S3, MinIO, and other S3-compatible services.",
+        "description": "Configure your own S3-compatible storage for exports",
         "endpoint": "Custom Endpoint (Optional)",
-        "endpointDescription": "For MinIO or other S3-compatible services. Leave empty for AWS S3.",
-        "endpointPlaceholder": "https://minio.example.com",
-        "keepExistingCredentials": "Leave empty to keep existing credentials",
-        "lastVerified": "Last verified: {date}",
+        "endpointDescription": "For S3-compatible services like MinIO",
+        "endpointPlaceholder": "https://s3.example.com",
+        "keepExistingCredentials": "Leave blank to keep existing credentials",
+        "lastVerified": "Last verified: ${new Date(config.lastVerifiedAt).toLocaleString()}",
         "region": "Region",
-        "regionDescription": "AWS region or MinIO region",
+        "regionDescription": "AWS region where your bucket is located",
         "regionPlaceholder": "us-east-1",
         "saveConfiguration": "Save Configuration",
         "saveError": "Failed to save configuration",
         "saveSuccess": "Storage configuration saved",
-        "saveSuccessDescription": "Your S3 storage settings have been saved. Test the connection to verify.",
+        "saveSuccessDescription": "Your S3 storage settings have been saved",
         "saving": "Saving...",
         "secretAccessKey": "Secret Access Key",
-        "secretKeyDescription": "Your S3 secret key",
+        "secretKeyDescription": "Your AWS secret access key",
         "testConnection": "Test Connection",
         "testFailed": "Connection test failed",
         "testing": "Testing...",
@@ -699,7 +1151,7 @@
         "verified": "Verified"
       },
       "storageNotConfigured": {
-        "description": "Please configure S3 storage in the \"Storage Settings\" tab before creating exports.",
+        "description": "Configure S3 storage before creating exports",
         "title": "Storage Not Configured"
       },
       "tabs": {
@@ -709,19 +1161,266 @@
       },
       "title": "Data Export"
     },
+    "demoData": {
+      "title": "Demo Data"
+    },
     "employees": {
-      "description": "Manage employee profiles, roles, and manager assignments",
+      "details": "Employee Details",
       "title": "Employees"
     },
-    "group": {
-      "account": "Account",
-      "administration": "Administration",
-      "data": "Data",
-      "enterprise": "Enterprise",
-      "organization": "Organization"
+    "enterprise": {
+      "tab": {
+        "branding": "Branding",
+        "domains": "Custom Domain",
+        "sso": "SSO Providers"
+      }
     },
     "holidays": {
-      "description": "Configure organization holidays and time off",
+      "add": "Add Holiday",
+      "assignments": {
+        "addEmployeeHoliday": "Add Employee Holiday",
+        "addHoliday": "Add Holiday",
+        "addOrgHoliday": "Add Organization-Wide Holiday",
+        "addTeamHoliday": "Add Team Holiday",
+        "assignEmployee": "Assign Preset",
+        "assignHoliday": "Assign Holiday",
+        "assignTeam": "Assign Preset",
+        "assignToEmployee": "Assign to Employee",
+        "assignToTeam": "Assign to Team",
+        "created": "Assignment created",
+        "createFailed": "Failed to create assignment",
+        "customHolidays": "Custom Holidays",
+        "deleted": "Assignment removed",
+        "deleteEmployeeDescription": "This will remove the override for \"{name}\". They will use their team or organization default.",
+        "deleteFailed": "Failed to remove assignment",
+        "deleteHolidayDescription": "This will remove the custom holiday \"{holiday}\" from this assignment.",
+        "deleteOrgDescription": "This will remove the organization default preset. Employees will only see custom holidays.",
+        "deleteTeamDescription": "This will remove the preset from team \"{team}\". They will use the organization default.",
+        "deleteTitle": "Remove Assignment?",
+        "employee": "Employee",
+        "employeeDescription": "This employee will use this preset instead of team/organization defaults",
+        "employeeDialogDescription": "Select a holiday preset and employee to override team or organization defaults",
+        "employeeHolidayDescription": "Select a custom holiday and employee to apply the holiday only to that employee",
+        "employeeHolidayNote": "This holiday will apply only to this employee",
+        "employeeLevel": "Employee Overrides",
+        "employeeLevelDescription": "Override team or organization defaults for specific employees",
+        "holiday": "Custom Holiday",
+        "holidayCreated": "Holiday assignment created",
+        "holidayCreateFailed": "Failed to create holiday assignment",
+        "holidayDeleted": "Holiday assignment removed",
+        "holidayDeleteFailed": "Failed to remove holiday assignment",
+        "holidayDescription": "The custom holiday to assign",
+        "holidays": "Custom Holidays",
+        "loadError": "Failed to load assignments",
+        "noEmployeeHolidays": "No employee holiday overrides",
+        "noEmployeePresets": "No employee preset overrides",
+        "noHolidays": "No custom holidays available. Create one first.",
+        "noOrgHolidays": "No custom holidays assigned to organization",
+        "noOrgPreset": "No default preset set",
+        "noTeamHolidays": "No team holiday assignments",
+        "noTeamPresets": "No team preset assignments",
+        "orgDescription": "Select a holiday preset to be the default for all employees in the organization",
+        "orgHolidayDescription": "Select a custom holiday to apply to all employees in the organization",
+        "orgLevel": "Organization Level",
+        "orgLevelDescription": "Default holidays applied to all employees unless overridden",
+        "preset": "Holiday Preset",
+        "presetDescription": "The holiday preset to assign",
+        "presets": "Presets",
+        "presetSection": "Holiday Preset",
+        "selectEmployee": "Select an employee",
+        "selectHoliday": "Select a holiday",
+        "selectPreset": "Select a preset",
+        "selectTeam": "Select a team",
+        "setDefault": "Set Default",
+        "setOrgDefault": "Set Organization Default",
+        "team": "Team",
+        "teamDescription": "All employees in this team will use this preset",
+        "teamDialogDescription": "Select a holiday preset and team to override the organization default",
+        "teamHolidayDescription": "Select a custom holiday and team to apply the holiday only to that team",
+        "teamHolidayNote": "This holiday will apply only to employees in this team",
+        "teamLevel": "Team Level",
+        "teamLevelDescription": "Override organization defaults for specific teams"
+      },
+      "bulkDelete": {
+        "confirm": "Delete {count} Holidays",
+        "description": "Are you sure you want to delete {count} holidays? This action cannot be undone.",
+        "title": "Delete Multiple Holidays"
+      },
+      "bulkDeleted": "{count} holidays deleted",
+      "bulkDeleteFailed": "Failed to delete holidays",
+      "categories": {
+        "actions": "Actions",
+        "add": "Add Category",
+        "blocks": "Blocks Time Entry",
+        "color": "Color",
+        "deleted": "Category deleted successfully",
+        "delete": {
+          "description": "Are you sure you want to delete \"{name}\"? This action cannot be undone. Categories in use by holidays cannot be deleted.",
+          "title": "Delete Category"
+        },
+        "deleteFailed": "Failed to delete category",
+        "edit": "Edit Category",
+        "empty": "No categories found. Add your first category to get started.",
+        "excludes": "Excludes from Calc",
+        "form": {
+          "active": "Active",
+          "activeDescription": "Inactive categories cannot be assigned to new holidays",
+          "blocksTimeEntry": "Blocks Time Entry",
+          "blocksTimeEntryDescription": "Prevent employees from clocking in/out on holidays in this category",
+          "color": "Color",
+          "colorDescription": "Hex color code for calendar display",
+          "colorPlaceholder": "#3B82F6",
+          "description": "Description",
+          "descriptionPlaceholder": "Add a description...",
+          "excludeFromCalculations": "Exclude from Calculations",
+          "excludeFromCalculationsDescription": "Exclude holidays in this category from work time calculations",
+          "name": "Name",
+          "namePlaceholder": "e.g., National Holidays",
+          "optional": "optional",
+          "type": "Type",
+          "typePlaceholder": "Select a category type"
+        },
+        "loadFailed": "Failed to load categories",
+        "loading": "Loading categories...",
+        "name": "Name",
+        "noColor": "No color",
+        "saveFailed": "Failed to save category",
+        "settings": "Settings",
+        "title": "Holiday Categories",
+        "type": "Type",
+        "types": {
+          "company": "Company Holiday",
+          "custom": "Custom",
+          "public": "Public Holiday",
+          "training": "Training Day"
+        }
+      },
+      "deleted": "Holiday deleted successfully",
+      "delete": {
+        "description": "Are you sure you want to delete \"{name}\"? This action cannot be undone.",
+        "title": "Delete Holiday"
+      },
+      "deleteFailed": "Failed to delete holiday",
+      "deleteSelected": "Delete ({count})",
+      "description": "Manage holiday presets and assignments for your organization",
+      "edit": "Edit Holiday",
+      "form": {
+        "active": "Active",
+        "activeDescription": "Inactive holidays won't appear in the calendar",
+        "category": "Category",
+        "categoryPlaceholder": "Select a category",
+        "description": "Description",
+        "descriptionPlaceholder": "Add a description...",
+        "endDate": "End Date",
+        "name": "Name",
+        "namePlaceholder": "e.g., Christmas Day",
+        "optional": "optional",
+        "recurrence": "Recurrence",
+        "recurrence.none": "One-time",
+        "recurrencePlaceholder": "Select recurrence type",
+        "recurrence.yearly": "Yearly",
+        "recurrence.yearlyDesc": "This holiday will repeat every year on the same date",
+        "startDate": "Start Date"
+      },
+      "import": {
+        "allRegions": "All (state-wide only)",
+        "allStates": "All (country-wide only)",
+        "country": "Country",
+        "createPresetButton": "Create Preset",
+        "date": "Date",
+        "defaultWarning": "Preset created but could not set as organization default",
+        "description": "Create a reusable holiday preset that can be assigned to teams or employees",
+        "duplicate": "Exists",
+        "holidaysSelected": "Holidays to import",
+        "loadingRegions": "Loading regions...",
+        "loadingStates": "Loading states...",
+        "location": "Location",
+        "name": "Name",
+        "new": "New",
+        "noCountryFound": "No country found",
+        "noRegionFound": "No region found",
+        "noStateFound": "No state found",
+        "presetColor": "Color",
+        "presetName": "Preset Name",
+        "presetNameHint": "This name will be used to identify the preset when assigning to teams or employees",
+        "presetNamePlaceholder": "e.g., Germany - Bavaria",
+        "presetSuccess": "Created preset \"{name}\" with ${holidaysToImport.length} holidays",
+        "region": "Region",
+        "searchCountry": "Search countries...",
+        "searchRegion": "Search regions...",
+        "searchState": "Search states...",
+        "selectCountry": "Select a country",
+        "selectRegion": "Select a region (optional)",
+        "selectState": "Select a state (optional)",
+        "setAsDefault": "Set as organization default",
+        "setAsDefaultDesc": "This preset will be applied to all employees unless overridden",
+        "state": "State / Region",
+        "status": "Status",
+        "step1": {
+          "title": "Select Location"
+        },
+        "step2": {
+          "description": "Found {count} holidays for {country}{state}. {duplicates} already exist.",
+          "title": "Select Holidays"
+        },
+        "step3": {
+          "title": "Create Holiday Preset"
+        },
+        "title": "Import Holiday Preset",
+        "type": "Type",
+        "types": "Holiday Types",
+        "year": "Year"
+      },
+      "list": {
+        "actions": "Actions",
+        "category": "Category",
+        "date": "Date",
+        "empty": "No holidays found. Add your first holiday to get started.",
+        "name": "Name",
+        "recurrence": "Recurrence",
+        "title": "Holidays"
+      },
+      "loading": "Loading holidays...",
+      "presets": {
+        "active": "Active",
+        "activeDescription": "Inactive presets won't apply to employees",
+        "color": "Color",
+        "date": "Date",
+        "deleted": "Preset deleted successfully",
+        "deleteDescription": "This will permanently delete the preset \"{name}\" and all its holidays.",
+        "deleteFailed": "Failed to delete preset",
+        "deleteTitle": "Delete Preset?",
+        "description": "Create reusable holiday sets for different locations that can be assigned to teams or employees",
+        "editDescription": "Update preset details and manage holidays",
+        "editTitle": "Edit Preset",
+        "empty": "No presets yet",
+        "emptyDescription": "Import holidays from a country to create your first preset",
+        "hasAssignments": "This preset has active assignments and cannot be deleted.",
+        "holidayDeleted": "Holiday removed",
+        "holidayDeleteFailed": "Failed to remove holiday",
+        "holidays": "holidays",
+        "holidaysList": "Holidays",
+        "import": "Import Holidays",
+        "importFirst": "Import Your First Preset",
+        "loadError": "Failed to load presets",
+        "name": "Name",
+        "noHolidays": "No holidays in this preset",
+        "title": "Holiday Presets",
+        "type": "Type",
+        "updated": "Preset updated successfully",
+        "updateFailed": "Failed to update preset"
+      },
+      "recurrence": {
+        "none": "One-time",
+        "yearly": "Yearly"
+      },
+      "saveFailed": "Failed to save holiday",
+      "tab": {
+        "assignments": "Assignments",
+        "categories": "Categories",
+        "custom": "Custom Holidays",
+        "presets": "Holiday Presets"
+      },
       "title": "Holidays"
     },
     "locations": {
@@ -810,29 +1509,441 @@
       "updated": "Location updated",
       "updateFailed": "Failed to update location"
     },
-    "notifications": {
-      "description": "Configure how you receive notifications",
-      "title": "Notifications"
-    },
     "organizations": {
-      "description": "Manage organization members, invitations, and teams",
       "title": "Organizations & Teams"
     },
+    "permissions": {
+      "title": "Permissions"
+    },
     "profile": {
-      "description": "Manage your personal information and profile picture",
       "title": "Profile"
     },
+    "projects": {
+      "column": {
+        "budget": "Budget",
+        "deadline": "Deadline",
+        "name": "Name",
+        "status": "Status",
+        "team": "Team"
+      },
+      "create": "Create Project",
+      "created": "Project created",
+      "createFailed": "Failed to create project",
+      "description": "Manage projects, budgets, deadlines, and time assignments",
+      "dialog": {
+        "create": "Create Project",
+        "createDescription": "Create a new project for time tracking",
+        "createTitle": "Create Project",
+        "editDescription": "Update project details",
+        "editTitle": "Edit Project",
+        "save": "Save Changes"
+      },
+      "empty": {
+        "description": "Create your first project to start tracking time against it.",
+        "title": "No projects yet"
+      },
+      "field": {
+        "budget": "Budget (hours)",
+        "budgetHelp": "Leave empty for unlimited budget",
+        "budgetPlaceholder": "e.g., 100",
+        "color": "Color",
+        "deadline": "Deadline",
+        "description": "Description",
+        "descriptionPlaceholder": "Optional project description",
+        "name": "Name",
+        "namePlaceholder": "Enter project name",
+        "status": "Status"
+      },
+      "list": {
+        "description": "{count} projects total",
+        "title": "All Projects"
+      },
+      "title": "Projects",
+      "updated": "Project updated",
+      "updateFailed": "Failed to update project"
+    },
     "security": {
-      "description": "Manage your password and active sessions",
       "title": "Security"
     },
-    "ssoProviders": {
-      "description": "Manage single sign-on providers for your organization",
-      "title": "SSO Providers"
+    "statistics": {
+      "cards": {
+        "activeSessions": "Active Sessions",
+        "activeSessionsDescription": "Current database sessions",
+        "approvalRequests": "Approval Requests",
+        "approvedAbsences": "Approved Absences",
+        "employees": "Employees",
+        "employeesDescription": "{active} active, {inactive} inactive",
+        "organizations": "Organizations",
+        "pendingAbsences": "Pending Absences",
+        "pendingCount": "{count} pending",
+        "rejectedAbsences": "Rejected Absences",
+        "teams": "Teams",
+        "thisMonth": "This Month",
+        "timeEntries": "Time entries",
+        "totalAbsences": "Total Absences",
+        "totalTimeEntries": "Total Time Entries",
+        "totalUsers": "Total Users",
+        "vsLastMonth": "vs last month"
+      },
+      "description": "View statistics and metrics about your instance",
+      "feature": "view instance statistics",
+      "lastUpdated": "Last updated",
+      "loadError": "Failed to load statistics",
+      "sections": {
+        "absenceBreakdown": "Absence Breakdown",
+        "activityMetrics": "Activity Metrics",
+        "coreCounts": "Core Counts",
+        "systemHealth": "System Health"
+      },
+      "title": "Statistics"
     },
+    "surcharges": {
+      "active": "Active",
+      "activeDescription": "Inactive models won't be used for calculations",
+      "addRule": "Add Rule",
+      "assignEmployee": "Assign to Employee",
+      "assignmentCreated": "Assignment created",
+      "assignmentDeleted": "Assignment removed",
+      "assignmentDeleteFailed": "Failed to remove assignment",
+      "assignmentFailed": "Failed to create assignment",
+      "assignTeam": "Assign to Team",
+      "assignToEmployee": "Assign to Employee",
+      "assignToTeam": "Assign to Team",
+      "comingSoon": "Coming soon...",
+      "createFailed": "Failed to create surcharge model",
+      "createFirstModel": "Create First Model",
+      "createModel": "Create Surcharge Model",
+      "dateBased": "Date-Based",
+      "dayOfWeek": "Day of Week",
+      "dayOfWeekDescription": "Surcharge applies on this day",
+      "defaultModel": "Default Model",
+      "deleteAssignmentTitle": "Remove Assignment?",
+      "deleteEmployeeAssignmentDescription": "This will remove the override for \"{name}\". They will use their team or organization default.",
+      "deleteFailed": "Failed to delete model",
+      "deleteModelDescription": "This will deactivate the model and all its assignments. This action cannot be undone.",
+      "deleteModelTitle": "Delete Surcharge Model?",
+      "deleteOrgAssignmentDescription": "This will remove the organization default. Teams and employees without specific assignments will have no surcharge model applied.",
+      "deleteTeamAssignmentDescription": "This will remove the surcharge model from team \"{team}\". They will use the organization default.",
+      "description": "Configure time surcharges for overtime, night work, weekends, and holidays.",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "Optional description of this surcharge model",
+      "editModel": "Edit Surcharge Model",
+      "employeeDialogDescription": "Select a surcharge model and employee to override team or organization defaults",
+      "employeeLevel": "Employee Overrides",
+      "employeeLevelDescription": "Override team or organization defaults for specific employees",
+      "endTime": "End Time",
+      "endTimeDescription": "e.g., 06:00 for night shift",
+      "feature": "manage surcharges",
+      "loadError": "Failed to load assignments",
+      "loading": "Loading surcharge settings...",
+      "modelCreated": "Surcharge model created",
+      "modelDeleted": "Surcharge model deleted",
+      "modelDescription": "Define surcharge rules for overtime, night work, weekends, and holidays.",
+      "modelName": "Model Name",
+      "modelNamePlaceholder": "e.g., Weekend Premium",
+      "modelUpdated": "Surcharge model updated",
+      "moreRules": "more rules",
+      "noEmployeeAssignments": "No employee-level overrides",
+      "noModels": "No surcharge models",
+      "noModelsDescription": "Create a surcharge model to define rules for overtime, night work, and weekend premiums.",
+      "noOrgDefault": "No default surcharge model set",
+      "noRules": "No surcharge rules defined",
+      "noRulesDescription": "Add rules to define when surcharges apply",
+      "noTeamAssignments": "No team-level assignments",
+      "orDateRange": "— or use a date range —",
+      "orgDialogDescription": "Select a surcharge model to be the default for all employees in the organization",
+      "orgLevel": "Organization Level",
+      "orgLevelDescription": "Default surcharge model applied to all employees unless overridden",
+      "percentage": "Percentage",
+      "percentageDescription": "Additional time credit",
+      "rangeEnd": "Range End",
+      "rangeStart": "Range Start",
+      "reports": "Surcharge Reports",
+      "reportsDescription": "View surcharge calculations and summaries for your employees.",
+      "rule": "Rule",
+      "ruleCountLabel": "{count, plural, one {# rule} other {# rules}}",
+      "ruleName": "Rule Name",
+      "ruleNamePlaceholder": "e.g., Sunday Premium",
+      "rules": "Surcharge Rules",
+      "ruleType": "Rule Type",
+      "ruleTypes": {
+        "dateBased": {
+          "description": "Apply on specific dates",
+          "label": "Date-Based"
+        },
+        "dayOfWeek": {
+          "description": "Apply on specific days",
+          "label": "Day of Week"
+        },
+        "timeWindow": {
+          "description": "Apply during time ranges",
+          "label": "Time Window"
+        }
+      },
+      "selectEmployee": "Select Employee",
+      "selectEmployeePlaceholder": "Select an employee",
+      "selectModel": "Surcharge Model",
+      "selectModelPlaceholder": "Select a model",
+      "selectRuleType": "Select type",
+      "selectTeam": "Select Team",
+      "selectTeamPlaceholder": "Select a team",
+      "setDefault": "Set Default",
+      "setOrgDefault": "Set Organization Default",
+      "specificDate": "Specific Date",
+      "specificDateDescription": "For single-day surcharges (e.g., holidays)",
+      "startTime": "Start Time",
+      "startTimeDescription": "e.g., 22:00 for night shift",
+      "tabAssignments": "Assignments",
+      "tabModels": "Models",
+      "tabReports": "Reports",
+      "teamDialogDescription": "Select a surcharge model and team to override the organization default",
+      "teamLevel": "Team Level",
+      "teamLevelDescription": "Override organization defaults for specific teams",
+      "timeWindow": "Time Window",
+      "title": "Surcharges",
+      "updateFailed": "Failed to update surcharge model",
+      "validation": {
+        "selectEmployee": "Please select an employee",
+        "selectModel": "Please select a surcharge model",
+        "selectTeam": "Please select a team"
+      }
+    },
+    "teams": {
+      "details": "Team Details",
+      "title": "Teams"
+    },
+    "timeRegulations": {
+      "acknowledge": "Acknowledge",
+      "acknowledged": "Acknowledged",
+      "acknowledgeDescription": "Add an optional note explaining how this violation was addressed.",
+      "acknowledgeFailed": "Failed to acknowledge violation",
+      "acknowledgeViolation": "Acknowledge Violation",
+      "active": "Active",
+      "activeDescription": "Inactive regulations won't be enforced",
+      "addBreakRule": "Add Break Rule",
+      "addEmployee": "Add Employee",
+      "addOption": "Add Option",
+      "addTeam": "Add Team",
+      "afterWorking": "After working",
+      "assign": "Assign",
+      "assignEmployee": "Assign to Employee",
+      "assignEmployeeDescription": "Override the regulation for a specific employee.",
+      "assignmentCreated": "Regulation assigned",
+      "assignmentDeleted": "Assignment removed",
+      "assignmentDeleteFailed": "Failed to remove assignment",
+      "assignmentFailed": "Failed to assign regulation",
+      "assignmentsLoadError": "Failed to load assignments",
+      "assignOrg": "Set Organization Default",
+      "assignOrgDescription": "Set the default time regulation for all employees in your organization.",
+      "assignRegulation": "Assign Regulation",
+      "assignTeam": "Assign to Team",
+      "assignTeamDescription": "Override the organization default for a specific team.",
+      "atLeastOneOption": "At least one break option is required",
+      "breakMissing": "Break Missing",
+      "breakOptions": "Break Options",
+      "breakRequired": "Break required",
+      "breakRule": "Break Rule",
+      "breakRuleCount": "{count} break rule(s)",
+      "breakRules": "Break Rules",
+      "breakTookNeeded": "Took {taken}m, needed {needed}m",
+      "create": "Create Regulation",
+      "created": "Regulation created",
+      "createFailed": "Failed to create regulation",
+      "createRegulation": "Create Regulation",
+      "csv": {
+        "acknowledgedAt": "Acknowledged At",
+        "acknowledgedNote": "Acknowledged Note",
+        "actualMinutes": "Actual Minutes",
+        "breakRequired": "Break Required (min)",
+        "breakTaken": "Break Taken (min)",
+        "date": "Date",
+        "employee": "Employee",
+        "limitMinutes": "Limit Minutes",
+        "status": "Status",
+        "violationType": "Violation Type"
+      },
+      "dailyExceeded": "Daily Exceeded",
+      "date": "Date",
+      "dateLabel": "Date:",
+      "deleted": "Regulation deleted",
+      "deleteDescription": "Are you sure you want to delete \"{name}\"? This will also remove all assignments for this regulation. This action cannot be undone.",
+      "deleteFailed": "Failed to delete regulation",
+      "deleteTitle": "Delete Regulation",
+      "description": "Manage working time limits and break requirements for your organization",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "Optional description of this regulation",
+      "details": "Details",
+      "editRegulation": "Edit Regulation",
+      "employee": "Employee",
+      "employeeLabel": "Employee:",
+      "employeeLevel": "Employee Overrides",
+      "employeeLevelDescription": "Override regulations for specific employees",
+      "exportCsv": "Export CSV",
+      "exportSuccess": "Violations exported successfully",
+      "hours": "hours",
+      "hoursFormat": "{hours}h",
+      "hoursMinutesFormat": "{hours}h {mins}m",
+      "import": "Import",
+      "importFailed": "Failed to import preset",
+      "importing": "Importing...",
+      "last30Days": "Last 30 days",
+      "last7Days": "Last 7 days",
+      "last90Days": "Last 90 days",
+      "loadError": "Failed to load regulations",
+      "longestMin": "longest min",
+      "maxDaily": "Max Daily",
+      "maxDailyDescription": "Per day limit",
+      "maxUninterrupted": "Max Uninterrupted",
+      "maxUninterruptedDescription": "Without a break",
+      "maxWeekly": "Max Weekly",
+      "maxWeeklyDescription": "Per week limit",
+      "minPerSplit": "min each",
+      "minUnit": "min",
+      "minutes": "minutes",
+      "name": "Name",
+      "namePlaceholder": "e.g., German Labor Law",
+      "noBreakRules": "No break rules defined",
+      "noBreakRulesDescription": "Add break rules to define required breaks based on working time",
+      "noDataToExport": "No data to export",
+      "noEmployeeAssignments": "No employee-specific regulations",
+      "noEmployeesAvailable": "No employees available",
+      "noLimitsSet": "No limits set",
+      "noOrgAssignment": "No organization default set",
+      "noPresets": "No presets available",
+      "noRegulations": "No time regulations",
+      "noRegulationsAvailable": "No regulations available",
+      "noRegulationsDescription": "Create a regulation to define working time limits and break requirements.",
+      "noSplit": "Take at once",
+      "note": "Note",
+      "noTeamAssignments": "No team-specific regulations",
+      "noTeamsAvailable": "No teams available",
+      "notePlaceholder": "How was this violation addressed?",
+      "noViolations": "No violations found",
+      "noViolationsDescription": "All employees are within compliance for the selected period.",
+      "optionsDescription": "Define how employees can split their break time",
+      "orgLevel": "Organization Default",
+      "orgLevelDescription": "Default time regulation applied to all employees unless overridden",
+      "pending": "Pending",
+      "perDay": "{hours}/day",
+      "perWeek": "{hours}/week",
+      "presetImported": "Preset imported successfully",
+      "presetsLoadError": "Failed to load presets",
+      "regulation": "Regulation",
+      "regulationDescription": "Define working time limits and break requirements that can be assigned to your organization, teams, or employees.",
+      "removeAssignment": "Remove Assignment",
+      "removeAssignmentDescription": "Are you sure you want to remove this regulation assignment? The affected employees will inherit their regulation from the next level up.",
+      "requiredDescription": "Total break time needed",
+      "selectEmployee": "Select an employee",
+      "selectRegulation": "Select a regulation",
+      "selectTeam": "Select a team",
+      "setAsDefaultOnImport": "Set as organization default after import",
+      "splitAny": "Any number of splits",
+      "splitThree": "Split into 3 parts",
+      "splitTwo": "Split into 2 parts",
+      "status": "Status",
+      "tab": {
+        "assignments": "Assignments",
+        "compliance": "Compliance",
+        "presets": "Import Presets",
+        "regulations": "Regulations"
+      },
+      "team": "Team",
+      "teamLevel": "Team Overrides",
+      "teamLevelDescription": "Override the organization default for specific teams",
+      "thresholdDescription": "Trigger when working more than this",
+      "title": "Time Regulations",
+      "totalViolations": "Total Violations",
+      "type": "Type",
+      "typeLabel": "Type:",
+      "unacknowledged": "Unacknowledged",
+      "updated": "Regulation updated",
+      "updateFailed": "Failed to update regulation",
+      "violationAcknowledged": "Violation acknowledged",
+      "violationsLoadError": "Failed to load violations",
+      "violationType": {
+        "breakRequired": "Required Break Missing",
+        "maxDaily": "Max Daily Exceeded",
+        "maxUninterrupted": "Max Continuous Exceeded",
+        "maxWeekly": "Max Weekly Exceeded"
+      },
+      "workingTimeLimits": "Working Time Limits"
+    },
+    "title": "Settings",
     "vacation": {
-      "description": "Manage vacation policies and allowances",
-      "title": "Vacation"
+      "assignments": {
+        "assignEmployee": "Assign to Employee",
+        "assignEmployeePolicy": "Assign Employee Policy",
+        "assignTeam": "Assign to Team",
+        "assignTeamPolicy": "Assign Team Policy",
+        "companyDefault": "Company Default",
+        "companyDefaultDescription": "The default policy applied to all employees. Manage defaults in the Policies tab.",
+        "created": "Policy assignment created",
+        "createFailed": "Failed to create policy assignment",
+        "deleted": "Policy assignment removed",
+        "deleteEmployeeDescription": "This will remove the override for \"{name}\". They will use their team or company default.",
+        "deleteFailed": "Failed to remove policy assignment",
+        "deleteTeamDescription": "This will remove the policy from team \"{team}\". They will use the company default.",
+        "deleteTitle": "Remove Policy Assignment?",
+        "employee": "Employee",
+        "employeeLevel": "Employee Overrides",
+        "employeeLevelDescription": "Override team or company defaults for specific employees (e.g., special contracts)",
+        "employeeNote": "This policy will override team and company defaults for this employee",
+        "employeePolicyDescription": "Select a vacation policy and employee. This overrides team and company defaults.",
+        "inheritanceInfo": "Policies are applied in priority order: Employee overrides take precedence over Team overrides, which take precedence over the Company Default. Create overrides only when needed.",
+        "loadError": "Failed to load policy assignments",
+        "noEmployeePolicies": "No employee-specific policies. Employees use their team or company default.",
+        "noPolicies": "No vacation policies available. Create one first.",
+        "noTeamPolicies": "No team-specific policies. All teams use the company default.",
+        "policy": "Vacation Policy",
+        "policyDescription": "The vacation policy to assign",
+        "selectEmployee": "Select an employee",
+        "selectPolicy": "Select a policy",
+        "selectTeam": "Select a team",
+        "team": "Team",
+        "teamLevel": "Team Overrides",
+        "teamLevelDescription": "Override the company default for specific teams (e.g., different locations or schedules)",
+        "teamNote": "This policy will apply to all employees in this team",
+        "teamPolicyDescription": "Select a vacation policy and team. This overrides the company default for team members."
+      },
+      "carryover": "Carryover",
+      "createPolicy": "Create Vacation Policy",
+      "createPolicyBtn": "Create Policy",
+      "current": "Current",
+      "days": "days",
+      "default": "Default",
+      "description": "Manage vacation policies and assignments for your organization",
+      "editPolicy": "Edit \"{name}\"",
+      "expires": "Expires",
+      "fallsBackToDefault": "Falls back to company default",
+      "fallsBackToTeamOrDefault": "Falls back to team or company default",
+      "history": {
+        "title": "History"
+      },
+      "next": "Next",
+      "noDefaultPolicy": "No Company Default Policy",
+      "noDefaultPolicyDescription": "Create a policy and mark it as Company Default in the Policies tab.",
+      "policyCreated": "Policy created successfully",
+      "policyDescription": "Configure vacation allowance settings. Each policy can be assigned to the organization, specific teams, or individual employees.",
+      "policyUpdated": "Policy updated successfully",
+      "required": "Required",
+      "saveFailed": "Failed to save policy",
+      "since": "since",
+      "startingOn": "starting on",
+      "tab": {
+        "assignments": "Assignments",
+        "policies": "Policies"
+      },
+      "title": "Vacation",
+      "updatePolicy": "Update Policy"
+    },
+    "wellness": {
+      "cardDescShort": "Stay hydrated while you work",
+      "cardTitle": "Water Reminders",
+      "dailyGoal": "Daily Goal",
+      "glasses": "glasses",
+      "reminderFrequency": "Reminder Frequency",
+      "saved": "Wellness settings saved",
+      "saveError": "Failed to save wellness settings"
     },
     "workSchedules": {
       "addEmployee": "Add Employee",
@@ -848,8 +1959,13 @@
       "assignOrg": "Set Organization Default",
       "assignOrgDescription": "Set the default work schedule for all employees in your organization.",
       "assignSchedule": "Assign Schedule",
+      "assignSelected": "Assign to Selected",
       "assignTeam": "Assign to Team",
       "assignTeamDescription": "Override the organization default for a specific team.",
+      "bulkAssignmentCreated": "{count} schedules assigned",
+      "bulkAssignmentFailed": "Failed to assign schedules",
+      "bulkMode": "Bulk Assignment",
+      "bulkModeDescription": "Assign to multiple {type}s at once",
       "created": "Template created",
       "createFailed": "Failed to create template",
       "createTemplate": "Create Template",
@@ -874,6 +1990,9 @@
       "descriptionLabel": "Description",
       "descriptionPlaceholder": "Optional description",
       "detailedDescription": "Configure hours for each day of the week",
+      "duplicate": "Duplicate",
+      "duplicated": "Template duplicated",
+      "duplicateFailed": "Failed to duplicate template",
       "editTemplate": "Edit Template",
       "employee": "Employee",
       "employeeLevel": "Employee Overrides",
@@ -899,10 +2018,14 @@
       "noTemplatesDescription": "Create a template to define work schedules for your team.",
       "orgLevel": "Organization Default",
       "orgLevelDescription": "Default work schedule applied to all employees unless overridden",
+      "preview": "Schedule Preview",
       "removeAssignment": "Remove Assignment",
       "removeAssignmentDescription": "Are you sure you want to remove this schedule assignment? The affected employees will inherit their schedule from the next level up.",
+      "selectedCount": "{count} selected",
       "selectEmployee": "Select an employee",
+      "selectEmployees": "Select Employees",
       "selectTeam": "Select a team",
+      "selectTeams": "Select Teams",
       "selectTemplate": "Select a template",
       "setDefault": "Set as Default",
       "tab": {
@@ -960,13 +2083,203 @@
       "technical-approach": "Technical Approach"
     }
   },
+  "team": {
+    "description": "View and manage employees you directly supervise",
+    "empty": {
+      "action": "Go to Employee Settings",
+      "description": "Employees assigned to you as their manager will appear here. You can manage team assignments in the employee settings.",
+      "title": "No team members yet"
+    },
+    "error": {
+      "description": "Unable to load your team members.",
+      "title": "Something went wrong"
+    },
+    "feature": "view your team",
+    "member": "member",
+    "members": "members",
+    "noResults": {
+      "action": "Clear search",
+      "description": "No team members match \"{query}\"",
+      "title": "No results found"
+    },
+    "pagination": {
+      "next": "Next",
+      "previous": "Previous",
+      "showing": "Showing {from} to {to} of {total}"
+    },
+    "primaryManager": "You are the primary manager",
+    "search": {
+      "placeholder": "Search by name, email, position, or team..."
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "table": {
+      "employee": "Employee",
+      "position": "Position",
+      "role": "Role",
+      "status": "Status",
+      "team": "Team"
+    },
+    "title": "Your Team",
+    "view": {
+      "cards": "Card view",
+      "table": "Table view"
+    }
+  },
+  "timeTracking": {
+    "addNotePrompt": "Add a note about your work (optional)",
+    "autoAdjusted": {
+      "description": "A {breakMinutes}-minute break was automatically added to comply with {regulationName}.",
+      "indicator": "Auto-adjusted for compliance",
+      "originalDuration": "Original: {duration}",
+      "title": "Auto-adjusted for compliance",
+      "toast": {
+        "description": "A {breakMinutes}-minute break was added to comply with time regulations.",
+        "title": "Break auto-added for compliance"
+      }
+    },
+    "breakReminder": {
+      "breakNeeded": "Break required: {remaining} minutes remaining of {total} total",
+      "overLimitMessage": "You've exceeded the maximum uninterrupted working time. Please take a break soon.",
+      "overLimitTitle": "Break Required",
+      "title": "Break Reminder",
+      "uninterrupted": "Uninterrupted work",
+      "warningMessage": "You have {minutes} minutes until a break is required."
+    },
+    "clockedOutSuccess": "You've clocked out!",
+    "clockIn": "Clock In",
+    "clockingIn": "Clocking In…",
+    "clockingOut": "Clocking Out…",
+    "clockInSuccess": "Clocked in successfully",
+    "clockOut": "Clock Out",
+    "clockOutSuccess": "Clocked out successfully",
+    "compliance": {
+      "violation": "Compliance Violation",
+      "warning": "Compliance Notice"
+    },
+    "correction": {
+      "clockIn": "Clock In",
+      "clockOut": "Clock Out",
+      "editDescription": "Make changes to your time entry for today.",
+      "editEntry": "Edit time entry",
+      "editTitle": "Edit Time Entry",
+      "errors": {
+        "invalidTimeRange": "Clock out time must be after clock in time",
+        "submitFailed": "Failed to submit correction",
+        "updateFailed": "Failed to update time entry"
+      },
+      "noteLabel": "Note (optional)",
+      "notePlaceholder": "Add a note about this change…",
+      "reasonLabel": "Reason for Correction",
+      "reasonPlaceholder": "Explain why this correction is needed…",
+      "requestCorrection": "Request time correction",
+      "requestDescription": "Submit a correction request for this time entry. Your manager will need to approve it.",
+      "requestTitle": "Request Time Correction",
+      "saveChanges": "Save Changes",
+      "saving": "Saving…",
+      "submitRequest": "Submit Request",
+      "submitting": "Submitting…",
+      "success": {
+        "submitted": "Correction request submitted for manager approval",
+        "updated": "Time entry updated successfully"
+      },
+      "timezoneNote": "Times are in your local timezone ({timezone})"
+    },
+    "currentlyClockedIn": "You're currently clocked in",
+    "errors": {
+      "clockInFailed": "Failed to clock in",
+      "clockOutFailed": "Failed to clock out",
+      "holidayBlocked": "Cannot clock out on {holidayName}",
+      "holidayBlockedDesc": "This day is marked as a holiday and time entries are not allowed",
+      "notesSaveFailed": "Failed to save notes"
+    },
+    "noProject": "No project",
+    "notesPlaceholder": "What did you work on?",
+    "notesSaved": "Notes saved",
+    "project": "Project",
+    "readyToClockIn": "Ready to start working?",
+    "selectProject": "Select a project",
+    "startedAt": "Started at",
+    "table": {
+      "active": "Active",
+      "clockIn": "Clock In",
+      "clockOut": "Clock Out",
+      "corrected": "Corrected",
+      "date": "Date",
+      "description": "Description",
+      "duration": "Duration",
+      "emptyState": "No time entries found for this week.",
+      "emptyStateHint": "Clock in to start tracking your time.",
+      "title": "Time Entries"
+    },
+    "title": "Time Tracking",
+    "welcomeBack": "Welcome back, {name}"
+  },
   "user": {
-    "account": "Account",
-    "billing": "Billing",
+    "language": "Language",
+    "logging-out": "Logging out...",
     "log-out": "Log out",
-    "notifications": "Notifications"
+    "profile": "Profile",
+    "theme": "Theme",
+    "theme-dark": "Dark",
+    "theme-light": "Light",
+    "theme-system": "System",
+    "time-settings": "Time Settings"
+  },
+  "vacation": {
+    "accrual-type": {
+      "annual": "Annual",
+      "biweekly": "Biweekly",
+      "monthly": "Monthly"
+    },
+    "policies": {
+      "active": "Active",
+      "add-policy": "Add Policy",
+      "company-default": "Company Default",
+      "create-first": "Create a policy to define vacation allowances for your team.",
+      "create-policy": "Create Policy",
+      "delete-default-warning": "Warning: \"{{name}}\" is the company default policy. You must set another policy as default before deleting this one.",
+      "delete-description-v2": "Are you sure you want to delete \"{{name}}\"? This will also remove all assignments for this policy.",
+      "delete-title": "Delete Vacation Policy",
+      "header": {
+        "accrual": "Accrual",
+        "annual-days": "Annual Days",
+        "carryover": "Carryover",
+        "name": "Name",
+        "start-date": "Start Date",
+        "status": "Status",
+        "valid-until": "Valid Until"
+      },
+      "list-description": "Manage vacation policies for your organization",
+      "max-days": "Max {{days}} days",
+      "none": "None",
+      "no-policies-created": "No vacation policies created yet",
+      "superseded": "Superseded",
+      "unlimited": "Unlimited"
+    }
   },
   "validation": {
-    "invalid-email": "Invalid email address"
+    "invalid-email": "Invalid email address",
+    "invalid-password": "Invalid password",
+    "name-required": "Name is required",
+    "password-required": "Password is required"
+  },
+  "wellness": {
+    "water": {
+      "goalMet": "Daily goal reached! Keep up the great work!",
+      "logError": "Failed to log water intake",
+      "logged": "Water logged! {progress}% of daily goal",
+      "logOne": "+1 Glass",
+      "logTwo": "+2 Glasses",
+      "reminderMessage": "Stay healthy - drink some water. You've had {intake} of {goal} glasses today.",
+      "reminderTitle": "Time to hydrate!",
+      "snoozed": "Water reminders snoozed for today",
+      "snoozeError": "Failed to snooze reminders",
+      "snoozeToday": "Snooze today",
+      "streak": "Current streak: {days} days",
+      "todayProgress": "Today's progress"
+    }
   }
 }
