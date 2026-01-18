@@ -8,6 +8,14 @@ import { format } from "@/lib/datetime/luxon-utils";
 import type { ReportData } from "../types";
 
 // Define styles for PDF
+// Helper to format currency
+const formatCurrency = (amount: number, currency: string): string => {
+	return new Intl.NumberFormat("de-DE", {
+		style: "currency",
+		currency: currency,
+	}).format(amount);
+};
+
 const styles = StyleSheet.create({
 	page: {
 		padding: 40,
@@ -75,6 +83,19 @@ const styles = StyleSheet.create({
 		marginBottom: 10,
 		textAlign: "center",
 	},
+	earningsSection: {
+		marginTop: 20,
+		padding: 15,
+		border: "2px solid #22C55E",
+		backgroundColor: "#F0FDF4",
+	},
+	earningsTitle: {
+		fontSize: 14,
+		fontWeight: "bold",
+		color: "#22C55E",
+		marginBottom: 10,
+		textAlign: "center",
+	},
 	footer: {
 		position: "absolute",
 		bottom: 30,
@@ -123,6 +144,12 @@ const EmployeeReportPDF = ({ reportData }: { reportData: ReportData }) => (
 				</View>
 			)}
 			<View style={styles.row}>
+				<Text style={styles.label}>Contract Type:</Text>
+				<Text style={styles.value}>
+					{reportData.employee.contractType === "hourly" ? "Hourly" : "Fixed"}
+				</Text>
+			</View>
+			<View style={styles.row}>
 				<Text style={styles.label}>Report Period:</Text>
 				<Text style={styles.value}>{reportData.period.label}</Text>
 			</View>
@@ -168,6 +195,58 @@ const EmployeeReportPDF = ({ reportData }: { reportData: ReportData }) => (
 						))}
 					</View>
 				</>
+			)}
+
+			{/* Earnings Summary - Only for hourly employees */}
+			{reportData.employee.contractType === "hourly" && reportData.hourlyEarnings && (
+				<View style={styles.earningsSection}>
+					<Text style={styles.earningsTitle}>EARNINGS SUMMARY (HOURLY EMPLOYEE)</Text>
+					<View style={styles.row}>
+						<Text style={styles.label}>Total Hours:</Text>
+						<Text style={styles.value}>{reportData.hourlyEarnings.totalHours}h</Text>
+					</View>
+					<View style={styles.row}>
+						<Text style={styles.label}>Total Earnings:</Text>
+						<Text style={styles.value}>
+							{formatCurrency(
+								reportData.hourlyEarnings.totalEarnings,
+								reportData.hourlyEarnings.currency,
+							)}
+						</Text>
+					</View>
+
+					{reportData.hourlyEarnings.byRatePeriod.length > 0 && (
+						<>
+							<View style={styles.spacer} />
+							<Text style={{ fontWeight: "bold", marginBottom: 5 }}>
+								Earnings by Rate Period:
+							</Text>
+							<View style={styles.table}>
+								<View style={styles.tableHeader}>
+									<Text style={styles.tableCell}>Period</Text>
+									<Text style={styles.tableCell}>Rate</Text>
+									<Text style={styles.tableCell}>Hours</Text>
+									<Text style={styles.tableCell}>Earnings</Text>
+								</View>
+								{reportData.hourlyEarnings.byRatePeriod.map((period, index) => (
+									<View key={index} style={styles.tableRow}>
+										<Text style={styles.tableCell}>
+											{format(period.periodStart, "MMM dd")} -{" "}
+											{format(period.periodEnd, "MMM dd")}
+										</Text>
+										<Text style={styles.tableCell}>
+											{formatCurrency(period.rate, period.currency)}/h
+										</Text>
+										<Text style={styles.tableCell}>{period.hours}h</Text>
+										<Text style={styles.tableCell}>
+											{formatCurrency(period.earnings, period.currency)}
+										</Text>
+									</View>
+								))}
+							</View>
+						</>
+					)}
+				</View>
 			)}
 
 			{/* Absences Summary */}

@@ -3,9 +3,9 @@
  * Aggregates data from time tracking and absences for comprehensive employee reports
  */
 
-import { and, eq, gte, isNotNull, lte } from "drizzle-orm";
+import { and, eq, gte, isNotNull, isNull, lte, or } from "drizzle-orm";
 import { db } from "@/db";
-import { absenceCategory, absenceEntry, employee, workPeriod } from "@/db/schema";
+import { absenceCategory, absenceEntry, employee, employeeRateHistory, workPeriod } from "@/db/schema";
 import { calculateBusinessDays } from "@/lib/absences/date-utils";
 import { dateToDB } from "@/lib/datetime/drizzle-adapter";
 import {
@@ -27,6 +27,8 @@ import type {
 	ComplianceMetrics,
 	HomeOfficeData,
 	HomeOfficeDetail,
+	HourlyEarningsData,
+	RatePeriodEarnings,
 	ReportData,
 	WorkHoursData,
 	WorkHoursSummary,
@@ -69,6 +71,18 @@ export async function generateEmployeeReport(
 	// Calculate compliance metrics using schedule-based expected hours
 	const complianceMetrics = calculateComplianceMetrics(workHours, absences, expectedHours);
 
+	// Calculate earnings for hourly employees
+	let hourlyEarnings: HourlyEarningsData | undefined;
+	if (emp.contractType === "hourly") {
+		hourlyEarnings = await calculateHourlyEarnings(
+			employeeId,
+			organizationId,
+			startDate,
+			endDate,
+			workHours.totalHours,
+		);
+	}
+
 	return {
 		employee: {
 			id: emp.id,
@@ -76,6 +90,8 @@ export async function generateEmployeeReport(
 			employeeNumber: emp.employeeNumber,
 			position: emp.position,
 			email: emp.user.email,
+			contractType: emp.contractType,
+			currentHourlyRate: emp.currentHourlyRate,
 		},
 		period: {
 			startDate,
@@ -88,6 +104,7 @@ export async function generateEmployeeReport(
 			homeOffice,
 		},
 		complianceMetrics,
+		hourlyEarnings,
 	};
 }
 
@@ -421,5 +438,141 @@ function calculateComplianceMetrics(
 		// Add schedule info for context in reports
 		scheduleInfo: expectedHoursData.scheduleInfo,
 		expectedWorkMinutes: expectedMinutes,
+	};
+}
+
+/**
+ * Calculate earnings for hourly employees
+ * Handles rate changes during the period by breaking down earnings by rate period
+ * @param employeeId - ID of the employee
+ * @param organizationId - ID of the organization
+ * @param startDate - Report start date
+ * @param endDate - Report end date
+ * @param totalHours - Total hours worked in the period
+ * @returns Earnings data with breakdown by rate period
+ */
+async function calculateHourlyEarnings(
+	employeeId: string,
+	organizationId: string,
+	startDate: Date,
+	endDate: Date,
+	totalHours: number,
+): Promise<HourlyEarningsData> {
+	// Get rate history for the period
+	// A rate applies if: effectiveFrom <= endDate AND (effectiveTo > startDate OR effectiveTo is null)
+	const rateHistory = await db
+		.select()
+		.from(employeeRateHistory)
+		.where(
+			and(
+				eq(employeeRateHistory.employeeId, employeeId),
+				lte(employeeRateHistory.effectiveFrom, endDate),
+				or(
+					isNull(employeeRateHistory.effectiveTo),
+					gte(employeeRateHistory.effectiveTo, startDate),
+				),
+			),
+		)
+		.orderBy(employeeRateHistory.effectiveFrom);
+
+	// If no rate history, use current rate from employee record
+	if (rateHistory.length === 0) {
+		const emp = await db.query.employee.findFirst({
+			where: eq(employee.id, employeeId),
+		});
+
+		if (!emp?.currentHourlyRate) {
+			return {
+				totalHours,
+				totalEarnings: 0,
+				currency: "EUR",
+				byRatePeriod: [],
+			};
+		}
+
+		const rate = parseFloat(emp.currentHourlyRate);
+		return {
+			totalHours,
+			totalEarnings: Math.round(totalHours * rate * 100) / 100,
+			currency: "EUR",
+			byRatePeriod: [
+				{
+					rate,
+					currency: "EUR",
+					periodStart: startDate,
+					periodEnd: endDate,
+					hours: totalHours,
+					earnings: Math.round(totalHours * rate * 100) / 100,
+				},
+			],
+		};
+	}
+
+	// Calculate earnings for each rate period
+	const byRatePeriod: RatePeriodEarnings[] = [];
+	let totalEarnings = 0;
+	const currency = rateHistory[0]?.currency || "EUR";
+
+	// For simple case with single rate, just use it
+	if (rateHistory.length === 1) {
+		const rate = parseFloat(rateHistory[0].hourlyRate);
+		const earnings = Math.round(totalHours * rate * 100) / 100;
+		totalEarnings = earnings;
+
+		byRatePeriod.push({
+			rate,
+			currency: rateHistory[0].currency,
+			periodStart: startDate,
+			periodEnd: endDate,
+			hours: totalHours,
+			earnings,
+		});
+	} else {
+		// Multiple rate periods - need to calculate hours per period
+		// This is an approximation based on the proportion of days in each period
+		const totalDays = Math.ceil(
+			(endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
+		);
+
+		for (let i = 0; i < rateHistory.length; i++) {
+			const rateEntry = rateHistory[i];
+			const rate = parseFloat(rateEntry.hourlyRate);
+
+			// Calculate the effective period for this rate within our report range
+			const periodStart = new Date(
+				Math.max(new Date(rateEntry.effectiveFrom).getTime(), startDate.getTime()),
+			);
+			const periodEnd = rateEntry.effectiveTo
+				? new Date(Math.min(new Date(rateEntry.effectiveTo).getTime(), endDate.getTime()))
+				: endDate;
+
+			// Calculate days in this period
+			const periodDays = Math.ceil(
+				(periodEnd.getTime() - periodStart.getTime()) / (1000 * 60 * 60 * 24),
+			);
+
+			// Estimate hours for this period based on proportion of days
+			const periodHours =
+				totalDays > 0 ? Math.round(((periodDays / totalDays) * totalHours) * 100) / 100 : 0;
+			const earnings = Math.round(periodHours * rate * 100) / 100;
+
+			totalEarnings += earnings;
+
+			byRatePeriod.push({
+				rate,
+				currency: rateEntry.currency,
+				periodStart,
+				periodEnd,
+				hours: periodHours,
+				earnings,
+			});
+		}
+	}
+
+	return {
+		totalHours,
+		totalEarnings: Math.round(totalEarnings * 100) / 100,
+		currency,
+		byRatePeriod,
 	};
 }

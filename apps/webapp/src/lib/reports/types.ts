@@ -25,6 +25,8 @@ export interface EmployeeInfo {
 	employeeNumber?: string | null;
 	position?: string | null;
 	email?: string;
+	contractType?: "fixed" | "hourly";
+	currentHourlyRate?: string | null;
 }
 
 export interface PeriodInfo {
@@ -90,12 +92,31 @@ export interface ComplianceMetrics {
 	expectedWorkMinutes?: number;
 }
 
+export interface RatePeriodEarnings {
+	rate: number;
+	currency: string;
+	periodStart: Date;
+	periodEnd: Date;
+	hours: number;
+	earnings: number;
+}
+
+export interface HourlyEarningsData {
+	totalHours: number;
+	totalEarnings: number;
+	currency: string;
+	/** Breakdown by rate period (for rate changes mid-period) */
+	byRatePeriod: RatePeriodEarnings[];
+}
+
 export interface ReportData {
 	employee: EmployeeInfo;
 	period: PeriodInfo;
 	workHours: WorkHoursData;
 	absences: AbsencesData;
 	complianceMetrics: ComplianceMetrics;
+	/** Earnings data (only for hourly employees) */
+	hourlyEarnings?: HourlyEarningsData;
 }
 
 export interface ReportFilters {

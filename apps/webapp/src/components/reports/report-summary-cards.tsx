@@ -1,6 +1,6 @@
 "use client";
 
-import { Calendar, Clock, Home, Umbrella } from "lucide-react";
+import { Calendar, Clock, Home, Umbrella, Wallet } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { ReportData } from "@/lib/reports/types";
 
@@ -8,9 +8,18 @@ interface ReportSummaryCardsProps {
 	reportData: ReportData;
 }
 
+function formatCurrency(amount: number, currency: string): string {
+	return new Intl.NumberFormat(undefined, {
+		style: "currency",
+		currency: currency,
+	}).format(amount);
+}
+
 export function ReportSummaryCards({ reportData }: ReportSummaryCardsProps) {
+	const isHourly = reportData.employee.contractType === "hourly";
+
 	return (
-		<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+		<div className={`grid gap-4 md:grid-cols-2 ${isHourly ? "lg:grid-cols-5" : "lg:grid-cols-4"}`}>
 			{/* Total Work Hours */}
 			<Card>
 				<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -71,6 +80,37 @@ export function ReportSummaryCards({ reportData }: ReportSummaryCardsProps) {
 					</p>
 				</CardContent>
 			</Card>
+
+			{/* Earnings - Only for hourly employees */}
+			{isHourly && reportData.hourlyEarnings && (
+				<Card className="border-green-500">
+					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+						<CardTitle className="text-sm font-medium">Total Earnings</CardTitle>
+						<Wallet className="h-4 w-4 text-green-500" />
+					</CardHeader>
+					<CardContent>
+						<div className="text-2xl font-bold">
+							{formatCurrency(
+								reportData.hourlyEarnings.totalEarnings,
+								reportData.hourlyEarnings.currency,
+							)}
+						</div>
+						<p className="text-xs text-muted-foreground">
+							{reportData.hourlyEarnings.totalHours}h @ avg{" "}
+							{formatCurrency(
+								reportData.hourlyEarnings.totalEarnings / reportData.hourlyEarnings.totalHours || 0,
+								reportData.hourlyEarnings.currency,
+							)}
+							/h
+						</p>
+						{reportData.hourlyEarnings.byRatePeriod.length > 1 && (
+							<p className="text-xs text-green-600">
+								{reportData.hourlyEarnings.byRatePeriod.length} rate periods
+							</p>
+						)}
+					</CardContent>
+				</Card>
+			)}
 		</div>
 	);
 }

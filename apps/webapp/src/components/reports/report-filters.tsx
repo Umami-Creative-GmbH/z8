@@ -1,16 +1,10 @@
 "use client";
 
 import { FileBarChart } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { EmployeeSingleSelect, type SelectableEmployee } from "@/components/employee-select";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import { getDateRangeForPreset } from "@/lib/reports/date-ranges";
 import type { AccessibleEmployee, DateRange } from "@/lib/reports/types";
 import { DateRangePicker } from "./date-range-picker";
@@ -22,19 +16,47 @@ interface ReportFiltersProps {
 	isGenerating?: boolean;
 }
 
+/**
+ * Convert AccessibleEmployee to SelectableEmployee format for the employee selector
+ */
+function toSelectableEmployee(emp: AccessibleEmployee): SelectableEmployee {
+	return {
+		id: emp.id,
+		userId: emp.id, // Use same ID as seed for avatar
+		firstName: null,
+		lastName: null,
+		position: emp.position,
+		role: emp.role,
+		isActive: true,
+		teamId: null,
+		user: {
+			id: emp.id,
+			name: emp.name,
+			email: emp.email,
+			image: null,
+		},
+		team: null,
+	};
+}
+
 export function ReportFilters({
 	employees,
 	currentEmployeeId,
 	onGenerate,
 	isGenerating = false,
 }: ReportFiltersProps) {
-	const [selectedEmployeeId, setSelectedEmployeeId] = useState(currentEmployeeId);
+	const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(currentEmployeeId);
 	const [dateRange, setDateRange] = useState<DateRange>(getDateRangeForPreset("current_month"));
+
+	// Convert AccessibleEmployee[] to SelectableEmployee[] for the employee selector
+	const selectableEmployees = useMemo(() => employees.map(toSelectableEmployee), [employees]);
 
 	const showEmployeeSelector = employees.length > 1;
 
 	const handleGenerate = () => {
-		onGenerate(selectedEmployeeId, dateRange);
+		if (selectedEmployeeId) {
+			onGenerate(selectedEmployeeId, dateRange);
+		}
 	};
 
 	return (
@@ -48,23 +70,14 @@ export function ReportFilters({
 						{showEmployeeSelector && (
 							<div className="space-y-2">
 								<label className="text-sm font-medium leading-none">Employee</label>
-								<Select
+								<EmployeeSingleSelect
 									value={selectedEmployeeId}
-									onValueChange={setSelectedEmployeeId}
+									onChange={setSelectedEmployeeId}
+									employees={selectableEmployees}
+									placeholder="Select employee"
 									disabled={isGenerating}
-								>
-									<SelectTrigger>
-										<SelectValue placeholder="Select employee" />
-									</SelectTrigger>
-									<SelectContent>
-										{employees.map((emp) => (
-											<SelectItem key={emp.id} value={emp.id}>
-												{emp.name}
-												{emp.position && ` - ${emp.position}`}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
+									className="space-y-0"
+								/>
 							</div>
 						)}
 
@@ -79,7 +92,7 @@ export function ReportFilters({
 					<div className="flex justify-end">
 						<Button
 							onClick={handleGenerate}
-							disabled={isGenerating}
+							disabled={isGenerating || !selectedEmployeeId}
 							size="lg"
 							className="w-full sm:w-auto"
 						>
