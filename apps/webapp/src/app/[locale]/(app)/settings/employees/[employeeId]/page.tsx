@@ -11,7 +11,10 @@ import { useForm } from "@tanstack/react-form";
 import { use, useEffect } from "react";
 import { toast } from "sonner";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
+import { ContractTypeSelector } from "@/components/settings/contract-type-selector";
+import { HourlyRateInput } from "@/components/settings/hourly-rate-input";
 import { ManagerAssignment } from "@/components/settings/manager-assignment";
+import { RateHistoryCard } from "@/components/settings/rate-history-card";
 import { RoleSelector } from "@/components/settings/role-selector";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -45,6 +48,8 @@ const defaultFormValues = {
 	position: "",
 	employeeNumber: "",
 	role: undefined as "admin" | "manager" | "employee" | undefined,
+	contractType: "fixed" as "fixed" | "hourly",
+	hourlyRate: "",
 };
 
 export default function EmployeeDetailPage({
@@ -59,11 +64,15 @@ export default function EmployeeDetailPage({
 		employee,
 		schedule,
 		availableManagers,
+		rateHistory,
 		isLoading,
+		isLoadingRateHistory,
 		hasEmployee,
 		isAdmin,
 		updateEmployee,
 		isUpdating,
+		updateRate,
+		isUpdatingRate,
 		refetch,
 	} = useEmployee({ employeeId });
 
@@ -96,6 +105,8 @@ export default function EmployeeDetailPage({
 			form.setFieldValue("position", employee.position || "");
 			form.setFieldValue("employeeNumber", employee.employeeNumber || "");
 			form.setFieldValue("role", employee.role || undefined);
+			form.setFieldValue("contractType", employee.contractType || "fixed");
+			form.setFieldValue("hourlyRate", employee.currentHourlyRate || "");
 		}
 	}, [employee, form]);
 
@@ -393,6 +404,50 @@ export default function EmployeeDetailPage({
 								)}
 							</form.Field>
 
+							<form.Field name="contractType">
+								{(field) => (
+									<TFormItem>
+										<TFormLabel hasError={fieldHasError(field)}>Contract Type</TFormLabel>
+										<ContractTypeSelector
+											value={field.state.value}
+											onChange={field.handleChange}
+											disabled={!isAdmin || isUpdating}
+										/>
+										<TFormDescription>
+											Determines how compensation is calculated
+										</TFormDescription>
+										<TFormMessage field={field} />
+									</TFormItem>
+								)}
+							</form.Field>
+
+							<form.Subscribe selector={(state) => state.values.contractType}>
+								{(contractType) =>
+									contractType === "hourly" && (
+										<form.Field name="hourlyRate">
+											{(field) => (
+												<TFormItem>
+													<TFormLabel hasError={fieldHasError(field)}>Hourly Rate</TFormLabel>
+													<TFormControl hasError={fieldHasError(field)}>
+														<HourlyRateInput
+															value={field.state.value}
+															onChange={field.handleChange}
+															onBlur={field.handleBlur}
+															disabled={!isAdmin || isUpdating}
+															hasError={fieldHasError(field)}
+														/>
+													</TFormControl>
+													<TFormDescription>
+														Current hourly rate for this employee
+													</TFormDescription>
+													<TFormMessage field={field} />
+												</TFormItem>
+											)}
+										</form.Field>
+									)
+								}
+							</form.Subscribe>
+
 							{isAdmin && (
 								<div className="flex justify-end gap-2">
 									<Button
@@ -428,6 +483,17 @@ export default function EmployeeDetailPage({
 					currentManagers={employee.managers || []}
 					availableManagers={availableManagers}
 					onSuccess={refetch}
+				/>
+			)}
+
+			{/* Rate History Section - Only for hourly employees */}
+			{employee.contractType === "hourly" && (
+				<RateHistoryCard
+					rateHistory={rateHistory}
+					isLoading={isLoadingRateHistory}
+					isAdmin={isAdmin}
+					onAddRate={updateRate}
+					isAddingRate={isUpdatingRate}
 				/>
 			)}
 		</div>

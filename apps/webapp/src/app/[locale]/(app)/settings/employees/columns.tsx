@@ -60,6 +60,22 @@ export const columns: ColumnDef<EmployeeWithRelations>[] = [
 		),
 	},
 	{
+		accessorKey: "contractType",
+		header: "Contract",
+		cell: ({ row }) => (
+			<Badge
+				variant="outline"
+				className={
+					row.original.contractType === "hourly"
+						? "border-orange-500 text-orange-600 dark:text-orange-400"
+						: "border-purple-500 text-purple-600 dark:text-purple-400"
+				}
+			>
+				{row.original.contractType === "hourly" ? "Hourly" : "Fixed"}
+			</Badge>
+		),
+	},
+	{
 		accessorKey: "isActive",
 		header: "Status",
 		cell: ({ row }) => (

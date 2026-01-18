@@ -2,10 +2,10 @@
 
 import { SpanStatusCode, trace } from "@opentelemetry/api";
 import { revalidateTag } from "next/cache";
-import { and, count, eq, ilike, or, sql } from "drizzle-orm";
+import { and, count, eq, ilike, isNull, or, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import { user } from "@/db/auth-schema";
-import { employee, type team } from "@/db/schema";
+import { employee, employeeRateHistory, type team } from "@/db/schema";
 
 // Type for employee with user and team relations
 export type EmployeeWithRelations = typeof employee.$inferSelect & {
@@ -181,6 +181,10 @@ export async function createEmployee(
 				}
 
 				// Step 6: Create employee record
+				const hourlyRateValue = validatedData.hourlyRate
+					? parseFloat(validatedData.hourlyRate)
+					: null;
+
 				const [newEmployee] = yield* _(
 					dbService.query("createEmployee", async () => {
 						return await dbService.db
@@ -198,10 +202,34 @@ export async function createEmployee(
 								startDate: validatedData.startDate || null,
 								endDate: validatedData.endDate || null,
 								isActive: true,
+								contractType: validatedData.contractType || "fixed",
+								currentHourlyRate: hourlyRateValue?.toString() || null,
 							})
 							.returning();
 					}),
 				);
+
+				// Step 7: If hourly employee with rate, create initial rate history entry
+				if (
+					validatedData.contractType === "hourly" &&
+					validatedData.hourlyRate &&
+					hourlyRateValue
+				) {
+					yield* _(
+						dbService.query("createInitialRateHistory", async () => {
+							await dbService.db.insert(employeeRateHistory).values({
+								employeeId: newEmployee.id,
+								organizationId: validatedData.organizationId,
+								hourlyRate: hourlyRateValue.toString(),
+								currency: "EUR",
+								effectiveFrom: new Date(),
+								effectiveTo: null,
+								reason: "Initial rate",
+								createdBy: session.user.id,
+							});
+						}),
+					);
+				}
 
 				logger.info(
 					{
@@ -310,18 +338,99 @@ export async function updateEmployee(
 
 				const validatedData = validationResult.data;
 
+				// Get the target employee to check for rate changes
+				const targetEmployee = yield* _(
+					dbService.query("getTargetEmployee", async () => {
+						return await dbService.db.query.employee.findFirst({
+							where: eq(employee.id, employeeId),
+						});
+					}),
+					Effect.flatMap((emp) =>
+						emp
+							? Effect.succeed(emp)
+							: Effect.fail(
+									new NotFoundError({
+										message: "Employee not found",
+										entityType: "employee",
+										entityId: employeeId,
+									}),
+								),
+					),
+				);
+
+				// Parse the new hourly rate
+				const newHourlyRate = validatedData.hourlyRate
+					? parseFloat(validatedData.hourlyRate)
+					: null;
+				const currentRate = targetEmployee.currentHourlyRate
+					? parseFloat(targetEmployee.currentHourlyRate)
+					: null;
+
+				// Prepare update data, handling hourlyRate separately
+				const { hourlyRate: _hourlyRate, ...updateData } = validatedData;
+				const updatePayload = {
+					...updateData,
+					currentHourlyRate: newHourlyRate?.toString() || null,
+					updatedAt: currentTimestamp(),
+				};
+
 				// Update employee
 				yield* _(
 					dbService.query("updateEmployee", async () => {
 						await dbService.db
 							.update(employee)
-							.set({
-								...validatedData,
-								updatedAt: currentTimestamp(),
-							})
+							.set(updatePayload)
 							.where(eq(employee.id, employeeId));
 					}),
 				);
+
+				// If contract type is hourly and rate changed, create rate history entry
+				const effectiveContractType = validatedData.contractType ?? targetEmployee.contractType;
+				if (
+					effectiveContractType === "hourly" &&
+					newHourlyRate !== null &&
+					newHourlyRate !== currentRate
+				) {
+					// Close the current active rate history entry
+					yield* _(
+						dbService.query("closeActiveRateHistory", async () => {
+							await dbService.db
+								.update(employeeRateHistory)
+								.set({ effectiveTo: new Date() })
+								.where(
+									and(
+										eq(employeeRateHistory.employeeId, employeeId),
+										isNull(employeeRateHistory.effectiveTo),
+									),
+								);
+						}),
+					);
+
+					// Create new rate history entry
+					yield* _(
+						dbService.query("createRateHistoryEntry", async () => {
+							await dbService.db.insert(employeeRateHistory).values({
+								employeeId: employeeId,
+								organizationId: targetEmployee.organizationId,
+								hourlyRate: newHourlyRate.toString(),
+								currency: "EUR",
+								effectiveFrom: new Date(),
+								effectiveTo: null,
+								reason: "Rate updated",
+								createdBy: session.user.id,
+							});
+						}),
+					);
+
+					logger.info(
+						{
+							employeeId,
+							previousRate: currentRate,
+							newRate: newHourlyRate,
+						},
+						"Employee rate history created",
+					);
+				}
 
 				logger.info({ employeeId }, "Employee updated successfully");
 
@@ -769,3 +878,267 @@ export async function assignManagers(
 
 // NOTE: Work schedule management is handled in settings/work-schedules/assignment-actions.ts
 // Use createWorkScheduleAssignment from that file to assign schedules to employees
+
+// =============================================================================
+// Employee Selection Actions (for unified employee select component)
+// =============================================================================
+
+/**
+ * Minimal employee type for selection component
+ * Optimized to reduce payload size for large employee lists
+ */
+export interface SelectableEmployee {
+	id: string;
+	userId: string;
+	firstName: string | null;
+	lastName: string | null;
+	position: string | null;
+	role: "admin" | "manager" | "employee";
+	isActive: boolean;
+	teamId: string | null;
+	user: {
+		id: string;
+		name: string | null;
+		email: string;
+		image: string | null;
+	};
+	team: {
+		id: string;
+		name: string;
+	} | null;
+}
+
+/**
+ * Parameters for employee selection query
+ */
+export interface EmployeeSelectParams {
+	search?: string;
+	role?: "admin" | "manager" | "employee" | "all";
+	status?: "active" | "inactive" | "all";
+	teamId?: string;
+	excludeIds?: string[];
+	limit?: number;
+	offset?: number;
+}
+
+/**
+ * Response for employee selection
+ */
+export interface EmployeeSelectResponse {
+	employees: SelectableEmployee[];
+	total: number;
+	hasMore: boolean;
+}
+
+/**
+ * List employees for selection component
+ * Optimized query with minimal fields for better performance at scale
+ */
+export async function listEmployeesForSelect(
+	params: EmployeeSelectParams = {},
+): Promise<ServerActionResult<EmployeeSelectResponse>> {
+	const { search, role, status, teamId, excludeIds = [], limit = 20, offset = 0 } = params;
+
+	const effect = Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
+		const dbService = yield* _(DatabaseService);
+
+		// Get current employee
+		const currentEmployee = yield* _(
+			dbService.query("getCurrentEmployee", async () => {
+				return await dbService.db.query.employee.findFirst({
+					where: eq(employee.userId, session.user.id),
+				});
+			}),
+			Effect.flatMap((emp) =>
+				emp
+					? Effect.succeed(emp)
+					: Effect.fail(
+							new NotFoundError({
+								message: "Employee profile not found",
+								entityType: "employee",
+							}),
+						),
+			),
+		);
+
+		const orgId = currentEmployee.organizationId;
+
+		// Build base conditions
+		const conditions: ReturnType<typeof eq>[] = [eq(employee.organizationId, orgId)];
+
+		// Role filter
+		if (role && role !== "all") {
+			conditions.push(eq(employee.role, role));
+		}
+
+		// Status filter
+		if (status && status !== "all") {
+			conditions.push(eq(employee.isActive, status === "active"));
+		}
+
+		// Team filter
+		if (teamId) {
+			conditions.push(eq(employee.teamId, teamId));
+		}
+
+		// Get employees with optimized select (minimal fields)
+		const employees = yield* _(
+			dbService.query("listEmployeesForSelect", async () => {
+				let results = await dbService.db.query.employee.findMany({
+					where: and(...conditions),
+					columns: {
+						id: true,
+						userId: true,
+						firstName: true,
+						lastName: true,
+						position: true,
+						role: true,
+						isActive: true,
+						teamId: true,
+					},
+					with: {
+						user: {
+							columns: {
+								id: true,
+								name: true,
+								email: true,
+								image: true,
+							},
+						},
+						team: {
+							columns: {
+								id: true,
+								name: true,
+							},
+						},
+					},
+					orderBy: (emp, { asc }) => [asc(emp.firstName), asc(emp.lastName)],
+				});
+
+				// Apply search filter
+				if (search) {
+					const searchLower = search.toLowerCase();
+					results = results.filter(
+						(emp) =>
+							emp.user?.name?.toLowerCase().includes(searchLower) ||
+							emp.user?.email?.toLowerCase().includes(searchLower) ||
+							emp.firstName?.toLowerCase().includes(searchLower) ||
+							emp.lastName?.toLowerCase().includes(searchLower) ||
+							emp.position?.toLowerCase().includes(searchLower),
+					);
+				}
+
+				// Exclude specific IDs
+				if (excludeIds.length > 0) {
+					results = results.filter((emp) => !excludeIds.includes(emp.id));
+				}
+
+				// Sort by user name
+				results.sort((a, b) => {
+					const nameA = a.user?.name || `${a.firstName || ""} ${a.lastName || ""}`.trim() || "";
+					const nameB = b.user?.name || `${b.firstName || ""} ${b.lastName || ""}`.trim() || "";
+					return nameA.localeCompare(nameB);
+				});
+
+				return results;
+			}),
+		);
+
+		// Calculate pagination
+		const total = employees.length;
+		const paginatedEmployees = employees.slice(offset, offset + limit + 1);
+		const hasMore = paginatedEmployees.length > limit;
+		const resultEmployees = hasMore ? paginatedEmployees.slice(0, limit) : paginatedEmployees;
+
+		return {
+			employees: resultEmployees as SelectableEmployee[],
+			total,
+			hasMore,
+		};
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
+}
+
+/**
+ * Get employees by IDs (for displaying currently selected employees)
+ * Useful for showing selected employees in the trigger button
+ */
+export async function getEmployeesByIds(
+	employeeIds: string[],
+): Promise<ServerActionResult<SelectableEmployee[]>> {
+	if (employeeIds.length === 0) {
+		return { success: true, data: [] };
+	}
+
+	const effect = Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
+		const dbService = yield* _(DatabaseService);
+
+		// Get current employee
+		const currentEmployee = yield* _(
+			dbService.query("getCurrentEmployee", async () => {
+				return await dbService.db.query.employee.findFirst({
+					where: eq(employee.userId, session.user.id),
+				});
+			}),
+			Effect.flatMap((emp) =>
+				emp
+					? Effect.succeed(emp)
+					: Effect.fail(
+							new NotFoundError({
+								message: "Employee profile not found",
+								entityType: "employee",
+							}),
+						),
+			),
+		);
+
+		const orgId = currentEmployee.organizationId;
+
+		// Get employees by IDs
+		const employees = yield* _(
+			dbService.query("getEmployeesByIds", async () => {
+				return await dbService.db.query.employee.findMany({
+					where: and(
+						eq(employee.organizationId, orgId),
+						sql`${employee.id} IN ${employeeIds}`,
+					),
+					columns: {
+						id: true,
+						userId: true,
+						firstName: true,
+						lastName: true,
+						position: true,
+						role: true,
+						isActive: true,
+						teamId: true,
+					},
+					with: {
+						user: {
+							columns: {
+								id: true,
+								name: true,
+								email: true,
+								image: true,
+							},
+						},
+						team: {
+							columns: {
+								id: true,
+								name: true,
+							},
+						},
+					},
+				});
+			}),
+		);
+
+		return employees as SelectableEmployee[];
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
+}
