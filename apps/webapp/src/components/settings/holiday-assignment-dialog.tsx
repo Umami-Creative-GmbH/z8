@@ -110,15 +110,15 @@ export function HolidayAssignmentDialog({
 		}
 	}, [open, form]);
 
-	// Fetch holidays
+	// Fetch holidays (get all without pagination for dropdown)
 	const { data: holidays, isLoading: holidaysLoading } = useQuery({
-		queryKey: queryKeys.holidays.list(organizationId),
+		queryKey: queryKeys.holidays.list(organizationId, { limit: 500 }),
 		queryFn: async () => {
-			const result = await getHolidays(organizationId);
+			const result = await getHolidays(organizationId, { limit: 500 });
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch holidays");
 			}
-			return result.data as HolidayOption[];
+			return result.data.data as HolidayOption[];
 		},
 		enabled: open,
 	});

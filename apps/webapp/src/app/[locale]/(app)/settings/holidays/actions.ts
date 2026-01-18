@@ -1,8 +1,9 @@
 "use server";
 
-import { and, eq, inArray } from "drizzle-orm";
+import { and, asc, count, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import { employee, holiday, holidayAssignment, holidayCategory, team } from "@/db/schema";
+import type { PaginatedParams, PaginatedResponse } from "@/lib/data-table/types";
 import {
 	AuthorizationError,
 	ConflictError,
@@ -14,17 +15,91 @@ import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 
+// Types for holiday list
+export interface HolidayListParams extends PaginatedParams {
+	categoryId?: string;
+}
+
+export interface HolidayWithCategory {
+	id: string;
+	name: string;
+	description: string | null;
+	startDate: Date;
+	endDate: Date;
+	recurrenceType: string;
+	recurrenceRule: string | null;
+	recurrenceEndDate: Date | null;
+	isActive: boolean;
+	categoryId: string;
+	category: {
+		id: string;
+		name: string;
+		type: string;
+		color: string | null;
+	};
+}
+
 /**
  * Get all holidays for an organization using Effect pattern
+ * Supports pagination, search, and filtering
  */
-export async function getHolidays(organizationId: string): Promise<ServerActionResult<any[]>> {
+export async function getHolidays(
+	organizationId: string,
+	params: HolidayListParams = {},
+): Promise<ServerActionResult<PaginatedResponse<HolidayWithCategory>>> {
+	const { search, categoryId, limit = 20, offset = 0, sortBy, sortOrder = "asc" } = params;
+
 	const effect = Effect.gen(function* (_) {
 		// Step 1: Get session via AuthService
 		const authService = yield* _(AuthService);
 		const _session = yield* _(authService.getSession());
 
-		// Step 2: Get holidays from database
+		// Step 2: Get database service
 		const dbService = yield* _(DatabaseService);
+
+		// Step 3: Build conditions
+		const conditions = [eq(holiday.organizationId, organizationId), eq(holiday.isActive, true)];
+
+		// Category filter
+		if (categoryId) {
+			conditions.push(eq(holiday.categoryId, categoryId));
+		}
+
+		// Search filter
+		if (search) {
+			conditions.push(
+				or(
+					ilike(holiday.name, `%${search}%`),
+					ilike(holiday.description, `%${search}%`),
+				) ?? sql`true`,
+			);
+		}
+
+		// Step 4: Get total count
+		const totalResult = yield* _(
+			dbService.query("countHolidays", async () => {
+				const [result] = await dbService.db
+					.select({ count: count() })
+					.from(holiday)
+					.where(and(...conditions));
+				return result?.count ?? 0;
+			}),
+			Effect.mapError(
+				(error) =>
+					new DatabaseError({
+						message: "Failed to count holidays",
+						operation: "select",
+						table: "holiday",
+						cause: error,
+					}),
+			),
+		);
+
+		// Step 5: Determine sort order
+		const orderColumn = sortBy === "name" ? holiday.name : holiday.startDate;
+		const orderFn = sortOrder === "desc" ? desc : asc;
+
+		// Step 6: Get paginated holidays
 		const holidays = yield* _(
 			dbService.query("getHolidays", async () => {
 				return await dbService.db
@@ -48,8 +123,10 @@ export async function getHolidays(organizationId: string): Promise<ServerActionR
 					})
 					.from(holiday)
 					.innerJoin(holidayCategory, eq(holiday.categoryId, holidayCategory.id))
-					.where(and(eq(holiday.organizationId, organizationId), eq(holiday.isActive, true)))
-					.orderBy(holiday.startDate);
+					.where(and(...conditions))
+					.orderBy(orderFn(orderColumn))
+					.limit(limit)
+					.offset(offset);
 			}),
 			Effect.mapError(
 				(error) =>
@@ -62,7 +139,11 @@ export async function getHolidays(organizationId: string): Promise<ServerActionR
 			),
 		);
 
-		return holidays;
+		return {
+			data: holidays as HolidayWithCategory[],
+			total: totalResult,
+			hasMore: offset + holidays.length < totalResult,
+		};
 	}).pipe(Effect.provide(AppLayer));
 
 	return runServerActionSafe(effect);
