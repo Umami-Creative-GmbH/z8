@@ -6,6 +6,7 @@ const logger = createLogger("Valkey");
 // Singleton pattern for Valkey connection
 const globalForValkey = globalThis as unknown as {
 	valkey: Redis | undefined;
+	valkeyPub: Redis | undefined;
 };
 
 function createValkeyClient(): Redis {
@@ -37,8 +38,40 @@ function createValkeyClient(): Redis {
 
 export const valkey = globalForValkey.valkey ?? createValkeyClient();
 
+// Dedicated publisher client for pub/sub (pub/sub clients can't be used for regular commands)
+export const valkeyPub = globalForValkey.valkeyPub ?? createValkeyClient();
+
 if (process.env.NODE_ENV !== "production") {
 	globalForValkey.valkey = valkey;
+	globalForValkey.valkeyPub = valkeyPub;
+}
+
+/**
+ * Create a new subscriber client for pub/sub
+ * Each SSE connection needs its own subscriber client
+ */
+export function createValkeySubscriber(): Redis {
+	return createValkeyClient();
+}
+
+/**
+ * Publish a notification event to a user's notification channel
+ * @param userId - The user ID to publish to
+ * @param event - The event type (new_notification, count_update)
+ * @param data - The event data
+ */
+export async function publishNotificationEvent(
+	userId: string,
+	event: "new_notification" | "count_update",
+	data: unknown,
+): Promise<void> {
+	try {
+		const channel = `notifications:${userId}`;
+		const message = JSON.stringify({ event, data });
+		await valkeyPub.publish(channel, message);
+	} catch (error) {
+		logger.error({ error, userId, event }, "Failed to publish notification event");
+	}
 }
 
 /**

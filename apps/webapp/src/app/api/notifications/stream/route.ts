@@ -1,38 +1,18 @@
-import { and, desc, eq, gt } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { connection } from "next/server";
 import { db } from "@/db";
-import { employee, notification } from "@/db/schema";
+import { employee } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { getUnreadCount } from "@/lib/notifications/notification-service";
-import type { NotificationWithMeta } from "@/lib/notifications/types";
-
-/**
- * Calculate relative time string
- */
-function getTimeAgo(date: Date): string {
-	const now = new Date();
-	const diffMs = now.getTime() - date.getTime();
-	const diffSeconds = Math.floor(diffMs / 1000);
-	const diffMinutes = Math.floor(diffSeconds / 60);
-	const diffHours = Math.floor(diffMinutes / 60);
-	const diffDays = Math.floor(diffHours / 24);
-
-	if (diffSeconds < 60) return "just now";
-	if (diffMinutes < 60) return `${diffMinutes} minute${diffMinutes === 1 ? "" : "s"} ago`;
-	if (diffHours < 24) return `${diffHours} hour${diffHours === 1 ? "" : "s"} ago`;
-	if (diffDays < 7) return `${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
-	if (diffDays < 30) {
-		const weeks = Math.floor(diffDays / 7);
-		return `${weeks} week${weeks === 1 ? "" : "s"} ago`;
-	}
-	const months = Math.floor(diffDays / 30);
-	return `${months} month${months === 1 ? "" : "s"} ago`;
-}
+import { createValkeySubscriber, valkey } from "@/lib/valkey";
 
 /**
  * GET /api/notifications/stream
  * Server-Sent Events endpoint for real-time notification updates
+ *
+ * Uses Valkey Pub/Sub for event-driven updates instead of database polling.
+ * This scales to thousands of concurrent connections without database overhead.
  *
  * Sends:
  * - count_update: When unread count changes (includes count)
@@ -69,14 +49,23 @@ export async function GET() {
 
 		const userId = session.user.id;
 		const organizationId = emp.organizationId;
+		const channel = `notifications:${userId}`;
+
+		// Check if Valkey is available
+		const valkeyAvailable = valkey.status === "ready" || valkey.status === "connecting";
 
 		// Create a readable stream for SSE
 		const stream = new ReadableStream({
 			async start(controller) {
 				const encoder = new TextEncoder();
+				let subscriber: ReturnType<typeof createValkeySubscriber> | null = null;
+				let heartbeatInterval: ReturnType<typeof setInterval> | null = null;
+				let pollInterval: ReturnType<typeof setInterval> | null = null;
+				let isCleanedUp = false;
 
 				// Helper to send SSE event
 				const sendEvent = (type: string, data: unknown) => {
+					if (isCleanedUp) return;
 					try {
 						const event = `event: ${type}\ndata: ${JSON.stringify(data)}\n\n`;
 						controller.enqueue(encoder.encode(event));
@@ -85,102 +74,82 @@ export async function GET() {
 					}
 				};
 
-				// Send initial count
-				const initialCount = await getUnreadCount(userId, organizationId);
-				sendEvent("count_update", { count: initialCount });
+				// Cleanup function
+				const cleanup = () => {
+					if (isCleanedUp) return;
+					isCleanedUp = true;
 
-				// Track state for change detection
-				let lastCount = initialCount;
-				let lastNotificationId: string | null = null;
-
-				// Get the most recent notification ID to track new ones
-				const [latestNotification] = await db
-					.select({ id: notification.id })
-					.from(notification)
-					.where(eq(notification.userId, userId))
-					.orderBy(desc(notification.createdAt))
-					.limit(1);
-
-				if (latestNotification) {
-					lastNotificationId = latestNotification.id;
-				}
-
-				// Poll for updates every 3 seconds (more responsive than 5s)
-				const pollInterval = setInterval(async () => {
-					try {
-						const currentCount = await getUnreadCount(userId, organizationId);
-
-						// If count increased, fetch and send new notifications
-						if (currentCount > lastCount) {
-							// Fetch notifications newer than the last one we saw
-							const newNotificationsQuery = lastNotificationId
-								? db
-										.select()
-										.from(notification)
-										.where(
-											and(
-												eq(notification.userId, userId),
-												gt(
-													notification.createdAt,
-													db
-														.select({ createdAt: notification.createdAt })
-														.from(notification)
-														.where(eq(notification.id, lastNotificationId)),
-												),
-											),
-										)
-										.orderBy(desc(notification.createdAt))
-										.limit(10)
-								: db
-										.select()
-										.from(notification)
-										.where(eq(notification.userId, userId))
-										.orderBy(desc(notification.createdAt))
-										.limit(currentCount - lastCount);
-
-							const newNotifications = await newNotificationsQuery;
-
-							// Send each new notification
-							for (const notif of newNotifications.reverse()) {
-								const notifWithMeta: NotificationWithMeta = {
-									...notif,
-									timeAgo: getTimeAgo(notif.createdAt),
-								};
-								sendEvent("new_notification", notifWithMeta);
-
-								// Update last notification ID
-								lastNotificationId = notif.id;
-							}
-						}
-
-						// Always send count update if changed
-						if (currentCount !== lastCount) {
-							sendEvent("count_update", { count: currentCount });
-							lastCount = currentCount;
-						}
-					} catch {
-						// Ignore polling errors
-					}
-				}, 5000);
-
-				// Send heartbeat every 30 seconds
-				const heartbeatInterval = setInterval(() => {
-					try {
-						sendEvent("heartbeat", { timestamp: Date.now() });
-					} catch {
-						// Connection might be closed
-						clearInterval(pollInterval);
+					if (heartbeatInterval) {
 						clearInterval(heartbeatInterval);
 					}
-				}, 30000);
-
-				// Cleanup on close
-				const cleanup = () => {
-					clearInterval(pollInterval);
-					clearInterval(heartbeatInterval);
+					if (pollInterval) {
+						clearInterval(pollInterval);
+					}
+					if (subscriber) {
+						subscriber.unsubscribe(channel).catch(() => {});
+						subscriber.disconnect();
+					}
 				};
 
-				// Handle abort
+				try {
+					// Send initial count
+					const initialCount = await getUnreadCount(userId, organizationId);
+					sendEvent("count_update", { count: initialCount });
+
+					if (valkeyAvailable) {
+						// Use Valkey Pub/Sub for real-time updates (preferred)
+						subscriber = createValkeySubscriber();
+
+						// Handle connection errors
+						subscriber.on("error", (err) => {
+							console.error("Valkey subscriber error:", err);
+							// Don't cleanup here - let the subscription try to reconnect
+						});
+
+						// Subscribe to user's notification channel
+						await subscriber.subscribe(channel);
+
+						// Handle incoming messages
+						subscriber.on("message", (_receivedChannel, message) => {
+							try {
+								const parsed = JSON.parse(message);
+								if (parsed.event && parsed.data) {
+									sendEvent(parsed.event, parsed.data);
+								}
+							} catch (error) {
+								console.error("Failed to parse notification message:", error);
+							}
+						});
+					} else {
+						// Fallback to polling if Valkey is not available
+						// This ensures the feature still works, just with higher database load
+						console.warn("Valkey not available, falling back to database polling");
+
+						let lastCount = initialCount;
+
+						pollInterval = setInterval(async () => {
+							try {
+								const currentCount = await getUnreadCount(userId, organizationId);
+								if (currentCount !== lastCount) {
+									sendEvent("count_update", { count: currentCount });
+									lastCount = currentCount;
+								}
+							} catch {
+								// Ignore polling errors
+							}
+						}, 5000);
+					}
+
+					// Send heartbeat every 30 seconds
+					heartbeatInterval = setInterval(() => {
+						sendEvent("heartbeat", { timestamp: Date.now() });
+					}, 30000);
+				} catch (error) {
+					console.error("Error setting up notification stream:", error);
+					cleanup();
+				}
+
+				// Return cleanup function for when stream is closed
 				return cleanup;
 			},
 		});
