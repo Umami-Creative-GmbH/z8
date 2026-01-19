@@ -84,7 +84,8 @@
       "Bash(pnpm biome format:*)",
       "Bash(git show:*)",
       "Skill(vercel-react-best-practices)",
-      "Skill(web-design-guidelines)"
+      "Skill(web-design-guidelines)",
+      "Bash(pnpm dev)"
     ]
   },
   "enableAllProjectMcpServers": true,

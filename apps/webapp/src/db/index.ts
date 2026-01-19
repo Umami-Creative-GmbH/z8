@@ -26,9 +26,12 @@ function createPool(): Pool {
 		database: process.env.POSTGRES_DB!,
 		user: process.env.POSTGRES_USER!,
 		password: process.env.POSTGRES_PASSWORD!,
-		max: 10, // Reduced from 20 to prevent exhaustion
-		idleTimeoutMillis: 60000, // 60 seconds - Increased from 30 to reduce connection churn
-		connectionTimeoutMillis: 5000, // 5 seconds - Increased from 2 for more reliability
+		// With PgBouncer handling connection pooling, we can use smaller app-side pools
+		// PgBouncer manages the actual connections to PostgreSQL
+		max: parseInt(process.env.POSTGRES_POOL_MAX || "10", 10),
+		min: parseInt(process.env.POSTGRES_POOL_MIN || "2", 10),
+		idleTimeoutMillis: 30000, // 30 seconds - connections return to pool faster
+		connectionTimeoutMillis: 10000, // 10 seconds - more generous timeout for high load
 	});
 }
 

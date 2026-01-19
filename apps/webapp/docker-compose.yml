@@ -3,13 +3,40 @@ services:
   db:
     image: postgres:18-alpine
     ports:
-      - 5432:5432
+      - 5433:5432  # Direct access on 5433 for admin tasks (migrations, etc.)
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mysecretpassword}
       POSTGRES_DB: ${POSTGRES_DB:-postgres}
     volumes:
       - default_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  pgbouncer:
+    image: edoburu/pgbouncer:latest
+    ports:
+      - 5432:5432  # App connects here (standard postgres port)
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: ${POSTGRES_USER:-postgres}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-mysecretpassword}
+      DB_NAME: ${POSTGRES_DB:-postgres}
+      LISTEN_PORT: 5432
+      POOL_MODE: transaction  # Transaction pooling for better connection reuse
+      MAX_CLIENT_CONN: 1000   # Support many app connections
+      DEFAULT_POOL_SIZE: 50   # Connections to actual DB
+      MIN_POOL_SIZE: 10
+      RESERVE_POOL_SIZE: 10
+      IGNORE_STARTUP_PARAMETERS: extra_float_digits
+      AUTH_TYPE: scram-sha-256
+    depends_on:
+      db:
+        condition: service_healthy
 
   valkey:
     image: valkey/valkey:9-alpine

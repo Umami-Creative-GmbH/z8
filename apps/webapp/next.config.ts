@@ -6,7 +6,9 @@ const withNextIntl = createNextIntlPlugin();
 const nextConfig: NextConfig = {
 	reactStrictMode: true,
 	reactCompiler: true,
-	cacheComponents: false,
+	// Enable cache components for static dashboard shells and improved performance
+	// Components using connection() will still be dynamic
+	cacheComponents: true,
 	experimental: {
 		optimizePackageImports: [
 			"@tabler/icons-react",

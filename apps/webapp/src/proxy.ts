@@ -2,6 +2,12 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import createMiddleware from "next-intl/middleware";
 import { ALL_LANGUAGES, DEFAULT_LANGUAGE } from "@/tolgee/shared";
+import {
+	checkRateLimit,
+	createRateLimitResponse,
+	getClientIp,
+	RATE_LIMIT_CONFIGS,
+} from "@/lib/rate-limit";
 
 // Main domain from environment variable
 const MAIN_DOMAIN = process.env.NEXT_PUBLIC_MAIN_DOMAIN || "localhost:3000";
@@ -44,6 +50,29 @@ const i18nMiddleware = createMiddleware({
 export async function proxy(request: NextRequest) {
 	const { pathname } = request.nextUrl;
 
+	// Rate limiting for auth endpoints
+	const pathWithoutLocale = pathname.replace(/^\/[a-z]{2}(?:\/|$)/, "/");
+	if (
+		pathWithoutLocale === "/sign-in" ||
+		pathWithoutLocale === "/sign-up" ||
+		pathWithoutLocale === "/forgot-password" ||
+		pathWithoutLocale.startsWith("/api/auth/")
+	) {
+		const clientIp = getClientIp(request);
+		const config =
+			pathWithoutLocale === "/sign-up"
+				? RATE_LIMIT_CONFIGS.signUp
+				: pathWithoutLocale === "/forgot-password"
+					? RATE_LIMIT_CONFIGS.passwordReset
+					: RATE_LIMIT_CONFIGS.auth;
+
+		const rateLimitResult = await checkRateLimit(clientIp, "auth", config);
+
+		if (!rateLimitResult.allowed) {
+			return createRateLimitResponse(rateLimitResult);
+		}
+	}
+
 	// Handle i18n routing first
 	const response = i18nMiddleware(request);
 
@@ -51,9 +80,6 @@ export async function proxy(request: NextRequest) {
 	if (response.status === 307 || response.status === 308) {
 		return response;
 	}
-
-	// Extract the path without locale prefix for route matching
-	const pathWithoutLocale = pathname.replace(/^\/[a-z]{2}(?:\/|$)/, "/");
 
 	// Check if this is a public route
 	const isPublicRoute = PUBLIC_ROUTES.some(
@@ -97,6 +123,17 @@ export async function proxy(request: NextRequest) {
 
 	// Set pathname header for server components (used for callback URLs)
 	response.headers.set(DOMAIN_HEADERS.PATHNAME, pathname);
+
+	// Security headers
+	response.headers.set(
+		"Content-Security-Policy",
+		"default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https:; frame-ancestors 'none';",
+	);
+	response.headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+	response.headers.set("X-Content-Type-Options", "nosniff");
+	response.headers.set("X-Frame-Options", "DENY");
+	response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+	response.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
 
 	// Custom domain detection
 	const hostname = request.headers.get("host") || "";
