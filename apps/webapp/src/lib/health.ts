@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import { db } from "@/db";
 import { createLogger } from "@/lib/logger";
 import { valkey } from "@/lib/valkey";
+import { isQueueHealthy } from "@/lib/queue";
 
 const logger = createLogger("Health");
 
@@ -11,14 +12,18 @@ export interface ServiceHealth {
 	status: ServiceStatus;
 	latencyMs?: number;
 	error?: string;
+	details?: Record<string, unknown>;
 }
 
 export interface HealthCheckResult {
 	status: ServiceStatus;
 	timestamp: string;
+	version?: string;
+	uptime?: number;
 	services: {
 		database: ServiceHealth;
 		cache: ServiceHealth;
+		queue?: ServiceHealth;
 	};
 }
 
@@ -69,25 +74,65 @@ export async function checkCache(): Promise<ServiceHealth> {
 }
 
 /**
+ * Check BullMQ queue connectivity (optional service)
+ */
+export async function checkQueue(): Promise<ServiceHealth> {
+	const start = performance.now();
+	try {
+		const healthy = await isQueueHealthy();
+		if (healthy) {
+			return {
+				status: "healthy",
+				latencyMs: Math.round(performance.now() - start),
+			};
+		}
+		return {
+			status: "degraded",
+			latencyMs: Math.round(performance.now() - start),
+			error: "Queue connection unavailable",
+		};
+	} catch (error) {
+		const message = error instanceof Error ? error.message : "Unknown error";
+		return {
+			status: "degraded", // Queue is optional
+			latencyMs: Math.round(performance.now() - start),
+			error: message,
+		};
+	}
+}
+
+/**
  * Run all health checks and return aggregated result
  */
 export async function checkHealth(): Promise<HealthCheckResult> {
-	const [database, cache] = await Promise.all([checkDatabase(), checkCache()]);
+	const [database, cache, queue] = await Promise.all([
+		checkDatabase(),
+		checkCache(),
+		checkQueue(),
+	]);
 
-	// Overall status: unhealthy if DB is down, degraded if cache is down
+	// Overall status: unhealthy if DB is down, degraded if cache/queue is down
 	let status: ServiceStatus = "healthy";
 	if (database.status === "unhealthy") {
 		status = "unhealthy";
-	} else if (cache.status === "degraded" || cache.status === "unhealthy") {
+	} else if (
+		cache.status === "degraded" ||
+		cache.status === "unhealthy" ||
+		queue.status === "degraded" ||
+		queue.status === "unhealthy"
+	) {
 		status = "degraded";
 	}
 
 	return {
 		status,
 		timestamp: new Date().toISOString(),
+		version: process.env.npm_package_version || "unknown",
+		uptime: process.uptime(),
 		services: {
 			database,
 			cache,
+			queue,
 		},
 	};
 }
