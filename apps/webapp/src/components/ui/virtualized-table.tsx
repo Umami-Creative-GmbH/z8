@@ -13,9 +13,8 @@
  * - Supports row selection and memoization
  */
 
-import * as React from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { cn } from "@/lib/utils";
+import * as React from "react";
 import {
 	Table,
 	TableBody,
@@ -24,6 +23,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { cn } from "@/lib/utils";
 
 export interface VirtualizedTableColumn<T> {
 	id: string;
@@ -134,12 +134,9 @@ export function VirtualizedTable<T>({
 	const virtualRows = virtualizer.getVirtualItems();
 
 	// Stable callback creator using ref
-	const handleRowClick = React.useCallback(
-		(row: T, index: number) => {
-			onRowClickRef.current?.(row, index);
-		},
-		[],
-	);
+	const handleRowClick = React.useCallback((row: T, index: number) => {
+		onRowClickRef.current?.(row, index);
+	}, []);
 
 	if (data.length === 0) {
 		return (
@@ -176,15 +173,8 @@ export function VirtualizedTable<T>({
 				</TableHeader>
 			</Table>
 
-			<div
-				ref={parentRef}
-				className="overflow-auto"
-				style={{ maxHeight }}
-			>
-				<div
-					className="relative w-full"
-					style={{ height: virtualizer.getTotalSize() }}
-				>
+			<div ref={parentRef} className="overflow-auto" style={{ maxHeight }}>
+				<div className="relative w-full" style={{ height: virtualizer.getTotalSize() }}>
 					<Table>
 						<TableBody>
 							{virtualRows.map((virtualRow) => {

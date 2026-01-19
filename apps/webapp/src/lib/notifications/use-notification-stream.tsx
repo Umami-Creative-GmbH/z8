@@ -17,20 +17,12 @@ export interface NotificationStreamState {
 	error: Error | null;
 }
 
-interface NotificationEvent {
-	event: "count_update" | "new_notification" | "heartbeat";
-	data: unknown;
-}
-
 /**
  * Hook for subscribing to the notification SSE stream
  * Automatically reconnects on disconnect with exponential backoff
  */
 export function useNotificationStream(
-	options: {
-		enabled?: boolean;
-		onNewNotification?: (notification: unknown) => void;
-	} = {},
+	options: { enabled?: boolean; onNewNotification?: (notification: unknown) => void } = {},
 ): NotificationStreamState {
 	const { enabled = true, onNewNotification } = options;
 
@@ -67,7 +59,7 @@ export function useNotificationStream(
 				}));
 
 				// Exponential backoff for reconnection
-				const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
+				const delay = Math.min(1000 * 2 ** reconnectAttempts, 30000);
 				reconnectAttempts++;
 
 				reconnectTimeout = setTimeout(() => {
@@ -162,9 +154,7 @@ export function NotificationStreamProvider({
 export function useNotificationStreamContext(): NotificationStreamState {
 	const context = React.useContext(NotificationStreamContext);
 	if (!context) {
-		throw new Error(
-			"useNotificationStreamContext must be used within NotificationStreamProvider",
-		);
+		throw new Error("useNotificationStreamContext must be used within NotificationStreamProvider");
 	}
 	return context;
 }

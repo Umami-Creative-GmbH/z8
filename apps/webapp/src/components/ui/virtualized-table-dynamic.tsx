@@ -30,6 +30,7 @@ function TableSkeleton({ rowCount = 5 }: { rowCount?: number }) {
 			{/* Row skeletons */}
 			<div className="divide-y">
 				{Array.from({ length: rowCount }).map((_, i) => (
+					// biome-ignore lint/suspicious/noArrayIndexKey: Static skeleton rows don't reorder
 					<div key={i} className="flex gap-4 p-4">
 						<Skeleton className="h-4 w-24" />
 						<Skeleton className="h-4 w-32" />
@@ -55,14 +56,13 @@ export const DynamicVirtualizedTable = dynamic(
 );
 
 /**
- * Hook exports need to be re-exported directly (can't be dynamically imported)
- */
-export { useRowMemoization } from "./virtualized-table";
-
-/**
  * Type exports for consumers
  */
 export type {
 	VirtualizedTableColumn,
 	VirtualizedTableProps,
 } from "./virtualized-table";
+/**
+ * Hook exports need to be re-exported directly (can't be dynamically imported)
+ */
+export { useRowMemoization } from "./virtualized-table";
