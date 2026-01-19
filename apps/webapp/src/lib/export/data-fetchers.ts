@@ -2,7 +2,7 @@
  * Data fetchers for export functionality
  * This file contains server-only code that accesses the database
  */
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import {
 	absenceCategory,
 	absenceEntry,
@@ -67,19 +67,16 @@ export async function fetchEmployees(organizationId: string) {
 		},
 	});
 
-	// Fetch manager relationships separately
-	const managerRelations = await db.query.employeeManagers.findMany({
-		where: and(
-			// Filter by employees in this org
-			eq(employeeManagers.employeeId, employeeManagers.employeeId),
-		),
-	});
+	// Extract employee IDs for filtering
+	const employeeIds = employees.map((e) => e.id);
 
-	// Filter to only include manager relations for employees in this org
-	const employeeIds = new Set(employees.map((e) => e.id));
-	const relevantManagerRelations = managerRelations.filter(
-		(mr) => employeeIds.has(mr.employeeId) && employeeIds.has(mr.managerId),
-	);
+	// Fetch manager relationships using proper database-level filtering
+	const relevantManagerRelations =
+		employeeIds.length > 0
+			? await db.query.employeeManagers.findMany({
+					where: inArray(employeeManagers.employeeId, employeeIds),
+				})
+			: [];
 
 	logger.info({ count: employees.length }, "Fetched employees");
 
@@ -166,12 +163,9 @@ export async function fetchTimeEntries(organizationId: string) {
 		return [];
 	}
 
-	// Fetch time entries in batches to avoid memory issues
-	const entries = await db.query.timeEntry.findMany({
-		where: and(
-			// Note: timeEntry doesn't have direct orgId, so we filter by employee
-			eq(timeEntry.employeeId, timeEntry.employeeId), // Placeholder - will use inArray in actual implementation
-		),
+	// Fetch time entries with proper database-level filtering
+	const filteredEntries = await db.query.timeEntry.findMany({
+		where: inArray(timeEntry.employeeId, employeeIds),
 		with: {
 			employee: {
 				columns: {
@@ -183,9 +177,6 @@ export async function fetchTimeEntries(organizationId: string) {
 			},
 		},
 	});
-
-	// Filter to only include entries for employees in this org
-	const filteredEntries = entries.filter((e) => employeeIds.includes(e.employeeId));
 
 	logger.info({ count: filteredEntries.length }, "Fetched time entries");
 
@@ -224,7 +215,9 @@ export async function fetchWorkPeriods(organizationId: string) {
 		return [];
 	}
 
-	const periods = await db.query.workPeriod.findMany({
+	// Fetch work periods with proper database-level filtering
+	const filteredPeriods = await db.query.workPeriod.findMany({
+		where: inArray(workPeriod.employeeId, employeeIds),
 		with: {
 			employee: {
 				columns: {
@@ -236,9 +229,6 @@ export async function fetchWorkPeriods(organizationId: string) {
 			},
 		},
 	});
-
-	// Filter to only include periods for employees in this org
-	const filteredPeriods = periods.filter((p) => employeeIds.includes(p.employeeId));
 
 	logger.info({ count: filteredPeriods.length }, "Fetched work periods");
 
@@ -280,7 +270,9 @@ export async function fetchAbsences(organizationId: string) {
 		return { absences: [], categories };
 	}
 
-	const absences = await db.query.absenceEntry.findMany({
+	// Fetch absences with proper database-level filtering
+	const filteredAbsences = await db.query.absenceEntry.findMany({
+		where: inArray(absenceEntry.employeeId, employeeIds),
 		with: {
 			employee: {
 				columns: {
@@ -293,9 +285,6 @@ export async function fetchAbsences(organizationId: string) {
 			category: true,
 		},
 	});
-
-	// Filter to only include absences for employees in this org
-	const filteredAbsences = absences.filter((a) => employeeIds.includes(a.employeeId));
 
 	logger.info({ count: filteredAbsences.length }, "Fetched absences");
 
@@ -351,9 +340,12 @@ export async function fetchHolidays(organizationId: string) {
 	});
 
 	const presetIds = presets.map((p) => p.id);
-	const presetHolidays = presetIds.length > 0 ? await db.query.holidayPresetHoliday.findMany() : [];
-
-	const filteredPresetHolidays = presetHolidays.filter((ph) => presetIds.includes(ph.presetId));
+	const filteredPresetHolidays =
+		presetIds.length > 0
+			? await db.query.holidayPresetHoliday.findMany({
+					where: inArray(holidayPresetHoliday.presetId, presetIds),
+				})
+			: [];
 
 	const presetAssignments = await db.query.holidayPresetAssignment.findMany({
 		where: eq(holidayPresetAssignment.organizationId, organizationId),
@@ -440,10 +432,12 @@ export async function fetchVacation(organizationId: string) {
 	});
 	const employeeIds = orgEmployees.map((e) => e.id);
 
-	const employeeAllowances = await db.query.employeeVacationAllowance.findMany();
-	const filteredEmployeeAllowances = employeeAllowances.filter((ea) =>
-		employeeIds.includes(ea.employeeId),
-	);
+	const filteredEmployeeAllowances =
+		employeeIds.length > 0
+			? await db.query.employeeVacationAllowance.findMany({
+					where: inArray(employeeVacationAllowance.employeeId, employeeIds),
+				})
+			: [];
 
 	const policyAssignments = await db.query.vacationPolicyAssignment.findMany({
 		where: eq(vacationPolicyAssignment.organizationId, organizationId),
@@ -502,10 +496,12 @@ export async function fetchSchedules(organizationId: string) {
 	});
 
 	const templateIds = templates.map((t) => t.id);
-	const templateDays =
-		templateIds.length > 0 ? await db.query.workScheduleTemplateDays.findMany() : [];
-
-	const filteredTemplateDays = templateDays.filter((td) => templateIds.includes(td.templateId));
+	const filteredTemplateDays =
+		templateIds.length > 0
+			? await db.query.workScheduleTemplateDays.findMany({
+					where: inArray(workScheduleTemplateDays.templateId, templateIds),
+				})
+			: [];
 
 	const assignments = await db.query.workScheduleAssignment.findMany({
 		where: eq(workScheduleAssignment.organizationId, organizationId),
@@ -574,9 +570,12 @@ export async function fetchShifts(organizationId: string) {
 	});
 
 	const shiftIds = shifts.map((s) => s.id);
-	const requests = shiftIds.length > 0 ? await db.query.shiftRequest.findMany() : [];
-
-	const filteredRequests = requests.filter((r) => shiftIds.includes(r.shiftId));
+	const filteredRequests =
+		shiftIds.length > 0
+			? await db.query.shiftRequest.findMany({
+					where: inArray(shiftRequest.shiftId, shiftIds),
+				})
+			: [];
 
 	logger.info(
 		{ shiftsCount: shifts.length, requestsCount: filteredRequests.length },
@@ -691,6 +690,7 @@ export async function fetchAuditLogs(organizationId: string) {
 
 /**
  * Fetch data for specified categories
+ * Uses Promise.all for parallel fetching to eliminate waterfalls
  */
 export async function fetchExportData(
 	organizationId: string,
@@ -698,42 +698,277 @@ export async function fetchExportData(
 ): Promise<Record<string, unknown>> {
 	logger.info({ organizationId, categories }, "Fetching export data");
 
-	const data: Record<string, unknown> = {};
+	// Map categories to their fetch functions
+	const categoryFetchers: Record<ExportCategory, () => Promise<unknown>> = {
+		employees: () => fetchEmployees(organizationId),
+		teams: () => fetchTeams(organizationId),
+		time_entries: () => fetchTimeEntries(organizationId),
+		work_periods: () => fetchWorkPeriods(organizationId),
+		absences: () => fetchAbsences(organizationId),
+		holidays: () => fetchHolidays(organizationId),
+		vacation: () => fetchVacation(organizationId),
+		schedules: () => fetchSchedules(organizationId),
+		shifts: () => fetchShifts(organizationId),
+		audit_logs: () => fetchAuditLogs(organizationId),
+	};
 
-	for (const category of categories) {
-		switch (category) {
-			case "employees":
-				data.employees = await fetchEmployees(organizationId);
-				break;
-			case "teams":
-				data.teams = await fetchTeams(organizationId);
-				break;
-			case "time_entries":
-				data.time_entries = await fetchTimeEntries(organizationId);
-				break;
-			case "work_periods":
-				data.work_periods = await fetchWorkPeriods(organizationId);
-				break;
-			case "absences":
-				data.absences = await fetchAbsences(organizationId);
-				break;
-			case "holidays":
-				data.holidays = await fetchHolidays(organizationId);
-				break;
-			case "vacation":
-				data.vacation = await fetchVacation(organizationId);
-				break;
-			case "schedules":
-				data.schedules = await fetchSchedules(organizationId);
-				break;
-			case "shifts":
-				data.shifts = await fetchShifts(organizationId);
-				break;
-			case "audit_logs":
-				data.audit_logs = await fetchAuditLogs(organizationId);
-				break;
-		}
+	// Fetch all requested categories in parallel
+	const fetchPromises = categories.map(async (category) => ({
+		category,
+		data: await categoryFetchers[category](),
+	}));
+
+	const results = await Promise.all(fetchPromises);
+
+	// Build result object from parallel results
+	const data: Record<string, unknown> = {};
+	for (const { category, data: categoryData } of results) {
+		data[category] = categoryData;
 	}
 
 	return data;
+}
+
+// ============================================================================
+// STREAMING GENERATORS FOR LARGE DATASETS
+// ============================================================================
+// These generator functions fetch data in batches to prevent memory issues
+// with large organizations (5,000-7,000 employees)
+
+const BATCH_SIZE = 1000;
+
+/**
+ * Stream time entries in batches using a generator
+ * Yields batches of time entries to prevent memory exhaustion
+ */
+export async function* streamTimeEntries(
+	organizationId: string,
+	employeeIds: string[],
+): AsyncGenerator<
+	Array<{
+		id: string;
+		employeeId: string;
+		employeeName: string | null;
+		employeeNumber: string | null;
+		type: string;
+		timestamp: Date;
+		source: string | null;
+		method: string | null;
+		notes: string | null;
+	}>
+> {
+	if (employeeIds.length === 0) return;
+
+	let offset = 0;
+	let hasMore = true;
+
+	while (hasMore) {
+		const batch = await db.query.timeEntry.findMany({
+			where: inArray(timeEntry.employeeId, employeeIds),
+			with: {
+				employee: {
+					columns: {
+						id: true,
+						firstName: true,
+						lastName: true,
+						employeeNumber: true,
+					},
+				},
+			},
+			limit: BATCH_SIZE,
+			offset,
+			orderBy: (timeEntry, { desc }) => [desc(timeEntry.timestamp)],
+		});
+
+		if (batch.length === 0) {
+			hasMore = false;
+			break;
+		}
+
+		yield batch.map((e) => ({
+			id: e.id,
+			employeeId: e.employeeId,
+			employeeName: e.employee
+				? `${e.employee.firstName || ""} ${e.employee.lastName || ""}`.trim()
+				: null,
+			employeeNumber: e.employee?.employeeNumber || null,
+			type: e.type,
+			timestamp: e.timestamp,
+			source: e.source,
+			method: e.method,
+			notes: e.notes,
+		}));
+
+		offset += BATCH_SIZE;
+		hasMore = batch.length === BATCH_SIZE;
+	}
+
+	logger.info({ organizationId, totalOffset: offset }, "Streamed time entries");
+}
+
+/**
+ * Stream work periods in batches using a generator
+ * Yields batches of work periods to prevent memory exhaustion
+ */
+export async function* streamWorkPeriods(
+	organizationId: string,
+	employeeIds: string[],
+): AsyncGenerator<
+	Array<{
+		id: string;
+		employeeId: string;
+		employeeName: string | null;
+		employeeNumber: string | null;
+		startTime: Date;
+		endTime: Date | null;
+		durationMinutes: number | null;
+		breakDurationMinutes: number | null;
+		isActive: boolean;
+		source: string | null;
+	}>
+> {
+	if (employeeIds.length === 0) return;
+
+	let offset = 0;
+	let hasMore = true;
+
+	while (hasMore) {
+		const batch = await db.query.workPeriod.findMany({
+			where: inArray(workPeriod.employeeId, employeeIds),
+			with: {
+				employee: {
+					columns: {
+						id: true,
+						firstName: true,
+						lastName: true,
+						employeeNumber: true,
+					},
+				},
+			},
+			limit: BATCH_SIZE,
+			offset,
+			orderBy: (workPeriod, { desc }) => [desc(workPeriod.startTime)],
+		});
+
+		if (batch.length === 0) {
+			hasMore = false;
+			break;
+		}
+
+		yield batch.map((p) => ({
+			id: p.id,
+			employeeId: p.employeeId,
+			employeeName: p.employee
+				? `${p.employee.firstName || ""} ${p.employee.lastName || ""}`.trim()
+				: null,
+			employeeNumber: p.employee?.employeeNumber || null,
+			startTime: p.startTime,
+			endTime: p.endTime,
+			durationMinutes: p.durationMinutes,
+			breakDurationMinutes: p.breakDurationMinutes,
+			isActive: p.isActive,
+			source: p.source,
+		}));
+
+		offset += BATCH_SIZE;
+		hasMore = batch.length === BATCH_SIZE;
+	}
+
+	logger.info({ organizationId, totalOffset: offset }, "Streamed work periods");
+}
+
+/**
+ * Stream audit logs in batches using a generator
+ * Yields batches of audit logs to prevent memory exhaustion
+ */
+export async function* streamAuditLogs(
+	organizationId: string,
+	employeeIds: Set<string>,
+	userIds: Set<string>,
+	teamIds: Set<string>,
+): AsyncGenerator<
+	Array<{
+		id: string;
+		entityType: string;
+		entityId: string;
+		action: string;
+		performedBy: string | null;
+		changes: unknown;
+		metadata: unknown;
+		timestamp: Date;
+	}>
+> {
+	let offset = 0;
+	let hasMore = true;
+
+	while (hasMore) {
+		const batch = await db.query.auditLog.findMany({
+			limit: BATCH_SIZE,
+			offset,
+			orderBy: (auditLog, { desc }) => [desc(auditLog.timestamp)],
+		});
+
+		if (batch.length === 0) {
+			hasMore = false;
+			break;
+		}
+
+		// Filter to logs related to this organization's entities
+		const filteredBatch = batch.filter((log) => {
+			if (log.entityType === "organization" && log.entityId === organizationId) {
+				return true;
+			}
+			if (log.entityType === "employee" && employeeIds.has(log.entityId)) {
+				return true;
+			}
+			if (log.entityType === "team" && teamIds.has(log.entityId)) {
+				return true;
+			}
+			if (log.performedBy && userIds.has(log.performedBy)) {
+				return true;
+			}
+			return false;
+		});
+
+		if (filteredBatch.length > 0) {
+			yield filteredBatch.map((log) => ({
+				id: log.id,
+				entityType: log.entityType,
+				entityId: log.entityId,
+				action: log.action,
+				performedBy: log.performedBy,
+				changes: log.changes,
+				metadata: log.metadata,
+				timestamp: log.timestamp,
+			}));
+		}
+
+		offset += BATCH_SIZE;
+		hasMore = batch.length === BATCH_SIZE;
+	}
+
+	logger.info({ organizationId, totalOffset: offset }, "Streamed audit logs");
+}
+
+/**
+ * Helper to collect all items from a generator into an array
+ * Use this when you need all data at once (small-medium datasets)
+ */
+export async function collectGenerator<T>(generator: AsyncGenerator<T[]>): Promise<T[]> {
+	const results: T[] = [];
+	for await (const batch of generator) {
+		results.push(...batch);
+	}
+	return results;
+}
+
+/**
+ * Get employee IDs for an organization (helper for streaming functions)
+ */
+export async function getOrganizationEmployeeIds(organizationId: string): Promise<string[]> {
+	const employees = await db.query.employee.findMany({
+		where: eq(employee.organizationId, organizationId),
+		columns: { id: true },
+	});
+	return employees.map((e) => e.id);
 }
