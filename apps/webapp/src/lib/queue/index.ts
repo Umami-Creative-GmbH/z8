@@ -11,7 +11,7 @@
  * - Supports job prioritization and rate limiting
  */
 
-import { Queue, Worker, Job, type ConnectionOptions, type JobsOptions } from "bullmq";
+import { type ConnectionOptions, type Job, type JobsOptions, Queue, Worker } from "bullmq";
 import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("JobQueue");
@@ -125,28 +125,36 @@ export async function addJob(
 /**
  * Add a report generation job
  */
-export async function addReportJob(data: Omit<ReportJobData, "type">): Promise<Job<JobData, JobResult>> {
+export async function addReportJob(
+	data: Omit<ReportJobData, "type">,
+): Promise<Job<JobData, JobResult>> {
 	return addJob("generate-report", { ...data, type: "report" });
 }
 
 /**
  * Add an export processing job
  */
-export async function addExportJob(data: Omit<ExportJobData, "type">): Promise<Job<JobData, JobResult>> {
+export async function addExportJob(
+	data: Omit<ExportJobData, "type">,
+): Promise<Job<JobData, JobResult>> {
 	return addJob("process-export", { ...data, type: "export" });
 }
 
 /**
  * Add an email sending job
  */
-export async function addEmailJob(data: Omit<EmailJobData, "type">): Promise<Job<JobData, JobResult>> {
+export async function addEmailJob(
+	data: Omit<EmailJobData, "type">,
+): Promise<Job<JobData, JobResult>> {
 	return addJob("send-email", { ...data, type: "email" }, { priority: 1 }); // High priority
 }
 
 /**
  * Add a cleanup job
  */
-export async function addCleanupJob(data: Omit<CleanupJobData, "type">): Promise<Job<JobData, JobResult>> {
+export async function addCleanupJob(
+	data: Omit<CleanupJobData, "type">,
+): Promise<Job<JobData, JobResult>> {
 	return addJob("cleanup", { ...data, type: "cleanup" }, { priority: 10 }); // Low priority
 }
 
@@ -167,7 +175,7 @@ export async function getJobStatus(jobId: string): Promise<{
 	}
 
 	const state = await job.getState();
-	const progress = job.progress as number || 0;
+	const progress = (job.progress as number) || 0;
 
 	return {
 		state,

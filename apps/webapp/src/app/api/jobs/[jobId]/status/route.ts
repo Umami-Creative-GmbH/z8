@@ -7,11 +7,11 @@
  * Rule: client-swr-dedup
  */
 
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { getJobStatus } from "@/lib/queue";
 
 export async function GET(
-	request: NextRequest,
+	_request: NextRequest,
 	{ params }: { params: Promise<{ jobId: string }> },
 ) {
 	const { jobId } = await params;
@@ -24,18 +24,12 @@ export async function GET(
 		const status = await getJobStatus(jobId);
 
 		if (!status) {
-			return NextResponse.json(
-				{ state: "unknown", progress: 0 },
-				{ status: 404 },
-			);
+			return NextResponse.json({ state: "unknown", progress: 0 }, { status: 404 });
 		}
 
 		return NextResponse.json(status);
 	} catch (error) {
 		console.error("Failed to get job status:", error);
-		return NextResponse.json(
-			{ error: "Failed to fetch job status" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Failed to fetch job status" }, { status: 500 });
 	}
 }

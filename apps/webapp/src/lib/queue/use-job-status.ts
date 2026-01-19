@@ -85,12 +85,7 @@ export function useJobStatus(
 	error: Error | undefined;
 	mutate: () => Promise<JobStatus | undefined>;
 } {
-	const {
-		refreshInterval = 2000,
-		enabled = true,
-		onSuccess,
-		onError,
-	} = options;
+	const { refreshInterval = 2000, enabled = true, onSuccess, onError } = options;
 
 	// Store callbacks in refs to avoid triggering effect reruns
 	const onSuccessRef = { current: onSuccess };
@@ -107,7 +102,7 @@ export function useJobStatus(
 			// SWR deduplication: multiple hooks watching same job share one request
 			dedupingInterval: 1000,
 			// Stop polling when job is in terminal state
-			refreshInterval: (data) => {
+			refreshInterval: (data: JobStatus | undefined) => {
 				if (!data) return refreshInterval;
 				if (data.state === "completed" || data.state === "failed") {
 					return 0; // Stop polling
@@ -117,7 +112,7 @@ export function useJobStatus(
 			// Revalidate on focus to catch updates user might have missed
 			revalidateOnFocus: true,
 			// Handle completion/failure callbacks
-			onSuccess: (data) => {
+			onSuccess: (data: JobStatus) => {
 				if (data.state === "completed" && data.result) {
 					onSuccessRef.current?.(data.result);
 				} else if (data.state === "failed" && data.error) {
@@ -153,22 +148,19 @@ export function useJobStatuses(
 	const { refreshInterval = 2000, enabled = true } = options;
 
 	// Use SWR for each job (SWR handles deduplication automatically)
+	// This pattern is intentional - jobIds array must be stable for correct behavior
 	const results = jobIds.map((id) => {
-		// eslint-disable-next-line react-hooks/rules-of-hooks
-		return useSWR<JobStatus>(
-			enabled ? `/api/jobs/${id}/status` : null,
-			fetcher,
-			{
-				dedupingInterval: 1000,
-				refreshInterval: (data) => {
-					if (!data) return refreshInterval;
-					if (data.state === "completed" || data.state === "failed") {
-						return 0;
-					}
-					return refreshInterval;
-				},
+		// biome-ignore lint/correctness/useHookAtTopLevel: SWR pattern for watching multiple items with stable array
+		return useSWR<JobStatus>(enabled ? `/api/jobs/${id}/status` : null, fetcher, {
+			dedupingInterval: 1000,
+			refreshInterval: (data: JobStatus | undefined) => {
+				if (!data) return refreshInterval;
+				if (data.state === "completed" || data.state === "failed") {
+					return 0;
+				}
+				return refreshInterval;
 			},
-		);
+		});
 	});
 
 	const statuses = new Map<string, JobStatus>();
