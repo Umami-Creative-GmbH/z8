@@ -8,6 +8,27 @@
       "when": 1768678734622,
       "tag": "0000_flimsy_jane_foster",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1768811399010,
+      "tag": "0001_flat_sunspot",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1737331200000,
+      "tag": "0002_enterprise_indexes",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1737331300000,
+      "tag": "0003_materialized_views",
+      "breakpoints": true
     }
   ]
 }
