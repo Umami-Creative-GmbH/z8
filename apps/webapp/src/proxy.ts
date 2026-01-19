@@ -1,13 +1,8 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import createMiddleware from "next-intl/middleware";
+import { checkRateLimit, createRateLimitResponse, getClientIp } from "@/lib/rate-limit";
 import { ALL_LANGUAGES, DEFAULT_LANGUAGE } from "@/tolgee/shared";
-import {
-	checkRateLimit,
-	createRateLimitResponse,
-	getClientIp,
-	RATE_LIMIT_CONFIGS,
-} from "@/lib/rate-limit";
 
 // Main domain from environment variable
 const MAIN_DOMAIN = process.env.NEXT_PUBLIC_MAIN_DOMAIN || "localhost:3000";
@@ -59,14 +54,14 @@ export async function proxy(request: NextRequest) {
 		pathWithoutLocale.startsWith("/api/auth/")
 	) {
 		const clientIp = getClientIp(request);
-		const config =
+		const endpoint =
 			pathWithoutLocale === "/sign-up"
-				? RATE_LIMIT_CONFIGS.signUp
+				? "signUp"
 				: pathWithoutLocale === "/forgot-password"
-					? RATE_LIMIT_CONFIGS.passwordReset
-					: RATE_LIMIT_CONFIGS.auth;
+					? "passwordReset"
+					: "auth";
 
-		const rateLimitResult = await checkRateLimit(clientIp, "auth", config);
+		const rateLimitResult = await checkRateLimit(clientIp, endpoint);
 
 		if (!rateLimitResult.allowed) {
 			return createRateLimitResponse(rateLimitResult);
@@ -83,14 +78,12 @@ export async function proxy(request: NextRequest) {
 
 	// Check if this is a public route
 	const isPublicRoute = PUBLIC_ROUTES.some(
-		(route) =>
-			pathWithoutLocale === route || pathWithoutLocale.startsWith(`${route}/`),
+		(route) => pathWithoutLocale === route || pathWithoutLocale.startsWith(`${route}/`),
 	);
 
 	// Check if this is an auth route (sign-in, sign-up, etc.)
 	const isAuthRoute = AUTH_ROUTES.some(
-		(route) =>
-			pathWithoutLocale === route || pathWithoutLocale.startsWith(`${route}/`),
+		(route) => pathWithoutLocale === route || pathWithoutLocale.startsWith(`${route}/`),
 	);
 
 	// Check for session cookie presence
@@ -105,8 +98,7 @@ export async function proxy(request: NextRequest) {
 	if (!hasSessionCookie) {
 		// Not authenticated - redirect to sign-in if trying to access protected route
 		if (!isPublicRoute) {
-			const locale =
-				pathname.match(/^\/([a-z]{2})(?:\/|$)/)?.[1] || DEFAULT_LANGUAGE;
+			const locale = pathname.match(/^\/([a-z]{2})(?:\/|$)/)?.[1] || DEFAULT_LANGUAGE;
 			const signInUrl = new URL(`/${locale}/sign-in`, request.url);
 			signInUrl.searchParams.set("callbackUrl", pathname);
 			return NextResponse.redirect(signInUrl);
@@ -114,8 +106,7 @@ export async function proxy(request: NextRequest) {
 	} else {
 		// Authenticated - redirect away from auth routes
 		if (isAuthRoute) {
-			const locale =
-				pathname.match(/^\/([a-z]{2})(?:\/|$)/)?.[1] || DEFAULT_LANGUAGE;
+			const locale = pathname.match(/^\/([a-z]{2})(?:\/|$)/)?.[1] || DEFAULT_LANGUAGE;
 			const dashboardUrl = new URL(`/${locale}/`, request.url);
 			return NextResponse.redirect(dashboardUrl);
 		}
