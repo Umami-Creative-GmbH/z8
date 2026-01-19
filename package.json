@@ -1,42 +1,42 @@
 {
-	"name": "z8",
-	"private": true,
-	"pnpm": {
-		"overrides": {
-			"pako": "1.0.11"
-		},
-		"onlyBuiltDependencies": [
-			"@parcel/watcher",
-			"@swc/core",
-			"esbuild",
-			"msw",
-			"protobufjs",
-			"sharp"
-		]
-	},
-	"workspaces": [
-		"apps/*",
-		"packages/*"
-	],
-	"scripts": {
-		"dev": "turbo dev",
-		"build": "turbo build",
-		"test": "turbo test",
-		"test:watch": "turbo test:watch",
-		"dev:webapp": "turbo dev --filter=webapp",
-		"dev:desktop": "turbo dev --filter=desktop",
-		"dev:mobile": "turbo dev --filter=mobile",
-		"build:webapp": "turbo build --filter=webapp",
-		"build:desktop": "turbo build --filter=desktop",
-		"build:mobile": "turbo build --filter=mobile",
-		"dev:docs": "turbo dev --filter=docs",
-		"build:docs": "turbo build --filter=docs"
-	},
-	"devDependencies": {
-		"@esbuild/win32-x64": "^0.27.2",
-		"puppeteer-core": "^24.35.0",
-		"shadcn": "^3.7.0",
-		"turbo": "^2.7.5"
-	},
-	"packageManager": "pnpm@10.28.0+sha512.05df71d1421f21399e053fde567cea34d446fa02c76571441bfc1c7956e98e363088982d940465fd34480d4d90a0668bc12362f8aa88000a64e83d0b0e47be48"
+  "name": "z8",
+  "private": true,
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@parcel/watcher",
+      "@swc/core",
+      "esbuild",
+      "msw",
+      "protobufjs",
+      "sharp"
+    ]
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "test": "turbo test",
+    "test:watch": "turbo test:watch",
+    "dev:webapp": "turbo dev --filter=webapp",
+    "dev:desktop": "turbo dev --filter=desktop",
+    "dev:mobile": "turbo dev --filter=mobile",
+    "build:webapp": "turbo build --filter=webapp",
+    "build:desktop": "turbo build --filter=desktop",
+    "build:mobile": "turbo build --filter=mobile",
+    "dev:docs": "turbo dev --filter=docs",
+    "build:docs": "turbo build --filter=docs"
+  },
+  "devDependencies": {
+    "@esbuild/win32-x64": "^0.27.2",
+    "puppeteer-core": "^24.35.0",
+    "shadcn": "^3.7.0",
+    "turbo": "^2.7.5"
+  },
+  "packageManager": "pnpm@10.28.0+sha512.05df71d1421f21399e053fde567cea34d446fa02c76571441bfc1c7956e98e363088982d940465fd34480d4d90a0668bc12362f8aa88000a64e83d0b0e47be48",
+  "overrides": {
+    "pako": "1.0.11"
+  }
 }
