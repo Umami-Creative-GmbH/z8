@@ -1,8 +1,12 @@
+import { connection } from "next/server";
 import { WellnessSettingsForm } from "@/components/settings/wellness-settings-form";
 import { requireUser } from "@/lib/auth-helpers";
 import { getWellnessSettings } from "./actions";
 
 export default async function WellnessPage() {
+	// Signal that this route needs request data (required before Effect runtime uses Date.now())
+	await connection();
+
 	// Parallelize auth and settings fetches
 	const [, settingsResult] = await Promise.all([requireUser(), getWellnessSettings()]);
 

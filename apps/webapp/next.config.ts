@@ -41,6 +41,7 @@ const nextConfig: NextConfig = {
 		"@opentelemetry/auto-instrumentations-node",
 		"pg",
 		"ioredis",
+		"bullmq",
 		"pino",
 		"pino-pretty",
 		"pino-opentelemetry-transport",

@@ -85,7 +85,11 @@
       "Bash(git show:*)",
       "Skill(vercel-react-best-practices)",
       "Skill(web-design-guidelines)",
-      "Bash(pnpm dev)"
+      "Bash(pnpm dev)",
+      "Bash(docker compose:*)",
+      "Bash(pnpm exec biome check:*)",
+      "Bash(pnpm --filter webapp build:*)",
+      "Bash(pnpm --filter docs build:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

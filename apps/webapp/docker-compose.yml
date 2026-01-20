@@ -54,6 +54,25 @@ services:
     depends_on:
       - valkey
 
+  # Bull Board - BullMQ job queue dashboard
+  # Access at http://localhost:3100
+  # Login with BULL_BOARD_USER/BULL_BOARD_PASSWORD from .env
+  bullboard:
+    image: deadly0/bull-board:latest
+    ports:
+      - "3100:3000"
+    environment:
+      REDIS_HOST: valkey
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${VALKEY_PASSWORD:-}
+      REDIS_USE_TLS: "false"
+      BULL_PREFIX: bull  # BullMQ default prefix
+      # Basic auth - set these in .env for security
+      USER_LOGIN: ${BULL_BOARD_USER:-admin}
+      USER_PASSWORD: ${BULL_BOARD_PASSWORD:-admin}
+    depends_on:
+      - valkey
+
 volumes:
   default_data:
   valkey_data:
