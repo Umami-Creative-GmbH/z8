@@ -47,6 +47,9 @@ export const dataExport = pgTable(
 );
 
 // S3 storage configuration for data exports (per organization)
+// NOTE: Secrets (accessKeyId, secretAccessKey) are stored in Vault at:
+//   - secret/data/organizations/{orgId}/storage/access_key_id
+//   - secret/data/organizations/{orgId}/storage/secret_access_key
 export const exportStorageConfig = pgTable(
 	"export_storage_config",
 	{
@@ -56,10 +59,8 @@ export const exportStorageConfig = pgTable(
 			.references(() => organization.id, { onDelete: "cascade" })
 			.unique(), // One config per organization
 
-		// S3 credentials (encrypted at rest by database)
+		// S3 non-secret config (secrets stored in Vault)
 		bucket: text("bucket").notNull(),
-		accessKeyId: text("access_key_id").notNull(),
-		secretAccessKey: text("secret_access_key").notNull(), // Should be encrypted
 		region: text("region").default("us-east-1").notNull(),
 		endpoint: text("endpoint"), // Custom endpoint for MinIO/compatible services
 

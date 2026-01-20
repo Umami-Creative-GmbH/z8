@@ -70,3 +70,21 @@ export type DashboardWidgetOrder = {
 	order: string[];
 	version: number;
 };
+
+// Type for work period pending changes (used when change policy requires approval)
+export type WorkPeriodPendingChanges = {
+	// Original times before the requested change
+	originalStartTime: string; // ISO timestamp
+	originalEndTime: string; // ISO timestamp
+	originalDurationMinutes: number;
+	// Requested changes
+	requestedStartTime?: string; // ISO timestamp
+	requestedEndTime?: string; // ISO timestamp
+	requestedDurationMinutes?: number;
+	// Metadata
+	requestedAt: string; // ISO timestamp
+	requestedBy: string; // User ID
+	reason?: string;
+	// For 0-day policy where clock-out itself triggers approval
+	isNewClockOut?: boolean;
+};

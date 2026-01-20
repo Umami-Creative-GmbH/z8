@@ -27,17 +27,6 @@ export const user = pgTable("user", {
   twoFactorEnabled: boolean("two_factor_enabled").default(false),
   canCreateOrganizations: boolean("can_create_organizations").default(false),
   invitedVia: text("invited_via"),
-  onboardingComplete: boolean("onboarding_complete").default(false),
-  onboardingStep: text("onboarding_step"),
-  onboardingStartedAt: timestamp("onboarding_started_at"),
-  onboardingCompletedAt: timestamp("onboarding_completed_at"),
-  timezone: text("timezone").default("UTC"),
-  waterReminderEnabled: boolean("water_reminder_enabled").default(false),
-  waterReminderPreset: text("water_reminder_preset").default("moderate"),
-  waterReminderIntervalMinutes: integer(
-    "water_reminder_interval_minutes",
-  ).default(45),
-  waterReminderDailyGoal: integer("water_reminder_daily_goal").default(8),
 });
 
 export const session = pgTable(
@@ -116,6 +105,8 @@ export const organization = pgTable(
     projectsEnabled: boolean("projects_enabled").default(false),
     surchargesEnabled: boolean("surcharges_enabled").default(false),
     timezone: text("timezone").default("UTC"),
+    deletedAt: timestamp("deleted_at"),
+    deletedBy: text("deleted_by"),
   },
   (table) => [uniqueIndex("organization_slug_uidx").on(table.slug)],
 );

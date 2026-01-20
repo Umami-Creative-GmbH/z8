@@ -3,10 +3,11 @@ import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 
 // Import auth tables for FK references
 import { user } from "../auth-schema";
-import { timeEntryTypeEnum } from "./enums";
+import { approvalStatusEnum, timeEntryTypeEnum } from "./enums";
 import { employee } from "./organization";
 import { project } from "./project";
-import type { WorkPeriodAutoAdjustmentReason } from "./types";
+import type { WorkPeriodAutoAdjustmentReason, WorkPeriodPendingChanges } from "./types";
+import { workCategory } from "./work-category";
 
 // ============================================
 // TIME TRACKING
@@ -75,11 +76,28 @@ export const workPeriod = pgTable(
 			onDelete: "set null",
 		}),
 
+		// Work category assignment (optional)
+		// When set, the factor from the category is used to calculate effective working time
+		// e.g., 2h of "Passive Travel" (factor 0.5) = 1h effective working time
+		workCategoryId: uuid("work_category_id").references(() => workCategory.id, {
+			onDelete: "set null",
+		}),
+
 		startTime: timestamp("start_time").notNull(),
 		endTime: timestamp("end_time"),
 		durationMinutes: integer("duration_minutes"), // Calculated when clocked out
 
 		isActive: boolean("is_active").default(true).notNull(), // False when clocked out
+
+		// Approval status for change policy enforcement
+		// "approved" = normal working period (default)
+		// "pending" = awaiting manager approval (when change policy requires it)
+		// "rejected" = manager rejected the change (reverted to original times)
+		approvalStatus: approvalStatusEnum("approval_status").default("approved").notNull(),
+
+		// Pending changes stored when approval is required
+		// Contains the requested changes while waiting for approval
+		pendingChanges: text("pending_changes").$type<WorkPeriodPendingChanges>(),
 
 		// Auto-adjustment tracking for break enforcement
 		wasAutoAdjusted: boolean("was_auto_adjusted").default(false).notNull(),
@@ -97,5 +115,7 @@ export const workPeriod = pgTable(
 		index("workPeriod_employeeId_idx").on(table.employeeId),
 		index("workPeriod_startTime_idx").on(table.startTime),
 		index("workPeriod_projectId_idx").on(table.projectId),
+		index("workPeriod_workCategoryId_idx").on(table.workCategoryId),
+		index("workPeriod_approvalStatus_idx").on(table.approvalStatus),
 	],
 );

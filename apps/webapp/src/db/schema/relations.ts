@@ -5,7 +5,12 @@ import { invitation, member, organization, user } from "../auth-schema";
 import { absenceCategory, absenceEntry } from "./absence";
 import { approvalRequest } from "./approval";
 import { auditLog } from "./audit";
-import { organizationBranding, organizationDomain } from "./enterprise";
+import { changePolicy, changePolicyAssignment } from "./change-policy";
+import {
+	organizationBranding,
+	organizationDomain,
+	organizationEmailConfig,
+} from "./enterprise";
 import { dataExport, exportStorageConfig } from "./export";
 import {
 	holiday,
@@ -15,6 +20,11 @@ import {
 	holidayPresetAssignment,
 	holidayPresetHoliday,
 } from "./holiday";
+import {
+	inviteCode,
+	inviteCodeUsage,
+	memberApproval,
+} from "./invite-code";
 import {
 	notification,
 	notificationPreference,
@@ -38,7 +48,7 @@ import {
 	projectManager,
 	projectNotificationState,
 } from "./project";
-import { shift, shiftRequest, shiftTemplate } from "./shift";
+import { shift, shiftRecurrence, shiftRequest, shiftTemplate } from "./shift";
 import {
 	surchargeCalculation,
 	surchargeModel,
@@ -63,6 +73,12 @@ import {
 
 import { hydrationStats, waterIntakeLog } from "./wellness";
 import {
+	workCategory,
+	workCategorySet,
+	workCategorySetAssignment,
+	workCategorySetCategory,
+} from "./work-category";
+import {
 	workScheduleAssignment,
 	workScheduleTemplate,
 	workScheduleTemplateDays,
@@ -79,6 +95,9 @@ export const organizationRelations = relations(
 		// Auth relations (from auth-schema tables)
 		members: many(member),
 		invitations: many(invitation),
+		// Invite codes
+		inviteCodes: many(inviteCode),
+		memberApprovals: many(memberApproval),
 		// Business relations
 		teams: many(team),
 		employees: many(employee),
@@ -108,12 +127,20 @@ export const organizationRelations = relations(
 		// Enterprise features
 		domains: many(organizationDomain),
 		branding: one(organizationBranding),
+		emailConfig: one(organizationEmailConfig),
 		// Surcharges
 		surchargeModels: many(surchargeModel),
 		surchargeModelAssignments: many(surchargeModelAssignment),
 		surchargeCalculations: many(surchargeCalculation),
 		// Locations
 		locations: many(location),
+		// Work categories
+		workCategories: many(workCategory),
+		workCategorySets: many(workCategorySet),
+		workCategorySetAssignments: many(workCategorySetAssignment),
+		// Change policies
+		changePolicies: many(changePolicy),
+		changePolicyAssignments: many(changePolicyAssignment),
 	}),
 );
 
@@ -131,6 +158,10 @@ export const teamRelations = relations(team, ({ one, many }) => ({
 	projectAssignments: many(projectAssignment),
 	// Surcharges
 	surchargeModelAssignments: many(surchargeModelAssignment),
+	// Work categories
+	workCategorySetAssignments: many(workCategorySetAssignment),
+	// Change policies
+	changePolicyAssignments: many(changePolicyAssignment),
 }));
 
 // Location relations
@@ -161,6 +192,10 @@ export const locationSubareaRelations = relations(
 			references: [location.id],
 		}),
 		employees: many(subareaEmployee),
+		// Shift scheduling relations
+		shifts: many(shift),
+		shiftTemplates: many(shiftTemplate),
+		shiftRecurrences: many(shiftRecurrence),
 		creator: one(user, {
 			fields: [locationSubarea.createdBy],
 			references: [user.id],
@@ -287,6 +322,10 @@ export const employeeRelations = relations(employee, ({ one, many }) => ({
 	// Location assignments
 	locationAssignments: many(locationEmployee),
 	subareaAssignments: many(subareaEmployee),
+	// Work categories
+	workCategorySetAssignments: many(workCategorySetAssignment),
+	// Change policies
+	changePolicyAssignments: many(changePolicyAssignment),
 }));
 
 // Employee Rate History
@@ -355,6 +394,10 @@ export const workPeriodRelations = relations(workPeriod, ({ one }) => ({
 		references: [project.id],
 	}),
 	surchargeCalculation: one(surchargeCalculation),
+	workCategory: one(workCategory, {
+		fields: [workPeriod.workCategoryId],
+		references: [workCategory.id],
+	}),
 }));
 
 // Absence relations
@@ -792,9 +835,37 @@ export const shiftTemplateRelations = relations(
 			fields: [shiftTemplate.organizationId],
 			references: [organization.id],
 		}),
+		subarea: one(locationSubarea, {
+			fields: [shiftTemplate.subareaId],
+			references: [locationSubarea.id],
+		}),
 		shifts: many(shift),
+		recurrences: many(shiftRecurrence),
 		creator: one(user, {
 			fields: [shiftTemplate.createdBy],
+			references: [user.id],
+		}),
+	}),
+);
+
+export const shiftRecurrenceRelations = relations(
+	shiftRecurrence,
+	({ one, many }) => ({
+		organization: one(organization, {
+			fields: [shiftRecurrence.organizationId],
+			references: [organization.id],
+		}),
+		template: one(shiftTemplate, {
+			fields: [shiftRecurrence.templateId],
+			references: [shiftTemplate.id],
+		}),
+		subarea: one(locationSubarea, {
+			fields: [shiftRecurrence.subareaId],
+			references: [locationSubarea.id],
+		}),
+		shifts: many(shift),
+		creator: one(user, {
+			fields: [shiftRecurrence.createdBy],
 			references: [user.id],
 		}),
 	}),
@@ -812,6 +883,14 @@ export const shiftRelations = relations(shift, ({ one, many }) => ({
 	template: one(shiftTemplate, {
 		fields: [shift.templateId],
 		references: [shiftTemplate.id],
+	}),
+	subarea: one(locationSubarea, {
+		fields: [shift.subareaId],
+		references: [locationSubarea.id],
+	}),
+	recurrence: one(shiftRecurrence, {
+		fields: [shift.recurrenceId],
+		references: [shiftRecurrence.id],
 	}),
 	requests: many(shiftRequest),
 	creator: one(user, {
@@ -974,6 +1053,16 @@ export const organizationBrandingRelations = relations(
 	}),
 );
 
+export const organizationEmailConfigRelations = relations(
+	organizationEmailConfig,
+	({ one }) => ({
+		organization: one(organization, {
+			fields: [organizationEmailConfig.organizationId],
+			references: [organization.id],
+		}),
+	}),
+);
+
 // Data export relations
 export const dataExportRelations = relations(dataExport, ({ one }) => ({
 	organization: one(organization, {
@@ -1114,6 +1203,205 @@ export const hydrationStatsRelations = relations(hydrationStats, ({ one }) => ({
 export const userSettingsRelations = relations(userSettings, ({ one }) => ({
 	user: one(user, {
 		fields: [userSettings.userId],
+		references: [user.id],
+	}),
+}));
+
+// ============================================
+// WORK CATEGORY RELATIONS
+// ============================================
+
+export const workCategorySetRelations = relations(
+	workCategorySet,
+	({ one, many }) => ({
+		organization: one(organization, {
+			fields: [workCategorySet.organizationId],
+			references: [organization.id],
+		}),
+		// Many-to-many through junction table
+		setCategories: many(workCategorySetCategory),
+		assignments: many(workCategorySetAssignment),
+		creator: one(user, {
+			fields: [workCategorySet.createdBy],
+			references: [user.id],
+			relationName: "work_category_set_creator",
+		}),
+		updater: one(user, {
+			fields: [workCategorySet.updatedBy],
+			references: [user.id],
+			relationName: "work_category_set_updater",
+		}),
+	}),
+);
+
+export const workCategoryRelations = relations(workCategory, ({ one, many }) => ({
+	organization: one(organization, {
+		fields: [workCategory.organizationId],
+		references: [organization.id],
+	}),
+	// Many-to-many through junction table
+	setCategories: many(workCategorySetCategory),
+	workPeriods: many(workPeriod),
+	creator: one(user, {
+		fields: [workCategory.createdBy],
+		references: [user.id],
+		relationName: "work_category_creator",
+	}),
+	updater: one(user, {
+		fields: [workCategory.updatedBy],
+		references: [user.id],
+		relationName: "work_category_updater",
+	}),
+}));
+
+// Junction table relations for many-to-many
+export const workCategorySetCategoryRelations = relations(
+	workCategorySetCategory,
+	({ one }) => ({
+		set: one(workCategorySet, {
+			fields: [workCategorySetCategory.setId],
+			references: [workCategorySet.id],
+		}),
+		category: one(workCategory, {
+			fields: [workCategorySetCategory.categoryId],
+			references: [workCategory.id],
+		}),
+	}),
+);
+
+export const workCategorySetAssignmentRelations = relations(
+	workCategorySetAssignment,
+	({ one }) => ({
+		set: one(workCategorySet, {
+			fields: [workCategorySetAssignment.setId],
+			references: [workCategorySet.id],
+		}),
+		organization: one(organization, {
+			fields: [workCategorySetAssignment.organizationId],
+			references: [organization.id],
+		}),
+		team: one(team, {
+			fields: [workCategorySetAssignment.teamId],
+			references: [team.id],
+		}),
+		employee: one(employee, {
+			fields: [workCategorySetAssignment.employeeId],
+			references: [employee.id],
+		}),
+		creator: one(user, {
+			fields: [workCategorySetAssignment.createdBy],
+			references: [user.id],
+		}),
+	}),
+);
+
+// ============================================
+// CHANGE POLICY RELATIONS
+// ============================================
+
+export const changePolicyRelations = relations(
+	changePolicy,
+	({ one, many }) => ({
+		organization: one(organization, {
+			fields: [changePolicy.organizationId],
+			references: [organization.id],
+		}),
+		assignments: many(changePolicyAssignment),
+		creator: one(user, {
+			fields: [changePolicy.createdBy],
+			references: [user.id],
+			relationName: "change_policy_creator",
+		}),
+		updater: one(user, {
+			fields: [changePolicy.updatedBy],
+			references: [user.id],
+			relationName: "change_policy_updater",
+		}),
+	}),
+);
+
+export const changePolicyAssignmentRelations = relations(
+	changePolicyAssignment,
+	({ one }) => ({
+		policy: one(changePolicy, {
+			fields: [changePolicyAssignment.policyId],
+			references: [changePolicy.id],
+		}),
+		organization: one(organization, {
+			fields: [changePolicyAssignment.organizationId],
+			references: [organization.id],
+		}),
+		team: one(team, {
+			fields: [changePolicyAssignment.teamId],
+			references: [team.id],
+		}),
+		employee: one(employee, {
+			fields: [changePolicyAssignment.employeeId],
+			references: [employee.id],
+		}),
+		creator: one(user, {
+			fields: [changePolicyAssignment.createdBy],
+			references: [user.id],
+		}),
+	}),
+);
+
+// ============================================
+// INVITE CODE RELATIONS
+// ============================================
+
+export const inviteCodeRelations = relations(inviteCode, ({ one, many }) => ({
+	organization: one(organization, {
+		fields: [inviteCode.organizationId],
+		references: [organization.id],
+	}),
+	defaultTeam: one(team, {
+		fields: [inviteCode.defaultTeamId],
+		references: [team.id],
+	}),
+	usages: many(inviteCodeUsage),
+	creator: one(user, {
+		fields: [inviteCode.createdBy],
+		references: [user.id],
+		relationName: "invite_code_creator",
+	}),
+	updater: one(user, {
+		fields: [inviteCode.updatedBy],
+		references: [user.id],
+		relationName: "invite_code_updater",
+	}),
+}));
+
+export const inviteCodeUsageRelations = relations(inviteCodeUsage, ({ one }) => ({
+	inviteCode: one(inviteCode, {
+		fields: [inviteCodeUsage.inviteCodeId],
+		references: [inviteCode.id],
+	}),
+	user: one(user, {
+		fields: [inviteCodeUsage.userId],
+		references: [user.id],
+	}),
+	member: one(member, {
+		fields: [inviteCodeUsage.memberId],
+		references: [member.id],
+	}),
+}));
+
+export const memberApprovalRelations = relations(memberApproval, ({ one }) => ({
+	member: one(member, {
+		fields: [memberApproval.memberId],
+		references: [member.id],
+	}),
+	organization: one(organization, {
+		fields: [memberApproval.organizationId],
+		references: [organization.id],
+	}),
+	assignedTeam: one(team, {
+		fields: [memberApproval.assignedTeamId],
+		references: [team.id],
+	}),
+	approver: one(user, {
+		fields: [memberApproval.approvedBy],
 		references: [user.id],
 	}),
 }));

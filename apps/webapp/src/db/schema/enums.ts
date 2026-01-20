@@ -121,6 +121,13 @@ export const shiftRequestTypeEnum = pgEnum("shift_request_type", [
 	"assignment",
 	"pickup",
 ]);
+export const shiftRecurrenceTypeEnum = pgEnum("shift_recurrence_type", [
+	"daily",
+	"weekly",
+	"biweekly",
+	"monthly",
+	"custom",
+]);
 
 // Project enums
 export const projectStatusEnum = pgEnum("project_status", [
@@ -161,4 +168,20 @@ export const exportStatusEnum = pgEnum("export_status", [
 	"processing",
 	"completed",
 	"failed",
+]);
+
+// Invite code status enum
+export const inviteCodeStatusEnum = pgEnum("invite_code_status", [
+	"active",
+	"paused",
+	"expired",
+	"archived",
+]);
+
+// Member status enum (for pending member approval flow)
+export const memberStatusEnum = pgEnum("member_status", [
+	"pending", // awaiting admin approval
+	"approved", // active member
+	"rejected", // invitation rejected
+	"suspended", // temporarily disabled
 ]);

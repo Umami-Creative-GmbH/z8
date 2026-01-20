@@ -16,7 +16,27 @@ import {
 	renderOrganizationInvitation,
 	renderPasswordReset,
 } from "./email/render";
+import { createLogger } from "./logger";
 import { secondaryStorage } from "./valkey";
+
+const logger = createLogger("Auth");
+
+/**
+ * Get the primary organization ID for a user (for auth emails)
+ * Returns the first organization the user is a member of
+ */
+async function getUserPrimaryOrganizationId(userId: string): Promise<string | undefined> {
+	try {
+		const membership = await db.query.member.findFirst({
+			where: eq(schema.member.userId, userId),
+			columns: { organizationId: true },
+		});
+		return membership?.organizationId;
+	} catch (error) {
+		logger.warn({ error, userId }, "Failed to get user organization for email");
+		return undefined;
+	}
+}
 
 export const auth = betterAuth({
 	baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
@@ -51,6 +71,9 @@ export const auth = betterAuth({
 		enabled: true,
 		requireEmailVerification: true,
 		sendResetPassword: async ({ user, url }, _request) => {
+			// Look up user's org for org-specific email config
+			const organizationId = await getUserPrimaryOrganizationId(user.id);
+
 			const html = await renderPasswordReset({
 				userName: user.name,
 				resetUrl: url,
@@ -61,6 +84,7 @@ export const auth = betterAuth({
 				subject: "Reset your password",
 				html,
 				actionUrl: url,
+				organizationId,
 			});
 		},
 	},
@@ -68,6 +92,9 @@ export const auth = betterAuth({
 		sendOnSignUp: true,
 		sendVerificationEmail: async ({ user, url, token }, _request) => {
 			const appUrl = process.env.BETTER_AUTH_URL || "http://localhost:3000";
+
+			// Look up user's org for org-specific email config
+			const organizationId = await getUserPrimaryOrganizationId(user.id);
 
 			const html = await renderEmailVerification({
 				userName: user.name,
@@ -80,6 +107,7 @@ export const auth = betterAuth({
 				subject: "Verify your email address",
 				html,
 				actionUrl: url,
+				organizationId,
 			});
 		},
 	},
@@ -180,6 +208,41 @@ export const auth = betterAuth({
 							defaultValue: "UTC",
 							input: true, // admin can set organization timezone
 						},
+						deletedAt: {
+							type: "date",
+							required: false,
+							input: false, // system-managed
+						},
+						deletedBy: {
+							type: "string",
+							required: false,
+							input: false, // system-managed, stores user ID
+						},
+						// SSO approval configuration: when true, SSO users need approval
+						ssoRequiresApproval: {
+							type: "boolean",
+							required: false,
+							defaultValue: true,
+							input: true,
+						},
+					},
+				},
+				member: {
+					additionalFields: {
+						// Member status for invite code approval flow
+						// "pending" = awaiting admin approval, "approved" = active member, "rejected" = rejected
+						status: {
+							type: "string",
+							required: false,
+							defaultValue: "approved", // existing members are approved by default
+							input: false, // system-managed
+						},
+						// Reference to the invite code used to join (if any)
+						inviteCodeId: {
+							type: "string",
+							required: false,
+							input: false,
+						},
 					},
 				},
 				invitation: {
@@ -211,6 +274,7 @@ export const auth = betterAuth({
 					subject: `You've been invited to join ${data.organization.name}`,
 					html,
 					actionUrl: invitationUrl,
+					organizationId: data.organization.id, // Use org-specific email config
 				});
 			},
 			organizationHooks: {
@@ -301,17 +365,25 @@ export const auth = betterAuth({
 			provisionUser: async ({ user, provider }) => {
 				// If provider is linked to an organization, check/create employee record
 				if (provider.organizationId) {
+					// Check if org requires SSO approval
+					const org = await db.query.organization.findFirst({
+						where: eq(schema.organization.id, provider.organizationId),
+					});
+
+					const ssoRequiresApproval = (org as { ssoRequiresApproval?: boolean })?.ssoRequiresApproval ?? true;
+
 					const existingEmployee = await db.query.employee.findFirst({
 						where: (emp, { eq, and }) =>
 							and(eq(emp.userId, user.id), eq(emp.organizationId, provider.organizationId!)),
 					});
 
 					if (!existingEmployee) {
+						// Create employee record - isActive depends on approval setting
 						await db.insert(employee).values({
 							userId: user.id,
 							organizationId: provider.organizationId,
 							role: "employee",
-							isActive: true,
+							isActive: !ssoRequiresApproval, // inactive if approval required
 						});
 					}
 				}
