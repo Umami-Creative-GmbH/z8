@@ -66,7 +66,22 @@
       "Bash(npx @tolgee/cli pull:*)",
       "Bash(node -e:*)",
       "Bash(node scripts/split-translations.mjs:*)",
-      "Bash(move data-table data-table-server)"
+      "Bash(move data-table data-table-server)",
+      "mcp__MCP_DOCKER__nextjs_docs",
+      "Bash(rg:*)",
+      "mcp__MCP_DOCKER__nextjs_runtime",
+      "Bash(timeout:*)",
+      "Bash(ping:*)",
+      "Bash(powershell -Command \"Start-Sleep -Seconds 5; Get-Content ''X:\\\\.claude-code\\\\tmp\\\\claude\\\\X--umami-creative-z8-apps-webapp\\\\tasks\\\\badbe8f.output''\")",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(curl:*)",
+      "mcp__MCP_DOCKER__browser_navigate",
+      "Bash(Get-Content \"X:\\\\umami-creative\\\\z8\\\\apps\\\\webapp\\\\.next\\\\server\\\\chunks\\\\_0da99f38._.js.map\")",
+      "Bash(ConvertFrom-Json)",
+      "Bash(Select-Object -ExpandProperty sources)",
+      "Bash(Select-Object -First 30)",
+      "WebFetch(domain:www.better-auth.com)"
     ]
   },
   "enabledMcpjsonServers": [

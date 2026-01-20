@@ -73,6 +73,24 @@ services:
     depends_on:
       - valkey
 
+  # HashiCorp Vault - Secrets management
+  # Access UI at http://localhost:8200
+  # First run: Initialize with `docker compose exec vault vault operator init`
+  # Save the unseal keys and root token, then unseal with `vault operator unseal`
+  # Production: Use auto-unseal with cloud KMS instead of manual unsealing
+  vault:
+    image: hashicorp/vault:1.18
+    ports:
+      - "8200:8200"
+    environment:
+      VAULT_ADDR: "http://127.0.0.1:8200"
+      VAULT_LOCAL_CONFIG: '{"storage": {"file": {"path": "/vault/data"}}, "listener": {"tcp": {"address": "0.0.0.0:8200", "tls_disable": true}}, "ui": true, "disable_mlock": true}'
+    cap_add:
+      - IPC_LOCK
+    volumes:
+      - ./.vault-data:/vault/data
+    command: server
+
 volumes:
   default_data:
   valkey_data:

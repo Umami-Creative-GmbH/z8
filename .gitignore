@@ -69,3 +69,7 @@ apps/webapp/public/uploads/
 
 # claude tmp files
 tmpclaude*-cwd
+
+# Vault keys and data (contains secrets)
+.vault-keys
+.vault-data/

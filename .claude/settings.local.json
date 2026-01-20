@@ -89,7 +89,11 @@
       "Bash(docker compose:*)",
       "Bash(pnpm exec biome check:*)",
       "Bash(pnpm --filter webapp build:*)",
-      "Bash(pnpm --filter docs build:*)"
+      "Bash(pnpm --filter docs build:*)",
+      "Bash(pnpm --filter webapp tsc:*)",
+      "Bash(node scripts/generate-icons.mjs:*)",
+      "Bash(pnpm tauri icon:*)",
+      "Bash(cargo check:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
