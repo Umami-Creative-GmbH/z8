@@ -35,8 +35,6 @@ export const getCachedTeams = unstable_cache(
 				id: true,
 				name: true,
 				description: true,
-				isActive: true,
-				parentTeamId: true,
 			},
 			orderBy: (team, { asc }) => [asc(team.name)],
 		});
@@ -118,9 +116,9 @@ export const getCachedHolidayPresets = unstable_cache(
 			columns: {
 				id: true,
 				name: true,
-				country: true,
-				region: true,
-				isDefault: true,
+				countryCode: true,
+				stateCode: true,
+				isActive: true,
 			},
 			orderBy: (preset, { asc }) => [asc(preset.name)],
 		});
@@ -146,7 +144,7 @@ export const getCachedEmployeeList = unstable_cache(
 				lastName: true,
 				employeeNumber: true,
 				isActive: true,
-				primaryTeamId: true,
+				teamId: true,
 			},
 			orderBy: (employee, { asc }) => [asc(employee.lastName), asc(employee.firstName)],
 		});
@@ -170,25 +168,12 @@ export const getCachedTeamHierarchy = unstable_cache(
 				id: true,
 				name: true,
 				description: true,
-				isActive: true,
-				parentTeamId: true,
 			},
 			orderBy: (team, { asc }) => [asc(team.name)],
 		});
 
-		// Build hierarchy
-		const teamMap = new Map(teams.map((t) => [t.id, { ...t, children: [] as typeof teams }]));
-		const rootTeams: (typeof teams[0] & { children: typeof teams })[] = [];
-
-		for (const team of teamMap.values()) {
-			if (team.parentTeamId && teamMap.has(team.parentTeamId)) {
-				teamMap.get(team.parentTeamId)!.children.push(team);
-			} else {
-				rootTeams.push(team);
-			}
-		}
-
-		return rootTeams;
+		// Return flat list since team table doesn't have hierarchy columns
+		return teams;
 	},
 	["team-hierarchy"],
 	{

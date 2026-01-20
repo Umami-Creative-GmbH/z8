@@ -4,4 +4,4 @@
 // This file re-exports everything for backward compatibility
 // ============================================
 
-export * from "./schema";
+export * from "./schema/index";

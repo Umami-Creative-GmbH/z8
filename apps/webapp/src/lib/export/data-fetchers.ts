@@ -752,8 +752,7 @@ export async function* streamTimeEntries(
 		employeeNumber: string | null;
 		type: string;
 		timestamp: Date;
-		source: string | null;
-		method: string | null;
+		location: string | null;
 		notes: string | null;
 	}>
 > {
@@ -794,8 +793,7 @@ export async function* streamTimeEntries(
 			employeeNumber: e.employee?.employeeNumber || null,
 			type: e.type,
 			timestamp: e.timestamp,
-			source: e.source,
-			method: e.method,
+			location: e.location,
 			notes: e.notes,
 		}));
 
@@ -822,9 +820,7 @@ export async function* streamWorkPeriods(
 		startTime: Date;
 		endTime: Date | null;
 		durationMinutes: number | null;
-		breakDurationMinutes: number | null;
 		isActive: boolean;
-		source: string | null;
 	}>
 > {
 	if (employeeIds.length === 0) return;
@@ -865,9 +861,7 @@ export async function* streamWorkPeriods(
 			startTime: p.startTime,
 			endTime: p.endTime,
 			durationMinutes: p.durationMinutes,
-			breakDurationMinutes: p.breakDurationMinutes,
 			isActive: p.isActive,
-			source: p.source,
 		}));
 
 		offset += BATCH_SIZE;
