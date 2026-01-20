@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { DemoDataWizard } from "@/components/settings/demo-data-wizard";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getOrganizationEmployees } from "./actions";
 
@@ -42,7 +42,7 @@ async function DemoSettingsContent() {
 				</p>
 			</div>
 
-			<DemoDataWizard organizationId={authContext.employee.organizationId} employees={employees} />
+			<DemoDataWizard employees={employees} />
 		</div>
 	);
 }

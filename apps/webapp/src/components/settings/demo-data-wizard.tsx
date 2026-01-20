@@ -4,24 +4,31 @@ import {
 	IconAlertTriangle,
 	IconBriefcase,
 	IconCheck,
+	IconCircle,
 	IconClock,
 	IconDatabase,
 	IconLoader2,
 	IconPlayerPlay,
-	IconSettings,
 	IconTrash,
 	IconUserCheck,
 	IconUsers,
 	IconUsersGroup,
+	IconX,
 } from "@tabler/icons-react";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
 	clearTimeDataAction,
 	deleteNonAdminDataAction,
-	generateDemoDataAction,
+	generateAbsencesStepAction,
 	generateDemoEmployeesAction,
+	generateManagersStepAction,
+	generateProjectsStepAction,
+	generateTeamsStepAction,
+	generateTimeEntriesStepAction,
+	type StepGenerationInput,
 } from "@/app/[locale]/(app)/settings/demo/actions";
+import { useOrganization } from "@/hooks/use-organization";
 import type { DeleteNonAdminResult } from "@/lib/demo/delete-non-admin";
 import type { ClearDataResult, DemoDataResult } from "@/lib/demo/demo-data.service";
 import type { GenerateEmployeesResult } from "@/lib/demo/employee-generator";
@@ -42,53 +49,31 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui
 import { Checkbox } from "../ui/checkbox";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
-import { Progress } from "../ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 
 interface DemoDataWizardProps {
-	organizationId: string;
 	employees: Array<{ id: string; name: string }>;
 }
 
 type WizardStep = "configure" | "generating" | "complete";
-type GenerationPhase =
-	| "initializing"
-	| "teams"
-	| "projects"
-	| "managers"
-	| "time-entries"
-	| "work-periods"
-	| "absences"
-	| "complete";
+type StepStatus = "pending" | "in-progress" | "complete" | "error";
 
-const PHASE_MESSAGES: Record<GenerationPhase, string> = {
-	initializing: "Initializing...",
-	teams: "Creating teams and assigning employees...",
-	projects: "Creating demo projects...",
-	managers: "Assigning employees to managers...",
-	"time-entries": "Creating time entries with blockchain hashes...",
-	"work-periods": "Generating work periods...",
-	absences: "Creating absence records...",
-	complete: "Generation complete!",
-};
+interface GenerationStep {
+	id: string;
+	label: string;
+	description: string;
+	icon: React.ReactNode;
+	status: StepStatus;
+	result?: string;
+	error?: string;
+}
 
-const PHASE_PROGRESS: Record<GenerationPhase, number> = {
-	initializing: 5,
-	teams: 12,
-	projects: 20,
-	managers: 28,
-	"time-entries": 50,
-	"work-periods": 70,
-	absences: 90,
-	complete: 100,
-};
-
-export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProps) {
+export function DemoDataWizard({ employees }: DemoDataWizardProps) {
 	const router = useRouter();
-	const [step, setStep] = useState<WizardStep>("configure");
-	const [phase, setPhase] = useState<GenerationPhase>("initializing");
-	const [_isPending, startTransition] = useTransition();
-	const [isClearing, startClearTransition] = useTransition();
+	const { organizationId } = useOrganization();
+	const [wizardStep, setWizardStep] = useState<WizardStep>("configure");
+	const [isGenerating, setIsGenerating] = useState(false);
+	const [isClearing, setIsClearing] = useState(false);
 
 	// Form state
 	const [dateRangeType, setDateRangeType] = useState<"last30" | "last60" | "last90" | "thisYear">(
@@ -102,127 +87,328 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 	const [projectCount, setProjectCount] = useState(6);
 	const [selectedEmployees, setSelectedEmployees] = useState<"all" | "selected">("all");
 
+	// Generation steps state
+	const [steps, setSteps] = useState<GenerationStep[]>([]);
+	const [error, setError] = useState<string | null>(null);
+
 	// Results
 	const [result, setResult] = useState<DemoDataResult | null>(null);
-	const [error, setError] = useState<string | null>(null);
 	const [clearResult, setClearResult] = useState<ClearDataResult | null>(null);
 	const [confirmText, setConfirmText] = useState("");
 
 	// Employee generation state
 	const [employeeCount, setEmployeeCount] = useState(5);
 	const [includeManagersForEmployees, setIncludeManagersForEmployees] = useState(true);
-	const [isGeneratingEmployees, startEmployeeTransition] = useTransition();
+	const [isGeneratingEmployees, setIsGeneratingEmployees] = useState(false);
 	const [employeeResult, setEmployeeResult] = useState<GenerateEmployeesResult | null>(null);
 	const [employeeError, setEmployeeError] = useState<string | null>(null);
 
 	// Delete non-admin state
-	const [isDeletingNonAdmin, startDeleteNonAdminTransition] = useTransition();
+	const [isDeletingNonAdmin, setIsDeletingNonAdmin] = useState(false);
 	const [deleteNonAdminResult, setDeleteNonAdminResult] = useState<DeleteNonAdminResult | null>(
 		null,
 	);
 	const [deleteNonAdminConfirmText, setDeleteNonAdminConfirmText] = useState("");
 
-	const handleGenerate = () => {
-		setStep("generating");
-		setPhase("initializing");
-		setError(null);
+	// Reset all state when organization changes
+	const prevOrgIdRef = useRef<string | null>(organizationId);
+	useEffect(() => {
+		// Only reset if we have a valid new org (not initial null -> value transition)
+		if (prevOrgIdRef.current !== null && prevOrgIdRef.current !== organizationId) {
+			setWizardStep("configure");
+			setSteps([]);
+			setResult(null);
+			setError(null);
+			setClearResult(null);
+			setConfirmText("");
+			setEmployeeResult(null);
+			setEmployeeError(null);
+			setDeleteNonAdminResult(null);
+			setDeleteNonAdminConfirmText("");
+		}
+		prevOrgIdRef.current = organizationId;
+	}, [organizationId]);
 
-		startTransition(async () => {
-			// Simulate phases for visual feedback
-			await new Promise((r) => setTimeout(r, 300));
-			setPhase("teams");
-
-			await new Promise((r) => setTimeout(r, 200));
-			setPhase("projects");
-
-			await new Promise((r) => setTimeout(r, 200));
-			setPhase("managers");
-
-			await new Promise((r) => setTimeout(r, 200));
-			setPhase("time-entries");
-
-			await new Promise((r) => setTimeout(r, 200));
-			setPhase("work-periods");
-
-			await new Promise((r) => setTimeout(r, 200));
-			setPhase("absences");
-
-			// Actually generate the data
-			const response = await generateDemoDataAction({
-				organizationId,
-				dateRangeType,
-				includeTimeEntries,
-				includeAbsences,
-				includeTeams,
-				teamCount: includeTeams ? teamCount : undefined,
-				includeProjects,
-				projectCount: includeProjects ? projectCount : undefined,
-				employeeIds: selectedEmployees === "all" ? undefined : [],
-			});
-
-			if (!response.success) {
-				setError(response.error);
-				setStep("configure");
-			} else {
-				setResult(response.data);
-				setPhase("complete");
-				setStep("complete");
-			}
-		});
+	const updateStepStatus = (
+		stepId: string,
+		status: StepStatus,
+		result?: string,
+		error?: string,
+	) => {
+		setSteps((prev) => prev.map((s) => (s.id === stepId ? { ...s, status, result, error } : s)));
 	};
 
-	const handleClear = () => {
-		startClearTransition(async () => {
-			const response = await clearTimeDataAction(organizationId);
-			if (!response.success) {
-				setError(response.error);
-			} else {
-				setClearResult(response.data);
-			}
-			setConfirmText("");
+	const handleGenerate = async () => {
+		if (!organizationId) {
+			setError("No organization selected");
+			return;
+		}
+		setError(null);
+		setResult(null);
+
+		// Build steps based on selected options
+		const activeSteps: GenerationStep[] = [];
+
+		if (includeTeams) {
+			activeSteps.push({
+				id: "teams",
+				label: "Teams",
+				description: "Creating teams and assigning employees",
+				icon: <IconUsersGroup className="size-4" />,
+				status: "pending",
+			});
+		}
+
+		if (includeProjects) {
+			activeSteps.push({
+				id: "projects",
+				label: "Projects",
+				description: "Creating demo projects",
+				icon: <IconBriefcase className="size-4" />,
+				status: "pending",
+			});
+		}
+
+		// Manager assignments are always created if we have employees
+		activeSteps.push({
+			id: "managers",
+			label: "Manager Assignments",
+			description: "Assigning employees to managers",
+			icon: <IconUserCheck className="size-4" />,
+			status: "pending",
 		});
+
+		if (includeTimeEntries) {
+			activeSteps.push({
+				id: "time-entries",
+				label: "Time Entries",
+				description: "Creating time entries with blockchain hashes",
+				icon: <IconClock className="size-4" />,
+				status: "pending",
+			});
+		}
+
+		if (includeAbsences) {
+			activeSteps.push({
+				id: "absences",
+				label: "Absences",
+				description: "Creating absence records",
+				icon: <IconUsers className="size-4" />,
+				status: "pending",
+			});
+		}
+
+		setSteps(activeSteps);
+		setWizardStep("generating");
+		setIsGenerating(true);
+
+		const input: StepGenerationInput = {
+			organizationId,
+			dateRangeType,
+			teamCount: includeTeams ? teamCount : undefined,
+			projectCount: includeProjects ? projectCount : undefined,
+			employeeIds: selectedEmployees === "all" ? undefined : [],
+		};
+
+		const finalResult: DemoDataResult = {
+			timeEntriesCreated: 0,
+			workPeriodsCreated: 0,
+			absencesCreated: 0,
+			teamsCreated: 0,
+			employeesAssignedToTeams: 0,
+			projectsCreated: 0,
+			managerAssignmentsCreated: 0,
+		};
+
+		let hasError = false;
+
+		// Helper to execute a step
+		const executeStep = async (
+			stepId: string,
+			action: () => Promise<{ success: boolean; data?: unknown; error?: string }>,
+			onSuccess: (data: unknown) => { result: string; updates: Partial<DemoDataResult> },
+		): Promise<boolean> => {
+			updateStepStatus(stepId, "in-progress");
+			try {
+				const response = await action();
+				if (!response.success) {
+					updateStepStatus(stepId, "error", undefined, response.error);
+					return false;
+				}
+				const { result, updates } = onSuccess(response.data);
+				Object.assign(finalResult, updates);
+				updateStepStatus(stepId, "complete", result);
+				return true;
+			} catch (_err) {
+				updateStepStatus(stepId, "error", undefined, "Unexpected error occurred");
+				return false;
+			}
+		};
+
+		// Phase 1: Run teams and projects in parallel (independent)
+		const phase1Steps = activeSteps.filter((s) => s.id === "teams" || s.id === "projects");
+		if (phase1Steps.length > 0) {
+			const phase1Results = await Promise.all(
+				phase1Steps.map((step) => {
+					if (step.id === "teams") {
+						return executeStep(
+							step.id,
+							() => generateTeamsStepAction(input),
+							(data) => {
+								const d = data as { teamsCreated: number; employeesAssignedToTeams: number };
+								return {
+									result: `${d.teamsCreated} teams, ${d.employeesAssignedToTeams} assigned`,
+									updates: {
+										teamsCreated: d.teamsCreated,
+										employeesAssignedToTeams: d.employeesAssignedToTeams,
+									},
+								};
+							},
+						);
+					}
+					return executeStep(
+						step.id,
+						() => generateProjectsStepAction(input),
+						(data) => {
+							const d = data as { projectsCreated: number };
+							return {
+								result: `${d.projectsCreated} projects`,
+								updates: { projectsCreated: d.projectsCreated },
+							};
+						},
+					);
+				}),
+			);
+			if (phase1Results.some((r) => !r)) hasError = true;
+		}
+
+		// Phase 2: Manager assignments (depends on teams being set up)
+		if (!hasError && activeSteps.some((s) => s.id === "managers")) {
+			const success = await executeStep(
+				"managers",
+				() => generateManagersStepAction(input),
+				(data) => {
+					const d = data as { managerAssignmentsCreated: number };
+					return {
+						result: `${d.managerAssignmentsCreated} assignments`,
+						updates: { managerAssignmentsCreated: d.managerAssignmentsCreated },
+					};
+				},
+			);
+			if (!success) hasError = true;
+		}
+
+		// Phase 3: Run time entries and absences in parallel (independent)
+		if (!hasError) {
+			const phase3Steps = activeSteps.filter((s) => s.id === "time-entries" || s.id === "absences");
+			if (phase3Steps.length > 0) {
+				const phase3Results = await Promise.all(
+					phase3Steps.map((step) => {
+						if (step.id === "time-entries") {
+							return executeStep(
+								step.id,
+								() => generateTimeEntriesStepAction(input),
+								(data) => {
+									const d = data as { timeEntriesCreated: number; workPeriodsCreated: number };
+									return {
+										result: `${d.timeEntriesCreated} entries, ${d.workPeriodsCreated} periods`,
+										updates: {
+											timeEntriesCreated: d.timeEntriesCreated,
+											workPeriodsCreated: d.workPeriodsCreated,
+										},
+									};
+								},
+							);
+						}
+						return executeStep(
+							step.id,
+							() => generateAbsencesStepAction(input),
+							(data) => {
+								const d = data as { absencesCreated: number };
+								return {
+									result: `${d.absencesCreated} absences`,
+									updates: { absencesCreated: d.absencesCreated },
+								};
+							},
+						);
+					}),
+				);
+				if (phase3Results.some((r) => !r)) hasError = true;
+			}
+		}
+
+		setIsGenerating(false);
+
+		if (!hasError) {
+			setResult(finalResult);
+			setWizardStep("complete");
+		} else {
+			setError("Generation failed. See step details above.");
+		}
+	};
+
+	const handleClear = async () => {
+		if (!organizationId) {
+			setError("No organization selected");
+			return;
+		}
+		setIsClearing(true);
+		const response = await clearTimeDataAction(organizationId);
+		if (!response.success) {
+			setError(response.error);
+		} else {
+			setClearResult(response.data);
+		}
+		setConfirmText("");
+		setIsClearing(false);
 	};
 
 	const handleReset = () => {
-		setStep("configure");
-		setPhase("initializing");
+		setWizardStep("configure");
+		setSteps([]);
 		setResult(null);
 		setError(null);
 	};
 
-	const handleGenerateEmployees = () => {
+	const handleGenerateEmployees = async () => {
+		if (!organizationId) {
+			setEmployeeError("No organization selected");
+			return;
+		}
 		setEmployeeError(null);
 		setEmployeeResult(null);
+		setIsGeneratingEmployees(true);
 
-		startEmployeeTransition(async () => {
-			const response = await generateDemoEmployeesAction({
-				organizationId,
-				count: employeeCount,
-				includeManagers: includeManagersForEmployees,
-			});
-
-			if (!response.success) {
-				setEmployeeError(response.error);
-			} else {
-				setEmployeeResult(response.data);
-				// Refresh the page to update the employees dropdown
-				router.refresh();
-			}
+		const response = await generateDemoEmployeesAction({
+			organizationId,
+			count: employeeCount,
+			includeManagers: includeManagersForEmployees,
 		});
+
+		if (!response.success) {
+			setEmployeeError(response.error);
+		} else {
+			setEmployeeResult(response.data);
+			router.refresh();
+		}
+		setIsGeneratingEmployees(false);
 	};
 
-	const handleDeleteNonAdmin = () => {
-		startDeleteNonAdminTransition(async () => {
-			const response = await deleteNonAdminDataAction(organizationId);
-			if (!response.success) {
-				setError(response.error);
-			} else {
-				setDeleteNonAdminResult(response.data);
-				// Refresh the page to update the employees dropdown
-				router.refresh();
-			}
-			setDeleteNonAdminConfirmText("");
-		});
+	const handleDeleteNonAdmin = async () => {
+		if (!organizationId) {
+			setError("No organization selected");
+			return;
+		}
+		setIsDeletingNonAdmin(true);
+		const response = await deleteNonAdminDataAction(organizationId);
+		if (!response.success) {
+			setError(response.error);
+		} else {
+			setDeleteNonAdminResult(response.data);
+			router.refresh();
+		}
+		setDeleteNonAdminConfirmText("");
+		setIsDeletingNonAdmin(false);
 	};
 
 	return (
@@ -239,7 +425,7 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
-					{step === "configure" && (
+					{wizardStep === "configure" && (
 						<div className="space-y-6">
 							{/* Step indicators */}
 							<div className="flex items-center gap-4">
@@ -448,7 +634,7 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 						</div>
 					)}
 
-					{step === "generating" && (
+					{wizardStep === "generating" && (
 						<div className="space-y-6">
 							{/* Step indicators */}
 							<div className="flex items-center gap-4">
@@ -459,40 +645,30 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 								<StepIndicator step={3} label="Complete" active={false} completed={false} />
 							</div>
 
-							<div className="space-y-4 py-8">
-								<div className="flex items-center justify-center gap-3">
-									<IconLoader2 className="size-8 animate-spin text-primary" />
-									<span className="text-lg font-medium">{PHASE_MESSAGES[phase]}</span>
+							{error && (
+								<div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
+									{error}
 								</div>
+							)}
 
-								<Progress value={PHASE_PROGRESS[phase]} className="h-2" />
-
-								<div className="grid grid-cols-7 gap-2 text-center text-xs text-muted-foreground">
-									<div className={cn(phase === "initializing" && "font-medium text-primary")}>
-										Initializing
-									</div>
-									<div className={cn(phase === "teams" && "font-medium text-primary")}>Teams</div>
-									<div className={cn(phase === "projects" && "font-medium text-primary")}>
-										Projects
-									</div>
-									<div className={cn(phase === "managers" && "font-medium text-primary")}>
-										Managers
-									</div>
-									<div className={cn(phase === "time-entries" && "font-medium text-primary")}>
-										Time Entries
-									</div>
-									<div className={cn(phase === "work-periods" && "font-medium text-primary")}>
-										Work Periods
-									</div>
-									<div className={cn(phase === "absences" && "font-medium text-primary")}>
-										Absences
-									</div>
-								</div>
+							{/* Step-by-step progress */}
+							<div className="space-y-3 py-4">
+								{steps.map((step) => (
+									<GenerationStepItem key={step.id} step={step} />
+								))}
 							</div>
+
+							{!isGenerating && error && (
+								<div className="flex justify-center gap-3">
+									<Button variant="outline" onClick={handleReset}>
+										Back to Configuration
+									</Button>
+								</div>
+							)}
 						</div>
 					)}
 
-					{step === "complete" && result && (
+					{wizardStep === "complete" && result && (
 						<div className="space-y-6">
 							{/* Step indicators */}
 							<div className="flex items-center gap-4">
@@ -511,42 +687,26 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 								</div>
 								<p className="text-center text-lg font-medium">Demo data generated successfully!</p>
 
-								<div className="grid gap-4 grid-cols-2 md:grid-cols-4 lg:grid-cols-7">
-									<ResultCard
-										icon={<IconClock className="size-5" />}
-										label="Time Entries"
-										value={result.timeEntriesCreated}
-									/>
-									<ResultCard
-										icon={<IconSettings className="size-5" />}
-										label="Work Periods"
-										value={result.workPeriodsCreated}
-									/>
-									<ResultCard
-										icon={<IconUsers className="size-5" />}
-										label="Absences"
-										value={result.absencesCreated}
-									/>
-									<ResultCard
-										icon={<IconUsersGroup className="size-5" />}
-										label="Teams"
-										value={result.teamsCreated}
-									/>
-									<ResultCard
-										icon={<IconBriefcase className="size-5" />}
-										label="Projects"
-										value={result.projectsCreated}
-									/>
-									<ResultCard
-										icon={<IconUserCheck className="size-5" />}
-										label="Managers"
-										value={result.managerAssignmentsCreated}
-									/>
-									<ResultCard
-										icon={<IconUsers className="size-5" />}
-										label="Team Assigned"
-										value={result.employeesAssignedToTeams}
-									/>
+								{/* Show completed steps with results */}
+								<div className="space-y-2">
+									{steps.map((step) => (
+										<div
+											key={step.id}
+											className="flex items-center gap-3 rounded-lg border bg-muted/30 p-3"
+										>
+											<div className="flex size-6 items-center justify-center rounded-full bg-green-100 text-green-600">
+												<IconCheck className="size-4" />
+											</div>
+											<div className="flex-1">
+												<span className="font-medium">{step.label}</span>
+												{step.result && (
+													<span className="ml-2 text-sm text-muted-foreground">
+														— {step.result}
+													</span>
+												)}
+											</div>
+										</div>
+									))}
 								</div>
 
 								<div className="flex justify-center">
@@ -903,20 +1063,59 @@ function StepIndicator({
 	);
 }
 
-function ResultCard({
-	icon,
-	label,
-	value,
-}: {
-	icon: React.ReactNode;
-	label: string;
-	value: number;
-}) {
+function GenerationStepItem({ step }: { step: GenerationStep }) {
 	return (
-		<div className="rounded-lg border bg-muted/30 p-4 text-center">
-			<div className="mb-2 flex justify-center text-muted-foreground">{icon}</div>
-			<p className="text-2xl font-bold">{value.toLocaleString()}</p>
-			<p className="text-sm text-muted-foreground">{label}</p>
+		<div
+			className={cn(
+				"flex items-center gap-3 rounded-lg border p-3 transition-colors",
+				step.status === "complete" && "border-green-500/50 bg-green-50/50 dark:bg-green-950/20",
+				step.status === "error" && "border-destructive/50 bg-destructive/10",
+				step.status === "in-progress" && "border-primary/50 bg-primary/5",
+			)}
+		>
+			{/* Status indicator */}
+			<div className="flex size-6 items-center justify-center">
+				{step.status === "pending" && <IconCircle className="size-5 text-muted-foreground/50" />}
+				{step.status === "in-progress" && (
+					<IconLoader2 className="size-5 animate-spin text-primary" />
+				)}
+				{step.status === "complete" && (
+					<div className="flex size-5 items-center justify-center rounded-full bg-green-500 text-white">
+						<IconCheck className="size-3" />
+					</div>
+				)}
+				{step.status === "error" && (
+					<div className="flex size-5 items-center justify-center rounded-full bg-destructive text-white">
+						<IconX className="size-3" />
+					</div>
+				)}
+			</div>
+
+			{/* Content */}
+			<div className="flex-1 min-w-0">
+				<div className="flex items-center gap-2">
+					{step.icon}
+					<span
+						className={cn(
+							"font-medium",
+							step.status === "pending" && "text-muted-foreground",
+							step.status === "complete" && "text-green-700 dark:text-green-400",
+							step.status === "error" && "text-destructive",
+						)}
+					>
+						{step.label}
+					</span>
+				</div>
+				{step.status === "in-progress" && (
+					<p className="text-xs text-muted-foreground mt-0.5">{step.description}</p>
+				)}
+				{step.status === "complete" && step.result && (
+					<p className="text-xs text-green-600 dark:text-green-500 mt-0.5">{step.result}</p>
+				)}
+				{step.status === "error" && step.error && (
+					<p className="text-xs text-destructive mt-0.5">{step.error}</p>
+				)}
+			</div>
 		</div>
 	);
 }

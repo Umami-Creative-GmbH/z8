@@ -12,8 +12,14 @@ import {
 import {
 	type ClearDataResult,
 	clearOrganizationTimeData,
+	type DemoDataOptions,
 	type DemoDataResult,
+	generateDemoAbsences,
 	generateDemoData,
+	generateDemoManagerAssignments,
+	generateDemoProjects,
+	generateDemoTeams,
+	generateDemoTimeEntries,
 } from "@/lib/demo/demo-data.service";
 import { type GenerateEmployeesResult, generateDemoEmployees } from "@/lib/demo/employee-generator";
 import { AuthorizationError, NotFoundError } from "@/lib/effect/errors";
@@ -144,6 +150,283 @@ export async function generateDemoDataAction(
 			),
 		);
 
+		return result;
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
+}
+
+// Step-by-step generation actions for real progress tracking
+
+export interface StepGenerationInput {
+	organizationId: string;
+	dateRangeType: "last30" | "last60" | "last90" | "thisYear";
+	teamCount?: number;
+	projectCount?: number;
+	employeeIds?: string[];
+}
+
+/**
+ * Helper to calculate date range from type
+ */
+function calculateDateRange(dateRangeType: StepGenerationInput["dateRangeType"]): {
+	start: Date;
+	end: Date;
+} {
+	const now = new Date();
+	let startDate: Date;
+	const endDate = new Date(now);
+
+	switch (dateRangeType) {
+		case "last30":
+			startDate = new Date(now);
+			startDate.setDate(startDate.getDate() - 30);
+			break;
+		case "last60":
+			startDate = new Date(now);
+			startDate.setDate(startDate.getDate() - 60);
+			break;
+		case "last90":
+			startDate = new Date(now);
+			startDate.setDate(startDate.getDate() - 90);
+			break;
+		case "thisYear":
+			startDate = new Date(now.getFullYear(), 0, 1);
+			break;
+		default:
+			startDate = new Date(now);
+			startDate.setDate(startDate.getDate() - 30);
+	}
+
+	return { start: startDate, end: endDate };
+}
+
+/**
+ * Generate demo teams (step 1)
+ */
+export async function generateTeamsStepAction(
+	input: StepGenerationInput,
+): Promise<ServerActionResult<{ teamsCreated: number; employeesAssignedToTeams: number }>> {
+	const effect = Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
+
+		const hasPermission = yield* _(
+			Effect.promise(() => isOrgAdmin(session.user.id, input.organizationId)),
+		);
+
+		if (!hasPermission) {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Insufficient permissions - admin role required",
+						userId: session.user.id,
+						resource: "demo_data",
+						action: "generate",
+					}),
+				),
+			);
+		}
+
+		const dateRange = calculateDateRange(input.dateRangeType);
+		const options: DemoDataOptions = {
+			organizationId: input.organizationId,
+			dateRange,
+			includeTimeEntries: false,
+			includeAbsences: false,
+			includeTeams: true,
+			teamCount: input.teamCount,
+			includeProjects: false,
+			employeeIds: input.employeeIds,
+			createdBy: session.user.id,
+		};
+
+		const result = yield* _(Effect.promise(() => generateDemoTeams(options)));
+		return result;
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
+}
+
+/**
+ * Generate demo projects (step 2)
+ */
+export async function generateProjectsStepAction(
+	input: StepGenerationInput,
+): Promise<ServerActionResult<{ projectsCreated: number }>> {
+	const effect = Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
+
+		const hasPermission = yield* _(
+			Effect.promise(() => isOrgAdmin(session.user.id, input.organizationId)),
+		);
+
+		if (!hasPermission) {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Insufficient permissions - admin role required",
+						userId: session.user.id,
+						resource: "demo_data",
+						action: "generate",
+					}),
+				),
+			);
+		}
+
+		const dateRange = calculateDateRange(input.dateRangeType);
+		const options: DemoDataOptions = {
+			organizationId: input.organizationId,
+			dateRange,
+			includeTimeEntries: false,
+			includeAbsences: false,
+			includeTeams: false,
+			includeProjects: true,
+			projectCount: input.projectCount,
+			employeeIds: input.employeeIds,
+			createdBy: session.user.id,
+		};
+
+		const result = yield* _(Effect.promise(() => generateDemoProjects(options)));
+		return result;
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
+}
+
+/**
+ * Generate manager assignments (step 3)
+ */
+export async function generateManagersStepAction(
+	input: StepGenerationInput,
+): Promise<ServerActionResult<{ managerAssignmentsCreated: number }>> {
+	const effect = Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
+
+		const hasPermission = yield* _(
+			Effect.promise(() => isOrgAdmin(session.user.id, input.organizationId)),
+		);
+
+		if (!hasPermission) {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Insufficient permissions - admin role required",
+						userId: session.user.id,
+						resource: "demo_data",
+						action: "generate",
+					}),
+				),
+			);
+		}
+
+		const dateRange = calculateDateRange(input.dateRangeType);
+		const options: DemoDataOptions = {
+			organizationId: input.organizationId,
+			dateRange,
+			includeTimeEntries: false,
+			includeAbsences: false,
+			includeTeams: false,
+			includeProjects: false,
+			employeeIds: input.employeeIds,
+			createdBy: session.user.id,
+		};
+
+		const result = yield* _(Effect.promise(() => generateDemoManagerAssignments(options)));
+		return result;
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
+}
+
+/**
+ * Generate time entries (step 4)
+ */
+export async function generateTimeEntriesStepAction(
+	input: StepGenerationInput,
+): Promise<ServerActionResult<{ timeEntriesCreated: number; workPeriodsCreated: number }>> {
+	const effect = Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
+
+		const hasPermission = yield* _(
+			Effect.promise(() => isOrgAdmin(session.user.id, input.organizationId)),
+		);
+
+		if (!hasPermission) {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Insufficient permissions - admin role required",
+						userId: session.user.id,
+						resource: "demo_data",
+						action: "generate",
+					}),
+				),
+			);
+		}
+
+		const dateRange = calculateDateRange(input.dateRangeType);
+		const options: DemoDataOptions = {
+			organizationId: input.organizationId,
+			dateRange,
+			includeTimeEntries: true,
+			includeAbsences: false,
+			includeTeams: false,
+			includeProjects: false,
+			employeeIds: input.employeeIds,
+			createdBy: session.user.id,
+		};
+
+		const result = yield* _(Effect.promise(() => generateDemoTimeEntries(options)));
+		return result;
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
+}
+
+/**
+ * Generate absences (step 5)
+ */
+export async function generateAbsencesStepAction(
+	input: StepGenerationInput,
+): Promise<ServerActionResult<{ absencesCreated: number }>> {
+	const effect = Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
+
+		const hasPermission = yield* _(
+			Effect.promise(() => isOrgAdmin(session.user.id, input.organizationId)),
+		);
+
+		if (!hasPermission) {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Insufficient permissions - admin role required",
+						userId: session.user.id,
+						resource: "demo_data",
+						action: "generate",
+					}),
+				),
+			);
+		}
+
+		const dateRange = calculateDateRange(input.dateRangeType);
+		const options: DemoDataOptions = {
+			organizationId: input.organizationId,
+			dateRange,
+			includeTimeEntries: false,
+			includeAbsences: true,
+			includeTeams: false,
+			includeProjects: false,
+			employeeIds: input.employeeIds,
+			createdBy: session.user.id,
+		};
+
+		const result = yield* _(Effect.promise(() => generateDemoAbsences(options)));
 		return result;
 	}).pipe(Effect.provide(AppLayer));
 
