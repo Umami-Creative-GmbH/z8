@@ -4,20 +4,31 @@
   "version": "0.1.0",
   "identifier": "com.z8.timer",
   "build": {
-    "beforeDevCommand": "bun run dev",
+    "beforeDevCommand": "pnpm dev",
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "bun run build",
+    "beforeBuildCommand": "pnpm build",
     "frontendDist": "../dist"
   },
   "app": {
     "withGlobalTauri": true,
+    "trayIcon": {
+      "iconPath": "icons/tray-gray.png",
+      "iconAsTemplate": false
+    },
     "windows": [
       {
         "title": "Z8 Timer",
-        "width": 400,
-        "height": 600,
+        "width": 300,
+        "height": 280,
+        "minWidth": 280,
+        "minHeight": 250,
         "resizable": true,
-        "fullscreen": false
+        "fullscreen": false,
+        "center": true,
+        "decorations": true,
+        "alwaysOnTop": true,
+        "skipTaskbar": false,
+        "visible": true
       }
     ],
     "security": {
@@ -26,13 +37,25 @@
   },
   "bundle": {
     "active": true,
-    "targets": "all",
+    "targets": ["msi", "nsis"],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "windows": {
+      "certificateThumbprint": null,
+      "digestAlgorithm": "sha256",
+      "timestampUrl": ""
+    }
+  },
+  "plugins": {
+    "deep-link": {
+      "desktop": {
+        "schemes": ["z8"]
+      }
+    }
   }
 }

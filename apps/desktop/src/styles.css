@@ -1,29 +1,103 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family:
+    Inter,
+    system-ui,
+    Avenir,
+    Helvetica,
+    Arial,
+    sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  color: #0f0f0f;
-  background-color: #f6f6f6;
+
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+  --primary: 221.2 83.2% 53.3%;
+  --primary-foreground: 210 40% 98%;
+  --muted: 210 40% 96.1%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --border: 214.3 31.8% 91.4%;
+  --success: 142.1 76.2% 36.3%;
+  --destructive: 0 84.2% 60.2%;
+
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-.container {
+body {
   margin: 0;
-  padding: 2rem;
-  text-align: center;
+  display: flex;
+  min-width: 280px;
+  min-height: 250px;
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
 }
 
-h1 {
-  font-size: 2rem;
-  line-height: 1.1;
+#root {
+  width: 100%;
+  height: 100%;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    color: #f6f6f6;
-    background-color: #0f0f0f;
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --border: 217.2 32.6% 17.5%;
+    --success: 142.1 70.6% 45.3%;
+    --destructive: 0 62.8% 30.6%;
   }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--muted));
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground));
+  border-radius: 3px;
+}
+
+/* Button styles */
+.btn {
+  @apply inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors;
+  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2;
+  @apply disabled:pointer-events-none disabled:opacity-50;
+}
+
+.btn-primary {
+  @apply bg-primary text-primary-foreground hover:bg-primary/90;
+}
+
+.btn-outline {
+  @apply border border-border bg-transparent hover:bg-muted;
+}
+
+.btn-ghost {
+  @apply hover:bg-muted hover:text-foreground;
+}
+
+/* Input styles */
+.input {
+  @apply flex h-10 w-full rounded-md border border-border bg-background px-3 py-2 text-sm;
+  @apply placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary;
+  @apply disabled:cursor-not-allowed disabled:opacity-50;
+}
+
+/* Card styles */
+.card {
+  @apply rounded-lg border border-border bg-card text-card-foreground shadow-sm;
 }
