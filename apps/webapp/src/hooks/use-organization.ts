@@ -30,6 +30,7 @@ interface OrganizationSettingsResponse {
 	projectsEnabled: boolean;
 	surchargesEnabled: boolean;
 	timezone: string;
+	deletedAt: string | null;
 }
 
 /**

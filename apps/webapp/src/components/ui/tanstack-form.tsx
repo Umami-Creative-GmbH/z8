@@ -81,8 +81,10 @@ function useTFormItem() {
 function TFormLabel({
 	className,
 	hasError,
+	required,
+	children,
 	...props
-}: React.ComponentProps<typeof LabelPrimitive.Root> & { hasError?: boolean }) {
+}: React.ComponentProps<typeof LabelPrimitive.Root> & { hasError?: boolean; required?: boolean }) {
 	const { id } = useTFormItem();
 
 	return (
@@ -92,7 +94,10 @@ function TFormLabel({
 			className={cn("data-[error=true]:text-destructive", className)}
 			htmlFor={`${id}-form-item`}
 			{...props}
-		/>
+		>
+			{children}
+			{required && <span className="text-destructive ml-1">*</span>}
+		</Label>
 	);
 }
 

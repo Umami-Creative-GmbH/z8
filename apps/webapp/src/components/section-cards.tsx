@@ -10,6 +10,7 @@ import { SortableWidgetGrid } from "@/components/dashboard/sortable-widget-grid"
 import { TeamOverviewWidget } from "@/components/dashboard/team-overview-widget";
 import { UpcomingTimeOffWidget } from "@/components/dashboard/upcoming-time-off-widget";
 import { useWidgetOrder } from "@/components/dashboard/use-widget-order";
+import { VacationBalanceWidget } from "@/components/dashboard/vacation-balance-widget";
 import { WidgetVisibilityProvider } from "@/components/dashboard/widget-visibility-context";
 import type { WidgetId } from "@/components/dashboard/widget-registry";
 import { WhosOutTodayWidget } from "@/components/dashboard/whos-out-today-widget";
@@ -29,6 +30,7 @@ const WIDGET_COMPONENTS: Record<WidgetId, React.ComponentType> = {
 	"recently-approved": RecentlyApprovedWidget,
 	"birthday-reminders": BirthdayRemindersWidget,
 	hydration: HydrationWidget,
+	"vacation-balance": VacationBalanceWidget,
 };
 
 function WidgetSkeleton() {

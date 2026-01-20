@@ -12,6 +12,7 @@ import { queryKeys } from "./keys";
 
 export interface TimeClockState {
 	hasEmployee: boolean;
+	employeeId: string | null;
 	isClockedIn: boolean;
 	activeWorkPeriod: { id: string; startTime: Date } | null;
 }
@@ -106,7 +107,8 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 
 	// Clock out mutation
 	const clockOutMutation = useMutation({
-		mutationFn: (projectId?: string) => clockOut(projectId),
+		mutationFn: (params?: { projectId?: string; workCategoryId?: string }) =>
+			clockOut(params?.projectId, params?.workCategoryId),
 		onSuccess: (result) => {
 			if (result.success) {
 				// Optimistically clear the active work period
@@ -147,6 +149,7 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 
 		// Derived state
 		hasEmployee: status?.hasEmployee ?? false,
+		employeeId: status?.employeeId ?? null,
 		isClockedIn: status?.isClockedIn ?? false,
 		activeWorkPeriod: status?.activeWorkPeriod ?? null,
 

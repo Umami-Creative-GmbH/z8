@@ -30,6 +30,7 @@ export async function GET() {
 					projectsEnabled: true,
 					surchargesEnabled: true,
 					timezone: true,
+					deletedAt: true,
 				},
 			});
 
@@ -40,6 +41,7 @@ export async function GET() {
 					projectsEnabled: org.projectsEnabled ?? false,
 					surchargesEnabled: org.surchargesEnabled ?? false,
 					timezone: org.timezone ?? "UTC",
+					deletedAt: org.deletedAt?.toISOString() ?? null,
 				};
 			}
 		}
@@ -64,6 +66,10 @@ export async function GET() {
 			organizationSettings,
 		});
 	} catch (error) {
+		// Rethrow prerender errors to let Next.js handle them
+		if (error instanceof Error && "digest" in error) {
+			throw error;
+		}
 		console.error("Error getting auth context:", error);
 		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
 	}

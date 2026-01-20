@@ -13,7 +13,8 @@ export type WidgetId =
 	| "upcoming-time-off"
 	| "recently-approved"
 	| "birthday-reminders"
-	| "hydration";
+	| "hydration"
+	| "vacation-balance";
 
 /**
  * Default widget order for new users or when no preferences are set.
@@ -29,6 +30,7 @@ export const DEFAULT_WIDGET_ORDER: WidgetId[] = [
 	"recently-approved",
 	"birthday-reminders",
 	"hydration",
+	"vacation-balance",
 ];
 
 /**

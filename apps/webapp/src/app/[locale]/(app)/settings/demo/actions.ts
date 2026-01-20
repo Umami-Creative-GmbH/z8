@@ -10,16 +10,22 @@ import {
 	deleteNonAdminEmployeesData,
 } from "@/lib/demo/delete-non-admin";
 import {
+	assignWorkCategoriesToPeriods,
 	type ClearDataResult,
 	clearOrganizationTimeData,
 	type DemoDataOptions,
 	type DemoDataResult,
 	generateDemoAbsences,
+	generateDemoChangePolicies,
 	generateDemoData,
+	generateDemoLocations,
 	generateDemoManagerAssignments,
 	generateDemoProjects,
+	generateDemoShifts,
+	generateDemoShiftTemplates,
 	generateDemoTeams,
 	generateDemoTimeEntries,
+	generateDemoWorkCategories,
 } from "@/lib/demo/demo-data.service";
 import { type GenerateEmployeesResult, generateDemoEmployees } from "@/lib/demo/employee-generator";
 import { AuthorizationError, NotFoundError } from "@/lib/effect/errors";
@@ -164,6 +170,16 @@ export interface StepGenerationInput {
 	teamCount?: number;
 	projectCount?: number;
 	employeeIds?: string[];
+	// NEW: Location options
+	locationCount?: number;
+	subareasPerLocation?: number;
+	// NEW: Work category options
+	workCategorySetCount?: number;
+	workCategoryCount?: number;
+	// NEW: Change policy options
+	changePolicyCount?: number;
+	// NEW: Shift scheduling options
+	shiftTemplateCount?: number;
 }
 
 /**
@@ -427,6 +443,318 @@ export async function generateAbsencesStepAction(
 		};
 
 		const result = yield* _(Effect.promise(() => generateDemoAbsences(options)));
+		return result;
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
+}
+
+/**
+ * Generate demo locations (step 6)
+ */
+export async function generateLocationsStepAction(
+	input: StepGenerationInput,
+): Promise<
+	ServerActionResult<{
+		locationsCreated: number;
+		subareasCreated: number;
+		supervisorAssignmentsCreated: number;
+	}>
+> {
+	const effect = Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
+
+		const hasPermission = yield* _(
+			Effect.promise(() => isOrgAdmin(session.user.id, input.organizationId)),
+		);
+
+		if (!hasPermission) {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Insufficient permissions - admin role required",
+						userId: session.user.id,
+						resource: "demo_data",
+						action: "generate",
+					}),
+				),
+			);
+		}
+
+		const dateRange = calculateDateRange(input.dateRangeType);
+		const options: DemoDataOptions = {
+			organizationId: input.organizationId,
+			dateRange,
+			includeTimeEntries: false,
+			includeAbsences: false,
+			includeTeams: false,
+			includeProjects: false,
+			includeLocations: true,
+			locationCount: input.locationCount,
+			subareasPerLocation: input.subareasPerLocation,
+			employeeIds: input.employeeIds,
+			createdBy: session.user.id,
+		};
+
+		const result = yield* _(Effect.promise(() => generateDemoLocations(options)));
+		return result;
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
+}
+
+/**
+ * Generate demo work categories (step 7)
+ */
+export async function generateWorkCategoriesStepAction(
+	input: StepGenerationInput,
+): Promise<
+	ServerActionResult<{
+		setsCreated: number;
+		categoriesCreated: number;
+		assignmentsCreated: number;
+	}>
+> {
+	const effect = Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
+
+		const hasPermission = yield* _(
+			Effect.promise(() => isOrgAdmin(session.user.id, input.organizationId)),
+		);
+
+		if (!hasPermission) {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Insufficient permissions - admin role required",
+						userId: session.user.id,
+						resource: "demo_data",
+						action: "generate",
+					}),
+				),
+			);
+		}
+
+		const dateRange = calculateDateRange(input.dateRangeType);
+		const options: DemoDataOptions = {
+			organizationId: input.organizationId,
+			dateRange,
+			includeTimeEntries: false,
+			includeAbsences: false,
+			includeTeams: false,
+			includeProjects: false,
+			includeWorkCategories: true,
+			workCategorySetCount: input.workCategorySetCount,
+			workCategoryCount: input.workCategoryCount,
+			employeeIds: input.employeeIds,
+			createdBy: session.user.id,
+		};
+
+		const result = yield* _(Effect.promise(() => generateDemoWorkCategories(options)));
+		return result;
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
+}
+
+/**
+ * Generate demo change policies (step 8)
+ */
+export async function generateChangePoliciesStepAction(
+	input: StepGenerationInput,
+): Promise<
+	ServerActionResult<{
+		policiesCreated: number;
+		assignmentsCreated: number;
+	}>
+> {
+	const effect = Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
+
+		const hasPermission = yield* _(
+			Effect.promise(() => isOrgAdmin(session.user.id, input.organizationId)),
+		);
+
+		if (!hasPermission) {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Insufficient permissions - admin role required",
+						userId: session.user.id,
+						resource: "demo_data",
+						action: "generate",
+					}),
+				),
+			);
+		}
+
+		const dateRange = calculateDateRange(input.dateRangeType);
+		const options: DemoDataOptions = {
+			organizationId: input.organizationId,
+			dateRange,
+			includeTimeEntries: false,
+			includeAbsences: false,
+			includeTeams: false,
+			includeProjects: false,
+			includeChangePolicies: true,
+			changePolicyCount: input.changePolicyCount,
+			employeeIds: input.employeeIds,
+			createdBy: session.user.id,
+		};
+
+		const result = yield* _(Effect.promise(() => generateDemoChangePolicies(options)));
+		return result;
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
+}
+
+/**
+ * Generate demo shift templates (step 9)
+ */
+export async function generateShiftTemplatesStepAction(
+	input: StepGenerationInput,
+): Promise<ServerActionResult<{ templatesCreated: number }>> {
+	const effect = Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
+
+		const hasPermission = yield* _(
+			Effect.promise(() => isOrgAdmin(session.user.id, input.organizationId)),
+		);
+
+		if (!hasPermission) {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Insufficient permissions - admin role required",
+						userId: session.user.id,
+						resource: "demo_data",
+						action: "generate",
+					}),
+				),
+			);
+		}
+
+		const dateRange = calculateDateRange(input.dateRangeType);
+		const options: DemoDataOptions = {
+			organizationId: input.organizationId,
+			dateRange,
+			includeTimeEntries: false,
+			includeAbsences: false,
+			includeTeams: false,
+			includeProjects: false,
+			includeShifts: true,
+			shiftTemplateCount: input.shiftTemplateCount,
+			employeeIds: input.employeeIds,
+			createdBy: session.user.id,
+		};
+
+		const result = yield* _(Effect.promise(() => generateDemoShiftTemplates(options)));
+		return result;
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
+}
+
+/**
+ * Generate demo shifts with recurrence (step 10)
+ */
+export async function generateShiftsStepAction(
+	input: StepGenerationInput,
+): Promise<
+	ServerActionResult<{
+		recurrencesCreated: number;
+		shiftsCreated: number;
+		requestsCreated: number;
+	}>
+> {
+	const effect = Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
+
+		const hasPermission = yield* _(
+			Effect.promise(() => isOrgAdmin(session.user.id, input.organizationId)),
+		);
+
+		if (!hasPermission) {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Insufficient permissions - admin role required",
+						userId: session.user.id,
+						resource: "demo_data",
+						action: "generate",
+					}),
+				),
+			);
+		}
+
+		const dateRange = calculateDateRange(input.dateRangeType);
+		const options: DemoDataOptions = {
+			organizationId: input.organizationId,
+			dateRange,
+			includeTimeEntries: false,
+			includeAbsences: false,
+			includeTeams: false,
+			includeProjects: false,
+			includeShifts: true,
+			generateShiftInstances: true,
+			employeeIds: input.employeeIds,
+			createdBy: session.user.id,
+		};
+
+		const result = yield* _(Effect.promise(() => generateDemoShifts(options)));
+		return result;
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
+}
+
+/**
+ * Assign work categories to existing work periods (step 11)
+ */
+export async function assignWorkCategoriesToPeriodsStepAction(
+	input: StepGenerationInput,
+): Promise<ServerActionResult<{ workCategoriesAssigned: number }>> {
+	const effect = Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
+
+		const hasPermission = yield* _(
+			Effect.promise(() => isOrgAdmin(session.user.id, input.organizationId)),
+		);
+
+		if (!hasPermission) {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Insufficient permissions - admin role required",
+						userId: session.user.id,
+						resource: "demo_data",
+						action: "generate",
+					}),
+				),
+			);
+		}
+
+		const dateRange = calculateDateRange(input.dateRangeType);
+		const options: DemoDataOptions = {
+			organizationId: input.organizationId,
+			dateRange,
+			includeTimeEntries: false,
+			includeAbsences: false,
+			includeTeams: false,
+			includeProjects: false,
+			assignWorkCategoriesToPeriods: true,
+			employeeIds: input.employeeIds,
+			createdBy: session.user.id,
+		};
+
+		const result = yield* _(Effect.promise(() => assignWorkCategoriesToPeriods(options)));
 		return result;
 	}).pipe(Effect.provide(AppLayer));
 

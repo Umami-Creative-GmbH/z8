@@ -1,6 +1,7 @@
 import { type Effect, Layer, ManagedRuntime } from "effect";
 import { AnalyticsService } from "./services/analytics.service";
 import { AuthServiceLive } from "./services/auth.service";
+import { ChangePolicyServiceLive } from "./services/change-policy.service";
 import { DatabaseServiceLive } from "./services/database.service";
 import { EmailServiceLive } from "./services/email.service";
 import { ManagerServiceLive } from "./services/manager.service";
@@ -42,6 +43,9 @@ const ShiftLayer = ShiftServiceLive.pipe(Layer.provide(DatabaseServiceLive));
 // Layer for ShiftRequestService (depends on DatabaseService)
 const ShiftRequestLayer = ShiftRequestServiceLive.pipe(Layer.provide(DatabaseServiceLive));
 
+// Layer for ChangePolicyService (depends on DatabaseService)
+const ChangePolicyLayer = ChangePolicyServiceLive.pipe(Layer.provide(DatabaseServiceLive));
+
 // Combine all service layers
 export const AppLayer = Layer.mergeAll(
 	BaseLayer,
@@ -56,6 +60,7 @@ export const AppLayer = Layer.mergeAll(
 	WorkScheduleLayer,
 	ShiftLayer,
 	ShiftRequestLayer,
+	ChangePolicyLayer,
 );
 
 // Runtime for executing effects

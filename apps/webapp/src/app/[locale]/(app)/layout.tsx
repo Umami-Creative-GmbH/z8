@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { PushPermissionProvider } from "@/components/notifications/push-permission-provider";
+import { OrganizationDeletionBanner } from "@/components/organization/organization-deletion-banner";
 import { OrganizationSettingsProvider } from "@/components/providers/organization-settings-provider";
 import { ServerAppSidebar } from "@/components/server-app-sidebar";
 import { SiteHeader } from "@/components/site-header";
@@ -44,6 +45,7 @@ export default async function AppLayout({ children, params }: AppLayoutProps) {
 					<ServerAppSidebar variant="inset" />
 					<SidebarInset>
 						<SiteHeader />
+						<OrganizationDeletionBanner />
 						<div className="flex flex-1 flex-col min-h-0 overflow-y-auto">{children}</div>
 					</SidebarInset>
 				</SidebarProvider>

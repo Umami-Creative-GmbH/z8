@@ -23,6 +23,7 @@ import {
 	type S3StorageConfig,
 	testS3Connection,
 } from "@/lib/storage/export-s3-client";
+import { deleteOrgSecret, storeOrgSecret } from "@/lib/vault";
 
 /**
  * Check if user is org admin or owner
@@ -345,6 +346,7 @@ export async function getStorageConfigAction(
 
 /**
  * Save S3 storage configuration for an organization
+ * Non-secret fields stored in database, secrets stored in Vault
  */
 export async function saveStorageConfigAction(
 	input: StorageConfigInput,
@@ -372,7 +374,17 @@ export async function saveStorageConfigAction(
 			);
 		}
 
-		// Step 3: Save or update storage config
+		// Step 3: Store secrets in Vault
+		yield* _(
+			Effect.promise(async () => {
+				await Promise.all([
+					storeOrgSecret(input.organizationId, "storage/access_key_id", input.accessKeyId),
+					storeOrgSecret(input.organizationId, "storage/secret_access_key", input.secretAccessKey),
+				]);
+			}),
+		);
+
+		// Step 4: Save or update non-secret config in database
 		const config = yield* _(
 			Effect.promise(async () => {
 				// Check if config exists
@@ -386,8 +398,6 @@ export async function saveStorageConfigAction(
 						.update(exportStorageConfig)
 						.set({
 							bucket: input.bucket,
-							accessKeyId: input.accessKeyId,
-							secretAccessKey: input.secretAccessKey,
 							region: input.region,
 							endpoint: input.endpoint || null,
 							isVerified: false, // Reset verification on update
@@ -404,8 +414,6 @@ export async function saveStorageConfigAction(
 						.values({
 							organizationId: input.organizationId,
 							bucket: input.bucket,
-							accessKeyId: input.accessKeyId,
-							secretAccessKey: input.secretAccessKey,
 							region: input.region,
 							endpoint: input.endpoint || null,
 							createdBy: session.user.id,
@@ -436,6 +444,8 @@ export async function saveStorageConfigAction(
 
 /**
  * Test S3 connection with stored or provided credentials
+ * When testing with new credentials, they are passed directly.
+ * When testing stored config, secrets are fetched from Vault.
  */
 export async function testStorageConnectionAction(
 	organizationId: string,
@@ -467,7 +477,7 @@ export async function testStorageConnectionAction(
 		// Step 3: Get full config (merge stored with test input)
 		const config = yield* _(
 			Effect.promise(async (): Promise<S3StorageConfig> => {
-				// If full test config provided, use it
+				// If full test config provided (new credentials being tested), use it directly
 				if (
 					testConfig?.bucket &&
 					testConfig?.accessKeyId &&
@@ -483,7 +493,7 @@ export async function testStorageConnectionAction(
 					};
 				}
 
-				// Otherwise get from database
+				// Otherwise get from database + Vault
 				const storedConfig = await getStorageConfig(organizationId);
 				if (!storedConfig) {
 					throw new Error("No storage configuration found. Please save your configuration first.");
@@ -528,6 +538,7 @@ export async function testStorageConnectionAction(
 
 /**
  * Delete S3 storage configuration for an organization
+ * Removes both database config and Vault secrets
  */
 export async function deleteStorageConfigAction(
 	organizationId: string,
@@ -555,7 +566,17 @@ export async function deleteStorageConfigAction(
 			);
 		}
 
-		// Step 3: Delete storage config
+		// Step 3: Delete secrets from Vault
+		yield* _(
+			Effect.promise(async () => {
+				await Promise.all([
+					deleteOrgSecret(organizationId, "storage/access_key_id"),
+					deleteOrgSecret(organizationId, "storage/secret_access_key"),
+				]);
+			}),
+		);
+
+		// Step 4: Delete storage config from database
 		yield* _(
 			Effect.promise(async () => {
 				await db

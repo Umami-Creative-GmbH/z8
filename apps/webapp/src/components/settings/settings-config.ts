@@ -11,8 +11,10 @@ export type SettingsIconName =
 	| "users"
 	| "map-pin"
 	| "calendar-event"
+	| "calendar-clock"
 	| "beach"
 	| "clock"
+	| "clock-edit"
 	| "gavel"
 	| "percentage"
 	| "briefcase"
@@ -20,7 +22,9 @@ export type SettingsIconName =
 	| "history"
 	| "chart-bar"
 	| "database-export"
-	| "test-pipe";
+	| "test-pipe"
+	| "mail"
+	| "tag";
 
 export interface SettingsEntry {
 	id: string;
@@ -124,7 +128,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 	{
 		id: "organizations",
 		titleKey: "settings.organizations.title",
-		titleDefault: "Organizations & Teams",
+		titleDefault: "Organization & Teams",
 		descriptionKey: "settings.organizations.description",
 		descriptionDefault: "Manage organization members, invitations, and teams",
 		href: "/settings/organizations",
@@ -190,11 +194,22 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 	{
 		id: "work-schedules",
 		titleKey: "settings.workSchedules.title",
-		titleDefault: "Work Shifts",
+		titleDefault: "Work Schedules",
 		descriptionKey: "settings.workSchedules.description",
-		descriptionDefault: "Manage work shift templates and assignments",
+		descriptionDefault: "Define required work hours and assign schedules to teams or employees",
 		href: "/settings/work-schedules",
 		icon: "clock",
+		adminOnly: true,
+		group: "administration",
+	},
+	{
+		id: "shift-templates",
+		titleKey: "settings.shiftTemplates.title",
+		titleDefault: "Shift Templates",
+		descriptionKey: "settings.shiftTemplates.description",
+		descriptionDefault: "Create reusable shift templates for scheduling (Morning, Night, etc.)",
+		href: "/settings/shifts",
+		icon: "calendar-clock",
 		adminOnly: true,
 		group: "administration",
 		requiredFeature: "shiftsEnabled",
@@ -223,6 +238,28 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		group: "administration",
 		requiredFeature: "projectsEnabled",
 	},
+	{
+		id: "work-categories",
+		titleKey: "settings.workCategories.title",
+		titleDefault: "Work Categories",
+		descriptionKey: "settings.workCategories.description",
+		descriptionDefault: "Define work categories with time factors for effective time calculation",
+		href: "/settings/work-categories",
+		icon: "tag",
+		adminOnly: true,
+		group: "administration",
+	},
+	{
+		id: "change-policies",
+		titleKey: "settings.changePolicies.title",
+		titleDefault: "Change Policies",
+		descriptionKey: "settings.changePolicies.description",
+		descriptionDefault: "Control when employees can edit time entries and require manager approval",
+		href: "/settings/change-policies",
+		icon: "clock-edit",
+		adminOnly: true,
+		group: "administration",
+	},
 	// Enterprise settings
 	{
 		id: "custom-domains",
@@ -232,6 +269,17 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Configure custom domain, branding, and SSO for your organization",
 		href: "/settings/enterprise/domains",
 		icon: "world",
+		adminOnly: true,
+		group: "enterprise",
+	},
+	{
+		id: "email-config",
+		titleKey: "settings.emailConfig.title",
+		titleDefault: "Email Configuration",
+		descriptionKey: "settings.emailConfig.description",
+		descriptionDefault: "Configure a custom email provider for organization emails",
+		href: "/settings/enterprise/email",
+		icon: "mail",
 		adminOnly: true,
 		group: "enterprise",
 	},

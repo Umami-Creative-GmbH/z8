@@ -181,6 +181,12 @@ export async function generateReport(
 export async function getAccessibleEmployeesAction(): Promise<
 	ServerActionResult<AccessibleEmployee[]>
 > {
+	// Early session check for prerender safety - prevents AuthenticationError during build
+	const preSession = await auth.api.getSession({ headers: await headers() });
+	if (!preSession?.user) {
+		return { success: false, error: "Not authenticated", code: "AuthenticationError" };
+	}
+
 	const tracer = trace.getTracer("reports");
 
 	const effect: Effect.Effect<AccessibleEmployee[], AnyAppError> = tracer.startActiveSpan(

@@ -28,6 +28,21 @@ export const queryKeys = {
 		list: (orgId: string) => ["invitations", orgId] as const,
 	},
 
+	// Invite codes (shareable join codes)
+	inviteCodes: {
+		all: ["invite-codes"] as const,
+		list: (orgId: string) => ["invite-codes", orgId] as const,
+		detail: (codeId: string) => ["invite-codes", "detail", codeId] as const,
+		stats: (codeId: string) => ["invite-codes", "stats", codeId] as const,
+	},
+
+	// Pending members (awaiting approval)
+	pendingMembers: {
+		all: ["pending-members"] as const,
+		list: (orgId: string) => ["pending-members", orgId] as const,
+		count: (orgId: string) => ["pending-members", "count", orgId] as const,
+	},
+
 	// Teams
 	teams: {
 		all: ["teams"] as const,
@@ -239,6 +254,7 @@ export const queryKeys = {
 		list: (orgId: string) => ["locations", "list", orgId] as const,
 		detail: (locationId: string) => ["locations", "detail", locationId] as const,
 		employees: (locationId: string) => ["locations", locationId, "employees"] as const,
+		withSubareas: (orgId: string) => ["locations", "with-subareas", orgId] as const,
 		subareas: {
 			all: (locationId: string) => ["locations", locationId, "subareas"] as const,
 			detail: (subareaId: string) => ["locations", "subareas", "detail", subareaId] as const,
@@ -287,5 +303,36 @@ export const queryKeys = {
 	userSettings: {
 		all: ["user-settings"] as const,
 		current: () => ["user-settings", "current"] as const,
+	},
+
+	// Work category sets
+	workCategorySets: {
+		all: ["work-category-sets"] as const,
+		list: (orgId: string) => ["work-category-sets", "list", orgId] as const,
+		detail: (setId: string) => ["work-category-sets", "detail", setId] as const,
+	},
+
+	// Work categories (org-level, independent of sets)
+	workCategories: {
+		all: ["work-categories"] as const,
+		// Org-level categories list
+		orgList: (orgId: string) => ["work-categories", "org", orgId] as const,
+		// Categories available to an employee (resolved through assignment hierarchy)
+		available: (employeeId: string) => ["work-categories", "available", employeeId] as const,
+	},
+
+	// Work category set assignments (org/team/employee)
+	workCategorySetAssignments: {
+		all: ["work-category-set-assignments"] as const,
+		list: (orgId: string) => ["work-category-set-assignments", "list", orgId] as const,
+	},
+
+	// Change policies (time tracking edit restrictions)
+	changePolicies: {
+		all: ["change-policies"] as const,
+		list: (orgId: string) => ["change-policies", "list", orgId] as const,
+		detail: (policyId: string) => ["change-policies", "detail", policyId] as const,
+		assignments: (orgId: string) => ["change-policies", "assignments", orgId] as const,
+		effective: (employeeId: string) => ["change-policies", "effective", employeeId] as const,
 	},
 } as const;

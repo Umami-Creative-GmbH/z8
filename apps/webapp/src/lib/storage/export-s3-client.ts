@@ -10,6 +10,7 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { eq } from "drizzle-orm";
 import { db, exportStorageConfig } from "@/db";
 import { createLogger } from "@/lib/logger";
+import { getOrgSecret } from "@/lib/vault";
 
 const logger = createLogger("ExportS3Client");
 
@@ -25,9 +26,11 @@ export interface S3StorageConfig {
 }
 
 /**
- * Get S3 storage configuration for an organization from the database
+ * Get S3 storage configuration for an organization
+ * Non-secret fields from database, secrets from Vault
  */
 export async function getStorageConfig(organizationId: string): Promise<S3StorageConfig | null> {
+	// Get non-secret config from database
 	const config = await db.query.exportStorageConfig.findFirst({
 		where: eq(exportStorageConfig.organizationId, organizationId),
 	});
@@ -36,10 +39,21 @@ export async function getStorageConfig(organizationId: string): Promise<S3Storag
 		return null;
 	}
 
+	// Fetch secrets from Vault
+	const [accessKeyId, secretAccessKey] = await Promise.all([
+		getOrgSecret(organizationId, "storage/access_key_id"),
+		getOrgSecret(organizationId, "storage/secret_access_key"),
+	]);
+
+	if (!accessKeyId || !secretAccessKey) {
+		logger.warn({ organizationId }, "S3 credentials not found in Vault");
+		return null;
+	}
+
 	return {
 		bucket: config.bucket,
-		accessKeyId: config.accessKeyId,
-		secretAccessKey: config.secretAccessKey,
+		accessKeyId,
+		secretAccessKey,
 		region: config.region,
 		endpoint: config.endpoint,
 	};

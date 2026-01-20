@@ -1,18 +1,32 @@
 "use server";
 
 import { faker } from "@faker-js/faker";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, isNotNull } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { db } from "@/db";
 import {
 	absenceCategory,
 	absenceEntry,
+	changePolicy,
+	changePolicyAssignment,
 	employee,
 	employeeManagers,
 	employeeVacationAllowance,
+	location,
+	locationEmployee,
+	locationSubarea,
 	project,
+	shift,
+	shiftRecurrence,
+	shiftRequest,
+	shiftTemplate,
+	subareaEmployee,
 	team,
 	timeEntry,
+	workCategory,
+	workCategorySet,
+	workCategorySetAssignment,
+	workCategorySetCategory,
 	workPeriod,
 } from "@/db/schema";
 import { dateToDB } from "@/lib/datetime/drizzle-adapter";
@@ -92,6 +106,22 @@ export interface DemoDataOptions {
 	projectCount?: number; // Number of projects to create (default: 5-8)
 	employeeIds?: string[];
 	createdBy: string;
+	// NEW: Location options
+	includeLocations?: boolean;
+	locationCount?: number;
+	subareasPerLocation?: number;
+	// NEW: Work category options
+	includeWorkCategories?: boolean;
+	workCategorySetCount?: number;
+	workCategoryCount?: number;
+	assignWorkCategoriesToPeriods?: boolean;
+	// NEW: Change policy options
+	includeChangePolicies?: boolean;
+	changePolicyCount?: number;
+	// NEW: Shift scheduling options
+	includeShifts?: boolean;
+	shiftTemplateCount?: number;
+	generateShiftInstances?: boolean;
 }
 
 export interface DemoDataResult {
@@ -102,6 +132,23 @@ export interface DemoDataResult {
 	employeesAssignedToTeams: number;
 	projectsCreated: number;
 	managerAssignmentsCreated: number;
+	// NEW: Location results
+	locationsCreated: number;
+	subareasCreated: number;
+	locationSupervisorsAssigned: number;
+	// NEW: Work category results
+	workCategorySetsCreated: number;
+	workCategoriesCreated: number;
+	workCategoryAssignmentsCreated: number;
+	workCategoriesAssignedToPeriods: number;
+	// NEW: Change policy results
+	changePoliciesCreated: number;
+	changePolicyAssignmentsCreated: number;
+	// NEW: Shift scheduling results
+	shiftTemplatesCreated: number;
+	shiftRecurrencesCreated: number;
+	shiftsCreated: number;
+	shiftRequestsCreated: number;
 }
 
 export interface ClearDataResult {
@@ -113,6 +160,20 @@ export interface ClearDataResult {
 	employeesUnassignedFromTeams: number;
 	projectsDeleted: number;
 	managerAssignmentsDeleted: number;
+	// NEW: Location cleanup
+	locationsDeleted: number;
+	subareasDeleted: number;
+	// NEW: Work category cleanup
+	workCategorySetsDeleted: number;
+	workCategoriesDeleted: number;
+	workCategoryAssignmentsRemoved: number;
+	// NEW: Change policy cleanup
+	changePoliciesDeleted: number;
+	// NEW: Shift scheduling cleanup
+	shiftTemplatesDeleted: number;
+	shiftRecurrencesDeleted: number;
+	shiftsDeleted: number;
+	shiftRequestsDeleted: number;
 }
 
 /**
@@ -1041,16 +1102,708 @@ export async function generateDemoManagerAssignments(
 	return { managerAssignmentsCreated };
 }
 
+// ============================================
+// NEW: LOCATION GENERATORS
+// ============================================
+
+const defaultLocationNames = [
+	"Main Office",
+	"Downtown Branch",
+	"Warehouse",
+	"Distribution Center",
+	"Manufacturing Plant",
+	"Regional Office",
+	"Retail Store",
+	"Service Center",
+];
+
+const defaultSubareaNames = [
+	"Reception",
+	"Cashier",
+	"Storage",
+	"Office Area",
+	"Kitchen",
+	"Warehouse Floor",
+	"Loading Dock",
+	"Meeting Rooms",
+	"Break Room",
+	"Production Line",
+];
+
+/**
+ * Generate demo locations with subareas
+ */
+export async function generateDemoLocations(
+	options: DemoDataOptions,
+): Promise<{
+	locationsCreated: number;
+	subareasCreated: number;
+	supervisorAssignmentsCreated: number;
+}> {
+	if (!options.includeLocations) {
+		return { locationsCreated: 0, subareasCreated: 0, supervisorAssignmentsCreated: 0 };
+	}
+
+	// Get employees for supervisor assignments
+	const employees = await db.query.employee.findMany({
+		where: eq(employee.organizationId, options.organizationId),
+	});
+
+	const locationCount = options.locationCount ?? Math.floor(Math.random() * 2) + 2; // 2-3 default
+	const subareasPerLocation = options.subareasPerLocation ?? Math.floor(Math.random() * 2) + 3; // 3-4 default
+
+	let locationsCreated = 0;
+	let subareasCreated = 0;
+	let supervisorAssignmentsCreated = 0;
+
+	const shuffledLocationNames = faker.helpers.shuffle([...defaultLocationNames]);
+	const shuffledEmployees = faker.helpers.shuffle([...employees]);
+
+	for (let i = 0; i < locationCount; i++) {
+		const locationName =
+			i < shuffledLocationNames.length
+				? `Demo - ${shuffledLocationNames[i]}`
+				: `Demo - ${faker.company.name()} Office`;
+
+		// Create location with realistic address
+		const [newLocation] = await db
+			.insert(location)
+			.values({
+				organizationId: options.organizationId,
+				name: locationName,
+				street: faker.location.streetAddress(),
+				city: faker.location.city(),
+				postalCode: faker.location.zipCode(),
+				country: "DE", // Default to Germany
+				isActive: true,
+				createdBy: options.createdBy,
+				updatedAt: new Date(),
+			})
+			.returning();
+
+		locationsCreated++;
+
+		// Assign a location supervisor (50% chance)
+		if (shuffledEmployees.length > 0 && Math.random() < 0.5) {
+			const supervisor = shuffledEmployees[i % shuffledEmployees.length];
+			await db.insert(locationEmployee).values({
+				locationId: newLocation.id,
+				employeeId: supervisor.id,
+				isPrimary: true,
+				createdBy: options.createdBy,
+			});
+			supervisorAssignmentsCreated++;
+		}
+
+		// Create subareas for this location
+		const shuffledSubareaNames = faker.helpers.shuffle([...defaultSubareaNames]);
+		for (let j = 0; j < subareasPerLocation && j < shuffledSubareaNames.length; j++) {
+			const [newSubarea] = await db
+				.insert(locationSubarea)
+				.values({
+					locationId: newLocation.id,
+					name: `Demo - ${shuffledSubareaNames[j]}`,
+					isActive: true,
+					createdBy: options.createdBy,
+					updatedAt: new Date(),
+				})
+				.returning();
+
+			subareasCreated++;
+
+			// Assign a subarea supervisor (30% chance)
+			if (shuffledEmployees.length > 0 && Math.random() < 0.3) {
+				const supervisor = shuffledEmployees[(i * subareasPerLocation + j) % shuffledEmployees.length];
+				await db.insert(subareaEmployee).values({
+					subareaId: newSubarea.id,
+					employeeId: supervisor.id,
+					isPrimary: true,
+					createdBy: options.createdBy,
+				});
+				supervisorAssignmentsCreated++;
+			}
+		}
+	}
+
+	return { locationsCreated, subareasCreated, supervisorAssignmentsCreated };
+}
+
+// ============================================
+// NEW: WORK CATEGORY GENERATORS
+// ============================================
+
+const workCategoryTemplates = [
+	{ name: "Normal Work", factor: "1.00", color: "#10b981" },
+	{ name: "Training", factor: "1.00", color: "#8b5cf6" },
+	{ name: "Meeting", factor: "1.00", color: "#3b82f6" },
+	{ name: "Passive Travel", factor: "0.50", color: "#94a3b8" },
+	{ name: "Active Travel", factor: "0.75", color: "#06b6d4" },
+	{ name: "Standby Duty", factor: "0.50", color: "#f59e0b" },
+	{ name: "Overtime", factor: "1.25", color: "#f97316" },
+	{ name: "Night Work", factor: "1.25", color: "#6366f1" },
+	{ name: "Hazardous Work", factor: "1.50", color: "#ef4444" },
+	{ name: "Weekend Work", factor: "1.50", color: "#ec4899" },
+];
+
+const workCategorySetTemplates = [
+	{ name: "Standard Categories", description: "Default work categories for most employees" },
+	{ name: "Field Work Categories", description: "Categories for field workers with travel time" },
+	{ name: "Manufacturing Categories", description: "Categories for production and manufacturing" },
+];
+
+/**
+ * Generate demo work category sets and categories
+ */
+export async function generateDemoWorkCategories(
+	options: DemoDataOptions,
+): Promise<{
+	setsCreated: number;
+	categoriesCreated: number;
+	assignmentsCreated: number;
+}> {
+	if (!options.includeWorkCategories) {
+		return { setsCreated: 0, categoriesCreated: 0, assignmentsCreated: 0 };
+	}
+
+	const setCount = options.workCategorySetCount ?? 2;
+	const categoryCount = options.workCategoryCount ?? Math.min(8, workCategoryTemplates.length);
+
+	let setsCreated = 0;
+	let categoriesCreated = 0;
+	let assignmentsCreated = 0;
+
+	// First, create all categories at org level
+	const createdCategories: Array<{ id: string; name: string }> = [];
+	const shuffledTemplates = faker.helpers.shuffle([...workCategoryTemplates]);
+
+	for (let i = 0; i < categoryCount && i < shuffledTemplates.length; i++) {
+		const template = shuffledTemplates[i];
+		const [newCategory] = await db
+			.insert(workCategory)
+			.values({
+				organizationId: options.organizationId,
+				name: template.name,
+				description: `Demo work category - ${template.name}`,
+				factor: template.factor,
+				color: template.color,
+				isActive: true,
+				createdBy: options.createdBy,
+				updatedAt: new Date(),
+			})
+			.returning();
+
+		createdCategories.push({ id: newCategory.id, name: newCategory.name });
+		categoriesCreated++;
+	}
+
+	// Create category sets and link categories
+	const createdSets: Array<{ id: string; name: string }> = [];
+
+	for (let i = 0; i < setCount && i < workCategorySetTemplates.length; i++) {
+		const template = workCategorySetTemplates[i];
+		const [newSet] = await db
+			.insert(workCategorySet)
+			.values({
+				organizationId: options.organizationId,
+				name: template.name,
+				description: `Demo work category set - ${template.description}`,
+				isActive: true,
+				createdBy: options.createdBy,
+				updatedAt: new Date(),
+			})
+			.returning();
+
+		createdSets.push({ id: newSet.id, name: newSet.name });
+		setsCreated++;
+
+		// Link categories to this set (each set gets a different subset)
+		const startIdx = i * 3; // Each set gets different categories
+		const categoriesForSet = createdCategories.slice(startIdx, startIdx + 6);
+
+		// Always include "Normal Work" if available
+		const normalWork = createdCategories.find((c) => c.name === "Normal Work");
+		if (normalWork && !categoriesForSet.find((c) => c.name === "Normal Work")) {
+			categoriesForSet.unshift(normalWork);
+		}
+
+		for (let j = 0; j < categoriesForSet.length; j++) {
+			await db.insert(workCategorySetCategory).values({
+				setId: newSet.id,
+				categoryId: categoriesForSet[j].id,
+				sortOrder: j,
+			});
+		}
+	}
+
+	// Create organization-level assignment (first set as default)
+	if (createdSets.length > 0) {
+		await db.insert(workCategorySetAssignment).values({
+			setId: createdSets[0].id,
+			organizationId: options.organizationId,
+			assignmentType: "organization",
+			priority: 0,
+			isActive: true,
+			createdBy: options.createdBy,
+			updatedAt: new Date(),
+		});
+		assignmentsCreated++;
+
+		// Assign other sets to teams (if multiple sets and teams exist)
+		if (createdSets.length > 1) {
+			const teams = await db.query.team.findMany({
+				where: eq(team.organizationId, options.organizationId),
+			});
+
+			const shuffledTeams = faker.helpers.shuffle(teams);
+			const teamsToAssign = shuffledTeams.slice(0, Math.min(2, shuffledTeams.length));
+
+			for (let i = 0; i < teamsToAssign.length && i + 1 < createdSets.length; i++) {
+				await db.insert(workCategorySetAssignment).values({
+					setId: createdSets[i + 1].id,
+					organizationId: options.organizationId,
+					assignmentType: "team",
+					teamId: teamsToAssign[i].id,
+					priority: 1,
+					isActive: true,
+					createdBy: options.createdBy,
+					updatedAt: new Date(),
+				});
+				assignmentsCreated++;
+			}
+		}
+	}
+
+	return { setsCreated, categoriesCreated, assignmentsCreated };
+}
+
+// ============================================
+// NEW: CHANGE POLICY GENERATORS
+// ============================================
+
+const changePolicyTemplates = [
+	{
+		name: "Standard Policy",
+		description: "Default policy with same-day free edits, 7-day approval window",
+		selfServiceDays: 0,
+		approvalDays: 7,
+		noApprovalRequired: false,
+	},
+	{
+		name: "Flexible Policy",
+		description: "Liberal policy allowing edits within 3 days without approval",
+		selfServiceDays: 3,
+		approvalDays: 14,
+		noApprovalRequired: false,
+	},
+	{
+		name: "Trust Policy",
+		description: "No approval required - full trust mode",
+		selfServiceDays: 0,
+		approvalDays: 0,
+		noApprovalRequired: true,
+	},
+	{
+		name: "Strict Policy",
+		description: "All clock-outs require manager approval",
+		selfServiceDays: 0,
+		approvalDays: 0,
+		noApprovalRequired: false,
+	},
+];
+
+/**
+ * Generate demo change policies
+ */
+export async function generateDemoChangePolicies(
+	options: DemoDataOptions,
+): Promise<{
+	policiesCreated: number;
+	assignmentsCreated: number;
+}> {
+	if (!options.includeChangePolicies) {
+		return { policiesCreated: 0, assignmentsCreated: 0 };
+	}
+
+	const policyCount = options.changePolicyCount ?? 2;
+	let policiesCreated = 0;
+	let assignmentsCreated = 0;
+
+	const createdPolicies: Array<{ id: string; name: string }> = [];
+
+	for (let i = 0; i < policyCount && i < changePolicyTemplates.length; i++) {
+		const template = changePolicyTemplates[i];
+		const [newPolicy] = await db
+			.insert(changePolicy)
+			.values({
+				organizationId: options.organizationId,
+				name: template.name,
+				description: `Demo change policy - ${template.description}`,
+				selfServiceDays: template.selfServiceDays,
+				approvalDays: template.approvalDays,
+				noApprovalRequired: template.noApprovalRequired,
+				isActive: true,
+				createdBy: options.createdBy,
+				updatedAt: new Date(),
+			})
+			.returning();
+
+		createdPolicies.push({ id: newPolicy.id, name: newPolicy.name });
+		policiesCreated++;
+	}
+
+	// Create organization-level assignment (first policy as default)
+	if (createdPolicies.length > 0) {
+		await db.insert(changePolicyAssignment).values({
+			policyId: createdPolicies[0].id,
+			organizationId: options.organizationId,
+			assignmentType: "organization",
+			priority: 0,
+			isActive: true,
+			createdBy: options.createdBy,
+			updatedAt: new Date(),
+		});
+		assignmentsCreated++;
+	}
+
+	return { policiesCreated, assignmentsCreated };
+}
+
+// ============================================
+// NEW: SHIFT SCHEDULING GENERATORS
+// ============================================
+
+const shiftTemplateData = [
+	{ name: "Morning Shift", startTime: "06:00", endTime: "14:00", color: "#fbbf24" },
+	{ name: "Day Shift", startTime: "09:00", endTime: "17:00", color: "#10b981" },
+	{ name: "Afternoon Shift", startTime: "14:00", endTime: "22:00", color: "#3b82f6" },
+	{ name: "Night Shift", startTime: "22:00", endTime: "06:00", color: "#6366f1" },
+	{ name: "Split Shift", startTime: "10:00", endTime: "18:00", color: "#ec4899" },
+	{ name: "Flex Shift", startTime: "08:00", endTime: "16:00", color: "#14b8a6" },
+];
+
+/**
+ * Generate demo shift templates
+ */
+export async function generateDemoShiftTemplates(
+	options: DemoDataOptions,
+): Promise<{ templatesCreated: number }> {
+	if (!options.includeShifts) {
+		return { templatesCreated: 0 };
+	}
+
+	// Get subareas for the organization
+	const orgLocations = await db.query.location.findMany({
+		where: eq(location.organizationId, options.organizationId),
+	});
+
+	if (orgLocations.length === 0) {
+		return { templatesCreated: 0 };
+	}
+
+	const locationIds = orgLocations.map((l) => l.id);
+	const subareas = await db.query.locationSubarea.findMany({
+		where: inArray(locationSubarea.locationId, locationIds),
+	});
+
+	const templateCount = options.shiftTemplateCount ?? Math.min(4, shiftTemplateData.length);
+	let templatesCreated = 0;
+
+	for (let i = 0; i < templateCount && i < shiftTemplateData.length; i++) {
+		const template = shiftTemplateData[i];
+		// Assign to a random subarea if available
+		const subarea = subareas.length > 0 ? faker.helpers.arrayElement(subareas) : null;
+
+		await db.insert(shiftTemplate).values({
+			organizationId: options.organizationId,
+			name: `Demo ${template.name}`,
+			startTime: template.startTime,
+			endTime: template.endTime,
+			color: template.color,
+			subareaId: subarea?.id ?? null,
+			isActive: true,
+			createdBy: options.createdBy,
+			updatedAt: new Date(),
+		});
+
+		templatesCreated++;
+	}
+
+	return { templatesCreated };
+}
+
+/**
+ * Generate demo shifts with recurrence patterns
+ */
+export async function generateDemoShifts(
+	options: DemoDataOptions,
+): Promise<{
+	recurrencesCreated: number;
+	shiftsCreated: number;
+	requestsCreated: number;
+}> {
+	if (!options.includeShifts || !options.generateShiftInstances) {
+		return { recurrencesCreated: 0, shiftsCreated: 0, requestsCreated: 0 };
+	}
+
+	// Get shift templates for this organization
+	const templates = await db.query.shiftTemplate.findMany({
+		where: eq(shiftTemplate.organizationId, options.organizationId),
+	});
+
+	if (templates.length === 0) {
+		return { recurrencesCreated: 0, shiftsCreated: 0, requestsCreated: 0 };
+	}
+
+	// Get subareas
+	const orgLocations = await db.query.location.findMany({
+		where: eq(location.organizationId, options.organizationId),
+	});
+	const locationIds = orgLocations.map((l) => l.id);
+	const subareas = await db.query.locationSubarea.findMany({
+		where: inArray(locationSubarea.locationId, locationIds),
+	});
+
+	if (subareas.length === 0) {
+		return { recurrencesCreated: 0, shiftsCreated: 0, requestsCreated: 0 };
+	}
+
+	// Get employees for shift assignment
+	const employees = await db.query.employee.findMany({
+		where: eq(employee.organizationId, options.organizationId),
+	});
+
+	let recurrencesCreated = 0;
+	let shiftsCreated = 0;
+	let requestsCreated = 0;
+
+	// Create recurrence patterns for templates
+	for (const template of templates) {
+		const subarea = template.subareaId
+			? subareas.find((s) => s.id === template.subareaId)
+			: faker.helpers.arrayElement(subareas);
+
+		if (!subarea) continue;
+
+		const [newRecurrence] = await db
+			.insert(shiftRecurrence)
+			.values({
+				organizationId: options.organizationId,
+				templateId: template.id,
+				subareaId: subarea.id,
+				recurrenceType: "weekly",
+				startTime: template.startTime,
+				endTime: template.endTime,
+				color: template.color,
+				startDate: options.dateRange.start,
+				endDate: options.dateRange.end,
+				weeklyDays: JSON.stringify([1, 2, 3, 4, 5]), // Monday-Friday
+				isActive: true,
+				createdBy: options.createdBy,
+				updatedAt: new Date(),
+			})
+			.returning();
+
+		recurrencesCreated++;
+
+		// Generate shift instances for the date range
+		const startDT = DateTime.fromJSDate(options.dateRange.start, { zone: "utc" });
+		const endDT = DateTime.fromJSDate(options.dateRange.end, { zone: "utc" });
+		let currentDT = startDT;
+
+		const shuffledEmployees = faker.helpers.shuffle([...employees]);
+		let employeeIndex = 0;
+
+		while (currentDT <= endDT) {
+			// Skip weekends
+			if (currentDT.weekday >= 1 && currentDT.weekday <= 5) {
+				// 70% assigned to employee, 30% open shifts
+				const assignToEmployee = Math.random() < 0.7 && shuffledEmployees.length > 0;
+				const assignedEmployee = assignToEmployee
+					? shuffledEmployees[employeeIndex % shuffledEmployees.length]
+					: null;
+
+				if (assignToEmployee) employeeIndex++;
+
+				// 80% published, 20% draft
+				const isPublished = Math.random() < 0.8;
+
+				const [newShift] = await db
+					.insert(shift)
+					.values({
+						organizationId: options.organizationId,
+						employeeId: assignedEmployee?.id ?? null,
+						templateId: template.id,
+						subareaId: subarea.id,
+						recurrenceId: newRecurrence.id,
+						date: currentDT.toJSDate(),
+						startTime: template.startTime,
+						endTime: template.endTime,
+						status: isPublished ? "published" : "draft",
+						publishedAt: isPublished ? new Date() : null,
+						publishedBy: isPublished ? options.createdBy : null,
+						color: template.color,
+						createdBy: options.createdBy,
+						updatedAt: new Date(),
+					})
+					.returning();
+
+				shiftsCreated++;
+
+				// 10% chance to create a shift request for published, assigned shifts
+				if (isPublished && assignedEmployee && Math.random() < 0.1 && employees.length > 1) {
+					const otherEmployees = employees.filter((e) => e.id !== assignedEmployee.id);
+					const targetEmployee =
+						Math.random() < 0.5 ? faker.helpers.arrayElement(otherEmployees) : null;
+
+					const requestTypes: Array<"swap" | "assignment" | "pickup"> = targetEmployee
+						? ["swap"]
+						: ["pickup"];
+					const requestType = faker.helpers.arrayElement(requestTypes);
+
+					// 60% approved, 25% pending, 15% rejected
+					const statusRand = Math.random();
+					const requestStatus: "pending" | "approved" | "rejected" =
+						statusRand < 0.6 ? "approved" : statusRand < 0.85 ? "pending" : "rejected";
+
+					await db.insert(shiftRequest).values({
+						shiftId: newShift.id,
+						type: requestType,
+						status: requestStatus,
+						requesterId: assignedEmployee.id,
+						targetEmployeeId: targetEmployee?.id ?? null,
+						reason: faker.helpers.arrayElement([
+							"Personal appointment",
+							"Family commitment",
+							"Doctor visit",
+							"Schedule conflict",
+						]),
+						reasonCategory: faker.helpers.arrayElement(["personal", "emergency", "childcare", "other"]),
+						approverId: requestStatus !== "pending" ? employees[0]?.id : null,
+						approvedAt: requestStatus !== "pending" ? new Date() : null,
+						rejectionReason: requestStatus === "rejected" ? "Schedule conflict" : null,
+						updatedAt: new Date(),
+					});
+
+					requestsCreated++;
+				}
+			}
+
+			currentDT = currentDT.plus({ days: 1 });
+		}
+	}
+
+	return { recurrencesCreated, shiftsCreated, requestsCreated };
+}
+
+/**
+ * Assign work categories to existing work periods
+ * This is called after time entries are generated
+ */
+export async function assignWorkCategoriesToPeriods(
+	options: DemoDataOptions,
+): Promise<{ workCategoriesAssigned: number }> {
+	if (!options.assignWorkCategoriesToPeriods) {
+		return { workCategoriesAssigned: 0 };
+	}
+
+	// Get employees for the organization
+	const employees = await db.query.employee.findMany({
+		where: options.employeeIds?.length
+			? and(
+					eq(employee.organizationId, options.organizationId),
+					inArray(employee.id, options.employeeIds),
+				)
+			: eq(employee.organizationId, options.organizationId),
+	});
+
+	if (employees.length === 0) {
+		return { workCategoriesAssigned: 0 };
+	}
+
+	// Get work categories for this organization
+	const categories = await db.query.workCategory.findMany({
+		where: and(
+			eq(workCategory.organizationId, options.organizationId),
+			eq(workCategory.isActive, true),
+		),
+	});
+
+	if (categories.length === 0) {
+		return { workCategoriesAssigned: 0 };
+	}
+
+	const employeeIds = employees.map((e) => e.id);
+
+	// Get work periods without a category assignment
+	const periodsWithoutCategory = await db.query.workPeriod.findMany({
+		where: and(
+			inArray(workPeriod.employeeId, employeeIds),
+			eq(workPeriod.isActive, false), // Only completed periods
+		),
+	});
+
+	// Assign categories to 20-30% of work periods
+	const assignmentRate = 0.2 + Math.random() * 0.1;
+	const periodsToAssign = faker.helpers
+		.shuffle(periodsWithoutCategory)
+		.slice(0, Math.ceil(periodsWithoutCategory.length * assignmentRate));
+
+	let workCategoriesAssigned = 0;
+
+	// Weighted category selection (more "Normal Work", less "Hazardous")
+	const weightedCategories: string[] = [];
+	for (const cat of categories) {
+		// More weight for common categories
+		const weight =
+			cat.name === "Normal Work" || cat.name === "Meeting"
+				? 5
+				: cat.name === "Training"
+					? 3
+					: 1;
+		for (let i = 0; i < weight; i++) {
+			weightedCategories.push(cat.id);
+		}
+	}
+
+	for (const period of periodsToAssign) {
+		const categoryId = faker.helpers.arrayElement(weightedCategories);
+
+		await db.update(workPeriod).set({ workCategoryId: categoryId }).where(eq(workPeriod.id, period.id));
+
+		workCategoriesAssigned++;
+	}
+
+	return { workCategoriesAssigned };
+}
+
 /**
  * Generate all demo data
  */
 export async function generateDemoData(options: DemoDataOptions): Promise<DemoDataResult> {
-	// Generate teams first (so employees have teams before other data)
+	// Phase 1: Foundation data (teams, projects, locations)
 	const teamResult = await generateDemoTeams(options);
 	const projectResult = await generateDemoProjects(options);
+	const locationResult = await generateDemoLocations(options);
+
+	// Phase 2: Configuration data (categories, policies)
+	const workCategoryResult = await generateDemoWorkCategories(options);
+	const changePolicyResult = await generateDemoChangePolicies(options);
+
+	// Phase 3: Manager assignments (depends on teams)
 	const managerResult = await generateDemoManagerAssignments(options);
+
+	// Phase 4: Shift templates (depends on locations)
+	const shiftTemplateResult = await generateDemoShiftTemplates(options);
+
+	// Phase 5: Time data
 	const timeResult = await generateDemoTimeEntries(options);
 	const absenceResult = await generateDemoAbsences(options);
+
+	// Phase 6: Shift instances (depends on templates + employees)
+	const shiftResult = await generateDemoShifts(options);
+
+	// Phase 7: Work category assignments (depends on categories + time entries)
+	const categoryAssignmentResult = await assignWorkCategoriesToPeriods(options);
 
 	return {
 		timeEntriesCreated: timeResult.timeEntriesCreated,
@@ -1060,6 +1813,23 @@ export async function generateDemoData(options: DemoDataOptions): Promise<DemoDa
 		employeesAssignedToTeams: teamResult.employeesAssignedToTeams,
 		projectsCreated: projectResult.projectsCreated,
 		managerAssignmentsCreated: managerResult.managerAssignmentsCreated,
+		// NEW: Location results
+		locationsCreated: locationResult.locationsCreated,
+		subareasCreated: locationResult.subareasCreated,
+		locationSupervisorsAssigned: locationResult.supervisorAssignmentsCreated,
+		// NEW: Work category results
+		workCategorySetsCreated: workCategoryResult.setsCreated,
+		workCategoriesCreated: workCategoryResult.categoriesCreated,
+		workCategoryAssignmentsCreated: workCategoryResult.assignmentsCreated,
+		workCategoriesAssignedToPeriods: categoryAssignmentResult.workCategoriesAssigned,
+		// NEW: Change policy results
+		changePoliciesCreated: changePolicyResult.policiesCreated,
+		changePolicyAssignmentsCreated: changePolicyResult.assignmentsCreated,
+		// NEW: Shift scheduling results
+		shiftTemplatesCreated: shiftTemplateResult.templatesCreated,
+		shiftRecurrencesCreated: shiftResult.recurrencesCreated,
+		shiftsCreated: shiftResult.shiftsCreated,
+		shiftRequestsCreated: shiftResult.requestsCreated,
 	};
 }
 
@@ -1067,72 +1837,290 @@ export async function generateDemoData(options: DemoDataOptions): Promise<DemoDa
  * Clear all time-related data for an organization
  */
 export async function clearOrganizationTimeData(organizationId: string): Promise<ClearDataResult> {
+	// Initialize result with zeros
+	const result: ClearDataResult = {
+		timeEntriesDeleted: 0,
+		workPeriodsDeleted: 0,
+		absencesDeleted: 0,
+		vacationAllowancesReset: 0,
+		teamsDeleted: 0,
+		employeesUnassignedFromTeams: 0,
+		projectsDeleted: 0,
+		managerAssignmentsDeleted: 0,
+		// NEW fields
+		locationsDeleted: 0,
+		subareasDeleted: 0,
+		workCategorySetsDeleted: 0,
+		workCategoriesDeleted: 0,
+		workCategoryAssignmentsRemoved: 0,
+		changePoliciesDeleted: 0,
+		shiftTemplatesDeleted: 0,
+		shiftRecurrencesDeleted: 0,
+		shiftsDeleted: 0,
+		shiftRequestsDeleted: 0,
+	};
+
 	// Get all employees in this organization
 	const employees = await db.query.employee.findMany({
 		where: eq(employee.organizationId, organizationId),
 	});
 
-	if (employees.length === 0) {
-		return {
-			timeEntriesDeleted: 0,
-			workPeriodsDeleted: 0,
-			absencesDeleted: 0,
-			vacationAllowancesReset: 0,
-			teamsDeleted: 0,
-			employeesUnassignedFromTeams: 0,
-			projectsDeleted: 0,
-			managerAssignmentsDeleted: 0,
-		};
-	}
+	const employeeIds = employees.length > 0 ? employees.map((e) => e.id) : [];
 
-	const employeeIds = employees.map((e) => e.id);
+	// ============================================
+	// SHIFT CLEANUP (delete shifts first - they reference templates/subareas)
+	// ============================================
 
-	// Delete work periods first (references time entries)
-	const workPeriodsToDelete = await db.query.workPeriod.findMany({
-		where: inArray(workPeriod.employeeId, employeeIds),
+	// Delete shift requests (references shifts)
+	const allShifts = await db.query.shift.findMany({
+		where: eq(shift.organizationId, organizationId),
 	});
-	if (workPeriodsToDelete.length > 0) {
-		await db.delete(workPeriod).where(inArray(workPeriod.employeeId, employeeIds));
+	const shiftIds = allShifts.map((s) => s.id);
+
+	if (shiftIds.length > 0) {
+		const shiftRequestsToDelete = await db.query.shiftRequest.findMany({
+			where: inArray(shiftRequest.shiftId, shiftIds),
+		});
+		if (shiftRequestsToDelete.length > 0) {
+			await db.delete(shiftRequest).where(inArray(shiftRequest.shiftId, shiftIds));
+			result.shiftRequestsDeleted = shiftRequestsToDelete.length;
+		}
+
+		// Delete shifts
+		await db.delete(shift).where(eq(shift.organizationId, organizationId));
+		result.shiftsDeleted = allShifts.length;
 	}
 
-	// Delete time entries
-	const timeEntriesToDelete = await db.query.timeEntry.findMany({
-		where: inArray(timeEntry.employeeId, employeeIds),
+	// Delete shift recurrences
+	const shiftRecurrencesToDelete = await db.query.shiftRecurrence.findMany({
+		where: eq(shiftRecurrence.organizationId, organizationId),
 	});
-	if (timeEntriesToDelete.length > 0) {
-		await db.delete(timeEntry).where(inArray(timeEntry.employeeId, employeeIds));
+	if (shiftRecurrencesToDelete.length > 0) {
+		await db.delete(shiftRecurrence).where(eq(shiftRecurrence.organizationId, organizationId));
+		result.shiftRecurrencesDeleted = shiftRecurrencesToDelete.length;
 	}
 
-	// Delete absence entries
-	const absencesToDelete = await db.query.absenceEntry.findMany({
-		where: inArray(absenceEntry.employeeId, employeeIds),
+	// Delete demo shift templates (name starts with "Demo ")
+	const allShiftTemplates = await db.query.shiftTemplate.findMany({
+		where: eq(shiftTemplate.organizationId, organizationId),
 	});
-	if (absencesToDelete.length > 0) {
-		await db.delete(absenceEntry).where(inArray(absenceEntry.employeeId, employeeIds));
+	const shiftTemplatesToDelete = allShiftTemplates.filter((t) => t.name.startsWith("Demo "));
+	if (shiftTemplatesToDelete.length > 0) {
+		await db.delete(shiftTemplate).where(
+			inArray(
+				shiftTemplate.id,
+				shiftTemplatesToDelete.map((t) => t.id),
+			),
+		);
+		result.shiftTemplatesDeleted = shiftTemplatesToDelete.length;
 	}
 
-	// Delete employee vacation allowances (reset to org defaults)
-	const allowancesToDelete = await db.query.employeeVacationAllowance.findMany({
-		where: inArray(employeeVacationAllowance.employeeId, employeeIds),
+	// ============================================
+	// WORK CATEGORY CLEANUP
+	// ============================================
+
+	// Remove work category assignments from work periods
+	if (employeeIds.length > 0) {
+		const periodsWithCategories = await db.query.workPeriod.findMany({
+			where: and(
+				inArray(workPeriod.employeeId, employeeIds),
+				isNotNull(workPeriod.workCategoryId),
+			),
+		});
+		if (periodsWithCategories.length > 0) {
+			await db
+				.update(workPeriod)
+				.set({ workCategoryId: null })
+				.where(inArray(workPeriod.employeeId, employeeIds));
+			result.workCategoryAssignmentsRemoved = periodsWithCategories.length;
+		}
+	}
+
+	// Delete work category set assignments (cascade from sets)
+	// Delete work category set categories (cascade from sets/categories)
+	// Delete demo work category sets
+	const allWorkCategorySets = await db.query.workCategorySet.findMany({
+		where: eq(workCategorySet.organizationId, organizationId),
 	});
-	if (allowancesToDelete.length > 0) {
-		await db
-			.delete(employeeVacationAllowance)
-			.where(inArray(employeeVacationAllowance.employeeId, employeeIds));
+	const workCategorySetsToDelete = allWorkCategorySets.filter((s) =>
+		s.description?.startsWith("Demo work category set - "),
+	);
+	if (workCategorySetsToDelete.length > 0) {
+		// Delete assignments first (no cascade defined)
+		await db.delete(workCategorySetAssignment).where(
+			inArray(
+				workCategorySetAssignment.setId,
+				workCategorySetsToDelete.map((s) => s.id),
+			),
+		);
+		// Delete set categories
+		await db.delete(workCategorySetCategory).where(
+			inArray(
+				workCategorySetCategory.setId,
+				workCategorySetsToDelete.map((s) => s.id),
+			),
+		);
+		// Delete sets
+		await db.delete(workCategorySet).where(
+			inArray(
+				workCategorySet.id,
+				workCategorySetsToDelete.map((s) => s.id),
+			),
+		);
+		result.workCategorySetsDeleted = workCategorySetsToDelete.length;
 	}
 
-	// Unassign employees from teams
-	const employeesWithTeams = employees.filter((e) => e.teamId !== null);
-	if (employeesWithTeams.length > 0) {
-		await db
-			.update(employee)
-			.set({ teamId: null })
-			.where(
+	// Delete demo work categories
+	const allWorkCategories = await db.query.workCategory.findMany({
+		where: eq(workCategory.organizationId, organizationId),
+	});
+	const workCategoriesToDelete = allWorkCategories.filter((c) =>
+		c.description?.startsWith("Demo work category - "),
+	);
+	if (workCategoriesToDelete.length > 0) {
+		await db.delete(workCategory).where(
+			inArray(
+				workCategory.id,
+				workCategoriesToDelete.map((c) => c.id),
+			),
+		);
+		result.workCategoriesDeleted = workCategoriesToDelete.length;
+	}
+
+	// ============================================
+	// CHANGE POLICY CLEANUP
+	// ============================================
+
+	// Delete demo change policies (cascade deletes assignments)
+	const allChangePolicies = await db.query.changePolicy.findMany({
+		where: eq(changePolicy.organizationId, organizationId),
+	});
+	const changePoliciesToDelete = allChangePolicies.filter((p) =>
+		p.description?.startsWith("Demo change policy - "),
+	);
+	if (changePoliciesToDelete.length > 0) {
+		// Delete assignments first
+		await db.delete(changePolicyAssignment).where(
+			inArray(
+				changePolicyAssignment.policyId,
+				changePoliciesToDelete.map((p) => p.id),
+			),
+		);
+		// Delete policies
+		await db.delete(changePolicy).where(
+			inArray(
+				changePolicy.id,
+				changePoliciesToDelete.map((p) => p.id),
+			),
+		);
+		result.changePoliciesDeleted = changePoliciesToDelete.length;
+	}
+
+	// ============================================
+	// LOCATION CLEANUP
+	// ============================================
+
+	// Delete demo locations (cascade deletes subareas and employee assignments)
+	const allLocations = await db.query.location.findMany({
+		where: eq(location.organizationId, organizationId),
+	});
+	const locationsToDelete = allLocations.filter((l) => l.name.startsWith("Demo - "));
+	if (locationsToDelete.length > 0) {
+		const locationIdsToDelete = locationsToDelete.map((l) => l.id);
+
+		// Count subareas before deletion
+		const subareasToDelete = await db.query.locationSubarea.findMany({
+			where: inArray(locationSubarea.locationId, locationIdsToDelete),
+		});
+		result.subareasDeleted = subareasToDelete.length;
+
+		// Delete location employee assignments
+		await db.delete(locationEmployee).where(inArray(locationEmployee.locationId, locationIdsToDelete));
+
+		// Delete subarea employee assignments
+		if (subareasToDelete.length > 0) {
+			await db.delete(subareaEmployee).where(
 				inArray(
-					employee.id,
-					employeesWithTeams.map((e) => e.id),
+					subareaEmployee.subareaId,
+					subareasToDelete.map((s) => s.id),
 				),
 			);
+		}
+
+		// Delete subareas
+		await db.delete(locationSubarea).where(inArray(locationSubarea.locationId, locationIdsToDelete));
+
+		// Delete locations
+		await db.delete(location).where(inArray(location.id, locationIdsToDelete));
+		result.locationsDeleted = locationsToDelete.length;
+	}
+
+	// ============================================
+	// EXISTING CLEANUP (work periods, time entries, absences, etc.)
+	// ============================================
+
+	if (employeeIds.length > 0) {
+		// Delete work periods first (references time entries)
+		const workPeriodsToDelete = await db.query.workPeriod.findMany({
+			where: inArray(workPeriod.employeeId, employeeIds),
+		});
+		if (workPeriodsToDelete.length > 0) {
+			await db.delete(workPeriod).where(inArray(workPeriod.employeeId, employeeIds));
+			result.workPeriodsDeleted = workPeriodsToDelete.length;
+		}
+
+		// Delete time entries
+		const timeEntriesToDelete = await db.query.timeEntry.findMany({
+			where: inArray(timeEntry.employeeId, employeeIds),
+		});
+		if (timeEntriesToDelete.length > 0) {
+			await db.delete(timeEntry).where(inArray(timeEntry.employeeId, employeeIds));
+			result.timeEntriesDeleted = timeEntriesToDelete.length;
+		}
+
+		// Delete absence entries
+		const absencesToDelete = await db.query.absenceEntry.findMany({
+			where: inArray(absenceEntry.employeeId, employeeIds),
+		});
+		if (absencesToDelete.length > 0) {
+			await db.delete(absenceEntry).where(inArray(absenceEntry.employeeId, employeeIds));
+			result.absencesDeleted = absencesToDelete.length;
+		}
+
+		// Delete employee vacation allowances (reset to org defaults)
+		const allowancesToDelete = await db.query.employeeVacationAllowance.findMany({
+			where: inArray(employeeVacationAllowance.employeeId, employeeIds),
+		});
+		if (allowancesToDelete.length > 0) {
+			await db
+				.delete(employeeVacationAllowance)
+				.where(inArray(employeeVacationAllowance.employeeId, employeeIds));
+			result.vacationAllowancesReset = allowancesToDelete.length;
+		}
+
+		// Unassign employees from teams
+		const employeesWithTeams = employees.filter((e) => e.teamId !== null);
+		if (employeesWithTeams.length > 0) {
+			await db
+				.update(employee)
+				.set({ teamId: null })
+				.where(
+					inArray(
+						employee.id,
+						employeesWithTeams.map((e) => e.id),
+					),
+				);
+			result.employeesUnassignedFromTeams = employeesWithTeams.length;
+		}
+
+		// Delete manager assignments for these employees
+		const managerAssignmentsToDelete = await db.query.employeeManagers.findMany({
+			where: inArray(employeeManagers.employeeId, employeeIds),
+		});
+		if (managerAssignmentsToDelete.length > 0) {
+			await db.delete(employeeManagers).where(inArray(employeeManagers.employeeId, employeeIds));
+			result.managerAssignmentsDeleted = managerAssignmentsToDelete.length;
+		}
 	}
 
 	// Delete demo teams (teams with description starting with "Demo team")
@@ -1140,7 +2128,6 @@ export async function clearOrganizationTimeData(organizationId: string): Promise
 		where: eq(team.organizationId, organizationId),
 	});
 	const teamsToDelete = allTeams.filter((t) => t.description?.startsWith("Demo team - "));
-
 	if (teamsToDelete.length > 0) {
 		await db.delete(team).where(
 			inArray(
@@ -1148,6 +2135,7 @@ export async function clearOrganizationTimeData(organizationId: string): Promise
 				teamsToDelete.map((t) => t.id),
 			),
 		);
+		result.teamsDeleted = teamsToDelete.length;
 	}
 
 	// Delete demo projects (projects with description starting with "Demo project")
@@ -1155,7 +2143,6 @@ export async function clearOrganizationTimeData(organizationId: string): Promise
 		where: eq(project.organizationId, organizationId),
 	});
 	const projectsToDelete = allProjects.filter((p) => p.description?.startsWith("Demo project - "));
-
 	if (projectsToDelete.length > 0) {
 		await db.delete(project).where(
 			inArray(
@@ -1163,25 +2150,8 @@ export async function clearOrganizationTimeData(organizationId: string): Promise
 				projectsToDelete.map((p) => p.id),
 			),
 		);
+		result.projectsDeleted = projectsToDelete.length;
 	}
 
-	// Delete manager assignments for these employees
-	const managerAssignmentsToDelete = await db.query.employeeManagers.findMany({
-		where: inArray(employeeManagers.employeeId, employeeIds),
-	});
-
-	if (managerAssignmentsToDelete.length > 0) {
-		await db.delete(employeeManagers).where(inArray(employeeManagers.employeeId, employeeIds));
-	}
-
-	return {
-		timeEntriesDeleted: timeEntriesToDelete.length,
-		workPeriodsDeleted: workPeriodsToDelete.length,
-		absencesDeleted: absencesToDelete.length,
-		vacationAllowancesReset: allowancesToDelete.length,
-		teamsDeleted: teamsToDelete.length,
-		employeesUnassignedFromTeams: employeesWithTeams.length,
-		projectsDeleted: projectsToDelete.length,
-		managerAssignmentsDeleted: managerAssignmentsToDelete.length,
-	};
+	return result;
 }

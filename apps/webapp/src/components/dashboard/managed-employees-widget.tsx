@@ -98,21 +98,6 @@ function EmptyState() {
 	);
 }
 
-function TeamSummary({ count }: { count: number }) {
-	const { t } = useTranslate();
-	return (
-		<div className="flex items-center gap-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 p-3 text-white shadow-lg shadow-indigo-500/25">
-			<div className="flex items-center justify-center rounded-full bg-white/20 p-2">
-				<IconUsers className="size-5" />
-			</div>
-			<div className="flex-1">
-				<p className="font-semibold">{t("dashboard.managed-employees.team-members", "{count} team members", { count })}</p>
-				<p className="text-xs opacity-90">{t("dashboard.managed-employees.reporting-to-you", "reporting to you")}</p>
-			</div>
-		</div>
-	);
-}
-
 export function ManagedEmployeesWidget() {
 	const { t } = useTranslate();
 	const [employees, setEmployees] = useState<ManagedEmployee[]>([]);
@@ -181,16 +166,10 @@ export function ManagedEmployeesWidget() {
 				{employees.length === 0 ? (
 					<EmptyState />
 				) : (
-					<div className="space-y-3">
-						{/* Team Summary */}
-						<TeamSummary count={employees.length} />
-
-						{/* Employee List */}
-						<div className="space-y-2">
-							{employees.slice(0, 4).map((emp) => (
-								<EmployeeCard key={emp.id} employee={emp} />
-							))}
-						</div>
+					<div className="space-y-2">
+						{employees.slice(0, 4).map((emp) => (
+							<EmployeeCard key={emp.id} employee={emp} />
+						))}
 
 						{/* More indicator */}
 						{employees.length > 4 && (

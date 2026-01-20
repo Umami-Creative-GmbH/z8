@@ -16,6 +16,7 @@ import {
 	updateOrganizationBranding,
 	verifyDomainOwnership,
 } from "@/lib/domain";
+import { deleteOrgSecret, storeOrgSecret } from "@/lib/vault";
 
 // ============ Domain Actions ============
 
@@ -97,7 +98,23 @@ export async function deleteDomainAction(domainId: string) {
 
 // ============ SSO Provider Actions ============
 
-export async function listSSOProvidersAction() {
+/**
+ * SSO provider response type (secrets masked)
+ */
+export interface SSOProviderResponse {
+	id: string;
+	issuer: string;
+	domain: string;
+	providerId: string;
+	domainVerified: boolean | null;
+	organizationId: string | null;
+	userId: string | null;
+	// Note: oidcConfig and samlConfig are NOT returned to protect secrets
+	hasOidcConfig: boolean;
+	hasSamlConfig: boolean;
+}
+
+export async function listSSOProvidersAction(): Promise<SSOProviderResponse[]> {
 	const authContext = await requireUser();
 
 	if (authContext.employee?.role !== "admin") {
@@ -112,7 +129,18 @@ export async function listSSOProvidersAction() {
 		where: eq(ssoProvider.organizationId, authContext.employee.organizationId),
 	});
 
-	return providers;
+	// Return providers without exposing secrets (oidcConfig contains clientSecret)
+	return providers.map((provider) => ({
+		id: provider.id,
+		issuer: provider.issuer,
+		domain: provider.domain,
+		providerId: provider.providerId,
+		domainVerified: provider.domainVerified,
+		organizationId: provider.organizationId,
+		userId: provider.userId,
+		hasOidcConfig: !!provider.oidcConfig,
+		hasSamlConfig: !!provider.samlConfig,
+	}));
 }
 
 export interface OIDCProviderInput {
@@ -134,17 +162,27 @@ export async function registerSSOProviderAction(data: OIDCProviderInput) {
 		throw new Error("No organization selected");
 	}
 
+	const organizationId = authContext.employee.organizationId;
+	const ssoProviderId = crypto.randomUUID();
+
+	// Store clientSecret in Vault for secure storage
+	// Path: secret/data/organizations/{orgId}/sso/{providerId}/client_secret
+	await storeOrgSecret(organizationId, `sso/${ssoProviderId}/client_secret`, data.clientSecret);
+
+	// Store OIDC config with clientSecret for Better Auth compatibility
+	// Note: Better Auth reads this directly from DB, so we need to keep the secret here
+	// The Vault copy serves as secure backup and audit trail
 	const oidcConfig = JSON.stringify({
 		clientId: data.clientId,
 		clientSecret: data.clientSecret,
 	});
 
 	await db.insert(ssoProvider).values({
-		id: crypto.randomUUID(),
+		id: ssoProviderId,
 		issuer: data.issuer,
 		domain: data.domain.toLowerCase(),
 		providerId: data.providerId,
-		organizationId: authContext.employee.organizationId,
+		organizationId,
 		oidcConfig,
 		domainVerified: false,
 	});
@@ -159,7 +197,19 @@ export async function deleteSSOProviderAction(providerId: string) {
 		throw new Error("Unauthorized");
 	}
 
+	if (!authContext.employee?.organizationId) {
+		throw new Error("No organization selected");
+	}
+
+	const organizationId = authContext.employee.organizationId;
+
+	// Delete the SSO provider from database
 	await db.delete(ssoProvider).where(eq(ssoProvider.id, providerId));
+
+	// Clean up the clientSecret from Vault
+	// Path: secret/data/organizations/{orgId}/sso/{providerId}/client_secret
+	await deleteOrgSecret(organizationId, `sso/${providerId}/client_secret`);
+
 	revalidatePath("/settings/enterprise/sso");
 }
 
