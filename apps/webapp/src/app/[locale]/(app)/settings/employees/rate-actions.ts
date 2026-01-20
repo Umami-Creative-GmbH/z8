@@ -2,7 +2,7 @@
 
 import { SpanStatusCode, trace } from "@opentelemetry/api";
 import { revalidateTag } from "next/cache";
-import { and, desc, eq, isNull, lte, or } from "drizzle-orm";
+import { and, desc, eq, gte, isNull, lte, or } from "drizzle-orm";
 import { Effect } from "effect";
 import { employee, employeeRateHistory } from "@/db/schema";
 
@@ -428,7 +428,7 @@ export async function getRateAtDate(
 							where: and(
 								eq(employeeRateHistory.employeeId, employeeId),
 								lte(employeeRateHistory.effectiveFrom, date),
-								or(isNull(employeeRateHistory.effectiveTo), lte(date, employeeRateHistory.effectiveTo!)),
+								or(isNull(employeeRateHistory.effectiveTo), gte(employeeRateHistory.effectiveTo, date)),
 							),
 							with: {
 								creator: true,

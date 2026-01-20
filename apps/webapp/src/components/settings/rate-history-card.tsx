@@ -67,6 +67,7 @@ export function RateHistoryCard({
 			try {
 				const result = await onAddRate({
 					hourlyRate: value.hourlyRate,
+					currency: currentRate?.currency || "EUR",
 					effectiveFrom: new Date(value.effectiveFrom),
 					reason: value.reason || null,
 				});
