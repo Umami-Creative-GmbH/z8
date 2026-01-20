@@ -162,6 +162,7 @@ export async function createNotification(
 				title: params.title,
 				message: params.message,
 				metadata: params.metadata,
+				organizationId: params.organizationId, // Use org-specific email config
 			}).catch((error) => {
 				logger.error(
 					{ error, userId: params.userId, type: params.type },

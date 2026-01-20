@@ -33,6 +33,7 @@ interface EmailNotificationParams {
 	title: string;
 	message: string;
 	metadata?: Record<string, unknown>;
+	organizationId?: string; // Optional org ID to use org-specific email config
 }
 
 /**
@@ -71,7 +72,7 @@ async function getUserName(userId: string): Promise<string> {
  * Send email notification based on notification type
  */
 export async function sendEmailNotification(params: EmailNotificationParams): Promise<boolean> {
-	const { userId, type, title, metadata } = params;
+	const { userId, type, title, metadata, organizationId } = params;
 
 	try {
 		const email = await getUserEmail(userId);
@@ -285,6 +286,7 @@ export async function sendEmailNotification(params: EmailNotificationParams): Pr
 			to: email,
 			subject,
 			html,
+			organizationId, // Use org-specific email config if available
 		});
 
 		if (result.success) {

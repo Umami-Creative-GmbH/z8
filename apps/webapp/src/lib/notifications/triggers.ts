@@ -199,6 +199,130 @@ export async function onTimeCorrectionPendingApproval(
 	}
 }
 
+// =============================================================================
+// Change Policy Clock-Out Approval Notifications
+// =============================================================================
+
+interface ClockOutApprovalParams {
+	workPeriodId: string;
+	employeeUserId: string;
+	employeeName: string;
+	organizationId: string;
+	startTime: Date;
+	endTime: Date;
+	durationMinutes: number;
+}
+
+interface ClockOutApprovalToManagerParams extends ClockOutApprovalParams {
+	managerUserId: string;
+}
+
+interface ClockOutApprovalResultParams {
+	workPeriodId: string;
+	employeeUserId: string;
+	organizationId: string;
+	approverName: string;
+	startTime: Date;
+	endTime: Date;
+	rejectionReason?: string;
+}
+
+/**
+ * Notify employee that their clock-out is pending approval (0-day policy)
+ */
+export async function onClockOutPendingApproval(params: ClockOutApprovalParams): Promise<void> {
+	try {
+		await createNotification({
+			userId: params.employeeUserId,
+			organizationId: params.organizationId,
+			type: "time_correction_submitted",
+			title: "Clock-out pending approval",
+			message: `Your clock-out for today (${formatDuration(params.durationMinutes)}) is pending manager approval.`,
+			entityType: "work_period",
+			entityId: params.workPeriodId,
+			actionUrl: "/time-tracking",
+		});
+	} catch (error) {
+		logger.error({ error, params }, "Failed to trigger clock-out pending notification");
+	}
+}
+
+/**
+ * Notify manager that a clock-out needs approval (0-day policy)
+ */
+export async function onClockOutPendingApprovalToManager(
+	params: ClockOutApprovalToManagerParams,
+): Promise<void> {
+	try {
+		const formatTime = (date: Date) =>
+			date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+
+		await createNotification({
+			userId: params.managerUserId,
+			organizationId: params.organizationId,
+			type: "approval_request_submitted",
+			title: "Clock-out approval required",
+			message: `${params.employeeName} clocked out (${formatTime(params.startTime)} - ${formatTime(params.endTime)}, ${formatDuration(params.durationMinutes)}). Approval required.`,
+			entityType: "work_period",
+			entityId: params.workPeriodId,
+			actionUrl: "/approvals",
+		});
+	} catch (error) {
+		logger.error({ error, params }, "Failed to trigger clock-out approval manager notification");
+	}
+}
+
+/**
+ * Notify employee that their clock-out was approved
+ */
+export async function onClockOutApproved(params: ClockOutApprovalResultParams): Promise<void> {
+	try {
+		await createNotification({
+			userId: params.employeeUserId,
+			organizationId: params.organizationId,
+			type: "time_correction_approved",
+			title: "Clock-out approved",
+			message: `Your clock-out was approved by ${params.approverName}.`,
+			entityType: "work_period",
+			entityId: params.workPeriodId,
+			actionUrl: "/time-tracking",
+		});
+	} catch (error) {
+		logger.error({ error, params }, "Failed to trigger clock-out approved notification");
+	}
+}
+
+/**
+ * Notify employee that their clock-out was rejected
+ */
+export async function onClockOutRejected(params: ClockOutApprovalResultParams): Promise<void> {
+	try {
+		const reasonText = params.rejectionReason ? ` Reason: ${params.rejectionReason}` : "";
+
+		await createNotification({
+			userId: params.employeeUserId,
+			organizationId: params.organizationId,
+			type: "time_correction_rejected",
+			title: "Clock-out rejected",
+			message: `Your clock-out was rejected by ${params.approverName}.${reasonText} The original times have been reverted.`,
+			entityType: "work_period",
+			entityId: params.workPeriodId,
+			actionUrl: "/time-tracking",
+		});
+	} catch (error) {
+		logger.error({ error, params }, "Failed to trigger clock-out rejected notification");
+	}
+}
+
+// Helper to format duration for notifications
+function formatDuration(minutes: number): string {
+	const hours = Math.floor(minutes / 60);
+	const mins = minutes % 60;
+	if (hours === 0) return `${mins}m`;
+	if (mins === 0) return `${hours}h`;
+	return `${hours}h ${mins}m`;
+}
+
 /**
  * Notify employee that their time correction was approved
  */
