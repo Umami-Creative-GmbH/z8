@@ -52,7 +52,7 @@ export function OrganizationsPageClient({
 		<div className="flex-1 p-6">
 			<div className="mx-auto max-w-6xl">
 				<div className="mb-8">
-					<h1 className="text-3xl font-semibold mb-2">Organizations & Teams</h1>
+					<h1 className="text-3xl font-semibold mb-2">Organization & Teams</h1>
 					<p className="text-muted-foreground">
 						Manage your organization members, invitations, and teams
 					</p>

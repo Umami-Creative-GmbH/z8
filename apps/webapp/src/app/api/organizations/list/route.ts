@@ -10,6 +10,10 @@ export async function GET() {
 			count: organizations.length,
 		});
 	} catch (error) {
+		// Rethrow prerender errors to let Next.js handle them
+		if (error instanceof Error && "digest" in error) {
+			throw error;
+		}
 		console.error("Error fetching organizations:", error);
 		return NextResponse.json({ error: "Failed to fetch organizations" }, { status: 500 });
 	}

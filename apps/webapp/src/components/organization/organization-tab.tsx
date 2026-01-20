@@ -8,11 +8,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import type * as authSchema from "@/db/auth-schema";
 import { queryKeys } from "@/lib/query";
 import { CreateOrganizationDialog } from "./create-organization-dialog";
+import { InviteCodeManagement } from "./invite-code-management";
 import { InviteMemberDialog } from "./invite-member-dialog";
 import { MembersTable } from "./members-table";
+import { OrganizationDangerZoneCard } from "./organization-danger-zone-card";
 import { OrganizationDetailsCard } from "./organization-details-card";
 import { OrganizationFeaturesCard } from "./organization-features-card";
 import { OrganizationTimezoneCard } from "./organization-timezone-card";
+import { PendingMembersCard } from "./pending-members-card";
 import type { InvitationWithInviter, MemberWithUserAndEmployee } from "./organizations-page-client";
 
 interface OrganizationTabProps {
@@ -81,6 +84,18 @@ export function OrganizationTab({
 				currentMemberRole={currentMemberRole}
 			/>
 
+			{/* Invite Codes Card (admin/owner only) */}
+			<InviteCodeManagement
+				organizationId={organization.id}
+				currentMemberRole={currentMemberRole}
+			/>
+
+			{/* Pending Members Card (admin/owner only) */}
+			<PendingMembersCard
+				organizationId={organization.id}
+				currentMemberRole={currentMemberRole}
+			/>
+
 			{/* Members & Invitations Card */}
 			<Card>
 				<CardHeader>
@@ -109,6 +124,12 @@ export function OrganizationTab({
 					/>
 				</CardContent>
 			</Card>
+
+			{/* Danger Zone Card */}
+			<OrganizationDangerZoneCard
+				organization={organization}
+				currentMemberRole={currentMemberRole}
+			/>
 
 			{/* Invite Member Dialog */}
 			<InviteMemberDialog

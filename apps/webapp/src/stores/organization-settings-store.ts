@@ -8,6 +8,7 @@ export interface OrganizationSettings {
 	projectsEnabled: boolean;
 	surchargesEnabled: boolean;
 	timezone: string;
+	deletedAt: string | null;
 	isHydrated: boolean;
 }
 
@@ -25,6 +26,7 @@ const initialState: OrganizationSettings = {
 	projectsEnabled: false,
 	surchargesEnabled: false,
 	timezone: "UTC",
+	deletedAt: null,
 	isHydrated: false,
 };
 
@@ -52,3 +54,4 @@ export const useShiftsEnabled = () => useOrganizationSettings((state) => state.s
 export const useSurchargesEnabled = () =>
 	useOrganizationSettings((state) => state.surchargesEnabled);
 export const useOrganizationTimezone = () => useOrganizationSettings((state) => state.timezone);
+export const useOrganizationDeletedAt = () => useOrganizationSettings((state) => state.deletedAt);

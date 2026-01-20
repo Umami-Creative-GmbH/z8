@@ -1149,3 +1149,394 @@ export async function toggleEmployeeStatus(
 
 	return runServerActionSafe(effect);
 }
+
+// =============================================================================
+// Organization Deletion Actions (Soft Delete with 5-Day Recovery)
+// =============================================================================
+
+/**
+ * Soft delete an organization (mark for deletion with 5-day recovery window)
+ * Requires admin or owner role
+ * Sends email notification to all organization admins/owners
+ */
+export async function deleteOrganization(
+	organizationId: string,
+	confirmationName: string,
+): Promise<ServerActionResult<void>> {
+	const tracer = trace.getTracer("organizations");
+
+	const effect = tracer.startActiveSpan(
+		"deleteOrganization",
+		{
+			attributes: {
+				"organization.id": organizationId,
+			},
+		},
+		(span) => {
+			return Effect.gen(function* (_) {
+				const authService = yield* _(AuthService);
+				const session = yield* _(authService.getSession());
+				const dbService = yield* _(DatabaseService);
+
+				// Get organization details
+				const organization = yield* _(
+					dbService.query("getOrganization", async () => {
+						return await db.query.organization.findFirst({
+							where: eq(authSchema.organization.id, organizationId),
+						});
+					}),
+					Effect.flatMap((org) =>
+						org
+							? Effect.succeed(org)
+							: Effect.fail(
+									new NotFoundError({
+										message: "Organization not found",
+										entityType: "organization",
+										entityId: organizationId,
+									}),
+								),
+					),
+				);
+
+				// Check if already deleted
+				if (organization.deletedAt) {
+					yield* _(
+						Effect.fail(
+							new ValidationError({
+								message: "Organization is already scheduled for deletion",
+								field: "organization",
+							}),
+						),
+					);
+				}
+
+				// Verify confirmation name matches
+				if (confirmationName !== organization.name) {
+					yield* _(
+						Effect.fail(
+							new ValidationError({
+								message: "Organization name does not match. Please type the exact organization name to confirm deletion.",
+								field: "confirmationName",
+								value: confirmationName,
+							}),
+						),
+					);
+				}
+
+				// Check current user's role
+				const memberRecord = yield* _(
+					dbService.query("getCurrentMember", async () => {
+						return await db.query.member.findFirst({
+							where: and(
+								eq(authSchema.member.userId, session.user.id),
+								eq(authSchema.member.organizationId, organizationId),
+							),
+						});
+					}),
+					Effect.flatMap((member) =>
+						member
+							? Effect.succeed(member)
+							: Effect.fail(
+									new NotFoundError({
+										message: "You are not a member of this organization",
+										entityType: "member",
+									}),
+								),
+					),
+				);
+
+				// Verify admin or owner role
+				if (memberRecord.role !== "owner" && memberRecord.role !== "admin") {
+					yield* _(
+						Effect.fail(
+							new AuthorizationError({
+								message: "Only owners and admins can delete an organization",
+								userId: session.user.id,
+								resource: "organization",
+								action: "delete",
+							}),
+						),
+					);
+				}
+
+				const deletionDate = new Date();
+
+				// Soft delete: Set deletedAt and deletedBy
+				yield* _(
+					Effect.tryPromise({
+						try: async () => {
+							await db
+								.update(authSchema.organization)
+								.set({
+									deletedAt: deletionDate,
+									deletedBy: session.user.id,
+								})
+								.where(eq(authSchema.organization.id, organizationId));
+						},
+						catch: (error) => {
+							return new ValidationError({
+								message: error instanceof Error ? error.message : "Failed to schedule organization for deletion",
+								field: "organization",
+							});
+						},
+					}),
+				);
+
+				// Send notification emails to all admins and owners
+				yield* _(
+					Effect.tryPromise({
+						try: async () => {
+							await sendOrganizationDeletionNotifications(
+								organizationId,
+								organization.name,
+								session.user.name || session.user.email,
+								deletionDate,
+							);
+						},
+						catch: (error) => {
+							// Log but don't fail the action if email sending fails
+							logger.warn({ error, organizationId }, "Failed to send deletion notification emails");
+						},
+					}),
+				);
+
+				logger.info(
+					{
+						organizationId,
+						organizationName: organization.name,
+						deletedBy: session.user.id,
+						deletionDate,
+					},
+					"Organization scheduled for deletion (5-day recovery window)",
+				);
+
+				span.setStatus({ code: SpanStatusCode.OK });
+			}).pipe(
+				Effect.catchAll((error) =>
+					Effect.gen(function* (_) {
+						span.recordException(error as unknown as Error);
+						span.setStatus({
+							code: SpanStatusCode.ERROR,
+							message: String(error),
+						});
+						logger.error({ error, organizationId }, "Failed to delete organization");
+						return yield* _(Effect.fail(error as unknown as AnyAppError));
+					}),
+				),
+				Effect.onExit(() => Effect.sync(() => span.end())),
+				Effect.provide(AppLayer),
+			);
+		},
+	);
+
+	return runServerActionSafe(effect);
+}
+
+/**
+ * Recover a soft-deleted organization (cancel deletion)
+ * Requires admin or owner role
+ */
+export async function recoverOrganization(
+	organizationId: string,
+): Promise<ServerActionResult<void>> {
+	const tracer = trace.getTracer("organizations");
+
+	const effect = tracer.startActiveSpan(
+		"recoverOrganization",
+		{
+			attributes: {
+				"organization.id": organizationId,
+			},
+		},
+		(span) => {
+			return Effect.gen(function* (_) {
+				const authService = yield* _(AuthService);
+				const session = yield* _(authService.getSession());
+				const dbService = yield* _(DatabaseService);
+
+				// Get organization details
+				const organization = yield* _(
+					dbService.query("getOrganization", async () => {
+						return await db.query.organization.findFirst({
+							where: eq(authSchema.organization.id, organizationId),
+						});
+					}),
+					Effect.flatMap((org) =>
+						org
+							? Effect.succeed(org)
+							: Effect.fail(
+									new NotFoundError({
+										message: "Organization not found",
+										entityType: "organization",
+										entityId: organizationId,
+									}),
+								),
+					),
+				);
+
+				// Check if organization is actually scheduled for deletion
+				if (!organization.deletedAt) {
+					yield* _(
+						Effect.fail(
+							new ValidationError({
+								message: "Organization is not scheduled for deletion",
+								field: "organization",
+							}),
+						),
+					);
+				}
+
+				// Check current user's role
+				const memberRecord = yield* _(
+					dbService.query("getCurrentMember", async () => {
+						return await db.query.member.findFirst({
+							where: and(
+								eq(authSchema.member.userId, session.user.id),
+								eq(authSchema.member.organizationId, organizationId),
+							),
+						});
+					}),
+					Effect.flatMap((member) =>
+						member
+							? Effect.succeed(member)
+							: Effect.fail(
+									new NotFoundError({
+										message: "You are not a member of this organization",
+										entityType: "member",
+									}),
+								),
+					),
+				);
+
+				// Verify admin or owner role
+				if (memberRecord.role !== "owner" && memberRecord.role !== "admin") {
+					yield* _(
+						Effect.fail(
+							new AuthorizationError({
+								message: "Only owners and admins can recover an organization",
+								userId: session.user.id,
+								resource: "organization",
+								action: "update",
+							}),
+						),
+					);
+				}
+
+				// Clear deletion fields to recover
+				yield* _(
+					Effect.tryPromise({
+						try: async () => {
+							await db
+								.update(authSchema.organization)
+								.set({
+									deletedAt: null,
+									deletedBy: null,
+								})
+								.where(eq(authSchema.organization.id, organizationId));
+						},
+						catch: (error) => {
+							return new ValidationError({
+								message: error instanceof Error ? error.message : "Failed to recover organization",
+								field: "organization",
+							});
+						},
+					}),
+				);
+
+				logger.info(
+					{
+						organizationId,
+						organizationName: organization.name,
+						recoveredBy: session.user.id,
+					},
+					"Organization recovered from deletion",
+				);
+
+				span.setStatus({ code: SpanStatusCode.OK });
+			}).pipe(
+				Effect.catchAll((error) =>
+					Effect.gen(function* (_) {
+						span.recordException(error as Error);
+						span.setStatus({
+							code: SpanStatusCode.ERROR,
+							message: String(error),
+						});
+						logger.error({ error, organizationId }, "Failed to recover organization");
+						return yield* _(Effect.fail(error as AnyAppError));
+					}),
+				),
+				Effect.onExit(() => Effect.sync(() => span.end())),
+				Effect.provide(AppLayer),
+			);
+		},
+	);
+
+	return runServerActionSafe(effect);
+}
+
+/**
+ * Helper function to send deletion notification emails to all admins and owners
+ */
+async function sendOrganizationDeletionNotifications(
+	organizationId: string,
+	organizationName: string,
+	deletedByName: string,
+	deletionDate: Date,
+): Promise<void> {
+	const { render } = await import("@react-email/components");
+	const { OrganizationDeletion } = await import("@/lib/email/templates/organization-deletion");
+	const { sendEmail } = await import("@/lib/email/email-service");
+
+	// Get all admins and owners
+	const adminMembers = await db.query.member.findMany({
+		where: and(
+			eq(authSchema.member.organizationId, organizationId),
+			// Include both admin and owner roles
+		),
+		with: {
+			user: true,
+		},
+	});
+
+	// Filter to only admins and owners
+	const adminsAndOwners = adminMembers.filter(
+		(m) => m.role === "admin" || m.role === "owner"
+	);
+
+	const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+	const recoveryUrl = `${appUrl}/settings/organizations`;
+	const permanentDeletionDate = new Date(deletionDate);
+	permanentDeletionDate.setDate(permanentDeletionDate.getDate() + 5);
+
+	// Send email to each admin/owner
+	for (const member of adminsAndOwners) {
+		if (!member.user?.email) continue;
+
+		try {
+			const html = await render(
+				OrganizationDeletion({
+					userName: member.user.name || member.user.email,
+					organizationName,
+					deletedByName,
+					deletionDate: deletionDate.toLocaleString(),
+					permanentDeletionDate: permanentDeletionDate.toLocaleString(),
+					recoveryUrl,
+					appUrl,
+				})
+			);
+
+			await sendEmail({
+				to: member.user.email,
+				subject: `Organization "${organizationName}" scheduled for deletion`,
+				html,
+				actionUrl: recoveryUrl,
+				organizationId,
+			});
+		} catch (error) {
+			logger.warn(
+				{ error, email: member.user.email, organizationId },
+				"Failed to send deletion notification to user"
+			);
+		}
+	}
+}
