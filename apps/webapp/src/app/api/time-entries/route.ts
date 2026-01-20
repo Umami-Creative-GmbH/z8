@@ -29,7 +29,19 @@ export async function GET(request: NextRequest) {
 
 		// Now await connection and session in parallel
 		const [, resolvedHeaders] = await Promise.all([connectionPromise, headersPromise]);
-		const session = await auth.api.getSession({ headers: resolvedHeaders });
+
+		// Support both Bearer token (desktop app) and cookie-based auth (web app)
+		const authHeader = resolvedHeaders.get("authorization");
+		let session;
+
+		if (authHeader?.startsWith("Bearer ")) {
+			const token = authHeader.slice(7);
+			session = await auth.api.getSession({
+				headers: new Headers({ cookie: `better-auth.session_token=${token}` }),
+			});
+		} else {
+			session = await auth.api.getSession({ headers: resolvedHeaders });
+		}
 
 		if (!session?.user) {
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -115,7 +127,19 @@ export async function POST(request: NextRequest) {
 			bodyPromise,
 		]);
 
-		const session = await auth.api.getSession({ headers: resolvedHeaders });
+		// Support both Bearer token (desktop app) and cookie-based auth (web app)
+		const authHeader = resolvedHeaders.get("authorization");
+		let session;
+
+		if (authHeader?.startsWith("Bearer ")) {
+			const token = authHeader.slice(7);
+			session = await auth.api.getSession({
+				headers: new Headers({ cookie: `better-auth.session_token=${token}` }),
+			});
+		} else {
+			session = await auth.api.getSession({ headers: resolvedHeaders });
+		}
+
 		if (!session?.user) {
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 		}

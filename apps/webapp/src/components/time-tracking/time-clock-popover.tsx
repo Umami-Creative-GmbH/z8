@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useElapsedTimer, useTimeClock } from "@/lib/query";
 import { formatDurationWithSeconds } from "@/lib/time-tracking/time-utils";
 import { ProjectSelector } from "./project-selector";
+import { WorkCategorySelector } from "./work-category-selector";
 
 // Hoist DateTimeFormat to avoid recreation on each render (js-hoist-regexp)
 const timeFormatter = new Intl.DateTimeFormat(undefined, {
@@ -23,6 +24,7 @@ export function TimeClockPopover() {
 
 	const {
 		hasEmployee,
+		employeeId,
 		isClockedIn,
 		activeWorkPeriod,
 		isLoading,
@@ -43,6 +45,8 @@ export function TimeClockPopover() {
 	const [notesText, setNotesText] = useState("");
 	// State for project selection
 	const [selectedProjectId, setSelectedProjectId] = useState<string | undefined>(undefined);
+	// State for work category selection
+	const [selectedWorkCategoryId, setSelectedWorkCategoryId] = useState<string | undefined>(undefined);
 
 	const handleClockIn = async () => {
 		const result = await clockIn();
@@ -69,12 +73,16 @@ export function TimeClockPopover() {
 	};
 
 	const handleClockOut = async () => {
-		const result = await clockOut(selectedProjectId);
+		const result = await clockOut({
+			projectId: selectedProjectId,
+			workCategoryId: selectedWorkCategoryId,
+		});
 
 		if (result.success) {
 			toast.success(t("timeTracking.clockOutSuccess", "Clocked out successfully"));
-			// Reset project selection after successful clock out
+			// Reset selections after successful clock out
 			setSelectedProjectId(undefined);
+			setSelectedWorkCategoryId(undefined);
 			// Show notes input and store the entry ID for patching
 			if (result.data?.id) {
 				setLastClockOutEntryId(result.data.id);
@@ -230,6 +238,16 @@ export function TimeClockPopover() {
 								<ProjectSelector
 									value={selectedProjectId}
 									onValueChange={setSelectedProjectId}
+									disabled={isMutating}
+								/>
+							)}
+
+							{/* Work category selector - only shown when clocked in */}
+							{isClockedIn && employeeId && (
+								<WorkCategorySelector
+									employeeId={employeeId}
+									value={selectedWorkCategoryId}
+									onValueChange={setSelectedWorkCategoryId}
 									disabled={isMutating}
 								/>
 							)}

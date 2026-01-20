@@ -33,12 +33,21 @@ import {
 	BreakEnforcementServiceLive,
 	type BreakEnforcementResult,
 } from "@/lib/effect/services/break-enforcement.service";
+import {
+	ChangePolicyService,
+	ChangePolicyServiceLive,
+	type EditCapability,
+} from "@/lib/effect/services/change-policy.service";
 import { renderTimeCorrectionPendingApproval } from "@/lib/email/render";
 import { createLogger } from "@/lib/logger";
 import {
 	checkProjectBudgetWarnings,
 	getProjectTotalHours,
 } from "@/lib/notifications/project-notification-triggers";
+import {
+	onClockOutPendingApproval,
+	onClockOutPendingApprovalToManager,
+} from "@/lib/notifications/triggers";
 import type { ComplianceWarning } from "@/lib/time-regulations/validation";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
 import { isSameDayInTimezone } from "@/lib/time-tracking/time-utils";
@@ -68,12 +77,13 @@ interface SameDayEditRequest {
 }
 
 /**
- * Edit a same-day time entry directly without requiring manager approval
- * Only works for completed work periods from the current day (based on user's timezone)
+ * Edit a time entry directly when allowed by the change policy
+ * Uses the employee's effective change policy to determine if direct edit is allowed
+ * or if manager approval is required
  */
 export async function editSameDayTimeEntry(
 	data: SameDayEditRequest,
-): Promise<ServerActionResult<{ workPeriodId: string }>> {
+): Promise<ServerActionResult<{ workPeriodId: string; requiresApproval?: boolean }>> {
 	const session = await auth.api.getSession({ headers: await headers() });
 	if (!session?.user) {
 		return { success: false, error: "Not authenticated" };
@@ -113,13 +123,51 @@ export async function editSameDayTimeEntry(
 		return { success: false, error: "Cannot edit an active work period. Please clock out first." };
 	}
 
-	// Check if this is a same-day entry
-	if (!isSameDayInTimezone(period.startTime, timezone)) {
+	// Check edit capability using change policy
+	let editCapability: EditCapability;
+	try {
+		const capabilityEffect = Effect.gen(function* (_) {
+			const policyService = yield* _(ChangePolicyService);
+			return yield* _(
+				policyService.getEditCapability({
+					employeeId: emp.id,
+					workPeriodEndTime: period.endTime!,
+					timezone,
+				}),
+			);
+		}).pipe(Effect.provide(ChangePolicyServiceLive), Effect.provide(DatabaseServiceLive));
+
+		editCapability = await Effect.runPromise(capabilityEffect);
+	} catch (error) {
+		logger.error({ error }, "Failed to check edit capability");
+		// Default to legacy same-day check if policy service fails
+		if (!isSameDayInTimezone(period.startTime, timezone)) {
+			return {
+				success: false,
+				error: "Past entries require manager approval. Please use the correction request.",
+			};
+		}
+		editCapability = { type: "direct", reason: "within_self_service" };
+	}
+
+	// Handle different capabilities
+	if (editCapability.type === "forbidden") {
 		return {
 			success: false,
-			error: "Past entries require manager approval. Please use the correction request.",
+			error: `Entries older than ${editCapability.daysBack} days can only be edited by admins or team leads.`,
 		};
 	}
+
+	if (editCapability.type === "approval_required") {
+		// For approval_required, redirect to correction request flow
+		return {
+			success: false,
+			error: "This edit requires manager approval. Please use the correction request.",
+			requiresApproval: true,
+		} as ServerActionResult<{ workPeriodId: string; requiresApproval?: boolean }>;
+	}
+
+	// editCapability.type === "direct" - proceed with the edit
 
 	// Calculate corrected timestamps
 	// The user provides times in their local timezone, so we need to:
@@ -726,12 +774,13 @@ export async function getCurrentEmployee(): Promise<typeof employee.$inferSelect
  */
 export async function getTimeClockStatus(): Promise<{
 	hasEmployee: boolean;
+	employeeId: string | null;
 	isClockedIn: boolean;
 	activeWorkPeriod: { id: string; startTime: Date } | null;
 }> {
 	const session = await auth.api.getSession({ headers: await headers() });
 	if (!session?.user) {
-		return { hasEmployee: false, isClockedIn: false, activeWorkPeriod: null };
+		return { hasEmployee: false, employeeId: null, isClockedIn: false, activeWorkPeriod: null };
 	}
 
 	const emp = await db.query.employee.findFirst({
@@ -739,7 +788,7 @@ export async function getTimeClockStatus(): Promise<{
 	});
 
 	if (!emp) {
-		return { hasEmployee: false, isClockedIn: false, activeWorkPeriod: null };
+		return { hasEmployee: false, employeeId: null, isClockedIn: false, activeWorkPeriod: null };
 	}
 
 	const period = await db.query.workPeriod.findFirst({
@@ -748,6 +797,7 @@ export async function getTimeClockStatus(): Promise<{
 
 	return {
 		hasEmployee: true,
+		employeeId: emp.id,
 		isClockedIn: !!period,
 		activeWorkPeriod: period ? { id: period.id, startTime: period.startTime } : null,
 	};
@@ -997,14 +1047,16 @@ export interface BreakAdjustmentInfo {
 export type ClockOutResult = typeof timeEntry.$inferSelect & {
 	complianceWarnings?: ComplianceWarning[];
 	breakAdjustment?: BreakAdjustmentInfo;
+	pendingApproval?: boolean;
 };
 
 /**
  * Clock out for current employee
  * Also checks compliance against time regulations and logs any violations
  * @param projectId - Optional project ID to assign the work period to
+ * @param workCategoryId - Optional work category ID to apply a time factor
  */
-export async function clockOut(projectId?: string): Promise<ServerActionResult<ClockOutResult>> {
+export async function clockOut(projectId?: string, workCategoryId?: string): Promise<ServerActionResult<ClockOutResult>> {
 	const session = await auth.api.getSession({ headers: await headers() });
 	if (!session?.user) {
 		return { success: false, error: "Not authenticated" };
@@ -1051,6 +1103,20 @@ export async function clockOut(projectId?: string): Promise<ServerActionResult<C
 		}
 	}
 
+	// Check if clock-out needs approval (0-day policy)
+	let needsClockOutApproval = false;
+	try {
+		const checkEffect = Effect.gen(function* (_) {
+			const policyService = yield* _(ChangePolicyService);
+			return yield* _(policyService.checkClockOutNeedsApproval(emp.id));
+		}).pipe(Effect.provide(ChangePolicyServiceLive), Effect.provide(DatabaseServiceLive));
+
+		needsClockOutApproval = await Effect.runPromise(checkEffect);
+	} catch (error) {
+		// Log but don't fail clock-out if policy check fails
+		logger.warn({ error }, "Failed to check clock-out approval requirement");
+	}
+
 	try {
 		// Get previous entry for blockchain linking
 		const [previousEntry] = await db
@@ -1093,6 +1159,22 @@ export async function clockOut(projectId?: string): Promise<ServerActionResult<C
 		const durationMs = now.getTime() - activePeriod.startTime.getTime();
 		const durationMinutes = Math.floor(durationMs / 60000);
 
+		// Determine approval status based on policy
+		const approvalStatus = needsClockOutApproval ? "pending" : "approved";
+
+		// Prepare pending changes data if approval is needed
+		// Note: Drizzle will serialize this object to JSON for storage
+		const pendingChangesData = needsClockOutApproval
+			? {
+					originalStartTime: activePeriod.startTime.toISOString(),
+					originalEndTime: now.toISOString(),
+					originalDurationMinutes: durationMinutes,
+					requestedAt: now.toISOString(),
+					requestedBy: session.user.id,
+					isNewClockOut: true,
+				}
+			: null;
+
 		await db
 			.update(workPeriod)
 			.set({
@@ -1100,10 +1182,26 @@ export async function clockOut(projectId?: string): Promise<ServerActionResult<C
 				endTime: now,
 				durationMinutes,
 				projectId: projectId || null,
+				workCategoryId: workCategoryId || null,
 				isActive: false,
+				approvalStatus,
+				pendingChanges: pendingChangesData,
 				updatedAt: new Date(),
 			})
 			.where(eq(workPeriod.id, activePeriod.id));
+
+		// If clock-out needs approval, create an approval request
+		if (needsClockOutApproval && emp.managerId) {
+			await createClockOutApprovalRequest({
+				workPeriodId: activePeriod.id,
+				employeeId: emp.id,
+				managerId: emp.managerId,
+				organizationId: emp.organizationId,
+				startTime: activePeriod.startTime,
+				endTime: now,
+				durationMinutes,
+			});
+		}
 
 		// Calculate and persist surcharge credits if feature is enabled
 		await calculateAndPersistSurcharges(activePeriod.id, emp.organizationId);
@@ -1142,6 +1240,7 @@ export async function clockOut(projectId?: string): Promise<ServerActionResult<C
 				breakAdjustment: breakEnforcementResult.wasAdjusted
 					? breakEnforcementResult.adjustment
 					: undefined,
+				pendingApproval: needsClockOutApproval || undefined,
 			},
 		};
 	} catch (error) {
@@ -2066,6 +2165,93 @@ export async function updateWorkPeriodProject(
 }
 
 /**
+ * Helper function to create an approval request for clock-out (0-day policy)
+ * Creates the approval request and sends notification to manager
+ */
+async function createClockOutApprovalRequest(params: {
+	workPeriodId: string;
+	employeeId: string;
+	managerId: string;
+	organizationId: string;
+	startTime: Date;
+	endTime: Date;
+	durationMinutes: number;
+}): Promise<void> {
+	const { workPeriodId, employeeId, managerId, organizationId, startTime, endTime, durationMinutes } = params;
+
+	try {
+		// Create approval request
+		await db.insert(approvalRequest).values({
+			entityType: "time_entry",
+			entityId: workPeriodId,
+			requestedBy: employeeId,
+			approverId: managerId,
+			status: "pending",
+			reason: "Clock-out requires approval (0-day policy)",
+		});
+
+		// Get employee and manager details for notifications
+		const [employeeData, managerData] = await Promise.all([
+			db.query.employee.findFirst({
+				where: eq(employee.id, employeeId),
+				with: { user: { columns: { id: true, name: true } } },
+			}),
+			db.query.employee.findFirst({
+				where: eq(employee.id, managerId),
+				columns: { userId: true },
+			}),
+		]);
+
+		const employeeUserId = employeeData?.userId;
+		const employeeName = employeeData?.user?.name || "Employee";
+		const managerUserId = managerData?.userId;
+
+		// Fire-and-forget: Send notifications
+		if (employeeUserId) {
+			void onClockOutPendingApproval({
+				workPeriodId,
+				employeeUserId,
+				employeeName,
+				organizationId,
+				startTime,
+				endTime,
+				durationMinutes,
+			}).catch((err) => {
+				logger.error({ error: err }, "Failed to send clock-out pending notification to employee");
+			});
+		}
+
+		if (managerUserId) {
+			void onClockOutPendingApprovalToManager({
+				workPeriodId,
+				employeeUserId: employeeUserId || "",
+				employeeName,
+				organizationId,
+				startTime,
+				endTime,
+				durationMinutes,
+				managerUserId,
+			}).catch((err) => {
+				logger.error({ error: err }, "Failed to send clock-out pending notification to manager");
+			});
+		}
+
+		logger.info(
+			{
+				workPeriodId,
+				employeeId,
+				managerId,
+				durationMinutes,
+			},
+			"Clock-out approval request created",
+		);
+	} catch (error) {
+		// Log but don't fail - approval request is secondary to clock-out completing
+		logger.error({ error, workPeriodId }, "Failed to create clock-out approval request");
+	}
+}
+
+/**
  * Helper function to check project budget warnings after clock-out
  * Gets project details and total hours, then triggers budget warning check
  */
@@ -2105,3 +2291,93 @@ async function checkProjectBudgetAfterClockOut(
 		usedHours: totalHours,
 	});
 }
+
+/**
+ * Get the edit capability for a work period based on change policy
+ * Returns information about what kind of edits are allowed
+ */
+export async function getWorkPeriodEditCapability(
+	workPeriodId: string,
+): Promise<
+	ServerActionResult<{
+		capability: EditCapability;
+		policyName: string | null;
+	}>
+> {
+	const session = await auth.api.getSession({ headers: await headers() });
+	if (!session?.user) {
+		return { success: false, error: "Not authenticated" };
+	}
+
+	const emp = await getCurrentEmployee();
+	if (!emp) {
+		return { success: false, error: "Employee profile not found" };
+	}
+
+	// Get user's timezone from userSettings
+	const settingsData = await db.query.userSettings.findFirst({
+		where: eq(userSettings.userId, session.user.id),
+		columns: { timezone: true },
+	});
+	const timezone = settingsData?.timezone || "UTC";
+
+	// Get the work period
+	const [period] = await db
+		.select()
+		.from(workPeriod)
+		.where(eq(workPeriod.id, workPeriodId))
+		.limit(1);
+
+	if (!period) {
+		return { success: false, error: "Work period not found" };
+	}
+
+	// Verify ownership
+	if (period.employeeId !== emp.id) {
+		return { success: false, error: "You can only check your own work periods" };
+	}
+
+	// Work period must be completed
+	if (!period.endTime) {
+		return {
+			success: true,
+			data: {
+				capability: { type: "forbidden", reason: "beyond_approval_window", daysBack: 0 },
+				policyName: null,
+			},
+		};
+	}
+
+	try {
+		const result = await Effect.runPromise(
+			Effect.gen(function* (_) {
+				const policyService = yield* _(ChangePolicyService);
+
+				// Get the resolved policy for context
+				const policy = yield* _(policyService.resolvePolicy(emp.id));
+
+				// Get edit capability
+				const capability = yield* _(
+					policyService.getEditCapability({
+						employeeId: emp.id,
+						workPeriodEndTime: period.endTime!,
+						timezone,
+					}),
+				);
+
+				return {
+					capability,
+					policyName: policy?.policyName || null,
+				};
+			}).pipe(Effect.provide(ChangePolicyServiceLive), Effect.provide(DatabaseServiceLive)),
+		);
+
+		return { success: true, data: result };
+	} catch (error) {
+		logger.error({ error }, "Failed to get edit capability");
+		return { success: false, error: "Failed to check edit permissions" };
+	}
+}
+
+// Re-export EditCapability type for UI components
+export type { EditCapability } from "@/lib/effect/services/change-policy.service";

@@ -153,6 +153,7 @@ export function ShiftScheduler({
 		mutationFn: async (data: {
 			id: string;
 			employeeId?: string | null;
+			subareaId: string;
 			date: Date;
 			startTime: string;
 			endTime: string;
@@ -160,6 +161,7 @@ export function ShiftScheduler({
 			const result = await upsertShift({
 				id: data.id,
 				employeeId: data.employeeId,
+				subareaId: data.subareaId,
 				date: data.date,
 				startTime: data.startTime,
 				endTime: data.endTime,
@@ -238,6 +240,7 @@ export function ShiftScheduler({
 			updateShiftMutation.mutate({
 				id: shift.id,
 				employeeId: shift.employeeId,
+				subareaId: shift.subareaId,
 				date: newDate,
 				startTime,
 				endTime,

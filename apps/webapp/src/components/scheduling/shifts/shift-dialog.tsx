@@ -4,11 +4,15 @@ import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useStore } from "@tanstack/react-store";
 import { format } from "date-fns";
-import { CalendarIcon, Loader2, Trash2, Users } from "lucide-react";
+import { CalendarIcon, Loader2, MapPin, Trash2, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
-import { deleteShift, upsertShift } from "@/app/[locale]/(app)/scheduling/actions";
+import {
+	deleteShift,
+	getLocationsWithSubareas,
+	upsertShift,
+} from "@/app/[locale]/(app)/scheduling/actions";
 import type { ShiftTemplate, ShiftWithRelations } from "@/app/[locale]/(app)/scheduling/types";
 import { listEmployees } from "@/app/[locale]/(app)/settings/employees/actions";
 import { Badge } from "@/components/ui/badge";
@@ -77,10 +81,24 @@ export function ShiftDialog({
 
 	const employees = employeesResult?.employees || [];
 
+	// Fetch locations with subareas
+	const { data: locationsResult } = useQuery({
+		queryKey: queryKeys.locations.withSubareas(organizationId),
+		queryFn: async () => {
+			const result = await getLocationsWithSubareas();
+			if (!result.success) throw new Error(result.error);
+			return result.data;
+		},
+		enabled: open && isManager,
+	});
+
+	const locations = locationsResult || [];
+
 	const form = useForm({
 		defaultValues: {
 			employeeId: null as string | null,
 			templateId: null as string | null,
+			subareaId: "" as string,
 			date: new Date(),
 			startTime: "09:00",
 			endTime: "17:00",
@@ -98,6 +116,7 @@ export function ShiftDialog({
 			if (shift) {
 				form.setFieldValue("employeeId", shift.employeeId);
 				form.setFieldValue("templateId", shift.templateId);
+				form.setFieldValue("subareaId", shift.subareaId || "");
 				form.setFieldValue("date", new Date(shift.date));
 				form.setFieldValue("startTime", shift.startTime);
 				form.setFieldValue("endTime", shift.endTime);
@@ -106,6 +125,7 @@ export function ShiftDialog({
 			} else {
 				form.setFieldValue("employeeId", null);
 				form.setFieldValue("templateId", null);
+				form.setFieldValue("subareaId", "");
 				form.setFieldValue("date", defaultDate || new Date());
 				form.setFieldValue("startTime", "09:00");
 				form.setFieldValue("endTime", "17:00");
@@ -115,7 +135,7 @@ export function ShiftDialog({
 		}
 	}, [open, shift, defaultDate, form]);
 
-	// Watch template selection to auto-fill times
+	// Watch template selection to auto-fill times and subarea
 	const formValues = useStore(form.store, (state) => state.values);
 	const selectedTemplateId = formValues.templateId;
 	useEffect(() => {
@@ -127,14 +147,19 @@ export function ShiftDialog({
 				if (template.color) {
 					form.setFieldValue("color", template.color);
 				}
+				// Auto-fill subarea from template if not already set
+				if (template.subareaId && !formValues.subareaId) {
+					form.setFieldValue("subareaId", template.subareaId);
+				}
 			}
 		}
-	}, [selectedTemplateId, templates, form]);
+	}, [selectedTemplateId, templates, form, formValues.subareaId]);
 
 	const upsertMutation = useMutation({
 		mutationFn: async (values: {
 			employeeId: string | null;
 			templateId: string | null;
+			subareaId: string;
 			date: Date;
 			startTime: string;
 			endTime: string;
@@ -145,6 +170,7 @@ export function ShiftDialog({
 				id: shift?.id,
 				employeeId: values.employeeId,
 				templateId: values.templateId,
+				subareaId: values.subareaId,
 				date: values.date,
 				startTime: values.startTime,
 				endTime: values.endTime,
@@ -349,6 +375,45 @@ export function ShiftDialog({
 						</form.Field>
 					</div>
 
+					{/* Subarea assignment (required, managers only) */}
+					{isManager && (
+						<form.Field name="subareaId">
+							{(field) => (
+								<div className="space-y-2">
+									<Label>
+										<span className="flex items-center gap-2">
+											<MapPin className="h-4 w-4" aria-hidden="true" />
+											Subarea
+											<span className="text-destructive">*</span>
+										</span>
+									</Label>
+									<Select
+										onValueChange={(value) => field.handleChange(value)}
+										value={field.state.value}
+									>
+										<SelectTrigger>
+											<SelectValue placeholder="Select a subarea…" />
+										</SelectTrigger>
+										<SelectContent>
+											{locations.flatMap((location) =>
+												location.subareas
+													.filter((s) => s.isActive)
+													.map((subarea) => (
+														<SelectItem key={subarea.id} value={subarea.id}>
+															{location.name} – {subarea.name}
+														</SelectItem>
+													)),
+											)}
+										</SelectContent>
+									</Select>
+									<p className="text-sm text-muted-foreground">
+										Where this shift will take place
+									</p>
+								</div>
+							)}
+						</form.Field>
+					)}
+
 					{/* Employee assignment (managers only) */}
 					{isManager && (
 						<form.Field name="employeeId">
@@ -356,7 +421,7 @@ export function ShiftDialog({
 								<div className="space-y-2">
 									<Label>
 										<span className="flex items-center gap-2">
-											<Users className="h-4 w-4" />
+											<Users className="h-4 w-4" aria-hidden="true" />
 											Assign To
 										</span>
 									</Label>

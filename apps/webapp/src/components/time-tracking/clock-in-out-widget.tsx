@@ -42,6 +42,7 @@ export function ClockInOutWidget({ activeWorkPeriod: initialWorkPeriod, employee
 	// Construct initial state from server-rendered props
 	const initialData: TimeClockState = {
 		hasEmployee: true, // Widget is only rendered for employees
+		employeeId: null, // Will be fetched when status updates
 		isClockedIn: !!initialWorkPeriod,
 		activeWorkPeriod: initialWorkPeriod
 			? { id: initialWorkPeriod.id, startTime: initialWorkPeriod.startTime }

@@ -49,3 +49,22 @@
   z-index: 10 !important;
   background-color: var(--sx-color-background) !important;
 }
+
+/* Pending work period styling - faded/semi-transparent with dashed border */
+.schedule-x-container [data-calendar-id="work_period_pending"] {
+  opacity: 0.6 !important;
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 4px,
+    rgba(255, 255, 255, 0.1) 4px,
+    rgba(255, 255, 255, 0.1) 8px
+  ) !important;
+  border: 2px dashed currentColor !important;
+}
+
+/* Rejected work period styling - strikethrough effect */
+.schedule-x-container [data-calendar-id="work_period_rejected"] {
+  opacity: 0.5 !important;
+  text-decoration: line-through !important;
+}

@@ -1,14 +1,25 @@
-import type { shift, shiftRequest, shiftTemplate } from "@/db/schema";
+import type { shift, shiftRecurrence, shiftRequest, shiftTemplate } from "@/db/schema";
 
 export type Shift = typeof shift.$inferSelect;
 export type ShiftTemplate = typeof shiftTemplate.$inferSelect;
 export type ShiftRequest = typeof shiftRequest.$inferSelect;
+export type ShiftRecurrence = typeof shiftRecurrence.$inferSelect;
 export type ShiftStatus = "draft" | "published";
 export type ShiftRequestType = "swap" | "assignment" | "pickup";
+export type ShiftRecurrenceType = "daily" | "weekly" | "biweekly" | "monthly" | "custom";
 
 export interface DateRange {
 	start: Date;
 	end: Date;
+}
+
+export interface SubareaInfo {
+	id: string;
+	name: string;
+	location: {
+		id: string;
+		name: string;
+	};
 }
 
 export interface ShiftWithRelations extends Shift {
@@ -18,6 +29,8 @@ export interface ShiftWithRelations extends Shift {
 		lastName: string | null;
 	} | null;
 	template?: ShiftTemplate | null;
+	subarea?: SubareaInfo | null;
+	recurrence?: ShiftRecurrence | null;
 }
 
 export interface ShiftRequestWithRelations extends ShiftRequest {
@@ -60,6 +73,7 @@ export interface CreateTemplateInput {
 	startTime: string;
 	endTime: string;
 	color?: string;
+	subareaId?: string; // Optional default subarea for shifts using this template
 }
 
 export interface UpdateTemplateInput {
@@ -68,12 +82,14 @@ export interface UpdateTemplateInput {
 	endTime?: string;
 	color?: string;
 	isActive?: boolean;
+	subareaId?: string | null;
 }
 
 export interface UpsertShiftInput {
 	id?: string;
 	employeeId?: string | null;
 	templateId?: string | null;
+	subareaId: string; // Required - every shift must be assigned to a subarea
 	date: Date;
 	startTime: string;
 	endTime: string;
@@ -85,6 +101,7 @@ export interface ShiftQuery {
 	startDate?: Date;
 	endDate?: Date;
 	employeeId?: string;
+	subareaId?: string; // Filter by subarea
 	status?: ShiftStatus;
 	includeOpenShifts?: boolean;
 }

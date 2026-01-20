@@ -1,10 +1,10 @@
 "use server";
 
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { headers } from "next/headers";
 import { db } from "@/db";
-import { employee } from "@/db/schema";
+import { employee, location } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { AuthorizationError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
@@ -29,6 +29,7 @@ import type {
 	ShiftQuery,
 	ShiftRequest,
 	ShiftTemplate,
+	SubareaInfo,
 	SwapRequestInput,
 	UpdateTemplateInput,
 	UpsertShiftInput,
@@ -105,6 +106,7 @@ export async function createShiftTemplate(
 				startTime: input.startTime,
 				endTime: input.endTime,
 				color: input.color,
+				subareaId: input.subareaId,
 				createdBy: session.user.id,
 			}),
 		);
@@ -314,6 +316,7 @@ export async function upsertShift(
 				organizationId: emp.organizationId,
 				employeeId: input.employeeId,
 				templateId: input.templateId,
+				subareaId: input.subareaId,
 				date: input.date,
 				startTime: input.startTime,
 				endTime: input.endTime,
@@ -819,6 +822,80 @@ export async function getOpenShifts(
 
 		return openShifts;
 	}).pipe(Effect.withSpan("getOpenShifts"), Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
+}
+
+// ============================================
+// LOCATION/SUBAREA ACTIONS
+// ============================================
+
+export interface LocationWithSubareas {
+	id: string;
+	name: string;
+	subareas: Array<{
+		id: string;
+		name: string;
+		isActive: boolean;
+	}>;
+}
+
+export async function getLocationsWithSubareas(): Promise<
+	ServerActionResult<LocationWithSubareas[]>
+> {
+	const effect = Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
+		const dbService = yield* _(DatabaseService);
+
+		yield* _(Effect.annotateCurrentSpan("user.id", session.user.id));
+
+		// Get current employee
+		const emp = yield* _(
+			dbService.query("getCurrentEmployee", async () => {
+				return await db.query.employee.findFirst({
+					where: eq(employee.userId, session.user.id),
+				});
+			}),
+		);
+
+		if (!emp) {
+			return yield* _(
+				Effect.fail(
+					new NotFoundError({
+						message: "Employee profile not found",
+						entityType: "employee",
+						entityId: session.user.id,
+					}),
+				),
+			);
+		}
+
+		// Get all locations with their subareas
+		const locations = yield* _(
+			dbService.query("getLocationsWithSubareas", async () => {
+				return await db.query.location.findMany({
+					where: eq(location.organizationId, emp.organizationId),
+					with: {
+						subareas: {
+							columns: {
+								id: true,
+								name: true,
+								isActive: true,
+							},
+						},
+					},
+					orderBy: [desc(location.createdAt)],
+				});
+			}),
+		);
+
+		return locations.map((loc) => ({
+			id: loc.id,
+			name: loc.name,
+			subareas: loc.subareas,
+		}));
+	}).pipe(Effect.withSpan("getLocationsWithSubareas"), Effect.provide(AppLayer));
 
 	return runServerActionSafe(effect);
 }

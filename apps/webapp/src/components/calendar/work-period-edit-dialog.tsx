@@ -3,11 +3,13 @@
 import {
 	IconBriefcase,
 	IconCheck,
+	IconClock,
 	IconLoader2,
 	IconPencil,
 	IconScissors,
 	IconTrash,
 	IconX,
+	IconXboxX,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useCallback, useState } from "react";
@@ -27,6 +29,8 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import type { CalendarEvent } from "@/lib/calendar/types";
 import { format } from "@/lib/datetime/luxon-utils";
 import { useProjectsEnabled } from "@/stores/organization-settings-store";
@@ -69,7 +73,13 @@ export function WorkPeriodEditDialog({
 			qualifyingMinutes: number;
 			surchargeMinutes: number;
 		}>;
+		// Approval status for change policy enforcement
+		approvalStatus?: "approved" | "pending" | "rejected";
 	};
+
+	const approvalStatus = metadata.approvalStatus ?? "approved";
+	const isPending = approvalStatus === "pending";
+	const isRejected = approvalStatus === "rejected";
 
 	const hasSurcharge = metadata.surchargeMinutes && metadata.surchargeMinutes > 0;
 
@@ -162,8 +172,21 @@ export function WorkPeriodEditDialog({
 			<DialogContent className="sm:max-w-md">
 				<DialogHeader>
 					<div className="flex items-center gap-2">
-						<div className="w-3 h-3 rounded-full" style={{ backgroundColor: event.color }} />
+						<div
+							className={`w-3 h-3 rounded-full ${isPending ? "opacity-60" : ""}`}
+							style={{ backgroundColor: event.color }}
+						/>
 						<DialogTitle>{t("calendar.edit.title", "Work Period")}</DialogTitle>
+						{isPending && (
+							<Badge variant="outline" className="text-amber-600 border-amber-500">
+								{t("calendar.status.pending", "Pending")}
+							</Badge>
+						)}
+						{isRejected && (
+							<Badge variant="destructive">
+								{t("calendar.status.rejected", "Rejected")}
+							</Badge>
+						)}
 					</div>
 					<DialogDescription>
 						{format(event.date, "PPP")} {/* e.g., "January 1, 2024" */}
@@ -171,6 +194,36 @@ export function WorkPeriodEditDialog({
 				</DialogHeader>
 
 				<div className="space-y-4 py-4">
+					{/* Approval Status Banner - show for pending or rejected */}
+					{isPending && (
+						<Alert className="border-amber-500/50 bg-amber-500/10">
+							<IconClock className="h-4 w-4 text-amber-500" />
+							<AlertTitle className="text-amber-600 dark:text-amber-400">
+								{t("calendar.details.pendingApproval", "Pending Approval")}
+							</AlertTitle>
+							<AlertDescription className="text-amber-600/80 dark:text-amber-400/80">
+								{t(
+									"calendar.details.pendingApprovalDescription",
+									"This work period is awaiting manager approval. The recorded times may change if rejected.",
+								)}
+							</AlertDescription>
+						</Alert>
+					)}
+					{isRejected && (
+						<Alert variant="destructive">
+							<IconXboxX className="h-4 w-4" />
+							<AlertTitle>
+								{t("calendar.details.rejected", "Rejected")}
+							</AlertTitle>
+							<AlertDescription>
+								{t(
+									"calendar.details.rejectedDescription",
+									"This work period change was rejected by a manager. The original times have been restored.",
+								)}
+							</AlertDescription>
+						</Alert>
+					)}
+
 					{/* Employee name */}
 					<div>
 						<span className="text-sm text-muted-foreground">

@@ -69,6 +69,11 @@ export interface WorkPeriodEvent extends CalendarEvent {
 		surchargeMinutes?: number;
 		totalCreditedMinutes?: number;
 		surchargeBreakdown?: SurchargeBreakdown[];
+		// Approval status - for change policy enforcement
+		// "approved" = normal working period (default)
+		// "pending" = awaiting manager approval
+		// "rejected" = manager rejected the change
+		approvalStatus?: "approved" | "pending" | "rejected";
 	};
 }
 

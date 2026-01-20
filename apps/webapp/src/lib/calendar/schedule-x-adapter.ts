@@ -89,6 +89,34 @@ export const calendarColors = {
 			onContainer: "#e5e7eb",
 		},
 	},
+	// Pending work period - faded green with dashed border effect
+	work_period_pending: {
+		colorName: "work_period_pending",
+		lightColors: {
+			main: "#10b981", // Same green base
+			container: "#d1fae5",
+			onContainer: "#065f46",
+		},
+		darkColors: {
+			main: "#34d399",
+			container: "#064e3b",
+			onContainer: "#a7f3d0",
+		},
+	},
+	// Rejected work period - red tint to indicate rejection
+	work_period_rejected: {
+		colorName: "work_period_rejected",
+		lightColors: {
+			main: "#ef4444", // Red
+			container: "#fee2e2",
+			onContainer: "#991b1b",
+		},
+		darkColors: {
+			main: "#f87171",
+			container: "#7f1d1d",
+			onContainer: "#fecaca",
+		},
+	},
 } as const;
 
 /**
@@ -231,12 +259,26 @@ export function calendarEventToScheduleX(event: CalendarEvent): ScheduleXEvent |
 			const start = toTemporalZonedDateTime(startDate);
 			const end = toTemporalZonedDateTime(endDate);
 
+			// Determine calendar ID based on approval status
+			// Pending/rejected work periods get different styling
+			const approvalStatus = event.metadata?.approvalStatus as
+				| "approved"
+				| "pending"
+				| "rejected"
+				| undefined;
+			let calendarId: string = "work_period";
+			if (approvalStatus === "pending") {
+				calendarId = "work_period_pending";
+			} else if (approvalStatus === "rejected") {
+				calendarId = "work_period_rejected";
+			}
+
 			return {
 				id: event.id,
 				title: event.title,
 				start,
 				end,
-				calendarId: event.type,
+				calendarId: calendarId as CalendarEventType,
 				_eventData: event,
 			};
 		}
@@ -312,6 +354,8 @@ export function getScheduleXCalendars() {
 		holiday: calendarColors.holiday,
 		absence: calendarColors.absence,
 		work_period: calendarColors.work_period,
+		work_period_pending: calendarColors.work_period_pending,
+		work_period_rejected: calendarColors.work_period_rejected,
 		time_entry: calendarColors.time_entry,
 		break: calendarColors.break,
 	};

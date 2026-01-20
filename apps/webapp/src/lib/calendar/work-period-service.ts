@@ -139,6 +139,8 @@ export async function getWorkPeriodsForMonth(
 						totalCreditedMinutes,
 						surchargeBreakdown,
 					}),
+					// Approval status for change policy enforcement
+					approvalStatus: period.approvalStatus ?? "approved",
 				},
 			};
 		});

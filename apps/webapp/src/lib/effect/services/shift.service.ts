@@ -21,6 +21,7 @@ export interface CreateTemplateInput {
 	startTime: string; // "HH:mm" format
 	endTime: string;
 	color?: string;
+	subareaId?: string; // Optional default subarea
 	createdBy: string;
 }
 
@@ -30,6 +31,7 @@ export interface UpdateTemplateInput {
 	endTime?: string;
 	color?: string;
 	isActive?: boolean;
+	subareaId?: string | null;
 }
 
 export interface UpsertShiftInput {
@@ -37,6 +39,7 @@ export interface UpsertShiftInput {
 	organizationId: string;
 	employeeId?: string | null; // null = open shift
 	templateId?: string | null;
+	subareaId: string; // Required - every shift must be assigned to a subarea
 	date: Date;
 	startTime: string;
 	endTime: string;
@@ -50,6 +53,7 @@ export interface ShiftQuery {
 	startDate?: Date;
 	endDate?: Date;
 	employeeId?: string;
+	subareaId?: string; // Filter by subarea
 	status?: ShiftStatus;
 	includeOpenShifts?: boolean;
 }
@@ -76,6 +80,14 @@ export interface ShiftWithRelations extends Shift {
 		lastName: string | null;
 	} | null;
 	template?: ShiftTemplate | null;
+	subarea?: {
+		id: string;
+		name: string;
+		location: {
+			id: string;
+			name: string;
+		};
+	} | null;
 }
 
 export class ShiftService extends Context.Tag("ShiftService")<
@@ -163,6 +175,7 @@ export const ShiftServiceLive = Layer.effect(
 									startTime: input.startTime,
 									endTime: input.endTime,
 									color: input.color,
+									subareaId: input.subareaId,
 									createdBy: input.createdBy,
 									updatedAt: new Date(),
 								})
@@ -230,6 +243,7 @@ export const ShiftServiceLive = Layer.effect(
 									...(input.endTime && { endTime: input.endTime }),
 									...(input.color !== undefined && { color: input.color }),
 									...(input.isActive !== undefined && { isActive: input.isActive }),
+									...(input.subareaId !== undefined && { subareaId: input.subareaId }),
 								})
 								.where(eq(shiftTemplate.id, id))
 								.returning();
@@ -401,6 +415,7 @@ export const ShiftServiceLive = Layer.effect(
 									.set({
 										employeeId: input.employeeId,
 										templateId: input.templateId,
+										subareaId: input.subareaId,
 										date: input.date,
 										startTime: input.startTime,
 										endTime: input.endTime,
@@ -422,6 +437,7 @@ export const ShiftServiceLive = Layer.effect(
 										organizationId: input.organizationId,
 										employeeId: input.employeeId,
 										templateId: input.templateId,
+										subareaId: input.subareaId,
 										date: input.date,
 										startTime: input.startTime,
 										endTime: input.endTime,
@@ -504,6 +520,9 @@ export const ShiftServiceLive = Layer.effect(
 							if (query.employeeId) {
 								conditions.push(eq(shift.employeeId, query.employeeId));
 							}
+							if (query.subareaId) {
+								conditions.push(eq(shift.subareaId, query.subareaId));
+							}
 							if (query.status) {
 								conditions.push(eq(shift.status, query.status));
 							}
@@ -524,6 +543,20 @@ export const ShiftServiceLive = Layer.effect(
 										},
 									},
 									template: true,
+									subarea: {
+										columns: {
+											id: true,
+											name: true,
+										},
+										with: {
+											location: {
+												columns: {
+													id: true,
+													name: true,
+												},
+											},
+										},
+									},
 								},
 								orderBy: [desc(shift.date), desc(shift.startTime)],
 							});
@@ -548,6 +581,20 @@ export const ShiftServiceLive = Layer.effect(
 										},
 									},
 									template: true,
+									subarea: {
+										columns: {
+											id: true,
+											name: true,
+										},
+										with: {
+											location: {
+												columns: {
+													id: true,
+													name: true,
+												},
+											},
+										},
+									},
 								},
 							});
 						}),
