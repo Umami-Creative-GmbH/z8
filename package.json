@@ -3,12 +3,8 @@
   "private": true,
   "pnpm": {
     "onlyBuiltDependencies": [
-      "@parcel/watcher",
-      "@swc/core",
-      "esbuild",
-      "msw",
-      "protobufjs",
-      "sharp"
+      "msgpackr-extract",
+      "msw"
     ]
   },
   "workspaces": [
