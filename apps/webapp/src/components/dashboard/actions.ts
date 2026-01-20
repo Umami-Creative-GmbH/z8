@@ -816,8 +816,8 @@ export async function getWhosOutToday(): Promise<
 			}),
 		);
 
-		// Process absences
-		const outToday: Array<{
+		// Process absences - deduplicate by employee ID (employee may have multiple overlapping absences)
+		const outTodayMap = new Map<string, {
 			id: string;
 			userId: string;
 			name: string;
@@ -826,9 +826,9 @@ export async function getWhosOutToday(): Promise<
 			categoryColor: string | null;
 			endsToday: boolean;
 			returnDate: string;
-		}> = [];
+		}>();
 
-		const returningTomorrow: Array<{
+		const returningTomorrowMap = new Map<string, {
 			id: string;
 			userId: string;
 			name: string;
@@ -837,15 +837,16 @@ export async function getWhosOutToday(): Promise<
 			categoryColor: string | null;
 			endsToday: boolean;
 			returnDate: string;
-		}> = [];
+		}>();
 
 		for (const absence of todayAbsences) {
+			const employeeId = absence.employee.id;
 			const endsToday = absence.endDate === todayStr;
 			const endDT = DateTime.fromISO(absence.endDate);
 			const returnDate = endDT.plus({ days: 1 }).toFormat("MMM d");
 
 			const employeeData = {
-				id: absence.employee.id,
+				id: employeeId,
 				userId: absence.employee.user.id,
 				name: absence.employee.user.name || "Unknown",
 				image: absence.employee.user.image,
@@ -855,12 +856,18 @@ export async function getWhosOutToday(): Promise<
 				returnDate,
 			};
 
-			outToday.push(employeeData);
+			// Only add if not already present (first absence wins)
+			if (!outTodayMap.has(employeeId)) {
+				outTodayMap.set(employeeId, employeeData);
+			}
 
-			if (endsToday) {
-				returningTomorrow.push(employeeData);
+			if (endsToday && !returningTomorrowMap.has(employeeId)) {
+				returningTomorrowMap.set(employeeId, employeeData);
 			}
 		}
+
+		const outToday = Array.from(outTodayMap.values());
+		const returningTomorrow = Array.from(returningTomorrowMap.values());
 
 		// Sort by name
 		outToday.sort((a, b) => a.name.localeCompare(b.name));
