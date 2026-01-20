@@ -107,7 +107,27 @@
     "verify-and-login": "Verify and Login",
     "verify-email-title": "Verify Your Email Address",
     "verifying": "Verifying...",
-    "verifying-email": "Verifying your email..."
+    "verifying-email": "Verifying your email...",
+    "join": {
+      "alreadyMember": "You are already a member of this organization.",
+      "codeExpired": "This invite code has expired.",
+      "codeInvalid": "This invite code is invalid or no longer active.",
+      "codeLimitReached": "This invite code has reached its usage limit.",
+      "enterCode": "Enter an invite code to join an organization.",
+      "goToDashboard": "Go to Dashboard",
+      "joinButton": "Join Organization",
+      "joining": "Joining...",
+      "joinOrg": "Join {organization}",
+      "orgDescription": "You've been invited to join this organization.",
+      "pendingApproval": "Your request to join {organization} is pending approval. An administrator will review your request.",
+      "requiresApproval": "Your request will need to be approved by an administrator.",
+      "signInFirst": "Please sign in to join this organization.",
+      "signInToJoin": "Sign in to Join",
+      "success": "You have successfully joined {organization}!",
+      "title": "Join Organization",
+      "validating": "Validating invite code...",
+      "welcomeBack": "Welcome back!"
+    }
   },
   "profile": {
     "avatar-removed": "Avatar removed successfully",

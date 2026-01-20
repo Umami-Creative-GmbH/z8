@@ -25,6 +25,7 @@
     "dismiss": "Schließen",
     "edit": "Bearbeiten",
     "enabled": "Aktiviert",
+    "moreActions": "Weitere Aktionen",
     "error-occurred": "Ein Fehler ist aufgetreten",
     "gender": {
       "female": "Weiblich",
@@ -53,6 +54,7 @@
     "openMenu": "Menü öffnen",
     "optional": "optional",
     "or": "Oder",
+    "recovering": "Wiederherstellen...",
     "refresh": "Aktualisieren",
     "remove": "Entfernen",
     "removing": "Entfernen...",
@@ -111,6 +113,47 @@
   "generic": {
     "done": "Fertig",
     "submit": "Absenden"
+  },
+  "organization": {
+    "delete": {
+      "button": "Organisation löschen",
+      "confirmButton": "Organisation löschen",
+      "confirmDescription": "Die Organisation wird zur Löschung vorgemerkt. Sie haben 5 Tage Zeit, sie wiederherzustellen, bevor alle Daten endgültig gelöscht werden.",
+      "confirmLabel": "Geben Sie \"{name}\" zur Bestätigung ein",
+      "confirmTitle": "Organisation löschen?",
+      "dangerZone": "Gefahrenzone",
+      "data": {
+        "absences": "Alle Abwesenheiten und Urlaubsdaten",
+        "employees": "Alle Mitarbeiter und Teams",
+        "members": "Alle Mitglieder und Einladungen",
+        "settings": "Alle Organisationseinstellungen und Konfigurationen",
+        "timeEntries": "Alle Zeiteinträge und Arbeitsperioden"
+      },
+      "daysRemaining": "{count, plural, one {# Tag} other {# Tage}}",
+      "description": "Diese Organisation und alle ihre Daten dauerhaft löschen",
+      "failed": "Organisation konnte nicht gelöscht werden",
+      "pendingDeletion": "Löschung ausstehend",
+      "pendingDescription": "Diese Organisation ist zur endgültigen Löschung vorgemerkt",
+      "permanentDeletionOn": "Endgültige Löschung am:",
+      "recoveryNote": "Alle Organisationsdaten werden nach diesem Datum endgültig gelöscht. Klicken Sie auf die Schaltfläche unten, um die Löschung abzubrechen und die Organisation wiederherzustellen.",
+      "scheduledSuccess": "Organisation zur Löschung vorgemerkt. Sie haben 5 Tage Zeit zur Wiederherstellung.",
+      "timeRemaining": "Verbleibende Zeit zur Wiederherstellung:",
+      "title": "Organisation löschen",
+      "warning": "Die Organisation wird zur Löschung vorgemerkt. Sie haben 5 Tage Zeit, sie wiederherzustellen, bevor alle Daten endgültig gelöscht werden.",
+      "bannerTitle": "Organisation zur Löschung vorgemerkt",
+      "bannerDescription": "Diese Organisation wird in {count, plural, one {# Tag} other {# Tagen}} endgültig gelöscht. Kontaktieren Sie Ihren Administrator, wenn Sie glauben, dass dies ein Fehler ist.",
+      "bannerLearnMore": "Mehr erfahren"
+    },
+    "logo-upload-failed": "Logo konnte nicht hochgeladen werden",
+    "logo-uploaded": "Logo erfolgreich hochgeladen",
+    "recover": {
+      "button": "Organisation wiederherstellen",
+      "confirmButton": "Organisation wiederherstellen",
+      "confirmDescription": "Dies bricht die geplante Löschung ab und stellt die Organisation wieder her. Alle Daten bleiben erhalten.",
+      "confirmTitle": "Organisation wiederherstellen?",
+      "failed": "Organisation konnte nicht wiederhergestellt werden",
+      "success": "Organisation erfolgreich wiederhergestellt"
+    }
   },
   "header": {
     "clock-in": "Einstempeln",

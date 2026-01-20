@@ -140,7 +140,8 @@ const namespaceImports: Record<Namespace, Record<string, () => Promise<unknown>>
 
 /**
  * Load specific namespaces for SSR
- * Returns merged translations for the specified namespaces
+ * Merges all namespace translations into a single object keyed by locale.
+ * This allows t("auth.login") to work without specifying namespace.
  */
 export async function loadNamespaces(
 	locale: string,
@@ -154,28 +155,31 @@ export async function loadNamespaces(
 		if (importFn) {
 			try {
 				const mod = await importFn();
-				const data = (mod as { default?: Record<string, unknown> }).default || mod;
-				return { ns, data: data as Record<string, unknown> };
+				const data = (mod as { default?: TreeTranslationsData }).default || (mod as TreeTranslationsData);
+				return { ns, data };
 			} catch (error) {
 				console.warn(`Failed to load namespace ${ns} for ${lang}:`, error);
-				return { ns, data: {} as Record<string, unknown> };
+				return { ns, data: {} as TreeTranslationsData };
 			}
 		}
-		return { ns, data: {} as Record<string, unknown> };
+		return { ns, data: {} as TreeTranslationsData };
 	});
 
 	const loaded = await Promise.all(loadPromises);
 
-	// Merge all loaded namespaces into a single object for the locale
-	const merged: Record<string, unknown> = {};
+	// Merge all namespace translations into a single object
+	// This allows t("auth.login") to work without specifying namespace
+	const merged: TreeTranslationsData = {};
 	for (const { data } of loaded) {
 		Object.assign(merged, data);
 	}
 
-	// Return in TolgeeStaticData format: { [locale]: translations }
-	return {
+	// Return in TolgeeStaticData format with just the locale as key
+	const result: Record<string, TreeTranslationsData> = {
 		[lang]: merged,
-	} as TolgeeStaticData;
+	};
+
+	return result;
 }
 
 /**
@@ -189,6 +193,29 @@ export async function loadRouteTranslations(
 	return loadNamespaces(locale, namespaces);
 }
 
+// Tolgee's expected translation data type
+type TreeTranslationsData = { [key: string]: TreeTranslationsData | string };
+
+/**
+ * Load and merge all namespaces for a language
+ */
+async function loadAllNamespacesForLanguage(lang: string): Promise<TreeTranslationsData> {
+	const merged: TreeTranslationsData = {};
+	for (const ns of ALL_NAMESPACES) {
+		const importFn = namespaceImports[ns]?.[lang];
+		if (importFn) {
+			try {
+				const mod = await importFn();
+				const data = (mod as { default?: TreeTranslationsData }).default || (mod as TreeTranslationsData);
+				Object.assign(merged, data);
+			} catch (error) {
+				console.warn(`Failed to load namespace ${ns} for ${lang}:`, error);
+			}
+		}
+	}
+	return merged;
+}
+
 export function TolgeeBase() {
 	const tolgee = Tolgee().use(FormatIcu());
 
@@ -200,70 +227,18 @@ export function TolgeeBase() {
 	return tolgee.updateDefaults({
 		apiKey,
 		apiUrl,
-		defaultNs: DEFAULT_NAMESPACE,
 		// Disable invisible character encoding to prevent broken strings in HTML
 		observerOptions: {
 			fullKeyEncode: false,
 		},
-		// Lazy load namespace translations on demand
-		// Uses "lang:namespace" format for namespace-based lazy loading
+		// Lazy load all translations for each language (merged namespaces)
 		staticData: {
-			// Common namespace (always loaded)
-			en: () => import("../../messages/common/en.json"),
-			de: () => import("../../messages/common/de.json"),
-			fr: () => import("../../messages/common/fr.json"),
-			es: () => import("../../messages/common/es.json"),
-			it: () => import("../../messages/common/it.json"),
-			pt: () => import("../../messages/common/pt.json"),
-			// Auth namespace
-			"en:auth": () => import("../../messages/auth/en.json"),
-			"de:auth": () => import("../../messages/auth/de.json"),
-			"fr:auth": () => import("../../messages/auth/fr.json"),
-			"es:auth": () => import("../../messages/auth/es.json"),
-			"it:auth": () => import("../../messages/auth/it.json"),
-			"pt:auth": () => import("../../messages/auth/pt.json"),
-			// Dashboard namespace
-			"en:dashboard": () => import("../../messages/dashboard/en.json"),
-			"de:dashboard": () => import("../../messages/dashboard/de.json"),
-			"fr:dashboard": () => import("../../messages/dashboard/fr.json"),
-			"es:dashboard": () => import("../../messages/dashboard/es.json"),
-			"it:dashboard": () => import("../../messages/dashboard/it.json"),
-			"pt:dashboard": () => import("../../messages/dashboard/pt.json"),
-			// Calendar namespace
-			"en:calendar": () => import("../../messages/calendar/en.json"),
-			"de:calendar": () => import("../../messages/calendar/de.json"),
-			"fr:calendar": () => import("../../messages/calendar/fr.json"),
-			"es:calendar": () => import("../../messages/calendar/es.json"),
-			"it:calendar": () => import("../../messages/calendar/it.json"),
-			"pt:calendar": () => import("../../messages/calendar/pt.json"),
-			// Time tracking namespace
-			"en:timeTracking": () => import("../../messages/timeTracking/en.json"),
-			"de:timeTracking": () => import("../../messages/timeTracking/de.json"),
-			"fr:timeTracking": () => import("../../messages/timeTracking/fr.json"),
-			"es:timeTracking": () => import("../../messages/timeTracking/es.json"),
-			"it:timeTracking": () => import("../../messages/timeTracking/it.json"),
-			"pt:timeTracking": () => import("../../messages/timeTracking/pt.json"),
-			// Reports namespace
-			"en:reports": () => import("../../messages/reports/en.json"),
-			"de:reports": () => import("../../messages/reports/de.json"),
-			"fr:reports": () => import("../../messages/reports/fr.json"),
-			"es:reports": () => import("../../messages/reports/es.json"),
-			"it:reports": () => import("../../messages/reports/it.json"),
-			"pt:reports": () => import("../../messages/reports/pt.json"),
-			// Settings namespace
-			"en:settings": () => import("../../messages/settings/en.json"),
-			"de:settings": () => import("../../messages/settings/de.json"),
-			"fr:settings": () => import("../../messages/settings/fr.json"),
-			"es:settings": () => import("../../messages/settings/es.json"),
-			"it:settings": () => import("../../messages/settings/it.json"),
-			"pt:settings": () => import("../../messages/settings/pt.json"),
-			// Onboarding namespace
-			"en:onboarding": () => import("../../messages/onboarding/en.json"),
-			"de:onboarding": () => import("../../messages/onboarding/de.json"),
-			"fr:onboarding": () => import("../../messages/onboarding/fr.json"),
-			"es:onboarding": () => import("../../messages/onboarding/es.json"),
-			"it:onboarding": () => import("../../messages/onboarding/it.json"),
-			"pt:onboarding": () => import("../../messages/onboarding/pt.json"),
+			en: () => loadAllNamespacesForLanguage("en"),
+			de: () => loadAllNamespacesForLanguage("de"),
+			fr: () => loadAllNamespacesForLanguage("fr"),
+			es: () => loadAllNamespacesForLanguage("es"),
+			it: () => loadAllNamespacesForLanguage("it"),
+			pt: () => loadAllNamespacesForLanguage("pt"),
 		},
 	});
 }

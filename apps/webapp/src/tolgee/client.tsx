@@ -2,7 +2,7 @@
 
 import { TolgeeProvider, useTolgee, type TolgeeStaticData } from "@tolgee/react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { type Namespace, TolgeeBase } from "./shared";
 
 type Props = {
@@ -11,10 +11,33 @@ type Props = {
 	children: React.ReactNode;
 };
 
-const tolgee = TolgeeBase().init();
+// Global tolgee instance - initialized lazily
+let globalTolgee: ReturnType<ReturnType<typeof TolgeeBase>["init"]> | null = null;
+
+function getOrCreateTolgee(language: string, staticData: TolgeeStaticData) {
+	if (!globalTolgee) {
+		globalTolgee = TolgeeBase().init({
+			language,
+			staticData,
+		});
+	}
+	return globalTolgee;
+}
 
 export const TolgeeNextProvider = ({ language, staticData, children }: Props) => {
 	const router = useRouter();
+
+	// Get or create the tolgee instance
+	const tolgee = getOrCreateTolgee(language, staticData);
+
+	// Always add staticData (it's idempotent) and sync language
+	if (staticData) {
+		tolgee.addStaticData(staticData);
+	}
+	if (tolgee.getLanguage() !== language) {
+		tolgee.changeLanguage(language);
+	}
+
 
 	useEffect(() => {
 		// this ensures server components refresh, after translation change
@@ -82,8 +105,8 @@ export function useNamespaces(namespaces: Namespace[]): {
  * Call this early in a component to start loading namespaces in the background
  */
 export function preloadNamespaces(namespaces: Namespace[]): void {
-	if (typeof window !== "undefined" && namespaces.length > 0) {
-		tolgee.addActiveNs(namespaces).catch((error) => {
+	if (typeof window !== "undefined" && globalTolgee && namespaces.length > 0) {
+		globalTolgee.addActiveNs(namespaces).catch((error) => {
 			console.warn("Failed to preload namespaces:", namespaces, error);
 		});
 	}

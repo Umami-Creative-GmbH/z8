@@ -107,7 +107,27 @@
     "verify-and-login": "Verifizieren und Login",
     "verify-email-title": "Bestätigen Sie Ihre E-Mail-Adresse",
     "verifying": "Verifizieren...",
-    "verifying-email": "Verifiziere Ihre E-Mail..."
+    "verifying-email": "Verifiziere Ihre E-Mail...",
+    "join": {
+      "alreadyMember": "Sie sind bereits Mitglied dieser Organisation.",
+      "codeExpired": "Dieser Einladungscode ist abgelaufen.",
+      "codeInvalid": "Dieser Einladungscode ist ungültig oder nicht mehr aktiv.",
+      "codeLimitReached": "Dieser Einladungscode hat sein Nutzungslimit erreicht.",
+      "enterCode": "Geben Sie einen Einladungscode ein, um einer Organisation beizutreten.",
+      "goToDashboard": "Zum Dashboard",
+      "joinButton": "Organisation beitreten",
+      "joining": "Beitritt...",
+      "joinOrg": "{organization} beitreten",
+      "orgDescription": "Sie wurden eingeladen, dieser Organisation beizutreten.",
+      "pendingApproval": "Ihre Anfrage, {organization} beizutreten, wartet auf Genehmigung. Ein Administrator wird Ihre Anfrage prüfen.",
+      "requiresApproval": "Ihre Anfrage muss von einem Administrator genehmigt werden.",
+      "signInFirst": "Bitte melden Sie sich an, um dieser Organisation beizutreten.",
+      "signInToJoin": "Anmelden zum Beitreten",
+      "success": "Sie sind {organization} erfolgreich beigetreten!",
+      "title": "Organisation beitreten",
+      "validating": "Einladungscode wird validiert...",
+      "welcomeBack": "Willkommen zurück!"
+    }
   },
   "profile": {
     "avatar-removed": "Avatar erfolgreich entfernt",

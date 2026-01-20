@@ -25,6 +25,7 @@
     "dismiss": "Dismiss",
     "edit": "Edit",
     "enabled": "Enabled",
+    "moreActions": "More actions",
     "error-occurred": "An error occurred",
     "gender": {
       "female": "Female",
@@ -53,6 +54,7 @@
     "openMenu": "Open menu",
     "optional": "optional",
     "or": "Or",
+    "recovering": "Recovering...",
     "refresh": "Refresh",
     "remove": "Remove",
     "removing": "Removing...",
@@ -111,6 +113,47 @@
   "generic": {
     "done": "Done",
     "submit": "Submit"
+  },
+  "organization": {
+    "delete": {
+      "button": "Delete Organization",
+      "confirmButton": "Delete Organization",
+      "confirmDescription": "This will schedule the organization for deletion. You will have 5 days to recover it before all data is permanently deleted.",
+      "confirmLabel": "Type \"{name}\" to confirm",
+      "confirmTitle": "Delete Organization?",
+      "dangerZone": "Danger Zone",
+      "data": {
+        "absences": "All absences and vacation data",
+        "employees": "All employees and teams",
+        "members": "All members and invitations",
+        "settings": "All organization settings and configurations",
+        "timeEntries": "All time entries and work periods"
+      },
+      "daysRemaining": "{count, plural, one {# day} other {# days}}",
+      "description": "Permanently delete this organization and all its data",
+      "failed": "Failed to delete organization",
+      "pendingDeletion": "Pending Deletion",
+      "pendingDescription": "This organization is scheduled for permanent deletion",
+      "permanentDeletionOn": "Permanent deletion on:",
+      "recoveryNote": "All organization data will be permanently deleted after this date. Click the button below to cancel deletion and recover the organization.",
+      "scheduledSuccess": "Organization scheduled for deletion. You have 5 days to recover it.",
+      "timeRemaining": "Time remaining to recover:",
+      "title": "Delete Organization",
+      "warning": "This will schedule the organization for deletion. You will have 5 days to recover it before all data is permanently deleted.",
+      "bannerTitle": "Organization Scheduled for Deletion",
+      "bannerDescription": "This organization will be permanently deleted in {count, plural, one {# day} other {# days}}. Contact your administrator if you believe this is a mistake.",
+      "bannerLearnMore": "Learn more"
+    },
+    "logo-upload-failed": "Failed to upload logo",
+    "logo-uploaded": "Logo uploaded successfully",
+    "recover": {
+      "button": "Recover Organization",
+      "confirmButton": "Recover Organization",
+      "confirmDescription": "This will cancel the scheduled deletion and restore the organization. All data will be preserved.",
+      "confirmTitle": "Recover Organization?",
+      "failed": "Failed to recover organization",
+      "success": "Organization recovered successfully"
+    }
   },
   "header": {
     "clock-in": "Clock In",
