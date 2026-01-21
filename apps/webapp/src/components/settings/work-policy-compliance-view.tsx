@@ -9,17 +9,17 @@ import {
 } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { format, subDays } from "date-fns";
+import { DateTime } from "luxon";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
-	acknowledgeViolation,
-	getViolationsSummary,
-	type ViolationSummary,
-} from "@/app/[locale]/(app)/settings/time-regulations/actions";
+	acknowledgeWorkPolicyViolation,
+	getWorkPolicyViolations,
+	type WorkPolicyViolationWithDetails,
+} from "@/app/[locale]/(app)/settings/work-policies/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import {
 	Dialog,
 	DialogContent,
@@ -45,8 +45,9 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { queryKeys } from "@/lib/query";
 
-interface TimeRegulationComplianceViewProps {
+interface WorkPolicyComplianceViewProps {
 	organizationId: string;
 }
 
@@ -55,71 +56,68 @@ const violationTypeColors: Record<string, "destructive" | "secondary" | "outline
 	max_weekly: "destructive",
 	max_uninterrupted: "secondary",
 	break_required: "outline",
+	schedule_deviation: "outline",
 };
 
-export function TimeRegulationComplianceView({
-	organizationId,
-}: TimeRegulationComplianceViewProps) {
+export function WorkPolicyComplianceView({ organizationId }: WorkPolicyComplianceViewProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const [dateRange, setDateRange] = useState<"7d" | "30d" | "90d">("30d");
-
-	// Helper function to get translated violation type labels
-	const getViolationTypeLabel = (type: string): string => {
-		switch (type) {
-			case "max_daily":
-				return t("settings.timeRegulations.violationType.maxDaily", "Max Daily Exceeded");
-			case "max_weekly":
-				return t("settings.timeRegulations.violationType.maxWeekly", "Max Weekly Exceeded");
-			case "max_uninterrupted":
-				return t(
-					"settings.timeRegulations.violationType.maxUninterrupted",
-					"Max Continuous Exceeded",
-				);
-			case "break_required":
-				return t("settings.timeRegulations.violationType.breakRequired", "Required Break Missing");
-			default:
-				return type;
-		}
-	};
-
-	// Helper function to format minutes to hours with translation
-	const formatMinutesToHours = (minutes: number): string => {
-		const hours = Math.floor(minutes / 60);
-		const mins = minutes % 60;
-		if (mins === 0) {
-			return t("settings.timeRegulations.hoursFormat", "{hours}h", { hours });
-		}
-		return t("settings.timeRegulations.hoursMinutesFormat", "{hours}h {mins}m", { hours, mins });
-	};
 	const [acknowledgeDialogOpen, setAcknowledgeDialogOpen] = useState(false);
-	const [selectedViolation, setSelectedViolation] = useState<ViolationSummary | null>(null);
+	const [selectedViolation, setSelectedViolation] = useState<WorkPolicyViolationWithDetails | null>(
+		null,
+	);
 	const [acknowledgeNote, setAcknowledgeNote] = useState("");
 
-	// Calculate date range - memoized to prevent infinite refetch
+	// Helper function to get translated violation type labels
+	const getViolationTypeLabel = useCallback(
+		(type: string): string => {
+			switch (type) {
+				case "max_daily":
+					return t("settings.workPolicies.violationType.maxDaily", "Max Daily Exceeded");
+				case "max_weekly":
+					return t("settings.workPolicies.violationType.maxWeekly", "Max Weekly Exceeded");
+				case "max_uninterrupted":
+					return t(
+						"settings.workPolicies.violationType.maxUninterrupted",
+						"Max Continuous Exceeded",
+					);
+				case "break_required":
+					return t("settings.workPolicies.violationType.breakRequired", "Required Break Missing");
+				case "schedule_deviation":
+					return t("settings.workPolicies.violationType.scheduleDeviation", "Schedule Deviation");
+				default:
+					return type;
+			}
+		},
+		[t],
+	);
+
+	// Calculate date range
 	const range = useMemo(() => {
-		const end = new Date();
-		let start: Date;
+		const endDt = DateTime.now();
+		let days: number;
 		switch (dateRange) {
 			case "7d":
-				start = subDays(end, 7);
+				days = 7;
 				break;
 			case "30d":
-				start = subDays(end, 30);
+				days = 30;
 				break;
 			case "90d":
-				start = subDays(end, 90);
+				days = 90;
 				break;
 			default:
-				start = subDays(end, 30);
+				days = 30;
 		}
-		return { start, end };
+		const startDt = endDt.minus({ days });
+		return { start: startDt.toJSDate(), end: endDt.toJSDate() };
 	}, [dateRange]);
 
-	// Create stable query key using ISO strings instead of Date objects
+	// Create stable query key
 	const queryKey = useMemo(
-		() => ["time-regulations", "violations", "list", organizationId, dateRange] as const,
-		[organizationId, dateRange],
+		() => queryKeys.workPolicies.violations.list(organizationId, range),
+		[organizationId, range],
 	);
 
 	// Fetch violations
@@ -131,25 +129,23 @@ export function TimeRegulationComplianceView({
 	} = useQuery({
 		queryKey,
 		queryFn: async () => {
-			const result = await getViolationsSummary(organizationId, range.start, range.end);
+			const result = await getWorkPolicyViolations(organizationId, range.start, range.end);
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch violations");
 			}
 			return result.data;
 		},
-		staleTime: 30 * 1000, // Consider data fresh for 30 seconds
-		refetchOnWindowFocus: false, // Don't refetch on window focus
+		staleTime: 30 * 1000,
+		refetchOnWindowFocus: false,
 	});
 
 	// Acknowledge mutation
 	const acknowledgeMutation = useMutation({
 		mutationFn: ({ violationId, note }: { violationId: string; note?: string }) =>
-			acknowledgeViolation(violationId, note),
+			acknowledgeWorkPolicyViolation(violationId, note),
 		onSuccess: (result) => {
 			if (result.success) {
-				toast.success(
-					t("settings.timeRegulations.violationAcknowledged", "Violation acknowledged"),
-				);
+				toast.success(t("settings.workPolicies.violationAcknowledged", "Violation acknowledged"));
 				queryClient.invalidateQueries({ queryKey });
 				setAcknowledgeDialogOpen(false);
 				setSelectedViolation(null);
@@ -157,67 +153,63 @@ export function TimeRegulationComplianceView({
 			} else {
 				toast.error(
 					result.error ||
-						t("settings.timeRegulations.acknowledgeFailed", "Failed to acknowledge violation"),
+						t("settings.workPolicies.acknowledgeFailed", "Failed to acknowledge violation"),
 				);
 			}
 		},
 		onError: () => {
-			toast.error(
-				t("settings.timeRegulations.acknowledgeFailed", "Failed to acknowledge violation"),
-			);
+			toast.error(t("settings.workPolicies.acknowledgeFailed", "Failed to acknowledge violation"));
 		},
 	});
 
-	const handleAcknowledgeClick = (violation: ViolationSummary) => {
+	const handleAcknowledgeClick = (violation: WorkPolicyViolationWithDetails) => {
 		setSelectedViolation(violation);
 		setAcknowledgeNote("");
 		setAcknowledgeDialogOpen(true);
 	};
 
+	const handleAcknowledgeConfirm = () => {
+		if (selectedViolation) {
+			acknowledgeMutation.mutate({
+				violationId: selectedViolation.id,
+				note: acknowledgeNote || undefined,
+			});
+		}
+	};
+
 	// CSV Export function
 	const handleExportCSV = useCallback(() => {
 		if (!violations || violations.length === 0) {
-			toast.error(t("settings.timeRegulations.noDataToExport", "No data to export"));
+			toast.error(t("settings.workPolicies.noDataToExport", "No data to export"));
 			return;
 		}
 
 		const headers = [
-			t("settings.timeRegulations.csv.employee", "Employee"),
-			t("settings.timeRegulations.csv.date", "Date"),
-			t("settings.timeRegulations.csv.violationType", "Violation Type"),
-			t("settings.timeRegulations.csv.actualMinutes", "Actual Minutes"),
-			t("settings.timeRegulations.csv.limitMinutes", "Limit Minutes"),
-			t("settings.timeRegulations.csv.breakTaken", "Break Taken (min)"),
-			t("settings.timeRegulations.csv.breakRequired", "Break Required (min)"),
-			t("settings.timeRegulations.csv.status", "Status"),
-			t("settings.timeRegulations.csv.acknowledgedAt", "Acknowledged At"),
-			t("settings.timeRegulations.csv.acknowledgedNote", "Acknowledged Note"),
+			t("settings.workPolicies.csv.employee", "Employee"),
+			t("settings.workPolicies.csv.date", "Date"),
+			t("settings.workPolicies.csv.policy", "Policy"),
+			t("settings.workPolicies.csv.violationType", "Violation Type"),
+			t("settings.workPolicies.csv.status", "Status"),
+			t("settings.workPolicies.csv.acknowledgedAt", "Acknowledged At"),
+			t("settings.workPolicies.csv.acknowledgedNote", "Acknowledged Note"),
 		];
 
 		const unknownLabel = t("common.unknown", "Unknown");
-		const acknowledgedLabel = t("settings.timeRegulations.acknowledged", "Acknowledged");
-		const pendingLabel = t("settings.timeRegulations.pending", "Pending");
+		const acknowledgedLabel = t("settings.workPolicies.acknowledged", "Acknowledged");
+		const pendingLabel = t("settings.workPolicies.pending", "Pending");
 
 		const rows = violations.map((v) => {
-			const details =
-				typeof v.details === "object" && v.details !== null
-					? (v.details as Record<string, number | string | undefined>)
-					: {};
-
 			const employeeName = v.employee
 				? `${v.employee.firstName || ""} ${v.employee.lastName || ""}`.trim() || unknownLabel
 				: unknownLabel;
 
 			return [
 				employeeName,
-				format(new Date(v.violationDate), "yyyy-MM-dd"),
+				DateTime.fromISO(v.violationDate).toFormat("yyyy-MM-dd"),
+				v.policy?.name || unknownLabel,
 				getViolationTypeLabel(v.violationType) || v.violationType,
-				details.actualMinutes ?? "",
-				details.limitMinutes ?? "",
-				details.breakTakenMinutes ?? "",
-				details.breakRequiredMinutes ?? "",
 				v.acknowledgedAt ? acknowledgedLabel : pendingLabel,
-				v.acknowledgedAt ? format(new Date(v.acknowledgedAt), "yyyy-MM-dd HH:mm") : "",
+				v.acknowledgedAt ? DateTime.fromISO(v.acknowledgedAt).toFormat("yyyy-MM-dd HH:mm") : "",
 				v.acknowledgedNote || "",
 			];
 		});
@@ -229,7 +221,6 @@ export function TimeRegulationComplianceView({
 				row
 					.map((cell) => {
 						const str = String(cell);
-						// Escape quotes and wrap in quotes if contains comma, quote, or newline
 						if (str.includes(",") || str.includes('"') || str.includes("\n")) {
 							return `"${str.replace(/"/g, '""')}"`;
 						}
@@ -244,23 +235,14 @@ export function TimeRegulationComplianceView({
 		const url = URL.createObjectURL(blob);
 		const link = document.createElement("a");
 		link.href = url;
-		link.download = `violations-${dateRange}-${format(new Date(), "yyyy-MM-dd")}.csv`;
+		link.download = `policy-violations-${dateRange}-${DateTime.now().toFormat("yyyy-MM-dd")}.csv`;
 		document.body.appendChild(link);
 		link.click();
 		document.body.removeChild(link);
 		URL.revokeObjectURL(url);
 
-		toast.success(t("settings.timeRegulations.exportSuccess", "Violations exported successfully"));
+		toast.success(t("settings.workPolicies.exportSuccess", "Violations exported successfully"));
 	}, [violations, dateRange, t, getViolationTypeLabel]);
-
-	const handleAcknowledgeConfirm = () => {
-		if (selectedViolation) {
-			acknowledgeMutation.mutate({
-				violationId: selectedViolation.id,
-				note: acknowledgeNote || undefined,
-			});
-		}
-	};
 
 	// Calculate summary stats
 	const stats = {
@@ -269,9 +251,9 @@ export function TimeRegulationComplianceView({
 		byType: {
 			max_daily: violations?.filter((v) => v.violationType === "max_daily").length || 0,
 			max_weekly: violations?.filter((v) => v.violationType === "max_weekly").length || 0,
+			break_required: violations?.filter((v) => v.violationType === "break_required").length || 0,
 			max_uninterrupted:
 				violations?.filter((v) => v.violationType === "max_uninterrupted").length || 0,
-			break_required: violations?.filter((v) => v.violationType === "break_required").length || 0,
 		},
 	};
 
@@ -300,7 +282,7 @@ export function TimeRegulationComplianceView({
 			<Card>
 				<CardContent className="py-8 text-center">
 					<p className="text-destructive">
-						{t("settings.timeRegulations.violationsLoadError", "Failed to load violations")}
+						{t("settings.workPolicies.violationsLoadError", "Failed to load violations")}
 					</p>
 					<Button className="mt-4" variant="outline" onClick={() => refetch()}>
 						<IconRefresh className="mr-2 h-4 w-4" />
@@ -321,13 +303,13 @@ export function TimeRegulationComplianceView({
 					</SelectTrigger>
 					<SelectContent>
 						<SelectItem value="7d">
-							{t("settings.timeRegulations.last7Days", "Last 7 days")}
+							{t("settings.workPolicies.last7Days", "Last 7 days")}
 						</SelectItem>
 						<SelectItem value="30d">
-							{t("settings.timeRegulations.last30Days", "Last 30 days")}
+							{t("settings.workPolicies.last30Days", "Last 30 days")}
 						</SelectItem>
 						<SelectItem value="90d">
-							{t("settings.timeRegulations.last90Days", "Last 90 days")}
+							{t("settings.workPolicies.last90Days", "Last 90 days")}
 						</SelectItem>
 					</SelectContent>
 				</Select>
@@ -340,7 +322,7 @@ export function TimeRegulationComplianceView({
 						disabled={!violations || violations.length === 0}
 					>
 						<IconDownload className="mr-2 h-4 w-4" />
-						{t("settings.timeRegulations.exportCsv", "Export CSV")}
+						{t("settings.workPolicies.exportCsv", "Export CSV")}
 					</Button>
 					<Button variant="ghost" size="icon" onClick={() => refetch()}>
 						<IconRefresh className="h-4 w-4" />
@@ -354,7 +336,7 @@ export function TimeRegulationComplianceView({
 				<Card>
 					<CardHeader className="pb-2">
 						<CardDescription>
-							{t("settings.timeRegulations.totalViolations", "Total Violations")}
+							{t("settings.workPolicies.totalViolations", "Total Violations")}
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
@@ -364,7 +346,7 @@ export function TimeRegulationComplianceView({
 				<Card>
 					<CardHeader className="pb-2">
 						<CardDescription>
-							{t("settings.timeRegulations.unacknowledged", "Unacknowledged")}
+							{t("settings.workPolicies.unacknowledged", "Unacknowledged")}
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
@@ -374,7 +356,7 @@ export function TimeRegulationComplianceView({
 				<Card>
 					<CardHeader className="pb-2">
 						<CardDescription>
-							{t("settings.timeRegulations.dailyExceeded", "Daily Exceeded")}
+							{t("settings.workPolicies.dailyExceeded", "Daily Exceeded")}
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
@@ -384,7 +366,7 @@ export function TimeRegulationComplianceView({
 				<Card>
 					<CardHeader className="pb-2">
 						<CardDescription>
-							{t("settings.timeRegulations.breakMissing", "Break Missing")}
+							{t("settings.workPolicies.breakMissing", "Break Missing")}
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
@@ -399,11 +381,11 @@ export function TimeRegulationComplianceView({
 					<CardContent className="py-12 text-center">
 						<IconCheck className="mx-auto h-12 w-12 text-green-500 mb-4" />
 						<p className="text-lg font-medium">
-							{t("settings.timeRegulations.noViolations", "No violations found")}
+							{t("settings.workPolicies.noViolations", "No violations found")}
 						</p>
 						<p className="text-sm text-muted-foreground mt-1">
 							{t(
-								"settings.timeRegulations.noViolationsDescription",
+								"settings.workPolicies.noViolationsDescription",
 								"All employees are within compliance for the selected period.",
 							)}
 						</p>
@@ -414,85 +396,60 @@ export function TimeRegulationComplianceView({
 					<Table>
 						<TableHeader>
 							<TableRow>
-								<TableHead>{t("settings.timeRegulations.employee", "Employee")}</TableHead>
-								<TableHead>{t("settings.timeRegulations.date", "Date")}</TableHead>
-								<TableHead>{t("settings.timeRegulations.type", "Type")}</TableHead>
-								<TableHead>{t("settings.timeRegulations.details", "Details")}</TableHead>
-								<TableHead>{t("settings.timeRegulations.status", "Status")}</TableHead>
+								<TableHead>{t("settings.workPolicies.employee", "Employee")}</TableHead>
+								<TableHead>{t("settings.workPolicies.date", "Date")}</TableHead>
+								<TableHead>{t("settings.workPolicies.policyName", "Policy")}</TableHead>
+								<TableHead>{t("settings.workPolicies.type", "Type")}</TableHead>
+								<TableHead>{t("settings.workPolicies.status", "Status")}</TableHead>
 								<TableHead className="w-[100px]" />
 							</TableRow>
 						</TableHeader>
 						<TableBody>
-							{violations.map((violation) => {
-								const details =
-									typeof violation.details === "object" && violation.details !== null
-										? (violation.details as Record<string, number | undefined>)
-										: {};
-
-								return (
-									<TableRow key={violation.id}>
-										<TableCell className="font-medium">
-											{violation.employee
-												? `${violation.employee.firstName || ""} ${violation.employee.lastName || ""}`.trim() ||
-													t("common.unknown", "Unknown")
-												: t("common.unknown", "Unknown")}
-										</TableCell>
-										<TableCell>
-											{format(new Date(violation.violationDate), "MMM d, yyyy")}
-										</TableCell>
-										<TableCell>
-											<Badge variant={violationTypeColors[violation.violationType] || "outline"}>
-												{getViolationTypeLabel(violation.violationType) || violation.violationType}
+							{violations.map((violation) => (
+								<TableRow key={violation.id}>
+									<TableCell className="font-medium">
+										{violation.employee
+											? `${violation.employee.firstName || ""} ${violation.employee.lastName || ""}`.trim() ||
+												t("common.unknown", "Unknown")
+											: t("common.unknown", "Unknown")}
+									</TableCell>
+									<TableCell>
+										{DateTime.fromISO(violation.violationDate).toFormat("LLL d, yyyy")}
+									</TableCell>
+									<TableCell className="text-sm text-muted-foreground">
+										{violation.policy?.name || t("common.unknown", "Unknown")}
+									</TableCell>
+									<TableCell>
+										<Badge variant={violationTypeColors[violation.violationType] || "outline"}>
+											{getViolationTypeLabel(violation.violationType) || violation.violationType}
+										</Badge>
+									</TableCell>
+									<TableCell>
+										{violation.acknowledgedAt ? (
+											<Badge variant="secondary">
+												<IconCheck className="mr-1 h-3 w-3" />
+												{t("settings.workPolicies.acknowledged", "Acknowledged")}
 											</Badge>
-										</TableCell>
-										<TableCell className="text-sm text-muted-foreground">
-											{details.actualMinutes && details.limitMinutes && (
-												<span>
-													{formatMinutesToHours(details.actualMinutes)} /{" "}
-													{formatMinutesToHours(details.limitMinutes)}
-												</span>
-											)}
-											{details.breakTakenMinutes !== undefined &&
-												details.breakRequiredMinutes !== undefined && (
-													<span>
-														{t(
-															"settings.timeRegulations.breakTookNeeded",
-															"Took {taken}m, needed {needed}m",
-															{
-																taken: details.breakTakenMinutes,
-																needed: details.breakRequiredMinutes,
-															},
-														)}
-													</span>
-												)}
-										</TableCell>
-										<TableCell>
-											{violation.acknowledgedAt ? (
-												<Badge variant="secondary">
-													<IconCheck className="mr-1 h-3 w-3" />
-													{t("settings.timeRegulations.acknowledged", "Acknowledged")}
-												</Badge>
-											) : (
-												<Badge variant="outline">
-													<IconAlertTriangle className="mr-1 h-3 w-3" />
-													{t("settings.timeRegulations.pending", "Pending")}
-												</Badge>
-											)}
-										</TableCell>
-										<TableCell>
-											{!violation.acknowledgedAt && (
-												<Button
-													variant="ghost"
-													size="sm"
-													onClick={() => handleAcknowledgeClick(violation)}
-												>
-													{t("settings.timeRegulations.acknowledge", "Acknowledge")}
-												</Button>
-											)}
-										</TableCell>
-									</TableRow>
-								);
-							})}
+										) : (
+											<Badge variant="outline">
+												<IconAlertTriangle className="mr-1 h-3 w-3" />
+												{t("settings.workPolicies.pending", "Pending")}
+											</Badge>
+										)}
+									</TableCell>
+									<TableCell>
+										{!violation.acknowledgedAt && (
+											<Button
+												variant="ghost"
+												size="sm"
+												onClick={() => handleAcknowledgeClick(violation)}
+											>
+												{t("settings.workPolicies.acknowledge", "Acknowledge")}
+											</Button>
+										)}
+									</TableCell>
+								</TableRow>
+							))}
 						</TableBody>
 					</Table>
 				</div>
@@ -503,11 +460,11 @@ export function TimeRegulationComplianceView({
 				<DialogContent>
 					<DialogHeader>
 						<DialogTitle>
-							{t("settings.timeRegulations.acknowledgeViolation", "Acknowledge Violation")}
+							{t("settings.workPolicies.acknowledgeViolation", "Acknowledge Violation")}
 						</DialogTitle>
 						<DialogDescription>
 							{t(
-								"settings.timeRegulations.acknowledgeDescription",
+								"settings.workPolicies.acknowledgeDescription",
 								"Add an optional note explaining how this violation was addressed.",
 							)}
 						</DialogDescription>
@@ -519,7 +476,7 @@ export function TimeRegulationComplianceView({
 								<div className="grid grid-cols-2 gap-2 text-sm">
 									<div>
 										<span className="text-muted-foreground">
-											{t("settings.timeRegulations.employeeLabel", "Employee:")}
+											{t("settings.workPolicies.employeeLabel", "Employee:")}
 										</span>{" "}
 										<span className="font-medium">
 											{selectedViolation.employee
@@ -530,15 +487,15 @@ export function TimeRegulationComplianceView({
 									</div>
 									<div>
 										<span className="text-muted-foreground">
-											{t("settings.timeRegulations.dateLabel", "Date:")}
+											{t("settings.workPolicies.dateLabel", "Date:")}
 										</span>{" "}
 										<span className="font-medium">
-											{format(new Date(selectedViolation.violationDate), "MMM d, yyyy")}
+											{DateTime.fromISO(selectedViolation.violationDate).toFormat("LLL d, yyyy")}
 										</span>
 									</div>
 									<div className="col-span-2">
 										<span className="text-muted-foreground">
-											{t("settings.timeRegulations.typeLabel", "Type:")}
+											{t("settings.workPolicies.typeLabel", "Type:")}
 										</span>{" "}
 										<Badge
 											variant={violationTypeColors[selectedViolation.violationType] || "outline"}
@@ -553,13 +510,13 @@ export function TimeRegulationComplianceView({
 
 						<div className="space-y-2">
 							<label className="text-sm font-medium">
-								{t("settings.timeRegulations.note", "Note")} ({t("common.optional", "optional")})
+								{t("settings.workPolicies.note", "Note")} ({t("common.optional", "optional")})
 							</label>
 							<Textarea
 								value={acknowledgeNote}
 								onChange={(e) => setAcknowledgeNote(e.target.value)}
 								placeholder={t(
-									"settings.timeRegulations.notePlaceholder",
+									"settings.workPolicies.notePlaceholder",
 									"How was this violation addressed?",
 								)}
 								rows={3}
@@ -575,7 +532,7 @@ export function TimeRegulationComplianceView({
 							{acknowledgeMutation.isPending && (
 								<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
 							)}
-							{t("settings.timeRegulations.acknowledge", "Acknowledge")}
+							{t("settings.workPolicies.acknowledge", "Acknowledge")}
 						</Button>
 					</DialogFooter>
 				</DialogContent>

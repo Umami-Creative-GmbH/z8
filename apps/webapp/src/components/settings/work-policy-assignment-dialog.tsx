@@ -7,13 +7,11 @@ import { useTranslate } from "@tolgee/react";
 import { useEffect } from "react";
 import { toast } from "sonner";
 import {
-	createTimeRegulationAssignment,
-	getTimeRegulations,
-} from "@/app/[locale]/(app)/settings/time-regulations/actions";
-import {
-	getEmployeesForAssignment,
+	createWorkPolicyAssignment,
 	getTeamsForAssignment,
-} from "@/app/[locale]/(app)/settings/work-schedules/assignment-actions";
+	getWorkPolicies,
+} from "@/app/[locale]/(app)/settings/work-policies/actions";
+import { EmployeeSingleSelect } from "@/components/employee-select";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -39,9 +37,8 @@ import {
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
 import { queryKeys } from "@/lib/query";
-import { timeRegulationAssignmentFormSchema } from "@/lib/time-regulations/validation";
 
-interface TimeRegulationAssignmentDialogProps {
+interface WorkPolicyAssignmentDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	organizationId: string;
@@ -49,38 +46,28 @@ interface TimeRegulationAssignmentDialogProps {
 	onSuccess: () => void;
 }
 
-function formatMinutesToHours(minutes: number | null): string {
-	if (minutes === null) return "";
-	const hours = Math.floor(minutes / 60);
-	return `${hours}h`;
-}
-
-export function TimeRegulationAssignmentDialog({
+export function WorkPolicyAssignmentDialog({
 	open,
 	onOpenChange,
 	organizationId,
 	assignmentType,
 	onSuccess,
-}: TimeRegulationAssignmentDialogProps) {
+}: WorkPolicyAssignmentDialogProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 
 	const form = useForm({
 		defaultValues: {
-			regulationId: "",
+			policyId: "",
 			assignmentType: assignmentType as "organization" | "team" | "employee",
 			teamId: null as string | null,
 			employeeId: null as string | null,
-			effectiveFrom: null as Date | null,
-			effectiveUntil: null as Date | null,
-			isActive: true,
 		},
 		validators: {
 			onChange: ({ value }) => {
-				const result = timeRegulationAssignmentFormSchema.safeParse(value);
-				if (!result.success) {
-					return result.error.issues[0]?.message || "Validation error";
-				}
+				if (!value.policyId) return "Policy is required";
+				if (assignmentType === "team" && !value.teamId) return "Team is required";
+				if (assignmentType === "employee" && !value.employeeId) return "Employee is required";
 				return undefined;
 			},
 		},
@@ -93,24 +80,21 @@ export function TimeRegulationAssignmentDialog({
 	useEffect(() => {
 		if (open) {
 			form.reset({
-				regulationId: "",
+				policyId: "",
 				assignmentType,
 				teamId: null,
 				employeeId: null,
-				effectiveFrom: null,
-				effectiveUntil: null,
-				isActive: true,
 			});
 		}
 	}, [open, assignmentType, form]);
 
-	// Fetch regulations
-	const { data: regulations, isLoading: loadingRegulations } = useQuery({
-		queryKey: queryKeys.timeRegulations.list(organizationId),
+	// Fetch policies
+	const { data: policies, isLoading: loadingPolicies } = useQuery({
+		queryKey: queryKeys.workPolicies.list(organizationId),
 		queryFn: async () => {
-			const result = await getTimeRegulations(organizationId);
+			const result = await getWorkPolicies(organizationId);
 			if (!result.success) {
-				throw new Error(result.error || "Failed to fetch regulations");
+				throw new Error(result.error || "Failed to fetch policies");
 			}
 			return result.data;
 		},
@@ -132,57 +116,42 @@ export function TimeRegulationAssignmentDialog({
 		staleTime: 30 * 1000,
 	});
 
-	// Fetch employees (only for employee assignments)
-	const { data: employees, isLoading: loadingEmployees } = useQuery({
-		queryKey: queryKeys.employees.list(organizationId),
-		queryFn: async () => {
-			const result = await getEmployeesForAssignment(organizationId);
-			if (!result.success) {
-				throw new Error(result.error || "Failed to fetch employees");
-			}
-			return result.data;
-		},
-		enabled: open && assignmentType === "employee",
-		staleTime: 30 * 1000,
-	});
-
 	// Create assignment mutation
 	const createMutation = useMutation({
 		mutationFn: (data: typeof form.state.values) =>
-			createTimeRegulationAssignment(organizationId, {
-				regulationId: data.regulationId,
+			createWorkPolicyAssignment(organizationId, {
+				policyId: data.policyId,
 				assignmentType: data.assignmentType,
-				teamId: assignmentType === "team" ? data.teamId : null,
-				employeeId: assignmentType === "employee" ? data.employeeId : null,
+				teamId: assignmentType === "team" ? (data.teamId ?? undefined) : undefined,
+				employeeId: assignmentType === "employee" ? (data.employeeId ?? undefined) : undefined,
 			}),
 		onSuccess: (result) => {
 			if (result.success) {
-				toast.success(t("settings.timeRegulations.assignmentCreated", "Regulation assigned"));
+				toast.success(t("settings.workPolicies.assignmentCreated", "Policy assigned"));
 				queryClient.invalidateQueries({
-					queryKey: queryKeys.timeRegulations.assignments(organizationId),
+					queryKey: queryKeys.workPolicies.assignments(organizationId),
 				});
 				onSuccess();
 				onOpenChange(false);
 			} else {
 				toast.error(
-					result.error ||
-						t("settings.timeRegulations.assignmentFailed", "Failed to assign regulation"),
+					result.error || t("settings.workPolicies.assignmentFailed", "Failed to assign policy"),
 				);
 			}
 		},
 		onError: () => {
-			toast.error(t("settings.timeRegulations.assignmentFailed", "Failed to assign regulation"));
+			toast.error(t("settings.workPolicies.assignmentFailed", "Failed to assign policy"));
 		},
 	});
 
 	const getDialogTitle = () => {
 		switch (assignmentType) {
 			case "organization":
-				return t("settings.timeRegulations.assignOrg", "Set Organization Default");
+				return t("settings.workPolicies.assignOrg", "Set Organization Default");
 			case "team":
-				return t("settings.timeRegulations.assignTeam", "Assign to Team");
+				return t("settings.workPolicies.assignTeam", "Assign to Team");
 			case "employee":
-				return t("settings.timeRegulations.assignEmployee", "Assign to Employee");
+				return t("settings.workPolicies.assignEmployee", "Assign to Employee");
 		}
 	};
 
@@ -190,34 +159,23 @@ export function TimeRegulationAssignmentDialog({
 		switch (assignmentType) {
 			case "organization":
 				return t(
-					"settings.timeRegulations.assignOrgDescription",
-					"Set the default time regulation for all employees in your organization.",
+					"settings.workPolicies.assignOrgDescription",
+					"Set the default work policy for all employees in your organization.",
 				);
 			case "team":
 				return t(
-					"settings.timeRegulations.assignTeamDescription",
+					"settings.workPolicies.assignTeamDescription",
 					"Override the organization default for a specific team.",
 				);
 			case "employee":
 				return t(
-					"settings.timeRegulations.assignEmployeeDescription",
-					"Override the regulation for a specific employee.",
+					"settings.workPolicies.assignEmployeeDescription",
+					"Override the policy for a specific employee.",
 				);
 		}
 	};
 
-	const formatRegulation = (regulation: NonNullable<typeof regulations>[number]) => {
-		const parts: string[] = [regulation.name];
-		if (regulation.maxDailyMinutes) {
-			parts.push(`max ${formatMinutesToHours(regulation.maxDailyMinutes)}/day`);
-		}
-		return parts.join(" - ");
-	};
-
-	const isLoading =
-		loadingRegulations ||
-		(assignmentType === "team" && loadingTeams) ||
-		(assignmentType === "employee" && loadingEmployees);
+	const isLoading = loadingPolicies || (assignmentType === "team" && loadingTeams);
 
 	const isPending = createMutation.isPending;
 
@@ -237,39 +195,33 @@ export function TimeRegulationAssignmentDialog({
 					}}
 					className="space-y-4"
 				>
-					<form.Field name="regulationId">
+					<form.Field name="policyId">
 						{(field) => (
 							<TFormItem>
 								<TFormLabel hasError={fieldHasError(field)}>
-									{t("settings.timeRegulations.regulation", "Regulation")}
+									{t("settings.workPolicies.policy", "Policy")}
 								</TFormLabel>
 								<TFormControl hasError={fieldHasError(field)}>
 									<Select value={field.state.value} onValueChange={field.handleChange}>
 										<SelectTrigger>
 											<SelectValue
-												placeholder={t(
-													"settings.timeRegulations.selectRegulation",
-													"Select a regulation",
-												)}
+												placeholder={t("settings.workPolicies.selectPolicy", "Select a policy")}
 											/>
 										</SelectTrigger>
 										<SelectContent>
-											{loadingRegulations ? (
+											{loadingPolicies ? (
 												<SelectItem value="" disabled>
 													{t("common.loading", "Loading...")}
 												</SelectItem>
-											) : regulations && regulations.length > 0 ? (
-												regulations.map((regulation) => (
-													<SelectItem key={regulation.id} value={regulation.id}>
-														{formatRegulation(regulation)}
+											) : policies && policies.length > 0 ? (
+												policies.map((policy) => (
+													<SelectItem key={policy.id} value={policy.id}>
+														{policy.name}
 													</SelectItem>
 												))
 											) : (
 												<SelectItem value="" disabled>
-													{t(
-														"settings.timeRegulations.noRegulationsAvailable",
-														"No regulations available",
-													)}
+													{t("settings.workPolicies.noPoliciesAvailable", "No policies available")}
 												</SelectItem>
 											)}
 										</SelectContent>
@@ -277,8 +229,8 @@ export function TimeRegulationAssignmentDialog({
 								</TFormControl>
 								<TFormDescription>
 									{t(
-										"settings.timeRegulations.regulationDescription",
-										"Choose the time regulation to assign",
+										"settings.workPolicies.policySelectDescription",
+										"Choose the work policy to assign",
 									)}
 								</TFormDescription>
 								<TFormMessage field={field} />
@@ -292,13 +244,13 @@ export function TimeRegulationAssignmentDialog({
 							{(field) => (
 								<TFormItem>
 									<TFormLabel hasError={fieldHasError(field)}>
-										{t("settings.timeRegulations.team", "Team")}
+										{t("settings.workPolicies.team", "Team")}
 									</TFormLabel>
 									<TFormControl hasError={fieldHasError(field)}>
 										<Select value={field.state.value || ""} onValueChange={field.handleChange}>
 											<SelectTrigger>
 												<SelectValue
-													placeholder={t("settings.timeRegulations.selectTeam", "Select a team")}
+													placeholder={t("settings.workPolicies.selectTeam", "Select a team")}
 												/>
 											</SelectTrigger>
 											<SelectContent>
@@ -314,7 +266,7 @@ export function TimeRegulationAssignmentDialog({
 													))
 												) : (
 													<SelectItem value="" disabled>
-														{t("settings.timeRegulations.noTeamsAvailable", "No teams available")}
+														{t("settings.workPolicies.noTeamsAvailable", "No teams available")}
 													</SelectItem>
 												)}
 											</SelectContent>
@@ -330,46 +282,12 @@ export function TimeRegulationAssignmentDialog({
 					{assignmentType === "employee" && (
 						<form.Field name="employeeId">
 							{(field) => (
-								<TFormItem>
-									<TFormLabel hasError={fieldHasError(field)}>
-										{t("settings.timeRegulations.employee", "Employee")}
-									</TFormLabel>
-									<TFormControl hasError={fieldHasError(field)}>
-										<Select value={field.state.value || ""} onValueChange={field.handleChange}>
-											<SelectTrigger>
-												<SelectValue
-													placeholder={t(
-														"settings.timeRegulations.selectEmployee",
-														"Select an employee",
-													)}
-												/>
-											</SelectTrigger>
-											<SelectContent>
-												{loadingEmployees ? (
-													<SelectItem value="" disabled>
-														{t("common.loading", "Loading...")}
-													</SelectItem>
-												) : employees && employees.length > 0 ? (
-													employees.map((emp) => (
-														<SelectItem key={emp.id} value={emp.id}>
-															{`${emp.firstName || ""} ${emp.lastName || ""}`.trim() ||
-																emp.employeeNumber ||
-																t("common.unknown", "Unknown")}
-														</SelectItem>
-													))
-												) : (
-													<SelectItem value="" disabled>
-														{t(
-															"settings.timeRegulations.noEmployeesAvailable",
-															"No employees available",
-														)}
-													</SelectItem>
-												)}
-											</SelectContent>
-										</Select>
-									</TFormControl>
-									<TFormMessage field={field} />
-								</TFormItem>
+								<EmployeeSingleSelect
+									value={field.state.value}
+									onChange={field.handleChange}
+									label={t("settings.workPolicies.employee", "Employee")}
+									placeholder={t("settings.workPolicies.selectEmployee", "Select an employee")}
+								/>
 							)}
 						</form.Field>
 					)}
@@ -387,7 +305,7 @@ export function TimeRegulationAssignmentDialog({
 									{(isPending || isSubmitting) && (
 										<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
 									)}
-									{t("settings.timeRegulations.assign", "Assign")}
+									{t("settings.workPolicies.assign", "Assign")}
 								</Button>
 							)}
 						</form.Subscribe>

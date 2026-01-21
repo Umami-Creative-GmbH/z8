@@ -2,7 +2,7 @@
 
 import {
 	IconBuilding,
-	IconGavel,
+	IconFileText,
 	IconLoader2,
 	IconPlus,
 	IconTrash,
@@ -14,10 +14,10 @@ import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
-	deleteTimeRegulationAssignment,
-	getTimeRegulationAssignments,
-	type TimeRegulationAssignmentWithRelations,
-} from "@/app/[locale]/(app)/settings/time-regulations/actions";
+	deleteWorkPolicyAssignment,
+	getWorkPolicyAssignments,
+	type WorkPolicyAssignmentWithDetails,
+} from "@/app/[locale]/(app)/settings/work-policies/actions";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -34,33 +34,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { queryKeys } from "@/lib/query";
 
-interface TimeRegulationAssignmentManagerProps {
+interface WorkPolicyAssignmentManagerProps {
 	organizationId: string;
 	onAssignClick: (type: "organization" | "team" | "employee") => void;
 }
 
-// formatMinutesToHours helper is defined inside the component for i18n access
-
-export function TimeRegulationAssignmentManager({
+export function WorkPolicyAssignmentManager({
 	organizationId,
 	onAssignClick,
-}: TimeRegulationAssignmentManagerProps) {
+}: WorkPolicyAssignmentManagerProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 	const [selectedAssignment, setSelectedAssignment] =
-		useState<TimeRegulationAssignmentWithRelations | null>(null);
-
-	// Helper function to format minutes to hours with translation
-	const formatMinutesToHours = (minutes: number | null): string => {
-		if (minutes === null) return "—";
-		const hours = Math.floor(minutes / 60);
-		const mins = minutes % 60;
-		if (mins === 0) {
-			return t("settings.timeRegulations.hoursFormat", "{hours}h", { hours });
-		}
-		return t("settings.timeRegulations.hoursMinutesFormat", "{hours}h {mins}m", { hours, mins });
-	};
+		useState<WorkPolicyAssignmentWithDetails | null>(null);
 
 	// Fetch assignments
 	const {
@@ -68,44 +55,44 @@ export function TimeRegulationAssignmentManager({
 		isLoading,
 		error,
 	} = useQuery({
-		queryKey: queryKeys.timeRegulations.assignments(organizationId),
+		queryKey: queryKeys.workPolicies.assignments(organizationId),
 		queryFn: async () => {
-			const result = await getTimeRegulationAssignments(organizationId);
+			const result = await getWorkPolicyAssignments(organizationId);
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch assignments");
 			}
-			return result.data as TimeRegulationAssignmentWithRelations[];
+			return result.data as WorkPolicyAssignmentWithDetails[];
 		},
-		staleTime: 30 * 1000, // Consider data fresh for 30 seconds
-		refetchOnWindowFocus: false, // Don't refetch on window focus
+		staleTime: 30 * 1000,
+		refetchOnWindowFocus: false,
 	});
 
 	// Delete mutation
 	const deleteMutation = useMutation({
-		mutationFn: (assignmentId: string) => deleteTimeRegulationAssignment(assignmentId),
+		mutationFn: (assignmentId: string) => deleteWorkPolicyAssignment(assignmentId),
 		onSuccess: (result) => {
 			if (result.success) {
-				toast.success(t("settings.timeRegulations.assignmentDeleted", "Assignment removed"));
+				toast.success(t("settings.workPolicies.assignmentDeleted", "Assignment removed"));
 				queryClient.invalidateQueries({
-					queryKey: queryKeys.timeRegulations.assignments(organizationId),
+					queryKey: queryKeys.workPolicies.assignments(organizationId),
 				});
 				setDeleteDialogOpen(false);
 				setSelectedAssignment(null);
 			} else {
 				toast.error(
 					result.error ||
-						t("settings.timeRegulations.assignmentDeleteFailed", "Failed to remove assignment"),
+						t("settings.workPolicies.assignmentDeleteFailed", "Failed to remove assignment"),
 				);
 			}
 		},
 		onError: () => {
 			toast.error(
-				t("settings.timeRegulations.assignmentDeleteFailed", "Failed to remove assignment"),
+				t("settings.workPolicies.assignmentDeleteFailed", "Failed to remove assignment"),
 			);
 		},
 	});
 
-	const handleDeleteClick = (assignment: TimeRegulationAssignmentWithRelations) => {
+	const handleDeleteClick = (assignment: WorkPolicyAssignmentWithDetails) => {
 		setSelectedAssignment(assignment);
 		setDeleteDialogOpen(true);
 	};
@@ -144,41 +131,12 @@ export function TimeRegulationAssignmentManager({
 			<Card>
 				<CardContent className="py-8 text-center">
 					<p className="text-destructive">
-						{t("settings.timeRegulations.assignmentsLoadError", "Failed to load assignments")}
+						{t("settings.workPolicies.assignmentsLoadError", "Failed to load assignments")}
 					</p>
 				</CardContent>
 			</Card>
 		);
 	}
-
-	const formatRegulation = (regulation: TimeRegulationAssignmentWithRelations["regulation"]) => {
-		const parts: string[] = [];
-		if (regulation.maxDailyMinutes) {
-			parts.push(
-				t("settings.timeRegulations.perDay", "{hours}/day", {
-					hours: formatMinutesToHours(regulation.maxDailyMinutes),
-				}),
-			);
-		}
-		if (regulation.maxWeeklyMinutes) {
-			parts.push(
-				t("settings.timeRegulations.perWeek", "{hours}/week", {
-					hours: formatMinutesToHours(regulation.maxWeeklyMinutes),
-				}),
-			);
-		}
-		const breakRulesCount = regulation.breakRules?.length || 0;
-		if (breakRulesCount > 0) {
-			parts.push(
-				t("settings.timeRegulations.breakRuleCount", "{count} break rule(s)", {
-					count: breakRulesCount,
-				}),
-			);
-		}
-		return parts.length > 0
-			? parts.join(", ")
-			: t("settings.timeRegulations.noLimitsSet", "No limits set");
-	};
 
 	return (
 		<>
@@ -190,12 +148,12 @@ export function TimeRegulationAssignmentManager({
 							<IconBuilding className="h-5 w-5 text-muted-foreground" />
 							<div>
 								<CardTitle className="text-base">
-									{t("settings.timeRegulations.orgLevel", "Organization Default")}
+									{t("settings.workPolicies.orgLevel", "Organization Default")}
 								</CardTitle>
 								<CardDescription>
 									{t(
-										"settings.timeRegulations.orgLevelDescription",
-										"Default time regulation applied to all employees unless overridden",
+										"settings.workPolicies.orgLevelDescription",
+										"Default work policy applied to all employees unless overridden",
 									)}
 								</CardDescription>
 							</div>
@@ -205,11 +163,10 @@ export function TimeRegulationAssignmentManager({
 						{orgAssignment ? (
 							<div className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
 								<div className="flex items-center gap-3">
-									<IconGavel className="h-5 w-5 text-muted-foreground" />
+									<IconFileText className="h-5 w-5 text-muted-foreground" />
 									<div>
-										<p className="font-medium">{orgAssignment.regulation.name}</p>
-										<p className="text-xs text-muted-foreground">
-											{formatRegulation(orgAssignment.regulation)}
+										<p className="font-medium">
+											{orgAssignment.policy?.name || t("common.unknown", "Unknown")}
 										</p>
 									</div>
 								</div>
@@ -225,11 +182,11 @@ export function TimeRegulationAssignmentManager({
 						) : (
 							<div className="flex items-center justify-between p-3 rounded-lg border border-dashed">
 								<p className="text-sm text-muted-foreground">
-									{t("settings.timeRegulations.noOrgAssignment", "No organization default set")}
+									{t("settings.workPolicies.noOrgAssignment", "No organization default set")}
 								</p>
 								<Button onClick={() => onAssignClick("organization")} size="sm" variant="outline">
 									<IconPlus className="mr-2 h-4 w-4" />
-									{t("settings.timeRegulations.assignRegulation", "Assign Regulation")}
+									{t("settings.workPolicies.assignPolicy", "Assign Policy")}
 								</Button>
 							</div>
 						)}
@@ -244,7 +201,7 @@ export function TimeRegulationAssignmentManager({
 								<IconUsers className="h-5 w-5 text-muted-foreground" />
 								<div>
 									<CardTitle className="text-base">
-										{t("settings.timeRegulations.teamLevel", "Team Overrides")}
+										{t("settings.workPolicies.teamLevel", "Team Overrides")}
 										{teamAssignments.length > 0 && (
 											<Badge variant="secondary" className="ml-2">
 												{teamAssignments.length}
@@ -253,7 +210,7 @@ export function TimeRegulationAssignmentManager({
 									</CardTitle>
 									<CardDescription>
 										{t(
-											"settings.timeRegulations.teamLevelDescription",
+											"settings.workPolicies.teamLevelDescription",
 											"Override the organization default for specific teams",
 										)}
 									</CardDescription>
@@ -261,14 +218,14 @@ export function TimeRegulationAssignmentManager({
 							</div>
 							<Button onClick={() => onAssignClick("team")} size="sm" variant="outline">
 								<IconPlus className="mr-2 h-4 w-4" />
-								{t("settings.timeRegulations.addTeam", "Add Team")}
+								{t("settings.workPolicies.addTeam", "Add Team")}
 							</Button>
 						</div>
 					</CardHeader>
 					<CardContent>
 						{teamAssignments.length === 0 ? (
 							<p className="text-sm text-muted-foreground text-center py-4">
-								{t("settings.timeRegulations.noTeamAssignments", "No team-specific regulations")}
+								{t("settings.workPolicies.noTeamAssignments", "No team-specific policies")}
 							</p>
 						) : (
 							<div className="space-y-2">
@@ -284,7 +241,7 @@ export function TimeRegulationAssignmentManager({
 													{assignment.team?.name || t("common.unknownTeam", "Unknown Team")}
 												</p>
 												<p className="text-xs text-muted-foreground">
-													{assignment.regulation.name}
+													{assignment.policy?.name || t("common.unknown", "Unknown")}
 												</p>
 											</div>
 										</div>
@@ -311,7 +268,7 @@ export function TimeRegulationAssignmentManager({
 								<IconUser className="h-5 w-5 text-muted-foreground" />
 								<div>
 									<CardTitle className="text-base">
-										{t("settings.timeRegulations.employeeLevel", "Employee Overrides")}
+										{t("settings.workPolicies.employeeLevel", "Employee Overrides")}
 										{employeeAssignments.length > 0 && (
 											<Badge variant="secondary" className="ml-2">
 												{employeeAssignments.length}
@@ -320,25 +277,22 @@ export function TimeRegulationAssignmentManager({
 									</CardTitle>
 									<CardDescription>
 										{t(
-											"settings.timeRegulations.employeeLevelDescription",
-											"Override regulations for specific employees",
+											"settings.workPolicies.employeeLevelDescription",
+											"Override policies for specific employees",
 										)}
 									</CardDescription>
 								</div>
 							</div>
 							<Button onClick={() => onAssignClick("employee")} size="sm" variant="outline">
 								<IconPlus className="mr-2 h-4 w-4" />
-								{t("settings.timeRegulations.addEmployee", "Add Employee")}
+								{t("settings.workPolicies.addEmployee", "Add Employee")}
 							</Button>
 						</div>
 					</CardHeader>
 					<CardContent>
 						{employeeAssignments.length === 0 ? (
 							<p className="text-sm text-muted-foreground text-center py-4">
-								{t(
-									"settings.timeRegulations.noEmployeeAssignments",
-									"No employee-specific regulations",
-								)}
+								{t("settings.workPolicies.noEmployeeAssignments", "No employee-specific policies")}
 							</p>
 						) : (
 							<div className="space-y-2">
@@ -357,7 +311,7 @@ export function TimeRegulationAssignmentManager({
 														: t("common.unknownEmployee", "Unknown Employee")}
 												</p>
 												<p className="text-xs text-muted-foreground">
-													{assignment.regulation.name}
+													{assignment.policy?.name || t("common.unknown", "Unknown")}
 												</p>
 											</div>
 										</div>
@@ -381,12 +335,12 @@ export function TimeRegulationAssignmentManager({
 				<AlertDialogContent>
 					<AlertDialogHeader>
 						<AlertDialogTitle>
-							{t("settings.timeRegulations.removeAssignment", "Remove Assignment")}
+							{t("settings.workPolicies.removeAssignment", "Remove Assignment")}
 						</AlertDialogTitle>
 						<AlertDialogDescription>
 							{t(
-								"settings.timeRegulations.removeAssignmentDescription",
-								"Are you sure you want to remove this regulation assignment? The affected employees will inherit their regulation from the next level up.",
+								"settings.workPolicies.removeAssignmentDescription",
+								"Are you sure you want to remove this policy assignment? The affected employees will inherit their policy from the next level up.",
 							)}
 						</AlertDialogDescription>
 					</AlertDialogHeader>
