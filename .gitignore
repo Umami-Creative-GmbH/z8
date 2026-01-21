@@ -73,3 +73,4 @@ tmpclaude*-cwd
 # Vault keys and data (contains secrets)
 .vault-keys
 .vault-data/
+deploy/.vault-data/

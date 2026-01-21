@@ -23,7 +23,20 @@
     "build:desktop": "turbo build --filter=desktop",
     "build:mobile": "turbo build --filter=mobile",
     "dev:docs": "turbo dev --filter=docs",
-    "build:docs": "turbo build --filter=docs"
+    "build:docs": "turbo build --filter=docs",
+    "docker:up": "docker compose -f deploy/compose/docker-compose.yml up -d",
+    "docker:down": "docker compose -f deploy/compose/docker-compose.yml down",
+    "docker:logs": "docker compose -f deploy/compose/docker-compose.yml logs -f",
+    "docker:ps": "docker compose -f deploy/compose/docker-compose.yml ps",
+    "docker:build": "docker build --target webapp -t z8-webapp:latest .",
+    "docker:build:webapp": "docker build --target webapp -t z8-webapp:latest .",
+    "docker:build:worker": "docker build --target worker -t z8-worker:latest .",
+    "docker:build:migration": "docker build --target migration -t z8-migration:latest .",
+    "docker:build:seed": "docker build --target db-seed -t z8-db-seed:latest .",
+    "docker:build:all": "docker build --target webapp -t z8-webapp:latest . && docker build --target worker -t z8-worker:latest . && docker build --target migration -t z8-migration:latest . && docker build --target db-seed -t z8-db-seed:latest .",
+    "docker:prod:up": "docker compose -f docker-compose.prod.yml up -d",
+    "docker:prod:down": "docker compose -f docker-compose.prod.yml down",
+    "docker:prod:logs": "docker compose -f docker-compose.prod.yml logs -f"
   },
   "devDependencies": {
     "@esbuild/win32-x64": "^0.27.2",

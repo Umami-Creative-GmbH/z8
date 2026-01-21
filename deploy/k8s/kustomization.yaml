@@ -1,0 +1,38 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+metadata:
+  name: z8
+
+namespace: z8
+
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - secret.yaml
+  - webapp.yaml
+  - worker.yaml
+  - migration.yaml
+  # Optional resources (apply separately when needed):
+  # - db-seed.yaml
+  # - ingress.yaml
+
+commonLabels:
+  app.kubernetes.io/name: z8
+  app.kubernetes.io/version: "0.1.0"
+  app.kubernetes.io/managed-by: kustomize
+
+# Image configuration (override in overlays)
+images:
+  - name: z8-webapp
+    newName: your-registry.com/z8-webapp
+    newTag: latest
+  - name: z8-worker
+    newName: your-registry.com/z8-worker
+    newTag: latest
+  - name: z8-migration
+    newName: your-registry.com/z8-migration
+    newTag: latest
+  - name: z8-db-seed
+    newName: your-registry.com/z8-db-seed
+    newTag: latest

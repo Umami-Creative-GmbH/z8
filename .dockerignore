@@ -1,0 +1,89 @@
+# ===========================================
+# Docker Build Context Exclusions
+# ===========================================
+# Keep build context small and prevent cache invalidation
+
+# Dependencies (will be installed fresh in container)
+node_modules
+**/node_modules
+.pnpm-store
+
+# Build outputs
+.next
+**/.next
+.turbo
+**/.turbo
+dist
+**/dist
+build
+**/build
+out
+*.tsbuildinfo
+
+# Git
+.git
+.gitignore
+.github
+
+# IDE and editor
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Testing
+coverage
+.nyc_output
+**/*.test.ts
+**/*.spec.ts
+**/__tests__
+vitest.config.*
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment files (secrets)
+.env
+.env.*
+!.env.example
+!.env.template
+apps/webapp/.env.local
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Certificates and keys
+*.pem
+*.key
+*.crt
+
+# Documentation (not needed at runtime)
+*.md
+!apps/webapp/README.md
+docs/
+
+# Other apps not needed for webapp container
+apps/docs
+apps/desktop
+apps/mobile
+
+# Deployment artifacts (not needed in image)
+deploy/.vault-data
+deploy/k8s
+
+# Package manager config
+.npmrc
+.yarnrc
+
+# Drizzle migrations (applied via init container)
+apps/webapp/drizzle
+
+# License report (generated at build time)
+apps/webapp/src/data/licenses.json

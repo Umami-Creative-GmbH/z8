@@ -1,0 +1,335 @@
+# =============================================================================
+# Z8 Production Docker Compose
+# =============================================================================
+# Full production stack including infrastructure and application services.
+#
+# Usage:
+#   # Build all images first
+#   docker compose -f docker-compose.prod.yml build
+#
+#   # Start infrastructure only
+#   docker compose -f docker-compose.prod.yml up -d db pgbouncer valkey
+#
+#   # Run migrations
+#   docker compose -f docker-compose.prod.yml up migration
+#
+#   # Start full stack
+#   docker compose -f docker-compose.prod.yml up -d
+#
+#   # Scale webapp horizontally
+#   docker compose -f docker-compose.prod.yml up -d --scale webapp=3
+#
+#   # Seed database (optional, use --profile seed)
+#   docker compose -f docker-compose.prod.yml --profile seed up db-seed
+#
+#   # View logs
+#   docker compose -f docker-compose.prod.yml logs -f webapp worker
+# =============================================================================
+
+name: z8
+
+services:
+  # ===========================================================================
+  # Infrastructure Services
+  # ===========================================================================
+
+  db:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-z8}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${POSTGRES_DB:-z8}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432" # Direct access for admin/migrations
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-z8}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 2G
+        reservations:
+          cpus: "0.5"
+          memory: 512M
+
+  pgbouncer:
+    image: edoburu/pgbouncer:latest
+    restart: unless-stopped
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: ${POSTGRES_USER:-z8}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      DB_NAME: ${POSTGRES_DB:-z8}
+      LISTEN_PORT: 5432
+      POOL_MODE: transaction
+      MAX_CLIENT_CONN: 1000
+      DEFAULT_POOL_SIZE: 50
+      MIN_POOL_SIZE: 10
+      RESERVE_POOL_SIZE: 10
+      IGNORE_STARTUP_PARAMETERS: extra_float_digits
+      # Use md5 auth for simpler setup with password passthrough
+      # For scram-sha-256 in production, use a proper userlist.txt file
+      AUTH_TYPE: md5
+    ports:
+      - "5432:5432" # App connections go here
+    depends_on:
+      db:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 256M
+        reservations:
+          cpus: "0.1"
+          memory: 64M
+
+  valkey:
+    image: valkey/valkey:9-alpine
+    restart: unless-stopped
+    command: >
+      valkey-server
+      --save 60 1000
+      --loglevel warning
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      ${VALKEY_PASSWORD:+--requirepass ${VALKEY_PASSWORD}}
+    volumes:
+      - valkey_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 512M
+        reservations:
+          cpus: "0.1"
+          memory: 128M
+
+  # Bull Board - Job Queue Dashboard
+  # Access at http://localhost:3100
+  bullboard:
+    image: deadly0/bull-board:latest
+    restart: unless-stopped
+    environment:
+      REDIS_HOST: valkey
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${VALKEY_PASSWORD:-}
+      REDIS_USE_TLS: "false"
+      BULL_PREFIX: bull
+      USER_LOGIN: ${BULL_BOARD_USER:-admin}
+      USER_PASSWORD: ${BULL_BOARD_PASSWORD:-admin}
+    ports:
+      - "3100:3000"
+    depends_on:
+      valkey:
+        condition: service_healthy
+
+  # HashiCorp Vault (optional - for per-org email config)
+  vault:
+    image: hashicorp/vault:1.18
+    restart: unless-stopped
+    environment:
+      VAULT_ADDR: "http://127.0.0.1:8200"
+      VAULT_LOCAL_CONFIG: |
+        {
+          "storage": {"file": {"path": "/vault/data"}},
+          "listener": {"tcp": {"address": "0.0.0.0:8200", "tls_disable": true}},
+          "ui": true,
+          "disable_mlock": true
+        }
+    cap_add:
+      - IPC_LOCK
+    volumes:
+      - vault_data:/vault/data
+    ports:
+      - "8200:8200"
+    command: server
+    profiles:
+      - vault # Only start when explicitly requested
+
+  # ===========================================================================
+  # Application Services
+  # ===========================================================================
+
+  # Database Migrations (runs once and exits)
+  migration:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: migration
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-z8}
+      POSTGRES_USER: ${POSTGRES_USER:-z8}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+
+  # Database Seeding (optional, use --profile seed)
+  db-seed:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: db-seed
+    environment:
+      POSTGRES_HOST: pgbouncer
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-z8}
+      POSTGRES_USER: ${POSTGRES_USER:-z8}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    depends_on:
+      migration:
+        condition: service_completed_successfully
+    restart: "no"
+    profiles:
+      - seed # Only run when explicitly requested
+
+  # Next.js Web Application
+  webapp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: webapp
+    restart: unless-stopped
+    environment:
+      # Database (via PgBouncer)
+      POSTGRES_HOST: pgbouncer
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-z8}
+      POSTGRES_USER: ${POSTGRES_USER:-z8}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      # Cache
+      VALKEY_HOST: valkey
+      VALKEY_PORT: 6379
+      VALKEY_PASSWORD: ${VALKEY_PASSWORD:-}
+      # Auth
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET is required}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000}
+      # App
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+      NODE_ENV: production
+      # OAuth (optional)
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
+      # Email (optional)
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      EMAIL_FROM: ${EMAIL_FROM:-noreply@example.com}
+      # Observability (optional)
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      # Cron secret (for HTTP-based cron if still used)
+      CRON_SECRET: ${CRON_SECRET:-}
+      # Vault (optional)
+      VAULT_ADDR: ${VAULT_ADDR:-}
+      VAULT_TOKEN: ${VAULT_TOKEN:-}
+    ports:
+      - "3000:3000"
+    depends_on:
+      pgbouncer:
+        condition: service_started
+      valkey:
+        condition: service_healthy
+      migration:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 40s
+      retries: 3
+    deploy:
+      replicas: 1 # Scale with: docker compose up -d --scale webapp=3
+      resources:
+        limits:
+          cpus: "2"
+          memory: 2G
+        reservations:
+          cpus: "0.5"
+          memory: 512M
+
+  # BullMQ Worker (processes jobs and cron tasks)
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: worker
+    restart: unless-stopped
+    environment:
+      # Database (via PgBouncer)
+      POSTGRES_HOST: pgbouncer
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-z8}
+      POSTGRES_USER: ${POSTGRES_USER:-z8}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      # Cache/Queue
+      VALKEY_HOST: valkey
+      VALKEY_PORT: 6379
+      VALKEY_PASSWORD: ${VALKEY_PASSWORD:-}
+      # Worker config
+      WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-5}
+      ENABLE_CRON_JOBS: ${ENABLE_CRON_JOBS:-true}
+      NODE_ENV: production
+      # Email (for email jobs)
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      EMAIL_FROM: ${EMAIL_FROM:-noreply@example.com}
+      # Observability
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    depends_on:
+      valkey:
+        condition: service_healthy
+      pgbouncer:
+        condition: service_started
+      webapp:
+        condition: service_started
+    deploy:
+      replicas: 1 # Scale based on job queue depth
+      resources:
+        limits:
+          cpus: "2"
+          memory: 1G
+        reservations:
+          cpus: "0.25"
+          memory: 256M
+
+# ===========================================================================
+# Volumes
+# ===========================================================================
+volumes:
+  db_data:
+    driver: local
+  valkey_data:
+    driver: local
+  vault_data:
+    driver: local
+
+# ===========================================================================
+# Networks (optional - use default bridge network)
+# ===========================================================================
+# networks:
+#   z8-network:
+#     driver: bridge

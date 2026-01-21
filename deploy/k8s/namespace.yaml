@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: z8
+  labels:
+    app.kubernetes.io/name: z8
+    app.kubernetes.io/managed-by: kubectl

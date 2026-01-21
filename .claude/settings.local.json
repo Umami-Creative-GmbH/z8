@@ -93,7 +93,8 @@
       "Bash(pnpm --filter webapp tsc:*)",
       "Bash(node scripts/generate-icons.mjs:*)",
       "Bash(pnpm tauri icon:*)",
-      "Bash(cargo check:*)"
+      "Bash(cargo check:*)",
+      "Bash(git -C \"X:\\\\umami-creative\\\\z8\" status --short)"
     ]
   },
   "enableAllProjectMcpServers": true,

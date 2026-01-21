@@ -81,7 +81,11 @@
       "Bash(ConvertFrom-Json)",
       "Bash(Select-Object -ExpandProperty sources)",
       "Bash(Select-Object -First 30)",
-      "WebFetch(domain:www.better-auth.com)"
+      "WebFetch(domain:www.better-auth.com)",
+      "Bash(pnpm exec next lint:*)",
+      "Bash(pnpm next lint:*)",
+      "Bash(pnpm lint:*)",
+      "Bash(pnpm remove:*)"
     ]
   },
   "enabledMcpjsonServers": [
