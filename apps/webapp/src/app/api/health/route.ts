@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { connection, NextResponse } from "next/server";
 import { checkHealth } from "@/lib/health";
 
 /**
@@ -10,8 +10,13 @@ import { checkHealth } from "@/lib/health";
  * - 503: Critical services (database) unavailable
  *
  * Response includes detailed status for each service with latency metrics
+ *
+ * Note: connection() opts out of caching - no need for `export const dynamic`
+ * with Next.js 16 cacheComponents enabled.
  */
 export async function GET() {
+	// Opt out of caching - health checks must run at request time
+	await connection();
 	const result = await checkHealth();
 
 	const statusCode = result.status === "unhealthy" ? 503 : 200;

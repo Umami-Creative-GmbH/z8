@@ -12,6 +12,7 @@
  */
 
 import { type ConnectionOptions, type Job, type JobsOptions, Queue, Worker } from "bullmq";
+import type { CronJobData, CronJobName, CronJobResult } from "@/lib/cron/registry";
 import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("JobQueue");
@@ -56,7 +57,7 @@ export interface CleanupJobData {
 	task: "expired_exports" | "old_notifications" | "old_audit_logs";
 }
 
-export type JobData = ReportJobData | ExportJobData | EmailJobData | CleanupJobData;
+export type JobData = ReportJobData | ExportJobData | EmailJobData | CleanupJobData | CronJobData;
 
 // Job result interfaces
 export interface JobResult {
@@ -156,6 +157,30 @@ export async function addCleanupJob(
 	data: Omit<CleanupJobData, "type">,
 ): Promise<Job<JobData, JobResult>> {
 	return addJob("cleanup", { ...data, type: "cleanup" }, { priority: 10 }); // Low priority
+}
+
+/**
+ * Add a cron job to the queue
+ *
+ * Used for manual triggers via API. The job will be processed by the worker
+ * using the cron job registry's processor.
+ */
+export async function addCronJob<T extends CronJobName>(
+	data: CronJobData<T>,
+	options?: Partial<JobsOptions>,
+): Promise<Job<CronJobData<T>, CronJobResult<T>>> {
+	const queue = getJobQueue();
+	const job = await queue.add(data.type, data as JobData, {
+		...defaultJobOptions,
+		...options,
+	});
+
+	logger.info(
+		{ jobId: job.id, type: data.type, executionId: data.executionId },
+		"Cron job added to queue",
+	);
+
+	return job as unknown as Job<CronJobData<T>, CronJobResult<T>>;
 }
 
 /**
