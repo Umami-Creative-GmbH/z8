@@ -7,6 +7,13 @@ import { AuthFormWrapper } from "@/components/auth-form-wrapper";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
 import { Link, useRouter } from "@/navigation";
+import { processPendingInviteCode } from "@/app/[locale]/(app)/settings/organizations/invite-code-actions";
+
+type JoinResult = {
+	success: boolean;
+	status: "pending" | "approved";
+	organizationName: string;
+} | null;
 
 export default function VerifyEmailPage() {
 	const { t } = useTranslate();
@@ -14,6 +21,7 @@ export default function VerifyEmailPage() {
 	const searchParams = useSearchParams();
 	const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
 	const [errorMessage, setErrorMessage] = useState<string>("");
+	const [joinResult, setJoinResult] = useState<JoinResult>(null);
 
 	useEffect(() => {
 		const verifyEmail = async () => {
@@ -38,9 +46,27 @@ export default function VerifyEmailPage() {
 						result.error.message || t("auth.verification-failed-error", "Verification failed"),
 					);
 				} else {
+					// Process any pending invite code after successful verification
+					let pendingJoinResult: JoinResult = null;
+					try {
+						const pendingResult = await processPendingInviteCode();
+						if (pendingResult.success && pendingResult.data) {
+							pendingJoinResult = pendingResult.data;
+							setJoinResult(pendingJoinResult);
+						}
+					} catch {
+						// Silently ignore errors - user can still proceed
+					}
+
 					setStatus("success");
 					setTimeout(() => {
-						router.push("/sign-in");
+						// If user joined an organization, go to onboarding
+						// Otherwise, go to sign-in
+						if (pendingJoinResult) {
+							router.push("/onboarding");
+						} else {
+							router.push("/sign-in");
+						}
 					}, 3000);
 				}
 			} catch (err) {
@@ -80,11 +106,35 @@ export default function VerifyEmailPage() {
 							"Your email has been successfully verified. You can now sign in to your account.",
 						)}
 					</p>
+					{joinResult && (
+						<div className="mb-4 rounded-lg border bg-muted/50 p-4">
+							<p className="font-medium">
+								{joinResult.status === "approved"
+									? t(
+											"auth.joined-organization",
+											"You've joined {organization}!",
+											{ organization: joinResult.organizationName },
+										)
+									: t(
+											"auth.pending-organization-approval",
+											"Your request to join {organization} is pending approval.",
+											{ organization: joinResult.organizationName },
+										)}
+							</p>
+						</div>
+					)}
 					<p className="text-sm text-muted-foreground">
-						{t("auth.redirecting-to-signin", "Redirecting to sign in page in 3 seconds...")}
+						{joinResult
+							? t("auth.redirecting-to-onboarding", "Redirecting to complete setup...")
+							: t("auth.redirecting-to-signin", "Redirecting to sign in page in 3 seconds...")}
 					</p>
-					<Button className="mt-4 w-full" onClick={() => router.push("/sign-in")}>
-						{t("auth.sign-in-now", "Sign in now")}
+					<Button
+						className="mt-4 w-full"
+						onClick={() => router.push(joinResult ? "/onboarding" : "/sign-in")}
+					>
+						{joinResult
+							? t("auth.continue-setup", "Continue Setup")
+							: t("auth.sign-in-now", "Sign in now")}
 					</Button>
 				</div>
 			)}

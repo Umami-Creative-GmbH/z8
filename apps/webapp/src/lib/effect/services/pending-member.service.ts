@@ -6,14 +6,13 @@ import {
 	employee,
 	team,
 	teamPermissions,
-	type memberApproval as MemberApprovalTable,
 } from "@/db/schema";
 import { member, organization, user } from "@/db/auth-schema";
 import { type DatabaseError, NotFoundError, ValidationError, AuthorizationError } from "../errors";
 import { DatabaseService } from "./database.service";
 
 // Type definitions
-type MemberApproval = typeof MemberApprovalTable.$inferSelect;
+type MemberApproval = typeof memberApproval.$inferSelect;
 type ApprovalStatus = "pending" | "approved" | "rejected";
 
 export interface PendingMember {

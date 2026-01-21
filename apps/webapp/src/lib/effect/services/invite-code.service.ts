@@ -137,6 +137,24 @@ export class InviteCodeService extends Context.Tag("InviteCodeService")<
 
 		// Code generation
 		readonly generateCode: () => Effect.Effect<string, never>;
+
+		// Pending invite code methods (for registration flow)
+		readonly setPendingInviteCode: (
+			userId: string,
+			code: string,
+		) => Effect.Effect<void, NotFoundError | ValidationError | DatabaseError>;
+
+		readonly processPendingInviteCode: (
+			userId: string,
+		) => Effect.Effect<UseInviteCodeResult | null, ValidationError | NotFoundError | DatabaseError>;
+
+		readonly clearPendingInviteCode: (
+			userId: string,
+		) => Effect.Effect<void, DatabaseError>;
+
+		readonly getPendingInviteCode: (
+			userId: string,
+		) => Effect.Effect<string | null, DatabaseError>;
 	}
 >() {}
 
@@ -710,6 +728,219 @@ export const InviteCodeServiceLive = Layer.effect(
 				}),
 
 			generateCode: () => Effect.succeed(generateReadableCode()),
+
+			setPendingInviteCode: (userId, code) =>
+				Effect.gen(function* (_) {
+					// Validate the code first to ensure it's valid before storing
+					const validationResult = yield* _(
+						dbService.query("validateCodeForPending", async () => {
+							return await dbService.db.query.inviteCode.findFirst({
+								where: eq(inviteCode.code, code.toUpperCase()),
+							});
+						}),
+					);
+
+					if (!validationResult) {
+						yield* _(
+							Effect.fail(
+								new ValidationError({
+									message: "Invalid invite code",
+									field: "code",
+								}),
+							),
+						);
+					}
+
+					const { usable, reason } = isCodeUsable(validationResult!);
+					if (!usable) {
+						yield* _(
+							Effect.fail(
+								new ValidationError({
+									message: reason || "Code is not usable",
+									field: "code",
+								}),
+							),
+						);
+					}
+
+					// Store the pending invite code on the user
+					yield* _(
+						dbService.query("setPendingInviteCode", async () => {
+							await dbService.db
+								.update(user)
+								.set({ pendingInviteCode: code.toUpperCase() })
+								.where(eq(user.id, userId));
+						}),
+					);
+				}),
+
+			processPendingInviteCode: (userId) =>
+				Effect.gen(function* (_) {
+					// Get the user's pending invite code
+					const userRecord = yield* _(
+						dbService.query("getUserPendingCode", async () => {
+							return await dbService.db.query.user.findFirst({
+								where: eq(user.id, userId),
+								columns: { id: true, pendingInviteCode: true },
+							});
+						}),
+					);
+
+					if (!userRecord || !userRecord.pendingInviteCode) {
+						return null;
+					}
+
+					const code = userRecord.pendingInviteCode;
+
+					// Clear the pending code first (regardless of outcome)
+					yield* _(
+						dbService.query("clearPendingInviteCode", async () => {
+							await dbService.db
+								.update(user)
+								.set({ pendingInviteCode: null })
+								.where(eq(user.id, userId));
+						}),
+					);
+
+					// Now use the code
+					const validationResult = yield* _(
+						dbService.query("findInviteCode", async () => {
+							return await dbService.db.query.inviteCode.findFirst({
+								where: eq(inviteCode.code, code.toUpperCase()),
+								with: {
+									organization: {
+										columns: {
+											id: true,
+											name: true,
+											slug: true,
+										},
+									},
+								},
+							});
+						}),
+					);
+
+					if (!validationResult) {
+						// Code is no longer valid, but we already cleared it
+						return null;
+					}
+
+					const inviteCodeRecord = validationResult;
+					const { usable } = isCodeUsable(inviteCodeRecord);
+
+					if (!usable) {
+						// Code is expired/exhausted, but we already cleared it
+						return null;
+					}
+
+					// Check if user is already a member of this organization
+					const existingMember = yield* _(
+						dbService.query("checkExistingMember", async () => {
+							return await dbService.db.query.member.findFirst({
+								where: and(
+									eq(member.userId, userId),
+									eq(member.organizationId, inviteCodeRecord.organizationId),
+								),
+							});
+						}),
+					);
+
+					if (existingMember) {
+						// User is already a member, nothing to do
+						return {
+							success: true,
+							memberId: existingMember.id,
+							status: "approved" as const,
+							organizationId: inviteCodeRecord.organizationId,
+							organizationName:
+								(inviteCodeRecord as InviteCodeWithRelations).organization?.name ||
+								"Unknown Organization",
+						};
+					}
+
+					// Create member with appropriate status
+					const memberStatus = inviteCodeRecord.requiresApproval ? "pending" : "approved";
+
+					const newMember = yield* _(
+						dbService.query("createMember", async () => {
+							const memberId = nanoid();
+
+							const [createdMember] = await dbService.db
+								.insert(member)
+								.values({
+									id: memberId,
+									userId,
+									organizationId: inviteCodeRecord.organizationId,
+									role: "member",
+									status: memberStatus,
+									inviteCodeId: inviteCodeRecord.id,
+									createdAt: new Date(),
+								})
+								.returning();
+
+							return createdMember;
+						}),
+					);
+
+					// Record the usage
+					yield* _(
+						dbService.query("recordUsage", async () => {
+							await dbService.db.insert(inviteCodeUsage).values({
+								inviteCodeId: inviteCodeRecord.id,
+								userId,
+								memberId: newMember.id,
+							});
+						}),
+					);
+
+					// Increment usage count
+					yield* _(
+						dbService.query("incrementUsageCount", async () => {
+							await dbService.db
+								.update(inviteCode)
+								.set({
+									currentUses: sql`${inviteCode.currentUses} + 1`,
+								})
+								.where(eq(inviteCode.id, inviteCodeRecord.id));
+						}),
+					);
+
+					return {
+						success: true,
+						memberId: newMember.id,
+						status: memberStatus as "pending" | "approved",
+						organizationId: inviteCodeRecord.organizationId,
+						organizationName:
+							(inviteCodeRecord as InviteCodeWithRelations).organization?.name ||
+							"Unknown Organization",
+					};
+				}),
+
+			clearPendingInviteCode: (userId) =>
+				Effect.gen(function* (_) {
+					yield* _(
+						dbService.query("clearPendingInviteCode", async () => {
+							await dbService.db
+								.update(user)
+								.set({ pendingInviteCode: null })
+								.where(eq(user.id, userId));
+						}),
+					);
+				}),
+
+			getPendingInviteCode: (userId) =>
+				Effect.gen(function* (_) {
+					const userRecord = yield* _(
+						dbService.query("getUserPendingCode", async () => {
+							return await dbService.db.query.user.findFirst({
+								where: eq(user.id, userId),
+								columns: { pendingInviteCode: true },
+							});
+						}),
+					);
+
+					return userRecord?.pendingInviteCode || null;
+				}),
 		});
 	}),
 );

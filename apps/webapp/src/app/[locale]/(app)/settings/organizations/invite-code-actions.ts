@@ -19,27 +19,36 @@ import { DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/data
 import {
 	InviteCodeService,
 	InviteCodeServiceLive,
-	type InviteCodeWithRelations as InviteCodeWithRelationsType,
-	type ValidateInviteCodeResult,
 } from "@/lib/effect/services/invite-code.service";
-
-// Re-export types for use in components
-export type InviteCodeWithRelations = InviteCodeWithRelationsType;
+import type {
+	InviteCodeWithRelations as InviteCodeWithRelationsType,
+	ValidateInviteCodeResult,
+} from "@/lib/effect/services/invite-code.service";
 import {
 	PendingMemberService,
 	PendingMemberServiceLive,
-	type PendingMember,
-	type ApprovalResult,
 } from "@/lib/effect/services/pending-member.service";
-
-// Re-export types for use in components
-export type { PendingMember, ApprovalResult };
+import type {
+	PendingMember,
+	ApprovalResult,
+} from "@/lib/effect/services/pending-member.service";
 import {
 	QRCodeService,
 	QRCodeServiceLive,
-	type QRCodeResult,
-	type QRCodeFormat,
 } from "@/lib/effect/services/qrcode.service";
+import type {
+	QRCodeResult,
+	QRCodeFormat,
+} from "@/lib/effect/services/qrcode.service";
+
+// Note: Types are NOT re-exported from server action files due to Turbopack bundling issues.
+// Import types directly from the service files:
+// - PendingMember, ApprovalResult from "@/lib/effect/services/pending-member.service"
+// - InviteCodeWithRelations from "@/lib/effect/services/invite-code.service"
+//
+// LEGACY: Re-exporting for backward compatibility with existing components
+// TODO: Migrate components to import directly from service files
+export type { InviteCodeWithRelations } from "@/lib/effect/services/invite-code.service";
 import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("InviteCodeActions");
@@ -102,7 +111,7 @@ const InviteCodeLayer = Layer.mergeAll(
  */
 export async function createInviteCode(
 	data: z.infer<typeof createInviteCodeSchema>,
-): Promise<ServerActionResult<InviteCodeWithRelations>> {
+): Promise<ServerActionResult<InviteCodeWithRelationsType>> {
 	const tracer = trace.getTracer("invite-codes");
 
 	const effect = tracer.startActiveSpan(
@@ -207,7 +216,7 @@ export async function updateInviteCode(
 	inviteCodeId: string,
 	organizationId: string,
 	data: z.infer<typeof updateInviteCodeSchema>,
-): Promise<ServerActionResult<InviteCodeWithRelations>> {
+): Promise<ServerActionResult<InviteCodeWithRelationsType>> {
 	const tracer = trace.getTracer("invite-codes");
 
 	const effect = tracer.startActiveSpan(
@@ -374,7 +383,7 @@ export async function deleteInviteCode(
 export async function listInviteCodes(
 	organizationId: string,
 	includeArchived?: boolean,
-): Promise<ServerActionResult<InviteCodeWithRelations[]>> {
+): Promise<ServerActionResult<InviteCodeWithRelationsType[]>> {
 	const tracer = trace.getTracer("invite-codes");
 
 	const effect = tracer.startActiveSpan(
@@ -1162,6 +1171,121 @@ export async function validateInviteCode(
 			);
 		},
 	);
+
+	return runServerActionSafe(effect.pipe(Effect.provide(InviteCodeLayer)));
+}
+
+/**
+ * Store a pending invite code for a user (called after registration)
+ * This is called after signup when the user registered via /join/{code}
+ * The code will be processed after email verification
+ */
+export async function storePendingInviteCode(
+	code: string,
+): Promise<ServerActionResult<void>> {
+	const tracer = trace.getTracer("invite-codes");
+
+	const effect = tracer.startActiveSpan(
+		"storePendingInviteCode",
+		{
+			attributes: {
+				"inviteCode.code": code,
+			},
+		},
+		(span) => {
+			return Effect.gen(function* (_) {
+				const authService = yield* _(AuthService);
+				const session = yield* _(authService.getSession());
+				const inviteCodeService = yield* _(InviteCodeService);
+
+				yield* _(inviteCodeService.setPendingInviteCode(session.user.id, code));
+
+				logger.info({ userId: session.user.id, code }, "Stored pending invite code for user");
+				span.setStatus({ code: SpanStatusCode.OK });
+			}).pipe(
+				Effect.tapError((error) =>
+					Effect.sync(() => {
+						span.setStatus({ code: SpanStatusCode.ERROR, message: (error as AnyAppError).message });
+						span.end();
+					}),
+				),
+				Effect.tap(() =>
+					Effect.sync(() => {
+						span.end();
+					}),
+				),
+			);
+		},
+	);
+
+	return runServerActionSafe(effect.pipe(Effect.provide(InviteCodeLayer)));
+}
+
+/**
+ * Process a user's pending invite code (called after email verification)
+ * This is typically called by the email verification callback or hook
+ */
+export async function processPendingInviteCode(): Promise<
+	ServerActionResult<{ success: boolean; status: "pending" | "approved"; organizationName: string } | null>
+> {
+	const tracer = trace.getTracer("invite-codes");
+
+	const effect = tracer.startActiveSpan(
+		"processPendingInviteCode",
+		{},
+		(span) => {
+			return Effect.gen(function* (_) {
+				const authService = yield* _(AuthService);
+				const session = yield* _(authService.getSession());
+				const inviteCodeService = yield* _(InviteCodeService);
+
+				const result = yield* _(inviteCodeService.processPendingInviteCode(session.user.id));
+
+				if (result) {
+					logger.info(
+						{ userId: session.user.id, organizationId: result.organizationId, status: result.status },
+						"Processed pending invite code",
+					);
+				}
+
+				span.setStatus({ code: SpanStatusCode.OK });
+				return result
+					? {
+							success: result.success,
+							status: result.status,
+							organizationName: result.organizationName,
+						}
+					: null;
+			}).pipe(
+				Effect.tapError((error) =>
+					Effect.sync(() => {
+						span.setStatus({ code: SpanStatusCode.ERROR, message: (error as AnyAppError).message });
+						span.end();
+					}),
+				),
+				Effect.tap(() =>
+					Effect.sync(() => {
+						span.end();
+					}),
+				),
+			);
+		},
+	);
+
+	return runServerActionSafe(effect.pipe(Effect.provide(InviteCodeLayer)));
+}
+
+/**
+ * Get a user's pending invite code (if any)
+ */
+export async function getPendingInviteCode(): Promise<ServerActionResult<string | null>> {
+	const effect = Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
+		const inviteCodeService = yield* _(InviteCodeService);
+
+		return yield* _(inviteCodeService.getPendingInviteCode(session.user.id));
+	});
 
 	return runServerActionSafe(effect.pipe(Effect.provide(InviteCodeLayer)));
 }

@@ -2,26 +2,44 @@
 
 import { IconBriefcase, IconBuilding, IconClock, IconUsers } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { ProgressIndicator } from "@/components/onboarding/progress-indicator";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRouter } from "@/navigation";
-import { startOnboarding, updateOnboardingStep } from "./actions";
+import { startOnboarding, updateOnboardingStep, getOnboardingSummary } from "./actions";
 
 export default function WelcomePage() {
 	const { t } = useTranslate();
 	const router = useRouter();
+	const [hasOrganization, setHasOrganization] = useState(false);
+	const [organizationName, setOrganizationName] = useState<string | null>(null);
 
-	// Mark onboarding as started
+	// Mark onboarding as started and check if user already has an organization
 	useEffect(() => {
-		startOnboarding();
+		const init = async () => {
+			await startOnboarding();
+			// Check if user already has an organization (e.g., joined via invite code)
+			const summary = await getOnboardingSummary();
+			if (summary.success && summary.data?.hasOrganization) {
+				setHasOrganization(true);
+				setOrganizationName(summary.data.organizationName || null);
+			}
+		};
+		init();
 	}, []);
 
 	const handleGetStarted = async () => {
-		// Update onboarding step and navigate
-		await updateOnboardingStep("organization");
-		router.push("/onboarding/organization");
+		// If user already has an organization (joined via invite code), skip to profile
+		if (hasOrganization) {
+			await updateOnboardingStep("profile");
+			router.push("/onboarding/profile");
+		} else {
+			// Otherwise, go to organization setup
+			await updateOnboardingStep("organization");
+			router.push("/onboarding/organization");
+		}
 	};
 
 	return (
@@ -105,9 +123,25 @@ export default function WelcomePage() {
 					</Card>
 				</div>
 
+				{/* Organization Info - show if user already joined via invite code */}
+				{hasOrganization && organizationName && (
+					<Alert className="mb-6 mx-auto max-w-md border-primary/20 bg-primary/5">
+						<IconBuilding className="h-4 w-4" />
+						<AlertDescription>
+							{t(
+								"onboarding.welcome.joinedOrganization",
+								"You've joined {organization}. Let's complete your profile setup.",
+								{ organization: organizationName },
+							)}
+						</AlertDescription>
+					</Alert>
+				)}
+
 				{/* CTA Button */}
 				<Button size="lg" onClick={handleGetStarted} className="w-full sm:w-auto">
-					{t("onboarding.welcome.getStarted", "Get Started")}
+					{hasOrganization
+						? t("onboarding.welcome.continueSetup", "Continue Setup")
+						: t("onboarding.welcome.getStarted", "Get Started")}
 				</Button>
 			</div>
 		</>

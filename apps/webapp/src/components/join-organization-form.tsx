@@ -224,7 +224,9 @@ export function JoinOrganizationForm({ code: initialCode }: JoinOrganizationForm
 					<div className="flex gap-2">
 						<Input
 							id="code"
+							name="code"
 							type="text"
+							autoComplete="off"
 							placeholder={t("settings.inviteCodes.codePlaceholder", "TEAM-ABC123")}
 							value={code}
 							onChange={(e) => handleCodeChange(e.target.value)}
@@ -326,7 +328,7 @@ export function JoinOrganizationForm({ code: initialCode }: JoinOrganizationForm
 				{!session && (
 					<p className="text-center text-sm text-muted-foreground">
 						{t("settings.inviteCodes.needAccount", "Don't have an account?")}{" "}
-						<Link href={`/sign-up`} className="text-primary hover:underline">
+						<Link href={`/sign-up?inviteCode=${code}`} className="text-primary hover:underline">
 							{t("auth.sign-up", "Sign up")}
 						</Link>
 					</p>

@@ -174,8 +174,8 @@ export function InviteCodeDialog({
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-[500px]">
-				<form onSubmit={handleSubmit}>
+			<DialogContent className="sm:max-w-[500px] max-h-[90vh] flex flex-col">
+				<form onSubmit={handleSubmit} className="flex flex-col overflow-hidden">
 					<DialogHeader>
 						<DialogTitle>
 							{isEditing
@@ -195,7 +195,7 @@ export function InviteCodeDialog({
 						</DialogDescription>
 					</DialogHeader>
 
-					<div className="grid gap-4 py-4">
+					<div className="grid gap-4 py-4 overflow-y-auto flex-1 pr-2">
 						{/* Code */}
 						<div className="grid gap-2">
 							<Label htmlFor="code">{t("settings.inviteCodes.code", "Code")}</Label>
@@ -285,14 +285,17 @@ export function InviteCodeDialog({
 						{/* Default Team */}
 						<div className="grid gap-2">
 							<Label htmlFor="defaultTeam">{t("settings.inviteCodes.defaultTeam", "Default Team")}</Label>
-							<Select value={defaultTeamId} onValueChange={setDefaultTeamId}>
+							<Select
+								value={defaultTeamId || "none"}
+								onValueChange={(v) => setDefaultTeamId(v === "none" ? "" : v)}
+							>
 								<SelectTrigger>
 									<SelectValue
 										placeholder={t("settings.inviteCodes.noDefaultTeam", "No default team")}
 									/>
 								</SelectTrigger>
 								<SelectContent>
-									<SelectItem value="">
+									<SelectItem value="none">
 										{t("settings.inviteCodes.noDefaultTeam", "No default team")}
 									</SelectItem>
 									{teams.map((team) => (

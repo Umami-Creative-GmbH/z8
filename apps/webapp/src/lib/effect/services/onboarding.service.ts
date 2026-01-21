@@ -10,9 +10,10 @@ import {
 	userSettings,
 	vacationAllowance,
 	vacationPolicyAssignment,
-	workScheduleAssignment,
-	workScheduleTemplate,
-	workScheduleTemplateDays,
+	workPolicy,
+	workPolicyAssignment,
+	workPolicySchedule,
+	workPolicyScheduleDay,
 } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import type {
@@ -39,7 +40,7 @@ export interface OnboardingSummary {
 	hasOrganization: boolean;
 	organizationName?: string;
 	profileCompleted: boolean;
-	workScheduleSet: boolean;
+	workPolicySet: boolean;
 	// Admin setup summary (only present if user is admin)
 	isAdmin: boolean;
 	vacationPolicyCreated?: boolean;
@@ -660,52 +661,67 @@ export const OnboardingServiceLive = Layer.effect(
 							return;
 						}
 
-						// Create work schedule template
-						const [template] = await dbService.db
-							.insert(workScheduleTemplate)
+						// Create work policy
+						const [policy] = await dbService.db
+							.insert(workPolicy)
 							.values({
 								organizationId: activeOrgId,
 								name: data.name,
 								description: "Created during onboarding",
-								scheduleCycle: "weekly",
-								scheduleType: "simple",
-								workingDaysPreset: "weekdays",
-								hoursPerCycle: data.hoursPerWeek.toString(),
-								homeOfficeDaysPerCycle: 0,
+								scheduleEnabled: true,
+								regulationEnabled: false,
 								isActive: true,
+								isDefault: data.setAsDefault,
 								createdBy: session.user.id,
+								updatedAt: new Date(),
 							})
 							.returning();
 
-						// Create template days
-						if (template) {
-							const allDays = [
-								"monday",
-								"tuesday",
-								"wednesday",
-								"thursday",
-								"friday",
-								"saturday",
-								"sunday",
-							] as const;
-							const hoursPerDay =
-								data.workingDays.length > 0 ? data.hoursPerWeek / data.workingDays.length : 0;
+						// Create schedule configuration
+						if (policy) {
+							const [schedule] = await dbService.db
+								.insert(workPolicySchedule)
+								.values({
+									policyId: policy.id,
+									scheduleCycle: "weekly",
+									scheduleType: "simple",
+									workingDaysPreset: "weekdays",
+									hoursPerCycle: data.hoursPerWeek.toString(),
+									homeOfficeDaysPerCycle: 0,
+								})
+								.returning();
 
-							await dbService.db.insert(workScheduleTemplateDays).values(
-								allDays.map((day) => ({
-									templateId: template.id,
-									dayOfWeek: day,
-									hoursPerDay: data.workingDays.includes(day) ? hoursPerDay.toFixed(1) : "0",
-									isWorkDay: data.workingDays.includes(day),
-								})),
-							);
+							// Create schedule days
+							if (schedule) {
+								const allDays = [
+									"monday",
+									"tuesday",
+									"wednesday",
+									"thursday",
+									"friday",
+									"saturday",
+									"sunday",
+								] as const;
+								const hoursPerDay =
+									data.workingDays.length > 0 ? data.hoursPerWeek / data.workingDays.length : 0;
+
+								await dbService.db.insert(workPolicyScheduleDay).values(
+									allDays.map((day) => ({
+										scheduleId: schedule.id,
+										dayOfWeek: day,
+										hoursPerDay: data.workingDays.includes(day) ? hoursPerDay.toFixed(1) : "0",
+										isWorkDay: data.workingDays.includes(day),
+									})),
+								);
+							}
 
 							// Assign to organization if setAsDefault
 							if (data.setAsDefault) {
-								await dbService.db.insert(workScheduleAssignment).values({
-									templateId: template.id,
+								await dbService.db.insert(workPolicyAssignment).values({
+									policyId: policy.id,
 									organizationId: activeOrgId,
 									assignmentType: "organization",
+									priority: 0,
 									effectiveFrom: new Date(),
 									isActive: true,
 									createdBy: session.user.id,
@@ -922,33 +938,33 @@ export const OnboardingServiceLive = Layer.effect(
 						// Check if user is admin
 						const isAdmin = membership?.role === "owner" || membership?.role === "admin";
 
-						// Check if work schedule is set (via org default or explicit assignment)
-						let hasWorkSchedule = false;
+						// Check if work policy is set (via org default or explicit assignment)
+						let hasWorkPolicy = false;
 						let hasVacationPolicy = false;
 						let hasHolidayPreset = false;
 						let hasWorkTemplate = false;
 
 						if (membership?.organizationId) {
-							// Check for org-level work schedule assignment
-							const orgAssignment = await dbService.db.query.workScheduleAssignment.findFirst({
+							// Check for org-level work policy assignment
+							const orgAssignment = await dbService.db.query.workPolicyAssignment.findFirst({
 								where: and(
-									eq(workScheduleAssignment.organizationId, membership.organizationId),
-									eq(workScheduleAssignment.assignmentType, "organization"),
-									eq(workScheduleAssignment.isActive, true),
+									eq(workPolicyAssignment.organizationId, membership.organizationId),
+									eq(workPolicyAssignment.assignmentType, "organization"),
+									eq(workPolicyAssignment.isActive, true),
 								),
 							});
-							hasWorkSchedule = !!orgAssignment;
+							hasWorkPolicy = !!orgAssignment;
 
 							// Or check for employee-specific assignment
-							if (!hasWorkSchedule && emp?.id) {
-								const empAssignment = await dbService.db.query.workScheduleAssignment.findFirst({
+							if (!hasWorkPolicy && emp?.id) {
+								const empAssignment = await dbService.db.query.workPolicyAssignment.findFirst({
 									where: and(
-										eq(workScheduleAssignment.employeeId, emp.id),
-										eq(workScheduleAssignment.assignmentType, "employee"),
-										eq(workScheduleAssignment.isActive, true),
+										eq(workPolicyAssignment.employeeId, emp.id),
+										eq(workPolicyAssignment.assignmentType, "employee"),
+										eq(workPolicyAssignment.isActive, true),
 									),
 								});
-								hasWorkSchedule = !!empAssignment;
+								hasWorkPolicy = !!empAssignment;
 							}
 
 							// Check for vacation policy (admin only)
@@ -969,11 +985,11 @@ export const OnboardingServiceLive = Layer.effect(
 								});
 								hasHolidayPreset = !!holidayPresetRecord;
 
-								// Check for work schedule template
-								const workTemplate = await dbService.db.query.workScheduleTemplate.findFirst({
-									where: eq(workScheduleTemplate.organizationId, membership.organizationId),
+								// Check for work policy
+								const workPolicyRecord = await dbService.db.query.workPolicy.findFirst({
+									where: eq(workPolicy.organizationId, membership.organizationId),
 								});
-								hasWorkTemplate = !!workTemplate;
+								hasWorkTemplate = !!workPolicyRecord;
 							}
 						}
 
@@ -992,7 +1008,7 @@ export const OnboardingServiceLive = Layer.effect(
 							hasOrganization: !!membership,
 							organizationName: membership?.organization?.name,
 							profileCompleted: !!(emp?.firstName && emp?.lastName),
-							workScheduleSet: hasWorkSchedule,
+							workPolicySet: hasWorkPolicy,
 							isAdmin,
 							vacationPolicyCreated: isAdmin ? hasVacationPolicy : undefined,
 							holidayPresetCreated: isAdmin ? hasHolidayPreset : undefined,

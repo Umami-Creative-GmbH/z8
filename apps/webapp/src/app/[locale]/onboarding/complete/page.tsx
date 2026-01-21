@@ -19,7 +19,7 @@ export default function CompletePage() {
 		hasOrganization: boolean;
 		organizationName?: string;
 		profileCompleted: boolean;
-		workScheduleSet: boolean;
+		workPolicySet: boolean;
 		isAdmin: boolean;
 		vacationPolicyCreated?: boolean;
 		holidayPresetCreated?: boolean;
@@ -154,10 +154,10 @@ export default function CompletePage() {
 							<div
 								className={cn(
 									"flex size-8 items-center justify-center rounded-full",
-									summary?.workScheduleSet ? "bg-green-500/10" : "bg-muted",
+									summary?.workPolicySet ? "bg-green-500/10" : "bg-muted",
 								)}
 							>
-								{summary?.workScheduleSet ? (
+								{summary?.workPolicySet ? (
 									<IconCheck className="size-4 text-green-500" />
 								) : (
 									<span className="text-xs text-muted-foreground">−</span>
@@ -165,7 +165,7 @@ export default function CompletePage() {
 							</div>
 							<div className="flex-1">
 								<p className="font-medium">
-									{summary?.workScheduleSet
+									{summary?.workPolicySet
 										? t("onboarding.complete.scheduleSet", "Work schedule set")
 										: t("onboarding.complete.scheduleSkipped", "You can set this later")}
 								</p>

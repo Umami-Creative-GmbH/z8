@@ -1,9 +1,10 @@
 "use client";
 
-import { IconLoader2 } from "@tabler/icons-react";
+import { IconBuilding, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { z } from "zod";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +16,10 @@ import { cn } from "@/lib/utils";
 import { checkPasswordRequirements, passwordSchema } from "@/lib/validations/password";
 import { Link, useRouter } from "@/navigation";
 import { AuthFormWrapper } from "./auth-form-wrapper";
+import {
+	storePendingInviteCode,
+	validateInviteCode,
+} from "@/app/[locale]/(app)/settings/organizations/invite-code-actions";
 
 const signupSchema = z
 	.object({
@@ -28,7 +33,11 @@ const signupSchema = z
 		path: ["confirmPassword"],
 	});
 
-export function SignupForm({ className, ...props }: React.ComponentProps<"div">) {
+interface SignupFormProps extends React.ComponentProps<"div"> {
+	inviteCode?: string;
+}
+
+export function SignupForm({ className, inviteCode, ...props }: SignupFormProps) {
 	const { t } = useTranslate();
 	const router = useRouter();
 	const [isLoading, setIsLoading] = useState(false);
@@ -42,10 +51,28 @@ export function SignupForm({ className, ...props }: React.ComponentProps<"div">)
 	const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 	const { enabledProviders, isLoading: providersLoading } = useEnabledProviders();
 
+	// Invite code state
+	const [organizationName, setOrganizationName] = useState<string | null>(null);
+	const [inviteCodeValid, setInviteCodeValid] = useState<boolean | null>(null);
+
 	// Domain auth context for custom domains
 	const domainAuth = useDomainAuth();
 	const authConfig = domainAuth?.authConfig;
 	const branding = domainAuth?.branding;
+
+	// Validate invite code on mount
+	useEffect(() => {
+		if (inviteCode) {
+			validateInviteCode(inviteCode).then((result) => {
+				if (result.success && result.data?.valid) {
+					setInviteCodeValid(true);
+					setOrganizationName(result.data.inviteCode?.organization?.name || null);
+				} else {
+					setInviteCodeValid(false);
+				}
+			});
+		}
+	}, [inviteCode]);
 
 	// Determine which auth methods are enabled
 	const showEmailPassword = authConfig?.emailPasswordEnabled ?? true;
@@ -178,6 +205,14 @@ export function SignupForm({ className, ...props }: React.ComponentProps<"div">)
 			if (signupResult.error) {
 				setError(signupResult.error.message || t("auth.signup-failed", "Failed to sign up"));
 			} else {
+				// Store pending invite code if provided
+				if (inviteCode && inviteCodeValid) {
+					try {
+						await storePendingInviteCode(inviteCode);
+					} catch {
+						// Silently ignore - user can still join manually later
+					}
+				}
 				router.push("/verify-email-pending");
 			}
 		} catch (err) {
@@ -194,9 +229,14 @@ export function SignupForm({ className, ...props }: React.ComponentProps<"div">)
 		setError(null);
 
 		try {
+			// For social signup with invite code, redirect to join page after auth
+			// The join page will process the code for the new user
+			const callbackURL =
+				inviteCode && inviteCodeValid ? `/join/${inviteCode}` : "/";
+
 			await authClient.signIn.social({
 				provider,
-				callbackURL: "/",
+				callbackURL,
 			});
 		} catch (err) {
 			setIsLoading(false);
@@ -219,6 +259,31 @@ export function SignupForm({ className, ...props }: React.ComponentProps<"div">)
 			{error ? (
 				<div className="rounded-md bg-destructive/15 p-3 text-destructive text-sm">{error}</div>
 			) : null}
+
+			{/* Show organization info when signing up with invite code */}
+			{inviteCode && inviteCodeValid && organizationName && (
+				<Alert className="border-primary/20 bg-primary/5">
+					<IconBuilding className="h-4 w-4" />
+					<AlertDescription>
+						{t(
+							"auth.signing-up-to-join",
+							"You're signing up to join {organization}",
+							{ organization: organizationName },
+						)}
+					</AlertDescription>
+				</Alert>
+			)}
+
+			{inviteCode && inviteCodeValid === false && (
+				<Alert variant="destructive">
+					<AlertDescription>
+						{t(
+							"auth.invalid-invite-code",
+							"The invite code is invalid or has expired. You can still sign up and join later.",
+						)}
+					</AlertDescription>
+				</Alert>
+			)}
 
 			{/* Email/Password signup form - only show if enabled */}
 			{showEmailPassword && (

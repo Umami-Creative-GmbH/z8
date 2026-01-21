@@ -5,6 +5,11 @@ export async function generateStaticParams() {
 	return ALL_LANGUAGES.map((locale) => ({ locale }));
 }
 
-export default function Page() {
-	return <SignupForm />;
+interface PageProps {
+	searchParams: Promise<{ inviteCode?: string }>;
+}
+
+export default async function Page({ searchParams }: PageProps) {
+	const { inviteCode } = await searchParams;
+	return <SignupForm inviteCode={inviteCode} />;
 }
