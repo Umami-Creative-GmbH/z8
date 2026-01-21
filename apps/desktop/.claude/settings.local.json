@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm tauri dev:*)",
+      "Bash(timeout:*)",
+      "Bash(pnpm install:*)"
+    ]
+  }
+}

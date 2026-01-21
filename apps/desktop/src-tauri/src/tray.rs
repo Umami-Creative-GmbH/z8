@@ -1,6 +1,6 @@
 use anyhow::Result;
 use tauri::{
-    image::Image,
+    include_image,
     menu::{Menu, MenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
     App, AppHandle, Emitter, Manager,
@@ -15,12 +15,9 @@ pub fn setup_tray(app: &App) -> Result<()> {
     let menu = Menu::with_items(app, &[&show, &settings, &quit])?;
 
     let tray = TrayIconBuilder::new()
-        .icon(Image::from_path("icons/tray-gray.png").unwrap_or_else(|_| {
-            // Fallback to default icon if custom one doesn't exist
-            app.default_window_icon().cloned().unwrap()
-        }))
+        .icon(include_image!("icons/tray-gray.png"))
         .menu(&menu)
-        .menu_on_left_click(false)
+        .show_menu_on_left_click(false)
         .on_tray_icon_event(|tray, event| {
             if let TrayIconEvent::Click {
                 button: MouseButton::Left,
@@ -63,19 +60,11 @@ pub fn setup_tray(app: &App) -> Result<()> {
 
 /// Updates the tray icon based on clock status
 pub fn update_tray_icon(app_handle: &AppHandle, is_clocked_in: bool) -> Result<()> {
-    let icon_path = if is_clocked_in {
-        "icons/tray-green.png"
+    // Use compile-time embedded icons
+    let icon = if is_clocked_in {
+        include_image!("icons/tray-green.png")
     } else {
-        "icons/tray-gray.png"
-    };
-
-    // Try to load the icon, falling back to default if not found
-    let icon = match Image::from_path(icon_path) {
-        Ok(img) => img,
-        Err(_) => {
-            log::warn!("Tray icon not found: {}, using default", icon_path);
-            return Ok(()); // Skip icon update if file not found
-        }
+        include_image!("icons/tray-gray.png")
     };
 
     // Get the tray icon from app state

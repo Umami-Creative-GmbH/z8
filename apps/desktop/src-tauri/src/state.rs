@@ -2,7 +2,7 @@ use anyhow::Result;
 use parking_lot::{Mutex, RwLock};
 use std::fs;
 use std::path::PathBuf;
-use tauri::AppHandle;
+use tauri::{AppHandle, Manager};
 
 use crate::offline::OfflineQueue;
 use crate::settings::Settings;
