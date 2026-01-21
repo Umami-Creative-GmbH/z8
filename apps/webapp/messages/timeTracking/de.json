@@ -58,6 +58,30 @@
       },
       "timezoneNote": "Zeiten sind in Ihrer lokalen Zeitzone ({timezone})"
     },
+    "manualEntry": {
+      "addButton": "Manuellen Eintrag hinzufügen",
+      "title": "Manuellen Zeiteintrag hinzufügen",
+      "description": "Erstellen Sie einen Zeiteintrag für ein vergangenes Datum. Je nach Änderungsrichtlinie Ihrer Organisation kann eine Genehmigung erforderlich sein.",
+      "dateLabel": "Datum",
+      "clockInLabel": "Einstempeln",
+      "clockOutLabel": "Ausstempeln",
+      "reasonLabel": "Grund",
+      "reasonPlaceholder": "Beschreiben Sie, woran Sie gearbeitet haben…",
+      "submit": "Eintrag erstellen",
+      "submitting": "Erstelle…",
+      "success": {
+        "created": "Zeiteintrag erfolgreich erstellt",
+        "pendingApproval": "Zeiteintrag zur Genehmigung durch Manager eingereicht",
+        "adjusted": "Zeiten auf {clockIn} - {clockOut} angepasst, um Überschneidungen zu vermeiden"
+      },
+      "errors": {
+        "invalidTimeRange": "Ausstempelzeit muss nach der Einstempelzeit liegen",
+        "futureDate": "Keine Einträge für zukünftige Daten möglich",
+        "overlapping": "Dieser Eintrag überschneidet sich mit einer bestehenden Arbeitsperiode",
+        "tooLong": "Arbeitsperiode darf nicht länger als 24 Stunden sein",
+        "createFailed": "Fehler beim Erstellen des Zeiteintrags"
+      }
+    },
     "currentlyClockedIn": "Sie sind derzeit eingestempelt",
     "errors": {
       "clockInFailed": "Fehler beim Einstempeln",

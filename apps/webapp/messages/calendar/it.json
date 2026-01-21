@@ -200,6 +200,12 @@
       "approved": "Approvato",
       "pending": "In attesa",
       "rejected": "Rifiutato"
+    },
+    "employeeSelector": {
+      "label": "Visualizza calendario",
+      "placeholder": "Seleziona membro del team...",
+      "myCalendar": "Il mio calendario",
+      "error": "Impossibile caricare i membri del team"
     }
   }
 }

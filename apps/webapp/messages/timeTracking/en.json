@@ -58,6 +58,30 @@
       },
       "timezoneNote": "Times are in your local timezone ({timezone})"
     },
+    "manualEntry": {
+      "addButton": "Add Manual Entry",
+      "title": "Add Manual Time Entry",
+      "description": "Create a time entry for a past date. Approval may be required based on your organization's change policy.",
+      "dateLabel": "Date",
+      "clockInLabel": "Clock In",
+      "clockOutLabel": "Clock Out",
+      "reasonLabel": "Reason",
+      "reasonPlaceholder": "Describe what you worked on…",
+      "submit": "Create Entry",
+      "submitting": "Creating…",
+      "success": {
+        "created": "Time entry created successfully",
+        "pendingApproval": "Time entry submitted for manager approval",
+        "adjusted": "Times adjusted to {clockIn} - {clockOut} to avoid overlap"
+      },
+      "errors": {
+        "invalidTimeRange": "Clock out time must be after clock in time",
+        "futureDate": "Cannot create entries for future dates",
+        "overlapping": "This entry overlaps with an existing work period",
+        "tooLong": "Work period cannot exceed 24 hours",
+        "createFailed": "Failed to create time entry"
+      }
+    },
     "currentlyClockedIn": "You're currently clocked in",
     "errors": {
       "clockInFailed": "Failed to clock in",

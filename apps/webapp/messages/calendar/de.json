@@ -200,6 +200,12 @@
       "approved": "Genehmigt",
       "pending": "Ausstehend",
       "rejected": "Abgelehnt"
+    },
+    "employeeSelector": {
+      "label": "Kalender anzeigen",
+      "placeholder": "Teammitglied auswählen...",
+      "myCalendar": "Mein Kalender",
+      "error": "Teammitglieder konnten nicht geladen werden"
     }
   }
 }

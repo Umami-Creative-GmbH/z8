@@ -219,8 +219,10 @@ async function loadAllNamespacesForLanguage(lang: string): Promise<TreeTranslati
 export function TolgeeBase() {
 	const tolgee = Tolgee().use(FormatIcu());
 
-	// Only load DevTools in development
-	if (isDevelopment) {
+	// Only load DevTools in development AND on the client side
+	// Loading DevTools on server causes hydration mismatch (server adds _tolgee attribute,
+	// client adds invisible characters)
+	if (isDevelopment && typeof window !== "undefined") {
 		tolgee.use(DevTools());
 	}
 

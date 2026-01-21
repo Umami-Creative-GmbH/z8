@@ -200,6 +200,12 @@
       "approved": "Approved",
       "pending": "Pending",
       "rejected": "Rejected"
+    },
+    "employeeSelector": {
+      "label": "View Calendar",
+      "placeholder": "Select team member...",
+      "myCalendar": "My Calendar",
+      "error": "Unable to load team members"
     }
   }
 }
