@@ -2,6 +2,7 @@
 
 import { IconLoader2, IconPlus, IconUsers } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslate } from "@tolgee/react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +12,7 @@ import { getCurrentEmployee } from "../../approvals/actions";
 import { listTeams } from "./actions";
 
 export default function TeamsPage() {
+	const { t } = useTranslate();
 	const [canCreate, setCanCreate] = useState(false);
 
 	// Fetch teams with TanStack Query
@@ -39,9 +41,9 @@ export default function TeamsPage() {
 		<div className="flex flex-1 flex-col gap-4 p-4">
 			<div className="flex items-center justify-between">
 				<div>
-					<h1 className="text-2xl font-semibold tracking-tight">Teams</h1>
+					<h1 className="text-2xl font-semibold tracking-tight">{t("settings.teams.title", "Teams")}</h1>
 					<p className="text-sm text-muted-foreground">
-						Organize employees into teams for better management
+						{t("settings.teams.description", "Organize employees into teams for better management")}
 					</p>
 				</div>
 				{canCreate && (

@@ -5,9 +5,10 @@ import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import { employee } from "@/db/schema";
 import { requireUser } from "@/lib/auth-helpers";
+import { getTranslate } from "@/tolgee/server";
 
 export default async function OrganizationsPage() {
-	const authContext = await requireUser();
+	const [authContext, t] = await Promise.all([requireUser(), getTranslate()]);
 	// Use session's activeOrganizationId, or fall back to employee's organizationId
 	// This ensures consistency with how the sidebar determines the current org
 	const activeOrgId =
@@ -17,9 +18,9 @@ export default async function OrganizationsPage() {
 		return (
 			<div className="flex-1 p-6">
 				<div className="mx-auto max-w-4xl">
-					<h1 className="text-2xl font-semibold">No Active Organization</h1>
+					<h1 className="text-2xl font-semibold">{t("settings.organizations.noActive.title", "No Active Organization")}</h1>
 					<p className="text-muted-foreground mt-2">
-						Please select or create an organization to continue.
+						{t("settings.organizations.noActive.description", "Please select or create an organization to continue.")}
 					</p>
 				</div>
 			</div>
@@ -76,9 +77,9 @@ export default async function OrganizationsPage() {
 		return (
 			<div className="flex-1 p-6">
 				<div className="mx-auto max-w-4xl">
-					<h1 className="text-2xl font-semibold">Organization Not Found</h1>
+					<h1 className="text-2xl font-semibold">{t("settings.organizations.notFound.title", "Organization Not Found")}</h1>
 					<p className="text-muted-foreground mt-2">
-						The organization could not be found or you don't have access to it.
+						{t("settings.organizations.notFound.description", "The organization could not be found or you don't have access to it.")}
 					</p>
 				</div>
 			</div>

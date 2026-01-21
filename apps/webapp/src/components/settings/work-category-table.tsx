@@ -116,7 +116,7 @@ export function WorkCategoryTable({ organizationId }: WorkCategoryTableProps) {
 			toast.error(
 				t(
 					"settings.workCategories.categoryInUse",
-					"Cannot delete a category that is used in {{count}} set(s). Remove it from all sets first.",
+					"Cannot delete a category that is used in {count} set(s). Remove it from all sets first.",
 					{ count: category.usedInSetsCount },
 				),
 			);

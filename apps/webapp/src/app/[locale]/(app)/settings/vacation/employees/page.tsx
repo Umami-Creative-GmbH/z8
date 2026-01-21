@@ -18,13 +18,14 @@ import {
 } from "@/components/ui/table";
 import { UserAvatar } from "@/components/user-avatar";
 import { Link } from "@/navigation";
+import { getTranslate } from "@/tolgee/server";
 import { getCompanyDefaultVacationPolicy, getEmployeesWithAllowances } from "../actions";
 import { getVacationPolicyAssignments } from "../assignment-actions";
 
 async function EmployeeAllowancesContent() {
 	await connection(); // Mark as fully dynamic for cacheComponents mode
 
-	const currentEmployee = await getCurrentEmployee();
+	const [currentEmployee, t] = await Promise.all([getCurrentEmployee(), getTranslate()]);
 
 	if (!currentEmployee) {
 		return (
@@ -66,9 +67,9 @@ async function EmployeeAllowancesContent() {
 		<div className="flex flex-1 flex-col gap-4 p-4">
 			<div className="flex items-center justify-between">
 				<div>
-					<h1 className="text-2xl font-semibold tracking-tight">Employee Allowances</h1>
+					<h1 className="text-2xl font-semibold tracking-tight">{t("settings.vacation.employees.title", "Employee Allowances")}</h1>
 					<p className="text-sm text-muted-foreground">
-						Configure custom vacation allowances for individual employees
+						{t("settings.vacation.employees.description", "Configure custom vacation allowances for individual employees")}
 					</p>
 				</div>
 			</div>

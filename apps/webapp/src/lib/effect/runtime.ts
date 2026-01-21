@@ -11,7 +11,7 @@ import { ReportingService } from "./services/reporting.service";
 import { ShiftServiceLive } from "./services/shift.service";
 import { ShiftRequestServiceLive } from "./services/shift-request.service";
 import { TimeEntryServiceLive } from "./services/time-entry.service";
-import { WorkScheduleServiceLive } from "./services/work-schedule.service";
+import { WorkPolicyServiceLive } from "./services/work-policy.service";
 
 // Base layer with DatabaseService (no dependencies)
 const BaseLayer = DatabaseServiceLive;
@@ -34,9 +34,6 @@ const ManagerLayer = ManagerServiceLive.pipe(Layer.provide(DatabaseServiceLive))
 // Layer for TimeEntryService (depends on DatabaseService)
 const TimeEntryLayer = TimeEntryServiceLive.pipe(Layer.provide(DatabaseServiceLive));
 
-// Layer for WorkScheduleService (depends on DatabaseService)
-const WorkScheduleLayer = WorkScheduleServiceLive.pipe(Layer.provide(DatabaseServiceLive));
-
 // Layer for ShiftService (depends on DatabaseService)
 const ShiftLayer = ShiftServiceLive.pipe(Layer.provide(DatabaseServiceLive));
 
@@ -45,6 +42,9 @@ const ShiftRequestLayer = ShiftRequestServiceLive.pipe(Layer.provide(DatabaseSer
 
 // Layer for ChangePolicyService (depends on DatabaseService)
 const ChangePolicyLayer = ChangePolicyServiceLive.pipe(Layer.provide(DatabaseServiceLive));
+
+// Layer for WorkPolicyService (depends on DatabaseService)
+const WorkPolicyLayer = WorkPolicyServiceLive.pipe(Layer.provide(DatabaseServiceLive));
 
 // Combine all service layers
 export const AppLayer = Layer.mergeAll(
@@ -57,10 +57,10 @@ export const AppLayer = Layer.mergeAll(
 	PermissionsLayer,
 	ManagerLayer,
 	TimeEntryLayer,
-	WorkScheduleLayer,
 	ShiftLayer,
 	ShiftRequestLayer,
 	ChangePolicyLayer,
+	WorkPolicyLayer,
 );
 
 // Runtime for executing effects

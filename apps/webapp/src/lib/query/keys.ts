@@ -18,8 +18,7 @@ export const queryKeys = {
 	// Organization members
 	members: {
 		all: ["members"] as const,
-		list: <T extends object>(orgId: string, params?: T) =>
-			["members", orgId, params] as const,
+		list: <T extends object>(orgId: string, params?: T) => ["members", orgId, params] as const,
 	},
 
 	// Invitations
@@ -62,10 +61,10 @@ export const queryKeys = {
 	// Employees
 	employees: {
 		all: ["employees"] as const,
-		list: <T extends object>(orgId: string, params?: T) =>
-			["employees", orgId, params] as const,
+		list: <T extends object>(orgId: string, params?: T) => ["employees", orgId, params] as const,
 		detail: (employeeId: string) => ["employees", "detail", employeeId] as const,
-		rateHistory: (employeeId: string) => ["employees", "detail", employeeId, "rate-history"] as const,
+		rateHistory: (employeeId: string) =>
+			["employees", "detail", employeeId, "rate-history"] as const,
 	},
 
 	// Employee Select (for unified employee selection component)
@@ -117,8 +116,7 @@ export const queryKeys = {
 	// Holidays (custom org-wide)
 	holidays: {
 		all: ["holidays"] as const,
-		list: <T extends object>(orgId: string, params?: T) =>
-			["holidays", orgId, params] as const,
+		list: <T extends object>(orgId: string, params?: T) => ["holidays", orgId, params] as const,
 	},
 
 	// Holiday categories
@@ -149,22 +147,6 @@ export const queryKeys = {
 		list: (orgId: string) => ["vacation-policy-assignments", orgId] as const,
 	},
 
-	// Work schedule templates
-	workScheduleTemplates: {
-		all: ["work-schedule-templates"] as const,
-		list: <T extends object>(orgId: string, params?: T) =>
-			["work-schedule-templates", orgId, params] as const,
-		detail: (templateId: string) => ["work-schedule-templates", "detail", templateId] as const,
-	},
-
-	// Work schedule assignments (templates to org/team/employee)
-	workScheduleAssignments: {
-		all: ["work-schedule-assignments"] as const,
-		list: (orgId: string) => ["work-schedule-assignments", orgId] as const,
-		employee: (employeeId: string) =>
-			["work-schedule-assignments", "employee", employeeId] as const,
-	},
-
 	// Shift templates (Morning Shift, Night Shift, etc.)
 	shiftTemplates: {
 		all: ["shift-templates"] as const,
@@ -188,24 +170,6 @@ export const queryKeys = {
 		all: ["shift-requests"] as const,
 		pending: (approverId: string) => ["shift-requests", "pending", approverId] as const,
 		byShift: (shiftId: string) => ["shift-requests", "shift", shiftId] as const,
-	},
-
-	// Time regulations
-	timeRegulations: {
-		all: ["time-regulations"] as const,
-		list: <T extends object>(orgId: string, params?: T) =>
-			["time-regulations", "list", orgId, params] as const,
-		detail: (regulationId: string) => ["time-regulations", "detail", regulationId] as const,
-		assignments: (orgId: string) => ["time-regulations", "assignments", orgId] as const,
-		presets: () => ["time-regulations", "presets"] as const,
-		violations: {
-			all: ["time-regulations", "violations"] as const,
-			list: (orgId: string, dateRange: { start: Date; end: Date }) =>
-				["time-regulations", "violations", "list", orgId, dateRange] as const,
-			byEmployee: (employeeId: string, dateRange: { start: Date; end: Date }) =>
-				["time-regulations", "violations", "employee", employeeId, dateRange] as const,
-		},
-		effective: (employeeId: string) => ["time-regulations", "effective", employeeId] as const,
 	},
 
 	// Projects
@@ -258,8 +222,7 @@ export const queryKeys = {
 		subareas: {
 			all: (locationId: string) => ["locations", locationId, "subareas"] as const,
 			detail: (subareaId: string) => ["locations", "subareas", "detail", subareaId] as const,
-			employees: (subareaId: string) =>
-				["locations", "subareas", subareaId, "employees"] as const,
+			employees: (subareaId: string) => ["locations", "subareas", subareaId, "employees"] as const,
 		},
 	},
 
@@ -281,6 +244,8 @@ export const queryKeys = {
 				};
 			},
 		) => ["calendar", "events", orgId, params] as const,
+		/** Employees visible in the calendar employee selector (current user + managed employees) */
+		employees: (managerId: string) => ["calendar", "employees", managerId] as const,
 	},
 
 	// Hydration / Water reminders
@@ -334,5 +299,29 @@ export const queryKeys = {
 		detail: (policyId: string) => ["change-policies", "detail", policyId] as const,
 		assignments: (orgId: string) => ["change-policies", "assignments", orgId] as const,
 		effective: (employeeId: string) => ["change-policies", "effective", employeeId] as const,
+	},
+
+	// Reports
+	reports: {
+		all: ["reports"] as const,
+		/** Accessible employees for report generation (based on role/permissions) */
+		employees: (employeeId: string) => ["reports", "employees", employeeId] as const,
+	},
+
+	// Work policies (unified work schedules + time regulations)
+	workPolicies: {
+		all: ["work-policies"] as const,
+		list: (orgId: string) => ["work-policies", "list", orgId] as const,
+		detail: (policyId: string) => ["work-policies", "detail", policyId] as const,
+		assignments: (orgId: string) => ["work-policies", "assignments", orgId] as const,
+		presets: () => ["work-policies", "presets"] as const,
+		violations: {
+			all: ["work-policies", "violations"] as const,
+			list: (orgId: string, dateRange: { start: Date; end: Date }) =>
+				["work-policies", "violations", "list", orgId, dateRange] as const,
+			byEmployee: (employeeId: string, dateRange: { start: Date; end: Date }) =>
+				["work-policies", "violations", "employee", employeeId, dateRange] as const,
+		},
+		effective: (employeeId: string) => ["work-policies", "effective", employeeId] as const,
 	},
 } as const;

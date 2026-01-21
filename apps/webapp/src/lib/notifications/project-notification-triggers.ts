@@ -424,3 +424,53 @@ export async function getProjectTotalHours(projectId: string): Promise<number> {
 	const totalMinutes = result[0]?.totalMinutes ?? 0;
 	return totalMinutes / 60;
 }
+
+// =============================================================================
+// Cron Job Runner for Deadline Notifications
+// =============================================================================
+
+/**
+ * Check and send deadline notifications for all projects.
+ * Called by cron job to process all projects with upcoming deadlines.
+ *
+ * @returns Summary of processed projects
+ */
+export async function checkAndSendDeadlineNotifications(): Promise<{
+	checked: number;
+	notificationsSent: number;
+}> {
+	const projects = await getProjectsWithUpcomingDeadlines();
+	let notificationsSent = 0;
+
+	const now = new Date();
+
+	for (const project of projects) {
+		try {
+			// Calculate days until deadline
+			const deadlineTime = project.deadline.getTime();
+			const nowTime = now.getTime();
+			const diffMs = deadlineTime - nowTime;
+			const daysUntilDeadline = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+			await checkProjectDeadlineWarnings({
+				projectId: project.id,
+				projectName: project.name,
+				organizationId: project.organizationId,
+				deadline: project.deadline,
+				daysUntilDeadline,
+			});
+			// Note: We don't track exactly how many were sent since checkProjectDeadlineWarnings
+			// is fire-and-forget. We increment optimistically for projects that had deadlines processed.
+			notificationsSent++;
+		} catch (error) {
+			logger.error({ error, projectId: project.id }, "Failed to check deadline for project");
+		}
+	}
+
+	logger.info({ checked: projects.length, notificationsSent }, "Deadline notification check complete");
+
+	return {
+		checked: projects.length,
+		notificationsSent,
+	};
+}

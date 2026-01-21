@@ -4,7 +4,7 @@ import { IconCalendar, IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useStore } from "@tanstack/react-store";
 import { useTranslate } from "@tolgee/react";
-import { format } from "date-fns";
+import { DateTime } from "luxon";
 import { useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -64,7 +64,7 @@ const parseDate = (dateStr: string): Date => {
 
 // Helper to format Date to YYYY-MM-DD string
 const formatDateStr = (date: Date): string => {
-	return format(date, "yyyy-MM-dd");
+	return DateTime.fromJSDate(date).toFormat("yyyy-MM-dd");
 };
 
 // Get default start date (Jan 1 of next year)
@@ -237,7 +237,7 @@ export function VacationPolicyForm({
 											>
 												<IconCalendar className="mr-2 h-4 w-4" />
 												{field.state.value ? (
-													format(field.state.value, "PPP")
+													DateTime.fromJSDate(field.state.value).toLocaleString(DateTime.DATE_MED)
 												) : (
 													<span>Pick a date</span>
 												)}
@@ -279,7 +279,7 @@ export function VacationPolicyForm({
 											>
 												<IconCalendar className="mr-2 h-4 w-4" />
 												{field.state.value ? (
-													format(field.state.value, "PPP")
+													DateTime.fromJSDate(field.state.value).toLocaleString(DateTime.DATE_MED)
 												) : (
 													<span>No end date</span>
 												)}
@@ -467,7 +467,9 @@ export function VacationPolicyForm({
 							<form.Field name="carryoverExpiryMonths">
 								{(field) => (
 									<div className="space-y-2">
-										<Label htmlFor="carryoverExpiryMonths">Carryover Expiry (months, optional)</Label>
+										<Label htmlFor="carryoverExpiryMonths">
+											Carryover Expiry (months, optional)
+										</Label>
 										<Input
 											id="carryoverExpiryMonths"
 											type="number"

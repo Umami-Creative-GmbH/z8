@@ -30,6 +30,7 @@ const PUBLIC_ROUTES = [
 	"/terms",
 	"/imprint",
 	"/licenses",
+	"/join",
 ];
 
 // Routes that authenticated users should be redirected away from

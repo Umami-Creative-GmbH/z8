@@ -6,6 +6,8 @@ const withNextIntl = createNextIntlPlugin();
 const nextConfig: NextConfig = {
 	reactStrictMode: true,
 	reactCompiler: true,
+	// Note: standalone output is not compatible with cacheComponents in Next.js 16
+	// Using standard build with full node_modules for Docker deployment
 	// Enable cache components for static dashboard shells and improved performance
 	// Components using connection() will still be dynamic
 	cacheComponents: true,

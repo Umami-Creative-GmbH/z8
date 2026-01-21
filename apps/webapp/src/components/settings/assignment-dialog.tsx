@@ -8,10 +8,10 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
 	createPresetAssignment,
-	getEmployeesForAssignment,
 	getHolidayPresets,
 	getTeamsForAssignment,
 } from "@/app/[locale]/(app)/settings/holidays/preset-actions";
+import { EmployeeSingleSelect } from "@/components/employee-select";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -51,13 +51,6 @@ interface PresetOption {
 interface TeamOption {
 	id: string;
 	name: string;
-}
-
-interface EmployeeOption {
-	id: string;
-	firstName: string | null;
-	lastName: string | null;
-	position: string | null;
 }
 
 export function AssignmentDialog({
@@ -134,19 +127,6 @@ export function AssignmentDialog({
 		enabled: open && assignmentType === "team",
 	});
 
-	// Fetch employees (only for employee assignment type)
-	const { data: employees, isLoading: employeesLoading } = useQuery({
-		queryKey: queryKeys.employees.list(organizationId),
-		queryFn: async () => {
-			const result = await getEmployeesForAssignment(organizationId);
-			if (!result.success) {
-				throw new Error(result.error || "Failed to fetch employees");
-			}
-			return result.data as EmployeeOption[];
-		},
-		enabled: open && assignmentType === "employee",
-	});
-
 	// Create mutation
 	const createMutation = useMutation({
 		mutationFn: (values: { presetId: string; teamId: string; employeeId: string }) =>
@@ -208,7 +188,7 @@ export function AssignmentDialog({
 		}
 	};
 
-	const isLoading = presetsLoading || teamsLoading || employeesLoading;
+	const isLoading = presetsLoading || teamsLoading;
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
@@ -322,42 +302,22 @@ export function AssignmentDialog({
 							<form.Field name="employeeId">
 								{(field) => (
 									<div className="space-y-2">
-										<Label>{t("settings.holidays.assignments.employee", "Employee")}</Label>
-										<Select value={field.state.value} onValueChange={field.handleChange}>
-											<SelectTrigger>
-												<SelectValue
-													placeholder={t(
-														"settings.holidays.assignments.selectEmployee",
-														"Select an employee",
-													)}
-												/>
-											</SelectTrigger>
-											<SelectContent>
-												{employees?.map((emp) => (
-													<SelectItem key={emp.id} value={emp.id}>
-														<div className="flex flex-col">
-															<span>
-																{emp.firstName} {emp.lastName}
-															</span>
-															{emp.position && (
-																<span className="text-xs text-muted-foreground">
-																	{emp.position}
-																</span>
-															)}
-														</div>
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
+										<EmployeeSingleSelect
+											value={field.state.value || null}
+											onChange={(val) => field.handleChange(val || "")}
+											label={t("settings.holidays.assignments.employee", "Employee")}
+											placeholder={t(
+												"settings.holidays.assignments.selectEmployee",
+												"Select an employee",
+											)}
+											error={validationErrors.employeeId}
+										/>
 										<p className="text-sm text-muted-foreground">
 											{t(
 												"settings.holidays.assignments.employeeDescription",
 												"This employee will use this preset instead of team/organization defaults",
 											)}
 										</p>
-										{validationErrors.employeeId && (
-											<p className="text-sm text-destructive">{validationErrors.employeeId}</p>
-										)}
 									</div>
 								)}
 							</form.Field>

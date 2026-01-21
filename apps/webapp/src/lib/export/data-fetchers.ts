@@ -26,9 +26,13 @@ import {
 	vacationAllowance,
 	vacationPolicyAssignment,
 	workPeriod,
-	workScheduleAssignment,
-	workScheduleTemplate,
-	workScheduleTemplateDays,
+	workPolicy,
+	workPolicyAssignment,
+	workPolicySchedule,
+	workPolicyScheduleDay,
+	workPolicyRegulation,
+	workPolicyBreakRule,
+	workPolicyBreakOption,
 } from "@/db";
 import { createLogger } from "@/lib/logger";
 
@@ -485,55 +489,109 @@ export async function fetchVacation(organizationId: string) {
 }
 
 /**
- * Fetch all work schedules for an organization
+ * Fetch all work policies for an organization
  * Format: JSON (complex nested structure)
  */
 export async function fetchSchedules(organizationId: string) {
-	logger.info({ organizationId }, "Fetching work schedules for export");
+	logger.info({ organizationId }, "Fetching work policies for export");
 
-	const templates = await db.query.workScheduleTemplate.findMany({
-		where: eq(workScheduleTemplate.organizationId, organizationId),
+	const policies = await db.query.workPolicy.findMany({
+		where: eq(workPolicy.organizationId, organizationId),
 	});
 
-	const templateIds = templates.map((t) => t.id);
-	const filteredTemplateDays =
-		templateIds.length > 0
-			? await db.query.workScheduleTemplateDays.findMany({
-					where: inArray(workScheduleTemplateDays.templateId, templateIds),
+	const policyIds = policies.map((p) => p.id);
+
+	const schedules =
+		policyIds.length > 0
+			? await db.query.workPolicySchedule.findMany({
+					where: inArray(workPolicySchedule.policyId, policyIds),
 				})
 			: [];
 
-	const assignments = await db.query.workScheduleAssignment.findMany({
-		where: eq(workScheduleAssignment.organizationId, organizationId),
+	const scheduleIds = schedules.map((s) => s.id);
+	const scheduleDays =
+		scheduleIds.length > 0
+			? await db.query.workPolicyScheduleDay.findMany({
+					where: inArray(workPolicyScheduleDay.scheduleId, scheduleIds),
+				})
+			: [];
+
+	const regulations =
+		policyIds.length > 0
+			? await db.query.workPolicyRegulation.findMany({
+					where: inArray(workPolicyRegulation.policyId, policyIds),
+				})
+			: [];
+
+	const regulationIds = regulations.map((r) => r.id);
+	const breakRules =
+		regulationIds.length > 0
+			? await db.query.workPolicyBreakRule.findMany({
+					where: inArray(workPolicyBreakRule.regulationId, regulationIds),
+				})
+			: [];
+
+	const breakRuleIds = breakRules.map((r) => r.id);
+	const breakOptions =
+		breakRuleIds.length > 0
+			? await db.query.workPolicyBreakOption.findMany({
+					where: inArray(workPolicyBreakOption.breakRuleId, breakRuleIds),
+				})
+			: [];
+
+	const assignments = await db.query.workPolicyAssignment.findMany({
+		where: eq(workPolicyAssignment.organizationId, organizationId),
 	});
 
 	logger.info(
-		{ templatesCount: templates.length, assignmentsCount: assignments.length },
-		"Fetched work schedules",
+		{ policiesCount: policies.length, assignmentsCount: assignments.length },
+		"Fetched work policies",
 	);
 
 	return {
-		templates: templates.map((t) => ({
-			id: t.id,
-			name: t.name,
-			description: t.description,
-			scheduleCycle: t.scheduleCycle,
-			scheduleType: t.scheduleType,
-			hoursPerCycle: t.hoursPerCycle,
-			homeOfficeDaysPerCycle: t.homeOfficeDaysPerCycle,
-			workingDaysPreset: t.workingDaysPreset,
-			isDefault: t.isDefault,
-			isActive: t.isActive,
+		policies: policies.map((p) => ({
+			id: p.id,
+			name: p.name,
+			description: p.description,
+			scheduleEnabled: p.scheduleEnabled,
+			regulationEnabled: p.regulationEnabled,
+			isDefault: p.isDefault,
+			isActive: p.isActive,
 		})),
-		templateDays: filteredTemplateDays.map((td) => ({
-			templateId: td.templateId,
-			dayOfWeek: td.dayOfWeek,
-			hoursPerDay: td.hoursPerDay,
-			isWorkDay: td.isWorkDay,
-			cycleWeek: td.cycleWeek,
+		schedules: schedules.map((s) => ({
+			policyId: s.policyId,
+			scheduleCycle: s.scheduleCycle,
+			scheduleType: s.scheduleType,
+			hoursPerCycle: s.hoursPerCycle,
+			homeOfficeDaysPerCycle: s.homeOfficeDaysPerCycle,
+			workingDaysPreset: s.workingDaysPreset,
+		})),
+		scheduleDays: scheduleDays.map((sd) => ({
+			scheduleId: sd.scheduleId,
+			dayOfWeek: sd.dayOfWeek,
+			hoursPerDay: sd.hoursPerDay,
+			isWorkDay: sd.isWorkDay,
+			cycleWeek: sd.cycleWeek,
+		})),
+		regulations: regulations.map((r) => ({
+			policyId: r.policyId,
+			maxDailyMinutes: r.maxDailyMinutes,
+			maxWeeklyMinutes: r.maxWeeklyMinutes,
+			maxUninterruptedMinutes: r.maxUninterruptedMinutes,
+		})),
+		breakRules: breakRules.map((br) => ({
+			regulationId: br.regulationId,
+			workingMinutesThreshold: br.workingMinutesThreshold,
+			requiredBreakMinutes: br.requiredBreakMinutes,
+		})),
+		breakOptions: breakOptions.map((bo) => ({
+			breakRuleId: bo.breakRuleId,
+			splitCount: bo.splitCount,
+			minimumSplitMinutes: bo.minimumSplitMinutes,
+			minimumLongestSplitMinutes: bo.minimumLongestSplitMinutes,
 		})),
 		assignments: assignments.map((a) => ({
-			templateId: a.templateId,
+			policyId: a.policyId,
 			employeeId: a.employeeId,
 			teamId: a.teamId,
 			priority: a.priority,

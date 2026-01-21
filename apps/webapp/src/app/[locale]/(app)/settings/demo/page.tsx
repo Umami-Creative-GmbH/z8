@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
+import { getTranslate } from "@/tolgee/server";
 import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { DemoDataWizard } from "@/components/settings/demo-data-wizard";
@@ -10,6 +11,7 @@ import { getOrganizationEmployees } from "./actions";
 
 async function DemoSettingsContent() {
 	await connection(); // Mark as fully dynamic for cacheComponents mode
+	const t = await getTranslate();
 
 	const currentEmployee = await getCurrentEmployee();
 
@@ -36,9 +38,9 @@ async function DemoSettingsContent() {
 	return (
 		<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
 			<div className="space-y-1">
-				<h1 className="text-2xl font-semibold">Demo Data</h1>
+				<h1 className="text-2xl font-semibold">{t("settings.demo.title", "Demo Data")}</h1>
 				<p className="text-muted-foreground">
-					Generate sample data for testing or clear existing time-related data
+					{t("settings.demo.description", "Generate sample data for testing or clear existing time-related data")}
 				</p>
 			</div>
 

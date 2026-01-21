@@ -15,6 +15,7 @@ import {
 	type SortingState,
 	useReactTable,
 } from "@tanstack/react-table";
+import { useTranslate } from "@tolgee/react";
 import { useEffect, useState } from "react";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { Button } from "@/components/ui/button";
@@ -40,6 +41,7 @@ import { Link } from "@/navigation";
 import { columns } from "./columns";
 
 export default function EmployeesPage() {
+	const { t } = useTranslate();
 	const {
 		employees,
 		total,
@@ -96,9 +98,9 @@ export default function EmployeesPage() {
 		<div className="flex flex-1 flex-col gap-4 p-4">
 			<div className="flex items-center justify-between">
 				<div>
-					<h1 className="text-2xl font-semibold tracking-tight">Employees</h1>
+					<h1 className="text-2xl font-semibold tracking-tight">{t("settings.employees.title", "Employees")}</h1>
 					<p className="text-sm text-muted-foreground">
-						Manage employee profiles, teams, and permissions
+						{t("settings.employees.description", "Manage employee profiles, teams, and permissions")}
 					</p>
 				</div>
 				<div className="flex items-center gap-2">

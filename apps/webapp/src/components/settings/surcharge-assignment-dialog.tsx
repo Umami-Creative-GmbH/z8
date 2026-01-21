@@ -7,10 +7,10 @@ import { useTranslate } from "@tolgee/react";
 import { toast } from "sonner";
 import {
 	createSurchargeAssignment,
-	getEmployeesForAssignment,
 	getSurchargeModels,
 	getTeamsForAssignment,
 } from "@/app/[locale]/(app)/settings/surcharges/actions";
+import { EmployeeSingleSelect } from "@/components/employee-select";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -64,13 +64,6 @@ export function SurchargeAssignmentDialog({
 		queryKey: ["teams-for-assignment", organizationId],
 		queryFn: () => getTeamsForAssignment(organizationId),
 		enabled: open && assignmentType === "team",
-	});
-
-	// Fetch employees (only for employee assignments)
-	const employeesQuery = useQuery({
-		queryKey: ["employees-for-assignment", organizationId],
-		queryFn: () => getEmployeesForAssignment(organizationId),
-		enabled: open && assignmentType === "employee",
 	});
 
 	const form = useForm({
@@ -136,7 +129,6 @@ export function SurchargeAssignmentDialog({
 		? modelsQuery.data.data.filter((m) => m.isActive)
 		: [];
 	const teams = teamsQuery.data?.success ? teamsQuery.data.data : [];
-	const employees = employeesQuery.data?.success ? employeesQuery.data.data : [];
 
 	const getDialogTitle = () => {
 		switch (assignmentType) {
@@ -262,31 +254,15 @@ export function SurchargeAssignmentDialog({
 					{assignmentType === "employee" && (
 						<form.Field name="employeeId">
 							{(field) => (
-								<TFormItem>
-									<TFormLabel hasError={fieldHasError(field)}>
-										{t("settings.surcharges.selectEmployee", "Select Employee")}
-									</TFormLabel>
-									<Select value={field.state.value || ""} onValueChange={field.handleChange}>
-										<TFormControl hasError={fieldHasError(field)}>
-											<SelectTrigger>
-												<SelectValue
-													placeholder={t(
-														"settings.surcharges.selectEmployeePlaceholder",
-														"Select an employee",
-													)}
-												/>
-											</SelectTrigger>
-										</TFormControl>
-										<SelectContent>
-											{employees.map((emp) => (
-												<SelectItem key={emp.id} value={emp.id}>
-													{emp.firstName} {emp.lastName}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-									<TFormMessage field={field} />
-								</TFormItem>
+								<EmployeeSingleSelect
+									value={field.state.value}
+									onChange={field.handleChange}
+									label={t("settings.surcharges.selectEmployee", "Select Employee")}
+									placeholder={t(
+										"settings.surcharges.selectEmployeePlaceholder",
+										"Select an employee",
+									)}
+								/>
 							)}
 						</form.Field>
 					)}

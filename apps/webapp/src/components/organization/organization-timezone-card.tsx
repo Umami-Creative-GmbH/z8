@@ -43,7 +43,7 @@ export function OrganizationTimezoneCard({
 
 		if (result.success) {
 			toast.success(
-				t("organization.timezone.updated", "Organization timezone updated to {{timezone}}", {
+				t("organization.timezone.updated", "Organization timezone updated to {timezone}", {
 					timezone: newTimezone,
 				}),
 			);

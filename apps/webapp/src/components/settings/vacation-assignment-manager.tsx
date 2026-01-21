@@ -14,7 +14,7 @@ import {
 } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { format } from "date-fns";
+import { DateTime } from "luxon";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -85,8 +85,7 @@ interface CompanyDefaultPolicies {
 
 // Helper to format date for display
 const formatDate = (dateStr: string) => {
-	const [year, month, day] = dateStr.split("-").map(Number);
-	return format(new Date(year, month - 1, day), "MMM d, yyyy");
+	return DateTime.fromISO(dateStr).toFormat("LLL d, yyyy");
 };
 
 // Helper to format policy summary

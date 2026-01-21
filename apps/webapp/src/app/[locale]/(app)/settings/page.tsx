@@ -12,9 +12,6 @@ export default async function SettingsPage() {
 	return (
 		<div className="flex-1 p-6">
 			<div className="mx-auto max-w-4xl">
-				<h1 className="text-3xl font-semibold mb-2">Settings</h1>
-				<p className="text-muted-foreground mb-8">Manage your account and organization settings</p>
-
 				<SettingsGrid visibleSettings={visibleSettings} visibleGroups={visibleGroups} />
 			</div>
 		</div>

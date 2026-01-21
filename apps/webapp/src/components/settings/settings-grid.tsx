@@ -9,6 +9,7 @@ import {
 	type SettingsGroupConfig,
 } from "@/components/settings/settings-config";
 import { useOrganizationSettings } from "@/stores/organization-settings-store";
+import { useTranslate } from "@tolgee/react";
 
 interface SettingsGridProps {
 	visibleSettings: SettingsEntry[];
@@ -16,6 +17,7 @@ interface SettingsGridProps {
 }
 
 export function SettingsGrid({ visibleSettings, visibleGroups }: SettingsGridProps) {
+	const { t } = useTranslate();
 	const orgSettings = useOrganizationSettings();
 	const isHydrated = orgSettings.isHydrated;
 
@@ -37,7 +39,7 @@ export function SettingsGrid({ visibleSettings, visibleGroups }: SettingsGridPro
 
 				return (
 					<section key={group.id}>
-						<h2 className="text-lg font-medium mb-4">{group.labelDefault}</h2>
+						<h2 className="text-lg font-medium mb-4">{t(group.labelKey, group.labelDefault)}</h2>
 						<div className="grid gap-4 md:grid-cols-2">
 							{groupEntries.map((entry) => {
 								const hasFeatureFlag = !!entry.requiredFeature;
@@ -48,8 +50,8 @@ export function SettingsGrid({ visibleSettings, visibleGroups }: SettingsGridPro
 								return (
 									<SettingsCard
 										key={entry.id}
-										title={entry.titleDefault}
-										description={entry.descriptionDefault}
+										title={t(entry.titleKey, entry.titleDefault)}
+										description={t(entry.descriptionKey, entry.descriptionDefault)}
 										href={entry.href}
 										icon={entry.icon}
 										disabled={isDisabled}

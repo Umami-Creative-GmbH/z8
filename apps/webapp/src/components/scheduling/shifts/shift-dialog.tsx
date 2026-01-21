@@ -3,8 +3,8 @@
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useStore } from "@tanstack/react-store";
-import { format } from "date-fns";
 import { CalendarIcon, Loader2, MapPin, Trash2, Users } from "lucide-react";
+import { DateTime } from "luxon";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -259,7 +259,7 @@ export function ShiftDialog({
 											disabled={!isManager}
 										>
 											{field.state.value ? (
-												format(field.state.value, "PPP")
+												DateTime.fromJSDate(field.state.value).toLocaleString(DateTime.DATE_MED)
 											) : (
 												<span>Pick a date</span>
 											)}
@@ -406,9 +406,7 @@ export function ShiftDialog({
 											)}
 										</SelectContent>
 									</Select>
-									<p className="text-sm text-muted-foreground">
-										Where this shift will take place
-									</p>
+									<p className="text-sm text-muted-foreground">Where this shift will take place</p>
 								</div>
 							)}
 						</form.Field>

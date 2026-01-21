@@ -24,7 +24,8 @@ export type SettingsIconName =
 	| "database-export"
 	| "test-pipe"
 	| "mail"
-	| "tag";
+	| "tag"
+	| "server";
 
 export interface SettingsEntry {
 	id: string;
@@ -181,27 +182,39 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		group: "administration",
 	},
 	{
-		id: "time-regulations",
-		titleKey: "settings.timeRegulations.title",
-		titleDefault: "Time Regulations",
-		descriptionKey: "settings.timeRegulations.description",
-		descriptionDefault: "Configure working time limits and break requirements",
-		href: "/settings/time-regulations",
+		id: "work-policies",
+		titleKey: "settings.workPolicies.title",
+		titleDefault: "Work Policies",
+		descriptionKey: "settings.workPolicies.description",
+		descriptionDefault: "Configure work schedules, time limits, and break requirements",
+		href: "/settings/work-policies",
 		icon: "gavel",
 		adminOnly: true,
 		group: "administration",
 	},
 	{
-		id: "work-schedules",
-		titleKey: "settings.workSchedules.title",
-		titleDefault: "Work Schedules",
-		descriptionKey: "settings.workSchedules.description",
-		descriptionDefault: "Define required work hours and assign schedules to teams or employees",
-		href: "/settings/work-schedules",
-		icon: "clock",
+		id: "work-categories",
+		titleKey: "settings.workCategories.title",
+		titleDefault: "Work Categories",
+		descriptionKey: "settings.workCategories.description",
+		descriptionDefault: "Define work categories with time factors for effective time calculation",
+		href: "/settings/work-categories",
+		icon: "tag",
 		adminOnly: true,
 		group: "administration",
 	},
+	{
+		id: "change-policies",
+		titleKey: "settings.changePolicies.title",
+		titleDefault: "Change Policies",
+		descriptionKey: "settings.changePolicies.description",
+		descriptionDefault: "Control when employees can edit time entries and require manager approval",
+		href: "/settings/change-policies",
+		icon: "clock-edit",
+		adminOnly: true,
+		group: "administration",
+	},
+	// Optional features (require feature flag to be enabled)
 	{
 		id: "shift-templates",
 		titleKey: "settings.shiftTemplates.title",
@@ -237,28 +250,6 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		adminOnly: true,
 		group: "administration",
 		requiredFeature: "projectsEnabled",
-	},
-	{
-		id: "work-categories",
-		titleKey: "settings.workCategories.title",
-		titleDefault: "Work Categories",
-		descriptionKey: "settings.workCategories.description",
-		descriptionDefault: "Define work categories with time factors for effective time calculation",
-		href: "/settings/work-categories",
-		icon: "tag",
-		adminOnly: true,
-		group: "administration",
-	},
-	{
-		id: "change-policies",
-		titleKey: "settings.changePolicies.title",
-		titleDefault: "Change Policies",
-		descriptionKey: "settings.changePolicies.description",
-		descriptionDefault: "Control when employees can edit time entries and require manager approval",
-		href: "/settings/change-policies",
-		icon: "clock-edit",
-		adminOnly: true,
-		group: "administration",
 	},
 	// Enterprise settings
 	{
@@ -303,6 +294,17 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "View statistics and metrics about your instance",
 		href: "/settings/statistics",
 		icon: "chart-bar",
+		adminOnly: true,
+		group: "data",
+	},
+	{
+		id: "worker-queue",
+		titleKey: "settings.workerQueue.title",
+		titleDefault: "Worker Queue",
+		descriptionKey: "settings.workerQueue.description",
+		descriptionDefault: "Monitor background job processing and cron job executions",
+		href: "/settings/worker-queue",
+		icon: "server",
 		adminOnly: true,
 		group: "data",
 	},

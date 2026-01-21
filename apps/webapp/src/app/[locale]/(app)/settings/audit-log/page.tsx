@@ -1,9 +1,10 @@
 import { redirect } from "next/navigation";
 import { AuditLogViewer } from "@/components/settings/audit-log-viewer";
 import { requireUser } from "@/lib/auth-helpers";
+import { getTranslate } from "@/tolgee/server";
 
 export default async function AuditLogPage() {
-	const authContext = await requireUser();
+	const [authContext, t] = await Promise.all([requireUser(), getTranslate()]);
 
 	// Only admins can access audit logs
 	if (authContext.employee?.role !== "admin") {
@@ -14,9 +15,9 @@ export default async function AuditLogPage() {
 		<div className="p-6">
 			<div className="mx-auto max-w-6xl">
 				<div className="mb-6">
-					<h1 className="text-2xl font-semibold">Audit Log</h1>
+					<h1 className="text-2xl font-semibold">{t("settings.auditLog.title", "Audit Log")}</h1>
 					<p className="text-muted-foreground">
-						View and search all actions performed in your organization
+						{t("settings.auditLog.description", "View and search all actions performed in your organization")}
 					</p>
 				</div>
 				<AuditLogViewer />

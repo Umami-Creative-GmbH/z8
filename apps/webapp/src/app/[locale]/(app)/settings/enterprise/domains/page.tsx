@@ -1,10 +1,11 @@
 import { redirect } from "next/navigation";
 import { DomainsAndBrandingTabs } from "@/components/settings/enterprise/domains-branding-tabs";
 import { requireUser } from "@/lib/auth-helpers";
+import { getTranslate } from "@/tolgee/server";
 import { getBrandingAction, listDomainsAction, listSSOProvidersAction } from "../actions";
 
 export default async function CustomDomainsPage() {
-	const authContext = await requireUser();
+	const [authContext, t] = await Promise.all([requireUser(), getTranslate()]);
 
 	if (authContext.employee?.role !== "admin") {
 		redirect("/settings");
@@ -20,9 +21,9 @@ export default async function CustomDomainsPage() {
 		<div className="p-6">
 			<div className="mx-auto max-w-4xl">
 				<div className="mb-6">
-					<h1 className="text-2xl font-semibold">Custom Domain & Branding</h1>
+					<h1 className="text-2xl font-semibold">{t("settings.enterprise.domains.title", "Custom Domain & Branding")}</h1>
 					<p className="text-muted-foreground">
-						Configure your organization&apos;s custom login domain, branding, and SSO providers.
+						{t("settings.enterprise.domains.description", "Configure your organization's custom login domain, branding, and SSO providers.")}
 					</p>
 				</div>
 				<DomainsAndBrandingTabs

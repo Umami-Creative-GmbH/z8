@@ -13,11 +13,16 @@ const logger = createLogger("RateLimit");
 
 /**
  * Minimal Redis interface required by @upstash/ratelimit
- * Based on: Pick<Redis, "evalsha" | "get" | "set">
+ * Includes both evalsha and eval for NOSCRIPT fallback handling
  */
 type RatelimitRedis = {
 	evalsha: <TArgs extends unknown[], TData = unknown>(
 		sha: string,
+		keys: string[],
+		args: TArgs,
+	) => Promise<TData>;
+	eval: <TArgs extends unknown[], TData = unknown>(
+		script: string,
 		keys: string[],
 		args: TArgs,
 	) => Promise<TData>;
@@ -26,7 +31,25 @@ type RatelimitRedis = {
 };
 
 /**
+ * Custom error class that properly stringifies for NOSCRIPT detection
+ * @upstash/ratelimit checks `${error}`.includes("NOSCRIPT")
+ */
+class NoscriptError extends Error {
+	constructor(message: string) {
+		super(message);
+		this.name = "NOSCRIPT";
+	}
+
+	toString(): string {
+		return `NOSCRIPT: ${this.message}`;
+	}
+}
+
+/**
  * Redis adapter for @upstash/ratelimit using our existing ioredis connection
+ *
+ * Handles NOSCRIPT errors by re-throwing with proper format so the library
+ * can detect them and fall back to EVAL
  */
 const redisAdapter: RatelimitRedis = {
 	evalsha: async <TArgs extends unknown[], TData = unknown>(
@@ -34,7 +57,22 @@ const redisAdapter: RatelimitRedis = {
 		keys: string[],
 		args: TArgs,
 	): Promise<TData> => {
-		return valkey.evalsha(sha, keys.length, ...keys, ...args.map(String)) as Promise<TData>;
+		try {
+			return (await valkey.evalsha(sha, keys.length, ...keys, ...args.map(String))) as TData;
+		} catch (error) {
+			// Re-throw NOSCRIPT errors with proper format for @upstash/ratelimit detection
+			if (error instanceof Error && error.message.includes("NOSCRIPT")) {
+				throw new NoscriptError(error.message);
+			}
+			throw error;
+		}
+	},
+	eval: async <TArgs extends unknown[], TData = unknown>(
+		script: string,
+		keys: string[],
+		args: TArgs,
+	): Promise<TData> => {
+		return valkey.eval(script, keys.length, ...keys, ...args.map(String)) as Promise<TData>;
 	},
 	get: async <TData = string>(key: string): Promise<TData | null> => {
 		return valkey.get(key) as Promise<TData | null>;

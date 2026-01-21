@@ -8,6 +8,7 @@ import {
 	IconLoader2,
 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
+import { useTranslate } from "@tolgee/react";
 import { use, useEffect } from "react";
 import { toast } from "sonner";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
@@ -58,6 +59,7 @@ export default function EmployeeDetailPage({
 	params: Promise<{ employeeId: string }>;
 }) {
 	const { employeeId } = use(params);
+	const { t } = useTranslate();
 	const router = useRouter();
 
 	const {
@@ -138,9 +140,9 @@ export default function EmployeeDetailPage({
 								<IconArrowBack className="size-4" aria-hidden="true" />
 							</Link>
 						</Button>
-						<h1 className="text-2xl font-semibold tracking-tight">Employee Details</h1>
+						<h1 className="text-2xl font-semibold tracking-tight">{t("settings.employees.details.title", "Employee Details")}</h1>
 					</div>
-					<p className="text-sm text-muted-foreground">View and edit employee information</p>
+					<p className="text-sm text-muted-foreground">{t("settings.employees.details.description", "View and edit employee information")}</p>
 				</div>
 			</div>
 
@@ -213,22 +215,24 @@ export default function EmployeeDetailPage({
 							</div>
 							{schedule ? (
 								<div className="space-y-2">
-									<div className="font-medium">{schedule.template.name}</div>
+									<div className="font-medium">{schedule.policyName}</div>
 									<div className="flex flex-wrap gap-2">
-										<Badge variant="outline">{schedule.weeklyHours}h / week</Badge>
-										{schedule.template.homeOfficeDaysPerCycle != null &&
-											schedule.template.homeOfficeDaysPerCycle > 0 && (
+										{schedule.hoursPerCycle && (
+											<Badge variant="outline">{schedule.hoursPerCycle}h / {schedule.scheduleCycle || "week"}</Badge>
+										)}
+										{schedule.homeOfficeDaysPerCycle != null &&
+											schedule.homeOfficeDaysPerCycle > 0 && (
 												<Badge variant="outline" className="flex items-center gap-1">
 													<IconHome className="size-3" aria-hidden="true" />
-													{schedule.template.homeOfficeDaysPerCycle} home office day
-													{schedule.template.homeOfficeDaysPerCycle > 1 ? "s" : ""}
+													{schedule.homeOfficeDaysPerCycle} home office day
+													{schedule.homeOfficeDaysPerCycle > 1 ? "s" : ""}
 												</Badge>
 											)}
 									</div>
 									<div className="text-xs text-muted-foreground">
 										Assigned via: {schedule.assignedVia}
 									</div>
-									{schedule.template.scheduleType === "detailed" && schedule.template.days && (
+									{schedule.scheduleType === "detailed" && schedule.days && (
 										<div className="mt-2 flex flex-wrap gap-1">
 											{["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day, index) => {
 												const dayName = [
@@ -240,7 +244,7 @@ export default function EmployeeDetailPage({
 													"saturday",
 													"sunday",
 												][index];
-												const scheduleDay = schedule.template.days.find(
+												const scheduleDay = schedule.days?.find(
 													(d) => d.dayOfWeek === dayName,
 												);
 												const isWorkDay = scheduleDay?.isWorkDay ?? false;

@@ -4,17 +4,15 @@ import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { format } from "date-fns";
+import { DateTime } from "luxon";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import {
-	getEmployeesForAssignment,
-	getTeamsForAssignment,
-} from "@/app/[locale]/(app)/settings/holidays/preset-actions";
+import { getTeamsForAssignment } from "@/app/[locale]/(app)/settings/holidays/preset-actions";
 import {
 	createVacationPolicyAssignment,
 	getVacationPolicies,
 } from "@/app/[locale]/(app)/settings/vacation/assignment-actions";
+import { EmployeeSingleSelect } from "@/components/employee-select";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -60,17 +58,9 @@ interface TeamOption {
 	name: string;
 }
 
-interface EmployeeOption {
-	id: string;
-	firstName: string | null;
-	lastName: string | null;
-	position: string | null;
-}
-
 // Helper to format date for display
 const formatDate = (dateStr: string) => {
-	const [year, month, day] = dateStr.split("-").map(Number);
-	return format(new Date(year, month - 1, day), "MMM yyyy");
+	return DateTime.fromISO(dateStr).toFormat("LLL yyyy");
 };
 
 export function VacationAssignmentDialog({
@@ -148,19 +138,6 @@ export function VacationAssignmentDialog({
 		enabled: open && assignmentType === "team",
 	});
 
-	// Fetch employees (only for employee assignment type)
-	const { data: employees, isLoading: employeesLoading } = useQuery({
-		queryKey: queryKeys.employees.list(organizationId),
-		queryFn: async () => {
-			const result = await getEmployeesForAssignment(organizationId);
-			if (!result.success) {
-				throw new Error(result.error || "Failed to fetch employees");
-			}
-			return result.data as EmployeeOption[];
-		},
-		enabled: open && assignmentType === "employee",
-	});
-
 	// Create mutation
 	const createMutation = useMutation({
 		mutationFn: (values: { policyId: string; teamId: string; employeeId: string }) =>
@@ -221,7 +198,7 @@ export function VacationAssignmentDialog({
 		return `${policy.name} - ${policy.defaultAnnualDays} days ${dateInfo}`;
 	};
 
-	const isLoading = policiesLoading || teamsLoading || employeesLoading;
+	const isLoading = policiesLoading || teamsLoading;
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
@@ -342,36 +319,22 @@ export function VacationAssignmentDialog({
 							<form.Field name="employeeId">
 								{(field) => (
 									<div className="space-y-2">
-										<Label>{t("settings.vacation.assignments.employee", "Employee")}</Label>
-										<Select value={field.state.value} onValueChange={field.handleChange}>
-											<SelectTrigger>
-												<SelectValue
-													placeholder={t(
-														"settings.vacation.assignments.selectEmployee",
-														"Select an employee",
-													)}
-												/>
-											</SelectTrigger>
-											<SelectContent>
-												{employees?.map((emp) => (
-													<SelectItem key={emp.id} value={emp.id}>
-														{emp.firstName} {emp.lastName}
-														{emp.position && (
-															<span className="text-muted-foreground ml-1">({emp.position})</span>
-														)}
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
+										<EmployeeSingleSelect
+											value={field.state.value || null}
+											onChange={(val) => field.handleChange(val || "")}
+											label={t("settings.vacation.assignments.employee", "Employee")}
+											placeholder={t(
+												"settings.vacation.assignments.selectEmployee",
+												"Select an employee",
+											)}
+											error={validationErrors.employeeId}
+										/>
 										<p className="text-sm text-muted-foreground">
 											{t(
 												"settings.vacation.assignments.employeeNote",
 												"This policy will override team and company defaults for this employee",
 											)}
 										</p>
-										{validationErrors.employeeId && (
-											<p className="text-sm text-destructive">{validationErrors.employeeId}</p>
-										)}
 									</div>
 								)}
 							</form.Field>

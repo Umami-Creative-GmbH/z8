@@ -12,7 +12,7 @@
 
 import { unstable_cache } from "next/cache";
 import { eq } from "drizzle-orm";
-import { db, employee, team, workScheduleTemplate, holidayPreset } from "@/db";
+import { db, employee, team, workPolicy, holidayPreset } from "@/db";
 
 // Cache tags for invalidation
 export const CACHE_TAGS = {
@@ -80,26 +80,25 @@ export const getCachedEmployeeCount = unstable_cache(
 );
 
 /**
- * Get cached work schedule templates for an organization
+ * Get cached work policies for an organization
  */
-export const getCachedScheduleTemplates = unstable_cache(
+export const getCachedWorkPolicies = unstable_cache(
 	async (organizationId: string) => {
-		return db.query.workScheduleTemplate.findMany({
-			where: eq(workScheduleTemplate.organizationId, organizationId),
+		return db.query.workPolicy.findMany({
+			where: eq(workPolicy.organizationId, organizationId),
 			columns: {
 				id: true,
 				name: true,
 				description: true,
-				scheduleCycle: true,
-				scheduleType: true,
-				hoursPerCycle: true,
+				scheduleEnabled: true,
+				regulationEnabled: true,
 				isDefault: true,
 				isActive: true,
 			},
-			orderBy: (template, { asc }) => [asc(template.name)],
+			orderBy: (policy, { asc }) => [asc(policy.name)],
 		});
 	},
-	["schedule-templates"],
+	["work-policies"],
 	{
 		revalidate: 300, // 5 minutes
 		tags: [CACHE_TAGS.SCHEDULES],

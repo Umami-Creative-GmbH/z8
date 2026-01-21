@@ -229,7 +229,7 @@ export function VacationPoliciesTable({ organizationId }: VacationPoliciesTableP
 					row.original.allowCarryover ? (
 						<Badge variant="outline">
 							{row.original.maxCarryoverDays
-								? t("vacation.policies.max-days", "Max {{days}} days", {
+								? t("vacation.policies.max-days", "Max {days} days", {
 										days: row.original.maxCarryoverDays,
 									})
 								: t("vacation.policies.unlimited", "Unlimited")}
@@ -372,12 +372,12 @@ export function VacationPoliciesTable({ organizationId }: VacationPoliciesTableP
 							{policyToDelete?.isCompanyDefault
 								? t(
 										"vacation.policies.delete-default-warning",
-										'Warning: "{{name}}" is the company default policy. You must set another policy as default before deleting this one.',
+										'Warning: "{name}" is the company default policy. You must set another policy as default before deleting this one.',
 										{ name: policyToDelete?.name },
 									)
 								: t(
 										"vacation.policies.delete-description-v2",
-										'Are you sure you want to delete "{{name}}"? This will also remove all assignments for this policy.',
+										'Are you sure you want to delete "{name}"? This will also remove all assignments for this policy.',
 										{ name: policyToDelete?.name },
 									)}
 						</AlertDialogDescription>

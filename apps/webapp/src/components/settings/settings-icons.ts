@@ -15,6 +15,7 @@ import {
 	IconMail,
 	IconMapPin,
 	IconPercentage,
+	IconServer,
 	IconShield,
 	IconTag,
 	IconTestPipe,
@@ -50,4 +51,5 @@ export const SETTINGS_ICON_MAP: Record<
 	"test-pipe": IconTestPipe,
 	mail: IconMail,
 	tag: IconTag,
+	server: IconServer,
 };

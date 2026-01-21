@@ -7,9 +7,10 @@ import { TwoFactorSetup } from "@/components/settings/two-factor-setup";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import { requireUser } from "@/lib/auth-helpers";
+import { getTranslate } from "@/tolgee/server";
 
 export default async function SecuritySettingsPage() {
-	const authContext = await requireUser();
+	const [authContext, t] = await Promise.all([requireUser(), getTranslate()]);
 
 	// Fetch user's 2FA status
 	const userRecord = await db.query.user.findFirst({
@@ -20,9 +21,9 @@ export default async function SecuritySettingsPage() {
 		<div className="p-6">
 			<div className="mx-auto max-w-2xl">
 				<div className="mb-6">
-					<h1 className="text-2xl font-semibold">Security Settings</h1>
+					<h1 className="text-2xl font-semibold">{t("settings.security.title", "Security Settings")}</h1>
 					<p className="text-muted-foreground">
-						Manage your password, two-factor authentication, passkeys, and active sessions
+						{t("settings.security.description", "Manage your password, two-factor authentication, passkeys, and active sessions")}
 					</p>
 				</div>
 				<div className="space-y-6">

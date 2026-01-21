@@ -596,15 +596,19 @@ export async function getEmployee(
 								},
 							},
 						},
-						workScheduleAssignments: {
+						workPolicyAssignments: {
 							with: {
-								template: {
+								policy: {
 									with: {
-										days: true,
+										schedule: {
+											with: {
+												days: true,
+											},
+										},
 									},
 								},
 							},
-							orderBy: (schedule, { desc }) => [desc(schedule.effectiveFrom)],
+							orderBy: (assignment, { desc }) => [desc(assignment.effectiveFrom)],
 							limit: 1,
 						},
 					},

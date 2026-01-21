@@ -14,7 +14,7 @@ import {
 	getEmployeeRateHistory,
 	type RateHistoryEntry,
 } from "@/app/[locale]/(app)/settings/employees/rate-actions";
-import { getEmployeeEffectiveScheduleDetails } from "@/app/[locale]/(app)/settings/work-schedules/assignment-actions";
+import { getEmployeeEffectiveScheduleDetails } from "@/app/[locale]/(app)/settings/work-policies/actions";
 import type { CreateRateHistory, UpdateEmployee } from "@/lib/validations/employee";
 import { queryKeys } from "./keys";
 

@@ -51,8 +51,8 @@ import {
 	rejectPendingMember,
 	bulkApprovePendingMembers,
 	bulkRejectPendingMembers,
-	type PendingMember,
 } from "@/app/[locale]/(app)/settings/organizations/invite-code-actions";
+import type { PendingMember } from "@/lib/effect/services/pending-member.service";
 import { listTeams } from "@/app/[locale]/(app)/settings/teams/actions";
 import { queryKeys } from "@/lib/query";
 
@@ -147,7 +147,7 @@ export function PendingMembersCard({
 			queryClient.invalidateQueries({ queryKey: queryKeys.pendingMembers.list(organizationId) });
 			queryClient.invalidateQueries({ queryKey: queryKeys.members.list(organizationId) });
 			toast.success(
-				t("settings.pendingMembers.bulkApproved", "{{count}} members approved", {
+				t("settings.pendingMembers.bulkApproved", "{count} members approved", {
 					count: data.approved,
 				}),
 			);
@@ -170,7 +170,7 @@ export function PendingMembersCard({
 		onSuccess: (data) => {
 			queryClient.invalidateQueries({ queryKey: queryKeys.pendingMembers.list(organizationId) });
 			toast.success(
-				t("settings.pendingMembers.bulkRejected", "{{count}} members rejected", {
+				t("settings.pendingMembers.bulkRejected", "{count} members rejected", {
 					count: data.rejected,
 				}),
 			);
@@ -440,7 +440,7 @@ export function PendingMembersCard({
 						<AlertDialogDescription>
 							{t(
 								"settings.pendingMembers.bulkRejectDescription",
-								"Are you sure you want to reject {{count}} selected members? They will be removed from the pending list.",
+								"Are you sure you want to reject {count} selected members? They will be removed from the pending list.",
 								{ count: selectedMembers.size },
 							)}
 						</AlertDialogDescription>

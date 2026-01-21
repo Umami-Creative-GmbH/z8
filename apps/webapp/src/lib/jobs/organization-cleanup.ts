@@ -44,17 +44,17 @@ import {
 	surchargeModelAssignment,
 	team,
 	timeEntry,
-	timeRegulation,
-	timeRegulationBreakRule,
-	timeRegulationBreakOption,
-	timeRegulationAssignment,
-	timeRegulationViolation,
 	vacationAllowance,
 	waterIntakeLog,
 	workPeriod,
-	workScheduleTemplate,
-	workScheduleTemplateDays,
-	workScheduleAssignment,
+	workPolicy,
+	workPolicyAssignment,
+	workPolicyBreakOption,
+	workPolicyBreakRule,
+	workPolicyRegulation,
+	workPolicySchedule,
+	workPolicyScheduleDay,
+	workPolicyViolation,
 } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
 
@@ -223,32 +223,40 @@ async function permanentlyDeleteOrganization(organizationId: string): Promise<vo
 		}
 		await tx.delete(surchargeModel).where(eq(surchargeModel.organizationId, organizationId));
 
-		// 9. Time regulation data
-		const regulations = await tx.query.timeRegulation.findMany({
-			where: eq(timeRegulation.organizationId, organizationId),
+		// 9. Work policy data (unified schedules + regulations)
+		const policies = await tx.query.workPolicy.findMany({
+			where: eq(workPolicy.organizationId, organizationId),
 		});
-		for (const reg of regulations) {
-			const breakRules = await tx.query.timeRegulationBreakRule.findMany({
-				where: eq(timeRegulationBreakRule.regulationId, reg.id),
+		for (const policy of policies) {
+			// Delete schedule data
+			const schedule = await tx.query.workPolicySchedule.findFirst({
+				where: eq(workPolicySchedule.policyId, policy.id),
 			});
-			for (const rule of breakRules) {
-				await tx.delete(timeRegulationBreakOption).where(eq(timeRegulationBreakOption.breakRuleId, rule.id));
+			if (schedule) {
+				await tx.delete(workPolicyScheduleDay).where(eq(workPolicyScheduleDay.scheduleId, schedule.id));
+				await tx.delete(workPolicySchedule).where(eq(workPolicySchedule.id, schedule.id));
 			}
-			await tx.delete(timeRegulationBreakRule).where(eq(timeRegulationBreakRule.regulationId, reg.id));
-			await tx.delete(timeRegulationAssignment).where(eq(timeRegulationAssignment.regulationId, reg.id));
-		}
-		await tx.delete(timeRegulationViolation).where(eq(timeRegulationViolation.organizationId, organizationId));
-		await tx.delete(timeRegulation).where(eq(timeRegulation.organizationId, organizationId));
 
-		// 10. Work schedule data
-		const schedules = await tx.query.workScheduleTemplate.findMany({
-			where: eq(workScheduleTemplate.organizationId, organizationId),
-		});
-		for (const sched of schedules) {
-			await tx.delete(workScheduleTemplateDays).where(eq(workScheduleTemplateDays.templateId, sched.id));
-			await tx.delete(workScheduleAssignment).where(eq(workScheduleAssignment.templateId, sched.id));
+			// Delete regulation data
+			const regulation = await tx.query.workPolicyRegulation.findFirst({
+				where: eq(workPolicyRegulation.policyId, policy.id),
+			});
+			if (regulation) {
+				const breakRules = await tx.query.workPolicyBreakRule.findMany({
+					where: eq(workPolicyBreakRule.regulationId, regulation.id),
+				});
+				for (const rule of breakRules) {
+					await tx.delete(workPolicyBreakOption).where(eq(workPolicyBreakOption.breakRuleId, rule.id));
+				}
+				await tx.delete(workPolicyBreakRule).where(eq(workPolicyBreakRule.regulationId, regulation.id));
+				await tx.delete(workPolicyRegulation).where(eq(workPolicyRegulation.id, regulation.id));
+			}
+
+			// Delete assignments
+			await tx.delete(workPolicyAssignment).where(eq(workPolicyAssignment.policyId, policy.id));
 		}
-		await tx.delete(workScheduleTemplate).where(eq(workScheduleTemplate.organizationId, organizationId));
+		await tx.delete(workPolicyViolation).where(eq(workPolicyViolation.organizationId, organizationId));
+		await tx.delete(workPolicy).where(eq(workPolicy.organizationId, organizationId));
 
 		// 11. Location data
 		const locations = await tx.query.location.findMany({

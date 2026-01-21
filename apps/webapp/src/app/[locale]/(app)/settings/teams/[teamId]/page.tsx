@@ -12,6 +12,7 @@ import {
 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslate } from "@tolgee/react";
 import { use, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -54,6 +55,7 @@ type TeamFormValues = z.infer<typeof teamFormSchema>;
 
 export default function TeamDetailPage({ params }: { params: Promise<{ teamId: string }> }) {
 	const { teamId } = use(params);
+	const { t } = useTranslate();
 	const router = useRouter();
 	const queryClient = useQueryClient();
 	const [currentEmployee, setCurrentEmployee] = useState<any>(null);
@@ -287,9 +289,9 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
 								<IconArrowBack className="size-4" />
 							</Link>
 						</Button>
-						<h1 className="text-2xl font-semibold tracking-tight">Team Details</h1>
+						<h1 className="text-2xl font-semibold tracking-tight">{t("settings.teams.details.title", "Team Details")}</h1>
 					</div>
-					<p className="text-sm text-muted-foreground">Manage team information and members</p>
+					<p className="text-sm text-muted-foreground">{t("settings.teams.details.description", "Manage team information and members")}</p>
 				</div>
 				{canManageSettings && (
 					<div className="flex gap-2">

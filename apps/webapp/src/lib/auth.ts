@@ -64,6 +64,13 @@ export const auth = betterAuth({
 				required: false,
 				input: false,
 			},
+			// Stores invite code during registration until email is verified
+			// Processed by afterVerification hook to auto-join organization
+			pendingInviteCode: {
+				type: "string",
+				required: false,
+				input: false, // system-managed
+			},
 		},
 	},
 

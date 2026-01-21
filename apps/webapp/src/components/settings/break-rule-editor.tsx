@@ -21,10 +21,13 @@ import {
 	TFormLabel,
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
-import type {
-	BreakOptionFormValues,
-	TimeRegulationFormValues,
-} from "@/lib/time-regulations/validation";
+
+// Local type definitions (previously from time-regulations/validation)
+export interface BreakOptionFormValues {
+	splitCount: number | null;
+	minimumSplitMinutes: number | null;
+	minimumLongestSplitMinutes: number | null;
+}
 
 interface BreakRuleEditorProps {
 	ruleIndex: number;

@@ -1,6 +1,7 @@
 "use client";
 
 import { IconLoader2, IconShield, IconUserCog } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
@@ -28,6 +29,7 @@ import { listEmployeePermissions } from "./actions";
 type TeamItem = { id: string; name: string };
 
 export default function PermissionsPage() {
+	const { t } = useTranslate();
 	const [employees, setEmployees] = useState<EmployeeWithRelations[]>([]);
 	const [teams, setTeams] = useState<TeamItem[]>([]);
 	const [permissions, setPermissions] = useState<Record<string, EmployeePermissions>>({});
@@ -174,9 +176,9 @@ export default function PermissionsPage() {
 		<div className="flex flex-1 flex-col gap-4 p-4">
 			<div className="flex items-center justify-between">
 				<div>
-					<h1 className="text-2xl font-semibold tracking-tight">Team Permissions</h1>
+					<h1 className="text-2xl font-semibold tracking-tight">{t("settings.permissions.title", "Team Permissions")}</h1>
 					<p className="text-sm text-muted-foreground">
-						Manage employee permissions for team operations
+						{t("settings.permissions.description", "Manage employee permissions for team operations")}
 					</p>
 				</div>
 			</div>
