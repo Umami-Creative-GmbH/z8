@@ -4,6 +4,7 @@
 // ============================================
 
 export * from "./absence";
+export * from "./cron-job";
 export * from "./approval";
 export * from "./audit";
 export * from "./change-policy";
@@ -23,7 +24,6 @@ export * from "./relations";
 export * from "./shift";
 export * from "./surcharge";
 export * from "./system";
-export * from "./time-regulation";
 export * from "./time-tracking";
 // TypeScript types
 export * from "./types";
@@ -31,4 +31,4 @@ export * from "./user-settings";
 export * from "./vacation";
 export * from "./wellness";
 export * from "./work-category";
-export * from "./work-schedule";
+export * from "./work-policy";

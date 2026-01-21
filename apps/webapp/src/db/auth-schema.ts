@@ -27,6 +27,7 @@ export const user = pgTable("user", {
   twoFactorEnabled: boolean("two_factor_enabled").default(false),
   canCreateOrganizations: boolean("can_create_organizations").default(false),
   invitedVia: text("invited_via"),
+  pendingInviteCode: text("pending_invite_code"),
 });
 
 export const session = pgTable(
@@ -107,6 +108,7 @@ export const organization = pgTable(
     timezone: text("timezone").default("UTC"),
     deletedAt: timestamp("deleted_at"),
     deletedBy: text("deleted_by"),
+    ssoRequiresApproval: boolean("sso_requires_approval").default(true),
   },
   (table) => [uniqueIndex("organization_slug_uidx").on(table.slug)],
 );
@@ -123,6 +125,8 @@ export const member = pgTable(
       .references(() => user.id, { onDelete: "cascade" }),
     role: text("role").default("member").notNull(),
     createdAt: timestamp("created_at").notNull(),
+    status: text("status").default("approved"),
+    inviteCodeId: text("invite_code_id"),
   },
   (table) => [
     index("member_organizationId_idx").on(table.organizationId),

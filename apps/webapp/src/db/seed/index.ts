@@ -5,7 +5,7 @@
  * Each seeder should be idempotent (safe to run multiple times).
  */
 
-import { seedTimeRegulationPresets } from "./time-regulation-presets";
+import { seedWorkPolicyPresets } from "./work-policy-presets";
 
 export interface Seeder {
 	name: string;
@@ -18,15 +18,8 @@ export interface Seeder {
  */
 export const seeders: Seeder[] = [
 	{
-		name: "time-regulation-presets",
-		description:
-			"Seed time regulation presets (German, EU, French, UK, Swiss, Austrian labor laws)",
-		run: seedTimeRegulationPresets,
+		name: "work-policy-presets",
+		description: "Seed labor law presets (DE, EU, FR, GB, CH, AT)",
+		run: seedWorkPolicyPresets,
 	},
-	// Add future seeders here:
-	// {
-	//   name: "example-seeder",
-	//   description: "Description of what this seeder does",
-	//   run: seedExampleData,
-	// },
 ];

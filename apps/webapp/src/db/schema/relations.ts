@@ -55,13 +55,6 @@ import {
 	surchargeModelAssignment,
 	surchargeRule,
 } from "./surcharge";
-import {
-	timeRegulation,
-	timeRegulationAssignment,
-	timeRegulationBreakOption,
-	timeRegulationBreakRule,
-	timeRegulationViolation,
-} from "./time-regulation";
 import { timeEntry, workPeriod } from "./time-tracking";
 import { userSettings } from "./user-settings";
 import {
@@ -79,10 +72,15 @@ import {
 	workCategorySetCategory,
 } from "./work-category";
 import {
-	workScheduleAssignment,
-	workScheduleTemplate,
-	workScheduleTemplateDays,
-} from "./work-schedule";
+	workPolicy,
+	workPolicyAssignment,
+	workPolicyBreakOption,
+	workPolicyBreakRule,
+	workPolicyRegulation,
+	workPolicySchedule,
+	workPolicyScheduleDay,
+	workPolicyViolation,
+} from "./work-policy";
 
 // ============================================
 // RELATIONS
@@ -109,12 +107,10 @@ export const organizationRelations = relations(
 		holidayAssignments: many(holidayAssignment),
 		vacationAllowances: many(vacationAllowance),
 		vacationPolicyAssignments: many(vacationPolicyAssignment),
-		workScheduleTemplates: many(workScheduleTemplate),
-		workScheduleAssignments: many(workScheduleAssignment),
-		// Time regulations
-		timeRegulations: many(timeRegulation),
-		timeRegulationAssignments: many(timeRegulationAssignment),
-		timeRegulationViolations: many(timeRegulationViolation),
+		// Work policies (unified schedules + regulations)
+		workPolicies: many(workPolicy),
+		workPolicyAssignments: many(workPolicyAssignment),
+		workPolicyViolations: many(workPolicyViolation),
 		// Shift scheduling
 		shiftTemplates: many(shiftTemplate),
 		shifts: many(shift),
@@ -153,8 +149,7 @@ export const teamRelations = relations(team, ({ one, many }) => ({
 	holidayPresetAssignments: many(holidayPresetAssignment),
 	holidayAssignments: many(holidayAssignment),
 	vacationPolicyAssignments: many(vacationPolicyAssignment),
-	workScheduleAssignments: many(workScheduleAssignment),
-	timeRegulationAssignments: many(timeRegulationAssignment),
+	workPolicyAssignments: many(workPolicyAssignment),
 	projectAssignments: many(projectAssignment),
 	// Surcharges
 	surchargeModelAssignments: many(surchargeModelAssignment),
@@ -297,11 +292,9 @@ export const employeeRelations = relations(employee, ({ one, many }) => ({
 	holidayAssignments: many(holidayAssignment),
 	// Vacation policy assignments
 	vacationPolicyAssignments: many(vacationPolicyAssignment),
-	// Work schedule assignments
-	workScheduleAssignments: many(workScheduleAssignment),
-	// Time regulation assignments
-	timeRegulationAssignments: many(timeRegulationAssignment),
-	timeRegulationViolations: many(timeRegulationViolation),
+	// Work policy assignments (unified)
+	workPolicyAssignments: many(workPolicyAssignment),
+	workPolicyViolations: many(workPolicyViolation),
 	// Shift scheduling
 	shifts: many(shift),
 	shiftRequestsAsRequester: many(shiftRequest, {
@@ -631,101 +624,6 @@ export const vacationPolicyAssignmentRelations = relations(
 	}),
 );
 
-// Time regulation relations
-export const timeRegulationRelations = relations(
-	timeRegulation,
-	({ one, many }) => ({
-		organization: one(organization, {
-			fields: [timeRegulation.organizationId],
-			references: [organization.id],
-		}),
-		breakRules: many(timeRegulationBreakRule),
-		assignments: many(timeRegulationAssignment),
-		violations: many(timeRegulationViolation),
-		creator: one(user, {
-			fields: [timeRegulation.createdBy],
-			references: [user.id],
-		}),
-		updater: one(user, {
-			fields: [timeRegulation.updatedBy],
-			references: [user.id],
-		}),
-	}),
-);
-
-export const timeRegulationBreakRuleRelations = relations(
-	timeRegulationBreakRule,
-	({ one, many }) => ({
-		regulation: one(timeRegulation, {
-			fields: [timeRegulationBreakRule.regulationId],
-			references: [timeRegulation.id],
-		}),
-		options: many(timeRegulationBreakOption),
-	}),
-);
-
-export const timeRegulationBreakOptionRelations = relations(
-	timeRegulationBreakOption,
-	({ one }) => ({
-		breakRule: one(timeRegulationBreakRule, {
-			fields: [timeRegulationBreakOption.breakRuleId],
-			references: [timeRegulationBreakRule.id],
-		}),
-	}),
-);
-
-export const timeRegulationAssignmentRelations = relations(
-	timeRegulationAssignment,
-	({ one }) => ({
-		regulation: one(timeRegulation, {
-			fields: [timeRegulationAssignment.regulationId],
-			references: [timeRegulation.id],
-		}),
-		organization: one(organization, {
-			fields: [timeRegulationAssignment.organizationId],
-			references: [organization.id],
-		}),
-		team: one(team, {
-			fields: [timeRegulationAssignment.teamId],
-			references: [team.id],
-		}),
-		employee: one(employee, {
-			fields: [timeRegulationAssignment.employeeId],
-			references: [employee.id],
-		}),
-		creator: one(user, {
-			fields: [timeRegulationAssignment.createdBy],
-			references: [user.id],
-		}),
-	}),
-);
-
-export const timeRegulationViolationRelations = relations(
-	timeRegulationViolation,
-	({ one }) => ({
-		employee: one(employee, {
-			fields: [timeRegulationViolation.employeeId],
-			references: [employee.id],
-		}),
-		organization: one(organization, {
-			fields: [timeRegulationViolation.organizationId],
-			references: [organization.id],
-		}),
-		regulation: one(timeRegulation, {
-			fields: [timeRegulationViolation.regulationId],
-			references: [timeRegulation.id],
-		}),
-		workPeriod: one(workPeriod, {
-			fields: [timeRegulationViolation.workPeriodId],
-			references: [workPeriod.id],
-		}),
-		acknowledger: one(employee, {
-			fields: [timeRegulationViolation.acknowledgedBy],
-			references: [employee.id],
-		}),
-	}),
-);
-
 // Employee managers relations
 export const employeeManagersRelations = relations(
 	employeeManagers,
@@ -766,63 +664,6 @@ export const teamPermissionsRelations = relations(
 		grantor: one(employee, {
 			fields: [teamPermissions.grantedBy],
 			references: [employee.id],
-		}),
-	}),
-);
-
-// Work schedule template relations
-export const workScheduleTemplateRelations = relations(
-	workScheduleTemplate,
-	({ one, many }) => ({
-		organization: one(organization, {
-			fields: [workScheduleTemplate.organizationId],
-			references: [organization.id],
-		}),
-		days: many(workScheduleTemplateDays),
-		assignments: many(workScheduleAssignment),
-		creator: one(user, {
-			fields: [workScheduleTemplate.createdBy],
-			references: [user.id],
-		}),
-		updater: one(user, {
-			fields: [workScheduleTemplate.updatedBy],
-			references: [user.id],
-		}),
-	}),
-);
-
-export const workScheduleTemplateDaysRelations = relations(
-	workScheduleTemplateDays,
-	({ one }) => ({
-		template: one(workScheduleTemplate, {
-			fields: [workScheduleTemplateDays.templateId],
-			references: [workScheduleTemplate.id],
-		}),
-	}),
-);
-
-export const workScheduleAssignmentRelations = relations(
-	workScheduleAssignment,
-	({ one }) => ({
-		template: one(workScheduleTemplate, {
-			fields: [workScheduleAssignment.templateId],
-			references: [workScheduleTemplate.id],
-		}),
-		organization: one(organization, {
-			fields: [workScheduleAssignment.organizationId],
-			references: [organization.id],
-		}),
-		team: one(team, {
-			fields: [workScheduleAssignment.teamId],
-			references: [team.id],
-		}),
-		employee: one(employee, {
-			fields: [workScheduleAssignment.employeeId],
-			references: [employee.id],
-		}),
-		creator: one(user, {
-			fields: [workScheduleAssignment.createdBy],
-			references: [user.id],
 		}),
 	}),
 );
@@ -1405,3 +1246,134 @@ export const memberApprovalRelations = relations(memberApproval, ({ one }) => ({
 		references: [user.id],
 	}),
 }));
+
+// ============================================
+// WORK POLICY RELATIONS (unified schedules + regulations)
+// ============================================
+
+export const workPolicyRelations = relations(workPolicy, ({ one, many }) => ({
+	organization: one(organization, {
+		fields: [workPolicy.organizationId],
+		references: [organization.id],
+	}),
+	schedule: one(workPolicySchedule),
+	regulation: one(workPolicyRegulation),
+	assignments: many(workPolicyAssignment),
+	violations: many(workPolicyViolation),
+	creator: one(user, {
+		fields: [workPolicy.createdBy],
+		references: [user.id],
+		relationName: "work_policy_creator",
+	}),
+	updater: one(user, {
+		fields: [workPolicy.updatedBy],
+		references: [user.id],
+		relationName: "work_policy_updater",
+	}),
+}));
+
+export const workPolicyScheduleRelations = relations(
+	workPolicySchedule,
+	({ one, many }) => ({
+		policy: one(workPolicy, {
+			fields: [workPolicySchedule.policyId],
+			references: [workPolicy.id],
+		}),
+		days: many(workPolicyScheduleDay),
+	}),
+);
+
+export const workPolicyScheduleDayRelations = relations(
+	workPolicyScheduleDay,
+	({ one }) => ({
+		schedule: one(workPolicySchedule, {
+			fields: [workPolicyScheduleDay.scheduleId],
+			references: [workPolicySchedule.id],
+		}),
+	}),
+);
+
+export const workPolicyRegulationRelations = relations(
+	workPolicyRegulation,
+	({ one, many }) => ({
+		policy: one(workPolicy, {
+			fields: [workPolicyRegulation.policyId],
+			references: [workPolicy.id],
+		}),
+		breakRules: many(workPolicyBreakRule),
+	}),
+);
+
+export const workPolicyBreakRuleRelations = relations(
+	workPolicyBreakRule,
+	({ one, many }) => ({
+		regulation: one(workPolicyRegulation, {
+			fields: [workPolicyBreakRule.regulationId],
+			references: [workPolicyRegulation.id],
+		}),
+		options: many(workPolicyBreakOption),
+	}),
+);
+
+export const workPolicyBreakOptionRelations = relations(
+	workPolicyBreakOption,
+	({ one }) => ({
+		breakRule: one(workPolicyBreakRule, {
+			fields: [workPolicyBreakOption.breakRuleId],
+			references: [workPolicyBreakRule.id],
+		}),
+	}),
+);
+
+export const workPolicyAssignmentRelations = relations(
+	workPolicyAssignment,
+	({ one }) => ({
+		policy: one(workPolicy, {
+			fields: [workPolicyAssignment.policyId],
+			references: [workPolicy.id],
+		}),
+		organization: one(organization, {
+			fields: [workPolicyAssignment.organizationId],
+			references: [organization.id],
+		}),
+		team: one(team, {
+			fields: [workPolicyAssignment.teamId],
+			references: [team.id],
+		}),
+		employee: one(employee, {
+			fields: [workPolicyAssignment.employeeId],
+			references: [employee.id],
+		}),
+		creator: one(user, {
+			fields: [workPolicyAssignment.createdBy],
+			references: [user.id],
+		}),
+	}),
+);
+
+export const workPolicyViolationRelations = relations(
+	workPolicyViolation,
+	({ one }) => ({
+		employee: one(employee, {
+			fields: [workPolicyViolation.employeeId],
+			references: [employee.id],
+		}),
+		organization: one(organization, {
+			fields: [workPolicyViolation.organizationId],
+			references: [organization.id],
+		}),
+		policy: one(workPolicy, {
+			fields: [workPolicyViolation.policyId],
+			references: [workPolicy.id],
+		}),
+		workPeriod: one(workPeriod, {
+			fields: [workPolicyViolation.workPeriodId],
+			references: [workPeriod.id],
+		}),
+		acknowledger: one(employee, {
+			fields: [workPolicyViolation.acknowledgedBy],
+			references: [employee.id],
+			relationName: "work_policy_violation_acknowledger",
+		}),
+	}),
+);
