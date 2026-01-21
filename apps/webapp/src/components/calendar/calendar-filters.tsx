@@ -4,26 +4,18 @@ import { useCallback } from "react";
 import { useTranslate } from "@tolgee/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import type { CalendarFilters } from "@/hooks/use-calendar-data";
 
 interface CalendarFiltersProps {
 	filters: CalendarFilters;
 	onFiltersChange: (filters: CalendarFilters) => void;
-	currentEmployeeId?: string; // Optional: current user's employee ID
+	currentEmployeeId?: string;
 }
 
 export function CalendarFiltersComponent({
 	filters,
 	onFiltersChange,
-	currentEmployeeId,
 }: CalendarFiltersProps) {
 	const { t } = useTranslate();
 
@@ -32,16 +24,6 @@ export function CalendarFiltersComponent({
 			onFiltersChange({
 				...filters,
 				[key]: !filters[key],
-			});
-		},
-		[filters, onFiltersChange],
-	);
-
-	const handleEmployeeFilterChange = useCallback(
-		(value: string) => {
-			onFiltersChange({
-				...filters,
-				employeeId: value === "all" ? undefined : value,
 			});
 		},
 		[filters, onFiltersChange],
@@ -73,33 +55,6 @@ export function CalendarFiltersComponent({
 						onCheckedChange={() => handleToggle("showAbsences")}
 					/>
 				</div>
-
-				{/* Employee filter - show when absences, time entries, or work periods are enabled */}
-				{(filters.showAbsences || filters.showTimeEntries || filters.showWorkPeriods) &&
-					currentEmployeeId && (
-						<div className="space-y-2 pl-4 border-l-2 border-muted">
-							<Label htmlFor="employee-filter" className="text-xs text-muted-foreground">
-								{t("calendar.filter.employee", "Filter by employee")}
-							</Label>
-							<Select
-								value={filters.employeeId || "all"}
-								onValueChange={handleEmployeeFilterChange}
-							>
-								<SelectTrigger id="employee-filter" className="h-8 text-xs">
-									<SelectValue />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="all">
-										{t("calendar.filter.allEmployees", "All Employees")}
-									</SelectItem>
-									<SelectItem value={currentEmployeeId}>
-										{t("calendar.filter.myDataOnly", "My Data Only")}
-									</SelectItem>
-								</SelectContent>
-							</Select>
-						</div>
-					)}
-
 				<div className="flex items-center justify-between">
 					<Label htmlFor="show-time-entries" className="text-sm">
 						{t("calendar.filter.timeEntries", "Time Entries")}

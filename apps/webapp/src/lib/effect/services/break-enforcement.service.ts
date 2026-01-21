@@ -11,7 +11,7 @@ import { calculateHash } from "@/lib/time-tracking/blockchain";
 import { getTodayRangeInTimezone } from "@/lib/time-tracking/timezone-utils";
 import { type DatabaseError, NotFoundError } from "../errors";
 import { DatabaseService, DatabaseServiceLive } from "./database.service";
-import { TimeRegulationService, TimeRegulationServiceLive } from "./time-regulation.service";
+import { WorkPolicyService, WorkPolicyServiceLive } from "./work-policy.service";
 
 // ============================================
 // TYPES
@@ -104,7 +104,7 @@ export const BreakEnforcementServiceLive = Layer.effect(
 	BreakEnforcementService,
 	Effect.gen(function* (_) {
 		const dbService = yield* _(DatabaseService);
-		const regulationService = yield* _(TimeRegulationService);
+		const workPolicyService = yield* _(WorkPolicyService);
 
 		/**
 		 * Calculate total break minutes taken today (gaps between work periods)
@@ -229,11 +229,12 @@ export const BreakEnforcementServiceLive = Layer.effect(
 			NotFoundError | DatabaseError
 		> =>
 			Effect.gen(function* (_) {
-				const regulation = yield* _(
-					regulationService.getEffectiveRegulation(params.employeeId),
+				const policy = yield* _(
+					workPolicyService.getEffectivePolicy(params.employeeId),
 				);
 
-				if (!regulation) {
+				// If no policy or no regulation enabled, no break requirements
+				if (!policy || !policy.regulation) {
 					return {
 						deficit: 0,
 						applicableRule: null,
@@ -242,6 +243,8 @@ export const BreakEnforcementServiceLive = Layer.effect(
 						maxUninterruptedMinutes: null,
 					};
 				}
+
+				const { regulation } = policy;
 
 				// Find the applicable break rule (highest threshold that applies)
 				const applicableRule = regulation.breakRules
@@ -252,8 +255,8 @@ export const BreakEnforcementServiceLive = Layer.effect(
 					return {
 						deficit: 0,
 						applicableRule: null,
-						regulationId: regulation.regulationId,
-						regulationName: regulation.regulationName,
+						regulationId: policy.policyId,
+						regulationName: policy.policyName,
 						maxUninterruptedMinutes: regulation.maxUninterruptedMinutes,
 					};
 				}
@@ -269,8 +272,8 @@ export const BreakEnforcementServiceLive = Layer.effect(
 						workingMinutesThreshold: applicableRule.workingMinutesThreshold,
 						requiredBreakMinutes: applicableRule.requiredBreakMinutes,
 					},
-					regulationId: regulation.regulationId,
-					regulationName: regulation.regulationName,
+					regulationId: policy.policyId,
+					regulationName: policy.policyName,
 					maxUninterruptedMinutes: regulation.maxUninterruptedMinutes,
 				};
 			});
@@ -556,9 +559,47 @@ export const BreakEnforcementServiceLive = Layer.effect(
  * Full layer with all dependencies for running break enforcement
  */
 export const BreakEnforcementServiceFullLive = BreakEnforcementServiceLive.pipe(
-	Layer.provide(TimeRegulationServiceLive),
+	Layer.provide(WorkPolicyServiceLive),
 	Layer.provide(DatabaseServiceLive),
 );
+
+// ============================================
+// STANDALONE RUNNER FOR WORKER/CRON
+// ============================================
+
+/**
+ * Run break enforcement check for all unprocessed work periods.
+ * This is a standalone function that can be called from workers/cron jobs.
+ *
+ * @param options - Optional configuration
+ * @param options.date - Target date (defaults to today)
+ * @param options.organizationId - Filter to specific organization
+ */
+export async function runBreakEnforcementCheck(options?: {
+	date?: Date;
+	organizationId?: string;
+}): Promise<{
+	processedCount: number;
+	adjustedCount: number;
+	errors: Array<{ workPeriodId: string; error: string }>;
+}> {
+	const effect = Effect.gen(function* (_) {
+		const breakService = yield* _(BreakEnforcementService);
+
+		return yield* _(
+			breakService.processUnprocessedPeriods({
+				date: options?.date,
+				organizationId: options?.organizationId,
+			}),
+		);
+	}).pipe(
+		Effect.provide(BreakEnforcementServiceLive),
+		Effect.provide(WorkPolicyServiceLive),
+		Effect.provide(DatabaseServiceLive),
+	);
+
+	return Effect.runPromise(effect);
+}
 
 // ============================================
 // TESTING HELPERS
@@ -575,25 +616,28 @@ export const calculateBreakDeficitForTesting = (
 		sessionDurationMinutes: number;
 		breaksTakenMinutes: number;
 	},
-	mockRegulationService: {
-		getEffectiveRegulation: (
+	mockPolicyService: {
+		getEffectivePolicy: (
 			employeeId: string,
 		) => Effect.Effect<
 			{
-				regulationId: string;
-				regulationName: string;
-				maxDailyMinutes: number | null;
-				maxWeeklyMinutes: number | null;
-				maxUninterruptedMinutes: number | null;
-				breakRules: Array<{
-					workingMinutesThreshold: number;
-					requiredBreakMinutes: number;
-					options: Array<{
-						splitCount: number | null;
-						minimumSplitMinutes: number | null;
-						minimumLongestSplitMinutes: number | null;
+				policyId: string;
+				policyName: string;
+				regulation: {
+					maxDailyMinutes: number | null;
+					maxWeeklyMinutes: number | null;
+					maxUninterruptedMinutes: number | null;
+					breakRules: Array<{
+						workingMinutesThreshold: number;
+						requiredBreakMinutes: number;
+						options: Array<{
+							splitCount: number | null;
+							minimumSplitMinutes: number | null;
+							minimumLongestSplitMinutes: number | null;
+						}>;
 					}>;
-				}>;
+				} | null;
+				schedule: unknown;
 				assignmentType: "organization" | "team" | "employee";
 				assignedVia: string;
 			} | null,
@@ -614,11 +658,11 @@ export const calculateBreakDeficitForTesting = (
 	never
 > =>
 	Effect.gen(function* (_) {
-		const regulation = yield* _(
-			mockRegulationService.getEffectiveRegulation(params.employeeId),
+		const policy = yield* _(
+			mockPolicyService.getEffectivePolicy(params.employeeId),
 		);
 
-		if (!regulation) {
+		if (!policy || !policy.regulation) {
 			return {
 				deficit: 0,
 				applicableRule: null,
@@ -627,6 +671,8 @@ export const calculateBreakDeficitForTesting = (
 				maxUninterruptedMinutes: null,
 			};
 		}
+
+		const { regulation } = policy;
 
 		// Find the applicable break rule (highest threshold that applies)
 		const applicableRule = regulation.breakRules
@@ -637,8 +683,8 @@ export const calculateBreakDeficitForTesting = (
 			return {
 				deficit: 0,
 				applicableRule: null,
-				regulationId: regulation.regulationId,
-				regulationName: regulation.regulationName,
+				regulationId: policy.policyId,
+				regulationName: policy.policyName,
 				maxUninterruptedMinutes: regulation.maxUninterruptedMinutes,
 			};
 		}
@@ -654,8 +700,8 @@ export const calculateBreakDeficitForTesting = (
 				workingMinutesThreshold: applicableRule.workingMinutesThreshold,
 				requiredBreakMinutes: applicableRule.requiredBreakMinutes,
 			},
-			regulationId: regulation.regulationId,
-			regulationName: regulation.regulationName,
+			regulationId: policy.policyId,
+			regulationName: policy.policyName,
 			maxUninterruptedMinutes: regulation.maxUninterruptedMinutes,
 		};
 	});

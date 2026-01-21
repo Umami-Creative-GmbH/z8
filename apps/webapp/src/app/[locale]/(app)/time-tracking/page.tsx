@@ -10,6 +10,7 @@ import { WeeklySummaryCards } from "@/components/time-tracking/weekly-summary-ca
 import { auth } from "@/lib/auth";
 import { dateToDB } from "@/lib/datetime/drizzle-adapter";
 import { getWeekRangeInTimezone } from "@/lib/time-tracking/timezone-utils";
+import { getTranslate } from "@/tolgee/server";
 import { getActiveWorkPeriod, getTimeSummary, getWorkPeriods } from "./actions";
 
 export default async function TimeTrackingPage() {
@@ -43,10 +44,11 @@ export default async function TimeTrackingPage() {
 	const { start, end } = getWeekRangeInTimezone(new Date(), timezone);
 	const startDate = dateToDB(start)!;
 	const endDate = dateToDB(end)!;
-	const [activeWorkPeriod, workPeriods, summary] = await Promise.all([
+	const [activeWorkPeriod, workPeriods, summary, t] = await Promise.all([
 		getActiveWorkPeriod(emp.id),
 		getWorkPeriods(emp.id, startDate, endDate),
 		getTimeSummary(emp.id, timezone),
+		getTranslate(),
 	]);
 
 	return (
@@ -55,7 +57,7 @@ export default async function TimeTrackingPage() {
 			<div className="px-4 lg:px-6">
 				<ClockInOutWidget
 					activeWorkPeriod={activeWorkPeriod}
-					employeeName={session.user.name || "Employee"}
+					employeeName={session.user.name || t("common.employee", "Employee")}
 				/>
 			</div>
 
@@ -68,6 +70,7 @@ export default async function TimeTrackingPage() {
 					workPeriods={workPeriods}
 					hasManager={!!emp.managerId}
 					employeeTimezone={timezone}
+					employeeId={emp.id}
 				/>
 			</div>
 		</div>

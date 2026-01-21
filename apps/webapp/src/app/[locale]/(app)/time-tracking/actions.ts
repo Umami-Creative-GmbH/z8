@@ -25,9 +25,9 @@ import { DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/data
 import { EmailService } from "@/lib/effect/services/email.service";
 import { SurchargeService, SurchargeServiceLive } from "@/lib/effect/services/surcharge.service";
 import {
-	TimeRegulationService,
-	TimeRegulationServiceLive,
-} from "@/lib/effect/services/time-regulation.service";
+	WorkPolicyService,
+	WorkPolicyServiceLive,
+} from "@/lib/effect/services/work-policy.service";
 import {
 	BreakEnforcementService,
 	BreakEnforcementServiceLive,
@@ -48,7 +48,7 @@ import {
 	onClockOutPendingApproval,
 	onClockOutPendingApprovalToManager,
 } from "@/lib/notifications/triggers";
-import type { ComplianceWarning } from "@/lib/time-regulations/validation";
+import type { ComplianceWarning } from "@/lib/effect/services/work-policy.service";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
 import { isSameDayInTimezone } from "@/lib/time-tracking/time-utils";
 import {
@@ -1328,10 +1328,10 @@ async function checkComplianceAfterClockOut(
 
 		// Use Effect to check compliance
 		const complianceEffect = Effect.gen(function* (_) {
-			const regulationService = yield* _(TimeRegulationService);
+			const workPolicyService = yield* _(WorkPolicyService);
 
 			const result = yield* _(
-				regulationService.checkCompliance({
+				workPolicyService.checkCompliance({
 					employeeId,
 					currentSessionMinutes,
 					totalDailyMinutes: timeSummary.todayMinutes,
@@ -1342,16 +1342,16 @@ async function checkComplianceAfterClockOut(
 
 			// Log violations if any
 			if (result.warnings.length > 0) {
-				const effectiveRegulation = yield* _(regulationService.getEffectiveRegulation(employeeId));
+				const effectivePolicy = yield* _(workPolicyService.getEffectivePolicy(employeeId));
 
-				if (effectiveRegulation) {
+				if (effectivePolicy?.regulation) {
 					for (const warning of result.warnings) {
 						if (warning.severity === "violation") {
 							yield* _(
-								regulationService.logViolation({
+								workPolicyService.logViolation({
 									employeeId,
 									organizationId,
-									regulationId: effectiveRegulation.regulationId,
+									policyId: effectivePolicy.policyId,
 									workPeriodId,
 									violationType: warning.type,
 									details: {
@@ -1368,7 +1368,7 @@ async function checkComplianceAfterClockOut(
 			}
 
 			return result.warnings;
-		}).pipe(Effect.provide(TimeRegulationServiceLive), Effect.provide(DatabaseServiceLive));
+		}).pipe(Effect.provide(WorkPolicyServiceLive), Effect.provide(DatabaseServiceLive));
 
 		const warnings = await Effect.runPromise(complianceEffect);
 		return warnings;
@@ -1471,7 +1471,7 @@ async function enforceBreaksAfterClockOut(input: {
 			return yield* _(breakService.enforceBreaksAfterClockOut(input));
 		}).pipe(
 			Effect.provide(BreakEnforcementServiceLive),
-			Effect.provide(TimeRegulationServiceLive),
+			Effect.provide(WorkPolicyServiceLive),
 			Effect.provide(DatabaseServiceLive),
 		);
 
@@ -1545,7 +1545,7 @@ export async function createTimeEntry(params: {
 export const requestTimeCorrection = requestTimeCorrectionEffect;
 
 // Re-export types for consumers
-export type { ComplianceWarning } from "@/lib/time-regulations/validation";
+export type { ComplianceWarning } from "@/lib/effect/services/work-policy.service";
 
 /**
  * Get break reminder status for the currently active session
@@ -1609,11 +1609,11 @@ export async function getBreakReminderStatus(): Promise<
 
 		// Use Effect to get regulation and check break requirements
 		const breakStatusEffect = Effect.gen(function* (_) {
-			const regulationService = yield* _(TimeRegulationService);
+			const workPolicyService = yield* _(WorkPolicyService);
 
-			const regulation = yield* _(regulationService.getEffectiveRegulation(emp.id));
+			const policy = yield* _(workPolicyService.getEffectivePolicy(emp.id));
 
-			if (!regulation) {
+			if (!policy?.regulation) {
 				return {
 					needsBreakSoon: false,
 					uninterruptedMinutes: currentSessionMinutes,
@@ -1623,8 +1623,10 @@ export async function getBreakReminderStatus(): Promise<
 				};
 			}
 
+			const { regulation } = policy;
+
 			// Calculate break requirements
-			const breakReq = regulationService.calculateBreakRequirements({
+			const breakReq = workPolicyService.calculateBreakRequirements({
 				regulation,
 				workedMinutes: timeSummary.todayMinutes + currentSessionMinutes,
 				breaksTakenMinutes: breaksTaken,
@@ -1666,7 +1668,7 @@ export async function getBreakReminderStatus(): Promise<
 						}
 					: null,
 			};
-		}).pipe(Effect.provide(TimeRegulationServiceLive), Effect.provide(DatabaseServiceLive));
+		}).pipe(Effect.provide(WorkPolicyServiceLive), Effect.provide(DatabaseServiceLive));
 
 		const breakStatus = await Effect.runPromise(breakStatusEffect);
 		return { success: true, data: breakStatus };
@@ -2381,3 +2383,433 @@ export async function getWorkPeriodEditCapability(
 
 // Re-export EditCapability type for UI components
 export type { EditCapability } from "@/lib/effect/services/change-policy.service";
+
+/**
+ * Input for creating a manual time entry
+ */
+interface ManualTimeEntryInput {
+	date: string; // YYYY-MM-DD format
+	clockInTime: string; // HH:mm format
+	clockOutTime: string; // HH:mm format
+	reason: string;
+	projectId?: string;
+	workCategoryId?: string;
+}
+
+/**
+ * Create a manual time entry for a past date
+ * Respects the organization's change policy for approval requirements
+ */
+export async function createManualTimeEntry(
+	data: ManualTimeEntryInput,
+): Promise<
+	ServerActionResult<{
+		workPeriodId: string;
+		requiresApproval: boolean;
+		wasAdjusted?: boolean;
+		adjustedTimes?: {
+			clockIn: string;
+			clockOut: string;
+			durationMinutes: number;
+		};
+	}>
+> {
+	const session = await auth.api.getSession({ headers: await headers() });
+	if (!session?.user) {
+		return { success: false, error: "Not authenticated" };
+	}
+
+	const emp = await getCurrentEmployee();
+	if (!emp) {
+		return { success: false, error: "Employee profile not found" };
+	}
+
+	// Get user's timezone from userSettings
+	const settingsData = await db.query.userSettings.findFirst({
+		where: eq(userSettings.userId, session.user.id),
+		columns: { timezone: true },
+	});
+	const timezone = settingsData?.timezone || "UTC";
+
+	// Parse the date and times in the user's timezone
+	const dateDT = DateTime.fromISO(data.date, { zone: timezone });
+	if (!dateDT.isValid) {
+		return { success: false, error: "Invalid date format" };
+	}
+
+	// Construct clock-in and clock-out timestamps
+	const [inHours, inMinutes] = data.clockInTime.split(":").map(Number);
+	const [outHours, outMinutes] = data.clockOutTime.split(":").map(Number);
+
+	// Validate parsed time values are valid numbers
+	if (Number.isNaN(inHours) || Number.isNaN(inMinutes) || Number.isNaN(outHours) || Number.isNaN(outMinutes)) {
+		return { success: false, error: "Invalid time format" };
+	}
+
+	// Validate time ranges (hour 0-23, minute 0-59)
+	if (inHours < 0 || inHours > 23 || inMinutes < 0 || inMinutes > 59 ||
+		outHours < 0 || outHours > 23 || outMinutes < 0 || outMinutes > 59) {
+		return { success: false, error: "Invalid time values" };
+	}
+
+	const clockInDT = dateDT.set({
+		hour: inHours,
+		minute: inMinutes,
+		second: 0,
+		millisecond: 0,
+	});
+	const clockOutDT = dateDT.set({
+		hour: outHours,
+		minute: outMinutes,
+		second: 0,
+		millisecond: 0,
+	});
+
+	// Validate DateTime objects are valid
+	if (!clockInDT.isValid || !clockOutDT.isValid) {
+		return { success: false, error: "Invalid time values" };
+	}
+
+	// Convert to UTC for storage
+	const clockInDate = dateToDB(clockInDT.toUTC());
+	const clockOutDate = dateToDB(clockOutDT.toUTC());
+
+	if (!clockInDate || !clockOutDate) {
+		return { success: false, error: "Invalid time values" };
+	}
+
+	// Validate: times cannot be in the future
+	const now = new Date();
+	if (clockOutDate > now) {
+		return { success: false, error: "Cannot create entries for future times" };
+	}
+
+	// Validate: clock out must be after clock in
+	if (clockOutDate <= clockInDate) {
+		return { success: false, error: "Clock out time must be after clock in time" };
+	}
+
+	// Validate the date range (check for holidays)
+	const validation = await validateTimeEntryRange(emp.organizationId, clockInDate, clockOutDate);
+	if (!validation.isValid) {
+		return {
+			success: false,
+			error: validation.error || "Cannot create time entry for this period",
+			holidayName: validation.holidayName,
+		};
+	}
+
+	// Validate project if provided
+	if (data.projectId) {
+		const projectValidation = await validateProjectAssignment(data.projectId, emp.id, emp.teamId);
+		if (!projectValidation.isValid) {
+			return {
+				success: false,
+				error: projectValidation.error || "Cannot assign to this project",
+			};
+		}
+	}
+
+	// Check edit capability using change policy
+	// We use the clock-out time to determine how many days back this entry is
+	let editCapability: EditCapability;
+	try {
+		const capabilityEffect = Effect.gen(function* (_) {
+			const policyService = yield* _(ChangePolicyService);
+			return yield* _(
+				policyService.getEditCapability({
+					employeeId: emp.id,
+					workPeriodEndTime: clockOutDate,
+					timezone,
+				}),
+			);
+		}).pipe(Effect.provide(ChangePolicyServiceLive), Effect.provide(DatabaseServiceLive));
+
+		editCapability = await Effect.runPromise(capabilityEffect);
+	} catch (error) {
+		logger.error({ error }, "Failed to check edit capability for manual entry");
+		// Default to direct if policy service fails
+		editCapability = { type: "direct", reason: "no_policy" };
+	}
+
+	// Handle forbidden case
+	if (editCapability.type === "forbidden") {
+		return {
+			success: false,
+			error: `Entries older than ${editCapability.daysBack} days can only be created by admins or team leads.`,
+		};
+	}
+
+	const requiresApproval = editCapability.type === "approval_required";
+
+	try {
+		// Check for overlapping work periods on the same day
+		const existingPeriods = await db.query.workPeriod.findMany({
+			where: and(
+				eq(workPeriod.employeeId, emp.id),
+				gte(workPeriod.startTime, dateToDB(dateDT.startOf("day").toUTC())!),
+				lte(workPeriod.startTime, dateToDB(dateDT.endOf("day").toUTC())!),
+			),
+		});
+
+		// Check for active work periods first
+		const hasActiveWorkPeriod = existingPeriods.some((p) => !p.endTime);
+		if (hasActiveWorkPeriod) {
+			return {
+				success: false,
+				error: "Cannot create manual entry while you have an active work period. Please clock out first.",
+			};
+		}
+
+		// Auto-adjust times to avoid overlaps with existing periods
+		let adjustedClockIn = clockInDate;
+		let adjustedClockOut = clockOutDate;
+		let wasAdjusted = false;
+
+		// Sort existing periods by start time for proper processing
+		const sortedPeriods = existingPeriods
+			.filter((p) => p.endTime !== null)
+			.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
+
+		for (const period of sortedPeriods) {
+			const periodStart = period.startTime.getTime();
+			const periodEnd = period.endTime!.getTime();
+			const newStart = adjustedClockIn.getTime();
+			const newEnd = adjustedClockOut.getTime();
+
+			// Check if there's any overlap
+			if (newStart < periodEnd && newEnd > periodStart) {
+				wasAdjusted = true;
+
+				// Case 1: Manual entry starts before existing period - clip the end
+				if (newStart < periodStart && newEnd > periodStart && newEnd <= periodEnd) {
+					adjustedClockOut = new Date(periodStart - 60000); // 1 minute before
+				}
+				// Case 2: Manual entry ends after existing period - clip the start
+				else if (newStart >= periodStart && newStart < periodEnd && newEnd > periodEnd) {
+					adjustedClockIn = new Date(periodEnd + 60000); // 1 minute after
+				}
+				// Case 3: Manual entry spans the existing period - clip to before it
+				else if (newStart < periodStart && newEnd > periodEnd) {
+					adjustedClockOut = new Date(periodStart - 60000); // 1 minute before
+				}
+				// Case 4: Manual entry is completely inside existing period - no valid time
+				else if (newStart >= periodStart && newEnd <= periodEnd) {
+					return {
+						success: false,
+						error: "The selected time range is completely covered by an existing work period.",
+					};
+				}
+			}
+		}
+
+		// Validate adjusted times are still valid (at least 1 minute duration)
+		const adjustedDurationMs = adjustedClockOut.getTime() - adjustedClockIn.getTime();
+		if (adjustedDurationMs < 60000) {
+			return {
+				success: false,
+				error: "After adjusting for existing entries, the remaining time is too short (less than 1 minute).",
+			};
+		}
+
+		// Use adjusted times for entry creation
+		const finalClockIn = adjustedClockIn;
+		const finalClockOut = adjustedClockOut;
+
+		// Create clock-in entry with blockchain hash
+		const clockInEntry = await createTimeEntry({
+			employeeId: emp.id,
+			type: "clock_in",
+			timestamp: finalClockIn,
+			createdBy: session.user.id,
+			notes: `Manual entry: ${data.reason}`,
+		});
+
+		// Create clock-out entry with blockchain hash
+		const clockOutEntry = await createTimeEntry({
+			employeeId: emp.id,
+			type: "clock_out",
+			timestamp: finalClockOut,
+			createdBy: session.user.id,
+			notes: data.reason,
+		});
+
+		// Calculate duration with adjusted times
+		const durationMs = finalClockOut.getTime() - finalClockIn.getTime();
+		const durationMinutes = Math.floor(durationMs / 60000);
+
+		// Determine approval status based on policy
+		const approvalStatus = requiresApproval ? "pending" : "approved";
+
+		// Prepare pending changes data if approval is needed
+		const pendingChangesData = requiresApproval
+			? {
+					originalStartTime: finalClockIn.toISOString(),
+					originalEndTime: finalClockOut.toISOString(),
+					originalDurationMinutes: durationMinutes,
+					requestedAt: now.toISOString(),
+					requestedBy: session.user.id,
+					isManualEntry: true,
+					reason: data.reason,
+				}
+			: null;
+
+		// Create work period with adjusted times
+		const [period] = await db
+			.insert(workPeriod)
+			.values({
+				employeeId: emp.id,
+				clockInId: clockInEntry.id,
+				clockOutId: clockOutEntry.id,
+				startTime: finalClockIn,
+				endTime: finalClockOut,
+				durationMinutes,
+				projectId: data.projectId || null,
+				workCategoryId: data.workCategoryId || null,
+				isActive: false,
+				approvalStatus,
+				pendingChanges: pendingChangesData,
+			})
+			.returning();
+
+		// If approval required, create approval request and notify manager
+		if (requiresApproval && emp.managerId) {
+			await createManualEntryApprovalRequest({
+				workPeriodId: period.id,
+				employeeId: emp.id,
+				managerId: emp.managerId,
+				organizationId: emp.organizationId,
+				startTime: finalClockIn,
+				endTime: finalClockOut,
+				durationMinutes,
+				reason: data.reason,
+			});
+		}
+
+		// Calculate and persist surcharge credits if feature is enabled
+		if (!requiresApproval) {
+			await calculateAndPersistSurcharges(period.id, emp.organizationId);
+		}
+
+		logger.info(
+			{
+				workPeriodId: period.id,
+				employeeId: emp.id,
+				date: data.date,
+				clockInTime: data.clockInTime,
+				clockOutTime: data.clockOutTime,
+				wasAdjusted,
+				adjustedClockIn: wasAdjusted ? finalClockIn.toISOString() : undefined,
+				adjustedClockOut: wasAdjusted ? finalClockOut.toISOString() : undefined,
+				requiresApproval,
+			},
+			"Manual time entry created successfully",
+		);
+
+		return {
+			success: true,
+			data: {
+				workPeriodId: period.id,
+				requiresApproval,
+				wasAdjusted,
+				adjustedTimes: wasAdjusted
+					? {
+							clockIn: finalClockIn.toISOString(),
+							clockOut: finalClockOut.toISOString(),
+							durationMinutes,
+						}
+					: undefined,
+			},
+		};
+	} catch (error) {
+		logger.error({ error }, "Failed to create manual time entry");
+		return { success: false, error: "Failed to create time entry. Please try again." };
+	}
+}
+
+/**
+ * Helper function to create an approval request for manual time entry
+ */
+async function createManualEntryApprovalRequest(params: {
+	workPeriodId: string;
+	employeeId: string;
+	managerId: string;
+	organizationId: string;
+	startTime: Date;
+	endTime: Date;
+	durationMinutes: number;
+	reason: string;
+}): Promise<void> {
+	const { workPeriodId, employeeId, managerId, organizationId, startTime, endTime, durationMinutes, reason } = params;
+
+	try {
+		// Create approval request
+		await db.insert(approvalRequest).values({
+			entityType: "time_entry",
+			entityId: workPeriodId,
+			requestedBy: employeeId,
+			approverId: managerId,
+			status: "pending",
+			reason: `Manual time entry: ${reason}`,
+		});
+
+		// Get employee and manager details for notifications
+		const [employeeData, managerData] = await Promise.all([
+			db.query.employee.findFirst({
+				where: eq(employee.id, employeeId),
+				with: { user: { columns: { id: true, name: true } } },
+			}),
+			db.query.employee.findFirst({
+				where: eq(employee.id, managerId),
+				columns: { userId: true },
+			}),
+		]);
+
+		const employeeUserId = employeeData?.userId;
+		const employeeName = employeeData?.user?.name || "Employee";
+		const managerUserId = managerData?.userId;
+
+		// Fire-and-forget: Send notifications
+		if (employeeUserId) {
+			void onClockOutPendingApproval({
+				workPeriodId,
+				employeeUserId,
+				employeeName,
+				organizationId,
+				startTime,
+				endTime,
+				durationMinutes,
+			}).catch((err) => {
+				logger.error({ error: err }, "Failed to send manual entry pending notification to employee");
+			});
+		}
+
+		if (managerUserId) {
+			void onClockOutPendingApprovalToManager({
+				workPeriodId,
+				employeeUserId: employeeUserId || "",
+				employeeName,
+				organizationId,
+				startTime,
+				endTime,
+				durationMinutes,
+				managerUserId,
+			}).catch((err) => {
+				logger.error({ error: err }, "Failed to send manual entry pending notification to manager");
+			});
+		}
+
+		logger.info(
+			{
+				workPeriodId,
+				employeeId,
+				managerId,
+				durationMinutes,
+			},
+			"Manual entry approval request created",
+		);
+	} catch (error) {
+		// Log but don't fail - approval request is secondary to entry creation
+		logger.error({ error, workPeriodId }, "Failed to create manual entry approval request");
+	}
+}

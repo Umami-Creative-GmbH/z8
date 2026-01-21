@@ -12,23 +12,20 @@ import { TimeEntryService } from "@/lib/effect/services/time-entry.service";
  * GET /api/time-entries
  * Retrieve time entries for an employee
  * Query params: employeeId, from, to, includeSuperseded
- * Optimized: start promises early, await late
  */
 export async function GET(request: NextRequest) {
-	// Start connection and headers promises early (don't await yet)
-	const connectionPromise = connection();
-	const headersPromise = headers();
+	// Opt out of caching - must be awaited immediately, not stored as promise
+	await connection();
 
 	try {
-		// Parse search params while promises are in flight
+		// Parse search params
 		const searchParams = request.nextUrl.searchParams;
 		const employeeId = searchParams.get("employeeId");
 		const from = searchParams.get("from");
 		const to = searchParams.get("to");
 		const includeSuperseded = searchParams.get("includeSuperseded") === "true";
 
-		// Now await connection and session in parallel
-		const [, resolvedHeaders] = await Promise.all([connectionPromise, headersPromise]);
+		const resolvedHeaders = await headers();
 
 		// Support both Bearer token (desktop app) and cookie-based auth (web app)
 		const authHeader = resolvedHeaders.get("authorization");
@@ -111,21 +108,14 @@ export async function GET(request: NextRequest) {
 /**
  * POST /api/time-entries
  * Create a new time entry (clock in/out)
- * Optimized: start promises early, await late
  */
 export async function POST(request: NextRequest) {
-	// Start all promises early in parallel
-	const connectionPromise = connection();
-	const headersPromise = headers();
-	const bodyPromise = request.json();
+	// Opt out of caching - must be awaited immediately, not stored as promise
+	await connection();
 
 	try {
-		// Await all initial promises in parallel
-		const [, resolvedHeaders, body] = await Promise.all([
-			connectionPromise,
-			headersPromise,
-			bodyPromise,
-		]);
+		// Await headers and body in parallel
+		const [resolvedHeaders, body] = await Promise.all([headers(), request.json()]);
 
 		// Support both Bearer token (desktop app) and cookie-based auth (web app)
 		const authHeader = resolvedHeaders.get("authorization");

@@ -8,9 +8,9 @@ import { dateFromDB, dateToDB } from "@/lib/datetime/drizzle-adapter";
 import { endOfDay, fromJSDate, startOfDay, toDateKey } from "@/lib/datetime/luxon-utils";
 import { runEffect } from "@/lib/effect/runtime";
 import {
-	type EffectiveWorkSchedule,
-	WorkScheduleService,
-} from "@/lib/effect/services/work-schedule.service";
+	type EffectiveWorkPolicy,
+	WorkPolicyService,
+} from "@/lib/effect/services/work-policy.service";
 
 export interface WorkHoursSummary {
 	totalMinutes: number;
@@ -42,19 +42,19 @@ function luxonWeekdayToScheduleDay(
 }
 
 /**
- * Get expected hours for a specific day based on work schedule
+ * Get expected hours for a specific day based on work policy schedule
  */
 function getExpectedHoursForDay(
-	schedule: EffectiveWorkSchedule | null,
+	policy: EffectiveWorkPolicy | null,
 	luxonWeekday: number,
 ): number {
 	// Default to 8 hours on weekdays if no schedule
-	if (!schedule) {
+	if (!policy?.schedule) {
 		return luxonWeekday >= 1 && luxonWeekday <= 5 ? 8 : 0;
 	}
 
 	const dayName = luxonWeekdayToScheduleDay(luxonWeekday);
-	const scheduleDay = schedule.days.find((d) => d.dayOfWeek === dayName);
+	const scheduleDay = policy.schedule.days.find((d) => d.dayOfWeek === dayName);
 
 	if (scheduleDay?.isWorkDay) {
 		const hours = parseFloat(scheduleDay.hoursPerDay);
@@ -65,16 +65,16 @@ function getExpectedHoursForDay(
 }
 
 /**
- * Check if a day is a working day based on schedule
+ * Check if a day is a working day based on policy schedule
  */
-function isWorkingDay(schedule: EffectiveWorkSchedule | null, luxonWeekday: number): boolean {
+function isWorkingDay(policy: EffectiveWorkPolicy | null, luxonWeekday: number): boolean {
 	// Default to weekdays if no schedule
-	if (!schedule) {
+	if (!policy?.schedule) {
 		return luxonWeekday >= 1 && luxonWeekday <= 5;
 	}
 
 	const dayName = luxonWeekdayToScheduleDay(luxonWeekday);
-	const scheduleDay = schedule.days.find((d) => d.dayOfWeek === dayName);
+	const scheduleDay = policy.schedule.days.find((d) => d.dayOfWeek === dayName);
 
 	return scheduleDay?.isWorkDay ?? false;
 }
@@ -164,18 +164,18 @@ export async function calculateWorkHoursByEmployee(
 }
 
 /**
- * Get employee's effective work schedule
- * Returns null if no schedule is assigned
+ * Get employee's effective work policy
+ * Returns null if no policy is assigned
  */
-export async function getEmployeeSchedule(
+export async function getEmployeePolicy(
 	employeeId: string,
-): Promise<EffectiveWorkSchedule | null> {
+): Promise<EffectiveWorkPolicy | null> {
 	const { Effect } = await import("effect");
 	try {
 		const result = await runEffect(
 			Effect.gen(function* () {
-				const service = yield* WorkScheduleService;
-				return yield* service.getEffectiveSchedule(employeeId);
+				const service = yield* WorkPolicyService;
+				return yield* service.getEffectivePolicy(employeeId);
 			}),
 		);
 		return result;
@@ -240,7 +240,7 @@ export async function calculateExpectedWorkHours(
 
 /**
  * Calculate expected work hours for an employee in a date range
- * Uses the employee's effective work schedule for accurate calculations
+ * Uses the employee's effective work policy schedule for accurate calculations
  */
 export async function calculateExpectedWorkHoursForEmployee(
 	employeeId: string,
@@ -248,8 +248,8 @@ export async function calculateExpectedWorkHoursForEmployee(
 	startDate: Date,
 	endDate: Date,
 ): Promise<WorkHoursSummary & { scheduleInfo: { name: string; source: string } | null }> {
-	// Get employee's effective schedule
-	const schedule = await getEmployeeSchedule(employeeId);
+	// Get employee's effective policy
+	const policy = await getEmployeePolicy(employeeId);
 
 	let currentDT = fromJSDate(startDate);
 	const endDT = fromJSDate(endDate);
@@ -263,9 +263,9 @@ export async function calculateExpectedWorkHoursForEmployee(
 	while (currentDT <= endDT) {
 		const luxonWeekday = currentDT.weekday; // 1=Mon...7=Sun
 
-		// Check if this is a working day per schedule
-		if (isWorkingDay(schedule, luxonWeekday)) {
-			const hoursForDay = getExpectedHoursForDay(schedule, luxonWeekday);
+		// Check if this is a working day per policy schedule
+		if (isWorkingDay(policy, luxonWeekday)) {
+			const hoursForDay = getExpectedHoursForDay(policy, luxonWeekday);
 
 			// Check if this is a holiday
 			const shouldExclude = await shouldExcludeFromCalculations(
@@ -292,10 +292,10 @@ export async function calculateExpectedWorkHoursForEmployee(
 		excludedMinutes,
 		workDays,
 		excludedDays,
-		scheduleInfo: schedule
+		scheduleInfo: policy
 			? {
-					name: schedule.templateName,
-					source: schedule.assignedVia,
+					name: policy.policyName,
+					source: policy.assignedVia,
 				}
 			: null,
 	};

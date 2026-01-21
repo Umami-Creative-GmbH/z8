@@ -165,7 +165,10 @@ export function WorkCategorySelector({
 				<SelectTrigger className="w-full">
 					<SelectValue placeholder={t("timeTracking.selectCategory", "Select a category")}>
 						{value ? (
-							<CategoryOption category={categoriesMap.get(value)} />
+							<CategoryOption
+								category={categoriesMap.get(value)}
+								unknownLabel={t("timeTracking.unknownCategory", "Unknown category")}
+							/>
 						) : (
 							<span className="text-muted-foreground">
 								{t("timeTracking.noCategory", "No category (100%)")}
@@ -182,7 +185,10 @@ export function WorkCategorySelector({
 					</SelectItem>
 					{categories.map((category) => (
 						<SelectItem key={category.id} value={category.id}>
-							<CategoryOption category={category} />
+							<CategoryOption
+								category={category}
+								unknownLabel={t("timeTracking.unknownCategory", "Unknown category")}
+							/>
 						</SelectItem>
 					))}
 				</SelectContent>
@@ -191,9 +197,15 @@ export function WorkCategorySelector({
 	);
 }
 
-function CategoryOption({ category }: { category: WorkCategory | undefined }) {
+function CategoryOption({
+	category,
+	unknownLabel,
+}: {
+	category: WorkCategory | undefined;
+	unknownLabel: string;
+}) {
 	if (!category) {
-		return <span>Unknown category</span>;
+		return <span>{unknownLabel}</span>;
 	}
 
 	const factor = parseFloat(category.factor);

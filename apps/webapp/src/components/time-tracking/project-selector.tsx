@@ -131,7 +131,10 @@ export function ProjectSelector({
 				<SelectTrigger className="w-full">
 					<SelectValue placeholder={t("timeTracking.selectProject", "Select a project")}>
 						{value ? (
-							<ProjectOption project={projectsMap.get(value)} />
+							<ProjectOption
+								project={projectsMap.get(value)}
+								unknownLabel={t("timeTracking.unknownProject", "Unknown project")}
+							/>
 						) : (
 							<span className="text-muted-foreground">
 								{t("timeTracking.noProject", "No project")}
@@ -148,7 +151,10 @@ export function ProjectSelector({
 					</SelectItem>
 					{projects.map((project) => (
 						<SelectItem key={project.id} value={project.id}>
-							<ProjectOption project={project} />
+							<ProjectOption
+								project={project}
+								unknownLabel={t("timeTracking.unknownProject", "Unknown project")}
+							/>
 						</SelectItem>
 					))}
 				</SelectContent>
@@ -157,9 +163,15 @@ export function ProjectSelector({
 	);
 }
 
-function ProjectOption({ project }: { project: AssignedProject | undefined }) {
+function ProjectOption({
+	project,
+	unknownLabel,
+}: {
+	project: AssignedProject | undefined;
+	unknownLabel: string;
+}) {
 	if (!project) {
-		return <span>Unknown project</span>;
+		return <span>{unknownLabel}</span>;
 	}
 
 	return (

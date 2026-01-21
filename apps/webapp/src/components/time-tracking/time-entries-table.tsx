@@ -1,19 +1,15 @@
 "use client";
 
-import type { ColumnDef } from "@tanstack/react-table";
 import { IconInfoCircle } from "@tabler/icons-react";
+import type { ColumnDef } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
 import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 import { useMemo } from "react";
 import { DataTable } from "@/components/data-table-server";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipProvider,
-	TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { WorkPeriodAutoAdjustmentReason } from "@/db/schema";
 import { formatDuration, isSameDayInTimezone } from "@/lib/time-tracking/time-utils";
 import {
@@ -29,9 +25,20 @@ const TimeCorrectionDialog = dynamic(
 	{ ssr: false },
 );
 
+// Dynamic import for ManualTimeEntryDialog
+const ManualTimeEntryDialog = dynamic(
+	() => import("./manual-time-entry-dialog").then((mod) => mod.ManualTimeEntryDialog),
+	{ ssr: false },
+);
+
 // Preload function to call on hover for better perceived performance (bundle-preload)
 const preloadTimeCorrectionDialog = () => {
 	void import("./time-correction-dialog");
+};
+
+// Preload function for manual entry dialog
+const preloadManualTimeEntryDialog = () => {
+	void import("./manual-time-entry-dialog");
 };
 
 interface TimeEntry {
@@ -59,10 +66,12 @@ interface Props {
 	workPeriods: WorkPeriodData[];
 	hasManager: boolean;
 	employeeTimezone: string;
+	employeeId: string;
 }
 
-export function TimeEntriesTable({ workPeriods, hasManager, employeeTimezone }: Props) {
+export function TimeEntriesTable({ workPeriods, hasManager, employeeTimezone, employeeId }: Props) {
 	const { t } = useTranslate();
+	const router = useRouter();
 	const timezoneAbbr = getTimezoneAbbreviation(employeeTimezone);
 
 	const columns = useMemo<ColumnDef<WorkPeriodData>[]>(
@@ -101,11 +110,7 @@ export function TimeEntriesTable({ workPeriods, hasManager, employeeTimezone }: 
 				),
 				cell: ({ row }) => {
 					if (!row.original.endTime) {
-						return (
-							<Badge variant="secondary">
-								{t("timeTracking.table.active", "Active")}
-							</Badge>
-						);
+						return <Badge variant="secondary">{t("timeTracking.table.active", "Active")}</Badge>;
 					}
 					return (
 						<div className="flex flex-col gap-1">
@@ -124,8 +129,7 @@ export function TimeEntriesTable({ workPeriods, hasManager, employeeTimezone }: 
 				header: t("timeTracking.table.duration", "Duration"),
 				cell: ({ row }) => {
 					if (!row.original.durationMinutes) return "-";
-					const hasSurcharge =
-						row.original.surchargeMinutes && row.original.surchargeMinutes > 0;
+					const hasSurcharge = row.original.surchargeMinutes && row.original.surchargeMinutes > 0;
 					const wasAutoAdjusted = row.original.wasAutoAdjusted;
 					const adjustmentReason = row.original.autoAdjustmentReason;
 
@@ -253,8 +257,16 @@ export function TimeEntriesTable({ workPeriods, hasManager, employeeTimezone }: 
 
 	return (
 		<Card>
-			<CardHeader>
+			<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
 				<CardTitle>{t("timeTracking.table.title", "Time Entries")}</CardTitle>
+				<div onMouseEnter={preloadManualTimeEntryDialog} onFocus={preloadManualTimeEntryDialog}>
+					<ManualTimeEntryDialog
+						employeeId={employeeId}
+						employeeTimezone={employeeTimezone}
+						hasManager={hasManager}
+						onSuccess={() => router.refresh()}
+					/>
+				</div>
 			</CardHeader>
 			<CardContent>
 				<DataTable

@@ -37,8 +37,16 @@ const mockRegulation = {
 			options: [{ splitCount: 1, minimumSplitMinutes: null, minimumLongestSplitMinutes: null }],
 		},
 	],
-	assignmentType: "organization" as const,
+};
+
+// Mock policy wrapping the regulation (new structure)
+const mockPolicy = {
+	policyId: "policy-123",
+	policyName: "German Time Law Policy",
 	assignedVia: "Organization Default",
+	assignmentType: "organization" as const,
+	regulation: mockRegulation,
+	schedule: null,
 };
 
 const mockWorkPeriod = {
@@ -139,14 +147,13 @@ vi.mock("@/lib/time-tracking/timezone-utils", () => ({
 	})),
 }));
 
-// Mock time regulation service
-const mockTimeRegulationService = {
-	getEffectiveRegulation: vi.fn(),
+// Mock work policy service
+const mockWorkPolicyService = {
+	getEffectivePolicy: vi.fn(),
 	checkCompliance: vi.fn(),
 	calculateBreakRequirements: vi.fn(),
 	logViolation: vi.fn(),
 	getViolations: vi.fn(),
-	getPresets: vi.fn(),
 	acknowledgeViolation: vi.fn(),
 };
 
@@ -154,12 +161,12 @@ describe("Break Enforcement Service", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockQueryResults = {};
-		mockTimeRegulationService.getEffectiveRegulation.mockReset();
+		mockWorkPolicyService.getEffectivePolicy.mockReset();
 	});
 
 	describe("calculateBreakDeficit", () => {
 		test("should return zero deficit when no regulation exists", async () => {
-			mockTimeRegulationService.getEffectiveRegulation.mockReturnValue(
+			mockWorkPolicyService.getEffectivePolicy.mockReturnValue(
 				Effect.succeed(null),
 			);
 
@@ -174,7 +181,7 @@ describe("Break Enforcement Service", () => {
 						sessionDurationMinutes: 540,
 						breaksTakenMinutes: 0,
 					},
-					mockTimeRegulationService,
+					mockWorkPolicyService,
 				),
 			);
 
@@ -184,8 +191,8 @@ describe("Break Enforcement Service", () => {
 		});
 
 		test("should return zero deficit when work duration is below threshold", async () => {
-			mockTimeRegulationService.getEffectiveRegulation.mockReturnValue(
-				Effect.succeed(mockRegulation),
+			mockWorkPolicyService.getEffectivePolicy.mockReturnValue(
+				Effect.succeed(mockPolicy),
 			);
 
 			const { calculateBreakDeficitForTesting } = await import(
@@ -199,7 +206,7 @@ describe("Break Enforcement Service", () => {
 						sessionDurationMinutes: 300, // 5 hours - below 6 hour threshold
 						breaksTakenMinutes: 0,
 					},
-					mockTimeRegulationService,
+					mockWorkPolicyService,
 				),
 			);
 
@@ -209,8 +216,8 @@ describe("Break Enforcement Service", () => {
 		});
 
 		test("should calculate correct deficit for 6+ hour shift with no breaks", async () => {
-			mockTimeRegulationService.getEffectiveRegulation.mockReturnValue(
-				Effect.succeed(mockRegulation),
+			mockWorkPolicyService.getEffectivePolicy.mockReturnValue(
+				Effect.succeed(mockPolicy),
 			);
 
 			const { calculateBreakDeficitForTesting } = await import(
@@ -224,7 +231,7 @@ describe("Break Enforcement Service", () => {
 						sessionDurationMinutes: 420, // 7 hours
 						breaksTakenMinutes: 0,
 					},
-					mockTimeRegulationService,
+					mockWorkPolicyService,
 				),
 			);
 
@@ -236,8 +243,8 @@ describe("Break Enforcement Service", () => {
 		});
 
 		test("should calculate correct deficit for 9+ hour shift", async () => {
-			mockTimeRegulationService.getEffectiveRegulation.mockReturnValue(
-				Effect.succeed(mockRegulation),
+			mockWorkPolicyService.getEffectivePolicy.mockReturnValue(
+				Effect.succeed(mockPolicy),
 			);
 
 			const { calculateBreakDeficitForTesting } = await import(
@@ -252,7 +259,7 @@ describe("Break Enforcement Service", () => {
 						sessionDurationMinutes: 541, // Just over 9 hours
 						breaksTakenMinutes: 0,
 					},
-					mockTimeRegulationService,
+					mockWorkPolicyService,
 				),
 			);
 
@@ -264,8 +271,8 @@ describe("Break Enforcement Service", () => {
 		});
 
 		test("should subtract breaks already taken from deficit", async () => {
-			mockTimeRegulationService.getEffectiveRegulation.mockReturnValue(
-				Effect.succeed(mockRegulation),
+			mockWorkPolicyService.getEffectivePolicy.mockReturnValue(
+				Effect.succeed(mockPolicy),
 			);
 
 			const { calculateBreakDeficitForTesting } = await import(
@@ -280,7 +287,7 @@ describe("Break Enforcement Service", () => {
 						sessionDurationMinutes: 541, // Just over 9 hours
 						breaksTakenMinutes: 30, // Already took 30 mins
 					},
-					mockTimeRegulationService,
+					mockWorkPolicyService,
 				),
 			);
 
@@ -288,8 +295,8 @@ describe("Break Enforcement Service", () => {
 		});
 
 		test("should return zero deficit when sufficient breaks already taken", async () => {
-			mockTimeRegulationService.getEffectiveRegulation.mockReturnValue(
-				Effect.succeed(mockRegulation),
+			mockWorkPolicyService.getEffectivePolicy.mockReturnValue(
+				Effect.succeed(mockPolicy),
 			);
 
 			const { calculateBreakDeficitForTesting } = await import(
@@ -303,7 +310,7 @@ describe("Break Enforcement Service", () => {
 						sessionDurationMinutes: 540, // 9 hours
 						breaksTakenMinutes: 60, // Already took 60 mins (more than 45 required)
 					},
-					mockTimeRegulationService,
+					mockWorkPolicyService,
 				),
 			);
 
@@ -311,8 +318,8 @@ describe("Break Enforcement Service", () => {
 		});
 
 		test("should include maxUninterruptedMinutes in result", async () => {
-			mockTimeRegulationService.getEffectiveRegulation.mockReturnValue(
-				Effect.succeed(mockRegulation),
+			mockWorkPolicyService.getEffectivePolicy.mockReturnValue(
+				Effect.succeed(mockPolicy),
 			);
 
 			const { calculateBreakDeficitForTesting } = await import(
@@ -326,7 +333,7 @@ describe("Break Enforcement Service", () => {
 						sessionDurationMinutes: 420,
 						breaksTakenMinutes: 0,
 					},
-					mockTimeRegulationService,
+					mockWorkPolicyService,
 				),
 			);
 
@@ -347,8 +354,8 @@ describe("Break Enforcement Service", () => {
 				maxUninterruptedMinutes: 360, // 6 hours
 			};
 
-			mockTimeRegulationService.getEffectiveRegulation.mockReturnValue(
-				Effect.succeed(regulation),
+			mockWorkPolicyService.getEffectivePolicy.mockReturnValue(
+				Effect.succeed({ ...mockPolicy, regulation }),
 			);
 
 			const { calculateBreakDeficitForTesting } = await import(
@@ -363,7 +370,7 @@ describe("Break Enforcement Service", () => {
 						sessionDurationMinutes: 541,
 						breaksTakenMinutes: 0,
 					},
-					mockTimeRegulationService,
+					mockWorkPolicyService,
 				),
 			);
 
@@ -378,8 +385,8 @@ describe("Break Enforcement Service", () => {
 				maxUninterruptedMinutes: 480, // 8 hours - higher than threshold
 			};
 
-			mockTimeRegulationService.getEffectiveRegulation.mockReturnValue(
-				Effect.succeed(regulation),
+			mockWorkPolicyService.getEffectivePolicy.mockReturnValue(
+				Effect.succeed({ ...mockPolicy, regulation }),
 			);
 
 			const { calculateBreakDeficitForTesting } = await import(
@@ -393,7 +400,7 @@ describe("Break Enforcement Service", () => {
 						sessionDurationMinutes: 420, // 7 hours
 						breaksTakenMinutes: 0,
 					},
-					mockTimeRegulationService,
+					mockWorkPolicyService,
 				),
 			);
 
@@ -414,8 +421,8 @@ describe("Break Enforcement Service", () => {
 				],
 			};
 
-			mockTimeRegulationService.getEffectiveRegulation.mockReturnValue(
-				Effect.succeed(multiRuleRegulation),
+			mockWorkPolicyService.getEffectivePolicy.mockReturnValue(
+				Effect.succeed({ ...mockPolicy, regulation: multiRuleRegulation }),
 			);
 
 			const { calculateBreakDeficitForTesting } = await import(
@@ -430,7 +437,7 @@ describe("Break Enforcement Service", () => {
 						sessionDurationMinutes: 420,
 						breaksTakenMinutes: 0,
 					},
-					mockTimeRegulationService,
+					mockWorkPolicyService,
 				),
 			);
 			expect(result1.applicableRule?.requiredBreakMinutes).toBe(30);
@@ -443,7 +450,7 @@ describe("Break Enforcement Service", () => {
 						sessionDurationMinutes: 600,
 						breaksTakenMinutes: 0,
 					},
-					mockTimeRegulationService,
+					mockWorkPolicyService,
 				),
 			);
 			expect(result2.applicableRule?.requiredBreakMinutes).toBe(45);
@@ -456,7 +463,7 @@ describe("Break Enforcement Service", () => {
 						sessionDurationMinutes: 780,
 						breaksTakenMinutes: 0,
 					},
-					mockTimeRegulationService,
+					mockWorkPolicyService,
 				),
 			);
 			expect(result3.applicableRule?.requiredBreakMinutes).toBe(60);
@@ -470,8 +477,8 @@ describe("Break Enforcement Service", () => {
 				breakRules: [],
 			};
 
-			mockTimeRegulationService.getEffectiveRegulation.mockReturnValue(
-				Effect.succeed(noBreakRulesRegulation),
+			mockWorkPolicyService.getEffectivePolicy.mockReturnValue(
+				Effect.succeed({ ...mockPolicy, regulation: noBreakRulesRegulation }),
 			);
 
 			const { calculateBreakDeficitForTesting } = await import(
@@ -485,7 +492,7 @@ describe("Break Enforcement Service", () => {
 						sessionDurationMinutes: 540,
 						breaksTakenMinutes: 0,
 					},
-					mockTimeRegulationService,
+					mockWorkPolicyService,
 				),
 			);
 
@@ -499,8 +506,8 @@ describe("Break Enforcement Service", () => {
 				maxUninterruptedMinutes: null,
 			};
 
-			mockTimeRegulationService.getEffectiveRegulation.mockReturnValue(
-				Effect.succeed(noMaxUninterruptedRegulation),
+			mockWorkPolicyService.getEffectivePolicy.mockReturnValue(
+				Effect.succeed({ ...mockPolicy, regulation: noMaxUninterruptedRegulation }),
 			);
 
 			const { calculateBreakDeficitForTesting } = await import(
@@ -515,7 +522,7 @@ describe("Break Enforcement Service", () => {
 						sessionDurationMinutes: 541,
 						breaksTakenMinutes: 0,
 					},
-					mockTimeRegulationService,
+					mockWorkPolicyService,
 				),
 			);
 
@@ -524,8 +531,8 @@ describe("Break Enforcement Service", () => {
 		});
 
 		test("should handle zero session duration", async () => {
-			mockTimeRegulationService.getEffectiveRegulation.mockReturnValue(
-				Effect.succeed(mockRegulation),
+			mockWorkPolicyService.getEffectivePolicy.mockReturnValue(
+				Effect.succeed(mockPolicy),
 			);
 
 			const { calculateBreakDeficitForTesting } = await import(
@@ -539,7 +546,7 @@ describe("Break Enforcement Service", () => {
 						sessionDurationMinutes: 0,
 						breaksTakenMinutes: 0,
 					},
-					mockTimeRegulationService,
+					mockWorkPolicyService,
 				),
 			);
 
@@ -547,8 +554,8 @@ describe("Break Enforcement Service", () => {
 		});
 
 		test("should handle very long shifts (16+ hours)", async () => {
-			mockTimeRegulationService.getEffectiveRegulation.mockReturnValue(
-				Effect.succeed(mockRegulation),
+			mockWorkPolicyService.getEffectivePolicy.mockReturnValue(
+				Effect.succeed(mockPolicy),
 			);
 
 			const { calculateBreakDeficitForTesting } = await import(
@@ -562,7 +569,7 @@ describe("Break Enforcement Service", () => {
 						sessionDurationMinutes: 960, // 16 hours
 						breaksTakenMinutes: 0,
 					},
-					mockTimeRegulationService,
+					mockWorkPolicyService,
 				),
 			);
 

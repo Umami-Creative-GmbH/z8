@@ -1,12 +1,12 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { CalendarFilters } from "@/hooks/use-calendar-data";
 import { useCalendarData } from "@/hooks/use-calendar-data";
 import { useOrganization } from "@/hooks/use-organization";
 import type { CalendarEvent } from "@/lib/calendar/types";
 import { format } from "@/lib/datetime/luxon-utils";
+import { CalendarEmployeeSelector } from "./calendar-employee-selector";
 import { CalendarFiltersComponent } from "./calendar-filters";
 import { CalendarLegend } from "./calendar-legend";
 import { DeleteWorkPeriodDialog } from "./delete-work-period-dialog";
@@ -28,8 +28,10 @@ export function CalendarView({ organizationId, currentEmployeeId }: CalendarView
 	// View mode state
 	const [viewMode, setViewMode] = useState<ViewMode>("week");
 
-	// Team view toggle (only for managers/admins)
-	const [teamView, setTeamView] = useState(false);
+	// Selected employee for calendar view (defaults to current user)
+	const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(
+		currentEmployeeId ?? null,
+	);
 
 	// Current date range for data fetching
 	const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
@@ -48,17 +50,18 @@ export function CalendarView({ organizationId, currentEmployeeId }: CalendarView
 		showAbsences: true,
 		showTimeEntries: false,
 		showWorkPeriods: true,
-		// Default to own data for regular employees, all data for managers in team view
+		// Always filter to selected employee (never undefined - avoids fetching all)
 		employeeId: currentEmployeeId,
 	});
 
-	// Update employee filter when team view changes
-	const handleTeamViewChange = useCallback(
-		(isTeamView: boolean) => {
-			setTeamView(isTeamView);
+	// Handle employee selection change
+	const handleEmployeeChange = useCallback(
+		(employeeId: string | null) => {
+			setSelectedEmployeeId(employeeId);
 			setFilters((prev) => ({
 				...prev,
-				employeeId: isTeamView ? undefined : currentEmployeeId,
+				// Always use explicit employeeId, fallback to current user (never undefined)
+				employeeId: employeeId ?? currentEmployeeId,
 			}));
 		},
 		[currentEmployeeId],
@@ -160,23 +163,13 @@ export function CalendarView({ organizationId, currentEmployeeId }: CalendarView
 				{/* Filters sidebar - hidden for year view */}
 				{viewMode !== "year" && (
 					<div className="space-y-4 order-2 md:order-1">
-						{/* Team toggle - only for managers and admins */}
-						{isManagerOrAbove && (
-							<Tabs
-								value={teamView ? "team" : "personal"}
-								onValueChange={(v) => handleTeamViewChange(v === "team")}
-								className="w-full"
-							>
-								<TabsList className="w-full">
-									<TabsTrigger value="personal" className="flex-1">
-										My Calendar
-									</TabsTrigger>
-									<TabsTrigger value="team" className="flex-1">
-										Team Calendar
-									</TabsTrigger>
-								</TabsList>
-							</Tabs>
-						)}
+						{/* Employee selector - replaces team toggle for better performance */}
+						<CalendarEmployeeSelector
+							currentEmployeeId={currentEmployeeId}
+							selectedEmployeeId={selectedEmployeeId}
+							onEmployeeChange={handleEmployeeChange}
+							isManagerOrAbove={isManagerOrAbove}
+						/>
 						<CalendarFiltersComponent
 							filters={filters}
 							onFiltersChange={setFilters}

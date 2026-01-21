@@ -20,15 +20,11 @@ import { auth } from "@/lib/auth";
  * }
  */
 export async function GET() {
-	// Start promises early
-	const connectionPromise = connection();
-	const headersPromise = headers();
+	// Opt out of caching - must be awaited immediately, not stored as promise
+	await connection();
 
 	try {
-		const [, resolvedHeaders] = await Promise.all([
-			connectionPromise,
-			headersPromise,
-		]);
+		const resolvedHeaders = await headers();
 
 		// Check for Bearer token in Authorization header (desktop app)
 		const authHeader = resolvedHeaders.get("authorization");
