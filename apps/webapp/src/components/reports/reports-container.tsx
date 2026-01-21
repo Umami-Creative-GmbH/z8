@@ -6,18 +6,17 @@ import { toast } from "sonner";
 import { generateReport } from "@/app/[locale]/(app)/reports/actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent } from "@/components/ui/card";
-import type { AccessibleEmployee, DateRange, ReportData } from "@/lib/reports/types";
+import type { DateRange, ReportData } from "@/lib/reports/types";
 import { ExportButtons } from "./export-buttons";
 import { ReportFilters } from "./report-filters";
 import { ReportPreviewTable } from "./report-preview-table";
 import { ReportSummaryCards } from "./report-summary-cards";
 
 interface ReportsContainerProps {
-	employees: AccessibleEmployee[];
 	currentEmployeeId: string;
 }
 
-export function ReportsContainer({ employees, currentEmployeeId }: ReportsContainerProps) {
+export function ReportsContainer({ currentEmployeeId }: ReportsContainerProps) {
 	const [reportData, setReportData] = useState<ReportData | null>(null);
 	const [isGenerating, setIsGenerating] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -55,7 +54,6 @@ export function ReportsContainer({ employees, currentEmployeeId }: ReportsContai
 		<div className="space-y-6 px-4 lg:px-6">
 			{/* Filters */}
 			<ReportFilters
-				employees={employees}
 				currentEmployeeId={currentEmployeeId}
 				onGenerate={handleGenerateReport}
 				isGenerating={isGenerating}

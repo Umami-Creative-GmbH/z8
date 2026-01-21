@@ -2,7 +2,7 @@ import { connection } from "next/server";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { ReportsContainer } from "@/components/reports/reports-container";
 import { getTranslate } from "@/tolgee/server";
-import { getAccessibleEmployeesAction, getCurrentEmployee } from "./actions";
+import { getCurrentEmployee } from "./actions";
 
 export default async function ReportsPage() {
 	await connection(); // Mark as fully dynamic for cacheComponents mode
@@ -20,10 +20,6 @@ export default async function ReportsPage() {
 		);
 	}
 
-	// Get accessible employees for selector
-	const accessibleEmployeesResult = await getAccessibleEmployeesAction();
-	const employees = accessibleEmployeesResult.success ? accessibleEmployeesResult.data : [];
-
 	return (
 		<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
 			{/* Page Header */}
@@ -40,7 +36,7 @@ export default async function ReportsPage() {
 			</div>
 
 			{/* Reports Container */}
-			<ReportsContainer employees={employees} currentEmployeeId={employee.id} />
+			<ReportsContainer currentEmployeeId={employee.id} />
 		</div>
 	);
 }
