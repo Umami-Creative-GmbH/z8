@@ -69,10 +69,11 @@ export async function GET() {
 			});
 		}
 
-		// Check for active work period
+		// Check for active work period in this organization
 		const period = await db.query.workPeriod.findFirst({
 			where: and(
 				eq(workPeriod.employeeId, emp.id),
+				eq(workPeriod.organizationId, activeOrgId),
 				isNull(workPeriod.endTime),
 			),
 		});

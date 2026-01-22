@@ -100,6 +100,7 @@ export async function POST(request: NextRequest) {
 			return yield* _(
 				timeEntryService.createCorrectionEntry({
 					employeeId: entryToCorrect.employeeId,
+					organizationId: currentEmployee.organizationId,
 					replacesEntryId,
 					timestamp: new Date(timestamp),
 					createdBy: session.user.id,

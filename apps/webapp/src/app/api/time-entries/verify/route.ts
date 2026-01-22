@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
 
 		const effect = Effect.gen(function* (_) {
 			const timeEntryService = yield* _(TimeEntryService);
-			return yield* _(timeEntryService.verifyTimeEntryChain(targetEmployeeId));
+			return yield* _(timeEntryService.verifyTimeEntryChain(targetEmployeeId, currentEmployee.organizationId));
 		});
 
 		const result = await runtime.runPromise(effect);
@@ -122,7 +122,7 @@ export async function GET(request: NextRequest) {
 
 		const effect = Effect.gen(function* (_) {
 			const timeEntryService = yield* _(TimeEntryService);
-			return yield* _(timeEntryService.getChainHash(targetEmployeeId));
+			return yield* _(timeEntryService.getChainHash(targetEmployeeId, currentEmployee.organizationId));
 		});
 
 		const chainHash = await runtime.runPromise(effect);

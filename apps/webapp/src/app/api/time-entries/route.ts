@@ -90,6 +90,7 @@ export async function GET(request: NextRequest) {
 			return yield* _(
 				timeEntryService.getTimeEntries({
 					employeeId: targetEmployeeId,
+					organizationId: activeOrgId,
 					from: from ? new Date(from) : undefined,
 					to: to ? new Date(to) : undefined,
 					includeSuperseded,
@@ -167,6 +168,7 @@ export async function POST(request: NextRequest) {
 			return yield* _(
 				timeEntryService.createTimeEntry({
 					employeeId: currentEmployee.id,
+					organizationId: activeOrgId,
 					type,
 					timestamp: timestamp ? new Date(timestamp) : new Date(),
 					createdBy: session.user.id,
@@ -184,21 +186,23 @@ export async function POST(request: NextRequest) {
 		const entryTime = timestamp ? new Date(timestamp) : new Date();
 
 		if (type === "clock_in") {
-			// Create a new work period
+			// Create a new work period with organizationId
 			await db.insert(workPeriod).values({
 				employeeId: currentEmployee.id,
+				organizationId: activeOrgId,
 				clockInId: entry.id,
 				startTime: entryTime,
 				isActive: true,
 			});
 		} else if (type === "clock_out") {
-			// Find and close the active work period
+			// Find and close the active work period for this employee in this org
 			const [activePeriod] = await db
 				.select()
 				.from(workPeriod)
 				.where(
 					and(
 						eq(workPeriod.employeeId, currentEmployee.id),
+						eq(workPeriod.organizationId, activeOrgId),
 						isNull(workPeriod.endTime),
 					),
 				)
