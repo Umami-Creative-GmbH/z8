@@ -1,93 +1,56 @@
 ---
-title: Time Regulations
-description: Labor law compliance, break rules, and time regulation presets
+title: Time Regulations (Deprecated)
+description: This page has been deprecated. Time Regulations are now part of Work Policies.
 icon: Scale
 ---
 
-## Understanding Time Regulations
+import { Callout } from 'fumadocs-ui/components/callout';
 
-Time regulations define labor law compliance rules for your organization, including:
-- Maximum daily working hours
-- Required break durations
-- Rest period requirements
-- Overtime thresholds
+<Callout type="warn" title="Deprecated">
+  **This page describes a deprecated feature.** Time Regulations have been consolidated into the new unified **Work Policies** system.
+</Callout>
 
----
+## Migrated to Work Policies
 
-## Creating Time Regulations
+The Time Regulations functionality has been merged into [Work Policies](/docs/guide/admin-guide/work-policies), which now provides a unified system for managing:
 
-To set up time regulation rules:
-
-1. Go to **Settings** → **Time Regulations**
-2. Click **"Create Regulation"**
-3. Configure the regulation:
-   - **Name**: Descriptive name (e.g., "Germany Standard")
-   - **Max Daily Hours**: Maximum hours per day (e.g., 10)
-   - **Max Weekly Hours**: Maximum hours per week (e.g., 48)
-   - **Break Rules**: Required breaks based on hours worked
-4. Click **"Save"**
+- **Schedules** - Simple and detailed work schedules
+- **Regulations** - Labor law compliance and break rules
+- **Feature toggles** - Enable/disable schedule or regulation enforcement independently
 
 ---
 
-## Break Rules
+## What Changed
 
-Configure break requirements based on hours worked:
-
-| Hours Worked | Required Break |
-|--------------|----------------|
-| > 6 hours | 30 minutes |
-| > 9 hours | 45 minutes |
-
-To add a break rule:
-1. In the regulation editor, click **"Add Break Rule"**
-2. Set the threshold (hours worked)
-3. Set the required break duration
-4. Save the regulation
+| Old Approach | New Approach |
+|--------------|--------------|
+| Separate "Time Regulations" configuration | Unified "Work Policies" with `regulationEnabled` toggle |
+| Standalone break rules | Integrated break rules within policies |
+| Separate compliance monitoring | Unified compliance dashboard |
+| Individual regulation presets | Labor law presets (German, EU, French, etc.) within policies |
 
 ---
 
-## Importing Presets
+## Migration
 
-Import pre-configured regulations based on country labor laws:
+All existing time regulations have been automatically migrated to the new Work Policies system. Your regulation configurations, break rules, and compliance settings remain intact.
 
-1. Go to **Settings** → **Time Regulations**
-2. Click **"Import Preset"**
-3. Select the country/region (e.g., Germany, Austria)
-4. Review the imported rules
-5. Click **"Import"**
+**To manage regulations now:**
 
-Available presets include German ArbZG (Working Hours Act) and other European labor law templates.
-
----
-
-## Assigning Regulations to Employees
-
-Regulations can be assigned at multiple levels:
-
-**Organization-wide:**
-1. Go to **Settings** → **Time Regulations**
-2. Set as organization default
-3. Applies to all employees without specific assignment
-
-**Team-level:**
-1. Go to team settings
-2. Assign a time regulation
-3. Applies to all team members
-
-**Individual:**
-1. Go to employee profile
-2. Assign a specific regulation
-3. Overrides team/org defaults
+1. Go to **Settings** → **Work Policies**
+2. Create or edit a policy
+3. Enable the **Regulation** toggle
+4. Configure regulation settings:
+   - Maximum daily/weekly hours
+   - Break rules by hours worked
+   - Rest period requirements
+5. Import labor law presets if needed
+6. Assign to organization, teams, or individual employees
 
 ---
 
-## Compliance Monitoring
+## Next Steps
 
-View compliance status for your organization:
-
-1. Go to **Settings** → **Time Regulations** → **"Compliance"**
-2. See violations and warnings:
-   - Overtime violations
-   - Missing breaks
-   - Rest period violations
-3. Export compliance reports for auditing
+- [View Work Policies Documentation](/docs/guide/admin-guide/work-policies)
+- [Learn about Work Categories](/docs/guide/admin-guide/work-categories)
+- [Configure Change Policies](/docs/guide/admin-guide/change-policies)

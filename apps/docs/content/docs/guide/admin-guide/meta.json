@@ -14,8 +14,9 @@
     "projects",
     "surcharges",
     "---Configuration---",
-    "schedules",
-    "time-regulations",
+    "work-policies",
+    "work-categories",
+    "change-policies",
     "holidays-and-vacation",
     "---Reports & Data---",
     "project-reports",
@@ -23,6 +24,9 @@
     "---System---",
     "system-administration",
     "telemetry",
-    "troubleshooting"
+    "troubleshooting",
+    "---Deprecated---",
+    "schedules",
+    "time-regulations"
   ]
 }

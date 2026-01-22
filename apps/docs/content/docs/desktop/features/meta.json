@@ -1,0 +1,13 @@
+{
+  "title": "Features",
+  "icon": "Sparkles",
+  "pages": [
+    "index",
+    "time-tracking",
+    "organizations",
+    "idle-detection",
+    "system-tray",
+    "offline-mode",
+    "settings"
+  ]
+}

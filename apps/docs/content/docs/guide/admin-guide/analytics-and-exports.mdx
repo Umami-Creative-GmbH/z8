@@ -94,6 +94,39 @@ Large exports are processed asynchronously:
 - Email notification sent when export is ready
 - Download link available in export history
 
+### Server-Side Report Generation
+
+For large organizations, reports are generated server-side:
+
+1. **Request a report** - Configure filters and click "Generate"
+2. **Background processing** - The job queue processes your request
+3. **Progress tracking** - See generation progress in the UI
+4. **Notification** - Receive notification when complete
+5. **Download** - Access the report from your export history
+
+Benefits of server-side generation:
+- Handle millions of records without browser timeouts
+- Continue working while reports generate
+- Consistent formatting regardless of data size
+- Automatic retry on temporary failures
+
+### Job Queue System
+
+Large exports use a job queue for reliable processing:
+
+| Status | Description |
+|--------|-------------|
+| **Queued** | Waiting to be processed |
+| **Processing** | Currently generating |
+| **Completed** | Ready for download |
+| **Failed** | Error occurred (can retry) |
+
+View queue status:
+1. Go to **Settings** → **Export** → **"Jobs"**
+2. See all pending, active, and completed jobs
+3. Cancel queued jobs if needed
+4. Retry failed jobs
+
 ### Export History
 
 View all previous exports:

@@ -294,3 +294,58 @@ The system uses a cascading timezone resolution:
 - Time entry displays and calculations
 - Report generation and date filtering
 - All date-based features throughout the application
+
+---
+
+## Organization Lifecycle
+
+### Organization Deletion
+
+Organization owners can delete an organization when it's no longer needed.
+
+<Callout type="warn" title="Permanent Action">
+  Organization deletion is **permanent and irreversible**. All data associated with the organization will be deleted, including employees, time entries, absences, and audit logs.
+</Callout>
+
+**To delete an organization:**
+
+1. Go to **Settings** → **Organization**
+2. Scroll to the **Danger Zone** section
+3. Click **"Delete Organization"**
+4. Type the organization name to confirm
+5. Enter your password for verification
+6. Click **"Permanently Delete"**
+
+**What gets deleted:**
+
+- All employee records
+- All time entries and clock records
+- All absence requests and vacation data
+- All teams and locations
+- All projects and surcharges
+- All audit logs
+- All notification history
+- All exported files
+
+**What is NOT deleted:**
+
+- User accounts (users can still access other organizations)
+- User profile information
+
+### Data Retention Before Deletion
+
+Before deleting an organization:
+
+1. **Export all data** - Use the export feature to download all records
+2. **Notify stakeholders** - Inform all organization members
+3. **Check compliance** - Ensure you meet data retention requirements
+4. **Document the decision** - Keep records of why the organization was deleted
+
+### Organization Cleanup
+
+For organizations you want to keep but need to clean:
+
+1. Use **Demo Data Management** to remove test data
+2. Deactivate former employees instead of deleting
+3. Archive old projects rather than removing them
+4. Export and delete old time entries if storage is a concern

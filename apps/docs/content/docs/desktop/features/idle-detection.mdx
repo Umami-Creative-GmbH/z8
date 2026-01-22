@@ -1,0 +1,240 @@
+---
+title: Idle Detection
+description: Automatic break detection in the z8 Timer desktop app
+icon: Coffee
+---
+
+import { Steps, Step } from 'fumadocs-ui/components/steps';
+import { Callout } from 'fumadocs-ui/components/callout';
+
+Idle detection automatically tracks when you've been away from your computer, helping you log breaks accurately without manual effort.
+
+## How It Works
+
+The z8 Timer monitors your keyboard and mouse activity:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                                                             │
+│   Working        Idle (5+ min)        Resume Activity       │
+│   ─────────────►───────────────────►─────────────────────   │
+│   ⌨️🖱️ Active     No input detected    Activity detected    │
+│                                              │              │
+│                                              ▼              │
+│                                    ┌─────────────────┐      │
+│                                    │  Idle Dialog    │      │
+│                                    │                 │      │
+│                                    │ "You were away" │      │
+│                                    │                 │      │
+│                                    │ [Break] [Work]  │      │
+│                                    └─────────────────┘      │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+1. **Continuous monitoring** - Tracks keyboard and mouse activity in the background
+2. **5-minute threshold** - Triggers after 5 minutes of no input
+3. **Resume detection** - When you start using your computer again
+4. **Dialog prompt** - Asks what you were doing
+
+<Callout type="info" title="Privacy">
+  The app only tracks *that* input occurred, not *what* you typed. No keystrokes or mouse positions are logged.
+</Callout>
+
+---
+
+## The Idle Dialog
+
+When idle is detected and you resume activity:
+
+```
+┌───────────────────────────────────────┐
+│                                       │
+│         You were away                 │
+│                                       │
+│   You were idle for 15 minutes.       │
+│   What were you doing?                │
+│                                       │
+│   ┌─────────────┐  ┌─────────────┐    │
+│   │ I was on    │  │ I was still │    │
+│   │ break       │  │ working     │    │
+│   └─────────────┘  └─────────────┘    │
+│                                       │
+└───────────────────────────────────────┘
+```
+
+### Options
+
+| Option | What it does |
+|--------|--------------|
+| **I was on break** | Records the idle period as a break |
+| **I was still working** | Dismisses the dialog, continues timer |
+
+---
+
+## Recording a Break
+
+When you select "I was on break":
+
+<Steps>
+  <Step>
+    **Clock out calculated**
+
+    You're clocked out at the moment you went idle (e.g., 15 minutes ago)
+  </Step>
+  <Step>
+    **Break recorded**
+
+    The idle period is recorded as break time in your timesheet
+  </Step>
+  <Step>
+    **Clock back in**
+
+    You're immediately clocked back in at the current time
+  </Step>
+  <Step>
+    **Continue working**
+
+    Your work session continues with accurate break tracking
+  </Step>
+</Steps>
+
+### Example Timeline
+
+```
+09:00  Clock in
+        │
+11:30  Last keyboard/mouse activity
+        │  ← You went for coffee
+11:45  Resume activity (idle detected: 15 min)
+        │
+        Dialog appears: "You were away for 15 minutes"
+        │
+        Select "I was on break"
+        │
+        Result:
+        - Time entry: 09:00 - 11:30 (2h 30m work)
+        - Break: 11:30 - 11:45 (15m break)
+        - New time entry: 11:45 - ongoing
+```
+
+---
+
+## Continuing Without Break
+
+When you select "I was still working":
+
+- Dialog is dismissed
+- Timer continues uninterrupted
+- No break is recorded
+- Idle period counts as work time
+
+**Use this when:**
+- You were reading/thinking (no input but still working)
+- You were on a call (phone/video without computer input)
+- False positive (brief bathroom break you don't want to log)
+
+---
+
+## Idle Detection Settings
+
+Idle detection is always active when you're clocked in. The threshold is fixed at 5 minutes.
+
+### When it triggers
+
+| Condition | Triggers? |
+|-----------|-----------|
+| No keyboard input for 5+ min | Yes |
+| No mouse movement for 5+ min | Yes |
+| Computer locked | No (monitors input, not lock state) |
+| App minimized | Yes (continues monitoring) |
+| App closed | No (need app running) |
+
+### When it doesn't trigger
+
+- When you're not clocked in
+- When the app is not running
+- During the first 5 minutes after clocking in
+
+---
+
+## Technical Details
+
+### Input Monitoring
+
+The app uses the `rdev` library for cross-platform input monitoring:
+
+- **Windows**: Raw input API
+- **macOS**: IOKit (requires Accessibility permission)
+- **Linux**: libevdev
+
+### Detection Algorithm
+
+```
+Every 10 seconds:
+  If clocked_in AND last_input > 5 minutes ago:
+    Wait for next input event
+    Show idle dialog with calculated idle duration
+```
+
+### Resource Usage
+
+Idle detection runs in a separate thread:
+
+| Metric | Impact |
+|--------|--------|
+| CPU | < 0.1% (event-based, not polling) |
+| Memory | ~1 MB |
+| Battery | Negligible |
+
+---
+
+## Platform-Specific Notes
+
+### macOS
+
+You must grant Accessibility permission:
+
+1. Go to **System Preferences → Security & Privacy → Privacy**
+2. Select **Accessibility**
+3. Enable **z8 Timer**
+
+Without this permission, idle detection won't work.
+
+### Linux
+
+Ensure your user has access to input devices:
+
+```bash
+# Add yourself to the input group
+sudo usermod -aG input $USER
+
+# Log out and back in for changes to take effect
+```
+
+### Windows
+
+No special permissions required. Works out of the box.
+
+---
+
+## Troubleshooting
+
+### Idle detection not triggering
+
+1. **Check if clocked in** - Only works while clocked in
+2. **Wait 5 minutes** - Threshold must be exceeded
+3. **Verify app is running** - Check tray icon
+4. **macOS**: Check Accessibility permission
+
+### False positives
+
+If idle detection triggers while you're working:
+- Select "I was still working"
+- This is expected during reading, calls, or thinking
+
+### Dialog not appearing
+
+1. Ensure the app has focus capability
+2. Check if "Do Not Disturb" mode is blocking it
+3. Restart the app

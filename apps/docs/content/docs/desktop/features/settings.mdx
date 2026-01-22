@@ -1,0 +1,274 @@
+---
+title: Settings
+description: Configure the z8 Timer desktop app
+icon: Settings
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+Customize the z8 Timer to fit your workflow.
+
+## Accessing Settings
+
+**From the app window:**
+1. Click the gear icon (⚙️) in the top-right corner
+
+**From the system tray:**
+1. Right-click the tray icon
+2. Select **Settings**
+
+---
+
+## Settings Overview
+
+```
+┌───────────────────────────────────────┐
+│             Settings                  │
+├───────────────────────────────────────┤
+│                                       │
+│  Webapp URL                           │
+│  ┌─────────────────────────────────┐  │
+│  │ https://time.yourcompany.com   │  │
+│  └─────────────────────────────────┘  │
+│                                       │
+│  Theme                                │
+│  ┌─────────────────────────────────┐  │
+│  │ System                       ▼  │  │
+│  └─────────────────────────────────┘  │
+│                                       │
+│  ┌──┐ Always on Top                   │
+│  └──┘                                 │
+│                                       │
+│  ┌──┐ Start with System               │
+│  └──┘                                 │
+│                                       │
+│  ─────────────────────────────────    │
+│                                       │
+│  [Sign Out]                           │
+│                                       │
+│  Version: 1.0.0                       │
+│                                       │
+│          [Cancel]  [Save]             │
+└───────────────────────────────────────┘
+```
+
+---
+
+## Webapp URL
+
+The base URL of your organization's z8 server.
+
+| Field | Example |
+|-------|---------|
+| **Webapp URL** | `https://time.yourcompany.com` |
+
+### Setting the URL
+
+1. Open **Settings**
+2. Enter your organization's z8 URL
+3. Click **Save**
+
+<Callout type="info" title="First-Time Setup">
+  You must configure the webapp URL before you can sign in. Ask your administrator for the correct URL.
+</Callout>
+
+### URL Format
+
+| Format | Valid? |
+|--------|--------|
+| `https://time.company.com` | Yes |
+| `https://z8.company.com` | Yes |
+| `http://localhost:3000` | Yes (development) |
+| `time.company.com` | No (needs https://) |
+
+---
+
+## Appearance
+
+The z8 Timer supports dark and light themes to match your preference.
+
+### Theme Options
+
+| Theme | Behavior |
+|-------|----------|
+| **System** | Follows your operating system's theme (recommended) |
+| **Light** | Always use light theme |
+| **Dark** | Always use dark theme |
+
+### Setting the Theme
+
+1. Open **Settings**
+2. Find the **Theme** dropdown
+3. Select your preferred option
+4. Click **Save**
+
+The theme applies immediately - no restart required.
+
+### System Theme
+
+When set to "System", the app automatically switches:
+
+| OS Setting | App Theme |
+|------------|-----------|
+| Light mode | Light theme |
+| Dark mode | Dark theme |
+
+Changes to your OS theme are detected automatically.
+
+### Theme Colors
+
+| Element | Light | Dark |
+|---------|-------|------|
+| Background | White/Gray | Dark gray/Black |
+| Text | Dark gray | Light gray/White |
+| Clock button (inactive) | Green gradient | Green gradient |
+| Clock button (active) | Red gradient | Red gradient |
+| Tray icon | Gray/Green | Gray/Green |
+
+<Callout type="info" title="Tray Icon">
+  The system tray icon colors (gray for not clocked in, green for clocked in) remain the same regardless of theme for visibility.
+</Callout>
+
+---
+
+## Always on Top
+
+When enabled, the app window stays above other windows.
+
+| Setting | Behavior |
+|---------|----------|
+| **On** | Window floats above all other windows |
+| **Off** | Window behaves normally |
+
+### Use Cases
+
+- Quick access while working in other apps
+- Seeing elapsed time while coding
+- Fast clock in/out without window hunting
+
+### Notes
+
+- You can still minimize to tray with always-on-top enabled
+- The setting persists across app restarts
+- Applies immediately when toggled
+
+---
+
+## Start with System
+
+Automatically launch z8 Timer when you log in to your computer.
+
+| Setting | Behavior |
+|---------|----------|
+| **On** | App starts automatically on login |
+| **Off** | Must launch manually |
+
+### Platform Implementation
+
+| Platform | Method |
+|----------|--------|
+| Windows | Registry entry in `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` |
+| macOS | Login Items (System Preferences) |
+| Linux | XDG autostart desktop file |
+
+### Recommended
+
+Enable auto-start so you never forget to track time. The app uses minimal resources when idle.
+
+---
+
+## Sign Out
+
+Sign out of your z8 account.
+
+<Callout type="warn" title="Offline Queue">
+  Signing out clears the offline queue. Ensure you're online and synced before signing out.
+</Callout>
+
+### What Happens
+
+1. Session token is cleared
+2. Offline queue is purged
+3. Tray icon returns to gray
+4. Login screen is shown
+
+### When to Sign Out
+
+- Switching to a different z8 account
+- Changing organizations
+- Troubleshooting authentication issues
+- Before uninstalling the app
+
+---
+
+## Version
+
+Shows the current app version (e.g., `1.0.0`).
+
+Useful for:
+- Checking for updates
+- Reporting issues
+- Confirming you have the latest features
+
+---
+
+## Settings Storage
+
+Settings are stored locally:
+
+| Platform | Location |
+|----------|----------|
+| Windows | `%APPDATA%\com.z8.timer\settings.json` |
+| macOS | `~/Library/Application Support/com.z8.timer/settings.json` |
+| Linux | `~/.config/com.z8.timer/settings.json` |
+
+### Settings File Format
+
+```json
+{
+  "webapp_url": "https://time.yourcompany.com",
+  "theme": "system",
+  "always_on_top": true,
+  "auto_startup": true
+}
+```
+
+Theme values: `"system"`, `"light"`, or `"dark"`
+
+### Resetting Settings
+
+To reset to defaults:
+
+1. Close the app completely
+2. Delete `settings.json`
+3. Restart the app
+
+---
+
+## Troubleshooting
+
+### Settings not saving
+
+1. **Check file permissions** - App needs write access to config directory
+2. **Restart the app** - Try again after restart
+3. **Check disk space** - Ensure space for config file
+
+### Auto-start not working
+
+**Windows:**
+- Check Task Manager → Startup tab
+- Ensure z8 Timer is enabled
+
+**macOS:**
+- Check System Preferences → Users & Groups → Login Items
+- Re-add if missing
+
+**Linux:**
+- Check `~/.config/autostart/`
+- Ensure desktop file exists and is valid
+
+### URL not accepted
+
+1. Ensure URL includes `https://`
+2. Verify the URL is correct with your admin
+3. Test the URL in a browser first

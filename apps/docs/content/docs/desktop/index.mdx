@@ -1,0 +1,100 @@
+---
+title: z8 Timer Desktop App
+description: Native desktop application for quick time tracking on Windows, macOS, and Linux
+icon: Monitor
+---
+
+import { Cards, Card } from 'fumadocs-ui/components/card';
+
+The **z8 Timer** is a lightweight desktop companion app that lives in your system tray for quick and effortless time tracking. Built with Tauri for native performance across all major platforms.
+
+## Why Use the Desktop App?
+
+| Feature | Web App | Desktop App |
+|---------|---------|-------------|
+| **Quick Clock In/Out** | Open browser, navigate | One click from tray |
+| **Always Available** | Need browser open | System tray access |
+| **Organization Switching** | Full dropdown | Quick switcher |
+| **Idle Detection** | Not available | Automatic break tracking |
+| **Offline Support** | Requires internet | Works offline, syncs later |
+| **Dark/Light Mode** | Theme selector | Follows system or manual |
+| **Auto-Start** | Manual | Starts with your computer |
+
+---
+
+## Key Features
+
+<Cards>
+  <Card
+    title="One-Click Time Tracking"
+    description="Clock in and out instantly from your system tray without opening a browser"
+    href="/docs/desktop/features/time-tracking"
+  />
+  <Card
+    title="Organization Switcher"
+    description="Seamlessly switch between multiple organizations without signing out"
+    href="/docs/desktop/features/organizations"
+  />
+  <Card
+    title="Idle Detection"
+    description="Automatically detect when you've been away and record breaks accurately"
+    href="/docs/desktop/features/idle-detection"
+  />
+  <Card
+    title="Offline Mode"
+    description="Keep tracking time even without internet - entries sync when you're back online"
+    href="/docs/desktop/features/offline-mode"
+  />
+  <Card
+    title="Dark & Light Mode"
+    description="Choose your preferred theme or follow your system settings"
+    href="/docs/desktop/features/settings#appearance"
+  />
+  <Card
+    title="System Tray Integration"
+    description="Minimal footprint with always-available access from your taskbar"
+    href="/docs/desktop/features/system-tray"
+  />
+</Cards>
+
+---
+
+## Platform Support
+
+| Platform | Installer | Requirements |
+|----------|-----------|--------------|
+| **Windows** | `.msi`, `.exe` | Windows 10+, WebView2 |
+| **macOS** | `.dmg` | macOS 10.15+ (Catalina) |
+| **Linux** | `.deb`, `.AppImage` | WebKitGTK 4.1+ |
+
+---
+
+## Quick Start
+
+1. **[Download & Install](/docs/desktop/getting-started/installation)** - Get the app for your platform
+2. **[Sign In](/docs/desktop/getting-started/authentication)** - Connect to your Z8 account
+3. **[Start Tracking](/docs/desktop/features/time-tracking)** - Clock in with one click
+
+---
+
+## How It Works
+
+The z8 Timer desktop app connects to your organization's Z8 web application:
+
+```
+┌─────────────────┐     OAuth      ┌─────────────────┐
+│  Desktop App    │ ◄───────────► │    z8 Webapp    │
+│  (System Tray)  │     API        │    (Server)     │
+└─────────────────┘                └─────────────────┘
+        │                                   │
+        │  Offline Queue                    │  Database
+        ▼                                   ▼
+   ┌─────────┐                      ┌─────────────┐
+   │ SQLite  │                      │  PostgreSQL │
+   └─────────┘                      └─────────────┘
+```
+
+- **Authentication**: Secure OAuth flow via your browser
+- **Time Tracking**: API calls to your Z8 server
+- **Offline Support**: Local SQLite queue for resilience
+- **Sync**: Automatic background sync when online

@@ -1,0 +1,112 @@
+---
+title: Features
+description: Complete feature guide for the z8 Timer desktop app
+icon: Sparkles
+---
+
+import { Cards, Card } from 'fumadocs-ui/components/card';
+
+The z8 Timer desktop app is designed for one thing: making time tracking effortless. Here's everything it can do.
+
+## Core Features
+
+<Cards>
+  <Card
+    title="Time Tracking"
+    description="Clock in and out with a single click from your system tray"
+    href="/docs/desktop/features/time-tracking"
+  />
+  <Card
+    title="Organizations"
+    description="Switch between multiple organizations seamlessly"
+    href="/docs/desktop/features/organizations"
+  />
+  <Card
+    title="Idle Detection"
+    description="Automatically detect when you've been away and record breaks"
+    href="/docs/desktop/features/idle-detection"
+  />
+  <Card
+    title="System Tray"
+    description="Always-available access from your taskbar with status indicators"
+    href="/docs/desktop/features/system-tray"
+  />
+  <Card
+    title="Offline Mode"
+    description="Keep tracking even without internet - syncs when you're back online"
+    href="/docs/desktop/features/offline-mode"
+  />
+  <Card
+    title="Settings"
+    description="Customize theme, auto-start, always-on-top, and more"
+    href="/docs/desktop/features/settings"
+  />
+</Cards>
+
+---
+
+## Feature Comparison
+
+| Feature | Description | Benefit |
+|---------|-------------|---------|
+| **One-Click Tracking** | Single button to clock in/out | No navigation, no browser |
+| **Organization Switcher** | Switch orgs from the header | Work across multiple organizations |
+| **Dark/Light Mode** | System, light, or dark theme | Comfortable viewing any time |
+| **Idle Detection** | Monitors keyboard/mouse activity | Never forget to log a break |
+| **System Tray** | Lives in your taskbar | Always accessible |
+| **Status Indicators** | Tray icon color changes | See status at a glance |
+| **Offline Queue** | SQLite-backed local storage | Never lose time entries |
+| **Auto-Start** | Launch with your computer | Never forget to start tracking |
+| **Always-on-Top** | Window stays visible | Quick access while working |
+| **Deep Link Auth** | Browser-based OAuth | Secure, no passwords stored |
+
+---
+
+## How Features Work Together
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                        z8 Timer                             │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│   ┌──────────────┐    ┌──────────────┐    ┌──────────────┐ │
+│   │ System Tray  │───►│ Time Tracking│───►│   z8 API     │ │
+│   │ (Always On)  │    │   (Core)     │    │   (Sync)     │ │
+│   └──────────────┘    └──────────────┘    └──────────────┘ │
+│          │                   │                    │        │
+│          │                   ▼                    │        │
+│          │            ┌──────────────┐            │        │
+│          │            │Idle Detection│            │        │
+│          │            │  (Monitor)   │            │        │
+│          │            └──────────────┘            │        │
+│          │                   │                    │        │
+│          ▼                   ▼                    ▼        │
+│   ┌──────────────────────────────────────────────────────┐ │
+│   │              Offline Queue (SQLite)                  │ │
+│   │         Stores entries when offline                  │ │
+│   └──────────────────────────────────────────────────────┘ │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+1. **System Tray** provides always-available access
+2. **Time Tracking** handles the core clock in/out logic
+3. **Idle Detection** monitors for breaks in the background
+4. **Offline Queue** ensures nothing is lost
+5. **z8 API** syncs everything to the server
+
+---
+
+## Resource Usage
+
+The desktop app is designed to be lightweight:
+
+| Metric | Typical Value |
+|--------|---------------|
+| **Memory** | ~50-80 MB |
+| **CPU (idle)** | <1% |
+| **CPU (active)** | ~1-2% |
+| **Disk** | ~50 MB installed |
+| **Network** | Minimal (API calls only) |
+
+The app uses native code (Rust) for system integrations, keeping resource usage low.

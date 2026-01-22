@@ -1,0 +1,217 @@
+---
+title: Installation
+description: Download and install the z8 Timer desktop app
+icon: Download
+---
+
+import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
+import { Steps, Step } from 'fumadocs-ui/components/steps';
+import { Callout } from 'fumadocs-ui/components/callout';
+
+## Download
+
+Download the z8 Timer installer for your platform from your organization's Z8 portal or the official download page.
+
+| Platform | Format | Download |
+|----------|--------|----------|
+| Windows | `.msi` installer | Contact your admin |
+| Windows | `.exe` installer | Contact your admin |
+| macOS | `.dmg` disk image | Contact your admin |
+| Linux | `.deb` package | Contact your admin |
+| Linux | `.AppImage` | Contact your admin |
+
+---
+
+## Installation Instructions
+
+<Tabs items={['Windows', 'macOS', 'Linux']}>
+  <Tab value="Windows">
+    ### Windows Installation
+
+    <Steps>
+      <Step>
+        **Download the installer**
+
+        Download the `.msi` or `.exe` file from your organization's portal
+      </Step>
+      <Step>
+        **Run the installer**
+
+        Double-click the downloaded file. If prompted by Windows Defender SmartScreen, click "More info" → "Run anyway"
+      </Step>
+      <Step>
+        **Follow the wizard**
+
+        Accept the license agreement and choose installation location (default is recommended)
+      </Step>
+      <Step>
+        **Launch the app**
+
+        z8 Timer will appear in your system tray after installation. Look for the gray clock icon near your clock.
+      </Step>
+    </Steps>
+
+    <Callout type="info" title="WebView2 Runtime">
+      Windows 10 users may be prompted to install the WebView2 Runtime. This is required and will be installed automatically.
+    </Callout>
+
+    ### Windows Auto-Update
+
+    The app checks for updates automatically. When an update is available, you'll be prompted to install it.
+  </Tab>
+  <Tab value="macOS">
+    ### macOS Installation
+
+    <Steps>
+      <Step>
+        **Download the DMG**
+
+        Download the `.dmg` file from your organization's portal
+      </Step>
+      <Step>
+        **Open the DMG**
+
+        Double-click the downloaded `.dmg` file to mount it
+      </Step>
+      <Step>
+        **Drag to Applications**
+
+        Drag the z8 Timer icon to the Applications folder shortcut
+      </Step>
+      <Step>
+        **Launch the app**
+
+        Open z8 Timer from your Applications folder or Launchpad
+      </Step>
+      <Step>
+        **Grant permissions**
+
+        When prompted, allow:
+        - **Accessibility** - For idle detection (keyboard/mouse monitoring)
+        - **Notifications** - For clock reminders
+      </Step>
+    </Steps>
+
+    <Callout type="warn" title="First Launch">
+      On first launch, macOS may show "z8 Timer cannot be opened because Apple cannot check it for malicious software."
+
+      To open: Right-click the app → Open → Click "Open" in the dialog.
+    </Callout>
+
+    ### macOS Permissions
+
+    For full functionality, grant these permissions in **System Preferences → Security & Privacy → Privacy**:
+
+    | Permission | Purpose |
+    |------------|---------|
+    | Accessibility | Idle detection (input monitoring) |
+    | Notifications | Clock reminders |
+  </Tab>
+  <Tab value="Linux">
+    ### Linux Installation
+
+    #### Debian/Ubuntu (.deb)
+
+    ```bash
+    # Download and install
+    sudo dpkg -i z8-timer_*.deb
+
+    # Fix any missing dependencies
+    sudo apt-get install -f
+    ```
+
+    #### AppImage
+
+    ```bash
+    # Make executable
+    chmod +x Z8-Timer-*.AppImage
+
+    # Run
+    ./Z8-Timer-*.AppImage
+    ```
+
+    <Callout type="info" title="AppImage Integration">
+      For desktop integration (menu entry, icons), use [AppImageLauncher](https://github.com/TheAssassin/AppImageLauncher).
+    </Callout>
+
+    #### Arch Linux (AUR)
+
+    ```bash
+    yay -S z8-timer-bin
+    ```
+
+    ### Linux Dependencies
+
+    Ensure you have:
+
+    ```bash
+    # Debian/Ubuntu
+    sudo apt install libwebkit2gtk-4.1-0 libgtk-3-0
+
+    # Fedora
+    sudo dnf install webkit2gtk4.1 gtk3
+
+    # Arch
+    sudo pacman -S webkit2gtk-4.1 gtk3
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## Post-Installation
+
+After installation:
+
+1. **Find the app** - Look for z8 Timer in your system tray (Windows/Linux) or menu bar (macOS)
+2. **Configure server** - Click the tray icon → Settings → Enter your webapp URL
+3. **Sign in** - Authenticate with your Z8 account
+
+---
+
+## Verifying Installation
+
+Check that the app is working correctly:
+
+| Check | Expected |
+|-------|----------|
+| Tray icon visible | Gray clock icon in system tray |
+| App launches | Main window opens on click |
+| Settings accessible | Can open settings dialog |
+| Browser opens | "Sign in" opens your browser |
+
+---
+
+## Uninstallation
+
+<Tabs items={['Windows', 'macOS', 'Linux']}>
+  <Tab value="Windows">
+    1. Open **Settings → Apps → Installed Apps**
+    2. Find "z8 Timer"
+    3. Click **Uninstall**
+  </Tab>
+  <Tab value="macOS">
+    1. Open **Finder → Applications**
+    2. Drag z8 Timer to Trash
+    3. Empty Trash
+
+    To remove settings:
+    ```bash
+    rm -rf ~/Library/Application\ Support/com.z8.timer
+    ```
+  </Tab>
+  <Tab value="Linux">
+    **Debian/Ubuntu:**
+    ```bash
+    sudo apt remove z8-timer
+    ```
+
+    **AppImage:**
+    Simply delete the AppImage file
+
+    To remove settings:
+    ```bash
+    rm -rf ~/.config/com.z8.timer
+    ```
+  </Tab>
+</Tabs>

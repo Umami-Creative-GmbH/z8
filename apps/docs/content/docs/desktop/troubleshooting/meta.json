@@ -1,0 +1,9 @@
+{
+  "title": "Troubleshooting",
+  "icon": "CircleHelp",
+  "pages": [
+    "index",
+    "common-issues",
+    "platform-specific"
+  ]
+}

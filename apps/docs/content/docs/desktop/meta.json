@@ -1,0 +1,11 @@
+{
+  "root": true,
+  "title": "Desktop App",
+  "description": "Z8 Timer desktop application for Windows, macOS, and Linux",
+  "icon": "Monitor",
+  "pages": [
+    "getting-started",
+    "features",
+    "troubleshooting"
+  ]
+}

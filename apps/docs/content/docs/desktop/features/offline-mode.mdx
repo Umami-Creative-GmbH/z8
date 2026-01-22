@@ -1,0 +1,240 @@
+---
+title: Offline Mode
+description: Working without internet in the z8 Timer desktop app
+icon: WifiOff
+---
+
+import { Steps, Step } from 'fumadocs-ui/components/steps';
+import { Callout } from 'fumadocs-ui/components/callout';
+
+The z8 Timer works even when you're offline. Clock in, clock out, and take breaks - everything syncs when you're back online.
+
+## How Offline Mode Works
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                        Online                               │
+│                                                             │
+│   Clock In ──────► API ──────► Server ──────► Database     │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│                        Offline                              │
+│                                                             │
+│   Clock In ──────► Queue ──────► SQLite (local)            │
+│                       │                                     │
+│                       │  (30s retry loop)                   │
+│                       ▼                                     │
+│                    Online? ──────► API ──────► Server       │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+1. **Action attempted** - Clock in/out/break
+2. **Network check** - If API is unreachable
+3. **Queue locally** - Store in SQLite database
+4. **Optimistic update** - UI reflects the action immediately
+5. **Background sync** - Retry every 30 seconds
+6. **Success** - Remove from queue when synced
+
+---
+
+## Offline Indicator
+
+When offline, you'll see a visual indicator:
+
+```
+┌─────────────────────────────────────┐
+│  ⚙️    📶✕ Offline       z8 Timer  │
+│                                     │
+│             ...                     │
+└─────────────────────────────────────┘
+```
+
+| Indicator | Meaning |
+|-----------|---------|
+| WiFi icon with slash | No internet connection |
+| "Offline" text | Currently in offline mode |
+| Yellow status dot | Actions queued for sync |
+
+---
+
+## Actions That Work Offline
+
+| Action | Offline Support |
+|--------|-----------------|
+| **Clock in** | Queued |
+| **Clock out** | Queued |
+| **Clock out with break** | Queued |
+| **View status** | Uses cached state |
+| **Settings changes** | Saved locally |
+
+---
+
+## The Offline Queue
+
+Actions are stored in a local SQLite database:
+
+### Queue Entry Structure
+
+```
+┌────────────────────────────────────────────────┐
+│ ID: 1                                          │
+│ Action: clock_in                               │
+│ Timestamp: 2024-01-15T09:00:00Z                │
+│ Retry Count: 0                                 │
+│ Created: 2024-01-15T09:00:05Z                  │
+└────────────────────────────────────────────────┘
+```
+
+### Queue Processing
+
+<Steps>
+  <Step>
+    **Action queued**
+
+    When offline, action saved to SQLite with timestamp
+  </Step>
+  <Step>
+    **Background processor**
+
+    Runs every 30 seconds
+  </Step>
+  <Step>
+    **Retry attempt**
+
+    Tries to sync queued actions
+  </Step>
+  <Step>
+    **Success or retry**
+
+    If successful, removed from queue. If failed, retry count incremented.
+  </Step>
+</Steps>
+
+### Retry Limits
+
+| Retry Count | Status |
+|-------------|--------|
+| 0-4 | Will retry |
+| 5+ | Skipped (logged as warning) |
+
+<Callout type="warn" title="Max Retries">
+  After 5 failed retries, an action is skipped. This prevents infinite loops from permanent errors. Check your connection and try again manually if needed.
+</Callout>
+
+---
+
+## Viewing Queue Status
+
+To see pending offline actions:
+
+1. Open the app
+2. Look for the offline indicator
+3. Pending count shown if > 0
+
+Or check programmatically via the tray menu status.
+
+---
+
+## Syncing Process
+
+When connection is restored:
+
+```
+Offline Queue: 3 items
+├── 09:00 - Clock In      → Syncing... ✓ Done
+├── 12:00 - Clock Out     → Syncing... ✓ Done
+└── 12:30 - Clock In      → Syncing... ✓ Done
+
+Queue cleared!
+```
+
+1. **Connection detected** - API becomes reachable
+2. **Process queue** - Oldest first (FIFO)
+3. **Sync each action** - With original timestamp
+4. **Update UI** - Reflect synced state
+5. **Clear queue** - Remove successful items
+
+---
+
+## Conflict Handling
+
+What happens if there's a conflict:
+
+| Scenario | Handling |
+|----------|----------|
+| **Clock in while already in** | Server rejects, entry removed from queue |
+| **Clock out while already out** | Server rejects, entry removed from queue |
+| **Timestamp in future** | Server adjusts to server time |
+| **Very old timestamp** | Action processed with original time |
+
+The server is the source of truth. Local queue only stores *intent*.
+
+---
+
+## Data Storage Location
+
+The offline queue is stored in:
+
+| Platform | Location |
+|----------|----------|
+| Windows | `%APPDATA%\com.z8.timer\offline_queue.db` |
+| macOS | `~/Library/Application Support/com.z8.timer/offline_queue.db` |
+| Linux | `~/.config/com.z8.timer/offline_queue.db` |
+
+This is a SQLite database that persists across app restarts.
+
+---
+
+## Signing Out While Offline
+
+<Callout type="warn" title="Warning">
+  Signing out while offline will **clear the offline queue**. Pending time entries will be lost.
+</Callout>
+
+If you must sign out while offline:
+
+1. Note your pending actions
+2. Sign out (queue is cleared)
+3. When online, manually enter the time entries in the web app
+
+---
+
+## Best Practices
+
+- **Check for pending entries** before signing out
+- **Let the app run** - Background sync handles everything
+- **Don't force quit** when offline - Let it sync first
+- **Trust the timestamps** - Entries use the original time, not sync time
+- **Verify important entries** in the web app after sync
+
+---
+
+## Troubleshooting
+
+### Queue not syncing
+
+1. **Check internet connection**
+2. **Verify server URL** in settings
+3. **Check if signed in** - Session may have expired
+4. **Restart the app** - Reinitializes sync processor
+
+### Entries missing after sync
+
+1. **Check web app** - Entries should appear there
+2. **Check for conflicts** - Duplicate clock in/out
+3. **Check queue** - May still be pending
+
+### Database corruption
+
+If offline queue is corrupted:
+
+1. Close the app
+2. Delete `offline_queue.db`
+3. Restart the app (creates fresh database)
+
+<Callout type="warn">
+  Deleting the database loses all pending entries. Only do this as a last resort.
+</Callout>

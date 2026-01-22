@@ -1,0 +1,112 @@
+---
+title: Troubleshooting
+description: Solve common issues with the z8 Timer desktop app
+icon: CircleHelp
+---
+
+import { Cards, Card } from 'fumadocs-ui/components/card';
+import { Callout } from 'fumadocs-ui/components/callout';
+
+Having trouble with the z8 Timer? This guide covers common issues and solutions.
+
+## Quick Fixes
+
+Before diving deep, try these common solutions:
+
+| Issue | Quick Fix |
+|-------|-----------|
+| App not responding | Quit and restart from tray |
+| Not syncing | Check internet connection |
+| Can't sign in | Verify webapp URL is correct |
+| Tray icon missing | Check hidden icons / restart app |
+| Idle detection not working | Check permissions (macOS) |
+
+---
+
+## Common Issues
+
+<Cards>
+  <Card
+    title="Common Issues"
+    description="Authentication, syncing, and general app problems"
+    href="/docs/desktop/troubleshooting/common-issues"
+  />
+  <Card
+    title="Platform-Specific"
+    description="Windows, macOS, and Linux specific issues"
+    href="/docs/desktop/troubleshooting/platform-specific"
+  />
+</Cards>
+
+---
+
+## Diagnostic Information
+
+When reporting issues, gather this information:
+
+### App Version
+
+1. Open Settings
+2. Find version number at bottom
+3. Example: `1.0.0`
+
+### System Information
+
+| Platform | How to Find |
+|----------|-------------|
+| Windows | Settings → System → About |
+| macOS | Apple menu → About This Mac |
+| Linux | `uname -a` in terminal |
+
+### Log Files
+
+| Platform | Location |
+|----------|----------|
+| Windows | `%APPDATA%\com.z8.timer\logs\` |
+| macOS | `~/Library/Logs/com.z8.timer/` |
+| Linux | `~/.local/share/com.z8.timer/logs/` |
+
+---
+
+## Reset the App
+
+If all else fails, reset to a clean state:
+
+<Callout type="warn" title="Data Loss">
+  Resetting clears all local data including offline queue and settings. Ensure you're synced first.
+</Callout>
+
+### Steps to Reset
+
+1. **Sign out** (if possible)
+2. **Quit the app** completely
+3. **Delete app data**:
+
+**Windows:**
+```powershell
+Remove-Item -Recurse "$env:APPDATA\com.z8.timer"
+```
+
+**macOS:**
+```bash
+rm -rf ~/Library/Application\ Support/com.z8.timer
+```
+
+**Linux:**
+```bash
+rm -rf ~/.config/com.z8.timer
+```
+
+4. **Restart the app**
+5. **Reconfigure** webapp URL and sign in
+
+---
+
+## Getting Help
+
+If you can't solve the issue:
+
+1. **Check documentation** - Search for your issue
+2. **Collect diagnostics** - Version, logs, system info
+3. **Contact support** - Through your organization's z8 admin
+4. **Report bugs** - If you've found a software bug

@@ -89,6 +89,113 @@ Background jobs are handled via cron endpoints:
 import { processExportJob } from '@/lib/jobs/export-processor';
 ```
 
+### BullMQ Job Queue
+
+For reliable background job processing, the system uses BullMQ with Valkey/Redis:
+
+```typescript
+import { Queue, Worker } from 'bullmq';
+
+// Create a queue
+const exportQueue = new Queue('exports', {
+  connection: { host: 'localhost', port: 6379 }
+});
+
+// Add a job
+await exportQueue.add('generate-report', {
+  organizationId,
+  reportType: 'time-entries',
+  dateRange: { start, end }
+});
+```
+
+#### Job Types
+
+| Queue | Purpose |
+|-------|---------|
+| `exports` | Large data exports |
+| `reports` | Scheduled report generation |
+| `notifications` | Bulk notification delivery |
+| `cleanup` | Data cleanup and maintenance |
+
+#### Worker Configuration
+
+```typescript
+const worker = new Worker('exports', async (job) => {
+  // Process the job
+  await generateExport(job.data);
+}, {
+  connection: { host: 'localhost', port: 6379 },
+  concurrency: 3
+});
+```
+
+---
+
+## Rate Limiting
+
+### @upstash/ratelimit Integration
+
+API endpoints are protected with rate limiting using `@upstash/ratelimit`:
+
+```typescript
+import { Ratelimit } from '@upstash/ratelimit';
+import { Redis } from '@upstash/redis';
+
+const ratelimit = new Ratelimit({
+  redis: Redis.fromEnv(),
+  limiter: Ratelimit.slidingWindow(10, '10 s'),
+});
+
+// In API route
+const { success, limit, remaining } = await ratelimit.limit(identifier);
+```
+
+#### Rate Limit Tiers
+
+| Endpoint Type | Limit | Window |
+|---------------|-------|--------|
+| Authentication | 5 | 1 minute |
+| API Read | 100 | 1 minute |
+| API Write | 30 | 1 minute |
+| Exports | 5 | 1 hour |
+
+---
+
+## Real-Time Infrastructure
+
+### Valkey Pub/Sub
+
+Real-time notifications use Valkey (Redis-compatible) pub/sub:
+
+```typescript
+import { createClient } from 'redis';
+
+const publisher = createClient({ url: process.env.VALKEY_URL });
+const subscriber = createClient({ url: process.env.VALKEY_URL });
+
+// Publish notification
+await publisher.publish('notifications', JSON.stringify({
+  userId,
+  type: 'approval-request',
+  data: { ... }
+}));
+
+// Subscribe in SSE handler
+await subscriber.subscribe('notifications', (message) => {
+  const notification = JSON.parse(message);
+  // Send to appropriate SSE connection
+});
+```
+
+#### Channel Structure
+
+| Channel | Purpose |
+|---------|---------|
+| `notifications:{userId}` | User-specific notifications |
+| `organization:{orgId}` | Organization-wide broadcasts |
+| `presence:{orgId}` | User presence tracking |
+
 ---
 
 ## DateTime Handling

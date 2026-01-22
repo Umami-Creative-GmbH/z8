@@ -1,0 +1,152 @@
+---
+title: Work Categories
+description: Categorize work time with time factors for accurate tracking
+icon: Tags
+---
+
+import { Steps, Step } from 'fumadocs-ui/components/steps';
+import { Callout } from 'fumadocs-ui/components/callout';
+
+Work Categories allow you to classify different types of work with associated time factors. This is useful for tracking different work modes like overtime, on-call time, training, or travel time.
+
+## Overview
+
+A Work Category includes:
+
+- **Name** - Descriptive label (e.g., "Overtime", "Travel", "Training")
+- **Time Factor** - Multiplier for hours worked (0.5x to 2.0x)
+- **Color** - Visual identifier in calendars and reports
+
+---
+
+## Time Factors
+
+Time factors adjust how hours are counted:
+
+| Factor | Description | Example Use |
+|--------|-------------|-------------|
+| **0.5x** | Half-time credit | Standby/on-call time |
+| **1.0x** | Standard time | Normal work hours |
+| **1.25x** | Quarter overtime | Evening work |
+| **1.5x** | Time and a half | Weekend work |
+| **2.0x** | Double time | Holiday work |
+
+<Callout type="info">
+  Time factors affect hour calculations in reports and overtime tracking. An employee working 4 hours at 1.5x factor would be credited with 6 hours.
+</Callout>
+
+---
+
+## Work Category Sets
+
+Categories are organized into sets that can be assigned to different parts of your organization.
+
+### Creating a Category Set
+
+<Steps>
+  <Step>
+    Go to **Settings** → **Work Categories**
+  </Step>
+  <Step>
+    Click **"Create Category Set"**
+  </Step>
+  <Step>
+    Enter a set name (e.g., "Standard Categories", "Shift Work Categories")
+  </Step>
+  <Step>
+    Add categories to the set:
+    - Click **"Add Category"**
+    - Enter name, time factor, and color
+    - Repeat for each category
+  </Step>
+  <Step>
+    Click **"Save"**
+  </Step>
+</Steps>
+
+### Default Categories
+
+New category sets include these default categories:
+
+| Category | Factor | Description |
+|----------|--------|-------------|
+| Regular | 1.0x | Standard work hours |
+| Overtime | 1.5x | Hours beyond standard schedule |
+| Holiday | 2.0x | Work on public holidays |
+
+---
+
+## Category Assignment Hierarchy
+
+Like Work Policies, category sets follow a hierarchical assignment:
+
+```
+Organization Default
+    ↓
+Team Override (optional)
+    ↓
+Employee Override (optional)
+```
+
+### Setting Organization Default
+
+1. Go to **Settings** → **Work Categories**
+2. Find the category set
+3. Click **"Set as Organization Default"**
+
+### Assigning to Teams or Employees
+
+1. Go to the team or employee settings
+2. Find the **Work Categories** section
+3. Select a category set
+4. Save changes
+
+---
+
+## Using Categories in Time Tracking
+
+### When Clocking In/Out
+
+1. Start a time entry as normal
+2. Optionally select a work category
+3. The category applies to that time entry
+
+### Manual Time Entries
+
+1. Create or edit a time entry
+2. Select the applicable category from the dropdown
+3. Hours are calculated with the category's time factor
+
+### Changing Categories on Existing Entries
+
+1. Go to the time entry
+2. Click **"Edit"**
+3. Change the category
+4. Save - the calculated hours update automatically
+
+---
+
+## Reports with Categories
+
+Work categories appear in reports:
+
+- **Time Tracking Reports** - Hours broken down by category
+- **Overtime Reports** - See overtime vs regular hours
+- **Payroll Exports** - Category factors applied to hour totals
+
+### Filtering by Category
+
+1. Go to any report
+2. Use the **Category** filter
+3. Select one or more categories
+4. View filtered results
+
+---
+
+## Best Practices
+
+- **Keep it simple** - Start with a few essential categories
+- **Use clear names** - Categories should be self-explanatory
+- **Consistent factors** - Use the same factors across teams when possible
+- **Train employees** - Ensure everyone knows which category to use when
+- **Review usage** - Periodically check if categories are being used correctly

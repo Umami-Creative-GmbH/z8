@@ -48,3 +48,47 @@ The system uses Server-Sent Events (SSE) to deliver real-time updates:
 - Instant notification delivery
 - Live status updates
 - No need to refresh the page
+
+---
+
+## Connection Status
+
+The notification system shows your connection status in real-time.
+
+### Status Indicators
+
+Look for the connection indicator near the notification bell:
+
+| Indicator | Meaning |
+|-----------|---------|
+| **Green dot** | Connected - receiving live updates |
+| **Yellow dot** | Reconnecting - temporarily disconnected |
+| **Red dot** | Disconnected - not receiving live updates |
+
+### Automatic Reconnection
+
+When connection is lost, the system automatically:
+
+1. Attempts to reconnect immediately
+2. Retries with increasing delays if unsuccessful
+3. Shows "Reconnecting..." status
+4. Restores live updates when connection is back
+5. Fetches any missed notifications
+
+### Troubleshooting Connection Issues
+
+If you see persistent connection issues:
+
+- **Check your internet connection**
+- **Refresh the page** - This reestablishes the SSE connection
+- **Check for VPN issues** - Some VPNs block SSE connections
+- **Try a different browser** - Rule out browser-specific issues
+- **Contact your admin** - There may be server-side issues
+
+### Offline Behavior
+
+When disconnected:
+- You can still browse previously loaded content
+- New notifications won't appear until reconnection
+- Actions may be queued and sync when reconnected
+- A banner may appear indicating offline status

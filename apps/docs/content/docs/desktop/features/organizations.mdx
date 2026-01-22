@@ -1,0 +1,129 @@
+---
+title: Organizations
+description: Switch between multiple organizations in the z8 Timer desktop app
+icon: Building2
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+If you belong to multiple organizations in z8, you can easily switch between them without signing out.
+
+## Organization Selector
+
+The organization selector appears in the app header when you have access to multiple organizations.
+
+```
+┌─────────────────────────────────────┐
+│  🏢 Acme Corp          ▼     ⚙️     │
+│                                     │
+│             ...                     │
+└─────────────────────────────────────┘
+```
+
+| Element | Description |
+|---------|-------------|
+| **Organization icon** | Logo or default building icon |
+| **Organization name** | Currently active organization |
+| **Dropdown arrow** | Click to see all organizations |
+
+<Callout type="info" title="Single Organization">
+  If you only belong to one organization, the selector shows your organization name without a dropdown.
+</Callout>
+
+---
+
+## Switching Organizations
+
+1. **Click the organization name** in the header
+2. **View the dropdown** with all your organizations
+3. **Select an organization** to switch to it
+
+```
+┌─────────────────────────────────────┐
+│  Switch Organization                │
+├─────────────────────────────────────┤
+│  🏢 Acme Corp              ✓ Admin  │
+│  🏢 Beta Industries          Member │
+│  🏢 Gamma Consulting         Admin  │
+└─────────────────────────────────────┘
+```
+
+Each organization shows:
+- **Icon/Logo** - Organization's logo or default icon
+- **Name** - Organization name
+- **Checkmark** - Indicates currently active organization
+- **Role** - Your role (Admin, Manager, Member)
+
+---
+
+## What Happens When You Switch
+
+When you switch organizations:
+
+1. **Session updates** - Your active organization changes on the server
+2. **Clock status refreshes** - Shows your status in the new organization
+3. **Time tracking context** - New entries go to the selected organization
+
+<Callout type="warn" title="Clock Status">
+  Your clock-in status is per organization. If you're clocked in at Acme Corp and switch to Beta Industries, you'll see your status at Beta Industries (which may be clocked out).
+</Callout>
+
+---
+
+## Organization Roles
+
+Your role determines what you can do in each organization:
+
+| Role | Description |
+|------|-------------|
+| **Owner** | Full control, can delete organization |
+| **Admin** | Manage settings, employees, teams |
+| **Manager** | Approve time entries, manage team |
+| **Member** | Standard employee access |
+
+Your role is displayed next to each organization in the dropdown.
+
+---
+
+## Syncing Across Devices
+
+Organization selection syncs with the web app:
+
+- **Switch on desktop** → Web app reflects the change
+- **Switch on web** → Desktop app updates on next API call
+- **Stored in session** → Persists across app restarts
+
+---
+
+## Employee Records
+
+<Callout type="info" title="Employee Record Required">
+  To track time in an organization, you need an employee record. If you're a member but don't have an employee record, contact your organization admin.
+</Callout>
+
+The app checks for employee records when:
+- Fetching your organizations
+- Switching organizations
+- Attempting to clock in/out
+
+---
+
+## Troubleshooting
+
+### Organization not appearing
+
+1. **Check membership** - Verify you're a member in the web app
+2. **Refresh the app** - Close and reopen to refetch organizations
+3. **Check connection** - Ensure you're online
+
+### Can't switch organizations
+
+1. **Wait for current operation** - Switching is disabled during loading
+2. **Check network** - Switch requires API call
+3. **Try again** - Temporary server issues may resolve
+
+### Clock status wrong after switch
+
+1. **Wait for refresh** - Status refreshes after switch
+2. **Manual refresh** - Close and reopen the app
+3. **Check web app** - Verify your status there

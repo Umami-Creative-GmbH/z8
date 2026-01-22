@@ -24,6 +24,46 @@ The database uses Drizzle ORM with the following key entities:
 
 ---
 
+## Schema Modularization
+
+The database schema is organized into domain-specific modules for maintainability:
+
+```
+src/db/schema/
+├── index.ts              # Re-exports all schemas
+├── auth.ts               # Authentication (users, sessions, accounts)
+├── organization.ts       # Organizations, members, invitations
+├── employee.ts           # Employee profiles, positions
+├── team.ts               # Teams, team members
+├── location.ts           # Work locations
+├── time-entry.ts         # Clock in/out records
+├── absence.ts            # Vacation, sick leave requests
+├── holiday.ts            # Holidays, holiday presets
+├── vacation.ts           # Vacation assignments, balances
+├── work-policy.ts        # Work policies (schedules + regulations)
+├── work-category.ts      # Work category sets and categories
+├── change-policy.ts      # Time entry change policies
+├── employee-rate.ts      # Employee rate history
+├── project.ts            # Projects, project assignments
+├── surcharge.ts          # Surcharges, surcharge rules
+├── notification.ts       # Notifications, push subscriptions
+├── audit.ts              # Audit logs
+├── export.ts             # Export jobs, export files
+└── ... (26+ domain files)
+```
+
+### Key Tables
+
+| Table | Description |
+|-------|-------------|
+| `work_policy` | Unified work schedules and regulations |
+| `work_category` | Work categories with time factors |
+| `work_category_set` | Sets of categories for assignment |
+| `change_policy` | Time entry modification policies |
+| `employee_rate_history` | Hourly rate tracking over time |
+
+---
+
 ## Schema Generation
 
 ```bash
@@ -32,4 +72,71 @@ bunx --bun @better-auth/cli generate --output ./src/db/schema.ts
 
 # Run database migrations
 bun db:migrate
+```
+
+---
+
+## New Tables Reference
+
+### work_policy
+
+```sql
+CREATE TABLE work_policy (
+  id UUID PRIMARY KEY,
+  organization_id UUID REFERENCES organization(id),
+  name TEXT NOT NULL,
+  schedule_enabled BOOLEAN DEFAULT true,
+  regulation_enabled BOOLEAN DEFAULT true,
+  schedule_type TEXT, -- 'simple' | 'detailed'
+  weekly_hours DECIMAL,
+  daily_hours JSONB, -- { monday: 8, tuesday: 8, ... }
+  max_daily_hours DECIMAL,
+  max_weekly_hours DECIMAL,
+  break_rules JSONB, -- [{ afterHours: 6, minBreakMinutes: 30 }]
+  created_at TIMESTAMPTZ,
+  updated_at TIMESTAMPTZ
+);
+```
+
+### work_category
+
+```sql
+CREATE TABLE work_category (
+  id UUID PRIMARY KEY,
+  set_id UUID REFERENCES work_category_set(id),
+  name TEXT NOT NULL,
+  time_factor DECIMAL DEFAULT 1.0,
+  color TEXT,
+  sort_order INTEGER,
+  created_at TIMESTAMPTZ
+);
+```
+
+### change_policy
+
+```sql
+CREATE TABLE change_policy (
+  id UUID PRIMARY KEY,
+  organization_id UUID REFERENCES organization(id),
+  name TEXT NOT NULL,
+  self_service_days INTEGER DEFAULT 3,
+  approval_days INTEGER DEFAULT 30,
+  no_approval_required BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ,
+  updated_at TIMESTAMPTZ
+);
+```
+
+### employee_rate_history
+
+```sql
+CREATE TABLE employee_rate_history (
+  id UUID PRIMARY KEY,
+  employee_id UUID REFERENCES employee(id),
+  hourly_rate DECIMAL NOT NULL,
+  currency TEXT DEFAULT 'EUR',
+  effective_from DATE NOT NULL,
+  created_by UUID REFERENCES user(id),
+  created_at TIMESTAMPTZ
+);
 ```

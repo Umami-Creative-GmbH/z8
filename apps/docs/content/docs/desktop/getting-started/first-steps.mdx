@@ -1,0 +1,161 @@
+---
+title: First Steps
+description: Your first clock in with the z8 Timer desktop app
+icon: Play
+---
+
+import { Steps, Step } from 'fumadocs-ui/components/steps';
+import { Callout } from 'fumadocs-ui/components/callout';
+
+Now that you've installed and signed in, let's walk through using the app for the first time.
+
+## The Main Interface
+
+When you click the tray icon, you'll see the main app window:
+
+```
+┌─────────────────────────────────────┐
+│  ⚙️                    z8 Timer    │
+│                                     │
+│                                     │
+│            ┌───────────┐            │
+│            │           │            │
+│            │    ▶️      │            │
+│            │           │            │
+│            └───────────┘            │
+│           Ready to work             │
+│                                     │
+│        ○ Not Clocked In             │
+└─────────────────────────────────────┘
+```
+
+| Element | Description |
+|---------|-------------|
+| **Settings icon** | Opens settings dialog |
+| **Clock button** | Large circular button in the center |
+| **Status text** | Shows "Ready to work" or elapsed time |
+| **Status badge** | Shows current clock state at bottom |
+
+---
+
+## Your First Clock In
+
+<Steps>
+  <Step>
+    **Open the app**
+
+    Click the z8 Timer icon in your system tray. The main window appears.
+  </Step>
+  <Step>
+    **Click the clock button**
+
+    The large circular button in the center. It shows a play icon (▶️) when you're not clocked in.
+  </Step>
+  <Step>
+    **You're now clocked in!**
+
+    The button changes to a stop icon (⏹️), turns red, and starts showing elapsed time.
+    The status badge updates to "Currently Working" with a green dot.
+  </Step>
+</Steps>
+
+<Callout type="info" title="Tray Icon Change">
+  Notice the tray icon changes from gray to green when you're clocked in. This lets you see your status at a glance.
+</Callout>
+
+---
+
+## Clocking Out
+
+When you're done working:
+
+<Steps>
+  <Step>
+    **Open the app**
+
+    Click the tray icon (now green)
+  </Step>
+  <Step>
+    **Click the clock button**
+
+    The button now shows elapsed time (e.g., "02:34:15")
+  </Step>
+  <Step>
+    **You're clocked out**
+
+    Your time entry is saved and synced to the server
+  </Step>
+</Steps>
+
+---
+
+## Understanding the Timer Display
+
+While clocked in, the button shows your elapsed time:
+
+```
+        ┌───────────┐
+        │           │
+        │  02:34:15 │
+        │           │
+        └───────────┘
+```
+
+| Format | Meaning |
+|--------|---------|
+| `00:05:23` | 5 minutes, 23 seconds |
+| `01:30:00` | 1 hour, 30 minutes |
+| `08:00:00` | 8 hours exactly |
+
+The timer updates in real-time every second.
+
+---
+
+## What Happens Behind the Scenes
+
+When you clock in:
+
+1. **API call** sent to your Z8 server
+2. **Time entry created** with current timestamp
+3. **Tray icon updated** to green
+4. **Timer starts** counting in the UI
+
+When you clock out:
+
+1. **API call** closes your time entry
+2. **Duration calculated** and saved
+3. **Tray icon updated** to gray
+4. **Entry synced** to your profile
+
+---
+
+## If You're Offline
+
+Don't worry if your internet connection drops:
+
+1. **Clock in/out still works** - Actions are queued locally
+2. **Look for the offline indicator** - WiFi icon with slash appears
+3. **Automatic sync** - When back online, entries sync automatically
+4. **No data loss** - Everything is stored in a local database
+
+[Learn more about offline mode →](/docs/desktop/features/offline-mode)
+
+---
+
+## Next Steps
+
+Now that you've clocked in and out, explore more features:
+
+- **[Idle Detection](/docs/desktop/features/idle-detection)** - How the app detects breaks automatically
+- **[System Tray](/docs/desktop/features/system-tray)** - Quick actions from the tray menu
+- **[Settings](/docs/desktop/features/settings)** - Customize the app behavior
+- **[Offline Mode](/docs/desktop/features/offline-mode)** - Work without internet
+
+---
+
+## Tips for Daily Use
+
+- **Keep the app running** - It stays in the system tray with minimal resources
+- **Use auto-start** - Enable in settings so you never forget to launch it
+- **Trust the idle detection** - It will catch breaks you forget to log
+- **Check the tray icon** - Green = working, gray = not clocked in

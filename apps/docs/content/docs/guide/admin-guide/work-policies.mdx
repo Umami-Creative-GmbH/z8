@@ -1,0 +1,232 @@
+---
+title: Work Policies
+description: Unified system for work schedules, time regulations, and labor law compliance
+icon: Briefcase
+---
+
+import { Steps, Step } from 'fumadocs-ui/components/steps';
+import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
+import { Callout } from 'fumadocs-ui/components/callout';
+
+Work Policies provide a unified system that combines work schedules and time regulations into a single, configurable policy. This replaces the previous separate "Work Schedules" and "Time Regulations" features.
+
+## Overview
+
+A Work Policy can include:
+
+- **Schedule** - Define expected work hours (simple or detailed)
+- **Regulation** - Enforce labor law compliance (max hours, breaks)
+
+Each component can be independently enabled or disabled using feature toggles.
+
+---
+
+## Feature Toggles
+
+| Toggle | Description |
+|--------|-------------|
+| `scheduleEnabled` | Enable work schedule tracking and expectations |
+| `regulationEnabled` | Enable labor law compliance enforcement |
+
+<Callout type="info">
+  You can enable schedules without regulations, regulations without schedules, or both together depending on your organization's needs.
+</Callout>
+
+---
+
+## Creating a Work Policy
+
+<Steps>
+  <Step>
+    Go to **Settings** → **Work Policies**
+  </Step>
+  <Step>
+    Click **"Create Policy"**
+  </Step>
+  <Step>
+    Enter a policy name (e.g., "Standard Full-Time", "Part-Time", "German ArbZG")
+  </Step>
+  <Step>
+    Configure the schedule and/or regulation settings
+  </Step>
+  <Step>
+    Click **"Save"**
+  </Step>
+</Steps>
+
+---
+
+## Schedule Configuration
+
+<Tabs items={['Simple Schedule', 'Detailed Schedule']}>
+  <Tab value="Simple Schedule">
+    **Simple Schedule** - Total weekly hours as a single number
+
+    - **Hours per week**: 0-168
+    - **Work classification**: Daily, Weekly, or Monthly
+    - **Best for**: Standard full-time, part-time schedules
+
+    Example: 40 hours per week
+  </Tab>
+  <Tab value="Detailed Schedule">
+    **Detailed Schedule** - Hours specified per day of the week
+
+    - **Work days**: Check which days are work days
+    - **Hours per day**: 0-24 for each work day
+    - **Work classification**: Daily, Weekly, or Monthly
+    - **Best for**: Irregular schedules, shift work, compressed weeks
+
+    Example: Mon-Thu 9 hours, Fri 4 hours
+  </Tab>
+</Tabs>
+
+---
+
+## Regulation Configuration
+
+Configure labor law compliance rules:
+
+| Setting | Description | Example |
+|---------|-------------|---------|
+| **Max Daily Hours** | Maximum hours per day | 10 hours |
+| **Max Weekly Hours** | Maximum hours per week | 48 hours |
+| **Min Rest Period** | Minimum rest between shifts | 11 hours |
+| **Break Rules** | Required breaks by hours worked | 30 min after 6 hours |
+
+### Break Rules
+
+Configure multiple break thresholds:
+
+| Hours Worked | Required Break |
+|--------------|----------------|
+| > 6 hours | 30 minutes |
+| > 9 hours | 45 minutes |
+
+---
+
+## Labor Law Presets
+
+Import pre-configured regulations based on country labor laws:
+
+<Steps>
+  <Step>
+    In the policy editor, click **"Import Preset"**
+  </Step>
+  <Step>
+    Select a preset:
+    - **German ArbZG** - German Working Hours Act
+    - **EU Standard** - EU Working Time Directive
+    - **French** - French Labor Code
+    - **UK** - UK Working Time Regulations
+    - **Swiss** - Swiss Labor Act
+    - **Austrian** - Austrian Working Hours Act
+  </Step>
+  <Step>
+    Review the imported configuration
+  </Step>
+  <Step>
+    Customize if needed and save
+  </Step>
+</Steps>
+
+---
+
+## Hierarchical Assignment
+
+Work policies are assigned hierarchically with inheritance:
+
+```
+Organization Default
+    ↓
+Team Override (optional)
+    ↓
+Employee Override (optional)
+```
+
+### Assignment Priority
+
+1. **Employee-level** - Highest priority, overrides all others
+2. **Team-level** - Applies to team members without individual assignment
+3. **Organization-level** - Default for all employees
+
+### Setting Organization Default
+
+<Steps>
+  <Step>
+    Go to **Settings** → **Work Policies**
+  </Step>
+  <Step>
+    Find the policy to use as default
+  </Step>
+  <Step>
+    Click **"Set as Organization Default"**
+  </Step>
+</Steps>
+
+### Assigning to a Team
+
+<Steps>
+  <Step>
+    Go to **Settings** → **Teams** → Select team
+  </Step>
+  <Step>
+    Find the **Work Policy** section
+  </Step>
+  <Step>
+    Select a policy from the dropdown
+  </Step>
+  <Step>
+    Save changes
+  </Step>
+</Steps>
+
+### Assigning to an Employee
+
+<Steps>
+  <Step>
+    Go to **Settings** → **Employees** → Select employee
+  </Step>
+  <Step>
+    Find the **Work Policy** section
+  </Step>
+  <Step>
+    Select a policy from the dropdown
+  </Step>
+  <Step>
+    Save changes
+  </Step>
+</Steps>
+
+---
+
+## Compliance Monitoring
+
+When regulations are enabled, the system monitors compliance:
+
+### Viewing Violations
+
+1. Go to **Settings** → **Work Policies** → **"Compliance"**
+2. See violations grouped by type:
+   - **Overtime** - Daily or weekly hours exceeded
+   - **Missing Breaks** - Required breaks not taken
+   - **Rest Violations** - Insufficient rest between shifts
+3. Filter by date range, team, or employee
+4. Export compliance reports for auditing
+
+### Violation Notifications
+
+Configure automatic notifications for compliance violations:
+
+- Email alerts to managers
+- In-app notifications
+- Weekly compliance summary reports
+
+---
+
+## Best Practices
+
+- **Start with presets** - Use labor law presets as a starting point
+- **Use hierarchy wisely** - Set a sensible organization default, override only when needed
+- **Enable what you need** - Only enable schedule or regulation if you'll use it
+- **Review compliance regularly** - Check compliance dashboard weekly
+- **Document exceptions** - Note why specific employees have different policies

@@ -36,17 +36,42 @@ const isValid = await validateBlockchainIntegrity(entries);
 
 ---
 
-## Time Regulation Service
+## Work Policy Service
+
+The Work Policy Service provides unified management of work schedules and time regulations.
+
+### Policy Resolution
+
+Resolves the effective policy for an employee using hierarchical inheritance:
+
+```typescript
+import { WorkPolicyService } from '@/lib/effect/services/work-policy.service';
+
+// Get effective policy for an employee
+const policy = await WorkPolicyService.getEffectivePolicy({
+  employeeId,
+  organizationId,
+});
+// Returns: Employee policy → Team policy → Organization default
+```
+
+### Schedule Validation
+
+```typescript
+// Validate expected vs actual hours
+const result = await WorkPolicyService.validateSchedule({
+  employeeId,
+  date,
+  actualHours: 8.5,
+});
+// Returns: { expected: 8, actual: 8.5, variance: 0.5 }
+```
 
 ### Labor Law Compliance
 
-The time regulation service enforces labor law compliance:
-
 ```typescript
-import { TimeRegulationService } from '@/lib/effect/services/time-regulation.service';
-
 // Validate work period against regulations
-const result = await TimeRegulationService.validateWorkPeriod({
+const result = await WorkPolicyService.validateWorkPeriod({
   employeeId,
   startTime,
   endTime,
@@ -56,7 +81,7 @@ const result = await TimeRegulationService.validateWorkPeriod({
 
 ### Break Rules
 
-Break rules are configured per regulation:
+Break rules are configured per policy:
 
 ```typescript
 interface BreakRule {
@@ -69,10 +94,93 @@ interface BreakRule {
 
 ```typescript
 // Check compliance for a date range
-const violations = await TimeRegulationService.checkCompliance({
+const violations = await WorkPolicyService.checkCompliance({
   employeeId,
   startDate,
   endDate,
+});
+```
+
+---
+
+## Change Policy Service
+
+The Change Policy Service manages time entry modification rules.
+
+### Policy Resolution
+
+```typescript
+import { ChangePolicyService } from '@/lib/effect/services/change-policy.service';
+
+// Get effective change policy
+const policy = await ChangePolicyService.getEffectivePolicy({
+  employeeId,
+  organizationId,
+});
+```
+
+### Edit Permission Check
+
+```typescript
+// Check if an entry can be edited
+const canEdit = await ChangePolicyService.canEditEntry({
+  employeeId,
+  entryDate,
+  policy,
+});
+// Returns: { allowed: true, requiresApproval: false }
+//      or: { allowed: true, requiresApproval: true }
+//      or: { allowed: false, reason: 'Entry too old' }
+```
+
+### Trust Mode
+
+```typescript
+// Check if approval is required
+if (policy.noApprovalRequired) {
+  // Auto-approve all changes
+} else {
+  // Check self-service window
+  const withinWindow = isWithinDays(entryDate, policy.selfServiceDays);
+}
+```
+
+---
+
+## Work Category Service
+
+The Work Category Service manages work categorization and time factors.
+
+### Category Set Resolution
+
+```typescript
+import { WorkCategoryService } from '@/lib/effect/services/work-category.service';
+
+// Get available categories for an employee
+const categories = await WorkCategoryService.getCategories({
+  employeeId,
+  organizationId,
+});
+```
+
+### Time Factor Calculation
+
+```typescript
+// Calculate adjusted hours
+const adjustedHours = await WorkCategoryService.calculateAdjustedHours({
+  actualHours: 4,
+  categoryId, // e.g., "overtime" with 1.5x factor
+});
+// Returns: 6 (4 * 1.5)
+```
+
+### Category Assignment
+
+```typescript
+// Assign category to time entry
+await WorkCategoryService.assignCategory({
+  timeEntryId,
+  categoryId,
 });
 ```
 

@@ -1,0 +1,337 @@
+---
+title: Platform-Specific Issues
+description: Windows, macOS, and Linux troubleshooting
+icon: Laptop
+---
+
+import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
+import { Callout } from 'fumadocs-ui/components/callout';
+
+## Windows Issues
+
+### WebView2 missing or outdated
+
+**Symptoms:**
+- App won't start
+- Blank white window
+- "WebView2 Runtime not found" error
+
+**Solutions:**
+
+1. **Install WebView2 Runtime**
+   - Download from [Microsoft](https://developer.microsoft.com/en-us/microsoft-edge/webview2/)
+   - Run the installer
+   - Restart z8 Timer
+
+2. **Update WebView2**
+   - WebView2 updates via Windows Update
+   - Check for Windows updates
+
+### Tray icon hidden
+
+**Symptoms:**
+- Icon not visible in system tray
+
+**Solutions:**
+
+1. **Check overflow area**
+   - Click the `^` arrow in the system tray
+   - z8 Timer may be in the overflow
+
+2. **Pin to taskbar**
+   - Right-click taskbar → Taskbar settings
+   - Find z8 Timer under "System tray icons"
+   - Set to "On"
+
+3. **Restart Explorer**
+   ```powershell
+   Stop-Process -Name explorer -Force; Start-Process explorer
+   ```
+
+### Auto-start not working
+
+**Symptoms:**
+- App doesn't start on login
+- Setting enabled but doesn't work
+
+**Solutions:**
+
+1. **Check Task Manager**
+   - Ctrl+Shift+Esc → Startup tab
+   - Find z8 Timer
+   - Ensure status is "Enabled"
+
+2. **Check Registry**
+   - Open `regedit`
+   - Navigate to `HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run`
+   - Look for `z8Timer` entry
+   - Value should be path to executable
+
+3. **Re-enable in settings**
+   - Turn off auto-start
+   - Save settings
+   - Turn on auto-start
+   - Save settings
+
+### Deep link not working
+
+**Symptoms:**
+- "Open z8 Desktop" does nothing in browser
+- `z8://` links don't open the app
+
+**Solutions:**
+
+1. **Re-register protocol**
+   - Reinstall the app
+   - This re-registers the `z8://` handler
+
+2. **Check Registry**
+   - Open `regedit`
+   - Navigate to `HKEY_CLASSES_ROOT\z8`
+   - Should contain URL handler entries
+
+3. **Set default app**
+   - Settings → Apps → Default Apps
+   - Choose defaults by protocol
+   - Find `z8` and set to z8 Timer
+
+---
+
+## macOS Issues
+
+### App won't open (Gatekeeper)
+
+**Symptoms:**
+- "z8 Timer can't be opened because Apple cannot check it for malicious software"
+
+**Solutions:**
+
+1. **Right-click to open**
+   - Right-click the app in Applications
+   - Select "Open"
+   - Click "Open" in the dialog
+
+2. **System Preferences method**
+   - Try opening normally (get the error)
+   - Go to System Preferences → Security & Privacy
+   - Click "Open Anyway" next to z8 Timer message
+
+### Accessibility permission denied
+
+**Symptoms:**
+- Idle detection doesn't work
+- No prompt for permission
+
+**Solutions:**
+
+1. **Grant permission manually**
+   - System Preferences → Security & Privacy → Privacy
+   - Select Accessibility in the list
+   - Click the lock to make changes
+   - Check the box next to z8 Timer
+
+2. **Remove and re-add**
+   - Uncheck z8 Timer
+   - Click `-` to remove
+   - Click `+` to add
+   - Navigate to Applications and select z8 Timer
+
+3. **Reset permissions**
+   ```bash
+   tccutil reset Accessibility com.z8.timer
+   ```
+   Then restart the app
+
+### Menu bar icon not showing
+
+**Symptoms:**
+- App running but no menu bar icon
+
+**Solutions:**
+
+1. **Check menu bar space**
+   - Too many icons may hide z8 Timer
+   - Hold Cmd and drag icons to rearrange
+
+2. **Check System Preferences**
+   - System Preferences → Dock & Menu Bar
+   - Ensure menu bar items are allowed
+
+3. **Restart the app**
+   - Quit from Activity Monitor if needed
+   - Relaunch
+
+### Deep link not working
+
+**Symptoms:**
+- `z8://` URLs don't open the app
+
+**Solutions:**
+
+1. **Check handler registration**
+   ```bash
+   /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister -dump | grep z8
+   ```
+
+2. **Re-register handler**
+   ```bash
+   /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister -f /Applications/z8\ Timer.app
+   ```
+
+3. **Reinstall the app**
+   - Drag to Trash
+   - Empty Trash
+   - Reinstall
+
+---
+
+## Linux Issues
+
+### Missing dependencies
+
+**Symptoms:**
+- App won't start
+- Library errors in terminal
+
+**Solutions:**
+
+<Tabs items={['Debian/Ubuntu', 'Fedora', 'Arch']}>
+  <Tab value="Debian/Ubuntu">
+    ```bash
+    sudo apt update
+    sudo apt install libwebkit2gtk-4.1-0 libgtk-3-0 libayatana-appindicator3-1
+    ```
+  </Tab>
+  <Tab value="Fedora">
+    ```bash
+    sudo dnf install webkit2gtk4.1 gtk3 libappindicator-gtk3
+    ```
+  </Tab>
+  <Tab value="Arch">
+    ```bash
+    sudo pacman -S webkit2gtk-4.1 gtk3 libappindicator-gtk3
+    ```
+  </Tab>
+</Tabs>
+
+### Tray icon not showing
+
+**Symptoms:**
+- No system tray icon visible
+- App runs but can't access from tray
+
+**Solutions:**
+
+| Desktop | Solution |
+|---------|----------|
+| **GNOME** | Install [AppIndicator extension](https://extensions.gnome.org/extension/615/appindicator-support/) |
+| **KDE** | Should work natively |
+| **XFCE** | Add "Status Tray Plugin" to panel |
+| **i3/Sway** | Use tray-capable bar (waybar, polybar) |
+
+### Idle detection not working
+
+**Symptoms:**
+- No idle dialogs appear
+- Breaks not detected
+
+**Solutions:**
+
+1. **Add user to input group**
+   ```bash
+   sudo usermod -aG input $USER
+   ```
+   Log out and back in
+
+2. **Check input device permissions**
+   ```bash
+   ls -la /dev/input/event*
+   ```
+   Ensure your user can read these
+
+3. **Check if running under Wayland**
+   - Idle detection may have limitations on Wayland
+   - Try running under Xwayland or switch to X11 session
+
+### AppImage issues
+
+**Symptoms:**
+- AppImage won't run
+- Permission denied
+
+**Solutions:**
+
+1. **Make executable**
+   ```bash
+   chmod +x z8-Timer-*.AppImage
+   ```
+
+2. **Install FUSE**
+   ```bash
+   # Debian/Ubuntu
+   sudo apt install libfuse2
+
+   # Fedora
+   sudo dnf install fuse
+   ```
+
+3. **Extract and run**
+   ```bash
+   ./z8-Timer-*.AppImage --appimage-extract
+   ./squashfs-root/AppRun
+   ```
+
+### Deep link not working
+
+**Symptoms:**
+- `z8://` URLs don't open the app
+
+**Solutions:**
+
+1. **Check MIME handler**
+   ```bash
+   xdg-mime query default x-scheme-handler/z8
+   ```
+
+2. **Register handler manually**
+   - Create `~/.local/share/applications/z8-timer.desktop`:
+   ```ini
+   [Desktop Entry]
+   Name=z8 Timer
+   Exec=/path/to/z8-timer %u
+   Type=Application
+   MimeType=x-scheme-handler/z8;
+   ```
+   - Register:
+   ```bash
+   xdg-mime default z8-timer.desktop x-scheme-handler/z8
+   update-desktop-database ~/.local/share/applications
+   ```
+
+### Auto-start not working
+
+**Symptoms:**
+- App doesn't start on login
+
+**Solutions:**
+
+1. **Check autostart directory**
+   ```bash
+   ls ~/.config/autostart/
+   ```
+
+2. **Create autostart entry manually**
+   ```bash
+   cat > ~/.config/autostart/z8-timer.desktop << EOF
+   [Desktop Entry]
+   Type=Application
+   Name=z8 Timer
+   Exec=/path/to/z8-timer
+   X-GNOME-Autostart-enabled=true
+   EOF
+   ```
+
+3. **Verify desktop file is valid**
+   ```bash
+   desktop-file-validate ~/.config/autostart/z8-timer.desktop
+   ```

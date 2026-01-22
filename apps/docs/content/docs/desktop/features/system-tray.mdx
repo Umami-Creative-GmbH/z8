@@ -1,0 +1,175 @@
+---
+title: System Tray
+description: System tray integration in the z8 Timer desktop app
+icon: LayoutGrid
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+The z8 Timer lives in your system tray for always-available access without cluttering your desktop.
+
+## Tray Icon Location
+
+| Platform | Location |
+|----------|----------|
+| **Windows** | System tray (bottom-right, near clock) |
+| **macOS** | Menu bar (top-right) |
+| **Linux** | System tray (varies by desktop environment) |
+
+---
+
+## Icon States
+
+The tray icon changes color to indicate your clock status:
+
+| Icon | State | Meaning |
+|------|-------|---------|
+| Gray clock | Not clocked in | Ready to start tracking |
+| Green clock | Clocked in | Currently tracking time |
+
+This gives you instant visibility of your work status without opening the app.
+
+---
+
+## Tray Menu
+
+Right-click (Windows/Linux) or click (macOS) the tray icon to see the context menu:
+
+```
+┌─────────────────────┐
+│ Show Window         │
+│ Settings            │
+│ ──────────────────  │
+│ Quit                │
+└─────────────────────┘
+```
+
+### Menu Actions
+
+| Action | Description |
+|--------|-------------|
+| **Show Window** | Opens the main app window |
+| **Settings** | Opens settings dialog directly |
+| **Quit** | Completely closes the app |
+
+---
+
+## Click Behavior
+
+### Windows & Linux
+
+| Click | Action |
+|-------|--------|
+| **Left-click** | Show main window |
+| **Right-click** | Open context menu |
+
+### macOS
+
+| Click | Action |
+|-------|--------|
+| **Click** | Open context menu |
+| **Cmd + Click** | Show main window |
+
+---
+
+## Minimizing to Tray
+
+The app is designed to live in the tray:
+
+1. **Close button** - Minimizes to tray (doesn't quit)
+2. **Minimize button** - Minimizes to tray
+3. **Tray click** - Brings window back
+
+<Callout type="info" title="Always Running">
+  Even when the window is closed, the app continues running in the tray. Idle detection and offline sync continue working.
+</Callout>
+
+### Quitting the App
+
+To actually close the app:
+
+1. Right-click the tray icon
+2. Select **Quit**
+
+Or use keyboard shortcut: `Ctrl/Cmd + Q` (when window is focused)
+
+---
+
+## Always-on-Top
+
+The app window can stay above other windows:
+
+1. Open **Settings**
+2. Enable **Always on Top**
+3. The window will stay visible above other applications
+
+**Useful for:**
+- Quick clock in/out while working
+- Seeing elapsed time while you work
+- Keeping the app accessible
+
+You can still minimize to tray even with always-on-top enabled.
+
+---
+
+## Hidden Icon (Windows)
+
+If you can't see the tray icon on Windows:
+
+1. Click the **^** arrow in the system tray
+2. Look for z8 Timer in the overflow area
+3. Drag it to the main tray area for quick access
+
+### Pin to Taskbar
+
+1. Right-click the overflow arrow (^)
+2. Select **Taskbar settings**
+3. Under "System tray icons", find z8 Timer
+4. Enable **On**
+
+---
+
+## Tray Icon Not Showing
+
+### Windows
+- Check the overflow area (^ arrow)
+- Restart Windows Explorer: `taskkill /f /im explorer.exe && start explorer`
+
+### macOS
+- Check System Preferences → Dock & Menu Bar
+- Ensure menu bar extras are allowed
+
+### Linux
+Common issues:
+
+| Desktop | Solution |
+|---------|----------|
+| **GNOME** | Install TopIcons Plus or AppIndicator extension |
+| **KDE** | Should work natively |
+| **XFCE** | Ensure systray plugin is added to panel |
+| **i3/Sway** | Use waybar or polybar with tray support |
+
+---
+
+## Resource Usage
+
+The tray component is lightweight:
+
+| Metric | Usage |
+|--------|-------|
+| Memory | ~5 MB |
+| CPU | 0% when idle |
+| GPU | None |
+
+The icon only redraws when status changes (clock in/out).
+
+---
+
+## Customization
+
+Currently, the tray icon style is not customizable. It uses:
+
+- Gray clock icon for "not clocked in"
+- Green clock icon for "clocked in"
+
+Future versions may support custom icons or themes.

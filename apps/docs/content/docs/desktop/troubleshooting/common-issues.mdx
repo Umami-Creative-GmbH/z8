@@ -1,0 +1,311 @@
+---
+title: Common Issues
+description: Solutions for common z8 Timer problems
+icon: AlertTriangle
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+## Authentication Issues
+
+### Can't sign in
+
+**Symptoms:**
+- "Sign in with z8" button doesn't work
+- Browser opens but login fails
+- "Open z8 Desktop" link doesn't work
+
+**Solutions:**
+
+1. **Verify webapp URL**
+   - Open Settings
+   - Check the URL is correct (e.g., `https://time.yourcompany.com`)
+   - Ensure it includes `https://`
+
+2. **Check your browser**
+   - Ensure a default browser is set
+   - Try opening the URL manually in a browser
+   - Clear browser cookies for the z8 domain
+
+3. **Deep link not registered**
+   - Reinstall the app to re-register `z8://` protocol
+   - Try restarting your computer
+
+4. **Firewall/VPN issues**
+   - Temporarily disable VPN
+   - Check if firewall is blocking the connection
+
+### Session expired
+
+**Symptoms:**
+- App shows login screen unexpectedly
+- API calls fail with 401 errors
+
+**Solutions:**
+
+1. Sign out completely
+2. Clear app data (see Troubleshooting index)
+3. Sign in again
+
+---
+
+## Sync Issues
+
+### Time entries not syncing
+
+**Symptoms:**
+- Offline indicator stays on
+- Entries don't appear in web app
+- Pending queue count doesn't decrease
+
+**Solutions:**
+
+1. **Check internet connection**
+   - Open a website in your browser
+   - Try pinging the server
+
+2. **Verify server is reachable**
+   ```bash
+   curl https://time.yourcompany.com/api/health
+   ```
+
+3. **Check queue status**
+   - Open the app
+   - Look for pending count indicator
+
+4. **Restart sync**
+   - Close and reopen the app
+   - Queue processor restarts automatically
+
+### Duplicate entries
+
+**Symptoms:**
+- Same time entry appears twice in web app
+- Overlapping clock in/out times
+
+**Solutions:**
+
+1. **Delete duplicates in web app**
+   - Log in to z8 web app
+   - Go to your timesheet
+   - Delete the duplicate entry
+
+2. **Check offline queue**
+   - If entries are queued multiple times
+   - Clear queue by signing out (loses pending data)
+
+<Callout type="info">
+  The server prevents true duplicates, but network issues can sometimes cause race conditions.
+</Callout>
+
+---
+
+## Clock Issues
+
+### Clock button not responding
+
+**Symptoms:**
+- Clicking clock button does nothing
+- Button shows loading spinner indefinitely
+
+**Solutions:**
+
+1. **Wait a moment** - API call may be slow
+2. **Check network** - Offline mode should queue the action
+3. **Restart app** - Force quit and reopen
+4. **Check logs** - Look for error messages
+
+### Wrong elapsed time
+
+**Symptoms:**
+- Timer shows incorrect time
+- Time doesn't match server
+
+**Solutions:**
+
+1. **Refresh status**
+   - Close and reopen the app
+   - Status is re-fetched from server
+
+2. **Check system clock**
+   - Ensure your computer's time is correct
+   - Enable automatic time sync
+
+3. **Timezone mismatch**
+   - Check your system timezone
+   - Verify z8 organization timezone setting
+
+### Can't clock out
+
+**Symptoms:**
+- Clock out fails repeatedly
+- Button stays red/active
+
+**Solutions:**
+
+1. **Check if already clocked out**
+   - Verify in web app
+   - Server may have already recorded clock out
+
+2. **Try offline mode**
+   - If online sync fails
+   - Action will be queued
+
+3. **Manual entry in web app**
+   - As last resort
+   - Create manual time entry with correct times
+
+---
+
+## Idle Detection Issues
+
+### Idle detection not triggering
+
+**Symptoms:**
+- No dialog appears after being away
+- Breaks not being detected
+
+**Solutions:**
+
+1. **Verify you're clocked in**
+   - Idle detection only works when clocked in
+
+2. **Wait 5+ minutes**
+   - Threshold must be exceeded
+
+3. **Check app is running**
+   - Verify tray icon is visible
+
+4. **Check permissions (macOS)**
+   - System Preferences → Security & Privacy → Privacy → Accessibility
+   - Enable z8 Timer
+
+5. **Check permissions (Linux)**
+   - Add user to `input` group
+   - Log out and back in
+
+### Too many idle prompts
+
+**Symptoms:**
+- Idle dialog appears too frequently
+- False positives during reading/thinking
+
+**Solutions:**
+
+- This is expected behavior
+- Select "I was still working" to dismiss
+- The 5-minute threshold is fixed and cannot be changed
+
+---
+
+## UI Issues
+
+### Window not appearing
+
+**Symptoms:**
+- Click tray icon, nothing happens
+- Window opens off-screen
+
+**Solutions:**
+
+1. **Check for hidden window**
+   - Alt+Tab through windows
+   - Check all virtual desktops
+
+2. **Reset window position**
+   - Delete settings file
+   - Restart app (window centers on screen)
+
+3. **Multi-monitor issue**
+   - Window may be on disconnected display
+   - Connect the display or reset settings
+
+### Tray icon not visible
+
+**Symptoms:**
+- Can't find z8 Timer in system tray
+- App running but no icon
+
+**Solutions:**
+
+See [Platform-Specific Issues](/docs/desktop/troubleshooting/platform-specific) for your OS.
+
+### UI appears corrupted
+
+**Symptoms:**
+- Garbled text or graphics
+- Rendering issues
+
+**Solutions:**
+
+1. **Update graphics drivers**
+2. **Restart the app**
+3. **Try different theme** (light/dark)
+4. **Update WebView2** (Windows)
+5. **Check GPU acceleration** - Try disabling hardware acceleration
+
+---
+
+## Performance Issues
+
+### High CPU usage
+
+**Symptoms:**
+- App using excessive CPU
+- System slowdown
+
+**Solutions:**
+
+1. **Check idle detection**
+   - Input monitoring should be lightweight
+   - Restart app if stuck
+
+2. **Check queue processor**
+   - If network is failing repeatedly
+   - Fix network or sign out to clear queue
+
+3. **Check for updates**
+   - Bug may be fixed in newer version
+
+### High memory usage
+
+**Symptoms:**
+- App using >200MB RAM
+
+**Solutions:**
+
+1. **Restart the app**
+   - Memory leaks may accumulate
+
+2. **Check queue size**
+   - Large offline queue uses memory
+   - Sync to clear queue
+
+---
+
+## Data Issues
+
+### Lost time entries
+
+**Symptoms:**
+- Entries don't appear after sync
+- Data missing from web app
+
+**Solutions:**
+
+1. **Check offline queue**
+   - Entries may still be queued
+
+2. **Check sync status**
+   - Ensure all entries synced successfully
+
+3. **Check for errors**
+   - View logs for sync failures
+
+4. **Manual recovery**
+   - Create entries manually in web app
+   - Use your memory of times worked
+
+<Callout type="warn">
+  Time entries stored only in the offline queue are lost if you sign out while offline or clear app data.
+</Callout>

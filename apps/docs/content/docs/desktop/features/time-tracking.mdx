@@ -1,0 +1,215 @@
+---
+title: Time Tracking
+description: Clock in and out with the z8 Timer desktop app
+icon: Clock
+---
+
+import { Steps, Step } from 'fumadocs-ui/components/steps';
+import { Callout } from 'fumadocs-ui/components/callout';
+
+Time tracking is the core feature of the z8 Timer. One click to start, one click to stop.
+
+## The Clock Button
+
+The large circular button in the center of the app handles all time tracking:
+
+### Not Clocked In
+
+```
+     ┌─────────────────┐
+     │                 │
+     │       ▶️         │  ← Green, play icon
+     │                 │
+     └─────────────────┘
+       Ready to work
+```
+
+- **Color**: Green gradient
+- **Icon**: Play (▶️)
+- **Text below**: "Ready to work"
+
+### Clocked In
+
+```
+     ┌─────────────────┐
+     │                 │
+     │    02:34:15     │  ← Red, shows elapsed time
+     │                 │
+     └─────────────────┘
+       Currently Working
+```
+
+- **Color**: Red gradient
+- **Icon**: Stop (⏹️) or elapsed time
+- **Text below**: "Currently Working"
+
+---
+
+## Clocking In
+
+<Steps>
+  <Step>
+    **Click the tray icon**
+
+    Find the z8 Timer icon in your system tray and click it
+  </Step>
+  <Step>
+    **Click the clock button**
+
+    Press the large green button showing the play icon
+  </Step>
+  <Step>
+    **Confirmation**
+
+    - Button turns red and starts showing elapsed time
+    - Tray icon changes from gray to green
+    - Toast notification: "Clocked in successfully"
+  </Step>
+</Steps>
+
+---
+
+## Clocking Out
+
+<Steps>
+  <Step>
+    **Click the tray icon**
+
+    The icon should be green, indicating you're clocked in
+  </Step>
+  <Step>
+    **Click the clock button**
+
+    Press the red button showing your elapsed time
+  </Step>
+  <Step>
+    **Confirmation**
+
+    - Button turns green and shows play icon
+    - Tray icon changes from green to gray
+    - Toast notification: "Clocked out successfully"
+  </Step>
+</Steps>
+
+---
+
+## Clock Out with Break
+
+When idle detection triggers, you can record a break period:
+
+<Steps>
+  <Step>
+    **Idle detected**
+
+    After 5 minutes of no activity, then resuming activity, an idle dialog appears
+  </Step>
+  <Step>
+    **Choose "I was on break"**
+
+    This records the idle period as a break
+  </Step>
+  <Step>
+    **Automatic handling**
+
+    - Clocks you out at the moment you went idle
+    - Immediately clocks you back in
+    - Break period is recorded accurately
+  </Step>
+</Steps>
+
+[Learn more about idle detection →](/docs/desktop/features/idle-detection)
+
+---
+
+## Elapsed Time Display
+
+While clocked in, the button shows a live timer:
+
+| Display | Meaning |
+|---------|---------|
+| `00:00:15` | 15 seconds |
+| `00:05:00` | 5 minutes |
+| `01:30:45` | 1 hour, 30 minutes, 45 seconds |
+| `08:00:00` | 8 hours exactly |
+
+The timer:
+- Updates every second
+- Uses monospace font for stability
+- Calculates from your clock-in time, not a running counter
+
+<Callout type="info" title="Accurate Time">
+  The elapsed time is calculated from your actual clock-in timestamp, ensuring accuracy even if you close and reopen the app.
+</Callout>
+
+---
+
+## Status Indicator
+
+The footer shows your current status:
+
+| Status | Indicator | Meaning |
+|--------|-----------|---------|
+| Not clocked in | ○ Gray dot | Ready to start working |
+| Clocked in | ● Green dot | Currently tracking time |
+| Syncing | ◐ Animated | Communicating with server |
+| Offline | ◐ Yellow dot | Queued for sync |
+
+---
+
+## Keyboard Shortcuts
+
+For power users:
+
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl/Cmd + Shift + T` | Toggle clock in/out |
+| `Ctrl/Cmd + Shift + D` | Open z8 dashboard in browser |
+
+<Callout type="info">
+  Keyboard shortcuts work globally when the app is running, even if the window is closed.
+</Callout>
+
+---
+
+## API Integration
+
+Time entries are synced to your z8 server:
+
+### Clock In
+
+```
+POST /api/time-entries
+{
+  "action": "clock_in",
+  "timestamp": "2024-01-15T09:00:00Z"
+}
+```
+
+### Clock Out
+
+```
+POST /api/time-entries
+{
+  "action": "clock_out",
+  "timestamp": "2024-01-15T17:30:00Z"
+}
+```
+
+### Offline Handling
+
+If the API is unreachable:
+
+1. Action is queued locally (SQLite)
+2. UI updates optimistically
+3. Background processor retries every 30 seconds
+4. Syncs automatically when connection restored
+
+---
+
+## Best Practices
+
+- **Clock in when you start** - Don't wait until after your first task
+- **Clock out for long breaks** - Lunch, appointments, etc.
+- **Trust idle detection** - It catches breaks you forget
+- **Check the tray icon** - Quick visual status check
+- **Keep the app running** - Minimize to tray, don't quit

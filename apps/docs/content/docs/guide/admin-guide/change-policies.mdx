@@ -1,0 +1,238 @@
+---
+title: Change Policies
+description: Configure self-service days, approval requirements, and trust mode for time entries
+icon: ClockEdit
+---
+
+import { Steps, Step } from 'fumadocs-ui/components/steps';
+import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
+import { Callout } from 'fumadocs-ui/components/callout';
+
+Change Policies control how employees can modify their time entries and what level of approval is required.
+
+## Overview
+
+A Change Policy defines:
+
+- **Self-service days** - How far back employees can edit entries without approval
+- **Approval days** - How far back entries can be edited with manager approval
+- **Trust mode** - Whether approval is required at all
+
+---
+
+## Configuration Options
+
+### Self-Service Days
+
+The number of days an employee can edit their own time entries without requiring approval.
+
+| Setting | Behavior |
+|---------|----------|
+| **0 days** | All changes require approval |
+| **3 days** | Can edit entries from the last 3 days freely |
+| **7 days** | Can edit entries from the last week freely |
+| **30 days** | Can edit entries from the last month freely |
+
+<Callout type="info">
+  Self-service edits are still logged in the audit trail for compliance.
+</Callout>
+
+### Approval Days
+
+The number of days within which time entries can be edited with manager approval.
+
+| Setting | Behavior |
+|---------|----------|
+| **7 days** | Can request approval for entries up to 1 week old |
+| **30 days** | Can request approval for entries up to 1 month old |
+| **90 days** | Can request approval for entries up to 3 months old |
+| **365 days** | Can request approval for entries up to 1 year old |
+
+Entries older than the approval window cannot be modified without admin intervention.
+
+### Trust Mode
+
+<Callout type="warn" title="Trust Mode">
+  When `noApprovalRequired` is enabled, all time entry changes are automatically approved. Use only in high-trust environments.
+</Callout>
+
+Trust mode settings:
+
+| Mode | Behavior |
+|------|----------|
+| **Standard** | Self-service within window, approval required beyond |
+| **Trust Mode** | All changes auto-approved, no manager approval needed |
+
+---
+
+## Creating a Change Policy
+
+<Steps>
+  <Step>
+    Go to **Settings** → **Change Policies**
+  </Step>
+  <Step>
+    Click **"Create Policy"**
+  </Step>
+  <Step>
+    Configure the policy:
+    - **Name**: Descriptive name (e.g., "Standard", "Strict", "Trust")
+    - **Self-service days**: Number of days for free editing
+    - **Approval days**: Maximum days for approved edits
+    - **Trust mode**: Enable/disable
+  </Step>
+  <Step>
+    Click **"Save"**
+  </Step>
+</Steps>
+
+---
+
+## Example Configurations
+
+<Tabs items={['Standard', 'Strict', 'Trust-Based', 'Weekly Lockdown']}>
+  <Tab value="Standard">
+    **Standard Configuration**
+
+    Balanced approach for most organizations.
+
+    ```
+    Self-service days: 3
+    Approval days: 30
+    Trust mode: Off
+    ```
+
+    - Employees can fix same-day or recent mistakes
+    - Manager approval for older entries
+    - Audit trail maintained
+  </Tab>
+  <Tab value="Strict">
+    **Strict Configuration**
+
+    For highly regulated environments.
+
+    ```
+    Self-service days: 0
+    Approval days: 7
+    Trust mode: Off
+    ```
+
+    - All changes require approval
+    - Short window for corrections
+    - Maximum oversight
+  </Tab>
+  <Tab value="Trust-Based">
+    **Trust-Based Configuration**
+
+    For high-autonomy teams.
+
+    ```
+    Self-service days: 7
+    Approval days: 90
+    Trust mode: On
+    ```
+
+    - Full week of self-service
+    - Extended approval window
+    - No approval bottlenecks
+  </Tab>
+  <Tab value="Weekly Lockdown">
+    **Weekly Lockdown Configuration**
+
+    For weekly payroll processing.
+
+    ```
+    Self-service days: 7
+    Approval days: 14
+    Trust mode: Off
+    ```
+
+    - Edit current week freely
+    - Previous week needs approval
+    - Older entries locked
+  </Tab>
+</Tabs>
+
+---
+
+## Assigning Change Policies
+
+Change policies follow the same hierarchical assignment as Work Policies:
+
+```
+Organization Default
+    ↓
+Team Override (optional)
+    ↓
+Employee Override (optional)
+```
+
+### Setting Organization Default
+
+1. Go to **Settings** → **Change Policies**
+2. Find the policy
+3. Click **"Set as Organization Default"**
+
+### Assigning to Teams or Employees
+
+1. Go to team or employee settings
+2. Find the **Change Policy** section
+3. Select a policy
+4. Save changes
+
+---
+
+## How It Works for Employees
+
+### Within Self-Service Window
+
+1. Employee opens a time entry
+2. Makes changes
+3. Saves - changes apply immediately
+4. Entry logged in audit trail
+
+### Beyond Self-Service Window
+
+1. Employee opens an older time entry
+2. Makes changes
+3. Clicks **"Request Approval"**
+4. Manager receives notification
+5. Manager approves or denies
+6. Employee notified of decision
+
+### In Trust Mode
+
+1. Employee opens any time entry
+2. Makes changes
+3. Saves - changes apply immediately
+4. No approval required regardless of age
+
+---
+
+## Manager Approval Workflow
+
+When approval is required:
+
+1. **Notification** - Manager receives in-app and email notification
+2. **Review** - Manager sees old vs new values
+3. **Decision** - Approve or deny with optional comment
+4. **Result** - Employee notified, entry updated if approved
+
+### Bulk Approval
+
+Managers can approve multiple pending changes:
+
+1. Go to **Approvals** → **Time Entry Changes**
+2. Review pending requests
+3. Check multiple items
+4. Click **"Approve Selected"** or **"Deny Selected"**
+
+---
+
+## Best Practices
+
+- **Match your payroll cycle** - Set approval days to align with payroll processing
+- **Consider your culture** - Trust mode for autonomous teams, strict for regulated industries
+- **Communicate clearly** - Ensure employees know the policy
+- **Review regularly** - Check if policy meets your needs
+- **Use audit logs** - Monitor for unusual patterns even with trust mode

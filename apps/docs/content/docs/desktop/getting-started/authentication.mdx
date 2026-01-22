@@ -1,0 +1,176 @@
+---
+title: Authentication
+description: Sign in to the z8 Timer desktop app
+icon: Key
+---
+
+import { Steps, Step } from 'fumadocs-ui/components/steps';
+import { Callout } from 'fumadocs-ui/components/callout';
+
+The z8 Timer uses secure OAuth authentication through your web browser. This means you sign in using the same credentials as the Z8 web app.
+
+## How Authentication Works
+
+```
+┌──────────────┐    1. Click "Sign In"    ┌──────────────┐
+│  Desktop App │ ──────────────────────► │   Browser    │
+└──────────────┘                          └──────────────┘
+                                                 │
+                                    2. Enter credentials
+                                                 │
+                                                 ▼
+                                          ┌──────────────┐
+                                          │  Z8 Server   │
+                                          └──────────────┘
+                                                 │
+                                    3. Authenticate
+                                                 │
+┌──────────────┐    4. Redirect with token       │
+│  Desktop App │ ◄───────────────────────────────┘
+└──────────────┘    z8://auth/callback?token=...
+```
+
+1. You click "Sign in with Z8" in the desktop app
+2. Your default browser opens to the Z8 login page
+3. You enter your credentials (or use SSO if configured)
+4. After successful login, the browser redirects back to the desktop app
+5. The app receives your session token and you're logged in
+
+---
+
+## Signing In
+
+<Steps>
+  <Step>
+    **Configure your server URL first**
+
+    Before signing in, you need to set your organization's Z8 webapp URL:
+    1. Click the tray icon to open the app
+    2. Click the **Settings** (gear) icon
+    3. Enter your webapp URL (e.g., `https://time.yourcompany.com`)
+    4. Click **Save**
+  </Step>
+  <Step>
+    **Click "Sign in with Z8"**
+
+    On the login screen, click the sign-in button. Your default browser will open.
+  </Step>
+  <Step>
+    **Authenticate in the browser**
+
+    Enter your Z8 credentials or use your organization's SSO provider (Google, Microsoft, etc.)
+  </Step>
+  <Step>
+    **Return to the desktop app**
+
+    After successful login, click **"Open Z8 Desktop"** in the browser. The desktop app will receive your session.
+  </Step>
+</Steps>
+
+<Callout type="info" title="Deep Link Protocol">
+  The desktop app registers the `z8://` protocol on your system. This allows the browser to redirect back to the app after authentication.
+</Callout>
+
+---
+
+## Session Management
+
+### Session Persistence
+
+Your session is stored securely on your device:
+
+- **Token storage**: Encrypted in your app data directory
+- **Automatic login**: You stay signed in until you explicitly sign out
+- **Session expiry**: Sessions expire based on your organization's settings
+
+### Signing Out
+
+To sign out:
+
+1. Click the tray icon to open the app
+2. Click the **Settings** (gear) icon
+3. Click **"Sign Out"**
+4. Confirm the action
+
+<Callout type="warn" title="Offline Queue">
+  Signing out will clear any pending offline time entries. Make sure you're online and synced before signing out.
+</Callout>
+
+---
+
+## Troubleshooting Authentication
+
+### Browser doesn't open
+
+**Cause**: Default browser not configured or not responding
+
+**Solution**:
+1. Ensure a default browser is set in your OS settings
+2. Try opening a URL manually to test
+3. Restart the desktop app
+
+### "Open Z8 Desktop" doesn't work
+
+**Cause**: Deep link protocol not registered correctly
+
+**Solutions**:
+
+**Windows:**
+1. Reinstall the app to re-register the protocol
+2. Check Windows Registry: `HKEY_CLASSES_ROOT\z8`
+
+**macOS:**
+1. Run: `/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister -dump | grep z8`
+2. If not found, reinstall the app
+
+**Linux:**
+1. Check: `xdg-mime query default x-scheme-handler/z8`
+2. Register manually:
+   ```bash
+   xdg-mime default z8-timer.desktop x-scheme-handler/z8
+   ```
+
+### "Invalid token" error
+
+**Cause**: Token expired or server mismatch
+
+**Solution**:
+1. Verify your webapp URL is correct in settings
+2. Try signing out and back in
+3. Check that the server is reachable
+
+### SSO not working
+
+**Cause**: Organization SSO configuration
+
+**Solution**:
+1. Ensure you can log in via the web app first
+2. Use the same browser for desktop app auth
+3. Contact your administrator if SSO fails consistently
+
+---
+
+## Security
+
+### How your credentials are protected
+
+- **No passwords stored**: The app never sees or stores your password
+- **Token-based**: Only a session token is stored locally
+- **Secure storage**: Tokens stored in OS-protected app data directory
+- **HTTPS only**: All API communication uses encrypted connections
+
+### Token location
+
+| Platform | Location |
+|----------|----------|
+| Windows | `%APPDATA%\com.z8.timer\` |
+| macOS | `~/Library/Application Support/com.z8.timer/` |
+| Linux | `~/.config/com.z8.timer/` |
+
+### Revoking access
+
+To revoke desktop app access from the server:
+1. Log in to the Z8 web app
+2. Go to **Settings → Security → Sessions**
+3. Find the desktop app session
+4. Click **"Revoke"**
