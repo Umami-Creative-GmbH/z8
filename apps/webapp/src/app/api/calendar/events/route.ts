@@ -1,6 +1,5 @@
-import { headers } from "next/headers";
 import { type NextRequest, NextResponse, connection } from "next/server";
-import { auth } from "@/lib/auth";
+import { getVerifiedOrgContext } from "@/lib/auth-helpers";
 import { getAbsencesForMonth } from "@/lib/calendar/absence-service";
 import { getHolidaysForMonth } from "@/lib/calendar/holiday-service";
 import { getTimeEntriesForMonth } from "@/lib/calendar/time-entry-service";
@@ -42,15 +41,9 @@ async function fetchMonthEvents(
 export async function GET(request: NextRequest) {
 	await connection();
 	try {
-		// Authenticate user
-		const session = await auth.api.getSession({ headers: await headers() });
-		if (!session?.user) {
-			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-		}
-
 		// Parse query parameters
 		const searchParams = request.nextUrl.searchParams;
-		const organizationId = searchParams.get("organizationId");
+		const requestedOrgId = searchParams.get("organizationId");
 		const month = searchParams.get("month");
 		const year = searchParams.get("year");
 		const fullYear = searchParams.get("fullYear") === "true"; // Fetch all 12 months
@@ -60,7 +53,18 @@ export async function GET(request: NextRequest) {
 		const showTimeEntries = searchParams.get("showTimeEntries") === "true";
 		const showWorkPeriods = searchParams.get("showWorkPeriods") === "true";
 
-		if (!organizationId || year === null) {
+		// SECURITY: Verify user is authenticated AND a member of the requested organization
+		const orgContext = await getVerifiedOrgContext(requestedOrgId);
+		if (!orgContext) {
+			return NextResponse.json(
+				{ error: "Forbidden: Not a member of this organization" },
+				{ status: 403 },
+			);
+		}
+
+		const organizationId = orgContext.organizationId;
+
+		if (year === null) {
 			return NextResponse.json({ error: "Missing required parameters" }, { status: 400 });
 		}
 

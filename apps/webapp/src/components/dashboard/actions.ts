@@ -407,6 +407,7 @@ export async function getQuickStats(): Promise<ServerActionResult<any>> {
 				return await dbService.db.query.workPeriod.findMany({
 					where: and(
 						eq(workPeriod.employeeId, currentEmployee.id),
+						eq(workPeriod.organizationId, currentEmployee.organizationId),
 						gte(workPeriod.startTime, monthStart),
 						lte(workPeriod.startTime, monthEnd),
 					),

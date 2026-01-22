@@ -246,6 +246,7 @@ export async function editSameDayTimeEntry(
 		// Create correction entry for clock in
 		const clockInCorrection = await createTimeEntry({
 			employeeId: emp.id,
+			organizationId: emp.organizationId,
 			type: "correction",
 			timestamp: correctedClockInDate,
 			createdBy: session.user.id,
@@ -267,6 +268,7 @@ export async function editSameDayTimeEntry(
 		if (data.newClockOutTime && period.clockOutId && correctedClockOutDate) {
 			const clockOutCorrection = await createTimeEntry({
 				employeeId: emp.id,
+				organizationId: emp.organizationId,
 				type: "correction",
 				timestamp: correctedClockOutDate,
 				createdBy: session.user.id,
@@ -559,6 +561,7 @@ export async function requestTimeCorrectionEffect(
 			Effect.promise(() =>
 				createTimeEntry({
 					employeeId: currentEmployee.id,
+					organizationId: currentEmployee.organizationId,
 					type: "correction",
 					timestamp: correctedClockInDate,
 					createdBy: session.user.id,
@@ -590,6 +593,7 @@ export async function requestTimeCorrectionEffect(
 				Effect.promise(() =>
 					createTimeEntry({
 						employeeId: currentEmployee.id,
+						organizationId: currentEmployee.organizationId,
 						type: "correction",
 						timestamp: correctedClockOutDate!,
 						createdBy: session.user.id,
@@ -633,6 +637,7 @@ export async function requestTimeCorrectionEffect(
 				return await dbService.db
 					.insert(approvalRequest)
 					.values({
+						organizationId: currentEmployee.organizationId,
 						entityType: "time_entry",
 						entityId: period.id,
 						requestedBy: currentEmployee.id,
@@ -979,11 +984,16 @@ export async function clockIn(): Promise<ServerActionResult<typeof timeEntry.$in
 	}
 
 	try {
-		// Get previous entry for blockchain linking
+		// Get previous entry for blockchain linking (per employee-per-org)
 		const [previousEntry] = await db
 			.select()
 			.from(timeEntry)
-			.where(eq(timeEntry.employeeId, emp.id))
+			.where(
+				and(
+					eq(timeEntry.employeeId, emp.id),
+					eq(timeEntry.organizationId, emp.organizationId),
+				),
+			)
 			.orderBy(desc(timeEntry.createdAt))
 			.limit(1);
 
@@ -1001,11 +1011,12 @@ export async function clockIn(): Promise<ServerActionResult<typeof timeEntry.$in
 			headersList.get("x-forwarded-for") || headersList.get("x-real-ip") || "unknown";
 		const userAgent = headersList.get("user-agent") || "unknown";
 
-		// Create clock in entry
+		// Create clock in entry with organizationId
 		const [entry] = await db
 			.insert(timeEntry)
 			.values({
 				employeeId: emp.id,
+				organizationId: emp.organizationId,
 				type: "clock_in",
 				timestamp: now,
 				hash,
@@ -1016,9 +1027,10 @@ export async function clockIn(): Promise<ServerActionResult<typeof timeEntry.$in
 			})
 			.returning();
 
-		// Create work period
+		// Create work period with organizationId
 		await db.insert(workPeriod).values({
 			employeeId: emp.id,
+			organizationId: emp.organizationId,
 			clockInId: entry.id,
 			startTime: now,
 		});
@@ -1118,11 +1130,16 @@ export async function clockOut(projectId?: string, workCategoryId?: string): Pro
 	}
 
 	try {
-		// Get previous entry for blockchain linking
+		// Get previous entry for blockchain linking (per employee-per-org)
 		const [previousEntry] = await db
 			.select()
 			.from(timeEntry)
-			.where(eq(timeEntry.employeeId, emp.id))
+			.where(
+				and(
+					eq(timeEntry.employeeId, emp.id),
+					eq(timeEntry.organizationId, emp.organizationId),
+				),
+			)
 			.orderBy(desc(timeEntry.createdAt))
 			.limit(1);
 
@@ -1140,11 +1157,12 @@ export async function clockOut(projectId?: string, workCategoryId?: string): Pro
 			headersList.get("x-forwarded-for") || headersList.get("x-real-ip") || "unknown";
 		const userAgent = headersList.get("user-agent") || "unknown";
 
-		// Create clock out entry
+		// Create clock out entry with organizationId
 		const [entry] = await db
 			.insert(timeEntry)
 			.values({
 				employeeId: emp.id,
+				organizationId: emp.organizationId,
 				type: "clock_out",
 				timestamp: now,
 				hash,
@@ -1492,19 +1510,25 @@ async function enforceBreaksAfterClockOut(input: {
  */
 export async function createTimeEntry(params: {
 	employeeId: string;
+	organizationId: string;
 	type: "clock_in" | "clock_out" | "correction";
 	timestamp: Date;
 	createdBy: string;
 	replacesEntryId?: string;
 	notes?: string;
 }): Promise<typeof timeEntry.$inferSelect> {
-	const { employeeId, type, timestamp, createdBy, replacesEntryId, notes } = params;
+	const { employeeId, organizationId, type, timestamp, createdBy, replacesEntryId, notes } = params;
 
-	// Get previous entry for blockchain linking
+	// Get previous entry for blockchain linking (per employee-per-org)
 	const [previousEntry] = await db
 		.select()
 		.from(timeEntry)
-		.where(eq(timeEntry.employeeId, employeeId))
+		.where(
+			and(
+				eq(timeEntry.employeeId, employeeId),
+				eq(timeEntry.organizationId, organizationId),
+			),
+		)
 		.orderBy(desc(timeEntry.createdAt))
 		.limit(1);
 
@@ -1521,11 +1545,12 @@ export async function createTimeEntry(params: {
 	const ipAddress = headersList.get("x-forwarded-for") || headersList.get("x-real-ip") || "unknown";
 	const userAgent = headersList.get("user-agent") || "unknown";
 
-	// Create time entry
+	// Create time entry with organizationId
 	const [entry] = await db
 		.insert(timeEntry)
 		.values({
 			employeeId,
+			organizationId,
 			type,
 			timestamp,
 			hash,
@@ -1902,6 +1927,7 @@ export async function splitWorkPeriod(
 		// Create clock-out entry for first period at split time
 		const firstClockOut = await createTimeEntry({
 			employeeId: emp.id,
+			organizationId: emp.organizationId,
 			type: "clock_out",
 			timestamp: splitDate,
 			createdBy: session.user.id,
@@ -1911,6 +1937,7 @@ export async function splitWorkPeriod(
 		// Create clock-in entry for second period at split time
 		const secondClockIn = await createTimeEntry({
 			employeeId: emp.id,
+			organizationId: emp.organizationId,
 			type: "clock_in",
 			timestamp: splitDate,
 			createdBy: session.user.id,
@@ -1952,6 +1979,7 @@ export async function splitWorkPeriod(
 			.insert(workPeriod)
 			.values({
 				employeeId: emp.id,
+				organizationId: emp.organizationId,
 				clockInId: secondClockIn.id,
 				clockOutId: period.clockOutId, // Use original clock-out for second period
 				startTime: splitDate,
@@ -2184,6 +2212,7 @@ async function createClockOutApprovalRequest(params: {
 	try {
 		// Create approval request
 		await db.insert(approvalRequest).values({
+			organizationId,
 			entityType: "time_entry",
 			entityId: workPeriodId,
 			requestedBy: employeeId,
@@ -2619,6 +2648,7 @@ export async function createManualTimeEntry(
 		// Create clock-in entry with blockchain hash
 		const clockInEntry = await createTimeEntry({
 			employeeId: emp.id,
+			organizationId: emp.organizationId,
 			type: "clock_in",
 			timestamp: finalClockIn,
 			createdBy: session.user.id,
@@ -2628,6 +2658,7 @@ export async function createManualTimeEntry(
 		// Create clock-out entry with blockchain hash
 		const clockOutEntry = await createTimeEntry({
 			employeeId: emp.id,
+			organizationId: emp.organizationId,
 			type: "clock_out",
 			timestamp: finalClockOut,
 			createdBy: session.user.id,
@@ -2659,6 +2690,7 @@ export async function createManualTimeEntry(
 			.insert(workPeriod)
 			.values({
 				employeeId: emp.id,
+				organizationId: emp.organizationId,
 				clockInId: clockInEntry.id,
 				clockOutId: clockOutEntry.id,
 				startTime: finalClockIn,
@@ -2745,6 +2777,7 @@ async function createManualEntryApprovalRequest(params: {
 	try {
 		// Create approval request
 		await db.insert(approvalRequest).values({
+			organizationId,
 			entityType: "time_entry",
 			entityId: workPeriodId,
 			requestedBy: employeeId,

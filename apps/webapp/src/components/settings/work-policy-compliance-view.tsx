@@ -205,11 +205,11 @@ export function WorkPolicyComplianceView({ organizationId }: WorkPolicyComplianc
 
 			return [
 				employeeName,
-				DateTime.fromISO(v.violationDate).toFormat("yyyy-MM-dd"),
+				DateTime.fromJSDate(v.violationDate).toFormat("yyyy-MM-dd"),
 				v.policy?.name || unknownLabel,
 				getViolationTypeLabel(v.violationType) || v.violationType,
 				v.acknowledgedAt ? acknowledgedLabel : pendingLabel,
-				v.acknowledgedAt ? DateTime.fromISO(v.acknowledgedAt).toFormat("yyyy-MM-dd HH:mm") : "",
+				v.acknowledgedAt ? DateTime.fromJSDate(v.acknowledgedAt).toFormat("yyyy-MM-dd HH:mm") : "",
 				v.acknowledgedNote || "",
 			];
 		});
@@ -414,7 +414,7 @@ export function WorkPolicyComplianceView({ organizationId }: WorkPolicyComplianc
 											: t("common.unknown", "Unknown")}
 									</TableCell>
 									<TableCell>
-										{DateTime.fromISO(violation.violationDate).toFormat("LLL d, yyyy")}
+										{DateTime.fromJSDate(violation.violationDate).toFormat("LLL d, yyyy")}
 									</TableCell>
 									<TableCell className="text-sm text-muted-foreground">
 										{violation.policy?.name || t("common.unknown", "Unknown")}
@@ -490,7 +490,7 @@ export function WorkPolicyComplianceView({ organizationId }: WorkPolicyComplianc
 											{t("settings.workPolicies.dateLabel", "Date:")}
 										</span>{" "}
 										<span className="font-medium">
-											{DateTime.fromISO(selectedViolation.violationDate).toFormat("LLL d, yyyy")}
+											{DateTime.fromJSDate(selectedViolation.violationDate).toFormat("LLL d, yyyy")}
 										</span>
 									</div>
 									<div className="col-span-2">

@@ -255,6 +255,7 @@ export async function requestAbsenceEffect(
 					yield* _(
 						dbService.query("createApprovalRequest", async () => {
 							return await dbService.db.insert(approvalRequest).values({
+								organizationId: currentEmployee.organizationId,
 								entityType: "absence_entry",
 								entityId: newAbsence.id,
 								requestedBy: currentEmployee.id,
