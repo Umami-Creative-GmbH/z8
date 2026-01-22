@@ -29,11 +29,23 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 
 		const { id } = await params;
 
-		// Get employee record to check role and organization
+		// SECURITY: Use activeOrganizationId from session to ensure org-scoped data
+		const activeOrgId = session.session?.activeOrganizationId;
+		if (!activeOrgId) {
+			return NextResponse.json({ error: "No active organization" }, { status: 400 });
+		}
+
+		// Get employee record for the active organization ONLY
 		const [employeeRecord] = await db
 			.select()
 			.from(employee)
-			.where(and(eq(employee.userId, session.user.id), eq(employee.isActive, true)))
+			.where(
+				and(
+					eq(employee.userId, session.user.id),
+					eq(employee.organizationId, activeOrgId),
+					eq(employee.isActive, true),
+				),
+			)
 			.limit(1);
 
 		if (!employeeRecord || employeeRecord.role !== "admin") {
@@ -98,11 +110,23 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
 		const { id } = await params;
 
-		// Get employee record to check role and organization
+		// SECURITY: Use activeOrganizationId from session to ensure org-scoped data
+		const activeOrgId = session.session?.activeOrganizationId;
+		if (!activeOrgId) {
+			return NextResponse.json({ error: "No active organization" }, { status: 400 });
+		}
+
+		// Get employee record for the active organization ONLY
 		const [employeeRecord] = await db
 			.select()
 			.from(employee)
-			.where(and(eq(employee.userId, session.user.id), eq(employee.isActive, true)))
+			.where(
+				and(
+					eq(employee.userId, session.user.id),
+					eq(employee.organizationId, activeOrgId),
+					eq(employee.isActive, true),
+				),
+			)
 			.limit(1);
 
 		if (!employeeRecord || employeeRecord.role !== "admin") {
@@ -175,11 +199,23 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
 
 		const { id } = await params;
 
-		// Get employee record to check role and organization
+		// SECURITY: Use activeOrganizationId from session to ensure org-scoped data
+		const activeOrgId = session.session?.activeOrganizationId;
+		if (!activeOrgId) {
+			return NextResponse.json({ error: "No active organization" }, { status: 400 });
+		}
+
+		// Get employee record for the active organization ONLY
 		const [employeeRecord] = await db
 			.select()
 			.from(employee)
-			.where(and(eq(employee.userId, session.user.id), eq(employee.isActive, true)))
+			.where(
+				and(
+					eq(employee.userId, session.user.id),
+					eq(employee.organizationId, activeOrgId),
+					eq(employee.isActive, true),
+				),
+			)
 			.limit(1);
 
 		if (!employeeRecord || employeeRecord.role !== "admin") {
