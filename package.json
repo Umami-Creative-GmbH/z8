@@ -40,7 +40,7 @@
   },
   "devDependencies": {
     "@esbuild/win32-x64": "^0.27.2",
-    "puppeteer-core": "^24.35.0",
+    "puppeteer-core": "^24.36.0",
     "shadcn": "^3.7.0",
     "turbo": "^2.7.5"
   },

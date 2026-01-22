@@ -11,7 +11,7 @@
     "build": "expo export"
   },
   "dependencies": {
-    "expo": "~54.0.31",
+    "expo": "~54.0.32",
     "expo-constants": "~18.0.13",
     "expo-linking": "~8.0.11",
     "expo-router": "~6.0.22",
