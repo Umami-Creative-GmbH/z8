@@ -4,6 +4,7 @@ import { betterAuth } from "better-auth/minimal";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
 import { admin } from "better-auth/plugins/admin";
+import { bearer } from "better-auth/plugins/bearer";
 import { organization } from "better-auth/plugins/organization";
 import { twoFactor } from "better-auth/plugins/two-factor";
 import { eq } from "drizzle-orm";
@@ -163,6 +164,7 @@ export const auth = betterAuth({
 	}),
 	plugins: [
 		nextCookies(),
+		bearer(), // Enable Bearer token auth for desktop app
 		admin({
 			defaultRole: "user",
 			adminRole: "admin",

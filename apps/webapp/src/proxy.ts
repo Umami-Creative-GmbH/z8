@@ -3,9 +3,10 @@ import { NextResponse } from "next/server";
 import createMiddleware from "next-intl/middleware";
 import { checkRateLimit, createRateLimitResponse, getClientIp } from "@/lib/rate-limit";
 import { ALL_LANGUAGES, DEFAULT_LANGUAGE } from "@/tolgee/shared";
+import { env } from "@/env";
 
 // Main domain from environment variable
-const MAIN_DOMAIN = process.env.NEXT_PUBLIC_MAIN_DOMAIN || "localhost:3000";
+const MAIN_DOMAIN = env.NEXT_PUBLIC_MAIN_DOMAIN || "localhost:3000";
 
 // Headers used to pass context to pages
 export const DOMAIN_HEADERS = {
@@ -92,7 +93,7 @@ export async function proxy(request: NextRequest) {
 	// getCookieCache signature verification fails with externalized better-auth.
 	// Real authentication happens server-side in pages/API routes via auth.api.getSession()
 	const hasSessionCookie =
-		request.cookies.has("better-auth.session_token") ||
+		request.cookies.has("better-auth.session-token") ||
 		request.cookies.has("better-auth.session_data");
 
 	// Handle authentication redirects

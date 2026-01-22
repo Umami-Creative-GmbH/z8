@@ -1,13 +1,14 @@
 import { FormatIcu } from "@tolgee/format-icu";
 import { DevTools, Tolgee } from "@tolgee/web";
 import type { TolgeeStaticData } from "@tolgee/react";
+import { env } from "@/env";
 
 const isDevelopment = process.env.NODE_ENV === "development";
 
 // Only use Tolgee API in development for in-context editing
 // In production, local JSON files (pulled via CLI before build) are used
-const apiKey = isDevelopment ? process.env.NEXT_PUBLIC_TOLGEE_API_KEY : undefined;
-const apiUrl = isDevelopment ? process.env.NEXT_PUBLIC_TOLGEE_API_URL : undefined;
+const apiKey = isDevelopment ? env.NEXT_PUBLIC_TOLGEE_API_KEY : undefined;
+const apiUrl = isDevelopment ? env.NEXT_PUBLIC_TOLGEE_API_URL : undefined;
 
 export const ALL_LANGUAGES = ["en", "de", "fr", "es", "it", "pt"];
 

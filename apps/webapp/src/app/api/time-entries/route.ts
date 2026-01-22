@@ -1,9 +1,9 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { Effect } from "effect";
 import { headers } from "next/headers";
 import { connection, type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { employee } from "@/db/schema";
+import { employee, workPeriod } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { runtime } from "@/lib/effect/runtime";
 import { TimeEntryService } from "@/lib/effect/services/time-entry.service";
@@ -27,32 +27,33 @@ export async function GET(request: NextRequest) {
 
 		const resolvedHeaders = await headers();
 
-		// Support both Bearer token (desktop app) and cookie-based auth (web app)
-		const authHeader = resolvedHeaders.get("authorization");
-		let session;
-
-		if (authHeader?.startsWith("Bearer ")) {
-			const token = authHeader.slice(7);
-			session = await auth.api.getSession({
-				headers: new Headers({ cookie: `better-auth.session_token=${token}` }),
-			});
-		} else {
-			session = await auth.api.getSession({ headers: resolvedHeaders });
-		}
+		// With Bearer plugin, getSession handles both cookie and Bearer token auth
+		const session = await auth.api.getSession({ headers: resolvedHeaders });
 
 		if (!session?.user) {
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 		}
 
-		// Get current user's employee record
+		// Get current user's employee record for the active organization
+		const activeOrgId = session.session.activeOrganizationId;
+		if (!activeOrgId) {
+			return NextResponse.json({ error: "No active organization" }, { status: 400 });
+		}
+
 		const [currentEmployee] = await db
 			.select()
 			.from(employee)
-			.where(and(eq(employee.userId, session.user.id), eq(employee.isActive, true)))
+			.where(
+				and(
+					eq(employee.userId, session.user.id),
+					eq(employee.organizationId, activeOrgId),
+					eq(employee.isActive, true),
+				),
+			)
 			.limit(1);
 
 		if (!currentEmployee) {
-			return NextResponse.json({ error: "Employee record not found" }, { status: 404 });
+			return NextResponse.json({ error: "Employee record not found in this organization" }, { status: 404 });
 		}
 
 		// Determine which employee's entries to fetch
@@ -100,7 +101,6 @@ export async function GET(request: NextRequest) {
 
 		return NextResponse.json({ entries });
 	} catch (error) {
-		console.error("Error fetching time entries:", error);
 		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
 	}
 }
@@ -117,18 +117,8 @@ export async function POST(request: NextRequest) {
 		// Await headers and body in parallel
 		const [resolvedHeaders, body] = await Promise.all([headers(), request.json()]);
 
-		// Support both Bearer token (desktop app) and cookie-based auth (web app)
-		const authHeader = resolvedHeaders.get("authorization");
-		let session;
-
-		if (authHeader?.startsWith("Bearer ")) {
-			const token = authHeader.slice(7);
-			session = await auth.api.getSession({
-				headers: new Headers({ cookie: `better-auth.session_token=${token}` }),
-			});
-		} else {
-			session = await auth.api.getSession({ headers: resolvedHeaders });
-		}
+		// With Bearer plugin, getSession handles both cookie and Bearer token auth
+		const session = await auth.api.getSession({ headers: resolvedHeaders });
 
 		if (!session?.user) {
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -144,15 +134,27 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
-		// Get current user's employee record
+		// Get current user's employee record for the active organization
+		const activeOrgId = session.session.activeOrganizationId;
+
+		if (!activeOrgId) {
+			return NextResponse.json({ error: "No active organization" }, { status: 400 });
+		}
+
 		const [currentEmployee] = await db
 			.select()
 			.from(employee)
-			.where(and(eq(employee.userId, session.user.id), eq(employee.isActive, true)))
+			.where(
+				and(
+					eq(employee.userId, session.user.id),
+					eq(employee.organizationId, activeOrgId),
+					eq(employee.isActive, true),
+				),
+			)
 			.limit(1);
 
 		if (!currentEmployee) {
-			return NextResponse.json({ error: "Employee record not found" }, { status: 404 });
+			return NextResponse.json({ error: "Employee record not found in this organization" }, { status: 404 });
 		}
 
 		// Extract request metadata from already-resolved headers
@@ -178,10 +180,48 @@ export async function POST(request: NextRequest) {
 
 		const entry = await runtime.runPromise(effect);
 
+		// Manage work periods based on entry type
+		const entryTime = timestamp ? new Date(timestamp) : new Date();
+
+		if (type === "clock_in") {
+			// Create a new work period
+			await db.insert(workPeriod).values({
+				employeeId: currentEmployee.id,
+				clockInId: entry.id,
+				startTime: entryTime,
+				isActive: true,
+			});
+		} else if (type === "clock_out") {
+			// Find and close the active work period
+			const [activePeriod] = await db
+				.select()
+				.from(workPeriod)
+				.where(
+					and(
+						eq(workPeriod.employeeId, currentEmployee.id),
+						isNull(workPeriod.endTime),
+					),
+				)
+				.limit(1);
+
+			if (activePeriod) {
+				const durationMs = entryTime.getTime() - activePeriod.startTime.getTime();
+				const durationMinutes = Math.round(durationMs / 60000);
+
+				await db
+					.update(workPeriod)
+					.set({
+						clockOutId: entry.id,
+						endTime: entryTime,
+						durationMinutes,
+						isActive: false,
+					})
+					.where(eq(workPeriod.id, activePeriod.id));
+			}
+		}
+
 		return NextResponse.json({ entry }, { status: 201 });
 	} catch (error) {
-		console.error("Error creating time entry:", error);
-
 		// Handle Effect errors
 		if (error instanceof Error && error.message.includes("NotFoundError")) {
 			return NextResponse.json({ error: "Employee not found" }, { status: 404 });

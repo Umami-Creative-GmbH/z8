@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
+import { IconChevronDown, IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
 import * as React from "react";
 import { type DayButton, DayPicker, getDefaultClassNames } from "react-day-picker";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -112,14 +112,14 @@ function Calendar({
 				},
 				Chevron: ({ className, orientation, ...props }) => {
 					if (orientation === "left") {
-						return <ChevronLeftIcon className={cn("size-4", className)} {...props} />;
+						return <IconChevronLeft className={cn("size-4", className)} {...props} />;
 					}
 
 					if (orientation === "right") {
-						return <ChevronRightIcon className={cn("size-4", className)} {...props} />;
+						return <IconChevronRight className={cn("size-4", className)} {...props} />;
 					}
 
-					return <ChevronDownIcon className={cn("size-4", className)} {...props} />;
+					return <IconChevronDown className={cn("size-4", className)} {...props} />;
 				},
 				DayButton: CalendarDayButton,
 				WeekNumber: ({ children, ...props }) => {

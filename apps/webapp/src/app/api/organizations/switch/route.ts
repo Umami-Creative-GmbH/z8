@@ -6,20 +6,30 @@ import { member } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
 import { auth } from "@/lib/auth";
 
+const corsHeaders = {
+	"Access-Control-Allow-Origin": "*",
+	"Access-Control-Allow-Methods": "POST, OPTIONS",
+	"Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
+
+export async function OPTIONS() {
+	return NextResponse.json({}, { headers: corsHeaders });
+}
+
 export async function POST(request: NextRequest) {
 	await connection();
 	try {
 		const session = await auth.api.getSession({ headers: await headers() });
 
 		if (!session?.user) {
-			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+			return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: corsHeaders });
 		}
 
 		const body = await request.json();
 		const { organizationId } = body;
 
 		if (!organizationId) {
-			return NextResponse.json({ error: "Organization ID is required" }, { status: 400 });
+			return NextResponse.json({ error: "Organization ID is required" }, { status: 400, headers: corsHeaders });
 		}
 
 		// Verify user is a member of this organization
@@ -32,7 +42,7 @@ export async function POST(request: NextRequest) {
 		if (!membership) {
 			return NextResponse.json(
 				{ error: "You are not a member of this organization" },
-				{ status: 403 },
+				{ status: 403, headers: corsHeaders },
 			);
 		}
 
@@ -61,9 +71,8 @@ export async function POST(request: NextRequest) {
 			success: true,
 			organizationId,
 			hasEmployeeRecord: !!employeeRecord,
-		});
+		}, { headers: corsHeaders });
 	} catch (error) {
-		console.error("Error switching organization:", error);
-		return NextResponse.json({ error: "Failed to switch organization" }, { status: 500 });
+		return NextResponse.json({ error: "Failed to switch organization" }, { status: 500, headers: corsHeaders });
 	}
 }

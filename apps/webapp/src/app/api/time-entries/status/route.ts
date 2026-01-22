@@ -26,20 +26,8 @@ export async function GET() {
 	try {
 		const resolvedHeaders = await headers();
 
-		// Check for Bearer token in Authorization header (desktop app)
-		const authHeader = resolvedHeaders.get("authorization");
-		let session;
-
-		if (authHeader?.startsWith("Bearer ")) {
-			const token = authHeader.slice(7);
-			// Validate the token by getting session
-			session = await auth.api.getSession({
-				headers: new Headers({ cookie: `better-auth.session_token=${token}` }),
-			});
-		} else {
-			// Fall back to cookie-based auth (web app)
-			session = await auth.api.getSession({ headers: resolvedHeaders });
-		}
+		// With Bearer plugin, getSession handles both cookie and Bearer token auth
+		const session = await auth.api.getSession({ headers: resolvedHeaders });
 
 		if (!session?.user) {
 			return NextResponse.json(
@@ -53,10 +41,21 @@ export async function GET() {
 			);
 		}
 
-		// Get employee record
+		// Get employee record for the active organization
+		const activeOrgId = session.session.activeOrganizationId;
+		if (!activeOrgId) {
+			return NextResponse.json({
+				hasEmployee: false,
+				employeeId: null,
+				isClockedIn: false,
+				activeWorkPeriod: null,
+			});
+		}
+
 		const emp = await db.query.employee.findFirst({
 			where: and(
 				eq(employee.userId, session.user.id),
+				eq(employee.organizationId, activeOrgId),
 				eq(employee.isActive, true),
 			),
 		});
@@ -78,7 +77,7 @@ export async function GET() {
 			),
 		});
 
-		return NextResponse.json({
+		const response = {
 			hasEmployee: true,
 			employeeId: emp.id,
 			isClockedIn: !!period,
@@ -88,9 +87,10 @@ export async function GET() {
 						startTime: period.startTime.toISOString(),
 					}
 				: null,
-		});
+		};
+
+		return NextResponse.json(response);
 	} catch (error) {
-		console.error("Error fetching clock status:", error);
 		return NextResponse.json(
 			{ error: "Internal server error" },
 			{ status: 500 },
