@@ -100,6 +100,7 @@ export async function calculateWorkHours(
 		.where(
 			and(
 				eq(workPeriod.employeeId, employeeId),
+				eq(workPeriod.organizationId, organizationId),
 				eq(workPeriod.isActive, false), // Only completed periods
 				isNotNull(workPeriod.durationMinutes), // Must have duration
 				gte(workPeriod.startTime, rangeStart),

@@ -2,7 +2,7 @@ import { boolean, index, integer, pgTable, text, timestamp, uuid } from "drizzle
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 
 // Import auth tables for FK references
-import { user } from "../auth-schema";
+import { organization, user } from "../auth-schema";
 import { approvalStatusEnum, timeEntryTypeEnum } from "./enums";
 import { employee } from "./organization";
 import { project } from "./project";
@@ -21,6 +21,9 @@ export const timeEntry = pgTable(
 		employeeId: uuid("employee_id")
 			.notNull()
 			.references(() => employee.id, { onDelete: "cascade" }),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
 		type: timeEntryTypeEnum("type").notNull(),
 		timestamp: timestamp("timestamp").notNull(),
 
@@ -47,11 +50,20 @@ export const timeEntry = pgTable(
 	},
 	(table) => [
 		index("timeEntry_employeeId_idx").on(table.employeeId),
+		index("timeEntry_organizationId_idx").on(table.organizationId),
 		index("timeEntry_timestamp_idx").on(table.timestamp),
 		index("timeEntry_previousEntryId_idx").on(table.previousEntryId),
 		index("timeEntry_replacesEntryId_idx").on(table.replacesEntryId),
-		index("timeEntry_employeeId_isSuperseded_timestamp_idx").on(
+		// Composite index for blockchain queries (per employee-per-org)
+		index("timeEntry_emp_org_timestamp_idx").on(
 			table.employeeId,
+			table.organizationId,
+			table.timestamp,
+		),
+		// Composite index for active entries
+		index("timeEntry_emp_org_isSuperseded_timestamp_idx").on(
+			table.employeeId,
+			table.organizationId,
 			table.isSuperseded,
 			table.timestamp,
 		),
@@ -66,6 +78,9 @@ export const workPeriod = pgTable(
 		employeeId: uuid("employee_id")
 			.notNull()
 			.references(() => employee.id, { onDelete: "cascade" }),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
 		clockInId: uuid("clock_in_id")
 			.notNull()
 			.references(() => timeEntry.id),
@@ -113,9 +128,21 @@ export const workPeriod = pgTable(
 	},
 	(table) => [
 		index("workPeriod_employeeId_idx").on(table.employeeId),
+		index("workPeriod_organizationId_idx").on(table.organizationId),
 		index("workPeriod_startTime_idx").on(table.startTime),
 		index("workPeriod_projectId_idx").on(table.projectId),
 		index("workPeriod_workCategoryId_idx").on(table.workCategoryId),
 		index("workPeriod_approvalStatus_idx").on(table.approvalStatus),
+		// Composite index for calendar queries (most common)
+		index("workPeriod_org_startTime_idx").on(
+			table.organizationId,
+			table.startTime,
+		),
+		// Composite index for employee-org queries
+		index("workPeriod_emp_org_startTime_idx").on(
+			table.employeeId,
+			table.organizationId,
+			table.startTime,
+		),
 	],
 );

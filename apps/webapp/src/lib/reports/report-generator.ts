@@ -64,7 +64,7 @@ export async function generateEmployeeReport(
 	const [workHours, absences, homeOffice, expectedHours] = await Promise.all([
 		aggregateWorkHours(employeeId, organizationId, startDate, endDate),
 		aggregateAbsences(employeeId, startDate, endDate),
-		aggregateHomeOfficeDays(employeeId, startDate, endDate),
+		aggregateHomeOfficeDays(employeeId, organizationId, startDate, endDate),
 		calculateExpectedWorkHoursForEmployee(employeeId, organizationId, startDate, endDate),
 	]);
 
@@ -135,6 +135,7 @@ export async function aggregateWorkHours(
 		.where(
 			and(
 				eq(workPeriod.employeeId, employeeId),
+				eq(workPeriod.organizationId, organizationId),
 				eq(workPeriod.isActive, false),
 				isNotNull(workPeriod.durationMinutes),
 				gte(workPeriod.startTime, rangeStart),
@@ -306,12 +307,14 @@ export async function aggregateAbsences(
  * Aggregate home office days with actual hours worked
  * CRITICAL for German tax purposes
  * @param employeeId - ID of the employee
+ * @param organizationId - ID of the organization
  * @param startDate - Start date
  * @param endDate - End date
  * @returns Home office data with hours worked
  */
 export async function aggregateHomeOfficeDays(
 	employeeId: string,
+	organizationId: string,
 	startDate: Date,
 	endDate: Date,
 ): Promise<HomeOfficeData> {
@@ -378,6 +381,7 @@ export async function aggregateHomeOfficeDays(
 				.where(
 					and(
 						eq(workPeriod.employeeId, employeeId),
+						eq(workPeriod.organizationId, organizationId),
 						eq(workPeriod.isActive, false),
 						isNotNull(workPeriod.durationMinutes),
 						gte(workPeriod.startTime, dayStart),

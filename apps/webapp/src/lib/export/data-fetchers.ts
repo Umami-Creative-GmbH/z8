@@ -155,21 +155,9 @@ export async function fetchTeams(organizationId: string) {
 export async function fetchTimeEntries(organizationId: string) {
 	logger.info({ organizationId }, "Fetching time entries for export");
 
-	// First get all employee IDs for this org
-	const orgEmployees = await db.query.employee.findMany({
-		where: eq(employee.organizationId, organizationId),
-		columns: { id: true },
-	});
-
-	const employeeIds = orgEmployees.map((e) => e.id);
-
-	if (employeeIds.length === 0) {
-		return [];
-	}
-
-	// Fetch time entries with proper database-level filtering
+	// Fetch time entries directly by organizationId
 	const filteredEntries = await db.query.timeEntry.findMany({
-		where: inArray(timeEntry.employeeId, employeeIds),
+		where: eq(timeEntry.organizationId, organizationId),
 		with: {
 			employee: {
 				columns: {
@@ -207,21 +195,9 @@ export async function fetchTimeEntries(organizationId: string) {
 export async function fetchWorkPeriods(organizationId: string) {
 	logger.info({ organizationId }, "Fetching work periods for export");
 
-	// Get employee IDs for this org
-	const orgEmployees = await db.query.employee.findMany({
-		where: eq(employee.organizationId, organizationId),
-		columns: { id: true },
-	});
-
-	const employeeIds = orgEmployees.map((e) => e.id);
-
-	if (employeeIds.length === 0) {
-		return [];
-	}
-
-	// Fetch work periods with proper database-level filtering
+	// Fetch work periods directly by organizationId
 	const filteredPeriods = await db.query.workPeriod.findMany({
-		where: inArray(workPeriod.employeeId, employeeIds),
+		where: eq(workPeriod.organizationId, organizationId),
 		with: {
 			employee: {
 				columns: {
@@ -814,14 +790,18 @@ export async function* streamTimeEntries(
 		notes: string | null;
 	}>
 > {
-	if (employeeIds.length === 0) return;
-
 	let offset = 0;
 	let hasMore = true;
 
+	// Build where clause - use organizationId directly, optionally filter by employeeIds
+	const whereClause =
+		employeeIds.length > 0
+			? and(eq(timeEntry.organizationId, organizationId), inArray(timeEntry.employeeId, employeeIds))
+			: eq(timeEntry.organizationId, organizationId);
+
 	while (hasMore) {
 		const batch = await db.query.timeEntry.findMany({
-			where: inArray(timeEntry.employeeId, employeeIds),
+			where: whereClause,
 			with: {
 				employee: {
 					columns: {
@@ -881,14 +861,18 @@ export async function* streamWorkPeriods(
 		isActive: boolean;
 	}>
 > {
-	if (employeeIds.length === 0) return;
-
 	let offset = 0;
 	let hasMore = true;
 
+	// Build where clause - use organizationId directly, optionally filter by employeeIds
+	const whereClause =
+		employeeIds.length > 0
+			? and(eq(workPeriod.organizationId, organizationId), inArray(workPeriod.employeeId, employeeIds))
+			: eq(workPeriod.organizationId, organizationId);
+
 	while (hasMore) {
 		const batch = await db.query.workPeriod.findMany({
-			where: inArray(workPeriod.employeeId, employeeIds),
+			where: whereClause,
 			with: {
 				employee: {
 					columns: {

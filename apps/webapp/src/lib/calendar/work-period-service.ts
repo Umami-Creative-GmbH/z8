@@ -34,8 +34,8 @@ export async function getWorkPeriodsForMonth(
 	try {
 		// Prepare conditions
 		const conditions = [
-			// Organization filter via employee
-			eq(employee.organizationId, filters.organizationId),
+			// Direct organization filter (no join needed for org filtering)
+			eq(workPeriod.organizationId, filters.organizationId),
 			// Date range filter
 			gte(workPeriod.startTime, startDate),
 			lte(workPeriod.startTime, endDate),

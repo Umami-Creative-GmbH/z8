@@ -32,6 +32,7 @@ function createMockEntry(
 	return {
 		id: overrides.id,
 		employeeId: overrides.employeeId,
+		organizationId: overrides.organizationId || "test-org",
 		type: overrides.type as "clock_in" | "clock_out" | "correction",
 		timestamp,
 		hash,

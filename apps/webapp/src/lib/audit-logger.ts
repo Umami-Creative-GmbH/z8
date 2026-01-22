@@ -236,6 +236,7 @@ export async function logAudit(entry: AuditLogEntry): Promise<void> {
 	// Persist to database
 	try {
 		await db.insert(auditLog).values({
+			organizationId: entry.organizationId, // Now stored in dedicated column for efficient org-scoped queries
 			entityType: entry.targetType || "unknown",
 			entityId: entry.targetId || "00000000-0000-0000-0000-000000000000", // Fallback UUID for non-entity actions
 			action: entry.action,
@@ -244,7 +245,6 @@ export async function logAudit(entry: AuditLogEntry): Promise<void> {
 			changes: entry.changes ? JSON.stringify(entry.changes) : null,
 			metadata: JSON.stringify({
 				actorEmail: entry.actorEmail,
-				organizationId: entry.organizationId,
 				...entry.metadata,
 			}),
 			ipAddress: entry.ipAddress,

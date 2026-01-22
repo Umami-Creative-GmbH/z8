@@ -295,6 +295,7 @@ export async function generateDemoTimeEntries(
 				.insert(timeEntry)
 				.values({
 					employeeId: emp.id,
+					organizationId: options.organizationId,
 					type: "clock_in",
 					timestamp: morningClockIn,
 					hash: morningInHash,
@@ -321,6 +322,7 @@ export async function generateDemoTimeEntries(
 				.insert(timeEntry)
 				.values({
 					employeeId: emp.id,
+					organizationId: options.organizationId,
 					type: "clock_out",
 					timestamp: morningClockOut,
 					hash: morningOutHash,
@@ -341,6 +343,7 @@ export async function generateDemoTimeEntries(
 			);
 			await db.insert(workPeriod).values({
 				employeeId: emp.id,
+				organizationId: options.organizationId,
 				clockInId: morningInEntry.id,
 				clockOutId: morningOutEntry.id,
 				startTime: morningClockIn,
@@ -367,6 +370,7 @@ export async function generateDemoTimeEntries(
 				.insert(timeEntry)
 				.values({
 					employeeId: emp.id,
+					organizationId: options.organizationId,
 					type: "clock_in",
 					timestamp: afternoonClockIn,
 					hash: afternoonInHash,
@@ -404,6 +408,7 @@ export async function generateDemoTimeEntries(
 					.insert(timeEntry)
 					.values({
 						employeeId: emp.id,
+						organizationId: options.organizationId,
 						type: "clock_out",
 						timestamp: breakStart,
 						hash: breakOutHash,
@@ -424,6 +429,7 @@ export async function generateDemoTimeEntries(
 				);
 				await db.insert(workPeriod).values({
 					employeeId: emp.id,
+					organizationId: options.organizationId,
 					clockInId: afternoonInEntry.id,
 					clockOutId: breakOutEntry.id,
 					startTime: afternoonClockIn,
@@ -450,6 +456,7 @@ export async function generateDemoTimeEntries(
 					.insert(timeEntry)
 					.values({
 						employeeId: emp.id,
+						organizationId: options.organizationId,
 						type: "clock_in",
 						timestamp: breakEnd,
 						hash: breakInHash,
@@ -482,6 +489,7 @@ export async function generateDemoTimeEntries(
 					.insert(timeEntry)
 					.values({
 						employeeId: emp.id,
+						organizationId: options.organizationId,
 						type: "clock_out",
 						timestamp: finalClockOut,
 						hash: finalOutHash,
@@ -498,6 +506,7 @@ export async function generateDemoTimeEntries(
 				const finalDuration = Math.round(finalClockOutDT.diff(breakEndDT, "minutes").minutes);
 				await db.insert(workPeriod).values({
 					employeeId: emp.id,
+					organizationId: options.organizationId,
 					clockInId: breakInEntry.id,
 					clockOutId: finalOutEntry.id,
 					startTime: breakEnd,
@@ -525,6 +534,7 @@ export async function generateDemoTimeEntries(
 					.insert(timeEntry)
 					.values({
 						employeeId: emp.id,
+						organizationId: options.organizationId,
 						type: "clock_out",
 						timestamp: finalClockOut,
 						hash: finalOutHash,
@@ -543,6 +553,7 @@ export async function generateDemoTimeEntries(
 				);
 				await db.insert(workPeriod).values({
 					employeeId: emp.id,
+					organizationId: options.organizationId,
 					clockInId: afternoonInEntry.id,
 					clockOutId: finalOutEntry.id,
 					startTime: afternoonClockIn,

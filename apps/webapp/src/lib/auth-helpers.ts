@@ -43,6 +43,10 @@ export interface UserOrganization {
 /**
  * Get current authenticated user and their employee context
  * Uses activeOrganizationId from session to get the correct employee record
+ *
+ * SECURITY: Only returns employee data for the active organization.
+ * If no activeOrganizationId is set, employee will be null.
+ * This prevents cross-organization data leakage.
  */
 export async function getAuthContext(): Promise<AuthContext | null> {
 	const session = await auth.api.getSession({ headers: await headers() });
@@ -53,7 +57,9 @@ export async function getAuthContext(): Promise<AuthContext | null> {
 
 	const activeOrganizationId = session.session?.activeOrganizationId || null;
 
-	// Fetch employee record for the active organization
+	// Fetch employee record for the active organization ONLY
+	// SECURITY: We intentionally do NOT fall back to any employee record
+	// if no activeOrganizationId is set. This ensures org-scoped data isolation.
 	let employeeRecord = null;
 
 	if (activeOrganizationId) {
@@ -68,14 +74,8 @@ export async function getAuthContext(): Promise<AuthContext | null> {
 				),
 			)
 			.limit(1);
-	} else {
-		// If no active organization, get first employee record as fallback
-		[employeeRecord] = await db
-			.select()
-			.from(employee)
-			.where(and(eq(employee.userId, session.user.id), eq(employee.isActive, true)))
-			.limit(1);
 	}
+	// No fallback - if no active org, employee stays null
 
 	return {
 		user: {
@@ -287,5 +287,186 @@ export async function getOnboardingStatus(): Promise<OnboardingStatus | null> {
 	return {
 		onboardingComplete: settingsData?.onboardingComplete ?? false,
 		onboardingStep: settingsData?.onboardingStep ?? null,
+	};
+}
+
+// ============================================
+// ORGANIZATION MEMBERSHIP VERIFICATION
+// ============================================
+
+export interface OrgVerificationResult {
+	isValid: boolean;
+	userId: string;
+	organizationId: string;
+	employeeId: string | null;
+	role: "admin" | "manager" | "employee" | null;
+}
+
+/**
+ * Verify that the current user is a member of the specified organization.
+ * This is the CRITICAL function for multi-tenant security.
+ *
+ * Use this in API routes when the organizationId comes from client input
+ * (query params, request body, etc.) to prevent unauthorized access.
+ *
+ * @param requestedOrgId - The organization ID from client request
+ * @returns OrgVerificationResult with isValid=false if user is not a member
+ *
+ * @example
+ * ```typescript
+ * const orgId = searchParams.get("organizationId");
+ * const verification = await verifyOrgMembership(orgId);
+ * if (!verification.isValid) {
+ *   return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+ * }
+ * // Safe to proceed with orgId
+ * ```
+ */
+export async function verifyOrgMembership(
+	requestedOrgId: string | null,
+): Promise<OrgVerificationResult | null> {
+	const session = await auth.api.getSession({ headers: await headers() });
+
+	if (!session?.user) {
+		return null;
+	}
+
+	if (!requestedOrgId) {
+		return {
+			isValid: false,
+			userId: session.user.id,
+			organizationId: "",
+			employeeId: null,
+			role: null,
+		};
+	}
+
+	// Check if user is a member of the requested organization
+	const [memberRecord] = await db
+		.select({
+			memberId: member.id,
+			memberRole: member.role,
+		})
+		.from(member)
+		.where(and(eq(member.userId, session.user.id), eq(member.organizationId, requestedOrgId)))
+		.limit(1);
+
+	if (!memberRecord) {
+		return {
+			isValid: false,
+			userId: session.user.id,
+			organizationId: requestedOrgId,
+			employeeId: null,
+			role: null,
+		};
+	}
+
+	// Also get employee record if exists
+	const [employeeRecord] = await db
+		.select({
+			id: employee.id,
+			role: employee.role,
+		})
+		.from(employee)
+		.where(
+			and(
+				eq(employee.userId, session.user.id),
+				eq(employee.organizationId, requestedOrgId),
+				eq(employee.isActive, true),
+			),
+		)
+		.limit(1);
+
+	return {
+		isValid: true,
+		userId: session.user.id,
+		organizationId: requestedOrgId,
+		employeeId: employeeRecord?.id ?? null,
+		role: employeeRecord?.role ?? null,
+	};
+}
+
+/**
+ * Require organization membership - throws if user is not a member.
+ * Use this in API routes for cleaner code flow.
+ *
+ * @param requestedOrgId - The organization ID from client request
+ * @throws Error if user is not authenticated or not a member
+ * @returns OrgVerificationResult with verified membership
+ *
+ * @example
+ * ```typescript
+ * try {
+ *   const org = await requireOrgMembership(searchParams.get("organizationId"));
+ *   // Safe to use org.organizationId
+ * } catch (error) {
+ *   return NextResponse.json({ error: error.message }, { status: 403 });
+ * }
+ * ```
+ */
+export async function requireOrgMembership(
+	requestedOrgId: string | null,
+): Promise<OrgVerificationResult> {
+	const result = await verifyOrgMembership(requestedOrgId);
+
+	if (!result) {
+		throw new Error("Authentication required");
+	}
+
+	if (!result.isValid) {
+		throw new Error("Access denied: You are not a member of this organization");
+	}
+
+	return result;
+}
+
+/**
+ * Get verified organization context for API routes.
+ * Combines session auth with org membership verification.
+ *
+ * This is the recommended function for API routes that accept organizationId
+ * from the client. It ensures the user is both authenticated AND a member
+ * of the requested organization.
+ *
+ * @param requestedOrgId - The organization ID from client request (query param, body, etc.)
+ * @returns Full auth context with verified org membership, or null if invalid
+ *
+ * @example
+ * ```typescript
+ * const context = await getVerifiedOrgContext(searchParams.get("organizationId"));
+ * if (!context) {
+ *   return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+ * }
+ * // Use context.organizationId - guaranteed to be authorized
+ * ```
+ */
+export async function getVerifiedOrgContext(requestedOrgId: string | null): Promise<{
+	user: AuthContext["user"];
+	organizationId: string;
+	employeeId: string | null;
+	role: "admin" | "manager" | "employee" | null;
+} | null> {
+	const verification = await verifyOrgMembership(requestedOrgId);
+
+	if (!verification || !verification.isValid) {
+		return null;
+	}
+
+	const session = await auth.api.getSession({ headers: await headers() });
+	if (!session?.user) {
+		return null;
+	}
+
+	return {
+		user: {
+			id: session.user.id,
+			email: session.user.email,
+			name: session.user.name,
+			image: session.user.image ?? undefined,
+			canCreateOrganizations: session.user.canCreateOrganizations ?? false,
+		},
+		organizationId: verification.organizationId,
+		employeeId: verification.employeeId,
+		role: verification.role,
 	};
 }

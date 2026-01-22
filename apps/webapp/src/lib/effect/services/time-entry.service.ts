@@ -16,6 +16,7 @@ type TimeEntryType = "clock_in" | "clock_out" | "correction";
 
 export interface CreateTimeEntryInput {
 	employeeId: string;
+	organizationId: string;
 	type: TimeEntryType;
 	timestamp: Date;
 	createdBy: string;
@@ -27,6 +28,7 @@ export interface CreateTimeEntryInput {
 
 export interface CreateCorrectionInput {
 	employeeId: string;
+	organizationId: string;
 	replacesEntryId: string;
 	timestamp: Date;
 	createdBy: string;
@@ -37,6 +39,7 @@ export interface CreateCorrectionInput {
 
 export interface GetTimeEntriesInput {
 	employeeId: string;
+	organizationId: string;
 	from?: Date;
 	to?: Date;
 	includeSuperseded?: boolean;
@@ -57,10 +60,14 @@ export class TimeEntryService extends Context.Tag("TimeEntryService")<
 			input: GetTimeEntriesInput,
 		) => Effect.Effect<TimeEntry[], DatabaseError>;
 
-		readonly getLatestEntry: (employeeId: string) => Effect.Effect<TimeEntry | null, DatabaseError>;
+		readonly getLatestEntry: (
+			employeeId: string,
+			organizationId: string,
+		) => Effect.Effect<TimeEntry | null, DatabaseError>;
 
 		readonly verifyTimeEntryChain: (
 			employeeId: string,
+			organizationId: string,
 		) => Effect.Effect<ChainValidationResult, DatabaseError>;
 
 		readonly verifyEntry: (
@@ -70,7 +77,10 @@ export class TimeEntryService extends Context.Tag("TimeEntryService")<
 			NotFoundError | DatabaseError
 		>;
 
-		readonly getChainHash: (employeeId: string) => Effect.Effect<string | null, DatabaseError>;
+		readonly getChainHash: (
+			employeeId: string,
+			organizationId: string,
+		) => Effect.Effect<string | null, DatabaseError>;
 	}
 >() {}
 
@@ -82,11 +92,14 @@ export const TimeEntryServiceLive = Layer.effect(
 		return TimeEntryService.of({
 			createTimeEntry: (input) =>
 				Effect.gen(function* (_) {
-					// Verify employee exists
+					// Verify employee exists in the specified organization
 					const employeeRecord = yield* _(
 						dbService.query("verifyEmployeeExists", async () => {
 							return await dbService.db.query.employee.findFirst({
-								where: eq(employee.id, input.employeeId),
+								where: and(
+									eq(employee.id, input.employeeId),
+									eq(employee.organizationId, input.organizationId),
+								),
 							});
 						}),
 					);
@@ -95,7 +108,7 @@ export const TimeEntryServiceLive = Layer.effect(
 						yield* _(
 							Effect.fail(
 								new NotFoundError({
-									message: "Employee not found",
+									message: "Employee not found in organization",
 									entityType: "employee",
 									entityId: input.employeeId,
 								}),
@@ -103,13 +116,18 @@ export const TimeEntryServiceLive = Layer.effect(
 						);
 					}
 
-					// Get previous entry for blockchain linking
+					// Get previous entry for blockchain linking (per employee-per-org)
 					const previousEntry = yield* _(
 						dbService.query("getPreviousEntry", async () => {
 							const [entry] = await dbService.db
 								.select()
 								.from(timeEntry)
-								.where(eq(timeEntry.employeeId, input.employeeId))
+								.where(
+									and(
+										eq(timeEntry.employeeId, input.employeeId),
+										eq(timeEntry.organizationId, input.organizationId),
+									),
+								)
 								.orderBy(desc(timeEntry.createdAt))
 								.limit(1);
 							return entry ?? null;
@@ -124,13 +142,14 @@ export const TimeEntryServiceLive = Layer.effect(
 						previousHash: previousEntry?.hash ?? null,
 					});
 
-					// Create the time entry
+					// Create the time entry with organizationId
 					const createdEntry = yield* _(
 						dbService.query("createTimeEntry", async () => {
 							const [entry] = await dbService.db
 								.insert(timeEntry)
 								.values({
 									employeeId: input.employeeId,
+									organizationId: input.organizationId,
 									type: input.type,
 									timestamp: input.timestamp,
 									hash,
@@ -152,11 +171,14 @@ export const TimeEntryServiceLive = Layer.effect(
 
 			createCorrectionEntry: (input) =>
 				Effect.gen(function* (_) {
-					// Verify employee exists
+					// Verify employee exists in the specified organization
 					const employeeRecord = yield* _(
 						dbService.query("verifyEmployeeForCorrection", async () => {
 							return await dbService.db.query.employee.findFirst({
-								where: eq(employee.id, input.employeeId),
+								where: and(
+									eq(employee.id, input.employeeId),
+									eq(employee.organizationId, input.organizationId),
+								),
 							});
 						}),
 					);
@@ -165,7 +187,7 @@ export const TimeEntryServiceLive = Layer.effect(
 						yield* _(
 							Effect.fail(
 								new NotFoundError({
-									message: "Employee not found",
+									message: "Employee not found in organization",
 									entityType: "employee",
 									entityId: input.employeeId,
 								}),
@@ -173,13 +195,18 @@ export const TimeEntryServiceLive = Layer.effect(
 						);
 					}
 
-					// Verify the entry being replaced exists
+					// Verify the entry being replaced exists and belongs to the same org
 					const entryToReplace = yield* _(
 						dbService.query("getEntryToReplace", async () => {
 							const [entry] = await dbService.db
 								.select()
 								.from(timeEntry)
-								.where(eq(timeEntry.id, input.replacesEntryId))
+								.where(
+									and(
+										eq(timeEntry.id, input.replacesEntryId),
+										eq(timeEntry.organizationId, input.organizationId),
+									),
+								)
 								.limit(1);
 							return entry ?? null;
 						}),
@@ -223,13 +250,18 @@ export const TimeEntryServiceLive = Layer.effect(
 						);
 					}
 
-					// Get previous entry for blockchain linking
+					// Get previous entry for blockchain linking (per employee-per-org)
 					const previousEntry = yield* _(
 						dbService.query("getPreviousEntryForCorrection", async () => {
 							const [entry] = await dbService.db
 								.select()
 								.from(timeEntry)
-								.where(eq(timeEntry.employeeId, input.employeeId))
+								.where(
+									and(
+										eq(timeEntry.employeeId, input.employeeId),
+										eq(timeEntry.organizationId, input.organizationId),
+									),
+								)
 								.orderBy(desc(timeEntry.createdAt))
 								.limit(1);
 							return entry ?? null;
@@ -247,11 +279,12 @@ export const TimeEntryServiceLive = Layer.effect(
 					// Create correction entry and mark original as superseded in a transaction
 					const correctionEntry = yield* _(
 						dbService.query("createCorrectionEntry", async () => {
-							// Insert the correction entry
+							// Insert the correction entry with organizationId
 							const [newEntry] = await dbService.db
 								.insert(timeEntry)
 								.values({
 									employeeId: input.employeeId,
+									organizationId: input.organizationId,
 									type: "correction",
 									timestamp: input.timestamp,
 									hash,
@@ -285,7 +318,10 @@ export const TimeEntryServiceLive = Layer.effect(
 				Effect.gen(function* (_) {
 					const entries = yield* _(
 						dbService.query("getTimeEntries", async () => {
-							const conditions = [eq(timeEntry.employeeId, input.employeeId)];
+							const conditions = [
+								eq(timeEntry.employeeId, input.employeeId),
+								eq(timeEntry.organizationId, input.organizationId),
+							];
 
 							if (!input.includeSuperseded) {
 								conditions.push(eq(timeEntry.isSuperseded, false));
@@ -310,14 +346,19 @@ export const TimeEntryServiceLive = Layer.effect(
 					return entries;
 				}),
 
-			getLatestEntry: (employeeId) =>
+			getLatestEntry: (employeeId, organizationId) =>
 				Effect.gen(function* (_) {
 					const entry = yield* _(
 						dbService.query("getLatestEntry", async () => {
 							const [latestEntry] = await dbService.db
 								.select()
 								.from(timeEntry)
-								.where(eq(timeEntry.employeeId, employeeId))
+								.where(
+									and(
+										eq(timeEntry.employeeId, employeeId),
+										eq(timeEntry.organizationId, organizationId),
+									),
+								)
 								.orderBy(desc(timeEntry.createdAt))
 								.limit(1);
 							return latestEntry ?? null;
@@ -327,14 +368,19 @@ export const TimeEntryServiceLive = Layer.effect(
 					return entry;
 				}),
 
-			verifyTimeEntryChain: (employeeId) =>
+			verifyTimeEntryChain: (employeeId, organizationId) =>
 				Effect.gen(function* (_) {
 					const entries = yield* _(
 						dbService.query("getEntriesForChainValidation", async () => {
 							return await dbService.db
 								.select()
 								.from(timeEntry)
-								.where(eq(timeEntry.employeeId, employeeId))
+								.where(
+									and(
+										eq(timeEntry.employeeId, employeeId),
+										eq(timeEntry.organizationId, organizationId),
+									),
+								)
 								.orderBy(desc(timeEntry.createdAt));
 						}),
 					);
@@ -370,14 +416,19 @@ export const TimeEntryServiceLive = Layer.effect(
 					return verifyHash(entry);
 				}),
 
-			getChainHash: (employeeId) =>
+			getChainHash: (employeeId, organizationId) =>
 				Effect.gen(function* (_) {
 					const entries = yield* _(
 						dbService.query("getEntriesForChainHash", async () => {
 							return await dbService.db
 								.select()
 								.from(timeEntry)
-								.where(eq(timeEntry.employeeId, employeeId))
+								.where(
+									and(
+										eq(timeEntry.employeeId, employeeId),
+										eq(timeEntry.organizationId, organizationId),
+									),
+								)
 								.orderBy(desc(timeEntry.createdAt));
 						}),
 					);

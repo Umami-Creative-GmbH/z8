@@ -33,8 +33,8 @@ export async function getTimeEntriesForMonth(
 	try {
 		// Prepare conditions
 		const conditions = [
-			// Organization filter via employee
-			eq(employee.organizationId, filters.organizationId),
+			// Direct organization filter (no join needed for org filtering)
+			eq(timeEntry.organizationId, filters.organizationId),
 			// Date range filter
 			gte(timeEntry.timestamp, startDate),
 			lte(timeEntry.timestamp, endDate),

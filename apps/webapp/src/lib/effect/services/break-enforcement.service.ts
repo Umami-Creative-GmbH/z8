@@ -156,19 +156,25 @@ export const BreakEnforcementServiceLive = Layer.effect(
 		 */
 		const createBreakTimeEntry = (params: {
 			employeeId: string;
+			organizationId: string;
 			type: "clock_in" | "clock_out";
 			timestamp: Date;
 			createdBy: string;
 			notes?: string;
 		}): Effect.Effect<typeof timeEntry.$inferSelect, DatabaseError> =>
 			Effect.gen(function* (_) {
-				// Get previous entry for blockchain linking
+				// Get previous entry for blockchain linking (scoped to employee + org)
 				const previousEntry = yield* _(
 					dbService.query("getPreviousEntryForBreak", async () => {
 						const [entry] = await dbService.db
 							.select()
 							.from(timeEntry)
-							.where(eq(timeEntry.employeeId, params.employeeId))
+							.where(
+								and(
+									eq(timeEntry.employeeId, params.employeeId),
+									eq(timeEntry.organizationId, params.organizationId),
+								),
+							)
 							.orderBy(desc(timeEntry.createdAt))
 							.limit(1);
 						return entry;
@@ -190,6 +196,7 @@ export const BreakEnforcementServiceLive = Layer.effect(
 							.insert(timeEntry)
 							.values({
 								employeeId: params.employeeId,
+								organizationId: params.organizationId,
 								type: params.type,
 								timestamp: params.timestamp,
 								hash,
@@ -366,6 +373,7 @@ export const BreakEnforcementServiceLive = Layer.effect(
 				const firstClockOut = yield* _(
 					createBreakTimeEntry({
 						employeeId: input.employeeId,
+						organizationId: input.organizationId,
 						type: "clock_out",
 						timestamp: breakStartDate,
 						createdBy: input.createdBy,
@@ -377,6 +385,7 @@ export const BreakEnforcementServiceLive = Layer.effect(
 				const secondClockIn = yield* _(
 					createBreakTimeEntry({
 						employeeId: input.employeeId,
+						organizationId: input.organizationId,
 						type: "clock_in",
 						timestamp: breakEndDate,
 						createdBy: input.createdBy,
@@ -428,6 +437,7 @@ export const BreakEnforcementServiceLive = Layer.effect(
 					dbService.query("createSecondWorkPeriod", async () => {
 						await dbService.db.insert(workPeriod).values({
 							employeeId: input.employeeId,
+							organizationId: input.organizationId,
 							clockInId: secondClockIn.id,
 							clockOutId: period.clockOutId,
 							startTime: breakEndDate,

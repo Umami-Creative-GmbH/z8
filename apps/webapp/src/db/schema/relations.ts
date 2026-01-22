@@ -137,6 +137,13 @@ export const organizationRelations = relations(
 		// Change policies
 		changePolicies: many(changePolicy),
 		changePolicyAssignments: many(changePolicyAssignment),
+		// Time tracking
+		timeEntries: many(timeEntry),
+		workPeriods: many(workPeriod),
+		// Approval workflows
+		approvalRequests: many(approvalRequest),
+		// Audit trail
+		auditLogs: many(auditLog),
 	}),
 );
 
@@ -346,6 +353,10 @@ export const timeEntryRelations = relations(timeEntry, ({ one }) => ({
 		fields: [timeEntry.employeeId],
 		references: [employee.id],
 	}),
+	organization: one(organization, {
+		fields: [timeEntry.organizationId],
+		references: [organization.id],
+	}),
 	previousEntry: one(timeEntry, {
 		fields: [timeEntry.previousEntryId],
 		references: [timeEntry.id],
@@ -371,6 +382,10 @@ export const workPeriodRelations = relations(workPeriod, ({ one }) => ({
 	employee: one(employee, {
 		fields: [workPeriod.employeeId],
 		references: [employee.id],
+	}),
+	organization: one(organization, {
+		fields: [workPeriod.organizationId],
+		references: [organization.id],
 	}),
 	clockIn: one(timeEntry, {
 		fields: [workPeriod.clockInId],
@@ -424,6 +439,10 @@ export const absenceEntryRelations = relations(absenceEntry, ({ one }) => ({
 export const approvalRequestRelations = relations(
 	approvalRequest,
 	({ one }) => ({
+		organization: one(organization, {
+			fields: [approvalRequest.organizationId],
+			references: [organization.id],
+		}),
 		requester: one(employee, {
 			fields: [approvalRequest.requestedBy],
 			references: [employee.id],
@@ -1015,6 +1034,10 @@ export const surchargeCalculationRelations = relations(
 
 // Audit log relations
 export const auditLogRelations = relations(auditLog, ({ one }) => ({
+	organization: one(organization, {
+		fields: [auditLog.organizationId],
+		references: [organization.id],
+	}),
 	performedByUser: one(user, {
 		fields: [auditLog.performedBy],
 		references: [user.id],

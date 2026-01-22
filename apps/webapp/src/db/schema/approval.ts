@@ -1,4 +1,5 @@
 import { index, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { organization } from "../auth-schema";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { approvalStatusEnum } from "./enums";
 // Import tables for FK references
@@ -12,6 +13,11 @@ export const approvalRequest = pgTable(
 	"approval_request",
 	{
 		id: uuid("id").defaultRandom().primaryKey(),
+
+		// Organization scoping - CRITICAL for multi-tenancy
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
 
 		// Polymorphic reference - can approve different entity types
 		entityType: text("entity_type").notNull(), // "time_entry" | "absence_entry"
@@ -37,6 +43,7 @@ export const approvalRequest = pgTable(
 			.notNull(),
 	},
 	(table) => [
+		index("approvalRequest_organizationId_idx").on(table.organizationId),
 		index("approvalRequest_entityType_entityId_idx").on(table.entityType, table.entityId),
 		index("approvalRequest_approverId_idx").on(table.approverId),
 		index("approvalRequest_status_idx").on(table.status),
