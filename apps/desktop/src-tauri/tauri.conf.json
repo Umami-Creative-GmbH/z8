@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Z8 Timer",
+  "productName": "z8 Timer",
   "version": "0.1.0",
   "identifier": "com.z8.timer",
   "build": {
@@ -17,11 +17,11 @@
     },
     "windows": [
       {
-        "title": "Z8 Timer",
-        "width": 300,
-        "height": 280,
-        "minWidth": 280,
-        "minHeight": 250,
+        "title": "z8 Timer",
+        "width": 400,
+        "height": 540,
+        "minWidth": 350,
+        "minHeight": 480,
         "resizable": true,
         "fullscreen": false,
         "center": true,

@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
-import { X, ExternalLink, LogOut } from "lucide-react";
-import { cn } from "../lib/utils";
+import { X, LogOut, Settings as SettingsIcon } from "lucide-react";
 import type { Settings as SettingsType } from "../types";
 
 interface SettingsProps {
@@ -25,6 +24,9 @@ export function Settings({
   const [webappUrl, setWebappUrl] = useState(settings?.webappUrl ?? "");
   const [alwaysOnTop, setAlwaysOnTop] = useState(settings?.alwaysOnTop ?? true);
   const [autoStartup, setAutoStartup] = useState(settings?.autoStartup ?? false);
+  const [saveHovered, setSaveHovered] = useState(false);
+  const [cancelHovered, setCancelHovered] = useState(false);
+  const [logoutHovered, setLogoutHovered] = useState(false);
 
   useEffect(() => {
     if (settings) {
@@ -47,28 +49,96 @@ export function Settings({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 50,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          background: "rgba(0, 0, 0, 0.4)",
+          backdropFilter: "blur(4px)",
+        }}
+        onClick={onClose}
+      />
 
       {/* Dialog */}
-      <div className="relative bg-background rounded-lg shadow-xl p-5 mx-4 max-w-sm w-full border border-border">
+      <div
+        style={{
+          position: "relative",
+          background: "var(--color-background)",
+          borderRadius: "16px",
+          boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+          padding: "24px",
+          margin: "16px",
+          maxWidth: "360px",
+          width: "100%",
+          border: "1px solid var(--color-border)",
+        }}
+      >
         {/* Header */}
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">Settings</h2>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginBottom: "24px",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <div
+              style={{
+                width: "36px",
+                height: "36px",
+                borderRadius: "10px",
+                background: "var(--color-muted)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <SettingsIcon size={20} color="var(--color-muted-foreground)" />
+            </div>
+            <h2 style={{ fontSize: "18px", fontWeight: 600, margin: 0 }}>Settings</h2>
+          </div>
           <button
             onClick={onClose}
-            className="p-1 hover:bg-muted rounded-md transition-colors"
+            style={{
+              padding: "8px",
+              borderRadius: "8px",
+              border: "none",
+              background: "var(--color-muted)",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
           >
-            <X className="w-5 h-5" />
+            <X size={18} color="var(--color-muted-foreground)" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="space-y-4">
+        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
           {/* Webapp URL */}
           <div>
-            <label className="block text-sm font-medium mb-1">
+            <label
+              style={{
+                display: "block",
+                fontSize: "14px",
+                fontWeight: 500,
+                marginBottom: "8px",
+                color: "var(--color-foreground)",
+              }}
+            >
               Webapp URL
             </label>
             <input
@@ -76,93 +146,217 @@ export function Settings({
               value={webappUrl}
               onChange={(e) => setWebappUrl(e.target.value)}
               placeholder="https://your-z8-instance.com"
-              className="input"
+              style={{
+                width: "100%",
+                padding: "12px 14px",
+                fontSize: "14px",
+                borderRadius: "10px",
+                border: "2px solid var(--color-border)",
+                background: "var(--color-background)",
+                color: "var(--color-foreground)",
+                outline: "none",
+                boxSizing: "border-box",
+                transition: "border-color 0.15s ease, box-shadow 0.15s ease",
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = "var(--color-primary)";
+                e.target.style.boxShadow = "0 0 0 3px hsl(221.2 83.2% 53.3% / 0.15)";
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = "var(--color-border)";
+                e.target.style.boxShadow = "none";
+              }}
             />
-            <p className="text-xs text-muted-foreground mt-1">
+            <p
+              style={{
+                fontSize: "12px",
+                color: "var(--color-muted-foreground)",
+                marginTop: "6px",
+              }}
+            >
               The URL of your Z8 webapp instance
             </p>
           </div>
 
           {/* Always on top toggle */}
-          <div className="flex items-center justify-between">
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "12px 14px",
+              background: "var(--color-muted)",
+              borderRadius: "10px",
+            }}
+          >
             <div>
-              <label className="text-sm font-medium">Always on top</label>
-              <p className="text-xs text-muted-foreground">
+              <label style={{ fontSize: "14px", fontWeight: 500 }}>Always on top</label>
+              <p style={{ fontSize: "12px", color: "var(--color-muted-foreground)", margin: 0 }}>
                 Keep window above other apps
               </p>
             </div>
             <button
               onClick={() => setAlwaysOnTop(!alwaysOnTop)}
-              className={cn(
-                "relative w-11 h-6 rounded-full transition-colors",
-                alwaysOnTop ? "bg-primary" : "bg-muted"
-              )}
+              style={{
+                position: "relative",
+                width: "44px",
+                height: "24px",
+                borderRadius: "12px",
+                border: "none",
+                cursor: "pointer",
+                background: alwaysOnTop ? "var(--color-primary)" : "var(--color-border)",
+                transition: "background 0.2s ease",
+              }}
             >
               <span
-                className={cn(
-                  "absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform shadow",
-                  alwaysOnTop && "translate-x-5"
-                )}
+                style={{
+                  position: "absolute",
+                  top: "2px",
+                  left: alwaysOnTop ? "22px" : "2px",
+                  width: "20px",
+                  height: "20px",
+                  background: "white",
+                  borderRadius: "50%",
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                  transition: "left 0.2s ease",
+                }}
               />
             </button>
           </div>
 
           {/* Auto startup toggle */}
-          <div className="flex items-center justify-between">
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "12px 14px",
+              background: "var(--color-muted)",
+              borderRadius: "10px",
+            }}
+          >
             <div>
-              <label className="text-sm font-medium">Start with Windows</label>
-              <p className="text-xs text-muted-foreground">
+              <label style={{ fontSize: "14px", fontWeight: 500 }}>Start with Windows</label>
+              <p style={{ fontSize: "12px", color: "var(--color-muted-foreground)", margin: 0 }}>
                 Launch automatically on login
               </p>
             </div>
             <button
               onClick={() => setAutoStartup(!autoStartup)}
-              className={cn(
-                "relative w-11 h-6 rounded-full transition-colors",
-                autoStartup ? "bg-primary" : "bg-muted"
-              )}
+              style={{
+                position: "relative",
+                width: "44px",
+                height: "24px",
+                borderRadius: "12px",
+                border: "none",
+                cursor: "pointer",
+                background: autoStartup ? "var(--color-primary)" : "var(--color-border)",
+                transition: "background 0.2s ease",
+              }}
             >
               <span
-                className={cn(
-                  "absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform shadow",
-                  autoStartup && "translate-x-5"
-                )}
+                style={{
+                  position: "absolute",
+                  top: "2px",
+                  left: autoStartup ? "22px" : "2px",
+                  width: "20px",
+                  height: "20px",
+                  background: "white",
+                  borderRadius: "50%",
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                  transition: "left 0.2s ease",
+                }}
               />
             </button>
           </div>
 
           {/* Divider */}
-          <hr className="border-border" />
+          <hr style={{ border: "none", borderTop: "1px solid var(--color-border)", margin: 0 }} />
 
           {/* Logout button */}
           {isAuthenticated && (
             <button
               onClick={handleLogout}
-              className="flex items-center justify-center gap-2 w-full py-2 px-4 text-destructive hover:bg-destructive/10 rounded-md transition-colors"
+              onMouseEnter={() => setLogoutHovered(true)}
+              onMouseLeave={() => setLogoutHovered(false)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "8px",
+                width: "100%",
+                padding: "12px",
+                fontSize: "14px",
+                fontWeight: 500,
+                color: "var(--color-destructive)",
+                background: logoutHovered ? "hsl(0 84.2% 60.2% / 0.1)" : "transparent",
+                border: "1px solid var(--color-border)",
+                borderRadius: "10px",
+                cursor: "pointer",
+                transition: "background 0.15s ease",
+              }}
             >
-              <LogOut className="w-4 h-4" />
+              <LogOut size={16} />
               Sign out
             </button>
           )}
 
           {/* Version info */}
-          <div className="text-center text-xs text-muted-foreground">
-            Z8 Timer v{settings?.version ?? "0.1.0"}
+          <div
+            style={{
+              textAlign: "center",
+              fontSize: "12px",
+              color: "var(--color-muted-foreground)",
+            }}
+          >
+            z8 Timer v{settings?.version ?? "0.1.0"}
           </div>
         </div>
 
         {/* Footer */}
-        <div className="flex gap-2 mt-5">
+        <div style={{ display: "flex", gap: "12px", marginTop: "24px" }}>
           <button
             onClick={onClose}
-            className="flex-1 py-2 px-4 btn btn-outline rounded-md"
+            onMouseEnter={() => setCancelHovered(true)}
+            onMouseLeave={() => setCancelHovered(false)}
+            style={{
+              flex: 1,
+              padding: "12px 16px",
+              fontSize: "14px",
+              fontWeight: 600,
+              color: "var(--color-foreground)",
+              background: cancelHovered ? "var(--color-muted)" : "var(--color-background)",
+              border: "2px solid var(--color-border)",
+              borderRadius: "10px",
+              cursor: "pointer",
+              transition: "background 0.15s ease",
+            }}
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
             disabled={isSaving || !webappUrl}
-            className="flex-1 py-2 px-4 btn btn-primary rounded-md"
+            onMouseEnter={() => setSaveHovered(true)}
+            onMouseLeave={() => setSaveHovered(false)}
+            style={{
+              flex: 1,
+              padding: "12px 16px",
+              fontSize: "14px",
+              fontWeight: 600,
+              color: "white",
+              background:
+                isSaving || !webappUrl
+                  ? "var(--color-muted-foreground)"
+                  : saveHovered
+                  ? "hsl(221.2 83.2% 45%)"
+                  : "var(--color-primary)",
+              border: "none",
+              borderRadius: "10px",
+              cursor: isSaving || !webappUrl ? "not-allowed" : "pointer",
+              opacity: isSaving || !webappUrl ? 0.6 : 1,
+              transition: "background 0.15s ease",
+            }}
           >
             {isSaving ? "Saving..." : "Save"}
           </button>

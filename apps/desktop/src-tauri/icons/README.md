@@ -1,6 +1,6 @@
-# Z8 Timer Icons
+# z8 Timer Icons
 
-This folder contains icons for the Z8 Timer desktop application.
+This folder contains icons for the z8 Timer desktop application.
 
 ## Required Icons
 

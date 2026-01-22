@@ -1,17 +1,20 @@
 import { useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Settings as SettingsIcon, Wifi, WifiOff } from "lucide-react";
+import { Settings as SettingsIcon, WifiOff, Clock, Sun, Moon, Monitor } from "lucide-react";
 import { Toaster, toast } from "sonner";
 
 import { ClockButton } from "./components/ClockButton";
 import { IdleDialog } from "./components/IdleDialog";
 import { LoginScreen } from "./components/LoginScreen";
+import { OrganizationSelector } from "./components/OrganizationSelector";
 import { Settings } from "./components/Settings";
 
 import { useAuth } from "./hooks/useAuth";
 import { useClock } from "./hooks/useClock";
 import { useIdle } from "./hooks/useIdle";
+import { useOrganizations } from "./hooks/useOrganizations";
 import { useSettings } from "./hooks/useSettings";
+import { useTheme } from "./hooks/useTheme";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -42,8 +45,23 @@ function AppContent() {
     isError,
   } = useClock();
   const { idleEvent, isIdleDialogOpen, dismissIdle } = useIdle();
+  const { theme, setTheme, resolvedTheme } = useTheme();
+  const {
+    organizations,
+    activeOrganizationId,
+    switchOrganization,
+    isSwitching,
+  } = useOrganizations();
 
   const [isProcessingIdle, setIsProcessingIdle] = useState(false);
+
+  const cycleTheme = () => {
+    if (theme === "system") setTheme("light");
+    else if (theme === "light") setTheme("dark");
+    else setTheme("system");
+  };
+
+  const ThemeIcon = theme === "system" ? Monitor : resolvedTheme === "dark" ? Moon : Sun;
 
   const handleClockIn = async () => {
     try {
@@ -82,7 +100,6 @@ function AppContent() {
   };
 
   const handleIdleResume = () => {
-    // Just dismiss - user says they were working during idle
     dismissIdle();
     toast.info("Continuing work session");
   };
@@ -111,26 +128,54 @@ function AppContent() {
   }
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="app-container">
       {/* Header */}
-      <header className="flex items-center justify-between px-4 py-2 border-b border-border">
-        <div className="flex items-center gap-2">
-          <span className="font-semibold text-sm">Z8 Timer</span>
-          {isError && (
-            <WifiOff className="w-4 h-4 text-destructive" title="Connection error" />
+      <header className="app-header">
+        <div className="app-header-left">
+          <div className="app-header-brand">
+            <div className="app-logo">
+              <Clock size={18} color="white" />
+            </div>
+            <div>
+              <div className="app-title">z8 Timer</div>
+              <div className="app-subtitle">Time tracking</div>
+            </div>
+          </div>
+          {organizations.length > 0 && (
+            <OrganizationSelector
+              organizations={organizations}
+              activeOrganizationId={activeOrganizationId}
+              onSwitch={switchOrganization}
+              isSwitching={isSwitching}
+            />
           )}
         </div>
-        <button
-          onClick={() => setIsSettingsOpen(true)}
-          className="p-1.5 hover:bg-muted rounded-md transition-colors"
-          title="Settings"
-        >
-          <SettingsIcon className="w-4 h-4 text-muted-foreground" />
-        </button>
+        <div className="app-header-actions">
+          {isError && (
+            <div className="offline-badge">
+              <WifiOff size={14} />
+              <span>Offline</span>
+            </div>
+          )}
+          <button
+            onClick={cycleTheme}
+            className="settings-button"
+            title={`Theme: ${theme === "system" ? "System" : theme === "light" ? "Light" : "Dark"}`}
+          >
+            <ThemeIcon size={18} />
+          </button>
+          <button
+            onClick={() => setIsSettingsOpen(true)}
+            className="settings-button"
+            title="Settings"
+          >
+            <SettingsIcon size={18} />
+          </button>
+        </div>
       </header>
 
       {/* Main content */}
-      <main className="flex-1 flex items-center justify-center p-4">
+      <main className="app-main">
         <ClockButton
           isClockedIn={isClockedIn}
           startTime={activeWorkPeriod?.startTime ?? null}
@@ -141,14 +186,11 @@ function AppContent() {
       </main>
 
       {/* Footer status */}
-      <footer className="px-4 py-2 border-t border-border text-center">
-        <span className="text-xs text-muted-foreground">
-          {isClockedIn ? (
-            <span className="text-success">● Clocked In</span>
-          ) : (
-            <span className="text-muted-foreground">○ Clocked Out</span>
-          )}
-        </span>
+      <footer className="app-footer">
+        <div className={`status-badge ${isClockedIn ? "status-active" : "status-inactive"}`}>
+          <div className="status-dot" />
+          <span>{isClockedIn ? "Currently Working" : "Not Clocked In"}</span>
+        </div>
       </footer>
 
       {/* Idle Dialog */}

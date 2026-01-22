@@ -12,17 +12,48 @@ use state::AppState;
 use std::sync::Arc;
 use tauri::Manager;
 use tauri_plugin_deep_link::DeepLinkExt;
+use url::Url;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
-    log::info!("Starting Z8 Timer application");
+    log::info!("Starting z8 Timer application");
 
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_store::Builder::default().build())
         .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
+            // Handle deep link URLs passed from second instance
+            log::info!("Single instance callback triggered with args: {:?}", args);
+
+            // Focus the main window
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.show();
+                let _ = window.set_focus();
+            }
+
+            // Check args for z8:// URLs
+            for arg in args {
+                if arg.starts_with("z8://") {
+                    if let Ok(url) = Url::parse(&arg) {
+                        log::info!("Deep link from single-instance: {}", url);
+                        if url.scheme() == "z8" {
+                            if let Some(token) = url.query_pairs().find(|(k, _)| k == "token") {
+                                let token_value = token.1.to_string();
+                                let handle = app.clone();
+                                tauri::async_runtime::spawn(async move {
+                                    if let Err(e) = auth::handle_oauth_callback(&handle, token_value).await {
+                                        log::error!("OAuth callback error: {}", e);
+                                    }
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        }))
         .setup(|app| {
             // Initialize application state
             let state = AppState::new(app.handle().clone())?;
@@ -30,6 +61,10 @@ pub fn run() {
 
             // Setup system tray
             tray::setup_tray(app)?;
+
+            // Register deep link protocol (required for Windows/Linux dev mode)
+            #[cfg(any(windows, target_os = "linux"))]
+            app.deep_link().register("z8")?;
 
             // Register deep link handler for OAuth callback
             let handle = app.handle().clone();
@@ -63,7 +98,7 @@ pub fn run() {
                 offline::start_queue_processor(app_handle).await;
             });
 
-            log::info!("Z8 Timer setup complete");
+            log::info!("z8 Timer setup complete");
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![

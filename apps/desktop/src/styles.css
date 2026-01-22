@@ -1,60 +1,96 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --color-background: hsl(0 0% 100%);
+  --color-foreground: hsl(222.2 47% 11%);
+  --color-primary: hsl(221.2 83.2% 53.3%);
+  --color-primary-foreground: hsl(210 40% 98%);
+  --color-muted: hsl(210 40% 96.1%);
+  --color-muted-foreground: hsl(215.4 16.3% 46.9%);
+  --color-border: hsl(214.3 31.8% 91.4%);
+  --color-success: hsl(142.1 76.2% 36.3%);
+  --color-destructive: hsl(0 84.2% 60.2%);
+  --color-card: hsl(0 0% 100%);
+  --color-card-foreground: hsl(222.2 47% 11%);
+}
+
+@media (prefers-color-scheme: dark) {
+  @theme {
+    --color-background: hsl(224 71% 4%);
+    --color-foreground: hsl(213 31% 91%);
+    --color-primary: hsl(217.2 91.2% 59.8%);
+    --color-primary-foreground: hsl(222.2 47.4% 11.2%);
+    --color-muted: hsl(223 47% 11%);
+    --color-muted-foreground: hsl(215.4 16.3% 56.9%);
+    --color-border: hsl(216 34% 17%);
+    --color-success: hsl(142.1 70.6% 45.3%);
+    --color-destructive: hsl(0 62.8% 50.6%);
+    --color-card: hsl(224 71% 4%);
+    --color-card-foreground: hsl(213 31% 91%);
+  }
+}
+
+/* Forced light mode */
+:root.light {
+  --color-background: hsl(0 0% 100%);
+  --color-foreground: hsl(222.2 47% 11%);
+  --color-primary: hsl(221.2 83.2% 53.3%);
+  --color-primary-foreground: hsl(210 40% 98%);
+  --color-muted: hsl(210 40% 96.1%);
+  --color-muted-foreground: hsl(215.4 16.3% 46.9%);
+  --color-border: hsl(214.3 31.8% 91.4%);
+  --color-success: hsl(142.1 76.2% 36.3%);
+  --color-destructive: hsl(0 84.2% 60.2%);
+  --color-card: hsl(0 0% 100%);
+  --color-card-foreground: hsl(222.2 47% 11%);
+}
+
+/* Forced dark mode */
+:root.dark {
+  --color-background: hsl(224 71% 4%);
+  --color-foreground: hsl(213 31% 91%);
+  --color-primary: hsl(217.2 91.2% 59.8%);
+  --color-primary-foreground: hsl(222.2 47.4% 11.2%);
+  --color-muted: hsl(223 47% 11%);
+  --color-muted-foreground: hsl(215.4 16.3% 56.9%);
+  --color-border: hsl(216 34% 17%);
+  --color-success: hsl(142.1 70.6% 45.3%);
+  --color-destructive: hsl(0 62.8% 50.6%);
+  --color-card: hsl(224 71% 4%);
+  --color-card-foreground: hsl(213 31% 91%);
+}
 
 :root {
   font-family:
-    Inter,
-    system-ui,
-    Avenir,
-    Helvetica,
-    Arial,
+    "Inter",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
     sans-serif;
   line-height: 1.5;
   font-weight: 400;
-
-  --background: 0 0% 100%;
-  --foreground: 222.2 84% 4.9%;
-  --primary: 221.2 83.2% 53.3%;
-  --primary-foreground: 210 40% 98%;
-  --muted: 210 40% 96.1%;
-  --muted-foreground: 215.4 16.3% 46.9%;
-  --border: 214.3 31.8% 91.4%;
-  --success: 142.1 76.2% 36.3%;
-  --destructive: 0 84.2% 60.2%;
-
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-body {
+html, body {
   margin: 0;
-  display: flex;
-  min-width: 280px;
-  min-height: 250px;
-  background-color: hsl(var(--background));
-  color: hsl(var(--foreground));
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
 }
 
 #root {
   width: 100%;
   height: 100%;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --border: 217.2 32.6% 17.5%;
-    --success: 142.1 70.6% 45.3%;
-    --destructive: 0 62.8% 30.6%;
-  }
 }
 
 /* Custom scrollbar */
@@ -63,41 +99,514 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: hsl(var(--muted));
+  background: var(--color-muted);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted-foreground));
+  background: var(--color-muted-foreground);
   border-radius: 3px;
 }
 
-/* Button styles */
-.btn {
-  @apply inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors;
-  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2;
-  @apply disabled:pointer-events-none disabled:opacity-50;
+/* App Layout */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--color-background);
 }
 
-.btn-primary {
-  @apply bg-primary text-primary-foreground hover:bg-primary/90;
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-card);
+  gap: 12px;
 }
 
-.btn-outline {
-  @apply border border-border bg-transparent hover:bg-muted;
+.app-header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+  min-width: 0;
 }
 
-.btn-ghost {
-  @apply hover:bg-muted hover:text-foreground;
+.app-header-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
 }
 
-/* Input styles */
-.input {
-  @apply flex h-10 w-full rounded-md border border-border bg-background px-3 py-2 text-sm;
-  @apply placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary;
-  @apply disabled:cursor-not-allowed disabled:opacity-50;
+.app-logo {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* Card styles */
-.card {
-  @apply rounded-lg border border-border bg-card text-card-foreground shadow-sm;
+.app-title {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--color-foreground);
+}
+
+.app-subtitle {
+  font-size: 11px;
+  color: var(--color-muted-foreground);
+}
+
+.app-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.offline-badge {
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: hsl(0 84.2% 60.2% / 0.1);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-destructive);
+  font-size: 12px;
+}
+
+.settings-button {
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  background: var(--color-card);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: all 0.15s ease;
+  color: var(--color-muted-foreground);
+}
+
+.settings-button:hover {
+  background: var(--color-muted);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.app-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.app-footer {
+  padding: 16px 20px;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-card);
+  text-align: center;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.status-badge.status-active {
+  background: hsl(142.1 76.2% 36.3% / 0.15);
+  color: var(--color-success);
+}
+
+.status-badge.status-inactive {
+  background: var(--color-muted);
+  color: var(--color-muted-foreground);
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.status-active .status-dot {
+  background: var(--color-success);
+  box-shadow: 0 0 8px var(--color-success);
+}
+
+.status-inactive .status-dot {
+  background: var(--color-muted-foreground);
+}
+
+/* Clock Button */
+.clock-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.clock-display {
+  text-align: center;
+}
+
+.clock-timer {
+  font-size: 48px;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-weight: 700;
+  color: var(--color-foreground);
+  letter-spacing: -1px;
+  line-height: 1;
+}
+
+.clock-ready {
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--color-foreground);
+  line-height: 1;
+}
+
+.clock-label {
+  font-size: 14px;
+  color: var(--color-muted-foreground);
+  margin-top: 8px;
+  font-weight: 500;
+}
+
+.clock-button {
+  position: relative;
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.clock-button:active:not(.clock-button-disabled) {
+  transform: scale(0.95);
+}
+
+.clock-button-start {
+  background: linear-gradient(135deg, hsl(142.1 76.2% 42%) 0%, hsl(142.1 76.2% 32%) 100%);
+  box-shadow: 0 8px 32px hsl(142.1 76.2% 36.3% / 0.4),
+              inset 0 1px 0 hsl(142.1 76.2% 50%),
+              inset 0 -2px 0 hsl(142.1 76.2% 28%);
+}
+
+.clock-button-stop {
+  background: linear-gradient(135deg, hsl(0 84.2% 55%) 0%, hsl(0 84.2% 45%) 100%);
+  box-shadow: 0 8px 32px hsl(0 84.2% 60.2% / 0.4),
+              inset 0 1px 0 hsl(0 84.2% 70%),
+              inset 0 -2px 0 hsl(0 84.2% 35%);
+}
+
+.clock-button-disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.clock-button-inner {
+  position: absolute;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.clock-button-start .clock-button-inner {
+  background: linear-gradient(180deg, hsl(142.1 76.2% 44%) 0%, hsl(142.1 76.2% 34%) 100%);
+}
+
+.clock-button-stop .clock-button-inner {
+  background: linear-gradient(180deg, hsl(0 84.2% 58%) 0%, hsl(0 84.2% 48%) 100%);
+}
+
+.clock-spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.clock-action-label {
+  font-size: 15px;
+  font-weight: 600;
+  padding: 10px 24px;
+  border-radius: 8px;
+  background: var(--color-muted);
+}
+
+.clock-action-start {
+  color: var(--color-success);
+}
+
+.clock-action-stop {
+  color: var(--color-destructive);
+}
+
+/* Login Screen */
+.login-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 32px;
+  background: var(--color-background);
+  position: relative;
+}
+
+.login-header-buttons {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  gap: 8px;
+}
+
+.login-brand {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.login-logo {
+  width: 72px;
+  height: 72px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, var(--color-primary) 0%, hsl(221.2 83.2% 43.3%) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  box-shadow: 0 8px 32px hsl(221.2 83.2% 53.3% / 0.3);
+}
+
+.login-title {
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0 0 8px;
+  color: var(--color-foreground);
+}
+
+.login-subtitle {
+  font-size: 15px;
+  color: var(--color-muted-foreground);
+  margin: 0;
+}
+
+.login-content {
+  width: 100%;
+  max-width: 280px;
+}
+
+.login-setup {
+  text-align: center;
+}
+
+.login-setup-text {
+  font-size: 14px;
+  color: var(--color-muted-foreground);
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.login-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 14px 20px;
+  font-size: 15px;
+  font-weight: 600;
+  color: white;
+  background: linear-gradient(135deg, var(--color-primary) 0%, hsl(221.2 83.2% 43.3%) 100%);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  box-shadow: 0 4px 16px hsl(221.2 83.2% 53.3% / 0.3);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.login-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.login-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.login-button-loading {
+  background: var(--color-muted-foreground);
+  cursor: not-allowed;
+  box-shadow: none;
+  opacity: 0.7;
+}
+
+.login-error {
+  font-size: 13px;
+  color: var(--color-destructive);
+  text-align: center;
+  margin-top: 16px;
+  padding: 10px;
+  background: hsl(0 84.2% 60.2% / 0.1);
+  border-radius: 8px;
+}
+
+.login-hint {
+  font-size: 12px;
+  color: var(--color-muted-foreground);
+  text-align: center;
+  margin-top: 20px;
+  line-height: 1.5;
+}
+
+/* Organization Selector */
+.org-selector-wrapper {
+  position: relative;
+}
+
+.org-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background: var(--color-card);
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--color-foreground);
+  transition: all 0.15s ease;
+}
+
+.org-selector:hover:not(:disabled) {
+  background: var(--color-muted);
+}
+
+.org-selector-single {
+  cursor: default;
+  border: none;
+  background: transparent;
+  padding: 6px 0;
+}
+
+.org-selector-single:hover {
+  background: transparent;
+}
+
+.org-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  background: var(--color-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  color: var(--color-muted-foreground);
+}
+
+.org-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.org-name {
+  font-weight: 500;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.org-chevron {
+  color: var(--color-muted-foreground);
+  transition: transform 0.15s ease;
+}
+
+.org-chevron-open {
+  transform: rotate(180deg);
+}
+
+.org-dropdown-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+}
+
+.org-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 200px;
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  z-index: 101;
+  overflow: hidden;
+}
+
+.org-dropdown-label {
+  padding: 8px 12px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-muted-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.org-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  color: var(--color-foreground);
+  transition: background 0.1s ease;
+}
+
+.org-dropdown-item:hover:not(:disabled) {
+  background: var(--color-muted);
+}
+
+.org-dropdown-item-active {
+  background: hsl(221.2 83.2% 53.3% / 0.1);
+}
+
+.org-dropdown-item-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.org-role {
+  font-size: 11px;
+  color: var(--color-muted-foreground);
+  text-transform: capitalize;
 }
