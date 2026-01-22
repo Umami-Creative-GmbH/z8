@@ -1,5 +1,6 @@
 import Redis from "ioredis";
 import { createLogger } from "@/lib/logger";
+import { env } from "@/env";
 
 const logger = createLogger("Valkey");
 
@@ -10,9 +11,9 @@ const globalForValkey = globalThis as unknown as {
 };
 
 function createValkeyClient(): Redis {
-	const host = process.env.VALKEY_HOST || process.env.REDIS_HOST || "localhost";
-	const port = Number(process.env.VALKEY_PORT || process.env.REDIS_PORT || 6379);
-	const password = process.env.VALKEY_PASSWORD || process.env.REDIS_PASSWORD;
+	const host = env.VALKEY_HOST || env.REDIS_HOST || "localhost";
+	const port = Number(env.VALKEY_PORT || env.REDIS_PORT || 6379);
+	const password = env.VALKEY_PASSWORD || env.REDIS_PASSWORD;
 
 	const client = new Redis({
 		host,
@@ -41,7 +42,7 @@ export const valkey = globalForValkey.valkey ?? createValkeyClient();
 // Dedicated publisher client for pub/sub (pub/sub clients can't be used for regular commands)
 export const valkeyPub = globalForValkey.valkeyPub ?? createValkeyClient();
 
-if (process.env.NODE_ENV !== "production") {
+if (env.NODE_ENV !== "production") {
 	globalForValkey.valkey = valkey;
 	globalForValkey.valkeyPub = valkeyPub;
 }

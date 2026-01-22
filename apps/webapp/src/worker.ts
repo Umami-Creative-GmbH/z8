@@ -20,6 +20,7 @@
  */
 
 import "dotenv/config";
+import { env } from "@/env";
 import type { Job, Queue } from "bullmq";
 import {
 	CRON_JOBS,
@@ -187,7 +188,7 @@ async function processJob(job: Job<AllJobData>): Promise<JobResult> {
  * See: https://docs.bullmq.io/guide/jobs/repeatable
  */
 async function setupCronJobs(queue: Queue): Promise<void> {
-	const enableCron = process.env.ENABLE_CRON_JOBS !== "false";
+	const enableCron = env.ENABLE_CRON_JOBS !== "false";
 
 	if (!enableCron) {
 		logger.info("Cron jobs disabled via ENABLE_CRON_JOBS=false");
@@ -245,14 +246,14 @@ async function setupCronJobs(queue: Queue): Promise<void> {
  * Main worker startup
  */
 async function main(): Promise<void> {
-	const concurrency = Number.parseInt(process.env.WORKER_CONCURRENCY || "5", 10);
+	const concurrency = Number.parseInt(env.WORKER_CONCURRENCY || "5", 10);
 
 	logger.info(
 		{
 			concurrency,
-			valkeyHost: process.env.VALKEY_HOST || "localhost",
-			valkeyPort: process.env.VALKEY_PORT || 6379,
-			nodeEnv: process.env.NODE_ENV,
+			valkeyHost: env.VALKEY_HOST || "localhost",
+			valkeyPort: env.VALKEY_PORT || 6379,
+			nodeEnv: env.NODE_ENV,
 		},
 		"Starting worker process",
 	);

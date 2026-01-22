@@ -1,13 +1,14 @@
 import { S3Client } from "@aws-sdk/client-s3";
+import { env } from "@/env";
 
 /**
  * Check if S3 storage is configured
  */
 export function isS3Configured(): boolean {
 	return !!(
-		process.env.S3_BUCKET &&
-		process.env.S3_ACCESS_KEY_ID &&
-		process.env.S3_SECRET_ACCESS_KEY
+		env.S3_BUCKET &&
+		env.S3_ACCESS_KEY_ID &&
+		env.S3_SECRET_ACCESS_KEY
 	);
 }
 
@@ -17,19 +18,19 @@ export function isS3Configured(): boolean {
  */
 export const s3Client = isS3Configured()
 	? new S3Client({
-			endpoint: process.env.S3_ENDPOINT || undefined,
-			region: process.env.S3_REGION || "us-east-1",
+			endpoint: env.S3_ENDPOINT || undefined,
+			region: env.S3_REGION || "us-east-1",
 			credentials: {
-				accessKeyId: process.env.S3_ACCESS_KEY_ID!,
-				secretAccessKey: process.env.S3_SECRET_ACCESS_KEY!,
+				accessKeyId: env.S3_ACCESS_KEY_ID!,
+				secretAccessKey: env.S3_SECRET_ACCESS_KEY!,
 			},
-			forcePathStyle: process.env.S3_FORCE_PATH_STYLE === "true",
+			forcePathStyle: env.S3_FORCE_PATH_STYLE === "true",
 		})
 	: null;
 
-export const S3_BUCKET = process.env.S3_BUCKET || "";
-export const S3_PUBLIC_URL = process.env.S3_PUBLIC_URL || "";
-export const S3_REGION = process.env.S3_REGION || "us-east-1";
+export const S3_BUCKET = env.S3_BUCKET || "";
+export const S3_PUBLIC_URL = env.S3_PUBLIC_URL || "";
+export const S3_REGION = env.S3_REGION || "us-east-1";
 
 /**
  * Get the public URL for an uploaded file

@@ -14,14 +14,15 @@
 import { type ConnectionOptions, type Job, type JobsOptions, Queue, Worker } from "bullmq";
 import type { CronJobData, CronJobName, CronJobResult } from "@/lib/cron/registry";
 import { createLogger } from "@/lib/logger";
+import { env } from "@/env";
 
 const logger = createLogger("JobQueue");
 
 // Connection configuration for Valkey/Redis
 const connection: ConnectionOptions = {
-	host: process.env.VALKEY_HOST || process.env.REDIS_HOST || "localhost",
-	port: Number(process.env.VALKEY_PORT || process.env.REDIS_PORT || 6379),
-	password: process.env.VALKEY_PASSWORD || process.env.REDIS_PASSWORD || undefined,
+	host: env.VALKEY_HOST || env.REDIS_HOST || "localhost",
+	port: Number(env.VALKEY_PORT || env.REDIS_PORT || 6379),
+	password: env.VALKEY_PASSWORD || env.REDIS_PASSWORD || undefined,
 	maxRetriesPerRequest: null, // Required for BullMQ
 };
 

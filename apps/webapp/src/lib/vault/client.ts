@@ -8,12 +8,13 @@
 
 import Vault from "node-vault";
 import { createLogger } from "@/lib/logger";
+import { env } from "@/env";
 
 const logger = createLogger("VaultClient");
 
 // Vault configuration from environment
-const VAULT_ADDR = process.env.VAULT_ADDR || "http://localhost:8200";
-const VAULT_TOKEN = process.env.VAULT_TOKEN;
+const VAULT_ADDR = env.VAULT_ADDR || "http://localhost:8200";
+const VAULT_TOKEN = env.VAULT_TOKEN;
 
 // Create Vault client instance
 export const vaultClient = Vault({

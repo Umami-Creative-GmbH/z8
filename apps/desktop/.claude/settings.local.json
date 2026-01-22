@@ -3,7 +3,13 @@
     "allow": [
       "Bash(pnpm tauri dev:*)",
       "Bash(timeout:*)",
-      "Bash(pnpm install:*)"
+      "Bash(pnpm install:*)",
+      "mcp__MCP_DOCKER__browser_navigate",
+      "mcp__MCP_DOCKER__browser_snapshot",
+      "Bash(pnpm add:*)",
+      "Bash(findstr:*)",
+      "WebFetch(domain:www.better-auth.com)",
+      "Bash(curl:*)"
     ]
   }
 }
