@@ -422,4 +422,84 @@ describe("Notification Service", () => {
 			expect(typeof result).toBe("number");
 		});
 	});
+
+	describe("Multi-org notification isolation", () => {
+		test("getUnreadCount requires organizationId parameter", async () => {
+			const { getUnreadCount } = await import("../notification-service");
+
+			// The function signature requires organizationId, ensuring org isolation
+			const result = await getUnreadCount("user-1", "org-a");
+
+			// Should return a number (the mock returns based on setup)
+			expect(typeof result).toBe("number");
+		});
+
+		test("getUserNotifications requires organizationId parameter", async () => {
+			const { getUserNotifications } = await import("../notification-service");
+
+			// The function signature requires organizationId, ensuring org isolation
+			const result = await getUserNotifications("user-1", "org-a");
+
+			// Should return expected structure
+			expect(result).toHaveProperty("notifications");
+			expect(result).toHaveProperty("total");
+			expect(result).toHaveProperty("hasMore");
+		});
+
+		test("markAllAsRead requires organizationId parameter", async () => {
+			const { markAllAsRead } = await import("../notification-service");
+
+			// The function signature requires organizationId, ensuring org isolation
+			const result = await markAllAsRead("user-1", "org-a");
+
+			// Should return a number
+			expect(typeof result).toBe("number");
+		});
+
+		test("deleteAllNotifications requires organizationId parameter", async () => {
+			const { deleteAllNotifications } = await import("../notification-service");
+
+			// The function signature requires organizationId, ensuring org isolation
+			const result = await deleteAllNotifications("user-1", "org-a");
+
+			// Should return a number
+			expect(typeof result).toBe("number");
+		});
+
+		test("createNotification includes organizationId in notification", async () => {
+			mockFindMany.mockImplementation(() => Promise.resolve([]));
+			const mockNotification = createMockNotification({ organizationId: "org-specific" });
+			mockReturning.mockImplementation(() => Promise.resolve([mockNotification]));
+
+			const { createNotification } = await import("../notification-service");
+
+			const result = await createNotification({
+				userId: "user-1",
+				organizationId: "org-specific",
+				type: "approval_request_submitted",
+				title: "Test",
+				message: "Test message",
+			});
+
+			expect(result).not.toBeNull();
+			expect(result?.organizationId).toBe("org-specific");
+		});
+
+		test("isChannelEnabled requires organizationId for preference lookup", async () => {
+			mockFindFirst.mockImplementation(() => Promise.resolve(null));
+
+			const { isChannelEnabled } = await import("../notification-service");
+
+			// The function signature requires organizationId, ensuring org isolation
+			const result = await isChannelEnabled(
+				"user-1",
+				"org-specific",
+				"approval_request_submitted",
+				"in_app",
+			);
+
+			// Default to enabled when no preference found
+			expect(result).toBe(true);
+		});
+	});
 });

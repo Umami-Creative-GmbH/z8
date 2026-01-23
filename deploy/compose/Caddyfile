@@ -1,0 +1,16 @@
+{
+  local_certs
+}
+
+http://*.test {
+  redir https://{host}{uri} permanent
+}
+
+https://*.test {
+  log {
+    output stdout
+    format console
+  }
+
+  reverse_proxy host.docker.internal:3000
+}

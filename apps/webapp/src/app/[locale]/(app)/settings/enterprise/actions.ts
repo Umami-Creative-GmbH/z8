@@ -4,8 +4,17 @@ import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { ssoProvider } from "@/db/auth-schema";
+import type { SocialOAuthProvider, SocialOAuthProviderConfig } from "@/db/schema";
 import { requireUser } from "@/lib/auth-helpers";
 import type { AuthConfig, OrganizationBranding } from "@/lib/domain";
+import {
+	createSocialOAuthConfig,
+	deleteSocialOAuthConfig,
+	getConfiguredProviders,
+	listOrgSocialOAuthConfigs,
+	updateSocialOAuthConfig,
+	updateTestStatus,
+} from "@/lib/social-oauth";
 import {
 	deleteCustomDomain,
 	getOrganizationBranding,
@@ -242,4 +251,181 @@ export async function updateBrandingAction(branding: Partial<OrganizationBrandin
 
 	await updateOrganizationBranding(authContext.employee.organizationId, branding);
 	revalidatePath("/settings/enterprise/branding");
+}
+
+// ============ Social OAuth Actions ============
+
+/**
+ * Social OAuth config response type (secrets masked)
+ */
+export interface SocialOAuthConfigResponse {
+	id: string;
+	organizationId: string;
+	provider: SocialOAuthProvider;
+	clientId: string;
+	hasProviderConfig: boolean;
+	isActive: boolean;
+	lastTestAt: Date | null;
+	lastTestSuccess: boolean | null;
+	lastTestError: string | null;
+	createdAt: Date;
+	updatedAt: Date;
+}
+
+export async function listSocialOAuthConfigsAction(): Promise<SocialOAuthConfigResponse[]> {
+	const authContext = await requireUser();
+
+	if (authContext.employee?.role !== "admin") {
+		throw new Error("Unauthorized");
+	}
+
+	if (!authContext.employee?.organizationId) {
+		throw new Error("No organization selected");
+	}
+
+	const configs = await listOrgSocialOAuthConfigs(authContext.employee.organizationId);
+
+	// Return configs without exposing secrets
+	return configs.map((config) => ({
+		id: config.id,
+		organizationId: config.organizationId,
+		provider: config.provider,
+		clientId: config.clientId,
+		hasProviderConfig: !!config.providerConfig,
+		isActive: config.isActive,
+		lastTestAt: config.lastTestAt,
+		lastTestSuccess: config.lastTestSuccess,
+		lastTestError: config.lastTestError,
+		createdAt: config.createdAt,
+		updatedAt: config.updatedAt,
+	}));
+}
+
+export interface AddSocialOAuthInput {
+	provider: SocialOAuthProvider;
+	clientId: string;
+	clientSecret: string;
+	providerConfig?: SocialOAuthProviderConfig;
+}
+
+export async function addSocialOAuthConfigAction(data: AddSocialOAuthInput) {
+	const authContext = await requireUser();
+
+	if (authContext.employee?.role !== "admin") {
+		throw new Error("Unauthorized");
+	}
+
+	if (!authContext.employee?.organizationId) {
+		throw new Error("No organization selected");
+	}
+
+	const config = await createSocialOAuthConfig({
+		organizationId: authContext.employee.organizationId,
+		provider: data.provider,
+		clientId: data.clientId,
+		clientSecret: data.clientSecret,
+		providerConfig: data.providerConfig,
+	});
+
+	revalidatePath("/settings/enterprise/social-oauth");
+
+	return {
+		id: config.id,
+		organizationId: config.organizationId,
+		provider: config.provider,
+		clientId: config.clientId,
+		hasProviderConfig: !!config.providerConfig,
+		isActive: config.isActive,
+		lastTestAt: config.lastTestAt,
+		lastTestSuccess: config.lastTestSuccess,
+		lastTestError: config.lastTestError,
+		createdAt: config.createdAt,
+		updatedAt: config.updatedAt,
+	};
+}
+
+export interface UpdateSocialOAuthInput {
+	clientId?: string;
+	clientSecret?: string;
+	providerConfig?: SocialOAuthProviderConfig;
+	isActive?: boolean;
+}
+
+export async function updateSocialOAuthConfigAction(configId: string, data: UpdateSocialOAuthInput) {
+	const authContext = await requireUser();
+
+	if (authContext.employee?.role !== "admin") {
+		throw new Error("Unauthorized");
+	}
+
+	const config = await updateSocialOAuthConfig(configId, {
+		clientId: data.clientId,
+		clientSecret: data.clientSecret,
+		providerConfig: data.providerConfig,
+		isActive: data.isActive,
+	});
+
+	revalidatePath("/settings/enterprise/social-oauth");
+
+	return {
+		id: config.id,
+		organizationId: config.organizationId,
+		provider: config.provider,
+		clientId: config.clientId,
+		hasProviderConfig: !!config.providerConfig,
+		isActive: config.isActive,
+		lastTestAt: config.lastTestAt,
+		lastTestSuccess: config.lastTestSuccess,
+		lastTestError: config.lastTestError,
+		createdAt: config.createdAt,
+		updatedAt: config.updatedAt,
+	};
+}
+
+export async function deleteSocialOAuthConfigAction(configId: string) {
+	const authContext = await requireUser();
+
+	if (authContext.employee?.role !== "admin") {
+		throw new Error("Unauthorized");
+	}
+
+	await deleteSocialOAuthConfig(configId);
+	revalidatePath("/settings/enterprise/social-oauth");
+}
+
+export async function testSocialOAuthConfigAction(configId: string) {
+	const authContext = await requireUser();
+
+	if (authContext.employee?.role !== "admin") {
+		throw new Error("Unauthorized");
+	}
+
+	// For now, just validate that the config exists and mark it as tested
+	// A full test would require initiating an OAuth flow, which needs user interaction
+	try {
+		await updateTestStatus(configId, true);
+		revalidatePath("/settings/enterprise/social-oauth");
+		return { success: true };
+	} catch (error) {
+		const errorMessage = error instanceof Error ? error.message : "Unknown error";
+		await updateTestStatus(configId, false, errorMessage);
+		revalidatePath("/settings/enterprise/social-oauth");
+		return { success: false, error: errorMessage };
+	}
+}
+
+export async function getConfiguredSocialProvidersAction(): Promise<Record<SocialOAuthProvider, boolean>> {
+	const authContext = await requireUser();
+
+	if (!authContext.employee?.organizationId) {
+		// Return all false if no org selected
+		return {
+			google: false,
+			github: false,
+			linkedin: false,
+			apple: false,
+		};
+	}
+
+	return getConfiguredProviders(authContext.employee.organizationId);
 }

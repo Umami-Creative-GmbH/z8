@@ -4,6 +4,7 @@ import { promisify } from "node:util";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { type AuthConfig, organizationBranding, organizationDomain } from "@/db/schema";
+import { getConfiguredProviders } from "@/lib/social-oauth";
 import { domainCache } from "./domain-cache";
 import {
 	DEFAULT_AUTH_CONFIG,
@@ -11,7 +12,15 @@ import {
 	type DomainAuthContext,
 	type DomainConfig,
 	type OrganizationBranding,
+	type SocialOAuthConfigured,
 } from "./types";
+
+const DEFAULT_SOCIAL_OAUTH_CONFIGURED: SocialOAuthConfigured = {
+	google: false,
+	github: false,
+	linkedin: false,
+	apple: false,
+};
 
 const resolveTxt = promisify(dns.resolveTxt);
 
@@ -68,11 +77,20 @@ export async function getDomainConfig(hostname: string): Promise<DomainAuthConte
 		};
 	}
 
+	// Get configured social OAuth providers for this org
+	let socialOAuthConfigured: SocialOAuthConfigured = DEFAULT_SOCIAL_OAUTH_CONFIGURED;
+	try {
+		socialOAuthConfigured = await getConfiguredProviders(domainRecord.organizationId);
+	} catch (error) {
+		console.warn(`Failed to get social OAuth config for ${domainRecord.organizationId}:`, error);
+	}
+
 	const domainContext: DomainAuthContext = {
 		organizationId: domainRecord.organizationId,
 		domain: normalizedHostname,
 		authConfig,
 		branding,
+		socialOAuthConfigured,
 	};
 
 	// Cache the result

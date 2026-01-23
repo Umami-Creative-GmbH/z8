@@ -20,18 +20,30 @@ export async function POST(request: NextRequest) {
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 		}
 
+		// SECURITY: Use activeOrganizationId from session to ensure org-scoped data
+		const activeOrgId = session.session?.activeOrganizationId;
+		if (!activeOrgId) {
+			return NextResponse.json({ error: "No active organization" }, { status: 400 });
+		}
+
 		const body = await request.json();
 		const { employeeId } = body;
 
-		// Get current user's employee record
+		// Get current user's employee record for the active organization ONLY
 		const [currentEmployee] = await db
 			.select()
 			.from(employee)
-			.where(and(eq(employee.userId, session.user.id), eq(employee.isActive, true)))
+			.where(
+				and(
+					eq(employee.userId, session.user.id),
+					eq(employee.organizationId, activeOrgId),
+					eq(employee.isActive, true),
+				),
+			)
 			.limit(1);
 
 		if (!currentEmployee) {
-			return NextResponse.json({ error: "Employee record not found" }, { status: 404 });
+			return NextResponse.json({ error: "Employee record not found in this organization" }, { status: 404 });
 		}
 
 		// Determine which employee's chain to verify
@@ -93,18 +105,30 @@ export async function GET(request: NextRequest) {
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 		}
 
+		// SECURITY: Use activeOrganizationId from session to ensure org-scoped data
+		const activeOrgId = session.session?.activeOrganizationId;
+		if (!activeOrgId) {
+			return NextResponse.json({ error: "No active organization" }, { status: 400 });
+		}
+
 		const searchParams = request.nextUrl.searchParams;
 		const employeeId = searchParams.get("employeeId");
 
-		// Get current user's employee record
+		// Get current user's employee record for the active organization ONLY
 		const [currentEmployee] = await db
 			.select()
 			.from(employee)
-			.where(and(eq(employee.userId, session.user.id), eq(employee.isActive, true)))
+			.where(
+				and(
+					eq(employee.userId, session.user.id),
+					eq(employee.organizationId, activeOrgId),
+					eq(employee.isActive, true),
+				),
+			)
 			.limit(1);
 
 		if (!currentEmployee) {
-			return NextResponse.json({ error: "Employee record not found" }, { status: 404 });
+			return NextResponse.json({ error: "Employee record not found in this organization" }, { status: 404 });
 		}
 
 		// Determine which employee's chain hash to get

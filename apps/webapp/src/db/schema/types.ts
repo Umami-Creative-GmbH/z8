@@ -88,3 +88,20 @@ export type WorkPeriodPendingChanges = {
 	// For 0-day policy where clock-out itself triggers approval
 	isNewClockOut?: boolean;
 };
+
+// Social OAuth provider type
+export type SocialOAuthProvider = "google" | "github" | "linkedin" | "apple";
+
+/**
+ * Provider-specific configuration for social OAuth
+ * Most providers just need clientId + clientSecret (stored in Vault)
+ * Apple Sign In requires additional configuration
+ */
+export type SocialOAuthProviderConfig = {
+	// Apple Sign In specific configuration
+	apple?: {
+		teamId: string; // Apple Developer Team ID
+		keyId: string; // Key ID from Apple Developer Console
+		// Private key is stored in Vault at: secret/organizations/{orgId}/social/apple/private_key
+	};
+};

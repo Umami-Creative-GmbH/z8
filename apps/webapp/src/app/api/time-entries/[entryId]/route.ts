@@ -26,15 +26,27 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 		}
 
-		// Get current user's employee record
+		// SECURITY: Use activeOrganizationId from session to ensure org-scoped data
+		const activeOrgId = session.session?.activeOrganizationId;
+		if (!activeOrgId) {
+			return NextResponse.json({ error: "No active organization" }, { status: 400 });
+		}
+
+		// Get current user's employee record for the active organization ONLY
 		const [currentEmployee] = await db
 			.select()
 			.from(employee)
-			.where(and(eq(employee.userId, session.user.id), eq(employee.isActive, true)))
+			.where(
+				and(
+					eq(employee.userId, session.user.id),
+					eq(employee.organizationId, activeOrgId),
+					eq(employee.isActive, true),
+				),
+			)
 			.limit(1);
 
 		if (!currentEmployee) {
-			return NextResponse.json({ error: "Employee record not found" }, { status: 404 });
+			return NextResponse.json({ error: "Employee record not found in this organization" }, { status: 404 });
 		}
 
 		// Get the time entry

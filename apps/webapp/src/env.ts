@@ -43,10 +43,33 @@ export const env = createEnv({
     TOLGEE_API_URL: z.string().optional(),
     
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+
+    // Security headers
+    SECURITY_HSTS_PRELOAD: z.enum(["true", "false"]).optional(),
+    SECURITY_CSP_REPORT_URI: z.string().optional(),
+    SECURITY_CSP_REPORT_ONLY: z.enum(["true", "false"]).optional(),
+
+    // Rate limiting
+    RATE_LIMIT_DISABLED: z.enum(["true", "false"]).optional(),
+    RATE_LIMIT_AUTH: z.string().optional(), // format: "requests/seconds" e.g. "10/60"
+    RATE_LIMIT_SIGNUP: z.string().optional(),
+    RATE_LIMIT_PASSWORD_RESET: z.string().optional(),
+    RATE_LIMIT_API: z.string().optional(),
+    RATE_LIMIT_EXPORT: z.string().optional(),
+
+    // Domain configuration (server-side only for runtime flexibility)
+    MAIN_DOMAIN: z.string().optional(),
+
+    // Social OAuth - Global/fallback credentials (optional, orgs can configure their own)
+    GOOGLE_CLIENT_ID: z.string().optional(),
+    GOOGLE_CLIENT_SECRET: z.string().optional(),
+    GITHUB_CLIENT_ID: z.string().optional(),
+    GITHUB_CLIENT_SECRET: z.string().optional(),
+    LINKEDIN_CLIENT_ID: z.string().optional(),
+    LINKEDIN_CLIENT_SECRET: z.string().optional(),
   },
   client: {
     NEXT_PUBLIC_APP_URL: z.string().url().optional(),
-    NEXT_PUBLIC_MAIN_DOMAIN: z.string().optional(),
     NEXT_PUBLIC_TOLGEE_API_KEY: z.string().optional(),
     NEXT_PUBLIC_TOLGEE_API_URL: z.string().optional(),
   },
@@ -82,10 +105,25 @@ export const env = createEnv({
     TOLGEE_API_KEY: process.env.TOLGEE_API_KEY,
     TOLGEE_API_URL: process.env.TOLGEE_API_URL,
     NODE_ENV: process.env.NODE_ENV,
+    SECURITY_HSTS_PRELOAD: process.env.SECURITY_HSTS_PRELOAD,
+    SECURITY_CSP_REPORT_URI: process.env.SECURITY_CSP_REPORT_URI,
+    SECURITY_CSP_REPORT_ONLY: process.env.SECURITY_CSP_REPORT_ONLY,
+    RATE_LIMIT_DISABLED: process.env.RATE_LIMIT_DISABLED,
+    RATE_LIMIT_AUTH: process.env.RATE_LIMIT_AUTH,
+    RATE_LIMIT_SIGNUP: process.env.RATE_LIMIT_SIGNUP,
+    RATE_LIMIT_PASSWORD_RESET: process.env.RATE_LIMIT_PASSWORD_RESET,
+    RATE_LIMIT_API: process.env.RATE_LIMIT_API,
+    RATE_LIMIT_EXPORT: process.env.RATE_LIMIT_EXPORT,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
-    NEXT_PUBLIC_MAIN_DOMAIN: process.env.NEXT_PUBLIC_MAIN_DOMAIN,
+    MAIN_DOMAIN: process.env.MAIN_DOMAIN,
     NEXT_PUBLIC_TOLGEE_API_KEY: process.env.NEXT_PUBLIC_TOLGEE_API_KEY,
     NEXT_PUBLIC_TOLGEE_API_URL: process.env.NEXT_PUBLIC_TOLGEE_API_URL,
+    GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
+    GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
+    GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID,
+    GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET,
+    LINKEDIN_CLIENT_ID: process.env.LINKEDIN_CLIENT_ID,
+    LINKEDIN_CLIENT_SECRET: process.env.LINKEDIN_CLIENT_SECRET,
   },
   skipValidation: !!process.env.SKIP_ENV_VALIDATION,
   emptyStringAsUndefined: true,

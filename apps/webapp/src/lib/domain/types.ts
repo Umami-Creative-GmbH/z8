@@ -1,7 +1,12 @@
-import type { AuthConfig } from "@/db/schema";
+import type { AuthConfig, SocialOAuthProvider } from "@/db/schema";
 
 // Re-export AuthConfig for consumers of this module
 export type { AuthConfig };
+
+/**
+ * Which social OAuth providers have org-specific credentials configured
+ */
+export type SocialOAuthConfigured = Record<SocialOAuthProvider, boolean>;
 
 /**
  * Domain configuration for custom domain routing
@@ -33,6 +38,8 @@ export interface DomainAuthContext {
 	domain: string;
 	authConfig: AuthConfig;
 	branding: OrganizationBranding | null;
+	/** Which social OAuth providers have org-specific credentials */
+	socialOAuthConfigured: SocialOAuthConfigured;
 }
 
 /**

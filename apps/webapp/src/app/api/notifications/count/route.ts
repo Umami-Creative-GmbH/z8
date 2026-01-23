@@ -18,15 +18,27 @@ export async function GET() {
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 		}
 
-		// Get organization from employee record (more reliable than session cache)
+		// SECURITY: Use activeOrganizationId from session to ensure org-scoped data
+		const activeOrgId = session.session?.activeOrganizationId;
+		if (!activeOrgId) {
+			return NextResponse.json({ error: "No active organization" }, { status: 400 });
+		}
+
+		// Get employee record for the active organization ONLY
 		const [emp] = await db
 			.select({ organizationId: employee.organizationId })
 			.from(employee)
-			.where(and(eq(employee.userId, session.user.id), eq(employee.isActive, true)))
+			.where(
+				and(
+					eq(employee.userId, session.user.id),
+					eq(employee.organizationId, activeOrgId),
+					eq(employee.isActive, true),
+				),
+			)
 			.limit(1);
 
 		if (!emp) {
-			return NextResponse.json({ error: "No active employee record" }, { status: 400 });
+			return NextResponse.json({ error: "No active employee record in this organization" }, { status: 400 });
 		}
 
 		const count = await getUnreadCount(session.user.id, emp.organizationId);
