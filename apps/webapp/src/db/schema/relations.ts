@@ -10,6 +10,7 @@ import {
 	organizationBranding,
 	organizationDomain,
 	organizationEmailConfig,
+	organizationSocialOAuth,
 } from "./enterprise";
 import { dataExport, exportStorageConfig } from "./export";
 import {
@@ -124,6 +125,7 @@ export const organizationRelations = relations(
 		domains: many(organizationDomain),
 		branding: one(organizationBranding),
 		emailConfig: one(organizationEmailConfig),
+		socialOAuthConfigs: many(organizationSocialOAuth),
 		// Surcharges
 		surchargeModels: many(surchargeModel),
 		surchargeModelAssignments: many(surchargeModelAssignment),
@@ -918,6 +920,16 @@ export const organizationEmailConfigRelations = relations(
 	({ one }) => ({
 		organization: one(organization, {
 			fields: [organizationEmailConfig.organizationId],
+			references: [organization.id],
+		}),
+	}),
+);
+
+export const organizationSocialOAuthRelations = relations(
+	organizationSocialOAuth,
+	({ one }) => ({
+		organization: one(organization, {
+			fields: [organizationSocialOAuth.organizationId],
 			references: [organization.id],
 		}),
 	}),

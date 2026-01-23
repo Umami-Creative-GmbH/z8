@@ -13,7 +13,7 @@ import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 
 // Import auth tables for FK references
 import { organization } from "../auth-schema";
-import type { AuthConfig } from "./types";
+import type { AuthConfig, SocialOAuthProvider, SocialOAuthProviderConfig } from "./types";
 
 // Email transport type for organizationEmailConfig
 export type EmailTransportType = "resend" | "smtp";
@@ -150,5 +150,69 @@ export const organizationEmailConfig = pgTable(
 	(table) => [
 		index("organizationEmailConfig_organizationId_idx").on(table.organizationId),
 		index("organizationEmailConfig_isActive_idx").on(table.isActive),
+	],
+);
+
+// ============================================
+// ENTERPRISE: ORGANIZATION SOCIAL OAUTH
+// ============================================
+
+/**
+ * Per-organization social OAuth credentials
+ *
+ * Allows organizations to use their own OAuth app credentials for social login
+ * (Google, GitHub, LinkedIn, Apple) on their custom domains, instead of using
+ * global/shared credentials.
+ *
+ * SECURITY: Client secrets are stored in HashiCorp Vault, NOT in this table.
+ *
+ * Vault secret paths:
+ * - Google: secret/organizations/{orgId}/social/google/client_secret
+ * - GitHub: secret/organizations/{orgId}/social/github/client_secret
+ * - LinkedIn: secret/organizations/{orgId}/social/linkedin/client_secret
+ * - Apple: secret/organizations/{orgId}/social/apple/client_secret
+ * - Apple private key: secret/organizations/{orgId}/social/apple/private_key
+ */
+export const organizationSocialOAuth = pgTable(
+	"organization_social_oauth",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+
+		// Provider type: google, github, linkedin, apple
+		provider: text("provider").$type<SocialOAuthProvider>().notNull(),
+
+		// OAuth client ID (public, safe to store in DB)
+		clientId: text("client_id").notNull(),
+
+		// Provider-specific configuration (e.g., Apple's teamId, keyId)
+		// Client secrets are stored in Vault, not here
+		providerConfig: text("provider_config").$type<SocialOAuthProviderConfig>(),
+
+		// Enable/disable without deleting
+		isActive: boolean("is_active").default(true).notNull(),
+
+		// Status tracking for testing
+		lastTestAt: timestamp("last_test_at"),
+		lastTestSuccess: boolean("last_test_success"),
+		lastTestError: text("last_test_error"),
+
+		// Audit timestamps
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+		updatedAt: timestamp("updated_at")
+			.defaultNow()
+			.$onUpdate(() => currentTimestamp())
+			.notNull(),
+	},
+	(table) => [
+		// One config per provider per organization
+		uniqueIndex("organizationSocialOAuth_org_provider_idx").on(
+			table.organizationId,
+			table.provider,
+		),
+		index("organizationSocialOAuth_organizationId_idx").on(table.organizationId),
+		index("organizationSocialOAuth_isActive_idx").on(table.isActive),
 	],
 );
