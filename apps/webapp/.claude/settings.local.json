@@ -85,7 +85,9 @@
       "Bash(pnpm exec next lint:*)",
       "Bash(pnpm next lint:*)",
       "Bash(pnpm lint:*)",
-      "Bash(pnpm remove:*)"
+      "Bash(pnpm remove:*)",
+      "WebFetch(domain:svgl.app)",
+      "WebFetch(domain:ui.shadcn.com)"
     ]
   },
   "enabledMcpjsonServers": [

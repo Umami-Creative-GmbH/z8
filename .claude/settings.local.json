@@ -96,7 +96,9 @@
       "Bash(cargo check:*)",
       "Bash(git -C \"X:\\\\umami-creative\\\\z8\" status --short)",
       "Bash(git -C /x/umami-creative/z8 log --oneline --all -20)",
-      "Bash(xargs basename:*)"
+      "Bash(xargs basename:*)",
+      "Bash(pnpm test:*)",
+      "Bash(pnpm --filter \"@z8/webapp\" build:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
