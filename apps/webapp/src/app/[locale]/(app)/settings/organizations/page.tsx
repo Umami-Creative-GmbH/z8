@@ -109,7 +109,7 @@ export default async function OrganizationsPage() {
 			teams={teamsResult.success ? teamsResult.data : []}
 			currentMemberRole={currentMember.role as "owner" | "admin" | "member"}
 			currentUserId={authContext.user.id}
-			canCreateOrganizations={authContext.user.canCreateOrganizations}
+			canCreateOrganizations={authContext.user.canCreateOrganizations || authContext.user.role === "admin"}
 			permissions={permissions}
 		/>
 	);
