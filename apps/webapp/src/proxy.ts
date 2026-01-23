@@ -2,11 +2,12 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import createMiddleware from "next-intl/middleware";
 import { checkRateLimit, createRateLimitResponse, getClientIp } from "@/lib/rate-limit";
+import { applySecurityHeaders } from "@/lib/security";
 import { ALL_LANGUAGES, DEFAULT_LANGUAGE } from "@/tolgee/shared";
 import { env } from "@/env";
 
 // Main domain from environment variable
-const MAIN_DOMAIN = env.NEXT_PUBLIC_MAIN_DOMAIN || "localhost:3000";
+const MAIN_DOMAIN = env.MAIN_DOMAIN || "localhost:3000";
 
 // Headers used to pass context to pages
 export const DOMAIN_HEADERS = {
@@ -66,7 +67,7 @@ export async function proxy(request: NextRequest) {
 		const rateLimitResult = await checkRateLimit(clientIp, endpoint);
 
 		if (!rateLimitResult.allowed) {
-			return createRateLimitResponse(rateLimitResult);
+			return createRateLimitResponse(rateLimitResult, request);
 		}
 	}
 
@@ -117,16 +118,8 @@ export async function proxy(request: NextRequest) {
 	// Set pathname header for server components (used for callback URLs)
 	response.headers.set(DOMAIN_HEADERS.PATHNAME, pathname);
 
-	// Security headers
-	response.headers.set(
-		"Content-Security-Policy",
-		"default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https:; frame-ancestors 'none';",
-	);
-	response.headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
-	response.headers.set("X-Content-Type-Options", "nosniff");
-	response.headers.set("X-Frame-Options", "DENY");
-	response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
-	response.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+	// Apply enterprise security headers (CSP with nonce, HSTS, etc.)
+	applySecurityHeaders(response);
 
 	// Custom domain detection
 	const hostname = request.headers.get("host") || "";
