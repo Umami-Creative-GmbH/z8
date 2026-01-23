@@ -116,6 +116,7 @@ export function AppSidebar({
 				<OrganizationSwitcher
 					organizations={organizations}
 					currentOrganization={currentOrganization}
+					canCreateOrganizations={session?.user?.canCreateOrganizations || session?.user?.role === "admin"}
 				/>
 			</SidebarHeader>
 			<SidebarContent>
