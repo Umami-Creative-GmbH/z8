@@ -91,7 +91,21 @@ services:
       - ../.vault-data:/vault/data
     command: server
 
+  caddy-dev:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
 volumes:
   default_data:
   valkey_data:
   redisinsight-data:
+  caddy_data:
+  caddy_config:
