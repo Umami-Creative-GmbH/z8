@@ -16,8 +16,9 @@ import type { auth } from "./auth";
 const isClient = typeof window !== "undefined";
 
 // Create auth client configuration (shared)
+// Note: No baseURL - let better-auth use relative URLs which automatically use current browser origin
+// This enables custom domain proxying (e.g., https://custom.domain proxies to the app)
 const createClientConfig = () => ({
-	baseURL: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
 	plugins: [
 		// Infer additional fields from auth config for type safety
 		inferAdditionalFields<typeof auth>(),

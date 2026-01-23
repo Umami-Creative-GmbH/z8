@@ -11,6 +11,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import * as schema from "@/db/auth-schema";
 import { employee, teamPermissions } from "@/db/schema";
+import { getDomainConfig, getDomainConfigByOrganization } from "./domain/domain-service";
 import { sendEmail } from "./email/email-service";
 import {
 	renderEmailVerification,
@@ -39,8 +40,61 @@ async function getUserPrimaryOrganizationId(userId: string): Promise<string | un
 	}
 }
 
+/**
+ * Get the base URL for an organization, using their custom domain if verified
+ */
+async function getBaseUrlForOrganization(organizationId?: string): Promise<string> {
+	const defaultUrl = process.env.BETTER_AUTH_URL || "http://localhost:3000";
+
+	if (!organizationId) return defaultUrl;
+
+	try {
+		const domainConfig = await getDomainConfigByOrganization(organizationId);
+		if (domainConfig?.domainVerified) {
+			return `https://${domainConfig.domain}`;
+		}
+	} catch (error) {
+		logger.warn({ error, organizationId }, "Failed to get custom domain for organization");
+	}
+
+	return defaultUrl;
+}
+
 export const auth = betterAuth({
 	baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
+
+	// Dynamic trusted origins for custom domains
+	// This allows auth requests from verified custom domains that proxy to the app
+	trustedOrigins: async (request) => {
+		const origins = [
+			process.env.BETTER_AUTH_URL || "http://localhost:3000",
+			process.env.NEXT_PUBLIC_APP_URL,
+		].filter(Boolean) as string[];
+
+		if (!request) return origins;
+
+		const host = request.headers.get("host");
+		if (!host) return origins;
+
+		// Add current host to trusted origins
+		const protocol = host.includes("localhost") ? "http" : "https";
+		const currentOrigin = `${protocol}://${host}`;
+		origins.push(currentOrigin);
+
+		// Verify against registered custom domains
+		const normalizedHost = host.toLowerCase().replace(/:\d+$/, "");
+		try {
+			const domainConfig = await getDomainConfig(normalizedHost);
+			if (domainConfig) {
+				// domainConfig is only returned if domain is verified (see getDomainConfig implementation)
+				origins.push(`https://${normalizedHost}`);
+			}
+		} catch (error) {
+			logger.warn({ error, host }, "Failed to verify custom domain for trusted origins");
+		}
+
+		return [...new Set(origins)];
+	},
 
 	// Enable experimental database joins for 2-3x faster queries
 	experimental: {
@@ -79,19 +133,24 @@ export const auth = betterAuth({
 		enabled: true,
 		requireEmailVerification: true,
 		sendResetPassword: async ({ user, url }, _request) => {
-			// Look up user's org for org-specific email config
+			// Look up user's org for org-specific email config and custom domain
 			const organizationId = await getUserPrimaryOrganizationId(user.id);
+			const appUrl = await getBaseUrlForOrganization(organizationId);
+
+			// Rewrite URL to use correct base (organization's custom domain if available)
+			const urlObj = new URL(url);
+			const correctedUrl = `${appUrl}${urlObj.pathname}${urlObj.search}`;
 
 			const html = await renderPasswordReset({
 				userName: user.name,
-				resetUrl: url,
+				resetUrl: correctedUrl,
 			});
 
 			await sendEmail({
 				to: user.email,
 				subject: "Reset your password",
 				html,
-				actionUrl: url,
+				actionUrl: correctedUrl,
 				organizationId,
 			});
 		},
@@ -99,14 +158,17 @@ export const auth = betterAuth({
 	emailVerification: {
 		sendOnSignUp: true,
 		sendVerificationEmail: async ({ user, url, token }, _request) => {
-			const appUrl = process.env.BETTER_AUTH_URL || "http://localhost:3000";
-
-			// Look up user's org for org-specific email config
+			// Look up user's org for org-specific email config and custom domain
 			const organizationId = await getUserPrimaryOrganizationId(user.id);
+			const appUrl = await getBaseUrlForOrganization(organizationId);
+
+			// Rewrite URL to use correct base (organization's custom domain if available)
+			const urlObj = new URL(url);
+			const correctedUrl = `${appUrl}${urlObj.pathname}${urlObj.search}`;
 
 			const html = await renderEmailVerification({
 				userName: user.name,
-				verificationUrl: url,
+				verificationUrl: correctedUrl,
 				appUrl,
 			});
 
@@ -114,7 +176,7 @@ export const auth = betterAuth({
 				to: user.email,
 				subject: "Verify your email address",
 				html,
-				actionUrl: url,
+				actionUrl: correctedUrl,
 				organizationId,
 			});
 		},
@@ -175,6 +237,10 @@ export const auth = betterAuth({
 				const userRecord = await db.query.user.findFirst({
 					where: eq(schema.user.id, user.id),
 				});
+				// System admins can always create organizations
+				if (userRecord?.role === "admin") {
+					return true;
+				}
 				return userRecord?.canCreateOrganizations ?? false;
 			},
 			organizationRoles: ["owner", "admin", "member"],
@@ -266,8 +332,8 @@ export const auth = betterAuth({
 				},
 			},
 			sendInvitationEmail: async (data) => {
-				const appUrl =
-					process.env.NEXT_PUBLIC_APP_URL || process.env.BETTER_AUTH_URL || "http://localhost:3000";
+				// Use organization's custom domain if verified
+				const appUrl = await getBaseUrlForOrganization(data.organization.id);
 				const invitationUrl = `${appUrl}/accept-invitation/${data.invitation.id}`;
 
 				const html = await renderOrganizationInvitation({
@@ -348,7 +414,19 @@ export const auth = betterAuth({
 		}),
 		passkey({
 			rpName: "Z8",
-			rpID: process.env.PASSKEY_RP_ID || "localhost",
+			// Dynamic rpID based on current request domain
+			// Important: Passkeys are domain-bound by WebAuthn spec - a passkey registered
+			// on localhost will not work on a custom domain. Users need separate passkeys per domain.
+			rpID: async (request) => {
+				if (!request) return process.env.PASSKEY_RP_ID || "localhost";
+
+				const host = request.headers.get("host");
+				if (!host) return process.env.PASSKEY_RP_ID || "localhost";
+
+				// Strip port for rpID (WebAuthn requires domain only)
+				const domain = host.replace(/:\d+$/, "");
+				return domain;
+			},
 		}),
 		sso({
 			// Enable domain verification for SSO providers

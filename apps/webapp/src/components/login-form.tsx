@@ -271,8 +271,8 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 					// Continue to dashboard if check fails
 				}
 
-				// Onboarding complete, redirect to dashboard
-				router.push("/");
+				// Onboarding complete, redirect to init page to set up org context
+				router.push("/init");
 			}
 		} catch (err) {
 			dispatch({ type: "SET_LOADING", loading: false });
@@ -292,10 +292,18 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 			dispatch({ type: "SET_ERROR", error: null });
 
 			try {
-				await authClient.signIn.social({
-					provider,
-					callbackURL: "/",
-				});
+				// Check if org has custom OAuth credentials for this provider
+				const socialOAuthConfigured = domainAuth?.socialOAuthConfigured;
+				if (socialOAuthConfigured?.[provider]) {
+					// Use custom OAuth flow for org-specific credentials
+					window.location.href = `/api/auth/social-org/${provider}?callbackURL=/init`;
+				} else {
+					// Use global Better Auth flow
+					await authClient.signIn.social({
+						provider,
+						callbackURL: "/init",
+					});
+				}
 			} catch (err) {
 				dispatch({ type: "SET_LOADING", loading: false });
 				dispatch({
@@ -307,7 +315,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 				});
 			}
 		},
-		[t],
+		[t, domainAuth?.socialOAuthConfigured],
 	);
 
 	const handlePasskeyLogin = useCallback(async () => {
@@ -341,7 +349,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 					console.error("Error checking onboarding status:", fetchError);
 				}
 
-				router.push("/");
+				router.push("/init");
 			}
 		} catch (_error) {
 			dispatch({
@@ -367,7 +375,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 		try {
 			await (authClient.sso as any).signIn({
 				providerId: authConfig.ssoProviderId,
-				callbackURL: "/",
+				callbackURL: "/init",
 			});
 		} catch (err) {
 			dispatch({ type: "SET_LOADING", loading: false });
@@ -424,8 +432,8 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 					// Continue to dashboard if check fails
 				}
 
-				// Onboarding complete, redirect to dashboard
-				router.push("/");
+				// Onboarding complete, redirect to init page to set up org context
+				router.push("/init");
 			}
 		} catch (err) {
 			dispatch({

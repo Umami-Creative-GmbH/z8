@@ -16,6 +16,7 @@ export interface AuthContext {
 		email: string;
 		name: string;
 		image?: string;
+		role?: string;
 		canCreateOrganizations: boolean;
 	};
 	session: {
@@ -83,6 +84,7 @@ export async function getAuthContext(): Promise<AuthContext | null> {
 			email: session.user.email,
 			name: session.user.name,
 			image: session.user.image ?? undefined,
+			role: session.user.role ?? undefined,
 			canCreateOrganizations: session.user.canCreateOrganizations ?? false,
 		},
 		session: {
@@ -463,6 +465,7 @@ export async function getVerifiedOrgContext(requestedOrgId: string | null): Prom
 			email: session.user.email,
 			name: session.user.name,
 			image: session.user.image ?? undefined,
+			role: session.user.role ?? undefined,
 			canCreateOrganizations: session.user.canCreateOrganizations ?? false,
 		},
 		organizationId: verification.organizationId,
