@@ -68,10 +68,8 @@ export async function getHolidays(
 		// Search filter
 		if (search) {
 			conditions.push(
-				or(
-					ilike(holiday.name, `%${search}%`),
-					ilike(holiday.description, `%${search}%`),
-				) ?? sql`true`,
+				or(ilike(holiday.name, `%${search}%`), ilike(holiday.description, `%${search}%`)) ??
+					sql`true`,
 			);
 		}
 

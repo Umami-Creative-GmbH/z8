@@ -342,17 +342,14 @@ export function EmployeeSelectModal({
 								<div className="flex items-center gap-2">
 									<span className="text-xs text-muted-foreground">
 										{t("employeeSelect.selected", "{count} selected", { count: selectionCount })}
-										{maxSelections && (
-											<span className="ml-1 opacity-60">
-												/ {maxSelections}
-											</span>
-										)}
+										{maxSelections && <span className="ml-1 opacity-60">/ {maxSelections}</span>}
 									</span>
 
 									{/* Selected badges (show first 3) */}
 									<div className="flex items-center gap-1">
 										{pendingIds.slice(0, 3).map((id) => {
-											const emp = selectedEmployeesMap.get(id) || employees.find((e) => e.id === id);
+											const emp =
+												selectedEmployeesMap.get(id) || employees.find((e) => e.id === id);
 											if (!emp) return null;
 											const name =
 												emp.firstName || emp.lastName

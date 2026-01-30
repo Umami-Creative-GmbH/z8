@@ -13,10 +13,7 @@ interface CalendarFiltersProps {
 	currentEmployeeId?: string;
 }
 
-export function CalendarFiltersComponent({
-	filters,
-	onFiltersChange,
-}: CalendarFiltersProps) {
+export function CalendarFiltersComponent({ filters, onFiltersChange }: CalendarFiltersProps) {
 	const { t } = useTranslate();
 
 	const handleToggle = useCallback(

@@ -45,7 +45,10 @@ export async function GET(request: NextRequest) {
 			.limit(1);
 
 		if (!emp) {
-			return NextResponse.json({ error: "No active employee record in this organization" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "No active employee record in this organization" },
+				{ status: 400 },
+			);
 		}
 		const organizationId = emp.organizationId;
 
@@ -110,7 +113,10 @@ export async function PATCH(request: NextRequest) {
 			.limit(1);
 
 		if (!emp) {
-			return NextResponse.json({ error: "No active employee record in this organization" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "No active employee record in this organization" },
+				{ status: 400 },
+			);
 		}
 		const organizationId = emp.organizationId;
 
@@ -176,7 +182,10 @@ export async function DELETE(request: NextRequest) {
 				.limit(1);
 
 			if (!emp) {
-				return NextResponse.json({ error: "No active employee record in this organization" }, { status: 400 });
+				return NextResponse.json(
+					{ error: "No active employee record in this organization" },
+					{ status: 400 },
+				);
 			}
 
 			const count = await deleteAllNotifications(session.user.id, emp.organizationId);

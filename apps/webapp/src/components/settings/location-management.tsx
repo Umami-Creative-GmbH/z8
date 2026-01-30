@@ -69,10 +69,7 @@ export function LocationManagement({ organizationId }: LocationManagementProps) 
 						{t("settings.locations.title", "Locations")}
 					</h1>
 					<p className="text-sm text-muted-foreground">
-						{t(
-							"settings.locations.description",
-							"Manage organization locations and subareas",
-						)}
+						{t("settings.locations.description", "Manage organization locations and subareas")}
 					</p>
 				</div>
 				<div className="flex items-center gap-2">

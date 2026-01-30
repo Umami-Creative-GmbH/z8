@@ -50,7 +50,9 @@ export async function storeOrgSecret(
 		logger.info({ organizationId, key }, "Stored organization secret");
 	} catch (error) {
 		logger.error({ error, organizationId, key }, "Failed to store organization secret");
-		throw new Error(`Failed to store secret: ${error instanceof Error ? error.message : "Unknown error"}`);
+		throw new Error(
+			`Failed to store secret: ${error instanceof Error ? error.message : "Unknown error"}`,
+		);
 	}
 }
 
@@ -80,7 +82,9 @@ export async function getOrgSecret(organizationId: string, key: string): Promise
 			return null;
 		}
 		logger.error({ error, organizationId, key }, "Failed to retrieve organization secret");
-		throw new Error(`Failed to retrieve secret: ${error instanceof Error ? error.message : "Unknown error"}`);
+		throw new Error(
+			`Failed to retrieve secret: ${error instanceof Error ? error.message : "Unknown error"}`,
+		);
 	}
 }
 
@@ -110,7 +114,9 @@ export async function deleteOrgSecret(organizationId: string, key: string): Prom
 			return;
 		}
 		logger.error({ error, organizationId, key }, "Failed to delete organization secret");
-		throw new Error(`Failed to delete secret: ${error instanceof Error ? error.message : "Unknown error"}`);
+		throw new Error(
+			`Failed to delete secret: ${error instanceof Error ? error.message : "Unknown error"}`,
+		);
 	}
 }
 
@@ -161,7 +167,9 @@ export async function deleteAllOrgSecrets(organizationId: string): Promise<void>
 			return;
 		}
 		logger.error({ error, organizationId }, "Failed to delete all organization secrets");
-		throw new Error(`Failed to delete secrets: ${error instanceof Error ? error.message : "Unknown error"}`);
+		throw new Error(
+			`Failed to delete secrets: ${error instanceof Error ? error.message : "Unknown error"}`,
+		);
 	}
 }
 

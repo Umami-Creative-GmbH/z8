@@ -123,10 +123,7 @@ export function TimeCorrectionDialog({ workPeriod, isSameDay, employeeTimezone }
 				} else {
 					toast.error(
 						result.error ||
-							t(
-								"timeTracking.correction.errors.submitFailed",
-								"Failed to submit correction",
-							),
+							t("timeTracking.correction.errors.submitFailed", "Failed to submit correction"),
 					);
 				}
 			}

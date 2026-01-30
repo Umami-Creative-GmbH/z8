@@ -11,9 +11,7 @@ import {
 export const waterReminderSettingsSchema = z
 	.object({
 		enabled: z.boolean().default(false),
-		preset: z
-			.enum(["light", "moderate", "active", "custom"] as const)
-			.default("moderate"),
+		preset: z.enum(["light", "moderate", "active", "custom"] as const).default("moderate"),
 		intervalMinutes: z
 			.number()
 			.min(CUSTOM_INTERVAL_RANGE.min, `Minimum interval is ${CUSTOM_INTERVAL_RANGE.min} minutes`)

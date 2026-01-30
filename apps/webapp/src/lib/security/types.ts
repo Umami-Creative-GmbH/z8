@@ -39,7 +39,7 @@ export interface CSPConfig {
 export interface CSPViolationReport {
 	"csp-report": {
 		"document-uri": string;
-		"referrer"?: string;
+		referrer?: string;
 		"violated-directive": string;
 		"effective-directive": string;
 		"original-policy": string;

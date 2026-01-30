@@ -7,6 +7,7 @@
 import { and, count, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { notification, notificationPreference } from "@/db/schema";
+import { publishEventAsync } from "@/lib/events";
 import { createLogger } from "@/lib/logger";
 import { publishNotificationEvent } from "@/lib/valkey";
 import { sendEmailNotification } from "./email-notifications";
@@ -170,6 +171,19 @@ export async function createNotification(
 				);
 			});
 		}
+
+		// Publish to event bus for webhooks (fire-and-forget)
+		// This allows webhooks to receive all notification events
+		publishEventAsync(params.type, params.organizationId, {
+			notificationId: created?.id,
+			userId: params.userId,
+			title: params.title,
+			message: params.message,
+			entityType: params.entityType,
+			entityId: params.entityId,
+			actionUrl: params.actionUrl,
+			metadata: params.metadata,
+		});
 
 		return created;
 	} catch (error) {

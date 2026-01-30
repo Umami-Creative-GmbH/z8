@@ -12,6 +12,7 @@ import {
 	IconDroplet,
 	IconGavel,
 	IconHistory,
+	IconKey,
 	IconMail,
 	IconMapPin,
 	IconPercentage,
@@ -21,6 +22,7 @@ import {
 	IconTestPipe,
 	IconUserCircle,
 	IconUsers,
+	IconWebhook,
 	IconWorld,
 } from "@tabler/icons-react";
 import type { SettingsIconName } from "./settings-config";
@@ -52,4 +54,6 @@ export const SETTINGS_ICON_MAP: Record<
 	mail: IconMail,
 	tag: IconTag,
 	server: IconServer,
+	key: IconKey,
+	webhook: IconWebhook,
 };

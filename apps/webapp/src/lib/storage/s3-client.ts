@@ -5,11 +5,7 @@ import { env } from "@/env";
  * Check if S3 storage is configured
  */
 export function isS3Configured(): boolean {
-	return !!(
-		env.S3_BUCKET &&
-		env.S3_ACCESS_KEY_ID &&
-		env.S3_SECRET_ACCESS_KEY
-	);
+	return !!(env.S3_BUCKET && env.S3_ACCESS_KEY_ID && env.S3_SECRET_ACCESS_KEY);
 }
 
 /**

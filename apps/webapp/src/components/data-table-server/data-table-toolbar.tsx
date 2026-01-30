@@ -159,11 +159,7 @@ export function DataTableToolbar({
 				))}
 
 				{(hasActiveFilters || localSearch) && (
-					<Button
-						variant="ghost"
-						onClick={clearAllFilters}
-						className="h-9 px-2 lg:px-3"
-					>
+					<Button variant="ghost" onClick={clearAllFilters} className="h-9 px-2 lg:px-3">
 						{t("table.clearFilters", "Clear filters")}
 						<IconX className="ml-2 h-4 w-4" />
 					</Button>

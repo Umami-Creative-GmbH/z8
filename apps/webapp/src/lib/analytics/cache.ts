@@ -123,7 +123,10 @@ export function revalidateAbsenceDataCache(organizationId: string): void {
 	revalidateTag(ANALYTICS_CACHE_TAGS.VACATION_TRENDS, DEFAULT_CACHE_PROFILE);
 	revalidateTag(ANALYTICS_CACHE_TAGS.ABSENCE_PATTERNS, DEFAULT_CACHE_PROFILE);
 	revalidateTag(ANALYTICS_CACHE_TAGS.DASHBOARD_WIDGETS, DEFAULT_CACHE_PROFILE);
-	revalidateTag(`${ANALYTICS_CACHE_TAGS.VACATION_TRENDS}:org:${organizationId}`, DEFAULT_CACHE_PROFILE);
+	revalidateTag(
+		`${ANALYTICS_CACHE_TAGS.VACATION_TRENDS}:org:${organizationId}`,
+		DEFAULT_CACHE_PROFILE,
+	);
 }
 
 /**
@@ -133,7 +136,10 @@ export function revalidateAbsenceDataCache(organizationId: string): void {
 export function revalidateApprovalDataCache(organizationId: string): void {
 	revalidateTag(ANALYTICS_CACHE_TAGS.MANAGER_EFFECTIVENESS, DEFAULT_CACHE_PROFILE);
 	revalidateTag(ANALYTICS_CACHE_TAGS.DASHBOARD_WIDGETS, DEFAULT_CACHE_PROFILE);
-	revalidateTag(`${ANALYTICS_CACHE_TAGS.MANAGER_EFFECTIVENESS}:org:${organizationId}`, DEFAULT_CACHE_PROFILE);
+	revalidateTag(
+		`${ANALYTICS_CACHE_TAGS.MANAGER_EFFECTIVENESS}:org:${organizationId}`,
+		DEFAULT_CACHE_PROFILE,
+	);
 }
 
 /**
@@ -143,7 +149,10 @@ export function revalidateApprovalDataCache(organizationId: string): void {
 export function revalidateEmployeeDataCache(organizationId: string): void {
 	revalidateTag(ANALYTICS_CACHE_TAGS.TEAM_PERFORMANCE, DEFAULT_CACHE_PROFILE);
 	revalidateTag(ANALYTICS_CACHE_TAGS.DASHBOARD_WIDGETS, DEFAULT_CACHE_PROFILE);
-	revalidateTag(`${ANALYTICS_CACHE_TAGS.TEAM_PERFORMANCE}:org:${organizationId}`, DEFAULT_CACHE_PROFILE);
+	revalidateTag(
+		`${ANALYTICS_CACHE_TAGS.TEAM_PERFORMANCE}:org:${organizationId}`,
+		DEFAULT_CACHE_PROFILE,
+	);
 }
 
 /**

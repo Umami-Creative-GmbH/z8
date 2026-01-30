@@ -167,10 +167,7 @@ export async function getOrganizationCategories(
 					})
 					.from(workCategory)
 					.where(
-						and(
-							eq(workCategory.organizationId, organizationId),
-							eq(workCategory.isActive, true),
-						),
+						and(eq(workCategory.organizationId, organizationId), eq(workCategory.isActive, true)),
 					)
 					.orderBy(asc(workCategory.name));
 
@@ -229,9 +226,7 @@ export async function createOrganizationCategory(
 				dbService.db
 					.select()
 					.from(employee)
-					.where(
-						and(eq(employee.userId, session.user.id), eq(employee.isActive, true)),
-					)
+					.where(and(eq(employee.userId, session.user.id), eq(employee.isActive, true)))
 					.limit(1),
 			),
 			Effect.mapError(
@@ -350,9 +345,7 @@ export async function updateOrganizationCategory(
 				dbService.db
 					.select()
 					.from(employee)
-					.where(
-						and(eq(employee.userId, session.user.id), eq(employee.isActive, true)),
-					)
+					.where(and(eq(employee.userId, session.user.id), eq(employee.isActive, true)))
 					.limit(1),
 			),
 		);
@@ -448,9 +441,7 @@ export async function deleteOrganizationCategory(
 				dbService.db
 					.select()
 					.from(employee)
-					.where(
-						and(eq(employee.userId, session.user.id), eq(employee.isActive, true)),
-					)
+					.where(and(eq(employee.userId, session.user.id), eq(employee.isActive, true)))
 					.limit(1),
 			),
 		);
@@ -611,11 +602,7 @@ export async function getWorkCategorySetDetail(
 
 		const [set] = yield* _(
 			dbService.query("getWorkCategorySet", async () =>
-				dbService.db
-					.select()
-					.from(workCategorySet)
-					.where(eq(workCategorySet.id, setId))
-					.limit(1),
+				dbService.db.select().from(workCategorySet).where(eq(workCategorySet.id, setId)).limit(1),
 			),
 			Effect.mapError(
 				() =>
@@ -656,12 +643,7 @@ export async function getWorkCategorySetDetail(
 					})
 					.from(workCategorySetCategory)
 					.innerJoin(workCategory, eq(workCategorySetCategory.categoryId, workCategory.id))
-					.where(
-						and(
-							eq(workCategorySetCategory.setId, setId),
-							eq(workCategory.isActive, true),
-						),
-					)
+					.where(and(eq(workCategorySetCategory.setId, setId), eq(workCategory.isActive, true)))
 					.orderBy(asc(workCategorySetCategory.sortOrder), asc(workCategory.name)),
 			),
 			Effect.mapError(
@@ -702,9 +684,7 @@ export async function createWorkCategorySet(
 				dbService.db
 					.select()
 					.from(employee)
-					.where(
-						and(eq(employee.userId, session.user.id), eq(employee.isActive, true)),
-					)
+					.where(and(eq(employee.userId, session.user.id), eq(employee.isActive, true)))
 					.limit(1),
 			),
 			Effect.mapError(
@@ -831,9 +811,7 @@ export async function updateWorkCategorySet(
 				dbService.db
 					.select()
 					.from(employee)
-					.where(
-						and(eq(employee.userId, session.user.id), eq(employee.isActive, true)),
-					)
+					.where(and(eq(employee.userId, session.user.id), eq(employee.isActive, true)))
 					.limit(1),
 			),
 		);
@@ -912,9 +890,7 @@ export async function deleteWorkCategorySet(
 				dbService.db
 					.select()
 					.from(employee)
-					.where(
-						and(eq(employee.userId, session.user.id), eq(employee.isActive, true)),
-					)
+					.where(and(eq(employee.userId, session.user.id), eq(employee.isActive, true)))
 					.limit(1),
 			),
 		);
@@ -1010,9 +986,7 @@ export async function updateSetCategories(
 				dbService.db
 					.select()
 					.from(employee)
-					.where(
-						and(eq(employee.userId, session.user.id), eq(employee.isActive, true)),
-					)
+					.where(and(eq(employee.userId, session.user.id), eq(employee.isActive, true)))
 					.limit(1),
 			),
 		);
@@ -1097,9 +1071,7 @@ export async function reorderSetCategories(
 				dbService.db
 					.select()
 					.from(employee)
-					.where(
-						and(eq(employee.userId, session.user.id), eq(employee.isActive, true)),
-					)
+					.where(and(eq(employee.userId, session.user.id), eq(employee.isActive, true)))
 					.limit(1),
 			),
 		);
@@ -1250,9 +1222,7 @@ export async function createSetAssignment(
 				dbService.db
 					.select()
 					.from(employee)
-					.where(
-						and(eq(employee.userId, session.user.id), eq(employee.isActive, true)),
-					)
+					.where(and(eq(employee.userId, session.user.id), eq(employee.isActive, true)))
 					.limit(1),
 			),
 		);
@@ -1329,9 +1299,7 @@ export async function deleteSetAssignment(
 				dbService.db
 					.select()
 					.from(employee)
-					.where(
-						and(eq(employee.userId, session.user.id), eq(employee.isActive, true)),
-					)
+					.where(and(eq(employee.userId, session.user.id), eq(employee.isActive, true)))
 					.limit(1),
 			),
 		);
@@ -1440,9 +1408,7 @@ export async function getEmployeesForAssignment(
 						position: employee.position,
 					})
 					.from(employee)
-					.where(
-						and(eq(employee.organizationId, organizationId), eq(employee.isActive, true)),
-					)
+					.where(and(eq(employee.organizationId, organizationId), eq(employee.isActive, true)))
 					.orderBy(asc(employee.firstName), asc(employee.lastName)),
 			),
 			Effect.mapError(

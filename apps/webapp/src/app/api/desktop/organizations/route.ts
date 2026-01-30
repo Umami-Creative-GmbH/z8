@@ -45,10 +45,13 @@ export async function GET() {
 			.where(eq(member.userId, session.user.id));
 
 		if (memberships.length === 0) {
-			return NextResponse.json({
-				organizations: [],
-				activeOrganizationId: null,
-			}, { headers: corsHeaders });
+			return NextResponse.json(
+				{
+					organizations: [],
+					activeOrganizationId: null,
+				},
+				{ headers: corsHeaders },
+			);
 		}
 
 		// Get organization details
@@ -100,11 +103,17 @@ export async function GET() {
 			}),
 		);
 
-		return NextResponse.json({
-			organizations: organizationsWithDetails,
-			activeOrganizationId: session.session.activeOrganizationId,
-		}, { headers: corsHeaders });
+		return NextResponse.json(
+			{
+				organizations: organizationsWithDetails,
+				activeOrganizationId: session.session.activeOrganizationId,
+			},
+			{ headers: corsHeaders },
+		);
 	} catch (error) {
-		return NextResponse.json({ error: "Internal server error" }, { status: 500, headers: corsHeaders });
+		return NextResponse.json(
+			{ error: "Internal server error" },
+			{ status: 500, headers: corsHeaders },
+		);
 	}
 }

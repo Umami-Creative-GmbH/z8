@@ -59,10 +59,8 @@ export async function assignLocationEmployee(
 					return yield* _(
 						Effect.fail(
 							new ValidationError({
-								message:
-									validationResult.error.issues[0]?.message || "Invalid input",
-								field:
-									validationResult.error.issues[0]?.path?.join(".") || "input",
+								message: validationResult.error.issues[0]?.message || "Invalid input",
+								field: validationResult.error.issues[0]?.path?.join(".") || "input",
 							}),
 						),
 					);
@@ -221,10 +219,8 @@ export async function updateLocationEmployee(
 					return yield* _(
 						Effect.fail(
 							new ValidationError({
-								message:
-									validationResult.error.issues[0]?.message || "Invalid input",
-								field:
-									validationResult.error.issues[0]?.path?.join(".") || "input",
+								message: validationResult.error.issues[0]?.message || "Invalid input",
+								field: validationResult.error.issues[0]?.path?.join(".") || "input",
 							}),
 						),
 					);
@@ -372,9 +368,7 @@ export async function removeLocationEmployee(
 				// Delete assignment
 				yield* _(
 					dbService.query("deleteAssignment", async () => {
-						return await db
-							.delete(locationEmployee)
-							.where(eq(locationEmployee.id, assignmentId));
+						return await db.delete(locationEmployee).where(eq(locationEmployee.id, assignmentId));
 					}),
 				);
 
@@ -425,10 +419,8 @@ export async function assignSubareaEmployee(
 					return yield* _(
 						Effect.fail(
 							new ValidationError({
-								message:
-									validationResult.error.issues[0]?.message || "Invalid input",
-								field:
-									validationResult.error.issues[0]?.path?.join(".") || "input",
+								message: validationResult.error.issues[0]?.message || "Invalid input",
+								field: validationResult.error.issues[0]?.path?.join(".") || "input",
 							}),
 						),
 					);
@@ -588,10 +580,8 @@ export async function updateSubareaEmployee(
 					return yield* _(
 						Effect.fail(
 							new ValidationError({
-								message:
-									validationResult.error.issues[0]?.message || "Invalid input",
-								field:
-									validationResult.error.issues[0]?.path?.join(".") || "input",
+								message: validationResult.error.issues[0]?.message || "Invalid input",
+								field: validationResult.error.issues[0]?.path?.join(".") || "input",
 							}),
 						),
 					);
@@ -747,9 +737,7 @@ export async function removeSubareaEmployee(
 				// Delete assignment
 				yield* _(
 					dbService.query("deleteAssignment", async () => {
-						return await db
-							.delete(subareaEmployee)
-							.where(eq(subareaEmployee.id, assignmentId));
+						return await db.delete(subareaEmployee).where(eq(subareaEmployee.id, assignmentId));
 					}),
 				);
 

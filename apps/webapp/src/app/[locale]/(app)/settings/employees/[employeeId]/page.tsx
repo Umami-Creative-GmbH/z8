@@ -29,6 +29,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 import {
 	fieldHasError,
 	TFormControl,
@@ -51,6 +52,10 @@ const defaultFormValues = {
 	role: undefined as "admin" | "manager" | "employee" | undefined,
 	contractType: "fixed" as "fixed" | "hourly",
 	hourlyRate: "",
+	// App access permissions
+	canUseWebapp: true,
+	canUseDesktop: true,
+	canUseMobile: true,
 };
 
 export default function EmployeeDetailPage({
@@ -109,6 +114,10 @@ export default function EmployeeDetailPage({
 			form.setFieldValue("role", employee.role || undefined);
 			form.setFieldValue("contractType", employee.contractType || "fixed");
 			form.setFieldValue("hourlyRate", employee.currentHourlyRate || "");
+			// App access permissions (from user relation)
+			form.setFieldValue("canUseWebapp", employee.user?.canUseWebapp ?? true);
+			form.setFieldValue("canUseDesktop", employee.user?.canUseDesktop ?? true);
+			form.setFieldValue("canUseMobile", employee.user?.canUseMobile ?? true);
 		}
 	}, [employee, form]);
 
@@ -123,7 +132,11 @@ export default function EmployeeDetailPage({
 	if (isLoading || !employee) {
 		return (
 			<div className="flex flex-1 flex-col gap-4 p-4">
-				<div className="flex items-center justify-center p-8" role="status" aria-label="Loading employee data">
+				<div
+					className="flex items-center justify-center p-8"
+					role="status"
+					aria-label="Loading employee data"
+				>
 					<IconLoader2 className="size-8 animate-spin text-muted-foreground" aria-hidden="true" />
 				</div>
 			</div>
@@ -140,9 +153,13 @@ export default function EmployeeDetailPage({
 								<IconArrowBack className="size-4" aria-hidden="true" />
 							</Link>
 						</Button>
-						<h1 className="text-2xl font-semibold tracking-tight">{t("settings.employees.details.title", "Employee Details")}</h1>
+						<h1 className="text-2xl font-semibold tracking-tight">
+							{t("settings.employees.details.title", "Employee Details")}
+						</h1>
 					</div>
-					<p className="text-sm text-muted-foreground">{t("settings.employees.details.description", "View and edit employee information")}</p>
+					<p className="text-sm text-muted-foreground">
+						{t("settings.employees.details.description", "View and edit employee information")}
+					</p>
 				</div>
 			</div>
 
@@ -218,7 +235,9 @@ export default function EmployeeDetailPage({
 									<div className="font-medium">{schedule.policyName}</div>
 									<div className="flex flex-wrap gap-2">
 										{schedule.hoursPerCycle && (
-											<Badge variant="outline">{schedule.hoursPerCycle}h / {schedule.scheduleCycle || "week"}</Badge>
+											<Badge variant="outline">
+												{schedule.hoursPerCycle}h / {schedule.scheduleCycle || "week"}
+											</Badge>
 										)}
 										{schedule.homeOfficeDaysPerCycle != null &&
 											schedule.homeOfficeDaysPerCycle > 0 && (
@@ -244,9 +263,7 @@ export default function EmployeeDetailPage({
 													"saturday",
 													"sunday",
 												][index];
-												const scheduleDay = schedule.days?.find(
-													(d) => d.dayOfWeek === dayName,
-												);
+												const scheduleDay = schedule.days?.find((d) => d.dayOfWeek === dayName);
 												const isWorkDay = scheduleDay?.isWorkDay ?? false;
 												return (
 													<div
@@ -417,9 +434,7 @@ export default function EmployeeDetailPage({
 											onChange={field.handleChange}
 											disabled={!isAdmin || isUpdating}
 										/>
-										<TFormDescription>
-											Determines how compensation is calculated
-										</TFormDescription>
+										<TFormDescription>Determines how compensation is calculated</TFormDescription>
 										<TFormMessage field={field} />
 									</TFormItem>
 								)}
@@ -441,9 +456,7 @@ export default function EmployeeDetailPage({
 															hasError={fieldHasError(field)}
 														/>
 													</TFormControl>
-													<TFormDescription>
-														Current hourly rate for this employee
-													</TFormDescription>
+													<TFormDescription>Current hourly rate for this employee</TFormDescription>
 													<TFormMessage field={field} />
 												</TFormItem>
 											)}
@@ -451,6 +464,78 @@ export default function EmployeeDetailPage({
 									)
 								}
 							</form.Subscribe>
+
+							{/* App Access Permissions - Admin only */}
+							{isAdmin && (
+								<>
+									<Separator className="my-4" />
+									<div className="space-y-4">
+										<div>
+											<h4 className="text-sm font-medium">App Access Permissions</h4>
+											<p className="text-sm text-muted-foreground">
+												Control which applications this employee can access
+											</p>
+										</div>
+
+										<form.Field name="canUseWebapp">
+											{(field) => (
+												<div className="flex items-center justify-between rounded-lg border p-3">
+													<div className="space-y-0.5">
+														<TFormLabel>Web Application</TFormLabel>
+														<TFormDescription>
+															Access to the browser-based application
+														</TFormDescription>
+													</div>
+													<Switch
+														checked={field.state.value ?? true}
+														onCheckedChange={field.handleChange}
+														disabled={isUpdating}
+														aria-label="Toggle web application access"
+													/>
+												</div>
+											)}
+										</form.Field>
+
+										<form.Field name="canUseDesktop">
+											{(field) => (
+												<div className="flex items-center justify-between rounded-lg border p-3">
+													<div className="space-y-0.5">
+														<TFormLabel>Desktop Application</TFormLabel>
+														<TFormDescription>
+															Access to the desktop app for time tracking
+														</TFormDescription>
+													</div>
+													<Switch
+														checked={field.state.value ?? true}
+														onCheckedChange={field.handleChange}
+														disabled={isUpdating}
+														aria-label="Toggle desktop application access"
+													/>
+												</div>
+											)}
+										</form.Field>
+
+										<form.Field name="canUseMobile">
+											{(field) => (
+												<div className="flex items-center justify-between rounded-lg border p-3">
+													<div className="space-y-0.5">
+														<TFormLabel>Mobile Application</TFormLabel>
+														<TFormDescription>
+															Access to mobile apps for time tracking
+														</TFormDescription>
+													</div>
+													<Switch
+														checked={field.state.value ?? true}
+														onCheckedChange={field.handleChange}
+														disabled={isUpdating}
+														aria-label="Toggle mobile application access"
+													/>
+												</div>
+											)}
+										</form.Field>
+									</div>
+								</>
+							)}
 
 							{isAdmin && (
 								<div className="flex justify-end gap-2">

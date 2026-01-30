@@ -989,10 +989,7 @@ export async function clockIn(): Promise<ServerActionResult<typeof timeEntry.$in
 			.select()
 			.from(timeEntry)
 			.where(
-				and(
-					eq(timeEntry.employeeId, emp.id),
-					eq(timeEntry.organizationId, emp.organizationId),
-				),
+				and(eq(timeEntry.employeeId, emp.id), eq(timeEntry.organizationId, emp.organizationId)),
 			)
 			.orderBy(desc(timeEntry.createdAt))
 			.limit(1);
@@ -1068,7 +1065,10 @@ export type ClockOutResult = typeof timeEntry.$inferSelect & {
  * @param projectId - Optional project ID to assign the work period to
  * @param workCategoryId - Optional work category ID to apply a time factor
  */
-export async function clockOut(projectId?: string, workCategoryId?: string): Promise<ServerActionResult<ClockOutResult>> {
+export async function clockOut(
+	projectId?: string,
+	workCategoryId?: string,
+): Promise<ServerActionResult<ClockOutResult>> {
 	const session = await auth.api.getSession({ headers: await headers() });
 	if (!session?.user) {
 		return { success: false, error: "Not authenticated" };
@@ -1135,10 +1135,7 @@ export async function clockOut(projectId?: string, workCategoryId?: string): Pro
 			.select()
 			.from(timeEntry)
 			.where(
-				and(
-					eq(timeEntry.employeeId, emp.id),
-					eq(timeEntry.organizationId, emp.organizationId),
-				),
+				and(eq(timeEntry.employeeId, emp.id), eq(timeEntry.organizationId, emp.organizationId)),
 			)
 			.orderBy(desc(timeEntry.createdAt))
 			.limit(1);
@@ -1523,12 +1520,7 @@ export async function createTimeEntry(params: {
 	const [previousEntry] = await db
 		.select()
 		.from(timeEntry)
-		.where(
-			and(
-				eq(timeEntry.employeeId, employeeId),
-				eq(timeEntry.organizationId, organizationId),
-			),
-		)
+		.where(and(eq(timeEntry.employeeId, employeeId), eq(timeEntry.organizationId, organizationId)))
 		.orderBy(desc(timeEntry.createdAt))
 		.limit(1);
 
@@ -2207,7 +2199,15 @@ async function createClockOutApprovalRequest(params: {
 	endTime: Date;
 	durationMinutes: number;
 }): Promise<void> {
-	const { workPeriodId, employeeId, managerId, organizationId, startTime, endTime, durationMinutes } = params;
+	const {
+		workPeriodId,
+		employeeId,
+		managerId,
+		organizationId,
+		startTime,
+		endTime,
+		durationMinutes,
+	} = params;
 
 	try {
 		// Create approval request
@@ -2327,9 +2327,7 @@ async function checkProjectBudgetAfterClockOut(
  * Get the edit capability for a work period based on change policy
  * Returns information about what kind of edits are allowed
  */
-export async function getWorkPeriodEditCapability(
-	workPeriodId: string,
-): Promise<
+export async function getWorkPeriodEditCapability(workPeriodId: string): Promise<
 	ServerActionResult<{
 		capability: EditCapability;
 		policyName: string | null;
@@ -2429,9 +2427,7 @@ interface ManualTimeEntryInput {
  * Create a manual time entry for a past date
  * Respects the organization's change policy for approval requirements
  */
-export async function createManualTimeEntry(
-	data: ManualTimeEntryInput,
-): Promise<
+export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise<
 	ServerActionResult<{
 		workPeriodId: string;
 		requiresApproval: boolean;
@@ -2471,13 +2467,26 @@ export async function createManualTimeEntry(
 	const [outHours, outMinutes] = data.clockOutTime.split(":").map(Number);
 
 	// Validate parsed time values are valid numbers
-	if (Number.isNaN(inHours) || Number.isNaN(inMinutes) || Number.isNaN(outHours) || Number.isNaN(outMinutes)) {
+	if (
+		Number.isNaN(inHours) ||
+		Number.isNaN(inMinutes) ||
+		Number.isNaN(outHours) ||
+		Number.isNaN(outMinutes)
+	) {
 		return { success: false, error: "Invalid time format" };
 	}
 
 	// Validate time ranges (hour 0-23, minute 0-59)
-	if (inHours < 0 || inHours > 23 || inMinutes < 0 || inMinutes > 59 ||
-		outHours < 0 || outHours > 23 || outMinutes < 0 || outMinutes > 59) {
+	if (
+		inHours < 0 ||
+		inHours > 23 ||
+		inMinutes < 0 ||
+		inMinutes > 59 ||
+		outHours < 0 ||
+		outHours > 23 ||
+		outMinutes < 0 ||
+		outMinutes > 59
+	) {
 		return { success: false, error: "Invalid time values" };
 	}
 
@@ -2586,7 +2595,8 @@ export async function createManualTimeEntry(
 		if (hasActiveWorkPeriod) {
 			return {
 				success: false,
-				error: "Cannot create manual entry while you have an active work period. Please clock out first.",
+				error:
+					"Cannot create manual entry while you have an active work period. Please clock out first.",
 			};
 		}
 
@@ -2637,7 +2647,8 @@ export async function createManualTimeEntry(
 		if (adjustedDurationMs < 60000) {
 			return {
 				success: false,
-				error: "After adjusting for existing entries, the remaining time is too short (less than 1 minute).",
+				error:
+					"After adjusting for existing entries, the remaining time is too short (less than 1 minute).",
 			};
 		}
 
@@ -2772,7 +2783,16 @@ async function createManualEntryApprovalRequest(params: {
 	durationMinutes: number;
 	reason: string;
 }): Promise<void> {
-	const { workPeriodId, employeeId, managerId, organizationId, startTime, endTime, durationMinutes, reason } = params;
+	const {
+		workPeriodId,
+		employeeId,
+		managerId,
+		organizationId,
+		startTime,
+		endTime,
+		durationMinutes,
+		reason,
+	} = params;
 
 	try {
 		// Create approval request
@@ -2813,7 +2833,10 @@ async function createManualEntryApprovalRequest(params: {
 				endTime,
 				durationMinutes,
 			}).catch((err) => {
-				logger.error({ error: err }, "Failed to send manual entry pending notification to employee");
+				logger.error(
+					{ error: err },
+					"Failed to send manual entry pending notification to employee",
+				);
 			});
 		}
 

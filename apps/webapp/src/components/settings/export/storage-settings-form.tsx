@@ -303,7 +303,9 @@ export function StorageSettingsForm({
 						>
 							{(field) => (
 								<div className="space-y-2">
-									<Label htmlFor="bucket">{t("settings.dataExport.storage.bucketName", "Bucket Name")}</Label>
+									<Label htmlFor="bucket">
+										{t("settings.dataExport.storage.bucketName", "Bucket Name")}
+									</Label>
 									<Input
 										id="bucket"
 										placeholder={t(
@@ -342,7 +344,9 @@ export function StorageSettingsForm({
 						>
 							{(field) => (
 								<div className="space-y-2">
-									<Label htmlFor="region">{t("settings.dataExport.storage.region", "Region")}</Label>
+									<Label htmlFor="region">
+										{t("settings.dataExport.storage.region", "Region")}
+									</Label>
 									<Input
 										id="region"
 										placeholder={t("settings.dataExport.storage.regionPlaceholder", "us-east-1")}
@@ -404,7 +408,9 @@ export function StorageSettingsForm({
 						<form.Field name="accessKeyId">
 							{(field) => (
 								<div className="space-y-2">
-									<Label htmlFor="accessKeyId">{t("settings.dataExport.storage.accessKeyId", "Access Key ID")}</Label>
+									<Label htmlFor="accessKeyId">
+										{t("settings.dataExport.storage.accessKeyId", "Access Key ID")}
+									</Label>
 									<Input
 										id="accessKeyId"
 										type="password"

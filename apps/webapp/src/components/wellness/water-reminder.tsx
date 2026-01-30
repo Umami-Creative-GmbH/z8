@@ -79,9 +79,7 @@ export function WaterReminder({ isClockedIn, sessionStartTime, onDismiss }: Wate
 			});
 
 			if (result.goalJustMet) {
-				toast.success(
-					t("wellness.water.goalMet", "Daily goal reached! Keep up the great work!"),
-				);
+				toast.success(t("wellness.water.goalMet", "Daily goal reached! Keep up the great work!"));
 			} else {
 				toast.success(
 					t("wellness.water.logged", "Water logged! {progress}% of daily goal", {
@@ -117,7 +115,10 @@ export function WaterReminder({ isClockedIn, sessionStartTime, onDismiss }: Wate
 	return (
 		<Alert className="relative animate-in fade-in slide-in-from-top-2 duration-300 border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20">
 			<div className="flex items-start gap-3">
-				<IconDroplet className="size-5 shrink-0 text-blue-600 dark:text-blue-400" aria-hidden="true" />
+				<IconDroplet
+					className="size-5 shrink-0 text-blue-600 dark:text-blue-400"
+					aria-hidden="true"
+				/>
 				<div className="flex-1 space-y-2">
 					<AlertTitle className="mb-1 text-blue-900 dark:text-blue-100">
 						{t("wellness.water.reminderTitle", "Time to hydrate!")}

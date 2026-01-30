@@ -1144,9 +1144,7 @@ const defaultSubareaNames = [
 /**
  * Generate demo locations with subareas
  */
-export async function generateDemoLocations(
-	options: DemoDataOptions,
-): Promise<{
+export async function generateDemoLocations(options: DemoDataOptions): Promise<{
 	locationsCreated: number;
 	subareasCreated: number;
 	supervisorAssignmentsCreated: number;
@@ -1224,7 +1222,8 @@ export async function generateDemoLocations(
 
 			// Assign a subarea supervisor (30% chance)
 			if (shuffledEmployees.length > 0 && Math.random() < 0.3) {
-				const supervisor = shuffledEmployees[(i * subareasPerLocation + j) % shuffledEmployees.length];
+				const supervisor =
+					shuffledEmployees[(i * subareasPerLocation + j) % shuffledEmployees.length];
 				await db.insert(subareaEmployee).values({
 					subareaId: newSubarea.id,
 					employeeId: supervisor.id,
@@ -1265,9 +1264,7 @@ const workCategorySetTemplates = [
 /**
  * Generate demo work category sets and categories
  */
-export async function generateDemoWorkCategories(
-	options: DemoDataOptions,
-): Promise<{
+export async function generateDemoWorkCategories(options: DemoDataOptions): Promise<{
 	setsCreated: number;
 	categoriesCreated: number;
 	assignmentsCreated: number;
@@ -1425,9 +1422,7 @@ const changePolicyTemplates = [
 /**
  * Generate demo change policies
  */
-export async function generateDemoChangePolicies(
-	options: DemoDataOptions,
-): Promise<{
+export async function generateDemoChangePolicies(options: DemoDataOptions): Promise<{
 	policiesCreated: number;
 	assignmentsCreated: number;
 }> {
@@ -1545,9 +1540,7 @@ export async function generateDemoShiftTemplates(
 /**
  * Generate demo shifts with recurrence patterns
  */
-export async function generateDemoShifts(
-	options: DemoDataOptions,
-): Promise<{
+export async function generateDemoShifts(options: DemoDataOptions): Promise<{
 	recurrencesCreated: number;
 	shiftsCreated: number;
 	requestsCreated: number;
@@ -1688,7 +1681,12 @@ export async function generateDemoShifts(
 							"Doctor visit",
 							"Schedule conflict",
 						]),
-						reasonCategory: faker.helpers.arrayElement(["personal", "emergency", "childcare", "other"]),
+						reasonCategory: faker.helpers.arrayElement([
+							"personal",
+							"emergency",
+							"childcare",
+							"other",
+						]),
 						approverId: requestStatus !== "pending" ? employees[0]?.id : null,
 						approvedAt: requestStatus !== "pending" ? new Date() : null,
 						rejectionReason: requestStatus === "rejected" ? "Schedule conflict" : null,
@@ -1766,11 +1764,7 @@ export async function assignWorkCategoriesToPeriods(
 	for (const cat of categories) {
 		// More weight for common categories
 		const weight =
-			cat.name === "Normal Work" || cat.name === "Meeting"
-				? 5
-				: cat.name === "Training"
-					? 3
-					: 1;
+			cat.name === "Normal Work" || cat.name === "Meeting" ? 5 : cat.name === "Training" ? 3 : 1;
 		for (let i = 0; i < weight; i++) {
 			weightedCategories.push(cat.id);
 		}
@@ -1779,7 +1773,10 @@ export async function assignWorkCategoriesToPeriods(
 	for (const period of periodsToAssign) {
 		const categoryId = faker.helpers.arrayElement(weightedCategories);
 
-		await db.update(workPeriod).set({ workCategoryId: categoryId }).where(eq(workPeriod.id, period.id));
+		await db
+			.update(workPeriod)
+			.set({ workCategoryId: categoryId })
+			.where(eq(workPeriod.id, period.id));
 
 		workCategoriesAssigned++;
 	}
@@ -1933,10 +1930,7 @@ export async function clearOrganizationTimeData(organizationId: string): Promise
 	// Remove work category assignments from work periods
 	if (employeeIds.length > 0) {
 		const periodsWithCategories = await db.query.workPeriod.findMany({
-			where: and(
-				inArray(workPeriod.employeeId, employeeIds),
-				isNotNull(workPeriod.workCategoryId),
-			),
+			where: and(inArray(workPeriod.employeeId, employeeIds), isNotNull(workPeriod.workCategoryId)),
 		});
 		if (periodsWithCategories.length > 0) {
 			await db
@@ -2046,7 +2040,9 @@ export async function clearOrganizationTimeData(organizationId: string): Promise
 		result.subareasDeleted = subareasToDelete.length;
 
 		// Delete location employee assignments
-		await db.delete(locationEmployee).where(inArray(locationEmployee.locationId, locationIdsToDelete));
+		await db
+			.delete(locationEmployee)
+			.where(inArray(locationEmployee.locationId, locationIdsToDelete));
 
 		// Delete subarea employee assignments
 		if (subareasToDelete.length > 0) {
@@ -2059,7 +2055,9 @@ export async function clearOrganizationTimeData(organizationId: string): Promise
 		}
 
 		// Delete subareas
-		await db.delete(locationSubarea).where(inArray(locationSubarea.locationId, locationIdsToDelete));
+		await db
+			.delete(locationSubarea)
+			.where(inArray(locationSubarea.locationId, locationIdsToDelete));
 
 		// Delete locations
 		await db.delete(location).where(inArray(location.id, locationIdsToDelete));

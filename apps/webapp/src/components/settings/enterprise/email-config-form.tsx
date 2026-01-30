@@ -14,7 +14,10 @@ import {
 	XCircle,
 } from "lucide-react";
 import { useState, useTransition } from "react";
-import type { EmailConfigInput, EmailConfigOutput } from "@/app/[locale]/(app)/settings/enterprise/email/actions";
+import type {
+	EmailConfigInput,
+	EmailConfigOutput,
+} from "@/app/[locale]/(app)/settings/enterprise/email/actions";
 import {
 	deleteEmailConfig,
 	saveEmailConfig,
@@ -89,7 +92,9 @@ export function EmailConfigForm({
 
 	const handleTest = async () => {
 		if (!testEmail) {
-			toast.error(t("settings.enterprise.email.testEmailRequired", "Please enter a test email address"));
+			toast.error(
+				t("settings.enterprise.email.testEmailRequired", "Please enter a test email address"),
+			);
 			return;
 		}
 
@@ -99,7 +104,9 @@ export function EmailConfigForm({
 			if (result.success) {
 				toast.success(t("settings.enterprise.email.testSent", "Test email sent successfully"));
 			} else {
-				toast.error(result.error || t("settings.enterprise.email.testFailed", "Failed to send test email"));
+				toast.error(
+					result.error || t("settings.enterprise.email.testFailed", "Failed to send test email"),
+				);
 			}
 		} finally {
 			setIsTesting(false);
@@ -107,7 +114,14 @@ export function EmailConfigForm({
 	};
 
 	const handleDelete = async () => {
-		if (!confirm(t("settings.enterprise.email.deleteConfirm", "Are you sure you want to delete this email configuration?"))) {
+		if (
+			!confirm(
+				t(
+					"settings.enterprise.email.deleteConfirm",
+					"Are you sure you want to delete this email configuration?",
+				),
+			)
+		) {
 			return;
 		}
 
@@ -116,7 +130,9 @@ export function EmailConfigForm({
 			if (result.success) {
 				toast.success(t("settings.enterprise.email.deleted", "Email configuration deleted"));
 			} else {
-				toast.error(result.error || t("settings.enterprise.email.deleteFailed", "Failed to delete"));
+				toast.error(
+					result.error || t("settings.enterprise.email.deleteFailed", "Failed to delete"),
+				);
 			}
 		});
 	};
@@ -127,9 +143,14 @@ export function EmailConfigForm({
 			return (
 				<Alert variant="destructive" className="mb-4">
 					<AlertTriangle className="h-4 w-4" />
-					<AlertTitle>{t("settings.enterprise.email.vaultUnavailable", "Vault Unavailable")}</AlertTitle>
+					<AlertTitle>
+						{t("settings.enterprise.email.vaultUnavailable", "Vault Unavailable")}
+					</AlertTitle>
 					<AlertDescription>
-						{t("settings.enterprise.email.vaultUnavailableDesc", "HashiCorp Vault is not available. Secrets cannot be stored securely.")}
+						{t(
+							"settings.enterprise.email.vaultUnavailableDesc",
+							"HashiCorp Vault is not available. Secrets cannot be stored securely.",
+						)}
 					</AlertDescription>
 				</Alert>
 			);
@@ -141,7 +162,10 @@ export function EmailConfigForm({
 					<AlertTriangle className="h-4 w-4" />
 					<AlertTitle>{t("settings.enterprise.email.vaultSealed", "Vault Sealed")}</AlertTitle>
 					<AlertDescription>
-						{t("settings.enterprise.email.vaultSealedDesc", "HashiCorp Vault is sealed. Please unseal it to store secrets.")}
+						{t(
+							"settings.enterprise.email.vaultSealedDesc",
+							"HashiCorp Vault is sealed. Please unseal it to store secrets.",
+						)}
 					</AlertDescription>
 				</Alert>
 			);
@@ -152,7 +176,10 @@ export function EmailConfigForm({
 				<Shield className="h-4 w-4" />
 				<AlertTitle>{t("settings.enterprise.email.vaultConnected", "Vault Connected")}</AlertTitle>
 				<AlertDescription>
-					{t("settings.enterprise.email.vaultConnectedDesc", "Secrets are stored securely in HashiCorp Vault.")}
+					{t(
+						"settings.enterprise.email.vaultConnectedDesc",
+						"Secrets are stored securely in HashiCorp Vault.",
+					)}
 				</AlertDescription>
 			</Alert>
 		);
@@ -172,7 +199,10 @@ export function EmailConfigForm({
 						{t("settings.enterprise.email.title", "Email Configuration")}
 					</CardTitle>
 					<CardDescription>
-						{t("settings.enterprise.email.description", "Configure a custom email provider for your organization. All organization emails (notifications, auth, invitations) will use this configuration.")}
+						{t(
+							"settings.enterprise.email.description",
+							"Configure a custom email provider for your organization. All organization emails (notifications, auth, invitations) will use this configuration.",
+						)}
 					</CardDescription>
 				</CardHeader>
 
@@ -282,7 +312,10 @@ export function EmailConfigForm({
 													onBlur={field.handleBlur}
 												/>
 												<p className="text-xs text-muted-foreground">
-													{t("settings.enterprise.email.apiKeyHint", "Leave blank to keep existing key. Get your API key from resend.com")}
+													{t(
+														"settings.enterprise.email.apiKeyHint",
+														"Leave blank to keep existing key. Get your API key from resend.com",
+													)}
 												</p>
 											</div>
 										)}
@@ -378,7 +411,10 @@ export function EmailConfigForm({
 														onBlur={field.handleBlur}
 													/>
 													<p className="text-xs text-muted-foreground">
-														{t("settings.enterprise.email.passwordHint", "Leave blank to keep existing password")}
+														{t(
+															"settings.enterprise.email.passwordHint",
+															"Leave blank to keep existing password",
+														)}
 													</p>
 												</div>
 											)}
@@ -410,7 +446,10 @@ export function EmailConfigForm({
 														onCheckedChange={(checked) => field.handleChange(checked === true)}
 													/>
 													<Label htmlFor="smtpRequireTls" className="cursor-pointer">
-														{t("settings.enterprise.email.smtpRequireTls", "Require STARTTLS upgrade")}
+														{t(
+															"settings.enterprise.email.smtpRequireTls",
+															"Require STARTTLS upgrade",
+														)}
 													</Label>
 												</div>
 											)}
@@ -440,7 +479,9 @@ export function EmailConfigForm({
 					{/* Test Status */}
 					{initialConfig?.lastTestAt && (
 						<div className="rounded-lg border p-4 space-y-2">
-							<h4 className="font-medium">{t("settings.enterprise.email.lastTest", "Last Test")}</h4>
+							<h4 className="font-medium">
+								{t("settings.enterprise.email.lastTest", "Last Test")}
+							</h4>
 							<div className="flex items-center gap-2 text-sm">
 								{initialConfig.lastTestSuccess ? (
 									<>
@@ -502,12 +543,7 @@ export function EmailConfigForm({
 
 				<CardFooter className="flex justify-between">
 					{initialConfig && (
-						<Button
-							type="button"
-							variant="destructive"
-							onClick={handleDelete}
-							disabled={isPending}
-						>
+						<Button type="button" variant="destructive" onClick={handleDelete} disabled={isPending}>
 							<Trash2 className="h-4 w-4 mr-2" />
 							{t("settings.enterprise.email.delete", "Delete Configuration")}
 						</Button>
@@ -519,9 +555,7 @@ export function EmailConfigForm({
 								type="submit"
 								disabled={isPending || isSubmitting || (!isDirty && !!initialConfig)}
 							>
-								{(isPending || isSubmitting) && (
-									<Loader2 className="h-4 w-4 mr-2 animate-spin" />
-								)}
+								{(isPending || isSubmitting) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
 								{initialConfig
 									? t("settings.enterprise.email.save", "Save Changes")
 									: t("settings.enterprise.email.create", "Create Configuration")}

@@ -122,14 +122,15 @@ export function ChangePolicyAssignmentDialog({
 			createChangePolicyAssignment(organizationId, input),
 		onSuccess: (result) => {
 			if (result.success) {
-				toast.success(t("settings.changePolicies.assignmentCreated", "Policy assigned successfully"));
+				toast.success(
+					t("settings.changePolicies.assignmentCreated", "Policy assigned successfully"),
+				);
 				form.reset();
 				onSuccess();
 				onOpenChange(false);
 			} else {
 				toast.error(
-					result.error ||
-						t("settings.changePolicies.assignmentFailed", "Failed to assign policy"),
+					result.error || t("settings.changePolicies.assignmentFailed", "Failed to assign policy"),
 				);
 			}
 		},
@@ -200,7 +201,10 @@ export function ChangePolicyAssignmentDialog({
 					<div className="py-8 text-center text-muted-foreground">
 						<p>{t("settings.changePolicies.noPoliciesForAssignment", "No policies available")}</p>
 						<p className="text-sm mt-1">
-							{t("settings.changePolicies.createPolicyFirst", "Create a policy first before assigning it.")}
+							{t(
+								"settings.changePolicies.createPolicyFirst",
+								"Create a policy first before assigning it.",
+							)}
 						</p>
 					</div>
 				) : (

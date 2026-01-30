@@ -38,10 +38,7 @@ describe("Organization Scoping Security", () => {
 
 			// Simulate the secure query pattern - filter by org
 			const result = employees.filter(
-				(e) =>
-					e.userId === userId &&
-					e.organizationId === activeOrgId &&
-					e.isActive,
+				(e) => e.userId === userId && e.organizationId === activeOrgId && e.isActive,
 			);
 
 			expect(result).toHaveLength(1);
@@ -115,9 +112,7 @@ describe("Organization Scoping Security", () => {
 
 			// Vulnerable pattern: just filter by userId and isActive
 			// This could return the wrong org's employee!
-			const vulnerableResult = employees.find(
-				(e) => e.userId === userId && e.isActive,
-			);
+			const vulnerableResult = employees.find((e) => e.userId === userId && e.isActive);
 
 			// This test shows the vulnerability - we get the first one, which may not be
 			// the one for the user's active organization
@@ -132,10 +127,7 @@ describe("Organization Scoping Security", () => {
 
 			// Fixed pattern: filter by userId, organizationId, AND isActive
 			const fixedResult = employees.find(
-				(e) =>
-					e.userId === userId &&
-					e.organizationId === activeOrgId &&
-					e.isActive,
+				(e) => e.userId === userId && e.organizationId === activeOrgId && e.isActive,
 			);
 
 			expect(fixedResult).toBeDefined();
@@ -156,7 +148,9 @@ describe("Organization Scoping Security", () => {
 
 		test("handles undefined activeOrganizationId", () => {
 			const session = createMockSession();
-			(session.session as { activeOrganizationId: string | null | undefined }).activeOrganizationId = undefined;
+			(
+				session.session as { activeOrganizationId: string | null | undefined }
+			).activeOrganizationId = undefined;
 
 			const activeOrgId = session.session.activeOrganizationId;
 			expect(!activeOrgId).toBe(true);
@@ -231,13 +225,9 @@ describe("Route Security Fix Verification", () => {
 				step3: "Query employee with organizationId = activeOrgId filter",
 			};
 
-			expect(securityPattern.step1).toBe(
-				"Check session.session?.activeOrganizationId exists",
-			);
+			expect(securityPattern.step1).toBe("Check session.session?.activeOrganizationId exists");
 			expect(securityPattern.step2).toBe("Return 400 if no activeOrganizationId");
-			expect(securityPattern.step3).toBe(
-				"Query employee with organizationId = activeOrgId filter",
-			);
+			expect(securityPattern.step3).toBe("Query employee with organizationId = activeOrgId filter");
 		});
 	});
 

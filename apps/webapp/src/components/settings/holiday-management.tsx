@@ -87,7 +87,8 @@ export function HolidayManagement({ organizationId }: HolidayManagementProps) {
 
 	// Holiday assignment dialog state
 	const [holidayAssignmentDialogOpen, setHolidayAssignmentDialogOpen] = useState(false);
-	const [holidayAssignmentType, setHolidayAssignmentType] = useState<AssignmentType>("organization");
+	const [holidayAssignmentType, setHolidayAssignmentType] =
+		useState<AssignmentType>("organization");
 
 	// Holiday handlers - memoized to prevent unnecessary child re-renders
 	const handleAddHolidayClick = useCallback(() => {

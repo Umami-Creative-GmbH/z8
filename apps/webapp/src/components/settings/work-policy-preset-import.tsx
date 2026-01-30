@@ -74,9 +74,7 @@ export function WorkPolicyPresetImport({
 			importWorkPolicyPreset(organizationId, presetId, setAsDefault),
 		onSuccess: (result) => {
 			if (result.success) {
-				toast.success(
-					t("settings.workPolicies.importSuccess", "Policy imported successfully"),
-				);
+				toast.success(t("settings.workPolicies.importSuccess", "Policy imported successfully"));
 				// Invalidate policies list to show new policy
 				queryClient.invalidateQueries({
 					queryKey: queryKeys.workPolicies.list(organizationId),

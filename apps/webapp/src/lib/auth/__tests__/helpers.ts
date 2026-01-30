@@ -102,10 +102,7 @@ export function createMockEmployee(overrides?: Partial<MockEmployee>): MockEmplo
  * Create a set of employees for multi-org testing
  * Returns employees for the same user in different organizations
  */
-export function createMultiOrgEmployees(
-	userId: string,
-	orgIds: string[],
-): MockEmployee[] {
+export function createMultiOrgEmployees(userId: string, orgIds: string[]): MockEmployee[] {
 	return orgIds.map((orgId, index) =>
 		createMockEmployee({
 			id: `emp-${index + 1}`,

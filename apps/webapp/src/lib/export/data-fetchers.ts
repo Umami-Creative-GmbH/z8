@@ -796,7 +796,10 @@ export async function* streamTimeEntries(
 	// Build where clause - use organizationId directly, optionally filter by employeeIds
 	const whereClause =
 		employeeIds.length > 0
-			? and(eq(timeEntry.organizationId, organizationId), inArray(timeEntry.employeeId, employeeIds))
+			? and(
+					eq(timeEntry.organizationId, organizationId),
+					inArray(timeEntry.employeeId, employeeIds),
+				)
 			: eq(timeEntry.organizationId, organizationId);
 
 	while (hasMore) {
@@ -867,7 +870,10 @@ export async function* streamWorkPeriods(
 	// Build where clause - use organizationId directly, optionally filter by employeeIds
 	const whereClause =
 		employeeIds.length > 0
-			? and(eq(workPeriod.organizationId, organizationId), inArray(workPeriod.employeeId, employeeIds))
+			? and(
+					eq(workPeriod.organizationId, organizationId),
+					inArray(workPeriod.employeeId, employeeIds),
+				)
 			: eq(workPeriod.organizationId, organizationId);
 
 	while (hasMore) {

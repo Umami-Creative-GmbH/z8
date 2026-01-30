@@ -2,7 +2,10 @@
 
 import { Effect } from "effect";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { OnboardingService, type OnboardingSummary } from "@/lib/effect/services/onboarding.service";
+import {
+	OnboardingService,
+	type OnboardingSummary,
+} from "@/lib/effect/services/onboarding.service";
 
 export async function startOnboarding(): Promise<ServerActionResult<void>> {
 	return runServerActionSafe(

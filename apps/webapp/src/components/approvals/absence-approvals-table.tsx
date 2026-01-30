@@ -69,7 +69,9 @@ export function AbsenceApprovalsTable() {
 				toast.success(t("approvals.absenceApproved", "Absence request approved"));
 				queryClient.invalidateQueries({ queryKey: queryKeys.approvals.absences() });
 			} else {
-				toast.error(result.error || t("approvals.approveFailed", "Failed to approve absence request"));
+				toast.error(
+					result.error || t("approvals.approveFailed", "Failed to approve absence request"),
+				);
 			}
 		},
 		onError: (_error, _absenceId, context) => {
@@ -99,7 +101,9 @@ export function AbsenceApprovalsTable() {
 				toast.success(t("approvals.absenceRejected", "Absence request rejected"));
 				queryClient.invalidateQueries({ queryKey: queryKeys.approvals.absences() });
 			} else {
-				toast.error(result.error || t("approvals.rejectFailed", "Failed to reject absence request"));
+				toast.error(
+					result.error || t("approvals.rejectFailed", "Failed to reject absence request"),
+				);
 			}
 		},
 		onError: (_error, _variables, context) => {
@@ -250,9 +254,7 @@ export function AbsenceApprovalsTable() {
 	if (isError) {
 		return (
 			<div className="flex flex-col items-center justify-center py-12 text-center border rounded-lg">
-				<p className="text-destructive">
-					{t("approvals.loadError", "Failed to load approvals")}
-				</p>
+				<p className="text-destructive">{t("approvals.loadError", "Failed to load approvals")}</p>
 				<Button className="mt-4" variant="outline" onClick={() => refetch()}>
 					<IconRefresh className="mr-2 h-4 w-4" />
 					{t("common.retry", "Retry")}

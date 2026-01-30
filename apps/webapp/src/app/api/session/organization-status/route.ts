@@ -1,6 +1,6 @@
 import { headers } from "next/headers";
 import { NextResponse, connection } from "next/server";
-import { getUserOrganizations } from "@/lib/auth-helpers";
+import { getUserOrganizations, validateAppAccess } from "@/lib/auth-helpers";
 import { auth } from "@/lib/auth";
 
 /**
@@ -11,10 +11,24 @@ export async function GET() {
 	await connection();
 
 	try {
-		const session = await auth.api.getSession({ headers: await headers() });
+		const resolvedHeaders = await headers();
+		const session = await auth.api.getSession({ headers: resolvedHeaders });
 
 		if (!session?.user) {
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+		}
+
+		// Validate app access before proceeding
+		const accessCheck = await validateAppAccess(session.user, resolvedHeaders);
+		if (!accessCheck.allowed) {
+			return NextResponse.json(
+				{
+					error: "AppAccessDenied",
+					message: accessCheck.reason,
+					appType: accessCheck.appType,
+				},
+				{ status: 403 },
+			);
 		}
 
 		const activeOrganizationId = session.session?.activeOrganizationId || null;

@@ -1,12 +1,6 @@
 "use client";
 
-import {
-	IconEdit,
-	IconLoader2,
-	IconPlus,
-	IconTag,
-	IconTrash,
-} from "@tabler/icons-react";
+import { IconEdit, IconLoader2, IconPlus, IconTag, IconTrash } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
@@ -222,15 +216,11 @@ export function WorkCategorySetsTable({ organizationId }: WorkCategorySetsTableP
 						<Table>
 							<TableHeader>
 								<TableRow>
-									<TableHead>
-										{t("settings.workCategories.setName", "Name")}
-									</TableHead>
+									<TableHead>{t("settings.workCategories.setName", "Name")}</TableHead>
 									<TableHead>
 										{t("settings.workCategories.setDescription", "Description")}
 									</TableHead>
-									<TableHead>
-										{t("settings.workCategories.categories", "Categories")}
-									</TableHead>
+									<TableHead>{t("settings.workCategories.categories", "Categories")}</TableHead>
 									<TableHead className="w-[100px]" />
 								</TableRow>
 							</TableHeader>

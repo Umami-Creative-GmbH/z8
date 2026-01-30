@@ -98,7 +98,13 @@
       "Bash(git -C /x/umami-creative/z8 log --oneline --all -20)",
       "Bash(xargs basename:*)",
       "Bash(pnpm test:*)",
-      "Bash(pnpm --filter \"@z8/webapp\" build:*)"
+      "Bash(pnpm --filter \"@z8/webapp\" build:*)",
+      "mcp__better-auth__chat",
+      "WebFetch(domain:www.better-auth.com)",
+      "Bash(pnpm list:*)",
+      "Bash(pnpm dlx:*)",
+      "Bash(pnpm exec better-auth:*)",
+      "Bash(pnpm drizzle-kit push:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

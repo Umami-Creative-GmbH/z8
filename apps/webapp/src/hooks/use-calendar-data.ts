@@ -102,15 +102,14 @@ export function useCalendarData({
 		filters,
 	};
 
-	const { data: events = [], isLoading, error } = useQuery({
+	const {
+		data: events = [],
+		isLoading,
+		error,
+	} = useQuery({
 		queryKey: queryKeys.calendar.events(organizationId, queryParams),
-		queryFn: () => fetchCalendarEvents(
-			organizationId,
-			year,
-			fullYear ? undefined : month,
-			fullYear,
-			filters,
-		),
+		queryFn: () =>
+			fetchCalendarEvents(organizationId, year, fullYear ? undefined : month, fullYear, filters),
 		staleTime: 30 * 1000, // 30 seconds - calendar data can change frequently
 		enabled: !!organizationId,
 	});

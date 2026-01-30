@@ -9,6 +9,8 @@ import { employee, userSettings } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { ManagerService, ManagerServiceLive } from "@/lib/effect/services/manager.service";
+import { detectAppType, type AppPermissions } from "@/lib/effect/services/app-access.service";
+import type { AppType } from "@/lib/audit-logger";
 
 export interface AuthContext {
 	user: {
@@ -18,6 +20,10 @@ export interface AuthContext {
 		image?: string;
 		role?: string;
 		canCreateOrganizations: boolean;
+		// App access permissions
+		canUseWebapp: boolean;
+		canUseDesktop: boolean;
+		canUseMobile: boolean;
 	};
 	session: {
 		activeOrganizationId: string | null;
@@ -86,6 +92,10 @@ export async function getAuthContext(): Promise<AuthContext | null> {
 			image: session.user.image ?? undefined,
 			role: session.user.role ?? undefined,
 			canCreateOrganizations: session.user.canCreateOrganizations ?? false,
+			// App access permissions - default to true for backward compatibility
+			canUseWebapp: session.user.canUseWebapp ?? true,
+			canUseDesktop: session.user.canUseDesktop ?? true,
+			canUseMobile: session.user.canUseMobile ?? true,
 		},
 		session: {
 			activeOrganizationId,
@@ -467,9 +477,99 @@ export async function getVerifiedOrgContext(requestedOrgId: string | null): Prom
 			image: session.user.image ?? undefined,
 			role: session.user.role ?? undefined,
 			canCreateOrganizations: session.user.canCreateOrganizations ?? false,
+			canUseWebapp: session.user.canUseWebapp ?? true,
+			canUseDesktop: session.user.canUseDesktop ?? true,
+			canUseMobile: session.user.canUseMobile ?? true,
 		},
 		organizationId: verification.organizationId,
 		employeeId: verification.employeeId,
 		role: verification.role,
 	};
+}
+
+// ============================================
+// APP ACCESS VALIDATION
+// ============================================
+
+export interface AppAccessValidationResult {
+	allowed: boolean;
+	appType: AppType;
+	reason?: string;
+}
+
+/**
+ * Validate if the current user has access to the app type being used.
+ * Detects app type from request headers (Bearer token = desktop/mobile, cookie = webapp).
+ *
+ * @param user - User object with app permissions
+ * @param requestHeaders - Request headers for app type detection
+ * @returns Validation result with allowed flag and reason if denied
+ *
+ * @example
+ * ```typescript
+ * const session = await auth.api.getSession({ headers: await headers() });
+ * const accessCheck = await validateAppAccess(session.user, await headers());
+ * if (!accessCheck.allowed) {
+ *   redirect(`/access-denied?app=${accessCheck.appType}`);
+ * }
+ * ```
+ */
+export async function validateAppAccess(
+	user: {
+		canUseWebapp?: boolean | null;
+		canUseDesktop?: boolean | null;
+		canUseMobile?: boolean | null;
+	},
+	requestHeaders: Headers,
+): Promise<AppAccessValidationResult> {
+	const appType = detectAppType(requestHeaders);
+
+	const canUseWebapp = user.canUseWebapp ?? true;
+	const canUseDesktop = user.canUseDesktop ?? true;
+	const canUseMobile = user.canUseMobile ?? true;
+
+	let allowed = true;
+	let reason: string | undefined;
+
+	if (appType === "webapp" && !canUseWebapp) {
+		allowed = false;
+		reason =
+			"Your account does not have access to the web application. Please contact your administrator.";
+	} else if (appType === "desktop" && !canUseDesktop) {
+		allowed = false;
+		reason =
+			"Your account does not have access to the desktop application. Please contact your administrator.";
+	} else if (appType === "mobile" && !canUseMobile) {
+		allowed = false;
+		reason =
+			"Your account does not have access to the mobile application. Please contact your administrator.";
+	}
+
+	return { allowed, appType, reason };
+}
+
+/**
+ * Require app access - throws error if user doesn't have access to the current app type.
+ * Use this in API routes and server actions for cleaner error handling.
+ *
+ * @param user - User object with app permissions
+ * @param requestHeaders - Request headers for app type detection
+ * @throws Error if user doesn't have access
+ * @returns The detected app type if access is allowed
+ */
+export async function requireAppAccess(
+	user: {
+		canUseWebapp?: boolean | null;
+		canUseDesktop?: boolean | null;
+		canUseMobile?: boolean | null;
+	},
+	requestHeaders: Headers,
+): Promise<AppType> {
+	const result = await validateAppAccess(user, requestHeaders);
+
+	if (!result.allowed) {
+		throw new Error(result.reason || "Access denied");
+	}
+
+	return result.appType;
 }

@@ -55,7 +55,11 @@ function ApprovedCard({ request }: { request: RecentlyApproved }) {
 				</div>
 				<div className="flex items-center gap-1.5 text-xs text-muted-foreground">
 					<IconCircleCheck className="size-3 text-emerald-500" />
-					<span className="truncate">{t("dashboard.recently-approved.by", "by {name}", { name: request.approverEmployee?.user.name || t("common.unknown", "Unknown") })}</span>
+					<span className="truncate">
+						{t("dashboard.recently-approved.by", "by {name}", {
+							name: request.approverEmployee?.user.name || t("common.unknown", "Unknown"),
+						})}
+					</span>
 					<span className="text-muted-foreground/50">•</span>
 					<span>{format(new Date(request.updatedAt), "MMM d")}</span>
 				</div>
@@ -71,7 +75,9 @@ function ApprovedCard({ request }: { request: RecentlyApproved }) {
 						: "bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300",
 				)}
 			>
-				{isAbsence ? t("dashboard.recently-approved.absence", "Absence") : t("dashboard.recently-approved.time", "Time")}
+				{isAbsence
+					? t("dashboard.recently-approved.absence", "Absence")
+					: t("dashboard.recently-approved.time", "Time")}
 			</Badge>
 		</div>
 	);
@@ -85,7 +91,10 @@ export function RecentlyApprovedWidget() {
 		refreshing,
 		refetch,
 	} = useWidgetData<RecentlyApproved[]>(() => getRecentlyApprovedRequests(10), {
-		errorMessage: t("dashboard.recently-approved.error", "Failed to load recently approved requests"),
+		errorMessage: t(
+			"dashboard.recently-approved.error",
+			"Failed to load recently approved requests",
+		),
 	});
 
 	if (!loading && (!requests || requests.length === 0)) return null;
@@ -96,7 +105,11 @@ export function RecentlyApprovedWidget() {
 				title={t("dashboard.recently-approved.title", "Recently Approved")}
 				description={
 					requests
-						? t("dashboard.recently-approved.description-count", "Last {count} approved {request}", { count: requests.length, request: pluralize(requests.length, "request") })
+						? t(
+								"dashboard.recently-approved.description-count",
+								"Last {count} approved {request}",
+								{ count: requests.length, request: pluralize(requests.length, "request") },
+							)
 						: t("dashboard.recently-approved.description", "Latest approved requests")
 				}
 				icon={<IconCheck className="size-4 text-emerald-500" />}
@@ -126,7 +139,11 @@ export function RecentlyApprovedWidget() {
 									{t("dashboard.recently-approved.all-caught-up", "All caught up!")}
 								</p>
 								<p className="text-xs text-emerald-600/80 dark:text-emerald-400/80">
-									{t("dashboard.recently-approved.approved-recently", "{count} {request} approved recently", { count: requests.length, request: pluralize(requests.length, "request") })}
+									{t(
+										"dashboard.recently-approved.approved-recently",
+										"{count} {request} approved recently",
+										{ count: requests.length, request: pluralize(requests.length, "request") },
+									)}
 								</p>
 							</div>
 						</div>
@@ -140,12 +157,16 @@ export function RecentlyApprovedWidget() {
 
 						{requests.length > 5 && (
 							<div className="flex items-center justify-center rounded-lg border border-dashed py-2 text-xs text-muted-foreground">
-								{t("dashboard.recently-approved.more-approved", "+{count} more approved", { count: requests.length - 5 })}
+								{t("dashboard.recently-approved.more-approved", "+{count} more approved", {
+									count: requests.length - 5,
+								})}
 							</div>
 						)}
 
 						<Button className="w-full" variant="outline" asChild>
-							<Link href="/approvals">{t("dashboard.recently-approved.view-all", "View All Approvals")}</Link>
+							<Link href="/approvals">
+								{t("dashboard.recently-approved.view-all", "View All Approvals")}
+							</Link>
 						</Button>
 					</div>
 				)}

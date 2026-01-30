@@ -4,10 +4,7 @@ import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import { resourceFromAttributes } from "@opentelemetry/resources";
 import { NodeSDK } from "@opentelemetry/sdk-node";
 import type { ReadableSpan, SpanProcessor } from "@opentelemetry/sdk-trace-base";
-import {
-	BatchSpanProcessor,
-	ConsoleSpanExporter,
-} from "@opentelemetry/sdk-trace-base";
+import { BatchSpanProcessor, ConsoleSpanExporter } from "@opentelemetry/sdk-trace-base";
 import { ATTR_SERVICE_NAME } from "@opentelemetry/semantic-conventions";
 
 // Custom span processor that only logs exception spans to console
@@ -80,9 +77,7 @@ export async function register() {
 		const healthy = await runStartupChecks();
 
 		if (!healthy) {
-			console.error(
-				"[FATAL] Critical startup checks failed - database unavailable",
-			);
+			console.error("[FATAL] Critical startup checks failed - database unavailable");
 			// In production, you may want to exit: process.exit(1)
 			// For now, we log and continue to allow debugging
 		}

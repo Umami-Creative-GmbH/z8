@@ -561,19 +561,20 @@ export function MembersTable({
 							{t("organization.members.pendingInvitations", "Pending Invitations")}
 						</h3>
 						<p className="text-sm text-muted-foreground">
-							{t("organization.members.invitationsWaiting", "{count} invitation(s) waiting to be accepted", {
-								count: invitations.length,
-							})}
+							{t(
+								"organization.members.invitationsWaiting",
+								"{count} invitation(s) waiting to be accepted",
+								{
+									count: invitations.length,
+								},
+							)}
 						</p>
 					</div>
 
 					<DataTableToolbar
 						search={invitationSearch}
 						onSearchChange={setInvitationSearch}
-						searchPlaceholder={t(
-							"organization.members.searchInvitations",
-							"Search invitations...",
-						)}
+						searchPlaceholder={t("organization.members.searchInvitations", "Search invitations...")}
 					/>
 
 					<DataTable

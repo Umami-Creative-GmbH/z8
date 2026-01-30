@@ -3,7 +3,16 @@
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { Clock, Loader2, MapPin, MoreHorizontal, Palette, Pencil, Plus, Trash2 } from "lucide-react";
+import {
+	Clock,
+	Loader2,
+	MapPin,
+	MoreHorizontal,
+	Palette,
+	Pencil,
+	Plus,
+	Trash2,
+} from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -161,7 +170,13 @@ export function ShiftTemplateManagement({ organizationId }: ShiftTemplateManagem
 
 	// Create mutation
 	const createMutation = useMutation({
-		mutationFn: async (values: { name: string; startTime: string; endTime: string; color?: string; subareaId?: string }) => {
+		mutationFn: async (values: {
+			name: string;
+			startTime: string;
+			endTime: string;
+			color?: string;
+			subareaId?: string;
+		}) => {
 			const result = await createShiftTemplate(values);
 			if (!result.success) throw new Error(result.error);
 			return result.data;
@@ -185,7 +200,14 @@ export function ShiftTemplateManagement({ organizationId }: ShiftTemplateManagem
 			values,
 		}: {
 			id: string;
-			values: { name?: string; startTime?: string; endTime?: string; color?: string; isActive?: boolean; subareaId?: string | null };
+			values: {
+				name?: string;
+				startTime?: string;
+				endTime?: string;
+				color?: string;
+				isActive?: boolean;
+				subareaId?: string | null;
+			};
 		}) => {
 			const result = await updateShiftTemplate(id, values);
 			if (!result.success) throw new Error(result.error);
@@ -361,9 +383,7 @@ export function ShiftTemplateManagement({ organizationId }: ShiftTemplateManagem
 												<DropdownMenuTrigger asChild>
 													<Button variant="ghost" size="icon" className="h-8 w-8">
 														<MoreHorizontal className="h-4 w-4" />
-														<span className="sr-only">
-															{t("common.openMenu", "Open menu")}
-														</span>
+														<span className="sr-only">{t("common.openMenu", "Open menu")}</span>
 													</Button>
 												</DropdownMenuTrigger>
 												<DropdownMenuContent align="end">
@@ -456,7 +476,13 @@ interface ShiftTemplateDialogProps {
 	onOpenChange: (open: boolean) => void;
 	template: ShiftTemplate | null;
 	locations: LocationWithSubareas[];
-	onSubmit: (values: { name: string; startTime: string; endTime: string; color?: string; subareaId?: string }) => void;
+	onSubmit: (values: {
+		name: string;
+		startTime: string;
+		endTime: string;
+		color?: string;
+		subareaId?: string;
+	}) => void;
 	isSubmitting: boolean;
 }
 
@@ -553,7 +579,10 @@ function ShiftTemplateDialog({
 								<Label htmlFor="name">{t("settings.shiftTemplates.form.name", "Name")}</Label>
 								<Input
 									id="name"
-									placeholder={t("settings.shiftTemplates.form.namePlaceholder", "e.g., Morning Shift…")}
+									placeholder={t(
+										"settings.shiftTemplates.form.namePlaceholder",
+										"e.g., Morning Shift…",
+									)}
 									value={field.state.value}
 									onChange={(e) => field.handleChange(e.target.value)}
 									onBlur={field.handleBlur}
@@ -607,7 +636,11 @@ function ShiftTemplateDialog({
 									<Palette className="h-4 w-4" aria-hidden="true" />
 									{t("settings.shiftTemplates.form.color", "Color")}
 								</Label>
-								<div className="flex flex-wrap gap-2" role="radiogroup" aria-label={t("settings.shiftTemplates.form.colorSelection", "Color selection")}>
+								<div
+									className="flex flex-wrap gap-2"
+									role="radiogroup"
+									aria-label={t("settings.shiftTemplates.form.colorSelection", "Color selection")}
+								>
 									{PRESET_COLORS.map((color) => (
 										<button
 											key={color.value}
@@ -618,8 +651,7 @@ function ShiftTemplateDialog({
 											onClick={() => field.handleChange(color.value)}
 											className={cn(
 												"h-8 w-8 rounded-full transition-transform hover:scale-110",
-												field.state.value === color.value &&
-													"ring-2 ring-offset-2 ring-primary",
+												field.state.value === color.value && "ring-2 ring-offset-2 ring-primary",
 											)}
 											style={{ backgroundColor: color.value }}
 										/>
@@ -651,10 +683,9 @@ function ShiftTemplateDialog({
 												"Select a subarea…",
 											)}
 										>
-											{field.state.value ? getSubareaDisplay(field.state.value) : t(
-												"settings.shiftTemplates.form.noSubarea",
-												"No default subarea",
-											)}
+											{field.state.value
+												? getSubareaDisplay(field.state.value)
+												: t("settings.shiftTemplates.form.noSubarea", "No default subarea")}
 										</SelectValue>
 									</SelectTrigger>
 									<SelectContent>
@@ -666,10 +697,14 @@ function ShiftTemplateDialog({
 												.filter((s) => s.isActive)
 												.map((subarea) => (
 													<SelectItem key={subarea.id} value={subarea.id}>
-														{t("settings.shiftTemplates.form.subareaFormat", "{location} – {subarea}", {
-															location: location.name,
-															subarea: subarea.name,
-														})}
+														{t(
+															"settings.shiftTemplates.form.subareaFormat",
+															"{location} – {subarea}",
+															{
+																location: location.name,
+																subarea: subarea.name,
+															},
+														)}
 													</SelectItem>
 												)),
 										)}

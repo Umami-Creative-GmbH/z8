@@ -3,7 +3,16 @@
 import { and, eq, gte, inArray, lte, or, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
-import { absenceEntry, approvalRequest, employee, hydrationStats, team, userSettings, waterIntakeLog, workPeriod } from "@/db/schema";
+import {
+	absenceEntry,
+	approvalRequest,
+	employee,
+	hydrationStats,
+	team,
+	userSettings,
+	waterIntakeLog,
+	workPeriod,
+} from "@/db/schema";
 import type { DashboardWidgetOrder } from "@/db/schema";
 import { getEnhancedVacationBalance } from "@/lib/absences/vacation.service";
 import { currentTimestamp, dateFromDB, dateToDB } from "@/lib/datetime/drizzle-adapter";
@@ -447,10 +456,7 @@ export async function getQuickStats(): Promise<ServerActionResult<any>> {
 		let weekExpected = 40; // Default
 		let monthExpected = 160; // Default
 
-		if (
-			currentEmployee.workPolicyAssignments &&
-			currentEmployee.workPolicyAssignments.length > 0
-		) {
+		if (currentEmployee.workPolicyAssignments && currentEmployee.workPolicyAssignments.length > 0) {
 			const assignment = currentEmployee.workPolicyAssignments[0];
 			const schedule = assignment.policy?.schedule;
 			if (schedule && schedule.scheduleType === "simple" && schedule.hoursPerCycle) {
@@ -826,27 +832,33 @@ export async function getWhosOutToday(): Promise<
 		);
 
 		// Process absences - deduplicate by employee ID (employee may have multiple overlapping absences)
-		const outTodayMap = new Map<string, {
-			id: string;
-			userId: string;
-			name: string;
-			image: string | null;
-			category: string;
-			categoryColor: string | null;
-			endsToday: boolean;
-			returnDate: string;
-		}>();
+		const outTodayMap = new Map<
+			string,
+			{
+				id: string;
+				userId: string;
+				name: string;
+				image: string | null;
+				category: string;
+				categoryColor: string | null;
+				endsToday: boolean;
+				returnDate: string;
+			}
+		>();
 
-		const returningTomorrowMap = new Map<string, {
-			id: string;
-			userId: string;
-			name: string;
-			image: string | null;
-			category: string;
-			categoryColor: string | null;
-			endsToday: boolean;
-			returnDate: string;
-		}>();
+		const returningTomorrowMap = new Map<
+			string,
+			{
+				id: string;
+				userId: string;
+				name: string;
+				image: string | null;
+				category: string;
+				categoryColor: string | null;
+				endsToday: boolean;
+				returnDate: string;
+			}
+		>();
 
 		for (const absence of todayAbsences) {
 			const employeeId = absence.employee.id;

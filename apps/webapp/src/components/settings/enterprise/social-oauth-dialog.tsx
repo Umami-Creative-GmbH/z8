@@ -82,7 +82,7 @@ export function SocialOAuthDialog({
 
 	const form = useForm({
 		defaultValues: {
-			provider: editConfig?.provider || (availableProviders[0] || "google"),
+			provider: editConfig?.provider || availableProviders[0] || "google",
 			clientId: editConfig?.clientId || "",
 			clientSecret: "",
 			isActive: editConfig?.isActive ?? true,
@@ -263,7 +263,9 @@ export function SocialOAuthDialog({
 											<Input
 												id="clientSecret"
 												type="password"
-												placeholder={isEditing ? "Leave blank to keep existing" : "Your OAuth client secret"}
+												placeholder={
+													isEditing ? "Leave blank to keep existing" : "Your OAuth client secret"
+												}
 												value={field.state.value}
 												onChange={(e) => field.handleChange(e.target.value)}
 												onBlur={field.handleBlur}
@@ -360,9 +362,7 @@ export function SocialOAuthDialog({
 								<div className="flex items-center justify-between">
 									<div className="space-y-0.5">
 										<Label htmlFor="isActive">Active</Label>
-										<p className="text-sm text-muted-foreground">
-											Enable or disable this provider
-										</p>
+										<p className="text-sm text-muted-foreground">Enable or disable this provider</p>
 									</div>
 									<Switch
 										id="isActive"

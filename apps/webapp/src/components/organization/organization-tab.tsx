@@ -91,10 +91,7 @@ export function OrganizationTab({
 			/>
 
 			{/* Pending Members Card (admin/owner only) */}
-			<PendingMembersCard
-				organizationId={organization.id}
-				currentMemberRole={currentMemberRole}
-			/>
+			<PendingMembersCard organizationId={organization.id} currentMemberRole={currentMemberRole} />
 
 			{/* Members & Invitations Card */}
 			<Card>

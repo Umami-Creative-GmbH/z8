@@ -1,9 +1,23 @@
-import { boolean, index, integer, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import {
+	boolean,
+	index,
+	integer,
+	pgTable,
+	text,
+	timestamp,
+	uniqueIndex,
+	uuid,
+} from "drizzle-orm/pg-core";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 
 // Import auth tables for FK references
 import { organization, user } from "../auth-schema";
-import { approvalStatusEnum, shiftRecurrenceTypeEnum, shiftRequestTypeEnum, shiftStatusEnum } from "./enums";
+import {
+	approvalStatusEnum,
+	shiftRecurrenceTypeEnum,
+	shiftRequestTypeEnum,
+	shiftStatusEnum,
+} from "./enums";
 import { employee, locationSubarea } from "./organization";
 
 // ============================================

@@ -105,11 +105,7 @@ export async function checkQueue(): Promise<ServiceHealth> {
  * Run all health checks and return aggregated result
  */
 export async function checkHealth(): Promise<HealthCheckResult> {
-	const [database, cache, queue] = await Promise.all([
-		checkDatabase(),
-		checkCache(),
-		checkQueue(),
-	]);
+	const [database, cache, queue] = await Promise.all([checkDatabase(), checkCache(), checkQueue()]);
 
 	// Overall status: unhealthy if DB is down, degraded if cache/queue is down
 	let status: ServiceStatus = "healthy";

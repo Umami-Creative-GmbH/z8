@@ -46,7 +46,10 @@ export const githubProvider: OAuthProviderImpl = {
 		const data = await response.json();
 
 		if (data.error) {
-			logger.error({ error: data.error, description: data.error_description }, "GitHub OAuth error");
+			logger.error(
+				{ error: data.error, description: data.error_description },
+				"GitHub OAuth error",
+			);
 			throw new Error(data.error_description || data.error);
 		}
 
@@ -99,7 +102,9 @@ export const githubProvider: OAuthProviderImpl = {
 					emailVerified = primaryEmail.verified;
 				} else {
 					// Fall back to any verified email
-					const verifiedEmail = emails.find((e: { verified: boolean; email: string }) => e.verified);
+					const verifiedEmail = emails.find(
+						(e: { verified: boolean; email: string }) => e.verified,
+					);
 					if (verifiedEmail) {
 						email = verifiedEmail.email;
 						emailVerified = verifiedEmail.verified;
@@ -109,7 +114,9 @@ export const githubProvider: OAuthProviderImpl = {
 		}
 
 		if (!email) {
-			throw new Error("Unable to retrieve email from GitHub. Please ensure your email is public or verified.");
+			throw new Error(
+				"Unable to retrieve email from GitHub. Please ensure your email is public or verified.",
+			);
 		}
 
 		return {

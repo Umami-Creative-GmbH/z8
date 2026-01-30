@@ -46,7 +46,9 @@ export function TimeClockPopover() {
 	// State for project selection
 	const [selectedProjectId, setSelectedProjectId] = useState<string | undefined>(undefined);
 	// State for work category selection
-	const [selectedWorkCategoryId, setSelectedWorkCategoryId] = useState<string | undefined>(undefined);
+	const [selectedWorkCategoryId, setSelectedWorkCategoryId] = useState<string | undefined>(
+		undefined,
+	);
 
 	const handleClockIn = async () => {
 		const result = await clockIn();

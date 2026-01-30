@@ -164,7 +164,9 @@ export default function WellnessPage() {
 								<div className="space-y-4 rounded-lg bg-muted/50 p-4">
 									{/* Preset Selection */}
 									<div className="space-y-2">
-										<Label>{t("onboarding.wellness.reminderFrequency", "Reminder Frequency")}</Label>
+										<Label>
+											{t("onboarding.wellness.reminderFrequency", "Reminder Frequency")}
+										</Label>
 										<Select value={selectedPreset} onValueChange={handlePresetChange}>
 											<SelectTrigger>
 												<SelectValue />
@@ -252,17 +254,9 @@ export default function WellnessPage() {
 										</h4>
 										<ul className="space-y-1 text-xs text-blue-800 dark:text-blue-200">
 											<li>
-												{t(
-													"onboarding.wellness.feature1",
-													"Gentle reminders while clocked in",
-												)}
+												{t("onboarding.wellness.feature1", "Gentle reminders while clocked in")}
 											</li>
-											<li>
-												{t(
-													"onboarding.wellness.feature2",
-													"Track your daily water intake",
-												)}
-											</li>
+											<li>{t("onboarding.wellness.feature2", "Track your daily water intake")}</li>
 											<li>
 												{t(
 													"onboarding.wellness.feature3",
@@ -270,10 +264,7 @@ export default function WellnessPage() {
 												)}
 											</li>
 											<li>
-												{t(
-													"onboarding.wellness.feature4",
-													"Dashboard widget to track progress",
-												)}
+												{t("onboarding.wellness.feature4", "Dashboard widget to track progress")}
 											</li>
 										</ul>
 									</div>

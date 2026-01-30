@@ -122,17 +122,14 @@ export function ClockInOutWidget({ activeWorkPeriod: initialWorkPeriod, employee
 			// Show break adjustment notification if a break was auto-added
 			const breakAdjustment = result.data?.breakAdjustment;
 			if (breakAdjustment) {
-				toast.info(
-					t("timeTracking.autoAdjusted.toast.title", "Break auto-added for compliance"),
-					{
-						description: t(
-							"timeTracking.autoAdjusted.toast.description",
-							"A {breakMinutes}-minute break was added to comply with time regulations.",
-							{ breakMinutes: breakAdjustment.breakMinutes },
-						),
-						duration: 8000,
-					},
-				);
+				toast.info(t("timeTracking.autoAdjusted.toast.title", "Break auto-added for compliance"), {
+					description: t(
+						"timeTracking.autoAdjusted.toast.description",
+						"A {breakMinutes}-minute break was added to comply with time regulations.",
+						{ breakMinutes: breakAdjustment.breakMinutes },
+					),
+					duration: 8000,
+				});
 			}
 
 			// Show notes input and store the entry ID for patching

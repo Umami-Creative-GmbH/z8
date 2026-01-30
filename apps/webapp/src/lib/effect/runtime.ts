@@ -1,6 +1,7 @@
 import { type Effect, Layer, ManagedRuntime, Exit } from "effect";
 import { createLogger } from "../logger";
 import { AnalyticsService } from "./services/analytics.service";
+import { AppAccessServiceLive } from "./services/app-access.service";
 import { AuthServiceLive } from "./services/auth.service";
 import { ChangePolicyServiceLive } from "./services/change-policy.service";
 import { DatabaseServiceLive } from "./services/database.service";
@@ -47,6 +48,9 @@ const ChangePolicyLayer = ChangePolicyServiceLive.pipe(Layer.provide(DatabaseSer
 // Layer for WorkPolicyService (depends on DatabaseService)
 const WorkPolicyLayer = WorkPolicyServiceLive.pipe(Layer.provide(DatabaseServiceLive));
 
+// Layer for AppAccessService (depends on DatabaseService)
+const AppAccessLayer = AppAccessServiceLive.pipe(Layer.provide(DatabaseServiceLive));
+
 // Combine all service layers
 export const AppLayer = Layer.mergeAll(
 	BaseLayer,
@@ -62,6 +66,7 @@ export const AppLayer = Layer.mergeAll(
 	ShiftRequestLayer,
 	ChangePolicyLayer,
 	WorkPolicyLayer,
+	AppAccessLayer,
 );
 
 // Runtime for executing effects

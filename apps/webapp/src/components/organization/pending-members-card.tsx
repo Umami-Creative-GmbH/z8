@@ -1,12 +1,6 @@
 "use client";
 
-import {
-	IconCheck,
-	IconLoader2,
-	IconUserCheck,
-	IconUserX,
-	IconX,
-} from "@tabler/icons-react";
+import { IconCheck, IconLoader2, IconUserCheck, IconUserX, IconX } from "@tabler/icons-react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
@@ -40,11 +34,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
 	listPendingMembers,
 	approvePendingMember,
@@ -61,10 +51,7 @@ interface PendingMembersCardProps {
 	currentMemberRole: "owner" | "admin" | "member";
 }
 
-export function PendingMembersCard({
-	organizationId,
-	currentMemberRole,
-}: PendingMembersCardProps) {
+export function PendingMembersCard({ organizationId, currentMemberRole }: PendingMembersCardProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const [selectedMembers, setSelectedMembers] = useState<Set<string>>(new Set());
@@ -248,7 +235,8 @@ export function PendingMembersCard({
 								disabled={bulkRejectMutation.isPending}
 							>
 								<IconUserX className="mr-2 h-4 w-4" />
-								{t("settings.pendingMembers.rejectSelected", "Reject Selected")} ({selectedMembers.size})
+								{t("settings.pendingMembers.rejectSelected", "Reject Selected")} (
+								{selectedMembers.size})
 							</Button>
 							<Button
 								size="sm"
@@ -260,7 +248,8 @@ export function PendingMembersCard({
 								) : (
 									<IconUserCheck className="mr-2 h-4 w-4" />
 								)}
-								{t("settings.pendingMembers.approveSelected", "Approve Selected")} ({selectedMembers.size})
+								{t("settings.pendingMembers.approveSelected", "Approve Selected")} (
+								{selectedMembers.size})
 							</Button>
 						</div>
 					)}
@@ -281,7 +270,10 @@ export function PendingMembersCard({
 											selectedMembers.size === pendingMembers.length && pendingMembers.length > 0
 										}
 										onCheckedChange={handleSelectAll}
-										aria-label={t("settings.pendingMembers.selectAll", "Select all pending members")}
+										aria-label={t(
+											"settings.pendingMembers.selectAll",
+											"Select all pending members",
+										)}
 									/>
 								</TableHead>
 								<TableHead>{t("settings.pendingMembers.user", "User")}</TableHead>
@@ -299,7 +291,9 @@ export function PendingMembersCard({
 										<Checkbox
 											checked={selectedMembers.has(member.id)}
 											onCheckedChange={(checked) => handleSelectMember(member.id, checked === true)}
-											aria-label={t("settings.pendingMembers.selectMember", "Select {name}", { name: member.user?.name || member.user?.email || "member" })}
+											aria-label={t("settings.pendingMembers.selectMember", "Select {name}", {
+												name: member.user?.name || member.user?.email || "member",
+											})}
 										/>
 									</TableCell>
 									<TableCell>
@@ -314,9 +308,7 @@ export function PendingMembersCard({
 												{member.inviteCode.label || member.inviteCode.code}
 											</Badge>
 										) : (
-											<Badge variant="secondary">
-												{t("settings.pendingMembers.sso", "SSO")}
-											</Badge>
+											<Badge variant="secondary">{t("settings.pendingMembers.sso", "SSO")}</Badge>
 										)}
 									</TableCell>
 									<TableCell>{formatDate(member.createdAt)}</TableCell>
@@ -326,9 +318,7 @@ export function PendingMembersCard({
 											onValueChange={(value) => handleTeamChange(member.id, value)}
 										>
 											<SelectTrigger className="w-[180px]">
-												<SelectValue
-													placeholder={t("settings.pendingMembers.noTeam", "No team")}
-												/>
+												<SelectValue placeholder={t("settings.pendingMembers.noTeam", "No team")} />
 											</SelectTrigger>
 											<SelectContent>
 												<SelectItem value="">
@@ -353,11 +343,18 @@ export function PendingMembersCard({
 														onClick={() =>
 															approveMutation.mutate({
 																memberId: member.id,
-																teamId: teamAssignments[member.id] || member.inviteCode?.defaultTeamId || undefined,
+																teamId:
+																	teamAssignments[member.id] ||
+																	member.inviteCode?.defaultTeamId ||
+																	undefined,
 															})
 														}
 														disabled={approveMutation.isPending}
-														aria-label={t("settings.pendingMembers.approveMember", "Approve {name}", { name: member.user?.name || "member" })}
+														aria-label={t(
+															"settings.pendingMembers.approveMember",
+															"Approve {name}",
+															{ name: member.user?.name || "member" },
+														)}
 													>
 														{approveMutation.isPending ? (
 															<IconLoader2 className="h-4 w-4 animate-spin" />
@@ -377,7 +374,9 @@ export function PendingMembersCard({
 														size="sm"
 														className="text-destructive hover:text-destructive hover:bg-destructive/10"
 														onClick={() => setRejectDialogMember(member)}
-														aria-label={t("settings.pendingMembers.rejectMember", "Reject {name}", { name: member.user?.name || "member" })}
+														aria-label={t("settings.pendingMembers.rejectMember", "Reject {name}", {
+															name: member.user?.name || "member",
+														})}
 													>
 														<IconX className="h-4 w-4" />
 													</Button>
@@ -409,7 +408,12 @@ export function PendingMembersCard({
 							{t(
 								"settings.pendingMembers.rejectDescription",
 								"Are you sure you want to reject {name}? They will be removed from the pending list and will need to request access again.",
-								{ name: rejectDialogMember?.user?.name || rejectDialogMember?.user?.email || "this user" },
+								{
+									name:
+										rejectDialogMember?.user?.name ||
+										rejectDialogMember?.user?.email ||
+										"this user",
+								},
 							)}
 						</AlertDialogDescription>
 					</AlertDialogHeader>

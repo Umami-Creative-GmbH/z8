@@ -55,7 +55,9 @@ export function VacationBalanceWidget() {
 		<DashboardWidget id="vacation-balance">
 			<WidgetCard
 				title={t("dashboard.vacation.title", "Vacation Balance")}
-				description={t("dashboard.vacation.description", "{year} vacation days", { year: new Date().getFullYear() })}
+				description={t("dashboard.vacation.description", "{year} vacation days", {
+					year: new Date().getFullYear(),
+				})}
 				icon={<IconBeach className="size-4 text-amber-500" />}
 				loading={loading}
 				refreshing={refreshing}
@@ -67,13 +69,28 @@ export function VacationBalanceWidget() {
 						<div className="flex items-center justify-between">
 							<div>
 								<p className="text-3xl font-bold">{balance.remainingDays.toFixed(1)}</p>
-								<p className="text-sm text-muted-foreground">{t("dashboard.vacation.days-remaining", "days remaining")}</p>
+								<p className="text-sm text-muted-foreground">
+									{t("dashboard.vacation.days-remaining", "days remaining")}
+								</p>
 							</div>
 							<div className="text-right">
-								<p className="text-sm font-medium">{t("dashboard.vacation.total", "{days} total", { days: balance.totalDays.toFixed(1) })}</p>
+								<p className="text-sm font-medium">
+									{t("dashboard.vacation.total", "{days} total", {
+										days: balance.totalDays.toFixed(1),
+									})}
+								</p>
 								<p className="text-xs text-muted-foreground">
-									{t("dashboard.vacation.used", "{days} used", { days: balance.usedDays.toFixed(1) })}
-									{balance.pendingDays > 0 && <>, {t("dashboard.vacation.pending", "{days} pending", { days: balance.pendingDays.toFixed(1) })}</>}
+									{t("dashboard.vacation.used", "{days} used", {
+										days: balance.usedDays.toFixed(1),
+									})}
+									{balance.pendingDays > 0 && (
+										<>
+											,{" "}
+											{t("dashboard.vacation.pending", "{days} pending", {
+												days: balance.pendingDays.toFixed(1),
+											})}
+										</>
+									)}
 								</p>
 							</div>
 						</div>
@@ -82,9 +99,15 @@ export function VacationBalanceWidget() {
 						<div className="space-y-1">
 							<Progress value={Math.min(usedPercentage, 100)} className="h-2" />
 							<div className="flex items-center justify-between text-xs">
-								<span className="text-muted-foreground">{t("dashboard.vacation.percent-used", "{percent}% used", { percent: usedPercentage.toFixed(0) })}</span>
+								<span className="text-muted-foreground">
+									{t("dashboard.vacation.percent-used", "{percent}% used", {
+										percent: usedPercentage.toFixed(0),
+									})}
+								</span>
 								<span className={getUsageColor(usedPercentage)}>
-									{t("dashboard.vacation.available", "{days} available", { days: balance.remainingDays.toFixed(1) })}
+									{t("dashboard.vacation.available", "{days} available", {
+										days: balance.remainingDays.toFixed(1),
+									})}
 								</span>
 							</div>
 						</div>
@@ -93,17 +116,23 @@ export function VacationBalanceWidget() {
 						<div className="grid grid-cols-3 gap-2 pt-2 border-t">
 							<div className="text-center">
 								<p className="text-lg font-semibold">{balance.usedDays.toFixed(1)}</p>
-								<p className="text-xs text-muted-foreground">{t("dashboard.vacation.label-used", "Used")}</p>
+								<p className="text-xs text-muted-foreground">
+									{t("dashboard.vacation.label-used", "Used")}
+								</p>
 							</div>
 							<div className="text-center">
 								<p className="text-lg font-semibold">{balance.pendingDays.toFixed(1)}</p>
-								<p className="text-xs text-muted-foreground">{t("dashboard.vacation.label-pending", "Pending")}</p>
+								<p className="text-xs text-muted-foreground">
+									{t("dashboard.vacation.label-pending", "Pending")}
+								</p>
 							</div>
 							<div className="text-center">
 								<p className="text-lg font-semibold text-green-600">
 									{balance.remainingDays.toFixed(1)}
 								</p>
-								<p className="text-xs text-muted-foreground">{t("dashboard.vacation.label-available", "Available")}</p>
+								<p className="text-xs text-muted-foreground">
+									{t("dashboard.vacation.label-available", "Available")}
+								</p>
 							</div>
 						</div>
 
@@ -113,9 +142,15 @@ export function VacationBalanceWidget() {
 								<div className="flex items-center justify-between">
 									<div className="flex items-center gap-2">
 										<IconCalendarTime className="size-4 text-muted-foreground" />
-										<span className="text-sm">{t("dashboard.vacation.carryover", "Carryover")}</span>
+										<span className="text-sm">
+											{t("dashboard.vacation.carryover", "Carryover")}
+										</span>
 									</div>
-									<Badge variant="secondary">{t("dashboard.vacation.carryover-days", "{days} days", { days: balance.carryoverDays.toFixed(1) })}</Badge>
+									<Badge variant="secondary">
+										{t("dashboard.vacation.carryover-days", "{days} days", {
+											days: balance.carryoverDays.toFixed(1),
+										})}
+									</Badge>
 								</div>
 
 								{balance.carryoverExpiryDaysRemaining !== null && (
@@ -124,13 +159,17 @@ export function VacationBalanceWidget() {
 											<div className="flex items-center gap-2 p-2 text-sm bg-amber-50 dark:bg-amber-950 rounded-md border border-amber-200 dark:border-amber-800">
 												<IconAlertTriangle className="size-4 text-amber-500 flex-shrink-0" />
 												<span className="text-amber-700 dark:text-amber-300">
-													{t("dashboard.vacation.expires-in", "Expires in {days} days", { days: balance.carryoverExpiryDaysRemaining })}
+													{t("dashboard.vacation.expires-in", "Expires in {days} days", {
+														days: balance.carryoverExpiryDaysRemaining,
+													})}
 												</span>
 											</div>
 										) : (
 											<p className="text-xs text-muted-foreground flex items-center gap-1">
 												<IconClock className="size-3" />
-												{t("dashboard.vacation.expires-in", "Expires in {days} days", { days: balance.carryoverExpiryDaysRemaining })}
+												{t("dashboard.vacation.expires-in", "Expires in {days} days", {
+													days: balance.carryoverExpiryDaysRemaining,
+												})}
 											</p>
 										)}
 									</div>

@@ -86,9 +86,7 @@ export function WorkPolicyAssignmentManager({
 			}
 		},
 		onError: () => {
-			toast.error(
-				t("settings.workPolicies.assignmentDeleteFailed", "Failed to remove assignment"),
-			);
+			toast.error(t("settings.workPolicies.assignmentDeleteFailed", "Failed to remove assignment"));
 		},
 	});
 

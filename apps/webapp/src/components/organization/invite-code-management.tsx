@@ -40,11 +40,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
 	listInviteCodes,
 	deleteInviteCode,
@@ -265,7 +261,11 @@ export function InviteCodeManagement({
 											</Tooltip>
 											<DropdownMenu>
 												<DropdownMenuTrigger asChild>
-													<Button variant="ghost" size="sm" aria-label={t("common.moreActions", "More actions")}>
+													<Button
+														variant="ghost"
+														size="sm"
+														aria-label={t("common.moreActions", "More actions")}
+													>
 														•••
 													</Button>
 												</DropdownMenuTrigger>
@@ -314,7 +314,10 @@ export function InviteCodeManagement({
 			/>
 
 			{/* Delete Confirmation Dialog */}
-			<AlertDialog open={!!deleteDialogCode} onOpenChange={(open) => !open && setDeleteDialogCode(null)}>
+			<AlertDialog
+				open={!!deleteDialogCode}
+				onOpenChange={(open) => !open && setDeleteDialogCode(null)}
+			>
 				<AlertDialogContent>
 					<AlertDialogHeader>
 						<AlertDialogTitle>
@@ -323,7 +326,7 @@ export function InviteCodeManagement({
 						<AlertDialogDescription>
 							{t(
 								"settings.inviteCodes.deleteDescription",
-								"Are you sure you want to delete the invite code \"{code}\"? This action cannot be undone.",
+								'Are you sure you want to delete the invite code "{code}"? This action cannot be undone.',
 								{ code: deleteDialogCode?.code || "" },
 							)}
 						</AlertDialogDescription>

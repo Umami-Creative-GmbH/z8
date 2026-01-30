@@ -452,9 +452,7 @@ export async function generateAbsencesStepAction(
 /**
  * Generate demo locations (step 6)
  */
-export async function generateLocationsStepAction(
-	input: StepGenerationInput,
-): Promise<
+export async function generateLocationsStepAction(input: StepGenerationInput): Promise<
 	ServerActionResult<{
 		locationsCreated: number;
 		subareasCreated: number;
@@ -507,9 +505,7 @@ export async function generateLocationsStepAction(
 /**
  * Generate demo work categories (step 7)
  */
-export async function generateWorkCategoriesStepAction(
-	input: StepGenerationInput,
-): Promise<
+export async function generateWorkCategoriesStepAction(input: StepGenerationInput): Promise<
 	ServerActionResult<{
 		setsCreated: number;
 		categoriesCreated: number;
@@ -562,9 +558,7 @@ export async function generateWorkCategoriesStepAction(
 /**
  * Generate demo change policies (step 8)
  */
-export async function generateChangePoliciesStepAction(
-	input: StepGenerationInput,
-): Promise<
+export async function generateChangePoliciesStepAction(input: StepGenerationInput): Promise<
 	ServerActionResult<{
 		policiesCreated: number;
 		assignmentsCreated: number;
@@ -663,9 +657,7 @@ export async function generateShiftTemplatesStepAction(
 /**
  * Generate demo shifts with recurrence (step 10)
  */
-export async function generateShiftsStepAction(
-	input: StepGenerationInput,
-): Promise<
+export async function generateShiftsStepAction(input: StepGenerationInput): Promise<
 	ServerActionResult<{
 		recurrencesCreated: number;
 		shiftsCreated: number;

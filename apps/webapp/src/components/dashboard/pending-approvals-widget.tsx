@@ -49,7 +49,10 @@ function UrgencyIndicator({ count }: { count: number }) {
 			</div>
 			<div className="flex-1">
 				<p className="font-semibold">
-					{t("dashboard.pending-approvals.pending-requests", "{count} pending {request}", { count, request: pluralize(count, "request") })}
+					{t("dashboard.pending-approvals.pending-requests", "{count} pending {request}", {
+						count,
+						request: pluralize(count, "request"),
+					})}
 				</p>
 				<p className="text-xs opacity-90">
 					{isUrgent
@@ -123,22 +126,25 @@ export function PendingApprovalsWidget() {
 	const [loading, setLoading] = useState(true);
 	const [refreshing, setRefreshing] = useState(false);
 
-	const loadData = useCallback(async (isRefresh = false) => {
-		if (isRefresh) {
-			setRefreshing(true);
-		}
-		try {
-			const { absenceApprovals: absences, timeCorrectionApprovals: corrections } =
-				await getPendingApprovals();
-			setAbsenceApprovals(absences);
-			setTimeCorrectionApprovals(corrections);
-		} catch {
-			toast.error(t("dashboard.pending-approvals.error", "Failed to load pending approvals"));
-		} finally {
-			setLoading(false);
-			setRefreshing(false);
-		}
-	}, [t]);
+	const loadData = useCallback(
+		async (isRefresh = false) => {
+			if (isRefresh) {
+				setRefreshing(true);
+			}
+			try {
+				const { absenceApprovals: absences, timeCorrectionApprovals: corrections } =
+					await getPendingApprovals();
+				setAbsenceApprovals(absences);
+				setTimeCorrectionApprovals(corrections);
+			} catch {
+				toast.error(t("dashboard.pending-approvals.error", "Failed to load pending approvals"));
+			} finally {
+				setLoading(false);
+				setRefreshing(false);
+			}
+		},
+		[t],
+	);
 
 	useEffect(() => {
 		loadData(false);
@@ -156,7 +162,10 @@ export function PendingApprovalsWidget() {
 		<DashboardWidget id="pending-approvals">
 			<WidgetCard
 				title={t("dashboard.pending-approvals.title", "Pending Approvals")}
-				description={t("dashboard.pending-approvals.description", "Requests awaiting your decision")}
+				description={t(
+					"dashboard.pending-approvals.description",
+					"Requests awaiting your decision",
+				)}
 				icon={<IconClock className="size-4 text-amber-500" />}
 				loading={loading}
 				refreshing={refreshing}
@@ -184,7 +193,9 @@ export function PendingApprovalsWidget() {
 							))}
 							{absenceApprovals.length > 3 && (
 								<p className="text-center text-xs text-muted-foreground pt-1">
-									{t("dashboard.pending-approvals.more-requests", "+{count} more requests", { count: absenceApprovals.length - 3 })}
+									{t("dashboard.pending-approvals.more-requests", "+{count} more requests", {
+										count: absenceApprovals.length - 3,
+									})}
 								</p>
 							)}
 						</ApprovalSection>
@@ -210,7 +221,9 @@ export function PendingApprovalsWidget() {
 							))}
 							{timeCorrectionApprovals.length > 3 && (
 								<p className="text-center text-xs text-muted-foreground pt-1">
-									{t("dashboard.pending-approvals.more-requests", "+{count} more requests", { count: timeCorrectionApprovals.length - 3 })}
+									{t("dashboard.pending-approvals.more-requests", "+{count} more requests", {
+										count: timeCorrectionApprovals.length - 3,
+									})}
 								</p>
 							)}
 						</ApprovalSection>

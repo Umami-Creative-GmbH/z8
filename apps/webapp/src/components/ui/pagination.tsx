@@ -34,7 +34,13 @@ type PaginationLinkProps = {
 } & Pick<React.ComponentProps<typeof Button>, "size"> &
 	Omit<React.ComponentProps<"a">, "href">;
 
-function PaginationLink({ className, isActive, size = "icon", href, ...props }: PaginationLinkProps) {
+function PaginationLink({
+	className,
+	isActive,
+	size = "icon",
+	href,
+	...props
+}: PaginationLinkProps) {
 	return (
 		<a
 			href={href}

@@ -176,7 +176,10 @@ export function DemoDataWizard({ employees }: DemoDataWizardProps) {
 			activeSteps.push({
 				id: "teams",
 				label: t("settings.demo.steps.teams.label", "Teams"),
-				description: t("settings.demo.steps.teams.description", "Creating teams and assigning employees"),
+				description: t(
+					"settings.demo.steps.teams.description",
+					"Creating teams and assigning employees",
+				),
 				icon: <IconUsersGroup className="size-4" />,
 				status: "pending",
 			});
@@ -205,7 +208,10 @@ export function DemoDataWizard({ employees }: DemoDataWizardProps) {
 			activeSteps.push({
 				id: "time-entries",
 				label: t("settings.demo.steps.timeEntries.label", "Time Entries"),
-				description: t("settings.demo.steps.timeEntries.description", "Creating time entries and work periods"),
+				description: t(
+					"settings.demo.steps.timeEntries.description",
+					"Creating time entries and work periods",
+				),
 				icon: <IconClock className="size-4" />,
 				status: "pending",
 			});
@@ -226,7 +232,10 @@ export function DemoDataWizard({ employees }: DemoDataWizardProps) {
 			activeSteps.push({
 				id: "locations",
 				label: t("settings.demo.steps.locations.label", "Locations"),
-				description: t("settings.demo.steps.locations.description", "Creating locations and subareas"),
+				description: t(
+					"settings.demo.steps.locations.description",
+					"Creating locations and subareas",
+				),
 				icon: <IconBuilding className="size-4" />,
 				status: "pending",
 			});
@@ -237,7 +246,10 @@ export function DemoDataWizard({ employees }: DemoDataWizardProps) {
 			activeSteps.push({
 				id: "work-categories",
 				label: t("settings.demo.steps.workCategories.label", "Work Categories"),
-				description: t("settings.demo.steps.workCategories.description", "Creating work category sets and categories"),
+				description: t(
+					"settings.demo.steps.workCategories.description",
+					"Creating work category sets and categories",
+				),
 				icon: <IconCategory className="size-4" />,
 				status: "pending",
 			});
@@ -248,7 +260,10 @@ export function DemoDataWizard({ employees }: DemoDataWizardProps) {
 			activeSteps.push({
 				id: "change-policies",
 				label: t("settings.demo.steps.changePolicies.label", "Change Policies"),
-				description: t("settings.demo.steps.changePolicies.description", "Creating change policies"),
+				description: t(
+					"settings.demo.steps.changePolicies.description",
+					"Creating change policies",
+				),
 				icon: <IconShieldCheck className="size-4" />,
 				status: "pending",
 			});
@@ -259,7 +274,10 @@ export function DemoDataWizard({ employees }: DemoDataWizardProps) {
 			activeSteps.push({
 				id: "shift-templates",
 				label: t("settings.demo.steps.shiftTemplates.label", "Shift Templates"),
-				description: t("settings.demo.steps.shiftTemplates.description", "Creating shift templates"),
+				description: t(
+					"settings.demo.steps.shiftTemplates.description",
+					"Creating shift templates",
+				),
 				icon: <IconCalendarEvent className="size-4" />,
 				status: "pending",
 			});
@@ -277,7 +295,10 @@ export function DemoDataWizard({ employees }: DemoDataWizardProps) {
 			activeSteps.push({
 				id: "assign-categories",
 				label: t("settings.demo.steps.assignCategories.label", "Assign Categories"),
-				description: t("settings.demo.steps.assignCategories.description", "Assigning work categories to periods"),
+				description: t(
+					"settings.demo.steps.assignCategories.description",
+					"Assigning work categories to periods",
+				),
 				icon: <IconCategory className="size-4" />,
 				status: "pending",
 			});
@@ -651,7 +672,10 @@ export function DemoDataWizard({ employees }: DemoDataWizardProps) {
 						{t("settings.demo.generateData.title", "Generate Demo Data")}
 					</CardTitle>
 					<CardDescription>
-						{t("settings.demo.generateData.description", "Create realistic sample data for your organization")}
+						{t(
+							"settings.demo.generateData.description",
+							"Create realistic sample data for your organization",
+						)}
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
@@ -659,11 +683,26 @@ export function DemoDataWizard({ employees }: DemoDataWizardProps) {
 						<div className="space-y-6">
 							{/* Step indicators */}
 							<div className="flex items-center gap-4">
-								<StepIndicator step={1} label={t("settings.demo.wizard.configure", "Configure")} active={true} completed={false} />
+								<StepIndicator
+									step={1}
+									label={t("settings.demo.wizard.configure", "Configure")}
+									active={true}
+									completed={false}
+								/>
 								<div className="h-px flex-1 bg-border" />
-								<StepIndicator step={2} label={t("settings.demo.wizard.generate", "Generate")} active={false} completed={false} />
+								<StepIndicator
+									step={2}
+									label={t("settings.demo.wizard.generate", "Generate")}
+									active={false}
+									completed={false}
+								/>
 								<div className="h-px flex-1 bg-border" />
-								<StepIndicator step={3} label={t("settings.demo.wizard.complete", "Complete")} active={false} completed={false} />
+								<StepIndicator
+									step={3}
+									label={t("settings.demo.wizard.complete", "Complete")}
+									active={false}
+									completed={false}
+								/>
 							</div>
 
 							{error && (
@@ -675,7 +714,9 @@ export function DemoDataWizard({ employees }: DemoDataWizardProps) {
 							{/* Configuration Form */}
 							<div className="grid gap-6 md:grid-cols-2">
 								<div className="space-y-2">
-									<Label htmlFor="dateRange">{t("settings.demo.form.dateRange.label", "Date Range")}</Label>
+									<Label htmlFor="dateRange">
+										{t("settings.demo.form.dateRange.label", "Date Range")}
+									</Label>
 									<Select
 										value={dateRangeType}
 										onValueChange={(v) =>
@@ -686,10 +727,18 @@ export function DemoDataWizard({ employees }: DemoDataWizardProps) {
 											<SelectValue />
 										</SelectTrigger>
 										<SelectContent>
-											<SelectItem value="last30">{t("settings.demo.form.dateRange.last30", "Last 30 days")}</SelectItem>
-											<SelectItem value="last60">{t("settings.demo.form.dateRange.last60", "Last 60 days")}</SelectItem>
-											<SelectItem value="last90">{t("settings.demo.form.dateRange.last90", "Last 90 days")}</SelectItem>
-											<SelectItem value="thisYear">{t("settings.demo.form.dateRange.thisYear", "This year")}</SelectItem>
+											<SelectItem value="last30">
+												{t("settings.demo.form.dateRange.last30", "Last 30 days")}
+											</SelectItem>
+											<SelectItem value="last60">
+												{t("settings.demo.form.dateRange.last60", "Last 60 days")}
+											</SelectItem>
+											<SelectItem value="last90">
+												{t("settings.demo.form.dateRange.last90", "Last 90 days")}
+											</SelectItem>
+											<SelectItem value="thisYear">
+												{t("settings.demo.form.dateRange.thisYear", "This year")}
+											</SelectItem>
 										</SelectContent>
 									</Select>
 									<p className="text-xs text-muted-foreground">
@@ -698,7 +747,9 @@ export function DemoDataWizard({ employees }: DemoDataWizardProps) {
 								</div>
 
 								<div className="space-y-2">
-									<Label htmlFor="employees">{t("settings.demo.form.employees.label", "Employees")}</Label>
+									<Label htmlFor="employees">
+										{t("settings.demo.form.employees.label", "Employees")}
+									</Label>
 									<Select
 										value={selectedEmployees}
 										onValueChange={(v) => setSelectedEmployees(v as "all" | "selected")}
@@ -707,9 +758,18 @@ export function DemoDataWizard({ employees }: DemoDataWizardProps) {
 											<SelectValue />
 										</SelectTrigger>
 										<SelectContent>
-											<SelectItem value="all">{t("settings.demo.form.employees.all", `All employees (${employees.length})`, { count: employees.length })}</SelectItem>
+											<SelectItem value="all">
+												{t(
+													"settings.demo.form.employees.all",
+													`All employees (${employees.length})`,
+													{ count: employees.length },
+												)}
+											</SelectItem>
 											<SelectItem value="selected" disabled>
-												{t("settings.demo.form.employees.selectSpecific", "Select specific employees")}
+												{t(
+													"settings.demo.form.employees.selectSpecific",
+													"Select specific employees",
+												)}
 											</SelectItem>
 										</SelectContent>
 									</Select>
@@ -737,7 +797,10 @@ export function DemoDataWizard({ employees }: DemoDataWizardProps) {
 												{t("settings.demo.form.dataTypes.timeEntries.title", "Time Entries")}
 											</div>
 											<p className="text-xs text-muted-foreground">
-												{t("settings.demo.form.dataTypes.timeEntries.description", "Clock-in/out records and work periods")}
+												{t(
+													"settings.demo.form.dataTypes.timeEntries.description",
+													"Clock-in/out records and work periods",
+												)}
 											</p>
 										</div>
 									</div>
@@ -760,7 +823,10 @@ export function DemoDataWizard({ employees }: DemoDataWizardProps) {
 												{t("settings.demo.form.dataTypes.absences.title", "Absences")}
 											</div>
 											<p className="text-xs text-muted-foreground">
-												{t("settings.demo.form.dataTypes.absences.description", "Vacation, sick leave, and other absences")}
+												{t(
+													"settings.demo.form.dataTypes.absences.description",
+													"Vacation, sick leave, and other absences",
+												)}
 											</p>
 										</div>
 									</div>
@@ -783,7 +849,10 @@ export function DemoDataWizard({ employees }: DemoDataWizardProps) {
 												{t("settings.demo.form.dataTypes.teams.title", "Teams")}
 											</div>
 											<p className="text-xs text-muted-foreground">
-												{t("settings.demo.form.dataTypes.teams.description", "Create teams and assign employees")}
+												{t(
+													"settings.demo.form.dataTypes.teams.description",
+													"Create teams and assign employees",
+												)}
 											</p>
 											{includeTeams && (
 												<div className="mt-2 flex items-center gap-2">
@@ -823,12 +892,18 @@ export function DemoDataWizard({ employees }: DemoDataWizardProps) {
 												{t("settings.demo.form.dataTypes.projects.title", "Projects")}
 											</div>
 											<p className="text-xs text-muted-foreground">
-												{t("settings.demo.form.dataTypes.projects.description", "Sample projects for time tracking")}
+												{t(
+													"settings.demo.form.dataTypes.projects.description",
+													"Sample projects for time tracking",
+												)}
 											</p>
 											{includeProjects && (
 												<div className="mt-2 flex items-center gap-2">
 													<Label htmlFor="projectCount" className="text-xs whitespace-nowrap">
-														{t("settings.demo.form.dataTypes.projects.countLabel", "Number of projects:")}
+														{t(
+															"settings.demo.form.dataTypes.projects.countLabel",
+															"Number of projects:",
+														)}
 													</Label>
 													<Input
 														id="projectCount"
@@ -864,12 +939,18 @@ export function DemoDataWizard({ employees }: DemoDataWizardProps) {
 												{t("settings.demo.form.dataTypes.locations.title", "Locations")}
 											</div>
 											<p className="text-xs text-muted-foreground">
-												{t("settings.demo.form.dataTypes.locations.description", "Work locations and subareas")}
+												{t(
+													"settings.demo.form.dataTypes.locations.description",
+													"Work locations and subareas",
+												)}
 											</p>
 											{includeLocations && (
 												<div className="mt-2 flex items-center gap-2">
 													<Label htmlFor="locationCount" className="text-xs whitespace-nowrap">
-														{t("settings.demo.form.dataTypes.locations.countLabel", "Number of locations:")}
+														{t(
+															"settings.demo.form.dataTypes.locations.countLabel",
+															"Number of locations:",
+														)}
 													</Label>
 													<Input
 														id="locationCount"
@@ -905,7 +986,10 @@ export function DemoDataWizard({ employees }: DemoDataWizardProps) {
 												{t("settings.demo.form.dataTypes.workCategories.title", "Work Categories")}
 											</div>
 											<p className="text-xs text-muted-foreground">
-												{t("settings.demo.form.dataTypes.workCategories.description", "Category sets for work periods")}
+												{t(
+													"settings.demo.form.dataTypes.workCategories.description",
+													"Category sets for work periods",
+												)}
 											</p>
 											{includeWorkCategories && includeTimeEntries && (
 												<div
@@ -918,7 +1002,10 @@ export function DemoDataWizard({ employees }: DemoDataWizardProps) {
 														onCheckedChange={(v) => setAssignWorkCategoriesToPeriods(v === true)}
 													/>
 													<Label htmlFor="assignCategories" className="text-xs cursor-pointer">
-														{t("settings.demo.form.dataTypes.workCategories.assignLabel", "Also assign to work periods")}
+														{t(
+															"settings.demo.form.dataTypes.workCategories.assignLabel",
+															"Also assign to work periods",
+														)}
 													</Label>
 												</div>
 											)}
@@ -944,7 +1031,10 @@ export function DemoDataWizard({ employees }: DemoDataWizardProps) {
 												{t("settings.demo.form.dataTypes.changePolicies.title", "Change Policies")}
 											</div>
 											<p className="text-xs text-muted-foreground">
-												{t("settings.demo.form.dataTypes.changePolicies.description", "Time entry change policies")}
+												{t(
+													"settings.demo.form.dataTypes.changePolicies.description",
+													"Time entry change policies",
+												)}
 											</p>
 										</div>
 									</div>
@@ -967,14 +1057,23 @@ export function DemoDataWizard({ employees }: DemoDataWizardProps) {
 										<div className="space-y-1">
 											<div className="flex items-center gap-2 font-medium">
 												<IconCalendarEvent className="size-4" />
-												{t("settings.demo.form.dataTypes.shiftScheduling.title", "Shift Scheduling")}
+												{t(
+													"settings.demo.form.dataTypes.shiftScheduling.title",
+													"Shift Scheduling",
+												)}
 											</div>
 											<p className="text-xs text-muted-foreground">
-												{t("settings.demo.form.dataTypes.shiftScheduling.description", "Shift templates and scheduled shifts")}
+												{t(
+													"settings.demo.form.dataTypes.shiftScheduling.description",
+													"Shift templates and scheduled shifts",
+												)}
 											</p>
 											{!includeLocations && (
 												<p className="text-xs text-amber-600 dark:text-amber-400">
-													{t("settings.demo.form.dataTypes.shiftScheduling.requiresLocations", "Requires Locations to be enabled")}
+													{t(
+														"settings.demo.form.dataTypes.shiftScheduling.requiresLocations",
+														"Requires Locations to be enabled",
+													)}
 												</p>
 											)}
 										</div>
@@ -1008,11 +1107,26 @@ export function DemoDataWizard({ employees }: DemoDataWizardProps) {
 						<div className="space-y-6">
 							{/* Step indicators */}
 							<div className="flex items-center gap-4">
-								<StepIndicator step={1} label={t("settings.demo.wizard.configure", "Configure")} active={false} completed={true} />
+								<StepIndicator
+									step={1}
+									label={t("settings.demo.wizard.configure", "Configure")}
+									active={false}
+									completed={true}
+								/>
 								<div className="h-px flex-1 bg-primary" />
-								<StepIndicator step={2} label={t("settings.demo.wizard.generate", "Generate")} active={true} completed={false} />
+								<StepIndicator
+									step={2}
+									label={t("settings.demo.wizard.generate", "Generate")}
+									active={true}
+									completed={false}
+								/>
 								<div className="h-px flex-1 bg-border" />
-								<StepIndicator step={3} label={t("settings.demo.wizard.complete", "Complete")} active={false} completed={false} />
+								<StepIndicator
+									step={3}
+									label={t("settings.demo.wizard.complete", "Complete")}
+									active={false}
+									completed={false}
+								/>
 							</div>
 
 							{error && (
@@ -1042,11 +1156,26 @@ export function DemoDataWizard({ employees }: DemoDataWizardProps) {
 						<div className="space-y-6">
 							{/* Step indicators */}
 							<div className="flex items-center gap-4">
-								<StepIndicator step={1} label={t("settings.demo.wizard.configure", "Configure")} active={false} completed={true} />
+								<StepIndicator
+									step={1}
+									label={t("settings.demo.wizard.configure", "Configure")}
+									active={false}
+									completed={true}
+								/>
 								<div className="h-px flex-1 bg-primary" />
-								<StepIndicator step={2} label={t("settings.demo.wizard.generate", "Generate")} active={false} completed={true} />
+								<StepIndicator
+									step={2}
+									label={t("settings.demo.wizard.generate", "Generate")}
+									active={false}
+									completed={true}
+								/>
 								<div className="h-px flex-1 bg-primary" />
-								<StepIndicator step={3} label={t("settings.demo.wizard.complete", "Complete")} active={true} completed={true} />
+								<StepIndicator
+									step={3}
+									label={t("settings.demo.wizard.complete", "Complete")}
+									active={true}
+									completed={true}
+								/>
 							</div>
 
 							<div className="space-y-6 py-4">
@@ -1055,7 +1184,9 @@ export function DemoDataWizard({ employees }: DemoDataWizardProps) {
 										<IconCheck className="size-6" />
 									</div>
 								</div>
-								<p className="text-center text-lg font-medium">{t("settings.demo.results.success", "Demo data generated successfully!")}</p>
+								<p className="text-center text-lg font-medium">
+									{t("settings.demo.results.success", "Demo data generated successfully!")}
+								</p>
 
 								{/* Show completed steps with results */}
 								<div className="space-y-2">
@@ -1098,7 +1229,10 @@ export function DemoDataWizard({ employees }: DemoDataWizardProps) {
 						{t("settings.demo.generateEmployees.title", "Generate Employees")}
 					</CardTitle>
 					<CardDescription>
-						{t("settings.demo.generateEmployees.description", "Create demo employee accounts for testing")}
+						{t(
+							"settings.demo.generateEmployees.description",
+							"Create demo employee accounts for testing",
+						)}
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
@@ -1112,19 +1246,42 @@ export function DemoDataWizard({ employees }: DemoDataWizardProps) {
 						{employeeResult && (
 							<div className="rounded-lg border border-green-500/50 bg-green-50 p-4 dark:bg-green-950/20">
 								<p className="font-medium text-green-700 dark:text-green-400">
-									{t("settings.demo.generateEmployees.successTitle", "Employees generated successfully!")}
+									{t(
+										"settings.demo.generateEmployees.successTitle",
+										"Employees generated successfully!",
+									)}
 								</p>
 								<ul className="mt-2 space-y-1 text-sm text-green-600 dark:text-green-500">
-									<li>{t("settings.demo.generateEmployees.usersCreated", `${employeeResult.usersCreated} users created`, { count: employeeResult.usersCreated })}</li>
-									<li>{t("settings.demo.generateEmployees.employeesCreated", `${employeeResult.employeesCreated} employees created`, { count: employeeResult.employeesCreated })}</li>
-									<li>{t("settings.demo.generateEmployees.managersCreated", `${employeeResult.managersCreated} manager assignments`, { count: employeeResult.managersCreated })}</li>
+									<li>
+										{t(
+											"settings.demo.generateEmployees.usersCreated",
+											`${employeeResult.usersCreated} users created`,
+											{ count: employeeResult.usersCreated },
+										)}
+									</li>
+									<li>
+										{t(
+											"settings.demo.generateEmployees.employeesCreated",
+											`${employeeResult.employeesCreated} employees created`,
+											{ count: employeeResult.employeesCreated },
+										)}
+									</li>
+									<li>
+										{t(
+											"settings.demo.generateEmployees.managersCreated",
+											`${employeeResult.managersCreated} manager assignments`,
+											{ count: employeeResult.managersCreated },
+										)}
+									</li>
 								</ul>
 							</div>
 						)}
 
 						<div className="grid gap-4 md:grid-cols-2">
 							<div className="space-y-2">
-								<Label htmlFor="employeeCount">{t("settings.demo.generateEmployees.countLabel", "Number of Employees")}</Label>
+								<Label htmlFor="employeeCount">
+									{t("settings.demo.generateEmployees.countLabel", "Number of Employees")}
+								</Label>
 								<Input
 									id="employeeCount"
 									type="number"
@@ -1133,7 +1290,9 @@ export function DemoDataWizard({ employees }: DemoDataWizardProps) {
 									value={employeeCount}
 									onChange={(e) => setEmployeeCount(parseInt(e.target.value, 10) || 5)}
 								/>
-								<p className="text-xs text-muted-foreground">{t("settings.demo.generateEmployees.countHint", "Maximum 50 employees at a time")}</p>
+								<p className="text-xs text-muted-foreground">
+									{t("settings.demo.generateEmployees.countHint", "Maximum 50 employees at a time")}
+								</p>
 							</div>
 
 							<div className="space-y-2">
@@ -1160,9 +1319,17 @@ export function DemoDataWizard({ employees }: DemoDataWizardProps) {
 										onCheckedChange={(v) => setIncludeManagersForEmployees(v === true)}
 									/>
 									<div className="space-y-1">
-										<div className="text-sm font-medium">{t("settings.demo.generateEmployees.includeManagers", "Include Manager Assignments")}</div>
+										<div className="text-sm font-medium">
+											{t(
+												"settings.demo.generateEmployees.includeManagers",
+												"Include Manager Assignments",
+											)}
+										</div>
 										<p className="text-xs text-muted-foreground">
-											{t("settings.demo.generateEmployees.managersHint", "Randomly assign managers to new employees")}
+											{t(
+												"settings.demo.generateEmployees.managersHint",
+												"Randomly assign managers to new employees",
+											)}
 										</p>
 									</div>
 								</div>
@@ -1183,7 +1350,11 @@ export function DemoDataWizard({ employees }: DemoDataWizardProps) {
 								) : (
 									<>
 										<IconUsers className="size-4" />
-										{t("settings.demo.generateEmployees.button", `Generate ${employeeCount} Employees`, { count: employeeCount })}
+										{t(
+											"settings.demo.generateEmployees.button",
+											`Generate ${employeeCount} Employees`,
+											{ count: employeeCount },
+										)}
 									</>
 								)}
 							</Button>
@@ -1207,8 +1378,12 @@ export function DemoDataWizard({ employees }: DemoDataWizardProps) {
 					<div className="space-y-3 text-sm text-muted-foreground">
 						<p>{t("settings.demo.availableTypes.supported", "Currently supported:")}</p>
 						<ul className="list-inside list-disc space-y-1">
-							<li>{t("settings.demo.availableTypes.timeEntries", "Time entries and work periods")}</li>
-							<li>{t("settings.demo.availableTypes.absences", "Absences (vacation, sick leave)")}</li>
+							<li>
+								{t("settings.demo.availableTypes.timeEntries", "Time entries and work periods")}
+							</li>
+							<li>
+								{t("settings.demo.availableTypes.absences", "Absences (vacation, sick leave)")}
+							</li>
 							<li>{t("settings.demo.availableTypes.teamsProjects", "Teams and projects")}</li>
 							<li>{t("settings.demo.availableTypes.locations", "Locations and subareas")}</li>
 							<li>{t("settings.demo.availableTypes.workCategories", "Work category sets")}</li>
@@ -1234,61 +1409,198 @@ export function DemoDataWizard({ employees }: DemoDataWizardProps) {
 					<div className="grid gap-6 md:grid-cols-2">
 						{/* Clear Time Data Section */}
 						<div className="space-y-4">
-							<h3 className="font-medium text-destructive">{t("settings.demo.dangerZone.clearData.title", "Clear Time Data")}</h3>
+							<h3 className="font-medium text-destructive">
+								{t("settings.demo.dangerZone.clearData.title", "Clear Time Data")}
+							</h3>
 
 							{clearResult && (
 								<div className="rounded-lg border border-green-500/50 bg-green-50 p-4 dark:bg-green-950/20">
 									<p className="font-medium text-green-700 dark:text-green-400">
-										{t("settings.demo.dangerZone.clearData.successTitle", "Data cleared successfully!")}
+										{t(
+											"settings.demo.dangerZone.clearData.successTitle",
+											"Data cleared successfully!",
+										)}
 									</p>
 									<ul className="mt-2 space-y-1 text-sm text-green-600 dark:text-green-500">
-										<li>{t("settings.demo.dangerZone.clearData.timeEntriesDeleted", `${clearResult.timeEntriesDeleted} time entries deleted`, { count: clearResult.timeEntriesDeleted })}</li>
-										<li>{t("settings.demo.dangerZone.clearData.workPeriodsDeleted", `${clearResult.workPeriodsDeleted} work periods deleted`, { count: clearResult.workPeriodsDeleted })}</li>
-										<li>{t("settings.demo.dangerZone.clearData.absencesDeleted", `${clearResult.absencesDeleted} absences deleted`, { count: clearResult.absencesDeleted })}</li>
-										<li>{t("settings.demo.dangerZone.clearData.vacationAllowancesReset", `${clearResult.vacationAllowancesReset} vacation allowances reset`, { count: clearResult.vacationAllowancesReset })}</li>
-										<li>{t("settings.demo.dangerZone.clearData.teamsDeleted", `${clearResult.teamsDeleted} teams deleted`, { count: clearResult.teamsDeleted })}</li>
-										<li>{t("settings.demo.dangerZone.clearData.projectsDeleted", `${clearResult.projectsDeleted} projects deleted`, { count: clearResult.projectsDeleted })}</li>
-										<li>{t("settings.demo.dangerZone.clearData.managerAssignmentsDeleted", `${clearResult.managerAssignmentsDeleted} manager assignments deleted`, { count: clearResult.managerAssignmentsDeleted })}</li>
+										<li>
+											{t(
+												"settings.demo.dangerZone.clearData.timeEntriesDeleted",
+												`${clearResult.timeEntriesDeleted} time entries deleted`,
+												{ count: clearResult.timeEntriesDeleted },
+											)}
+										</li>
+										<li>
+											{t(
+												"settings.demo.dangerZone.clearData.workPeriodsDeleted",
+												`${clearResult.workPeriodsDeleted} work periods deleted`,
+												{ count: clearResult.workPeriodsDeleted },
+											)}
+										</li>
+										<li>
+											{t(
+												"settings.demo.dangerZone.clearData.absencesDeleted",
+												`${clearResult.absencesDeleted} absences deleted`,
+												{ count: clearResult.absencesDeleted },
+											)}
+										</li>
+										<li>
+											{t(
+												"settings.demo.dangerZone.clearData.vacationAllowancesReset",
+												`${clearResult.vacationAllowancesReset} vacation allowances reset`,
+												{ count: clearResult.vacationAllowancesReset },
+											)}
+										</li>
+										<li>
+											{t(
+												"settings.demo.dangerZone.clearData.teamsDeleted",
+												`${clearResult.teamsDeleted} teams deleted`,
+												{ count: clearResult.teamsDeleted },
+											)}
+										</li>
+										<li>
+											{t(
+												"settings.demo.dangerZone.clearData.projectsDeleted",
+												`${clearResult.projectsDeleted} projects deleted`,
+												{ count: clearResult.projectsDeleted },
+											)}
+										</li>
+										<li>
+											{t(
+												"settings.demo.dangerZone.clearData.managerAssignmentsDeleted",
+												`${clearResult.managerAssignmentsDeleted} manager assignments deleted`,
+												{ count: clearResult.managerAssignmentsDeleted },
+											)}
+										</li>
 										{/* NEW: Display new cleanup results */}
 										{clearResult.locationsDeleted > 0 && (
-											<li>{t("settings.demo.dangerZone.clearData.locationsDeleted", `${clearResult.locationsDeleted} locations deleted`, { count: clearResult.locationsDeleted })}</li>
+											<li>
+												{t(
+													"settings.demo.dangerZone.clearData.locationsDeleted",
+													`${clearResult.locationsDeleted} locations deleted`,
+													{ count: clearResult.locationsDeleted },
+												)}
+											</li>
 										)}
 										{clearResult.subareasDeleted > 0 && (
-											<li>{t("settings.demo.dangerZone.clearData.subareasDeleted", `${clearResult.subareasDeleted} subareas deleted`, { count: clearResult.subareasDeleted })}</li>
+											<li>
+												{t(
+													"settings.demo.dangerZone.clearData.subareasDeleted",
+													`${clearResult.subareasDeleted} subareas deleted`,
+													{ count: clearResult.subareasDeleted },
+												)}
+											</li>
 										)}
 										{clearResult.workCategorySetsDeleted > 0 && (
-											<li>{t("settings.demo.dangerZone.clearData.workCategorySetsDeleted", `${clearResult.workCategorySetsDeleted} work category sets deleted`, { count: clearResult.workCategorySetsDeleted })}</li>
+											<li>
+												{t(
+													"settings.demo.dangerZone.clearData.workCategorySetsDeleted",
+													`${clearResult.workCategorySetsDeleted} work category sets deleted`,
+													{ count: clearResult.workCategorySetsDeleted },
+												)}
+											</li>
 										)}
 										{clearResult.workCategoriesDeleted > 0 && (
-											<li>{t("settings.demo.dangerZone.clearData.workCategoriesDeleted", `${clearResult.workCategoriesDeleted} work categories deleted`, { count: clearResult.workCategoriesDeleted })}</li>
+											<li>
+												{t(
+													"settings.demo.dangerZone.clearData.workCategoriesDeleted",
+													`${clearResult.workCategoriesDeleted} work categories deleted`,
+													{ count: clearResult.workCategoriesDeleted },
+												)}
+											</li>
 										)}
 										{clearResult.changePoliciesDeleted > 0 && (
-											<li>{t("settings.demo.dangerZone.clearData.changePoliciesDeleted", `${clearResult.changePoliciesDeleted} change policies deleted`, { count: clearResult.changePoliciesDeleted })}</li>
+											<li>
+												{t(
+													"settings.demo.dangerZone.clearData.changePoliciesDeleted",
+													`${clearResult.changePoliciesDeleted} change policies deleted`,
+													{ count: clearResult.changePoliciesDeleted },
+												)}
+											</li>
 										)}
 										{clearResult.shiftTemplatesDeleted > 0 && (
-											<li>{t("settings.demo.dangerZone.clearData.shiftTemplatesDeleted", `${clearResult.shiftTemplatesDeleted} shift templates deleted`, { count: clearResult.shiftTemplatesDeleted })}</li>
+											<li>
+												{t(
+													"settings.demo.dangerZone.clearData.shiftTemplatesDeleted",
+													`${clearResult.shiftTemplatesDeleted} shift templates deleted`,
+													{ count: clearResult.shiftTemplatesDeleted },
+												)}
+											</li>
 										)}
 										{clearResult.shiftsDeleted > 0 && (
-											<li>{t("settings.demo.dangerZone.clearData.shiftsDeleted", `${clearResult.shiftsDeleted} shifts deleted`, { count: clearResult.shiftsDeleted })}</li>
+											<li>
+												{t(
+													"settings.demo.dangerZone.clearData.shiftsDeleted",
+													`${clearResult.shiftsDeleted} shifts deleted`,
+													{ count: clearResult.shiftsDeleted },
+												)}
+											</li>
 										)}
 										{clearResult.shiftRequestsDeleted > 0 && (
-											<li>{t("settings.demo.dangerZone.clearData.shiftRequestsDeleted", `${clearResult.shiftRequestsDeleted} shift requests deleted`, { count: clearResult.shiftRequestsDeleted })}</li>
+											<li>
+												{t(
+													"settings.demo.dangerZone.clearData.shiftRequestsDeleted",
+													`${clearResult.shiftRequestsDeleted} shift requests deleted`,
+													{ count: clearResult.shiftRequestsDeleted },
+												)}
+											</li>
 										)}
 									</ul>
 								</div>
 							)}
 
 							<div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
-								<p className="text-sm text-muted-foreground">{t("settings.demo.dangerZone.clearData.willDelete", "This will permanently delete:")}</p>
+								<p className="text-sm text-muted-foreground">
+									{t(
+										"settings.demo.dangerZone.clearData.willDelete",
+										"This will permanently delete:",
+									)}
+								</p>
 								<ul className="mt-2 list-inside list-disc space-y-1 text-sm">
-									<li>{t("settings.demo.dangerZone.clearData.items.timeEntries", "All time entries and work periods")}</li>
-									<li>{t("settings.demo.dangerZone.clearData.items.absences", "All absence entries")}</li>
-									<li>{t("settings.demo.dangerZone.clearData.items.vacationAllowances", "All vacation allowances")}</li>
-									<li>{t("settings.demo.dangerZone.clearData.items.teamsProjects", "All teams and projects")}</li>
-									<li>{t("settings.demo.dangerZone.clearData.items.locations", "All locations and subareas")}</li>
-									<li>{t("settings.demo.dangerZone.clearData.items.workCategories", "All work categories")}</li>
-									<li>{t("settings.demo.dangerZone.clearData.items.changePolicies", "All change policies")}</li>
-									<li>{t("settings.demo.dangerZone.clearData.items.shifts", "All shift templates and shifts")}</li>
+									<li>
+										{t(
+											"settings.demo.dangerZone.clearData.items.timeEntries",
+											"All time entries and work periods",
+										)}
+									</li>
+									<li>
+										{t("settings.demo.dangerZone.clearData.items.absences", "All absence entries")}
+									</li>
+									<li>
+										{t(
+											"settings.demo.dangerZone.clearData.items.vacationAllowances",
+											"All vacation allowances",
+										)}
+									</li>
+									<li>
+										{t(
+											"settings.demo.dangerZone.clearData.items.teamsProjects",
+											"All teams and projects",
+										)}
+									</li>
+									<li>
+										{t(
+											"settings.demo.dangerZone.clearData.items.locations",
+											"All locations and subareas",
+										)}
+									</li>
+									<li>
+										{t(
+											"settings.demo.dangerZone.clearData.items.workCategories",
+											"All work categories",
+										)}
+									</li>
+									<li>
+										{t(
+											"settings.demo.dangerZone.clearData.items.changePolicies",
+											"All change policies",
+										)}
+									</li>
+									<li>
+										{t(
+											"settings.demo.dangerZone.clearData.items.shifts",
+											"All shift templates and shifts",
+										)}
+									</li>
 								</ul>
 							</div>
 
@@ -1301,9 +1613,14 @@ export function DemoDataWizard({ employees }: DemoDataWizardProps) {
 								</AlertDialogTrigger>
 								<AlertDialogContent>
 									<AlertDialogHeader>
-										<AlertDialogTitle>{t("settings.demo.dangerZone.clearData.dialog.title", "Clear All Time Data?")}</AlertDialogTitle>
+										<AlertDialogTitle>
+											{t("settings.demo.dangerZone.clearData.dialog.title", "Clear All Time Data?")}
+										</AlertDialogTitle>
 										<AlertDialogDescription>
-											{t("settings.demo.dangerZone.clearData.dialog.description", "This action cannot be undone. All time entries, absences, teams, projects, and related data will be permanently deleted.")}
+											{t(
+												"settings.demo.dangerZone.clearData.dialog.description",
+												"This action cannot be undone. All time entries, absences, teams, projects, and related data will be permanently deleted.",
+											)}
 										</AlertDialogDescription>
 									</AlertDialogHeader>
 									<div className="py-4">
@@ -1319,7 +1636,9 @@ export function DemoDataWizard({ employees }: DemoDataWizardProps) {
 										/>
 									</div>
 									<AlertDialogFooter>
-										<AlertDialogCancel onClick={() => setConfirmText("")}>{t("common.cancel", "Cancel")}</AlertDialogCancel>
+										<AlertDialogCancel onClick={() => setConfirmText("")}>
+											{t("common.cancel", "Cancel")}
+										</AlertDialogCancel>
 										<AlertDialogAction
 											onClick={handleClear}
 											disabled={confirmText !== "DELETE" || isClearing}
@@ -1341,33 +1660,96 @@ export function DemoDataWizard({ employees }: DemoDataWizardProps) {
 
 						{/* Delete Non-Admin Employees Section */}
 						<div className="space-y-4">
-							<h3 className="font-medium text-destructive">{t("settings.demo.dangerZone.deleteNonAdmin.title", "Delete Non-Admin Employees")}</h3>
+							<h3 className="font-medium text-destructive">
+								{t("settings.demo.dangerZone.deleteNonAdmin.title", "Delete Non-Admin Employees")}
+							</h3>
 
 							{deleteNonAdminResult && (
 								<div className="rounded-lg border border-green-500/50 bg-green-50 p-4 dark:bg-green-950/20">
 									<p className="font-medium text-green-700 dark:text-green-400">
-										{t("settings.demo.dangerZone.deleteNonAdmin.successTitle", "Non-admin employees deleted successfully!")}
+										{t(
+											"settings.demo.dangerZone.deleteNonAdmin.successTitle",
+											"Non-admin employees deleted successfully!",
+										)}
 									</p>
 									<ul className="mt-2 space-y-1 text-sm text-green-600 dark:text-green-500">
-										<li>{t("settings.demo.dangerZone.deleteNonAdmin.employeesDeleted", `${deleteNonAdminResult.employeesDeleted} employees deleted`, { count: deleteNonAdminResult.employeesDeleted })}</li>
-										<li>{t("settings.demo.dangerZone.deleteNonAdmin.usersDeleted", `${deleteNonAdminResult.usersDeleted} users deleted`, { count: deleteNonAdminResult.usersDeleted })}</li>
-										<li>{t("settings.demo.dangerZone.deleteNonAdmin.membersDeleted", `${deleteNonAdminResult.membersDeleted} members deleted`, { count: deleteNonAdminResult.membersDeleted })}</li>
-										<li>{t("settings.demo.dangerZone.deleteNonAdmin.timeEntriesDeleted", `${deleteNonAdminResult.timeEntriesDeleted} time entries deleted`, { count: deleteNonAdminResult.timeEntriesDeleted })}</li>
-										<li>{t("settings.demo.dangerZone.deleteNonAdmin.absencesDeleted", `${deleteNonAdminResult.absencesDeleted} absences deleted`, { count: deleteNonAdminResult.absencesDeleted })}</li>
+										<li>
+											{t(
+												"settings.demo.dangerZone.deleteNonAdmin.employeesDeleted",
+												`${deleteNonAdminResult.employeesDeleted} employees deleted`,
+												{ count: deleteNonAdminResult.employeesDeleted },
+											)}
+										</li>
+										<li>
+											{t(
+												"settings.demo.dangerZone.deleteNonAdmin.usersDeleted",
+												`${deleteNonAdminResult.usersDeleted} users deleted`,
+												{ count: deleteNonAdminResult.usersDeleted },
+											)}
+										</li>
+										<li>
+											{t(
+												"settings.demo.dangerZone.deleteNonAdmin.membersDeleted",
+												`${deleteNonAdminResult.membersDeleted} members deleted`,
+												{ count: deleteNonAdminResult.membersDeleted },
+											)}
+										</li>
+										<li>
+											{t(
+												"settings.demo.dangerZone.deleteNonAdmin.timeEntriesDeleted",
+												`${deleteNonAdminResult.timeEntriesDeleted} time entries deleted`,
+												{ count: deleteNonAdminResult.timeEntriesDeleted },
+											)}
+										</li>
+										<li>
+											{t(
+												"settings.demo.dangerZone.deleteNonAdmin.absencesDeleted",
+												`${deleteNonAdminResult.absencesDeleted} absences deleted`,
+												{ count: deleteNonAdminResult.absencesDeleted },
+											)}
+										</li>
 									</ul>
 								</div>
 							)}
 
 							<div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
-								<p className="text-sm text-muted-foreground">{t("settings.demo.dangerZone.deleteNonAdmin.willDelete", "This will permanently delete:")}</p>
+								<p className="text-sm text-muted-foreground">
+									{t(
+										"settings.demo.dangerZone.deleteNonAdmin.willDelete",
+										"This will permanently delete:",
+									)}
+								</p>
 								<ul className="mt-2 list-inside list-disc space-y-1 text-sm">
-									<li>{t("settings.demo.dangerZone.deleteNonAdmin.items.employees", "All non-admin employees")}</li>
-									<li>{t("settings.demo.dangerZone.deleteNonAdmin.items.demoUsers", "All demo user accounts")}</li>
-									<li>{t("settings.demo.dangerZone.deleteNonAdmin.items.timeEntries", "Their time entries and work periods")}</li>
-									<li>{t("settings.demo.dangerZone.deleteNonAdmin.items.managerAssignments", "All manager assignments")}</li>
+									<li>
+										{t(
+											"settings.demo.dangerZone.deleteNonAdmin.items.employees",
+											"All non-admin employees",
+										)}
+									</li>
+									<li>
+										{t(
+											"settings.demo.dangerZone.deleteNonAdmin.items.demoUsers",
+											"All demo user accounts",
+										)}
+									</li>
+									<li>
+										{t(
+											"settings.demo.dangerZone.deleteNonAdmin.items.timeEntries",
+											"Their time entries and work periods",
+										)}
+									</li>
+									<li>
+										{t(
+											"settings.demo.dangerZone.deleteNonAdmin.items.managerAssignments",
+											"All manager assignments",
+										)}
+									</li>
 								</ul>
 								<p className="mt-2 text-xs text-muted-foreground">
-									{t("settings.demo.dangerZone.deleteNonAdmin.adminPreserved", "Admin accounts will be preserved")}
+									{t(
+										"settings.demo.dangerZone.deleteNonAdmin.adminPreserved",
+										"Admin accounts will be preserved",
+									)}
 								</p>
 							</div>
 
@@ -1375,14 +1757,25 @@ export function DemoDataWizard({ employees }: DemoDataWizardProps) {
 								<AlertDialogTrigger asChild>
 									<Button variant="destructive" className="gap-2">
 										<IconUsers className="size-4" />
-										{t("settings.demo.dangerZone.deleteNonAdmin.button", "Delete Non-Admin Employees")}
+										{t(
+											"settings.demo.dangerZone.deleteNonAdmin.button",
+											"Delete Non-Admin Employees",
+										)}
 									</Button>
 								</AlertDialogTrigger>
 								<AlertDialogContent>
 									<AlertDialogHeader>
-										<AlertDialogTitle>{t("settings.demo.dangerZone.deleteNonAdmin.dialog.title", "Delete Non-Admin Employees?")}</AlertDialogTitle>
+										<AlertDialogTitle>
+											{t(
+												"settings.demo.dangerZone.deleteNonAdmin.dialog.title",
+												"Delete Non-Admin Employees?",
+											)}
+										</AlertDialogTitle>
 										<AlertDialogDescription>
-											{t("settings.demo.dangerZone.deleteNonAdmin.dialog.description", "This action cannot be undone. All non-admin employees and their associated data will be permanently deleted.")}
+											{t(
+												"settings.demo.dangerZone.deleteNonAdmin.dialog.description",
+												"This action cannot be undone. All non-admin employees and their associated data will be permanently deleted.",
+											)}
 										</AlertDialogDescription>
 									</AlertDialogHeader>
 									<div className="py-4">
@@ -1412,7 +1805,10 @@ export function DemoDataWizard({ employees }: DemoDataWizardProps) {
 													{t("settings.demo.dangerZone.deleting", "Deleting...")}
 												</>
 											) : (
-												t("settings.demo.dangerZone.deleteNonAdmin.dialog.confirm", "Delete Non-Admin Employees")
+												t(
+													"settings.demo.dangerZone.deleteNonAdmin.dialog.confirm",
+													"Delete Non-Admin Employees",
+												)
 											)}
 										</AlertDialogAction>
 									</AlertDialogFooter>

@@ -1,6 +1,13 @@
 "use client";
 
-import { IconBuilding, IconCheck, IconClock, IconLoader2, IconUserPlus, IconX } from "@tabler/icons-react";
+import {
+	IconBuilding,
+	IconCheck,
+	IconClock,
+	IconLoader2,
+	IconUserPlus,
+	IconX,
+} from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -27,7 +34,14 @@ interface JoinOrganizationFormProps {
 	code?: string;
 }
 
-type JoinState = "loading" | "invalid" | "valid" | "joining" | "success" | "error" | "already-member";
+type JoinState =
+	| "loading"
+	| "invalid"
+	| "valid"
+	| "joining"
+	| "success"
+	| "error"
+	| "already-member";
 
 export function JoinOrganizationForm({ code: initialCode }: JoinOrganizationFormProps) {
 	const { t } = useTranslate();
@@ -160,7 +174,9 @@ export function JoinOrganizationForm({ code: initialCode }: JoinOrganizationForm
 					{joinStatus === "pending" && (
 						<Alert>
 							<IconClock className="h-4 w-4" />
-							<AlertTitle>{t("settings.inviteCodes.pendingApproval", "Pending Approval")}</AlertTitle>
+							<AlertTitle>
+								{t("settings.inviteCodes.pendingApproval", "Pending Approval")}
+							</AlertTitle>
 							<AlertDescription>
 								{t(
 									"settings.inviteCodes.pendingApprovalDescription",
@@ -318,7 +334,10 @@ export function JoinOrganizationForm({ code: initialCode }: JoinOrganizationForm
 				{!session && (
 					<p className="text-center text-sm text-muted-foreground">
 						{t("settings.inviteCodes.alreadyHaveAccount", "Already have an account?")}{" "}
-						<Link href={`/sign-in?callbackUrl=/join/${code}`} className="text-primary hover:underline">
+						<Link
+							href={`/sign-in?callbackUrl=/join/${code}`}
+							className="text-primary hover:underline"
+						>
 							{t("auth.sign-in", "Sign in")}
 						</Link>
 					</p>

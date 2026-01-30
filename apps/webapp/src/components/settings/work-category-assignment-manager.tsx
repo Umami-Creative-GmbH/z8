@@ -96,9 +96,7 @@ export function WorkCategoryAssignmentManager({
 		mutationFn: (assignmentId: string) => deleteSetAssignment(assignmentId),
 		onSuccess: (result) => {
 			if (result.success) {
-				toast.success(
-					t("settings.workCategories.assignmentDeleted", "Assignment removed"),
-				);
+				toast.success(t("settings.workCategories.assignmentDeleted", "Assignment removed"));
 				queryClient.invalidateQueries({
 					queryKey: queryKeys.workCategorySetAssignments.list(organizationId),
 				});
@@ -107,10 +105,7 @@ export function WorkCategoryAssignmentManager({
 			} else {
 				toast.error(
 					result.error ||
-						t(
-							"settings.workCategories.assignmentDeleteFailed",
-							"Failed to remove assignment",
-						),
+						t("settings.workCategories.assignmentDeleteFailed", "Failed to remove assignment"),
 				);
 			}
 		},
@@ -195,11 +190,7 @@ export function WorkCategoryAssignmentManager({
 								{t("settings.workCategories.defaultSet", "Default Category Set")}
 							</h4>
 							{!orgAssignment && (
-								<Button
-									onClick={() => onAssignClick("organization")}
-									size="sm"
-									variant="outline"
-								>
+								<Button onClick={() => onAssignClick("organization")} size="sm" variant="outline">
 									<IconPlus className="mr-2 h-4 w-4" />
 									{t("settings.workCategories.setDefault", "Set Default")}
 								</Button>
@@ -298,10 +289,7 @@ export function WorkCategoryAssignmentManager({
 							</div>
 						) : (
 							<p className="text-sm text-muted-foreground text-center py-4">
-								{t(
-									"settings.workCategories.noTeamAssignments",
-									"No team-level assignments",
-								)}
+								{t("settings.workCategories.noTeamAssignments", "No team-level assignments")}
 							</p>
 						)}
 					</CardContent>
@@ -348,8 +336,7 @@ export function WorkCategoryAssignmentManager({
 											<IconUser className="h-4 w-4 text-muted-foreground" />
 											<div>
 												<span className="font-medium">
-													{assignment.employee?.firstName}{" "}
-													{assignment.employee?.lastName}
+													{assignment.employee?.firstName} {assignment.employee?.lastName}
 												</span>
 												<span className="text-muted-foreground mx-2">→</span>
 												<span className="text-sm">{assignment.set.name}</span>
@@ -369,10 +356,7 @@ export function WorkCategoryAssignmentManager({
 							</div>
 						) : (
 							<p className="text-sm text-muted-foreground text-center py-4">
-								{t(
-									"settings.workCategories.noEmployeeAssignments",
-									"No employee-level overrides",
-								)}
+								{t("settings.workCategories.noEmployeeAssignments", "No employee-level overrides")}
 							</p>
 						)}
 					</CardContent>

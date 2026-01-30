@@ -289,9 +289,13 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
 								<IconArrowBack className="size-4" />
 							</Link>
 						</Button>
-						<h1 className="text-2xl font-semibold tracking-tight">{t("settings.teams.details.title", "Team Details")}</h1>
+						<h1 className="text-2xl font-semibold tracking-tight">
+							{t("settings.teams.details.title", "Team Details")}
+						</h1>
 					</div>
-					<p className="text-sm text-muted-foreground">{t("settings.teams.details.description", "Manage team information and members")}</p>
+					<p className="text-sm text-muted-foreground">
+						{t("settings.teams.details.description", "Manage team information and members")}
+					</p>
 				</div>
 				{canManageSettings && (
 					<div className="flex gap-2">

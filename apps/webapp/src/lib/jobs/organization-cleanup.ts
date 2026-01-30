@@ -86,7 +86,7 @@ export async function runOrganizationCleanup(): Promise<OrganizationCleanupResul
 		const organizationsToDelete = await db.query.organization.findMany({
 			where: and(
 				isNotNull(authSchema.organization.deletedAt),
-				lt(authSchema.organization.deletedAt, cutoffDate)
+				lt(authSchema.organization.deletedAt, cutoffDate),
 			),
 		});
 
@@ -97,7 +97,7 @@ export async function runOrganizationCleanup(): Promise<OrganizationCleanupResul
 
 		logger.info(
 			{ count: organizationsToDelete.length },
-			"Found organizations ready for permanent deletion"
+			"Found organizations ready for permanent deletion",
 		);
 
 		for (const org of organizationsToDelete) {
@@ -106,14 +106,14 @@ export async function runOrganizationCleanup(): Promise<OrganizationCleanupResul
 				result.organizationsDeleted++;
 				logger.info(
 					{ organizationId: org.id, organizationName: org.name },
-					"Organization permanently deleted"
+					"Organization permanently deleted",
 				);
 			} catch (error) {
 				const errorMessage = error instanceof Error ? error.message : "Unknown error";
 				result.errors.push(`Failed to delete org ${org.id}: ${errorMessage}`);
 				logger.error(
 					{ error: errorMessage, organizationId: org.id },
-					"Failed to permanently delete organization"
+					"Failed to permanently delete organization",
 				);
 			}
 		}
@@ -174,13 +174,17 @@ async function permanentlyDeleteOrganization(organizationId: string): Promise<vo
 		// 4. Vacation data
 		if (employeeIds.length > 0) {
 			for (const empId of employeeIds) {
-				await tx.delete(employeeVacationAllowance).where(eq(employeeVacationAllowance.employeeId, empId));
+				await tx
+					.delete(employeeVacationAllowance)
+					.where(eq(employeeVacationAllowance.employeeId, empId));
 			}
 		}
 		await tx.delete(vacationAllowance).where(eq(vacationAllowance.organizationId, organizationId));
 
 		// 5. Holiday data
-		await tx.delete(holidayPresetAssignment).where(eq(holidayPresetAssignment.organizationId, organizationId));
+		await tx
+			.delete(holidayPresetAssignment)
+			.where(eq(holidayPresetAssignment.organizationId, organizationId));
 		await tx.delete(holidayAssignment).where(eq(holidayAssignment.organizationId, organizationId));
 
 		const presets = await tx.query.holidayPreset.findMany({
@@ -219,7 +223,9 @@ async function permanentlyDeleteOrganization(organizationId: string): Promise<vo
 		});
 		for (const model of surchargeModels) {
 			await tx.delete(surchargeRule).where(eq(surchargeRule.modelId, model.id));
-			await tx.delete(surchargeModelAssignment).where(eq(surchargeModelAssignment.modelId, model.id));
+			await tx
+				.delete(surchargeModelAssignment)
+				.where(eq(surchargeModelAssignment.modelId, model.id));
 		}
 		await tx.delete(surchargeModel).where(eq(surchargeModel.organizationId, organizationId));
 
@@ -233,7 +239,9 @@ async function permanentlyDeleteOrganization(organizationId: string): Promise<vo
 				where: eq(workPolicySchedule.policyId, policy.id),
 			});
 			if (schedule) {
-				await tx.delete(workPolicyScheduleDay).where(eq(workPolicyScheduleDay.scheduleId, schedule.id));
+				await tx
+					.delete(workPolicyScheduleDay)
+					.where(eq(workPolicyScheduleDay.scheduleId, schedule.id));
 				await tx.delete(workPolicySchedule).where(eq(workPolicySchedule.id, schedule.id));
 			}
 
@@ -246,16 +254,22 @@ async function permanentlyDeleteOrganization(organizationId: string): Promise<vo
 					where: eq(workPolicyBreakRule.regulationId, regulation.id),
 				});
 				for (const rule of breakRules) {
-					await tx.delete(workPolicyBreakOption).where(eq(workPolicyBreakOption.breakRuleId, rule.id));
+					await tx
+						.delete(workPolicyBreakOption)
+						.where(eq(workPolicyBreakOption.breakRuleId, rule.id));
 				}
-				await tx.delete(workPolicyBreakRule).where(eq(workPolicyBreakRule.regulationId, regulation.id));
+				await tx
+					.delete(workPolicyBreakRule)
+					.where(eq(workPolicyBreakRule.regulationId, regulation.id));
 				await tx.delete(workPolicyRegulation).where(eq(workPolicyRegulation.id, regulation.id));
 			}
 
 			// Delete assignments
 			await tx.delete(workPolicyAssignment).where(eq(workPolicyAssignment.policyId, policy.id));
 		}
-		await tx.delete(workPolicyViolation).where(eq(workPolicyViolation.organizationId, organizationId));
+		await tx
+			.delete(workPolicyViolation)
+			.where(eq(workPolicyViolation.organizationId, organizationId));
 		await tx.delete(workPolicy).where(eq(workPolicy.organizationId, organizationId));
 
 		// 11. Location data
@@ -277,12 +291,16 @@ async function permanentlyDeleteOrganization(organizationId: string): Promise<vo
 		}
 
 		// 13. Notification data
-		await tx.delete(notificationPreference).where(eq(notificationPreference.organizationId, organizationId));
+		await tx
+			.delete(notificationPreference)
+			.where(eq(notificationPreference.organizationId, organizationId));
 		await tx.delete(notification).where(eq(notification.organizationId, organizationId));
 
 		// 14. Export data
 		await tx.delete(dataExport).where(eq(dataExport.organizationId, organizationId));
-		await tx.delete(exportStorageConfig).where(eq(exportStorageConfig.organizationId, organizationId));
+		await tx
+			.delete(exportStorageConfig)
+			.where(eq(exportStorageConfig.organizationId, organizationId));
 
 		// 15. Audit log (by employee)
 		if (employeeIds.length > 0) {
@@ -290,9 +308,15 @@ async function permanentlyDeleteOrganization(organizationId: string): Promise<vo
 		}
 
 		// 16. Enterprise data
-		await tx.delete(organizationDomain).where(eq(organizationDomain.organizationId, organizationId));
-		await tx.delete(organizationBranding).where(eq(organizationBranding.organizationId, organizationId));
-		await tx.delete(organizationEmailConfig).where(eq(organizationEmailConfig.organizationId, organizationId));
+		await tx
+			.delete(organizationDomain)
+			.where(eq(organizationDomain.organizationId, organizationId));
+		await tx
+			.delete(organizationBranding)
+			.where(eq(organizationBranding.organizationId, organizationId));
+		await tx
+			.delete(organizationEmailConfig)
+			.where(eq(organizationEmailConfig.organizationId, organizationId));
 
 		// 17. Push subscriptions
 		for (const emp of employees) {
@@ -310,7 +334,9 @@ async function permanentlyDeleteOrganization(organizationId: string): Promise<vo
 		// 21. Better Auth data (members, invitations, sessions)
 		// Members and invitations have cascade delete from organization
 		await tx.delete(authSchema.member).where(eq(authSchema.member.organizationId, organizationId));
-		await tx.delete(authSchema.invitation).where(eq(authSchema.invitation.organizationId, organizationId));
+		await tx
+			.delete(authSchema.invitation)
+			.where(eq(authSchema.invitation.organizationId, organizationId));
 
 		// Clear active organization from sessions
 		await tx
@@ -319,7 +345,9 @@ async function permanentlyDeleteOrganization(organizationId: string): Promise<vo
 			.where(eq(authSchema.session.activeOrganizationId, organizationId));
 
 		// 22. SSO providers
-		await tx.delete(authSchema.ssoProvider).where(eq(authSchema.ssoProvider.organizationId, organizationId));
+		await tx
+			.delete(authSchema.ssoProvider)
+			.where(eq(authSchema.ssoProvider.organizationId, organizationId));
 
 		// 23. Finally, delete the organization itself
 		await tx.delete(authSchema.organization).where(eq(authSchema.organization.id, organizationId));

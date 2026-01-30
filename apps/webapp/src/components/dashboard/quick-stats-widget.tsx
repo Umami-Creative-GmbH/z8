@@ -16,7 +16,11 @@ import { WidgetCard } from "./widget-card";
 
 function HoursLabel() {
 	const { t } = useTranslate();
-	return <span className="text-[10px] text-muted-foreground">{t("dashboard.quick-stats.hours", "hours")}</span>;
+	return (
+		<span className="text-[10px] text-muted-foreground">
+			{t("dashboard.quick-stats.hours", "hours")}
+		</span>
+	);
 }
 
 type QuickStats = {
@@ -176,7 +180,11 @@ function StatCard({
 				</div>
 
 				<p className="text-xs text-muted-foreground">
-					{t("dashboard.quick-stats.progress", "{actual}h of {expected}h ({percent}%)", { actual: actual.toFixed(1), expected: expected.toFixed(1), percent: percentage.toFixed(0) })}
+					{t("dashboard.quick-stats.progress", "{actual}h of {expected}h ({percent}%)", {
+						actual: actual.toFixed(1),
+						expected: expected.toFixed(1),
+						percent: percentage.toFixed(0),
+					})}
 				</p>
 			</div>
 		</div>

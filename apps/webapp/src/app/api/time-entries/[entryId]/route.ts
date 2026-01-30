@@ -46,7 +46,10 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 			.limit(1);
 
 		if (!currentEmployee) {
-			return NextResponse.json({ error: "Employee record not found in this organization" }, { status: 404 });
+			return NextResponse.json(
+				{ error: "Employee record not found in this organization" },
+				{ status: 404 },
+			);
 		}
 
 		// Get the time entry

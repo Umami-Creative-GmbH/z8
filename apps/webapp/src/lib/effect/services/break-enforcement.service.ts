@@ -1,11 +1,7 @@
 import { and, desc, eq, gte, lte } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { DateTime } from "luxon";
-import {
-	timeEntry,
-	workPeriod,
-	type WorkPeriodAutoAdjustmentReason,
-} from "@/db/schema";
+import { timeEntry, workPeriod, type WorkPeriodAutoAdjustmentReason } from "@/db/schema";
 import { dateFromDB, dateToDB } from "@/lib/datetime/drizzle-adapter";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
 import { getTodayRangeInTimezone } from "@/lib/time-tracking/timezone-utils";
@@ -236,9 +232,7 @@ export const BreakEnforcementServiceLive = Layer.effect(
 			NotFoundError | DatabaseError
 		> =>
 			Effect.gen(function* (_) {
-				const policy = yield* _(
-					workPolicyService.getEffectivePolicy(params.employeeId),
-				);
+				const policy = yield* _(workPolicyService.getEffectivePolicy(params.employeeId));
 
 				// If no policy or no regulation enabled, no break requirements
 				if (!policy || !policy.regulation) {
@@ -320,9 +314,7 @@ export const BreakEnforcementServiceLive = Layer.effect(
 				}
 
 				// Calculate breaks taken today
-				const breaksTaken = yield* _(
-					calculateBreaksTakenToday(input.employeeId, input.timezone),
-				);
+				const breaksTaken = yield* _(calculateBreaksTakenToday(input.employeeId, input.timezone));
 
 				// Calculate break deficit
 				const deficitResult = yield* _(
@@ -627,9 +619,7 @@ export const calculateBreakDeficitForTesting = (
 		breaksTakenMinutes: number;
 	},
 	mockPolicyService: {
-		getEffectivePolicy: (
-			employeeId: string,
-		) => Effect.Effect<
+		getEffectivePolicy: (employeeId: string) => Effect.Effect<
 			{
 				policyId: string;
 				policyName: string;
@@ -668,9 +658,7 @@ export const calculateBreakDeficitForTesting = (
 	never
 > =>
 	Effect.gen(function* (_) {
-		const policy = yield* _(
-			mockPolicyService.getEffectivePolicy(params.employeeId),
-		);
+		const policy = yield* _(mockPolicyService.getEffectivePolicy(params.employeeId));
 
 		if (!policy || !policy.regulation) {
 			return {
@@ -699,10 +687,7 @@ export const calculateBreakDeficitForTesting = (
 			};
 		}
 
-		const deficit = Math.max(
-			0,
-			applicableRule.requiredBreakMinutes - params.breaksTakenMinutes,
-		);
+		const deficit = Math.max(0, applicableRule.requiredBreakMinutes - params.breaksTakenMinutes);
 
 		return {
 			deficit,

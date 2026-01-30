@@ -14,7 +14,10 @@ import {
 	type BreakRuleInput,
 	type ScheduleDayInput,
 } from "@/app/[locale]/(app)/settings/work-policies/actions";
-import { generateDaysFromPreset, WorkSchedulePreview } from "@/components/settings/work-policy-preview";
+import {
+	generateDaysFromPreset,
+	WorkSchedulePreview,
+} from "@/components/settings/work-policy-preview";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -252,7 +255,10 @@ export function WorkPolicyDialog({
 	const workingDaysPreset = useStore(form.store, (state) => state.values.workingDaysPreset);
 	const hoursPerCycle = useStore(form.store, (state) => state.values.hoursPerCycle);
 	const scheduleCycle = useStore(form.store, (state) => state.values.scheduleCycle);
-	const homeOfficeDaysPerCycle = useStore(form.store, (state) => state.values.homeOfficeDaysPerCycle);
+	const homeOfficeDaysPerCycle = useStore(
+		form.store,
+		(state) => state.values.homeOfficeDaysPerCycle,
+	);
 	const breakRules = useStore(form.store, (state) => state.values.breakRules);
 
 	// Calculate total hours for detailed mode
@@ -366,10 +372,7 @@ export function WorkPolicyDialog({
 												)}
 											</p>
 										</div>
-										<Switch
-											checked={field.state.value}
-											onCheckedChange={field.handleChange}
-										/>
+										<Switch checked={field.state.value} onCheckedChange={field.handleChange} />
 									</div>
 								)}
 							</form.Field>
@@ -386,10 +389,7 @@ export function WorkPolicyDialog({
 												)}
 											</p>
 										</div>
-										<Switch
-											checked={field.state.value}
-											onCheckedChange={field.handleChange}
-										/>
+										<Switch checked={field.state.value} onCheckedChange={field.handleChange} />
 									</div>
 								)}
 							</form.Field>
@@ -450,7 +450,9 @@ export function WorkPolicyDialog({
 									<form.Field name="homeOfficeDaysPerCycle">
 										{(field) => (
 											<div className="space-y-2">
-												<Label>{t("settings.workSchedules.homeOfficeDays", "Home Office Days")}</Label>
+												<Label>
+													{t("settings.workSchedules.homeOfficeDays", "Home Office Days")}
+												</Label>
 												<Input
 													type="number"
 													min="0"
@@ -565,7 +567,10 @@ export function WorkPolicyDialog({
 																	value={days[index]?.hoursPerDay ?? "0"}
 																	onChange={(e) => {
 																		const newDays = [...days];
-																		newDays[index] = { ...newDays[index], hoursPerDay: e.target.value };
+																		newDays[index] = {
+																			...newDays[index],
+																			hoursPerDay: e.target.value,
+																		};
 																		form.setFieldValue("days", newDays);
 																	}}
 																/>
@@ -753,10 +758,7 @@ export function WorkPolicyDialog({
 						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
 							{t("common.cancel", "Cancel")}
 						</Button>
-						<Button
-							type="submit"
-							disabled={isPending || (!scheduleEnabled && !regulationEnabled)}
-						>
+						<Button type="submit" disabled={isPending || (!scheduleEnabled && !regulationEnabled)}>
 							{isPending && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
 							{isEditing ? t("common.save", "Save") : t("common.create", "Create")}
 						</Button>

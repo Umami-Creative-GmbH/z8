@@ -27,7 +27,7 @@ const connection: ConnectionOptions = {
 };
 
 // Job types
-export type JobType = "report" | "export" | "email" | "cleanup";
+export type JobType = "report" | "export" | "email" | "cleanup" | "webhook";
 
 // Job data interfaces
 export interface ReportJobData {
@@ -58,7 +58,27 @@ export interface CleanupJobData {
 	task: "expired_exports" | "old_notifications" | "old_audit_logs";
 }
 
-export type JobData = ReportJobData | ExportJobData | EmailJobData | CleanupJobData | CronJobData;
+// Re-export WebhookJobData from webhooks module (avoid circular import)
+// The actual type is defined in @/lib/webhooks/types.ts
+export interface WebhookJobData {
+	type: "webhook";
+	deliveryId: string;
+	webhookEndpointId: string;
+	organizationId: string;
+	url: string;
+	payload: Record<string, unknown>;
+	eventType: string;
+	eventId?: string;
+	attemptNumber: number;
+}
+
+export type JobData =
+	| ReportJobData
+	| ExportJobData
+	| EmailJobData
+	| CleanupJobData
+	| CronJobData
+	| WebhookJobData;
 
 // Job result interfaces
 export interface JobResult {

@@ -1,12 +1,6 @@
 "use client";
 
-import {
-	IconLoader2,
-	IconPencil,
-	IconPlus,
-	IconRefresh,
-	IconTrash,
-} from "@tabler/icons-react";
+import { IconLoader2, IconPencil, IconPlus, IconRefresh, IconTrash } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
@@ -16,11 +10,7 @@ import {
 	deleteCategory,
 	getHolidayCategories,
 } from "@/app/[locale]/(app)/settings/holidays/actions";
-import {
-	DataTable,
-	DataTableSkeleton,
-	DataTableToolbar,
-} from "@/components/data-table-server";
+import { DataTable, DataTableSkeleton, DataTableToolbar } from "@/components/data-table-server";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -156,9 +146,7 @@ export function CategoryManager({ organizationId, onAddClick, onEditClick }: Cat
 			{
 				accessorKey: "type",
 				header: t("settings.holidays.categories.type", "Type"),
-				cell: ({ row }) => (
-					<Badge variant="outline">{formatCategoryType(row.original.type)}</Badge>
-				),
+				cell: ({ row }) => <Badge variant="outline">{formatCategoryType(row.original.type)}</Badge>,
 			},
 			{
 				accessorKey: "color",
@@ -289,7 +277,10 @@ export function CategoryManager({ organizationId, onAddClick, onEditClick }: Cat
 					isFetching={isFetching}
 					emptyMessage={
 						search
-							? t("settings.holidays.categories.noSearchResults", "No categories match your search.")
+							? t(
+									"settings.holidays.categories.noSearchResults",
+									"No categories match your search.",
+								)
 							: t(
 									"settings.holidays.categories.empty",
 									"No categories found. Add your first category to get started.",

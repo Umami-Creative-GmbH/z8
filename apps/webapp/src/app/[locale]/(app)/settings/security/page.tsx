@@ -21,9 +21,14 @@ export default async function SecuritySettingsPage() {
 		<div className="p-6">
 			<div className="mx-auto max-w-2xl">
 				<div className="mb-6">
-					<h1 className="text-2xl font-semibold">{t("settings.security.title", "Security Settings")}</h1>
+					<h1 className="text-2xl font-semibold">
+						{t("settings.security.title", "Security Settings")}
+					</h1>
 					<p className="text-muted-foreground">
-						{t("settings.security.description", "Manage your password, two-factor authentication, passkeys, and active sessions")}
+						{t(
+							"settings.security.description",
+							"Manage your password, two-factor authentication, passkeys, and active sessions",
+						)}
 					</p>
 				</div>
 				<div className="space-y-6">

@@ -85,7 +85,9 @@ export function WorkSchedulePreview({
 						key={day.dayOfWeek}
 						className={cn(
 							"flex flex-col items-center justify-center p-2 rounded-md flex-1 min-w-0",
-							day.isWorkDay ? "bg-primary/10 border border-primary/20" : "bg-muted/50 border border-muted",
+							day.isWorkDay
+								? "bg-primary/10 border border-primary/20"
+								: "bg-muted/50 border border-muted",
 						)}
 					>
 						<span

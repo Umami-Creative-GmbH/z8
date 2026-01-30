@@ -148,7 +148,9 @@ export function InviteCodeQRDialog({
 								) : qrData.png ? (
 									<img
 										src={`data:image/png;base64,${qrData.png}`}
-										alt={t("settings.inviteCodes.qrAlt", "QR code for {code}", { code: inviteCode?.code })}
+										alt={t("settings.inviteCodes.qrAlt", "QR code for {code}", {
+											code: inviteCode?.code,
+										})}
 										width={256}
 										height={256}
 										className="max-w-full"
@@ -184,12 +186,11 @@ export function InviteCodeQRDialog({
 					<Button variant="outline" onClick={() => onOpenChange(false)}>
 						{t("common.close", "Close")}
 					</Button>
-					<Button
-						onClick={handleDownload}
-						disabled={!qrData[format] || generateMutation.isPending}
-					>
+					<Button onClick={handleDownload} disabled={!qrData[format] || generateMutation.isPending}>
 						<IconDownload className="mr-2 h-4 w-4" />
-						{t("settings.inviteCodes.downloadFormat", "Download {format}", { format: format.toUpperCase() })}
+						{t("settings.inviteCodes.downloadFormat", "Download {format}", {
+							format: format.toUpperCase(),
+						})}
 					</Button>
 				</DialogFooter>
 			</DialogContent>

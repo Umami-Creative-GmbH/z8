@@ -98,11 +98,7 @@ interface CalendarEmployeesData {
  * @param currentEmployeeId - The current user's employee ID (used for query key)
  */
 export function useCalendarEmployees(currentEmployeeId?: string): UseCalendarEmployeesResult {
-	const {
-		data,
-		isLoading,
-		error,
-	} = useQuery<CalendarEmployeesData>({
+	const { data, isLoading, error } = useQuery<CalendarEmployeesData>({
 		// Use empty string when disabled - query won't run anyway
 		queryKey: queryKeys.calendar.employees(currentEmployeeId ?? ""),
 		queryFn: async () => {

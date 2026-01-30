@@ -40,7 +40,10 @@ async function DemoSettingsContent() {
 			<div className="space-y-1">
 				<h1 className="text-2xl font-semibold">{t("settings.demo.title", "Demo Data")}</h1>
 				<p className="text-muted-foreground">
-					{t("settings.demo.description", "Generate sample data for testing or clear existing time-related data")}
+					{t(
+						"settings.demo.description",
+						"Generate sample data for testing or clear existing time-related data",
+					)}
 				</p>
 			</div>
 

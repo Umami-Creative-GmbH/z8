@@ -28,18 +28,9 @@ import {
 	PendingMemberService,
 	PendingMemberServiceLive,
 } from "@/lib/effect/services/pending-member.service";
-import type {
-	PendingMember,
-	ApprovalResult,
-} from "@/lib/effect/services/pending-member.service";
-import {
-	QRCodeService,
-	QRCodeServiceLive,
-} from "@/lib/effect/services/qrcode.service";
-import type {
-	QRCodeResult,
-	QRCodeFormat,
-} from "@/lib/effect/services/qrcode.service";
+import type { PendingMember, ApprovalResult } from "@/lib/effect/services/pending-member.service";
+import { QRCodeService, QRCodeServiceLive } from "@/lib/effect/services/qrcode.service";
+import type { QRCodeResult, QRCodeFormat } from "@/lib/effect/services/qrcode.service";
 
 // Note: Types are NOT re-exported from server action files due to Turbopack bundling issues.
 // Import types directly from the service files:
@@ -597,13 +588,17 @@ export async function generateInviteQRCode(
 				}
 
 				// Generate QR code
-				const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.BETTER_AUTH_URL || "http://localhost:3000";
+				const baseUrl =
+					process.env.NEXT_PUBLIC_APP_URL || process.env.BETTER_AUTH_URL || "http://localhost:3000";
 				const qrResult = yield* _(
 					qrCodeService.generateInviteQR(inviteCode!.code, baseUrl, format).pipe(
-						Effect.mapError((err) => new ValidationError({
-							message: err.message || "Failed to generate QR code",
-							field: "qrcode",
-						})),
+						Effect.mapError(
+							(err) =>
+								new ValidationError({
+									message: err.message || "Failed to generate QR code",
+									field: "qrcode",
+								}),
+						),
 					),
 				);
 
@@ -692,9 +687,7 @@ export async function listPendingMembers(
 					);
 				}
 
-				const pendingMembers = yield* _(
-					pendingMemberService.listPending({ organizationId }),
-				);
+				const pendingMembers = yield* _(pendingMemberService.listPending({ organizationId }));
 
 				span.setStatus({ code: SpanStatusCode.OK });
 				return pendingMembers;
@@ -1180,9 +1173,7 @@ export async function validateInviteCode(
  * This is called after signup when the user registered via /join/{code}
  * The code will be processed after email verification
  */
-export async function storePendingInviteCode(
-	code: string,
-): Promise<ServerActionResult<void>> {
+export async function storePendingInviteCode(code: string): Promise<ServerActionResult<void>> {
 	const tracer = trace.getTracer("invite-codes");
 
 	const effect = tracer.startActiveSpan(
@@ -1226,51 +1217,51 @@ export async function storePendingInviteCode(
  * This is typically called by the email verification callback or hook
  */
 export async function processPendingInviteCode(): Promise<
-	ServerActionResult<{ success: boolean; status: "pending" | "approved"; organizationName: string } | null>
+	ServerActionResult<{
+		success: boolean;
+		status: "pending" | "approved";
+		organizationName: string;
+	} | null>
 > {
 	const tracer = trace.getTracer("invite-codes");
 
-	const effect = tracer.startActiveSpan(
-		"processPendingInviteCode",
-		{},
-		(span) => {
-			return Effect.gen(function* (_) {
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
-				const inviteCodeService = yield* _(InviteCodeService);
+	const effect = tracer.startActiveSpan("processPendingInviteCode", {}, (span) => {
+		return Effect.gen(function* (_) {
+			const authService = yield* _(AuthService);
+			const session = yield* _(authService.getSession());
+			const inviteCodeService = yield* _(InviteCodeService);
 
-				const result = yield* _(inviteCodeService.processPendingInviteCode(session.user.id));
+			const result = yield* _(inviteCodeService.processPendingInviteCode(session.user.id));
 
-				if (result) {
-					logger.info(
-						{ userId: session.user.id, organizationId: result.organizationId, status: result.status },
-						"Processed pending invite code",
-					);
-				}
+			if (result) {
+				logger.info(
+					{ userId: session.user.id, organizationId: result.organizationId, status: result.status },
+					"Processed pending invite code",
+				);
+			}
 
-				span.setStatus({ code: SpanStatusCode.OK });
-				return result
-					? {
-							success: result.success,
-							status: result.status,
-							organizationName: result.organizationName,
-						}
-					: null;
-			}).pipe(
-				Effect.tapError((error) =>
-					Effect.sync(() => {
-						span.setStatus({ code: SpanStatusCode.ERROR, message: (error as AnyAppError).message });
-						span.end();
-					}),
-				),
-				Effect.tap(() =>
-					Effect.sync(() => {
-						span.end();
-					}),
-				),
-			);
-		},
-	);
+			span.setStatus({ code: SpanStatusCode.OK });
+			return result
+				? {
+						success: result.success,
+						status: result.status,
+						organizationName: result.organizationName,
+					}
+				: null;
+		}).pipe(
+			Effect.tapError((error) =>
+				Effect.sync(() => {
+					span.setStatus({ code: SpanStatusCode.ERROR, message: (error as AnyAppError).message });
+					span.end();
+				}),
+			),
+			Effect.tap(() =>
+				Effect.sync(() => {
+					span.end();
+				}),
+			),
+		);
+	});
 
 	return runServerActionSafe(effect.pipe(Effect.provide(InviteCodeLayer)));
 }
@@ -1297,7 +1288,9 @@ export async function useInviteCode(
 	code: string,
 	ipAddress?: string,
 	userAgent?: string,
-): Promise<ServerActionResult<{ success: boolean; status: "pending" | "approved"; organizationName: string }>> {
+): Promise<
+	ServerActionResult<{ success: boolean; status: "pending" | "approved"; organizationName: string }>
+> {
 	const tracer = trace.getTracer("invite-codes");
 
 	const effect = tracer.startActiveSpan(

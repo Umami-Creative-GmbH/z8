@@ -74,7 +74,7 @@ export function WorkCategoryDialog({
 			name: category?.name || "",
 			description: category?.description || "",
 			factor: category?.factor || "1.00",
-			color: category?.color || null as string | null,
+			color: category?.color || (null as string | null),
 		},
 		onSubmit: async ({ value }) => {
 			if (isEditing && category) {
@@ -171,10 +171,7 @@ export function WorkCategoryDialog({
 					</DialogTitle>
 					<DialogDescription>
 						{isEditing
-							? t(
-									"settings.workCategories.editCategoryDescription",
-									"Update the category details",
-								)
+							? t("settings.workCategories.editCategoryDescription", "Update the category details")
 							: t(
 									"settings.workCategories.createCategoryDescription",
 									"Create a new work category that can be assigned to multiple sets",
@@ -370,7 +367,9 @@ function ColorPicker({
 						className="h-6 w-6 rounded-full border-2 border-dashed border-muted-foreground/50 hover:border-muted-foreground transition-colors flex items-center justify-center"
 						onClick={() => onChange(null)}
 					>
-						<span className="text-xs text-muted-foreground" aria-hidden="true">x</span>
+						<span className="text-xs text-muted-foreground" aria-hidden="true">
+							x
+						</span>
 					</button>
 				</div>
 			</PopoverContent>

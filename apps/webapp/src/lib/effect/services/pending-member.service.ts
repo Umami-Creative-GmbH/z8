@@ -1,12 +1,6 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
-import {
-	inviteCodeUsage,
-	memberApproval,
-	employee,
-	team,
-	teamPermissions,
-} from "@/db/schema";
+import { inviteCodeUsage, memberApproval, employee, team, teamPermissions } from "@/db/schema";
 import { member, organization, user } from "@/db/auth-schema";
 import { type DatabaseError, NotFoundError, ValidationError, AuthorizationError } from "../errors";
 import { DatabaseService } from "./database.service";
@@ -79,12 +73,18 @@ export class PendingMemberService extends Context.Tag("PendingMemberService")<
 		// Approve a pending member
 		readonly approve: (
 			input: ApproveMemberInput,
-		) => Effect.Effect<ApprovalResult, NotFoundError | ValidationError | AuthorizationError | DatabaseError>;
+		) => Effect.Effect<
+			ApprovalResult,
+			NotFoundError | ValidationError | AuthorizationError | DatabaseError
+		>;
 
 		// Reject a pending member
 		readonly reject: (
 			input: RejectMemberInput,
-		) => Effect.Effect<ApprovalResult, NotFoundError | ValidationError | AuthorizationError | DatabaseError>;
+		) => Effect.Effect<
+			ApprovalResult,
+			NotFoundError | ValidationError | AuthorizationError | DatabaseError
+		>;
 
 		// Bulk approve members
 		readonly bulkApprove: (
@@ -108,9 +108,7 @@ export class PendingMemberService extends Context.Tag("PendingMemberService")<
 		) => Effect.Effect<MemberApproval[], DatabaseError>;
 
 		// Count pending members for an organization
-		readonly countPending: (
-			organizationId: string,
-		) => Effect.Effect<number, DatabaseError>;
+		readonly countPending: (organizationId: string) => Effect.Effect<number, DatabaseError>;
 	}
 >() {}
 
@@ -491,10 +489,7 @@ export const PendingMemberServiceLive = Layer.effect(
 
 									// Get member details
 									const memberRecord = await dbService.db.query.member.findFirst({
-										where: and(
-											eq(member.id, memberId),
-											eq(member.organizationId, organizationId),
-										),
+										where: and(eq(member.id, memberId), eq(member.organizationId, organizationId)),
 									});
 
 									if (!memberRecord) {

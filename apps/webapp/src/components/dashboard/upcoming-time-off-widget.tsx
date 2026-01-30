@@ -62,7 +62,11 @@ function TimelineMarker({ daysUntil }: { daysUntil: number }) {
 							: "text-muted-foreground",
 				)}
 			>
-				{isToday ? t("dashboard.upcoming-time-off.today", "Today") : isTomorrow ? t("dashboard.upcoming-time-off.tomorrow", "Tomorrow") : t("dashboard.upcoming-time-off.days", "days")}
+				{isToday
+					? t("dashboard.upcoming-time-off.today", "Today")
+					: isTomorrow
+						? t("dashboard.upcoming-time-off.tomorrow", "Tomorrow")
+						: t("dashboard.upcoming-time-off.days", "days")}
 			</span>
 		</div>
 	);
@@ -144,7 +148,11 @@ export function UpcomingTimeOffWidget() {
 				title={t("dashboard.upcoming-time-off.title", "Upcoming Time Off")}
 				description={
 					absences
-						? t("dashboard.upcoming-time-off.description-count", "Next {count} scheduled {absence}", { count: absences.length, absence: pluralize(absences.length, "absence") })
+						? t(
+								"dashboard.upcoming-time-off.description-count",
+								"Next {count} scheduled {absence}",
+								{ count: absences.length, absence: pluralize(absences.length, "absence") },
+							)
 						: t("dashboard.upcoming-time-off.description", "Scheduled team absences")
 				}
 				icon={<IconCalendar className="size-4 text-indigo-500" />}

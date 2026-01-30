@@ -358,7 +358,7 @@ export async function getRateAtDate(
 		{
 			attributes: {
 				"employee.id": employeeId,
-				"date": date.toISOString(),
+				date: date.toISOString(),
 			},
 		},
 		(span) => {
@@ -428,7 +428,10 @@ export async function getRateAtDate(
 							where: and(
 								eq(employeeRateHistory.employeeId, employeeId),
 								lte(employeeRateHistory.effectiveFrom, date),
-								or(isNull(employeeRateHistory.effectiveTo), gte(employeeRateHistory.effectiveTo, date)),
+								or(
+									isNull(employeeRateHistory.effectiveTo),
+									gte(employeeRateHistory.effectiveTo, date),
+								),
 							),
 							with: {
 								creator: true,

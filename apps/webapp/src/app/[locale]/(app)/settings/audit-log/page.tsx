@@ -17,7 +17,10 @@ export default async function AuditLogPage() {
 				<div className="mb-6">
 					<h1 className="text-2xl font-semibold">{t("settings.auditLog.title", "Audit Log")}</h1>
 					<p className="text-muted-foreground">
-						{t("settings.auditLog.description", "View and search all actions performed in your organization")}
+						{t(
+							"settings.auditLog.description",
+							"View and search all actions performed in your organization",
+						)}
 					</p>
 				</div>
 				<AuditLogViewer />

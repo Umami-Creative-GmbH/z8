@@ -33,7 +33,9 @@ export function BrandingForm({ initialBranding, organizationId }: BrandingFormPr
 			toast.success(t("settings.branding.logoUploadSuccess", "Logo uploaded successfully"));
 		},
 		onError: (error) => {
-			toast.error(error.message || t("settings.branding.logoUploadFailed", "Failed to upload logo"));
+			toast.error(
+				error.message || t("settings.branding.logoUploadFailed", "Failed to upload logo"),
+			);
 		},
 	});
 
@@ -44,10 +46,15 @@ export function BrandingForm({ initialBranding, organizationId }: BrandingFormPr
 		maxFileSize: 5 * 1024 * 1024, // 5MB
 		onSuccess: (url) => {
 			setBranding((prev) => ({ ...prev, backgroundImageUrl: url }));
-			toast.success(t("settings.branding.backgroundUploadSuccess", "Background image uploaded successfully"));
+			toast.success(
+				t("settings.branding.backgroundUploadSuccess", "Background image uploaded successfully"),
+			);
 		},
 		onError: (error) => {
-			toast.error(error.message || t("settings.branding.backgroundUploadFailed", "Failed to upload background image"));
+			toast.error(
+				error.message ||
+					t("settings.branding.backgroundUploadFailed", "Failed to upload background image"),
+			);
 		},
 	});
 
@@ -90,7 +97,10 @@ export function BrandingForm({ initialBranding, organizationId }: BrandingFormPr
 				<CardHeader>
 					<CardTitle>{t("settings.branding.logo.title", "Logo")}</CardTitle>
 					<CardDescription>
-						{t("settings.branding.logo.description", "Upload your organization logo to display on the login page.")}
+						{t(
+							"settings.branding.logo.description",
+							"Upload your organization logo to display on the login page.",
+						)}
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
@@ -117,7 +127,10 @@ export function BrandingForm({ initialBranding, organizationId }: BrandingFormPr
 								aria-label={t("settings.branding.logo.upload", "Upload logo image")}
 							/>
 							<p className="text-sm text-muted-foreground mt-2">
-								{t("settings.branding.logo.hint", "Recommended: 200x200px, PNG or SVG with transparent background")}
+								{t(
+									"settings.branding.logo.hint",
+									"Recommended: 200x200px, PNG or SVG with transparent background",
+								)}
 							</p>
 							{logoUpload.isUploading && (
 								<p className="text-sm text-muted-foreground">
@@ -144,7 +157,10 @@ export function BrandingForm({ initialBranding, organizationId }: BrandingFormPr
 				<CardHeader>
 					<CardTitle>{t("settings.branding.background.title", "Background Image")}</CardTitle>
 					<CardDescription>
-						{t("settings.branding.background.description", "Upload a custom background image for the login page.")}
+						{t(
+							"settings.branding.background.description",
+							"Upload a custom background image for the login page.",
+						)}
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
@@ -171,7 +187,10 @@ export function BrandingForm({ initialBranding, organizationId }: BrandingFormPr
 								aria-label={t("settings.branding.background.upload", "Upload background image")}
 							/>
 							<p className="text-sm text-muted-foreground mt-2">
-								{t("settings.branding.background.hint", "Recommended: 1920x1080px or larger, high quality JPEG or PNG")}
+								{t(
+									"settings.branding.background.hint",
+									"Recommended: 1920x1080px or larger, high quality JPEG or PNG",
+								)}
 							</p>
 							{backgroundUpload.isUploading && (
 								<p className="text-sm text-muted-foreground">
@@ -198,7 +217,10 @@ export function BrandingForm({ initialBranding, organizationId }: BrandingFormPr
 				<CardHeader>
 					<CardTitle>{t("settings.branding.appName.title", "App Name")}</CardTitle>
 					<CardDescription>
-						{t("settings.branding.appName.description", "Override the default app name shown on the login page.")}
+						{t(
+							"settings.branding.appName.description",
+							"Override the default app name shown on the login page.",
+						)}
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
@@ -225,7 +247,10 @@ export function BrandingForm({ initialBranding, organizationId }: BrandingFormPr
 				<CardHeader>
 					<CardTitle>{t("settings.branding.colors.title", "Theme Colors")}</CardTitle>
 					<CardDescription>
-						{t("settings.branding.colors.description", "Customize the primary and accent colors for your login page.")}
+						{t(
+							"settings.branding.colors.description",
+							"Customize the primary and accent colors for your login page.",
+						)}
 					</CardDescription>
 				</CardHeader>
 				<CardContent className="space-y-4">
@@ -235,7 +260,10 @@ export function BrandingForm({ initialBranding, organizationId }: BrandingFormPr
 								{t("settings.branding.colors.primary", "Primary Color")}
 							</Label>
 							<p className="text-sm text-muted-foreground mb-2">
-								{t("settings.branding.colors.primaryHint", "Used for buttons, links, and focus states")}
+								{t(
+									"settings.branding.colors.primaryHint",
+									"Used for buttons, links, and focus states",
+								)}
 							</p>
 							<div className="flex items-center gap-3">
 								<Input

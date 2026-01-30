@@ -18,11 +18,7 @@ import {
 	getChangePolicies,
 	type ChangePolicyRecord,
 } from "@/app/[locale]/(app)/settings/change-policies/actions";
-import {
-	DataTable,
-	DataTableSkeleton,
-	DataTableToolbar,
-} from "@/components/data-table-server";
+import { DataTable, DataTableSkeleton, DataTableToolbar } from "@/components/data-table-server";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -152,9 +148,7 @@ export function ChangePolicyTable({
 							)}
 						</div>
 						{row.original.description && (
-							<p className="text-xs text-muted-foreground mt-0.5">
-								{row.original.description}
-							</p>
+							<p className="text-xs text-muted-foreground mt-0.5">{row.original.description}</p>
 						)}
 					</div>
 				),
@@ -223,9 +217,7 @@ export function ChangePolicyTable({
 						<DropdownMenuTrigger asChild>
 							<Button variant="ghost" size="icon" className="h-8 w-8">
 								<IconDots className="h-4 w-4" />
-								<span className="sr-only">
-									{t("common.actions", "Actions")}
-								</span>
+								<span className="sr-only">{t("common.actions", "Actions")}</span>
 							</Button>
 						</DropdownMenuTrigger>
 						<DropdownMenuContent align="end">

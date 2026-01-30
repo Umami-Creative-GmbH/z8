@@ -231,8 +231,7 @@ export function SignupForm({ className, inviteCode, ...props }: SignupFormProps)
 		try {
 			// For social signup with invite code, redirect to join page after auth
 			// The join page will process the code for the new user
-			const callbackURL =
-				inviteCode && inviteCodeValid ? `/join/${inviteCode}` : "/";
+			const callbackURL = inviteCode && inviteCodeValid ? `/join/${inviteCode}` : "/";
 
 			await authClient.signIn.social({
 				provider,
@@ -265,11 +264,9 @@ export function SignupForm({ className, inviteCode, ...props }: SignupFormProps)
 				<Alert className="border-primary/20 bg-primary/5">
 					<IconBuilding className="h-4 w-4" />
 					<AlertDescription>
-						{t(
-							"auth.signing-up-to-join",
-							"You're signing up to join {organization}",
-							{ organization: organizationName },
-						)}
+						{t("auth.signing-up-to-join", "You're signing up to join {organization}", {
+							organization: organizationName,
+						})}
 					</AlertDescription>
 				</Alert>
 			)}

@@ -15,31 +15,20 @@ export const absenceTypeEnum = pgEnum("absence_type", [
 	"bereavement",
 	"custom",
 ]);
-export const approvalStatusEnum = pgEnum("approval_status", [
-	"pending",
-	"approved",
-	"rejected",
-]);
-export const timeEntryTypeEnum = pgEnum("time_entry_type", [
-	"clock_in",
-	"clock_out",
-	"correction",
-]);
+export const approvalStatusEnum = pgEnum("approval_status", ["pending", "approved", "rejected"]);
+export const timeEntryTypeEnum = pgEnum("time_entry_type", ["clock_in", "clock_out", "correction"]);
 export const holidayCategoryEnum = pgEnum("holiday_category_type", [
 	"public_holiday",
 	"company_holiday",
 	"training_day",
 	"custom",
 ]);
-export const recurrenceTypeEnum = pgEnum("recurrence_type", [
-	"none",
-	"yearly",
-	"custom",
+export const recurrenceTypeEnum = pgEnum("recurrence_type", ["none", "yearly", "custom"]);
+export const holidayPresetAssignmentTypeEnum = pgEnum("holiday_preset_assignment_type", [
+	"organization",
+	"team",
+	"employee",
 ]);
-export const holidayPresetAssignmentTypeEnum = pgEnum(
-	"holiday_preset_assignment_type",
-	["organization", "team", "employee"],
-);
 export const genderEnum = pgEnum("gender", ["male", "female", "other"]);
 export const contractTypeEnum = pgEnum("contract_type", ["fixed", "hourly"]);
 export const scheduleCycleEnum = pgEnum("schedule_cycle", [
@@ -108,19 +97,11 @@ export const notificationTypeEnum = pgEnum("notification_type", [
 	"water_reminder",
 ]);
 
-export const notificationChannelEnum = pgEnum("notification_channel", [
-	"in_app",
-	"push",
-	"email",
-]);
+export const notificationChannelEnum = pgEnum("notification_channel", ["in_app", "push", "email"]);
 
 // Shift scheduling enums
 export const shiftStatusEnum = pgEnum("shift_status", ["draft", "published"]);
-export const shiftRequestTypeEnum = pgEnum("shift_request_type", [
-	"swap",
-	"assignment",
-	"pickup",
-]);
+export const shiftRequestTypeEnum = pgEnum("shift_request_type", ["swap", "assignment", "pickup"]);
 export const shiftRecurrenceTypeEnum = pgEnum("shift_recurrence_type", [
 	"daily",
 	"weekly",
@@ -137,16 +118,15 @@ export const projectStatusEnum = pgEnum("project_status", [
 	"completed",
 	"archived",
 ]);
-export const projectAssignmentTypeEnum = pgEnum("project_assignment_type", [
-	"team",
-	"employee",
-]);
+export const projectAssignmentTypeEnum = pgEnum("project_assignment_type", ["team", "employee"]);
 
 // Time regulation enums
-export const timeRegulationViolationTypeEnum = pgEnum(
-	"time_regulation_violation_type",
-	["max_daily", "max_weekly", "max_uninterrupted", "break_required"],
-);
+export const timeRegulationViolationTypeEnum = pgEnum("time_regulation_violation_type", [
+	"max_daily",
+	"max_weekly",
+	"max_uninterrupted",
+	"break_required",
+]);
 
 // Surcharge enums
 export const surchargeRuleTypeEnum = pgEnum("surcharge_rule_type", [

@@ -39,7 +39,8 @@ export function TwoFactorVerificationForm() {
 
 				if (result.error) {
 					toast.error(t("auth.2fa.verification-failed", "Verification failed"), {
-						description: result.error.message || t("auth.2fa.invalid-backup-code", "Invalid backup code"),
+						description:
+							result.error.message || t("auth.2fa.invalid-backup-code", "Invalid backup code"),
 					});
 				} else {
 					toast.success(t("auth.2fa.verification-successful", "Verification successful"));
@@ -60,7 +61,9 @@ export function TwoFactorVerificationForm() {
 
 				if (result.error) {
 					toast.error(t("auth.2fa.verification-failed", "Verification failed"), {
-						description: result.error.message || t("auth.2fa.invalid-verification-code", "Invalid verification code"),
+						description:
+							result.error.message ||
+							t("auth.2fa.invalid-verification-code", "Invalid verification code"),
 					});
 				} else {
 					toast.success(t("auth.2fa.verification-successful", "Verification successful"));
@@ -69,7 +72,10 @@ export function TwoFactorVerificationForm() {
 			}
 		} catch (error) {
 			toast.error(t("auth.2fa.verification-failed", "Verification failed"), {
-				description: error instanceof Error ? error.message : t("auth.2fa.unexpected-error", "An unexpected error occurred"),
+				description:
+					error instanceof Error
+						? error.message
+						: t("auth.2fa.unexpected-error", "An unexpected error occurred"),
 			});
 		} finally {
 			setIsLoading(false);
@@ -105,7 +111,13 @@ export function TwoFactorVerificationForm() {
 					<div className="space-y-2">
 						<Label>{t("auth.2fa.code-label", "Authentication Code")}</Label>
 						<div className="flex justify-center">
-							<InputOTP maxLength={6} value={otpValue} onChange={setOtpValue} disabled={isLoading} autoComplete="one-time-code">
+							<InputOTP
+								maxLength={6}
+								value={otpValue}
+								onChange={setOtpValue}
+								disabled={isLoading}
+								autoComplete="one-time-code"
+							>
 								<InputOTPGroup>
 									<InputOTPSlot index={0} />
 									<InputOTPSlot index={1} />

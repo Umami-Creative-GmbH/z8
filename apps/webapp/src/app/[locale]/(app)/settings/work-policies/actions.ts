@@ -158,10 +158,7 @@ export async function getWorkPolicies(
 		const policies = yield* _(
 			dbService.query("getWorkPolicies", async () => {
 				return await dbService.db.query.workPolicy.findMany({
-					where: and(
-						eq(workPolicy.organizationId, organizationId),
-						eq(workPolicy.isActive, true),
-					),
+					where: and(eq(workPolicy.organizationId, organizationId), eq(workPolicy.isActive, true)),
 					with: {
 						schedule: {
 							with: { days: true },
@@ -874,7 +871,8 @@ export async function createWorkPolicyAssignment(
 			);
 		}
 
-		const priority = data.assignmentType === "employee" ? 2 : data.assignmentType === "team" ? 1 : 0;
+		const priority =
+			data.assignmentType === "employee" ? 2 : data.assignmentType === "team" ? 1 : 0;
 
 		const [assignment] = yield* _(
 			dbService.query("createWorkPolicyAssignment", async () => {
@@ -1140,7 +1138,10 @@ export async function setDefaultWorkPolicy(policyId: string): Promise<ServerActi
 						updatedAt: currentTimestamp(),
 					})
 					.where(
-						and(eq(workPolicy.organizationId, policy!.organizationId), eq(workPolicy.isDefault, true)),
+						and(
+							eq(workPolicy.organizationId, policy!.organizationId),
+							eq(workPolicy.isDefault, true),
+						),
 					);
 			}),
 		);
@@ -1230,12 +1231,23 @@ export async function importWorkPolicyPreset(
 		}
 
 		// Parse breakRulesJson - it's stored as a text column so may be a string
-		let parsedBreakRules: { rules?: Array<{ workingMinutesThreshold: number; requiredBreakMinutes: number; options?: Array<{ splitCount: number | null; minimumSplitMinutes: number | null; minimumLongestSplitMinutes: number | null }> }> } | null = null;
+		let parsedBreakRules: {
+			rules?: Array<{
+				workingMinutesThreshold: number;
+				requiredBreakMinutes: number;
+				options?: Array<{
+					splitCount: number | null;
+					minimumSplitMinutes: number | null;
+					minimumLongestSplitMinutes: number | null;
+				}>;
+			}>;
+		} | null = null;
 		if (preset!.breakRulesJson) {
 			try {
-				parsedBreakRules = typeof preset!.breakRulesJson === "string"
-					? JSON.parse(preset!.breakRulesJson)
-					: preset!.breakRulesJson;
+				parsedBreakRules =
+					typeof preset!.breakRulesJson === "string"
+						? JSON.parse(preset!.breakRulesJson)
+						: preset!.breakRulesJson;
 			} catch {
 				parsedBreakRules = null;
 			}
@@ -1373,8 +1385,14 @@ export async function getEmployeeEffectiveScheduleDetails(
 						eq(workPolicyAssignment.employeeId, employeeId),
 						eq(workPolicyAssignment.assignmentType, "employee"),
 						eq(workPolicyAssignment.isActive, true),
-						or(isNull(workPolicyAssignment.effectiveFrom), lte(workPolicyAssignment.effectiveFrom, now)),
-						or(isNull(workPolicyAssignment.effectiveUntil), gte(workPolicyAssignment.effectiveUntil, now)),
+						or(
+							isNull(workPolicyAssignment.effectiveFrom),
+							lte(workPolicyAssignment.effectiveFrom, now),
+						),
+						or(
+							isNull(workPolicyAssignment.effectiveUntil),
+							gte(workPolicyAssignment.effectiveUntil, now),
+						),
 					),
 					with: {
 						policy: {
@@ -1418,8 +1436,14 @@ export async function getEmployeeEffectiveScheduleDetails(
 							eq(workPolicyAssignment.teamId, emp.teamId!),
 							eq(workPolicyAssignment.assignmentType, "team"),
 							eq(workPolicyAssignment.isActive, true),
-							or(isNull(workPolicyAssignment.effectiveFrom), lte(workPolicyAssignment.effectiveFrom, now)),
-							or(isNull(workPolicyAssignment.effectiveUntil), gte(workPolicyAssignment.effectiveUntil, now)),
+							or(
+								isNull(workPolicyAssignment.effectiveFrom),
+								lte(workPolicyAssignment.effectiveFrom, now),
+							),
+							or(
+								isNull(workPolicyAssignment.effectiveUntil),
+								gte(workPolicyAssignment.effectiveUntil, now),
+							),
 						),
 						with: {
 							policy: {
@@ -1464,8 +1488,14 @@ export async function getEmployeeEffectiveScheduleDetails(
 						eq(workPolicyAssignment.organizationId, emp.organizationId),
 						eq(workPolicyAssignment.assignmentType, "organization"),
 						eq(workPolicyAssignment.isActive, true),
-						or(isNull(workPolicyAssignment.effectiveFrom), lte(workPolicyAssignment.effectiveFrom, now)),
-						or(isNull(workPolicyAssignment.effectiveUntil), gte(workPolicyAssignment.effectiveUntil, now)),
+						or(
+							isNull(workPolicyAssignment.effectiveFrom),
+							lte(workPolicyAssignment.effectiveFrom, now),
+						),
+						or(
+							isNull(workPolicyAssignment.effectiveUntil),
+							gte(workPolicyAssignment.effectiveUntil, now),
+						),
 					),
 					with: {
 						policy: {
@@ -1534,9 +1564,16 @@ export async function getTeamsForAssignment(
 	return runServerActionSafe(effect);
 }
 
-export async function getEmployeesForAssignment(
-	organizationId: string,
-): Promise<ServerActionResult<{ id: string; firstName: string | null; lastName: string | null; employeeNumber: string | null }[]>> {
+export async function getEmployeesForAssignment(organizationId: string): Promise<
+	ServerActionResult<
+		{
+			id: string;
+			firstName: string | null;
+			lastName: string | null;
+			employeeNumber: string | null;
+		}[]
+	>
+> {
 	const effect = Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
 		const _session = yield* _(authService.getSession());

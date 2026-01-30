@@ -176,9 +176,14 @@ export default function PermissionsPage() {
 		<div className="flex flex-1 flex-col gap-4 p-4">
 			<div className="flex items-center justify-between">
 				<div>
-					<h1 className="text-2xl font-semibold tracking-tight">{t("settings.permissions.title", "Team Permissions")}</h1>
+					<h1 className="text-2xl font-semibold tracking-tight">
+						{t("settings.permissions.title", "Team Permissions")}
+					</h1>
 					<p className="text-sm text-muted-foreground">
-						{t("settings.permissions.description", "Manage employee permissions for team operations")}
+						{t(
+							"settings.permissions.description",
+							"Manage employee permissions for team operations",
+						)}
 					</p>
 				</div>
 			</div>

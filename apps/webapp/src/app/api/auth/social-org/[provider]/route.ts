@@ -58,10 +58,7 @@ export async function GET(
 	const credentialsResult = await resolveCredentials(organizationId, provider);
 	if (!credentialsResult) {
 		logger.warn({ provider, organizationId }, "No credentials available for provider");
-		return NextResponse.json(
-			{ error: `${provider} login is not configured` },
-			{ status: 400 },
-		);
+		return NextResponse.json({ error: `${provider} login is not configured` }, { status: 400 });
 	}
 
 	// Generate PKCE values and nonce

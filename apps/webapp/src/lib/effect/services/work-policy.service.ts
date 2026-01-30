@@ -234,7 +234,9 @@ export class WorkPolicyService extends Context.Tag("WorkPolicyService")<
 		/**
 		 * Calculate total hours per week for a schedule.
 		 */
-		readonly calculateWeeklyHours: (schedule: NonNullable<EffectiveWorkPolicy["schedule"]>) => number;
+		readonly calculateWeeklyHours: (
+			schedule: NonNullable<EffectiveWorkPolicy["schedule"]>,
+		) => number;
 
 		/**
 		 * Log a compliance violation to the database.

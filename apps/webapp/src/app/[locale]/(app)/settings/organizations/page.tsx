@@ -18,9 +18,14 @@ export default async function OrganizationsPage() {
 		return (
 			<div className="flex-1 p-6">
 				<div className="mx-auto max-w-4xl">
-					<h1 className="text-2xl font-semibold">{t("settings.organizations.noActive.title", "No Active Organization")}</h1>
+					<h1 className="text-2xl font-semibold">
+						{t("settings.organizations.noActive.title", "No Active Organization")}
+					</h1>
 					<p className="text-muted-foreground mt-2">
-						{t("settings.organizations.noActive.description", "Please select or create an organization to continue.")}
+						{t(
+							"settings.organizations.noActive.description",
+							"Please select or create an organization to continue.",
+						)}
 					</p>
 				</div>
 			</div>
@@ -77,9 +82,14 @@ export default async function OrganizationsPage() {
 		return (
 			<div className="flex-1 p-6">
 				<div className="mx-auto max-w-4xl">
-					<h1 className="text-2xl font-semibold">{t("settings.organizations.notFound.title", "Organization Not Found")}</h1>
+					<h1 className="text-2xl font-semibold">
+						{t("settings.organizations.notFound.title", "Organization Not Found")}
+					</h1>
 					<p className="text-muted-foreground mt-2">
-						{t("settings.organizations.notFound.description", "The organization could not be found or you don't have access to it.")}
+						{t(
+							"settings.organizations.notFound.description",
+							"The organization could not be found or you don't have access to it.",
+						)}
 					</p>
 				</div>
 			</div>
@@ -109,7 +119,9 @@ export default async function OrganizationsPage() {
 			teams={teamsResult.success ? teamsResult.data : []}
 			currentMemberRole={currentMember.role as "owner" | "admin" | "member"}
 			currentUserId={authContext.user.id}
-			canCreateOrganizations={authContext.user.canCreateOrganizations || authContext.user.role === "admin"}
+			canCreateOrganizations={
+				authContext.user.canCreateOrganizations || authContext.user.role === "admin"
+			}
 			permissions={permissions}
 		/>
 	);

@@ -28,9 +28,6 @@ export default async function LocationDetailPage({ params }: LocationDetailPageP
 	}
 
 	return (
-		<LocationDetail
-			locationId={locationId}
-			organizationId={authContext.employee.organizationId}
-		/>
+		<LocationDetail locationId={locationId} organizationId={authContext.employee.organizationId} />
 	);
 }

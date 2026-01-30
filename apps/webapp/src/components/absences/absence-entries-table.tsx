@@ -146,9 +146,7 @@ export function AbsenceEntriesTable({ absences, onUpdate }: AbsenceEntriesTableP
 			},
 			{
 				accessorKey: "days",
-				header: () => (
-					<div className="text-right">{t("absences.table.headers.days", "Days")}</div>
-				),
+				header: () => <div className="text-right">{t("absences.table.headers.days", "Days")}</div>,
 				cell: ({ row }) => {
 					const days = calculateBusinessDaysWithHalfDays(
 						row.original.startDate,
@@ -244,7 +242,10 @@ export function AbsenceEntriesTable({ absences, onUpdate }: AbsenceEntriesTableP
 			<DataTableToolbar
 				search={search}
 				onSearchChange={setSearch}
-				searchPlaceholder={t("absences.table.searchPlaceholder", "Search by type, status, or notes...")}
+				searchPlaceholder={t(
+					"absences.table.searchPlaceholder",
+					"Search by type, status, or notes...",
+				)}
 			/>
 
 			<DataTable

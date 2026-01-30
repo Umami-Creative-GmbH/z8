@@ -183,9 +183,7 @@ export function WorkPeriodEditDialog({
 							</Badge>
 						)}
 						{isRejected && (
-							<Badge variant="destructive">
-								{t("calendar.status.rejected", "Rejected")}
-							</Badge>
+							<Badge variant="destructive">{t("calendar.status.rejected", "Rejected")}</Badge>
 						)}
 					</div>
 					<DialogDescription>
@@ -212,9 +210,7 @@ export function WorkPeriodEditDialog({
 					{isRejected && (
 						<Alert variant="destructive">
 							<IconXboxX className="h-4 w-4" />
-							<AlertTitle>
-								{t("calendar.details.rejected", "Rejected")}
-							</AlertTitle>
+							<AlertTitle>{t("calendar.details.rejected", "Rejected")}</AlertTitle>
 							<AlertDescription>
 								{t(
 									"calendar.details.rejectedDescription",

@@ -55,21 +55,17 @@ export function DataTablePagination<TData>({
 	return (
 		<div className="flex items-center justify-between px-2">
 			<div className="flex-1 text-sm text-muted-foreground">
-				{showSelectedCount && selectedCount > 0 ? (
-					t("table.selectedOfTotal", "{selected} of {total} row(s) selected", {
-						selected: selectedCount,
-						total,
-					})
-				) : (
-					t("table.totalRows", "{total} row(s)", { total })
-				)}
+				{showSelectedCount && selectedCount > 0
+					? t("table.selectedOfTotal", "{selected} of {total} row(s) selected", {
+							selected: selectedCount,
+							total,
+						})
+					: t("table.totalRows", "{total} row(s)", { total })}
 			</div>
 
 			<div className="flex items-center gap-6 lg:gap-8">
 				<div className="flex items-center gap-2">
-					<p className="text-sm font-medium">
-						{t("table.rowsPerPage", "Rows per page")}
-					</p>
+					<p className="text-sm font-medium">{t("table.rowsPerPage", "Rows per page")}</p>
 					<Select
 						value={`${pageSize}`}
 						onValueChange={(value) => {

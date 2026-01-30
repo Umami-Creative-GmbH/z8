@@ -35,7 +35,9 @@ export function OrganizationDeletion({
 	return (
 		<Html>
 			<Head />
-			<Preview>Organization "{organizationName}" scheduled for deletion - 5 days to recover</Preview>
+			<Preview>
+				Organization "{organizationName}" scheduled for deletion - 5 days to recover
+			</Preview>
 			<Body style={main}>
 				<Container style={container}>
 					{/* Header with warning icon */}
@@ -50,8 +52,8 @@ export function OrganizationDeletion({
 					<Section style={contentSection}>
 						<Text style={greeting}>Hi {userName},</Text>
 						<Text style={text}>
-							The organization <strong style={orgName}>{organizationName}</strong> has been scheduled
-							for deletion by <strong>{deletedByName}</strong>.
+							The organization <strong style={orgName}>{organizationName}</strong> has been
+							scheduled for deletion by <strong>{deletedByName}</strong>.
 						</Text>
 
 						{/* Warning countdown box */}
@@ -114,8 +116,8 @@ export function OrganizationDeletion({
 
 						{/* Footer note */}
 						<Text style={footerNote}>
-							If you initiated this deletion and want it to proceed, no action is needed.
-							The organization will be permanently deleted on {permanentDeletionDate}.
+							If you initiated this deletion and want it to proceed, no action is needed. The
+							organization will be permanently deleted on {permanentDeletionDate}.
 						</Text>
 
 						<Text style={securityNote}>

@@ -351,7 +351,10 @@ export interface UpdateSocialOAuthInput {
 	isActive?: boolean;
 }
 
-export async function updateSocialOAuthConfigAction(configId: string, data: UpdateSocialOAuthInput) {
+export async function updateSocialOAuthConfigAction(
+	configId: string,
+	data: UpdateSocialOAuthInput,
+) {
 	const authContext = await requireUser();
 
 	if (authContext.employee?.role !== "admin") {
@@ -414,7 +417,9 @@ export async function testSocialOAuthConfigAction(configId: string) {
 	}
 }
 
-export async function getConfiguredSocialProvidersAction(): Promise<Record<SocialOAuthProvider, boolean>> {
+export async function getConfiguredSocialProvidersAction(): Promise<
+	Record<SocialOAuthProvider, boolean>
+> {
 	const authContext = await requireUser();
 
 	if (!authContext.employee?.organizationId) {

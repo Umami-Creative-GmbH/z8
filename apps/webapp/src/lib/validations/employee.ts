@@ -119,6 +119,11 @@ export const updateEmployeeSchema = z
 		// Contract type and hourly rate
 		contractType: contractTypeSchema.optional(),
 		hourlyRate: hourlyRateSchema,
+
+		// App access permissions (admin-only)
+		canUseWebapp: z.boolean().optional(),
+		canUseDesktop: z.boolean().optional(),
+		canUseMobile: z.boolean().optional(),
 	})
 	.refine(
 		(data) => {

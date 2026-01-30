@@ -3,10 +3,7 @@ import { sso } from "@better-auth/sso";
 import { betterAuth } from "better-auth/minimal";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
-import { admin } from "better-auth/plugins/admin";
-import { bearer } from "better-auth/plugins/bearer";
-import { organization } from "better-auth/plugins/organization";
-import { twoFactor } from "better-auth/plugins/two-factor";
+import { admin, apiKey, bearer, organization, twoFactor } from "better-auth/plugins";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import * as schema from "@/db/auth-schema";
@@ -125,6 +122,25 @@ export const auth = betterAuth({
 				type: "string",
 				required: false,
 				input: false, // system-managed
+			},
+			// App access permissions - control which applications the user can access
+			canUseWebapp: {
+				type: "boolean",
+				required: false,
+				defaultValue: true,
+				input: false, // admin-managed only
+			},
+			canUseDesktop: {
+				type: "boolean",
+				required: false,
+				defaultValue: true,
+				input: false, // admin-managed only
+			},
+			canUseMobile: {
+				type: "boolean",
+				required: false,
+				defaultValue: true,
+				input: false, // admin-managed only
 			},
 		},
 	},
@@ -457,7 +473,8 @@ export const auth = betterAuth({
 						where: eq(schema.organization.id, provider.organizationId),
 					});
 
-					const ssoRequiresApproval = (org as { ssoRequiresApproval?: boolean })?.ssoRequiresApproval ?? true;
+					const ssoRequiresApproval =
+						(org as { ssoRequiresApproval?: boolean })?.ssoRequiresApproval ?? true;
 
 					const existingEmployee = await db.query.employee.findFirst({
 						where: (emp, { eq, and }) =>
@@ -475,6 +492,19 @@ export const auth = betterAuth({
 					}
 				}
 			},
+		}),
+		// API Key plugin for organization-level API access
+		// Organization-specific data (organizationId, scopes, etc.) is stored in the metadata field
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Used at runtime
+		apiKey({
+			// Rate limiting configuration
+			rateLimit: {
+				enabled: true,
+				timeWindow: 60 * 1000, // 1 minute
+				maxRequests: 100, // 100 requests per minute default
+			},
+			// Enable metadata storage for additional key info (organizationId, scopes, displayName, createdBy)
+			enableMetadata: true,
 		}),
 	],
 });

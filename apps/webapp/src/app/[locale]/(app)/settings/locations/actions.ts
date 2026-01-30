@@ -364,10 +364,8 @@ export async function createLocation(
 					return yield* _(
 						Effect.fail(
 							new ValidationError({
-								message:
-									validationResult.error.issues[0]?.message || "Invalid input",
-								field:
-									validationResult.error.issues[0]?.path?.join(".") || "input",
+								message: validationResult.error.issues[0]?.message || "Invalid input",
+								field: validationResult.error.issues[0]?.path?.join(".") || "input",
 							}),
 						),
 					);
@@ -501,10 +499,8 @@ export async function updateLocation(
 					return yield* _(
 						Effect.fail(
 							new ValidationError({
-								message:
-									validationResult.error.issues[0]?.message || "Invalid input",
-								field:
-									validationResult.error.issues[0]?.path?.join(".") || "input",
+								message: validationResult.error.issues[0]?.message || "Invalid input",
+								field: validationResult.error.issues[0]?.path?.join(".") || "input",
 							}),
 						),
 					);
@@ -633,9 +629,7 @@ export async function updateLocation(
 /**
  * Delete a location (cascades to subareas and assignments)
  */
-export async function deleteLocation(
-	locationId: string,
-): Promise<ServerActionResult<void>> {
+export async function deleteLocation(locationId: string): Promise<ServerActionResult<void>> {
 	const tracer = trace.getTracer("locations");
 
 	const effect = tracer.startActiveSpan(
@@ -761,10 +755,8 @@ export async function createSubarea(
 					return yield* _(
 						Effect.fail(
 							new ValidationError({
-								message:
-									validationResult.error.issues[0]?.message || "Invalid input",
-								field:
-									validationResult.error.issues[0]?.path?.join(".") || "input",
+								message: validationResult.error.issues[0]?.message || "Invalid input",
+								field: validationResult.error.issues[0]?.path?.join(".") || "input",
 							}),
 						),
 					);
@@ -899,10 +891,8 @@ export async function updateSubarea(
 					return yield* _(
 						Effect.fail(
 							new ValidationError({
-								message:
-									validationResult.error.issues[0]?.message || "Invalid input",
-								field:
-									validationResult.error.issues[0]?.path?.join(".") || "input",
+								message: validationResult.error.issues[0]?.message || "Invalid input",
+								field: validationResult.error.issues[0]?.path?.join(".") || "input",
 							}),
 						),
 					);
@@ -1016,9 +1006,7 @@ export async function updateSubarea(
 /**
  * Delete a subarea
  */
-export async function deleteSubarea(
-	subareaId: string,
-): Promise<ServerActionResult<void>> {
+export async function deleteSubarea(subareaId: string): Promise<ServerActionResult<void>> {
 	const tracer = trace.getTracer("locations");
 
 	const effect = tracer.startActiveSpan(
@@ -1079,9 +1067,7 @@ export async function deleteSubarea(
 				// Delete subarea (cascade handles employee assignments)
 				yield* _(
 					dbService.query("deleteSubarea", async () => {
-						return await db
-							.delete(locationSubarea)
-							.where(eq(locationSubarea.id, subareaId));
+						return await db.delete(locationSubarea).where(eq(locationSubarea.id, subareaId));
 					}),
 				);
 
@@ -1112,12 +1098,16 @@ export async function getAvailableEmployees(
 	organizationId: string,
 	excludeLocationId?: string,
 	excludeSubareaId?: string,
-): Promise<ServerActionResult<Array<{
-	id: string;
-	firstName: string | null;
-	lastName: string | null;
-	user: { name: string | null; email: string };
-}>>> {
+): Promise<
+	ServerActionResult<
+		Array<{
+			id: string;
+			firstName: string | null;
+			lastName: string | null;
+			user: { name: string | null; email: string };
+		}>
+	>
+> {
 	const tracer = trace.getTracer("locations");
 
 	const effect = tracer.startActiveSpan(
@@ -1158,10 +1148,7 @@ export async function getAvailableEmployees(
 				const employees = yield* _(
 					dbService.query("getEmployees", async () => {
 						return await db.query.employee.findMany({
-							where: and(
-								eq(employee.organizationId, organizationId),
-								eq(employee.isActive, true),
-							),
+							where: and(eq(employee.organizationId, organizationId), eq(employee.isActive, true)),
 							with: { user: true },
 						});
 					}),

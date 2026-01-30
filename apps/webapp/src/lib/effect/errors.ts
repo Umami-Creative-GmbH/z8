@@ -43,6 +43,12 @@ export class ConflictError extends Data.TaggedError("ConflictError")<{
 	details?: Record<string, unknown>;
 }> {}
 
+export class AppAccessDeniedError extends Data.TaggedError("AppAccessDeniedError")<{
+	message: string;
+	appType: "webapp" | "desktop" | "mobile";
+	userId: string;
+}> {}
+
 export type AnyAppError =
 	| ValidationError
 	| AuthenticationError
@@ -50,4 +56,5 @@ export type AnyAppError =
 	| DatabaseError
 	| EmailError
 	| NotFoundError
-	| ConflictError;
+	| ConflictError
+	| AppAccessDeniedError;

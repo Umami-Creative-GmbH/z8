@@ -118,9 +118,7 @@ export function LocationEmployeeDialog({
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="sm:max-w-[450px]">
 				<DialogHeader>
-					<DialogTitle>
-						{t("settings.locations.assignEmployee", "Assign Employee")}
-					</DialogTitle>
+					<DialogTitle>{t("settings.locations.assignEmployee", "Assign Employee")}</DialogTitle>
 					<DialogDescription>
 						{t(
 							"settings.locations.assignEmployeeDescription",

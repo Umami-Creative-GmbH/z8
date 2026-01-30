@@ -134,10 +134,7 @@ export const workPeriod = pgTable(
 		index("workPeriod_workCategoryId_idx").on(table.workCategoryId),
 		index("workPeriod_approvalStatus_idx").on(table.approvalStatus),
 		// Composite index for calendar queries (most common)
-		index("workPeriod_org_startTime_idx").on(
-			table.organizationId,
-			table.startTime,
-		),
+		index("workPeriod_org_startTime_idx").on(table.organizationId, table.startTime),
 		// Composite index for employee-org queries
 		index("workPeriod_emp_org_startTime_idx").on(
 			table.employeeId,

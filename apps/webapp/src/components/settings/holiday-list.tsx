@@ -197,10 +197,7 @@ export function HolidayList({ organizationId, onAddClick, onEditClick }: Holiday
 			{
 				accessorKey: "name",
 				header: ({ column }) => (
-					<DataTableColumnHeader
-						column={column}
-						title={t("settings.holidays.list.name", "Name")}
-					/>
+					<DataTableColumnHeader column={column} title={t("settings.holidays.list.name", "Name")} />
 				),
 				cell: ({ row }) => (
 					<div>
@@ -229,10 +226,7 @@ export function HolidayList({ organizationId, onAddClick, onEditClick }: Holiday
 			{
 				accessorKey: "startDate",
 				header: ({ column }) => (
-					<DataTableColumnHeader
-						column={column}
-						title={t("settings.holidays.list.date", "Date")}
-					/>
+					<DataTableColumnHeader column={column} title={t("settings.holidays.list.date", "Date")} />
 				),
 				cell: ({ row }) => formatDateRange(row.original.startDate, row.original.endDate),
 			},
@@ -245,9 +239,7 @@ export function HolidayList({ organizationId, onAddClick, onEditClick }: Holiday
 							{t("settings.holidays.recurrence.none", "One-time")}
 						</span>
 					) : (
-						<Badge variant="secondary">
-							{t("settings.holidays.recurrence.yearly", "Yearly")}
-						</Badge>
+						<Badge variant="secondary">{t("settings.holidays.recurrence.yearly", "Yearly")}</Badge>
 					),
 			},
 			{
@@ -390,22 +382,22 @@ export function HolidayList({ organizationId, onAddClick, onEditClick }: Holiday
 				/>
 
 				<DataTablePagination
-					table={{
-						getState: () => ({ pagination }),
-						getPageCount: () => pageCount,
-						getCanPreviousPage: () => pagination.pageIndex > 0,
-						getCanNextPage: () => pagination.pageIndex < pageCount - 1,
-						previousPage: () =>
-							setPagination((prev) => ({ ...prev, pageIndex: prev.pageIndex - 1 })),
-						nextPage: () =>
-							setPagination((prev) => ({ ...prev, pageIndex: prev.pageIndex + 1 })),
-						setPageIndex: (index: number) =>
-							setPagination((prev) => ({ ...prev, pageIndex: index })),
-						setPageSize: (size: number) =>
-							setPagination({ pageIndex: 0, pageSize: size }),
-						getFilteredSelectedRowModel: () => ({ rows: [] }),
-						getFilteredRowModel: () => ({ rows: [] }),
-					} as any}
+					table={
+						{
+							getState: () => ({ pagination }),
+							getPageCount: () => pageCount,
+							getCanPreviousPage: () => pagination.pageIndex > 0,
+							getCanNextPage: () => pagination.pageIndex < pageCount - 1,
+							previousPage: () =>
+								setPagination((prev) => ({ ...prev, pageIndex: prev.pageIndex - 1 })),
+							nextPage: () => setPagination((prev) => ({ ...prev, pageIndex: prev.pageIndex + 1 })),
+							setPageIndex: (index: number) =>
+								setPagination((prev) => ({ ...prev, pageIndex: index })),
+							setPageSize: (size: number) => setPagination({ pageIndex: 0, pageSize: size }),
+							getFilteredSelectedRowModel: () => ({ rows: [] }),
+							getFilteredRowModel: () => ({ rows: [] }),
+						} as any
+					}
 					totalRows={total}
 					showSelectedCount={selectedCount > 0}
 				/>

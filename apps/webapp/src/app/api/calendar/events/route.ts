@@ -24,15 +24,9 @@ async function fetchMonthEvents(
 	// Fetch all event types in parallel - conditional fetches return empty arrays
 	const [holidays, absences, timeEntries, workPeriods] = await Promise.all([
 		showHolidays ? getHolidaysForMonth(organizationId, month, year) : [],
-		showAbsences
-			? getAbsencesForMonth(month, year, { organizationId, employeeId })
-			: [],
-		showTimeEntries
-			? getTimeEntriesForMonth(month, year, { organizationId, employeeId })
-			: [],
-		showWorkPeriods
-			? getWorkPeriodsForMonth(month, year, { organizationId, employeeId })
-			: [],
+		showAbsences ? getAbsencesForMonth(month, year, { organizationId, employeeId }) : [],
+		showTimeEntries ? getTimeEntriesForMonth(month, year, { organizationId, employeeId }) : [],
+		showWorkPeriods ? getWorkPeriodsForMonth(month, year, { organizationId, employeeId }) : [],
 	]);
 
 	return [...holidays, ...absences, ...timeEntries, ...workPeriods];

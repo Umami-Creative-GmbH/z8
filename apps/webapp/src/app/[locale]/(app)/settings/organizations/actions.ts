@@ -1215,7 +1215,8 @@ export async function deleteOrganization(
 					yield* _(
 						Effect.fail(
 							new ValidationError({
-								message: "Organization name does not match. Please type the exact organization name to confirm deletion.",
+								message:
+									"Organization name does not match. Please type the exact organization name to confirm deletion.",
 								field: "confirmationName",
 								value: confirmationName,
 							}),
@@ -1275,7 +1276,10 @@ export async function deleteOrganization(
 						},
 						catch: (error) => {
 							return new ValidationError({
-								message: error instanceof Error ? error.message : "Failed to schedule organization for deletion",
+								message:
+									error instanceof Error
+										? error.message
+										: "Failed to schedule organization for deletion",
 								field: "organization",
 							});
 						},
@@ -1499,9 +1503,7 @@ async function sendOrganizationDeletionNotifications(
 	});
 
 	// Filter to only admins and owners
-	const adminsAndOwners = adminMembers.filter(
-		(m) => m.role === "admin" || m.role === "owner"
-	);
+	const adminsAndOwners = adminMembers.filter((m) => m.role === "admin" || m.role === "owner");
 
 	const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 	const recoveryUrl = `${appUrl}/settings/organizations`;
@@ -1522,7 +1524,7 @@ async function sendOrganizationDeletionNotifications(
 					permanentDeletionDate: permanentDeletionDate.toLocaleString(),
 					recoveryUrl,
 					appUrl,
-				})
+				}),
 			);
 
 			await sendEmail({
@@ -1535,7 +1537,7 @@ async function sendOrganizationDeletionNotifications(
 		} catch (error) {
 			logger.warn(
 				{ error, email: member.user.email, organizationId },
-				"Failed to send deletion notification to user"
+				"Failed to send deletion notification to user",
 			);
 		}
 	}

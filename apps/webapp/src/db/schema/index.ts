@@ -29,6 +29,7 @@ export * from "./time-tracking";
 export * from "./types";
 export * from "./user-settings";
 export * from "./vacation";
+export * from "./webhook";
 export * from "./wellness";
 export * from "./work-category";
 export * from "./work-policy";

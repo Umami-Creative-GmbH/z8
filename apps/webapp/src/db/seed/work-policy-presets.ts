@@ -201,7 +201,6 @@ export async function seedWorkPolicyPresets() {
 	let created = 0;
 
 	for (const preset of workPolicyPresetsData) {
-
 		await db.insert(workPolicyPreset).values({
 			name: preset.name,
 			description: preset.description,
@@ -210,7 +209,9 @@ export async function seedWorkPolicyPresets() {
 			maxWeeklyMinutes: preset.maxWeeklyMinutes,
 			maxUninterruptedMinutes: preset.maxUninterruptedMinutes,
 			// text column requires explicit JSON stringification
-			breakRulesJson: JSON.stringify(preset.breakRulesJson) as unknown as typeof preset.breakRulesJson,
+			breakRulesJson: JSON.stringify(
+				preset.breakRulesJson,
+			) as unknown as typeof preset.breakRulesJson,
 			isActive: true,
 		});
 

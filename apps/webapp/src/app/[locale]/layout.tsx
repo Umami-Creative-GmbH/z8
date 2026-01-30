@@ -7,11 +7,7 @@ import { Toaster } from "sonner";
 import { BProgressBar } from "@/components/bprogress/bprogress";
 import { ThemeProvider } from "@/components/theme-provider";
 import { TolgeeNextProvider } from "@/tolgee/client";
-import {
-	ALL_LANGUAGES,
-	loadNamespaces,
-	getNamespacesForRoute,
-} from "@/tolgee/shared";
+import { ALL_LANGUAGES, loadNamespaces, getNamespacesForRoute } from "@/tolgee/shared";
 import { DOMAIN_HEADERS } from "@/proxy";
 import { NonceProvider } from "@/lib/nonce-context";
 import { NONCE_HEADER } from "@/lib/security";
@@ -25,10 +21,7 @@ type Props = {
 };
 
 // Load translations for the current route's required namespaces
-async function loadRouteTranslations(
-	locale: string,
-	pathname: string
-): Promise<TolgeeStaticData> {
+async function loadRouteTranslations(locale: string, pathname: string): Promise<TolgeeStaticData> {
 	try {
 		// Get namespaces for this route
 		const namespaces = getNamespacesForRoute(pathname);

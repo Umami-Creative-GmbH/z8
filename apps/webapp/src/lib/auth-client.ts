@@ -4,6 +4,7 @@ import { passkeyClient } from "@better-auth/passkey/client";
 import { ssoClient } from "@better-auth/sso/client";
 import {
 	adminClient,
+	apiKeyClient,
 	inferAdditionalFields,
 	inferOrgAdditionalFields,
 	organizationClient,
@@ -23,6 +24,7 @@ const createClientConfig = () => ({
 		// Infer additional fields from auth config for type safety
 		inferAdditionalFields<typeof auth>(),
 		adminClient(),
+		apiKeyClient(),
 		organizationClient({
 			// Infer organization additional fields for type safety
 			schema: inferOrgAdditionalFields<typeof auth>(),
@@ -70,7 +72,7 @@ function requireAuthClient(): AuthClient {
 	if (!client) {
 		throw new Error(
 			"Auth client operations can only be performed on the client side. " +
-			"For server-side session access, use auth.api.getSession() from @/lib/auth instead."
+				"For server-side session access, use auth.api.getSession() from @/lib/auth instead.",
 		);
 	}
 	return client;

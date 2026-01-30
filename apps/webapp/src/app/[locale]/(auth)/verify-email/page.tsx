@@ -110,11 +110,9 @@ export default function VerifyEmailPage() {
 						<div className="mb-4 rounded-lg border bg-muted/50 p-4">
 							<p className="font-medium">
 								{joinResult.status === "approved"
-									? t(
-											"auth.joined-organization",
-											"You've joined {organization}!",
-											{ organization: joinResult.organizationName },
-										)
+									? t("auth.joined-organization", "You've joined {organization}!", {
+											organization: joinResult.organizationName,
+										})
 									: t(
 											"auth.pending-organization-approval",
 											"Your request to join {organization} is pending approval.",

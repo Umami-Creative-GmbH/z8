@@ -64,10 +64,7 @@ export function ProjectSelector({
 	lastProjectIdRef.current = cachedLastProjectId;
 
 	// Build a Map for O(1) project lookups (js-index-maps)
-	const projectsMap = useMemo(
-		() => new Map(projects.map((p) => [p.id, p])),
-		[projects],
-	);
+	const projectsMap = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects]);
 
 	// Auto-select last used project on initial load
 	useEffect(() => {

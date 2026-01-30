@@ -467,7 +467,10 @@ export async function checkAndSendDeadlineNotifications(): Promise<{
 		}
 	}
 
-	logger.info({ checked: projects.length, notificationsSent }, "Deadline notification check complete");
+	logger.info(
+		{ checked: projects.length, notificationsSent },
+		"Deadline notification check complete",
+	);
 
 	return {
 		checked: projects.length,

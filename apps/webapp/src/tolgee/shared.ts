@@ -146,7 +146,7 @@ const namespaceImports: Record<Namespace, Record<string, () => Promise<unknown>>
  */
 export async function loadNamespaces(
 	locale: string,
-	namespaces: Namespace[]
+	namespaces: Namespace[],
 ): Promise<TolgeeStaticData> {
 	const lang = ALL_LANGUAGES.includes(locale) ? locale : DEFAULT_LANGUAGE;
 
@@ -156,7 +156,8 @@ export async function loadNamespaces(
 		if (importFn) {
 			try {
 				const mod = await importFn();
-				const data = (mod as { default?: TreeTranslationsData }).default || (mod as TreeTranslationsData);
+				const data =
+					(mod as { default?: TreeTranslationsData }).default || (mod as TreeTranslationsData);
 				return { ns, data };
 			} catch (error) {
 				console.warn(`Failed to load namespace ${ns} for ${lang}:`, error);
@@ -188,7 +189,7 @@ export async function loadNamespaces(
  */
 export async function loadRouteTranslations(
 	locale: string,
-	pathname: string
+	pathname: string,
 ): Promise<TolgeeStaticData> {
 	const namespaces = getNamespacesForRoute(pathname);
 	return loadNamespaces(locale, namespaces);
@@ -207,7 +208,8 @@ async function loadAllNamespacesForLanguage(lang: string): Promise<TreeTranslati
 		if (importFn) {
 			try {
 				const mod = await importFn();
-				const data = (mod as { default?: TreeTranslationsData }).default || (mod as TreeTranslationsData);
+				const data =
+					(mod as { default?: TreeTranslationsData }).default || (mod as TreeTranslationsData);
 				Object.assign(merged, data);
 			} catch (error) {
 				console.warn(`Failed to load namespace ${ns} for ${lang}:`, error);

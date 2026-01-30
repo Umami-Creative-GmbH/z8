@@ -43,7 +43,10 @@ export async function POST(request: NextRequest) {
 			.limit(1);
 
 		if (!currentEmployee) {
-			return NextResponse.json({ error: "Employee record not found in this organization" }, { status: 404 });
+			return NextResponse.json(
+				{ error: "Employee record not found in this organization" },
+				{ status: 404 },
+			);
 		}
 
 		// Determine which employee's chain to verify
@@ -77,7 +80,9 @@ export async function POST(request: NextRequest) {
 
 		const effect = Effect.gen(function* (_) {
 			const timeEntryService = yield* _(TimeEntryService);
-			return yield* _(timeEntryService.verifyTimeEntryChain(targetEmployeeId, currentEmployee.organizationId));
+			return yield* _(
+				timeEntryService.verifyTimeEntryChain(targetEmployeeId, currentEmployee.organizationId),
+			);
 		});
 
 		const result = await runtime.runPromise(effect);
@@ -128,7 +133,10 @@ export async function GET(request: NextRequest) {
 			.limit(1);
 
 		if (!currentEmployee) {
-			return NextResponse.json({ error: "Employee record not found in this organization" }, { status: 404 });
+			return NextResponse.json(
+				{ error: "Employee record not found in this organization" },
+				{ status: 404 },
+			);
 		}
 
 		// Determine which employee's chain hash to get
@@ -146,7 +154,9 @@ export async function GET(request: NextRequest) {
 
 		const effect = Effect.gen(function* (_) {
 			const timeEntryService = yield* _(TimeEntryService);
-			return yield* _(timeEntryService.getChainHash(targetEmployeeId, currentEmployee.organizationId));
+			return yield* _(
+				timeEntryService.getChainHash(targetEmployeeId, currentEmployee.organizationId),
+			);
 		});
 
 		const chainHash = await runtime.runPromise(effect);

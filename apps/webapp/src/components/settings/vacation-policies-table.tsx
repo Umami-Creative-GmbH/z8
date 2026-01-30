@@ -18,11 +18,7 @@ import {
 	deleteVacationPolicy,
 	getVacationPolicies,
 } from "@/app/[locale]/(app)/settings/vacation/actions";
-import {
-	DataTable,
-	DataTableSkeleton,
-	DataTableToolbar,
-} from "@/components/data-table-server";
+import { DataTable, DataTableSkeleton, DataTableToolbar } from "@/components/data-table-server";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -209,7 +205,9 @@ export function VacationPoliciesTable({ organizationId }: VacationPoliciesTableP
 			{
 				accessorKey: "defaultAnnualDays",
 				header: () => (
-					<div className="text-right">{t("vacation.policies.header.annual-days", "Annual Days")}</div>
+					<div className="text-right">
+						{t("vacation.policies.header.annual-days", "Annual Days")}
+					</div>
 				),
 				cell: ({ row }) => (
 					<div className="text-right tabular-nums">{row.original.defaultAnnualDays}</div>

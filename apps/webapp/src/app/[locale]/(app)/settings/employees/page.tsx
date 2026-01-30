@@ -98,9 +98,14 @@ export default function EmployeesPage() {
 		<div className="flex flex-1 flex-col gap-4 p-4">
 			<div className="flex items-center justify-between">
 				<div>
-					<h1 className="text-2xl font-semibold tracking-tight">{t("settings.employees.title", "Employees")}</h1>
+					<h1 className="text-2xl font-semibold tracking-tight">
+						{t("settings.employees.title", "Employees")}
+					</h1>
 					<p className="text-sm text-muted-foreground">
-						{t("settings.employees.description", "Manage employee profiles, teams, and permissions")}
+						{t(
+							"settings.employees.description",
+							"Manage employee profiles, teams, and permissions",
+						)}
 					</p>
 				</div>
 				<div className="flex items-center gap-2">

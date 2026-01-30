@@ -3,68 +3,68 @@
 /* Hide default Schedule-X header and view selection */
 .sx__calendar-header,
 .sx__view-selection {
-  display: none !important;
+	display: none !important;
 }
 
 /* Make calendar fill container height */
 .schedule-x-container .sx-react-calendar-wrapper {
-  height: 100% !important;
+	height: 100% !important;
 }
 
 .schedule-x-container .sx__calendar-wrapper {
-  height: 100% !important;
+	height: 100% !important;
 }
 
 .schedule-x-container .sx__calendar {
-  height: 100% !important;
-  display: flex !important;
-  flex-direction: column !important;
-  overflow: hidden !important;
+	height: 100% !important;
+	display: flex !important;
+	flex-direction: column !important;
+	overflow: hidden !important;
 }
 
 /* View container fills remaining space with scroll */
 .schedule-x-container .sx__view-container {
-  flex: 1 !important;
-  min-height: 0 !important;
-  overflow-y: auto !important;
+	flex: 1 !important;
+	min-height: 0 !important;
+	overflow-y: auto !important;
 }
 
 /* Week/time grid sizing */
 .schedule-x-container .sx__week-wrapper,
 .schedule-x-container .sx__time-grid-wrapper,
 .schedule-x-container .sx__month-grid-wrapper {
-  height: auto !important;
-  min-height: 100% !important;
+	height: auto !important;
+	min-height: 100% !important;
 }
 
 /* Fix: Remove overflow from week-wrapper so sticky works relative to view-container */
 .schedule-x-container .sx__week-wrapper {
-  overflow: visible !important;
+	overflow: visible !important;
 }
 
 /* Sticky day headers for week and day views */
 .schedule-x-container .sx__week-header {
-  position: sticky !important;
-  top: 0 !important;
-  z-index: 10 !important;
-  background-color: var(--sx-color-background) !important;
+	position: sticky !important;
+	top: 0 !important;
+	z-index: 10 !important;
+	background-color: var(--sx-color-background) !important;
 }
 
 /* Pending work period styling - faded/semi-transparent with dashed border */
 .schedule-x-container [data-calendar-id="work_period_pending"] {
-  opacity: 0.6 !important;
-  background-image: repeating-linear-gradient(
-    45deg,
-    transparent,
-    transparent 4px,
-    rgba(255, 255, 255, 0.1) 4px,
-    rgba(255, 255, 255, 0.1) 8px
-  ) !important;
-  border: 2px dashed currentColor !important;
+	opacity: 0.6 !important;
+	background-image: repeating-linear-gradient(
+		45deg,
+		transparent,
+		transparent 4px,
+		rgba(255, 255, 255, 0.1) 4px,
+		rgba(255, 255, 255, 0.1) 8px
+	) !important;
+	border: 2px dashed currentColor !important;
 }
 
 /* Rejected work period styling - strikethrough effect */
 .schedule-x-container [data-calendar-id="work_period_rejected"] {
-  opacity: 0.5 !important;
-  text-decoration: line-through !important;
+	opacity: 0.5 !important;
+	text-decoration: line-through !important;
 }

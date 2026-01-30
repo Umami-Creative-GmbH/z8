@@ -151,7 +151,8 @@ export function RateHistoryCard({
 											</TFormControl>
 											{currentRate && (
 												<TFormDescription>
-													Current rate: {formatCurrency(currentRate.hourlyRate, currentRate.currency)}
+													Current rate:{" "}
+													{formatCurrency(currentRate.hourlyRate, currentRate.currency)}
 												</TFormDescription>
 											)}
 											<TFormMessage field={field} />
@@ -249,7 +250,10 @@ export function RateHistoryCard({
 									<div className="flex-1 space-y-1">
 										<div className="flex items-center gap-2">
 											<span
-												className={cn("font-medium", isCurrent ? "text-primary" : "text-foreground")}
+												className={cn(
+													"font-medium",
+													isCurrent ? "text-primary" : "text-foreground",
+												)}
 											>
 												{formatCurrency(entry.hourlyRate, entry.currency)}
 											</span>

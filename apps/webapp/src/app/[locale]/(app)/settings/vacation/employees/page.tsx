@@ -67,9 +67,14 @@ async function EmployeeAllowancesContent() {
 		<div className="flex flex-1 flex-col gap-4 p-4">
 			<div className="flex items-center justify-between">
 				<div>
-					<h1 className="text-2xl font-semibold tracking-tight">{t("settings.vacation.employees.title", "Employee Allowances")}</h1>
+					<h1 className="text-2xl font-semibold tracking-tight">
+						{t("settings.vacation.employees.title", "Employee Allowances")}
+					</h1>
 					<p className="text-sm text-muted-foreground">
-						{t("settings.vacation.employees.description", "Configure custom vacation allowances for individual employees")}
+						{t(
+							"settings.vacation.employees.description",
+							"Configure custom vacation allowances for individual employees",
+						)}
 					</p>
 				</div>
 			</div>

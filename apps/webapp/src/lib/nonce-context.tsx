@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, type ReactNode } from "react";
+import { createContext, type ReactNode, useContext } from "react";
 
 const NonceContext = createContext<string | undefined>(undefined);
 
@@ -13,7 +13,9 @@ interface NonceProviderProps {
  * Provider for distributing CSP nonce to client components
  */
 export function NonceProvider({ nonce, children }: NonceProviderProps) {
-	return <NonceContext.Provider value={nonce}>{children}</NonceContext.Provider>;
+	return (
+		<NonceContext.Provider value={nonce}>{children}</NonceContext.Provider>
+	);
 }
 
 /**

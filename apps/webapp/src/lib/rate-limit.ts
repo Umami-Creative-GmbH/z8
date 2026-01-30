@@ -40,7 +40,11 @@ export function isRateLimitDisabled(): boolean {
  * Parse rate limit config from env var
  * Format: "requests/seconds" (e.g., "10/60" = 10 requests per 60 seconds)
  */
-function parseRateLimitEnv(envValue: string | undefined, defaultRequests: number, defaultSeconds: number): { requests: number; seconds: number } {
+function parseRateLimitEnv(
+	envValue: string | undefined,
+	defaultRequests: number,
+	defaultSeconds: number,
+): { requests: number; seconds: number } {
 	if (!envValue) {
 		return { requests: defaultRequests, seconds: defaultSeconds };
 	}
@@ -163,7 +167,10 @@ const limiters = {
 	/** Password reset: configurable via RATE_LIMIT_PASSWORD_RESET (default: 3 requests per 60 seconds) */
 	passwordReset: new Ratelimit({
 		redis,
-		limiter: Ratelimit.slidingWindow(passwordResetConfig.requests, `${passwordResetConfig.seconds} s`),
+		limiter: Ratelimit.slidingWindow(
+			passwordResetConfig.requests,
+			`${passwordResetConfig.seconds} s`,
+		),
 		prefix: "ratelimit:password-reset",
 		analytics: false,
 	}),
@@ -200,7 +207,10 @@ export interface RateLimitResult {
 export const RATE_LIMIT_CONFIGS = {
 	auth: { maxRequests: authConfig.requests, windowSeconds: authConfig.seconds },
 	signUp: { maxRequests: signUpConfig.requests, windowSeconds: signUpConfig.seconds },
-	passwordReset: { maxRequests: passwordResetConfig.requests, windowSeconds: passwordResetConfig.seconds },
+	passwordReset: {
+		maxRequests: passwordResetConfig.requests,
+		windowSeconds: passwordResetConfig.seconds,
+	},
 	api: { maxRequests: apiConfig.requests, windowSeconds: apiConfig.seconds },
 	export: { maxRequests: exportConfig.requests, windowSeconds: exportConfig.seconds },
 };

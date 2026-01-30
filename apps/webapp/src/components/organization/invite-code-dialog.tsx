@@ -79,9 +79,7 @@ export function InviteCodeDialog({
 				setDescription(inviteCode.description || "");
 				setMaxUses(inviteCode.maxUses?.toString() || "");
 				setExpiresAt(
-					inviteCode.expiresAt
-						? new Date(inviteCode.expiresAt).toISOString().split("T")[0]
-						: "",
+					inviteCode.expiresAt ? new Date(inviteCode.expiresAt).toISOString().split("T")[0] : "",
 				);
 				setDefaultTeamId(inviteCode.defaultTeamId || "");
 				setRequiresApproval(inviteCode.requiresApproval);
@@ -234,19 +232,27 @@ export function InviteCodeDialog({
 								id="label"
 								value={label}
 								onChange={(e) => setLabel(e.target.value)}
-								placeholder={t("settings.inviteCodes.labelPlaceholder", "e.g., Public Recruitment 2024")}
+								placeholder={t(
+									"settings.inviteCodes.labelPlaceholder",
+									"e.g., Public Recruitment 2024",
+								)}
 								required
 							/>
 						</div>
 
 						{/* Description */}
 						<div className="grid gap-2">
-							<Label htmlFor="description">{t("settings.inviteCodes.description", "Description")}</Label>
+							<Label htmlFor="description">
+								{t("settings.inviteCodes.description", "Description")}
+							</Label>
 							<Textarea
 								id="description"
 								value={description}
 								onChange={(e) => setDescription(e.target.value)}
-								placeholder={t("settings.inviteCodes.descriptionPlaceholder", "Optional description...")}
+								placeholder={t(
+									"settings.inviteCodes.descriptionPlaceholder",
+									"Optional description...",
+								)}
 								rows={2}
 							/>
 						</div>
@@ -269,7 +275,9 @@ export function InviteCodeDialog({
 
 						{/* Expires At */}
 						<div className="grid gap-2">
-							<Label htmlFor="expiresAt">{t("settings.inviteCodes.expiresAt", "Expiration Date")}</Label>
+							<Label htmlFor="expiresAt">
+								{t("settings.inviteCodes.expiresAt", "Expiration Date")}
+							</Label>
 							<Input
 								id="expiresAt"
 								type="date"
@@ -284,7 +292,9 @@ export function InviteCodeDialog({
 
 						{/* Default Team */}
 						<div className="grid gap-2">
-							<Label htmlFor="defaultTeam">{t("settings.inviteCodes.defaultTeam", "Default Team")}</Label>
+							<Label htmlFor="defaultTeam">
+								{t("settings.inviteCodes.defaultTeam", "Default Team")}
+							</Label>
 							<Select
 								value={defaultTeamId || "none"}
 								onValueChange={(v) => setDefaultTeamId(v === "none" ? "" : v)}
@@ -358,9 +368,7 @@ export function InviteCodeDialog({
 						</Button>
 						<Button type="submit" disabled={isSubmitting || !label.trim()}>
 							{isSubmitting && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
-							{isEditing
-								? t("common.save", "Save")
-								: t("settings.inviteCodes.create", "Create")}
+							{isEditing ? t("common.save", "Save") : t("settings.inviteCodes.create", "Create")}
 						</Button>
 					</DialogFooter>
 				</form>

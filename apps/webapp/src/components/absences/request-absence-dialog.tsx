@@ -122,9 +122,7 @@ export function RequestAbsenceDialog({
 
 			// Validate same-day period logic
 			const invalidSameDayPeriod =
-				value.startDate === value.endDate &&
-				value.startPeriod === "pm" &&
-				value.endPeriod === "am";
+				value.startDate === value.endDate && value.startPeriod === "pm" && value.endPeriod === "am";
 
 			if (invalidSameDayPeriod) {
 				toast.error(

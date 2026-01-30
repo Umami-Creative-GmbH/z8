@@ -107,10 +107,7 @@ export async function getWorkCategorySets(
 		.select()
 		.from(workCategorySet)
 		.where(
-			and(
-				eq(workCategorySet.organizationId, organizationId),
-				eq(workCategorySet.isActive, true),
-			),
+			and(eq(workCategorySet.organizationId, organizationId), eq(workCategorySet.isActive, true)),
 		)
 		.orderBy(asc(workCategorySet.name));
 
@@ -142,9 +139,7 @@ export async function getWorkCategorySets(
 /**
  * Get a specific work category set by ID
  */
-export async function getWorkCategorySetById(
-	setId: string,
-): Promise<WorkCategorySetRecord | null> {
+export async function getWorkCategorySetById(setId: string): Promise<WorkCategorySetRecord | null> {
 	const result = await db.query.workCategorySet.findFirst({
 		where: eq(workCategorySet.id, setId),
 	});
@@ -180,12 +175,7 @@ export async function getWorkCategorySetWithCategories(setId: string): Promise<{
 		})
 		.from(workCategorySetCategory)
 		.innerJoin(workCategory, eq(workCategorySetCategory.categoryId, workCategory.id))
-		.where(
-			and(
-				eq(workCategorySetCategory.setId, setId),
-				eq(workCategory.isActive, true),
-			),
-		)
+		.where(and(eq(workCategorySetCategory.setId, setId), eq(workCategory.isActive, true)))
 		.orderBy(asc(workCategorySetCategory.sortOrder), asc(workCategory.name));
 
 	return {
@@ -216,12 +206,7 @@ export async function getOrganizationCategories(
 			createdAt: workCategory.createdAt,
 		})
 		.from(workCategory)
-		.where(
-			and(
-				eq(workCategory.organizationId, organizationId),
-				eq(workCategory.isActive, true),
-			),
-		)
+		.where(and(eq(workCategory.organizationId, organizationId), eq(workCategory.isActive, true)))
 		.orderBy(asc(workCategory.name));
 }
 
@@ -243,21 +228,14 @@ export async function getCategoriesInSet(setId: string): Promise<SetCategoryReco
 		})
 		.from(workCategorySetCategory)
 		.innerJoin(workCategory, eq(workCategorySetCategory.categoryId, workCategory.id))
-		.where(
-			and(
-				eq(workCategorySetCategory.setId, setId),
-				eq(workCategory.isActive, true),
-			),
-		)
+		.where(and(eq(workCategorySetCategory.setId, setId), eq(workCategory.isActive, true)))
 		.orderBy(asc(workCategorySetCategory.sortOrder), asc(workCategory.name));
 }
 
 /**
  * Get a specific category by ID
  */
-export async function getWorkCategoryById(
-	categoryId: string,
-): Promise<WorkCategoryRecord | null> {
+export async function getWorkCategoryById(categoryId: string): Promise<WorkCategoryRecord | null> {
 	const [result] = await db
 		.select({
 			id: workCategory.id,
@@ -379,7 +357,10 @@ export async function getEffectiveWorkCategorySetForEmployee(
 		},
 	});
 
-	if (employeeAssignment?.set?.isActive && isEffective(employeeAssignment.effectiveFrom, employeeAssignment.effectiveUntil)) {
+	if (
+		employeeAssignment?.set?.isActive &&
+		isEffective(employeeAssignment.effectiveFrom, employeeAssignment.effectiveUntil)
+	) {
 		return {
 			set: employeeAssignment.set,
 			source: "employee",
@@ -400,7 +381,10 @@ export async function getEffectiveWorkCategorySetForEmployee(
 			},
 		});
 
-		if (teamAssignment?.set?.isActive && isEffective(teamAssignment.effectiveFrom, teamAssignment.effectiveUntil)) {
+		if (
+			teamAssignment?.set?.isActive &&
+			isEffective(teamAssignment.effectiveFrom, teamAssignment.effectiveUntil)
+		) {
 			return {
 				set: teamAssignment.set,
 				source: "team",
@@ -421,7 +405,10 @@ export async function getEffectiveWorkCategorySetForEmployee(
 		},
 	});
 
-	if (orgAssignment?.set?.isActive && isEffective(orgAssignment.effectiveFrom, orgAssignment.effectiveUntil)) {
+	if (
+		orgAssignment?.set?.isActive &&
+		isEffective(orgAssignment.effectiveFrom, orgAssignment.effectiveUntil)
+	) {
 		return {
 			set: orgAssignment.set,
 			source: "organization",

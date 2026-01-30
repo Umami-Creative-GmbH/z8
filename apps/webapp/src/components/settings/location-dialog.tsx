@@ -160,7 +160,10 @@ export function LocationDialog({
 										value={field.state.value}
 										onChange={(e) => field.handleChange(e.target.value)}
 										onBlur={field.handleBlur}
-										placeholder={t("settings.locations.field.streetPlaceholder", "e.g., 123 Main St")}
+										placeholder={t(
+											"settings.locations.field.streetPlaceholder",
+											"e.g., 123 Main St",
+										)}
 									/>
 								</div>
 							)}
@@ -194,7 +197,10 @@ export function LocationDialog({
 											value={field.state.value}
 											onChange={(e) => field.handleChange(e.target.value)}
 											onBlur={field.handleBlur}
-											placeholder={t("settings.locations.field.postalCodePlaceholder", "e.g., 10001")}
+											placeholder={t(
+												"settings.locations.field.postalCodePlaceholder",
+												"e.g., 10001",
+											)}
 										/>
 									</div>
 								)}

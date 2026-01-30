@@ -2,17 +2,8 @@
 
 import { and, desc, eq } from "drizzle-orm";
 import { Effect } from "effect";
-import {
-	changePolicy,
-	changePolicyAssignment,
-	employee,
-	team,
-} from "@/db/schema";
-import {
-	AuthorizationError,
-	NotFoundError,
-	ValidationError,
-} from "@/lib/effect/errors";
+import { changePolicy, changePolicyAssignment, employee, team } from "@/db/schema";
+import { AuthorizationError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
@@ -383,9 +374,7 @@ export async function updateChangePolicy(
 /**
  * Soft delete a change policy
  */
-export async function deleteChangePolicy(
-	policyId: string,
-): Promise<ServerActionResult<void>> {
+export async function deleteChangePolicy(policyId: string): Promise<ServerActionResult<void>> {
 	const effect = Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
@@ -698,7 +687,9 @@ export async function getTeamsForAssignment(
  */
 export async function getEmployeesForAssignment(
 	organizationId: string,
-): Promise<ServerActionResult<{ id: string; firstName: string | null; lastName: string | null }[]>> {
+): Promise<
+	ServerActionResult<{ id: string; firstName: string | null; lastName: string | null }[]>
+> {
 	const effect = Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
 		const _session = yield* _(authService.getSession());

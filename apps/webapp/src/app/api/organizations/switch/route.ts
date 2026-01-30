@@ -29,7 +29,10 @@ export async function POST(request: NextRequest) {
 		const { organizationId } = body;
 
 		if (!organizationId) {
-			return NextResponse.json({ error: "Organization ID is required" }, { status: 400, headers: corsHeaders });
+			return NextResponse.json(
+				{ error: "Organization ID is required" },
+				{ status: 400, headers: corsHeaders },
+			);
 		}
 
 		// Verify user is a member of this organization
@@ -67,12 +70,18 @@ export async function POST(request: NextRequest) {
 			},
 		});
 
-		return NextResponse.json({
-			success: true,
-			organizationId,
-			hasEmployeeRecord: !!employeeRecord,
-		}, { headers: corsHeaders });
+		return NextResponse.json(
+			{
+				success: true,
+				organizationId,
+				hasEmployeeRecord: !!employeeRecord,
+			},
+			{ headers: corsHeaders },
+		);
 	} catch (error) {
-		return NextResponse.json({ error: "Failed to switch organization" }, { status: 500, headers: corsHeaders });
+		return NextResponse.json(
+			{ error: "Failed to switch organization" },
+			{ status: 500, headers: corsHeaders },
+		);
 	}
 }

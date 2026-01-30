@@ -38,7 +38,10 @@ export async function GET() {
 			.limit(1);
 
 		if (!emp) {
-			return NextResponse.json({ error: "No active employee record in this organization" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "No active employee record in this organization" },
+				{ status: 400 },
+			);
 		}
 
 		const count = await getUnreadCount(session.user.id, emp.organizationId);

@@ -45,9 +45,13 @@ function AbsenceCard({ employee }: { employee: AbsentEmployee }) {
 				<div className="font-medium text-sm truncate">{employee.name}</div>
 				<div className="flex items-center gap-1 text-xs text-muted-foreground">
 					{employee.endsToday ? (
-						<span className="text-emerald-600 dark:text-emerald-400">{t("dashboard.whos-out.returns-tomorrow", "Returns tomorrow")}</span>
+						<span className="text-emerald-600 dark:text-emerald-400">
+							{t("dashboard.whos-out.returns-tomorrow", "Returns tomorrow")}
+						</span>
 					) : (
-						<span>{t("dashboard.whos-out.until-date", "Until {date}", { date: employee.returnDate })}</span>
+						<span>
+							{t("dashboard.whos-out.until-date", "Until {date}", { date: employee.returnDate })}
+						</span>
 					)}
 				</div>
 			</div>
@@ -93,8 +97,12 @@ function EmptyState() {
 					<IconCheck className="size-3 text-white" />
 				</div>
 			</div>
-			<p className="mt-4 text-sm font-medium">{t("dashboard.whos-out.full-team", "Full team available!")}</p>
-			<p className="mt-1 text-xs text-muted-foreground">{t("dashboard.whos-out.everyone-in", "Everyone is in the office today")}</p>
+			<p className="mt-4 text-sm font-medium">
+				{t("dashboard.whos-out.full-team", "Full team available!")}
+			</p>
+			<p className="mt-1 text-xs text-muted-foreground">
+				{t("dashboard.whos-out.everyone-in", "Everyone is in the office today")}
+			</p>
 		</div>
 	);
 }
@@ -118,7 +126,10 @@ export function WhosOutTodayWidget() {
 					data
 						? data.totalOut === 0
 							? t("dashboard.whos-out.everyones-in", "Everyone's in!")
-							: t("dashboard.whos-out.members-out", "{count} team {member} out", { count: data.totalOut, member: pluralize(data.totalOut, "member") })
+							: t("dashboard.whos-out.members-out", "{count} team {member} out", {
+									count: data.totalOut,
+									member: pluralize(data.totalOut, "member"),
+								})
 						: t("dashboard.whos-out.team-availability", "Team availability")
 				}
 				icon={<IconUsers className="size-4 text-violet-500" />}
@@ -158,7 +169,9 @@ export function WhosOutTodayWidget() {
 											))}
 											{data.outToday.length > 4 && (
 												<div className="flex items-center justify-center rounded-lg border border-dashed py-2 text-xs text-muted-foreground">
-													{t("dashboard.whos-out.more-members", "+{count} more team members", { count: data.outToday.length - 4 })}
+													{t("dashboard.whos-out.more-members", "+{count} more team members", {
+														count: data.outToday.length - 4,
+													})}
 												</div>
 											)}
 										</div>
@@ -170,7 +183,9 @@ export function WhosOutTodayWidget() {
 									<div className="space-y-2">
 										<div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
 											<IconCalendar className="size-3.5 text-emerald-500" />
-											<span>{t("dashboard.whos-out.returning-tomorrow", "Returning Tomorrow")}</span>
+											<span>
+												{t("dashboard.whos-out.returning-tomorrow", "Returning Tomorrow")}
+											</span>
 										</div>
 										<div className="flex flex-wrap gap-2">
 											{data.returningTomorrow.slice(0, 4).map((emp) => (

@@ -1,12 +1,6 @@
 "use client";
 
-import {
-	IconCheck,
-	IconPencil,
-	IconPlus,
-	IconTrash,
-	IconX,
-} from "@tabler/icons-react";
+import { IconCheck, IconPencil, IconPlus, IconTrash, IconX } from "@tabler/icons-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -75,9 +69,7 @@ export function SocialOAuthManagement({ initialConfigs }: SocialOAuthManagementP
 	};
 
 	const handleConfigUpdated = (updatedConfig: SocialOAuthConfigResponse) => {
-		setConfigs((prev) =>
-			prev.map((c) => (c.id === updatedConfig.id ? updatedConfig : c)),
-		);
+		setConfigs((prev) => prev.map((c) => (c.id === updatedConfig.id ? updatedConfig : c)));
 		setEditConfig(null);
 		toast.success(`${PROVIDER_INFO[updatedConfig.provider].name} OAuth updated successfully`);
 	};
@@ -113,8 +105,8 @@ export function SocialOAuthManagement({ initialConfigs }: SocialOAuthManagementP
 					<div>
 						<CardTitle>Social Login Providers</CardTitle>
 						<CardDescription>
-							Configure your own OAuth credentials for social login. This allows your users
-							to sign in using your organization's OAuth apps instead of shared credentials.
+							Configure your own OAuth credentials for social login. This allows your users to sign
+							in using your organization's OAuth apps instead of shared credentials.
 						</CardDescription>
 					</div>
 					{availableProviders.length > 0 && (
@@ -187,11 +179,7 @@ export function SocialOAuthManagement({ initialConfigs }: SocialOAuthManagementP
 											</TableCell>
 											<TableCell className="text-right">
 												<div className="flex justify-end gap-2">
-													<Button
-														variant="outline"
-														size="sm"
-														onClick={() => setEditConfig(config)}
-													>
+													<Button variant="outline" size="sm" onClick={() => setEditConfig(config)}>
 														<IconPencil className="h-4 w-4" />
 													</Button>
 													<Button
@@ -254,8 +242,8 @@ export function SocialOAuthManagement({ initialConfigs }: SocialOAuthManagementP
 					<AlertDialogHeader>
 						<AlertDialogTitle>Remove Social OAuth Provider</AlertDialogTitle>
 						<AlertDialogDescription>
-							Are you sure you want to remove this OAuth configuration? Users will fall back
-							to the shared OAuth credentials (if available).
+							Are you sure you want to remove this OAuth configuration? Users will fall back to the
+							shared OAuth credentials (if available).
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>

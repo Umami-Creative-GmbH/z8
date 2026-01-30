@@ -105,9 +105,7 @@ async function findOrCreateUserWithAccount(params: {
 				accessToken,
 				refreshToken,
 				idToken,
-				accessTokenExpiresAt: expiresIn
-					? new Date(Date.now() + expiresIn * 1000)
-					: null,
+				accessTokenExpiresAt: expiresIn ? new Date(Date.now() + expiresIn * 1000) : null,
 				updatedAt: new Date(),
 			})
 			.where(eq(authSchema.account.id, existingAccount.id));
@@ -130,9 +128,7 @@ async function findOrCreateUserWithAccount(params: {
 			accessToken,
 			refreshToken,
 			idToken,
-			accessTokenExpiresAt: expiresIn
-				? new Date(Date.now() + expiresIn * 1000)
-				: null,
+			accessTokenExpiresAt: expiresIn ? new Date(Date.now() + expiresIn * 1000) : null,
 			createdAt: new Date(),
 			updatedAt: new Date(),
 		});
@@ -163,9 +159,7 @@ async function findOrCreateUserWithAccount(params: {
 		accessToken,
 		refreshToken,
 		idToken,
-		accessTokenExpiresAt: expiresIn
-			? new Date(Date.now() + expiresIn * 1000)
-			: null,
+		accessTokenExpiresAt: expiresIn ? new Date(Date.now() + expiresIn * 1000) : null,
 		createdAt: now,
 		updatedAt: now,
 	});

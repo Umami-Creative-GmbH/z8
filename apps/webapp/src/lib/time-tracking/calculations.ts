@@ -44,10 +44,7 @@ function luxonWeekdayToScheduleDay(
 /**
  * Get expected hours for a specific day based on work policy schedule
  */
-function getExpectedHoursForDay(
-	policy: EffectiveWorkPolicy | null,
-	luxonWeekday: number,
-): number {
+function getExpectedHoursForDay(policy: EffectiveWorkPolicy | null, luxonWeekday: number): number {
 	// Default to 8 hours on weekdays if no schedule
 	if (!policy?.schedule) {
 		return luxonWeekday >= 1 && luxonWeekday <= 5 ? 8 : 0;
@@ -168,9 +165,7 @@ export async function calculateWorkHoursByEmployee(
  * Get employee's effective work policy
  * Returns null if no policy is assigned
  */
-export async function getEmployeePolicy(
-	employeeId: string,
-): Promise<EffectiveWorkPolicy | null> {
+export async function getEmployeePolicy(employeeId: string): Promise<EffectiveWorkPolicy | null> {
 	const { Effect } = await import("effect");
 	try {
 		const result = await runEffect(

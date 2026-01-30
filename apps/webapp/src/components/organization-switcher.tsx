@@ -175,7 +175,13 @@ export function OrganizationSwitcher({
 								>
 									<div className="flex size-6 items-center justify-center rounded-sm border">
 										{org.logo ? (
-											<Image src={org.logo} alt={org.name} width={24} height={24} className="size-6 rounded-sm object-cover" />
+											<Image
+												src={org.logo}
+												alt={org.name}
+												width={24}
+												height={24}
+												className="size-6 rounded-sm object-cover"
+											/>
 										) : (
 											<IconBuilding className="size-4" />
 										)}

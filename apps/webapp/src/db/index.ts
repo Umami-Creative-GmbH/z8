@@ -53,9 +53,7 @@ function createInstrumentedPool(basePool: Pool): Pool {
 						},
 						async (span) => {
 							try {
-								const result = await (target as Pool).query(
-									...(args as Parameters<Pool["query"]>),
-								);
+								const result = await (target as Pool).query(...(args as Parameters<Pool["query"]>));
 								span.setStatus({ code: 1 }); // OK
 								span.end();
 								return result;
@@ -63,10 +61,7 @@ function createInstrumentedPool(basePool: Pool): Pool {
 								span.recordException(error as Error);
 								span.setStatus({ code: 2, message: String(error) }); // ERROR
 								span.end();
-								logger.error(
-									{ error, operation: "query" },
-									"Database query failed",
-								);
+								logger.error({ error, operation: "query" }, "Database query failed");
 								throw error;
 							}
 						},

@@ -105,9 +105,7 @@ export class InviteCodeService extends Context.Tag("InviteCodeService")<
 			userId: string,
 		) => Effect.Effect<void, NotFoundError | AuthorizationError | DatabaseError>;
 
-		readonly getById: (
-			id: string,
-		) => Effect.Effect<InviteCodeWithRelations | null, DatabaseError>;
+		readonly getById: (id: string) => Effect.Effect<InviteCodeWithRelations | null, DatabaseError>;
 
 		readonly getByCode: (
 			organizationId: string,
@@ -119,9 +117,7 @@ export class InviteCodeService extends Context.Tag("InviteCodeService")<
 		) => Effect.Effect<InviteCodeWithRelations[], DatabaseError>;
 
 		// Validation and usage
-		readonly validateCode: (
-			code: string,
-		) => Effect.Effect<ValidateInviteCodeResult, DatabaseError>;
+		readonly validateCode: (code: string) => Effect.Effect<ValidateInviteCodeResult, DatabaseError>;
 
 		readonly useCode: (
 			input: UseInviteCodeInput,
@@ -148,13 +144,9 @@ export class InviteCodeService extends Context.Tag("InviteCodeService")<
 			userId: string,
 		) => Effect.Effect<UseInviteCodeResult | null, ValidationError | NotFoundError | DatabaseError>;
 
-		readonly clearPendingInviteCode: (
-			userId: string,
-		) => Effect.Effect<void, DatabaseError>;
+		readonly clearPendingInviteCode: (userId: string) => Effect.Effect<void, DatabaseError>;
 
-		readonly getPendingInviteCode: (
-			userId: string,
-		) => Effect.Effect<string | null, DatabaseError>;
+		readonly getPendingInviteCode: (userId: string) => Effect.Effect<string | null, DatabaseError>;
 	}
 >() {}
 
@@ -168,7 +160,9 @@ export const InviteCodeServiceLive = Layer.effect(
 			// Generate a code like "JOIN-ABC123" or "TEAM-XYZ789"
 			const prefixes = ["JOIN", "TEAM", "HIRE", "WORK"];
 			const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
-			const suffix = nanoid(6).toUpperCase().replace(/[^A-Z0-9]/g, "X");
+			const suffix = nanoid(6)
+				.toUpperCase()
+				.replace(/[^A-Z0-9]/g, "X");
 			return `${prefix}-${suffix}`;
 		};
 

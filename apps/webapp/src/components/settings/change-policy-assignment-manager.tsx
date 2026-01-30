@@ -74,7 +74,9 @@ const formatPolicySummary = (
 };
 
 // Helper to get employee display name
-const getEmployeeName = (employee: { firstName: string | null; lastName: string | null } | null) => {
+const getEmployeeName = (
+	employee: { firstName: string | null; lastName: string | null } | null,
+) => {
 	if (!employee) return "";
 	const name = [employee.firstName, employee.lastName].filter(Boolean).join(" ");
 	return name || "Unnamed";
@@ -126,7 +128,9 @@ export function ChangePolicyAssignmentManager({
 			}
 		},
 		onError: () => {
-			toast.error(t("settings.changePolicies.assignmentDeleteFailed", "Failed to remove assignment"));
+			toast.error(
+				t("settings.changePolicies.assignmentDeleteFailed", "Failed to remove assignment"),
+			);
 		},
 	});
 

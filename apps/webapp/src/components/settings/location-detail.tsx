@@ -205,9 +205,7 @@ export function LocationDetail({ locationId, organizationId }: LocationDetailPro
 									: t("common.inactive", "Inactive")}
 							</Badge>
 						</div>
-						{formatAddress() && (
-							<p className="text-sm text-muted-foreground">{formatAddress()}</p>
-						)}
+						{formatAddress() && <p className="text-sm text-muted-foreground">{formatAddress()}</p>}
 					</div>
 				</div>
 				<div className="flex items-center gap-2">
@@ -255,9 +253,7 @@ export function LocationDetail({ locationId, organizationId }: LocationDetailPro
 								<p className="text-sm font-medium text-muted-foreground">
 									{t("settings.locations.field.cityPostal", "City / Postal Code")}
 								</p>
-								<p>
-									{[location.postalCode, location.city].filter(Boolean).join(" ")}
-								</p>
+								<p>{[location.postalCode, location.city].filter(Boolean).join(" ")}</p>
 							</div>
 						)}
 						{location.country && (
@@ -285,7 +281,10 @@ export function LocationDetail({ locationId, organizationId }: LocationDetailPro
 							</Button>
 						</div>
 						<CardDescription>
-							{t("settings.locations.supervisorsDescription", "Employees assigned to this location")}
+							{t(
+								"settings.locations.supervisorsDescription",
+								"Employees assigned to this location",
+							)}
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
@@ -381,11 +380,7 @@ export function LocationDetail({ locationId, organizationId }: LocationDetailPro
 												>
 													<IconPlus className="h-4 w-4" />
 												</Button>
-												<Button
-													variant="ghost"
-													size="icon"
-													onClick={() => setEditSubarea(subarea)}
-												>
+												<Button variant="ghost" size="icon" onClick={() => setEditSubarea(subarea)}>
 													<IconEdit className="h-4 w-4" />
 												</Button>
 												<Button
@@ -400,15 +395,10 @@ export function LocationDetail({ locationId, organizationId }: LocationDetailPro
 										{subarea.employees.length > 0 && (
 											<div className="border-t px-3 py-2 space-y-1">
 												{subarea.employees.map((emp) => (
-													<div
-														key={emp.id}
-														className="flex items-center justify-between text-sm"
-													>
+													<div key={emp.id} className="flex items-center justify-between text-sm">
 														<div className="flex items-center gap-2">
 															<span>{getEmployeeName(emp.employee)}</span>
-															{emp.isPrimary && (
-																<IconStar className="h-3 w-3 text-yellow-500" />
-															)}
+															{emp.isPrimary && <IconStar className="h-3 w-3 text-yellow-500" />}
 														</div>
 														<Button
 															variant="ghost"

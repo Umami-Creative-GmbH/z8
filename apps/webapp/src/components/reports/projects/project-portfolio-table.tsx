@@ -182,9 +182,7 @@ export function ProjectPortfolioTable({ projects, onProjectSelect }: ProjectPort
 			},
 			{
 				accessorKey: "uniqueEmployees",
-				header: () => (
-					<div className="text-right">{t("reports.projects.table.team", "Team")}</div>
-				),
+				header: () => <div className="text-right">{t("reports.projects.table.team", "Team")}</div>,
 				cell: ({ row }) => (
 					<div className="text-right tabular-nums">{row.original.uniqueEmployees}</div>
 				),
@@ -233,7 +231,10 @@ export function ProjectPortfolioTable({ projects, onProjectSelect }: ProjectPort
 					data={filteredProjects}
 					emptyMessage={
 						search
-							? t("reports.projects.table.noProjectsMatch", "No projects match the selected filters")
+							? t(
+									"reports.projects.table.noProjectsMatch",
+									"No projects match the selected filters",
+								)
 							: t("reports.projects.table.noProjectsFound", "No projects found")
 					}
 				/>

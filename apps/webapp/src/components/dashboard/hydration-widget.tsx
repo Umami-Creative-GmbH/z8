@@ -180,7 +180,9 @@ export function HydrationWidget() {
 					}
 					refetch();
 				} else {
-					toast.error(result.error ?? t("dashboard.hydration.log-error", "Failed to log water intake"));
+					toast.error(
+						result.error ?? t("dashboard.hydration.log-error", "Failed to log water intake"),
+					);
 				}
 			} catch {
 				toast.error(t("dashboard.hydration.log-error", "Failed to log water intake"));
@@ -224,7 +226,9 @@ export function HydrationWidget() {
 							>
 								{stats.todayIntake}
 							</span>
-							<span className="text-[10px] text-muted-foreground">{t("dashboard.hydration.of-goal", "of {goal}", { goal: stats.dailyGoal })}</span>
+							<span className="text-[10px] text-muted-foreground">
+								{t("dashboard.hydration.of-goal", "of {goal}", { goal: stats.dailyGoal })}
+							</span>
 						</CircularProgress>
 
 						{/* Right: Glass Grid + Add Buttons */}

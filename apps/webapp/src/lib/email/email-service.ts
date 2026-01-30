@@ -94,10 +94,7 @@ async function getTransportForOrg(organizationId?: string): Promise<EmailTranspo
 			}
 
 			if (!config.smtpHost || !config.smtpPort || !config.smtpUsername) {
-				logger.warn(
-					{ organizationId },
-					"Incomplete SMTP config, falling back to system default",
-				);
+				logger.warn({ organizationId }, "Incomplete SMTP config, falling back to system default");
 				return getSystemTransport();
 			}
 
@@ -210,9 +207,7 @@ export async function sendBulkEmail(
 		recipients.map((to) => sendEmail({ to, subject, html, from, organizationId })),
 	);
 
-	const successful = results.filter(
-		(r) => r.status === "fulfilled" && r.value.success,
-	).length;
+	const successful = results.filter((r) => r.status === "fulfilled" && r.value.success).length;
 	const failed = results.length - successful;
 
 	return { successful, failed, total: recipients.length };

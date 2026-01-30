@@ -38,6 +38,7 @@ import {
 } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
+import { AppAccessService } from "@/lib/effect/services/app-access.service";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { ManagerService } from "@/lib/effect/services/manager.service";
@@ -374,15 +375,70 @@ export async function updateEmployee(
 					updatedAt: currentTimestamp(),
 				};
 
-				// Update employee
+				// Extract app access fields before updating employee
+				const { canUseWebapp, canUseDesktop, canUseMobile, ...employeeUpdateData } = updatePayload;
+
+				// Update employee (without app access fields - those go on user table)
 				yield* _(
 					dbService.query("updateEmployee", async () => {
 						await dbService.db
 							.update(employee)
-							.set(updatePayload)
+							.set(employeeUpdateData)
 							.where(eq(employee.id, employeeId));
 					}),
 				);
+
+				// Update app access permissions on user table if any were provided
+				const hasAppAccessChanges =
+					validatedData.canUseWebapp !== undefined ||
+					validatedData.canUseDesktop !== undefined ||
+					validatedData.canUseMobile !== undefined;
+
+				if (hasAppAccessChanges) {
+					// Get the user record associated with this employee
+					const targetUser = yield* _(
+						dbService.query("getTargetUserForAppAccess", async () => {
+							return await dbService.db.query.user.findFirst({
+								where: eq(user.id, targetEmployee.userId),
+								columns: {
+									id: true,
+									name: true,
+									email: true,
+								},
+							});
+						}),
+					);
+
+					if (targetUser) {
+						const appAccessService = yield* _(AppAccessService);
+						yield* _(
+							appAccessService.updatePermissions({
+								userId: targetEmployee.userId,
+								permissions: {
+									canUseWebapp: validatedData.canUseWebapp,
+									canUseDesktop: validatedData.canUseDesktop,
+									canUseMobile: validatedData.canUseMobile,
+								},
+								changedBy: session.user.id,
+								changedByEmail: session.user.email,
+								organizationId: targetEmployee.organizationId,
+								targetUserName: targetUser.name,
+								targetUserEmail: targetUser.email,
+							}),
+						);
+
+						logger.info(
+							{
+								employeeId,
+								userId: targetEmployee.userId,
+								canUseWebapp: validatedData.canUseWebapp,
+								canUseDesktop: validatedData.canUseDesktop,
+								canUseMobile: validatedData.canUseMobile,
+							},
+							"User app access permissions updated",
+						);
+					}
+				}
 
 				// If contract type is hourly and rate changed, create rate history entry
 				const effectiveContractType = validatedData.contractType ?? targetEmployee.contractType;
@@ -1107,10 +1163,7 @@ export async function getEmployeesByIds(
 		const employees = yield* _(
 			dbService.query("getEmployeesByIds", async () => {
 				return await dbService.db.query.employee.findMany({
-					where: and(
-						eq(employee.organizationId, orgId),
-						sql`${employee.id} IN ${employeeIds}`,
-					),
+					where: and(eq(employee.organizationId, orgId), sql`${employee.id} IN ${employeeIds}`),
 					columns: {
 						id: true,
 						userId: true,

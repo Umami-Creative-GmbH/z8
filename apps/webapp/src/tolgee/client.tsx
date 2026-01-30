@@ -38,7 +38,6 @@ export const TolgeeNextProvider = ({ language, staticData, children }: Props) =>
 		tolgee.changeLanguage(language);
 	}
 
-
 	useEffect(() => {
 		// this ensures server components refresh, after translation change
 		const { unsubscribe } = tolgee.on("permanentChange", () => {

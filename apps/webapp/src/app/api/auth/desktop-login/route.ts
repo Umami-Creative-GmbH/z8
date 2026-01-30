@@ -14,10 +14,7 @@ export async function GET(request: NextRequest) {
 	const redirectUrl = searchParams.get("redirect");
 
 	if (!redirectUrl) {
-		return NextResponse.json(
-			{ error: "Missing redirect parameter" },
-			{ status: 400 },
-		);
+		return NextResponse.json({ error: "Missing redirect parameter" }, { status: 400 });
 	}
 
 	// Validate the redirect URL is a valid z8:// protocol
@@ -32,6 +29,19 @@ export async function GET(request: NextRequest) {
 	const session = await auth.api.getSession({ headers: await headers() });
 
 	if (session?.user) {
+		// Check if user has desktop app access
+		const canUseDesktop = session.user.canUseDesktop ?? true;
+		if (!canUseDesktop) {
+			// Redirect to desktop app with error
+			const callbackUrl = new URL(redirectUrl);
+			callbackUrl.searchParams.set("error", "access_denied");
+			callbackUrl.searchParams.set(
+				"error_description",
+				"Your account does not have access to the desktop application. Please contact your administrator.",
+			);
+			return NextResponse.redirect(callbackUrl.toString());
+		}
+
 		// User is already logged in, generate a token and redirect
 		// For security, we create a short-lived session token for the desktop app
 		const token = session.session.token;

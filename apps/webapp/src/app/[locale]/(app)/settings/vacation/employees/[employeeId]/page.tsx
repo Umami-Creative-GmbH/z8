@@ -205,9 +205,15 @@ export default function EmployeeAllowanceEditPage({
 		<div className="flex flex-1 flex-col gap-4 p-4">
 			<div className="flex items-center justify-between">
 				<div>
-					<h1 className="text-2xl font-semibold tracking-tight">{t("settings.vacation.employees.edit.title", "Edit Vacation Allowance")}</h1>
+					<h1 className="text-2xl font-semibold tracking-tight">
+						{t("settings.vacation.employees.edit.title", "Edit Vacation Allowance")}
+					</h1>
 					<p className="text-sm text-muted-foreground">
-						{t("settings.vacation.employees.edit.description", "Configure custom vacation allowance for {{name}}", { name: employee.user.name })}
+						{t(
+							"settings.vacation.employees.edit.description",
+							"Configure custom vacation allowance for {{name}}",
+							{ name: employee.user.name },
+						)}
 					</p>
 				</div>
 			</div>

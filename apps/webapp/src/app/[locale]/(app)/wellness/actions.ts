@@ -186,9 +186,7 @@ export async function getHydrationStats(): Promise<ServerActionResult<HydrationS
 /**
  * Log water intake
  */
-export async function logWaterIntake(
-	data: LogWaterIntakeFormValues,
-): Promise<
+export async function logWaterIntake(data: LogWaterIntakeFormValues): Promise<
 	ServerActionResult<{
 		todayIntake: number;
 		goalProgress: number;
@@ -432,7 +430,9 @@ export async function updateWaterReminderSettings(
 /**
  * Get water reminder settings for the current user
  */
-export async function getWaterReminderSettings(): Promise<ServerActionResult<WaterReminderSettings>> {
+export async function getWaterReminderSettings(): Promise<
+	ServerActionResult<WaterReminderSettings>
+> {
 	const effect = Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());

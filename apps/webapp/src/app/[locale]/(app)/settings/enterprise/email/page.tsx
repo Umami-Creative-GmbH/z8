@@ -27,9 +27,14 @@ export default async function EmailConfigPage() {
 		<div className="p-6">
 			<div className="mx-auto max-w-4xl">
 				<div className="mb-6">
-					<h1 className="text-2xl font-semibold">{t("settings.enterprise.email.title", "Email Configuration")}</h1>
+					<h1 className="text-2xl font-semibold">
+						{t("settings.enterprise.email.title", "Email Configuration")}
+					</h1>
 					<p className="text-muted-foreground">
-						{t("settings.enterprise.email.description", "Configure a custom email provider for your organization. All organization emails will use this configuration instead of the system default.")}
+						{t(
+							"settings.enterprise.email.description",
+							"Configure a custom email provider for your organization. All organization emails will use this configuration instead of the system default.",
+						)}
 					</p>
 				</div>
 				<EmailConfigForm

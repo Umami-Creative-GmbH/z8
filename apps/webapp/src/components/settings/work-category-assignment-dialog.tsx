@@ -136,9 +136,7 @@ export function WorkCategoryAssignmentDialog({
 		},
 		onSuccess: (result) => {
 			if (result.success) {
-				toast.success(
-					t("settings.workCategories.assignmentCreated", "Assignment created"),
-				);
+				toast.success(t("settings.workCategories.assignmentCreated", "Assignment created"));
 				queryClient.invalidateQueries({
 					queryKey: queryKeys.workCategorySetAssignments.list(organizationId),
 				});
@@ -147,10 +145,7 @@ export function WorkCategoryAssignmentDialog({
 			} else {
 				toast.error(
 					result.error ||
-						t(
-							"settings.workCategories.assignmentCreateFailed",
-							"Failed to create assignment",
-						),
+						t("settings.workCategories.assignmentCreateFailed", "Failed to create assignment"),
 				);
 			}
 		},
@@ -178,17 +173,11 @@ export function WorkCategoryAssignmentDialog({
 	const getTitle = () => {
 		switch (assignmentType) {
 			case "organization":
-				return t(
-					"settings.workCategories.assignOrgTitle",
-					"Set Organization Default",
-				);
+				return t("settings.workCategories.assignOrgTitle", "Set Organization Default");
 			case "team":
 				return t("settings.workCategories.assignTeamTitle", "Assign to Team");
 			case "employee":
-				return t(
-					"settings.workCategories.assignEmployeeTitle",
-					"Assign to Employee",
-				);
+				return t("settings.workCategories.assignEmployeeTitle", "Assign to Employee");
 		}
 	};
 
@@ -223,9 +212,7 @@ export function WorkCategoryAssignmentDialog({
 				<div className="space-y-4 py-4">
 					{/* Category Set Selection */}
 					<div className="space-y-2">
-						<Label>
-							{t("settings.workCategories.selectSet", "Category Set")}
-						</Label>
+						<Label>{t("settings.workCategories.selectSet", "Category Set")}</Label>
 						{setsLoading ? (
 							<Skeleton className="h-10 w-full" />
 						) : (
@@ -290,10 +277,7 @@ export function WorkCategoryAssignmentDialog({
 							)}
 							{teams?.length === 0 && (
 								<p className="text-sm text-muted-foreground">
-									{t(
-										"settings.workCategories.noTeamsAvailable",
-										"No teams available.",
-									)}
+									{t("settings.workCategories.noTeamsAvailable", "No teams available.")}
 								</p>
 							)}
 						</div>
@@ -302,16 +286,11 @@ export function WorkCategoryAssignmentDialog({
 					{/* Employee Selection */}
 					{assignmentType === "employee" && (
 						<div className="space-y-2">
-							<Label>
-								{t("settings.workCategories.selectEmployee", "Employee")}
-							</Label>
+							<Label>{t("settings.workCategories.selectEmployee", "Employee")}</Label>
 							{employeesLoading ? (
 								<Skeleton className="h-10 w-full" />
 							) : (
-								<Select
-									value={selectedEmployeeId}
-									onValueChange={setSelectedEmployeeId}
-								>
+								<Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
 									<SelectTrigger>
 										<SelectValue
 											placeholder={t(
@@ -331,10 +310,7 @@ export function WorkCategoryAssignmentDialog({
 							)}
 							{employees?.length === 0 && (
 								<p className="text-sm text-muted-foreground">
-									{t(
-										"settings.workCategories.noEmployeesAvailable",
-										"No employees available.",
-									)}
+									{t("settings.workCategories.noEmployeesAvailable", "No employees available.")}
 								</p>
 							)}
 						</div>
@@ -345,10 +321,7 @@ export function WorkCategoryAssignmentDialog({
 					<Button variant="outline" onClick={() => handleOpenChange(false)}>
 						{t("common.cancel", "Cancel")}
 					</Button>
-					<Button
-						onClick={handleSubmit}
-						disabled={!isValid || createMutation.isPending}
-					>
+					<Button onClick={handleSubmit} disabled={!isValid || createMutation.isPending}>
 						{createMutation.isPending ? (
 							<>
 								<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />

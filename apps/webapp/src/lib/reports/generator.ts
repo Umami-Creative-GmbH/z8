@@ -14,7 +14,10 @@ const logger = createLogger("ReportGenerator");
  * Generate report from worker queue job
  */
 export async function generateReport(data: ReportJobData): Promise<void> {
-	logger.info({ employeeId: data.employeeId, organizationId: data.organizationId }, "Generating report");
+	logger.info(
+		{ employeeId: data.employeeId, organizationId: data.organizationId },
+		"Generating report",
+	);
 
 	await generateEmployeeReport(
 		data.employeeId,

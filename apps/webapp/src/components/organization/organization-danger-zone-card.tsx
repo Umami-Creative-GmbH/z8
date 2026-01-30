@@ -64,16 +64,15 @@ export function OrganizationDangerZoneCard({
 				toast.success(
 					t(
 						"organization.delete.scheduledSuccess",
-						"Organization scheduled for deletion. You have 5 days to recover it."
-					)
+						"Organization scheduled for deletion. You have 5 days to recover it.",
+					),
 				);
 				setDeleteDialogOpen(false);
 				setConfirmationName("");
 				router.refresh();
 			} else {
 				toast.error(
-					result.error ||
-						t("organization.delete.failed", "Failed to delete organization")
+					result.error || t("organization.delete.failed", "Failed to delete organization"),
 				);
 			}
 		});
@@ -84,15 +83,12 @@ export function OrganizationDangerZoneCard({
 			const result = await recoverOrganization(organization.id);
 
 			if (result.success) {
-				toast.success(
-					t("organization.recover.success", "Organization recovered successfully")
-				);
+				toast.success(t("organization.recover.success", "Organization recovered successfully"));
 				setRecoverDialogOpen(false);
 				router.refresh();
 			} else {
 				toast.error(
-					result.error ||
-						t("organization.recover.failed", "Failed to recover organization")
+					result.error || t("organization.recover.failed", "Failed to recover organization"),
 				);
 			}
 		});
@@ -115,7 +111,7 @@ export function OrganizationDangerZoneCard({
 						<CardDescription>
 							{t(
 								"organization.delete.pendingDescription",
-								"This organization is scheduled for permanent deletion"
+								"This organization is scheduled for permanent deletion",
 							)}
 						</CardDescription>
 					</CardHeader>
@@ -128,7 +124,11 @@ export function OrganizationDangerZoneCard({
 											{t("organization.delete.timeRemaining", "Time remaining to recover:")}
 										</p>
 										<p className="text-2xl font-bold text-amber-600">
-											{t("organization.delete.daysRemaining", "{count, plural, one {# day} other {# days}}", { count: remainingDays })}
+											{t(
+												"organization.delete.daysRemaining",
+												"{count, plural, one {# day} other {# days}}",
+												{ count: remainingDays },
+											)}
 										</p>
 									</div>
 									<div className="text-right text-sm text-muted-foreground">
@@ -143,7 +143,7 @@ export function OrganizationDangerZoneCard({
 									<p>
 										{t(
 											"organization.delete.recoveryNote",
-											"All organization data will be permanently deleted after this date. Click the button below to cancel deletion and recover the organization."
+											"All organization data will be permanently deleted after this date. Click the button below to cancel deletion and recover the organization.",
 										)}
 									</p>
 								</div>
@@ -171,7 +171,7 @@ export function OrganizationDangerZoneCard({
 							<AlertDialogDescription>
 								{t(
 									"organization.recover.confirmDescription",
-									"This will cancel the scheduled deletion and restore the organization. All data will be preserved."
+									"This will cancel the scheduled deletion and restore the organization. All data will be preserved.",
 								)}
 							</AlertDialogDescription>
 						</AlertDialogHeader>
@@ -205,7 +205,7 @@ export function OrganizationDangerZoneCard({
 					<CardDescription>
 						{t(
 							"organization.delete.description",
-							"Permanently delete this organization and all its data"
+							"Permanently delete this organization and all its data",
 						)}
 					</CardDescription>
 				</CardHeader>
@@ -219,32 +219,22 @@ export function OrganizationDangerZoneCard({
 								<p className="text-sm text-muted-foreground mt-1">
 									{t(
 										"organization.delete.warning",
-										"This will schedule the organization for deletion. You will have 5 days to recover it before all data is permanently deleted."
+										"This will schedule the organization for deletion. You will have 5 days to recover it before all data is permanently deleted.",
 									)}
 								</p>
 								<ul className="text-sm text-muted-foreground list-disc list-inside mt-2 space-y-1">
+									<li>{t("organization.delete.data.members", "All members and invitations")}</li>
+									<li>{t("organization.delete.data.employees", "All employees and teams")}</li>
 									<li>
-										{t("organization.delete.data.members", "All members and invitations")}
+										{t("organization.delete.data.timeEntries", "All time entries and work periods")}
 									</li>
 									<li>
-										{t("organization.delete.data.employees", "All employees and teams")}
-									</li>
-									<li>
-										{t(
-											"organization.delete.data.timeEntries",
-											"All time entries and work periods"
-										)}
-									</li>
-									<li>
-										{t(
-											"organization.delete.data.absences",
-											"All absences and vacation data"
-										)}
+										{t("organization.delete.data.absences", "All absences and vacation data")}
 									</li>
 									<li>
 										{t(
 											"organization.delete.data.settings",
-											"All organization settings and configurations"
+											"All organization settings and configurations",
 										)}
 									</li>
 								</ul>
@@ -274,7 +264,7 @@ export function OrganizationDangerZoneCard({
 								<p>
 									{t(
 										"organization.delete.confirmDescription",
-										"This will schedule the organization for deletion. You will have 5 days to recover it before all data is permanently deleted."
+										"This will schedule the organization for deletion. You will have 5 days to recover it before all data is permanently deleted.",
 									)}
 								</p>
 								<div className="space-y-2">

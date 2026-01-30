@@ -72,6 +72,11 @@ export enum AuditAction {
 	TWO_FACTOR_ENABLED = "auth.two_factor_enabled",
 	TWO_FACTOR_DISABLED = "auth.two_factor_disabled",
 
+	// App Access Operations
+	APP_ACCESS_GRANTED = "app_access.granted",
+	APP_ACCESS_REVOKED = "app_access.revoked",
+	APP_ACCESS_DENIED = "app_access.denied",
+
 	// Surcharge Operations
 	SURCHARGE_MODEL_CREATED = "surcharge.model_created",
 	SURCHARGE_MODEL_UPDATED = "surcharge.model_updated",
@@ -135,7 +140,8 @@ export interface AuditLogEntry {
 		| "location"
 		| "subarea"
 		| "location_employee"
-		| "subarea_employee";
+		| "subarea_employee"
+		| "user";
 	organizationId: string;
 	metadata?: Record<string, unknown>;
 	changes?: Record<string, unknown>; // Before/after changes for updates
@@ -1197,6 +1203,81 @@ export function logWorkPeriodProjectUnassigned(
 		},
 		metadata: {
 			employeeName: params.employeeName,
+		},
+		timestamp: new Date(),
+		ipAddress: params.ipAddress,
+		userAgent: params.userAgent,
+	});
+}
+
+// ============================================
+// APP ACCESS AUDIT HELPERS
+// ============================================
+
+export type AppType = "webapp" | "desktop" | "mobile";
+
+/**
+ * Log app access permission change (grant or revoke)
+ */
+export function logAppAccessChange(
+	params: {
+		userId: string;
+		userName: string;
+		userEmail: string;
+		appType: AppType;
+		granted: boolean; // true = granted, false = revoked
+		changedBy: string;
+		changedByEmail: string;
+		organizationId: string;
+	} & AuditContext,
+): Promise<void> {
+	return logAudit({
+		action: params.granted ? AuditAction.APP_ACCESS_GRANTED : AuditAction.APP_ACCESS_REVOKED,
+		actorId: params.changedBy,
+		actorEmail: params.changedByEmail,
+		targetId: params.userId,
+		targetType: "user",
+		organizationId: params.organizationId,
+		metadata: {
+			userName: params.userName,
+			userEmail: params.userEmail,
+			appType: params.appType,
+		},
+		changes: {
+			[`canUse${params.appType.charAt(0).toUpperCase()}${params.appType.slice(1)}`]: {
+				from: !params.granted,
+				to: params.granted,
+			},
+		},
+		timestamp: new Date(),
+		ipAddress: params.ipAddress,
+		userAgent: params.userAgent,
+	});
+}
+
+/**
+ * Log failed app access attempt (user tried to access blocked app)
+ */
+export function logAppAccessDenied(
+	params: {
+		userId: string;
+		userName: string;
+		userEmail: string;
+		appType: AppType;
+		organizationId?: string;
+	} & AuditContext,
+): Promise<void> {
+	return logAudit({
+		action: AuditAction.APP_ACCESS_DENIED,
+		actorId: params.userId,
+		actorEmail: params.userEmail,
+		targetId: params.userId,
+		targetType: "user",
+		organizationId: params.organizationId || "system",
+		metadata: {
+			userName: params.userName,
+			appType: params.appType,
+			reason: `User attempted to access ${params.appType} but does not have permission`,
 		},
 		timestamp: new Date(),
 		ipAddress: params.ipAddress,

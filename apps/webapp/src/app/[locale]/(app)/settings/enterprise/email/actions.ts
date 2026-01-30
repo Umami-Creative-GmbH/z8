@@ -6,12 +6,7 @@ import { db } from "@/db";
 import { organizationEmailConfig, type EmailTransportType } from "@/db/schema";
 import { sendTestEmail } from "@/lib/email/email-service";
 import { createLogger } from "@/lib/logger";
-import {
-	deleteOrgSecret,
-	getVaultStatus,
-	hasOrgSecret,
-	storeOrgSecret,
-} from "@/lib/vault";
+import { deleteOrgSecret, getVaultStatus, hasOrgSecret, storeOrgSecret } from "@/lib/vault";
 
 const logger = createLogger("EmailConfigActions");
 
@@ -65,9 +60,7 @@ export interface EmailConfigOutput {
 /**
  * Get email configuration for an organization (without secrets)
  */
-export async function getEmailConfig(
-	organizationId: string,
-): Promise<EmailConfigOutput | null> {
+export async function getEmailConfig(organizationId: string): Promise<EmailConfigOutput | null> {
 	try {
 		const config = await db.query.organizationEmailConfig.findFirst({
 			where: eq(organizationEmailConfig.organizationId, organizationId),
@@ -135,11 +128,11 @@ export async function saveEmailConfig(
 			fromEmail: config.fromEmail,
 			fromName: config.fromName ?? null,
 			isActive: config.isActive,
-			smtpHost: config.transportType === "smtp" ? config.smtpHost ?? null : null,
-			smtpPort: config.transportType === "smtp" ? config.smtpPort ?? null : null,
-			smtpSecure: config.transportType === "smtp" ? config.smtpSecure ?? true : null,
-			smtpRequireTls: config.transportType === "smtp" ? config.smtpRequireTls ?? true : null,
-			smtpUsername: config.transportType === "smtp" ? config.smtpUsername ?? null : null,
+			smtpHost: config.transportType === "smtp" ? (config.smtpHost ?? null) : null,
+			smtpPort: config.transportType === "smtp" ? (config.smtpPort ?? null) : null,
+			smtpSecure: config.transportType === "smtp" ? (config.smtpSecure ?? true) : null,
+			smtpRequireTls: config.transportType === "smtp" ? (config.smtpRequireTls ?? true) : null,
+			smtpUsername: config.transportType === "smtp" ? (config.smtpUsername ?? null) : null,
 		};
 
 		// Save to database

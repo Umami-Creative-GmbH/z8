@@ -1,9 +1,5 @@
 import { cache } from "react";
-import {
-	getAuthContext,
-	getOnboardingStatus,
-	getUserOrganizations,
-} from "./auth-helpers";
+import { getAuthContext, getOnboardingStatus, getUserOrganizations } from "./auth-helpers";
 
 /**
  * Request-scoped caching for frequently used queries.

@@ -191,9 +191,7 @@ export function formatMinutesAsHoursMinutes(minutes: number): string {
  * formatEffectiveTimeDisplay({ trackedMinutes: 120, effectiveMinutes: 60, factor: 0.5 })
  * // Returns: "2h tracked → 1h effective (0.5x)"
  */
-export function formatEffectiveTimeDisplay(
-	calculation: EffectiveTimeCalculation,
-): string {
+export function formatEffectiveTimeDisplay(calculation: EffectiveTimeCalculation): string {
 	const { trackedMinutes, effectiveMinutes, factor } = calculation;
 
 	const tracked = formatMinutesAsHoursMinutes(trackedMinutes);

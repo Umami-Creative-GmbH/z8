@@ -53,7 +53,10 @@ export async function GET(request: NextRequest) {
 			.limit(1);
 
 		if (!currentEmployee) {
-			return NextResponse.json({ error: "Employee record not found in this organization" }, { status: 404 });
+			return NextResponse.json(
+				{ error: "Employee record not found in this organization" },
+				{ status: 404 },
+			);
 		}
 
 		// Determine which employee's entries to fetch
@@ -155,7 +158,10 @@ export async function POST(request: NextRequest) {
 			.limit(1);
 
 		if (!currentEmployee) {
-			return NextResponse.json({ error: "Employee record not found in this organization" }, { status: 404 });
+			return NextResponse.json(
+				{ error: "Employee record not found in this organization" },
+				{ status: 404 },
+			);
 		}
 
 		// Extract request metadata from already-resolved headers

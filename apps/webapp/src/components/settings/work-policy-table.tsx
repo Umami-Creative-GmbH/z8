@@ -24,11 +24,7 @@ import {
 	setDefaultWorkPolicy,
 	type WorkPolicyWithDetails,
 } from "@/app/[locale]/(app)/settings/work-policies/actions";
-import {
-	DataTable,
-	DataTableSkeleton,
-	DataTableToolbar,
-} from "@/components/data-table-server";
+import { DataTable, DataTableSkeleton, DataTableToolbar } from "@/components/data-table-server";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -48,12 +44,7 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipProvider,
-	TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { queryKeys } from "@/lib/query";
 
 interface WorkPolicyTableProps {
@@ -219,9 +210,7 @@ export function WorkPolicyTable({
 			{
 				accessorKey: "features",
 				header: () => (
-					<div className="text-center">
-						{t("settings.workPolicies.features", "Features")}
-					</div>
+					<div className="text-center">{t("settings.workPolicies.features", "Features")}</div>
 				),
 				cell: ({ row }) => (
 					<div className="flex justify-center gap-1">
@@ -271,21 +260,13 @@ export function WorkPolicyTable({
 					}
 					const schedule = row.original.schedule;
 					if (schedule.scheduleType === "simple" && schedule.hoursPerCycle) {
-						return (
-							<div className="text-center tabular-nums">
-								{schedule.hoursPerCycle}h
-							</div>
-						);
+						return <div className="text-center tabular-nums">{schedule.hoursPerCycle}h</div>;
 					}
 					if (schedule.scheduleType === "detailed" && schedule.days) {
 						const totalHours = schedule.days
 							.filter((d) => d.isWorkDay)
 							.reduce((sum, d) => sum + parseFloat(d.hoursPerDay || "0"), 0);
-						return (
-							<div className="text-center tabular-nums">
-								{totalHours.toFixed(1)}h
-							</div>
-						);
+						return <div className="text-center tabular-nums">{totalHours.toFixed(1)}h</div>;
 					}
 					return <div className="text-center text-muted-foreground">—</div>;
 				},
@@ -293,9 +274,7 @@ export function WorkPolicyTable({
 			{
 				accessorKey: "breakRules",
 				header: () => (
-					<div className="text-center">
-						{t("settings.workPolicies.breakRules", "Break Rules")}
-					</div>
+					<div className="text-center">{t("settings.workPolicies.breakRules", "Break Rules")}</div>
 				),
 				cell: ({ row }) => {
 					if (!row.original.regulationEnabled || !row.original.regulation) {
@@ -303,9 +282,7 @@ export function WorkPolicyTable({
 					}
 					return (
 						<div className="text-center">
-							<Badge variant="outline">
-								{row.original.regulation.breakRules?.length || 0}
-							</Badge>
+							<Badge variant="outline">{row.original.regulation.breakRules?.length || 0}</Badge>
 						</div>
 					);
 				},

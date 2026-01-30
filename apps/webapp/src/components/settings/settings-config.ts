@@ -25,7 +25,9 @@ export type SettingsIconName =
 	| "test-pipe"
 	| "mail"
 	| "tag"
-	| "server";
+	| "server"
+	| "key"
+	| "webhook";
 
 export interface SettingsEntry {
 	id: string;
@@ -275,6 +277,17 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		group: "enterprise",
 	},
 	{
+		id: "api-keys",
+		titleKey: "settings.apiKeys.title",
+		titleDefault: "API Keys",
+		descriptionKey: "settings.apiKeys.description",
+		descriptionDefault: "Manage API keys for programmatic access to your organization data",
+		href: "/settings/enterprise/api-keys",
+		icon: "key",
+		adminOnly: true,
+		group: "enterprise",
+	},
+	{
 		id: "audit-log",
 		titleKey: "settings.auditLog.title",
 		titleDefault: "Audit Log",
@@ -282,6 +295,17 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "View activity history and security events",
 		href: "/settings/enterprise/audit-log",
 		icon: "history",
+		adminOnly: true,
+		group: "enterprise",
+	},
+	{
+		id: "webhooks",
+		titleKey: "settings.webhooks.title",
+		titleDefault: "Webhooks",
+		descriptionKey: "settings.webhooks.description",
+		descriptionDefault: "Configure webhook endpoints to receive real-time event notifications",
+		href: "/settings/webhooks",
+		icon: "webhook",
 		adminOnly: true,
 		group: "enterprise",
 	},

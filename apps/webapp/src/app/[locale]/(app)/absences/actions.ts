@@ -145,10 +145,7 @@ export async function requestAbsenceEffect(
 						return await dbService.db.query.absenceEntry.findMany({
 							where: and(
 								eq(absenceEntry.employeeId, currentEmployee.id),
-								or(
-									eq(absenceEntry.status, "approved"),
-									eq(absenceEntry.status, "pending"),
-								),
+								or(eq(absenceEntry.status, "approved"), eq(absenceEntry.status, "pending")),
 							),
 						});
 					}),

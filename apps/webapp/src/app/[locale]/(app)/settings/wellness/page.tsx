@@ -9,7 +9,11 @@ export default async function WellnessPage() {
 	await connection();
 
 	// Parallelize auth, settings, and translation fetches
-	const [, settingsResult, t] = await Promise.all([requireUser(), getWellnessSettings(), getTranslate()]);
+	const [, settingsResult, t] = await Promise.all([
+		requireUser(),
+		getWellnessSettings(),
+		getTranslate(),
+	]);
 
 	// Handle error case
 	const settings = settingsResult.success
@@ -25,9 +29,14 @@ export default async function WellnessPage() {
 		<div className="p-6">
 			<div className="mx-auto max-w-2xl space-y-6">
 				<div>
-					<h1 className="text-2xl font-semibold">{t("settings.wellness.title", "Wellness Settings")}</h1>
+					<h1 className="text-2xl font-semibold">
+						{t("settings.wellness.title", "Wellness Settings")}
+					</h1>
 					<p className="text-muted-foreground">
-						{t("settings.wellness.description", "Configure water reminders and hydration tracking during your work sessions")}
+						{t(
+							"settings.wellness.description",
+							"Configure water reminders and hydration tracking during your work sessions",
+						)}
 					</p>
 				</div>
 

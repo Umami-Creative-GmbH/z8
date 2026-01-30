@@ -1,11 +1,6 @@
 "use client";
 
-import {
-	IconCheck,
-	IconGripVertical,
-	IconLoader2,
-	IconX,
-} from "@tabler/icons-react";
+import { IconCheck, IconGripVertical, IconLoader2, IconX } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
@@ -87,10 +82,7 @@ export function WorkCategorySetDialog({
 	const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
 
 	// Fetch all org-level categories
-	const {
-		data: orgCategoriesResult,
-		isLoading: isLoadingOrgCategories,
-	} = useQuery({
+	const { data: orgCategoriesResult, isLoading: isLoadingOrgCategories } = useQuery({
 		queryKey: queryKeys.workCategories.orgList(organizationId),
 		queryFn: async () => {
 			const result = await getOrganizationCategories(organizationId);
@@ -103,10 +95,7 @@ export function WorkCategorySetDialog({
 	});
 
 	// Fetch category set details when editing
-	const {
-		data: setDetail,
-		isLoading: isLoadingDetail,
-	} = useQuery({
+	const { data: setDetail, isLoading: isLoadingDetail } = useQuery({
 		queryKey: queryKeys.workCategorySets.detail(categorySet?.id || ""),
 		queryFn: async () => {
 			if (!categorySet?.id) return null;
@@ -275,9 +264,7 @@ export function WorkCategorySetDialog({
 		.filter((c): c is OrgCategory => c !== undefined);
 
 	// Get unselected categories
-	const unselectedCategories = orgCategories.filter(
-		(c) => !selectedCategoryIds.includes(c.id),
-	);
+	const unselectedCategories = orgCategories.filter((c) => !selectedCategoryIds.includes(c.id));
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
@@ -311,9 +298,7 @@ export function WorkCategorySetDialog({
 					<div className="flex-1 overflow-y-auto space-y-4 py-4">
 						{/* Set Name */}
 						<div className="space-y-2 px-1">
-							<Label htmlFor="set-name">
-								{t("settings.workCategories.setName", "Name")}
-							</Label>
+							<Label htmlFor="set-name">{t("settings.workCategories.setName", "Name")}</Label>
 							<setForm.Field name="name">
 								{(field) => (
 									<Input
@@ -355,12 +340,9 @@ export function WorkCategorySetDialog({
 						{/* Categories Section */}
 						<div className="space-y-4 px-1">
 							<div className="flex items-center justify-between">
-								<Label>
-									{t("settings.workCategories.selectCategories", "Select Categories")}
-								</Label>
+								<Label>{t("settings.workCategories.selectCategories", "Select Categories")}</Label>
 								<Badge variant="secondary">
-									{selectedCategoryIds.length}{" "}
-									{t("common.selected", "selected")}
+									{selectedCategoryIds.length} {t("common.selected", "selected")}
 								</Badge>
 							</div>
 
@@ -373,10 +355,7 @@ export function WorkCategorySetDialog({
 							) : orgCategories.length === 0 ? (
 								<div className="py-8 text-center text-muted-foreground">
 									<p>
-										{t(
-											"settings.workCategories.noCategoriesAvailable",
-											"No categories available",
-										)}
+										{t("settings.workCategories.noCategoriesAvailable", "No categories available")}
 									</p>
 									<p className="text-sm">
 										{t(
@@ -437,9 +416,7 @@ export function WorkCategorySetDialog({
 																aria-hidden="true"
 															/>
 														)}
-														<span className="flex-1 font-medium text-sm">
-															{category.name}
-														</span>
+														<span className="flex-1 font-medium text-sm">{category.name}</span>
 														<Badge variant="outline" className="text-xs">
 															{formatFactorAsMultiplier(parseFloat(category.factor))}
 														</Badge>
@@ -463,10 +440,7 @@ export function WorkCategorySetDialog({
 									{unselectedCategories.length > 0 && (
 										<div className="space-y-2">
 											<p className="text-sm text-muted-foreground">
-												{t(
-													"settings.workCategories.availableCategories",
-													"Available categories",
-												)}
+												{t("settings.workCategories.availableCategories", "Available categories")}
 											</p>
 											<ScrollArea className="h-[200px] rounded-lg border p-2">
 												<div className="space-y-1">
@@ -496,9 +470,7 @@ export function WorkCategorySetDialog({
 																	aria-hidden="true"
 																/>
 															)}
-															<span className="flex-1 text-sm">
-																{category.name}
-															</span>
+															<span className="flex-1 text-sm">{category.name}</span>
 															<Badge variant="outline" className="text-xs">
 																{formatFactorAsMultiplier(parseFloat(category.factor))}
 															</Badge>

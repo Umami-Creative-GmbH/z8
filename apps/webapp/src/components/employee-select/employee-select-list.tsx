@@ -50,9 +50,7 @@ export function EmployeeSelectList({
 		return (
 			<div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
 				<IconUsers className="h-10 w-10 mb-2 opacity-40" />
-				<p className="text-sm">
-					{t("employeeSelect.noEmployeesFound", "No employees found")}
-				</p>
+				<p className="text-sm">{t("employeeSelect.noEmployeesFound", "No employees found")}</p>
 				<p className="text-xs mt-0.5 opacity-70">
 					{t("employeeSelect.tryDifferentSearch", "Try adjusting your search or filters")}
 				</p>

@@ -87,7 +87,9 @@ export function ChangePolicyDialog({
 				form.reset();
 				onSuccess();
 			} else {
-				toast.error(result.error || t("settings.changePolicies.createFailed", "Failed to create policy"));
+				toast.error(
+					result.error || t("settings.changePolicies.createFailed", "Failed to create policy"),
+				);
 			}
 		},
 		onError: () => {
@@ -103,7 +105,9 @@ export function ChangePolicyDialog({
 				toast.success(t("settings.changePolicies.updated", "Policy updated successfully"));
 				onSuccess();
 			} else {
-				toast.error(result.error || t("settings.changePolicies.updateFailed", "Failed to update policy"));
+				toast.error(
+					result.error || t("settings.changePolicies.updateFailed", "Failed to update policy"),
+				);
 			}
 		},
 		onError: () => {
@@ -156,7 +160,10 @@ export function ChangePolicyDialog({
 										value={field.state.value}
 										onChange={(e) => field.handleChange(e.target.value)}
 										onBlur={field.handleBlur}
-										placeholder={t("settings.changePolicies.namePlaceholder", "e.g., Standard Policy")}
+										placeholder={t(
+											"settings.changePolicies.namePlaceholder",
+											"e.g., Standard Policy",
+										)}
 									/>
 								</TFormControl>
 								<TFormMessage field={field} />
@@ -221,7 +228,10 @@ export function ChangePolicyDialog({
 										{(field) => (
 											<TFormItem>
 												<TFormLabel>
-													{t("settings.changePolicies.selfServiceDaysLabel", "Self-Service Window (days)")}
+													{t(
+														"settings.changePolicies.selfServiceDaysLabel",
+														"Self-Service Window (days)",
+													)}
 												</TFormLabel>
 												<TFormControl>
 													<Input
@@ -271,7 +281,9 @@ export function ChangePolicyDialog({
 									</form.Field>
 
 									{/* Policy Summary */}
-									<form.Subscribe selector={(state) => [state.values.selfServiceDays, state.values.approvalDays]}>
+									<form.Subscribe
+										selector={(state) => [state.values.selfServiceDays, state.values.approvalDays]}
+									>
 										{([selfServiceDays, approvalDays]) => (
 											<div className="rounded-lg bg-muted p-3 text-sm">
 												<p className="font-medium mb-1">
@@ -287,8 +299,12 @@ export function ChangePolicyDialog({
 												) : (
 													<ul className="text-muted-foreground space-y-1">
 														<li>
-															• {selfServiceDays === 0
-																? t("settings.changePolicies.sameDayFree", "Same-day edits are free")
+															•{" "}
+															{selfServiceDays === 0
+																? t(
+																		"settings.changePolicies.sameDayFree",
+																		"Same-day edits are free",
+																	)
 																: t(
 																		"settings.changePolicies.daysFree",
 																		"Edits within {days} days are free",
@@ -297,7 +313,8 @@ export function ChangePolicyDialog({
 														</li>
 														{approvalDays > 0 && (
 															<li>
-																• {t(
+																•{" "}
+																{t(
 																	"settings.changePolicies.daysApproval",
 																	"Days {start}-{end} require approval",
 																	{
@@ -308,7 +325,8 @@ export function ChangePolicyDialog({
 															</li>
 														)}
 														<li>
-															• {t(
+															•{" "}
+															{t(
 																"settings.changePolicies.beyondWindow",
 																"Beyond {days} days: only admins/team leads can edit",
 																{ days: selfServiceDays + approvalDays },

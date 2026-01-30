@@ -118,9 +118,7 @@ const styleDefinitions = {
  */
 export async function exportToPDF(reportData: ReportData): Promise<Uint8Array> {
 	// Dynamic import - only loads when user actually exports to PDF
-	const { Document, Page, pdf, StyleSheet, Text, View } = await import(
-		"@react-pdf/renderer"
-	);
+	const { Document, Page, pdf, StyleSheet, Text, View } = await import("@react-pdf/renderer");
 
 	// Create styles at runtime after dynamic import
 	const styles = StyleSheet.create(styleDefinitions);

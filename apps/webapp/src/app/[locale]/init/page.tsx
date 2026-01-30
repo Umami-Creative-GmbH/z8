@@ -38,6 +38,15 @@ export default function InitPage() {
 			// Check current session state
 			const response = await fetch("/api/session/organization-status");
 			if (!response.ok) {
+				// Check for app access denied error
+				if (response.status === 403) {
+					const errorData = await response.json();
+					if (errorData.error === "AppAccessDenied") {
+						// Redirect to access denied page
+						window.location.href = `/access-denied?app=${errorData.appType}`;
+						return;
+					}
+				}
 				// Not authenticated, redirect to login
 				window.location.href = "/sign-in";
 				return;
@@ -130,7 +139,10 @@ export default function InitPage() {
 							{t("init.selectOrganization", "Select Organization")}
 						</h1>
 						<p className="text-muted-foreground">
-							{t("init.selectOrganizationDescription", "Choose which organization you want to work with")}
+							{t(
+								"init.selectOrganizationDescription",
+								"Choose which organization you want to work with",
+							)}
 						</p>
 					</div>
 
@@ -138,15 +150,23 @@ export default function InitPage() {
 						{organizations.map((org) => (
 							<Card
 								key={org.id}
-								className={`cursor-pointer transition-all hover:border-primary ${
+								role="button"
+								tabIndex={isActivating ? -1 : 0}
+								className={`cursor-pointer transition-all hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
 									selectedOrg === org.id ? "border-primary ring-2 ring-primary/20" : ""
 								} ${isActivating ? "pointer-events-none opacity-50" : ""}`}
 								onClick={() => handleSelectOrganization(org.id)}
+								onKeyDown={(e) => {
+									if (e.key === "Enter" || e.key === " ") {
+										e.preventDefault();
+										handleSelectOrganization(org.id);
+									}
+								}}
 							>
 								<CardHeader className="p-4">
 									<div className="flex items-center gap-3">
 										<div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-											<IconBuilding className="size-5" />
+											<IconBuilding className="size-5" aria-hidden="true" />
 										</div>
 										<div className="flex-1">
 											<CardTitle className="text-base">{org.name}</CardTitle>
@@ -155,7 +175,7 @@ export default function InitPage() {
 											</CardDescription>
 										</div>
 										{selectedOrg === org.id && (
-											<IconCheck className="size-5 text-primary" />
+											<IconCheck className="size-5 text-primary" aria-hidden="true" />
 										)}
 									</div>
 								</CardHeader>
@@ -164,8 +184,12 @@ export default function InitPage() {
 					</div>
 
 					{isActivating && (
-						<div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-							<IconLoader2 className="size-4 animate-spin" />
+						<div
+							className="flex items-center justify-center gap-2 text-sm text-muted-foreground"
+							role="status"
+							aria-live="polite"
+						>
+							<IconLoader2 className="size-4 animate-spin" aria-hidden="true" />
 							{t("init.activating", "Setting up your workspace...")}
 						</div>
 					)}
@@ -177,8 +201,8 @@ export default function InitPage() {
 	// Show loading state
 	return (
 		<div className="flex min-h-screen items-center justify-center bg-background">
-			<div className="flex flex-col items-center gap-4">
-				<IconLoader2 className="size-8 animate-spin text-primary" />
+			<div className="flex flex-col items-center gap-4" role="status" aria-live="polite">
+				<IconLoader2 className="size-8 animate-spin text-primary" aria-hidden="true" />
 				<p className="text-sm text-muted-foreground">
 					{status === "checking" && t("init.checking", "Checking session...")}
 					{status === "activating" && t("init.activating", "Setting up your workspace...")}

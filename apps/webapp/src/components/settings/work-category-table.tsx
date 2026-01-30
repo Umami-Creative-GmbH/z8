@@ -11,13 +11,7 @@ import {
 } from "@/app/[locale]/(app)/settings/work-categories/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
 	Table,
@@ -27,12 +21,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipProvider,
-	TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { queryKeys } from "@/lib/query";
 import { formatFactorAsMultiplier } from "@/lib/work-category/work-category.service";
 import { WorkCategoryDialog } from "./work-category-dialog";
@@ -205,15 +194,9 @@ export function WorkCategoryTable({ organizationId }: WorkCategoryTableProps) {
 									<TableHead className="w-[50px]">
 										{t("settings.workCategories.color", "Color")}
 									</TableHead>
-									<TableHead>
-										{t("settings.workCategories.categoryName", "Name")}
-									</TableHead>
-									<TableHead>
-										{t("settings.workCategories.factor", "Factor")}
-									</TableHead>
-									<TableHead>
-										{t("settings.workCategories.usedInSets", "Used in Sets")}
-									</TableHead>
+									<TableHead>{t("settings.workCategories.categoryName", "Name")}</TableHead>
+									<TableHead>{t("settings.workCategories.factor", "Factor")}</TableHead>
+									<TableHead>{t("settings.workCategories.usedInSets", "Used in Sets")}</TableHead>
 									<TableHead className="w-[100px] text-right">
 										{t("common.actions", "Actions")}
 									</TableHead>
@@ -230,7 +213,10 @@ export function WorkCategoryTable({ organizationId }: WorkCategoryTableProps) {
 													aria-hidden="true"
 												/>
 											) : (
-												<div className="h-6 w-6 rounded-full border border-dashed bg-muted" aria-hidden="true" />
+												<div
+													className="h-6 w-6 rounded-full border border-dashed bg-muted"
+													aria-hidden="true"
+												/>
 											)}
 										</TableCell>
 										<TableCell>
@@ -271,9 +257,7 @@ export function WorkCategoryTable({ organizationId }: WorkCategoryTableProps) {
 																<IconEdit className="h-4 w-4" aria-hidden="true" />
 															</Button>
 														</TooltipTrigger>
-														<TooltipContent>
-															{t("common.edit", "Edit")}
-														</TooltipContent>
+														<TooltipContent>{t("common.edit", "Edit")}</TooltipContent>
 													</Tooltip>
 												</TooltipProvider>
 												<TooltipProvider>
@@ -284,10 +268,7 @@ export function WorkCategoryTable({ organizationId }: WorkCategoryTableProps) {
 																size="icon"
 																className="h-8 w-8 text-muted-foreground hover:text-destructive"
 																onClick={() => handleDeleteClick(category)}
-																disabled={
-																	deleteMutation.isPending ||
-																	category.usedInSetsCount > 0
-																}
+																disabled={deleteMutation.isPending || category.usedInSetsCount > 0}
 																aria-label={
 																	category.usedInSetsCount > 0
 																		? t(

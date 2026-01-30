@@ -90,9 +90,14 @@ function EmptyState() {
 					<IconUsersGroup className="size-8 text-slate-500" />
 				</div>
 			</div>
-			<p className="mt-4 text-sm font-medium">{t("dashboard.managed-employees.no-reports", "No direct reports yet")}</p>
+			<p className="mt-4 text-sm font-medium">
+				{t("dashboard.managed-employees.no-reports", "No direct reports yet")}
+			</p>
 			<p className="mt-1 text-xs text-muted-foreground">
-				{t("dashboard.managed-employees.no-reports-description", "You'll see your team members here once assigned")}
+				{t(
+					"dashboard.managed-employees.no-reports-description",
+					"You'll see your team members here once assigned",
+				)}
 			</p>
 		</div>
 	);
@@ -145,7 +150,9 @@ export function ManagedEmployeesWidget() {
 				title={t("dashboard.managed-employees.title", "Your Team")}
 				description={
 					employees.length > 0
-						? t("dashboard.managed-employees.direct-reports", "{count} direct reports", { count: employees.length })
+						? t("dashboard.managed-employees.direct-reports", "{count} direct reports", {
+								count: employees.length,
+							})
 						: t("dashboard.managed-employees.people-you-manage", "People you manage")
 				}
 				icon={<IconUsers className="size-4 text-indigo-500" />}
@@ -176,7 +183,11 @@ export function ManagedEmployeesWidget() {
 							<Button className="w-full" variant="outline" size="sm" asChild>
 								<Link href="/settings/employees">
 									<IconUserCheck className="mr-2 size-4" />
-									{t("dashboard.managed-employees.view-all-members", "View all {count} team members", { count: employees.length })}
+									{t(
+										"dashboard.managed-employees.view-all-members",
+										"View all {count} team members",
+										{ count: employees.length },
+									)}
 								</Link>
 							</Button>
 						)}

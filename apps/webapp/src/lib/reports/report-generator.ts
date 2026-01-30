@@ -5,7 +5,13 @@
 
 import { and, eq, gte, isNotNull, isNull, lte, or } from "drizzle-orm";
 import { db } from "@/db";
-import { absenceCategory, absenceEntry, employee, employeeRateHistory, workPeriod } from "@/db/schema";
+import {
+	absenceCategory,
+	absenceEntry,
+	employee,
+	employeeRateHistory,
+	workPeriod,
+} from "@/db/schema";
 import { calculateBusinessDays } from "@/lib/absences/date-utils";
 import { dateToDB } from "@/lib/datetime/drizzle-adapter";
 import {
@@ -534,9 +540,7 @@ async function calculateHourlyEarnings(
 	} else {
 		// Multiple rate periods - need to calculate hours per period
 		// This is an approximation based on the proportion of days in each period
-		const totalDays = Math.ceil(
-			(endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
-		);
+		const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
 
 		for (let i = 0; i < rateHistory.length; i++) {
 			const rateEntry = rateHistory[i];
@@ -557,7 +561,7 @@ async function calculateHourlyEarnings(
 
 			// Estimate hours for this period based on proportion of days
 			const periodHours =
-				totalDays > 0 ? Math.round(((periodDays / totalDays) * totalHours) * 100) / 100 : 0;
+				totalDays > 0 ? Math.round((periodDays / totalDays) * totalHours * 100) / 100 : 0;
 			const earnings = Math.round(periodHours * rate * 100) / 100;
 
 			totalEarnings += earnings;

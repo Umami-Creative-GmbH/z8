@@ -110,36 +110,39 @@ export function TeamOverviewWidget() {
 	const [refreshing, setRefreshing] = useState(false);
 	const [role, setRole] = useState<EmployeeRole | null>(null);
 
-	const loadData = useCallback(async (isRefresh = false) => {
-		if (isRefresh) {
-			setRefreshing(true);
-		}
+	const loadData = useCallback(
+		async (isRefresh = false) => {
+			if (isRefresh) {
+				setRefreshing(true);
+			}
 
-		const current = await getCurrentEmployee();
-		if (!current) {
+			const current = await getCurrentEmployee();
+			if (!current) {
+				setLoading(false);
+				setRefreshing(false);
+				return;
+			}
+
+			setRole(current.role);
+
+			if (current.role !== "admin" && current.role !== "manager") {
+				setLoading(false);
+				setRefreshing(false);
+				return;
+			}
+
+			const result = await getTeamOverviewStats();
+			if (result.success && result.data) {
+				setStats(result.data);
+			} else {
+				toast.error(t("dashboard.team-overview.error", "Failed to load team statistics"));
+			}
+
 			setLoading(false);
 			setRefreshing(false);
-			return;
-		}
-
-		setRole(current.role);
-
-		if (current.role !== "admin" && current.role !== "manager") {
-			setLoading(false);
-			setRefreshing(false);
-			return;
-		}
-
-		const result = await getTeamOverviewStats();
-		if (result.success && result.data) {
-			setStats(result.data);
-		} else {
-			toast.error(t("dashboard.team-overview.error", "Failed to load team statistics"));
-		}
-
-		setLoading(false);
-		setRefreshing(false);
-	}, [t]);
+		},
+		[t],
+	);
 
 	useEffect(() => {
 		loadData(false);
@@ -183,7 +186,15 @@ export function TeamOverviewWidget() {
 									</span>
 								</div>
 								<p className="mt-1 text-xs text-emerald-600/80 dark:text-emerald-400/80">
-									{t("dashboard.team-overview.active-count", "{active} of {total} employees ({percent}%)", { active: stats.activeEmployees, total: stats.totalEmployees, percent: activePercentage.toFixed(0) })}
+									{t(
+										"dashboard.team-overview.active-count",
+										"{active} of {total} employees ({percent}%)",
+										{
+											active: stats.activeEmployees,
+											total: stats.totalEmployees,
+											percent: activePercentage.toFixed(0),
+										},
+									)}
 								</p>
 							</div>
 						</div>

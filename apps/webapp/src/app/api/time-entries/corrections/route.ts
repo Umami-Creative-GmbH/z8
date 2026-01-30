@@ -58,7 +58,10 @@ export async function POST(request: NextRequest) {
 			.limit(1);
 
 		if (!currentEmployee) {
-			return NextResponse.json({ error: "Employee record not found in this organization" }, { status: 404 });
+			return NextResponse.json(
+				{ error: "Employee record not found in this organization" },
+				{ status: 404 },
+			);
 		}
 
 		// Get the entry being corrected
@@ -188,7 +191,10 @@ export async function GET(request: NextRequest) {
 			.limit(1);
 
 		if (!currentEmployee) {
-			return NextResponse.json({ error: "Employee record not found in this organization" }, { status: 404 });
+			return NextResponse.json(
+				{ error: "Employee record not found in this organization" },
+				{ status: 404 },
+			);
 		}
 
 		// Build query conditions

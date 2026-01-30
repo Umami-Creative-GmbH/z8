@@ -106,7 +106,13 @@ function TodaysCelebration({ count }: { count: number }) {
 				<IconCake className="size-4" />
 			</div>
 			<span className="font-medium">
-				{t("dashboard.birthday.count-today", "{count} {birthday} today!", { count, birthday: count > 1 ? t("dashboard.birthday.birthdays", "birthdays") : t("dashboard.birthday.birthday", "birthday") })}
+				{t("dashboard.birthday.count-today", "{count} {birthday} today!", {
+					count,
+					birthday:
+						count > 1
+							? t("dashboard.birthday.birthdays", "birthdays")
+							: t("dashboard.birthday.birthday", "birthday"),
+				})}
 			</span>
 			<IconSparkles className="ml-auto size-4 animate-pulse" />
 		</div>
@@ -132,7 +138,14 @@ export function BirthdayRemindersWidget() {
 				title={t("dashboard.birthday.title", "Upcoming Birthdays")}
 				description={
 					birthdays
-						? t("dashboard.birthday.description-count", "{count} {celebration} in the next 30 days", { count: birthdays.length, celebration: pluralize(birthdays.length, "celebration") })
+						? t(
+								"dashboard.birthday.description-count",
+								"{count} {celebration} in the next 30 days",
+								{
+									count: birthdays.length,
+									celebration: pluralize(birthdays.length, "celebration"),
+								},
+							)
 						: t("dashboard.birthday.description", "Celebrations in the next 30 days")
 				}
 				icon={<IconCake className="size-4 text-pink-500" />}
@@ -158,7 +171,11 @@ export function BirthdayRemindersWidget() {
 						{birthdays.length > 5 + todayBirthdays.length && (
 							<div className="flex items-center justify-center gap-2 rounded-lg bg-muted/50 py-2 text-xs text-muted-foreground">
 								<IconGift className="size-3" />
-								<span>{t("dashboard.birthday.more-celebrations", "+{count} more celebrations", { count: birthdays.length - 5 - todayBirthdays.length })}</span>
+								<span>
+									{t("dashboard.birthday.more-celebrations", "+{count} more celebrations", {
+										count: birthdays.length - 5 - todayBirthdays.length,
+									})}
+								</span>
 							</div>
 						)}
 					</div>

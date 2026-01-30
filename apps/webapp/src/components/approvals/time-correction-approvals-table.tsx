@@ -288,9 +288,7 @@ export function TimeCorrectionApprovalsTable() {
 	if (isError) {
 		return (
 			<div className="flex flex-col items-center justify-center py-12 text-center border rounded-lg">
-				<p className="text-destructive">
-					{t("approvals.loadError", "Failed to load approvals")}
-				</p>
+				<p className="text-destructive">{t("approvals.loadError", "Failed to load approvals")}</p>
 				<Button className="mt-4" variant="outline" onClick={() => refetch()}>
 					<IconRefresh className="mr-2 h-4 w-4" />
 					{t("common.retry", "Retry")}

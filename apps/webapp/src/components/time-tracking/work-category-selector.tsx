@@ -98,10 +98,7 @@ export function WorkCategorySelector({
 	lastCategoryIdRef.current = cachedLastCategoryId ?? null;
 
 	// Build a Map for O(1) category lookups
-	const categoriesMap = useMemo(
-		() => new Map(categories.map((c) => [c.id, c])),
-		[categories],
-	);
+	const categoriesMap = useMemo(() => new Map(categories.map((c) => [c.id, c])), [categories]);
 
 	// Auto-select last used category on initial load
 	useEffect(() => {

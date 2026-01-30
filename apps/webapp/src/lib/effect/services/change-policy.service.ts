@@ -154,9 +154,7 @@ export class ChangePolicyService extends Context.Tag("ChangePolicyService")<
 			assignmentId: string,
 		) => Effect.Effect<void, NotFoundError | DatabaseError>;
 
-		readonly getAssignments: (
-			organizationId: string,
-		) => Effect.Effect<
+		readonly getAssignments: (organizationId: string) => Effect.Effect<
 			Array<
 				ChangePolicyAssignment & {
 					policy: ChangePolicy;
@@ -349,7 +347,10 @@ export const ChangePolicyServiceLive = Layer.effect(
 					// Within approval window
 					const totalApprovalWindow = policy.selfServiceDays + policy.approvalDays;
 					if (daysBack <= totalApprovalWindow) {
-						return { type: "approval_required" as const, reason: "within_approval_window" as const };
+						return {
+							type: "approval_required" as const,
+							reason: "within_approval_window" as const,
+						};
 					}
 
 					// Beyond approval window - forbidden for employees
@@ -412,7 +413,9 @@ export const ChangePolicyServiceLive = Layer.effect(
 									.map((r) => ({
 										managerId: r.manager.id,
 										userId: r.manager.userId,
-										name: [r.manager.firstName, r.manager.lastName].filter(Boolean).join(" ") || "Manager",
+										name:
+											[r.manager.firstName, r.manager.lastName].filter(Boolean).join(" ") ||
+											"Manager",
 										isPrimary: r.isPrimary,
 									}));
 							} else {
@@ -470,8 +473,9 @@ export const ChangePolicyServiceLive = Layer.effect(
 										managerId: result.manager.id,
 										userId: result.manager.userId,
 										name:
-											[result.manager.firstName, result.manager.lastName].filter(Boolean).join(" ") ||
-											"Manager",
+											[result.manager.firstName, result.manager.lastName]
+												.filter(Boolean)
+												.join(" ") || "Manager",
 										isPrimary: result.isPrimary,
 									},
 								];
@@ -585,7 +589,8 @@ export const ChangePolicyServiceLive = Layer.effect(
 			assignPolicy: (input) =>
 				Effect.gen(function* (_) {
 					// Calculate priority based on assignment type
-					const priority = input.assignmentType === "employee" ? 2 : input.assignmentType === "team" ? 1 : 0;
+					const priority =
+						input.assignmentType === "employee" ? 2 : input.assignmentType === "team" ? 1 : 0;
 
 					const created = yield* _(
 						dbService.query("assignChangePolicy", async () => {
@@ -649,7 +654,10 @@ export const ChangePolicyServiceLive = Layer.effect(
 										},
 									},
 								},
-								orderBy: [desc(changePolicyAssignment.priority), desc(changePolicyAssignment.createdAt)],
+								orderBy: [
+									desc(changePolicyAssignment.priority),
+									desc(changePolicyAssignment.createdAt),
+								],
 							});
 						}),
 					);
