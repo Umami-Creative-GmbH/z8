@@ -1,0 +1,397 @@
+---
+title: Enterprise Features
+description: API keys, webhooks, social OAuth, and organization-level access control
+icon: Building
+---
+
+import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
+import { Callout } from 'fumadocs-ui/components/callout';
+import { File, Folder, Files } from 'fumadocs-ui/components/files';
+
+Enterprise features provide advanced capabilities for organizations requiring programmatic access, event-driven integrations, and granular access control.
+
+---
+
+## API Key Management
+
+API keys enable secure programmatic access to Z8 APIs for integrations, automation, and third-party applications.
+
+### Permission Scopes
+
+API keys use a scoped permission model:
+
+| Scope | Description |
+|-------|-------------|
+| `time-entries:read` | Read time entries |
+| `time-entries:write` | Create/update time entries |
+| `employees:read` | Read employee data |
+| `reports:read` | Access analytics reports |
+| `projects:read` | Read project information |
+| `projects:write` | Manage projects |
+
+### Creating API Keys
+
+```typescript
+import { createApiKeySchema } from '@/lib/validations/api-key';
+
+const apiKey = await createApiKey({
+  name: 'Integration Key',
+  scopes: ['time-entries:read', 'employees:read'],
+  expiresInDays: 90,
+  rateLimitEnabled: true,
+  rateLimitMax: 100,
+  rateLimitTimeWindow: 60000, // 1 minute
+});
+```
+
+### Expiration Options
+
+| Option | Duration |
+|--------|----------|
+| 7 days | Short-term testing |
+| 30 days | Monthly rotation |
+| 90 days | Quarterly rotation |
+| 180 days | Semi-annual |
+| 365 days | Annual |
+| Never | No expiration (use with caution) |
+
+### Rate Limiting
+
+Each API key can have its own rate limits:
+
+- **Rate Limit Max**: Maximum requests per window (10-10,000)
+- **Time Window**: Window duration in milliseconds (1s-1hr)
+- Default: 100 requests per minute
+
+### Security Notes
+
+<Callout type="warn" title="API Key Security">
+  - The full API key is shown **only once** at creation
+  - Store keys securely (environment variables, secrets manager)
+  - Maximum 10 API keys per organization
+  - Rotate keys regularly
+  - Disable unused keys
+</Callout>
+
+### API Key Response
+
+```typescript
+interface ApiKeyResponse {
+  id: string;
+  name: string;
+  prefix: string | null;  // First few chars for identification
+  organizationId: string;
+  createdAt: string;
+  expiresAt: string | null;
+  lastRequest: string | null;
+  enabled: boolean;
+  scopes: ApiKeyScope[];
+  rateLimitEnabled: boolean | null;
+  rateLimitMax: number | null;
+  requestCount: number | null;
+}
+```
+
+---
+
+## Webhook System
+
+Webhooks enable real-time event notifications to external systems when actions occur in Z8.
+
+### Architecture
+
+<Files>
+  <Folder name="src/lib/webhooks" defaultOpen>
+    <File name="index.ts" />
+    <File name="types.ts" />
+    <File name="signature.ts" />
+    <File name="webhook-service.ts" />
+    <File name="webhook-delivery.ts" />
+    <File name="webhook-queue.ts" />
+    <File name="webhook-worker.ts" />
+    <File name="webhook-subscriber.ts" />
+  </Folder>
+  <Folder name="src/lib/events" defaultOpen>
+    <File name="bus.ts" />
+    <File name="types.ts" />
+    <File name="subscribers.ts" />
+  </Folder>
+</Files>
+
+### Event Types
+
+Webhooks can subscribe to any notification type:
+
+| Event Category | Examples |
+|----------------|----------|
+| **Time Entries** | Clock in/out, entry created/updated |
+| **Absences** | Request submitted, approved, denied |
+| **Employees** | Created, updated, deactivated |
+| **Projects** | Created, budget alert, deadline |
+| **Approvals** | Request pending, approved, rejected |
+
+### Creating Webhooks
+
+```typescript
+import { createWebhookEndpoint } from '@/lib/webhooks';
+
+const { endpoint, secret } = await createWebhookEndpoint({
+  organizationId,
+  name: 'Slack Integration',
+  url: 'https://hooks.slack.com/services/...',
+  subscribedEvents: ['time_entry.clock_in', 'absence.requested'],
+  description: 'Send notifications to #time-tracking channel',
+  createdBy: userId,
+});
+```
+
+### Webhook Payload
+
+```typescript
+interface WebhookPayloadData {
+  id: string;           // Unique event ID
+  type: string;         // Event type (e.g., 'time_entry.clock_in')
+  createdAt: string;    // ISO timestamp
+  data: Record<string, unknown>;  // Event-specific data
+}
+```
+
+### Signature Verification
+
+Webhook payloads are signed using HMAC-SHA256:
+
+```typescript
+import crypto from 'crypto';
+
+function verifyWebhook(payload: string, signature: string, secret: string): boolean {
+  const expected = crypto
+    .createHmac('sha256', secret)
+    .update(payload)
+    .digest('hex');
+
+  return crypto.timingSafeEqual(
+    Buffer.from(signature),
+    Buffer.from(expected)
+  );
+}
+```
+
+The signature is sent in the `X-Webhook-Signature` header.
+
+### Retry Strategy
+
+Failed deliveries use exponential backoff:
+
+| Attempt | Delay |
+|---------|-------|
+| 1 | Immediate |
+| 2 | 1 second |
+| 3 | 5 seconds |
+| 4 | 30 seconds |
+| 5 | 2 minutes |
+| 6 | 10 minutes |
+
+- Maximum 6 attempts per delivery
+- 30-second HTTP timeout
+- Auto-disable after 10 consecutive failures
+
+### Delivery Logs
+
+Track webhook delivery status:
+
+```typescript
+import { getDeliveryLogs } from '@/lib/webhooks';
+
+const { deliveries, total } = await getDeliveryLogs(webhookId, {
+  limit: 50,
+  offset: 0,
+});
+
+// Each delivery includes:
+// - status: 'pending' | 'success' | 'failed' | 'retrying'
+// - httpStatus, responseBody, errorMessage
+// - attemptNumber, durationMs
+// - startedAt, completedAt
+```
+
+---
+
+## Event Bus
+
+The event bus provides internal pub/sub messaging for decoupled event handling.
+
+### Publishing Events
+
+```typescript
+import { eventBus } from '@/lib/events';
+
+// Emit an event
+eventBus.emit('time_entry.clock_in', {
+  employeeId,
+  organizationId,
+  timestamp: new Date(),
+});
+```
+
+### Subscribing to Events
+
+```typescript
+import { eventBus } from '@/lib/events';
+
+// Subscribe to events
+eventBus.on('time_entry.clock_in', async (data) => {
+  // Handle the event
+  await notifyManagers(data);
+  await updateDashboard(data);
+});
+```
+
+### Webhook Subscriber
+
+The webhook subscriber listens to all events and queues deliveries:
+
+```typescript
+// Automatically registered on startup
+import '@/lib/events/subscribers';
+
+// Subscribes to all notification events
+// Queues webhook deliveries for matching endpoints
+```
+
+---
+
+## Organization Social OAuth
+
+Enterprise organizations can configure their own OAuth providers for single sign-on.
+
+### Supported Providers
+
+| Provider | Features |
+|----------|----------|
+| **Google** | OAuth 2.0 with PKCE |
+| **Microsoft** | Azure AD integration |
+| **GitHub** | OAuth Apps |
+| **LinkedIn** | OAuth 2.0 |
+| **Apple** | Sign in with Apple (requires additional config) |
+
+### Configuration
+
+Each organization can configure providers independently:
+
+```typescript
+import { createSocialOAuth } from '@/lib/social-oauth/service';
+
+await createSocialOAuth({
+  organizationId,
+  provider: 'google',
+  clientId: 'your-client-id',
+  clientSecret: 'your-client-secret',
+});
+```
+
+### Apple Sign-In
+
+Apple requires additional configuration:
+
+```typescript
+interface AppleProviderConfig {
+  teamId: string;      // Apple Developer Team ID
+  keyId: string;       // Key ID for .p8 file
+  privateKey: string;  // Contents of .p8 private key
+}
+```
+
+### OAuth Flow
+
+1. User clicks "Sign in with [Provider]" on organization login
+2. Redirected to provider with org-specific credentials
+3. Provider callback includes PKCE verification
+4. User linked to organization account
+
+### Security Features
+
+- **PKCE**: Code challenge for enhanced security
+- **Nonce**: OIDC nonce for replay protection
+- **State**: HMAC-signed state for tamper detection
+- **Secure cookies**: State stored in httpOnly cookies
+
+---
+
+## App Access Control
+
+Control which applications (webapp, desktop, mobile) users can access.
+
+### Permission Model
+
+```typescript
+interface AppPermissions {
+  canUseWebapp: boolean;   // Web application access
+  canUseDesktop: boolean;  // Desktop app access
+  canUseMobile: boolean;   // Mobile app access
+}
+```
+
+### App Type Detection
+
+The system automatically detects app type from request headers:
+
+| Auth Method | User Agent | App Type |
+|-------------|------------|----------|
+| Cookie | Any | Webapp |
+| Bearer token | Mobile/Android/iOS | Mobile |
+| Bearer token | Other | Desktop |
+
+### Access Validation
+
+```typescript
+import { AppAccessService } from '@/lib/effect/services/app-access.service';
+
+// Check access (returns result)
+const result = await AppAccessService.checkAccess(userId, headers);
+// { allowed: true, appType: 'webapp', permissions: {...} }
+
+// Validate access (throws if denied)
+const appType = await AppAccessService.validateAccess(userId, headers);
+```
+
+### Audit Logging
+
+All access changes and denials are logged:
+
+- **Access granted/revoked**: Who, when, which app
+- **Access denied**: User, app type, IP address, user agent
+
+### Use Cases
+
+- Restrict contractors to web-only access
+- Allow field workers mobile-only access
+- Limit desktop app to specific roles
+- Temporary access restrictions
+
+---
+
+## Configuration
+
+### Environment Variables
+
+```ini
+# API Keys
+API_KEY_ENCRYPTION_KEY=<32-byte-hex-key>
+
+# Webhooks
+WEBHOOK_WORKER_CONCURRENCY=3
+WEBHOOK_MAX_RETRIES=6
+
+# Social OAuth (organization-level overrides these)
+GOOGLE_CLIENT_ID=<default-client-id>
+GOOGLE_CLIENT_SECRET=<default-secret>
+```
+
+### Database Tables
+
+| Table | Purpose |
+|-------|---------|
+| `api_key` | API key storage (hashed) |
+| `webhook_endpoint` | Webhook configurations |
+| `webhook_delivery` | Delivery logs and status |
+| `social_oauth` | Org-specific OAuth configs |

@@ -1,0 +1,286 @@
+---
+title: Social OAuth
+description: Configure organization-specific social login providers for single sign-on
+icon: Users
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
+
+Enterprise organizations can configure their own OAuth providers to enable branded single sign-on (SSO). Users can sign in using their existing Google, Microsoft, GitHub, LinkedIn, or Apple accounts tied to your organization's OAuth application.
+
+---
+
+## Benefits of Organization OAuth
+
+| Benefit | Description |
+|---------|-------------|
+| **Branded Login** | Users see your organization's name during sign-in |
+| **Access Control** | Restrict sign-in to your organization's domain |
+| **Audit Trail** | All authentication goes through your OAuth app |
+| **SSO Integration** | Works with existing identity management |
+
+---
+
+## Accessing Social OAuth Settings
+
+1. Go to **Settings** in the sidebar
+2. Click **Enterprise** > **Social Login**
+3. View and manage configured providers
+
+---
+
+## Supported Providers
+
+<Tabs items={['Google', 'Microsoft', 'GitHub', 'LinkedIn', 'Apple']}>
+  <Tab value="Google">
+    ### Google OAuth Setup
+
+    1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+    2. Create or select a project
+    3. Navigate to **APIs & Services** > **Credentials**
+    4. Click **Create Credentials** > **OAuth client ID**
+    5. Select **Web application**
+    6. Add authorized redirect URI:
+       ```
+       https://your-z8-domain.com/api/auth/callback/social-org/google
+       ```
+    7. Copy the **Client ID** and **Client Secret**
+
+    ### Configuration in Z8
+    1. Click **Add Provider** > **Google**
+    2. Enter your Client ID and Client Secret
+    3. Click **Save**
+  </Tab>
+
+  <Tab value="Microsoft">
+    ### Microsoft Azure AD Setup
+
+    1. Go to [Azure Portal](https://portal.azure.com/)
+    2. Navigate to **Azure Active Directory** > **App registrations**
+    3. Click **New registration**
+    4. Set redirect URI:
+       ```
+       https://your-z8-domain.com/api/auth/callback/social-org/microsoft
+       ```
+    5. Under **Certificates & secrets**, create a new client secret
+    6. Copy the **Application (client) ID** and secret value
+
+    ### Configuration in Z8
+    1. Click **Add Provider** > **Microsoft**
+    2. Enter your Client ID and Client Secret
+    3. Click **Save**
+  </Tab>
+
+  <Tab value="GitHub">
+    ### GitHub OAuth Setup
+
+    1. Go to [GitHub Developer Settings](https://github.com/settings/developers)
+    2. Click **OAuth Apps** > **New OAuth App**
+    3. Set Authorization callback URL:
+       ```
+       https://your-z8-domain.com/api/auth/callback/social-org/github
+       ```
+    4. Register the application
+    5. Generate a new client secret
+    6. Copy the **Client ID** and **Client Secret**
+
+    ### Configuration in Z8
+    1. Click **Add Provider** > **GitHub**
+    2. Enter your Client ID and Client Secret
+    3. Click **Save**
+  </Tab>
+
+  <Tab value="LinkedIn">
+    ### LinkedIn OAuth Setup
+
+    1. Go to [LinkedIn Developers](https://developer.linkedin.com/)
+    2. Create a new application
+    3. Under **Auth**, add redirect URL:
+       ```
+       https://your-z8-domain.com/api/auth/callback/social-org/linkedin
+       ```
+    4. Request the `r_emailaddress` and `r_liteprofile` permissions
+    5. Copy the **Client ID** and **Client Secret**
+
+    ### Configuration in Z8
+    1. Click **Add Provider** > **LinkedIn**
+    2. Enter your Client ID and Client Secret
+    3. Click **Save**
+  </Tab>
+
+  <Tab value="Apple">
+    ### Apple Sign-In Setup
+
+    Apple requires additional configuration:
+
+    1. Go to [Apple Developer Portal](https://developer.apple.com/)
+    2. Create a new **Services ID** for Sign in with Apple
+    3. Configure the service with your domain
+    4. Create a new **Key** for Sign in with Apple
+    5. Download the `.p8` private key file
+
+    ### Required Information
+    - **Team ID**: Found in your Apple Developer account
+    - **Key ID**: The ID of the key you created
+    - **Private Key**: Contents of the `.p8` file
+
+    ### Configuration in Z8
+    1. Click **Add Provider** > **Apple**
+    2. Enter:
+       - Client ID (Services ID)
+       - Team ID
+       - Key ID
+       - Private Key (paste full contents)
+    3. Click **Save**
+
+    <Callout type="warn" title="Apple Private Key">
+      The private key is only downloadable once from Apple. Store it securely.
+    </Callout>
+  </Tab>
+</Tabs>
+
+---
+
+## Testing Configuration
+
+Before enabling a provider for users, test the configuration:
+
+1. Click the provider card
+2. Click **Test Configuration**
+3. A new window opens to test the OAuth flow
+4. Complete the sign-in process
+5. Check the test result:
+   - **Success**: Provider is configured correctly
+   - **Failed**: Review error message and fix configuration
+
+<Callout type="info" title="Test Account">
+  Use a test account to verify the flow before enabling for all users.
+</Callout>
+
+---
+
+## Enabling/Disabling Providers
+
+### Enable a Provider
+
+1. Configure the provider with credentials
+2. Test the configuration successfully
+3. Toggle **Active** to enable
+4. The provider appears on the login page
+
+### Disable a Provider
+
+1. Click the provider card
+2. Toggle **Active** off
+3. The provider is hidden from the login page
+4. Existing sessions remain valid
+
+---
+
+## User Experience
+
+### Login Flow
+
+When organization OAuth is enabled:
+
+1. User visits the organization's login page
+2. Clicks "Sign in with [Provider]"
+3. Redirected to provider with your org's branding
+4. User authenticates with their account
+5. Redirected back to Z8
+6. Account linked or created automatically
+
+### Account Linking
+
+| Scenario | Behavior |
+|----------|----------|
+| **New user, new email** | New account created |
+| **Existing user, same email** | Account linked automatically |
+| **Existing user, different email** | User prompted to link accounts |
+
+---
+
+## Security Features
+
+### PKCE (Proof Key for Code Exchange)
+
+All OAuth flows use PKCE to prevent authorization code interception attacks.
+
+### State Signing
+
+OAuth state is signed with HMAC to prevent CSRF attacks.
+
+### Nonce Validation
+
+OIDC providers include nonce validation to prevent replay attacks.
+
+### Secure Cookie Storage
+
+OAuth state is stored in secure, httpOnly cookies during the flow.
+
+---
+
+## Managing Providers
+
+### Edit Configuration
+
+1. Click the provider card
+2. Click **Edit**
+3. Update credentials
+4. Click **Save**
+5. Test the new configuration
+
+### Delete Provider
+
+1. Click the provider card
+2. Click **Delete**
+3. Confirm deletion
+4. Provider is immediately removed
+
+<Callout type="warn" title="User Impact">
+  Deleting a provider doesn't affect users who have already linked accounts. They can still sign in with other methods or re-link when the provider is re-added.
+</Callout>
+
+---
+
+## Domain Restrictions
+
+For additional security, restrict which email domains can sign in:
+
+1. Go to **Settings** > **Enterprise** > **Domains**
+2. Add your organization's email domain(s)
+3. Only users with matching email domains can sign in via OAuth
+
+---
+
+## Troubleshooting
+
+### "Invalid redirect URI"
+
+- Ensure the redirect URI in your OAuth app matches exactly
+- Check for trailing slashes
+- Verify the domain is correct
+
+### "Client ID not found"
+
+- Double-check the Client ID is entered correctly
+- Ensure the OAuth app is not deleted or disabled
+
+### "Invalid client secret"
+
+- Regenerate the secret in the provider's console
+- Update the secret in Z8 settings
+- Some providers (Microsoft) require periodic secret rotation
+
+### "User not authorized"
+
+- For Microsoft: Check the user is in the tenant
+- For Google: Verify domain restrictions
+- Check if the email domain is allowed
+
+### Test succeeds but login fails
+
+- Clear browser cookies and try again
+- Check for multiple Z8 organizations with the same provider
+- Verify the redirect URI is for your specific organization

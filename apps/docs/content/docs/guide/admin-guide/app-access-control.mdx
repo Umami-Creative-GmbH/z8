@@ -1,0 +1,247 @@
+---
+title: App Access Control
+description: Control which applications (web, desktop, mobile) users can access
+icon: ShieldCheck
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+App Access Control allows administrators to restrict which Z8 applications users can access. This is useful for compliance, security policies, or limiting access based on user roles.
+
+---
+
+## Understanding App Access
+
+Z8 offers multiple applications:
+
+| Application | Description | Default Access |
+|-------------|-------------|----------------|
+| **Web App** | Full-featured browser application | Enabled |
+| **Desktop App** | Lightweight time tracking widget | Enabled |
+| **Mobile App** | Native mobile companion | Enabled |
+
+By default, all users can access all applications. Administrators can restrict access per user.
+
+---
+
+## Use Cases
+
+### Security Compliance
+
+- **Contractors**: Restrict to web-only to maintain oversight
+- **Sensitive roles**: Disable mobile to prevent off-premises access
+- **BYOD restrictions**: Limit desktop app to company devices
+
+### Role-Based Access
+
+- **Field workers**: Mobile-only for on-site time tracking
+- **Office staff**: Web and desktop, no mobile needed
+- **Remote workers**: Full access to all applications
+
+### Temporary Restrictions
+
+- **Onboarding**: Start with web-only, expand later
+- **Investigation**: Temporarily restrict access during reviews
+- **Transitions**: Limit access during role changes
+
+---
+
+## Managing User Access
+
+### From Employee Management
+
+1. Go to **Employees** in the sidebar
+2. Click on the employee's profile
+3. Scroll to **App Access** section
+4. Toggle access for each application:
+   - Web Application
+   - Desktop Application
+   - Mobile Application
+5. Changes save automatically
+
+### From Organization Settings
+
+1. Go to **Settings** > **Members**
+2. Find the user in the members list
+3. Click **Edit Access**
+4. Configure app permissions
+5. Click **Save**
+
+---
+
+## Access Behavior
+
+### When Access is Granted
+
+- User can log in to the application
+- All features available based on their role
+- Normal session management applies
+
+### When Access is Denied
+
+1. User attempts to access the application
+2. System detects the app type from the request
+3. Access check fails
+4. User sees the "Access Denied" page
+5. Audit log entry created
+
+<Callout type="info" title="Clear Messaging">
+  Denied users see a clear message explaining which application they cannot access and are advised to contact their administrator.
+</Callout>
+
+---
+
+## How Apps Are Detected
+
+The system automatically detects which application is making the request:
+
+| Detection Method | App Type |
+|------------------|----------|
+| Cookie authentication | Web App |
+| Bearer token + mobile user agent | Mobile App |
+| Bearer token + other user agent | Desktop App |
+
+This detection is automatic and requires no user configuration.
+
+---
+
+## Audit Logging
+
+All access control events are logged:
+
+### Access Changes
+
+When permissions are modified:
+- Who made the change
+- Which user was affected
+- Which app access changed
+- Previous and new values
+- Timestamp
+
+### Access Denials
+
+When access is denied:
+- User who was denied
+- Which app they tried to access
+- IP address
+- User agent
+- Timestamp
+
+Access audit logs in **Settings** > **Audit Logs** and filter by "App Access".
+
+---
+
+## Bulk Management
+
+### Using Filters
+
+1. Go to **Employees**
+2. Filter by team, location, or role
+3. Select multiple employees
+4. Click **Bulk Actions** > **Update App Access**
+5. Set permissions
+6. Click **Apply**
+
+### Import/Export
+
+App access settings can be included in employee data exports and imports:
+
+```csv
+email,canUseWebapp,canUseDesktop,canUseMobile
+john@example.com,true,true,false
+jane@example.com,true,false,false
+```
+
+---
+
+## Default Settings
+
+### New Employees
+
+New employees receive full access to all applications by default.
+
+### Invited Users
+
+Users invited to the organization also receive full access by default. Adjust permissions after they join if needed.
+
+### Deactivated Employees
+
+Deactivating an employee revokes all access. App access settings are preserved if the employee is later reactivated.
+
+---
+
+## Integration with Other Features
+
+### Session Management
+
+- Changing app access doesn't terminate existing sessions
+- User will be denied on their next API request
+- Consider manually revoking sessions for immediate effect
+
+### Two-Factor Authentication
+
+- 2FA requirements apply regardless of app access
+- Users must complete 2FA on allowed applications
+- Denied apps don't bypass 2FA
+
+### Organization Switching
+
+- App access is checked per organization
+- Users may have different access in different organizations
+- Switching organizations re-validates access
+
+---
+
+## Best Practices
+
+### Principle of Least Privilege
+
+Only grant access to applications users actually need.
+
+### Document Policies
+
+Create clear policies about who gets access to which apps:
+- By role
+- By department
+- By employment type
+
+### Regular Reviews
+
+Periodically audit app access:
+1. Export user permissions
+2. Review against current policies
+3. Adjust as needed
+4. Document changes
+
+### Communicate Changes
+
+When restricting access:
+1. Notify affected users in advance
+2. Explain the reason
+3. Provide alternative access methods if available
+4. Update documentation
+
+---
+
+## Troubleshooting
+
+### User reports "Access Denied" unexpectedly
+
+1. Check their app access settings in employee profile
+2. Verify they're accessing the correct organization
+3. Check audit logs for recent permission changes
+4. Ensure their account is active
+
+### Access changes not taking effect
+
+1. User may have cached session
+2. Ask them to log out and back in
+3. Check if they're using the correct app
+4. Verify the change was saved
+
+### Can't modify user's access
+
+1. Verify you have admin permissions
+2. Check if the user is the organization owner
+3. Organization owners cannot have their webapp access restricted
+4. Contact support if issues persist

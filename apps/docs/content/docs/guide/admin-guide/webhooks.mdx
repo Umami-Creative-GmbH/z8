@@ -1,0 +1,283 @@
+---
+title: Webhooks
+description: Configure webhooks to receive real-time notifications when events occur in Z8
+icon: Webhook
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+Webhooks allow external systems to receive real-time notifications when events occur in your Z8 organization. Use webhooks to integrate with Slack, Teams, custom dashboards, or any system that can receive HTTP POST requests.
+
+---
+
+## Accessing Webhook Settings
+
+1. Go to **Settings** in the sidebar
+2. Click **Webhooks** under the Enterprise section
+3. View your configured webhook endpoints
+
+---
+
+## Creating a Webhook
+
+1. Click **Create Webhook**
+2. Fill in the webhook details:
+
+| Field | Description |
+|-------|-------------|
+| **Name** | A descriptive name (e.g., "Slack Notifications") |
+| **URL** | The endpoint URL that will receive events |
+| **Events** | Select which events trigger this webhook |
+| **Description** | Optional notes about this webhook's purpose |
+
+3. Click **Create**
+4. **Important**: Copy the webhook secret - it's only shown once!
+
+---
+
+## Webhook Events
+
+Select which events should trigger notifications:
+
+### Time Tracking Events
+
+| Event | Triggered When |
+|-------|----------------|
+| Clock In | Employee starts their work day |
+| Clock Out | Employee ends their work day |
+| Time Entry Created | Manual time entry added |
+| Time Entry Updated | Time entry modified |
+
+### Absence Events
+
+| Event | Triggered When |
+|-------|----------------|
+| Absence Requested | Employee submits absence request |
+| Absence Approved | Manager approves absence |
+| Absence Denied | Manager denies absence |
+
+### Employee Events
+
+| Event | Triggered When |
+|-------|----------------|
+| Employee Created | New employee added |
+| Employee Updated | Employee profile changed |
+| Employee Deactivated | Employee account disabled |
+
+### Project Events
+
+| Event | Triggered When |
+|-------|----------------|
+| Project Created | New project added |
+| Budget Alert | Project budget threshold reached |
+| Deadline Approaching | Project deadline is near |
+
+---
+
+## Webhook Payload
+
+When an event occurs, Z8 sends an HTTP POST request with this format:
+
+```json
+{
+  "id": "evt_abc123",
+  "type": "time_entry.clock_in",
+  "createdAt": "2026-01-15T09:00:00.000Z",
+  "data": {
+    "employeeId": "emp_123",
+    "employeeName": "John Doe",
+    "timestamp": "2026-01-15T09:00:00.000Z",
+    "organizationId": "org_456"
+  }
+}
+```
+
+### Headers
+
+| Header | Description |
+|--------|-------------|
+| `Content-Type` | `application/json` |
+| `X-Webhook-Signature` | HMAC-SHA256 signature for verification |
+| `X-Webhook-ID` | Unique delivery ID |
+| `X-Webhook-Timestamp` | Delivery timestamp |
+
+---
+
+## Verifying Webhooks
+
+<Callout type="warn" title="Security Best Practice">
+  Always verify webhook signatures to ensure requests are genuinely from Z8.
+</Callout>
+
+### Signature Verification
+
+```javascript
+const crypto = require('crypto');
+
+function verifyWebhook(payload, signature, secret) {
+  const expected = crypto
+    .createHmac('sha256', secret)
+    .update(payload)
+    .digest('hex');
+
+  return crypto.timingSafeEqual(
+    Buffer.from(signature),
+    Buffer.from(expected)
+  );
+}
+
+// In your webhook handler
+app.post('/webhook', (req, res) => {
+  const signature = req.headers['x-webhook-signature'];
+  const isValid = verifyWebhook(
+    JSON.stringify(req.body),
+    signature,
+    process.env.WEBHOOK_SECRET
+  );
+
+  if (!isValid) {
+    return res.status(401).send('Invalid signature');
+  }
+
+  // Process the webhook
+  handleEvent(req.body);
+  res.status(200).send('OK');
+});
+```
+
+---
+
+## Managing Webhooks
+
+### Viewing Delivery Logs
+
+1. Click on a webhook endpoint
+2. Click **View Delivery Logs**
+3. See recent delivery attempts with:
+   - Status (success, failed, retrying)
+   - HTTP response code
+   - Duration
+   - Error message (if failed)
+
+### Regenerating Secrets
+
+If you suspect your webhook secret is compromised:
+
+1. Click the webhook endpoint
+2. Click **Regenerate Secret**
+3. Update your receiving system with the new secret
+4. The old secret is immediately invalidated
+
+### Disabling/Enabling Webhooks
+
+Toggle the webhook's active status:
+
+1. Click the webhook endpoint
+2. Toggle **Active** on or off
+3. Disabled webhooks won't receive events
+
+### Deleting Webhooks
+
+1. Click the webhook endpoint
+2. Click **Delete**
+3. Confirm deletion
+4. All delivery logs are also deleted
+
+---
+
+## Retry Behavior
+
+Failed deliveries are automatically retried with exponential backoff:
+
+| Attempt | Delay After Failure |
+|---------|---------------------|
+| 1 | Immediate |
+| 2 | 1 second |
+| 3 | 5 seconds |
+| 4 | 30 seconds |
+| 5 | 2 minutes |
+| 6 | 10 minutes |
+
+After 6 failed attempts, the delivery is marked as permanently failed.
+
+### Auto-Disable
+
+<Callout type="warn" title="Automatic Disabling">
+  Webhooks with 10 consecutive failures are automatically disabled to prevent resource waste. Re-enable manually after fixing the issue.
+</Callout>
+
+---
+
+## Best Practices
+
+### Endpoint Requirements
+
+Your webhook endpoint should:
+
+- Respond within 30 seconds
+- Return 2xx status for success
+- Handle duplicate deliveries (use the event ID)
+- Process events asynchronously if needed
+
+### Error Handling
+
+```javascript
+app.post('/webhook', async (req, res) => {
+  // Respond quickly
+  res.status(200).send('OK');
+
+  // Process asynchronously
+  try {
+    await processEvent(req.body);
+  } catch (error) {
+    console.error('Webhook processing failed:', error);
+    // Don't throw - Z8 already got the 200 response
+  }
+});
+```
+
+### Idempotency
+
+Events may be delivered more than once. Use the event ID to detect duplicates:
+
+```javascript
+const processedEvents = new Set();
+
+async function handleEvent(event) {
+  if (processedEvents.has(event.id)) {
+    return; // Already processed
+  }
+
+  processedEvents.add(event.id);
+  // Process the event...
+}
+```
+
+---
+
+## Troubleshooting
+
+### Webhook not receiving events
+
+1. Check the webhook is **Active**
+2. Verify the subscribed **Events** include your expected event
+3. Check delivery logs for errors
+4. Test your endpoint URL manually
+
+### Signature verification failing
+
+1. Use the exact payload string (no reformatting)
+2. Ensure you're using the correct secret
+3. Check for encoding issues
+
+### Deliveries timing out
+
+1. Your endpoint must respond within 30 seconds
+2. Process events asynchronously
+3. Return 200 immediately, handle later
+
+### Too many retries
+
+1. Check your endpoint's availability
+2. Review error messages in delivery logs
+3. Fix the underlying issue before re-enabling

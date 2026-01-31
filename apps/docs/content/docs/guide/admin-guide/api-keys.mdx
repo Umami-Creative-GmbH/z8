@@ -1,0 +1,279 @@
+---
+title: API Keys
+description: Create and manage API keys for programmatic access to Z8
+icon: Key
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+API keys allow external applications and integrations to access Z8 data programmatically. Use API keys for automated reporting, third-party integrations, or custom dashboards.
+
+---
+
+## Accessing API Key Settings
+
+1. Go to **Settings** in the sidebar
+2. Click **API Keys** under the Enterprise section
+3. View your organization's API keys
+
+---
+
+## Creating an API Key
+
+1. Click **Create API Key**
+2. Configure the key settings:
+
+| Field | Description |
+|-------|-------------|
+| **Name** | A descriptive name (e.g., "Reporting Integration") |
+| **Permissions** | Select which data the key can access |
+| **Expiration** | When the key expires (or never) |
+| **Rate Limiting** | Optional request limits |
+
+3. Click **Create**
+
+<Callout type="warn" title="Copy Your Key">
+  The API key is shown **only once** after creation. Copy it immediately and store it securely. You cannot view the full key again.
+</Callout>
+
+---
+
+## Permission Scopes
+
+API keys use granular permission scopes:
+
+### Read Permissions
+
+| Scope | Access Granted |
+|-------|----------------|
+| **Time Entries: Read** | View time entries, clock status |
+| **Employees: Read** | View employee profiles, status |
+| **Reports: Read** | Access analytics and reports |
+| **Projects: Read** | View projects, budgets |
+
+### Write Permissions
+
+| Scope | Access Granted |
+|-------|----------------|
+| **Time Entries: Write** | Create, update time entries |
+| **Projects: Write** | Create, update projects |
+
+<Callout type="info" title="Principle of Least Privilege">
+  Only grant the permissions your integration actually needs. You can always create additional keys for different purposes.
+</Callout>
+
+---
+
+## Expiration Options
+
+| Option | Recommended For |
+|--------|-----------------|
+| **7 days** | Short-term testing |
+| **30 days** | Monthly rotation |
+| **90 days** | Quarterly rotation |
+| **180 days** | Semi-annual rotation |
+| **365 days** | Annual rotation |
+| **Never** | Long-running integrations (rotate manually) |
+
+<Callout type="warn" title="Key Rotation">
+  Regularly rotating API keys limits the impact of potential key exposure. We recommend 90-day rotation for production integrations.
+</Callout>
+
+---
+
+## Rate Limiting
+
+Protect your organization from excessive API usage:
+
+### Configuration
+
+| Setting | Description | Default |
+|---------|-------------|---------|
+| **Enable Rate Limiting** | Toggle rate limits on/off | On |
+| **Max Requests** | Requests allowed per window | 100 |
+| **Time Window** | Window duration | 1 minute |
+
+### Rate Limit Responses
+
+When rate limited, the API returns:
+
+```json
+{
+  "error": "rate_limit_exceeded",
+  "message": "Too many requests",
+  "retryAfter": 45
+}
+```
+
+With headers:
+- `X-RateLimit-Limit`: Maximum requests
+- `X-RateLimit-Remaining`: Requests left in window
+- `X-RateLimit-Reset`: Window reset timestamp
+
+---
+
+## Using API Keys
+
+### Authentication
+
+Include the API key in the `Authorization` header:
+
+```bash
+curl -H "Authorization: Bearer z8_abc123..." \
+     https://app.z8.de/api/time-entries
+```
+
+### Example: Get Time Entries
+
+```javascript
+const response = await fetch('https://app.z8.de/api/time-entries', {
+  headers: {
+    'Authorization': `Bearer ${API_KEY}`,
+    'Content-Type': 'application/json'
+  }
+});
+
+const entries = await response.json();
+```
+
+### Example: Create Time Entry
+
+```javascript
+const response = await fetch('https://app.z8.de/api/time-entries', {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${API_KEY}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    employeeId: 'emp_123',
+    startTime: '2026-01-15T09:00:00Z',
+    endTime: '2026-01-15T17:00:00Z'
+  })
+});
+```
+
+---
+
+## Managing API Keys
+
+### Viewing Key Details
+
+Click on any API key to see:
+- Key prefix (first few characters for identification)
+- Creation date
+- Last used date
+- Request count
+- Expiration date
+- Assigned permissions
+
+### Editing Keys
+
+1. Click on the API key
+2. Click **Edit**
+3. You can update:
+   - Name
+   - Permissions (scopes)
+   - Rate limit settings
+4. Click **Save**
+
+<Callout type="info" title="Cannot Change Expiration">
+  Once created, the expiration date cannot be changed. Create a new key if you need a different expiration.
+</Callout>
+
+### Disabling Keys
+
+Temporarily disable a key without deleting it:
+
+1. Click on the API key
+2. Toggle **Enabled** off
+3. The key immediately stops working
+4. Toggle back on to re-enable
+
+### Deleting Keys
+
+1. Click on the API key
+2. Click **Delete**
+3. Confirm deletion
+4. The key is immediately and permanently invalidated
+
+---
+
+## Security Best Practices
+
+### Storage
+
+- **Never** commit API keys to version control
+- Use environment variables or secret managers
+- Encrypt keys at rest
+
+```bash
+# Good: Environment variable
+export Z8_API_KEY=z8_abc123...
+
+# Bad: Hardcoded in code
+const API_KEY = 'z8_abc123...'; // DON'T DO THIS
+```
+
+### Access Control
+
+- Create separate keys for different integrations
+- Use the minimum required permissions
+- Review and audit key usage regularly
+
+### Monitoring
+
+- Check the **Last Request** timestamp regularly
+- Review request counts for anomalies
+- Investigate unused or over-used keys
+
+### Incident Response
+
+If you suspect a key is compromised:
+
+1. **Immediately disable** the key
+2. Check request logs for unauthorized access
+3. Create a new key with the same permissions
+4. Update your integration
+5. Delete the compromised key
+
+---
+
+## Limits
+
+| Limit | Value |
+|-------|-------|
+| Maximum keys per organization | 10 |
+| Key name length | 3-100 characters |
+| Rate limit maximum | 10,000 requests/window |
+| Rate limit window | 1 second to 1 hour |
+
+---
+
+## Troubleshooting
+
+### "Invalid API Key"
+
+- Verify the key is correct (no extra spaces)
+- Check the key hasn't expired
+- Ensure the key is enabled
+- Confirm the key belongs to this organization
+
+### "Permission Denied"
+
+- Check the key has the required scope
+- Verify you're accessing the correct endpoint
+- Some operations require multiple scopes
+
+### "Rate Limit Exceeded"
+
+- Wait for the retry period
+- Implement exponential backoff
+- Consider increasing rate limits
+- Batch requests when possible
+
+### Key Not Working After Creation
+
+- Ensure you copied the complete key
+- The key starts working immediately
+- Try disabling and re-enabling if issues persist

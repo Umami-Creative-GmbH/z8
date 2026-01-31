@@ -1,8 +1,11 @@
 ---
 title: Authentication
-description: Better-Auth integration, 2FA, passkeys, and OAuth configuration
+description: Better-Auth integration, 2FA, passkeys, OAuth, and organization-scoped access
 icon: Key
 ---
+
+import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
+import { Callout } from 'fumadocs-ui/components/callout';
 
 ## Better-Auth Integration
 
@@ -11,7 +14,8 @@ Z8 uses Better-Auth for authentication with support for:
 - **Email/Password**: Traditional authentication
 - **Two-Factor Authentication (2FA)**: TOTP-based
 - **Passkeys**: WebAuthn/FIDO2 passwordless authentication
-- **Social OAuth**: Google, Microsoft, GitHub providers
+- **Social OAuth**: Google, Microsoft, GitHub, LinkedIn, Apple providers
+- **Organization OAuth**: Per-organization SSO configuration
 
 ---
 
@@ -32,7 +36,155 @@ BETTER_AUTH_URL=http://localhost:3000
 
 ## Social OAuth Setup
 
-Configure OAuth providers in `src/lib/auth/index.ts`:
-- Google OAuth credentials
-- Microsoft Azure AD
-- GitHub OAuth App
+### System-Level OAuth
+
+Configure default OAuth providers in `src/lib/auth/index.ts`:
+
+```typescript
+export const auth = betterAuth({
+  socialProviders: {
+    google: {
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    },
+    github: {
+      clientId: process.env.GITHUB_CLIENT_ID,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET,
+    },
+  },
+});
+```
+
+### Organization-Level OAuth (Enterprise)
+
+Organizations can configure their own OAuth credentials for branded SSO:
+
+<Tabs items={['Google', 'Microsoft', 'GitHub', 'Apple']}>
+  <Tab value="Google">
+    1. Create OAuth 2.0 credentials in Google Cloud Console
+    2. Set authorized redirect URI: `https://your-domain/api/auth/callback/social-org/google`
+    3. Configure in Z8: **Settings** > **Enterprise** > **Social Login**
+  </Tab>
+  <Tab value="Microsoft">
+    1. Register app in Azure AD portal
+    2. Configure redirect URI for your domain
+    3. Add client ID and secret in Z8 settings
+  </Tab>
+  <Tab value="GitHub">
+    1. Create OAuth App in GitHub Developer Settings
+    2. Set callback URL to your domain's callback endpoint
+    3. Configure in Z8 organization settings
+  </Tab>
+  <Tab value="Apple">
+    Apple Sign-In requires additional configuration:
+    - Team ID from Apple Developer account
+    - Key ID for the .p8 private key
+    - Private key contents (PEM format)
+  </Tab>
+</Tabs>
+
+### OAuth Security Features
+
+Organization OAuth includes enhanced security:
+
+| Feature | Description |
+|---------|-------------|
+| **PKCE** | Proof Key for Code Exchange prevents code interception |
+| **State signing** | HMAC-signed state prevents CSRF attacks |
+| **Nonce validation** | OIDC nonce prevents replay attacks |
+| **Secure cookies** | httpOnly cookies store OAuth state |
+
+### OAuth Flow
+
+```
+User clicks "Sign in with Google"
+    ↓
+Detect organization from context
+    ↓
+Load org-specific or default credentials
+    ↓
+Redirect to provider with PKCE challenge
+    ↓
+User authenticates with provider
+    ↓
+Callback with code + state
+    ↓
+Verify state signature + exchange code
+    ↓
+Link/create user account
+    ↓
+Establish session with organization context
+```
+
+---
+
+## Organization-Scoped Sessions
+
+Sessions are scoped to the active organization:
+
+```typescript
+// Get session with organization context
+const session = await auth.api.getSession({
+  headers: request.headers,
+});
+
+// session.session.activeOrganizationId
+// session.user.id
+```
+
+### Switching Organizations
+
+```typescript
+// Switch active organization
+await fetch('/api/organizations/switch', {
+  method: 'POST',
+  body: JSON.stringify({ organizationId }),
+});
+```
+
+---
+
+## App Access Control
+
+Users can be restricted from specific applications:
+
+| Permission | Description |
+|------------|-------------|
+| `canUseWebapp` | Access to web application |
+| `canUseDesktop` | Access to desktop app |
+| `canUseMobile` | Access to mobile app |
+
+<Callout type="info" title="Default Access">
+  All permissions default to `true`. Administrators can restrict access per user.
+</Callout>
+
+### Access Detection
+
+The system detects app type from request headers:
+
+- **Cookie auth** → Webapp
+- **Bearer token + mobile user agent** → Mobile
+- **Bearer token + other** → Desktop
+
+### Access Denied Handling
+
+When access is denied:
+1. Audit log entry created
+2. User redirected to `/access-denied` page
+3. Clear message explaining which app is restricted
+
+---
+
+## Content Security Policy
+
+The app implements a strict CSP with nonce-based script execution:
+
+```typescript
+// CSP headers are set automatically
+// Scripts must include the nonce
+<script nonce={nonce}>...</script>
+```
+
+### CSP Reporting
+
+CSP violations are reported to `/api/csp-report` for monitoring.

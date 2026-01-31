@@ -117,6 +117,7 @@ await exportQueue.add('generate-report', {
 | `reports` | Scheduled report generation |
 | `notifications` | Bulk notification delivery |
 | `cleanup` | Data cleanup and maintenance |
+| `webhooks` | Webhook delivery with retries |
 
 #### Worker Configuration
 
@@ -129,6 +130,154 @@ const worker = new Worker('exports', async (job) => {
   concurrency: 3
 });
 ```
+
+---
+
+## Event Bus
+
+The event bus provides internal pub/sub messaging for decoupled event handling across the application.
+
+### Architecture
+
+<Files>
+  <Folder name="src/lib/events" defaultOpen>
+    <File name="bus.ts" />
+    <File name="types.ts" />
+    <File name="subscribers.ts" />
+    <File name="index.ts" />
+  </Folder>
+</Files>
+
+### Publishing Events
+
+```typescript
+import { eventBus } from '@/lib/events';
+
+// Emit an event when something happens
+eventBus.emit('time_entry.clock_in', {
+  employeeId,
+  organizationId,
+  timestamp: new Date(),
+  metadata: { source: 'desktop' }
+});
+```
+
+### Subscribing to Events
+
+```typescript
+import { eventBus } from '@/lib/events';
+
+// Subscribe to handle events
+eventBus.on('time_entry.clock_in', async (data) => {
+  // Send notifications
+  await notifyManagers(data);
+
+  // Update dashboards
+  await updateRealTimeDashboard(data);
+
+  // Trigger webhooks (handled by webhook subscriber)
+});
+```
+
+### Event Types
+
+| Category | Events |
+|----------|--------|
+| **Time Entries** | `clock_in`, `clock_out`, `created`, `updated`, `deleted` |
+| **Absences** | `requested`, `approved`, `denied`, `cancelled` |
+| **Employees** | `created`, `updated`, `deactivated` |
+| **Projects** | `created`, `budget_alert`, `deadline_approaching` |
+| **System** | `export_ready`, `report_generated` |
+
+---
+
+## Webhook System
+
+Webhooks deliver real-time notifications to external systems.
+
+### Webhook Queue
+
+<Files>
+  <Folder name="src/lib/webhooks" defaultOpen>
+    <File name="webhook-service.ts" />
+    <File name="webhook-queue.ts" />
+    <File name="webhook-worker.ts" />
+    <File name="webhook-delivery.ts" />
+    <File name="webhook-subscriber.ts" />
+    <File name="signature.ts" />
+    <File name="types.ts" />
+  </Folder>
+</Files>
+
+### Delivery Flow
+
+```
+Event occurs (e.g., clock in)
+    ↓
+Event bus emits event
+    ↓
+Webhook subscriber receives event
+    ↓
+Find matching webhook endpoints
+    ↓
+Queue delivery jobs in BullMQ
+    ↓
+Worker processes deliveries
+    ↓
+Sign payload with HMAC-SHA256
+    ↓
+POST to webhook URL
+    ↓
+Retry on failure (exponential backoff)
+```
+
+### Retry Strategy
+
+| Attempt | Delay |
+|---------|-------|
+| 1 | Immediate |
+| 2 | 1 second |
+| 3 | 5 seconds |
+| 4 | 30 seconds |
+| 5 | 2 minutes |
+| 6 | 10 minutes |
+
+### Webhook Payload
+
+```typescript
+interface WebhookPayload {
+  id: string;           // Unique delivery ID
+  type: string;         // Event type
+  createdAt: string;    // ISO timestamp
+  data: {               // Event-specific data
+    // Varies by event type
+  }
+}
+```
+
+### Signature Verification
+
+Payloads include an HMAC-SHA256 signature in the `X-Webhook-Signature` header:
+
+```typescript
+// Verify incoming webhook
+import crypto from 'crypto';
+
+const signature = request.headers['x-webhook-signature'];
+const expected = crypto
+  .createHmac('sha256', webhookSecret)
+  .update(JSON.stringify(body))
+  .digest('hex');
+
+const isValid = crypto.timingSafeEqual(
+  Buffer.from(signature),
+  Buffer.from(expected)
+);
+```
+
+### Auto-Disable
+
+Endpoints are automatically disabled after 10 consecutive failures to prevent resource waste.
 
 ---
 
