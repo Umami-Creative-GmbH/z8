@@ -6,17 +6,31 @@ import { member, organization } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
 import { auth } from "@/lib/auth";
 
-const corsHeaders = {
-	"Access-Control-Allow-Origin": "*",
-	"Access-Control-Allow-Methods": "GET, OPTIONS",
-	"Access-Control-Allow-Headers": "Content-Type, Authorization",
-};
+function getCorsHeaders(origin: string | null): Record<string, string> {
+	const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+	const allowedOrigins = [
+		appUrl,
+		"tauri://localhost", // Tauri desktop app
+		"capacitor://localhost", // Mobile app (if used)
+	];
+
+	// Use the origin if it's in the allowlist, otherwise use the app URL
+	const allowOrigin = origin && allowedOrigins.includes(origin) ? origin : appUrl;
+
+	return {
+		"Access-Control-Allow-Origin": allowOrigin,
+		"Access-Control-Allow-Methods": "GET, OPTIONS",
+		"Access-Control-Allow-Headers": "Content-Type, Authorization",
+		"Access-Control-Allow-Credentials": "true",
+	};
+}
 
 /**
  * Handle CORS preflight requests
  */
-export async function OPTIONS() {
-	return NextResponse.json({}, { headers: corsHeaders });
+export async function OPTIONS(request: Request) {
+	const origin = request.headers.get("origin");
+	return NextResponse.json({}, { headers: getCorsHeaders(origin) });
 }
 
 /**
@@ -24,8 +38,10 @@ export async function OPTIONS() {
  * Returns the list of organizations the user belongs to
  * Used by desktop app for organization selection
  */
-export async function GET() {
+export async function GET(request: Request) {
 	await connection();
+	const origin = request.headers.get("origin");
+	const corsHeaders = getCorsHeaders(origin);
 
 	try {
 		const resolvedHeaders = await headers();

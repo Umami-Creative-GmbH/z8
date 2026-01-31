@@ -2,10 +2,16 @@ import { and, eq, gte, lte, sql } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { headers } from "next/headers";
 import { type NextRequest, NextResponse, connection } from "next/server";
+import { z } from "zod";
 import { db } from "@/db";
 import { hydrationStats, userSettings, waterIntakeLog } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { calculateStreakOnIntake } from "@/lib/wellness/streak-calculator";
+
+const waterActionSchema = z.object({
+	action: z.enum(["log", "snooze"]),
+	amount: z.number().int().min(1).max(10).optional().default(1),
+});
 
 /**
  * POST /api/wellness/water-action
@@ -25,7 +31,14 @@ export async function POST(request: NextRequest) {
 		}
 
 		const body = await request.json();
-		const { action, amount = 1 } = body;
+		const parseResult = waterActionSchema.safeParse(body);
+		if (!parseResult.success) {
+			return NextResponse.json(
+				{ error: "Invalid request body", details: parseResult.error.flatten() },
+				{ status: 400 },
+			);
+		}
+		const { action, amount } = parseResult.data;
 
 		if (action === "log") {
 			// Log water intake

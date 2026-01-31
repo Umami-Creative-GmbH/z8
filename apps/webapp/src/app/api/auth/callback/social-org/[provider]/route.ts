@@ -20,6 +20,19 @@ const logger = createLogger("SocialOAuth:Callback");
 
 const VALID_PROVIDERS: SocialOAuthProvider[] = ["google", "github", "linkedin", "apple"];
 
+/**
+ * Validate callback URL to prevent open redirect attacks
+ */
+function isValidCallbackURL(url: string): boolean {
+	// Only allow relative URLs starting with /
+	if (!url.startsWith("/")) return false;
+	// Prevent protocol-relative URLs (//evil.com)
+	if (url.startsWith("//")) return false;
+	// Prevent javascript: or data: URLs
+	if (/^(javascript|data|vbscript):/i.test(url)) return false;
+	return true;
+}
+
 // Session settings (match Better Auth defaults)
 const SESSION_EXPIRY_DAYS = 7;
 const SESSION_COOKIE_NAME = "better-auth.session_token";
@@ -317,9 +330,10 @@ async function handleCallback(
 			"OAuth login successful",
 		);
 
-		// Redirect to callback URL
+		// Redirect to callback URL (validate to prevent open redirect)
 		// If new user, might want to redirect to onboarding
-		const redirectUrl = isNewUser ? "/onboarding" : state.callbackURL;
+		const safeCallbackURL = isValidCallbackURL(state.callbackURL) ? state.callbackURL : "/";
+		const redirectUrl = isNewUser ? "/onboarding" : safeCallbackURL;
 		return NextResponse.redirect(new URL(redirectUrl, request.url));
 	} catch (error) {
 		logger.error({ error, provider }, "OAuth callback failed");

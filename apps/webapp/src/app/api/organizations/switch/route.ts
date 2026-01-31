@@ -6,18 +6,34 @@ import { member } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
 import { auth } from "@/lib/auth";
 
-const corsHeaders = {
-	"Access-Control-Allow-Origin": "*",
-	"Access-Control-Allow-Methods": "POST, OPTIONS",
-	"Access-Control-Allow-Headers": "Content-Type, Authorization",
-};
+function getCorsHeaders(origin: string | null): Record<string, string> {
+	const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+	const allowedOrigins = [
+		appUrl,
+		"tauri://localhost", // Tauri desktop app
+		"capacitor://localhost", // Mobile app (if used)
+	];
 
-export async function OPTIONS() {
-	return NextResponse.json({}, { headers: corsHeaders });
+	// Use the origin if it's in the allowlist, otherwise use the app URL
+	const allowOrigin = origin && allowedOrigins.includes(origin) ? origin : appUrl;
+
+	return {
+		"Access-Control-Allow-Origin": allowOrigin,
+		"Access-Control-Allow-Methods": "POST, OPTIONS",
+		"Access-Control-Allow-Headers": "Content-Type, Authorization",
+		"Access-Control-Allow-Credentials": "true",
+	};
+}
+
+export async function OPTIONS(request: NextRequest) {
+	const origin = request.headers.get("origin");
+	return NextResponse.json({}, { headers: getCorsHeaders(origin) });
 }
 
 export async function POST(request: NextRequest) {
 	await connection();
+	const origin = request.headers.get("origin");
+	const corsHeaders = getCorsHeaders(origin);
 	try {
 		const session = await auth.api.getSession({ headers: await headers() });
 

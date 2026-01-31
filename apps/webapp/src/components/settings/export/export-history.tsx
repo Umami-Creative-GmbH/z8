@@ -58,7 +58,10 @@ export function ExportHistory({ exports, organizationId }: ExportHistoryProps) {
 			const result = await regenerateDownloadUrlAction(exportId, organizationId);
 			if (result.success) {
 				// Open download URL in new tab
-				window.open(result.data, "_blank");
+				const newWindow = window.open(result.data, "_blank");
+				if (newWindow) {
+					newWindow.opener = null;
+				}
 				toast.success(t("settings.dataExport.history.downloadSuccess", "Download started"));
 			} else {
 				toast.error(

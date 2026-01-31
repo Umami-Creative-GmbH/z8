@@ -43,12 +43,6 @@ async function verifyCronAuth(request: NextRequest): Promise<boolean> {
 		return true;
 	}
 
-	// In development, allow without auth
-	if (process.env.NODE_ENV === "development") {
-		logger.warn("Allowing cron request without auth in development");
-		return true;
-	}
-
 	return false;
 }
 

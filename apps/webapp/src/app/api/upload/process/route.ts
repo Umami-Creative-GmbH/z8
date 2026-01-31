@@ -1,10 +1,14 @@
-import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
+import { mkdir, readFile, stat, unlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
+import { fileTypeFromBuffer } from "file-type";
 import { headers } from "next/headers";
 import { type NextRequest, NextResponse, connection } from "next/server";
 import { auth } from "@/lib/auth";
 import { getPublicUrl, isS3Configured, S3_BUCKET, s3Client } from "@/lib/storage/s3-client";
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 
 interface ProcessRequest {
 	tusFileKey: string;
@@ -61,14 +65,30 @@ export async function POST(request: NextRequest) {
 			}
 		}
 
+		// Sanitize tusFileKey to prevent path traversal
+		const safeTusFileKey = tusFileKey.replace(/\.\./g, "").replace(/[\/\\]/g, "");
+		if (!safeTusFileKey || safeTusFileKey !== tusFileKey) {
+			return NextResponse.json({ error: "Invalid file key" }, { status: 400 });
+		}
+
 		// Read the uploaded file (from S3 or local temp storage)
 		let buffer: Buffer;
 
 		if (isS3Configured() && s3Client) {
 			// Read from S3
 			const getResponse = await s3Client.send(
-				new GetObjectCommand({ Bucket: S3_BUCKET, Key: tusFileKey }),
+				new GetObjectCommand({ Bucket: S3_BUCKET, Key: safeTusFileKey }),
 			);
+
+			// Check file size from S3 metadata before reading
+			const contentLength = getResponse.ContentLength;
+			if (contentLength && contentLength > MAX_FILE_SIZE) {
+				return NextResponse.json(
+					{ error: `File too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB` },
+					{ status: 413 },
+				);
+			}
+
 			const byteArray = await getResponse.Body?.transformToByteArray();
 			if (!byteArray) {
 				return NextResponse.json({ error: "Failed to read file from S3" }, { status: 500 });
@@ -76,8 +96,35 @@ export async function POST(request: NextRequest) {
 			buffer = Buffer.from(byteArray);
 		} else {
 			// Read from local temp storage
-			const tempPath = join(process.cwd(), "public", "uploads", "tus-temp", tusFileKey);
+			const tempPath = join(process.cwd(), "public", "uploads", "tus-temp", safeTusFileKey);
+
+			// Check file size before reading into memory
+			const fileStats = await stat(tempPath);
+			if (fileStats.size > MAX_FILE_SIZE) {
+				return NextResponse.json(
+					{ error: `File too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB` },
+					{ status: 413 },
+				);
+			}
+
 			buffer = await readFile(tempPath);
+		}
+
+		// Validate file size after reading (double-check)
+		if (buffer.length > MAX_FILE_SIZE) {
+			return NextResponse.json(
+				{ error: `File too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB` },
+				{ status: 413 },
+			);
+		}
+
+		// Validate file type using magic bytes
+		const fileType = await fileTypeFromBuffer(buffer);
+		if (!fileType || !ALLOWED_MIME_TYPES.includes(fileType.mime)) {
+			return NextResponse.json(
+				{ error: `Invalid file type. Allowed: ${ALLOWED_MIME_TYPES.join(", ")}` },
+				{ status: 400 },
+			);
 		}
 
 		// Process with Sharp
@@ -125,14 +172,14 @@ export async function POST(request: NextRequest) {
 					ContentType: "image/webp",
 					Metadata: {
 						"uploaded-by": session.user.id,
-						"original-key": tusFileKey,
+						"original-key": safeTusFileKey,
 						"upload-timestamp": new Date().toISOString(),
 					},
 				}),
 			);
 
 			// Delete temp file from S3
-			await s3Client.send(new DeleteObjectCommand({ Bucket: S3_BUCKET, Key: tusFileKey }));
+			await s3Client.send(new DeleteObjectCommand({ Bucket: S3_BUCKET, Key: safeTusFileKey }));
 
 			publicUrl = getPublicUrl(finalKey);
 		} else {
@@ -144,7 +191,7 @@ export async function POST(request: NextRequest) {
 			await writeFile(finalPath, optimized);
 
 			// Delete temp file
-			const tempPath = join(process.cwd(), "public", "uploads", "tus-temp", tusFileKey);
+			const tempPath = join(process.cwd(), "public", "uploads", "tus-temp", safeTusFileKey);
 			try {
 				await unlink(tempPath);
 			} catch {

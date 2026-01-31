@@ -19,6 +19,19 @@ const logger = createLogger("SocialOAuth:Initiate");
 const VALID_PROVIDERS: SocialOAuthProvider[] = ["google", "github", "linkedin", "apple"];
 
 /**
+ * Validate callback URL to prevent open redirect attacks
+ */
+function isValidCallbackURL(url: string): boolean {
+	// Only allow relative URLs starting with /
+	if (!url.startsWith("/")) return false;
+	// Prevent protocol-relative URLs (//evil.com)
+	if (url.startsWith("//")) return false;
+	// Prevent javascript: or data: URLs
+	if (/^(javascript|data|vbscript):/i.test(url)) return false;
+	return true;
+}
+
+/**
  * Initiate OAuth flow for organization-specific or global credentials
  *
  * GET /api/auth/social-org/[provider]?callbackURL=/dashboard
@@ -35,8 +48,9 @@ export async function GET(
 	}
 	const provider = providerParam as SocialOAuthProvider;
 
-	// Get callback URL from query params
+	// Get callback URL from query params and validate to prevent open redirect
 	const callbackURL = request.nextUrl.searchParams.get("callbackURL") || "/";
+	const safeCallbackURL = isValidCallbackURL(callbackURL) ? callbackURL : "/";
 
 	// Determine organization from domain
 	const host = request.headers.get("host");
@@ -68,7 +82,7 @@ export async function GET(
 	// Create signed state
 	const state = createOAuthState({
 		organizationId,
-		callbackURL,
+		callbackURL: safeCallbackURL,
 		codeVerifier,
 		nonce,
 	});
