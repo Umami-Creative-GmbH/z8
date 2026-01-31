@@ -100,12 +100,13 @@ export const PermissionsServiceLive = Layer.effect(
 						}
 					}
 
-					// Step 4: Fallback to organization-wide permissions (teamId = null)
+					// Step 4: Fallback to organization-wide permissions (teamId = organizationId)
 					const orgPerms = yield* _(
 						dbService.query("getOrganizationWidePermissions", async () => {
 							return await dbService.db.query.teamPermissions.findFirst({
 								where: and(
 									eq(teamPermissions.employeeId, employeeId),
+									eq(teamPermissions.organizationId, emp.organizationId),
 									eq(teamPermissions.teamId, emp.organizationId),
 								),
 							});

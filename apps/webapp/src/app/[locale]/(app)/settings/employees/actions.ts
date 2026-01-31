@@ -2,7 +2,7 @@
 
 import { SpanStatusCode, trace } from "@opentelemetry/api";
 import { revalidateTag } from "next/cache";
-import { and, count, eq, ilike, isNull, or, sql } from "drizzle-orm";
+import { and, count, eq, ilike, inArray, isNull, or, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import { user } from "@/db/auth-schema";
 import { employee, employeeRateHistory, type team } from "@/db/schema";
@@ -1163,7 +1163,7 @@ export async function getEmployeesByIds(
 		const employees = yield* _(
 			dbService.query("getEmployeesByIds", async () => {
 				return await dbService.db.query.employee.findMany({
-					where: and(eq(employee.organizationId, orgId), sql`${employee.id} IN ${employeeIds}`),
+					where: and(eq(employee.organizationId, orgId), inArray(employee.id, employeeIds)),
 					columns: {
 						id: true,
 						userId: true,

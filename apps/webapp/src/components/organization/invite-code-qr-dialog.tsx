@@ -168,9 +168,12 @@ export function InviteCodeQRDialog({
 								{generateMutation.isPending && format === "svg" ? (
 									<IconLoader2 className="h-8 w-8 animate-spin text-muted-foreground" />
 								) : qrData.svg ? (
-									<div
-										dangerouslySetInnerHTML={{ __html: qrData.svg }}
-										className="max-w-full [&>svg]:max-w-full [&>svg]:h-auto"
+									<img
+										src={`data:image/svg+xml;base64,${btoa(qrData.svg)}`}
+										alt={t("settings.inviteCodes.qrAlt", "QR code for {code}", {
+											code: inviteCode?.code,
+										})}
+										className="max-w-full h-auto"
 									/>
 								) : (
 									<div className="text-muted-foreground">
