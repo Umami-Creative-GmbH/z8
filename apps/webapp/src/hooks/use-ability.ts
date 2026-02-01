@@ -121,6 +121,29 @@ const SELF_SERVICE_SUBJECTS: Subject[] = [
 // Hoisted empty object to prevent new reference on each render
 const EMPTY_PERMISSIONS: PermissionFlags = {};
 
+// Hoisted flag map for permission lookups
+const PERMISSION_FLAG_MAP: Partial<Record<Subject, keyof PermissionFlags>> = {
+	Team: "canManageTeams",
+	Employee: "canManageEmployees",
+	OrgMembers: "canManageEmployees",
+	OrgSettings: "canManageOrganization",
+	Location: "canManageLocations",
+	Project: "canManageProjects",
+	WorkPolicy: "canManageWorkPolicies",
+	VacationPolicy: "canManageVacationPolicies",
+	Compliance: "canManageCompliance",
+	Export: "canManageExports",
+	AuditLog: "canManageAudit",
+	OrgBilling: "canManageBilling",
+	OrgWebhooks: "canManageWebhooks",
+	OrgIntegrations: "canManageIntegrations",
+	Absence: "canApproveAbsences",
+	TimeEntry: "canApproveTimeEntries",
+	Report: "canViewReports",
+	Schedule: "canManageSchedules",
+	Calendar: "canManageCalendars",
+};
+
 /**
  * Hook to check user abilities/permissions on the client side.
  *
@@ -141,7 +164,7 @@ const EMPTY_PERMISSIONS: PermissionFlags = {};
  * }
  * ```
  */
-export function useAbility(permissions: PermissionFlags = {}): AbilityContext {
+export function useAbility(permissions: PermissionFlags = EMPTY_PERMISSIONS): AbilityContext {
 	const { role, isAdmin, isManager, isManagerOrAbove, isLoading } = useOrganization();
 
 	// Build a simple can() function based on role
@@ -181,29 +204,7 @@ export function useAbility(permissions: PermissionFlags = {}): AbilityContext {
 			}
 
 			// Check specific permission flags if provided
-			const flagMap: Partial<Record<Subject, keyof PermissionFlags>> = {
-				Team: "canManageTeams",
-				Employee: "canManageEmployees",
-				OrgMembers: "canManageEmployees",
-				OrgSettings: "canManageOrganization",
-				Location: "canManageLocations",
-				Project: "canManageProjects",
-				WorkPolicy: "canManageWorkPolicies",
-				VacationPolicy: "canManageVacationPolicies",
-				Compliance: "canManageCompliance",
-				Export: "canManageExports",
-				AuditLog: "canManageAudit",
-				OrgBilling: "canManageBilling",
-				OrgWebhooks: "canManageWebhooks",
-				OrgIntegrations: "canManageIntegrations",
-				Absence: "canApproveAbsences",
-				TimeEntry: "canApproveTimeEntries",
-				Report: "canViewReports",
-				Schedule: "canManageSchedules",
-				Calendar: "canManageCalendars",
-			};
-
-			const flag = flagMap[subject];
+			const flag = PERMISSION_FLAG_MAP[subject];
 			if (flag && permissions[flag] === true) {
 				return true;
 			}
