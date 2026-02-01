@@ -17,6 +17,7 @@ pnpm drizzle-kit push # Push schema to database
 
 ## Key Conventions
 
+- **Multi-tenancy**: Every feature must be organization-scoped. This is a SaaS app - always filter data by `organizationId` and enforce org-level permissions.
 - **Forms**: Use `@tanstack/react-form`. Migrate legacy `react-hook-form` when modifying existing forms.
 - **Dates**: Use Luxon (`DateTime`), not native `Date`.
 - **Auth schema**: Never edit `src/db/auth-schema.ts` directly - it's auto-generated.
