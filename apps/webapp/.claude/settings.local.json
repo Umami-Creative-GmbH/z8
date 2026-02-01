@@ -87,7 +87,9 @@
       "Bash(pnpm lint:*)",
       "Bash(pnpm remove:*)",
       "WebFetch(domain:svgl.app)",
-      "WebFetch(domain:ui.shadcn.com)"
+      "WebFetch(domain:ui.shadcn.com)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   },
   "enabledMcpjsonServers": [

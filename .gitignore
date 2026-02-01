@@ -76,3 +76,4 @@ nul
 .vault-keys
 .vault-data/
 deploy/.vault-data/
+.github/prompts

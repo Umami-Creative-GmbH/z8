@@ -1,54 +1,56 @@
 {
-  "name": "z8",
-  "private": true,
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@parcel/watcher",
-      "@swc/core",
-      "msw"
-    ]
-  },
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
-  "scripts": {
-    "dev": "turbo dev",
-    "build": "turbo build",
-    "test": "turbo test",
-    "test:watch": "turbo test:watch",
-    "dev:webapp": "turbo dev --filter=webapp",
-    "dev:desktop": "turbo dev --filter=desktop",
-    "dev:mobile": "turbo dev --filter=mobile",
-    "build:webapp": "turbo build --filter=webapp",
-    "build:desktop": "turbo build --filter=desktop",
-    "build:mobile": "turbo build --filter=mobile",
-    "dev:extension": "turbo dev --filter=extension",
-    "build:extension": "turbo build --filter=extension",
-    "dev:docs": "turbo dev --filter=docs",
-    "build:docs": "turbo build --filter=docs",
-    "docker:up": "docker compose -f deploy/compose/docker-compose.yml up -d",
-    "docker:down": "docker compose -f deploy/compose/docker-compose.yml down",
-    "docker:logs": "docker compose -f deploy/compose/docker-compose.yml logs -f",
-    "docker:ps": "docker compose -f deploy/compose/docker-compose.yml ps",
-    "docker:build": "docker build --target webapp -t z8-webapp:latest .",
-    "docker:build:webapp": "docker build --target webapp -t z8-webapp:latest .",
-    "docker:build:worker": "docker build --target worker -t z8-worker:latest .",
-    "docker:build:migration": "docker build --target migration -t z8-migration:latest .",
-    "docker:build:seed": "docker build --target db-seed -t z8-db-seed:latest .",
-    "docker:build:all": "docker build --target webapp -t z8-webapp:latest . && docker build --target worker -t z8-worker:latest . && docker build --target migration -t z8-migration:latest . && docker build --target db-seed -t z8-db-seed:latest .",
-    "docker:prod:up": "docker compose -f docker-compose.prod.yml up -d",
-    "docker:prod:down": "docker compose -f docker-compose.prod.yml down",
-    "docker:prod:logs": "docker compose -f docker-compose.prod.yml logs -f"
-  },
-  "devDependencies": {
-    "@esbuild/win32-x64": "^0.27.2",
-    "puppeteer-core": "^24.36.1",
-    "shadcn": "^3.8.1",
-    "turbo": "^2.8.1"
-  },
-  "packageManager": "pnpm@10.28.2",
-  "overrides": {
-    "pako": "1.0.11"
-  }
+	"name": "z8",
+	"private": true,
+	"pnpm": {
+		"onlyBuiltDependencies": [
+			"@parcel/watcher",
+			"@swc/core",
+			"msw"
+		]
+	},
+	"workspaces": [
+		"apps/*",
+		"packages/*"
+	],
+	"scripts": {
+		"dev": "turbo dev",
+		"build": "turbo build",
+		"test": "turbo test",
+		"test:watch": "turbo test:watch",
+		"dev:webapp": "turbo dev --filter=webapp",
+		"dev:desktop": "turbo dev --filter=desktop",
+		"dev:mobile": "turbo dev --filter=mobile",
+		"build:webapp": "turbo build --filter=webapp",
+		"build:desktop": "turbo build --filter=desktop",
+		"build:mobile": "turbo build --filter=mobile",
+		"dev:extension": "turbo dev --filter=extension",
+		"build:extension": "turbo build --filter=extension",
+		"dev:docs": "turbo dev --filter=docs",
+		"build:docs": "turbo build --filter=docs",
+		"docker:up": "docker compose -f deploy/compose/docker-compose.yml up -d",
+		"docker:down": "docker compose -f deploy/compose/docker-compose.yml down",
+		"docker:logs": "docker compose -f deploy/compose/docker-compose.yml logs -f",
+		"docker:ps": "docker compose -f deploy/compose/docker-compose.yml ps",
+		"docker:build": "docker build --target webapp -t z8-webapp:latest .",
+		"docker:build:webapp": "docker build --target webapp -t z8-webapp:latest .",
+		"docker:build:worker": "docker build --target worker -t z8-worker:latest .",
+		"docker:build:migration": "docker build --target migration -t z8-migration:latest .",
+		"docker:build:seed": "docker build --target db-seed -t z8-db-seed:latest .",
+		"docker:build:all": "docker build --target webapp -t z8-webapp:latest . && docker build --target worker -t z8-worker:latest . && docker build --target migration -t z8-migration:latest . && docker build --target db-seed -t z8-db-seed:latest .",
+		"docker:prod:up": "docker compose -f docker-compose.prod.yml up -d",
+		"docker:prod:down": "docker compose -f docker-compose.prod.yml down",
+		"docker:prod:logs": "docker compose -f docker-compose.prod.yml logs -f"
+	},
+	"devDependencies": {
+		"@esbuild/win32-x64": "^0.27.2",
+		"puppeteer-core": "^24.36.1",
+		"shadcn": "^3.8.1",
+		"turbo": "^2.8.1"
+	},
+	"packageManager": "pnpm@10.28.2",
+	"overrides": {
+		"@types/react": "19.2.8",
+		"@types/react-dom": "19.2.3",
+		"pako": "1.0.11"
+	}
 }
