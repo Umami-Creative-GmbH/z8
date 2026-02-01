@@ -269,8 +269,8 @@ export function WageTypeMappings({ organizationId, config }: WageTypeMappingsPro
 				</div>
 				<Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
 					<DialogTrigger asChild>
-						<Button onClick={resetForm}>
-							<IconPlus className="mr-2 h-4 w-4" />
+						<Button onClick={resetForm} aria-label={t("settings.payrollExport.mappings.addMapping", "Add Mapping")}>
+							<IconPlus className="mr-2 h-4 w-4" aria-hidden="true" />
 							{t("settings.payrollExport.mappings.addMapping", "Add Mapping")}
 						</Button>
 					</DialogTrigger>
@@ -417,6 +417,7 @@ export function WageTypeMappings({ organizationId, config }: WageTypeMappingsPro
 											placeholder="1000"
 											value={datevWageTypeCode}
 											onChange={(e) => setDatevWageTypeCode(e.target.value)}
+											autoComplete="off"
 										/>
 									</div>
 									<div className="space-y-1">
@@ -427,6 +428,7 @@ export function WageTypeMappings({ organizationId, config }: WageTypeMappingsPro
 											placeholder="Arbeitszeit"
 											value={datevWageTypeName}
 											onChange={(e) => setDatevWageTypeName(e.target.value)}
+											autoComplete="off"
 										/>
 									</div>
 								</div>
@@ -446,6 +448,7 @@ export function WageTypeMappings({ organizationId, config }: WageTypeMappingsPro
 											placeholder="100"
 											value={lexwareWageTypeCode}
 											onChange={(e) => setLexwareWageTypeCode(e.target.value)}
+											autoComplete="off"
 										/>
 									</div>
 									<div className="space-y-1">
@@ -456,6 +459,7 @@ export function WageTypeMappings({ organizationId, config }: WageTypeMappingsPro
 											placeholder="Lohn"
 											value={lexwareWageTypeName}
 											onChange={(e) => setLexwareWageTypeName(e.target.value)}
+											autoComplete="off"
 										/>
 									</div>
 								</div>
@@ -475,6 +479,7 @@ export function WageTypeMappings({ organizationId, config }: WageTypeMappingsPro
 											placeholder="1000"
 											value={sageWageTypeCode}
 											onChange={(e) => setSageWageTypeCode(e.target.value)}
+											autoComplete="off"
 										/>
 									</div>
 									<div className="space-y-1">
@@ -485,6 +490,7 @@ export function WageTypeMappings({ organizationId, config }: WageTypeMappingsPro
 											placeholder="Arbeitszeit"
 											value={sageWageTypeName}
 											onChange={(e) => setSageWageTypeName(e.target.value)}
+											autoComplete="off"
 										/>
 									</div>
 								</div>

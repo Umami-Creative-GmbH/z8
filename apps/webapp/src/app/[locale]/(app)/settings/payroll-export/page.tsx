@@ -7,6 +7,7 @@ import { DatevConfigForm } from "@/components/settings/payroll-export/datev-conf
 import { LexwareConfigForm } from "@/components/settings/payroll-export/lexware-config-form";
 import { SageConfigForm } from "@/components/settings/payroll-export/sage-config-form";
 import { PersonioConfigForm } from "@/components/settings/payroll-export/personio-config-form";
+import { SuccessFactorsConfigForm } from "@/components/settings/payroll-export/successfactors-config-form";
 import { ExportForm } from "@/components/settings/payroll-export/export-form";
 import { ExportHistory } from "@/components/settings/payroll-export/export-history";
 import { WageTypeMappings } from "@/components/settings/payroll-export/wage-type-mappings";
@@ -20,6 +21,7 @@ import {
 	getLexwareConfigAction,
 	getSageConfigAction,
 	getPersonioConfigAction,
+	getSuccessFactorsConfigAction,
 	getExportHistoryAction,
 } from "./actions";
 
@@ -47,11 +49,12 @@ async function PayrollExportContent() {
 	const organizationId = authContext.employee.organizationId;
 
 	// Fetch configs and history in parallel
-	const [datevConfigResult, lexwareConfigResult, sageConfigResult, personioConfigResult, historyResult] = await Promise.all([
+	const [datevConfigResult, lexwareConfigResult, sageConfigResult, personioConfigResult, successFactorsConfigResult, historyResult] = await Promise.all([
 		getDatevConfigAction(organizationId),
 		getLexwareConfigAction(organizationId),
 		getSageConfigAction(organizationId),
 		getPersonioConfigAction(organizationId),
+		getSuccessFactorsConfigAction(organizationId),
 		getExportHistoryAction(organizationId),
 	]);
 
@@ -59,6 +62,7 @@ async function PayrollExportContent() {
 	const lexwareConfig = lexwareConfigResult.success ? lexwareConfigResult.data : null;
 	const sageConfig = sageConfigResult.success ? sageConfigResult.data : null;
 	const personioConfig = personioConfigResult.success ? personioConfigResult.data : null;
+	const successFactorsConfig = successFactorsConfigResult.success ? successFactorsConfigResult.data : null;
 	const exports = historyResult.success ? historyResult.data : [];
 
 	// For backward compatibility, use datevConfig as main config
@@ -95,6 +99,9 @@ async function PayrollExportContent() {
 					<TabsTrigger value="personio">
 						{t("settings.payrollExport.tabs.personio", "Personio")}
 					</TabsTrigger>
+					<TabsTrigger value="successfactors">
+						{t("settings.payrollExport.tabs.successfactors", "SAP SuccessFactors")}
+					</TabsTrigger>
 					<TabsTrigger value="mappings">
 						{t("settings.payrollExport.tabs.mappings", "Wage Types")}
 					</TabsTrigger>
@@ -121,6 +128,10 @@ async function PayrollExportContent() {
 
 				<TabsContent value="personio" className="mt-4">
 					<PersonioConfigForm organizationId={organizationId} initialConfig={personioConfig} />
+				</TabsContent>
+
+				<TabsContent value="successfactors" className="mt-4">
+					<SuccessFactorsConfigForm organizationId={organizationId} initialConfig={successFactorsConfig} />
 				</TabsContent>
 
 				<TabsContent value="mappings" className="mt-4">

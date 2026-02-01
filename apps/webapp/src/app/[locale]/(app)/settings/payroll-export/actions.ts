@@ -125,6 +125,8 @@ export interface SaveMappingInput {
 	lexwareWageTypeName?: string | null;
 	sageWageTypeCode?: string | null;
 	sageWageTypeName?: string | null;
+	successFactorsTimeTypeCode?: string | null;
+	successFactorsTimeTypeName?: string | null;
 }
 
 export interface DeleteMappingInput {
@@ -631,6 +633,350 @@ export async function saveSageConfigAction(
 }
 
 // ============================================
+// SAP SUCCESSFACTORS CONFIGURATION
+// ============================================
+
+import type { SuccessFactorsConfig } from "@/lib/payroll-export/types";
+
+const SF_FORMAT_ID = "successfactors_api";
+const SF_CSV_FORMAT_ID = "successfactors_csv";
+
+export interface SuccessFactorsConfigResult {
+	id: string;
+	formatId: string;
+	config: SuccessFactorsConfig;
+	isActive: boolean;
+	createdAt: Date;
+	updatedAt: Date;
+}
+
+export interface SaveSuccessFactorsConfigInput {
+	organizationId: string;
+	config: SuccessFactorsConfig;
+}
+
+/**
+ * Get SAP SuccessFactors configuration for organization
+ */
+export async function getSuccessFactorsConfigAction(
+	organizationId: string,
+): Promise<ServerActionResult<SuccessFactorsConfigResult | null>> {
+	const effect = Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
+
+		const hasPermission = yield* _(
+			Effect.promise(() => isOrgAdmin(session.user.id, organizationId)),
+		);
+
+		if (!hasPermission) {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Insufficient permissions - admin role required",
+						userId: session.user.id,
+						resource: "payroll_export_config",
+						action: "read",
+					}),
+				),
+			);
+		}
+
+		const configResult = yield* _(
+			Effect.promise(() => getPayrollExportConfig(organizationId, SF_FORMAT_ID)),
+		);
+
+		if (!configResult) {
+			return null;
+		}
+
+		return {
+			id: configResult.config.id,
+			formatId: configResult.config.formatId,
+			config: configResult.config.config as unknown as SuccessFactorsConfig,
+			isActive: configResult.config.isActive,
+			createdAt: configResult.config.createdAt,
+			updatedAt: configResult.config.updatedAt,
+		};
+	});
+
+	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+}
+
+/**
+ * Save SAP SuccessFactors configuration
+ */
+export async function saveSuccessFactorsConfigAction(
+	input: SaveSuccessFactorsConfigInput,
+): Promise<ServerActionResult<SuccessFactorsConfigResult>> {
+	const effect = Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
+
+		const hasPermission = yield* _(
+			Effect.promise(() => isOrgAdmin(session.user.id, input.organizationId)),
+		);
+
+		if (!hasPermission) {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Insufficient permissions - admin role required",
+						userId: session.user.id,
+						resource: "payroll_export_config",
+						action: "create",
+					}),
+				),
+			);
+		}
+
+		// Ensure SAP SuccessFactors format exists (for both API and CSV modes)
+		yield* _(
+			Effect.promise(async () => {
+				// Create API format if doesn't exist
+				const apiFormat = await db.query.payrollExportFormat.findFirst({
+					where: eq(payrollExportFormat.id, SF_FORMAT_ID),
+				});
+
+				if (!apiFormat) {
+					await db.insert(payrollExportFormat).values({
+						id: SF_FORMAT_ID,
+						name: "SAP SuccessFactors (API)",
+						version: "1.0.0",
+						description: "Export to SAP SuccessFactors via OData API",
+						isEnabled: true,
+						requiresConfiguration: true,
+						supportsAsync: true,
+						syncThreshold: 500,
+						updatedAt: new Date(),
+					});
+				}
+
+				// Create CSV format if doesn't exist
+				const csvFormat = await db.query.payrollExportFormat.findFirst({
+					where: eq(payrollExportFormat.id, SF_CSV_FORMAT_ID),
+				});
+
+				if (!csvFormat) {
+					await db.insert(payrollExportFormat).values({
+						id: SF_CSV_FORMAT_ID,
+						name: "SAP SuccessFactors (CSV)",
+						version: "1.0.0",
+						description: "Export CSV file for SAP SuccessFactors import",
+						isEnabled: true,
+						requiresConfiguration: true,
+						supportsAsync: true,
+						syncThreshold: 500,
+						updatedAt: new Date(),
+					});
+				}
+			}),
+		);
+
+		// Save or update config (shared between API and CSV modes)
+		const config = yield* _(
+			Effect.promise(async () => {
+				const existing = await db.query.payrollExportConfig.findFirst({
+					where: and(
+						eq(payrollExportConfig.organizationId, input.organizationId),
+						eq(payrollExportConfig.formatId, SF_FORMAT_ID),
+					),
+				});
+
+				if (existing) {
+					const [updated] = await db
+						.update(payrollExportConfig)
+						.set({
+							config: input.config as unknown as Record<string, unknown>,
+							updatedBy: session.user.id,
+						})
+						.where(eq(payrollExportConfig.id, existing.id))
+						.returning();
+
+					return updated;
+				} else {
+					const [inserted] = await db
+						.insert(payrollExportConfig)
+						.values({
+							organizationId: input.organizationId,
+							formatId: SF_FORMAT_ID,
+							config: input.config as unknown as Record<string, unknown>,
+							isActive: true,
+							createdBy: session.user.id,
+							updatedAt: new Date(),
+						})
+						.returning();
+
+					return inserted;
+				}
+			}),
+		);
+
+		revalidatePath("/settings/payroll-export");
+
+		return {
+			id: config.id,
+			formatId: config.formatId,
+			config: config.config as unknown as SuccessFactorsConfig,
+			isActive: config.isActive,
+			createdAt: config.createdAt,
+			updatedAt: config.updatedAt,
+		};
+	});
+
+	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+}
+
+/**
+ * Test SAP SuccessFactors connection
+ */
+export async function testSuccessFactorsConnectionAction(input: {
+	organizationId: string;
+	config: SuccessFactorsConfig;
+}): Promise<ServerActionResult<{ success: boolean; error?: string }>> {
+	const effect = Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
+
+		const hasPermission = yield* _(
+			Effect.promise(() => isOrgAdmin(session.user.id, input.organizationId)),
+		);
+
+		if (!hasPermission) {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Insufficient permissions - admin role required",
+						userId: session.user.id,
+						resource: "payroll_export_config",
+						action: "read",
+					}),
+				),
+			);
+		}
+
+		// Import the exporter to test connection
+		const { successFactorsExporter } = yield* _(
+			Effect.promise(() => import("@/lib/payroll-export/exporters/successfactors")),
+		);
+
+		const result = yield* _(
+			Effect.promise(() =>
+				successFactorsExporter.testConnection(
+					input.organizationId,
+					input.config as unknown as Record<string, unknown>,
+				),
+			),
+		);
+
+		return result;
+	});
+
+	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+}
+
+/**
+ * SAP SuccessFactors credentials input
+ */
+export interface SaveSuccessFactorsCredentialsInput {
+	organizationId: string;
+	clientId: string;
+	clientSecret: string;
+}
+
+/**
+ * Vault keys for SAP SuccessFactors credentials
+ */
+const SF_VAULT_KEY_CLIENT_ID = "payroll/successfactors/client_id";
+const SF_VAULT_KEY_CLIENT_SECRET = "payroll/successfactors/client_secret";
+
+/**
+ * Save SAP SuccessFactors API credentials to Vault
+ */
+export async function saveSuccessFactorsCredentialsAction(
+	input: SaveSuccessFactorsCredentialsInput,
+): Promise<ServerActionResult<{ success: boolean }>> {
+	const effect = Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
+
+		const hasPermission = yield* _(
+			Effect.promise(() => isOrgAdmin(session.user.id, input.organizationId)),
+		);
+
+		if (!hasPermission) {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Insufficient permissions - admin role required",
+						userId: session.user.id,
+						resource: "payroll_export_config",
+						action: "create",
+					}),
+				),
+			);
+		}
+
+		// Store credentials in Vault
+		yield* _(
+			Effect.promise(async () => {
+				await storeOrgSecret(input.organizationId, SF_VAULT_KEY_CLIENT_ID, input.clientId);
+				await storeOrgSecret(input.organizationId, SF_VAULT_KEY_CLIENT_SECRET, input.clientSecret);
+			}),
+		);
+
+		revalidatePath("/settings/payroll-export");
+
+		return { success: true };
+	});
+
+	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+}
+
+/**
+ * Delete SAP SuccessFactors API credentials from Vault
+ */
+export async function deleteSuccessFactorsCredentialsAction(
+	organizationId: string,
+): Promise<ServerActionResult<{ success: boolean }>> {
+	const effect = Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
+
+		const hasPermission = yield* _(
+			Effect.promise(() => isOrgAdmin(session.user.id, organizationId)),
+		);
+
+		if (!hasPermission) {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Insufficient permissions - admin role required",
+						userId: session.user.id,
+						resource: "payroll_export_config",
+						action: "delete",
+					}),
+				),
+			);
+		}
+
+		// Delete credentials from Vault
+		yield* _(
+			Effect.promise(async () => {
+				await deleteOrgSecret(organizationId, SF_VAULT_KEY_CLIENT_ID);
+				await deleteOrgSecret(organizationId, SF_VAULT_KEY_CLIENT_SECRET);
+			}),
+		);
+
+		revalidatePath("/settings/payroll-export");
+
+		return { success: true };
+	});
+
+	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+}
+
+// ============================================
 // WAGE TYPE MAPPING ACTIONS
 // ============================================
 
@@ -783,8 +1129,8 @@ export async function saveMappingAction(
 						.update(payrollWageTypeMapping)
 						.set({
 							// Legacy fields (for backwards compatibility)
-							wageTypeCode: input.wageTypeCode || input.datevWageTypeCode || input.lexwareWageTypeCode || input.sageWageTypeCode || "",
-							wageTypeName: input.wageTypeName || input.datevWageTypeName || input.lexwareWageTypeName || input.sageWageTypeName || null,
+							wageTypeCode: input.wageTypeCode || input.datevWageTypeCode || input.lexwareWageTypeCode || input.sageWageTypeCode || input.successFactorsTimeTypeCode || "",
+							wageTypeName: input.wageTypeName || input.datevWageTypeName || input.lexwareWageTypeName || input.sageWageTypeName || input.successFactorsTimeTypeName || null,
 							// Format-specific codes
 							datevWageTypeCode: input.datevWageTypeCode ?? existing.datevWageTypeCode,
 							datevWageTypeName: input.datevWageTypeName ?? existing.datevWageTypeName,
@@ -792,6 +1138,8 @@ export async function saveMappingAction(
 							lexwareWageTypeName: input.lexwareWageTypeName ?? existing.lexwareWageTypeName,
 							sageWageTypeCode: input.sageWageTypeCode ?? existing.sageWageTypeCode,
 							sageWageTypeName: input.sageWageTypeName ?? existing.sageWageTypeName,
+							successFactorsTimeTypeCode: input.successFactorsTimeTypeCode ?? existing.successFactorsTimeTypeCode,
+							successFactorsTimeTypeName: input.successFactorsTimeTypeName ?? existing.successFactorsTimeTypeName,
 							isActive: true,
 						})
 						.where(eq(payrollWageTypeMapping.id, existing.id))
@@ -808,8 +1156,8 @@ export async function saveMappingAction(
 							absenceCategoryId: input.absenceCategoryId || null,
 							specialCategory: input.specialCategory || null,
 							// Legacy fields (for backwards compatibility)
-							wageTypeCode: input.wageTypeCode || input.datevWageTypeCode || input.lexwareWageTypeCode || input.sageWageTypeCode || "",
-							wageTypeName: input.wageTypeName || input.datevWageTypeName || input.lexwareWageTypeName || input.sageWageTypeName || null,
+							wageTypeCode: input.wageTypeCode || input.datevWageTypeCode || input.lexwareWageTypeCode || input.sageWageTypeCode || input.successFactorsTimeTypeCode || "",
+							wageTypeName: input.wageTypeName || input.datevWageTypeName || input.lexwareWageTypeName || input.sageWageTypeName || input.successFactorsTimeTypeName || null,
 							// Format-specific codes
 							datevWageTypeCode: input.datevWageTypeCode || null,
 							datevWageTypeName: input.datevWageTypeName || null,
@@ -817,6 +1165,8 @@ export async function saveMappingAction(
 							lexwareWageTypeName: input.lexwareWageTypeName || null,
 							sageWageTypeCode: input.sageWageTypeCode || null,
 							sageWageTypeName: input.sageWageTypeName || null,
+							successFactorsTimeTypeCode: input.successFactorsTimeTypeCode || null,
+							successFactorsTimeTypeName: input.successFactorsTimeTypeName || null,
 							isActive: true,
 							createdBy: session.user.id,
 							updatedAt: new Date(),
@@ -846,6 +1196,8 @@ export async function saveMappingAction(
 			lexwareWageTypeName: mapping.lexwareWageTypeName,
 			sageWageTypeCode: mapping.sageWageTypeCode,
 			sageWageTypeName: mapping.sageWageTypeName,
+			successFactorsTimeTypeCode: mapping.successFactorsTimeTypeCode,
+			successFactorsTimeTypeName: mapping.successFactorsTimeTypeName,
 			factor: mapping.factor || "1.00",
 			isActive: mapping.isActive,
 		};

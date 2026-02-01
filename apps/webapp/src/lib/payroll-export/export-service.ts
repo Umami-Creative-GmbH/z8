@@ -18,6 +18,10 @@ import { DatevLohnFormatter } from "./formatters/datev-lohn-formatter";
 import { LexwareLohnFormatter } from "./formatters/lexware-lohn-formatter";
 import { SageLohnFormatter } from "./formatters/sage-lohn-formatter";
 import { personioExporter } from "./exporters/personio";
+import {
+	successFactorsExporter,
+	successFactorsFormatter,
+} from "./exporters/successfactors";
 import type {
 	IPayrollExportFormatter,
 	IPayrollExporter,
@@ -56,6 +60,12 @@ formatters.set(sageFormatter.formatId, sageFormatter);
 
 // Register Personio exporter
 exporters.set(personioExporter.exporterId, personioExporter);
+
+// Register SAP SuccessFactors exporter (API mode)
+exporters.set(successFactorsExporter.exporterId, successFactorsExporter);
+
+// Register SAP SuccessFactors formatter (CSV mode)
+formatters.set(successFactorsFormatter.formatId, successFactorsFormatter);
 
 /**
  * Get formatter by ID

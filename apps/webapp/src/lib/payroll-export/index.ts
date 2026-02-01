@@ -45,3 +45,15 @@ export type {
 	PersonioConfig,
 	PersonioCredentials,
 } from "./exporters/personio";
+
+// SAP SuccessFactors exporter (API and CSV modes)
+export {
+	SuccessFactorsExporter,
+	successFactorsExporter,
+	SuccessFactorsFormatter,
+	successFactorsFormatter,
+} from "./exporters/successfactors";
+export type {
+	SuccessFactorsConfig,
+	SuccessFactorsCredentials,
+} from "./exporters/successfactors";

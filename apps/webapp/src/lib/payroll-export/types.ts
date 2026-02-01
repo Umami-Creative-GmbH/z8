@@ -76,6 +76,13 @@ export const DEFAULT_SAGE_CONFIG: SageLohnConfig = {
 	outputFormat: "sage_native",
 };
 
+// SAP SuccessFactors types - re-exported from exporter module
+export type {
+	SuccessFactorsConfig,
+	SuccessFactorsEmployeeMatchStrategy,
+} from "./exporters/successfactors/types";
+export { DEFAULT_SUCCESSFACTORS_CONFIG } from "./exporters/successfactors/types";
+
 // ============================================
 // WAGE TYPE MAPPING TYPES
 // ============================================
@@ -150,6 +157,8 @@ export interface WageTypeMapping {
 	lexwareWageTypeName: string | null;
 	sageWageTypeCode: string | null;
 	sageWageTypeName: string | null;
+	successFactorsTimeTypeCode: string | null;
+	successFactorsTimeTypeName: string | null;
 	factor: string;
 	isActive: boolean;
 }

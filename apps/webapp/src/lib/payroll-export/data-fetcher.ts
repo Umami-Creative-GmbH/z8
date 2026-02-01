@@ -269,6 +269,8 @@ export async function getWageTypeMappings(configId: string): Promise<WageTypeMap
 		lexwareWageTypeName: m.lexwareWageTypeName,
 		sageWageTypeCode: m.sageWageTypeCode,
 		sageWageTypeName: m.sageWageTypeName,
+		successFactorsTimeTypeCode: m.successFactorsTimeTypeCode,
+		successFactorsTimeTypeName: m.successFactorsTimeTypeName,
 		factor: m.factor || "1.00",
 		isActive: m.isActive,
 	}));
