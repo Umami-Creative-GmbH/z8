@@ -1,0 +1,181 @@
+---
+title: Coverage Targets
+description: Set and manage staffing coverage targets for your team schedules
+icon: ChartBar
+---
+
+## Overview
+
+Coverage Targets help you ensure adequate staffing levels across your organization. By defining minimum staff requirements for specific locations, days, and time blocks, you can visualize coverage gaps directly in the scheduler and validate schedules before publishing.
+
+The Coverage Targets feature provides:
+
+- **Minimum staffing rules** per location/subarea, day of week, and time range
+- **Visual heatmap overlay** in the shift scheduler showing under/over staffing
+- **Publish validation** to prevent schedules with coverage gaps from going live
+- **Real-time gap detection** with actionable warnings
+
+## Setting Coverage Targets
+
+Coverage rules are managed from **Settings > Coverage Rules**. Only administrators can create and modify coverage rules.
+
+### Creating a Coverage Rule
+
+1. Navigate to **Settings > Coverage Rules**
+2. Click **Add Rule** in the top-right corner
+3. Fill in the rule details:
+   - **Location / Subarea**: Select the specific work area this rule applies to
+   - **Day of Week**: Choose which day (Monday through Sunday) this rule covers
+   - **Start Time**: When the coverage requirement begins (e.g., 09:00)
+   - **End Time**: When the coverage requirement ends (e.g., 17:00)
+   - **Minimum Staff Count**: The minimum number of employees required during this time block (1-100)
+4. Click **Create** to save the rule
+
+### Example Configuration
+
+For a retail store that needs:
+- 3 staff on weekday mornings (09:00-13:00)
+- 5 staff on weekday afternoons (13:00-18:00)
+- 4 staff on weekends all day (10:00-18:00)
+
+You would create separate rules for each combination of day and time block.
+
+### Editing and Deleting Rules
+
+Rules are displayed grouped by location/subarea. For each rule, you can:
+
+- Click the **pencil icon** to edit the rule
+- Click the **trash icon** to delete the rule (requires confirmation)
+
+## Scheduler Heatmap
+
+When viewing the shift scheduler, managers can toggle a coverage heatmap overlay that visualizes staffing levels against defined targets.
+
+### Enabling the Heatmap
+
+1. Open the **Scheduler** view
+2. Click the **Coverage** button in the toolbar
+3. The heatmap overlay will display on the calendar
+
+### Understanding the Colors
+
+The heatmap uses a three-color system:
+
+| Color | Status | Meaning |
+|-------|--------|---------|
+| **Red** | Understaffed | Scheduled staff count is below the minimum requirement |
+| **Green** | Adequate | Scheduled staff meets the minimum requirement exactly |
+| **Blue** | Overstaffed | Scheduled staff exceeds the minimum requirement |
+
+### Day Indicators
+
+Each day in the scheduler shows an indicator reflecting the worst coverage status for that day:
+
+- **Warning triangle (red)**: At least one time block is understaffed
+- **Checkmark (green)**: All time blocks meet requirements
+- **Trending up arrow (blue)**: Some time blocks are overstaffed, none are understaffed
+
+Hover over the day indicator to see:
+- Overall status summary
+- Total gap count (number of staff shortages)
+- Utilization percentage
+- Per-location breakdown (if multiple subareas)
+
+### Coverage Summary Bar
+
+When the heatmap is enabled, a summary bar appears above the scheduler showing:
+
+- Number of **understaffed** time slots (with total gap count)
+- Number of **adequate** time slots
+- Number of **overstaffed** time slots
+
+## Shift Validation
+
+Coverage targets integrate with the schedule publishing workflow to prevent understaffed schedules from going live.
+
+### Publish Warnings
+
+When attempting to publish shifts:
+
+1. The system checks all shifts against coverage rules
+2. If gaps exist, the **Publish** button shows a warning indicator
+3. Managers see a summary of coverage gaps before confirming
+
+### Publishing Settings
+
+Administrators can control publishing behavior in **Settings > Coverage Rules**:
+
+**Allow publishing with coverage gaps**
+- **Enabled** (default): Managers can publish schedules even when understaffed, with a warning
+- **Disabled**: Schedules with coverage gaps cannot be published until resolved
+
+To change this setting:
+1. Navigate to **Settings > Coverage Rules**
+2. Find the **Publishing Settings** card
+3. Toggle the **Allow publishing with coverage gaps** switch
+
+## Best Practices
+
+### Designing Effective Coverage Rules
+
+1. **Break the day into logical blocks**: Match your business patterns (morning rush, lunch peak, evening close)
+2. **Account for breaks**: If staff take staggered breaks, you may need higher minimums during peak hours
+3. **Consider seasonal variations**: You may need to adjust rules during busy seasons
+4. **Start conservative**: Begin with minimum viable staffing and adjust based on actual needs
+
+### Managing Multiple Locations
+
+- Create rules for each subarea that has distinct staffing needs
+- Use consistent time blocks across similar locations for easier comparison
+- Review the location breakdown in day tooltips to identify problem areas
+
+### Using the Heatmap Effectively
+
+- Enable the heatmap during schedule planning, not just for review
+- Address red (understaffed) slots first when building schedules
+- Blue (overstaffed) slots may indicate opportunities for cost savings
+- Use the summary bar to track progress as you add shifts
+
+### Publish Workflow
+
+- Review coverage before publishing, even if gaps are allowed
+- Document why you're publishing with gaps (e.g., no available staff)
+- Consider disabling gap publishing during critical periods
+
+## Troubleshooting
+
+### Heatmap Not Showing Data
+
+**Symptoms**: The coverage toggle button appears but no colors show on the calendar.
+
+**Solutions**:
+1. Verify coverage rules exist for the visible date range
+2. Check that rules exist for the displayed subareas
+3. Ensure you have manager or admin permissions
+
+### Rules Not Applying to Expected Days
+
+**Symptoms**: Coverage appears correct on some days but not others.
+
+**Solutions**:
+1. Verify the **Day of Week** setting on each rule
+2. Check that time ranges don't have gaps (e.g., 09:00-12:00 and 13:00-17:00 leaves 12:00-13:00 uncovered)
+3. Confirm the correct subarea is selected
+
+### Cannot Publish Due to Coverage Gaps
+
+**Symptoms**: The publish button is disabled or shows an error about coverage.
+
+**Solutions**:
+1. Enable the heatmap to identify gap locations
+2. Add shifts to cover understaffed time blocks
+3. If gaps are acceptable, ask an administrator to enable **Allow publishing with coverage gaps**
+
+### Unexpected Understaffing Warnings
+
+**Symptoms**: Day shows as understaffed even though enough staff are scheduled.
+
+**Solutions**:
+1. Verify shift times overlap with rule time blocks
+2. Check that shifts are assigned to the correct subarea
+3. Confirm shifts are in draft or published status (not cancelled)

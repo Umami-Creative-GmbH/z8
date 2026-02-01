@@ -1,0 +1,249 @@
+---
+title: Browser Extension
+description: Track time directly from your browser with the z8 Chrome/Edge extension
+icon: Code
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Steps, Step } from 'fumadocs-ui/components/steps';
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+
+## Overview
+
+The z8 Browser Extension brings time tracking directly to your browser toolbar. With a single click, you can clock in and out without switching to the main web application. The extension is compatible with Google Chrome, Microsoft Edge, and other Chromium-based browsers.
+
+### Key Features
+
+- **One-click clock in/out** - Start and stop tracking instantly from your toolbar
+- **Live timer display** - See your current work session duration in real-time
+- **Project selection** - Assign your time to specific projects when clocking out
+- **Offline support** - Clock in/out even without internet; actions sync automatically
+- **Desktop notifications** - Get notified when you clock in or out
+- **Status badge** - Green badge indicator shows when you're clocked in
+
+---
+
+## Installation
+
+<Tabs items={['Chrome', 'Edge']}>
+  <Tab value="Chrome">
+    <Steps>
+      <Step>
+        ### Open Chrome Web Store
+        Navigate to the [Chrome Web Store](https://chrome.google.com/webstore) and search for "Z8 Time Tracker"
+      </Step>
+      <Step>
+        ### Add to Chrome
+        Click **Add to Chrome**, then confirm by clicking **Add extension**
+      </Step>
+      <Step>
+        ### Pin the Extension
+        Click the puzzle piece icon in your toolbar, then click the pin icon next to "Z8 Time Tracker" for easy access
+      </Step>
+    </Steps>
+  </Tab>
+  <Tab value="Edge">
+    <Steps>
+      <Step>
+        ### Open Edge Add-ons
+        Navigate to the [Microsoft Edge Add-ons](https://microsoftedge.microsoft.com/addons) store and search for "Z8 Time Tracker"
+      </Step>
+      <Step>
+        ### Get the Extension
+        Click **Get**, then confirm by clicking **Add extension**
+      </Step>
+      <Step>
+        ### Pin the Extension
+        Click the extensions icon in your toolbar, then click the eye icon next to "Z8 Time Tracker" to show it in your toolbar
+      </Step>
+    </Steps>
+  </Tab>
+</Tabs>
+
+<Callout type="info" title="Manual Installation">
+  If your organization provides a custom build of the extension, you can install it manually by enabling Developer Mode in your browser's extensions page and loading the unpacked extension.
+</Callout>
+
+---
+
+## Configuration
+
+Before using the extension, you need to configure it to connect to your z8 instance.
+
+<Steps>
+  <Step>
+    ### Open Extension Options
+    Right-click on the z8 extension icon in your toolbar and select **Options**, or click the extension icon and select the settings gear
+  </Step>
+  <Step>
+    ### Enter Your Webapp URL
+    Enter the URL of your z8 installation (e.g., `https://z8.yourcompany.com`)
+  </Step>
+  <Step>
+    ### Configure Notifications
+    Choose your notification preferences:
+    - **Enable notifications** - Master toggle for all notifications
+    - **Notify on clock in** - Get notified when you clock in
+    - **Notify on clock out** - Get notified when you clock out
+  </Step>
+  <Step>
+    ### Save Settings
+    Click **Save Settings** to apply your configuration. Use the **Test** button to verify the URL opens correctly.
+  </Step>
+</Steps>
+
+---
+
+## Authentication
+
+The extension uses your existing z8 web session for authentication. No separate login is required.
+
+<Steps>
+  <Step>
+    ### Sign in to z8
+    Open your z8 webapp URL in a browser tab and sign in with your credentials
+  </Step>
+  <Step>
+    ### Use the Extension
+    Once signed in, the extension will automatically detect your session and allow you to clock in/out
+  </Step>
+</Steps>
+
+<Callout type="warning" title="Session Required">
+  If you see "Login Required" when clicking the extension, open your z8 webapp and sign in. The extension shares your browser session with the web app.
+</Callout>
+
+---
+
+## Usage
+
+### Clocking In
+
+1. Click the z8 extension icon in your toolbar
+2. Click the green **Clock In** button
+3. A green badge will appear on the extension icon indicating you're clocked in
+4. The timer will start showing your current session duration
+
+### Clocking Out
+
+1. Click the z8 extension icon in your toolbar
+2. (Optional) Select a project from the dropdown to assign your time
+3. Click the red **Clock Out** button
+4. The badge will disappear, indicating you're clocked out
+
+### Project Selection
+
+When you're clocked in, you can optionally select a project to assign your time entry to:
+
+1. Click the extension icon while clocked in
+2. Use the **Project** dropdown to select a project
+3. The selected project will be applied when you clock out
+
+<Callout type="info">
+  Project selection is optional. If no project is selected, your time will be recorded as general work time.
+</Callout>
+
+### Understanding the Status Badge
+
+The extension icon displays a badge to indicate your current status:
+
+| Badge | Meaning |
+|-------|---------|
+| Green dot | You are currently clocked in |
+| Amber exclamation | Offline actions are queued for sync |
+| No badge | You are clocked out |
+
+---
+
+## Offline Support
+
+The extension works even when you're offline or have intermittent connectivity.
+
+### How It Works
+
+1. **Offline actions are queued** - When you clock in or out without internet, the action is saved locally
+2. **Automatic sync** - When connectivity is restored, queued actions are automatically sent to the server
+3. **Sync notifications** - You'll be notified when offline actions have been successfully synced
+
+### Offline Indicators
+
+- An amber banner appears in the popup when you're offline
+- An amber badge (!) appears on the extension icon when actions are queued
+- Project selection is disabled while offline (will need to be assigned in the web app)
+
+<Callout type="info" title="Timestamps Preserved">
+  When you clock in/out offline, the original timestamp is preserved. Your time entries will reflect the actual time you performed the action, not when it synced.
+</Callout>
+
+---
+
+## Troubleshooting
+
+### Login Required Message
+
+**Problem:** The extension shows "Login Required" even though you're signed in.
+
+**Solutions:**
+1. Open your z8 webapp in a new tab and ensure you're signed in
+2. Check that cookies are not being blocked for your z8 domain
+3. Verify the Webapp URL in extension settings matches your sign-in URL exactly
+4. Try signing out and back in to the web app
+
+### Extension Not Connecting
+
+**Problem:** The extension can't connect to your z8 instance.
+
+**Solutions:**
+1. Verify the Webapp URL in settings is correct (check for typos)
+2. Ensure the URL uses `https://` (not `http://` for production)
+3. Check if your organization's firewall is blocking the connection
+4. Try the **Test** button in settings to verify the URL works
+
+### Badge Not Updating
+
+**Problem:** The status badge doesn't reflect your actual clock status.
+
+**Solutions:**
+1. Click the extension icon to refresh the status
+2. Check your internet connection
+3. Right-click the extension and select "Reload" to restart it
+
+### Notifications Not Working
+
+**Problem:** You're not receiving desktop notifications.
+
+**Solutions:**
+1. Check that notifications are enabled in extension settings
+2. Verify your browser has permission to show notifications
+3. Check your operating system's notification settings
+4. Use the **Send test notification** button in settings to verify
+
+### Queued Actions Not Syncing
+
+**Problem:** Offline actions remain queued even when online.
+
+**Solutions:**
+1. Ensure you're signed in to the web app
+2. Wait for the periodic sync (runs every minute)
+3. Click the extension icon to trigger a manual sync check
+4. Check the browser console for error messages
+
+---
+
+## Privacy and Security
+
+The z8 Browser Extension:
+
+- **Uses your existing session** - No passwords are stored in the extension
+- **Stores settings locally** - Configuration is saved in browser sync storage
+- **Minimal permissions** - Only requests access to storage, alarms, and notifications
+- **No tracking** - The extension does not collect analytics or usage data
+
+---
+
+## Version History
+
+| Version | Changes |
+|---------|---------|
+| 1.0.1 | Current release with offline support and notifications |
+| 1.0.0 | Initial release with clock in/out and project selection |

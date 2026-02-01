@@ -1,0 +1,218 @@
+---
+title: Skills & Qualifications
+description: Manage employee skills, certifications, and qualification requirements
+icon: UserCog
+---
+
+## Overview
+
+The Skills & Qualifications feature helps organizations track and manage employee competencies, certifications, and training requirements. This is essential for industries where specific qualifications are required for certain roles or locations, such as:
+
+- **Safety certifications** (e.g., First Aid, Fire Safety)
+- **Equipment licenses** (e.g., Forklift License, Heavy Machinery)
+- **Professional certifications** (e.g., Food Safety, OSHA)
+- **Language proficiencies**
+- **Specialized training**
+
+z8 validates employee qualifications during shift scheduling and alerts managers when assigning employees who lack required skills or have expired certifications.
+
+## Skill Catalog
+
+The Skill Catalog is your organization's central repository of all skills and qualifications. Only administrators can manage the catalog.
+
+### Accessing the Skill Catalog
+
+Navigate to **Settings > Skills & Qualifications** to access the skill catalog management interface.
+
+### Creating a Skill
+
+1. Click the **Add Skill** button
+2. Fill in the skill details:
+   - **Name** (required): A descriptive name like "Forklift License" or "Food Safety Certification"
+   - **Category**: Select from predefined categories:
+     - **Safety**: Health and safety related certifications
+     - **Equipment**: Equipment operation licenses
+     - **Certification**: Professional or industry certifications
+     - **Training**: Internal or external training completions
+     - **Language**: Language proficiency qualifications
+     - **Custom**: Define your own category name
+   - **Description** (optional): Additional details about the skill
+   - **Requires Expiry Date**: Enable if this certification needs periodic renewal
+3. Click **Create** to save the skill
+
+### Editing a Skill
+
+1. Find the skill in the catalog table
+2. Click the edit icon (pencil) in the Actions column
+3. Modify the skill details as needed
+4. Click **Save** to apply changes
+
+<Callout type="info">
+Changing a skill's expiry requirement does not affect existing employee assignments. Only new assignments will follow the updated rules.
+</Callout>
+
+### Deleting a Skill
+
+Skills are soft-deleted to preserve historical data. When you delete a skill:
+
+- It will no longer appear in the catalog
+- Existing employee assignments remain for audit purposes
+- The skill cannot be assigned to new employees
+
+## Assigning Skills to Employees
+
+Administrators and managers can assign skills to employees from the employee profile.
+
+### Adding a Skill Assignment
+
+1. Navigate to the employee's profile page
+2. Locate the **Skills & Qualifications** card
+3. Click **Assign Skill**
+4. Select a skill from the dropdown (only unassigned skills appear)
+5. If the skill requires an expiry date, provide the certification expiration date
+6. Optionally add notes (e.g., certificate number, training provider)
+7. Click **Assign** to save
+
+### Skill Assignment Details
+
+Each assignment tracks:
+
+| Field | Description |
+|-------|-------------|
+| Skill | The skill from your catalog |
+| Expiry Date | When the certification expires (if applicable) |
+| Notes | Additional information like certificate numbers |
+| Assigned By | Who made the assignment |
+| Assigned At | When the assignment was created |
+
+### Removing a Skill
+
+1. On the employee's Skills & Qualifications card, find the skill
+2. Click the remove icon (trash can)
+3. Confirm the removal
+
+<Callout type="warning">
+Removing a skill from an employee does not affect past override logs. Historical records are preserved for compliance auditing.
+</Callout>
+
+## Qualification Tracking
+
+### Expiry Monitoring
+
+z8 automatically monitors certification expiry dates and provides visual indicators:
+
+- **Valid**: Skills with no expiry or future expiry dates display normally
+- **Expiring Soon**: Skills expiring within 30 days show a yellow warning badge
+- **Expired**: Skills past their expiry date show a red "Expired" badge
+
+### Skill Requirements on Subareas
+
+You can define which skills are required to work in specific location subareas. This is useful for areas with special requirements like:
+
+- Kitchen areas requiring Food Safety certification
+- Warehouse zones requiring Forklift License
+- Hazardous areas requiring safety training
+
+Requirements can be marked as:
+
+- **Required**: Employee must have this skill (hard requirement)
+- **Preferred**: Skill is recommended but not mandatory (soft requirement)
+
+### Skill Requirements on Shift Templates
+
+Shift templates can also specify required skills. When creating shifts from templates, z8 validates that assigned employees have the necessary qualifications.
+
+## Validation Alerts
+
+When scheduling shifts, z8 validates employee qualifications and displays alerts for any issues.
+
+### Warning Alert Types
+
+The skill validation system checks for:
+
+1. **Missing Required Skills**: Employee lacks a mandatory skill
+2. **Missing Preferred Skills**: Employee lacks a recommended skill
+3. **Expired Certifications**: Employee has the skill but it has expired
+
+### Override Logging
+
+When a manager assigns an employee despite qualification warnings, the system:
+
+1. Prompts for an override reason
+2. Logs the override with full audit details:
+   - Which skills were missing
+   - Who approved the override
+   - When the override occurred
+   - The associated shift
+3. Optionally sends notifications for compliance tracking
+
+<Callout type="info">
+Override logs are preserved for compliance auditing. Organizations in regulated industries should establish policies for when overrides are acceptable.
+</Callout>
+
+## Best Practices
+
+### Skill Catalog Design
+
+- **Be specific**: Use clear, unambiguous skill names
+- **Use categories**: Organize skills by type for easier management
+- **Enable expiry tracking**: For any certification that requires renewal
+- **Add descriptions**: Help managers understand what each skill represents
+
+### Assignment Management
+
+- **Keep records current**: Update expiry dates when employees renew certifications
+- **Use notes effectively**: Record certificate numbers and training dates
+- **Regular audits**: Periodically review employee qualifications
+
+### Requirement Planning
+
+- **Start with required skills**: Focus on mandatory certifications first
+- **Use preferred skills sparingly**: Reserve for "nice to have" qualifications
+- **Document policies**: Create internal guidelines for skill requirements
+
+### Compliance Workflows
+
+- **Monitor expiring certifications**: Use the expiring soon indicators to plan renewals
+- **Review override logs**: Regularly audit skill requirement overrides
+- **Train managers**: Ensure scheduling managers understand qualification requirements
+
+## Troubleshooting
+
+### Common Issues
+
+**Skill not appearing in assignment dropdown**
+
+The skill may already be assigned to the employee. Each skill can only be assigned once per employee.
+
+**Expiry date required error**
+
+The selected skill has expiry tracking enabled. You must provide an expiration date when assigning this skill.
+
+**Cannot edit skill assignment**
+
+To update an assignment (e.g., change the expiry date), remove the existing assignment and create a new one with the updated details.
+
+**Qualification warnings not showing**
+
+Ensure that:
+1. Skills are defined in the catalog
+2. Skill requirements are set on the subarea or shift template
+3. The employee lacks the required skills or has expired certifications
+
+### Error Messages
+
+| Error | Solution |
+|-------|----------|
+| "Only admins can create skills" | Contact your organization administrator to add skills to the catalog |
+| "This skill requires an expiry date" | Provide an expiration date when assigning this certification |
+| "Skill not found or inactive" | The skill may have been deleted. Select a different skill from the catalog |
+| "Employee skill assignment not found" | The assignment may have already been removed. Refresh the page to update |
+
+### Getting Help
+
+If you continue to experience issues with skills and qualifications:
+
+1. Check that you have the appropriate permissions (admin for catalog, admin/manager for assignments)
+2. Verify the skill exists and is active in the catalog
+3. Contact your organization administrator for assistance

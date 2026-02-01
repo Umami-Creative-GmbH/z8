@@ -1,0 +1,274 @@
+---
+title: Calendar Sync
+description: Sync your work schedule with Google Calendar or Microsoft Outlook
+icon: Calendar
+---
+
+## Overview
+
+Calendar Sync allows you to integrate Z8 with your external calendar applications, keeping your work schedule and absences synchronized across platforms. This feature supports:
+
+- **Two-way OAuth connections** with Google Calendar and Microsoft Outlook
+- **ICS feed subscriptions** for read-only calendar access
+- **Conflict detection** to prevent scheduling issues when requesting time off
+- **Automatic syncing** of approved absences to your connected calendars
+
+When enabled, your approved absences will automatically appear in your external calendar as "Out of Office" events, making it easy for colleagues to see your availability.
+
+## Google Calendar Setup
+
+### Prerequisites
+
+Before connecting Google Calendar, ensure:
+- Your organization administrator has enabled Google Calendar sync
+- You have a Google account with Google Calendar access
+
+### Connecting Your Account
+
+1. Navigate to **Settings** > **Calendar Connections**
+2. In the Calendar Providers section, locate **Google Calendar**
+3. Click the **Connect** button next to Google Calendar
+4. You will be redirected to Google's authorization page
+5. Sign in with your Google account (if not already signed in)
+6. Review the requested permissions:
+   - **View your calendars** - Allows Z8 to read your calendar events for conflict detection
+   - **Manage events on your calendars** - Allows Z8 to create absence events
+7. Click **Allow** to grant access
+8. You will be redirected back to Z8 with a success message
+
+### Permissions Explained
+
+Z8 requests the following Google Calendar scopes:
+- `calendar.events` - Read and write calendar events
+- `calendar.readonly` - View your calendar list
+
+These permissions allow Z8 to:
+- Create "Out of Office" events for your approved absences
+- Check for scheduling conflicts when you request time off
+- Update or delete events when absence dates change
+
+### Selecting a Calendar
+
+After connecting, you can choose which calendar to sync absences to:
+1. By default, Z8 syncs to your primary calendar
+2. To change the target calendar, go to **Settings** > **Calendar Connections**
+3. Click the **Settings** icon next to your Google connection
+4. Select the desired calendar from the dropdown
+
+## Microsoft Outlook Setup
+
+### Prerequisites
+
+Before connecting Microsoft Outlook, ensure:
+- Your organization administrator has enabled Microsoft 365 calendar sync
+- You have a Microsoft 365 or Outlook.com account
+
+### Connecting Your Account
+
+1. Navigate to **Settings** > **Calendar Connections**
+2. In the Calendar Providers section, locate **Microsoft 365**
+3. Click the **Connect** button next to Microsoft 365
+4. You will be redirected to Microsoft's login page
+5. Sign in with your Microsoft account
+6. Review the requested permissions:
+   - **Read and write your calendars** - Allows Z8 to manage absence events
+   - **Sign in and read your profile** - Used to identify your account
+7. Click **Accept** to grant access
+8. You will be redirected back to Z8 with a success message
+
+### Permissions Explained
+
+Z8 requests the following Microsoft Graph scopes:
+- `Calendars.ReadWrite` - Full access to your calendar events
+- `openid`, `email`, `profile` - Basic profile information
+- `offline_access` - Allows Z8 to refresh tokens without re-authentication
+
+### Work vs Personal Accounts
+
+Microsoft 365 supports both work/school accounts and personal Microsoft accounts. Z8 uses the "common" endpoint, which allows either type. If your organization uses Microsoft 365 for business, use your work email address when signing in.
+
+## ICS Feed
+
+ICS (iCalendar) feeds provide a read-only way to subscribe to absence calendars without OAuth authentication. This is useful for:
+- Viewing absences in calendar apps that don't support OAuth
+- Subscribing to team absence calendars
+- Sharing your schedule with family members or other personal calendars
+
+### Personal ICS Feed
+
+A personal ICS feed shows all your absences (approved and optionally pending).
+
+**Creating a Personal Feed:**
+
+1. Go to **Settings** > **Calendar Connections**
+2. Scroll to the **ICS Feeds** section
+3. Click **Create Personal Feed**
+4. Copy the generated URL
+
+**Subscribing in Google Calendar:**
+
+1. Open Google Calendar
+2. Click the **+** next to "Other calendars"
+3. Select **From URL**
+4. Paste the ICS feed URL
+5. Click **Add calendar**
+
+**Subscribing in Microsoft Outlook:**
+
+1. Open Outlook Calendar
+2. Right-click on **Other calendars**
+3. Select **Add calendar** > **From Internet**
+4. Paste the ICS feed URL
+5. Click **OK**
+
+### Team ICS Feeds
+
+Team leads can create feeds showing all team member absences. This requires:
+- Team ICS feeds to be enabled by your organization
+- You to have team lead permissions
+
+**Creating a Team Feed:**
+
+1. Go to **Settings** > **Calendar Connections**
+2. Click **Create Team Feed**
+3. Select the team from the dropdown
+4. Configure feed options (include pending requests, etc.)
+5. Copy the generated URL
+
+### Security Considerations
+
+ICS feed URLs contain a secret token for authentication. Anyone with the URL can view the calendar contents. **Important security practices:**
+
+- **Do not share** ICS URLs publicly
+- **Regenerate** the URL if you suspect it has been compromised
+- **Revoke** feeds you no longer need
+
+To regenerate or revoke a feed:
+1. Go to **Settings** > **Calendar Connections**
+2. Find the feed in the ICS Feeds section
+3. Click **Regenerate** to create a new URL, or **Delete** to remove it
+
+## Conflict Detection
+
+When you request time off, Z8 can check your connected calendar for potential scheduling conflicts.
+
+### How It Works
+
+1. When you submit an absence request, Z8 queries your connected calendar
+2. Events during the requested period are analyzed
+3. Conflicts are displayed as warnings or informational notices
+
+### Conflict Types
+
+| Type | Severity | Description |
+|------|----------|-------------|
+| **Overlap** | Warning | An existing calendar event directly overlaps with your requested absence |
+| **Adjacent** | Info | An event starts or ends within 1 hour of your absence period |
+
+### Viewing Conflicts
+
+When creating an absence request:
+1. Fill in the absence dates
+2. If you have a connected calendar, click **Check for Conflicts**
+3. Review any warnings displayed
+4. You can still submit the request, but consider rescheduling conflicting meetings first
+
+### Organization Policies
+
+Your organization may enforce conflict checking:
+- **Optional** - You can skip conflict detection
+- **Required** - You must check for conflicts before submitting (warning only)
+- **Blocking** - Absences cannot be submitted if conflicts exist
+
+Check with your HR administrator if you're unsure about your organization's policy.
+
+## Settings
+
+Calendar sync settings are managed at two levels: personal settings for your connections, and organization settings controlled by administrators.
+
+### Personal Settings
+
+Access via **Settings** > **Calendar Connections**:
+
+| Setting | Description |
+|---------|-------------|
+| **Push to Calendar** | Enable/disable syncing absences to this connected calendar |
+| **Conflict Detection** | Enable/disable checking this calendar for conflicts |
+| **Target Calendar** | Which calendar to create events in (default: primary) |
+
+### Organization Settings (Administrators)
+
+Access via **Settings** > **Calendar** (requires admin permissions):
+
+| Setting | Description |
+|---------|-------------|
+| **Google Calendar Enabled** | Allow employees to connect Google Calendar |
+| **Microsoft 365 Enabled** | Allow employees to connect Microsoft Outlook |
+| **ICS Feeds Enabled** | Allow personal ICS feed creation |
+| **Team ICS Feeds Enabled** | Allow team leads to create team feeds |
+| **Auto-sync on Approval** | Automatically sync absences when approved |
+| **Require Conflict Check** | Employees must check conflicts before submitting |
+| **Event Title Template** | Customize how events appear (e.g., "Out of Office - \{categoryName\}") |
+| **Event Description** | Optional description added to all synced events |
+
+### Event Customization Variables
+
+Organization admins can use these variables in event templates:
+- `\{categoryName\}` - The absence type (e.g., "Vacation", "Sick Leave")
+- `\{employeeName\}` - The employee's display name
+- `\{status\}` - The approval status (Pending, Approved)
+
+## Troubleshooting
+
+### Connection Issues
+
+**"Calendar provider not configured"**
+- Your organization administrator has not set up OAuth credentials for this provider
+- Contact your IT administrator to enable the integration
+
+**"Token expired" or frequent reconnection prompts**
+- Your OAuth tokens may have been revoked
+- Disconnect and reconnect your calendar account
+- For Google: Check if your Google admin has restricted third-party app access
+
+**Events not appearing in external calendar**
+- Verify "Push to Calendar" is enabled in your connection settings
+- Check that "Auto-sync on Approval" is enabled (or manually trigger sync)
+- Ensure the absence is approved (pending absences may not sync depending on settings)
+
+### Sync Issues
+
+**Duplicate events**
+- This can occur if you reconnect without deleting old synced events
+- Z8 tracks synced events to prevent duplicates; contact support if the issue persists
+
+**Wrong calendar showing events**
+- Check your target calendar setting in connection preferences
+- The default is your primary calendar
+
+**Events not updating when absence dates change**
+- Updates are processed asynchronously; allow a few minutes
+- If still not updated, check for sync errors in your connection settings
+
+### ICS Feed Issues
+
+**Feed not updating**
+- Most calendar apps cache ICS feeds and refresh periodically (15-60 minutes)
+- Force a refresh in your calendar app if available
+- Z8 sets a refresh interval of 15 minutes; some apps may not respect this
+
+**Feed URL not working**
+- Ensure the URL was copied completely
+- Check if the feed has been deactivated
+- Try regenerating the feed URL
+
+### Conflict Detection Issues
+
+**Conflicts not showing**
+- Ensure conflict detection is enabled for your connection
+- Check that your calendar connection is active (not disconnected)
+- All-day events and private events may be excluded depending on settings
+
+**False positives**
+- Cancelled events should be automatically excluded
+- Tentative events may show as conflicts; consider declining meetings before requesting time off

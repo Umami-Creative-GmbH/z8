@@ -1,6 +1,6 @@
 ---
 title: Payroll Export
-description: Export time tracking data to payroll systems like DATEV, Lexware, Sage, and Personio
+description: Export time tracking data to payroll systems like DATEV, Lexware, Sage, Personio, and SAP SuccessFactors
 icon: BankNote
 ---
 
@@ -15,6 +15,7 @@ The Payroll Export feature allows you to export employee time tracking data dire
 
 **API Integrations:**
 - **Personio**: Direct API integration with Personio HR
+- **SAP SuccessFactors**: Direct API integration with SAP SuccessFactors Employee Central
 
 Access payroll export at **Settings** → **Payroll Export**.
 
@@ -135,6 +136,108 @@ The system tracks sync status for each record:
 - **Synced**: Successfully exported to Personio
 - **Failed**: Error occurred (can be retried)
 - **Skipped**: Record was skipped (e.g., employee not found in Personio)
+
+---
+
+## SAP SuccessFactors Integration
+
+Connect Z8 directly to SAP SuccessFactors Employee Central to automatically sync time entries and absence data via the OData API.
+
+### Setting Up SAP SuccessFactors
+
+1. Go to **Settings** → **Payroll Export** → **SAP SuccessFactors** tab
+2. Enter your SuccessFactors instance details:
+   - **Instance URL**: Your SAP SuccessFactors API endpoint (e.g., `https://api.successfactors.com`)
+   - **Company ID**: Your SAP SuccessFactors company identifier
+3. Configure API credentials in the vault:
+   - **Client ID**: OAuth2 client ID with Employee Central Time Management permissions
+   - **Client Secret**: The client secret for authentication
+4. Click **Save Configuration**
+
+API credentials are stored securely in an encrypted vault and use OAuth2 client credentials flow for authentication.
+
+### Employee Matching
+
+Configure how Z8 matches employees to SAP SuccessFactors users:
+
+| Strategy | Description | Recommendation |
+|----------|-------------|----------------|
+| **User ID** | Match using SAP SuccessFactors userId field | Recommended - uses employee number from Z8 |
+| **Person ID External** | Match using personIdExternal field | Use when employee numbers map to external HR IDs |
+| **Email** | Match using email address | Fallback option when IDs don't align |
+
+**User ID** matching is recommended as it provides the most reliable unique identifier between systems. Ensure your Z8 employee numbers match the userId values in SAP SuccessFactors.
+
+### Time Data Sync
+
+When exporting time data to SAP SuccessFactors:
+
+1. Z8 transforms work periods into EmployeeTime records
+2. Each time entry includes:
+   - Start and end date/time
+   - Duration in hours (decimal format)
+   - Time type code (mapped from wage type settings)
+   - Optional comment with work category and project name
+3. Records are sent in configurable batch sizes (default: 100, max: 100)
+4. The externalCode field tracks the source work period ID for sync status
+
+**Time Type Mapping**: Work categories are mapped to SAP SuccessFactors time types using the SuccessFactors Time Type Code in wage type mappings. If no specific code is set, the system falls back to DATEV codes or a default "REGULAR" type.
+
+### Absence Data Sync
+
+When exporting absences to SAP SuccessFactors:
+
+1. Z8 transforms approved absences into EmployeeTimeOff records
+2. Each absence includes:
+   - Start and end date
+   - Duration in days (calculated from date range)
+   - Time off type code (mapped from wage type settings)
+   - Absence category name as comment
+3. Absences without a configured wage type mapping are skipped
+
+**Important**: Ensure all absence categories have corresponding wage type mappings with SuccessFactors time type codes configured.
+
+### Configuration Options
+
+| Setting | Description | Default |
+|---------|-------------|---------|
+| **Instance URL** | SAP SuccessFactors API endpoint URL | Required |
+| **Company ID** | Your SAP SuccessFactors company ID | Required |
+| **Employee Matching** | Strategy for matching employees | User ID |
+| **Include Zero Hours** | Export records with 0 hours | Disabled |
+| **Batch Size** | Records per API request (1-100) | 100 |
+| **API Timeout** | Request timeout in milliseconds | 60000 |
+
+### Testing the Connection
+
+After saving your configuration:
+
+1. Click **Test Connection** to verify API access
+2. The system authenticates using OAuth2 and queries the User endpoint
+3. A success message confirms SAP SuccessFactors is properly connected
+4. If the test fails, verify:
+   - Instance URL is correct and accessible
+   - Company ID matches your SAP SuccessFactors tenant
+   - Client credentials have sufficient permissions
+
+### Sync Status Tracking
+
+The system tracks sync status for each record:
+
+- **Pending**: Waiting to be synced
+- **Synced**: Successfully exported to SAP SuccessFactors
+- **Failed**: Error occurred (check error details, retryable errors are automatically retried up to 3 times)
+- **Skipped**: Record was skipped (e.g., employee not found or missing wage type mapping)
+
+### Error Handling
+
+The integration includes automatic retry logic with exponential backoff for transient errors:
+
+- Rate limiting (429)
+- Server errors (500, 502, 503, 504)
+- Request timeouts (408)
+
+Non-retryable errors are logged with detailed error messages from the SAP SuccessFactors API.
 
 ---
 
@@ -259,6 +362,14 @@ View all previous exports:
 2. **Test connection regularly**: Verify API access before running exports
 3. **Review sync results**: Check for failed or skipped records after each export
 
+### For SAP SuccessFactors Integration
+
+1. **Use User ID matching**: Most reliable strategy for employee matching
+2. **Configure time type codes**: Add SuccessFactors-specific time type codes in wage type mappings
+3. **Start with small batches**: Reduce batch size if experiencing timeouts
+4. **Test connection first**: Always verify API access before running exports
+5. **Monitor sync results**: Review failed and skipped records after each export
+
 ### Data Quality
 
 - Ensure work periods are approved before export
@@ -301,6 +412,19 @@ View all previous exports:
 | Employee not found | Ensure employee numbers/emails match between systems |
 | Rate limit exceeded | Wait and retry, or reduce batch size |
 | API timeout | Increase timeout in export settings |
+
+### SAP SuccessFactors Connection Issues
+
+| Issue | Solution |
+|-------|----------|
+| Authentication failed | Verify Client ID and Client Secret, ensure OAuth2 credentials have Employee Central permissions |
+| Invalid Instance URL | Confirm the URL format (e.g., `https://api.successfactors.com`) and accessibility |
+| Company ID not found | Verify the Company ID matches your SAP SuccessFactors tenant |
+| Employee not matched | Ensure employee numbers in Z8 match userId or personIdExternal values in SuccessFactors |
+| Time type not found | Add SuccessFactors-specific time type codes in wage type mappings |
+| Rate limit exceeded (429) | The system automatically retries with exponential backoff; reduce batch size if persistent |
+| API timeout | Increase the API Timeout setting or reduce batch size |
+| Absence skipped | Configure wage type mappings for all absence categories |
 
 ### Common Errors
 

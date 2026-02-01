@@ -1,0 +1,303 @@
+---
+title: Microsoft Teams Integration
+description: Connect z8 with Microsoft Teams for notifications and approvals
+icon: Bell
+---
+
+## Overview
+
+The z8 Microsoft Teams integration brings workforce management directly into your team's collaboration hub. Managers receive approval requests as interactive Adaptive Cards, employees can check their status with bot commands, and everyone stays informed with daily digest notifications.
+
+Key capabilities:
+
+- **Interactive Approval Cards**: Approve or reject time-off requests, time corrections, and other requests directly from Teams
+- **Daily Digest**: Managers receive a morning summary of pending approvals, who's out, coverage gaps, and compliance alerts
+- **Bot Commands**: Query clocked-in employees, pending approvals, and open shifts without leaving Teams
+- **Automatic Escalation**: Approval requests that go unanswered are automatically escalated to backup managers
+- **Multi-Tenant Support**: A single z8 bot serves all customer organizations, with each Microsoft 365 tenant linked to their respective z8 organization
+
+## Prerequisites
+
+Before setting up the Teams integration, ensure you have:
+
+1. **z8 Organization Admin Access**: You must be an administrator of your z8 organization
+2. **Microsoft 365 Admin Access**: You (or your IT admin) must be able to install apps in your Microsoft 365 tenant
+3. **Azure AD Tenant**: Your organization must use Microsoft 365 with Azure Active Directory
+4. **Matching Email Addresses**: Users are automatically linked between z8 and Teams based on email address matching
+
+<Callout type="info">
+The z8 Teams bot is a **multi-tenant application** registered in Azure AD. Your organization does not need to register its own Azure AD app - simply install the z8 app from the Teams App Directory.
+</Callout>
+
+## Bot Setup
+
+### Step 1: Install the z8 App in Teams
+
+1. Open Microsoft Teams
+2. Navigate to **Apps** in the left sidebar
+3. Search for "z8" or "z8 Time Tracking"
+4. Click **Add** to install the app for yourself, or **Add to a team** to make it available to your organization
+5. If you're a Teams admin, you can pre-install the app for all users via the Microsoft Teams Admin Center
+
+### Step 2: Link Your Microsoft 365 Tenant to z8
+
+After installing the app, a Teams admin must link your Microsoft 365 tenant to your z8 organization:
+
+1. Open the z8 bot in Teams (search for "z8" in the chat)
+2. The bot will detect that your tenant is not yet configured and provide a setup link
+3. Click the link to navigate to z8's integration settings page
+4. Sign in to z8 with an organization admin account
+5. Confirm the tenant linking by selecting your z8 organization
+6. Click **Connect** to complete the setup
+
+The linking process stores the following information:
+
+| Data | Purpose |
+|------|---------|
+| Microsoft Tenant ID | Routes bot messages to the correct z8 organization |
+| Organization ID | Links the tenant to your z8 workspace |
+| Service URL | Enables proactive messaging (approvals, digests) |
+
+### Step 3: Verify the Connection
+
+Once linked, you can verify the connection:
+
+1. Go to **Settings > Integrations > Microsoft Teams** in z8
+2. You should see your Microsoft 365 tenant name and a green "Active" status
+3. Open Teams and message the z8 bot with `help` to confirm it responds
+
+## Channel Notifications
+
+z8 can send notifications through Teams as an additional delivery channel alongside in-app, push, and email notifications.
+
+### Enabling Teams Notifications
+
+1. Navigate to **Settings > Integrations > Microsoft Teams** in z8
+2. Toggle the notification categories you want delivered via Teams:
+   - **Approval Requests**: Receive interactive cards for pending approvals
+   - **Bot Commands**: Allow users to query data via chat commands
+   - **Daily Digest**: Receive morning summary cards
+   - **Escalations**: Get notified when approvals escalate to backup managers
+
+### Notification Types Delivered via Teams
+
+| Notification Type | Format | Action Required |
+|-------------------|--------|-----------------|
+| Approval Request | Adaptive Card | Approve/Reject buttons |
+| Approval Resolution | Text message | No action |
+| Daily Digest | Adaptive Card | View links |
+| Escalation Alert | Text message | Review in z8 |
+
+### User Notification Preferences
+
+Individual users can control whether they receive Teams notifications:
+
+1. Go to **Settings > Notifications** in z8
+2. For each notification type, toggle the **Teams** channel on or off
+3. Teams notifications default to enabled if the integration is active
+
+## Approval Notifications
+
+The Teams integration transforms approval workflows by delivering interactive Adaptive Cards directly to managers.
+
+### How Approval Cards Work
+
+When an employee submits a request that requires approval (time-off, time correction, etc.):
+
+1. z8 creates an approval request and identifies the approving manager
+2. The system checks if the manager has a linked Teams account
+3. An Adaptive Card is sent to the manager's Teams chat with the z8 bot
+4. The card displays request details and Approve/Reject buttons
+5. The manager clicks a button to take action
+6. The card updates to show the resolution status
+7. The requesting employee is notified of the decision
+
+### Adaptive Card Contents
+
+Approval cards include:
+
+- **Requester Name**: Who submitted the request
+- **Request Type**: Absence request, time correction, etc.
+- **Details**: Dates, times, category, reason (if provided)
+- **Action Buttons**: Approve and Reject
+- **Deep Link**: Link to view full details in z8
+
+### Approval Escalation
+
+If an approval goes unanswered, z8 can automatically escalate to a backup manager:
+
+1. Configure the escalation timeout in **Settings > Integrations > Microsoft Teams**
+2. Default timeout is 24 hours
+3. When timeout expires, the approval is reassigned to the backup manager
+4. The new approver receives a fresh Adaptive Card
+5. Escalation history is tracked for audit purposes
+
+<Callout type="warn">
+Escalation requires that employees have a backup manager configured in their profile. Without a backup manager, unanswered approvals will remain pending.
+</Callout>
+
+## Daily Digest
+
+Managers receive a daily summary card at their configured time, providing an operational overview.
+
+### Digest Contents
+
+The daily digest includes:
+
+| Section | Information |
+|---------|-------------|
+| Pending Approvals | Count of requests awaiting your action |
+| Who's Out | Team members on leave today with return dates |
+| Currently Clocked In | Employees actively working with duration |
+| Coverage Gaps | Subareas with fewer staff than scheduled |
+| Open Shifts | Unfilled shifts for today and tomorrow |
+| Compliance Alerts | Pending compliance exceptions requiring review |
+
+### Configuring Digest Time
+
+1. Go to **Settings > Integrations > Microsoft Teams**
+2. Set your preferred **Digest Time** (default: 08:00)
+3. Select your **Timezone** for accurate delivery
+4. The digest is sent within a 15-minute window of the configured time
+
+### Disabling Daily Digest
+
+To stop receiving daily digests:
+
+- **Organization-wide**: Disable "Daily Digest" in the Teams integration settings
+- **Individual**: Set your Teams notification preference for digests to disabled
+
+## User Account Linking
+
+z8 automatically links user accounts between z8 and Teams based on email address matching.
+
+### Automatic Linking
+
+When a user first interacts with the z8 bot in Teams:
+
+1. The bot retrieves the user's email from their Teams profile
+2. z8 searches for a user with a matching email address
+3. If found, a mapping is created between the Teams user ID and z8 user ID
+4. The mapping is stored in `teams_user_mapping` and used for all future interactions
+
+### Linking Requirements
+
+For automatic linking to work:
+
+- The email address in Teams (User Principal Name or email) must exactly match the z8 user's email
+- The z8 user must have an employee record in the linked organization
+- Both accounts must be active
+
+### Manual Linking
+
+If automatic linking fails (e.g., different email domains), users can manually link their accounts:
+
+1. Open the z8 bot in Teams
+2. Type `link` to start the linking process
+3. The bot provides a secure link to z8
+4. Sign in to z8 and confirm the account link
+
+### Unlinking Accounts
+
+To unlink a Teams account:
+
+1. Go to **Settings > Integrations > Microsoft Teams** in z8
+2. Click **Unlink** next to your Teams account
+3. Alternatively, organization admins can unlink any user from the admin panel
+
+## Bot Commands
+
+The z8 bot supports several commands for quick information access.
+
+### Available Commands
+
+| Command | Aliases | Description |
+|---------|---------|-------------|
+| `help` | `commands`, `?` | List all available commands |
+| `clockedin` | `whoshere`, `active` | Show currently clocked-in team members |
+| `whosout` | `out`, `away` | Show team members on leave today |
+| `pending` | `approvals` | Show your pending approval requests |
+| `coverage` | - | Show coverage status for today |
+| `openshifts` | `open` | Show unfilled shifts |
+| `compliance` | - | Show pending compliance exceptions |
+
+### Using Commands
+
+Simply message the z8 bot with any command:
+
+```
+You: pending
+z8 Bot: You have 3 pending approvals:
+        * John Doe - Vacation (Dec 20-27)
+        * Jane Smith - Time Correction (Dec 15)
+        * Bob Johnson - Sick Leave (Dec 18-19)
+```
+
+### Command Permissions
+
+Some commands are restricted based on your role:
+
+- **All Users**: `help`, `clockedin` (own status)
+- **Managers**: `whosout`, `pending`, `coverage`, `openshifts`, `compliance`
+- **Admins**: All commands, including organization-wide views
+
+## Troubleshooting
+
+### Bot Not Responding
+
+**Symptoms**: The z8 bot doesn't respond to messages in Teams.
+
+**Solutions**:
+1. Verify the z8 app is installed in your Teams organization
+2. Check if your Microsoft 365 tenant is linked in z8 Settings
+3. Ensure the tenant status is "Active" (not "Pending" or "Suspended")
+4. Try reinstalling the z8 app in Teams
+
+### Not Receiving Approval Cards
+
+**Symptoms**: You're a manager but don't receive approval cards in Teams.
+
+**Solutions**:
+1. Verify your z8 email matches your Teams email
+2. Send a message to the z8 bot to trigger automatic account linking
+3. Check that Teams notifications are enabled in your z8 notification preferences
+4. Ensure "Enable Approvals" is turned on in the organization's Teams integration settings
+
+### Daily Digest Not Arriving
+
+**Symptoms**: You're a manager but don't receive the daily digest.
+
+**Solutions**:
+1. Confirm you have direct reports assigned to you in z8
+2. Verify the digest time and timezone in Teams integration settings
+3. Check that "Enable Daily Digest" is turned on for your organization
+4. Ensure you've messaged the z8 bot at least once to establish a conversation
+
+### Account Linking Failed
+
+**Symptoms**: The bot says it can't find your z8 account.
+
+**Solutions**:
+1. Verify your Teams email exactly matches your z8 account email
+2. Ensure you have an active employee record in z8
+3. Try the manual linking process (`link` command)
+4. Contact your z8 administrator to verify your account status
+
+### Approval Actions Not Working
+
+**Symptoms**: Clicking Approve/Reject on a card shows an error.
+
+**Solutions**:
+1. The approval may have already been processed elsewhere
+2. You may not be the current approver (escalation may have occurred)
+3. Try viewing the request in z8 directly using the provided link
+4. If the card is very old, the approval may have expired
+
+### Tenant Already Linked Error
+
+**Symptoms**: When trying to link your tenant, you see "Tenant is already linked to another organization."
+
+**Solutions**:
+1. Each Microsoft 365 tenant can only link to one z8 organization
+2. Contact your IT administrator to determine which z8 organization is currently linked
+3. To change the linked organization, the existing link must first be removed by an admin

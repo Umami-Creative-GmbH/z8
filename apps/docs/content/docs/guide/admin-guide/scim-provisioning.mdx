@@ -1,0 +1,548 @@
+---
+title: SCIM Provisioning
+description: Automate user and group provisioning from your identity provider using SCIM 2.0
+icon: UserPlus
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Steps, Step } from 'fumadocs-ui/components/steps';
+
+SCIM (System for Cross-domain Identity Management) 2.0 enables automatic user and group provisioning from your identity provider (IdP) to Z8. This eliminates manual user management and ensures your workforce data stays synchronized with your corporate directory.
+
+---
+
+## Overview
+
+SCIM provisioning automates the entire user lifecycle:
+
+| Event | SCIM Action | Z8 Behavior |
+|-------|-------------|-------------|
+| **Employee joins** | User created in IdP | User provisioned in Z8 with configured permissions |
+| **Role changes** | Group membership updated | Role template automatically applied |
+| **Employee leaves** | User deactivated/deleted | User suspended or soft-deleted based on policy |
+| **Attribute updates** | User attributes changed | Profile information synchronized |
+
+<Callout type="info" title="Enterprise Feature">
+  SCIM provisioning requires an Enterprise plan with SSO enabled. Contact your account manager to enable this feature.
+</Callout>
+
+---
+
+## Prerequisites
+
+Before configuring SCIM provisioning, ensure you have:
+
+- **Enterprise SSO** configured and working
+- **Organization owner** or **admin** role in Z8
+- **Admin access** to your identity provider (Okta, Azure AD, etc.)
+- **SCIM application** support in your IdP
+
+---
+
+## Configuration
+
+### Step 1: Enable SCIM in Z8
+
+<Steps>
+<Step>
+Navigate to **Settings** > **Security** > **Identity & Access**
+</Step>
+<Step>
+Click **Configure SCIM Provisioning**
+</Step>
+<Step>
+Copy the **SCIM Endpoint URL** and **Bearer Token**
+
+```
+SCIM Endpoint: https://app.z8.io/api/scim/v2
+Bearer Token: scim_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+</Step>
+<Step>
+Configure your provisioning settings:
+
+| Setting | Description | Default |
+|---------|-------------|---------|
+| **Auto-activate users** | Skip approval for SCIM-provisioned users | Disabled |
+| **Deprovision action** | What happens when users are removed | Suspend |
+| **Default role template** | Role to assign when no group mapping matches | Employee |
+</Step>
+</Steps>
+
+<Callout type="warn" title="Secure Your Token">
+  The SCIM bearer token provides full provisioning access to your organization. Store it securely and rotate it periodically.
+</Callout>
+
+### Step 2: Configure Your Identity Provider
+
+See the [IdP-Specific Guides](#idp-specific-guides) section below for detailed setup instructions for your identity provider.
+
+---
+
+## User Provisioning
+
+### How User Creation Works
+
+When a user is provisioned via SCIM:
+
+1. IdP sends a `POST /Users` request with user attributes
+2. Z8 creates the user account and organization membership
+3. If **auto-activate** is enabled, the user is immediately active
+4. If disabled, the user enters the [pending approval workflow](/guide/admin-guide/employee-management#pending-approvals)
+5. Default role template is applied (if configured)
+6. Provisioning event is logged for audit
+
+### User Attributes Mapping
+
+| SCIM Attribute | Z8 Field | Notes |
+|----------------|----------|-------|
+| `userName` | Email | Primary identifier |
+| `name.givenName` | First Name | Display name component |
+| `name.familyName` | Last Name | Display name component |
+| `displayName` | Full Name | Falls back to first + last |
+| `active` | Account Status | Controls access |
+| `externalId` | External ID | IdP reference for sync |
+
+### Auto-Activation Settings
+
+Control whether SCIM-provisioned users require approval:
+
+| Setting | Behavior |
+|---------|----------|
+| **Auto-activate enabled** | Users are immediately active and can log in |
+| **Auto-activate disabled** | Users appear in pending approvals queue |
+
+Configure per-organization in **Settings** > **Security** > **User Lifecycle**.
+
+---
+
+## Group Provisioning
+
+### How Group Sync Works
+
+SCIM groups map to Z8 role templates, enabling automatic permission assignment:
+
+1. IdP sends group membership changes via SCIM
+2. Z8 looks up the role template mapping for that group
+3. The mapped role template is applied to the user
+4. User's role, team permissions, and app access are updated
+
+### Role Template Mapping
+
+Map IdP groups to Z8 role templates:
+
+<Steps>
+<Step>
+Go to **Settings** > **Security** > **Role Templates**
+</Step>
+<Step>
+Create or select a role template
+</Step>
+<Step>
+Click **Add IdP Group Mapping**
+</Step>
+<Step>
+Enter the **IdP Group ID** (from your identity provider)
+</Step>
+<Step>
+Set the **Priority** (higher priority mappings take precedence)
+</Step>
+</Steps>
+
+### Role Template Contents
+
+Each role template can define:
+
+| Permission | Description |
+|------------|-------------|
+| **Employee Role** | Base role (employee, manager, admin) |
+| **Default Team** | Auto-assign to a specific team |
+| **Team Permissions** | Create teams, manage members, etc. |
+| **App Access** | Web, desktop, and mobile app access |
+
+### Priority and Conflict Resolution
+
+When a user belongs to multiple IdP groups:
+
+1. All matching role template mappings are identified
+2. The mapping with the **highest priority** is applied
+3. Only one role template is active per user per organization
+
+<Callout type="info" title="Priority Best Practice">
+  Use priority values like 100, 200, 300 to leave room for insertions. Higher numbers = higher priority.
+</Callout>
+
+---
+
+## Attribute Mapping
+
+### Standard SCIM Attributes
+
+Z8 supports the SCIM 2.0 Core User schema:
+
+```json
+{
+  "schemas": ["urn:ietf:params:scim:schemas:core:2.0:User"],
+  "userName": "jane.doe@company.com",
+  "name": {
+    "givenName": "Jane",
+    "familyName": "Doe"
+  },
+  "displayName": "Jane Doe",
+  "active": true,
+  "externalId": "12345"
+}
+```
+
+### Custom Attribute Extensions
+
+Z8 recognizes the following enterprise extension attributes:
+
+```json
+{
+  "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User": {
+    "department": "Engineering",
+    "manager": {
+      "value": "manager-external-id"
+    }
+  }
+}
+```
+
+| Extension Attribute | Z8 Mapping |
+|---------------------|------------|
+| `department` | Team assignment (if team exists) |
+| `manager.value` | Manager relationship |
+| `employeeNumber` | Employee ID field |
+
+---
+
+## Deprovisioning Workflows
+
+### Deprovision Actions
+
+When a user is deactivated or deleted via SCIM, Z8 performs one of two actions:
+
+| Action | Behavior | Use Case |
+|--------|----------|----------|
+| **Suspend** | User status set to suspended; can be reactivated | Temporary leaves, role transitions |
+| **Soft Delete** | Employee deactivated; data preserved | Permanent departures with compliance needs |
+
+Configure the default action in **Settings** > **Security** > **SCIM Configuration**.
+
+### Suspend Workflow
+
+1. IdP sends `PATCH /Users/{id}` with `active: false` or `DELETE /Users/{id}`
+2. Z8 sets member status to `suspended`
+3. User cannot log in or access any apps
+4. All time entries and data are preserved
+5. User can be reactivated via SCIM or manually
+
+### Soft Delete Workflow
+
+1. IdP sends deactivation or deletion request
+2. Z8 sets `employee.isActive = false`
+3. User loses all access
+4. Data retained for configured retention period (default: 90 days)
+5. After retention period, data may be permanently deleted
+
+<Callout type="warn" title="Compliance Consideration">
+  Choose your deprovision action carefully. Soft delete preserves data for audits and compliance but cannot be undone after the retention period.
+</Callout>
+
+### Reactivation
+
+Suspended users can be reactivated:
+
+1. IdP sends `PATCH /Users/{id}` with `active: true`
+2. Z8 reactivates the employee and member records
+3. Previous role template is restored
+4. User can log in immediately
+
+---
+
+## IdP-Specific Guides
+
+### Okta
+
+<Steps>
+<Step>
+In Okta Admin Console, go to **Applications** > **Applications**
+</Step>
+<Step>
+Click **Create App Integration** > **SCIM 2.0**
+</Step>
+<Step>
+Configure the SCIM connection:
+
+| Field | Value |
+|-------|-------|
+| SCIM connector base URL | `https://app.z8.io/api/scim/v2` |
+| Unique identifier field | `userName` |
+| Authentication mode | HTTP Header |
+| Authorization | `Bearer scim_your_token_here` |
+</Step>
+<Step>
+Enable provisioning features:
+- Create Users
+- Update User Attributes
+- Deactivate Users
+- Sync Password (optional)
+</Step>
+<Step>
+Map attributes in the **Provisioning** > **To App** section
+</Step>
+<Step>
+Assign users and groups to the application
+</Step>
+</Steps>
+
+### Microsoft Entra ID (Azure AD)
+
+<Steps>
+<Step>
+In Azure Portal, go to **Enterprise Applications**
+</Step>
+<Step>
+Click **New Application** > **Create your own application**
+</Step>
+<Step>
+Select **Integrate any other application (Non-gallery)**
+</Step>
+<Step>
+Go to **Provisioning** > **Get Started**
+</Step>
+<Step>
+Set **Provisioning Mode** to **Automatic**
+</Step>
+<Step>
+Configure Admin Credentials:
+
+| Field | Value |
+|-------|-------|
+| Tenant URL | `https://app.z8.io/api/scim/v2` |
+| Secret Token | `scim_your_token_here` |
+</Step>
+<Step>
+Click **Test Connection** to verify
+</Step>
+<Step>
+Configure attribute mappings under **Mappings**
+</Step>
+<Step>
+Turn **Provisioning Status** to **On**
+</Step>
+</Steps>
+
+### OneLogin
+
+<Steps>
+<Step>
+In OneLogin Admin, go to **Applications** > **Add App**
+</Step>
+<Step>
+Search for and add **SCIM Provisioner with SAML**
+</Step>
+<Step>
+Go to **Configuration** tab and enter:
+
+| Field | Value |
+|-------|-------|
+| SCIM Base URL | `https://app.z8.io/api/scim/v2` |
+| SCIM Bearer Token | `scim_your_token_here` |
+| API Connection | SCIM Bearer Token |
+</Step>
+<Step>
+Go to **Provisioning** tab and enable:
+- Create user
+- Update user
+- Delete user
+</Step>
+<Step>
+Configure **Parameters** for attribute mapping
+</Step>
+</Steps>
+
+### Google Workspace
+
+<Steps>
+<Step>
+In Google Admin Console, go to **Apps** > **SAML apps**
+</Step>
+<Step>
+Click the Z8 SAML app (must be configured first)
+</Step>
+<Step>
+Go to **Auto-provisioning** > **Set up auto-provisioning**
+</Step>
+<Step>
+Enter the endpoint URL and authorization token
+</Step>
+<Step>
+Map attributes and configure provisioning scope
+</Step>
+<Step>
+Enable auto-provisioning
+</Step>
+</Steps>
+
+---
+
+## Monitoring and Audit
+
+### Provisioning Logs
+
+All SCIM operations are logged with full detail:
+
+| Event Type | Description |
+|------------|-------------|
+| `user_created` | New user provisioned |
+| `user_updated` | User attributes modified |
+| `user_deactivated` | User set to inactive |
+| `user_reactivated` | User restored to active |
+| `user_deleted` | User removed via SCIM |
+| `group_member_added` | User added to group |
+| `group_member_removed` | User removed from group |
+| `role_template_applied` | Permission template assigned |
+| `error` | Provisioning error occurred |
+
+Access logs at **Settings** > **Audit Logs** > filter by **SCIM Provisioning**.
+
+### User Lifecycle Events
+
+Track join/move/leave events in the lifecycle audit trail:
+
+- **Join**: User provisioned with source = SCIM
+- **Move**: Role template changed via group membership
+- **Leave**: User deprovisioned
+
+---
+
+## Troubleshooting
+
+### SCIM Connection Errors
+
+**Test connection fails in IdP**
+
+1. Verify the SCIM endpoint URL is correct
+2. Check the bearer token is valid and not expired
+3. Ensure your IP is not blocked by firewall rules
+4. Verify SSO is enabled for your organization
+
+**401 Unauthorized errors**
+
+1. Regenerate the SCIM bearer token in Z8
+2. Update the token in your IdP configuration
+3. Ensure no extra whitespace in the token
+
+### User Provisioning Issues
+
+**Users not appearing in Z8**
+
+1. Check provisioning logs in your IdP
+2. Verify the user is assigned to the SCIM application
+3. Review Z8 provisioning logs for errors
+4. Ensure auto-activate is enabled or check pending approvals
+
+**Users created but cannot log in**
+
+1. Check if auto-activate is disabled (user may be pending)
+2. Verify app access permissions in role template
+3. Ensure the user's email matches their SSO identity
+
+### Group Mapping Issues
+
+**Role template not applied**
+
+1. Verify the IdP group ID in the mapping matches exactly
+2. Check if a higher-priority mapping is taking precedence
+3. Review provisioning logs for group membership events
+
+**Wrong permissions assigned**
+
+1. Check role template priority settings
+2. Verify the correct role template is mapped
+3. Review the role template contents
+
+### Deprovisioning Issues
+
+**User still has access after deletion**
+
+1. Existing sessions may still be valid
+2. Manually revoke sessions in **Settings** > **Members**
+3. Check if the deprovision action is set correctly
+
+**Cannot reactivate user**
+
+1. If soft-deleted, user cannot be reactivated via SCIM
+2. Create a new user or restore manually before retention expires
+3. Consider using "suspend" for recoverable deprovisioning
+
+---
+
+## Best Practices
+
+### Security
+
+- **Rotate SCIM tokens** periodically (recommended: every 90 days)
+- **Use IP allowlisting** if your IdP supports it
+- **Monitor provisioning logs** for unexpected activity
+- **Test in staging** before enabling in production
+
+### Configuration
+
+- **Start with auto-activate disabled** to review users before granting access
+- **Create role templates** before enabling group sync
+- **Use descriptive group names** for easier mapping management
+- **Set appropriate priorities** to handle multi-group membership
+
+### Maintenance
+
+- **Regular audits**: Compare IdP users with Z8 users quarterly
+- **Update mappings**: When organizational structure changes
+- **Review logs**: Check for recurring errors or sync issues
+- **Document procedures**: For token rotation and troubleshooting
+
+---
+
+## API Reference
+
+### SCIM Endpoints
+
+Z8 implements SCIM 2.0 RFC 7644:
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/scim/v2/Users` | GET | List users |
+| `/scim/v2/Users` | POST | Create user |
+| `/scim/v2/Users/{id}` | GET | Get user |
+| `/scim/v2/Users/{id}` | PUT | Replace user |
+| `/scim/v2/Users/{id}` | PATCH | Update user |
+| `/scim/v2/Users/{id}` | DELETE | Delete user |
+| `/scim/v2/Groups` | GET | List groups |
+| `/scim/v2/Groups` | POST | Create group |
+| `/scim/v2/Groups/{id}` | GET | Get group |
+| `/scim/v2/Groups/{id}` | PATCH | Update group |
+| `/scim/v2/Groups/{id}` | DELETE | Delete group |
+| `/scim/v2/ServiceProviderConfig` | GET | Service provider config |
+| `/scim/v2/Schemas` | GET | List schemas |
+| `/scim/v2/ResourceTypes` | GET | List resource types |
+
+### Authentication
+
+All SCIM requests require Bearer token authentication:
+
+```http
+Authorization: Bearer scim_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+### Rate Limits
+
+| Tier | Requests/minute | Burst |
+|------|-----------------|-------|
+| Enterprise | 1000 | 100 |
+
+Rate limit headers are included in responses:
+- `X-RateLimit-Limit`
+- `X-RateLimit-Remaining`
+- `X-RateLimit-Reset`
