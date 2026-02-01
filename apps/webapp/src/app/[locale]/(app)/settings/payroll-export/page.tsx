@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { DatevConfigForm } from "@/components/settings/payroll-export/datev-config-form";
+import { PersonioConfigForm } from "@/components/settings/payroll-export/personio-config-form";
 import { ExportForm } from "@/components/settings/payroll-export/export-form";
 import { ExportHistory } from "@/components/settings/payroll-export/export-history";
 import { WageTypeMappings } from "@/components/settings/payroll-export/wage-type-mappings";
@@ -14,6 +15,7 @@ import { getAuthContext } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
 import {
 	getDatevConfigAction,
+	getPersonioConfigAction,
 	getExportHistoryAction,
 } from "./actions";
 
@@ -40,14 +42,19 @@ async function PayrollExportContent() {
 
 	const organizationId = authContext.employee.organizationId;
 
-	// Fetch config and history in parallel
-	const [configResult, historyResult] = await Promise.all([
+	// Fetch configs and history in parallel
+	const [datevConfigResult, personioConfigResult, historyResult] = await Promise.all([
 		getDatevConfigAction(organizationId),
+		getPersonioConfigAction(organizationId),
 		getExportHistoryAction(organizationId),
 	]);
 
-	const config = configResult.success ? configResult.data : null;
+	const datevConfig = datevConfigResult.success ? datevConfigResult.data : null;
+	const personioConfig = personioConfigResult.success ? personioConfigResult.data : null;
 	const exports = historyResult.success ? historyResult.data : [];
+
+	// For backward compatibility, use datevConfig as main config
+	const config = datevConfig;
 
 	return (
 		<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
@@ -58,18 +65,21 @@ async function PayrollExportContent() {
 				<p className="text-muted-foreground">
 					{t(
 						"settings.payrollExport.description",
-						"Export work periods to DATEV Lohn & Gehalt",
+						"Export work periods to payroll systems like DATEV or Personio",
 					)}
 				</p>
 			</div>
 
-			<Tabs defaultValue={config ? "export" : "configuration"} className="w-full">
+			<Tabs defaultValue={config ? "export" : "datev"} className="w-full">
 				<TabsList>
 					<TabsTrigger value="export">
 						{t("settings.payrollExport.tabs.export", "Export")}
 					</TabsTrigger>
-					<TabsTrigger value="configuration">
-						{t("settings.payrollExport.tabs.configuration", "Configuration")}
+					<TabsTrigger value="datev">
+						{t("settings.payrollExport.tabs.datev", "DATEV")}
+					</TabsTrigger>
+					<TabsTrigger value="personio">
+						{t("settings.payrollExport.tabs.personio", "Personio")}
 					</TabsTrigger>
 					<TabsTrigger value="mappings">
 						{t("settings.payrollExport.tabs.mappings", "Wage Types")}
@@ -83,8 +93,12 @@ async function PayrollExportContent() {
 					<ExportForm organizationId={organizationId} config={config} />
 				</TabsContent>
 
-				<TabsContent value="configuration" className="mt-4">
-					<DatevConfigForm organizationId={organizationId} initialConfig={config} />
+				<TabsContent value="datev" className="mt-4">
+					<DatevConfigForm organizationId={organizationId} initialConfig={datevConfig} />
+				</TabsContent>
+
+				<TabsContent value="personio" className="mt-4">
+					<PersonioConfigForm organizationId={organizationId} initialConfig={personioConfig} />
 				</TabsContent>
 
 				<TabsContent value="mappings" className="mt-4">

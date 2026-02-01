@@ -354,9 +354,20 @@ export async function saveMappingAction(
 			throw new Error("Exactly one of workCategoryId, absenceCategoryId, or specialCategory must be provided");
 		}
 
-		// Validate organization ownership of category IDs
+		// Validate organization ownership of configId and category IDs
 		yield* _(
 			Effect.promise(async () => {
+				// Validate configId belongs to organization
+				const config = await db.query.payrollExportConfig.findFirst({
+					where: and(
+						eq(payrollExportConfig.id, input.configId),
+						eq(payrollExportConfig.organizationId, input.organizationId),
+					),
+				});
+				if (!config) {
+					throw new Error("Configuration not found or access denied");
+				}
+
 				if (input.workCategoryId) {
 					const category = await db.query.workCategory.findFirst({
 						where: and(
@@ -482,8 +493,22 @@ export async function deleteMappingAction(
 			);
 		}
 
+		// Validate mapping belongs to organization before deleting
 		yield* _(
 			Effect.promise(async () => {
+				const mapping = await db.query.payrollWageTypeMapping.findFirst({
+					where: eq(payrollWageTypeMapping.id, input.mappingId),
+					with: { config: true },
+				});
+
+				if (!mapping) {
+					throw new Error("Mapping not found");
+				}
+
+				if (mapping.config.organizationId !== input.organizationId) {
+					throw new Error("Mapping not found or access denied");
+				}
+
 				await db
 					.delete(payrollWageTypeMapping)
 					.where(eq(payrollWageTypeMapping.id, input.mappingId));
@@ -807,6 +832,349 @@ export async function getExportDownloadUrlAction(
 		);
 
 		return url;
+	});
+
+	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+}
+
+// ============================================
+// PERSONIO CONFIGURATION TYPES
+// ============================================
+
+import { storeOrgSecret, getOrgSecret, deleteOrgSecret } from "@/lib/vault/secrets";
+import { getExporter, type PersonioConfig } from "@/lib/payroll-export";
+
+const PERSONIO_FORMAT_ID = "personio";
+const VAULT_KEY_CLIENT_ID = "payroll/personio/client_id";
+const VAULT_KEY_CLIENT_SECRET = "payroll/personio/client_secret";
+
+export interface PersonioConfigResult {
+	id: string;
+	formatId: string;
+	config: PersonioConfig;
+	isActive: boolean;
+	hasCredentials: boolean;
+	createdAt: Date;
+	updatedAt: Date;
+}
+
+export interface SavePersonioConfigInput {
+	organizationId: string;
+	config: PersonioConfig;
+}
+
+export interface SavePersonioCredentialsInput {
+	organizationId: string;
+	clientId: string;
+	clientSecret: string;
+}
+
+// ============================================
+// PERSONIO CONFIGURATION ACTIONS
+// ============================================
+
+/**
+ * Get Personio configuration for organization
+ */
+export async function getPersonioConfigAction(
+	organizationId: string,
+): Promise<ServerActionResult<PersonioConfigResult | null>> {
+	const effect = Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
+
+		const hasPermission = yield* _(
+			Effect.promise(() => isOrgAdmin(session.user.id, organizationId)),
+		);
+
+		if (!hasPermission) {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Insufficient permissions - admin role required",
+						userId: session.user.id,
+						resource: "payroll_export_config",
+						action: "read",
+					}),
+				),
+			);
+		}
+
+		const configResult = yield* _(
+			Effect.promise(() => getPayrollExportConfig(organizationId, PERSONIO_FORMAT_ID)),
+		);
+
+		if (!configResult) {
+			return null;
+		}
+
+		// Check if credentials exist in Vault
+		const hasCredentials = yield* _(
+			Effect.promise(async () => {
+				const clientId = await getOrgSecret(organizationId, VAULT_KEY_CLIENT_ID);
+				return clientId !== null;
+			}),
+		);
+
+		return {
+			id: configResult.config.id,
+			formatId: configResult.config.formatId,
+			config: configResult.config.config as unknown as PersonioConfig,
+			isActive: configResult.config.isActive,
+			hasCredentials,
+			createdAt: configResult.config.createdAt,
+			updatedAt: configResult.config.updatedAt,
+		};
+	});
+
+	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+}
+
+/**
+ * Save Personio configuration
+ */
+export async function savePersonioConfigAction(
+	input: SavePersonioConfigInput,
+): Promise<ServerActionResult<PersonioConfigResult>> {
+	const effect = Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
+
+		const hasPermission = yield* _(
+			Effect.promise(() => isOrgAdmin(session.user.id, input.organizationId)),
+		);
+
+		if (!hasPermission) {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Insufficient permissions - admin role required",
+						userId: session.user.id,
+						resource: "payroll_export_config",
+						action: "create",
+					}),
+				),
+			);
+		}
+
+		// Ensure Personio format exists
+		yield* _(
+			Effect.promise(async () => {
+				const format = await db.query.payrollExportFormat.findFirst({
+					where: eq(payrollExportFormat.id, PERSONIO_FORMAT_ID),
+				});
+
+				if (!format) {
+					// Create the format if it doesn't exist
+					await db.insert(payrollExportFormat).values({
+						id: PERSONIO_FORMAT_ID,
+						name: "Personio",
+						version: "1.0",
+						description: "Push time entries directly to Personio HR",
+						isEnabled: true,
+						requiresConfiguration: true,
+						supportsAsync: true,
+						syncThreshold: 500,
+						updatedAt: new Date(),
+					});
+				}
+			}),
+		);
+
+		// Save or update config
+		const config = yield* _(
+			Effect.promise(async () => {
+				const existing = await db.query.payrollExportConfig.findFirst({
+					where: and(
+						eq(payrollExportConfig.organizationId, input.organizationId),
+						eq(payrollExportConfig.formatId, PERSONIO_FORMAT_ID),
+					),
+				});
+
+				if (existing) {
+					const [updated] = await db
+						.update(payrollExportConfig)
+						.set({
+							config: input.config as unknown as Record<string, unknown>,
+							updatedBy: session.user.id,
+						})
+						.where(eq(payrollExportConfig.id, existing.id))
+						.returning();
+
+					return updated;
+				} else {
+					const [inserted] = await db
+						.insert(payrollExportConfig)
+						.values({
+							organizationId: input.organizationId,
+							formatId: PERSONIO_FORMAT_ID,
+							config: input.config as unknown as Record<string, unknown>,
+							isActive: true,
+							createdBy: session.user.id,
+							updatedAt: new Date(),
+						})
+						.returning();
+
+					return inserted;
+				}
+			}),
+		);
+
+		// Check if credentials exist
+		const hasCredentials = yield* _(
+			Effect.promise(async () => {
+				const clientId = await getOrgSecret(input.organizationId, VAULT_KEY_CLIENT_ID);
+				return clientId !== null;
+			}),
+		);
+
+		revalidatePath("/settings/payroll-export");
+
+		return {
+			id: config.id,
+			formatId: config.formatId,
+			config: config.config as unknown as PersonioConfig,
+			isActive: config.isActive,
+			hasCredentials,
+			createdAt: config.createdAt,
+			updatedAt: config.updatedAt,
+		};
+	});
+
+	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+}
+
+/**
+ * Save Personio API credentials to Vault
+ */
+export async function savePersonioCredentialsAction(
+	input: SavePersonioCredentialsInput,
+): Promise<ServerActionResult<{ success: boolean }>> {
+	const effect = Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
+
+		const hasPermission = yield* _(
+			Effect.promise(() => isOrgAdmin(session.user.id, input.organizationId)),
+		);
+
+		if (!hasPermission) {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Insufficient permissions - admin role required",
+						userId: session.user.id,
+						resource: "payroll_export_config",
+						action: "create",
+					}),
+				),
+			);
+		}
+
+		// Store credentials in Vault
+		yield* _(
+			Effect.promise(async () => {
+				await storeOrgSecret(input.organizationId, VAULT_KEY_CLIENT_ID, input.clientId);
+				await storeOrgSecret(input.organizationId, VAULT_KEY_CLIENT_SECRET, input.clientSecret);
+			}),
+		);
+
+		revalidatePath("/settings/payroll-export");
+
+		return { success: true };
+	});
+
+	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+}
+
+/**
+ * Delete Personio API credentials from Vault
+ */
+export async function deletePersonioCredentialsAction(
+	organizationId: string,
+): Promise<ServerActionResult<{ success: boolean }>> {
+	const effect = Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
+
+		const hasPermission = yield* _(
+			Effect.promise(() => isOrgAdmin(session.user.id, organizationId)),
+		);
+
+		if (!hasPermission) {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Insufficient permissions - admin role required",
+						userId: session.user.id,
+						resource: "payroll_export_config",
+						action: "delete",
+					}),
+				),
+			);
+		}
+
+		// Delete credentials from Vault
+		yield* _(
+			Effect.promise(async () => {
+				await deleteOrgSecret(organizationId, VAULT_KEY_CLIENT_ID);
+				await deleteOrgSecret(organizationId, VAULT_KEY_CLIENT_SECRET);
+			}),
+		);
+
+		revalidatePath("/settings/payroll-export");
+
+		return { success: true };
+	});
+
+	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+}
+
+/**
+ * Test Personio API connection
+ */
+export async function testPersonioConnectionAction(
+	organizationId: string,
+): Promise<ServerActionResult<{ success: boolean; error?: string }>> {
+	const effect = Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
+
+		const hasPermission = yield* _(
+			Effect.promise(() => isOrgAdmin(session.user.id, organizationId)),
+		);
+
+		if (!hasPermission) {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Insufficient permissions - admin role required",
+						userId: session.user.id,
+						resource: "payroll_export_config",
+						action: "read",
+					}),
+				),
+			);
+		}
+
+		// Get the Personio exporter and test connection
+		const exporter = getExporter(PERSONIO_FORMAT_ID);
+		if (!exporter) {
+			return { success: false, error: "Personio exporter not available" };
+		}
+
+		// Get config
+		const configResult = yield* _(
+			Effect.promise(() => getPayrollExportConfig(organizationId, PERSONIO_FORMAT_ID)),
+		);
+
+		const config = configResult?.config.config || {};
+
+		const result = yield* _(
+			Effect.promise(() => exporter.testConnection(organizationId, config as Record<string, unknown>)),
+		);
+
+		return result;
 	});
 
 	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
