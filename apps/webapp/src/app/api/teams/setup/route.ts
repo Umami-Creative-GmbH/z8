@@ -88,15 +88,13 @@ export async function POST(request: NextRequest) {
 			where: eq(employee.userId, session.user.id),
 		});
 
-		if (!emp || emp.organizationId !== organizationId) {
+		if (!emp || emp.organizationId !== organizationId || emp.role !== "admin") {
 			return NextResponse.json(
 				{ error: "Access denied" },
 				{ status: 403 },
 			);
 		}
 
-		// Check if user is an admin (role check)
-		// Note: This should be enhanced with proper role checking based on your auth setup
 		const org = await db.query.organization.findFirst({
 			where: eq(organization.id, organizationId),
 		});
@@ -211,7 +209,7 @@ export async function DELETE(request: NextRequest) {
 			where: eq(employee.userId, session.user.id),
 		});
 
-		if (!emp || emp.organizationId !== organizationId) {
+		if (!emp || emp.organizationId !== organizationId || emp.role !== "admin") {
 			return NextResponse.json(
 				{ error: "Access denied" },
 				{ status: 403 },
