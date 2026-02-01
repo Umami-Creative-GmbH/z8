@@ -54,17 +54,23 @@ export function TimeClockPopover() {
 		const result = await clockIn();
 
 		if (result.success) {
-			toast.success(t("timeTracking.clockInSuccess", "Clocked in successfully"));
+			// Check if this was an offline queued request
+			if ("queued" in result && result.queued) {
+				toast.info(t("timeTracking.clockInQueued", "Clock-in queued for sync"));
+			} else {
+				toast.success(t("timeTracking.clockInSuccess", "Clocked in successfully"));
+			}
 			setOpen(false);
 		} else {
-			const errorMessage = result.holidayName
+			const holidayName = "holidayName" in result ? result.holidayName : undefined;
+			const errorMessage = holidayName
 				? t("timeTracking.errors.holidayBlocked", "Cannot clock in on {holidayName}", {
-						holidayName: result.holidayName,
+						holidayName,
 					})
 				: result.error || t("timeTracking.errors.clockInFailed", "Failed to clock in");
 
 			toast.error(errorMessage, {
-				description: result.holidayName
+				description: holidayName
 					? t(
 							"timeTracking.errors.holidayBlockedDesc",
 							"This day is marked as a holiday and time entries are not allowed",
@@ -81,12 +87,21 @@ export function TimeClockPopover() {
 		});
 
 		if (result.success) {
+			// Check if this was an offline queued request
+			if ("queued" in result && result.queued) {
+				toast.info(t("timeTracking.clockOutQueued", "Clock-out queued for sync"));
+				setSelectedProjectId(undefined);
+				setSelectedWorkCategoryId(undefined);
+				setOpen(false);
+				return;
+			}
+
 			toast.success(t("timeTracking.clockOutSuccess", "Clocked out successfully"));
 			// Reset selections after successful clock out
 			setSelectedProjectId(undefined);
 			setSelectedWorkCategoryId(undefined);
-			// Show notes input and store the entry ID for patching
-			if (result.data?.id) {
+			// Show notes input and store the entry ID for patching (only for non-queued)
+			if ("data" in result && result.data?.id) {
 				setLastClockOutEntryId(result.data.id);
 				setShowNotesInput(true);
 				setNotesText("");
@@ -94,14 +109,15 @@ export function TimeClockPopover() {
 				setOpen(false);
 			}
 		} else {
-			const errorMessage = result.holidayName
+			const holidayName = "holidayName" in result ? result.holidayName : undefined;
+			const errorMessage = holidayName
 				? t("timeTracking.errors.holidayBlocked", "Cannot clock out on {holidayName}", {
-						holidayName: result.holidayName,
+						holidayName,
 					})
 				: result.error || t("timeTracking.errors.clockOutFailed", "Failed to clock out");
 
 			toast.error(errorMessage, {
-				description: result.holidayName
+				description: holidayName
 					? t(
 							"timeTracking.errors.holidayBlockedDesc",
 							"This day is marked as a holiday and time entries are not allowed",

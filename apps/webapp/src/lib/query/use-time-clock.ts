@@ -8,6 +8,7 @@ import {
 	getTimeClockStatus,
 	updateTimeEntryNotes,
 } from "@/app/[locale]/(app)/time-tracking/actions";
+import { useOfflineClock } from "@/hooks/use-offline-clock";
 import { queryKeys } from "./keys";
 
 export interface TimeClockState {
@@ -74,6 +75,7 @@ interface UseTimeClockOptions {
  * Provides:
  * - Time clock status query with caching
  * - Clock in/out mutations with automatic cache invalidation
+ * - Offline support with automatic queuing
  *
  * Note: For real-time elapsed seconds, use `useElapsedTimer` separately.
  * This prevents unnecessary re-renders in components that don't need the timer.
@@ -81,6 +83,15 @@ interface UseTimeClockOptions {
 export function useTimeClock(options: UseTimeClockOptions = {}) {
 	const { initialData, enabled = true } = options;
 	const queryClient = useQueryClient();
+
+	// Offline support
+	const {
+		isOnline,
+		isOffline,
+		pendingCount,
+		isSyncing,
+		queueClockEvent,
+	} = useOfflineClock();
 
 	// Query for time clock status
 	const statusQuery = useQuery({
@@ -94,42 +105,103 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 
 	const status = statusQuery.data;
 
-	// Clock in mutation
+	// Clock in mutation with offline support
 	const clockInMutation = useMutation({
-		mutationFn: clockIn,
+		mutationFn: async () => {
+			// When offline, queue the event for later sync
+			if (isOffline) {
+				const result = await queueClockEvent({
+					type: "clock_in",
+					timestamp: Date.now(),
+					organizationId: "pending", // Will be resolved on sync
+				});
+
+				if (result.success) {
+					// Optimistically update the UI immediately
+					queryClient.setQueryData(
+						queryKeys.timeClock.status(),
+						(old: TimeClockState | undefined) => {
+							if (!old) return old;
+							return {
+								...old,
+								isClockedIn: true,
+								activeWorkPeriod: {
+									id: `pending-${Date.now()}`,
+									startTime: new Date(),
+								},
+							};
+						},
+					);
+
+					// Return success without data (queued case)
+					// The toast in the hook will notify the user
+					return { success: true as const, queued: true };
+				}
+				return {
+					success: false as const,
+					error: result.error || "Failed to queue clock event",
+				};
+			}
+
+			// Online - use normal server action
+			return clockIn();
+		},
 		onSuccess: (result) => {
-			if (result.success) {
-				// Invalidate and refetch status
+			if (result.success && !("queued" in result)) {
+				// Only invalidate for non-queued success (server confirmed)
 				queryClient.invalidateQueries({ queryKey: queryKeys.timeClock.status() });
 			}
 		},
 	});
 
-	// Clock out mutation
+	// Clock out mutation with offline support
 	const clockOutMutation = useMutation({
-		mutationFn: (params?: { projectId?: string; workCategoryId?: string }) =>
-			clockOut(params?.projectId, params?.workCategoryId),
+		mutationFn: async (params?: { projectId?: string; workCategoryId?: string }) => {
+			// When offline, queue the event for later sync
+			if (isOffline) {
+				const result = await queueClockEvent({
+					type: "clock_out",
+					timestamp: Date.now(),
+					organizationId: "pending", // Will be resolved on sync
+					projectId: params?.projectId,
+					workCategoryId: params?.workCategoryId,
+				});
+
+				if (result.success) {
+					// Optimistically update the UI immediately
+					queryClient.setQueryData(
+						queryKeys.timeClock.status(),
+						(old: TimeClockState | undefined) => {
+							if (!old) return old;
+							return {
+								...old,
+								isClockedIn: false,
+								activeWorkPeriod: null,
+							};
+						},
+					);
+
+					// Return success without data (queued case)
+					return { success: true as const, queued: true };
+				}
+				return {
+					success: false as const,
+					error: result.error || "Failed to queue clock event",
+				};
+			}
+
+			// Online - use normal server action
+			return clockOut(params?.projectId, params?.workCategoryId);
+		},
 		onSuccess: (result) => {
-			if (result.success) {
-				// Optimistically clear the active work period
-				queryClient.setQueryData(
-					queryKeys.timeClock.status(),
-					(old: TimeClockState | undefined) => {
-						if (!old) return old;
-						return {
-							...old,
-							isClockedIn: false,
-							activeWorkPeriod: null,
-						};
-					},
-				);
-				// Then invalidate to ensure consistency
+			if (result.success && !("queued" in result)) {
+				// Only invalidate for non-queued success (server confirmed)
 				queryClient.invalidateQueries({ queryKey: queryKeys.timeClock.status() });
 			}
 		},
 	});
 
-	// Update notes mutation
+	// Update notes mutation (online only - notes are secondary)
 	const updateNotesMutation = useMutation({
 		mutationFn: ({ entryId, notes }: { entryId: string; notes: string }) =>
 			updateTimeEntryNotes(entryId, notes),
@@ -152,6 +224,12 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 		employeeId: status?.employeeId ?? null,
 		isClockedIn: status?.isClockedIn ?? false,
 		activeWorkPeriod: status?.activeWorkPeriod ?? null,
+
+		// Offline state
+		isOnline,
+		isOffline,
+		pendingCount,
+		isSyncing,
 
 		// Mutations
 		clockIn: clockInMutation.mutateAsync,

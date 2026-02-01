@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 		}
 
-		const { type, timestamp, notes, location } = body;
+		const { type, timestamp, notes, location, projectId } = body;
 
 		// Validate required fields
 		if (!type || !["clock_in", "clock_out"].includes(type)) {
@@ -225,6 +225,7 @@ export async function POST(request: NextRequest) {
 						endTime: entryTime,
 						durationMinutes,
 						isActive: false,
+						...(projectId && { projectId }),
 					})
 					.where(eq(workPeriod.id, activePeriod.id));
 			}
