@@ -41,12 +41,21 @@ export const NOTIFICATION_TYPES = [
 	"project_deadline_overdue",
 	// Wellness notifications
 	"water_reminder",
+	// ArbZG Compliance notifications
+	"rest_period_warning",
+	"rest_period_violation",
+	"overtime_warning",
+	"overtime_violation",
+	"compliance_exception_requested",
+	"compliance_exception_approved",
+	"compliance_exception_rejected",
+	"compliance_exception_expired",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 
 // Notification channel enum values
-export const NOTIFICATION_CHANNELS = ["in_app", "push", "email"] as const;
+export const NOTIFICATION_CHANNELS = ["in_app", "push", "email", "teams"] as const;
 
 export type NotificationChannel = (typeof NOTIFICATION_CHANNELS)[number];
 

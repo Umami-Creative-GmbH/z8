@@ -12,6 +12,7 @@ import { createLogger } from "@/lib/logger";
 import { publishNotificationEvent } from "@/lib/valkey";
 import { sendEmailNotification } from "./email-notifications";
 import { isPushAvailable, type PushPayload, sendPushToUser } from "./push-service";
+import { sendTeamsNotification, isTeamsAvailable } from "./teams-channel";
 import type {
 	CreateNotificationParams,
 	Notification,
@@ -85,6 +86,10 @@ export async function createNotification(
 		// Check email preference
 		const emailPreference = preferences.find((p) => p.channel === "email");
 		const emailEnabled = !emailPreference || emailPreference.enabled;
+
+		// Check Teams preference
+		const teamsPreference = preferences.find((p) => p.channel === "teams");
+		const teamsEnabled = !teamsPreference || teamsPreference.enabled;
 
 		let created: Notification | null = null;
 
@@ -172,6 +177,27 @@ export async function createNotification(
 			});
 		}
 
+		// Send Teams notification if enabled and available
+		if (teamsEnabled && (await isTeamsAvailable(params.organizationId))) {
+			// Fire and forget - don't await to avoid blocking
+			void sendTeamsNotification({
+				userId: params.userId,
+				organizationId: params.organizationId,
+				type: params.type,
+				title: params.title,
+				message: params.message,
+				entityType: params.entityType,
+				entityId: params.entityId,
+				actionUrl: params.actionUrl,
+				metadata: params.metadata,
+			}).catch((error) => {
+				logger.error(
+					{ error, userId: params.userId, type: params.type },
+					"Failed to send Teams notification",
+				);
+			});
+		}
+
 		// Publish to event bus for webhooks (fire-and-forget)
 		// This allows webhooks to receive all notification events
 		publishEventAsync(params.type, params.organizationId, {
@@ -188,6 +214,41 @@ export async function createNotification(
 		return created;
 	} catch (error) {
 		logger.error({ error, params }, "Failed to create notification");
+		return null;
+	}
+}
+
+/**
+ * Create a notification for a manager by their employee ID
+ *
+ * This resolves the manager's userId from their employee ID, then creates
+ * the notification using createNotification.
+ */
+export async function createNotificationForManager(
+	params: Omit<CreateNotificationParams, "userId"> & { managerId: string },
+): Promise<Notification | null> {
+	try {
+		// Import employee table here to avoid circular dependency
+		const { employee } = await import("@/db/schema");
+
+		// Get the manager's userId from their employee record
+		const manager = await db.query.employee.findFirst({
+			where: eq(employee.id, params.managerId),
+			columns: { userId: true },
+		});
+
+		if (!manager) {
+			logger.warn({ managerId: params.managerId }, "Manager not found for notification");
+			return null;
+		}
+
+		// Create notification with resolved userId
+		return await createNotification({
+			...params,
+			userId: manager.userId,
+		});
+	} catch (error) {
+		logger.error({ error, params }, "Failed to create manager notification");
 		return null;
 	}
 }

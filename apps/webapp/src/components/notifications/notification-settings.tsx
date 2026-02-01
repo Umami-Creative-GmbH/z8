@@ -2,6 +2,7 @@
 
 import {
 	IconBell,
+	IconBrandTeams,
 	IconCalendar,
 	IconCalendarEvent,
 	IconCheck,
@@ -139,6 +140,15 @@ const TYPE_LABELS: Record<NotificationType, string> = {
 	project_deadline_overdue: "Project overdue",
 	// Wellness notifications
 	water_reminder: "Water reminders",
+	// Compliance notifications
+	rest_period_warning: "Rest period warning",
+	rest_period_violation: "Rest period violation",
+	overtime_warning: "Overtime warning",
+	overtime_violation: "Overtime violation",
+	compliance_exception_requested: "Exception requested",
+	compliance_exception_approved: "Exception approved",
+	compliance_exception_rejected: "Exception rejected",
+	compliance_exception_expired: "Exception expired",
 };
 
 // Channel icons and labels
@@ -160,6 +170,11 @@ const CHANNEL_CONFIG: Record<
 		icon: IconMail,
 		label: "Email",
 		description: "Send email notifications",
+	},
+	teams: {
+		icon: IconBrandTeams,
+		label: "Teams",
+		description: "Microsoft Teams notifications",
 	},
 };
 
