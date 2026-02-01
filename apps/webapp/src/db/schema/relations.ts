@@ -64,6 +64,7 @@ import {
 	payrollExportConfig,
 	payrollExportFormat,
 	payrollExportJob,
+	payrollExportSyncRecord,
 	payrollWageTypeMapping,
 } from "./payroll-export";
 import {
@@ -1364,7 +1365,7 @@ export const payrollWageTypeMappingRelations = relations(payrollWageTypeMapping,
 	}),
 }));
 
-export const payrollExportJobRelations = relations(payrollExportJob, ({ one }) => ({
+export const payrollExportJobRelations = relations(payrollExportJob, ({ one, many }) => ({
 	organization: one(organization, {
 		fields: [payrollExportJob.organizationId],
 		references: [organization.id],
@@ -1377,4 +1378,15 @@ export const payrollExportJobRelations = relations(payrollExportJob, ({ one }) =
 		fields: [payrollExportJob.requestedById],
 		references: [employee.id],
 	}),
+	syncRecords: many(payrollExportSyncRecord),
 }));
+
+export const payrollExportSyncRecordRelations = relations(
+	payrollExportSyncRecord,
+	({ one }) => ({
+		job: one(payrollExportJob, {
+			fields: [payrollExportSyncRecord.jobId],
+			references: [payrollExportJob.id],
+		}),
+	}),
+);

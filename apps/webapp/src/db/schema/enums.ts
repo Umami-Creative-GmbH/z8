@@ -169,6 +169,7 @@ export const memberStatusEnum = pgEnum("member_status", [
 // Payroll export format enum
 export const payrollExportFormatEnum = pgEnum("payroll_export_format", [
 	"datev_lohn",
+	"personio",
 	"sage",
 	"lexware",
 	"custom",

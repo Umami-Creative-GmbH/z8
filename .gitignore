@@ -70,6 +70,7 @@ apps/webapp/public/uploads/
 # claude tmp files
 tmpclaude*-cwd
 nul
+.claude/settings.local.json
 
 # Vault keys and data (contains secrets)
 .vault-keys

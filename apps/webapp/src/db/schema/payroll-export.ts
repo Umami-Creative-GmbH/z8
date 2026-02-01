@@ -200,6 +200,10 @@ export const payrollExportJob = pgTable(
 		workPeriodCount: integer("work_period_count"), // Total periods processed
 		employeeCount: integer("employee_count"), // Total employees in export
 
+		// API export results (for Personio and similar)
+		syncedRecordCount: integer("synced_record_count"), // Successfully synced to external system
+		failedRecordCount: integer("failed_record_count"), // Failed to sync
+
 		// Timestamps
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		startedAt: timestamp("started_at"),
@@ -214,5 +218,50 @@ export const payrollExportJob = pgTable(
 		index("payrollExportJob_createdAt_idx").on(table.createdAt),
 		// Composite index for finding pending async jobs
 		index("payrollExportJob_status_isAsync_idx").on(table.status, table.isAsync),
+	],
+);
+
+/**
+ * Payroll export sync records
+ * Tracks individual record sync status for API-based exports (Personio, etc.)
+ * Enables partial success handling and selective retry
+ */
+export const payrollExportSyncRecord = pgTable(
+	"payroll_export_sync_record",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		jobId: uuid("job_id")
+			.notNull()
+			.references(() => payrollExportJob.id, { onDelete: "cascade" }),
+
+		// Record identification
+		recordType: text("record_type").notNull(), // "attendance" | "absence"
+		sourceRecordId: uuid("source_record_id").notNull(), // workPeriod.id or absenceEntry.id
+		employeeId: uuid("employee_id").notNull(),
+
+		// Sync status
+		status: text("status").notNull(), // "pending" | "synced" | "failed" | "skipped"
+		externalId: text("external_id"), // ID returned by external system (e.g., Personio)
+
+		// Error tracking
+		errorMessage: text("error_message"),
+		isRetryable: boolean("is_retryable").default(true),
+		attemptCount: integer("attempt_count").default(0).notNull(),
+		lastAttemptAt: timestamp("last_attempt_at"),
+
+		// Timestamps
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+		syncedAt: timestamp("synced_at"),
+	},
+	(table) => [
+		index("payrollExportSyncRecord_jobId_idx").on(table.jobId),
+		index("payrollExportSyncRecord_status_idx").on(table.status),
+		index("payrollExportSyncRecord_sourceRecordId_idx").on(table.sourceRecordId),
+		// Composite index for retry queries
+		index("payrollExportSyncRecord_job_status_retryable_idx").on(
+			table.jobId,
+			table.status,
+			table.isRetryable,
+		),
 	],
 );

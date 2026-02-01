@@ -213,6 +213,8 @@ export {
 	payrollExportJob,
 	payrollExportJobRelations,
 	payrollExportStatusEnum,
+	payrollExportSyncRecord,
+	payrollExportSyncRecordRelations,
 	payrollWageTypeMapping,
 	payrollWageTypeMappingRelations,
 	// Work category tables
