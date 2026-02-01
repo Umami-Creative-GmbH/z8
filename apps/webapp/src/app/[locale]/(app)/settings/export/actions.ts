@@ -3,8 +3,8 @@
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { db, exportStorageConfig } from "@/db";
-import { member } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
+import { isOrgAdminCasl } from "@/lib/auth-helpers";
 import { AuthorizationError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
@@ -25,16 +25,7 @@ import {
 } from "@/lib/storage/export-s3-client";
 import { deleteOrgSecret, storeOrgSecret } from "@/lib/vault";
 
-/**
- * Check if user is org admin or owner
- */
-async function isOrgAdmin(userId: string, organizationId: string): Promise<boolean> {
-	const membership = await db.query.member.findFirst({
-		where: and(eq(member.userId, userId), eq(member.organizationId, organizationId)),
-	});
-
-	return membership?.role === "admin" || membership?.role === "owner";
-}
+// Using isOrgAdminCasl from auth-helpers for CASL-based authorization
 
 export interface StartExportInput {
 	organizationId: string;
@@ -80,7 +71,7 @@ export async function startExportAction(
 
 		// Step 3: Verify user is org admin
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, input.organizationId)),
+			Effect.promise(() => isOrgAdminCasl(input.organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -161,7 +152,7 @@ export async function getExportHistoryAction(
 
 		// Step 3: Verify user is org admin
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, organizationId)),
+			Effect.promise(() => isOrgAdminCasl(organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -200,7 +191,7 @@ export async function regenerateDownloadUrlAction(
 
 		// Step 2: Verify user is org admin
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, organizationId)),
+			Effect.promise(() => isOrgAdminCasl(organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -239,7 +230,7 @@ export async function deleteExportAction(
 
 		// Step 2: Verify user is org admin
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, organizationId)),
+			Effect.promise(() => isOrgAdminCasl(organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -299,7 +290,7 @@ export async function getStorageConfigAction(
 
 		// Step 2: Verify user is org admin
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, organizationId)),
+			Effect.promise(() => isOrgAdminCasl(organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -358,7 +349,7 @@ export async function saveStorageConfigAction(
 
 		// Step 2: Verify user is org admin
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, input.organizationId)),
+			Effect.promise(() => isOrgAdminCasl(input.organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -458,7 +449,7 @@ export async function testStorageConnectionAction(
 
 		// Step 2: Verify user is org admin
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, organizationId)),
+			Effect.promise(() => isOrgAdminCasl(organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -550,7 +541,7 @@ export async function deleteStorageConfigAction(
 
 		// Step 2: Verify user is org admin
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, organizationId)),
+			Effect.promise(() => isOrgAdminCasl(organizationId)),
 		);
 
 		if (!hasPermission) {

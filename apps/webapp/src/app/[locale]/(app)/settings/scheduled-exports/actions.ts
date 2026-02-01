@@ -5,7 +5,7 @@ import { DateTime } from "luxon";
 import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
 import { db, scheduledExport, scheduledExportExecution } from "@/db";
-import { member } from "@/db/auth-schema";
+import { isOrgAdminCasl } from "@/lib/auth-helpers";
 import type {
 	ScheduledExport,
 	ScheduledExportExecution,
@@ -102,17 +102,7 @@ export interface ExecutionHistoryItem {
 	completedAt: Date | null;
 }
 
-// ============================================
-// HELPERS
-// ============================================
-
-async function isOrgAdmin(userId: string, organizationId: string): Promise<boolean> {
-	const membership = await db.query.member.findFirst({
-		where: and(eq(member.userId, userId), eq(member.organizationId, organizationId)),
-	});
-
-	return membership?.role === "admin" || membership?.role === "owner";
-}
+// Using isOrgAdminCasl from auth-helpers for CASL-based authorization
 
 // ============================================
 // CREATE
@@ -126,7 +116,7 @@ export async function createScheduledExportAction(
 		const session = yield* _(authService.getSession());
 
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, input.organizationId)),
+			Effect.promise(() => isOrgAdminCasl(input.organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -239,7 +229,7 @@ export async function getScheduledExportsAction(
 		const session = yield* _(authService.getSession());
 
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, organizationId)),
+			Effect.promise(() => isOrgAdminCasl(organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -293,7 +283,7 @@ export async function getScheduledExportAction(
 		const session = yield* _(authService.getSession());
 
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, organizationId)),
+			Effect.promise(() => isOrgAdminCasl(organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -338,7 +328,7 @@ export async function updateScheduledExportAction(
 		const session = yield* _(authService.getSession());
 
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, input.organizationId)),
+			Effect.promise(() => isOrgAdminCasl(input.organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -459,7 +449,7 @@ export async function deleteScheduledExportAction(
 		const session = yield* _(authService.getSession());
 
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, organizationId)),
+			Effect.promise(() => isOrgAdminCasl(organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -524,7 +514,7 @@ export async function getExecutionHistoryAction(
 		const session = yield* _(authService.getSession());
 
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, organizationId)),
+			Effect.promise(() => isOrgAdminCasl(organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -617,7 +607,7 @@ export async function runScheduledExportNowAction(
 		const session = yield* _(authService.getSession());
 
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, organizationId)),
+			Effect.promise(() => isOrgAdminCasl(organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -687,7 +677,7 @@ export async function getFilterOptionsAction(
 		const session = yield* _(authService.getSession());
 
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, organizationId)),
+			Effect.promise(() => isOrgAdminCasl(organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -791,7 +781,7 @@ export async function getPayrollConfigsAction(
 		const session = yield* _(authService.getSession());
 
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, organizationId)),
+			Effect.promise(() => isOrgAdminCasl(organizationId)),
 		);
 
 		if (!hasPermission) {

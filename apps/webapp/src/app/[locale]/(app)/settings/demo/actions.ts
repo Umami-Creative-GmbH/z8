@@ -1,10 +1,10 @@
 "use server";
 
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { db } from "@/db";
-import { member } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
+import { isOrgAdminCasl } from "@/lib/auth-helpers";
 import {
 	type DeleteNonAdminResult,
 	deleteNonAdminEmployeesData,
@@ -34,16 +34,7 @@ import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 
-/**
- * Check if user is org admin or owner
- */
-async function isOrgAdmin(userId: string, organizationId: string): Promise<boolean> {
-	const membership = await db.query.member.findFirst({
-		where: and(eq(member.userId, userId), eq(member.organizationId, organizationId)),
-	});
-
-	return membership?.role === "admin" || membership?.role === "owner";
-}
+// Using isOrgAdminCasl from auth-helpers for CASL-based authorization
 
 export interface GenerateDemoDataInput {
 	organizationId: string;
@@ -93,7 +84,7 @@ export async function generateDemoDataAction(
 
 		// Step 3: Verify user is org admin
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, input.organizationId)),
+			Effect.promise(() => isOrgAdminCasl(input.organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -228,7 +219,7 @@ export async function generateTeamsStepAction(
 		const session = yield* _(authService.getSession());
 
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, input.organizationId)),
+			Effect.promise(() => isOrgAdminCasl(input.organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -275,7 +266,7 @@ export async function generateProjectsStepAction(
 		const session = yield* _(authService.getSession());
 
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, input.organizationId)),
+			Effect.promise(() => isOrgAdminCasl(input.organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -322,7 +313,7 @@ export async function generateManagersStepAction(
 		const session = yield* _(authService.getSession());
 
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, input.organizationId)),
+			Effect.promise(() => isOrgAdminCasl(input.organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -368,7 +359,7 @@ export async function generateTimeEntriesStepAction(
 		const session = yield* _(authService.getSession());
 
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, input.organizationId)),
+			Effect.promise(() => isOrgAdminCasl(input.organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -414,7 +405,7 @@ export async function generateAbsencesStepAction(
 		const session = yield* _(authService.getSession());
 
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, input.organizationId)),
+			Effect.promise(() => isOrgAdminCasl(input.organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -464,7 +455,7 @@ export async function generateLocationsStepAction(input: StepGenerationInput): P
 		const session = yield* _(authService.getSession());
 
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, input.organizationId)),
+			Effect.promise(() => isOrgAdminCasl(input.organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -517,7 +508,7 @@ export async function generateWorkCategoriesStepAction(input: StepGenerationInpu
 		const session = yield* _(authService.getSession());
 
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, input.organizationId)),
+			Effect.promise(() => isOrgAdminCasl(input.organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -569,7 +560,7 @@ export async function generateChangePoliciesStepAction(input: StepGenerationInpu
 		const session = yield* _(authService.getSession());
 
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, input.organizationId)),
+			Effect.promise(() => isOrgAdminCasl(input.organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -617,7 +608,7 @@ export async function generateShiftTemplatesStepAction(
 		const session = yield* _(authService.getSession());
 
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, input.organizationId)),
+			Effect.promise(() => isOrgAdminCasl(input.organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -669,7 +660,7 @@ export async function generateShiftsStepAction(input: StepGenerationInput): Prom
 		const session = yield* _(authService.getSession());
 
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, input.organizationId)),
+			Effect.promise(() => isOrgAdminCasl(input.organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -717,7 +708,7 @@ export async function assignWorkCategoriesToPeriodsStepAction(
 		const session = yield* _(authService.getSession());
 
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, input.organizationId)),
+			Effect.promise(() => isOrgAdminCasl(input.organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -789,7 +780,7 @@ export async function clearTimeDataAction(
 
 		// Step 3: Verify user is org admin
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, organizationId)),
+			Effect.promise(() => isOrgAdminCasl(organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -827,7 +818,7 @@ export async function getOrganizationEmployees(
 
 		// Step 2: Verify user is org admin
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, organizationId)),
+			Effect.promise(() => isOrgAdminCasl(organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -884,7 +875,7 @@ export async function generateDemoEmployeesAction(
 
 		// Step 2: Verify user is org admin
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, input.organizationId)),
+			Effect.promise(() => isOrgAdminCasl(input.organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -930,7 +921,7 @@ export async function deleteNonAdminDataAction(
 
 		// Step 2: Verify user is org admin
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, organizationId)),
+			Effect.promise(() => isOrgAdminCasl(organizationId)),
 		);
 
 		if (!hasPermission) {

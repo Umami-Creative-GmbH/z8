@@ -36,9 +36,21 @@ export async function GET(
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 		}
 
-		// Get current employee
+		// Get active organization from session
+		const activeOrganizationId = session.session?.activeOrganizationId;
+		if (!activeOrganizationId) {
+			return NextResponse.json(
+				{ error: "No active organization" },
+				{ status: 400 },
+			);
+		}
+
+		// Get current employee for the active organization
 		const currentEmployee = await db.query.employee.findFirst({
-			where: eq(employee.userId, session.user.id),
+			where: and(
+				eq(employee.userId, session.user.id),
+				eq(employee.organizationId, activeOrganizationId),
+			),
 		});
 
 		if (!currentEmployee) {

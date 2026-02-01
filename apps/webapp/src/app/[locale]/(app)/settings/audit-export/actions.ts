@@ -3,7 +3,7 @@
 import { and, eq, desc } from "drizzle-orm";
 import { Effect } from "effect";
 import { db, auditExportPackage, auditExportConfig } from "@/db";
-import { member } from "@/db/auth-schema";
+import { isOrgAdminCasl } from "@/lib/auth-helpers";
 import { AuthorizationError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
@@ -15,20 +15,7 @@ import {
 	type VerificationResult,
 } from "@/lib/audit-export";
 
-// ============================================
-// HELPER FUNCTIONS
-// ============================================
-
-/**
- * Check if user is org admin or owner
- */
-async function isOrgAdmin(userId: string, organizationId: string): Promise<boolean> {
-	const membership = await db.query.member.findFirst({
-		where: and(eq(member.userId, userId), eq(member.organizationId, organizationId)),
-	});
-
-	return membership?.role === "admin" || membership?.role === "owner";
-}
+// Using isOrgAdminCasl from auth-helpers for CASL-based authorization
 
 // ============================================
 // CONFIGURATION ACTIONS
@@ -44,7 +31,7 @@ export async function getAuditConfigAction(
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdmin(session.user.id, organizationId)));
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -83,7 +70,7 @@ export async function initializeAuditExportAction(
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdmin(session.user.id, organizationId)));
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -127,7 +114,7 @@ export async function updateAuditConfigAction(
 		const session = yield* _(authService.getSession());
 
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, input.organizationId)),
+			Effect.promise(() => isOrgAdminCasl(input.organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -176,7 +163,7 @@ export async function rotateSigningKeyAction(
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdmin(session.user.id, organizationId)));
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -221,7 +208,7 @@ export async function getSigningKeyHistoryAction(
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdmin(session.user.id, organizationId)));
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -263,7 +250,7 @@ export async function exportPublicKeyAction(
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdmin(session.user.id, organizationId)));
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -319,7 +306,7 @@ export async function getAuditPackagesAction(
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdmin(session.user.id, organizationId)));
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -381,7 +368,7 @@ export async function verifyAuditPackageAction(
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdmin(session.user.id, organizationId)));
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -433,7 +420,7 @@ export async function getVerificationHistoryAction(
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdmin(session.user.id, organizationId)));
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
 
 		if (!hasPermission) {
 			yield* _(

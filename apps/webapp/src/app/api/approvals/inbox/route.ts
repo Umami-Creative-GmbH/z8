@@ -6,7 +6,7 @@
 
 import { type NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
@@ -37,9 +37,21 @@ export async function GET(request: NextRequest) {
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 		}
 
-		// Get current employee
+		// Get active organization from session
+		const activeOrganizationId = session.session?.activeOrganizationId;
+		if (!activeOrganizationId) {
+			return NextResponse.json(
+				{ error: "No active organization" },
+				{ status: 400 },
+			);
+		}
+
+		// Get current employee for the active organization
 		const currentEmployee = await db.query.employee.findFirst({
-			where: eq(employee.userId, session.user.id),
+			where: and(
+				eq(employee.userId, session.user.id),
+				eq(employee.organizationId, activeOrganizationId),
+			),
 		});
 
 		if (!currentEmployee) {

@@ -3,7 +3,6 @@
 import { and, desc, eq, gte, isNull, lte, or } from "drizzle-orm";
 import { Effect } from "effect";
 import { db } from "@/db";
-import { member } from "@/db/auth-schema";
 import {
 	employee,
 	team,
@@ -17,6 +16,7 @@ import {
 	workPolicyScheduleDay,
 	workPolicyViolation,
 } from "@/db/schema";
+import { isOrgAdminCasl } from "@/lib/auth-helpers";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import {
 	AuthorizationError,
@@ -114,17 +114,7 @@ export interface CreateWorkPolicyInput {
 
 export type UpdateWorkPolicyInput = Partial<CreateWorkPolicyInput>;
 
-// ============================================
-// HELPERS
-// ============================================
-
-async function isOrgAdmin(userId: string, organizationId: string): Promise<boolean> {
-	const membership = await db.query.member.findFirst({
-		where: and(eq(member.userId, userId), eq(member.organizationId, organizationId)),
-	});
-
-	return membership?.role === "admin" || membership?.role === "owner";
-}
+// Using isOrgAdminCasl from auth-helpers for CASL-based authorization
 
 // ============================================
 // GET POLICIES
@@ -138,7 +128,7 @@ export async function getWorkPolicies(
 		const session = yield* _(authService.getSession());
 
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, organizationId)),
+			Effect.promise(() => isOrgAdminCasl(organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -225,7 +215,7 @@ export async function getWorkPolicy(
 		}
 
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, policy.organizationId)),
+			Effect.promise(() => isOrgAdminCasl(policy.organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -260,7 +250,7 @@ export async function createWorkPolicy(
 		const session = yield* _(authService.getSession());
 
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, organizationId)),
+			Effect.promise(() => isOrgAdminCasl(organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -502,7 +492,7 @@ export async function updateWorkPolicy(
 		}
 
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, existingPolicy!.organizationId)),
+			Effect.promise(() => isOrgAdminCasl(existingPolicy!.organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -745,7 +735,7 @@ export async function deleteWorkPolicy(policyId: string): Promise<ServerActionRe
 		}
 
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, existingPolicy!.organizationId)),
+			Effect.promise(() => isOrgAdminCasl(existingPolicy!.organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -1111,7 +1101,7 @@ export async function setDefaultWorkPolicy(policyId: string): Promise<ServerActi
 		}
 
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, policy!.organizationId)),
+			Effect.promise(() => isOrgAdminCasl(policy!.organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -1180,7 +1170,7 @@ export async function importWorkPolicyPreset(
 		const session = yield* _(authService.getSession());
 
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, organizationId)),
+			Effect.promise(() => isOrgAdminCasl(organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -1641,7 +1631,7 @@ export async function duplicateWorkPolicy(
 		}
 
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, existingPolicy!.organizationId)),
+			Effect.promise(() => isOrgAdminCasl(existingPolicy!.organizationId)),
 		);
 
 		if (!hasPermission) {

@@ -5,7 +5,6 @@ import { Effect } from "effect";
 import { revalidateTag } from "next/cache";
 import { headers } from "next/headers";
 import { db } from "@/db";
-import { member } from "@/db/auth-schema";
 import {
 	employee,
 	employeeVacationAllowance,
@@ -15,7 +14,7 @@ import {
 import { AuditAction, logAudit } from "@/lib/audit-logger";
 import { CACHE_TAGS } from "@/lib/cache/tags";
 import { auth } from "@/lib/auth";
-import { isManagerOf } from "@/lib/auth-helpers";
+import { isManagerOf, isOrgAdminCasl } from "@/lib/auth-helpers";
 import {
 	AuthorizationError,
 	ConflictError,
@@ -50,16 +49,7 @@ async function _getCurrentEmployee() {
 	return emp;
 }
 
-/**
- * Check if user is org admin or owner
- */
-async function isOrgAdmin(userId: string, organizationId: string): Promise<boolean> {
-	const membership = await db.query.member.findFirst({
-		where: and(eq(member.userId, userId), eq(member.organizationId, organizationId)),
-	});
-
-	return membership?.role === "admin" || membership?.role === "owner";
-}
+// Using isOrgAdminCasl from auth-helpers for CASL-based authorization
 
 /**
  * Get a vacation policy by ID using Effect pattern
@@ -93,7 +83,7 @@ export async function getVacationPolicy(
 
 		// Step 4: Verify user is org admin
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, policy.organizationId)),
+			Effect.promise(() => isOrgAdminCasl(policy.organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -128,7 +118,7 @@ export async function getCompanyDefaultVacationPolicy(
 
 		// Step 2: Verify user is org admin
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, organizationId)),
+			Effect.promise(() => isOrgAdminCasl(organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -217,7 +207,7 @@ export async function createVacationPolicy(data: {
 
 		// Step 3: Verify user is org admin
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, data.organizationId)),
+			Effect.promise(() => isOrgAdminCasl(data.organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -357,7 +347,7 @@ export async function updateVacationPolicy(
 
 		// Step 4: Verify user is org admin
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, policy.organizationId)),
+			Effect.promise(() => isOrgAdminCasl(policy.organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -444,7 +434,7 @@ export async function getEmployeesWithAllowances(
 
 		// Step 2: Verify user is org admin
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, organizationId)),
+			Effect.promise(() => isOrgAdminCasl(organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -551,7 +541,7 @@ export async function getEmployeeAllowance(
 		);
 
 		// Step 5: Verify user is org admin or manager of this employee
-		const isAdmin = yield* _(Effect.promise(() => isOrgAdmin(session.user.id, emp.organizationId)));
+		const isAdmin = yield* _(Effect.promise(() => isOrgAdminCasl(emp.organizationId)));
 		const isManager = yield* _(Effect.promise(() => isManagerOf(emp.id)));
 
 		if (!isAdmin && !isManager && currentEmployee.role !== "admin") {
@@ -638,7 +628,7 @@ export async function updateEmployeeAllowance(
 		);
 
 		// Step 5: Verify user is org admin or manager of this employee
-		const isAdmin = yield* _(Effect.promise(() => isOrgAdmin(session.user.id, emp.organizationId)));
+		const isAdmin = yield* _(Effect.promise(() => isOrgAdminCasl(emp.organizationId)));
 		const isManager = yield* _(Effect.promise(() => isManagerOf(emp.id)));
 
 		if (!isAdmin && !isManager && currentEmployee.role !== "admin") {
@@ -776,7 +766,7 @@ export async function createVacationAdjustmentAction(
 		);
 
 		// Step 5: Verify user is org admin or manager of this employee
-		const isAdmin = yield* _(Effect.promise(() => isOrgAdmin(session.user.id, emp.organizationId)));
+		const isAdmin = yield* _(Effect.promise(() => isOrgAdminCasl(emp.organizationId)));
 		const isManager = yield* _(Effect.promise(() => isManagerOf(emp.id)));
 
 		if (!isAdmin && !isManager && currentEmployee.role !== "admin") {
@@ -862,7 +852,7 @@ export async function getVacationPolicies(
 
 		// Step 2: Verify user is org admin
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, organizationId)),
+			Effect.promise(() => isOrgAdminCasl(organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -952,7 +942,7 @@ export async function deleteVacationPolicy(policyId: string): Promise<ServerActi
 
 		// Step 4: Verify user is org admin
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, policy.organizationId)),
+			Effect.promise(() => isOrgAdminCasl(policy.organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -1061,7 +1051,7 @@ export async function getEmployeeAdjustmentTotal(
 		);
 
 		// Step 4: Verify user is org admin or manager
-		const isAdmin = yield* _(Effect.promise(() => isOrgAdmin(session.user.id, emp.organizationId)));
+		const isAdmin = yield* _(Effect.promise(() => isOrgAdminCasl(emp.organizationId)));
 		const isManager = yield* _(Effect.promise(() => isManagerOf(emp.id)));
 
 		if (!isAdmin && !isManager) {

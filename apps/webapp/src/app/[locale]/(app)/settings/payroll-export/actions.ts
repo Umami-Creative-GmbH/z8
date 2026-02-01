@@ -12,8 +12,8 @@ import {
 	payrollWageTypeMapping,
 	workCategory,
 } from "@/db";
-import { member } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
+import { isOrgAdminCasl } from "@/lib/auth-helpers";
 import { AuthorizationError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
@@ -39,16 +39,7 @@ import {
 	type PayrollExportJobSummary,
 } from "@/lib/payroll-export";
 
-/**
- * Check if user is org admin or owner
- */
-async function isOrgAdmin(userId: string, organizationId: string): Promise<boolean> {
-	const membership = await db.query.member.findFirst({
-		where: and(eq(member.userId, userId), eq(member.organizationId, organizationId)),
-	});
-
-	return membership?.role === "admin" || membership?.role === "owner";
-}
+// Using isOrgAdminCasl from auth-helpers for CASL-based authorization
 
 // ============================================
 // CONFIGURATION TYPES
@@ -172,7 +163,7 @@ export async function getDatevConfigAction(
 		const session = yield* _(authService.getSession());
 
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, organizationId)),
+			Effect.promise(() => isOrgAdminCasl(organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -220,7 +211,7 @@ export async function saveDatevConfigAction(
 		const session = yield* _(authService.getSession());
 
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, input.organizationId)),
+			Effect.promise(() => isOrgAdminCasl(input.organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -331,7 +322,7 @@ export async function getLexwareConfigAction(
 		const session = yield* _(authService.getSession());
 
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, organizationId)),
+			Effect.promise(() => isOrgAdminCasl(organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -379,7 +370,7 @@ export async function saveLexwareConfigAction(
 		const session = yield* _(authService.getSession());
 
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, input.organizationId)),
+			Effect.promise(() => isOrgAdminCasl(input.organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -490,7 +481,7 @@ export async function getSageConfigAction(
 		const session = yield* _(authService.getSession());
 
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, organizationId)),
+			Effect.promise(() => isOrgAdminCasl(organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -538,7 +529,7 @@ export async function saveSageConfigAction(
 		const session = yield* _(authService.getSession());
 
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, input.organizationId)),
+			Effect.promise(() => isOrgAdminCasl(input.organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -666,7 +657,7 @@ export async function getSuccessFactorsConfigAction(
 		const session = yield* _(authService.getSession());
 
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, organizationId)),
+			Effect.promise(() => isOrgAdminCasl(organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -714,7 +705,7 @@ export async function saveSuccessFactorsConfigAction(
 		const session = yield* _(authService.getSession());
 
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, input.organizationId)),
+			Effect.promise(() => isOrgAdminCasl(input.organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -839,7 +830,7 @@ export async function testSuccessFactorsConnectionAction(input: {
 		const session = yield* _(authService.getSession());
 
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, input.organizationId)),
+			Effect.promise(() => isOrgAdminCasl(input.organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -901,7 +892,7 @@ export async function saveSuccessFactorsCredentialsAction(
 		const session = yield* _(authService.getSession());
 
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, input.organizationId)),
+			Effect.promise(() => isOrgAdminCasl(input.organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -944,7 +935,7 @@ export async function deleteSuccessFactorsCredentialsAction(
 		const session = yield* _(authService.getSession());
 
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, organizationId)),
+			Effect.promise(() => isOrgAdminCasl(organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -991,7 +982,7 @@ export async function getMappingsAction(
 		const session = yield* _(authService.getSession());
 
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, organizationId)),
+			Effect.promise(() => isOrgAdminCasl(organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -1038,7 +1029,7 @@ export async function saveMappingAction(
 		const session = yield* _(authService.getSession());
 
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, input.organizationId)),
+			Effect.promise(() => isOrgAdminCasl(input.organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -1217,7 +1208,7 @@ export async function deleteMappingAction(
 		const session = yield* _(authService.getSession());
 
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, input.organizationId)),
+			Effect.promise(() => isOrgAdminCasl(input.organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -1276,7 +1267,7 @@ export async function getWorkCategoriesAction(
 		const session = yield* _(authService.getSession());
 
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, organizationId)),
+			Effect.promise(() => isOrgAdminCasl(organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -1313,7 +1304,7 @@ export async function getAbsenceCategoriesAction(
 		const session = yield* _(authService.getSession());
 
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, organizationId)),
+			Effect.promise(() => isOrgAdminCasl(organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -1354,7 +1345,7 @@ export async function getFilterOptionsAction(
 		const session = yield* _(authService.getSession());
 
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, organizationId)),
+			Effect.promise(() => isOrgAdminCasl(organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -1427,7 +1418,7 @@ export async function startExportAction(
 		);
 
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, input.organizationId)),
+			Effect.promise(() => isOrgAdminCasl(input.organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -1513,7 +1504,7 @@ export async function getExportHistoryAction(
 		const session = yield* _(authService.getSession());
 
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, organizationId)),
+			Effect.promise(() => isOrgAdminCasl(organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -1551,7 +1542,7 @@ export async function getExportDownloadUrlAction(
 		const session = yield* _(authService.getSession());
 
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, organizationId)),
+			Effect.promise(() => isOrgAdminCasl(organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -1624,7 +1615,7 @@ export async function getPersonioConfigAction(
 		const session = yield* _(authService.getSession());
 
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, organizationId)),
+			Effect.promise(() => isOrgAdminCasl(organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -1681,7 +1672,7 @@ export async function savePersonioConfigAction(
 		const session = yield* _(authService.getSession());
 
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, input.organizationId)),
+			Effect.promise(() => isOrgAdminCasl(input.organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -1795,7 +1786,7 @@ export async function savePersonioCredentialsAction(
 		const session = yield* _(authService.getSession());
 
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, input.organizationId)),
+			Effect.promise(() => isOrgAdminCasl(input.organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -1838,7 +1829,7 @@ export async function deletePersonioCredentialsAction(
 		const session = yield* _(authService.getSession());
 
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, organizationId)),
+			Effect.promise(() => isOrgAdminCasl(organizationId)),
 		);
 
 		if (!hasPermission) {
@@ -1881,7 +1872,7 @@ export async function testPersonioConnectionAction(
 		const session = yield* _(authService.getSession());
 
 		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdmin(session.user.id, organizationId)),
+			Effect.promise(() => isOrgAdminCasl(organizationId)),
 		);
 
 		if (!hasPermission) {
