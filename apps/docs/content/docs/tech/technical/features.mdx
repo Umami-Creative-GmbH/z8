@@ -226,6 +226,146 @@ await ExportS3Client.upload(exportBuffer, filename);
 
 ---
 
+## Payroll Export System
+
+### Architecture
+
+The payroll export system supports both file-based and API-based exports:
+
+```
+src/lib/payroll-export/
+├── export-service.ts      # Core orchestration
+├── data-fetcher.ts        # Query work periods and absences
+├── types.ts               # Shared interfaces
+├── index.ts               # Public exports
+├── formatters/
+│   ├── datev-lohn-formatter.ts   # DATEV Lohn & Gehalt
+│   ├── lexware-lohn-formatter.ts # Lexware lohn+gehalt
+│   └── sage-lohn-formatter.ts    # Sage Lohn
+└── exporters/
+    └── personio/
+        ├── api-client.ts       # Personio API client
+        ├── personio-exporter.ts # Exporter implementation
+        └── types.ts            # Personio-specific types
+```
+
+### File-Based Formatters
+
+Three file-based export formatters are available:
+
+| Formatter | Format ID | Output |
+|-----------|-----------|--------|
+| `DatevLohnFormatter` | `datev_lohn` | CSV with semicolon delimiter, UTF-8 |
+| `LexwareLohnFormatter` | `lexware_lohn` | CSV with year/month columns |
+| `SageLohnFormatter` | `sage_lohn` | CSV with configurable decimal separator |
+
+### Exporter Interfaces
+
+Two interfaces support different export modes:
+
+```typescript
+// File-based exports (DATEV)
+interface IPayrollExportFormatter {
+  formatId: string;
+  formatName: string;
+  validateConfig(config: Record<string, unknown>): { valid: boolean; errors?: string[] };
+  transform(workPeriods, absences, mappings, config): ExportResult;
+}
+
+// API-based exports (Personio)
+interface IPayrollExporter {
+  exporterId: string;
+  exporterName: string;
+  validateConfig(config: Record<string, unknown>): Promise<{ valid: boolean; errors?: string[] }>;
+  testConnection(organizationId, config): Promise<{ success: boolean; error?: string }>;
+  export(organizationId, workPeriods, absences, mappings, config): Promise<ApiExportResult>;
+}
+```
+
+### Sync Record Tracking
+
+API exports track individual record status for partial success handling:
+
+```typescript
+type SyncRecordStatus = 'pending' | 'synced' | 'failed' | 'skipped';
+
+interface ApiExportResult {
+  success: boolean;
+  totalRecords: number;
+  syncedRecords: number;
+  failedRecords: number;
+  skippedRecords: number;
+  errors: Array<{
+    recordId: string;
+    recordType: 'attendance' | 'absence';
+    employeeId: string;
+    errorMessage: string;
+    isRetryable: boolean;
+  }>;
+}
+```
+
+### Personio Integration
+
+The Personio exporter syncs attendance and absences via API:
+
+```typescript
+import { PersonioExporter } from '@/lib/payroll-export/exporters/personio';
+
+const result = await PersonioExporter.export(
+  organizationId,
+  workPeriods,
+  absences,
+  mappings,
+  config,
+);
+```
+
+#### Credential Storage
+
+API credentials are stored securely in Vault, separate from configuration:
+
+```typescript
+// Configuration (in database)
+interface PersonioConfig {
+  employeeMatchStrategy: 'employeeNumber' | 'email';
+  includeZeroHours: boolean;
+  batchSize: number;
+}
+
+// Credentials (in Vault)
+interface PersonioCredentials {
+  clientId: string;
+  clientSecret: string;
+}
+```
+
+### Wage Type Mappings
+
+Map Z8 categories to payroll wage codes with format-specific codes:
+
+```typescript
+interface WageTypeMapping {
+  workCategoryId: string | null;
+  absenceCategoryId: string | null;
+  specialCategory: string | null; // 'overtime', 'holiday_compensation', etc.
+
+  // Format-specific wage type codes
+  datevWageTypeCode: string | null;
+  datevWageTypeName: string | null;
+  lexwareWageTypeCode: string | null;
+  lexwareWageTypeName: string | null;
+  sageWageTypeCode: string | null;
+  sageWageTypeName: string | null;
+
+  factor: string;
+}
+```
+
+Each mapping can have different codes for each payroll system, allowing the same mapping to work across DATEV, Lexware, and Sage exports.
+
+---
+
 ## Avatar Generation
 
 ### DiceBear Integration

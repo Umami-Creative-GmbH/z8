@@ -1,0 +1,311 @@
+---
+title: Payroll Export
+description: Export time tracking data to payroll systems like DATEV, Lexware, Sage, and Personio
+icon: BankNote
+---
+
+## Overview
+
+The Payroll Export feature allows you to export employee time tracking data directly to your payroll system. Z8 supports multiple export formats and integrations:
+
+**File-Based Exports:**
+- **DATEV Lohn & Gehalt**: Standard German payroll format
+- **Lexware lohn+gehalt**: Lexware ASCII import format
+- **Sage Lohn**: Sage-native or DATEV-compatible format
+
+**API Integrations:**
+- **Personio**: Direct API integration with Personio HR
+
+Access payroll export at **Settings** → **Payroll Export**.
+
+---
+
+## DATEV Configuration
+
+Configure DATEV Lohn & Gehalt export settings for German payroll processing.
+
+### Setup
+
+1. Go to **Settings** → **Payroll Export** → **DATEV** tab
+2. Enter your DATEV credentials:
+   - **Mandantennummer** (Client Number): 1-5 digits
+   - **Beraternummer** (Consultant Number): 1-7 digits
+3. Configure settings:
+   - **Personnel Number Type**: Use Employee Number or Employee ID as identifier
+   - **Include Zero Hours**: Whether to include rows with no recorded time
+4. Click **Save Configuration**
+
+### Export Format
+
+DATEV exports generate CSV files compatible with DATEV Lohn & Gehalt software:
+- Semicolon-delimited with UTF-8 encoding
+- Windows line endings (CRLF)
+- Columns: Personalnummer, Lohnart, Betrag, Datum, Bemerkung
+
+---
+
+## Lexware Configuration
+
+Configure Lexware lohn+gehalt export settings.
+
+### Setup
+
+1. Go to **Settings** → **Payroll Export** → **Lexware** tab
+2. Configure settings:
+   - **Personnel Number Type**: Use Employee Number or Employee ID as identifier
+   - **Include Zero Hours**: Whether to include rows with no recorded time
+   - **Include Stunden**: Add optional hours column
+   - **Include Stundensatz**: Add optional hourly rate column
+3. Click **Save Configuration**
+
+### Export Format
+
+Lexware exports generate CSV files with:
+- Semicolon delimiter
+- Comma as decimal separator
+- Required columns: Jahr, Monat, Personalnummer, Lohnartennummer, Wert
+- Optional columns: Stunden, Stundensatz
+
+---
+
+## Sage Configuration
+
+Configure Sage Lohn export settings.
+
+### Setup
+
+1. Go to **Settings** → **Payroll Export** → **Sage** tab
+2. Configure settings:
+   - **Personnel Number Type**: Use Employee Number or Employee ID as identifier
+   - **Include Zero Hours**: Whether to include rows with no recorded time
+   - **Output Format**: Choose between DATEV-compatible or Sage-native format
+3. Click **Save Configuration**
+
+### Output Formats
+
+| Format | Decimal Separator | Use Case |
+|--------|-------------------|----------|
+| **DATEV-compatible** | Period (.) | When using DATEV import in Sage |
+| **Sage-native** | Comma (,) | Native Sage import |
+
+---
+
+## Personio Integration
+
+Connect Z8 directly to Personio to automatically sync attendance and absence data via API.
+
+### Setting Up Personio
+
+1. Go to **Settings** → **Payroll Export** → **Personio** tab
+2. Enter your Personio API credentials:
+   - **Client ID**: Found in Personio under Settings → Integrations → API credentials
+   - **API Secret**: The secret key associated with your Client ID
+3. Click **Save Credentials**
+
+API credentials are stored securely in an encrypted vault.
+
+### Export Settings
+
+Configure how time entries are exported to Personio:
+
+| Setting | Description |
+|---------|-------------|
+| **Employee Matching** | How to match employees between Z8 and Personio (Employee Number or Email) |
+| **Include Zero Hours** | Whether to export days with no recorded time |
+
+**Employee Number** matching is recommended as it provides a reliable unique identifier.
+
+### Testing the Connection
+
+After saving credentials:
+1. Click **Test Connection** to verify API access
+2. A success message confirms Personio is properly connected
+3. If the test fails, verify your credentials in Personio
+
+### How Syncing Works
+
+When you export to Personio:
+1. Z8 matches employees using your configured strategy
+2. Attendance periods are pushed to Personio's attendance API
+3. Absences are synced to Personio's time-off API
+4. Each record is tracked individually for partial success handling
+
+The system tracks sync status for each record:
+- **Pending**: Waiting to be synced
+- **Synced**: Successfully exported to Personio
+- **Failed**: Error occurred (can be retried)
+- **Skipped**: Record was skipped (e.g., employee not found in Personio)
+
+---
+
+## Wage Type Mappings
+
+Map Z8 work categories and absence types to payroll wage codes.
+
+### Accessing Mappings
+
+1. Go to **Settings** → **Payroll Export** → **Wage Types** tab
+2. View all configured mappings
+
+### Mapping Types
+
+Mappings connect Z8 categories to payroll system codes:
+
+| Z8 Category Type | Description | Example |
+|------------------|-------------|---------|
+| **Work Category** | Regular work time categories | Normal Hours → 1000 |
+| **Absence Category** | Vacation, illness, etc. | Vacation → 1600 |
+| **Special Category** | Overtime, holiday compensation | Overtime → 1900 |
+
+### Special Categories
+
+The following special wage categories are available:
+
+- **Overtime**: Hours worked beyond regular schedule
+- **Holiday Compensation**: Pay for working on holidays
+- **Overtime Reduction**: Compensatory time off
+
+### Format-Specific Wage Type Codes
+
+Each mapping can have separate wage type codes for different payroll systems:
+
+| Format | Code Column | Example Codes |
+|--------|-------------|---------------|
+| **DATEV** | DATEV Wage Type | 1000, 1600, 1900 |
+| **Lexware** | Lexware Wage Type | 100, 200, 300 |
+| **Sage** | Sage Wage Type | 1000, 1600, 1900 |
+
+This allows you to use the same mapping with different export formats without reconfiguration.
+
+### Common Wage Type Codes
+
+**DATEV Lohnarten:**
+
+| Code | Name | Description |
+|------|------|-------------|
+| 1000 | Arbeitszeit | Regular work time |
+| 1600 | Urlaub | Vacation |
+| 1650 | Krankheit | Illness |
+| 1900 | Überstunden | Overtime |
+| 1910 | Überstunden-Abbau | Overtime reduction |
+| 1012 | Feiertagsausgleich | Holiday compensation |
+
+**Lexware Lohnarten:**
+
+| Code | Name | Description |
+|------|------|-------------|
+| 100 | Lohn | Regular wages |
+| 200 | Überstunden | Overtime |
+| 300 | Urlaub | Vacation |
+
+### Creating Mappings
+
+1. Click **Add Mapping**
+2. Select the category type (Work, Absence, or Special)
+3. Choose the Z8 category
+4. Enter format-specific wage type codes:
+   - DATEV code and name
+   - Lexware code and name
+   - Sage code and name
+5. Set the factor (e.g., 1.0 for regular, 1.5 for overtime)
+6. Save the mapping
+
+---
+
+## Running Exports
+
+### Creating an Export
+
+1. Go to **Settings** → **Payroll Export** → **Export** tab
+2. Select the date range for the export
+3. Optionally filter by:
+   - Employees
+   - Teams
+   - Projects
+4. Click **Start Export**
+
+### Export Processing
+
+Exports are processed based on data volume:
+
+- **Small exports**: Processed immediately, download starts automatically
+- **Large exports**: Queued for background processing with progress tracking
+
+### Export History
+
+View all previous exports:
+
+1. Go to **Settings** → **Payroll Export** → **History** tab
+2. See exports with:
+   - Date created
+   - Status (Pending, Processing, Completed, Failed)
+   - File size
+   - Record counts (employees, work periods)
+3. Download completed exports or retry failed ones
+
+---
+
+## Best Practices
+
+### Before First Export
+
+1. **Verify employee numbers**: Ensure all employees have correct employee numbers matching your payroll system
+2. **Configure all wage types**: Map all work and absence categories to appropriate wage codes
+3. **Test with a small date range**: Run a test export for one week before processing larger periods
+
+### For Personio Integration
+
+1. **Use Employee Number matching**: More reliable than email matching
+2. **Test connection regularly**: Verify API access before running exports
+3. **Review sync results**: Check for failed or skipped records after each export
+
+### Data Quality
+
+- Ensure work periods are approved before export
+- Verify absence requests are in "approved" status
+- Review overtime calculations before export
+
+---
+
+## Troubleshooting
+
+### DATEV Export Issues
+
+| Issue | Solution |
+|-------|----------|
+| Invalid Mandantennummer | Verify the client number is 1-5 digits |
+| Missing wage types | Add DATEV-specific codes for all work/absence categories |
+| Empty export file | Check date range contains approved work periods |
+
+### Lexware Export Issues
+
+| Issue | Solution |
+|-------|----------|
+| Import fails in Lexware | Verify file encoding is correct (UTF-8) |
+| Missing Lohnartennummer | Add Lexware-specific codes in wage type mappings |
+| Invalid decimal format | Lexware uses comma (,) as decimal separator |
+
+### Sage Export Issues
+
+| Issue | Solution |
+|-------|----------|
+| Wrong decimal separator | Check Output Format setting (DATEV-compatible vs Sage-native) |
+| Missing wage types | Add Sage-specific codes in wage type mappings |
+| Import errors | Try switching between DATEV-compatible and Sage-native format |
+
+### Personio Connection Issues
+
+| Issue | Solution |
+|-------|----------|
+| Authentication failed | Verify Client ID and API Secret in Personio settings |
+| Employee not found | Ensure employee numbers/emails match between systems |
+| Rate limit exceeded | Wait and retry, or reduce batch size |
+| API timeout | Increase timeout in export settings |
+
+### Common Errors
+
+**"Employee not matched"**: The employee exists in Z8 but couldn't be found in the target system. Verify the employee number or email matches.
+
+**"Invalid wage type"**: The wage type code doesn't exist in the target payroll system. Verify the code in your payroll software.
+
+**"Connection timeout"**: The API request took too long. This may indicate network issues or large data volumes. Try exporting a smaller date range.
