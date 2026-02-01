@@ -13,6 +13,7 @@ import { use, useEffect } from "react";
 import { toast } from "sonner";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { ContractTypeSelector } from "@/components/settings/contract-type-selector";
+import { EmployeeSkillsCard } from "@/components/settings/employee-skills-card";
 import { HourlyRateInput } from "@/components/settings/hourly-rate-input";
 import { ManagerAssignment } from "@/components/settings/manager-assignment";
 import { RateHistoryCard } from "@/components/settings/rate-history-card";
@@ -574,6 +575,13 @@ export default function EmployeeDetailPage({
 					onSuccess={refetch}
 				/>
 			)}
+
+			{/* Skills & Qualifications Section */}
+			<EmployeeSkillsCard
+				employeeId={employeeId}
+				organizationId={employee.organizationId}
+				isAdmin={isAdmin}
+			/>
 
 			{/* Rate History Section - Only for hourly employees */}
 			{employee.contractType === "hourly" && (

@@ -41,6 +41,7 @@ import {
 	onAbsenceRequestPendingApproval,
 	onAbsenceRequestSubmitted,
 } from "@/lib/notifications/triggers";
+import { addCalendarSyncJob } from "@/lib/queue";
 
 const logger = createLogger("AbsenceActionsEffect");
 
@@ -399,6 +400,13 @@ export async function requestAbsenceEffect(
 
 					span.setAttribute("absence.auto_approved", true);
 
+					// Queue calendar sync job for auto-approved absence
+					void addCalendarSyncJob({
+						absenceId: newAbsence.id,
+						employeeId: currentEmployee.id,
+						action: "create",
+					});
+
 					logger.info({ absenceId: newAbsence.id }, "Absence auto-approved (no approval required)");
 				} else {
 					// No manager assigned - auto-approve since there's no one to approve
@@ -417,6 +425,13 @@ export async function requestAbsenceEffect(
 
 					span.setAttribute("absence.auto_approved", true);
 					span.setAttribute("absence.no_manager", true);
+
+					// Queue calendar sync job for auto-approved absence
+					void addCalendarSyncJob({
+						absenceId: newAbsence.id,
+						employeeId: currentEmployee.id,
+						action: "create",
+					});
 
 					logger.info(
 						{
@@ -686,6 +701,13 @@ export async function cancelAbsenceRequest(
 			error: "You do not have permission to cancel this absence",
 		};
 	}
+
+	// Queue calendar sync job to delete from external calendar (if synced)
+	void addCalendarSyncJob({
+		absenceId: absenceId,
+		employeeId: absence.employeeId,
+		action: "delete",
+	});
 
 	// Delete the absence
 	await db.delete(absenceEntry).where(eq(absenceEntry.id, absenceId));

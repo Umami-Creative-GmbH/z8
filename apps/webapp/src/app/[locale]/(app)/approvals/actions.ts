@@ -28,6 +28,7 @@ import {
 	onTimeCorrectionApproved,
 	onTimeCorrectionRejected,
 } from "@/lib/notifications/triggers";
+import { addCalendarSyncJob } from "@/lib/queue";
 import { getCurrentEmployee } from "../absences/actions";
 
 const logger = createLogger("ApprovalsActionsEffect");
@@ -337,6 +338,13 @@ export async function approveAbsenceEffect(absenceId: string): Promise<ServerAct
 					startDate: absence.startDate,
 					endDate: absence.endDate,
 					approverName: currentEmployee.user.name,
+				});
+
+				// Queue calendar sync job (fire-and-forget)
+				void addCalendarSyncJob({
+					absenceId: entityId,
+					employeeId: absence.employeeId,
+					action: "create",
 				});
 
 				return absence;
