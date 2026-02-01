@@ -1,0 +1,131 @@
+import { redirect } from "next/navigation";
+import { connection } from "next/server";
+import { Suspense } from "react";
+import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
+import { NoEmployeeError } from "@/components/errors/no-employee-error";
+import { DatevConfigForm } from "@/components/settings/payroll-export/datev-config-form";
+import { ExportForm } from "@/components/settings/payroll-export/export-form";
+import { ExportHistory } from "@/components/settings/payroll-export/export-history";
+import { WageTypeMappings } from "@/components/settings/payroll-export/wage-type-mappings";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getAuthContext } from "@/lib/auth-helpers";
+import { getTranslate } from "@/tolgee/server";
+import {
+	getDatevConfigAction,
+	getExportHistoryAction,
+} from "./actions";
+
+async function PayrollExportContent() {
+	await connection(); // Mark as fully dynamic
+
+	const [t, currentEmployee] = await Promise.all([getTranslate(), getCurrentEmployee()]);
+
+	if (!currentEmployee) {
+		return (
+			<div className="flex flex-1 items-center justify-center p-6">
+				<NoEmployeeError
+					feature={t("settings.payrollExport.featureName", "Payroll Export")}
+				/>
+			</div>
+		);
+	}
+
+	const authContext = await getAuthContext();
+
+	if (!authContext?.employee || authContext.employee.role !== "admin") {
+		redirect("/");
+	}
+
+	const organizationId = authContext.employee.organizationId;
+
+	// Fetch config and history in parallel
+	const [configResult, historyResult] = await Promise.all([
+		getDatevConfigAction(organizationId),
+		getExportHistoryAction(organizationId),
+	]);
+
+	const config = configResult.success ? configResult.data : null;
+	const exports = historyResult.success ? historyResult.data : [];
+
+	return (
+		<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+			<div className="space-y-1">
+				<h1 className="text-2xl font-semibold">
+					{t("settings.payrollExport.title", "Payroll Export")}
+				</h1>
+				<p className="text-muted-foreground">
+					{t(
+						"settings.payrollExport.description",
+						"Export work periods to DATEV Lohn & Gehalt",
+					)}
+				</p>
+			</div>
+
+			<Tabs defaultValue={config ? "export" : "configuration"} className="w-full">
+				<TabsList>
+					<TabsTrigger value="export">
+						{t("settings.payrollExport.tabs.export", "Export")}
+					</TabsTrigger>
+					<TabsTrigger value="configuration">
+						{t("settings.payrollExport.tabs.configuration", "Configuration")}
+					</TabsTrigger>
+					<TabsTrigger value="mappings">
+						{t("settings.payrollExport.tabs.mappings", "Wage Types")}
+					</TabsTrigger>
+					<TabsTrigger value="history">
+						{t("settings.payrollExport.tabs.history", "History")}
+					</TabsTrigger>
+				</TabsList>
+
+				<TabsContent value="export" className="mt-4">
+					<ExportForm organizationId={organizationId} config={config} />
+				</TabsContent>
+
+				<TabsContent value="configuration" className="mt-4">
+					<DatevConfigForm organizationId={organizationId} initialConfig={config} />
+				</TabsContent>
+
+				<TabsContent value="mappings" className="mt-4">
+					<WageTypeMappings organizationId={organizationId} config={config} />
+				</TabsContent>
+
+				<TabsContent value="history" className="mt-4">
+					<ExportHistory organizationId={organizationId} exports={exports} />
+				</TabsContent>
+			</Tabs>
+		</div>
+	);
+}
+
+function PayrollExportLoading() {
+	return (
+		<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+			<div className="space-y-2">
+				<Skeleton className="h-8 w-48" />
+				<Skeleton className="h-4 w-96" />
+			</div>
+			<Card>
+				<CardHeader>
+					<Skeleton className="h-6 w-48" />
+					<Skeleton className="h-4 w-72" />
+				</CardHeader>
+				<CardContent>
+					<div className="space-y-4">
+						<Skeleton className="h-32 w-full" />
+						<Skeleton className="h-10 w-32" />
+					</div>
+				</CardContent>
+			</Card>
+		</div>
+	);
+}
+
+export default function PayrollExportPage() {
+	return (
+		<Suspense fallback={<PayrollExportLoading />}>
+			<PayrollExportContent />
+		</Suspense>
+	);
+}

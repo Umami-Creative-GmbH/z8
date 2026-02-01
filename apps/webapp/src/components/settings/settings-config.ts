@@ -344,6 +344,17 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		group: "data",
 	},
 	{
+		id: "payroll-export",
+		titleKey: "settings.payrollExport.title",
+		titleDefault: "Payroll Export",
+		descriptionKey: "settings.payrollExport.description",
+		descriptionDefault: "Export work periods to DATEV Lohn & Gehalt",
+		href: "/settings/payroll-export",
+		icon: "database-export",
+		adminOnly: true,
+		group: "data",
+	},
+	{
 		id: "demo-data",
 		titleKey: "settings.demoData.title",
 		titleDefault: "Demo Data",
