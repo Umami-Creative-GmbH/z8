@@ -61,6 +61,12 @@ import {
 } from "./work-category";
 import { webhookDelivery, webhookEndpoint } from "./webhook";
 import {
+	payrollExportConfig,
+	payrollExportFormat,
+	payrollExportJob,
+	payrollWageTypeMapping,
+} from "./payroll-export";
+import {
 	workPolicy,
 	workPolicyAssignment,
 	workPolicyBreakOption,
@@ -135,6 +141,9 @@ export const organizationRelations = relations(organization, ({ one, many }) => 
 	// Webhooks
 	webhookEndpoints: many(webhookEndpoint),
 	webhookDeliveries: many(webhookDelivery),
+	// Payroll exports
+	payrollExportConfigs: many(payrollExportConfig),
+	payrollExportJobs: many(payrollExportJob),
 }));
 
 export const teamRelations = relations(team, ({ one, many }) => ({
@@ -1302,5 +1311,70 @@ export const webhookDeliveryRelations = relations(webhookDelivery, ({ one }) => 
 	organization: one(organization, {
 		fields: [webhookDelivery.organizationId],
 		references: [organization.id],
+	}),
+}));
+
+// ============================================
+// PAYROLL EXPORT RELATIONS
+// ============================================
+
+export const payrollExportFormatRelations = relations(payrollExportFormat, ({ many }) => ({
+	configs: many(payrollExportConfig),
+}));
+
+export const payrollExportConfigRelations = relations(payrollExportConfig, ({ one, many }) => ({
+	organization: one(organization, {
+		fields: [payrollExportConfig.organizationId],
+		references: [organization.id],
+	}),
+	format: one(payrollExportFormat, {
+		fields: [payrollExportConfig.formatId],
+		references: [payrollExportFormat.id],
+	}),
+	creator: one(user, {
+		fields: [payrollExportConfig.createdBy],
+		references: [user.id],
+		relationName: "payrollExportConfig_creator",
+	}),
+	updater: one(user, {
+		fields: [payrollExportConfig.updatedBy],
+		references: [user.id],
+		relationName: "payrollExportConfig_updater",
+	}),
+	mappings: many(payrollWageTypeMapping),
+	jobs: many(payrollExportJob),
+}));
+
+export const payrollWageTypeMappingRelations = relations(payrollWageTypeMapping, ({ one }) => ({
+	config: one(payrollExportConfig, {
+		fields: [payrollWageTypeMapping.configId],
+		references: [payrollExportConfig.id],
+	}),
+	workCategory: one(workCategory, {
+		fields: [payrollWageTypeMapping.workCategoryId],
+		references: [workCategory.id],
+	}),
+	absenceCategory: one(absenceCategory, {
+		fields: [payrollWageTypeMapping.absenceCategoryId],
+		references: [absenceCategory.id],
+	}),
+	creator: one(user, {
+		fields: [payrollWageTypeMapping.createdBy],
+		references: [user.id],
+	}),
+}));
+
+export const payrollExportJobRelations = relations(payrollExportJob, ({ one }) => ({
+	organization: one(organization, {
+		fields: [payrollExportJob.organizationId],
+		references: [organization.id],
+	}),
+	config: one(payrollExportConfig, {
+		fields: [payrollExportJob.configId],
+		references: [payrollExportConfig.id],
+	}),
+	requestedBy: one(employee, {
+		fields: [payrollExportJob.requestedById],
+		references: [employee.id],
 	}),
 }));

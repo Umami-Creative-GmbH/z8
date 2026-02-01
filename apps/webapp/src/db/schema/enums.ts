@@ -165,3 +165,19 @@ export const memberStatusEnum = pgEnum("member_status", [
 	"rejected", // invitation rejected
 	"suspended", // temporarily disabled
 ]);
+
+// Payroll export format enum
+export const payrollExportFormatEnum = pgEnum("payroll_export_format", [
+	"datev_lohn",
+	"sage",
+	"lexware",
+	"custom",
+]);
+
+// Payroll export status enum
+export const payrollExportStatusEnum = pgEnum("payroll_export_status", [
+	"pending",
+	"processing",
+	"completed",
+	"failed",
+]);

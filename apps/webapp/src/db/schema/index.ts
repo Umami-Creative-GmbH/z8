@@ -13,6 +13,8 @@ export * from "./enterprise";
 export * from "./enums";
 export * from "./export";
 export * from "./holiday";
+// Payroll export
+export * from "./payroll-export";
 // Invite codes
 export * from "./invite-code";
 export * from "./notification";

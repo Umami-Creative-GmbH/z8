@@ -204,4 +204,21 @@ export {
 	workPolicyScheduleRelations,
 	workPolicyViolation,
 	workPolicyViolationRelations,
+	// Payroll export tables
+	payrollExportConfig,
+	payrollExportConfigRelations,
+	payrollExportFormat,
+	payrollExportFormatEnum,
+	payrollExportFormatRelations,
+	payrollExportJob,
+	payrollExportJobRelations,
+	payrollExportStatusEnum,
+	payrollWageTypeMapping,
+	payrollWageTypeMappingRelations,
+	// Work category tables
+	workCategory,
+	workCategoryRelations,
+	// Project tables
+	project,
+	projectRelations,
 } from "./schema";
