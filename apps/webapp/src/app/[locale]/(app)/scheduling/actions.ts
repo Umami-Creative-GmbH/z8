@@ -21,6 +21,7 @@ import {
 	ShiftRequestService,
 	type ShiftRequestWithRelations,
 } from "@/lib/effect/services/shift-request.service";
+import { CoverageService } from "@/lib/effect/services/coverage.service";
 import { createLogger } from "@/lib/logger";
 import type {
 	CreateTemplateInput,
@@ -453,6 +454,34 @@ export async function publishShifts(
 					}),
 				),
 			);
+		}
+
+		// Check coverage settings and validate gaps
+		const coverageService = yield* _(CoverageService);
+		const settings = yield* _(coverageService.getCoverageSettings(emp.organizationId));
+
+		if (!settings.allowPublishWithGaps) {
+			// Validate that there are no coverage gaps before publishing
+			const validation = yield* _(
+				coverageService.validateScheduleCanPublish({
+					organizationId: emp.organizationId,
+					startDate: dateRange.start,
+					endDate: dateRange.end,
+				}),
+			);
+
+			if (!validation.canPublish) {
+				return yield* _(
+					Effect.fail(
+						new AuthorizationError({
+							message: `Cannot publish: ${validation.gaps.length} coverage gap(s) detected. Review and fill gaps before publishing.`,
+							userId: session.user.id,
+							resource: "shift",
+							action: "publish",
+						}),
+					),
+				);
+			}
 		}
 
 		const result = yield* _(

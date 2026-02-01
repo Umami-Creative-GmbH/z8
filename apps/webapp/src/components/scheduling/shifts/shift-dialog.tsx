@@ -8,6 +8,8 @@ import { DateTime } from "luxon";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
+import { SkillWarningAlert, SkillWarningBadge } from "@/components/scheduling/skill-warning-alert";
+import { useSkillValidation } from "@/lib/query/use-skills";
 import {
 	deleteShift,
 	getLocationsWithSubareas,
@@ -155,6 +157,14 @@ export function ShiftDialog({
 		}
 	}, [selectedTemplateId, templates, form, formValues.subareaId]);
 
+	// Skill validation for assigned employee
+	const { data: skillValidation, isLoading: isValidatingSkills } = useSkillValidation({
+		employeeId: formValues.employeeId || "",
+		subareaId: formValues.subareaId,
+		templateId: formValues.templateId,
+		enabled: open && !!formValues.employeeId && !!formValues.subareaId,
+	});
+
 	const upsertMutation = useMutation({
 		mutationFn: async (values: {
 			employeeId: string | null;
@@ -181,9 +191,26 @@ export function ShiftDialog({
 			return result.data;
 		},
 		onSuccess: (result) => {
+			const warnings: string[] = [];
+
 			if (result.metadata.hasOverlap) {
-				toast.warning("Shift saved with overlap warning", {
-					description: `This shift overlaps with ${result.metadata.overlappingShifts.length} other shift(s)`,
+				warnings.push(`Overlaps with ${result.metadata.overlappingShifts.length} other shift(s)`);
+			}
+
+			if (result.metadata.skillWarning && !result.metadata.skillWarning.isQualified) {
+				const missingCount = result.metadata.skillWarning.missingSkills?.length ?? 0;
+				const expiredCount = result.metadata.skillWarning.expiredSkills?.length ?? 0;
+				if (missingCount > 0 || expiredCount > 0) {
+					const parts: string[] = [];
+					if (missingCount > 0) parts.push(`${missingCount} missing skill(s)`);
+					if (expiredCount > 0) parts.push(`${expiredCount} expired certification(s)`);
+					warnings.push(`Employee has ${parts.join(" and ")}`);
+				}
+			}
+
+			if (warnings.length > 0) {
+				toast.warning("Shift saved with warnings", {
+					description: warnings.join(". "),
 				});
 			} else {
 				toast.success(isEditing ? "Shift updated" : "Shift created");
@@ -439,7 +466,12 @@ export function ShiftDialog({
 											</SelectItem>
 											{employees.map((emp) => (
 												<SelectItem key={emp.id} value={emp.id}>
-													{emp.firstName} {emp.lastName}
+													<span className="flex items-center gap-2">
+														{emp.firstName} {emp.lastName}
+														{field.state.value === emp.id && skillValidation && !skillValidation.isQualified && (
+															<SkillWarningBadge validation={skillValidation} />
+														)}
+													</span>
 												</SelectItem>
 											))}
 										</SelectContent>
@@ -450,6 +482,14 @@ export function ShiftDialog({
 								</div>
 							)}
 						</form.Field>
+					)}
+
+					{/* Skill validation warning */}
+					{isManager && formValues.employeeId && formValues.subareaId && (
+						<SkillWarningAlert
+							validation={skillValidation}
+							isLoading={isValidatingSkills}
+						/>
 					)}
 
 					{/* Notes */}

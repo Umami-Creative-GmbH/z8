@@ -53,6 +53,21 @@ export interface ShiftRequestWithRelations extends ShiftRequest {
 	} | null;
 }
 
+export interface SkillWarningInfo {
+	isQualified: boolean;
+	missingSkills: Array<{
+		id: string;
+		name: string;
+		category: string;
+		isRequired: boolean;
+	}>;
+	expiredSkills: Array<{
+		id: string;
+		name: string;
+		expiresAt: Date;
+	}>;
+}
+
 export interface ShiftMetadata {
 	hasOverlap: boolean;
 	overlappingShifts: Array<{
@@ -61,6 +76,7 @@ export interface ShiftMetadata {
 		startTime: string;
 		endTime: string;
 	}>;
+	skillWarning?: SkillWarningInfo;
 }
 
 export interface IncompleteDayInfo {

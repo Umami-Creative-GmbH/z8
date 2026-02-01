@@ -1,7 +1,11 @@
-import { and, desc, eq, gte, isNull, lte, sql } from "drizzle-orm";
+import { and, desc, eq, gt, gte, inArray, isNull, lte, or, sql } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import {
 	employee,
+	employeeSkill,
+	shiftTemplateSkillRequirement,
+	subareaSkillRequirement,
+	skill,
 	type shift as ShiftTable,
 	type shiftTemplate as ShiftTemplateTable,
 	shift,
@@ -63,9 +67,26 @@ export interface DateRange {
 	end: Date;
 }
 
+export interface SkillWarning {
+	employeeId: string;
+	isQualified: boolean;
+	missingSkills: Array<{
+		id: string;
+		name: string;
+		category: string;
+		isRequired: boolean;
+	}>;
+	expiredSkills: Array<{
+		id: string;
+		name: string;
+		expiresAt: Date;
+	}>;
+}
+
 export interface ShiftMetadata {
 	hasOverlap: boolean;
 	overlappingShifts: Array<{ id: string; date: Date; startTime: string; endTime: string }>;
+	skillWarning?: SkillWarning;
 }
 
 export interface IncompleteDayInfo {
@@ -383,6 +404,104 @@ export const ShiftServiceLive = Layer.effect(
 						);
 					}
 
+					// Check skill requirements if employee is assigned
+					let skillWarning: SkillWarning | undefined;
+					if (input.employeeId) {
+						const empId = input.employeeId;
+						const now = new Date();
+
+						// Get employee's current valid skills
+						const validEmployeeSkills = yield* _(
+							dbService.query("getEmployeeValidSkills", async () => {
+								return await dbService.db.query.employeeSkill.findMany({
+									where: and(
+										eq(employeeSkill.employeeId, empId),
+										or(isNull(employeeSkill.expiresAt), gt(employeeSkill.expiresAt, now)),
+									),
+									with: { skill: true },
+								});
+							}),
+						);
+
+						// Get expired skills for warning
+						const expiredEmployeeSkills = yield* _(
+							dbService.query("getExpiredSkills", async () => {
+								return await dbService.db.query.employeeSkill.findMany({
+									where: and(
+										eq(employeeSkill.employeeId, empId),
+										lte(employeeSkill.expiresAt, now),
+									),
+									with: { skill: true },
+								});
+							}),
+						);
+
+						const validSkillIds = new Set(validEmployeeSkills.map((es) => es.skillId));
+
+						// Get subarea requirements
+						const subareaReqs = yield* _(
+							dbService.query("getSubareaSkillRequirements", async () => {
+								return await dbService.db.query.subareaSkillRequirement.findMany({
+									where: eq(subareaSkillRequirement.subareaId, input.subareaId),
+									with: { skill: true },
+								});
+							}),
+						);
+
+						// Get template requirements if applicable
+						let templateReqs: Array<{ skillId: string; isRequired: boolean; skill: typeof skill.$inferSelect }> = [];
+						if (input.templateId) {
+							templateReqs = yield* _(
+								dbService.query("getTemplateSkillRequirements", async () => {
+									return await dbService.db.query.shiftTemplateSkillRequirement.findMany({
+										where: eq(shiftTemplateSkillRequirement.templateId, input.templateId!),
+										with: { skill: true },
+									});
+								}),
+							);
+						}
+
+						// Combine all requirements (deduped by skillId)
+						const allRequirements = new Map<string, { skill: typeof skill.$inferSelect; isRequired: boolean }>();
+						for (const req of [...subareaReqs, ...templateReqs]) {
+							const existing = allRequirements.get(req.skillId);
+							if (!existing || (req.isRequired && !existing.isRequired)) {
+								allRequirements.set(req.skillId, { skill: req.skill, isRequired: req.isRequired });
+							}
+						}
+
+						// Find missing skills
+						const missingSkills: SkillWarning["missingSkills"] = [];
+						for (const [skillId, { skill: skillData, isRequired }] of allRequirements) {
+							if (!validSkillIds.has(skillId)) {
+								missingSkills.push({
+									id: skillId,
+									name: skillData.name,
+									category: skillData.category,
+									isRequired,
+								});
+							}
+						}
+
+						// Map expired skills (only those that are required)
+						const expiredSkills: SkillWarning["expiredSkills"] = expiredEmployeeSkills
+							.filter((es) => allRequirements.has(es.skillId))
+							.map((es) => ({
+								id: es.skillId,
+								name: es.skill.name,
+								expiresAt: es.expiresAt!,
+							}));
+
+						if (missingSkills.length > 0 || expiredSkills.length > 0) {
+							skillWarning = {
+								employeeId: empId,
+								isQualified: false,
+								missingSkills,
+								expiredSkills,
+							};
+						}
+					}
+
 					let createdShift: Shift;
 
 					if (input.id) {
@@ -458,6 +577,7 @@ export const ShiftServiceLive = Layer.effect(
 						metadata: {
 							hasOverlap: overlappingShifts.length > 0,
 							overlappingShifts,
+							skillWarning,
 						},
 					};
 				}),
