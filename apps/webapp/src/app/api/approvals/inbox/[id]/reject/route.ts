@@ -14,6 +14,7 @@ import { approvalRequest, employee, auditLog } from "@/db/schema";
 import { getApprovalHandler } from "@/lib/approvals/domain/registry";
 import type { ApprovalType } from "@/lib/approvals/domain/types";
 import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
+import type { AnyAppError } from "@/lib/effect/errors";
 import { createLogger } from "@/lib/logger";
 
 // Ensure handlers are registered
@@ -99,7 +100,7 @@ export async function POST(
 		await Effect.runPromise(
 			handler
 				.reject(approvalReq.entityId, currentEmployee.id, reason)
-				.pipe(Effect.provide(DatabaseServiceLive)),
+				.pipe(Effect.provide(DatabaseServiceLive)) as Effect.Effect<void, AnyAppError, never>,
 		);
 
 		// Log audit trail

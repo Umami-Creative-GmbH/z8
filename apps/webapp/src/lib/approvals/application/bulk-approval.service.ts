@@ -7,7 +7,7 @@
 import { Context, Effect, Layer } from "effect";
 import { getApprovalHandler } from "../domain/registry";
 import type { ApprovalType, BulkApproveResult } from "../domain/types";
-import { NotFoundError, AuthorizationError } from "@/lib/effect/errors";
+import { type AnyAppError, NotFoundError, AuthorizationError } from "@/lib/effect/errors";
 import { DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { approvalRequest } from "@/db/schema";
 import { eq, inArray } from "drizzle-orm";
@@ -23,11 +23,12 @@ export class BulkApprovalService extends Context.Tag("BulkApprovalService")<
 		 * Bulk approve multiple approvals.
 		 * Only processes types that support bulk approve.
 		 */
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		readonly bulkApprove: (
 			approvalIds: string[],
 			approverId: string,
 			organizationId: string,
-		) => Effect.Effect<BulkApproveResult>;
+		) => Effect.Effect<BulkApproveResult, AnyAppError, any>;
 	}
 >() {}
 

@@ -96,7 +96,8 @@ export const ApprovalTypeRegistryLive = Layer.succeed(
  * Register a handler directly (for initialization).
  * Use this in the init file to register handlers at startup.
  */
-export function registerApprovalHandler(handler: ApprovalTypeHandler): void {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function registerApprovalHandler(handler: ApprovalTypeHandler<any>): void {
 	handlers.set(handler.type, handler);
 }
 

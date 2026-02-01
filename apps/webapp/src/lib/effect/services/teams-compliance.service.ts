@@ -40,7 +40,7 @@ export interface ComplianceExceptionSummary {
 	employeeId: string;
 	employeeName: string;
 	exceptionType: "rest_period" | "overtime_daily" | "overtime_weekly" | "overtime_monthly";
-	status: "pending" | "approved" | "rejected" | "expired";
+	status: "pending" | "approved" | "rejected" | "expired" | "used";
 	requestedAt: Date;
 	validFrom: Date;
 	validUntil: Date;
@@ -82,12 +82,13 @@ export class TeamsComplianceService extends Context.Tag("TeamsComplianceService"
 		/**
 		 * Get full compliance summary for Teams display
 		 */
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		readonly getComplianceSummary: (params: {
 			managerId: string;
 			organizationId: string;
 			daysBack?: number;
 			timezone: string;
-		}) => Effect.Effect<ComplianceSummary, DatabaseError>;
+		}) => Effect.Effect<ComplianceSummary, DatabaseError, any>;
 
 		/**
 		 * Get count of pending compliance exceptions for digest

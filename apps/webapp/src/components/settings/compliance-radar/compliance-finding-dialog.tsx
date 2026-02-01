@@ -87,7 +87,7 @@ export function ComplianceFindingDialog({
 				setNote("");
 				onAction();
 			} else {
-				toast.error(result.error.message);
+				toast.error(result.error);
 			}
 		} finally {
 			setIsSubmitting(false);
@@ -108,7 +108,7 @@ export function ComplianceFindingDialog({
 				setShowWaiverForm(false);
 				onAction();
 			} else {
-				toast.error(result.error.message);
+				toast.error(result.error);
 			}
 		} finally {
 			setIsSubmitting(false);
@@ -124,7 +124,7 @@ export function ComplianceFindingDialog({
 				setNote("");
 				onAction();
 			} else {
-				toast.error(result.error.message);
+				toast.error(result.error);
 			}
 		} finally {
 			setIsSubmitting(false);

@@ -12,6 +12,7 @@ import { withRateLimit, withPermission, compose } from "./middleware";
 import {
 	TeamsComplianceService,
 	TeamsComplianceServiceFullLive,
+	type ComplianceSummary,
 } from "@/lib/effect/services/teams-compliance.service";
 import { buildComplianceCard } from "../cards/compliance-card";
 
@@ -66,7 +67,11 @@ async function complianceHandler(ctx: BotCommandContext): Promise<BotCommandResp
 		});
 
 		const summary = await Effect.runPromise(
-			program.pipe(Effect.provide(TeamsComplianceServiceFullLive)),
+			program.pipe(Effect.provide(TeamsComplianceServiceFullLive)) as Effect.Effect<
+				ComplianceSummary,
+				never,
+				never
+			>,
 		);
 
 		// If no compliance data, return text response

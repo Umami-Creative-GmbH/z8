@@ -10,7 +10,7 @@ import {
 	IconX,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { formatDistanceToNow, format } from "date-fns";
+import { formatRelative, format } from "@/lib/datetime/luxon-utils";
 import { toast } from "sonner";
 import {
 	Sheet,
@@ -44,9 +44,9 @@ const TYPE_ICONS: Record<ApprovalType, React.ComponentType<{ className?: string 
 };
 
 // Priority badge variants
-const PRIORITY_VARIANTS: Record<string, "destructive" | "warning" | "default" | "secondary"> = {
+const PRIORITY_VARIANTS: Record<string, "destructive" | "outline" | "default" | "secondary"> = {
 	urgent: "destructive",
-	high: "warning",
+	high: "outline",
 	normal: "default",
 	low: "secondary",
 };
@@ -200,7 +200,7 @@ export function ApprovalDetailPanel({
 								<span className="text-sm">
 									{format(approval.createdAt, "PPp")}
 									<span className="text-muted-foreground ml-1">
-										({formatDistanceToNow(approval.createdAt, { addSuffix: true })})
+										({formatRelative(approval.createdAt)})
 									</span>
 								</span>
 							</div>
@@ -213,7 +213,7 @@ export function ApprovalDetailPanel({
 										className={cn(
 											"text-sm",
 											approval.sla.status === "overdue" && "text-destructive",
-											approval.sla.status === "approaching" && "text-warning",
+											approval.sla.status === "approaching" && "text-amber-500",
 										)}
 									>
 										{format(approval.sla.deadline, "PPp")}

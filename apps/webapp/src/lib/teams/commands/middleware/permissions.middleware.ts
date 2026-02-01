@@ -78,7 +78,9 @@ export async function checkPermissions(
 		const isManager = managedEmployeeCount > 0;
 
 		// Admin role bypasses all checks
-		if (emp.role === "admin") {
+		// Type cast needed because drizzle enum type inference can be narrow
+		const empRole = emp.role as "admin" | "manager" | "employee";
+		if (empRole === "admin") {
 			return {
 				allowed: true,
 				role: "admin",
@@ -88,20 +90,21 @@ export async function checkPermissions(
 		}
 
 		// Check role requirements
-		if (requiredRole === "admin" && emp.role !== "admin") {
+		// Note: empRole can't be "admin" at this point (already returned above)
+		if (requiredRole === "admin") {
 			return {
 				allowed: false,
-				role: emp.role,
+				role: empRole,
 				isManager,
 				managedEmployeeCount,
 				errorMessage: "This command is only available to organization admins.",
 			};
 		}
 
-		if (requiredRole === "manager" && !isManager && emp.role !== "admin") {
+		if (requiredRole === "manager" && !isManager) {
 			return {
 				allowed: false,
-				role: emp.role,
+				role: empRole,
 				isManager: false,
 				managedEmployeeCount: 0,
 				errorMessage: "This command is only available to managers and admins.",
@@ -110,7 +113,7 @@ export async function checkPermissions(
 
 		return {
 			allowed: true,
-			role: emp.role,
+			role: empRole,
 			isManager,
 			managedEmployeeCount,
 		};

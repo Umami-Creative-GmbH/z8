@@ -49,7 +49,7 @@ export function ComplianceConfigForm({ config, onSaved }: ComplianceConfigFormPr
 	const { t } = useTranslate();
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
-	const form = useForm<SaveConfigInput>({
+	const form = useForm({
 		defaultValues: config
 			? {
 					detectRestPeriodViolations: config.detectRestPeriodViolations,
@@ -75,7 +75,7 @@ export function ComplianceConfigForm({ config, onSaved }: ComplianceConfigFormPr
 					toast.success(t("complianceRadar.config.saved", "Configuration saved"));
 					onSaved();
 				} else {
-					toast.error(result.error.message);
+					toast.error(result.error);
 				}
 			} finally {
 				setIsSubmitting(false);

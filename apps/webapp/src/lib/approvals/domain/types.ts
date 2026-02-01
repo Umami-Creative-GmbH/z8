@@ -204,41 +204,46 @@ export interface ApprovalTypeHandler<TEntity = unknown> {
 	/**
 	 * Fetch pending approvals of this type.
 	 */
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	getApprovals: (
 		params: ApprovalQueryParams,
-	) => Effect.Effect<UnifiedApprovalItem[], AnyAppError>;
+	) => Effect.Effect<UnifiedApprovalItem[], AnyAppError, any>;
 
 	/**
 	 * Get count of pending approvals (for badges).
 	 */
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	getCount: (
 		approverId: string,
 		organizationId: string,
-	) => Effect.Effect<number, AnyAppError>;
+	) => Effect.Effect<number, AnyAppError, any>;
 
 	/**
 	 * Get full details for the slide-over panel.
 	 * @param entityId - The ID of the entity
 	 * @param organizationId - Organization ID for authorization (optional for internal calls)
 	 */
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	getDetail: (
 		entityId: string,
 		organizationId?: string,
-	) => Effect.Effect<ApprovalDetail<TEntity>, AnyAppError>;
+	) => Effect.Effect<ApprovalDetail<TEntity>, AnyAppError, any>;
 
 	/**
 	 * Approve the entity.
 	 */
-	approve: (entityId: string, approverId: string) => Effect.Effect<void, AnyAppError>;
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	approve: (entityId: string, approverId: string) => Effect.Effect<void, AnyAppError, any>;
 
 	/**
 	 * Reject the entity with a reason.
 	 */
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	reject: (
 		entityId: string,
 		approverId: string,
 		reason: string,
-	) => Effect.Effect<void, AnyAppError>;
+	) => Effect.Effect<void, AnyAppError, any>;
 
 	/**
 	 * Calculate priority from entity metadata.

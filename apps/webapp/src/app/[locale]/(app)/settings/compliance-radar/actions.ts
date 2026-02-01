@@ -14,13 +14,17 @@ import {
 	type ComplianceFindingType,
 } from "@/db/schema";
 import {
+	type AnyAppError,
+	AuthenticationError,
 	AuthorizationError,
+	DatabaseError,
 	NotFoundError,
 	ValidationError,
 } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 import {
 	ComplianceFindingsService,
 	ComplianceFindingsServiceLive,
@@ -32,6 +36,60 @@ import {
 	onComplianceFindingAcknowledged,
 	onComplianceFindingWaived,
 } from "@/lib/notifications/compliance-radar-triggers";
+
+// ============================================
+// HELPERS
+// ============================================
+
+/**
+ * Helper to wrap database/async operations with proper error typing
+ */
+function dbEffect<T>(
+	operation: string,
+	fn: () => Promise<T>,
+): Effect.Effect<T, AnyAppError> {
+	return Effect.tryPromise({
+		try: fn,
+		catch: (error) =>
+			new DatabaseError({
+				message: `Database operation failed: ${operation}`,
+				operation,
+				cause: error,
+			}) as AnyAppError,
+	});
+}
+
+/**
+ * Helper to get current employee with proper Effect typing
+ */
+function getCurrentEmployeeEffect() {
+	return Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		const dbService = yield* _(DatabaseService);
+		const session = yield* _(authService.getSession());
+
+		const currentEmployee = yield* _(
+			dbService.query("getCurrentEmployee", () =>
+				dbService.db.query.employee.findFirst({
+					where: eq(employee.userId, session.user.id),
+				}),
+			),
+		);
+
+		if (!currentEmployee) {
+			return yield* _(
+				Effect.fail(
+					new AuthenticationError({
+						message: "Employee profile not found",
+						userId: session.user.id,
+					}),
+				),
+			);
+		}
+
+		return { employee: currentEmployee, user: session.user };
+	});
+}
 
 // ============================================
 // TYPES
@@ -72,8 +130,7 @@ export interface GetFindingsFilters {
 export async function getComplianceConfig(): Promise<ServerActionResult<ComplianceConfigData | null>> {
 	return runServerActionSafe(
 		Effect.gen(function* (_) {
-			const authService = yield* _(AuthService);
-			const { employee: currentEmployee } = yield* _(authService.getCurrentEmployee());
+			const { employee: currentEmployee } = yield* _(getCurrentEmployeeEffect());
 
 			// Check admin/manager access
 			if (currentEmployee.role !== "admin" && currentEmployee.role !== "manager") {
@@ -86,9 +143,13 @@ export async function getComplianceConfig(): Promise<ServerActionResult<Complian
 				);
 			}
 
-			const config = await db.query.complianceConfig.findFirst({
-				where: eq(complianceConfig.organizationId, currentEmployee.organizationId),
-			});
+			const config = yield* _(
+				dbEffect("getComplianceConfig", () =>
+					db.query.complianceConfig.findFirst({
+						where: eq(complianceConfig.organizationId, currentEmployee.organizationId),
+					}),
+				),
+			);
 
 			if (!config) {
 				return null;
@@ -140,8 +201,7 @@ export async function saveComplianceConfig(
 ): Promise<ServerActionResult<{ id: string }>> {
 	return runServerActionSafe(
 		Effect.gen(function* (_) {
-			const authService = yield* _(AuthService);
-			const { employee: currentEmployee, user } = yield* _(authService.getCurrentEmployee());
+			const { employee: currentEmployee, user } = yield* _(getCurrentEmployeeEffect());
 
 			// Only admins can modify config
 			if (currentEmployee.role !== "admin") {
@@ -155,42 +215,58 @@ export async function saveComplianceConfig(
 			}
 
 			// Upsert config
-			const existingConfig = await db.query.complianceConfig.findFirst({
-				where: eq(complianceConfig.organizationId, currentEmployee.organizationId),
-			});
+			const existingConfig = yield* _(
+				dbEffect("findExistingComplianceConfig", () =>
+					db.query.complianceConfig.findFirst({
+						where: eq(complianceConfig.organizationId, currentEmployee.organizationId),
+					}),
+				),
+			);
 
 			let configId: string;
 
 			if (existingConfig) {
-				await db
-					.update(complianceConfig)
-					.set({
-						...input,
-						updatedBy: user.id,
-					})
-					.where(eq(complianceConfig.id, existingConfig.id));
+				yield* _(
+					dbEffect("updateComplianceConfig", () =>
+						db
+							.update(complianceConfig)
+							.set({
+								...input,
+								updatedBy: user.id,
+							})
+							.where(eq(complianceConfig.id, existingConfig.id)),
+					),
+				);
 				configId = existingConfig.id;
 			} else {
-				const [created] = await db
-					.insert(complianceConfig)
-					.values({
-						organizationId: currentEmployee.organizationId,
-						...input,
-						createdBy: user.id,
-					})
-					.returning({ id: complianceConfig.id });
+				const [created] = yield* _(
+					dbEffect("insertComplianceConfig", () =>
+						db
+							.insert(complianceConfig)
+							.values({
+								organizationId: currentEmployee.organizationId,
+								...input,
+								createdBy: user.id,
+							})
+							.returning({ id: complianceConfig.id }),
+					),
+				);
 				configId = created.id;
 			}
 
 			// Audit log
-			await db.insert(auditLog).values({
-				organizationId: currentEmployee.organizationId,
-				entityType: "compliance_config",
-				entityId: configId,
-				action: existingConfig ? "compliance_config_updated" : "compliance_config_created",
-				performedBy: user.id,
-				changes: JSON.stringify({ changes: input }),
-			});
+			yield* _(
+				dbEffect("insertComplianceConfigAuditLog", () =>
+					db.insert(auditLog).values({
+						organizationId: currentEmployee.organizationId,
+						entityType: "compliance_config",
+						entityId: configId,
+						action: existingConfig ? "compliance_config_updated" : "compliance_config_created",
+						performedBy: user.id,
+						changes: JSON.stringify({ changes: input }),
+					}),
+				),
+			);
 
 			revalidatePath("/settings/compliance-radar");
 
@@ -209,9 +285,8 @@ export async function getComplianceFindings(
 ): Promise<ServerActionResult<FindingsWithCount>> {
 	return runServerActionSafe(
 		Effect.gen(function* (_) {
-			const authService = yield* _(AuthService);
 			const findingsService = yield* _(ComplianceFindingsService);
-			const { employee: currentEmployee } = yield* _(authService.getCurrentEmployee());
+			const { employee: currentEmployee } = yield* _(getCurrentEmployeeEffect());
 
 			// Check admin/manager access
 			if (currentEmployee.role !== "admin" && currentEmployee.role !== "manager") {
@@ -227,10 +302,14 @@ export async function getComplianceFindings(
 			// For managers, filter to their direct reports unless admin
 			let employeeFilter = filters?.employeeIds;
 			if (currentEmployee.role === "manager") {
-				const subordinates = await db.query.employee.findMany({
-					where: eq(employee.managerId, currentEmployee.id),
-					columns: { id: true },
-				});
+				const subordinates = yield* _(
+					dbEffect("getManagerSubordinates", () =>
+						db.query.employee.findMany({
+							where: eq(employee.managerId, currentEmployee.id),
+							columns: { id: true },
+						}),
+					),
+				);
 				const subordinateIds = subordinates.map((s) => s.id);
 
 				if (employeeFilter) {
@@ -272,9 +351,8 @@ export async function getComplianceFindings(
 export async function getComplianceStats(): Promise<ServerActionResult<ComplianceStats>> {
 	return runServerActionSafe(
 		Effect.gen(function* (_) {
-			const authService = yield* _(AuthService);
 			const findingsService = yield* _(ComplianceFindingsService);
-			const { employee: currentEmployee } = yield* _(authService.getCurrentEmployee());
+			const { employee: currentEmployee } = yield* _(getCurrentEmployeeEffect());
 
 			// Check admin/manager access
 			if (currentEmployee.role !== "admin" && currentEmployee.role !== "manager") {
@@ -302,9 +380,8 @@ export async function acknowledgeFinding(
 ): Promise<ServerActionResult<void>> {
 	return runServerActionSafe(
 		Effect.gen(function* (_) {
-			const authService = yield* _(AuthService);
 			const findingsService = yield* _(ComplianceFindingsService);
-			const { employee: currentEmployee, user } = yield* _(authService.getCurrentEmployee());
+			const { employee: currentEmployee, user } = yield* _(getCurrentEmployeeEffect());
 
 			// Check admin/manager access
 			if (currentEmployee.role !== "admin" && currentEmployee.role !== "manager") {
@@ -318,17 +395,21 @@ export async function acknowledgeFinding(
 			}
 
 			// Verify finding belongs to this org
-			const finding = await db.query.complianceFinding.findFirst({
-				where: and(
-					eq(complianceFinding.id, findingId),
-					eq(complianceFinding.organizationId, currentEmployee.organizationId),
+			const finding = yield* _(
+				dbEffect("getComplianceFindingForAcknowledge", () =>
+					db.query.complianceFinding.findFirst({
+						where: and(
+							eq(complianceFinding.id, findingId),
+							eq(complianceFinding.organizationId, currentEmployee.organizationId),
+						),
+						with: {
+							employee: {
+								columns: { id: true, firstName: true, lastName: true, userId: true },
+							},
+						},
+					}),
 				),
-				with: {
-					employee: {
-						columns: { id: true, firstName: true, lastName: true, userId: true },
-					},
-				},
-			});
+			);
 
 			if (!finding) {
 				return yield* _(
@@ -351,25 +432,33 @@ export async function acknowledgeFinding(
 			);
 
 			// Audit log
-			await db.insert(auditLog).values({
-				organizationId: currentEmployee.organizationId,
-				entityType: "compliance_finding",
-				entityId: findingId,
-				action: "compliance_finding_acknowledged",
-				performedBy: user.id,
-				changes: JSON.stringify({ note }),
-			});
+			yield* _(
+				dbEffect("insertAcknowledgeAuditLog", () =>
+					db.insert(auditLog).values({
+						organizationId: currentEmployee.organizationId,
+						entityType: "compliance_finding",
+						entityId: findingId,
+						action: "compliance_finding_acknowledged",
+						performedBy: user.id,
+						changes: JSON.stringify({ note }),
+					}),
+				),
+			);
 
 			// Notify employee
 			if (finding.employee?.userId) {
-				await onComplianceFindingAcknowledged({
-					findingId,
-					organizationId: currentEmployee.organizationId,
-					employeeUserId: finding.employee.userId,
-					employeeName: `${finding.employee.firstName ?? ""} ${finding.employee.lastName ?? ""}`.trim(),
-					type: finding.type,
-					acknowledgerName: `${currentEmployee.firstName ?? ""} ${currentEmployee.lastName ?? ""}`.trim(),
-				});
+				yield* _(
+					dbEffect("notifyAcknowledgeFinding", () =>
+						onComplianceFindingAcknowledged({
+							findingId,
+							organizationId: currentEmployee.organizationId,
+							employeeUserId: finding.employee.userId,
+							employeeName: `${finding.employee.firstName ?? ""} ${finding.employee.lastName ?? ""}`.trim(),
+							type: finding.type,
+							acknowledgerName: `${currentEmployee.firstName ?? ""} ${currentEmployee.lastName ?? ""}`.trim(),
+						}),
+					),
+				);
 			}
 
 			revalidatePath("/settings/compliance-radar");
@@ -387,9 +476,8 @@ export async function waiveFinding(
 ): Promise<ServerActionResult<void>> {
 	return runServerActionSafe(
 		Effect.gen(function* (_) {
-			const authService = yield* _(AuthService);
 			const findingsService = yield* _(ComplianceFindingsService);
-			const { employee: currentEmployee, user } = yield* _(authService.getCurrentEmployee());
+			const { employee: currentEmployee, user } = yield* _(getCurrentEmployeeEffect());
 
 			// Only admins can waive
 			if (currentEmployee.role !== "admin") {
@@ -413,17 +501,21 @@ export async function waiveFinding(
 			}
 
 			// Verify finding belongs to this org
-			const finding = await db.query.complianceFinding.findFirst({
-				where: and(
-					eq(complianceFinding.id, findingId),
-					eq(complianceFinding.organizationId, currentEmployee.organizationId),
+			const finding = yield* _(
+				dbEffect("getComplianceFindingForWaive", () =>
+					db.query.complianceFinding.findFirst({
+						where: and(
+							eq(complianceFinding.id, findingId),
+							eq(complianceFinding.organizationId, currentEmployee.organizationId),
+						),
+						with: {
+							employee: {
+								columns: { id: true, firstName: true, lastName: true, userId: true },
+							},
+						},
+					}),
 				),
-				with: {
-					employee: {
-						columns: { id: true, firstName: true, lastName: true, userId: true },
-					},
-				},
-			});
+			);
 
 			if (!finding) {
 				return yield* _(
@@ -446,26 +538,34 @@ export async function waiveFinding(
 			);
 
 			// Audit log
-			await db.insert(auditLog).values({
-				organizationId: currentEmployee.organizationId,
-				entityType: "compliance_finding",
-				entityId: findingId,
-				action: "compliance_finding_waived",
-				performedBy: user.id,
-				changes: JSON.stringify({ reason }),
-			});
+			yield* _(
+				dbEffect("insertWaiveAuditLog", () =>
+					db.insert(auditLog).values({
+						organizationId: currentEmployee.organizationId,
+						entityType: "compliance_finding",
+						entityId: findingId,
+						action: "compliance_finding_waived",
+						performedBy: user.id,
+						changes: JSON.stringify({ reason }),
+					}),
+				),
+			);
 
 			// Notify employee
 			if (finding.employee?.userId) {
-				await onComplianceFindingWaived({
-					findingId,
-					organizationId: currentEmployee.organizationId,
-					employeeUserId: finding.employee.userId,
-					employeeName: `${finding.employee.firstName ?? ""} ${finding.employee.lastName ?? ""}`.trim(),
-					type: finding.type,
-					waiverName: `${currentEmployee.firstName ?? ""} ${currentEmployee.lastName ?? ""}`.trim(),
-					waiverReason: reason,
-				});
+				yield* _(
+					dbEffect("notifyWaiveFinding", () =>
+						onComplianceFindingWaived({
+							findingId,
+							organizationId: currentEmployee.organizationId,
+							employeeUserId: finding.employee.userId,
+							employeeName: `${finding.employee.firstName ?? ""} ${finding.employee.lastName ?? ""}`.trim(),
+							type: finding.type,
+							waiverName: `${currentEmployee.firstName ?? ""} ${currentEmployee.lastName ?? ""}`.trim(),
+							waiverReason: reason,
+						}),
+					),
+				);
 			}
 
 			revalidatePath("/settings/compliance-radar");
@@ -483,9 +583,8 @@ export async function resolveFinding(
 ): Promise<ServerActionResult<void>> {
 	return runServerActionSafe(
 		Effect.gen(function* (_) {
-			const authService = yield* _(AuthService);
 			const findingsService = yield* _(ComplianceFindingsService);
-			const { employee: currentEmployee, user } = yield* _(authService.getCurrentEmployee());
+			const { employee: currentEmployee, user } = yield* _(getCurrentEmployeeEffect());
 
 			// Check admin/manager access
 			if (currentEmployee.role !== "admin" && currentEmployee.role !== "manager") {
@@ -499,12 +598,16 @@ export async function resolveFinding(
 			}
 
 			// Verify finding belongs to this org
-			const finding = await db.query.complianceFinding.findFirst({
-				where: and(
-					eq(complianceFinding.id, findingId),
-					eq(complianceFinding.organizationId, currentEmployee.organizationId),
+			const finding = yield* _(
+				dbEffect("getComplianceFindingForResolve", () =>
+					db.query.complianceFinding.findFirst({
+						where: and(
+							eq(complianceFinding.id, findingId),
+							eq(complianceFinding.organizationId, currentEmployee.organizationId),
+						),
+					}),
 				),
-			});
+			);
 
 			if (!finding) {
 				return yield* _(
@@ -527,14 +630,18 @@ export async function resolveFinding(
 			);
 
 			// Audit log
-			await db.insert(auditLog).values({
-				organizationId: currentEmployee.organizationId,
-				entityType: "compliance_finding",
-				entityId: findingId,
-				action: "compliance_finding_resolved",
-				performedBy: user.id,
-				changes: JSON.stringify({ note }),
-			});
+			yield* _(
+				dbEffect("insertResolveAuditLog", () =>
+					db.insert(auditLog).values({
+						organizationId: currentEmployee.organizationId,
+						entityType: "compliance_finding",
+						entityId: findingId,
+						action: "compliance_finding_resolved",
+						performedBy: user.id,
+						changes: JSON.stringify({ note }),
+					}),
+				),
+			);
 
 			revalidatePath("/settings/compliance-radar");
 		}).pipe(Effect.provide(AppLayer.pipe(Layer.provide(ComplianceFindingsServiceLive)))),

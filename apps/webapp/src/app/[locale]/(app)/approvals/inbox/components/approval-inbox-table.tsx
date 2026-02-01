@@ -10,7 +10,7 @@ import {
 } from "@tabler/icons-react";
 import type { ColumnDef, CellContext } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
-import { formatDistanceToNow } from "date-fns";
+import { formatRelative } from "@/lib/datetime/luxon-utils";
 import { DataTable } from "@/components/data-table-server";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
@@ -34,9 +34,9 @@ const TYPE_ICONS: Record<ApprovalType, React.ComponentType<{ className?: string 
 };
 
 // Priority badge variants
-const PRIORITY_VARIANTS: Record<ApprovalPriority, "destructive" | "warning" | "default" | "secondary"> = {
+const PRIORITY_VARIANTS: Record<ApprovalPriority, "destructive" | "outline" | "default" | "secondary"> = {
 	urgent: "destructive",
-	high: "warning",
+	high: "outline",
 	normal: "default",
 	low: "secondary",
 };
@@ -47,7 +47,7 @@ function getSLAStatusColor(status: SLAStatus): string {
 		case "overdue":
 			return "text-destructive";
 		case "approaching":
-			return "text-warning";
+			return "text-amber-500";
 		case "on_time":
 			return "text-muted-foreground";
 	}
@@ -203,7 +203,7 @@ export function ApprovalInboxTable({
 				header: t("approvals.requested", "Requested"),
 				cell: ({ row }) => (
 					<span className="text-sm text-muted-foreground">
-						{formatDistanceToNow(row.original.createdAt, { addSuffix: true })}
+						{formatRelative(row.original.createdAt)}
 					</span>
 				),
 				size: 120,

@@ -238,6 +238,7 @@ export const ComplianceFindingsServiceLive = Layer.succeed(
 				catch: (error) =>
 					new DatabaseError({
 						message: `Failed to create finding: ${error instanceof Error ? error.message : String(error)}`,
+						operation: "createFinding",
 						cause: error instanceof Error ? error : undefined,
 					}),
 			}),
@@ -288,6 +289,7 @@ export const ComplianceFindingsServiceLive = Layer.succeed(
 				catch: (error) =>
 					new DatabaseError({
 						message: `Failed to create findings batch: ${error instanceof Error ? error.message : String(error)}`,
+						operation: "createFindings",
 						cause: error instanceof Error ? error : undefined,
 					}),
 			}),
@@ -362,6 +364,7 @@ export const ComplianceFindingsServiceLive = Layer.succeed(
 				catch: (error) =>
 					new DatabaseError({
 						message: `Failed to get findings: ${error instanceof Error ? error.message : String(error)}`,
+						operation: "getFindings",
 						cause: error instanceof Error ? error : undefined,
 					}),
 			}),
@@ -406,6 +409,7 @@ export const ComplianceFindingsServiceLive = Layer.succeed(
 					}
 					return new DatabaseError({
 						message: `Failed to get finding: ${error instanceof Error ? error.message : String(error)}`,
+						operation: "getFinding",
 						cause: error instanceof Error ? error : undefined,
 					});
 				},
@@ -443,6 +447,7 @@ export const ComplianceFindingsServiceLive = Layer.succeed(
 					}
 					return new DatabaseError({
 						message: `Failed to acknowledge finding: ${error instanceof Error ? error.message : String(error)}`,
+						operation: "acknowledgeFinding",
 						cause: error instanceof Error ? error : undefined,
 					});
 				},
@@ -480,6 +485,7 @@ export const ComplianceFindingsServiceLive = Layer.succeed(
 					}
 					return new DatabaseError({
 						message: `Failed to waive finding: ${error instanceof Error ? error.message : String(error)}`,
+						operation: "waiveFinding",
 						cause: error instanceof Error ? error : undefined,
 					});
 				},
@@ -517,6 +523,7 @@ export const ComplianceFindingsServiceLive = Layer.succeed(
 					}
 					return new DatabaseError({
 						message: `Failed to resolve finding: ${error instanceof Error ? error.message : String(error)}`,
+						operation: "resolveFinding",
 						cause: error instanceof Error ? error : undefined,
 					});
 				},
@@ -546,6 +553,7 @@ export const ComplianceFindingsServiceLive = Layer.succeed(
 				catch: (error) =>
 					new DatabaseError({
 						message: `Failed to get open findings count: ${error instanceof Error ? error.message : String(error)}`,
+						operation: "getOpenFindingsCount",
 						cause: error instanceof Error ? error : undefined,
 					}),
 			}),
@@ -614,6 +622,7 @@ export const ComplianceFindingsServiceLive = Layer.succeed(
 				catch: (error) =>
 					new DatabaseError({
 						message: `Failed to get stats: ${error instanceof Error ? error.message : String(error)}`,
+						operation: "getStats",
 						cause: error instanceof Error ? error : undefined,
 					}),
 			}),
@@ -645,6 +654,7 @@ export const ComplianceFindingsServiceLive = Layer.succeed(
 				catch: (error) =>
 					new DatabaseError({
 						message: `Failed to check finding existence: ${error instanceof Error ? error.message : String(error)}`,
+						operation: "findingExists",
 						cause: error instanceof Error ? error : undefined,
 					}),
 			}),

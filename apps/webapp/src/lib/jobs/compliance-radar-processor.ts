@@ -8,7 +8,8 @@
 import { Effect } from "effect";
 import { DateTime } from "luxon";
 import { db } from "@/db";
-import { complianceConfig, organization, employee } from "@/db/schema";
+import { complianceConfig, employee } from "@/db/schema";
+import { organization } from "@/db/auth-schema";
 import { eq, and, inArray } from "drizzle-orm";
 import { createLogger } from "@/lib/logger";
 import {

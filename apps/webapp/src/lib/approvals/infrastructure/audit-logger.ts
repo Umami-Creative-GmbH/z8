@@ -8,6 +8,7 @@ import { Context, Effect, Layer } from "effect";
 import { auditLog } from "@/db/schema";
 import { DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import type { ApprovalStatus, ApprovalType } from "../domain/types";
+import type { AnyAppError } from "@/lib/effect/errors";
 
 // ============================================
 // TYPES
@@ -45,12 +46,14 @@ export class ApprovalAuditLogger extends Context.Tag("ApprovalAuditLogger")<
 		/**
 		 * Log an approval action.
 		 */
-		readonly log: (entry: ApprovalAuditEntry) => Effect.Effect<void>;
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		readonly log: (entry: ApprovalAuditEntry) => Effect.Effect<void, AnyAppError, any>;
 
 		/**
 		 * Log multiple actions in batch (for bulk operations).
 		 */
-		readonly logBatch: (entries: ApprovalAuditEntry[]) => Effect.Effect<void>;
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		readonly logBatch: (entries: ApprovalAuditEntry[]) => Effect.Effect<void, AnyAppError, any>;
 	}
 >() {}
 

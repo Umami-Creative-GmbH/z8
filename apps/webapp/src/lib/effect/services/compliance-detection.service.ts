@@ -211,6 +211,7 @@ export const ComplianceDetectionServiceLive = Layer.succeed(
 				catch: (error) =>
 					new DatabaseError({
 						message: `Failed to detect compliance findings: ${error instanceof Error ? error.message : String(error)}`,
+						operation: "detectComplianceFindings",
 						cause: error instanceof Error ? error : undefined,
 					}),
 			}),
@@ -287,6 +288,7 @@ export const ComplianceDetectionServiceLive = Layer.succeed(
 				catch: (error) =>
 					new DatabaseError({
 						message: `Failed to detect findings for employee: ${error instanceof Error ? error.message : String(error)}`,
+						operation: "detectForEmployee",
 						cause: error instanceof Error ? error : undefined,
 					}),
 			}),
@@ -400,7 +402,7 @@ async function getEffectivePolicyForEmployee(
 
 function extractPolicyData(
 	assignment: Awaited<ReturnType<typeof db.query.workPolicyAssignment.findMany>>[0] & {
-		policy: { regulation: unknown } | null;
+		policy: { id: string; name: string; regulation: unknown } | null;
 	},
 ): EmployeeWithPolicy["policy"] {
 	const policy = assignment.policy;

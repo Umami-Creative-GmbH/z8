@@ -15,6 +15,7 @@ import type {
 	UnifiedApprovalItem,
 } from "../domain/types";
 import { DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/database.service";
+import type { AnyAppError } from "@/lib/effect/errors";
 
 // ============================================
 // SERVICE DEFINITION
@@ -26,17 +27,19 @@ export class ApprovalQueryService extends Context.Tag("ApprovalQueryService")<
 		/**
 		 * Get unified approvals with pagination and filtering.
 		 */
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		readonly getApprovals: (
 			params: ApprovalQueryParams,
-		) => Effect.Effect<PaginatedApprovalResult>;
+		) => Effect.Effect<PaginatedApprovalResult, AnyAppError, any>;
 
 		/**
 		 * Get total counts per approval type.
 		 */
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		readonly getCounts: (
 			approverId: string,
 			organizationId: string,
-		) => Effect.Effect<Record<ApprovalType, number>>;
+		) => Effect.Effect<Record<ApprovalType, number>, AnyAppError, any>;
 	}
 >() {}
 

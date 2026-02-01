@@ -21,6 +21,7 @@ import type {
 	UnifiedApprovalItem,
 } from "@/lib/approvals/domain/types";
 import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
+import type { AnyAppError } from "@/lib/effect/errors";
 import { createLogger } from "@/lib/logger";
 
 // Ensure handlers are registered
@@ -104,7 +105,7 @@ export async function GET(request: NextRequest) {
 
 		for (const handler of activeHandlers) {
 			const result = await Effect.runPromise(
-				handler.getApprovals(params).pipe(Effect.provide(DatabaseServiceLive)),
+				handler.getApprovals(params).pipe(Effect.provide(DatabaseServiceLive)) as Effect.Effect<UnifiedApprovalItem[], AnyAppError, never>,
 			);
 			allItems.push(...result);
 		}

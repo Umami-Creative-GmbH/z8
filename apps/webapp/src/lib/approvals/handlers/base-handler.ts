@@ -12,6 +12,7 @@ import { approvalRequest } from "@/db/schema";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import type { ApprovalQueryParams, ApprovalType, UnifiedApprovalItem } from "../domain/types";
 import { calculateSLAStatus } from "../domain/sla-calculator";
+import type { AnyAppError } from "@/lib/effect/errors";
 
 /**
  * Configuration for building approval request queries
@@ -23,7 +24,8 @@ interface ApprovalQueryConfig<TEntity> {
 	 * Batch fetch entities by their IDs
 	 * This is the key optimization - fetching all entities in one query
 	 */
-	fetchEntitiesByIds: (entityIds: string[]) => Effect.Effect<Map<string, TEntity>, unknown>;
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	fetchEntitiesByIds: (entityIds: string[]) => Effect.Effect<Map<string, TEntity>, AnyAppError, any>;
 	/**
 	 * Transform an entity to UnifiedApprovalItem
 	 */
@@ -94,9 +96,10 @@ export function buildBaseConditions(
 /**
  * Optimized approval fetching using batch entity loading
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function fetchApprovals<TEntity>(
 	config: ApprovalQueryConfig<TEntity>,
-): Effect.Effect<UnifiedApprovalItem[], unknown> {
+): Effect.Effect<UnifiedApprovalItem[], AnyAppError, any> {
 	return Effect.gen(function* (_) {
 		const dbService = yield* _(DatabaseService);
 		const { entityType, params, fetchEntitiesByIds, transformToItem, filterEntity } = config;
@@ -160,11 +163,12 @@ export function fetchApprovals<TEntity>(
 /**
  * Get approval count for a specific entity type
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function getApprovalCount(
 	entityType: ApprovalType,
 	approverId: string,
 	organizationId: string,
-): Effect.Effect<number, unknown> {
+): Effect.Effect<number, AnyAppError, any> {
 	return Effect.gen(function* (_) {
 		const dbService = yield* _(DatabaseService);
 
