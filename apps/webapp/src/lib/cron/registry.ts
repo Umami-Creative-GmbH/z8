@@ -118,6 +118,49 @@ export interface TelemetryResult {
 	message: string;
 }
 
+/** Result from scheduled exports job */
+export interface ScheduledExportsResult {
+	success: boolean;
+	processed: number;
+	succeeded: number;
+	failed: number;
+	errors: Array<{ scheduleId: string; error: string }>;
+}
+
+/** Result from Teams daily digest job */
+export interface TeamsDailyDigestResult {
+	success: boolean;
+	tenantsProcessed: number;
+	digestsSent: number;
+	errors: string[];
+}
+
+/** Result from Teams escalation checker job */
+export interface TeamsEscalationResult {
+	success: boolean;
+	tenantsProcessed: number;
+	approvalsEscalated: number;
+	errors: string[];
+}
+
+/** Result from compliance radar detection job */
+export interface ComplianceRadarResult {
+	success: boolean;
+	startedAt: Date;
+	completedAt: Date;
+	organizationsProcessed: number;
+	findingsCreated: number;
+	notificationsSent: number;
+	errors: string[];
+	details: Array<{
+		organizationId: string;
+		organizationName: string;
+		findingsDetected: number;
+		findingsCreated: number;
+		error?: string;
+	}>;
+}
+
 // ============================================
 // CRON JOB REGISTRY
 // ============================================
@@ -202,6 +245,50 @@ export const CRON_JOBS = {
 			return { success: true, message: "Telemetry collected" };
 		},
 		defaultJobOptions: { attempts: 1, priority: 9 },
+	},
+
+	"cron:scheduled-exports": {
+		schedule: "*/5 * * * *", // Every 5 minutes
+		description: "Process due scheduled exports (payroll, data, audit reports)",
+		processor: async (): Promise<ScheduledExportsResult> => {
+			const { runScheduledExportsProcessor } = await import(
+				"@/lib/jobs/scheduled-exports-processor"
+			);
+			return runScheduledExportsProcessor();
+		},
+		defaultJobOptions: { attempts: 2, priority: 4 },
+	},
+
+	"cron:teams-daily-digest": {
+		schedule: "*/15 * * * *", // Every 15 minutes (checks configured digest times)
+		description: "Send Teams daily digest cards to managers",
+		processor: async (): Promise<TeamsDailyDigestResult> => {
+			const { runDailyDigestJob } = await import("@/lib/teams/jobs/daily-digest");
+			return runDailyDigestJob();
+		},
+		defaultJobOptions: { attempts: 2, priority: 5 },
+	},
+
+	"cron:teams-escalation": {
+		schedule: "*/30 * * * *", // Every 30 minutes
+		description: "Check and escalate stale approval requests via Teams",
+		processor: async (): Promise<TeamsEscalationResult> => {
+			const { runEscalationCheckerJob } = await import("@/lib/teams/jobs/escalation-checker");
+			return runEscalationCheckerJob();
+		},
+		defaultJobOptions: { attempts: 2, priority: 6 },
+	},
+
+	"cron:compliance-radar": {
+		schedule: "0 2 * * *", // Daily at 2 AM
+		description: "Detect compliance violations for previous day",
+		processor: async (): Promise<ComplianceRadarResult> => {
+			const { runComplianceRadarDetection } = await import(
+				"@/lib/jobs/compliance-radar-processor"
+			);
+			return runComplianceRadarDetection();
+		},
+		defaultJobOptions: { attempts: 2, priority: 5 },
 	},
 } as const satisfies Record<string, CronJobDefinition>;
 

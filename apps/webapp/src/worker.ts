@@ -153,7 +153,12 @@ async function processOneOffJob(job: Job<JobData>): Promise<JobResult> {
 				const { processWebhookJob } = await import("@/lib/webhooks/webhook-worker");
 				// Type assertion needed: job.data is WebhookJobData (queue type)
 				// processWebhookJob expects the specific webhook type, which is structurally compatible
-				return processWebhookJob(job as Parameters<typeof processWebhookJob>[0]);
+				return processWebhookJob(job as unknown as Parameters<typeof processWebhookJob>[0]);
+			}
+
+			case "calendar-sync": {
+				const { processCalendarSyncJob } = await import("@/lib/calendar-sync/jobs");
+				return processCalendarSyncJob(job.data);
 			}
 
 			default:

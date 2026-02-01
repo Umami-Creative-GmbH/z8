@@ -18,6 +18,12 @@ export const CACHE_TAGS = {
 	// Vacation policies (public cache, scoped by org)
 	VACATION_POLICY: (orgId: string) => `vacation-policy:${orgId}`,
 
+	// Skills & Qualifications (public cache, scoped)
+	SKILLS: (orgId: string) => `skills:${orgId}`,
+	EMPLOYEE_SKILLS: (employeeId: string) => `employee-skills:${employeeId}`,
+	SUBAREA_SKILLS: (subareaId: string) => `subarea-skills:${subareaId}`,
+	TEMPLATE_SKILLS: (templateId: string) => `template-skills:${templateId}`,
+
 	// Analytics (keep in sync with analytics/cache.ts)
 	ANALYTICS_ALL: "analytics:all",
 } as const;

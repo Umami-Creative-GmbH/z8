@@ -27,7 +27,7 @@ const connection: ConnectionOptions = {
 };
 
 // Job types
-export type JobType = "report" | "export" | "email" | "cleanup" | "webhook";
+export type JobType = "report" | "export" | "email" | "cleanup" | "webhook" | "calendar-sync";
 
 // Job data interfaces
 export interface ReportJobData {
@@ -72,13 +72,21 @@ export interface WebhookJobData {
 	attemptNumber: number;
 }
 
+export interface CalendarSyncJobData {
+	type: "calendar-sync";
+	absenceId: string;
+	employeeId: string;
+	action: "create" | "update" | "delete";
+}
+
 export type JobData =
 	| ReportJobData
 	| ExportJobData
 	| EmailJobData
 	| CleanupJobData
 	| CronJobData
-	| WebhookJobData;
+	| WebhookJobData
+	| CalendarSyncJobData;
 
 // Job result interfaces
 export interface JobResult {
@@ -178,6 +186,15 @@ export async function addCleanupJob(
 	data: Omit<CleanupJobData, "type">,
 ): Promise<Job<JobData, JobResult>> {
 	return addJob("cleanup", { ...data, type: "cleanup" }, { priority: 10 }); // Low priority
+}
+
+/**
+ * Add a calendar sync job
+ */
+export async function addCalendarSyncJob(
+	data: Omit<CalendarSyncJobData, "type">,
+): Promise<Job<JobData, JobResult>> {
+	return addJob("calendar-sync", { ...data, type: "calendar-sync" }, { priority: 3 });
 }
 
 /**

@@ -59,6 +59,15 @@ export interface EffectiveWorkPolicy {
 		maxWeeklyMinutes: number | null;
 		maxUninterruptedMinutes: number | null;
 		breakRules: BreakRule[];
+
+		// ArbZG compliance fields
+		minRestPeriodMinutes: number | null; // 11-hour rest period (660 min)
+		restPeriodEnforcement: "block" | "warn" | "none"; // How to enforce rest period
+		overtimeDailyThresholdMinutes: number | null; // Daily overtime threshold
+		overtimeWeeklyThresholdMinutes: number | null; // Weekly overtime threshold
+		overtimeMonthlyThresholdMinutes: number | null; // Monthly overtime threshold
+		alertBeforeLimitMinutes: number; // Minutes before limit to show warning
+		alertThresholdPercent: number; // Percentage of limit to show warning
 	} | null;
 
 	assignmentType: "organization" | "team" | "employee";
@@ -104,7 +113,15 @@ export interface LogViolationInput {
 	organizationId: string;
 	policyId: string;
 	workPeriodId?: string;
-	violationType: "max_daily" | "max_weekly" | "max_uninterrupted" | "break_required";
+	violationType:
+		| "max_daily"
+		| "max_weekly"
+		| "max_uninterrupted"
+		| "break_required"
+		| "rest_period"
+		| "overtime_daily"
+		| "overtime_weekly"
+		| "overtime_monthly";
 	details: {
 		actualMinutes?: number;
 		limitMinutes?: number;
@@ -113,6 +130,18 @@ export interface LogViolationInput {
 		uninterruptedMinutes?: number;
 		warningShownAt?: string;
 		userContinued?: boolean;
+		// Rest period violation details
+		lastClockOutTime?: string;
+		attemptedClockInTime?: string;
+		restPeriodMinutes?: number;
+		requiredRestMinutes?: number;
+		// Overtime violation details
+		overtimeMinutes?: number;
+		overtimeThreshold?: number;
+		periodType?: "daily" | "weekly" | "monthly";
+		// Exception handling
+		exceptionId?: string;
+		exceptionApprovedBy?: string;
 	};
 }
 
@@ -339,6 +368,14 @@ export const WorkPolicyServiceLive = Layer.effect(
 							maxDailyMinutes: policy.regulation.maxDailyMinutes,
 							maxWeeklyMinutes: policy.regulation.maxWeeklyMinutes,
 							maxUninterruptedMinutes: policy.regulation.maxUninterruptedMinutes,
+							// ArbZG compliance fields
+							minRestPeriodMinutes: policy.regulation.minRestPeriodMinutes,
+							restPeriodEnforcement: policy.regulation.restPeriodEnforcement ?? "warn",
+							overtimeDailyThresholdMinutes: policy.regulation.overtimeDailyThresholdMinutes,
+							overtimeWeeklyThresholdMinutes: policy.regulation.overtimeWeeklyThresholdMinutes,
+							overtimeMonthlyThresholdMinutes: policy.regulation.overtimeMonthlyThresholdMinutes,
+							alertBeforeLimitMinutes: policy.regulation.alertBeforeLimitMinutes ?? 30,
+							alertThresholdPercent: policy.regulation.alertThresholdPercent ?? 80,
 							breakRules: policy.regulation.breakRules
 								.sort((a, b) => a.sortOrder - b.sortOrder)
 								.map((rule) => ({
