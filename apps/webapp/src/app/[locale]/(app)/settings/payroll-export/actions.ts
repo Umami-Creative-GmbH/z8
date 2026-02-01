@@ -33,6 +33,8 @@ import {
 	getProjectsForFilter,
 	type PayrollExportFilters,
 	type DatevLohnConfig,
+	type LexwareLohnConfig,
+	type SageLohnConfig,
 	type WageTypeMapping,
 	type PayrollExportJobSummary,
 } from "@/lib/payroll-export";
@@ -67,6 +69,42 @@ export interface SaveDatevConfigInput {
 }
 
 // ============================================
+// LEXWARE CONFIGURATION TYPES
+// ============================================
+
+export interface LexwareConfigResult {
+	id: string;
+	formatId: string;
+	config: LexwareLohnConfig;
+	isActive: boolean;
+	createdAt: Date;
+	updatedAt: Date;
+}
+
+export interface SaveLexwareConfigInput {
+	organizationId: string;
+	config: LexwareLohnConfig;
+}
+
+// ============================================
+// SAGE CONFIGURATION TYPES
+// ============================================
+
+export interface SageConfigResult {
+	id: string;
+	formatId: string;
+	config: SageLohnConfig;
+	isActive: boolean;
+	createdAt: Date;
+	updatedAt: Date;
+}
+
+export interface SaveSageConfigInput {
+	organizationId: string;
+	config: SageLohnConfig;
+}
+
+// ============================================
 // WAGE TYPE MAPPING TYPES
 // ============================================
 
@@ -76,8 +114,17 @@ export interface SaveMappingInput {
 	workCategoryId?: string | null;
 	absenceCategoryId?: string | null;
 	specialCategory?: string | null;
-	wageTypeCode: string;
+	/** @deprecated Use format-specific codes instead */
+	wageTypeCode?: string;
+	/** @deprecated Use format-specific codes instead */
 	wageTypeName?: string;
+	// Format-specific wage type codes
+	datevWageTypeCode?: string | null;
+	datevWageTypeName?: string | null;
+	lexwareWageTypeCode?: string | null;
+	lexwareWageTypeName?: string | null;
+	sageWageTypeCode?: string | null;
+	sageWageTypeName?: string | null;
 }
 
 export interface DeleteMappingInput {
@@ -266,6 +313,324 @@ export async function saveDatevConfigAction(
 }
 
 // ============================================
+// LEXWARE CONFIGURATION ACTIONS
+// ============================================
+
+const LEXWARE_FORMAT_ID = "lexware_lohn";
+
+/**
+ * Get Lexware configuration for organization
+ */
+export async function getLexwareConfigAction(
+	organizationId: string,
+): Promise<ServerActionResult<LexwareConfigResult | null>> {
+	const effect = Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
+
+		const hasPermission = yield* _(
+			Effect.promise(() => isOrgAdmin(session.user.id, organizationId)),
+		);
+
+		if (!hasPermission) {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Insufficient permissions - admin role required",
+						userId: session.user.id,
+						resource: "payroll_export_config",
+						action: "read",
+					}),
+				),
+			);
+		}
+
+		const configResult = yield* _(
+			Effect.promise(() => getPayrollExportConfig(organizationId, LEXWARE_FORMAT_ID)),
+		);
+
+		if (!configResult) {
+			return null;
+		}
+
+		return {
+			id: configResult.config.id,
+			formatId: configResult.config.formatId,
+			config: configResult.config.config as unknown as LexwareLohnConfig,
+			isActive: configResult.config.isActive,
+			createdAt: configResult.config.createdAt,
+			updatedAt: configResult.config.updatedAt,
+		};
+	});
+
+	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+}
+
+/**
+ * Save Lexware configuration
+ */
+export async function saveLexwareConfigAction(
+	input: SaveLexwareConfigInput,
+): Promise<ServerActionResult<LexwareConfigResult>> {
+	const effect = Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
+
+		const hasPermission = yield* _(
+			Effect.promise(() => isOrgAdmin(session.user.id, input.organizationId)),
+		);
+
+		if (!hasPermission) {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Insufficient permissions - admin role required",
+						userId: session.user.id,
+						resource: "payroll_export_config",
+						action: "create",
+					}),
+				),
+			);
+		}
+
+		// Ensure Lexware format exists
+		yield* _(
+			Effect.promise(async () => {
+				const format = await db.query.payrollExportFormat.findFirst({
+					where: eq(payrollExportFormat.id, LEXWARE_FORMAT_ID),
+				});
+
+				if (!format) {
+					// Create the format if it doesn't exist
+					await db.insert(payrollExportFormat).values({
+						id: LEXWARE_FORMAT_ID,
+						name: "Lexware lohn+gehalt",
+						version: "2024.1",
+						description: "Export for Lexware lohn+gehalt payroll software",
+						isEnabled: true,
+						requiresConfiguration: true,
+						supportsAsync: true,
+						syncThreshold: 500,
+						updatedAt: new Date(),
+					});
+				}
+			}),
+		);
+
+		// Save or update config
+		const config = yield* _(
+			Effect.promise(async () => {
+				const existing = await db.query.payrollExportConfig.findFirst({
+					where: and(
+						eq(payrollExportConfig.organizationId, input.organizationId),
+						eq(payrollExportConfig.formatId, LEXWARE_FORMAT_ID),
+					),
+				});
+
+				if (existing) {
+					const [updated] = await db
+						.update(payrollExportConfig)
+						.set({
+							config: input.config as unknown as Record<string, unknown>,
+							updatedBy: session.user.id,
+						})
+						.where(eq(payrollExportConfig.id, existing.id))
+						.returning();
+
+					return updated;
+				} else {
+					const [inserted] = await db
+						.insert(payrollExportConfig)
+						.values({
+							organizationId: input.organizationId,
+							formatId: LEXWARE_FORMAT_ID,
+							config: input.config as unknown as Record<string, unknown>,
+							isActive: true,
+							createdBy: session.user.id,
+							updatedAt: new Date(),
+						})
+						.returning();
+
+					return inserted;
+				}
+			}),
+		);
+
+		revalidatePath("/settings/payroll-export");
+
+		return {
+			id: config.id,
+			formatId: config.formatId,
+			config: config.config as unknown as LexwareLohnConfig,
+			isActive: config.isActive,
+			createdAt: config.createdAt,
+			updatedAt: config.updatedAt,
+		};
+	});
+
+	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+}
+
+// ============================================
+// SAGE CONFIGURATION ACTIONS
+// ============================================
+
+const SAGE_FORMAT_ID = "sage_lohn";
+
+/**
+ * Get Sage configuration for organization
+ */
+export async function getSageConfigAction(
+	organizationId: string,
+): Promise<ServerActionResult<SageConfigResult | null>> {
+	const effect = Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
+
+		const hasPermission = yield* _(
+			Effect.promise(() => isOrgAdmin(session.user.id, organizationId)),
+		);
+
+		if (!hasPermission) {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Insufficient permissions - admin role required",
+						userId: session.user.id,
+						resource: "payroll_export_config",
+						action: "read",
+					}),
+				),
+			);
+		}
+
+		const configResult = yield* _(
+			Effect.promise(() => getPayrollExportConfig(organizationId, SAGE_FORMAT_ID)),
+		);
+
+		if (!configResult) {
+			return null;
+		}
+
+		return {
+			id: configResult.config.id,
+			formatId: configResult.config.formatId,
+			config: configResult.config.config as unknown as SageLohnConfig,
+			isActive: configResult.config.isActive,
+			createdAt: configResult.config.createdAt,
+			updatedAt: configResult.config.updatedAt,
+		};
+	});
+
+	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+}
+
+/**
+ * Save Sage configuration
+ */
+export async function saveSageConfigAction(
+	input: SaveSageConfigInput,
+): Promise<ServerActionResult<SageConfigResult>> {
+	const effect = Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
+
+		const hasPermission = yield* _(
+			Effect.promise(() => isOrgAdmin(session.user.id, input.organizationId)),
+		);
+
+		if (!hasPermission) {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Insufficient permissions - admin role required",
+						userId: session.user.id,
+						resource: "payroll_export_config",
+						action: "create",
+					}),
+				),
+			);
+		}
+
+		// Ensure Sage format exists
+		yield* _(
+			Effect.promise(async () => {
+				const format = await db.query.payrollExportFormat.findFirst({
+					where: eq(payrollExportFormat.id, SAGE_FORMAT_ID),
+				});
+
+				if (!format) {
+					// Create the format if it doesn't exist
+					await db.insert(payrollExportFormat).values({
+						id: SAGE_FORMAT_ID,
+						name: "Sage Lohn",
+						version: "2024.1",
+						description: "Export for Sage Lohn payroll software",
+						isEnabled: true,
+						requiresConfiguration: true,
+						supportsAsync: true,
+						syncThreshold: 500,
+						updatedAt: new Date(),
+					});
+				}
+			}),
+		);
+
+		// Save or update config
+		const config = yield* _(
+			Effect.promise(async () => {
+				const existing = await db.query.payrollExportConfig.findFirst({
+					where: and(
+						eq(payrollExportConfig.organizationId, input.organizationId),
+						eq(payrollExportConfig.formatId, SAGE_FORMAT_ID),
+					),
+				});
+
+				if (existing) {
+					const [updated] = await db
+						.update(payrollExportConfig)
+						.set({
+							config: input.config as unknown as Record<string, unknown>,
+							updatedBy: session.user.id,
+						})
+						.where(eq(payrollExportConfig.id, existing.id))
+						.returning();
+
+					return updated;
+				} else {
+					const [inserted] = await db
+						.insert(payrollExportConfig)
+						.values({
+							organizationId: input.organizationId,
+							formatId: SAGE_FORMAT_ID,
+							config: input.config as unknown as Record<string, unknown>,
+							isActive: true,
+							createdBy: session.user.id,
+							updatedAt: new Date(),
+						})
+						.returning();
+
+					return inserted;
+				}
+			}),
+		);
+
+		revalidatePath("/settings/payroll-export");
+
+		return {
+			id: config.id,
+			formatId: config.formatId,
+			config: config.config as unknown as SageLohnConfig,
+			isActive: config.isActive,
+			createdAt: config.createdAt,
+			updatedAt: config.updatedAt,
+		};
+	});
+
+	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+}
+
+// ============================================
 // WAGE TYPE MAPPING ACTIONS
 // ============================================
 
@@ -417,8 +782,16 @@ export async function saveMappingAction(
 					const [updated] = await db
 						.update(payrollWageTypeMapping)
 						.set({
-							wageTypeCode: input.wageTypeCode,
-							wageTypeName: input.wageTypeName || null,
+							// Legacy fields (for backwards compatibility)
+							wageTypeCode: input.wageTypeCode || input.datevWageTypeCode || input.lexwareWageTypeCode || input.sageWageTypeCode || "",
+							wageTypeName: input.wageTypeName || input.datevWageTypeName || input.lexwareWageTypeName || input.sageWageTypeName || null,
+							// Format-specific codes
+							datevWageTypeCode: input.datevWageTypeCode ?? existing.datevWageTypeCode,
+							datevWageTypeName: input.datevWageTypeName ?? existing.datevWageTypeName,
+							lexwareWageTypeCode: input.lexwareWageTypeCode ?? existing.lexwareWageTypeCode,
+							lexwareWageTypeName: input.lexwareWageTypeName ?? existing.lexwareWageTypeName,
+							sageWageTypeCode: input.sageWageTypeCode ?? existing.sageWageTypeCode,
+							sageWageTypeName: input.sageWageTypeName ?? existing.sageWageTypeName,
 							isActive: true,
 						})
 						.where(eq(payrollWageTypeMapping.id, existing.id))
@@ -434,8 +807,16 @@ export async function saveMappingAction(
 							workCategoryId: input.workCategoryId || null,
 							absenceCategoryId: input.absenceCategoryId || null,
 							specialCategory: input.specialCategory || null,
-							wageTypeCode: input.wageTypeCode,
-							wageTypeName: input.wageTypeName || null,
+							// Legacy fields (for backwards compatibility)
+							wageTypeCode: input.wageTypeCode || input.datevWageTypeCode || input.lexwareWageTypeCode || input.sageWageTypeCode || "",
+							wageTypeName: input.wageTypeName || input.datevWageTypeName || input.lexwareWageTypeName || input.sageWageTypeName || null,
+							// Format-specific codes
+							datevWageTypeCode: input.datevWageTypeCode || null,
+							datevWageTypeName: input.datevWageTypeName || null,
+							lexwareWageTypeCode: input.lexwareWageTypeCode || null,
+							lexwareWageTypeName: input.lexwareWageTypeName || null,
+							sageWageTypeCode: input.sageWageTypeCode || null,
+							sageWageTypeName: input.sageWageTypeName || null,
 							isActive: true,
 							createdBy: session.user.id,
 							updatedAt: new Date(),
@@ -458,6 +839,13 @@ export async function saveMappingAction(
 			specialCategory: mapping.specialCategory,
 			wageTypeCode: mapping.wageTypeCode,
 			wageTypeName: mapping.wageTypeName,
+			// Format-specific codes
+			datevWageTypeCode: mapping.datevWageTypeCode,
+			datevWageTypeName: mapping.datevWageTypeName,
+			lexwareWageTypeCode: mapping.lexwareWageTypeCode,
+			lexwareWageTypeName: mapping.lexwareWageTypeName,
+			sageWageTypeCode: mapping.sageWageTypeCode,
+			sageWageTypeName: mapping.sageWageTypeName,
 			factor: mapping.factor || "1.00",
 			isActive: mapping.isActive,
 		};

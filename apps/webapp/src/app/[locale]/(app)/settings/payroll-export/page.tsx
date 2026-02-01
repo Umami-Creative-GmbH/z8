@@ -4,6 +4,8 @@ import { Suspense } from "react";
 import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { DatevConfigForm } from "@/components/settings/payroll-export/datev-config-form";
+import { LexwareConfigForm } from "@/components/settings/payroll-export/lexware-config-form";
+import { SageConfigForm } from "@/components/settings/payroll-export/sage-config-form";
 import { PersonioConfigForm } from "@/components/settings/payroll-export/personio-config-form";
 import { ExportForm } from "@/components/settings/payroll-export/export-form";
 import { ExportHistory } from "@/components/settings/payroll-export/export-history";
@@ -15,6 +17,8 @@ import { getAuthContext } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
 import {
 	getDatevConfigAction,
+	getLexwareConfigAction,
+	getSageConfigAction,
 	getPersonioConfigAction,
 	getExportHistoryAction,
 } from "./actions";
@@ -43,13 +47,17 @@ async function PayrollExportContent() {
 	const organizationId = authContext.employee.organizationId;
 
 	// Fetch configs and history in parallel
-	const [datevConfigResult, personioConfigResult, historyResult] = await Promise.all([
+	const [datevConfigResult, lexwareConfigResult, sageConfigResult, personioConfigResult, historyResult] = await Promise.all([
 		getDatevConfigAction(organizationId),
+		getLexwareConfigAction(organizationId),
+		getSageConfigAction(organizationId),
 		getPersonioConfigAction(organizationId),
 		getExportHistoryAction(organizationId),
 	]);
 
 	const datevConfig = datevConfigResult.success ? datevConfigResult.data : null;
+	const lexwareConfig = lexwareConfigResult.success ? lexwareConfigResult.data : null;
+	const sageConfig = sageConfigResult.success ? sageConfigResult.data : null;
 	const personioConfig = personioConfigResult.success ? personioConfigResult.data : null;
 	const exports = historyResult.success ? historyResult.data : [];
 
@@ -78,6 +86,12 @@ async function PayrollExportContent() {
 					<TabsTrigger value="datev">
 						{t("settings.payrollExport.tabs.datev", "DATEV")}
 					</TabsTrigger>
+					<TabsTrigger value="lexware">
+						{t("settings.payrollExport.tabs.lexware", "Lexware")}
+					</TabsTrigger>
+					<TabsTrigger value="sage">
+						{t("settings.payrollExport.tabs.sage", "Sage")}
+					</TabsTrigger>
 					<TabsTrigger value="personio">
 						{t("settings.payrollExport.tabs.personio", "Personio")}
 					</TabsTrigger>
@@ -95,6 +109,14 @@ async function PayrollExportContent() {
 
 				<TabsContent value="datev" className="mt-4">
 					<DatevConfigForm organizationId={organizationId} initialConfig={datevConfig} />
+				</TabsContent>
+
+				<TabsContent value="lexware" className="mt-4">
+					<LexwareConfigForm organizationId={organizationId} initialConfig={lexwareConfig} />
+				</TabsContent>
+
+				<TabsContent value="sage" className="mt-4">
+					<SageConfigForm organizationId={organizationId} initialConfig={sageConfig} />
 				</TabsContent>
 
 				<TabsContent value="personio" className="mt-4">
