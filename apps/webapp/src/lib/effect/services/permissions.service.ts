@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { employee, teamPermissions } from "@/db/schema";
 import {
@@ -107,14 +107,14 @@ export const PermissionsServiceLive = Layer.effect(
 						}
 					}
 
-					// Step 4: Fallback to organization-wide permissions (teamId = organizationId)
+					// Step 4: Fallback to organization-wide permissions (teamId = NULL)
 					const orgPerms = yield* _(
 						dbService.query("getOrganizationWidePermissions", async () => {
 							return await dbService.db.query.teamPermissions.findFirst({
 								where: and(
 									eq(teamPermissions.employeeId, employeeId),
 									eq(teamPermissions.organizationId, emp.organizationId),
-									eq(teamPermissions.teamId, emp.organizationId),
+									isNull(teamPermissions.teamId),
 								),
 							});
 						}),
@@ -256,7 +256,7 @@ export const PermissionsServiceLive = Layer.effect(
 									eq(teamPermissions.organizationId, organizationId),
 									teamId
 										? eq(teamPermissions.teamId, teamId)
-										: eq(teamPermissions.teamId, organizationId),
+										: isNull(teamPermissions.teamId),
 								),
 							});
 						}),
@@ -294,7 +294,7 @@ export const PermissionsServiceLive = Layer.effect(
 								await dbService.db.insert(teamPermissions).values({
 									employeeId,
 									organizationId,
-									teamId: teamId || organizationId, // Use orgId for org-wide permissions
+									teamId: teamId ?? null, // null = org-wide permissions
 									canCreateTeams: permissions.canCreateTeams ?? false,
 									canManageTeamMembers:
 										permissions.canManageTeamMembers ?? false,
@@ -342,7 +342,7 @@ export const PermissionsServiceLive = Layer.effect(
 										eq(teamPermissions.organizationId, organizationId),
 										teamId
 											? eq(teamPermissions.teamId, teamId)
-											: eq(teamPermissions.teamId, organizationId),
+											: isNull(teamPermissions.teamId),
 									),
 								);
 						}),

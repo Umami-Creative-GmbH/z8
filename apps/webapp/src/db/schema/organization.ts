@@ -317,7 +317,11 @@ export const teamPermissions = pgTable(
 		index("teamPermissions_employeeId_idx").on(table.employeeId),
 		index("teamPermissions_organizationId_idx").on(table.organizationId),
 		index("teamPermissions_teamId_idx").on(table.teamId),
-		// One permission record per employee per organization
-		index("teamPermissions_unique_idx").on(table.employeeId, table.organizationId),
+		// One permission record per employee per organization per team (or org-wide with null teamId)
+		uniqueIndex("teamPermissions_unique_idx").on(
+			table.employeeId,
+			table.organizationId,
+			table.teamId,
+		),
 	],
 );

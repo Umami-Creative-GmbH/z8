@@ -118,6 +118,9 @@ const SELF_SERVICE_SUBJECTS: Subject[] = [
 	"Employee", // own profile
 ];
 
+// Hoisted empty object to prevent new reference on each render
+const EMPTY_PERMISSIONS: PermissionFlags = {};
+
 /**
  * Hook to check user abilities/permissions on the client side.
  *

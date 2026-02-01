@@ -5,12 +5,19 @@ import { Effect } from "effect";
 import { headers } from "next/headers";
 import { db } from "@/db";
 import { member, organization } from "@/db/auth-schema";
-import { employee, userSettings } from "@/db/schema";
+import { employee, employeeManagers, teamPermissions, userSettings } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { ManagerService, ManagerServiceLive } from "@/lib/effect/services/manager.service";
 import { detectAppType, type AppPermissions } from "@/lib/effect/services/app-access.service";
 import type { AppType } from "@/lib/audit-logger";
+import {
+	defineAbilityFor,
+	type AppAbility,
+	type PrincipalContext,
+	type TeamPermissions,
+} from "@/lib/authorization";
+import type { PermissionFlags } from "@/lib/effect/services/permissions.service";
 
 export interface AuthContext {
 	user: {
@@ -599,4 +606,308 @@ export async function requireAppAccess(
 	}
 
 	return result.appType;
+}
+
+// ============================================
+// CASL AUTHORIZATION
+// ============================================
+
+/**
+ * Build CASL principal context from current auth state.
+ * This loads all necessary data to construct abilities.
+ *
+ * @returns PrincipalContext or null if not authenticated
+ *
+ * @example
+ * ```typescript
+ * const principal = await getPrincipalContext();
+ * if (principal) {
+ *   const ability = defineAbilityFor(principal);
+ *   if (ability.can("update", { organizationId, teamId })) {
+ *     // User can update
+ *   }
+ * }
+ * ```
+ */
+export async function getPrincipalContext(): Promise<PrincipalContext | null> {
+	const session = await auth.api.getSession({ headers: await headers() });
+
+	if (!session?.user) {
+		return null;
+	}
+
+	const userId = session.user.id;
+	const isPlatformAdmin = session.user.role === "admin";
+	const activeOrganizationId = session.session?.activeOrganizationId || null;
+
+	// Platform admin gets full access
+	if (isPlatformAdmin) {
+		return {
+			userId,
+			isPlatformAdmin: true,
+			activeOrganizationId,
+			orgMembership: null,
+			employee: null,
+			permissions: { orgWide: null, byTeamId: new Map() },
+			managedEmployeeIds: [],
+		};
+	}
+
+	// No active org = limited context
+	if (!activeOrganizationId) {
+		return {
+			userId,
+			isPlatformAdmin: false,
+			activeOrganizationId: null,
+			orgMembership: null,
+			employee: null,
+			permissions: { orgWide: null, byTeamId: new Map() },
+			managedEmployeeIds: [],
+		};
+	}
+
+	// Load organization membership
+	const [memberRecord] = await db
+		.select()
+		.from(member)
+		.where(
+			and(eq(member.userId, userId), eq(member.organizationId, activeOrganizationId)),
+		)
+		.limit(1);
+
+	// Load employee record
+	const [employeeRecord] = await db
+		.select()
+		.from(employee)
+		.where(
+			and(
+				eq(employee.userId, userId),
+				eq(employee.organizationId, activeOrganizationId),
+				eq(employee.isActive, true),
+			),
+		)
+		.limit(1);
+
+	// Load permissions if employee exists
+	const permissions: TeamPermissions = {
+		orgWide: null,
+		byTeamId: new Map(),
+	};
+
+	if (employeeRecord) {
+		const permRecords = await db
+			.select()
+			.from(teamPermissions)
+			.where(eq(teamPermissions.employeeId, employeeRecord.id));
+
+		for (const perm of permRecords) {
+			const flags: PermissionFlags = {
+				canCreateTeams: perm.canCreateTeams,
+				canManageTeamMembers: perm.canManageTeamMembers,
+				canManageTeamSettings: perm.canManageTeamSettings,
+				canApproveTeamRequests: perm.canApproveTeamRequests,
+			};
+
+			if (perm.teamId === null) {
+				// Org-wide permissions
+				permissions.orgWide = flags;
+			} else {
+				// Team-specific permissions
+				permissions.byTeamId.set(perm.teamId, flags);
+			}
+		}
+	}
+
+	// Load managed employee IDs
+	let managedEmployeeIds: string[] = [];
+
+	if (
+		employeeRecord &&
+		(employeeRecord.role === "manager" || employeeRecord.role === "admin")
+	) {
+		const managedRecords = await db
+			.select({ employeeId: employeeManagers.employeeId })
+			.from(employeeManagers)
+			.where(eq(employeeManagers.managerId, employeeRecord.id));
+
+		managedEmployeeIds = managedRecords.map((r) => r.employeeId);
+	}
+
+	return {
+		userId,
+		isPlatformAdmin: false,
+		activeOrganizationId,
+		orgMembership: memberRecord
+			? {
+					organizationId: memberRecord.organizationId,
+					role: memberRecord.role as "owner" | "admin" | "member",
+					status: "active",
+				}
+			: null,
+		employee: employeeRecord
+			? {
+					id: employeeRecord.id,
+					organizationId: employeeRecord.organizationId,
+					role: employeeRecord.role,
+					teamId: employeeRecord.teamId,
+				}
+			: null,
+		permissions,
+		managedEmployeeIds,
+	};
+}
+
+/**
+ * Get CASL ability for the current authenticated user.
+ * Convenience function that combines getPrincipalContext and defineAbilityFor.
+ *
+ * @returns AppAbility or null if not authenticated
+ *
+ * @example
+ * ```typescript
+ * const ability = await getAbility();
+ * if (ability && ability.can("manage", "Team", { organizationId })) {
+ *   // Show team management UI
+ * }
+ * ```
+ */
+export async function getAbility(): Promise<AppAbility | null> {
+	const principal = await getPrincipalContext();
+
+	if (!principal) {
+		return null;
+	}
+
+	return defineAbilityFor(principal);
+}
+
+/**
+ * Get CASL ability, throwing if not authenticated.
+ *
+ * @throws Error if not authenticated
+ * @returns AppAbility for the current user
+ *
+ * @example
+ * ```typescript
+ * const ability = await requireAbility();
+ * assertCan(ability, "update", { organizationId, teamId });
+ * ```
+ */
+export async function requireAbility(): Promise<AppAbility> {
+	const ability = await getAbility();
+
+	if (!ability) {
+		throw new Error("Authentication required");
+	}
+
+	return ability;
+}
+
+// ============================================
+// CASL-BASED AUTHORIZATION CHECKS
+// ============================================
+
+/**
+ * Check if the current user is an organization admin (admin or owner role).
+ * Uses CASL ability to check if user can manage OrgSettings.
+ *
+ * @param organizationId - The organization to check admin status for
+ * @returns true if user is admin/owner, false otherwise
+ *
+ * @example
+ * ```typescript
+ * if (await isOrgAdminCasl(organizationId)) {
+ *   // User can manage org settings
+ * }
+ * ```
+ */
+export async function isOrgAdminCasl(organizationId: string): Promise<boolean> {
+	const session = await auth.api.getSession({ headers: await headers() });
+	if (!session?.user) {
+		return false;
+	}
+
+	// Check if this is the active organization
+	if (session.session?.activeOrganizationId !== organizationId) {
+		// Need to check membership directly for non-active org
+		const [memberRecord] = await db
+			.select()
+			.from(member)
+			.where(
+				and(
+					eq(member.userId, session.user.id),
+					eq(member.organizationId, organizationId),
+				),
+			)
+			.limit(1);
+
+		return memberRecord?.role === "admin" || memberRecord?.role === "owner";
+	}
+
+	// For active organization, use CASL
+	const ability = await getAbility();
+	if (!ability) {
+		return false;
+	}
+
+	return ability.can("manage", "OrgSettings");
+}
+
+/**
+ * Check if the current user is an organization owner.
+ * Uses CASL ability to check if user can manage OrgBilling.
+ *
+ * @param organizationId - The organization to check owner status for
+ * @returns true if user is owner, false otherwise
+ */
+export async function isOrgOwnerCasl(organizationId: string): Promise<boolean> {
+	const session = await auth.api.getSession({ headers: await headers() });
+	if (!session?.user) {
+		return false;
+	}
+
+	// Check if this is the active organization
+	if (session.session?.activeOrganizationId !== organizationId) {
+		// Need to check membership directly for non-active org
+		const [memberRecord] = await db
+			.select()
+			.from(member)
+			.where(
+				and(
+					eq(member.userId, session.user.id),
+					eq(member.organizationId, organizationId),
+				),
+			)
+			.limit(1);
+
+		return memberRecord?.role === "owner";
+	}
+
+	// For active organization, use CASL
+	const ability = await getAbility();
+	if (!ability) {
+		return false;
+	}
+
+	return ability.can("manage", "OrgBilling");
+}
+
+/**
+ * Require org admin access, throwing if not authorized.
+ * Uses CASL ability to check if user can manage OrgSettings.
+ *
+ * @param organizationId - The organization to check admin status for
+ * @throws Error if not authenticated or not an admin
+ *
+ * @example
+ * ```typescript
+ * await requireOrgAdminCasl(organizationId);
+ * // User is confirmed to be admin/owner
+ * ```
+ */
+export async function requireOrgAdminCasl(organizationId: string): Promise<void> {
+	const isAdmin = await isOrgAdminCasl(organizationId);
+	if (!isAdmin) {
+		throw new Error("Organization admin access required");
+	}
 }
