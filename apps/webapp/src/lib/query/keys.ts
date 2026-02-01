@@ -53,6 +53,11 @@ export const queryKeys = {
 	// Approvals
 	approvals: {
 		all: ["approvals"] as const,
+		// Unified inbox queries
+		inbox: <T extends object>(params?: T) => ["approvals", "inbox", params] as const,
+		inboxCounts: () => ["approvals", "inbox", "counts"] as const,
+		detail: (approvalId: string) => ["approvals", "detail", approvalId] as const,
+		// Legacy queries (for backward compatibility)
 		absences: <T extends object>(params?: T) => ["approvals", "absences", params] as const,
 		timeCorrections: <T extends object>(params?: T) =>
 			["approvals", "time-corrections", params] as const,
@@ -90,6 +95,13 @@ export const queryKeys = {
 	timeClock: {
 		status: () => ["time-clock", "status"] as const,
 		breakStatus: () => ["time-clock", "break-status"] as const,
+	},
+
+	// Offline queue
+	offlineQueue: {
+		all: ["offline-queue"] as const,
+		count: () => ["offline-queue", "count"] as const,
+		status: () => ["offline-queue", "status"] as const,
 	},
 
 	// Notifications
@@ -323,5 +335,70 @@ export const queryKeys = {
 				["work-policies", "violations", "employee", employeeId, dateRange] as const,
 		},
 		effective: (employeeId: string) => ["work-policies", "effective", employeeId] as const,
+	},
+
+	// ArbZG Compliance
+	compliance: {
+		all: ["compliance"] as const,
+		// Rest period check for clock-in
+		restPeriod: (employeeId: string) => ["compliance", "rest-period", employeeId] as const,
+		// Proactive alerts during active session
+		alerts: (employeeId: string) => ["compliance", "alerts", employeeId] as const,
+		// Full compliance status
+		status: (employeeId: string) => ["compliance", "status", employeeId] as const,
+		// Overtime statistics
+		overtime: (employeeId: string) => ["compliance", "overtime", employeeId] as const,
+		// Exception requests
+		exceptions: {
+			all: ["compliance", "exceptions"] as const,
+			// Employee's own exceptions
+			my: (employeeId: string, includeExpired?: boolean) =>
+				["compliance", "exceptions", "my", employeeId, includeExpired] as const,
+			// Pending exceptions for manager/admin
+			pending: (orgId: string) => ["compliance", "exceptions", "pending", orgId] as const,
+		},
+		// Pending exceptions count (for badge)
+		pendingExceptions: (orgId: string) =>
+			["compliance", "pending-exceptions", orgId] as const,
+	},
+
+	// Compliance Radar (findings, config, stats)
+	complianceRadar: {
+		all: ["compliance-radar"] as const,
+		findings: (orgId: string, filters?: object) =>
+			["compliance-radar", "findings", orgId, filters] as const,
+		stats: (orgId: string) => ["compliance-radar", "stats", orgId] as const,
+		config: (orgId: string) => ["compliance-radar", "config", orgId] as const,
+	},
+
+	// Coverage Targets (minimum staffing requirements)
+	coverage: {
+		all: ["coverage"] as const,
+		rules: (orgId: string, subareaId?: string) =>
+			["coverage", "rules", orgId, subareaId] as const,
+		ruleDetail: (ruleId: string) => ["coverage", "rules", "detail", ruleId] as const,
+		heatmap: (orgId: string, dateRange: { start: Date; end: Date }) =>
+			["coverage", "heatmap", orgId, dateRange] as const,
+		validation: (orgId: string, dateRange: { start: Date; end: Date }) =>
+			["coverage", "validation", orgId, dateRange] as const,
+	},
+
+	// Skills & Qualifications
+	skills: {
+		all: ["skills"] as const,
+		list: (orgId: string, includeInactive?: boolean) =>
+			["skills", "list", orgId, includeInactive] as const,
+		detail: (skillId: string) => ["skills", "detail", skillId] as const,
+		// Employee skill assignments
+		employee: (employeeId: string) => ["skills", "employee", employeeId] as const,
+		// Subarea skill requirements
+		subarea: (subareaId: string) => ["skills", "subarea", subareaId] as const,
+		// Template skill requirements
+		template: (templateId: string) => ["skills", "template", templateId] as const,
+		// Skill validation for shift assignment
+		validation: (employeeId: string, subareaId: string, templateId?: string) =>
+			["skills", "validation", employeeId, subareaId, templateId] as const,
+		// Qualified employees for a set of skills
+		qualified: (skillIds: string[]) => ["skills", "qualified", skillIds] as const,
 	},
 } as const;

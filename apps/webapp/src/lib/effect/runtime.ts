@@ -12,8 +12,12 @@ import { PermissionsServiceLive } from "./services/permissions.service";
 import { ReportingService } from "./services/reporting.service";
 import { ShiftServiceLive } from "./services/shift.service";
 import { ShiftRequestServiceLive } from "./services/shift-request.service";
+import { SkillServiceLive } from "./services/skill.service";
+import { CoverageServiceLive } from "./services/coverage.service";
 import { TimeEntryServiceLive } from "./services/time-entry.service";
 import { WorkPolicyServiceLive } from "./services/work-policy.service";
+import { PlatformAdminServiceLive } from "./services/platform-admin.service";
+import { SetupServiceLive } from "./services/setup.service";
 
 // Base layer with DatabaseService (no dependencies)
 const BaseLayer = DatabaseServiceLive;
@@ -51,6 +55,18 @@ const WorkPolicyLayer = WorkPolicyServiceLive.pipe(Layer.provide(DatabaseService
 // Layer for AppAccessService (depends on DatabaseService)
 const AppAccessLayer = AppAccessServiceLive.pipe(Layer.provide(DatabaseServiceLive));
 
+// Layer for PlatformAdminService (no external dependencies - uses auth internally)
+const PlatformAdminLayer = PlatformAdminServiceLive;
+
+// Layer for SetupService (no external dependencies)
+const SetupLayer = SetupServiceLive;
+
+// Layer for SkillService (depends on DatabaseService)
+const SkillLayer = SkillServiceLive.pipe(Layer.provide(DatabaseServiceLive));
+
+// Layer for CoverageService (depends on DatabaseService)
+const CoverageLayer = CoverageServiceLive.pipe(Layer.provide(DatabaseServiceLive));
+
 // Combine all service layers
 export const AppLayer = Layer.mergeAll(
 	BaseLayer,
@@ -67,6 +83,10 @@ export const AppLayer = Layer.mergeAll(
 	ChangePolicyLayer,
 	WorkPolicyLayer,
 	AppAccessLayer,
+	PlatformAdminLayer,
+	SetupLayer,
+	SkillLayer,
+	CoverageLayer,
 );
 
 // Runtime for executing effects

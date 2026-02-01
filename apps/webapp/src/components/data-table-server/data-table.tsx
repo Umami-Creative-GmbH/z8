@@ -104,6 +104,14 @@ interface DataTableProps<TData, TValue> {
 	 * Additional className for the table container
 	 */
 	className?: string;
+	/**
+	 * Click handler for row (passes the original data)
+	 */
+	onRowClick?: (row: TData) => void;
+	/**
+	 * Custom className for rows (can be a function based on row data)
+	 */
+	rowClassName?: string | ((row: TData) => string);
 }
 
 export function DataTable<TData, TValue>({
@@ -124,6 +132,8 @@ export function DataTable<TData, TValue>({
 	emptyMessage,
 	isFetching,
 	className,
+	onRowClick,
+	rowClassName,
 }: DataTableProps<TData, TValue>) {
 	const { t } = useTranslate();
 
@@ -191,15 +201,27 @@ export function DataTable<TData, TValue>({
 				</TableHeader>
 				<TableBody>
 					{table.getRowModel().rows?.length ? (
-						table.getRowModel().rows.map((row) => (
-							<TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
-								{row.getVisibleCells().map((cell) => (
-									<TableCell key={cell.id}>
-										{flexRender(cell.column.columnDef.cell, cell.getContext())}
-									</TableCell>
-								))}
-							</TableRow>
-						))
+						table.getRowModel().rows.map((row) => {
+							const rowClassNameValue =
+								typeof rowClassName === "function"
+									? rowClassName(row.original)
+									: rowClassName;
+
+							return (
+								<TableRow
+									key={row.id}
+									data-state={row.getIsSelected() && "selected"}
+									className={rowClassNameValue}
+									onClick={onRowClick ? () => onRowClick(row.original) : undefined}
+								>
+									{row.getVisibleCells().map((cell) => (
+										<TableCell key={cell.id}>
+											{flexRender(cell.column.columnDef.cell, cell.getContext())}
+										</TableCell>
+									))}
+								</TableRow>
+							);
+						})
 					) : (
 						<TableRow>
 							<TableCell

@@ -1,8 +1,12 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
+import { IconInbox, IconArrowRight } from "@tabler/icons-react";
 import { AbsenceApprovalsTable } from "@/components/approvals/absence-approvals-table";
 import { TimeCorrectionApprovalsTable } from "@/components/approvals/time-correction-approvals-table";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -35,6 +39,23 @@ async function ApprovalsContent() {
 					</p>
 				</div>
 			</div>
+
+			{/* Unified Inbox Banner */}
+			<Alert>
+				<IconInbox className="h-4 w-4" />
+				<AlertTitle>Try the new Unified Inbox</AlertTitle>
+				<AlertDescription className="flex items-center justify-between">
+					<span>
+						View all approval types in one place with filtering, bulk actions, and SLA tracking.
+					</span>
+					<Button asChild size="sm" variant="outline" className="ml-4">
+						<Link href="/approvals/inbox">
+							Open Inbox
+							<IconArrowRight className="ml-2 h-4 w-4" />
+						</Link>
+					</Button>
+				</AlertDescription>
+			</Alert>
 
 			<Tabs defaultValue="absences" className="space-y-4">
 				<TabsList>

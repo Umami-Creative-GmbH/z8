@@ -33,6 +33,7 @@ const PUBLIC_ROUTES = [
 	"/imprint",
 	"/licenses",
 	"/join",
+	"/setup",
 ];
 
 // Routes that authenticated users should be redirected away from
@@ -48,8 +49,31 @@ const i18nMiddleware = createMiddleware({
 export async function proxy(request: NextRequest) {
 	const { pathname } = request.nextUrl;
 
-	// Rate limiting for auth endpoints
+	// Extract locale and path without locale for consistent handling
 	const pathWithoutLocale = pathname.replace(/^\/[a-z]{2}(?:\/|$)/, "/");
+	const locale = pathname.match(/^\/([a-z]{2})(?:\/|$)/)?.[1] || DEFAULT_LANGUAGE;
+	const isSetupPage = pathWithoutLocale === "/setup" || pathWithoutLocale.startsWith("/setup/");
+
+	// Platform setup check - redirect to /setup if not configured
+	// This runs before all other checks to ensure unconfigured instances are protected
+	if (!isSetupPage) {
+		const { isPlatformConfigured } = await import("@/lib/setup/config-cache");
+		const configured = await isPlatformConfigured();
+		if (!configured) {
+			const setupUrl = new URL(`/${locale}/setup`, request.url);
+			return NextResponse.redirect(setupUrl);
+		}
+	} else {
+		// On setup page - redirect to home if already configured
+		const { isPlatformConfigured } = await import("@/lib/setup/config-cache");
+		const configured = await isPlatformConfigured();
+		if (configured) {
+			const homeUrl = new URL(`/${locale}/`, request.url);
+			return NextResponse.redirect(homeUrl);
+		}
+	}
+
+	// Rate limiting for auth endpoints
 	if (
 		pathWithoutLocale === "/sign-in" ||
 		pathWithoutLocale === "/sign-up" ||

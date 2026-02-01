@@ -1,0 +1,109 @@
+{
+  "commands": {
+    "coverage": {
+      "title": "Coverage Report",
+      "noData": "No scheduled coverage data found for {date}.",
+      "summary": "{count} locations checked",
+      "understaffed": "Understaffed by {count}",
+      "overstaffed": "Overstaffed by {count}",
+      "adequate": "Fully staffed",
+      "scheduled": "Scheduled",
+      "clockedIn": "Clocked In",
+      "variance": "Variance",
+      "viewFullSchedule": "View Full Schedule"
+    },
+    "openShifts": {
+      "title": "Open Shifts",
+      "noShifts": "No open shifts found for {period}. All shifts are currently assigned.",
+      "available": "{count} shift available",
+      "availablePlural": "{count} shifts available",
+      "requestButton": "Request",
+      "moreShifts": "+{count} more shifts",
+      "requestPending": "Request pending",
+      "managerApprovalRequired": "Requests require manager approval",
+      "viewAllShifts": "View All Shifts"
+    },
+    "compliance": {
+      "title": "Compliance Summary",
+      "noIssues": "No compliance issues found in the last {days} days. Your team is in good standing!",
+      "itemsRequireAttention": "{count} item requires attention",
+      "itemsRequireAttentionPlural": "{count} items require attention",
+      "violations": "Violations",
+      "critical": "Critical",
+      "pending": "Pending",
+      "recentViolations": "Recent Violations",
+      "pendingExceptions": "Pending Exception Requests",
+      "exceptionUsed": "(exception used)",
+      "moreViolations": "+{count} more violations",
+      "moreRequests": "+{count} more requests",
+      "viewDashboard": "View Compliance Dashboard",
+      "reviewExceptions": "Review Exceptions"
+    },
+    "help": {
+      "availableCommands": "Available Commands",
+      "coverageDesc": "View staffing coverage by location and time slot",
+      "openShiftsDesc": "View and request open shifts",
+      "complianceDesc": "View compliance violations and pending exceptions"
+    }
+  },
+  "errors": {
+    "rateLimitExceeded": "Rate limit exceeded. Please wait {seconds} seconds before using this command again.",
+    "permissionDenied": "This command is only available to managers and admins.",
+    "permissionDeniedAdmin": "This command is only available to organization admins.",
+    "notFound": "Resource not found",
+    "generalError": "Something went wrong. Please try again later.",
+    "employeeNotFound": "Your employee record could not be found."
+  },
+  "shiftPickup": {
+    "success": "Shift pickup request submitted!",
+    "successDetail": "Your manager will review and approve your request. You'll be notified once a decision is made.",
+    "unavailable": "Shift no longer available",
+    "unavailableDetail": "This shift has already been assigned or is no longer open. Please check for other available shifts.",
+    "alreadyPending": "Request already pending",
+    "alreadyPendingDetail": "You already have a pending pickup request for this shift. Please wait for your manager to review it.",
+    "failed": "Request failed",
+    "failedDetail": "Something went wrong while processing your request. Please try again or contact support."
+  },
+  "digest": {
+    "title": "Daily Digest",
+    "pendingApprovals": "Pending Approvals",
+    "noPendingApprovals": "No pending approvals",
+    "pendingApprovalsCount": "You have {count} pending approval",
+    "pendingApprovalsCountPlural": "You have {count} pending approvals",
+    "whosOutToday": "Who's Out Today",
+    "everyoneAvailable": "Everyone is available today",
+    "returns": "Returns {date}",
+    "currentlyClockedIn": "Currently Clocked In",
+    "noOneClockedIn": "No one is clocked in yet",
+    "since": "Since {time}",
+    "coverageGaps": "Coverage Gaps",
+    "openShifts": "Open Shifts",
+    "todayTomorrow": "Today: {today} | Tomorrow: {tomorrow}",
+    "complianceAlerts": "Compliance Alerts",
+    "pendingExceptionRequests": "{count} pending exception request awaiting review",
+    "pendingExceptionRequestsPlural": "{count} pending exception requests awaiting review",
+    "openDashboard": "Open Z8 Dashboard",
+    "viewApprovals": "View Approvals"
+  },
+  "common": {
+    "more": "+{count} more",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "unknown": "Unknown"
+  },
+  "exceptionTypes": {
+    "rest_period": "Rest Period",
+    "overtime_daily": "Daily Overtime",
+    "overtime_weekly": "Weekly Overtime",
+    "overtime_monthly": "Monthly Overtime"
+  },
+  "legend": {
+    "adequate": "Adequate",
+    "understaffed": "Understaffed",
+    "overstaffed": "Overstaffed",
+    "violation": "Violation",
+    "critical": "Critical",
+    "warning": "Warning",
+    "pendingRequest": "Pending Request"
+  }
+}
