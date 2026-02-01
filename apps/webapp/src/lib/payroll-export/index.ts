@@ -24,6 +24,9 @@ export {
 export {
 	getFormatter,
 	getAvailableFormatters,
+	getExporter,
+	getAvailableExporters,
+	isApiBasedExport,
 	createExportJob,
 	processExportJob,
 	getPendingExportJobs,
@@ -31,5 +34,12 @@ export {
 	getExportDownloadUrl,
 } from "./export-service";
 
-// Formatters
+// File-based formatters
 export { DatevLohnFormatter, datevLohnFormatter } from "./formatters/datev-lohn-formatter";
+
+// API-based exporters
+export { PersonioExporter, personioExporter } from "./exporters/personio";
+export type {
+	PersonioConfig,
+	PersonioCredentials,
+} from "./exporters/personio";

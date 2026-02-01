@@ -246,3 +246,90 @@ export interface IPayrollExportFormatter {
 	 */
 	getSyncThreshold(): number;
 }
+
+// ============================================
+// API-BASED EXPORTER TYPES (Personio, etc.)
+// ============================================
+
+/**
+ * Employee matching strategy for API-based exports
+ */
+export type EmployeeMatchStrategy = "employeeNumber" | "email";
+
+/**
+ * Sync record status for individual records in API exports
+ */
+export type SyncRecordStatus = "pending" | "synced" | "failed" | "skipped";
+
+/**
+ * API export result with record-level tracking
+ */
+export interface ApiExportResult {
+	success: boolean;
+	totalRecords: number;
+	syncedRecords: number;
+	failedRecords: number;
+	skippedRecords: number;
+	errors: Array<{
+		recordId: string;
+		recordType: "attendance" | "absence";
+		employeeId: string;
+		errorMessage: string;
+		isRetryable: boolean;
+	}>;
+	metadata: {
+		employeeCount: number;
+		dateRange: { start: string; end: string };
+		apiCallCount: number;
+		durationMs: number;
+	};
+}
+
+/**
+ * Base interface for API-based payroll exporters
+ * Used for systems that require pushing data via API (Personio, BambooHR, etc.)
+ */
+export interface IPayrollExporter {
+	/** Unique identifier for this exporter */
+	readonly exporterId: string;
+	/** Human-readable name */
+	readonly exporterName: string;
+	/** Exporter version */
+	readonly version: string;
+
+	/**
+	 * Validate configuration for this exporter
+	 */
+	validateConfig(config: Record<string, unknown>): Promise<{
+		valid: boolean;
+		errors?: string[];
+	}>;
+
+	/**
+	 * Test connection and credentials
+	 */
+	testConnection(
+		organizationId: string,
+		config: Record<string, unknown>,
+	): Promise<{
+		success: boolean;
+		error?: string;
+	}>;
+
+	/**
+	 * Transform and push work periods and absences via API
+	 * Implements record-level tracking for partial success scenarios
+	 */
+	export(
+		organizationId: string,
+		workPeriods: WorkPeriodData[],
+		absences: AbsenceData[],
+		mappings: WageTypeMapping[],
+		config: Record<string, unknown>,
+	): Promise<ApiExportResult>;
+
+	/**
+	 * Get maximum work periods for synchronous export
+	 */
+	getSyncThreshold(): number;
+}

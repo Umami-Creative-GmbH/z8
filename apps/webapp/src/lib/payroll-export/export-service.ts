@@ -4,7 +4,7 @@
  */
 import { DateTime } from "luxon";
 import { eq } from "drizzle-orm";
-import { db, payrollExportJob } from "@/db";
+import { db, payrollExportJob, payrollExportSyncRecord } from "@/db";
 import { createLogger } from "@/lib/logger";
 import { uploadExport, getPresignedUrl } from "@/lib/storage/export-s3-client";
 import {
@@ -15,24 +15,37 @@ import {
 	countWorkPeriods,
 } from "./data-fetcher";
 import { DatevLohnFormatter } from "./formatters/datev-lohn-formatter";
+import { personioExporter } from "./exporters/personio";
 import type {
 	IPayrollExportFormatter,
+	IPayrollExporter,
 	PayrollExportFilters,
 	SerializedPayrollExportFilters,
 	ExportResult,
+	ApiExportResult,
 	PayrollExportJobSummary,
+	WorkPeriodData,
+	AbsenceData,
 } from "./types";
 
 const logger = createLogger("PayrollExportService");
 
 /**
- * Registry of available export formatters
+ * Registry of available file-based export formatters (DATEV, SAGE, etc.)
  */
 const formatters = new Map<string, IPayrollExportFormatter>();
+
+/**
+ * Registry of available API-based exporters (Personio, etc.)
+ */
+const exporters = new Map<string, IPayrollExporter>();
 
 // Register DATEV formatter
 const datevFormatter = new DatevLohnFormatter();
 formatters.set(datevFormatter.formatId, datevFormatter);
+
+// Register Personio exporter
+exporters.set(personioExporter.exporterId, personioExporter);
 
 /**
  * Get formatter by ID
@@ -46,6 +59,27 @@ export function getFormatter(formatId: string): IPayrollExportFormatter | undefi
  */
 export function getAvailableFormatters(): IPayrollExportFormatter[] {
 	return Array.from(formatters.values());
+}
+
+/**
+ * Get exporter by ID
+ */
+export function getExporter(exporterId: string): IPayrollExporter | undefined {
+	return exporters.get(exporterId);
+}
+
+/**
+ * Get all available exporters
+ */
+export function getAvailableExporters(): IPayrollExporter[] {
+	return Array.from(exporters.values());
+}
+
+/**
+ * Check if a format is API-based (exporter) or file-based (formatter)
+ */
+export function isApiBasedExport(formatId: string): boolean {
+	return exporters.has(formatId);
 }
 
 /**
@@ -66,8 +100,11 @@ export async function createExportJob(params: {
 		"Creating payroll export job",
 	);
 
+	// Check both formatters (file-based) and exporters (API-based)
 	const formatter = formatters.get(params.formatId);
-	if (!formatter) {
+	const exporter = exporters.get(params.formatId);
+
+	if (!formatter && !exporter) {
 		throw new Error(`Unknown export format: ${params.formatId}`);
 	}
 
@@ -78,8 +115,10 @@ export async function createExportJob(params: {
 	}
 
 	// Count work periods to determine sync/async
+	// Use the sync threshold from whichever is available (formatter or exporter)
 	const count = await countWorkPeriods(params.organizationId, params.filters);
-	const isAsync = count > formatter.getSyncThreshold();
+	const syncThreshold = formatter?.getSyncThreshold() ?? exporter?.getSyncThreshold() ?? 500;
+	const isAsync = count > syncThreshold;
 
 	// Serialize filters for storage
 	const serializedFilters: SerializedPayrollExportFilters = {
@@ -116,9 +155,11 @@ export async function createExportJob(params: {
 /**
  * Process an export job
  * Called immediately for sync jobs, or by cron for async jobs
+ * Supports both file-based formatters (DATEV) and API-based exporters (Personio)
  */
 export async function processExportJob(jobId: string): Promise<{
 	result?: ExportResult;
+	apiResult?: ApiExportResult;
 	downloadUrl?: string;
 }> {
 	logger.info({ jobId }, "Processing payroll export job");
@@ -146,9 +187,12 @@ export async function processExportJob(jobId: string): Promise<{
 			throw new Error(`Job not found: ${jobId}`);
 		}
 
+		// Check if this is a file-based formatter or API-based exporter
 		const formatter = formatters.get(job.config.formatId);
-		if (!formatter) {
-			throw new Error(`Unknown format: ${job.config.formatId}`);
+		const exporter = exporters.get(job.config.formatId);
+
+		if (!formatter && !exporter) {
+			throw new Error(`Unknown format/exporter: ${job.config.formatId}`);
 		}
 
 		// Parse filters
@@ -169,70 +213,116 @@ export async function processExportJob(jobId: string): Promise<{
 			getWageTypeMappings(job.configId),
 		]);
 
-		// Transform to export format
-		const exportResult = formatter.transform(
-			workPeriods,
-			absences,
-			mappings,
-			job.config.config as Record<string, unknown>,
-		);
+		// BRANCH: API-based exporter (Personio, etc.)
+		if (exporter) {
+			const apiResult = await exporter.export(
+				job.organizationId,
+				workPeriods,
+				absences,
+				mappings,
+				job.config.config as Record<string, unknown>,
+			);
 
-		let downloadUrl: string | undefined;
-
-		if (job.isAsync) {
-			// Upload to S3
-			const s3Key = `payroll-exports/${job.organizationId}/${job.id}/${exportResult.fileName}`;
-			const contentBuffer =
-				typeof exportResult.content === "string"
-					? Buffer.from(exportResult.content, exportResult.encoding)
-					: exportResult.content;
-
-			await uploadExport(job.organizationId, s3Key, contentBuffer, exportResult.mimeType);
-
-			// Generate download URL
-			downloadUrl = await getPresignedUrl(job.organizationId, s3Key);
+			// Save sync records for tracking
+			await saveSyncRecords(jobId, workPeriods, absences, apiResult);
 
 			// Update job with results
 			await db
 				.update(payrollExportJob)
 				.set({
-					status: "completed",
-					fileName: exportResult.fileName,
-					s3Key,
-					fileSizeBytes: contentBuffer.length,
-					workPeriodCount: exportResult.metadata.workPeriodCount,
-					employeeCount: exportResult.metadata.employeeCount,
+					status: apiResult.success ? "completed" : "failed",
+					workPeriodCount: apiResult.totalRecords,
+					employeeCount: apiResult.metadata.employeeCount,
+					syncedRecordCount: apiResult.syncedRecords,
+					failedRecordCount: apiResult.failedRecords,
 					completedAt: new Date(),
-					expiresAt: DateTime.now().plus({ days: 30 }).toJSDate(),
+					errorMessage: apiResult.success
+						? null
+						: `${apiResult.failedRecords} of ${apiResult.totalRecords} records failed to sync`,
 				})
 				.where(eq(payrollExportJob.id, jobId));
 
-			logger.info({ jobId, s3Key }, "Async payroll export completed");
+			logger.info(
+				{
+					jobId,
+					totalRecords: apiResult.totalRecords,
+					syncedRecords: apiResult.syncedRecords,
+					failedRecords: apiResult.failedRecords,
+				},
+				"API export completed",
+			);
 
-			return { downloadUrl };
-		} else {
-			// Sync export - update job and return result
-			const contentBuffer =
-				typeof exportResult.content === "string"
-					? Buffer.from(exportResult.content, exportResult.encoding)
-					: exportResult.content;
-
-			await db
-				.update(payrollExportJob)
-				.set({
-					status: "completed",
-					fileName: exportResult.fileName,
-					fileSizeBytes: contentBuffer.length,
-					workPeriodCount: exportResult.metadata.workPeriodCount,
-					employeeCount: exportResult.metadata.employeeCount,
-					completedAt: new Date(),
-				})
-				.where(eq(payrollExportJob.id, jobId));
-
-			logger.info({ jobId }, "Sync payroll export completed");
-
-			return { result: exportResult };
+			return { apiResult };
 		}
+
+		// BRANCH: File-based formatter (DATEV, etc.)
+		if (formatter) {
+			const exportResult = formatter.transform(
+				workPeriods,
+				absences,
+				mappings,
+				job.config.config as Record<string, unknown>,
+			);
+
+			let downloadUrl: string | undefined;
+
+			if (job.isAsync) {
+				// Upload to S3
+				const s3Key = `payroll-exports/${job.organizationId}/${job.id}/${exportResult.fileName}`;
+				const contentBuffer =
+					typeof exportResult.content === "string"
+						? Buffer.from(exportResult.content, exportResult.encoding)
+						: exportResult.content;
+
+				await uploadExport(job.organizationId, s3Key, contentBuffer, exportResult.mimeType);
+
+				// Generate download URL
+				downloadUrl = await getPresignedUrl(job.organizationId, s3Key);
+
+				// Update job with results
+				await db
+					.update(payrollExportJob)
+					.set({
+						status: "completed",
+						fileName: exportResult.fileName,
+						s3Key,
+						fileSizeBytes: contentBuffer.length,
+						workPeriodCount: exportResult.metadata.workPeriodCount,
+						employeeCount: exportResult.metadata.employeeCount,
+						completedAt: new Date(),
+						expiresAt: DateTime.now().plus({ days: 30 }).toJSDate(),
+					})
+					.where(eq(payrollExportJob.id, jobId));
+
+				logger.info({ jobId, s3Key }, "Async file export completed");
+
+				return { downloadUrl };
+			} else {
+				// Sync export - update job and return result
+				const contentBuffer =
+					typeof exportResult.content === "string"
+						? Buffer.from(exportResult.content, exportResult.encoding)
+						: exportResult.content;
+
+				await db
+					.update(payrollExportJob)
+					.set({
+						status: "completed",
+						fileName: exportResult.fileName,
+						fileSizeBytes: contentBuffer.length,
+						workPeriodCount: exportResult.metadata.workPeriodCount,
+						employeeCount: exportResult.metadata.employeeCount,
+						completedAt: new Date(),
+					})
+					.where(eq(payrollExportJob.id, jobId));
+
+				logger.info({ jobId }, "Sync file export completed");
+
+				return { result: exportResult };
+			}
+		}
+
+		throw new Error("Neither formatter nor exporter available");
 	} catch (error) {
 		const errorMessage = error instanceof Error ? error.message : "Unknown error";
 		logger.error({ jobId, error: errorMessage }, "Payroll export job failed");
@@ -247,6 +337,66 @@ export async function processExportJob(jobId: string): Promise<{
 			.where(eq(payrollExportJob.id, jobId));
 
 		throw error;
+	}
+}
+
+/**
+ * Save sync records for API-based exports
+ * Enables record-level tracking and selective retry
+ */
+async function saveSyncRecords(
+	jobId: string,
+	workPeriods: WorkPeriodData[],
+	absences: AbsenceData[],
+	result: ApiExportResult,
+): Promise<void> {
+	// Build a map of errors by recordId for quick lookup
+	const errorMap = new Map<string, (typeof result.errors)[0]>();
+	for (const error of result.errors) {
+		errorMap.set(error.recordId, error);
+	}
+
+	const records: Array<typeof payrollExportSyncRecord.$inferInsert> = [];
+
+	// Create sync records for work periods (attendances)
+	for (const period of workPeriods) {
+		const error = errorMap.get(period.id);
+		records.push({
+			jobId,
+			recordType: "attendance",
+			sourceRecordId: period.id,
+			employeeId: period.employeeId,
+			status: error ? "failed" : "synced",
+			errorMessage: error?.errorMessage,
+			isRetryable: error?.isRetryable ?? true,
+			attemptCount: 1,
+			lastAttemptAt: new Date(),
+			syncedAt: error ? null : new Date(),
+		});
+	}
+
+	// Create sync records for absences
+	for (const absence of absences) {
+		const error = errorMap.get(absence.id);
+		// Check if it was skipped (no mapping) vs failed
+		const wasSkipped = !error && result.skippedRecords > 0;
+		records.push({
+			jobId,
+			recordType: "absence",
+			sourceRecordId: absence.id,
+			employeeId: absence.employeeId,
+			status: error ? "failed" : wasSkipped ? "skipped" : "synced",
+			errorMessage: error?.errorMessage,
+			isRetryable: error?.isRetryable ?? true,
+			attemptCount: 1,
+			lastAttemptAt: new Date(),
+			syncedAt: error || wasSkipped ? null : new Date(),
+		});
+	}
+
+	if (records.length > 0) {
+		await db.insert(payrollExportSyncRecord).values(records);
+		logger.info({ jobId, recordCount: records.length }, "Saved sync records");
 	}
 }
 
