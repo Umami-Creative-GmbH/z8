@@ -5,6 +5,7 @@ export type FeatureFlag = "shiftsEnabled" | "projectsEnabled" | "surchargesEnabl
 export type SettingsIconName =
 	| "user-circle"
 	| "shield"
+	| "shield-check"
 	| "bell"
 	| "droplet"
 	| "building"
@@ -27,7 +28,11 @@ export type SettingsIconName =
 	| "tag"
 	| "server"
 	| "key"
-	| "webhook";
+	| "webhook"
+	| "calendar-sync"
+	| "radar"
+	| "target"
+	| "certificate";
 
 export interface SettingsEntry {
 	id: string;
@@ -216,6 +221,28 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		adminOnly: true,
 		group: "administration",
 	},
+	{
+		id: "compliance-radar",
+		titleKey: "settings.complianceRadar.title",
+		titleDefault: "Compliance Radar",
+		descriptionKey: "settings.complianceRadar.description",
+		descriptionDefault: "Monitor labor-law compliance, view findings, and manage waivers",
+		href: "/settings/compliance-radar",
+		icon: "radar",
+		adminOnly: true,
+		group: "administration",
+	},
+	{
+		id: "skills",
+		titleKey: "settings.skills.title",
+		titleDefault: "Skills & Qualifications",
+		descriptionKey: "settings.skills.description",
+		descriptionDefault: "Manage skill catalog, certifications, and employee qualifications",
+		href: "/settings/skills",
+		icon: "certificate",
+		adminOnly: true,
+		group: "administration",
+	},
 	// Optional features (require feature flag to be enabled)
 	{
 		id: "shift-templates",
@@ -225,6 +252,18 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Create reusable shift templates for scheduling (Morning, Night, etc.)",
 		href: "/settings/shifts",
 		icon: "calendar-clock",
+		adminOnly: true,
+		group: "administration",
+		requiredFeature: "shiftsEnabled",
+	},
+	{
+		id: "coverage-rules",
+		titleKey: "settings.coverageRules.title",
+		titleDefault: "Coverage Targets",
+		descriptionKey: "settings.coverageRules.description",
+		descriptionDefault: "Set minimum staffing requirements per location and time",
+		href: "/settings/coverage-rules",
+		icon: "target",
 		adminOnly: true,
 		group: "administration",
 		requiredFeature: "shiftsEnabled",
@@ -309,6 +348,17 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		adminOnly: true,
 		group: "enterprise",
 	},
+	{
+		id: "calendar",
+		titleKey: "settings.calendar.title",
+		titleDefault: "Calendar Sync",
+		descriptionKey: "settings.calendar.description",
+		descriptionDefault: "Configure calendar providers, ICS feeds, and sync settings",
+		href: "/settings/calendar",
+		icon: "calendar-sync",
+		adminOnly: true,
+		group: "enterprise",
+	},
 	// Data settings
 	{
 		id: "statistics",
@@ -351,6 +401,17 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Export work periods to DATEV Lohn & Gehalt",
 		href: "/settings/payroll-export",
 		icon: "database-export",
+		adminOnly: true,
+		group: "data",
+	},
+	{
+		id: "audit-export",
+		titleKey: "settings.auditExport.title",
+		titleDefault: "Audit Export",
+		descriptionKey: "settings.auditExport.description",
+		descriptionDefault: "GoBD-compliant export hardening with digital signatures",
+		href: "/settings/audit-export",
+		icon: "shield-check",
 		adminOnly: true,
 		group: "data",
 	},

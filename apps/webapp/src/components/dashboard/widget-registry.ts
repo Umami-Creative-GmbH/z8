@@ -14,13 +14,15 @@ export type WidgetId =
 	| "recently-approved"
 	| "birthday-reminders"
 	| "hydration"
-	| "vacation-balance";
+	| "vacation-balance"
+	| "compliance-radar";
 
 /**
  * Default widget order for new users or when no preferences are set.
  * This order matches the original hardcoded layout in section-cards.tsx.
  */
 export const DEFAULT_WIDGET_ORDER: WidgetId[] = [
+	"compliance-radar",
 	"managed-employees",
 	"pending-approvals",
 	"team-overview",
