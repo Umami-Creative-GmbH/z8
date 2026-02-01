@@ -167,6 +167,33 @@ export async function isManagerOrAbove(): Promise<boolean> {
 }
 
 /**
+ * Check if user is a platform/system admin (user.role === "admin")
+ * This is different from org admin (employee.role === "admin")
+ */
+export async function isSystemAdmin(): Promise<boolean> {
+	const context = await getAuthContext();
+	return context?.user.role === "admin";
+}
+
+/**
+ * Require platform/system admin role (throws if not)
+ * Use this in server actions and API routes for platform-level operations
+ */
+export async function requireSystemAdmin(): Promise<AuthContext> {
+	const context = await getAuthContext();
+
+	if (!context) {
+		throw new Error("Authentication required");
+	}
+
+	if (context.user.role !== "admin") {
+		throw new Error("Platform admin access required");
+	}
+
+	return context;
+}
+
+/**
  * Get all organizations the current user is a member of
  * Optimized: Uses single batch query instead of N+1 pattern
  */

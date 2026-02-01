@@ -1,13 +1,23 @@
 import { passkey } from "@better-auth/passkey";
+import { scim } from "@better-auth/scim";
 import { sso } from "@better-auth/sso";
 import { betterAuth } from "better-auth/minimal";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
 import { admin, apiKey, bearer, organization, twoFactor } from "better-auth/plugins";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import * as schema from "@/db/auth-schema";
-import { employee, teamPermissions } from "@/db/schema";
+import {
+	employee,
+	teamPermissions,
+	scimProviderConfig,
+	scimProvisioningLog,
+	roleTemplate,
+	roleTemplateMapping,
+	userRoleTemplateAssignment,
+	userLifecycleEvent,
+} from "@/db/schema";
 import { getDomainConfig, getDomainConfigByOrganization } from "./domain/domain-service";
 import { sendEmail } from "./email/email-service";
 import {
@@ -430,19 +440,10 @@ export const auth = betterAuth({
 		}),
 		passkey({
 			rpName: "Z8",
-			// Dynamic rpID based on current request domain
-			// Important: Passkeys are domain-bound by WebAuthn spec - a passkey registered
-			// on localhost will not work on a custom domain. Users need separate passkeys per domain.
-			rpID: async (request) => {
-				if (!request) return process.env.PASSKEY_RP_ID || "localhost";
-
-				const host = request.headers.get("host");
-				if (!host) return process.env.PASSKEY_RP_ID || "localhost";
-
-				// Strip port for rpID (WebAuthn requires domain only)
-				const domain = host.replace(/:\d+$/, "");
-				return domain;
-			},
+			// rpID must be a static string - passkeys are domain-bound by WebAuthn spec.
+			// Users accessing via custom domains will need to register separate passkeys.
+			// For multi-tenant with custom domains, consider using the origin option instead.
+			rpID: process.env.PASSKEY_RP_ID || "localhost",
 		}),
 		sso({
 			// Enable domain verification for SSO providers
@@ -505,6 +506,35 @@ export const auth = betterAuth({
 			},
 			// Enable metadata storage for additional key info (organizationId, scopes, displayName, createdBy)
 			enableMetadata: true,
+		}),
+		// SCIM 2.0 provisioning for enterprise identity management
+		// Integrates with Azure AD, Okta, Google Workspace, and generic SCIM 2.0 providers
+		// User lifecycle events are handled via databaseHooks below
+		scim({
+			// Store SCIM tokens encrypted for security
+			storeSCIMToken: "encrypted",
+			// Token generation hooks for security and audit
+			beforeSCIMTokenGenerated: async ({ user, member }) => {
+				// Only org admins/owners can generate SCIM tokens
+				if (member && member.role !== "admin" && member.role !== "owner") {
+					throw new Error("Only organization admins can generate SCIM tokens");
+				}
+				logger.info({ userId: user.id, memberRole: member?.role }, "SCIM token generation requested");
+			},
+			afterSCIMTokenGenerated: async ({ user, scimProvider }) => {
+				// Log SCIM provider creation for audit
+				if (scimProvider.organizationId) {
+					await db.insert(scimProvisioningLog).values({
+						organizationId: scimProvider.organizationId,
+						eventType: "user_created", // Using as "provider_created" equivalent
+						userId: user.id,
+						metadata: {
+							idpProvider: "scim",
+							scimDisplayName: `SCIM Provider ${scimProvider.providerId}`,
+						},
+					});
+				}
+			},
 		}),
 	],
 });
