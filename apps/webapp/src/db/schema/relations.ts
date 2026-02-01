@@ -1,7 +1,7 @@
 import { relations } from "drizzle-orm";
 
 // Import auth tables
-import { invitation, member, organization, user } from "../auth-schema";
+import { invitation, member, organization, session, user } from "../auth-schema";
 import { absenceCategory, absenceEntry } from "./absence";
 import { approvalRequest } from "./approval";
 import { auditLog } from "./audit";
@@ -37,6 +37,7 @@ import {
 } from "./organization";
 import { project, projectAssignment, projectManager, projectNotificationState } from "./project";
 import { shift, shiftRecurrence, shiftRequest, shiftTemplate } from "./shift";
+import { coverageRule, coverageSettings } from "./coverage";
 import {
 	surchargeCalculation,
 	surchargeModel,
@@ -77,6 +78,33 @@ import {
 	workPolicyScheduleDay,
 	workPolicyViolation,
 } from "./work-policy";
+import { complianceException } from "./compliance";
+import { complianceFinding, complianceConfig } from "./compliance-finding";
+// SCIM provisioning
+import { scimProviderConfig, scimProvisioningLog } from "./scim";
+// Identity management (role templates, lifecycle)
+import {
+	userLifecycleConfig,
+	roleTemplate,
+	roleTemplateMapping,
+	userRoleTemplateAssignment,
+	userLifecycleEvent,
+} from "./identity";
+// Conditional access policies
+import {
+	accessPolicy,
+	trustedDevice,
+	sessionExtension,
+	accessViolationLog,
+} from "./access-policy";
+// Skills & qualifications
+import {
+	skill,
+	employeeSkill,
+	subareaSkillRequirement,
+	shiftTemplateSkillRequirement,
+	skillRequirementOverride,
+} from "./skill";
 
 // ============================================
 // RELATIONS
@@ -137,6 +165,11 @@ export const organizationRelations = relations(organization, ({ one, many }) => 
 	workPeriods: many(workPeriod),
 	// Approval workflows
 	approvalRequests: many(approvalRequest),
+	// Compliance exceptions
+	complianceExceptions: many(complianceException),
+	// Compliance Radar
+	complianceFindings: many(complianceFinding),
+	complianceConfig: one(complianceConfig),
 	// Audit trail
 	auditLogs: many(auditLog),
 	// Webhooks
@@ -145,6 +178,9 @@ export const organizationRelations = relations(organization, ({ one, many }) => 
 	// Payroll exports
 	payrollExportConfigs: many(payrollExportConfig),
 	payrollExportJobs: many(payrollExportJob),
+	// Coverage
+	coverageRules: many(coverageRule),
+	coverageSettings: one(coverageSettings),
 }));
 
 export const teamRelations = relations(team, ({ one, many }) => ({
@@ -196,6 +232,10 @@ export const locationSubareaRelations = relations(locationSubarea, ({ one, many 
 	shifts: many(shift),
 	shiftTemplates: many(shiftTemplate),
 	shiftRecurrences: many(shiftRecurrence),
+	// Coverage targets
+	coverageRules: many(coverageRule),
+	// Skill requirements for this subarea
+	skillRequirements: many(subareaSkillRequirement),
 	creator: one(user, {
 		fields: [locationSubarea.createdBy],
 		references: [user.id],
@@ -293,6 +333,26 @@ export const employeeRelations = relations(employee, ({ one, many }) => ({
 	// Work policy assignments (unified)
 	workPolicyAssignments: many(workPolicyAssignment),
 	workPolicyViolations: many(workPolicyViolation),
+	// Compliance exceptions
+	complianceExceptionsAsEmployee: many(complianceException, {
+		relationName: "compliance_exception_employee",
+	}),
+	complianceExceptionsAsApprover: many(complianceException, {
+		relationName: "compliance_exception_approver",
+	}),
+	// Compliance findings
+	complianceFindings: many(complianceFinding, {
+		relationName: "compliance_finding_employee",
+	}),
+	findingsAcknowledged: many(complianceFinding, {
+		relationName: "compliance_finding_acknowledger",
+	}),
+	findingsWaived: many(complianceFinding, {
+		relationName: "compliance_finding_waiver",
+	}),
+	findingsResolved: many(complianceFinding, {
+		relationName: "compliance_finding_resolver",
+	}),
 	// Shift scheduling
 	shifts: many(shift),
 	shiftRequestsAsRequester: many(shiftRequest, {
@@ -317,6 +377,9 @@ export const employeeRelations = relations(employee, ({ one, many }) => ({
 	workCategorySetAssignments: many(workCategorySetAssignment),
 	// Change policies
 	changePolicyAssignments: many(changePolicyAssignment),
+	// Skills & qualifications
+	skills: many(employeeSkill),
+	skillOverrides: many(skillRequirementOverride),
 }));
 
 // Employee Rate History
@@ -655,6 +718,8 @@ export const shiftTemplateRelations = relations(shiftTemplate, ({ one, many }) =
 		fields: [shiftTemplate.createdBy],
 		references: [user.id],
 	}),
+	// Skill requirements for this template
+	skillRequirements: many(shiftTemplateSkillRequirement),
 }));
 
 export const shiftRecurrenceRelations = relations(shiftRecurrence, ({ one, many }) => ({
@@ -707,6 +772,8 @@ export const shiftRelations = relations(shift, ({ one, many }) => ({
 		fields: [shift.publishedBy],
 		references: [user.id],
 	}),
+	// Skill override records for this shift
+	skillOverrides: many(skillRequirementOverride),
 }));
 
 export const shiftRequestRelations = relations(shiftRequest, ({ one }) => ({
@@ -1390,3 +1457,688 @@ export const payrollExportSyncRecordRelations = relations(
 		}),
 	}),
 );
+
+// ============================================
+// COMPLIANCE EXCEPTION RELATIONS
+// ============================================
+
+export const complianceExceptionRelations = relations(complianceException, ({ one }) => ({
+	organization: one(organization, {
+		fields: [complianceException.organizationId],
+		references: [organization.id],
+	}),
+	employee: one(employee, {
+		fields: [complianceException.employeeId],
+		references: [employee.id],
+		relationName: "compliance_exception_employee",
+	}),
+	approver: one(employee, {
+		fields: [complianceException.approverId],
+		references: [employee.id],
+		relationName: "compliance_exception_approver",
+	}),
+	workPeriod: one(workPeriod, {
+		fields: [complianceException.workPeriodId],
+		references: [workPeriod.id],
+	}),
+	creator: one(user, {
+		fields: [complianceException.createdBy],
+		references: [user.id],
+	}),
+}));
+
+// ============================================
+// CALENDAR SYNC RELATIONS
+// ============================================
+
+import {
+	calendarConnection,
+	icsFeed,
+	organizationCalendarSettings,
+	syncedAbsence,
+} from "./calendar-sync";
+
+export const calendarConnectionRelations = relations(calendarConnection, ({ one, many }) => ({
+	employee: one(employee, {
+		fields: [calendarConnection.employeeId],
+		references: [employee.id],
+	}),
+	organization: one(organization, {
+		fields: [calendarConnection.organizationId],
+		references: [organization.id],
+	}),
+	syncedAbsences: many(syncedAbsence),
+}));
+
+export const syncedAbsenceRelations = relations(syncedAbsence, ({ one }) => ({
+	absenceEntry: one(absenceEntry, {
+		fields: [syncedAbsence.absenceEntryId],
+		references: [absenceEntry.id],
+	}),
+	calendarConnection: one(calendarConnection, {
+		fields: [syncedAbsence.calendarConnectionId],
+		references: [calendarConnection.id],
+	}),
+}));
+
+export const icsFeedRelations = relations(icsFeed, ({ one }) => ({
+	organization: one(organization, {
+		fields: [icsFeed.organizationId],
+		references: [organization.id],
+	}),
+	employee: one(employee, {
+		fields: [icsFeed.employeeId],
+		references: [employee.id],
+	}),
+	team: one(team, {
+		fields: [icsFeed.teamId],
+		references: [team.id],
+	}),
+	creator: one(user, {
+		fields: [icsFeed.createdBy],
+		references: [user.id],
+	}),
+}));
+
+export const organizationCalendarSettingsRelations = relations(
+	organizationCalendarSettings,
+	({ one }) => ({
+		organization: one(organization, {
+			fields: [organizationCalendarSettings.organizationId],
+			references: [organization.id],
+		}),
+	}),
+);
+
+// ============================================
+// SCHEDULED EXPORT RELATIONS
+// ============================================
+
+import { scheduledExport, scheduledExportExecution } from "./scheduled-export";
+
+export const scheduledExportRelations = relations(scheduledExport, ({ one, many }) => ({
+	organization: one(organization, {
+		fields: [scheduledExport.organizationId],
+		references: [organization.id],
+	}),
+	payrollConfig: one(payrollExportConfig, {
+		fields: [scheduledExport.payrollConfigId],
+		references: [payrollExportConfig.id],
+	}),
+	creator: one(user, {
+		fields: [scheduledExport.createdBy],
+		references: [user.id],
+		relationName: "scheduled_export_creator",
+	}),
+	updater: one(user, {
+		fields: [scheduledExport.updatedBy],
+		references: [user.id],
+		relationName: "scheduled_export_updater",
+	}),
+	executions: many(scheduledExportExecution),
+}));
+
+export const scheduledExportExecutionRelations = relations(
+	scheduledExportExecution,
+	({ one }) => ({
+		scheduledExport: one(scheduledExport, {
+			fields: [scheduledExportExecution.scheduledExportId],
+			references: [scheduledExport.id],
+		}),
+		organization: one(organization, {
+			fields: [scheduledExportExecution.organizationId],
+			references: [organization.id],
+		}),
+	}),
+);
+
+// ============================================
+// AUDIT EXPORT RELATIONS
+// ============================================
+
+import {
+	auditExportConfig,
+	auditExportFile,
+	auditExportPackage,
+	auditSigningKey,
+	auditVerificationLog,
+} from "./audit-export";
+
+export const auditExportConfigRelations = relations(auditExportConfig, ({ one }) => ({
+	organization: one(organization, {
+		fields: [auditExportConfig.organizationId],
+		references: [organization.id],
+	}),
+	creator: one(user, {
+		fields: [auditExportConfig.createdBy],
+		references: [user.id],
+	}),
+}));
+
+export const auditSigningKeyRelations = relations(auditSigningKey, ({ one, many }) => ({
+	organization: one(organization, {
+		fields: [auditSigningKey.organizationId],
+		references: [organization.id],
+	}),
+	packages: many(auditExportPackage),
+}));
+
+export const auditExportPackageRelations = relations(auditExportPackage, ({ one, many }) => ({
+	organization: one(organization, {
+		fields: [auditExportPackage.organizationId],
+		references: [organization.id],
+	}),
+	requestedBy: one(user, {
+		fields: [auditExportPackage.requestedById],
+		references: [user.id],
+	}),
+	dataExport: one(dataExport, {
+		fields: [auditExportPackage.dataExportId],
+		references: [dataExport.id],
+	}),
+	payrollExportJob: one(payrollExportJob, {
+		fields: [auditExportPackage.payrollExportJobId],
+		references: [payrollExportJob.id],
+	}),
+	signingKey: one(auditSigningKey, {
+		fields: [auditExportPackage.signingKeyId],
+		references: [auditSigningKey.id],
+	}),
+	files: many(auditExportFile),
+	verifications: many(auditVerificationLog),
+}));
+
+export const auditExportFileRelations = relations(auditExportFile, ({ one }) => ({
+	package: one(auditExportPackage, {
+		fields: [auditExportFile.packageId],
+		references: [auditExportPackage.id],
+	}),
+}));
+
+export const auditVerificationLogRelations = relations(auditVerificationLog, ({ one }) => ({
+	package: one(auditExportPackage, {
+		fields: [auditVerificationLog.packageId],
+		references: [auditExportPackage.id],
+	}),
+	verifiedBy: one(user, {
+		fields: [auditVerificationLog.verifiedById],
+		references: [user.id],
+	}),
+}));
+
+// ============================================
+// TEAMS INTEGRATION RELATIONS
+// ============================================
+
+import {
+	teamsApprovalCard,
+	teamsConversation,
+	teamsEscalation,
+	teamsTenantConfig,
+	teamsUserMapping,
+} from "./teams-integration";
+
+export const teamsTenantConfigRelations = relations(teamsTenantConfig, ({ one }) => ({
+	organization: one(organization, {
+		fields: [teamsTenantConfig.organizationId],
+		references: [organization.id],
+	}),
+	configuredBy: one(user, {
+		fields: [teamsTenantConfig.configuredByUserId],
+		references: [user.id],
+	}),
+}));
+
+export const teamsUserMappingRelations = relations(teamsUserMapping, ({ one }) => ({
+	user: one(user, {
+		fields: [teamsUserMapping.userId],
+		references: [user.id],
+	}),
+	organization: one(organization, {
+		fields: [teamsUserMapping.organizationId],
+		references: [organization.id],
+	}),
+}));
+
+export const teamsConversationRelations = relations(teamsConversation, ({ one }) => ({
+	organization: one(organization, {
+		fields: [teamsConversation.organizationId],
+		references: [organization.id],
+	}),
+	user: one(user, {
+		fields: [teamsConversation.userId],
+		references: [user.id],
+	}),
+}));
+
+export const teamsApprovalCardRelations = relations(teamsApprovalCard, ({ one }) => ({
+	organization: one(organization, {
+		fields: [teamsApprovalCard.organizationId],
+		references: [organization.id],
+	}),
+	approvalRequest: one(approvalRequest, {
+		fields: [teamsApprovalCard.approvalRequestId],
+		references: [approvalRequest.id],
+	}),
+	recipient: one(user, {
+		fields: [teamsApprovalCard.recipientUserId],
+		references: [user.id],
+	}),
+}));
+
+export const teamsEscalationRelations = relations(teamsEscalation, ({ one }) => ({
+	organization: one(organization, {
+		fields: [teamsEscalation.organizationId],
+		references: [organization.id],
+	}),
+	approvalRequest: one(approvalRequest, {
+		fields: [teamsEscalation.approvalRequestId],
+		references: [approvalRequest.id],
+	}),
+	originalApprover: one(employee, {
+		fields: [teamsEscalation.originalApproverId],
+		references: [employee.id],
+		relationName: "teams_escalation_original_approver",
+	}),
+	escalatedToApprover: one(employee, {
+		fields: [teamsEscalation.escalatedToApproverId],
+		references: [employee.id],
+		relationName: "teams_escalation_escalated_to",
+	}),
+}));
+
+// ============================================
+// SCIM PROVISIONING RELATIONS
+// ============================================
+
+export const scimProviderConfigRelations = relations(scimProviderConfig, ({ one }) => ({
+	organization: one(organization, {
+		fields: [scimProviderConfig.organizationId],
+		references: [organization.id],
+	}),
+	defaultRoleTemplate: one(roleTemplate, {
+		fields: [scimProviderConfig.defaultRoleTemplateId],
+		references: [roleTemplate.id],
+	}),
+	creator: one(user, {
+		fields: [scimProviderConfig.createdBy],
+		references: [user.id],
+		relationName: "scim_config_creator",
+	}),
+	updater: one(user, {
+		fields: [scimProviderConfig.updatedBy],
+		references: [user.id],
+		relationName: "scim_config_updater",
+	}),
+}));
+
+export const scimProvisioningLogRelations = relations(scimProvisioningLog, ({ one }) => ({
+	organization: one(organization, {
+		fields: [scimProvisioningLog.organizationId],
+		references: [organization.id],
+	}),
+	user: one(user, {
+		fields: [scimProvisioningLog.userId],
+		references: [user.id],
+	}),
+}));
+
+// ============================================
+// IDENTITY MANAGEMENT RELATIONS
+// ============================================
+
+export const userLifecycleConfigRelations = relations(userLifecycleConfig, ({ one }) => ({
+	organization: one(organization, {
+		fields: [userLifecycleConfig.organizationId],
+		references: [organization.id],
+	}),
+}));
+
+export const roleTemplateRelations = relations(roleTemplate, ({ one, many }) => ({
+	organization: one(organization, {
+		fields: [roleTemplate.organizationId],
+		references: [organization.id],
+	}),
+	defaultTeam: one(team, {
+		fields: [roleTemplate.defaultTeamId],
+		references: [team.id],
+	}),
+	creator: one(user, {
+		fields: [roleTemplate.createdBy],
+		references: [user.id],
+	}),
+	mappings: many(roleTemplateMapping),
+	assignments: many(userRoleTemplateAssignment),
+}));
+
+export const roleTemplateMappingRelations = relations(roleTemplateMapping, ({ one }) => ({
+	organization: one(organization, {
+		fields: [roleTemplateMapping.organizationId],
+		references: [organization.id],
+	}),
+	roleTemplate: one(roleTemplate, {
+		fields: [roleTemplateMapping.roleTemplateId],
+		references: [roleTemplate.id],
+	}),
+	creator: one(user, {
+		fields: [roleTemplateMapping.createdBy],
+		references: [user.id],
+	}),
+}));
+
+export const userRoleTemplateAssignmentRelations = relations(userRoleTemplateAssignment, ({ one }) => ({
+	user: one(user, {
+		fields: [userRoleTemplateAssignment.userId],
+		references: [user.id],
+	}),
+	organization: one(organization, {
+		fields: [userRoleTemplateAssignment.organizationId],
+		references: [organization.id],
+	}),
+	roleTemplate: one(roleTemplate, {
+		fields: [userRoleTemplateAssignment.roleTemplateId],
+		references: [roleTemplate.id],
+	}),
+	assignedByUser: one(user, {
+		fields: [userRoleTemplateAssignment.assignedBy],
+		references: [user.id],
+		relationName: "role_assignment_assignor",
+	}),
+}));
+
+export const userLifecycleEventRelations = relations(userLifecycleEvent, ({ one }) => ({
+	organization: one(organization, {
+		fields: [userLifecycleEvent.organizationId],
+		references: [organization.id],
+	}),
+	user: one(user, {
+		fields: [userLifecycleEvent.userId],
+		references: [user.id],
+	}),
+	employee: one(employee, {
+		fields: [userLifecycleEvent.employeeId],
+		references: [employee.id],
+	}),
+	approver: one(user, {
+		fields: [userLifecycleEvent.approvedBy],
+		references: [user.id],
+		relationName: "lifecycle_event_approver",
+	}),
+	creator: one(user, {
+		fields: [userLifecycleEvent.createdBy],
+		references: [user.id],
+		relationName: "lifecycle_event_creator",
+	}),
+}));
+
+// ============================================
+// CONDITIONAL ACCESS RELATIONS
+// ============================================
+
+export const accessPolicyRelations = relations(accessPolicy, ({ one, many }) => ({
+	organization: one(organization, {
+		fields: [accessPolicy.organizationId],
+		references: [organization.id],
+	}),
+	creator: one(user, {
+		fields: [accessPolicy.createdBy],
+		references: [user.id],
+		relationName: "access_policy_creator",
+	}),
+	updater: one(user, {
+		fields: [accessPolicy.updatedBy],
+		references: [user.id],
+		relationName: "access_policy_updater",
+	}),
+	sessionExtensions: many(sessionExtension),
+	violations: many(accessViolationLog),
+}));
+
+export const trustedDeviceRelations = relations(trustedDevice, ({ one, many }) => ({
+	user: one(user, {
+		fields: [trustedDevice.userId],
+		references: [user.id],
+	}),
+	organization: one(organization, {
+		fields: [trustedDevice.organizationId],
+		references: [organization.id],
+	}),
+	creator: one(user, {
+		fields: [trustedDevice.createdBy],
+		references: [user.id],
+		relationName: "trusted_device_creator",
+	}),
+	revoker: one(user, {
+		fields: [trustedDevice.revokedBy],
+		references: [user.id],
+		relationName: "trusted_device_revoker",
+	}),
+	sessionExtensions: many(sessionExtension),
+}));
+
+export const sessionExtensionRelations = relations(sessionExtension, ({ one }) => ({
+	session: one(session, {
+		fields: [sessionExtension.sessionId],
+		references: [session.id],
+	}),
+	organization: one(organization, {
+		fields: [sessionExtension.organizationId],
+		references: [organization.id],
+	}),
+	trustedDevice: one(trustedDevice, {
+		fields: [sessionExtension.trustedDeviceId],
+		references: [trustedDevice.id],
+	}),
+	accessPolicy: one(accessPolicy, {
+		fields: [sessionExtension.accessPolicyId],
+		references: [accessPolicy.id],
+	}),
+}));
+
+export const accessViolationLogRelations = relations(accessViolationLog, ({ one }) => ({
+	organization: one(organization, {
+		fields: [accessViolationLog.organizationId],
+		references: [organization.id],
+	}),
+	user: one(user, {
+		fields: [accessViolationLog.userId],
+		references: [user.id],
+	}),
+	session: one(session, {
+		fields: [accessViolationLog.sessionId],
+		references: [session.id],
+	}),
+	policy: one(accessPolicy, {
+		fields: [accessViolationLog.policyId],
+		references: [accessPolicy.id],
+	}),
+}));
+
+// ============================================
+// SKILL & QUALIFICATION RELATIONS
+// ============================================
+
+export const skillRelations = relations(skill, ({ one, many }) => ({
+	organization: one(organization, {
+		fields: [skill.organizationId],
+		references: [organization.id],
+	}),
+	creator: one(user, {
+		fields: [skill.createdBy],
+		references: [user.id],
+		relationName: "skill_creator",
+	}),
+	updater: one(user, {
+		fields: [skill.updatedBy],
+		references: [user.id],
+		relationName: "skill_updater",
+	}),
+	employeeSkills: many(employeeSkill),
+	subareaRequirements: many(subareaSkillRequirement),
+	templateRequirements: many(shiftTemplateSkillRequirement),
+}));
+
+export const employeeSkillRelations = relations(employeeSkill, ({ one }) => ({
+	employee: one(employee, {
+		fields: [employeeSkill.employeeId],
+		references: [employee.id],
+	}),
+	skill: one(skill, {
+		fields: [employeeSkill.skillId],
+		references: [skill.id],
+	}),
+	assigner: one(user, {
+		fields: [employeeSkill.assignedBy],
+		references: [user.id],
+	}),
+}));
+
+export const subareaSkillRequirementRelations = relations(subareaSkillRequirement, ({ one }) => ({
+	subarea: one(locationSubarea, {
+		fields: [subareaSkillRequirement.subareaId],
+		references: [locationSubarea.id],
+	}),
+	skill: one(skill, {
+		fields: [subareaSkillRequirement.skillId],
+		references: [skill.id],
+	}),
+	creator: one(user, {
+		fields: [subareaSkillRequirement.createdBy],
+		references: [user.id],
+	}),
+}));
+
+export const shiftTemplateSkillRequirementRelations = relations(
+	shiftTemplateSkillRequirement,
+	({ one }) => ({
+		template: one(shiftTemplate, {
+			fields: [shiftTemplateSkillRequirement.templateId],
+			references: [shiftTemplate.id],
+		}),
+		skill: one(skill, {
+			fields: [shiftTemplateSkillRequirement.skillId],
+			references: [skill.id],
+		}),
+		creator: one(user, {
+			fields: [shiftTemplateSkillRequirement.createdBy],
+			references: [user.id],
+		}),
+	}),
+);
+
+export const skillRequirementOverrideRelations = relations(skillRequirementOverride, ({ one }) => ({
+	organization: one(organization, {
+		fields: [skillRequirementOverride.organizationId],
+		references: [organization.id],
+	}),
+	shift: one(shift, {
+		fields: [skillRequirementOverride.shiftId],
+		references: [shift.id],
+	}),
+	employee: one(employee, {
+		fields: [skillRequirementOverride.employeeId],
+		references: [employee.id],
+	}),
+	overrider: one(user, {
+		fields: [skillRequirementOverride.overriddenBy],
+		references: [user.id],
+	}),
+}));
+
+// ============================================
+// COVERAGE TARGET RELATIONS
+// ============================================
+
+export const coverageRuleRelations = relations(coverageRule, ({ one }) => ({
+	organization: one(organization, {
+		fields: [coverageRule.organizationId],
+		references: [organization.id],
+	}),
+	subarea: one(locationSubarea, {
+		fields: [coverageRule.subareaId],
+		references: [locationSubarea.id],
+	}),
+	creator: one(user, {
+		fields: [coverageRule.createdBy],
+		references: [user.id],
+		relationName: "coverage_rule_creator",
+	}),
+	updater: one(user, {
+		fields: [coverageRule.updatedBy],
+		references: [user.id],
+		relationName: "coverage_rule_updater",
+	}),
+}));
+
+export const coverageSettingsRelations = relations(coverageSettings, ({ one }) => ({
+	organization: one(organization, {
+		fields: [coverageSettings.organizationId],
+		references: [organization.id],
+	}),
+	updater: one(user, {
+		fields: [coverageSettings.updatedBy],
+		references: [user.id],
+		relationName: "coverage_settings_updater",
+	}),
+}));
+
+// ============================================
+// COMPLIANCE RADAR RELATIONS
+// ============================================
+
+export const complianceFindingRelations = relations(complianceFinding, ({ one }) => ({
+	organization: one(organization, {
+		fields: [complianceFinding.organizationId],
+		references: [organization.id],
+	}),
+	employee: one(employee, {
+		fields: [complianceFinding.employeeId],
+		references: [employee.id],
+		relationName: "compliance_finding_employee",
+	}),
+	acknowledgedByRef: one(employee, {
+		fields: [complianceFinding.acknowledgedBy],
+		references: [employee.id],
+		relationName: "compliance_finding_acknowledger",
+	}),
+	waivedByRef: one(employee, {
+		fields: [complianceFinding.waivedBy],
+		references: [employee.id],
+		relationName: "compliance_finding_waiver",
+	}),
+	resolvedByRef: one(employee, {
+		fields: [complianceFinding.resolvedBy],
+		references: [employee.id],
+		relationName: "compliance_finding_resolver",
+	}),
+	workPolicy: one(workPolicy, {
+		fields: [complianceFinding.workPolicyId],
+		references: [workPolicy.id],
+	}),
+	exception: one(complianceException, {
+		fields: [complianceFinding.exceptionId],
+		references: [complianceException.id],
+	}),
+	creator: one(user, {
+		fields: [complianceFinding.createdBy],
+		references: [user.id],
+		relationName: "compliance_finding_creator",
+	}),
+}));
+
+export const complianceConfigRelations = relations(complianceConfig, ({ one }) => ({
+	organization: one(organization, {
+		fields: [complianceConfig.organizationId],
+		references: [organization.id],
+	}),
+	creator: one(user, {
+		fields: [complianceConfig.createdBy],
+		references: [user.id],
+		relationName: "compliance_config_creator",
+	}),
+	updater: one(user, {
+		fields: [complianceConfig.updatedBy],
+		references: [user.id],
+		relationName: "compliance_config_updater",
+	}),
+}));

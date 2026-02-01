@@ -107,6 +107,20 @@ export {
 	// Audit tables
 	auditLog,
 	auditLogRelations,
+	// Audit export tables (signed packages, WORM retention)
+	auditExportConfig,
+	auditExportConfigRelations,
+	auditExportFile,
+	auditExportFileRelations,
+	auditExportPackage,
+	auditExportPackageRelations,
+	auditExportStatusEnum,
+	auditSigningKey,
+	auditSigningKeyRelations,
+	auditVerificationLog,
+	auditVerificationLogRelations,
+	verificationCheckEnum,
+	wormRetentionModeEnum,
 	// Data export tables
 	dataExport,
 	dataExportRelations,
@@ -223,4 +237,9 @@ export {
 	// Project tables
 	project,
 	projectRelations,
+	// Scheduled export tables
+	scheduledExport,
+	scheduledExportRelations,
+	scheduledExportExecution,
+	scheduledExportExecutionRelations,
 } from "./schema";

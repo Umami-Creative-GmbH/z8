@@ -17,6 +17,7 @@ import { organization, user } from "../auth-schema";
 import {
 	dayOfWeekEnum,
 	holidayPresetAssignmentTypeEnum,
+	restPeriodEnforcementEnum,
 	scheduleCycleEnum,
 	scheduleTypeEnum,
 	timeRegulationViolationTypeEnum,
@@ -162,6 +163,23 @@ export const workPolicyRegulation = pgTable(
 		maxDailyMinutes: integer("max_daily_minutes"), // e.g., 600 = 10 hours
 		maxWeeklyMinutes: integer("max_weekly_minutes"), // e.g., 2880 = 48 hours
 		maxUninterruptedMinutes: integer("max_uninterrupted_minutes"), // e.g., 360 = 6 hours
+
+		// ============================================
+		// ArbZG COMPLIANCE FIELDS
+		// ============================================
+
+		// 11-hour rest period rule (ArbZG §5)
+		minRestPeriodMinutes: integer("min_rest_period_minutes"), // e.g., 660 = 11 hours
+		restPeriodEnforcement: restPeriodEnforcementEnum("rest_period_enforcement").default("warn"),
+
+		// Overtime thresholds (beyond normal working hours)
+		overtimeDailyThresholdMinutes: integer("overtime_daily_threshold_minutes"), // e.g., 480 = 8h (overtime after 8h)
+		overtimeWeeklyThresholdMinutes: integer("overtime_weekly_threshold_minutes"), // e.g., 2400 = 40h
+		overtimeMonthlyThresholdMinutes: integer("overtime_monthly_threshold_minutes"), // e.g., 10800 = 180h
+
+		// Proactive warning configuration
+		alertBeforeLimitMinutes: integer("alert_before_limit_minutes").default(30), // Warn 30 min before limit
+		alertThresholdPercent: integer("alert_threshold_percent").default(80), // Warn at 80% of limit
 
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at")

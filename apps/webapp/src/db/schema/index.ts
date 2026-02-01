@@ -4,10 +4,20 @@
 // ============================================
 
 export * from "./absence";
+// Coverage targets (minimum staffing requirements)
+export * from "./coverage";
+// Audit export (signed packages, WORM retention)
+export * from "./audit-export";
+// Calendar sync
+export * from "./calendar-sync";
 export * from "./cron-job";
 export * from "./approval";
 export * from "./audit";
 export * from "./change-policy";
+// ArbZG Compliance
+export * from "./compliance";
+// Compliance Radar (findings, config)
+export * from "./compliance-finding";
 export * from "./enterprise";
 // Enums
 export * from "./enums";
@@ -15,6 +25,8 @@ export * from "./export";
 export * from "./holiday";
 // Payroll export
 export * from "./payroll-export";
+// Scheduled exports
+export * from "./scheduled-export";
 // Invite codes
 export * from "./invite-code";
 export * from "./notification";
@@ -35,3 +47,15 @@ export * from "./webhook";
 export * from "./wellness";
 export * from "./work-category";
 export * from "./work-policy";
+// SCIM provisioning
+export * from "./scim";
+// Identity management (role templates, lifecycle)
+export * from "./identity";
+// Conditional access policies
+export * from "./access-policy";
+// Microsoft Teams integration
+export * from "./teams-integration";
+// Platform admin (audit log, org suspension)
+export * from "./platform-admin";
+// Skills & qualifications
+export * from "./skill";

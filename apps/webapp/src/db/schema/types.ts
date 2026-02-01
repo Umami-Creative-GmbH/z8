@@ -32,6 +32,21 @@ export type TimeRegulationViolationDetails = {
 	uninterruptedMinutes?: number;
 	warningShownAt?: string;
 	userContinued?: boolean;
+
+	// Rest period violation details
+	lastClockOutTime?: string; // ISO timestamp of last clock-out
+	attemptedClockInTime?: string; // ISO timestamp of attempted clock-in
+	restPeriodMinutes?: number; // Actual rest period (in minutes)
+	requiredRestMinutes?: number; // Required rest period (typically 660 = 11h)
+
+	// Overtime violation details
+	overtimeMinutes?: number; // How many minutes of overtime
+	overtimeThreshold?: number; // What the threshold was
+	periodType?: "daily" | "weekly" | "monthly"; // What period this violation is for
+
+	// Exception handling
+	exceptionId?: string; // If an approved exception was used
+	exceptionApprovedBy?: string; // Who approved the exception
 };
 
 // Type for work period auto-adjustment reason (break enforcement)
@@ -87,6 +102,86 @@ export type WorkPeriodPendingChanges = {
 	reason?: string;
 	// For 0-day policy where clock-out itself triggers approval
 	isNewClockOut?: boolean;
+};
+
+// ============================================
+// COMPLIANCE TYPES
+// ============================================
+
+/**
+ * Proactive compliance alert shown to employees during work sessions
+ */
+export type ComplianceAlert = {
+	alertType:
+		| "rest_period"
+		| "overtime_daily"
+		| "overtime_weekly"
+		| "overtime_monthly"
+		| "daily_hours"
+		| "weekly_hours"
+		| "monthly_hours"
+		| "uninterrupted_work"
+		| "break_required";
+	severity: "info" | "warning" | "critical" | "violation";
+	message: string;
+	minutesRemaining?: number; // Minutes until limit reached
+	thresholdMinutes?: number; // The configured limit
+	currentMinutes?: number; // Current value
+	percentOfLimit?: number; // Current as percentage of limit (0-100+)
+	canRequestException?: boolean; // Whether employee can request an exception for this
+};
+
+/**
+ * Aggregated overtime statistics for an employee
+ */
+export type OvertimeStats = {
+	daily: {
+		workedMinutes: number;
+		thresholdMinutes: number | null;
+		overtimeMinutes: number;
+		percentOfThreshold: number | null;
+	};
+	weekly: {
+		workedMinutes: number;
+		thresholdMinutes: number | null;
+		overtimeMinutes: number;
+		percentOfThreshold: number | null;
+	};
+	monthly: {
+		workedMinutes: number;
+		thresholdMinutes: number | null;
+		overtimeMinutes: number;
+		percentOfThreshold: number | null;
+	};
+};
+
+/**
+ * Result of a rest period compliance check
+ */
+export type RestPeriodCheckResult = {
+	canClockIn: boolean;
+	enforcement: "block" | "warn" | "none";
+	violation: {
+		lastClockOutTime: string;
+		restPeriodMinutes: number;
+		requiredMinutes: number;
+		shortfallMinutes: number;
+	} | null;
+	hasValidException: boolean;
+	exceptionId?: string;
+	minutesUntilAllowed?: number; // Minutes until rest period is complete
+	nextAllowedClockIn?: Date; // When clock-in will be allowed
+};
+
+/**
+ * Full compliance status for an employee
+ */
+export type ComplianceStatus = {
+	isCompliant: boolean;
+	alerts: ComplianceAlert[];
+	stats: OvertimeStats;
+	pendingExceptions: number;
+	unacknowledgedViolations: number;
 };
 
 // Social OAuth provider type

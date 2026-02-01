@@ -95,9 +95,23 @@ export const notificationTypeEnum = pgEnum("notification_type", [
 	"project_deadline_overdue",
 	// Wellness notifications
 	"water_reminder",
+	// ArbZG Compliance notifications
+	"rest_period_warning", // Proactive warning about rest period
+	"rest_period_violation", // Rest period violation occurred
+	"overtime_warning", // Approaching overtime threshold
+	"overtime_violation", // Overtime threshold exceeded
+	"compliance_exception_requested", // Exception request submitted to manager
+	"compliance_exception_approved", // Exception approved by manager
+	"compliance_exception_rejected", // Exception rejected by manager
+	"compliance_exception_expired", // Pre-approval expired
 ]);
 
-export const notificationChannelEnum = pgEnum("notification_channel", ["in_app", "push", "email"]);
+export const notificationChannelEnum = pgEnum("notification_channel", [
+	"in_app",
+	"push",
+	"email",
+	"teams",
+]);
 
 // Shift scheduling enums
 export const shiftStatusEnum = pgEnum("shift_status", ["draft", "published"]);
@@ -126,6 +140,34 @@ export const timeRegulationViolationTypeEnum = pgEnum("time_regulation_violation
 	"max_weekly",
 	"max_uninterrupted",
 	"break_required",
+	"rest_period", // ArbZG: 11-hour rest period violation
+	"overtime_daily", // ArbZG: Daily overtime threshold exceeded
+	"overtime_weekly", // ArbZG: Weekly overtime threshold exceeded
+	"overtime_monthly", // ArbZG: Monthly overtime threshold exceeded
+]);
+
+// Rest period enforcement mode
+export const restPeriodEnforcementEnum = pgEnum("rest_period_enforcement", [
+	"block", // Hard block clock-in until rest period satisfied (requires approval)
+	"warn", // Show warning but allow clock-in; log violation
+	"none", // No enforcement, no warnings
+]);
+
+// Compliance exception type
+export const complianceExceptionTypeEnum = pgEnum("compliance_exception_type", [
+	"rest_period", // Exception for 11-hour rest period
+	"overtime_daily", // Exception for daily overtime
+	"overtime_weekly", // Exception for weekly overtime
+	"overtime_monthly", // Exception for monthly overtime
+]);
+
+// Compliance exception status
+export const complianceExceptionStatusEnum = pgEnum("compliance_exception_status", [
+	"pending", // Awaiting manager approval
+	"approved", // Approved by manager
+	"rejected", // Rejected by manager
+	"expired", // Pre-approval expired (24h passed)
+	"used", // Exception was used (employee clocked in using it)
 ]);
 
 // Surcharge enums
@@ -181,4 +223,89 @@ export const payrollExportStatusEnum = pgEnum("payroll_export_status", [
 	"processing",
 	"completed",
 	"failed",
+]);
+
+// ============================================
+// SCHEDULED EXPORT ENUMS
+// ============================================
+
+// Schedule frequency type (preset intervals or custom cron)
+export const scheduledExportScheduleTypeEnum = pgEnum("scheduled_export_schedule_type", [
+	"daily",
+	"weekly",
+	"monthly",
+	"quarterly",
+	"cron",
+]);
+
+// Report type for scheduled exports
+export const scheduledExportReportTypeEnum = pgEnum("scheduled_export_report_type", [
+	"payroll_export",
+	"data_export",
+	"audit_report",
+]);
+
+// Delivery method
+export const scheduledExportDeliveryMethodEnum = pgEnum("scheduled_export_delivery_method", [
+	"s3_only",
+	"email_only",
+	"s3_and_email",
+]);
+
+// Date range calculation strategy
+export const scheduledExportDateRangeStrategyEnum = pgEnum("scheduled_export_date_range_strategy", [
+	"previous_day",
+	"previous_week",
+	"previous_month",
+	"previous_quarter",
+	"custom_offset",
+]);
+
+// Execution status
+export const scheduledExportExecutionStatusEnum = pgEnum("scheduled_export_execution_status", [
+	"pending",
+	"processing",
+	"completed",
+	"failed",
+]);
+
+// ============================================
+// SKILL & QUALIFICATION ENUMS
+// ============================================
+
+// Skill categories for organization skill catalog
+export const skillCategoryEnum = pgEnum("skill_category", [
+	"safety", // Safety certifications (e.g., First Aid, Fire Safety)
+	"equipment", // Equipment operation (e.g., Forklift, Crane)
+	"certification", // Professional certifications (e.g., Food Safety)
+	"training", // Training completions
+	"language", // Language proficiency
+	"custom", // Custom category (uses customCategoryName field)
+]);
+
+// ============================================
+// COMPLIANCE RADAR ENUMS
+// ============================================
+
+// Compliance finding type (what rule was violated)
+export const complianceFindingTypeEnum = pgEnum("compliance_finding_type", [
+	"rest_period_insufficient", // 11-hour rest period violated
+	"max_hours_daily_exceeded", // Daily max exceeded
+	"max_hours_weekly_exceeded", // Weekly max exceeded
+	"consecutive_days_exceeded", // Too many consecutive work days
+]);
+
+// Compliance finding severity
+export const complianceFindingSeverityEnum = pgEnum("compliance_finding_severity", [
+	"info", // FYI only (5-10% over threshold)
+	"warning", // Should review (10-25% over threshold)
+	"critical", // Requires action (25%+ over threshold)
+]);
+
+// Compliance finding status
+export const complianceFindingStatusEnum = pgEnum("compliance_finding_status", [
+	"open", // Not yet reviewed
+	"acknowledged", // Manager reviewed, noted
+	"waived", // Manager approved exception
+	"resolved", // Fixed/no longer relevant
 ]);

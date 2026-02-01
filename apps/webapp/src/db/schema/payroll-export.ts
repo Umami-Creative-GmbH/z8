@@ -129,6 +129,8 @@ export const payrollWageTypeMapping = pgTable(
 		lexwareWageTypeName: text("lexware_wage_type_name"), // e.g., "Lohn"
 		sageWageTypeCode: text("sage_wage_type_code"), // e.g., "1000", "1600"
 		sageWageTypeName: text("sage_wage_type_name"), // e.g., "Arbeitszeit"
+		successFactorsTimeTypeCode: text("successfactors_time_type_code"), // e.g., "REGULAR", "OVERTIME"
+		successFactorsTimeTypeName: text("successfactors_time_type_name"), // e.g., "Regular Hours"
 
 		// Additional mapping configuration
 		factor: numeric("factor", { precision: 4, scale: 2 }).default("1.00"), // Override category factor
