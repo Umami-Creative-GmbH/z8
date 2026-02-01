@@ -5,6 +5,7 @@ import { getMessages } from "next-intl/server";
 import { type ReactNode, Suspense } from "react";
 import { Toaster } from "sonner";
 import { BProgressBar } from "@/components/bprogress/bprogress";
+import { OfflineBanner, SWUpdatePrompt } from "@/components/offline";
 import { ThemeProvider } from "@/components/theme-provider";
 import { TolgeeNextProvider } from "@/tolgee/client";
 import { ALL_LANGUAGES, loadNamespaces, getNamespacesForRoute } from "@/tolgee/shared";
@@ -161,6 +162,8 @@ export default async function LocaleLayout({ children, params }: Props) {
 							<QueryProvider>
 								<BProgressBar />
 								<TooltipProvider delayDuration={0}>
+									<OfflineBanner />
+									<SWUpdatePrompt />
 									{children}
 									<Toaster position="bottom-right" richColors />
 								</TooltipProvider>

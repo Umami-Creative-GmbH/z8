@@ -1,5 +1,5 @@
 import { createEnv } from "@t3-oss/env-nextjs";
-import { z, type ZodError } from "zod";
+import { z } from "zod";
 
 export const env = createEnv({
 	server: {
@@ -67,6 +67,12 @@ export const env = createEnv({
 		GITHUB_CLIENT_SECRET: z.string().optional(),
 		LINKEDIN_CLIENT_ID: z.string().optional(),
 		LINKEDIN_CLIENT_SECRET: z.string().optional(),
+
+		// Calendar Sync OAuth (separate from social login - different scopes)
+		CALENDAR_GOOGLE_CLIENT_ID: z.string().optional(),
+		CALENDAR_GOOGLE_CLIENT_SECRET: z.string().optional(),
+		CALENDAR_MICROSOFT_CLIENT_ID: z.string().optional(),
+		CALENDAR_MICROSOFT_CLIENT_SECRET: z.string().optional(),
 	},
 	client: {
 		NEXT_PUBLIC_APP_URL: z.string().url().optional(),
@@ -124,17 +130,17 @@ export const env = createEnv({
 		GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET,
 		LINKEDIN_CLIENT_ID: process.env.LINKEDIN_CLIENT_ID,
 		LINKEDIN_CLIENT_SECRET: process.env.LINKEDIN_CLIENT_SECRET,
+		CALENDAR_GOOGLE_CLIENT_ID: process.env.CALENDAR_GOOGLE_CLIENT_ID,
+		CALENDAR_GOOGLE_CLIENT_SECRET: process.env.CALENDAR_GOOGLE_CLIENT_SECRET,
+		CALENDAR_MICROSOFT_CLIENT_ID: process.env.CALENDAR_MICROSOFT_CLIENT_ID,
+		CALENDAR_MICROSOFT_CLIENT_SECRET: process.env.CALENDAR_MICROSOFT_CLIENT_SECRET,
 	},
 	skipValidation: !!process.env.SKIP_ENV_VALIDATION,
 	emptyStringAsUndefined: true,
-	onValidationError: (error: ZodError) => {
+	onValidationError: (issues) => {
 		console.error("❌ Invalid environment variables:");
-		if (error && "errors" in error) {
-			error.errors.forEach((e) => {
-				console.error(`   - ${e.path.join(".")}: ${e.message}`);
-			});
-		} else {
-			console.error(error);
+		for (const issue of issues) {
+			console.error(`   - ${issue.path?.join(".") ?? "unknown"}: ${issue.message}`);
 		}
 		process.exit(1);
 	},

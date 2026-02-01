@@ -1,11 +1,41 @@
 {
 	"name": "z8 - time app",
 	"short_name": "z8",
-	"icons": [
-		{ "src": "/android-chrome-192x192.png", "sizes": "192x192", "type": "image/png" },
-		{ "src": "/android-chrome-512x512.png", "sizes": "512x512", "type": "image/png" }
-	],
-	"theme_color": "#ffffff",
+	"description": "Employee time tracking and workforce management",
+	"start_url": "/?source=pwa",
+	"scope": "/",
+	"display": "standalone",
+	"orientation": "portrait-primary",
+	"theme_color": "#000000",
 	"background_color": "#ffffff",
-	"display": "standalone"
+	"icons": [
+		{
+			"src": "/android-chrome-192x192.png",
+			"sizes": "192x192",
+			"type": "image/png",
+			"purpose": "any"
+		},
+		{
+			"src": "/android-chrome-512x512.png",
+			"sizes": "512x512",
+			"type": "image/png",
+			"purpose": "any"
+		},
+		{
+			"src": "/android-chrome-512x512.png",
+			"sizes": "512x512",
+			"type": "image/png",
+			"purpose": "maskable"
+		}
+	],
+	"categories": ["productivity", "business"],
+	"shortcuts": [
+		{
+			"name": "Clock In/Out",
+			"short_name": "Clock",
+			"description": "Quick access to time tracking",
+			"url": "/time-tracking?source=shortcut",
+			"icons": [{ "src": "/android-chrome-192x192.png", "sizes": "192x192" }]
+		}
+	]
 }
