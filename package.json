@@ -23,6 +23,8 @@
     "build:webapp": "turbo build --filter=webapp",
     "build:desktop": "turbo build --filter=desktop",
     "build:mobile": "turbo build --filter=mobile",
+    "dev:extension": "turbo dev --filter=extension",
+    "build:extension": "turbo build --filter=extension",
     "dev:docs": "turbo dev --filter=docs",
     "build:docs": "turbo build --filter=docs",
     "docker:up": "docker compose -f deploy/compose/docker-compose.yml up -d",

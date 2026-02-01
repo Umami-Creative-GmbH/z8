@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "Z8 Time Tracker",
+  "version": "1.0.1",
+  "description": "One-click clock in/out for Z8 time tracking",
+  "permissions": ["storage", "alarms", "notifications"],
+  "host_permissions": ["http://localhost:3000/*", "https://*/*"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.svg",
+      "32": "icons/icon32.svg",
+      "48": "icons/icon48.svg",
+      "128": "icons/icon128.svg"
+    }
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "options_page": "options.html",
+  "icons": {
+    "16": "icons/icon16.svg",
+    "48": "icons/icon48.svg",
+    "128": "icons/icon128.svg"
+  }
+}
