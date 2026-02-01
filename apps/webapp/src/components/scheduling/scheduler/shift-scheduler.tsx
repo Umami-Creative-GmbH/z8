@@ -26,6 +26,11 @@ import type {
 } from "@/app/[locale]/(app)/scheduling/types";
 import { queryKeys } from "@/lib/query/keys";
 import { ShiftDialog } from "../shifts/shift-dialog";
+import {
+	CoverageHeatmapOverlay,
+	CoverageSummaryBar,
+	useCoverageHeatmap,
+} from "./coverage-heatmap-overlay";
 import { PublishFab } from "./publish-fab";
 import { TemplateSidebar } from "./template-sidebar";
 
@@ -101,6 +106,7 @@ export function ShiftScheduler({
 	const [selectedShift, setSelectedShift] = useState<ShiftWithRelations | null>(null);
 	const [isShiftDialogOpen, setIsShiftDialogOpen] = useState(false);
 	const [newShiftDate, setNewShiftDate] = useState<Date | null>(null);
+	const [showCoverageOverlay, setShowCoverageOverlay] = useState(true);
 	const isDark = resolvedTheme === "dark";
 
 	// Fetch shifts
@@ -143,6 +149,12 @@ export function ShiftScheduler({
 	const templates = templatesResult || [];
 	// Reserved for future use - will be used for day header warnings
 	const _incompleteDays = incompleteDaysResult || [];
+
+	// Fetch coverage heatmap data
+	const {
+		data: coverageData,
+		hasGaps: hasCoverageGaps,
+	} = useCoverageHeatmap(organizationId, dateRange, isManager && showCoverageOverlay);
 
 	// Convert shifts to Schedule-X events
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -344,22 +356,42 @@ export function ShiftScheduler({
 	}
 
 	return (
-		<div className="flex gap-4 h-[calc(100vh-200px)]">
-			{/* Template sidebar for managers */}
-			{isManager && <TemplateSidebar templates={templates} onTemplateDrop={handleTemplateDrop} />}
-
-			{/* Main calendar */}
-			<div className="flex-1 relative h-full overflow-hidden">
-				<ScheduleXCalendar calendarApp={calendar} />
-
-				{/* Publish FAB for managers with draft shifts */}
-				{isManager && draftCount > 0 && (
-					<PublishFab
-						draftCount={draftCount}
-						onPublish={() => publishMutation.mutate()}
-						isPublishing={publishMutation.isPending}
+		<div className="flex flex-col gap-4 h-[calc(100vh-200px)]">
+			{/* Coverage summary bar and toggle for managers */}
+			{isManager && (
+				<div className="flex items-center gap-4">
+					<CoverageHeatmapOverlay
+						organizationId={organizationId}
+						dateRange={dateRange}
+						visible={showCoverageOverlay}
+						onToggle={() => setShowCoverageOverlay((v) => !v)}
 					/>
-				)}
+				</div>
+			)}
+
+			{/* Coverage summary when visible */}
+			{isManager && showCoverageOverlay && coverageData.length > 0 && (
+				<CoverageSummaryBar data={coverageData} visible={showCoverageOverlay} />
+			)}
+
+			<div className="flex gap-4 flex-1 min-h-0">
+				{/* Template sidebar for managers */}
+				{isManager && <TemplateSidebar templates={templates} onTemplateDrop={handleTemplateDrop} />}
+
+				{/* Main calendar */}
+				<div className="flex-1 relative h-full overflow-hidden">
+					<ScheduleXCalendar calendarApp={calendar} />
+
+					{/* Publish FAB for managers with draft shifts */}
+					{isManager && draftCount > 0 && (
+						<PublishFab
+							draftCount={draftCount}
+							onPublish={() => publishMutation.mutate()}
+							isPublishing={publishMutation.isPending}
+							hasCoverageGaps={hasCoverageGaps}
+						/>
+					)}
+				</div>
 			</div>
 
 			{/* Shift dialog */}
