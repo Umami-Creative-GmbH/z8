@@ -15,6 +15,8 @@ import {
 	countWorkPeriods,
 } from "./data-fetcher";
 import { DatevLohnFormatter } from "./formatters/datev-lohn-formatter";
+import { LexwareLohnFormatter } from "./formatters/lexware-lohn-formatter";
+import { SageLohnFormatter } from "./formatters/sage-lohn-formatter";
 import { personioExporter } from "./exporters/personio";
 import type {
 	IPayrollExportFormatter,
@@ -43,6 +45,14 @@ const exporters = new Map<string, IPayrollExporter>();
 // Register DATEV formatter
 const datevFormatter = new DatevLohnFormatter();
 formatters.set(datevFormatter.formatId, datevFormatter);
+
+// Register Lexware formatter
+const lexwareFormatter = new LexwareLohnFormatter();
+formatters.set(lexwareFormatter.formatId, lexwareFormatter);
+
+// Register Sage formatter
+const sageFormatter = new SageLohnFormatter();
+formatters.set(sageFormatter.formatId, sageFormatter);
 
 // Register Personio exporter
 exporters.set(personioExporter.exporterId, personioExporter);

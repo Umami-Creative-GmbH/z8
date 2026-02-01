@@ -118,9 +118,17 @@ export const payrollWageTypeMapping = pgTable(
 		// e.g., "overtime", "holiday_compensation", "overtime_reduction"
 		specialCategory: text("special_category"),
 
-		// Target: wage type code in payroll system
-		wageTypeCode: text("wage_type_code").notNull(), // e.g., "1000", "1900"
-		wageTypeName: text("wage_type_name"), // Human-readable name, e.g., "Arbeitszeit"
+		// Legacy generic wage type code (deprecated - use format-specific columns)
+		wageTypeCode: text("wage_type_code").notNull().default(""), // Kept for backwards compatibility
+		wageTypeName: text("wage_type_name"), // Kept for backwards compatibility
+
+		// Format-specific wage type codes
+		datevWageTypeCode: text("datev_wage_type_code"), // e.g., "1000", "1900"
+		datevWageTypeName: text("datev_wage_type_name"), // e.g., "Arbeitszeit"
+		lexwareWageTypeCode: text("lexware_wage_type_code"), // e.g., "100", "200"
+		lexwareWageTypeName: text("lexware_wage_type_name"), // e.g., "Lohn"
+		sageWageTypeCode: text("sage_wage_type_code"), // e.g., "1000", "1600"
+		sageWageTypeName: text("sage_wage_type_name"), // e.g., "Arbeitszeit"
 
 		// Additional mapping configuration
 		factor: numeric("factor", { precision: 4, scale: 2 }).default("1.00"), // Override category factor

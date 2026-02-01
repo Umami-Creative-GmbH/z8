@@ -31,6 +31,51 @@ export const DEFAULT_DATEV_CONFIG: DatevLohnConfig = {
 	includeZeroHours: false,
 };
 
+/**
+ * Lexware lohn+gehalt specific configuration
+ */
+export interface LexwareLohnConfig {
+	/** Personnel number type - which field to use as employee identifier */
+	personnelNumberType: "employeeNumber" | "employeeId";
+	/** Whether to include rows with zero hours */
+	includeZeroHours: boolean;
+	/** Whether to include optional Stunden (hours) column */
+	includeStunden: boolean;
+	/** Whether to include optional Stundensatz (hourly rate) column */
+	includeStundensatz: boolean;
+}
+
+/**
+ * Default Lexware Lohn configuration
+ */
+export const DEFAULT_LEXWARE_CONFIG: LexwareLohnConfig = {
+	personnelNumberType: "employeeNumber",
+	includeZeroHours: false,
+	includeStunden: true,
+	includeStundensatz: false,
+};
+
+/**
+ * Sage Lohn specific configuration
+ */
+export interface SageLohnConfig {
+	/** Personnel number type - which field to use as employee identifier */
+	personnelNumberType: "employeeNumber" | "employeeId";
+	/** Whether to include rows with zero hours */
+	includeZeroHours: boolean;
+	/** Output format - DATEV-compatible or Sage-native CSV */
+	outputFormat: "datev_compatible" | "sage_native";
+}
+
+/**
+ * Default Sage Lohn configuration
+ */
+export const DEFAULT_SAGE_CONFIG: SageLohnConfig = {
+	personnelNumberType: "employeeNumber",
+	includeZeroHours: false,
+	outputFormat: "sage_native",
+};
+
 // ============================================
 // WAGE TYPE MAPPING TYPES
 // ============================================
@@ -94,8 +139,17 @@ export interface WageTypeMapping {
 	absenceCategoryId: string | null;
 	absenceCategoryName?: string | null;
 	specialCategory: string | null;
+	/** @deprecated Use format-specific codes instead */
 	wageTypeCode: string;
+	/** @deprecated Use format-specific codes instead */
 	wageTypeName: string | null;
+	// Format-specific wage type codes
+	datevWageTypeCode: string | null;
+	datevWageTypeName: string | null;
+	lexwareWageTypeCode: string | null;
+	lexwareWageTypeName: string | null;
+	sageWageTypeCode: string | null;
+	sageWageTypeName: string | null;
 	factor: string;
 	isActive: boolean;
 }

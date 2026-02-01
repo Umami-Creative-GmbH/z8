@@ -36,6 +36,8 @@ export {
 
 // File-based formatters
 export { DatevLohnFormatter, datevLohnFormatter } from "./formatters/datev-lohn-formatter";
+export { LexwareLohnFormatter, lexwareLohnFormatter } from "./formatters/lexware-lohn-formatter";
+export { SageLohnFormatter, sageLohnFormatter } from "./formatters/sage-lohn-formatter";
 
 // API-based exporters
 export { PersonioExporter, personioExporter } from "./exporters/personio";

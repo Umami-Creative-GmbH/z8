@@ -1,24 +1,30 @@
 /**
- * DATEV Lohn & Gehalt CSV formatter
- * Implements DATEV ASCII format specification for payroll data
+ * Lexware lohn+gehalt CSV formatter
+ * Implements Lexware ASCII import format specification for payroll data
+ *
+ * Format specification (from Lexware documentation):
+ * - Delimiter: Semicolon (;)
+ * - Decimal separator: Comma (,)
+ * - Required columns: Jahr, Monat, Personalnummer, Lohnartennummer, Wert
+ * - Optional columns: Stunden, Stundensatz
  */
 import { DateTime } from "luxon";
 import { createLogger } from "@/lib/logger";
 import type {
 	AbsenceData,
-	DatevLohnConfig,
 	ExportResult,
 	IPayrollExportFormatter,
+	LexwareLohnConfig,
 	WageTypeMapping,
 	WorkPeriodData,
 } from "../types";
 
-const logger = createLogger("DatevLohnFormatter");
+const logger = createLogger("LexwareLohnFormatter");
 
 /**
  * Default wage type code for unmapped categories
  */
-const DEFAULT_WAGE_TYPE_CODE = "1000";
+const DEFAULT_WAGE_TYPE_CODE = "100";
 
 /**
  * Maximum work periods for synchronous export
@@ -26,11 +32,11 @@ const DEFAULT_WAGE_TYPE_CODE = "1000";
 const SYNC_THRESHOLD = 500;
 
 /**
- * DATEV Lohn & Gehalt CSV formatter
+ * Lexware lohn+gehalt CSV formatter
  */
-export class DatevLohnFormatter implements IPayrollExportFormatter {
-	readonly formatId = "datev_lohn";
-	readonly formatName = "DATEV Lohn & Gehalt";
+export class LexwareLohnFormatter implements IPayrollExportFormatter {
+	readonly formatId = "lexware_lohn";
+	readonly formatName = "Lexware lohn+gehalt";
 	readonly version = "2024.1";
 
 	getSyncThreshold(): number {
@@ -39,23 +45,11 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 
 	validateConfig(config: Record<string, unknown>): { valid: boolean; errors?: string[] } {
 		const errors: string[] = [];
-		const datevConfig = config as Partial<DatevLohnConfig>;
-
-		if (!datevConfig.mandantennummer) {
-			errors.push("Mandantennummer (client number) is required");
-		} else if (!/^\d{1,5}$/.test(datevConfig.mandantennummer)) {
-			errors.push("Mandantennummer must be 1-5 digits");
-		}
-
-		if (!datevConfig.beraternummer) {
-			errors.push("Beraternummer (consultant number) is required");
-		} else if (!/^\d{1,7}$/.test(datevConfig.beraternummer)) {
-			errors.push("Beraternummer must be 1-7 digits");
-		}
+		const lexwareConfig = config as Partial<LexwareLohnConfig>;
 
 		if (
-			!datevConfig.personnelNumberType ||
-			!["employeeNumber", "employeeId"].includes(datevConfig.personnelNumberType)
+			!lexwareConfig.personnelNumberType ||
+			!["employeeNumber", "employeeId"].includes(lexwareConfig.personnelNumberType)
 		) {
 			errors.push("Personnel number type must be 'employeeNumber' or 'employeeId'");
 		}
@@ -74,10 +68,10 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 	): ExportResult {
 		logger.info(
 			{ workPeriodCount: workPeriods.length, absenceCount: absences.length },
-			"Transforming to DATEV Lohn format",
+			"Transforming to Lexware lohn+gehalt format",
 		);
 
-		const datevConfig = config as unknown as DatevLohnConfig;
+		const lexwareConfig = config as unknown as LexwareLohnConfig;
 
 		// Build mapping lookups
 		const workCategoryMappings = new Map<string, WageTypeMapping>();
@@ -96,43 +90,47 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 			}
 		}
 
-		// Group work periods by employee and date
+		// Group work periods by employee, year, month, and wage type
 		const aggregatedData = this.aggregateWorkPeriods(
 			workPeriods,
 			workCategoryMappings,
-			datevConfig,
+			lexwareConfig,
 		);
 
 		// Add absence data
-		this.addAbsenceData(absences, absenceCategoryMappings, aggregatedData, datevConfig);
+		this.addAbsenceData(absences, absenceCategoryMappings, aggregatedData, lexwareConfig);
 
 		// Generate CSV content
 		const lines: string[] = [];
 
 		// Header row
-		lines.push(this.generateHeaderRow());
+		lines.push(this.generateHeaderRow(lexwareConfig));
 
-		// Data rows
+		// Data rows - sorted by personnel number, year, month
 		const sortedEmployees = Array.from(aggregatedData.keys()).sort();
 		for (const personnelNumber of sortedEmployees) {
 			const employeeData = aggregatedData.get(personnelNumber)!;
-			const sortedDates = Array.from(employeeData.keys()).sort();
+			const sortedKeys = Array.from(employeeData.keys()).sort();
 
-			for (const dateStr of sortedDates) {
-				const wageTypes = employeeData.get(dateStr)!;
+			for (const key of sortedKeys) {
+				const wageTypes = employeeData.get(key)!;
+				const [year, month] = key.split("-");
 				const sortedWageTypes = Array.from(wageTypes.entries()).sort((a, b) =>
 					a[0].localeCompare(b[0]),
 				);
 
 				for (const [wageTypeCode, data] of sortedWageTypes) {
-					if (data.hours > 0 || datevConfig.includeZeroHours) {
+					if (data.value > 0 || lexwareConfig.includeZeroHours) {
 						lines.push(
 							this.generateDataRow(
 								personnelNumber,
+								year,
+								month,
 								wageTypeCode,
+								data.value,
 								data.hours,
-								dateStr,
-								data.note,
+								data.hourlyRate,
+								lexwareConfig,
 							),
 						);
 					}
@@ -153,17 +151,17 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 				employeeCount: uniqueEmployees.size,
 				fileName,
 			},
-			"DATEV Lohn export generated",
+			"Lexware lohn+gehalt export generated",
 		);
 
-		// Join with Windows-style line endings (required by DATEV)
+		// Join with Windows-style line endings
 		const csvContent = lines.join("\r\n");
 
 		return {
 			fileName,
 			content: csvContent,
 			mimeType: "text/csv",
-			encoding: "utf-8", // DATEV supports UTF-8 since 2020
+			encoding: "utf-8",
 			metadata: {
 				workPeriodCount: workPeriods.length,
 				employeeCount: uniqueEmployees.size,
@@ -176,41 +174,35 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 	}
 
 	/**
-	 * Aggregate work periods by employee, date, and wage type
+	 * Aggregate work periods by employee, year-month, and wage type
+	 * Returns: Map<PersonnelNumber, Map<Year-Month, Map<WageTypeCode, AggregatedData>>>
 	 */
 	private aggregateWorkPeriods(
 		workPeriods: WorkPeriodData[],
 		workCategoryMappings: Map<string, WageTypeMapping>,
-		config: DatevLohnConfig,
-	): Map<string, Map<string, Map<string, { hours: number; note: string }>>> {
-		const result = new Map<string, Map<string, Map<string, { hours: number; note: string }>>>();
+		config: LexwareLohnConfig,
+	): Map<string, Map<string, Map<string, { value: number; hours: number; hourlyRate: number | null }>>> {
+		const result = new Map<string, Map<string, Map<string, { value: number; hours: number; hourlyRate: number | null }>>>();
 
 		for (const period of workPeriods) {
 			if (!period.durationMinutes || !period.endTime) continue;
 
 			const personnelNumber = this.getPersonnelNumber(period, config);
-			const dateStr = period.startTime.toISODate()!;
+			const year = period.startTime.toFormat("yyyy");
+			const month = period.startTime.toFormat("MM");
+			const yearMonth = `${year}-${month}`;
 			const hours = period.durationMinutes / 60;
 
-			// Determine wage type code (use DATEV-specific column)
+			// Determine wage type code (use Lexware-specific column)
 			let wageTypeCode = DEFAULT_WAGE_TYPE_CODE;
-			let note = "";
 
 			if (period.workCategoryId) {
 				const mapping = workCategoryMappings.get(period.workCategoryId);
-				// Prefer datevWageTypeCode, fall back to legacy wageTypeCode for migration
-				const mappedCode = mapping?.datevWageTypeCode || mapping?.wageTypeCode;
+				// Prefer lexwareWageTypeCode, fall back to legacy wageTypeCode
+				const mappedCode = mapping?.lexwareWageTypeCode || mapping?.wageTypeCode;
 				if (mapping && mappedCode) {
 					wageTypeCode = mappedCode;
-					note = mapping.datevWageTypeName || mapping.wageTypeName || period.workCategoryName || "";
-				} else {
-					note = period.workCategoryName || "";
 				}
-			}
-
-			// Add project name to note if present
-			if (period.projectName) {
-				note = note ? `${note} - ${period.projectName}` : period.projectName;
 			}
 
 			// Initialize nested maps if needed
@@ -219,16 +211,17 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 			}
 			const employeeData = result.get(personnelNumber)!;
 
-			if (!employeeData.has(dateStr)) {
-				employeeData.set(dateStr, new Map());
+			if (!employeeData.has(yearMonth)) {
+				employeeData.set(yearMonth, new Map());
 			}
-			const dateData = employeeData.get(dateStr)!;
+			const monthData = employeeData.get(yearMonth)!;
 
-			// Aggregate hours
-			const existing = dateData.get(wageTypeCode) || { hours: 0, note: "" };
-			dateData.set(wageTypeCode, {
+			// Aggregate hours and value (Wert = hours for time-based entries)
+			const existing = monthData.get(wageTypeCode) || { value: 0, hours: 0, hourlyRate: null };
+			monthData.set(wageTypeCode, {
+				value: existing.value + hours,
 				hours: existing.hours + hours,
-				note: note || existing.note,
+				hourlyRate: existing.hourlyRate, // Could be derived from employee rate
 			});
 		}
 
@@ -241,29 +234,29 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 	private addAbsenceData(
 		absences: AbsenceData[],
 		absenceCategoryMappings: Map<string, WageTypeMapping>,
-		aggregatedData: Map<string, Map<string, Map<string, { hours: number; note: string }>>>,
-		config: DatevLohnConfig,
+		aggregatedData: Map<string, Map<string, Map<string, { value: number; hours: number; hourlyRate: number | null }>>>,
+		config: LexwareLohnConfig,
 	): void {
 		for (const absence of absences) {
 			const mapping = absenceCategoryMappings.get(absence.absenceCategoryId);
-			// Prefer datevWageTypeCode, fall back to legacy wageTypeCode for migration
-			const mappedCode = mapping?.datevWageTypeCode || mapping?.wageTypeCode;
+			// Prefer lexwareWageTypeCode, fall back to legacy wageTypeCode
+			const mappedCode = mapping?.lexwareWageTypeCode || mapping?.wageTypeCode;
 			if (!mapping || !mappedCode) continue; // Skip if no mapping
 
 			const personnelNumber = this.getPersonnelNumberFromAbsence(absence, config);
 			const wageTypeCode = mappedCode;
-			const note = mapping.datevWageTypeName || mapping.wageTypeName || absence.absenceCategoryName || "";
 
-			// Calculate days (DATEV typically uses days for absences, not hours)
-			// Use startOf('day') to ensure consistent date comparison
+			// Calculate days
 			const startDate = DateTime.fromISO(absence.startDate).startOf("day");
 			const endDate = DateTime.fromISO(absence.endDate).startOf("day");
 			const days = Math.floor(endDate.diff(startDate, "days").days) + 1;
 
-			// Add an entry for each day of the absence
+			// Add an entry for each day of the absence (grouped by month)
 			for (let i = 0; i < days; i++) {
 				const currentDate = startDate.plus({ days: i });
-				const dateStr = currentDate.toISODate()!;
+				const year = currentDate.toFormat("yyyy");
+				const month = currentDate.toFormat("MM");
+				const yearMonth = `${year}-${month}`;
 
 				// Initialize nested maps if needed
 				if (!aggregatedData.has(personnelNumber)) {
@@ -271,17 +264,17 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 				}
 				const employeeData = aggregatedData.get(personnelNumber)!;
 
-				if (!employeeData.has(dateStr)) {
-					employeeData.set(dateStr, new Map());
+				if (!employeeData.has(yearMonth)) {
+					employeeData.set(yearMonth, new Map());
 				}
-				const dateData = employeeData.get(dateStr)!;
+				const monthData = employeeData.get(yearMonth)!;
 
 				// For absences, we typically record 8 hours (full day)
-				// This could be configurable based on the employee's work schedule
-				const existing = dateData.get(wageTypeCode) || { hours: 0, note: "" };
-				dateData.set(wageTypeCode, {
-					hours: existing.hours + 8, // Full day
-					note: note || existing.note,
+				const existing = monthData.get(wageTypeCode) || { value: 0, hours: 0, hourlyRate: null };
+				monthData.set(wageTypeCode, {
+					value: existing.value + 8, // Full day = 8 hours
+					hours: existing.hours + 8,
+					hourlyRate: existing.hourlyRate,
 				});
 			}
 		}
@@ -290,7 +283,7 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 	/**
 	 * Get personnel number from work period based on config
 	 */
-	private getPersonnelNumber(period: WorkPeriodData, config: DatevLohnConfig): string {
+	private getPersonnelNumber(period: WorkPeriodData, config: LexwareLohnConfig): string {
 		if (config.personnelNumberType === "employeeNumber") {
 			if (period.employeeNumber) {
 				return period.employeeNumber;
@@ -306,7 +299,7 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 	/**
 	 * Get personnel number from absence based on config
 	 */
-	private getPersonnelNumberFromAbsence(absence: AbsenceData, config: DatevLohnConfig): string {
+	private getPersonnelNumberFromAbsence(absence: AbsenceData, config: LexwareLohnConfig): string {
 		if (config.personnelNumberType === "employeeNumber") {
 			if (absence.employeeNumber) {
 				return absence.employeeNumber;
@@ -322,17 +315,23 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 	/**
 	 * Generate CSV header row
 	 */
-	private generateHeaderRow(): string {
-		// DATEV Lohn standard columns
-		return [
+	private generateHeaderRow(config: LexwareLohnConfig): string {
+		const headers = [
+			"Jahr",
+			"Monat",
 			"Personalnummer",
-			"Lohnart",
-			"Betrag",
-			"Datum",
-			"Bemerkung",
-		]
-			.map((col) => this.escapeCSV(col))
-			.join(";");
+			"Lohnartennummer",
+			"Wert",
+		];
+
+		if (config.includeStunden) {
+			headers.push("Stunden");
+		}
+		if (config.includeStundensatz) {
+			headers.push("Stundensatz");
+		}
+
+		return headers.map((col) => this.escapeCSV(col)).join(";");
 	}
 
 	/**
@@ -340,34 +339,51 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 	 */
 	private generateDataRow(
 		personnelNumber: string,
+		year: string,
+		month: string,
 		wageTypeCode: string,
+		value: number,
 		hours: number,
-		dateStr: string,
-		note: string,
+		hourlyRate: number | null,
+		config: LexwareLohnConfig,
 	): string {
-		return [
+		const fields = [
+			this.escapeCSV(year),
+			this.escapeCSV(month),
 			this.escapeCSV(personnelNumber),
 			this.escapeCSV(wageTypeCode),
-			this.formatHours(hours),
-			this.escapeCSV(dateStr),
-			this.escapeCSV(note),
-		].join(";");
+			this.formatDecimal(value), // Wert with comma as decimal separator
+		];
+
+		if (config.includeStunden) {
+			fields.push(this.formatDecimal(hours));
+		}
+		if (config.includeStundensatz) {
+			fields.push(hourlyRate !== null ? this.formatDecimal(hourlyRate) : "");
+		}
+
+		return fields.join(";");
 	}
 
 	/**
-	 * Escape value for CSV (DATEV uses semicolon as separator)
+	 * Escape value for CSV (Lexware uses semicolon as separator)
 	 */
 	private escapeCSV(value: string): string {
-		if (!value) return '""';
-		// Always wrap in quotes and escape internal quotes
-		return `"${value.replace(/"/g, '""')}"`;
+		if (!value) return "";
+		// Only wrap in quotes if necessary
+		if (value.includes(";") || value.includes('"') || value.includes("\n")) {
+			return `"${value.replace(/"/g, '""')}"`;
+		}
+		return value;
 	}
 
 	/**
-	 * Format hours as decimal with 2 decimal places
+	 * Format number as decimal with comma separator (German format)
+	 * Lexware requires comma as decimal separator, no leading zeros
 	 */
-	private formatHours(hours: number): string {
-		return hours.toFixed(2);
+	private formatDecimal(value: number): string {
+		// Format with 2 decimal places and replace period with comma
+		return value.toFixed(2).replace(".", ",");
 	}
 
 	/**
@@ -412,11 +428,11 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 		const dateStr = dateRange.start
 			? dateRange.start.toFormat("yyyy-MM")
 			: now.toFormat("yyyy-MM");
-		return `datev_lohn_${dateStr}_${now.toFormat("yyyyMMdd_HHmmss")}.csv`;
+		return `lexware_lohn_${dateStr}_${now.toFormat("yyyyMMdd_HHmmss")}.csv`;
 	}
 }
 
 /**
  * Singleton instance
  */
-export const datevLohnFormatter = new DatevLohnFormatter();
+export const lexwareLohnFormatter = new LexwareLohnFormatter();

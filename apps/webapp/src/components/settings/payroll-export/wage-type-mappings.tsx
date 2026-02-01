@@ -23,6 +23,7 @@ import {
 	AlertDialogTitle,
 	AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -49,6 +50,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import {
 	Table,
 	TableBody,
@@ -57,8 +59,13 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { WageTypeMapping } from "@/lib/payroll-export/types";
-import { DEFAULT_DATEV_LOHNARTEN } from "@/lib/payroll-export/types";
 
 interface WageTypeMappingsProps {
 	organizationId: string;
@@ -92,8 +99,13 @@ export function WageTypeMappings({ organizationId, config }: WageTypeMappingsPro
 	const [selectedWorkCategory, setSelectedWorkCategory] = useState<string>("");
 	const [selectedAbsenceCategory, setSelectedAbsenceCategory] = useState<string>("");
 	const [selectedSpecialCategory, setSelectedSpecialCategory] = useState<string>("");
-	const [wageTypeCode, setWageTypeCode] = useState<string>("");
-	const [wageTypeName, setWageTypeName] = useState<string>("");
+	// Format-specific wage type codes
+	const [datevWageTypeCode, setDatevWageTypeCode] = useState<string>("");
+	const [datevWageTypeName, setDatevWageTypeName] = useState<string>("");
+	const [lexwareWageTypeCode, setLexwareWageTypeCode] = useState<string>("");
+	const [lexwareWageTypeName, setLexwareWageTypeName] = useState<string>("");
+	const [sageWageTypeCode, setSageWageTypeCode] = useState<string>("");
+	const [sageWageTypeName, setSageWageTypeName] = useState<string>("");
 
 	// Memoize loader to avoid dependency warning (async-parallel already applied)
 	const loadData = useCallback(async () => {
@@ -133,8 +145,13 @@ export function WageTypeMappings({ organizationId, config }: WageTypeMappingsPro
 				workCategoryId: sourceType === "work_category" ? selectedWorkCategory : null,
 				absenceCategoryId: sourceType === "absence_category" ? selectedAbsenceCategory : null,
 				specialCategory: sourceType === "special" ? selectedSpecialCategory : null,
-				wageTypeCode,
-				wageTypeName,
+				// Format-specific codes
+				datevWageTypeCode: datevWageTypeCode || null,
+				datevWageTypeName: datevWageTypeName || null,
+				lexwareWageTypeCode: lexwareWageTypeCode || null,
+				lexwareWageTypeName: lexwareWageTypeName || null,
+				sageWageTypeCode: sageWageTypeCode || null,
+				sageWageTypeName: sageWageTypeName || null,
 			});
 
 			if (result.success) {
@@ -176,8 +193,13 @@ export function WageTypeMappings({ organizationId, config }: WageTypeMappingsPro
 		setSelectedWorkCategory("");
 		setSelectedAbsenceCategory("");
 		setSelectedSpecialCategory("");
-		setWageTypeCode("");
-		setWageTypeName("");
+		// Reset format-specific codes
+		setDatevWageTypeCode("");
+		setDatevWageTypeName("");
+		setLexwareWageTypeCode("");
+		setLexwareWageTypeName("");
+		setSageWageTypeCode("");
+		setSageWageTypeName("");
 	};
 
 	const getDisplayName = (mapping: WageTypeMapping): string => {
@@ -225,7 +247,7 @@ export function WageTypeMappings({ organizationId, config }: WageTypeMappingsPro
 					<CardDescription>
 						{t(
 							"settings.payrollExport.mappings.configureFirst",
-							"Please configure DATEV master data first before setting up mappings.",
+							"Please configure at least one payroll export format (DATEV, Lexware, or Sage) before setting up mappings.",
 						)}
 					</CardDescription>
 				</CardHeader>
@@ -241,7 +263,7 @@ export function WageTypeMappings({ organizationId, config }: WageTypeMappingsPro
 					<CardDescription>
 						{t(
 							"settings.payrollExport.mappings.description",
-							"Map your work categories and absence types to DATEV Lohnarten codes",
+							"Map your work categories and absence types to payroll wage type codes",
 						)}
 					</CardDescription>
 				</div>
@@ -260,7 +282,7 @@ export function WageTypeMappings({ organizationId, config }: WageTypeMappingsPro
 							<DialogDescription>
 								{t(
 									"settings.payrollExport.mappings.addMappingDescription",
-									"Map a category to a DATEV Lohnart code",
+									"Map a category to payroll wage type codes for each format",
 								)}
 							</DialogDescription>
 						</DialogHeader>
@@ -372,35 +394,100 @@ export function WageTypeMappings({ organizationId, config }: WageTypeMappingsPro
 								</div>
 							)}
 
-							<div className="space-y-2">
-								<Label>
-									{t("settings.payrollExport.mappings.wageTypeCode", "DATEV Lohnart Code")}
-								</Label>
-								<Input
-									placeholder="1000"
-									value={wageTypeCode}
-									onChange={(e) => setWageTypeCode(e.target.value)}
-								/>
-								<p className="text-sm text-muted-foreground">
-									{t(
-										"settings.payrollExport.mappings.wageTypeCodeHint",
-										"Common codes: 1000 (Working time), 1900 (Overtime), 1650 (Illness), 1600 (Vacation)",
-									)}
-								</p>
+							<Separator />
+
+							<p className="text-sm text-muted-foreground">
+								{t(
+									"settings.payrollExport.mappings.formatSpecificHint",
+									"Configure wage type codes for each payroll format. At least one is required.",
+								)}
+							</p>
+
+							{/* DATEV Wage Type */}
+							<div className="space-y-2 rounded-lg border p-3">
+								<div className="flex items-center gap-2">
+									<Badge variant="outline" className="font-mono text-xs">DATEV</Badge>
+								</div>
+								<div className="grid grid-cols-2 gap-2">
+									<div className="space-y-1">
+										<Label className="text-xs">
+											{t("settings.payrollExport.mappings.code", "Code")}
+										</Label>
+										<Input
+											placeholder="1000"
+											value={datevWageTypeCode}
+											onChange={(e) => setDatevWageTypeCode(e.target.value)}
+										/>
+									</div>
+									<div className="space-y-1">
+										<Label className="text-xs">
+											{t("settings.payrollExport.mappings.description", "Description")}
+										</Label>
+										<Input
+											placeholder="Arbeitszeit"
+											value={datevWageTypeName}
+											onChange={(e) => setDatevWageTypeName(e.target.value)}
+										/>
+									</div>
+								</div>
 							</div>
 
-							<div className="space-y-2">
-								<Label>
-									{t("settings.payrollExport.mappings.wageTypeName", "Description (Optional)")}
-								</Label>
-								<Input
-									placeholder={t(
-										"settings.payrollExport.mappings.wageTypeNamePlaceholder",
-										"e.g., Arbeitszeit",
-									)}
-									value={wageTypeName}
-									onChange={(e) => setWageTypeName(e.target.value)}
-								/>
+							{/* Lexware Wage Type */}
+							<div className="space-y-2 rounded-lg border p-3">
+								<div className="flex items-center gap-2">
+									<Badge variant="outline" className="font-mono text-xs">Lexware</Badge>
+								</div>
+								<div className="grid grid-cols-2 gap-2">
+									<div className="space-y-1">
+										<Label className="text-xs">
+											{t("settings.payrollExport.mappings.code", "Code")}
+										</Label>
+										<Input
+											placeholder="100"
+											value={lexwareWageTypeCode}
+											onChange={(e) => setLexwareWageTypeCode(e.target.value)}
+										/>
+									</div>
+									<div className="space-y-1">
+										<Label className="text-xs">
+											{t("settings.payrollExport.mappings.description", "Description")}
+										</Label>
+										<Input
+											placeholder="Lohn"
+											value={lexwareWageTypeName}
+											onChange={(e) => setLexwareWageTypeName(e.target.value)}
+										/>
+									</div>
+								</div>
+							</div>
+
+							{/* Sage Wage Type */}
+							<div className="space-y-2 rounded-lg border p-3">
+								<div className="flex items-center gap-2">
+									<Badge variant="outline" className="font-mono text-xs">Sage</Badge>
+								</div>
+								<div className="grid grid-cols-2 gap-2">
+									<div className="space-y-1">
+										<Label className="text-xs">
+											{t("settings.payrollExport.mappings.code", "Code")}
+										</Label>
+										<Input
+											placeholder="1000"
+											value={sageWageTypeCode}
+											onChange={(e) => setSageWageTypeCode(e.target.value)}
+										/>
+									</div>
+									<div className="space-y-1">
+										<Label className="text-xs">
+											{t("settings.payrollExport.mappings.description", "Description")}
+										</Label>
+										<Input
+											placeholder="Arbeitszeit"
+											value={sageWageTypeName}
+											onChange={(e) => setSageWageTypeName(e.target.value)}
+										/>
+									</div>
+								</div>
 							</div>
 						</div>
 						<DialogFooter>
@@ -411,7 +498,8 @@ export function WageTypeMappings({ organizationId, config }: WageTypeMappingsPro
 								onClick={handleSaveMapping}
 								disabled={
 									isPending ||
-									!wageTypeCode ||
+									// Must have at least one format code
+									(!datevWageTypeCode && !lexwareWageTypeCode && !sageWageTypeCode) ||
 									(sourceType === "work_category" && !selectedWorkCategory) ||
 									(sourceType === "absence_category" && !selectedAbsenceCategory) ||
 									(sourceType === "special" && !selectedSpecialCategory)
@@ -440,34 +528,78 @@ export function WageTypeMappings({ organizationId, config }: WageTypeMappingsPro
 						{t("settings.payrollExport.mappings.noMappings", "No mappings configured yet")}
 					</div>
 				) : (
-					<Table>
-						<TableHeader>
-							<TableRow>
-								<TableHead>
-									{t("settings.payrollExport.mappings.table.type", "Type")}
-								</TableHead>
-								<TableHead>
-									{t("settings.payrollExport.mappings.table.category", "Category")}
-								</TableHead>
-								<TableHead>
-									{t("settings.payrollExport.mappings.table.lohnart", "Lohnart")}
-								</TableHead>
-								<TableHead>
-									{t("settings.payrollExport.mappings.table.description", "Description")}
-								</TableHead>
-								<TableHead className="w-[100px]" />
-							</TableRow>
-						</TableHeader>
-						<TableBody>
-							{mappings.map((mapping) => (
-								<TableRow key={mapping.id}>
-									<TableCell className="text-muted-foreground">
-										{getSourceTypeLabel(mapping)}
-									</TableCell>
-									<TableCell className="font-medium">{getDisplayName(mapping)}</TableCell>
-									<TableCell className="font-mono">{mapping.wageTypeCode}</TableCell>
-									<TableCell>{mapping.wageTypeName || "-"}</TableCell>
-									<TableCell>
+					<TooltipProvider>
+						<Table>
+							<TableHeader>
+								<TableRow>
+									<TableHead>
+										{t("settings.payrollExport.mappings.table.type", "Type")}
+									</TableHead>
+									<TableHead>
+										{t("settings.payrollExport.mappings.table.category", "Category")}
+									</TableHead>
+									<TableHead>
+										{t("settings.payrollExport.mappings.table.datev", "DATEV")}
+									</TableHead>
+									<TableHead>
+										{t("settings.payrollExport.mappings.table.lexware", "Lexware")}
+									</TableHead>
+									<TableHead>
+										{t("settings.payrollExport.mappings.table.sage", "Sage")}
+									</TableHead>
+									<TableHead className="w-[100px]" />
+								</TableRow>
+							</TableHeader>
+							<TableBody>
+								{mappings.map((mapping) => (
+									<TableRow key={mapping.id}>
+										<TableCell className="text-muted-foreground">
+											{getSourceTypeLabel(mapping)}
+										</TableCell>
+										<TableCell className="font-medium">{getDisplayName(mapping)}</TableCell>
+										<TableCell>
+											{mapping.datevWageTypeCode ? (
+												<Tooltip>
+													<TooltipTrigger asChild>
+														<span className="font-mono cursor-help">{mapping.datevWageTypeCode}</span>
+													</TooltipTrigger>
+													<TooltipContent>
+														{mapping.datevWageTypeName || mapping.datevWageTypeCode}
+													</TooltipContent>
+												</Tooltip>
+											) : (
+												<span className="text-muted-foreground">-</span>
+											)}
+										</TableCell>
+										<TableCell>
+											{mapping.lexwareWageTypeCode ? (
+												<Tooltip>
+													<TooltipTrigger asChild>
+														<span className="font-mono cursor-help">{mapping.lexwareWageTypeCode}</span>
+													</TooltipTrigger>
+													<TooltipContent>
+														{mapping.lexwareWageTypeName || mapping.lexwareWageTypeCode}
+													</TooltipContent>
+												</Tooltip>
+											) : (
+												<span className="text-muted-foreground">-</span>
+											)}
+										</TableCell>
+										<TableCell>
+											{mapping.sageWageTypeCode ? (
+												<Tooltip>
+													<TooltipTrigger asChild>
+														<span className="font-mono cursor-help">{mapping.sageWageTypeCode}</span>
+													</TooltipTrigger>
+													<TooltipContent>
+														{mapping.sageWageTypeName || mapping.sageWageTypeCode}
+													</TooltipContent>
+												</Tooltip>
+											) : (
+												<span className="text-muted-foreground">-</span>
+											)}
+										</TableCell>
+										<TableCell>
 										<AlertDialog>
 											<AlertDialogTrigger asChild>
 												<Button
@@ -505,11 +637,12 @@ export function WageTypeMappings({ organizationId, config }: WageTypeMappingsPro
 												</AlertDialogFooter>
 											</AlertDialogContent>
 										</AlertDialog>
-									</TableCell>
-								</TableRow>
-							))}
-						</TableBody>
-					</Table>
+										</TableCell>
+									</TableRow>
+								))}
+							</TableBody>
+						</Table>
+					</TooltipProvider>
 				)}
 			</CardContent>
 		</Card>

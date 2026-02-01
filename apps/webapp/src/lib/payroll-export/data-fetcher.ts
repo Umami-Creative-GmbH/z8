@@ -262,6 +262,13 @@ export async function getWageTypeMappings(configId: string): Promise<WageTypeMap
 		specialCategory: m.specialCategory,
 		wageTypeCode: m.wageTypeCode,
 		wageTypeName: m.wageTypeName,
+		// Format-specific codes
+		datevWageTypeCode: m.datevWageTypeCode,
+		datevWageTypeName: m.datevWageTypeName,
+		lexwareWageTypeCode: m.lexwareWageTypeCode,
+		lexwareWageTypeName: m.lexwareWageTypeName,
+		sageWageTypeCode: m.sageWageTypeCode,
+		sageWageTypeName: m.sageWageTypeName,
 		factor: m.factor || "1.00",
 		isActive: m.isActive,
 	}));

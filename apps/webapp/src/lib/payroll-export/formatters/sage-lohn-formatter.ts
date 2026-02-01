@@ -1,19 +1,26 @@
 /**
- * DATEV Lohn & Gehalt CSV formatter
- * Implements DATEV ASCII format specification for payroll data
+ * Sage Lohn CSV formatter
+ * Supports both DATEV-compatible and Sage-native CSV formats
+ *
+ * Sage-native format specification:
+ * - Delimiter: Semicolon (;)
+ * - Text quoting: Double quotes (") - always quoted
+ * - Decimal separator: Period (.) for DATEV-compatible, Comma (,) for Sage-native
+ * - Required columns: Personalnummer, Lohnart, Wert/Betrag, Datum, Bemerkung
+ * - Line endings: Windows CRLF (\r\n)
  */
 import { DateTime } from "luxon";
 import { createLogger } from "@/lib/logger";
 import type {
 	AbsenceData,
-	DatevLohnConfig,
 	ExportResult,
 	IPayrollExportFormatter,
+	SageLohnConfig,
 	WageTypeMapping,
 	WorkPeriodData,
 } from "../types";
 
-const logger = createLogger("DatevLohnFormatter");
+const logger = createLogger("SageLohnFormatter");
 
 /**
  * Default wage type code for unmapped categories
@@ -26,11 +33,11 @@ const DEFAULT_WAGE_TYPE_CODE = "1000";
 const SYNC_THRESHOLD = 500;
 
 /**
- * DATEV Lohn & Gehalt CSV formatter
+ * Sage Lohn CSV formatter
  */
-export class DatevLohnFormatter implements IPayrollExportFormatter {
-	readonly formatId = "datev_lohn";
-	readonly formatName = "DATEV Lohn & Gehalt";
+export class SageLohnFormatter implements IPayrollExportFormatter {
+	readonly formatId = "sage_lohn";
+	readonly formatName = "Sage Lohn";
 	readonly version = "2024.1";
 
 	getSyncThreshold(): number {
@@ -39,25 +46,20 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 
 	validateConfig(config: Record<string, unknown>): { valid: boolean; errors?: string[] } {
 		const errors: string[] = [];
-		const datevConfig = config as Partial<DatevLohnConfig>;
+		const sageConfig = config as Partial<SageLohnConfig>;
 
-		if (!datevConfig.mandantennummer) {
-			errors.push("Mandantennummer (client number) is required");
-		} else if (!/^\d{1,5}$/.test(datevConfig.mandantennummer)) {
-			errors.push("Mandantennummer must be 1-5 digits");
-		}
-
-		if (!datevConfig.beraternummer) {
-			errors.push("Beraternummer (consultant number) is required");
-		} else if (!/^\d{1,7}$/.test(datevConfig.beraternummer)) {
-			errors.push("Beraternummer must be 1-7 digits");
+		if (
+			!sageConfig.personnelNumberType ||
+			!["employeeNumber", "employeeId"].includes(sageConfig.personnelNumberType)
+		) {
+			errors.push("Personnel number type must be 'employeeNumber' or 'employeeId'");
 		}
 
 		if (
-			!datevConfig.personnelNumberType ||
-			!["employeeNumber", "employeeId"].includes(datevConfig.personnelNumberType)
+			!sageConfig.outputFormat ||
+			!["datev_compatible", "sage_native"].includes(sageConfig.outputFormat)
 		) {
-			errors.push("Personnel number type must be 'employeeNumber' or 'employeeId'");
+			errors.push("Output format must be 'datev_compatible' or 'sage_native'");
 		}
 
 		return {
@@ -74,10 +76,10 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 	): ExportResult {
 		logger.info(
 			{ workPeriodCount: workPeriods.length, absenceCount: absences.length },
-			"Transforming to DATEV Lohn format",
+			"Transforming to Sage Lohn format",
 		);
 
-		const datevConfig = config as unknown as DatevLohnConfig;
+		const sageConfig = config as unknown as SageLohnConfig;
 
 		// Build mapping lookups
 		const workCategoryMappings = new Map<string, WageTypeMapping>();
@@ -100,19 +102,19 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 		const aggregatedData = this.aggregateWorkPeriods(
 			workPeriods,
 			workCategoryMappings,
-			datevConfig,
+			sageConfig,
 		);
 
 		// Add absence data
-		this.addAbsenceData(absences, absenceCategoryMappings, aggregatedData, datevConfig);
+		this.addAbsenceData(absences, absenceCategoryMappings, aggregatedData, sageConfig);
 
-		// Generate CSV content
+		// Generate CSV content based on output format
 		const lines: string[] = [];
 
 		// Header row
-		lines.push(this.generateHeaderRow());
+		lines.push(this.generateHeaderRow(sageConfig));
 
-		// Data rows
+		// Data rows - sorted by personnel number, date
 		const sortedEmployees = Array.from(aggregatedData.keys()).sort();
 		for (const personnelNumber of sortedEmployees) {
 			const employeeData = aggregatedData.get(personnelNumber)!;
@@ -125,7 +127,7 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 				);
 
 				for (const [wageTypeCode, data] of sortedWageTypes) {
-					if (data.hours > 0 || datevConfig.includeZeroHours) {
+					if (data.hours > 0 || sageConfig.includeZeroHours) {
 						lines.push(
 							this.generateDataRow(
 								personnelNumber,
@@ -133,6 +135,7 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 								data.hours,
 								dateStr,
 								data.note,
+								sageConfig,
 							),
 						);
 					}
@@ -152,18 +155,19 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 				lineCount: lines.length,
 				employeeCount: uniqueEmployees.size,
 				fileName,
+				outputFormat: sageConfig.outputFormat,
 			},
-			"DATEV Lohn export generated",
+			"Sage Lohn export generated",
 		);
 
-		// Join with Windows-style line endings (required by DATEV)
+		// Join with Windows-style line endings (required for German payroll software)
 		const csvContent = lines.join("\r\n");
 
 		return {
 			fileName,
 			content: csvContent,
 			mimeType: "text/csv",
-			encoding: "utf-8", // DATEV supports UTF-8 since 2020
+			encoding: "utf-8",
 			metadata: {
 				workPeriodCount: workPeriods.length,
 				employeeCount: uniqueEmployees.size,
@@ -177,11 +181,12 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 
 	/**
 	 * Aggregate work periods by employee, date, and wage type
+	 * Returns: Map<PersonnelNumber, Map<Date, Map<WageTypeCode, AggregatedData>>>
 	 */
 	private aggregateWorkPeriods(
 		workPeriods: WorkPeriodData[],
 		workCategoryMappings: Map<string, WageTypeMapping>,
-		config: DatevLohnConfig,
+		config: SageLohnConfig,
 	): Map<string, Map<string, Map<string, { hours: number; note: string }>>> {
 		const result = new Map<string, Map<string, Map<string, { hours: number; note: string }>>>();
 
@@ -192,17 +197,24 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 			const dateStr = period.startTime.toISODate()!;
 			const hours = period.durationMinutes / 60;
 
-			// Determine wage type code (use DATEV-specific column)
+			// Determine wage type code (prefer Sage-specific, fall back to DATEV, then legacy)
 			let wageTypeCode = DEFAULT_WAGE_TYPE_CODE;
 			let note = "";
 
 			if (period.workCategoryId) {
 				const mapping = workCategoryMappings.get(period.workCategoryId);
-				// Prefer datevWageTypeCode, fall back to legacy wageTypeCode for migration
-				const mappedCode = mapping?.datevWageTypeCode || mapping?.wageTypeCode;
+				const mappedCode =
+					mapping?.sageWageTypeCode ||
+					mapping?.datevWageTypeCode ||
+					mapping?.wageTypeCode;
 				if (mapping && mappedCode) {
 					wageTypeCode = mappedCode;
-					note = mapping.datevWageTypeName || mapping.wageTypeName || period.workCategoryName || "";
+					note =
+						mapping.sageWageTypeName ||
+						mapping.datevWageTypeName ||
+						mapping.wageTypeName ||
+						period.workCategoryName ||
+						"";
 				} else {
 					note = period.workCategoryName || "";
 				}
@@ -242,20 +254,25 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 		absences: AbsenceData[],
 		absenceCategoryMappings: Map<string, WageTypeMapping>,
 		aggregatedData: Map<string, Map<string, Map<string, { hours: number; note: string }>>>,
-		config: DatevLohnConfig,
+		config: SageLohnConfig,
 	): void {
 		for (const absence of absences) {
 			const mapping = absenceCategoryMappings.get(absence.absenceCategoryId);
-			// Prefer datevWageTypeCode, fall back to legacy wageTypeCode for migration
-			const mappedCode = mapping?.datevWageTypeCode || mapping?.wageTypeCode;
+			// Prefer Sage-specific, fall back to DATEV, then legacy
+			const mappedCode =
+				mapping?.sageWageTypeCode || mapping?.datevWageTypeCode || mapping?.wageTypeCode;
 			if (!mapping || !mappedCode) continue; // Skip if no mapping
 
 			const personnelNumber = this.getPersonnelNumberFromAbsence(absence, config);
 			const wageTypeCode = mappedCode;
-			const note = mapping.datevWageTypeName || mapping.wageTypeName || absence.absenceCategoryName || "";
+			const note =
+				mapping.sageWageTypeName ||
+				mapping.datevWageTypeName ||
+				mapping.wageTypeName ||
+				absence.absenceCategoryName ||
+				"";
 
-			// Calculate days (DATEV typically uses days for absences, not hours)
-			// Use startOf('day') to ensure consistent date comparison
+			// Calculate days
 			const startDate = DateTime.fromISO(absence.startDate).startOf("day");
 			const endDate = DateTime.fromISO(absence.endDate).startOf("day");
 			const days = Math.floor(endDate.diff(startDate, "days").days) + 1;
@@ -277,7 +294,6 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 				const dateData = employeeData.get(dateStr)!;
 
 				// For absences, we typically record 8 hours (full day)
-				// This could be configurable based on the employee's work schedule
 				const existing = dateData.get(wageTypeCode) || { hours: 0, note: "" };
 				dateData.set(wageTypeCode, {
 					hours: existing.hours + 8, // Full day
@@ -290,7 +306,7 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 	/**
 	 * Get personnel number from work period based on config
 	 */
-	private getPersonnelNumber(period: WorkPeriodData, config: DatevLohnConfig): string {
+	private getPersonnelNumber(period: WorkPeriodData, config: SageLohnConfig): string {
 		if (config.personnelNumberType === "employeeNumber") {
 			if (period.employeeNumber) {
 				return period.employeeNumber;
@@ -306,7 +322,7 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 	/**
 	 * Get personnel number from absence based on config
 	 */
-	private getPersonnelNumberFromAbsence(absence: AbsenceData, config: DatevLohnConfig): string {
+	private getPersonnelNumberFromAbsence(absence: AbsenceData, config: SageLohnConfig): string {
 		if (config.personnelNumberType === "employeeNumber") {
 			if (absence.employeeNumber) {
 				return absence.employeeNumber;
@@ -322,8 +338,8 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 	/**
 	 * Generate CSV header row
 	 */
-	private generateHeaderRow(): string {
-		// DATEV Lohn standard columns
+	private generateHeaderRow(config: SageLohnConfig): string {
+		// Sage uses same column names as DATEV
 		return [
 			"Personalnummer",
 			"Lohnart",
@@ -344,18 +360,19 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 		hours: number,
 		dateStr: string,
 		note: string,
+		config: SageLohnConfig,
 	): string {
 		return [
 			this.escapeCSV(personnelNumber),
 			this.escapeCSV(wageTypeCode),
-			this.formatHours(hours),
+			this.escapeCSV(this.formatHours(hours, config)), // Quote the hours value to handle comma decimal separator
 			this.escapeCSV(dateStr),
 			this.escapeCSV(note),
 		].join(";");
 	}
 
 	/**
-	 * Escape value for CSV (DATEV uses semicolon as separator)
+	 * Escape value for CSV (Sage uses semicolon as separator)
 	 */
 	private escapeCSV(value: string): string {
 		if (!value) return '""';
@@ -364,10 +381,16 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 	}
 
 	/**
-	 * Format hours as decimal with 2 decimal places
+	 * Format hours as decimal
+	 * DATEV-compatible: period as decimal separator (8.50)
+	 * Sage-native: comma as decimal separator (8,50)
 	 */
-	private formatHours(hours: number): string {
-		return hours.toFixed(2);
+	private formatHours(hours: number, config: SageLohnConfig): string {
+		const formatted = hours.toFixed(2);
+		if (config.outputFormat === "sage_native") {
+			return formatted.replace(".", ",");
+		}
+		return formatted;
 	}
 
 	/**
@@ -412,11 +435,11 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 		const dateStr = dateRange.start
 			? dateRange.start.toFormat("yyyy-MM")
 			: now.toFormat("yyyy-MM");
-		return `datev_lohn_${dateStr}_${now.toFormat("yyyyMMdd_HHmmss")}.csv`;
+		return `sage_lohn_${dateStr}_${now.toFormat("yyyyMMdd_HHmmss")}.csv`;
 	}
 }
 
 /**
  * Singleton instance
  */
-export const datevLohnFormatter = new DatevLohnFormatter();
+export const sageLohnFormatter = new SageLohnFormatter();
