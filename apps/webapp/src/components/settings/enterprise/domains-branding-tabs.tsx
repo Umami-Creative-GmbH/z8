@@ -62,7 +62,7 @@ export function DomainsAndBrandingTabs({
 			</TabsList>
 
 			<TabsContent value="domains" className="space-y-4">
-				<DomainManagement initialDomains={initialDomains} />
+				<DomainManagement initialDomains={initialDomains} organizationId={organizationId} />
 			</TabsContent>
 
 			<TabsContent value="branding" className="space-y-4">

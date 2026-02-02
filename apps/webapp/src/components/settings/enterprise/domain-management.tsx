@@ -15,6 +15,7 @@ import {
 	deleteDomainAction,
 	regenerateVerificationTokenAction,
 	updateDomainAuthConfigAction,
+	storeTurnstileSecretAction,
 	verifyDomainAction,
 } from "@/app/[locale]/(app)/settings/enterprise/actions";
 import {
@@ -48,9 +49,10 @@ interface Domain {
 
 interface DomainManagementProps {
 	initialDomains: Domain[];
+	organizationId: string;
 }
 
-export function DomainManagement({ initialDomains }: DomainManagementProps) {
+export function DomainManagement({ initialDomains, organizationId }: DomainManagementProps) {
 	// Since each org can only have 1 domain, we track it as a single domain
 	const [domain, setDomain] = useState<Domain | null>(initialDomains[0] ?? null);
 	const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -113,8 +115,17 @@ export function DomainManagement({ initialDomains }: DomainManagementProps) {
 		}
 	};
 
-	const handleUpdateAuthConfig = async (domainId: string, config: AuthConfig) => {
+	const handleUpdateAuthConfig = async (
+		domainId: string,
+		config: AuthConfig,
+		turnstileSecretKey?: string,
+	) => {
 		try {
+			// Store Turnstile secret in Vault if provided
+			if (turnstileSecretKey && config.turnstileSiteKey) {
+				await storeTurnstileSecretAction(turnstileSecretKey);
+			}
+
 			await updateDomainAuthConfigAction(domainId, config);
 			setDomain((prev) => (prev ? { ...prev, authConfig: config } : null));
 			toast.success("Auth configuration updated");
@@ -257,6 +268,7 @@ export function DomainManagement({ initialDomains }: DomainManagementProps) {
 					setAuthConfigDialog({ isOpen: open, domain: authConfigDialog.domain })
 				}
 				domain={authConfigDialog.domain}
+				organizationId={organizationId}
 				onSave={handleUpdateAuthConfig}
 			/>
 

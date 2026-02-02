@@ -11,6 +11,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
@@ -26,7 +27,8 @@ interface DomainAuthConfigDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	domain: Domain | null;
-	onSave: (domainId: string, config: AuthConfig) => Promise<void>;
+	organizationId: string;
+	onSave: (domainId: string, config: AuthConfig, turnstileSecretKey?: string) => Promise<void>;
 }
 
 const SOCIAL_PROVIDERS = [
@@ -40,6 +42,7 @@ export function DomainAuthConfigDialog({
 	open,
 	onOpenChange,
 	domain,
+	organizationId,
 	onSave,
 }: DomainAuthConfigDialogProps) {
 	const [config, setConfig] = useState<AuthConfig>({
@@ -48,11 +51,14 @@ export function DomainAuthConfigDialog({
 		ssoEnabled: false,
 		passkeyEnabled: true,
 	});
+	const [turnstileSecretKey, setTurnstileSecretKey] = useState("");
 	const [isSaving, setIsSaving] = useState(false);
 
 	useEffect(() => {
 		if (domain) {
 			setConfig(domain.authConfig);
+			// Clear secret key when domain changes (we don't fetch it back for security)
+			setTurnstileSecretKey("");
 		}
 	}, [domain]);
 
@@ -70,7 +76,8 @@ export function DomainAuthConfigDialog({
 	const handleSave = async () => {
 		setIsSaving(true);
 		try {
-			await onSave(domain.id, config);
+			// Pass the secret key only if it was entered (non-empty)
+			await onSave(domain.id, config, turnstileSecretKey || undefined);
 		} finally {
 			setIsSaving(false);
 		}
@@ -165,6 +172,46 @@ export function DomainAuthConfigDialog({
 								setConfig((prev) => ({ ...prev, passkeyEnabled: checked }))
 							}
 						/>
+					</div>
+
+					<Separator />
+
+					{/* Cloudflare Turnstile */}
+					<div className="space-y-3">
+						<div>
+							<Label>Cloudflare Turnstile</Label>
+							<p className="text-sm text-muted-foreground">
+								Bot protection for auth forms. Required for enterprise domains.
+							</p>
+						</div>
+						<div className="space-y-3">
+							<div className="space-y-1.5">
+								<Label htmlFor="turnstile-site-key">Site Key</Label>
+								<Input
+									id="turnstile-site-key"
+									value={config.turnstileSiteKey ?? ""}
+									onChange={(e) =>
+										setConfig((prev) => ({ ...prev, turnstileSiteKey: e.target.value || undefined }))
+									}
+									placeholder="0x4AAA..."
+								/>
+							</div>
+							<div className="space-y-1.5">
+								<Label htmlFor="turnstile-secret-key">Secret Key</Label>
+								<Input
+									id="turnstile-secret-key"
+									type="password"
+									value={turnstileSecretKey}
+									onChange={(e) => setTurnstileSecretKey(e.target.value)}
+									placeholder={config.turnstileSiteKey ? "••••••••••••••••" : "Enter secret key"}
+								/>
+								<p className="text-xs text-muted-foreground">
+									{config.turnstileSiteKey
+										? "Leave empty to keep existing secret key"
+										: "Required when setting a site key"}
+								</p>
+							</div>
+						</div>
 					</div>
 				</div>
 

@@ -83,16 +83,15 @@ export function defineAbilityFor(principal: PrincipalContext): AppAbility {
 			can("manage", "DemoData");
 		}
 
-		// Admin has most org control, but not billing
+		// Admin has most org control, including billing
 		if (role === "admin") {
 			can("read", "Organization");
 			can("update", "Organization");
 			can("manage", "OrgSettings");
+			can("manage", "OrgBilling"); // Admins can manage billing too
 			can("manage", "OrgWebhooks");
 			can("manage", "OrgMembers");
 			can("manage", "OrgIntegrations");
-			// Cannot manage billing - that's owner only
-			cannot("manage", "OrgBilling");
 			// Policy management
 			can("manage", "WorkPolicy");
 			can("manage", "VacationPolicy");
@@ -136,6 +135,7 @@ export function defineAbilityFor(principal: PrincipalContext): AppAbility {
 			can("manage", "Schedule");
 			can("manage", "Calendar");
 			can("manage", "Surcharge");
+			can("manage", "Holiday");
 		}
 
 		// Manager - can manage direct reports + approvals

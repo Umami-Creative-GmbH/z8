@@ -10,6 +10,7 @@ import {
 	IconChartBar,
 	IconClock,
 	IconClockEdit,
+	IconCreditCard,
 	IconDatabaseExport,
 	IconDroplet,
 	IconGavel,
@@ -66,4 +67,5 @@ export const SETTINGS_ICON_MAP: Record<
 	radar: IconRadar,
 	target: IconTarget,
 	certificate: IconCertificate,
+	"credit-card": IconCreditCard,
 };

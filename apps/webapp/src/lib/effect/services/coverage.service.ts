@@ -5,28 +5,33 @@
  * scheduled shifts vs actual clocked-in employees.
  */
 
-import { and, eq, gte, lte, isNull, sql, inArray } from "drizzle-orm";
+import { and, eq, gte, inArray, lte, sql } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { DateTime } from "luxon";
-import { shift, workPeriod, employee, employeeManagers, locationSubarea, location, coverageRule, coverageSettings } from "@/db/schema";
-import { DatabaseError, NotFoundError, ValidationError } from "../errors";
-import { DatabaseService, DatabaseServiceLive } from "./database.service";
 import {
-	calculateCoverage,
-	type ShiftForCoverage,
+	coverageRule,
+	coverageSettings,
+	employeeManagers,
+	location,
+	locationSubarea,
+	shift,
+	workPeriod,
+} from "@/db/schema";
+import {
 	type CoverageCalculationResult,
+	calculateCoverage,
 	extractGaps,
+	type ShiftForCoverage,
 } from "@/lib/coverage/application/calculators/coverage-calculator";
 import {
 	type CoverageRuleEntity,
-	toCoverageRuleEntity,
 	type DayOfWeek,
+	toCoverageRuleEntity,
 } from "@/lib/coverage/domain/entities/coverage-rule";
-import type {
-	HeatmapDataPoint,
-	CoverageSnapshot as DomainCoverageSnapshot,
-} from "@/lib/coverage/domain/entities/coverage-snapshot";
+import type { HeatmapDataPoint } from "@/lib/coverage/domain/entities/coverage-snapshot";
 import { snapshotToHeatmapDataPoint } from "@/lib/coverage/domain/entities/coverage-snapshot";
+import type { DatabaseError, NotFoundError, ValidationError } from "../errors";
+import { DatabaseService, DatabaseServiceLive } from "./database.service";
 
 // ============================================
 // TYPES
@@ -170,16 +175,24 @@ export class CoverageService extends Context.Tag("CoverageService")<
 		/** Create a coverage rule */
 		readonly createCoverageRule: (
 			input: CreateCoverageRuleInput,
-		) => Effect.Effect<CoverageRuleWithRelations, ValidationError | DatabaseError>;
+		) => Effect.Effect<
+			CoverageRuleWithRelations,
+			ValidationError | DatabaseError
+		>;
 
 		/** Update a coverage rule */
 		readonly updateCoverageRule: (
 			id: string,
 			input: UpdateCoverageRuleInput,
-		) => Effect.Effect<CoverageRuleWithRelations, NotFoundError | ValidationError | DatabaseError>;
+		) => Effect.Effect<
+			CoverageRuleWithRelations,
+			NotFoundError | ValidationError | DatabaseError
+		>;
 
 		/** Delete a coverage rule */
-		readonly deleteCoverageRule: (id: string) => Effect.Effect<void, NotFoundError | DatabaseError>;
+		readonly deleteCoverageRule: (
+			id: string,
+		) => Effect.Effect<void, NotFoundError | DatabaseError>;
 
 		/** Get all coverage rules for an organization */
 		readonly getCoverageRules: (
@@ -205,7 +218,10 @@ export class CoverageService extends Context.Tag("CoverageService")<
 			organizationId: string;
 			startDate: Date;
 			endDate: Date;
-		}) => Effect.Effect<{ canPublish: boolean; gaps: TargetCoverageGap[] }, DatabaseError>;
+		}) => Effect.Effect<
+			{ canPublish: boolean; gaps: TargetCoverageGap[] },
+			DatabaseError
+		>;
 
 		// ============================================
 		// COVERAGE SETTINGS METHODS
@@ -228,7 +244,10 @@ export class CoverageService extends Context.Tag("CoverageService")<
 // HELPER FUNCTIONS
 // ============================================
 
-function calculateStatus(scheduled: number, actual: number): "understaffed" | "adequate" | "overstaffed" {
+function calculateStatus(
+	scheduled: number,
+	actual: number,
+): "understaffed" | "adequate" | "overstaffed" {
 	const variance = actual - scheduled;
 	if (variance < 0) return "understaffed";
 	if (variance > 0) return "overstaffed";
@@ -246,7 +265,11 @@ function minutesToTime(minutes: number): string {
 	return `${hours.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}`;
 }
 
-function generateTimeSlots(startTime: string, endTime: string, intervalMinutes = 60): string[] {
+function generateTimeSlots(
+	startTime: string,
+	endTime: string,
+	intervalMinutes = 60,
+): string[] {
 	const slots: string[] = [];
 	let current = timeToMinutes(startTime);
 	const end = timeToMinutes(endTime);
@@ -312,8 +335,15 @@ export const CoverageServiceLive = Layer.effect(
 		/**
 		 * Get subareas for organization (optionally filtered by managed employees' shifts)
 		 */
-		const getSubareas = (organizationId: string): Effect.Effect<
-			Array<{ id: string; name: string; locationId: string; locationName: string }>,
+		const getSubareas = (
+			organizationId: string,
+		): Effect.Effect<
+			Array<{
+				id: string;
+				name: string;
+				locationId: string;
+				locationName: string;
+			}>,
 			DatabaseError
 		> =>
 			dbService.query("getSubareas", async () => {
@@ -341,7 +371,9 @@ export const CoverageServiceLive = Layer.effect(
 					// Get managed employee IDs if manager filter provided
 					let managedEmployeeIds: string[] | undefined;
 					if (managerId) {
-						managedEmployeeIds = yield* _(getManagedEmployeeIds(managerId, organizationId));
+						managedEmployeeIds = yield* _(
+							getManagedEmployeeIds(managerId, organizationId),
+						);
 						if (managedEmployeeIds.length === 0) {
 							return {
 								date,
@@ -397,7 +429,9 @@ export const CoverageServiceLive = Layer.effect(
 							];
 
 							if (managedEmployeeIds) {
-								conditions.push(inArray(workPeriod.employeeId, managedEmployeeIds));
+								conditions.push(
+									inArray(workPeriod.employeeId, managedEmployeeIds),
+								);
 							}
 
 							return await dbService.db.query.workPeriod.findMany({
@@ -421,7 +455,9 @@ export const CoverageServiceLive = Layer.effect(
 
 					for (const subarea of subareas) {
 						// Get shifts for this subarea
-						const subareaShifts = scheduledShifts.filter((s) => s.subareaId === subarea.id);
+						const subareaShifts = scheduledShifts.filter(
+							(s) => s.subareaId === subarea.id,
+						);
 						if (subareaShifts.length === 0) continue;
 
 						// Find time range for this subarea
@@ -443,13 +479,19 @@ export const CoverageServiceLive = Layer.effect(
 								const shiftStart = timeToMinutes(s.startTime);
 								const shiftEnd = timeToMinutes(s.endTime);
 								// Shift overlaps with slot
-								return shiftStart < slotEndMins && shiftEnd > slotStartMins && s.employeeId !== null;
+								return (
+									shiftStart < slotEndMins &&
+									shiftEnd > slotStartMins &&
+									s.employeeId !== null
+								);
 							});
 
 							// Count clocked-in employees for this slot
 							// For simplicity, check if their clock-in time falls within this slot
 							const clockedInSlot = clockedInPeriods.filter((wp) => {
-								const clockInTime = DateTime.fromJSDate(wp.startTime).setZone(timezone);
+								const clockInTime = DateTime.fromJSDate(wp.startTime).setZone(
+									timezone,
+								);
 								const clockInMins = clockInTime.hour * 60 + clockInTime.minute;
 								// Consider clocked in if they started before slot end
 								return clockInMins < slotEndMins;
@@ -467,7 +509,9 @@ export const CoverageServiceLive = Layer.effect(
 
 							// Add scheduled employees
 							for (const s of scheduledInSlot) {
-								const isClockedIn = clockedInSlot.some((wp) => wp.employeeId === s.employeeId);
+								const isClockedIn = clockedInSlot.some(
+									(wp) => wp.employeeId === s.employeeId,
+								);
 								employees.push({
 									id: s.employeeId!,
 									name: s.employee?.user?.name || "Unknown",
@@ -513,12 +557,21 @@ export const CoverageServiceLive = Layer.effect(
 
 			getCoverageGaps: (params) =>
 				Effect.gen(function* (_) {
-					const { organizationId, startDate, endDate, timezone, threshold = 1, managerId } = params;
+					const {
+						organizationId,
+						startDate,
+						endDate,
+						timezone,
+						threshold = 1,
+						managerId,
+					} = params;
 
 					// Get managed employee IDs if manager filter provided
 					let managedEmployeeIds: string[] | undefined;
 					if (managerId) {
-						managedEmployeeIds = yield* _(getManagedEmployeeIds(managerId, organizationId));
+						managedEmployeeIds = yield* _(
+							getManagedEmployeeIds(managerId, organizationId),
+						);
 						if (managedEmployeeIds.length === 0) {
 							return [];
 						}
@@ -559,7 +612,9 @@ export const CoverageServiceLive = Layer.effect(
 							];
 
 							if (managedEmployeeIds) {
-								conditions.push(inArray(workPeriod.employeeId, managedEmployeeIds));
+								conditions.push(
+									inArray(workPeriod.employeeId, managedEmployeeIds),
+								);
 							}
 
 							return await dbService.db.query.workPeriod.findMany({
@@ -584,7 +639,9 @@ export const CoverageServiceLive = Layer.effect(
 					// Group work periods by date
 					const workPeriodsByDate = new Map<string, typeof clockedInPeriods>();
 					for (const wp of clockedInPeriods) {
-						const dateKey = DateTime.fromJSDate(wp.startTime).setZone(timezone).toISODate();
+						const dateKey = DateTime.fromJSDate(wp.startTime)
+							.setZone(timezone)
+							.toISODate();
 						const existing = workPeriodsByDate.get(dateKey!) || [];
 						existing.push(wp);
 						workPeriodsByDate.set(dateKey!, existing);
@@ -597,12 +654,16 @@ export const CoverageServiceLive = Layer.effect(
 						if (!subarea) continue;
 
 						// Get unique scheduled employee IDs
-						const scheduledEmployeeIds = new Set(shifts.map((s) => s.employeeId).filter(Boolean));
+						const scheduledEmployeeIds = new Set(
+							shifts.map((s) => s.employeeId).filter(Boolean),
+						);
 						const scheduled = scheduledEmployeeIds.size;
 
 						// Get clocked-in employees for this date
 						const dayWorkPeriods = workPeriodsByDate.get(dateStr) || [];
-						const clockedInEmployeeIds = new Set(dayWorkPeriods.map((wp) => wp.employeeId));
+						const clockedInEmployeeIds = new Set(
+							dayWorkPeriods.map((wp) => wp.employeeId),
+						);
 						const clockedIn = clockedInEmployeeIds.size;
 
 						const shortage = scheduled - clockedIn;
@@ -690,7 +751,9 @@ export const CoverageServiceLive = Layer.effect(
 									...(input.minimumStaffCount !== undefined && {
 										minimumStaffCount: input.minimumStaffCount,
 									}),
-									...(input.priority !== undefined && { priority: input.priority }),
+									...(input.priority !== undefined && {
+										priority: input.priority,
+									}),
 									updatedBy: input.updatedBy,
 									updatedAt: new Date(),
 								})
@@ -723,7 +786,9 @@ export const CoverageServiceLive = Layer.effect(
 				Effect.gen(function* (_) {
 					yield* _(
 						dbService.query("deleteCoverageRule", async () => {
-							await dbService.db.delete(coverageRule).where(eq(coverageRule.id, id));
+							await dbService.db
+								.delete(coverageRule)
+								.where(eq(coverageRule.id, id));
 						}),
 					);
 				}),
@@ -749,7 +814,10 @@ export const CoverageServiceLive = Layer.effect(
 										},
 									},
 								},
-								orderBy: (rule, { asc }) => [asc(rule.dayOfWeek), asc(rule.startTime)],
+								orderBy: (rule, { asc }) => [
+									asc(rule.dayOfWeek),
+									asc(rule.startTime),
+								],
 							});
 						}),
 					);
@@ -785,7 +853,9 @@ export const CoverageServiceLive = Layer.effect(
 					const { organizationId, startDate, endDate, subareaIds } = params;
 
 					// Fetch rules
-					const rulesConditions = [eq(coverageRule.organizationId, organizationId)];
+					const rulesConditions = [
+						eq(coverageRule.organizationId, organizationId),
+					];
 					if (subareaIds && subareaIds.length > 0) {
 						rulesConditions.push(inArray(coverageRule.subareaId, subareaIds));
 					}
@@ -834,7 +904,10 @@ export const CoverageServiceLive = Layer.effect(
 					);
 
 					// Get unique subareas from rules
-					const subareaMap = new Map<string, { id: string; name: string; locationName?: string }>();
+					const subareaMap = new Map<
+						string,
+						{ id: string; name: string; locationName?: string }
+					>();
 					for (const rule of rules) {
 						if (rule.subarea && !subareaMap.has(rule.subareaId)) {
 							subareaMap.set(rule.subareaId, {
@@ -868,7 +941,9 @@ export const CoverageServiceLive = Layer.effect(
 							const dateStr = date.toISOString().split("T")[0];
 							const subareaShifts: ShiftForCoverage[] = shifts
 								.filter((s) => {
-									const shiftDateStr = new Date(s.date).toISOString().split("T")[0];
+									const shiftDateStr = new Date(s.date)
+										.toISOString()
+										.split("T")[0];
 									return s.subareaId === subareaId && shiftDateStr === dateStr;
 								})
 								.map((s) => ({
@@ -965,7 +1040,10 @@ export const CoverageServiceLive = Layer.effect(
 					const allShifts = [...draftShifts, ...publishedShifts];
 
 					// Get unique subareas
-					const subareaMap = new Map<string, { id: string; name: string; locationName?: string }>();
+					const subareaMap = new Map<
+						string,
+						{ id: string; name: string; locationName?: string }
+					>();
 					for (const rule of rules) {
 						if (rule.subarea && !subareaMap.has(rule.subareaId)) {
 							subareaMap.set(rule.subareaId, {
@@ -999,7 +1077,9 @@ export const CoverageServiceLive = Layer.effect(
 							const dateStr = date.toISOString().split("T")[0];
 							const subareaShifts: ShiftForCoverage[] = allShifts
 								.filter((s) => {
-									const shiftDateStr = new Date(s.date).toISOString().split("T")[0];
+									const shiftDateStr = new Date(s.date)
+										.toISOString()
+										.split("T")[0];
 									return s.subareaId === subareaId && shiftDateStr === dateStr;
 								})
 								.map((s) => ({

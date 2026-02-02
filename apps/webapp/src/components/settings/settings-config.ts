@@ -32,7 +32,8 @@ export type SettingsIconName =
 	| "calendar-sync"
 	| "radar"
 	| "target"
-	| "certificate";
+	| "certificate"
+	| "credit-card";
 
 export interface SettingsEntry {
 	id: string;
@@ -46,6 +47,8 @@ export interface SettingsEntry {
 	group: SettingsGroup;
 	/** Feature flag that must be enabled for this setting to be accessible */
 	requiredFeature?: FeatureFlag;
+	/** If true, only show when BILLING_ENABLED=true (checked at runtime) */
+	requiresBilling?: boolean;
 }
 
 export interface SettingsGroupConfig {
@@ -143,6 +146,18 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		icon: "building",
 		adminOnly: false,
 		group: "organization",
+	},
+	{
+		id: "billing",
+		titleKey: "settings.billing.title",
+		titleDefault: "Billing & Subscription",
+		descriptionKey: "settings.billing.description",
+		descriptionDefault: "Manage your subscription, payment methods, and invoices",
+		href: "/settings/billing",
+		icon: "credit-card",
+		adminOnly: true,
+		group: "organization",
+		requiresBilling: true,
 	},
 	{
 		id: "employees",
@@ -428,8 +443,14 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 	},
 ];
 
-export function getVisibleSettings(isAdmin: boolean): SettingsEntry[] {
-	return SETTINGS_ENTRIES.filter((entry) => !entry.adminOnly || isAdmin);
+export function getVisibleSettings(isAdmin: boolean, billingEnabled = false): SettingsEntry[] {
+	return SETTINGS_ENTRIES.filter((entry) => {
+		// Check admin requirement
+		if (entry.adminOnly && !isAdmin) return false;
+		// Check billing requirement (hide completely when billing disabled)
+		if (entry.requiresBilling && !billingEnabled) return false;
+		return true;
+	});
 }
 
 export function getVisibleGroups(isAdmin: boolean): SettingsGroupConfig[] {

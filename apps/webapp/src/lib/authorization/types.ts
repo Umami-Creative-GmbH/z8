@@ -81,7 +81,8 @@ export type WorkforceSubject =
 	| "AbsenceAllowance" // Absence allowance management
 	| "Schedule" // Scheduling
 	| "Calendar" // Calendar access
-	| "Surcharge"; // Surcharge rules
+	| "Surcharge" // Surcharge rules
+	| "Holiday"; // Holiday management
 
 /**
  * All subjects combined
@@ -217,6 +218,7 @@ export type SubjectTypeMap = {
 	Schedule: TeamScopedSubject;
 	Calendar: TeamScopedSubject;
 	Surcharge: OrgScopedSubject;
+	Holiday: OrgScopedSubject;
 
 	// Wildcard
 	all: "all";

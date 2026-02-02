@@ -9,6 +9,7 @@ export interface CSPDirectives {
 	"img-src"?: string[];
 	"font-src"?: string[];
 	"connect-src"?: string[];
+	"frame-src"?: string[];
 	"worker-src"?: string[];
 	"frame-ancestors"?: string[];
 	"form-action"?: string[];

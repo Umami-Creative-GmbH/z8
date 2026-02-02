@@ -59,3 +59,5 @@ export * from "./teams-integration";
 export * from "./platform-admin";
 // Skills & qualifications
 export * from "./skill";
+// Billing & subscriptions (Stripe integration)
+export * from "./billing";

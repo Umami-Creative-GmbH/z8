@@ -49,6 +49,19 @@ export class AppAccessDeniedError extends Data.TaggedError("AppAccessDeniedError
 	userId: string;
 }> {}
 
+export class StripeError extends Data.TaggedError("StripeError")<{
+	message: string;
+	operation: string;
+	stripeCode?: string;
+	cause?: unknown;
+}> {}
+
+export class BillingError extends Data.TaggedError("BillingError")<{
+	message: string;
+	reason: "subscription_required" | "trial_expired" | "payment_failed" | "canceled" | "billing_disabled";
+	organizationId?: string;
+}> {}
+
 export type AnyAppError =
 	| ValidationError
 	| AuthenticationError
@@ -57,4 +70,6 @@ export type AnyAppError =
 	| EmailError
 	| NotFoundError
 	| ConflictError
-	| AppAccessDeniedError;
+	| AppAccessDeniedError
+	| StripeError
+	| BillingError;

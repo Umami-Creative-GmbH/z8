@@ -9,6 +9,10 @@ export type AuthConfig = {
 	ssoEnabled: boolean;
 	ssoProviderId?: string; // Reference to ssoProvider.providerId
 	passkeyEnabled: boolean;
+	// Cloudflare Turnstile (enterprise domains - required, no fallback to global)
+	// Site key is public, stored here. Secret key stored in Vault at:
+	// secret/organizations/{orgId}/turnstile/secret_key
+	turnstileSiteKey?: string;
 };
 
 // Type definitions for JSON fields

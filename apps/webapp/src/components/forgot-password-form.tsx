@@ -2,14 +2,17 @@
 
 import { IconLoader2 } from "@tabler/icons-react";
 import { useTolgee, useTranslate } from "@tolgee/react";
-import { useState } from "react";
+import { useState, useCallback, useRef } from "react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useDomainAuth, useTurnstile } from "@/lib/auth/domain-auth-context";
 import { authClient } from "@/lib/auth-client";
+import { verifyTurnstileWithServer } from "@/lib/turnstile/verify";
 import { Link } from "@/navigation";
 import { AuthFormWrapper } from "./auth-form-wrapper";
+import { TurnstileWidget, type TurnstileRef } from "./turnstile-widget";
 
 const forgotPasswordSchema = z.object({
 	email: z.string().email("Invalid email address"),
@@ -26,6 +29,32 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
 		email: "",
 	});
 	const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+	// Turnstile state
+	const domainAuth = useDomainAuth();
+	const turnstileConfig = useTurnstile();
+	const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+	const turnstileRef = useRef<TurnstileRef>(null);
+
+	const handleTurnstileVerify = useCallback((token: string) => {
+		setTurnstileToken(token);
+	}, []);
+
+	const handleTurnstileError = useCallback(() => {
+		setTurnstileToken(null);
+		setError(t("auth.turnstile-error", "Verification failed. Please try again."));
+		turnstileRef.current?.reset();
+	}, [t]);
+
+	const handleTurnstileExpire = useCallback(() => {
+		setTurnstileToken(null);
+		turnstileRef.current?.reset();
+	}, []);
+
+	const handleTurnstileTimeout = useCallback(() => {
+		setTurnstileToken(null);
+		turnstileRef.current?.reset();
+	}, []);
 
 	const handleChange = (field: string, value: string) => {
 		setFormData((prev) => ({ ...prev, [field]: value }));
@@ -101,7 +130,26 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
 			return;
 		}
 
+		// Verify Turnstile if enabled
+		if (turnstileConfig?.enabled && !turnstileToken) {
+			setError(t("auth.turnstile-required", "Please complete the verification."));
+			setIsLoading(false);
+			return;
+		}
+
 		try {
+			// Verify Turnstile token server-side if enabled
+			if (turnstileConfig?.enabled && turnstileToken) {
+				const verifyResult = await verifyTurnstileWithServer(turnstileToken);
+				if (!verifyResult.success) {
+					setError(verifyResult.error || t("auth.turnstile-failed", "Verification failed."));
+					setTurnstileToken(null);
+					turnstileRef.current?.reset();
+					setIsLoading(false);
+					return;
+				}
+			}
+
 			// Better Auth forgot password API
 			const response = await authClient.requestPasswordReset({
 				email: formData.email,
@@ -113,6 +161,11 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
 					response.error.message ||
 						t("auth.forgot-password-error", "Failed to send reset email. Please try again."),
 				);
+				// Reset Turnstile for retry (tokens are single-use)
+				if (turnstileConfig?.enabled) {
+					setTurnstileToken(null);
+					turnstileRef.current?.reset();
+				}
 			} else {
 				setSuccess(true);
 			}
@@ -122,6 +175,11 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
 					? err.message
 					: t("auth.forgot-password-error", "An error occurred. Please try again."),
 			);
+			// Reset Turnstile for retry (tokens are single-use)
+			if (turnstileConfig?.enabled) {
+				setTurnstileToken(null);
+				turnstileRef.current?.reset();
+			}
 		} finally {
 			setIsLoading(false);
 		}
@@ -183,7 +241,26 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
 				/>
 				{fieldErrors.email ? <p className="text-destructive text-sm">{fieldErrors.email}</p> : null}
 			</div>
-			<Button className="w-full" disabled={isLoading} type="submit">
+
+			{/* Turnstile widget */}
+			{turnstileConfig?.enabled && turnstileConfig.siteKey && (
+				<div className="flex justify-center">
+					<TurnstileWidget
+						ref={turnstileRef}
+						siteKey={turnstileConfig.siteKey}
+						onVerify={handleTurnstileVerify}
+						onError={handleTurnstileError}
+						onExpire={handleTurnstileExpire}
+						onTimeout={handleTurnstileTimeout}
+					/>
+				</div>
+			)}
+
+			<Button
+				className="w-full"
+				disabled={isLoading || (turnstileConfig?.enabled && !turnstileToken)}
+				type="submit"
+			>
 				{isLoading ? (
 					<>
 						<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />

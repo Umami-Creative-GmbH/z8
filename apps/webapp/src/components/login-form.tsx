@@ -3,7 +3,7 @@
 import { IconFingerprint, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { Key } from "lucide-react";
-import { useCallback, useEffect, useReducer } from "react";
+import { useCallback, useEffect, useReducer, useRef } from "react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,12 +11,14 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { useDomainAuth } from "@/lib/auth/domain-auth-context";
+import { useDomainAuth, useTurnstile } from "@/lib/auth/domain-auth-context";
 import { authClient } from "@/lib/auth-client";
 import { useEnabledProviders } from "@/lib/hooks/use-enabled-providers";
+import { verifyTurnstileWithServer } from "@/lib/turnstile/verify";
 import { getOnboardingStepPath } from "@/lib/validations/onboarding";
 import { Link, useRouter } from "@/navigation";
 import { AuthFormWrapper } from "./auth-form-wrapper";
+import { TurnstileWidget, type TurnstileRef } from "./turnstile-widget";
 
 const loginSchema = z.object({
 	email: z.string().email("Invalid email address"),
@@ -33,6 +35,7 @@ type FormState = {
 	requires2FA: boolean;
 	otpValue: string;
 	trustDevice: boolean;
+	turnstileToken: string | null;
 };
 
 type FormAction =
@@ -45,6 +48,7 @@ type FormAction =
 	| { type: "SET_REQUIRES_2FA"; requires2FA: boolean }
 	| { type: "SET_OTP"; value: string }
 	| { type: "SET_TRUST_DEVICE"; trustDevice: boolean }
+	| { type: "SET_TURNSTILE_TOKEN"; token: string | null }
 	| { type: "RESET_LOADING" };
 
 const initialState: FormState = {
@@ -56,6 +60,7 @@ const initialState: FormState = {
 	requires2FA: false,
 	otpValue: "",
 	trustDevice: false,
+	turnstileToken: null,
 };
 
 function formReducer(state: FormState, action: FormAction): FormState {
@@ -92,6 +97,8 @@ function formReducer(state: FormState, action: FormAction): FormState {
 			return { ...state, otpValue: action.value };
 		case "SET_TRUST_DEVICE":
 			return { ...state, trustDevice: action.trustDevice };
+		case "SET_TURNSTILE_TOKEN":
+			return { ...state, turnstileToken: action.token };
 		case "RESET_LOADING":
 			return { ...state, isLoading: false };
 		default:
@@ -106,13 +113,46 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 	const { enabledProviders, isLoading: providersLoading } = useEnabledProviders();
 
 	// Destructure for easier access
-	const { email, password, fieldErrors, error, isLoading, requires2FA, otpValue, trustDevice } =
-		state;
+	const {
+		email,
+		password,
+		fieldErrors,
+		error,
+		isLoading,
+		requires2FA,
+		otpValue,
+		trustDevice,
+		turnstileToken,
+	} = state;
 
 	// Domain auth context for custom domains
 	const domainAuth = useDomainAuth();
 	const authConfig = domainAuth?.authConfig;
 	const branding = domainAuth?.branding;
+	const turnstileConfig = useTurnstile();
+
+	// Turnstile ref for programmatic control
+	const turnstileRef = useRef<TurnstileRef>(null);
+
+	// Turnstile handlers
+	const handleTurnstileVerify = useCallback((token: string) => {
+		dispatch({ type: "SET_TURNSTILE_TOKEN", token });
+	}, []);
+
+	const handleTurnstileError = useCallback(() => {
+		dispatch({ type: "SET_TURNSTILE_TOKEN", token: null });
+		turnstileRef.current?.reset();
+	}, []);
+
+	const handleTurnstileExpire = useCallback(() => {
+		dispatch({ type: "SET_TURNSTILE_TOKEN", token: null });
+		turnstileRef.current?.reset();
+	}, []);
+
+	const handleTurnstileTimeout = useCallback(() => {
+		dispatch({ type: "SET_TURNSTILE_TOKEN", token: null });
+		turnstileRef.current?.reset();
+	}, []);
 
 	// Determine which auth methods are enabled
 	const showEmailPassword = authConfig?.emailPasswordEnabled ?? true;
@@ -206,7 +246,32 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 			return;
 		}
 
+		// Verify Turnstile if enabled
+		if (turnstileConfig?.enabled && !turnstileToken) {
+			dispatch({
+				type: "SET_ERROR",
+				error: t("auth.turnstile-required", "Please complete the verification."),
+			});
+			dispatch({ type: "SET_LOADING", loading: false });
+			return;
+		}
+
 		try {
+			// Verify Turnstile token server-side if enabled
+			if (turnstileConfig?.enabled && turnstileToken) {
+				const verifyResult = await verifyTurnstileWithServer(turnstileToken);
+				if (!verifyResult.success) {
+					dispatch({
+						type: "SET_ERROR",
+						error: verifyResult.error || t("auth.turnstile-failed", "Verification failed."),
+					});
+					dispatch({ type: "SET_TURNSTILE_TOKEN", token: null });
+					turnstileRef.current?.reset();
+					dispatch({ type: "SET_LOADING", loading: false });
+					return;
+				}
+			}
+
 			const signInResult = await authClient.signIn.email(
 				{
 					email,
@@ -247,6 +312,11 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 						error: signInResult.error.message || t("auth.login-failed", "Failed to sign in"),
 					});
 				}
+				// Reset Turnstile for retry (tokens are single-use)
+				if (turnstileConfig?.enabled) {
+					dispatch({ type: "SET_TURNSTILE_TOKEN", token: null });
+					turnstileRef.current?.reset();
+				}
 			} else {
 				// Check if 2FA is required
 				if ((signInResult.data as any)?.twoFactorRedirect) {
@@ -283,6 +353,11 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 						? err.message
 						: t("auth.login-error", "An error occurred during sign in"),
 			});
+			// Reset Turnstile for retry (tokens are single-use)
+			if (turnstileConfig?.enabled) {
+				dispatch({ type: "SET_TURNSTILE_TOKEN", token: null });
+				turnstileRef.current?.reset();
+			}
 		}
 	};
 
@@ -577,16 +652,36 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 					</Button>
 				</>
 			) : showEmailPassword ? (
-				<Button className="w-full" disabled={isLoading} type="submit">
-					{isLoading ? (
-						<>
-							<IconLoader2 className="size-4 animate-spin" />
-							{t("auth.logging-in", "Logging in...")}
-						</>
-					) : (
-						t("auth.login", "Login")
+				<>
+					{/* Turnstile widget */}
+					{turnstileConfig?.enabled && turnstileConfig.siteKey && (
+						<div className="flex justify-center">
+							<TurnstileWidget
+								ref={turnstileRef}
+								siteKey={turnstileConfig.siteKey}
+								onVerify={handleTurnstileVerify}
+								onError={handleTurnstileError}
+								onExpire={handleTurnstileExpire}
+								onTimeout={handleTurnstileTimeout}
+							/>
+						</div>
 					)}
-				</Button>
+
+					<Button
+						className="w-full"
+						disabled={isLoading || (turnstileConfig?.enabled && !turnstileToken)}
+						type="submit"
+					>
+						{isLoading ? (
+							<>
+								<IconLoader2 className="size-4 animate-spin" />
+								{t("auth.logging-in", "Logging in...")}
+							</>
+						) : (
+							t("auth.login", "Login")
+						)}
+					</Button>
+				</>
 			) : null}
 			{!requires2FA && showEmailPassword && (
 				<div className="-mt-6 text-center">

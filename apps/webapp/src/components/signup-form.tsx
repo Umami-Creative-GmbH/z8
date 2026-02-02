@@ -2,20 +2,22 @@
 
 import { IconBuilding, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { z } from "zod";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { useDomainAuth } from "@/lib/auth/domain-auth-context";
+import { useDomainAuth, useTurnstile } from "@/lib/auth/domain-auth-context";
 import { authClient } from "@/lib/auth-client";
 import { useEnabledProviders } from "@/lib/hooks/use-enabled-providers";
+import { verifyTurnstileWithServer } from "@/lib/turnstile/verify";
 import { cn } from "@/lib/utils";
 import { checkPasswordRequirements, passwordSchema } from "@/lib/validations/password";
 import { Link, useRouter } from "@/navigation";
 import { AuthFormWrapper } from "./auth-form-wrapper";
+import { TurnstileWidget, type TurnstileRef } from "./turnstile-widget";
 import {
 	storePendingInviteCode,
 	validateInviteCode,
@@ -50,6 +52,31 @@ export function SignupForm({ className, inviteCode, ...props }: SignupFormProps)
 	});
 	const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 	const { enabledProviders, isLoading: providersLoading } = useEnabledProviders();
+
+	// Turnstile state
+	const turnstileConfig = useTurnstile();
+	const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+	const turnstileRef = useRef<TurnstileRef>(null);
+
+	const handleTurnstileVerify = useCallback((token: string) => {
+		setTurnstileToken(token);
+	}, []);
+
+	const handleTurnstileError = useCallback(() => {
+		setTurnstileToken(null);
+		setError(t("auth.turnstile-error", "Verification failed. Please try again."));
+		turnstileRef.current?.reset();
+	}, [t]);
+
+	const handleTurnstileExpire = useCallback(() => {
+		setTurnstileToken(null);
+		turnstileRef.current?.reset();
+	}, []);
+
+	const handleTurnstileTimeout = useCallback(() => {
+		setTurnstileToken(null);
+		turnstileRef.current?.reset();
+	}, []);
 
 	// Invite code state
 	const [organizationName, setOrganizationName] = useState<string | null>(null);
@@ -195,7 +222,26 @@ export function SignupForm({ className, inviteCode, ...props }: SignupFormProps)
 			return;
 		}
 
+		// Verify Turnstile if enabled
+		if (turnstileConfig?.enabled && !turnstileToken) {
+			setError(t("auth.turnstile-required", "Please complete the verification."));
+			setIsLoading(false);
+			return;
+		}
+
 		try {
+			// Verify Turnstile token server-side if enabled
+			if (turnstileConfig?.enabled && turnstileToken) {
+				const verifyResult = await verifyTurnstileWithServer(turnstileToken);
+				if (!verifyResult.success) {
+					setError(verifyResult.error || t("auth.turnstile-failed", "Verification failed."));
+					setTurnstileToken(null);
+					turnstileRef.current?.reset();
+					setIsLoading(false);
+					return;
+				}
+			}
+
 			const signupResult = await authClient.signUp.email({
 				email: formData.email,
 				password: formData.password,
@@ -204,6 +250,11 @@ export function SignupForm({ className, inviteCode, ...props }: SignupFormProps)
 
 			if (signupResult.error) {
 				setError(signupResult.error.message || t("auth.signup-failed", "Failed to sign up"));
+				// Reset Turnstile for retry (tokens are single-use)
+				if (turnstileConfig?.enabled) {
+					setTurnstileToken(null);
+					turnstileRef.current?.reset();
+				}
 			} else {
 				// Store pending invite code if provided
 				if (inviteCode && inviteCodeValid) {
@@ -219,6 +270,11 @@ export function SignupForm({ className, inviteCode, ...props }: SignupFormProps)
 			setError(
 				err instanceof Error ? err.message : t("common.error-occurred", "An error occurred"),
 			);
+			// Reset Turnstile for retry (tokens are single-use)
+			if (turnstileConfig?.enabled) {
+				setTurnstileToken(null);
+				turnstileRef.current?.reset();
+			}
 		} finally {
 			setIsLoading(false);
 		}
@@ -388,7 +444,26 @@ export function SignupForm({ className, inviteCode, ...props }: SignupFormProps)
 							</p>
 						) : null}
 					</div>
-					<Button className="w-full" disabled={isLoading} type="submit">
+
+					{/* Turnstile widget */}
+					{turnstileConfig?.enabled && turnstileConfig.siteKey && (
+						<div className="flex justify-center">
+							<TurnstileWidget
+								ref={turnstileRef}
+								siteKey={turnstileConfig.siteKey}
+								onVerify={handleTurnstileVerify}
+								onError={handleTurnstileError}
+								onExpire={handleTurnstileExpire}
+								onTimeout={handleTurnstileTimeout}
+							/>
+						</div>
+					)}
+
+					<Button
+						className="w-full"
+						disabled={isLoading || (turnstileConfig?.enabled && !turnstileToken)}
+						type="submit"
+					>
 						{isLoading ? (
 							<>
 								<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
