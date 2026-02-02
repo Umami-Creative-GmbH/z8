@@ -6,11 +6,13 @@ import {
 	IconUsers,
 	IconUserX,
 	IconAlertTriangle,
+	IconCurrencyEuro,
+	IconCreditCard,
 } from "@tabler/icons-react";
-import { count, eq, isNull, or } from "drizzle-orm";
+import { count, eq, isNull, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { user, organization } from "@/db/auth-schema";
-import { organizationSuspension } from "@/db/schema";
+import { organizationSuspension, subscription } from "@/db/schema";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -49,28 +51,47 @@ function StatCard({ title, value, description, icon, href, variant = "default" }
 async function DashboardStats() {
 	await connection();
 
-	// Get total users count
-	const [{ totalUsers }] = await db
-		.select({ totalUsers: count() })
-		.from(user);
+	const billingEnabled = process.env.BILLING_ENABLED === "true";
 
-	// Get banned users count
-	const [{ bannedUsers }] = await db
-		.select({ bannedUsers: count() })
-		.from(user)
-		.where(eq(user.banned, true));
+	// Run all queries in parallel to avoid waterfalls (async-parallel)
+	const [
+		[{ totalUsers }],
+		[{ bannedUsers }],
+		[{ totalOrgs }],
+		[{ suspendedOrgs }],
+		subscriptions,
+	] = await Promise.all([
+		// Get total users count
+		db.select({ totalUsers: count() }).from(user),
+		// Get banned users count
+		db.select({ bannedUsers: count() }).from(user).where(eq(user.banned, true)),
+		// Get total organizations count (excluding deleted)
+		db.select({ totalOrgs: count() }).from(organization).where(isNull(organization.deletedAt)),
+		// Get suspended organizations count
+		db.select({ suspendedOrgs: count() }).from(organizationSuspension).where(eq(organizationSuspension.isActive, true)),
+		// Billing stats (only when billing is enabled)
+		billingEnabled
+			? db
+					.select({
+						currentSeats: subscription.currentSeats,
+						billingInterval: subscription.billingInterval,
+						status: subscription.status,
+					})
+					.from(subscription)
+					.where(sql`${subscription.status} IN ('active', 'trialing', 'past_due')`)
+			: Promise.resolve([]),
+	]);
 
-	// Get total organizations count (excluding deleted)
-	const [{ totalOrgs }] = await db
-		.select({ totalOrgs: count() })
-		.from(organization)
-		.where(isNull(organization.deletedAt));
-
-	// Get suspended organizations count
-	const [{ suspendedOrgs }] = await db
-		.select({ suspendedOrgs: count() })
-		.from(organizationSuspension)
-		.where(eq(organizationSuspension.isActive, true));
+	// Calculate billing stats from results
+	const billingStats = {
+		activeSubscriptions: subscriptions.length,
+		totalSeats: subscriptions.reduce((sum, s) => sum + s.currentSeats, 0),
+		// Calculate MRR: monthly = seats * 4, yearly = seats * 3
+		mrr: subscriptions.reduce((sum, s) => {
+			const pricePerSeat = s.billingInterval === "year" ? 3 : 4;
+			return sum + s.currentSeats * pricePerSeat;
+		}, 0),
+	};
 
 	return (
 		<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -104,14 +125,35 @@ async function DashboardStats() {
 				href="/admin/organizations?status=suspended"
 				variant={suspendedOrgs > 0 ? "warning" : "default"}
 			/>
+			{billingEnabled ? (
+				<>
+					<StatCard
+						title="MRR"
+						value={billingStats.mrr}
+						description="Monthly recurring revenue (€)"
+						icon={<IconCurrencyEuro className="size-5" aria-hidden="true" />}
+						href="/admin/billing"
+					/>
+					<StatCard
+						title="Licensed Seats"
+						value={billingStats.totalSeats}
+						description="Total seats across all subscriptions"
+						icon={<IconCreditCard className="size-5" aria-hidden="true" />}
+						href="/admin/billing"
+					/>
+				</>
+			) : null}
 		</div>
 	);
 }
 
 function DashboardStatsLoading() {
+	const billingEnabled = process.env.BILLING_ENABLED === "true";
+	const cardCount = billingEnabled ? 6 : 4;
+
 	return (
 		<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-			{[...Array(4)].map((_, i) => (
+			{[...Array(cardCount)].map((_, i) => (
 				<Card key={i}>
 					<CardHeader className="pb-2">
 						<Skeleton className="h-4 w-24" />
@@ -174,6 +216,25 @@ export default function AdminDashboardPage() {
 						</Link>
 					</CardContent>
 				</Card>
+
+				{process.env.BILLING_ENABLED === "true" && (
+					<Card>
+						<CardHeader>
+							<CardTitle>Billing & Subscriptions</CardTitle>
+							<CardDescription>
+								View subscription metrics, MRR, and payment status
+							</CardDescription>
+						</CardHeader>
+						<CardContent>
+							<Link
+								href="/admin/billing"
+								className="text-primary hover:underline text-sm font-medium"
+							>
+								View Billing Dashboard →
+							</Link>
+						</CardContent>
+					</Card>
+				)}
 			</div>
 		</div>
 	);

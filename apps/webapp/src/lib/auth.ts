@@ -212,9 +212,6 @@ export const auth = betterAuth({
 			enabled: true,
 			maxAge: 5 * 60, // Cache duration in seconds (5 minutes)
 			strategy: "compact", // Smallest cookie size, best performance
-			refreshCache: {
-				updateAge: 60, // Refresh cookie when 60 seconds from expiry
-			},
 		},
 		// When using secondary storage, don't store sessions in DB for performance
 		// Sessions are cached in Valkey which is much faster
@@ -428,6 +425,71 @@ export const auth = betterAuth({
 								canApproveTeamRequests: true,
 								grantedBy: newEmployee.id,
 							});
+						}
+					}
+
+					// Sync seat count to Stripe if billing is enabled
+					if (process.env.BILLING_ENABLED === "true") {
+						try {
+							const { Effect, Layer } = await import("effect");
+							const {
+								SeatSyncService,
+								SeatSyncServiceLive,
+								StripeServiceLive,
+								SubscriptionServiceLive,
+							} = await import("@/lib/effect/services/billing");
+
+							const layers = SeatSyncServiceLive.pipe(
+								Layer.provide(StripeServiceLive),
+								Layer.provide(SubscriptionServiceLive),
+							);
+
+							const program = Effect.gen(function* () {
+								const seatSyncService = yield* SeatSyncService;
+								yield* seatSyncService.handleMemberAdded(
+									organization.id,
+									member.id,
+									user.id,
+								);
+							});
+
+							await Effect.runPromise(program.pipe(Effect.provide(layers)));
+						} catch (error) {
+							// Log but don't fail - seat sync is non-blocking
+							logger.error({ error, organizationId: organization.id }, "Failed to sync seats after member added");
+						}
+					}
+				},
+
+				// Sync seat count when member is removed
+				afterRemoveMember: async ({ member, organization }) => {
+					if (process.env.BILLING_ENABLED === "true") {
+						try {
+							const { Effect, Layer } = await import("effect");
+							const {
+								SeatSyncService,
+								SeatSyncServiceLive,
+								StripeServiceLive,
+								SubscriptionServiceLive,
+							} = await import("@/lib/effect/services/billing");
+
+							const layers = SeatSyncServiceLive.pipe(
+								Layer.provide(StripeServiceLive),
+								Layer.provide(SubscriptionServiceLive),
+							);
+
+							const program = Effect.gen(function* () {
+								const seatSyncService = yield* SeatSyncService;
+								yield* seatSyncService.handleMemberRemoved(
+									organization.id,
+									member.id,
+									member.userId,
+								);
+							});
+
+							await Effect.runPromise(program.pipe(Effect.provide(layers)));
+						} catch (error) {
+							logger.error({ error, organizationId: organization.id }, "Failed to sync seats after member removed");
 						}
 					}
 				},

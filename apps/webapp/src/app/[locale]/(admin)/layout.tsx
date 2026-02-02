@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import Link from "next/link";
-import { IconBuilding, IconHome, IconUsers } from "@tabler/icons-react";
+import { IconBuilding, IconHome, IconSettings, IconUsers } from "@tabler/icons-react";
 import { auth } from "@/lib/auth";
 
 export default async function AdminLayout({
@@ -55,6 +55,13 @@ export default async function AdminLayout({
 							>
 								<IconBuilding className="size-4" aria-hidden="true" />
 								Organizations
+							</Link>
+							<Link
+								href="/admin/settings"
+								className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors"
+							>
+								<IconSettings className="size-4" aria-hidden="true" />
+								Settings
 							</Link>
 						</nav>
 					</div>

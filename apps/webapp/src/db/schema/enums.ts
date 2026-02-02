@@ -15,20 +15,31 @@ export const absenceTypeEnum = pgEnum("absence_type", [
 	"bereavement",
 	"custom",
 ]);
-export const approvalStatusEnum = pgEnum("approval_status", ["pending", "approved", "rejected"]);
-export const timeEntryTypeEnum = pgEnum("time_entry_type", ["clock_in", "clock_out", "correction"]);
+export const approvalStatusEnum = pgEnum("approval_status", [
+	"pending",
+	"approved",
+	"rejected",
+]);
+export const timeEntryTypeEnum = pgEnum("time_entry_type", [
+	"clock_in",
+	"clock_out",
+	"correction",
+]);
 export const holidayCategoryEnum = pgEnum("holiday_category_type", [
 	"public_holiday",
 	"company_holiday",
 	"training_day",
 	"custom",
 ]);
-export const recurrenceTypeEnum = pgEnum("recurrence_type", ["none", "yearly", "custom"]);
-export const holidayPresetAssignmentTypeEnum = pgEnum("holiday_preset_assignment_type", [
-	"organization",
-	"team",
-	"employee",
+export const recurrenceTypeEnum = pgEnum("recurrence_type", [
+	"none",
+	"yearly",
+	"custom",
 ]);
+export const holidayPresetAssignmentTypeEnum = pgEnum(
+	"holiday_preset_assignment_type",
+	["organization", "team", "employee"],
+);
 export const genderEnum = pgEnum("gender", ["male", "female", "other"]);
 export const contractTypeEnum = pgEnum("contract_type", ["fixed", "hourly"]);
 export const scheduleCycleEnum = pgEnum("schedule_cycle", [
@@ -115,7 +126,11 @@ export const notificationChannelEnum = pgEnum("notification_channel", [
 
 // Shift scheduling enums
 export const shiftStatusEnum = pgEnum("shift_status", ["draft", "published"]);
-export const shiftRequestTypeEnum = pgEnum("shift_request_type", ["swap", "assignment", "pickup"]);
+export const shiftRequestTypeEnum = pgEnum("shift_request_type", [
+	"swap",
+	"assignment",
+	"pickup",
+]);
 export const shiftRecurrenceTypeEnum = pgEnum("shift_recurrence_type", [
 	"daily",
 	"weekly",
@@ -132,19 +147,25 @@ export const projectStatusEnum = pgEnum("project_status", [
 	"completed",
 	"archived",
 ]);
-export const projectAssignmentTypeEnum = pgEnum("project_assignment_type", ["team", "employee"]);
+export const projectAssignmentTypeEnum = pgEnum("project_assignment_type", [
+	"team",
+	"employee",
+]);
 
 // Time regulation enums
-export const timeRegulationViolationTypeEnum = pgEnum("time_regulation_violation_type", [
-	"max_daily",
-	"max_weekly",
-	"max_uninterrupted",
-	"break_required",
-	"rest_period", // ArbZG: 11-hour rest period violation
-	"overtime_daily", // ArbZG: Daily overtime threshold exceeded
-	"overtime_weekly", // ArbZG: Weekly overtime threshold exceeded
-	"overtime_monthly", // ArbZG: Monthly overtime threshold exceeded
-]);
+export const timeRegulationViolationTypeEnum = pgEnum(
+	"time_regulation_violation_type",
+	[
+		"max_daily",
+		"max_weekly",
+		"max_uninterrupted",
+		"break_required",
+		"rest_period", // ArbZG: 11-hour rest period violation
+		"overtime_daily", // ArbZG: Daily overtime threshold exceeded
+		"overtime_weekly", // ArbZG: Weekly overtime threshold exceeded
+		"overtime_monthly", // ArbZG: Monthly overtime threshold exceeded
+	],
+);
 
 // Rest period enforcement mode
 export const restPeriodEnforcementEnum = pgEnum("rest_period_enforcement", [
@@ -162,13 +183,16 @@ export const complianceExceptionTypeEnum = pgEnum("compliance_exception_type", [
 ]);
 
 // Compliance exception status
-export const complianceExceptionStatusEnum = pgEnum("compliance_exception_status", [
-	"pending", // Awaiting manager approval
-	"approved", // Approved by manager
-	"rejected", // Rejected by manager
-	"expired", // Pre-approval expired (24h passed)
-	"used", // Exception was used (employee clocked in using it)
-]);
+export const complianceExceptionStatusEnum = pgEnum(
+	"compliance_exception_status",
+	[
+		"pending", // Awaiting manager approval
+		"approved", // Approved by manager
+		"rejected", // Rejected by manager
+		"expired", // Pre-approval expired (24h passed)
+		"used", // Exception was used (employee clocked in using it)
+	],
+);
 
 // Surcharge enums
 export const surchargeRuleTypeEnum = pgEnum("surcharge_rule_type", [
@@ -209,7 +233,7 @@ export const memberStatusEnum = pgEnum("member_status", [
 ]);
 
 // Payroll export format enum
-export const payrollExportFormatEnum = pgEnum("payroll_export_format", [
+export const payrollExportFormatEnum = pgEnum("payroll_export_format_type", [
 	"datev_lohn",
 	"personio",
 	"sage",
@@ -230,44 +254,40 @@ export const payrollExportStatusEnum = pgEnum("payroll_export_status", [
 // ============================================
 
 // Schedule frequency type (preset intervals or custom cron)
-export const scheduledExportScheduleTypeEnum = pgEnum("scheduled_export_schedule_type", [
-	"daily",
-	"weekly",
-	"monthly",
-	"quarterly",
-	"cron",
-]);
+export const scheduledExportScheduleTypeEnum = pgEnum(
+	"scheduled_export_schedule_type",
+	["daily", "weekly", "monthly", "quarterly", "cron"],
+);
 
 // Report type for scheduled exports
-export const scheduledExportReportTypeEnum = pgEnum("scheduled_export_report_type", [
-	"payroll_export",
-	"data_export",
-	"audit_report",
-]);
+export const scheduledExportReportTypeEnum = pgEnum(
+	"scheduled_export_report_type",
+	["payroll_export", "data_export", "audit_report"],
+);
 
 // Delivery method
-export const scheduledExportDeliveryMethodEnum = pgEnum("scheduled_export_delivery_method", [
-	"s3_only",
-	"email_only",
-	"s3_and_email",
-]);
+export const scheduledExportDeliveryMethodEnum = pgEnum(
+	"scheduled_export_delivery_method",
+	["s3_only", "email_only", "s3_and_email"],
+);
 
 // Date range calculation strategy
-export const scheduledExportDateRangeStrategyEnum = pgEnum("scheduled_export_date_range_strategy", [
-	"previous_day",
-	"previous_week",
-	"previous_month",
-	"previous_quarter",
-	"custom_offset",
-]);
+export const scheduledExportDateRangeStrategyEnum = pgEnum(
+	"scheduled_export_date_range_strategy",
+	[
+		"previous_day",
+		"previous_week",
+		"previous_month",
+		"previous_quarter",
+		"custom_offset",
+	],
+);
 
 // Execution status
-export const scheduledExportExecutionStatusEnum = pgEnum("scheduled_export_execution_status", [
-	"pending",
-	"processing",
-	"completed",
-	"failed",
-]);
+export const scheduledExportExecutionStatusEnum = pgEnum(
+	"scheduled_export_execution_status",
+	["pending", "processing", "completed", "failed"],
+);
 
 // ============================================
 // SKILL & QUALIFICATION ENUMS
@@ -296,11 +316,14 @@ export const complianceFindingTypeEnum = pgEnum("compliance_finding_type", [
 ]);
 
 // Compliance finding severity
-export const complianceFindingSeverityEnum = pgEnum("compliance_finding_severity", [
-	"info", // FYI only (5-10% over threshold)
-	"warning", // Should review (10-25% over threshold)
-	"critical", // Requires action (25%+ over threshold)
-]);
+export const complianceFindingSeverityEnum = pgEnum(
+	"compliance_finding_severity",
+	[
+		"info", // FYI only (5-10% over threshold)
+		"warning", // Should review (10-25% over threshold)
+		"critical", // Requires action (25%+ over threshold)
+	],
+);
 
 // Compliance finding status
 export const complianceFindingStatusEnum = pgEnum("compliance_finding_status", [

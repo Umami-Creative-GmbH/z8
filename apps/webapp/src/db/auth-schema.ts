@@ -244,6 +244,13 @@ export const apikey = pgTable(
 	],
 );
 
+export const scimProvider = pgTable("scim_provider", {
+	id: text("id").primaryKey(),
+	providerId: text("provider_id").notNull().unique(),
+	scimToken: text("scim_token").notNull().unique(),
+	organizationId: text("organization_id"),
+});
+
 export const userRelations = relations(user, ({ many }) => ({
 	sessions: many(session),
 	accounts: many(account),

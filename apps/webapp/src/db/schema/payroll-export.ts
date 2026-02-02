@@ -15,10 +15,9 @@ import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 
 // Import auth tables for FK references
 import { organization, user } from "../auth-schema";
-import { payrollExportFormatEnum, payrollExportStatusEnum } from "./enums";
-import { employee, team } from "./organization";
-import { project } from "./project";
 import { absenceCategory } from "./absence";
+import { payrollExportStatusEnum } from "./enums";
+import { employee } from "./organization";
 import { workCategory } from "./work-category";
 
 // ============================================
@@ -37,7 +36,9 @@ export const payrollExportFormat = pgTable(
 		version: text("version").notNull(), // "2024.1"
 		description: text("description"),
 		isEnabled: boolean("is_enabled").default(true).notNull(),
-		requiresConfiguration: boolean("requires_configuration").default(true).notNull(),
+		requiresConfiguration: boolean("requires_configuration")
+			.default(true)
+			.notNull(),
 
 		// Format capabilities
 		supportsAsync: boolean("supports_async").default(true).notNull(),
@@ -111,9 +112,12 @@ export const payrollWageTypeMapping = pgTable(
 		workCategoryId: uuid("work_category_id").references(() => workCategory.id, {
 			onDelete: "cascade",
 		}),
-		absenceCategoryId: uuid("absence_category_id").references(() => absenceCategory.id, {
-			onDelete: "cascade",
-		}),
+		absenceCategoryId: uuid("absence_category_id").references(
+			() => absenceCategory.id,
+			{
+				onDelete: "cascade",
+			},
+		),
 		// Special categories not covered by work/absence categories
 		// e.g., "overtime", "holiday_compensation", "overtime_reduction"
 		specialCategory: text("special_category"),
@@ -148,7 +152,9 @@ export const payrollWageTypeMapping = pgTable(
 	(table) => [
 		index("payrollWageTypeMapping_configId_idx").on(table.configId),
 		index("payrollWageTypeMapping_workCategoryId_idx").on(table.workCategoryId),
-		index("payrollWageTypeMapping_absenceCategoryId_idx").on(table.absenceCategoryId),
+		index("payrollWageTypeMapping_absenceCategoryId_idx").on(
+			table.absenceCategoryId,
+		),
 		// Unique constraint: one mapping per work category per config
 		uniqueIndex("payrollWageTypeMapping_config_workCategory_idx")
 			.on(table.configId, table.workCategoryId)
@@ -227,7 +233,10 @@ export const payrollExportJob = pgTable(
 		index("payrollExportJob_status_idx").on(table.status),
 		index("payrollExportJob_createdAt_idx").on(table.createdAt),
 		// Composite index for finding pending async jobs
-		index("payrollExportJob_status_isAsync_idx").on(table.status, table.isAsync),
+		index("payrollExportJob_status_isAsync_idx").on(
+			table.status,
+			table.isAsync,
+		),
 	],
 );
 
@@ -266,7 +275,9 @@ export const payrollExportSyncRecord = pgTable(
 	(table) => [
 		index("payrollExportSyncRecord_jobId_idx").on(table.jobId),
 		index("payrollExportSyncRecord_status_idx").on(table.status),
-		index("payrollExportSyncRecord_sourceRecordId_idx").on(table.sourceRecordId),
+		index("payrollExportSyncRecord_sourceRecordId_idx").on(
+			table.sourceRecordId,
+		),
 		// Composite index for retry queries
 		index("payrollExportSyncRecord_job_status_retryable_idx").on(
 			table.jobId,
