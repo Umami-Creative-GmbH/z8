@@ -243,6 +243,235 @@ export const BillingEventsServiceLive = Layer.effect(
 				// TODO: Send trial ending email notification
 			});
 
+		const handleCustomerSubscriptionPaused = (
+			stripeSub: Stripe.Subscription,
+		): Effect.Effect<void, DatabaseError> =>
+			Effect.gen(function* () {
+				yield* Effect.tryPromise({
+					try: async () => {
+						await db
+							.update(subscription)
+							.set({
+								status: "paused",
+								metadata: {
+									pausedAt: new Date().toISOString(),
+									pauseReason: stripeSub.pause_collection?.behavior ?? "unknown",
+								},
+							})
+							.where(eq(subscription.stripeSubscriptionId, stripeSub.id));
+					},
+					catch: (error) =>
+						new DatabaseError({
+							message: "Failed to update subscription to paused",
+							operation: "handleCustomerSubscriptionPaused",
+							table: "subscription",
+							cause: error,
+						}),
+				});
+
+				logger.info(
+					{
+						subscriptionId: stripeSub.id,
+						pauseBehavior: stripeSub.pause_collection?.behavior,
+						resumesAt: stripeSub.pause_collection?.resumes_at
+							? new Date(stripeSub.pause_collection.resumes_at * 1000).toISOString()
+							: null,
+					},
+					"Subscription paused",
+				);
+				// TODO: Send subscription paused email notification
+			});
+
+		const handleCustomerSubscriptionResumed = (
+			stripeSub: Stripe.Subscription,
+		): Effect.Effect<void, DatabaseError> =>
+			Effect.gen(function* () {
+				const item = stripeSub.items.data[0];
+
+				yield* Effect.tryPromise({
+					try: async () => {
+						await db
+							.update(subscription)
+							.set({
+								status: stripeSub.status, // Will be 'active' or 'trialing'
+								currentPeriodStart: item?.current_period_start
+									? new Date(item.current_period_start * 1000)
+									: new Date(),
+								currentPeriodEnd: item?.current_period_end
+									? new Date(item.current_period_end * 1000)
+									: new Date(),
+								metadata: {
+									resumedAt: new Date().toISOString(),
+								},
+							})
+							.where(eq(subscription.stripeSubscriptionId, stripeSub.id));
+					},
+					catch: (error) =>
+						new DatabaseError({
+							message: "Failed to update subscription to resumed",
+							operation: "handleCustomerSubscriptionResumed",
+							table: "subscription",
+							cause: error,
+						}),
+				});
+
+				logger.info(
+					{ subscriptionId: stripeSub.id, status: stripeSub.status },
+					"Subscription resumed",
+				);
+				// TODO: Send subscription resumed email notification
+			});
+
+		const handleInvoiceFinalized = (
+			invoice: Stripe.Invoice,
+		): Effect.Effect<void, DatabaseError> =>
+			Effect.gen(function* () {
+				// Get subscription ID from invoice
+				const invoiceWithSub = invoice as unknown as {
+					subscription?: string | { id: string } | null;
+				};
+				const subscriptionId =
+					typeof invoiceWithSub.subscription === "string"
+						? invoiceWithSub.subscription
+						: invoiceWithSub.subscription?.id;
+
+				if (!subscriptionId) return;
+
+				// Store invoice details in subscription metadata for reference
+				yield* Effect.tryPromise({
+					try: async () => {
+						const existing = await db.query.subscription.findFirst({
+							where: eq(subscription.stripeSubscriptionId, subscriptionId),
+						});
+
+						if (existing) {
+							const existingMetadata = (existing.metadata ?? {}) as Record<string, unknown>;
+							await db
+								.update(subscription)
+								.set({
+									metadata: {
+										...existingMetadata,
+										lastInvoice: {
+											id: invoice.id,
+											number: invoice.number,
+											amountDue: invoice.amount_due,
+											amountPaid: invoice.amount_paid,
+											currency: invoice.currency,
+											status: invoice.status,
+											hostedInvoiceUrl: invoice.hosted_invoice_url,
+											invoicePdf: invoice.invoice_pdf,
+											finalizedAt: new Date().toISOString(),
+										},
+									},
+								})
+								.where(eq(subscription.stripeSubscriptionId, subscriptionId));
+						}
+					},
+					catch: (error) =>
+						new DatabaseError({
+							message: "Failed to store invoice details",
+							operation: "handleInvoiceFinalized",
+							table: "subscription",
+							cause: error,
+						}),
+				});
+
+				logger.info(
+					{
+						invoiceId: invoice.id,
+						invoiceNumber: invoice.number,
+						subscriptionId,
+						amountDue: invoice.amount_due,
+						currency: invoice.currency,
+						status: invoice.status,
+					},
+					"Invoice finalized",
+				);
+				// TODO: Send invoice ready email notification with PDF link
+			});
+
+		const handlePaymentIntentFailed = (
+			paymentIntent: Stripe.PaymentIntent,
+		): Effect.Effect<void, DatabaseError> =>
+			Effect.gen(function* () {
+				// Extract failure details
+				const lastError = paymentIntent.last_payment_error;
+				const failureCode = lastError?.code ?? "unknown";
+				const failureMessage = lastError?.message ?? "Payment failed";
+				const declineCode = lastError?.decline_code;
+
+				// Try to find subscription from metadata or invoice
+				const subscriptionId = paymentIntent.metadata?.subscriptionId;
+				// invoice can be string, Invoice object, or null (expandable field)
+				const paymentIntentWithInvoice = paymentIntent as unknown as {
+					invoice?: string | { id: string } | null;
+				};
+				const invoiceId =
+					typeof paymentIntentWithInvoice.invoice === "string"
+						? paymentIntentWithInvoice.invoice
+						: paymentIntentWithInvoice.invoice?.id;
+
+				// Log detailed failure info for debugging and customer support
+				logger.warn(
+					{
+						paymentIntentId: paymentIntent.id,
+						subscriptionId,
+						invoiceId,
+						failureCode,
+						failureMessage,
+						declineCode,
+						paymentMethodType: lastError?.payment_method?.type,
+						cardBrand: lastError?.payment_method?.card?.brand,
+						cardLast4: lastError?.payment_method?.card?.last4,
+						amount: paymentIntent.amount,
+						currency: paymentIntent.currency,
+					},
+					"Payment intent failed",
+				);
+
+				// If we can identify the subscription, store failure details
+				if (subscriptionId) {
+					yield* Effect.tryPromise({
+						try: async () => {
+							const existing = await db.query.subscription.findFirst({
+								where: eq(subscription.stripeSubscriptionId, subscriptionId),
+							});
+
+							if (existing) {
+								const existingMetadata = (existing.metadata ?? {}) as Record<string, unknown>;
+								await db
+									.update(subscription)
+									.set({
+										metadata: {
+											...existingMetadata,
+											lastPaymentFailure: {
+												paymentIntentId: paymentIntent.id,
+												failureCode,
+												failureMessage,
+												declineCode,
+												failedAt: new Date().toISOString(),
+												amount: paymentIntent.amount,
+												currency: paymentIntent.currency,
+											},
+										},
+									})
+									.where(eq(subscription.stripeSubscriptionId, subscriptionId));
+							}
+						},
+						catch: (error) =>
+							new DatabaseError({
+								message: "Failed to store payment failure details",
+								operation: "handlePaymentIntentFailed",
+								table: "subscription",
+								cause: error,
+							}),
+					});
+				}
+
+				// TODO: Send payment failed email with actionable next steps
+				// Include: reason for failure, link to update payment method, support contact
+			});
+
 		return BillingEventsService.of({
 			isEventProcessed: (eventId) =>
 				Effect.tryPromise({
@@ -365,6 +594,28 @@ export const BillingEventsServiceLive = Layer.effect(
 							case "customer.subscription.trial_will_end":
 								yield* handleCustomerSubscriptionTrialWillEnd(
 									event.data.object as Stripe.Subscription,
+								);
+								break;
+
+							case "customer.subscription.paused":
+								yield* handleCustomerSubscriptionPaused(
+									event.data.object as Stripe.Subscription,
+								);
+								break;
+
+							case "customer.subscription.resumed":
+								yield* handleCustomerSubscriptionResumed(
+									event.data.object as Stripe.Subscription,
+								);
+								break;
+
+							case "invoice.finalized":
+								yield* handleInvoiceFinalized(event.data.object as Stripe.Invoice);
+								break;
+
+							case "payment_intent.payment_failed":
+								yield* handlePaymentIntentFailed(
+									event.data.object as Stripe.PaymentIntent,
 								);
 								break;
 

@@ -31,7 +31,7 @@ export const subscription = pgTable(
 		stripePriceId: text("stripe_price_id"),
 
 		// Subscription state
-		status: text("status").notNull(), // trialing, active, past_due, canceled, unpaid
+		status: text("status").notNull(), // trialing, active, past_due, canceled, unpaid, paused
 		billingInterval: text("billing_interval"), // month, year
 
 		// Trial

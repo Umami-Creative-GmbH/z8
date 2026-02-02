@@ -23,8 +23,12 @@ const logger = createLogger("StripeWebhook");
  * - customer.subscription.updated
  * - customer.subscription.deleted
  * - customer.subscription.trial_will_end
+ * - customer.subscription.paused
+ * - customer.subscription.resumed
  * - invoice.payment_succeeded
  * - invoice.payment_failed
+ * - invoice.finalized
+ * - payment_intent.payment_failed
  */
 export async function POST(request: NextRequest) {
 	await connection();
