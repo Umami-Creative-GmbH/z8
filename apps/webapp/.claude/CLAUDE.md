@@ -46,3 +46,4 @@ Agents must validate their work against these skills before completing tasks:
 - [Forms](docs/forms.md) - TanStack Form patterns and UI components
 - [i18n](docs/i18n.md) - Tolgee namespaces and translation workflow
 - [Date/Time](docs/dates.md) - Luxon usage patterns
+- [Billing & Stripe](docs/billing-stripe.md) - Stripe setup, webhooks, per-seat billing
