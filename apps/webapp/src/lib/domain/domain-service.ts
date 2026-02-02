@@ -6,6 +6,7 @@ import { db } from "@/db";
 import { type AuthConfig, organizationBranding, organizationDomain } from "@/db/schema";
 import { getConfiguredProviders } from "@/lib/social-oauth";
 import { domainCache } from "./domain-cache";
+import { env } from "@/env";
 import {
 	DEFAULT_AUTH_CONFIG,
 	DEFAULT_BRANDING,
@@ -13,6 +14,7 @@ import {
 	type DomainConfig,
 	type OrganizationBranding,
 	type SocialOAuthConfigured,
+	type TurnstileConfig,
 } from "./types";
 
 const DEFAULT_SOCIAL_OAUTH_CONFIGURED: SocialOAuthConfigured = {
@@ -85,12 +87,21 @@ export async function getDomainConfig(hostname: string): Promise<DomainAuthConte
 		console.warn(`Failed to get social OAuth config for ${domainRecord.organizationId}:`, error);
 	}
 
+	// Build Turnstile configuration
+	// Enterprise domains MUST have their own keys (no fallback to global)
+	const turnstile: TurnstileConfig = {
+		enabled: !!authConfig.turnstileSiteKey,
+		siteKey: authConfig.turnstileSiteKey ?? null,
+		isEnterprise: true, // Custom domains always use enterprise config
+	};
+
 	const domainContext: DomainAuthContext = {
 		organizationId: domainRecord.organizationId,
 		domain: normalizedHostname,
 		authConfig,
 		branding,
 		socialOAuthConfigured,
+		turnstile,
 	};
 
 	// Cache the result

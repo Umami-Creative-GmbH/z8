@@ -42,7 +42,9 @@ export const env = createEnv({
 		TOLGEE_API_KEY: z.string().optional(),
 		TOLGEE_API_URL: z.string().optional(),
 
-		NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+		NODE_ENV: z
+			.enum(["development", "test", "production"])
+			.default("development"),
 
 		// Security headers
 		SECURITY_HSTS_PRELOAD: z.enum(["true", "false"]).optional(),
@@ -73,11 +75,22 @@ export const env = createEnv({
 		CALENDAR_GOOGLE_CLIENT_SECRET: z.string().optional(),
 		CALENDAR_MICROSOFT_CLIENT_ID: z.string().optional(),
 		CALENDAR_MICROSOFT_CLIENT_SECRET: z.string().optional(),
+
+		// Cloudflare Turnstile (global/platform-wide)
+		TURNSTILE_SITE_KEY: z.string(),
+		TURNSTILE_SECRET_KEY: z.string(),
+
+		// Billing / Stripe (SaaS mode only - disabled for self-hosted)
+		BILLING_ENABLED: z.enum(["true", "false"]).optional().default("false"),
+		STRIPE_SECRET_KEY: z.string().optional(),
+		STRIPE_WEBHOOK_SECRET: z.string().optional(),
+		STRIPE_PRICE_MONTHLY_ID: z.string().optional(),
+		STRIPE_PRICE_YEARLY_ID: z.string().optional(),
 	},
 	client: {
-		NEXT_PUBLIC_APP_URL: z.string().url().optional(),
+		NEXT_PUBLIC_APP_URL: z.url().optional(),
 		NEXT_PUBLIC_TOLGEE_API_KEY: z.string().optional(),
-		NEXT_PUBLIC_TOLGEE_API_URL: z.string().optional(),
+		NEXT_PUBLIC_TOLGEE_API_URL: z.url().optional(),
 	},
 	runtimeEnv: {
 		// DATABASE_URL: process.env.DATABASE_URL,
@@ -133,14 +146,24 @@ export const env = createEnv({
 		CALENDAR_GOOGLE_CLIENT_ID: process.env.CALENDAR_GOOGLE_CLIENT_ID,
 		CALENDAR_GOOGLE_CLIENT_SECRET: process.env.CALENDAR_GOOGLE_CLIENT_SECRET,
 		CALENDAR_MICROSOFT_CLIENT_ID: process.env.CALENDAR_MICROSOFT_CLIENT_ID,
-		CALENDAR_MICROSOFT_CLIENT_SECRET: process.env.CALENDAR_MICROSOFT_CLIENT_SECRET,
+		CALENDAR_MICROSOFT_CLIENT_SECRET:
+			process.env.CALENDAR_MICROSOFT_CLIENT_SECRET,
+		TURNSTILE_SITE_KEY: process.env.TURNSTILE_SITE_KEY,
+		TURNSTILE_SECRET_KEY: process.env.TURNSTILE_SECRET_KEY,
+		BILLING_ENABLED: process.env.BILLING_ENABLED,
+		STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+		STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
+		STRIPE_PRICE_MONTHLY_ID: process.env.STRIPE_PRICE_MONTHLY_ID,
+		STRIPE_PRICE_YEARLY_ID: process.env.STRIPE_PRICE_YEARLY_ID,
 	},
 	skipValidation: !!process.env.SKIP_ENV_VALIDATION,
 	emptyStringAsUndefined: true,
 	onValidationError: (issues) => {
 		console.error("❌ Invalid environment variables:");
 		for (const issue of issues) {
-			console.error(`   - ${issue.path?.join(".") ?? "unknown"}: ${issue.message}`);
+			console.error(
+				`   - ${issue.path?.join(".") ?? "unknown"}: ${issue.message}`,
+			);
 		}
 		process.exit(1);
 	},

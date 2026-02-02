@@ -5,6 +5,7 @@ import type {
 	AuthConfig,
 	DomainAuthContext as DomainAuthContextType,
 	OrganizationBranding,
+	TurnstileConfig,
 } from "@/lib/domain";
 
 interface DomainAuthProviderProps {
@@ -14,8 +15,15 @@ interface DomainAuthProviderProps {
 
 const DomainAuthContext = createContext<DomainAuthContextType | null>(null);
 
-export function DomainAuthProvider({ children, domainContext }: DomainAuthProviderProps) {
-	return <DomainAuthContext.Provider value={domainContext}>{children}</DomainAuthContext.Provider>;
+export function DomainAuthProvider({
+	children,
+	domainContext,
+}: DomainAuthProviderProps) {
+	return (
+		<DomainAuthContext.Provider value={domainContext}>
+			{children}
+		</DomainAuthContext.Provider>
+	);
 }
 
 export function useDomainAuth(): DomainAuthContextType | null {
@@ -30,4 +38,9 @@ export function useBranding(): OrganizationBranding | null {
 export function useAuthConfig(): AuthConfig | null {
 	const context = useContext(DomainAuthContext);
 	return context?.authConfig ?? null;
+}
+
+export function useTurnstile(): TurnstileConfig | null {
+	const context = useContext(DomainAuthContext);
+	return context?.turnstile ?? null;
 }

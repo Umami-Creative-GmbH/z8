@@ -14,17 +14,23 @@ export function generateNonce(): string {
 	return btoa(String.fromCharCode(...array));
 }
 
+// Cloudflare Turnstile requires these domains
+const TURNSTILE_DOMAINS = [
+	"https://challenges.cloudflare.com",
+];
+
 /**
  * Build CSP directives for production (strict, nonce-based)
  */
 function buildProductionDirectives(nonce: string, reportUri: string): CSPDirectives {
 	return {
 		"default-src": ["'self'"],
-		"script-src": ["'self'", `'nonce-${nonce}'`, "'strict-dynamic'"],
+		"script-src": ["'self'", `'nonce-${nonce}'`, "'strict-dynamic'", ...TURNSTILE_DOMAINS],
 		"style-src": ["'self'", `'nonce-${nonce}'`],
 		"img-src": ["'self'", "data:", "blob:", "https:"],
 		"font-src": ["'self'", "data:"],
 		"connect-src": ["'self'", "https:"],
+		"frame-src": ["'self'", ...TURNSTILE_DOMAINS],
 		"worker-src": ["'self'", "blob:"],
 		"frame-ancestors": ["'none'"],
 		"form-action": ["'self'"],
@@ -42,12 +48,13 @@ function buildProductionDirectives(nonce: string, reportUri: string): CSPDirecti
 function buildDevelopmentDirectives(): CSPDirectives {
 	return {
 		"default-src": ["'self'"],
-		"script-src": ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+		"script-src": ["'self'", "'unsafe-inline'", "'unsafe-eval'", ...TURNSTILE_DOMAINS],
 		"style-src": ["'self'", "'unsafe-inline'"],
 		"img-src": ["'self'", "data:", "blob:", "https:", "http:"],
 		"font-src": ["'self'", "data:"],
 		// Allow http: in dev for custom domain testing (e.g., custom.localhost -> localhost:3000)
 		"connect-src": ["'self'", "https:", "http:", "ws:", "wss:"],
+		"frame-src": ["'self'", ...TURNSTILE_DOMAINS],
 		"worker-src": ["'self'", "blob:"],
 		"frame-ancestors": ["'none'"],
 	};

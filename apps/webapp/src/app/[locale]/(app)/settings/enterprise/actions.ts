@@ -434,3 +434,24 @@ export async function getConfiguredSocialProvidersAction(): Promise<
 
 	return getConfiguredProviders(authContext.employee.organizationId);
 }
+
+// ============ Turnstile Actions ============
+
+/**
+ * Store Turnstile secret key in Vault for the organization
+ * Vault path: secret/organizations/{orgId}/turnstile/secret_key
+ */
+export async function storeTurnstileSecretAction(secretKey: string) {
+	const authContext = await requireUser();
+
+	if (authContext.employee?.role !== "admin") {
+		throw new Error("Unauthorized");
+	}
+
+	if (!authContext.employee?.organizationId) {
+		throw new Error("No organization selected");
+	}
+
+	await storeOrgSecret(authContext.employee.organizationId, "turnstile/secret_key", secretKey);
+	revalidatePath("/settings/enterprise/domains");
+}

@@ -31,6 +31,16 @@ export interface OrganizationBranding {
 }
 
 /**
+ * Turnstile configuration for auth pages
+ */
+export interface TurnstileConfig {
+	enabled: boolean;
+	siteKey: string | null;
+	/** True if using organization-specific keys (enterprise), false if using global */
+	isEnterprise: boolean;
+}
+
+/**
  * Combined domain context for auth pages
  */
 export interface DomainAuthContext {
@@ -40,6 +50,8 @@ export interface DomainAuthContext {
 	branding: OrganizationBranding | null;
 	/** Which social OAuth providers have org-specific credentials */
 	socialOAuthConfigured: SocialOAuthConfigured;
+	/** Turnstile captcha configuration */
+	turnstile: TurnstileConfig;
 }
 
 /**
