@@ -35,6 +35,11 @@ function createPool(): Pool {
 	});
 }
 
+// PostgreSQL error codes that are expected during startup/setup
+const EXPECTED_ERROR_CODES = new Set([
+	"42P01", // relation does not exist (fresh DB without migrations)
+]);
+
 function createInstrumentedPool(basePool: Pool): Pool {
 	return new Proxy(basePool, {
 		get(target, prop) {
@@ -58,10 +63,16 @@ function createInstrumentedPool(basePool: Pool): Pool {
 								span.end();
 								return result;
 							} catch (error) {
+								// Note: Drizzle wraps pg errors, so code may be at error.code or error.cause.code
+								const pgError = error as { code?: string; cause?: { code?: string } };
+								const errorCode = pgError.code || pgError.cause?.code;
 								span.recordException(error as Error);
 								span.setStatus({ code: 2, message: String(error) }); // ERROR
 								span.end();
-								logger.error({ error, operation: "query" }, "Database query failed");
+								// Only log unexpected errors - expected errors during setup are handled upstream
+								if (!EXPECTED_ERROR_CODES.has(errorCode || "")) {
+									logger.error({ error, operation: "query" }, "Database query failed");
+								}
 								throw error;
 							}
 						},
