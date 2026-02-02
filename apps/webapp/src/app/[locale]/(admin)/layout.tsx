@@ -1,8 +1,25 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import Link from "next/link";
-import { IconBuilding, IconHome, IconSettings, IconUsers } from "@tabler/icons-react";
+import {
+	IconBuilding,
+	IconChartBar,
+	IconCreditCard,
+	IconLogout,
+	IconSettings,
+	IconShield,
+	IconUsers,
+} from "@tabler/icons-react";
 import { auth } from "@/lib/auth";
+import { cn } from "@/lib/utils";
+
+const navItems = [
+	{ href: "/admin", icon: IconChartBar, label: "Overview" },
+	{ href: "/admin/users", icon: IconUsers, label: "Users" },
+	{ href: "/admin/organizations", icon: IconBuilding, label: "Organizations" },
+	{ href: "/admin/billing", icon: IconCreditCard, label: "Billing" },
+	{ href: "/admin/settings", icon: IconSettings, label: "Settings" },
+];
 
 export default async function AdminLayout({
 	children,
@@ -25,62 +42,72 @@ export default async function AdminLayout({
 	return (
 		<div className="min-h-screen bg-background">
 			{/* Admin Header */}
-			<header className="sticky top-0 z-50 border-b bg-card">
-				<div className="container flex h-14 items-center justify-between">
-					<div className="flex items-center gap-6">
-						<Link href="/admin" className="flex items-center gap-2 font-semibold">
-							<span className="bg-primary text-primary-foreground px-2 py-0.5 rounded text-xs font-bold">
-								ADMIN
-							</span>
-							<span>Platform Admin</span>
+			<header className="sticky top-0 z-50 border-b border-border/40 bg-background/95 backdrop-blur-sm supports-backdrop-filter:bg-background/60">
+				<div className="mx-auto flex h-16 max-w-screen-2xl items-center justify-between px-6 lg:px-8">
+					{/* Left: Branding + Nav */}
+					<div className="flex items-center gap-8">
+						{/* Branding */}
+						<Link
+							href="/admin"
+							className="group flex items-center gap-3 transition-opacity hover:opacity-80"
+						>
+							<div className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
+								<IconShield className="size-5" aria-hidden="true" />
+							</div>
+							<div className="hidden sm:block">
+								<div className="text-sm font-semibold tracking-tight">Admin Console</div>
+								<div className="text-xs text-muted-foreground">Platform Management</div>
+							</div>
 						</Link>
-						<nav className="flex items-center gap-4 text-sm">
-							<Link
-								href="/admin"
-								className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors"
-							>
-								<IconHome className="size-4" aria-hidden="true" />
-								Dashboard
-							</Link>
-							<Link
-								href="/admin/users"
-								className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors"
-							>
-								<IconUsers className="size-4" aria-hidden="true" />
-								Users
-							</Link>
-							<Link
-								href="/admin/organizations"
-								className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors"
-							>
-								<IconBuilding className="size-4" aria-hidden="true" />
-								Organizations
-							</Link>
-							<Link
-								href="/admin/settings"
-								className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors"
-							>
-								<IconSettings className="size-4" aria-hidden="true" />
-								Settings
-							</Link>
+
+						{/* Divider */}
+						<div className="hidden h-6 w-px bg-border/60 md:block" />
+
+						{/* Navigation */}
+						<nav className="hidden items-center gap-1 md:flex">
+							{navItems.map((item) => (
+								<Link
+									key={item.href}
+									href={item.href}
+									className={cn(
+										"flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+										"text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+									)}
+								>
+									<item.icon className="size-4" aria-hidden="true" />
+									{item.label}
+								</Link>
+							))}
 						</nav>
 					</div>
+
+					{/* Right: User + Exit */}
 					<div className="flex items-center gap-4">
-						<span className="text-sm text-muted-foreground">
-							{session.user.email}
-						</span>
+						<div className="hidden items-center gap-3 sm:flex">
+							<div className="size-8 rounded-full bg-muted flex items-center justify-center text-xs font-medium text-muted-foreground">
+								{session.user.name?.charAt(0).toUpperCase() || session.user.email?.charAt(0).toUpperCase()}
+							</div>
+							<div className="hidden lg:block">
+								<div className="text-sm font-medium">{session.user.name}</div>
+								<div className="text-xs text-muted-foreground">{session.user.email}</div>
+							</div>
+						</div>
+
+						<div className="hidden h-6 w-px bg-border/60 sm:block" />
+
 						<Link
 							href="/"
-							className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+							className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
 						>
-							Exit Admin
+							<IconLogout className="size-4" aria-hidden="true" />
+							<span className="hidden sm:inline">Exit Admin</span>
 						</Link>
 					</div>
 				</div>
 			</header>
 
 			{/* Main Content */}
-			<main className="container py-6">{children}</main>
+			<main className="mx-auto max-w-screen-2xl px-6 py-8 lg:px-8">{children}</main>
 		</div>
 	);
 }

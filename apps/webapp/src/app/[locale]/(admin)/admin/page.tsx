@@ -2,12 +2,15 @@ import { Suspense } from "react";
 import { connection } from "next/server";
 import Link from "next/link";
 import {
+	IconArrowUpRight,
 	IconBuilding,
+	IconChevronRight,
+	IconCreditCard,
+	IconCurrencyEuro,
+	IconUserBolt,
 	IconUsers,
 	IconUserX,
 	IconAlertTriangle,
-	IconCurrencyEuro,
-	IconCreditCard,
 } from "@tabler/icons-react";
 import { count, eq, isNull, sql } from "drizzle-orm";
 import { db } from "@/db";
@@ -15,6 +18,7 @@ import { user, organization } from "@/db/auth-schema";
 import { organizationSuspension, subscription } from "@/db/schema";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
 interface StatCardProps {
 	title: string;
@@ -22,26 +26,53 @@ interface StatCardProps {
 	description: string;
 	icon: React.ReactNode;
 	href: string;
-	variant?: "default" | "warning" | "destructive";
+	variant?: "default" | "warning" | "destructive" | "success";
 }
 
 function StatCard({ title, value, description, icon, href, variant = "default" }: StatCardProps) {
 	const variantStyles = {
-		default: "",
-		warning: "border-yellow-500/50",
-		destructive: "border-red-500/50",
+		default: "hover:border-border",
+		warning: "border-amber-500/30 bg-amber-500/5 hover:border-amber-500/50",
+		destructive: "border-red-500/30 bg-red-500/5 hover:border-red-500/50",
+		success: "border-emerald-500/30 bg-emerald-500/5 hover:border-emerald-500/50",
+	};
+
+	const iconStyles = {
+		default: "bg-muted text-muted-foreground",
+		warning: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
+		destructive: "bg-red-500/10 text-red-600 dark:text-red-400",
+		success: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
 	};
 
 	return (
-		<Link href={href}>
-			<Card className={`hover:bg-accent/50 transition-colors cursor-pointer ${variantStyles[variant]}`}>
-				<CardHeader className="flex flex-row items-center justify-between pb-2">
-					<CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
-					<div className="text-muted-foreground">{icon}</div>
+		<Link href={href} className="group block">
+			<Card
+				className={cn(
+					"relative overflow-hidden transition-all duration-200",
+					"hover:shadow-md dark:hover:shadow-lg dark:hover:shadow-black/20",
+					variantStyles[variant],
+				)}
+			>
+				<CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3">
+					<div
+						className={cn(
+							"flex size-10 items-center justify-center rounded-lg transition-transform group-hover:scale-105",
+							iconStyles[variant],
+						)}
+					>
+						{icon}
+					</div>
+					<IconArrowUpRight
+						className="size-4 text-muted-foreground/50 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-muted-foreground"
+						aria-hidden="true"
+					/>
 				</CardHeader>
-				<CardContent>
-					<div className="text-3xl font-bold tabular-nums">{value.toLocaleString()}</div>
-					<p className="text-xs text-muted-foreground mt-1">{description}</p>
+				<CardContent className="space-y-1">
+					<div className="text-3xl font-bold tabular-nums tracking-tight">
+						{value.toLocaleString()}
+					</div>
+					<div className="text-sm font-medium">{title}</div>
+					<p className="text-xs text-muted-foreground">{description}</p>
 				</CardContent>
 			</Card>
 		</Link>
@@ -94,18 +125,18 @@ async function DashboardStats() {
 	};
 
 	return (
-		<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+		<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
 			<StatCard
 				title="Total Users"
 				value={totalUsers}
-				description="All registered users on the platform"
+				description="Registered platform accounts"
 				icon={<IconUsers className="size-5" aria-hidden="true" />}
 				href="/admin/users"
 			/>
 			<StatCard
 				title="Banned Users"
 				value={bannedUsers}
-				description="Users currently banned from the platform"
+				description="Restricted from access"
 				icon={<IconUserX className="size-5" aria-hidden="true" />}
 				href="/admin/users?status=banned"
 				variant={bannedUsers > 0 ? "destructive" : "default"}
@@ -113,14 +144,14 @@ async function DashboardStats() {
 			<StatCard
 				title="Organizations"
 				value={totalOrgs}
-				description="Active organizations on the platform"
+				description="Active workspaces"
 				icon={<IconBuilding className="size-5" aria-hidden="true" />}
 				href="/admin/organizations"
 			/>
 			<StatCard
-				title="Suspended Orgs"
+				title="Suspended"
 				value={suspendedOrgs}
-				description="Organizations in read-only mode"
+				description="Read-only organizations"
 				icon={<IconAlertTriangle className="size-5" aria-hidden="true" />}
 				href="/admin/organizations?status=suspended"
 				variant={suspendedOrgs > 0 ? "warning" : "default"}
@@ -133,11 +164,12 @@ async function DashboardStats() {
 						description="Monthly recurring revenue (€)"
 						icon={<IconCurrencyEuro className="size-5" aria-hidden="true" />}
 						href="/admin/billing"
+						variant="success"
 					/>
 					<StatCard
 						title="Licensed Seats"
 						value={billingStats.totalSeats}
-						description="Total seats across all subscriptions"
+						description="Across all subscriptions"
 						icon={<IconCreditCard className="size-5" aria-hidden="true" />}
 						href="/admin/billing"
 					/>
@@ -152,15 +184,16 @@ function DashboardStatsLoading() {
 	const cardCount = billingEnabled ? 6 : 4;
 
 	return (
-		<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+		<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
 			{[...Array(cardCount)].map((_, i) => (
 				<Card key={i}>
-					<CardHeader className="pb-2">
-						<Skeleton className="h-4 w-24" />
+					<CardHeader className="pb-3">
+						<Skeleton className="size-10 rounded-lg" />
 					</CardHeader>
-					<CardContent>
-						<Skeleton className="h-8 w-16" />
-						<Skeleton className="h-3 w-32 mt-2" />
+					<CardContent className="space-y-2">
+						<Skeleton className="h-8 w-20" />
+						<Skeleton className="h-4 w-24" />
+						<Skeleton className="h-3 w-32" />
 					</CardContent>
 				</Card>
 			))}
@@ -168,74 +201,86 @@ function DashboardStatsLoading() {
 	);
 }
 
+interface QuickActionCardProps {
+	title: string;
+	description: string;
+	href: string;
+	icon: React.ReactNode;
+}
+
+function QuickActionCard({ title, description, href, icon }: QuickActionCardProps) {
+	return (
+		<Link href={href} className="group block">
+			<Card className="h-full transition-all duration-200 hover:border-border hover:shadow-md dark:hover:shadow-lg dark:hover:shadow-black/20">
+				<CardContent className="flex items-start gap-4 p-6">
+					<div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+						{icon}
+					</div>
+					<div className="flex-1 space-y-1">
+						<div className="flex items-center justify-between">
+							<CardTitle className="text-base">{title}</CardTitle>
+							<IconChevronRight
+								className="size-4 text-muted-foreground/50 transition-all group-hover:translate-x-0.5 group-hover:text-muted-foreground"
+								aria-hidden="true"
+							/>
+						</div>
+						<CardDescription className="text-sm">{description}</CardDescription>
+					</div>
+				</CardContent>
+			</Card>
+		</Link>
+	);
+}
+
 export default function AdminDashboardPage() {
 	return (
-		<div className="space-y-8">
-			<div>
-				<h1 className="text-3xl font-bold">Platform Admin Dashboard</h1>
-				<p className="text-muted-foreground mt-1">
-					Manage users, organizations, and platform-wide settings
+		<div className="space-y-10">
+			{/* Page Header */}
+			<div className="space-y-1">
+				<h1 className="text-2xl font-semibold tracking-tight">Overview</h1>
+				<p className="text-muted-foreground">
+					Platform metrics and quick actions
 				</p>
 			</div>
 
-			<Suspense fallback={<DashboardStatsLoading />}>
-				<DashboardStats />
-			</Suspense>
+			{/* Stats Grid */}
+			<section className="space-y-4">
+				<h2 className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
+					Platform Metrics
+				</h2>
+				<Suspense fallback={<DashboardStatsLoading />}>
+					<DashboardStats />
+				</Suspense>
+			</section>
 
-			<div className="grid gap-6 md:grid-cols-2">
-				<Card>
-					<CardHeader>
-						<CardTitle>User Management</CardTitle>
-						<CardDescription>
-							Ban/unban users, manage sessions, and view user activity
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
-						<Link
-							href="/admin/users"
-							className="text-primary hover:underline text-sm font-medium"
-						>
-							Manage Users →
-						</Link>
-					</CardContent>
-				</Card>
-
-				<Card>
-					<CardHeader>
-						<CardTitle>Organization Management</CardTitle>
-						<CardDescription>
-							View org usage, suspend orgs, or delete organizations
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
-						<Link
-							href="/admin/organizations"
-							className="text-primary hover:underline text-sm font-medium"
-						>
-							Manage Organizations →
-						</Link>
-					</CardContent>
-				</Card>
-
-				{process.env.BILLING_ENABLED === "true" && (
-					<Card>
-						<CardHeader>
-							<CardTitle>Billing & Subscriptions</CardTitle>
-							<CardDescription>
-								View subscription metrics, MRR, and payment status
-							</CardDescription>
-						</CardHeader>
-						<CardContent>
-							<Link
-								href="/admin/billing"
-								className="text-primary hover:underline text-sm font-medium"
-							>
-								View Billing Dashboard →
-							</Link>
-						</CardContent>
-					</Card>
-				)}
-			</div>
+			{/* Quick Actions */}
+			<section className="space-y-4">
+				<h2 className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
+					Quick Actions
+				</h2>
+				<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+					<QuickActionCard
+						title="User Management"
+						description="Ban/unban users, manage sessions, view activity"
+						href="/admin/users"
+						icon={<IconUserBolt className="size-5" />}
+					/>
+					<QuickActionCard
+						title="Organization Management"
+						description="Suspend, delete, or review organizations"
+						href="/admin/organizations"
+						icon={<IconBuilding className="size-5" />}
+					/>
+					{process.env.BILLING_ENABLED === "true" && (
+						<QuickActionCard
+							title="Billing & Subscriptions"
+							description="Revenue metrics and subscription status"
+							href="/admin/billing"
+							icon={<IconCreditCard className="size-5" />}
+						/>
+					)}
+				</div>
+			</section>
 		</div>
 	);
 }

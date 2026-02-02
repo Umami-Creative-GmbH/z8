@@ -205,56 +205,51 @@ export default function OrganizationsPage() {
 	const totalPages = Math.ceil(total / PAGE_SIZE);
 
 	return (
-		<div className="space-y-6">
-			<div>
-				<h1 className="text-2xl font-bold">Organization Management</h1>
+		<div className="space-y-8">
+			{/* Page Header */}
+			<div className="space-y-1">
+				<h1 className="text-2xl font-semibold tracking-tight">Organization Management</h1>
 				<p className="text-muted-foreground">
 					View and manage all organizations on the platform
 				</p>
 			</div>
 
 			{/* Filters */}
-			<Card>
-				<CardContent className="pt-6">
-					<div className="flex gap-4">
-						<div className="flex-1">
-							<div className="relative">
-								<IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" aria-hidden="true" />
-								<Input
-									placeholder="Search by name or slug…"
-									name="search"
-									autoComplete="off"
-									value={search}
-									onChange={(e) => handleFilterChange(e.target.value, status)}
-									className="pl-9"
-								/>
-							</div>
-						</div>
-						<Select
-							value={status}
-							onValueChange={(v) => handleFilterChange(search, v as "all" | "active" | "suspended" | "deleted")}
-						>
-							<SelectTrigger className="w-40">
-								<SelectValue placeholder="Status" />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="all">All</SelectItem>
-								<SelectItem value="active">Active</SelectItem>
-								<SelectItem value="suspended">Suspended</SelectItem>
-								<SelectItem value="deleted">Deleted</SelectItem>
-							</SelectContent>
-						</Select>
-					</div>
-				</CardContent>
-			</Card>
+			<div className="flex flex-col gap-4 sm:flex-row">
+				<div className="relative flex-1">
+					<IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" aria-hidden="true" />
+					<Input
+						placeholder="Search by name or slug…"
+						name="search"
+						autoComplete="off"
+						value={search}
+						onChange={(e) => handleFilterChange(e.target.value, status)}
+						className="pl-9"
+					/>
+				</div>
+				<Select
+					value={status}
+					onValueChange={(v) => handleFilterChange(search, v as "all" | "active" | "suspended" | "deleted")}
+				>
+					<SelectTrigger className="w-full sm:w-40">
+						<SelectValue placeholder="Status" />
+					</SelectTrigger>
+					<SelectContent>
+						<SelectItem value="all">All</SelectItem>
+						<SelectItem value="active">Active</SelectItem>
+						<SelectItem value="suspended">Suspended</SelectItem>
+						<SelectItem value="deleted">Deleted</SelectItem>
+					</SelectContent>
+				</Select>
+			</div>
 
 			{/* Organizations Table */}
 			<Card>
-				<CardContent className="pt-6">
+				<CardContent className="p-0">
 					{isLoading ? (
-						<div className="space-y-2">
+						<div className="p-6 space-y-3">
 							{[...Array(5)].map((_, i) => (
-								<Skeleton key={i} className="h-12 w-full" />
+								<Skeleton key={i} className="h-14 w-full rounded-lg" />
 							))}
 						</div>
 					) : (
@@ -385,42 +380,45 @@ export default function OrganizationsPage() {
 						</Table>
 					)}
 
-					{/* Pagination */}
-					{totalPages > 1 && (
-						<div className="flex justify-between items-center mt-4 pt-4 border-t">
-							<div className="text-sm text-muted-foreground">
-								Showing {(page - 1) * PAGE_SIZE + 1} - {Math.min(page * PAGE_SIZE, total)} of {total}
-							</div>
-							<div className="flex gap-2">
-								<Button
-									variant="outline"
-									size="sm"
-									onClick={() => {
-										const newPage = page - 1;
-										setPage(newPage);
-										fetchOrganizations(search, status, newPage);
-									}}
-									disabled={page === 1}
-								>
-									Previous
-								</Button>
-								<Button
-									variant="outline"
-									size="sm"
-									onClick={() => {
-										const newPage = page + 1;
-										setPage(newPage);
-										fetchOrganizations(search, status, newPage);
-									}}
-									disabled={page >= totalPages}
-								>
-									Next
-								</Button>
-							</div>
-						</div>
-					)}
 				</CardContent>
 			</Card>
+
+			{/* Pagination */}
+			{totalPages > 1 && (
+				<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+					<p className="text-sm text-muted-foreground">
+						Showing <span className="font-medium text-foreground">{(page - 1) * PAGE_SIZE + 1}</span> to{" "}
+						<span className="font-medium text-foreground">{Math.min(page * PAGE_SIZE, total)}</span> of{" "}
+						<span className="font-medium text-foreground">{total}</span> organizations
+					</p>
+					<div className="flex gap-2">
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={() => {
+								const newPage = page - 1;
+								setPage(newPage);
+								fetchOrganizations(search, status, newPage);
+							}}
+							disabled={page === 1}
+						>
+							Previous
+						</Button>
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={() => {
+								const newPage = page + 1;
+								setPage(newPage);
+								fetchOrganizations(search, status, newPage);
+							}}
+							disabled={page >= totalPages}
+						>
+							Next
+						</Button>
+					</div>
+				</div>
+			)}
 
 			{/* Suspend Dialog */}
 			<Dialog open={!!suspendDialogOrg} onOpenChange={() => setSuspendDialogOrg(null)}>

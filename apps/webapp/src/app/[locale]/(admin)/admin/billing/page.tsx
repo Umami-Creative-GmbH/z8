@@ -1,17 +1,15 @@
 import { Suspense } from "react";
 import { connection } from "next/server";
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import {
 	IconCurrencyEuro,
 	IconUsers,
 	IconBuilding,
 	IconClock,
 	IconAlertTriangle,
-	IconCheck,
-	IconArrowLeft,
+	IconTrendingUp,
 } from "@tabler/icons-react";
-import { count, eq, sql, and, gte, lte } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { db } from "@/db";
 import { organization } from "@/db/auth-schema";
@@ -27,6 +25,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { cn } from "@/lib/utils";
 
 export default function AdminBillingPage() {
 	// Check if billing is enabled
@@ -35,29 +34,34 @@ export default function AdminBillingPage() {
 	}
 
 	return (
-		<div className="space-y-8">
-			<div className="flex items-center gap-4">
-				<Link
-					href="/admin"
-					className="text-muted-foreground hover:text-foreground"
-				>
-					<IconArrowLeft className="size-5" />
-				</Link>
-				<div>
-					<h1 className="text-3xl font-bold">Billing Dashboard</h1>
-					<p className="text-muted-foreground mt-1">
-						Monitor subscriptions, revenue, and payment status across all organizations
-					</p>
-				</div>
+		<div className="space-y-10">
+			{/* Page Header */}
+			<div className="space-y-1">
+				<h1 className="text-2xl font-semibold tracking-tight">Billing Dashboard</h1>
+				<p className="text-muted-foreground">
+					Monitor subscriptions, revenue, and payment status
+				</p>
 			</div>
 
-			<Suspense fallback={<BillingStatsLoading />}>
-				<BillingStats />
-			</Suspense>
+			{/* Stats */}
+			<section className="space-y-4">
+				<h2 className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
+					Revenue Metrics
+				</h2>
+				<Suspense fallback={<BillingStatsLoading />}>
+					<BillingStats />
+				</Suspense>
+			</section>
 
-			<Suspense fallback={<SubscriptionsTableLoading />}>
-				<SubscriptionsTable />
-			</Suspense>
+			{/* Subscriptions Table */}
+			<section className="space-y-4">
+				<h2 className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
+					Recent Subscriptions
+				</h2>
+				<Suspense fallback={<SubscriptionsTableLoading />}>
+					<SubscriptionsTable />
+				</Suspense>
+			</section>
 		</div>
 	);
 }
@@ -72,20 +76,38 @@ interface StatCardProps {
 
 function StatCard({ title, value, description, icon, variant = "default" }: StatCardProps) {
 	const variantStyles = {
-		default: "",
-		warning: "border-yellow-500/50",
-		success: "border-green-500/50",
+		default: "hover:border-border",
+		warning: "border-amber-500/30 bg-amber-500/5 hover:border-amber-500/50",
+		success: "border-emerald-500/30 bg-emerald-500/5 hover:border-emerald-500/50",
+	};
+
+	const iconStyles = {
+		default: "bg-muted text-muted-foreground",
+		warning: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
+		success: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
 	};
 
 	return (
-		<Card className={variantStyles[variant]}>
-			<CardHeader className="flex flex-row items-center justify-between pb-2">
-				<CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
-				<div className="text-muted-foreground">{icon}</div>
+		<Card
+			className={cn(
+				"transition-all duration-200 hover:shadow-md dark:hover:shadow-lg dark:hover:shadow-black/20",
+				variantStyles[variant],
+			)}
+		>
+			<CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3">
+				<div
+					className={cn(
+						"flex size-10 items-center justify-center rounded-lg",
+						iconStyles[variant],
+					)}
+				>
+					{icon}
+				</div>
 			</CardHeader>
-			<CardContent>
-				<div className="text-3xl font-bold tabular-nums">{value}</div>
-				<p className="text-xs text-muted-foreground mt-1">{description}</p>
+			<CardContent className="space-y-1">
+				<div className="text-3xl font-bold tabular-nums tracking-tight">{value}</div>
+				<div className="text-sm font-medium">{title}</div>
+				<p className="text-xs text-muted-foreground">{description}</p>
 			</CardContent>
 		</Card>
 	);
@@ -135,7 +157,7 @@ async function BillingStats() {
 		: 0;
 
 	return (
-		<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+		<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
 			<StatCard
 				title="MRR"
 				value={`€${mrr.toLocaleString()}`}
@@ -146,7 +168,7 @@ async function BillingStats() {
 			<StatCard
 				title="Licensed Seats"
 				value={totalSeats}
-				description="Total seats across subscriptions"
+				description="Across all subscriptions"
 				icon={<IconUsers className="size-5" aria-hidden="true" />}
 			/>
 			<StatCard
@@ -158,20 +180,20 @@ async function BillingStats() {
 			<StatCard
 				title="Past Due"
 				value={pastDueCount}
-				description="Subscriptions with payment issues"
+				description="Payment issues"
 				icon={<IconAlertTriangle className="size-5" aria-hidden="true" />}
 				variant={pastDueCount > 0 ? "warning" : "default"}
 			/>
 			<StatCard
-				title="Trial Conversion"
+				title="Conversion Rate"
 				value={`${conversionRate}%`}
-				description="Trials converted to paid"
-				icon={<IconCheck className="size-5" aria-hidden="true" />}
+				description="Trials to paid"
+				icon={<IconTrendingUp className="size-5" aria-hidden="true" />}
 			/>
 			<StatCard
-				title="Currently Trialing"
+				title="Trialing"
 				value={trialingCount}
-				description="Organizations in trial period"
+				description="In trial period"
 				icon={<IconClock className="size-5" aria-hidden="true" />}
 			/>
 		</div>
@@ -180,15 +202,16 @@ async function BillingStats() {
 
 function BillingStatsLoading() {
 	return (
-		<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+		<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
 			{[...Array(6)].map((_, i) => (
 				<Card key={i}>
-					<CardHeader className="pb-2">
-						<Skeleton className="h-4 w-24" />
+					<CardHeader className="pb-3">
+						<Skeleton className="size-10 rounded-lg" />
 					</CardHeader>
-					<CardContent>
-						<Skeleton className="h-8 w-16" />
-						<Skeleton className="h-3 w-32 mt-2" />
+					<CardContent className="space-y-2">
+						<Skeleton className="h-8 w-20" />
+						<Skeleton className="h-4 w-24" />
+						<Skeleton className="h-3 w-28" />
 					</CardContent>
 				</Card>
 			))}
@@ -249,13 +272,7 @@ async function SubscriptionsTable() {
 
 	return (
 		<Card>
-			<CardHeader>
-				<CardTitle>Recent Subscriptions</CardTitle>
-				<CardDescription>
-					Latest subscription activity across all organizations
-				</CardDescription>
-			</CardHeader>
-			<CardContent>
+			<CardContent className="p-0">
 				<Table>
 					<TableHeader>
 						<TableRow>
@@ -304,16 +321,10 @@ async function SubscriptionsTable() {
 function SubscriptionsTableLoading() {
 	return (
 		<Card>
-			<CardHeader>
-				<Skeleton className="h-6 w-48" />
-				<Skeleton className="h-4 w-64 mt-1" />
-			</CardHeader>
-			<CardContent>
-				<div className="space-y-3">
-					{[...Array(5)].map((_, i) => (
-						<Skeleton key={i} className="h-12 w-full" />
-					))}
-				</div>
+			<CardContent className="p-6 space-y-3">
+				{[...Array(5)].map((_, i) => (
+					<Skeleton key={i} className="h-14 w-full rounded-lg" />
+				))}
 			</CardContent>
 		</Card>
 	);
