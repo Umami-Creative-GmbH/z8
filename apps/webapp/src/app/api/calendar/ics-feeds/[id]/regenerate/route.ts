@@ -14,6 +14,8 @@ import { headers } from "next/headers";
 import { db } from "@/db";
 import { employee, icsFeed } from "@/db/schema";
 import { auth } from "@/lib/auth";
+import { getAbility } from "@/lib/auth-helpers";
+import { ForbiddenError, toHttpError } from "@/lib/authorization";
 
 // ============================================
 // HELPERS
@@ -77,13 +79,22 @@ export async function POST(
 			return NextResponse.json({ error: "Employee not found" }, { status: 404 });
 		}
 
+		// Get CASL ability for permission checks
+		const ability = await getAbility();
+
 		// Check access
 		if (feed.feedType === "user" && feed.employeeId !== emp.id) {
-			return NextResponse.json({ error: "Access denied" }, { status: 403 });
+			const error = new ForbiddenError("update", "Calendar");
+			const httpError = toHttpError(error);
+			return NextResponse.json(httpError.body, { status: httpError.status });
 		}
 
-		if (feed.feedType === "team" && emp.role !== "admin" && emp.role !== "manager") {
-			return NextResponse.json({ error: "Access denied" }, { status: 403 });
+		if (feed.feedType === "team") {
+			if (!ability || ability.cannot("manage", "Calendar")) {
+				const error = new ForbiddenError("manage", "Calendar");
+				const httpError = toHttpError(error);
+				return NextResponse.json(httpError.body, { status: httpError.status });
+			}
 		}
 
 		// Generate new secret

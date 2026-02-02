@@ -16,6 +16,8 @@ import { z } from "zod";
 import { db } from "@/db";
 import { employee, icsFeed, team } from "@/db/schema";
 import { auth } from "@/lib/auth";
+import { getAbility } from "@/lib/auth-helpers";
+import { ForbiddenError, toHttpError } from "@/lib/authorization";
 
 // ============================================
 // VALIDATION
@@ -73,6 +75,14 @@ export async function GET(_request: NextRequest) {
 			return NextResponse.json({ error: "Employee not found" }, { status: 404 });
 		}
 
+		// Check CASL permissions for viewing calendar
+		const ability = await getAbility();
+		if (!ability || ability.cannot("read", "Calendar")) {
+			const error = new ForbiddenError("read", "Calendar");
+			const httpError = toHttpError(error);
+			return NextResponse.json(httpError.body, { status: httpError.status });
+		}
+
 		// Get user's personal feed
 		const userFeed = await db.query.icsFeed.findFirst({
 			where: and(
@@ -82,17 +92,20 @@ export async function GET(_request: NextRequest) {
 			),
 		});
 
-		// Get team feeds (if user is admin/manager, they can see team feeds)
-		const teamFeeds = await db.query.icsFeed.findMany({
-			where: and(
-				eq(icsFeed.organizationId, activeOrgId),
-				eq(icsFeed.feedType, "team"),
-				eq(icsFeed.isActive, true),
-			),
-			with: {
-				team: true,
-			},
-		});
+		// Get team feeds (only if user can manage calendars)
+		const canManageCalendar = ability.can("manage", "Calendar");
+		const teamFeeds = canManageCalendar
+			? await db.query.icsFeed.findMany({
+					where: and(
+						eq(icsFeed.organizationId, activeOrgId),
+						eq(icsFeed.feedType, "team"),
+						eq(icsFeed.isActive, true),
+					),
+					with: {
+						team: true,
+					},
+				})
+			: [];
 
 		// Build response
 		const feeds = [];
@@ -109,8 +122,8 @@ export async function GET(_request: NextRequest) {
 			});
 		}
 
-		// Only include team feeds the user has access to
-		if (emp.role === "admin" || emp.role === "manager") {
+		// Only include team feeds if user can manage calendar
+		if (canManageCalendar) {
 			for (const feed of teamFeeds) {
 				feeds.push({
 					id: feed.id,
@@ -178,6 +191,9 @@ export async function POST(request: NextRequest) {
 			return NextResponse.json({ error: "Employee not found" }, { status: 404 });
 		}
 
+		// Check CASL permissions
+		const ability = await getAbility();
+
 		// Validate based on feed type
 		if (feedType === "team") {
 			if (!teamId) {
@@ -187,12 +203,11 @@ export async function POST(request: NextRequest) {
 				);
 			}
 
-			// Only admins/managers can create team feeds
-			if (emp.role !== "admin" && emp.role !== "manager") {
-				return NextResponse.json(
-					{ error: "Only admins and managers can create team feeds" },
-					{ status: 403 },
-				);
+			// Only users who can manage calendars can create team feeds
+			if (!ability || ability.cannot("manage", "Calendar")) {
+				const error = new ForbiddenError("manage", "Calendar");
+				const httpError = toHttpError(error);
+				return NextResponse.json(httpError.body, { status: httpError.status });
 			}
 
 			// Validate team exists in org
@@ -220,7 +235,13 @@ export async function POST(request: NextRequest) {
 				);
 			}
 		} else {
-			// User feed
+			// User feed - must have at least read Calendar permission
+			if (!ability || ability.cannot("read", "Calendar")) {
+				const error = new ForbiddenError("read", "Calendar");
+				const httpError = toHttpError(error);
+				return NextResponse.json(httpError.body, { status: httpError.status });
+			}
+
 			// Check if feed already exists
 			const existingFeed = await db.query.icsFeed.findFirst({
 				where: and(

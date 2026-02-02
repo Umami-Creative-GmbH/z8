@@ -5,6 +5,8 @@ import { type NextRequest, NextResponse, connection } from "next/server";
 import { db } from "@/db";
 import { employee } from "@/db/schema";
 import { auth } from "@/lib/auth";
+import { getAbility } from "@/lib/auth-helpers";
+import { ForbiddenError, toHttpError } from "@/lib/authorization";
 import { runtime } from "@/lib/effect/runtime";
 import { TimeEntryService } from "@/lib/effect/services/time-entry.service";
 
@@ -52,13 +54,13 @@ export async function POST(request: NextRequest) {
 		// Determine which employee's chain to verify
 		const targetEmployeeId = employeeId || currentEmployee.id;
 
-		// Only allow verifying own entries unless admin/manager
+		// Only allow verifying own entries unless user can manage time entries
 		if (targetEmployeeId !== currentEmployee.id) {
-			if (currentEmployee.role !== "admin" && currentEmployee.role !== "manager") {
-				return NextResponse.json(
-					{ error: "Not authorized to verify other employees' chains" },
-					{ status: 403 },
-				);
+			const ability = await getAbility();
+			if (!ability || ability.cannot("manage", "TimeEntry")) {
+				const error = new ForbiddenError("read", "TimeEntry");
+				const httpError = toHttpError(error);
+				return NextResponse.json(httpError.body, { status: httpError.status });
 			}
 
 			// Verify target employee is in same organization
@@ -142,13 +144,13 @@ export async function GET(request: NextRequest) {
 		// Determine which employee's chain hash to get
 		const targetEmployeeId = employeeId || currentEmployee.id;
 
-		// Only allow viewing own chain hash unless admin/manager
+		// Only allow viewing own chain hash unless user can manage time entries
 		if (targetEmployeeId !== currentEmployee.id) {
-			if (currentEmployee.role !== "admin" && currentEmployee.role !== "manager") {
-				return NextResponse.json(
-					{ error: "Not authorized to view other employees' chain hash" },
-					{ status: 403 },
-				);
+			const ability = await getAbility();
+			if (!ability || ability.cannot("manage", "TimeEntry")) {
+				const error = new ForbiddenError("read", "TimeEntry");
+				const httpError = toHttpError(error);
+				return NextResponse.json(httpError.body, { status: httpError.status });
 			}
 		}
 

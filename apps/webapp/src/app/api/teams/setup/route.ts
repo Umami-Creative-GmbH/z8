@@ -10,11 +10,13 @@
 
 import { connection, NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { teamsTenantConfig, employee } from "@/db/schema";
 import { organization } from "@/db/auth-schema";
 import { auth } from "@/lib/auth";
+import { getAbility } from "@/lib/auth-helpers";
+import { ForbiddenError, toHttpError } from "@/lib/authorization";
 import { headers } from "next/headers";
 import { createLogger } from "@/lib/logger";
 
@@ -83,16 +85,30 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
-		// Verify user has admin access to the organization
+		// Verify user has admin access using CASL
+		// First check they're a member of the organization
 		const emp = await db.query.employee.findFirst({
-			where: eq(employee.userId, session.user.id),
+			where: and(
+				eq(employee.userId, session.user.id),
+				eq(employee.organizationId, organizationId),
+			),
 		});
 
-		if (!emp || emp.organizationId !== organizationId || emp.role !== "admin") {
+		if (!emp) {
 			return NextResponse.json(
 				{ error: "Access denied" },
 				{ status: 403 },
 			);
+		}
+
+		// Check CASL permissions - must be able to manage OrgIntegrations or be employee admin
+		const ability = await getAbility();
+		// Employee admins get manage Team permission, so use that as proxy for employee admin check
+		// Also check OrgIntegrations for org-level admin
+		if (!ability || (ability.cannot("manage", "OrgIntegrations") && ability.cannot("manage", "Team"))) {
+			const error = new ForbiddenError("manage", "OrgIntegrations");
+			const httpError = toHttpError(error);
+			return NextResponse.json(httpError.body, { status: httpError.status });
 		}
 
 		const org = await db.query.organization.findFirst({
@@ -204,16 +220,27 @@ export async function DELETE(request: NextRequest) {
 			);
 		}
 
-		// Verify user has admin access
+		// Verify user has admin access using CASL
 		const emp = await db.query.employee.findFirst({
-			where: eq(employee.userId, session.user.id),
+			where: and(
+				eq(employee.userId, session.user.id),
+				eq(employee.organizationId, organizationId),
+			),
 		});
 
-		if (!emp || emp.organizationId !== organizationId || emp.role !== "admin") {
+		if (!emp) {
 			return NextResponse.json(
 				{ error: "Access denied" },
 				{ status: 403 },
 			);
+		}
+
+		// Check CASL permissions - must be able to manage OrgIntegrations or be employee admin
+		const ability = await getAbility();
+		if (!ability || (ability.cannot("manage", "OrgIntegrations") && ability.cannot("manage", "Team"))) {
+			const error = new ForbiddenError("manage", "OrgIntegrations");
+			const httpError = toHttpError(error);
+			return NextResponse.json(httpError.body, { status: httpError.status });
 		}
 
 		// Deactivate the tenant config

@@ -6,11 +6,13 @@
 
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
 import { employee } from "@/db/schema";
+import { getAbility } from "@/lib/auth-helpers";
+import { ForbiddenError, toHttpError } from "@/lib/authorization";
 import { getAllApprovalHandlers } from "@/lib/approvals/domain/registry";
 import type { ApprovalType } from "@/lib/approvals/domain/types";
 import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
@@ -30,18 +32,33 @@ export async function GET() {
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 		}
 
-		// Get current employee
+		// Get active organization from session
+		const activeOrganizationId = session.session?.activeOrganizationId;
+		if (!activeOrganizationId) {
+			return NextResponse.json(
+				{ error: "No active organization" },
+				{ status: 400 },
+			);
+		}
+
+		// Check CASL permissions - must be able to approve or manage approvals
+		const ability = await getAbility();
+		if (!ability || (ability.cannot("approve", "Approval") && ability.cannot("manage", "Approval"))) {
+			const error = new ForbiddenError("approve", "Approval");
+			const httpError = toHttpError(error);
+			return NextResponse.json(httpError.body, { status: httpError.status });
+		}
+
+		// Get current employee for the active organization
 		const currentEmployee = await db.query.employee.findFirst({
-			where: eq(employee.userId, session.user.id),
+			where: and(
+				eq(employee.userId, session.user.id),
+				eq(employee.organizationId, activeOrganizationId),
+			),
 		});
 
 		if (!currentEmployee) {
 			return NextResponse.json({ error: "Employee not found" }, { status: 404 });
-		}
-
-		// Only managers and admins can access approvals
-		if (currentEmployee.role !== "manager" && currentEmployee.role !== "admin") {
-			return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 		}
 
 		// Get counts from all handlers

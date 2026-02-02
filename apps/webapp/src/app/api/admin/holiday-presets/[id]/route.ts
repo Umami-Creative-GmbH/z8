@@ -3,12 +3,13 @@ import { headers } from "next/headers";
 import { type NextRequest, NextResponse, connection } from "next/server";
 import { db } from "@/db";
 import {
-	employee,
 	holidayPreset,
 	holidayPresetAssignment,
 	holidayPresetHoliday,
 } from "@/db/schema";
 import { auth } from "@/lib/auth";
+import { getAbility } from "@/lib/auth-helpers";
+import { ForbiddenError, toHttpError } from "@/lib/authorization";
 import { holidayPresetFormSchema } from "@/lib/holidays/validation";
 
 interface RouteParams {
@@ -35,21 +36,12 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 			return NextResponse.json({ error: "No active organization" }, { status: 400 });
 		}
 
-		// Get employee record for the active organization ONLY
-		const [employeeRecord] = await db
-			.select()
-			.from(employee)
-			.where(
-				and(
-					eq(employee.userId, session.user.id),
-					eq(employee.organizationId, activeOrgId),
-					eq(employee.isActive, true),
-				),
-			)
-			.limit(1);
-
-		if (!employeeRecord || employeeRecord.role !== "admin") {
-			return NextResponse.json({ error: "Admin access required" }, { status: 403 });
+		// Check CASL permissions
+		const ability = await getAbility();
+		if (!ability || ability.cannot("manage", "Holiday")) {
+			const error = new ForbiddenError("manage", "Holiday");
+			const httpError = toHttpError(error);
+			return NextResponse.json(httpError.body, { status: httpError.status });
 		}
 
 		// Fetch the preset
@@ -59,7 +51,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 			.where(
 				and(
 					eq(holidayPreset.id, id),
-					eq(holidayPreset.organizationId, employeeRecord.organizationId),
+					eq(holidayPreset.organizationId, activeOrgId),
 				),
 			)
 			.limit(1);
@@ -116,21 +108,12 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 			return NextResponse.json({ error: "No active organization" }, { status: 400 });
 		}
 
-		// Get employee record for the active organization ONLY
-		const [employeeRecord] = await db
-			.select()
-			.from(employee)
-			.where(
-				and(
-					eq(employee.userId, session.user.id),
-					eq(employee.organizationId, activeOrgId),
-					eq(employee.isActive, true),
-				),
-			)
-			.limit(1);
-
-		if (!employeeRecord || employeeRecord.role !== "admin") {
-			return NextResponse.json({ error: "Admin access required" }, { status: 403 });
+		// Check CASL permissions
+		const ability = await getAbility();
+		if (!ability || ability.cannot("manage", "Holiday")) {
+			const error = new ForbiddenError("manage", "Holiday");
+			const httpError = toHttpError(error);
+			return NextResponse.json(httpError.body, { status: httpError.status });
 		}
 
 		// Check if preset exists and belongs to organization
@@ -140,7 +123,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 			.where(
 				and(
 					eq(holidayPreset.id, id),
-					eq(holidayPreset.organizationId, employeeRecord.organizationId),
+					eq(holidayPreset.organizationId, activeOrgId),
 				),
 			)
 			.limit(1);
@@ -205,21 +188,12 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
 			return NextResponse.json({ error: "No active organization" }, { status: 400 });
 		}
 
-		// Get employee record for the active organization ONLY
-		const [employeeRecord] = await db
-			.select()
-			.from(employee)
-			.where(
-				and(
-					eq(employee.userId, session.user.id),
-					eq(employee.organizationId, activeOrgId),
-					eq(employee.isActive, true),
-				),
-			)
-			.limit(1);
-
-		if (!employeeRecord || employeeRecord.role !== "admin") {
-			return NextResponse.json({ error: "Admin access required" }, { status: 403 });
+		// Check CASL permissions
+		const ability = await getAbility();
+		if (!ability || ability.cannot("manage", "Holiday")) {
+			const error = new ForbiddenError("manage", "Holiday");
+			const httpError = toHttpError(error);
+			return NextResponse.json(httpError.body, { status: httpError.status });
 		}
 
 		// Check if preset exists and belongs to organization
@@ -229,7 +203,7 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
 			.where(
 				and(
 					eq(holidayPreset.id, id),
-					eq(holidayPreset.organizationId, employeeRecord.organizationId),
+					eq(holidayPreset.organizationId, activeOrgId),
 				),
 			)
 			.limit(1);

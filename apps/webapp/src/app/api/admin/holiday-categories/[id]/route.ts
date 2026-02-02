@@ -2,8 +2,10 @@ import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { type NextRequest, NextResponse, connection } from "next/server";
 import { db } from "@/db";
-import { employee, holidayCategory } from "@/db/schema";
+import { holidayCategory } from "@/db/schema";
 import { auth } from "@/lib/auth";
+import { getAbility } from "@/lib/auth-helpers";
+import { ForbiddenError, toHttpError } from "@/lib/authorization";
 
 /**
  * PATCH /api/admin/holiday-categories/[id]
@@ -25,21 +27,12 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 			return NextResponse.json({ error: "No active organization" }, { status: 400 });
 		}
 
-		// Get employee record for the active organization ONLY
-		const [employeeRecord] = await db
-			.select()
-			.from(employee)
-			.where(
-				and(
-					eq(employee.userId, session.user.id),
-					eq(employee.organizationId, activeOrgId),
-					eq(employee.isActive, true),
-				),
-			)
-			.limit(1);
-
-		if (!employeeRecord || employeeRecord.role !== "admin") {
-			return NextResponse.json({ error: "Admin access required" }, { status: 403 });
+		// Check CASL permissions
+		const ability = await getAbility();
+		if (!ability || ability.cannot("manage", "Holiday")) {
+			const error = new ForbiddenError("manage", "Holiday");
+			const httpError = toHttpError(error);
+			return NextResponse.json(httpError.body, { status: httpError.status });
 		}
 
 		// Verify category belongs to organization
@@ -49,7 +42,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 			.where(
 				and(
 					eq(holidayCategory.id, id),
-					eq(holidayCategory.organizationId, employeeRecord.organizationId),
+					eq(holidayCategory.organizationId, activeOrgId),
 				),
 			)
 			.limit(1);
@@ -107,21 +100,12 @@ export async function DELETE(
 			return NextResponse.json({ error: "No active organization" }, { status: 400 });
 		}
 
-		// Get employee record for the active organization ONLY
-		const [employeeRecord] = await db
-			.select()
-			.from(employee)
-			.where(
-				and(
-					eq(employee.userId, session.user.id),
-					eq(employee.organizationId, activeOrgId),
-					eq(employee.isActive, true),
-				),
-			)
-			.limit(1);
-
-		if (!employeeRecord || employeeRecord.role !== "admin") {
-			return NextResponse.json({ error: "Admin access required" }, { status: 403 });
+		// Check CASL permissions
+		const ability = await getAbility();
+		if (!ability || ability.cannot("manage", "Holiday")) {
+			const error = new ForbiddenError("manage", "Holiday");
+			const httpError = toHttpError(error);
+			return NextResponse.json(httpError.body, { status: httpError.status });
 		}
 
 		// Verify category belongs to organization
@@ -131,7 +115,7 @@ export async function DELETE(
 			.where(
 				and(
 					eq(holidayCategory.id, id),
-					eq(holidayCategory.organizationId, employeeRecord.organizationId),
+					eq(holidayCategory.organizationId, activeOrgId),
 				),
 			)
 			.limit(1);

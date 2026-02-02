@@ -4,7 +4,6 @@
  * GET /api/calendar/ics-feeds/[id] - Get feed details
  * PATCH /api/calendar/ics-feeds/[id] - Update feed settings
  * DELETE /api/calendar/ics-feeds/[id] - Delete/deactivate feed
- * POST /api/calendar/ics-feeds/[id]/regenerate - Regenerate secret
  */
 
 import crypto from "crypto";
@@ -16,6 +15,8 @@ import { z } from "zod";
 import { db } from "@/db";
 import { employee, icsFeed } from "@/db/schema";
 import { auth } from "@/lib/auth";
+import { getAbility } from "@/lib/auth-helpers";
+import { ForbiddenError, toHttpError } from "@/lib/authorization";
 
 // ============================================
 // VALIDATION
@@ -30,10 +31,6 @@ const updateFeedSchema = z.object({
 // HELPERS
 // ============================================
 
-function generateFeedSecret(): string {
-	return crypto.randomBytes(32).toString("hex");
-}
-
 function buildFeedUrl(secret: string): string {
 	const baseUrl = process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 	return `${baseUrl}/api/calendar/ics/${secret}`;
@@ -43,7 +40,7 @@ async function verifyFeedAccess(
 	feedId: string,
 	userId: string,
 	organizationId: string,
-): Promise<{ feed: typeof icsFeed.$inferSelect; employee: typeof employee.$inferSelect } | null> {
+): Promise<{ feed: typeof icsFeed.$inferSelect; employee: typeof employee.$inferSelect; canAccess: boolean } | null> {
 	const feed = await db.query.icsFeed.findFirst({
 		where: and(
 			eq(icsFeed.id, feedId),
@@ -63,18 +60,20 @@ async function verifyFeedAccess(
 
 	if (!emp) return null;
 
+	// Get ability for CASL checks
+	const ability = await getAbility();
+
 	// Check access:
 	// - User feeds: only the owner can access
-	// - Team feeds: only admins/managers can access
-	if (feed.feedType === "user" && feed.employeeId !== emp.id) {
-		return null;
+	// - Team feeds: only users who can manage calendars can access
+	let canAccess = false;
+	if (feed.feedType === "user" && feed.employeeId === emp.id) {
+		canAccess = true;
+	} else if (feed.feedType === "team" && ability?.can("manage", "Calendar")) {
+		canAccess = true;
 	}
 
-	if (feed.feedType === "team" && emp.role !== "admin" && emp.role !== "manager") {
-		return null;
-	}
-
-	return { feed, employee: emp };
+	return { feed, employee: emp, canAccess };
 }
 
 // ============================================
@@ -102,7 +101,7 @@ export async function GET(
 		}
 
 		const access = await verifyFeedAccess(id, session.user.id, activeOrgId);
-		if (!access) {
+		if (!access || !access.canAccess) {
 			return NextResponse.json({ error: "Feed not found" }, { status: 404 });
 		}
 
@@ -148,7 +147,7 @@ export async function PATCH(
 		}
 
 		const access = await verifyFeedAccess(id, session.user.id, activeOrgId);
-		if (!access) {
+		if (!access || !access.canAccess) {
 			return NextResponse.json({ error: "Feed not found" }, { status: 404 });
 		}
 
@@ -215,7 +214,7 @@ export async function DELETE(
 		}
 
 		const access = await verifyFeedAccess(id, session.user.id, activeOrgId);
-		if (!access) {
+		if (!access || !access.canAccess) {
 			return NextResponse.json({ error: "Feed not found" }, { status: 404 });
 		}
 

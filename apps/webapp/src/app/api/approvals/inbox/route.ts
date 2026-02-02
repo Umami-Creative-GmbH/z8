@@ -11,6 +11,8 @@ import { Effect } from "effect";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
 import { employee } from "@/db/schema";
+import { getAbility } from "@/lib/auth-helpers";
+import { ForbiddenError, toHttpError } from "@/lib/authorization";
 import { getAllApprovalHandlers } from "@/lib/approvals/domain/registry";
 import { comparePriority } from "@/lib/approvals/domain/sla-calculator";
 import type {
@@ -46,6 +48,14 @@ export async function GET(request: NextRequest) {
 			);
 		}
 
+		// Check CASL permissions - must be able to approve or manage approvals
+		const ability = await getAbility();
+		if (!ability || (ability.cannot("approve", "Approval") && ability.cannot("manage", "Approval"))) {
+			const error = new ForbiddenError("approve", "Approval");
+			const httpError = toHttpError(error);
+			return NextResponse.json(httpError.body, { status: httpError.status });
+		}
+
 		// Get current employee for the active organization
 		const currentEmployee = await db.query.employee.findFirst({
 			where: and(
@@ -56,11 +66,6 @@ export async function GET(request: NextRequest) {
 
 		if (!currentEmployee) {
 			return NextResponse.json({ error: "Employee not found" }, { status: 404 });
-		}
-
-		// Only managers and admins can access approvals
-		if (currentEmployee.role !== "manager" && currentEmployee.role !== "admin") {
-			return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 		}
 
 		// Parse query parameters

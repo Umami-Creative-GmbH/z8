@@ -3,12 +3,13 @@ import { headers } from "next/headers";
 import { type NextRequest, NextResponse, connection } from "next/server";
 import { db } from "@/db";
 import {
-	employee,
 	holidayPreset,
 	holidayPresetAssignment,
 	holidayPresetHoliday,
 } from "@/db/schema";
 import { auth } from "@/lib/auth";
+import { getAbility } from "@/lib/auth-helpers";
+import { ForbiddenError, toHttpError } from "@/lib/authorization";
 import { holidayPresetFormSchema } from "@/lib/holidays/validation";
 
 /**
@@ -29,21 +30,12 @@ export async function GET(_request: NextRequest) {
 			return NextResponse.json({ error: "No active organization" }, { status: 400 });
 		}
 
-		// Get employee record for the active organization ONLY
-		const [employeeRecord] = await db
-			.select()
-			.from(employee)
-			.where(
-				and(
-					eq(employee.userId, session.user.id),
-					eq(employee.organizationId, activeOrgId),
-					eq(employee.isActive, true),
-				),
-			)
-			.limit(1);
-
-		if (!employeeRecord || employeeRecord.role !== "admin") {
-			return NextResponse.json({ error: "Admin access required" }, { status: 403 });
+		// Check CASL permissions
+		const ability = await getAbility();
+		if (!ability || ability.cannot("manage", "Holiday")) {
+			const error = new ForbiddenError("manage", "Holiday");
+			const httpError = toHttpError(error);
+			return NextResponse.json(httpError.body, { status: httpError.status });
 		}
 
 		// Fetch all presets for the organization with holiday count
@@ -60,7 +52,7 @@ export async function GET(_request: NextRequest) {
 				createdAt: holidayPreset.createdAt,
 			})
 			.from(holidayPreset)
-			.where(eq(holidayPreset.organizationId, employeeRecord.organizationId))
+			.where(eq(holidayPreset.organizationId, activeOrgId))
 			.orderBy(holidayPreset.name);
 
 		// Get holiday counts and assignment counts for each preset
@@ -121,21 +113,12 @@ export async function POST(request: NextRequest) {
 			return NextResponse.json({ error: "No active organization" }, { status: 400 });
 		}
 
-		// Get employee record for the active organization ONLY
-		const [employeeRecord] = await db
-			.select()
-			.from(employee)
-			.where(
-				and(
-					eq(employee.userId, session.user.id),
-					eq(employee.organizationId, activeOrgId),
-					eq(employee.isActive, true),
-				),
-			)
-			.limit(1);
-
-		if (!employeeRecord || employeeRecord.role !== "admin") {
-			return NextResponse.json({ error: "Admin access required" }, { status: 403 });
+		// Check CASL permissions
+		const ability = await getAbility();
+		if (!ability || ability.cannot("manage", "Holiday")) {
+			const error = new ForbiddenError("manage", "Holiday");
+			const httpError = toHttpError(error);
+			return NextResponse.json(httpError.body, { status: httpError.status });
 		}
 
 		const body = await request.json();
@@ -154,7 +137,7 @@ export async function POST(request: NextRequest) {
 		// Check for existing preset with same location
 		if (countryCode) {
 			const existingConditions = [
-				eq(holidayPreset.organizationId, employeeRecord.organizationId),
+				eq(holidayPreset.organizationId, activeOrgId),
 				eq(holidayPreset.countryCode, countryCode),
 			];
 
@@ -183,7 +166,7 @@ export async function POST(request: NextRequest) {
 		const [newPreset] = await db
 			.insert(holidayPreset)
 			.values({
-				organizationId: employeeRecord.organizationId,
+				organizationId: activeOrgId,
 				name,
 				description: description || null,
 				countryCode: countryCode || null,

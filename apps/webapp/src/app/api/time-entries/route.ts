@@ -5,6 +5,8 @@ import { connection, type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { employee, workPeriod } from "@/db/schema";
 import { auth } from "@/lib/auth";
+import { getAbility } from "@/lib/auth-helpers";
+import { ForbiddenError, toHttpError } from "@/lib/authorization";
 import { runtime } from "@/lib/effect/runtime";
 import { TimeEntryService } from "@/lib/effect/services/time-entry.service";
 
@@ -62,13 +64,13 @@ export async function GET(request: NextRequest) {
 		// Determine which employee's entries to fetch
 		const targetEmployeeId = employeeId || currentEmployee.id;
 
-		// Only allow viewing own entries unless admin/manager
+		// Only allow viewing own entries unless user can manage time entries
 		if (targetEmployeeId !== currentEmployee.id) {
-			if (currentEmployee.role !== "admin" && currentEmployee.role !== "manager") {
-				return NextResponse.json(
-					{ error: "Not authorized to view other employees' entries" },
-					{ status: 403 },
-				);
+			const ability = await getAbility();
+			if (!ability || ability.cannot("manage", "TimeEntry")) {
+				const error = new ForbiddenError("read", "TimeEntry");
+				const httpError = toHttpError(error);
+				return NextResponse.json(httpError.body, { status: httpError.status });
 			}
 
 			// Verify target employee is in same organization

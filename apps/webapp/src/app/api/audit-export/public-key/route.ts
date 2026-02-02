@@ -1,9 +1,8 @@
-import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { type NextRequest, NextResponse, connection } from "next/server";
-import { db } from "@/db";
-import { member } from "@/db/auth-schema";
 import { auth } from "@/lib/auth";
+import { getAbility } from "@/lib/auth-helpers";
+import { ForbiddenError, toHttpError } from "@/lib/authorization";
 import { configurationService } from "@/lib/audit-export";
 
 /**
@@ -30,16 +29,12 @@ export async function GET(request: NextRequest) {
 			return NextResponse.json({ error: "No active organization" }, { status: 400 });
 		}
 
-		// Verify user is admin or owner
-		const membership = await db.query.member.findFirst({
-			where: and(eq(member.userId, session.user.id), eq(member.organizationId, activeOrgId)),
-		});
-
-		if (membership?.role !== "admin" && membership?.role !== "owner") {
-			return NextResponse.json(
-				{ error: "Insufficient permissions - admin role required" },
-				{ status: 403 },
-			);
+		// Check CASL permissions - requires manage Export or manage AuditLog
+		const ability = await getAbility();
+		if (!ability || (ability.cannot("manage", "Export") && ability.cannot("manage", "AuditLog"))) {
+			const error = new ForbiddenError("manage", "Export");
+			const httpError = toHttpError(error);
+			return NextResponse.json(httpError.body, { status: httpError.status });
 		}
 
 		const publicKey = await configurationService.exportPublicKey(activeOrgId);

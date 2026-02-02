@@ -1,9 +1,11 @@
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { type NextRequest, NextResponse, connection } from "next/server";
 import { db } from "@/db";
-import { employee, holiday, holidayCategory } from "@/db/schema";
+import { holiday, holidayCategory } from "@/db/schema";
 import { auth } from "@/lib/auth";
+import { getAbility } from "@/lib/auth-helpers";
+import { ForbiddenError, toHttpError } from "@/lib/authorization";
 
 /**
  * GET /api/admin/holidays
@@ -23,21 +25,12 @@ export async function GET(_request: NextRequest) {
 			return NextResponse.json({ error: "No active organization" }, { status: 400 });
 		}
 
-		// Get employee record for the active organization ONLY
-		const [employeeRecord] = await db
-			.select()
-			.from(employee)
-			.where(
-				and(
-					eq(employee.userId, session.user.id),
-					eq(employee.organizationId, activeOrgId),
-					eq(employee.isActive, true),
-				),
-			)
-			.limit(1);
-
-		if (!employeeRecord || employeeRecord.role !== "admin") {
-			return NextResponse.json({ error: "Admin access required" }, { status: 403 });
+		// Check CASL permissions
+		const ability = await getAbility();
+		if (!ability || ability.cannot("manage", "Holiday")) {
+			const error = new ForbiddenError("manage", "Holiday");
+			const httpError = toHttpError(error);
+			return NextResponse.json(httpError.body, { status: httpError.status });
 		}
 
 		// Fetch all holidays for the organization with category info
@@ -61,7 +54,7 @@ export async function GET(_request: NextRequest) {
 			})
 			.from(holiday)
 			.innerJoin(holidayCategory, eq(holiday.categoryId, holidayCategory.id))
-			.where(eq(holiday.organizationId, employeeRecord.organizationId))
+			.where(eq(holiday.organizationId, activeOrgId))
 			.orderBy(holiday.startDate);
 
 		return NextResponse.json({ holidays });
@@ -89,21 +82,12 @@ export async function POST(request: NextRequest) {
 			return NextResponse.json({ error: "No active organization" }, { status: 400 });
 		}
 
-		// Get employee record for the active organization ONLY
-		const [employeeRecord] = await db
-			.select()
-			.from(employee)
-			.where(
-				and(
-					eq(employee.userId, session.user.id),
-					eq(employee.organizationId, activeOrgId),
-					eq(employee.isActive, true),
-				),
-			)
-			.limit(1);
-
-		if (!employeeRecord || employeeRecord.role !== "admin") {
-			return NextResponse.json({ error: "Admin access required" }, { status: 403 });
+		// Check CASL permissions
+		const ability = await getAbility();
+		if (!ability || ability.cannot("manage", "Holiday")) {
+			const error = new ForbiddenError("manage", "Holiday");
+			const httpError = toHttpError(error);
+			return NextResponse.json(httpError.body, { status: httpError.status });
 		}
 
 		const body = await request.json();
@@ -128,7 +112,7 @@ export async function POST(request: NextRequest) {
 		const [newHoliday] = await db
 			.insert(holiday)
 			.values({
-				organizationId: employeeRecord.organizationId,
+				organizationId: activeOrgId,
 				name,
 				description: description || null,
 				categoryId,

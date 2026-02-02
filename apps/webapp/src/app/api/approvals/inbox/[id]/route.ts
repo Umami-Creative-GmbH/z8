@@ -11,6 +11,8 @@ import { Effect } from "effect";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
 import { approvalRequest, employee } from "@/db/schema";
+import { getAbility } from "@/lib/auth-helpers";
+import { ForbiddenError, toHttpError } from "@/lib/authorization";
 import { getApprovalHandler } from "@/lib/approvals/domain/registry";
 import type { ApprovalType } from "@/lib/approvals/domain/types";
 import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
@@ -71,12 +73,15 @@ export async function GET(
 			return NextResponse.json({ error: "Approval not found" }, { status: 404 });
 		}
 
-		// Must be the approver or an admin
-		if (
-			request.approverId !== currentEmployee.id &&
-			currentEmployee.role !== "admin"
-		) {
-			return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+		// Check CASL permissions - must be the approver OR have manage Approval permission
+		const ability = await getAbility();
+		const isAssignedApprover = request.approverId === currentEmployee.id;
+		const canManageApprovals = ability?.can("manage", "Approval");
+
+		if (!isAssignedApprover && !canManageApprovals) {
+			const error = new ForbiddenError("read", "Approval");
+			const httpError = toHttpError(error);
+			return NextResponse.json(httpError.body, { status: httpError.status });
 		}
 
 		// Get handler

@@ -5,7 +5,8 @@ import { type NextRequest, NextResponse, connection } from "next/server";
 import { db } from "@/db";
 import { employee, timeEntry } from "@/db/schema";
 import { auth } from "@/lib/auth";
-import { canApproveFor } from "@/lib/auth-helpers";
+import { canApproveFor, getAbility } from "@/lib/auth-helpers";
+import { ForbiddenError, toHttpError } from "@/lib/authorization";
 import { runtime } from "@/lib/effect/runtime";
 import { TimeEntryService } from "@/lib/effect/services/time-entry.service";
 
@@ -94,14 +95,16 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
-		// Check authorization
+		// Check authorization using CASL
 		// Self-correction: Employee can request correction of their own entries (but needs approval)
 		// Admin/Manager correction: Can directly correct entries of employees they manage
 		const isSelfCorrection = entryToCorrect.employeeId === currentEmployee.id;
 		const canApprove = await canApproveFor(entryToCorrect.employeeId);
 
 		if (!isSelfCorrection && !canApprove) {
-			return NextResponse.json({ error: "Not authorized to correct this entry" }, { status: 403 });
+			const error = new ForbiddenError("update", "TimeEntry");
+			const httpError = toHttpError(error);
+			return NextResponse.json(httpError.body, { status: httpError.status });
 		}
 
 		// Get request metadata
@@ -212,13 +215,13 @@ export async function GET(request: NextRequest) {
 				return NextResponse.json({ error: "Entry not found" }, { status: 404 });
 			}
 
-			// Check authorization
+			// Check authorization using CASL
 			if (originalEntry.employeeId !== currentEmployee.id) {
-				if (currentEmployee.role !== "admin" && currentEmployee.role !== "manager") {
-					return NextResponse.json(
-						{ error: "Not authorized to view correction history" },
-						{ status: 403 },
-					);
+				const ability = await getAbility();
+				if (!ability || ability.cannot("manage", "TimeEntry")) {
+					const error = new ForbiddenError("read", "TimeEntry");
+					const httpError = toHttpError(error);
+					return NextResponse.json(httpError.body, { status: httpError.status });
 				}
 			}
 
@@ -227,13 +230,13 @@ export async function GET(request: NextRequest) {
 			// Get all corrections for an employee
 			const targetEmployeeId = employeeId || currentEmployee.id;
 
-			// Only allow viewing own corrections unless admin/manager
+			// Only allow viewing own corrections unless user can manage time entries
 			if (targetEmployeeId !== currentEmployee.id) {
-				if (currentEmployee.role !== "admin" && currentEmployee.role !== "manager") {
-					return NextResponse.json(
-						{ error: "Not authorized to view other employees' corrections" },
-						{ status: 403 },
-					);
+				const ability = await getAbility();
+				if (!ability || ability.cannot("manage", "TimeEntry")) {
+					const error = new ForbiddenError("read", "TimeEntry");
+					const httpError = toHttpError(error);
+					return NextResponse.json(httpError.body, { status: httpError.status });
 				}
 			}
 
