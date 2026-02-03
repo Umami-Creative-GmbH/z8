@@ -29,6 +29,7 @@ dist
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
 
 # env files (can opt-in for commiting if needed)
 .env*
@@ -77,3 +78,26 @@ nul
 .vault-data/
 deploy/.vault-data/
 .github/prompts
+
+# Infrastructure (Terraform / OpenTofu)
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.backup
+*.tfvars
+*.tfvars.json
+tofu.tfvars
+terraform.tfvars
+override.tf
+override.tf.json
+_override.tf
+_override.tf.json
+.terraformrc
+terraform.rc
+
+# Kubernetes
+kubeconfig*
+*.kubeconfig
+*secret.yaml
+!apps/webapp/infra/k8s/**/*secret.yaml
+experimental/
