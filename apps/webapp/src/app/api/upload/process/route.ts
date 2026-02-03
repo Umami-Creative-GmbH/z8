@@ -1,11 +1,9 @@
-import { mkdir, readFile, stat, unlink, writeFile } from "node:fs/promises";
-import { join } from "node:path";
 import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { fileTypeFromBuffer } from "file-type";
 import { headers } from "next/headers";
 import { type NextRequest, NextResponse, connection } from "next/server";
 import { auth } from "@/lib/auth";
-import { getPublicUrl, isS3Configured, S3_BUCKET, s3Client } from "@/lib/storage/s3-client";
+import { getPublicUrl, S3_BUCKET, s3Client } from "@/lib/storage/s3-client";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
@@ -71,44 +69,25 @@ export async function POST(request: NextRequest) {
 			return NextResponse.json({ error: "Invalid file key" }, { status: 400 });
 		}
 
-		// Read the uploaded file (from S3 or local temp storage)
-		let buffer: Buffer;
+		// Read the uploaded file from S3
+		const getResponse = await s3Client.send(
+			new GetObjectCommand({ Bucket: S3_BUCKET, Key: safeTusFileKey }),
+		);
 
-		if (isS3Configured() && s3Client) {
-			// Read from S3
-			const getResponse = await s3Client.send(
-				new GetObjectCommand({ Bucket: S3_BUCKET, Key: safeTusFileKey }),
+		// Check file size from S3 metadata before reading
+		const contentLength = getResponse.ContentLength;
+		if (contentLength && contentLength > MAX_FILE_SIZE) {
+			return NextResponse.json(
+				{ error: `File too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB` },
+				{ status: 413 },
 			);
-
-			// Check file size from S3 metadata before reading
-			const contentLength = getResponse.ContentLength;
-			if (contentLength && contentLength > MAX_FILE_SIZE) {
-				return NextResponse.json(
-					{ error: `File too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB` },
-					{ status: 413 },
-				);
-			}
-
-			const byteArray = await getResponse.Body?.transformToByteArray();
-			if (!byteArray) {
-				return NextResponse.json({ error: "Failed to read file from S3" }, { status: 500 });
-			}
-			buffer = Buffer.from(byteArray);
-		} else {
-			// Read from local temp storage
-			const tempPath = join(process.cwd(), "public", "uploads", "tus-temp", safeTusFileKey);
-
-			// Check file size before reading into memory
-			const fileStats = await stat(tempPath);
-			if (fileStats.size > MAX_FILE_SIZE) {
-				return NextResponse.json(
-					{ error: `File too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB` },
-					{ status: 413 },
-				);
-			}
-
-			buffer = await readFile(tempPath);
 		}
+
+		const byteArray = await getResponse.Body?.transformToByteArray();
+		if (!byteArray) {
+			return NextResponse.json({ error: "Failed to read file from S3" }, { status: 500 });
+		}
+		const buffer = Buffer.from(byteArray);
 
 		// Validate file size after reading (double-check)
 		if (buffer.length > MAX_FILE_SIZE) {
@@ -160,46 +139,25 @@ export async function POST(request: NextRequest) {
 		const filename = `${id}-${timestamp}.webp`;
 		const finalKey = `${folder}/${filename}`;
 
-		let publicUrl: string;
+		// Upload optimized image to S3
+		await s3Client.send(
+			new PutObjectCommand({
+				Bucket: S3_BUCKET,
+				Key: finalKey,
+				Body: optimized,
+				ContentType: "image/webp",
+				Metadata: {
+					"uploaded-by": session.user.id,
+					"original-key": safeTusFileKey,
+					"upload-timestamp": new Date().toISOString(),
+				},
+			}),
+		);
 
-		if (isS3Configured() && s3Client) {
-			// Upload to S3
-			await s3Client.send(
-				new PutObjectCommand({
-					Bucket: S3_BUCKET,
-					Key: finalKey,
-					Body: optimized,
-					ContentType: "image/webp",
-					Metadata: {
-						"uploaded-by": session.user.id,
-						"original-key": safeTusFileKey,
-						"upload-timestamp": new Date().toISOString(),
-					},
-				}),
-			);
+		// Delete temp file from S3
+		await s3Client.send(new DeleteObjectCommand({ Bucket: S3_BUCKET, Key: safeTusFileKey }));
 
-			// Delete temp file from S3
-			await s3Client.send(new DeleteObjectCommand({ Bucket: S3_BUCKET, Key: safeTusFileKey }));
-
-			publicUrl = getPublicUrl(finalKey);
-		} else {
-			// Save to local storage
-			const uploadDir = join(process.cwd(), "public", "uploads");
-			await mkdir(uploadDir, { recursive: true });
-
-			const finalPath = join(uploadDir, filename);
-			await writeFile(finalPath, optimized);
-
-			// Delete temp file
-			const tempPath = join(process.cwd(), "public", "uploads", "tus-temp", safeTusFileKey);
-			try {
-				await unlink(tempPath);
-			} catch {
-				// Ignore if temp file doesn't exist
-			}
-
-			publicUrl = `/uploads/${filename}`;
-		}
+		const publicUrl = getPublicUrl(finalKey);
 
 		// Auto-update database for org-logo
 		if (uploadType === "org-logo" && organizationId) {
