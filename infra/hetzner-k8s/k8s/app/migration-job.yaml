@@ -1,0 +1,32 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: drizzle-migrate
+  namespace: app-prod
+spec:
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 3600
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: migrate
+          image: ${IMAGE}:${TAG}
+          imagePullPolicy: IfNotPresent
+          workingDir: /app
+          command: ["node", "./scripts/migrate-with-lock.js"]
+          env:
+            - name: DB_MIGRATION_LOCK_ID
+              value: "74382643"
+            - name: DRIZZLE_MIGRATE_COMMAND
+              value: "pnpm dlx drizzle-kit migrate --config ./drizzle.config.ts"
+          envFrom:
+            - secretRef:
+                name: app-secrets
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi

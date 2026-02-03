@@ -1,0 +1,18 @@
+hcloud_token         = "CHANGEME"
+ssh_public_key_path  = "~/.ssh/id_ed25519.pub"
+ssh_private_key_path = "~/.ssh/id_ed25519"
+
+cluster_name = "z8"
+
+network_region        = "eu-central"
+control_plane_location = "nbg1"
+worker_location        = "nbg1"
+
+control_plane_server_type = "cx23"
+worker_server_type        = "cx23"
+
+load_balancer_type     = "lb11"
+load_balancer_location = "nbg1"
+
+firewall_ssh_source      = ["YOUR_IP/32"]
+firewall_kube_api_source = ["YOUR_IP/32"]
