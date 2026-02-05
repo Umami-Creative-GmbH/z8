@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { FloatingNav } from "./floating-nav";
 
 export const metadata: Metadata = {
 	title: "Z8",
@@ -9,7 +10,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
 	return (
 		<html lang="en">
-			<body className="antialiased">{children}</body>
+			<body className="antialiased">
+				{children}
+				<FloatingNav />
+			</body>
 		</html>
 	);
 }

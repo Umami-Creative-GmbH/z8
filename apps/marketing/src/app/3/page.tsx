@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 export default function Design3() {
@@ -122,6 +123,40 @@ export default function Design3() {
 				</div>
 			</section>
 
+			{/* Industrial image strip */}
+			<section
+				className="relative z-10 overflow-hidden"
+				style={{ borderTop: "1px solid #f59e0b20", borderBottom: "1px solid #f59e0b20" }}
+			>
+				<div className="relative h-56">
+					<Image
+						src="https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=1920&q=80&auto=format&fit=crop"
+						alt=""
+						fill
+						className="object-cover opacity-30"
+						style={{ filter: "sepia(100%) saturate(300%) hue-rotate(-10deg) brightness(0.7)" }}
+					/>
+					<div
+						className="absolute inset-0"
+						style={{
+							background:
+								"linear-gradient(90deg, #1a1a1a 0%, transparent 30%, transparent 70%, #1a1a1a 100%)",
+						}}
+					/>
+					<div className="absolute inset-0 flex items-center px-6">
+						<div className="flex w-full items-center gap-4">
+							<span className="text-[10px] uppercase tracking-[0.4em] text-[#f59e0b]/40">
+								// system.runtime
+							</span>
+							<div className="h-px flex-1 bg-[#f59e0b]/10" />
+							<span className="text-[10px] uppercase tracking-[0.4em] text-[#f59e0b]/40">
+								active_nodes: 847
+							</span>
+						</div>
+					</div>
+				</div>
+			</section>
+
 			{/* Features */}
 			<section
 				id="features"
@@ -141,37 +176,53 @@ export default function Design3() {
 							id: "CLK",
 							title: "time.clock()",
 							desc: "Stempeln per Klick. Web, Desktop-Widget, Mobile-App, Browser-Extension. Echtzeit-Sync \u00fcber alle Ger\u00e4te.",
+							img: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=400&q=80&auto=format&fit=crop",
 						},
 						{
 							id: "SEC",
 							title: "audit.secure()",
 							desc: "Blockchain-\u00e4hnliche Verkettung aller Zeiteintr\u00e4ge. Manipulationssicher. WORM-f\u00e4hig. Digital signiert.",
+							img: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=400&q=80&auto=format&fit=crop",
 						},
 						{
 							id: "EXP",
 							title: "payroll.export()",
 							desc: "DATEV, Lexware, Personio, SAP SuccessFactors, Sage. Automatisierter Lohnexport ohne Medienbruch.",
+							img: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&q=80&auto=format&fit=crop",
 						},
 						{
 							id: "IAM",
 							title: "auth.enterprise()",
 							desc: "SAML 2.0, OpenID Connect, SCIM Provisioning. Passkeys. Zwei-Faktor. Zero-Trust-ready.",
+							img: "https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?w=400&q=80&auto=format&fit=crop",
 						},
 					].map((f) => (
-						<div key={f.id} className="group bg-[#1a1a1a] p-8 transition-colors hover:bg-[#1f1f1f]">
-							<div className="mb-4 flex items-center gap-3">
-								<span
-									className="inline-block px-2 py-0.5 text-[10px] font-bold tracking-wider"
-									style={{
-										backgroundColor: "#f59e0b20",
-										color: "#f59e0b",
-									}}
-								>
-									{f.id}
-								</span>
-								<span className="text-sm font-bold text-[#f59e0b]/80">{f.title}</span>
+						<div key={f.id} className="group relative overflow-hidden bg-[#1a1a1a] p-8 transition-colors hover:bg-[#1f1f1f]">
+							{/* Subtle background image */}
+							<div className="absolute right-0 top-0 h-full w-1/3 overflow-hidden opacity-0 transition-opacity duration-500 group-hover:opacity-[0.08]">
+								<Image
+									src={f.img}
+									alt=""
+									fill
+									className="object-cover"
+									style={{ filter: "sepia(100%) saturate(300%) hue-rotate(-10deg)" }}
+								/>
 							</div>
-							<p className="text-[13px] leading-[1.8] text-[#666]">{f.desc}</p>
+							<div className="relative z-10">
+								<div className="mb-4 flex items-center gap-3">
+									<span
+										className="inline-block px-2 py-0.5 text-[10px] font-bold tracking-wider"
+										style={{
+											backgroundColor: "#f59e0b20",
+											color: "#f59e0b",
+										}}
+									>
+										{f.id}
+									</span>
+									<span className="text-sm font-bold text-[#f59e0b]/80">{f.title}</span>
+								</div>
+								<p className="text-[13px] leading-[1.8] text-[#666]">{f.desc}</p>
+							</div>
 						</div>
 					))}
 				</div>
@@ -210,6 +261,32 @@ export default function Design3() {
 							</span>
 						</div>
 					))}
+				</div>
+			</section>
+
+			{/* Full-width server room image */}
+			<section
+				className="relative z-10 h-48 overflow-hidden"
+				style={{ borderTop: "1px solid #f59e0b20" }}
+			>
+				<Image
+					src="https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1920&q=80&auto=format&fit=crop"
+					alt=""
+					fill
+					className="object-cover opacity-25"
+					style={{ filter: "sepia(100%) saturate(200%) hue-rotate(-10deg) brightness(0.8)" }}
+				/>
+				<div
+					className="absolute inset-0"
+					style={{
+						background:
+							"linear-gradient(90deg, #1a1a1a 0%, transparent 20%, transparent 80%, #1a1a1a 100%)",
+					}}
+				/>
+				<div className="absolute inset-0 flex items-center justify-center">
+					<span className="text-[10px] uppercase tracking-[0.5em] text-[#f59e0b]/30">
+						// infrastructure.ready
+					</span>
 				</div>
 			</section>
 

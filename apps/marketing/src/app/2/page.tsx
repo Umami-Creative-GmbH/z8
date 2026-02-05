@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 export default function Design2() {
@@ -99,23 +100,40 @@ export default function Design2() {
 					</div>
 				</div>
 
-				{/* Editorial image placeholder */}
+				{/* Editorial image - workspace */}
 				<div
-					className="animate-scale-in mt-16 flex h-[40vh] items-center justify-center rounded-sm"
-					style={{
-						backgroundColor: "#ede8e0",
-						animationDelay: "0.5s",
-					}}
+					className="animate-scale-in relative mt-16 overflow-hidden rounded-sm"
+					style={{ animationDelay: "0.5s" }}
 				>
-					<span
-						className="text-[11px] uppercase tracking-[0.4em]"
-						style={{
-							fontFamily: "'Trebuchet MS', sans-serif",
-							color: "#b5a99a",
-						}}
-					>
-						Dashboard Preview
-					</span>
+					<div className="relative h-[45vh]">
+						<Image
+							src="https://images.unsplash.com/photo-1497366216548-37526070297c?w=1600&q=80&auto=format&fit=crop"
+							alt="Modern workspace"
+							fill
+							className="object-cover"
+							style={{ objectPosition: "center 60%" }}
+						/>
+						<div
+							className="absolute inset-0"
+							style={{
+								background:
+									"linear-gradient(180deg, rgba(250,247,242,0) 60%, rgba(250,247,242,0.4) 100%)",
+							}}
+						/>
+					</div>
+					<div className="absolute bottom-6 left-8">
+						<span
+							className="text-[11px] uppercase tracking-[0.4em]"
+							style={{
+								fontFamily: "'Trebuchet MS', sans-serif",
+								color: "#2a2520",
+								backgroundColor: "rgba(250,247,242,0.85)",
+								padding: "6px 14px",
+							}}
+						>
+							Z8 Arbeitsumgebung
+						</span>
+					</div>
 				</div>
 			</section>
 
@@ -177,13 +195,80 @@ export default function Design2() {
 				</div>
 			</section>
 
+			{/* Editorial image pair */}
+			<section className="px-8 pb-24 lg:px-16">
+				<div className="grid gap-4 md:grid-cols-2">
+					<div className="relative h-[35vh] overflow-hidden rounded-sm">
+						<Image
+							src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&q=80&auto=format&fit=crop"
+							alt="Team collaboration"
+							fill
+							className="object-cover transition-transform duration-700 hover:scale-105"
+						/>
+						<div
+							className="absolute inset-0"
+							style={{
+								background:
+									"linear-gradient(180deg, transparent 50%, rgba(42,37,32,0.3) 100%)",
+							}}
+						/>
+						<div className="absolute bottom-5 left-6">
+							<span
+								className="text-[10px] font-semibold uppercase tracking-[0.4em]"
+								style={{
+									fontFamily: "'Trebuchet MS', sans-serif",
+									color: "#faf7f2",
+								}}
+							>
+								Team-Zusammenarbeit
+							</span>
+						</div>
+					</div>
+					<div className="relative h-[35vh] overflow-hidden rounded-sm">
+						<Image
+							src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=800&q=80&auto=format&fit=crop"
+							alt="Focused work"
+							fill
+							className="object-cover transition-transform duration-700 hover:scale-105"
+						/>
+						<div
+							className="absolute inset-0"
+							style={{
+								background:
+									"linear-gradient(180deg, transparent 50%, rgba(42,37,32,0.3) 100%)",
+							}}
+						/>
+						<div className="absolute bottom-5 left-6">
+							<span
+								className="text-[10px] font-semibold uppercase tracking-[0.4em]"
+								style={{
+									fontFamily: "'Trebuchet MS', sans-serif",
+									color: "#faf7f2",
+								}}
+							>
+								Fokussiertes Arbeiten
+							</span>
+						</div>
+					</div>
+				</div>
+			</section>
+
 			{/* Philosophy quote */}
 			<section
 				id="philosophy"
-				className="px-8 py-24 lg:px-16"
+				className="relative overflow-hidden px-8 py-24 lg:px-16"
 				style={{ backgroundColor: "#2a2520", color: "#faf7f2" }}
 			>
-				<div className="mx-auto max-w-3xl text-center">
+				{/* Background image with heavy overlay */}
+				<div className="absolute inset-0">
+					<Image
+						src="https://images.unsplash.com/photo-1497215842964-222b430dc094?w=1600&q=80&auto=format&fit=crop"
+						alt=""
+						fill
+						className="object-cover opacity-10"
+					/>
+				</div>
+				<div className="relative z-10 mx-auto max-w-3xl text-center">
 					<span className="mb-8 block text-7xl" style={{ color: "#a08060", lineHeight: 1 }}>
 						&ldquo;
 					</span>

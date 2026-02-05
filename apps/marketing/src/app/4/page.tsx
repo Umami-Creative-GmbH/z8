@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 export default function Design4() {
@@ -128,16 +129,29 @@ export default function Design4() {
 					</a>
 				</div>
 
-				{/* Dashboard mockup placeholder */}
+				{/* Dashboard mockup with real image */}
 				<div
-					className="animate-scale-in mx-auto mt-16 flex h-[45vh] max-w-4xl items-center justify-center overflow-hidden rounded-3xl shadow-2xl"
+					className="animate-scale-in relative mx-auto mt-16 max-w-4xl overflow-hidden rounded-3xl shadow-2xl"
 					style={{
-						background: "linear-gradient(180deg, #f8f4ff 0%, #fef2f8 100%)",
 						border: "1px solid #ede5f7",
 						animationDelay: "0.6s",
 					}}
 				>
-					<span className="text-[13px] font-medium text-[#b5a0d0]">Dashboard Vorschau</span>
+					<div className="relative h-[45vh]">
+						<Image
+							src="https://images.unsplash.com/photo-1531403009284-440f080d1e12?w=1200&q=80&auto=format&fit=crop"
+							alt="Dashboard preview"
+							fill
+							className="object-cover"
+						/>
+						<div
+							className="absolute inset-0"
+							style={{
+								background:
+									"linear-gradient(180deg, rgba(248,244,255,0.1) 0%, rgba(254,242,248,0.3) 100%)",
+							}}
+						/>
+					</div>
 				</div>
 			</section>
 
@@ -208,6 +222,42 @@ export default function Design4() {
 				</div>
 			</section>
 
+			{/* Team image section */}
+			<section className="relative z-10 px-6 lg:px-12">
+				<div className="mx-auto grid max-w-5xl gap-4 md:grid-cols-3">
+					<div className="relative h-64 overflow-hidden rounded-2xl">
+						<Image
+							src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=600&q=80&auto=format&fit=crop"
+							alt="Team collaboration"
+							fill
+							className="object-cover transition-transform duration-500 hover:scale-105"
+						/>
+						<div
+							className="absolute inset-0 rounded-2xl"
+							style={{
+								background:
+									"linear-gradient(180deg, transparent 40%, rgba(139,92,246,0.2) 100%)",
+							}}
+						/>
+					</div>
+					<div className="relative h-64 overflow-hidden rounded-2xl md:col-span-2">
+						<Image
+							src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=900&q=80&auto=format&fit=crop"
+							alt="Modern workspace"
+							fill
+							className="object-cover transition-transform duration-500 hover:scale-105"
+						/>
+						<div
+							className="absolute inset-0 rounded-2xl"
+							style={{
+								background:
+									"linear-gradient(180deg, transparent 40%, rgba(236,72,153,0.15) 100%)",
+							}}
+						/>
+					</div>
+				</div>
+			</section>
+
 			{/* Why Z8 */}
 			<section
 				id="why"
@@ -235,22 +285,35 @@ export default function Design4() {
 			{/* Contact */}
 			<section id="contact" className="relative z-10 px-6 py-24 text-center lg:px-12">
 				<div
-					className="mx-auto max-w-2xl rounded-3xl p-12 shadow-xl"
+					className="relative mx-auto max-w-2xl overflow-hidden rounded-3xl p-12 shadow-xl"
 					style={{
 						background: "linear-gradient(135deg, #8b5cf6, #ec4899)",
 					}}
 				>
-					<h2 className="mb-4 text-3xl font-bold tracking-tight text-white">Bereit loszulegen?</h2>
-					<p className="mb-8 text-[15px] leading-relaxed text-white/80">
-						Starten Sie heute kostenlos. Kein Kreditkarte. Kein Risiko.
-					</p>
-					<a
-						href="mailto:hello@z8.app"
-						className="inline-block rounded-full bg-white px-8 py-3.5 text-[14px] font-semibold shadow-lg transition-transform hover:scale-105"
-						style={{ color: "#8b5cf6" }}
-					>
-						Kostenlose Demo vereinbaren
-					</a>
+					{/* Decorative background image */}
+					<div className="absolute inset-0 opacity-10">
+						<Image
+							src="https://images.unsplash.com/photo-1557804506-669a67965ba0?w=1200&q=80&auto=format&fit=crop"
+							alt=""
+							fill
+							className="object-cover"
+						/>
+					</div>
+					<div className="relative z-10">
+						<h2 className="mb-4 text-3xl font-bold tracking-tight text-white">
+							Bereit loszulegen?
+						</h2>
+						<p className="mb-8 text-[15px] leading-relaxed text-white/80">
+							Starten Sie heute kostenlos. Kein Kreditkarte. Kein Risiko.
+						</p>
+						<a
+							href="mailto:hello@z8.app"
+							className="inline-block rounded-full bg-white px-8 py-3.5 text-[14px] font-semibold shadow-lg transition-transform hover:scale-105"
+							style={{ color: "#8b5cf6" }}
+						>
+							Kostenlose Demo vereinbaren
+						</a>
+					</div>
 				</div>
 			</section>
 

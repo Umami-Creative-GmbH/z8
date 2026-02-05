@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 export default function Design5() {
@@ -40,17 +41,25 @@ export default function Design5() {
 				</a>
 			</header>
 
-			{/* Hero - Diagonal split */}
+			{/* Hero - Diagonal split with image */}
 			<section className="relative overflow-hidden px-8 pb-32 pt-20 lg:px-16">
-				{/* Diagonal geometric background */}
+				{/* Diagonal geometric background with image */}
 				<div className="pointer-events-none absolute inset-0 z-0">
 					<div
-						className="absolute right-0 top-0 h-full w-1/2"
+						className="absolute right-0 top-0 h-full w-1/2 overflow-hidden"
 						style={{
-							backgroundColor: "#0a0a0a",
 							clipPath: "polygon(20% 0%, 100% 0%, 100% 100%, 0% 100%)",
 						}}
-					/>
+					>
+						<Image
+							src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1200&q=80&auto=format&fit=crop"
+							alt=""
+							fill
+							className="object-cover"
+							style={{ filter: "brightness(0.15) contrast(1.2)" }}
+							priority
+						/>
+					</div>
 					{/* Electric blue accent triangle */}
 					<div
 						className="absolute right-[15%] top-[10%] h-48 w-48 opacity-80"
@@ -207,6 +216,37 @@ export default function Design5() {
 				</div>
 			</section>
 
+			{/* Full-width architectural image */}
+			<section className="relative h-[50vh] overflow-hidden">
+				<Image
+					src="https://images.unsplash.com/photo-1497366216548-37526070297c?w=1920&q=80&auto=format&fit=crop"
+					alt=""
+					fill
+					className="object-cover"
+					style={{ filter: "contrast(1.1)" }}
+				/>
+				<div
+					className="absolute inset-0"
+					style={{
+						background:
+							"linear-gradient(180deg, rgba(255,255,255,1) 0%, transparent 15%, transparent 85%, rgba(255,255,255,1) 100%)",
+					}}
+				/>
+				<div className="absolute inset-0 flex items-center justify-center">
+					<div className="text-center">
+						<p
+							className="text-[11px] font-bold uppercase tracking-[0.5em]"
+							style={{ color: "#2563eb" }}
+						>
+							Designed for
+						</p>
+						<p className="mt-2 text-5xl font-black uppercase tracking-tight text-[#0a0a0a]">
+							Excellence
+						</p>
+					</div>
+				</div>
+			</section>
+
 			{/* About / Diagonal section */}
 			<section id="about" className="relative overflow-hidden px-8 py-32 lg:px-16">
 				<div
@@ -267,16 +307,27 @@ export default function Design5() {
 							</a>
 						</div>
 					</div>
-					{/* Geometric decoration */}
+					{/* Geometric decoration with image */}
 					<div className="hidden items-center justify-center md:flex">
 						<div className="relative h-72 w-72">
 							<div
-								className="absolute inset-0"
+								className="absolute inset-0 overflow-hidden"
 								style={{
 									border: "3px solid #0a0a0a",
 									transform: "rotate(45deg)",
 								}}
-							/>
+							>
+								<Image
+									src="https://images.unsplash.com/photo-1497215842964-222b430dc094?w=600&q=80&auto=format&fit=crop"
+									alt=""
+									fill
+									className="object-cover"
+									style={{
+										transform: "rotate(-45deg) scale(1.5)",
+										filter: "grayscale(100%) contrast(1.2)",
+									}}
+								/>
+							</div>
 							<div
 								className="absolute inset-8"
 								style={{

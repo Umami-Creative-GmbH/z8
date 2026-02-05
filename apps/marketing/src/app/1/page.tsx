@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 export default function Design1() {
@@ -47,46 +48,91 @@ export default function Design1() {
 
 			{/* Hero */}
 			<section className="relative z-10 flex min-h-[85vh] flex-col justify-end px-8 pb-20 pt-32">
-				<div className="mb-8 flex items-end gap-8">
-					<p
-						className="animate-fade-up text-[11px] font-medium uppercase tracking-[0.4em] text-white/30"
-						style={{ animationDelay: "0.1s" }}
-					>
-						Workforce
-						<br />
-						Management
-						<br />
-						Platform
-					</p>
-					<div className="h-px flex-1 bg-white/10" />
-					<p
-						className="animate-fade-up text-right text-[11px] font-medium uppercase tracking-[0.4em] text-white/30"
-						style={{ animationDelay: "0.2s" }}
-					>
-						GoBD-
-						<br />
-						Konform
-					</p>
+				{/* Hero background image */}
+				<div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+					<Image
+						src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1920&q=80&auto=format&fit=crop"
+						alt=""
+						fill
+						className="object-cover opacity-[0.07]"
+						style={{ objectPosition: "center 30%" }}
+						priority
+					/>
+					<div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/80 to-transparent" />
 				</div>
 
-				<h1 className="animate-fade-up" style={{ animationDelay: "0.3s" }}>
-					<span className="block text-[clamp(3rem,12vw,10rem)] font-black uppercase leading-[0.85] tracking-[-0.04em]">
-						Zeiterfassung
-					</span>
-					<span className="block text-[clamp(3rem,12vw,10rem)] font-black uppercase leading-[0.85] tracking-[-0.04em] text-white/20">
-						Neu Gedacht
-					</span>
-				</h1>
+				<div className="relative z-10">
+					<div className="mb-8 flex items-end gap-8">
+						<p
+							className="animate-fade-up text-[11px] font-medium uppercase tracking-[0.4em] text-white/30"
+							style={{ animationDelay: "0.1s" }}
+						>
+							Workforce
+							<br />
+							Management
+							<br />
+							Platform
+						</p>
+						<div className="h-px flex-1 bg-white/10" />
+						<p
+							className="animate-fade-up text-right text-[11px] font-medium uppercase tracking-[0.4em] text-white/30"
+							style={{ animationDelay: "0.2s" }}
+						>
+							GoBD-
+							<br />
+							Konform
+						</p>
+					</div>
 
-				<div
-					className="mt-12 flex items-center gap-6 animate-fade-up"
-					style={{ animationDelay: "0.5s" }}
-				>
-					<div className="h-[1px] w-16 bg-white/30" />
-					<p className="max-w-md text-sm leading-relaxed text-white/50">
-						Modulare Arbeitszeitverwaltung mit revisionssicherer Dokumentation. Entwickelt f&uuml;r
-						Teams, die Pr&auml;zision und Klarheit sch&auml;tzen.
-					</p>
+					<h1 className="animate-fade-up" style={{ animationDelay: "0.3s" }}>
+						<span className="block text-[clamp(3rem,12vw,10rem)] font-black uppercase leading-[0.85] tracking-[-0.04em]">
+							Zeiterfassung
+						</span>
+						<span className="block text-[clamp(3rem,12vw,10rem)] font-black uppercase leading-[0.85] tracking-[-0.04em] text-white/20">
+							Neu Gedacht
+						</span>
+					</h1>
+
+					<div
+						className="mt-12 flex items-center gap-6 animate-fade-up"
+						style={{ animationDelay: "0.5s" }}
+					>
+						<div className="h-[1px] w-16 bg-white/30" />
+						<p className="max-w-md text-sm leading-relaxed text-white/50">
+							Modulare Arbeitszeitverwaltung mit revisionssicherer Dokumentation. Entwickelt
+							f&uuml;r Teams, die Pr&auml;zision und Klarheit sch&auml;tzen.
+						</p>
+					</div>
+				</div>
+			</section>
+
+			{/* Visual break - architectural image strip */}
+			<section className="relative z-10 border-y border-white/10">
+				<div className="grid md:grid-cols-3">
+					<div className="relative h-48 overflow-hidden">
+						<Image
+							src="https://images.unsplash.com/photo-1497366216548-37526070297c?w=640&q=80&auto=format&fit=crop"
+							alt=""
+							fill
+							className="object-cover opacity-40 grayscale transition-all duration-700 hover:opacity-60 hover:grayscale-0"
+						/>
+					</div>
+					<div className="relative h-48 overflow-hidden">
+						<Image
+							src="https://images.unsplash.com/photo-1497215842964-222b430dc094?w=640&q=80&auto=format&fit=crop"
+							alt=""
+							fill
+							className="object-cover opacity-40 grayscale transition-all duration-700 hover:opacity-60 hover:grayscale-0"
+						/>
+					</div>
+					<div className="relative h-48 overflow-hidden">
+						<Image
+							src="https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=640&q=80&auto=format&fit=crop"
+							alt=""
+							fill
+							className="object-cover opacity-40 grayscale transition-all duration-700 hover:opacity-60 hover:grayscale-0"
+						/>
+					</div>
 				</div>
 			</section>
 
@@ -142,6 +188,22 @@ export default function Design1() {
 							<p className="text-sm leading-relaxed text-white/40">{f.desc}</p>
 						</div>
 					))}
+				</div>
+			</section>
+
+			{/* Full-width atmospheric image */}
+			<section className="relative z-10 h-[40vh] overflow-hidden border-y border-white/10">
+				<Image
+					src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1920&q=80&auto=format&fit=crop"
+					alt=""
+					fill
+					className="object-cover opacity-30 grayscale"
+				/>
+				<div className="absolute inset-0 bg-gradient-to-r from-[#0a0a0a] via-transparent to-[#0a0a0a]" />
+				<div className="absolute inset-0 flex items-center justify-center">
+					<p className="text-[10px] font-bold uppercase tracking-[0.5em] text-white/20">
+						Pr&auml;zision in jedem Detail
+					</p>
 				</div>
 			</section>
 
