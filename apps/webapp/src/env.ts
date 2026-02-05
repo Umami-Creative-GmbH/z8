@@ -20,14 +20,16 @@ export const env = createEnv({
 		REDIS_PORT: z.string().optional(),
 		REDIS_PASSWORD: z.string().optional(),
 
-		// AWS S3 / Object Storage
-		S3_BUCKET: z.string().optional(),
-		S3_ACCESS_KEY_ID: z.string().optional(),
-		S3_SECRET_ACCESS_KEY: z.string().optional(),
-		S3_ENDPOINT: z.string().optional(),
-		S3_REGION: z.string().optional(),
-		S3_FORCE_PATH_STYLE: z.string().optional(),
-		S3_PUBLIC_URL: z.string().optional(),
+		// AWS S3 / Object Storage (REQUIRED)
+		// S3-compatible storage is required for file uploads
+		// Use RustFS (included in docker-compose) or external provider (AWS S3, Cloudflare R2, MinIO)
+		S3_BUCKET: z.string().min(1, "S3_BUCKET is required"),
+		S3_ACCESS_KEY_ID: z.string().min(1, "S3_ACCESS_KEY_ID is required"),
+		S3_SECRET_ACCESS_KEY: z.string().min(1, "S3_SECRET_ACCESS_KEY is required"),
+		S3_ENDPOINT: z.string().url("S3_ENDPOINT must be a valid URL"),
+		S3_REGION: z.string().default("us-east-1"),
+		S3_FORCE_PATH_STYLE: z.enum(["true", "false"]).default("true"),
+		S3_PUBLIC_URL: z.string().url("S3_PUBLIC_URL must be a valid URL"),
 
 		// Worker / Jobs
 		ENABLE_CRON_JOBS: z.string().optional(),
@@ -76,9 +78,9 @@ export const env = createEnv({
 		CALENDAR_MICROSOFT_CLIENT_ID: z.string().optional(),
 		CALENDAR_MICROSOFT_CLIENT_SECRET: z.string().optional(),
 
-		// Cloudflare Turnstile (global/platform-wide)
-		TURNSTILE_SITE_KEY: z.string(),
-		TURNSTILE_SECRET_KEY: z.string(),
+		// Cloudflare Turnstile (optional - disables captcha if not set)
+		TURNSTILE_SITE_KEY: z.string().optional(),
+		TURNSTILE_SECRET_KEY: z.string().optional(),
 
 		// Billing / Stripe (SaaS mode only - disabled for self-hosted)
 		BILLING_ENABLED: z.enum(["true", "false"]).optional().default("false"),

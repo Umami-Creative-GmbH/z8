@@ -72,14 +72,29 @@ export async function register() {
 
 		sdk.start();
 
-		// Run startup health checks after OpenTelemetry is initialized
+		// Initialize S3 storage (validates config, tests connection, creates bucket if needed)
+		const { initializeStorage } = await import("@/lib/storage/storage-init");
+		const storageResult = await initializeStorage();
+
+		if (!storageResult.success) {
+			console.error("[FATAL] S3 storage initialization failed:", storageResult.error?.message);
+			if (storageResult.error?.remedy) {
+				console.error("[HINT]", storageResult.error.remedy);
+			}
+			if (process.env.NODE_ENV === "production") {
+				process.exit(1);
+			}
+		}
+
+		// Run startup health checks after OpenTelemetry and storage are initialized
 		const { runStartupChecks } = await import("@/lib/health");
 		const healthy = await runStartupChecks();
 
 		if (!healthy) {
-			console.error("[FATAL] Critical startup checks failed - database unavailable");
-			// In production, you may want to exit: process.exit(1)
-			// For now, we log and continue to allow debugging
+			console.error("[FATAL] Critical startup checks failed - database or storage unavailable");
+			if (process.env.NODE_ENV === "production") {
+				process.exit(1);
+			}
 		}
 
 		process.on("SIGTERM", () => {

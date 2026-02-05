@@ -392,7 +392,7 @@ importers:
         version: 4.3.2(react@19.2.4)
       '@schedule-x/calendar':
         specifier: ^4.1.0
-        version: 4.1.0(@preact/signals@2.5.1(preact@10.28.2))(preact@10.28.2)(temporal-polyfill@0.3.0)
+        version: 4.1.0(@preact/signals@2.5.1(preact@10.28.3))(preact@10.28.3)(temporal-polyfill@0.3.0)
       '@schedule-x/calendar-controls':
         specifier: ^4.1.0
         version: 4.1.0
@@ -404,10 +404,10 @@ importers:
         version: 3.7.3
       '@schedule-x/event-modal':
         specifier: ^4.1.0
-        version: 4.1.0(@preact/signals@2.5.1(preact@10.28.2))(preact@10.28.2)
+        version: 4.1.0(@preact/signals@2.5.1(preact@10.28.3))(preact@10.28.3)
       '@schedule-x/react':
         specifier: ^4.1.0
-        version: 4.1.0(@schedule-x/calendar@4.1.0(@preact/signals@2.5.1(preact@10.28.2))(preact@10.28.2)(temporal-polyfill@0.3.0))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+        version: 4.1.0(@schedule-x/calendar@4.1.0(@preact/signals@2.5.1(preact@10.28.3))(preact@10.28.3)(temporal-polyfill@0.3.0))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@schedule-x/theme-default':
         specifier: ^4.1.0
         version: 4.1.0
@@ -460,17 +460,17 @@ importers:
         specifier: ^5.2.0
         version: 5.2.0
       '@uppy/dashboard':
-        specifier: ^5.1.0
-        version: 5.1.0(@uppy/core@5.2.0)
-      '@uppy/locales':
-        specifier: ^5.1.0
-        version: 5.1.0
-      '@uppy/react':
         specifier: ^5.1.1
-        version: 5.1.1(@uppy/core@5.2.0)(@uppy/dashboard@5.1.0(@uppy/core@5.2.0))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+        version: 5.1.1(@uppy/core@5.2.0)
+      '@uppy/locales':
+        specifier: ^5.1.1
+        version: 5.1.1
+      '@uppy/react':
+        specifier: ^5.2.0
+        version: 5.2.0(@uppy/core@5.2.0)(@uppy/dashboard@5.1.1(@uppy/core@5.2.0))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@uppy/tus':
-        specifier: ^5.1.0
-        version: 5.1.0(@uppy/core@5.2.0)
+        specifier: ^5.1.1
+        version: 5.1.1(@uppy/core@5.2.0)
       '@upstash/ratelimit':
         specifier: ^2.0.8
         version: 2.0.8(@upstash/redis@1.36.1)
@@ -868,6 +868,10 @@ packages:
 
   '@aws-sdk/util-endpoints@3.983.0':
     resolution: {integrity: sha512-t/VbL2X3gvDEjC4gdySOeFFOZGQEBKwa23pRHeB7hBLBZ119BB/2OEFtTFWKyp3bnMQgxpeVeGS7/hxk6wpKJw==}
+    engines: {node: '>=20.0.0'}
+
+  '@aws-sdk/util-endpoints@3.981.0':
+    resolution: {integrity: sha512-a8nXh/H3/4j+sxhZk+N3acSDlgwTVSZbX9i55dx41gI1H+geuonuRG+Shv3GZsCb46vzc08RK2qC78ypO8uRlg==}
     engines: {node: '>=20.0.0'}
 
   '@aws-sdk/util-format-url@3.972.3':
@@ -5705,13 +5709,13 @@ packages:
     peerDependencies:
       '@uppy/core': ^5.1.1
 
-  '@uppy/components@1.1.0':
-    resolution: {integrity: sha512-omiNBzJn49FQznkSwOIGn3TKz+3r4T+y8sxWIBDMO6De2genzywRk1drAWO9GbSAF3htlVuvamNojQ2pSLeh3w==}
+  '@uppy/components@1.2.0':
+    resolution: {integrity: sha512-rtIr+77Rw/q5Vw++xazF1dCg2d4A4zT9CV+ZyN8Rsx8xiIr2CxCR4TaHHBy+WeC0b7Mk6yNuJ0wUa34tFJ6pKg==}
     peerDependencies:
-      '@uppy/core': ^5.1.1
-      '@uppy/image-editor': ^4.0.2
-      '@uppy/screen-capture': ^5.0.1
-      '@uppy/webcam': ^5.0.2
+      '@uppy/core': ^5.2.0
+      '@uppy/image-editor': ^4.2.0
+      '@uppy/screen-capture': ^5.1.0
+      '@uppy/webcam': ^5.1.0
     peerDependenciesMeta:
       '@uppy/image-editor':
         optional: true
@@ -5723,27 +5727,27 @@ packages:
   '@uppy/core@5.2.0':
     resolution: {integrity: sha512-uvfNyz4cnaplt7LYJmEZHuqOuav0tKp4a9WKJIaH6iIj7XiqYvS2J5SEByexAlUFlzefOAyjzj4Ja2dd/8aMrw==}
 
-  '@uppy/dashboard@5.1.0':
-    resolution: {integrity: sha512-TCuDbsAWokPO2LzubDoXyBskY/DHFB9tyDeHJe1FGBHrm0sY2zd+yEW7c4HNMDiIYCs/AdFJWAjQosCT07rD6Q==}
+  '@uppy/dashboard@5.1.1':
+    resolution: {integrity: sha512-6H/xVvhhdfwp1+FRMp2C+tudyaedqD5+LMDB8Iw20k9+QCL1eGzOh4wXm6MCqJtNfQ1tLaprGMG1jlo7yS/uyw==}
     peerDependencies:
       '@uppy/core': ^5.2.0
 
-  '@uppy/locales@5.1.0':
-    resolution: {integrity: sha512-6ijq68eLFUp+eV/faNACp+SWOGmOGcPsQBS28WEPFQb7Jg8THWCw8jik3LHzkvLBWgdpQ4n6R65PNZ2QsPkubw==}
+  '@uppy/locales@5.1.1':
+    resolution: {integrity: sha512-zSbDU27JzfdssRJoa5/xmGOsrEtS+2Z9j41weaoCa/NoK4wqZzkFNQ0Z44etbTg3PDVFakZVDu/Z+c+vsJCfdQ==}
 
   '@uppy/provider-views@5.2.2':
     resolution: {integrity: sha512-NAazIJ5sjrAc6++CeJ/u9dB5gDaaAOLHrYeEmWs/HqLlftlIinRZOybnyzJRXwI8jWI/FK5moluzt2HXu6dPQQ==}
     peerDependencies:
       '@uppy/core': ^5.2.0
 
-  '@uppy/react@5.1.1':
-    resolution: {integrity: sha512-VP9c5YMpAhDFAI5Z+mvvwqXXCg3ximcYSurG/38pbRLnQpvNr8ldtQ7g+2t5awRhtY8uWaI2QT6qdhMGKWFeDQ==}
+  '@uppy/react@5.2.0':
+    resolution: {integrity: sha512-6lzPutg2XGavs7P6ALmqOBPitd/Jqi3r1jCJQD5nx8xtNlBRwvlBR6hrZgo8XOI9cR+OaNDrJ0vEFxXDWb04Ag==}
     peerDependencies:
-      '@uppy/core': ^5.1.1
-      '@uppy/dashboard': ^5.0.3
-      '@uppy/screen-capture': ^5.0.1
-      '@uppy/status-bar': ^5.0.2
-      '@uppy/webcam': ^5.0.2
+      '@uppy/core': ^5.2.0
+      '@uppy/dashboard': ^5.1.1
+      '@uppy/screen-capture': ^5.1.0
+      '@uppy/status-bar': ^5.1.0
+      '@uppy/webcam': ^5.1.0
       react: ^18.0.0 || ^19.0.0
       react-dom: ^18.0.0 || ^19.0.0
     peerDependenciesMeta:
@@ -5764,8 +5768,8 @@ packages:
     peerDependencies:
       '@uppy/core': ^5.2.0
 
-  '@uppy/tus@5.1.0':
-    resolution: {integrity: sha512-B3EetcpqhiRGEA8gvZPbtu2up6sZqmeQLqx10AeG+/O16iB5aqbJR8wzqrEr2DVvS/sTgr2QMu94xT/zG9E8yA==}
+  '@uppy/tus@5.1.1':
+    resolution: {integrity: sha512-316kLQfO5H/uUJIMhBYhBrTpeN0Q+d6ykW3pomCvdTkFGCvg20rF3oH/owE3lf2UZZN7ZqBk+wHO0WlQePoklg==}
     peerDependencies:
       '@uppy/core': ^5.2.0
 
@@ -7273,9 +7277,6 @@ packages:
   event-target-shim@5.0.1:
     resolution: {integrity: sha512-i/2XbnSz/uxRCU6+NdVJgKWDTM427+MqYbkQzD321DuCQJUqOuJKIA0IM2+W2xtYHdKOmZ4dR6fExsd4SXL+WQ==}
     engines: {node: '>=6'}
-
-  eventemitter3@5.0.1:
-    resolution: {integrity: sha512-GWkBvjiSZK87ELrYOSESUYeVIc9mvLLf/nXalMOS5dYrgZq9o5OVkbZAVM06CVxYsCwH9BDZFPlQTlPA1j4ahA==}
 
   eventemitter3@5.0.4:
     resolution: {integrity: sha512-mlsTRyGaPBjPedk6Bvw+aqbsXDtoAyAzm5MO7JgU+yVRyMQ5O8bD4Kcci7BS85f93veegeCPkL8R4GLClnjLFw==}
@@ -9603,6 +9604,9 @@ packages:
   preact@10.28.2:
     resolution: {integrity: sha512-lbteaWGzGHdlIuiJ0l2Jq454m6kcpI1zNje6d8MlGAFlYvP2GO4ibnat7P74Esfz4sPTdM6UxtTwh/d3pwM9JA==}
 
+  preact@10.28.3:
+    resolution: {integrity: sha512-tCmoRkPQLpBeWzpmbhryairGnhW9tKV6c6gr/w+RhoRoKEJwsjzipwp//1oCpGPOchvSLaAPlpcJi9MwMmoPyA==}
+
   prepin@1.0.3:
     resolution: {integrity: sha512-0XL2hreherEEvUy0fiaGEfN/ioXFV+JpImqIzQjxk6iBg4jQ2ARKqvC4+BmRD8w/pnpD+lbxvh0Ub+z7yBEjvA==}
     hasBin: true
@@ -11832,6 +11836,14 @@ snapshots:
       tslib: 2.8.1
 
   '@aws-sdk/util-endpoints@3.983.0':
+    dependencies:
+      '@aws-sdk/types': 3.973.1
+      '@smithy/types': 4.12.0
+      '@smithy/url-parser': 4.2.8
+      '@smithy/util-endpoints': 3.2.8
+      tslib: 2.8.1
+
+  '@aws-sdk/util-endpoints@3.981.0':
     dependencies:
       '@aws-sdk/types': 3.973.1
       '@smithy/types': 4.12.0
@@ -14889,7 +14901,7 @@ snapshots:
 
   '@preact/signals-core@1.13.0': {}
 
-  '@preact/signals@2.5.1(preact@10.28.2)':
+  '@preact/signals@2.5.1(preact@10.28.3)':
     dependencies:
       '@preact/signals-core': 1.13.0
       preact: 10.28.2
@@ -16159,24 +16171,24 @@ snapshots:
 
   '@schedule-x/calendar-controls@4.1.0': {}
 
-  '@schedule-x/calendar@4.1.0(@preact/signals@2.5.1(preact@10.28.2))(preact@10.28.2)(temporal-polyfill@0.3.0)':
+  '@schedule-x/calendar@4.1.0(@preact/signals@2.5.1(preact@10.28.3))(preact@10.28.3)(temporal-polyfill@0.3.0)':
     dependencies:
-      '@preact/signals': 2.5.1(preact@10.28.2)
-      preact: 10.28.2
+      '@preact/signals': 2.5.1(preact@10.28.3)
+      preact: 10.28.3
       temporal-polyfill: 0.3.0
 
   '@schedule-x/current-time@4.1.0': {}
 
   '@schedule-x/drag-and-drop@3.7.3': {}
 
-  '@schedule-x/event-modal@4.1.0(@preact/signals@2.5.1(preact@10.28.2))(preact@10.28.2)':
+  '@schedule-x/event-modal@4.1.0(@preact/signals@2.5.1(preact@10.28.3))(preact@10.28.3)':
     dependencies:
-      '@preact/signals': 2.5.1(preact@10.28.2)
-      preact: 10.28.2
+      '@preact/signals': 2.5.1(preact@10.28.3)
+      preact: 10.28.3
 
-  '@schedule-x/react@4.1.0(@schedule-x/calendar@4.1.0(@preact/signals@2.5.1(preact@10.28.2))(preact@10.28.2)(temporal-polyfill@0.3.0))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
+  '@schedule-x/react@4.1.0(@schedule-x/calendar@4.1.0(@preact/signals@2.5.1(preact@10.28.3))(preact@10.28.3)(temporal-polyfill@0.3.0))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
     dependencies:
-      '@schedule-x/calendar': 4.1.0(@preact/signals@2.5.1(preact@10.28.2))(preact@10.28.2)(temporal-polyfill@0.3.0)
+      '@schedule-x/calendar': 4.1.0(@preact/signals@2.5.1(preact@10.28.3))(preact@10.28.3)(temporal-polyfill@0.3.0)
       react: 19.2.4
       react-dom: 19.2.4(react@19.2.4)
 
@@ -17195,12 +17207,12 @@ snapshots:
       namespace-emitter: 2.0.1
       p-retry: 6.2.1
 
-  '@uppy/components@1.1.0(@uppy/core@5.2.0)':
+  '@uppy/components@1.2.0(@uppy/core@5.2.0)':
     dependencies:
       '@uppy/core': 5.2.0
       clsx: 2.1.1
       dequal: 2.0.3
-      preact: 10.28.2
+      preact: 10.28.3
       pretty-bytes: 6.1.1
 
   '@uppy/core@5.2.0':
@@ -17214,7 +17226,7 @@ snapshots:
       nanoid: 5.1.6
       preact: 10.28.2
 
-  '@uppy/dashboard@5.1.0(@uppy/core@5.2.0)':
+  '@uppy/dashboard@5.1.1(@uppy/core@5.2.0)':
     dependencies:
       '@transloadit/prettier-bytes': 0.3.5
       '@uppy/core': 5.2.0
@@ -17224,10 +17236,10 @@ snapshots:
       classnames: 2.5.1
       lodash: 4.17.23
       nanoid: 5.1.6
-      preact: 10.28.2
+      preact: 10.28.3
       shallow-equal: 3.1.0
 
-  '@uppy/locales@5.1.0':
+  '@uppy/locales@5.1.1':
     dependencies:
       '@uppy/utils': 7.1.5
 
@@ -17239,18 +17251,18 @@ snapshots:
       lodash: 4.17.23
       nanoid: 5.1.6
       p-queue: 8.1.1
-      preact: 10.28.2
+      preact: 10.28.3
 
-  '@uppy/react@5.1.1(@uppy/core@5.2.0)(@uppy/dashboard@5.1.0(@uppy/core@5.2.0))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
+  '@uppy/react@5.2.0(@uppy/core@5.2.0)(@uppy/dashboard@5.1.1(@uppy/core@5.2.0))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
     dependencies:
-      '@uppy/components': 1.1.0(@uppy/core@5.2.0)
+      '@uppy/components': 1.2.0(@uppy/core@5.2.0)
       '@uppy/core': 5.2.0
-      preact: 10.28.2
+      preact: 10.28.3
       react: 19.2.4
       react-dom: 19.2.4(react@19.2.4)
       use-sync-external-store: 1.6.0(react@19.2.4)
     optionalDependencies:
-      '@uppy/dashboard': 5.1.0(@uppy/core@5.2.0)
+      '@uppy/dashboard': 5.1.1(@uppy/core@5.2.0)
     transitivePeerDependencies:
       - '@uppy/image-editor'
 
@@ -17262,7 +17274,7 @@ snapshots:
       '@uppy/utils': 7.1.5
       exifr: 7.1.3
 
-  '@uppy/tus@5.1.0(@uppy/core@5.2.0)':
+  '@uppy/tus@5.1.1(@uppy/core@5.2.0)':
     dependencies:
       '@uppy/companion-client': 5.1.1(@uppy/core@5.2.0)
       '@uppy/core': 5.2.0
@@ -18827,8 +18839,6 @@ snapshots:
   etag@1.8.1: {}
 
   event-target-shim@5.0.1: {}
-
-  eventemitter3@5.0.1: {}
 
   eventemitter3@5.0.4: {}
 
@@ -21417,7 +21427,7 @@ snapshots:
 
   p-queue@8.1.1:
     dependencies:
-      eventemitter3: 5.0.1
+      eventemitter3: 5.0.4
       p-timeout: 6.1.4
 
   p-retry@6.2.1:
@@ -21689,6 +21699,8 @@ snapshots:
   powershell-utils@0.1.0: {}
 
   preact@10.28.2: {}
+
+  preact@10.28.3: {}
 
   prepin@1.0.3: {}
 

@@ -103,9 +103,40 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
+  # RustFS - S3-compatible object storage
+  # Web Console: http://localhost:9001 (default: rustfsadmin/rustfsadmin)
+  # S3 API: http://localhost:9000
+  # Configure app with:
+  #   S3_ENDPOINT=http://localhost:9000
+  #   S3_ACCESS_KEY_ID=rustfsadmin
+  #   S3_SECRET_ACCESS_KEY=rustfsadmin
+  #   S3_BUCKET=z8-uploads
+  #   S3_FORCE_PATH_STYLE=true
+  #   S3_PUBLIC_URL=http://localhost:9000/z8-uploads
+  rustfs:
+    image: rustfs/rustfs:latest
+    ports:
+      - "9000:9000"  # S3 API
+      - "9001:9001"  # Web Console
+    environment:
+      RUSTFS_ROOT_USER: ${S3_ACCESS_KEY_ID:-rustfsadmin}
+      RUSTFS_ROOT_PASSWORD: ${S3_SECRET_ACCESS_KEY:-rustfsadmin}
+      RUSTFS_VOLUMES: /data
+      RUSTFS_ADDRESS: "0.0.0.0:9000"
+      RUSTFS_CONSOLE_ADDRESS: "0.0.0.0:9001"
+      RUSTFS_CONSOLE_ENABLE: "true"
+    volumes:
+      - rustfs_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   default_data:
   valkey_data:
   redisinsight-data:
   caddy_data:
   caddy_config:
+  rustfs_data:

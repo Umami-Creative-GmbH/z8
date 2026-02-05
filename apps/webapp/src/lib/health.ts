@@ -1,8 +1,10 @@
+import { HeadBucketCommand } from "@aws-sdk/client-s3";
 import { sql } from "drizzle-orm";
 import { db } from "@/db";
 import { createLogger } from "@/lib/logger";
-import { valkey } from "@/lib/valkey";
 import { isQueueHealthy } from "@/lib/queue";
+import { s3Client, S3_BUCKET } from "@/lib/storage/s3-client";
+import { valkey } from "@/lib/valkey";
 
 const logger = createLogger("Health");
 
@@ -23,6 +25,7 @@ export interface HealthCheckResult {
 	services: {
 		database: ServiceHealth;
 		cache: ServiceHealth;
+		storage: ServiceHealth;
 		queue?: ServiceHealth;
 	};
 }
@@ -74,6 +77,29 @@ export async function checkCache(): Promise<ServiceHealth> {
 }
 
 /**
+ * Check S3 storage connectivity (critical service)
+ */
+export async function checkStorage(): Promise<ServiceHealth> {
+	const start = performance.now();
+	try {
+		await s3Client.send(new HeadBucketCommand({ Bucket: S3_BUCKET }));
+		return {
+			status: "healthy",
+			latencyMs: Math.round(performance.now() - start),
+			details: { bucket: S3_BUCKET },
+		};
+	} catch (error) {
+		const message = error instanceof Error ? error.message : "Unknown error";
+		return {
+			status: "unhealthy",
+			latencyMs: Math.round(performance.now() - start),
+			error: message,
+			details: { bucket: S3_BUCKET },
+		};
+	}
+}
+
+/**
  * Check BullMQ queue connectivity (optional service)
  */
 export async function checkQueue(): Promise<ServiceHealth> {
@@ -105,11 +131,16 @@ export async function checkQueue(): Promise<ServiceHealth> {
  * Run all health checks and return aggregated result
  */
 export async function checkHealth(): Promise<HealthCheckResult> {
-	const [database, cache, queue] = await Promise.all([checkDatabase(), checkCache(), checkQueue()]);
+	const [database, cache, storage, queue] = await Promise.all([
+		checkDatabase(),
+		checkCache(),
+		checkStorage(),
+		checkQueue(),
+	]);
 
-	// Overall status: unhealthy if DB is down, degraded if cache/queue is down
+	// Overall status: unhealthy if DB or storage is down, degraded if cache/queue is down
 	let status: ServiceStatus = "healthy";
-	if (database.status === "unhealthy") {
+	if (database.status === "unhealthy" || storage.status === "unhealthy") {
 		status = "unhealthy";
 	} else if (
 		cache.status === "degraded" ||
@@ -128,6 +159,7 @@ export async function checkHealth(): Promise<HealthCheckResult> {
 		services: {
 			database,
 			cache,
+			storage,
 			queue,
 		},
 	};
@@ -135,18 +167,37 @@ export async function checkHealth(): Promise<HealthCheckResult> {
 
 /**
  * Run startup health checks with logging
- * Returns true if critical services (database) are available
+ * Returns true if critical services (database, storage) are available
  */
 export async function runStartupChecks(): Promise<boolean> {
 	logger.info("Running startup health checks...");
 
 	const result = await checkHealth();
 
-	// Log database status
+	// Log database status (critical)
 	if (result.services.database.status === "healthy") {
 		logger.info({ latencyMs: result.services.database.latencyMs }, "Database connection verified");
 	} else {
 		logger.error({ error: result.services.database.error }, "Database connection failed");
+	}
+
+	// Log storage status (critical)
+	if (result.services.storage.status === "healthy") {
+		logger.info(
+			{
+				latencyMs: result.services.storage.latencyMs,
+				bucket: result.services.storage.details?.bucket,
+			},
+			"S3 storage verified",
+		);
+	} else {
+		logger.error(
+			{
+				error: result.services.storage.error,
+				bucket: result.services.storage.details?.bucket,
+			},
+			"S3 storage connection failed",
+		);
 	}
 
 	// Log cache status (optional service)
@@ -159,8 +210,10 @@ export async function runStartupChecks(): Promise<boolean> {
 		);
 	}
 
-	// Return true only if database is healthy (cache is optional)
-	const success = result.services.database.status === "healthy";
+	// Return true only if database AND storage are healthy (cache is optional)
+	const success =
+		result.services.database.status === "healthy" &&
+		result.services.storage.status === "healthy";
 
 	if (success) {
 		logger.info({ status: result.status }, "Startup checks completed");
