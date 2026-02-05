@@ -186,6 +186,55 @@ importers:
         specifier: ^7.3.1
         version: 7.3.1(@types/node@25.2.0)(jiti@2.6.1)(lightningcss@1.31.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
 
+  apps/marketing:
+    dependencies:
+      '@tabler/icons-react':
+        specifier: ^3.36.1
+        version: 3.36.1(react@19.2.4)
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
+      next:
+        specifier: 16.1.6
+        version: 16.1.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      react:
+        specifier: 19.2.4
+        version: 19.2.4
+      react-dom:
+        specifier: 19.2.4
+        version: 19.2.4(react@19.2.4)
+      tailwind-merge:
+        specifier: ^3.3.0
+        version: 3.4.0
+    devDependencies:
+      '@biomejs/biome':
+        specifier: ^1.9.4
+        version: 1.9.4
+      '@tailwindcss/postcss':
+        specifier: ^4.1.18
+        version: 4.1.18
+      '@types/node':
+        specifier: ^25.2.0
+        version: 25.2.0
+      '@types/react':
+        specifier: ^19.2.13
+        version: 19.2.13
+      '@types/react-dom':
+        specifier: ^19.2.3
+        version: 19.2.3(@types/react@19.2.13)
+      postcss:
+        specifier: ^8.5.6
+        version: 8.5.6
+      tailwindcss:
+        specifier: ^4.1.18
+        version: 4.1.18
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      ultracite:
+        specifier: ^7.1.4
+        version: 7.1.4
+
   apps/mobile:
     dependencies:
       expo:
@@ -392,7 +441,7 @@ importers:
         version: 4.3.2(react@19.2.4)
       '@schedule-x/calendar':
         specifier: ^4.1.0
-        version: 4.1.0(@preact/signals@2.5.1(preact@10.28.3))(preact@10.28.3)(temporal-polyfill@0.3.0)
+        version: 4.1.0(@preact/signals@2.5.1(preact@10.28.2))(preact@10.28.2)(temporal-polyfill@0.3.0)
       '@schedule-x/calendar-controls':
         specifier: ^4.1.0
         version: 4.1.0
@@ -404,10 +453,10 @@ importers:
         version: 3.7.3
       '@schedule-x/event-modal':
         specifier: ^4.1.0
-        version: 4.1.0(@preact/signals@2.5.1(preact@10.28.3))(preact@10.28.3)
+        version: 4.1.0(@preact/signals@2.5.1(preact@10.28.2))(preact@10.28.2)
       '@schedule-x/react':
         specifier: ^4.1.0
-        version: 4.1.0(@schedule-x/calendar@4.1.0(@preact/signals@2.5.1(preact@10.28.3))(preact@10.28.3)(temporal-polyfill@0.3.0))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+        version: 4.1.0(@schedule-x/calendar@4.1.0(@preact/signals@2.5.1(preact@10.28.2))(preact@10.28.2)(temporal-polyfill@0.3.0))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@schedule-x/theme-default':
         specifier: ^4.1.0
         version: 4.1.0
@@ -868,14 +917,6 @@ packages:
 
   '@aws-sdk/util-endpoints@3.983.0':
     resolution: {integrity: sha512-t/VbL2X3gvDEjC4gdySOeFFOZGQEBKwa23pRHeB7hBLBZ119BB/2OEFtTFWKyp3bnMQgxpeVeGS7/hxk6wpKJw==}
-    engines: {node: '>=20.0.0'}
-
-  '@aws-sdk/util-endpoints@3.981.0':
-    resolution: {integrity: sha512-a8nXh/H3/4j+sxhZk+N3acSDlgwTVSZbX9i55dx41gI1H+geuonuRG+Shv3GZsCb46vzc08RK2qC78ypO8uRlg==}
-    engines: {node: '>=20.0.0'}
-
-  '@aws-sdk/util-endpoints@3.981.0':
-    resolution: {integrity: sha512-a8nXh/H3/4j+sxhZk+N3acSDlgwTVSZbX9i55dx41gI1H+geuonuRG+Shv3GZsCb46vzc08RK2qC78ypO8uRlg==}
     engines: {node: '>=20.0.0'}
 
   '@aws-sdk/util-format-url@3.972.3':
@@ -1526,15 +1567,32 @@ packages:
   '@better-fetch/fetch@1.1.21':
     resolution: {integrity: sha512-/ImESw0sskqlVR94jB+5+Pxjf+xBwDZF/N5+y2/q4EqD7IARUTSpPfIo8uf39SYpCxyOCtbyYpUrZ3F/k0zT4A==}
 
+  '@biomejs/biome@1.9.4':
+    resolution: {integrity: sha512-1rkd7G70+o9KkTn5KLmDYXihGoTaIGO9PIIN2ZB7UJxFrWw04CZHPYiMRjYsaDvVV7hP1dYNRLxSANLaBFGpog==}
+    engines: {node: '>=14.21.3'}
+    hasBin: true
+
   '@biomejs/biome@2.3.14':
     resolution: {integrity: sha512-QMT6QviX0WqXJCaiqVMiBUCr5WRQ1iFSjvOLoTk6auKukJMvnMzWucXpwZB0e8F00/1/BsS9DzcKgWH+CLqVuA==}
     engines: {node: '>=14.21.3'}
     hasBin: true
 
+  '@biomejs/cli-darwin-arm64@1.9.4':
+    resolution: {integrity: sha512-bFBsPWrNvkdKrNCYeAp+xo2HecOGPAy9WyNyB/jKnnedgzl4W4Hb9ZMzYNbf8dMCGmUdSavlYHiR01QaYR58cw==}
+    engines: {node: '>=14.21.3'}
+    cpu: [arm64]
+    os: [darwin]
+
   '@biomejs/cli-darwin-arm64@2.3.14':
     resolution: {integrity: sha512-UJGPpvWJMkLxSRtpCAKfKh41Q4JJXisvxZL8ChN1eNW3m/WlPFJ6EFDCE7YfUb4XS8ZFi3C1dFpxUJ0Ety5n+A==}
     engines: {node: '>=14.21.3'}
     cpu: [arm64]
+    os: [darwin]
+
+  '@biomejs/cli-darwin-x64@1.9.4':
+    resolution: {integrity: sha512-ngYBh/+bEedqkSevPVhLP4QfVPCpb+4BBe2p7Xs32dBgs7rh9nY2AIYUL6BgLw1JVXV8GlpKmb/hNiuIxfPfZg==}
+    engines: {node: '>=14.21.3'}
+    cpu: [x64]
     os: [darwin]
 
   '@biomejs/cli-darwin-x64@2.3.14':
@@ -1543,12 +1601,26 @@ packages:
     cpu: [x64]
     os: [darwin]
 
+  '@biomejs/cli-linux-arm64-musl@1.9.4':
+    resolution: {integrity: sha512-v665Ct9WCRjGa8+kTr0CzApU0+XXtRgwmzIf1SeKSGAv+2scAlW6JR5PMFo6FzqqZ64Po79cKODKf3/AAmECqA==}
+    engines: {node: '>=14.21.3'}
+    cpu: [arm64]
+    os: [linux]
+    libc: [musl]
+
   '@biomejs/cli-linux-arm64-musl@2.3.14':
     resolution: {integrity: sha512-LInRbXhYujtL3sH2TMCH/UBwJZsoGwfQjBrMfl84CD4hL/41C/EU5mldqf1yoFpsI0iPWuU83U+nB2TUUypWeg==}
     engines: {node: '>=14.21.3'}
     cpu: [arm64]
     os: [linux]
     libc: [musl]
+
+  '@biomejs/cli-linux-arm64@1.9.4':
+    resolution: {integrity: sha512-fJIW0+LYujdjUgJJuwesP4EjIBl/N/TcOX3IvIHJQNsAqvV2CHIogsmA94BPG6jZATS4Hi+xv4SkBBQSt1N4/g==}
+    engines: {node: '>=14.21.3'}
+    cpu: [arm64]
+    os: [linux]
+    libc: [glibc]
 
   '@biomejs/cli-linux-arm64@2.3.14':
     resolution: {integrity: sha512-KT67FKfzIw6DNnUNdYlBg+eU24Go3n75GWK6NwU4+yJmDYFe9i/MjiI+U/iEzKvo0g7G7MZqoyrhIYuND2w8QQ==}
@@ -1557,12 +1629,26 @@ packages:
     os: [linux]
     libc: [glibc]
 
+  '@biomejs/cli-linux-x64-musl@1.9.4':
+    resolution: {integrity: sha512-gEhi/jSBhZ2m6wjV530Yy8+fNqG8PAinM3oV7CyO+6c3CEh16Eizm21uHVsyVBEB6RIM8JHIl6AGYCv6Q6Q9Tg==}
+    engines: {node: '>=14.21.3'}
+    cpu: [x64]
+    os: [linux]
+    libc: [musl]
+
   '@biomejs/cli-linux-x64-musl@2.3.14':
     resolution: {integrity: sha512-KQU7EkbBBuHPW3/rAcoiVmhlPtDSGOGRPv9js7qJVpYTzjQmVR+C9Rfcz+ti8YCH+zT1J52tuBybtP4IodjxZQ==}
     engines: {node: '>=14.21.3'}
     cpu: [x64]
     os: [linux]
     libc: [musl]
+
+  '@biomejs/cli-linux-x64@1.9.4':
+    resolution: {integrity: sha512-lRCJv/Vi3Vlwmbd6K+oQ0KhLHMAysN8lXoCI7XeHlxaajk06u7G+UsFSO01NAs5iYuWKmVZjmiOzJ0OJmGsMwg==}
+    engines: {node: '>=14.21.3'}
+    cpu: [x64]
+    os: [linux]
+    libc: [glibc]
 
   '@biomejs/cli-linux-x64@2.3.14':
     resolution: {integrity: sha512-ZsZzQsl9U+wxFrGGS4f6UxREUlgHwmEfu1IrXlgNFrNnd5Th6lIJr8KmSzu/+meSa9f4rzFrbEW9LBBA6ScoMA==}
@@ -1571,10 +1657,22 @@ packages:
     os: [linux]
     libc: [glibc]
 
+  '@biomejs/cli-win32-arm64@1.9.4':
+    resolution: {integrity: sha512-tlbhLk+WXZmgwoIKwHIHEBZUwxml7bRJgk0X2sPyNR3S93cdRq6XulAZRQJ17FYGGzWne0fgrXBKpl7l4M87Hg==}
+    engines: {node: '>=14.21.3'}
+    cpu: [arm64]
+    os: [win32]
+
   '@biomejs/cli-win32-arm64@2.3.14':
     resolution: {integrity: sha512-+IKYkj/pUBbnRf1G1+RlyA3LWiDgra1xpS7H2g4BuOzzRbRB+hmlw0yFsLprHhbbt7jUzbzAbAjK/Pn0FDnh1A==}
     engines: {node: '>=14.21.3'}
     cpu: [arm64]
+    os: [win32]
+
+  '@biomejs/cli-win32-x64@1.9.4':
+    resolution: {integrity: sha512-8Y5wMhVIPaWe6jw2H+KlEm4wP/f7EW3810ZLmDlrEEy5KvBsb9ECEfu/kMWD484ijfQ8+nIi0giMgu9g1UAuuA==}
+    engines: {node: '>=14.21.3'}
+    cpu: [x64]
     os: [win32]
 
   '@biomejs/cli-win32-x64@2.3.14':
@@ -9608,9 +9706,6 @@ packages:
   preact@10.28.2:
     resolution: {integrity: sha512-lbteaWGzGHdlIuiJ0l2Jq454m6kcpI1zNje6d8MlGAFlYvP2GO4ibnat7P74Esfz4sPTdM6UxtTwh/d3pwM9JA==}
 
-  preact@10.28.3:
-    resolution: {integrity: sha512-tCmoRkPQLpBeWzpmbhryairGnhW9tKV6c6gr/w+RhoRoKEJwsjzipwp//1oCpGPOchvSLaAPlpcJi9MwMmoPyA==}
-
   prepin@1.0.3:
     resolution: {integrity: sha512-0XL2hreherEEvUy0fiaGEfN/ioXFV+JpImqIzQjxk6iBg4jQ2ARKqvC4+BmRD8w/pnpD+lbxvh0Ub+z7yBEjvA==}
     hasBin: true
@@ -11847,22 +11942,6 @@ snapshots:
       '@smithy/util-endpoints': 3.2.8
       tslib: 2.8.1
 
-  '@aws-sdk/util-endpoints@3.981.0':
-    dependencies:
-      '@aws-sdk/types': 3.973.1
-      '@smithy/types': 4.12.0
-      '@smithy/url-parser': 4.2.8
-      '@smithy/util-endpoints': 3.2.8
-      tslib: 2.8.1
-
-  '@aws-sdk/util-endpoints@3.981.0':
-    dependencies:
-      '@aws-sdk/types': 3.973.1
-      '@smithy/types': 4.12.0
-      '@smithy/url-parser': 4.2.8
-      '@smithy/util-endpoints': 3.2.8
-      tslib: 2.8.1
-
   '@aws-sdk/util-format-url@3.972.3':
     dependencies:
       '@aws-sdk/types': 3.973.1
@@ -12688,6 +12767,17 @@ snapshots:
 
   '@better-fetch/fetch@1.1.21': {}
 
+  '@biomejs/biome@1.9.4':
+    optionalDependencies:
+      '@biomejs/cli-darwin-arm64': 1.9.4
+      '@biomejs/cli-darwin-x64': 1.9.4
+      '@biomejs/cli-linux-arm64': 1.9.4
+      '@biomejs/cli-linux-arm64-musl': 1.9.4
+      '@biomejs/cli-linux-x64': 1.9.4
+      '@biomejs/cli-linux-x64-musl': 1.9.4
+      '@biomejs/cli-win32-arm64': 1.9.4
+      '@biomejs/cli-win32-x64': 1.9.4
+
   '@biomejs/biome@2.3.14':
     optionalDependencies:
       '@biomejs/cli-darwin-arm64': 2.3.14
@@ -12699,25 +12789,49 @@ snapshots:
       '@biomejs/cli-win32-arm64': 2.3.14
       '@biomejs/cli-win32-x64': 2.3.14
 
+  '@biomejs/cli-darwin-arm64@1.9.4':
+    optional: true
+
   '@biomejs/cli-darwin-arm64@2.3.14':
+    optional: true
+
+  '@biomejs/cli-darwin-x64@1.9.4':
     optional: true
 
   '@biomejs/cli-darwin-x64@2.3.14':
     optional: true
 
+  '@biomejs/cli-linux-arm64-musl@1.9.4':
+    optional: true
+
   '@biomejs/cli-linux-arm64-musl@2.3.14':
+    optional: true
+
+  '@biomejs/cli-linux-arm64@1.9.4':
     optional: true
 
   '@biomejs/cli-linux-arm64@2.3.14':
     optional: true
 
+  '@biomejs/cli-linux-x64-musl@1.9.4':
+    optional: true
+
   '@biomejs/cli-linux-x64-musl@2.3.14':
+    optional: true
+
+  '@biomejs/cli-linux-x64@1.9.4':
     optional: true
 
   '@biomejs/cli-linux-x64@2.3.14':
     optional: true
 
+  '@biomejs/cli-win32-arm64@1.9.4':
+    optional: true
+
   '@biomejs/cli-win32-arm64@2.3.14':
+    optional: true
+
+  '@biomejs/cli-win32-x64@1.9.4':
     optional: true
 
   '@biomejs/cli-win32-x64@2.3.14':
@@ -14913,7 +15027,7 @@ snapshots:
 
   '@preact/signals-core@1.13.0': {}
 
-  '@preact/signals@2.5.1(preact@10.28.3)':
+  '@preact/signals@2.5.1(preact@10.28.2)':
     dependencies:
       '@preact/signals-core': 1.13.0
       preact: 10.28.2
@@ -16183,24 +16297,24 @@ snapshots:
 
   '@schedule-x/calendar-controls@4.1.0': {}
 
-  '@schedule-x/calendar@4.1.0(@preact/signals@2.5.1(preact@10.28.3))(preact@10.28.3)(temporal-polyfill@0.3.0)':
+  '@schedule-x/calendar@4.1.0(@preact/signals@2.5.1(preact@10.28.2))(preact@10.28.2)(temporal-polyfill@0.3.0)':
     dependencies:
-      '@preact/signals': 2.5.1(preact@10.28.3)
-      preact: 10.28.3
+      '@preact/signals': 2.5.1(preact@10.28.2)
+      preact: 10.28.2
       temporal-polyfill: 0.3.0
 
   '@schedule-x/current-time@4.1.0': {}
 
   '@schedule-x/drag-and-drop@3.7.3': {}
 
-  '@schedule-x/event-modal@4.1.0(@preact/signals@2.5.1(preact@10.28.3))(preact@10.28.3)':
+  '@schedule-x/event-modal@4.1.0(@preact/signals@2.5.1(preact@10.28.2))(preact@10.28.2)':
     dependencies:
-      '@preact/signals': 2.5.1(preact@10.28.3)
-      preact: 10.28.3
+      '@preact/signals': 2.5.1(preact@10.28.2)
+      preact: 10.28.2
 
-  '@schedule-x/react@4.1.0(@schedule-x/calendar@4.1.0(@preact/signals@2.5.1(preact@10.28.3))(preact@10.28.3)(temporal-polyfill@0.3.0))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
+  '@schedule-x/react@4.1.0(@schedule-x/calendar@4.1.0(@preact/signals@2.5.1(preact@10.28.2))(preact@10.28.2)(temporal-polyfill@0.3.0))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
     dependencies:
-      '@schedule-x/calendar': 4.1.0(@preact/signals@2.5.1(preact@10.28.3))(preact@10.28.3)(temporal-polyfill@0.3.0)
+      '@schedule-x/calendar': 4.1.0(@preact/signals@2.5.1(preact@10.28.2))(preact@10.28.2)(temporal-polyfill@0.3.0)
       react: 19.2.4
       react-dom: 19.2.4(react@19.2.4)
 
@@ -17224,7 +17338,7 @@ snapshots:
       '@uppy/core': 5.2.0
       clsx: 2.1.1
       dequal: 2.0.3
-      preact: 10.28.3
+      preact: 10.28.2
       pretty-bytes: 6.1.1
 
   '@uppy/core@5.2.0':
@@ -17248,7 +17362,7 @@ snapshots:
       classnames: 2.5.1
       lodash: 4.17.23
       nanoid: 5.1.6
-      preact: 10.28.3
+      preact: 10.28.2
       shallow-equal: 3.1.0
 
   '@uppy/locales@5.1.1':
@@ -17263,13 +17377,13 @@ snapshots:
       lodash: 4.17.23
       nanoid: 5.1.6
       p-queue: 8.1.1
-      preact: 10.28.3
+      preact: 10.28.2
 
   '@uppy/react@5.2.0(@uppy/core@5.2.0)(@uppy/dashboard@5.1.1(@uppy/core@5.2.0))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
     dependencies:
       '@uppy/components': 1.2.0(@uppy/core@5.2.0)
       '@uppy/core': 5.2.0
-      preact: 10.28.3
+      preact: 10.28.2
       react: 19.2.4
       react-dom: 19.2.4(react@19.2.4)
       use-sync-external-store: 1.6.0(react@19.2.4)
@@ -21711,8 +21825,6 @@ snapshots:
   powershell-utils@0.1.0: {}
 
   preact@10.28.2: {}
-
-  preact@10.28.3: {}
 
   prepin@1.0.3: {}
 

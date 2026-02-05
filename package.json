@@ -26,6 +26,8 @@
 		"build:extension": "turbo build --filter=extension",
 		"dev:docs": "turbo dev --filter=docs",
 		"build:docs": "turbo build --filter=docs",
+		"dev:marketing": "turbo dev --filter=marketing",
+		"build:marketing": "turbo build --filter=marketing",
 		"docker:up": "docker compose -f deploy/compose/docker-compose.yml up -d",
 		"docker:down": "docker compose -f deploy/compose/docker-compose.yml down",
 		"docker:logs": "docker compose -f deploy/compose/docker-compose.yml logs -f",
