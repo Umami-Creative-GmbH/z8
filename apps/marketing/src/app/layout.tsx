@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { FloatingNav } from "./floating-nav";
+import dynamic from "next/dynamic";
+
+const FloatingNav = dynamic(() =>
+	import("./floating-nav").then((m) => m.FloatingNav),
+);
 
 export const metadata: Metadata = {
 	title: "Z8",

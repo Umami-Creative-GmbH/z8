@@ -3,11 +3,16 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const TOTAL = 20;
+const DESIGNS = [
+	"6", "7", "13", "20", "22", "24",
+	"24-1", "24-2", "24-3", "24-4", "24-5",
+	"m-1", "m-2", "m-3", "m-4", "m-5", "m-6",
+	"p-1", "p-2", "p-3", "p-4", "p-5", "p-6",
+];
 
 export function FloatingNav() {
 	const pathname = usePathname();
-	const current = Number(pathname.replace("/", "")) || 0;
+	const current = pathname.replace("/", "");
 
 	// Hide on the index page
 	if (pathname === "/") return null;
@@ -30,11 +35,11 @@ export function FloatingNav() {
 					&larr;
 				</Link>
 				<div className="mx-1 h-4 w-px bg-white/10" />
-				{Array.from({ length: TOTAL }, (_, i) => i + 1).map((n) => (
+				{DESIGNS.map((n) => (
 					<Link
 						key={n}
 						href={`/${n}`}
-						className="flex h-7 min-w-[28px] items-center justify-center rounded-full text-[11px] font-medium transition-colors"
+						className="flex h-7 min-w-[28px] items-center justify-center rounded-full px-1.5 text-[10px] font-medium transition-colors"
 						style={{
 							backgroundColor: current === n ? "rgba(255,255,255,0.15)" : "transparent",
 							color: current === n ? "#fff" : "rgba(255,255,255,0.35)",
