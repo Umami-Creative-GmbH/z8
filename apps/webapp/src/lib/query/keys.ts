@@ -358,8 +358,7 @@ export const queryKeys = {
 			pending: (orgId: string) => ["compliance", "exceptions", "pending", orgId] as const,
 		},
 		// Pending exceptions count (for badge)
-		pendingExceptions: (orgId: string) =>
-			["compliance", "pending-exceptions", orgId] as const,
+		pendingExceptions: (orgId: string) => ["compliance", "pending-exceptions", orgId] as const,
 	},
 
 	// Compliance Radar (findings, config, stats)
@@ -374,8 +373,7 @@ export const queryKeys = {
 	// Coverage Targets (minimum staffing requirements)
 	coverage: {
 		all: ["coverage"] as const,
-		rules: (orgId: string, subareaId?: string) =>
-			["coverage", "rules", orgId, subareaId] as const,
+		rules: (orgId: string, subareaId?: string) => ["coverage", "rules", orgId, subareaId] as const,
 		ruleDetail: (ruleId: string) => ["coverage", "rules", "detail", ruleId] as const,
 		heatmap: (orgId: string, dateRange: { start: Date; end: Date }) =>
 			["coverage", "heatmap", orgId, dateRange] as const,
@@ -400,5 +398,11 @@ export const queryKeys = {
 			["skills", "validation", employeeId, subareaId, templateId] as const,
 		// Qualified employees for a set of skills
 		qualified: (skillIds: string[]) => ["skills", "qualified", skillIds] as const,
+	},
+	// Telegram integration
+	telegram: {
+		all: ["telegram"] as const,
+		config: (orgId: string) => ["telegram", "config", orgId] as const,
+		link: (userId: string, orgId: string) => ["telegram", "link", userId, orgId] as const,
 	},
 } as const;
