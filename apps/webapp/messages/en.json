@@ -5,6 +5,147 @@
     "signOut": "Sign Out",
     "title": "Access Restricted"
   },
+  "admin": {
+    "layout": {
+      "exitAdmin": "Exit Admin",
+      "nav": {
+        "billing": "Billing",
+        "organizations": "Organizations",
+        "overview": "Overview",
+        "settings": "Settings",
+        "users": "Users"
+      },
+      "subtitle": "Platform Management",
+      "title": "Admin Console"
+    },
+    "organizations": {
+      "badges": {
+        "deleted": "Deleted",
+        "suspended": "Suspended"
+      },
+      "deleteDialog": {
+        "confirmButton": "Delete Organization",
+        "confirmLabel": "Type \"{name}\" to confirm",
+        "confirmPlaceholder": "Organization name",
+        "description": "This action will delete \"{name}\" and all associated data. This cannot be undone.",
+        "immediateDelete": "Delete immediately (skip 5-day grace period)",
+        "skipNotification": "Skip deletion notification to org members",
+        "title": "Delete Organization"
+      },
+      "description": "View and manage all organizations on the platform",
+      "filters": {
+        "all": "All",
+        "deleted": "Deleted",
+        "suspended": "Suspended"
+      },
+      "pagination": {
+        "showing": "Showing {from} to {to} of {total} organizations"
+      },
+      "searchPlaceholder": "Search by name or slug…",
+      "suspendDialog": {
+        "confirmButton": "Suspend Organization",
+        "description": "Suspend \"{name}\" and put it in read-only mode. Members will be able to view data but not create or edit anything.",
+        "reason": "Reason",
+        "reasonPlaceholder": "Enter the reason for suspending this organization…",
+        "title": "Suspend Organization"
+      },
+      "table": {
+        "created": "Created",
+        "employees": "Employees",
+        "members": "Members",
+        "noOrganizationsFound": "No organizations found",
+        "organization": "Organization"
+      },
+      "title": "Organization Management",
+      "toasts": {
+        "deletedGracePeriod": "Organization \"{name}\" has been scheduled for deletion in 5 days",
+        "deletedImmediate": "Organization \"{name}\" has been scheduled for immediate deletion",
+        "suspended": "Organization \"{name}\" has been suspended",
+        "unsuspended": "Organization \"{name}\" has been unsuspended"
+      }
+    },
+    "overview": {
+      "description": "Platform metrics and quick actions",
+      "metrics": {
+        "bannedUsers": "Banned Users",
+        "bannedUsersDescription": "Restricted from access",
+        "licensedSeats": "Licensed Seats",
+        "licensedSeatsDescription": "Across all subscriptions",
+        "mrr": "MRR",
+        "mrrDescription": "Monthly recurring revenue (€)",
+        "organizations": "Organizations",
+        "organizationsDescription": "Active workspaces",
+        "suspended": "Suspended",
+        "suspendedDescription": "Read-only organizations",
+        "title": "Platform Metrics",
+        "totalUsers": "Total Users",
+        "totalUsersDescription": "Registered platform accounts"
+      },
+      "quickActions": {
+        "billing": {
+          "description": "Revenue metrics and subscription status",
+          "title": "Billing & Subscriptions"
+        },
+        "organizations": {
+          "description": "Suspend, delete, or review organizations",
+          "title": "Organization Management"
+        },
+        "title": "Quick Actions",
+        "users": {
+          "description": "Ban/unban users, manage sessions, view activity",
+          "title": "User Management"
+        }
+      },
+      "title": "Overview"
+    },
+    "users": {
+      "badges": {
+        "admin": "Admin",
+        "banExpiresUntil": "Until {date}",
+        "banned": "Banned",
+        "user": "User"
+      },
+      "banDialog": {
+        "confirmButton": "Ban User",
+        "description": "Ban {email} from accessing the platform.",
+        "expiry": "Expiry Date (optional)",
+        "permanentBanHint": "Leave empty for permanent ban",
+        "reason": "Reason",
+        "reasonPlaceholder": "Enter the reason for banning this user…",
+        "title": "Ban User"
+      },
+      "description": "View and manage all users on the platform",
+      "filters": {
+        "allUsers": "All Users",
+        "banned": "Banned"
+      },
+      "pagination": {
+        "showing": "Showing {from} to {to} of {total} users"
+      },
+      "searchPlaceholder": "Search by name or email…",
+      "sessionsDialog": {
+        "description": "Active sessions for {email}",
+        "noSessions": "No active sessions",
+        "revokeAll": "Revoke All Sessions",
+        "title": "User Sessions",
+        "unknownDevice": "Unknown device",
+        "unknownIp": "Unknown IP"
+      },
+      "table": {
+        "created": "Created",
+        "noUsersFound": "No users found",
+        "role": "Role",
+        "user": "User"
+      },
+      "title": "User Management",
+      "toasts": {
+        "banned": "User {email} has been banned",
+        "sessionRevoked": "Session revoked",
+        "sessionsRevoked": "Revoked {count} sessions",
+        "unbanned": "User {email} has been unbanned"
+      }
+    }
+  },
   "approvals": {
     "absenceApproved": "Absence request approved",
     "absenceRejected": "Absence request rejected",
