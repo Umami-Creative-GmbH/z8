@@ -3,8 +3,8 @@
 	"private": true,
 	"pnpm": {
 		"onlyBuiltDependencies": [
-			"msw",
-			"puppeteer"
+			"esbuild",
+			"msw"
 		]
 	},
 	"workspaces": [
@@ -44,7 +44,7 @@
 	},
 	"devDependencies": {
 		"@esbuild/win32-x64": "^0.27.3",
-		"puppeteer-core": "^24.37.1",
+		"puppeteer-core": "^24.37.2",
 		"shadcn": "^3.8.4",
 		"turbo": "^2.8.3"
 	},
