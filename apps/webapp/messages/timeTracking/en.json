@@ -23,8 +23,10 @@
     "clockIn": "Clock In",
     "clockingIn": "Clocking In…",
     "clockingOut": "Clocking Out…",
+    "clockInQueued": "Clock-in queued for sync",
     "clockInSuccess": "Clocked in successfully",
     "clockOut": "Clock Out",
+    "clockOutQueued": "Clock-out queued for sync",
     "clockOutSuccess": "Clocked out successfully",
     "compliance": {
       "violation": "Compliance Violation",
@@ -58,45 +60,57 @@
       },
       "timezoneNote": "Times are in your local timezone ({timezone})"
     },
-    "manualEntry": {
-      "addButton": "Add Manual Entry",
-      "title": "Add Manual Time Entry",
-      "description": "Create a time entry for a past date. Approval may be required based on your organization's change policy.",
-      "dateLabel": "Date",
-      "clockInLabel": "Clock In",
-      "clockOutLabel": "Clock Out",
-      "reasonLabel": "Reason",
-      "reasonPlaceholder": "Describe what you worked on…",
-      "submit": "Create Entry",
-      "submitting": "Creating…",
-      "success": {
-        "created": "Time entry created successfully",
-        "pendingApproval": "Time entry submitted for manager approval",
-        "adjusted": "Times adjusted to {clockIn} - {clockOut} to avoid overlap"
-      },
-      "errors": {
-        "invalidTimeRange": "Clock out time must be after clock in time",
-        "futureDate": "Cannot create entries for future dates",
-        "overlapping": "This entry overlaps with an existing work period",
-        "tooLong": "Work period cannot exceed 24 hours",
-        "createFailed": "Failed to create time entry"
-      }
-    },
     "currentlyClockedIn": "You're currently clocked in",
     "errors": {
       "clockInFailed": "Failed to clock in",
       "clockOutFailed": "Failed to clock out",
       "holidayBlocked": "Cannot clock out on {holidayName}",
       "holidayBlockedDesc": "This day is marked as a holiday and time entries are not allowed",
-      "notesSaveFailed": "Failed to save notes"
+      "notesSaveFailed": "Failed to save notes",
+      "restPeriodBlocked": "Rest period not complete",
+      "restPeriodBlockedDesc": "You must complete the required rest period before clocking in. Request an exception if needed."
     },
+    "manualEntry": {
+      "addButton": "Add Manual Entry",
+      "clockInLabel": "Clock In",
+      "clockOutLabel": "Clock Out",
+      "dateLabel": "Date",
+      "description": "Create a time entry for a past date. Approval may be required based on your organization's change policy.",
+      "errors": {
+        "createFailed": "Failed to create time entry",
+        "futureDate": "Cannot create entries for future dates",
+        "invalidTimeRange": "Clock out time must be after clock in time",
+        "tooLong": "Work period cannot exceed 24 hours"
+      },
+      "reasonLabel": "Reason",
+      "reasonPlaceholder": "Describe what you worked on…",
+      "submit": "Create Entry",
+      "submitting": "Creating…",
+      "success": {
+        "adjusted": "Times adjusted to {clockIn} - {clockOut} to avoid overlap",
+        "created": "Time entry created successfully",
+        "pendingApproval": "Time entry submitted for manager approval"
+      },
+      "title": "Add Manual Time Entry"
+    },
+    "noCategory": "No category (100%)",
     "noProject": "No project",
     "notesPlaceholder": "What did you work on?",
     "notesSaved": "Notes saved",
     "project": "Project",
     "readyToClockIn": "Ready to start working?",
+    "restPeriodWarning": "Rest Period Warning",
+    "restPeriodWarningMessage": "You have not completed the required rest period. Clocking in now will be logged as a violation.",
+    "selectCategory": "Select a category",
     "selectProject": "Select a project",
     "startedAt": "Started at",
+    "summary": {
+      "baseWorked": "Base worked",
+      "surcharge": "Surcharge",
+      "thisMonth": "This Month",
+      "thisWeek": "This Week",
+      "today": "Today"
+    },
     "table": {
       "active": "Active",
       "clockIn": "Clock In",
@@ -106,11 +120,13 @@
       "description": "Description",
       "duration": "Duration",
       "emptyState": "No time entries found for this week.",
-      "emptyStateHint": "Clock in to start tracking your time.",
       "title": "Time Entries"
     },
     "title": "Time Tracking",
-    "welcomeBack": "Welcome back, {name}"
+    "unknownCategory": "Unknown category",
+    "unknownProject": "Unknown project",
+    "welcomeBack": "Welcome back, {name}",
+    "workCategory": "Work Category"
   },
   "wellness": {
     "water": {

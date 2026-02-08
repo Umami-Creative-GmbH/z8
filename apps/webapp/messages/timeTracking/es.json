@@ -82,7 +82,6 @@
       "description": "Descripción",
       "duration": "Duración",
       "emptyState": "No se encontraron entradas de tiempo para esta semana.",
-      "emptyStateHint": "Marca entrada para comenzar a registrar tu tiempo.",
       "title": "Entradas de tiempo"
     },
     "title": "Control de tiempo",

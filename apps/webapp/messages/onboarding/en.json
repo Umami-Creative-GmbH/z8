@@ -143,6 +143,7 @@
       "title": "Set up vacation policy"
     },
     "welcome": {
+      "continueSetup": "Continue Setup",
       "features": {
         "absences": "Absence Management",
         "absencesDesc": "Request time off, manage vacation days, and track holidays",
@@ -152,6 +153,7 @@
         "timeTrackingDesc": "Clock in and out, track work hours, and manage time corrections"
       },
       "getStarted": "Get Started",
+      "joinedOrganization": "You've joined {organization}. Let's complete your profile setup.",
       "subtitle": "Let's get you started with a quick setup. This will only take a few minutes.",
       "title": "Welcome to Z8!"
     },

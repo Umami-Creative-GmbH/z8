@@ -82,7 +82,6 @@
       "description": "Descrição",
       "duration": "Duração",
       "emptyState": "Nenhum registro de tempo encontrado para esta semana.",
-      "emptyStateHint": "Registre entrada para começar a rastrear seu tempo.",
       "title": "Registros de Tempo"
     },
     "title": "Controle de Ponto",

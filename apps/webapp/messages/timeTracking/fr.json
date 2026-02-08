@@ -82,7 +82,6 @@
       "description": "Description",
       "duration": "Durée",
       "emptyState": "Aucune entrée de temps trouvée pour cette semaine.",
-      "emptyStateHint": "Pointez pour commencer à suivre votre temps.",
       "title": "Entrées de temps"
     },
     "title": "Suivi du temps",

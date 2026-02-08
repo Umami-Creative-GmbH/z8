@@ -161,10 +161,7 @@
     },
     "filter": {
       "absences": "Assenze",
-      "allEmployees": "Tutti i dipendenti",
-      "employee": "Filtra per dipendente",
       "holidays": "Festività",
-      "myDataOnly": "Solo i miei dati",
       "timeEntries": "Voci di tempo",
       "workPeriods": "Periodi di lavoro"
     },
@@ -200,12 +197,6 @@
       "approved": "Approvato",
       "pending": "In attesa",
       "rejected": "Rifiutato"
-    },
-    "employeeSelector": {
-      "label": "Visualizza calendario",
-      "placeholder": "Seleziona membro del team...",
-      "myCalendar": "Il mio calendario",
-      "error": "Impossibile caricare i membri del team"
     }
   }
 }

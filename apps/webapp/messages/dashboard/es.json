@@ -25,8 +25,6 @@
       "no-reports": "Aún no hay informes directos",
       "no-reports-description": "Verá a los miembros de su equipo aquí una vez asignados",
       "people-you-manage": "Personas que gestiona",
-      "reporting-to-you": "que le reportan",
-      "team-members": "{count} miembros del equipo",
       "title": "Su equipo",
       "view-all": "Ver todo",
       "view-all-members": "Ver todos los {count} miembros del equipo"
