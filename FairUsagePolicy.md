@@ -5,7 +5,7 @@
 
 ## Overview
 
-Z8 is and will remain a fully open-source project under the BSD 3-Clause License. This Fair Usage Policy complements the license and is designed to ensure sustainability, fairness, and equitable access within the Z8 community.
+Z8 is distributed under a source-available license based on the BSD 3-Clause License with additional use restrictions (see [LICENSE](LICENSE)). This Fair Usage Policy complements the license and is designed to ensure sustainability, fairness, and equitable access within the Z8 community.
 
 The Fair Usage Policy is built on the principle of **fair exchange**: Z8 provides a powerful, feature-rich open-source time tracking and HR management platform free of charge. In return, organizations using Z8 at scale are expected to contribute fairly by either:
 
@@ -55,7 +55,7 @@ This count is performed **once daily** (UTC midnight) and is included in the ano
 ### Tier 1: Community (Free)
 - **Limit**: Up to 25 concurrent active users within any 24-hour period
 - **Cost**: Free
-- **Features**: Full feature access
+- **Features**: Feature access subject to the [LICENSE](LICENSE) restrictions (for example, Billing Features are restricted)
 - **Support**: Community forums and documentation
 - **Requirements**: 
   - Daily telemetry reporting enabled (see "Telemetry & Reporting" section)

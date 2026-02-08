@@ -1,7 +1,7 @@
 Copyright (c) 2026 Umami Creative GmbH
 All rights reserved.
 
-**Note**: This project is subject to a Fair Usage Policy for deployments with more than 25 concurrent active users. See [FairUsagePolicy.md](FairUsagePolicy.md) for details. The Fair Usage Policy complements this BSD 3-Clause License and does not restrict open-source usage rights.
+**Note**: This project is subject to additional use restrictions, including a Fair Usage Policy and restrictions on competing SaaS offerings and billing functionality. See [FairUsagePolicy.md](FairUsagePolicy.md) for details. The Fair Usage Policy complements this license.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -29,14 +29,43 @@ modification, are permitted provided that the following conditions are met:
    at the sole discretion of the copyright holder and is not guaranteed as
    part of any enterprise license agreement.
 
-5. Deployments or distributions where the total number of end users (defined
-   as individual natural persons with direct access to the application)
-   exceeds twenty-five (25) within any rolling thirty (30) day period require a duly
-   executed enterprise license from the copyright holder. Use of this software
-   by organizations exceeding this threshold without an enterprise license
-   constitutes a material breach of this license.
+5. Competing SaaS Prohibition.
+   (a) You are strictly prohibited from offering the software (or any
+      substantial portion of it) to third parties as a hosted or managed
+      service in a manner that competes with Umami Creative GmbH's Z8 hosted
+      offering (a "Competing SaaS Offering"), unless you have a duly executed
+      enterprise license from the copyright holder that expressly permits
+      such use.
+   (b) A "Competing SaaS Offering" includes, without limitation, making the
+      software available as (i) a generally available hosted service for
+      multiple unaffiliated organizations, or (ii) a hosted service that is
+      marketed, positioned, or used as a substitute for Umami Creative GmbH's
+      Z8 SaaS offering.
+   (c) For avoidance of doubt, self-hosting and use of the software by an
+      organization for its own internal workforce (including commercial
+      organizations) is permitted, subject to the Fair Usage Policy and the
+      end-user threshold below.
+   (d) Internal self-hosted use is permitted without an enterprise license
+      only where the total number of end users (defined as individual natural
+      persons with direct access to the application; i.e., employees/users)
+      does not exceed twenty-five (25) within any rolling thirty (30) day
+      period. Organizations exceeding this threshold require a duly executed
+      enterprise license.
 
-6. All code, modifications, or derivative works incorporated into this project
+6. Billing Feature Restriction.
+   (a) "Billing Features" means any code, configuration, UI, API routes,
+      workflows, or integrations included with the software that enable or
+      facilitate paid subscriptions, plan gating, metering, invoicing,
+      payment processing, or similar monetization functionality, including
+      but not limited to any Stripe integration.
+   (b) Billing Features are restricted to use by Umami Creative GmbH. You are
+      strictly prohibited from enabling, operating, or using Billing Features
+      in any deployment or distribution, except where expressly permitted by
+      a duly executed enterprise license from the copyright holder.
+   (c) You may remove or disable Billing Features in your deployments and
+      distributions, provided you otherwise comply with this License.
+
+7. All code, modifications, or derivative works incorporated into this project
    prior to the incorporation of these clauses remain licensed under the BSD
    3-Clause License, and prior contributors retain all BSD-3 rights therein;
    if any such contributor requests the removal of their BSD-3-licensed code,
