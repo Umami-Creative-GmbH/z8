@@ -12,14 +12,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import { Link } from "@/navigation";
-
-const navItems = [
-	{ href: "/admin", icon: IconChartBar, label: "Overview" },
-	{ href: "/admin/users", icon: IconUsers, label: "Users" },
-	{ href: "/admin/organizations", icon: IconBuilding, label: "Organizations" },
-	{ href: "/admin/billing", icon: IconCreditCard, label: "Billing" },
-	{ href: "/admin/settings", icon: IconSettings, label: "Settings" },
-];
+import { getTranslate } from "@/tolgee/server";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
 	const headersList = await headers();
@@ -34,6 +27,28 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 	if (session.user.role !== "admin") {
 		redirect("/");
 	}
+
+	const t = await getTranslate();
+
+	const navItems = [
+		{ href: "/admin", icon: IconChartBar, label: t("admin.layout.nav.overview", "Overview") },
+		{ href: "/admin/users", icon: IconUsers, label: t("admin.layout.nav.users", "Users") },
+		{
+			href: "/admin/organizations",
+			icon: IconBuilding,
+			label: t("admin.layout.nav.organizations", "Organizations"),
+		},
+		{
+			href: "/admin/billing",
+			icon: IconCreditCard,
+			label: t("admin.layout.nav.billing", "Billing"),
+		},
+		{
+			href: "/admin/settings",
+			icon: IconSettings,
+			label: t("admin.layout.nav.settings", "Settings"),
+		},
+	];
 
 	return (
 		<div className="min-h-screen bg-background">
@@ -51,8 +66,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 								<IconShield className="size-5" aria-hidden="true" />
 							</div>
 							<div className="hidden sm:block">
-								<div className="text-sm font-semibold tracking-tight">Admin Console</div>
-								<div className="text-xs text-muted-foreground">Platform Management</div>
+								<div className="text-sm font-semibold tracking-tight">
+									{t("admin.layout.title", "Admin Console")}
+								</div>
+								<div className="text-xs text-muted-foreground">
+									{t("admin.layout.subtitle", "Platform Management")}
+								</div>
 							</div>
 						</Link>
 
@@ -97,7 +116,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 							className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
 						>
 							<IconLogout className="size-4" aria-hidden="true" />
-							<span className="hidden sm:inline">Exit Admin</span>
+							<span className="hidden sm:inline">
+								{t("admin.layout.exitAdmin", "Exit Admin")}
+							</span>
 						</Link>
 					</div>
 				</div>
