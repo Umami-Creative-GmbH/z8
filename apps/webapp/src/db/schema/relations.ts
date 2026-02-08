@@ -3,9 +3,14 @@ import { relations } from "drizzle-orm";
 // Import auth tables
 import { invitation, member, organization, session, user } from "../auth-schema";
 import { absenceCategory, absenceEntry } from "./absence";
+// Conditional access policies
+import { accessPolicy, accessViolationLog, sessionExtension, trustedDevice } from "./access-policy";
 import { approvalRequest } from "./approval";
 import { auditLog } from "./audit";
 import { changePolicy, changePolicyAssignment } from "./change-policy";
+import { complianceException } from "./compliance";
+import { complianceConfig, complianceFinding } from "./compliance-finding";
+import { coverageRule, coverageSettings } from "./coverage";
 import {
 	organizationBranding,
 	organizationDomain,
@@ -21,6 +26,14 @@ import {
 	holidayPresetAssignment,
 	holidayPresetHoliday,
 } from "./holiday";
+// Identity management (role templates, lifecycle)
+import {
+	roleTemplate,
+	roleTemplateMapping,
+	userLifecycleConfig,
+	userLifecycleEvent,
+	userRoleTemplateAssignment,
+} from "./identity";
 import { inviteCode, inviteCodeUsage, memberApproval } from "./invite-code";
 import { notification, notificationPreference, pushSubscription } from "./notification";
 // Import tables from all domain files
@@ -35,9 +48,25 @@ import {
 	team,
 	teamPermissions,
 } from "./organization";
+import {
+	payrollExportConfig,
+	payrollExportFormat,
+	payrollExportJob,
+	payrollExportSyncRecord,
+	payrollWageTypeMapping,
+} from "./payroll-export";
 import { project, projectAssignment, projectManager, projectNotificationState } from "./project";
+// SCIM provisioning
+import { scimProviderConfig, scimProvisioningLog } from "./scim";
 import { shift, shiftRecurrence, shiftRequest, shiftTemplate } from "./shift";
-import { coverageRule, coverageSettings } from "./coverage";
+// Skills & qualifications
+import {
+	employeeSkill,
+	shiftTemplateSkillRequirement,
+	skill,
+	skillRequirementOverride,
+	subareaSkillRequirement,
+} from "./skill";
 import {
 	surchargeCalculation,
 	surchargeModel,
@@ -52,7 +81,7 @@ import {
 	vacationAllowance,
 	vacationPolicyAssignment,
 } from "./vacation";
-
+import { webhookDelivery, webhookEndpoint } from "./webhook";
 import { hydrationStats, waterIntakeLog } from "./wellness";
 import {
 	workCategory,
@@ -60,14 +89,6 @@ import {
 	workCategorySetAssignment,
 	workCategorySetCategory,
 } from "./work-category";
-import { webhookDelivery, webhookEndpoint } from "./webhook";
-import {
-	payrollExportConfig,
-	payrollExportFormat,
-	payrollExportJob,
-	payrollExportSyncRecord,
-	payrollWageTypeMapping,
-} from "./payroll-export";
 import {
 	workPolicy,
 	workPolicyAssignment,
@@ -78,33 +99,6 @@ import {
 	workPolicyScheduleDay,
 	workPolicyViolation,
 } from "./work-policy";
-import { complianceException } from "./compliance";
-import { complianceFinding, complianceConfig } from "./compliance-finding";
-// SCIM provisioning
-import { scimProviderConfig, scimProvisioningLog } from "./scim";
-// Identity management (role templates, lifecycle)
-import {
-	userLifecycleConfig,
-	roleTemplate,
-	roleTemplateMapping,
-	userRoleTemplateAssignment,
-	userLifecycleEvent,
-} from "./identity";
-// Conditional access policies
-import {
-	accessPolicy,
-	trustedDevice,
-	sessionExtension,
-	accessViolationLog,
-} from "./access-policy";
-// Skills & qualifications
-import {
-	skill,
-	employeeSkill,
-	subareaSkillRequirement,
-	shiftTemplateSkillRequirement,
-	skillRequirementOverride,
-} from "./skill";
 
 // ============================================
 // RELATIONS
@@ -1448,15 +1442,12 @@ export const payrollExportJobRelations = relations(payrollExportJob, ({ one, man
 	syncRecords: many(payrollExportSyncRecord),
 }));
 
-export const payrollExportSyncRecordRelations = relations(
-	payrollExportSyncRecord,
-	({ one }) => ({
-		job: one(payrollExportJob, {
-			fields: [payrollExportSyncRecord.jobId],
-			references: [payrollExportJob.id],
-		}),
+export const payrollExportSyncRecordRelations = relations(payrollExportSyncRecord, ({ one }) => ({
+	job: one(payrollExportJob, {
+		fields: [payrollExportSyncRecord.jobId],
+		references: [payrollExportJob.id],
 	}),
-);
+}));
 
 // ============================================
 // COMPLIANCE EXCEPTION RELATIONS
@@ -1578,19 +1569,16 @@ export const scheduledExportRelations = relations(scheduledExport, ({ one, many 
 	executions: many(scheduledExportExecution),
 }));
 
-export const scheduledExportExecutionRelations = relations(
-	scheduledExportExecution,
-	({ one }) => ({
-		scheduledExport: one(scheduledExport, {
-			fields: [scheduledExportExecution.scheduledExportId],
-			references: [scheduledExport.id],
-		}),
-		organization: one(organization, {
-			fields: [scheduledExportExecution.organizationId],
-			references: [organization.id],
-		}),
+export const scheduledExportExecutionRelations = relations(scheduledExportExecution, ({ one }) => ({
+	scheduledExport: one(scheduledExport, {
+		fields: [scheduledExportExecution.scheduledExportId],
+		references: [scheduledExport.id],
 	}),
-);
+	organization: one(organization, {
+		fields: [scheduledExportExecution.organizationId],
+		references: [organization.id],
+	}),
+}));
 
 // ============================================
 // AUDIT EXPORT RELATIONS
@@ -1826,25 +1814,28 @@ export const roleTemplateMappingRelations = relations(roleTemplateMapping, ({ on
 	}),
 }));
 
-export const userRoleTemplateAssignmentRelations = relations(userRoleTemplateAssignment, ({ one }) => ({
-	user: one(user, {
-		fields: [userRoleTemplateAssignment.userId],
-		references: [user.id],
+export const userRoleTemplateAssignmentRelations = relations(
+	userRoleTemplateAssignment,
+	({ one }) => ({
+		user: one(user, {
+			fields: [userRoleTemplateAssignment.userId],
+			references: [user.id],
+		}),
+		organization: one(organization, {
+			fields: [userRoleTemplateAssignment.organizationId],
+			references: [organization.id],
+		}),
+		roleTemplate: one(roleTemplate, {
+			fields: [userRoleTemplateAssignment.roleTemplateId],
+			references: [roleTemplate.id],
+		}),
+		assignedByUser: one(user, {
+			fields: [userRoleTemplateAssignment.assignedBy],
+			references: [user.id],
+			relationName: "role_assignment_assignor",
+		}),
 	}),
-	organization: one(organization, {
-		fields: [userRoleTemplateAssignment.organizationId],
-		references: [organization.id],
-	}),
-	roleTemplate: one(roleTemplate, {
-		fields: [userRoleTemplateAssignment.roleTemplateId],
-		references: [roleTemplate.id],
-	}),
-	assignedByUser: one(user, {
-		fields: [userRoleTemplateAssignment.assignedBy],
-		references: [user.id],
-		relationName: "role_assignment_assignor",
-	}),
-}));
+);
 
 export const userLifecycleEventRelations = relations(userLifecycleEvent, ({ one }) => ({
 	organization: one(organization, {
@@ -2140,5 +2131,296 @@ export const complianceConfigRelations = relations(complianceConfig, ({ one }) =
 		fields: [complianceConfig.updatedBy],
 		references: [user.id],
 		relationName: "compliance_config_updater",
+	}),
+}));
+
+// ============================================
+// TELEGRAM INTEGRATION RELATIONS
+// ============================================
+
+import {
+	telegramApprovalMessage,
+	telegramBotConfig,
+	telegramConversation,
+	telegramEscalation,
+	telegramLinkCode,
+	telegramUserMapping,
+} from "./telegram-integration";
+
+export const telegramBotConfigRelations = relations(telegramBotConfig, ({ one }) => ({
+	organization: one(organization, {
+		fields: [telegramBotConfig.organizationId],
+		references: [organization.id],
+	}),
+	configuredBy: one(user, {
+		fields: [telegramBotConfig.configuredByUserId],
+		references: [user.id],
+	}),
+}));
+
+export const telegramUserMappingRelations = relations(telegramUserMapping, ({ one }) => ({
+	user: one(user, {
+		fields: [telegramUserMapping.userId],
+		references: [user.id],
+	}),
+	organization: one(organization, {
+		fields: [telegramUserMapping.organizationId],
+		references: [organization.id],
+	}),
+}));
+
+export const telegramConversationRelations = relations(telegramConversation, ({ one }) => ({
+	organization: one(organization, {
+		fields: [telegramConversation.organizationId],
+		references: [organization.id],
+	}),
+	user: one(user, {
+		fields: [telegramConversation.userId],
+		references: [user.id],
+	}),
+}));
+
+export const telegramLinkCodeRelations = relations(telegramLinkCode, ({ one }) => ({
+	user: one(user, {
+		fields: [telegramLinkCode.userId],
+		references: [user.id],
+	}),
+	organization: one(organization, {
+		fields: [telegramLinkCode.organizationId],
+		references: [organization.id],
+	}),
+}));
+
+export const telegramApprovalMessageRelations = relations(telegramApprovalMessage, ({ one }) => ({
+	organization: one(organization, {
+		fields: [telegramApprovalMessage.organizationId],
+		references: [organization.id],
+	}),
+	approvalRequest: one(approvalRequest, {
+		fields: [telegramApprovalMessage.approvalRequestId],
+		references: [approvalRequest.id],
+	}),
+	recipient: one(user, {
+		fields: [telegramApprovalMessage.recipientUserId],
+		references: [user.id],
+	}),
+}));
+
+export const telegramEscalationRelations = relations(telegramEscalation, ({ one }) => ({
+	organization: one(organization, {
+		fields: [telegramEscalation.organizationId],
+		references: [organization.id],
+	}),
+	approvalRequest: one(approvalRequest, {
+		fields: [telegramEscalation.approvalRequestId],
+		references: [approvalRequest.id],
+	}),
+	originalApprover: one(employee, {
+		fields: [telegramEscalation.originalApproverId],
+		references: [employee.id],
+		relationName: "telegram_escalation_original_approver",
+	}),
+	escalatedToApprover: one(employee, {
+		fields: [telegramEscalation.escalatedToApproverId],
+		references: [employee.id],
+		relationName: "telegram_escalation_escalated_to",
+	}),
+}));
+
+// ============================================
+// DISCORD INTEGRATION RELATIONS
+// ============================================
+
+import {
+	discordApprovalMessage,
+	discordBotConfig,
+	discordConversation,
+	discordEscalation,
+	discordLinkCode,
+	discordUserMapping,
+} from "./discord-integration";
+
+export const discordBotConfigRelations = relations(discordBotConfig, ({ one }) => ({
+	organization: one(organization, {
+		fields: [discordBotConfig.organizationId],
+		references: [organization.id],
+	}),
+	configuredBy: one(user, {
+		fields: [discordBotConfig.configuredByUserId],
+		references: [user.id],
+	}),
+}));
+
+export const discordUserMappingRelations = relations(discordUserMapping, ({ one }) => ({
+	user: one(user, {
+		fields: [discordUserMapping.userId],
+		references: [user.id],
+	}),
+	organization: one(organization, {
+		fields: [discordUserMapping.organizationId],
+		references: [organization.id],
+	}),
+}));
+
+export const discordConversationRelations = relations(discordConversation, ({ one }) => ({
+	organization: one(organization, {
+		fields: [discordConversation.organizationId],
+		references: [organization.id],
+	}),
+	user: one(user, {
+		fields: [discordConversation.userId],
+		references: [user.id],
+	}),
+}));
+
+export const discordLinkCodeRelations = relations(discordLinkCode, ({ one }) => ({
+	user: one(user, {
+		fields: [discordLinkCode.userId],
+		references: [user.id],
+	}),
+	organization: one(organization, {
+		fields: [discordLinkCode.organizationId],
+		references: [organization.id],
+	}),
+}));
+
+export const discordApprovalMessageRelations = relations(discordApprovalMessage, ({ one }) => ({
+	organization: one(organization, {
+		fields: [discordApprovalMessage.organizationId],
+		references: [organization.id],
+	}),
+	approvalRequest: one(approvalRequest, {
+		fields: [discordApprovalMessage.approvalRequestId],
+		references: [approvalRequest.id],
+	}),
+	recipient: one(user, {
+		fields: [discordApprovalMessage.recipientUserId],
+		references: [user.id],
+	}),
+}));
+
+export const discordEscalationRelations = relations(discordEscalation, ({ one }) => ({
+	organization: one(organization, {
+		fields: [discordEscalation.organizationId],
+		references: [organization.id],
+	}),
+	approvalRequest: one(approvalRequest, {
+		fields: [discordEscalation.approvalRequestId],
+		references: [approvalRequest.id],
+	}),
+	originalApprover: one(employee, {
+		fields: [discordEscalation.originalApproverId],
+		references: [employee.id],
+		relationName: "discord_escalation_original_approver",
+	}),
+	escalatedToApprover: one(employee, {
+		fields: [discordEscalation.escalatedToApproverId],
+		references: [employee.id],
+		relationName: "discord_escalation_escalated_to",
+	}),
+}));
+
+// ============================================
+// SLACK INTEGRATION RELATIONS
+// ============================================
+
+import {
+	slackApprovalMessage,
+	slackConversation,
+	slackEscalation,
+	slackLinkCode,
+	slackOAuthState,
+	slackUserMapping,
+	slackWorkspaceConfig,
+} from "./slack-integration";
+
+export const slackWorkspaceConfigRelations = relations(slackWorkspaceConfig, ({ one }) => ({
+	organization: one(organization, {
+		fields: [slackWorkspaceConfig.organizationId],
+		references: [organization.id],
+	}),
+	configuredBy: one(user, {
+		fields: [slackWorkspaceConfig.configuredByUserId],
+		references: [user.id],
+	}),
+}));
+
+export const slackOAuthStateRelations = relations(slackOAuthState, ({ one }) => ({
+	organization: one(organization, {
+		fields: [slackOAuthState.organizationId],
+		references: [organization.id],
+	}),
+	user: one(user, {
+		fields: [slackOAuthState.userId],
+		references: [user.id],
+	}),
+}));
+
+export const slackUserMappingRelations = relations(slackUserMapping, ({ one }) => ({
+	user: one(user, {
+		fields: [slackUserMapping.userId],
+		references: [user.id],
+	}),
+	organization: one(organization, {
+		fields: [slackUserMapping.organizationId],
+		references: [organization.id],
+	}),
+}));
+
+export const slackConversationRelations = relations(slackConversation, ({ one }) => ({
+	organization: one(organization, {
+		fields: [slackConversation.organizationId],
+		references: [organization.id],
+	}),
+	user: one(user, {
+		fields: [slackConversation.userId],
+		references: [user.id],
+	}),
+}));
+
+export const slackLinkCodeRelations = relations(slackLinkCode, ({ one }) => ({
+	user: one(user, {
+		fields: [slackLinkCode.userId],
+		references: [user.id],
+	}),
+	organization: one(organization, {
+		fields: [slackLinkCode.organizationId],
+		references: [organization.id],
+	}),
+}));
+
+export const slackApprovalMessageRelations = relations(slackApprovalMessage, ({ one }) => ({
+	organization: one(organization, {
+		fields: [slackApprovalMessage.organizationId],
+		references: [organization.id],
+	}),
+	approvalRequest: one(approvalRequest, {
+		fields: [slackApprovalMessage.approvalRequestId],
+		references: [approvalRequest.id],
+	}),
+	recipient: one(user, {
+		fields: [slackApprovalMessage.recipientUserId],
+		references: [user.id],
+	}),
+}));
+
+export const slackEscalationRelations = relations(slackEscalation, ({ one }) => ({
+	organization: one(organization, {
+		fields: [slackEscalation.organizationId],
+		references: [organization.id],
+	}),
+	approvalRequest: one(approvalRequest, {
+		fields: [slackEscalation.approvalRequestId],
+		references: [approvalRequest.id],
+	}),
+	originalApprover: one(employee, {
+		fields: [slackEscalation.originalApproverId],
+		references: [employee.id],
+		relationName: "slack_escalation_original_approver",
+	}),
+	escalatedToApprover: one(employee, {
+		fields: [slackEscalation.escalatedToApproverId],
+		references: [employee.id],
+		relationName: "slack_escalation_escalated_to",
 	}),
 }));
