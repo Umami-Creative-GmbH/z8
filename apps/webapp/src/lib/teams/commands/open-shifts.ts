@@ -7,7 +7,7 @@
 
 import { Effect } from "effect";
 import { DateTime } from "luxon";
-import type { BotCommand, BotCommandContext, BotCommandResponse } from "../types";
+import type { BotCommand, BotCommandContext, BotCommandResponse } from "@/lib/bot-platform/types";
 import { createLogger } from "@/lib/logger";
 import { withRateLimit } from "./middleware";
 import { OpenShiftsService, OpenShiftsServiceFullLive } from "@/lib/effect/services/open-shifts.service";
@@ -79,7 +79,7 @@ function parseDateRangeArgument(arg: string | undefined, timezone: string): Date
 async function openShiftsHandler(ctx: BotCommandContext): Promise<BotCommandResponse> {
 	try {
 		const rangeArg = ctx.args[0];
-		const { startDate, endDate } = parseDateRangeArgument(rangeArg, ctx.tenant.digestTimezone);
+		const { startDate, endDate } = parseDateRangeArgument(rangeArg, ctx.config.digestTimezone);
 
 		logger.debug(
 			{
@@ -119,7 +119,7 @@ async function openShiftsHandler(ctx: BotCommandContext): Promise<BotCommandResp
 		const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://app.z8.works";
 		const card = buildOpenShiftsCard({
 			shifts,
-			timezone: ctx.tenant.digestTimezone,
+			timezone: ctx.config.digestTimezone,
 			appUrl,
 			requesterId: ctx.employeeId,
 			locale: "en", // TODO: Get from user preferences

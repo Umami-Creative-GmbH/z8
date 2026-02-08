@@ -11,11 +11,11 @@ import { createLogger } from "@/lib/logger";
 import { resolveTenant, updateTenantServiceUrl } from "./tenant-resolver";
 import { resolveTeamsUser } from "./user-resolver";
 import { saveConversationReference, deactivateConversation } from "./conversation-manager";
-import { parseCommand, executeCommand } from "./commands";
+import { parseCommand, executeCommand } from "@/lib/bot-platform/command-registry";
 import { handleApprovalAction } from "./approval-handler";
 import { handleShiftPickupAction } from "./shift-pickup-handler";
 import { TeamsError } from "./types";
-import type { BotCommandContext } from "./types";
+import type { BotCommandContext } from "@/lib/bot-platform/types";
 
 const logger = createLogger("TeamsBotHandler");
 
@@ -169,11 +169,21 @@ async function handleMessage(context: TurnContext): Promise<void> {
 
 	// Build command context
 	const commandContext: BotCommandContext = {
+		platform: "teams",
 		organizationId: tenant.organizationId,
 		employeeId: userResult.status === "found" ? userResult.user.employeeId : "",
 		userId: userResult.status === "found" ? userResult.user.userId : "",
-		teamsUserId,
-		tenant,
+		platformUserId: teamsUserId,
+		config: {
+			organizationId: tenant.organizationId,
+			enableApprovals: tenant.enableApprovals,
+			enableCommands: tenant.enableCommands,
+			enableDailyDigest: tenant.enableDailyDigest,
+			enableEscalations: tenant.enableEscalations,
+			digestTime: tenant.digestTime,
+			digestTimezone: tenant.digestTimezone,
+			escalationTimeoutHours: tenant.escalationTimeoutHours,
+		},
 		args: parsed.args,
 	};
 

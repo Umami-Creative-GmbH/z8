@@ -10,7 +10,7 @@ import { DateTime } from "luxon";
 import { db } from "@/db";
 import { workPeriod, employee, employeeManagers } from "@/db/schema";
 import { user } from "@/db/auth-schema";
-import type { BotCommand, BotCommandContext, BotCommandResponse } from "../types";
+import type { BotCommand, BotCommandContext, BotCommandResponse } from "@/lib/bot-platform/types";
 import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("TeamsCommand:ClockedIn");
@@ -78,10 +78,10 @@ export const clockedInCommand: BotCommand = {
 			}
 
 			// Build response with details
-			const now = DateTime.now().setZone(ctx.tenant.digestTimezone);
+			const now = DateTime.now().setZone(ctx.config.digestTimezone);
 			const lines = activeWorkPeriods.map((entry) => {
 				const clockInTime = DateTime.fromJSDate(entry.startTime).setZone(
-					ctx.tenant.digestTimezone,
+					ctx.config.digestTimezone,
 				);
 				const duration = now.diff(clockInTime, ["hours", "minutes"]);
 				const hours = Math.floor(duration.hours);

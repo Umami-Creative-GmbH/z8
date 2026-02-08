@@ -10,7 +10,7 @@ import { DateTime } from "luxon";
 import { db } from "@/db";
 import { absenceEntry, absenceCategory, employee, employeeManagers } from "@/db/schema";
 import { user } from "@/db/auth-schema";
-import type { BotCommand, BotCommandContext, BotCommandResponse } from "../types";
+import type { BotCommand, BotCommandContext, BotCommandResponse } from "@/lib/bot-platform/types";
 import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("TeamsCommand:WhosOut");
@@ -51,7 +51,7 @@ export const whosOutCommand: BotCommand = {
 			}
 
 			const managedEmployeeIds = orgManagedEmployees.map((m) => m.employeeId);
-			const today = DateTime.now().setZone(ctx.tenant.digestTimezone).toISODate();
+			const today = DateTime.now().setZone(ctx.config.digestTimezone).toISODate();
 
 			// Get approved absence entries that cover today for managed employees
 			const absences = await db
@@ -84,7 +84,7 @@ export const whosOutCommand: BotCommand = {
 
 			// Build response with details
 			const lines = absences.map((absence) => {
-				const endDate = DateTime.fromISO(absence.endDate).setZone(ctx.tenant.digestTimezone);
+				const endDate = DateTime.fromISO(absence.endDate).setZone(ctx.config.digestTimezone);
 				const returnDate = endDate.plus({ days: 1 }).toFormat("EEE, MMM d");
 				const category = absence.categoryName || "Leave";
 
