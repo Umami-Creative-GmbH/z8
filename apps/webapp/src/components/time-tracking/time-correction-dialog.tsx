@@ -1,9 +1,8 @@
 "use client";
 
-import { useForm } from "@tanstack/react-form";
 import { IconEdit, IconLoader2 } from "@tabler/icons-react";
+import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -22,7 +21,6 @@ import {
 	DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
 	fieldHasError,
 	TFormControl,
@@ -30,7 +28,9 @@ import {
 	TFormLabel,
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
+import { Textarea } from "@/components/ui/textarea";
 import { formatTimeInZone, getTimezoneAbbreviation } from "@/lib/time-tracking/timezone-utils";
+import { useRouter } from "@/navigation";
 
 interface WorkPeriodData {
 	id: string;

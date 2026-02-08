@@ -1,9 +1,9 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSession } from "@/lib/auth-client";
 import { ApiError, fetchApi } from "@/lib/fetch";
+import { useRouter } from "@/navigation";
 import { useOrganizationSettings } from "@/stores/organization-settings-store";
 
 export interface OrganizationContext {

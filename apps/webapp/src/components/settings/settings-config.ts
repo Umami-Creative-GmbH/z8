@@ -34,7 +34,8 @@ export type SettingsIconName =
 	| "target"
 	| "certificate"
 	| "credit-card"
-	| "brand-telegram";
+	| "brand-telegram"
+	| "database-import";
 
 export interface SettingsEntry {
 	id: string;
@@ -450,6 +451,17 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Generate sample data for testing or clear all time-related data",
 		href: "/settings/demo",
 		icon: "test-pipe",
+		adminOnly: true,
+		group: "data",
+	},
+	{
+		id: "clockodo-import",
+		titleKey: "settings.clockodoImport.title",
+		titleDefault: "Clockodo Import",
+		descriptionKey: "settings.clockodoImport.description",
+		descriptionDefault: "One-time migration to import data from your Clockodo account",
+		href: "/settings/clockodo-import",
+		icon: "database-import",
 		adminOnly: true,
 		group: "data",
 	},

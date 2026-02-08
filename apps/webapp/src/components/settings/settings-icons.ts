@@ -13,6 +13,7 @@ import {
 	IconClockEdit,
 	IconCreditCard,
 	IconDatabaseExport,
+	IconDatabaseImport,
 	IconDroplet,
 	IconGavel,
 	IconHistory,
@@ -70,4 +71,5 @@ export const SETTINGS_ICON_MAP: Record<
 	certificate: IconCertificate,
 	"credit-card": IconCreditCard,
 	"brand-telegram": IconBrandTelegram,
+	"database-import": IconDatabaseImport,
 };

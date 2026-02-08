@@ -1,7 +1,6 @@
-import Link from "next/link";
+import { IconArrowRight, IconInbox } from "@tabler/icons-react";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import { IconInbox, IconArrowRight } from "@tabler/icons-react";
 import { AbsenceApprovalsTable } from "@/components/approvals/absence-approvals-table";
 import { TimeCorrectionApprovalsTable } from "@/components/approvals/time-correction-approvals-table";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
@@ -10,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Link } from "@/navigation";
 import { getCurrentEmployee } from "./actions";
 
 async function ApprovalsContent() {

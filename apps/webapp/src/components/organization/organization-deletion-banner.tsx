@@ -3,8 +3,8 @@
 import { IconAlertTriangle } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
-import Link from "next/link";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Link } from "@/navigation";
 import {
 	useOrganizationDeletedAt,
 	useOrganizationSettings,

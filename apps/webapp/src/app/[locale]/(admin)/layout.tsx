@@ -1,6 +1,3 @@
-import { redirect } from "next/navigation";
-import { headers } from "next/headers";
-import Link from "next/link";
 import {
 	IconBuilding,
 	IconChartBar,
@@ -10,8 +7,11 @@ import {
 	IconShield,
 	IconUsers,
 } from "@tabler/icons-react";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
+import { Link } from "@/navigation";
 
 const navItems = [
 	{ href: "/admin", icon: IconChartBar, label: "Overview" },
@@ -21,11 +21,7 @@ const navItems = [
 	{ href: "/admin/settings", icon: IconSettings, label: "Settings" },
 ];
 
-export default async function AdminLayout({
-	children,
-}: {
-	children: React.ReactNode;
-}) {
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
 	const headersList = await headers();
 	const session = await auth.api.getSession({ headers: headersList });
 
@@ -85,7 +81,8 @@ export default async function AdminLayout({
 					<div className="flex items-center gap-4">
 						<div className="hidden items-center gap-3 sm:flex">
 							<div className="size-8 rounded-full bg-muted flex items-center justify-center text-xs font-medium text-muted-foreground">
-								{session.user.name?.charAt(0).toUpperCase() || session.user.email?.charAt(0).toUpperCase()}
+								{session.user.name?.charAt(0).toUpperCase() ||
+									session.user.email?.charAt(0).toUpperCase()}
 							</div>
 							<div className="hidden lg:block">
 								<div className="text-sm font-medium">{session.user.name}</div>

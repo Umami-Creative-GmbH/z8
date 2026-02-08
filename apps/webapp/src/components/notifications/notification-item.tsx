@@ -11,10 +11,10 @@ import {
 	IconUsers,
 	IconX,
 } from "@tabler/icons-react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import type { NotificationType, NotificationWithMeta } from "@/lib/notifications/types";
 import { cn } from "@/lib/utils";
+import { useRouter } from "@/navigation";
 
 interface NotificationItemProps {
 	notification: NotificationWithMeta;

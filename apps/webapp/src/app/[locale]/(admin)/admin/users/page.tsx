@@ -1,16 +1,9 @@
 "use client";
 
-import { useState, useTransition, useEffect, useRef, useCallback } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import {
-	IconBan,
-	IconCheck,
-	IconDevices,
-	IconSearch,
-	IconUser,
-	IconX,
-} from "@tabler/icons-react";
+import { IconBan, IconCheck, IconDevices, IconSearch, IconUser, IconX } from "@tabler/icons-react";
 import { DateTime } from "luxon";
+import { useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -43,13 +36,14 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import type { PlatformUser, UserSession } from "@/lib/effect/services/platform-admin.service";
+import { useRouter } from "@/navigation";
 import {
-	listUsersAction,
 	banUserAction,
-	unbanUserAction,
 	listUserSessionsAction,
-	revokeSessionAction,
+	listUsersAction,
 	revokeAllUserSessionsAction,
+	revokeSessionAction,
+	unbanUserAction,
 } from "./actions";
 
 const PAGE_SIZE = 20;
@@ -78,13 +72,13 @@ export default function UsersPage() {
 	const [sessionsLoading, setSessionsLoading] = useState(false);
 
 	// Fetch users with explicit parameters to avoid race conditions
-	const fetchUsers = async (
-		searchVal = search,
-		statusVal = status,
-		pageVal = page,
-	) => {
+	const fetchUsers = async (searchVal = search, statusVal = status, pageVal = page) => {
 		setIsLoading(true);
-		const result = await listUsersAction({ search: searchVal, status: statusVal }, pageVal, PAGE_SIZE);
+		const result = await listUsersAction(
+			{ search: searchVal, status: statusVal },
+			pageVal,
+			PAGE_SIZE,
+		);
 		if (result.success) {
 			setUsers(result.data.data);
 			setTotal(result.data.total);
@@ -100,40 +94,43 @@ export default function UsersPage() {
 	}, []);
 
 	// Debounced search with immediate status change
-	const handleFilterChange = useCallback((newSearch: string, newStatus: "all" | "active" | "banned") => {
-		// Clear any pending search timeout
-		if (searchTimeoutRef.current) {
-			clearTimeout(searchTimeoutRef.current);
-		}
+	const handleFilterChange = useCallback(
+		(newSearch: string, newStatus: "all" | "active" | "banned") => {
+			// Clear any pending search timeout
+			if (searchTimeoutRef.current) {
+				clearTimeout(searchTimeoutRef.current);
+			}
 
-		setSearch(newSearch);
+			setSearch(newSearch);
 
-		// If only status changed, fetch immediately
-		if (newStatus !== status) {
-			setStatus(newStatus);
-			setPage(1);
-			const params = new URLSearchParams();
-			if (newSearch) params.set("search", newSearch);
-			if (newStatus !== "all") params.set("status", newStatus);
-			router.push(`/admin/users?${params.toString()}`);
-			startTransition(() => {
-				fetchUsers(newSearch, newStatus, 1);
-			});
-			return;
-		}
+			// If only status changed, fetch immediately
+			if (newStatus !== status) {
+				setStatus(newStatus);
+				setPage(1);
+				const params = new URLSearchParams();
+				if (newSearch) params.set("search", newSearch);
+				if (newStatus !== "all") params.set("status", newStatus);
+				router.push(`/admin/users?${params.toString()}`);
+				startTransition(() => {
+					fetchUsers(newSearch, newStatus, 1);
+				});
+				return;
+			}
 
-		// Debounce search input (300ms)
-		searchTimeoutRef.current = setTimeout(() => {
-			setPage(1);
-			const params = new URLSearchParams();
-			if (newSearch) params.set("search", newSearch);
-			if (newStatus !== "all") params.set("status", newStatus);
-			router.push(`/admin/users?${params.toString()}`);
-			startTransition(() => {
-				fetchUsers(newSearch, newStatus, 1);
-			});
-		}, 300);
-	}, [status, router]);
+			// Debounce search input (300ms)
+			searchTimeoutRef.current = setTimeout(() => {
+				setPage(1);
+				const params = new URLSearchParams();
+				if (newSearch) params.set("search", newSearch);
+				if (newStatus !== "all") params.set("status", newStatus);
+				router.push(`/admin/users?${params.toString()}`);
+				startTransition(() => {
+					fetchUsers(newSearch, newStatus, 1);
+				});
+			}, 300);
+		},
+		[status, router],
+	);
 
 	// Cleanup timeout on unmount
 	useEffect(() => {
@@ -149,11 +146,7 @@ export default function UsersPage() {
 		if (!banDialogUser) return;
 
 		startTransition(async () => {
-			const result = await banUserAction(
-				banDialogUser.id,
-				banReason,
-				banExpiry || null,
-			);
+			const result = await banUserAction(banDialogUser.id, banReason, banExpiry || null);
 			if (result.success) {
 				toast.success(`User ${banDialogUser.email} has been banned`);
 				setBanDialogUser(null);
@@ -227,15 +220,16 @@ export default function UsersPage() {
 			{/* Page Header */}
 			<div className="space-y-1">
 				<h1 className="text-2xl font-semibold tracking-tight">User Management</h1>
-				<p className="text-muted-foreground">
-					View and manage all users on the platform
-				</p>
+				<p className="text-muted-foreground">View and manage all users on the platform</p>
 			</div>
 
 			{/* Filters */}
 			<div className="flex flex-col gap-4 sm:flex-row">
 				<div className="relative flex-1">
-					<IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" aria-hidden="true" />
+					<IconSearch
+						className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground"
+						aria-hidden="true"
+					/>
 					<Input
 						placeholder="Search by name or email…"
 						name="search"
@@ -307,9 +301,7 @@ export default function UsersPage() {
 													</div>
 													<div>
 														<div className="font-medium">{user.name}</div>
-														<div className="text-sm text-muted-foreground">
-															{user.email}
-														</div>
+														<div className="text-sm text-muted-foreground">{user.email}</div>
 													</div>
 												</div>
 											</TableCell>
@@ -326,7 +318,10 @@ export default function UsersPage() {
 														<Badge variant="destructive">Banned</Badge>
 														{user.banExpires && (
 															<div className="text-xs text-muted-foreground mt-1">
-																Until {DateTime.fromJSDate(user.banExpires).toLocaleString(DateTime.DATE_SHORT)}
+																Until{" "}
+																{DateTime.fromJSDate(user.banExpires).toLocaleString(
+																	DateTime.DATE_SHORT,
+																)}
 															</div>
 														)}
 													</div>
@@ -379,7 +374,6 @@ export default function UsersPage() {
 							</TableBody>
 						</Table>
 					)}
-
 				</CardContent>
 			</Card>
 
@@ -387,9 +381,10 @@ export default function UsersPage() {
 			{totalPages > 1 && (
 				<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 					<p className="text-sm text-muted-foreground">
-						Showing <span className="font-medium text-foreground">{(page - 1) * PAGE_SIZE + 1}</span> to{" "}
-						<span className="font-medium text-foreground">{Math.min(page * PAGE_SIZE, total)}</span> of{" "}
-						<span className="font-medium text-foreground">{total}</span> users
+						Showing{" "}
+						<span className="font-medium text-foreground">{(page - 1) * PAGE_SIZE + 1}</span> to{" "}
+						<span className="font-medium text-foreground">{Math.min(page * PAGE_SIZE, total)}</span>{" "}
+						of <span className="font-medium text-foreground">{total}</span> users
 					</p>
 					<div className="flex gap-2">
 						<Button
@@ -447,20 +442,14 @@ export default function UsersPage() {
 								value={banExpiry}
 								onChange={(e) => setBanExpiry(e.target.value)}
 							/>
-							<p className="text-xs text-muted-foreground">
-								Leave empty for permanent ban
-							</p>
+							<p className="text-xs text-muted-foreground">Leave empty for permanent ban</p>
 						</div>
 					</div>
 					<DialogFooter>
 						<Button variant="outline" onClick={() => setBanDialogUser(null)}>
 							Cancel
 						</Button>
-						<Button
-							variant="destructive"
-							onClick={handleBan}
-							disabled={!banReason || isPending}
-						>
+						<Button variant="destructive" onClick={handleBan} disabled={!banReason || isPending}>
 							Ban User
 						</Button>
 					</DialogFooter>
@@ -472,9 +461,7 @@ export default function UsersPage() {
 				<DialogContent className="max-w-2xl">
 					<DialogHeader>
 						<DialogTitle>User Sessions</DialogTitle>
-						<DialogDescription>
-							Active sessions for {sessionsDialogUser?.email}
-						</DialogDescription>
+						<DialogDescription>Active sessions for {sessionsDialogUser?.email}</DialogDescription>
 					</DialogHeader>
 					<div className="py-4">
 						{sessionsLoading ? (
@@ -484,9 +471,7 @@ export default function UsersPage() {
 								))}
 							</div>
 						) : sessions.length === 0 ? (
-							<p className="text-center text-muted-foreground py-8">
-								No active sessions
-							</p>
+							<p className="text-center text-muted-foreground py-8">No active sessions</p>
 						) : (
 							<div className="space-y-2">
 								{sessions.map((session) => (
@@ -497,12 +482,12 @@ export default function UsersPage() {
 										<div>
 											<div className="font-medium text-sm">
 												{session.userAgent
-													? session.userAgent.substring(0, 50) + "…"
+													? `${session.userAgent.substring(0, 50)}…`
 													: "Unknown device"}
 											</div>
 											<div className="text-xs text-muted-foreground">
-												{session.ipAddress ?? "Unknown IP"} •{" "}
-												Created {DateTime.fromJSDate(session.createdAt).toRelative()}
+												{session.ipAddress ?? "Unknown IP"} • Created{" "}
+												{DateTime.fromJSDate(session.createdAt).toRelative()}
 											</div>
 										</div>
 										<Button
@@ -524,11 +509,7 @@ export default function UsersPage() {
 							Close
 						</Button>
 						{sessions.length > 0 && (
-							<Button
-								variant="destructive"
-								onClick={handleRevokeAllSessions}
-								disabled={isPending}
-							>
+							<Button variant="destructive" onClick={handleRevokeAllSessions} disabled={isPending}>
 								Revoke All Sessions
 							</Button>
 						)}

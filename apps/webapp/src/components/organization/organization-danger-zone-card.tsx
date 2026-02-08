@@ -3,9 +3,12 @@
 import { IconAlertTriangle, IconRestore, IconTrash } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
-import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
+import {
+	deleteOrganization,
+	recoverOrganization,
+} from "@/app/[locale]/(app)/settings/organizations/actions";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -21,10 +24,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type * as authSchema from "@/db/auth-schema";
-import {
-	deleteOrganization,
-	recoverOrganization,
-} from "@/app/[locale]/(app)/settings/organizations/actions";
+import { useRouter } from "@/navigation";
 
 interface OrganizationDangerZoneCardProps {
 	organization: typeof authSchema.organization.$inferSelect;

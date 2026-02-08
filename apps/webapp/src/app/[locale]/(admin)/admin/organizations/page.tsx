@@ -1,7 +1,5 @@
 "use client";
 
-import { useState, useTransition, useEffect, useRef, useCallback } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
 import {
 	IconAlertTriangle,
 	IconBuilding,
@@ -13,6 +11,8 @@ import {
 	IconUsers,
 } from "@tabler/icons-react";
 import { DateTime } from "luxon";
+import { useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -46,11 +46,12 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import type { PlatformOrganization } from "@/lib/effect/services/platform-admin.service";
+import { useRouter } from "@/navigation";
 import {
+	deleteOrganizationAction,
 	listOrganizationsAction,
 	suspendOrganizationAction,
 	unsuspendOrganizationAction,
-	deleteOrganizationAction,
 } from "./actions";
 
 const PAGE_SIZE = 20;
@@ -79,13 +80,13 @@ export default function OrganizationsPage() {
 	const [deleteConfirmName, setDeleteConfirmName] = useState("");
 
 	// Fetch organizations with explicit parameters to avoid race conditions
-	const fetchOrganizations = async (
-		searchVal = search,
-		statusVal = status,
-		pageVal = page,
-	) => {
+	const fetchOrganizations = async (searchVal = search, statusVal = status, pageVal = page) => {
 		setIsLoading(true);
-		const result = await listOrganizationsAction({ search: searchVal, status: statusVal }, pageVal, PAGE_SIZE);
+		const result = await listOrganizationsAction(
+			{ search: searchVal, status: statusVal },
+			pageVal,
+			PAGE_SIZE,
+		);
 		if (result.success) {
 			setOrganizations(result.data.data);
 			setTotal(result.data.total);
@@ -101,40 +102,43 @@ export default function OrganizationsPage() {
 	}, []);
 
 	// Debounced search with immediate status change
-	const handleFilterChange = useCallback((newSearch: string, newStatus: "all" | "active" | "suspended" | "deleted") => {
-		// Clear any pending search timeout
-		if (searchTimeoutRef.current) {
-			clearTimeout(searchTimeoutRef.current);
-		}
+	const handleFilterChange = useCallback(
+		(newSearch: string, newStatus: "all" | "active" | "suspended" | "deleted") => {
+			// Clear any pending search timeout
+			if (searchTimeoutRef.current) {
+				clearTimeout(searchTimeoutRef.current);
+			}
 
-		setSearch(newSearch);
+			setSearch(newSearch);
 
-		// If only status changed, fetch immediately
-		if (newStatus !== status) {
-			setStatus(newStatus);
-			setPage(1);
-			const params = new URLSearchParams();
-			if (newSearch) params.set("search", newSearch);
-			if (newStatus !== "all") params.set("status", newStatus);
-			router.push(`/admin/organizations?${params.toString()}`);
-			startTransition(() => {
-				fetchOrganizations(newSearch, newStatus, 1);
-			});
-			return;
-		}
+			// If only status changed, fetch immediately
+			if (newStatus !== status) {
+				setStatus(newStatus);
+				setPage(1);
+				const params = new URLSearchParams();
+				if (newSearch) params.set("search", newSearch);
+				if (newStatus !== "all") params.set("status", newStatus);
+				router.push(`/admin/organizations?${params.toString()}`);
+				startTransition(() => {
+					fetchOrganizations(newSearch, newStatus, 1);
+				});
+				return;
+			}
 
-		// Debounce search input (300ms)
-		searchTimeoutRef.current = setTimeout(() => {
-			setPage(1);
-			const params = new URLSearchParams();
-			if (newSearch) params.set("search", newSearch);
-			if (newStatus !== "all") params.set("status", newStatus);
-			router.push(`/admin/organizations?${params.toString()}`);
-			startTransition(() => {
-				fetchOrganizations(newSearch, newStatus, 1);
-			});
-		}, 300);
-	}, [status, router]);
+			// Debounce search input (300ms)
+			searchTimeoutRef.current = setTimeout(() => {
+				setPage(1);
+				const params = new URLSearchParams();
+				if (newSearch) params.set("search", newSearch);
+				if (newStatus !== "all") params.set("status", newStatus);
+				router.push(`/admin/organizations?${params.toString()}`);
+				startTransition(() => {
+					fetchOrganizations(newSearch, newStatus, 1);
+				});
+			}, 300);
+		},
+		[status, router],
+	);
 
 	// Cleanup timeout on unmount
 	useEffect(() => {
@@ -209,15 +213,16 @@ export default function OrganizationsPage() {
 			{/* Page Header */}
 			<div className="space-y-1">
 				<h1 className="text-2xl font-semibold tracking-tight">Organization Management</h1>
-				<p className="text-muted-foreground">
-					View and manage all organizations on the platform
-				</p>
+				<p className="text-muted-foreground">View and manage all organizations on the platform</p>
 			</div>
 
 			{/* Filters */}
 			<div className="flex flex-col gap-4 sm:flex-row">
 				<div className="relative flex-1">
-					<IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" aria-hidden="true" />
+					<IconSearch
+						className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground"
+						aria-hidden="true"
+					/>
 					<Input
 						placeholder="Search by name or slug…"
 						name="search"
@@ -229,7 +234,9 @@ export default function OrganizationsPage() {
 				</div>
 				<Select
 					value={status}
-					onValueChange={(v) => handleFilterChange(search, v as "all" | "active" | "suspended" | "deleted")}
+					onValueChange={(v) =>
+						handleFilterChange(search, v as "all" | "active" | "suspended" | "deleted")
+					}
 				>
 					<SelectTrigger className="w-full sm:w-40">
 						<SelectValue placeholder="Status" />
@@ -291,9 +298,7 @@ export default function OrganizationsPage() {
 													</div>
 													<div>
 														<div className="font-medium">{org.name}</div>
-														<div className="text-sm text-muted-foreground">
-															{org.slug}
-														</div>
+														<div className="text-sm text-muted-foreground">{org.slug}</div>
 													</div>
 												</div>
 											</TableCell>
@@ -322,7 +327,10 @@ export default function OrganizationsPage() {
 															Suspended
 														</Badge>
 														{org.suspendedReason && (
-															<div className="text-xs text-muted-foreground mt-1 max-w-32 truncate" title={org.suspendedReason}>
+															<div
+																className="text-xs text-muted-foreground mt-1 max-w-32 truncate"
+																title={org.suspendedReason}
+															>
 																{org.suspendedReason}
 															</div>
 														)}
@@ -379,7 +387,6 @@ export default function OrganizationsPage() {
 							</TableBody>
 						</Table>
 					)}
-
 				</CardContent>
 			</Card>
 
@@ -387,9 +394,10 @@ export default function OrganizationsPage() {
 			{totalPages > 1 && (
 				<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 					<p className="text-sm text-muted-foreground">
-						Showing <span className="font-medium text-foreground">{(page - 1) * PAGE_SIZE + 1}</span> to{" "}
-						<span className="font-medium text-foreground">{Math.min(page * PAGE_SIZE, total)}</span> of{" "}
-						<span className="font-medium text-foreground">{total}</span> organizations
+						Showing{" "}
+						<span className="font-medium text-foreground">{(page - 1) * PAGE_SIZE + 1}</span> to{" "}
+						<span className="font-medium text-foreground">{Math.min(page * PAGE_SIZE, total)}</span>{" "}
+						of <span className="font-medium text-foreground">{total}</span> organizations
 					</p>
 					<div className="flex gap-2">
 						<Button
@@ -426,8 +434,8 @@ export default function OrganizationsPage() {
 					<DialogHeader>
 						<DialogTitle>Suspend Organization</DialogTitle>
 						<DialogDescription>
-							Suspend "{suspendDialogOrg?.name}" and put it in read-only mode.
-							Members will be able to view data but not create or edit anything.
+							Suspend "{suspendDialogOrg?.name}" and put it in read-only mode. Members will be able
+							to view data but not create or edit anything.
 						</DialogDescription>
 					</DialogHeader>
 					<div className="space-y-4 py-4">
@@ -457,18 +465,21 @@ export default function OrganizationsPage() {
 			</Dialog>
 
 			{/* Delete Dialog */}
-			<Dialog open={!!deleteDialogOrg} onOpenChange={() => {
-				setDeleteDialogOrg(null);
-				setDeleteImmediate(false);
-				setDeleteSkipNotification(false);
-				setDeleteConfirmName("");
-			}}>
+			<Dialog
+				open={!!deleteDialogOrg}
+				onOpenChange={() => {
+					setDeleteDialogOrg(null);
+					setDeleteImmediate(false);
+					setDeleteSkipNotification(false);
+					setDeleteConfirmName("");
+				}}
+			>
 				<DialogContent>
 					<DialogHeader>
 						<DialogTitle>Delete Organization</DialogTitle>
 						<DialogDescription>
-							This action will delete "{deleteDialogOrg?.name}" and all associated data.
-							This cannot be undone.
+							This action will delete "{deleteDialogOrg?.name}" and all associated data. This cannot
+							be undone.
 						</DialogDescription>
 					</DialogHeader>
 					<div className="space-y-4 py-4">
@@ -493,9 +504,7 @@ export default function OrganizationsPage() {
 							</Label>
 						</div>
 						<div className="space-y-2">
-							<Label htmlFor="confirmName">
-								Type "{deleteDialogOrg?.name}" to confirm
-							</Label>
+							<Label htmlFor="confirmName">Type "{deleteDialogOrg?.name}" to confirm</Label>
 							<Input
 								id="confirmName"
 								value={deleteConfirmName}

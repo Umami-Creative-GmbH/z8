@@ -9,7 +9,6 @@ import {
 	IconShieldCheck,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -48,6 +47,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { useRouter } from "@/navigation";
 
 interface KeyInfo {
 	keyId: string;
@@ -91,7 +91,9 @@ export function KeyManagement({
 				);
 				router.refresh();
 			} else {
-				toast.error(result.error || t("settings.auditExport.keys.rotateError", "Key rotation failed"));
+				toast.error(
+					result.error || t("settings.auditExport.keys.rotateError", "Key rotation failed"),
+				);
 			}
 		} catch (error) {
 			toast.error(t("common.unexpectedError", "An unexpected error occurred"));
@@ -108,7 +110,9 @@ export function KeyManagement({
 			if (result.success) {
 				setKeyHistory(result.data);
 			} else {
-				toast.error(result.error || t("settings.auditExport.keys.historyError", "Failed to load key history"));
+				toast.error(
+					result.error || t("settings.auditExport.keys.historyError", "Failed to load key history"),
+				);
 			}
 		} catch (error) {
 			toast.error(t("common.unexpectedError", "An unexpected error occurred"));
@@ -125,7 +129,9 @@ export function KeyManagement({
 			if (result.success) {
 				setPublicKey(result.data);
 			} else {
-				toast.error(result.error || t("settings.auditExport.keys.exportError", "Failed to export public key"));
+				toast.error(
+					result.error || t("settings.auditExport.keys.exportError", "Failed to export public key"),
+				);
 			}
 		} catch (error) {
 			toast.error(t("common.unexpectedError", "An unexpected error occurred"));
@@ -185,7 +191,9 @@ export function KeyManagement({
 								{t("settings.auditExport.keys.activeKey", "Active Key")}
 							</span>
 							<Badge variant="secondary">
-								{t("settings.auditExport.keys.version", "v{version}", { version: activeKeyVersion ?? 1 })}
+								{t("settings.auditExport.keys.version", "v{version}", {
+									version: activeKeyVersion ?? 1,
+								})}
 							</Badge>
 						</div>
 					</div>
@@ -304,18 +312,12 @@ export function KeyManagement({
 								<Table>
 									<TableHeader>
 										<TableRow>
-											<TableHead>
-												{t("settings.auditExport.keys.colVersion", "Version")}
-											</TableHead>
+											<TableHead>{t("settings.auditExport.keys.colVersion", "Version")}</TableHead>
 											<TableHead>
 												{t("settings.auditExport.keys.colFingerprint", "Fingerprint")}
 											</TableHead>
-											<TableHead>
-												{t("settings.auditExport.keys.colCreated", "Created")}
-											</TableHead>
-											<TableHead>
-												{t("settings.auditExport.keys.colStatus", "Status")}
-											</TableHead>
+											<TableHead>{t("settings.auditExport.keys.colCreated", "Created")}</TableHead>
+											<TableHead>{t("settings.auditExport.keys.colStatus", "Status")}</TableHead>
 										</TableRow>
 									</TableHeader>
 									<TableBody>
@@ -325,14 +327,10 @@ export function KeyManagement({
 												<TableCell className="font-mono text-xs">
 													{key.fingerprint.substring(0, 16)}…
 												</TableCell>
-												<TableCell>
-													{new Date(key.createdAt).toLocaleDateString()}
-												</TableCell>
+												<TableCell>{new Date(key.createdAt).toLocaleDateString()}</TableCell>
 												<TableCell>
 													{key.isActive ? (
-														<Badge>
-															{t("settings.auditExport.keys.active", "Active")}
-														</Badge>
+														<Badge>{t("settings.auditExport.keys.active", "Active")}</Badge>
 													) : (
 														<Badge variant="secondary">
 															{t("settings.auditExport.keys.rotated", "Rotated")}

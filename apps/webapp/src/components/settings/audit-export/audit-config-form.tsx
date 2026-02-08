@@ -2,13 +2,12 @@
 
 import { IconLoader2, IconShieldCheck } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
 	initializeAuditExportAction,
-	updateAuditConfigAction,
 	type UpdateAuditConfigInput,
+	updateAuditConfigAction,
 } from "@/app/[locale]/(app)/settings/audit-export/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,6 +22,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import type { AuditExportConfigData } from "@/lib/audit-export";
+import { useRouter } from "@/navigation";
 
 interface AuditConfigFormProps {
 	organizationId: string;
@@ -49,7 +49,9 @@ export function AuditConfigForm({ organizationId, initialConfig }: AuditConfigFo
 				);
 				router.refresh();
 			} else {
-				toast.error(result.error || t("settings.auditExport.config.initError", "Initialization failed"));
+				toast.error(
+					result.error || t("settings.auditExport.config.initError", "Initialization failed"),
+				);
 			}
 		} catch (error) {
 			toast.error(t("common.unexpectedError", "An unexpected error occurred"));
@@ -237,7 +239,10 @@ export function AuditConfigForm({ organizationId, initialConfig }: AuditConfigFo
 					{!config.objectLockSupported && (
 						<div className="rounded-lg border border-yellow-500/50 bg-yellow-500/10 p-3 text-sm">
 							<p className="font-medium text-yellow-600 dark:text-yellow-400">
-								{t("settings.auditExport.config.objectLockNotSupported", "Object Lock Not Available")}
+								{t(
+									"settings.auditExport.config.objectLockNotSupported",
+									"Object Lock Not Available",
+								)}
 							</p>
 							<p className="mt-1 text-muted-foreground">
 								{t(

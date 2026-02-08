@@ -4,7 +4,6 @@ import { IconInfoCircle } from "@tabler/icons-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
 import dynamic from "next/dynamic";
-import { useRouter } from "next/navigation";
 import { useMemo } from "react";
 import { DataTable } from "@/components/data-table-server";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +16,7 @@ import {
 	formatTimeInZone,
 	getTimezoneAbbreviation,
 } from "@/lib/time-tracking/timezone-utils";
+import { useRouter } from "@/navigation";
 
 // Dynamic import for TimeCorrectionDialog (bundle-dynamic-imports)
 // Only loaded when user interacts with the edit action, reducing initial bundle size

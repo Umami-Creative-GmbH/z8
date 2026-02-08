@@ -1,7 +1,5 @@
-import { Suspense } from "react";
-import { connection } from "next/server";
-import Link from "next/link";
 import {
+	IconAlertTriangle,
 	IconArrowUpRight,
 	IconBuilding,
 	IconChevronRight,
@@ -10,15 +8,17 @@ import {
 	IconUserBolt,
 	IconUsers,
 	IconUserX,
-	IconAlertTriangle,
 } from "@tabler/icons-react";
 import { count, eq, isNull, sql } from "drizzle-orm";
-import { db } from "@/db";
-import { user, organization } from "@/db/auth-schema";
-import { organizationSuspension, subscription } from "@/db/schema";
+import { connection } from "next/server";
+import { Suspense } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { db } from "@/db";
+import { organization, user } from "@/db/auth-schema";
+import { organizationSuspension, subscription } from "@/db/schema";
 import { cn } from "@/lib/utils";
+import { Link } from "@/navigation";
 
 interface StatCardProps {
 	title: string;
@@ -85,33 +85,31 @@ async function DashboardStats() {
 	const billingEnabled = process.env.BILLING_ENABLED === "true";
 
 	// Run all queries in parallel to avoid waterfalls (async-parallel)
-	const [
-		[{ totalUsers }],
-		[{ bannedUsers }],
-		[{ totalOrgs }],
-		[{ suspendedOrgs }],
-		subscriptions,
-	] = await Promise.all([
-		// Get total users count
-		db.select({ totalUsers: count() }).from(user),
-		// Get banned users count
-		db.select({ bannedUsers: count() }).from(user).where(eq(user.banned, true)),
-		// Get total organizations count (excluding deleted)
-		db.select({ totalOrgs: count() }).from(organization).where(isNull(organization.deletedAt)),
-		// Get suspended organizations count
-		db.select({ suspendedOrgs: count() }).from(organizationSuspension).where(eq(organizationSuspension.isActive, true)),
-		// Billing stats (only when billing is enabled)
-		billingEnabled
-			? db
-					.select({
-						currentSeats: subscription.currentSeats,
-						billingInterval: subscription.billingInterval,
-						status: subscription.status,
-					})
-					.from(subscription)
-					.where(sql`${subscription.status} IN ('active', 'trialing', 'past_due')`)
-			: Promise.resolve([]),
-	]);
+	const [[{ totalUsers }], [{ bannedUsers }], [{ totalOrgs }], [{ suspendedOrgs }], subscriptions] =
+		await Promise.all([
+			// Get total users count
+			db.select({ totalUsers: count() }).from(user),
+			// Get banned users count
+			db.select({ bannedUsers: count() }).from(user).where(eq(user.banned, true)),
+			// Get total organizations count (excluding deleted)
+			db.select({ totalOrgs: count() }).from(organization).where(isNull(organization.deletedAt)),
+			// Get suspended organizations count
+			db
+				.select({ suspendedOrgs: count() })
+				.from(organizationSuspension)
+				.where(eq(organizationSuspension.isActive, true)),
+			// Billing stats (only when billing is enabled)
+			billingEnabled
+				? db
+						.select({
+							currentSeats: subscription.currentSeats,
+							billingInterval: subscription.billingInterval,
+							status: subscription.status,
+						})
+						.from(subscription)
+						.where(sql`${subscription.status} IN ('active', 'trialing', 'past_due')`)
+				: Promise.resolve([]),
+		]);
 
 	// Calculate billing stats from results
 	const billingStats = {
@@ -238,9 +236,7 @@ export default function AdminDashboardPage() {
 			{/* Page Header */}
 			<div className="space-y-1">
 				<h1 className="text-2xl font-semibold tracking-tight">Overview</h1>
-				<p className="text-muted-foreground">
-					Platform metrics and quick actions
-				</p>
+				<p className="text-muted-foreground">Platform metrics and quick actions</p>
 			</div>
 
 			{/* Stats Grid */}
