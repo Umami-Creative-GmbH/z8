@@ -1,0 +1,146 @@
+---
+title: Billing & Subscriptions
+description: Manage your z8 subscription, pricing plans, and billing settings
+icon: CreditCard
+---
+
+## Overview
+
+z8 uses a seat-based subscription model powered by Stripe. Each active employee in your organization counts as one seat. Organization administrators can manage their subscription, view billing details, and access invoices from the billing settings page.
+
+<Callout type="info">
+Billing is only available when enabled for your z8 instance. Self-hosted deployments can operate without billing by leaving the `BILLING_ENABLED` flag disabled.
+</Callout>
+
+## Pricing Plans
+
+z8 offers two billing cycles with per-seat pricing:
+
+| Plan | Price per Seat | Billing Cycle | Savings |
+|------|---------------|---------------|---------|
+| **Monthly** | €4 / month | Billed monthly | - |
+| **Yearly** | €3 / month | Billed annually | 25% discount |
+
+### What Counts as a Seat
+
+- Each **active employee** in your organization counts as one seat
+- Deactivated employees do not count toward your seat total
+- Seat counts are automatically synchronized when employees are added or removed
+- The billing amount adjusts automatically based on your current seat count
+
+## Free Trial
+
+New organizations receive a **14-day free trial**:
+
+- Full access to all features during the trial
+- No credit card required to start
+- Trial countdown visible on the billing page
+- You'll receive a reminder before the trial ends
+- Subscribe at any time during or after the trial
+
+## Managing Your Subscription
+
+### Viewing Subscription Status
+
+1. Navigate to **Settings > Billing** in z8
+2. View your current subscription details:
+   - Current plan (Monthly or Yearly)
+   - Number of active seats
+   - Monthly cost
+   - Next billing date
+   - Trial status (if applicable)
+
+### Subscribing to a Plan
+
+1. Go to **Settings > Billing**
+2. Select your preferred plan (Monthly or Yearly)
+3. Click **Subscribe**
+4. You'll be redirected to Stripe Checkout to enter payment details
+5. After successful payment, you'll be redirected back to z8
+
+### Changing Your Plan
+
+To switch between Monthly and Yearly billing:
+
+1. Go to **Settings > Billing**
+2. Click **Manage Subscription**
+3. You'll be redirected to the Stripe Customer Portal
+4. Update your subscription plan
+5. Changes take effect at the next billing cycle
+
+### Updating Payment Method
+
+1. Go to **Settings > Billing**
+2. Click **Manage Subscription**
+3. In the Stripe Customer Portal, update your payment method
+4. Add or change credit card, SEPA, or other payment methods
+
+### Viewing Invoices
+
+1. Go to **Settings > Billing**
+2. Click **Manage Subscription**
+3. View and download past invoices in the Stripe Customer Portal
+
+### Canceling Your Subscription
+
+1. Go to **Settings > Billing**
+2. Click **Manage Subscription**
+3. In the Stripe Customer Portal, click **Cancel Plan**
+4. Your subscription remains active until the end of the current billing period
+
+<Callout type="warn">
+After your subscription ends, your organization enters read-only mode. You can view existing data but cannot create new time entries, approvals, or other records until you resubscribe.
+</Callout>
+
+## Subscription States
+
+| State | Access Level | Description |
+|-------|-------------|-------------|
+| **Trialing** | Full access | Free trial period active |
+| **Active** | Full access | Subscription is current and paid |
+| **Past Due** | Full access (temporary) | Payment failed, retry in progress |
+| **Canceled** | Read-only | Subscription ended |
+| **Unpaid** | Read-only | Payment failed after all retries |
+
+## Seat Synchronization
+
+z8 automatically keeps your seat count in sync with Stripe:
+
+- When you **add an employee**, the seat count increases and billing adjusts pro-rata
+- When you **deactivate an employee**, the seat count decreases at the next billing cycle
+- The **current seat count** is always visible on the billing page
+
+## Platform Administration
+
+<Callout type="info">
+This section is for platform administrators managing a multi-tenant z8 deployment. Organization admins can skip this section.
+</Callout>
+
+Platform administrators have access to a billing overview dashboard at **Admin > Billing** that provides:
+
+| Metric | Description |
+|--------|-------------|
+| **Monthly Recurring Revenue** | Total MRR across all organizations |
+| **Licensed Seats** | Total seats across all active subscriptions |
+| **Active Subscriptions** | Number of organizations with active subscriptions |
+| **Past Due** | Organizations with failed payments |
+| **Trial Conversion Rate** | Percentage of trials that convert to paid |
+| **Subscription Table** | List of all subscriptions with status, seats, and organization details |
+
+## FAQ
+
+### What happens if my payment fails?
+
+Stripe will automatically retry the payment over several days. During this time, your access remains unchanged. If all retries fail, your organization enters read-only mode until payment is resolved.
+
+### Can I get a refund?
+
+Contact your z8 administrator or support for refund requests. Refunds are handled on a case-by-case basis through Stripe.
+
+### Do I need billing for self-hosted?
+
+No. Self-hosted z8 deployments can disable billing entirely. All features are available without a subscription when `BILLING_ENABLED` is not set.
+
+### How are seats counted for part-time employees?
+
+All active employees count as one seat regardless of hours worked or employment type. Only deactivated employees are excluded from the count.

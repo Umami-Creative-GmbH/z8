@@ -29,10 +29,27 @@ DATABASE_URL=postgres://...
 BETTER_AUTH_SECRET=<generated-secret>
 BETTER_AUTH_URL=https://your-domain.com
 
+# Storage (required)
+S3_BUCKET=your-bucket
+S3_REGION=eu-central-1
+S3_ACCESS_KEY_ID=<access-key>
+S3_SECRET_ACCESS_KEY=<secret-key>
+S3_ENDPOINT=https://s3.amazonaws.com
+
 # Push Notifications (optional)
 VAPID_PUBLIC_KEY=<generated-key>
 VAPID_PRIVATE_KEY=<generated-key>
 VAPID_SUBJECT=mailto:support@yourdomain.com
+
+# Bot Protection (optional)
+TURNSTILE_SITE_KEY=<cloudflare-site-key>
+TURNSTILE_SECRET_KEY=<cloudflare-secret-key>
+
+# Billing (optional)
+BILLING_ENABLED=true
+STRIPE_SECRET_KEY=<stripe-secret-key>
+STRIPE_WEBHOOK_SECRET=<stripe-webhook-signing-secret>
+STRIPE_PUBLISHABLE_KEY=<stripe-publishable-key>
 ```
 
 ### Vercel Deployment
@@ -130,17 +147,42 @@ Or run directly:
 bun --bun run src/db/seed/do-seed.ts
 ```
 
-## Storage (Optional)
+## Storage (Required)
 
-For file uploads and exports, configure S3-compatible storage:
+S3-compatible object storage is **required** for file uploads, exports, and attachments:
 
 ```ini
 S3_BUCKET=your-bucket
 S3_REGION=eu-central-1
 S3_ACCESS_KEY_ID=<access-key>
 S3_SECRET_ACCESS_KEY=<secret-key>
-S3_ENDPOINT=https://s3.amazonaws.com  # Or MinIO, R2, etc.
+S3_ENDPOINT=https://s3.amazonaws.com  # Or MinIO, R2, RustFS, etc.
 ```
+
+### Local Development with RustFS
+
+For local development, z8 includes RustFS as a lightweight S3-compatible server in the Docker Compose stack:
+
+```yaml
+services:
+  rustfs:
+    image: rustfs/rustfs:latest
+    ports:
+      - "9000:9000"
+    volumes:
+      - rustfs-data:/data
+```
+
+Buckets are automatically created on startup via the storage initialization service.
+
+### Production Storage Options
+
+| Provider | Endpoint Example |
+|----------|-----------------|
+| AWS S3 | `https://s3.amazonaws.com` |
+| Cloudflare R2 | `https://<account>.r2.cloudflarestorage.com` |
+| MinIO | `https://minio.yourdomain.com` |
+| Hetzner Object Storage | `https://<region>.your-objectstorage.com` |
 
 ## Valkey/Redis Configuration
 
@@ -206,6 +248,10 @@ services:
     environment:
       - DATABASE_URL=${DATABASE_URL}
       - VALKEY_URL=redis://valkey:6379
+      - S3_ENDPOINT=http://rustfs:9000
+      - S3_BUCKET=z8
+      - S3_ACCESS_KEY_ID=minioadmin
+      - S3_SECRET_ACCESS_KEY=minioadmin
 
   worker:
     build: ./apps/webapp
@@ -218,6 +264,13 @@ services:
     image: valkey/valkey:latest
     volumes:
       - valkey-data:/data
+
+  rustfs:
+    image: rustfs/rustfs:latest
+    ports:
+      - "9000:9000"
+    volumes:
+      - rustfs-data:/data
 ```
 
 ### Scaling Workers

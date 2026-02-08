@@ -1,0 +1,227 @@
+---
+title: Slack Integration
+description: Connect z8 with Slack for notifications, approvals, and bot commands
+icon: Bell
+---
+
+## Overview
+
+The z8 Slack integration brings workforce management directly into your Slack workspace. Managers receive approval requests as interactive Block Kit messages, employees can check their status with slash commands, and everyone stays informed with daily digest notifications.
+
+Key capabilities:
+
+- **Interactive Approval Messages**: Approve or reject time-off requests, time corrections, and other requests directly from Slack
+- **Daily Digest**: Managers receive a morning summary of pending approvals, who's out, coverage gaps, and compliance alerts
+- **Slash Commands**: Query clocked-in employees, pending approvals, and open shifts without leaving Slack
+- **Automatic Escalation**: Approval requests that go unanswered are automatically escalated to backup managers
+- **User Account Linking**: Employees link their z8 accounts via secure one-time codes
+
+## Prerequisites
+
+Before setting up the Slack integration, ensure you have:
+
+1. **z8 Organization Admin Access**: You must be an administrator of your z8 organization
+2. **Slack Workspace Admin Access**: You must be able to install apps in your Slack workspace
+3. **z8 Employee Accounts**: Users who will use the integration must have active employee records in z8
+
+<Callout type="info">
+Unlike the Teams integration which uses email matching, Slack account linking uses **secure link codes** that users enter via the bot. This provides explicit consent for account pairing.
+</Callout>
+
+## Bot Setup
+
+### Step 1: Start the OAuth Installation
+
+1. Navigate to **Settings > Integrations** in z8
+2. Find the **Slack** integration card
+3. Click **Connect Slack Workspace**
+4. You'll be redirected to Slack's OAuth authorization page
+
+### Step 2: Authorize the z8 App
+
+1. Review the permissions requested by the z8 app
+2. Select the Slack workspace you want to connect
+3. Click **Allow** to authorize the installation
+4. You'll be redirected back to z8 with a confirmation
+
+### Step 3: Configure Integration Features
+
+Once connected, configure which features are enabled:
+
+1. Go to **Settings > Integrations > Slack** in z8
+2. Toggle the features you want to enable:
+   - **Approval Notifications**: Send interactive approval messages to managers
+   - **Bot Commands**: Allow slash commands for querying data
+   - **Daily Digest**: Send morning summary to managers
+   - **Escalations**: Auto-escalate unanswered approvals
+3. If daily digest is enabled, set the **Digest Time** and **Timezone**
+4. If escalations are enabled, set the **Escalation Timeout** (1-168 hours, default: 24)
+
+### Step 4: Verify the Connection
+
+1. The integration status should show **Active** with a green indicator
+2. Open Slack and find the z8 bot in your workspace
+3. Send `help` to the bot to confirm it responds
+
+## User Account Linking
+
+Slack users must link their z8 accounts using a secure link code.
+
+### Linking Your Account
+
+1. Go to **Settings > Integrations > Slack** in z8
+2. Click **Generate Link Code** - a 6-character code will be displayed
+3. Open Slack and send a direct message to the z8 bot
+4. Type `/link CODE` (replacing CODE with your 6-character code)
+5. The bot confirms the link is successful
+
+<Callout type="warn">
+Link codes expire after a short time. Generate a new code if the previous one has expired.
+</Callout>
+
+### Unlinking Your Account
+
+To unlink your Slack account:
+
+1. Go to **Settings > Integrations > Slack** in z8
+2. Click **Unlink** next to your Slack account
+3. Organization admins can unlink any user from the admin panel
+
+## Channel Notifications
+
+z8 can send notifications through Slack as an additional delivery channel alongside in-app, push, and email notifications.
+
+### Notification Types Delivered via Slack
+
+| Notification Type | Format | Action Required |
+|-------------------|--------|-----------------|
+| Approval Request | Block Kit message | Approve/Reject buttons |
+| Approval Resolution | Text message | No action |
+| Daily Digest | Block Kit message | View links |
+| Escalation Alert | Text message | Review in z8 |
+
+### User Notification Preferences
+
+Individual users can control whether they receive Slack notifications:
+
+1. Go to **Settings > Notifications** in z8
+2. For each notification type, toggle the **Slack** channel on or off
+3. Slack notifications are available once your account is linked
+
+## Approval Notifications
+
+The Slack integration delivers interactive Block Kit messages for approval workflows.
+
+### How Approval Messages Work
+
+When an employee submits a request that requires approval:
+
+1. z8 creates an approval request and identifies the approving manager
+2. The system checks if the manager has a linked Slack account
+3. A Block Kit message is sent to the manager's DM with the z8 bot
+4. The message displays request details and Approve/Reject buttons
+5. The manager clicks a button to take action
+6. The message updates to show the resolution status
+7. The requesting employee is notified of the decision
+
+### Approval Escalation
+
+If an approval goes unanswered, z8 can automatically escalate to a backup manager:
+
+1. Configure the escalation timeout in **Settings > Integrations > Slack**
+2. Default timeout is 24 hours
+3. When timeout expires, the approval is reassigned to the backup manager
+4. The new approver receives a fresh approval message
+5. Escalation history is tracked for audit purposes
+
+<Callout type="warn">
+Escalation requires that employees have a backup manager configured in their profile. Without a backup manager, unanswered approvals will remain pending.
+</Callout>
+
+## Daily Digest
+
+Managers receive a daily summary message at their configured time, providing an operational overview.
+
+### Digest Contents
+
+| Section | Information |
+|---------|-------------|
+| Pending Approvals | Count of requests awaiting your action |
+| Who's Out | Team members on leave today with return dates |
+| Currently Clocked In | Employees actively working with duration |
+| Coverage Gaps | Subareas with fewer staff than scheduled |
+| Open Shifts | Unfilled shifts for today and tomorrow |
+| Compliance Alerts | Pending compliance exceptions requiring review |
+
+### Configuring Digest Time
+
+1. Go to **Settings > Integrations > Slack**
+2. Set your preferred **Digest Time** (default: 08:00)
+3. Select your **Timezone** for accurate delivery
+4. The digest is sent within a 15-minute window of the configured time
+
+## Bot Commands
+
+The z8 Slack bot supports several commands for quick information access.
+
+### Available Commands
+
+| Command | Aliases | Description |
+|---------|---------|-------------|
+| `help` | `commands`, `?` | List all available commands |
+| `clockedin` | `whoshere`, `active` | Show currently clocked-in team members |
+| `whosout` | `out`, `away` | Show team members on leave today |
+| `pending` | `approvals` | Show your pending approval requests |
+| `coverage` | - | Show coverage status for today |
+| `openshifts` | `open` | Show unfilled shifts |
+| `compliance` | - | Show pending compliance exceptions |
+
+### Command Permissions
+
+Some commands are restricted based on your role:
+
+- **All Users**: `help`, `clockedin` (own status)
+- **Managers**: `whosout`, `pending`, `coverage`, `openshifts`, `compliance`
+- **Admins**: All commands, including organization-wide views
+
+## Troubleshooting
+
+### Bot Not Responding
+
+**Symptoms**: The z8 bot doesn't respond to messages in Slack.
+
+**Solutions**:
+1. Verify the z8 app is installed in your Slack workspace
+2. Check if the integration status is "Active" in z8 Settings
+3. Ensure the Slack OAuth tokens haven't been revoked
+4. Try reinstalling the z8 app in Slack
+
+### Not Receiving Approval Messages
+
+**Symptoms**: You're a manager but don't receive approval messages in Slack.
+
+**Solutions**:
+1. Verify your z8 account is linked to your Slack account
+2. Check that Slack notifications are enabled in your z8 notification preferences
+3. Ensure "Enable Approvals" is turned on in the organization's Slack integration settings
+4. Generate a new link code and re-link your account if needed
+
+### Daily Digest Not Arriving
+
+**Symptoms**: You're a manager but don't receive the daily digest.
+
+**Solutions**:
+1. Confirm you have direct reports assigned to you in z8
+2. Verify the digest time and timezone in Slack integration settings
+3. Check that "Enable Daily Digest" is turned on for your organization
+4. Ensure your Slack account is linked to your z8 account
+
+### Account Linking Failed
+
+**Symptoms**: The link code is rejected by the bot.
+
+**Solutions**:
+1. Ensure the link code hasn't expired - generate a fresh one
+2. Type the code exactly as shown (codes are case-sensitive)
+3. Make sure you have an active employee record in z8
+4. Contact your z8 administrator if issues persist
