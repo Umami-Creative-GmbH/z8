@@ -1,6 +1,6 @@
 "use server";
 
-import { and, count, eq } from "drizzle-orm";
+import { and, count, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import {
@@ -77,6 +77,29 @@ async function requireAdmin(organizationId: string) {
 	}
 
 	return authContext;
+}
+
+/**
+ * Validates that all provided employee IDs belong to the given organization.
+ * Prevents cross-org data writes via tampered client requests.
+ */
+async function validateEmployeeOwnership(
+	employeeIds: string[],
+	organizationId: string,
+): Promise<void> {
+	if (employeeIds.length === 0) return;
+
+	const validEmployees = await db
+		.select({ id: employee.id })
+		.from(employee)
+		.where(and(eq(employee.organizationId, organizationId), inArray(employee.id, employeeIds)));
+
+	const validIds = new Set(validEmployees.map((e) => e.id));
+	const invalidIds = employeeIds.filter((id) => !validIds.has(id));
+
+	if (invalidIds.length > 0) {
+		throw new Error("One or more employee IDs do not belong to this organization");
+	}
 }
 
 // ============================================
@@ -238,6 +261,12 @@ export async function saveUserMappings(
 	try {
 		const authContext = await requireAdmin(organizationId);
 
+		// Validate that all referenced employee IDs belong to this organization
+		const employeeIds = mappings
+			.map((m) => m.employeeId)
+			.filter((id): id is string => id != null);
+		await validateEmployeeOwnership(employeeIds, organizationId);
+
 		await Promise.all(
 			mappings.map((mapping) =>
 				db
@@ -302,6 +331,14 @@ export async function importClockodoData(
 		const connected = await client.testConnection();
 		if (!connected) {
 			return { success: false, error: "Invalid credentials" };
+		}
+
+		// Validate that all employee IDs in mappings belong to this organization
+		if (serializedMappings) {
+			const employeeIds = serializedMappings
+				.map((m) => m.employeeId)
+				.filter((id): id is string => id != null);
+			await validateEmployeeOwnership(employeeIds, organizationId);
 		}
 
 		logger.info(
