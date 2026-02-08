@@ -2,7 +2,10 @@
 
 import {
 	IconBell,
+	IconBrandDiscord,
+	IconBrandSlack,
 	IconBrandTeams,
+	IconBrandTelegram,
 	IconCalendar,
 	IconCalendarEvent,
 	IconCheck,
@@ -176,6 +179,21 @@ const CHANNEL_CONFIG: Record<
 		label: "Teams",
 		description: "Microsoft Teams notifications",
 	},
+	telegram: {
+		icon: IconBrandTelegram,
+		label: "Telegram",
+		description: "Telegram bot notifications",
+	},
+	discord: {
+		icon: IconBrandDiscord,
+		label: "Discord",
+		description: "Discord bot notifications",
+	},
+	slack: {
+		icon: IconBrandSlack,
+		label: "Slack",
+		description: "Slack bot notifications",
+	},
 };
 
 export function NotificationSettings() {
@@ -273,7 +291,10 @@ export function NotificationSettings() {
 				<Card className="border-blue-200 bg-blue-50/50 dark:border-blue-900 dark:bg-blue-950/20">
 					<CardHeader className="pb-3">
 						<div className="flex items-center gap-2">
-							<IconDeviceMobile className="size-5 text-blue-600 dark:text-blue-400" />
+							<IconDeviceMobile
+								className="size-5 text-blue-600 dark:text-blue-400"
+								aria-hidden="true"
+							/>
 							<CardTitle className="text-base">Enable Push Notifications</CardTitle>
 						</div>
 						<CardDescription>
@@ -282,7 +303,9 @@ export function NotificationSettings() {
 					</CardHeader>
 					<CardContent>
 						<Button onClick={() => setShowPermissionModal(true)} disabled={isPushLoading} size="sm">
-							{isPushLoading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
+							{isPushLoading && (
+								<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
+							)}
 							Enable Push Notifications
 						</Button>
 					</CardContent>
@@ -294,7 +317,10 @@ export function NotificationSettings() {
 				<Card className="border-amber-200 bg-amber-50/50 dark:border-amber-900 dark:bg-amber-950/20">
 					<CardHeader className="pb-3">
 						<div className="flex items-center gap-2">
-							<IconExclamationCircle className="size-5 text-amber-600 dark:text-amber-400" />
+							<IconExclamationCircle
+								className="size-5 text-amber-600 dark:text-amber-400"
+								aria-hidden="true"
+							/>
 							<CardTitle className="text-base">Push Notifications Blocked</CardTitle>
 						</div>
 						<CardDescription>
@@ -314,7 +340,10 @@ export function NotificationSettings() {
 			{/* Push enabled indicator */}
 			{isPushSubscribed && (
 				<div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50/50 p-3 dark:border-green-900 dark:bg-green-950/20">
-					<IconDeviceMobile className="size-4 text-green-600 dark:text-green-400" />
+					<IconDeviceMobile
+						className="size-4 text-green-600 dark:text-green-400"
+						aria-hidden="true"
+					/>
 					<span className="text-sm text-green-700 dark:text-green-300">
 						Push notifications are enabled
 					</span>
@@ -339,7 +368,7 @@ export function NotificationSettings() {
 					const config = CHANNEL_CONFIG[channel];
 					return (
 						<div key={channel} className="flex items-center gap-1.5">
-							<config.icon className="size-4" />
+							<config.icon className="size-4" aria-hidden="true" />
 							<span>{config.label}</span>
 						</div>
 					);
@@ -351,7 +380,7 @@ export function NotificationSettings() {
 				<Card key={category.id}>
 					<CardHeader className="pb-3">
 						<div className="flex items-center gap-2">
-							<category.icon className="size-5 text-muted-foreground" />
+							<category.icon className="size-5 text-muted-foreground" aria-hidden="true" />
 							<CardTitle className="text-base">{category.title}</CardTitle>
 						</div>
 						<CardDescription>{category.description}</CardDescription>
@@ -383,11 +412,15 @@ export function NotificationSettings() {
 													className="flex items-center gap-1.5"
 													title={config.description}
 												>
-													<config.icon className="size-3.5 text-muted-foreground" />
+													<config.icon
+														className="size-3.5 text-muted-foreground"
+														aria-hidden="true"
+													/>
 													<Switch
 														checked={isEnabled}
 														onCheckedChange={(checked) => handleToggle(type, channel, checked)}
 														disabled={isDisabled}
+														aria-label={`${config.label} notifications for ${TYPE_LABELS[type]}`}
 														className="data-[state=checked]:bg-primary"
 													/>
 												</div>

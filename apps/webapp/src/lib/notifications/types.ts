@@ -55,7 +55,15 @@ export const NOTIFICATION_TYPES = [
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 
 // Notification channel enum values
-export const NOTIFICATION_CHANNELS = ["in_app", "push", "email", "teams"] as const;
+export const NOTIFICATION_CHANNELS = [
+	"in_app",
+	"push",
+	"email",
+	"teams",
+	"telegram",
+	"discord",
+	"slack",
+] as const;
 
 export type NotificationChannel = (typeof NOTIFICATION_CHANNELS)[number];
 
