@@ -15,6 +15,8 @@ export * from "./billing";
 // Calendar sync
 export * from "./calendar-sync";
 export * from "./change-policy";
+// Clockodo import (user mapping)
+export * from "./clockodo-import";
 // ArbZG Compliance
 export * from "./compliance";
 // Compliance Radar (findings, config)

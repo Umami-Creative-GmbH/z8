@@ -2262,6 +2262,24 @@ export const discordUserMappingRelations = relations(discordUserMapping, ({ one 
 	}),
 }));
 
+// Clockodo import
+import { clockodoUserMapping } from "./clockodo-import";
+
+export const clockodoUserMappingRelations = relations(clockodoUserMapping, ({ one }) => ({
+	user: one(user, {
+		fields: [clockodoUserMapping.userId],
+		references: [user.id],
+	}),
+	organization: one(organization, {
+		fields: [clockodoUserMapping.organizationId],
+		references: [organization.id],
+	}),
+	employee: one(employee, {
+		fields: [clockodoUserMapping.employeeId],
+		references: [employee.id],
+	}),
+}));
+
 export const discordConversationRelations = relations(discordConversation, ({ one }) => ({
 	organization: one(organization, {
 		fields: [discordConversation.organizationId],
