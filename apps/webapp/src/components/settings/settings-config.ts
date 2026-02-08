@@ -33,7 +33,8 @@ export type SettingsIconName =
 	| "radar"
 	| "target"
 	| "certificate"
-	| "credit-card";
+	| "credit-card"
+	| "brand-telegram";
 
 export interface SettingsEntry {
 	id: string;
@@ -372,6 +373,17 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		href: "/settings/calendar",
 		icon: "calendar-sync",
 		adminOnly: true,
+		group: "enterprise",
+	},
+	{
+		id: "telegram",
+		titleKey: "settings.telegram.title",
+		titleDefault: "Telegram",
+		descriptionKey: "settings.telegram.description",
+		descriptionDefault: "Configure Telegram bot for notifications and commands",
+		href: "/settings/telegram",
+		icon: "brand-telegram",
+		adminOnly: false,
 		group: "enterprise",
 	},
 	// Data settings

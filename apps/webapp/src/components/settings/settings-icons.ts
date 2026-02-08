@@ -1,6 +1,7 @@
 import {
 	IconBeach,
 	IconBell,
+	IconBrandTelegram,
 	IconBriefcase,
 	IconBuilding,
 	IconCalendarClock,
@@ -68,4 +69,5 @@ export const SETTINGS_ICON_MAP: Record<
 	target: IconTarget,
 	certificate: IconCertificate,
 	"credit-card": IconCreditCard,
+	"brand-telegram": IconBrandTelegram,
 };
