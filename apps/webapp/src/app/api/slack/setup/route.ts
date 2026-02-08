@@ -6,11 +6,12 @@
  * Requires admin authentication.
  */
 
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import type { NextRequest } from "next/server";
 import { connection, NextResponse } from "next/server";
 import { db } from "@/db";
+import { member } from "@/db/auth-schema";
 import { slackWorkspaceConfig } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { createLogger } from "@/lib/logger";
@@ -31,6 +32,17 @@ export async function DELETE(request: NextRequest) {
 
 		if (!organizationId) {
 			return NextResponse.json({ error: "organizationId is required" }, { status: 400 });
+		}
+
+		// Verify user is an admin member of this organization
+		const [membership] = await db
+			.select()
+			.from(member)
+			.where(and(eq(member.userId, session.user.id), eq(member.organizationId, organizationId)))
+			.limit(1);
+
+		if (!membership || membership.role !== "admin") {
+			return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 		}
 
 		const config = await db.query.slackWorkspaceConfig.findFirst({

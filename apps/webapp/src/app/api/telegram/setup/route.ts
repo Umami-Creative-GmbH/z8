@@ -13,6 +13,7 @@ import { headers } from "next/headers";
 import type { NextRequest } from "next/server";
 import { connection, NextResponse } from "next/server";
 import { db } from "@/db";
+import { member } from "@/db/auth-schema";
 import { telegramBotConfig } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { createLogger } from "@/lib/logger";
@@ -36,6 +37,17 @@ export async function POST(request: NextRequest) {
 				{ error: "botToken and organizationId are required" },
 				{ status: 400 },
 			);
+		}
+
+		// Verify user is an admin member of this organization
+		const [membership] = await db
+			.select()
+			.from(member)
+			.where(and(eq(member.userId, session.user.id), eq(member.organizationId, organizationId)))
+			.limit(1);
+
+		if (!membership || membership.role !== "admin") {
+			return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 		}
 
 		// Verify the bot token with Telegram
@@ -133,6 +145,17 @@ export async function DELETE(request: NextRequest) {
 
 		if (!organizationId) {
 			return NextResponse.json({ error: "organizationId is required" }, { status: 400 });
+		}
+
+		// Verify user is an admin member of this organization
+		const [membership] = await db
+			.select()
+			.from(member)
+			.where(and(eq(member.userId, session.user.id), eq(member.organizationId, organizationId)))
+			.limit(1);
+
+		if (!membership || membership.role !== "admin") {
+			return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 		}
 
 		const config = await db.query.telegramBotConfig.findFirst({
