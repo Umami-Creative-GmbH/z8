@@ -24,6 +24,16 @@ const designs = [
 	{ id: "p-4", name: "Prisma — Zentrale", desc: "White with floating prismatic product cards, rainbow accents, perspective tilt" },
 	{ id: "p-5", name: "Prisma — Editorial", desc: "Warm editorial serif, spectral stats, prismatic app screenshot overlay" },
 	{ id: "p-6", name: "Prisma — Gradient", desc: "Light glass dashboard, full rainbow spectrum, logo bar, soft purple tones" },
+	{ id: "s-1", name: "Tintenblau", desc: "Japanese ink wash, dark/light toggle, calligraphic weight, wabi-sabi spacing" },
+	{ id: "s-2", name: "Kiesel", desc: "Pebble stone warmth, rounded forms, tactile matte surfaces, organic shapes" },
+	{ id: "s-3", name: "Neonoir", desc: "Neon noir cyberpunk, electric cyan on black, monospace, scanline grid" },
+	{ id: "s-4", name: "Terrakotta", desc: "Mediterranean editorial warmth, burnt sienna, serif elegance, arch motif" },
+	{ id: "s-5", name: "Eisglas", desc: "Frosted glass layers, cool translucent whites, crystalline depth, blur" },
+	{ id: "s-6", name: "Kohle", desc: "Chalkboard sketch aesthetic, hand-drawn feel, dashed lines, cursive type" },
+	{ id: "s-7", name: "Kupfer", desc: "Oxidized copper patina, green-to-bronze gradient, industrial dark elegance" },
+	{ id: "s-8", name: "Papier", desc: "Newspaper broadsheet, dense columns, strict hierarchy, ink-on-paper editorial" },
+	{ id: "s-9", name: "Morgenrot", desc: "Dawn gradient, peach-to-coral horizon, sun circle, optimistic warmth" },
+	{ id: "s-10", name: "Schiefer", desc: "Dark slate blue monochrome, sharp geometry, Swiss precision, data dashboard" },
 ];
 
 export default function Home() {
