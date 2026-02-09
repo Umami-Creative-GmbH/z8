@@ -35,6 +35,7 @@ import {
 	team,
 	teamPermissions,
 } from "./organization";
+import { customer } from "./customer";
 import { project, projectAssignment, projectManager, projectNotificationState } from "./project";
 import { shift, shiftRecurrence, shiftRequest, shiftTemplate } from "./shift";
 import { coverageRule, coverageSettings } from "./coverage";
@@ -136,6 +137,8 @@ export const organizationRelations = relations(organization, ({ one, many }) => 
 	// Shift scheduling
 	shiftTemplates: many(shiftTemplate),
 	shifts: many(shift),
+	// Customers
+	customers: many(customer),
 	// Projects
 	projects: many(project),
 	projectAssignments: many(projectAssignment),
@@ -804,6 +807,10 @@ export const projectRelations = relations(project, ({ one, many }) => ({
 		fields: [project.organizationId],
 		references: [organization.id],
 	}),
+	customer: one(customer, {
+		fields: [project.customerId],
+		references: [customer.id],
+	}),
 	managers: many(projectManager),
 	assignments: many(projectAssignment),
 	workPeriods: many(workPeriod),
@@ -860,6 +867,25 @@ export const projectNotificationStateRelations = relations(projectNotificationSt
 	project: one(project, {
 		fields: [projectNotificationState.projectId],
 		references: [project.id],
+	}),
+}));
+
+// Customer relations
+export const customerRelations = relations(customer, ({ one, many }) => ({
+	organization: one(organization, {
+		fields: [customer.organizationId],
+		references: [organization.id],
+	}),
+	projects: many(project),
+	creator: one(user, {
+		fields: [customer.createdBy],
+		references: [user.id],
+		relationName: "customer_creator",
+	}),
+	updater: one(user, {
+		fields: [customer.updatedBy],
+		references: [user.id],
+		relationName: "customer_updater",
 	}),
 }));
 

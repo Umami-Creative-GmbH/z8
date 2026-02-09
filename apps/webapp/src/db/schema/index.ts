@@ -18,6 +18,7 @@ export * from "./change-policy";
 export * from "./compliance";
 // Compliance Radar (findings, config)
 export * from "./compliance-finding";
+export * from "./customer";
 export * from "./enterprise";
 // Enums
 export * from "./enums";

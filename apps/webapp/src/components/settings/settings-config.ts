@@ -18,6 +18,7 @@ export type SettingsIconName =
 	| "clock-edit"
 	| "gavel"
 	| "percentage"
+	| "address-book"
 	| "briefcase"
 	| "world"
 	| "history"
@@ -33,7 +34,8 @@ export type SettingsIconName =
 	| "radar"
 	| "target"
 	| "certificate"
-	| "credit-card";
+	| "credit-card"
+	| "file-text";
 
 export interface SettingsEntry {
 	id: string;
@@ -155,6 +157,18 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Manage your subscription, payment methods, and invoices",
 		href: "/settings/billing",
 		icon: "credit-card",
+		adminOnly: true,
+		group: "organization",
+		requiresBilling: true,
+	},
+	{
+		id: "avv",
+		titleKey: "settings.avv.title",
+		titleDefault: "Data Processing Agreement",
+		descriptionKey: "settings.avv.description",
+		descriptionDefault: "Download your Data Processing Agreement (Auftragsverarbeitungsvertrag)",
+		href: "/settings/avv",
+		icon: "file-text",
 		adminOnly: true,
 		group: "organization",
 		requiresBilling: true,
@@ -294,6 +308,18 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		adminOnly: true,
 		group: "administration",
 		requiredFeature: "surchargesEnabled",
+	},
+	{
+		id: "customers",
+		titleKey: "settings.customers.title",
+		titleDefault: "Customers",
+		descriptionKey: "settings.customers.description",
+		descriptionDefault: "Manage customer contacts for project assignments",
+		href: "/settings/customers",
+		icon: "address-book",
+		adminOnly: true,
+		group: "administration",
+		requiredFeature: "projectsEnabled",
 	},
 	{
 		id: "projects",

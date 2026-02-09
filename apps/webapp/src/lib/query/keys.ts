@@ -184,6 +184,14 @@ export const queryKeys = {
 		byShift: (shiftId: string) => ["shift-requests", "shift", shiftId] as const,
 	},
 
+	// Customers
+	customers: {
+		all: ["customers"] as const,
+		list: (orgId: string) => ["customers", "list", orgId] as const,
+		detail: (customerId: string) => ["customers", "detail", customerId] as const,
+		selection: (orgId: string) => ["customers", "selection", orgId] as const,
+	},
+
 	// Projects
 	projects: {
 		all: ["projects"] as const,

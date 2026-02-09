@@ -1,4 +1,5 @@
 import {
+	IconAddressBook,
 	IconBeach,
 	IconBell,
 	IconBriefcase,
@@ -13,6 +14,7 @@ import {
 	IconCreditCard,
 	IconDatabaseExport,
 	IconDroplet,
+	IconFileText,
 	IconGavel,
 	IconHistory,
 	IconKey,
@@ -37,6 +39,7 @@ export const SETTINGS_ICON_MAP: Record<
 	SettingsIconName,
 	React.ComponentType<{ className?: string }>
 > = {
+	"address-book": IconAddressBook,
 	"user-circle": IconUserCircle,
 	shield: IconShield,
 	"shield-check": IconShieldCheck,
@@ -68,4 +71,5 @@ export const SETTINGS_ICON_MAP: Record<
 	target: IconTarget,
 	certificate: IconCertificate,
 	"credit-card": IconCreditCard,
+	"file-text": IconFileText,
 };

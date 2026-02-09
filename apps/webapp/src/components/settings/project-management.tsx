@@ -182,7 +182,8 @@ export function ProjectManagement({ organizationId }: ProjectManagementProps) {
 								<TableRow>
 									<TableHead>{t("settings.projects.column.name", "Name")}</TableHead>
 									<TableHead>{t("settings.projects.column.status", "Status")}</TableHead>
-									<TableHead>{t("settings.projects.column.budget", "Budget")}</TableHead>
+									<TableHead>{t("settings.projects.column.customer", "Customer")}</TableHead>
+								<TableHead>{t("settings.projects.column.budget", "Budget")}</TableHead>
 									<TableHead>{t("settings.projects.column.deadline", "Deadline")}</TableHead>
 									<TableHead>{t("settings.projects.column.team", "Team")}</TableHead>
 									<TableHead className="w-[100px]"></TableHead>
@@ -220,6 +221,11 @@ export function ProjectManagement({ organizationId }: ProjectManagementProps) {
 												>
 													{STATUS_LABELS[project.status]}
 												</Badge>
+											</TableCell>
+											<TableCell>
+												{project.customerName || (
+													<span className="text-muted-foreground">-</span>
+												)}
 											</TableCell>
 											<TableCell>
 												{budgetProgress ? (
