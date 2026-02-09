@@ -8,7 +8,7 @@
 
 import { Effect } from "effect";
 import { DateTime } from "luxon";
-import type { BotCommand, BotCommandContext, BotCommandResponse } from "../types";
+import type { BotCommand, BotCommandContext, BotCommandResponse } from "@/lib/bot-platform/types";
 import { createLogger } from "@/lib/logger";
 import { withRateLimit, withPermission, compose } from "./middleware";
 import { CoverageService, CoverageServiceFullLive } from "@/lib/effect/services/coverage.service";
@@ -52,7 +52,7 @@ function parseDateArgument(arg: string | undefined, timezone: string): DateTime 
 async function coverageHandler(ctx: BotCommandContext): Promise<BotCommandResponse> {
 	try {
 		const dateArg = ctx.args[0];
-		const date = parseDateArgument(dateArg, ctx.tenant.digestTimezone);
+		const date = parseDateArgument(dateArg, ctx.config.digestTimezone);
 
 		logger.debug(
 			{
@@ -70,7 +70,7 @@ async function coverageHandler(ctx: BotCommandContext): Promise<BotCommandRespon
 				coverageService.getCoverageForDate({
 					organizationId: ctx.organizationId,
 					date: date.toJSDate(),
-					timezone: ctx.tenant.digestTimezone,
+					timezone: ctx.config.digestTimezone,
 					managerId: ctx.employeeId,
 				}),
 			);

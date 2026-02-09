@@ -143,6 +143,54 @@ export interface TeamsEscalationResult {
 	errors: string[];
 }
 
+/** Result from Telegram daily digest job */
+export interface TelegramDailyDigestResult {
+	success: boolean;
+	botsProcessed: number;
+	digestsSent: number;
+	errors: string[];
+}
+
+/** Result from Telegram escalation checker job */
+export interface TelegramEscalationResult {
+	success: boolean;
+	botsProcessed: number;
+	approvalsEscalated: number;
+	errors: string[];
+}
+
+/** Result from Discord daily digest job */
+export interface DiscordDailyDigestResult {
+	success: boolean;
+	botsProcessed: number;
+	digestsSent: number;
+	errors: string[];
+}
+
+/** Result from Discord escalation checker job */
+export interface DiscordEscalationResult {
+	success: boolean;
+	botsProcessed: number;
+	approvalsEscalated: number;
+	errors: string[];
+}
+
+/** Result from Slack daily digest job */
+export interface SlackDailyDigestResult {
+	success: boolean;
+	botsProcessed: number;
+	digestsSent: number;
+	errors: string[];
+}
+
+/** Result from Slack escalation checker job */
+export interface SlackEscalationResult {
+	success: boolean;
+	botsProcessed: number;
+	approvalsEscalated: number;
+	errors: string[];
+}
+
 /** Result from compliance radar detection job */
 export interface ComplianceRadarResult {
 	success: boolean;
@@ -279,13 +327,75 @@ export const CRON_JOBS = {
 		defaultJobOptions: { attempts: 2, priority: 6 },
 	},
 
+	"cron:telegram-daily-digest": {
+		schedule: "*/15 * * * *", // Every 15 minutes (checks configured digest times)
+		description: "Send Telegram daily digest messages to managers",
+		processor: async (): Promise<TelegramDailyDigestResult> => {
+			const { runTelegramDailyDigestJob } = await import("@/lib/telegram/jobs/daily-digest");
+			return runTelegramDailyDigestJob();
+		},
+		defaultJobOptions: { attempts: 2, priority: 5 },
+	},
+
+	"cron:telegram-escalation": {
+		schedule: "*/30 * * * *", // Every 30 minutes
+		description: "Check and escalate stale approval requests via Telegram",
+		processor: async (): Promise<TelegramEscalationResult> => {
+			const { runTelegramEscalationCheckerJob } = await import(
+				"@/lib/telegram/jobs/escalation-checker"
+			);
+			return runTelegramEscalationCheckerJob();
+		},
+		defaultJobOptions: { attempts: 2, priority: 6 },
+	},
+
+	"cron:discord-daily-digest": {
+		schedule: "*/15 * * * *", // Every 15 minutes (checks configured digest times)
+		description: "Send Discord daily digest messages to managers",
+		processor: async (): Promise<DiscordDailyDigestResult> => {
+			const { runDiscordDailyDigestJob } = await import("@/lib/discord/jobs/daily-digest");
+			return runDiscordDailyDigestJob();
+		},
+		defaultJobOptions: { attempts: 2, priority: 5 },
+	},
+
+	"cron:discord-escalation": {
+		schedule: "*/30 * * * *", // Every 30 minutes
+		description: "Check and escalate stale approval requests via Discord",
+		processor: async (): Promise<DiscordEscalationResult> => {
+			const { runDiscordEscalationCheckerJob } = await import(
+				"@/lib/discord/jobs/escalation-checker"
+			);
+			return runDiscordEscalationCheckerJob();
+		},
+		defaultJobOptions: { attempts: 2, priority: 6 },
+	},
+
+	"cron:slack-daily-digest": {
+		schedule: "*/15 * * * *", // Every 15 minutes (checks configured digest times)
+		description: "Send Slack daily digest messages to managers",
+		processor: async (): Promise<SlackDailyDigestResult> => {
+			const { runSlackDailyDigestJob } = await import("@/lib/slack/jobs/daily-digest");
+			return runSlackDailyDigestJob();
+		},
+		defaultJobOptions: { attempts: 2, priority: 5 },
+	},
+
+	"cron:slack-escalation": {
+		schedule: "*/30 * * * *", // Every 30 minutes
+		description: "Check and escalate stale approval requests via Slack",
+		processor: async (): Promise<SlackEscalationResult> => {
+			const { runSlackEscalationCheckerJob } = await import("@/lib/slack/jobs/escalation-checker");
+			return runSlackEscalationCheckerJob();
+		},
+		defaultJobOptions: { attempts: 2, priority: 6 },
+	},
+
 	"cron:compliance-radar": {
 		schedule: "0 2 * * *", // Daily at 2 AM
 		description: "Detect compliance violations for previous day",
 		processor: async (): Promise<ComplianceRadarResult> => {
-			const { runComplianceRadarDetection } = await import(
-				"@/lib/jobs/compliance-radar-processor"
-			);
+			const { runComplianceRadarDetection } = await import("@/lib/jobs/compliance-radar-processor");
 			return runComplianceRadarDetection();
 		},
 		defaultJobOptions: { attempts: 2, priority: 5 },

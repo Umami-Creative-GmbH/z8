@@ -1,6 +1,3 @@
-import { redirect } from "next/navigation";
-import { headers } from "next/headers";
-import Link from "next/link";
 import {
 	IconBuilding,
 	IconChartBar,
@@ -10,22 +7,14 @@ import {
 	IconShield,
 	IconUsers,
 } from "@tabler/icons-react";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
+import { Link } from "@/navigation";
+import { getTranslate } from "@/tolgee/server";
 
-const navItems = [
-	{ href: "/admin", icon: IconChartBar, label: "Overview" },
-	{ href: "/admin/users", icon: IconUsers, label: "Users" },
-	{ href: "/admin/organizations", icon: IconBuilding, label: "Organizations" },
-	{ href: "/admin/billing", icon: IconCreditCard, label: "Billing" },
-	{ href: "/admin/settings", icon: IconSettings, label: "Settings" },
-];
-
-export default async function AdminLayout({
-	children,
-}: {
-	children: React.ReactNode;
-}) {
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
 	const headersList = await headers();
 	const session = await auth.api.getSession({ headers: headersList });
 
@@ -38,6 +27,28 @@ export default async function AdminLayout({
 	if (session.user.role !== "admin") {
 		redirect("/");
 	}
+
+	const t = await getTranslate();
+
+	const navItems = [
+		{ href: "/admin", icon: IconChartBar, label: t("admin.layout.nav.overview", "Overview") },
+		{ href: "/admin/users", icon: IconUsers, label: t("admin.layout.nav.users", "Users") },
+		{
+			href: "/admin/organizations",
+			icon: IconBuilding,
+			label: t("admin.layout.nav.organizations", "Organizations"),
+		},
+		{
+			href: "/admin/billing",
+			icon: IconCreditCard,
+			label: t("admin.layout.nav.billing", "Billing"),
+		},
+		{
+			href: "/admin/settings",
+			icon: IconSettings,
+			label: t("admin.layout.nav.settings", "Settings"),
+		},
+	];
 
 	return (
 		<div className="min-h-screen bg-background">
@@ -55,8 +66,12 @@ export default async function AdminLayout({
 								<IconShield className="size-5" aria-hidden="true" />
 							</div>
 							<div className="hidden sm:block">
-								<div className="text-sm font-semibold tracking-tight">Admin Console</div>
-								<div className="text-xs text-muted-foreground">Platform Management</div>
+								<div className="text-sm font-semibold tracking-tight">
+									{t("admin.layout.title", "Admin Console")}
+								</div>
+								<div className="text-xs text-muted-foreground">
+									{t("admin.layout.subtitle", "Platform Management")}
+								</div>
 							</div>
 						</Link>
 
@@ -85,7 +100,8 @@ export default async function AdminLayout({
 					<div className="flex items-center gap-4">
 						<div className="hidden items-center gap-3 sm:flex">
 							<div className="size-8 rounded-full bg-muted flex items-center justify-center text-xs font-medium text-muted-foreground">
-								{session.user.name?.charAt(0).toUpperCase() || session.user.email?.charAt(0).toUpperCase()}
+								{session.user.name?.charAt(0).toUpperCase() ||
+									session.user.email?.charAt(0).toUpperCase()}
 							</div>
 							<div className="hidden lg:block">
 								<div className="text-sm font-medium">{session.user.name}</div>
@@ -100,7 +116,9 @@ export default async function AdminLayout({
 							className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
 						>
 							<IconLogout className="size-4" aria-hidden="true" />
-							<span className="hidden sm:inline">Exit Admin</span>
+							<span className="hidden sm:inline">
+								{t("admin.layout.exitAdmin", "Exit Admin")}
+							</span>
 						</Link>
 					</div>
 				</div>

@@ -1,8 +1,5 @@
 "use client";
 
-import { useForm } from "@tanstack/react-form";
-import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
 import {
 	IconCheck,
 	IconEye,
@@ -13,13 +10,16 @@ import {
 	IconShieldCheck,
 	IconUser,
 } from "@tabler/icons-react";
+import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
+import { useState, useTransition } from "react";
 import { createPlatformAdminAction } from "@/app/[locale]/(setup)/setup/actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
 import { cn } from "@/lib/utils";
+import { useRouter } from "@/navigation";
 
 interface SetupWizardFormProps {
 	locale: string;
@@ -188,7 +188,7 @@ export function SetupWizardForm({ locale }: SetupWizardFormProps) {
 				<CardDescription>
 					{t(
 						"setup.description",
-						"Set up the first administrator account for your platform. This account will have full system access and is separate from organization accounts."
+						"Set up the first administrator account for your platform. This account will have full system access and is separate from organization accounts.",
 					)}
 				</CardDescription>
 			</CardHeader>
@@ -202,7 +202,10 @@ export function SetupWizardForm({ locale }: SetupWizardFormProps) {
 					className="space-y-4"
 				>
 					{error && (
-						<div role="alert" className="rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
+						<div
+							role="alert"
+							className="rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive"
+						>
 							{error}
 						</div>
 					)}
@@ -283,7 +286,10 @@ export function SetupWizardForm({ locale }: SetupWizardFormProps) {
 									<div className="relative">
 										<Input
 											type={showPassword ? "text" : "password"}
-											placeholder={t("setup.field.password_placeholder", "Create a strong password")}
+											placeholder={t(
+												"setup.field.password_placeholder",
+												"Create a strong password",
+											)}
 											value={field.state.value}
 											onChange={(e) => field.handleChange(e.target.value)}
 											onBlur={field.handleBlur}
@@ -294,7 +300,11 @@ export function SetupWizardForm({ locale }: SetupWizardFormProps) {
 											type="button"
 											onClick={() => setShowPassword(!showPassword)}
 											className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-											aria-label={showPassword ? t("setup.hide_password", "Hide password") : t("setup.show_password", "Show password")}
+											aria-label={
+												showPassword
+													? t("setup.hide_password", "Hide password")
+													: t("setup.show_password", "Show password")
+											}
 										>
 											{showPassword ? (
 												<IconEyeOff className="size-4" />
@@ -334,7 +344,10 @@ export function SetupWizardForm({ locale }: SetupWizardFormProps) {
 									<div className="relative">
 										<Input
 											type={showConfirmPassword ? "text" : "password"}
-											placeholder={t("setup.field.confirm_password_placeholder", "Confirm your password")}
+											placeholder={t(
+												"setup.field.confirm_password_placeholder",
+												"Confirm your password",
+											)}
 											value={field.state.value}
 											onChange={(e) => field.handleChange(e.target.value)}
 											onBlur={field.handleBlur}
@@ -345,7 +358,11 @@ export function SetupWizardForm({ locale }: SetupWizardFormProps) {
 											type="button"
 											onClick={() => setShowConfirmPassword(!showConfirmPassword)}
 											className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-											aria-label={showConfirmPassword ? t("setup.hide_password", "Hide password") : t("setup.show_password", "Show password")}
+											aria-label={
+												showConfirmPassword
+													? t("setup.hide_password", "Hide password")
+													: t("setup.show_password", "Show password")
+											}
 										>
 											{showConfirmPassword ? (
 												<IconEyeOff className="size-4" />
@@ -397,8 +414,14 @@ function PasswordStrengthIndicator({ password }: { password: string }) {
 
 	const checks = [
 		{ label: t("setup.password.min_length", "12+ characters"), valid: password.length >= 12 },
-		{ label: t("setup.password.uppercase", "Uppercase letter"), valid: UPPERCASE_REGEX.test(password) },
-		{ label: t("setup.password.lowercase", "Lowercase letter"), valid: LOWERCASE_REGEX.test(password) },
+		{
+			label: t("setup.password.uppercase", "Uppercase letter"),
+			valid: UPPERCASE_REGEX.test(password),
+		},
+		{
+			label: t("setup.password.lowercase", "Lowercase letter"),
+			valid: LOWERCASE_REGEX.test(password),
+		},
 		{ label: t("setup.password.number", "Number"), valid: NUMBER_REGEX.test(password) },
 	];
 

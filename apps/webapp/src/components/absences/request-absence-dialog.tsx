@@ -1,9 +1,8 @@
 "use client";
 
-import { useForm } from "@tanstack/react-form";
 import { IconLoader2 } from "@tabler/icons-react";
+import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
-import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { requestAbsence } from "@/app/[locale]/(app)/absences/actions";
@@ -29,6 +28,7 @@ import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/
 import { Textarea } from "@/components/ui/textarea";
 import { calculateBusinessDaysWithHalfDays, formatDays } from "@/lib/absences/date-utils";
 import type { DayPeriod, Holiday } from "@/lib/absences/types";
+import { useRouter } from "@/navigation";
 import { CategoryBadge } from "./category-badge";
 
 interface RequestAbsenceDialogProps {

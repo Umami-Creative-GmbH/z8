@@ -2,9 +2,8 @@
 
 import { IconChevronRight, IconSettings } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { usePathname } from "next/navigation";
 import { Fragment } from "react";
-import { Link } from "@/navigation";
+import { Link, usePathname } from "@/navigation";
 
 interface Breadcrumb {
 	label: string;

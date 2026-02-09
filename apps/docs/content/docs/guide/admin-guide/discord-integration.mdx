@@ -1,0 +1,249 @@
+---
+title: Discord Integration
+description: Connect z8 with Discord for notifications, approvals, and bot commands
+icon: Bell
+---
+
+## Overview
+
+The z8 Discord integration brings workforce management to your Discord server. Managers receive approval requests as rich embed messages, employees can check their status with slash commands, and everyone stays informed with daily digest notifications.
+
+Key capabilities:
+
+- **Interactive Approval Embeds**: Approve or reject requests using buttons on rich embed messages in Discord
+- **Daily Digest**: Managers receive a morning summary of pending approvals, who's out, coverage gaps, and compliance alerts
+- **Slash Commands**: Query clocked-in employees, pending approvals, and open shifts using Discord slash commands
+- **Automatic Escalation**: Approval requests that go unanswered are automatically escalated to backup managers
+- **User Account Linking**: Employees link their z8 accounts via secure one-time codes
+
+## Prerequisites
+
+Before setting up the Discord integration, ensure you have:
+
+1. **z8 Organization Admin Access**: You must be an administrator of your z8 organization
+2. **Discord Server Admin Access**: You must have administrator permissions in the Discord server
+3. **Discord Developer Portal Access**: You'll create a bot application via the [Discord Developer Portal](https://discord.com/developers/applications)
+
+## Bot Setup
+
+### Step 1: Create a Discord Application
+
+1. Go to the [Discord Developer Portal](https://discord.com/developers/applications)
+2. Click **New Application** and name it (e.g., "z8 Bot")
+3. Navigate to the **Bot** section in the sidebar
+4. Click **Add Bot** and confirm
+5. Copy the **Bot Token** - store this securely
+6. Note the **Application ID** from the General Information page
+7. Copy the **Public Key** from the General Information page
+
+<Callout type="warn">
+Keep your bot token secret. Anyone with the token can control your bot. You can regenerate the token in the Developer Portal if compromised.
+</Callout>
+
+### Step 2: Configure Bot Permissions
+
+In the Discord Developer Portal under your application:
+
+1. Go to **OAuth2 > URL Generator**
+2. Select the `bot` and `applications.commands` scopes
+3. Under bot permissions, select:
+   - Send Messages
+   - Embed Links
+   - Use Slash Commands
+4. Copy the generated URL and open it in your browser
+5. Select your Discord server and authorize the bot
+
+### Step 3: Connect the Bot to z8
+
+1. Navigate to **Settings > Integrations** in z8
+2. Find the **Discord** integration card
+3. Click **Connect Discord Bot**
+4. Enter the following:
+   - **Bot Token**: The token from the Developer Portal
+   - **Application ID**: From the General Information page
+   - **Public Key**: From the General Information page
+5. Click **Validate & Connect**
+6. z8 will verify the credentials and register slash commands
+
+### Step 4: Configure Interaction Endpoint
+
+After connecting, z8 provides an **Interaction Endpoint URL**:
+
+1. Copy the endpoint URL shown in the z8 integration settings
+2. Go to your Discord application in the Developer Portal
+3. Paste the URL into the **Interactions Endpoint URL** field
+4. Discord will verify the endpoint automatically
+
+### Step 5: Configure Integration Features
+
+Once connected, configure which features are enabled:
+
+1. Go to **Settings > Integrations > Discord** in z8
+2. Toggle the features you want to enable:
+   - **Approval Notifications**: Send interactive approval embeds to managers
+   - **Bot Commands**: Allow slash commands for querying data
+   - **Daily Digest**: Send morning summary to managers
+   - **Escalations**: Auto-escalate unanswered approvals
+3. If daily digest is enabled, set the **Digest Time** and **Timezone**
+4. If escalations are enabled, set the **Escalation Timeout** (1-168 hours, default: 24)
+
+## User Account Linking
+
+Discord users must link their z8 accounts using a secure link code.
+
+### Linking Your Account
+
+1. Go to **Settings > Integrations > Discord** in z8
+2. Click **Generate Link Code** - a 6-character code will be displayed
+3. Open Discord and send a DM to the z8 bot, or use the `/link` command in any channel
+4. Type `/link code:CODE` (replacing CODE with your 6-character code)
+5. The bot confirms the link is successful
+
+### Unlinking Your Account
+
+To unlink your Discord account:
+
+1. Go to **Settings > Integrations > Discord** in z8
+2. Click **Unlink** next to your Discord account
+3. Organization admins can unlink any user from the admin panel
+
+## Channel Notifications
+
+z8 sends notifications through Discord as an additional delivery channel alongside in-app, push, and email notifications.
+
+### Notification Types Delivered via Discord
+
+| Notification Type | Format | Action Required |
+|-------------------|--------|-----------------|
+| Approval Request | Rich embed with buttons | Approve/Reject buttons |
+| Approval Resolution | Embed message | No action |
+| Daily Digest | Rich embed | View links |
+| Escalation Alert | Embed message | Review in z8 |
+
+### User Notification Preferences
+
+Individual users can control whether they receive Discord notifications:
+
+1. Go to **Settings > Notifications** in z8
+2. For each notification type, toggle the **Discord** channel on or off
+3. Discord notifications are available once your account is linked
+
+## Approval Notifications
+
+The Discord integration delivers rich embed messages with interactive buttons for approval workflows.
+
+### How Approval Embeds Work
+
+When an employee submits a request that requires approval:
+
+1. z8 creates an approval request and identifies the approving manager
+2. The system checks if the manager has a linked Discord account
+3. A rich embed with action buttons is sent to the manager via DM
+4. The embed displays request details and Approve/Reject buttons
+5. The manager clicks a button to take action
+6. The embed updates to show the resolution status
+7. The requesting employee is notified of the decision
+
+### Approval Escalation
+
+If an approval goes unanswered, z8 can automatically escalate to a backup manager:
+
+1. Configure the escalation timeout in **Settings > Integrations > Discord**
+2. Default timeout is 24 hours
+3. When timeout expires, the approval is reassigned to the backup manager
+4. The new approver receives a fresh approval embed
+5. Escalation history is tracked for audit purposes
+
+<Callout type="warn">
+Escalation requires that employees have a backup manager configured in their profile. Without a backup manager, unanswered approvals will remain pending.
+</Callout>
+
+## Daily Digest
+
+Managers receive a daily summary embed at their configured time, providing an operational overview.
+
+### Digest Contents
+
+| Section | Information |
+|---------|-------------|
+| Pending Approvals | Count of requests awaiting your action |
+| Who's Out | Team members on leave today with return dates |
+| Currently Clocked In | Employees actively working with duration |
+| Coverage Gaps | Subareas with fewer staff than scheduled |
+| Open Shifts | Unfilled shifts for today and tomorrow |
+| Compliance Alerts | Pending compliance exceptions requiring review |
+
+### Configuring Digest Time
+
+1. Go to **Settings > Integrations > Discord**
+2. Set your preferred **Digest Time** (default: 08:00)
+3. Select your **Timezone** for accurate delivery
+4. The digest is sent within a 15-minute window of the configured time
+
+## Slash Commands
+
+The z8 Discord bot registers slash commands for quick information access.
+
+### Available Commands
+
+| Command | Description |
+|---------|-------------|
+| `/z8 help` | List all available commands |
+| `/z8 clockedin` | Show currently clocked-in team members |
+| `/z8 whosout` | Show team members on leave today |
+| `/z8 pending` | Show your pending approval requests |
+| `/z8 coverage` | Show coverage status for today |
+| `/z8 openshifts` | Show unfilled shifts |
+| `/z8 compliance` | Show pending compliance exceptions |
+| `/link` | Link your z8 account with a code |
+
+### Command Permissions
+
+Some commands are restricted based on your role:
+
+- **All Users**: `/z8 help`, `/z8 clockedin` (own status), `/link`
+- **Managers**: `/z8 whosout`, `/z8 pending`, `/z8 coverage`, `/z8 openshifts`, `/z8 compliance`
+- **Admins**: All commands, including organization-wide views
+
+## Troubleshooting
+
+### Bot Not Responding
+
+**Symptoms**: The z8 bot doesn't respond to slash commands in Discord.
+
+**Solutions**:
+1. Verify the bot is online in your Discord server's member list
+2. Check if the integration status is "Active" in z8 Settings
+3. Ensure the Interactions Endpoint URL is correctly configured in the Developer Portal
+4. Verify the bot has the required permissions in the channel
+5. Try re-registering slash commands by disconnecting and reconnecting
+
+### Not Receiving Approval Embeds
+
+**Symptoms**: You're a manager but don't receive approval messages in Discord.
+
+**Solutions**:
+1. Verify your z8 account is linked to your Discord account
+2. Check that Discord notifications are enabled in your z8 notification preferences
+3. Ensure "Enable Approvals" is turned on in the organization's Discord integration settings
+4. Make sure your Discord privacy settings allow DMs from server members
+
+### Slash Commands Not Appearing
+
+**Symptoms**: The `/z8` commands don't show up in Discord.
+
+**Solutions**:
+1. Slash command registration can take up to 1 hour to propagate globally
+2. Verify the bot has the `applications.commands` scope
+3. Check that "Bot Commands" is enabled in the z8 integration settings
+4. Try removing and re-adding the bot to your server
+
+### Account Linking Failed
+
+**Symptoms**: The link code is rejected by the bot.
+
+**Solutions**:
+1. Ensure the link code hasn't expired - generate a fresh one
+2. Type the code exactly as shown (codes are case-sensitive)
+3. Make sure you have an active employee record in z8
+4. Contact your z8 administrator if issues persist

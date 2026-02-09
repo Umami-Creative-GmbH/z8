@@ -1,7 +1,6 @@
 "use client";
 
 import { IconLoader2 } from "@tabler/icons-react";
-import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { updateOrganizationDetails } from "@/app/[locale]/(app)/settings/organizations/actions";
@@ -18,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type * as authSchema from "@/db/auth-schema";
+import { useRouter } from "@/navigation";
 
 interface EditOrganizationDialogProps {
 	organization: typeof authSchema.organization.$inferSelect;

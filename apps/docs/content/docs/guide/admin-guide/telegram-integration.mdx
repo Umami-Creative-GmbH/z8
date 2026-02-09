@@ -1,0 +1,230 @@
+---
+title: Telegram Integration
+description: Connect z8 with Telegram for notifications, approvals, and bot commands
+icon: Bell
+---
+
+## Overview
+
+The z8 Telegram integration brings workforce management to Telegram. Managers receive approval requests with interactive inline buttons, employees can check their status with bot commands, and everyone stays informed with daily digest notifications.
+
+Key capabilities:
+
+- **Interactive Approval Messages**: Approve or reject requests using inline buttons directly in Telegram
+- **Daily Digest**: Managers receive a morning summary of pending approvals, who's out, coverage gaps, and compliance alerts
+- **Bot Commands**: Query clocked-in employees, pending approvals, and open shifts from Telegram
+- **Automatic Escalation**: Approval requests that go unanswered are automatically escalated to backup managers
+- **User Account Linking**: Employees link their z8 accounts via secure one-time codes
+
+## Prerequisites
+
+Before setting up the Telegram integration, ensure you have:
+
+1. **z8 Organization Admin Access**: You must be an administrator of your z8 organization
+2. **Telegram Account**: A Telegram account to create and manage the bot
+3. **BotFather Access**: You'll create a bot via Telegram's [@BotFather](https://t.me/BotFather)
+
+## Bot Setup
+
+### Step 1: Create a Telegram Bot
+
+1. Open Telegram and search for **@BotFather**
+2. Send `/newbot` to create a new bot
+3. Follow the prompts to name your bot (e.g., "Your Company z8 Bot")
+4. BotFather will provide a **Bot Token** - copy this token securely
+
+<Callout type="warn">
+Keep your bot token secret. Anyone with the token can control your bot. If compromised, use `/revoke` with BotFather to generate a new token.
+</Callout>
+
+### Step 2: Connect the Bot to z8
+
+1. Navigate to **Settings > Integrations** in z8
+2. Find the **Telegram** integration card
+3. Click **Connect Telegram Bot**
+4. Paste your **Bot Token** from BotFather
+5. Click **Validate & Connect**
+6. z8 will verify the token and register a webhook with Telegram
+
+### Step 3: Configure Integration Features
+
+Once connected, configure which features are enabled:
+
+1. Go to **Settings > Integrations > Telegram** in z8
+2. Toggle the features you want to enable:
+   - **Approval Notifications**: Send interactive approval messages to managers
+   - **Bot Commands**: Allow commands for querying data
+   - **Daily Digest**: Send morning summary to managers
+   - **Escalations**: Auto-escalate unanswered approvals
+3. If daily digest is enabled, set the **Digest Time** and **Timezone**
+4. If escalations are enabled, set the **Escalation Timeout** (1-168 hours, default: 24)
+
+### Step 4: Verify the Connection
+
+1. The integration status should show **Active** with a green indicator
+2. Open Telegram and find your bot
+3. Send `/help` to confirm it responds
+
+## User Account Linking
+
+Telegram users must link their z8 accounts using a secure link code.
+
+### Linking Your Account
+
+1. Go to **Settings > Integrations > Telegram** in z8
+2. Click **Generate Link Code** - a 6-character code will be displayed
+3. Open Telegram and start a conversation with your organization's z8 bot
+4. Send `/link CODE` (replacing CODE with your 6-character code)
+5. The bot confirms the link is successful
+
+<Callout type="info">
+You must start a conversation with the bot first (send `/start`) before the bot can send you messages. This is a Telegram platform requirement.
+</Callout>
+
+### Unlinking Your Account
+
+To unlink your Telegram account:
+
+1. Go to **Settings > Integrations > Telegram** in z8
+2. Click **Unlink** next to your Telegram account
+3. Organization admins can unlink any user from the admin panel
+
+## Channel Notifications
+
+z8 sends notifications through Telegram as an additional delivery channel alongside in-app, push, and email notifications.
+
+### Notification Types Delivered via Telegram
+
+| Notification Type | Format | Action Required |
+|-------------------|--------|-----------------|
+| Approval Request | Message with inline buttons | Approve/Reject buttons |
+| Approval Resolution | Text message | No action |
+| Daily Digest | Formatted message | View links |
+| Escalation Alert | Text message | Review in z8 |
+
+### User Notification Preferences
+
+Individual users can control whether they receive Telegram notifications:
+
+1. Go to **Settings > Notifications** in z8
+2. For each notification type, toggle the **Telegram** channel on or off
+3. Telegram notifications are available once your account is linked
+
+## Approval Notifications
+
+The Telegram integration delivers messages with interactive inline buttons for approval workflows.
+
+### How Approval Messages Work
+
+When an employee submits a request that requires approval:
+
+1. z8 creates an approval request and identifies the approving manager
+2. The system checks if the manager has a linked Telegram account
+3. A message with inline buttons is sent to the manager's Telegram chat
+4. The message displays request details and Approve/Reject buttons
+5. The manager taps a button to take action
+6. The message updates to show the resolution status
+7. The requesting employee is notified of the decision
+
+### Approval Escalation
+
+If an approval goes unanswered, z8 can automatically escalate to a backup manager:
+
+1. Configure the escalation timeout in **Settings > Integrations > Telegram**
+2. Default timeout is 24 hours
+3. When timeout expires, the approval is reassigned to the backup manager
+4. The new approver receives a fresh approval message
+5. Escalation history is tracked for audit purposes
+
+<Callout type="warn">
+Escalation requires that employees have a backup manager configured in their profile. Without a backup manager, unanswered approvals will remain pending.
+</Callout>
+
+## Daily Digest
+
+Managers receive a daily summary message at their configured time, providing an operational overview.
+
+### Digest Contents
+
+| Section | Information |
+|---------|-------------|
+| Pending Approvals | Count of requests awaiting your action |
+| Who's Out | Team members on leave today with return dates |
+| Currently Clocked In | Employees actively working with duration |
+| Coverage Gaps | Subareas with fewer staff than scheduled |
+| Open Shifts | Unfilled shifts for today and tomorrow |
+| Compliance Alerts | Pending compliance exceptions requiring review |
+
+### Configuring Digest Time
+
+1. Go to **Settings > Integrations > Telegram**
+2. Set your preferred **Digest Time** (default: 08:00)
+3. Select your **Timezone** for accurate delivery
+4. The digest is sent within a 15-minute window of the configured time
+
+## Bot Commands
+
+The z8 Telegram bot supports several commands for quick information access.
+
+### Available Commands
+
+| Command | Aliases | Description |
+|---------|---------|-------------|
+| `/help` | `/commands`, `?` | List all available commands |
+| `/clockedin` | `/whoshere`, `/active` | Show currently clocked-in team members |
+| `/whosout` | `/out`, `/away` | Show team members on leave today |
+| `/pending` | `/approvals` | Show your pending approval requests |
+| `/coverage` | - | Show coverage status for today |
+| `/openshifts` | `/open` | Show unfilled shifts |
+| `/compliance` | - | Show pending compliance exceptions |
+| `/link` | - | Link your z8 account with a code |
+
+### Command Permissions
+
+Some commands are restricted based on your role:
+
+- **All Users**: `/help`, `/clockedin` (own status), `/link`
+- **Managers**: `/whosout`, `/pending`, `/coverage`, `/openshifts`, `/compliance`
+- **Admins**: All commands, including organization-wide views
+
+## Troubleshooting
+
+### Bot Not Responding
+
+**Symptoms**: The z8 bot doesn't respond to messages in Telegram.
+
+**Solutions**:
+1. Verify the bot token is still valid (check with @BotFather)
+2. Check if the integration status is "Active" in z8 Settings
+3. Ensure you've sent `/start` to the bot first
+4. Try disconnecting and reconnecting the bot with a fresh token
+
+### Not Receiving Approval Messages
+
+**Symptoms**: You're a manager but don't receive approval messages in Telegram.
+
+**Solutions**:
+1. Verify your z8 account is linked to your Telegram account
+2. Check that Telegram notifications are enabled in your z8 notification preferences
+3. Ensure "Enable Approvals" is turned on in the organization's Telegram integration settings
+4. Make sure you've started a conversation with the bot (`/start`)
+
+### Daily Digest Not Arriving
+
+**Symptoms**: You're a manager but don't receive the daily digest.
+
+**Solutions**:
+1. Confirm you have direct reports assigned to you in z8
+2. Verify the digest time and timezone in Telegram integration settings
+3. Check that "Enable Daily Digest" is turned on for your organization
+4. Ensure your Telegram account is linked and you've messaged the bot at least once
+
+### Account Linking Failed
+
+**Symptoms**: The link code is rejected by the bot.
+
+**Solutions**:
+1. Ensure the link code hasn't expired - generate a fresh one
+2. Type the code exactly as shown (codes are case-sensitive)
+3. Make sure you have an active employee record in z8
+4. Contact your z8 administrator if issues persist

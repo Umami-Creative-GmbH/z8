@@ -82,7 +82,6 @@
       "description": "Descrizione",
       "duration": "Durata",
       "emptyState": "Nessuna voce oraria trovata per questa settimana.",
-      "emptyStateHint": "Timbra per iniziare a tracciare il tuo tempo.",
       "title": "Voci orarie"
     },
     "title": "Rilevazione presenze",

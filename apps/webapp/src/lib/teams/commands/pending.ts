@@ -9,7 +9,7 @@ import { DateTime } from "luxon";
 import { db } from "@/db";
 import { approvalRequest, employee, absenceEntry, absenceCategory } from "@/db/schema";
 import { user } from "@/db/auth-schema";
-import type { BotCommand, BotCommandContext, BotCommandResponse } from "../types";
+import type { BotCommand, BotCommandContext, BotCommandResponse } from "@/lib/bot-platform/types";
 import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("TeamsCommand:Pending");
@@ -54,10 +54,10 @@ export const pendingCommand: BotCommand = {
 
 					const requesterName = requesterEmployee?.user?.name || "Unknown";
 					const createdAt = DateTime.fromJSDate(request.createdAt).setZone(
-						ctx.tenant.digestTimezone,
+						ctx.config.digestTimezone,
 					);
 					const age = DateTime.now()
-						.setZone(ctx.tenant.digestTimezone)
+						.setZone(ctx.config.digestTimezone)
 						.diff(createdAt, ["days", "hours"]);
 
 					let description = "";

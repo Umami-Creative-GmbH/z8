@@ -6,7 +6,7 @@
  */
 
 import { Effect } from "effect";
-import type { BotCommand, BotCommandContext, BotCommandResponse } from "../types";
+import type { BotCommand, BotCommandContext, BotCommandResponse } from "@/lib/bot-platform/types";
 import { createLogger } from "@/lib/logger";
 import { withRateLimit, withPermission, compose } from "./middleware";
 import {
@@ -61,7 +61,7 @@ async function complianceHandler(ctx: BotCommandContext): Promise<BotCommandResp
 					managerId: ctx.employeeId,
 					organizationId: ctx.organizationId,
 					daysBack,
-					timezone: ctx.tenant.digestTimezone,
+					timezone: ctx.config.digestTimezone,
 				}),
 			);
 		});

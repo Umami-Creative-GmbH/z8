@@ -4,7 +4,6 @@ import { IconLoader2, IconPlus } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { createManualTimeEntry } from "@/app/[locale]/(app)/time-tracking/actions";
@@ -31,6 +30,7 @@ import {
 } from "@/components/ui/tanstack-form";
 import { Textarea } from "@/components/ui/textarea";
 import { getTimezoneAbbreviation } from "@/lib/time-tracking/timezone-utils";
+import { useRouter } from "@/navigation";
 
 interface Props {
 	employeeId: string;

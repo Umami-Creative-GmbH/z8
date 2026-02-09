@@ -176,14 +176,14 @@ export async function checkCommandRateLimit(
 		}
 
 		// Create unique identifier: tenant + user + command
-		const identifier = `${ctx.tenant.tenantId}:${ctx.userId}:${commandName}`;
+		const identifier = `${ctx.config.organizationId}:${ctx.userId}:${commandName}`;
 		const limiter = getLimiter(commandName);
 		const result = await limiter.limit(identifier);
 
 		if (!result.success) {
 			const retryAfter = Math.ceil((result.reset - Date.now()) / 1000);
 			logger.info(
-				{ commandName, userId: ctx.userId, tenantId: ctx.tenant.tenantId, retryAfter },
+				{ commandName, userId: ctx.userId, tenantId: ctx.config.organizationId, retryAfter },
 				"Teams command rate limit exceeded",
 			);
 			return {

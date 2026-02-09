@@ -4,8 +4,8 @@
  * Lists all available commands with descriptions.
  */
 
-import type { BotCommand, BotCommandContext, BotCommandResponse } from "../types";
-import { getAllCommands } from "./registry";
+import type { BotCommand, BotCommandContext, BotCommandResponse } from "@/lib/bot-platform/types";
+import { getAllCommands } from "@/lib/bot-platform/command-registry";
 
 export const helpCommand: BotCommand = {
 	name: "help",
@@ -13,7 +13,7 @@ export const helpCommand: BotCommand = {
 	description: "Show available commands",
 	usage: "help",
 	requiresAuth: false,
-	handler: async (_ctx: BotCommandContext): Promise<BotCommandResponse> => {
+	handler: async (ctx: BotCommandContext): Promise<BotCommandResponse> => {
 		const commands = getAllCommands();
 
 		// Sort commands alphabetically, but put help last
@@ -33,7 +33,7 @@ export const helpCommand: BotCommand = {
 			"",
 			...lines,
 			"",
-			"_You can also receive approval requests and daily digests directly in Teams._",
+			`_You can also receive approval requests and daily digests directly in ${ctx.platform === "telegram" ? "Telegram" : "Teams"}._`,
 		].join("\n");
 
 		return {

@@ -13,6 +13,18 @@
       "today": "Today!",
       "tomorrow": "Tomorrow"
     },
+    "compliance-radar": {
+      "critical": "Critical",
+      "description": "Labor-law compliance findings",
+      "for-awareness": "For awareness",
+      "info": "Info",
+      "openFindings": "{{count}} open finding",
+      "requires-attention": "Requires immediate attention",
+      "review-recommended": "Review recommended",
+      "title": "Compliance Radar",
+      "view-details": "View Compliance Details",
+      "warning": "Warning"
+    },
     "hydration": {
       "description": "Track your daily water intake",
       "error": "Failed to load hydration stats",
@@ -25,8 +37,6 @@
       "no-reports": "No direct reports yet",
       "no-reports-description": "You'll see your team members here once assigned",
       "people-you-manage": "People you manage",
-      "reporting-to-you": "reporting to you",
-      "team-members": "{count} team members",
       "title": "Your Team",
       "view-all": "View All",
       "view-all-members": "View all {count} team members"

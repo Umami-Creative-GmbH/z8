@@ -13,7 +13,6 @@ import {
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
-import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
@@ -22,6 +21,16 @@ import {
 	testWebhook,
 	updateWebhook,
 } from "@/app/[locale]/(app)/settings/webhooks/actions";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,19 +42,10 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import type { WebhookEndpoint } from "@/lib/webhooks/types";
-import { WebhookFormDialog } from "./webhook-form-dialog";
+import { useRouter } from "@/navigation";
 import { WebhookDeliveryLogsDialog } from "./webhook-delivery-logs-dialog";
+import { WebhookFormDialog } from "./webhook-form-dialog";
 import { WebhookSecretDialog } from "./webhook-secret-dialog";
 
 interface WebhookEndpointCardProps {

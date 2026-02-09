@@ -1,6 +1,11 @@
 {
   "reports": {
     "description": "Generate comprehensive work hour and absence reports with tax-relevant home office data",
+    "employeeSelector": {
+      "error": "Unable to load team members",
+      "label": "Employee",
+      "placeholder": "Select employee..."
+    },
     "feature": "generate reports",
     "projects": {
       "budget": {
@@ -97,8 +102,10 @@
         "portfolioDescription": "Overview of all projects with budget and time tracking metrics",
         "portfolioTitle": "Project Portfolio",
         "project": "Project",
+        "searchPlaceholder": "Search by name, description, or status...",
         "status": "Status",
-        "team": "Team"
+        "team": "Team",
+        "viewProject": "View project details"
       },
       "team": {
         "byEmployee": "By Employee",

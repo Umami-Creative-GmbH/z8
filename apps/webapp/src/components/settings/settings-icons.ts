@@ -2,6 +2,7 @@ import {
 	IconAddressBook,
 	IconBeach,
 	IconBell,
+	IconBrandTelegram,
 	IconBriefcase,
 	IconBuilding,
 	IconCalendarClock,
@@ -13,6 +14,7 @@ import {
 	IconClockEdit,
 	IconCreditCard,
 	IconDatabaseExport,
+	IconDatabaseImport,
 	IconDroplet,
 	IconFileText,
 	IconGavel,
@@ -72,4 +74,6 @@ export const SETTINGS_ICON_MAP: Record<
 	certificate: IconCertificate,
 	"credit-card": IconCreditCard,
 	"file-text": IconFileText,
+	"brand-telegram": IconBrandTelegram,
+	"database-import": IconDatabaseImport,
 };

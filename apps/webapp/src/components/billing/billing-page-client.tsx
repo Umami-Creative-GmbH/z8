@@ -1,20 +1,21 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { IconCreditCard, IconUsers, IconCalendar, IconAlertTriangle, IconCheck } from "@tabler/icons-react";
-import { DateTime } from "luxon";
-import { toast } from "sonner";
 import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+	IconAlertTriangle,
+	IconCalendar,
+	IconCheck,
+	IconCreditCard,
+	IconUsers,
+} from "@tabler/icons-react";
+import { DateTime } from "luxon";
+import { useSearchParams } from "next/navigation";
+import { useState } from "react";
+import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useRouter } from "@/navigation";
 
 interface SubscriptionInfo {
 	id: string;
@@ -47,11 +48,7 @@ const MONTHLY_PRICE = 4;
 const YEARLY_PRICE_PER_MONTH = 3;
 const YEARLY_PRICE_TOTAL = 36;
 
-export function BillingPageClient({
-	subscription,
-	accessResult,
-	isOwner,
-}: BillingPageClientProps) {
+export function BillingPageClient({ subscription, accessResult, isOwner }: BillingPageClientProps) {
 	const router = useRouter();
 	const searchParams = useSearchParams();
 	const [isLoading, setIsLoading] = useState(false);
@@ -128,7 +125,11 @@ export function BillingPageClient({
 			case "trialing":
 				return <Badge variant="default">Trial</Badge>;
 			case "active":
-				return <Badge variant="default" className="bg-green-600">Active</Badge>;
+				return (
+					<Badge variant="default" className="bg-green-600">
+						Active
+					</Badge>
+				);
 			case "past_due":
 				return <Badge variant="destructive">Past Due</Badge>;
 			case "canceled":
@@ -178,9 +179,7 @@ export function BillingPageClient({
 
 			<div>
 				<h1 className="text-3xl font-bold">Billing & Subscription</h1>
-				<p className="text-muted-foreground mt-1">
-					Manage your subscription and billing details
-				</p>
+				<p className="text-muted-foreground mt-1">Manage your subscription and billing details</p>
 			</div>
 
 			{/* Current Subscription Card */}
@@ -196,11 +195,7 @@ export function BillingPageClient({
 									{subscription.billingInterval === "year" ? "Yearly" : "Monthly"} billing
 								</CardDescription>
 							</div>
-							<Button
-								variant="outline"
-								onClick={handleManageBilling}
-								disabled={isPortalLoading}
-							>
+							<Button variant="outline" onClick={handleManageBilling} disabled={isPortalLoading}>
 								{isPortalLoading ? "Opening..." : "Manage Billing"}
 							</Button>
 						</div>
@@ -385,8 +380,8 @@ export function BillingPageClient({
 					<div>
 						<h4 className="font-medium">How does per-seat billing work?</h4>
 						<p className="text-sm text-muted-foreground">
-							You're billed based on the number of active members in your organization.
-							When you add or remove members, your subscription is automatically adjusted.
+							You're billed based on the number of active members in your organization. When you add
+							or remove members, your subscription is automatically adjusted.
 						</p>
 					</div>
 					<div>
@@ -399,8 +394,8 @@ export function BillingPageClient({
 					<div>
 						<h4 className="font-medium">Can I switch between monthly and yearly?</h4>
 						<p className="text-sm text-muted-foreground">
-							Yes! You can switch plans at any time through the billing portal. Changes
-							take effect at your next billing cycle.
+							Yes! You can switch plans at any time through the billing portal. Changes take effect
+							at your next billing cycle.
 						</p>
 					</div>
 				</CardContent>

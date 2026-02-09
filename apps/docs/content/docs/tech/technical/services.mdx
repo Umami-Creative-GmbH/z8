@@ -12,13 +12,85 @@ import { File, Folder, Files } from 'fumadocs-ui/components/files';
 
 ### Multi-Channel Architecture
 
-The notification system supports three delivery channels:
+The notification system supports seven delivery channels:
 
 | Channel | Technology | Use Case |
 |---------|------------|----------|
 | **Email** | SMTP / Provider | Transactional emails |
 | **Push** | Web Push API | Browser notifications |
 | **In-App** | Server-Sent Events | Real-time updates |
+| **Microsoft Teams** | Bot Framework / Adaptive Cards | Workspace notifications |
+| **Slack** | Block Kit / OAuth | Workspace notifications |
+| **Telegram** | Bot API / Inline buttons | Direct messages |
+| **Discord** | Embeds / Slash commands | Server notifications |
+
+### Bot Platform Infrastructure
+
+The messaging platform integrations share a unified architecture:
+
+```
+Approval created / Digest triggered / Event occurs
+    ↓
+Notification service selects delivery channels
+    ↓
+For each bot channel: check user has linked account
+    ↓
+Platform-specific SDK handler formats message
+    ↓
+Send via platform API (Teams/Slack/Telegram/Discord)
+    ↓
+Track message for interactive updates (approve/reject)
+```
+
+#### Shared Bot Command Registry
+
+All four platforms use a unified command registry. Commands are registered once and dispatched to platform-specific handlers:
+
+| Command | Description | Role |
+|---------|-------------|------|
+| `help` | List available commands | All |
+| `pending` | Pending approval requests | Manager |
+| `clockedin` | Currently clocked-in employees | All |
+| `whosout` | Team members on leave | Manager |
+| `openshifts` | Unfilled shifts | Manager |
+| `coverage` | Coverage status for today | Manager |
+| `compliance` | Compliance exceptions | Manager |
+| `link` | Link z8 account via code | All |
+
+#### Database Schema
+
+Bot integrations use organization-scoped tables:
+
+| Table | Purpose |
+|-------|---------|
+| `slack_config` | OAuth tokens, feature toggles, digest settings |
+| `telegram_config` | Bot token, webhook secret, feature toggles |
+| `discord_config` | Bot token, app ID, public key, feature toggles |
+| `teams_config` | Tenant mapping, service URL, feature toggles |
+| `*_user_mapping` | Per-platform user account links |
+| `*_approval_message` | Tracks sent approval messages for updates |
+| `*_escalation` | Escalation audit trail with timeout tracking |
+
+### Billing Service
+
+The billing system integrates with Stripe for seat-based subscriptions:
+
+| Component | Purpose |
+|-----------|---------|
+| `BillingEnforcementService` | Gates feature access based on subscription state |
+| Stripe Webhook Handler | Processes 12 event types for subscription lifecycle |
+| Seat Sync | Automatically updates Stripe quantity on employee changes |
+
+Gated behind `BILLING_ENABLED` environment variable. When disabled, all features are available without subscription checks.
+
+### Turnstile Bot Protection
+
+Authentication pages are protected with Cloudflare Turnstile:
+
+- Login, signup, and password reset forms include a Turnstile widget
+- Server-side verification with fail-closed behavior
+- Enterprise organizations can use custom per-domain Turnstile keys stored in Vault
+- Configured via `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` environment variables
 
 ### Push Notifications
 
@@ -56,9 +128,9 @@ File uploads use the TUS protocol for reliable, resumable uploads:
 - Resume interrupted uploads
 - Progress tracking
 
-### S3 Integration
+### S3 Integration (Required)
 
-Configure S3-compatible storage:
+S3-compatible object storage is **required** for all deployments. Configure S3 storage:
 
 ```ini
 S3_BUCKET=your-bucket
@@ -67,6 +139,21 @@ S3_ACCESS_KEY_ID=<access-key>
 S3_SECRET_ACCESS_KEY=<secret-key>
 S3_ENDPOINT=https://s3.amazonaws.com  # Or compatible endpoint
 ```
+
+For local development, z8 includes **RustFS** as a lightweight S3-compatible storage server:
+
+```ini
+# RustFS defaults for local development
+S3_BUCKET=z8
+S3_REGION=us-east-1
+S3_ACCESS_KEY_ID=minioadmin
+S3_SECRET_ACCESS_KEY=minioadmin
+S3_ENDPOINT=http://localhost:9000
+```
+
+<Callout type="info">
+S3 storage is no longer optional. The local filesystem fallback has been removed. All file uploads, exports, and attachments are stored in S3.
+</Callout>
 
 ---
 

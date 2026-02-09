@@ -2,7 +2,6 @@
 
 import { IconCopy, IconInfoCircle, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
@@ -12,6 +11,7 @@ import {
 } from "@/app/[locale]/(app)/settings/webhooks/actions";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
 	Dialog,
 	DialogContent,
@@ -22,10 +22,10 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Textarea } from "@/components/ui/textarea";
 import type { NotificationType } from "@/lib/notifications/types";
 import type { WebhookEndpoint } from "@/lib/webhooks/types";
+import { useRouter } from "@/navigation";
 import { WebhookSecretDialog } from "./webhook-secret-dialog";
 
 interface WebhookFormDialogProps {

@@ -17,6 +17,7 @@ export const DEFAULT_LANGUAGE = "en";
 // All available namespaces - must match the namespace directory structure
 export const ALL_NAMESPACES = [
 	"common",
+	"admin",
 	"auth",
 	"dashboard",
 	"calendar",
@@ -39,6 +40,8 @@ export const ROUTE_NAMESPACES: Record<string, Namespace[]> = {
 	"/forgot-password": ["common", "auth"],
 	"/reset-password": ["common", "auth"],
 	"/verify-email": ["common", "auth"],
+	// Admin routes
+	"/admin": ["common", "admin"],
 	// Main app routes
 	"/": ["common", "dashboard"],
 	"/calendar": ["common", "calendar"],
@@ -80,6 +83,14 @@ const namespaceImports: Record<Namespace, Record<string, () => Promise<unknown>>
 		es: () => import("../../messages/common/es.json"),
 		it: () => import("../../messages/common/it.json"),
 		pt: () => import("../../messages/common/pt.json"),
+	},
+	admin: {
+		en: () => import("../../messages/admin/en.json"),
+		de: () => import("../../messages/admin/de.json"),
+		fr: () => import("../../messages/admin/fr.json"),
+		es: () => import("../../messages/admin/es.json"),
+		it: () => import("../../messages/admin/it.json"),
+		pt: () => import("../../messages/admin/pt.json"),
 	},
 	auth: {
 		en: () => import("../../messages/auth/en.json"),

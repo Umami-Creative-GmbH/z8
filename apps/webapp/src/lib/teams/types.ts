@@ -2,9 +2,25 @@
  * Microsoft Teams Integration Types
  *
  * Type definitions for the Teams bot and ChatOps features.
+ * Shared types are re-exported from @/lib/bot-platform/types.
  */
 
 import type { ConversationReference } from "botbuilder";
+
+// Re-export shared bot-platform types for backward compatibility
+export type {
+	BotPlatform,
+	PlatformConfig,
+	BotCommandContext,
+	BotCommand,
+	BotCommandResponse,
+	DailyDigestData,
+	ApprovalCardData,
+	ApprovalResolvedData,
+} from "@/lib/bot-platform/types";
+import type { ApprovalResolvedData } from "@/lib/bot-platform/types";
+/** @deprecated Use ApprovalResolvedData instead */
+export type ApprovalCardResolvedData = ApprovalResolvedData;
 
 // ============================================
 // TENANT & USER TYPES
@@ -57,120 +73,11 @@ export type UserResolutionResult =
 	| { status: "not_linked"; teamsUserId: string; teamsEmail: string | null }
 	| { status: "no_employee"; userId: string };
 
-// ============================================
-// BOT COMMAND TYPES
-// ============================================
+// BOT COMMAND TYPES - see @/lib/bot-platform/types for shared definitions
 
-/**
- * Bot command context passed to handlers
- */
-export interface BotCommandContext {
-	organizationId: string;
-	employeeId: string;
-	userId: string;
-	teamsUserId: string;
-	tenant: ResolvedTenant;
-	args: string[];
-}
+// APPROVAL CARD TYPES - see @/lib/bot-platform/types for shared definitions
 
-/**
- * Bot command definition
- */
-export interface BotCommand {
-	/** Command name (e.g., "clockedin") */
-	name: string;
-	/** Alternative names that trigger this command */
-	aliases?: string[];
-	/** Help text shown in /help */
-	description: string;
-	/** Usage example */
-	usage: string;
-	/** Whether user must be linked to Z8 account */
-	requiresAuth: boolean;
-	/** Handler function */
-	handler: (ctx: BotCommandContext) => Promise<BotCommandResponse>;
-}
-
-/**
- * Response from a bot command
- */
-export interface BotCommandResponse {
-	/** Response type */
-	type: "text" | "card";
-	/** Plain text response (for type: "text" or as fallback) */
-	text: string;
-	/** Adaptive Card payload (for type: "card") */
-	// biome-ignore lint/suspicious/noExplicitAny: Adaptive Cards are flexible JSON
-	card?: any;
-}
-
-// ============================================
-// APPROVAL CARD TYPES
-// ============================================
-
-/**
- * Data for building an approval Adaptive Card
- */
-export interface ApprovalCardData {
-	approvalId: string;
-	entityType: "absence_entry" | "time_entry";
-	requesterName: string;
-	requesterEmail?: string;
-	reason?: string;
-	createdAt: Date;
-	// Absence-specific
-	absenceCategory?: string;
-	startDate?: string;
-	endDate?: string;
-	days?: number;
-	// Time correction-specific
-	originalTime?: string;
-	correctedTime?: string;
-}
-
-/**
- * Data for resolved approval card (after action)
- */
-export interface ApprovalCardResolvedData {
-	action: "approved" | "rejected";
-	approverName: string;
-	resolvedAt: Date;
-}
-
-// ============================================
-// DAILY DIGEST TYPES
-// ============================================
-
-/**
- * Data for building a daily digest Adaptive Card
- */
-export interface DailyDigestData {
-	date: Date;
-	timezone: string;
-	pendingApprovals: number;
-	employeesOut: Array<{
-		name: string;
-		category: string;
-		returnDate: string;
-	}>;
-	employeesClockedIn: Array<{
-		name: string;
-		clockedInAt: string;
-		durationSoFar: string;
-	}>;
-	// Operations Console Additions
-	coverageGaps?: Array<{
-		subareaName: string;
-		locationName: string;
-		timeSlot: string;
-		scheduled: number;
-		actual: number;
-		shortage: number;
-	}>;
-	openShiftsToday?: number;
-	openShiftsTomorrow?: number;
-	compliancePending?: number;
-}
+// DAILY DIGEST TYPES - see @/lib/bot-platform/types for shared definitions
 
 // ============================================
 // PROACTIVE MESSAGING TYPES

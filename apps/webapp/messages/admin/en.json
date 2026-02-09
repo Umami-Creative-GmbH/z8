@@ -1,0 +1,145 @@
+{
+  "admin": {
+    "layout": {
+      "title": "Admin Console",
+      "subtitle": "Platform Management",
+      "nav": {
+        "overview": "Overview",
+        "users": "Users",
+        "organizations": "Organizations",
+        "billing": "Billing",
+        "settings": "Settings"
+      },
+      "exitAdmin": "Exit Admin"
+    },
+    "overview": {
+      "title": "Overview",
+      "description": "Platform metrics and quick actions",
+      "metrics": {
+        "title": "Platform Metrics",
+        "totalUsers": "Total Users",
+        "totalUsersDescription": "Registered platform accounts",
+        "bannedUsers": "Banned Users",
+        "bannedUsersDescription": "Restricted from access",
+        "organizations": "Organizations",
+        "organizationsDescription": "Active workspaces",
+        "suspended": "Suspended",
+        "suspendedDescription": "Read-only organizations",
+        "mrr": "MRR",
+        "mrrDescription": "Monthly recurring revenue (€)",
+        "licensedSeats": "Licensed Seats",
+        "licensedSeatsDescription": "Across all subscriptions"
+      },
+      "quickActions": {
+        "title": "Quick Actions",
+        "users": {
+          "title": "User Management",
+          "description": "Ban/unban users, manage sessions, view activity"
+        },
+        "organizations": {
+          "title": "Organization Management",
+          "description": "Suspend, delete, or review organizations"
+        },
+        "billing": {
+          "title": "Billing & Subscriptions",
+          "description": "Revenue metrics and subscription status"
+        }
+      }
+    },
+    "users": {
+      "title": "User Management",
+      "description": "View and manage all users on the platform",
+      "searchPlaceholder": "Search by name or email…",
+      "filters": {
+        "allUsers": "All Users",
+        "active": "Active",
+        "banned": "Banned"
+      },
+      "table": {
+        "user": "User",
+        "role": "Role",
+        "created": "Created",
+        "noUsersFound": "No users found"
+      },
+      "badges": {
+        "admin": "Admin",
+        "user": "User",
+        "banned": "Banned",
+        "banExpiresUntil": "Until {date}"
+      },
+      "toasts": {
+        "banned": "User {email} has been banned",
+        "unbanned": "User {email} has been unbanned",
+        "sessionRevoked": "Session revoked",
+        "sessionsRevoked": "Revoked {count} sessions"
+      },
+      "banDialog": {
+        "title": "Ban User",
+        "description": "Ban {email} from accessing the platform.",
+        "reason": "Reason",
+        "reasonPlaceholder": "Enter the reason for banning this user…",
+        "expiry": "Expiry Date (optional)",
+        "permanentBanHint": "Leave empty for permanent ban",
+        "confirmButton": "Ban User"
+      },
+      "sessionsDialog": {
+        "title": "User Sessions",
+        "description": "Active sessions for {email}",
+        "noSessions": "No active sessions",
+        "unknownDevice": "Unknown device",
+        "unknownIp": "Unknown IP",
+        "revokeAll": "Revoke All Sessions"
+      },
+      "pagination": {
+        "showing": "Showing {from} to {to} of {total} users"
+      }
+    },
+    "organizations": {
+      "title": "Organization Management",
+      "description": "View and manage all organizations on the platform",
+      "searchPlaceholder": "Search by name or slug…",
+      "filters": {
+        "all": "All",
+        "active": "Active",
+        "suspended": "Suspended",
+        "deleted": "Deleted"
+      },
+      "table": {
+        "organization": "Organization",
+        "employees": "Employees",
+        "members": "Members",
+        "created": "Created",
+        "noOrganizationsFound": "No organizations found"
+      },
+      "badges": {
+        "deleted": "Deleted",
+        "suspended": "Suspended"
+      },
+      "toasts": {
+        "suspended": "Organization \"{name}\" has been suspended",
+        "unsuspended": "Organization \"{name}\" has been unsuspended",
+        "deletedImmediate": "Organization \"{name}\" has been scheduled for immediate deletion",
+        "deletedGracePeriod": "Organization \"{name}\" has been scheduled for deletion in 5 days"
+      },
+      "suspendDialog": {
+        "title": "Suspend Organization",
+        "description": "Suspend \"{name}\" and put it in read-only mode. Members will be able to view data but not create or edit anything.",
+        "reason": "Reason",
+        "reasonPlaceholder": "Enter the reason for suspending this organization…",
+        "confirmButton": "Suspend Organization"
+      },
+      "deleteDialog": {
+        "title": "Delete Organization",
+        "description": "This action will delete \"{name}\" and all associated data. This cannot be undone.",
+        "immediateDelete": "Delete immediately (skip 5-day grace period)",
+        "skipNotification": "Skip deletion notification to org members",
+        "confirmLabel": "Type \"{name}\" to confirm",
+        "confirmPlaceholder": "Organization name",
+        "confirmButton": "Delete Organization"
+      },
+      "pagination": {
+        "showing": "Showing {from} to {to} of {total} organizations"
+      }
+    }
+  }
+}

@@ -2,13 +2,13 @@
 
 import { IconBriefcase, IconCalendarTime, IconLoader2, IconPercentage } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { toggleOrganizationFeature } from "@/app/[locale]/(app)/settings/organizations/actions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { useRouter } from "@/navigation";
 import { useOrganizationSettings } from "@/stores/organization-settings-store";
 
 interface OrganizationFeaturesCardProps {

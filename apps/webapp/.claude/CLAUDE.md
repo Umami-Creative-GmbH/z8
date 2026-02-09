@@ -38,6 +38,7 @@ Agents must validate their work against these skills before completing tasks:
 - **Forms**: Use `@tanstack/react-form`. Migrate legacy `react-hook-form` when modifying existing forms.
 - **Dates**: Use Luxon (`DateTime`), not native `Date`.
 - **Auth schema**: Never edit `src/db/auth-schema.ts` directly - it's auto-generated.
+- **RBAC**: Uses [CASL](https://casl.js.org/) for role-based access control.
 
 ## Detailed Documentation
 

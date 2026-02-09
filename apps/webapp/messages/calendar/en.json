@@ -83,6 +83,8 @@
         "type": "Type"
       },
       "noRequests": "No absence requests found.",
+      "noSearchResults": "No absences match your search.",
+      "searchPlaceholder": "Search by type, status, or notes...",
       "start": "Start",
       "subtitle": "Recent and upcoming absence requests",
       "title": "Your Absence Requests"
@@ -128,9 +130,13 @@
       "duration": "Duration",
       "employee": "Employee",
       "notes": "Notes",
+      "pendingApproval": "Pending Approval",
+      "pendingApprovalDescription": "This work period is awaiting manager approval. The recorded times may change if rejected.",
       "periods": "Work Periods",
       "project": "Project",
       "recurring": "Recurring yearly",
+      "rejected": "Rejected",
+      "rejectedDescription": "This work period change was rejected by a manager. The original times have been restored.",
       "status": "Status",
       "surcharge": "Surcharge",
       "surchargeBreakdown": "Surcharge Breakdown",
@@ -148,6 +154,12 @@
       "split": "Split",
       "title": "Work Period"
     },
+    "employeeSelector": {
+      "error": "Unable to load team members",
+      "label": "View Calendar",
+      "myCalendar": "My Calendar",
+      "placeholder": "Select team member..."
+    },
     "entryType": {
       "clockIn": "Clock In",
       "clockOut": "Clock Out",
@@ -161,10 +173,7 @@
     },
     "filter": {
       "absences": "Absences",
-      "allEmployees": "All Employees",
-      "employee": "Filter by employee",
       "holidays": "Holidays",
-      "myDataOnly": "My Data Only",
       "timeEntries": "Time Entries",
       "workPeriods": "Work Periods"
     },
@@ -179,7 +188,8 @@
       "timeEntry": "Time Entry",
       "title": "Legend",
       "undertime": "Undertime",
-      "workPeriod": "Work Period"
+      "workPeriod": "Work Period",
+      "workPeriodPending": "Pending Approval"
     },
     "split": {
       "confirm": "Split Work Period",
@@ -200,12 +210,6 @@
       "approved": "Approved",
       "pending": "Pending",
       "rejected": "Rejected"
-    },
-    "employeeSelector": {
-      "label": "View Calendar",
-      "placeholder": "Select team member...",
-      "myCalendar": "My Calendar",
-      "error": "Unable to load team members"
     }
   }
 }

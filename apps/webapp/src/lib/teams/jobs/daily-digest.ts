@@ -186,7 +186,7 @@ async function processTenantDigest(tenant: {
 /**
  * Build digest data for a specific manager
  */
-async function buildDigestDataForManager(
+export async function buildDigestDataForManager(
 	managerId: string,
 	organizationId: string,
 	timezone: string,

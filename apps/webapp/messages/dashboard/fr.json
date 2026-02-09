@@ -25,8 +25,6 @@
       "no-reports": "Pas encore de subordonnés directs",
       "no-reports-description": "Vous verrez les membres de votre équipe ici une fois assignés",
       "people-you-manage": "Personnes que vous gérez",
-      "reporting-to-you": "sous votre responsabilité",
-      "team-members": "{count} membres de l'équipe",
       "title": "Votre équipe",
       "view-all": "Voir tout",
       "view-all-members": "Voir tous les {count} membres de l'équipe"

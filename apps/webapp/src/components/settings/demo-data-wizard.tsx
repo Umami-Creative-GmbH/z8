@@ -20,7 +20,6 @@ import {
 	IconX,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import {
 	assignWorkCategoriesToPeriodsStepAction,
@@ -44,6 +43,7 @@ import type { DeleteNonAdminResult } from "@/lib/demo/delete-non-admin";
 import type { ClearDataResult, DemoDataResult } from "@/lib/demo/demo-data.service";
 import type { GenerateEmployeesResult } from "@/lib/demo/employee-generator";
 import { cn } from "@/lib/utils";
+import { useRouter } from "@/navigation";
 import {
 	AlertDialog,
 	AlertDialogAction,

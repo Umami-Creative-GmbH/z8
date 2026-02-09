@@ -10,7 +10,6 @@ import {
 	IconX,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -41,6 +40,7 @@ import {
 } from "@/components/ui/table";
 import type { ExportCategory } from "@/lib/export/types";
 import { type ExportRecord, formatFileSize } from "@/lib/export/utils";
+import { useRouter } from "@/navigation";
 
 interface ExportHistoryProps {
 	exports: ExportRecord[];

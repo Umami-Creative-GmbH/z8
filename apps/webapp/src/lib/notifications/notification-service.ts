@@ -10,9 +10,12 @@ import { notification, notificationPreference } from "@/db/schema";
 import { publishEventAsync } from "@/lib/events";
 import { createLogger } from "@/lib/logger";
 import { publishNotificationEvent } from "@/lib/valkey";
+import { isDiscordAvailable, sendDiscordNotification } from "./discord-channel";
 import { sendEmailNotification } from "./email-notifications";
 import { isPushAvailable, type PushPayload, sendPushToUser } from "./push-service";
-import { sendTeamsNotification, isTeamsAvailable } from "./teams-channel";
+import { isSlackAvailable, sendSlackNotification } from "./slack-channel";
+import { isTeamsAvailable, sendTeamsNotification } from "./teams-channel";
+import { isTelegramAvailable, sendTelegramNotification } from "./telegram-channel";
 import type {
 	CreateNotificationParams,
 	Notification,
@@ -90,6 +93,18 @@ export async function createNotification(
 		// Check Teams preference
 		const teamsPreference = preferences.find((p) => p.channel === "teams");
 		const teamsEnabled = !teamsPreference || teamsPreference.enabled;
+
+		// Check Telegram preference
+		const telegramPreference = preferences.find((p) => p.channel === "telegram");
+		const telegramEnabled = !telegramPreference || telegramPreference.enabled;
+
+		// Check Discord preference
+		const discordPreference = preferences.find((p) => p.channel === "discord");
+		const discordEnabled = !discordPreference || discordPreference.enabled;
+
+		// Check Slack preference
+		const slackPreference = preferences.find((p) => p.channel === "slack");
+		const slackEnabled = !slackPreference || slackPreference.enabled;
 
 		let created: Notification | null = null;
 
@@ -177,23 +192,64 @@ export async function createNotification(
 			});
 		}
 
+		// Check bot platform availability in parallel (async-parallel rule)
+		const [teamsAvailable, telegramAvailable, discordAvailable, slackAvailable] = await Promise.all(
+			[
+				teamsEnabled ? isTeamsAvailable(params.organizationId) : Promise.resolve(false),
+				telegramEnabled ? isTelegramAvailable(params.organizationId) : Promise.resolve(false),
+				discordEnabled ? isDiscordAvailable(params.organizationId) : Promise.resolve(false),
+				slackEnabled ? isSlackAvailable(params.organizationId) : Promise.resolve(false),
+			],
+		);
+
+		const botChannelPayload = {
+			userId: params.userId,
+			organizationId: params.organizationId,
+			type: params.type,
+			title: params.title,
+			message: params.message,
+			entityType: params.entityType,
+			entityId: params.entityId,
+			actionUrl: params.actionUrl,
+			metadata: params.metadata,
+		};
+
 		// Send Teams notification if enabled and available
-		if (teamsEnabled && (await isTeamsAvailable(params.organizationId))) {
-			// Fire and forget - don't await to avoid blocking
-			void sendTeamsNotification({
-				userId: params.userId,
-				organizationId: params.organizationId,
-				type: params.type,
-				title: params.title,
-				message: params.message,
-				entityType: params.entityType,
-				entityId: params.entityId,
-				actionUrl: params.actionUrl,
-				metadata: params.metadata,
-			}).catch((error) => {
+		if (teamsAvailable) {
+			void sendTeamsNotification(botChannelPayload).catch((error) => {
 				logger.error(
 					{ error, userId: params.userId, type: params.type },
 					"Failed to send Teams notification",
+				);
+			});
+		}
+
+		// Send Telegram notification if enabled and available
+		if (telegramAvailable) {
+			void sendTelegramNotification(botChannelPayload).catch((error) => {
+				logger.error(
+					{ error, userId: params.userId, type: params.type },
+					"Failed to send Telegram notification",
+				);
+			});
+		}
+
+		// Send Discord notification if enabled and available
+		if (discordAvailable) {
+			void sendDiscordNotification(botChannelPayload).catch((error) => {
+				logger.error(
+					{ error, userId: params.userId, type: params.type },
+					"Failed to send Discord notification",
+				);
+			});
+		}
+
+		// Send Slack notification if enabled and available
+		if (slackAvailable) {
+			void sendSlackNotification(botChannelPayload).catch((error) => {
+				logger.error(
+					{ error, userId: params.userId, type: params.type },
+					"Failed to send Slack notification",
 				);
 			});
 		}

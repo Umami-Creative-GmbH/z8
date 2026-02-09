@@ -3,7 +3,6 @@
 import { IconX } from "@tabler/icons-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
-import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { cancelAbsenceRequest } from "@/app/[locale]/(app)/absences/actions";
@@ -27,6 +26,7 @@ import {
 	formatDays,
 } from "@/lib/absences/date-utils";
 import type { AbsenceWithCategory, DayPeriod } from "@/lib/absences/types";
+import { useRouter } from "@/navigation";
 import { CategoryBadge } from "./category-badge";
 
 interface AbsenceEntriesTableProps {

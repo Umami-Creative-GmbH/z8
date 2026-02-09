@@ -1,7 +1,5 @@
 "use client";
 
-import { useState, useTransition, useEffect, useRef, useCallback } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
 import {
 	IconAlertTriangle,
 	IconBuilding,
@@ -12,7 +10,10 @@ import {
 	IconTrash,
 	IconUsers,
 } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
+import { useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -46,16 +47,18 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import type { PlatformOrganization } from "@/lib/effect/services/platform-admin.service";
+import { useRouter } from "@/navigation";
 import {
+	deleteOrganizationAction,
 	listOrganizationsAction,
 	suspendOrganizationAction,
 	unsuspendOrganizationAction,
-	deleteOrganizationAction,
 } from "./actions";
 
 const PAGE_SIZE = 20;
 
 export default function OrganizationsPage() {
+	const { t } = useTranslate();
 	const router = useRouter();
 	const searchParams = useSearchParams();
 
@@ -79,13 +82,13 @@ export default function OrganizationsPage() {
 	const [deleteConfirmName, setDeleteConfirmName] = useState("");
 
 	// Fetch organizations with explicit parameters to avoid race conditions
-	const fetchOrganizations = async (
-		searchVal = search,
-		statusVal = status,
-		pageVal = page,
-	) => {
+	const fetchOrganizations = async (searchVal = search, statusVal = status, pageVal = page) => {
 		setIsLoading(true);
-		const result = await listOrganizationsAction({ search: searchVal, status: statusVal }, pageVal, PAGE_SIZE);
+		const result = await listOrganizationsAction(
+			{ search: searchVal, status: statusVal },
+			pageVal,
+			PAGE_SIZE,
+		);
 		if (result.success) {
 			setOrganizations(result.data.data);
 			setTotal(result.data.total);
@@ -101,40 +104,43 @@ export default function OrganizationsPage() {
 	}, []);
 
 	// Debounced search with immediate status change
-	const handleFilterChange = useCallback((newSearch: string, newStatus: "all" | "active" | "suspended" | "deleted") => {
-		// Clear any pending search timeout
-		if (searchTimeoutRef.current) {
-			clearTimeout(searchTimeoutRef.current);
-		}
+	const handleFilterChange = useCallback(
+		(newSearch: string, newStatus: "all" | "active" | "suspended" | "deleted") => {
+			// Clear any pending search timeout
+			if (searchTimeoutRef.current) {
+				clearTimeout(searchTimeoutRef.current);
+			}
 
-		setSearch(newSearch);
+			setSearch(newSearch);
 
-		// If only status changed, fetch immediately
-		if (newStatus !== status) {
-			setStatus(newStatus);
-			setPage(1);
-			const params = new URLSearchParams();
-			if (newSearch) params.set("search", newSearch);
-			if (newStatus !== "all") params.set("status", newStatus);
-			router.push(`/admin/organizations?${params.toString()}`);
-			startTransition(() => {
-				fetchOrganizations(newSearch, newStatus, 1);
-			});
-			return;
-		}
+			// If only status changed, fetch immediately
+			if (newStatus !== status) {
+				setStatus(newStatus);
+				setPage(1);
+				const params = new URLSearchParams();
+				if (newSearch) params.set("search", newSearch);
+				if (newStatus !== "all") params.set("status", newStatus);
+				router.push(`/admin/organizations?${params.toString()}`);
+				startTransition(() => {
+					fetchOrganizations(newSearch, newStatus, 1);
+				});
+				return;
+			}
 
-		// Debounce search input (300ms)
-		searchTimeoutRef.current = setTimeout(() => {
-			setPage(1);
-			const params = new URLSearchParams();
-			if (newSearch) params.set("search", newSearch);
-			if (newStatus !== "all") params.set("status", newStatus);
-			router.push(`/admin/organizations?${params.toString()}`);
-			startTransition(() => {
-				fetchOrganizations(newSearch, newStatus, 1);
-			});
-		}, 300);
-	}, [status, router]);
+			// Debounce search input (300ms)
+			searchTimeoutRef.current = setTimeout(() => {
+				setPage(1);
+				const params = new URLSearchParams();
+				if (newSearch) params.set("search", newSearch);
+				if (newStatus !== "all") params.set("status", newStatus);
+				router.push(`/admin/organizations?${params.toString()}`);
+				startTransition(() => {
+					fetchOrganizations(newSearch, newStatus, 1);
+				});
+			}, 300);
+		},
+		[status, router],
+	);
 
 	// Cleanup timeout on unmount
 	useEffect(() => {
@@ -152,7 +158,7 @@ export default function OrganizationsPage() {
 		startTransition(async () => {
 			const result = await suspendOrganizationAction(suspendDialogOrg.id, suspendReason);
 			if (result.success) {
-				toast.success(`Organization "${suspendDialogOrg.name}" has been suspended`);
+				toast.success(t("admin.organizations.toasts.suspended", "Organization \"{name}\" has been suspended", { name: suspendDialogOrg.name }));
 				setSuspendDialogOrg(null);
 				setSuspendReason("");
 				fetchOrganizations();
@@ -167,7 +173,7 @@ export default function OrganizationsPage() {
 		startTransition(async () => {
 			const result = await unsuspendOrganizationAction(org.id);
 			if (result.success) {
-				toast.success(`Organization "${org.name}" has been unsuspended`);
+				toast.success(t("admin.organizations.toasts.unsuspended", "Organization \"{name}\" has been unsuspended", { name: org.name }));
 				fetchOrganizations();
 			} else {
 				toast.error(result.error);
@@ -188,8 +194,8 @@ export default function OrganizationsPage() {
 			if (result.success) {
 				toast.success(
 					deleteImmediate
-						? `Organization "${deleteDialogOrg.name}" has been scheduled for immediate deletion`
-						: `Organization "${deleteDialogOrg.name}" has been scheduled for deletion in 5 days`,
+						? t("admin.organizations.toasts.deletedImmediate", "Organization \"{name}\" has been scheduled for immediate deletion", { name: deleteDialogOrg.name })
+						: t("admin.organizations.toasts.deletedGracePeriod", "Organization \"{name}\" has been scheduled for deletion in 5 days", { name: deleteDialogOrg.name }),
 				);
 				setDeleteDialogOrg(null);
 				setDeleteImmediate(false);
@@ -208,18 +214,23 @@ export default function OrganizationsPage() {
 		<div className="space-y-8">
 			{/* Page Header */}
 			<div className="space-y-1">
-				<h1 className="text-2xl font-semibold tracking-tight">Organization Management</h1>
+				<h1 className="text-2xl font-semibold tracking-tight">
+					{t("admin.organizations.title", "Organization Management")}
+				</h1>
 				<p className="text-muted-foreground">
-					View and manage all organizations on the platform
+					{t("admin.organizations.description", "View and manage all organizations on the platform")}
 				</p>
 			</div>
 
 			{/* Filters */}
 			<div className="flex flex-col gap-4 sm:flex-row">
 				<div className="relative flex-1">
-					<IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" aria-hidden="true" />
+					<IconSearch
+						className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground"
+						aria-hidden="true"
+					/>
 					<Input
-						placeholder="Search by name or slug…"
+						placeholder={t("admin.organizations.searchPlaceholder", "Search by name or slug…")}
 						name="search"
 						autoComplete="off"
 						value={search}
@@ -229,16 +240,18 @@ export default function OrganizationsPage() {
 				</div>
 				<Select
 					value={status}
-					onValueChange={(v) => handleFilterChange(search, v as "all" | "active" | "suspended" | "deleted")}
+					onValueChange={(v) =>
+						handleFilterChange(search, v as "all" | "active" | "suspended" | "deleted")
+					}
 				>
 					<SelectTrigger className="w-full sm:w-40">
-						<SelectValue placeholder="Status" />
+						<SelectValue placeholder={t("common.status", "Status")} />
 					</SelectTrigger>
 					<SelectContent>
-						<SelectItem value="all">All</SelectItem>
-						<SelectItem value="active">Active</SelectItem>
-						<SelectItem value="suspended">Suspended</SelectItem>
-						<SelectItem value="deleted">Deleted</SelectItem>
+						<SelectItem value="all">{t("admin.organizations.filters.all", "All")}</SelectItem>
+						<SelectItem value="active">{t("common.active", "Active")}</SelectItem>
+						<SelectItem value="suspended">{t("admin.organizations.filters.suspended", "Suspended")}</SelectItem>
+						<SelectItem value="deleted">{t("admin.organizations.filters.deleted", "Deleted")}</SelectItem>
 					</SelectContent>
 				</Select>
 			</div>
@@ -256,19 +269,19 @@ export default function OrganizationsPage() {
 						<Table>
 							<TableHeader>
 								<TableRow>
-									<TableHead>Organization</TableHead>
-									<TableHead>Employees</TableHead>
-									<TableHead>Members</TableHead>
-									<TableHead>Status</TableHead>
-									<TableHead>Created</TableHead>
-									<TableHead className="text-right">Actions</TableHead>
+									<TableHead>{t("admin.organizations.table.organization", "Organization")}</TableHead>
+									<TableHead>{t("admin.organizations.table.employees", "Employees")}</TableHead>
+									<TableHead>{t("admin.organizations.table.members", "Members")}</TableHead>
+									<TableHead>{t("common.status", "Status")}</TableHead>
+									<TableHead>{t("admin.organizations.table.created", "Created")}</TableHead>
+									<TableHead className="text-right">{t("common.actions", "Actions")}</TableHead>
 								</TableRow>
 							</TableHeader>
 							<TableBody>
 								{organizations.length === 0 ? (
 									<TableRow>
 										<TableCell colSpan={6} className="text-center text-muted-foreground">
-											No organizations found
+											{t("admin.organizations.table.noOrganizationsFound", "No organizations found")}
 										</TableCell>
 									</TableRow>
 								) : (
@@ -291,9 +304,7 @@ export default function OrganizationsPage() {
 													</div>
 													<div>
 														<div className="font-medium">{org.name}</div>
-														<div className="text-sm text-muted-foreground">
-															{org.slug}
-														</div>
+														<div className="text-sm text-muted-foreground">{org.slug}</div>
 													</div>
 												</div>
 											</TableCell>
@@ -309,7 +320,7 @@ export default function OrganizationsPage() {
 													<div>
 														<Badge variant="destructive">
 															<IconTrash className="size-3 mr-1" aria-hidden="true" />
-															Deleted
+															{t("admin.organizations.badges.deleted", "Deleted")}
 														</Badge>
 														<div className="text-xs text-muted-foreground mt-1">
 															{DateTime.fromJSDate(org.deletedAt).toRelative()}
@@ -319,10 +330,13 @@ export default function OrganizationsPage() {
 													<div>
 														<Badge variant="outline" className="border-yellow-500 text-yellow-700">
 															<IconAlertTriangle className="size-3 mr-1" aria-hidden="true" />
-															Suspended
+															{t("admin.organizations.badges.suspended", "Suspended")}
 														</Badge>
 														{org.suspendedReason && (
-															<div className="text-xs text-muted-foreground mt-1 max-w-32 truncate" title={org.suspendedReason}>
+															<div
+																className="text-xs text-muted-foreground mt-1 max-w-32 truncate"
+																title={org.suspendedReason}
+															>
 																{org.suspendedReason}
 															</div>
 														)}
@@ -330,7 +344,7 @@ export default function OrganizationsPage() {
 												) : (
 													<Badge variant="outline" className="border-green-500 text-green-700">
 														<IconCheck className="size-3 mr-1" aria-hidden="true" />
-														Active
+														{t("common.active", "Active")}
 													</Badge>
 												)}
 											</TableCell>
@@ -347,7 +361,7 @@ export default function OrganizationsPage() {
 																	size="sm"
 																	onClick={() => handleUnsuspend(org)}
 																	disabled={isPending}
-																	aria-label="Unsuspend organization"
+																	aria-label={t("admin.organizations.toasts.unsuspended", "Organization \"{name}\" has been unsuspended", { name: org.name })}
 																>
 																	<IconPlayerPlay className="size-4" aria-hidden="true" />
 																</Button>
@@ -356,7 +370,7 @@ export default function OrganizationsPage() {
 																	variant="ghost"
 																	size="sm"
 																	onClick={() => setSuspendDialogOrg(org)}
-																	aria-label="Suspend organization"
+																	aria-label={t("admin.organizations.suspendDialog.title", "Suspend Organization")}
 																>
 																	<IconPlayerPause className="size-4" aria-hidden="true" />
 																</Button>
@@ -365,7 +379,7 @@ export default function OrganizationsPage() {
 																variant="ghost"
 																size="sm"
 																onClick={() => setDeleteDialogOrg(org)}
-																aria-label="Delete organization"
+																aria-label={t("admin.organizations.deleteDialog.title", "Delete Organization")}
 															>
 																<IconTrash className="size-4" aria-hidden="true" />
 															</Button>
@@ -379,7 +393,6 @@ export default function OrganizationsPage() {
 							</TableBody>
 						</Table>
 					)}
-
 				</CardContent>
 			</Card>
 
@@ -387,9 +400,11 @@ export default function OrganizationsPage() {
 			{totalPages > 1 && (
 				<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 					<p className="text-sm text-muted-foreground">
-						Showing <span className="font-medium text-foreground">{(page - 1) * PAGE_SIZE + 1}</span> to{" "}
-						<span className="font-medium text-foreground">{Math.min(page * PAGE_SIZE, total)}</span> of{" "}
-						<span className="font-medium text-foreground">{total}</span> organizations
+						{t("admin.organizations.pagination.showing", "Showing {from} to {to} of {total} organizations", {
+							from: (page - 1) * PAGE_SIZE + 1,
+							to: Math.min(page * PAGE_SIZE, total),
+							total,
+						})}
 					</p>
 					<div className="flex gap-2">
 						<Button
@@ -402,7 +417,7 @@ export default function OrganizationsPage() {
 							}}
 							disabled={page === 1}
 						>
-							Previous
+							{t("common.previous", "Previous")}
 						</Button>
 						<Button
 							variant="outline"
@@ -414,7 +429,7 @@ export default function OrganizationsPage() {
 							}}
 							disabled={page >= totalPages}
 						>
-							Next
+							{t("common.next", "Next")}
 						</Button>
 					</div>
 				</div>
@@ -424,18 +439,17 @@ export default function OrganizationsPage() {
 			<Dialog open={!!suspendDialogOrg} onOpenChange={() => setSuspendDialogOrg(null)}>
 				<DialogContent>
 					<DialogHeader>
-						<DialogTitle>Suspend Organization</DialogTitle>
+						<DialogTitle>{t("admin.organizations.suspendDialog.title", "Suspend Organization")}</DialogTitle>
 						<DialogDescription>
-							Suspend "{suspendDialogOrg?.name}" and put it in read-only mode.
-							Members will be able to view data but not create or edit anything.
+							{t("admin.organizations.suspendDialog.description", "Suspend \"{name}\" and put it in read-only mode. Members will be able to view data but not create or edit anything.", { name: suspendDialogOrg?.name ?? "" })}
 						</DialogDescription>
 					</DialogHeader>
 					<div className="space-y-4 py-4">
 						<div className="space-y-2">
-							<Label htmlFor="suspendReason">Reason</Label>
+							<Label htmlFor="suspendReason">{t("admin.organizations.suspendDialog.reason", "Reason")}</Label>
 							<Textarea
 								id="suspendReason"
-								placeholder="Enter the reason for suspending this organization…"
+								placeholder={t("admin.organizations.suspendDialog.reasonPlaceholder", "Enter the reason for suspending this organization…")}
 								value={suspendReason}
 								onChange={(e) => setSuspendReason(e.target.value)}
 							/>
@@ -443,32 +457,34 @@ export default function OrganizationsPage() {
 					</div>
 					<DialogFooter>
 						<Button variant="outline" onClick={() => setSuspendDialogOrg(null)}>
-							Cancel
+							{t("common.cancel", "Cancel")}
 						</Button>
 						<Button
 							variant="default"
 							onClick={handleSuspend}
 							disabled={!suspendReason || isPending}
 						>
-							Suspend Organization
+							{t("admin.organizations.suspendDialog.confirmButton", "Suspend Organization")}
 						</Button>
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>
 
 			{/* Delete Dialog */}
-			<Dialog open={!!deleteDialogOrg} onOpenChange={() => {
-				setDeleteDialogOrg(null);
-				setDeleteImmediate(false);
-				setDeleteSkipNotification(false);
-				setDeleteConfirmName("");
-			}}>
+			<Dialog
+				open={!!deleteDialogOrg}
+				onOpenChange={() => {
+					setDeleteDialogOrg(null);
+					setDeleteImmediate(false);
+					setDeleteSkipNotification(false);
+					setDeleteConfirmName("");
+				}}
+			>
 				<DialogContent>
 					<DialogHeader>
-						<DialogTitle>Delete Organization</DialogTitle>
+						<DialogTitle>{t("admin.organizations.deleteDialog.title", "Delete Organization")}</DialogTitle>
 						<DialogDescription>
-							This action will delete "{deleteDialogOrg?.name}" and all associated data.
-							This cannot be undone.
+							{t("admin.organizations.deleteDialog.description", "This action will delete \"{name}\" and all associated data. This cannot be undone.", { name: deleteDialogOrg?.name ?? "" })}
 						</DialogDescription>
 					</DialogHeader>
 					<div className="space-y-4 py-4">
@@ -479,7 +495,7 @@ export default function OrganizationsPage() {
 								onCheckedChange={(checked) => setDeleteImmediate(checked as boolean)}
 							/>
 							<Label htmlFor="immediate" className="text-sm font-normal">
-								Delete immediately (skip 5-day grace period)
+								{t("admin.organizations.deleteDialog.immediateDelete", "Delete immediately (skip 5-day grace period)")}
 							</Label>
 						</div>
 						<div className="flex items-center space-x-2">
@@ -489,31 +505,31 @@ export default function OrganizationsPage() {
 								onCheckedChange={(checked) => setDeleteSkipNotification(checked as boolean)}
 							/>
 							<Label htmlFor="skipNotification" className="text-sm font-normal">
-								Skip deletion notification to org members
+								{t("admin.organizations.deleteDialog.skipNotification", "Skip deletion notification to org members")}
 							</Label>
 						</div>
 						<div className="space-y-2">
 							<Label htmlFor="confirmName">
-								Type "{deleteDialogOrg?.name}" to confirm
+								{t("admin.organizations.deleteDialog.confirmLabel", "Type \"{name}\" to confirm", { name: deleteDialogOrg?.name ?? "" })}
 							</Label>
 							<Input
 								id="confirmName"
 								value={deleteConfirmName}
 								onChange={(e) => setDeleteConfirmName(e.target.value)}
-								placeholder="Organization name"
+								placeholder={t("admin.organizations.deleteDialog.confirmPlaceholder", "Organization name")}
 							/>
 						</div>
 					</div>
 					<DialogFooter>
 						<Button variant="outline" onClick={() => setDeleteDialogOrg(null)}>
-							Cancel
+							{t("common.cancel", "Cancel")}
 						</Button>
 						<Button
 							variant="destructive"
 							onClick={handleDelete}
 							disabled={deleteConfirmName !== deleteDialogOrg?.name || isPending}
 						>
-							Delete Organization
+							{t("admin.organizations.deleteDialog.confirmButton", "Delete Organization")}
 						</Button>
 					</DialogFooter>
 				</DialogContent>

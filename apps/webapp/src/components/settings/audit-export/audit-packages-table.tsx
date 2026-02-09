@@ -11,12 +11,11 @@ import {
 	IconX,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
-	verifyAuditPackageAction,
 	type AuditPackageInfo,
+	verifyAuditPackageAction,
 } from "@/app/[locale]/(app)/settings/audit-export/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -37,6 +36,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import type { VerificationResult } from "@/lib/audit-export";
+import { useRouter } from "@/navigation";
 
 function formatFileSize(bytes: number): string {
 	if (bytes < 1024) return `${bytes} B`;
@@ -66,7 +66,9 @@ export function AuditPackagesTable({ organizationId, packages }: AuditPackagesTa
 			if (result.success) {
 				setVerificationResult({ packageId, result: result.data });
 			} else {
-				toast.error(result.error || t("settings.auditExport.packages.verifyError", "Verification failed"));
+				toast.error(
+					result.error || t("settings.auditExport.packages.verifyError", "Verification failed"),
+				);
 			}
 		} catch (error) {
 			toast.error(t("common.unexpectedError", "An unexpected error occurred"));
@@ -110,7 +112,10 @@ export function AuditPackagesTable({ organizationId, packages }: AuditPackagesTa
 							{t("settings.auditExport.packages.title", "Audit Packages")}
 						</CardTitle>
 						<CardDescription>
-							{t("settings.auditExport.packages.description", "Cryptographically hardened export packages")}
+							{t(
+								"settings.auditExport.packages.description",
+								"Cryptographically hardened export packages",
+							)}
 						</CardDescription>
 					</div>
 					<Button variant="outline" size="sm" onClick={() => router.refresh()}>
@@ -127,7 +132,9 @@ export function AuditPackagesTable({ organizationId, packages }: AuditPackagesTa
 								<TableHead>{t("settings.auditExport.packages.colStatus", "Status")}</TableHead>
 								<TableHead>{t("settings.auditExport.packages.colFiles", "Files")}</TableHead>
 								<TableHead>{t("settings.auditExport.packages.colSize", "Size")}</TableHead>
-								<TableHead>{t("settings.auditExport.packages.colRetention", "Retention")}</TableHead>
+								<TableHead>
+									{t("settings.auditExport.packages.colRetention", "Retention")}
+								</TableHead>
 								<TableHead className="text-right">
 									{t("settings.auditExport.packages.colActions", "Actions")}
 								</TableHead>
