@@ -24,6 +24,8 @@ export * from "./compliance-finding";
 // Coverage targets (minimum staffing requirements)
 export * from "./coverage";
 export * from "./cron-job";
+// Custom roles (configurable permissions)
+export * from "./custom-role";
 export * from "./customer";
 // Discord integration
 export * from "./discord-integration";

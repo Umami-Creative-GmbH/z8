@@ -32,6 +32,7 @@ function createPrincipal(overrides: Partial<PrincipalContext> = {}): PrincipalCo
 		employee: null,
 		permissions: { orgWide: null, byTeamId: new Map() },
 		managedEmployeeIds: [],
+		customRoles: [],
 		...overrides,
 	};
 }
@@ -513,5 +514,141 @@ describe("Tenant Isolation", () => {
 		// Without active org, no abilities for org resources
 		expect(ability.can("manage", "Team")).toBe(false);
 		expect(ability.can("manage", "OrgSettings")).toBe(false);
+	});
+});
+
+// ============================================
+// CUSTOM ROLE TESTS
+// ============================================
+
+describe("Custom Roles", () => {
+	it("employee with custom role gets additional permissions", () => {
+		const principal = createPrincipal({
+			employee: {
+				id: EMPLOYEE_1,
+				organizationId: ORG_1,
+				role: "employee",
+				teamId: TEAM_1,
+			},
+			customRoles: [
+				{
+					roleId: "role-1",
+					roleName: "Team Lead",
+					baseTier: "employee",
+					permissions: [
+						{ action: "approve", subject: "Approval" },
+						{ action: "manage", subject: "Report" },
+					],
+				},
+			],
+		});
+		const ability = defineAbilityFor(principal);
+
+		// Custom role permissions granted
+		expect(ability.can("approve", "Approval")).toBe(true);
+		expect(ability.can("manage", "Report")).toBe(true);
+
+		// Base employee permissions still work
+		expect(ability.can("read", "Employee")).toBe(true);
+		expect(ability.can("manage", "TimeEntry")).toBe(true);
+
+		// Permissions not granted remain denied
+		expect(ability.can("manage", "OrgSettings")).toBe(false);
+	});
+
+	it("multiple custom roles merge additively", () => {
+		const principal = createPrincipal({
+			employee: {
+				id: EMPLOYEE_1,
+				organizationId: ORG_1,
+				role: "employee",
+				teamId: TEAM_1,
+			},
+			customRoles: [
+				{
+					roleId: "role-1",
+					roleName: "Approver",
+					baseTier: "employee",
+					permissions: [
+						{ action: "approve", subject: "Approval" },
+						{ action: "reject", subject: "Approval" },
+					],
+				},
+				{
+					roleId: "role-2",
+					roleName: "Reporter",
+					baseTier: "employee",
+					permissions: [
+						{ action: "read", subject: "Report" },
+						{ action: "generate", subject: "Report" },
+					],
+				},
+			],
+		});
+		const ability = defineAbilityFor(principal);
+
+		// Both roles' permissions are granted
+		expect(ability.can("approve", "Approval")).toBe(true);
+		expect(ability.can("reject", "Approval")).toBe(true);
+		expect(ability.can("read", "Report")).toBe(true);
+		expect(ability.can("generate", "Report")).toBe(true);
+	});
+
+	it("base tier inheritance still works alongside custom roles", () => {
+		const principal = createPrincipal({
+			orgMembership: {
+				organizationId: ORG_1,
+				role: "member",
+				status: "active",
+			},
+			employee: {
+				id: EMPLOYEE_1,
+				organizationId: ORG_1,
+				role: "manager",
+				teamId: TEAM_1,
+			},
+			managedEmployeeIds: [EMPLOYEE_2],
+			customRoles: [
+				{
+					roleId: "role-1",
+					roleName: "Export Manager",
+					baseTier: "manager",
+					permissions: [
+						{ action: "manage", subject: "Export" },
+					],
+				},
+			],
+		});
+		const ability = defineAbilityFor(principal);
+
+		// Manager base tier
+		expect(ability.can("approve", "Approval")).toBe(true);
+		expect(ability.can("read", "Report")).toBe(true);
+		expect(ability.can("read", "Team")).toBe(true);
+
+		// Custom role addition
+		expect(ability.can("manage", "Export")).toBe(true);
+	});
+
+	it("empty customRoles array does not change behavior", () => {
+		const principal = createPrincipal({
+			employee: {
+				id: EMPLOYEE_1,
+				organizationId: ORG_1,
+				role: "employee",
+				teamId: TEAM_1,
+			},
+			customRoles: [],
+		});
+		const ability = defineAbilityFor(principal);
+
+		// Standard employee permissions
+		expect(ability.can("read", "Employee")).toBe(true);
+		expect(ability.can("manage", "TimeEntry")).toBe(true);
+		expect(ability.can("create", "LeaveRequest")).toBe(true);
+
+		// No extra permissions
+		expect(ability.can("approve", "Approval")).toBe(false);
+		expect(ability.can("manage", "Report")).toBe(false);
 	});
 });

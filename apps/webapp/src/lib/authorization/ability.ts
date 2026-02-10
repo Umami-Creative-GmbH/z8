@@ -201,6 +201,15 @@ export function defineAbilityFor(principal: PrincipalContext): AppAbility {
 		for (const [_, flags] of permissions.byTeamId) {
 			applyPermissionFlags(can, flags);
 		}
+
+		// ----------------------------------------
+		// 5. Custom Role Grants (additive)
+		// ----------------------------------------
+		for (const customRole of principal.customRoles) {
+			for (const perm of customRole.permissions) {
+				can(perm.action, perm.subject);
+			}
+		}
 	}
 
 	return build();

@@ -22,6 +22,13 @@ import { changePolicy, changePolicyAssignment } from "./change-policy";
 import { complianceException } from "./compliance";
 import { complianceConfig, complianceFinding } from "./compliance-finding";
 import { coverageRule, coverageSettings } from "./coverage";
+// Custom roles
+import {
+	customRole,
+	customRoleAuditLog,
+	customRolePermission,
+	employeeCustomRole,
+} from "./custom-role";
 import { customer } from "./customer";
 import {
 	organizationBranding,
@@ -200,6 +207,9 @@ export const organizationRelations = relations(
 		// Coverage
 		coverageRules: many(coverageRule),
 		coverageSettings: one(coverageSettings),
+		// Custom roles
+		customRoles: many(customRole),
+		customRoleAuditLogs: many(customRoleAuditLog),
 	}),
 );
 
@@ -409,6 +419,8 @@ export const employeeRelations = relations(employee, ({ one, many }) => ({
 	// Skills & qualifications
 	skills: many(employeeSkill),
 	skillOverrides: many(skillRequirementOverride),
+	// Custom roles
+	employeeCustomRoles: many(employeeCustomRole),
 }));
 
 // Employee Rate History
@@ -2659,6 +2671,79 @@ export const discordEscalationRelations = relations(
 			fields: [discordEscalation.escalatedToApproverId],
 			references: [employee.id],
 			relationName: "discord_escalation_escalated_to",
+		}),
+	}),
+);
+
+// ============================================
+// CUSTOM ROLE RELATIONS
+// ============================================
+
+export const customRoleRelations = relations(
+	customRole,
+	({ one, many }) => ({
+		organization: one(organization, {
+			fields: [customRole.organizationId],
+			references: [organization.id],
+		}),
+		permissions: many(customRolePermission),
+		employeeAssignments: many(employeeCustomRole),
+		auditLogs: many(customRoleAuditLog),
+		creator: one(user, {
+			fields: [customRole.createdBy],
+			references: [user.id],
+			relationName: "custom_role_creator",
+		}),
+		updater: one(user, {
+			fields: [customRole.updatedBy],
+			references: [user.id],
+			relationName: "custom_role_updater",
+		}),
+	}),
+);
+
+export const customRolePermissionRelations = relations(
+	customRolePermission,
+	({ one }) => ({
+		customRole: one(customRole, {
+			fields: [customRolePermission.customRoleId],
+			references: [customRole.id],
+		}),
+	}),
+);
+
+export const employeeCustomRoleRelations = relations(
+	employeeCustomRole,
+	({ one }) => ({
+		employee: one(employee, {
+			fields: [employeeCustomRole.employeeId],
+			references: [employee.id],
+		}),
+		customRole: one(customRole, {
+			fields: [employeeCustomRole.customRoleId],
+			references: [customRole.id],
+		}),
+		assigner: one(user, {
+			fields: [employeeCustomRole.assignedBy],
+			references: [user.id],
+		}),
+	}),
+);
+
+export const customRoleAuditLogRelations = relations(
+	customRoleAuditLog,
+	({ one }) => ({
+		organization: one(organization, {
+			fields: [customRoleAuditLog.organizationId],
+			references: [organization.id],
+		}),
+		customRole: one(customRole, {
+			fields: [customRoleAuditLog.customRoleId],
+			references: [customRole.id],
+		}),
+		creator: one(user, {
+			fields: [customRoleAuditLog.createdBy],
+			references: [user.id],
 		}),
 	}),
 );
