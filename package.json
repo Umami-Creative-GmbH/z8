@@ -48,7 +48,7 @@
 		"shadcn": "^3.8.4",
 		"turbo": "^2.8.3"
 	},
-	"packageManager": "pnpm@10.29.1",
+	"packageManager": "pnpm@10.29.2",
 	"overrides": {
 		"@types/react": "19.2.8",
 		"@types/react-dom": "19.2.3",
