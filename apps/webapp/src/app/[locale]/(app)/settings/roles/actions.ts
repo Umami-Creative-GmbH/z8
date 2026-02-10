@@ -251,10 +251,10 @@ export async function getEmployeeCustomRoles(
 	employeeId: string,
 ): Promise<ServerActionResult<CustomRoleWithPermissions[]>> {
 	const effect = Effect.gen(function* (_) {
-		yield* _(getAdminEmployee());
+		const { currentEmployee } = yield* _(getAdminEmployee());
 		const customRoleService = yield* _(CustomRoleService);
 
-		return yield* _(customRoleService.getEmployeeRoles(employeeId));
+		return yield* _(customRoleService.getEmployeeRoles(employeeId, currentEmployee.organizationId));
 	}).pipe(
 		Effect.catchAll((error) => Effect.fail(error as AnyAppError)),
 		Effect.provide(AppLayer),
