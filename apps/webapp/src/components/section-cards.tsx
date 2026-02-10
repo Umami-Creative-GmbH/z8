@@ -69,6 +69,7 @@ export function SectionCards() {
 	}
 
 	return (
+		<div data-tour="dashboard-widgets">
 		<WidgetVisibilityProvider>
 			<SortableWidgetGrid widgetOrder={widgetOrder} onReorder={onReorder}>
 				{widgetOrder.map((widgetId) => {
@@ -78,5 +79,6 @@ export function SectionCards() {
 				})}
 			</SortableWidgetGrid>
 		</WidgetVisibilityProvider>
+		</div>
 	);
 }

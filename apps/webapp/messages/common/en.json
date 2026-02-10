@@ -162,6 +162,57 @@
     "team-label": "Team",
     "time-tracking": "Time Tracking"
   },
+  "tour": {
+    "progress": "{{current}} of {{total}}",
+    "sidebar": {
+      "title": "Navigation",
+      "description": "This is your main navigation. Access all features from here — time tracking, calendar, absences, and more."
+    },
+    "dashboard": {
+      "title": "Dashboard Widgets",
+      "description": "Your personalized dashboard. Drag and drop widgets to rearrange them, and toggle visibility to focus on what matters most."
+    },
+    "timeClock": {
+      "title": "Time Clock",
+      "description": "Clock in and out with a single click. Your current work session and today\u2019s total hours are shown here."
+    },
+    "timeTracking": {
+      "title": "Time Tracking",
+      "description": "View and manage your time entries. Add manual entries, edit existing ones, and see your daily and weekly totals."
+    },
+    "calendar": {
+      "title": "Calendar",
+      "description": "See your work schedule, absences, and team events at a glance in the calendar view."
+    },
+    "absences": {
+      "title": "Absences",
+      "description": "View your absence history, check remaining vacation days, and track pending requests."
+    },
+    "requestAbsence": {
+      "title": "Request Absence",
+      "description": "Quickly request time off — vacation, sick leave, or other absence types. Your manager will be notified automatically."
+    },
+    "reports": {
+      "title": "Reports",
+      "description": "Generate reports for your working hours, overtime, and absences. Export data for your records."
+    },
+    "notifications": {
+      "title": "Notifications",
+      "description": "Stay up to date with approval updates, team changes, and important reminders."
+    },
+    "teamSection": {
+      "title": "Team Management",
+      "description": "As a manager, oversee your team\u2019s schedules, time entries, and attendance from this section."
+    },
+    "approvals": {
+      "title": "Approvals",
+      "description": "Review and approve absence requests, time corrections, and other pending items from your team."
+    },
+    "settings": {
+      "title": "Settings",
+      "description": "Configure organization settings, manage holidays, set up work schedules, and customize your workspace."
+    }
+  },
   "table": {
     "clearFilters": "Clear filters",
     "clearSort": "Clear sort",
