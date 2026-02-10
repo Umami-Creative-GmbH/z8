@@ -55,14 +55,18 @@ export function SiteHeader() {
 				<Separator className="mx-2 data-[orientation=vertical]:h-4" orientation="vertical" />
 				<h1 className="font-medium text-base">{t(titleKey, defaultTitle)}</h1>
 				<div className="ml-auto flex items-center gap-2">
-					<Button size="sm" variant="outline">
+					<Button size="sm" variant="outline" data-tour="request-absence">
 						<IconPlus className="size-4" />
 						<span className="hidden sm:inline">
 							{t("header.request-absence", "Request Absence")}
 						</span>
 					</Button>
-					<NotificationBell />
-					<TimeClockPopover />
+					<div data-tour="notification-bell">
+						<NotificationBell />
+					</div>
+					<div data-tour="time-clock">
+						<TimeClockPopover />
+					</div>
 				</div>
 			</div>
 		</header>

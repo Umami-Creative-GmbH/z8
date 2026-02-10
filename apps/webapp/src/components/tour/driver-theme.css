@@ -1,0 +1,92 @@
+.driver-popover {
+  background-color: hsl(var(--popover)) !important;
+  color: hsl(var(--popover-foreground)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  border-radius: var(--radius) !important;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1) !important;
+  max-width: 340px !important;
+  padding: 1rem !important;
+}
+
+.driver-popover-title {
+  font-size: 0.9375rem !important;
+  font-weight: 600 !important;
+  color: hsl(var(--popover-foreground)) !important;
+  margin-bottom: 0.375rem !important;
+}
+
+.driver-popover-description {
+  font-size: 0.8125rem !important;
+  color: hsl(var(--muted-foreground)) !important;
+  line-height: 1.5 !important;
+  margin-bottom: 0 !important;
+}
+
+.driver-popover-progress-text {
+  font-size: 0.75rem !important;
+  color: hsl(var(--muted-foreground)) !important;
+}
+
+.driver-popover-footer {
+  margin-top: 0.75rem !important;
+  gap: 0.5rem !important;
+}
+
+.driver-popover-footer button {
+  font-size: 0.8125rem !important;
+  font-weight: 500 !important;
+  border-radius: calc(var(--radius) - 2px) !important;
+  padding: 0.375rem 0.875rem !important;
+  cursor: pointer !important;
+  transition: background-color 0.15s, color 0.15s !important;
+  outline: none !important;
+}
+
+.driver-popover-footer button:focus-visible {
+  outline: none !important;
+  box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--ring)) !important;
+}
+
+.driver-popover-prev-btn {
+  background-color: hsl(var(--secondary)) !important;
+  color: hsl(var(--secondary-foreground)) !important;
+  border: none !important;
+}
+
+.driver-popover-prev-btn:hover {
+  background-color: hsl(var(--secondary) / 0.8) !important;
+}
+
+.driver-popover-next-btn,
+.driver-popover-close-btn {
+  background-color: hsl(var(--primary)) !important;
+  color: hsl(var(--primary-foreground)) !important;
+  border: none !important;
+  text-shadow: none !important;
+}
+
+.driver-popover-next-btn:hover,
+.driver-popover-close-btn:hover {
+  background-color: hsl(var(--primary) / 0.9) !important;
+}
+
+.driver-popover-arrow-side-left .driver-popover-arrow,
+.driver-popover-arrow-side-right .driver-popover-arrow,
+.driver-popover-arrow-side-top .driver-popover-arrow,
+.driver-popover-arrow-side-bottom .driver-popover-arrow {
+  border-color: hsl(var(--popover)) !important;
+}
+
+.driver-overlay {
+  background-color: rgb(0 0 0 / 0.5) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .driver-popover-footer button {
+    transition: none !important;
+  }
+
+  .driver-popover {
+    transition: none !important;
+  }
+}

@@ -50,26 +50,31 @@ export function AppSidebar({
 			title: t("nav.dashboard", "Dashboard"),
 			url: "/",
 			icon: IconDashboard,
+			dataTour: "nav-dashboard",
 		},
 		{
 			title: t("nav.time-tracking", "Time Tracking"),
 			url: "/time-tracking",
 			icon: IconClock,
+			dataTour: "nav-time-tracking",
 		},
 		{
 			title: t("nav.calendar", "Calendar"),
 			url: "/calendar",
 			icon: IconCalendarEvent,
+			dataTour: "nav-calendar",
 		},
 		{
 			title: t("nav.absences", "Absences"),
 			url: "/absences",
 			icon: IconBeach,
+			dataTour: "nav-absences",
 		},
 		{
 			title: t("nav.reports", "Reports"),
 			url: "/reports",
 			icon: IconReport,
+			dataTour: "nav-reports",
 		},
 	];
 
@@ -94,6 +99,7 @@ export function AppSidebar({
 			title: t("nav.approvals", "Approvals"),
 			url: "/approvals",
 			icon: IconClipboardCheck,
+			dataTour: "nav-approvals",
 		},
 	];
 
@@ -102,6 +108,7 @@ export function AppSidebar({
 			title: t("nav.settings", "Settings"),
 			url: "/settings",
 			icon: IconSettings,
+			dataTour: "nav-settings",
 		},
 		{
 			title: t("nav.get-help", "Get Help"),
@@ -111,7 +118,7 @@ export function AppSidebar({
 	];
 
 	return (
-		<Sidebar collapsible="offcanvas" {...props}>
+		<Sidebar collapsible="offcanvas" data-tour="sidebar" {...props}>
 			<SidebarHeader>
 				<OrganizationSwitcher
 					organizations={organizations}

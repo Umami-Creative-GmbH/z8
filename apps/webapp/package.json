@@ -106,6 +106,7 @@
 		"cron-parser": "^5.5.0",
 		"date-holidays": "^3.26.8",
 		"dotenv": "^17.2.4",
+		"driver.js": "^1.4.0",
 		"drizzle-orm": "^0.45.1",
 		"effect": "^3.19.16",
 		"embla-carousel-react": "^8.6.0",

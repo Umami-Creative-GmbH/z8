@@ -132,6 +132,57 @@
     "team-label": "Team",
     "time-tracking": "Zeiterfassung"
   },
+  "tour": {
+    "progress": "{{current}} von {{total}}",
+    "sidebar": {
+      "title": "Navigation",
+      "description": "Dies ist Ihre Hauptnavigation. Greifen Sie von hier auf alle Funktionen zu — Zeiterfassung, Kalender, Abwesenheiten und mehr."
+    },
+    "dashboard": {
+      "title": "Dashboard-Widgets",
+      "description": "Ihr personalisiertes Dashboard. Verschieben Sie Widgets per Drag & Drop und blenden Sie sie ein oder aus, um sich auf das Wesentliche zu konzentrieren."
+    },
+    "timeClock": {
+      "title": "Stempeluhr",
+      "description": "Stempeln Sie mit einem Klick ein und aus. Ihre aktuelle Arbeitssitzung und die heutigen Gesamtstunden werden hier angezeigt."
+    },
+    "timeTracking": {
+      "title": "Zeiterfassung",
+      "description": "Sehen und verwalten Sie Ihre Zeiteinträge. Fügen Sie manuelle Einträge hinzu, bearbeiten Sie bestehende und sehen Sie Ihre Tages- und Wochensummen."
+    },
+    "calendar": {
+      "title": "Kalender",
+      "description": "Sehen Sie Ihren Arbeitsplan, Abwesenheiten und Teamevents auf einen Blick in der Kalenderansicht."
+    },
+    "absences": {
+      "title": "Abwesenheiten",
+      "description": "Sehen Sie Ihre Abwesenheitshistorie, prüfen Sie verbleibende Urlaubstage und verfolgen Sie ausstehende Anträge."
+    },
+    "requestAbsence": {
+      "title": "Abwesenheit beantragen",
+      "description": "Beantragen Sie schnell eine Auszeit — Urlaub, Krankheit oder andere Abwesenheitsarten. Ihr Vorgesetzter wird automatisch benachrichtigt."
+    },
+    "reports": {
+      "title": "Berichte",
+      "description": "Erstellen Sie Berichte über Ihre Arbeitszeiten, Überstunden und Abwesenheiten. Exportieren Sie Daten für Ihre Unterlagen."
+    },
+    "notifications": {
+      "title": "Benachrichtigungen",
+      "description": "Bleiben Sie über Genehmigungen, Teamänderungen und wichtige Erinnerungen auf dem Laufenden."
+    },
+    "teamSection": {
+      "title": "Teamverwaltung",
+      "description": "Als Manager überblicken Sie hier die Dienstpläne, Zeiteinträge und Anwesenheit Ihres Teams."
+    },
+    "approvals": {
+      "title": "Genehmigungen",
+      "description": "Prüfen und genehmigen Sie Abwesenheitsanträge, Zeitkorrekturen und andere ausstehende Vorgänge Ihres Teams."
+    },
+    "settings": {
+      "title": "Einstellungen",
+      "description": "Konfigurieren Sie Organisationseinstellungen, verwalten Sie Feiertage, richten Sie Arbeitspläne ein und passen Sie Ihren Arbeitsbereich an."
+    }
+  },
   "table": {
     "description": "Zeigt die Gesamtbesucherzahl der letzten 6 Monate an. Dies ist nur ein zufälliger Text, um das Layout zu testen. Er erstreckt sich über mehrere Zeilen und sollte umbrechen.",
     "header": "Kopfzeile",

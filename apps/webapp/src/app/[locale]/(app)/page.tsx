@@ -1,10 +1,13 @@
 import { Suspense } from "react";
+import dynamic from "next/dynamic";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { NoOrganizationError } from "@/components/errors/no-organization-error";
 import { SectionCards, SectionCardsSkeleton } from "@/components/section-cards";
 import { getOnboardingStatus, getUserOrganizations } from "@/lib/auth-helpers";
 import { getOnboardingStepPath } from "@/lib/validations/onboarding";
+
+const AppTour = dynamic(() => import("@/components/tour/app-tour").then((m) => m.AppTour));
 
 export default async function Page() {
 	await connection(); // Mark as fully dynamic for cacheComponents mode
@@ -36,6 +39,7 @@ export default async function Page() {
 					<SectionCards />
 				</Suspense>
 			</div>
+			<AppTour />
 		</div>
 	);
 }

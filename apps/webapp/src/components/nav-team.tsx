@@ -19,17 +19,18 @@ export function NavTeam({
 		title: string;
 		url: string;
 		icon?: Icon;
+		dataTour?: string;
 	}[];
 }) {
 	const { t } = useTranslate();
 
 	return (
-		<SidebarGroup>
+		<SidebarGroup data-tour="nav-team-section">
 			<SidebarGroupLabel>{t("nav.team-label", "Team")}</SidebarGroupLabel>
 			<SidebarGroupContent>
 				<SidebarMenu>
 					{items.map((item) => (
-						<SidebarMenuItem key={item.title}>
+						<SidebarMenuItem key={item.title} data-tour={item.dataTour}>
 							<SidebarMenuButton asChild tooltip={item.title}>
 								<Link href={item.url}>
 									{item.icon && <item.icon />}
