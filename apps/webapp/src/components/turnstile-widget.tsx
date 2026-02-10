@@ -1,7 +1,7 @@
 "use client";
 
-import { Turnstile } from "@marsidev/react-turnstile";
 import type { TurnstileInstance } from "@marsidev/react-turnstile";
+import { Turnstile } from "@marsidev/react-turnstile";
 import { forwardRef, useImperativeHandle, useRef } from "react";
 
 export interface TurnstileWidgetProps {
@@ -71,7 +71,10 @@ export const TurnstileWidget = forwardRef<TurnstileRef, TurnstileWidgetProps>(
 					return turnstileRef.current?.getResponse();
 				},
 				getResponsePromise: () => {
-					return turnstileRef.current?.getResponsePromise() ?? Promise.reject(new Error("Widget not ready"));
+					return (
+						turnstileRef.current?.getResponsePromise() ??
+						Promise.reject(new Error("Widget not ready"))
+					);
 				},
 				isExpired: () => {
 					return turnstileRef.current?.isExpired() ?? false;

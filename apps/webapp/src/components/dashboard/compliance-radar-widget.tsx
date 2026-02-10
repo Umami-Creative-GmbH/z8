@@ -79,7 +79,7 @@ export function ComplianceRadarWidget() {
 						</div>
 						<div className="flex-1">
 							<p className="font-semibold">
-								{t("dashboard.compliance-radar.openFindings", "{{count}} open finding", { count: stats?.totalOpen ?? 0 })}
+								{t("dashboard.compliance-radar.openFindings", "{count, plural, one {# open finding} other {# open findings}}", { count: stats?.totalOpen ?? 0 })}
 							</p>
 							<p className="text-xs opacity-90">
 								{hasCritical

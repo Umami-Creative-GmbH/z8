@@ -157,6 +157,26 @@
 	button {
 		@apply cursor-pointer;
 	}
+
+	/* Prevent password managers and browser autofill from overriding input styles */
+	input:-webkit-autofill,
+	input:-webkit-autofill:hover,
+	input:-webkit-autofill:focus,
+	input[data-com-onepassword-filled] {
+		-webkit-text-fill-color: var(--foreground);
+		-webkit-box-shadow: 0 0 0 1000px var(--background) inset !important;
+		box-shadow: 0 0 0 1000px var(--background) inset !important;
+		background-color: var(--background) !important;
+		transition: background-color 5000s ease-in-out 0s;
+	}
+
+	.dark input:-webkit-autofill,
+	.dark input:-webkit-autofill:hover,
+	.dark input:-webkit-autofill:focus,
+	.dark input[data-com-onepassword-filled] {
+		-webkit-box-shadow: 0 0 0 1000px var(--background) inset !important;
+		box-shadow: 0 0 0 1000px var(--background) inset !important;
+	}
 }
 
 .tsqd-open-btn-container {
