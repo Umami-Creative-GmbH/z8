@@ -39,9 +39,8 @@ export default function WorkSchedulePage() {
 
 			const result = await setWorkScheduleOnboarding(value);
 
-			setLoading(false);
-
 			if (!result.success) {
+				setLoading(false);
 				toast.error(
 					result.error || t("onboarding.workSchedule.error", "Failed to set work schedule"),
 				);
@@ -57,9 +56,8 @@ export default function WorkSchedulePage() {
 
 		const result = await skipWorkScheduleSetup();
 
-		setLoading(false);
-
 		if (!result.success) {
+			setLoading(false);
 			toast.error(result.error || "Failed to skip work schedule setup");
 			return;
 		}

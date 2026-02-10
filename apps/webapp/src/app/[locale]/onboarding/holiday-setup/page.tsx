@@ -52,12 +52,11 @@ export default function HolidaySetupPage() {
 
 			const result = await createHolidayPresetOnboarding(value);
 
-			setLoading(false);
-
 			if (result.success) {
 				toast.success(t("onboarding.holidaySetup.success", "Holiday preset created!"));
 				router.push("/onboarding/work-templates");
 			} else {
+				setLoading(false);
 				toast.error(
 					result.error || t("onboarding.holidaySetup.error", "Failed to create holiday preset"),
 				);
@@ -116,11 +115,10 @@ export default function HolidaySetupPage() {
 
 		const result = await skipHolidaySetup();
 
-		setLoading(false);
-
 		if (result.success) {
 			router.push("/onboarding/work-templates");
 		} else {
+			setLoading(false);
 			toast.error(result.error || "Failed to skip holiday setup");
 		}
 	}

@@ -47,12 +47,11 @@ export default function WorkTemplatesPage() {
 
 			const result = await createWorkTemplateOnboarding(value);
 
-			setLoading(false);
-
 			if (result.success) {
 				toast.success(t("onboarding.workTemplates.success", "Work schedule template created!"));
 				router.push("/onboarding/notifications");
 			} else {
+				setLoading(false);
 				toast.error(
 					result.error ||
 						t("onboarding.workTemplates.error", "Failed to create work schedule template"),
@@ -86,11 +85,10 @@ export default function WorkTemplatesPage() {
 
 		const result = await skipWorkTemplateSetup();
 
-		setLoading(false);
-
 		if (result.success) {
 			router.push("/onboarding/notifications");
 		} else {
+			setLoading(false);
 			toast.error(result.error || "Failed to skip work schedule template setup");
 		}
 	}

@@ -15,7 +15,7 @@ export async function setWorkScheduleOnboarding(
 
 			// Determine next step based on admin status
 			const isAdmin = yield* onboardingService.isUserAdmin();
-			const nextStep = isAdmin ? "/onboarding/vacation-policy" : "/onboarding/notifications";
+			const nextStep = isAdmin ? "/onboarding/vacation-policy" : "/onboarding/wellness";
 			return { nextStep };
 		}),
 	);
@@ -29,7 +29,7 @@ export async function skipWorkScheduleSetup(): Promise<ServerActionResult<{ next
 
 			// Determine next step based on admin status
 			const isAdmin = yield* onboardingService.isUserAdmin();
-			const nextStep = isAdmin ? "/onboarding/vacation-policy" : "/onboarding/notifications";
+			const nextStep = isAdmin ? "/onboarding/vacation-policy" : "/onboarding/wellness";
 			return { nextStep };
 		}),
 	);

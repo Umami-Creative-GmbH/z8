@@ -44,12 +44,11 @@ export default function ProfilePage() {
 
 			const result = await updateProfileOnboarding(value);
 
-			setLoading(false);
-
 			if (result.success) {
 				toast.success(t("onboarding.profile.success", "Profile updated successfully!"));
 				router.push("/onboarding/work-schedule");
 			} else {
+				setLoading(false);
 				toast.error(result.error || t("onboarding.profile.error", "Failed to update profile"));
 			}
 		},
@@ -60,11 +59,10 @@ export default function ProfilePage() {
 
 		const result = await skipProfileSetup();
 
-		setLoading(false);
-
 		if (result.success) {
 			router.push("/onboarding/work-schedule");
 		} else {
+			setLoading(false);
 			toast.error(result.error || "Failed to skip profile setup");
 		}
 	}
