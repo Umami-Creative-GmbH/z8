@@ -7,7 +7,7 @@ import { useTranslate } from "@tolgee/react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
-import { checkSlugAvailability } from "@/app/[locale]/(app)/actions/organization";
+import { checkSlugAvailability } from "@/app/[locale]/(app)/organization-actions";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
