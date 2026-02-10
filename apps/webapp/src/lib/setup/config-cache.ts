@@ -9,6 +9,11 @@ const logger = createLogger("SetupConfigCache");
 const CACHE_TAG = "platform-configured";
 const CACHE_PROFILE = "default";
 
+// In-memory flag: once the platform is configured, it never reverts.
+// This avoids per-request DB queries in middleware where unstable_cache
+// is not supported (Edge Runtime).
+let _configuredInMemory: boolean | null = null;
+
 /**
  * Internal function to query the database for platform admin existence.
  * This is wrapped by unstable_cache for cross-request caching.
@@ -62,10 +67,17 @@ const getCachedPlatformConfigured = unstable_cache(
 
 /**
  * Check if the platform is configured (at least one platform admin exists).
- * Uses Next.js cache that works across requests and processes.
+ * Uses an in-memory flag as a fast path — once configured, the platform
+ * never reverts, so we skip the DB/cache entirely. Falls through to
+ * unstable_cache for the initial check (works in server components;
+ * in middleware it queries the DB directly, but only until the first `true`).
  */
 export async function isPlatformConfigured(): Promise<boolean> {
-	return getCachedPlatformConfigured();
+	if (_configuredInMemory === true) return true;
+
+	const result = await getCachedPlatformConfigured();
+	if (result) _configuredInMemory = true;
+	return result;
 }
 
 /**
