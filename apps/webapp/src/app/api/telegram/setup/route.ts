@@ -30,7 +30,9 @@ export async function POST(request: NextRequest) {
 		}
 
 		const body = await request.json();
-		const { botToken, organizationId } = body;
+		const { botToken: rawBotToken, organizationId } = body;
+
+		const botToken = typeof rawBotToken === "string" ? rawBotToken.trim() : "";
 
 		if (!botToken || !organizationId) {
 			return NextResponse.json(

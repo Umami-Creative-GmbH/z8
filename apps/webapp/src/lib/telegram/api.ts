@@ -18,6 +18,15 @@ const logger = createLogger("TelegramAPI");
 const TELEGRAM_API_BASE = "https://api.telegram.org";
 
 /**
+ * Normalize a bot token: trim whitespace and strip accidental "bot" prefix.
+ */
+function normalizeToken(token: string): string {
+	const trimmed = token.trim();
+	// Users sometimes paste "bot123456:ABC..." instead of just "123456:ABC..."
+	return trimmed.replace(/^bot/i, "");
+}
+
+/**
  * Call a Telegram Bot API method
  */
 async function callApi<T>(
@@ -25,7 +34,8 @@ async function callApi<T>(
 	method: string,
 	params?: Record<string, unknown>,
 ): Promise<TelegramApiResponse<T>> {
-	const url = `${TELEGRAM_API_BASE}/bot${botToken}/${method}`;
+	const token = normalizeToken(botToken);
+	const url = `${TELEGRAM_API_BASE}/bot${token}/${method}`;
 
 	const response = await fetch(url, {
 		method: "POST",
@@ -36,8 +46,18 @@ async function callApi<T>(
 	const data = (await response.json()) as TelegramApiResponse<T>;
 
 	if (!data.ok) {
+		// Redact token but show format for debugging (e.g. "1234***:AB***")
+		const [id, hash] = token.split(":");
+		const redacted = id && hash ? `${id.slice(0, 4)}***:${hash.slice(0, 2)}***` : "***";
 		logger.error(
-			{ method, errorCode: data.error_code, description: data.description },
+			{
+				method,
+				httpStatus: response.status,
+				errorCode: data.error_code,
+				description: data.description,
+				tokenFormat: redacted,
+				tokenLength: token.length,
+			},
 			"Telegram API error",
 		);
 	}

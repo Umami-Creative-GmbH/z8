@@ -116,14 +116,15 @@ export async function setupTelegramBot(
 	try {
 		const authContext = await requireAdmin(organizationId);
 
-		if (!botToken?.trim()) {
+		const trimmedToken = botToken?.trim();
+		if (!trimmedToken) {
 			return { success: false, error: "Bot token is required" };
 		}
 
 		// Verify the bot token with Telegram
 		const { getMe, setWebhook } = await import("@/lib/telegram");
 
-		const botInfo = await getMe(botToken);
+		const botInfo = await getMe(trimmedToken);
 		if (!botInfo) {
 			return { success: false, error: "Invalid bot token. Please check your BotFather token." };
 		}
@@ -140,7 +141,7 @@ export async function setupTelegramBot(
 			await db
 				.update(telegramBotConfig)
 				.set({
-					botToken,
+					botToken: trimmedToken,
 					botUsername: botInfo.username || null,
 					botDisplayName: botInfo.first_name,
 					webhookSecret,
@@ -153,7 +154,7 @@ export async function setupTelegramBot(
 		} else {
 			await db.insert(telegramBotConfig).values({
 				organizationId,
-				botToken,
+				botToken: trimmedToken,
 				botUsername: botInfo.username || null,
 				botDisplayName: botInfo.first_name,
 				webhookSecret,
@@ -167,7 +168,7 @@ export async function setupTelegramBot(
 		const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://app.z8.works";
 		const webhookUrl = `${appUrl}/api/telegram/webhook/${webhookSecret}`;
 
-		const webhookRegistered = await setWebhook(botToken, webhookUrl, webhookSecret);
+		const webhookRegistered = await setWebhook(trimmedToken, webhookUrl, webhookSecret);
 
 		if (webhookRegistered) {
 			await db
