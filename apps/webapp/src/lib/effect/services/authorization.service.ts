@@ -8,7 +8,14 @@
 import { and, eq } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { member } from "@/db/auth-schema";
-import { employee, employeeManagers, teamPermissions } from "@/db/schema";
+import {
+	employee,
+	employeeCustomRole,
+	employeeManagers,
+	customRole,
+	customRolePermission,
+	teamPermissions,
+} from "@/db/schema";
 import {
 	defineAbilityFor,
 	type AppAbility,
@@ -16,6 +23,7 @@ import {
 	type Action,
 	type Subject,
 	type TeamPermissions,
+	type CustomRoleInfo,
 } from "@/lib/authorization";
 import type { PermissionFlags } from "./permissions.service";
 import { AuthorizationError, type DatabaseError } from "../errors";
@@ -96,6 +104,7 @@ export const AuthorizationServiceLive = Layer.effect(
 							employee: null,
 							permissions: { orgWide: null, byTeamId: new Map() },
 							managedEmployeeIds: [],
+							customRoles: [],
 						} satisfies PrincipalContext;
 					}
 
@@ -109,6 +118,7 @@ export const AuthorizationServiceLive = Layer.effect(
 							employee: null,
 							permissions: { orgWide: null, byTeamId: new Map() },
 							managedEmployeeIds: [],
+							customRoles: [],
 						} satisfies PrincipalContext;
 					}
 
@@ -186,6 +196,51 @@ export const AuthorizationServiceLive = Layer.effect(
 						managedEmployeeIds = managedRecords.map((r) => r.employeeId);
 					}
 
+					// Load custom roles
+					let customRolesInfo: CustomRoleInfo[] = [];
+
+					if (employeeRecord) {
+						const assignments = yield* _(
+							dbService.query("getCustomRolesForAuth", async () => {
+								return await dbService.db
+									.select({
+										roleId: customRole.id,
+										roleName: customRole.name,
+										baseTier: customRole.baseTier,
+										permAction: customRolePermission.action,
+										permSubject: customRolePermission.subject,
+									})
+									.from(employeeCustomRole)
+									.innerJoin(customRole, and(
+										eq(employeeCustomRole.customRoleId, customRole.id),
+										eq(customRole.isActive, true),
+									))
+									.leftJoin(customRolePermission, eq(customRolePermission.customRoleId, customRole.id))
+									.where(eq(employeeCustomRole.employeeId, employeeRecord.id));
+							}),
+						);
+
+						// Group permissions by role
+						const roleMap = new Map<string, CustomRoleInfo>();
+						for (const row of assignments) {
+							if (!roleMap.has(row.roleId)) {
+								roleMap.set(row.roleId, {
+									roleId: row.roleId,
+									roleName: row.roleName,
+									baseTier: row.baseTier,
+									permissions: [],
+								});
+							}
+							if (row.permAction && row.permSubject) {
+								roleMap.get(row.roleId)!.permissions.push({
+									action: row.permAction as Action,
+									subject: row.permSubject as Subject,
+								});
+							}
+						}
+						customRolesInfo = Array.from(roleMap.values());
+					}
+
 					return {
 						userId,
 						isPlatformAdmin: false,
@@ -207,6 +262,7 @@ export const AuthorizationServiceLive = Layer.effect(
 							: null,
 						permissions,
 						managedEmployeeIds,
+						customRoles: customRolesInfo,
 					} satisfies PrincipalContext;
 				}),
 
@@ -224,6 +280,7 @@ export const AuthorizationServiceLive = Layer.effect(
 							employee: null,
 							permissions: { orgWide: null, byTeamId: new Map() },
 							managedEmployeeIds: [],
+							customRoles: [],
 						};
 						return defineAbilityFor(principal);
 					}
@@ -238,6 +295,7 @@ export const AuthorizationServiceLive = Layer.effect(
 							employee: null,
 							permissions: { orgWide: null, byTeamId: new Map() },
 							managedEmployeeIds: [],
+							customRoles: [],
 						};
 						return defineAbilityFor(principal);
 					}
@@ -314,6 +372,50 @@ export const AuthorizationServiceLive = Layer.effect(
 						managedEmployeeIds = managedRecords.map((r) => r.employeeId);
 					}
 
+					// Load custom roles
+					let customRolesInfo: CustomRoleInfo[] = [];
+
+					if (employeeRecord) {
+						const assignments = yield* _(
+							dbService.query("getCustomRolesForBuildAbility", async () => {
+								return await dbService.db
+									.select({
+										roleId: customRole.id,
+										roleName: customRole.name,
+										baseTier: customRole.baseTier,
+										permAction: customRolePermission.action,
+										permSubject: customRolePermission.subject,
+									})
+									.from(employeeCustomRole)
+									.innerJoin(customRole, and(
+										eq(employeeCustomRole.customRoleId, customRole.id),
+										eq(customRole.isActive, true),
+									))
+									.leftJoin(customRolePermission, eq(customRolePermission.customRoleId, customRole.id))
+									.where(eq(employeeCustomRole.employeeId, employeeRecord.id));
+							}),
+						);
+
+						const roleMap = new Map<string, CustomRoleInfo>();
+						for (const row of assignments) {
+							if (!roleMap.has(row.roleId)) {
+								roleMap.set(row.roleId, {
+									roleId: row.roleId,
+									roleName: row.roleName,
+									baseTier: row.baseTier,
+									permissions: [],
+								});
+							}
+							if (row.permAction && row.permSubject) {
+								roleMap.get(row.roleId)!.permissions.push({
+									action: row.permAction as Action,
+									subject: row.permSubject as Subject,
+								});
+							}
+						}
+						customRolesInfo = Array.from(roleMap.values());
+					}
+
 					const principal: PrincipalContext = {
 						userId,
 						isPlatformAdmin: false,
@@ -335,6 +437,7 @@ export const AuthorizationServiceLive = Layer.effect(
 							: null,
 						permissions,
 						managedEmployeeIds,
+						customRoles: customRolesInfo,
 					};
 
 					return defineAbilityFor(principal);
