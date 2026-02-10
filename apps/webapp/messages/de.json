@@ -1,0 +1,584 @@
+{
+  "accessDenied": {
+    "contactAdmin": "Bitte kontaktieren Sie Ihren Administrator, um Zugriff anzufordern.",
+    "description": "Ihr Konto verfügt nicht über die Berechtigung, auf {{appLabel}} zuzugreifen.",
+    "signOut": "Abmelden",
+    "title": "Zugriff eingeschränkt"
+  },
+  "admin": {
+    "layout": {
+      "exitAdmin": "Admin verlassen",
+      "nav": {
+        "billing": "Abrechnung",
+        "organizations": "Organisationen",
+        "overview": "Übersicht",
+        "settings": "Einstellungen",
+        "users": "Benutzer"
+      },
+      "subtitle": "Plattformverwaltung",
+      "title": "Admin-Konsole"
+    },
+    "organizations": {
+      "badges": {
+        "deleted": "Gelöscht",
+        "suspended": "Suspendiert"
+      },
+      "deleteDialog": {
+        "confirmButton": "Organisation löschen",
+        "confirmLabel": "Geben Sie „{name}“ zur Bestätigung ein",
+        "confirmPlaceholder": "Organisationsname",
+        "description": "Diese Aktion wird „{name}“ und alle zugehörigen Daten löschen. Dies kann nicht rückgängig gemacht werden.",
+        "immediateDelete": "Sofort löschen (5-tägige Kulanzzeit überspringen)",
+        "skipNotification": "Löschbenachrichtigung an Organisationsmitglieder überspringen",
+        "title": "Organisation löschen"
+      },
+      "description": "Alle Organisationen auf der Plattform anzeigen und verwalten",
+      "filters": {
+        "all": "Alle",
+        "deleted": "Gelöscht",
+        "suspended": "Suspendiert"
+      },
+      "pagination": {
+        "showing": "Anzeige von {from} bis {to} von {total} Organisationen"
+      },
+      "searchPlaceholder": "Nach Name oder Slug suchen …",
+      "suspendDialog": {
+        "confirmButton": "Organisation suspendieren",
+        "description": "„{name}“ suspendieren und in den schreibgeschützten Modus versetzen. Mitglieder können Daten weiterhin einsehen, aber nichts erstellen oder bearbeiten.",
+        "reason": "Grund",
+        "reasonPlaceholder": "Geben Sie den Grund für die Suspendierung dieser Organisation ein …",
+        "title": "Organisation suspendieren"
+      },
+      "table": {
+        "created": "Erstellt",
+        "employees": "Mitarbeiter",
+        "members": "Mitglieder",
+        "noOrganizationsFound": "Keine Organisationen gefunden",
+        "organization": "Organisation"
+      },
+      "title": "Organisationsverwaltung",
+      "toasts": {
+        "deletedGracePeriod": "Die Löschung der Organisation „{name}“ wurde für in 5 Tagen geplant",
+        "deletedImmediate": "Die Organisation „{name}“ wurde zur sofortigen Löschung vorgemerkt",
+        "suspended": "Organisation „{name}“ wurde suspendiert",
+        "unsuspended": "Suspendierung der Organisation „{name}“ wurde aufgehoben"
+      }
+    },
+    "overview": {
+      "description": "Plattform-Metriken und Schnellaktionen",
+      "metrics": {
+        "bannedUsers": "Gesperrte Benutzer",
+        "bannedUsersDescription": "Vom Zugriff ausgeschlossen",
+        "licensedSeats": "Lizenzierte Plätze",
+        "licensedSeatsDescription": "Über alle Abonnements hinweg",
+        "mrr": "MRR",
+        "mrrDescription": "Monatlich wiederkehrender Umsatz (€)",
+        "organizations": "Organisationen",
+        "organizationsDescription": "Aktive Arbeitsbereiche",
+        "suspended": "Suspendiert",
+        "suspendedDescription": "Schreibgeschützte Organisationen",
+        "title": "Plattform-Metriken",
+        "totalUsers": "Benutzer insgesamt",
+        "totalUsersDescription": "Registrierte Plattform-Konten"
+      },
+      "quickActions": {
+        "billing": {
+          "description": "Umsatzkennzahlen und Abonnementstatus",
+          "title": "Abrechnung & Abonnements"
+        },
+        "organizations": {
+          "description": "Organisationen sperren, löschen oder überprüfen",
+          "title": "Organisationsverwaltung"
+        },
+        "title": "Schnellaktionen",
+        "users": {
+          "description": "Benutzer sperren/entsperren, Sitzungen verwalten, Aktivitäten anzeigen",
+          "title": "Benutzerverwaltung"
+        }
+      },
+      "title": "Übersicht"
+    },
+    "users": {
+      "badges": {
+        "admin": "Admin",
+        "banExpiresUntil": "Bis {date}",
+        "banned": "Gesperrt",
+        "user": "Benutzer"
+      },
+      "banDialog": {
+        "confirmButton": "Benutzer sperren",
+        "description": "{email} den Zugriff auf die Plattform verweigern.",
+        "expiry": "Ablaufdatum (optional)",
+        "permanentBanHint": "Für permanente Sperre leer lassen",
+        "reason": "Grund",
+        "reasonPlaceholder": "Geben Sie den Grund für die Sperrung dieses Benutzers ein…",
+        "title": "Benutzer sperren"
+      },
+      "description": "Alle Benutzer auf der Plattform anzeigen und verwalten",
+      "filters": {
+        "allUsers": "Alle Benutzer",
+        "banned": "Gesperrt"
+      },
+      "pagination": {
+        "showing": "Zeige {from} bis {to} von {total} Benutzern"
+      },
+      "searchPlaceholder": "Nach Name oder E-Mail suchen…",
+      "sessionsDialog": {
+        "description": "Aktive Sitzungen für {email}",
+        "noSessions": "Keine aktiven Sitzungen",
+        "revokeAll": "Alle Sitzungen widerrufen",
+        "title": "Benutzersitzungen",
+        "unknownDevice": "Unbekanntes Gerät",
+        "unknownIp": "Unbekannte IP"
+      },
+      "table": {
+        "created": "Erstellt",
+        "noUsersFound": "Keine Benutzer gefunden",
+        "role": "Rolle",
+        "user": "Benutzer"
+      },
+      "title": "Benutzerverwaltung",
+      "toasts": {
+        "banned": "Benutzer {email} wurde gesperrt",
+        "sessionRevoked": "Sitzung widerrufen",
+        "sessionsRevoked": "{count} Sitzungen widerrufen",
+        "unbanned": "Benutzer {email} wurde entsperrt"
+      }
+    }
+  },
+  "approvals": {
+    "absenceApproved": "Abwesenheitsantrag genehmigt",
+    "absenceRejected": "Abwesenheitsantrag abgelehnt",
+    "age": "Alter",
+    "approve": "Genehmigen",
+    "approved": "Antrag genehmigt",
+    "approveFailed": "Genehmigung fehlgeschlagen",
+    "approveSelected": "Ausgewählte genehmigen",
+    "approveTimeCorrectionTitle": "Zeitkorrektur genehmigen",
+    "approveTitle": "Abwesenheitsantrag genehmigen",
+    "bulkApproveFailed": "${result.failed.length} Antrag/Anträge fehlgeschlagen",
+    "bulkApproveSuccess": "${result.succeeded.length} Antrag/Anträge genehmigt",
+    "category": "Kategorie",
+    "changed": "Geändert",
+    "confirmReject": "Ablehnung bestätigen",
+    "correctedTimes": "Korrigierte Zeiten",
+    "date": "Datum",
+    "dates": "Daten",
+    "days": "Tage",
+    "details": "Details",
+    "employee": "Mitarbeiter",
+    "filterByAge": "Nach Alter filtern",
+    "filterByPriority": "Nach Priorität filtern",
+    "filterByType": "Nach Typ filtern",
+    "inbox": "Genehmigungs-Posteingang",
+    "inboxDescription": "Überprüfen und genehmigen Sie ausstehende Anfragen Ihres Teams",
+    "loadError": "Genehmigungen konnten nicht geladen werden",
+    "noAbsenceApprovals": "Keine ausstehenden Abwesenheitsanfragen zur Überprüfung.",
+    "noRequests": "Keine ausstehenden Anfragen",
+    "noRequestsDescription": "Wenn Teammitglieder Anfragen einreichen, werden diese hier angezeigt",
+    "noSearchResults": "Keine Genehmigungen entsprechen Ihrer Suche.",
+    "notes": "Notizen",
+    "noTimeCorrectionApprovals": "Keine ausstehenden Zeitkorrekturanfragen zur Überprüfung.",
+    "offFrom": "abwesend ab",
+    "originalTimes": "Ursprüngliche Zeiten",
+    "pendingRequests": "Ausstehende Anfragen",
+    "pendingRequestsDescription": "Wählen Sie Anfragen für die Massengenehmigung aus oder klicken Sie auf eine Zeile für Details",
+    "priority": "Priorität",
+    "reason": "Grund",
+    "reject": "Ablehnen",
+    "rejected": "Anfrage abgelehnt",
+    "rejectFailed": "Ablehnung fehlgeschlagen",
+    "rejectionReason": "Grund für die Ablehnung",
+    "rejectionReasonPlaceholder": "Bitte geben Sie einen Grund für die Ablehnung dieser Anfrage an…",
+    "rejectTimeCorrectionTitle": "Zeitkorrektur ablehnen",
+    "rejectTitle": "Abwesenheitsanfrage ablehnen",
+    "requested": "Beantragt",
+    "requester": "Antragsteller",
+    "requestingCorrection": "beantragt eine Zeitkorrektur für",
+    "requestingOff": "beantragt",
+    "searchLabel": "Genehmigungen suchen",
+    "searchPlaceholder": "Nach Name oder E-Mail suchen…",
+    "selectAll": "Alle auswählen",
+    "selectRow": "Zeile auswählen",
+    "sla": "SLA",
+    "slaDeadline": "SLA-Frist",
+    "status": "Status",
+    "timeCorrectionApproved": "Zeitkorrektur genehmigt",
+    "timeCorrectionRejected": "Zeitkorrektur abgelehnt",
+    "timeline": "Zeitstrahl",
+    "type": "Typ"
+  },
+  "colors": {
+    "blue": "Blau",
+    "green": "Grün",
+    "indigo": "Indigo",
+    "orange": "Orange",
+    "pink": "Rosa",
+    "purple": "Lila",
+    "red": "Rot",
+    "teal": "Türkis"
+  },
+  "compliance": {
+    "exception": {
+      "approved": "Ausnahme genehmigt",
+      "approvedDescription": "Die Compliance-Ausnahme wurde genehmigt.",
+      "approveFailed": "Genehmigung fehlgeschlagen",
+      "plannedDuration": "Geplant",
+      "plannedDurationHelp": "Schätzen Sie, wie viel zusätzliche Zeit Sie über das Limit hinaus benötigen werden.",
+      "reason": "Grund für die Ausnahme",
+      "reasonPlaceholder": "Erklären Sie, warum Sie diese Ausnahme benötigen (z. B. dringende Projektfrist, kritischer Kundentermin)...",
+      "reasonRequired": "Grund erforderlich",
+      "reasonRequiredDescription": "Bitte geben Sie einen Grund für Ihre Ausnahme-Anfrage an.",
+      "rejectDescription": "Geben Sie einen Grund für die Ablehnung dieser Ausnahme-Anfrage an (optional)",
+      "rejected": "Ausnahme abgelehnt",
+      "rejectedDescription": "Die Compliance-Ausnahme wurde abgelehnt.",
+      "rejectFailed": "Ablehnung fehlgeschlagen",
+      "rejectionPlaceholder": "Grund für die Ablehnung dieser Ausnahme eingeben...",
+      "rejectionReason": "Grund für die Ablehnung",
+      "rejectTitle": "Ausnahme-Anfrage ablehnen",
+      "requestDescription": "Fordern Sie eine Vorabgenehmigung von Ihrem Vorgesetzten an, um trotz Compliance-Einschränkungen fortzufahren. Genehmigte Ausnahmen sind 24 Stunden lang gültig.",
+      "requestedAt": "Angefordert",
+      "requestFailed": "Anfrage fehlgeschlagen",
+      "requestSubmitted": "Ausnahme-Anfrage übermittelt",
+      "requestSubmittedDescription": "Ihr Vorgesetzter wird benachrichtigt und kann Ihre Anfrage genehmigen oder ablehnen.",
+      "requestTitle": "Compliance-Ausnahme anfordern",
+      "submit": "Anfrage absenden",
+      "type": "Ausnahmetyp"
+    },
+    "hasApprovedException": "Sie haben eine genehmigte Ausnahme. Sie können fortfahren.",
+    "moreAlerts": "mehr",
+    "noExceptions": "Keine ausstehenden Ausnahme-Anfragen",
+    "pendingExceptions": "Ausstehende Ausnahme-Anfragen",
+    "pendingExceptionsDescription": "Prüfen Sie Ausnahmeanträge, die Ihre Genehmigung erfordern",
+    "requestException": "Ausnahme beantragen",
+    "restPeriodMessage": "Sie benötigen noch {{time}} Ruhezeit, bevor Sie sich einstempeln können. Nächstmögliche Einstempelzeit: {{nextTime}}",
+    "restPeriodRequired": "Ruhezeit erforderlich"
+  },
+  "complianceRadar": {
+    "config": {
+      "autoResolution": "Automatische Lösung",
+      "autoResolutionDesc": "Alte Befunde automatisch lösen",
+      "autoResolveAfterDays": "Automatisch lösen nach (Tagen)",
+      "autoResolveAfterDaysDesc": "Auf 0 setzen, um die automatische Lösung zu deaktivieren",
+      "detectConsecutive": "Maximale Anzahl aufeinanderfolgender Tage überschritten",
+      "detectConsecutiveDesc": "Erkennen, wenn Mitarbeiter zu viele Tage hintereinander arbeiten",
+      "detectionRules": "Erkennungsregeln",
+      "detectionRulesDesc": "Wählen Sie aus, welche Compliance-Verstöße erkannt werden sollen",
+      "detectMaxDaily": "Tägliche Arbeitsstunden überschritten",
+      "detectMaxDailyDesc": "Erkennen, wenn die tägliche Arbeitszeit das Maximum (10 Stunden) überschreitet",
+      "detectMaxWeekly": "Wöchentliche Arbeitsstunden überschritten",
+      "detectMaxWeeklyDesc": "Erkennen, wenn die wöchentliche Arbeitszeit das Maximum (48 Stunden) überschreitet",
+      "detectRestPeriod": "Verstöße gegen die Ruhezeit",
+      "detectRestPeriodDesc": "Unzureichende Ruhezeit zwischen den Schichten erkennen (mindestens 11 Stunden)",
+      "employeeVisibility": "Sichtbarkeit für Mitarbeiter",
+      "employeeVisibilityDesc": "Mitarbeitern erlauben, ihre eigenen Compliance-Befunde einzusehen",
+      "maxConsecutiveDays": "Max. aufeinanderfolgende Tage",
+      "maxConsecutivePlaceholder": "6",
+      "maxDailyMinutes": "Max. tägliche Minuten",
+      "maxDailyPlaceholder": "600 (10 Stunden)",
+      "maxWeeklyMinutes": "Max. wöchentliche Minuten",
+      "maxWeeklyPlaceholder": "2880 (48 Stunden)",
+      "notifications": "Benachrichtigungen",
+      "notificationsDesc": "Konfigurieren Sie, wie Befunde kommuniziert werden",
+      "notifyManagers": "Manager benachrichtigen",
+      "notifyManagersDesc": "Benachrichtigungen an Manager senden, wenn Befunde erkannt werden",
+      "notifyOnSeverity": "Mindest-Schweregrad für Benachrichtigungen",
+      "notifyOnSeverityDesc": "Nur bei Befunden mit diesem oder einem höheren Schweregrad benachrichtigen",
+      "restPeriodMinutes": "Mindestruhezeit (Minuten)",
+      "restPeriodPlaceholder": "660 (11 Stunden)",
+      "saved": "Konfiguration gespeichert",
+      "teamsDigest": "Täglicher Teams-Bericht",
+      "teamsDigestDesc": "Tägliche Zusammenfassung an Microsoft Teams-Kanal senden",
+      "thresholds": "Schwellenwerte",
+      "thresholdsDesc": "Standard-Schwellenwerte überschreiben (leer lassen, um Standardwerte der Arbeitsrichtlinie zu verwenden)"
+    },
+    "evidence": {
+      "actualRest": "Tatsächliche Ruhezeit:",
+      "consecutiveDays": "Aufeinanderfolgende Tage:",
+      "date": "Datum:",
+      "exceededBy": "Überschritten um:",
+      "hoursWorked": "Geleistete Arbeitsstunden:",
+      "lastClockOut": "Letztes Ausstempeln:",
+      "limit": "Limit:",
+      "maxAllowed": "Maximal zulässig:",
+      "nextClockIn": "Nächstes Einstempeln:",
+      "period": "Zeitraum:",
+      "requiredRest": "Erforderliche Ruhezeit:",
+      "shortfall": "Defizit:",
+      "week": "Woche:"
+    },
+    "filters": {
+      "selectSeverity": "Nach Schweregrad filtern",
+      "selectStatus": "Nach Status filtern",
+      "severity": "Schweregrad",
+      "status": "Status"
+    },
+    "finding": {
+      "acknowledge": "Bestätigen",
+      "acknowledged": "Befund bestätigt",
+      "actionBy": "Von {{name}} am {{date}}",
+      "confirmWaiver": "Ausnahme bestätigen",
+      "evidence": "Nachweis",
+      "noteLabel": "Notiz (optional)",
+      "notePlaceholder": "Notiz hinzufügen…",
+      "reason": "Grund: „{{reason}}“",
+      "resolve": "Lösen",
+      "resolved": "Befund gelöst",
+      "status": "Status",
+      "waive": "Ausnahme erteilen",
+      "waived": "Ausnahme für Befund erteilt",
+      "waiverReasonLabel": "Grund für Ausnahme (erforderlich)",
+      "waiverReasonPlaceholder": "Erklären Sie, warum für diesen Befund eine Ausnahme erteilt wird…",
+      "waiverReasonRequired": "Grund für Ausnahme ist erforderlich"
+    },
+    "findingType": {
+      "consecutiveDaysExceeded": "Aufeinanderfolgende Tage überschritten",
+      "maxHoursDailyExceeded": "Tägliche Arbeitsstunden überschritten",
+      "maxHoursWeeklyExceeded": "Wöchentliche Arbeitsstunden überschritten",
+      "restPeriodInsufficient": "Ungenügende Ruhezeit"
+    },
+    "noFindings": "Keine Compliance-Befunde",
+    "severity": {
+      "critical": "Kritisch",
+      "info": "Info",
+      "warning": "Warnung"
+    },
+    "showing": "Anzeige von {{from}}-{{to}} von {{total}}",
+    "stats": {
+      "critical": "Kritisch",
+      "criticalDesc": "Erfordert sofortiges Handeln",
+      "info": "Info",
+      "infoDesc": "Zur Kenntnisnahme",
+      "totalOpen": "Offene Befunde",
+      "warning": "Warnungen",
+      "warningDesc": "Sollte überprüft werden"
+    },
+    "status": {
+      "acknowledged": "Bestätigt",
+      "open": "Offen",
+      "resolved": "Gelöst",
+      "waived": "Abgelehnt"
+    },
+    "table": {
+      "date": "Datum",
+      "employee": "Mitarbeiter",
+      "severity": "Schweregrad",
+      "status": "Status",
+      "type": "Typ"
+    },
+    "trend": {
+      "improving": "Verbessernd",
+      "stable": "Stabil",
+      "worsening": "Erfordert Aufmerksamkeit"
+    }
+  },
+  "employeeSelect": {
+    "countSelected": "{count} Mitarbeiter ausgewählt",
+    "countWithMore": "{count} Mitarbeiter (+{more} weitere)",
+    "noEmployeesFound": "Keine Mitarbeiter gefunden",
+    "role": "Rolle",
+    "searchPlaceholder": "Suche nach Name, E-Mail oder Position...",
+    "selected": "{count} ausgewählt",
+    "selectEmployee": "Mitarbeiter auswählen",
+    "selectEmployees": "Mitarbeiter auswählen",
+    "selectMultipleEmployees": "Wählen Sie einen oder mehrere Mitarbeiter aus der Liste aus",
+    "selectOneEmployee": "Wählen Sie einen Mitarbeiter aus der Liste aus",
+    "status": "Status",
+    "team": "Team",
+    "totalEmployees": "{count} Mitarbeiter",
+    "tryDifferentSearch": "Versuchen Sie, Ihre Suche oder Filter anzupassen"
+  },
+  "init": {
+    "activating": "Ihr Arbeitsbereich wird eingerichtet...",
+    "checking": "Sitzung wird geprüft...",
+    "clickToSelect": "Zum Auswählen klicken",
+    "redirecting": "Weiterleitung...",
+    "selectOrganization": "Organisation auswählen",
+    "selectOrganizationDescription": "Wählen Sie die Organisation aus, mit der Sie arbeiten möchten"
+  },
+  "offline": {
+    "banner": {
+      "offline": "Sie sind offline",
+      "offlineWithPending": "Offline – {count} ausstehende(s) Ereignis(se)",
+      "pending": "{count} Ereignis(se) warten auf Synchronisierung",
+      "retry": "Erneut versuchen",
+      "syncing": "{count} Ereignis(se) werden synchronisiert..."
+    }
+  },
+  "roles": {
+    "admin": "Admin",
+    "employee": "Mitarbeiter",
+    "manager": "Manager"
+  },
+  "scheduling": {
+    "coverage": {
+      "adequate": "Ausreichende Personalbesetzung",
+      "byLocation": "Nach Standort:",
+      "gapCount": "{{count}} Personalmangel",
+      "gaps": "Lücken",
+      "hideOverlay": "Abdeckungs-Overlay ausblenden",
+      "metSlots": "{{count}} ausreichend besetzt",
+      "overSlots": "{{count}} überbesetzt",
+      "overstaffed": "Überbesetzt",
+      "showOverlay": "Overlay für Abdeckungsziele anzeigen",
+      "summary": "Zusammenfassung der Abdeckung:",
+      "toggleLabel": "Abdeckung",
+      "underSlots": "{{count}} unterbesetzt",
+      "understaffed": "Unterbesetzt",
+      "utilization": "{{percent}}% Auslastung"
+    },
+    "skills": {
+      "expiredCertifications": "Abgelaufene Zertifizierungen:",
+      "expiredOn": "(Abgelaufen am {{date}})",
+      "missingPreferred": "Fehlende bevorzugte Qualifikationen:",
+      "missingPreferredCount": "{{count}} bevorzugte fehlen",
+      "missingRequired": "Fehlende erforderliche Qualifikationen:",
+      "preferred": "Bevorzugt",
+      "preferredSkillsMissing": "Bevorzugte Qualifikationen fehlen",
+      "requirementsNotMet": "Qualifikationsanforderungen nicht erfüllt",
+      "unqualified": "Nicht qualifiziert",
+      "validating": "Fähigkeiten werden validiert…",
+      "validatingDescription": "Mitarbeiterqualifikationen werden geprüft",
+      "warningMessage": "Sie können diese Schicht weiterhin zuweisen, dies wird jedoch als Überschreibung protokolliert."
+    }
+  },
+  "setup": {
+    "button": {
+      "create": "Admin-Konto erstellen",
+      "creating": "Konto wird erstellt..."
+    },
+    "complete_message": "Ihr Plattform-Admin-Konto wurde erstellt.",
+    "complete_title": "Einrichtung abgeschlossen!",
+    "continue_to_sign_in": "Weiter zur Anmeldung",
+    "creating_account": "Ihr Admin-Konto wird erstellt...",
+    "description": "Richten Sie das erste Administratorkonto für Ihre Plattform ein. Dieses Konto hat vollen Systemzugriff und ist von Organisationskonten getrennt.",
+    "error": {
+      "passwords_mismatch": "Passwörter stimmen nicht überein"
+    },
+    "field": {
+      "confirm_password": "Passwort bestätigen",
+      "confirm_password_placeholder": "Bestätigen Sie Ihr Passwort",
+      "email": "E-Mail-Adresse",
+      "email_placeholder": "admin@ihre-firma.de",
+      "name": "Vollständiger Name",
+      "name_placeholder": "Geben Sie Ihren vollständigen Namen ein",
+      "password": "Passwort",
+      "password_placeholder": "Erstellen Sie ein sicheres Passwort"
+    },
+    "hide_password": "Passwort ausblenden",
+    "layout": {
+      "subtitle": "Konfigurieren Sie Ihre Plattform, um loszulegen",
+      "title": "Ersteinrichtung"
+    },
+    "password": {
+      "lowercase": "Kleinbuchstabe",
+      "min_length": "12+ Zeichen",
+      "number": "Zahl",
+      "uppercase": "Großbuchstabe"
+    },
+    "please_wait": "Bitte warten Sie, während wir alles einrichten",
+    "show_password": "Passwort anzeigen",
+    "sign_in_with": "Sie können sich jetzt anmelden mit",
+    "title": "Plattform-Admin erstellen"
+  },
+  "status": {
+    "active": "Aktiv",
+    "inactive": "Inaktiv"
+  },
+  "time": {
+    "am": "AM",
+    "hoursAndMinutes": "{hours} Std. {minutes} Min.",
+    "hoursOnly": "{hours} Std.",
+    "pm": "PM"
+  },
+  "webhooks": {
+    "copy-failed": "Kopieren in die Zwischenablage fehlgeschlagen",
+    "create": "Webhook hinzufügen",
+    "create-failed": "Webhook konnte nicht erstellt werden",
+    "delete-confirm": {
+      "description": "Dies wird den Webhook-Endpunkt und den gesamten Zustellungsverlauf dauerhaft löschen. Diese Aktion kann nicht rückgängig gemacht werden.",
+      "title": "Webhook löschen?"
+    },
+    "deleted": "Webhook gelöscht",
+    "delete-failed": "Webhook konnte nicht gelöscht werden",
+    "deliveries": "Zustellungen",
+    "description": "Konfigurieren Sie Webhook-Endpunkte, um Echtzeit-Benachrichtigungen zu erhalten, wenn Ereignisse in Ihrer Organisation auftreten.",
+    "disabled": "Webhook deaktiviert",
+    "empty": {
+      "description": "Erstellen Sie Ihren ersten Webhook, um Ereignisbenachrichtigungen zu erhalten.",
+      "title": "Keine Webhooks konfiguriert"
+    },
+    "enabled": "Webhook aktiviert",
+    "events": "Ereignisse",
+    "form": {
+      "create": "Webhook erstellen",
+      "create-description": "Konfigurieren Sie einen neuen Webhook-Endpunkt, um Ereignisbenachrichtigungen zu erhalten.",
+      "create-title": "Webhook erstellen",
+      "description": "Beschreibung",
+      "description-placeholder": "Wofür wird dieser Webhook verwendet?",
+      "deselect-all": "Alle abwählen",
+      "edit-description": "Die Konfiguration des Webhook-Endpunkts aktualisieren.",
+      "edit-title": "Webhook bearbeiten",
+      "events": "Zu empfangende Ereignisse",
+      "events-hint": "Ausgewählte Ereignisse: {{count}}",
+      "events-required": "Mindestens ein Ereignis muss ausgewählt sein",
+      "name": "Name",
+      "name-placeholder": "Mein Webhook",
+      "name-required": "Name ist erforderlich",
+      "select-all": "Alle auswählen",
+      "url": "Endpunkt-URL",
+      "url-hint": "In der Produktionsumgebung ist HTTPS erforderlich. Ereignisse werden als POST-Anfragen gesendet.",
+      "url-required": "URL ist erforderlich"
+    },
+    "last-delivery": "Letzter",
+    "logs": {
+      "attempt": "Versuch",
+      "description": "Aktuelle Webhook-Zustellungsversuche und deren Ergebnisse.",
+      "duration": "Dauer",
+      "empty": "Noch keine Zustellungsprotokolle vorhanden",
+      "error": "Fehler",
+      "event": "Ereignis",
+      "failed": "Fehlgeschlagen",
+      "http": "HTTP",
+      "payload": "Payload",
+      "pending": "Ausstehend",
+      "response": "Antwort",
+      "retrying": "Wiederholung",
+      "showing": "Zeige {{start}}-{{end}} von {{total}}",
+      "status": "Status",
+      "success": "Erfolgreich",
+      "time": "Zeit",
+      "title": "Zustellungsprotokolle"
+    },
+    "regenerate-failed": "Geheimnis konnte nicht neu generiert werden",
+    "regenerate-secret": "Geheimnis neu generieren",
+    "secret-copied": "Geheimnis in die Zwischenablage kopiert",
+    "secret-dialog": {
+      "copy-secret": "Geheimnis in die Zwischenablage kopieren",
+      "description": "Dieses Geheimnis wird zur Überprüfung von Webhook-Signaturen verwendet. Bewahren Sie es sicher auf.",
+      "done": "Ich habe das Geheimnis gespeichert",
+      "secret": "Signatur-Geheimnis",
+      "title": "Webhook-Geheimnis",
+      "verification": "Signaturprüfung",
+      "verification-hint": "Überprüfen Sie Webhook-Signaturen mit HMAC-SHA256. Die Signatur wird im Header X-Z8-Signature gesendet.",
+      "warning": "Dieses Geheimnis wird nur einmal angezeigt. Stellen Sie sicher, dass Sie es jetzt speichern.",
+      "warning-title": "Wichtig"
+    },
+    "secret-regenerated": "Geheimnis neu generiert",
+    "status": {
+      "degraded": "Beeinträchtigt",
+      "failing": "Fehlerhaft",
+      "healthy": "Fehlerfrei",
+      "inactive": "Inaktiv"
+    },
+    "success-rate": "Erfolg",
+    "test": "Test senden",
+    "test-failed": "Test-Webhook konnte nicht gesendet werden",
+    "test-sent": "Test-Webhook gesendet",
+    "title": "Webhooks",
+    "toggle-active": "Webhook-Aktivierung umschalten",
+    "updated": "Webhook aktualisiert",
+    "update-failed": "Webhook konnte nicht aktualisiert werden",
+    "view-logs": "Protokolle anzeigen"
+  }
+}

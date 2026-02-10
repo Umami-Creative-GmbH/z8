@@ -19,12 +19,15 @@
       "uninterrupted": "Trabalho ininterrupto",
       "warningMessage": "Você tem {minutes} minutos até que uma pausa seja necessária."
     },
+    "budget": "Orçamento",
     "clockedOutSuccess": "Você registrou a saída!",
     "clockIn": "Registrar Entrada",
     "clockingIn": "Registrando entrada...",
     "clockingOut": "Registrando saída...",
+    "clockInQueued": "Entrada na fila para sincronização",
     "clockInSuccess": "Entrada registrada com sucesso",
     "clockOut": "Registrar Saída",
+    "clockOutQueued": "Saída na fila para sincronização",
     "clockOutSuccess": "Saída registrada com sucesso",
     "compliance": {
       "violation": "Violação de Conformidade",
@@ -59,20 +62,57 @@
       "timezoneNote": "Os horários estão no seu fuso horário local ({timezone})"
     },
     "currentlyClockedIn": "Você registrou a entrada atualmente",
+    "deadline": "Prazo",
     "errors": {
       "clockInFailed": "Falha ao registrar entrada",
       "clockOutFailed": "Falha ao registrar saída",
       "holidayBlocked": "Não é possível registrar saída em {holidayName}",
       "holidayBlockedDesc": "Este dia está marcado como feriado e registros de tempo não são permitidos",
-      "notesSaveFailed": "Falha ao salvar notas"
+      "notesSaveFailed": "Falha ao salvar notas",
+      "restPeriodBlocked": "Período de descanso não concluído",
+      "restPeriodBlockedDesc": "Você deve completar o período de descanso obrigatório antes de registrar a entrada. Solicite uma exceção se necessário."
     },
+    "manualEntry": {
+      "addButton": "Adicionar Entrada Manual",
+      "clockInLabel": "Registrar Entrada",
+      "clockOutLabel": "Registrar Saída",
+      "dateLabel": "Data",
+      "description": "Crie uma entrada de tempo para uma data passada. A aprovação pode ser necessária com base na política de alteração da sua organização.",
+      "errors": {
+        "createFailed": "Falha ao criar entrada de tempo",
+        "futureDate": "Não é possível criar entradas para datas futuras",
+        "invalidTimeRange": "O horário de saída deve ser posterior ao horário de entrada",
+        "tooLong": "O período de trabalho não pode exceder 24 horas"
+      },
+      "reasonLabel": "Motivo",
+      "reasonPlaceholder": "Descreva no que você trabalhou…",
+      "submit": "Criar Entrada",
+      "submitting": "Criando…",
+      "success": {
+        "adjusted": "Horários ajustados para {clockIn} - {clockOut} para evitar sobreposição",
+        "created": "Entrada de tempo criada com sucesso",
+        "pendingApproval": "Entrada de tempo enviada para aprovação do gerente"
+      },
+      "title": "Adicionar Entrada de Tempo Manual"
+    },
+    "noCategory": "Sem categoria (100%)",
     "noProject": "Sem projeto",
     "notesPlaceholder": "Em que você trabalhou?",
     "notesSaved": "Notas salvas",
     "project": "Projeto",
     "readyToClockIn": "Pronto para começar a trabalhar?",
+    "restPeriodWarning": "Aviso de Período de Descanso",
+    "restPeriodWarningMessage": "Você não completou o período de descanso obrigatório. Registrar o início agora será registrado como uma violação.",
+    "selectCategory": "Selecione uma categoria",
     "selectProject": "Selecione um projeto",
     "startedAt": "Iniciado às",
+    "summary": {
+      "baseWorked": "Base trabalhada",
+      "surcharge": "Sobretaxa",
+      "thisMonth": "Este Mês",
+      "thisWeek": "Esta Semana",
+      "today": "Hoje"
+    },
     "table": {
       "active": "Ativo",
       "clockIn": "Entrada",
@@ -85,7 +125,10 @@
       "title": "Registros de Tempo"
     },
     "title": "Controle de Ponto",
-    "welcomeBack": "Bem-vindo de volta, {name}"
+    "unknownCategory": "Categoria desconhecida",
+    "unknownProject": "Projeto desconhecido",
+    "welcomeBack": "Bem-vindo de volta, {name}",
+    "workCategory": "Categoria de Trabalho"
   },
   "wellness": {
     "water": {

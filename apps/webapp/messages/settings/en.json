@@ -629,6 +629,55 @@
       "title": "Coverage Targets",
       "updateFailed": "Failed to update rule"
     },
+    "customers": {
+      "column": {
+        "contactPerson": "Contact Person",
+        "email": "Email",
+        "name": "Company Name",
+        "phone": "Phone"
+      },
+      "create": "Add Customer",
+      "created": "Customer created",
+      "createFailed": "Failed to create customer",
+      "deleted": "Customer deleted",
+      "delete": {
+        "description": "Are you sure you want to delete \"{name}\"? Projects assigned to this customer will keep working but the customer reference will be removed.",
+        "title": "Delete Customer"
+      },
+      "deleteFailed": "Failed to delete customer",
+      "description": "Manage customer contacts for project assignments",
+      "dialog": {
+        "create": "Add Customer",
+        "createDescription": "Add a new customer for project assignments",
+        "createTitle": "Add Customer",
+        "editDescription": "Update customer details",
+        "editTitle": "Edit Customer",
+        "save": "Save Changes"
+      },
+      "empty": {
+        "description": "Add your first customer to assign them to projects.",
+        "title": "No customers yet"
+      },
+      "field": {
+        "address": "Address",
+        "addressPlaceholder": "Street, City, ZIP",
+        "contactPerson": "Contact Person",
+        "contactPersonPlaceholder": "e.g., John Smith",
+        "email": "Email",
+        "name": "Company Name",
+        "namePlaceholder": "Enter company name",
+        "phone": "Phone",
+        "vatId": "VAT ID",
+        "website": "Website"
+      },
+      "list": {
+        "description": "{count} customers total",
+        "title": "All Customers"
+      },
+      "title": "Customers",
+      "updated": "Customer updated",
+      "updateFailed": "Failed to update customer"
+    },
     "dataExport": {
       "description": "Export your organization's data",
       "featureName": "Data Export",
@@ -1428,13 +1477,13 @@
     },
     "payrollExport": {
       "datev": {
-        "beraternummer": "Beraternummer",
+        "beraternummer": "Consultant Number",
         "beraternummerTooltip": "Your DATEV consultant number (1-7 digits)",
         "configured": "Configured",
         "description": "Configure your DATEV Lohn & Gehalt connection details",
         "includeZeroHours": "Include Zero Hours",
         "includeZeroHoursDescription": "Include rows with 0 hours in the export",
-        "mandantennummer": "Mandantennummer",
+        "mandantennummer": "Client Number",
         "mandantennummerTooltip": "Your DATEV client number (1-5 digits)",
         "personnelNumberType": "Personnel Number Type",
         "personnelNumberType.employeeId": "Internal Employee ID",
@@ -1699,6 +1748,7 @@
     "projects": {
       "column": {
         "budget": "Budget",
+        "customer": "Customer",
         "deadline": "Deadline",
         "name": "Name",
         "status": "Status",
@@ -1725,11 +1775,14 @@
         "budgetHelp": "Leave empty for unlimited budget",
         "budgetPlaceholder": "e.g., 100",
         "color": "Color",
+        "customer": "Customer",
+        "customerPlaceholder": "Select a customer",
         "deadline": "Deadline",
         "description": "Description",
         "descriptionPlaceholder": "Optional project description",
         "name": "Name",
         "namePlaceholder": "Enter project name",
+        "noCustomer": "No customer",
         "status": "Status"
       },
       "list": {

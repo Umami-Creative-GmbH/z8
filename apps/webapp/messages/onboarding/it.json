@@ -143,6 +143,7 @@
       "title": "Imposta politica ferie"
     },
     "welcome": {
+      "continueSetup": "Continua configurazione",
       "features": {
         "absences": "Gestione Assenze",
         "absencesDesc": "Richiedi ferie, gestisci giorni di vacanza e traccia i giorni festivi",
@@ -152,6 +153,7 @@
         "timeTrackingDesc": "Timbra entrata e uscita, traccia ore di lavoro e gestisci correzioni orarie"
       },
       "getStarted": "Inizia",
+      "joinedOrganization": "Ti sei unito a {organization}. Completiamo la configurazione del tuo profilo.",
       "subtitle": "Iniziamo con una configurazione rapida. Ci vorranno solo pochi minuti.",
       "title": "Benvenuto in Z8!"
     },

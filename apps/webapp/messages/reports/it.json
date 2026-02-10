@@ -1,6 +1,11 @@
 {
   "reports": {
     "description": "Genera report completi su ore lavorative e assenze con dati su smart working rilevanti ai fini fiscali",
+    "employeeSelector": {
+      "error": "Impossibile caricare i membri del team",
+      "label": "Dipendente",
+      "placeholder": "Seleziona dipendente..."
+    },
     "feature": "generare report",
     "projects": {
       "budget": {
@@ -97,8 +102,10 @@
         "portfolioDescription": "Panoramica di tutti i progetti con metriche di budget e tracciamento del tempo",
         "portfolioTitle": "Portafoglio progetti",
         "project": "Progetto",
+        "searchPlaceholder": "Cerca per nome, descrizione o stato...",
         "status": "Stato",
-        "team": "Team"
+        "team": "Team",
+        "viewProject": "Visualizza dettagli progetto"
       },
       "team": {
         "byEmployee": "Per dipendente",

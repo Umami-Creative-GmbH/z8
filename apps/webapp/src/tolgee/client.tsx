@@ -2,7 +2,7 @@
 
 import { TolgeeProvider, useTolgee, type TolgeeStaticData } from "@tolgee/react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { type Namespace, TolgeeBase } from "./shared";
 
 type Props = {
@@ -11,31 +11,31 @@ type Props = {
 	children: React.ReactNode;
 };
 
-// Global tolgee instance - initialized lazily
-let globalTolgee: ReturnType<ReturnType<typeof TolgeeBase>["init"]> | null = null;
+const tolgeeCache = new Map<string, ReturnType<ReturnType<typeof TolgeeBase>["init"]>>();
 
 function getOrCreateTolgee(language: string, staticData: TolgeeStaticData) {
-	if (!globalTolgee) {
-		globalTolgee = TolgeeBase().init({
+	let instance = tolgeeCache.get(language);
+	if (!instance) {
+		instance = TolgeeBase().init({
 			language,
 			staticData,
 		});
+		tolgeeCache.set(language, instance);
 	}
-	return globalTolgee;
+	return instance;
 }
 
 export const TolgeeNextProvider = ({ language, staticData, children }: Props) => {
 	const router = useRouter();
 
-	// Get or create the tolgee instance
-	const tolgee = getOrCreateTolgee(language, staticData);
+	const tolgee = useMemo(
+		() => getOrCreateTolgee(language, staticData),
+		[language],
+	);
 
-	// Always add staticData (it's idempotent) and sync language
+	// Always add staticData (idempotent) in case new namespaces were loaded
 	if (staticData) {
 		tolgee.addStaticData(staticData);
-	}
-	if (tolgee.getLanguage() !== language) {
-		tolgee.changeLanguage(language);
 	}
 
 	useEffect(() => {
@@ -44,7 +44,7 @@ export const TolgeeNextProvider = ({ language, staticData, children }: Props) =>
 			router.refresh();
 		});
 		return () => unsubscribe();
-	}, [router]);
+	}, [router, tolgee]);
 
 	return (
 		<TolgeeProvider ssr={{ language, staticData }} tolgee={tolgee}>
@@ -104,9 +104,12 @@ export function useNamespaces(namespaces: Namespace[]): {
  * Call this early in a component to start loading namespaces in the background
  */
 export function preloadNamespaces(namespaces: Namespace[]): void {
-	if (typeof window !== "undefined" && globalTolgee && namespaces.length > 0) {
-		globalTolgee.addActiveNs(namespaces).catch((error) => {
-			console.warn("Failed to preload namespaces:", namespaces, error);
-		});
+	if (typeof window !== "undefined" && namespaces.length > 0) {
+		const instance = tolgeeCache.values().next().value;
+		if (instance) {
+			instance.addActiveNs(namespaces).catch((error: unknown) => {
+				console.warn("Failed to preload namespaces:", namespaces, error);
+			});
+		}
 	}
 }

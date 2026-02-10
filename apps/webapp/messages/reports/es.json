@@ -1,6 +1,11 @@
 {
   "reports": {
     "description": "Genere informes completos de horas de trabajo y ausencias con datos de home office relevantes para impuestos",
+    "employeeSelector": {
+      "error": "No se pudo cargar a los miembros del equipo",
+      "label": "Empleado",
+      "placeholder": "Seleccionar empleado..."
+    },
     "feature": "generar informes",
     "projects": {
       "budget": {
@@ -97,8 +102,10 @@
         "portfolioDescription": "Resumen de todos los proyectos con métricas de presupuesto y seguimiento de tiempo",
         "portfolioTitle": "Portafolio de proyectos",
         "project": "Proyecto",
+        "searchPlaceholder": "Buscar por nombre, descripción o estado...",
         "status": "Estado",
-        "team": "Equipo"
+        "team": "Equipo",
+        "viewProject": "Ver detalles del proyecto"
       },
       "team": {
         "byEmployee": "Por empleado",

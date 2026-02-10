@@ -1,6 +1,11 @@
 {
   "reports": {
     "description": "Générez des rapports complets sur les heures de travail et les absences avec des données de télétravail pertinentes pour les impôts",
+    "employeeSelector": {
+      "error": "Impossible de charger les membres de l'équipe",
+      "label": "Employé",
+      "placeholder": "Sélectionner un employé..."
+    },
     "feature": "générer des rapports",
     "projects": {
       "budget": {
@@ -97,8 +102,10 @@
         "portfolioDescription": "Aperçu de tous les projets avec métriques de budget et de suivi du temps",
         "portfolioTitle": "Portefeuille de projets",
         "project": "Projet",
+        "searchPlaceholder": "Rechercher par nom, description ou statut...",
         "status": "Statut",
-        "team": "Équipe"
+        "team": "Équipe",
+        "viewProject": "Voir les détails du projet"
       },
       "team": {
         "byEmployee": "Par employé",

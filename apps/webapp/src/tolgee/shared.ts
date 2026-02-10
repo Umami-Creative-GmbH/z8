@@ -1,14 +1,8 @@
 import { FormatIcu } from "@tolgee/format-icu";
 import { DevTools, Tolgee } from "@tolgee/web";
 import type { TolgeeStaticData } from "@tolgee/react";
-import { env } from "@/env";
 
 const isDevelopment = process.env.NODE_ENV === "development";
-
-// Only use Tolgee API in development for in-context editing
-// In production, local JSON files (pulled via CLI before build) are used
-const apiKey = isDevelopment ? env.NEXT_PUBLIC_TOLGEE_API_KEY : undefined;
-const apiUrl = isDevelopment ? env.NEXT_PUBLIC_TOLGEE_API_URL : undefined;
 
 export const ALL_LANGUAGES = ["en", "de", "fr", "es", "it", "pt"];
 
@@ -241,8 +235,13 @@ export function TolgeeBase() {
 	}
 
 	return tolgee.updateDefaults({
-		apiKey,
-		apiUrl,
+		// NOTE: apiKey/apiUrl intentionally removed from config.
+		// When set, Tolgee fetches translations from the API backend which only returns
+		// the default namespace, overriding the complete staticData (all namespaces merged).
+		// This caused non-default-namespace translations (auth, common, etc.) to be lost.
+		// Translations are loaded from local JSON files via staticData instead.
+		// DevTools observer still works for highlighting keys without apiKey.
+
 		// Disable invisible character encoding to prevent broken strings in HTML
 		observerOptions: {
 			fullKeyEncode: false,

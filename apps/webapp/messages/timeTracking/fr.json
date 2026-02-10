@@ -19,12 +19,15 @@
       "uninterrupted": "Travail ininterrompu",
       "warningMessage": "Il vous reste {minutes} minutes avant qu'une pause soit requise."
     },
+    "budget": "Budget",
     "clockedOutSuccess": "Vous avez pointé votre départ !",
     "clockIn": "Pointer l'entrée",
     "clockingIn": "Pointage de l'entrée...",
     "clockingOut": "Pointage de la sortie...",
+    "clockInQueued": "Pointage d'entrée mis en attente pour synchronisation",
     "clockInSuccess": "Entrée pointée avec succès",
     "clockOut": "Pointer la sortie",
+    "clockOutQueued": "Pointage de sortie mis en attente pour synchronisation",
     "clockOutSuccess": "Sortie pointée avec succès",
     "compliance": {
       "violation": "Violation de conformité",
@@ -59,20 +62,57 @@
       "timezoneNote": "Les heures sont dans votre fuseau horaire local ({timezone})"
     },
     "currentlyClockedIn": "Vous êtes actuellement pointé à l'entrée",
+    "deadline": "Échéance",
     "errors": {
       "clockInFailed": "Échec du pointage de l'entrée",
       "clockOutFailed": "Échec du pointage de la sortie",
       "holidayBlocked": "Impossible de pointer la sortie le {holidayName}",
       "holidayBlockedDesc": "Ce jour est marqué comme férié et les entrées de temps ne sont pas autorisées",
-      "notesSaveFailed": "Échec de l'enregistrement des notes"
+      "notesSaveFailed": "Échec de l'enregistrement des notes",
+      "restPeriodBlocked": "Période de repos non terminée",
+      "restPeriodBlockedDesc": "Vous devez terminer la période de repos obligatoire avant de pointer. Demandez une exception si nécessaire."
     },
+    "manualEntry": {
+      "addButton": "Ajouter une saisie manuelle",
+      "clockInLabel": "Pointer l'entrée",
+      "clockOutLabel": "Pointer la sortie",
+      "dateLabel": "Date",
+      "description": "Créez une saisie de temps pour une date passée. Une approbation peut être requise selon la politique de changement de votre organisation.",
+      "errors": {
+        "createFailed": "Échec de la création de la saisie de temps",
+        "futureDate": "Impossible de créer des saisies pour des dates futures",
+        "invalidTimeRange": "L'heure de sortie doit être postérieure à l'heure d'entrée",
+        "tooLong": "La période de travail ne peut pas dépasser 24 heures"
+      },
+      "reasonLabel": "Motif",
+      "reasonPlaceholder": "Décrivez votre travail…",
+      "submit": "Créer la saisie",
+      "submitting": "Création en cours…",
+      "success": {
+        "adjusted": "Horaires ajustés à {clockIn} - {clockOut} pour éviter tout chevauchement",
+        "created": "Saisie de temps créée avec succès",
+        "pendingApproval": "Saisie de temps soumise pour approbation par le manager"
+      },
+      "title": "Ajouter une saisie de temps manuelle"
+    },
+    "noCategory": "Aucune catégorie (100 %)",
     "noProject": "Aucun projet",
     "notesPlaceholder": "Sur quoi avez-vous travaillé ?",
     "notesSaved": "Notes enregistrées",
     "project": "Projet",
     "readyToClockIn": "Prêt à travailler ?",
+    "restPeriodWarning": "Avertissement sur le temps de repos",
+    "restPeriodWarningMessage": "Vous n'avez pas respecté la période de repos obligatoire. Pointer maintenant sera enregistré comme une infraction.",
+    "selectCategory": "Sélectionner une catégorie",
     "selectProject": "Sélectionner un projet",
     "startedAt": "Commencé à",
+    "summary": {
+      "baseWorked": "Base travaillée",
+      "surcharge": "Surcharge",
+      "thisMonth": "Ce mois-ci",
+      "thisWeek": "Cette semaine",
+      "today": "Aujourd'hui"
+    },
     "table": {
       "active": "Actif",
       "clockIn": "Entrée",
@@ -85,7 +125,10 @@
       "title": "Entrées de temps"
     },
     "title": "Suivi du temps",
-    "welcomeBack": "Bon retour, {name}"
+    "unknownCategory": "Catégorie inconnue",
+    "unknownProject": "Projet inconnu",
+    "welcomeBack": "Bon retour, {name}",
+    "workCategory": "Catégorie de travail"
   },
   "wellness": {
     "water": {

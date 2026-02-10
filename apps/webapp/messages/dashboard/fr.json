@@ -13,6 +13,18 @@
       "today": "Aujourd'hui !",
       "tomorrow": "Demain"
     },
+    "compliance-radar": {
+      "critical": "Critique",
+      "description": "Observations de conformité au droit du travail",
+      "for-awareness": "Pour information",
+      "info": "Info",
+      "openFindings": "{{count}} observation ouverte",
+      "requires-attention": "Nécessite une attention immédiate",
+      "review-recommended": "Examen recommandé",
+      "title": "Radar de conformité",
+      "view-details": "Voir les détails de conformité",
+      "warning": "Avertissement"
+    },
     "hydration": {
       "description": "Suivez votre consommation d'eau quotidienne",
       "error": "Échec du chargement des statistiques d'hydratation",
