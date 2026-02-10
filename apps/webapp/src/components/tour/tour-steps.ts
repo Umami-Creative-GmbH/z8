@@ -1,4 +1,4 @@
-import type { DriveStep, Side, Alignment } from "driver.js";
+import type { Alignment, DriveStep, Side } from "driver.js";
 
 export interface TourStepDef {
 	element: string;
