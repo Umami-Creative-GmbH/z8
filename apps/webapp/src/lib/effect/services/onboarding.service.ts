@@ -920,11 +920,17 @@ export const OnboardingServiceLive = Layer.effect(
 			getOnboardingSummary: () =>
 				Effect.gen(function* () {
 					const session = yield* authService.getSession();
+					const activeOrgId = session.session.activeOrganizationId;
 
 					const summary = yield* dbService.query("getOnboardingSummary", async () => {
-						// Check if user has an organization
+						// Check if user has an organization (scoped to active org if set)
 						const membership = await dbService.db.query.member.findFirst({
-							where: eq(member.userId, session.user.id),
+							where: activeOrgId
+								? and(
+										eq(member.userId, session.user.id),
+										eq(member.organizationId, activeOrgId),
+									)
+								: eq(member.userId, session.user.id),
 							with: {
 								organization: true,
 							},
@@ -935,8 +941,10 @@ export const OnboardingServiceLive = Layer.effect(
 							where: eq(employee.userId, session.user.id),
 						});
 
-						// Check if user is admin
-						const isAdmin = membership?.role === "owner" || membership?.role === "admin";
+						// Check if user is admin (consistent with isUserAdmin — requires activeOrganizationId)
+						const isAdmin = activeOrgId
+							? membership?.role === "owner" || membership?.role === "admin"
+							: false;
 
 						// Check if work policy is set (via org default or explicit assignment)
 						let hasWorkPolicy = false;
