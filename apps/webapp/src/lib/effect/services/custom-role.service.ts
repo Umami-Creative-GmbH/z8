@@ -11,6 +11,7 @@ import {
 	customRole,
 	customRoleAuditLog,
 	customRolePermission,
+	employee,
 	employeeCustomRole,
 } from "@/db/schema";
 import { isValidPermission } from "@/lib/authorization/permission-registry";
@@ -124,6 +125,7 @@ export class CustomRoleService extends Context.Tag("CustomRoleService")<
 
 		readonly getEmployeeRoles: (
 			employeeId: string,
+			orgId: string,
 		) => Effect.Effect<CustomRoleWithPermissions[], DatabaseError>;
 	}
 >() {}
@@ -490,6 +492,29 @@ export const CustomRoleServiceLive = Layer.effect(
 
 			assignRole: (employeeId, roleId, orgId, assignedBy) =>
 				Effect.gen(function* (_) {
+					// Verify employee belongs to the same organization
+					yield* _(
+						dbService.query("verifyEmployeeOrgForAssign", async () => {
+							return await dbService.db.query.employee.findFirst({
+								where: and(
+									eq(employee.id, employeeId),
+									eq(employee.organizationId, orgId),
+								),
+							});
+						}),
+						Effect.flatMap((r) =>
+							r
+								? Effect.succeed(r)
+								: Effect.fail(
+										new NotFoundError({
+											message: "Employee not found in this organization",
+											entityType: "employee",
+											entityId: employeeId,
+										}),
+									),
+						),
+					);
+
 					// Verify role exists and is active
 					yield* _(
 						dbService.query("getCustomRoleForAssign", async () => {
@@ -537,6 +562,29 @@ export const CustomRoleServiceLive = Layer.effect(
 
 			unassignRole: (employeeId, roleId, orgId, unassignedBy) =>
 				Effect.gen(function* (_) {
+					// Verify employee belongs to the same organization
+					yield* _(
+						dbService.query("verifyEmployeeOrgForUnassign", async () => {
+							return await dbService.db.query.employee.findFirst({
+								where: and(
+									eq(employee.id, employeeId),
+									eq(employee.organizationId, orgId),
+								),
+							});
+						}),
+						Effect.flatMap((r) =>
+							r
+								? Effect.succeed(r)
+								: Effect.fail(
+										new NotFoundError({
+											message: "Employee not found in this organization",
+											entityType: "employee",
+											entityId: employeeId,
+										}),
+									),
+						),
+					);
+
 					// Verify role exists
 					yield* _(
 						dbService.query("getCustomRoleForUnassign", async () => {
@@ -580,7 +628,7 @@ export const CustomRoleServiceLive = Layer.effect(
 					);
 				}),
 
-			getEmployeeRoles: (employeeId) =>
+			getEmployeeRoles: (employeeId, orgId) =>
 				Effect.gen(function* (_) {
 					const assignments = yield* _(
 						dbService.query("getEmployeeCustomRoleAssignments", async () => {
@@ -594,7 +642,7 @@ export const CustomRoleServiceLive = Layer.effect(
 					);
 
 					const activeRoles = assignments
-						.filter((a) => a.customRole.isActive)
+						.filter((a) => a.customRole.isActive && a.customRole.organizationId === orgId)
 						.map((a) => a.customRole);
 
 					return yield* _(

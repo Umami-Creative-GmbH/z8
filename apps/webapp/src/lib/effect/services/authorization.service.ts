@@ -214,6 +214,7 @@ export const AuthorizationServiceLive = Layer.effect(
 									.innerJoin(customRole, and(
 										eq(employeeCustomRole.customRoleId, customRole.id),
 										eq(customRole.isActive, true),
+										eq(customRole.organizationId, employeeRecord.organizationId),
 									))
 									.leftJoin(customRolePermission, eq(customRolePermission.customRoleId, customRole.id))
 									.where(eq(employeeCustomRole.employeeId, employeeRecord.id));
@@ -390,6 +391,7 @@ export const AuthorizationServiceLive = Layer.effect(
 									.innerJoin(customRole, and(
 										eq(employeeCustomRole.customRoleId, customRole.id),
 										eq(customRole.isActive, true),
+										eq(customRole.organizationId, employeeRecord.organizationId),
 									))
 									.leftJoin(customRolePermission, eq(customRolePermission.customRoleId, customRole.id))
 									.where(eq(employeeCustomRole.employeeId, employeeRecord.id));
