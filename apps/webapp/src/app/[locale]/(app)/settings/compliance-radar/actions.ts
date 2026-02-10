@@ -1,7 +1,7 @@
 "use server";
 
 import { and, eq } from "drizzle-orm";
-import { Effect, Layer } from "effect";
+import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import {
@@ -27,7 +27,6 @@ import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import {
 	ComplianceFindingsService,
-	ComplianceFindingsServiceLive,
 	type ComplianceFindingWithDetails,
 	type ComplianceStats,
 	type FindingsWithCount,
@@ -338,7 +337,7 @@ export async function getComplianceFindings(
 					pagination,
 				}),
 			);
-		}).pipe(Effect.provide(AppLayer.pipe(Layer.provide(ComplianceFindingsServiceLive)))),
+		}).pipe(Effect.provide(AppLayer)),
 	);
 }
 
@@ -364,7 +363,7 @@ export async function getComplianceStats(): Promise<ServerActionResult<Complianc
 			}
 
 			return yield* _(findingsService.getStats(currentEmployee.organizationId));
-		}).pipe(Effect.provide(AppLayer.pipe(Layer.provide(ComplianceFindingsServiceLive)))),
+		}).pipe(Effect.provide(AppLayer)),
 	);
 }
 
@@ -460,7 +459,7 @@ export async function acknowledgeFinding(
 			}
 
 			revalidatePath("/settings/compliance-radar");
-		}).pipe(Effect.provide(AppLayer.pipe(Layer.provide(ComplianceFindingsServiceLive)))),
+		}).pipe(Effect.provide(AppLayer)),
 	);
 }
 
@@ -567,7 +566,7 @@ export async function waiveFinding(
 			}
 
 			revalidatePath("/settings/compliance-radar");
-		}).pipe(Effect.provide(AppLayer.pipe(Layer.provide(ComplianceFindingsServiceLive)))),
+		}).pipe(Effect.provide(AppLayer)),
 	);
 }
 
@@ -642,6 +641,6 @@ export async function resolveFinding(
 			);
 
 			revalidatePath("/settings/compliance-radar");
-		}).pipe(Effect.provide(AppLayer.pipe(Layer.provide(ComplianceFindingsServiceLive)))),
+		}).pipe(Effect.provide(AppLayer)),
 	);
 }
