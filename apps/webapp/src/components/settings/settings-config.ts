@@ -198,6 +198,18 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		group: "administration",
 	},
 	{
+		id: "roles",
+		titleKey: "settings.roles.title",
+		titleDefault: "Custom Roles",
+		descriptionKey: "settings.roles.description",
+		descriptionDefault:
+			"Create custom permission roles for your organization",
+		href: "/settings/roles",
+		icon: "shield-check",
+		adminOnly: true,
+		group: "administration",
+	},
+	{
 		id: "locations",
 		titleKey: "settings.locations.title",
 		titleDefault: "Locations",

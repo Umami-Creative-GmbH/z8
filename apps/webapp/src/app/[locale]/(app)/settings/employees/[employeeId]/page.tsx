@@ -13,6 +13,7 @@ import { use, useEffect } from "react";
 import { toast } from "sonner";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { ContractTypeSelector } from "@/components/settings/contract-type-selector";
+import { EmployeeCustomRolesCard } from "@/components/settings/custom-roles/employee-custom-roles-card";
 import { EmployeeSkillsCard } from "@/components/settings/employee-skills-card";
 import { HourlyRateInput } from "@/components/settings/hourly-rate-input";
 import { ManagerAssignment } from "@/components/settings/manager-assignment";
@@ -575,6 +576,13 @@ export default function EmployeeDetailPage({
 					onSuccess={refetch}
 				/>
 			)}
+
+			{/* Custom Roles Section */}
+			<EmployeeCustomRolesCard
+				employeeId={employeeId}
+				organizationId={employee.organizationId}
+				isAdmin={isAdmin}
+			/>
 
 			{/* Skills & Qualifications Section */}
 			<EmployeeSkillsCard
