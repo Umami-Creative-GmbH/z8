@@ -95,8 +95,6 @@ function getCurrentEmployeeEffect() {
 // TYPES
 // ============================================
 
-export type { ComplianceFindingWithDetails, ComplianceStats, FindingsWithCount };
-
 export interface ComplianceConfigData {
 	id: string;
 	organizationId: string;

@@ -19,9 +19,6 @@ import {
 	type UpdateCustomRoleInput,
 } from "@/lib/effect/services/custom-role.service";
 
-// Re-export types for client components
-export type { CustomRoleWithPermissions, CreateCustomRoleInput, UpdateCustomRoleInput };
-
 // =============================================================================
 // Helpers
 // =============================================================================

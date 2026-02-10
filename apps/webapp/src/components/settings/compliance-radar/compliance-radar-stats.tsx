@@ -2,7 +2,7 @@
 
 import { useTranslate } from "@tolgee/react";
 import { IconAlertTriangle, IconCircleCheck, IconExclamationCircle, IconInfoCircle } from "@tabler/icons-react";
-import type { ComplianceStats } from "@/app/[locale]/(app)/settings/compliance-radar/actions";
+import type { ComplianceStats } from "@/lib/effect/services/compliance-findings.service";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 

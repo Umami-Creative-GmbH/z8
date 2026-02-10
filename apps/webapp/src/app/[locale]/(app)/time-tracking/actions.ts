@@ -1561,8 +1561,6 @@ export async function createTimeEntry(params: {
 // Re-export Effect functions with cleaner names (backward compatibility)
 export const requestTimeCorrection = requestTimeCorrectionEffect;
 
-// Re-export types for consumers
-export type { ComplianceWarning } from "@/lib/effect/services/work-policy.service";
 
 /**
  * Get break reminder status for the currently active session
@@ -2456,8 +2454,6 @@ export async function getWorkPeriodEditCapability(workPeriodId: string): Promise
 	}
 }
 
-// Re-export EditCapability type for UI components
-export type { EditCapability } from "@/lib/effect/services/change-policy.service";
 
 /**
  * Input for creating a manual time entry

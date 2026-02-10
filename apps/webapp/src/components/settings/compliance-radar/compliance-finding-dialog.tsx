@@ -8,8 +8,8 @@ import {
 	acknowledgeFinding,
 	resolveFinding,
 	waiveFinding,
-	type ComplianceFindingWithDetails,
 } from "@/app/[locale]/(app)/settings/compliance-radar/actions";
+import type { ComplianceFindingWithDetails } from "@/lib/effect/services/compliance-findings.service";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {

@@ -57,8 +57,8 @@ import {
 import {
 	assignSkillToEmployee,
 	removeSkillFromEmployee,
-	type EmployeeSkillWithDetails,
 } from "@/app/[locale]/(app)/settings/skills/actions";
+import type { EmployeeSkillWithDetails } from "@/lib/effect/services/skill.service";
 import {
 	useEmployeeSkills,
 	useOrganizationSkills,

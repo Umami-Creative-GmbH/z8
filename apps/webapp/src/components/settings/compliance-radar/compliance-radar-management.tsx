@@ -7,9 +7,9 @@ import {
 	getComplianceConfig,
 	getComplianceFindings,
 	getComplianceStats,
-	type ComplianceFindingWithDetails,
 	type GetFindingsFilters,
 } from "@/app/[locale]/(app)/settings/compliance-radar/actions";
+import type { ComplianceFindingWithDetails } from "@/lib/effect/services/compliance-findings.service";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ComplianceRadarStats } from "./compliance-radar-stats";
 import { ComplianceFindingsTable } from "./compliance-findings-table";

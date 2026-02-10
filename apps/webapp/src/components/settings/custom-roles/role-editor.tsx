@@ -22,8 +22,8 @@ import {
 	createCustomRole,
 	updateCustomRole,
 	setRolePermissions,
-	type CustomRoleWithPermissions,
 } from "@/app/[locale]/(app)/settings/roles/actions";
+import type { CustomRoleWithPermissions } from "@/lib/effect/services/custom-role.service";
 import {
 	getPermissionsByCategory,
 	getPermissionCategories,

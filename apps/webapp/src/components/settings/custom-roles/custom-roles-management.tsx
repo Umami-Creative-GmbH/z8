@@ -39,8 +39,8 @@ import {
 import {
 	listCustomRoles,
 	deleteCustomRole,
-	type CustomRoleWithPermissions,
 } from "@/app/[locale]/(app)/settings/roles/actions";
+import type { CustomRoleWithPermissions } from "@/lib/effect/services/custom-role.service";
 import { RoleEditor } from "./role-editor";
 
 const TIER_LABELS: Record<string, string> = {

@@ -31,8 +31,8 @@ import {
 	getEmployeeCustomRoles,
 	assignRoleToEmployee,
 	unassignRoleFromEmployee,
-	type CustomRoleWithPermissions,
 } from "@/app/[locale]/(app)/settings/roles/actions";
+import type { CustomRoleWithPermissions } from "@/lib/effect/services/custom-role.service";
 
 interface EmployeeCustomRolesCardProps {
 	employeeId: string;

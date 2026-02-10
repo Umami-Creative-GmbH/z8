@@ -7,9 +7,9 @@ import { useCallback } from "react";
 import { IconAlertTriangle, IconCheck, IconExclamationCircle, IconFilter, IconInfoCircle } from "@tabler/icons-react";
 import {
 	getComplianceFindings,
-	type ComplianceFindingWithDetails,
 	type GetFindingsFilters,
 } from "@/app/[locale]/(app)/settings/compliance-radar/actions";
+import type { ComplianceFindingWithDetails } from "@/lib/effect/services/compliance-findings.service";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
