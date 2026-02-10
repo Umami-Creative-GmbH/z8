@@ -51,7 +51,7 @@ export function useAppTour({ autoStart = false }: UseAppTourOptions = {}) {
 		const driverInstance = driver({
 			animate: !prefersReducedMotion,
 			showProgress: true,
-			progressText: t("tour.progress", "{{current}} of {{total}}"),
+			progressText: "{{current}} / {{total}}",
 			nextBtnText: t("common.next", "Next"),
 			prevBtnText: t("common.previous", "Previous"),
 			doneBtnText: t("generic.done", "Done"),
