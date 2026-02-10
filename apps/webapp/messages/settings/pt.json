@@ -583,14 +583,6 @@
       "description": "Revisar e gerenciar solicitações de exceção de conformidade de membros da equipe",
       "title": "Conformidade ArbZG"
     },
-    "complianceRadar": {
-      "description": "Monitorar a conformidade com as leis trabalhistas, revisar descobertas e gerenciar isenções",
-      "tab": {
-        "config": "Configuração",
-        "findings": "Descobertas"
-      },
-      "title": "Radar de Conformidade"
-    },
     "coverageRules": {
       "addRule": "Adicionar Regra",
       "allowPublishWithGaps": "Permitir publicação com lacunas de cobertura",

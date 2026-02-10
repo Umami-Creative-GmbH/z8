@@ -13,18 +13,6 @@
       "today": "Heute!",
       "tomorrow": "Morgen"
     },
-    "compliance-radar": {
-      "critical": "Kritisch",
-      "description": "Ergebnisse zur Arbeitsrechtskonformität",
-      "for-awareness": "Zur Kenntnisnahme",
-      "info": "Info",
-      "openFindings": "{{count}} offene Feststellung",
-      "requires-attention": "Erfordert sofortige Aufmerksamkeit",
-      "review-recommended": "Überprüfung empfohlen",
-      "title": "Compliance-Radar",
-      "view-details": "Compliance-Details anzeigen",
-      "warning": "Warnung"
-    },
     "hydration": {
       "description": "Verfolgen Sie Ihre tägliche Wasseraufnahme",
       "error": "Fehler beim Laden der Wasseraufnahme-Statistiken",

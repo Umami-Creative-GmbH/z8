@@ -13,18 +13,6 @@
       "today": "¡Hoy!",
       "tomorrow": "Mañana"
     },
-    "compliance-radar": {
-      "critical": "Crítico",
-      "description": "Hallazgos de cumplimiento de legislación laboral",
-      "for-awareness": "Para conocimiento",
-      "info": "Información",
-      "openFindings": "{{count}} hallazgo abierto",
-      "requires-attention": "Requiere atención inmediata",
-      "review-recommended": "Revisión recomendada",
-      "title": "Radar de cumplimiento",
-      "view-details": "Ver detalles de cumplimiento",
-      "warning": "Advertencia"
-    },
     "hydration": {
       "description": "Siga su ingesta diaria de agua",
       "error": "Error al cargar estadísticas de hidratación",

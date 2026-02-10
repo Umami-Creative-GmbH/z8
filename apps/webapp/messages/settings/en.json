@@ -583,14 +583,6 @@
       "description": "Review and manage compliance exception requests from team members",
       "title": "ArbZG Compliance"
     },
-    "complianceRadar": {
-      "description": "Monitor labor-law compliance, review findings, and manage waivers",
-      "tab": {
-        "config": "Configuration",
-        "findings": "Findings"
-      },
-      "title": "Compliance Radar"
-    },
     "coverageRules": {
       "addRule": "Add Rule",
       "allowPublishWithGaps": "Allow publishing with coverage gaps",

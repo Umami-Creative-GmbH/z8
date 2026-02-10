@@ -583,14 +583,6 @@
       "description": "Überprüfen und verwalten Sie Anträge auf Compliance-Ausnahmen von Teammitgliedern",
       "title": "ArbZG-Compliance"
     },
-    "complianceRadar": {
-      "description": "Überwachen Sie die Einhaltung des Arbeitsrechts, prüfen Sie Ergebnisse und verwalten Sie Verzichtserklärungen",
-      "tab": {
-        "config": "Konfiguration",
-        "findings": "Ergebnisse"
-      },
-      "title": "Compliance-Radar"
-    },
     "coverageRules": {
       "addRule": "Regel hinzufügen",
       "allowPublishWithGaps": "Veröffentlichung bei Deckungslücken zulassen",

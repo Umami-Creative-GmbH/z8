@@ -14,7 +14,6 @@ import { ShiftServiceLive } from "./services/shift.service";
 import { ShiftRequestServiceLive } from "./services/shift-request.service";
 import { SkillServiceLive } from "./services/skill.service";
 import { CoverageServiceLive } from "./services/coverage.service";
-import { ComplianceFindingsServiceLive } from "./services/compliance-findings.service";
 import { CustomRoleServiceLive } from "./services/custom-role.service";
 import { TimeEntryServiceLive } from "./services/time-entry.service";
 import { WorkPolicyServiceLive } from "./services/work-policy.service";
@@ -93,7 +92,6 @@ export const AppLayer = Layer.mergeAll(
 	SkillLayer,
 	CoverageLayer,
 	CustomRoleLayer,
-	ComplianceFindingsServiceLive,
 );
 
 // Runtime for executing effects

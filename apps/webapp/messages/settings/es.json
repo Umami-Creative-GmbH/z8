@@ -583,14 +583,6 @@
       "description": "Revisar y gestionar las solicitudes de excepción de cumplimiento de los miembros del equipo",
       "title": "Cumplimiento de ArbZG"
     },
-    "complianceRadar": {
-      "description": "Supervisar el cumplimiento de la legislación laboral, revisar los hallazgos y gestionar las exenciones",
-      "tab": {
-        "config": "Configuración",
-        "findings": "Hallazgos"
-      },
-      "title": "Radar de cumplimiento"
-    },
     "coverageRules": {
       "addRule": "Añadir regla",
       "allowPublishWithGaps": "Permitir la publicación con brechas de cobertura",

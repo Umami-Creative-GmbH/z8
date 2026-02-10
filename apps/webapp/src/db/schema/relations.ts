@@ -20,7 +20,6 @@ import { approvalRequest } from "./approval";
 import { auditLog } from "./audit";
 import { changePolicy, changePolicyAssignment } from "./change-policy";
 import { complianceException } from "./compliance";
-import { complianceConfig, complianceFinding } from "./compliance-finding";
 import { coverageRule, coverageSettings } from "./coverage";
 // Custom roles
 import {
@@ -193,9 +192,6 @@ export const organizationRelations = relations(
 		approvalRequests: many(approvalRequest),
 		// Compliance exceptions
 		complianceExceptions: many(complianceException),
-		// Compliance Radar
-		complianceFindings: many(complianceFinding),
-		complianceConfig: one(complianceConfig),
 		// Audit trail
 		auditLogs: many(auditLog),
 		// Webhooks
@@ -378,19 +374,6 @@ export const employeeRelations = relations(employee, ({ one, many }) => ({
 	}),
 	complianceExceptionsAsApprover: many(complianceException, {
 		relationName: "compliance_exception_approver",
-	}),
-	// Compliance findings
-	complianceFindings: many(complianceFinding, {
-		relationName: "compliance_finding_employee",
-	}),
-	findingsAcknowledged: many(complianceFinding, {
-		relationName: "compliance_finding_acknowledger",
-	}),
-	findingsWaived: many(complianceFinding, {
-		relationName: "compliance_finding_waiver",
-	}),
-	findingsResolved: many(complianceFinding, {
-		relationName: "compliance_finding_resolver",
 	}),
 	// Shift scheduling
 	shifts: many(shift),
@@ -2361,73 +2344,6 @@ export const coverageSettingsRelations = relations(
 			fields: [coverageSettings.updatedBy],
 			references: [user.id],
 			relationName: "coverage_settings_updater",
-		}),
-	}),
-);
-
-// ============================================
-// COMPLIANCE RADAR RELATIONS
-// ============================================
-
-export const complianceFindingRelations = relations(
-	complianceFinding,
-	({ one }) => ({
-		organization: one(organization, {
-			fields: [complianceFinding.organizationId],
-			references: [organization.id],
-		}),
-		employee: one(employee, {
-			fields: [complianceFinding.employeeId],
-			references: [employee.id],
-			relationName: "compliance_finding_employee",
-		}),
-		acknowledgedByRef: one(employee, {
-			fields: [complianceFinding.acknowledgedBy],
-			references: [employee.id],
-			relationName: "compliance_finding_acknowledger",
-		}),
-		waivedByRef: one(employee, {
-			fields: [complianceFinding.waivedBy],
-			references: [employee.id],
-			relationName: "compliance_finding_waiver",
-		}),
-		resolvedByRef: one(employee, {
-			fields: [complianceFinding.resolvedBy],
-			references: [employee.id],
-			relationName: "compliance_finding_resolver",
-		}),
-		workPolicy: one(workPolicy, {
-			fields: [complianceFinding.workPolicyId],
-			references: [workPolicy.id],
-		}),
-		exception: one(complianceException, {
-			fields: [complianceFinding.exceptionId],
-			references: [complianceException.id],
-		}),
-		creator: one(user, {
-			fields: [complianceFinding.createdBy],
-			references: [user.id],
-			relationName: "compliance_finding_creator",
-		}),
-	}),
-);
-
-export const complianceConfigRelations = relations(
-	complianceConfig,
-	({ one }) => ({
-		organization: one(organization, {
-			fields: [complianceConfig.organizationId],
-			references: [organization.id],
-		}),
-		creator: one(user, {
-			fields: [complianceConfig.createdBy],
-			references: [user.id],
-			relationName: "compliance_config_creator",
-		}),
-		updater: one(user, {
-			fields: [complianceConfig.updatedBy],
-			references: [user.id],
-			relationName: "compliance_config_updater",
 		}),
 	}),
 );

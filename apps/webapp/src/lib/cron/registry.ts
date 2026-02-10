@@ -191,24 +191,6 @@ export interface SlackEscalationResult {
 	errors: string[];
 }
 
-/** Result from compliance radar detection job */
-export interface ComplianceRadarResult {
-	success: boolean;
-	startedAt: Date;
-	completedAt: Date;
-	organizationsProcessed: number;
-	findingsCreated: number;
-	notificationsSent: number;
-	errors: string[];
-	details: Array<{
-		organizationId: string;
-		organizationName: string;
-		findingsDetected: number;
-		findingsCreated: number;
-		error?: string;
-	}>;
-}
-
 // ============================================
 // CRON JOB REGISTRY
 // ============================================
@@ -391,15 +373,6 @@ export const CRON_JOBS = {
 		defaultJobOptions: { attempts: 2, priority: 6 },
 	},
 
-	"cron:compliance-radar": {
-		schedule: "0 2 * * *", // Daily at 2 AM
-		description: "Detect compliance violations for previous day",
-		processor: async (): Promise<ComplianceRadarResult> => {
-			const { runComplianceRadarDetection } = await import("@/lib/jobs/compliance-radar-processor");
-			return runComplianceRadarDetection();
-		},
-		defaultJobOptions: { attempts: 2, priority: 5 },
-	},
 } as const satisfies Record<string, CronJobDefinition>;
 
 // ============================================

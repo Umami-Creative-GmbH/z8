@@ -583,14 +583,6 @@
       "description": "Examiner et gérer les demandes d'exception de conformité des membres de l'équipe",
       "title": "Conformité ArbZG"
     },
-    "complianceRadar": {
-      "description": "Surveiller la conformité au droit du travail, examiner les conclusions et gérer les dérogations",
-      "tab": {
-        "config": "Configuration",
-        "findings": "Résultats"
-      },
-      "title": "Radar de conformité"
-    },
     "coverageRules": {
       "addRule": "Ajouter une règle",
       "allowPublishWithGaps": "Autoriser la publication avec des lacunes de couverture",

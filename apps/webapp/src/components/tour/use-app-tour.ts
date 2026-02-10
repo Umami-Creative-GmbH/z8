@@ -40,7 +40,9 @@ export function useAppTour({ autoStart = false }: UseAppTourOptions = {}) {
 		// Lazy-load driver.js + CSS only when the tour actually starts
 		const [{ driver }] = await Promise.all([
 			import("driver.js"),
+			// @ts-expect-error -- CSS side-effect import has no type declarations
 			import("driver.js/dist/driver.css"),
+			// @ts-expect-error -- CSS side-effect import has no type declarations
 			import("./driver-theme.css"),
 		]);
 

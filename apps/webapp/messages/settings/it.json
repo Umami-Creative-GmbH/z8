@@ -583,14 +583,6 @@
       "description": "Esamina e gestisci le richieste di eccezione di conformità dei membri del team",
       "title": "Conformità ArbZG"
     },
-    "complianceRadar": {
-      "description": "Monitora la conformità alle leggi sul lavoro, esamina i risultati e gestisci le deroghe",
-      "tab": {
-        "config": "Configurazione",
-        "findings": "Risultati"
-      },
-      "title": "Radar di conformità"
-    },
     "coverageRules": {
       "addRule": "Aggiungi regola",
       "allowPublishWithGaps": "Consenti la pubblicazione con lacune nella copertura",

@@ -369,15 +369,6 @@ export const queryKeys = {
 		pendingExceptions: (orgId: string) => ["compliance", "pending-exceptions", orgId] as const,
 	},
 
-	// Compliance Radar (findings, config, stats)
-	complianceRadar: {
-		all: ["compliance-radar"] as const,
-		findings: (orgId: string, filters?: object) =>
-			["compliance-radar", "findings", orgId, filters] as const,
-		stats: (orgId: string) => ["compliance-radar", "stats", orgId] as const,
-		config: (orgId: string) => ["compliance-radar", "config", orgId] as const,
-	},
-
 	// Coverage Targets (minimum staffing requirements)
 	coverage: {
 		all: ["coverage"] as const,

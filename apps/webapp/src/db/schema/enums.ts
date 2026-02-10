@@ -286,29 +286,3 @@ export const skillCategoryEnum = pgEnum("skill_category", [
 	"custom", // Custom category (uses customCategoryName field)
 ]);
 
-// ============================================
-// COMPLIANCE RADAR ENUMS
-// ============================================
-
-// Compliance finding type (what rule was violated)
-export const complianceFindingTypeEnum = pgEnum("compliance_finding_type", [
-	"rest_period_insufficient", // 11-hour rest period violated
-	"max_hours_daily_exceeded", // Daily max exceeded
-	"max_hours_weekly_exceeded", // Weekly max exceeded
-	"consecutive_days_exceeded", // Too many consecutive work days
-]);
-
-// Compliance finding severity
-export const complianceFindingSeverityEnum = pgEnum("compliance_finding_severity", [
-	"info", // FYI only (5-10% over threshold)
-	"warning", // Should review (10-25% over threshold)
-	"critical", // Requires action (25%+ over threshold)
-]);
-
-// Compliance finding status
-export const complianceFindingStatusEnum = pgEnum("compliance_finding_status", [
-	"open", // Not yet reviewed
-	"acknowledged", // Manager reviewed, noted
-	"waived", // Manager approved exception
-	"resolved", // Fixed/no longer relevant
-]);

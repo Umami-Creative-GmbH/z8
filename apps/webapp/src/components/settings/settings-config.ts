@@ -39,7 +39,6 @@ export type SettingsIconName =
 	| "key"
 	| "webhook"
 	| "calendar-sync"
-	| "radar"
 	| "target"
 	| "certificate"
 	| "credit-card"
@@ -275,18 +274,6 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 			"Control when employees can edit time entries and require manager approval",
 		href: "/settings/change-policies",
 		icon: "clock-edit",
-		adminOnly: true,
-		group: "administration",
-	},
-	{
-		id: "compliance-radar",
-		titleKey: "settings.complianceRadar.title",
-		titleDefault: "Compliance Radar",
-		descriptionKey: "settings.complianceRadar.description",
-		descriptionDefault:
-			"Monitor labor-law compliance, view findings, and manage waivers",
-		href: "/settings/compliance-radar",
-		icon: "radar",
 		adminOnly: true,
 		group: "administration",
 	},
