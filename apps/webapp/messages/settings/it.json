@@ -499,6 +499,7 @@
       },
       "credentials": {
         "apiKey": "Chiave API",
+        "apiKeyHint": "Puoi trovare la tua chiave API nel tuo profilo Clockodo:",
         "connect": "Connetti e Anteprima",
         "description": "Inserisci la tua email e la chiave API di Clockodo. Puoi trovare la tua chiave API in Clockodo sotto Il mio profilo > Chiave API. Le credenziali non vengono memorizzate.",
         "email": "Email di Clockodo",

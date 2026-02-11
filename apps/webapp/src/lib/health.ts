@@ -57,10 +57,6 @@ export async function checkDatabase(): Promise<ServiceHealth> {
 export async function checkCache(): Promise<ServiceHealth> {
 	const start = performance.now();
 	try {
-		// Attempt to connect if not already connected (lazyConnect is enabled)
-		if (valkey.status !== "ready") {
-			await valkey.connect();
-		}
 		await valkey.ping();
 		return {
 			status: "healthy",

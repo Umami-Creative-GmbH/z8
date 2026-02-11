@@ -499,6 +499,7 @@
       },
       "credentials": {
         "apiKey": "API Key",
+        "apiKeyHint": "You can find your API key in your Clockodo profile:",
         "connect": "Connect & Preview",
         "description": "Enter your Clockodo email and API key. You can find your API key in Clockodo under My Profile > API Key. Credentials are not stored.",
         "email": "Clockodo Email",

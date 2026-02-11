@@ -4,7 +4,7 @@ import { IconPlus, IconWebhook } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import type { WebhookEndpoint } from "@/lib/webhooks/types";
 import { WebhookEndpointCard } from "./webhook-endpoint-card";
 import { WebhookFormDialog } from "./webhook-form-dialog";
@@ -35,27 +35,27 @@ export function WebhooksPageClient({
 	};
 
 	return (
-		<div className="space-y-6">
-			<Card>
-				<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-					<div className="space-y-1">
-						<CardTitle className="flex items-center gap-2">
-							<IconWebhook className="h-5 w-5" />
+		<div className="p-6">
+			<div className="mx-auto max-w-4xl">
+				<div className="mb-6 flex items-start justify-between">
+					<div>
+						<h1 className="text-2xl font-semibold">
 							{t("webhooks.title", "Webhooks")}
-						</CardTitle>
-						<CardDescription>
+						</h1>
+						<p className="text-muted-foreground">
 							{t(
 								"webhooks.description",
 								"Configure webhook endpoints to receive real-time notifications when events occur in your organization.",
 							)}
-						</CardDescription>
+						</p>
 					</div>
 					<Button onClick={() => setIsCreateDialogOpen(true)}>
 						<IconPlus className="mr-2 h-4 w-4" />
 						{t("webhooks.create", "Add Webhook")}
 					</Button>
-				</CardHeader>
-				<CardContent>
+				</div>
+				<Card>
+					<CardContent className="pt-6">
 					{webhooks.length === 0 ? (
 						<div className="flex flex-col items-center justify-center py-12 text-center">
 							<IconWebhook className="h-12 w-12 text-muted-foreground/50" />
@@ -87,6 +87,7 @@ export function WebhooksPageClient({
 					)}
 				</CardContent>
 			</Card>
+			</div>
 
 			<WebhookFormDialog
 				organizationId={organizationId}

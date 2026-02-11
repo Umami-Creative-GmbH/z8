@@ -464,6 +464,7 @@ export function PersonioConfigForm({
 					</CardDescription>
 				</CardHeader>
 				<form
+					className="flex flex-col gap-6"
 					onSubmit={(e) => {
 						e.preventDefault();
 						form.handleSubmit();

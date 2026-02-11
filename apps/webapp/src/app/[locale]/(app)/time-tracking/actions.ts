@@ -1327,7 +1327,7 @@ async function validateProjectAssignment(
  * Check compliance after clocking out and log any violations
  * This is a warning-only system - it logs violations but doesn't block actions
  */
-async function checkComplianceAfterClockOut(
+export async function checkComplianceAfterClockOut(
 	employeeId: string,
 	organizationId: string,
 	workPeriodId: string,
@@ -1441,7 +1441,7 @@ async function calculateBreaksTakenToday(
  * Only runs if surcharges are enabled for the organization
  * Errors are logged but don't fail the clock-out
  */
-async function calculateAndPersistSurcharges(
+export async function calculateAndPersistSurcharges(
 	workPeriodId: string,
 	organizationId: string,
 ): Promise<void> {
@@ -1471,7 +1471,7 @@ async function calculateAndPersistSurcharges(
  * if they violate break requirements.
  * Errors are logged but don't fail the clock-out.
  */
-async function enforceBreaksAfterClockOut(input: {
+export async function enforceBreaksAfterClockOut(input: {
 	employeeId: string;
 	organizationId: string;
 	workPeriodId: string;
@@ -2236,7 +2236,7 @@ export async function updateWorkPeriodProject(
  * Helper function to create an approval request for clock-out (0-day policy)
  * Creates the approval request and sends notification to manager
  */
-async function createClockOutApprovalRequest(params: {
+export async function createClockOutApprovalRequest(params: {
 	workPeriodId: string;
 	employeeId: string;
 	managerId: string;

@@ -110,7 +110,7 @@ export function DatevConfigForm({
 							alt="DATEV Logo"
 							width={48}
 							height={48}
-							className="h-12 w-12"
+							className="h-12 w-12 dark:invert"
 						/>
 						<div>
 							<CardTitle className="flex items-center gap-2">
@@ -133,6 +133,7 @@ export function DatevConfigForm({
 				</div>
 			</CardHeader>
 			<form
+				className="flex flex-col gap-6"
 				onSubmit={(e) => {
 					e.preventDefault();
 					form.handleSubmit();

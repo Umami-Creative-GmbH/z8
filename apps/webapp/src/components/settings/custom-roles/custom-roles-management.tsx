@@ -5,6 +5,8 @@ import {
 	IconEdit,
 	IconLoader2,
 	IconPlus,
+	IconRefresh,
+	IconShieldCog,
 	IconTrash,
 } from "@tabler/icons-react";
 import { useState } from "react";
@@ -15,9 +17,6 @@ import { Button } from "@/components/ui/button";
 import {
 	Card,
 	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
 } from "@/components/ui/card";
 import {
 	Dialog,
@@ -65,7 +64,7 @@ export function CustomRolesManagement({ organizationId }: CustomRolesManagementP
 	const [isCreateOpen, setIsCreateOpen] = useState(false);
 	const [deleteTarget, setDeleteTarget] = useState<CustomRoleWithPermissions | null>(null);
 
-	const { data: roles, isLoading } = useQuery({
+	const { data: roles, isLoading, isFetching, refetch } = useQuery({
 		queryKey: ["custom-roles", organizationId],
 		queryFn: async () => {
 			const result = await listCustomRoles();
@@ -96,33 +95,50 @@ export function CustomRolesManagement({ organizationId }: CustomRolesManagementP
 	};
 
 	return (
-		<div className="space-y-6">
-			<Card>
-				<CardHeader>
-					<div className="flex items-center justify-between">
-						<div>
-							<CardTitle>Custom Roles</CardTitle>
-							<CardDescription>
-								Create custom permission roles that can be assigned to employees.
-								Custom roles add permissions on top of the base tier.
-							</CardDescription>
-						</div>
-						<Button onClick={() => setIsCreateOpen(true)}>
+		<div className="flex flex-1 flex-col gap-4 p-4">
+			<div className="flex items-center justify-between">
+				<div className="flex flex-col gap-2">
+					<h1 className="text-2xl font-semibold tracking-tight">Custom Roles</h1>
+					<p className="text-sm text-muted-foreground">
+						Create custom permission roles that can be assigned to employees.
+						Custom roles add permissions on top of the base tier.
+					</p>
+				</div>
+				<div className="flex items-center gap-2">
+					<Button variant="ghost" size="icon" onClick={() => refetch()} disabled={isFetching}>
+						<IconRefresh className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
+						<span className="sr-only">Refresh</span>
+					</Button>
+					<Button onClick={() => setIsCreateOpen(true)}>
+						<IconPlus className="mr-2 h-4 w-4" />
+						Create Role
+					</Button>
+				</div>
+			</div>
+
+			{isLoading ? (
+				<Card>
+					<CardContent className="flex items-center justify-center py-12">
+						<IconLoader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+					</CardContent>
+				</Card>
+			) : !roles?.length ? (
+				<Card>
+					<CardContent className="flex flex-col items-center justify-center py-12">
+						<IconShieldCog className="h-12 w-12 text-muted-foreground" />
+						<h3 className="mt-4 text-lg font-medium">No custom roles yet</h3>
+						<p className="mt-2 text-sm text-muted-foreground">
+							Create one to get started.
+						</p>
+						<Button onClick={() => setIsCreateOpen(true)} className="mt-4">
 							<IconPlus className="mr-2 h-4 w-4" />
 							Create Role
 						</Button>
-					</div>
-				</CardHeader>
-				<CardContent>
-					{isLoading ? (
-						<div className="flex items-center justify-center py-8">
-							<IconLoader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-						</div>
-					) : !roles?.length ? (
-						<div className="py-8 text-center text-muted-foreground">
-							No custom roles yet. Create one to get started.
-						</div>
-					) : (
+					</CardContent>
+				</Card>
+			) : (
+				<Card>
+					<CardContent>
 						<Table>
 							<TableHeader>
 								<TableRow>
@@ -191,9 +207,9 @@ export function CustomRolesManagement({ organizationId }: CustomRolesManagementP
 								))}
 							</TableBody>
 						</Table>
-					)}
-				</CardContent>
-			</Card>
+					</CardContent>
+				</Card>
+			)}
 
 			{/* Create Dialog */}
 			<Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
