@@ -7,6 +7,7 @@
 
 import { DateTime } from "luxon";
 import type { CoverageSummary } from "@/lib/effect/services/coverage.service";
+import { fmtFullDate } from "@/lib/bot-platform/i18n";
 
 // ============================================
 // TYPES
@@ -56,10 +57,11 @@ function formatVariance(variance: number): string {
 // ============================================
 
 export function buildCoverageCard(input: CoverageCardInput): Record<string, unknown> {
-	const { summary, appUrl } = input;
-	const dateFormatted = DateTime.fromJSDate(summary.date)
-		.setZone(summary.timezone)
-		.toFormat("EEEE, MMMM d, yyyy");
+	const { summary, appUrl, locale } = input;
+	const dateFormatted = fmtFullDate(
+		DateTime.fromJSDate(summary.date).setZone(summary.timezone),
+		locale,
+	);
 
 	// Group snapshots by subarea for display
 	const bySubarea = new Map<string, typeof summary.snapshots>();
@@ -314,10 +316,11 @@ export function buildCoverageCard(input: CoverageCardInput): Record<string, unkn
  * Build text-only coverage summary (fallback for non-card clients)
  */
 export function buildCoverageText(input: CoverageCardInput): string {
-	const { summary } = input;
-	const dateFormatted = DateTime.fromJSDate(summary.date)
-		.setZone(summary.timezone)
-		.toFormat("EEEE, MMMM d, yyyy");
+	const { summary, locale } = input;
+	const dateFormatted = fmtFullDate(
+		DateTime.fromJSDate(summary.date).setZone(summary.timezone),
+		locale,
+	);
 
 	const lines: string[] = [
 		`**📊 Coverage Report - ${dateFormatted}**`,

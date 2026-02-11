@@ -45,6 +45,7 @@ export const userSettings = pgTable(
 
 		// User preferences
 		timezone: text("timezone").default("UTC").notNull(), // e.g., "UTC", "America/New_York"
+		locale: text("locale"), // e.g., "en", "de" — null means auto-detect
 
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at")

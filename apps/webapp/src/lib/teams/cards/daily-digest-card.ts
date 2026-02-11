@@ -6,6 +6,8 @@
 
 import { DateTime } from "luxon";
 import type { DailyDigestData } from "../types";
+import { fmtFullDate } from "@/lib/bot-platform/i18n";
+import { DEFAULT_LANGUAGE } from "@/tolgee/shared";
 
 /**
  * Build a daily digest Adaptive Card
@@ -17,10 +19,12 @@ import type { DailyDigestData } from "../types";
 export function buildDailyDigestCard(
 	data: DailyDigestData,
 	appUrl: string,
+	locale: string = DEFAULT_LANGUAGE,
 ): Record<string, unknown> {
-	const dateFormatted = DateTime.fromJSDate(data.date)
-		.setZone(data.timezone)
-		.toFormat("EEEE, MMMM d, yyyy");
+	const dateFormatted = fmtFullDate(
+		DateTime.fromJSDate(data.date).setZone(data.timezone),
+		locale,
+	);
 
 	const body: Array<Record<string, unknown>> = [
 		// Header
@@ -341,11 +345,12 @@ export function buildDailyDigestCard(
 /**
  * Build a simplified digest summary for text-only clients
  */
-export function buildDailyDigestText(data: DailyDigestData): string {
+export function buildDailyDigestText(data: DailyDigestData, locale: string = DEFAULT_LANGUAGE): string {
 	const lines: string[] = [];
-	const dateFormatted = DateTime.fromJSDate(data.date)
-		.setZone(data.timezone)
-		.toFormat("EEEE, MMMM d, yyyy");
+	const dateFormatted = fmtFullDate(
+		DateTime.fromJSDate(data.date).setZone(data.timezone),
+		locale,
+	);
 
 	lines.push(`**Daily Digest - ${dateFormatted}**`);
 	lines.push("");

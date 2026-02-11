@@ -7,6 +7,7 @@
 
 import { DateTime } from "luxon";
 import type { ComplianceSummary, ComplianceAlert, ComplianceExceptionSummary } from "@/lib/effect/services/teams-compliance.service";
+import { fmtShortDate } from "@/lib/bot-platform/i18n";
 
 // ============================================
 // TYPES
@@ -62,9 +63,9 @@ function getExceptionTypeLabel(type: string): string {
 	}
 }
 
-function formatDate(date: Date, timezone?: string): string {
+function formatDate(date: Date, locale: string, timezone?: string): string {
 	const dt = timezone ? DateTime.fromJSDate(date).setZone(timezone) : DateTime.fromJSDate(date);
-	return dt.toFormat("MMM d");
+	return fmtShortDate(dt, locale);
 }
 
 // ============================================
@@ -72,7 +73,7 @@ function formatDate(date: Date, timezone?: string): string {
 // ============================================
 
 export function buildComplianceCard(input: ComplianceCardInput): Record<string, unknown> {
-	const { summary, daysBack, appUrl } = input;
+	const { summary, daysBack, appUrl, locale } = input;
 
 	const body: Array<Record<string, unknown>> = [
 		// Header
@@ -219,7 +220,7 @@ export function buildComplianceCard(input: ComplianceCardInput): Record<string, 
 						items: [
 							{
 								type: "TextBlock",
-								text: formatDate(alert.date),
+								text: formatDate(alert.date, locale),
 								size: "small",
 								isSubtle: true,
 							},
@@ -297,7 +298,7 @@ export function buildComplianceCard(input: ComplianceCardInput): Record<string, 
 						items: [
 							{
 								type: "TextBlock",
-								text: formatDate(exception.requestedAt),
+								text: formatDate(exception.requestedAt, locale),
 								size: "small",
 								isSubtle: true,
 							},

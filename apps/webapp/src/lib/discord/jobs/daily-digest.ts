@@ -9,6 +9,7 @@ import { and, eq } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { db } from "@/db";
 import { employee, employeeManagers } from "@/db/schema";
+import { getUserLocale } from "@/lib/bot-platform/i18n";
 import type { DailyDigestData } from "@/lib/bot-platform/types";
 import { createLogger } from "@/lib/logger";
 import { sendMessage } from "../api";
@@ -36,7 +37,10 @@ export async function runDiscordDailyDigestJob(): Promise<DiscordDailyDigestResu
 		const bots = await getAllActiveBotConfigs();
 		const digestEnabledBots = bots.filter((b) => b.enableDailyDigest);
 
-		logger.info({ botCount: digestEnabledBots.length }, "Starting Discord daily digest job");
+		logger.info(
+			{ botCount: digestEnabledBots.length },
+			"Starting Discord daily digest job",
+		);
 
 		for (const bot of digestEnabledBots) {
 			try {
@@ -50,7 +54,11 @@ export async function runDiscordDailyDigestJob(): Promise<DiscordDailyDigestResu
 		}
 
 		logger.info(
-			{ botsProcessed: digestEnabledBots.length, digestsSent, errors: errors.length },
+			{
+				botsProcessed: digestEnabledBots.length,
+				digestsSent,
+				errors: errors.length,
+			},
 			"Discord daily digest job completed",
 		);
 
@@ -75,7 +83,11 @@ async function processBotDigest(bot: {
 	// Check if it's time to send
 	const now = DateTime.now().setZone(bot.digestTimezone);
 	const [digestHour, digestMinute] = bot.digestTime.split(":").map(Number);
-	const digestTime = now.set({ hour: digestHour, minute: digestMinute, second: 0 });
+	const digestTime = now.set({
+		hour: digestHour,
+		minute: digestMinute,
+		second: 0,
+	});
 	const minutesSinceDigestTime = now.diff(digestTime, "minutes").minutes;
 
 	if (minutesSinceDigestTime < 0 || minutesSinceDigestTime >= 15) {
@@ -85,46 +97,58 @@ async function processBotDigest(bot: {
 	const conversations = await getOrganizationConversations(bot.organizationId);
 	if (conversations.length === 0) return 0;
 
-	let sent = 0;
-	const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://app.z8.works";
+	const appUrl = process.env.APP_URL || "https://z8-time.app";
+	const { buildDigestDataForManager } = await import(
+		"@/lib/teams/jobs/daily-digest"
+	);
 
-	for (const conv of conversations) {
-		try {
-			// Get employee record
-			const emp = await db.query.employee.findFirst({
-				where: and(
-					eq(employee.userId, conv.userId),
-					eq(employee.organizationId, bot.organizationId),
-				),
-			});
+	const results = await Promise.allSettled(
+		conversations.map(async (conv) => {
+			try {
+				// Get employee record
+				const emp = await db.query.employee.findFirst({
+					where: and(
+						eq(employee.userId, conv.userId),
+						eq(employee.organizationId, bot.organizationId),
+					),
+				});
 
-			if (!emp) continue;
+				if (!emp) return false;
 
-			// Check if manager
-			const manages = await db.query.employeeManagers.findFirst({
-				where: eq(employeeManagers.managerId, emp.id),
-			});
+				// Check if manager
+				const manages = await db.query.employeeManagers.findFirst({
+					where: eq(employeeManagers.managerId, emp.id),
+				});
 
-			if (!manages) continue;
+				if (!manages) return false;
 
-			// Build digest data - reuse the shared function from Teams
-			const { buildDigestDataForManager } = await import("@/lib/teams/jobs/daily-digest");
-			const digestData: DailyDigestData = await buildDigestDataForManager(
-				emp.id,
-				bot.organizationId,
-				bot.digestTimezone,
-			);
+				const userLocale = await getUserLocale(conv.userId);
+				const digestData: DailyDigestData = await buildDigestDataForManager(
+					emp.id,
+					bot.organizationId,
+					bot.digestTimezone,
+					userLocale,
+				);
 
-			// Build Discord embed
-			const embeds = buildDailyDigestEmbed(digestData, appUrl);
+				// Build Discord embed
+				const embeds = buildDailyDigestEmbed(digestData, appUrl, userLocale);
 
-			await sendMessage(bot.botToken, conv.channelId, { embeds });
+				await sendMessage(bot.botToken, conv.channelId, { embeds });
 
-			sent++;
-		} catch (error) {
-			logger.warn({ error, userId: conv.userId }, "Failed to send Discord digest");
-		}
-	}
+				return true;
+			} catch (error) {
+				logger.warn(
+					{ error, userId: conv.userId },
+					"Failed to send Discord digest",
+				);
+				return false;
+			}
+		}),
+	);
+
+	const sent = results.filter(
+		(r) => r.status === "fulfilled" && r.value === true,
+	).length;
 
 	logger.info(
 		{ organizationId: bot.organizationId, digestsSent: sent },

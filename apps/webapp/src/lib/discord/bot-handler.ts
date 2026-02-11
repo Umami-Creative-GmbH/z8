@@ -118,6 +118,7 @@ async function handleSlashCommand(
 			escalationTimeoutHours: bot.escalationTimeoutHours,
 		},
 		args: extractCommandArgs(interaction),
+		locale: "en",
 	};
 
 	// Execute command and send follow-up response

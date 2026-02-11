@@ -5,6 +5,8 @@
  */
 
 import { DateTime } from "luxon";
+import { fmtFullDate, fmtShortDate, fmtShortDateTime } from "@/lib/bot-platform/i18n";
+import { DEFAULT_LANGUAGE } from "@/tolgee/shared";
 import type {
 	ApprovalButtonData,
 	ApprovalCardData,
@@ -34,7 +36,10 @@ const Colors = {
 /**
  * Build approval request embed with approve/reject buttons.
  */
-export function buildApprovalEmbed(data: ApprovalCardData): {
+export function buildApprovalEmbed(
+	data: ApprovalCardData,
+	locale: string = DEFAULT_LANGUAGE,
+): {
 	embeds: DiscordEmbed[];
 	components: DiscordActionRow[];
 } {
@@ -46,8 +51,8 @@ export function buildApprovalEmbed(data: ApprovalCardData): {
 		const category = data.absenceCategory || "Leave";
 		fields.push({ name: "Type", value: category, inline: true });
 		if (data.startDate && data.endDate) {
-			const start = DateTime.fromISO(data.startDate).toFormat("MMM d");
-			const end = DateTime.fromISO(data.endDate).toFormat("MMM d");
+			const start = fmtShortDate(DateTime.fromISO(data.startDate), locale);
+			const end = fmtShortDate(DateTime.fromISO(data.endDate), locale);
 			fields.push({ name: "Period", value: `${start} - ${end}`, inline: true });
 		}
 	} else if (data.entityType === "time_entry") {
@@ -58,7 +63,7 @@ export function buildApprovalEmbed(data: ApprovalCardData): {
 		fields.push({ name: "Reason", value: data.reason, inline: false });
 	}
 
-	const submitted = DateTime.fromJSDate(data.createdAt).toFormat("MMM d, HH:mm");
+	const submitted = fmtShortDateTime(DateTime.fromJSDate(data.createdAt), locale);
 	fields.push({ name: "Submitted", value: submitted, inline: true });
 
 	const approveData: ApprovalButtonData = { a: "ap", id: data.approvalId };
@@ -101,6 +106,7 @@ export function buildApprovalEmbed(data: ApprovalCardData): {
 export function buildResolvedApprovalEmbed(
 	data: ApprovalCardData,
 	resolved: ApprovalResolvedData,
+	locale: string = DEFAULT_LANGUAGE,
 ): { embeds: DiscordEmbed[]; components: DiscordActionRow[] } {
 	const isApproved = resolved.action === "approved";
 	const icon = isApproved ? "\u2705" : "\u274C";
@@ -114,13 +120,13 @@ export function buildResolvedApprovalEmbed(
 		const category = data.absenceCategory || "Leave";
 		fields.push({ name: "Type", value: category, inline: true });
 		if (data.startDate && data.endDate) {
-			const start = DateTime.fromISO(data.startDate).toFormat("MMM d");
-			const end = DateTime.fromISO(data.endDate).toFormat("MMM d");
+			const start = fmtShortDate(DateTime.fromISO(data.startDate), locale);
+			const end = fmtShortDate(DateTime.fromISO(data.endDate), locale);
 			fields.push({ name: "Period", value: `${start} - ${end}`, inline: true });
 		}
 	}
 
-	const resolvedAt = DateTime.fromJSDate(resolved.resolvedAt).toFormat("MMM d, HH:mm");
+	const resolvedAt = fmtShortDateTime(DateTime.fromJSDate(resolved.resolvedAt), locale);
 	fields.push({ name: `${status} by`, value: resolved.approverName, inline: true });
 	fields.push({ name: "At", value: resolvedAt, inline: true });
 
@@ -165,10 +171,15 @@ export function buildResolvedApprovalEmbed(
 /**
  * Build daily digest embed for Discord.
  */
-export function buildDailyDigestEmbed(data: DailyDigestData, appUrl: string): DiscordEmbed[] {
-	const dateFormatted = DateTime.fromJSDate(data.date)
-		.setZone(data.timezone)
-		.toFormat("EEEE, MMMM d, yyyy");
+export function buildDailyDigestEmbed(
+	data: DailyDigestData,
+	appUrl: string,
+	locale: string = DEFAULT_LANGUAGE,
+): DiscordEmbed[] {
+	const dateFormatted = fmtFullDate(
+		DateTime.fromJSDate(data.date).setZone(data.timezone),
+		locale,
+	);
 
 	const fields: DiscordEmbed["fields"] = [];
 
