@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
 			)
 			.limit(1);
 
-		if (!membership || membership.role !== "admin") {
+		if (!membership || (membership.role !== "admin" && membership.role !== "owner")) {
 			return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 		}
 
