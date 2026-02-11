@@ -19,6 +19,7 @@ export const ALL_NAMESPACES = [
 	"reports",
 	"settings",
 	"onboarding",
+	"bot",
 ] as const;
 
 export type Namespace = (typeof ALL_NAMESPACES)[number];
@@ -141,6 +142,14 @@ const namespaceImports: Record<Namespace, Record<string, () => Promise<unknown>>
 		es: () => import("../../messages/onboarding/es.json"),
 		it: () => import("../../messages/onboarding/it.json"),
 		pt: () => import("../../messages/onboarding/pt.json"),
+	},
+	bot: {
+		en: () => import("../../messages/bot/en.json"),
+		de: () => import("../../messages/bot/de.json"),
+		fr: () => import("../../messages/bot/fr.json"),
+		es: () => import("../../messages/bot/es.json"),
+		it: () => import("../../messages/bot/it.json"),
+		pt: () => import("../../messages/bot/pt.json"),
 	},
 };
 

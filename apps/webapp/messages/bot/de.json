@@ -1,0 +1,92 @@
+{
+  "bot": {
+    "approval": {
+      "alreadyProcessed": "Diese Genehmigung wurde bereits bearbeitet."
+    },
+    "cmd": {
+      "clockedin": {
+        "header": "{active} von {total} Teammitgliedern sind derzeit eingestempelt:",
+        "noneActive": "Keines Ihrer {total} Teammitglieder ist derzeit eingestempelt.",
+        "noTeam": "Ihnen sind keine Teammitglieder zugewiesen."
+      },
+      "clockin": {
+        "alreadyIn": "Sie sind bereits seit {time} eingestempelt ({hours}h {minutes}m).",
+        "cannotNow": "Einstempeln zu diesem Zeitpunkt nicht möglich.",
+        "noProfile": "Mitarbeiterprofil nicht gefunden.",
+        "success": "Eingestempelt um {time}."
+      },
+      "clockout": {
+        "cannotNow": "Ausstempeln zu diesem Zeitpunkt nicht möglich.",
+        "noProfile": "Mitarbeiterprofil nicht gefunden.",
+        "notClockedIn": "Sie sind derzeit nicht eingestempelt.",
+        "pendingApproval": "Ihr Ausstempeln wartet auf die Genehmigung durch den Manager.",
+        "success": "Ausgestempelt um {time}. Dauer: {hours}h {minutes}m."
+      },
+      "compliance": {
+        "error": "Compliance-Daten konnten nicht abgerufen werden. Bitte versuchen Sie es später erneut.",
+        "noIssues": "Keine Compliance-Probleme in den letzten {days} Tagen gefunden. Ihr Team ist in einem guten Zustand!"
+      },
+      "coverage": {
+        "error": "Abdeckungsdaten konnten nicht abgerufen werden. Bitte versuchen Sie es später erneut.",
+        "noData": "Keine geplanten Abdeckungsdaten für {date} gefunden."
+      },
+      "help": {
+        "footer": "Sie können Genehmigungsanfragen und tägliche Zusammenfassungen auch direkt in {platform} erhalten.",
+        "title": "Z8 Bot-Befehle"
+      },
+      "openshifts": {
+        "error": "Offene Schichten konnten nicht abgerufen werden. Bitte versuchen Sie es später erneut.",
+        "noShifts": "Keine offenen Schichten für {period} gefunden. Alle Schichten sind derzeit zugewiesen."
+      },
+      "pending": {
+        "footer": "In Z8 ansehen und genehmigen oder auf einzelne Genehmigungskarten warten.",
+        "header": "{count, plural, one {Sie haben {count} ausstehende Genehmigung:} other {Sie haben {count} ausstehende Genehmigungen:}}",
+        "none": "Sie haben keine ausstehenden Genehmigungsanfragen. Gute Arbeit!"
+      },
+      "status": {
+        "clockedIn": "Sie sind seit {time} eingestempelt ({hours}h {minutes}m).",
+        "noProfile": "Mitarbeiterprofil nicht gefunden.",
+        "notClockedIn": "Sie sind derzeit nicht eingestempelt."
+      },
+      "whosout": {
+        "header": "{outCount} von {total} Teammitgliedern sind heute abwesend:",
+        "noneOut": "Alle {total} Ihrer Teammitglieder sind heute verfügbar.",
+        "noTeam": "Ihnen sind keine Teammitglieder zugewiesen."
+      }
+    },
+    "language": {
+      "changed": "Sprache auf {language} geändert.",
+      "prompt": "Wählen Sie Ihre Sprache:"
+    },
+    "static": {
+      "errorApprovalNotFound": "Diese Genehmigungsanfrage existiert nicht mehr oder wurde bereits bearbeitet.",
+      "errorApprovalResolved": "Diese Genehmigung wurde bereits genehmigt oder abgelehnt.",
+      "errorDefault": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.",
+      "errorEmployeeNotFound": "Sie haben keinen Mitarbeiterdatensatz in Z8. Bitte kontaktieren Sie Ihren Administrator.",
+      "errorNotAuthorized": "Sie sind nicht berechtigt, diese Aktion auszuführen.",
+      "errorTenantNotConfigured": "Ihre Organisation hat die Z8-Einrichtung noch nicht abgeschlossen. Bitte bitten Sie einen Administrator, die Integration zu konfigurieren.",
+      "errorUserNotLinked": "Ihr Teams-Konto ist nicht mit Z8 verknüpft. Stellen Sie sicher, dass Ihre Teams-E-Mail mit Ihrem Z8-Konto übereinstimmt.",
+      "genericError": "Entschuldigung, etwas ist schiefgelaufen. Bitte versuchen Sie es erneut oder kontaktieren Sie den Support.",
+      "linkAlreadyLinked": "Dieses Telegram-Konto ist bereits mit einem Z8-Konto in dieser Organisation verknüpft.",
+      "linkExpired": "Dieser Verknüpfungscode ist abgelaufen. Bitte generieren Sie einen neuen in Ihren Z8-Einstellungen.",
+      "linkInvalid": "Ungültiger Verknüpfungscode. Bitte überprüfen Sie Ihren Code und versuchen Sie es erneut.",
+      "linkSuccess": "Ihr Telegram-Konto wurde mit Z8 verknüpft! Geben Sie /help ein, um verfügbare Befehle zu sehen.",
+      "linkUsage": "Bitte geben Sie Ihren Verknüpfungscode an: /link IHR_CODE",
+      "mentionHelp": "Hallo! Ich bin der Z8-Bot. Geben Sie „help“ ein, um verfügbare Befehle anzuzeigen.",
+      "noEmployee": "Ihr Konto existiert, aber Sie haben keinen Mitarbeiterdatensatz in Z8.",
+      "noOrg": "Ihre Organisation konnte nicht identifiziert werden. Bitte kontaktieren Sie den Support.",
+      "notLinked": "Ihr Telegram-Konto ist nicht mit Z8 verknüpft. Gehen Sie in Ihrem Z8-Dashboard zu Einstellungen > Integrationen > Telegram, um einen Verknüpfungscode zu generieren, und senden Sie dann: /link IHR_CODE",
+      "notLinkedTeams": "Ich konnte Ihr Z8-Konto nicht finden. Stellen Sie sicher, dass Ihre Teams-E-Mail mit Ihrer Z8-Konto-E-Mail übereinstimmt.",
+      "noUser": "Ihr Benutzerkonto konnte nicht identifiziert werden.",
+      "setupBody": "Ihre Organisation muss mit Z8 verbunden werden. Klicken Sie unten, um den Einrichtungsprozess zu starten.",
+      "setupButton": "Einrichtung abschließen",
+      "setupNote": "Nur Organisationsadministratoren können diese Einrichtung abschließen.",
+      "setupRequired": "Willkommen bei Z8! Um diese Microsoft 365-Organisation mit Ihrem Z8-Konto zu verbinden, muss ein Administrator die Einrichtung abschließen.",
+      "setupTitle": "Z8-Einrichtung erforderlich",
+      "typeHelp": "Geben Sie /help ein, um die verfügbaren Befehle anzuzeigen.",
+      "unconfigured": "Die Z8-Integration Ihrer Organisation wird gerade eingerichtet. Bitte warten Sie, bis Ihr Administrator die Konfiguration abgeschlossen hat.",
+      "welcome": "Willkommen bei Z8! Um Ihr Konto zu verbinden, gehen Sie in Ihrem Z8-Dashboard zu Einstellungen > Integrationen > Telegram und generieren Sie einen Link-Code. Senden Sie dann: /link IHR_CODE",
+      "welcomeTeams": "Willkommen bei Z8! Geben Sie „help“ ein, um die verfügbaren Befehle anzuzeigen."
+    }
+  }
+}

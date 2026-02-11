@@ -1,0 +1,92 @@
+{
+  "bot": {
+    "approval": {
+      "alreadyProcessed": "Cette approbation a déjà été traitée."
+    },
+    "cmd": {
+      "clockedin": {
+        "header": "{active} sur {total} membres de l'équipe sont actuellement pointés :",
+        "noneActive": "Aucun de vos {total} membres d'équipe n'est actuellement pointé.",
+        "noTeam": "Aucun membre de l'équipe ne vous est assigné."
+      },
+      "clockin": {
+        "alreadyIn": "Vous avez déjà pointé depuis {time} ({hours}h {minutes}m).",
+        "cannotNow": "Impossible de pointer à l'entrée pour le moment.",
+        "noProfile": "Profil de l'employé introuvable.",
+        "success": "Pointage à l'entrée effectué à {time}."
+      },
+      "clockout": {
+        "cannotNow": "Impossible de pointer à la sortie pour le moment.",
+        "noProfile": "Profil de l'employé introuvable.",
+        "notClockedIn": "Vous n'êtes pas actuellement pointé.",
+        "pendingApproval": "Votre pointage de sortie est en attente de l'approbation du manager.",
+        "success": "Pointage à la sortie effectué à {time}. Durée : {hours}h {minutes}m."
+      },
+      "compliance": {
+        "error": "Échec de la récupération des données de conformité. Veuillez réessayer plus tard.",
+        "noIssues": "Aucun problème de conformité trouvé au cours des {days} derniers jours. Votre équipe est en règle !"
+      },
+      "coverage": {
+        "error": "Échec de la récupération des données de couverture. Veuillez réessayer plus tard.",
+        "noData": "Aucune donnée de couverture planifiée trouvée pour le {date}."
+      },
+      "help": {
+        "footer": "Vous pouvez également recevoir des demandes d'approbation et des résumés quotidiens directement dans {platform}.",
+        "title": "Commandes du Bot Z8"
+      },
+      "openshifts": {
+        "error": "Échec de la récupération des créneaux ouverts. Veuillez réessayer plus tard.",
+        "noShifts": "Aucun créneau ouvert trouvé pour {period}. Tous les créneaux sont actuellement assignés."
+      },
+      "pending": {
+        "footer": "Consultez et approuvez dans Z8 ou attendez les fiches d'approbation individuelles.",
+        "header": "{count, plural, one {Vous avez {count} approbation en attente :} other {Vous avez {count} approbations en attente :}}",
+        "none": "Vous n'avez aucune demande d'approbation en attente. Beau travail !"
+      },
+      "status": {
+        "clockedIn": "Vous avez pointé depuis {time} ({hours}h {minutes}m).",
+        "noProfile": "Profil de l'employé introuvable.",
+        "notClockedIn": "Vous n'êtes pas actuellement pointé à l'entrée."
+      },
+      "whosout": {
+        "header": "{outCount} sur {total} membres de l'équipe sont absents aujourd'hui :",
+        "noneOut": "L'ensemble de vos {total} membres d'équipe est disponible aujourd'hui.",
+        "noTeam": "Aucun membre de l'équipe ne vous est assigné."
+      }
+    },
+    "language": {
+      "changed": "Langue changée en {language}.",
+      "prompt": "Choisissez votre langue :"
+    },
+    "static": {
+      "errorApprovalNotFound": "Cette demande d'approbation n'existe plus ou a déjà été traitée.",
+      "errorApprovalResolved": "Cette approbation a déjà été acceptée ou rejetée.",
+      "errorDefault": "Une erreur est survenue. Veuillez réessayer.",
+      "errorEmployeeNotFound": "Vous n'avez pas de dossier d'employé dans Z8. Veuillez contacter votre administrateur.",
+      "errorNotAuthorized": "Vous n'êtes pas autorisé à effectuer cette action.",
+      "errorTenantNotConfigured": "Votre organisation n'a pas encore terminé la configuration de Z8. Veuillez demander à un administrateur de configurer l'intégration.",
+      "errorUserNotLinked": "Votre compte Teams n'est pas lié à Z8. Assurez-vous que votre e-mail Teams correspond à votre compte Z8.",
+      "genericError": "Désolé, une erreur est survenue. Veuillez réessayer ou contacter le support.",
+      "linkAlreadyLinked": "Ce compte Telegram est déjà lié à un compte Z8 dans cette organisation.",
+      "linkExpired": "Ce code de liaison a expiré. Veuillez en générer un nouveau depuis vos paramètres Z8.",
+      "linkInvalid": "Code de liaison invalide. Veuillez vérifier votre code et réessayer.",
+      "linkSuccess": "Votre compte Telegram a été lié à Z8 ! Tapez /help pour voir les commandes disponibles.",
+      "linkUsage": "Veuillez fournir votre code de liaison : /link VOTRE_CODE",
+      "mentionHelp": "Salut ! Je suis le bot Z8. Tapez « help » pour voir les commandes disponibles.",
+      "noEmployee": "Votre compte existe mais vous n'avez pas de dossier d'employé dans Z8.",
+      "noOrg": "Impossible d'identifier votre organisation. Veuillez contacter le support.",
+      "notLinked": "Votre compte Telegram n'est pas lié à Z8. Allez dans Paramètres > Intégrations > Telegram dans votre tableau de bord Z8 pour générer un code de liaison, puis envoyez : /link VOTRE_CODE",
+      "notLinkedTeams": "Je n'ai pas pu trouver votre compte Z8. Assurez-vous que votre adresse e-mail Teams correspond à celle de votre compte Z8.",
+      "noUser": "Impossible d'identifier votre compte utilisateur.",
+      "setupBody": "Votre organisation doit être connectée à Z8. Cliquez ci-dessous pour commencer le processus de configuration.",
+      "setupButton": "Terminer la configuration",
+      "setupNote": "Seuls les administrateurs de l'organisation peuvent terminer cette configuration.",
+      "setupRequired": "Bienvenue sur Z8 ! Pour connecter cette organisation Microsoft 365 à votre compte Z8, un administrateur doit terminer la configuration.",
+      "setupTitle": "Configuration Z8 requise",
+      "typeHelp": "Tapez /help pour voir les commandes disponibles.",
+      "unconfigured": "L'intégration Z8 de votre organisation est en cours de configuration. Veuillez attendre que votre administrateur termine la configuration.",
+      "welcome": "Bienvenue sur Z8 ! Pour connecter votre compte, allez dans Paramètres > Intégrations > Telegram dans votre tableau de bord Z8 et générez un code de lien. Envoyez ensuite : /link VOTRE_CODE",
+      "welcomeTeams": "Bienvenue sur Z8 ! Tapez « help » pour voir les commandes disponibles."
+    }
+  }
+}

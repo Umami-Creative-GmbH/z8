@@ -1,0 +1,92 @@
+{
+  "bot": {
+    "approval": {
+      "alreadyProcessed": "This approval has already been processed."
+    },
+    "cmd": {
+      "clockedin": {
+        "header": "{active} of {total} team members currently clocked in:",
+        "noneActive": "None of your {total} team members are currently clocked in.",
+        "noTeam": "You don't have any team members assigned to you."
+      },
+      "clockin": {
+        "alreadyIn": "You are already clocked in since {time} ({hours}h {minutes}m).",
+        "cannotNow": "Cannot clock in at this time.",
+        "noProfile": "Employee profile not found.",
+        "success": "Clocked in at {time}."
+      },
+      "clockout": {
+        "cannotNow": "Cannot clock out at this time.",
+        "noProfile": "Employee profile not found.",
+        "notClockedIn": "You are not currently clocked in.",
+        "pendingApproval": "Your clock-out is pending manager approval.",
+        "success": "Clocked out at {time}. Duration: {hours}h {minutes}m."
+      },
+      "compliance": {
+        "error": "Failed to retrieve compliance data. Please try again later.",
+        "noIssues": "No compliance issues found in the last {days} days. Your team is in good standing!"
+      },
+      "coverage": {
+        "error": "Failed to retrieve coverage data. Please try again later.",
+        "noData": "No scheduled coverage data found for {date}."
+      },
+      "help": {
+        "footer": "You can also receive approval requests and daily digests directly in {platform}.",
+        "title": "Z8 Bot Commands"
+      },
+      "openshifts": {
+        "error": "Failed to retrieve open shifts. Please try again later.",
+        "noShifts": "No open shifts found for {period}. All shifts are currently assigned."
+      },
+      "pending": {
+        "footer": "View and approve in Z8 or wait for individual approval cards.",
+        "header": "{count, plural, one {You have {count} pending approval:} other {You have {count} pending approvals:}}",
+        "none": "You have no pending approval requests. Nice work keeping up!"
+      },
+      "status": {
+        "clockedIn": "You are clocked in since {time} ({hours}h {minutes}m).",
+        "noProfile": "Employee profile not found.",
+        "notClockedIn": "You are not currently clocked in."
+      },
+      "whosout": {
+        "header": "{outCount} of {total} team members out today:",
+        "noneOut": "All {total} of your team members are available today.",
+        "noTeam": "You don't have any team members assigned to you."
+      }
+    },
+    "language": {
+      "changed": "Language changed to {language}.",
+      "prompt": "Choose your language:"
+    },
+    "static": {
+      "errorApprovalNotFound": "This approval request no longer exists or has already been processed.",
+      "errorApprovalResolved": "This approval has already been approved or rejected.",
+      "errorDefault": "Something went wrong. Please try again.",
+      "errorEmployeeNotFound": "You don't have an employee record in Z8. Please contact your administrator.",
+      "errorNotAuthorized": "You're not authorized to perform this action.",
+      "errorTenantNotConfigured": "Your organization hasn't completed the Z8 setup yet. Please ask an admin to configure the integration.",
+      "errorUserNotLinked": "Your Teams account isn't linked to Z8. Make sure your Teams email matches your Z8 account.",
+      "genericError": "Sorry, something went wrong. Please try again or contact support.",
+      "linkAlreadyLinked": "This Telegram account is already linked to a Z8 account in this organization.",
+      "linkExpired": "This link code has expired. Please generate a new one from your Z8 settings.",
+      "linkInvalid": "Invalid link code. Please check your code and try again.",
+      "linkSuccess": "Your Telegram account has been linked to Z8! Type /help to see available commands.",
+      "linkUsage": "Please provide your link code: /link YOUR_CODE",
+      "mentionHelp": "Hi! I'm the Z8 bot. Type \"help\" to see available commands.",
+      "noEmployee": "Your account exists but you don't have an employee record in Z8.",
+      "noOrg": "Unable to identify your organization. Please contact support.",
+      "notLinked": "Your Telegram account is not linked to Z8. Go to Settings > Integrations > Telegram in your Z8 dashboard to generate a link code, then send: /link YOUR_CODE",
+      "notLinkedTeams": "I couldn't find your Z8 account. Make sure your Teams email matches your Z8 account email.",
+      "noUser": "Unable to identify your user account.",
+      "setupBody": "Your organization needs to be connected to Z8. Click below to start the setup process.",
+      "setupButton": "Complete Setup",
+      "setupNote": "Only organization admins can complete this setup.",
+      "setupRequired": "Welcome to Z8! To connect this Microsoft 365 organization to your Z8 account, an admin needs to complete the setup.",
+      "setupTitle": "Z8 Setup Required",
+      "typeHelp": "Type /help to see available commands.",
+      "unconfigured": "Your organization's Z8 integration is being set up. Please wait for your admin to complete configuration.",
+      "welcome": "Welcome to Z8! To connect your account, go to Settings > Integrations > Telegram in your Z8 dashboard and generate a link code. Then send: /link YOUR_CODE",
+      "welcomeTeams": "Welcome to Z8! Type \"help\" to see available commands."
+    }
+  }
+}

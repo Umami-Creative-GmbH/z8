@@ -2,6 +2,8 @@
 
 import { detectLanguageFromHeaders } from "@tolgee/react/server";
 import { cookies, headers } from "next/headers";
+import { setUserLocale } from "@/lib/bot-platform/i18n";
+import { auth } from "@/lib/auth";
 import { ALL_LANGUAGES, DEFAULT_LANGUAGE } from "./shared";
 
 const LANGUAGE_COOKIE = "NEXT_LOCALE";
@@ -23,4 +25,18 @@ export async function getLanguage() {
 	// try to detect language from headers or use default
 	const detected = detectLanguageFromHeaders(await headers(), ALL_LANGUAGES);
 	return detected || DEFAULT_LANGUAGE;
+}
+
+/**
+ * Persist locale preference to DB (userSettings.locale).
+ * Called from LanguageSwitcher so the preference syncs across devices/bots.
+ */
+export async function persistLocaleToDb(locale: string) {
+	if (!ALL_LANGUAGES.includes(locale)) return;
+
+	const headersList = await headers();
+	const session = await auth.api.getSession({ headers: headersList });
+	if (!session?.user?.id) return;
+
+	await setUserLocale(session.user.id, locale);
 }

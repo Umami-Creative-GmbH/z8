@@ -46,6 +46,8 @@ const NAMESPACE_PREFIXES = {
 	team: 'settings',
 	// onboarding namespace
 	onboarding: 'onboarding',
+	// bot namespace
+	bot: 'bot',
 };
 
 /**
@@ -90,6 +92,8 @@ export default function extractor(code, fileName) {
 		/import\s+\{[^}]*\buseTranslate\b[^}]*\}\s+from\s+["']@tolgee\/react["']/,
 		// Direct SDK imports (fallback)
 		/import\s+\{[^}]*\b(getTranslate|useTranslate)\b[^}]*\}\s+from\s+["']@tolgee\/(react|next|web)(\/server)?["']/,
+		// Bot: import { getBotTranslate } from "@/lib/bot-platform/i18n"
+		/import\s+\{[^}]*\bgetBotTranslate\b[^}]*\}\s+from\s+["']@\/lib\/bot-platform\/i18n["']/,
 	];
 
 	for (const pattern of validImportPatterns) {
