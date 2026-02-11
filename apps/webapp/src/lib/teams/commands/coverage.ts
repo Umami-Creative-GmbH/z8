@@ -8,11 +8,19 @@
 
 import { Effect } from "effect";
 import { DateTime } from "luxon";
-import type { BotCommand, BotCommandContext, BotCommandResponse } from "@/lib/bot-platform/types";
+import { fmtFullDate, fmtLongDate, getBotTranslate } from "@/lib/bot-platform/i18n";
+import type {
+	BotCommand,
+	BotCommandContext,
+	BotCommandResponse,
+} from "@/lib/bot-platform/types";
+import {
+	CoverageService,
+	CoverageServiceFullLive,
+} from "@/lib/effect/services/coverage.service";
 import { createLogger } from "@/lib/logger";
-import { withRateLimit, withPermission, compose } from "./middleware";
-import { CoverageService, CoverageServiceFullLive } from "@/lib/effect/services/coverage.service";
 import { buildCoverageCard } from "../cards/coverage-card";
+import { compose, withPermission, withRateLimit } from "./middleware";
 
 const logger = createLogger("TeamsCommand:Coverage");
 
@@ -20,7 +28,10 @@ const logger = createLogger("TeamsCommand:Coverage");
 // HELPER FUNCTIONS
 // ============================================
 
-function parseDateArgument(arg: string | undefined, timezone: string): DateTime {
+function parseDateArgument(
+	arg: string | undefined,
+	timezone: string,
+): DateTime {
 	const now = DateTime.now().setZone(timezone);
 
 	if (!arg || arg.toLowerCase() === "today") {
@@ -49,8 +60,11 @@ function parseDateArgument(arg: string | undefined, timezone: string): DateTime 
 // COMMAND HANDLER
 // ============================================
 
-async function coverageHandler(ctx: BotCommandContext): Promise<BotCommandResponse> {
+async function coverageHandler(
+	ctx: BotCommandContext,
+): Promise<BotCommandResponse> {
 	try {
+		const t = await getBotTranslate(ctx.locale);
 		const dateArg = ctx.args[0];
 		const date = parseDateArgument(dateArg, ctx.config.digestTimezone);
 
@@ -76,34 +90,37 @@ async function coverageHandler(ctx: BotCommandContext): Promise<BotCommandRespon
 			);
 		});
 
-		const summary = await Effect.runPromise(program.pipe(Effect.provide(CoverageServiceFullLive)));
+		const summary = await Effect.runPromise(
+			program.pipe(Effect.provide(CoverageServiceFullLive)),
+		);
 
 		// If no coverage data, return text response
 		if (summary.snapshots.length === 0) {
 			return {
 				type: "text",
-				text: `📅 No scheduled coverage data found for ${date.toFormat("EEEE, MMMM d, yyyy")}.`,
+				text: t("bot.cmd.coverage.noData", "No scheduled coverage data found for {date}.", { date: fmtFullDate(date, ctx.locale) }),
 			};
 		}
 
 		// Build Adaptive Card
-		const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://app.z8.works";
+		const appUrl = process.env.APP_URL || "https://z8-time.app";
 		const card = buildCoverageCard({
 			summary,
 			appUrl,
-			locale: "en", // TODO: Get from user preferences
+			locale: ctx.locale,
 		});
 
 		return {
 			type: "card",
-			text: `Coverage report for ${date.toFormat("MMMM d, yyyy")}`,
+			text: `Coverage report for ${fmtLongDate(date, ctx.locale)}`,
 			card,
 		};
 	} catch (error) {
 		logger.error({ error, ctx }, "Coverage command failed");
+		const t = await getBotTranslate(ctx.locale);
 		return {
 			type: "text",
-			text: "❌ Failed to retrieve coverage data. Please try again later.",
+			text: t("bot.cmd.coverage.error", "Failed to retrieve coverage data. Please try again later."),
 		};
 	}
 }
@@ -120,7 +137,7 @@ const wrappedHandler = compose(
 export const coverageCommand: BotCommand = {
 	name: "coverage",
 	aliases: ["staffing", "whoson"],
-	description: "View staffing coverage by location and time slot",
+	description: "bot.cmd.coverage.desc",
 	usage: "coverage [today|tomorrow|YYYY-MM-DD]",
 	requiresAuth: true,
 	handler: wrappedHandler,
