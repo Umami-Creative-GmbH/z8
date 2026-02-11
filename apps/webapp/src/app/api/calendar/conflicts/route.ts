@@ -23,6 +23,7 @@ import {
 	hasBlockingConflicts,
 } from "@/lib/calendar-sync/domain";
 import { getCalendarProvider, isTokenExpired } from "@/lib/calendar-sync/providers";
+import { getCalendarTokens, storeCalendarTokens } from "@/lib/calendar-sync/token-store";
 import type { ConflictWarning } from "@/lib/calendar-sync/types";
 import { auth } from "@/lib/auth";
 import { Effect } from "effect";
@@ -44,8 +45,10 @@ export async function POST(request: NextRequest) {
 	await connection(); // Opt out of caching
 
 	try {
+		// Start independent operations in parallel
+		const [headersList, body] = await Promise.all([headers(), request.json()]);
+
 		// Authenticate
-		const headersList = await headers();
 		const session = await auth.api.getSession({ headers: headersList });
 
 		if (!session?.user) {
@@ -57,8 +60,7 @@ export async function POST(request: NextRequest) {
 			return NextResponse.json({ error: "No active organization" }, { status: 400 });
 		}
 
-		// Parse and validate request body
-		const body = await request.json();
+		// Validate request body
 		const validationResult = conflictCheckSchema.safeParse(body);
 
 		if (!validationResult.success) {
@@ -94,12 +96,32 @@ export async function POST(request: NextRequest) {
 			});
 		}
 
+		// Read tokens from Vault (falls back to DB for unmigrated connections)
+		const tokens = await getCalendarTokens(
+			connection.organizationId,
+			connection.id,
+			connection.accessToken,
+			connection.refreshToken,
+		);
+
+		if (!tokens.accessToken) {
+			return NextResponse.json({
+				hasConflicts: false,
+				conflicts: [],
+				summary: "Calendar needs reconnection",
+				calendarConnected: false,
+				error: "Calendar credentials not found",
+			});
+		}
+
+		let currentAccessToken = tokens.accessToken;
+
 		// Check if token is expired
 		if (isTokenExpired(connection.expiresAt)) {
 			// Try to refresh the token
 			const provider = getCalendarProvider(connection.provider);
 
-			if (!connection.refreshToken) {
+			if (!tokens.refreshToken) {
 				return NextResponse.json({
 					hasConflicts: false,
 					conflicts: [],
@@ -111,23 +133,27 @@ export async function POST(request: NextRequest) {
 
 			try {
 				const refreshResult = await Effect.runPromise(
-					provider.refreshAccessToken(connection.refreshToken),
+					provider.refreshAccessToken(tokens.refreshToken),
 				);
 
-				// Update tokens in database
+				// Store refreshed tokens in Vault
+				await storeCalendarTokens(connection.organizationId, connection.id, {
+					accessToken: refreshResult.accessToken,
+					refreshToken: refreshResult.refreshToken ?? tokens.refreshToken,
+				});
+
+				// Update expiry in database
 				await db
 					.update(calendarConnection)
 					.set({
-						accessToken: refreshResult.accessToken,
+						accessToken: "vault:managed",
 						expiresAt: refreshResult.expiresAt,
-						refreshToken: refreshResult.refreshToken ?? connection.refreshToken,
+						refreshToken: "vault:managed",
 						updatedAt: new Date(),
 					})
 					.where(eq(calendarConnection.id, connection.id));
 
-				// Update local reference
-				connection.accessToken = refreshResult.accessToken;
-				connection.expiresAt = refreshResult.expiresAt;
+				currentAccessToken = refreshResult.accessToken;
 			} catch {
 				return NextResponse.json({
 					hasConflicts: false,
@@ -148,8 +174,8 @@ export async function POST(request: NextRequest) {
 
 		const eventsEffect = provider.fetchEvents(
 			{
-				accessToken: connection.accessToken,
-				refreshToken: connection.refreshToken,
+				accessToken: currentAccessToken,
+				refreshToken: tokens.refreshToken,
 				expiresAt: connection.expiresAt,
 				scope: connection.scope,
 			},

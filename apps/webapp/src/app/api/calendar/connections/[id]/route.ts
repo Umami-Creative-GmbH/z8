@@ -15,6 +15,7 @@ import { db } from "@/db";
 import { calendarConnection, employee, syncedAbsence } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { getCalendarProvider } from "@/lib/calendar-sync/providers";
+import { deleteCalendarTokens, getCalendarTokens } from "@/lib/calendar-sync/token-store";
 import { Effect } from "effect";
 
 // ============================================
@@ -65,8 +66,7 @@ export async function GET(
 	await connection();
 
 	try {
-		const { id } = await params;
-		const headersList = await headers();
+		const [{ id }, headersList] = await Promise.all([params, headers()]);
 		const session = await auth.api.getSession({ headers: headersList });
 
 		if (!session?.user) {
@@ -129,8 +129,7 @@ export async function PATCH(
 	await connection();
 
 	try {
-		const { id } = await params;
-		const headersList = await headers();
+		const [{ id }, headersList] = await Promise.all([params, headers()]);
 		const session = await auth.api.getSession({ headers: headersList });
 
 		if (!session?.user) {
@@ -199,8 +198,7 @@ export async function DELETE(
 	await connection();
 
 	try {
-		const { id } = await params;
-		const headersList = await headers();
+		const [{ id }, headersList] = await Promise.all([params, headers()]);
 		const session = await auth.api.getSession({ headers: headersList });
 
 		if (!session?.user) {
@@ -217,13 +215,24 @@ export async function DELETE(
 			return NextResponse.json({ error: "Connection not found" }, { status: 404 });
 		}
 
-		// Revoke tokens with provider (best effort)
+		// Read tokens from Vault for revocation (best effort)
 		try {
-			const provider = getCalendarProvider(conn.provider);
-			await Effect.runPromise(provider.revokeTokens(conn.accessToken));
+			const tokens = await getCalendarTokens(
+				conn.organizationId,
+				conn.id,
+				conn.accessToken,
+				conn.refreshToken,
+			);
+			if (tokens.accessToken) {
+				const provider = getCalendarProvider(conn.provider);
+				await Effect.runPromise(provider.revokeTokens(tokens.accessToken));
+			}
 		} catch {
 			// Ignore revocation errors - still disconnect locally
 		}
+
+		// Remove tokens from Vault
+		await deleteCalendarTokens(conn.organizationId, conn.id);
 
 		// Soft delete: set isActive to false
 		await db

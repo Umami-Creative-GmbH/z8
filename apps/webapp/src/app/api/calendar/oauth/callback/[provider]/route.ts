@@ -14,6 +14,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { calendarConnection, employee } from "@/db/schema";
 import { getCalendarProvider, isProviderSupported } from "@/lib/calendar-sync/providers";
+import { storeCalendarTokens } from "@/lib/calendar-sync/token-store";
 import type { CalendarProvider } from "@/lib/calendar-sync/types";
 import { Effect } from "effect";
 
@@ -114,30 +115,27 @@ export async function GET(
 			return redirectWithError("Invalid state parameter");
 		}
 
-		// Validate employee exists
-		const emp = await db.query.employee.findFirst({
-			where: and(
-				eq(employee.id, statePayload.employeeId),
-				eq(employee.organizationId, statePayload.organizationId),
-			),
-		});
-
-		if (!emp) {
-			return redirectWithError("Employee not found");
-		}
-
 		// Build redirect URI (must match the one used to initiate)
 		const baseUrl = process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 		const redirectUri = `${baseUrl}/api/calendar/oauth/callback/${provider}`;
 
-		// Exchange code for tokens
+		// Validate employee and exchange tokens in parallel (independent operations)
 		const calendarProvider = getCalendarProvider(provider);
-		const tokensEffect = calendarProvider.exchangeCodeForTokens(
-			{ code, state },
-			redirectUri,
-		);
+		const [emp, tokens] = await Promise.all([
+			db.query.employee.findFirst({
+				where: and(
+					eq(employee.id, statePayload.employeeId),
+					eq(employee.organizationId, statePayload.organizationId),
+				),
+			}),
+			Effect.runPromise(
+				calendarProvider.exchangeCodeForTokens({ code, state }, redirectUri),
+			),
+		]);
 
-		const tokens = await Effect.runPromise(tokensEffect);
+		if (!emp) {
+			return redirectWithError("Employee not found");
+		}
 
 		// Check if connection already exists
 		const existingConnection = await db.query.calendarConnection.findFirst({
@@ -148,12 +146,19 @@ export async function GET(
 		});
 
 		if (existingConnection) {
-			// Update existing connection
+			// Store tokens in Vault
+			await storeCalendarTokens(
+				statePayload.organizationId,
+				existingConnection.id,
+				{ accessToken: tokens.accessToken, refreshToken: tokens.refreshToken },
+			);
+
+			// Update existing connection (sentinel values in DB)
 			await db
 				.update(calendarConnection)
 				.set({
-					accessToken: tokens.accessToken,
-					refreshToken: tokens.refreshToken,
+					accessToken: "vault:managed",
+					refreshToken: tokens.refreshToken ? "vault:managed" : null,
 					expiresAt: tokens.expiresAt,
 					scope: tokens.scope,
 					providerAccountId: tokens.providerAccountId,
@@ -164,14 +169,14 @@ export async function GET(
 				})
 				.where(eq(calendarConnection.id, existingConnection.id));
 		} else {
-			// Create new connection
-			await db.insert(calendarConnection).values({
+			// Create new connection first to get the ID
+			const [newConnection] = await db.insert(calendarConnection).values({
 				employeeId: statePayload.employeeId,
 				organizationId: statePayload.organizationId,
 				provider,
 				providerAccountId: tokens.providerAccountId,
-				accessToken: tokens.accessToken,
-				refreshToken: tokens.refreshToken,
+				accessToken: "vault:managed",
+				refreshToken: tokens.refreshToken ? "vault:managed" : null,
 				expiresAt: tokens.expiresAt,
 				scope: tokens.scope,
 				calendarId: "primary", // Default to primary calendar
@@ -179,7 +184,14 @@ export async function GET(
 				pushEnabled: true,
 				conflictDetectionEnabled: true,
 				updatedAt: new Date(),
-			});
+			}).returning({ id: calendarConnection.id });
+
+			// Store tokens in Vault
+			await storeCalendarTokens(
+				statePayload.organizationId,
+				newConnection.id,
+				{ accessToken: tokens.accessToken, refreshToken: tokens.refreshToken },
+			);
 		}
 
 		// Redirect to settings page with success message

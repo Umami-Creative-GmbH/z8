@@ -14,6 +14,7 @@ import { createLogger } from "@/lib/logger";
 import type { CalendarSyncJobData, JobResult } from "@/lib/queue";
 import { mapAbsenceToCalendarEvent } from "../domain";
 import { getCalendarProvider, isTokenExpired } from "../providers";
+import { getCalendarTokens, storeCalendarTokens } from "../token-store";
 
 const logger = createLogger("CalendarSyncProcessor");
 
@@ -382,16 +383,28 @@ async function ensureValidCredentials(
 	expiresAt: Date | null;
 	scope: string | null;
 } | null> {
+	// Read tokens from Vault (falls back to DB for unmigrated connections)
+	const tokens = await getCalendarTokens(
+		connection.organizationId,
+		connection.id,
+		connection.accessToken,
+		connection.refreshToken,
+	);
+
+	if (!tokens.accessToken) {
+		return null;
+	}
+
 	if (!isTokenExpired(connection.expiresAt)) {
 		return {
-			accessToken: connection.accessToken,
-			refreshToken: connection.refreshToken,
+			accessToken: tokens.accessToken,
+			refreshToken: tokens.refreshToken,
 			expiresAt: connection.expiresAt,
 			scope: connection.scope,
 		};
 	}
 
-	if (!connection.refreshToken) {
+	if (!tokens.refreshToken) {
 		logger.warn(
 			{ connectionId: connection.id },
 			"Token expired and no refresh token available",
@@ -402,23 +415,29 @@ async function ensureValidCredentials(
 	try {
 		const provider = getCalendarProvider(connection.provider);
 		const refreshResult = await Effect.runPromise(
-			provider.refreshAccessToken(connection.refreshToken),
+			provider.refreshAccessToken(tokens.refreshToken),
 		);
 
-		// Update tokens in database
+		// Store refreshed tokens in Vault
+		await storeCalendarTokens(connection.organizationId, connection.id, {
+			accessToken: refreshResult.accessToken,
+			refreshToken: refreshResult.refreshToken ?? tokens.refreshToken,
+		});
+
+		// Update expiry in database (tokens stay as sentinel values)
 		await db
 			.update(calendarConnection)
 			.set({
-				accessToken: refreshResult.accessToken,
+				accessToken: "vault:managed",
 				expiresAt: refreshResult.expiresAt,
-				refreshToken: refreshResult.refreshToken ?? connection.refreshToken,
+				refreshToken: "vault:managed",
 				updatedAt: new Date(),
 			})
 			.where(eq(calendarConnection.id, connection.id));
 
 		return {
 			accessToken: refreshResult.accessToken,
-			refreshToken: refreshResult.refreshToken ?? connection.refreshToken,
+			refreshToken: refreshResult.refreshToken ?? tokens.refreshToken,
 			expiresAt: refreshResult.expiresAt,
 			scope: connection.scope,
 		};

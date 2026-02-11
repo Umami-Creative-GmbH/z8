@@ -37,27 +37,37 @@ export async function POST(request: NextRequest) {
 	await connection();
 
 	try {
-		const session = await auth.api.getSession({ headers: await headers() });
+		const [headersList, body] = await Promise.all([headers(), request.json()]);
+		const session = await auth.api.getSession({ headers: headersList });
 		if (!session?.user) {
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 		}
 
 		if (!SLACK_CLIENT_ID) {
-			return NextResponse.json({ error: "Slack integration is not configured" }, { status: 503 });
+			return NextResponse.json(
+				{ error: "Slack integration is not configured" },
+				{ status: 503 },
+			);
 		}
-
-		const body = await request.json();
 		const { organizationId } = body;
 
 		if (!organizationId) {
-			return NextResponse.json({ error: "organizationId is required" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "organizationId is required" },
+				{ status: 400 },
+			);
 		}
 
 		// Verify user is an admin member of this organization
 		const [membership] = await db
 			.select()
 			.from(member)
-			.where(and(eq(member.userId, session.user.id), eq(member.organizationId, organizationId)))
+			.where(
+				and(
+					eq(member.userId, session.user.id),
+					eq(member.organizationId, organizationId),
+				),
+			)
 			.limit(1);
 
 		if (!membership || membership.role !== "admin") {
@@ -78,7 +88,7 @@ export async function POST(request: NextRequest) {
 		});
 
 		// Build Slack authorization URL
-		const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://app.z8.works";
+		const appUrl = process.env.APP_URL || "https://z8-time.app";
 		const redirectUri = `${appUrl}/api/slack/oauth/callback`;
 
 		const authUrl = new URL("https://slack.com/oauth/v2/authorize");
@@ -87,7 +97,10 @@ export async function POST(request: NextRequest) {
 		authUrl.searchParams.set("redirect_uri", redirectUri);
 		authUrl.searchParams.set("state", stateToken);
 
-		logger.info({ organizationId, userId: session.user.id }, "Slack OAuth flow started");
+		logger.info(
+			{ organizationId, userId: session.user.id },
+			"Slack OAuth flow started",
+		);
 
 		return NextResponse.json({
 			authUrl: authUrl.toString(),
@@ -95,6 +108,9 @@ export async function POST(request: NextRequest) {
 		});
 	} catch (error) {
 		logger.error({ error }, "Failed to start Slack OAuth flow");
-		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+		return NextResponse.json(
+			{ error: "Internal server error" },
+			{ status: 500 },
+		);
 	}
 }

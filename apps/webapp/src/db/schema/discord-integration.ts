@@ -32,7 +32,7 @@ export const discordBotConfig = pgTable(
 			.references(() => organization.id, { onDelete: "cascade" }),
 
 		// Discord Bot Identity
-		botToken: text("bot_token").notNull(), // Encrypted at rest
+		botToken: text("bot_token").notNull(), // Sentinel value — real token stored in Vault at discord/bot_token
 		applicationId: text("application_id").notNull(), // Discord application ID (for slash command registration)
 		publicKey: text("public_key").notNull(), // Discord public key (for interaction signature verification)
 

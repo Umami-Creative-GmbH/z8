@@ -2,16 +2,19 @@
  * Slack Bot Config Resolver
  *
  * Resolves organization workspace configuration from the database.
- * Mirrors telegram/bot-config.ts pattern.
+ * Bot access tokens are stored in HashiCorp Vault, not in the database.
  */
 
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { slackWorkspaceConfig } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
+import { getOrgSecret } from "@/lib/vault";
 import type { ResolvedSlackBot } from "./types";
 
-const _logger = createLogger("SlackBotConfig");
+const logger = createLogger("SlackBotConfig");
+
+const VAULT_KEY = "slack/bot_access_token";
 
 /**
  * Get bot config for an organization
@@ -25,7 +28,7 @@ export async function getBotConfigByOrganization(
 
 	if (!config) return null;
 
-	return mapToResolvedBot(config);
+	return hydrateBot(config);
 }
 
 /**
@@ -41,7 +44,7 @@ export async function getBotConfigByTeamId(slackTeamId: string): Promise<Resolve
 
 	if (!config) return null;
 
-	return mapToResolvedBot(config);
+	return hydrateBot(config);
 }
 
 /**
@@ -67,13 +70,39 @@ export async function getAllActiveBotConfigs(): Promise<ResolvedSlackBot[]> {
 		where: eq(slackWorkspaceConfig.setupStatus, "active"),
 	});
 
-	return configs.map(mapToResolvedBot);
+	const results = await Promise.all(configs.map(hydrateBot));
+	return results.filter((bot): bot is ResolvedSlackBot => bot !== null);
 }
 
-function mapToResolvedBot(config: typeof slackWorkspaceConfig.$inferSelect): ResolvedSlackBot {
+/**
+ * Hydrate a bot config with the access token from Vault.
+ * Falls back to the DB column for configs that haven't been migrated yet.
+ */
+async function hydrateBot(
+	config: typeof slackWorkspaceConfig.$inferSelect,
+): Promise<ResolvedSlackBot | null> {
+	let botAccessToken = await getOrgSecret(config.organizationId, VAULT_KEY);
+
+	// Fallback: read from DB column for pre-migration configs
+	if (!botAccessToken && config.botAccessToken && config.botAccessToken !== "vault:managed") {
+		botAccessToken = config.botAccessToken;
+		logger.warn(
+			{ organizationId: config.organizationId },
+			"Slack bot access token read from DB column — run migration to move to Vault",
+		);
+	}
+
+	if (!botAccessToken) {
+		logger.error(
+			{ organizationId: config.organizationId },
+			"Slack bot access token not found in Vault or DB",
+		);
+		return null;
+	}
+
 	return {
 		organizationId: config.organizationId,
-		botAccessToken: config.botAccessToken,
+		botAccessToken,
 		slackTeamId: config.slackTeamId,
 		slackTeamName: config.slackTeamName,
 		botUserId: config.botUserId,

@@ -15,6 +15,7 @@ import { member } from "@/db/auth-schema";
 import { slackWorkspaceConfig } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { createLogger } from "@/lib/logger";
+import { deleteOrgSecret } from "@/lib/vault";
 
 const logger = createLogger("SlackSetup");
 
@@ -50,6 +51,9 @@ export async function DELETE(request: NextRequest) {
 		});
 
 		if (config) {
+			// Remove bot access token from Vault
+			await deleteOrgSecret(organizationId, "slack/bot_access_token");
+
 			// Mark as disconnected (don't delete - preserve history)
 			await db
 				.update(slackWorkspaceConfig)
