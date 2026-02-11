@@ -9,6 +9,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import { absenceEntry, approvalRequest, employee, telegramApprovalMessage } from "@/db/schema";
+import { getBotTranslate, getUserLocale } from "@/lib/bot-platform/i18n";
 import { createLogger } from "@/lib/logger";
 import { editMessageText, sendMessage } from "./api";
 import { getChatIdForUser } from "./conversation-manager";
@@ -59,10 +60,12 @@ export async function handleApprovalCallback(
 		if (approval.status !== "pending") {
 			// Update the message to show it's already resolved
 			if (query.message) {
+				const locale = await getUserLocale(userResult.user.userId);
+				const t = await getBotTranslate(locale);
 				await editMessageText(bot.botToken, {
 					chat_id: query.message.chat.id,
 					message_id: query.message.message_id,
-					text: escapeMarkdownV2("This approval has already been processed."),
+					text: escapeMarkdownV2(t("bot.approval.alreadyProcessed", "This approval has already been processed.")),
 					parse_mode: "MarkdownV2",
 				});
 			}
@@ -120,11 +123,13 @@ export async function handleApprovalCallback(
 
 		// Update the message to show resolved status
 		if (query.message && cardData) {
+			const locale = await getUserLocale(userResult.user.userId);
+			const t = await getBotTranslate(locale);
 			const resolvedText = buildResolvedApprovalMessage(cardData, {
 				action: newStatus,
 				approverName,
 				resolvedAt: new Date(),
-			});
+			}, t, locale);
 
 			await editMessageText(bot.botToken, {
 				chat_id: query.message.chat.id,
@@ -199,8 +204,10 @@ export async function sendApprovalMessageToManager(
 			return;
 		}
 
-		// Build message with inline keyboard
-		const { text, keyboard } = buildApprovalMessage(cardData);
+		// Build message with inline keyboard (use recipient's locale)
+		const recipientLocale = await getUserLocale(approverEmployee.userId);
+		const t = await getBotTranslate(recipientLocale);
+		const { text, keyboard } = buildApprovalMessage(cardData, t, recipientLocale);
 
 		// Send message
 		const sentMessage = await sendMessage(botToken, {

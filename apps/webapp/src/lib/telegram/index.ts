@@ -5,7 +5,7 @@
  */
 
 // API
-export { deleteWebhook, editMessageText, getMe, sendMessage, setWebhook } from "./api";
+export { deleteWebhook, editMessageText, getMe, sendMessage, setMyCommands, setWebhook } from "./api";
 // Approval handling
 export {
 	handleApprovalCallback,

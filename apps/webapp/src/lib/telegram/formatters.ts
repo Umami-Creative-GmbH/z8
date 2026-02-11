@@ -6,6 +6,9 @@
  */
 
 import { DateTime } from "luxon";
+import type { BotTranslateFn } from "@/lib/bot-platform/i18n";
+import { fmtFullDate, fmtShortDate, fmtShortDateTime } from "@/lib/bot-platform/i18n";
+import { DEFAULT_LANGUAGE } from "@/tolgee/shared";
 import type {
 	ApprovalCallbackData,
 	ApprovalCardData,
@@ -34,40 +37,101 @@ function bold(text: string): string {
 }
 
 // ============================================
+// HTML HELPERS (for command responses)
+// ============================================
+
+/**
+ * Escape HTML special characters.
+ */
+function escapeHtml(text: string): string {
+	return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+/**
+ * Convert simple markdown (as used in shared bot command responses) to Telegram HTML.
+ *
+ * Handles:
+ * - **bold** → <b>bold</b>
+ * - _italic_ → <i>italic</i>
+ *
+ * All other text is HTML-escaped.
+ */
+export function markdownToHtml(text: string): string {
+	// Split into segments: bold, italic, and plain text
+	// Process bold first (**...**), then italic (_..._)
+	let html = "";
+	let remaining = text;
+
+	while (remaining.length > 0) {
+		// Find the next **bold** or _italic_ match
+		const boldMatch = remaining.match(/\*\*(.+?)\*\*/);
+		const italicMatch = remaining.match(/(?<!\w)_(.+?)_(?!\w)/);
+
+		// Determine which comes first
+		const boldIndex = boldMatch?.index ?? Infinity;
+		const italicIndex = italicMatch?.index ?? Infinity;
+
+		if (boldIndex === Infinity && italicIndex === Infinity) {
+			// No more markdown, escape and append the rest
+			html += escapeHtml(remaining);
+			break;
+		}
+
+		if (boldIndex <= italicIndex) {
+			// Bold comes first
+			html += escapeHtml(remaining.slice(0, boldIndex));
+			html += `<b>${escapeHtml(boldMatch![1])}</b>`;
+			remaining = remaining.slice(boldIndex + boldMatch![0].length);
+		} else {
+			// Italic comes first
+			html += escapeHtml(remaining.slice(0, italicIndex));
+			html += `<i>${escapeHtml(italicMatch![1])}</i>`;
+			remaining = remaining.slice(italicIndex + italicMatch![0].length);
+		}
+	}
+
+	return html;
+}
+
+// ============================================
 // APPROVAL MESSAGES
 // ============================================
 
 /**
  * Build approval request message for Telegram.
  */
-export function buildApprovalMessage(data: ApprovalCardData): {
+export function buildApprovalMessage(
+	data: ApprovalCardData,
+	t?: BotTranslateFn,
+	locale: string = DEFAULT_LANGUAGE,
+): {
 	text: string;
 	keyboard: TelegramInlineKeyboardMarkup;
 } {
 	const lines: string[] = [];
 
-	lines.push(bold("New Approval Request"));
+	lines.push(bold(t ? t("bot.approval.newRequest", "New Approval Request") : "New Approval Request"));
 	lines.push("");
-	lines.push(`From: ${bold(data.requesterName)}`);
+	lines.push(`${t ? t("bot.approval.from", "From") : "From"}: ${bold(data.requesterName)}`);
 
 	if (data.entityType === "absence_entry") {
-		const category = data.absenceCategory || "Leave";
-		lines.push(`Type: ${escapeMarkdownV2(category)}`);
+		const category = data.absenceCategory || (t ? t("bot.approval.leave", "Leave") : "Leave");
+		lines.push(`${t ? t("bot.approval.type", "Type") : "Type"}: ${escapeMarkdownV2(category)}`);
 		if (data.startDate && data.endDate) {
-			const start = DateTime.fromISO(data.startDate).toFormat("MMM d");
-			const end = DateTime.fromISO(data.endDate).toFormat("MMM d");
-			lines.push(`Period: ${escapeMarkdownV2(start)} \\- ${escapeMarkdownV2(end)}`);
+			const start = fmtShortDate(DateTime.fromISO(data.startDate), locale);
+			const end = fmtShortDate(DateTime.fromISO(data.endDate), locale);
+			lines.push(`${t ? t("bot.approval.period", "Period") : "Period"}: ${escapeMarkdownV2(start)} \\- ${escapeMarkdownV2(end)}`);
 		}
 	} else if (data.entityType === "time_entry") {
-		lines.push(`Type: ${escapeMarkdownV2("Time entry correction")}`);
+		lines.push(`${t ? t("bot.approval.type", "Type") : "Type"}: ${escapeMarkdownV2(t ? t("bot.approval.timeCorrection", "Time entry correction") : "Time entry correction")}`);
 	}
 
 	if (data.reason) {
-		lines.push(`Reason: ${escapeMarkdownV2(data.reason)}`);
+		lines.push(`${t ? t("bot.approval.reason", "Reason") : "Reason"}: ${escapeMarkdownV2(data.reason)}`);
 	}
 
-	const submitted = DateTime.fromJSDate(data.createdAt).toFormat("MMM d, HH:mm");
-	lines.push(`Submitted: ${escapeMarkdownV2(submitted)}`);
+	const submitted = fmtShortDateTime(DateTime.fromJSDate(data.createdAt), locale);
+	lines.push(`${t ? t("bot.approval.submitted", "Submitted") : "Submitted"}: ${escapeMarkdownV2(submitted)}`);
 
 	// Build inline keyboard with approve/reject buttons
 	// Callback data must be <= 64 bytes, so use compact format
@@ -77,8 +141,14 @@ export function buildApprovalMessage(data: ApprovalCardData): {
 	const keyboard: TelegramInlineKeyboardMarkup = {
 		inline_keyboard: [
 			[
-				{ text: "Approve", callback_data: JSON.stringify(approveData) },
-				{ text: "Reject", callback_data: JSON.stringify(rejectData) },
+				{
+					text: t ? t("bot.approval.approve", "Approve") : "Approve",
+					callback_data: JSON.stringify(approveData),
+				},
+				{
+					text: t ? t("bot.approval.reject", "Reject") : "Reject",
+					callback_data: JSON.stringify(rejectData),
+				},
 			],
 		],
 	};
@@ -95,29 +165,34 @@ export function buildApprovalMessage(data: ApprovalCardData): {
 export function buildResolvedApprovalMessage(
 	data: ApprovalCardData,
 	resolved: ApprovalResolvedData,
+	t?: BotTranslateFn,
+	locale: string = DEFAULT_LANGUAGE,
 ): string {
 	const lines: string[] = [];
 	const icon = resolved.action === "approved" ? "\u2705" : "\u274C";
-	const status = resolved.action === "approved" ? "Approved" : "Rejected";
+	const status =
+		resolved.action === "approved"
+			? (t ? t("bot.approval.approved", "Approved") : "Approved")
+			: (t ? t("bot.approval.rejected", "Rejected") : "Rejected");
 
-	lines.push(`${icon} ${bold(`Approval ${status}`)}`);
+	lines.push(`${icon} ${bold(`${t ? t("bot.approval.approval", "Approval") : "Approval"} ${status}`)}`);
 	lines.push("");
-	lines.push(`From: ${bold(data.requesterName)}`);
+	lines.push(`${t ? t("bot.approval.from", "From") : "From"}: ${bold(data.requesterName)}`);
 
 	if (data.entityType === "absence_entry") {
-		const category = data.absenceCategory || "Leave";
-		lines.push(`Type: ${escapeMarkdownV2(category)}`);
+		const category = data.absenceCategory || (t ? t("bot.approval.leave", "Leave") : "Leave");
+		lines.push(`${t ? t("bot.approval.type", "Type") : "Type"}: ${escapeMarkdownV2(category)}`);
 		if (data.startDate && data.endDate) {
-			const start = DateTime.fromISO(data.startDate).toFormat("MMM d");
-			const end = DateTime.fromISO(data.endDate).toFormat("MMM d");
-			lines.push(`Period: ${escapeMarkdownV2(start)} \\- ${escapeMarkdownV2(end)}`);
+			const start = fmtShortDate(DateTime.fromISO(data.startDate), locale);
+			const end = fmtShortDate(DateTime.fromISO(data.endDate), locale);
+			lines.push(`${t ? t("bot.approval.period", "Period") : "Period"}: ${escapeMarkdownV2(start)} \\- ${escapeMarkdownV2(end)}`);
 		}
 	}
 
 	lines.push("");
-	lines.push(`${bold(status)} by ${escapeMarkdownV2(resolved.approverName)}`);
-	const resolvedAt = DateTime.fromJSDate(resolved.resolvedAt).toFormat("MMM d, HH:mm");
-	lines.push(`at ${escapeMarkdownV2(resolvedAt)}`);
+	lines.push(`${bold(status)} ${t ? t("bot.approval.by", "by") : "by"} ${escapeMarkdownV2(resolved.approverName)}`);
+	const resolvedAt = fmtShortDateTime(DateTime.fromJSDate(resolved.resolvedAt), locale);
+	lines.push(`${t ? t("bot.approval.at", "at") : "at"} ${escapeMarkdownV2(resolvedAt)}`);
 
 	return lines.join("\n");
 }
@@ -130,27 +205,33 @@ export function buildResolvedApprovalMessage(
  * Build daily digest message for Telegram.
  * Uses the shared DailyDigestData and formats for MarkdownV2.
  */
-export function buildDailyDigestMessage(data: DailyDigestData, appUrl: string): string {
+export function buildDailyDigestMessage(
+	data: DailyDigestData,
+	appUrl: string,
+	t?: BotTranslateFn,
+	locale: string = DEFAULT_LANGUAGE,
+): string {
 	const lines: string[] = [];
-	const dateFormatted = DateTime.fromJSDate(data.date)
-		.setZone(data.timezone)
-		.toFormat("EEEE, MMMM d, yyyy");
+	const dateFormatted = fmtFullDate(
+		DateTime.fromJSDate(data.date).setZone(data.timezone),
+		locale,
+	);
 
-	lines.push(bold(`Daily Digest - ${dateFormatted}`));
+	lines.push(bold(t ? t("bot.digest.title", "Daily Digest - {date}", { date: dateFormatted }) : `Daily Digest - ${dateFormatted}`));
 	lines.push("");
 
 	// Pending approvals
 	if (data.pendingApprovals === 0) {
-		lines.push(`${bold("Pending Approvals:")} None`);
+		lines.push(`${bold(t ? t("bot.digest.pendingApprovals", "Pending Approvals:") : "Pending Approvals:")} ${t ? t("bot.digest.none", "None") : "None"}`);
 	} else {
-		lines.push(`${bold("Pending Approvals:")} ${data.pendingApprovals}`);
+		lines.push(`${bold(t ? t("bot.digest.pendingApprovals", "Pending Approvals:") : "Pending Approvals:")} ${data.pendingApprovals}`);
 	}
 	lines.push("");
 
 	// Who's out
-	lines.push(bold("Who's Out:"));
+	lines.push(bold(t ? t("bot.digest.whosOut", "Who's Out:") : "Who's Out:"));
 	if (data.employeesOut.length === 0) {
-		lines.push(escapeMarkdownV2("Everyone is available"));
+		lines.push(escapeMarkdownV2(t ? t("bot.digest.everyoneAvailable", "Everyone is available") : "Everyone is available"));
 	} else {
 		for (const emp of data.employeesOut.slice(0, 5)) {
 			lines.push(escapeMarkdownV2(`  ${emp.name} - ${emp.category} (returns ${emp.returnDate})`));
@@ -162,9 +243,9 @@ export function buildDailyDigestMessage(data: DailyDigestData, appUrl: string): 
 	lines.push("");
 
 	// Clocked in
-	lines.push(bold("Currently Clocked In:"));
+	lines.push(bold(t ? t("bot.digest.clockedIn", "Currently Clocked In:") : "Currently Clocked In:"));
 	if (data.employeesClockedIn.length === 0) {
-		lines.push(escapeMarkdownV2("No one yet"));
+		lines.push(escapeMarkdownV2(t ? t("bot.digest.noOneYet", "No one yet") : "No one yet"));
 	} else {
 		for (const emp of data.employeesClockedIn.slice(0, 5)) {
 			lines.push(
@@ -179,7 +260,7 @@ export function buildDailyDigestMessage(data: DailyDigestData, appUrl: string): 
 
 	// Coverage gaps
 	if (data.coverageGaps && data.coverageGaps.length > 0) {
-		lines.push(bold("Coverage Gaps:"));
+		lines.push(bold(t ? t("bot.digest.coverageGaps", "Coverage Gaps:") : "Coverage Gaps:"));
 		for (const gap of data.coverageGaps) {
 			lines.push(
 				escapeMarkdownV2(
@@ -192,7 +273,7 @@ export function buildDailyDigestMessage(data: DailyDigestData, appUrl: string): 
 
 	// Open shifts
 	if (data.openShiftsToday || data.openShiftsTomorrow) {
-		lines.push(bold("Open Shifts:"));
+		lines.push(bold(t ? t("bot.digest.openShifts", "Open Shifts:") : "Open Shifts:"));
 		lines.push(
 			escapeMarkdownV2(
 				`Today: ${data.openShiftsToday || 0} | Tomorrow: ${data.openShiftsTomorrow || 0}`,
@@ -203,7 +284,7 @@ export function buildDailyDigestMessage(data: DailyDigestData, appUrl: string): 
 
 	// Compliance
 	if (data.compliancePending && data.compliancePending > 0) {
-		lines.push(bold("Compliance:"));
+		lines.push(bold(t ? t("bot.digest.compliance", "Compliance:") : "Compliance:"));
 		lines.push(
 			escapeMarkdownV2(
 				`${data.compliancePending} pending exception request${data.compliancePending > 1 ? "s" : ""}`,
@@ -214,7 +295,8 @@ export function buildDailyDigestMessage(data: DailyDigestData, appUrl: string): 
 
 	// Dashboard link
 	const dashboardUrl = `${appUrl}/dashboard`;
-	lines.push(`[Open Z8 Dashboard](${escapeMarkdownV2(dashboardUrl)})`);
+	const linkText = t ? t("bot.digest.openDashboard", "Open Z8 Dashboard") : "Open Z8 Dashboard";
+	lines.push(`[${linkText}](${escapeMarkdownV2(dashboardUrl)})`);
 
 	return lines.join("\n");
 }
@@ -231,21 +313,28 @@ export function buildEscalationMessage(
 	entityType: string,
 	ageHours: number,
 	originalApproverName: string,
+	t?: BotTranslateFn,
 ): string {
 	const lines: string[] = [];
 
-	lines.push(bold("Escalated Approval Request"));
+	lines.push(bold(t ? t("bot.escalation.title", "Escalated Approval Request") : "Escalated Approval Request"));
 	lines.push("");
-	lines.push(`From: ${bold(requesterName)}`);
+	lines.push(`${t ? t("bot.approval.from", "From") : "From"}: ${bold(requesterName)}`);
 	lines.push(
-		`Type: ${escapeMarkdownV2(entityType === "absence_entry" ? "Absence request" : "Time correction")}`,
+		`${t ? t("bot.approval.type", "Type") : "Type"}: ${escapeMarkdownV2(
+			entityType === "absence_entry"
+				? (t ? t("bot.escalation.absenceRequest", "Absence request") : "Absence request")
+				: (t ? t("bot.escalation.timeCorrection", "Time correction") : "Time correction"),
+		)}`,
 	);
-	lines.push(`Waiting: ${escapeMarkdownV2(`${Math.round(ageHours)}h`)}`);
-	lines.push(`Original approver: ${escapeMarkdownV2(originalApproverName)}`);
+	lines.push(`${t ? t("bot.escalation.waiting", "Waiting") : "Waiting"}: ${escapeMarkdownV2(`${Math.round(ageHours)}h`)}`);
+	lines.push(`${t ? t("bot.escalation.originalApprover", "Original approver") : "Original approver"}: ${escapeMarkdownV2(originalApproverName)}`);
 	lines.push("");
 	lines.push(
 		escapeMarkdownV2(
-			"This request has been escalated to you because the original approver did not respond in time.",
+			t
+				? t("bot.escalation.reason", "This request has been escalated to you because the original approver did not respond in time.")
+				: "This request has been escalated to you because the original approver did not respond in time.",
 		),
 	);
 

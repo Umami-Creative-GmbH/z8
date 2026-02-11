@@ -132,6 +132,17 @@ export async function setWebhook(
 }
 
 /**
+ * Register bot commands for the Telegram command menu
+ */
+export async function setMyCommands(
+	botToken: string,
+	commands: Array<{ command: string; description: string }>,
+): Promise<boolean> {
+	const result = await callApi(botToken, "setMyCommands", { commands });
+	return result.ok;
+}
+
+/**
  * Remove the webhook
  */
 export async function deleteWebhook(botToken: string): Promise<boolean> {
