@@ -46,9 +46,9 @@
 		"@esbuild/win32-x64": "^0.27.3",
 		"puppeteer-core": "^24.37.2",
 		"shadcn": "^3.8.4",
-		"turbo": "^2.8.5"
+		"turbo": "^2.8.7"
 	},
-	"packageManager": "pnpm@10.29.2",
+	"packageManager": "pnpm@10.29.3+sha512.498e1fb4cca5aa06c1dcf2611e6fafc50972ffe7189998c409e90de74566444298ffe43e6cd2acdc775ba1aa7cc5e092a8b7054c811ba8c5770f84693d33d2dc",
 	"overrides": {
 		"@types/react": "19.2.8",
 		"@types/react-dom": "19.2.3",
