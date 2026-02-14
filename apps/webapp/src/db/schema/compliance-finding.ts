@@ -53,11 +53,31 @@ export type ConsecutiveDaysExceededEvidence = {
 	workDates: string[]; // ISO dates
 };
 
+export type PresenceRequirementEvidence = {
+	type: "presence_requirement";
+	mode: "minimum_count" | "fixed_days";
+	evaluationStart: string; // ISO date
+	evaluationEnd: string; // ISO date
+	requiredDays: number;
+	actualOnsiteDays: number;
+	// For fixed_days mode: which required days were missed
+	missedDays?: string[]; // day_of_week values, e.g. ["monday", "wednesday"]
+	// Days excluded from evaluation (sick, vacation, holiday)
+	excludedDays: string[]; // ISO dates
+	excludedReasons: string[]; // "sick", "vacation", "holiday", etc.
+	// Work periods that counted as on-site
+	onsiteWorkPeriodIds: string[];
+	// Location constraint (null = any)
+	locationId: string | null;
+	locationName: string | null;
+};
+
 export type ComplianceFindingEvidence =
 	| RestPeriodInsufficientEvidence
 	| MaxHoursDailyExceededEvidence
 	| MaxHoursWeeklyExceededEvidence
-	| ConsecutiveDaysExceededEvidence;
+	| ConsecutiveDaysExceededEvidence
+	| PresenceRequirementEvidence;
 
 // ============================================
 // COMPLIANCE FINDING TABLE

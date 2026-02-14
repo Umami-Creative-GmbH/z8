@@ -3,7 +3,7 @@ import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 
 // Import auth tables for FK references
 import { organization, user } from "../auth-schema";
-import { approvalStatusEnum, timeEntryTypeEnum } from "./enums";
+import { approvalStatusEnum, timeEntryTypeEnum, workLocationTypeEnum } from "./enums";
 import { employee } from "./organization";
 import { project } from "./project";
 import type { WorkPeriodAutoAdjustmentReason, WorkPeriodPendingChanges } from "./types";
@@ -97,6 +97,9 @@ export const workPeriod = pgTable(
 		workCategoryId: uuid("work_category_id").references(() => workCategory.id, {
 			onDelete: "set null",
 		}),
+
+		// Work location type - employee tags at clock-in (office, home, field, other)
+		workLocationType: workLocationTypeEnum("work_location_type"),
 
 		startTime: timestamp("start_time").notNull(),
 		endTime: timestamp("end_time"),

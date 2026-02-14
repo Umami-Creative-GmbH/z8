@@ -156,6 +156,31 @@ export const restPeriodEnforcementEnum = pgEnum("rest_period_enforcement", [
 	"none", // No enforcement, no warnings
 ]);
 
+// Presence policy enums
+export const workLocationTypeEnum = pgEnum("work_location_type", [
+	"office",
+	"home",
+	"field",
+	"other",
+]);
+
+export const presenceModeEnum = pgEnum("presence_mode", [
+	"minimum_count",
+	"fixed_days",
+]);
+
+export const presenceEnforcementEnum = pgEnum("presence_enforcement", [
+	"block",
+	"warn",
+	"none",
+]);
+
+export const presenceEvaluationPeriodEnum = pgEnum("presence_evaluation_period", [
+	"weekly",
+	"biweekly",
+	"monthly",
+]);
+
 // Compliance exception type
 export const complianceExceptionTypeEnum = pgEnum("compliance_exception_type", [
 	"rest_period", // Exception for 11-hour rest period
@@ -296,6 +321,7 @@ export const complianceFindingTypeEnum = pgEnum("compliance_finding_type", [
 	"max_hours_daily_exceeded", // Daily max exceeded
 	"max_hours_weekly_exceeded", // Weekly max exceeded
 	"consecutive_days_exceeded", // Too many consecutive work days
+	"presence_requirement", // Presence requirement not met
 ]);
 
 // Compliance finding severity

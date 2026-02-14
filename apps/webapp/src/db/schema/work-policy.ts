@@ -17,13 +17,16 @@ import { organization, user } from "../auth-schema";
 import {
 	dayOfWeekEnum,
 	holidayPresetAssignmentTypeEnum,
+	presenceEnforcementEnum,
+	presenceEvaluationPeriodEnum,
+	presenceModeEnum,
 	restPeriodEnforcementEnum,
 	scheduleCycleEnum,
 	scheduleTypeEnum,
 	timeRegulationViolationTypeEnum,
 	workingDaysPresetEnum,
 } from "./enums";
-import { employee, team } from "./organization";
+import { employee, location, team } from "./organization";
 import { workPeriod } from "./time-tracking";
 import type { TimeRegulationBreakRulesPreset, TimeRegulationViolationDetails } from "./types";
 
@@ -50,6 +53,7 @@ export const workPolicy = pgTable(
 		// Feature toggles - each policy can have schedule, regulation, or both
 		scheduleEnabled: boolean("schedule_enabled").default(true).notNull(),
 		regulationEnabled: boolean("regulation_enabled").default(true).notNull(),
+		presenceEnabled: boolean("presence_enabled").default(false).notNull(),
 
 		// Status flags
 		isActive: boolean("is_active").default(true).notNull(),
@@ -139,6 +143,54 @@ export const workPolicyScheduleDay = pgTable(
 			table.dayOfWeek,
 			table.cycleWeek,
 		),
+	],
+);
+
+// ============================================
+// PRESENCE CONFIGURATION (1:1 with workPolicy)
+// ============================================
+
+/**
+ * Presence configuration - defines on-site requirements.
+ * Only used when policy.presenceEnabled = true.
+ */
+export const workPolicyPresence = pgTable(
+	"work_policy_presence",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		policyId: uuid("policy_id")
+			.notNull()
+			.unique()
+			.references(() => workPolicy.id, { onDelete: "cascade" }),
+
+		// Mode: minimum count of days or fixed specific days
+		presenceMode: presenceModeEnum("presence_mode").default("minimum_count").notNull(),
+
+		// For minimum_count mode: minimum on-site days per evaluation period
+		requiredOnsiteDays: integer("required_onsite_days"),
+
+		// For fixed_days mode: JSON array of day_of_week values, e.g. ["monday","wednesday","friday"]
+		requiredOnsiteFixedDays: text("required_onsite_fixed_days"),
+
+		// Optional: restrict to a specific location (null = any on-site location)
+		locationId: uuid("location_id").references(() => location.id, {
+			onDelete: "set null",
+		}),
+
+		// How often to evaluate compliance
+		evaluationPeriod: presenceEvaluationPeriodEnum("evaluation_period").default("weekly").notNull(),
+
+		// Enforcement level
+		enforcement: presenceEnforcementEnum("enforcement").default("warn").notNull(),
+
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+		updatedAt: timestamp("updated_at")
+			.$onUpdate(() => currentTimestamp())
+			.notNull(),
+	},
+	(table) => [
+		index("workPolicyPresence_policyId_idx").on(table.policyId),
+		index("workPolicyPresence_locationId_idx").on(table.locationId),
 	],
 );
 

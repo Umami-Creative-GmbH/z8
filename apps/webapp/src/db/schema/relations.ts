@@ -94,6 +94,7 @@ import {
 	workPolicyAssignment,
 	workPolicyBreakOption,
 	workPolicyBreakRule,
+	workPolicyPresence,
 	workPolicyRegulation,
 	workPolicySchedule,
 	workPolicyScheduleDay,
@@ -1250,6 +1251,7 @@ export const workPolicyRelations = relations(workPolicy, ({ one, many }) => ({
 	}),
 	schedule: one(workPolicySchedule),
 	regulation: one(workPolicyRegulation),
+	presence: one(workPolicyPresence),
 	assignments: many(workPolicyAssignment),
 	violations: many(workPolicyViolation),
 	creator: one(user, {
@@ -1276,6 +1278,17 @@ export const workPolicyScheduleDayRelations = relations(workPolicyScheduleDay, (
 	schedule: one(workPolicySchedule, {
 		fields: [workPolicyScheduleDay.scheduleId],
 		references: [workPolicySchedule.id],
+	}),
+}));
+
+export const workPolicyPresenceRelations = relations(workPolicyPresence, ({ one }) => ({
+	policy: one(workPolicy, {
+		fields: [workPolicyPresence.policyId],
+		references: [workPolicy.id],
+	}),
+	location: one(location, {
+		fields: [workPolicyPresence.locationId],
+		references: [location.id],
 	}),
 }));
 

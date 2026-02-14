@@ -65,6 +65,7 @@ export function ComplianceFindingDialog({
 		max_hours_daily_exceeded: t("complianceRadar.findingType.maxHoursDailyExceeded", "Daily Hours Exceeded"),
 		max_hours_weekly_exceeded: t("complianceRadar.findingType.maxHoursWeeklyExceeded", "Weekly Hours Exceeded"),
 		consecutive_days_exceeded: t("complianceRadar.findingType.consecutiveDaysExceeded", "Consecutive Days Exceeded"),
+		presence_requirement: t("complianceRadar.findingType.presenceRequirement", "Presence Requirement"),
 	};
 
 	const statusLabels: Record<ComplianceFindingStatus, string> = {

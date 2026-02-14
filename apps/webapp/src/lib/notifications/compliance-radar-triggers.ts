@@ -20,6 +20,7 @@ const FINDING_TYPE_LABELS: Record<ComplianceFindingType, string> = {
 	max_hours_daily_exceeded: "Daily Hours Exceeded",
 	max_hours_weekly_exceeded: "Weekly Hours Exceeded",
 	consecutive_days_exceeded: "Too Many Consecutive Days",
+	presence_requirement: "Presence Requirement",
 };
 
 const SEVERITY_LABELS: Record<ComplianceFindingSeverity, string> = {
