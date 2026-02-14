@@ -2,14 +2,18 @@
 
 import {
 	IconAlertTriangle,
+	IconBuilding,
 	IconCheck,
 	IconClock,
 	IconClockPause,
+	IconDots,
+	IconHome,
 	IconLoader2,
+	IconMapPin,
 	IconX,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { BreakReminder } from "@/components/time-tracking/break-reminder";
 import { WaterReminder } from "@/components/wellness/water-reminder";
@@ -21,6 +25,7 @@ import { ExceptionRequestDialog } from "@/components/compliance/exception-reques
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useComplianceStatus } from "@/hooks/use-compliance-status";
 import { type TimeClockState, useElapsedTimer, useTimeClock } from "@/lib/query";
 import { formatDurationWithSeconds } from "@/lib/time-tracking/time-utils";
@@ -69,6 +74,18 @@ export function ClockInOutWidget({ activeWorkPeriod: initialWorkPeriod, employee
 	// Separate timer hook to isolate per-second re-renders to this component only
 	const elapsedSeconds = useElapsedTimer(activeWorkPeriod?.startTime ?? null);
 
+	// Work location type with sticky localStorage preference
+	const [workLocationType, setWorkLocationType] = useState<"office" | "home" | "field" | "other">(() => {
+		if (typeof window !== "undefined") {
+			return (localStorage.getItem("z8-work-location-type") as "office" | "home" | "field" | "other") ?? "office";
+		}
+		return "office";
+	});
+
+	useEffect(() => {
+		localStorage.setItem("z8-work-location-type", workLocationType);
+	}, [workLocationType]);
+
 	// State for showing notes input after clock-out
 	const [showNotesInput, setShowNotesInput] = useState(false);
 	const [lastClockOutEntryId, setLastClockOutEntryId] = useState<string | null>(null);
@@ -112,7 +129,7 @@ export function ClockInOutWidget({ activeWorkPeriod: initialWorkPeriod, employee
 			}
 		}
 
-		const result = await clockIn();
+		const result = await clockIn({ workLocationType });
 
 		if (result.success) {
 			// Check if this was an offline queued request
@@ -316,6 +333,37 @@ export function ClockInOutWidget({ activeWorkPeriod: initialWorkPeriod, employee
 					isClockedIn={isClockedIn}
 					sessionStartTime={activeWorkPeriod?.startTime ?? null}
 				/>
+
+					{/* Work location selector - only shown when about to clock in */}
+				{!isClockedIn && !showNotesInput && (
+					<ToggleGroup
+						type="single"
+						variant="outline"
+						size="sm"
+						value={workLocationType}
+						onValueChange={(value) => {
+							if (value) setWorkLocationType(value as typeof workLocationType);
+						}}
+						className="w-full"
+					>
+						<ToggleGroupItem value="office" aria-label={t("timeTracking.workLocationOffice", "Office")}>
+							<IconBuilding className="size-4" />
+							<span className="hidden @[20rem]/widget:inline text-xs">{t("timeTracking.workLocationOffice", "Office")}</span>
+						</ToggleGroupItem>
+						<ToggleGroupItem value="home" aria-label={t("timeTracking.workLocationHome", "Home")}>
+							<IconHome className="size-4" />
+							<span className="hidden @[20rem]/widget:inline text-xs">{t("timeTracking.workLocationHome", "Home")}</span>
+						</ToggleGroupItem>
+						<ToggleGroupItem value="field" aria-label={t("timeTracking.workLocationField", "Field")}>
+							<IconMapPin className="size-4" />
+							<span className="hidden @[20rem]/widget:inline text-xs">{t("timeTracking.workLocationField", "Field")}</span>
+						</ToggleGroupItem>
+						<ToggleGroupItem value="other" aria-label={t("timeTracking.workLocationOther", "Other")}>
+							<IconDots className="size-4" />
+							<span className="hidden @[20rem]/widget:inline text-xs">{t("timeTracking.workLocationOther", "Other")}</span>
+						</ToggleGroupItem>
+					</ToggleGroup>
+				)}
 
 				{!showNotesInput && (
 					<Button

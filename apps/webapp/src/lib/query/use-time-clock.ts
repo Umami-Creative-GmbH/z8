@@ -107,7 +107,7 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 
 	// Clock in mutation with offline support
 	const clockInMutation = useMutation({
-		mutationFn: async () => {
+		mutationFn: async (params: { workLocationType?: "office" | "home" | "field" | "other" }) => {
 			// When offline, queue the event for later sync
 			if (isOffline) {
 				const result = await queueClockEvent({
@@ -144,7 +144,7 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 			}
 
 			// Online - use normal server action
-			return clockIn();
+			return clockIn(params?.workLocationType);
 		},
 		onSuccess: (result) => {
 			if (result.success && !("queued" in result)) {
@@ -232,7 +232,8 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 		isSyncing,
 
 		// Mutations
-		clockIn: clockInMutation.mutateAsync,
+		clockIn: (params?: { workLocationType?: "office" | "home" | "field" | "other" }) =>
+			clockInMutation.mutateAsync(params ?? {}),
 		clockOut: clockOutMutation.mutateAsync,
 		updateNotes: updateNotesMutation.mutateAsync,
 		isClockingIn: clockInMutation.isPending,

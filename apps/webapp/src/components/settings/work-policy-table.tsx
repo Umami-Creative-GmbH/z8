@@ -6,6 +6,7 @@ import {
 	IconDots,
 	IconGavel,
 	IconLoader2,
+	IconMapPin,
 	IconPencil,
 	IconPlus,
 	IconRefresh,
@@ -240,6 +241,29 @@ export function WorkPolicyTable({
 									</TooltipTrigger>
 									<TooltipContent>
 										{t("settings.workPolicies.regulationEnabled", "Time regulation enabled")}
+									</TooltipContent>
+								</Tooltip>
+							</TooltipProvider>
+						)}
+						{row.original.presenceEnabled && (
+							<TooltipProvider>
+								<Tooltip>
+									<TooltipTrigger>
+										<Badge variant="outline" className="gap-1">
+											<IconMapPin className="h-3 w-3" />
+											{t("settings.workPolicies.presenceEnabled", "Presence")}
+										</Badge>
+									</TooltipTrigger>
+									<TooltipContent>
+										{row.original.presence
+											? row.original.presence.presenceMode === "minimum_count"
+												? t("settings.workPolicies.presenceSummaryDaysPerWeek", "{count} days/{period} on-site", {
+													count: row.original.presence.requiredOnsiteDays,
+													period: row.original.presence.evaluationPeriod,
+												})
+												: t("settings.workPolicies.presenceSummaryFixedDays", "Fixed days on-site")
+											: t("settings.workPolicies.presenceEnabledTooltip", "On-site presence required")
+										}
 									</TooltipContent>
 								</Tooltip>
 							</TooltipProvider>
