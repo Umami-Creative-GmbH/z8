@@ -34,6 +34,7 @@ export const env = createEnv({
 		// Worker / Jobs
 		ENABLE_CRON_JOBS: z.string().optional(),
 		WORKER_CONCURRENCY: z.string().optional(),
+		CRON_SECRET: z.string().min(1).optional(),
 
 		// Vault
 		VAULT_ADDR: z.string().optional(),
@@ -120,6 +121,7 @@ export const env = createEnv({
 
 		ENABLE_CRON_JOBS: process.env.ENABLE_CRON_JOBS,
 		WORKER_CONCURRENCY: process.env.WORKER_CONCURRENCY,
+		CRON_SECRET: process.env.CRON_SECRET,
 		VAULT_ADDR: process.env.VAULT_ADDR,
 		VAULT_TOKEN: process.env.VAULT_TOKEN,
 		TOLGEE_PROJECT_ID: process.env.TOLGEE_PROJECT_ID,

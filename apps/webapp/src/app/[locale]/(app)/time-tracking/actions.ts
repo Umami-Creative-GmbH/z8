@@ -4,6 +4,7 @@ import { and, desc, eq, gte, inArray, isNull, lte, or } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
 import { headers } from "next/headers";
+import * as z from "zod";
 import { db } from "@/db";
 import {
 	approvalRequest,
@@ -19,7 +20,7 @@ import {
 } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { dateFromDB, dateToDB } from "@/lib/datetime/drizzle-adapter";
-import { NotFoundError, ValidationError } from "@/lib/effect/errors";
+import { AuthorizationError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
@@ -768,11 +769,26 @@ export async function getCurrentEmployee(): Promise<typeof employee.$inferSelect
 		return null;
 	}
 
+	const activeOrgId = session.session?.activeOrganizationId;
+
+	// If we have an active organization, get employee for that org
+	if (activeOrgId) {
+		const emp = await db.query.employee.findFirst({
+			where: and(
+				eq(employee.userId, session.user.id),
+				eq(employee.organizationId, activeOrgId),
+				eq(employee.isActive, true),
+			),
+		});
+		if (emp) return emp;
+	}
+
+	// Fall back to first active employee record (for backwards compatibility)
 	const emp = await db.query.employee.findFirst({
-		where: eq(employee.userId, session.user.id),
+		where: and(eq(employee.userId, session.user.id), eq(employee.isActive, true)),
 	});
 
-	return emp || null;
+	return emp ?? null;
 }
 
 /**
@@ -2890,14 +2906,60 @@ export async function getPresenceStatus(
 		presenceEnabled: boolean;
 	}>
 > {
+	const parsed = z.object({ employeeId: z.string().uuid("Invalid employee ID") }).safeParse({ employeeId });
+	if (!parsed.success) {
+		return { success: false as const, error: parsed.error.issues[0]?.message || "Invalid input" };
+	}
+	const validatedEmployeeId = parsed.data.employeeId;
+
 	const effect = Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
-		yield* _(authService.getSession());
+		const session = yield* _(authService.getSession());
 		const dbService = yield* _(DatabaseService);
+
+		// Require an active organization
+		if (!session.session.activeOrganizationId) {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "No active organization",
+						userId: session.user.id,
+						resource: "employee",
+						action: "getPresenceStatus",
+					}),
+				),
+			);
+		}
+
+		// Verify the employee belongs to the caller's active organization
+		const targetEmployee = yield* _(
+			dbService.query("getEmployeeForAuth", async () => {
+				return await dbService.db.query.employee.findFirst({
+					where: and(
+						eq(employee.id, validatedEmployeeId),
+						eq(employee.organizationId, session.session.activeOrganizationId!),
+					),
+					columns: { id: true },
+				});
+			}),
+		);
+
+		if (!targetEmployee) {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Employee not found in your organization",
+						userId: session.user.id,
+						resource: "employee",
+						action: "getPresenceStatus",
+					}),
+				),
+			);
+		}
 
 		// Get employee's effective work policy
 		const workPolicyService = yield* _(WorkPolicyService);
-		const effectivePolicy = yield* _(workPolicyService.getEffectivePolicy(employeeId));
+		const effectivePolicy = yield* _(workPolicyService.getEffectivePolicy(validatedEmployeeId));
 
 		if (!effectivePolicy) {
 			return {
@@ -2957,7 +3019,7 @@ export async function getPresenceStatus(
 			dbService.query("getWeekWorkPeriods", async () => {
 				return await dbService.db.query.workPeriod.findMany({
 					where: and(
-						eq(workPeriod.employeeId, employeeId),
+						eq(workPeriod.employeeId, validatedEmployeeId),
 						gte(workPeriod.startTime, weekStart.toJSDate()),
 						lte(workPeriod.startTime, weekEnd.toJSDate()),
 					),
