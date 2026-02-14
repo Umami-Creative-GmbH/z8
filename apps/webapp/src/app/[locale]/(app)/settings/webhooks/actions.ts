@@ -2,6 +2,7 @@
 
 import { randomUUID } from "node:crypto";
 import { trace } from "@opentelemetry/api";
+import { isPrivateIP } from "@/lib/webhooks/url-validation";
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { db } from "@/db";
@@ -50,54 +51,6 @@ function verifyOwnerRole(memberRecord: { role: string } | null | undefined, user
 			);
 		}
 	});
-}
-
-/**
- * Check if an IP address is in a private/internal range
- * This prevents SSRF attacks by blocking requests to internal infrastructure
- */
-function isPrivateIP(hostname: string): boolean {
-	// Localhost variants
-	if (
-		hostname === "localhost" ||
-		hostname === "127.0.0.1" ||
-		hostname === "::1" ||
-		hostname === "[::1]" ||
-		hostname.endsWith(".localhost")
-	) {
-		return true;
-	}
-
-	// IPv4 private ranges
-	const ipv4Match = hostname.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
-	if (ipv4Match) {
-		const [, a, b, c] = ipv4Match.map(Number);
-		// 10.0.0.0/8 - Private network
-		if (a === 10) return true;
-		// 172.16.0.0/12 - Private network
-		if (a === 172 && b >= 16 && b <= 31) return true;
-		// 192.168.0.0/16 - Private network
-		if (a === 192 && b === 168) return true;
-		// 169.254.0.0/16 - Link-local (including cloud metadata at 169.254.169.254)
-		if (a === 169 && b === 254) return true;
-		// 127.0.0.0/8 - Loopback
-		if (a === 127) return true;
-		// 0.0.0.0/8 - Current network
-		if (a === 0) return true;
-	}
-
-	// Common cloud metadata hostnames
-	const metadataHostnames = [
-		"metadata.google.internal",
-		"metadata.goog",
-		"instance-data",
-		"169.254.169.254", // AWS/GCP/Azure metadata
-	];
-	if (metadataHostnames.includes(hostname.toLowerCase())) {
-		return true;
-	}
-
-	return false;
 }
 
 /**

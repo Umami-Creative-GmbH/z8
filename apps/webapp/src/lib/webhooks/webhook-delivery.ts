@@ -9,6 +9,7 @@ import { createLogger } from "@/lib/logger";
 import { generateWebhookSignature } from "./signature";
 import type { WebhookDeliveryResult, WebhookPayloadData } from "./types";
 import { MAX_RESPONSE_BODY_LENGTH, WEBHOOK_TIMEOUT_MS } from "./types";
+import { resolveAndValidateUrl } from "./url-validation";
 
 const logger = createLogger("WebhookDelivery");
 
@@ -28,6 +29,27 @@ export async function executeWebhookRequest(params: {
 	const startTime = Date.now();
 
 	try {
+		// SSRF protection: re-validate the URL at delivery time to prevent
+		// DNS rebinding and other bypass techniques
+		const urlValidation = await resolveAndValidateUrl(params.url);
+		if (!urlValidation.valid) {
+			const durationMs = Date.now() - startTime;
+			logger.warn(
+				{
+					deliveryId: params.deliveryId,
+					url: params.url,
+					reason: urlValidation.reason,
+				},
+				"Webhook delivery blocked by SSRF protection",
+			);
+			return {
+				success: false,
+				httpStatus: 0,
+				errorMessage: urlValidation.reason ?? "URL validation failed at delivery time",
+				durationMs,
+			};
+		}
+
 		// Serialize payload
 		const payloadString = JSON.stringify(params.payload);
 
