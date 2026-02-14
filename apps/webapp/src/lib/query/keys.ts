@@ -335,6 +335,9 @@ export const queryKeys = {
 				["work-policies", "violations", "employee", employeeId, dateRange] as const,
 		},
 		effective: (employeeId: string) => ["work-policies", "effective", employeeId] as const,
+		presence: {
+			status: (employeeId: string) => ["work-policies", "presence", "status", employeeId] as const,
+		},
 	},
 
 	// ArbZG Compliance

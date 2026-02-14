@@ -5,6 +5,7 @@ import { ComplianceRadarWidget } from "@/components/dashboard/compliance-radar-w
 import { HydrationWidget } from "@/components/dashboard/hydration-widget";
 import { ManagedEmployeesWidget } from "@/components/dashboard/managed-employees-widget";
 import { PendingApprovalsWidget } from "@/components/dashboard/pending-approvals-widget";
+import { PresenceStatusWidget } from "@/components/dashboard/presence-status-widget";
 import { QuickStatsWidget } from "@/components/dashboard/quick-stats-widget";
 import { RecentlyApprovedWidget } from "@/components/dashboard/recently-approved-widget";
 import { SortableWidgetGrid } from "@/components/dashboard/sortable-widget-grid";
@@ -33,6 +34,7 @@ const WIDGET_COMPONENTS: Record<WidgetId, React.ComponentType> = {
 	"birthday-reminders": BirthdayRemindersWidget,
 	hydration: HydrationWidget,
 	"vacation-balance": VacationBalanceWidget,
+	"presence-status": PresenceStatusWidget,
 };
 
 function WidgetSkeleton() {

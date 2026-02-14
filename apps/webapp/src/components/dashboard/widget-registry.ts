@@ -15,7 +15,8 @@ export type WidgetId =
 	| "birthday-reminders"
 	| "hydration"
 	| "vacation-balance"
-	| "compliance-radar";
+	| "compliance-radar"
+	| "presence-status";
 
 /**
  * Default widget order for new users or when no preferences are set.
@@ -27,6 +28,7 @@ export const DEFAULT_WIDGET_ORDER: WidgetId[] = [
 	"pending-approvals",
 	"team-overview",
 	"quick-stats",
+	"presence-status",
 	"whos-out-today",
 	"upcoming-time-off",
 	"recently-approved",

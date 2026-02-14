@@ -10,7 +10,15 @@ import { Context, Effect, Layer } from "effect";
 import { DateTime } from "luxon";
 import { db } from "@/db";
 import { employee, workPeriod, userSettings } from "@/db/schema";
-import { complianceConfig, workPolicy, workPolicyAssignment, workPolicyRegulation } from "@/db/schema";
+import {
+	complianceConfig,
+	workPolicy,
+	workPolicyAssignment,
+	workPolicyRegulation,
+	workPolicyPresence,
+	absenceEntry,
+	holiday,
+} from "@/db/schema";
 import { createLogger } from "@/lib/logger";
 import {
 	COMPLIANCE_RULES,
@@ -21,6 +29,14 @@ import {
 	type RuleDetectionInput,
 	type WorkPeriodData,
 } from "@/lib/compliance/rules";
+import {
+	PresenceRequirementRule,
+	type PresenceRuleDetectionInput,
+	type PresenceConfig,
+	type WorkPeriodWithLocation,
+	type AbsenceDay,
+	type HolidayDay,
+} from "@/lib/compliance/rules/presence-requirement-rule";
 import { DatabaseError } from "../errors";
 
 const logger = createLogger("ComplianceDetectionService");
@@ -102,14 +118,16 @@ export const ComplianceDetectionServiceLive = Layer.succeed(
 					});
 
 					// If no config, use defaults (all rules enabled)
+					const presenceDetectionEnabled = config?.detectPresenceRequirement ?? true;
 					const enabledRules = getEnabledRules({
 						restPeriod: config?.detectRestPeriodViolations ?? true,
 						maxHoursDaily: config?.detectMaxHoursDaily ?? true,
 						maxHoursWeekly: config?.detectMaxHoursWeekly ?? true,
 						consecutiveDays: config?.detectConsecutiveDays ?? true,
+						presenceRequirement: false, // Presence runs separately with its own schedule
 					});
 
-					if (enabledRules.length === 0) {
+				if (enabledRules.length === 0 && !presenceDetectionEnabled) {
 						logger.info({ organizationId }, "No rules enabled, skipping detection");
 						return {
 							findings: [],
@@ -151,6 +169,9 @@ export const ComplianceDetectionServiceLive = Layer.succeed(
 						bySeverity: {} as Record<string, number>,
 					};
 
+					// Check if today is a presence evaluation trigger day
+					const now = DateTime.now();
+
 					for (const emp of employees) {
 						stats.employeesChecked++;
 
@@ -165,23 +186,50 @@ export const ComplianceDetectionServiceLive = Layer.succeed(
 							expandedEnd.toJSDate(),
 						);
 
-						if (periods.length === 0) {
+						if (periods.length === 0 && !presenceDetectionEnabled) {
 							continue;
 						}
 
-						// Run each enabled rule
-						const ruleInput: RuleDetectionInput = {
-							employee: emp,
-							workPeriods: periods,
-							dateRange,
-							thresholdOverrides,
-						};
+						// Run each enabled rule (non-presence rules)
+						if (periods.length > 0) {
+							const ruleInput: RuleDetectionInput = {
+								employee: emp,
+								workPeriods: periods,
+								dateRange,
+								thresholdOverrides,
+							};
 
-						for (const rule of enabledRules) {
+							for (const rule of enabledRules) {
+								try {
+									const findings = await rule.detectViolations(ruleInput);
+
+									for (const finding of findings) {
+										allFindings.push(finding);
+										stats.findingsDetected++;
+										stats.byType[finding.type] = (stats.byType[finding.type] ?? 0) + 1;
+										stats.bySeverity[finding.severity] =
+											(stats.bySeverity[finding.severity] ?? 0) + 1;
+									}
+								} catch (error) {
+									logger.error(
+										{ error, rule: rule.name, employeeId: emp.id },
+										"Rule detection failed",
+									);
+									// Continue with other rules
+								}
+							}
+						}
+
+						// Run presence detection if enabled and the employee has a presence policy
+						if (presenceDetectionEnabled && emp.policy?.policyId) {
 							try {
-								const findings = await rule.detectViolations(ruleInput);
+								const presenceFindings = await detectPresenceForEmployee(
+									emp,
+									now,
+									organizationId,
+								);
 
-								for (const finding of findings) {
+								for (const finding of presenceFindings) {
 									allFindings.push(finding);
 									stats.findingsDetected++;
 									stats.byType[finding.type] = (stats.byType[finding.type] ?? 0) + 1;
@@ -190,10 +238,9 @@ export const ComplianceDetectionServiceLive = Layer.succeed(
 								}
 							} catch (error) {
 								logger.error(
-									{ error, rule: rule.name, employeeId: emp.id },
-									"Rule detection failed",
+									{ error, employeeId: emp.id },
+									"Presence detection failed",
 								);
-								// Continue with other rules
 							}
 						}
 					}
@@ -234,11 +281,13 @@ export const ComplianceDetectionServiceLive = Layer.succeed(
 						where: eq(complianceConfig.organizationId, organizationId),
 					});
 
+					const presenceDetectionEnabled = config?.detectPresenceRequirement ?? true;
 					const enabledRules = getEnabledRules({
 						restPeriod: config?.detectRestPeriodViolations ?? true,
 						maxHoursDaily: config?.detectMaxHoursDaily ?? true,
 						maxHoursWeekly: config?.detectMaxHoursWeekly ?? true,
 						consecutiveDays: config?.detectConsecutiveDays ?? true,
+						presenceRequirement: false, // Presence runs separately with its own schedule
 					});
 
 					const thresholdOverrides: ComplianceThresholds | null = config
@@ -260,26 +309,39 @@ export const ComplianceDetectionServiceLive = Layer.succeed(
 						expandedEnd.toJSDate(),
 					);
 
-					if (periods.length === 0) {
-						return [];
-					}
-
-					// Run rules
-					const ruleInput: RuleDetectionInput = {
-						employee: emp,
-						workPeriods: periods,
-						dateRange,
-						thresholdOverrides,
-					};
-
 					const allFindings: ComplianceFindingResult[] = [];
 
-					for (const rule of enabledRules) {
+					// Run standard rules if there are work periods
+					if (periods.length > 0) {
+						const ruleInput: RuleDetectionInput = {
+							employee: emp,
+							workPeriods: periods,
+							dateRange,
+							thresholdOverrides,
+						};
+
+						for (const rule of enabledRules) {
+							try {
+								const findings = await rule.detectViolations(ruleInput);
+								allFindings.push(...findings);
+							} catch (error) {
+								logger.error({ error, rule: rule.name, employeeId }, "Rule detection failed");
+							}
+						}
+					}
+
+					// Run presence detection if enabled
+					if (presenceDetectionEnabled && emp.policy?.policyId) {
 						try {
-							const findings = await rule.detectViolations(ruleInput);
-							allFindings.push(...findings);
+							const now = DateTime.now();
+							const presenceFindings = await detectPresenceForEmployee(
+								emp,
+								now,
+								organizationId,
+							);
+							allFindings.push(...presenceFindings);
 						} catch (error) {
-							logger.error({ error, rule: rule.name, employeeId }, "Rule detection failed");
+							logger.error({ error, employeeId }, "Presence detection failed");
 						}
 					}
 
@@ -447,4 +509,315 @@ async function getWorkPeriodsForEmployee(
 	});
 
 	return periods;
+}
+
+// ============================================
+// PRESENCE DETECTION HELPERS
+// ============================================
+
+const DAY_NAME_TO_WEEKDAY: Record<string, number> = {
+	monday: 1,
+	tuesday: 2,
+	wednesday: 3,
+	thursday: 4,
+	friday: 5,
+	saturday: 6,
+	sunday: 7,
+};
+
+/**
+ * Check if today is the correct day to evaluate presence for a given evaluation period.
+ * - weekly: every Monday
+ * - biweekly: every other Monday (even ISO week numbers)
+ * - monthly: 1st of each month
+ */
+function isPresenceEvaluationDay(evaluationPeriod: string, now: DateTime): boolean {
+	switch (evaluationPeriod) {
+		case "weekly":
+			return now.weekday === 1; // Monday
+		case "biweekly":
+			return now.weekday === 1 && now.weekNumber % 2 === 0; // Every other Monday
+		case "monthly":
+			return now.day === 1; // 1st of month
+		default:
+			return false;
+	}
+}
+
+/**
+ * Get the date range to evaluate based on the evaluation period.
+ * Always looks backward from "now":
+ * - weekly: previous full week (Mon-Sun)
+ * - biweekly: previous two full weeks
+ * - monthly: previous full month
+ */
+function getPresenceEvaluationRange(
+	evaluationPeriod: string,
+	now: DateTime,
+): { start: DateTime; end: DateTime } {
+	switch (evaluationPeriod) {
+		case "weekly":
+			return {
+				start: now.minus({ weeks: 1 }).startOf("week"),
+				end: now.minus({ weeks: 1 }).endOf("week"),
+			};
+		case "biweekly":
+			return {
+				start: now.minus({ weeks: 2 }).startOf("week"),
+				end: now.minus({ weeks: 1 }).endOf("week"),
+			};
+		case "monthly":
+			return {
+				start: now.minus({ months: 1 }).startOf("month"),
+				end: now.minus({ months: 1 }).endOf("month"),
+			};
+		default:
+			return {
+				start: now.minus({ weeks: 1 }).startOf("week"),
+				end: now.minus({ weeks: 1 }).endOf("week"),
+			};
+	}
+}
+
+/**
+ * Detect presence requirement violations for a single employee.
+ * Checks if the employee has a presence-enabled policy, if today is an
+ * evaluation trigger day, and runs the PresenceRequirementRule.
+ */
+async function detectPresenceForEmployee(
+	emp: EmployeeWithPolicy,
+	now: DateTime,
+	organizationId: string,
+): Promise<ComplianceFindingResult[]> {
+	if (!emp.policy?.policyId) return [];
+
+	// Check if the policy has presence enabled
+	const policyRow = await db.query.workPolicy.findFirst({
+		where: and(
+			eq(workPolicy.id, emp.policy.policyId),
+			eq(workPolicy.presenceEnabled, true),
+		),
+		columns: { id: true },
+	});
+
+	if (!policyRow) return [];
+
+	// Load the presence configuration
+	const presenceRow = await db.query.workPolicyPresence.findFirst({
+		where: eq(workPolicyPresence.policyId, emp.policy.policyId),
+	});
+
+	if (!presenceRow) return [];
+
+	// Check if today is an evaluation trigger day for this evaluation period
+	if (!isPresenceEvaluationDay(presenceRow.evaluationPeriod, now)) {
+		return [];
+	}
+
+	const evalRange = getPresenceEvaluationRange(presenceRow.evaluationPeriod, now);
+
+	logger.debug(
+		{
+			employeeId: emp.id,
+			evaluationPeriod: presenceRow.evaluationPeriod,
+			evalStart: evalRange.start.toISO(),
+			evalEnd: evalRange.end.toISO(),
+		},
+		"Running presence detection for employee",
+	);
+
+	// Parse fixed days from JSON text (stored as ["monday","wednesday",...]) into weekday numbers
+	let fixedDayNumbers: number[] = [];
+	if (presenceRow.requiredOnsiteFixedDays) {
+		try {
+			const dayNames = JSON.parse(presenceRow.requiredOnsiteFixedDays) as string[];
+			fixedDayNumbers = dayNames
+				.map((name) => DAY_NAME_TO_WEEKDAY[name.toLowerCase()])
+				.filter((n): n is number => n !== undefined);
+		} catch {
+			logger.warn(
+				{ policyId: emp.policy.policyId, raw: presenceRow.requiredOnsiteFixedDays },
+				"Failed to parse requiredOnsiteFixedDays",
+			);
+		}
+	}
+
+	// Map DB enforcement values to PresenceConfig enforcement
+	// DB uses "block" | "warn" | "none", PresenceConfig uses "hard" | "soft" | "none"
+	const enforcementMap: Record<string, PresenceConfig["enforcement"]> = {
+		block: "hard",
+		warn: "soft",
+		none: "none",
+	};
+
+	// Map DB evaluationPeriod values to PresenceConfig evaluationPeriod
+	// DB uses "weekly" | "biweekly" | "monthly", PresenceConfig uses "week" | "month"
+	const evalPeriodMap: Record<string, PresenceConfig["evaluationPeriod"]> = {
+		weekly: "week",
+		biweekly: "week", // biweekly still evaluates over weeks, just two of them
+		monthly: "month",
+	};
+
+	const presenceConfig: PresenceConfig = {
+		presenceMode: presenceRow.presenceMode as PresenceConfig["presenceMode"],
+		requiredOnsiteDays: presenceRow.requiredOnsiteDays ?? 0,
+		requiredOnsiteFixedDays: fixedDayNumbers,
+		locationId: presenceRow.locationId,
+		evaluationPeriod: evalPeriodMap[presenceRow.evaluationPeriod] ?? "week",
+		enforcement: enforcementMap[presenceRow.enforcement] ?? "none",
+	};
+
+	// Skip if enforcement is disabled
+	if (presenceConfig.enforcement === "none") return [];
+
+	// Load work periods with location type for the evaluation range
+	const workPeriodsWithLocation = await getWorkPeriodsWithLocationForEmployee(
+		emp.id,
+		evalRange.start.toJSDate(),
+		evalRange.end.toJSDate(),
+	);
+
+	// Load absence entries for the evaluation range
+	const absenceDays = await getAbsenceDaysForEmployee(
+		emp.id,
+		evalRange.start,
+		evalRange.end,
+	);
+
+	// Load holidays for the organization in the evaluation range
+	const holidayDays = await getHolidaysForOrganization(
+		organizationId,
+		evalRange.start,
+		evalRange.end,
+	);
+
+	// Build the detection input and run the rule
+	const presenceInput: PresenceRuleDetectionInput = {
+		employee: emp,
+		workPeriods: workPeriodsWithLocation,
+		dateRange: evalRange,
+		thresholdOverrides: null,
+		presenceConfig,
+		absenceDays,
+		holidayDays,
+	};
+
+	const presenceRule = new PresenceRequirementRule();
+	return presenceRule.detectViolations(presenceInput);
+}
+
+/**
+ * Get work periods with workLocationType for presence detection
+ */
+async function getWorkPeriodsWithLocationForEmployee(
+	employeeId: string,
+	startDate: Date,
+	endDate: Date,
+): Promise<WorkPeriodWithLocation[]> {
+	const periods = await db.query.workPeriod.findMany({
+		where: and(
+			eq(workPeriod.employeeId, employeeId),
+			gte(workPeriod.startTime, startDate),
+			lte(workPeriod.startTime, endDate),
+		),
+		columns: {
+			id: true,
+			employeeId: true,
+			startTime: true,
+			endTime: true,
+			durationMinutes: true,
+			isActive: true,
+			workLocationType: true,
+		},
+		orderBy: (table, { asc }) => [asc(table.startTime)],
+	});
+
+	return periods;
+}
+
+/**
+ * Get absence days for an employee within a date range.
+ * Expands multi-day absences into individual day entries.
+ */
+async function getAbsenceDaysForEmployee(
+	employeeId: string,
+	start: DateTime,
+	end: DateTime,
+): Promise<AbsenceDay[]> {
+	const absences = await db.query.absenceEntry.findMany({
+		where: and(
+			eq(absenceEntry.employeeId, employeeId),
+			// Overlapping range: absence starts before range end AND ends after range start
+			lte(absenceEntry.startDate, end.toISODate()!),
+			gte(absenceEntry.endDate, start.toISODate()!),
+			// Only approved absences count
+			eq(absenceEntry.status, "approved"),
+		),
+		with: {
+			category: {
+				columns: { type: true, name: true },
+			},
+		},
+	});
+
+	const days: AbsenceDay[] = [];
+
+	for (const absence of absences) {
+		const absStart = DateTime.fromISO(absence.startDate);
+		const absEnd = DateTime.fromISO(absence.endDate);
+		const rangeStart = absStart < start ? start : absStart;
+		const rangeEnd = absEnd > end ? end : absEnd;
+
+		let current = rangeStart.startOf("day");
+		const lastDay = rangeEnd.startOf("day");
+
+		while (current <= lastDay) {
+			days.push({
+				date: current.toISODate()!,
+				reason: absence.category?.type ?? absence.category?.name ?? "absence",
+			});
+			current = current.plus({ days: 1 });
+		}
+	}
+
+	return days;
+}
+
+/**
+ * Get holidays for an organization within a date range.
+ * Expands multi-day holidays into individual day entries.
+ */
+async function getHolidaysForOrganization(
+	organizationId: string,
+	start: DateTime,
+	end: DateTime,
+): Promise<HolidayDay[]> {
+	const holidays = await db.query.holiday.findMany({
+		where: and(
+			eq(holiday.organizationId, organizationId),
+			eq(holiday.isActive, true),
+			// Overlapping range
+			lte(holiday.startDate, end.toJSDate()),
+			gte(holiday.endDate, start.toJSDate()),
+		),
+	});
+
+	const days: HolidayDay[] = [];
+
+	for (const h of holidays) {
+		const holStart = DateTime.fromJSDate(h.startDate);
+		const holEnd = DateTime.fromJSDate(h.endDate);
+		const rangeStart = holStart < start ? start : holStart;
+		const rangeEnd = holEnd > end ? end : holEnd;
+
+		let current = rangeStart.startOf("day");
+		const lastDay = rangeEnd.startOf("day");
+
+		while (current <= lastDay) {
+			days.push({ date: current.toISODate()! });
+			current = current.plus({ days: 1 });
+		}
+	}
+
+	return days;
 }
