@@ -10,12 +10,14 @@ export * from "./rest-period-rule";
 export * from "./max-daily-hours-rule";
 export * from "./max-weekly-hours-rule";
 export * from "./consecutive-days-rule";
+export * from "./presence-requirement-rule";
 
 import type { ComplianceRule } from "./types";
 import { RestPeriodRule } from "./rest-period-rule";
 import { MaxDailyHoursRule } from "./max-daily-hours-rule";
 import { MaxWeeklyHoursRule } from "./max-weekly-hours-rule";
 import { ConsecutiveDaysRule } from "./consecutive-days-rule";
+import { PresenceRequirementRule } from "./presence-requirement-rule";
 
 /**
  * All available compliance rules
@@ -25,6 +27,7 @@ export const COMPLIANCE_RULES: ComplianceRule[] = [
 	new MaxDailyHoursRule(),
 	new MaxWeeklyHoursRule(),
 	new ConsecutiveDaysRule(),
+	new PresenceRequirementRule(),
 ];
 
 /**
@@ -42,6 +45,7 @@ export function getEnabledRules(enabledTypes: {
 	maxHoursDaily: boolean;
 	maxHoursWeekly: boolean;
 	consecutiveDays: boolean;
+	presenceRequirement: boolean;
 }): ComplianceRule[] {
 	return COMPLIANCE_RULES.filter((rule) => {
 		switch (rule.type) {
@@ -53,6 +57,8 @@ export function getEnabledRules(enabledTypes: {
 				return enabledTypes.maxHoursWeekly;
 			case "consecutive_days_exceeded":
 				return enabledTypes.consecutiveDays;
+			case "presence_requirement":
+				return enabledTypes.presenceRequirement;
 			default:
 				return false;
 		}

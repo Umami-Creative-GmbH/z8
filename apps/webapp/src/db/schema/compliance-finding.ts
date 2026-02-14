@@ -192,6 +192,7 @@ export const complianceConfig = pgTable(
 		detectMaxHoursDaily: boolean("detect_max_hours_daily").default(true).notNull(),
 		detectMaxHoursWeekly: boolean("detect_max_hours_weekly").default(true).notNull(),
 		detectConsecutiveDays: boolean("detect_consecutive_days").default(true).notNull(),
+		detectPresenceRequirement: boolean("detect_presence_requirement").default(true).notNull(),
 
 		// Thresholds (can override work policy for compliance radar purposes)
 		restPeriodMinutes: integer("rest_period_minutes"), // null = use work policy (default 660 = 11h)
