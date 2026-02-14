@@ -90,6 +90,7 @@ export async function handleSlashCommand(
 			escalationTimeoutHours: bot.escalationTimeoutHours,
 		},
 		args: parsed.args,
+		locale: "en",
 	};
 
 	// Execute command (shared with Teams and Telegram)

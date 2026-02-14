@@ -1,6 +1,14 @@
-export type SettingsGroup = "account" | "organization" | "administration" | "enterprise" | "data";
+export type SettingsGroup =
+	| "account"
+	| "organization"
+	| "administration"
+	| "enterprise"
+	| "data";
 
-export type FeatureFlag = "shiftsEnabled" | "projectsEnabled" | "surchargesEnabled";
+export type FeatureFlag =
+	| "shiftsEnabled"
+	| "projectsEnabled"
+	| "surchargesEnabled";
 
 export type SettingsIconName =
 	| "user-circle"
@@ -18,6 +26,7 @@ export type SettingsIconName =
 	| "clock-edit"
 	| "gavel"
 	| "percentage"
+	| "address-book"
 	| "briefcase"
 	| "world"
 	| "history"
@@ -30,10 +39,10 @@ export type SettingsIconName =
 	| "key"
 	| "webhook"
 	| "calendar-sync"
-	| "radar"
 	| "target"
 	| "certificate"
 	| "credit-card"
+	| "file-text"
 	| "brand-telegram"
 	| "database-import";
 
@@ -154,9 +163,23 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.billing.title",
 		titleDefault: "Billing & Subscription",
 		descriptionKey: "settings.billing.description",
-		descriptionDefault: "Manage your subscription, payment methods, and invoices",
+		descriptionDefault:
+			"Manage your subscription, payment methods, and invoices",
 		href: "/settings/billing",
 		icon: "credit-card",
+		adminOnly: true,
+		group: "organization",
+		requiresBilling: true,
+	},
+	{
+		id: "avv",
+		titleKey: "settings.avv.title",
+		titleDefault: "Data Processing Agreement",
+		descriptionKey: "settings.avv.description",
+		descriptionDefault:
+			"Download your Data Processing Agreement (Auftragsverarbeitungsvertrag)",
+		href: "/settings/avv",
+		icon: "file-text",
 		adminOnly: true,
 		group: "organization",
 		requiresBilling: true,
@@ -166,9 +189,22 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.employees.title",
 		titleDefault: "Employees",
 		descriptionKey: "settings.employees.description",
-		descriptionDefault: "Manage employee profiles, roles, and manager assignments",
+		descriptionDefault:
+			"Manage employee profiles, roles, and manager assignments",
 		href: "/settings/employees",
 		icon: "users",
+		adminOnly: true,
+		group: "administration",
+	},
+	{
+		id: "roles",
+		titleKey: "settings.roles.title",
+		titleDefault: "Custom Roles",
+		descriptionKey: "settings.roles.description",
+		descriptionDefault:
+			"Create custom permission roles for your organization",
+		href: "/settings/roles",
+		icon: "shield-check",
 		adminOnly: true,
 		group: "administration",
 	},
@@ -210,7 +246,8 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.workPolicies.title",
 		titleDefault: "Work Policies",
 		descriptionKey: "settings.workPolicies.description",
-		descriptionDefault: "Configure work schedules, time limits, and break requirements",
+		descriptionDefault:
+			"Configure work schedules, time limits, and break requirements",
 		href: "/settings/work-policies",
 		icon: "gavel",
 		adminOnly: true,
@@ -221,7 +258,8 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.workCategories.title",
 		titleDefault: "Work Categories",
 		descriptionKey: "settings.workCategories.description",
-		descriptionDefault: "Define work categories with time factors for effective time calculation",
+		descriptionDefault:
+			"Define work categories with time factors for effective time calculation",
 		href: "/settings/work-categories",
 		icon: "tag",
 		adminOnly: true,
@@ -232,20 +270,10 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.changePolicies.title",
 		titleDefault: "Change Policies",
 		descriptionKey: "settings.changePolicies.description",
-		descriptionDefault: "Control when employees can edit time entries and require manager approval",
+		descriptionDefault:
+			"Control when employees can edit time entries and require manager approval",
 		href: "/settings/change-policies",
 		icon: "clock-edit",
-		adminOnly: true,
-		group: "administration",
-	},
-	{
-		id: "compliance-radar",
-		titleKey: "settings.complianceRadar.title",
-		titleDefault: "Compliance Radar",
-		descriptionKey: "settings.complianceRadar.description",
-		descriptionDefault: "Monitor labor-law compliance, view findings, and manage waivers",
-		href: "/settings/compliance-radar",
-		icon: "radar",
 		adminOnly: true,
 		group: "administration",
 	},
@@ -254,7 +282,8 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.skills.title",
 		titleDefault: "Skills & Qualifications",
 		descriptionKey: "settings.skills.description",
-		descriptionDefault: "Manage skill catalog, certifications, and employee qualifications",
+		descriptionDefault:
+			"Manage skill catalog, certifications, and employee qualifications",
 		href: "/settings/skills",
 		icon: "certificate",
 		adminOnly: true,
@@ -266,7 +295,8 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.shiftTemplates.title",
 		titleDefault: "Shift Templates",
 		descriptionKey: "settings.shiftTemplates.description",
-		descriptionDefault: "Create reusable shift templates for scheduling (Morning, Night, etc.)",
+		descriptionDefault:
+			"Create reusable shift templates for scheduling (Morning, Night, etc.)",
 		href: "/settings/shifts",
 		icon: "calendar-clock",
 		adminOnly: true,
@@ -278,7 +308,8 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.coverageRules.title",
 		titleDefault: "Coverage Targets",
 		descriptionKey: "settings.coverageRules.description",
-		descriptionDefault: "Set minimum staffing requirements per location and time",
+		descriptionDefault:
+			"Set minimum staffing requirements per location and time",
 		href: "/settings/coverage-rules",
 		icon: "target",
 		adminOnly: true,
@@ -290,7 +321,8 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.surcharges.title",
 		titleDefault: "Surcharges",
 		descriptionKey: "settings.surcharges.description",
-		descriptionDefault: "Configure time surcharges for overtime, night work, and holidays",
+		descriptionDefault:
+			"Configure time surcharges for overtime, night work, and holidays",
 		href: "/settings/surcharges",
 		icon: "percentage",
 		adminOnly: true,
@@ -298,11 +330,24 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		requiredFeature: "surchargesEnabled",
 	},
 	{
+		id: "customers",
+		titleKey: "settings.customers.title",
+		titleDefault: "Customers",
+		descriptionKey: "settings.customers.description",
+		descriptionDefault: "Manage customer contacts for project assignments",
+		href: "/settings/customers",
+		icon: "address-book",
+		adminOnly: true,
+		group: "administration",
+		requiredFeature: "projectsEnabled",
+	},
+	{
 		id: "projects",
 		titleKey: "settings.projects.title",
 		titleDefault: "Projects",
 		descriptionKey: "settings.projects.description",
-		descriptionDefault: "Manage projects, budgets, deadlines, and time assignments",
+		descriptionDefault:
+			"Manage projects, budgets, deadlines, and time assignments",
 		href: "/settings/projects",
 		icon: "briefcase",
 		adminOnly: true,
@@ -315,7 +360,8 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.customDomains.title",
 		titleDefault: "Domain & Branding",
 		descriptionKey: "settings.customDomains.description",
-		descriptionDefault: "Configure custom domain, branding, and SSO for your organization",
+		descriptionDefault:
+			"Configure custom domain, branding, and SSO for your organization",
 		href: "/settings/enterprise/domains",
 		icon: "world",
 		adminOnly: true,
@@ -326,7 +372,8 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.emailConfig.title",
 		titleDefault: "Email Configuration",
 		descriptionKey: "settings.emailConfig.description",
-		descriptionDefault: "Configure a custom email provider for organization emails",
+		descriptionDefault:
+			"Configure a custom email provider for organization emails",
 		href: "/settings/enterprise/email",
 		icon: "mail",
 		adminOnly: true,
@@ -337,7 +384,8 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.apiKeys.title",
 		titleDefault: "API Keys",
 		descriptionKey: "settings.apiKeys.description",
-		descriptionDefault: "Manage API keys for programmatic access to your organization data",
+		descriptionDefault:
+			"Manage API keys for programmatic access to your organization data",
 		href: "/settings/enterprise/api-keys",
 		icon: "key",
 		adminOnly: true,
@@ -359,7 +407,8 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.webhooks.title",
 		titleDefault: "Webhooks",
 		descriptionKey: "settings.webhooks.description",
-		descriptionDefault: "Configure webhook endpoints to receive real-time event notifications",
+		descriptionDefault:
+			"Configure webhook endpoints to receive real-time event notifications",
 		href: "/settings/webhooks",
 		icon: "webhook",
 		adminOnly: true,
@@ -370,7 +419,8 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.calendar.title",
 		titleDefault: "Calendar Sync",
 		descriptionKey: "settings.calendar.description",
-		descriptionDefault: "Configure calendar providers, ICS feeds, and sync settings",
+		descriptionDefault:
+			"Configure calendar providers, ICS feeds, and sync settings",
 		href: "/settings/calendar",
 		icon: "calendar-sync",
 		adminOnly: true,
@@ -404,7 +454,8 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.workerQueue.title",
 		titleDefault: "Worker Queue",
 		descriptionKey: "settings.workerQueue.description",
-		descriptionDefault: "Monitor background job processing and cron job executions",
+		descriptionDefault:
+			"Monitor background job processing and cron job executions",
 		href: "/settings/worker-queue",
 		icon: "server",
 		adminOnly: true,
@@ -437,7 +488,8 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.auditExport.title",
 		titleDefault: "Audit Export",
 		descriptionKey: "settings.auditExport.description",
-		descriptionDefault: "GoBD-compliant export hardening with digital signatures",
+		descriptionDefault:
+			"GoBD-compliant export hardening with digital signatures",
 		href: "/settings/audit-export",
 		icon: "shield-check",
 		adminOnly: true,
@@ -448,7 +500,8 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.demoData.title",
 		titleDefault: "Demo Data",
 		descriptionKey: "settings.demoData.description",
-		descriptionDefault: "Generate sample data for testing or clear all time-related data",
+		descriptionDefault:
+			"Generate sample data for testing or clear all time-related data",
 		href: "/settings/demo",
 		icon: "test-pipe",
 		adminOnly: true,
@@ -459,7 +512,8 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.clockodoImport.title",
 		titleDefault: "Clockodo Import",
 		descriptionKey: "settings.clockodoImport.description",
-		descriptionDefault: "One-time migration to import data from your Clockodo account",
+		descriptionDefault:
+			"One-time migration to import data from your Clockodo account",
 		href: "/settings/clockodo-import",
 		icon: "database-import",
 		adminOnly: true,
@@ -467,7 +521,10 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 	},
 ];
 
-export function getVisibleSettings(isAdmin: boolean, billingEnabled = false): SettingsEntry[] {
+export function getVisibleSettings(
+	isAdmin: boolean,
+	billingEnabled = false,
+): SettingsEntry[] {
 	return SETTINGS_ENTRIES.filter((entry) => {
 		// Check admin requirement
 		if (entry.adminOnly && !isAdmin) return false;
@@ -481,6 +538,9 @@ export function getVisibleGroups(isAdmin: boolean): SettingsGroupConfig[] {
 	return SETTINGS_GROUPS.filter((group) => !group.adminOnly || isAdmin);
 }
 
-export function getEntriesByGroup(entries: SettingsEntry[], group: SettingsGroup): SettingsEntry[] {
+export function getEntriesByGroup(
+	entries: SettingsEntry[],
+	group: SettingsGroup,
+): SettingsEntry[] {
 	return entries.filter((entry) => entry.group === group);
 }

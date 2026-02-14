@@ -20,6 +20,7 @@ const NAMESPACE_PREFIXES = {
 	header: 'common',
 	user: 'common',
 	table: 'common',
+	tour: 'common',
 	validation: 'common',
 	errors: 'common',
 	info: 'common',
@@ -45,6 +46,8 @@ const NAMESPACE_PREFIXES = {
 	team: 'settings',
 	// onboarding namespace
 	onboarding: 'onboarding',
+	// bot namespace
+	bot: 'bot',
 };
 
 /**
@@ -73,6 +76,11 @@ export default function extractor(code, fileName) {
 	const keys = [];
 	const warnings = [];
 
+	// Extract translation keys from properties ending in "Key" (e.g. titleKey: "tour.sidebar.title")
+	// This runs for ALL files, not just those with translation imports, since these
+	// keys are defined in data files and consumed dynamically via t(step.titleKey).
+	keys.push(...extractKeyProperties(code));
+
 	// Track if file has valid t-function sources
 	let hasValidTSource = false;
 
@@ -84,6 +92,8 @@ export default function extractor(code, fileName) {
 		/import\s+\{[^}]*\buseTranslate\b[^}]*\}\s+from\s+["']@tolgee\/react["']/,
 		// Direct SDK imports (fallback)
 		/import\s+\{[^}]*\b(getTranslate|useTranslate)\b[^}]*\}\s+from\s+["']@tolgee\/(react|next|web)(\/server)?["']/,
+		// Bot: import { getBotTranslate } from "@/lib/bot-platform/i18n"
+		/import\s+\{[^}]*\bgetBotTranslate\b[^}]*\}\s+from\s+["']@\/lib\/bot-platform\/i18n["']/,
 	];
 
 	for (const pattern of validImportPatterns) {
@@ -447,6 +457,36 @@ function extractKeyMappingObjects(code) {
 				});
 			}
 		}
+	}
+
+	return results;
+}
+
+/**
+ * Extract translation keys from properties whose names end with "Key"
+ * (e.g. titleKey: "tour.sidebar.title", descriptionKey: "tour.sidebar.description").
+ * This handles data-driven patterns where keys are stored in objects/arrays
+ * and later passed to t() dynamically.
+ */
+function extractKeyProperties(code) {
+	const results = [];
+	// Match properties like: titleKey: "some.dotted.key" or descriptionKey: 'some.dotted.key'
+	const pattern = /(\w+Key)\s*:\s*["']([a-z][a-z0-9]*(?:\.[a-z][a-z0-9A-Z]*)*)["']/g;
+
+	let match;
+	while ((match = pattern.exec(code)) !== null) {
+		const keyValue = match[2];
+
+		// Must have at least one dot to be a translation key
+		if (!keyValue.includes('.') || isDynamicKey(keyValue)) continue;
+
+		const namespace = inferNamespace(keyValue);
+
+		results.push({
+			keyName: keyValue,
+			namespace,
+			line: getLineNumber(code, match.index),
+		});
 	}
 
 	return results;

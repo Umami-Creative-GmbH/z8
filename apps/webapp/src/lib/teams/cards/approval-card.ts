@@ -7,6 +7,8 @@
 
 import { DateTime } from "luxon";
 import type { ApprovalCardData, ApprovalCardResolvedData } from "../types";
+import { fmtWeekdayShortDate, fmtWeekdayShortDateYear, fmtWeekdayShortDateTime } from "@/lib/bot-platform/i18n";
+import { DEFAULT_LANGUAGE } from "@/tolgee/shared";
 
 /**
  * Build an approval request Adaptive Card
@@ -18,6 +20,7 @@ import type { ApprovalCardData, ApprovalCardResolvedData } from "../types";
 export function buildApprovalCard(
 	data: ApprovalCardData,
 	callbackUrl: string,
+	locale: string = DEFAULT_LANGUAGE,
 ): Record<string, unknown> {
 	const isAbsence = data.entityType === "absence_entry";
 	const title = isAbsence ? "Absence Request" : "Time Correction Request";
@@ -37,8 +40,8 @@ export function buildApprovalCard(
 			facts.push({ title: "Type", value: data.absenceCategory });
 		}
 		if (data.startDate && data.endDate) {
-			const start = DateTime.fromISO(data.startDate).toFormat("EEE, MMM d, yyyy");
-			const end = DateTime.fromISO(data.endDate).toFormat("EEE, MMM d, yyyy");
+			const start = fmtWeekdayShortDateYear(DateTime.fromISO(data.startDate), locale);
+			const end = fmtWeekdayShortDateYear(DateTime.fromISO(data.endDate), locale);
 			facts.push({ title: "Dates", value: `${start} - ${end}` });
 		}
 		if (data.days !== undefined) {
@@ -60,7 +63,7 @@ export function buildApprovalCard(
 
 	facts.push({
 		title: "Submitted",
-		value: DateTime.fromJSDate(data.createdAt).toFormat("EEE, MMM d 'at' HH:mm"),
+		value: fmtWeekdayShortDateTime(DateTime.fromJSDate(data.createdAt), locale),
 	});
 
 	return {
@@ -125,7 +128,7 @@ export function buildApprovalCard(
  * Build an approval card with Action.Submit buttons (for Bot Framework)
  * This version uses invoke actions that the bot can handle directly
  */
-export function buildApprovalCardWithInvoke(data: ApprovalCardData): Record<string, unknown> {
+export function buildApprovalCardWithInvoke(data: ApprovalCardData, locale: string = DEFAULT_LANGUAGE): Record<string, unknown> {
 	const isAbsence = data.entityType === "absence_entry";
 	const title = isAbsence ? "Absence Request" : "Time Correction Request";
 	const accentColor = isAbsence ? "accent" : "warning";
@@ -140,8 +143,8 @@ export function buildApprovalCardWithInvoke(data: ApprovalCardData): Record<stri
 			facts.push({ title: "Type", value: data.absenceCategory });
 		}
 		if (data.startDate && data.endDate) {
-			const start = DateTime.fromISO(data.startDate).toFormat("EEE, MMM d");
-			const end = DateTime.fromISO(data.endDate).toFormat("EEE, MMM d");
+			const start = fmtWeekdayShortDate(DateTime.fromISO(data.startDate), locale);
+			const end = fmtWeekdayShortDate(DateTime.fromISO(data.endDate), locale);
 			facts.push({ title: "Dates", value: `${start} - ${end}` });
 		}
 		if (data.days !== undefined) {
@@ -162,7 +165,7 @@ export function buildApprovalCardWithInvoke(data: ApprovalCardData): Record<stri
 
 	facts.push({
 		title: "Submitted",
-		value: DateTime.fromJSDate(data.createdAt).toFormat("EEE, MMM d 'at' HH:mm"),
+		value: fmtWeekdayShortDateTime(DateTime.fromJSDate(data.createdAt), locale),
 	});
 
 	return {
@@ -234,6 +237,7 @@ export function buildApprovalCardWithInvoke(data: ApprovalCardData): Record<stri
 export function buildResolvedApprovalCard(
 	originalData: ApprovalCardData,
 	resolvedData: ApprovalCardResolvedData,
+	locale: string = DEFAULT_LANGUAGE,
 ): Record<string, unknown> {
 	const isAbsence = originalData.entityType === "absence_entry";
 	const title = isAbsence ? "Absence Request" : "Time Correction Request";
@@ -249,8 +253,8 @@ export function buildResolvedApprovalCard(
 			facts.push({ title: "Type", value: originalData.absenceCategory });
 		}
 		if (originalData.startDate && originalData.endDate) {
-			const start = DateTime.fromISO(originalData.startDate).toFormat("EEE, MMM d");
-			const end = DateTime.fromISO(originalData.endDate).toFormat("EEE, MMM d");
+			const start = fmtWeekdayShortDate(DateTime.fromISO(originalData.startDate), locale);
+			const end = fmtWeekdayShortDate(DateTime.fromISO(originalData.endDate), locale);
 			facts.push({ title: "Dates", value: `${start} - ${end}` });
 		}
 	}
@@ -267,7 +271,7 @@ export function buildResolvedApprovalCard(
 
 	facts.push({
 		title: "Resolved",
-		value: DateTime.fromJSDate(resolvedData.resolvedAt).toFormat("EEE, MMM d 'at' HH:mm"),
+		value: fmtWeekdayShortDateTime(DateTime.fromJSDate(resolvedData.resolvedAt), locale),
 	});
 
 	return {

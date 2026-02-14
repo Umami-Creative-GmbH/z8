@@ -24,6 +24,14 @@ export async function POST(
 
 	const { token: webhookSecret } = await params;
 
+	// Validate the secret token header sent by Telegram
+	// https://core.telegram.org/bots/api#setwebhook
+	const secretTokenHeader = request.headers.get("x-telegram-bot-api-secret-token");
+	if (secretTokenHeader !== webhookSecret) {
+		logger.warn("Telegram webhook called with invalid or missing secret token header");
+		return NextResponse.json({ ok: false }, { status: 403 });
+	}
+
 	try {
 		// Dynamically import to avoid loading Telegram module on every request
 		const { resolveBotByWebhookSecret, handleTelegramUpdate } = await import("@/lib/telegram");

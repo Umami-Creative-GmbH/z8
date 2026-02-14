@@ -9,6 +9,7 @@ import {
 	IconCircleCheck,
 	IconCircleX,
 	IconDatabaseImport,
+	IconExternalLink,
 	IconKey,
 	IconLink,
 	IconLoader2,
@@ -389,6 +390,21 @@ export function ClockodoImportWizard({ organizationId }: ClockodoImportWizardPro
 							<Label htmlFor="clockodo-apikey">
 								{t("settings.clockodoImport.credentials.apiKey", "API Key")}
 							</Label>
+							<p className="text-xs text-muted-foreground">
+								{t(
+									"settings.clockodoImport.credentials.apiKeyHint",
+									"You can find your API key in your Clockodo profile:",
+								)}{" "}
+								<a
+									href="https://my.clockodo.com/de/users/editself/"
+									target="_blank"
+									rel="noopener noreferrer"
+									className="text-primary underline underline-offset-2 hover:text-primary/80"
+								>
+									my.clockodo.com
+									<IconExternalLink className="ml-0.5 inline h-3 w-3" aria-hidden="true" />
+								</a>
+							</p>
 							<Input
 								id="clockodo-apikey"
 								type="password"
@@ -903,8 +919,8 @@ export function ClockodoImportWizard({ organizationId }: ClockodoImportWizardPro
 											})}
 										</summary>
 										<ul className="mt-1 list-inside list-disc space-y-1 text-xs text-muted-foreground">
-											{entityResult.errors.slice(0, 20).map((err) => (
-												<li key={err}>{err}</li>
+											{entityResult.errors.slice(0, 20).map((err, i) => (
+												<li key={i}>{err}</li>
 											))}
 											{entityResult.errors.length > 20 && (
 												<li>

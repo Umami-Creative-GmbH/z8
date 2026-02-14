@@ -7,6 +7,7 @@
 
 import { DateTime } from "luxon";
 import type { OpenShiftWithDetails } from "@/lib/effect/services/open-shifts.service";
+import { fmtWeekdayShortDate } from "@/lib/bot-platform/i18n";
 
 // ============================================
 // TYPES
@@ -28,7 +29,7 @@ function formatShiftTime(startTime: string, endTime: string): string {
 	return `${startTime} - ${endTime}`;
 }
 
-function formatShiftDate(date: Date, timezone: string): string {
+function formatShiftDate(date: Date, timezone: string, locale: string): string {
 	const dt = DateTime.fromJSDate(date).setZone(timezone);
 	const now = DateTime.now().setZone(timezone);
 
@@ -40,7 +41,7 @@ function formatShiftDate(date: Date, timezone: string): string {
 		return "Tomorrow";
 	}
 
-	return dt.toFormat("EEE, MMM d");
+	return fmtWeekdayShortDate(dt, locale);
 }
 
 function calculateShiftDuration(startTime: string, endTime: string): string {
@@ -62,7 +63,7 @@ function calculateShiftDuration(startTime: string, endTime: string): string {
 // ============================================
 
 export function buildOpenShiftsCard(input: OpenShiftsCardInput): Record<string, unknown> {
-	const { shifts, timezone, appUrl, requesterId } = input;
+	const { shifts, timezone, appUrl, requesterId, locale } = input;
 
 	// Group shifts by date
 	const shiftsByDate = new Map<string, OpenShiftWithDetails[]>();
@@ -115,7 +116,7 @@ export function buildOpenShiftsCard(input: OpenShiftsCardInput): Record<string, 
 			break;
 		}
 
-		const dateFormatted = formatShiftDate(DateTime.fromISO(dateKey).toJSDate(), timezone);
+		const dateFormatted = formatShiftDate(DateTime.fromISO(dateKey).toJSDate(), timezone, locale);
 
 		body.push({
 			type: "Container",
@@ -249,7 +250,7 @@ export function buildOpenShiftsCard(input: OpenShiftsCardInput): Record<string, 
  * Build text-only open shifts list (fallback for non-card clients)
  */
 export function buildOpenShiftsText(input: OpenShiftsCardInput): string {
-	const { shifts, timezone } = input;
+	const { shifts, timezone, locale } = input;
 
 	const lines: string[] = [
 		`**📋 Open Shifts**`,
@@ -260,7 +261,7 @@ export function buildOpenShiftsText(input: OpenShiftsCardInput): string {
 	// Group by date
 	const shiftsByDate = new Map<string, OpenShiftWithDetails[]>();
 	for (const shift of shifts) {
-		const dateKey = formatShiftDate(shift.date, timezone);
+		const dateKey = formatShiftDate(shift.date, timezone, locale);
 		const existing = shiftsByDate.get(dateKey) || [];
 		existing.push(shift);
 		shiftsByDate.set(dateKey, existing);

@@ -46,6 +46,8 @@ export interface BotCommandContext {
 	platformUserId: string;
 	config: PlatformConfig;
 	args: string[];
+	/** User's preferred locale (e.g., "en", "de") */
+	locale: string;
 }
 
 /**

@@ -145,6 +145,19 @@ export interface PrincipalContext {
 
 	/** Manager relationships - employee IDs this user manages */
 	managedEmployeeIds: string[];
+
+	/** Custom roles assigned to this employee */
+	customRoles: CustomRoleInfo[];
+}
+
+/**
+ * Custom role info for CASL ability building
+ */
+export interface CustomRoleInfo {
+	roleId: string;
+	roleName: string;
+	baseTier: "admin" | "manager" | "employee";
+	permissions: Array<{ action: Action; subject: Subject }>;
 }
 
 // ============================================

@@ -5,27 +5,29 @@
  * Runs every 15 minutes to check for digests due to be sent.
  */
 
-import { and, eq, lte, gte, inArray, isNull, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, isNull, lte, sql } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { db } from "@/db";
+import { user } from "@/db/auth-schema";
 import {
-	approvalRequest,
-	absenceEntry,
 	absenceCategory,
-	workPeriod,
+	absenceEntry,
+	approvalRequest,
+	complianceException,
 	employee,
 	employeeManagers,
-	shift,
-	complianceException,
-	locationSubarea,
 	location,
+	locationSubarea,
+	shift,
+	workPeriod,
 } from "@/db/schema";
-import { user } from "@/db/auth-schema";
+import { fmtTime, fmtWeekdayShortDate, getUserLocale } from "@/lib/bot-platform/i18n";
 import { createLogger } from "@/lib/logger";
-import { getAllActiveTenants } from "../tenant-resolver";
-import { getOrganizationPersonalConversations } from "../conversation-manager";
+import { DEFAULT_LANGUAGE } from "@/tolgee/shared";
 import { sendAdaptiveCard } from "../bot-adapter";
 import { buildDailyDigestCard } from "../cards";
+import { getOrganizationPersonalConversations } from "../conversation-manager";
+import { getAllActiveTenants } from "../tenant-resolver";
 import type { DailyDigestData } from "../types";
 
 const logger = createLogger("TeamsDailyDigest");
@@ -105,20 +107,30 @@ async function processTenantDigest(tenant: {
 	const [digestHour, digestMinute] = tenant.digestTime.split(":").map(Number);
 
 	// Only send if within the 15-minute window of the digest time
-	const digestTime = now.set({ hour: digestHour, minute: digestMinute, second: 0 });
+	const digestTime = now.set({
+		hour: digestHour,
+		minute: digestMinute,
+		second: 0,
+	});
 	const minutesSinceDigestTime = now.diff(digestTime, "minutes").minutes;
 
 	// Send if we're within 0-15 minutes after the digest time
 	if (minutesSinceDigestTime < 0 || minutesSinceDigestTime >= 15) {
 		logger.debug(
-			{ tenantId: tenant.tenantId, digestTime: tenant.digestTime, currentTime: now.toISO() },
+			{
+				tenantId: tenant.tenantId,
+				digestTime: tenant.digestTime,
+				currentTime: now.toISO(),
+			},
 			"Not digest time for tenant",
 		);
 		return 0;
 	}
 
 	// Get all managers in this organization who have Teams conversations
-	const conversations = await getOrganizationPersonalConversations(tenant.organizationId);
+	const conversations = await getOrganizationPersonalConversations(
+		tenant.organizationId,
+	);
 
 	if (conversations.length === 0) {
 		logger.debug(
@@ -128,52 +140,60 @@ async function processTenantDigest(tenant: {
 		return 0;
 	}
 
-	let sent = 0;
-	const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://app.z8.works";
+	const appUrl = process.env.APP_URL || "https://z8-time.app";
 
-	for (const conv of conversations) {
-		try {
-			// Get employee ID for this user
-			const emp = await db.query.employee.findFirst({
-				where: and(
-					eq(employee.userId, conv.userId),
-					eq(employee.organizationId, tenant.organizationId),
-				),
-			});
+	const results = await Promise.allSettled(
+		conversations.map(async (conv) => {
+			try {
+				// Get employee ID for this user
+				const emp = await db.query.employee.findFirst({
+					where: and(
+						eq(employee.userId, conv.userId),
+						eq(employee.organizationId, tenant.organizationId),
+					),
+				});
 
-			if (!emp) continue;
+				if (!emp) return false;
 
-			// Check if this employee is a manager (has any employees reporting to them)
-			const manages = await db.query.employeeManagers.findFirst({
-				where: eq(employeeManagers.managerId, emp.id),
-			});
+				// Check if this employee is a manager (has any employees reporting to them)
+				const manages = await db.query.employeeManagers.findFirst({
+					where: eq(employeeManagers.managerId, emp.id),
+				});
 
-			if (!manages) continue; // Not a manager, skip
+				if (!manages) return false;
 
-			// Build digest data for this manager
-			const digestData = await buildDigestDataForManager(
-				emp.id,
-				tenant.organizationId,
-				tenant.digestTimezone,
-			);
+				// Build digest data for this manager
+				const userLocale = await getUserLocale(conv.userId);
+				const digestData = await buildDigestDataForManager(
+					emp.id,
+					tenant.organizationId,
+					tenant.digestTimezone,
+					userLocale,
+				);
 
-			// Build and send card
-			const card = buildDailyDigestCard(digestData, appUrl);
+				// Build and send card
+				const card = buildDailyDigestCard(digestData, appUrl, userLocale);
 
-			await sendAdaptiveCard(
-				conv.conversationReference,
-				card,
-				`Daily Digest - ${digestData.date.toLocaleDateString()}`,
-			);
+				await sendAdaptiveCard(
+					conv.conversationReference,
+					card,
+					`Daily Digest - ${digestData.date.toLocaleDateString()}`,
+				);
 
-			sent++;
-		} catch (error) {
-			logger.warn(
-				{ error, userId: conv.userId },
-				"Failed to send digest to user",
-			);
-		}
-	}
+				return true;
+			} catch (error) {
+				logger.warn(
+					{ error, userId: conv.userId },
+					"Failed to send digest to user",
+				);
+				return false;
+			}
+		}),
+	);
+
+	const sent = results.filter(
+		(r) => r.status === "fulfilled" && r.value === true,
+	).length;
 
 	logger.info(
 		{ organizationId: tenant.organizationId, digestsSent: sent },
@@ -190,6 +210,7 @@ export async function buildDigestDataForManager(
 	managerId: string,
 	organizationId: string,
 	timezone: string,
+	locale: string = DEFAULT_LANGUAGE,
 ): Promise<DailyDigestData> {
 	const now = DateTime.now().setZone(timezone);
 	const todayStr = now.toISODate();
@@ -279,69 +300,88 @@ export async function buildDigestDataForManager(
 	// Phase 2: Queries that depend on managedEmployeeIds
 	// These run in parallel with each other
 	// =========================================
-	let employeesOut: Array<{ name: string; category: string; returnDate: string }> = [];
-	let employeesClockedIn: Array<{ name: string; clockedInAt: string; durationSoFar: string }> = [];
-	let activeWorkPeriods: Array<{ employeeId: string; startTime: Date; employeeName: string | null }> = [];
+	let employeesOut: Array<{
+		name: string;
+		category: string;
+		returnDate: string;
+	}> = [];
+	let employeesClockedIn: Array<{
+		name: string;
+		clockedInAt: string;
+		durationSoFar: string;
+	}> = [];
+	let activeWorkPeriods: Array<{
+		employeeId: string;
+		startTime: Date;
+		employeeName: string | null;
+	}> = [];
 	let compliancePending: number | undefined;
 
 	if (managedEmployeeIds.length > 0) {
-		const [absences, activeWorkPeriodsResult, [pendingExceptionsResult]] = await Promise.all([
-			// Employees out today
-			db
-				.select({
-					employeeId: absenceEntry.employeeId,
-					startDate: absenceEntry.startDate,
-					endDate: absenceEntry.endDate,
-					employeeName: user.name,
-					categoryName: absenceCategory.name,
-				})
-				.from(absenceEntry)
-				.innerJoin(employee, eq(absenceEntry.employeeId, employee.id))
-				.innerJoin(user, eq(employee.userId, user.id))
-				.leftJoin(absenceCategory, eq(absenceEntry.categoryId, absenceCategory.id))
-				.where(
-					and(
-						eq(absenceEntry.status, "approved"),
-						lte(absenceEntry.startDate, todayStr!),
-						gte(absenceEntry.endDate, todayStr!),
-						inArray(absenceEntry.employeeId, managedEmployeeIds),
+		const [absences, activeWorkPeriodsResult, [pendingExceptionsResult]] =
+			await Promise.all([
+				// Employees out today
+				db
+					.select({
+						employeeId: absenceEntry.employeeId,
+						startDate: absenceEntry.startDate,
+						endDate: absenceEntry.endDate,
+						employeeName: user.name,
+						categoryName: absenceCategory.name,
+					})
+					.from(absenceEntry)
+					.innerJoin(employee, eq(absenceEntry.employeeId, employee.id))
+					.innerJoin(user, eq(employee.userId, user.id))
+					.leftJoin(
+						absenceCategory,
+						eq(absenceEntry.categoryId, absenceCategory.id),
+					)
+					.where(
+						and(
+							eq(absenceEntry.status, "approved"),
+							lte(absenceEntry.startDate, todayStr!),
+							gte(absenceEntry.endDate, todayStr!),
+							inArray(absenceEntry.employeeId, managedEmployeeIds),
+						),
 					),
-				),
-			// Employees clocked in
-			db
-				.select({
-					employeeId: workPeriod.employeeId,
-					startTime: workPeriod.startTime,
-					employeeName: user.name,
-				})
-				.from(workPeriod)
-				.innerJoin(employee, eq(workPeriod.employeeId, employee.id))
-				.innerJoin(user, eq(employee.userId, user.id))
-				.where(
-					and(
-						eq(workPeriod.organizationId, organizationId),
-						eq(workPeriod.isActive, true),
-						inArray(workPeriod.employeeId, managedEmployeeIds),
+				// Employees clocked in
+				db
+					.select({
+						employeeId: workPeriod.employeeId,
+						startTime: workPeriod.startTime,
+						employeeName: user.name,
+					})
+					.from(workPeriod)
+					.innerJoin(employee, eq(workPeriod.employeeId, employee.id))
+					.innerJoin(user, eq(employee.userId, user.id))
+					.where(
+						and(
+							eq(workPeriod.organizationId, organizationId),
+							eq(workPeriod.isActive, true),
+							inArray(workPeriod.employeeId, managedEmployeeIds),
+						),
 					),
-				),
-			// Pending compliance exceptions
-			db
-				.select({ count: sql<number>`count(*)` })
-				.from(complianceException)
-				.where(
-					and(
-						eq(complianceException.organizationId, organizationId),
-						eq(complianceException.status, "pending"),
-						inArray(complianceException.employeeId, managedEmployeeIds),
+				// Pending compliance exceptions
+				db
+					.select({ count: sql<number>`count(*)` })
+					.from(complianceException)
+					.where(
+						and(
+							eq(complianceException.organizationId, organizationId),
+							eq(complianceException.status, "pending"),
+							inArray(complianceException.employeeId, managedEmployeeIds),
+						),
 					),
-				),
-		]);
+			]);
 
 		// Process Phase 2 results
 		employeesOut = absences.map((a) => ({
 			name: a.employeeName || "Unknown",
 			category: a.categoryName || "Leave",
-			returnDate: DateTime.fromISO(a.endDate).plus({ days: 1 }).toFormat("EEE, MMM d"),
+			returnDate: fmtWeekdayShortDate(
+				DateTime.fromISO(a.endDate).plus({ days: 1 }),
+				locale,
+			),
 		}));
 
 		activeWorkPeriods = activeWorkPeriodsResult;
@@ -351,7 +391,7 @@ export async function buildDigestDataForManager(
 
 			return {
 				name: e.employeeName || "Unknown",
-				clockedInAt: clockInTime.toFormat("HH:mm"),
+				clockedInAt: fmtTime(clockInTime, locale),
 				durationSoFar: `${Math.floor(duration.hours)}h ${Math.floor(duration.minutes % 60)}m`,
 			};
 		});
@@ -397,7 +437,9 @@ export async function buildDigestDataForManager(
 		}
 
 		// Count clocked-in employees by the shifts they're assigned to
-		const scheduledEmployeeIds = [...new Set(scheduledShifts.map((s) => s.employeeId).filter(Boolean))] as string[];
+		const scheduledEmployeeIds = [
+			...new Set(scheduledShifts.map((s) => s.employeeId).filter(Boolean)),
+		] as string[];
 		const clockedInEmployeeIds = new Set(
 			activeWorkPeriods?.map((wp) => wp.employeeId) || [],
 		);
@@ -409,7 +451,9 @@ export async function buildDigestDataForManager(
 			if (!subarea) continue;
 
 			// Count clocked-in employees and find time range in a single pass (O(n) instead of O(n log n))
-			const subareaShifts = scheduledShifts.filter((s) => s.subareaId === subareaId);
+			const subareaShifts = scheduledShifts.filter(
+				(s) => s.subareaId === subareaId,
+			);
 			if (subareaShifts.length === 0) continue;
 
 			let clockedIn = 0;

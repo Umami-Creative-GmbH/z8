@@ -2,15 +2,19 @@
  * Discord Bot Config Resolver
  *
  * Resolves organization bot configuration from the database.
+ * Bot tokens are stored in HashiCorp Vault, not in the database.
  */
 
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { discordBotConfig } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
+import { getOrgSecret } from "@/lib/vault";
 import type { ResolvedDiscordBot } from "./types";
 
-const _logger = createLogger("DiscordBotConfig");
+const logger = createLogger("DiscordBotConfig");
+
+const VAULT_KEY = "discord/bot_token";
 
 /**
  * Resolve bot config by webhook secret (used in interaction route)
@@ -27,7 +31,7 @@ export async function resolveBotByWebhookSecret(
 
 	if (!config) return null;
 
-	return mapToResolvedBot(config);
+	return hydrateBot(config);
 }
 
 /**
@@ -42,7 +46,7 @@ export async function getBotConfigByOrganization(
 
 	if (!config) return null;
 
-	return mapToResolvedBot(config);
+	return hydrateBot(config);
 }
 
 /**
@@ -68,13 +72,39 @@ export async function getAllActiveBotConfigs(): Promise<ResolvedDiscordBot[]> {
 		where: eq(discordBotConfig.setupStatus, "active"),
 	});
 
-	return configs.map(mapToResolvedBot);
+	const results = await Promise.all(configs.map(hydrateBot));
+	return results.filter((bot): bot is ResolvedDiscordBot => bot !== null);
 }
 
-function mapToResolvedBot(config: typeof discordBotConfig.$inferSelect): ResolvedDiscordBot {
+/**
+ * Hydrate a bot config with the bot token from Vault.
+ * Falls back to the DB column for configs that haven't been migrated yet.
+ */
+async function hydrateBot(
+	config: typeof discordBotConfig.$inferSelect,
+): Promise<ResolvedDiscordBot | null> {
+	let botToken = await getOrgSecret(config.organizationId, VAULT_KEY);
+
+	// Fallback: read from DB column for pre-migration configs
+	if (!botToken && config.botToken && config.botToken !== "vault:managed") {
+		botToken = config.botToken;
+		logger.warn(
+			{ organizationId: config.organizationId },
+			"Discord bot token read from DB column — run migration to move to Vault",
+		);
+	}
+
+	if (!botToken) {
+		logger.error(
+			{ organizationId: config.organizationId },
+			"Discord bot token not found in Vault or DB",
+		);
+		return null;
+	}
+
 	return {
 		organizationId: config.organizationId,
-		botToken: config.botToken,
+		botToken,
 		applicationId: config.applicationId,
 		publicKey: config.publicKey,
 		webhookSecret: config.webhookSecret,

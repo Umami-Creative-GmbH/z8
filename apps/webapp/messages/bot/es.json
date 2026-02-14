@@ -1,0 +1,92 @@
+{
+  "bot": {
+    "approval": {
+      "alreadyProcessed": "Esta aprobación ya ha sido procesada."
+    },
+    "cmd": {
+      "clockedin": {
+        "header": "{active} de {total} miembros del equipo tienen el turno iniciado actualmente:",
+        "noneActive": "Ninguno de tus {total} miembros del equipo tiene el turno iniciado actualmente.",
+        "noTeam": "No tienes ningún miembro del equipo asignado."
+      },
+      "clockin": {
+        "alreadyIn": "Ya tienes el turno iniciado desde las {time} ({hours}h {minutes}m).",
+        "cannotNow": "No se puede iniciar el turno en este momento.",
+        "noProfile": "No se encontró el perfil del empleado.",
+        "success": "Turno iniciado a las {time}."
+      },
+      "clockout": {
+        "cannotNow": "No se puede finalizar el turno en este momento.",
+        "noProfile": "No se encontró el perfil del empleado.",
+        "notClockedIn": "No tienes un turno iniciado actualmente.",
+        "pendingApproval": "La finalización de tu turno está pendiente de la aprobación del gerente.",
+        "success": "Turno finalizado a las {time}. Duración: {hours}h {minutes}m."
+      },
+      "compliance": {
+        "error": "Error al recuperar los datos de cumplimiento. Por favor, inténtalo de nuevo más tarde.",
+        "noIssues": "No se encontraron problemas de cumplimiento en los últimos {days} días. ¡Tu equipo está al día!"
+      },
+      "coverage": {
+        "error": "Error al recuperar los datos de cobertura. Por favor, inténtalo de nuevo más tarde.",
+        "noData": "No se encontraron datos de cobertura programada para el {date}."
+      },
+      "help": {
+        "footer": "También puedes recibir solicitudes de aprobación y resúmenes diarios directamente en {platform}.",
+        "title": "Comandos del Bot Z8"
+      },
+      "openshifts": {
+        "error": "Error al recuperar los turnos abiertos. Por favor, inténtalo de nuevo más tarde.",
+        "noShifts": "No se encontraron turnos abiertos para {period}. Todos los turnos están asignados actualmente."
+      },
+      "pending": {
+        "footer": "Ver y aprobar en Z8 o esperar a las tarjetas de aprobación individuales.",
+        "header": "{count, plural, one {Tienes {count} aprobación pendiente:} other {Tienes {count} aprobaciones pendientes:}}",
+        "none": "No tienes solicitudes de aprobación pendientes. ¡Buen trabajo manteniéndote al día!"
+      },
+      "status": {
+        "clockedIn": "Tienes el turno iniciado desde las {time} ({hours}h {minutes}m).",
+        "noProfile": "Perfil de empleado no encontrado.",
+        "notClockedIn": "No has marcado entrada actualmente."
+      },
+      "whosout": {
+        "header": "{outCount} de {total} miembros del equipo están fuera hoy:",
+        "noneOut": "Los {total} miembros de tu equipo están disponibles hoy.",
+        "noTeam": "No tienes ningún miembro del equipo asignado."
+      }
+    },
+    "language": {
+      "changed": "Idioma cambiado a {language}.",
+      "prompt": "Elige tu idioma:"
+    },
+    "static": {
+      "errorApprovalNotFound": "Esta solicitud de aprobación ya no existe o ya ha sido procesada.",
+      "errorApprovalResolved": "Esta aprobación ya ha sido aprobada o rechazada.",
+      "errorDefault": "Algo salió mal. Por favor, inténtalo de nuevo.",
+      "errorEmployeeNotFound": "No tienes un registro de empleado en Z8. Por favor, contacta a tu administrador.",
+      "errorNotAuthorized": "No tienes autorización para realizar esta acción.",
+      "errorTenantNotConfigured": "Tu organización aún no ha completado la configuración de Z8. Por favor, pide a un administrador que configure la integración.",
+      "errorUserNotLinked": "Tu cuenta de Teams no está vinculada a Z8. Asegúrate de que tu correo de Teams coincida con tu cuenta de Z8.",
+      "genericError": "Lo sentimos, algo salió mal. Por favor, inténtalo de nuevo o contacta al soporte técnico.",
+      "linkAlreadyLinked": "Esta cuenta de Telegram ya está vinculada a una cuenta de Z8 en esta organización.",
+      "linkExpired": "Este código de vinculación ha caducado. Por favor, genera uno nuevo desde tus ajustes de Z8.",
+      "linkInvalid": "Código de vinculación inválido. Por favor, comprueba tu código e inténtalo de nuevo.",
+      "linkSuccess": "¡Tu cuenta de Telegram ha sido vinculada a Z8! Escribe /help para ver los comandos disponibles.",
+      "linkUsage": "Por favor, proporciona tu código de vinculación: /link TU_CÓDIGO",
+      "mentionHelp": "¡Hola! Soy el bot de Z8. Escribe \"help\" para ver los comandos disponibles.",
+      "noEmployee": "Tu cuenta existe pero no tienes un registro de empleado en Z8.",
+      "noOrg": "No se pudo identificar tu organización. Por favor, contacta al soporte técnico.",
+      "notLinked": "Tu cuenta de Telegram no está vinculada a Z8. Ve a Ajustes > Integraciones > Telegram en tu panel de Z8 para generar un código de vinculación, luego envía: /link TU_CÓDIGO",
+      "notLinkedTeams": "No pude encontrar tu cuenta de Z8. Asegúrate de que tu correo electrónico de Teams coincida con el correo de tu cuenta de Z8.",
+      "noUser": "No se pudo identificar tu cuenta de usuario.",
+      "setupBody": "Tu organización debe estar conectada a Z8. Haz clic abajo para iniciar el proceso de configuración.",
+      "setupButton": "Completar configuración",
+      "setupNote": "Solo los administradores de la organización pueden completar esta configuración.",
+      "setupRequired": "¡Bienvenido a Z8! Para conectar esta organización de Microsoft 365 a tu cuenta de Z8, un administrador debe completar la configuración.",
+      "setupTitle": "Se requiere configuración de Z8",
+      "typeHelp": "Escribe /help para ver los comandos disponibles.",
+      "unconfigured": "Se está configurando la integración de Z8 de tu organización. Por favor, espera a que tu administrador complete la configuración.",
+      "welcome": "¡Bienvenido a Z8! Para conectar tu cuenta, ve a Configuración > Integraciones > Telegram en tu panel de Z8 y genera un código de enlace. Luego envía: /link TU_CÓDIGO",
+      "welcomeTeams": "¡Bienvenido a Z8! Escribe \"help\" para ver los comandos disponibles."
+    }
+  }
+}

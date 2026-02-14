@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -41,7 +41,6 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Progress } from "@/components/ui/progress";
 import {
 	listApiKeys,
 	deleteApiKey,
@@ -154,39 +153,34 @@ export function ApiKeyPageClient({
 	};
 
 	return (
-		<div className="flex-1 space-y-6 p-6">
+		<div className="p-6">
 			<div className="mx-auto max-w-4xl">
-				<Card>
-					<CardHeader>
-						<div className="flex items-start justify-between">
-							<div>
-								<CardTitle className="flex items-center gap-2">
-									<IconKey className="h-5 w-5" />
-									{t("settings.apiKeys.title", "API Keys")}
-								</CardTitle>
-								<CardDescription>
-									{t(
-										"settings.apiKeys.description",
-										"Create and manage API keys for programmatic access to your organization data.",
-									)}
-								</CardDescription>
-								<div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
-									<span>
-										{t("settings.apiKeys.usage", "{count} of {max} keys used", {
-											count: keyCount,
-											max: MAX_API_KEYS_PER_ORG,
-										})}
-									</span>
-									<Progress value={(keyCount / MAX_API_KEYS_PER_ORG) * 100} className="w-24 h-2" />
-								</div>
-							</div>
-							<Button onClick={() => setCreateDialogOpen(true)} disabled={!canCreateMore}>
-								<IconPlus className="mr-2 h-4 w-4" />
-								{t("settings.apiKeys.create", "Create Key")}
-							</Button>
-						</div>
-					</CardHeader>
-					<CardContent>
+				<div className="mb-6 flex items-start justify-between">
+					<div>
+						<h1 className="text-2xl font-semibold">
+							{t("settings.apiKeys.title", "API Keys")}
+						</h1>
+						<p className="text-muted-foreground">
+							{t(
+								"settings.apiKeys.description",
+								"Create and manage API keys for programmatic access to your organization data.",
+							)}
+						</p>
+						<p className="mt-1 text-sm text-muted-foreground">
+							{t("settings.apiKeys.usage", "{count} of {max} keys used", {
+								count: keyCount,
+								max: MAX_API_KEYS_PER_ORG,
+							})}
+						</p>
+					</div>
+					<Button onClick={() => setCreateDialogOpen(true)} disabled={!canCreateMore}>
+						<IconPlus className="mr-2 h-4 w-4" />
+						{t("settings.apiKeys.create", "Create Key")}
+					</Button>
+				</div>
+					<div className="space-y-6">
+					<Card>
+						<CardContent className="pt-6">
 						{isLoading ? (
 							<div className="flex items-center justify-center py-8">
 								<IconLoader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -332,7 +326,7 @@ export function ApiKeyPageClient({
 
 				{/* Security Notice */}
 				<Card className="border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950">
-					<CardContent className="pt-6">
+					<CardContent>
 						<div className="flex gap-3">
 							<IconKey className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
 							<div>
@@ -349,6 +343,7 @@ export function ApiKeyPageClient({
 						</div>
 					</CardContent>
 				</Card>
+				</div>
 			</div>
 
 			{/* Create Dialog */}

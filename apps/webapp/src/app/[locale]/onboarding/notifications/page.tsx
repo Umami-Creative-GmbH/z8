@@ -38,12 +38,11 @@ export default function NotificationsPage() {
 
 			const result = await configureNotificationsOnboarding(value);
 
-			setLoading(false);
-
 			if (result.success) {
 				toast.success(t("onboarding.notifications.success", "Notification preferences saved!"));
 				router.push("/onboarding/complete");
 			} else {
+				setLoading(false);
 				toast.error(
 					result.error ||
 						t("onboarding.notifications.error", "Failed to save notification preferences"),
@@ -77,11 +76,10 @@ export default function NotificationsPage() {
 
 		const result = await skipNotificationsSetup();
 
-		setLoading(false);
-
 		if (result.success) {
 			router.push("/onboarding/complete");
 		} else {
+			setLoading(false);
 			toast.error(result.error || "Failed to skip notification setup");
 		}
 	}

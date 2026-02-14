@@ -1,6 +1,11 @@
 {
   "reports": {
     "description": "Erstellen Sie umfassende Arbeitszeit- und Abwesenheitsberichte mit steuerrelevanten Homeoffice-Daten",
+    "employeeSelector": {
+      "error": "Teammitglieder konnten nicht geladen werden",
+      "label": "Mitarbeiter",
+      "placeholder": "Mitarbeiter auswählen..."
+    },
     "feature": "Berichte generieren",
     "projects": {
       "budget": {
@@ -97,8 +102,10 @@
         "portfolioDescription": "Übersicht aller Projekte mit Budget- und Zeiterfassungsmetriken",
         "portfolioTitle": "Projektportfolio",
         "project": "Projekt",
+        "searchPlaceholder": "Nach Name, Beschreibung oder Status suchen...",
         "status": "Status",
-        "team": "Team"
+        "team": "Team",
+        "viewProject": "Projektdetails anzeigen"
       },
       "team": {
         "byEmployee": "Nach Mitarbeiter",

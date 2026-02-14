@@ -14,6 +14,7 @@ import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 
 // Import auth tables for FK references
 import { organization, user } from "../auth-schema";
+import { customer } from "./customer";
 import { projectAssignmentTypeEnum, projectStatusEnum } from "./enums";
 import { employee, team } from "./organization";
 
@@ -39,6 +40,9 @@ export const project = pgTable(
 		icon: text("icon"), // Tabler icon name
 		color: text("color"), // Hex color
 
+		// Customer assignment (optional)
+		customerId: uuid("customer_id").references(() => customer.id, { onDelete: "set null" }),
+
 		// Budget tracking (optional)
 		budgetHours: decimal("budget_hours", { precision: 8, scale: 2 }), // null = unlimited
 
@@ -63,6 +67,7 @@ export const project = pgTable(
 		index("project_status_idx").on(table.status),
 		index("project_deadline_idx").on(table.deadline),
 		index("project_isActive_idx").on(table.isActive),
+		index("project_customerId_idx").on(table.customerId),
 		uniqueIndex("project_org_name_idx").on(table.organizationId, table.name),
 	],
 );

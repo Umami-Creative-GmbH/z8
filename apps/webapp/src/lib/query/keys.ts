@@ -184,6 +184,14 @@ export const queryKeys = {
 		byShift: (shiftId: string) => ["shift-requests", "shift", shiftId] as const,
 	},
 
+	// Customers
+	customers: {
+		all: ["customers"] as const,
+		list: (orgId: string) => ["customers", "list", orgId] as const,
+		detail: (customerId: string) => ["customers", "detail", customerId] as const,
+		selection: (orgId: string) => ["customers", "selection", orgId] as const,
+	},
+
 	// Projects
 	projects: {
 		all: ["projects"] as const,
@@ -362,15 +370,6 @@ export const queryKeys = {
 		},
 		// Pending exceptions count (for badge)
 		pendingExceptions: (orgId: string) => ["compliance", "pending-exceptions", orgId] as const,
-	},
-
-	// Compliance Radar (findings, config, stats)
-	complianceRadar: {
-		all: ["compliance-radar"] as const,
-		findings: (orgId: string, filters?: object) =>
-			["compliance-radar", "findings", orgId, filters] as const,
-		stats: (orgId: string) => ["compliance-radar", "stats", orgId] as const,
-		config: (orgId: string) => ["compliance-radar", "config", orgId] as const,
 	},
 
 	// Coverage Targets (minimum staffing requirements)

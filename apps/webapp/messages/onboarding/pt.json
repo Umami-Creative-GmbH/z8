@@ -143,6 +143,7 @@
       "title": "Configurar política de férias"
     },
     "welcome": {
+      "continueSetup": "Continuar Configuração",
       "features": {
         "absences": "Gestão de Ausências",
         "absencesDesc": "Solicite folgas, gerencie dias de férias e acompanhe feriados",
@@ -152,6 +153,7 @@
         "timeTrackingDesc": "Registre entrada e saída, rastreie horas de trabalho e gerencie correções de tempo"
       },
       "getStarted": "Começar",
+      "joinedOrganization": "Você entrou em {organization}. Vamos concluir a configuração do seu perfil.",
       "subtitle": "Vamos começar com uma configuração rápida. Isso levará apenas alguns minutos.",
       "title": "Bem-vindo ao Z8!"
     },

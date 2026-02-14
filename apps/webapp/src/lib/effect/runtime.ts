@@ -14,6 +14,7 @@ import { ShiftServiceLive } from "./services/shift.service";
 import { ShiftRequestServiceLive } from "./services/shift-request.service";
 import { SkillServiceLive } from "./services/skill.service";
 import { CoverageServiceLive } from "./services/coverage.service";
+import { CustomRoleServiceLive } from "./services/custom-role.service";
 import { TimeEntryServiceLive } from "./services/time-entry.service";
 import { WorkPolicyServiceLive } from "./services/work-policy.service";
 import { PlatformAdminServiceLive } from "./services/platform-admin.service";
@@ -67,6 +68,9 @@ const SkillLayer = SkillServiceLive.pipe(Layer.provide(DatabaseServiceLive));
 // Layer for CoverageService (depends on DatabaseService)
 const CoverageLayer = CoverageServiceLive.pipe(Layer.provide(DatabaseServiceLive));
 
+// Layer for CustomRoleService (depends on DatabaseService)
+const CustomRoleLayer = CustomRoleServiceLive.pipe(Layer.provide(DatabaseServiceLive));
+
 // Combine all service layers
 export const AppLayer = Layer.mergeAll(
 	BaseLayer,
@@ -87,6 +91,7 @@ export const AppLayer = Layer.mergeAll(
 	SetupLayer,
 	SkillLayer,
 	CoverageLayer,
+	CustomRoleLayer,
 );
 
 // Runtime for executing effects

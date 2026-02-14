@@ -19,6 +19,7 @@
       "uninterrupted": "Uninterrupted work",
       "warningMessage": "You have {minutes} minutes until a break is required."
     },
+    "budget": "Budget",
     "clockedOutSuccess": "You've clocked out!",
     "clockIn": "Clock In",
     "clockingIn": "Clocking In…",
@@ -61,6 +62,7 @@
       "timezoneNote": "Times are in your local timezone ({timezone})"
     },
     "currentlyClockedIn": "You're currently clocked in",
+    "deadline": "Deadline",
     "errors": {
       "clockInFailed": "Failed to clock in",
       "clockOutFailed": "Failed to clock out",

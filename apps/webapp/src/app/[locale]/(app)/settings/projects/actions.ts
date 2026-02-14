@@ -6,6 +6,7 @@ import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import {
+	customer,
 	employee,
 	project,
 	projectAssignment,
@@ -40,6 +41,8 @@ export interface ProjectWithDetails {
 	color: string | null;
 	budgetHours: string | null;
 	deadline: Date | null;
+	customerId: string | null;
+	customerName: string | null;
 	isActive: boolean;
 	createdAt: Date;
 	createdBy: string;
@@ -70,6 +73,7 @@ export interface CreateProjectInput {
 	color?: string;
 	budgetHours?: number;
 	deadline?: Date;
+	customerId?: string;
 }
 
 export interface UpdateProjectInput {
@@ -80,6 +84,7 @@ export interface UpdateProjectInput {
 	color?: string;
 	budgetHours?: number | null;
 	deadline?: Date | null;
+	customerId?: string | null;
 }
 
 /**
@@ -126,12 +131,17 @@ export async function getProjects(
 					),
 				);
 
-				// Fetch all projects
+				// Fetch all projects with customer relation
 				const projects = yield* _(
 					dbService.query("getProjects", async () => {
 						return await db.query.project.findMany({
 							where: eq(project.organizationId, organizationId),
 							orderBy: [desc(project.createdAt)],
+							with: {
+								customer: {
+									columns: { id: true, name: true },
+								},
+							},
 						});
 					}),
 				);
@@ -205,6 +215,8 @@ export async function getProjects(
 					color: p.color,
 					budgetHours: p.budgetHours,
 					deadline: p.deadline,
+					customerId: p.customerId,
+					customerName: p.customer?.name ?? null,
 					isActive: p.isActive,
 					createdAt: p.createdAt,
 					createdBy: p.createdBy,
@@ -326,6 +338,32 @@ export async function createProject(
 					);
 				}
 
+				// Validate customerId if provided
+				if (input.customerId) {
+					const customerExists = yield* _(
+						dbService.query("verifyCustomer", async () => {
+							return await db.query.customer.findFirst({
+								where: and(
+									eq(customer.id, input.customerId!),
+									eq(customer.organizationId, input.organizationId),
+									eq(customer.isActive, true),
+								),
+							});
+						}),
+					);
+
+					if (!customerExists) {
+						yield* _(
+							Effect.fail(
+								new ValidationError({
+									message: "Customer not found",
+									field: "customerId",
+								}),
+							),
+						);
+					}
+				}
+
 				// Create the project
 				const [created] = yield* _(
 					Effect.tryPromise({
@@ -341,6 +379,7 @@ export async function createProject(
 									color: input.color || null,
 									budgetHours: input.budgetHours?.toString() || null,
 									deadline: input.deadline || null,
+									customerId: input.customerId || null,
 									isActive: true,
 									createdBy: session.user.id,
 									updatedAt: new Date(),
@@ -518,6 +557,33 @@ export async function updateProject(
 				if (input.budgetHours !== undefined)
 					updateData.budgetHours = input.budgetHours?.toString() || null;
 				if (input.deadline !== undefined) updateData.deadline = input.deadline;
+				if (input.customerId !== undefined) updateData.customerId = input.customerId;
+
+				// Validate customerId if changing to a new customer
+				if (input.customerId) {
+					const customerExists = yield* _(
+						dbService.query("verifyCustomer", async () => {
+							return await db.query.customer.findFirst({
+								where: and(
+									eq(customer.id, input.customerId!),
+									eq(customer.organizationId, existingProject.organizationId),
+									eq(customer.isActive, true),
+								),
+							});
+						}),
+					);
+
+					if (!customerExists) {
+						yield* _(
+							Effect.fail(
+								new ValidationError({
+									message: "Customer not found",
+									field: "customerId",
+								}),
+							),
+						);
+					}
+				}
 
 				// Update the project
 				yield* _(

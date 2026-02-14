@@ -19,11 +19,12 @@ export * from "./change-policy";
 export * from "./clockodo-import";
 // ArbZG Compliance
 export * from "./compliance";
-// Compliance Radar (findings, config)
-export * from "./compliance-finding";
 // Coverage targets (minimum staffing requirements)
 export * from "./coverage";
 export * from "./cron-job";
+// Custom roles (configurable permissions)
+export * from "./custom-role";
+export * from "./customer";
 // Discord integration
 export * from "./discord-integration";
 export * from "./enterprise";

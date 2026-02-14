@@ -37,6 +37,7 @@ export type {
 	OrgMembership,
 	EmployeeInfo,
 	TeamPermissions,
+	CustomRoleInfo,
 	OrgScopedSubject,
 	TeamScopedSubject,
 	EmployeeScopedSubject,

@@ -83,6 +83,8 @@
         "type": "Typ"
       },
       "noRequests": "Keine Abwesenheitsanträge gefunden.",
+      "noSearchResults": "Keine Abwesenheiten entsprechen Ihrer Suche.",
+      "searchPlaceholder": "Suche nach Typ, Status oder Notizen...",
       "start": "Start",
       "subtitle": "Kürzliche und kommende Abwesenheitsanträge",
       "title": "Ihre Abwesenheitsanträge"
@@ -128,9 +130,13 @@
       "duration": "Dauer",
       "employee": "Mitarbeiter",
       "notes": "Notizen",
+      "pendingApproval": "Ausstehende Genehmigung",
+      "pendingApprovalDescription": "Dieser Arbeitszeitraum wartet auf die Genehmigung durch den Manager. Die erfassten Zeiten können sich bei Ablehnung ändern.",
       "periods": "Arbeitszeiträume",
       "project": "Projekt",
       "recurring": "Jährlich wiederkehrend",
+      "rejected": "Abgelehnt",
+      "rejectedDescription": "Diese Änderung des Arbeitszeitraums wurde von einem Manager abgelehnt. Die ursprünglichen Zeiten wurden wiederhergestellt.",
       "status": "Status",
       "surcharge": "Zuschlag",
       "surchargeBreakdown": "Aufschlüsselung der Zuschläge",
@@ -147,6 +153,12 @@
       "projectSaveFailed": "Aktualisieren des Projekts fehlgeschlagen",
       "split": "Teilen",
       "title": "Arbeitszeitraum"
+    },
+    "employeeSelector": {
+      "error": "Teammitglieder konnten nicht geladen werden",
+      "label": "Kalender anzeigen",
+      "myCalendar": "Mein Kalender",
+      "placeholder": "Teammitglied auswählen..."
     },
     "entryType": {
       "clockIn": "Einstempeln",
@@ -176,7 +188,8 @@
       "timeEntry": "Zeiteintrag",
       "title": "Legende",
       "undertime": "Minusstunden",
-      "workPeriod": "Arbeitszeitraum"
+      "workPeriod": "Arbeitszeitraum",
+      "workPeriodPending": "Ausstehende Genehmigung"
     },
     "split": {
       "confirm": "Arbeitszeitraum teilen",

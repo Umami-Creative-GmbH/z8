@@ -36,7 +36,7 @@ export const slackWorkspaceConfig = pgTable(
 		slackTeamName: text("slack_team_name"),
 
 		// OAuth2 Tokens
-		botAccessToken: text("bot_access_token").notNull(), // xoxb-...
+		botAccessToken: text("bot_access_token").notNull(), // Sentinel value — real token stored in Vault at slack/bot_access_token
 		botUserId: text("bot_user_id"), // Bot user ID (U...)
 
 		// Setup state

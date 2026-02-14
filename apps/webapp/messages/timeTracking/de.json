@@ -19,12 +19,15 @@
       "uninterrupted": "Ununterbrochene Arbeit",
       "warningMessage": "Sie haben noch {minutes} Minuten, bis eine Pause erforderlich ist."
     },
+    "budget": "Budget",
     "clockedOutSuccess": "Sie haben ausgestempelt!",
     "clockIn": "Einstempeln",
     "clockingIn": "Stemple ein...",
     "clockingOut": "Stemple aus...",
+    "clockInQueued": "Einstempeln für Synchronisierung in Warteschlange",
     "clockInSuccess": "Erfolgreich eingestempelt",
     "clockOut": "Ausstempeln",
+    "clockOutQueued": "Ausstempeln für Synchronisierung in Warteschlange",
     "clockOutSuccess": "Erfolgreich ausgestempelt",
     "compliance": {
       "violation": "Compliance-Verstoß",
@@ -59,20 +62,57 @@
       "timezoneNote": "Zeiten sind in Ihrer lokalen Zeitzone ({timezone})"
     },
     "currentlyClockedIn": "Sie sind derzeit eingestempelt",
+    "deadline": "Deadline",
     "errors": {
       "clockInFailed": "Fehler beim Einstempeln",
       "clockOutFailed": "Fehler beim Ausstempeln",
       "holidayBlocked": "Ausstempeln am {holidayName} nicht möglich",
       "holidayBlockedDesc": "Dieser Tag ist als Feiertag markiert und Zeiteinträge sind nicht erlaubt",
-      "notesSaveFailed": "Fehler beim Speichern der Notizen"
+      "notesSaveFailed": "Fehler beim Speichern der Notizen",
+      "restPeriodBlocked": "Ruhezeit nicht abgeschlossen",
+      "restPeriodBlockedDesc": "Sie müssen die erforderliche Ruhezeit einhalten, bevor Sie sich einstempeln. Fordern Sie bei Bedarf eine Ausnahme an."
     },
+    "manualEntry": {
+      "addButton": "Manuellen Eintrag hinzufügen",
+      "clockInLabel": "Einstempeln",
+      "clockOutLabel": "Ausstempeln",
+      "dateLabel": "Datum",
+      "description": "Erstellen Sie einen Zeiteintrag für ein vergangenes Datum. Je nach Änderungsrichtlinie Ihrer Organisation kann eine Genehmigung erforderlich sein.",
+      "errors": {
+        "createFailed": "Zeiteintrag konnte nicht erstellt werden",
+        "futureDate": "Einträge für zukünftige Daten können nicht erstellt werden",
+        "invalidTimeRange": "Die Zeit für das Ausstempeln muss nach der Zeit für das Einstempeln liegen",
+        "tooLong": "Die Arbeitsdauer darf 24 Stunden nicht überschreiten"
+      },
+      "reasonLabel": "Grund",
+      "reasonPlaceholder": "Beschreiben Sie, woran Sie gearbeitet haben …",
+      "submit": "Eintrag erstellen",
+      "submitting": "Wird erstellt …",
+      "success": {
+        "adjusted": "Zeiten auf {clockIn} - {clockOut} angepasst, um Überschneidungen zu vermeiden",
+        "created": "Zeiteintrag erfolgreich erstellt",
+        "pendingApproval": "Zeiteintrag zur Genehmigung durch den Manager eingereicht"
+      },
+      "title": "Manuellen Zeiteintrag hinzufügen"
+    },
+    "noCategory": "Keine Kategorie (100 %)",
     "noProject": "Kein Projekt",
     "notesPlaceholder": "Woran haben Sie gearbeitet?",
     "notesSaved": "Notizen gespeichert",
     "project": "Projekt",
     "readyToClockIn": "Bereit zum Arbeiten?",
+    "restPeriodWarning": "Warnung zur Ruhezeit",
+    "restPeriodWarningMessage": "Sie haben die erforderliche Ruhezeit nicht eingehalten. Das jetzige Einstempeln wird als Verstoß protokolliert.",
+    "selectCategory": "Kategorie auswählen",
     "selectProject": "Projekt auswählen",
     "startedAt": "Begonnen um",
+    "summary": {
+      "baseWorked": "Grundarbeitszeit",
+      "surcharge": "Zuschlag",
+      "thisMonth": "Diesen Monat",
+      "thisWeek": "Diese Woche",
+      "today": "Heute"
+    },
     "table": {
       "active": "Aktiv",
       "clockIn": "Einstempeln",
@@ -85,7 +125,10 @@
       "title": "Zeiteinträge"
     },
     "title": "Zeiterfassung",
-    "welcomeBack": "Willkommen zurück, {name}"
+    "unknownCategory": "Unbekannte Kategorie",
+    "unknownProject": "Unbekanntes Projekt",
+    "welcomeBack": "Willkommen zurück, {name}",
+    "workCategory": "Arbeitskategorie"
   },
   "wellness": {
     "water": {

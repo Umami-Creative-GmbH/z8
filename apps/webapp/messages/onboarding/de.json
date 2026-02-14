@@ -143,6 +143,7 @@
       "title": "Urlaubsrichtlinie einrichten"
     },
     "welcome": {
+      "continueSetup": "Einrichtung fortsetzen",
       "features": {
         "absences": "Abwesenheitsverwaltung",
         "absencesDesc": "Freizeit beantragen, Urlaubstage verwalten und Feiertage verfolgen",
@@ -152,6 +153,7 @@
         "timeTrackingDesc": "Ein- und Ausstempeln, Arbeitsstunden verfolgen und Zeitkorrekturen verwalten"
       },
       "getStarted": "Los geht's",
+      "joinedOrganization": "Sie sind {organization} beigetreten. Lassen Sie uns Ihre Profileinrichtung abschließen.",
       "subtitle": "Lassen Sie uns mit einer schnellen Einrichtung beginnen. Das dauert nur wenige Minuten.",
       "title": "Willkommen bei Z8!"
     },

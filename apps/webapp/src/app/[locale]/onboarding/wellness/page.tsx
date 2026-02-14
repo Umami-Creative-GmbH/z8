@@ -44,14 +44,13 @@ export default function WellnessPage() {
 
 			const result = await configureWellnessOnboarding(value);
 
-			setLoading(false);
-
 			if (result.success) {
 				if (value.enableWaterReminder) {
 					toast.success(t("onboarding.wellness.success", "Water reminder enabled!"));
 				}
 				router.push("/onboarding/notifications");
 			} else {
+				setLoading(false);
 				toast.error(
 					result.error || t("onboarding.wellness.error", "Failed to save wellness settings"),
 				);
@@ -64,11 +63,10 @@ export default function WellnessPage() {
 
 		const result = await skipWellnessSetup();
 
-		setLoading(false);
-
 		if (result.success) {
 			router.push("/onboarding/notifications");
 		} else {
+			setLoading(false);
 			toast.error(result.error || "Failed to skip wellness setup");
 		}
 	}

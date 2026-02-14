@@ -1,6 +1,11 @@
 {
   "reports": {
     "description": "Gere relatórios completos de horas de trabalho e ausências com dados de teletrabalho relevantes para impostos",
+    "employeeSelector": {
+      "error": "Não foi possível carregar os membros da equipe",
+      "label": "Funcionário",
+      "placeholder": "Selecionar funcionário..."
+    },
     "feature": "gerar relatórios",
     "projects": {
       "budget": {
@@ -97,8 +102,10 @@
         "portfolioDescription": "Visão geral de todos os projetos com métricas de orçamento e registo de tempo",
         "portfolioTitle": "Portefólio de projetos",
         "project": "Projeto",
+        "searchPlaceholder": "Pesquisar por nome, descrição ou status...",
         "status": "Estado",
-        "team": "Equipa"
+        "team": "Equipa",
+        "viewProject": "Ver detalhes do projeto"
       },
       "team": {
         "byEmployee": "Por funcionário",

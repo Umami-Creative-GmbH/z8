@@ -66,9 +66,9 @@ export const calendarSyncActionEnum = pgEnum("calendar_sync_action", [
  * Stores OAuth tokens and configuration for connecting external calendars.
  * Each employee can have one connection per provider.
  *
- * Token storage note: Access and refresh tokens are stored directly in the database.
- * For production, consider encrypting at rest using database-level encryption
- * or application-level encryption with a KMS.
+ * Token storage: OAuth tokens are stored in HashiCorp Vault at
+ * calendar/{connectionId}/access_token and calendar/{connectionId}/refresh_token.
+ * DB columns hold sentinel value "vault:managed".
  */
 export const calendarConnection = pgTable(
 	"calendar_connection",
@@ -85,7 +85,7 @@ export const calendarConnection = pgTable(
 		provider: calendarProviderEnum("provider").notNull(),
 		providerAccountId: text("provider_account_id").notNull(), // External user ID/email
 
-		// OAuth tokens
+		// OAuth tokens (sentinel values — real tokens stored in Vault)
 		accessToken: text("access_token").notNull(),
 		refreshToken: text("refresh_token"),
 		expiresAt: timestamp("expires_at"),

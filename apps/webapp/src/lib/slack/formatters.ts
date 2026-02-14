@@ -5,6 +5,8 @@
  */
 
 import { DateTime } from "luxon";
+import { fmtFullDate, fmtShortDate, fmtShortDateTime } from "@/lib/bot-platform/i18n";
+import { DEFAULT_LANGUAGE } from "@/tolgee/shared";
 import type {
 	ApprovalCardData,
 	ApprovalResolvedData,
@@ -18,7 +20,10 @@ import type {
 /**
  * Build Block Kit blocks for an approval request message.
  */
-export function buildApprovalBlocks(data: ApprovalCardData): {
+export function buildApprovalBlocks(
+	data: ApprovalCardData,
+	locale: string = DEFAULT_LANGUAGE,
+): {
 	blocks: unknown[];
 	text: string;
 } {
@@ -41,8 +46,8 @@ export function buildApprovalBlocks(data: ApprovalCardData): {
 		});
 
 		if (data.startDate && data.endDate) {
-			const start = DateTime.fromISO(data.startDate).toFormat("MMM d");
-			const end = DateTime.fromISO(data.endDate).toFormat("MMM d");
+			const start = fmtShortDate(DateTime.fromISO(data.startDate), locale);
+			const end = fmtShortDate(DateTime.fromISO(data.endDate), locale);
 			fields.push({
 				type: "mrkdwn",
 				text: `*Period:*\n${start} - ${end}`,
@@ -64,7 +69,7 @@ export function buildApprovalBlocks(data: ApprovalCardData): {
 		});
 	}
 
-	const submitted = DateTime.fromJSDate(data.createdAt).toFormat("MMM d, HH:mm");
+	const submitted = fmtShortDateTime(DateTime.fromJSDate(data.createdAt), locale);
 	blocks.push({
 		type: "context",
 		elements: [{ type: "mrkdwn", text: `Submitted ${submitted}` }],
@@ -100,6 +105,7 @@ export function buildApprovalBlocks(data: ApprovalCardData): {
 export function buildResolvedApprovalBlocks(
 	data: ApprovalCardData,
 	resolved: ApprovalResolvedData,
+	locale: string = DEFAULT_LANGUAGE,
 ): { blocks: unknown[]; text: string } {
 	const icon = resolved.action === "approved" ? ":white_check_mark:" : ":x:";
 	const status = resolved.action === "approved" ? "Approved" : "Rejected";
@@ -123,15 +129,15 @@ export function buildResolvedApprovalBlocks(
 	];
 
 	if (data.startDate && data.endDate) {
-		const start = DateTime.fromISO(data.startDate).toFormat("MMM d");
-		const end = DateTime.fromISO(data.endDate).toFormat("MMM d");
+		const start = fmtShortDate(DateTime.fromISO(data.startDate), locale);
+		const end = fmtShortDate(DateTime.fromISO(data.endDate), locale);
 		blocks.push({
 			type: "context",
 			elements: [{ type: "mrkdwn", text: `${start} - ${end}` }],
 		});
 	}
 
-	const resolvedAt = DateTime.fromJSDate(resolved.resolvedAt).toFormat("MMM d, HH:mm");
+	const resolvedAt = fmtShortDateTime(DateTime.fromJSDate(resolved.resolvedAt), locale);
 	blocks.push({
 		type: "context",
 		elements: [{ type: "mrkdwn", text: `${status} by ${resolved.approverName} at ${resolvedAt}` }],
@@ -150,14 +156,16 @@ export function buildResolvedApprovalBlocks(
 export function buildDailyDigestBlocks(
 	data: DailyDigestData,
 	appUrl: string,
+	locale: string = DEFAULT_LANGUAGE,
 ): {
 	blocks: unknown[];
 	text: string;
 } {
 	const text = "Daily Digest";
-	const dateFormatted = DateTime.fromJSDate(data.date)
-		.setZone(data.timezone)
-		.toFormat("EEEE, MMMM d, yyyy");
+	const dateFormatted = fmtFullDate(
+		DateTime.fromJSDate(data.date).setZone(data.timezone),
+		locale,
+	);
 
 	const blocks: unknown[] = [
 		{

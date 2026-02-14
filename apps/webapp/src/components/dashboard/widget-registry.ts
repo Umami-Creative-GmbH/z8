@@ -15,7 +15,6 @@ export type WidgetId =
 	| "birthday-reminders"
 	| "hydration"
 	| "vacation-balance"
-	| "compliance-radar"
 	| "presence-status";
 
 /**
@@ -23,7 +22,6 @@ export type WidgetId =
  * This order matches the original hardcoded layout in section-cards.tsx.
  */
 export const DEFAULT_WIDGET_ORDER: WidgetId[] = [
-	"compliance-radar",
 	"managed-employees",
 	"pending-approvals",
 	"team-overview",

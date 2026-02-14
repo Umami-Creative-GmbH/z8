@@ -10,6 +10,7 @@ import { DateTime } from "luxon";
 import { db } from "@/db";
 import { absenceEntry, absenceCategory, employee, employeeManagers } from "@/db/schema";
 import { user } from "@/db/auth-schema";
+import { fmtWeekdayShortDate, getBotTranslate } from "@/lib/bot-platform/i18n";
 import type { BotCommand, BotCommandContext, BotCommandResponse } from "@/lib/bot-platform/types";
 import { createLogger } from "@/lib/logger";
 
@@ -18,11 +19,12 @@ const logger = createLogger("TeamsCommand:WhosOut");
 export const whosOutCommand: BotCommand = {
 	name: "whosout",
 	aliases: ["out", "absent", "leave", "vacation"],
-	description: "See which team members are currently out/on leave",
+	description: "bot.cmd.whosout.desc",
 	usage: "whosout",
 	requiresAuth: true,
 	handler: async (ctx: BotCommandContext): Promise<BotCommandResponse> => {
 		try {
+			const t = await getBotTranslate(ctx.locale);
 			// Get employees this user manages (join through employee to filter by org)
 			const managedEmployees = await db.query.employeeManagers.findMany({
 				where: eq(employeeManagers.managerId, ctx.employeeId),
@@ -46,7 +48,7 @@ export const whosOutCommand: BotCommand = {
 			if (orgManagedEmployees.length === 0) {
 				return {
 					type: "text",
-					text: "You don't have any team members assigned to you.",
+					text: t("bot.cmd.whosout.noTeam", "You don't have any team members assigned to you."),
 				};
 			}
 
@@ -78,21 +80,21 @@ export const whosOutCommand: BotCommand = {
 			if (absences.length === 0) {
 				return {
 					type: "text",
-					text: `All ${orgManagedEmployees.length} of your team members are available today.`,
+					text: t("bot.cmd.whosout.noneOut", "All {total} of your team members are available today.", { total: orgManagedEmployees.length }),
 				};
 			}
 
 			// Build response with details
 			const lines = absences.map((absence) => {
 				const endDate = DateTime.fromISO(absence.endDate).setZone(ctx.config.digestTimezone);
-				const returnDate = endDate.plus({ days: 1 }).toFormat("EEE, MMM d");
+				const returnDate = fmtWeekdayShortDate(endDate.plus({ days: 1 }), ctx.locale);
 				const category = absence.categoryName || "Leave";
 
 				return `• **${absence.employeeName}** - ${category} (returns ${returnDate})`;
 			});
 
 			const response = [
-				`**${absences.length} of ${orgManagedEmployees.length} team members out today:**`,
+				`**${t("bot.cmd.whosout.header", "{outCount} of {total} team members out today:", { outCount: absences.length, total: orgManagedEmployees.length })}**`,
 				"",
 				...lines,
 			].join("\n");

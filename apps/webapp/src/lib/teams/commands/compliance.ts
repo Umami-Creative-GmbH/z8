@@ -6,15 +6,20 @@
  */
 
 import { Effect } from "effect";
-import type { BotCommand, BotCommandContext, BotCommandResponse } from "@/lib/bot-platform/types";
-import { createLogger } from "@/lib/logger";
-import { withRateLimit, withPermission, compose } from "./middleware";
+import { getBotTranslate } from "@/lib/bot-platform/i18n";
+import type {
+	BotCommand,
+	BotCommandContext,
+	BotCommandResponse,
+} from "@/lib/bot-platform/types";
 import {
+	type ComplianceSummary,
 	TeamsComplianceService,
 	TeamsComplianceServiceFullLive,
-	type ComplianceSummary,
 } from "@/lib/effect/services/teams-compliance.service";
+import { createLogger } from "@/lib/logger";
 import { buildComplianceCard } from "../cards/compliance-card";
+import { compose, withPermission, withRateLimit } from "./middleware";
 
 const logger = createLogger("TeamsCommand:Compliance");
 
@@ -40,8 +45,11 @@ function parseDaysArgument(arg: string | undefined): number {
 // COMMAND HANDLER
 // ============================================
 
-async function complianceHandler(ctx: BotCommandContext): Promise<BotCommandResponse> {
+async function complianceHandler(
+	ctx: BotCommandContext,
+): Promise<BotCommandResponse> {
 	try {
+		const t = await getBotTranslate(ctx.locale);
 		const daysBack = parseDaysArgument(ctx.args[0]);
 
 		logger.debug(
@@ -67,28 +75,26 @@ async function complianceHandler(ctx: BotCommandContext): Promise<BotCommandResp
 		});
 
 		const summary = await Effect.runPromise(
-			program.pipe(Effect.provide(TeamsComplianceServiceFullLive)) as Effect.Effect<
-				ComplianceSummary,
-				never,
-				never
-			>,
+			program.pipe(
+				Effect.provide(TeamsComplianceServiceFullLive),
+			) as Effect.Effect<ComplianceSummary, never, never>,
 		);
 
 		// If no compliance data, return text response
 		if (summary.alerts.length === 0 && summary.pendingExceptions.length === 0) {
 			return {
 				type: "text",
-				text: `✅ No compliance issues found in the last ${daysBack} days. Your team is in good standing!`,
+				text: t("bot.cmd.compliance.noIssues", "No compliance issues found in the last {days} days. Your team is in good standing!", { days: daysBack }),
 			};
 		}
 
 		// Build Adaptive Card
-		const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://app.z8.works";
+		const appUrl = process.env.APP_URL || "https://z8-time.app";
 		const card = buildComplianceCard({
 			summary,
 			daysBack,
 			appUrl,
-			locale: "en", // TODO: Get from user preferences
+			locale: ctx.locale,
 		});
 
 		const issueCount = summary.alerts.length + summary.pendingExceptions.length;
@@ -99,9 +105,10 @@ async function complianceHandler(ctx: BotCommandContext): Promise<BotCommandResp
 		};
 	} catch (error) {
 		logger.error({ error, ctx }, "Compliance command failed");
+		const t = await getBotTranslate(ctx.locale);
 		return {
 			type: "text",
-			text: "❌ Failed to retrieve compliance data. Please try again later.",
+			text: t("bot.cmd.compliance.error", "Failed to retrieve compliance data. Please try again later."),
 		};
 	}
 }
@@ -118,7 +125,7 @@ const wrappedHandler = compose(
 export const complianceCommand: BotCommand = {
 	name: "compliance",
 	aliases: ["violations", "arbzg", "alerts"],
-	description: "View compliance violations and pending exception requests",
+	description: "bot.cmd.compliance.desc",
 	usage: "compliance [days]",
 	requiresAuth: true,
 	handler: wrappedHandler,

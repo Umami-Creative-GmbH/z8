@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { LANGUAGE_CONFIG } from "@/lib/language-config";
 import { usePathname, useRouter } from "@/navigation";
+import { persistLocaleToDb, setLanguage } from "@/tolgee/language";
 import { ALL_LANGUAGES } from "@/tolgee/shared";
 
 export function LanguageSwitcher() {
@@ -22,7 +23,9 @@ export function LanguageSwitcher() {
 	const [isPending, startTransition] = useTransition();
 
 	const handleLanguageChange = (newLocale: string) => {
-		startTransition(() => {
+		startTransition(async () => {
+			await setLanguage(newLocale);
+			persistLocaleToDb(newLocale).catch(() => {}); // fire-and-forget
 			router.replace(pathname, { locale: newLocale });
 		});
 	};

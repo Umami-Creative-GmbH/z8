@@ -2,9 +2,11 @@
 
 import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { getCustomersForSelection } from "@/app/[locale]/(app)/settings/customers/actions";
 import {
 	createProject,
 	type ProjectStatus,
@@ -30,6 +32,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { queryKeys } from "@/lib/query";
 
 interface ProjectDialogProps {
 	organizationId: string;
@@ -59,6 +62,8 @@ const COLOR_OPTIONS = [
 	"#6b7280", // gray
 ];
 
+const NO_CUSTOMER_VALUE = "__none__";
+
 interface FormValues {
 	name: string;
 	description: string;
@@ -66,6 +71,7 @@ interface FormValues {
 	color: string;
 	budgetHours: string;
 	deadline: string;
+	customerId: string;
 }
 
 export function ProjectDialog({
@@ -79,6 +85,18 @@ export function ProjectDialog({
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const isEditing = !!project;
 
+	const { data: customersData } = useQuery({
+		queryKey: queryKeys.customers.selection(organizationId),
+		queryFn: async () => {
+			const result = await getCustomersForSelection(organizationId);
+			if (!result.success) return [];
+			return result.data;
+		},
+		enabled: open,
+	});
+
+	const customers = customersData || [];
+
 	const defaultValues: FormValues = {
 		name: project?.name || "",
 		description: project?.description || "",
@@ -86,6 +104,7 @@ export function ProjectDialog({
 		color: project?.color || "",
 		budgetHours: project?.budgetHours || "",
 		deadline: project?.deadline ? new Date(project.deadline).toISOString().split("T")[0] : "",
+		customerId: project?.customerId || "",
 	};
 
 	const form = useForm({
@@ -95,6 +114,7 @@ export function ProjectDialog({
 			try {
 				const budgetHours = value.budgetHours ? parseFloat(value.budgetHours) : undefined;
 				const deadline = value.deadline ? new Date(value.deadline) : undefined;
+				const customerId = value.customerId || undefined;
 
 				if (isEditing && project) {
 					const result = await updateProject(project.id, {
@@ -104,6 +124,7 @@ export function ProjectDialog({
 						color: value.color || undefined,
 						budgetHours: budgetHours ?? null,
 						deadline: deadline ?? null,
+						customerId: customerId ?? null,
 					});
 
 					if (result.success) {
@@ -123,6 +144,7 @@ export function ProjectDialog({
 						color: value.color || undefined,
 						budgetHours,
 						deadline,
+						customerId,
 					});
 
 					if (result.success) {
@@ -203,6 +225,44 @@ export function ProjectDialog({
 								</div>
 							)}
 						</form.Field>
+
+						{/* Customer */}
+						{customers.length > 0 && (
+							<form.Field name="customerId">
+								{(field) => (
+									<div className="grid gap-2">
+										<Label htmlFor="customerId">
+											{t("settings.projects.field.customer", "Customer")}
+										</Label>
+										<Select
+											value={field.state.value || NO_CUSTOMER_VALUE}
+											onValueChange={(value) =>
+												field.handleChange(value === NO_CUSTOMER_VALUE ? "" : value)
+											}
+										>
+											<SelectTrigger>
+												<SelectValue
+													placeholder={t(
+														"settings.projects.field.customerPlaceholder",
+														"Select a customer",
+													)}
+												/>
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value={NO_CUSTOMER_VALUE}>
+													{t("settings.projects.field.noCustomer", "No customer")}
+												</SelectItem>
+												{customers.map((c) => (
+													<SelectItem key={c.id} value={c.id}>
+														{c.name}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									</div>
+								)}
+							</form.Field>
+						)}
 
 						{/* Status */}
 						<form.Field name="status">

@@ -83,6 +83,8 @@
         "type": "Tipo"
       },
       "noRequests": "Nessuna richiesta di assenza trovata.",
+      "noSearchResults": "Nessuna assenza corrisponde alla tua ricerca.",
+      "searchPlaceholder": "Cerca per tipo, stato o note...",
       "start": "Inizio",
       "subtitle": "Richieste di assenza recenti e future",
       "title": "Le tue richieste di assenza"
@@ -128,9 +130,13 @@
       "duration": "Durata",
       "employee": "Dipendente",
       "notes": "Note",
+      "pendingApproval": "In attesa di approvazione",
+      "pendingApprovalDescription": "Questo periodo lavorativo è in attesa di approvazione da parte del manager. Gli orari registrati potrebbero cambiare se rifiutati.",
       "periods": "Periodi di lavoro",
       "project": "Progetto",
       "recurring": "Ricorrente annualmente",
+      "rejected": "Rifiutato",
+      "rejectedDescription": "Questa modifica del periodo lavorativo è stata rifiutata da un manager. Gli orari originali sono stati ripristinati.",
       "status": "Stato",
       "surcharge": "Supplemento",
       "surchargeBreakdown": "Dettaglio supplementi",
@@ -147,6 +153,12 @@
       "projectSaveFailed": "Impossibile aggiornare il progetto",
       "split": "Dividi",
       "title": "Periodo di lavoro"
+    },
+    "employeeSelector": {
+      "error": "Impossibile caricare i membri del team",
+      "label": "Visualizza calendario",
+      "myCalendar": "Il mio calendario",
+      "placeholder": "Seleziona membro del team..."
     },
     "entryType": {
       "clockIn": "Ingresso",
@@ -176,7 +188,8 @@
       "timeEntry": "Voce di tempo",
       "title": "Legenda",
       "undertime": "Ore mancanti",
-      "workPeriod": "Periodo di lavoro"
+      "workPeriod": "Periodo di lavoro",
+      "workPeriodPending": "In attesa di approvazione"
     },
     "split": {
       "confirm": "Dividi periodo di lavoro",

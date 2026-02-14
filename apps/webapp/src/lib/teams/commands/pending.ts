@@ -9,6 +9,7 @@ import { DateTime } from "luxon";
 import { db } from "@/db";
 import { approvalRequest, employee, absenceEntry, absenceCategory } from "@/db/schema";
 import { user } from "@/db/auth-schema";
+import { fmtShortDate, getBotTranslate } from "@/lib/bot-platform/i18n";
 import type { BotCommand, BotCommandContext, BotCommandResponse } from "@/lib/bot-platform/types";
 import { createLogger } from "@/lib/logger";
 
@@ -17,11 +18,13 @@ const logger = createLogger("TeamsCommand:Pending");
 export const pendingCommand: BotCommand = {
 	name: "pending",
 	aliases: ["approvals", "requests", "approve"],
-	description: "See your pending approval requests",
+	description: "bot.cmd.pending.desc",
 	usage: "pending",
 	requiresAuth: true,
 	handler: async (ctx: BotCommandContext): Promise<BotCommandResponse> => {
 		try {
+			const t = await getBotTranslate(ctx.locale);
+
 			// Get pending approval requests assigned to this employee
 			const pendingRequests = await db.query.approvalRequest.findMany({
 				where: and(
@@ -35,7 +38,7 @@ export const pendingCommand: BotCommand = {
 			if (pendingRequests.length === 0) {
 				return {
 					type: "text",
-					text: "You have no pending approval requests. Nice work keeping up!",
+					text: t("bot.cmd.pending.none", "You have no pending approval requests. Nice work keeping up!"),
 				};
 			}
 
@@ -75,8 +78,8 @@ export const pendingCommand: BotCommand = {
 
 						if (absence) {
 							const categoryName = absence.category?.name || "Leave";
-							const startDate = DateTime.fromISO(absence.startDate).toFormat("MMM d");
-							const endDate = DateTime.fromISO(absence.endDate).toFormat("MMM d");
+							const startDate = fmtShortDate(DateTime.fromISO(absence.startDate), ctx.locale);
+							const endDate = fmtShortDate(DateTime.fromISO(absence.endDate), ctx.locale);
 							description = `${categoryName}: ${startDate} - ${endDate}`;
 						}
 					} else if (request.entityType === "time_entry") {
@@ -106,11 +109,11 @@ export const pendingCommand: BotCommand = {
 			});
 
 			const response = [
-				`**You have ${pendingRequests.length} pending approval${pendingRequests.length > 1 ? "s" : ""}:**`,
+				`**${t("bot.cmd.pending.header", "You have {count} pending {count, plural, one {approval} other {approvals}}:", { count: pendingRequests.length })}**`,
 				"",
 				...lines,
 				"",
-				"_View and approve in Z8 or wait for individual approval cards._",
+				`_${t("bot.cmd.pending.footer", "View and approve in Z8 or wait for individual approval cards.")}_`,
 			].join("\n");
 
 			return {

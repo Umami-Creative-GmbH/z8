@@ -32,7 +32,7 @@ export const telegramBotConfig = pgTable(
 			.references(() => organization.id, { onDelete: "cascade" }),
 
 		// Telegram Bot Identity
-		botToken: text("bot_token").notNull(), // Encrypted at rest
+		botToken: text("bot_token").notNull(), // Sentinel value — real token stored in Vault at telegram/bot_token
 		botUsername: text("bot_username"), // e.g., "z8_acme_bot"
 		botDisplayName: text("bot_display_name"), // e.g., "Z8 Acme Time Tracking"
 

@@ -19,11 +19,19 @@ function createValkeyClient(): Redis {
 		host,
 		port,
 		password: password || undefined,
-		maxRetriesPerRequest: 3,
-		lazyConnect: true,
-		// Performance optimizations
-		enableReadyCheck: false,
+		maxRetriesPerRequest: 20,
+		retryStrategy(times) {
+			// Exponential backoff: 50ms, 100ms, 200ms... capped at 2s
+			return Math.min(times * 50, 2000);
+		},
+		lazyConnect: false,
+		enableReadyCheck: true,
 		enableOfflineQueue: true,
+		// Reconnect automatically on connection loss
+		reconnectOnError(err) {
+			const targetErrors = ["READONLY", "ECONNRESET", "EPIPE"];
+			return targetErrors.some((e) => err.message.includes(e));
+		},
 	});
 
 	client.on("error", (err) => {
@@ -32,6 +40,10 @@ function createValkeyClient(): Redis {
 
 	client.on("connect", () => {
 		logger.info({ host, port }, "Connected to Valkey");
+	});
+
+	client.on("reconnecting", (delay: number) => {
+		logger.warn({ delay }, "Reconnecting to Valkey");
 	});
 
 	return client;

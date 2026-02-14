@@ -42,12 +42,11 @@ export default function VacationPolicyPage() {
 
 			const result = await createVacationPolicyOnboarding(value);
 
-			setLoading(false);
-
 			if (result.success) {
 				toast.success(t("onboarding.vacationPolicy.success", "Vacation policy created!"));
 				router.push("/onboarding/holiday-setup");
 			} else {
+				setLoading(false);
 				toast.error(
 					result.error || t("onboarding.vacationPolicy.error", "Failed to create vacation policy"),
 				);
@@ -80,11 +79,10 @@ export default function VacationPolicyPage() {
 
 		const result = await skipVacationPolicySetup();
 
-		setLoading(false);
-
 		if (result.success) {
 			router.push("/onboarding/holiday-setup");
 		} else {
+			setLoading(false);
 			toast.error(result.error || "Failed to skip vacation policy setup");
 		}
 	}

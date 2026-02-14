@@ -13,18 +13,6 @@
       "today": "Today!",
       "tomorrow": "Tomorrow"
     },
-    "compliance-radar": {
-      "critical": "Critical",
-      "description": "Labor-law compliance findings",
-      "for-awareness": "For awareness",
-      "info": "Info",
-      "openFindings": "{{count}} open finding",
-      "requires-attention": "Requires immediate attention",
-      "review-recommended": "Review recommended",
-      "title": "Compliance Radar",
-      "view-details": "View Compliance Details",
-      "warning": "Warning"
-    },
     "hydration": {
       "description": "Track your daily water intake",
       "error": "Failed to load hydration stats",

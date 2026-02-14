@@ -89,6 +89,11 @@ export enum AuditAction {
 	SURCHARGE_CALCULATION_CREATED = "surcharge.calculation_created",
 	SURCHARGE_CALCULATION_RECALCULATED = "surcharge.calculation_recalculated",
 
+	// Customer Operations
+	CUSTOMER_CREATED = "customer.created",
+	CUSTOMER_UPDATED = "customer.updated",
+	CUSTOMER_DELETED = "customer.deleted",
+
 	// Project Operations
 	PROJECT_CREATED = "project.created",
 	PROJECT_UPDATED = "project.updated",
@@ -134,6 +139,7 @@ export interface AuditLogEntry {
 		| "surcharge_rule"
 		| "surcharge_assignment"
 		| "surcharge_calculation"
+		| "customer"
 		| "project"
 		| "project_assignment"
 		| "work_period"

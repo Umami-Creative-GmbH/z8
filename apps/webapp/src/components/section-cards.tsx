@@ -1,7 +1,6 @@
 "use client";
 
 import { BirthdayRemindersWidget } from "@/components/dashboard/birthday-reminders-widget";
-import { ComplianceRadarWidget } from "@/components/dashboard/compliance-radar-widget";
 import { HydrationWidget } from "@/components/dashboard/hydration-widget";
 import { ManagedEmployeesWidget } from "@/components/dashboard/managed-employees-widget";
 import { PendingApprovalsWidget } from "@/components/dashboard/pending-approvals-widget";
@@ -23,7 +22,6 @@ import { Skeleton } from "@/components/ui/skeleton";
  * Widgets handle their own DashboardWidget wrapper internally.
  */
 const WIDGET_COMPONENTS: Record<WidgetId, React.ComponentType> = {
-	"compliance-radar": ComplianceRadarWidget,
 	"managed-employees": ManagedEmployeesWidget,
 	"pending-approvals": PendingApprovalsWidget,
 	"team-overview": TeamOverviewWidget,
@@ -71,6 +69,7 @@ export function SectionCards() {
 	}
 
 	return (
+		<div data-tour="dashboard-widgets">
 		<WidgetVisibilityProvider>
 			<SortableWidgetGrid widgetOrder={widgetOrder} onReorder={onReorder}>
 				{widgetOrder.map((widgetId) => {
@@ -80,5 +79,6 @@ export function SectionCards() {
 				})}
 			</SortableWidgetGrid>
 		</WidgetVisibilityProvider>
+		</div>
 	);
 }

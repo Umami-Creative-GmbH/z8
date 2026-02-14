@@ -13,6 +13,7 @@ import { db } from "@/db";
 import { slackOAuthState, slackWorkspaceConfig } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
 import { exchangeOAuthCode } from "@/lib/slack/api";
+import { storeOrgSecret } from "@/lib/vault";
 
 const logger = createLogger("SlackOAuthCallback");
 
@@ -24,13 +25,15 @@ export async function GET(request: NextRequest) {
 	const state = searchParams.get("state");
 	const error = searchParams.get("error");
 
-	const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://app.z8.works";
+	const appUrl = process.env.APP_URL || "https://z8-time.app";
 	const settingsUrl = `${appUrl}/settings/integrations`;
 
 	// Handle user cancellation
 	if (error) {
 		logger.info({ error }, "Slack OAuth flow cancelled by user");
-		return NextResponse.redirect(`${settingsUrl}?slack_error=${encodeURIComponent(error)}`);
+		return NextResponse.redirect(
+			`${settingsUrl}?slack_error=${encodeURIComponent(error)}`,
+		);
 	}
 
 	if (!code || !state) {
@@ -40,7 +43,10 @@ export async function GET(request: NextRequest) {
 	try {
 		// Validate state token
 		const stateRecord = await db.query.slackOAuthState.findFirst({
-			where: and(eq(slackOAuthState.stateToken, state), eq(slackOAuthState.status, "pending")),
+			where: and(
+				eq(slackOAuthState.stateToken, state),
+				eq(slackOAuthState.status, "pending"),
+			),
 		});
 
 		if (!stateRecord) {
@@ -67,12 +73,24 @@ export async function GET(request: NextRequest) {
 		const tokenResult = await exchangeOAuthCode(code, redirectUri);
 
 		if (!tokenResult) {
-			return NextResponse.redirect(`${settingsUrl}?slack_error=token_exchange_failed`);
+			return NextResponse.redirect(
+				`${settingsUrl}?slack_error=token_exchange_failed`,
+			);
 		}
+
+		// Store bot access token in Vault
+		await storeOrgSecret(
+			stateRecord.organizationId,
+			"slack/bot_access_token",
+			tokenResult.accessToken,
+		);
 
 		// Check if workspace config already exists
 		const existing = await db.query.slackWorkspaceConfig.findFirst({
-			where: eq(slackWorkspaceConfig.organizationId, stateRecord.organizationId),
+			where: eq(
+				slackWorkspaceConfig.organizationId,
+				stateRecord.organizationId,
+			),
 		});
 
 		if (existing) {
@@ -82,7 +100,7 @@ export async function GET(request: NextRequest) {
 				.set({
 					slackTeamId: tokenResult.teamId,
 					slackTeamName: tokenResult.teamName,
-					botAccessToken: tokenResult.accessToken,
+					botAccessToken: "vault:managed",
 					botUserId: tokenResult.botUserId,
 					setupStatus: "active",
 					configuredByUserId: stateRecord.userId,
@@ -95,7 +113,7 @@ export async function GET(request: NextRequest) {
 				organizationId: stateRecord.organizationId,
 				slackTeamId: tokenResult.teamId,
 				slackTeamName: tokenResult.teamName,
-				botAccessToken: tokenResult.accessToken,
+				botAccessToken: "vault:managed",
 				botUserId: tokenResult.botUserId,
 				setupStatus: "active",
 				configuredByUserId: stateRecord.userId,

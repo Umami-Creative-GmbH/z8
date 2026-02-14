@@ -137,3 +137,13 @@ export interface ApprovalCallbackData {
 	a: "ap" | "rj"; // action: approve or reject
 	id: string; // approval request ID (truncated UUID)
 }
+
+export interface CommandCallbackData {
+	a: "cmd"; // action: execute command
+	c: string; // command name
+}
+
+export interface LanguageCallbackData {
+	a: "lang"; // action: set language
+	l: string; // locale code (e.g., "de")
+}

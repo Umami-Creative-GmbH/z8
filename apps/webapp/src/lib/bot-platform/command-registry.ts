@@ -6,19 +6,45 @@
  */
 
 import { createLogger } from "@/lib/logger";
+import { getBotTranslate } from "./i18n";
+import { clockInCommand } from "@/lib/teams/commands/clock-in";
+import { clockOutCommand } from "@/lib/teams/commands/clock-out";
 import { clockedInCommand } from "@/lib/teams/commands/clockedin";
 import { complianceCommand } from "@/lib/teams/commands/compliance";
 import { coverageCommand } from "@/lib/teams/commands/coverage";
 import { helpCommand } from "@/lib/teams/commands/help";
 import { openShiftsCommand } from "@/lib/teams/commands/open-shifts";
 import { pendingCommand } from "@/lib/teams/commands/pending";
+import { statusCommand } from "@/lib/teams/commands/status";
 import { whosOutCommand } from "@/lib/teams/commands/whos-out";
 import type { BotCommand, BotCommandContext, BotCommandResponse } from "./types";
 
 const logger = createLogger("BotCommandRegistry");
 
+/**
+ * /language command — handled directly by Telegram handler (inline keyboard).
+ * Registered here so it appears in /help output.
+ */
+const languageCommand: BotCommand = {
+	name: "language",
+	aliases: ["lang"],
+	description: "bot.cmd.language.desc",
+	usage: "language",
+	requiresAuth: true,
+	handler: async (ctx: BotCommandContext): Promise<BotCommandResponse> => {
+		const t = await getBotTranslate(ctx.locale);
+		return {
+			type: "text",
+			text: t("bot.cmd.language.useInline", "Use /language in Telegram to change your language with inline buttons."),
+		};
+	},
+};
+
 // All available commands
 const allCommands: BotCommand[] = [
+	statusCommand,
+	clockInCommand,
+	clockOutCommand,
 	clockedInCommand,
 	whosOutCommand,
 	pendingCommand,
@@ -26,6 +52,7 @@ const allCommands: BotCommand[] = [
 	coverageCommand,
 	openShiftsCommand,
 	complianceCommand,
+	languageCommand,
 ];
 
 // Registry of all available commands (keyed by name and aliases)
@@ -120,9 +147,14 @@ export async function executeCommand(
 	const command = getCommand(commandName);
 
 	if (!command) {
+		const t = await getBotTranslate(context.locale);
 		return {
 			type: "text",
-			text: `Unknown command: ${commandName}\n\nType "help" to see available commands.`,
+			text: t(
+				"bot.static.unknownCommand",
+				'Unknown command: {command}\n\nType "help" to see available commands.',
+				{ command: commandName },
+			),
 		};
 	}
 
@@ -148,9 +180,13 @@ export async function executeCommand(
 			"Command execution failed",
 		);
 
+		const t = await getBotTranslate(context.locale);
 		return {
 			type: "text",
-			text: "Sorry, something went wrong executing that command. Please try again.",
+			text: t(
+				"bot.static.commandError",
+				"Sorry, something went wrong executing that command. Please try again.",
+			),
 		};
 	}
 }

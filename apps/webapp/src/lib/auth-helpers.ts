@@ -650,6 +650,7 @@ export async function getPrincipalContext(): Promise<PrincipalContext | null> {
 			employee: null,
 			permissions: { orgWide: null, byTeamId: new Map() },
 			managedEmployeeIds: [],
+			customRoles: [],
 		};
 	}
 
@@ -663,6 +664,7 @@ export async function getPrincipalContext(): Promise<PrincipalContext | null> {
 			employee: null,
 			permissions: { orgWide: null, byTeamId: new Map() },
 			managedEmployeeIds: [],
+			customRoles: [],
 		};
 	}
 
@@ -754,6 +756,7 @@ export async function getPrincipalContext(): Promise<PrincipalContext | null> {
 			: null,
 		permissions,
 		managedEmployeeIds,
+		customRoles: [],
 	};
 }
 

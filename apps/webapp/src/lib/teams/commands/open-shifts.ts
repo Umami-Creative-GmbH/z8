@@ -7,11 +7,19 @@
 
 import { Effect } from "effect";
 import { DateTime } from "luxon";
-import type { BotCommand, BotCommandContext, BotCommandResponse } from "@/lib/bot-platform/types";
+import { getBotTranslate } from "@/lib/bot-platform/i18n";
+import type {
+	BotCommand,
+	BotCommandContext,
+	BotCommandResponse,
+} from "@/lib/bot-platform/types";
+import {
+	OpenShiftsService,
+	OpenShiftsServiceFullLive,
+} from "@/lib/effect/services/open-shifts.service";
 import { createLogger } from "@/lib/logger";
-import { withRateLimit } from "./middleware";
-import { OpenShiftsService, OpenShiftsServiceFullLive } from "@/lib/effect/services/open-shifts.service";
 import { buildOpenShiftsCard } from "../cards/open-shifts-card";
+import { withRateLimit } from "./middleware";
 
 const logger = createLogger("TeamsCommand:OpenShifts");
 
@@ -24,7 +32,10 @@ interface DateRange {
 	endDate: Date;
 }
 
-function parseDateRangeArgument(arg: string | undefined, timezone: string): DateRange {
+function parseDateRangeArgument(
+	arg: string | undefined,
+	timezone: string,
+): DateRange {
 	const now = DateTime.now().setZone(timezone);
 
 	if (!arg || arg.toLowerCase() === "week") {
@@ -76,10 +87,16 @@ function parseDateRangeArgument(arg: string | undefined, timezone: string): Date
 // COMMAND HANDLER
 // ============================================
 
-async function openShiftsHandler(ctx: BotCommandContext): Promise<BotCommandResponse> {
+async function openShiftsHandler(
+	ctx: BotCommandContext,
+): Promise<BotCommandResponse> {
 	try {
+		const t = await getBotTranslate(ctx.locale);
 		const rangeArg = ctx.args[0];
-		const { startDate, endDate } = parseDateRangeArgument(rangeArg, ctx.config.digestTimezone);
+		const { startDate, endDate } = parseDateRangeArgument(
+			rangeArg,
+			ctx.config.digestTimezone,
+		);
 
 		logger.debug(
 			{
@@ -104,25 +121,32 @@ async function openShiftsHandler(ctx: BotCommandContext): Promise<BotCommandResp
 			);
 		});
 
-		const shifts = await Effect.runPromise(program.pipe(Effect.provide(OpenShiftsServiceFullLive)));
+		const shifts = await Effect.runPromise(
+			program.pipe(Effect.provide(OpenShiftsServiceFullLive)),
+		);
 
 		// If no open shifts, return text response
 		if (shifts.length === 0) {
-			const rangeDesc = rangeArg === "today" ? "today" : rangeArg === "tomorrow" ? "tomorrow" : "the selected period";
+			const rangeDesc =
+				rangeArg === "today"
+					? "today"
+					: rangeArg === "tomorrow"
+						? "tomorrow"
+						: "the selected period";
 			return {
 				type: "text",
-				text: `📅 No open shifts found for ${rangeDesc}. All shifts are currently assigned.`,
+				text: t("bot.cmd.openshifts.noShifts", "No open shifts found for {period}. All shifts are currently assigned.", { period: rangeDesc }),
 			};
 		}
 
 		// Build Adaptive Card with pickup buttons
-		const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://app.z8.works";
+		const appUrl = process.env.APP_URL || "https://z8-time.app";
 		const card = buildOpenShiftsCard({
 			shifts,
 			timezone: ctx.config.digestTimezone,
 			appUrl,
 			requesterId: ctx.employeeId,
-			locale: "en", // TODO: Get from user preferences
+			locale: ctx.locale,
 		});
 
 		const shiftCount = shifts.length;
@@ -133,9 +157,10 @@ async function openShiftsHandler(ctx: BotCommandContext): Promise<BotCommandResp
 		};
 	} catch (error) {
 		logger.error({ error, ctx }, "Open shifts command failed");
+		const t = await getBotTranslate(ctx.locale);
 		return {
 			type: "text",
-			text: "❌ Failed to retrieve open shifts. Please try again later.",
+			text: t("bot.cmd.openshifts.error", "Failed to retrieve open shifts. Please try again later."),
 		};
 	}
 }
@@ -151,7 +176,7 @@ const wrappedHandler = withRateLimit("openshifts", openShiftsHandler);
 export const openShiftsCommand: BotCommand = {
 	name: "openshifts",
 	aliases: ["open", "shifts", "pickup"],
-	description: "View and request open shifts",
+	description: "bot.cmd.openshifts.desc",
 	usage: "openshifts [today|tomorrow|week|month|YYYY-MM-DD]",
 	requiresAuth: true,
 	handler: wrappedHandler,

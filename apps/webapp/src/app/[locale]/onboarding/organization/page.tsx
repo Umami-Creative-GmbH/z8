@@ -7,7 +7,7 @@ import { useTranslate } from "@tolgee/react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
-import { checkSlugAvailability } from "@/app/[locale]/(app)/actions/organization";
+import { checkSlugAvailability } from "@/app/[locale]/(app)/organization-actions";
 import { ProgressIndicator } from "@/components/onboarding/progress-indicator";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -42,12 +42,11 @@ export default function OrganizationPage() {
 
 			const result = await createOrganizationOnboarding(value);
 
-			setLoading(false);
-
 			if (result.success) {
 				toast.success(t("organization.createSuccess", "Organization created successfully!"));
 				router.push("/onboarding/profile");
 			} else {
+				setLoading(false);
 				toast.error(result.error || t("organization.createError", "Failed to create organization"));
 			}
 		},
@@ -102,11 +101,10 @@ export default function OrganizationPage() {
 
 		const result = await skipOrganizationSetup();
 
-		setLoading(false);
-
 		if (result.success) {
 			router.push("/onboarding/profile");
 		} else {
+			setLoading(false);
 			toast.error(result.error || "Failed to skip organization setup");
 		}
 	}

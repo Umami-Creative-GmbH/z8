@@ -6,7 +6,7 @@ import { DateTime } from "luxon";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import type { SkillValidationResult } from "@/app/[locale]/(app)/settings/skills/actions";
+import type { SkillValidationResult } from "@/lib/effect/services/skill.service";
 
 interface SkillWarningAlertProps {
 	validation: SkillValidationResult | undefined;

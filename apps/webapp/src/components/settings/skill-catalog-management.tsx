@@ -66,8 +66,8 @@ import {
 	updateSkill,
 	deleteSkill,
 	getOrganizationSkills,
-	type SkillWithRelations,
 } from "@/app/[locale]/(app)/settings/skills/actions";
+import type { SkillWithRelations } from "@/lib/effect/services/skill.service";
 import { queryKeys } from "@/lib/query/keys";
 
 type SkillCategory = "safety" | "equipment" | "certification" | "training" | "language" | "custom";

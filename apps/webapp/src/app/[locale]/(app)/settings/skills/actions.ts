@@ -26,8 +26,6 @@ import {
 	type SkillValidationResult,
 } from "@/lib/effect/services/skill.service";
 
-// Re-export types for use by client components
-export type { SkillWithRelations, EmployeeSkillWithDetails, SkillValidationResult };
 import { CACHE_TAGS } from "@/lib/cache/tags";
 import { createLogger } from "@/lib/logger";
 

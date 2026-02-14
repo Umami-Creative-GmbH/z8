@@ -7,6 +7,7 @@ import * as authSchema from "@/db/auth-schema";
 import { telegramBotConfig, telegramUserMapping } from "@/db/schema";
 import { requireUser } from "@/lib/auth-helpers";
 import { createLogger } from "@/lib/logger";
+import { deleteOrgSecret, getOrgSecret, storeOrgSecret } from "@/lib/vault";
 
 const logger = createLogger("TelegramSettings");
 
@@ -44,7 +45,9 @@ export interface TelegramSettingsFormValues {
 	escalationTimeoutHours: number;
 }
 
-type ActionResult<T = void> = { success: true; data: T } | { success: false; error: string };
+type ActionResult<T = void> =
+	| { success: true; data: T }
+	| { success: false; error: string };
 
 // ============================================
 // HELPERS
@@ -59,7 +62,10 @@ async function requireAdmin(organizationId: string) {
 		),
 	});
 
-	if (!memberRecord || (memberRecord.role !== "owner" && memberRecord.role !== "admin")) {
+	if (
+		!memberRecord ||
+		(memberRecord.role !== "owner" && memberRecord.role !== "admin")
+	) {
 		throw new Error("Unauthorized");
 	}
 
@@ -112,24 +118,33 @@ export async function getTelegramConfig(
 export async function setupTelegramBot(
 	botToken: string,
 	organizationId: string,
-): Promise<ActionResult<{ botUsername: string | null; botDisplayName: string }>> {
+): Promise<
+	ActionResult<{ botUsername: string | null; botDisplayName: string }>
+> {
 	try {
 		const authContext = await requireAdmin(organizationId);
 
-		if (!botToken?.trim()) {
+		const trimmedToken = botToken?.trim();
+		if (!trimmedToken) {
 			return { success: false, error: "Bot token is required" };
 		}
 
 		// Verify the bot token with Telegram
 		const { getMe, setWebhook } = await import("@/lib/telegram");
 
-		const botInfo = await getMe(botToken);
+		const botInfo = await getMe(trimmedToken);
 		if (!botInfo) {
-			return { success: false, error: "Invalid bot token. Please check your BotFather token." };
+			return {
+				success: false,
+				error: "Invalid bot token. Please check your BotFather token.",
+			};
 		}
 
 		// Generate webhook secret
 		const webhookSecret = randomBytes(32).toString("hex");
+
+		// Store bot token in Vault
+		await storeOrgSecret(organizationId, "telegram/bot_token", trimmedToken);
 
 		// Check if config already exists
 		const existing = await db.query.telegramBotConfig.findFirst({
@@ -140,7 +155,7 @@ export async function setupTelegramBot(
 			await db
 				.update(telegramBotConfig)
 				.set({
-					botToken,
+					botToken: "vault:managed",
 					botUsername: botInfo.username || null,
 					botDisplayName: botInfo.first_name,
 					webhookSecret,
@@ -153,7 +168,7 @@ export async function setupTelegramBot(
 		} else {
 			await db.insert(telegramBotConfig).values({
 				organizationId,
-				botToken,
+				botToken: "vault:managed",
 				botUsername: botInfo.username || null,
 				botDisplayName: botInfo.first_name,
 				webhookSecret,
@@ -164,10 +179,14 @@ export async function setupTelegramBot(
 		}
 
 		// Register webhook with Telegram
-		const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://app.z8.works";
+		const appUrl = process.env.APP_URL || "https://z8-time.app";
 		const webhookUrl = `${appUrl}/api/telegram/webhook/${webhookSecret}`;
 
-		const webhookRegistered = await setWebhook(botToken, webhookUrl, webhookSecret);
+		const webhookRegistered = await setWebhook(
+			trimmedToken,
+			webhookUrl,
+			webhookSecret,
+		);
 
 		if (webhookRegistered) {
 			await db
@@ -228,7 +247,9 @@ export async function updateTelegramSettings(
 // DISCONNECT BOT
 // ============================================
 
-export async function disconnectTelegramBot(organizationId: string): Promise<ActionResult> {
+export async function disconnectTelegramBot(
+	organizationId: string,
+): Promise<ActionResult> {
 	try {
 		await requireAdmin(organizationId);
 
@@ -237,9 +258,22 @@ export async function disconnectTelegramBot(organizationId: string): Promise<Act
 		});
 
 		if (config) {
-			// Remove webhook from Telegram
+			// Fetch bot token from Vault (fall back to DB for pre-migration configs)
 			const { deleteWebhook } = await import("@/lib/telegram");
-			await deleteWebhook(config.botToken);
+			const vaultToken = await getOrgSecret(
+				config.organizationId,
+				"telegram/bot_token",
+			);
+			const tokenForCleanup =
+				vaultToken ||
+				(config.botToken !== "vault:managed" ? config.botToken : null);
+
+			if (tokenForCleanup) {
+				await deleteWebhook(tokenForCleanup);
+			}
+
+			// Remove bot token from Vault
+			await deleteOrgSecret(organizationId, "telegram/bot_token");
 
 			// Mark as disconnected
 			await db
@@ -309,11 +343,16 @@ export async function generateTelegramLinkCode(
 			return { success: false, error: "Unauthorized" };
 		}
 
-		const { generateLinkCode, isTelegramEnabledForOrganization } = await import("@/lib/telegram");
+		const { generateLinkCode, isTelegramEnabledForOrganization } = await import(
+			"@/lib/telegram"
+		);
 
 		const enabled = await isTelegramEnabledForOrganization(organizationId);
 		if (!enabled) {
-			return { success: false, error: "Telegram is not configured for this organization" };
+			return {
+				success: false,
+				error: "Telegram is not configured for this organization",
+			};
 		}
 
 		const { code, expiresAt } = await generateLinkCode(userId, organizationId);

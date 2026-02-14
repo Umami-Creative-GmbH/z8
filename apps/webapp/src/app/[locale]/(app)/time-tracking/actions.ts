@@ -1,6 +1,6 @@
 "use server";
 
-import { and, desc, eq, gte, inArray, isNull, lte, or } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, isNull, lte, or, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
 import { headers } from "next/headers";
@@ -1348,7 +1348,7 @@ async function validateProjectAssignment(
  * Check compliance after clocking out and log any violations
  * This is a warning-only system - it logs violations but doesn't block actions
  */
-async function checkComplianceAfterClockOut(
+export async function checkComplianceAfterClockOut(
 	employeeId: string,
 	organizationId: string,
 	workPeriodId: string,
@@ -1462,7 +1462,7 @@ async function calculateBreaksTakenToday(
  * Only runs if surcharges are enabled for the organization
  * Errors are logged but don't fail the clock-out
  */
-async function calculateAndPersistSurcharges(
+export async function calculateAndPersistSurcharges(
 	workPeriodId: string,
 	organizationId: string,
 ): Promise<void> {
@@ -1492,7 +1492,7 @@ async function calculateAndPersistSurcharges(
  * if they violate break requirements.
  * Errors are logged but don't fail the clock-out.
  */
-async function enforceBreaksAfterClockOut(input: {
+export async function enforceBreaksAfterClockOut(input: {
 	employeeId: string;
 	organizationId: string;
 	workPeriodId: string;
@@ -1582,8 +1582,6 @@ export async function createTimeEntry(params: {
 // Re-export Effect functions with cleaner names (backward compatibility)
 export const requestTimeCorrection = requestTimeCorrectionEffect;
 
-// Re-export types for consumers
-export type { ComplianceWarning } from "@/lib/effect/services/work-policy.service";
 
 /**
  * Get break reminder status for the currently active session
@@ -2076,6 +2074,9 @@ export interface AssignedProject {
 	name: string;
 	color: string | null;
 	status: string;
+	budgetHours: number | null;
+	deadline: string | null; // ISO string for serialization
+	totalHoursBooked: number;
 }
 
 /**
@@ -2118,18 +2119,63 @@ export async function getAssignedProjects(): Promise<ServerActionResult<Assigned
 			: [];
 
 		// Combine and deduplicate projects
-		const projectsMap = new Map<string, AssignedProject>();
+		const bookableProjects = new Map<
+			string,
+			{ id: string; name: string; color: string | null; status: string; budgetHours: string | null; deadline: Date | null }
+		>();
 
 		for (const assignment of [...directAssignments, ...teamAssignments]) {
 			const proj = assignment.project;
-			if (proj && bookableStatuses.includes(proj.status) && !projectsMap.has(proj.id)) {
-				projectsMap.set(proj.id, {
+			if (proj && bookableStatuses.includes(proj.status) && !bookableProjects.has(proj.id)) {
+				bookableProjects.set(proj.id, {
 					id: proj.id,
 					name: proj.name,
 					color: proj.color,
 					status: proj.status,
+					budgetHours: proj.budgetHours,
+					deadline: proj.deadline,
 				});
 			}
+		}
+
+		// Batch query: get total hours booked per project in one query
+		const projectIds = Array.from(bookableProjects.keys());
+		const hoursMap = new Map<string, number>();
+
+		if (projectIds.length > 0) {
+			const hoursResult = await db
+				.select({
+					projectId: workPeriod.projectId,
+					totalMinutes: sql<number>`COALESCE(SUM(${workPeriod.durationMinutes}), 0)`,
+				})
+				.from(workPeriod)
+				.where(
+					and(
+						inArray(workPeriod.projectId, projectIds),
+						eq(workPeriod.organizationId, emp.organizationId),
+					),
+				)
+				.groupBy(workPeriod.projectId);
+
+			for (const row of hoursResult) {
+				if (row.projectId) {
+					hoursMap.set(row.projectId, row.totalMinutes / 60);
+				}
+			}
+		}
+
+		// Build final result with budget/deadline data
+		const projectsMap = new Map<string, AssignedProject>();
+		for (const proj of bookableProjects.values()) {
+			projectsMap.set(proj.id, {
+				id: proj.id,
+				name: proj.name,
+				color: proj.color,
+				status: proj.status,
+				budgetHours: proj.budgetHours ? Number(proj.budgetHours) : null,
+				deadline: proj.deadline?.toISOString() ?? null,
+				totalHoursBooked: hoursMap.get(proj.id) ?? 0,
+			});
 		}
 
 		// Sort by name
@@ -2211,7 +2257,7 @@ export async function updateWorkPeriodProject(
  * Helper function to create an approval request for clock-out (0-day policy)
  * Creates the approval request and sends notification to manager
  */
-async function createClockOutApprovalRequest(params: {
+export async function createClockOutApprovalRequest(params: {
 	workPeriodId: string;
 	employeeId: string;
 	managerId: string;
@@ -2429,8 +2475,6 @@ export async function getWorkPeriodEditCapability(workPeriodId: string): Promise
 	}
 }
 
-// Re-export EditCapability type for UI components
-export type { EditCapability } from "@/lib/effect/services/change-policy.service";
 
 /**
  * Input for creating a manual time entry

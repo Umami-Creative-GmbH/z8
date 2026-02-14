@@ -1,6 +1,12 @@
 "use client";
 
-import { IconBriefcase, IconBuilding, IconClock, IconUsers } from "@tabler/icons-react";
+import {
+	IconBriefcase,
+	IconBuilding,
+	IconClock,
+	IconLoader2,
+	IconUsers,
+} from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useState } from "react";
 import { ProgressIndicator } from "@/components/onboarding/progress-indicator";
@@ -13,6 +19,7 @@ import { startOnboarding, updateOnboardingStep, getOnboardingSummary } from "./a
 export default function WelcomePage() {
 	const { t } = useTranslate();
 	const router = useRouter();
+	const [loading, setLoading] = useState(false);
 	const [hasOrganization, setHasOrganization] = useState(false);
 	const [organizationName, setOrganizationName] = useState<string | null>(null);
 
@@ -31,6 +38,7 @@ export default function WelcomePage() {
 	}, []);
 
 	const handleGetStarted = async () => {
+		setLoading(true);
 		// If user already has an organization (joined via invite code), skip to profile
 		if (hasOrganization) {
 			await updateOnboardingStep("profile");
@@ -138,7 +146,8 @@ export default function WelcomePage() {
 				)}
 
 				{/* CTA Button */}
-				<Button size="lg" onClick={handleGetStarted} className="w-full sm:w-auto">
+				<Button size="lg" onClick={handleGetStarted} disabled={loading} className="w-full sm:w-auto">
+					{loading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
 					{hasOrganization
 						? t("onboarding.welcome.continueSetup", "Continue Setup")
 						: t("onboarding.welcome.getStarted", "Get Started")}

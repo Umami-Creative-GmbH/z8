@@ -208,13 +208,13 @@ export const auth = betterAuth({
 		},
 	},
 	session: {
+		expiresIn: 60 * 60 * 24 * 30, // 30 days
+		updateAge: 60 * 60 * 24, // Extend session expiry on daily activity (sliding window)
 		cookieCache: {
 			enabled: true,
-			maxAge: 5 * 60, // Cache duration in seconds (5 minutes)
-			strategy: "compact", // Smallest cookie size, best performance
+			maxAge: 15 * 60, // 15 min cache before re-validating from Valkey/DB
+			strategy: "compact",
 		},
-		// When using secondary storage, don't store sessions in DB for performance
-		// Sessions are cached in Valkey which is much faster
 		storeSessionInDatabase: true, // Keep DB as source of truth for revocation
 	},
 	// Use secondary storage for rate limiting as well

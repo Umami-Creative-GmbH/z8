@@ -32,6 +32,7 @@ const NAMESPACE_MAP = {
 		"header",
 		"user",
 		"table",
+		"tour",
 		"validation",
 		"errors",
 		"info",

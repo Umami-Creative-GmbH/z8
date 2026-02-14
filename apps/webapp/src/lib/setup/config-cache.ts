@@ -1,13 +1,18 @@
+import { eq } from "drizzle-orm";
+import { revalidateTag, unstable_cache } from "next/cache";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
-import { eq } from "drizzle-orm";
-import { unstable_cache, revalidateTag } from "next/cache";
 import { createLogger } from "../logger";
 
 const logger = createLogger("SetupConfigCache");
 
 const CACHE_TAG = "platform-configured";
 const CACHE_PROFILE = "default";
+
+// In-memory flag: once the platform is configured, it never reverts.
+// This avoids per-request DB queries in middleware where unstable_cache
+// is not supported (Edge Runtime).
+let _configuredInMemory: boolean | null = null;
 
 /**
  * Internal function to query the database for platform admin existence.
@@ -22,7 +27,10 @@ async function checkPlatformConfiguredFromDb(): Promise<boolean> {
 			.limit(1);
 
 		const configured = !!admin;
-		logger.info({ configured }, "Platform configuration status checked from DB");
+		logger.info(
+			{ configured },
+			"Platform configuration status checked from DB",
+		);
 		return configured;
 	} catch (error) {
 		// Check if this is a "relation does not exist" error (42P01)
@@ -54,15 +62,22 @@ const getCachedPlatformConfigured = unstable_cache(
 	{
 		tags: [CACHE_TAG],
 		revalidate: false, // Only revalidate on explicit tag invalidation
-	}
+	},
 );
 
 /**
  * Check if the platform is configured (at least one platform admin exists).
- * Uses Next.js cache that works across requests and processes.
+ * Uses an in-memory flag as a fast path — once configured, the platform
+ * never reverts, so we skip the DB/cache entirely. Falls through to
+ * unstable_cache for the initial check (works in server components;
+ * in middleware it queries the DB directly, but only until the first `true`).
  */
 export async function isPlatformConfigured(): Promise<boolean> {
-	return getCachedPlatformConfigured();
+	if (_configuredInMemory === true) return true;
+
+	const result = await getCachedPlatformConfigured();
+	if (result) _configuredInMemory = true;
+	return result;
 }
 
 /**
@@ -82,5 +97,8 @@ export function setConfiguredStatus(status: boolean): void {
 	// In the new implementation, we just invalidate the cache
 	// and let the next check query the database
 	revalidateTag(CACHE_TAG, CACHE_PROFILE);
-	logger.info({ configured: status }, "Platform configuration cache invalidated (status will be refreshed from DB)");
+	logger.info(
+		{ configured: status },
+		"Platform configuration cache invalidated (status will be refreshed from DB)",
+	);
 }

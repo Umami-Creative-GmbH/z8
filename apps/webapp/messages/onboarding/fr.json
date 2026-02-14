@@ -143,6 +143,7 @@
       "title": "Configurer la politique de congés"
     },
     "welcome": {
+      "continueSetup": "Continuer la configuration",
       "features": {
         "absences": "Gestion des absences",
         "absencesDesc": "Demandez des congés, gérez les jours de vacances et suivez les jours fériés",
@@ -152,6 +153,7 @@
         "timeTrackingDesc": "Pointez à l'arrivée et au départ, suivez les heures de travail et gérez les corrections de temps"
       },
       "getStarted": "Commencer",
+      "joinedOrganization": "Vous avez rejoint {organization}. Terminons la configuration de votre profil.",
       "subtitle": "Commençons par une configuration rapide. Cela ne prendra que quelques minutes.",
       "title": "Bienvenue sur Z8 !"
     },

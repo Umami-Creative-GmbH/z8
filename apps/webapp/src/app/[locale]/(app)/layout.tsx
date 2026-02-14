@@ -8,7 +8,9 @@ import { ServerAppSidebar } from "@/components/server-app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { auth } from "@/lib/auth";
+import { getUserLocaleRaw } from "@/lib/bot-platform/i18n";
 import { DOMAIN_HEADERS } from "@/proxy";
+import { setLanguage } from "@/tolgee/language";
 
 interface AppLayoutProps {
 	children: ReactNode;
@@ -16,10 +18,9 @@ interface AppLayoutProps {
 }
 
 export default async function AppLayout({ children, params }: AppLayoutProps) {
-	const { locale } = await params;
+	const [{ locale }, headersList] = await Promise.all([params, headers()]);
 
 	// Centralized auth check - protects all routes in the (app) group
-	const headersList = await headers();
 	const session = await auth.api.getSession({ headers: headersList });
 
 	if (!session?.user) {
@@ -29,6 +30,16 @@ export default async function AppLayout({ children, params }: AppLayoutProps) {
 		const pathname = headersList.get(DOMAIN_HEADERS.PATHNAME) || `/${locale}`;
 		const sessionExpiredUrl = `/api/auth/session-expired?locale=${locale}&callbackUrl=${encodeURIComponent(pathname)}`;
 		redirect(sessionExpiredUrl);
+	}
+
+	// Sync DB locale preference on load (null = user hasn't set preference, respect browser/cookie)
+	const dbLocale = await getUserLocaleRaw(session.user.id);
+	if (dbLocale && dbLocale !== locale) {
+		// User has a saved locale preference that differs from current URL — redirect
+		await setLanguage(dbLocale);
+		const pathname = headersList.get(DOMAIN_HEADERS.PATHNAME) || `/${locale}`;
+		const newPath = pathname.replace(`/${locale}`, `/${dbLocale}`);
+		redirect(newPath);
 	}
 
 	return (

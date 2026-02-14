@@ -19,12 +19,15 @@
       "uninterrupted": "Lavoro ininterrotto",
       "warningMessage": "Hai {minutes} minuti prima che sia richiesta una pausa."
     },
+    "budget": "Budget",
     "clockedOutSuccess": "Hai timbrato l'uscita!",
     "clockIn": "Entrata",
     "clockingIn": "Timbratura entrata...",
     "clockingOut": "Timbratura uscita...",
+    "clockInQueued": "Ingresso in coda per la sincronizzazione",
     "clockInSuccess": "Entrata timbrata con successo",
     "clockOut": "Uscita",
+    "clockOutQueued": "Uscita in coda per la sincronizzazione",
     "clockOutSuccess": "Uscita timbrata con successo",
     "compliance": {
       "violation": "Violazione conformità",
@@ -59,20 +62,57 @@
       "timezoneNote": "Gli orari sono nel tuo fuso orario locale ({timezone})"
     },
     "currentlyClockedIn": "Attualmente hai timbrato l'entrata",
+    "deadline": "Scadenza",
     "errors": {
       "clockInFailed": "Timbratura entrata non riuscita",
       "clockOutFailed": "Timbratura uscita non riuscita",
       "holidayBlocked": "Impossibile timbrare l'uscita il {holidayName}",
       "holidayBlockedDesc": "Questo giorno è segnato come festivo e le voci orarie non sono consentite",
-      "notesSaveFailed": "Salvataggio note non riuscito"
+      "notesSaveFailed": "Salvataggio note non riuscito",
+      "restPeriodBlocked": "Periodo di riposo non completato",
+      "restPeriodBlockedDesc": "Devi completare il periodo di riposo obbligatorio prima di timbrare l'ingresso. Richiedi un'eccezione se necessario."
     },
+    "manualEntry": {
+      "addButton": "Aggiungi voce manuale",
+      "clockInLabel": "Timbra ingresso",
+      "clockOutLabel": "Timbra uscita",
+      "dateLabel": "Data",
+      "description": "Crea una voce di tempo per una data passata. Potrebbe essere richiesta l'approvazione in base alla policy della tua organizzazione.",
+      "errors": {
+        "createFailed": "Impossibile creare la voce di tempo",
+        "futureDate": "Impossibile creare voci per date future",
+        "invalidTimeRange": "L'orario di uscita deve essere successivo all'orario di ingresso",
+        "tooLong": "Il periodo di lavoro non può superare le 24 ore"
+      },
+      "reasonLabel": "Motivo",
+      "reasonPlaceholder": "Descrivi il lavoro svolto...",
+      "submit": "Crea voce",
+      "submitting": "Creazione in corso...",
+      "success": {
+        "adjusted": "Orari modificati in {clockIn} - {clockOut} per evitare sovrapposizioni",
+        "created": "Voce di tempo creata con successo",
+        "pendingApproval": "Voce di tempo inviata per l'approvazione del manager"
+      },
+      "title": "Aggiungi voce di tempo manuale"
+    },
+    "noCategory": "Nessuna categoria (100%)",
     "noProject": "Nessun progetto",
     "notesPlaceholder": "Su cosa hai lavorato?",
     "notesSaved": "Note salvate",
     "project": "Progetto",
     "readyToClockIn": "Pronto a lavorare?",
+    "restPeriodWarning": "Avviso periodo di riposo",
+    "restPeriodWarningMessage": "Non hai completato il periodo di riposo richiesto. Timbrare l'entrata ora verrà registrato come una violazione.",
+    "selectCategory": "Seleziona una categoria",
     "selectProject": "Seleziona un progetto",
     "startedAt": "Iniziato alle",
+    "summary": {
+      "baseWorked": "Base lavorata",
+      "surcharge": "Maggiorazione",
+      "thisMonth": "Questo mese",
+      "thisWeek": "Questa settimana",
+      "today": "Oggi"
+    },
     "table": {
       "active": "Attivo",
       "clockIn": "Entrata",
@@ -85,7 +125,10 @@
       "title": "Voci orarie"
     },
     "title": "Rilevazione presenze",
-    "welcomeBack": "Bentornato, {name}"
+    "unknownCategory": "Categoria sconosciuta",
+    "unknownProject": "Progetto sconosciuto",
+    "welcomeBack": "Bentornato, {name}",
+    "workCategory": "Categoria lavorativa"
   },
   "wellness": {
     "water": {

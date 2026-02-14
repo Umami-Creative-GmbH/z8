@@ -1,4 +1,5 @@
 import {
+	IconAddressBook,
 	IconBeach,
 	IconBell,
 	IconBrandTelegram,
@@ -15,13 +16,13 @@ import {
 	IconDatabaseExport,
 	IconDatabaseImport,
 	IconDroplet,
+	IconFileText,
 	IconGavel,
 	IconHistory,
 	IconKey,
 	IconMail,
 	IconMapPin,
 	IconPercentage,
-	IconRadar,
 	IconServer,
 	IconShield,
 	IconShieldCheck,
@@ -39,6 +40,7 @@ export const SETTINGS_ICON_MAP: Record<
 	SettingsIconName,
 	React.ComponentType<{ className?: string }>
 > = {
+	"address-book": IconAddressBook,
 	"user-circle": IconUserCircle,
 	shield: IconShield,
 	"shield-check": IconShieldCheck,
@@ -66,10 +68,10 @@ export const SETTINGS_ICON_MAP: Record<
 	key: IconKey,
 	webhook: IconWebhook,
 	"calendar-sync": IconCalendarShare,
-	radar: IconRadar,
 	target: IconTarget,
 	certificate: IconCertificate,
 	"credit-card": IconCreditCard,
+	"file-text": IconFileText,
 	"brand-telegram": IconBrandTelegram,
 	"database-import": IconDatabaseImport,
 };

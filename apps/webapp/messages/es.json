@@ -1,0 +1,466 @@
+{
+  "accessDenied": {
+    "contactAdmin": "Por favor, póngase en contacto con el administrador de su organización para solicitar acceso.",
+    "description": "Su cuenta no tiene permiso para acceder a {{appLabel}}.",
+    "signOut": "Cerrar sesión",
+    "title": "Acceso restringido"
+  },
+  "admin": {
+    "layout": {
+      "exitAdmin": "Salir de Admin",
+      "nav": {
+        "billing": "Facturación",
+        "organizations": "Organizaciones",
+        "overview": "Resumen",
+        "settings": "Configuración",
+        "users": "Usuarios"
+      },
+      "subtitle": "Gestión de la plataforma",
+      "title": "Consola de administración"
+    },
+    "organizations": {
+      "badges": {
+        "deleted": "Eliminado",
+        "suspended": "Suspendido"
+      },
+      "deleteDialog": {
+        "confirmButton": "Eliminar organización",
+        "confirmLabel": "Escribe \"{name}\" para confirmar",
+        "confirmPlaceholder": "Nombre de la organización",
+        "description": "Esta acción eliminará \"{name}\" y todos los datos asociados. Esto no se puede deshacer.",
+        "immediateDelete": "Eliminar de inmediato (omitir el periodo de gracia de 5 días)",
+        "skipNotification": "Omitir la notificación de eliminación a los miembros de la organización",
+        "title": "Eliminar organización"
+      },
+      "description": "Ver y gestionar todas las organizaciones de la plataforma",
+      "filters": {
+        "all": "Todas",
+        "deleted": "Eliminadas",
+        "suspended": "Suspendidas"
+      },
+      "pagination": {
+        "showing": "Mostrando de {from} a {to} de {total} organizaciones"
+      },
+      "searchPlaceholder": "Buscar por nombre o slug…",
+      "suspendDialog": {
+        "confirmButton": "Suspender organización",
+        "description": "Suspender \"{name}\" y ponerla en modo de solo lectura. Los miembros podrán ver los datos, pero no podrán crear ni editar nada.",
+        "reason": "Motivo",
+        "reasonPlaceholder": "Introduce el motivo para suspender esta organización…",
+        "title": "Suspender organización"
+      },
+      "table": {
+        "created": "Creada",
+        "employees": "Empleados",
+        "members": "Miembros",
+        "noOrganizationsFound": "No se encontraron organizaciones",
+        "organization": "Organización"
+      },
+      "title": "Gestión de organizaciones",
+      "toasts": {
+        "deletedGracePeriod": "La organización \"{name}\" ha sido programada para su eliminación en 5 días",
+        "deletedImmediate": "La organización \"{name}\" ha sido programada para su eliminación inmediata",
+        "suspended": "La organización \"{name}\" ha sido suspendida",
+        "unsuspended": "La organización \"{name}\" ha dejado de estar suspendida"
+      }
+    },
+    "overview": {
+      "description": "Métricas de la plataforma y acciones rápidas",
+      "metrics": {
+        "bannedUsers": "Usuarios baneados",
+        "bannedUsersDescription": "Acceso restringido",
+        "licensedSeats": "Asientos con licencia",
+        "licensedSeatsDescription": "En todas las suscripciones",
+        "mrr": "MRR",
+        "mrrDescription": "Ingresos mensuales recurrentes (€)",
+        "organizations": "Organizaciones",
+        "organizationsDescription": "Espacios de trabajo activos",
+        "suspended": "Suspendida",
+        "suspendedDescription": "Organizaciones de solo lectura",
+        "title": "Métricas de la plataforma",
+        "totalUsers": "Total de usuarios",
+        "totalUsersDescription": "Cuentas registradas en la plataforma"
+      },
+      "quickActions": {
+        "billing": {
+          "description": "Métricas de ingresos y estado de suscripción",
+          "title": "Facturación y suscripciones"
+        },
+        "organizations": {
+          "description": "Suspender, eliminar o revisar organizaciones",
+          "title": "Gestión de organizaciones"
+        },
+        "title": "Acciones rápidas",
+        "users": {
+          "description": "Banear/desbanear usuarios, gestionar sesiones, ver actividad",
+          "title": "Gestión de usuarios"
+        }
+      },
+      "title": "Resumen"
+    },
+    "users": {
+      "badges": {
+        "admin": "Administrador",
+        "banExpiresUntil": "Hasta el {date}",
+        "banned": "Baneado",
+        "user": "Usuario"
+      },
+      "banDialog": {
+        "confirmButton": "Banear usuario",
+        "description": "Banear a {email} para que no acceda a la plataforma.",
+        "expiry": "Fecha de expiración (opcional)",
+        "permanentBanHint": "Dejar vacío para un baneo permanente",
+        "reason": "Motivo",
+        "reasonPlaceholder": "Ingrese el motivo para banear a este usuario…",
+        "title": "Banear usuario"
+      },
+      "description": "Ver y gestionar todos los usuarios de la plataforma",
+      "filters": {
+        "allUsers": "Todos los usuarios",
+        "banned": "Baneados"
+      },
+      "pagination": {
+        "showing": "Mostrando de {from} a {to} de {total} usuarios"
+      },
+      "searchPlaceholder": "Buscar por nombre o correo electrónico…",
+      "sessionsDialog": {
+        "description": "Sesiones activas de {email}",
+        "noSessions": "No hay sesiones activas",
+        "revokeAll": "Revocar todas las sesiones",
+        "title": "Sesiones de usuario",
+        "unknownDevice": "Dispositivo desconocido",
+        "unknownIp": "IP desconocida"
+      },
+      "table": {
+        "created": "Creado",
+        "noUsersFound": "No se encontraron usuarios",
+        "role": "Rol",
+        "user": "Usuario"
+      },
+      "title": "Gestión de usuarios",
+      "toasts": {
+        "banned": "El usuario {email} ha sido baneado",
+        "sessionRevoked": "Sesión revocada",
+        "sessionsRevoked": "Se han revocado {count} sesiones",
+        "unbanned": "El usuario {email} ha sido desbaneado"
+      }
+    }
+  },
+  "approvals": {
+    "absenceApproved": "Solicitud de ausencia aprobada",
+    "absenceRejected": "Solicitud de ausencia rechazada",
+    "age": "Edad",
+    "approve": "Aprobar",
+    "approved": "Solicitud aprobada",
+    "approveFailed": "Error al aprobar",
+    "approveSelected": "Aprobar seleccionados",
+    "approveTimeCorrectionTitle": "Aprobar corrección de tiempo",
+    "approveTitle": "Aprobar solicitud de ausencia",
+    "bulkApproveFailed": "${result.failed.length} solicitud(es) fallida(s)",
+    "bulkApproveSuccess": "${result.succeeded.length} solicitud(es) aprobada(s)",
+    "category": "Categoría",
+    "changed": "Cambiado",
+    "confirmReject": "Confirmar rechazo",
+    "correctedTimes": "Tiempos corregidos",
+    "date": "Fecha",
+    "dates": "Fechas",
+    "days": "Días",
+    "details": "Detalles",
+    "employee": "Empleado",
+    "filterByAge": "Filtrar por edad",
+    "filterByPriority": "Filtrar por prioridad",
+    "filterByType": "Filtrar por tipo",
+    "inbox": "Bandeja de entrada de aprobaciones",
+    "inboxDescription": "Revisa y aprueba las solicitudes pendientes de tu equipo",
+    "loadError": "Error al cargar las aprobaciones",
+    "noAbsenceApprovals": "No hay solicitudes de ausencia pendientes para revisar.",
+    "noRequests": "No hay solicitudes pendientes",
+    "noRequestsDescription": "Cuando los miembros del equipo envíen solicitudes, aparecerán aquí",
+    "noSearchResults": "Ninguna aprobación coincide con tu búsqueda.",
+    "notes": "Notas",
+    "noTimeCorrectionApprovals": "No hay solicitudes de corrección de tiempo pendientes para revisar.",
+    "offFrom": "fuera desde",
+    "originalTimes": "Horarios originales",
+    "pendingRequests": "Solicitudes pendientes",
+    "pendingRequestsDescription": "Selecciona solicitudes para aprobar en lote, o haz clic en una fila para ver detalles",
+    "priority": "Prioridad",
+    "reason": "Motivo",
+    "reject": "Rechazar",
+    "rejected": "Solicitud rechazada",
+    "rejectFailed": "Error al rechazar",
+    "rejectionReason": "Motivo del rechazo",
+    "rejectionReasonPlaceholder": "Por favor, proporciona un motivo para rechazar esta solicitud…",
+    "rejectTimeCorrectionTitle": "Rechazar corrección de tiempo",
+    "rejectTitle": "Rechazar solicitud de ausencia",
+    "requested": "Solicitado",
+    "requester": "Solicitante",
+    "requestingCorrection": "está solicitando una corrección de tiempo para",
+    "requestingOff": "está solicitando",
+    "searchLabel": "Buscar aprobaciones",
+    "searchPlaceholder": "Buscar por nombre o correo electrónico…",
+    "selectAll": "Seleccionar todo",
+    "selectRow": "Seleccionar fila",
+    "sla": "SLA",
+    "slaDeadline": "Fecha límite de SLA",
+    "status": "Estado",
+    "timeCorrectionApproved": "Corrección de tiempo aprobada",
+    "timeCorrectionRejected": "Corrección de tiempo rechazada",
+    "timeline": "Cronología",
+    "type": "Tipo"
+  },
+  "colors": {
+    "blue": "Azul",
+    "green": "Verde",
+    "indigo": "Índigo",
+    "orange": "Naranja",
+    "pink": "Rosa",
+    "purple": "Púrpura",
+    "red": "Rojo",
+    "teal": "Verde azulado"
+  },
+  "compliance": {
+    "exception": {
+      "approved": "Excepción aprobada",
+      "approvedDescription": "La excepción de cumplimiento ha sido aprobada.",
+      "approveFailed": "Error al aprobar",
+      "plannedDuration": "Planificado",
+      "plannedDurationHelp": "Estime cuánto tiempo adicional espera necesitar más allá del límite.",
+      "reason": "Motivo de la excepción",
+      "reasonPlaceholder": "Explique por qué necesita esta excepción (p. ej., fecha límite de proyecto urgente, reunión crítica con un cliente)...",
+      "reasonRequired": "Motivo requerido",
+      "reasonRequiredDescription": "Proporcione un motivo para su solicitud de excepción.",
+      "rejectDescription": "Proporcione un motivo para rechazar esta solicitud de excepción (opcional)",
+      "rejected": "Excepción rechazada",
+      "rejectedDescription": "La excepción de cumplimiento ha sido rechazada.",
+      "rejectFailed": "Error al rechazar",
+      "rejectionPlaceholder": "Ingrese el motivo para rechazar esta excepción...",
+      "rejectionReason": "Motivo del rechazo",
+      "rejectTitle": "Rechazar solicitud de excepción",
+      "requestDescription": "Solicite la aprobación previa de su gerente para proceder a pesar de las restricciones de cumplimiento. Las excepciones aprobadas son válidas por 24 horas.",
+      "requestedAt": "Solicitado",
+      "requestFailed": "Error en la solicitud",
+      "requestSubmitted": "Solicitud de excepción enviada",
+      "requestSubmittedDescription": "Su gerente será notificado y podrá aprobar o rechazar su solicitud.",
+      "requestTitle": "Solicitar excepción de cumplimiento",
+      "submit": "Enviar solicitud",
+      "type": "Tipo de excepción"
+    },
+    "hasApprovedException": "Tiene una excepción aprobada. Puede proceder.",
+    "moreAlerts": "más",
+    "noExceptions": "No hay solicitudes de excepción pendientes",
+    "pendingExceptions": "Solicitudes de excepción pendientes",
+    "pendingExceptionsDescription": "Revise las solicitudes de excepción que requieren su aprobación",
+    "requestException": "Solicitar excepción",
+    "restPeriodMessage": "Necesita {{time}} más de descanso antes de poder marcar entrada. Próximo inicio permitido: {{nextTime}}",
+    "restPeriodRequired": "Periodo de descanso obligatorio"
+  },
+  "employeeSelect": {
+    "countSelected": "{count} empleados seleccionados",
+    "countWithMore": "{count} empleados (+{more} más)",
+    "noEmployeesFound": "No se encontraron empleados",
+    "role": "Rol",
+    "searchPlaceholder": "Buscar por nombre, correo o puesto...",
+    "selected": "{count} seleccionados",
+    "selectEmployee": "Seleccionar empleado",
+    "selectEmployees": "Seleccionar empleados",
+    "selectMultipleEmployees": "Elija uno o más empleados de la lista",
+    "selectOneEmployee": "Elija un empleado de la lista",
+    "status": "Estado",
+    "team": "Equipo",
+    "totalEmployees": "{count} empleados",
+    "tryDifferentSearch": "Intente ajustar su búsqueda o filtros"
+  },
+  "init": {
+    "activating": "Configurando su espacio de trabajo...",
+    "checking": "Comprobando sesión...",
+    "clickToSelect": "Haga clic para seleccionar",
+    "redirecting": "Redirigiendo...",
+    "selectOrganization": "Seleccionar Organización",
+    "selectOrganizationDescription": "Elija con qué organización desea trabajar"
+  },
+  "offline": {
+    "banner": {
+      "offline": "No tiene conexión",
+      "offlineWithPending": "Sin conexión - {count} evento(s) pendiente(s)",
+      "pending": "{count} evento(s) pendiente(s) de sincronización",
+      "retry": "Reintentar",
+      "syncing": "Sincronizando {count} evento(s)..."
+    }
+  },
+  "roles": {
+    "admin": "Administrador",
+    "employee": "Empleado",
+    "manager": "Gerente"
+  },
+  "scheduling": {
+    "coverage": {
+      "adequate": "Personal adecuado",
+      "byLocation": "Por ubicación:",
+      "gapCount": "Escasez de {{count}} empleados",
+      "gaps": "brechas",
+      "hideOverlay": "Ocultar superposición de cobertura",
+      "metSlots": "{{count}} adecuado",
+      "overSlots": "{{count}} con exceso de personal",
+      "overstaffed": "Exceso de personal",
+      "showOverlay": "Mostrar superposición de objetivos de cobertura",
+      "summary": "Resumen de cobertura:",
+      "toggleLabel": "Cobertura",
+      "underSlots": "{{count}} con falta de personal",
+      "understaffed": "Falta de personal",
+      "utilization": "{{percent}}% de utilización"
+    },
+    "skills": {
+      "expiredCertifications": "Certificaciones vencidas:",
+      "expiredOn": "(Venció el {{date}})",
+      "missingPreferred": "Habilidades preferidas faltantes:",
+      "missingPreferredCount": "faltan {{count}} preferidas",
+      "missingRequired": "Habilidades requeridas faltantes:",
+      "preferred": "Preferida",
+      "preferredSkillsMissing": "Faltan habilidades preferidas",
+      "requirementsNotMet": "Requisitos de habilidades no cumplidos",
+      "unqualified": "No calificado",
+      "validating": "Validando habilidades…",
+      "validatingDescription": "Comprobando las cualificaciones del empleado",
+      "warningMessage": "Aún puede asignar este turno, pero se registrará como una anulación."
+    }
+  },
+  "setup": {
+    "button": {
+      "create": "Crear cuenta de administrador",
+      "creating": "Creando cuenta..."
+    },
+    "complete_message": "Se ha creado su cuenta de administrador de la plataforma.",
+    "complete_title": "¡Configuración completada!",
+    "continue_to_sign_in": "Continuar al inicio de sesión",
+    "creating_account": "Creando su cuenta de administrador...",
+    "description": "Configure la primera cuenta de administrador para su plataforma. Esta cuenta tendrá acceso total al sistema y es independiente de las cuentas de la organización.",
+    "error": {
+      "passwords_mismatch": "Las contraseñas no coinciden"
+    },
+    "field": {
+      "confirm_password": "Confirmar contraseña",
+      "confirm_password_placeholder": "Confirme su contraseña",
+      "email": "Dirección de correo electrónico",
+      "email_placeholder": "admin@suempresa.com",
+      "name": "Nombre completo",
+      "name_placeholder": "Introduzca su nombre completo",
+      "password": "Contraseña",
+      "password_placeholder": "Cree una contraseña segura"
+    },
+    "hide_password": "Ocultar contraseña",
+    "layout": {
+      "subtitle": "Configure su plataforma para comenzar",
+      "title": "Configuración inicial"
+    },
+    "password": {
+      "lowercase": "Letra minúscula",
+      "min_length": "Más de 12 caracteres",
+      "number": "Número",
+      "uppercase": "Letra mayúscula"
+    },
+    "please_wait": "Espere mientras configuramos todo",
+    "show_password": "Mostrar contraseña",
+    "sign_in_with": "Ahora puedes iniciar sesión con",
+    "title": "Crear administrador de la plataforma"
+  },
+  "status": {
+    "active": "Activo",
+    "inactive": "Inactivo"
+  },
+  "time": {
+    "am": "AM",
+    "hoursAndMinutes": "{hours}h {minutes}m",
+    "hoursOnly": "{hours}h",
+    "pm": "PM"
+  },
+  "webhooks": {
+    "copy-failed": "Error al copiar al portapapeles",
+    "create": "Añadir webhook",
+    "create-failed": "Error al crear el webhook",
+    "delete-confirm": {
+      "description": "Esto eliminará permanentemente el punto de conexión del webhook y todo el historial de entregas. Esta acción no se puede deshacer.",
+      "title": "¿Eliminar webhook?"
+    },
+    "deleted": "Webhook eliminado",
+    "delete-failed": "Error al eliminar el webhook",
+    "deliveries": "Entregas",
+    "description": "Configure puntos de conexión de webhook para recibir notificaciones en tiempo real cuando ocurran eventos en su organización.",
+    "disabled": "Webhook desactivado",
+    "empty": {
+      "description": "Cree su primer webhook para comenzar a recibir notificaciones de eventos.",
+      "title": "No hay webhooks configurados"
+    },
+    "enabled": "Webhook activado",
+    "events": "Eventos",
+    "form": {
+      "create": "Crear Webhook",
+      "create-description": "Configure un nuevo punto de conexión de webhook para recibir notificaciones de eventos.",
+      "create-title": "Crear Webhook",
+      "description": "Descripción",
+      "description-placeholder": "¿Para qué se utiliza este webhook?",
+      "deselect-all": "Deseleccionar todo",
+      "edit-description": "Actualizar la configuración del punto de conexión del webhook.",
+      "edit-title": "Editar Webhook",
+      "events": "Eventos a recibir",
+      "events-hint": "Eventos seleccionados: {{count}}",
+      "events-required": "Se debe seleccionar al menos un evento",
+      "name": "Nombre",
+      "name-placeholder": "Mi Webhook",
+      "name-required": "El nombre es obligatorio",
+      "select-all": "Seleccionar todo",
+      "url": "URL del punto de conexión",
+      "url-hint": "Se requiere HTTPS en producción. Los eventos se enviarán como solicitudes POST.",
+      "url-required": "La URL es obligatoria"
+    },
+    "last-delivery": "Último",
+    "logs": {
+      "attempt": "Intento",
+      "description": "Intentos recientes de entrega de webhooks y sus resultados.",
+      "duration": "Duración",
+      "empty": "Aún no hay registros de entrega",
+      "error": "Error",
+      "event": "Evento",
+      "failed": "Fallido",
+      "http": "HTTP",
+      "payload": "Carga útil",
+      "pending": "Pendiente",
+      "response": "Respuesta",
+      "retrying": "Reintentando",
+      "showing": "Mostrando {{start}}-{{end}} de {{total}}",
+      "status": "Estado",
+      "success": "Éxito",
+      "time": "Hora",
+      "title": "Registros de entrega"
+    },
+    "regenerate-failed": "Error al regenerar el secreto",
+    "regenerate-secret": "Regenerar secreto",
+    "secret-copied": "Secreto copiado al portapapeles",
+    "secret-dialog": {
+      "copy-secret": "Copiar secreto al portapapeles",
+      "description": "Este secreto se utiliza para verificar las firmas de los webhooks. Guárdelo de forma segura.",
+      "done": "He guardado el secreto",
+      "secret": "Secreto de firma",
+      "title": "Secreto de webhook",
+      "verification": "Verificación de firma",
+      "verification-hint": "Verifique las firmas de los webhooks mediante HMAC-SHA256. La firma se envía en el encabezado X-Z8-Signature.",
+      "warning": "Este secreto solo se mostrará una vez. Asegúrese de guardarlo ahora.",
+      "warning-title": "Importante"
+    },
+    "secret-regenerated": "Secreto regenerado",
+    "status": {
+      "degraded": "Degradado",
+      "failing": "Fallando",
+      "healthy": "Saludable",
+      "inactive": "Inactivo"
+    },
+    "success-rate": "Éxito",
+    "test": "Enviar prueba",
+    "test-failed": "Error al enviar el webhook de prueba",
+    "test-sent": "Webhook de prueba enviado",
+    "title": "Webhooks",
+    "toggle-active": "Alternar estado del webhook",
+    "updated": "Webhook actualizado",
+    "update-failed": "Error al actualizar el webhook",
+    "view-logs": "Ver registros"
+  }
+}

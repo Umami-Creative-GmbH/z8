@@ -655,16 +655,15 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 				<>
 					{/* Turnstile widget */}
 					{turnstileConfig?.enabled && turnstileConfig.siteKey && (
-						<div className="flex justify-center">
-							<TurnstileWidget
-								ref={turnstileRef}
-								siteKey={turnstileConfig.siteKey}
-								onVerify={handleTurnstileVerify}
-								onError={handleTurnstileError}
-								onExpire={handleTurnstileExpire}
-								onTimeout={handleTurnstileTimeout}
-							/>
-						</div>
+						<TurnstileWidget
+							ref={turnstileRef}
+							siteKey={turnstileConfig.siteKey}
+							onVerify={handleTurnstileVerify}
+							onError={handleTurnstileError}
+							onExpire={handleTurnstileExpire}
+							onTimeout={handleTurnstileTimeout}
+							className="!absolute !overflow-hidden !h-0 !w-0"
+						/>
 					)}
 
 					<Button
