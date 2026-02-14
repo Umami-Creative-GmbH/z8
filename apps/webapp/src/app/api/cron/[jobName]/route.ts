@@ -15,18 +15,24 @@
 
 import { headers } from "next/headers";
 import { connection, type NextRequest, NextResponse } from "next/server";
+import { env } from "@/env";
 import { CRON_JOBS, type CronJobName, isCronJobName } from "@/lib/cron/registry";
 import { createJobExecution, getJobExecution, updateJobExecution } from "@/lib/cron/tracking";
 import { createLogger } from "@/lib/logger";
 import { addCronJob } from "@/lib/queue";
 
 const logger = createLogger("cron-api");
-const CRON_SECRET = process.env.CRON_SECRET;
+const CRON_SECRET = env.CRON_SECRET;
 
 /**
  * Verify the request is from a valid cron source
  */
 async function verifyCronAuth(request: NextRequest): Promise<boolean> {
+	// Fail closed if CRON_SECRET is not configured
+	if (!CRON_SECRET) {
+		return false;
+	}
+
 	// Check for Bearer token in Authorization header
 	const headersList = await headers();
 	const authHeader = headersList.get("authorization");

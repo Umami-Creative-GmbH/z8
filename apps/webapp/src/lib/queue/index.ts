@@ -229,6 +229,7 @@ export async function getJobStatus(jobId: string): Promise<{
 	progress: number;
 	result?: JobResult;
 	error?: string;
+	organizationId?: string;
 } | null> {
 	const queue = getJobQueue();
 	const job = await queue.getJob(jobId);
@@ -240,11 +241,18 @@ export async function getJobStatus(jobId: string): Promise<{
 	const state = await job.getState();
 	const progress = (job.progress as number) || 0;
 
+	// Extract organizationId from job data for authorization checks
+	const organizationId =
+		job.data && "organizationId" in job.data
+			? (job.data as { organizationId: string }).organizationId
+			: undefined;
+
 	return {
 		state,
 		progress,
 		result: job.returnvalue,
 		error: job.failedReason,
+		organizationId,
 	};
 }
 
