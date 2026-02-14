@@ -10,6 +10,7 @@ import {
 	workPolicyAssignment,
 	workPolicyBreakOption,
 	workPolicyBreakRule,
+	workPolicyPresence,
 	workPolicyPreset,
 	workPolicyRegulation,
 	workPolicySchedule,
@@ -46,6 +47,7 @@ export type WorkPolicyWithDetails = typeof workPolicy.$inferSelect & {
 				})[];
 		  })
 		| null;
+	presence: (typeof workPolicyPresence.$inferSelect) | null;
 };
 
 export type WorkPolicyAssignmentWithDetails = typeof workPolicyAssignment.$inferSelect & {
@@ -92,6 +94,17 @@ export interface CreateWorkPolicyInput {
 	description?: string;
 	scheduleEnabled: boolean;
 	regulationEnabled: boolean;
+	presenceEnabled: boolean;
+
+	// Presence fields (used when presenceEnabled = true)
+	presence?: {
+		presenceMode: "minimum_count" | "fixed_days";
+		requiredOnsiteDays?: number;
+		requiredOnsiteFixedDays?: string[];
+		locationId?: string;
+		evaluationPeriod?: "weekly" | "biweekly" | "monthly";
+		enforcement?: "block" | "warn" | "none";
+	};
 
 	// Schedule fields (used when scheduleEnabled = true)
 	schedule?: {
@@ -165,6 +178,7 @@ export async function getWorkPolicies(
 								},
 							},
 						},
+						presence: true,
 					},
 					orderBy: (p, { asc }) => [asc(p.name)],
 				});
@@ -187,7 +201,7 @@ export async function getWorkPolicy(
 		const dbService = yield* _(DatabaseService);
 		const policy = yield* _(
 			dbService.query("getWorkPolicy", async () => {
-				return await dbService.db.query.workPolicy.findFirst({
+			return await dbService.db.query.workPolicy.findFirst({
 					where: eq(workPolicy.id, policyId),
 					with: {
 						schedule: {
@@ -205,6 +219,7 @@ export async function getWorkPolicy(
 								},
 							},
 						},
+						presence: true,
 					},
 				});
 			}),
@@ -267,11 +282,11 @@ export async function createWorkPolicy(
 		}
 
 		// Validate at least one feature is enabled
-		if (!data.scheduleEnabled && !data.regulationEnabled) {
+		if (!data.scheduleEnabled && !data.regulationEnabled && !data.presenceEnabled) {
 			yield* _(
 				Effect.fail(
 					new ValidationError({
-						message: "At least one feature (schedule or regulation) must be enabled",
+						message: "At least one feature (schedule, regulation, or presence) must be enabled",
 						field: "scheduleEnabled",
 					}),
 				),
@@ -316,6 +331,7 @@ export async function createWorkPolicy(
 						description: data.description,
 						scheduleEnabled: data.scheduleEnabled,
 						regulationEnabled: data.regulationEnabled,
+						presenceEnabled: data.presenceEnabled ?? false,
 						createdBy: session.user.id,
 						updatedAt: currentTimestamp(),
 					})
@@ -414,6 +430,26 @@ export async function createWorkPolicy(
 			}
 		}
 
+		// Create presence config if enabled
+		if (data.presenceEnabled && data.presence) {
+			yield* _(
+				dbService.query("createPresence", async () => {
+					await dbService.db.insert(workPolicyPresence).values({
+						policyId: newPolicy.id,
+						presenceMode: data.presence!.presenceMode,
+						requiredOnsiteDays: data.presence!.requiredOnsiteDays ?? null,
+						requiredOnsiteFixedDays: data.presence!.requiredOnsiteFixedDays
+							? JSON.stringify(data.presence!.requiredOnsiteFixedDays)
+							: null,
+						locationId: data.presence!.locationId || null,
+						evaluationPeriod: data.presence!.evaluationPeriod ?? "weekly",
+						enforcement: data.presence!.enforcement ?? "warn",
+						updatedAt: currentTimestamp(),
+					});
+				}),
+			);
+		}
+
 		// Fetch complete policy
 		const completePolicy = yield* _(
 			dbService.query("fetchComplete", async () => {
@@ -430,6 +466,7 @@ export async function createWorkPolicy(
 								},
 							},
 						},
+						presence: true,
 					},
 				});
 			}),
@@ -474,6 +511,7 @@ export async function updateWorkPolicy(
 					with: {
 						schedule: true,
 						regulation: true,
+						presence: true,
 					},
 				});
 			}),
@@ -545,6 +583,7 @@ export async function updateWorkPolicy(
 						description: data.description ?? existingPolicy!.description,
 						scheduleEnabled: data.scheduleEnabled ?? existingPolicy!.scheduleEnabled,
 						regulationEnabled: data.regulationEnabled ?? existingPolicy!.regulationEnabled,
+						presenceEnabled: data.presenceEnabled ?? existingPolicy!.presenceEnabled,
 						updatedBy: session.user.id,
 						updatedAt: currentTimestamp(),
 					})
@@ -665,6 +704,38 @@ export async function updateWorkPolicy(
 			}
 		}
 
+		// Update presence if provided
+		if (data.presence !== undefined) {
+			// Delete existing presence config
+			yield* _(
+				dbService.query("deleteOldPresence", async () => {
+					await dbService.db
+						.delete(workPolicyPresence)
+						.where(eq(workPolicyPresence.policyId, policyId));
+				}),
+			);
+
+			// Create new presence config if enabled
+			if ((data.presenceEnabled ?? existingPolicy!.presenceEnabled) && data.presence) {
+				yield* _(
+					dbService.query("createPresence", async () => {
+						await dbService.db.insert(workPolicyPresence).values({
+							policyId,
+							presenceMode: data.presence!.presenceMode,
+							requiredOnsiteDays: data.presence!.requiredOnsiteDays ?? null,
+							requiredOnsiteFixedDays: data.presence!.requiredOnsiteFixedDays
+								? JSON.stringify(data.presence!.requiredOnsiteFixedDays)
+								: null,
+							locationId: data.presence!.locationId || null,
+							evaluationPeriod: data.presence!.evaluationPeriod ?? "weekly",
+							enforcement: data.presence!.enforcement ?? "warn",
+							updatedAt: currentTimestamp(),
+						});
+					}),
+				);
+			}
+		}
+
 		// Fetch updated policy
 		const updatedPolicy = yield* _(
 			dbService.query("fetchUpdated", async () => {
@@ -681,6 +752,7 @@ export async function updateWorkPolicy(
 								},
 							},
 						},
+						presence: true,
 					},
 				});
 			}),
@@ -1273,6 +1345,7 @@ export async function importWorkPolicyPreset(
 			description: preset!.description ?? undefined,
 			scheduleEnabled: false,
 			regulationEnabled: true,
+			presenceEnabled: false,
 			regulation: {
 				maxDailyMinutes: preset!.maxDailyMinutes ?? undefined,
 				maxWeeklyMinutes: preset!.maxWeeklyMinutes ?? undefined,
@@ -1613,6 +1686,7 @@ export async function duplicateWorkPolicy(
 								},
 							},
 						},
+						presence: true,
 					},
 				});
 			}),
@@ -1684,6 +1758,7 @@ export async function duplicateWorkPolicy(
 						description: existingPolicy!.description,
 						scheduleEnabled: existingPolicy!.scheduleEnabled,
 						regulationEnabled: existingPolicy!.regulationEnabled,
+						presenceEnabled: existingPolicy!.presenceEnabled,
 						isDefault: false,
 						createdBy: session.user.id,
 						updatedAt: currentTimestamp(),
@@ -1779,6 +1854,24 @@ export async function duplicateWorkPolicy(
 			}
 		}
 
+		// Duplicate presence if exists
+		if (existingPolicy!.presence) {
+			yield* _(
+				dbService.query("duplicatePresence", async () => {
+					await dbService.db.insert(workPolicyPresence).values({
+						policyId: newPolicy.id,
+						presenceMode: existingPolicy!.presence!.presenceMode,
+						requiredOnsiteDays: existingPolicy!.presence!.requiredOnsiteDays,
+						requiredOnsiteFixedDays: existingPolicy!.presence!.requiredOnsiteFixedDays,
+						locationId: existingPolicy!.presence!.locationId,
+						evaluationPeriod: existingPolicy!.presence!.evaluationPeriod,
+						enforcement: existingPolicy!.presence!.enforcement,
+						updatedAt: currentTimestamp(),
+					});
+				}),
+			);
+		}
+
 		// Fetch complete policy
 		const completePolicy = yield* _(
 			dbService.query("fetchComplete", async () => {
@@ -1795,6 +1888,7 @@ export async function duplicateWorkPolicy(
 								},
 							},
 						},
+						presence: true,
 					},
 				});
 			}),

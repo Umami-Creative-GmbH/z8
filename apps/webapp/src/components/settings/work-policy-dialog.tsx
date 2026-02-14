@@ -92,6 +92,7 @@ const formDefaultValues = {
 	description: "",
 	scheduleEnabled: true,
 	regulationEnabled: false,
+	presenceEnabled: false,
 	scheduleCycle: "weekly" as ScheduleCycleType,
 	scheduleType: "simple" as ScheduleTypeType,
 	workingDaysPreset: "weekdays" as WorkingDaysPresetType,
@@ -117,11 +118,12 @@ export function WorkPolicyDialog({
 	const form = useForm({
 		defaultValues: formDefaultValues,
 		onSubmit: async ({ value }) => {
-			const input = {
+		const input = {
 				name: value.name,
 				description: value.description || undefined,
 				scheduleEnabled: value.scheduleEnabled,
 				regulationEnabled: value.regulationEnabled,
+				presenceEnabled: value.presenceEnabled,
 				schedule: value.scheduleEnabled
 					? {
 							scheduleCycle: value.scheduleCycle,
