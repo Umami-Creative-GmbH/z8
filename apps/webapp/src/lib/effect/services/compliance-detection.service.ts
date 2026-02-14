@@ -8,6 +8,7 @@
 import { and, eq, gte, lte, isNull } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { DateTime } from "luxon";
+import { z } from "zod";
 import { db } from "@/db";
 import { employee, workPeriod, userSettings } from "@/db/schema";
 import {
@@ -127,7 +128,7 @@ export const ComplianceDetectionServiceLive = Layer.succeed(
 						presenceRequirement: false, // Presence runs separately with its own schedule
 					});
 
-				if (enabledRules.length === 0 && !presenceDetectionEnabled) {
+					if (enabledRules.length === 0 && !presenceDetectionEnabled) {
 						logger.info({ organizationId }, "No rules enabled, skipping detection");
 						return {
 							findings: [],
@@ -630,7 +631,9 @@ async function detectPresenceForEmployee(
 	let fixedDayNumbers: number[] = [];
 	if (presenceRow.requiredOnsiteFixedDays) {
 		try {
-			const dayNames = JSON.parse(presenceRow.requiredOnsiteFixedDays) as string[];
+			const dayNames = z.array(z.string()).parse(
+				JSON.parse(presenceRow.requiredOnsiteFixedDays),
+			);
 			fixedDayNumbers = dayNames
 				.map((name) => DAY_NAME_TO_WEEKDAY[name.toLowerCase()])
 				.filter((n): n is number => n !== undefined);

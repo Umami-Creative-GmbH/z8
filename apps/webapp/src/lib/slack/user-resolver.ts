@@ -227,9 +227,10 @@ export async function unlinkSlackUser(userId: string, organizationId: string): P
 
 function generateRandomCode(length: number): string {
 	const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // Removed ambiguous chars: 0/O, 1/I/L
+	const randomBytes = crypto.getRandomValues(new Uint8Array(length));
 	let code = "";
 	for (let i = 0; i < length; i++) {
-		code += chars[Math.floor(Math.random() * chars.length)];
+		code += chars[randomBytes[i] % chars.length];
 	}
 	return code;
 }
