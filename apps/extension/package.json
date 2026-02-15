@@ -11,7 +11,7 @@
   "dependencies": {
     "@tanstack/react-query": "^5.90.21",
     "clsx": "^2.1.1",
-    "lucide-react": "^0.563.0",
+    "lucide-react": "^0.564.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "tailwind-merge": "^3.4.0"
@@ -20,12 +20,12 @@
     "@tailwindcss/postcss": "^4.1.18",
     "@types/chrome": "^0.1.36",
     "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.0.2",
+    "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.4",
     "autoprefixer": "^10.4.24",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.18",
-    "typescript": "^5.7.2",
+    "typescript": "^5.9.3",
     "vite": "^7.3.1"
   }
 }
