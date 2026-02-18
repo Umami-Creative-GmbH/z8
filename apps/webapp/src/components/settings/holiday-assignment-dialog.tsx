@@ -4,7 +4,7 @@ import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import {
 	createHolidayAssignment,
@@ -102,13 +102,13 @@ export function HolidayAssignmentDialog({
 		},
 	});
 
-	// Reset form when dialog opens
-	useEffect(() => {
-		if (open) {
+	const handleOpenChange = (nextOpen: boolean) => {
+		if (!nextOpen) {
 			form.reset();
 			setValidationErrors({});
 		}
-	}, [open, form]);
+		onOpenChange(nextOpen);
+	};
 
 	// Fetch holidays (get all without pagination for dropdown)
 	const { data: holidays, isLoading: holidaysLoading } = useQuery({
@@ -234,7 +234,7 @@ export function HolidayAssignmentDialog({
 	const isLoading = holidaysLoading || teamsLoading || employeesLoading;
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
+		<Dialog open={open} onOpenChange={handleOpenChange}>
 			<DialogContent>
 				<DialogHeader>
 					<DialogTitle>{getDialogTitle()}</DialogTitle>

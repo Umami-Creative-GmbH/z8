@@ -20,7 +20,7 @@ import {
 	IconX,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import {
 	assignWorkCategoriesToPeriodsStepAction,
 	clearTimeDataAction,
@@ -38,7 +38,6 @@ import {
 	generateWorkCategoriesStepAction,
 	type StepGenerationInput,
 } from "@/app/[locale]/(app)/settings/demo/actions";
-import { useOrganization } from "@/hooks/use-organization";
 import type { DeleteNonAdminResult } from "@/lib/demo/delete-non-admin";
 import type { ClearDataResult, DemoDataResult } from "@/lib/demo/demo-data.service";
 import type { GenerateEmployeesResult } from "@/lib/demo/employee-generator";
@@ -63,6 +62,7 @@ import { Label } from "../ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 
 interface DemoDataWizardProps {
+	organizationId: string;
 	employees: Array<{ id: string; name: string }>;
 }
 
@@ -79,10 +79,9 @@ interface GenerationStep {
 	error?: string;
 }
 
-export function DemoDataWizard({ employees }: DemoDataWizardProps) {
+export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProps) {
 	const { t } = useTranslate();
 	const router = useRouter();
-	const { organizationId } = useOrganization();
 	const [wizardStep, setWizardStep] = useState<WizardStep>("configure");
 	const [isGenerating, setIsGenerating] = useState(false);
 	const [isClearing, setIsClearing] = useState(false);
@@ -132,25 +131,6 @@ export function DemoDataWizard({ employees }: DemoDataWizardProps) {
 		null,
 	);
 	const [deleteNonAdminConfirmText, setDeleteNonAdminConfirmText] = useState("");
-
-	// Reset all state when organization changes
-	const prevOrgIdRef = useRef<string | null>(organizationId);
-	useEffect(() => {
-		// Only reset if we have a valid new org (not initial null -> value transition)
-		if (prevOrgIdRef.current !== null && prevOrgIdRef.current !== organizationId) {
-			setWizardStep("configure");
-			setSteps([]);
-			setResult(null);
-			setError(null);
-			setClearResult(null);
-			setConfirmText("");
-			setEmployeeResult(null);
-			setEmployeeError(null);
-			setDeleteNonAdminResult(null);
-			setDeleteNonAdminConfirmText("");
-		}
-		prevOrgIdRef.current = organizationId;
-	}, [organizationId]);
 
 	const updateStepStatus = (
 		stepId: string,
