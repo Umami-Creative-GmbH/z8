@@ -2,9 +2,8 @@
 
 import { IconCheck, IconGripVertical, IconLoader2, IconX } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import {
 	createWorkCategorySet,
@@ -77,9 +76,17 @@ export function WorkCategorySetDialog({
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const isEditing = !!categorySet;
+	const metaScopeKey = `${open}:${categorySet?.id ?? "new"}`;
 
-	// Selected category IDs (in order)
-	const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
+	const [metaDraft, setMetaDraft] = useState<{
+		scopeKey: string;
+		name: string;
+		description: string;
+	} | null>(null);
+	const [selectionDraft, setSelectionDraft] = useState<{
+		scopeKey: string;
+		ids: string[];
+	} | null>(null);
 
 	// Fetch all org-level categories
 	const { data: orgCategoriesResult, isLoading: isLoadingOrgCategories } = useQuery({
@@ -108,55 +115,21 @@ export function WorkCategorySetDialog({
 		enabled: isEditing && open,
 	});
 
-	// Initialize selected categories when editing
-	useEffect(() => {
-		if (setDetail?.categories) {
-			setSelectedCategoryIds(setDetail.categories.map((c) => c.id));
-		} else if (!isEditing) {
-			setSelectedCategoryIds([]);
-		}
-	}, [setDetail, isEditing, open]);
+	const selectionScopeKey = `${metaScopeKey}:${setDetail?.categories.map((c) => c.id).join(",") ?? ""}`;
 
-	// Reset when dialog closes
-	useEffect(() => {
-		if (!open) {
-			setSelectedCategoryIds([]);
-		}
-	}, [open]);
+	const initialSelectedCategoryIds = isEditing ? (setDetail?.categories.map((c) => c.id) ?? []) : [];
+	const selectedCategoryIds =
+		selectionDraft?.scopeKey === selectionScopeKey
+			? selectionDraft.ids
+			: initialSelectedCategoryIds;
 
-	// Set form
-	const setForm = useForm({
-		defaultValues: {
-			name: categorySet?.name || "",
-			description: categorySet?.description || "",
-		},
-		onSubmit: async ({ value }) => {
-			if (isEditing && categorySet) {
-				// Update set metadata
-				updateSetMutation.mutate({
-					setId: categorySet.id,
-					name: value.name,
-					description: value.description || null,
-				});
-			} else {
-				// Create new set with selected categories
-				createSetMutation.mutate({
-					name: value.name,
-					description: value.description || null,
-					categoryIds: selectedCategoryIds,
-				});
-			}
-		},
-	});
-
-	// Reset form when categorySet changes
-	useEffect(() => {
-		if (open) {
-			setForm.reset();
-			setForm.setFieldValue("name", categorySet?.name || "");
-			setForm.setFieldValue("description", categorySet?.description || "");
-		}
-	}, [open, categorySet, setForm]);
+	const metaValues =
+		metaDraft?.scopeKey === metaScopeKey
+			? { name: metaDraft.name, description: metaDraft.description }
+			: {
+				name: categorySet?.name || "",
+				description: categorySet?.description || "",
+			};
 
 	// Create set mutation
 	const createSetMutation = useMutation({
@@ -220,38 +193,81 @@ export function WorkCategorySetDialog({
 
 	// Toggle category selection
 	const handleToggleCategory = (categoryId: string) => {
-		setSelectedCategoryIds((prev) => {
-			if (prev.includes(categoryId)) {
-				return prev.filter((id) => id !== categoryId);
-			} else {
-				return [...prev, categoryId];
-			}
+		setSelectionDraft((prev) => {
+			const currentIds = prev?.scopeKey === selectionScopeKey ? prev.ids : selectedCategoryIds;
+			const nextIds = currentIds.includes(categoryId)
+				? currentIds.filter((id) => id !== categoryId)
+				: [...currentIds, categoryId];
+
+			return {
+				scopeKey: selectionScopeKey,
+				ids: nextIds,
+			};
 		});
 	};
 
 	// Move category up in order
 	const moveUp = (index: number) => {
 		if (index === 0) return;
-		setSelectedCategoryIds((prev) => {
-			const newIds = [...prev];
+		setSelectionDraft((prev) => {
+			const currentIds = prev?.scopeKey === selectionScopeKey ? prev.ids : selectedCategoryIds;
+			const newIds = [...currentIds];
 			[newIds[index - 1], newIds[index]] = [newIds[index], newIds[index - 1]];
-			return newIds;
+			return {
+				scopeKey: selectionScopeKey,
+				ids: newIds,
+			};
 		});
 	};
 
 	// Move category down in order
 	const moveDown = (index: number) => {
-		setSelectedCategoryIds((prev) => {
-			if (index === prev.length - 1) return prev;
-			const newIds = [...prev];
+		setSelectionDraft((prev) => {
+			const currentIds = prev?.scopeKey === selectionScopeKey ? prev.ids : selectedCategoryIds;
+			if (index === currentIds.length - 1) {
+				return {
+					scopeKey: selectionScopeKey,
+					ids: currentIds,
+				};
+			}
+
+			const newIds = [...currentIds];
 			[newIds[index], newIds[index + 1]] = [newIds[index + 1], newIds[index]];
-			return newIds;
+			return {
+				scopeKey: selectionScopeKey,
+				ids: newIds,
+			};
 		});
 	};
 
 	// Remove category from selection
 	const removeCategory = (categoryId: string) => {
-		setSelectedCategoryIds((prev) => prev.filter((id) => id !== categoryId));
+		setSelectionDraft((prev) => {
+			const currentIds = prev?.scopeKey === selectionScopeKey ? prev.ids : selectedCategoryIds;
+			return {
+				scopeKey: selectionScopeKey,
+				ids: currentIds.filter((id) => id !== categoryId),
+			};
+		});
+	};
+
+	const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+		e.preventDefault();
+
+		if (isEditing && categorySet) {
+			updateSetMutation.mutate({
+				setId: categorySet.id,
+				name: metaValues.name,
+				description: metaValues.description || null,
+			});
+			return;
+		}
+
+		createSetMutation.mutate({
+			name: metaValues.name,
+			description: metaValues.description || null,
+			categoryIds: selectedCategoryIds,
+		});
 	};
 
 	const orgCategories = orgCategoriesResult || [];
@@ -289,29 +305,28 @@ export function WorkCategorySetDialog({
 				</DialogHeader>
 
 				<form
-					onSubmit={(e) => {
-						e.preventDefault();
-						setForm.handleSubmit();
-					}}
+					onSubmit={handleSubmit}
 					className="flex-1 overflow-hidden flex flex-col"
 				>
 					<div className="flex-1 overflow-y-auto space-y-4 py-4">
 						{/* Set Name */}
 						<div className="space-y-2 px-1">
 							<Label htmlFor="set-name">{t("settings.workCategories.setName", "Name")}</Label>
-							<setForm.Field name="name">
-								{(field) => (
-									<Input
-										id="set-name"
-										value={field.state.value}
-										onChange={(e) => field.handleChange(e.target.value)}
-										placeholder={t(
-											"settings.workCategories.setNamePlaceholder",
-											"e.g., Travel Categories",
-										)}
-									/>
+							<Input
+								id="set-name"
+								value={metaValues.name}
+								onChange={(e) => {
+									setMetaDraft({
+										scopeKey: metaScopeKey,
+										name: e.target.value,
+										description: metaValues.description,
+									});
+								}}
+								placeholder={t(
+									"settings.workCategories.setNamePlaceholder",
+									"e.g., Travel Categories",
 								)}
-							</setForm.Field>
+							/>
 						</div>
 
 						{/* Set Description */}
@@ -319,20 +334,22 @@ export function WorkCategorySetDialog({
 							<Label htmlFor="set-description">
 								{t("settings.workCategories.setDescription", "Description")}
 							</Label>
-							<setForm.Field name="description">
-								{(field) => (
-									<Textarea
-										id="set-description"
-										value={field.state.value}
-										onChange={(e) => field.handleChange(e.target.value)}
-										placeholder={t(
-											"settings.workCategories.setDescriptionPlaceholder",
-											"Optional description for this category set",
-										)}
-										rows={2}
-									/>
+							<Textarea
+								id="set-description"
+								value={metaValues.description}
+								onChange={(e) => {
+									setMetaDraft({
+										scopeKey: metaScopeKey,
+										name: metaValues.name,
+										description: e.target.value,
+									});
+								}}
+								placeholder={t(
+									"settings.workCategories.setDescriptionPlaceholder",
+									"Optional description for this category set",
 								)}
-							</setForm.Field>
+								rows={2}
+							/>
 						</div>
 
 						<Separator />

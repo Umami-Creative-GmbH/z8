@@ -59,7 +59,7 @@ export function WorkPolicyAssignmentManager({
 		queryFn: async () => {
 			const result = await getWorkPolicyAssignments(organizationId);
 			if (!result.success) {
-				throw new Error(result.error || "Failed to fetch assignments");
+				return Promise.reject(result.error || "Failed to fetch assignments");
 			}
 			return result.data as WorkPolicyAssignmentWithDetails[];
 		},

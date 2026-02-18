@@ -104,7 +104,7 @@ export function SocialAccounts() {
 		setConnectingProvider(providerId);
 		// Redirect to OAuth flow
 		const callbackUrl = encodeURIComponent("/settings/security");
-		window.location.href = `/api/auth/signin/${providerId}?callbackUrl=${callbackUrl}`;
+		window.location.assign(`/api/auth/signin/${providerId}?callbackUrl=${callbackUrl}`);
 	};
 
 	const handleUnlink = () => {
