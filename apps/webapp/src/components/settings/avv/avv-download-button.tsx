@@ -3,6 +3,7 @@
 import { FileText } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { exportAvvToPDF, generateAvvFilename } from "@/lib/avv/avv-pdf-generator";
 import { Button } from "@/components/ui/button";
 
 interface AvvDownloadButtonProps {
@@ -15,36 +16,43 @@ export function AvvDownloadButton({ organizationName }: AvvDownloadButtonProps) 
 	const handleDownload = async () => {
 		setLoading(true);
 
-		try {
-			const { exportAvvToPDF, generateAvvFilename } = await import(
-				"@/lib/avv/avv-pdf-generator"
-			);
+		const downloadResult = await exportAvvToPDF(organizationName)
+			.then((data) => ({
+				ok: true as const,
+				value: {
+					data,
+					filename: generateAvvFilename(organizationName),
+				},
+			}))
+			.catch((error) => ({ ok: false as const, error }));
 
-			const data = await exportAvvToPDF(organizationName);
-			const filename = generateAvvFilename(organizationName);
-
-			const blob = new Blob([data as BlobPart], { type: "application/pdf" });
-			const url = URL.createObjectURL(blob);
-			const a = document.createElement("a");
-			a.href = url;
-			a.download = filename;
-			document.body.appendChild(a);
-			a.click();
-			document.body.removeChild(a);
-			URL.revokeObjectURL(url);
-
-			toast.success("AVV erfolgreich heruntergeladen", {
-				description: `Datei: ${filename}`,
-			});
-		} catch (error) {
-			console.error("AVV download failed:", error);
+		if (!downloadResult.ok) {
+			console.error("AVV download failed:", downloadResult.error);
 			toast.error("Download fehlgeschlagen", {
 				description:
-					error instanceof Error ? error.message : "Ein Fehler ist aufgetreten",
+					downloadResult.error instanceof Error
+						? downloadResult.error.message
+						: "Ein Fehler ist aufgetreten",
 			});
-		} finally {
 			setLoading(false);
+			return;
 		}
+
+		const { data, filename } = downloadResult.value;
+		const blob = new Blob([data as BlobPart], { type: "application/pdf" });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement("a");
+		a.href = url;
+		a.download = filename;
+		document.body.appendChild(a);
+		a.click();
+		document.body.removeChild(a);
+		URL.revokeObjectURL(url);
+
+		toast.success("AVV erfolgreich heruntergeladen", {
+			description: `Datei: ${filename}`,
+		});
+		setLoading(false);
 	};
 
 	return (

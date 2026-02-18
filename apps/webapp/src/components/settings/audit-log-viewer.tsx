@@ -8,8 +8,9 @@ import {
 	IconLoader2,
 	IconSearch,
 } from "@tabler/icons-react";
+import { useQuery } from "@tanstack/react-query";
 import { DateTime } from "luxon";
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import {
 	exportAuditLogsAction,
@@ -101,11 +102,7 @@ function formatAction(action: string): string {
 }
 
 export function AuditLogViewer() {
-	const [logs, setLogs] = useState<AuditLogResult[]>([]);
-	const [total, setTotal] = useState(0);
-	const [loading, setLoading] = useState(true);
 	const [exporting, setExporting] = useState(false);
-	const [_selectedLog, setSelectedLog] = useState<AuditLogResult | null>(null);
 
 	// Filters
 	const [search, setSearch] = useState("");
@@ -124,10 +121,11 @@ export function AuditLogViewer() {
 		return new Date().toISOString().split("T")[0];
 	});
 
-	const fetchLogs = useCallback(async () => {
-		setLoading(true);
-		try {
-			const result = await getAuditLogsAction({
+	const { data: logsResult, isLoading: loading, refetch } = useQuery({
+		queryKey: ["audit-logs", entityType, actionCategory, search, startDate, endDate, page] as const,
+
+		queryFn: async () => {
+			return getAuditLogsAction({
 				entityType: entityType !== "all" ? entityType : undefined,
 				action: actionCategory !== "all" ? actionCategory : undefined,
 				search: search || undefined,
@@ -136,58 +134,50 @@ export function AuditLogViewer() {
 				limit: pageSize,
 				offset: page * pageSize,
 			});
+		},
+	});
 
-			if (result.success && result.data) {
-				setLogs(result.data.logs);
-				setTotal(result.data.total);
-			} else {
-				toast.error(result.error || "Failed to fetch audit logs");
-			}
-		} catch (_error) {
-			toast.error("Failed to fetch audit logs");
-		} finally {
-			setLoading(false);
-		}
-	}, [search, entityType, actionCategory, startDate, endDate, page]);
-
-	useEffect(() => {
-		fetchLogs();
-	}, [fetchLogs]);
+	const logs: AuditLogResult[] =
+		logsResult?.success && logsResult.data ? (logsResult.data.logs as AuditLogResult[]) : [];
+	const total = logsResult?.success && logsResult.data ? logsResult.data.total : 0;
+	const loadError =
+		logsResult && !logsResult.success ? logsResult.error || "Failed to fetch audit logs" : null;
 
 	const handleExport = async () => {
 		setExporting(true);
-		try {
-			const result = await exportAuditLogsAction(startDate, endDate);
-
-			if (result.success && result.data) {
-				// Create and download JSON file
-				const blob = new Blob([JSON.stringify(result.data, null, 2)], {
-					type: "application/json",
-				});
-				const url = URL.createObjectURL(blob);
-				const a = document.createElement("a");
-				a.href = url;
-				a.download = `audit-log-${startDate}-to-${endDate}.json`;
-				document.body.appendChild(a);
-				a.click();
-				document.body.removeChild(a);
-				URL.revokeObjectURL(url);
-
-				toast.success(`Exported ${result.data.length} audit log entries`);
-			} else {
-				toast.error(result.error || "Failed to export audit logs");
-			}
-		} catch (_error) {
+		const result = await exportAuditLogsAction(startDate, endDate).catch(() => null);
+		if (!result) {
 			toast.error("Failed to export audit logs");
-		} finally {
 			setExporting(false);
+			return;
 		}
+
+		if (result.success && result.data) {
+			// Create and download JSON file
+			const blob = new Blob([JSON.stringify(result.data, null, 2)], {
+				type: "application/json",
+			});
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement("a");
+			a.href = url;
+			a.download = `audit-log-${startDate}-to-${endDate}.json`;
+			document.body.appendChild(a);
+			a.click();
+			document.body.removeChild(a);
+			URL.revokeObjectURL(url);
+
+			toast.success(`Exported ${result.data.length} audit log entries`);
+		} else {
+			toast.error(result.error || "Failed to export audit logs");
+		}
+
+		setExporting(false);
 	};
 
 	const handleSearch = (e: React.FormEvent) => {
 		e.preventDefault();
 		setPage(0);
-		fetchLogs();
+		void refetch();
 	};
 
 	const totalPages = Math.ceil(total / pageSize);
@@ -307,6 +297,8 @@ export function AuditLogViewer() {
 						<div className="flex items-center justify-center py-12">
 							<IconLoader2 className="size-8 animate-spin text-muted-foreground" />
 						</div>
+					) : loadError ? (
+						<div className="text-center py-12 text-destructive">{loadError}</div>
 					) : logs.length === 0 ? (
 						<div className="text-center py-12 text-muted-foreground">
 							No audit log entries found for the selected filters.
@@ -354,12 +346,12 @@ export function AuditLogViewer() {
 												{log.ipAddress || "-"}
 											</TableCell>
 											<TableCell>
-												<Dialog>
-													<DialogTrigger asChild>
-														<Button variant="ghost" size="sm" onClick={() => setSelectedLog(log)}>
-															<IconEye className="size-4" />
-														</Button>
-													</DialogTrigger>
+													<Dialog>
+														<DialogTrigger asChild>
+															<Button variant="ghost" size="sm">
+																<IconEye className="size-4" />
+															</Button>
+														</DialogTrigger>
 													<DialogContent className="max-w-2xl">
 														<DialogHeader>
 															<DialogTitle>Audit Log Details</DialogTitle>
@@ -439,21 +431,21 @@ export function AuditLogViewer() {
 										Page {page + 1} of {totalPages}
 									</div>
 									<div className="flex gap-2">
-										<Button
-											variant="outline"
-											size="sm"
-											onClick={() => setPage((p) => Math.max(0, p - 1))}
-											disabled={page === 0}
-										>
+									<Button
+										variant="outline"
+										size="sm"
+										onClick={() => setPage((p) => Math.max(0, p - 1))}
+										disabled={page === 0}
+									>
 											<IconChevronLeft className="size-4 mr-1" />
 											Previous
 										</Button>
-										<Button
-											variant="outline"
-											size="sm"
-											onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-											disabled={page >= totalPages - 1}
-										>
+									<Button
+										variant="outline"
+										size="sm"
+										onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+										disabled={page >= totalPages - 1}
+									>
 											Next
 											<IconChevronRight className="size-4 ml-1" />
 										</Button>

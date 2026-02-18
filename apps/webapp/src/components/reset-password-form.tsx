@@ -136,29 +136,31 @@ export function ResetPasswordForm({ className, ...props }: React.ComponentProps<
 			return;
 		}
 
-		try {
-			const response = await authClient.resetPassword({
+		const response = await authClient
+			.resetPassword({
 				newPassword: formData.password,
 				token,
-			});
+			})
+			.catch((err) => ({
+				error: {
+					message:
+						err instanceof Error
+							? err.message
+							: t("auth.reset-password-error", "An error occurred. Please try again."),
+				},
+			}));
 
-			if (response.error) {
-				setError(
-					response.error.message ||
-						t("auth.reset-password-failed", "Failed to reset password. Please try again."),
-				);
-			} else {
-				setSuccess(true);
-			}
-		} catch (err) {
+		if (response.error) {
 			setError(
-				err instanceof Error
-					? err.message
-					: t("auth.reset-password-error", "An error occurred. Please try again."),
+				response.error.message ||
+					t("auth.reset-password-failed", "Failed to reset password. Please try again."),
 			);
-		} finally {
 			setIsLoading(false);
+			return;
 		}
+
+		setSuccess(true);
+		setIsLoading(false);
 	};
 
 	// Show error state for invalid/expired token

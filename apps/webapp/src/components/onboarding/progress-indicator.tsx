@@ -2,7 +2,6 @@
 
 import { IconCheck } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import {
 	ADMIN_ONLY_STEPS,
@@ -37,25 +36,10 @@ export function ProgressIndicator({
 	isAdmin: isAdminProp,
 }: ProgressIndicatorProps) {
 	const { t } = useTranslate();
-	// If isAdmin is not provided, we need to determine it from context
-	// For admin-only steps, assume admin. For other steps, we show a simplified view
-	const [isAdmin, setIsAdmin] = useState<boolean | undefined>(isAdminProp);
-
-	useEffect(() => {
-		if (isAdminProp !== undefined) {
-			setIsAdmin(isAdminProp);
-			return;
-		}
-
-		// If we're on an admin-only step, we're definitely an admin
-		if (ADMIN_ONLY_STEPS.includes(currentStep)) {
-			setIsAdmin(true);
-		}
-	}, [currentStep, isAdminProp]);
+	const isAdmin = isAdminProp ?? ADMIN_ONLY_STEPS.includes(currentStep);
 
 	// Get visible steps based on admin status
-	// If we don't know yet, show all steps for admins (worst case)
-	const visibleSteps = getVisibleSteps(isAdmin ?? ADMIN_ONLY_STEPS.includes(currentStep));
+	const visibleSteps = getVisibleSteps(isAdmin);
 
 	// Get step configs for visible steps
 	const steps = visibleSteps.map((step, index) => ({

@@ -57,39 +57,46 @@ export function OrganizationSwitcher({
 		// Reset org settings store immediately to show loading state
 		resetOrgSettings();
 
-		try {
-			const response = await fetch("/api/organizations/switch", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ organizationId }),
-			});
+		const response = await fetch("/api/organizations/switch", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ organizationId }),
+		}).catch(() => null);
 
-			if (!response.ok) {
-				const error = await response.json();
-				throw new Error(error.error || "Failed to switch organization");
-			}
-
-			const result = await response.json();
-
-			// Persist the selected organization for next login
-			saveLastOrganization(organizationId);
-
-			if (!result.hasEmployeeRecord) {
-				toast.warning(
-					t(
-						"organization.noEmployeeRecord",
-						"You are not set up as an employee in this organization yet.",
-					),
-				);
-			}
-
-			// Full page reload to refetch everything with new organization context
-			window.location.reload();
-		} catch (error: any) {
-			toast.error(error.message || t("organization.switchFailed", "Failed to switch organization"));
-		} finally {
+		if (!response) {
+			toast.error(t("organization.switchFailed", "Failed to switch organization"));
 			setSwitching(false);
+			return;
 		}
+
+		if (!response.ok) {
+			const error = await response.json().catch(() => null);
+			toast.error(error?.error || t("organization.switchFailed", "Failed to switch organization"));
+			setSwitching(false);
+			return;
+		}
+
+		const result = await response.json().catch(() => null);
+		if (!result) {
+			toast.error(t("organization.switchFailed", "Failed to switch organization"));
+			setSwitching(false);
+			return;
+		}
+
+		// Persist the selected organization for next login
+		saveLastOrganization(organizationId);
+
+		if (!result.hasEmployeeRecord) {
+			toast.warning(
+				t(
+					"organization.noEmployeeRecord",
+					"You are not set up as an employee in this organization yet.",
+				),
+			);
+		}
+
+		// Full page reload to refetch everything with new organization context
+		window.location.reload();
 	};
 
 	if (organizations.length === 0) {

@@ -25,29 +25,26 @@ export function ReportsContainer({ currentEmployeeId }: ReportsContainerProps) {
 		setIsGenerating(true);
 		setError(null);
 
-		try {
-			const result = await generateReport(employeeId, dateRange.start, dateRange.end);
+		const result = await generateReport(employeeId, dateRange.start, dateRange.end).catch((error) => ({
+			success: false,
+			error: error instanceof Error ? error.message : "An unexpected error occurred",
+			data: null,
+		}));
 
-			if (result.success) {
-				setReportData(result.data);
-				toast.success("Report generated successfully", {
-					description: `Generated report for ${result.data.employee.name}`,
-				});
-			} else {
-				setError(result.error || "Failed to generate report");
-				toast.error("Failed to generate report", {
-					description: result.error || "An unknown error occurred",
-				});
-			}
-		} catch (err) {
-			const errorMessage = err instanceof Error ? err.message : "An unexpected error occurred";
-			setError(errorMessage);
-			toast.error("Failed to generate report", {
-				description: errorMessage,
+		if (result.success) {
+			setReportData(result.data);
+			toast.success("Report generated successfully", {
+				description: `Generated report for ${result.data.employee.name}`,
 			});
-		} finally {
 			setIsGenerating(false);
+			return;
 		}
+
+		setError(result.error || "Failed to generate report");
+		toast.error("Failed to generate report", {
+			description: result.error || "An unknown error occurred",
+		});
+		setIsGenerating(false);
 	};
 
 	return (

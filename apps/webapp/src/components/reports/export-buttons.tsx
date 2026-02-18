@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { exportToCSV, generateCSVFilename } from "@/lib/reports/exporters/csv-exporter";
 import { exportToExcel, generateExcelFilename } from "@/lib/reports/exporters/excel-exporter";
+import { exportToPDF, generatePDFFilename } from "@/lib/reports/exporters/pdf-exporter";
 import type { ReportData } from "@/lib/reports/types";
 
 interface ExportButtonsProps {
@@ -20,52 +21,60 @@ export function ExportButtons({ reportData }: ExportButtonsProps) {
 	const handleExport = async (format: ExportFormat) => {
 		setLoading(format);
 
-		try {
-			let data: Uint8Array | Buffer | string;
-			let filename: string;
-			let mimeType: string;
-
+		const exportResult = await (async () => {
 			if (format === "pdf") {
-				// Dynamic import to avoid bundling @react-pdf/renderer in the main bundle
-				const { exportToPDF, generatePDFFilename } = await import(
-					"@/lib/reports/exporters/pdf-exporter"
-				);
-				data = await exportToPDF(reportData);
-				filename = generatePDFFilename(reportData);
-				mimeType = "application/pdf";
-			} else if (format === "excel") {
-				data = await exportToExcel(reportData);
-				filename = generateExcelFilename(reportData);
-				mimeType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-			} else {
-				data = exportToCSV(reportData);
-				filename = generateCSVFilename(reportData);
-				mimeType = "text/csv;charset=utf-8;";
+				return {
+					data: await exportToPDF(reportData),
+					filename: generatePDFFilename(reportData),
+					mimeType: "application/pdf",
+				};
 			}
 
-			// Create blob and download
-			const blob = new Blob([data as BlobPart], { type: mimeType });
-			const url = URL.createObjectURL(blob);
-			const a = document.createElement("a");
-			a.href = url;
-			a.download = filename;
-			document.body.appendChild(a);
-			a.click();
-			document.body.removeChild(a);
-			URL.revokeObjectURL(url);
+			if (format === "excel") {
+				return {
+					data: await exportToExcel(reportData),
+					filename: generateExcelFilename(reportData),
+					mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+				};
+			}
 
-			toast.success("Export successful", {
-				description: `Downloaded ${filename}`,
-			});
-		} catch (error) {
-			console.error("Export failed:", error);
+			return {
+				data: exportToCSV(reportData),
+				filename: generateCSVFilename(reportData),
+				mimeType: "text/csv;charset=utf-8;",
+			};
+		})().then(
+			(value) => ({ ok: true as const, value }),
+			(error) => ({ ok: false as const, error }),
+		);
+
+		if (!exportResult.ok) {
+			console.error("Export failed:", exportResult.error);
 			toast.error("Export failed", {
 				description:
-					error instanceof Error ? error.message : "An error occurred while exporting the report",
+					exportResult.error instanceof Error
+						? exportResult.error.message
+						: "An error occurred while exporting the report",
 			});
-		} finally {
 			setLoading(null);
+			return;
 		}
+
+		const { data, filename, mimeType } = exportResult.value;
+		const blob = new Blob([data as BlobPart], { type: mimeType });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement("a");
+		a.href = url;
+		a.download = filename;
+		document.body.appendChild(a);
+		a.click();
+		document.body.removeChild(a);
+		URL.revokeObjectURL(url);
+
+		toast.success("Export successful", {
+			description: `Downloaded ${filename}`,
+		});
+		setLoading(null);
 	};
 
 	return (

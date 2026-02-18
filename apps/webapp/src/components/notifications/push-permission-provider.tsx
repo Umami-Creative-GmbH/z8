@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { usePushNotifications } from "@/hooks/use-push-notifications";
 import { PushPermissionModal } from "./push-permission-modal";
@@ -36,9 +36,9 @@ interface PushPermissionProviderProps {
  * - Permission has not been asked yet (is "default")
  * - User has not dismissed the modal before
  */
-export function PushPermissionProvider({ children }: PushPermissionProviderProps) {
+	export function PushPermissionProvider({ children }: PushPermissionProviderProps) {
 	const [showModal, setShowModal] = useState(false);
-	const [hasChecked, setHasChecked] = useState(false);
+	const hasCheckedRef = useRef(false);
 
 	const {
 		isSupported,
@@ -64,8 +64,8 @@ export function PushPermissionProvider({ children }: PushPermissionProviderProps
 		if (isPushLoading) return;
 
 		// Only check once
-		if (hasChecked) return;
-		setHasChecked(true);
+		if (hasCheckedRef.current) return;
+		hasCheckedRef.current = true;
 
 		// Don't show if:
 		// - Not supported
@@ -81,7 +81,7 @@ export function PushPermissionProvider({ children }: PushPermissionProviderProps
 		}, SHOW_DELAY_MS);
 
 		return () => clearTimeout(timer);
-	}, [isSupported, permission, isPushLoading, hasChecked]);
+	}, [isSupported, permission, isPushLoading]);
 
 	const handleEnable = async (): Promise<boolean> => {
 		const success = await subscribe();
