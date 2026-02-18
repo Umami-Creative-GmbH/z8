@@ -16,32 +16,34 @@ export default function VerifyEmailPendingPage() {
 		setIsResending(true);
 		setResendMessage("");
 
-		try {
-			const result = await authClient.sendVerificationEmail({
+		const result = await authClient
+			.sendVerificationEmail({
 				email: "", // The user's email should be stored in session
 				callbackURL: "/verify-email",
-			});
+			})
+			.catch((error) => ({
+				error: {
+					message:
+						error instanceof Error
+							? error.message
+							: t("common.error-occurred", "An error occurred"),
+				},
+			}));
 
-			if (result.error) {
-				setResendMessage(
-					result.error.message ||
-						t("auth.resend-verification-failed", "Failed to resend verification email"),
-				);
-			} else {
-				setResendMessage(
-					t(
-						"auth.verification-email-resent",
-						"Verification email has been resent! Please check your inbox.",
-					),
-				);
-			}
-		} catch (err) {
+		if (result.error) {
 			setResendMessage(
-				err instanceof Error ? err.message : t("common.error-occurred", "An error occurred"),
+				result.error.message || t("auth.resend-verification-failed", "Failed to resend verification email"),
 			);
-		} finally {
-			setIsResending(false);
+		} else {
+			setResendMessage(
+				t(
+					"auth.verification-email-resent",
+					"Verification email has been resent! Please check your inbox.",
+				),
+			);
 		}
+
+		setIsResending(false);
 	};
 
 	return (

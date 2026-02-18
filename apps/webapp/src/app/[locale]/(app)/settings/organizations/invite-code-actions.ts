@@ -1284,7 +1284,7 @@ export async function getPendingInviteCode(): Promise<ServerActionResult<string 
 /**
  * Use an invite code to join an organization (requires authentication)
  */
-export async function useInviteCode(
+export async function redeemInviteCode(
 	code: string,
 	ipAddress?: string,
 	userAgent?: string,
@@ -1294,7 +1294,7 @@ export async function useInviteCode(
 	const tracer = trace.getTracer("invite-codes");
 
 	const effect = tracer.startActiveSpan(
-		"useInviteCode",
+		"redeemInviteCode",
 		{
 			attributes: {
 				"inviteCode.code": code,

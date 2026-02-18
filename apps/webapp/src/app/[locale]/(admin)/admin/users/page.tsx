@@ -1,9 +1,9 @@
 "use client";
 
 import { IconBan, IconCheck, IconDevices, IconSearch, IconUser, IconX } from "@tabler/icons-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
-import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -48,20 +48,37 @@ import {
 } from "./actions";
 
 const PAGE_SIZE = 20;
+const LOADING_ROW_KEYS = ["loading-1", "loading-2", "loading-3", "loading-4", "loading-5"];
+const SESSION_LOADING_KEYS = ["session-loading-1", "session-loading-2", "session-loading-3"];
+
+function getInitialFilters() {
+	if (typeof window === "undefined") {
+		return {
+			search: "",
+			status: "all" as const,
+		};
+	}
+
+	const params = new URLSearchParams(window.location.search);
+	const statusParam = params.get("status");
+	return {
+		search: params.get("search") ?? "",
+		status:
+			statusParam === "active" || statusParam === "banned"
+				? statusParam
+				: ("all" as const),
+	};
+}
 
 export default function UsersPage() {
 	const { t } = useTranslate();
 	const router = useRouter();
-	const searchParams = useSearchParams();
+	const queryClient = useQueryClient();
+	const initialFilters = getInitialFilters();
 
-	const [users, setUsers] = useState<PlatformUser[]>([]);
-	const [total, setTotal] = useState(0);
 	const [page, setPage] = useState(1);
-	const [search, setSearch] = useState(searchParams.get("search") ?? "");
-	const [status, setStatus] = useState<"all" | "active" | "banned">(
-		(searchParams.get("status") as "all" | "active" | "banned") ?? "all",
-	);
-	const [isLoading, setIsLoading] = useState(true);
+	const [search, setSearch] = useState(initialFilters.search);
+	const [status, setStatus] = useState<"all" | "active" | "banned">(initialFilters.status);
 	const [isPending, startTransition] = useTransition();
 	const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -73,27 +90,20 @@ export default function UsersPage() {
 	const [sessions, setSessions] = useState<UserSession[]>([]);
 	const [sessionsLoading, setSessionsLoading] = useState(false);
 
-	// Fetch users with explicit parameters to avoid race conditions
-	const fetchUsers = async (searchVal = search, statusVal = status, pageVal = page) => {
-		setIsLoading(true);
-		const result = await listUsersAction(
-			{ search: searchVal, status: statusVal },
-			pageVal,
-			PAGE_SIZE,
-		);
-		if (result.success) {
-			setUsers(result.data.data);
-			setTotal(result.data.total);
-		} else {
-			toast.error(result.error);
-		}
-		setIsLoading(false);
-	};
+	const { data, isLoading } = useQuery({
+		queryKey: ["admin-users", search, status, page],
+		queryFn: async () => {
+			const result = await listUsersAction({ search, status }, page, PAGE_SIZE);
+			if (!result.success) {
+				throw new Error(result.error);
+			}
+			return result.data;
+		},
+		retry: false,
+	});
 
-	// Initial load
-	useEffect(() => {
-		fetchUsers();
-	}, []);
+	const users = data?.data ?? [];
+	const total = data?.total ?? 0;
 
 	// Debounced search with immediate status change
 	const handleFilterChange = useCallback(
@@ -113,9 +123,6 @@ export default function UsersPage() {
 				if (newSearch) params.set("search", newSearch);
 				if (newStatus !== "all") params.set("status", newStatus);
 				router.push(`/admin/users?${params.toString()}`);
-				startTransition(() => {
-					fetchUsers(newSearch, newStatus, 1);
-				});
 				return;
 			}
 
@@ -126,12 +133,9 @@ export default function UsersPage() {
 				if (newSearch) params.set("search", newSearch);
 				if (newStatus !== "all") params.set("status", newStatus);
 				router.push(`/admin/users?${params.toString()}`);
-				startTransition(() => {
-					fetchUsers(newSearch, newStatus, 1);
-				});
 			}, 300);
 		},
-		[status, router],
+		[router, status],
 	);
 
 	// Cleanup timeout on unmount
@@ -154,7 +158,7 @@ export default function UsersPage() {
 				setBanDialogUser(null);
 				setBanReason("");
 				setBanExpiry("");
-				fetchUsers();
+				queryClient.invalidateQueries({ queryKey: ["admin-users"] });
 			} else {
 				toast.error(result.error);
 			}
@@ -167,7 +171,7 @@ export default function UsersPage() {
 			const result = await unbanUserAction(user.id);
 			if (result.success) {
 				toast.success(t("admin.users.toasts.unbanned", "User {email} has been unbanned", { email: user.email }));
-				fetchUsers();
+				queryClient.invalidateQueries({ queryKey: ["admin-users"] });
 			} else {
 				toast.error(result.error);
 			}
@@ -265,8 +269,8 @@ export default function UsersPage() {
 				<CardContent className="p-0">
 					{isLoading ? (
 						<div className="p-6 space-y-3">
-							{[...Array(5)].map((_, i) => (
-								<Skeleton key={i} className="h-14 w-full rounded-lg" />
+							{LOADING_ROW_KEYS.map((key) => (
+								<Skeleton key={key} className="h-14 w-full rounded-lg" />
 							))}
 						</div>
 					) : (
@@ -401,7 +405,6 @@ export default function UsersPage() {
 							onClick={() => {
 								const newPage = page - 1;
 								setPage(newPage);
-								fetchUsers(search, status, newPage);
 							}}
 							disabled={page === 1}
 						>
@@ -413,7 +416,6 @@ export default function UsersPage() {
 							onClick={() => {
 								const newPage = page + 1;
 								setPage(newPage);
-								fetchUsers(search, status, newPage);
 							}}
 							disabled={page >= totalPages}
 						>
@@ -478,8 +480,8 @@ export default function UsersPage() {
 					<div className="py-4">
 						{sessionsLoading ? (
 							<div className="space-y-2">
-								{[...Array(3)].map((_, i) => (
-									<Skeleton key={i} className="h-12 w-full" />
+								{SESSION_LOADING_KEYS.map((key) => (
+									<Skeleton key={key} className="h-12 w-full" />
 								))}
 							</div>
 						) : sessions.length === 0 ? (

@@ -7,6 +7,7 @@ import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { DemoDataWizard } from "@/components/settings/demo-data-wizard";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getAuthContext } from "@/lib/auth-helpers";
 import { getOrganizationEmployees } from "./actions";
 
 async function DemoSettingsContent() {
@@ -24,7 +25,6 @@ async function DemoSettingsContent() {
 	}
 
 	// Check if user has admin role
-	const { getAuthContext } = await import("@/lib/auth-helpers");
 	const authContext = await getAuthContext();
 
 	if (!authContext?.employee || authContext.employee.role !== "admin") {
@@ -47,7 +47,11 @@ async function DemoSettingsContent() {
 				</p>
 			</div>
 
-			<DemoDataWizard employees={employees} />
+			<DemoDataWizard
+				key={authContext.employee.organizationId}
+				organizationId={authContext.employee.organizationId}
+				employees={employees}
+			/>
 		</div>
 	);
 }

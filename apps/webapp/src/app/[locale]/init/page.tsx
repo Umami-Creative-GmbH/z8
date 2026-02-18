@@ -26,108 +26,125 @@ export default function InitPage() {
 	const [selectedOrg, setSelectedOrg] = useState<string | null>(null);
 	const [isActivating, setIsActivating] = useState(false);
 
-	useEffect(() => {
-		if (hasInitialized.current) return;
-		hasInitialized.current = true;
-
-		initializeSession();
-	}, []);
-
 	async function initializeSession() {
-		try {
-			// Check current session state
-			const response = await fetch("/api/session/organization-status");
-			if (!response.ok) {
-				// Check for app access denied error
-				if (response.status === 403) {
-					const errorData = await response.json();
-					if (errorData.error === "AppAccessDenied") {
-						// Redirect to access denied page
-						window.location.href = `/access-denied?app=${errorData.appType}`;
-						return;
-					}
-				}
-				// Not authenticated, redirect to login
-				window.location.href = "/sign-in";
-				return;
-			}
+		// Check current session state
+		const response = await fetch("/api/session/organization-status").catch((error) => {
+			console.error("Failed to initialize session:", error);
+			window.location.assign("/");
+			return null;
+		});
+		if (!response) {
+			return;
+		}
 
-			const data = await response.json();
-			const { hasActiveOrganization, organizations: orgs } = data;
-
-			// If already has an active org, go straight to dashboard
-			if (hasActiveOrganization) {
-				setStatus("redirecting");
-				window.location.href = "/";
-				return;
-			}
-
-			// No organizations at all, go to dashboard (will show appropriate state)
-			if (!orgs || orgs.length === 0) {
-				setStatus("redirecting");
-				window.location.href = "/";
-				return;
-			}
-
-			// Try to restore the last used organization
-			const lastOrgId = getLastOrganization();
-
-			if (lastOrgId) {
-				// Check if it's still valid
-				const isValid = orgs.some((org: Organization) => org.id === lastOrgId);
-				if (isValid) {
-					// Auto-activate the last used org
-					await activateOrganization(lastOrgId);
+		if (!response.ok) {
+			// Check for app access denied error
+			if (response.status === 403) {
+				const errorData = await response.json().catch(() => null);
+				if (errorData?.error === "AppAccessDenied") {
+					// Redirect to access denied page
+					window.location.assign(`/access-denied?app=${errorData.appType}`);
 					return;
 				}
 			}
+			// Not authenticated, redirect to login
+			window.location.assign("/sign-in");
+			return;
+		}
 
-			// Only one org available - auto-activate it
-			if (orgs.length === 1) {
-				await activateOrganization(orgs[0].id);
+		const data = await response.json().catch((error) => {
+			console.error("Failed to parse organization status:", error);
+			window.location.assign("/");
+			return null;
+		});
+		if (!data) {
+			return;
+		}
+
+		const { hasActiveOrganization, organizations: orgs } = data;
+
+		// If already has an active org, go straight to dashboard
+		if (hasActiveOrganization) {
+			setStatus("redirecting");
+			window.location.assign("/");
+			return;
+		}
+
+		// No organizations at all, go to dashboard (will show appropriate state)
+		if (!orgs || orgs.length === 0) {
+			setStatus("redirecting");
+			window.location.assign("/");
+			return;
+		}
+
+		// Try to restore the last used organization
+		const lastOrgId = getLastOrganization();
+
+		if (lastOrgId) {
+			// Check if it's still valid
+			const isValid = orgs.some((org: Organization) => org.id === lastOrgId);
+			if (isValid) {
+				// Auto-activate the last used org
+				await activateOrganization(lastOrgId);
 				return;
 			}
-
-			// Multiple orgs and no saved preference - show selection UI
-			setOrganizations(orgs);
-			setStatus("selecting");
-		} catch (error) {
-			console.error("Failed to initialize session:", error);
-			// On error, still try to go to dashboard
-			window.location.href = "/";
 		}
+
+		// Only one org available - auto-activate it
+		if (orgs.length === 1) {
+			await activateOrganization(orgs[0].id);
+			return;
+		}
+
+		// Multiple orgs and no saved preference - show selection UI
+		setOrganizations(orgs);
+		setStatus("selecting");
 	}
 
 	async function activateOrganization(orgId: string) {
 		setStatus("activating");
 		setIsActivating(true);
 
-		try {
-			const switchResponse = await fetch("/api/organizations/switch", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ organizationId: orgId }),
-			});
-
-			if (switchResponse.ok) {
-				saveLastOrganization(orgId);
-			}
-
-			// Hard redirect to dashboard to get fresh server state
-			setStatus("redirecting");
-			window.location.href = "/";
-		} catch (error) {
+		const switchResponse = await fetch("/api/organizations/switch", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ organizationId: orgId }),
+		}).catch((error) => {
 			console.error("Failed to activate organization:", error);
 			setIsActivating(false);
 			// On error, still try to go to dashboard
-			window.location.href = "/";
+			window.location.assign("/");
+			return null;
+		});
+
+		if (!switchResponse) {
+			return;
 		}
+
+		if (switchResponse.ok) {
+			saveLastOrganization(orgId);
+		}
+
+		// Hard redirect to dashboard to get fresh server state
+		setStatus("redirecting");
+		window.location.assign("/");
 	}
 
 	async function handleSelectOrganization(orgId: string) {
 		setSelectedOrg(orgId);
 		await activateOrganization(orgId);
 	}
+
+	useEffect(() => {
+		if (hasInitialized.current) return;
+		hasInitialized.current = true;
+
+		const timer = setTimeout(() => {
+			void initializeSession();
+		}, 0);
+
+		return () => clearTimeout(timer);
+	}, []);
 
 	// Show organization selection UI
 	if (status === "selecting") {

@@ -33,16 +33,21 @@ export default function PlatformSettingsPage() {
 
 	const handleSave = async () => {
 		setIsLoading(true);
-		try {
-			const result = await setCookieConsentScriptAction(script);
-			if (result.success) {
-				toast.success("Cookie consent script saved successfully");
-			} else {
-				toast.error(result.error ?? "Failed to save");
-			}
-		} finally {
+		const result = await setCookieConsentScriptAction(script).catch(() => null);
+
+		if (!result) {
+			toast.error("Failed to save");
 			setIsLoading(false);
+			return;
 		}
+
+		if (result.success) {
+			toast.success("Cookie consent script saved successfully");
+		} else {
+			toast.error(result.error ?? "Failed to save");
+		}
+
+		setIsLoading(false);
 	};
 
 	return (

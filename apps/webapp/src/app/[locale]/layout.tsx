@@ -23,14 +23,12 @@ type Props = {
 
 // Load translations for the current route's required namespaces
 async function loadRouteTranslations(locale: string, pathname: string): Promise<TolgeeStaticData> {
-	try {
-		// Get namespaces for this route
-		const namespaces = getNamespacesForRoute(pathname);
-		return loadNamespaces(locale, namespaces);
-	} catch (error) {
+	// Get namespaces for this route
+	const namespaces = getNamespacesForRoute(pathname);
+	return loadNamespaces(locale, namespaces).catch((error) => {
 		console.warn("Failed to load translations:", error);
 		return {};
-	}
+	});
 }
 
 // Generate static params for all locales to enable static generation
@@ -49,17 +47,15 @@ async function TranslationProvider({ locale, children }: { locale: string; child
 	// Strip locale prefix from pathname (e.g., /en/settings -> /settings)
 	const pathnameWithoutLocale = pathname.replace(new RegExp(`^/${locale}`), "") || "/";
 
-	try {
-		records = await loadRouteTranslations(locale, pathnameWithoutLocale);
-	} catch (error) {
+	records = await loadRouteTranslations(locale, pathnameWithoutLocale).catch((error) => {
 		console.warn("Failed to load Tolgee records:", error);
-	}
+		return {};
+	});
 
-	try {
-		messages = await getMessages({ locale });
-	} catch (error) {
+	messages = await getMessages({ locale }).catch((error) => {
 		console.warn("Failed to load next-intl messages:", error);
-	}
+		return {};
+	});
 
 	return (
 		<TolgeeNextProvider language={locale} staticData={records}>
@@ -92,28 +88,33 @@ async function NonceWrapper({ children }: { children: ReactNode }) {
 
 // Component for translated meta tags (title, description, keywords)
 // Uses next-intl instead of Tolgee to avoid observer side effects (duplicate elements, invisible characters)
-async function TranslatedMeta({ locale }: { locale: string }) {
-	try {
-		const messages = await getMessages({ locale });
-		const meta = (messages as Record<string, Record<string, string>>).meta || {};
+const DEFAULT_META = {
+	title: "z8 - time app",
+	description: "z8 - time app",
+	keywords: "z8, time, app, productivity",
+};
 
-		return (
-			<>
-				<title>{meta.title || "z8 - time app"}</title>
-				<meta content={meta.description || "z8 - time app"} name="description" />
-				<meta content={meta.keywords || "z8, time, app, productivity"} name="keywords" />
-			</>
-		);
-	} catch (error) {
+async function TranslatedMeta({ locale }: { locale: string }) {
+	let meta = DEFAULT_META;
+
+	const messages = await getMessages({ locale }).catch((error) => {
 		console.warn("Failed to load translated meta:", error);
-		return (
-			<>
-				<title>z8 - time app</title>
-				<meta content="z8 - time app" name="description" />
-				<meta content="z8, time, app, productivity" name="keywords" />
-			</>
-		);
-	}
+		return {};
+	});
+	const translatedMeta = (messages as Record<string, Record<string, string>>).meta || {};
+	meta = {
+		title: translatedMeta.title || DEFAULT_META.title,
+		description: translatedMeta.description || DEFAULT_META.description,
+		keywords: translatedMeta.keywords || DEFAULT_META.keywords,
+	};
+
+	return (
+		<>
+			<title>{meta.title}</title>
+			<meta content={meta.description} name="description" />
+			<meta content={meta.keywords} name="keywords" />
+		</>
+	);
 }
 
 export default async function LocaleLayout({ children, params }: Props) {

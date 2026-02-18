@@ -10,9 +10,9 @@ import {
 	IconTrash,
 	IconUsers,
 } from "@tabler/icons-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
-import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -56,20 +56,38 @@ import {
 } from "./actions";
 
 const PAGE_SIZE = 20;
+const LOADING_ROW_KEYS = ["loading-1", "loading-2", "loading-3", "loading-4", "loading-5"];
+
+function getInitialFilters() {
+	if (typeof window === "undefined") {
+		return {
+			search: "",
+			status: "all" as const,
+		};
+	}
+
+	const params = new URLSearchParams(window.location.search);
+	const statusParam = params.get("status");
+	return {
+		search: params.get("search") ?? "",
+		status:
+			statusParam === "active" || statusParam === "suspended" || statusParam === "deleted"
+				? statusParam
+				: ("all" as const),
+	};
+}
 
 export default function OrganizationsPage() {
 	const { t } = useTranslate();
 	const router = useRouter();
-	const searchParams = useSearchParams();
+	const queryClient = useQueryClient();
+	const initialFilters = getInitialFilters();
 
-	const [organizations, setOrganizations] = useState<PlatformOrganization[]>([]);
-	const [total, setTotal] = useState(0);
 	const [page, setPage] = useState(1);
-	const [search, setSearch] = useState(searchParams.get("search") ?? "");
+	const [search, setSearch] = useState(initialFilters.search);
 	const [status, setStatus] = useState<"all" | "active" | "suspended" | "deleted">(
-		(searchParams.get("status") as "all" | "active" | "suspended" | "deleted") ?? "all",
+		initialFilters.status,
 	);
-	const [isLoading, setIsLoading] = useState(true);
 	const [isPending, startTransition] = useTransition();
 	const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -81,27 +99,20 @@ export default function OrganizationsPage() {
 	const [deleteSkipNotification, setDeleteSkipNotification] = useState(false);
 	const [deleteConfirmName, setDeleteConfirmName] = useState("");
 
-	// Fetch organizations with explicit parameters to avoid race conditions
-	const fetchOrganizations = async (searchVal = search, statusVal = status, pageVal = page) => {
-		setIsLoading(true);
-		const result = await listOrganizationsAction(
-			{ search: searchVal, status: statusVal },
-			pageVal,
-			PAGE_SIZE,
-		);
-		if (result.success) {
-			setOrganizations(result.data.data);
-			setTotal(result.data.total);
-		} else {
-			toast.error(result.error);
-		}
-		setIsLoading(false);
-	};
+	const { data, isLoading } = useQuery({
+		queryKey: ["admin-organizations", search, status, page],
+		queryFn: async () => {
+			const result = await listOrganizationsAction({ search, status }, page, PAGE_SIZE);
+			if (!result.success) {
+				throw new Error(result.error);
+			}
+			return result.data;
+		},
+		retry: false,
+	});
 
-	// Initial load
-	useEffect(() => {
-		fetchOrganizations();
-	}, []);
+	const organizations = data?.data ?? [];
+	const total = data?.total ?? 0;
 
 	// Debounced search with immediate status change
 	const handleFilterChange = useCallback(
@@ -121,9 +132,6 @@ export default function OrganizationsPage() {
 				if (newSearch) params.set("search", newSearch);
 				if (newStatus !== "all") params.set("status", newStatus);
 				router.push(`/admin/organizations?${params.toString()}`);
-				startTransition(() => {
-					fetchOrganizations(newSearch, newStatus, 1);
-				});
 				return;
 			}
 
@@ -134,12 +142,9 @@ export default function OrganizationsPage() {
 				if (newSearch) params.set("search", newSearch);
 				if (newStatus !== "all") params.set("status", newStatus);
 				router.push(`/admin/organizations?${params.toString()}`);
-				startTransition(() => {
-					fetchOrganizations(newSearch, newStatus, 1);
-				});
 			}, 300);
 		},
-		[status, router],
+		[router, status],
 	);
 
 	// Cleanup timeout on unmount
@@ -161,7 +166,7 @@ export default function OrganizationsPage() {
 				toast.success(t("admin.organizations.toasts.suspended", "Organization \"{name}\" has been suspended", { name: suspendDialogOrg.name }));
 				setSuspendDialogOrg(null);
 				setSuspendReason("");
-				fetchOrganizations();
+				queryClient.invalidateQueries({ queryKey: ["admin-organizations"] });
 			} else {
 				toast.error(result.error);
 			}
@@ -174,7 +179,7 @@ export default function OrganizationsPage() {
 			const result = await unsuspendOrganizationAction(org.id);
 			if (result.success) {
 				toast.success(t("admin.organizations.toasts.unsuspended", "Organization \"{name}\" has been unsuspended", { name: org.name }));
-				fetchOrganizations();
+				queryClient.invalidateQueries({ queryKey: ["admin-organizations"] });
 			} else {
 				toast.error(result.error);
 			}
@@ -201,7 +206,7 @@ export default function OrganizationsPage() {
 				setDeleteImmediate(false);
 				setDeleteSkipNotification(false);
 				setDeleteConfirmName("");
-				fetchOrganizations();
+				queryClient.invalidateQueries({ queryKey: ["admin-organizations"] });
 			} else {
 				toast.error(result.error);
 			}
@@ -261,8 +266,8 @@ export default function OrganizationsPage() {
 				<CardContent className="p-0">
 					{isLoading ? (
 						<div className="p-6 space-y-3">
-							{[...Array(5)].map((_, i) => (
-								<Skeleton key={i} className="h-14 w-full rounded-lg" />
+							{LOADING_ROW_KEYS.map((key) => (
+								<Skeleton key={key} className="h-14 w-full rounded-lg" />
 							))}
 						</div>
 					) : (
@@ -413,7 +418,6 @@ export default function OrganizationsPage() {
 							onClick={() => {
 								const newPage = page - 1;
 								setPage(newPage);
-								fetchOrganizations(search, status, newPage);
 							}}
 							disabled={page === 1}
 						>
@@ -425,7 +429,6 @@ export default function OrganizationsPage() {
 							onClick={() => {
 								const newPage = page + 1;
 								setPage(newPage);
-								fetchOrganizations(search, status, newPage);
 							}}
 							disabled={page >= totalPages}
 						>

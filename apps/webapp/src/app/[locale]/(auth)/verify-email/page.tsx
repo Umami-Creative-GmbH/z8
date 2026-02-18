@@ -33,48 +33,47 @@ export default function VerifyEmailPage() {
 				return;
 			}
 
-			try {
-				const result = await authClient.verifyEmail({
+			const result = await authClient
+				.verifyEmail({
 					query: {
 						token,
 					},
-				});
+				})
+				.catch((error) => ({
+					error: {
+						message:
+							error instanceof Error
+								? error.message
+								: t("common.error-occurred", "An error occurred"),
+					},
+				}));
 
-				if (result.error) {
-					setStatus("error");
-					setErrorMessage(
-						result.error.message || t("auth.verification-failed-error", "Verification failed"),
-					);
-				} else {
-					// Process any pending invite code after successful verification
-					let pendingJoinResult: JoinResult = null;
-					try {
-						const pendingResult = await processPendingInviteCode();
-						if (pendingResult.success && pendingResult.data) {
-							pendingJoinResult = pendingResult.data;
-							setJoinResult(pendingJoinResult);
-						}
-					} catch {
-						// Silently ignore errors - user can still proceed
-					}
-
-					setStatus("success");
-					setTimeout(() => {
-						// If user joined an organization, go to onboarding
-						// Otherwise, go to sign-in
-						if (pendingJoinResult) {
-							router.push("/onboarding");
-						} else {
-							router.push("/sign-in");
-						}
-					}, 3000);
-				}
-			} catch (err) {
+			if (result.error) {
 				setStatus("error");
 				setErrorMessage(
-					err instanceof Error ? err.message : t("common.error-occurred", "An error occurred"),
+					result.error.message || t("auth.verification-failed-error", "Verification failed"),
 				);
+				return;
 			}
+
+			// Process any pending invite code after successful verification
+			let pendingJoinResult: JoinResult = null;
+			const pendingResult = await processPendingInviteCode().catch(() => null);
+			if (pendingResult?.success && pendingResult.data) {
+				pendingJoinResult = pendingResult.data;
+				setJoinResult(pendingJoinResult);
+			}
+
+			setStatus("success");
+			setTimeout(() => {
+				// If user joined an organization, go to onboarding
+				// Otherwise, go to sign-in
+				if (pendingJoinResult) {
+					router.push("/onboarding");
+				} else {
+					router.push("/sign-in");
+				}
+			}, 3000);
 		};
 
 		verifyEmail();

@@ -60,8 +60,6 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
 	const queryClient = useQueryClient();
 	const [currentEmployee, setCurrentEmployee] = useState<any>(null);
 	const [noEmployee, setNoEmployee] = useState(false);
-	const [canManageSettings, setCanManageSettings] = useState(false);
-	const [canManageMembers, setCanManageMembers] = useState(false);
 	const [isEditing, setIsEditing] = useState(false);
 	const [showAddMember, setShowAddMember] = useState(false);
 	const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -104,16 +102,9 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
 		loadCurrentEmployee();
 	}, []);
 
-	// Update form and permissions when team data changes
-	useEffect(() => {
-		if (team && currentEmployee) {
-			form.setFieldValue("name", team.name);
-			form.setFieldValue("description", team.description || "");
-			const isAdmin = currentEmployee.role === "admin";
-			setCanManageSettings((team as any).canManageSettings || isAdmin);
-			setCanManageMembers((team as any).canManageMembers || isAdmin);
-		}
-	}, [team, currentEmployee, form]);
+	const isAdmin = currentEmployee?.role === "admin";
+	const canManageSettings = Boolean((team as any)?.canManageSettings || isAdmin);
+	const canManageMembers = Boolean((team as any)?.canManageMembers || isAdmin);
 
 	async function loadAvailableEmployees() {
 		if (!team) return;
@@ -314,7 +305,17 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
 						<div className="flex items-center justify-between">
 							<CardTitle>Team Information</CardTitle>
 							{canManageSettings && !isEditing && (
-								<Button variant="ghost" size="sm" onClick={() => setIsEditing(true)}>
+								<Button
+									variant="ghost"
+									size="sm"
+									onClick={() => {
+										setIsEditing(true);
+										form.reset({
+											name: team.name,
+											description: team.description || "",
+										});
+									}}
+								>
 									Edit
 								</Button>
 							)}
@@ -384,11 +385,7 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
 										type="button"
 										variant="outline"
 										size="sm"
-										onClick={() => {
-											setIsEditing(false);
-											form.setFieldValue("name", team.name);
-											form.setFieldValue("description", team.description || "");
-										}}
+										onClick={() => setIsEditing(false)}
 										disabled={loading}
 									>
 										<IconX className="mr-2 size-4" />
