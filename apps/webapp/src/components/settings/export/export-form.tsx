@@ -52,27 +52,29 @@ export function ExportForm({ organizationId }: ExportFormProps) {
 		}
 
 		setIsSubmitting(true);
-		try {
-			const result = await startExportAction({
-				organizationId,
-				categories: Array.from(selectedCategories),
-			});
-
-			if (result.success) {
-				toast.success(t("settings.dataExport.form.submitSuccess", "Export started successfully"));
-				// Switch to history tab
-				router.refresh();
-			} else {
-				toast.error(
-					result.error || t("settings.dataExport.form.submitError", "Failed to start export"),
-				);
-			}
-		} catch (error) {
+		const result = await startExportAction({
+			organizationId,
+			categories: Array.from(selectedCategories),
+		}).catch((error: unknown) => {
 			toast.error(t("settings.dataExport.form.unexpectedError", "An unexpected error occurred"));
 			console.error("Export error:", error);
-		} finally {
+			return null;
+		});
+
+		if (!result) {
 			setIsSubmitting(false);
+			return;
 		}
+
+		if (result.success) {
+			toast.success(t("settings.dataExport.form.submitSuccess", "Export started successfully"));
+			// Switch to history tab
+			router.refresh();
+		} else {
+			toast.error(result.error || t("settings.dataExport.form.submitError", "Failed to start export"));
+		}
+
+		setIsSubmitting(false);
 	};
 
 	return (

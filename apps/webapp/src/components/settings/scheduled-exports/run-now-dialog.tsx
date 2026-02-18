@@ -83,25 +83,25 @@ export function RunNowDialog({
 
 	const handleRunNow = () => {
 		startTransition(async () => {
-			try {
-				const result = await runScheduledExportNowAction(
-					organizationId,
-					scheduleId,
-				);
-
-				if (result.success) {
-					toast.success(t("settings.scheduledExports.runNow.success", "Export started"), {
-						description: t("settings.scheduledExports.runNow.successDesc", "The export has been queued and will run shortly. Check the execution history for progress."),
-					});
-					onOpenChange(false);
-					onSuccess?.();
-				} else {
-					toast.error(t("settings.scheduledExports.runNow.error", "Failed to start export"), {
-						description: result.error,
-					});
-				}
-			} catch {
+			const result = await runScheduledExportNowAction(organizationId, scheduleId).catch(() => {
 				toast.error(t("settings.scheduledExports.toast.unexpectedError", "An unexpected error occurred"));
+				return null;
+			});
+
+			if (!result) {
+				return;
+			}
+
+			if (result.success) {
+				toast.success(t("settings.scheduledExports.runNow.success", "Export started"), {
+					description: t("settings.scheduledExports.runNow.successDesc", "The export has been queued and will run shortly. Check the execution history for progress."),
+				});
+				onOpenChange(false);
+				onSuccess?.();
+			} else {
+				toast.error(t("settings.scheduledExports.runNow.error", "Failed to start export"), {
+					description: result.error,
+				});
 			}
 		});
 	};

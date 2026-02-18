@@ -188,42 +188,36 @@ export function PersonioConfigForm({
 
 	const handleTestConnection = async () => {
 		setIsTesting(true);
-		try {
-			const result = await testPersonioConnectionAction(organizationId);
+		const result = await testPersonioConnectionAction(organizationId).catch(() => null);
+		if (!result) {
+			toast.error(t("settings.payrollExport.personio.connectionFailed", "Connection test failed"));
+			setIsTesting(false);
+			return;
+		}
 
-			if (result.success) {
-				if (result.data.success) {
-					toast.success(
-						t(
-							"settings.payrollExport.personio.connectionSuccess",
-							"Successfully connected to Personio",
-						),
-					);
-				} else {
-					toast.error(
-						t(
-							"settings.payrollExport.personio.connectionFailed",
-							"Connection test failed",
-						),
-						{
-							description: result.data.error,
-						},
-					);
-				}
+		if (result.success) {
+			if (result.data.success) {
+				toast.success(
+					t(
+						"settings.payrollExport.personio.connectionSuccess",
+						"Successfully connected to Personio",
+					),
+				);
 			} else {
 				toast.error(
-					t(
-						"settings.payrollExport.personio.connectionFailed",
-						"Connection test failed",
-					),
+					t("settings.payrollExport.personio.connectionFailed", "Connection test failed"),
 					{
-						description: result.error,
+						description: result.data.error,
 					},
 				);
 			}
-		} finally {
-			setIsTesting(false);
+		} else {
+			toast.error(t("settings.payrollExport.personio.connectionFailed", "Connection test failed"), {
+				description: result.error,
+			});
 		}
+
+		setIsTesting(false);
 	};
 
 	return (

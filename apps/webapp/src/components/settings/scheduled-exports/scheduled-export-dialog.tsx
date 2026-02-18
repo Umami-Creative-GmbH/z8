@@ -4,7 +4,7 @@ import { useForm } from "@tanstack/react-form";
 import { useStore } from "@tanstack/react-store";
 import { useTranslate } from "@tolgee/react";
 import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
-import { useCallback, useEffect, useState, useTransition } from "react";
+import { useCallback, useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
 	createScheduledExportAction,
@@ -137,55 +137,59 @@ export function ScheduledExportDialog({
 		defaultValues: { ...DEFAULT_VALUES, ...initialValues } as ScheduledExportFormValues,
 		onSubmit: async ({ value }) => {
 			startTransition(async () => {
-				try {
-					const result = isEditing
-						? await updateScheduledExportAction({
-								id: editScheduleId!,
-								organizationId,
-								...value,
-							})
-						: await createScheduledExportAction({
-								organizationId,
-								...value,
-							});
+				const result = await (isEditing
+					? updateScheduledExportAction({
+							id: editScheduleId!,
+							organizationId,
+							...value,
+						})
+					: createScheduledExportAction({
+							organizationId,
+							...value,
+						})
+				).then((response) => response, () => null);
 
-					if (result.success) {
-						toast.success(
-							isEditing
-								? t("settings.scheduledExports.toast.updateSuccess", "Schedule updated")
-								: t("settings.scheduledExports.toast.createSuccess", "Schedule created"),
-							{
-								description: isEditing
-									? t("settings.scheduledExports.toast.updateSuccessDesc", "Your scheduled export has been updated.")
-									: t("settings.scheduledExports.toast.createSuccessDesc", "Your scheduled export has been created and will run according to the schedule."),
-							},
-						);
-						onOpenChange(false);
-						onSuccess?.();
-					} else {
-						toast.error(
-							isEditing
-								? t("settings.scheduledExports.toast.updateError", "Failed to update schedule")
-								: t("settings.scheduledExports.toast.createError", "Failed to create schedule"),
-							{
-								description: result.error,
-							},
-						);
-					}
-				} catch {
-					toast.error(t("settings.scheduledExports.toast.unexpectedError", "An unexpected error occurred"));
+				if (!result) {
+					toast.error(
+						t("settings.scheduledExports.toast.unexpectedError", "An unexpected error occurred"),
+					);
+					return;
+				}
+
+				if (result.success) {
+					toast.success(
+						isEditing
+							? t("settings.scheduledExports.toast.updateSuccess", "Schedule updated")
+							: t("settings.scheduledExports.toast.createSuccess", "Schedule created"),
+						{
+							description: isEditing
+								? t("settings.scheduledExports.toast.updateSuccessDesc", "Your scheduled export has been updated.")
+								: t("settings.scheduledExports.toast.createSuccessDesc", "Your scheduled export has been created and will run according to the schedule."),
+						},
+					);
+					onOpenChange(false);
+					onSuccess?.();
+				} else {
+					toast.error(
+						isEditing
+							? t("settings.scheduledExports.toast.updateError", "Failed to update schedule")
+							: t("settings.scheduledExports.toast.createError", "Failed to create schedule"),
+						{
+							description: result.error,
+						},
+					);
 				}
 			});
 		},
 	});
 
-	// Reset form when dialog opens/closes
-	useEffect(() => {
-		if (open) {
+	const handleOpenChange = (nextOpen: boolean) => {
+		if (!nextOpen) {
 			form.reset({ ...DEFAULT_VALUES, ...initialValues });
 			setCurrentStep(0);
 		}
-	}, [open, initialValues, form]);
+		onOpenChange(nextOpen);
+	};
 
 	// Get current form values for validation
 	const formValues = useStore(form.store, (state) => state.values);
@@ -240,7 +244,7 @@ export function ScheduledExportDialog({
 	const progress = ((currentStep + 1) / STEPS.length) * 100;
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
+		<Dialog open={open} onOpenChange={handleOpenChange}>
 			<DialogContent
 				className="max-w-2xl max-h-[90vh] overflow-y-auto"
 				aria-describedby="wizard-description"

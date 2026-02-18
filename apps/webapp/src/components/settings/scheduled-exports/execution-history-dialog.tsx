@@ -63,22 +63,27 @@ export function ExecutionHistoryDialog({
 			const fetchHistory = async () => {
 				setIsLoading(true);
 				setError(null);
-				try {
-					const result = await getExecutionHistoryAction(
-						organizationId,
-						scheduleId,
-						50,
-					);
-					if (result.success) {
-						setExecutions(result.data);
-					} else {
-						setError(result.error || t("settings.scheduledExports.history.loadError", "Failed to load execution history"));
-					}
-				} catch {
+				const result = await getExecutionHistoryAction(organizationId, scheduleId, 50).then(
+					(response) => response,
+					() => null,
+				);
+
+				if (!result) {
 					setError(t("settings.scheduledExports.history.loadError", "Failed to load execution history"));
-				} finally {
 					setIsLoading(false);
+					return;
 				}
+
+				if (result.success) {
+					setExecutions(result.data);
+				} else {
+					setError(
+						result.error ||
+							t("settings.scheduledExports.history.loadError", "Failed to load execution history"),
+					);
+				}
+
+				setIsLoading(false);
 			};
 			fetchHistory();
 		}

@@ -151,41 +151,48 @@ export function StorageSettingsForm({
 		const values = formValues;
 
 		startTransition(async () => {
-			try {
-				// If we have complete credentials, test with those
-				// Otherwise test with stored config
-				const testConfig =
-					values.accessKeyId && values.secretAccessKey
-						? {
-								bucket: values.bucket,
-								accessKeyId: values.accessKeyId,
-								secretAccessKey: values.secretAccessKey,
-								region: values.region,
-								endpoint: values.endpoint,
-							}
-						: undefined;
-
-				const result = await testStorageConnectionAction(organizationId, testConfig);
-
-				if (result.success) {
-					setTestResult(result.data);
-					if (result.data.success) {
-						// Refresh config to get updated verification status
-						const configResult = await getStorageConfigAction(organizationId);
-						if (configResult.success && configResult.data) {
-							setConfig(configResult.data);
+			// If we have complete credentials, test with those
+			// Otherwise test with stored config
+			const testConfig =
+				values.accessKeyId && values.secretAccessKey
+					? {
+							bucket: values.bucket,
+							accessKeyId: values.accessKeyId,
+							secretAccessKey: values.secretAccessKey,
+							region: values.region,
+							endpoint: values.endpoint,
 						}
-					}
-				} else {
-					setTestResult({
-						success: false,
-						message:
-							result.error ?? t("settings.dataExport.storage.testFailed", "Connection test failed"),
-					});
-				}
-			} finally {
+					: undefined;
+
+			const result = await testStorageConnectionAction(organizationId, testConfig).catch(
+				() => null,
+			);
+			if (!result) {
+				setTestResult({
+					success: false,
+					message: t("settings.dataExport.storage.testFailed", "Connection test failed"),
+				});
 				setIsTesting(false);
+				return;
 			}
+
+			if (result.success) {
+				setTestResult(result.data);
+				if (result.data.success) {
+					// Refresh config to get updated verification status
+					const configResult = await getStorageConfigAction(organizationId).catch(() => null);
+					if (configResult?.success && configResult.data) {
+						setConfig(configResult.data);
+					}
+				}
+			} else {
+				setTestResult({
+					success: false,
+					message: result.error ?? t("settings.dataExport.storage.testFailed", "Connection test failed"),
+				});
+			}
+
+			setIsTesting(false);
 		});
 	};
 

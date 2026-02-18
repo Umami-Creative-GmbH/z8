@@ -54,46 +54,52 @@ export function ExportHistory({ exports, organizationId }: ExportHistoryProps) {
 
 	const handleDownload = async (exportId: string) => {
 		setLoadingAction(`download-${exportId}`);
-		try {
-			const result = await regenerateDownloadUrlAction(exportId, organizationId);
-			if (result.success) {
-				// Open download URL in new tab
-				const newWindow = window.open(result.data, "_blank");
-				if (newWindow) {
-					newWindow.opener = null;
-				}
-				toast.success(t("settings.dataExport.history.downloadSuccess", "Download started"));
-			} else {
-				toast.error(
-					result.error || t("settings.dataExport.history.downloadError", "Failed to download"),
-				);
-			}
-		} catch (error) {
+		const result = await regenerateDownloadUrlAction(exportId, organizationId).catch((error: unknown) => {
 			toast.error(t("settings.dataExport.history.unexpectedError", "An unexpected error occurred"));
 			console.error("Download error:", error);
-		} finally {
+			return null;
+		});
+
+		if (!result) {
 			setLoadingAction(null);
+			return;
 		}
+
+		if (result.success) {
+			// Open download URL in new tab
+			const newWindow = window.open(result.data, "_blank");
+			if (newWindow) {
+				newWindow.opener = null;
+			}
+			toast.success(t("settings.dataExport.history.downloadSuccess", "Download started"));
+		} else {
+			toast.error(result.error || t("settings.dataExport.history.downloadError", "Failed to download"));
+		}
+
+		setLoadingAction(null);
 	};
 
 	const handleDelete = async (exportId: string) => {
 		setLoadingAction(`delete-${exportId}`);
-		try {
-			const result = await deleteExportAction(exportId, organizationId);
-			if (result.success) {
-				toast.success(t("settings.dataExport.history.deleteSuccess", "Export deleted"));
-				router.refresh();
-			} else {
-				toast.error(
-					result.error || t("settings.dataExport.history.deleteError", "Failed to delete export"),
-				);
-			}
-		} catch (error) {
+		const result = await deleteExportAction(exportId, organizationId).catch((error: unknown) => {
 			toast.error(t("settings.dataExport.history.unexpectedError", "An unexpected error occurred"));
 			console.error("Delete error:", error);
-		} finally {
+			return null;
+		});
+
+		if (!result) {
 			setLoadingAction(null);
+			return;
 		}
+
+		if (result.success) {
+			toast.success(t("settings.dataExport.history.deleteSuccess", "Export deleted"));
+			router.refresh();
+		} else {
+			toast.error(result.error || t("settings.dataExport.history.deleteError", "Failed to delete export"));
+		}
+
+		setLoadingAction(null);
 	};
 
 	if (exports.length === 0) {

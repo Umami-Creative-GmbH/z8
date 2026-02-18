@@ -94,32 +94,35 @@ export function SuccessFactorsConfigForm({
 
 	const handleTestConnection = async () => {
 		setIsTestingConnection(true);
-		try {
-			const result = await testSuccessFactorsConnectionAction({
-				organizationId,
-				config: form.state.values,
-			});
+		const result = await testSuccessFactorsConnectionAction({
+			organizationId,
+			config: form.state.values,
+		}).then((response) => response, () => null);
 
-			if (result.success && result.data && result.data.success) {
-				toast.success(
-					t("settings.payrollExport.successfactors.connectionSuccess", "Connection successful"),
-				);
-			} else {
-				const errorMessage = result.success && result.data ? result.data.error : (result.success === false ? result.error : undefined);
-				toast.error(
-					t("settings.payrollExport.successfactors.connectionFailed", "Connection failed"),
-					{
-						description: errorMessage,
-					},
-				);
-			}
-		} catch {
+		if (!result) {
 			toast.error(
 				t("settings.payrollExport.successfactors.connectionFailed", "Connection failed"),
 			);
-		} finally {
 			setIsTestingConnection(false);
+			return;
 		}
+
+		if (result.success && result.data && result.data.success) {
+			toast.success(
+				t("settings.payrollExport.successfactors.connectionSuccess", "Connection successful"),
+			);
+		} else {
+			const errorMessage = result.success && result.data
+				? result.data.error
+				: result.success === false
+					? result.error
+					: undefined;
+			toast.error(t("settings.payrollExport.successfactors.connectionFailed", "Connection failed"), {
+				description: errorMessage,
+			});
+		}
+
+		setIsTestingConnection(false);
 	};
 
 	return (
