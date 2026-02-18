@@ -19,9 +19,6 @@ import { formatFactorAsMultiplier } from "@/lib/work-category/work-category.serv
 
 const LAST_CATEGORY_KEY = "z8-last-work-category-id";
 
-// Cache localStorage read at module level to avoid repeated access
-let cachedLastCategoryId: string | null | undefined;
-
 interface WorkCategory {
 	id: string;
 	name: string;
@@ -69,7 +66,13 @@ export function WorkCategorySelector({
 	autoSelectLast = true,
 }: WorkCategorySelectorProps) {
 	const { t } = useTranslate();
-	const [hasAutoSelected, setHasAutoSelected] = useState(false);
+	const hasAutoSelectedRef = useRef(false);
+	const [lastCategoryId, setLastCategoryId] = useState<string | null>(() => {
+		if (typeof window === "undefined") {
+			return null;
+		}
+		return localStorage.getItem(LAST_CATEGORY_KEY);
+	});
 
 	// Fetch available categories for this employee
 	const {
@@ -90,36 +93,35 @@ export function WorkCategorySelector({
 
 	const categories = categoriesResult || [];
 
-	// Read localStorage once and cache at module level
-	const lastCategoryIdRef = useRef<string | null>(null);
-	if (cachedLastCategoryId === undefined && typeof window !== "undefined") {
-		cachedLastCategoryId = localStorage.getItem(LAST_CATEGORY_KEY);
-	}
-	lastCategoryIdRef.current = cachedLastCategoryId ?? null;
-
 	// Build a Map for O(1) category lookups
 	const categoriesMap = useMemo(() => new Map(categories.map((c) => [c.id, c])), [categories]);
 
 	// Auto-select last used category on initial load
 	useEffect(() => {
-		if (autoSelectLast && !hasAutoSelected && categories.length > 0 && value === undefined) {
-			const lastCategoryId = lastCategoryIdRef.current;
+		if (autoSelectLast && !hasAutoSelectedRef.current && categories.length > 0 && value === undefined) {
 			if (lastCategoryId && categoriesMap.has(lastCategoryId)) {
 				onValueChange(lastCategoryId);
 			}
-			setHasAutoSelected(true);
+			hasAutoSelectedRef.current = true;
 		}
-	}, [autoSelectLast, hasAutoSelected, categories.length, categoriesMap, value, onValueChange]);
+	}, [
+		autoSelectLast,
+		categories.length,
+		categoriesMap,
+		value,
+		onValueChange,
+		lastCategoryId,
+	]);
 
 	// Save selected category to localStorage and update cache
 	const handleValueChange = (newValue: string) => {
 		if (newValue === "none") {
 			localStorage.removeItem(LAST_CATEGORY_KEY);
-			cachedLastCategoryId = null;
+			setLastCategoryId(null);
 			onValueChange(undefined);
 		} else {
 			localStorage.setItem(LAST_CATEGORY_KEY, newValue);
-			cachedLastCategoryId = newValue;
+			setLastCategoryId(newValue);
 			onValueChange(newValue);
 		}
 	};

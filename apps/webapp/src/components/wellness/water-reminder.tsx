@@ -2,7 +2,7 @@
 
 import { IconDroplet, IconLoader2, IconMoonStars, IconX } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -29,7 +29,11 @@ interface WaterReminderProps {
  */
 export function WaterReminder({ isClockedIn, sessionStartTime, onDismiss }: WaterReminderProps) {
 	const { t } = useTranslate();
-	const [localDismissed, setLocalDismissed] = useState(false);
+	const sessionKey = sessionStartTime?.getTime() ?? null;
+	const [dismissedSessionKeys, setDismissedSessionKeys] = useState<Set<number>>(() => new Set());
+	const [dismissedWithoutSession, setDismissedWithoutSession] = useState(false);
+	const localDismissed =
+		sessionKey === null ? dismissedWithoutSession : dismissedSessionKeys.has(sessionKey);
 
 	// Get water reminder state
 	const {
@@ -38,7 +42,6 @@ export function WaterReminder({ isClockedIn, sessionStartTime, onDismiss }: Wate
 		isSnoozed,
 		handleReminderAction,
 		dismiss: dismissReminder,
-		resetDismissed,
 	} = useWaterReminder({
 		enabled: isClockedIn,
 		workSessionStart: sessionStartTime,
@@ -56,15 +59,6 @@ export function WaterReminder({ isClockedIn, sessionStartTime, onDismiss }: Wate
 		isSnoozing,
 		goalMet,
 	} = useHydrationStats({ enabled: isClockedIn && enabled });
-
-	// Reset dismissed state when user clocks in again
-	const sessionKey = sessionStartTime?.getTime() ?? 0;
-	useEffect(() => {
-		if (isClockedIn && sessionKey > 0) {
-			setLocalDismissed(false);
-			resetDismissed();
-		}
-	}, [isClockedIn, sessionKey, resetDismissed]);
 
 	// Don't show if not enabled, not clocked in, dismissed, snoozed, or no reminder needed
 	if (!enabled || !isClockedIn || localDismissed || isSnoozed || !showReminder) {
@@ -105,7 +99,15 @@ export function WaterReminder({ isClockedIn, sessionStartTime, onDismiss }: Wate
 	};
 
 	const handleDismiss = () => {
-		setLocalDismissed(true);
+		if (sessionKey === null) {
+			setDismissedWithoutSession(true);
+		} else {
+			setDismissedSessionKeys((prev) => {
+				const next = new Set(prev);
+				next.add(sessionKey);
+				return next;
+			});
+		}
 		dismissReminder();
 		onDismiss?.();
 	};

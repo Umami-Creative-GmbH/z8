@@ -19,15 +19,13 @@ export function CronPreview({
 	timezone,
 }: CronPreviewProps) {
 	const { t } = useTranslate();
+	const hasValidInput = scheduleType !== "cron" || Boolean(cronExpression);
 	const [nextRuns, setNextRuns] = useState<string[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
 	useEffect(() => {
-		// Only fetch if we have valid input
-		if (scheduleType === "cron" && !cronExpression) {
-			setNextRuns([]);
-			setError(null);
+		if (!hasValidInput) {
 			return;
 		}
 
@@ -35,32 +33,39 @@ export function CronPreview({
 			setIsLoading(true);
 			setError(null);
 
-			try {
-				const result = await previewNextExecutionsAction(
-					scheduleType,
-					cronExpression,
-					timezone,
-					5,
-				);
+			const result = await previewNextExecutionsAction(
+				scheduleType,
+				cronExpression,
+				timezone,
+				5,
+			).then((response) => response, () => null);
 
-				if (result.success) {
-					setNextRuns(result.data);
-				} else {
-					setError(result.error || t("settings.scheduledExports.cronPreview.error", "Failed to calculate next runs"));
-					setNextRuns([]);
-				}
-			} catch {
+			if (!result) {
 				setError(t("settings.scheduledExports.cronPreview.error", "Failed to calculate next runs"));
 				setNextRuns([]);
-			} finally {
 				setIsLoading(false);
+				return;
 			}
+
+			if (result.success) {
+				setNextRuns(result.data);
+			} else {
+				setError(
+					result.error || t("settings.scheduledExports.cronPreview.error", "Failed to calculate next runs"),
+				);
+				setNextRuns([]);
+			}
+
+			setIsLoading(false);
 		};
 
 		// Debounce for cron expression changes
 		const timer = setTimeout(fetchPreview, scheduleType === "cron" ? 500 : 0);
 		return () => clearTimeout(timer);
-	}, [scheduleType, cronExpression, timezone, t]);
+	}, [hasValidInput, scheduleType, cronExpression, timezone, t]);
+
+	const displayError = hasValidInput ? error : null;
+	const displayRuns = hasValidInput ? nextRuns : [];
 
 	if (isLoading) {
 		return (
@@ -71,16 +76,16 @@ export function CronPreview({
 		);
 	}
 
-	if (error) {
+	if (displayError) {
 		return (
 			<div className="flex items-center gap-2 text-sm text-destructive py-2" role="alert">
 				<AlertCircle className="h-4 w-4" aria-hidden="true" />
-				<span>{error}</span>
+				<span>{displayError}</span>
 			</div>
 		);
 	}
 
-	if (nextRuns.length === 0) {
+	if (displayRuns.length === 0) {
 		return null;
 	}
 
@@ -91,7 +96,7 @@ export function CronPreview({
 				<span>{t("settings.scheduledExports.cronPreview.title", "Next 5 scheduled runs")}</span>
 			</div>
 			<ul className="space-y-1 text-sm text-muted-foreground" aria-label={t("settings.scheduledExports.cronPreview.listLabel", "List of next scheduled runs")}>
-				{nextRuns.map((run) => {
+				{displayRuns.map((run) => {
 					const dt = DateTime.fromISO(run).setZone(timezone);
 					return (
 						<li key={run} className="flex items-center gap-2">

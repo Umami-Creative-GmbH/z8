@@ -34,7 +34,11 @@ interface BreakReminderProps {
  */
 export function BreakReminder({ isClockedIn, sessionStartTime, onDismiss }: BreakReminderProps) {
 	const { t } = useTranslate();
-	const [dismissed, setDismissed] = useState(false);
+	const sessionKey = sessionStartTime?.getTime() ?? null;
+	const [dismissedSessionKeys, setDismissedSessionKeys] = useState<Set<number>>(() => new Set());
+	const [dismissedWithoutSession, setDismissedWithoutSession] = useState(false);
+	const dismissed =
+		sessionKey === null ? dismissedWithoutSession : dismissedSessionKeys.has(sessionKey);
 
 	// Use elapsed timer for real-time updates (only causes re-renders in this component)
 	const elapsedSeconds = useElapsedTimer(isClockedIn ? sessionStartTime : null);
@@ -91,22 +95,21 @@ export function BreakReminder({ isClockedIn, sessionStartTime, onDismiss }: Brea
 		};
 	}, [serverData, elapsedMinutes]);
 
-	// Reset dismissed state when user clocks in again
-	// Using a key based on sessionStartTime would be cleaner, but this works
-	const sessionKey = sessionStartTime?.getTime() ?? 0;
-	useMemo(() => {
-		if (isClockedIn && sessionKey > 0) {
-			setDismissed(false);
-		}
-	}, [isClockedIn, sessionKey]);
-
 	// Don't show if not clocked in, dismissed, or no break needed
 	if (!isClockedIn || dismissed || !breakStatus?.needsBreakSoon) {
 		return null;
 	}
 
 	const handleDismiss = () => {
-		setDismissed(true);
+		if (sessionKey === null) {
+			setDismissedWithoutSession(true);
+		} else {
+			setDismissedSessionKeys((prev) => {
+				const next = new Set(prev);
+				next.add(sessionKey);
+				return next;
+			});
+		}
 		onDismiss?.();
 	};
 

@@ -17,9 +17,6 @@ import { cn } from "@/lib/utils";
 
 const LAST_PROJECT_KEY = "z8-last-project-id";
 
-// Cache localStorage read at module level to avoid repeated access
-let cachedLastProjectId: string | null | undefined;
-
 interface ProjectSelectorProps {
 	/**
 	 * Currently selected project ID
@@ -56,38 +53,43 @@ export function ProjectSelector({
 }: ProjectSelectorProps) {
 	const { t } = useTranslate();
 	const { projects, isLoading, isError } = useAssignedProjects();
-	const [hasAutoSelected, setHasAutoSelected] = useState(false);
-
-	// Read localStorage once and cache at module level (js-cache-storage)
-	const lastProjectIdRef = useRef<string | null>(null);
-	if (cachedLastProjectId === undefined) {
-		cachedLastProjectId = localStorage.getItem(LAST_PROJECT_KEY);
-	}
-	lastProjectIdRef.current = cachedLastProjectId;
+	const hasAutoSelectedRef = useRef(false);
+	const [lastProjectId, setLastProjectId] = useState<string | null>(() => {
+		if (typeof window === "undefined") {
+			return null;
+		}
+		return localStorage.getItem(LAST_PROJECT_KEY);
+	});
 
 	// Build a Map for O(1) project lookups (js-index-maps)
 	const projectsMap = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects]);
 
 	// Auto-select last used project on initial load
 	useEffect(() => {
-		if (autoSelectLast && !hasAutoSelected && projects.length > 0 && value === undefined) {
-			const lastProjectId = lastProjectIdRef.current;
+		if (autoSelectLast && !hasAutoSelectedRef.current && projects.length > 0 && value === undefined) {
 			if (lastProjectId && projectsMap.has(lastProjectId)) {
 				onValueChange(lastProjectId);
 			}
-			setHasAutoSelected(true);
+			hasAutoSelectedRef.current = true;
 		}
-	}, [autoSelectLast, hasAutoSelected, projects.length, projectsMap, value, onValueChange]);
+	}, [
+		autoSelectLast,
+		projects.length,
+		projectsMap,
+		value,
+		onValueChange,
+		lastProjectId,
+	]);
 
 	// Save selected project to localStorage and update cache
 	const handleValueChange = (newValue: string) => {
 		if (newValue === "none") {
 			localStorage.removeItem(LAST_PROJECT_KEY);
-			cachedLastProjectId = null;
+			setLastProjectId(null);
 			onValueChange(undefined);
 		} else {
 			localStorage.setItem(LAST_PROJECT_KEY, newValue);
-			cachedLastProjectId = newValue;
+			setLastProjectId(newValue);
 			onValueChange(newValue);
 		}
 	};
