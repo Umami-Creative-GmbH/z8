@@ -1,7 +1,7 @@
 "use client";
 
 import { IconCheck, IconSelector } from "@tabler/icons-react";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Command,
@@ -45,6 +45,7 @@ export function SearchableSelect({
 	className,
 }: SearchableSelectProps) {
 	const [open, setOpen] = useState(false);
+	const listboxId = useId();
 	const selectedOption = options.find((opt) => opt.code === value);
 
 	return (
@@ -54,6 +55,7 @@ export function SearchableSelect({
 					variant="outline"
 					role="combobox"
 					aria-expanded={open}
+					aria-controls={listboxId}
 					className={cn("w-full justify-between font-normal", className)}
 					disabled={disabled}
 				>
@@ -64,7 +66,7 @@ export function SearchableSelect({
 			<PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
 				<Command>
 					<CommandInput placeholder={searchPlaceholder} />
-					<CommandList>
+					<CommandList id={listboxId}>
 						<CommandEmpty>{emptyText}</CommandEmpty>
 						<CommandGroup>
 							{allowEmpty && (

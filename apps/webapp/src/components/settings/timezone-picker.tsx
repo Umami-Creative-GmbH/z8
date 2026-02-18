@@ -100,6 +100,7 @@ interface TimezonePickerProps {
 
 export function TimezonePicker({ value = "UTC", onChange, disabled }: TimezonePickerProps) {
 	const [open, setOpen] = React.useState(false);
+	const listboxId = React.useId();
 
 	// Get current timezone label
 	const selectedLabel = React.useMemo(() => {
@@ -117,6 +118,7 @@ export function TimezonePicker({ value = "UTC", onChange, disabled }: TimezonePi
 					variant="outline"
 					role="combobox"
 					aria-expanded={open}
+					aria-controls={listboxId}
 					className="w-full justify-between"
 					disabled={disabled}
 				>
@@ -131,7 +133,7 @@ export function TimezonePicker({ value = "UTC", onChange, disabled }: TimezonePi
 				<Command>
 					<CommandInput placeholder="Search timezone..." />
 					<CommandEmpty>No timezone found.</CommandEmpty>
-					<CommandList>
+					<CommandList id={listboxId}>
 						{TIMEZONE_GROUPS.map((group) => (
 							<CommandGroup key={group.region} heading={group.region}>
 								{group.timezones.map((tz) => (
