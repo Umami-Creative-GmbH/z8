@@ -23,63 +23,89 @@ export function TwoFactorVerificationForm() {
 	const handleVerify = async () => {
 		setIsLoading(true);
 
-		try {
-			if (useBackupCode) {
-				if (backupCode.length < 6) {
-					toast.error(t("auth.2fa.invalid-backup-code", "Invalid backup code"), {
-						description: t("auth.2fa.enter-valid-backup-code", "Please enter a valid backup code"),
-					});
-					setIsLoading(false);
-					return;
-				}
-
-				const result = await authClient.twoFactor.verifyBackupCode({
-					code: backupCode,
+		if (useBackupCode) {
+			if (backupCode.length < 6) {
+				toast.error(t("auth.2fa.invalid-backup-code", "Invalid backup code"), {
+					description: t("auth.2fa.enter-valid-backup-code", "Please enter a valid backup code"),
 				});
-
-				if (result.error) {
-					toast.error(t("auth.2fa.verification-failed", "Verification failed"), {
-						description:
-							result.error.message || t("auth.2fa.invalid-backup-code", "Invalid backup code"),
-					});
-				} else {
-					toast.success(t("auth.2fa.verification-successful", "Verification successful"));
-					router.push("/");
-				}
-			} else {
-				if (otpValue.length !== 6) {
-					toast.error(t("auth.2fa.invalid-code", "Invalid code"), {
-						description: t("auth.2fa.enter-6-digit-code", "Please enter a 6-digit code"),
-					});
-					setIsLoading(false);
-					return;
-				}
-
-				const result = await authClient.twoFactor.verifyTotp({
-					code: otpValue,
-				});
-
-				if (result.error) {
-					toast.error(t("auth.2fa.verification-failed", "Verification failed"), {
-						description:
-							result.error.message ||
-							t("auth.2fa.invalid-verification-code", "Invalid verification code"),
-					});
-				} else {
-					toast.success(t("auth.2fa.verification-successful", "Verification successful"));
-					router.push("/");
-				}
+				setIsLoading(false);
+				return;
 			}
-		} catch (error) {
+
+			const result = await authClient.twoFactor
+				.verifyBackupCode({
+					code: backupCode,
+				})
+				.catch((error: unknown) => {
+					toast.error(t("auth.2fa.verification-failed", "Verification failed"), {
+						description:
+							error instanceof Error
+								? error.message
+								: t("auth.2fa.unexpected-error", "An unexpected error occurred"),
+					});
+					return null;
+				});
+
+			if (!result) {
+				setIsLoading(false);
+				return;
+			}
+
+			if (result.error) {
+				toast.error(t("auth.2fa.verification-failed", "Verification failed"), {
+					description:
+						result.error.message || t("auth.2fa.invalid-backup-code", "Invalid backup code"),
+				});
+				setIsLoading(false);
+				return;
+			}
+
+			toast.success(t("auth.2fa.verification-successful", "Verification successful"));
+			router.push("/");
+			setIsLoading(false);
+			return;
+		}
+
+		if (otpValue.length !== 6) {
+			toast.error(t("auth.2fa.invalid-code", "Invalid code"), {
+				description: t("auth.2fa.enter-6-digit-code", "Please enter a 6-digit code"),
+			});
+			setIsLoading(false);
+			return;
+		}
+
+		const result = await authClient.twoFactor
+			.verifyTotp({
+				code: otpValue,
+			})
+			.catch((error: unknown) => {
+				toast.error(t("auth.2fa.verification-failed", "Verification failed"), {
+					description:
+						error instanceof Error
+							? error.message
+							: t("auth.2fa.unexpected-error", "An unexpected error occurred"),
+				});
+				return null;
+			});
+
+		if (!result) {
+			setIsLoading(false);
+			return;
+		}
+
+		if (result.error) {
 			toast.error(t("auth.2fa.verification-failed", "Verification failed"), {
 				description:
-					error instanceof Error
-						? error.message
-						: t("auth.2fa.unexpected-error", "An unexpected error occurred"),
+					result.error.message ||
+					t("auth.2fa.invalid-verification-code", "Invalid verification code"),
 			});
-		} finally {
 			setIsLoading(false);
+			return;
 		}
+
+		toast.success(t("auth.2fa.verification-successful", "Verification successful"));
+		router.push("/");
+		setIsLoading(false);
 	};
 
 	return (

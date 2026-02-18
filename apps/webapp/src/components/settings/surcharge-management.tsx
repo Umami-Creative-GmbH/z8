@@ -53,17 +53,17 @@ export function SurchargeManagement({ organizationId }: SurchargeManagementProps
 
 	const loadData = useCallback(async () => {
 		setIsLoading(true);
-		try {
-			const modelsResult = await getSurchargeModels(organizationId);
 
-			if (modelsResult.success) {
-				setModels(modelsResult.data);
-			}
-		} catch (error) {
+		const modelsResult = await getSurchargeModels(organizationId).catch((error: unknown) => {
 			console.error("Failed to load surcharge data:", error);
-		} finally {
-			setIsLoading(false);
+			return null;
+		});
+
+		if (modelsResult?.success) {
+			setModels(modelsResult.data);
 		}
+
+		setIsLoading(false);
 	}, [organizationId]);
 
 	useEffect(() => {
