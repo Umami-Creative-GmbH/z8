@@ -42,15 +42,14 @@ export function ApprovalActionDialog({
 		}
 
 		setLoading(true);
-		try {
-			await onConfirm(action === "reject" ? rejectionReason : undefined);
+		const confirmed = await onConfirm(action === "reject" ? rejectionReason : undefined)
+			.then(() => true)
+			.catch(() => false);
+		if (confirmed) {
 			onOpenChange(false);
 			setRejectionReason("");
-		} catch (_error) {
-			// Error handling is done in the parent
-		} finally {
-			setLoading(false);
 		}
+		setLoading(false);
 	};
 
 	return (

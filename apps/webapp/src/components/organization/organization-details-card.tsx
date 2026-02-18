@@ -28,6 +28,13 @@ export function OrganizationDetailsCard({
 	const inputRef = useRef<HTMLInputElement>(null);
 
 	const canEdit = currentMemberRole === "owner";
+	const metadataDescription =
+		typeof organization.metadata === "object" &&
+		organization.metadata !== null &&
+		"description" in organization.metadata &&
+		typeof organization.metadata.description === "string"
+			? organization.metadata.description
+			: null;
 
 	// Image upload hook
 	const {
@@ -127,16 +134,9 @@ export function OrganizationDetailsCard({
 							{memberCount} {memberCount === 1 ? "member" : "members"}
 						</span>
 					</div>
-					{organization.metadata && (
+					{metadataDescription && (
 						<p className="mt-4 text-sm text-muted-foreground">
-							{(() => {
-								try {
-									const metadata = JSON.parse(organization.metadata as string);
-									return metadata.description || null;
-								} catch {
-									return null;
-								}
-							})()}
+							{metadataDescription}
 						</p>
 					)}
 				</CardContent>

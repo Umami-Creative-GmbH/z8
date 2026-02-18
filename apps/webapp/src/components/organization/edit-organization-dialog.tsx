@@ -34,13 +34,9 @@ export function EditOrganizationDialog({
 	const [isPending, startTransition] = useTransition();
 
 	// Parse existing metadata
-	const existingMetadata = (() => {
-		try {
-			return organization.metadata ? JSON.parse(organization.metadata as string) : {};
-		} catch {
-			return {};
-		}
-	})();
+	const existingMetadata = organization.metadata
+		? (JSON.parse(organization.metadata as string) as Record<string, string>)
+		: {};
 
 	const [formData, setFormData] = useState({
 		name: organization.name,

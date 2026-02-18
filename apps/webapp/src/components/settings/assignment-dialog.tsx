@@ -4,7 +4,7 @@ import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import {
 	createPresetAssignment,
@@ -93,13 +93,13 @@ export function AssignmentDialog({
 		},
 	});
 
-	// Reset form when dialog opens
-	useEffect(() => {
-		if (open) {
+	const handleOpenChange = (nextOpen: boolean) => {
+		if (!nextOpen) {
 			form.reset();
 			setValidationErrors({});
 		}
-	}, [open, form]);
+		onOpenChange(nextOpen);
+	};
 
 	// Fetch presets
 	const { data: presets, isLoading: presetsLoading } = useQuery({
@@ -191,7 +191,7 @@ export function AssignmentDialog({
 	const isLoading = presetsLoading || teamsLoading;
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
+		<Dialog open={open} onOpenChange={handleOpenChange}>
 			<DialogContent>
 				<DialogHeader>
 					<DialogTitle>{getDialogTitle()}</DialogTitle>

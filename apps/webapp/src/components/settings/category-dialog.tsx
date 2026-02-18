@@ -69,49 +69,54 @@ export function CategoryDialog({
 		onSubmit: async ({ value }) => {
 			setLoading(true);
 
-			try {
-				const payload = {
-					...value,
-					organizationId,
-					color: value.color || null,
-				};
+			const payload = {
+				...value,
+				organizationId,
+				color: value.color || null,
+			};
 
-				const endpoint = isEditing
-					? `/api/admin/holiday-categories/${editingCategory.id}`
-					: "/api/admin/holiday-categories";
-				const method = isEditing ? "PATCH" : "POST";
+			const endpoint = isEditing
+				? `/api/admin/holiday-categories/${editingCategory.id}`
+				: "/api/admin/holiday-categories";
+			const method = isEditing ? "PATCH" : "POST";
 
-				const response = await fetch(endpoint, {
-					method,
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify(payload),
-				});
+			const response = await fetch(endpoint, {
+				method,
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(payload),
+			}).then((result) => result, () => null);
 
-				if (!response.ok) {
-					const error = await response.json();
-					throw new Error(error.error || "Failed to save category");
-				}
-
-				toast.success(
-					t(
-						isEditing
-							? "settings.holidays.categories.updated"
-							: "settings.holidays.categories.created",
-						isEditing ? "Category updated successfully" : "Category created successfully",
-					),
-				);
-
-				onSuccess();
-				onOpenChange(false);
-				form.reset();
-			} catch (error: unknown) {
-				const errorMessage = error instanceof Error ? error.message : "Failed to save category";
-				toast.error(
-					errorMessage || t("settings.holidays.categories.saveFailed", "Failed to save category"),
-				);
-			} finally {
+			if (!response) {
+				toast.error(t("settings.holidays.categories.saveFailed", "Failed to save category"));
 				setLoading(false);
+				return;
 			}
+
+			if (!response.ok) {
+				const responseError = await response
+					.json()
+					.then((result) => result as { error?: string }, () => null);
+				toast.error(
+					responseError?.error ||
+						t("settings.holidays.categories.saveFailed", "Failed to save category"),
+				);
+				setLoading(false);
+				return;
+			}
+
+			toast.success(
+				t(
+					isEditing
+						? "settings.holidays.categories.updated"
+						: "settings.holidays.categories.created",
+					isEditing ? "Category updated successfully" : "Category created successfully",
+				),
+			);
+
+			onSuccess();
+			onOpenChange(false);
+			form.reset();
+			setLoading(false);
 		},
 	});
 

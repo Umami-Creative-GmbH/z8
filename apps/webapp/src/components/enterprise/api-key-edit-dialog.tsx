@@ -3,7 +3,7 @@
 import { IconLoader2 } from "@tabler/icons-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -44,22 +44,22 @@ export function ApiKeyEditDialog({
 	const queryClient = useQueryClient();
 
 	// Form state
-	const [name, setName] = useState("");
-	const [enabled, setEnabled] = useState(true);
-	const [selectedScopes, setSelectedScopes] = useState<ApiKeyScope[]>([]);
-	const [rateLimitEnabled, setRateLimitEnabled] = useState(true);
-	const [rateLimitMax, setRateLimitMax] = useState("100");
+	const [name, setName] = useState(() => apiKey?.name ?? "");
+	const [enabled, setEnabled] = useState(() => apiKey?.enabled ?? true);
+	const [selectedScopes, setSelectedScopes] = useState<ApiKeyScope[]>(() => apiKey?.scopes ?? []);
+	const [rateLimitEnabled, setRateLimitEnabled] = useState(() => apiKey?.rateLimitEnabled ?? true);
+	const [rateLimitMax, setRateLimitMax] = useState(() => String(apiKey?.rateLimitMax || 100));
 
-	// Reset form when apiKey changes
-	useEffect(() => {
-		if (apiKey && open) {
+	const handleOpenChange = (nextOpen: boolean) => {
+		if (!nextOpen && apiKey) {
 			setName(apiKey.name);
 			setEnabled(apiKey.enabled);
 			setSelectedScopes(apiKey.scopes);
 			setRateLimitEnabled(apiKey.rateLimitEnabled ?? true);
 			setRateLimitMax(String(apiKey.rateLimitMax || 100));
 		}
-	}, [apiKey, open]);
+		onOpenChange(nextOpen);
+	};
 
 	const handleScopeToggle = (scope: ApiKeyScope) => {
 		setSelectedScopes((prev) =>
@@ -96,7 +96,7 @@ export function ApiKeyEditDialog({
 	if (!apiKey) return null;
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
+		<Dialog open={open} onOpenChange={handleOpenChange}>
 			<DialogContent className="sm:max-w-[500px]">
 				<DialogHeader>
 					<DialogTitle>{t("settings.apiKeys.editTitle", "Edit API Key")}</DialogTitle>

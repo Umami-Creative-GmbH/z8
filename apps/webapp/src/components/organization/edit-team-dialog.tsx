@@ -2,7 +2,6 @@
 
 import { IconLoader2 } from "@tabler/icons-react";
 import { useMutation } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { updateTeam } from "@/app/[locale]/(app)/settings/teams/actions";
 import { Button } from "@/components/ui/button";
@@ -27,21 +26,6 @@ interface EditTeamDialogProps {
 }
 
 export function EditTeamDialog({ team, open, onOpenChange, onSuccess }: EditTeamDialogProps) {
-	const [formData, setFormData] = useState({
-		name: "",
-		description: "",
-	});
-
-	// Update form data when team changes
-	useEffect(() => {
-		if (team) {
-			setFormData({
-				name: team.name,
-				description: team.description || "",
-			});
-		}
-	}, [team]);
-
 	const updateMutation = useMutation({
 		mutationFn: (data: { teamId: string; name?: string; description?: string }) =>
 			updateTeam(data.teamId, { name: data.name, description: data.description }),
@@ -63,10 +47,14 @@ export function EditTeamDialog({ team, open, onOpenChange, onSuccess }: EditTeam
 		e.preventDefault();
 		if (!team) return;
 
+		const formData = new FormData(e.currentTarget as HTMLFormElement);
+		const name = String(formData.get("name") ?? "").trim();
+		const description = String(formData.get("description") ?? "").trim();
+
 		updateMutation.mutate({
 			teamId: team.id,
-			name: formData.name !== team.name ? formData.name : undefined,
-			description: formData.description !== team.description ? formData.description : undefined,
+			name: name !== team.name ? name : undefined,
+			description: description !== (team.description || "") ? description : undefined,
 		});
 	};
 
@@ -80,13 +68,13 @@ export function EditTeamDialog({ team, open, onOpenChange, onSuccess }: EditTeam
 					<DialogDescription>Update team name and description</DialogDescription>
 				</DialogHeader>
 
-				<form onSubmit={handleSubmit} className="space-y-4">
+				<form key={team.id} onSubmit={handleSubmit} className="space-y-4">
 					<div className="space-y-2">
 						<Label htmlFor="name">Team Name</Label>
 						<Input
 							id="name"
-							value={formData.name}
-							onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+							name="name"
+							defaultValue={team.name}
 							placeholder="Engineering, Sales, Marketing..."
 							required
 						/>
@@ -96,8 +84,8 @@ export function EditTeamDialog({ team, open, onOpenChange, onSuccess }: EditTeam
 						<Label htmlFor="description">Description (Optional)</Label>
 						<Textarea
 							id="description"
-							value={formData.description}
-							onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+							name="description"
+							defaultValue={team.description || ""}
 							placeholder="A brief description of this team"
 							rows={3}
 						/>

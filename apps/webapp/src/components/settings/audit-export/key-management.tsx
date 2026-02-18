@@ -83,62 +83,69 @@ export function KeyManagement({
 
 	const handleRotateKey = async () => {
 		setLoading(true);
-		try {
-			const result = await rotateSigningKeyAction(organizationId);
-			if (result.success) {
-				toast.success(
-					t("settings.auditExport.keys.rotateSuccess", "Signing key rotated successfully"),
-				);
-				router.refresh();
-			} else {
-				toast.error(
-					result.error || t("settings.auditExport.keys.rotateError", "Key rotation failed"),
-				);
-			}
-		} catch (error) {
+		const result = await rotateSigningKeyAction(organizationId).catch((error: unknown) => {
 			toast.error(t("common.unexpectedError", "An unexpected error occurred"));
 			console.error("Rotate key error:", error);
-		} finally {
+			return null;
+		});
+
+		if (!result) {
 			setLoading(false);
+			return;
 		}
+
+		if (result.success) {
+			toast.success(t("settings.auditExport.keys.rotateSuccess", "Signing key rotated successfully"));
+			router.refresh();
+		} else {
+			toast.error(result.error || t("settings.auditExport.keys.rotateError", "Key rotation failed"));
+		}
+
+		setLoading(false);
 	};
 
 	const loadKeyHistory = async () => {
 		setHistoryLoading(true);
-		try {
-			const result = await getSigningKeyHistoryAction(organizationId);
-			if (result.success) {
-				setKeyHistory(result.data);
-			} else {
-				toast.error(
-					result.error || t("settings.auditExport.keys.historyError", "Failed to load key history"),
-				);
-			}
-		} catch (error) {
+		const result = await getSigningKeyHistoryAction(organizationId).catch((error: unknown) => {
 			toast.error(t("common.unexpectedError", "An unexpected error occurred"));
 			console.error("Load key history error:", error);
-		} finally {
+			return null;
+		});
+
+		if (!result) {
 			setHistoryLoading(false);
+			return;
 		}
+
+		if (result.success) {
+			setKeyHistory(result.data);
+		} else {
+			toast.error(result.error || t("settings.auditExport.keys.historyError", "Failed to load key history"));
+		}
+
+		setHistoryLoading(false);
 	};
 
 	const loadPublicKey = async () => {
 		setPublicKeyLoading(true);
-		try {
-			const result = await exportPublicKeyAction(organizationId);
-			if (result.success) {
-				setPublicKey(result.data);
-			} else {
-				toast.error(
-					result.error || t("settings.auditExport.keys.exportError", "Failed to export public key"),
-				);
-			}
-		} catch (error) {
+		const result = await exportPublicKeyAction(organizationId).catch((error: unknown) => {
 			toast.error(t("common.unexpectedError", "An unexpected error occurred"));
 			console.error("Export public key error:", error);
-		} finally {
+			return null;
+		});
+
+		if (!result) {
 			setPublicKeyLoading(false);
+			return;
 		}
+
+		if (result.success) {
+			setPublicKey(result.data);
+		} else {
+			toast.error(result.error || t("settings.auditExport.keys.exportError", "Failed to export public key"));
+		}
+
+		setPublicKeyLoading(false);
 	};
 
 	const handleCopyPublicKey = () => {

@@ -54,39 +54,48 @@ export function CreateOrganizationDialog({
 
 			setLoading(true);
 
-			try {
-				// Create organization using Better Auth
-				const result = await authClient.organization.create({
+			// Create organization using Better Auth
+			const result = await authClient.organization
+				.create({
 					name: value.name,
 					slug: value.slug,
+				})
+				.catch((error: unknown) => {
+					console.error("Error creating organization:", error);
+					const message =
+						error instanceof Error
+							? error.message
+							: t("organization.createError", "Failed to create organization");
+					toast.error(message);
+					return null;
 				});
 
-				if (result.error) {
-					throw new Error(result.error.message || "Failed to create organization");
-				}
-
-				toast.success(t("organization.createSuccess", "Organization created successfully!"));
-
-				// Reset form
-				form.reset();
-				slugManuallyEdited.current = false;
-
-				// Close dialog
-				onOpenChange(false);
-
-				// Call success callback
-				onSuccess?.();
-
-				// Refresh the page to update organization context
-				router.refresh();
-			} catch (error: any) {
-				console.error("Error creating organization:", error);
-				toast.error(
-					error.message || t("organization.createError", "Failed to create organization"),
-				);
-			} finally {
+			if (!result) {
 				setLoading(false);
+				return;
 			}
+
+			if (result.error) {
+				toast.error(result.error.message || t("organization.createError", "Failed to create organization"));
+				setLoading(false);
+				return;
+			}
+
+			toast.success(t("organization.createSuccess", "Organization created successfully!"));
+
+			// Reset form
+			form.reset();
+			slugManuallyEdited.current = false;
+
+			// Close dialog
+			onOpenChange(false);
+
+			// Call success callback
+			onSuccess?.();
+
+			// Refresh the page to update organization context
+			router.refresh();
+			setLoading(false);
 		},
 	});
 
@@ -105,29 +114,31 @@ export function CreateOrganizationDialog({
 	// Validate slug availability (debounced)
 	useEffect(() => {
 		if (!slug || slug.length < 2) {
-			setSlugError(null);
 			return;
 		}
 
 		const timeoutId = setTimeout(async () => {
 			setCheckingSlug(true);
-			try {
-				const isAvailable = await checkSlugAvailability(slug);
-				if (!isAvailable) {
-					setSlugError(
-						t(
-							"organization.slugTaken",
-							"This slug is already taken. Please choose a different one.",
-						),
-					);
-				} else {
+			checkSlugAvailability(slug)
+				.then((isAvailable) => {
+					if (!isAvailable) {
+						setSlugError(
+							t(
+								"organization.slugTaken",
+								"This slug is already taken. Please choose a different one.",
+							),
+						);
+						return;
+					}
+
 					setSlugError(null);
-				}
-			} catch (error) {
-				console.error("Error checking slug availability:", error);
-			} finally {
-				setCheckingSlug(false);
-			}
+				})
+				.catch((error: unknown) => {
+					console.error("Error checking slug availability:", error);
+				})
+				.finally(() => {
+					setCheckingSlug(false);
+				});
 		}, 500);
 
 		return () => clearTimeout(timeoutId);
@@ -216,10 +227,11 @@ export function CreateOrganizationDialog({
 								<div className="relative">
 									<Input
 										value={field.state.value}
-										onChange={(e) => {
-											slugManuallyEdited.current = true;
-											field.handleChange(e.target.value);
-										}}
+									onChange={(e) => {
+										slugManuallyEdited.current = true;
+										setSlugError(null);
+										field.handleChange(e.target.value);
+									}}
 										onBlur={field.handleBlur}
 										placeholder={t("organization.slugPlaceholder", "acme-inc")}
 										disabled={loading}
