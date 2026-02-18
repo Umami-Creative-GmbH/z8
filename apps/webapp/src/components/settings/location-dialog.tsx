@@ -64,47 +64,45 @@ export function LocationDialog({
 		defaultValues,
 		onSubmit: async ({ value }) => {
 			setIsSubmitting(true);
-			try {
-				if (isEditing && location) {
-					const result = await updateLocation(location.id, {
-						name: value.name,
-						street: value.street || undefined,
-						city: value.city || undefined,
-						postalCode: value.postalCode || undefined,
-						country: value.country || undefined,
-						isActive: value.isActive,
-					});
+			if (isEditing && location) {
+				const result = await updateLocation(location.id, {
+					name: value.name,
+					street: value.street || undefined,
+					city: value.city || undefined,
+					postalCode: value.postalCode || undefined,
+					country: value.country || undefined,
+					isActive: value.isActive,
+				}).then((response) => response, () => null);
 
-					if (result.success) {
-						toast.success(t("settings.locations.updated", "Location updated"));
-						onSuccess();
-					} else {
-						toast.error(
-							result.error || t("settings.locations.updateFailed", "Failed to update location"),
-						);
-					}
+				if (result?.success) {
+					toast.success(t("settings.locations.updated", "Location updated"));
+					onSuccess();
 				} else {
-					const result = await createLocation({
-						organizationId,
-						name: value.name,
-						street: value.street || undefined,
-						city: value.city || undefined,
-						postalCode: value.postalCode || undefined,
-						country: value.country || undefined,
-					});
-
-					if (result.success) {
-						toast.success(t("settings.locations.created", "Location created"));
-						onSuccess();
-					} else {
-						toast.error(
-							result.error || t("settings.locations.createFailed", "Failed to create location"),
-						);
-					}
+					toast.error(
+						result?.error || t("settings.locations.updateFailed", "Failed to update location"),
+					);
 				}
-			} finally {
-				setIsSubmitting(false);
+			} else {
+				const result = await createLocation({
+					organizationId,
+					name: value.name,
+					street: value.street || undefined,
+					city: value.city || undefined,
+					postalCode: value.postalCode || undefined,
+					country: value.country || undefined,
+				}).then((response) => response, () => null);
+
+				if (result?.success) {
+					toast.success(t("settings.locations.created", "Location created"));
+					onSuccess();
+				} else {
+					toast.error(
+						result?.error || t("settings.locations.createFailed", "Failed to create location"),
+					);
+				}
 			}
+
+			setIsSubmitting(false);
 		},
 	});
 

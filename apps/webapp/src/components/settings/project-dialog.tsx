@@ -111,54 +111,62 @@ export function ProjectDialog({
 		defaultValues,
 		onSubmit: async ({ value }) => {
 			setIsSubmitting(true);
-			try {
-				const budgetHours = value.budgetHours ? parseFloat(value.budgetHours) : undefined;
-				const deadline = value.deadline ? new Date(value.deadline) : undefined;
-				const customerId = value.customerId || undefined;
+			const budgetHours = value.budgetHours ? parseFloat(value.budgetHours) : undefined;
+			const deadline = value.deadline ? new Date(value.deadline) : undefined;
+			const customerId = value.customerId || undefined;
 
-				if (isEditing && project) {
-					const result = await updateProject(project.id, {
-						name: value.name,
-						description: value.description || undefined,
-						status: value.status,
-						color: value.color || undefined,
-						budgetHours: budgetHours ?? null,
-						deadline: deadline ?? null,
-						customerId: customerId ?? null,
-					});
+			if (isEditing && project) {
+				const result = await updateProject(project.id, {
+					name: value.name,
+					description: value.description || undefined,
+					status: value.status,
+					color: value.color || undefined,
+					budgetHours: budgetHours ?? null,
+					deadline: deadline ?? null,
+					customerId: customerId ?? null,
+				}).catch(() => null);
 
-					if (result.success) {
-						toast.success(t("settings.projects.updated", "Project updated"));
-						onSuccess();
-					} else {
-						toast.error(
-							result.error || t("settings.projects.updateFailed", "Failed to update project"),
-						);
-					}
-				} else {
-					const result = await createProject({
-						organizationId,
-						name: value.name,
-						description: value.description || undefined,
-						status: value.status,
-						color: value.color || undefined,
-						budgetHours,
-						deadline,
-						customerId,
-					});
-
-					if (result.success) {
-						toast.success(t("settings.projects.created", "Project created"));
-						onSuccess();
-					} else {
-						toast.error(
-							result.error || t("settings.projects.createFailed", "Failed to create project"),
-						);
-					}
+				if (!result) {
+					toast.error(t("settings.projects.updateFailed", "Failed to update project"));
+					setIsSubmitting(false);
+					return;
 				}
-			} finally {
+
+				if (result.success) {
+					toast.success(t("settings.projects.updated", "Project updated"));
+					onSuccess();
+				} else {
+					toast.error(result.error || t("settings.projects.updateFailed", "Failed to update project"));
+				}
 				setIsSubmitting(false);
+				return;
 			}
+
+			const result = await createProject({
+				organizationId,
+				name: value.name,
+				description: value.description || undefined,
+				status: value.status,
+				color: value.color || undefined,
+				budgetHours,
+				deadline,
+				customerId,
+			}).catch(() => null);
+
+			if (!result) {
+				toast.error(t("settings.projects.createFailed", "Failed to create project"));
+				setIsSubmitting(false);
+				return;
+			}
+
+			if (result.success) {
+				toast.success(t("settings.projects.created", "Project created"));
+				onSuccess();
+			} else {
+				toast.error(result.error || t("settings.projects.createFailed", "Failed to create project"));
+			}
+
+			setIsSubmitting(false);
 		},
 	});
 

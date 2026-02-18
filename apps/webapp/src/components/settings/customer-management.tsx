@@ -87,20 +87,23 @@ export function CustomerManagement({ organizationId }: CustomerManagementProps) 
 	const handleDelete = async () => {
 		if (!deletingCustomer) return;
 		setIsDeleting(true);
-		try {
-			const result = await deleteCustomer(deletingCustomer.id);
-			if (result.success) {
-				toast.success(t("settings.customers.deleted", "Customer deleted"));
-				queryClient.invalidateQueries({ queryKey: queryKeys.customers.list(organizationId) });
-			} else {
-				toast.error(
-					result.error || t("settings.customers.deleteFailed", "Failed to delete customer"),
-				);
-			}
-		} finally {
+		const result = await deleteCustomer(deletingCustomer.id).then((response) => response, () => null);
+		if (!result) {
+			toast.error(t("settings.customers.deleteFailed", "Failed to delete customer"));
 			setIsDeleting(false);
 			setDeletingCustomer(null);
+			return;
 		}
+
+		if (result.success) {
+			toast.success(t("settings.customers.deleted", "Customer deleted"));
+			queryClient.invalidateQueries({ queryKey: queryKeys.customers.list(organizationId) });
+		} else {
+			toast.error(result.error || t("settings.customers.deleteFailed", "Failed to delete customer"));
+		}
+
+			setIsDeleting(false);
+			setDeletingCustomer(null);
 	};
 
 	return (

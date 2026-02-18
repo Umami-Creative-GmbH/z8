@@ -64,26 +64,29 @@ export function LocationEmployeeDialog({
 			}
 
 			setIsSubmitting(true);
-			try {
-				const result = await assignLocationEmployee({
-					locationId,
-					employeeId: value.employeeId,
-					isPrimary: value.isPrimary,
-				});
+			const result = await assignLocationEmployee({
+				locationId,
+				employeeId: value.employeeId,
+				isPrimary: value.isPrimary,
+			}).catch(() => null);
 
-				if (result.success) {
-					toast.success(t("settings.locations.employeeAssigned", "Employee assigned"));
-					onSuccess();
-					onOpenChange(false);
-				} else {
-					toast.error(
-						result.error ||
-							t("settings.locations.employeeAssignFailed", "Failed to assign employee"),
-					);
-				}
-			} finally {
+			if (!result) {
+				toast.error(t("settings.locations.employeeAssignFailed", "Failed to assign employee"));
 				setIsSubmitting(false);
+				return;
 			}
+
+			if (result.success) {
+				toast.success(t("settings.locations.employeeAssigned", "Employee assigned"));
+				onSuccess();
+				onOpenChange(false);
+			} else {
+				toast.error(
+					result.error || t("settings.locations.employeeAssignFailed", "Failed to assign employee"),
+				);
+			}
+
+			setIsSubmitting(false);
 		},
 	});
 
@@ -100,7 +103,7 @@ export function LocationEmployeeDialog({
 		queryFn: async () => {
 			const result = await getAvailableEmployees(organizationId, locationId);
 			if (!result.success) {
-				throw new Error(result.error || "Failed to fetch employees");
+				return Promise.reject(result.error || "Failed to fetch employees");
 			}
 			return result.data;
 		},

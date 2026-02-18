@@ -68,7 +68,7 @@ export function ComplianceExceptionsManager({
 		queryFn: async () => {
 			const result = await getPendingExceptions();
 			if (!result.success) {
-				throw new Error(result.error);
+				return Promise.reject(result.error || "Failed to load exceptions");
 			}
 			return result.data;
 		},
@@ -79,7 +79,7 @@ export function ComplianceExceptionsManager({
 		mutationFn: async (exceptionId: string) => {
 			const result = await approveComplianceException(exceptionId);
 			if (!result.success) {
-				throw new Error(result.error);
+				return Promise.reject(result.error || "Failed to approve exception");
 			}
 		},
 		onSuccess: () => {
@@ -93,9 +93,10 @@ export function ComplianceExceptionsManager({
 				),
 			});
 		},
-		onError: (error: Error) => {
+		onError: (error: unknown) => {
+			const message = error instanceof Error ? error.message : String(error);
 			toast.error(t("compliance.exception.approveFailed", "Failed to Approve"), {
-				description: error.message,
+				description: message,
 			});
 		},
 	});
@@ -105,7 +106,7 @@ export function ComplianceExceptionsManager({
 		mutationFn: async ({ exceptionId, reason }: { exceptionId: string; reason?: string }) => {
 			const result = await rejectComplianceException(exceptionId, reason);
 			if (!result.success) {
-				throw new Error(result.error);
+				return Promise.reject(result.error || "Failed to reject exception");
 			}
 		},
 		onSuccess: () => {
@@ -122,9 +123,10 @@ export function ComplianceExceptionsManager({
 				),
 			});
 		},
-		onError: (error: Error) => {
+		onError: (error: unknown) => {
+			const message = error instanceof Error ? error.message : String(error);
 			toast.error(t("compliance.exception.rejectFailed", "Failed to Reject"), {
-				description: error.message,
+				description: message,
 			});
 		},
 	});

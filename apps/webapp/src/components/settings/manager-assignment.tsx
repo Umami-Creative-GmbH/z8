@@ -1,7 +1,7 @@
 "use client";
 
 import { IconCheck, IconLoader2, IconX } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { assignManagers } from "@/app/[locale]/(app)/settings/employees/actions";
 import { Button } from "@/components/ui/button";
@@ -38,6 +38,13 @@ interface ManagerAssignmentProps {
 	onCancel?: () => void;
 }
 
+function buildInitialManagerState(currentManagers: CurrentManager[]) {
+	const selectedManagers = new Set(currentManagers.map((manager) => manager.manager.id));
+	const primaryManager = currentManagers.find((manager) => manager.isPrimary)?.manager.id ?? "";
+
+	return { selectedManagers, primaryManager };
+}
+
 export function ManagerAssignment({
 	employeeId,
 	currentManagers,
@@ -45,20 +52,12 @@ export function ManagerAssignment({
 	onSuccess,
 	onCancel,
 }: ManagerAssignmentProps) {
-	const [selectedManagers, setSelectedManagers] = useState<Set<string>>(new Set());
-	const [primaryManager, setPrimaryManager] = useState<string>("");
+	const [initialManagerState] = useState(() => buildInitialManagerState(currentManagers));
+	const [selectedManagers, setSelectedManagers] = useState<Set<string>>(
+		() => initialManagerState.selectedManagers,
+	);
+	const [primaryManager, setPrimaryManager] = useState<string>(() => initialManagerState.primaryManager);
 	const [loading, setLoading] = useState(false);
-
-	// Initialize with current managers
-	useEffect(() => {
-		const managerIds = new Set(currentManagers.map((m) => m.manager.id));
-		setSelectedManagers(managerIds);
-
-		const primary = currentManagers.find((m) => m.isPrimary);
-		if (primary) {
-			setPrimaryManager(primary.manager.id);
-		}
-	}, [currentManagers]);
 
 	const handleManagerToggle = (managerId: string, checked: boolean) => {
 		const newSelected = new Set(selectedManagers);
@@ -95,25 +94,27 @@ export function ManagerAssignment({
 
 		setLoading(true);
 
-		try {
-			const managers = Array.from(selectedManagers).map((managerId) => ({
-				managerId,
-				isPrimary: managerId === primaryManager,
-			}));
+		const managers = Array.from(selectedManagers).map((managerId) => ({
+			managerId,
+			isPrimary: managerId === primaryManager,
+		}));
 
-			const result = await assignManagers(employeeId, { managers });
+		const result = await assignManagers(employeeId, { managers }).catch(() => null);
 
-			if (result.success) {
-				toast.success("Managers assigned successfully");
-				onSuccess?.();
-			} else {
-				toast.error(result.error || "Failed to assign managers");
-			}
-		} catch (_error) {
+		if (!result) {
 			toast.error("An unexpected error occurred");
-		} finally {
 			setLoading(false);
+			return;
 		}
+
+		if (result.success) {
+			toast.success("Managers assigned successfully");
+			onSuccess?.();
+		} else {
+			toast.error(result.error || "Failed to assign managers");
+		}
+
+		setLoading(false);
 	};
 
 	const isChanged =

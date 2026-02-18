@@ -105,20 +105,17 @@ export function ProfileForm({ user }: ProfileFormProps) {
 	// Load employee personal info
 	useEffect(() => {
 		async function loadEmployeeData() {
-			try {
-				const emp = await getCurrentEmployee();
-				if (emp) {
-					setProfileData((prev) => ({
-						...prev,
-						firstName: emp.firstName || "",
-						lastName: emp.lastName || "",
-						gender: emp.gender || "",
-						birthday: emp.birthday ? new Date(emp.birthday) : null,
-					}));
-				}
-			} finally {
-				setIsInitialLoading(false);
+			const emp = await getCurrentEmployee().then((value) => value, () => null);
+			if (emp) {
+				setProfileData((prev) => ({
+					...prev,
+					firstName: emp.firstName || "",
+					lastName: emp.lastName || "",
+					gender: emp.gender || "",
+					birthday: emp.birthday ? new Date(emp.birthday) : null,
+				}));
 			}
+			setIsInitialLoading(false);
 		}
 		loadEmployeeData();
 	}, []);

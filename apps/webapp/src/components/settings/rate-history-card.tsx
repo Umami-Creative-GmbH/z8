@@ -64,23 +64,24 @@ export function RateHistoryCard({
 	const form = useForm({
 		defaultValues: defaultFormValues,
 		onSubmit: async ({ value }) => {
-			try {
-				const result = await onAddRate({
-					hourlyRate: value.hourlyRate,
-					currency: currentRate?.currency || "EUR",
-					effectiveFrom: new Date(value.effectiveFrom),
-					reason: value.reason || null,
-				});
+			const result = await onAddRate({
+				hourlyRate: value.hourlyRate,
+				currency: currentRate?.currency || "EUR",
+				effectiveFrom: new Date(value.effectiveFrom),
+				reason: value.reason || null,
+			}).then((response) => response, () => null);
 
-				if (result.success) {
-					toast.success("Rate updated successfully");
-					setDialogOpen(false);
-					form.reset();
-				} else {
-					toast.error(result.error || "Failed to update rate");
-				}
-			} catch (_error) {
+			if (!result) {
 				toast.error("An unexpected error occurred");
+				return;
+			}
+
+			if (result.success) {
+				toast.success("Rate updated successfully");
+				setDialogOpen(false);
+				form.reset();
+			} else {
+				toast.error(result.error || "Failed to update rate");
 			}
 		},
 	});

@@ -66,26 +66,24 @@ export function SubareaEmployeeDialog({
 			}
 
 			setIsSubmitting(true);
-			try {
-				const result = await assignSubareaEmployee({
-					subareaId,
-					employeeId: value.employeeId,
-					isPrimary: value.isPrimary,
-				});
+			const result = await assignSubareaEmployee({
+				subareaId,
+				employeeId: value.employeeId,
+				isPrimary: value.isPrimary,
+			}).then((response) => response, () => null);
 
-				if (result.success) {
-					toast.success(t("settings.locations.employeeAssigned", "Employee assigned"));
-					onSuccess();
-					onOpenChange(false);
-				} else {
-					toast.error(
-						result.error ||
-							t("settings.locations.employeeAssignFailed", "Failed to assign employee"),
-					);
-				}
-			} finally {
-				setIsSubmitting(false);
+			if (result?.success) {
+				toast.success(t("settings.locations.employeeAssigned", "Employee assigned"));
+				onSuccess();
+				onOpenChange(false);
+			} else {
+				toast.error(
+					result?.error ||
+						t("settings.locations.employeeAssignFailed", "Failed to assign employee"),
+				);
 			}
+
+			setIsSubmitting(false);
 		},
 	});
 

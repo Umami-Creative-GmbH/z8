@@ -66,52 +66,50 @@ export function CustomerDialog({
 		defaultValues,
 		onSubmit: async ({ value }) => {
 			setIsSubmitting(true);
-			try {
-				if (isEditing && customer) {
-					const result = await updateCustomer(customer.id, {
-						name: value.name,
-						address: value.address || null,
-						vatId: value.vatId || null,
-						email: value.email || null,
-						contactPerson: value.contactPerson || null,
-						phone: value.phone || null,
-						website: value.website || null,
-					});
+			if (isEditing && customer) {
+				const result = await updateCustomer(customer.id, {
+					name: value.name,
+					address: value.address || null,
+					vatId: value.vatId || null,
+					email: value.email || null,
+					contactPerson: value.contactPerson || null,
+					phone: value.phone || null,
+					website: value.website || null,
+				}).then((response) => response, () => null);
 
-					if (result.success) {
-						toast.success(t("settings.customers.updated", "Customer updated"));
-						onSuccess();
-					} else {
-						toast.error(
-							result.error ||
-								t("settings.customers.updateFailed", "Failed to update customer"),
-						);
-					}
+				if (result?.success) {
+					toast.success(t("settings.customers.updated", "Customer updated"));
+					onSuccess();
 				} else {
-					const result = await createCustomer({
-						organizationId,
-						name: value.name,
-						address: value.address || undefined,
-						vatId: value.vatId || undefined,
-						email: value.email || undefined,
-						contactPerson: value.contactPerson || undefined,
-						phone: value.phone || undefined,
-						website: value.website || undefined,
-					});
-
-					if (result.success) {
-						toast.success(t("settings.customers.created", "Customer created"));
-						onSuccess();
-					} else {
-						toast.error(
-							result.error ||
-								t("settings.customers.createFailed", "Failed to create customer"),
-						);
-					}
+					toast.error(
+						result?.error ||
+							t("settings.customers.updateFailed", "Failed to update customer"),
+					);
 				}
-			} finally {
-				setIsSubmitting(false);
+			} else {
+				const result = await createCustomer({
+					organizationId,
+					name: value.name,
+					address: value.address || undefined,
+					vatId: value.vatId || undefined,
+					email: value.email || undefined,
+					contactPerson: value.contactPerson || undefined,
+					phone: value.phone || undefined,
+					website: value.website || undefined,
+				}).then((response) => response, () => null);
+
+				if (result?.success) {
+					toast.success(t("settings.customers.created", "Customer created"));
+					onSuccess();
+				} else {
+					toast.error(
+						result?.error ||
+							t("settings.customers.createFailed", "Failed to create customer"),
+					);
+				}
 			}
+
+			setIsSubmitting(false);
 		},
 	});
 

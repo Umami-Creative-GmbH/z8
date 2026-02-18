@@ -56,41 +56,39 @@ export function SubareaDialog({
 		defaultValues,
 		onSubmit: async ({ value }) => {
 			setIsSubmitting(true);
-			try {
-				if (isEditing && subarea) {
-					const result = await updateSubarea(subarea.id, {
-						name: value.name,
-						isActive: value.isActive,
-					});
+			if (isEditing && subarea) {
+				const result = await updateSubarea(subarea.id, {
+					name: value.name,
+					isActive: value.isActive,
+				}).then((response) => response, () => null);
 
-					if (result.success) {
-						toast.success(t("settings.locations.subareaUpdated", "Subarea updated"));
-						onSuccess();
-					} else {
-						toast.error(
-							result.error ||
-								t("settings.locations.subareaUpdateFailed", "Failed to update subarea"),
-						);
-					}
+				if (result?.success) {
+					toast.success(t("settings.locations.subareaUpdated", "Subarea updated"));
+					onSuccess();
 				} else {
-					const result = await createSubarea({
-						locationId,
-						name: value.name,
-					});
-
-					if (result.success) {
-						toast.success(t("settings.locations.subareaCreated", "Subarea created"));
-						onSuccess();
-					} else {
-						toast.error(
-							result.error ||
-								t("settings.locations.subareaCreateFailed", "Failed to create subarea"),
-						);
-					}
+					toast.error(
+						result?.error ||
+							t("settings.locations.subareaUpdateFailed", "Failed to update subarea"),
+					);
 				}
-			} finally {
-				setIsSubmitting(false);
+			} else {
+				const result = await createSubarea({
+					locationId,
+					name: value.name,
+				}).then((response) => response, () => null);
+
+				if (result?.success) {
+					toast.success(t("settings.locations.subareaCreated", "Subarea created"));
+					onSuccess();
+				} else {
+					toast.error(
+						result?.error ||
+							t("settings.locations.subareaCreateFailed", "Failed to create subarea"),
+					);
+				}
 			}
+
+			setIsSubmitting(false);
 		},
 	});
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { IconCheck, IconLoader2, IconX } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import {
 	grantTeamPermissions,
@@ -75,18 +75,6 @@ export function PermissionEditor({
 		canApproveTeamRequests: currentPermissions?.canApproveTeamRequests || false,
 	});
 
-	useEffect(() => {
-		if (currentPermissions) {
-			setPermissions({
-				canCreateTeams: currentPermissions.canCreateTeams,
-				canManageTeamMembers: currentPermissions.canManageTeamMembers,
-				canManageTeamSettings: currentPermissions.canManageTeamSettings,
-				canApproveTeamRequests: currentPermissions.canApproveTeamRequests,
-			});
-			setTeamScope(currentPermissions.teamId || "all");
-		}
-	}, [currentPermissions]);
-
 	const handlePermissionChange = (permission: keyof typeof permissions, checked: boolean) => {
 		setPermissions((prev) => ({
 			...prev,
@@ -99,48 +87,52 @@ export function PermissionEditor({
 	const handleSave = async () => {
 		setLoading(true);
 
-		try {
-			const result = await grantTeamPermissions({
-				employeeId,
-				organizationId,
-				teamId: teamScope === "all" ? null : teamScope,
-				permissions,
-			});
+		const result = await grantTeamPermissions({
+			employeeId,
+			organizationId,
+			teamId: teamScope === "all" ? null : teamScope,
+			permissions,
+		}).then((response) => response, () => null);
 
-			if (result.success) {
-				toast.success("Permissions updated successfully");
-				onSuccess?.();
-			} else {
-				toast.error(result.error || "Failed to update permissions");
-			}
-		} catch (_error) {
+		if (!result) {
 			toast.error("An unexpected error occurred");
-		} finally {
 			setLoading(false);
+			return;
 		}
+
+		if (result.success) {
+			toast.success("Permissions updated successfully");
+			onSuccess?.();
+		} else {
+			toast.error(result.error || "Failed to update permissions");
+		}
+
+		setLoading(false);
 	};
 
 	const handleRevoke = async () => {
 		setLoading(true);
 
-		try {
-			const result = await revokeTeamPermissions(
-				employeeId,
-				organizationId,
-				teamScope === "all" ? undefined : teamScope,
-			);
+		const result = await revokeTeamPermissions(
+			employeeId,
+			organizationId,
+			teamScope === "all" ? undefined : teamScope,
+		).then((response) => response, () => null);
 
-			if (result.success) {
-				toast.success("Permissions revoked successfully");
-				onSuccess?.();
-			} else {
-				toast.error(result.error || "Failed to revoke permissions");
-			}
-		} catch (_error) {
+		if (!result) {
 			toast.error("An unexpected error occurred");
-		} finally {
 			setLoading(false);
+			return;
 		}
+
+		if (result.success) {
+			toast.success("Permissions revoked successfully");
+			onSuccess?.();
+		} else {
+			toast.error(result.error || "Failed to revoke permissions");
+		}
+
+		setLoading(false);
 	};
 
 	const isChanged =
