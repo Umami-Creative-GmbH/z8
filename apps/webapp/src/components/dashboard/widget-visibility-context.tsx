@@ -39,7 +39,11 @@ function createVisibilityStore() {
 			visibleWidgets.add(id);
 			updateSnapshot();
 			// Notify listeners asynchronously to avoid state updates during render
-			queueMicrotask(() => listeners.forEach((l) => l()));
+			queueMicrotask(() => {
+				listeners.forEach((listener) => {
+					listener();
+				});
+			});
 		}
 	}
 
@@ -47,7 +51,11 @@ function createVisibilityStore() {
 		if (visibleWidgets.has(id)) {
 			visibleWidgets.delete(id);
 			updateSnapshot();
-			queueMicrotask(() => listeners.forEach((l) => l()));
+			queueMicrotask(() => {
+				listeners.forEach((listener) => {
+					listener();
+				});
+			});
 		}
 	}
 
@@ -55,6 +63,14 @@ function createVisibilityStore() {
 }
 
 type VisibilityStore = ReturnType<typeof createVisibilityStore>;
+
+const EMPTY_WIDGETS: WidgetId[] = [];
+const EMPTY_VISIBILITY_STORE: VisibilityStore = {
+	subscribe: () => () => {},
+	getSnapshot: () => EMPTY_WIDGETS,
+	register: () => {},
+	unregister: () => {},
+};
 
 const WidgetVisibilityContext = createContext<VisibilityStore | null>(null);
 
@@ -97,9 +113,11 @@ export function useRegisterVisibleWidget(id: WidgetId) {
  */
 export function useVisibleWidgets(): WidgetId[] {
 	const store = useContext(WidgetVisibilityContext);
-	if (!store) {
-		return [];
-	}
+	const activeStore = store ?? EMPTY_VISIBILITY_STORE;
 
-	return useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
+	return useSyncExternalStore(
+		activeStore.subscribe,
+		activeStore.getSnapshot,
+		activeStore.getSnapshot,
+	);
 }

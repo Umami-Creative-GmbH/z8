@@ -9,6 +9,9 @@ interface VacationBalanceCardProps {
 	balance: VacationBalance;
 }
 
+const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+const NOW_TIMESTAMP = Date.now();
+
 export function VacationBalanceCard({ balance }: VacationBalanceCardProps) {
 	const { t } = useTranslate();
 	const tolgee = useTolgee(["language"]);
@@ -17,7 +20,7 @@ export function VacationBalanceCard({ balance }: VacationBalanceCardProps) {
 	const carryoverExpiringSoon =
 		hasCarryover &&
 		balance.carryoverExpiryDate &&
-		balance.carryoverExpiryDate.getTime() - Date.now() < 30 * 24 * 60 * 60 * 1000; // 30 days
+		balance.carryoverExpiryDate.getTime() - NOW_TIMESTAMP < THIRTY_DAYS_MS;
 
 	return (
 		<Card>

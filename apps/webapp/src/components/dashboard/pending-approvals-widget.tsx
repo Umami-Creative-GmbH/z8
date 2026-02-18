@@ -7,10 +7,9 @@ import {
 	IconClock,
 	IconClockEdit,
 } from "@tabler/icons-react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
-import { useCallback, useEffect, useState } from "react";
-import { toast } from "sonner";
 import { getPendingApprovals } from "@/app/[locale]/(app)/approvals/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -119,44 +118,31 @@ function ApprovalItem({
 
 export function PendingApprovalsWidget() {
 	const { t } = useTranslate();
-	const [absenceApprovals, setAbsenceApprovals] = useState<ApprovalWithAbsence[]>([]);
-	const [timeCorrectionApprovals, setTimeCorrectionApprovals] = useState<
-		ApprovalWithTimeCorrection[]
-	>([]);
-	const [loading, setLoading] = useState(true);
-	const [refreshing, setRefreshing] = useState(false);
+	const pendingApprovalsQuery = useQuery({
+		queryKey: ["dashboard", "pending-approvals"],
+		queryFn: async () => {
+			const pending = await getPendingApprovals().catch(() => null);
+			if (!pending) {
+				throw new Error(t("dashboard.pending-approvals.error", "Failed to load pending approvals"));
+			}
 
-	const loadData = useCallback(
-		async (isRefresh = false) => {
-			if (isRefresh) {
-				setRefreshing(true);
-			}
-			try {
-				const { absenceApprovals: absences, timeCorrectionApprovals: corrections } =
-					await getPendingApprovals();
-				setAbsenceApprovals(absences);
-				setTimeCorrectionApprovals(corrections);
-			} catch {
-				toast.error(t("dashboard.pending-approvals.error", "Failed to load pending approvals"));
-			} finally {
-				setLoading(false);
-				setRefreshing(false);
-			}
+			return pending;
 		},
-		[t],
-	);
+	});
 
-	useEffect(() => {
-		loadData(false);
-	}, [loadData]);
+	const absenceApprovals: ApprovalWithAbsence[] = pendingApprovalsQuery.data?.absenceApprovals ?? [];
+	const timeCorrectionApprovals: ApprovalWithTimeCorrection[] =
+		pendingApprovalsQuery.data?.timeCorrectionApprovals ?? [];
+	const loading = pendingApprovalsQuery.isLoading;
+	const refreshing = pendingApprovalsQuery.isFetching && !pendingApprovalsQuery.isLoading;
 
-	const refetch = useCallback(() => {
-		loadData(true);
-	}, [loadData]);
+	const refetch = () => {
+		pendingApprovalsQuery.refetch();
+	};
 
 	const totalPending = absenceApprovals.length + timeCorrectionApprovals.length;
 
-	if (!loading && totalPending === 0) return null;
+	if ((!loading && pendingApprovalsQuery.isError) || (!loading && totalPending === 0)) return null;
 
 	return (
 		<DashboardWidget id="pending-approvals">

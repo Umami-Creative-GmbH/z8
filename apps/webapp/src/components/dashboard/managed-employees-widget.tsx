@@ -7,9 +7,8 @@ import {
 	IconUsers,
 	IconUsersGroup,
 } from "@tabler/icons-react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useCallback, useEffect, useState } from "react";
-import { toast } from "sonner";
 import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -105,42 +104,34 @@ function EmptyState() {
 
 export function ManagedEmployeesWidget() {
 	const { t } = useTranslate();
-	const [employees, setEmployees] = useState<ManagedEmployee[]>([]);
-	const [loading, setLoading] = useState(true);
-	const [refreshing, setRefreshing] = useState(false);
-	const [isManager, setIsManager] = useState(false);
+	const managedEmployeesQuery = useQuery({
+		queryKey: ["dashboard", "managed-employees"],
+		queryFn: async () => {
+			const current = await getCurrentEmployee();
+			if (!current) {
+				return { employees: [] as ManagedEmployee[], isManager: false };
+			}
 
-	const loadData = useCallback(async (isRefresh = false) => {
-		if (isRefresh) {
-			setRefreshing(true);
-		}
+			const result = await getManagedEmployees(current.id);
+			if (!result.success) {
+				throw new Error(result.error || "Failed to load managed employees");
+			}
 
-		const current = await getCurrentEmployee();
-		if (!current) {
-			setLoading(false);
-			setRefreshing(false);
-			return;
-		}
+			return {
+				employees: result.data,
+				isManager: result.data.length > 0 || current.role === "admin",
+			};
+		},
+	});
 
-		const result = await getManagedEmployees(current.id);
-		if (result.success) {
-			setEmployees(result.data);
-			setIsManager(result.data.length > 0 || current.role === "admin");
-		} else {
-			toast.error(result.error);
-		}
+	const employees = managedEmployeesQuery.data?.employees ?? [];
+	const isManager = managedEmployeesQuery.data?.isManager ?? false;
+	const loading = managedEmployeesQuery.isLoading;
+	const refreshing = managedEmployeesQuery.isFetching && !managedEmployeesQuery.isLoading;
 
-		setLoading(false);
-		setRefreshing(false);
-	}, []);
-
-	useEffect(() => {
-		loadData(false);
-	}, [loadData]);
-
-	const refetch = useCallback(() => {
-		loadData(true);
-	}, [loadData]);
+	const refetch = () => {
+		managedEmployeesQuery.refetch();
+	};
 
 	if (!loading && !isManager) return null;
 

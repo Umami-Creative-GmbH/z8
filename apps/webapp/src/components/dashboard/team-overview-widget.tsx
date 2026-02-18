@@ -7,9 +7,8 @@ import {
 	IconUsers,
 	IconUsersGroup,
 } from "@tabler/icons-react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useCallback, useEffect, useState } from "react";
-import { toast } from "sonner";
 import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
 import { getTeamOverviewStats } from "@/components/dashboard/actions";
 import { Button } from "@/components/ui/button";
@@ -105,52 +104,35 @@ function StatCard({
 
 export function TeamOverviewWidget() {
 	const { t } = useTranslate();
-	const [stats, setStats] = useState<TeamStats | null>(null);
-	const [loading, setLoading] = useState(true);
-	const [refreshing, setRefreshing] = useState(false);
-	const [role, setRole] = useState<EmployeeRole | null>(null);
-
-	const loadData = useCallback(
-		async (isRefresh = false) => {
-			if (isRefresh) {
-				setRefreshing(true);
-			}
-
+	const teamOverviewQuery = useQuery({
+		queryKey: ["dashboard", "team-overview"],
+		queryFn: async () => {
 			const current = await getCurrentEmployee();
 			if (!current) {
-				setLoading(false);
-				setRefreshing(false);
-				return;
+				return { role: null as EmployeeRole | null, stats: null as TeamStats | null };
 			}
 
-			setRole(current.role);
-
 			if (current.role !== "admin" && current.role !== "manager") {
-				setLoading(false);
-				setRefreshing(false);
-				return;
+				return { role: current.role, stats: null as TeamStats | null };
 			}
 
 			const result = await getTeamOverviewStats();
-			if (result.success && result.data) {
-				setStats(result.data);
-			} else {
-				toast.error(t("dashboard.team-overview.error", "Failed to load team statistics"));
+			if (!result.success || !result.data) {
+				throw new Error("Failed to load team statistics");
 			}
 
-			setLoading(false);
-			setRefreshing(false);
+			return { role: current.role, stats: result.data };
 		},
-		[t],
-	);
+	});
 
-	useEffect(() => {
-		loadData(false);
-	}, [loadData]);
+	const role = teamOverviewQuery.data?.role ?? null;
+	const stats = teamOverviewQuery.data?.stats ?? null;
+	const loading = teamOverviewQuery.isLoading;
+	const refreshing = teamOverviewQuery.isFetching && !teamOverviewQuery.isLoading;
 
-	const refetch = useCallback(() => {
-		loadData(true);
-	}, [loadData]);
+	const refetch = () => {
+		teamOverviewQuery.refetch();
+	};
 
 	if (!loading && (!role || (role !== "admin" && role !== "manager"))) {
 		return null;

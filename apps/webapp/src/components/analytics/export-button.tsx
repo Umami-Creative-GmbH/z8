@@ -33,18 +33,15 @@ export function ExportButton<T = any>({ data, onExport, disabled }: ExportButton
 	const [exportingFormat, setExportingFormat] = useState<ExportFormat | null>(null);
 
 	const handleExport = async (format: ExportFormat) => {
-		try {
-			setIsExporting(true);
-			setExportingFormat(format);
+		setIsExporting(true);
+		setExportingFormat(format);
 
-			// If custom onExport provided, use it
+		const exportResult = await (async () => {
 			if (onExport) {
 				await onExport(format);
-				toast.success(`Exported as ${format.toUpperCase()}`);
-				return;
+				return { type: "custom" as const };
 			}
 
-			// Default export implementation via API
 			const response = await fetch("/api/analytics/export", {
 				method: "POST",
 				headers: {
@@ -59,37 +56,48 @@ export function ExportButton<T = any>({ data, onExport, disabled }: ExportButton
 			});
 
 			if (!response.ok) {
-				throw new Error(`Export failed: ${response.statusText}`);
+				return { type: "error" as const, message: response.statusText };
 			}
 
-			// Get the blob from response
-			const blob = await response.blob();
+			return { type: "blob" as const, blob: await response.blob() };
+		})().then(
+			(value) => ({ ok: true as const, value }),
+			(error) => ({ ok: false as const, error }),
+		);
 
-			// Create download link
-			const url = window.URL.createObjectURL(blob);
+		if (!exportResult.ok) {
+			console.error("Export failed:", exportResult.error);
+			toast.error(`Failed to export as ${format.toUpperCase()}`);
+			setIsExporting(false);
+			setExportingFormat(null);
+			return;
+		}
+
+		if (exportResult.value.type === "error") {
+			console.error("Export failed:", exportResult.value.message);
+			toast.error(`Failed to export as ${format.toUpperCase()}`);
+			setIsExporting(false);
+			setExportingFormat(null);
+			return;
+		}
+
+		if (exportResult.value.type === "blob") {
+			const url = window.URL.createObjectURL(exportResult.value.blob);
 			const link = document.createElement("a");
 			link.href = url;
 
-			// Set filename based on format
 			const extension = format === "csv" ? "csv" : "xlsx";
 			link.download = `${data.filename}.${extension}`;
 
-			// Trigger download
 			document.body.appendChild(link);
 			link.click();
-
-			// Cleanup
 			document.body.removeChild(link);
 			window.URL.revokeObjectURL(url);
-
-			toast.success(`Exported as ${format.toUpperCase()}`);
-		} catch (error) {
-			console.error("Export failed:", error);
-			toast.error(`Failed to export as ${format.toUpperCase()}`);
-		} finally {
-			setIsExporting(false);
-			setExportingFormat(null);
 		}
+
+		toast.success(`Exported as ${format.toUpperCase()}`);
+		setIsExporting(false);
+		setExportingFormat(null);
 	};
 
 	return (

@@ -2,9 +2,10 @@
 
 import { IconCalendarEvent, IconCheck, IconLoader2, IconSelector } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
+import { useQuery } from "@tanstack/react-query";
 import { useStore } from "@tanstack/react-store";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { ProgressIndicator } from "@/components/onboarding/progress-indicator";
@@ -36,9 +37,21 @@ export default function HolidaySetupPage() {
 	const router = useRouter();
 	const [loading, setLoading] = useState(false);
 	const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
-	const [countries, setCountries] = useState<CountryOption[]>([]);
-	const [countriesLoading, setCountriesLoading] = useState(false);
 	const [countryOpen, setCountryOpen] = useState(false);
+	const countryListboxId = useId();
+	const countriesQuery = useQuery({
+		queryKey: ["location", "countries"],
+		queryFn: async () => {
+			const response = await fetch("/api/location/countries");
+			if (!response.ok) {
+				throw new Error("Failed to load countries");
+			}
+			const data = await response.json();
+			return (data.countries as CountryOption[]) ?? [];
+		},
+	});
+	const countries = countriesQuery.data ?? [];
+	const countriesLoading = countriesQuery.isLoading;
 
 	const form = useForm({
 		defaultValues: {
@@ -82,34 +95,6 @@ export default function HolidaySetupPage() {
 		checkAdmin();
 	}, [router]);
 
-	// Load countries
-	useEffect(() => {
-		async function loadCountries() {
-			setCountriesLoading(true);
-			try {
-				const response = await fetch("/api/location/countries");
-				if (response.ok) {
-					const data = await response.json();
-					setCountries(data.countries);
-				}
-			} catch (error) {
-				console.error("Failed to load countries:", error);
-			} finally {
-				setCountriesLoading(false);
-			}
-		}
-		loadCountries();
-	}, []);
-
-	// Auto-generate preset name from country
-	useEffect(() => {
-		if (selectedCountry) {
-			const countryName =
-				countries.find((c) => c.code === selectedCountry)?.name || selectedCountry;
-			form.setFieldValue("presetName", `${countryName} Holidays`);
-		}
-	}, [selectedCountry, countries, form]);
-
 	async function handleSkip() {
 		setLoading(true);
 
@@ -136,6 +121,12 @@ export default function HolidaySetupPage() {
 	}
 
 	const selectedCountryName = countries.find((c) => c.code === selectedCountry)?.name;
+
+	const handleCountrySelect = (country: CountryOption, onCountryChange: (value: string) => void) => {
+		onCountryChange(country.code);
+		form.setFieldValue("presetName", `${country.name} Holidays`);
+		setCountryOpen(false);
+	};
 
 	return (
 		<>
@@ -187,13 +178,14 @@ export default function HolidaySetupPage() {
 										<Label>{t("onboarding.holidaySetup.country", "Country")}</Label>
 										<Popover open={countryOpen} onOpenChange={setCountryOpen}>
 											<PopoverTrigger asChild>
-												<Button
-													variant="outline"
-													role="combobox"
-													aria-expanded={countryOpen}
-													className="w-full justify-between font-normal"
-													disabled={countriesLoading || loading}
-												>
+								<Button
+									variant="outline"
+									role="combobox"
+									aria-expanded={countryOpen}
+									aria-controls={countryListboxId}
+									className="w-full justify-between font-normal"
+									disabled={countriesLoading || loading}
+								>
 													{selectedCountryName ||
 														t("onboarding.holidaySetup.selectCountry", "Select a country")}
 													<IconSelector className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -210,20 +202,19 @@ export default function HolidaySetupPage() {
 															"Search countries...",
 														)}
 													/>
-													<CommandList>
+											<CommandList id={countryListboxId}>
 														<CommandEmpty>
 															{t("onboarding.holidaySetup.noCountry", "No country found")}
 														</CommandEmpty>
 														<CommandGroup>
-															{countries.map((country) => (
-																<CommandItem
-																	key={country.code}
-																	value={country.name}
-																	onSelect={() => {
-																		field.handleChange(country.code);
-																		setCountryOpen(false);
-																	}}
-																>
+											{countries.map((country) => (
+												<CommandItem
+													key={country.code}
+													value={country.name}
+													onSelect={() => {
+														handleCountrySelect(country, field.handleChange);
+													}}
+												>
 																	<IconCheck
 																		className={cn(
 																			"mr-2 h-4 w-4",

@@ -60,48 +60,64 @@ export function BillingPageClient({ subscription, accessResult, isOwner }: Billi
 
 	const handleSubscribe = async (interval: "month" | "year") => {
 		setIsLoading(true);
-		try {
-			const response = await fetch("/api/billing/checkout", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ interval }),
-			});
+		const response = await fetch("/api/billing/checkout", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ interval }),
+		}).catch(() => null);
 
-			const data = await response.json();
-
-			if (!response.ok) {
-				throw new Error(data.error || "Failed to create checkout session");
-			}
-
-			// Redirect to Stripe Checkout
-			window.location.href = data.url;
-		} catch (error) {
-			toast.error(error instanceof Error ? error.message : "Failed to start checkout");
+		if (!response) {
+			toast.error("Failed to start checkout");
 			setIsLoading(false);
+			return;
 		}
+
+		const data = await response.json().catch(() => null);
+		if (!response.ok) {
+			toast.error(data?.error || "Failed to create checkout session");
+			setIsLoading(false);
+			return;
+		}
+
+		if (!data?.url) {
+			toast.error("Failed to start checkout");
+			setIsLoading(false);
+			return;
+		}
+
+		// Redirect to Stripe Checkout
+		window.location.href = data.url;
 	};
 
 	const handleManageBilling = async () => {
 		setIsPortalLoading(true);
-		try {
-			const response = await fetch("/api/billing/portal", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ returnUrl: window.location.href }),
-			});
+		const response = await fetch("/api/billing/portal", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ returnUrl: window.location.href }),
+		}).catch(() => null);
 
-			const data = await response.json();
-
-			if (!response.ok) {
-				throw new Error(data.error || "Failed to open billing portal");
-			}
-
-			// Redirect to Stripe Portal
-			window.location.href = data.url;
-		} catch (error) {
-			toast.error(error instanceof Error ? error.message : "Failed to open billing portal");
+		if (!response) {
+			toast.error("Failed to open billing portal");
 			setIsPortalLoading(false);
+			return;
 		}
+
+		const data = await response.json().catch(() => null);
+		if (!response.ok) {
+			toast.error(data?.error || "Failed to open billing portal");
+			setIsPortalLoading(false);
+			return;
+		}
+
+		if (!data?.url) {
+			toast.error("Failed to open billing portal");
+			setIsPortalLoading(false);
+			return;
+		}
+
+		// Redirect to Stripe Portal
+		window.location.href = data.url;
 	};
 
 	const formatDate = (dateStr: string | null) => {
