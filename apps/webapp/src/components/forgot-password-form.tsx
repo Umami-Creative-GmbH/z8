@@ -137,52 +137,49 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
 			return;
 		}
 
-		try {
-			// Verify Turnstile token server-side if enabled
-			if (turnstileConfig?.enabled && turnstileToken) {
-				const verifyResult = await verifyTurnstileWithServer(turnstileToken);
-				if (!verifyResult.success) {
-					setError(verifyResult.error || t("auth.turnstile-failed", "Verification failed."));
-					setTurnstileToken(null);
-					turnstileRef.current?.reset();
-					setIsLoading(false);
-					return;
-				}
+		// Verify Turnstile token server-side if enabled
+		if (turnstileConfig?.enabled && turnstileToken) {
+			const verifyResult = await verifyTurnstileWithServer(turnstileToken).catch(() => null);
+			if (!verifyResult || !verifyResult.success) {
+				setError(verifyResult?.error || t("auth.turnstile-failed", "Verification failed."));
+				setTurnstileToken(null);
+				turnstileRef.current?.reset();
+				setIsLoading(false);
+				return;
 			}
+		}
 
-			// Better Auth forgot password API
-			const response = await authClient.requestPasswordReset({
+		// Better Auth forgot password API
+		const response = await authClient
+			.requestPasswordReset({
 				email: formData.email,
 				redirectTo: `${window.location.origin}/${locale}/reset-password`,
-			});
+			})
+			.catch((err) => ({
+				error: {
+					message:
+						err instanceof Error
+							? err.message
+							: t("auth.forgot-password-error", "An error occurred. Please try again."),
+				},
+			}));
 
-			if (response.error) {
-				setError(
-					response.error.message ||
-						t("auth.forgot-password-error", "Failed to send reset email. Please try again."),
-				);
-				// Reset Turnstile for retry (tokens are single-use)
-				if (turnstileConfig?.enabled) {
-					setTurnstileToken(null);
-					turnstileRef.current?.reset();
-				}
-			} else {
-				setSuccess(true);
-			}
-		} catch (err) {
+		if (response.error) {
 			setError(
-				err instanceof Error
-					? err.message
-					: t("auth.forgot-password-error", "An error occurred. Please try again."),
+				response.error.message ||
+					t("auth.forgot-password-error", "Failed to send reset email. Please try again."),
 			);
 			// Reset Turnstile for retry (tokens are single-use)
 			if (turnstileConfig?.enabled) {
 				setTurnstileToken(null);
 				turnstileRef.current?.reset();
 			}
-		} finally {
 			setIsLoading(false);
+			return;
 		}
+
+		setSuccess(true);
+		setIsLoading(false);
 	};
 
 	if (success) {

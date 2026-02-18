@@ -15,7 +15,7 @@ import {
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
 import { useTheme } from "next-themes";
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import {
 	DropdownMenu,
@@ -65,16 +65,6 @@ export function NavUser({
 	const [isLoggingOut, setIsLoggingOut] = useState(false);
 	const [isPending, startTransition] = useTransition();
 	const [dropdownOpen, setDropdownOpen] = useState(false);
-	const [previousEmail, setPreviousEmail] = useState(user.email);
-
-	// Reset logout overlay when user logs back in
-	// Only reset if user.email changes from empty to having a value
-	useEffect(() => {
-		if (!previousEmail && user.email && isLoggingOut) {
-			setIsLoggingOut(false);
-		}
-		setPreviousEmail(user.email);
-	}, [user.email, previousEmail, isLoggingOut]);
 
 	const handleLogout = async () => {
 		setDropdownOpen(false);

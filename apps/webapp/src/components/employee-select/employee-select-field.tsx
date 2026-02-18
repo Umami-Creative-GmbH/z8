@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useId, useMemo, useState } from "react";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { EmployeeSelectModal } from "./employee-select-modal";
@@ -60,6 +60,7 @@ export function EmployeeSelectField(props: EmployeeSelectFieldProps) {
 	} = props;
 
 	const [modalOpen, setModalOpen] = useState(false);
+	const employeeListboxId = useId();
 
 	// Track selected employees locally for immediate UI updates
 	const [localSelectedEmployees, setLocalSelectedEmployees] = useState<
@@ -147,6 +148,7 @@ export function EmployeeSelectField(props: EmployeeSelectFieldProps) {
 
 	// Get maxSelections for multi-select
 	const maxSelections = props.mode === "multiple" ? props.maxSelections : undefined;
+	const modalInstanceKey = `${modalOpen ? "open" : "closed"}:${selectedIds.join(",")}`;
 
 	return (
 		<div className={cn("space-y-2", className)}>
@@ -156,6 +158,8 @@ export function EmployeeSelectField(props: EmployeeSelectFieldProps) {
 				mode={props.mode}
 				selectedEmployees={selectedEmployees}
 				placeholder={placeholder}
+				controlsId={employeeListboxId}
+				expanded={modalOpen}
 				disabled={disabled}
 				error={error}
 				onClick={() => setModalOpen(true)}
@@ -175,8 +179,10 @@ export function EmployeeSelectField(props: EmployeeSelectFieldProps) {
 
 			{/* Selection modal */}
 			<EmployeeSelectModal
+				key={modalInstanceKey}
 				open={modalOpen}
 				onOpenChange={setModalOpen}
+				listboxId={employeeListboxId}
 				mode={props.mode}
 				selectedIds={selectedIds}
 				onSelect={handleSelect}

@@ -9,7 +9,7 @@ import {
 	IconX,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,8 +25,8 @@ import { Label } from "@/components/ui/label";
 import { useSession } from "@/lib/auth-client";
 import { Link, useRouter } from "@/navigation";
 import {
+	redeemInviteCode,
 	validateInviteCode,
-	useInviteCode,
 } from "@/app/[locale]/(app)/settings/organizations/invite-code-actions";
 import { AuthFormWrapper } from "./auth-form-wrapper";
 
@@ -53,15 +53,9 @@ export function JoinOrganizationForm({ code: initialCode }: JoinOrganizationForm
 	const [error, setError] = useState<string | null>(null);
 	const [organizationName, setOrganizationName] = useState<string | null>(null);
 	const [joinStatus, setJoinStatus] = useState<"pending" | "approved" | null>(null);
+	const hasValidatedInitialCode = useRef(false);
 
-	// Validate code on mount or when code changes
-	useEffect(() => {
-		if (initialCode && state === "loading") {
-			validateCode(initialCode);
-		}
-	}, [initialCode]);
-
-	const validateCode = async (codeToValidate: string) => {
+	async function validateCode(codeToValidate: string) {
 		if (!codeToValidate.trim()) {
 			setState("valid");
 			setError(null);
@@ -88,7 +82,39 @@ export function JoinOrganizationForm({ code: initialCode }: JoinOrganizationForm
 
 		setState("valid");
 		setOrganizationName(result.data.inviteCode?.organization?.name || null);
-	};
+	}
+
+	// Validate initial code once on mount
+	useEffect(() => {
+		if (!initialCode || hasValidatedInitialCode.current) {
+			return;
+		}
+
+		hasValidatedInitialCode.current = true;
+
+		async function validateInitialCode() {
+			const result = await validateInviteCode(initialCode.toUpperCase());
+
+			if (!result.success) {
+				setState("invalid");
+				setError(result.error || t("settings.inviteCodes.invalidCode", "Invalid invite code"));
+				return;
+			}
+
+			if (!result.data.valid) {
+				setState("invalid");
+				setError(
+					result.data.error || t("settings.inviteCodes.invalidCode", "Invalid invite code"),
+				);
+				return;
+			}
+
+			setState("valid");
+			setOrganizationName(result.data.inviteCode?.organization?.name || null);
+		}
+
+		validateInitialCode();
+	}, [initialCode, t]);
 
 	const handleCodeChange = (newCode: string) => {
 		setCode(newCode.toUpperCase());
@@ -114,7 +140,7 @@ export function JoinOrganizationForm({ code: initialCode }: JoinOrganizationForm
 		setState("joining");
 		setError(null);
 
-		const result = await useInviteCode(code);
+		const result = await redeemInviteCode(code);
 
 		if (!result.success) {
 			if (result.error?.includes("already a member")) {

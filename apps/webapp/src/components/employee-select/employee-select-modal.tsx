@@ -23,18 +23,21 @@ import { EmployeeSelectList } from "./employee-select-list";
 import type { EmployeeSelectModalProps, SelectableEmployee } from "./types";
 import { useEmployeeSelect } from "./use-employee-select";
 
+const EMPTY_EXCLUDE_IDS: string[] = [];
+
 /**
  * Modal dialog for selecting employees with search and filters
  */
 export function EmployeeSelectModal({
 	open,
 	onOpenChange,
+	listboxId,
 	mode,
 	selectedIds,
 	onSelect,
 	onDeselect,
 	onConfirm,
-	excludeIds = [],
+	excludeIds,
 	filters,
 	showFilters = true,
 	maxSelections,
@@ -42,27 +45,23 @@ export function EmployeeSelectModal({
 }: EmployeeSelectModalProps) {
 	const { t } = useTranslate();
 
+	const effectiveExcludeIds = excludeIds ?? EMPTY_EXCLUDE_IDS;
+
 	// Determine if we're using pre-filtered employees
 	const usePreFiltered = preFilteredEmployees !== undefined;
 
 	// Track pending selections (for multi-select confirmation)
-	const [pendingIds, setPendingIds] = useState<string[]>(selectedIds);
+	const [pendingIds, setPendingIds] = useState<string[]>([]);
+	const [hasPendingChanges, setHasPendingChanges] = useState(false);
+	const activePendingIds = hasPendingChanges ? pendingIds : selectedIds;
 
 	// Local search state for pre-filtered mode
 	const [localSearch, setLocalSearch] = useState("");
 
-	// Sync pending state when modal opens
-	useMemo(() => {
-		if (open) {
-			setPendingIds(selectedIds);
-			setLocalSearch("");
-		}
-	}, [open, selectedIds]);
-
 	// Use the employee select hook (only when not using pre-filtered list)
 	const serverData = useEmployeeSelect({
 		filters,
-		excludeIds,
+		excludeIds: effectiveExcludeIds,
 		enabled: open && !usePreFiltered,
 	});
 
@@ -132,8 +131,9 @@ export function EmployeeSelectModal({
 			onOpenChange(false);
 		} else {
 			// In multi mode, add to pending
-			if (!pendingIds.includes(employee.id)) {
-				setPendingIds((prev) => [...prev, employee.id]);
+			if (!activePendingIds.includes(employee.id)) {
+				setHasPendingChanges(true);
+				setPendingIds([...activePendingIds, employee.id]);
 				setSelectedEmployeesMap((prev) => new Map(prev).set(employee.id, employee));
 			}
 		}
@@ -144,7 +144,8 @@ export function EmployeeSelectModal({
 		if (mode === "single") {
 			onDeselect(employeeId);
 		} else {
-			setPendingIds((prev) => prev.filter((id) => id !== employeeId));
+			setHasPendingChanges(true);
+			setPendingIds(activePendingIds.filter((id) => id !== employeeId));
 			setSelectedEmployeesMap((prev) => {
 				const newMap = new Map(prev);
 				newMap.delete(employeeId);
@@ -157,8 +158,8 @@ export function EmployeeSelectModal({
 	const handleConfirm = () => {
 		if (mode === "multiple") {
 			// Apply all pending selections
-			const toDeselect = selectedIds.filter((id) => !pendingIds.includes(id));
-			const toSelect = pendingIds.filter((id) => !selectedIds.includes(id));
+			const toDeselect = selectedIds.filter((id) => !activePendingIds.includes(id));
+			const toSelect = activePendingIds.filter((id) => !selectedIds.includes(id));
 
 			for (const id of toDeselect) {
 				onDeselect(id);
@@ -177,20 +178,21 @@ export function EmployeeSelectModal({
 
 	// Handle cancel
 	const handleCancel = () => {
-		setPendingIds(selectedIds);
+		setPendingIds([]);
+		setHasPendingChanges(false);
 		onOpenChange(false);
 	};
 
 	// Select all visible employees
 	const handleSelectAll = () => {
 		const availableIds = employees
-			.filter((emp) => !pendingIds.includes(emp.id))
+			.filter((emp) => !activePendingIds.includes(emp.id))
 			.map((emp) => emp.id);
 
 		// Respect max selections
 		let idsToAdd = availableIds;
 		if (maxSelections) {
-			const remaining = maxSelections - pendingIds.length;
+			const remaining = maxSelections - activePendingIds.length;
 			idsToAdd = availableIds.slice(0, remaining);
 		}
 
@@ -202,22 +204,24 @@ export function EmployeeSelectModal({
 			}
 		}
 
-		setPendingIds((prev) => [...prev, ...idsToAdd]);
+		setHasPendingChanges(true);
+		setPendingIds([...activePendingIds, ...idsToAdd]);
 		setSelectedEmployeesMap(newMap);
 	};
 
 	// Clear all selections
 	const handleClearAll = () => {
+		setHasPendingChanges(true);
 		setPendingIds([]);
 		setSelectedEmployeesMap(new Map());
 	};
 
-	const effectiveSelectedIds = mode === "multiple" ? pendingIds : selectedIds;
+	const effectiveSelectedIds = mode === "multiple" ? activePendingIds : selectedIds;
 	const selectionCount = effectiveSelectedIds.length;
 	const hasChanges =
 		mode === "multiple" &&
-		(pendingIds.length !== selectedIds.length ||
-			!pendingIds.every((id) => selectedIds.includes(id)));
+		(effectiveSelectedIds.length !== selectedIds.length ||
+			!effectiveSelectedIds.every((id) => selectedIds.includes(id)));
 
 	return (
 		<DialogPrimitive.Root open={open} onOpenChange={handleCancel}>
@@ -347,7 +351,7 @@ export function EmployeeSelectModal({
 
 									{/* Selected badges (show first 3) */}
 									<div className="flex items-center gap-1">
-										{pendingIds.slice(0, 3).map((id) => {
+									{activePendingIds.slice(0, 3).map((id) => {
 											const emp =
 												selectedEmployeesMap.get(id) || employees.find((e) => e.id === id);
 											if (!emp) return null;
@@ -368,9 +372,9 @@ export function EmployeeSelectModal({
 												</Badge>
 											);
 										})}
-										{pendingIds.length > 3 && (
+										{activePendingIds.length > 3 && (
 											<Badge variant="secondary" className="text-xs h-6">
-												+{pendingIds.length - 3}
+												+{activePendingIds.length - 3}
 											</Badge>
 										)}
 									</div>
@@ -406,7 +410,10 @@ export function EmployeeSelectModal({
 						)}
 
 						{/* Employee list */}
-						<CommandPrimitive.List className="max-h-[320px] overflow-y-auto overflow-x-hidden scroll-py-2 p-2">
+						<CommandPrimitive.List
+							id={listboxId}
+							className="max-h-[320px] overflow-y-auto overflow-x-hidden scroll-py-2 p-2"
+						>
 							<EmployeeSelectList
 								employees={employees}
 								selectedIds={effectiveSelectedIds}

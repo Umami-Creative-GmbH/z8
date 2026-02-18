@@ -2,7 +2,6 @@
 
 import { IconSearch, IconX } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -68,36 +67,16 @@ export function DataTableToolbar({
 	onFilterChange,
 	actions,
 	bulkActions,
-	searchDebounceMs = 300,
 	isSearching,
 }: DataTableToolbarProps) {
 	const { t } = useTranslate();
-	const [localSearch, setLocalSearch] = useState(search ?? "");
-
-	// Sync local search with external state
-	useEffect(() => {
-		setLocalSearch(search ?? "");
-	}, [search]);
-
-	// Debounced search
-	useEffect(() => {
-		if (!onSearchChange) return;
-
-		const handler = setTimeout(() => {
-			if (localSearch !== search) {
-				onSearchChange(localSearch);
-			}
-		}, searchDebounceMs);
-
-		return () => clearTimeout(handler);
-	}, [localSearch, search, onSearchChange, searchDebounceMs]);
+	const currentSearch = search ?? "";
 
 	const hasActiveFilters =
 		filterValues && Object.values(filterValues).some((v) => v && v !== "all");
 
 	const clearAllFilters = () => {
 		if (onSearchChange) {
-			setLocalSearch("");
 			onSearchChange("");
 		}
 		if (onFilterChange && filters) {
@@ -115,17 +94,16 @@ export function DataTableToolbar({
 						<IconSearch className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
 						<Input
 							placeholder={searchPlaceholder ?? t("table.searchPlaceholder", "Search...")}
-							value={localSearch}
-							onChange={(e) => setLocalSearch(e.target.value)}
+							value={currentSearch}
+							onChange={(e) => onSearchChange(e.target.value)}
 							className="h-9 w-full pl-8 pr-8"
 						/>
-						{localSearch && (
+						{currentSearch && (
 							<Button
 								variant="ghost"
 								size="icon"
 								className="absolute right-0 top-0 h-9 w-9 hover:bg-transparent"
 								onClick={() => {
-									setLocalSearch("");
 									onSearchChange("");
 								}}
 							>
@@ -158,7 +136,7 @@ export function DataTableToolbar({
 					</Select>
 				))}
 
-				{(hasActiveFilters || localSearch) && (
+				{(hasActiveFilters || currentSearch) && (
 					<Button variant="ghost" onClick={clearAllFilters} className="h-9 px-2 lg:px-3">
 						{t("table.clearFilters", "Clear filters")}
 						<IconX className="ml-2 h-4 w-4" />

@@ -116,6 +116,8 @@ export interface EmployeeSelectTriggerProps {
 	mode: "single" | "multiple";
 	selectedEmployees: SelectableEmployee[];
 	placeholder?: string;
+	controlsId?: string;
+	expanded?: boolean;
 	disabled?: boolean;
 	error?: string;
 	className?: string;
@@ -128,6 +130,7 @@ export interface EmployeeSelectTriggerProps {
 export interface EmployeeSelectModalProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
+	listboxId?: string;
 	mode: "single" | "multiple";
 	selectedIds: string[];
 	onSelect: (employee: SelectableEmployee) => void;

@@ -24,6 +24,8 @@ export function EmployeeSelectTrigger({
 	mode,
 	selectedEmployees,
 	placeholder,
+	controlsId,
+	expanded = false,
 	disabled = false,
 	error,
 	className,
@@ -47,6 +49,8 @@ export function EmployeeSelectTrigger({
 				type="button"
 				variant="outline"
 				role="combobox"
+				aria-expanded={expanded}
+				aria-controls={controlsId}
 				disabled={disabled}
 				onClick={onClick}
 				className={cn(
@@ -83,6 +87,8 @@ export function EmployeeSelectTrigger({
 				type="button"
 				variant="outline"
 				role="combobox"
+				aria-expanded={expanded}
+				aria-controls={controlsId}
 				disabled={disabled}
 				onClick={onClick}
 				className={cn(
@@ -109,6 +115,8 @@ export function EmployeeSelectTrigger({
 			type="button"
 			variant="outline"
 			role="combobox"
+			aria-expanded={expanded}
+			aria-controls={controlsId}
 			disabled={disabled}
 			onClick={onClick}
 			className={cn(
