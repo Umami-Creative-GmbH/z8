@@ -48,26 +48,31 @@ export function SSOProviderDialog({ open, onOpenChange, onProviderAdded }: SSOPr
 		},
 		onSubmit: async ({ value }) => {
 			setIsSubmitting(true);
-			try {
-				await registerSSOProviderAction(value as OIDCProviderInput);
-				onProviderAdded({
-					id: crypto.randomUUID(),
-					issuer: value.issuer,
-					domain: value.domain.toLowerCase(),
-					providerId: value.providerId,
-					domainVerified: false,
-					createdAt: new Date(),
-				});
-				form.reset();
-			} catch (error) {
-				if (error instanceof Error) {
-					toast.error(error.message);
+			const result = await registerSSOProviderAction(value as OIDCProviderInput).then(
+				(response) => ({ ok: true as const, response }),
+				(error) => ({ ok: false as const, error }),
+			);
+
+			if (!result.ok) {
+				if (result.error instanceof Error) {
+					toast.error(result.error.message);
 				} else {
 					toast.error("Failed to add SSO provider");
 				}
-			} finally {
 				setIsSubmitting(false);
+				return;
 			}
+
+			onProviderAdded({
+				id: crypto.randomUUID(),
+				issuer: value.issuer,
+				domain: value.domain.toLowerCase(),
+				providerId: value.providerId,
+				domainVerified: false,
+				createdAt: new Date(),
+			});
+			form.reset();
+			setIsSubmitting(false);
 		},
 	});
 

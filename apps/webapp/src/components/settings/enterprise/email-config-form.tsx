@@ -44,12 +44,61 @@ import { toast } from "sonner";
 interface EmailConfigFormProps {
 	organizationId: string;
 	initialConfig: EmailConfigOutput | null;
-	vaultStatus: {
-		available: boolean;
-		initialized: boolean;
-		sealed: boolean;
-		address: string;
-	};
+	vaultStatus: VaultStatus;
+}
+
+interface VaultStatus {
+	available: boolean;
+	initialized: boolean;
+	sealed: boolean;
+	address: string;
+}
+
+function VaultStatusAlert({ vaultStatus }: { vaultStatus: VaultStatus }) {
+	const { t } = useTranslate();
+
+	if (!vaultStatus.available) {
+		return (
+			<Alert variant="destructive" className="mb-4">
+				<AlertTriangle className="h-4 w-4" />
+				<AlertTitle>{t("settings.enterprise.email.vaultUnavailable", "Vault Unavailable")}</AlertTitle>
+				<AlertDescription>
+					{t(
+						"settings.enterprise.email.vaultUnavailableDesc",
+						"HashiCorp Vault is not available. Secrets cannot be stored securely.",
+					)}
+				</AlertDescription>
+			</Alert>
+		);
+	}
+
+	if (vaultStatus.sealed) {
+		return (
+			<Alert variant="destructive" className="mb-4">
+				<AlertTriangle className="h-4 w-4" />
+				<AlertTitle>{t("settings.enterprise.email.vaultSealed", "Vault Sealed")}</AlertTitle>
+				<AlertDescription>
+					{t(
+						"settings.enterprise.email.vaultSealedDesc",
+						"HashiCorp Vault is sealed. Please unseal it to store secrets.",
+					)}
+				</AlertDescription>
+			</Alert>
+		);
+	}
+
+	return (
+		<Alert className="mb-4">
+			<Shield className="h-4 w-4" />
+			<AlertTitle>{t("settings.enterprise.email.vaultConnected", "Vault Connected")}</AlertTitle>
+			<AlertDescription>
+				{t(
+					"settings.enterprise.email.vaultConnectedDesc",
+					"Secrets are stored securely in HashiCorp Vault.",
+				)}
+			</AlertDescription>
+		</Alert>
+	);
 }
 
 export function EmailConfigForm({
@@ -99,18 +148,23 @@ export function EmailConfigForm({
 		}
 
 		setIsTesting(true);
-		try {
-			const result = await testEmailConfig(organizationId, testEmail);
-			if (result.success) {
-				toast.success(t("settings.enterprise.email.testSent", "Test email sent successfully"));
-			} else {
-				toast.error(
-					result.error || t("settings.enterprise.email.testFailed", "Failed to send test email"),
-				);
-			}
-		} finally {
+		const result = await testEmailConfig(organizationId, testEmail).then(
+			(response) => response,
+			() => null,
+		);
+		if (!result) {
+			toast.error(t("settings.enterprise.email.testFailed", "Failed to send test email"));
 			setIsTesting(false);
+			return;
 		}
+
+		if (result.success) {
+			toast.success(t("settings.enterprise.email.testSent", "Test email sent successfully"));
+		} else {
+			toast.error(result.error || t("settings.enterprise.email.testFailed", "Failed to send test email"));
+		}
+
+		setIsTesting(false);
 	};
 
 	const handleDelete = async () => {
@@ -137,54 +191,6 @@ export function EmailConfigForm({
 		});
 	};
 
-	// Vault status component
-	const VaultStatus = () => {
-		if (!vaultStatus.available) {
-			return (
-				<Alert variant="destructive" className="mb-4">
-					<AlertTriangle className="h-4 w-4" />
-					<AlertTitle>
-						{t("settings.enterprise.email.vaultUnavailable", "Vault Unavailable")}
-					</AlertTitle>
-					<AlertDescription>
-						{t(
-							"settings.enterprise.email.vaultUnavailableDesc",
-							"HashiCorp Vault is not available. Secrets cannot be stored securely.",
-						)}
-					</AlertDescription>
-				</Alert>
-			);
-		}
-
-		if (vaultStatus.sealed) {
-			return (
-				<Alert variant="destructive" className="mb-4">
-					<AlertTriangle className="h-4 w-4" />
-					<AlertTitle>{t("settings.enterprise.email.vaultSealed", "Vault Sealed")}</AlertTitle>
-					<AlertDescription>
-						{t(
-							"settings.enterprise.email.vaultSealedDesc",
-							"HashiCorp Vault is sealed. Please unseal it to store secrets.",
-						)}
-					</AlertDescription>
-				</Alert>
-			);
-		}
-
-		return (
-			<Alert className="mb-4">
-				<Shield className="h-4 w-4" />
-				<AlertTitle>{t("settings.enterprise.email.vaultConnected", "Vault Connected")}</AlertTitle>
-				<AlertDescription>
-					{t(
-						"settings.enterprise.email.vaultConnectedDesc",
-						"Secrets are stored securely in HashiCorp Vault.",
-					)}
-				</AlertDescription>
-			</Alert>
-		);
-	};
-
 	return (
 		<form
 			onSubmit={(e) => {
@@ -207,7 +213,7 @@ export function EmailConfigForm({
 				</CardHeader>
 
 				<CardContent className="space-y-6">
-					<VaultStatus />
+					<VaultStatusAlert vaultStatus={vaultStatus} />
 
 					{/* Transport Type Selection */}
 					<div className="space-y-3">

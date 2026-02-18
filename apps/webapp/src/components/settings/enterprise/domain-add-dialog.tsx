@@ -1,6 +1,7 @@
 "use client";
 
 import { useForm } from "@tanstack/react-form";
+import { DateTime } from "luxon";
 import { useState } from "react";
 import { toast } from "sonner";
 import { addDomainAction } from "@/app/[locale]/(app)/settings/enterprise/actions";
@@ -55,34 +56,40 @@ export function DomainAddDialog({ open, onOpenChange, onDomainAdded }: DomainAdd
 			}
 
 			setIsSubmitting(true);
-			try {
-				const result = await addDomainAction(value.domain);
-				onDomainAdded({
-					id: result.id,
-					domain: value.domain.toLowerCase(),
-					domainVerified: false,
-					isPrimary: false,
-					verificationToken: result.verificationToken,
-					verificationTokenExpiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-					authConfig: {
-						emailPasswordEnabled: true,
-						socialProvidersEnabled: [],
-						ssoEnabled: false,
-						passkeyEnabled: true,
-					},
-					createdAt: new Date(),
-				});
-				form.reset();
-				toast.success("Domain added successfully");
-			} catch (error) {
+			const result = await addDomainAction(value.domain).catch((error: unknown) => {
 				if (error instanceof Error) {
 					toast.error(error.message);
 				} else {
 					toast.error("Failed to add domain");
 				}
-			} finally {
+				return null;
+			});
+
+			if (!result) {
 				setIsSubmitting(false);
+				return;
 			}
+
+			const now = DateTime.now();
+
+			onDomainAdded({
+				id: result.id,
+				domain: value.domain.toLowerCase(),
+				domainVerified: false,
+				isPrimary: false,
+				verificationToken: result.verificationToken,
+				verificationTokenExpiresAt: now.plus({ days: 7 }).toJSDate(),
+				authConfig: {
+					emailPasswordEnabled: true,
+					socialProvidersEnabled: [],
+					ssoEnabled: false,
+					passkeyEnabled: true,
+				},
+				createdAt: now.toJSDate(),
+			});
+			form.reset();
+			toast.success("Domain added successfully");
+			setIsSubmitting(false);
 		},
 	});
 

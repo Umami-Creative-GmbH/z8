@@ -55,17 +55,21 @@ export function SSOProviderManagement({ initialProviders }: SSOProviderManagemen
 	};
 
 	const handleDelete = async () => {
-		if (!deleteDialog.provider) return;
+		const provider = deleteDialog.provider;
+		if (!provider) return;
 
-		try {
-			await deleteSSOProviderAction(deleteDialog.provider.id);
-			setProviders((prev) => prev.filter((p) => p.id !== deleteDialog.provider?.id));
+		const didDelete = await deleteSSOProviderAction(provider.id)
+			.then(() => true)
+			.catch(() => false);
+
+		if (didDelete) {
+			setProviders((prev) => prev.filter((p) => p.id !== provider.id));
 			toast.success("SSO provider deleted");
-		} catch (_error) {
+		} else {
 			toast.error("Failed to delete SSO provider");
-		} finally {
-			setDeleteDialog({ isOpen: false, provider: null });
 		}
+
+		setDeleteDialog({ isOpen: false, provider: null });
 	};
 
 	const getProviderDisplayName = (issuer: string) => {

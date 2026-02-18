@@ -76,16 +76,18 @@ export function SocialOAuthManagement({ initialConfigs }: SocialOAuthManagementP
 
 	const handleDelete = async () => {
 		if (!deleteDialog.config) return;
+		const configToDelete = deleteDialog.config;
 
-		try {
-			await deleteSocialOAuthConfigAction(deleteDialog.config.id);
-			setConfigs((prev) => prev.filter((c) => c.id !== deleteDialog.config?.id));
-			toast.success(`${PROVIDER_INFO[deleteDialog.config.provider].name} OAuth removed`);
-		} catch (_error) {
-			toast.error("Failed to delete OAuth config");
-		} finally {
-			setDeleteDialog({ isOpen: false, config: null });
-		}
+		await deleteSocialOAuthConfigAction(configToDelete.id)
+			.then(() => {
+				setConfigs((prev) => prev.filter((c) => c.id !== configToDelete.id));
+				toast.success(`${PROVIDER_INFO[configToDelete.provider].name} OAuth removed`);
+			})
+			.catch(() => {
+				toast.error("Failed to delete OAuth config");
+			});
+
+		setDeleteDialog({ isOpen: false, config: null });
 	};
 
 	const formatDate = (date: Date | null) => {

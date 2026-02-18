@@ -79,40 +79,34 @@ export function DomainManagement({ initialDomains, organizationId }: DomainManag
 
 	const handleVerify = async (domainId: string) => {
 		setIsVerifying(true);
-		try {
-			const verified = await verifyDomainAction(domainId);
-			if (verified) {
-				setDomain((prev) =>
-					prev ? { ...prev, domainVerified: true, verificationToken: null } : null,
-				);
-				toast.success("Domain verified successfully");
-				setVerificationDialog({ isOpen: false, domain: null });
-			} else {
-				toast.error("Verification failed. Please check your DNS records.");
-			}
-		} catch (_error) {
+		const verified = await verifyDomainAction(domainId).catch(() => null);
+		if (verified) {
+			setDomain((prev) => (prev ? { ...prev, domainVerified: true, verificationToken: null } : null));
+			toast.success("Domain verified successfully");
+			setVerificationDialog({ isOpen: false, domain: null });
+		} else {
 			toast.error("Failed to verify domain");
-		} finally {
-			setIsVerifying(false);
 		}
+		setIsVerifying(false);
 	};
 
 	const handleRegenerateToken = async (domainId: string) => {
-		try {
-			const newToken = await regenerateVerificationTokenAction(domainId);
-			setDomain((prev) =>
-				prev
-					? {
-							...prev,
-							verificationToken: newToken,
-							verificationTokenExpiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-						}
-					: null,
-			);
-			toast.success("New verification token generated");
-		} catch (_error) {
+		const newToken = await regenerateVerificationTokenAction(domainId).catch(() => null);
+		if (!newToken) {
 			toast.error("Failed to regenerate token");
+			return;
 		}
+
+		setDomain((prev) =>
+			prev
+				? {
+						...prev,
+						verificationToken: newToken,
+						verificationTokenExpiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+					}
+				: null,
+		);
+		toast.success("New verification token generated");
 	};
 
 	const handleUpdateAuthConfig = async (
@@ -120,33 +114,43 @@ export function DomainManagement({ initialDomains, organizationId }: DomainManag
 		config: AuthConfig,
 		turnstileSecretKey?: string,
 	) => {
-		try {
-			// Store Turnstile secret in Vault if provided
-			if (turnstileSecretKey && config.turnstileSiteKey) {
-				await storeTurnstileSecretAction(turnstileSecretKey);
+		// Store Turnstile secret in Vault if provided
+		if (turnstileSecretKey && config.turnstileSiteKey) {
+			const secretStored = await storeTurnstileSecretAction(turnstileSecretKey)
+				.then(() => true)
+				.catch(() => false);
+			if (!secretStored) {
+				toast.error("Failed to update auth configuration");
+				return;
 			}
-
-			await updateDomainAuthConfigAction(domainId, config);
-			setDomain((prev) => (prev ? { ...prev, authConfig: config } : null));
-			toast.success("Auth configuration updated");
-			setAuthConfigDialog({ isOpen: false, domain: null });
-		} catch (_error) {
-			toast.error("Failed to update auth configuration");
 		}
+
+		const authUpdated = await updateDomainAuthConfigAction(domainId, config)
+			.then(() => true)
+			.catch(() => false);
+		if (!authUpdated) {
+			toast.error("Failed to update auth configuration");
+			return;
+		}
+
+		setDomain((prev) => (prev ? { ...prev, authConfig: config } : null));
+		toast.success("Auth configuration updated");
+		setAuthConfigDialog({ isOpen: false, domain: null });
 	};
 
 	const handleDelete = async () => {
 		if (!deleteDialog.domain) return;
 
-		try {
-			await deleteDomainAction(deleteDialog.domain.id);
+		const deleted = await deleteDomainAction(deleteDialog.domain.id)
+			.then(() => true)
+			.catch(() => false);
+		if (deleted) {
 			setDomain(null);
 			toast.success("Domain deleted");
-		} catch (_error) {
+		} else {
 			toast.error("Failed to delete domain");
-		} finally {
-			setDeleteDialog({ isOpen: false, domain: null });
 		}
+		setDeleteDialog({ isOpen: false, domain: null });
 	};
 
 	return (

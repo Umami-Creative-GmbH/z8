@@ -43,6 +43,8 @@ interface SocialOAuthDialogProps {
 	onConfigUpdated?: (config: SocialOAuthConfigResponse) => void;
 }
 
+const EMPTY_PROVIDERS: SocialOAuthProvider[] = [];
+
 const PROVIDER_INFO: Record<
 	SocialOAuthProvider,
 	{ name: string; icon: typeof Google; docsUrl: string }
@@ -72,13 +74,22 @@ const PROVIDER_INFO: Record<
 export function SocialOAuthDialog({
 	open,
 	onOpenChange,
-	availableProviders = [],
+	availableProviders = EMPTY_PROVIDERS,
 	editConfig,
 	onConfigAdded,
 	onConfigUpdated,
 }: SocialOAuthDialogProps) {
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const isEditing = !!editConfig;
+
+	const handleSubmissionError = (error: unknown) => {
+		if (error instanceof Error) {
+			toast.error(error.message);
+			return;
+		}
+
+		toast.error(isEditing ? "Failed to update config" : "Failed to add provider");
+	};
 
 	const form = useForm({
 		defaultValues: {
@@ -92,49 +103,64 @@ export function SocialOAuthDialog({
 		},
 		onSubmit: async ({ value }) => {
 			setIsSubmitting(true);
-			try {
-				// Build provider config for Apple
-				const providerConfig =
-					value.provider === "apple" && value.appleTeamId && value.appleKeyId
-						? {
-								apple: {
-									teamId: value.appleTeamId,
-									keyId: value.appleKeyId,
-								},
-							}
-						: undefined;
 
-				if (isEditing && editConfig) {
-					const updated = await updateSocialOAuthConfigAction(editConfig.id, {
-						clientId: value.clientId,
-						clientSecret: value.clientSecret || undefined,
-						isActive: value.isActive,
-						providerConfig,
-					});
-					onConfigUpdated?.(updated);
-				} else {
-					if (!value.clientSecret) {
-						toast.error("Client Secret is required");
-						return;
-					}
-					const config = await addSocialOAuthConfigAction({
-						provider: value.provider as SocialOAuthProvider,
-						clientId: value.clientId,
-						clientSecret: value.clientSecret,
-						providerConfig,
-					});
-					onConfigAdded?.(config);
+			// Build provider config for Apple
+			const providerConfig =
+				value.provider === "apple" && value.appleTeamId && value.appleKeyId
+					? {
+							apple: {
+								teamId: value.appleTeamId,
+								keyId: value.appleKeyId,
+							},
+						}
+					: undefined;
+
+			if (isEditing && editConfig) {
+				const updated = await updateSocialOAuthConfigAction(editConfig.id, {
+					clientId: value.clientId,
+					clientSecret: value.clientSecret || undefined,
+					isActive: value.isActive,
+					providerConfig,
+				}).catch((error: unknown) => {
+					handleSubmissionError(error);
+					return null;
+				});
+
+				if (!updated) {
+					setIsSubmitting(false);
+					return;
 				}
+
+				onConfigUpdated?.(updated);
 				form.reset();
-			} catch (error) {
-				if (error instanceof Error) {
-					toast.error(error.message);
-				} else {
-					toast.error(isEditing ? "Failed to update config" : "Failed to add provider");
-				}
-			} finally {
 				setIsSubmitting(false);
+				return;
 			}
+
+			if (!value.clientSecret) {
+				toast.error("Client Secret is required");
+				setIsSubmitting(false);
+				return;
+			}
+
+			const config = await addSocialOAuthConfigAction({
+				provider: value.provider as SocialOAuthProvider,
+				clientId: value.clientId,
+				clientSecret: value.clientSecret,
+				providerConfig,
+			}).catch((error: unknown) => {
+				handleSubmissionError(error);
+				return null;
+			});
+
+			if (!config) {
+				setIsSubmitting(false);
+				return;
+			}
+
+			onConfigAdded?.(config);
+			form.reset();
+			setIsSubmitting(false);
 		},
 	});
 

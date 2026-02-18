@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -46,21 +46,22 @@ export function DomainAuthConfigDialog({
 	onSave,
 }: DomainAuthConfigDialogProps) {
 	const [config, setConfig] = useState<AuthConfig>({
-		emailPasswordEnabled: true,
-		socialProvidersEnabled: [],
-		ssoEnabled: false,
-		passkeyEnabled: true,
+		emailPasswordEnabled: domain?.authConfig.emailPasswordEnabled ?? true,
+		socialProvidersEnabled: domain?.authConfig.socialProvidersEnabled ?? [],
+		ssoEnabled: domain?.authConfig.ssoEnabled ?? false,
+		passkeyEnabled: domain?.authConfig.passkeyEnabled ?? true,
+		turnstileSiteKey: domain?.authConfig.turnstileSiteKey,
 	});
 	const [turnstileSecretKey, setTurnstileSecretKey] = useState("");
 	const [isSaving, setIsSaving] = useState(false);
 
-	useEffect(() => {
-		if (domain) {
+	const handleOpenChange = (nextOpen: boolean) => {
+		if (nextOpen && domain) {
 			setConfig(domain.authConfig);
-			// Clear secret key when domain changes (we don't fetch it back for security)
 			setTurnstileSecretKey("");
 		}
-	}, [domain]);
+		onOpenChange(nextOpen);
+	};
 
 	if (!domain) return null;
 
@@ -75,16 +76,13 @@ export function DomainAuthConfigDialog({
 
 	const handleSave = async () => {
 		setIsSaving(true);
-		try {
-			// Pass the secret key only if it was entered (non-empty)
-			await onSave(domain.id, config, turnstileSecretKey || undefined);
-		} finally {
-			setIsSaving(false);
-		}
+		// Pass the secret key only if it was entered (non-empty)
+		await onSave(domain.id, config, turnstileSecretKey || undefined).catch(() => undefined);
+		setIsSaving(false);
 	};
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
+		<Dialog open={open} onOpenChange={handleOpenChange}>
 			<DialogContent className="max-w-md">
 				<DialogHeader>
 					<DialogTitle>Auth Configuration</DialogTitle>

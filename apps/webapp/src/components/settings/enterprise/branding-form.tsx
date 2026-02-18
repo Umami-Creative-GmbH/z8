@@ -80,14 +80,16 @@ export function BrandingForm({ initialBranding, organizationId }: BrandingFormPr
 
 	const handleSave = async () => {
 		setIsSaving(true);
-		try {
-			await updateBrandingAction(branding);
-			toast.success(t("settings.branding.saveSuccess", "Branding settings saved"));
-		} catch (_error) {
-			toast.error(t("settings.branding.saveFailed", "Failed to save branding settings"));
-		} finally {
-			setIsSaving(false);
-		}
+
+		await updateBrandingAction(branding)
+			.then(() => {
+				toast.success(t("settings.branding.saveSuccess", "Branding settings saved"));
+			})
+			.catch(() => {
+				toast.error(t("settings.branding.saveFailed", "Failed to save branding settings"));
+			});
+
+		setIsSaving(false);
 	};
 
 	return (

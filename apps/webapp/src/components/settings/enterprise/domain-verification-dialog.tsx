@@ -56,11 +56,8 @@ export function DomainVerificationDialog({
 
 	const handleRegenerateToken = async () => {
 		setIsRegenerating(true);
-		try {
-			await onRegenerateToken(domain.id);
-		} finally {
-			setIsRegenerating(false);
-		}
+		await onRegenerateToken(domain.id).catch(() => undefined);
+		setIsRegenerating(false);
 	};
 
 	const isExpired =
