@@ -65,55 +65,56 @@ export function HolidayDialog({
 		onSubmit: async ({ value }) => {
 			setLoading(true);
 
-			try {
-				// Generate recurrence rule for yearly holidays
-				let recurrenceRule = value.recurrenceRule;
-				if (value.recurrenceType === "yearly" && !recurrenceRule) {
-					const month = value.startDate.getMonth() + 1; // 1-12
-					const day = value.startDate.getDate();
-					recurrenceRule = JSON.stringify({ month, day });
-				}
-
-				const payload = {
-					...value,
-					recurrenceRule,
-					// Convert dates to ISO strings for API
-					startDate: value.startDate.toISOString(),
-					endDate: value.endDate.toISOString(),
-					recurrenceEndDate: value.recurrenceEndDate?.toISOString() || null,
-				};
-
-				const endpoint = isEditing
-					? `/api/admin/holidays/${editingHoliday.id}`
-					: "/api/admin/holidays";
-				const method = isEditing ? "PATCH" : "POST";
-
-				const response = await fetch(endpoint, {
-					method,
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify(payload),
-				});
-
-				if (!response.ok) {
-					const error = await response.json();
-					throw new Error(error.error || "Failed to save holiday");
-				}
-
-				toast.success(
-					t(
-						isEditing ? "settings.holidays.updated" : "settings.holidays.created",
-						isEditing ? "Holiday updated successfully" : "Holiday created successfully",
-					),
-				);
-
-				onSuccess();
-				onOpenChange(false);
-				form.reset();
-			} catch (error: any) {
-				toast.error(error.message || t("settings.holidays.saveFailed", "Failed to save holiday"));
-			} finally {
-				setLoading(false);
+			// Generate recurrence rule for yearly holidays
+			let recurrenceRule = value.recurrenceRule;
+			if (value.recurrenceType === "yearly" && !recurrenceRule) {
+				const month = value.startDate.getMonth() + 1; // 1-12
+				const day = value.startDate.getDate();
+				recurrenceRule = JSON.stringify({ month, day });
 			}
+
+			const payload = {
+				...value,
+				recurrenceRule,
+				// Convert dates to ISO strings for API
+				startDate: value.startDate.toISOString(),
+				endDate: value.endDate.toISOString(),
+				recurrenceEndDate: value.recurrenceEndDate?.toISOString() || null,
+			};
+
+			const endpoint = isEditing ? `/api/admin/holidays/${editingHoliday.id}` : "/api/admin/holidays";
+			const method = isEditing ? "PATCH" : "POST";
+
+			const response = await fetch(endpoint, {
+				method,
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(payload),
+			}).catch(() => null);
+
+			if (!response) {
+				toast.error(t("settings.holidays.saveFailed", "Failed to save holiday"));
+				setLoading(false);
+				return;
+			}
+
+			if (!response.ok) {
+				const error = await response.json().catch(() => null);
+				toast.error(error?.error || t("settings.holidays.saveFailed", "Failed to save holiday"));
+				setLoading(false);
+				return;
+			}
+
+			toast.success(
+				t(
+					isEditing ? "settings.holidays.updated" : "settings.holidays.created",
+					isEditing ? "Holiday updated successfully" : "Holiday created successfully",
+				),
+			);
+
+			onSuccess();
+			onOpenChange(false);
+			form.reset();
+			setLoading(false);
 		},
 	});
 

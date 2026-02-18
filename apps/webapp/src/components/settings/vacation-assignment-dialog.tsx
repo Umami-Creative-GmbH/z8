@@ -5,7 +5,7 @@ import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { getTeamsForAssignment } from "@/app/[locale]/(app)/settings/holidays/preset-actions";
 import {
@@ -103,13 +103,13 @@ export function VacationAssignmentDialog({
 		},
 	});
 
-	// Reset form when dialog opens
-	useEffect(() => {
-		if (open) {
+	const handleOpenChange = (nextOpen: boolean) => {
+		if (!nextOpen) {
 			form.reset();
 			setValidationErrors({});
 		}
-	}, [open, form]);
+		onOpenChange(nextOpen);
+	};
 
 	// Fetch vacation policies
 	const { data: policies, isLoading: policiesLoading } = useQuery({
@@ -201,7 +201,7 @@ export function VacationAssignmentDialog({
 	const isLoading = policiesLoading || teamsLoading;
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
+		<Dialog open={open} onOpenChange={handleOpenChange}>
 			<DialogContent>
 				<DialogHeader>
 					<DialogTitle>{getDialogTitle()}</DialogTitle>

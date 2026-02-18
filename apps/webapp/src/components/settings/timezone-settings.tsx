@@ -18,18 +18,21 @@ export function TimezoneSettings({ currentTimezone = "UTC", onUpdate }: Timezone
 
 	const handleSave = async () => {
 		setIsLoading(true);
-		try {
-			const result = await onUpdate(timezone);
-			if (result.success) {
-				toast.success("Timezone updated successfully");
-			} else {
-				toast.error(result.error || "Failed to update timezone");
-			}
-		} catch (_error) {
+		const result = await onUpdate(timezone).then((response) => response, () => null);
+
+		if (!result) {
 			toast.error("An error occurred while updating timezone");
-		} finally {
 			setIsLoading(false);
+			return;
 		}
+
+		if (result.success) {
+			toast.success("Timezone updated successfully");
+		} else {
+			toast.error(result.error || "Failed to update timezone");
+		}
+
+		setIsLoading(false);
 	};
 
 	const hasChanged = timezone !== currentTimezone;

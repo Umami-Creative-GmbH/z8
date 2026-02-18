@@ -9,7 +9,7 @@ import {
 	IconLoader2,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import {
 	bulkAddHolidaysToPreset,
@@ -123,255 +123,298 @@ export function HolidayImportDialog({
 	const currentYear = new Date().getFullYear();
 	const yearOptions = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i);
 
-	// Load countries on mount
-	// biome-ignore lint/correctness/useExhaustiveDependencies: loadCountries is stable, countries.length check is intentional
-	useEffect(() => {
-		if (open && countries.length === 0) {
-			loadCountries();
-		}
-	}, [open]);
-
-	// Reset state when dialog closes
-	useEffect(() => {
-		if (!open) {
-			setStep(1);
-			setSelectedCountry("");
-			setSelectedState("");
-			setSelectedRegion("");
-			setSelectedYear(new Date().getFullYear());
-			setSelectedTypes(["public"]);
-			setHolidays([]);
-			setSelectedHolidays(new Set());
-			setStates([]);
-			setRegions([]);
-			setPresetName("");
-			setPresetColor("#4F46E5");
-			setSetAsOrgDefault(false);
-		}
-	}, [open]);
-
-	// Load states when country changes
-	// biome-ignore lint/correctness/useExhaustiveDependencies: loadStates is stable
-	useEffect(() => {
-		if (selectedCountry) {
-			loadStates(selectedCountry);
-			setSelectedState("");
-			setSelectedRegion("");
-			setRegions([]);
-		}
-	}, [selectedCountry]);
-
-	// Load regions when state changes
-	// biome-ignore lint/correctness/useExhaustiveDependencies: loadRegions is stable
-	useEffect(() => {
-		if (selectedCountry && selectedState) {
-			loadRegions(selectedCountry, selectedState);
-			setSelectedRegion("");
-		}
-	}, [selectedCountry, selectedState]);
-
 	async function loadCountries() {
 		setCountriesLoading(true);
-		try {
-			const response = await fetch("/api/location/countries");
-			if (response.ok) {
-				const data = await response.json();
+		const response = await fetch("/api/location/countries").catch((error) => {
+			console.error("Failed to load countries:", error);
+			return null;
+		});
+
+		if (!response) {
+			toast.error("Failed to load countries");
+			setCountriesLoading(false);
+			return;
+		}
+
+		if (response.ok) {
+			const data = await response.json().catch(() => null);
+			if (data?.countries) {
 				setCountries(data.countries);
 			}
-		} catch (error) {
-			console.error("Failed to load countries:", error);
-			toast.error("Failed to load countries");
-		} finally {
-			setCountriesLoading(false);
 		}
+
+		setCountriesLoading(false);
 	}
 
 	async function loadStates(country: string) {
 		setStatesLoading(true);
-		try {
-			const response = await fetch(`/api/location/states?country=${encodeURIComponent(country)}`);
-			if (response.ok) {
-				const data = await response.json();
+		const response = await fetch(`/api/location/states?country=${encodeURIComponent(country)}`).catch(
+			(error) => {
+				console.error("Failed to load states:", error);
+				return null;
+			},
+		);
+
+		if (!response) {
+			setStatesLoading(false);
+			return;
+		}
+
+		if (response.ok) {
+			const data = await response.json().catch(() => null);
+			if (data?.states) {
 				setStates(data.states);
 			}
-		} catch (error) {
-			console.error("Failed to load states:", error);
-		} finally {
-			setStatesLoading(false);
 		}
+
+		setStatesLoading(false);
 	}
 
 	async function loadRegions(country: string, state: string) {
 		setRegionsLoading(true);
-		try {
-			const response = await fetch(
-				`/api/location/regions?country=${encodeURIComponent(country)}&state=${encodeURIComponent(state)}`,
-			);
-			if (response.ok) {
-				const data = await response.json();
+		const response = await fetch(
+			`/api/location/regions?country=${encodeURIComponent(country)}&state=${encodeURIComponent(state)}`,
+		).catch((error) => {
+			console.error("Failed to load regions:", error);
+			return null;
+		});
+
+		if (!response) {
+			setRegionsLoading(false);
+			return;
+		}
+
+		if (response.ok) {
+			const data = await response.json().catch(() => null);
+			if (data?.regions) {
 				setRegions(data.regions);
 			}
-		} catch (error) {
-			console.error("Failed to load regions:", error);
-		} finally {
-			setRegionsLoading(false);
 		}
+
+		setRegionsLoading(false);
 	}
 
 	async function loadPreview() {
 		setPreviewLoading(true);
-		try {
-			const params = new URLSearchParams({
-				country: selectedCountry,
-				year: selectedYear.toString(),
-				types: selectedTypes.join(","),
-			});
-			if (selectedState) params.set("state", selectedState);
-			if (selectedRegion) params.set("region", selectedRegion);
+		const params = new URLSearchParams({
+			country: selectedCountry,
+			year: selectedYear.toString(),
+			types: selectedTypes.join(","),
+		});
+		if (selectedState) params.set("state", selectedState);
+		if (selectedRegion) params.set("region", selectedRegion);
 
-			const response = await fetch(`/api/admin/holidays/preview?${params}`);
-			if (response.ok) {
-				const data = await response.json();
-				setHolidays(data.holidays);
-				// Pre-select non-duplicate holidays
-				const nonDuplicates = data.holidays
-					.filter((h: HolidayPreview) => !h.isDuplicate)
-					.map((h: HolidayPreview) => h.name);
-				setSelectedHolidays(new Set(nonDuplicates));
-
-				// Generate preset name from location
-				const countryName =
-					countries.find((c) => c.code === selectedCountry)?.name || selectedCountry;
-				const stateName = states.find((s) => s.code === selectedState)?.name;
-				const regionName = regions.find((r) => r.code === selectedRegion)?.name;
-				const nameParts = [countryName];
-				if (stateName) nameParts.push(stateName);
-				if (regionName) nameParts.push(regionName);
-				setPresetName(nameParts.join(" - "));
-
-				setStep(2);
-			} else {
-				const error = await response.json();
-				toast.error(error.error || "Failed to load holidays");
-			}
-		} catch (error) {
+		const response = await fetch(`/api/admin/holidays/preview?${params}`).catch((error) => {
 			console.error("Failed to load preview:", error);
+			return null;
+		});
+
+		if (!response) {
 			toast.error("Failed to load holidays");
-		} finally {
 			setPreviewLoading(false);
+			return;
 		}
+
+		if (!response.ok) {
+			const error = await response.json().catch(() => null);
+			toast.error(error?.error || "Failed to load holidays");
+			setPreviewLoading(false);
+			return;
+		}
+
+		const data = await response.json().catch(() => null);
+		if (!data?.holidays) {
+			toast.error("Failed to load holidays");
+			setPreviewLoading(false);
+			return;
+		}
+
+		setHolidays(data.holidays);
+		// Pre-select non-duplicate holidays
+		const nonDuplicates = data.holidays
+			.filter((h: HolidayPreview) => !h.isDuplicate)
+			.map((h: HolidayPreview) => h.name);
+		setSelectedHolidays(new Set(nonDuplicates));
+
+		// Generate preset name from location
+		const countryName = countries.find((c) => c.code === selectedCountry)?.name || selectedCountry;
+		const stateName = states.find((s) => s.code === selectedState)?.name;
+		const regionName = regions.find((r) => r.code === selectedRegion)?.name;
+		const nameParts = [countryName];
+		if (stateName) nameParts.push(stateName);
+		if (regionName) nameParts.push(regionName);
+		setPresetName(nameParts.join(" - "));
+
+		setStep(2);
+		setPreviewLoading(false);
 	}
 
 	async function handleImport() {
 		setImportLoading(true);
-		try {
-			// Step 1: Create the preset
-			const presetResult = await createHolidayPreset(organizationId, {
-				name: presetName,
-				description: "",
-				countryCode: selectedCountry,
-				stateCode: selectedState || undefined,
-				regionCode: selectedRegion || undefined,
-				color: presetColor,
-				isActive: true,
+		// Step 1: Create the preset
+		const presetResult = await createHolidayPreset(organizationId, {
+			name: presetName,
+			description: "",
+			countryCode: selectedCountry,
+			stateCode: selectedState || undefined,
+			regionCode: selectedRegion || undefined,
+			color: presetColor,
+			isActive: true,
+		}).catch((error) => {
+			console.error("Failed to create preset:", error);
+			return null;
+		});
+
+		if (!presetResult?.success) {
+			toast.error(presetResult?.error || "Failed to create preset");
+			setImportLoading(false);
+			return;
+		}
+
+		const presetId = presetResult.data.id;
+
+		// Prepare holidays data for import
+		const holidaysToImport = holidays
+			.filter((h) => selectedHolidays.has(h.name))
+			.map((h) => {
+				const startDate = new Date(h.startDate);
+				const endDate = new Date(h.endDate);
+				const durationMs = endDate.getTime() - startDate.getTime();
+				const durationDays = Math.ceil(durationMs / (1000 * 60 * 60 * 24)) + 1;
+
+				return {
+					name: h.name,
+					description: "",
+					month: startDate.getMonth() + 1,
+					day: startDate.getDate(),
+					durationDays,
+					holidayType: h.type as "optional" | "public" | "bank" | "school" | "observance",
+					isFloating: false,
+					isActive: true,
+				};
 			});
 
-			if (!presetResult.success) {
-				toast.error(presetResult.error || "Failed to create preset");
-				return;
+		// Step 2 & 3: Run in parallel - adding holidays and creating assignment are independent
+		const parallelOperations: Promise<{ success: boolean; error?: string }>[] = [];
+
+		// Add holidays to preset (if any selected)
+		if (holidaysToImport.length > 0) {
+			parallelOperations.push(bulkAddHolidaysToPreset(presetId, holidaysToImport));
+		}
+
+		// Create org default assignment (if requested)
+		if (setAsOrgDefault) {
+			parallelOperations.push(
+				createPresetAssignment(organizationId, {
+					presetId,
+					assignmentType: "organization",
+					isActive: true,
+				}),
+			);
+		}
+
+		// Await all parallel operations
+		const results = await Promise.all(parallelOperations).catch((error) => {
+			console.error("Failed to complete import operations:", error);
+			return null;
+		});
+
+		if (!results) {
+			toast.error("Failed to create preset");
+			setImportLoading(false);
+			return;
+		}
+
+		// Check results
+		let bulkAddFailed = false;
+
+		if (holidaysToImport.length > 0) {
+			const bulkResult = results[0];
+			if (!bulkResult.success) {
+				bulkAddFailed = true;
+				toast.error(bulkResult.error || "Failed to add holidays to preset");
 			}
+		}
 
-			const presetId = presetResult.data.id;
-
-			// Prepare holidays data for import
-			const holidaysToImport = holidays
-				.filter((h) => selectedHolidays.has(h.name))
-				.map((h) => {
-					const startDate = new Date(h.startDate);
-					const endDate = new Date(h.endDate);
-					const durationMs = endDate.getTime() - startDate.getTime();
-					const durationDays = Math.ceil(durationMs / (1000 * 60 * 60 * 24)) + 1;
-
-					return {
-						name: h.name,
-						description: "",
-						month: startDate.getMonth() + 1,
-						day: startDate.getDate(),
-						durationDays,
-						holidayType: h.type as "optional" | "public" | "bank" | "school" | "observance",
-						isFloating: false,
-						isActive: true,
-					};
-				});
-
-			// Step 2 & 3: Run in parallel - adding holidays and creating assignment are independent
-			const parallelOperations: Promise<{ success: boolean; error?: string }>[] = [];
-
-			// Add holidays to preset (if any selected)
-			if (holidaysToImport.length > 0) {
-				parallelOperations.push(bulkAddHolidaysToPreset(presetId, holidaysToImport));
-			}
-
-			// Create org default assignment (if requested)
-			if (setAsOrgDefault) {
-				parallelOperations.push(
-					createPresetAssignment(organizationId, {
-						presetId,
-						assignmentType: "organization",
-						isActive: true,
-					}),
+		if (setAsOrgDefault) {
+			const assignResultIndex = holidaysToImport.length > 0 ? 1 : 0;
+			const assignResult = results[assignResultIndex];
+			if (!assignResult.success) {
+				toast.warning(
+					t(
+						"settings.holidays.import.defaultWarning",
+						"Preset created but could not set as organization default",
+					),
 				);
 			}
+		}
 
-			// Await all parallel operations
-			const results = await Promise.all(parallelOperations);
-
-			// Check results
-			let bulkAddFailed = false;
-			let assignmentFailed = false;
-
-			if (holidaysToImport.length > 0) {
-				const bulkResult = results[0];
-				if (!bulkResult.success) {
-					bulkAddFailed = true;
-					toast.error(bulkResult.error || "Failed to add holidays to preset");
-				}
-			}
-
-			if (setAsOrgDefault) {
-				const assignResultIndex = holidaysToImport.length > 0 ? 1 : 0;
-				const assignResult = results[assignResultIndex];
-				if (!assignResult.success) {
-					assignmentFailed = true;
-					toast.warning(
-						t(
-							"settings.holidays.import.defaultWarning",
-							"Preset created but could not set as organization default",
-						),
-					);
-				}
-			}
-
-			// Only fail completely if bulk add failed (assignment failure is non-critical)
-			if (bulkAddFailed) {
-				return;
-			}
-
-			toast.success(
-				t(
-					"settings.holidays.import.presetSuccess",
-					`Created preset "{name}" with ${holidaysToImport.length} holidays`,
-					{ name: presetName, count: holidaysToImport.length },
-				),
-			);
-
-			onSuccess();
-			onOpenChange(false);
-		} catch (error) {
-			console.error("Failed to create preset:", error);
-			toast.error("Failed to create preset");
-		} finally {
+		// Only fail completely if bulk add failed (assignment failure is non-critical)
+		if (bulkAddFailed) {
 			setImportLoading(false);
+			return;
+		}
+
+		toast.success(
+			t(
+				"settings.holidays.import.presetSuccess",
+				`Created preset "{name}" with ${holidaysToImport.length} holidays`,
+				{ name: presetName, count: holidaysToImport.length },
+			),
+		);
+
+		onSuccess();
+		handleDialogOpenChange(false);
+		setImportLoading(false);
+	}
+
+	function resetDialogState() {
+		setStep(1);
+		setSelectedCountry("");
+		setSelectedState("");
+		setSelectedRegion("");
+		setSelectedYear(new Date().getFullYear());
+		setSelectedTypes(["public"]);
+		setHolidays([]);
+		setSelectedHolidays(new Set());
+		setStates([]);
+		setRegions([]);
+		setPresetName("");
+		setPresetColor("#4F46E5");
+		setSetAsOrgDefault(false);
+	}
+
+	function handleDialogOpenChange(nextOpen: boolean) {
+		onOpenChange(nextOpen);
+		if (nextOpen) {
+			if (countries.length === 0) {
+				loadCountries();
+			}
+			return;
+		}
+
+		resetDialogState();
+	}
+
+	function handleCountryChange(countryCode: string) {
+		setSelectedCountry(countryCode);
+		setSelectedState("");
+		setSelectedRegion("");
+		setStates([]);
+		setRegions([]);
+
+		if (countryCode) {
+			loadStates(countryCode);
+		}
+	}
+
+	function handleStateChange(stateCode: string) {
+		setSelectedState(stateCode);
+		setSelectedRegion("");
+		setRegions([]);
+
+		if (selectedCountry && stateCode) {
+			loadRegions(selectedCountry, stateCode);
 		}
 	}
 
@@ -412,7 +455,7 @@ export function HolidayImportDialog({
 	).length;
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
+		<Dialog open={open} onOpenChange={handleDialogOpenChange}>
 			<DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
 				<DialogHeader>
 					<DialogTitle className="flex items-center gap-2">
@@ -471,7 +514,7 @@ export function HolidayImportDialog({
 								<SearchableSelect
 									options={countries}
 									value={selectedCountry}
-									onValueChange={setSelectedCountry}
+									onValueChange={handleCountryChange}
 									placeholder={t("settings.holidays.import.selectCountry", "Select a country")}
 									searchPlaceholder={t(
 										"settings.holidays.import.searchCountry",
@@ -497,7 +540,7 @@ export function HolidayImportDialog({
 										<SearchableSelect
 											options={states}
 											value={selectedState}
-											onValueChange={setSelectedState}
+											onValueChange={handleStateChange}
 											placeholder={t(
 												"settings.holidays.import.selectState",
 												"Select a state (optional)",
@@ -755,7 +798,7 @@ export function HolidayImportDialog({
 					{step > 1 && (
 						<Button
 							variant="outline"
-							onClick={() => setStep(step - 1)}
+							onClick={() => setStep((prev) => prev - 1)}
 							disabled={previewLoading || importLoading}
 						>
 							<IconChevronLeft className="mr-1 h-4 w-4" />
@@ -765,7 +808,7 @@ export function HolidayImportDialog({
 
 					<Button
 						variant="outline"
-						onClick={() => onOpenChange(false)}
+						onClick={() => handleDialogOpenChange(false)}
 						disabled={previewLoading || importLoading}
 					>
 						{t("common.cancel", "Cancel")}
