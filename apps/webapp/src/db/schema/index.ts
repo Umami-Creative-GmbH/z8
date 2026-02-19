@@ -22,6 +22,7 @@ export * from "./clockodo-import";
 export * from "./compliance";
 // Coverage targets (minimum staffing requirements)
 export * from "./coverage";
+export * from "./cost-center";
 export * from "./cron-job";
 // Custom roles (configurable permissions)
 export * from "./custom-role";

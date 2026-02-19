@@ -28,6 +28,7 @@ import {
 	customRolePermission,
 	employeeCustomRole,
 } from "./custom-role";
+import { costCenter, employeeCostCenterAssignment } from "./cost-center";
 import { customer } from "./customer";
 import {
 	organizationBranding,
@@ -162,6 +163,9 @@ export const organizationRelations = relations(
 		shifts: many(shift),
 		// Customers
 		customers: many(customer),
+		// Cost centers
+		costCenters: many(costCenter),
+		employeeCostCenterAssignments: many(employeeCostCenterAssignment),
 		// Projects
 		projects: many(project),
 		projectAssignments: many(projectAssignment),
@@ -390,6 +394,8 @@ export const employeeRelations = relations(employee, ({ one, many }) => ({
 	// Projects
 	projectManagements: many(projectManager),
 	projectAssignments: many(projectAssignment),
+	// Cost centers
+	costCenterAssignments: many(employeeCostCenterAssignment),
 	// Surcharges
 	surchargeModelAssignments: many(surchargeModelAssignment),
 	surchargeCalculations: many(surchargeCalculation),
@@ -939,6 +945,32 @@ export const projectNotificationStateRelations = relations(
 		project: one(project, {
 			fields: [projectNotificationState.projectId],
 			references: [project.id],
+		}),
+	}),
+);
+
+export const costCenterRelations = relations(costCenter, ({ one, many }) => ({
+	organization: one(organization, {
+		fields: [costCenter.organizationId],
+		references: [organization.id],
+	}),
+	assignments: many(employeeCostCenterAssignment),
+}));
+
+export const employeeCostCenterAssignmentRelations = relations(
+	employeeCostCenterAssignment,
+	({ one }) => ({
+		organization: one(organization, {
+			fields: [employeeCostCenterAssignment.organizationId],
+			references: [organization.id],
+		}),
+		employee: one(employee, {
+			fields: [employeeCostCenterAssignment.employeeId],
+			references: [employee.id],
+		}),
+		costCenter: one(costCenter, {
+			fields: [employeeCostCenterAssignment.costCenterId],
+			references: [costCenter.id],
 		}),
 	}),
 );

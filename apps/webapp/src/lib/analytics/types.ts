@@ -169,6 +169,37 @@ export type ManagerEffectivenessData = {
 	}>;
 };
 
+export type TrendDirection = "up" | "down" | "flat";
+
+export type OvertimeBurnDownGroupedRow = {
+	id: string;
+	label: string;
+	currentOvertimeHours: number;
+	previousOvertimeHours: number;
+	wowDeltaHours: number;
+	trendDirection: TrendDirection;
+	weekly: Array<{
+		weekStart: string;
+		overtimeHours: number;
+	}>;
+};
+
+export type OvertimeBurnDownData = {
+	summary: {
+		currentOvertimeHours: number;
+		wowDeltaHours: number;
+		improvingGroups: number;
+		trendDirection: TrendDirection;
+	};
+	weeklySeries: Array<{
+		weekStart: string;
+		overtimeHours: number;
+	}>;
+	byTeam: OvertimeBurnDownGroupedRow[];
+	byCostCenter: OvertimeBurnDownGroupedRow[];
+	byManager: OvertimeBurnDownGroupedRow[];
+};
+
 /**
  * Parameters for analytics service methods
  */
@@ -198,6 +229,20 @@ export type ManagerEffectivenessParams = {
 	organizationId: string;
 	dateRange: DateRange;
 	managerId?: string;
+};
+
+export type OvertimeBurnDownParams = {
+	organizationId: string;
+	dateRange: DateRange;
+	filters?: {
+		teamId?: string;
+		costCenterId?: string;
+		managerId?: string;
+	};
+	scope?: {
+		role: "admin" | "manager";
+		managerEmployeeId?: string;
+	};
 };
 
 /**

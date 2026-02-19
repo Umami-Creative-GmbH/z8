@@ -6,24 +6,40 @@
  * absence patterns, and manager effectiveness metrics.
  */
 
-import { and, eq, gte, lte, sql } from "drizzle-orm";
+import { and, eq, gte, isNull, lte, or, sql } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { DateTime } from "luxon";
-import { absenceEntry, approvalRequest, employee, employeeManagers, workPeriod } from "@/db/schema";
+import {
+	absenceEntry,
+	approvalRequest,
+	employee,
+	employeeCostCenterAssignment,
+	employeeManagers,
+	workPeriod,
+} from "@/db/schema";
 import type {
 	AbsencePatternsData,
 	AbsencePatternsParams,
 	ManagerEffectivenessData,
 	ManagerEffectivenessParams,
+	OvertimeBurnDownData,
+	OvertimeBurnDownGroupedRow,
+	OvertimeBurnDownParams,
 	TeamPerformanceData,
 	TeamPerformanceParams,
+	TrendDirection,
 	VacationTrendsData,
 	VacationTrendsParams,
 	WorkHoursAnalyticsData,
 	WorkHoursParams,
 } from "@/lib/analytics/types";
+import { clampOvertime } from "@/lib/analytics/overtime-burndown";
 import { differenceInDays, format } from "@/lib/datetime/luxon-utils";
-import { calculateExpectedWorkHours, calculateWorkHours } from "@/lib/time-tracking/calculations";
+import {
+	calculateExpectedWorkHours,
+	calculateExpectedWorkHoursForEmployee,
+	calculateWorkHours,
+} from "@/lib/time-tracking/calculations";
 import type { DatabaseError, NotFoundError, ValidationError } from "../errors";
 import { DatabaseService } from "./database.service";
 
@@ -79,6 +95,149 @@ function calculateExpectedWorkDays(startDate: Date, endDate: Date): number {
 	return workDays;
 }
 
+type OvertimeBurnDownWeeklyRecord = {
+	weekStart: string;
+	overtimeHours: number;
+	teamId: string;
+	teamLabel: string;
+	costCenterId: string;
+	costCenterLabel: string;
+	managerId: string;
+	managerLabel: string;
+};
+
+const UNASSIGNED_GROUP = {
+	id: "unassigned",
+	label: "Unassigned",
+} as const;
+
+function roundToTwoDecimals(value: number): number {
+	return Math.round(value * 100) / 100;
+}
+
+function toTrendDirection(delta: number): TrendDirection {
+	if (delta > 0) return "up";
+	if (delta < 0) return "down";
+	return "flat";
+}
+
+function buildGroupedOvertimeRows(
+	records: OvertimeBurnDownWeeklyRecord[],
+	weekStarts: string[],
+	groupSelector: (record: OvertimeBurnDownWeeklyRecord) => { id: string; label: string },
+): OvertimeBurnDownGroupedRow[] {
+	const grouped = new Map<
+		string,
+		{
+			id: string;
+			label: string;
+			weeklyMap: Map<string, number>;
+		}
+	>();
+
+	for (const record of records) {
+		const group = groupSelector(record);
+		const existing = grouped.get(group.id);
+		if (existing) {
+			existing.weeklyMap.set(
+				record.weekStart,
+				roundToTwoDecimals(
+					(existing.weeklyMap.get(record.weekStart) || 0) + clampOvertime(record.overtimeHours),
+				),
+			);
+			continue;
+		}
+
+		grouped.set(group.id, {
+			id: group.id,
+			label: group.label,
+			weeklyMap: new Map([[record.weekStart, roundToTwoDecimals(clampOvertime(record.overtimeHours))]]),
+		});
+	}
+
+	return Array.from(grouped.values())
+		.map((group) => {
+			const weekly = weekStarts.map((weekStart) => ({
+				weekStart,
+				overtimeHours: roundToTwoDecimals(group.weeklyMap.get(weekStart) || 0),
+			}));
+			const previousOvertimeHours = weekly.length >= 2 ? weekly[weekly.length - 2].overtimeHours : 0;
+			const currentOvertimeHours = weekly.length > 0 ? weekly[weekly.length - 1].overtimeHours : 0;
+			const wowDeltaHours = roundToTwoDecimals(currentOvertimeHours - previousOvertimeHours);
+
+			return {
+				id: group.id,
+				label: group.label,
+				currentOvertimeHours,
+				previousOvertimeHours,
+				wowDeltaHours,
+				trendDirection: toTrendDirection(wowDeltaHours),
+				weekly,
+			};
+		})
+		.sort((a, b) => b.currentOvertimeHours - a.currentOvertimeHours);
+}
+
+export function buildOvertimeBurnDownDataForTesting(
+	records: OvertimeBurnDownWeeklyRecord[],
+	allWeekStarts: string[] = [],
+): OvertimeBurnDownData {
+	const inferredWeekStarts = Array.from(new Set(records.map((record) => record.weekStart))).sort((a, b) =>
+		a.localeCompare(b),
+	);
+	const weekStarts = Array.from(new Set([...allWeekStarts, ...inferredWeekStarts])).sort((a, b) =>
+		a.localeCompare(b),
+	);
+
+	const weekTotalsMap = new Map<string, number>();
+	for (const weekStart of weekStarts) {
+		weekTotalsMap.set(weekStart, 0);
+	}
+
+	for (const record of records) {
+		weekTotalsMap.set(
+			record.weekStart,
+			roundToTwoDecimals((weekTotalsMap.get(record.weekStart) || 0) + clampOvertime(record.overtimeHours)),
+		);
+	}
+
+	const weeklySeries = weekStarts.map((weekStart) => ({
+		weekStart,
+		overtimeHours: roundToTwoDecimals(weekTotalsMap.get(weekStart) || 0),
+	}));
+
+	const previousOvertimeHours =
+		weeklySeries.length >= 2 ? weeklySeries[weeklySeries.length - 2].overtimeHours : 0;
+	const currentOvertimeHours = weeklySeries.length > 0 ? weeklySeries[weeklySeries.length - 1].overtimeHours : 0;
+	const wowDeltaHours = roundToTwoDecimals(currentOvertimeHours - previousOvertimeHours);
+
+	const byTeam = buildGroupedOvertimeRows(records, weekStarts, (record) => ({
+		id: record.teamId,
+		label: record.teamLabel,
+	}));
+	const byCostCenter = buildGroupedOvertimeRows(records, weekStarts, (record) => ({
+		id: record.costCenterId,
+		label: record.costCenterLabel,
+	}));
+	const byManager = buildGroupedOvertimeRows(records, weekStarts, (record) => ({
+		id: record.managerId,
+		label: record.managerLabel,
+	}));
+
+	return {
+		summary: {
+			currentOvertimeHours,
+			wowDeltaHours,
+			improvingGroups: byTeam.filter((row) => row.trendDirection === "down").length,
+			trendDirection: toTrendDirection(wowDeltaHours),
+		},
+		weeklySeries,
+		byTeam,
+		byCostCenter,
+		byManager,
+	};
+}
+
 export class AnalyticsService extends Context.Tag("AnalyticsService")<
 	AnalyticsService,
 	{
@@ -97,6 +256,9 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 		readonly getManagerEffectiveness: (
 			params: ManagerEffectivenessParams,
 		) => Effect.Effect<ManagerEffectivenessData, NotFoundError | ValidationError | DatabaseError>;
+		readonly getOvertimeBurnDown: (
+			params: OvertimeBurnDownParams,
+		) => Effect.Effect<OvertimeBurnDownData, NotFoundError | ValidationError | DatabaseError>;
 	}
 >() {
 	static readonly Live = Layer.effect(
@@ -938,6 +1100,186 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 							responseTimeDistribution,
 							trends,
 						};
+					}),
+
+				getOvertimeBurnDown: (params: OvertimeBurnDownParams) =>
+					Effect.gen(function* (_) {
+						const { organizationId, dateRange, filters, scope } = params;
+						const rangeStart = DateTime.fromJSDate(dateRange.start).startOf("day");
+						const rangeEnd = DateTime.fromJSDate(dateRange.end).endOf("day");
+
+						const weekBuckets: Array<{ weekStart: DateTime; weekStartIso: string; weekEnd: DateTime }> = [];
+						let currentWeek = rangeStart.startOf("week");
+						const finalWeek = rangeEnd.startOf("week");
+
+						while (currentWeek <= finalWeek) {
+							const weekStartIso = currentWeek.toISODate();
+							if (weekStartIso) {
+								weekBuckets.push({
+									weekStart: currentWeek,
+									weekStartIso,
+									weekEnd: currentWeek.endOf("week"),
+								});
+							}
+							currentWeek = currentWeek.plus({ weeks: 1 });
+						}
+
+						const employees = yield* _(
+							dbService.query("getEmployeesForOvertimeBurnDown", async () => {
+								return await dbService.db.query.employee.findMany({
+									where: and(
+										eq(employee.organizationId, organizationId),
+										eq(employee.isActive, true),
+										filters?.teamId ? eq(employee.teamId, filters.teamId) : undefined,
+									),
+									with: {
+										team: true,
+										managers: {
+											with: {
+												manager: {
+													with: {
+														user: true,
+													},
+												},
+											},
+										},
+									},
+								});
+							}),
+						);
+
+						const scopedEmployees = employees.filter((emp) => {
+							if (
+								scope?.role === "manager" &&
+								scope.managerEmployeeId &&
+								!emp.managers.some((managerRow) => managerRow.managerId === scope.managerEmployeeId)
+							) {
+								return false;
+							}
+
+							if (
+								filters?.managerId &&
+								!emp.managers.some((managerRow) => managerRow.managerId === filters.managerId)
+							) {
+								return false;
+							}
+
+							return true;
+						});
+
+						const employeeIds = scopedEmployees.map((emp) => emp.id);
+						if (employeeIds.length === 0 || weekBuckets.length === 0) {
+							return buildOvertimeBurnDownDataForTesting(
+								[],
+								weekBuckets.map((bucket) => bucket.weekStartIso),
+							);
+						}
+
+						const assignments = yield* _(
+							dbService.query("getEmployeeCostCenterAssignmentsForOvertimeBurnDown", async () => {
+								return await dbService.db.query.employeeCostCenterAssignment.findMany({
+									where: and(
+										eq(employeeCostCenterAssignment.organizationId, organizationId),
+										sql`${employeeCostCenterAssignment.employeeId} = ANY(${employeeIds})`,
+										lte(employeeCostCenterAssignment.effectiveFrom, rangeEnd.toJSDate()),
+										or(
+											isNull(employeeCostCenterAssignment.effectiveTo),
+											gte(employeeCostCenterAssignment.effectiveTo, rangeStart.toJSDate()),
+										),
+									),
+									with: {
+										costCenter: true,
+									},
+								});
+							}),
+						);
+
+						const assignmentByEmployee = new Map<string, typeof assignments>();
+						for (const assignment of assignments) {
+							const existing = assignmentByEmployee.get(assignment.employeeId) || [];
+							existing.push(assignment);
+							assignmentByEmployee.set(assignment.employeeId, existing);
+						}
+
+						for (const employeeAssignments of assignmentByEmployee.values()) {
+							employeeAssignments.sort(
+								(a, b) =>
+									new Date(b.effectiveFrom).getTime() - new Date(a.effectiveFrom).getTime(),
+							);
+						}
+
+						const nestedRecords = yield* _(
+							Effect.promise(async () => {
+								return await Promise.all(
+									scopedEmployees.map(async (emp) => {
+										const primaryManager =
+											emp.managers.find((managerRow) => managerRow.isPrimary) || emp.managers[0];
+										const managerId = primaryManager?.managerId || UNASSIGNED_GROUP.id;
+										const managerLabel =
+											primaryManager?.manager?.user?.name || UNASSIGNED_GROUP.label;
+
+										const employeeAssignments = assignmentByEmployee.get(emp.id) || [];
+
+										const weeklyRecords = await Promise.all(
+											weekBuckets.map(async ({ weekStart, weekStartIso, weekEnd }) => {
+												const [actual, expected] = await Promise.all([
+													calculateWorkHours(
+														emp.id,
+														organizationId,
+														weekStart.toJSDate(),
+														weekEnd.toJSDate(),
+													),
+													calculateExpectedWorkHoursForEmployee(
+														emp.id,
+														organizationId,
+														weekStart.toJSDate(),
+														weekEnd.toJSDate(),
+													),
+												]);
+
+												const weekStartDate = weekStart.toJSDate();
+												const activeAssignment = employeeAssignments.find((assignment) => {
+													const effectiveFrom = new Date(assignment.effectiveFrom);
+													const effectiveTo = assignment.effectiveTo ? new Date(assignment.effectiveTo) : null;
+													return (
+														effectiveFrom.getTime() <= weekStartDate.getTime() &&
+														(!effectiveTo || effectiveTo.getTime() >= weekStartDate.getTime())
+													);
+												});
+
+												const costCenterId = activeAssignment?.costCenterId || UNASSIGNED_GROUP.id;
+												const costCenterLabel =
+													activeAssignment?.costCenter?.name || UNASSIGNED_GROUP.label;
+
+												if (filters?.costCenterId && costCenterId !== filters.costCenterId) {
+													return null;
+												}
+
+												return {
+													weekStart: weekStartIso,
+													overtimeHours: clampOvertime(actual.totalHours - expected.totalHours),
+													teamId: emp.teamId || UNASSIGNED_GROUP.id,
+													teamLabel: emp.team?.name || UNASSIGNED_GROUP.label,
+													costCenterId,
+													costCenterLabel,
+													managerId,
+													managerLabel,
+												} satisfies OvertimeBurnDownWeeklyRecord;
+											}),
+										);
+
+										return weeklyRecords.filter((record): record is OvertimeBurnDownWeeklyRecord =>
+											Boolean(record),
+										);
+									}),
+								);
+							}),
+						);
+
+						return buildOvertimeBurnDownDataForTesting(
+							nestedRecords.flat(),
+							weekBuckets.map((bucket) => bucket.weekStartIso),
+						);
 					}),
 			};
 		}),
