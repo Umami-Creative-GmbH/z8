@@ -31,7 +31,7 @@ export interface HardenExportParams {
 	exportId: string;
 	organizationId: string;
 	requestedById: string;
-	exportType: "data" | "payroll";
+	exportType: "data" | "payroll" | "audit_pack";
 	zipBuffer: Buffer;
 }
 

@@ -145,7 +145,7 @@ export class AuditManifest {
 	constructor(
 		public readonly exportId: string,
 		public readonly organizationId: string,
-		public readonly exportType: "data" | "payroll",
+		public readonly exportType: "data" | "payroll" | "audit_pack",
 		public readonly files: AuditFileEntry[],
 		public readonly merkleRoot: SHA256Hash,
 		public readonly createdAt: Date,

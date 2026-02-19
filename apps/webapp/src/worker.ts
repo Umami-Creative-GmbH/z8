@@ -175,6 +175,14 @@ async function processOneOffJob(job: Job<JobData>): Promise<JobResult> {
 				return processCalendarSyncJob(job.data);
 			}
 
+			case "audit-pack": {
+				const { processAuditPack } = await import(
+					"@/lib/audit-pack/application/audit-pack-processor"
+				);
+				await processAuditPack(job.data);
+				return { success: true, message: "Audit pack processed" };
+			}
+
 			default:
 				throw new Error(`Unknown job type: ${(job.data as JobData).type}`);
 		}

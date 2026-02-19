@@ -8,6 +8,7 @@ export * from "./absence";
 export * from "./access-policy";
 export * from "./approval";
 export * from "./audit";
+export * from "./audit-pack";
 // Audit export (signed packages, WORM retention)
 export * from "./audit-export";
 // Billing & subscriptions (Stripe integration)

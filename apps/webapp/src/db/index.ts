@@ -118,6 +118,12 @@ export {
 	// Audit tables
 	auditLog,
 	auditLogRelations,
+	// Audit pack tables
+	auditPackArtifact,
+	auditPackArtifactRelations,
+	auditPackRequest,
+	auditPackRequestRelations,
+	auditPackStatusEnum,
 	// Audit export tables (signed packages, WORM retention)
 	auditExportConfig,
 	auditExportConfigRelations,

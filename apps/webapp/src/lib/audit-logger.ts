@@ -117,6 +117,11 @@ export enum AuditAction {
 	SUBAREA_DELETED = "subarea.deleted",
 	SUBAREA_EMPLOYEE_ASSIGNED = "subarea.employee_assigned",
 	SUBAREA_EMPLOYEE_REMOVED = "subarea.employee_removed",
+
+	// Audit Pack Operations
+	AUDIT_PACK_CREATED = "audit_pack.created",
+	AUDIT_PACK_DOWNLOADED = "audit_pack.downloaded",
+	AUDIT_PACK_RETRY_REQUESTED = "audit_pack.retry_requested",
 }
 
 export interface AuditLogEntry {
@@ -147,7 +152,8 @@ export interface AuditLogEntry {
 		| "subarea"
 		| "location_employee"
 		| "subarea_employee"
-		| "user";
+		| "user"
+		| "audit_pack_request";
 	organizationId: string;
 	metadata?: Record<string, unknown>;
 	changes?: Record<string, unknown>; // Before/after changes for updates

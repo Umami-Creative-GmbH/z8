@@ -157,7 +157,9 @@ export function AuditPackagesTable({ organizationId, packages }: AuditPackagesTa
 										<Badge variant="outline">
 											{pkg.exportType === "data"
 												? t("settings.auditExport.packages.typeData", "Data")
-												: t("settings.auditExport.packages.typePayroll", "Payroll")}
+												: pkg.exportType === "payroll"
+													? t("settings.auditExport.packages.typePayroll", "Payroll")
+													: t("settings.auditExport.packages.typeAuditPack", "Audit Pack")}
 										</Badge>
 									</TableCell>
 									<TableCell>

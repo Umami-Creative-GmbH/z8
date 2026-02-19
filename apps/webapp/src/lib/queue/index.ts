@@ -27,7 +27,14 @@ const connection: ConnectionOptions = {
 };
 
 // Job types
-export type JobType = "report" | "export" | "email" | "cleanup" | "webhook" | "calendar-sync";
+export type JobType =
+	| "report"
+	| "export"
+	| "email"
+	| "cleanup"
+	| "webhook"
+	| "calendar-sync"
+	| "audit-pack";
 
 // Job data interfaces
 export interface ReportJobData {
@@ -79,6 +86,12 @@ export interface CalendarSyncJobData {
 	action: "create" | "update" | "delete";
 }
 
+export interface AuditPackJobData {
+	type: "audit-pack";
+	requestId: string;
+	organizationId: string;
+}
+
 export type JobData =
 	| ReportJobData
 	| ExportJobData
@@ -86,7 +99,8 @@ export type JobData =
 	| CleanupJobData
 	| CronJobData
 	| WebhookJobData
-	| CalendarSyncJobData;
+	| CalendarSyncJobData
+	| AuditPackJobData;
 
 // Job result interfaces
 export interface JobResult {
@@ -195,6 +209,15 @@ export async function addCalendarSyncJob(
 	data: Omit<CalendarSyncJobData, "type">,
 ): Promise<Job<JobData, JobResult>> {
 	return addJob("calendar-sync", { ...data, type: "calendar-sync" }, { priority: 3 });
+}
+
+/**
+ * Add an audit pack generation job
+ */
+export async function addAuditPackJob(
+	data: Omit<AuditPackJobData, "type">,
+): Promise<Job<JobData, JobResult>> {
+	return addJob("process-audit-pack", { ...data, type: "audit-pack" }, { priority: 4 });
 }
 
 /**

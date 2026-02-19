@@ -1800,6 +1800,44 @@ export const scheduledExportExecutionRelations = relations(
 );
 
 // ============================================
+// AUDIT PACK RELATIONS
+// ============================================
+
+import { auditPackArtifact, auditPackRequest } from "./audit-pack";
+
+export const auditPackRequestRelations = relations(
+	auditPackRequest,
+	({ one }) => ({
+		organization: one(organization, {
+			fields: [auditPackRequest.organizationId],
+			references: [organization.id],
+		}),
+		requestedBy: one(user, {
+			fields: [auditPackRequest.requestedById],
+			references: [user.id],
+		}),
+		artifact: one(auditPackArtifact, {
+			fields: [auditPackRequest.id],
+			references: [auditPackArtifact.requestId],
+		}),
+	}),
+);
+
+export const auditPackArtifactRelations = relations(
+	auditPackArtifact,
+	({ one }) => ({
+		request: one(auditPackRequest, {
+			fields: [auditPackArtifact.requestId],
+			references: [auditPackRequest.id],
+		}),
+		auditExportPackage: one(auditExportPackage, {
+			fields: [auditPackArtifact.auditExportPackageId],
+			references: [auditExportPackage.id],
+		}),
+	}),
+);
+
+// ============================================
 // AUDIT EXPORT RELATIONS
 // ============================================
 
@@ -1860,6 +1898,7 @@ export const auditExportPackageRelations = relations(
 			references: [auditSigningKey.id],
 		}),
 		files: many(auditExportFile),
+		auditPackArtifacts: many(auditPackArtifact),
 		verifications: many(auditVerificationLog),
 	}),
 );

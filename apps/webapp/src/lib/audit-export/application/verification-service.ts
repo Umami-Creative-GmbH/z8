@@ -144,6 +144,20 @@ export class VerificationService {
 				});
 			}
 
+			// Check 6 (audit_pack only): verify expected package contents
+			if (packageData.exportType === "audit_pack") {
+				if (packageData.s3Key) {
+					const coverageCheck = await this.verifyAuditPackContents(organizationId, packageData.s3Key);
+					checks.push(coverageCheck);
+				} else {
+					checks.push({
+						name: "Audit Pack Coverage",
+						passed: false,
+						details: "Audit pack S3 key is missing",
+					});
+				}
+			}
+
 			// Determine overall validity
 			const isValid = checks.every((c) => c.passed);
 			const summary = isValid
@@ -359,6 +373,70 @@ export class VerificationService {
 				name: "RFC 3161 Timestamp",
 				passed: false,
 				details: `Timestamp verification error: ${error instanceof Error ? error.message : String(error)}`,
+			};
+		}
+	}
+
+	private async verifyAuditPackContents(
+		organizationId: string,
+		s3Key: string,
+	): Promise<VerificationCheck> {
+		try {
+			const url = await getPresignedUrl(organizationId, s3Key, 300);
+			const response = await fetch(url);
+
+			if (!response.ok) {
+				return {
+					name: "Audit Pack Coverage",
+					passed: false,
+					details: `Failed to download package for coverage check (HTTP ${response.status})`,
+				};
+			}
+
+			const packageBuffer = Buffer.from(await response.arrayBuffer());
+			const packageZip = await JSZip.loadAsync(packageBuffer);
+			const nestedExportZip = packageZip.file("export.zip");
+
+			if (!nestedExportZip) {
+				return {
+					name: "Audit Pack Coverage",
+					passed: false,
+					details: "Missing export.zip payload in hardened package",
+				};
+			}
+
+			const exportZipBuffer = await nestedExportZip.async("nodebuffer");
+			const exportZip = await JSZip.loadAsync(exportZipBuffer);
+
+			const requiredFiles = [
+				"evidence/entries.json",
+				"evidence/corrections.json",
+				"evidence/approvals.json",
+				"evidence/audit-timeline.json",
+				"meta/scope.json",
+				"views/entries.csv",
+				"views/approvals.csv",
+			];
+
+			const missing = requiredFiles.filter((path) => !exportZip.file(path));
+			if (missing.length > 0) {
+				return {
+					name: "Audit Pack Coverage",
+					passed: false,
+					details: `Missing required audit pack files: ${missing.join(", ")}`,
+				};
+			}
+
+			return {
+				name: "Audit Pack Coverage",
+				passed: true,
+				details: "All required audit pack evidence files are present",
+			};
+		} catch (error) {
+			return {
+				name: "Audit Pack Coverage",
+				passed: false,
+				details: `Coverage verification error: ${error instanceof Error ? error.message : String(error)}`,
 			};
 		}
 	}

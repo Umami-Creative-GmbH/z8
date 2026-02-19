@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { AuditConfigForm } from "@/components/settings/audit-export/audit-config-form";
+import { AuditPackGeneratorCard } from "@/components/settings/audit-export/audit-pack-generator-card";
 import { AuditPackagesTable } from "@/components/settings/audit-export/audit-packages-table";
 import { KeyManagement } from "@/components/settings/audit-export/key-management";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -83,7 +84,8 @@ async function AuditExportSettingsContent() {
 					<AuditConfigForm organizationId={organizationId} initialConfig={config} />
 				</TabsContent>
 
-				<TabsContent value="packages" className="mt-4">
+				<TabsContent value="packages" className="mt-4 space-y-6">
+					<AuditPackGeneratorCard organizationId={organizationId} />
 					<AuditPackagesTable organizationId={organizationId} packages={packages} />
 				</TabsContent>
 

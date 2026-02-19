@@ -20,7 +20,7 @@ export interface IManifestBuilder {
 	buildManifest(
 		exportId: string,
 		organizationId: string,
-		exportType: "data" | "payroll",
+		exportType: "data" | "payroll" | "audit_pack",
 		zipContent: Buffer,
 	): Promise<{
 		manifest: AuditManifest;
@@ -50,7 +50,7 @@ export class ManifestBuilder implements IManifestBuilder {
 	async buildManifest(
 		exportId: string,
 		organizationId: string,
-		exportType: "data" | "payroll",
+		exportType: "data" | "payroll" | "audit_pack",
 		zipContent: Buffer,
 	): Promise<{
 		manifest: AuditManifest;
