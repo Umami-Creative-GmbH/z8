@@ -17,6 +17,8 @@ import type {
 	AbsencePatternsData,
 	DateRange,
 	ManagerEffectivenessData,
+	OvertimeBurnDownData,
+	OvertimeBurnDownParams,
 	TeamPerformanceData,
 	VacationTrendsData,
 	WorkHoursAnalyticsData,
@@ -202,6 +204,42 @@ export async function getManagerEffectivenessData(
 				organizationId,
 				dateRange,
 				managerId,
+			}),
+		);
+
+		return data;
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
+}
+
+/**
+ * Get overtime burn-down analytics
+ * Organization ID is derived from authenticated user's employee record
+ */
+export async function getOvertimeBurnDownData(
+	dateRange: DateRange,
+	filters?: OvertimeBurnDownParams["filters"],
+): Promise<ServerActionResult<OvertimeBurnDownData>> {
+	const effect = Effect.gen(function* (_) {
+		const currentEmployee = yield* _(checkManagerOrAdminAccess());
+		const organizationId = currentEmployee.organizationId;
+
+		const analyticsService = yield* _(AnalyticsService);
+		const scope =
+			currentEmployee.role === "admin"
+				? { role: "admin" as const }
+				: {
+						role: "manager" as const,
+						managerEmployeeId: currentEmployee.id,
+					};
+
+		const data = yield* _(
+			analyticsService.getOvertimeBurnDown({
+				organizationId,
+				dateRange,
+				filters,
+				scope,
 			}),
 		);
 

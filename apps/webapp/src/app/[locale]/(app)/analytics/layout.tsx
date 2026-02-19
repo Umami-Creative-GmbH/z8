@@ -1,4 +1,4 @@
-import { IconCalendar, IconChartBar, IconChartLine, IconUsers } from "@tabler/icons-react";
+import { IconCalendar, IconChartBar, IconChartLine, IconClock, IconUsers } from "@tabler/icons-react";
 import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -66,7 +66,7 @@ export default async function AnalyticsLayout({ children }: { children: React.Re
 			{/* Sub-navigation Tabs */}
 			<div className="px-4 lg:px-6">
 				<Tabs defaultValue="overview" className="w-full">
-					<TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
+					<TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid">
 						<TabsTrigger value="overview" asChild>
 							<Link href="/analytics">
 								<IconChartBar className="mr-2 size-4" />
@@ -89,6 +89,12 @@ export default async function AnalyticsLayout({ children }: { children: React.Re
 							<Link href="/analytics/work-hours">
 								<IconChartLine className="mr-2 size-4" />
 								Work Hours
+							</Link>
+						</TabsTrigger>
+						<TabsTrigger value="overtime-burn-down" asChild>
+							<Link href="/analytics/overtime-burn-down">
+								<IconClock className="mr-2 size-4" />
+								Overtime Burn-Down
 							</Link>
 						</TabsTrigger>
 					</TabsList>
