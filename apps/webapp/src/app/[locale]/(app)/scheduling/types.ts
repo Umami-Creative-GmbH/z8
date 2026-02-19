@@ -1,4 +1,5 @@
 import type { shift, shiftRecurrence, shiftRequest, shiftTemplate } from "@/db/schema";
+import type { ScheduleComplianceSummary } from "@/lib/scheduling/compliance/types";
 
 export type Shift = typeof shift.$inferSelect;
 export type ShiftTemplate = typeof shiftTemplate.$inferSelect;
@@ -12,6 +13,24 @@ export interface DateRange {
 	start: Date;
 	end: Date;
 }
+
+export interface PublishAcknowledgmentInput {
+	evaluationFingerprint: string;
+}
+
+export type PublishShiftsResult =
+	| {
+		published: true;
+		requiresAcknowledgment: false;
+		count: number;
+	}
+	| {
+		published: false;
+		requiresAcknowledgment: true;
+		count: 0;
+		complianceSummary: ScheduleComplianceSummary;
+		evaluationFingerprint: string;
+	};
 
 export interface SubareaInfo {
 	id: string;

@@ -19,7 +19,7 @@ import {
 import { approvalRequest } from "./approval";
 import { auditLog } from "./audit";
 import { changePolicy, changePolicyAssignment } from "./change-policy";
-import { complianceException } from "./compliance";
+import { complianceException, schedulePublishComplianceAck } from "./compliance";
 import { coverageRule, coverageSettings } from "./coverage";
 // Custom roles
 import {
@@ -193,6 +193,7 @@ export const organizationRelations = relations(
 		approvalRequests: many(approvalRequest),
 		// Compliance exceptions
 		complianceExceptions: many(complianceException),
+		schedulePublishComplianceAcks: many(schedulePublishComplianceAck),
 		// Audit trail
 		auditLogs: many(auditLog),
 		// Webhooks
@@ -375,6 +376,9 @@ export const employeeRelations = relations(employee, ({ one, many }) => ({
 	}),
 	complianceExceptionsAsApprover: many(complianceException, {
 		relationName: "compliance_exception_approver",
+	}),
+	schedulePublishComplianceAcksAsActor: many(schedulePublishComplianceAck, {
+		relationName: "schedule_publish_compliance_ack_actor",
 	}),
 	// Shift scheduling
 	shifts: many(shift),
@@ -1684,6 +1688,21 @@ export const complianceExceptionRelations = relations(
 		creator: one(user, {
 			fields: [complianceException.createdBy],
 			references: [user.id],
+		}),
+	}),
+);
+
+export const schedulePublishComplianceAckRelations = relations(
+	schedulePublishComplianceAck,
+	({ one }) => ({
+		organization: one(organization, {
+			fields: [schedulePublishComplianceAck.organizationId],
+			references: [organization.id],
+		}),
+		actorEmployee: one(employee, {
+			fields: [schedulePublishComplianceAck.actorEmployeeId],
+			references: [employee.id],
+			relationName: "schedule_publish_compliance_ack_actor",
 		}),
 	}),
 );

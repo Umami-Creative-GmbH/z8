@@ -351,6 +351,9 @@ export const queryKeys = {
 	// ArbZG Compliance
 	compliance: {
 		all: ["compliance"] as const,
+		// Schedule compliance warnings for scheduler publish flow
+		scheduleWarnings: (orgId: string, dateRange: { start: Date; end: Date }) =>
+			["compliance", "schedule-warnings", orgId, dateRange] as const,
 		// Rest period check for clock-in
 		restPeriod: (employeeId: string) => ["compliance", "rest-period", employeeId] as const,
 		// Proactive alerts during active session
