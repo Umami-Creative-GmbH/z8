@@ -3,8 +3,8 @@
 	"private": true,
 	"pnpm": {
 		"onlyBuiltDependencies": [
-			"esbuild",
-			"msw"
+			"msw",
+			"protobufjs"
 		]
 	},
 	"workspaces": [
