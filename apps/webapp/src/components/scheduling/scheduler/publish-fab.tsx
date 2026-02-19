@@ -11,6 +11,8 @@ interface PublishFabProps {
 	onPublish: () => void;
 	isPublishing: boolean;
 	hasCoverageGaps?: boolean;
+	hasComplianceWarnings?: boolean;
+	complianceFindingsCount?: number;
 }
 
 export function PublishFab({
@@ -18,7 +20,11 @@ export function PublishFab({
 	onPublish,
 	isPublishing,
 	hasCoverageGaps = false,
+	hasComplianceWarnings = false,
+	complianceFindingsCount = 0,
 }: PublishFabProps) {
+	const hasWarnings = hasCoverageGaps || hasComplianceWarnings;
+
 	return (
 		<Tooltip>
 			<TooltipTrigger asChild>
@@ -29,23 +35,23 @@ export function PublishFab({
 					className={cn(
 						"fixed bottom-6 right-6 h-14 rounded-full shadow-lg",
 						"hover:shadow-xl transition-shadow",
-						hasCoverageGaps
+						hasWarnings
 							? "bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-700"
 							: "bg-primary hover:bg-primary/90",
-						draftCount > 0 && !hasCoverageGaps && "motion-safe:animate-pulse",
+						draftCount > 0 && !hasWarnings && "motion-safe:animate-pulse",
 					)}
 				>
 					{isPublishing ? (
 						<>
 							<Loader2 className="h-5 w-5 mr-2 animate-spin" />
-							Publishing...
+							Publishing…
 						</>
 					) : (
 						<>
-							{hasCoverageGaps ? (
-								<IconAlertTriangle className="h-5 w-5 mr-2" />
+							{hasWarnings ? (
+								<IconAlertTriangle className="h-5 w-5 mr-2" aria-hidden="true" />
 							) : (
-								<Send className="h-5 w-5 mr-2" />
+								<Send className="h-5 w-5 mr-2" aria-hidden="true" />
 							)}
 							Publish ({draftCount})
 						</>
@@ -53,15 +59,23 @@ export function PublishFab({
 				</Button>
 			</TooltipTrigger>
 			<TooltipContent side="left" className="max-w-xs">
-				{hasCoverageGaps ? (
+				{hasWarnings ? (
 					<div className="space-y-1">
 						<p className="font-medium text-amber-600 dark:text-amber-400">
-							Coverage gaps detected
+							Warnings detected before publish
 						</p>
-						<p className="text-sm">
-							Some time blocks don&apos;t meet minimum staffing requirements.
-							Publishing will proceed, but consider reviewing coverage.
-						</p>
+						{hasCoverageGaps && (
+							<p className="text-sm">
+								Some time blocks don&apos;t meet minimum staffing requirements.
+							</p>
+						)}
+						{hasComplianceWarnings && (
+							<p className="text-sm">
+								Compliance checks found {complianceFindingsCount} warning
+								{complianceFindingsCount === 1 ? "" : "s"}; you will need to acknowledge
+								them before publishing.
+							</p>
+						)}
 					</div>
 				) : (
 					<p>

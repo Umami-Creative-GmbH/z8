@@ -22,10 +22,18 @@ import {
 	type ShiftRequestWithRelations,
 } from "@/lib/effect/services/shift-request.service";
 import { CoverageService } from "@/lib/effect/services/coverage.service";
+import {
+	ScheduleComplianceService,
+	ScheduleComplianceServiceLive,
+} from "@/lib/effect/services/schedule-compliance.service";
 import { createLogger } from "@/lib/logger";
+import { getEffectiveTimezone } from "@/lib/timezone/effective-timezone";
+import type { ScheduleComplianceSummary } from "@/lib/scheduling/compliance/types";
 import type {
 	CreateTemplateInput,
 	DateRange,
+	PublishAcknowledgmentInput,
+	PublishShiftsResult,
 	Shift,
 	ShiftQuery,
 	ShiftRequest,
@@ -37,6 +45,37 @@ import type {
 } from "./types";
 
 const logger = createLogger("SchedulingActions");
+
+interface BuildPublishDecisionInput {
+	count: number;
+	compliance: {
+		summary: ScheduleComplianceSummary;
+		fingerprint: string;
+	};
+	acknowledgment?: PublishAcknowledgmentInput | null;
+}
+
+export function buildPublishDecision(input: BuildPublishDecisionInput): PublishShiftsResult {
+	const hasFindings = input.compliance.summary.totalFindings > 0;
+	const hasValidAcknowledgment =
+		input.acknowledgment?.evaluationFingerprint === input.compliance.fingerprint;
+
+	if (hasFindings && !hasValidAcknowledgment) {
+		return {
+			published: false as const,
+			requiresAcknowledgment: true as const,
+			count: 0,
+			complianceSummary: input.compliance.summary,
+			evaluationFingerprint: input.compliance.fingerprint,
+		};
+	}
+
+	return {
+		published: true as const,
+		requiresAcknowledgment: false as const,
+		count: input.count,
+	};
+}
 
 // Helper to get current employee
 async function _getCurrentEmployee() {
@@ -412,12 +451,14 @@ export async function getShifts(
 
 export async function publishShifts(
 	dateRange: DateRange,
-): Promise<ServerActionResult<{ count: number }>> {
+	acknowledgment?: PublishAcknowledgmentInput | null,
+): Promise<ServerActionResult<PublishShiftsResult>> {
 	const effect = Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 		const shiftService = yield* _(ShiftService);
 		const dbService = yield* _(DatabaseService);
+		const scheduleComplianceService = yield* _(ScheduleComplianceService);
 
 		yield* _(Effect.annotateCurrentSpan("user.id", session.user.id));
 
@@ -484,9 +525,51 @@ export async function publishShifts(
 			}
 		}
 
+		const timezone = yield* _(
+			dbService.query("getEffectiveTimezoneForSchedulePublish", async () => {
+				return await getEffectiveTimezone(session.user.id, emp.organizationId);
+			}),
+		);
+
+		const complianceEvaluation = yield* _(
+			scheduleComplianceService.evaluateScheduleWindow({
+				organizationId: emp.organizationId,
+				startDate: dateRange.start,
+				endDate: dateRange.end,
+				timezone,
+			}),
+		);
+
+		const publishDecision = buildPublishDecision({
+			count: 0,
+			compliance: {
+				summary: complianceEvaluation.summary,
+				fingerprint: complianceEvaluation.fingerprint,
+			},
+			acknowledgment,
+		});
+
+		if (!publishDecision.published) {
+			return publishDecision;
+		}
+
 		const result = yield* _(
 			shiftService.publishShifts(emp.organizationId, dateRange, session.user.id),
 		);
+
+		if (complianceEvaluation.summary.totalFindings > 0) {
+			yield* _(
+				scheduleComplianceService.recordPublishAcknowledgment({
+					organizationId: emp.organizationId,
+					actorEmployeeId: emp.id,
+					publishedRangeStart: dateRange.start,
+					publishedRangeEnd: dateRange.end,
+					warningCountTotal: complianceEvaluation.summary.totalFindings,
+					warningCountsByType: complianceEvaluation.summary.byType,
+					evaluationFingerprint: complianceEvaluation.fingerprint,
+				}),
+			);
+		}
 
 		// TODO: Trigger notifications for affected employees
 		// This will be implemented when we add notification triggers
@@ -496,8 +579,16 @@ export async function publishShifts(
 			"Published shifts",
 		);
 
-		return { count: result.count };
-	}).pipe(Effect.withSpan("publishShifts"), Effect.provide(AppLayer));
+		return {
+			published: true as const,
+			requiresAcknowledgment: false as const,
+			count: result.count,
+		};
+	}).pipe(
+		Effect.withSpan("publishShifts"),
+		Effect.provide(ScheduleComplianceServiceLive),
+		Effect.provide(AppLayer),
+	);
 
 	return runServerActionSafe(effect);
 }
@@ -538,6 +629,83 @@ export async function getIncompleteDays(
 
 		return incompleteDays;
 	}).pipe(Effect.withSpan("getIncompleteDays"), Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
+}
+
+export async function getScheduleComplianceSummary(
+	dateRange: DateRange,
+): Promise<
+	ServerActionResult<{
+		summary: ScheduleComplianceSummary;
+		evaluationFingerprint: string;
+	}>
+> {
+	const effect = Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
+		const dbService = yield* _(DatabaseService);
+		const scheduleComplianceService = yield* _(ScheduleComplianceService);
+
+		yield* _(Effect.annotateCurrentSpan("user.id", session.user.id));
+
+		const emp = yield* _(
+			dbService.query("getCurrentEmployee", async () => {
+				return await db.query.employee.findFirst({
+					where: eq(employee.userId, session.user.id),
+				});
+			}),
+		);
+
+		if (!emp) {
+			return yield* _(
+				Effect.fail(
+					new NotFoundError({
+						message: "Employee profile not found",
+						entityType: "employee",
+						entityId: session.user.id,
+					}),
+				),
+			);
+		}
+
+		if (emp.role !== "manager" && emp.role !== "admin") {
+			return yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Only managers and admins can view schedule compliance warnings",
+						userId: session.user.id,
+						resource: "shift",
+						action: "read",
+					}),
+				),
+			);
+		}
+
+		const timezone = yield* _(
+			dbService.query("getEffectiveTimezoneForScheduleComplianceSummary", async () => {
+				return await getEffectiveTimezone(session.user.id, emp.organizationId);
+			}),
+		);
+
+		const evaluation = yield* _(
+			scheduleComplianceService.evaluateScheduleWindow({
+				organizationId: emp.organizationId,
+				startDate: dateRange.start,
+				endDate: dateRange.end,
+				timezone,
+			}),
+		);
+
+		return {
+			summary: evaluation.summary,
+			evaluationFingerprint: evaluation.fingerprint,
+		};
+	}).pipe(
+		Effect.withSpan("getScheduleComplianceSummary"),
+		Effect.provide(ScheduleComplianceServiceLive),
+		Effect.provide(AppLayer),
+	);
 
 	return runServerActionSafe(effect);
 }

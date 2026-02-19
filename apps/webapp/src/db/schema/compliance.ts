@@ -89,3 +89,30 @@ export const complianceException = pgTable(
 		index("complianceException_org_status_idx").on(table.organizationId, table.status),
 	],
 );
+
+export const schedulePublishComplianceAck = pgTable(
+	"schedule_publish_compliance_ack",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		actorEmployeeId: uuid("actor_employee_id")
+			.notNull()
+			.references(() => employee.id, { onDelete: "cascade" }),
+		publishedRangeStart: timestamp("published_range_start", { withTimezone: true }).notNull(),
+		publishedRangeEnd: timestamp("published_range_end", { withTimezone: true }).notNull(),
+		warningCountTotal: integer("warning_count_total").notNull(),
+		warningCountsByType: text("warning_counts_by_type").notNull(),
+		evaluationFingerprint: text("evaluation_fingerprint").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+	},
+	(table) => [
+		index("schedulePublishComplianceAck_org_createdAt_idx").on(table.organizationId, table.createdAt),
+		index("schedulePublishComplianceAck_actor_createdAt_idx").on(table.actorEmployeeId, table.createdAt),
+		index("schedulePublishComplianceAck_org_rangeStart_idx").on(
+			table.organizationId,
+			table.publishedRangeStart,
+		),
+	],
+);

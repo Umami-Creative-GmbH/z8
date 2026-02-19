@@ -14,6 +14,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
 	getIncompleteDays,
+	getScheduleComplianceSummary,
 	getShifts,
 	getShiftTemplates,
 	publishShifts,
@@ -21,6 +22,8 @@ import {
 } from "@/app/[locale]/(app)/scheduling/actions";
 import type {
 	DateRange,
+	PublishAcknowledgmentInput,
+	PublishShiftsResult,
 	ShiftTemplate,
 	ShiftWithRelations,
 } from "@/app/[locale]/(app)/scheduling/types";
@@ -31,7 +34,12 @@ import {
 	CoverageSummaryBar,
 	useCoverageHeatmap,
 } from "./coverage-heatmap-overlay";
+import {
+	PublishComplianceDialog,
+	shouldOpenComplianceDialog,
+} from "./publish-compliance-dialog";
 import { PublishFab } from "./publish-fab";
+import { ScheduleComplianceBanner } from "./schedule-compliance-banner";
 import { TemplateSidebar } from "./template-sidebar";
 
 interface ShiftSchedulerProps {
@@ -107,6 +115,10 @@ export function ShiftScheduler({
 	const [isShiftDialogOpen, setIsShiftDialogOpen] = useState(false);
 	const [newShiftDate, setNewShiftDate] = useState<Date | null>(null);
 	const [showCoverageOverlay, setShowCoverageOverlay] = useState(true);
+	const [pendingAcknowledgment, setPendingAcknowledgment] = useState<
+		Extract<PublishShiftsResult, { published: false; requiresAcknowledgment: true }> | null
+	>(null);
+	const [isComplianceDialogOpen, setIsComplianceDialogOpen] = useState(false);
 	const isDark = resolvedTheme === "dark";
 
 	// Fetch shifts
@@ -156,6 +168,16 @@ export function ShiftScheduler({
 		hasGaps: hasCoverageGaps,
 	} = useCoverageHeatmap(organizationId, dateRange, isManager && showCoverageOverlay);
 
+	const { data: complianceSummaryResult } = useQuery({
+		queryKey: queryKeys.compliance.scheduleWarnings(organizationId, dateRange),
+		queryFn: async () => {
+			const result = await getScheduleComplianceSummary(dateRange);
+			if (!result.success) throw new Error(result.error);
+			return result.data;
+		},
+		enabled: isManager,
+	});
+
 	// Convert shifts to Schedule-X events
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const events = useMemo(() => shifts.map(shiftToEvent) as any[], [shifts]);
@@ -190,6 +212,9 @@ export function ShiftScheduler({
 				toast.success("Shift updated");
 			}
 			queryClient.invalidateQueries({ queryKey: queryKeys.shifts.all });
+			queryClient.invalidateQueries({
+				queryKey: queryKeys.compliance.scheduleWarnings(organizationId, dateRange),
+			});
 		},
 		onError: (error) => {
 			toast.error("Failed to update shift", { description: error.message });
@@ -198,22 +223,48 @@ export function ShiftScheduler({
 
 	// Mutation for publishing shifts
 	const publishMutation = useMutation({
-		mutationFn: async () => {
-			const result = await publishShifts(dateRange);
+		mutationFn: async (input?: { acknowledgment?: PublishAcknowledgmentInput | null }) => {
+			const result = await publishShifts(dateRange, input?.acknowledgment ?? null);
 			if (!result.success) throw new Error(result.error);
 			return result.data;
 		},
 		onSuccess: (result) => {
+			if (shouldOpenComplianceDialog(result)) {
+				setPendingAcknowledgment(result);
+				setIsComplianceDialogOpen(true);
+				return;
+			}
+
+			setPendingAcknowledgment(null);
+			setIsComplianceDialogOpen(false);
 			toast.success(`Published ${result.count} shift(s)`);
 			queryClient.invalidateQueries({ queryKey: queryKeys.shifts.all });
+			queryClient.invalidateQueries({
+				queryKey: queryKeys.compliance.scheduleWarnings(organizationId, dateRange),
+			});
 		},
 		onError: (error) => {
 			toast.error("Failed to publish shifts", { description: error.message });
 		},
 	});
 
+	const handlePublishConfirm = useCallback(() => {
+		if (!pendingAcknowledgment) {
+			return;
+		}
+
+		publishMutation.mutate({
+			acknowledgment: {
+				evaluationFingerprint: pendingAcknowledgment.evaluationFingerprint,
+			},
+		});
+	}, [pendingAcknowledgment, publishMutation]);
+
 	// Count draft shifts for publish button
 	const draftCount = shifts.filter((s) => s.status === "draft").length;
+	const complianceSummary = complianceSummaryResult?.summary;
+	const complianceFindingsCount = complianceSummary?.totalFindings ?? 0;
+	const hasComplianceWarnings = complianceFindingsCount > 0;
 
 	// Handle event click - Schedule-X passes (event, uiEvent)
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -357,6 +408,8 @@ export function ShiftScheduler({
 
 	return (
 		<div className="flex flex-col gap-4 h-[calc(100vh-200px)]">
+			{isManager && <ScheduleComplianceBanner summary={complianceSummary} />}
+
 			{/* Coverage summary bar and toggle for managers */}
 			{isManager && (
 				<div className="flex items-center gap-4">
@@ -386,9 +439,11 @@ export function ShiftScheduler({
 					{isManager && draftCount > 0 && (
 						<PublishFab
 							draftCount={draftCount}
-							onPublish={() => publishMutation.mutate()}
+							onPublish={() => publishMutation.mutate(undefined)}
 							isPublishing={publishMutation.isPending}
 							hasCoverageGaps={hasCoverageGaps}
+							hasComplianceWarnings={hasComplianceWarnings}
+							complianceFindingsCount={complianceFindingsCount}
 						/>
 					)}
 				</div>
@@ -403,6 +458,14 @@ export function ShiftScheduler({
 				isManager={isManager}
 				defaultDate={newShiftDate}
 				organizationId={organizationId}
+			/>
+
+			<PublishComplianceDialog
+				open={isComplianceDialogOpen}
+				onOpenChange={setIsComplianceDialogOpen}
+				summary={pendingAcknowledgment?.complianceSummary ?? null}
+				onConfirm={handlePublishConfirm}
+				isConfirming={publishMutation.isPending}
 			/>
 		</div>
 	);
