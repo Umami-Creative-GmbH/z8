@@ -129,3 +129,48 @@ export class SmtpTransport implements EmailTransport {
 		this.transporter.close();
 	}
 }
+
+/**
+ * Create an SMTP transport with system-level configuration (from env vars)
+ *
+ * Used as fallback after Resend when no org-specific email config is available.
+ * Requires all of: SMTP_HOST, SMTP_PORT, SMTP_USERNAME, SMTP_PASSWORD, SMTP_FROM_EMAIL
+ * Optional: SMTP_SECURE, SMTP_REQUIRE_TLS, SMTP_FROM_NAME
+ *
+ * @returns SmtpTransport instance if all required vars are set, null otherwise
+ */
+export function createSystemSmtpTransport(): SmtpTransport | null {
+	const host = process.env.SMTP_HOST;
+	const port = process.env.SMTP_PORT;
+	const username = process.env.SMTP_USERNAME;
+	const password = process.env.SMTP_PASSWORD;
+	const fromEmail = process.env.SMTP_FROM_EMAIL;
+
+	// All required vars must be present
+	if (!host || !port || !username || !password || !fromEmail) {
+		return null;
+	}
+
+	const secure = process.env.SMTP_SECURE === "true";
+	const requireTls = process.env.SMTP_REQUIRE_TLS !== "false"; // Default to true
+	const fromName = process.env.SMTP_FROM_NAME;
+
+	try {
+		return new SmtpTransport({
+			host,
+			port: parseInt(port, 10),
+			secure,
+			requireTls,
+			auth: {
+				user: username,
+				pass: password,
+			},
+			fromEmail,
+			fromName,
+		});
+	} catch (error) {
+		logger.error({ error }, "Failed to create system SMTP transport from env vars");
+		return null;
+	}
+}
+

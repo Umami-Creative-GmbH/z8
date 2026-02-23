@@ -16,6 +16,7 @@ import { getOrgSecret } from "@/lib/vault";
 import {
 	ConsoleTransport,
 	createSystemResendTransport,
+	createSystemSmtpTransport,
 	ResendTransport,
 	SmtpTransport,
 	type EmailMessage,
@@ -30,15 +31,44 @@ let systemTransport: EmailTransport | null = null;
 
 /**
  * Get the system default transport
- * Uses Resend if API key is configured, otherwise console fallback
+ * Priority: Resend → SMTP → Console (development fallback)
+ *
+ * Resend is preferred if configured, but falls back to SMTP if:
+ * - RESEND_API_KEY is not set, or
+ * - Resend initialization fails
+ *
+ * SMTP is used if all required env vars are configured:
+ * SMTP_HOST, SMTP_PORT, SMTP_USERNAME, SMTP_PASSWORD, SMTP_FROM_EMAIL
+ *
+ * Console fallback is used if neither Resend nor SMTP is available.
  */
 function getSystemTransport(): EmailTransport {
 	if (!systemTransport) {
+		// Try Resend first
 		const resendTransport = createSystemResendTransport();
-		systemTransport = resendTransport || new ConsoleTransport();
-		logger.info({ transport: systemTransport.getName() }, "System email transport initialized");
+		if (resendTransport) {
+			systemTransport = resendTransport;
+			logger.info({ transport: systemTransport.getName() }, "System email transport initialized");
+			return systemTransport;
+		}
+
+		// Fall back to SMTP if Resend not available
+		const smtpTransport = createSystemSmtpTransport();
+		if (smtpTransport) {
+			systemTransport = smtpTransport;
+			logger.info({ transport: systemTransport.getName() }, "System email transport initialized");
+			return systemTransport;
+		}
+
+		// Final fallback to console (development mode)
+		systemTransport = new ConsoleTransport();
+		logger.info(
+			{ transport: systemTransport.getName() },
+			"System email transport initialized (using console fallback - configure RESEND_API_KEY or SMTP_* env vars for production)",
+		);
 	}
 	return systemTransport;
+}
 }
 
 /**

@@ -45,6 +45,18 @@ export const env = createEnv({
 		TOLGEE_API_KEY: z.string().optional(),
 		TOLGEE_API_URL: z.string().optional(),
 
+		// Email / SMTP (System-level fallback - used if org has no email config)
+		// If configured, SMTP becomes fallback after Resend
+		// Organization-specific email configs always take precedence over these system defaults
+		SMTP_HOST: z.string().optional(),
+		SMTP_PORT: z.string().optional(),
+		SMTP_USERNAME: z.string().optional(),
+		SMTP_PASSWORD: z.string().optional(),
+		SMTP_SECURE: z.enum(["true", "false"]).optional(),
+		SMTP_REQUIRE_TLS: z.enum(["true", "false"]).optional(),
+		SMTP_FROM_EMAIL: z.email().optional(),
+		SMTP_FROM_NAME: z.string().optional(),
+
 		NODE_ENV: z
 			.enum(["development", "test", "production"])
 			.default("development"),
@@ -127,6 +139,14 @@ export const env = createEnv({
 		TOLGEE_PROJECT_ID: process.env.TOLGEE_PROJECT_ID,
 		TOLGEE_API_KEY: process.env.TOLGEE_API_KEY,
 		TOLGEE_API_URL: process.env.TOLGEE_API_URL,
+		SMTP_HOST: process.env.SMTP_HOST,
+		SMTP_PORT: process.env.SMTP_PORT,
+		SMTP_USERNAME: process.env.SMTP_USERNAME,
+		SMTP_PASSWORD: process.env.SMTP_PASSWORD,
+		SMTP_SECURE: process.env.SMTP_SECURE,
+		SMTP_REQUIRE_TLS: process.env.SMTP_REQUIRE_TLS,
+		SMTP_FROM_EMAIL: process.env.SMTP_FROM_EMAIL,
+		SMTP_FROM_NAME: process.env.SMTP_FROM_NAME,
 		NODE_ENV: process.env.NODE_ENV,
 		SECURITY_HSTS_PRELOAD: process.env.SECURITY_HSTS_PRELOAD,
 		SECURITY_CSP_REPORT_URI: process.env.SECURITY_CSP_REPORT_URI,
