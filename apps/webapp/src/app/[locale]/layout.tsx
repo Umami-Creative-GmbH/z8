@@ -10,8 +10,6 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { TolgeeNextProvider } from "@/tolgee/client";
 import { ALL_LANGUAGES, loadNamespaces, getNamespacesForRoute } from "@/tolgee/shared";
 import { DOMAIN_HEADERS } from "@/proxy";
-import { NonceProvider } from "@/lib/nonce-context";
-import { NONCE_HEADER } from "@/lib/security";
 import "../globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryProvider } from "@/lib/query";
@@ -63,26 +61,6 @@ async function TranslationProvider({ locale, children }: { locale: string; child
 				{children}
 			</NextIntlClientProvider>
 		</TolgeeNextProvider>
-	);
-}
-
-// Async wrapper that reads nonce from headers and provides it via context
-async function NonceWrapper({ children }: { children: ReactNode }) {
-	const headersList = await headers();
-	const nonce = headersList.get(NONCE_HEADER) || undefined;
-
-	return (
-		<NonceProvider nonce={nonce}>
-			<ThemeProvider
-				attribute="class"
-				defaultTheme="system"
-				enableSystem
-				disableTransitionOnChange
-				nonce={nonce}
-			>
-				{children}
-			</ThemeProvider>
-		</NonceProvider>
 	);
 }
 
@@ -158,7 +136,12 @@ export default async function LocaleLayout({ children, params }: Props) {
 						</div>
 					}
 				>
-					<NonceWrapper>
+					<ThemeProvider
+						attribute="class"
+						defaultTheme="system"
+						enableSystem
+						disableTransitionOnChange
+					>
 						<TranslationProvider locale={locale}>
 							<QueryProvider>
 								<BProgressBar />
@@ -170,7 +153,7 @@ export default async function LocaleLayout({ children, params }: Props) {
 								</TooltipProvider>
 							</QueryProvider>
 						</TranslationProvider>
-					</NonceWrapper>
+					</ThemeProvider>
 				</Suspense>
 			</body>
 		</html>

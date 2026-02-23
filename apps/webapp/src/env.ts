@@ -63,8 +63,6 @@ export const env = createEnv({
 
 		// Security headers
 		SECURITY_HSTS_PRELOAD: z.enum(["true", "false"]).optional(),
-		SECURITY_CSP_REPORT_URI: z.string().optional(),
-		SECURITY_CSP_REPORT_ONLY: z.enum(["true", "false"]).optional(),
 
 		// Rate limiting
 		RATE_LIMIT_DISABLED: z.enum(["true", "false"]).optional(),
@@ -149,8 +147,6 @@ export const env = createEnv({
 		SMTP_FROM_NAME: process.env.SMTP_FROM_NAME,
 		NODE_ENV: process.env.NODE_ENV,
 		SECURITY_HSTS_PRELOAD: process.env.SECURITY_HSTS_PRELOAD,
-		SECURITY_CSP_REPORT_URI: process.env.SECURITY_CSP_REPORT_URI,
-		SECURITY_CSP_REPORT_ONLY: process.env.SECURITY_CSP_REPORT_ONLY,
 		RATE_LIMIT_DISABLED: process.env.RATE_LIMIT_DISABLED,
 		RATE_LIMIT_AUTH: process.env.RATE_LIMIT_AUTH,
 		RATE_LIMIT_SIGNUP: process.env.RATE_LIMIT_SIGNUP,

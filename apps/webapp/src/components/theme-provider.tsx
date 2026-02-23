@@ -6,14 +6,9 @@
 import type { ThemeProviderProps } from "next-themes";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 
-interface ExtendedThemeProviderProps extends ThemeProviderProps {
-	/** CSP nonce for inline scripts used by next-themes */
-	nonce?: string;
-}
-
-export function ThemeProvider({ children, nonce, ...props }: ExtendedThemeProviderProps) {
+export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
 	return (
-		<NextThemesProvider nonce={nonce} {...props}>
+		<NextThemesProvider {...props}>
 			{children}
 		</NextThemesProvider>
 	);

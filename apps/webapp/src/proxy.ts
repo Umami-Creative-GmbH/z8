@@ -148,7 +148,7 @@ export async function proxy(request: NextRequest) {
 	// Set pathname header for server components (used for callback URLs)
 	response.headers.set(DOMAIN_HEADERS.PATHNAME, pathname);
 
-	// Apply enterprise security headers (CSP with nonce, HSTS, etc.)
+	// Apply enterprise security headers (HSTS, frame/referrer/content type policies)
 	applySecurityHeaders(response);
 
 	// Custom domain detection
