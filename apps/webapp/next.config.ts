@@ -5,6 +5,7 @@ import createNextIntlPlugin from "next-intl/plugin";
 
 const withNextIntl = createNextIntlPlugin();
 const configDir = path.dirname(fileURLToPath(import.meta.url));
+const workspaceRoot = path.resolve(configDir, "../..");
 
 const nextConfig: NextConfig = {
 	reactStrictMode: true,
@@ -24,13 +25,13 @@ const nextConfig: NextConfig = {
 		],
 	},
 	turbopack: {
-		root: configDir,
+		root: workspaceRoot,
 	},
-	// Use Valkey for distributed caching (enabled when VALKEY_HOST is set)
-	...(process.env.VALKEY_HOST
+	// Use Valkey for distributed caching (skip in CI build to reduce noisy logs)
+	...(process.env.VALKEY_HOST && process.env.CI !== "true"
 		? {
 				cacheHandlers: {
-					default: require.resolve("./cache-handler.ts"),
+					default: require.resolve("./cache-handler.js"),
 				},
 				cacheMaxMemorySize: 0, // Disable in-memory cache, use Valkey only
 			}

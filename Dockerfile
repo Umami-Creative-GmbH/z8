@@ -84,9 +84,9 @@ RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile
 
 # =============================================================================
-# Stage 4: builder - Build Next.js application
+# Stage 4: workspace - Prepare pruned workspace
 # =============================================================================
-FROM base AS builder
+FROM base AS workspace
 
 # Skip strict env validation during image build.
 # Runtime containers still require real environment variables.
@@ -100,16 +100,20 @@ COPY --from=deps /app/apps/webapp/node_modules ./apps/webapp/node_modules
 COPY --from=pruner /app/out/full/ ./
 COPY --from=pruner /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
 
+# =============================================================================
+# Stage 5: webapp-builder - Build Next.js webapp
+# =============================================================================
+FROM workspace AS webapp-builder
+
 # Generate license report (required by build script)
 RUN pnpm --filter webapp run generate-licenses || echo "{}" > apps/webapp/src/data/licenses.json
 
-# Build the webapp using webpack in Docker context.
-# Turbopack workspace root inference can fail in pruned container builds.
+# Build the webapp (Turbopack)
 RUN --mount=type=cache,id=next-cache,target=/app/apps/webapp/.next/cache \
-    pnpm --filter webapp exec next build --webpack
+    pnpm --filter webapp exec next build
 
 # =============================================================================
-# Stage 5: prod-deps - Production dependencies only
+# Stage 6: prod-deps - Production dependencies only
 # =============================================================================
 FROM base AS prod-deps
 
@@ -122,7 +126,7 @@ RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile --prod
 
 # =============================================================================
-# Stage 6: webapp - Production Next.js server (Alpine)
+# Stage 7: webapp - Production Next.js server (Alpine)
 # =============================================================================
 # Note: Using standard build (not standalone) because standalone is not
 # compatible with cacheComponents in Next.js 16. This results in larger
@@ -139,15 +143,15 @@ COPY --from=prod-deps --chown=nextjs:nodejs /app/node_modules ./node_modules
 COPY --from=prod-deps --chown=nextjs:nodejs /app/apps/webapp/node_modules ./apps/webapp/node_modules
 
 # Copy built application
-COPY --from=builder --chown=nextjs:nodejs /app/apps/webapp/.next ./apps/webapp/.next
-COPY --from=builder --chown=nextjs:nodejs /app/apps/webapp/public ./apps/webapp/public
-COPY --from=builder --chown=nextjs:nodejs /app/apps/webapp/package.json ./apps/webapp/
-COPY --from=builder --chown=nextjs:nodejs /app/apps/webapp/next.config.ts ./apps/webapp/
-COPY --from=builder --chown=nextjs:nodejs /app/apps/webapp/cache-handler.ts ./apps/webapp/
+COPY --from=webapp-builder --chown=nextjs:nodejs /app/apps/webapp/.next ./apps/webapp/.next
+COPY --from=workspace --chown=nextjs:nodejs /app/apps/webapp/public ./apps/webapp/public
+COPY --from=workspace --chown=nextjs:nodejs /app/apps/webapp/package.json ./apps/webapp/
+COPY --from=workspace --chown=nextjs:nodejs /app/apps/webapp/next.config.ts ./apps/webapp/
+COPY --from=workspace --chown=nextjs:nodejs /app/apps/webapp/cache-handler.js ./apps/webapp/
 
 # Copy workspace config for pnpm/next to work correctly
-COPY --from=builder --chown=nextjs:nodejs /app/package.json ./
-COPY --from=builder --chown=nextjs:nodejs /app/pnpm-workspace.yaml ./
+COPY --from=workspace --chown=nextjs:nodejs /app/package.json ./
+COPY --from=workspace --chown=nextjs:nodejs /app/pnpm-workspace.yaml ./
 
 WORKDIR /app/apps/webapp
 
@@ -173,7 +177,7 @@ CMD ["pnpm", "start"]
 # =============================================================================
 
 # =============================================================================
-# Stage 7: migration - One-shot Drizzle migration runner
+# Stage 8: migration - One-shot Drizzle migration runner
 # =============================================================================
 FROM base AS migration
 
@@ -182,10 +186,10 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/webapp/node_modules ./apps/webapp/node_modules
 
 # Copy database schema and drizzle config
-COPY --from=builder /app/apps/webapp/src/db ./apps/webapp/src/db
-COPY --from=builder /app/apps/webapp/drizzle.config.ts ./apps/webapp/
-COPY --from=builder /app/apps/webapp/package.json ./apps/webapp/
-COPY --from=builder /app/apps/webapp/tsconfig.json ./apps/webapp/
+COPY --from=workspace /app/apps/webapp/src/db ./apps/webapp/src/db
+COPY --from=workspace /app/apps/webapp/drizzle.config.ts ./apps/webapp/
+COPY --from=workspace /app/apps/webapp/package.json ./apps/webapp/
+COPY --from=workspace /app/apps/webapp/tsconfig.json ./apps/webapp/
 
 WORKDIR /app/apps/webapp
 
@@ -206,9 +210,9 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/webapp/node_modules ./apps/webapp/node_modules
 
 # Copy database code and seed scripts
-COPY --from=builder /app/apps/webapp/src ./apps/webapp/src
-COPY --from=builder /app/apps/webapp/package.json ./apps/webapp/
-COPY --from=builder /app/apps/webapp/tsconfig.json ./apps/webapp/
+COPY --from=workspace /app/apps/webapp/src ./apps/webapp/src
+COPY --from=workspace /app/apps/webapp/package.json ./apps/webapp/
+COPY --from=workspace /app/apps/webapp/tsconfig.json ./apps/webapp/
 
 WORKDIR /app/apps/webapp
 
@@ -232,9 +236,9 @@ COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=prod-deps /app/apps/webapp/node_modules ./apps/webapp/node_modules
 
 # Copy application source (worker needs access to lib modules)
-COPY --from=builder /app/apps/webapp/src ./apps/webapp/src
-COPY --from=builder /app/apps/webapp/package.json ./apps/webapp/
-COPY --from=builder /app/apps/webapp/tsconfig.json ./apps/webapp/
+COPY --from=workspace /app/apps/webapp/src ./apps/webapp/src
+COPY --from=workspace /app/apps/webapp/package.json ./apps/webapp/
+COPY --from=workspace /app/apps/webapp/tsconfig.json ./apps/webapp/
 
 WORKDIR /app/apps/webapp
 

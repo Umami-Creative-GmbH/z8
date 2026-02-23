@@ -8,50 +8,52 @@
  *   - VALKEY_PASSWORD (optional) - Valkey authentication password
  */
 
-import Redis from "ioredis";
+const Redis = require("ioredis");
 
 const host = process.env.VALKEY_HOST || "localhost";
 const port = Number(process.env.VALKEY_PORT || "6379");
 const password = process.env.VALKEY_PASSWORD;
+const isCi = process.env.CI === "true";
+
+let hasLoggedConnectionError = false;
 
 const redis = new Redis({
 	host,
 	port,
 	password: password || undefined,
 	maxRetriesPerRequest: 3,
-	lazyConnect: false, // Connect immediately for cache handler
+	lazyConnect: false,
 	enableReadyCheck: false,
 	enableOfflineQueue: true,
 });
 
 redis.on("error", (err) => {
+	if (isCi) {
+		if (!hasLoggedConnectionError) {
+			hasLoggedConnectionError = true;
+			console.warn("[CacheHandler] Redis unavailable during CI build; using cache misses.");
+		}
+		return;
+	}
+
 	console.error("[CacheHandler] Redis connection error:", err);
 });
 
 const CACHE_PREFIX = "nextjs:cache:";
 const TAG_PREFIX = "nextjs:tag:";
 
-interface CacheEntry {
-	value: unknown;
-	tags: string[];
-	expireAt?: number;
-}
-
-export default class CacheHandler {
+class CacheHandler {
 	constructor() {
-		console.log(
-			`[CacheHandler] Initialized with ioredis client → ${host}:${port}`,
-		);
+		console.log(`[CacheHandler] Initialized with ioredis client -> ${host}:${port}`);
 	}
 
-	async get(key: string): Promise<CacheEntry | null> {
+	async get(key) {
 		try {
 			const data = await redis.get(CACHE_PREFIX + key);
 			if (!data) return null;
 
-			const entry: CacheEntry = JSON.parse(data);
+			const entry = JSON.parse(data);
 
-			// Check if expired
 			if (entry.expireAt && Date.now() > entry.expireAt) {
 				await this.delete(key);
 				return null;
@@ -64,13 +66,9 @@ export default class CacheHandler {
 		}
 	}
 
-	async set(
-		key: string,
-		value: unknown,
-		options?: { tags?: string[]; ttl?: number },
-	): Promise<void> {
+	async set(key, value, options) {
 		try {
-			const entry: CacheEntry = {
+			const entry = {
 				value,
 				tags: options?.tags || [],
 				expireAt: options?.ttl ? Date.now() + options.ttl * 1000 : undefined,
@@ -84,7 +82,6 @@ export default class CacheHandler {
 				await redis.set(CACHE_PREFIX + key, serialized);
 			}
 
-			// Store key references for each tag (for tag-based invalidation)
 			if (options?.tags) {
 				for (const tag of options.tags) {
 					await redis.sadd(TAG_PREFIX + tag, key);
@@ -95,13 +92,11 @@ export default class CacheHandler {
 		}
 	}
 
-	async delete(key: string): Promise<void> {
+	async delete(key) {
 		try {
-			// Get entry to find its tags
 			const data = await redis.get(CACHE_PREFIX + key);
 			if (data) {
-				const entry: CacheEntry = JSON.parse(data);
-				// Remove key from tag sets
+				const entry = JSON.parse(data);
 				for (const tag of entry.tags) {
 					await redis.srem(TAG_PREFIX + tag, key);
 				}
@@ -112,24 +107,21 @@ export default class CacheHandler {
 		}
 	}
 
-	async revalidateTag(tag: string): Promise<void> {
+	async revalidateTag(tag) {
 		try {
-			// Get all keys associated with this tag
 			const keys = await redis.smembers(TAG_PREFIX + tag);
 
-			// Delete all cached entries with this tag
 			for (const key of keys) {
 				await redis.del(CACHE_PREFIX + key);
 			}
 
-			// Clear the tag set
 			await redis.del(TAG_PREFIX + tag);
 
-			console.log(
-				`[CacheHandler] Revalidated tag: ${tag}, cleared ${keys.length} entries`,
-			);
+			console.log(`[CacheHandler] Revalidated tag: ${tag}, cleared ${keys.length} entries`);
 		} catch (error) {
 			console.error("[CacheHandler] RevalidateTag error:", error);
 		}
 	}
 }
+
+module.exports = CacheHandler;

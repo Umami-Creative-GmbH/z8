@@ -5,7 +5,7 @@
 	"scripts": {
 		"dev": "next dev --turbopack",
 		"dev:webpack": "next dev",
-		"build": "pnpm run generate-licenses && next build --webpack",
+		"build": "pnpm run generate-licenses && next build",
 		"start": "next start",
 		"test": "vitest run",
 		"test:watch": "vitest",
