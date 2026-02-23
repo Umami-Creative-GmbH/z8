@@ -45,6 +45,13 @@ The workflow at `.github/workflows/publish-images.yml` builds and publishes the 
 - `ghcr.io/umami-creative-gmbh/z8-worker`
 - `ghcr.io/umami-creative-gmbh/z8-migration`
 
+Workflow details:
+
+- Uses native `amd64` and native `arm64` runners (no QEMU emulation)
+- Builds per-architecture images first, then publishes multi-arch manifest tags
+- Keeps three role-specific images (`webapp`, `worker`, `migration`) with different runtime commands
+- Optimizes build graph so worker/migration builds do not compile the Next.js app bundle
+
 ### Triggers
 
 - Push to `main` (publishes rolling images)
