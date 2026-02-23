@@ -41,7 +41,9 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build webapp
-        run: pnpm build:webapp
+        run: pnpm --filter webapp run build
+        env:
+          SKIP_ENV_VALIDATION: "1"
 
   publish-images:
     name: Publish Images

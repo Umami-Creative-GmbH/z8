@@ -37,6 +37,11 @@ RUN apk add --no-cache \
 ARG PNPM_VERSION
 RUN corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate
 
+# Configure pnpm global binaries path (required for pnpm add -g)
+ENV PNPM_HOME=/pnpm
+ENV PATH=$PNPM_HOME:$PATH
+RUN mkdir -p "$PNPM_HOME"
+
 # Set production environment
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
@@ -83,20 +88,25 @@ RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
 # =============================================================================
 FROM base AS builder
 
+# Skip strict env validation during image build.
+# Runtime containers still require real environment variables.
+ENV SKIP_ENV_VALIDATION=1
+
 # Copy installed dependencies
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/webapp/node_modules ./apps/webapp/node_modules
 
 # Copy source code from pruned workspace
 COPY --from=pruner /app/out/full/ ./
+COPY --from=pruner /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
 
 # Generate license report (required by build script)
 RUN pnpm --filter webapp run generate-licenses || echo "{}" > apps/webapp/src/data/licenses.json
 
-# Build the webapp with standalone output
-# Use BuildKit cache mount for turbo cache
-RUN --mount=type=cache,id=turbo-cache,target=/app/.turbo \
-    pnpm turbo build --filter=webapp
+# Build the webapp using webpack in Docker context.
+# Turbopack workspace root inference can fail in pruned container builds.
+RUN --mount=type=cache,id=next-cache,target=/app/apps/webapp/.next/cache \
+    pnpm --filter webapp exec next build --webpack
 
 # =============================================================================
 # Stage 5: prod-deps - Production dependencies only

@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import createNextIntlPlugin from "next-intl/plugin";
 
 const withNextIntl = createNextIntlPlugin();
+const configDir = path.dirname(fileURLToPath(import.meta.url));
 
 const nextConfig: NextConfig = {
 	reactStrictMode: true,
@@ -19,6 +22,9 @@ const nextConfig: NextConfig = {
 			"date-fns",
 			"@radix-ui/react-icons",
 		],
+	},
+	turbopack: {
+		root: configDir,
 	},
 	// Use Valkey for distributed caching (enabled when VALKEY_HOST is set)
 	...(process.env.VALKEY_HOST
