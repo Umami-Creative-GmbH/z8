@@ -37,6 +37,34 @@ The root `Dockerfile` builds multiple optimized containers:
 > `cacheComponents` feature is not compatible with `output: "standalone"`.
 > The standard build includes full node_modules but ensures full compatibility.
 
+## GitHub Actions: GHCR Publishing
+
+The workflow at `.github/workflows/publish-images.yml` builds and publishes the main production images to GHCR:
+
+- `ghcr.io/umami-creative-gmbh/z8-webapp`
+- `ghcr.io/umami-creative-gmbh/z8-worker`
+- `ghcr.io/umami-creative-gmbh/z8-migration`
+
+### Triggers
+
+- Push to `main` (publishes rolling images)
+- Push semver tag `v*.*.*` (publishes release images)
+- Manual run via `workflow_dispatch`
+
+### Published Tags
+
+- On `main`: `latest`, `sha-<shortsha>`
+- On `vX.Y.Z`: `vX.Y.Z`, `vX.Y`, `vX`, `sha-<shortsha>`
+
+`latest` is only published from `main`.
+
+### Example Release Tag
+
+```bash
+git tag v1.2.3
+git push origin v1.2.3
+```
+
 ## Quick Start
 
 ### Development (Local Infrastructure Only)
