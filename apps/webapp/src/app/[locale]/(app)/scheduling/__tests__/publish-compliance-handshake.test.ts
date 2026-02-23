@@ -17,7 +17,7 @@ vi.mock("@/lib/effect/services/schedule-compliance.service", () => ({
 vi.mock("@/lib/logger", () => ({ createLogger: () => ({ info: vi.fn(), error: vi.fn() }) }));
 vi.mock("@/lib/timezone/effective-timezone", () => ({ getEffectiveTimezone: vi.fn() }));
 
-const { buildPublishDecision } = await import("@/app/[locale]/(app)/scheduling/actions");
+const { buildPublishDecision } = await import("@/app/[locale]/(app)/scheduling/publish-decision");
 
 describe("buildPublishDecision", () => {
 	const complianceSummary = {
