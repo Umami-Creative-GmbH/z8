@@ -180,7 +180,10 @@ export const env = createEnv({
 		STRIPE_PRICE_MONTHLY_ID: process.env.STRIPE_PRICE_MONTHLY_ID,
 		STRIPE_PRICE_YEARLY_ID: process.env.STRIPE_PRICE_YEARLY_ID,
 	},
-	skipValidation: !!process.env.SKIP_ENV_VALIDATION,
+	skipValidation:
+		process.env.SKIP_ENV_VALIDATION === "1" ||
+		process.env.SKIP_ENV_VALIDATION === "true" ||
+		process.env.CI === "true",
 	emptyStringAsUndefined: true,
 	onValidationError: (issues) => {
 		console.error("❌ Invalid environment variables:");
