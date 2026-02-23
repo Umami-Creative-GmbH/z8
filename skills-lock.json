@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "skills": {
+    "hetzner-infra": {
+      "source": "nmime/infra-skills",
+      "sourceType": "github",
+      "computedHash": "b63fcd4b09f7f630722b2b88f5dc7413e52dc732ca1a68f6fd34d4eead2deb7f"
+    }
+  }
+}
