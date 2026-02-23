@@ -15,6 +15,9 @@ const nextConfig: NextConfig = {
 	// Enable cache components for static dashboard shells and improved performance
 	// Components using connection() will still be dynamic
 	cacheComponents: true,
+	images: {
+		unoptimized: true,
+	},
 	experimental: {
 		optimizePackageImports: [
 			"@tabler/icons-react",
