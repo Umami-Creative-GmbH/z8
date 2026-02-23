@@ -9,5 +9,6 @@ resources:
   - app/valkey.yaml
   - app/rustfs.yaml
   - app/web-deployment.yaml
+  - app/worker-deployment.yaml
   - app/web-service.yaml
   - app/web-ingress.yaml

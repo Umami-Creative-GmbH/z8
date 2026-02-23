@@ -75,7 +75,14 @@ const getCachedPlatformConfigured = unstable_cache(
 export async function isPlatformConfigured(): Promise<boolean> {
 	if (_configuredInMemory === true) return true;
 
-	const result = await getCachedPlatformConfigured();
+	let result = await getCachedPlatformConfigured();
+
+	// Avoid sticky false values from stale cache entries.
+	// If cache says "not configured", re-check the DB once directly.
+	if (!result) {
+		result = await checkPlatformConfiguredFromDb();
+	}
+
 	if (result) _configuredInMemory = true;
 	return result;
 }
@@ -86,6 +93,7 @@ export async function isPlatformConfigured(): Promise<boolean> {
  */
 export async function invalidateConfigCache(): Promise<void> {
 	revalidateTag(CACHE_TAG, CACHE_PROFILE);
+	_configuredInMemory = null;
 	logger.info("Platform configuration cache invalidated");
 }
 
@@ -94,11 +102,15 @@ export async function invalidateConfigCache(): Promise<void> {
  * The next call to isPlatformConfigured will query the database.
  */
 export function setConfiguredStatus(status: boolean): void {
-	// In the new implementation, we just invalidate the cache
-	// and let the next check query the database
+	if (status) {
+		_configuredInMemory = true;
+	} else {
+		_configuredInMemory = null;
+	}
+
 	revalidateTag(CACHE_TAG, CACHE_PROFILE);
 	logger.info(
 		{ configured: status },
-		"Platform configuration cache invalidated (status will be refreshed from DB)",
+		"Platform configuration cache status updated",
 	);
 }

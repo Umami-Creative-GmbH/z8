@@ -38,7 +38,7 @@ This folder provisions a Hetzner Cloud Kubernetes cluster using kube-hetzner and
 
 Install the Phase operator using the official Helm chart. Update the repo URL if Phase changes it.
 
-- `helm repo add phase https://charts.phase.dev`
+- `helm repo add phase https://helm.phase.dev`
 - `helm repo update`
 - `helm upgrade --install phase-secrets-operator phase/phase-secrets-operator \
   --namespace phase-system --create-namespace \
@@ -60,7 +60,17 @@ This installs:
 - Valkey (persistent, AOF)
 - Vault (Raft storage)
 - web + worker deployments and services
-- drizzle migration job
+
+## Release rollout flow (migration first)
+
+Use the rollout script so every release runs migrations once before web/worker rollouts:
+
+- `bash infra/hetzner-k8s/deploy-rollout.sh sha-<commit>`
+
+What it does:
+- runs a one-shot migration Job using `ghcr.io/umami-creative-gmbh/z8-migration:<tag>`
+- waits for migration completion (fails fast on error)
+- updates web + worker to the same tag and waits for rollout success
 
 ## Required application secrets
 
@@ -86,7 +96,7 @@ Rolling update safety:
 - Migrations must be backward compatible.
 - Do not perform destructive schema changes in a single release. Split into safe, staged changes.
 
-Run it before deploying the app or after a schema change:
+Run it manually only for debugging (normal deploys should use `deploy-rollout.sh`):
 
 - `kubectl --kubeconfig ./kubeconfig.yaml apply -f infra/hetzner-k8s/k8s/app/migration-job.yaml`
 - `kubectl --kubeconfig ./kubeconfig.yaml -n app-prod logs job/drizzle-migrate`

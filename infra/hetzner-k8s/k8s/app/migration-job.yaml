@@ -9,10 +9,12 @@ spec:
   template:
     spec:
       enableServiceLinks: false
+      imagePullSecrets:
+        - name: ghcr-credentials
       restartPolicy: Never
       containers:
         - name: migrate
-          image: ${IMAGE}:${TAG}
+          image: ghcr.io/umami-creative-gmbh/z8-migration:latest
           imagePullPolicy: IfNotPresent
           env:
             - name: VALKEY_HOST
@@ -22,7 +24,7 @@ spec:
             - name: DB_MIGRATION_LOCK_ID
               value: "74382643"
             - name: DRIZZLE_MIGRATE_COMMAND
-              value: "pnpm dlx drizzle-kit migrate --config ./drizzle.config.ts"
+              value: "pnpm exec drizzle-kit migrate --config ./drizzle.config.ts"
           workingDir: /app/apps/webapp
           command: ["node", "./scripts/migrate-with-lock.js"]
           envFrom:

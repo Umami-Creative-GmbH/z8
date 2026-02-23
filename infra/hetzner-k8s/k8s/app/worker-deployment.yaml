@@ -14,9 +14,11 @@ spec:
         app: worker
     spec:
       enableServiceLinks: false
+      imagePullSecrets:
+        - name: ghcr-credentials
       containers:
         - name: worker
-          image: ${IMAGE}:${TAG}
+          image: ghcr.io/umami-creative-gmbh/z8-worker:latest
           imagePullPolicy: IfNotPresent
           env:
             - name: VALKEY_HOST

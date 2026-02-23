@@ -18,7 +18,7 @@ spec:
         - name: ghcr-credentials
       containers:
         - name: web
-          image: ghcr.io/umami-creative-gmbh/z8-webapp:sha-9fbcb35
+          image: ghcr.io/umami-creative-gmbh/z8-webapp:latest
           imagePullPolicy: IfNotPresent
           env:
             - name: VALKEY_HOST
