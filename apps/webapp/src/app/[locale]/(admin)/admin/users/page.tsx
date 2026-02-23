@@ -50,8 +50,9 @@ import {
 const PAGE_SIZE = 20;
 const LOADING_ROW_KEYS = ["loading-1", "loading-2", "loading-3", "loading-4", "loading-5"];
 const SESSION_LOADING_KEYS = ["session-loading-1", "session-loading-2", "session-loading-3"];
+type UserStatusFilter = "all" | "active" | "banned";
 
-function getInitialFilters() {
+function getInitialFilters(): { search: string; status: UserStatusFilter } {
 	if (typeof window === "undefined") {
 		return {
 			search: "",
@@ -61,12 +62,12 @@ function getInitialFilters() {
 
 	const params = new URLSearchParams(window.location.search);
 	const statusParam = params.get("status");
+	const status: UserStatusFilter =
+		statusParam === "active" || statusParam === "banned" ? statusParam : "all";
+
 	return {
 		search: params.get("search") ?? "",
-		status:
-			statusParam === "active" || statusParam === "banned"
-				? statusParam
-				: ("all" as const),
+		status,
 	};
 }
 
@@ -78,7 +79,7 @@ export default function UsersPage() {
 
 	const [page, setPage] = useState(1);
 	const [search, setSearch] = useState(initialFilters.search);
-	const [status, setStatus] = useState<"all" | "active" | "banned">(initialFilters.status);
+	const [status, setStatus] = useState<UserStatusFilter>(initialFilters.status);
 	const [isPending, startTransition] = useTransition();
 	const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -107,7 +108,7 @@ export default function UsersPage() {
 
 	// Debounced search with immediate status change
 	const handleFilterChange = useCallback(
-		(newSearch: string, newStatus: "all" | "active" | "banned") => {
+		(newSearch: string, newStatus: UserStatusFilter) => {
 			// Clear any pending search timeout
 			if (searchTimeoutRef.current) {
 				clearTimeout(searchTimeoutRef.current);
@@ -251,7 +252,7 @@ export default function UsersPage() {
 				</div>
 				<Select
 					value={status}
-					onValueChange={(v) => handleFilterChange(search, v as "all" | "active" | "banned")}
+					onValueChange={(v) => handleFilterChange(search, v as UserStatusFilter)}
 				>
 					<SelectTrigger className="w-full sm:w-40">
 						<SelectValue placeholder={t("common.status", "Status")} />

@@ -28,12 +28,12 @@ export function OrganizationDetailsCard({
 	const inputRef = useRef<HTMLInputElement>(null);
 
 	const canEdit = currentMemberRole === "owner";
+	const metadata = organization.metadata as Record<string, unknown> | null;
 	const metadataDescription =
-		typeof organization.metadata === "object" &&
-		organization.metadata !== null &&
-		"description" in organization.metadata &&
-		typeof organization.metadata.description === "string"
-			? organization.metadata.description
+		typeof metadata === "object" &&
+		metadata !== null &&
+		typeof metadata.description === "string"
+			? metadata.description
 			: null;
 
 	// Image upload hook

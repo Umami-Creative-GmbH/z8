@@ -69,7 +69,6 @@ function getSystemTransport(): EmailTransport {
 	}
 	return systemTransport;
 }
-}
 
 /**
  * Get the email transport for a specific organization

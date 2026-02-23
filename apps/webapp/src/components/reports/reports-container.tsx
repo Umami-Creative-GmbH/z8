@@ -31,7 +31,7 @@ export function ReportsContainer({ currentEmployeeId }: ReportsContainerProps) {
 			data: null,
 		}));
 
-		if (result.success) {
+		if (result.success && result.data) {
 			setReportData(result.data);
 			toast.success("Report generated successfully", {
 				description: `Generated report for ${result.data.employee.name}`,

@@ -86,14 +86,16 @@ export function JoinOrganizationForm({ code: initialCode }: JoinOrganizationForm
 
 	// Validate initial code once on mount
 	useEffect(() => {
-		if (!initialCode || hasValidatedInitialCode.current) {
-			return;
-		}
+	if (!initialCode || hasValidatedInitialCode.current) {
+		return;
+	}
 
-		hasValidatedInitialCode.current = true;
+	const codeToValidate = initialCode;
 
-		async function validateInitialCode() {
-			const result = await validateInviteCode(initialCode.toUpperCase());
+	hasValidatedInitialCode.current = true;
+
+	async function validateInitialCode() {
+		const result = await validateInviteCode(codeToValidate.toUpperCase());
 
 			if (!result.success) {
 				setState("invalid");

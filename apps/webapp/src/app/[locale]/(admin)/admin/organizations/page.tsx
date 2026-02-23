@@ -57,8 +57,9 @@ import {
 
 const PAGE_SIZE = 20;
 const LOADING_ROW_KEYS = ["loading-1", "loading-2", "loading-3", "loading-4", "loading-5"];
+type OrganizationStatusFilter = "all" | "active" | "suspended" | "deleted";
 
-function getInitialFilters() {
+function getInitialFilters(): { search: string; status: OrganizationStatusFilter } {
 	if (typeof window === "undefined") {
 		return {
 			search: "",
@@ -68,12 +69,14 @@ function getInitialFilters() {
 
 	const params = new URLSearchParams(window.location.search);
 	const statusParam = params.get("status");
+	const status: OrganizationStatusFilter =
+		statusParam === "active" || statusParam === "suspended" || statusParam === "deleted"
+			? statusParam
+			: "all";
+
 	return {
 		search: params.get("search") ?? "",
-		status:
-			statusParam === "active" || statusParam === "suspended" || statusParam === "deleted"
-				? statusParam
-				: ("all" as const),
+		status,
 	};
 }
 
@@ -85,9 +88,7 @@ export default function OrganizationsPage() {
 
 	const [page, setPage] = useState(1);
 	const [search, setSearch] = useState(initialFilters.search);
-	const [status, setStatus] = useState<"all" | "active" | "suspended" | "deleted">(
-		initialFilters.status,
-	);
+	const [status, setStatus] = useState<OrganizationStatusFilter>(initialFilters.status);
 	const [isPending, startTransition] = useTransition();
 	const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -116,7 +117,7 @@ export default function OrganizationsPage() {
 
 	// Debounced search with immediate status change
 	const handleFilterChange = useCallback(
-		(newSearch: string, newStatus: "all" | "active" | "suspended" | "deleted") => {
+		(newSearch: string, newStatus: OrganizationStatusFilter) => {
 			// Clear any pending search timeout
 			if (searchTimeoutRef.current) {
 				clearTimeout(searchTimeoutRef.current);
@@ -245,9 +246,7 @@ export default function OrganizationsPage() {
 				</div>
 				<Select
 					value={status}
-					onValueChange={(v) =>
-						handleFilterChange(search, v as "all" | "active" | "suspended" | "deleted")
-					}
+					onValueChange={(v) => handleFilterChange(search, v as OrganizationStatusFilter)}
 				>
 					<SelectTrigger className="w-full sm:w-40">
 						<SelectValue placeholder={t("common.status", "Status")} />
