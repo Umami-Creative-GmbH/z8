@@ -13,10 +13,16 @@ spec:
       labels:
         app: worker
     spec:
+      enableServiceLinks: false
       containers:
         - name: worker
           image: ${IMAGE}:${TAG}
           imagePullPolicy: IfNotPresent
+          env:
+            - name: VALKEY_HOST
+              value: valkey
+            - name: VALKEY_PORT
+              value: "6379"
           envFrom:
             - secretRef:
                 name: app-secrets

@@ -8,18 +8,23 @@ spec:
   ttlSecondsAfterFinished: 3600
   template:
     spec:
+      enableServiceLinks: false
       restartPolicy: Never
       containers:
         - name: migrate
           image: ${IMAGE}:${TAG}
           imagePullPolicy: IfNotPresent
-          workingDir: /app
-          command: ["node", "./scripts/migrate-with-lock.js"]
           env:
+            - name: VALKEY_HOST
+              value: valkey
+            - name: VALKEY_PORT
+              value: "6379"
             - name: DB_MIGRATION_LOCK_ID
               value: "74382643"
             - name: DRIZZLE_MIGRATE_COMMAND
               value: "pnpm dlx drizzle-kit migrate --config ./drizzle.config.ts"
+          workingDir: /app/apps/webapp
+          command: ["node", "./scripts/migrate-with-lock.js"]
           envFrom:
             - secretRef:
                 name: app-secrets

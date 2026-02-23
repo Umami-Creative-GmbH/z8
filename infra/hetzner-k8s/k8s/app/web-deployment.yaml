@@ -13,12 +13,18 @@ spec:
       labels:
         app: web
     spec:
+      enableServiceLinks: false
       imagePullSecrets:
         - name: ghcr-credentials
       containers:
         - name: web
-          image: ghcr.io/umami-creative-gmbh/z8-webapp:prod-20260223
+          image: ghcr.io/umami-creative-gmbh/z8-webapp:sha-9fbcb35
           imagePullPolicy: IfNotPresent
+          env:
+            - name: VALKEY_HOST
+              value: valkey
+            - name: VALKEY_PORT
+              value: "6379"
           ports:
             - containerPort: 3000
               name: http
@@ -29,14 +35,18 @@ spec:
             httpGet:
               path: /api/health
               port: 3000
-            initialDelaySeconds: 10
-            periodSeconds: 10
+            initialDelaySeconds: 20
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 5
           livenessProbe:
             httpGet:
-              path: /api/health
+              path: /
               port: 3000
             initialDelaySeconds: 30
             periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 5
           resources:
             requests:
               cpu: 100m
