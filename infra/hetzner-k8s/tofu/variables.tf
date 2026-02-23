@@ -51,6 +51,18 @@ variable "worker_server_type" {
   description = "Hetzner server type for worker nodes."
 }
 
+variable "nat_router_server_type" {
+  type        = string
+  default     = "cpx22"
+  description = "Hetzner server type for NAT router node."
+}
+
+variable "nat_router_location" {
+  type        = string
+  default     = "nbg1"
+  description = "Hetzner location for NAT router node."
+}
+
 variable "load_balancer_type" {
   type        = string
   default     = "lb11"
