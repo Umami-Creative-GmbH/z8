@@ -106,3 +106,5 @@ experimental/
 
 # Local infra tooling downloads
 infra/hetzner-k8s/bin/
+infra/hetzner-k8s/tofu/.terraform.tfstate.lock.info
+infra/hetzner-k8s/tofu/*.lock.info
