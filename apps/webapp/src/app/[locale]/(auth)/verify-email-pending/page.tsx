@@ -58,11 +58,11 @@ export default function VerifyEmailPendingPage() {
 				</p>
 
 				<div className="mb-6 rounded-lg bg-muted p-4 text-sm">
-					<p className="font-medium">{t("auth.check-console", "Development Mode:")}</p>
+					<p className="font-medium">{t("auth.check-inbox-title", "Check your inbox")}</p>
 					<p className="text-muted-foreground">
 						{t(
-							"auth.check-console-message",
-							"Since no email provider is configured, check your server console for the verification link.",
+							"auth.check-inbox-message",
+							"If you don't see the verification email, check your spam folder. In development environments without email configuration, the verification link is logged to the server console.",
 						)}
 					</p>
 				</div>
