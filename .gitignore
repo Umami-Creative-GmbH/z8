@@ -75,6 +75,8 @@ nul
 
 # Vault keys and data (contains secrets)
 .vault-keys
+infra/hetzner-k8s/.vault-keys.txt
+infra/hetzner-k8s/.vault-keys.json
 .vault-data/
 deploy/.vault-data/
 .github/prompts
