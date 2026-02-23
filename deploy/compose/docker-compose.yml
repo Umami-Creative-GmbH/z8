@@ -3,7 +3,7 @@ services:
   db:
     image: postgres:18-alpine
     ports:
-      - 5433:5432  # Direct access on 5433 for admin tasks (migrations, etc.)
+      - 5433:5432 # Direct access on 5433 for admin tasks (migrations, etc.)
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mysecretpassword}
@@ -19,7 +19,7 @@ services:
   pgbouncer:
     image: edoburu/pgbouncer:latest
     ports:
-      - 5432:5432  # App connects here (standard postgres port)
+      - 5432:5432 # App connects here (standard postgres port)
     environment:
       DB_HOST: db
       DB_PORT: 5432
@@ -27,9 +27,9 @@ services:
       DB_PASSWORD: ${POSTGRES_PASSWORD:-mysecretpassword}
       DB_NAME: ${POSTGRES_DB:-postgres}
       LISTEN_PORT: 5432
-      POOL_MODE: transaction  # Transaction pooling for better connection reuse
-      MAX_CLIENT_CONN: 1000   # Support many app connections
-      DEFAULT_POOL_SIZE: 50   # Connections to actual DB
+      POOL_MODE: transaction # Transaction pooling for better connection reuse
+      MAX_CLIENT_CONN: 1000 # Support many app connections
+      DEFAULT_POOL_SIZE: 50 # Connections to actual DB
       MIN_POOL_SIZE: 10
       RESERVE_POOL_SIZE: 10
       IGNORE_STARTUP_PARAMETERS: extra_float_digits
@@ -66,7 +66,7 @@ services:
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${VALKEY_PASSWORD:-}
       REDIS_USE_TLS: "false"
-      BULL_PREFIX: bull  # BullMQ default prefix
+      BULL_PREFIX: bull # BullMQ default prefix
       # Basic auth - set these in .env for security
       USER_LOGIN: ${BULL_BOARD_USER:-admin}
       USER_PASSWORD: ${BULL_BOARD_PASSWORD:-admin}
@@ -79,7 +79,7 @@ services:
   # Save the unseal keys and root token, then unseal with `vault operator unseal`
   # Production: Use auto-unseal with cloud KMS instead of manual unsealing
   vault:
-    image: hashicorp/vault:1.18
+    image: hashicorp/vault:1.21
     ports:
       - "8200:8200"
     environment:
@@ -116,8 +116,8 @@ services:
   rustfs:
     image: rustfs/rustfs:latest
     ports:
-      - "9000:9000"  # S3 API
-      - "9001:9001"  # Web Console
+      - "9000:9000" # S3 API
+      - "9001:9001" # Web Console
     environment:
       RUSTFS_ROOT_USER: ${S3_ACCESS_KEY_ID:-rustfsadmin}
       RUSTFS_ROOT_PASSWORD: ${S3_SECRET_ACCESS_KEY:-rustfsadmin}
