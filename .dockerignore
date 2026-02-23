@@ -82,8 +82,7 @@ deploy/k8s
 .npmrc
 .yarnrc
 
-# Drizzle migrations (applied via init container)
-apps/webapp/drizzle
+# Drizzle migrations are required in migration image
 
 # License report (generated at build time)
 apps/webapp/src/data/licenses.json
