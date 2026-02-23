@@ -5,12 +5,9 @@ resources:
   - https://github.com/cert-manager/cert-manager/releases/download/v1.14.4/cert-manager.yaml
   - namespaces.yaml
   - cluster-issuer.yaml
-  - phase/phase-service-token-secret.yaml
   - app/phase-secret.yaml
   - app/valkey.yaml
+  - app/rustfs.yaml
   - app/web-deployment.yaml
   - app/web-service.yaml
   - app/web-ingress.yaml
-  - app/worker-deployment.yaml
-  - app/migration-job.yaml
-  - vault/vault.yaml

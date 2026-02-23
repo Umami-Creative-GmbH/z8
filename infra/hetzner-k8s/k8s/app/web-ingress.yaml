@@ -9,10 +9,10 @@ spec:
   ingressClassName: traefik
   tls:
     - hosts:
-        - app.example.com
+        - ui.z8-time.app
       secretName: web-tls
   rules:
-    - host: app.example.com
+    - host: ui.z8-time.app
       http:
         paths:
           - path: /
