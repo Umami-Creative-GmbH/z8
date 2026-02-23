@@ -67,19 +67,39 @@ spec:
       labels:
         app: vault
     spec:
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+      initContainers:
+        - name: vault-permissions
+          image: busybox:1.36
+          command:
+            - sh
+            - -lc
+            - chown -R 100:1000 /vault/data
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
+          volumeMounts:
+            - name: data
+              mountPath: /vault/data
       containers:
         - name: vault
           image: hashicorp/vault:1.16.2
           imagePullPolicy: IfNotPresent
+          command: ["vault"]
           args: ["server", "-config=/vault/config/vault.hcl"]
+          env:
+            - name: VAULT_ADDR
+              value: "http://127.0.0.1:8200"
+          securityContext:
+            runAsUser: 100
+            runAsGroup: 1000
           ports:
             - containerPort: 8200
               name: http
             - containerPort: 8201
               name: raft
-          env:
-            - name: VAULT_ADDR
-              value: "http://127.0.0.1:8200"
           volumeMounts:
             - name: config
               mountPath: /vault/config
