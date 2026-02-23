@@ -188,8 +188,8 @@ COPY --from=deps /app/apps/webapp/node_modules ./apps/webapp/node_modules
 # Copy webapp files needed for migration execution
 # Include full src to support path aliases (e.g. @/...) when drizzle reads schema files.
 COPY --from=workspace /app/apps/webapp/src ./apps/webapp/src
-COPY --from=workspace /app/apps/webapp/scripts ./apps/webapp/scripts
-COPY --from=workspace /app/apps/webapp/drizzle ./apps/webapp/drizzle
+COPY --from=pruner /app/apps/webapp/scripts ./apps/webapp/scripts
+COPY --from=pruner /app/apps/webapp/drizzle ./apps/webapp/drizzle
 COPY --from=workspace /app/apps/webapp/drizzle.config.ts ./apps/webapp/
 COPY --from=workspace /app/apps/webapp/package.json ./apps/webapp/
 COPY --from=workspace /app/apps/webapp/tsconfig.json ./apps/webapp/
