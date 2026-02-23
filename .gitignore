@@ -98,6 +98,11 @@ terraform.rc
 # Kubernetes
 kubeconfig*
 *.kubeconfig
+*_kubeconfig.yaml
+*_kustomization_backup.yaml
 *secret.yaml
 !apps/webapp/infra/k8s/**/*secret.yaml
 experimental/
+
+# Local infra tooling downloads
+infra/hetzner-k8s/bin/
