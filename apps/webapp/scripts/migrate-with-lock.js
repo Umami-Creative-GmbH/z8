@@ -8,9 +8,26 @@ if (!Number.isInteger(lockId)) {
   throw new Error("DB_MIGRATION_LOCK_ID must be an integer.");
 }
 
-const databaseUrl = process.env.DATABASE_URL;
+const databaseUrl =
+  process.env.DATABASE_URL ||
+  (() => {
+    const host = process.env.POSTGRES_HOST;
+    const port = process.env.POSTGRES_PORT;
+    const database = process.env.POSTGRES_DB;
+    const user = process.env.POSTGRES_USER;
+    const password = process.env.POSTGRES_PASSWORD;
+
+    if (!host || !port || !database || !user || !password) {
+      return null;
+    }
+
+    return `postgresql://${encodeURIComponent(user)}:${encodeURIComponent(password)}@${host}:${port}/${database}`;
+  })();
+
 if (!databaseUrl) {
-  throw new Error("DATABASE_URL is required to run migrations.");
+  throw new Error(
+    "DATABASE_URL is required, or POSTGRES_HOST/POSTGRES_PORT/POSTGRES_DB/POSTGRES_USER/POSTGRES_PASSWORD must all be set."
+  );
 }
 
 const migrateCommand =

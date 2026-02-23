@@ -185,17 +185,20 @@ FROM base AS migration
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/webapp/node_modules ./apps/webapp/node_modules
 
-# Copy database schema and drizzle config
-COPY --from=workspace /app/apps/webapp/src/db ./apps/webapp/src/db
+# Copy webapp files needed for migration execution
+# Include full src to support path aliases (e.g. @/...) when drizzle reads schema files.
+COPY --from=workspace /app/apps/webapp/src ./apps/webapp/src
+COPY --from=workspace /app/apps/webapp/scripts ./apps/webapp/scripts
+COPY --from=workspace /app/apps/webapp/drizzle ./apps/webapp/drizzle
 COPY --from=workspace /app/apps/webapp/drizzle.config.ts ./apps/webapp/
 COPY --from=workspace /app/apps/webapp/package.json ./apps/webapp/
 COPY --from=workspace /app/apps/webapp/tsconfig.json ./apps/webapp/
 
 WORKDIR /app/apps/webapp
 
-# Run migrations using drizzle-kit push
-# This syncs the schema with the database (creates/alters tables)
-CMD ["pnpm", "exec", "drizzle-kit", "push"]
+# Run migrations under an advisory lock
+# Uses DATABASE_URL if provided, or falls back to POSTGRES_* variables.
+CMD ["node", "./scripts/migrate-with-lock.js"]
 
 # =============================================================================
 # Stage 9: db-seed - One-shot database seeder
