@@ -147,7 +147,6 @@ COPY --from=webapp-builder --chown=nextjs:nodejs /app/apps/webapp/.next ./apps/w
 COPY --from=workspace --chown=nextjs:nodejs /app/apps/webapp/public ./apps/webapp/public
 COPY --from=workspace --chown=nextjs:nodejs /app/apps/webapp/package.json ./apps/webapp/
 COPY --from=workspace --chown=nextjs:nodejs /app/apps/webapp/next.config.ts ./apps/webapp/
-COPY --from=workspace --chown=nextjs:nodejs /app/apps/webapp/cache-handler.js ./apps/webapp/
 
 # Copy workspace config for pnpm/next to work correctly
 COPY --from=workspace --chown=nextjs:nodejs /app/package.json ./
