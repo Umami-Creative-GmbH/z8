@@ -27,15 +27,6 @@ const nextConfig: NextConfig = {
 	turbopack: {
 		root: workspaceRoot,
 	},
-	// Use Valkey for distributed caching (skip in CI build to reduce noisy logs)
-	...(process.env.VALKEY_HOST && process.env.CI !== "true"
-		? {
-				cacheHandlers: {
-					default: require.resolve("./cache-handler.js"),
-				},
-				cacheMaxMemorySize: 0, // Disable in-memory cache, use Valkey only
-			}
-		: {}),
 	devIndicators: {
 		position: "bottom-right",
 	},
