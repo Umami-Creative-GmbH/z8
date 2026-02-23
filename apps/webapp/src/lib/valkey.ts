@@ -3,6 +3,10 @@ import { createLogger } from "@/lib/logger";
 import { env } from "@/env";
 
 const logger = createLogger("Valkey");
+const hasValkeyConfig = Boolean(env.VALKEY_HOST || env.REDIS_HOST);
+const shouldDisableValkeyDuringBuild =
+	process.env.NEXT_PHASE === "phase-production-build" ||
+	(process.env.CI === "true" && !hasValkeyConfig);
 
 // Singleton pattern for Valkey connection
 const globalForValkey = globalThis as unknown as {
@@ -24,7 +28,7 @@ function createValkeyClient(): Redis {
 			// Exponential backoff: 50ms, 100ms, 200ms... capped at 2s
 			return Math.min(times * 50, 2000);
 		},
-		lazyConnect: false,
+		lazyConnect: true,
 		enableReadyCheck: true,
 		enableOfflineQueue: true,
 		// Reconnect automatically on connection loss
@@ -93,6 +97,10 @@ export async function publishNotificationEvent(
  */
 export const secondaryStorage = {
 	get: async (key: string): Promise<string | null> => {
+		if (shouldDisableValkeyDuringBuild) {
+			return null;
+		}
+
 		try {
 			return await valkey.get(key);
 		} catch (error) {
@@ -101,6 +109,10 @@ export const secondaryStorage = {
 		}
 	},
 	set: async (key: string, value: string, ttl?: number): Promise<void> => {
+		if (shouldDisableValkeyDuringBuild) {
+			return;
+		}
+
 		try {
 			if (ttl) {
 				await valkey.set(key, value, "EX", ttl);
@@ -112,6 +124,10 @@ export const secondaryStorage = {
 		}
 	},
 	delete: async (key: string): Promise<void> => {
+		if (shouldDisableValkeyDuringBuild) {
+			return;
+		}
+
 		try {
 			await valkey.del(key);
 		} catch (error) {

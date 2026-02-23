@@ -22,6 +22,44 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: z8
+          POSTGRES_USER: z8
+          POSTGRES_PASSWORD: z8
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U z8 -d z8"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+      valkey:
+        image: valkey/valkey:8-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "valkey-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      CI: "true"
+      SKIP_ENV_VALIDATION: "1"
+      BETTER_AUTH_SECRET: ci-build-secret
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: z8
+      POSTGRES_USER: z8
+      POSTGRES_PASSWORD: z8
+      VALKEY_HOST: localhost
+      VALKEY_PORT: "6379"
+      REDIS_HOST: localhost
+      REDIS_PORT: "6379"
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -42,8 +80,6 @@ jobs:
 
       - name: Build webapp
         run: pnpm --filter webapp run build
-        env:
-          SKIP_ENV_VALIDATION: "1"
 
   publish-images:
     name: Publish Images

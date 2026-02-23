@@ -16,12 +16,21 @@ export function toServerActionResult<T>(exit: Exit.Exit<T, AnyAppError>): Server
 			const failure = Option.getOrNull(Cause.failureOption(cause));
 
 			const error = defect ?? failure ?? cause;
+			const taggedError =
+				error && typeof error === "object" && "_tag" in error
+					? (error as AnyAppError)
+					: null;
+			const isBuildPhase = process.env.NEXT_PHASE === "phase-production-build";
+			const isCi = process.env.CI === "true";
+			const suppressExpectedAuthErrorLog =
+				taggedError?._tag === "AuthenticationError" && (isBuildPhase || isCi);
 
-			// Log error for debugging
-			console.error("[ServerAction Error]", error);
+			if (!suppressExpectedAuthErrorLog) {
+				console.error("[ServerAction Error]", error);
+			}
 
-			if (error && typeof error === "object" && "_tag" in error) {
-				const appError = error as AnyAppError;
+			if (taggedError) {
+				const appError = taggedError;
 				const result: ServerActionResult<T> = {
 					success: false,
 					error: appError.message,
