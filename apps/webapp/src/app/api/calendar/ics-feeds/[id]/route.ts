@@ -6,17 +6,15 @@
  * DELETE /api/calendar/ics-feeds/[id] - Delete/deactivate feed
  */
 
-import crypto from "crypto";
 import { and, eq } from "drizzle-orm";
-import { type NextRequest, NextResponse } from "next/server";
-import { connection } from "next/server";
 import { headers } from "next/headers";
+import { connection, type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/db";
 import { employee, icsFeed } from "@/db/schema";
+import { getDefaultAppBaseUrl } from "@/lib/app-url";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
-import { ForbiddenError, toHttpError } from "@/lib/authorization";
 
 // ============================================
 // VALIDATION
@@ -32,7 +30,7 @@ const updateFeedSchema = z.object({
 // ============================================
 
 function buildFeedUrl(secret: string): string {
-	const baseUrl = process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+	const baseUrl = getDefaultAppBaseUrl();
 	return `${baseUrl}/api/calendar/ics/${secret}`;
 }
 
@@ -40,7 +38,11 @@ async function verifyFeedAccess(
 	feedId: string,
 	userId: string,
 	organizationId: string,
-): Promise<{ feed: typeof icsFeed.$inferSelect; employee: typeof employee.$inferSelect; canAccess: boolean } | null> {
+): Promise<{
+	feed: typeof icsFeed.$inferSelect;
+	employee: typeof employee.$inferSelect;
+	canAccess: boolean;
+} | null> {
 	const feed = await db.query.icsFeed.findFirst({
 		where: and(
 			eq(icsFeed.id, feedId),
@@ -52,10 +54,7 @@ async function verifyFeedAccess(
 	if (!feed) return null;
 
 	const emp = await db.query.employee.findFirst({
-		where: and(
-			eq(employee.userId, userId),
-			eq(employee.organizationId, organizationId),
-		),
+		where: and(eq(employee.userId, userId), eq(employee.organizationId, organizationId)),
 	});
 
 	if (!emp) return null;
@@ -80,10 +79,7 @@ async function verifyFeedAccess(
 // GET - Get feed details
 // ============================================
 
-export async function GET(
-	_request: NextRequest,
-	{ params }: { params: Promise<{ id: string }> },
-) {
+export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
 	await connection();
 
 	try {
@@ -126,10 +122,7 @@ export async function GET(
 // PATCH - Update feed settings
 // ============================================
 
-export async function PATCH(
-	request: NextRequest,
-	{ params }: { params: Promise<{ id: string }> },
-) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
 	await connection();
 
 	try {

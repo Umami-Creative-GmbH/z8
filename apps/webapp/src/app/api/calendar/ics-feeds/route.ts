@@ -7,14 +7,14 @@
  * POST /api/calendar/ics-feeds - Create a new feed
  */
 
-import crypto from "crypto";
+import crypto from "node:crypto";
 import { and, eq } from "drizzle-orm";
-import { type NextRequest, NextResponse } from "next/server";
-import { connection } from "next/server";
 import { headers } from "next/headers";
+import { connection, type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/db";
 import { employee, icsFeed, team } from "@/db/schema";
+import { getDefaultAppBaseUrl } from "@/lib/app-url";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
 import { ForbiddenError, toHttpError } from "@/lib/authorization";
@@ -39,7 +39,7 @@ function generateFeedSecret(): string {
 }
 
 function buildFeedUrl(secret: string): string {
-	const baseUrl = process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+	const baseUrl = getDefaultAppBaseUrl();
 	return `${baseUrl}/api/calendar/ics/${secret}`;
 }
 
@@ -65,10 +65,7 @@ export async function GET(_request: NextRequest) {
 
 		// Get employee record
 		const emp = await db.query.employee.findFirst({
-			where: and(
-				eq(employee.userId, session.user.id),
-				eq(employee.organizationId, activeOrgId),
-			),
+			where: and(eq(employee.userId, session.user.id), eq(employee.organizationId, activeOrgId)),
 		});
 
 		if (!emp) {
@@ -181,10 +178,7 @@ export async function POST(request: NextRequest) {
 
 		// Get employee record
 		const emp = await db.query.employee.findFirst({
-			where: and(
-				eq(employee.userId, session.user.id),
-				eq(employee.organizationId, activeOrgId),
-			),
+			where: and(eq(employee.userId, session.user.id), eq(employee.organizationId, activeOrgId)),
 		});
 
 		if (!emp) {
@@ -197,10 +191,7 @@ export async function POST(request: NextRequest) {
 		// Validate based on feed type
 		if (feedType === "team") {
 			if (!teamId) {
-				return NextResponse.json(
-					{ error: "teamId is required for team feeds" },
-					{ status: 400 },
-				);
+				return NextResponse.json({ error: "teamId is required for team feeds" }, { status: 400 });
 			}
 
 			// Only users who can manage calendars can create team feeds

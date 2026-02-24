@@ -1,19 +1,19 @@
-import { NextRequest, NextResponse } from "next/server";
-import { connection } from "next/server";
-import { headers } from "next/headers";
-import { Effect } from "effect";
 import { count, eq } from "drizzle-orm";
-import { auth } from "@/lib/auth";
+import { Effect } from "effect";
+import { headers } from "next/headers";
+import { connection, type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { member, organization } from "@/db/auth-schema";
+import { getDefaultAppBaseUrl } from "@/lib/app-url";
+import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
-import { createLogger } from "@/lib/logger";
 import {
 	StripeService,
 	StripeServiceLive,
 	SubscriptionService,
 	SubscriptionServiceLive,
 } from "@/lib/effect/services/billing";
+import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("BillingCheckout");
 
@@ -64,6 +64,7 @@ export async function POST(request: NextRequest) {
 	const program = Effect.gen(function* () {
 		const stripeService = yield* StripeService;
 		const subscriptionService = yield* SubscriptionService;
+		const appUrl = getDefaultAppBaseUrl();
 
 		// Check if subscription already exists
 		const existing = yield* subscriptionService.getByOrganization(organizationId);
@@ -84,10 +85,7 @@ export async function POST(request: NextRequest) {
 
 		// Count current members for initial seats
 		const [memberCountResult] = yield* Effect.promise(() =>
-			db
-				.select({ count: count() })
-				.from(member)
-				.where(eq(member.organizationId, organizationId)),
+			db.select({ count: count() }).from(member).where(eq(member.organizationId, organizationId)),
 		);
 		const seatCount = Math.max(memberCountResult?.count ?? 1, 1);
 
@@ -123,25 +121,19 @@ export async function POST(request: NextRequest) {
 			priceId,
 			organizationId: org.id,
 			quantity: seatCount,
-			successUrl: `${process.env.NEXT_PUBLIC_APP_URL}/settings/billing?success=true`,
-			cancelUrl: `${process.env.NEXT_PUBLIC_APP_URL}/settings/billing?canceled=true`,
+			successUrl: `${appUrl}/settings/billing?success=true`,
+			cancelUrl: `${appUrl}/settings/billing?canceled=true`,
 			trialPeriodDays: 14,
 		});
 
-		logger.info(
-			{ organizationId, customerId, interval, seatCount },
-			"Checkout session created",
-		);
+		logger.info({ organizationId, customerId, interval, seatCount }, "Checkout session created");
 
 		return { url: checkoutSession.url };
 	});
 
 	try {
 		const result = await Effect.runPromise(
-			program.pipe(
-				Effect.provide(StripeServiceLive),
-				Effect.provide(SubscriptionServiceLive),
-			),
+			program.pipe(Effect.provide(StripeServiceLive), Effect.provide(SubscriptionServiceLive)),
 		);
 		return NextResponse.json(result);
 	} catch (error) {

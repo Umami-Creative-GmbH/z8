@@ -1,13 +1,14 @@
 import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
-import { type NextRequest, NextResponse, connection } from "next/server";
+import { connection, type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
+import { getDefaultAppBaseUrl } from "@/lib/app-url";
 import { auth } from "@/lib/auth";
 
 function getCorsHeaders(origin: string | null): Record<string, string> {
-	const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+	const appUrl = getDefaultAppBaseUrl();
 	const allowedOrigins = [
 		appUrl,
 		"tauri://localhost", // Tauri desktop app
@@ -94,7 +95,7 @@ export async function POST(request: NextRequest) {
 			},
 			{ headers: corsHeaders },
 		);
-	} catch (error) {
+	} catch (_error) {
 		return NextResponse.json(
 			{ error: "Failed to switch organization" },
 			{ status: 500, headers: corsHeaders },

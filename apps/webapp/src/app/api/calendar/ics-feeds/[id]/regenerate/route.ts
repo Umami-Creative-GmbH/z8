@@ -6,13 +6,13 @@
  * POST /api/calendar/ics-feeds/[id]/regenerate
  */
 
-import crypto from "crypto";
+import crypto from "node:crypto";
 import { and, eq } from "drizzle-orm";
-import { type NextRequest, NextResponse } from "next/server";
-import { connection } from "next/server";
 import { headers } from "next/headers";
+import { connection, type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { employee, icsFeed } from "@/db/schema";
+import { getDefaultAppBaseUrl } from "@/lib/app-url";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
 import { ForbiddenError, toHttpError } from "@/lib/authorization";
@@ -26,7 +26,7 @@ function generateFeedSecret(): string {
 }
 
 function buildFeedUrl(secret: string): string {
-	const baseUrl = process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+	const baseUrl = getDefaultAppBaseUrl();
 	return `${baseUrl}/api/calendar/ics/${secret}`;
 }
 
@@ -34,10 +34,7 @@ function buildFeedUrl(secret: string): string {
 // POST - Regenerate secret
 // ============================================
 
-export async function POST(
-	_request: NextRequest,
-	{ params }: { params: Promise<{ id: string }> },
-) {
+export async function POST(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
 	await connection();
 
 	try {
@@ -69,10 +66,7 @@ export async function POST(
 
 		// Get employee
 		const emp = await db.query.employee.findFirst({
-			where: and(
-				eq(employee.userId, session.user.id),
-				eq(employee.organizationId, activeOrgId),
-			),
+			where: and(eq(employee.userId, session.user.id), eq(employee.organizationId, activeOrgId)),
 		});
 
 		if (!emp) {
@@ -117,9 +111,6 @@ export async function POST(
 		});
 	} catch (error) {
 		console.error("Error regenerating ICS feed secret:", error);
-		return NextResponse.json(
-			{ error: "Failed to regenerate feed secret" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Failed to regenerate feed secret" }, { status: 500 });
 	}
 }

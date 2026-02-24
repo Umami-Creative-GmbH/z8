@@ -8,15 +8,16 @@
  * GET /api/calendar/oauth/callback/microsoft365
  */
 
-import crypto from "crypto";
+import crypto from "node:crypto";
 import { and, eq } from "drizzle-orm";
+import { Effect } from "effect";
 import { type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { calendarConnection, employee } from "@/db/schema";
+import { getDefaultAppBaseUrl } from "@/lib/app-url";
 import { getCalendarProvider, isProviderSupported } from "@/lib/calendar-sync/providers";
 import { storeCalendarTokens } from "@/lib/calendar-sync/token-store";
 import type { CalendarProvider } from "@/lib/calendar-sync/types";
-import { Effect } from "effect";
 
 // ============================================
 // TYPES
@@ -116,7 +117,7 @@ export async function GET(
 		}
 
 		// Build redirect URI (must match the one used to initiate)
-		const baseUrl = process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+		const baseUrl = getDefaultAppBaseUrl();
 		const redirectUri = `${baseUrl}/api/calendar/oauth/callback/${provider}`;
 
 		// Validate employee and exchange tokens in parallel (independent operations)
@@ -128,9 +129,7 @@ export async function GET(
 					eq(employee.organizationId, statePayload.organizationId),
 				),
 			}),
-			Effect.runPromise(
-				calendarProvider.exchangeCodeForTokens({ code, state }, redirectUri),
-			),
+			Effect.runPromise(calendarProvider.exchangeCodeForTokens({ code, state }, redirectUri)),
 		]);
 
 		if (!emp) {
@@ -147,11 +146,10 @@ export async function GET(
 
 		if (existingConnection) {
 			// Store tokens in Vault
-			await storeCalendarTokens(
-				statePayload.organizationId,
-				existingConnection.id,
-				{ accessToken: tokens.accessToken, refreshToken: tokens.refreshToken },
-			);
+			await storeCalendarTokens(statePayload.organizationId, existingConnection.id, {
+				accessToken: tokens.accessToken,
+				refreshToken: tokens.refreshToken,
+			});
 
 			// Update existing connection (sentinel values in DB)
 			await db
@@ -170,34 +168,34 @@ export async function GET(
 				.where(eq(calendarConnection.id, existingConnection.id));
 		} else {
 			// Create new connection first to get the ID
-			const [newConnection] = await db.insert(calendarConnection).values({
-				employeeId: statePayload.employeeId,
-				organizationId: statePayload.organizationId,
-				provider,
-				providerAccountId: tokens.providerAccountId,
-				accessToken: "vault:managed",
-				refreshToken: tokens.refreshToken ? "vault:managed" : null,
-				expiresAt: tokens.expiresAt,
-				scope: tokens.scope,
-				calendarId: "primary", // Default to primary calendar
-				isActive: true,
-				pushEnabled: true,
-				conflictDetectionEnabled: true,
-				updatedAt: new Date(),
-			}).returning({ id: calendarConnection.id });
+			const [newConnection] = await db
+				.insert(calendarConnection)
+				.values({
+					employeeId: statePayload.employeeId,
+					organizationId: statePayload.organizationId,
+					provider,
+					providerAccountId: tokens.providerAccountId,
+					accessToken: "vault:managed",
+					refreshToken: tokens.refreshToken ? "vault:managed" : null,
+					expiresAt: tokens.expiresAt,
+					scope: tokens.scope,
+					calendarId: "primary", // Default to primary calendar
+					isActive: true,
+					pushEnabled: true,
+					conflictDetectionEnabled: true,
+					updatedAt: new Date(),
+				})
+				.returning({ id: calendarConnection.id });
 
 			// Store tokens in Vault
-			await storeCalendarTokens(
-				statePayload.organizationId,
-				newConnection.id,
-				{ accessToken: tokens.accessToken, refreshToken: tokens.refreshToken },
-			);
+			await storeCalendarTokens(statePayload.organizationId, newConnection.id, {
+				accessToken: tokens.accessToken,
+				refreshToken: tokens.refreshToken,
+			});
 		}
 
 		// Redirect to settings page with success message
-		return NextResponse.redirect(
-			`${baseUrl}/settings/calendar?connected=${provider}`,
-		);
+		return NextResponse.redirect(`${baseUrl}/settings/calendar?connected=${provider}`);
 	} catch (error) {
 		console.error("Error completing calendar OAuth:", error);
 		return redirectWithError("Failed to connect calendar");
@@ -209,9 +207,7 @@ export async function GET(
 // ============================================
 
 function redirectWithError(message: string): NextResponse {
-	const baseUrl = process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+	const baseUrl = getDefaultAppBaseUrl();
 	const encodedMessage = encodeURIComponent(message);
-	return NextResponse.redirect(
-		`${baseUrl}/settings/calendar?error=${encodedMessage}`,
-	);
+	return NextResponse.redirect(`${baseUrl}/settings/calendar?error=${encodedMessage}`);
 }

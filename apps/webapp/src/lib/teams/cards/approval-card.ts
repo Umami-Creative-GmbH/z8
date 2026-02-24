@@ -6,9 +6,14 @@
  */
 
 import { DateTime } from "luxon";
-import type { ApprovalCardData, ApprovalCardResolvedData } from "../types";
-import { fmtWeekdayShortDate, fmtWeekdayShortDateYear, fmtWeekdayShortDateTime } from "@/lib/bot-platform/i18n";
+import { getDefaultAppBaseUrl } from "@/lib/app-url";
+import {
+	fmtWeekdayShortDate,
+	fmtWeekdayShortDateTime,
+	fmtWeekdayShortDateYear,
+} from "@/lib/bot-platform/i18n";
 import { DEFAULT_LANGUAGE } from "@/tolgee/shared";
+import type { ApprovalCardData, ApprovalCardResolvedData } from "../types";
 
 /**
  * Build an approval request Adaptive Card
@@ -118,7 +123,7 @@ export function buildApprovalCard(
 			{
 				type: "Action.OpenUrl",
 				title: "View in Z8",
-				url: `${process.env.NEXT_PUBLIC_APP_URL}/approvals/${data.approvalId}`,
+				url: `${getDefaultAppBaseUrl()}/approvals/${data.approvalId}`,
 			},
 		],
 	};
@@ -128,7 +133,10 @@ export function buildApprovalCard(
  * Build an approval card with Action.Submit buttons (for Bot Framework)
  * This version uses invoke actions that the bot can handle directly
  */
-export function buildApprovalCardWithInvoke(data: ApprovalCardData, locale: string = DEFAULT_LANGUAGE): Record<string, unknown> {
+export function buildApprovalCardWithInvoke(
+	data: ApprovalCardData,
+	locale: string = DEFAULT_LANGUAGE,
+): Record<string, unknown> {
 	const isAbsence = data.entityType === "absence_entry";
 	const title = isAbsence ? "Absence Request" : "Time Correction Request";
 	const accentColor = isAbsence ? "accent" : "warning";

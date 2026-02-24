@@ -7,6 +7,7 @@ import { headers } from "next/headers";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import { employee } from "@/db/schema";
+import { getOrganizationBaseUrl } from "@/lib/app-url";
 import { auth } from "@/lib/auth";
 import {
 	type AnyAppError,
@@ -1505,7 +1506,7 @@ async function sendOrganizationDeletionNotifications(
 	// Filter to only admins and owners
 	const adminsAndOwners = adminMembers.filter((m) => m.role === "admin" || m.role === "owner");
 
-	const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+	const appUrl = await getOrganizationBaseUrl(organizationId);
 	const recoveryUrl = `${appUrl}/settings/organizations`;
 	const permanentDeletionDate = new Date(deletionDate);
 	permanentDeletionDate.setDate(permanentDeletionDate.getDate() + 5);

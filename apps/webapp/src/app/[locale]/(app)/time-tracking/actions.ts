@@ -18,29 +18,31 @@ import {
 	workPolicy,
 	workPolicyPresence,
 } from "@/db/schema";
+import { getOrganizationBaseUrl } from "@/lib/app-url";
 import { auth } from "@/lib/auth";
 import { dateFromDB, dateToDB } from "@/lib/datetime/drizzle-adapter";
 import { AuthorizationError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
-import { DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/database.service";
-import { EmailService } from "@/lib/effect/services/email.service";
-import { SurchargeService, SurchargeServiceLive } from "@/lib/effect/services/surcharge.service";
 import {
-	WorkPolicyService,
-	WorkPolicyServiceLive,
-} from "@/lib/effect/services/work-policy.service";
-import {
+	type BreakEnforcementResult,
 	BreakEnforcementService,
 	BreakEnforcementServiceLive,
-	type BreakEnforcementResult,
 } from "@/lib/effect/services/break-enforcement.service";
 import {
 	ChangePolicyService,
 	ChangePolicyServiceLive,
 	type EditCapability,
 } from "@/lib/effect/services/change-policy.service";
+import { DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/database.service";
+import { EmailService } from "@/lib/effect/services/email.service";
+import { SurchargeService, SurchargeServiceLive } from "@/lib/effect/services/surcharge.service";
+import type { ComplianceWarning } from "@/lib/effect/services/work-policy.service";
+import {
+	WorkPolicyService,
+	WorkPolicyServiceLive,
+} from "@/lib/effect/services/work-policy.service";
 import { renderTimeCorrectionPendingApproval } from "@/lib/email/render";
 import { createLogger } from "@/lib/logger";
 import {
@@ -51,7 +53,6 @@ import {
 	onClockOutPendingApproval,
 	onClockOutPendingApprovalToManager,
 } from "@/lib/notifications/triggers";
-import type { ComplianceWarning } from "@/lib/effect/services/work-policy.service";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
 import { isSameDayInTimezone } from "@/lib/time-tracking/time-utils";
 import {
@@ -684,7 +685,9 @@ export async function requestTimeCorrectionEffect(
 			]),
 		);
 
-		const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+		const appUrl = yield* _(
+			Effect.promise(() => getOrganizationBaseUrl(currentEmployee.organizationId)),
+		);
 		const formatDate = (date: Date) =>
 			date.toLocaleDateString("en-US", {
 				month: "short",
@@ -1582,7 +1585,6 @@ export async function createTimeEntry(params: {
 // Re-export Effect functions with cleaner names (backward compatibility)
 export const requestTimeCorrection = requestTimeCorrectionEffect;
 
-
 /**
  * Get break reminder status for the currently active session
  * Returns information about break requirements and whether a break is needed soon
@@ -2121,7 +2123,14 @@ export async function getAssignedProjects(): Promise<ServerActionResult<Assigned
 		// Combine and deduplicate projects
 		const bookableProjects = new Map<
 			string,
-			{ id: string; name: string; color: string | null; status: string; budgetHours: string | null; deadline: Date | null }
+			{
+				id: string;
+				name: string;
+				color: string | null;
+				status: string;
+				budgetHours: string | null;
+				deadline: Date | null;
+			}
 		>();
 
 		for (const assignment of [...directAssignments, ...teamAssignments]) {
@@ -2474,7 +2483,6 @@ export async function getWorkPeriodEditCapability(workPeriodId: string): Promise
 		return { success: false, error: "Failed to check edit permissions" };
 	}
 }
-
 
 /**
  * Input for creating a manual time entry
@@ -2939,9 +2947,7 @@ async function createManualEntryApprovalRequest(params: {
  * Get presence status for an employee
  * Returns on-site requirement progress for the current evaluation period
  */
-export async function getPresenceStatus(
-	employeeId: string,
-): Promise<
+export async function getPresenceStatus(employeeId: string): Promise<
 	ServerActionResult<{
 		required: number;
 		actual: number;
@@ -2950,7 +2956,9 @@ export async function getPresenceStatus(
 		presenceEnabled: boolean;
 	}>
 > {
-	const parsed = z.object({ employeeId: z.string().uuid("Invalid employee ID") }).safeParse({ employeeId });
+	const parsed = z
+		.object({ employeeId: z.string().uuid("Invalid employee ID") })
+		.safeParse({ employeeId });
 	if (!parsed.success) {
 		return { success: false as const, error: parsed.error.issues[0]?.message || "Invalid input" };
 	}
@@ -3074,10 +3082,7 @@ export async function getPresenceStatus(
 		// Count on-site days
 		const onsiteDates = new Set<string>();
 		for (const period of periods) {
-			if (
-				period.workLocationType === "office" ||
-				period.workLocationType === "field"
-			) {
+			if (period.workLocationType === "office" || period.workLocationType === "field") {
 				const dateStr = DateTime.fromJSDate(period.startTime).toISODate();
 				if (dateStr) onsiteDates.add(dateStr);
 			}

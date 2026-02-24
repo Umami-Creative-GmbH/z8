@@ -1,8 +1,8 @@
 import { passkey } from "@better-auth/passkey";
 import { scim } from "@better-auth/scim";
 import { sso } from "@better-auth/sso";
-import { betterAuth } from "better-auth/minimal";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { betterAuth } from "better-auth/minimal";
 import { nextCookies } from "better-auth/next-js";
 import { admin, apiKey, bearer, organization, twoFactor } from "better-auth/plugins";
 import { and, eq } from "drizzle-orm";
@@ -10,15 +10,16 @@ import { db } from "@/db";
 import * as schema from "@/db/auth-schema";
 import {
 	employee,
-	teamPermissions,
-	scimProviderConfig,
-	scimProvisioningLog,
 	roleTemplate,
 	roleTemplateMapping,
-	userRoleTemplateAssignment,
+	scimProviderConfig,
+	scimProvisioningLog,
+	teamPermissions,
 	userLifecycleEvent,
+	userRoleTemplateAssignment,
 } from "@/db/schema";
-import { getDomainConfig, getDomainConfigByOrganization } from "./domain/domain-service";
+import { getDefaultAppBaseUrl, getOrganizationBaseUrl } from "./app-url";
+import { getDomainConfig } from "./domain/domain-service";
 import { sendEmail } from "./email/email-service";
 import {
 	renderEmailVerification,
@@ -47,36 +48,13 @@ async function getUserPrimaryOrganizationId(userId: string): Promise<string | un
 	}
 }
 
-/**
- * Get the base URL for an organization, using their custom domain if verified
- */
-async function getBaseUrlForOrganization(organizationId?: string): Promise<string> {
-	const defaultUrl = process.env.BETTER_AUTH_URL || "http://localhost:3000";
-
-	if (!organizationId) return defaultUrl;
-
-	try {
-		const domainConfig = await getDomainConfigByOrganization(organizationId);
-		if (domainConfig?.domainVerified) {
-			return `https://${domainConfig.domain}`;
-		}
-	} catch (error) {
-		logger.warn({ error, organizationId }, "Failed to get custom domain for organization");
-	}
-
-	return defaultUrl;
-}
-
 export const auth = betterAuth({
 	baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
 
 	// Dynamic trusted origins for custom domains
 	// This allows auth requests from verified custom domains that proxy to the app
 	trustedOrigins: async (request) => {
-		const origins = [
-			process.env.BETTER_AUTH_URL || "http://localhost:3000",
-			process.env.NEXT_PUBLIC_APP_URL,
-		].filter(Boolean) as string[];
+		const origins = [getDefaultAppBaseUrl()];
 
 		if (!request) return origins;
 
@@ -161,7 +139,7 @@ export const auth = betterAuth({
 		sendResetPassword: async ({ user, url }, _request) => {
 			// Look up user's org for org-specific email config and custom domain
 			const organizationId = await getUserPrimaryOrganizationId(user.id);
-			const appUrl = await getBaseUrlForOrganization(organizationId);
+			const appUrl = await getOrganizationBaseUrl(organizationId);
 
 			// Rewrite URL to use correct base (organization's custom domain if available)
 			const urlObj = new URL(url);
@@ -186,7 +164,7 @@ export const auth = betterAuth({
 		sendVerificationEmail: async ({ user, url, token }, _request) => {
 			// Look up user's org for org-specific email config and custom domain
 			const organizationId = await getUserPrimaryOrganizationId(user.id);
-			const appUrl = await getBaseUrlForOrganization(organizationId);
+			const appUrl = await getOrganizationBaseUrl(organizationId);
 
 			// Rewrite URL to use correct base (organization's custom domain if available)
 			const urlObj = new URL(url);
@@ -356,7 +334,7 @@ export const auth = betterAuth({
 			},
 			sendInvitationEmail: async (data) => {
 				// Use organization's custom domain if verified
-				const appUrl = await getBaseUrlForOrganization(data.organization.id);
+				const appUrl = await getOrganizationBaseUrl(data.organization.id);
 				const invitationUrl = `${appUrl}/accept-invitation/${data.invitation.id}`;
 
 				const html = await renderOrganizationInvitation({
@@ -446,17 +424,16 @@ export const auth = betterAuth({
 
 							const program = Effect.gen(function* () {
 								const seatSyncService = yield* SeatSyncService;
-								yield* seatSyncService.handleMemberAdded(
-									organization.id,
-									member.id,
-									user.id,
-								);
+								yield* seatSyncService.handleMemberAdded(organization.id, member.id, user.id);
 							});
 
 							await Effect.runPromise(program.pipe(Effect.provide(layers)));
 						} catch (error) {
 							// Log but don't fail - seat sync is non-blocking
-							logger.error({ error, organizationId: organization.id }, "Failed to sync seats after member added");
+							logger.error(
+								{ error, organizationId: organization.id },
+								"Failed to sync seats after member added",
+							);
 						}
 					}
 				},
@@ -489,7 +466,10 @@ export const auth = betterAuth({
 
 							await Effect.runPromise(program.pipe(Effect.provide(layers)));
 						} catch (error) {
-							logger.error({ error, organizationId: organization.id }, "Failed to sync seats after member removed");
+							logger.error(
+								{ error, organizationId: organization.id },
+								"Failed to sync seats after member removed",
+							);
 						}
 					}
 				},
@@ -581,7 +561,10 @@ export const auth = betterAuth({
 				if (member && member.role !== "admin" && member.role !== "owner") {
 					throw new Error("Only organization admins can generate SCIM tokens");
 				}
-				logger.info({ userId: user.id, memberRole: member?.role }, "SCIM token generation requested");
+				logger.info(
+					{ userId: user.id, memberRole: member?.role },
+					"SCIM token generation requested",
+				);
 			},
 			afterSCIMTokenGenerated: async ({ user, scimProvider }) => {
 				// Log SCIM provider creation for audit

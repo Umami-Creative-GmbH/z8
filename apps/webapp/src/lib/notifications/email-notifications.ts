@@ -7,6 +7,7 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
+import { getOrganizationBaseUrl } from "@/lib/app-url";
 import { sendEmail } from "@/lib/email/email-service";
 import {
 	renderAbsenceRequestApproved,
@@ -24,8 +25,6 @@ import { createLogger } from "@/lib/logger";
 import type { NotificationType } from "./types";
 
 const logger = createLogger("EmailNotifications");
-
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
 interface EmailNotificationParams {
 	userId: string;
@@ -82,6 +81,7 @@ export async function sendEmailNotification(params: EmailNotificationParams): Pr
 		}
 
 		const userName = await getUserName(userId);
+		const appUrl = await getOrganizationBaseUrl(organizationId);
 
 		let html: string | null = null;
 		let subject = title;
@@ -97,7 +97,7 @@ export async function sendEmailNotification(params: EmailNotificationParams): Pr
 						absenceType: String(metadata.absenceType || ""),
 						days: Number(metadata.days || 0),
 						managerName: String(metadata.managerName || "your manager"),
-						appUrl: APP_URL,
+						appUrl,
 					});
 					subject = "Absence Request Submitted";
 				}
@@ -112,7 +112,7 @@ export async function sendEmailNotification(params: EmailNotificationParams): Pr
 						endDate: String(metadata.endDate || ""),
 						absenceType: String(metadata.absenceType || ""),
 						days: Number(metadata.days || 0),
-						appUrl: APP_URL,
+						appUrl,
 					});
 					subject = "Absence Request Approved";
 				}
@@ -128,7 +128,7 @@ export async function sendEmailNotification(params: EmailNotificationParams): Pr
 						absenceType: String(metadata.absenceType || ""),
 						days: Number(metadata.days || 0),
 						rejectionReason: String(metadata.rejectionReason || "No reason provided"),
-						appUrl: APP_URL,
+						appUrl,
 					});
 					subject = "Absence Request Rejected";
 				}
@@ -145,7 +145,7 @@ export async function sendEmailNotification(params: EmailNotificationParams): Pr
 						absenceType: String(metadata.absenceType || ""),
 						days: Number(metadata.days || 0),
 						notes: metadata.notes ? String(metadata.notes) : undefined,
-						approvalUrl: `${APP_URL}/approvals`,
+						approvalUrl: `${appUrl}/approvals`,
 					});
 					subject = "New Absence Request Pending Approval";
 				}
@@ -163,7 +163,7 @@ export async function sendEmailNotification(params: EmailNotificationParams): Pr
 						correctedClockIn: String(metadata.correctedClockIn || ""),
 						correctedClockOut: String(metadata.correctedClockOut || ""),
 						reason: String(metadata.reason || ""),
-						approvalUrl: `${APP_URL}/approvals`,
+						approvalUrl: `${appUrl}/approvals`,
 					});
 					subject = "New Time Correction Pending Approval";
 				}
@@ -177,7 +177,7 @@ export async function sendEmailNotification(params: EmailNotificationParams): Pr
 						date: String(metadata.date || ""),
 						correctedClockIn: String(metadata.correctedClockIn || ""),
 						correctedClockOut: String(metadata.correctedClockOut || ""),
-						appUrl: APP_URL,
+						appUrl,
 					});
 					subject = "Time Correction Approved";
 				}
@@ -192,7 +192,7 @@ export async function sendEmailNotification(params: EmailNotificationParams): Pr
 						correctedClockIn: String(metadata.correctedClockIn || ""),
 						correctedClockOut: String(metadata.correctedClockOut || ""),
 						rejectionReason: String(metadata.rejectionReason || "No reason provided"),
-						appUrl: APP_URL,
+						appUrl,
 					});
 					subject = "Time Correction Rejected";
 				}
@@ -204,8 +204,8 @@ export async function sendEmailNotification(params: EmailNotificationParams): Pr
 						memberName: userName,
 						teamName: String(metadata.teamName || ""),
 						addedByName: String(metadata.addedByName || ""),
-						teamUrl: `${APP_URL}/settings/teams/${metadata.teamId || ""}`,
-						appUrl: APP_URL,
+						teamUrl: `${appUrl}/settings/teams/${metadata.teamId || ""}`,
+						appUrl,
 					});
 					subject = `You've been added to ${metadata.teamName}`;
 				}
@@ -217,7 +217,7 @@ export async function sendEmailNotification(params: EmailNotificationParams): Pr
 						memberName: userName,
 						teamName: String(metadata.teamName || ""),
 						removedByName: String(metadata.removedByName || ""),
-						appUrl: APP_URL,
+						appUrl,
 					});
 					subject = `You've been removed from ${metadata.teamName}`;
 				}
@@ -230,8 +230,8 @@ export async function sendEmailNotification(params: EmailNotificationParams): Pr
 					timestamp: new Date().toLocaleString(),
 					ipAddress: metadata?.ipAddress ? String(metadata.ipAddress) : undefined,
 					userAgent: metadata?.userAgent ? String(metadata.userAgent) : undefined,
-					securitySettingsUrl: `${APP_URL}/settings/security`,
-					appUrl: APP_URL,
+					securitySettingsUrl: `${appUrl}/settings/security`,
+					appUrl,
 				});
 				subject = "Security Alert: Password Changed";
 				break;
@@ -243,8 +243,8 @@ export async function sendEmailNotification(params: EmailNotificationParams): Pr
 					timestamp: new Date().toLocaleString(),
 					ipAddress: metadata?.ipAddress ? String(metadata.ipAddress) : undefined,
 					userAgent: metadata?.userAgent ? String(metadata.userAgent) : undefined,
-					securitySettingsUrl: `${APP_URL}/settings/security`,
-					appUrl: APP_URL,
+					securitySettingsUrl: `${appUrl}/settings/security`,
+					appUrl,
 				});
 				subject = "Security Alert: Two-Factor Authentication Enabled";
 				break;
@@ -256,8 +256,8 @@ export async function sendEmailNotification(params: EmailNotificationParams): Pr
 					timestamp: new Date().toLocaleString(),
 					ipAddress: metadata?.ipAddress ? String(metadata.ipAddress) : undefined,
 					userAgent: metadata?.userAgent ? String(metadata.userAgent) : undefined,
-					securitySettingsUrl: `${APP_URL}/settings/security`,
-					appUrl: APP_URL,
+					securitySettingsUrl: `${appUrl}/settings/security`,
+					appUrl,
 				});
 				subject = "Security Alert: Two-Factor Authentication Disabled";
 				break;

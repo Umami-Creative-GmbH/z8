@@ -8,22 +8,23 @@
  * GET /api/calendar/oauth/microsoft365
  */
 
-import crypto from "crypto";
+import crypto from "node:crypto";
 import { eq } from "drizzle-orm";
+import { headers } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { employee } from "@/db/schema";
+import { getDefaultAppBaseUrl } from "@/lib/app-url";
+import { auth } from "@/lib/auth";
 import { getCalendarProvider, isProviderSupported } from "@/lib/calendar-sync/providers";
 import type { CalendarProvider } from "@/lib/calendar-sync/types";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
 
 // ============================================
 // ROUTE HANDLER
 // ============================================
 
 export async function GET(
-	request: NextRequest,
+	_request: NextRequest,
 	{ params }: { params: Promise<{ provider: string }> },
 ) {
 	const { provider: providerParam } = await params;
@@ -58,10 +59,7 @@ export async function GET(
 		// Get the active organization from session
 		const activeOrgId = session.session.activeOrganizationId;
 		if (!activeOrgId) {
-			return NextResponse.json(
-				{ error: "No active organization" },
-				{ status: 400 },
-			);
+			return NextResponse.json({ error: "No active organization" }, { status: 400 });
 		}
 
 		// Get employee record
@@ -89,18 +87,15 @@ export async function GET(
 		if (!secret) {
 			throw new Error("BETTER_AUTH_SECRET is required for OAuth state signing");
 		}
-		const signature = crypto
-			.createHmac("sha256", secret)
-			.update(payloadStr)
-			.digest("hex");
+		const signature = crypto.createHmac("sha256", secret).update(payloadStr).digest("hex");
 
 		// Combine payload and signature
-		const state = Buffer.from(
-			JSON.stringify({ payload: payloadStr, signature }),
-		).toString("base64url");
+		const state = Buffer.from(JSON.stringify({ payload: payloadStr, signature })).toString(
+			"base64url",
+		);
 
 		// Build redirect URI
-		const baseUrl = process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+		const baseUrl = getDefaultAppBaseUrl();
 		const redirectUri = `${baseUrl}/api/calendar/oauth/callback/${provider}`;
 
 		// Get the provider and generate auth URL
@@ -114,9 +109,6 @@ export async function GET(
 		return NextResponse.redirect(authUrl);
 	} catch (error) {
 		console.error("Error initiating calendar OAuth:", error);
-		return NextResponse.json(
-			{ error: "Failed to initiate calendar connection" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Failed to initiate calendar connection" }, { status: 500 });
 	}
 }

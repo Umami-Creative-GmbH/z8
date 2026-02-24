@@ -5,7 +5,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import type { SocialOAuthProvider } from "@/db/schema";
-import { env } from "@/env";
+import { getBaseUrlFromHost } from "@/lib/app-url";
 import { createLogger } from "@/lib/logger";
 import {
 	exchangeCode,
@@ -265,7 +265,7 @@ async function handleCallback(
 	try {
 		// Build redirect URI
 		const host = request.headers.get("host");
-		const baseUrl = env.NEXT_PUBLIC_APP_URL || `https://${host}`;
+		const baseUrl = getBaseUrlFromHost(host);
 		const redirectUri = `${baseUrl}/api/auth/callback/social-org/${provider}`;
 
 		// Exchange code for tokens

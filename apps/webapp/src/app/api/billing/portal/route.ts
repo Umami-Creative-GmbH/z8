@@ -1,16 +1,16 @@
-import { NextRequest, NextResponse } from "next/server";
-import { connection } from "next/server";
-import { headers } from "next/headers";
 import { Effect } from "effect";
+import { headers } from "next/headers";
+import { connection, type NextRequest, NextResponse } from "next/server";
+import { getDefaultAppBaseUrl } from "@/lib/app-url";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
-import { createLogger } from "@/lib/logger";
 import {
 	StripeService,
 	StripeServiceLive,
 	SubscriptionService,
 	SubscriptionServiceLive,
 } from "@/lib/effect/services/billing";
+import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("BillingPortal");
 
@@ -49,12 +49,13 @@ export async function POST(request: NextRequest) {
 	}
 
 	// Parse body for return URL
+	const appUrl = getDefaultAppBaseUrl();
 	let returnUrl: string;
 	try {
 		const body = await request.json();
-		returnUrl = body.returnUrl || `${process.env.NEXT_PUBLIC_APP_URL}/settings/billing`;
+		returnUrl = body.returnUrl || `${appUrl}/settings/billing`;
 	} catch {
-		returnUrl = `${process.env.NEXT_PUBLIC_APP_URL}/settings/billing`;
+		returnUrl = `${appUrl}/settings/billing`;
 	}
 
 	const program = Effect.gen(function* () {
@@ -84,10 +85,7 @@ export async function POST(request: NextRequest) {
 
 	try {
 		const result = await Effect.runPromise(
-			program.pipe(
-				Effect.provide(StripeServiceLive),
-				Effect.provide(SubscriptionServiceLive),
-			),
+			program.pipe(Effect.provide(StripeServiceLive), Effect.provide(SubscriptionServiceLive)),
 		);
 		return NextResponse.json(result);
 	} catch (error) {

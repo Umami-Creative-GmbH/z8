@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 import type { SocialOAuthProvider } from "@/db/schema";
-import { env } from "@/env";
+import { getBaseUrlFromHost } from "@/lib/app-url";
 import { getDomainConfig } from "@/lib/domain/domain-service";
 import { createLogger } from "@/lib/logger";
 import {
@@ -88,7 +88,7 @@ export async function GET(
 	});
 
 	// Build redirect URI
-	const baseUrl = env.NEXT_PUBLIC_APP_URL || `https://${host}`;
+	const baseUrl = getBaseUrlFromHost(host);
 	const redirectUri = `${baseUrl}/api/auth/callback/social-org/${provider}`;
 
 	// Build authorization URL

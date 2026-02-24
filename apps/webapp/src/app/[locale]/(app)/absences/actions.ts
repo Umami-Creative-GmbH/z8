@@ -24,6 +24,7 @@ import type {
 	VacationBalance,
 } from "@/lib/absences/types";
 import { calculateVacationBalance } from "@/lib/absences/vacation-calculator";
+import { getOrganizationBaseUrl } from "@/lib/app-url";
 import { auth } from "@/lib/auth";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { ConflictError, NotFoundError, ValidationError } from "@/lib/effect/errors";
@@ -296,7 +297,9 @@ export async function requestAbsenceEffect(
 						]),
 					);
 
-					const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+					const appUrl = yield* _(
+						Effect.promise(() => getOrganizationBaseUrl(currentEmployee.organizationId)),
+					);
 					// Format YYYY-MM-DD date strings for display
 					const formatDate = (dateStr: string) => {
 						const dt = DateTime.fromISO(dateStr);

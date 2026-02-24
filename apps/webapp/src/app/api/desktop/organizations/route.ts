@@ -4,10 +4,11 @@ import { connection, NextResponse } from "next/server";
 import { db } from "@/db";
 import { member, organization } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
+import { getDefaultAppBaseUrl } from "@/lib/app-url";
 import { auth } from "@/lib/auth";
 
 function getCorsHeaders(origin: string | null): Record<string, string> {
-	const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+	const appUrl = getDefaultAppBaseUrl();
 	const allowedOrigins = [
 		appUrl,
 		"tauri://localhost", // Tauri desktop app
@@ -70,22 +71,6 @@ export async function GET(request: Request) {
 			);
 		}
 
-		// Get organization details
-		const orgs = await db
-			.select({
-				id: organization.id,
-				name: organization.name,
-				slug: organization.slug,
-				logo: organization.logo,
-			})
-			.from(organization)
-			.where(
-				and(
-					eq(organization.id, memberships[0].organizationId),
-					// Add more org IDs via OR if needed
-				),
-			);
-
 		// Build full org list with employee status
 		const organizationsWithDetails = await Promise.all(
 			memberships.map(async (m) => {
@@ -126,7 +111,7 @@ export async function GET(request: Request) {
 			},
 			{ headers: corsHeaders },
 		);
-	} catch (error) {
+	} catch (_error) {
 		return NextResponse.json(
 			{ error: "Internal server error" },
 			{ status: 500, headers: corsHeaders },

@@ -13,6 +13,7 @@ import {
 	workPeriod,
 } from "@/db/schema";
 import { calculateBusinessDays } from "@/lib/absences/date-utils";
+import { getOrganizationBaseUrl } from "@/lib/app-url";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { type AnyAppError, AuthorizationError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
@@ -297,7 +298,9 @@ export async function approveAbsenceEffect(absenceId: string): Promise<ServerAct
 				);
 
 				const days = calculateBusinessDays(absence.startDate, absence.endDate, holidays);
-				const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+				const appUrl = yield* _(
+					Effect.promise(() => getOrganizationBaseUrl(absence.employee.organizationId)),
+				);
 
 				const formatDate = (date: Date) =>
 					date.toLocaleDateString("en-US", {
@@ -409,7 +412,9 @@ export async function rejectAbsenceEffect(
 				);
 
 				const days = calculateBusinessDays(absence.startDate, absence.endDate, holidays);
-				const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+				const appUrl = yield* _(
+					Effect.promise(() => getOrganizationBaseUrl(absence.employee.organizationId)),
+				);
 
 				const formatDate = (date: Date) =>
 					date.toLocaleDateString("en-US", {

@@ -8,7 +8,8 @@
  */
 
 import { eq } from "drizzle-orm";
-import { dataExport, db, employee, organization, user } from "@/db";
+import { dataExport, db, employee, organization } from "@/db";
+import { getDefaultAppBaseUrl } from "@/lib/app-url";
 import { sendEmail } from "@/lib/email/email-service";
 import { renderExportFailed, renderExportReady } from "@/lib/email/render";
 import { CATEGORY_LABELS, type ExportCategory } from "@/lib/export/data-fetchers";
@@ -140,7 +141,7 @@ async function sendFailureEmail(exportRecord: ExportRecord): Promise<void> {
 		);
 
 		// Build retry URL (settings page)
-		const retryUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/settings/export`;
+		const retryUrl = `${getDefaultAppBaseUrl()}/settings/export`;
 
 		const html = await renderExportFailed({
 			recipientName: requester.name,

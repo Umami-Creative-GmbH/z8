@@ -5,6 +5,7 @@
  */
 
 import { render } from "@react-email/components";
+import { getDefaultAppBaseUrl } from "@/lib/app-url";
 import { sendEmail } from "@/lib/email/email-service";
 import { ManagerAssignedEmail } from "@/lib/email/templates/manager-assigned";
 import { createLogger } from "@/lib/logger";
@@ -28,7 +29,7 @@ export async function sendManagerAssignedNotification(
 	params: ManagerAssignmentNotificationParams,
 ): Promise<void> {
 	try {
-		const dashboardUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+		const dashboardUrl = getDefaultAppBaseUrl();
 
 		// Render email template
 		const emailHtml = await render(
@@ -100,7 +101,7 @@ export async function sendManagerRemovedNotification(
 	params: ManagerRemovalNotificationParams,
 ): Promise<void> {
 	try {
-		const dashboardUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+		const dashboardUrl = getDefaultAppBaseUrl();
 
 		// Simple text email for removal
 		const employeeEmailHtml = `
