@@ -3,16 +3,21 @@
 import {
 	IconCheck,
 	IconCopy,
-	IconDownload,
 	IconLoader2,
 	IconPlus,
 	IconQrcode,
 	IconTrash,
 } from "@tabler/icons-react";
-import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
+import type { InviteCodeWithRelations } from "@/app/[locale]/(app)/settings/organizations/invite-code-actions";
+import {
+	deleteInviteCode,
+	getInviteBaseUrl,
+	listInviteCodes,
+} from "@/app/[locale]/(app)/settings/organizations/invite-code-actions";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -41,12 +46,6 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import {
-	listInviteCodes,
-	deleteInviteCode,
-	generateInviteQRCode,
-} from "@/app/[locale]/(app)/settings/organizations/invite-code-actions";
-import type { InviteCodeWithRelations } from "@/app/[locale]/(app)/settings/organizations/invite-code-actions";
 import { queryKeys } from "@/lib/query";
 import { InviteCodeDialog } from "./invite-code-dialog";
 import { InviteCodeQRDialog } from "./invite-code-qr-dialog";
@@ -85,6 +84,19 @@ export function InviteCodeManagement({
 
 	const inviteCodes = inviteCodesResult?.success ? inviteCodesResult.data : [];
 
+	const { data: inviteBaseUrlResult } = useQuery({
+		queryKey: ["invite-base-url", organizationId],
+		queryFn: () => getInviteBaseUrl(organizationId),
+		enabled: canManage,
+	});
+
+	const inviteBaseUrl =
+		inviteBaseUrlResult?.success && inviteBaseUrlResult.data
+			? inviteBaseUrlResult.data
+			: typeof window !== "undefined"
+				? window.location.origin
+				: "";
+
 	// Delete mutation
 	const deleteMutation = useMutation({
 		mutationFn: async (inviteCodeId: string) => {
@@ -102,7 +114,7 @@ export function InviteCodeManagement({
 	});
 
 	const handleCopyCode = async (code: string) => {
-		const joinUrl = `${window.location.origin}/join/${code}`;
+		const joinUrl = `${inviteBaseUrl}/join/${code}`;
 		await navigator.clipboard.writeText(joinUrl);
 		setCopiedCode(code);
 		toast.success(t("settings.inviteCodes.urlCopied", "Invite URL copied to clipboard"));
@@ -307,6 +319,7 @@ export function InviteCodeManagement({
 			<InviteCodeQRDialog
 				inviteCode={qrDialogCode}
 				organizationId={organizationId}
+				inviteBaseUrl={inviteBaseUrl}
 				open={!!qrDialogCode}
 				onOpenChange={(open) => {
 					if (!open) setQrDialogCode(null);

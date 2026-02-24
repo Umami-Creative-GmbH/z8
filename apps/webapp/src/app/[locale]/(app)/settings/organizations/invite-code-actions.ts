@@ -6,6 +6,7 @@ import { Effect, Layer } from "effect";
 import { z } from "zod";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
+import { getOrganizationBaseUrl } from "@/lib/app-url";
 import {
 	type AnyAppError,
 	AuthorizationError,
@@ -16,21 +17,21 @@ import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/resul
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/database.service";
-import {
-	InviteCodeService,
-	InviteCodeServiceLive,
-} from "@/lib/effect/services/invite-code.service";
 import type {
 	InviteCodeWithRelations as InviteCodeWithRelationsType,
 	ValidateInviteCodeResult,
 } from "@/lib/effect/services/invite-code.service";
 import {
+	InviteCodeService,
+	InviteCodeServiceLive,
+} from "@/lib/effect/services/invite-code.service";
+import type { ApprovalResult, PendingMember } from "@/lib/effect/services/pending-member.service";
+import {
 	PendingMemberService,
 	PendingMemberServiceLive,
 } from "@/lib/effect/services/pending-member.service";
-import type { PendingMember, ApprovalResult } from "@/lib/effect/services/pending-member.service";
+import type { QRCodeFormat, QRCodeResult } from "@/lib/effect/services/qrcode.service";
 import { QRCodeService, QRCodeServiceLive } from "@/lib/effect/services/qrcode.service";
-import type { QRCodeResult, QRCodeFormat } from "@/lib/effect/services/qrcode.service";
 
 // Note: Types are NOT re-exported from server action files due to Turbopack bundling issues.
 // Import types directly from the service files:
@@ -40,6 +41,7 @@ import type { QRCodeResult, QRCodeFormat } from "@/lib/effect/services/qrcode.se
 // LEGACY: Re-exporting for backward compatibility with existing components
 // TODO: Migrate components to import directly from service files
 export type { InviteCodeWithRelations } from "@/lib/effect/services/invite-code.service";
+
 import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("InviteCodeActions");
@@ -588,8 +590,7 @@ export async function generateInviteQRCode(
 				}
 
 				// Generate QR code
-				const baseUrl =
-					process.env.NEXT_PUBLIC_APP_URL || process.env.BETTER_AUTH_URL || "http://localhost:3000";
+				const baseUrl = yield* _(Effect.promise(() => getOrganizationBaseUrl(organizationId)));
 				const qrResult = yield* _(
 					qrCodeService.generateInviteQR(inviteCode!.code, baseUrl, format).pipe(
 						Effect.mapError(
@@ -630,6 +631,48 @@ export async function generateRandomCode(): Promise<ServerActionResult<string>> 
 	const effect = Effect.gen(function* (_) {
 		const inviteCodeService = yield* _(InviteCodeService);
 		return yield* _(inviteCodeService.generateCode());
+	});
+
+	return runServerActionSafe(effect.pipe(Effect.provide(InviteCodeLayer)));
+}
+
+/**
+ * Get base URL used for invite links for the organization.
+ * Uses verified custom domain when available.
+ */
+export async function getInviteBaseUrl(
+	organizationId: string,
+): Promise<ServerActionResult<string>> {
+	const effect = Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
+		const dbService = yield* _(DatabaseService);
+
+		const memberRecord = yield* _(
+			dbService.query("getCurrentMember", async () => {
+				return await db.query.member.findFirst({
+					where: and(
+						eq(authSchema.member.userId, session.user.id),
+						eq(authSchema.member.organizationId, organizationId),
+					),
+				});
+			}),
+		);
+
+		if (!memberRecord || (memberRecord.role !== "admin" && memberRecord.role !== "owner")) {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Only admins and owners can access invite links",
+						userId: session.user.id,
+						resource: "inviteCode",
+						action: "read",
+					}),
+				),
+			);
+		}
+
+		return yield* _(Effect.promise(() => getOrganizationBaseUrl(organizationId)));
 	});
 
 	return runServerActionSafe(effect.pipe(Effect.provide(InviteCodeLayer)));

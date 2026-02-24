@@ -5,6 +5,10 @@ import { useMutation } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
+import {
+	generateInviteQRCode,
+	type InviteCodeWithRelations,
+} from "@/app/[locale]/(app)/settings/organizations/invite-code-actions";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -15,14 +19,11 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-	generateInviteQRCode,
-	type InviteCodeWithRelations,
-} from "@/app/[locale]/(app)/settings/organizations/invite-code-actions";
 
 interface InviteCodeQRDialogProps {
 	inviteCode: InviteCodeWithRelations | null;
 	organizationId: string;
+	inviteBaseUrl: string;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 }
@@ -30,6 +31,7 @@ interface InviteCodeQRDialogProps {
 export function InviteCodeQRDialog({
 	inviteCode,
 	organizationId,
+	inviteBaseUrl,
 	open,
 	onOpenChange,
 }: InviteCodeQRDialogProps) {
@@ -113,9 +115,9 @@ export function InviteCodeQRDialog({
 		toast.success(t("settings.inviteCodes.qrDownloaded", "QR code downloaded"));
 	};
 
-	const joinUrl = inviteCode
-		? `${typeof window !== "undefined" ? window.location.origin : ""}/join/${inviteCode.code}`
-		: "";
+	const fallbackBaseUrl = typeof window !== "undefined" ? window.location.origin : "";
+	const resolvedBaseUrl = inviteBaseUrl || fallbackBaseUrl;
+	const joinUrl = inviteCode ? `${resolvedBaseUrl}/join/${inviteCode.code}` : "";
 
 	return (
 		<Dialog open={open} onOpenChange={handleOpenChange}>
