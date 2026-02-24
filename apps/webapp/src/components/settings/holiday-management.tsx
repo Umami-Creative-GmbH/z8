@@ -102,8 +102,8 @@ export function HolidayManagement({ organizationId }: HolidayManagementProps) {
 	}, []);
 
 	const handleHolidaySuccess = useCallback(() => {
-		queryClient.invalidateQueries({ queryKey: queryKeys.holidays.list(organizationId) });
-	}, [queryClient, organizationId]);
+		queryClient.invalidateQueries({ queryKey: queryKeys.holidays.all });
+	}, [queryClient]);
 
 	// Category handlers - memoized
 	const handleAddCategoryClick = useCallback(() => {

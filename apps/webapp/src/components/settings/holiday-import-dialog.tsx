@@ -9,7 +9,7 @@ import {
 	IconLoader2,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
 	bulkAddHolidaysToPreset,
@@ -123,7 +123,7 @@ export function HolidayImportDialog({
 	const currentYear = new Date().getFullYear();
 	const yearOptions = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i);
 
-	async function loadCountries() {
+	const loadCountries = useCallback(async () => {
 		setCountriesLoading(true);
 		const response = await fetch("/api/location/countries").catch((error) => {
 			console.error("Failed to load countries:", error);
@@ -144,7 +144,34 @@ export function HolidayImportDialog({
 		}
 
 		setCountriesLoading(false);
-	}
+	}, []);
+
+	const resetDialogState = useCallback(() => {
+		setStep(1);
+		setSelectedCountry("");
+		setSelectedState("");
+		setSelectedRegion("");
+		setSelectedYear(new Date().getFullYear());
+		setSelectedTypes(["public"]);
+		setHolidays([]);
+		setSelectedHolidays(new Set());
+		setStates([]);
+		setRegions([]);
+		setPresetName("");
+		setPresetColor("#4F46E5");
+		setSetAsOrgDefault(false);
+	}, []);
+
+	useEffect(() => {
+		if (!open) {
+			resetDialogState();
+			return;
+		}
+
+		if (countries.length === 0) {
+			void loadCountries();
+		}
+	}, [open, countries.length, loadCountries, resetDialogState]);
 
 	async function loadStates(country: string) {
 		setStatesLoading(true);
@@ -368,32 +395,8 @@ export function HolidayImportDialog({
 		setImportLoading(false);
 	}
 
-	function resetDialogState() {
-		setStep(1);
-		setSelectedCountry("");
-		setSelectedState("");
-		setSelectedRegion("");
-		setSelectedYear(new Date().getFullYear());
-		setSelectedTypes(["public"]);
-		setHolidays([]);
-		setSelectedHolidays(new Set());
-		setStates([]);
-		setRegions([]);
-		setPresetName("");
-		setPresetColor("#4F46E5");
-		setSetAsOrgDefault(false);
-	}
-
 	function handleDialogOpenChange(nextOpen: boolean) {
 		onOpenChange(nextOpen);
-		if (nextOpen) {
-			if (countries.length === 0) {
-				loadCountries();
-			}
-			return;
-		}
-
-		resetDialogState();
 	}
 
 	function handleCountryChange(countryCode: string) {
