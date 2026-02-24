@@ -38,9 +38,9 @@ export function AuthFormWrapper({
 	return (
 		<div className={cn("flex flex-col gap-6", className)} style={customStyles} {...props}>
 			<Card className="overflow-hidden p-0">
-				<CardContent className="relative p-0">
+				<CardContent className="p-0 md:grid md:grid-cols-2">
 					<form
-						className="relative z-20 w-full bg-card p-6 md:w-1/2 md:p-8"
+						className="w-full bg-card p-6 md:p-8"
 						method="post"
 						{...formProps}
 					>
@@ -63,7 +63,7 @@ export function AuthFormWrapper({
 							{children}
 						</div>
 					</form>
-					<div className="absolute inset-0 z-10 bg-muted">
+					<div className="relative hidden bg-muted md:block">
 						{branding?.backgroundImageUrl ? (
 							<Image
 								alt={`${appName} background`}
