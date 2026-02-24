@@ -7,8 +7,8 @@ import Image from "next/image";
 import { useTransition } from "react";
 import { toast } from "sonner";
 import {
-	saveSageConfigAction,
 	type SageConfigResult,
+	saveSageConfigAction,
 } from "@/app/[locale]/(app)/settings/payroll-export/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -58,7 +58,8 @@ export function SageConfigForm({
 	const [isPending, startTransition] = useTransition();
 
 	const form = useForm({
-		defaultValues: (initialConfig?.config ?? DEFAULT_CONFIG) satisfies SageLohnConfig,
+		defaultValues: (initialConfig?.config ??
+			DEFAULT_CONFIG) satisfies SageLohnConfig,
 		onSubmit: async ({ value }) => {
 			startTransition(async () => {
 				const result = await saveSageConfigAction({
@@ -92,7 +93,7 @@ export function SageConfigForm({
 				<div className="flex items-center justify-between">
 					<div className="flex items-center gap-4">
 						<Image
-							src="/sage.svg"
+							src="/sage.png"
 							alt="Sage Logo"
 							width={48}
 							height={48}

@@ -1,5 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
-  <rect width="48" height="48" rx="8" fill="#0066B3"/>
-  <path d="M12 14h4v16h8v4H12V14z" fill="white"/>
-  <path d="M26 14h4l3 10 3-10h4l-5 20h-4l-5-20z" fill="white"/>
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Ebene_1" data-name="Ebene 1" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 198.43 198.43">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #ff4554;
+        stroke-width: 0px;
+      }
+    </style>
+  </defs>
+  <polygon class="cls-1" points="127.71 106.47 105.48 133.9 123.89 156.61 136.38 156.61 152.37 156.61 168.34 156.61 127.71 106.47"/>
+  <polygon class="cls-1" points="167.22 40.92 152.37 40.92 152.37 40.93 152.37 40.93 152.37 40.92 136.38 40.93 136.38 40.92 123.86 40.92 105.46 63.63 127.71 91.06 127.71 91.06 168.34 40.92 167.22 40.92"/>
+  <polygon class="cls-1" points="97.53 69.24 74.59 40.92 29.93 40.92 29.93 40.92 52.87 69.24 76.8 98.77 52.87 128.3 29.92 156.61 73.47 156.61 74.59 156.61 97.53 128.3 121.46 98.77 97.53 69.24"/>
 </svg>

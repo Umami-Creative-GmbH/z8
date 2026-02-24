@@ -1,6 +1,6 @@
-import type { NextConfig } from "next";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
 
 const withNextIntl = createNextIntlPlugin();
@@ -16,7 +16,7 @@ const nextConfig: NextConfig = {
 	// Components using connection() will still be dynamic
 	cacheComponents: true,
 	images: {
-		unoptimized: true,
+		unoptimized: false,
 	},
 	experimental: {
 		optimizePackageImports: [
