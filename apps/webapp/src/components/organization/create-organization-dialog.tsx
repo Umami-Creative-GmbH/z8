@@ -4,6 +4,7 @@ import { IconBuilding, IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useStore } from "@tanstack/react-store";
 import { useTranslate } from "@tolgee/react";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -21,7 +22,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { authClient } from "@/lib/auth-client";
 import { generateSlug } from "@/lib/validations/organization";
-import { useRouter } from "@/navigation";
 
 interface CreateOrganizationDialogProps {
 	open: boolean;
@@ -76,7 +76,9 @@ export function CreateOrganizationDialog({
 			}
 
 			if (result.error) {
-				toast.error(result.error.message || t("organization.createError", "Failed to create organization"));
+				toast.error(
+					result.error.message || t("organization.createError", "Failed to create organization"),
+				);
 				setLoading(false);
 				return;
 			}
@@ -227,11 +229,11 @@ export function CreateOrganizationDialog({
 								<div className="relative">
 									<Input
 										value={field.state.value}
-									onChange={(e) => {
-										slugManuallyEdited.current = true;
-										setSlugError(null);
-										field.handleChange(e.target.value);
-									}}
+										onChange={(e) => {
+											slugManuallyEdited.current = true;
+											setSlugError(null);
+											field.handleChange(e.target.value);
+										}}
 										onBlur={field.handleBlur}
 										placeholder={t("organization.slugPlaceholder", "acme-inc")}
 										disabled={loading}
