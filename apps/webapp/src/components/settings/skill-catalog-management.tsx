@@ -65,7 +65,6 @@ import {
 	createSkill,
 	updateSkill,
 	deleteSkill,
-	getOrganizationSkills,
 } from "@/app/[locale]/(app)/settings/skills/actions";
 import type { SkillWithRelations } from "@/lib/effect/services/skill.service";
 import { queryKeys } from "@/lib/query/keys";
@@ -110,9 +109,16 @@ export function SkillCatalogManagement({ organizationId }: SkillCatalogManagemen
 	} = useQuery({
 		queryKey: queryKeys.skills.list(organizationId, false),
 		queryFn: async () => {
-			const result = await getOrganizationSkills({ includeInactive: false });
-			if (!result.success) throw new Error(result.error ?? "Unknown error");
-			return result.data;
+			const response = await fetch("/api/settings/skills?includeInactive=false", {
+				method: "GET",
+			});
+
+			const result = await response.json().catch(() => null);
+			if (!response.ok || !result?.success) {
+				throw new Error(result?.error ?? t("common.error-occurred", "An error occurred"));
+			}
+
+			return result.data as SkillWithRelations[];
 		},
 	});
 
