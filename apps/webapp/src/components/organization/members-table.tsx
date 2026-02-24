@@ -15,7 +15,7 @@ import {
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
 	cancelInvitation,
@@ -52,6 +52,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserAvatar } from "@/components/user-avatar";
 import { formatRelative as formatDistanceToNow } from "@/lib/datetime/luxon-utils";
 import { queryKeys } from "@/lib/query";
@@ -85,13 +86,14 @@ export function MembersTable({
 	const [memberSearch, setMemberSearch] = useState("");
 	const [invitationSearch, setInvitationSearch] = useState("");
 
-	// Sync with props when they change
-	if (initialMembers !== members && initialMembers.length !== members.length) {
+	// Sync local state when server-provided props change
+	useEffect(() => {
 		setMembers(initialMembers);
-	}
-	if (initialInvitations !== invitations && initialInvitations.length !== invitations.length) {
+	}, [initialMembers]);
+
+	useEffect(() => {
 		setInvitations(initialInvitations);
-	}
+	}, [initialInvitations]);
 
 	const isOwner = currentMemberRole === "owner";
 	const isAdmin = currentMemberRole === "admin";
@@ -553,9 +555,62 @@ export function MembersTable({
 
 	return (
 		<div className="space-y-6">
-			{/* Pending Invitations */}
-			{invitations.length > 0 && (
-				<div className="space-y-4">
+			<Tabs defaultValue="members" className="space-y-4">
+				<TabsList className="grid w-full grid-cols-2">
+					<TabsTrigger value="members">
+						{t("organization.members.activeMembers", "Active Members")} ({members.length})
+					</TabsTrigger>
+					<TabsTrigger value="invitations">
+						{t("organization.members.pendingInvitations", "Pending Invitations")} (
+						{invitations.length})
+					</TabsTrigger>
+				</TabsList>
+
+				<TabsContent value="members" className="space-y-4">
+					<div className="flex items-center justify-between">
+						<div>
+							<h3 className="text-lg font-semibold">
+								{t("organization.members.activeMembers", "Active Members")}
+							</h3>
+							<p className="text-sm text-muted-foreground">
+								{t("organization.members.memberCount", "{count} member(s) in this organization", {
+									count: members.length,
+								})}
+							</p>
+						</div>
+					</div>
+
+					<DataTableToolbar
+						search={memberSearch}
+						onSearchChange={setMemberSearch}
+						searchPlaceholder={t("organization.members.searchMembers", "Search members...")}
+						actions={
+							onRefresh && (
+								<Button variant="outline" size="sm" onClick={onRefresh} disabled={isRefreshing}>
+									{isRefreshing ? (
+										<IconLoader2 className="h-4 w-4 animate-spin" />
+									) : (
+										<IconRefresh className="h-4 w-4" />
+									)}
+									<span className="ml-2">{t("common.refresh", "Refresh")}</span>
+								</Button>
+							)
+						}
+					/>
+
+					<DataTable
+						columns={memberColumns}
+						data={filteredMembers}
+						isFetching={isRefreshing}
+						emptyMessage={
+							memberSearch
+								? t("organization.members.noMemberResults", "No members match your search.")
+								: t("organization.members.noMembers", "No members in this organization.")
+						}
+					/>
+				</TabsContent>
+
+				<TabsContent value="invitations" className="space-y-4">
 					<div>
 						<h3 className="text-lg font-semibold">
 							{t("organization.members.pendingInvitations", "Pending Invitations")}
@@ -586,53 +641,8 @@ export function MembersTable({
 								: t("organization.members.noInvitations", "No pending invitations.")
 						}
 					/>
-				</div>
-			)}
-
-			{/* Active Members */}
-			<div className="space-y-4">
-				<div className="flex items-center justify-between">
-					<div>
-						<h3 className="text-lg font-semibold">
-							{t("organization.members.activeMembers", "Active Members")}
-						</h3>
-						<p className="text-sm text-muted-foreground">
-							{t("organization.members.memberCount", "{count} member(s) in this organization", {
-								count: members.length,
-							})}
-						</p>
-					</div>
-				</div>
-
-				<DataTableToolbar
-					search={memberSearch}
-					onSearchChange={setMemberSearch}
-					searchPlaceholder={t("organization.members.searchMembers", "Search members...")}
-					actions={
-						onRefresh && (
-							<Button variant="outline" size="sm" onClick={onRefresh} disabled={isRefreshing}>
-								{isRefreshing ? (
-									<IconLoader2 className="h-4 w-4 animate-spin" />
-								) : (
-									<IconRefresh className="h-4 w-4" />
-								)}
-								<span className="ml-2">{t("common.refresh", "Refresh")}</span>
-							</Button>
-						)
-					}
-				/>
-
-				<DataTable
-					columns={memberColumns}
-					data={filteredMembers}
-					isFetching={isRefreshing}
-					emptyMessage={
-						memberSearch
-							? t("organization.members.noMemberResults", "No members match your search.")
-							: t("organization.members.noMembers", "No members in this organization.")
-					}
-				/>
-			</div>
+				</TabsContent>
+			</Tabs>
 
 			{/* Remove Member Confirmation Dialog */}
 			<AlertDialog open={removeDialogOpen} onOpenChange={setRemoveDialogOpen}>
