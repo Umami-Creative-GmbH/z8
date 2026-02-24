@@ -2,7 +2,7 @@
 
 import { IconBuilding, IconCheck, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getLastOrganization, saveLastOrganization } from "@/lib/org-persistence";
 
@@ -20,13 +20,41 @@ type Status = "checking" | "selecting" | "activating" | "redirecting";
  */
 export default function InitPage() {
 	const { t } = useTranslate();
-	const hasInitialized = useRef(false);
 	const [status, setStatus] = useState<Status>("checking");
 	const [organizations, setOrganizations] = useState<Organization[]>([]);
 	const [selectedOrg, setSelectedOrg] = useState<string | null>(null);
 	const [isActivating, setIsActivating] = useState(false);
 
-	async function initializeSession() {
+	const activateOrganization = useCallback(async (orgId: string) => {
+		setStatus("activating");
+		setIsActivating(true);
+
+		const switchResponse = await fetch("/api/organizations/switch", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ organizationId: orgId }),
+		}).catch((error) => {
+			console.error("Failed to activate organization:", error);
+			setIsActivating(false);
+			// On error, still try to go to dashboard
+			window.location.assign("/");
+			return null;
+		});
+
+		if (!switchResponse) {
+			return;
+		}
+
+		if (switchResponse.ok) {
+			saveLastOrganization(orgId);
+		}
+
+		// Hard redirect to dashboard to get fresh server state
+		setStatus("redirecting");
+		window.location.assign("/");
+	}, []);
+
+	const initializeSession = useCallback(async () => {
 		// Check current session state
 		const response = await fetch("/api/session/organization-status").catch((error) => {
 			console.error("Failed to initialize session:", error);
@@ -99,52 +127,19 @@ export default function InitPage() {
 		// Multiple orgs and no saved preference - show selection UI
 		setOrganizations(orgs);
 		setStatus("selecting");
-	}
+	}, [activateOrganization]);
 
-	async function activateOrganization(orgId: string) {
-		setStatus("activating");
-		setIsActivating(true);
-
-		const switchResponse = await fetch("/api/organizations/switch", {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ organizationId: orgId }),
-		}).catch((error) => {
-			console.error("Failed to activate organization:", error);
-			setIsActivating(false);
-			// On error, still try to go to dashboard
-			window.location.assign("/");
-			return null;
-		});
-
-		if (!switchResponse) {
-			return;
-		}
-
-		if (switchResponse.ok) {
-			saveLastOrganization(orgId);
-		}
-
-		// Hard redirect to dashboard to get fresh server state
-		setStatus("redirecting");
-		window.location.assign("/");
-	}
-
-	async function handleSelectOrganization(orgId: string) {
-		setSelectedOrg(orgId);
-		await activateOrganization(orgId);
-	}
+	const handleSelectOrganization = useCallback(
+		async (orgId: string) => {
+			setSelectedOrg(orgId);
+			await activateOrganization(orgId);
+		},
+		[activateOrganization],
+	);
 
 	useEffect(() => {
-		if (hasInitialized.current) return;
-		hasInitialized.current = true;
-
-		const timer = setTimeout(() => {
-			void initializeSession();
-		}, 0);
-
-		return () => clearTimeout(timer);
-	}, []);
+		void initializeSession();
+	}, [initializeSession]);
 
 	// Show organization selection UI
 	if (status === "selecting") {
