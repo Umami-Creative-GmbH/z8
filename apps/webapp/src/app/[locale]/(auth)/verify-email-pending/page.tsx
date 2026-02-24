@@ -1,24 +1,39 @@
 "use client";
 
 import { useTranslate } from "@tolgee/react";
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { AuthFormWrapper } from "@/components/auth-form-wrapper";
 import { Button } from "@/components/ui/button";
-import { authClient } from "@/lib/auth-client";
+import { authClient, useSession } from "@/lib/auth-client";
 import { Link } from "@/navigation";
 
 export default function VerifyEmailPendingPage() {
 	const { t } = useTranslate();
+	const searchParams = useSearchParams();
+	const { data: session } = useSession();
 	const [isResending, setIsResending] = useState(false);
 	const [resendMessage, setResendMessage] = useState<string>("");
+	const email = (searchParams.get("email") || session?.user?.email || "").trim();
 
 	const handleResendEmail = async () => {
 		setIsResending(true);
 		setResendMessage("");
 
+		if (!email) {
+			setResendMessage(
+				t(
+					"auth.resend-verification-missing-email",
+					"Please return to sign in and enter your email address again.",
+				),
+			);
+			setIsResending(false);
+			return;
+		}
+
 		const result = await authClient
 			.sendVerificationEmail({
-				email: "", // The user's email should be stored in session
+				email,
 				callbackURL: "/verify-email",
 			})
 			.catch((error) => ({

@@ -371,7 +371,7 @@ export function SignupForm({ className, inviteCode, ...props }: SignupFormProps)
 						// Silently ignore - user can still join manually later
 					}
 				}
-				router.push("/verify-email-pending");
+				router.push(`/verify-email-pending?email=${encodeURIComponent(formData.email)}`);
 			}
 		} catch (err) {
 			setError(
