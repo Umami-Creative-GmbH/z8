@@ -2,17 +2,17 @@
 
 import { IconLoader2 } from "@tabler/icons-react";
 import { useTolgee, useTranslate } from "@tolgee/react";
-import { useState, useCallback, useRef } from "react";
+import { useCallback, useRef, useState } from "react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useDomainAuth, useTurnstile } from "@/lib/auth/domain-auth-context";
+import { useTurnstile } from "@/lib/auth/domain-auth-context";
 import { authClient } from "@/lib/auth-client";
 import { verifyTurnstileWithServer } from "@/lib/turnstile/verify";
 import { Link } from "@/navigation";
 import { AuthFormWrapper } from "./auth-form-wrapper";
-import { TurnstileWidget, type TurnstileRef } from "./turnstile-widget";
+import { type TurnstileRef, TurnstileWidget } from "./turnstile-widget";
 
 const forgotPasswordSchema = z.object({
 	email: z.string().email("Invalid email address"),
@@ -31,7 +31,6 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
 	const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
 	// Turnstile state
-	const domainAuth = useDomainAuth();
 	const turnstileConfig = useTurnstile();
 	const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
 	const turnstileRef = useRef<TurnstileRef>(null);
@@ -227,10 +226,7 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
 					name="email"
 					autoComplete="email"
 					onBlur={(e) => validateField("email", e.target.value)}
-					onChange={(e) => {
-						handleChange("email", e.target.value);
-						validateField("email", e.target.value);
-					}}
+					onChange={(e) => handleChange("email", e.target.value)}
 					placeholder={t("auth.email-placeholder", "m@example.com")}
 					required
 					type="email"

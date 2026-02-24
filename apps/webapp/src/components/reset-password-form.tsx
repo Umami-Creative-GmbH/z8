@@ -3,7 +3,7 @@
 import { IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { checkPasswordRequirements, passwordSchema } from "@/lib/validations/password";
-import { Link, useRouter } from "@/navigation";
+import { Link } from "@/navigation";
 import { AuthFormWrapper } from "./auth-form-wrapper";
 
 const resetPasswordSchema = z
@@ -26,7 +26,6 @@ const resetPasswordSchema = z
 
 export function ResetPasswordForm({ className, ...props }: React.ComponentProps<"div">) {
 	const { t } = useTranslate();
-	const router = useRouter();
 	const searchParams = useSearchParams();
 
 	const token = searchParams.get("token");
@@ -41,7 +40,10 @@ export function ResetPasswordForm({ className, ...props }: React.ComponentProps<
 	});
 	const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-	const passwordRequirements = checkPasswordRequirements(formData.password, t);
+	const passwordRequirements = useMemo(
+		() => checkPasswordRequirements(formData.password, t),
+		[formData.password, t],
+	);
 	const passwordsMatch =
 		formData.confirmPassword && formData.password && formData.confirmPassword === formData.password;
 
@@ -251,10 +253,7 @@ export function ResetPasswordForm({ className, ...props }: React.ComponentProps<
 					name="password"
 					autoComplete="new-password"
 					onBlur={(e) => validateField("password", e.target.value)}
-					onChange={(e) => {
-						handleChange("password", e.target.value);
-						validateField("password", e.target.value);
-					}}
+					onChange={(e) => handleChange("password", e.target.value)}
 					required
 					type="password"
 					value={formData.password}
@@ -290,10 +289,7 @@ export function ResetPasswordForm({ className, ...props }: React.ComponentProps<
 					name="confirmPassword"
 					autoComplete="new-password"
 					onBlur={(e) => validateField("confirmPassword", e.target.value)}
-					onChange={(e) => {
-						handleChange("confirmPassword", e.target.value);
-						validateField("confirmPassword", e.target.value);
-					}}
+					onChange={(e) => handleChange("confirmPassword", e.target.value)}
 					required
 					type="password"
 					value={formData.confirmPassword}

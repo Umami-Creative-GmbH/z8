@@ -2,8 +2,12 @@
 
 import { IconBuilding, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useState, useEffect, useCallback, useRef } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
+import {
+	storePendingInviteCode,
+	validateInviteCode,
+} from "@/app/[locale]/(auth)/invite-code-actions";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,16 +16,13 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { useDomainAuth, useTurnstile } from "@/lib/auth/domain-auth-context";
 import { authClient } from "@/lib/auth-client";
 import { useEnabledProviders } from "@/lib/hooks/use-enabled-providers";
+import type { SocialProvider, SocialProviderId } from "@/lib/social-providers";
 import { verifyTurnstileWithServer } from "@/lib/turnstile/verify";
 import { cn } from "@/lib/utils";
 import { checkPasswordRequirements, passwordSchema } from "@/lib/validations/password";
 import { Link, useRouter } from "@/navigation";
 import { AuthFormWrapper } from "./auth-form-wrapper";
-import { TurnstileWidget, type TurnstileRef } from "./turnstile-widget";
-import {
-	storePendingInviteCode,
-	validateInviteCode,
-} from "@/app/[locale]/(app)/settings/organizations/invite-code-actions";
+import { type TurnstileRef, TurnstileWidget } from "./turnstile-widget";
 
 const signupSchema = z
 	.object({
@@ -38,6 +39,106 @@ const signupSchema = z
 interface SignupFormProps extends React.ComponentProps<"div"> {
 	inviteCode?: string;
 }
+
+const SOCIAL_SKELETON_KEYS = [
+	"social-1",
+	"social-2",
+	"social-3",
+	"social-4",
+	"social-5",
+	"social-6",
+];
+
+type PasswordRequirementsListProps = {
+	passwordRequirements: ReturnType<typeof checkPasswordRequirements>;
+};
+
+const PasswordRequirementsList = memo(function PasswordRequirementsList({
+	passwordRequirements,
+}: PasswordRequirementsListProps) {
+	return (
+		<div className="space-y-1.5 text-sm">
+			{passwordRequirements.map((requirement) => (
+				<div
+					className={cn(
+						"flex items-center gap-2",
+						requirement.met ? "text-green-600 dark:text-green-400" : "text-muted-foreground",
+					)}
+					key={requirement.label}
+				>
+					<span className={cn(requirement.met ? "text-green-600" : "text-muted-foreground")}>
+						{requirement.met ? "✓" : "○"}
+					</span>
+					<span>{requirement.label}</span>
+				</div>
+			))}
+		</div>
+	);
+});
+
+type SignupSocialAuthProps = {
+	showEmailPassword: boolean;
+	filteredProviders: SocialProvider[];
+	providersLoading: boolean;
+	isLoading: boolean;
+	onSocialSignup: (provider: SocialProviderId) => void;
+};
+
+const SignupSocialAuth = memo(function SignupSocialAuth({
+	showEmailPassword,
+	filteredProviders,
+	providersLoading,
+	isLoading,
+	onSocialSignup,
+}: SignupSocialAuthProps) {
+	const { t } = useTranslate();
+
+	if (filteredProviders.length === 0) {
+		return null;
+	}
+
+	const skeletonCount = Math.max(filteredProviders.length, 4);
+
+	return (
+		<>
+			<div className="text-center text-sm">
+				<span className="relative z-10 px-2 text-muted-foreground">
+					{showEmailPassword
+						? t("auth.or-sign-up-with", "Or sign up with")
+						: t("auth.sign-up-with.label", "Sign up with")}
+				</span>
+			</div>
+			<div className="flex flex-wrap justify-center gap-2 *:w-1/4">
+				{providersLoading
+					? SOCIAL_SKELETON_KEYS.slice(0, skeletonCount).map((key) => (
+							<div key={key} className="h-10 animate-pulse rounded-md bg-muted" />
+						))
+					: filteredProviders.map((provider) => (
+							<Tooltip key={provider.id}>
+								<TooltipTrigger asChild>
+									<Button
+										type="button"
+										variant="outline"
+										onClick={() => onSocialSignup(provider.id)}
+										disabled={isLoading}
+									>
+										<provider.icon className="h-4 w-4" />
+										<span className="sr-only">
+											{t(`auth.sign-up-with.${provider.id}`, `Sign up with ${provider.name}`)}
+										</span>
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent>
+									<span className="text-sm">
+										{t(`auth.sign-up-with.${provider.id}`, `Sign up with ${provider.name}`)}
+									</span>
+								</TooltipContent>
+							</Tooltip>
+						))}
+			</div>
+		</>
+	);
+});
 
 export function SignupForm({ className, inviteCode, ...props }: SignupFormProps) {
 	const { t } = useTranslate();
@@ -106,12 +207,18 @@ export function SignupForm({ className, inviteCode, ...props }: SignupFormProps)
 	const allowedSocialProviders = authConfig?.socialProvidersEnabled ?? [];
 
 	// Filter social providers based on auth config
-	const filteredProviders =
-		allowedSocialProviders.length > 0
-			? enabledProviders.filter((p) => allowedSocialProviders.includes(p.id))
-			: enabledProviders;
+	const filteredProviders = useMemo(() => {
+		if (allowedSocialProviders.length === 0) {
+			return enabledProviders;
+		}
 
-	const passwordRequirements = checkPasswordRequirements(formData.password, t);
+		return enabledProviders.filter((provider) => allowedSocialProviders.includes(provider.id));
+	}, [enabledProviders, allowedSocialProviders]);
+
+	const passwordRequirements = useMemo(
+		() => checkPasswordRequirements(formData.password, t),
+		[formData.password, t],
+	);
 	const passwordsMatch =
 		formData.confirmPassword && formData.password && formData.confirmPassword === formData.password;
 
@@ -280,28 +387,31 @@ export function SignupForm({ className, inviteCode, ...props }: SignupFormProps)
 		}
 	};
 
-	const handleSocialSignup = async (provider: "google" | "github" | "linkedin" | "apple") => {
-		setIsLoading(true);
-		setError(null);
+	const handleSocialSignup = useCallback(
+		async (provider: SocialProviderId) => {
+			setIsLoading(true);
+			setError(null);
 
-		try {
-			// For social signup with invite code, redirect to join page after auth
-			// The join page will process the code for the new user
-			const callbackURL = inviteCode && inviteCodeValid ? `/join/${inviteCode}` : "/";
+			try {
+				// For social signup with invite code, redirect to join page after auth
+				// The join page will process the code for the new user
+				const callbackURL = inviteCode && inviteCodeValid ? `/join/${inviteCode}` : "/";
 
-			await authClient.signIn.social({
-				provider,
-				callbackURL,
-			});
-		} catch (err) {
-			setIsLoading(false);
-			setError(
-				err instanceof Error
-					? err.message
-					: t("auth.social-signup-error", "An error occurred during social sign-up"),
-			);
-		}
-	};
+				await authClient.signIn.social({
+					provider,
+					callbackURL,
+				});
+			} catch (err) {
+				setIsLoading(false);
+				setError(
+					err instanceof Error
+						? err.message
+						: t("auth.social-signup-error", "An error occurred during social sign-up"),
+				);
+			}
+		},
+		[inviteCode, inviteCodeValid, t],
+	);
 
 	return (
 		<AuthFormWrapper
@@ -348,10 +458,7 @@ export function SignupForm({ className, inviteCode, ...props }: SignupFormProps)
 							name="name"
 							autoComplete="name"
 							onBlur={(e) => validateField("name", e.target.value)}
-							onChange={(e) => {
-								handleChange("name", e.target.value);
-								validateField("name", e.target.value);
-							}}
+							onChange={(e) => handleChange("name", e.target.value)}
 							placeholder={t("auth.name-placeholder", "John Doe")}
 							required
 							type="text"
@@ -368,10 +475,7 @@ export function SignupForm({ className, inviteCode, ...props }: SignupFormProps)
 							name="email"
 							autoComplete="email"
 							onBlur={(e) => validateField("email", e.target.value)}
-							onChange={(e) => {
-								handleChange("email", e.target.value);
-								validateField("email", e.target.value);
-							}}
+							onChange={(e) => handleChange("email", e.target.value)}
 							placeholder={t("auth.email-placeholder", "m@example.com")}
 							required
 							type="email"
@@ -388,31 +492,13 @@ export function SignupForm({ className, inviteCode, ...props }: SignupFormProps)
 							name="password"
 							autoComplete="new-password"
 							onBlur={(e) => validateField("password", e.target.value)}
-							onChange={(e) => {
-								handleChange("password", e.target.value);
-								validateField("password", e.target.value);
-							}}
+							onChange={(e) => handleChange("password", e.target.value)}
 							required
 							type="password"
 							value={formData.password}
 						/>
 						{formData.password ? (
-							<div className="space-y-1.5 text-sm">
-								{passwordRequirements.map((req) => (
-									<div
-										className={cn(
-											"flex items-center gap-2",
-											req.met ? "text-green-600 dark:text-green-400" : "text-muted-foreground",
-										)}
-										key={req.label}
-									>
-										<span className={cn(req.met ? "text-green-600" : "text-muted-foreground")}>
-											{req.met ? "✓" : "○"}
-										</span>
-										<span>{req.label}</span>
-									</div>
-								))}
-							</div>
+							<PasswordRequirementsList passwordRequirements={passwordRequirements} />
 						) : null}
 						{fieldErrors.password ? (
 							<p className="text-destructive text-sm">{fieldErrors.password}</p>
@@ -427,10 +513,7 @@ export function SignupForm({ className, inviteCode, ...props }: SignupFormProps)
 							name="confirmPassword"
 							autoComplete="new-password"
 							onBlur={(e) => validateField("confirmPassword", e.target.value)}
-							onChange={(e) => {
-								handleChange("confirmPassword", e.target.value);
-								validateField("confirmPassword", e.target.value);
-							}}
+							onChange={(e) => handleChange("confirmPassword", e.target.value)}
 							required
 							type="password"
 							value={formData.confirmPassword}
@@ -477,46 +560,13 @@ export function SignupForm({ className, inviteCode, ...props }: SignupFormProps)
 			)}
 
 			{/* Alternative auth methods */}
-			{filteredProviders.length > 0 && (
-				<>
-					<div className="text-center text-sm">
-						<span className="relative z-10 px-2 text-muted-foreground">
-							{showEmailPassword
-								? t("auth.or-sign-up-with", "Or sign up with")
-								: t("auth.sign-up-with.label", "Sign up with")}
-						</span>
-					</div>
-					<div className="flex flex-wrap justify-center gap-2 *:w-1/4">
-						{/* Dynamic social providers - filtered based on auth config */}
-						{providersLoading
-							? Array.from({ length: filteredProviders.length || 4 }).map((_, i) => (
-									<div key={i} className="h-10 bg-muted animate-pulse rounded-md" />
-								))
-							: filteredProviders.map((provider) => (
-									<Tooltip key={provider.id}>
-										<TooltipTrigger asChild>
-											<Button
-												type="button"
-												variant="outline"
-												onClick={() => handleSocialSignup(provider.id)}
-												disabled={isLoading}
-											>
-												<provider.icon className="h-4 w-4" />
-												<span className="sr-only">
-													{t(`auth.sign-up-with.${provider.id}`, `Sign up with ${provider.name}`)}
-												</span>
-											</Button>
-										</TooltipTrigger>
-										<TooltipContent>
-											<span className="text-sm">
-												{t(`auth.sign-up-with.${provider.id}`, `Sign up with ${provider.name}`)}
-											</span>
-										</TooltipContent>
-									</Tooltip>
-								))}
-					</div>
-				</>
-			)}
+			<SignupSocialAuth
+				showEmailPassword={showEmailPassword}
+				filteredProviders={filteredProviders}
+				providersLoading={providersLoading}
+				isLoading={isLoading}
+				onSocialSignup={handleSocialSignup}
+			/>
 
 			{showEmailPassword && (
 				<div className="text-center text-sm">

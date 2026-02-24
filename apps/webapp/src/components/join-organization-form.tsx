@@ -10,6 +10,7 @@ import {
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useRef, useState } from "react";
+import { redeemInviteCode, validateInviteCode } from "@/app/[locale]/(auth)/invite-code-actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,10 +25,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useSession } from "@/lib/auth-client";
 import { Link, useRouter } from "@/navigation";
-import {
-	redeemInviteCode,
-	validateInviteCode,
-} from "@/app/[locale]/(app)/settings/organizations/invite-code-actions";
 import { AuthFormWrapper } from "./auth-form-wrapper";
 
 interface JoinOrganizationFormProps {
@@ -86,16 +83,16 @@ export function JoinOrganizationForm({ code: initialCode }: JoinOrganizationForm
 
 	// Validate initial code once on mount
 	useEffect(() => {
-	if (!initialCode || hasValidatedInitialCode.current) {
-		return;
-	}
+		if (!initialCode || hasValidatedInitialCode.current) {
+			return;
+		}
 
-	const codeToValidate = initialCode;
+		const codeToValidate = initialCode;
 
-	hasValidatedInitialCode.current = true;
+		hasValidatedInitialCode.current = true;
 
-	async function validateInitialCode() {
-		const result = await validateInviteCode(codeToValidate.toUpperCase());
+		async function validateInitialCode() {
+			const result = await validateInviteCode(codeToValidate.toUpperCase());
 
 			if (!result.success) {
 				setState("invalid");
@@ -105,9 +102,7 @@ export function JoinOrganizationForm({ code: initialCode }: JoinOrganizationForm
 
 			if (!result.data.valid) {
 				setState("invalid");
-				setError(
-					result.data.error || t("settings.inviteCodes.invalidCode", "Invalid invite code"),
-				);
+				setError(result.data.error || t("settings.inviteCodes.invalidCode", "Invalid invite code"));
 				return;
 			}
 
