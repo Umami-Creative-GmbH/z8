@@ -2,6 +2,7 @@
 
 import { IconLoader2, IconMail } from "@tabler/icons-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "@/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { sendInvitation } from "@/app/[locale]/(app)/settings/organizations/actions";
@@ -41,6 +42,7 @@ export function InviteMemberDialog({
 	open,
 	onOpenChange,
 }: InviteMemberDialogProps) {
+	const router = useRouter();
 	const queryClient = useQueryClient();
 
 	const [formData, setFormData] = useState({
@@ -66,6 +68,7 @@ export function InviteMemberDialog({
 				});
 				onOpenChange(false);
 				queryClient.invalidateQueries({ queryKey: queryKeys.invitations.list(organizationId) });
+				router.refresh();
 			} else {
 				toast.error(result.error || "Failed to send invitation");
 			}

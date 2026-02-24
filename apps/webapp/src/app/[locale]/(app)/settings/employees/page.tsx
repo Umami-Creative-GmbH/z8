@@ -115,9 +115,9 @@ export default function EmployeesPage() {
 					</Button>
 					{isAdmin && (
 						<Button asChild>
-							<Link href="/settings/employees/new">
+							<Link href="/settings/organizations">
 								<IconPlus className="mr-2 size-4" />
-								Add Employee
+								Invite Employee
 							</Link>
 						</Button>
 					)}
