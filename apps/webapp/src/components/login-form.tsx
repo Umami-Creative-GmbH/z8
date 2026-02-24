@@ -3,7 +3,7 @@
 import { IconFingerprint, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { Key } from "lucide-react";
-import { useCallback, useEffect, useReducer, useRef } from "react";
+import { memo, useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,11 +14,12 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { useDomainAuth, useTurnstile } from "@/lib/auth/domain-auth-context";
 import { authClient } from "@/lib/auth-client";
 import { useEnabledProviders } from "@/lib/hooks/use-enabled-providers";
+import type { SocialProvider, SocialProviderId } from "@/lib/social-providers";
 import { verifyTurnstileWithServer } from "@/lib/turnstile/verify";
 import { getOnboardingStepPath } from "@/lib/validations/onboarding";
 import { Link, useRouter } from "@/navigation";
 import { AuthFormWrapper } from "./auth-form-wrapper";
-import { TurnstileWidget, type TurnstileRef } from "./turnstile-widget";
+import { type TurnstileRef, TurnstileWidget } from "./turnstile-widget";
 
 const loginSchema = z.object({
 	email: z.string().email("Invalid email address"),
@@ -106,6 +107,159 @@ function formReducer(state: FormState, action: FormAction): FormState {
 	}
 }
 
+const SOCIAL_SKELETON_KEYS = [
+	"social-1",
+	"social-2",
+	"social-3",
+	"social-4",
+	"social-5",
+	"social-6",
+];
+
+type LoginCredentialsFieldsProps = {
+	email: string;
+	password: string;
+	fieldErrors: Record<string, string>;
+	requires2FA: boolean;
+	onEmailBlur: (value: string) => void;
+	onEmailChange: (value: string) => void;
+	onPasswordBlur: (value: string) => void;
+	onPasswordChange: (value: string) => void;
+};
+
+const LoginCredentialsFields = memo(function LoginCredentialsFields({
+	email,
+	password,
+	fieldErrors,
+	requires2FA,
+	onEmailBlur,
+	onEmailChange,
+	onPasswordBlur,
+	onPasswordChange,
+}: LoginCredentialsFieldsProps) {
+	const { t } = useTranslate();
+
+	return (
+		<>
+			<div className="grid gap-3">
+				<Label htmlFor="email">{t("auth.email", "Email")}</Label>
+				<Input
+					id="email"
+					name="email"
+					autoComplete="email"
+					onBlur={(e) => onEmailBlur(e.target.value)}
+					onChange={(e) => onEmailChange(e.target.value)}
+					placeholder={t("auth.email-placeholder", "m@example.com")}
+					required
+					type="email"
+					value={email}
+					disabled={requires2FA}
+				/>
+				{fieldErrors.email ? <p className="text-destructive text-sm">{fieldErrors.email}</p> : null}
+			</div>
+			<div className="grid gap-3">
+				<Label htmlFor="password">{t("auth.password", "Password")}</Label>
+				<Input
+					id="password"
+					name="password"
+					autoComplete="current-password"
+					onBlur={(e) => onPasswordBlur(e.target.value)}
+					onChange={(e) => onPasswordChange(e.target.value)}
+					required
+					type="password"
+					value={password}
+					disabled={requires2FA}
+				/>
+				{fieldErrors.password ? (
+					<p className="text-destructive text-sm">{fieldErrors.password}</p>
+				) : null}
+			</div>
+		</>
+	);
+});
+
+type LoginAlternativeAuthProps = {
+	requires2FA: boolean;
+	showPasskey: boolean;
+	filteredProviders: SocialProvider[];
+	providersLoading: boolean;
+	isLoading: boolean;
+	onPasskeyLogin: () => void;
+	onSocialLogin: (provider: SocialProviderId) => void;
+};
+
+const LoginAlternativeAuth = memo(function LoginAlternativeAuth({
+	requires2FA,
+	showPasskey,
+	filteredProviders,
+	providersLoading,
+	isLoading,
+	onPasskeyLogin,
+	onSocialLogin,
+}: LoginAlternativeAuthProps) {
+	const { t } = useTranslate();
+
+	if (requires2FA || (!showPasskey && filteredProviders.length === 0)) {
+		return null;
+	}
+
+	const skeletonCount = Math.max(filteredProviders.length, 4);
+
+	return (
+		<>
+			<div className="text-center text-sm">
+				<span className="relative z-10 px-2 text-muted-foreground">
+					{t("auth.or-continue-with", "Or continue with")}
+				</span>
+			</div>
+			<div className="flex flex-wrap justify-center gap-2 *:w-1/4">
+				{showPasskey && (
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Button type="button" variant="outline" onClick={onPasskeyLogin} disabled={isLoading}>
+								<Key className="h-4 w-4" />
+								<span className="sr-only">
+									{t("auth.login-with.passkey", "Login with Passkey")}
+								</span>
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent>
+							<span className="text-sm">{t("auth.login-with.passkey", "Login with Passkey")}</span>
+						</TooltipContent>
+					</Tooltip>
+				)}
+
+				{providersLoading
+					? SOCIAL_SKELETON_KEYS.slice(0, skeletonCount).map((key) => (
+							<div key={key} className="h-10 animate-pulse rounded-md bg-muted" />
+						))
+					: filteredProviders.map((provider) => (
+							<Tooltip key={provider.id}>
+								<TooltipTrigger asChild>
+									<Button
+										type="button"
+										variant="outline"
+										onClick={() => onSocialLogin(provider.id)}
+										disabled={isLoading}
+									>
+										<provider.icon className="h-4 w-4" />
+										<span className="sr-only">
+											{t(`auth.login-with.${provider.id}`, `Login with ${provider.name}`)}
+										</span>
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent>
+									<span className="text-sm">
+										{t(`auth.login-with.${provider.id}`, `Login with ${provider.name}`)}
+									</span>
+								</TooltipContent>
+							</Tooltip>
+						))}
+			</div>
+		</>
+	);
+});
+
 export function LoginForm({ className, ...props }: React.ComponentProps<"div">) {
 	const { t } = useTranslate();
 	const router = useRouter();
@@ -129,6 +283,8 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 	const domainAuth = useDomainAuth();
 	const authConfig = domainAuth?.authConfig;
 	const branding = domainAuth?.branding;
+	const socialOAuthConfigured = domainAuth?.socialOAuthConfigured;
+	const ssoProviderId = authConfig?.ssoProviderId;
 	const turnstileConfig = useTurnstile();
 
 	// Turnstile ref for programmatic control
@@ -161,10 +317,13 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 	const allowedSocialProviders = authConfig?.socialProvidersEnabled ?? [];
 
 	// Filter social providers based on auth config
-	const filteredProviders =
-		allowedSocialProviders.length > 0
-			? enabledProviders.filter((p) => allowedSocialProviders.includes(p.id))
-			: enabledProviders;
+	const filteredProviders = useMemo(() => {
+		if (allowedSocialProviders.length === 0) {
+			return enabledProviders;
+		}
+
+		return enabledProviders.filter((provider) => allowedSocialProviders.includes(provider.id));
+	}, [enabledProviders, allowedSocialProviders]);
 
 	// Reset loading state when component mounts (e.g., after logout redirect)
 	useEffect(() => {
@@ -232,6 +391,34 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 		}
 		dispatch({ type: "SET_FIELD_ERRORS", errors: errorMap });
 	}, []);
+
+	const handleEmailChange = useCallback(
+		(value: string) => {
+			handleChange("email", value);
+		},
+		[handleChange],
+	);
+
+	const handlePasswordChange = useCallback(
+		(value: string) => {
+			handleChange("password", value);
+		},
+		[handleChange],
+	);
+
+	const handleEmailBlur = useCallback(
+		(value: string) => {
+			validateField("email", value);
+		},
+		[validateField],
+	);
+
+	const handlePasswordBlur = useCallback(
+		(value: string) => {
+			validateField("password", value);
+		},
+		[validateField],
+	);
 
 	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
@@ -368,7 +555,6 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 
 			try {
 				// Check if org has custom OAuth credentials for this provider
-				const socialOAuthConfigured = domainAuth?.socialOAuthConfigured;
 				if (socialOAuthConfigured?.[provider]) {
 					// Use custom OAuth flow for org-specific credentials
 					window.location.href = `/api/auth/social-org/${provider}?callbackURL=/init`;
@@ -390,7 +576,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 				});
 			}
 		},
-		[t, domainAuth?.socialOAuthConfigured],
+		[t, socialOAuthConfigured],
 	);
 
 	const handlePasskeyLogin = useCallback(async () => {
@@ -436,7 +622,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 	}, [t, router]);
 
 	const handleSSOLogin = useCallback(async () => {
-		if (!authConfig?.ssoProviderId) {
+		if (!ssoProviderId) {
 			dispatch({
 				type: "SET_ERROR",
 				error: t("auth.sso-not-configured", "SSO is not configured for this domain"),
@@ -449,7 +635,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 
 		try {
 			await (authClient.sso as any).signIn({
-				providerId: authConfig.ssoProviderId,
+				providerId: ssoProviderId,
 				callbackURL: "/init",
 			});
 		} catch (err) {
@@ -462,7 +648,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 						: t("auth.sso-login-error", "An error occurred during SSO sign-in"),
 			});
 		}
-	}, [authConfig?.ssoProviderId, t]);
+	}, [ssoProviderId, t]);
 
 	const handleVerify2FA = useCallback(async () => {
 		if (otpValue.length !== 6) {
@@ -556,49 +742,16 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 
 			{/* Email/Password fields - only show if enabled */}
 			{showEmailPassword && (
-				<>
-					<div className="grid gap-3">
-						<Label htmlFor="email">{t("auth.email", "Email")}</Label>
-						<Input
-							id="email"
-							name="email"
-							autoComplete="email"
-							onBlur={(e) => validateField("email", e.target.value)}
-							onChange={(e) => {
-								handleChange("email", e.target.value);
-								validateField("email", e.target.value);
-							}}
-							placeholder={t("auth.email-placeholder", "m@example.com")}
-							required
-							type="email"
-							value={email}
-							disabled={requires2FA}
-						/>
-						{fieldErrors.email ? (
-							<p className="text-destructive text-sm">{fieldErrors.email}</p>
-						) : null}
-					</div>
-					<div className="grid gap-3">
-						<Label htmlFor="password">{t("auth.password", "Password")}</Label>
-						<Input
-							id="password"
-							name="password"
-							autoComplete="current-password"
-							onBlur={(e) => validateField("password", e.target.value)}
-							onChange={(e) => {
-								handleChange("password", e.target.value);
-								validateField("password", e.target.value);
-							}}
-							required
-							type="password"
-							value={password}
-							disabled={requires2FA}
-						/>
-						{fieldErrors.password ? (
-							<p className="text-destructive text-sm">{fieldErrors.password}</p>
-						) : null}
-					</div>
-				</>
+				<LoginCredentialsFields
+					email={email}
+					password={password}
+					fieldErrors={fieldErrors}
+					requires2FA={requires2FA}
+					onEmailBlur={handleEmailBlur}
+					onEmailChange={handleEmailChange}
+					onPasswordBlur={handlePasswordBlur}
+					onPasswordChange={handlePasswordChange}
+				/>
 			)}
 			{requires2FA ? (
 				<>
@@ -689,68 +842,15 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 					</Link>
 				</div>
 			)}
-			{!requires2FA && (showPasskey || filteredProviders.length > 0) && (
-				<>
-					<div className="text-center text-sm">
-						<span className="relative z-10 px-2 text-muted-foreground">
-							{t("auth.or-continue-with", "Or continue with")}
-						</span>
-					</div>
-					<div className="flex flex-wrap justify-center gap-2 *:w-1/4">
-						{/* Passkey - show if enabled */}
-						{showPasskey && (
-							<Tooltip>
-								<TooltipTrigger asChild>
-									<Button
-										type="button"
-										variant="outline"
-										onClick={handlePasskeyLogin}
-										disabled={isLoading}
-									>
-										<Key className="h-4 w-4" />
-										<span className="sr-only">
-											{t("auth.login-with.passkey", "Login with Passkey")}
-										</span>
-									</Button>
-								</TooltipTrigger>
-								<TooltipContent>
-									<span className="text-sm">
-										{t("auth.login-with.passkey", "Login with Passkey")}
-									</span>
-								</TooltipContent>
-							</Tooltip>
-						)}
-
-						{/* Dynamic social providers - filtered based on auth config */}
-						{providersLoading
-							? Array.from({ length: filteredProviders.length || 4 }).map((_, i) => (
-									<div key={i} className="h-10 bg-muted animate-pulse rounded-md" />
-								))
-							: filteredProviders.map((provider) => (
-									<Tooltip key={provider.id}>
-										<TooltipTrigger asChild>
-											<Button
-												type="button"
-												variant="outline"
-												onClick={() => handleSocialLogin(provider.id)}
-												disabled={isLoading}
-											>
-												<provider.icon className="h-4 w-4" />
-												<span className="sr-only">
-													{t(`auth.login-with.${provider.id}`, `Login with ${provider.name}`)}
-												</span>
-											</Button>
-										</TooltipTrigger>
-										<TooltipContent>
-											<span className="text-sm">
-												{t(`auth.login-with.${provider.id}`, `Login with ${provider.name}`)}
-											</span>
-										</TooltipContent>
-									</Tooltip>
-								))}
-					</div>
-				</>
-			)}
+			<LoginAlternativeAuth
+				requires2FA={requires2FA}
+				showPasskey={showPasskey}
+				filteredProviders={filteredProviders}
+				providersLoading={providersLoading}
+				isLoading={isLoading}
+				onPasskeyLogin={handlePasskeyLogin}
+				onSocialLogin={handleSocialLogin}
+			/>
 			{!requires2FA && showEmailPassword && (
 				<div className="text-center text-sm">
 					{t("auth.dont-have-account", "Don't have an account?")}{" "}

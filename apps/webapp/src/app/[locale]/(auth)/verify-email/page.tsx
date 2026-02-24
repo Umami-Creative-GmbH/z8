@@ -3,11 +3,11 @@
 import { useTranslate } from "@tolgee/react";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { processPendingInviteCode } from "@/app/[locale]/(auth)/invite-code-actions";
 import { AuthFormWrapper } from "@/components/auth-form-wrapper";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
 import { Link, useRouter } from "@/navigation";
-import { processPendingInviteCode } from "@/app/[locale]/(app)/settings/organizations/invite-code-actions";
 
 type JoinResult = {
 	success: boolean;
