@@ -1,1 +1,9 @@
-{}
+{
+  "admin": {
+    "layout": {
+      "nav": {
+        "workerQueue": "Coda dei worker"
+      }
+    }
+  }
+}

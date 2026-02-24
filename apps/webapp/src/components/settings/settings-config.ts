@@ -450,18 +450,6 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		group: "data",
 	},
 	{
-		id: "worker-queue",
-		titleKey: "settings.workerQueue.title",
-		titleDefault: "Worker Queue",
-		descriptionKey: "settings.workerQueue.description",
-		descriptionDefault:
-			"Monitor background job processing and cron job executions",
-		href: "/settings/worker-queue",
-		icon: "server",
-		adminOnly: true,
-		group: "data",
-	},
-	{
 		id: "export",
 		titleKey: "settings.export.title",
 		titleDefault: "Data Export",

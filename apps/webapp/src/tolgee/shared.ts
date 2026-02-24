@@ -37,6 +37,7 @@ export const ROUTE_NAMESPACES: Record<string, Namespace[]> = {
 	"/verify-email": ["common", "auth"],
 	// Admin routes
 	"/admin": ["common", "admin"],
+	"/admin/worker-queue": ["common", "admin", "settings"],
 	// Main app routes
 	"/": ["common", "dashboard"],
 	"/calendar": ["common", "calendar"],

@@ -1,14 +1,11 @@
 "use server";
 
-import { eq } from "drizzle-orm";
 import { Effect } from "effect";
-import { db } from "@/db";
-import { employee } from "@/db/schema";
 import { getAllJobMetrics, getRecentExecutions } from "@/lib/cron/tracking";
-import { AuthorizationError, DatabaseError } from "@/lib/effect/errors";
+import { DatabaseError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
-import { AuthService } from "@/lib/effect/services/auth.service";
+import { PlatformAdminService } from "@/lib/effect/services/platform-admin.service";
 import { getJobQueue, isQueueHealthy } from "@/lib/queue";
 
 export interface QueueCounts {
@@ -46,65 +43,23 @@ export interface JobMetric {
 }
 
 export interface WorkerQueueStats {
-	// Connection status
 	isConnected: boolean;
-
-	// Queue counts
 	counts: QueueCounts;
-
-	// Repeatable jobs (cron schedules)
 	repeatableJobs: RepeatableJob[];
-
-	// Recent executions from database
 	recentExecutions: RecentExecution[];
-
-	// Job metrics (last 30 days)
 	jobMetrics: JobMetric[];
-
-	// Timestamps
 	fetchedAt: string;
 }
 
-/**
- * Get comprehensive worker queue statistics
- * Only accessible by admins
- */
 export async function getWorkerQueueStats(): Promise<ServerActionResult<WorkerQueueStats>> {
 	const effect = Effect.gen(function* () {
-		// Get session and verify admin
-		const authService = yield* AuthService;
-		const authSession = yield* authService.getSession();
+		const adminService = yield* PlatformAdminService;
+		yield* adminService.requirePlatformAdmin();
 
-		// Get current employee to check role
-		const currentEmployee = yield* Effect.tryPromise({
-			try: () =>
-				db.query.employee.findFirst({
-					where: eq(employee.userId, authSession.user.id),
-				}),
-			catch: () =>
-				new DatabaseError({
-					message: "Failed to fetch employee",
-					operation: "query",
-					table: "employee",
-				}),
-		});
-
-		if (!currentEmployee || currentEmployee.role !== "admin") {
-			return yield* Effect.fail(
-				new AuthorizationError({
-					message: "Only admins can view worker queue status",
-					resource: "worker-queue",
-					action: "read",
-				}),
-			);
-		}
-
-		// Check queue health - catch errors silently and treat as disconnected
 		const isConnected = yield* Effect.promise(() => isQueueHealthy()).pipe(
 			Effect.orElseSucceed(() => false),
 		);
 
-		// Get queue counts
 		let counts: QueueCounts = {
 			waiting: 0,
 			active: 0,
@@ -119,7 +74,6 @@ export async function getWorkerQueueStats(): Promise<ServerActionResult<WorkerQu
 		if (isConnected) {
 			const queue = getJobQueue();
 
-			// Get job counts
 			const jobCounts = yield* Effect.tryPromise({
 				try: () => queue.getJobCounts(),
 				catch: () =>
@@ -138,7 +92,6 @@ export async function getWorkerQueueStats(): Promise<ServerActionResult<WorkerQu
 				paused: jobCounts.paused ?? 0,
 			};
 
-			// Get repeatable jobs - catch errors silently and return empty array
 			const repeatables = yield* Effect.promise(() => queue.getRepeatableJobs()).pipe(
 				Effect.orElseSucceed(() => [] as Awaited<ReturnType<typeof queue.getRepeatableJobs>>),
 			);
@@ -150,7 +103,6 @@ export async function getWorkerQueueStats(): Promise<ServerActionResult<WorkerQu
 			}));
 		}
 
-		// Get recent executions from database
 		const executions = yield* Effect.tryPromise({
 			try: () => getRecentExecutions(50),
 			catch: () =>
@@ -171,7 +123,6 @@ export async function getWorkerQueueStats(): Promise<ServerActionResult<WorkerQu
 			error: exec.error,
 		}));
 
-		// Get job metrics
 		const metrics = yield* Effect.tryPromise({
 			try: () => getAllJobMetrics(30),
 			catch: () =>

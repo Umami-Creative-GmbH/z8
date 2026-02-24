@@ -5,6 +5,7 @@ import {
 	IconLogout,
 	IconSettings,
 	IconShield,
+	IconServer,
 	IconUsers,
 } from "@tabler/icons-react";
 import { headers } from "next/headers";
@@ -47,6 +48,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 			href: "/admin/settings",
 			icon: IconSettings,
 			label: t("admin.layout.nav.settings", "Settings"),
+		},
+		{
+			href: "/admin/worker-queue",
+			icon: IconServer,
+			label: t("admin.layout.nav.workerQueue", "Worker Queue"),
 		},
 	];
 

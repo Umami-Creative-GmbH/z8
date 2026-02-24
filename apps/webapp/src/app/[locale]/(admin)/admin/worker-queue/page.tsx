@@ -8,10 +8,8 @@ import {
 	IconServer,
 	IconX,
 } from "@tabler/icons-react";
-import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -23,7 +21,6 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { getAuthContext } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
 import { getWorkerQueueStats } from "./actions";
 
@@ -98,20 +95,6 @@ async function WorkerQueueContent() {
 	await connection();
 
 	const t = await getTranslate();
-	const authContext = await getAuthContext();
-
-	if (!authContext?.employee) {
-		return (
-			<div className="flex flex-1 items-center justify-center p-6">
-				<NoEmployeeError feature={t("settings.workerQueue.feature", "view worker queue status")} />
-			</div>
-		);
-	}
-
-	if (authContext.employee.role !== "admin") {
-		redirect("/");
-	}
-
 	const statsResult = await getWorkerQueueStats();
 
 	if (!statsResult.success) {
@@ -131,7 +114,7 @@ async function WorkerQueueContent() {
 				<Card className="border-destructive">
 					<CardContent className="pt-6">
 						<p className="text-destructive">
-							{t("settings.workerQueue.loadError", "Failed to load queue status")}:{" "}
+							{t("settings.workerQueue.loadError", "Failed to load queue status")}: {" "}
 							{statsResult.error}
 						</p>
 					</CardContent>
@@ -176,13 +159,12 @@ async function WorkerQueueContent() {
 						)}
 					</Badge>
 					<p className="text-xs text-muted-foreground">
-						{t("settings.workerQueue.lastUpdated", "Last updated")}:{" "}
+						{t("settings.workerQueue.lastUpdated", "Last updated")}: {" "}
 						{new Date(stats.fetchedAt).toLocaleString()}
 					</p>
 				</div>
 			</div>
 
-			{/* Queue Counts Section */}
 			<section>
 				<h2 className="text-lg font-medium mb-4 flex items-center gap-2">
 					<IconServer className="size-5" />
@@ -235,7 +217,6 @@ async function WorkerQueueContent() {
 				</div>
 			</section>
 
-			{/* Scheduled Jobs Section */}
 			<section>
 				<h2 className="text-lg font-medium mb-4 flex items-center gap-2">
 					<IconRefresh className="size-5" />
@@ -279,7 +260,6 @@ async function WorkerQueueContent() {
 				</Card>
 			</section>
 
-			{/* Job Metrics Section */}
 			{stats.jobMetrics.length > 0 && (
 				<section>
 					<h2 className="text-lg font-medium mb-4 flex items-center gap-2">
@@ -343,7 +323,6 @@ async function WorkerQueueContent() {
 				</section>
 			)}
 
-			{/* Recent Executions Section */}
 			<section>
 				<h2 className="text-lg font-medium mb-4 flex items-center gap-2">
 					<IconClock className="size-5" />
