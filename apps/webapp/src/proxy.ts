@@ -46,6 +46,12 @@ const AUTH_ROUTES = ["/sign-in", "/sign-up", "/forgot-password", "/welcome"];
 
 const i18nMiddleware = createMiddleware(routing);
 
+const SESSION_COOKIE_NAMES = [
+	"better-auth.session-token",
+	"better-auth.session_token",
+	"better-auth.session_data",
+];
+
 export async function proxy(request: NextRequest) {
 	const { pathname } = request.nextUrl;
 
@@ -121,9 +127,7 @@ export async function proxy(request: NextRequest) {
 	// NOTE: We only check cookie existence, not signature validity.
 	// getCookieCache signature verification fails with externalized better-auth.
 	// Real authentication happens server-side in pages/API routes via auth.api.getSession()
-	const hasSessionCookie =
-		request.cookies.has("better-auth.session-token") ||
-		request.cookies.has("better-auth.session_data");
+	const hasSessionCookie = SESSION_COOKIE_NAMES.some((cookieName) => request.cookies.has(cookieName));
 
 	// Handle authentication redirects
 	if (!hasSessionCookie) {
