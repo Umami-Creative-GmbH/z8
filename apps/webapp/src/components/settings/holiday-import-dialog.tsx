@@ -231,7 +231,7 @@ export function HolidayImportDialog({
 		if (selectedState) params.set("state", selectedState);
 		if (selectedRegion) params.set("region", selectedRegion);
 
-		const response = await fetch(`/api/admin/holidays/preview?${params}`).catch((error) => {
+		const response = await fetch(`/api/org-admin/holidays/preview?${params}`).catch((error) => {
 			console.error("Failed to load preview:", error);
 			return null;
 		});

@@ -13,7 +13,7 @@ import { ForbiddenError, toHttpError } from "@/lib/authorization";
 import { holidayPresetFormSchema } from "@/lib/holidays/validation";
 
 /**
- * GET /api/admin/holiday-presets
+ * GET /api/org-admin/holiday-presets
  * List all holiday presets for the organization
  */
 export async function GET(_request: NextRequest) {
@@ -96,7 +96,7 @@ export async function GET(_request: NextRequest) {
 }
 
 /**
- * POST /api/admin/holiday-presets
+ * POST /api/org-admin/holiday-presets
  * Create a new holiday preset
  */
 export async function POST(request: NextRequest) {

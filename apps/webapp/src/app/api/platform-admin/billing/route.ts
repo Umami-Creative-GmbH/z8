@@ -12,7 +12,7 @@ const YEARLY_PRICE_PER_MONTH = 3;
 
 /**
  * Get platform billing metrics for superadmin dashboard
- * Endpoint: GET /api/admin/billing
+ * Endpoint: GET /api/platform-admin/billing
  *
  * Requires: Platform admin role (user.role === "admin")
  * Returns: MRR, total seats, active subscriptions, trial conversions, etc.

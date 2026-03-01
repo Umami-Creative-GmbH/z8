@@ -13,7 +13,7 @@ import {
 } from "@/lib/holidays/date-holidays-service";
 
 /**
- * GET /api/admin/holidays/preview
+ * GET /api/org-admin/holidays/preview
  * Preview holidays from date-holidays library for a specific location
  */
 export async function GET(request: NextRequest) {

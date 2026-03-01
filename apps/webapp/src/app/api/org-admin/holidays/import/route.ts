@@ -14,7 +14,7 @@ import {
 import { holidayImportSchema } from "@/lib/holidays/validation";
 
 /**
- * POST /api/admin/holidays/import
+ * POST /api/org-admin/holidays/import
  * Bulk import holidays from date-holidays library
  */
 export async function POST(request: NextRequest) {

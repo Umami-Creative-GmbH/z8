@@ -17,7 +17,7 @@ interface RouteParams {
 }
 
 /**
- * GET /api/admin/holiday-presets/[id]
+ * GET /api/org-admin/holiday-presets/[id]
  * Get a specific holiday preset with its holidays
  */
 export async function GET(_request: NextRequest, { params }: RouteParams) {
@@ -89,7 +89,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 }
 
 /**
- * PUT /api/admin/holiday-presets/[id]
+ * PUT /api/org-admin/holiday-presets/[id]
  * Update a holiday preset
  */
 export async function PUT(request: NextRequest, { params }: RouteParams) {
@@ -169,7 +169,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 }
 
 /**
- * DELETE /api/admin/holiday-presets/[id]
+ * DELETE /api/org-admin/holiday-presets/[id]
  * Delete a holiday preset (soft delete by setting isActive to false)
  */
 export async function DELETE(_request: NextRequest, { params }: RouteParams) {

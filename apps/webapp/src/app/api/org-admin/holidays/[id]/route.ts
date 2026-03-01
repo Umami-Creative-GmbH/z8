@@ -8,7 +8,7 @@ import { getAbility } from "@/lib/auth-helpers";
 import { ForbiddenError, toHttpError } from "@/lib/authorization";
 
 /**
- * PATCH /api/admin/holidays/[id]
+ * PATCH /api/org-admin/holidays/[id]
  * Update a holiday
  */
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -87,7 +87,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 }
 
 /**
- * DELETE /api/admin/holidays/[id]
+ * DELETE /api/org-admin/holidays/[id]
  * Delete a holiday
  */
 export async function DELETE(

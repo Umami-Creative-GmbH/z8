@@ -82,7 +82,9 @@ export function HolidayDialog({
 				recurrenceEndDate: value.recurrenceEndDate?.toISOString() || null,
 			};
 
-			const endpoint = isEditing ? `/api/admin/holidays/${editingHoliday.id}` : "/api/admin/holidays";
+			const endpoint = isEditing
+				? `/api/org-admin/holidays/${editingHoliday.id}`
+				: "/api/org-admin/holidays";
 			const method = isEditing ? "PATCH" : "POST";
 
 			const response = await fetch(endpoint, {
