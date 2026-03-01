@@ -49,6 +49,7 @@ export function ExportForm({ organizationId, config, onExportComplete }: ExportF
 	const { t } = useTranslate();
 	const [isPending, startTransition] = useTransition();
 	const [filterOptions, setFilterOptions] = useState<FilterOptions | null>(null);
+	const [selectedFormatId, setSelectedFormatId] = useState<string>(config?.formatId ?? "datev_lohn");
 
 	// Date selection
 	const [dateMode, setDateMode] = useState<"month" | "custom">("month");
@@ -85,10 +86,8 @@ export function ExportForm({ organizationId, config, onExportComplete }: ExportF
 
 	// Load filter options on mount
 	useEffect(() => {
-		if (config) {
-			loadFilterOptions();
-		}
-	}, [config, loadFilterOptions]);
+		loadFilterOptions();
+	}, [loadFilterOptions]);
 
 	const getDateRange = () => {
 		if (dateMode === "month") {
@@ -105,13 +104,12 @@ export function ExportForm({ organizationId, config, onExportComplete }: ExportF
 	};
 
 	const handleExport = async () => {
-		if (!config) return;
-
 		const dateRange = getDateRange();
 
 		startTransition(async () => {
 			const result = await startExportAction({
 				organizationId,
+				formatId: selectedFormatId,
 				startDate: dateRange.start,
 				endDate: dateRange.end,
 				employeeIds: selectedEmployeeIds.length > 0 ? selectedEmployeeIds : undefined,
@@ -136,7 +134,7 @@ export function ExportForm({ organizationId, config, onExportComplete }: ExportF
 					const url = window.URL.createObjectURL(blob);
 					const link = document.createElement("a");
 					link.href = url;
-					link.download = `datev_lohn_${dateRange.start}_${dateRange.end}.csv`;
+					link.download = `${selectedFormatId}_${dateRange.start}_${dateRange.end}.csv`;
 					document.body.appendChild(link);
 					link.click();
 					document.body.removeChild(link);
@@ -152,6 +150,24 @@ export function ExportForm({ organizationId, config, onExportComplete }: ExportF
 			}
 		});
 	};
+
+	const exportFormatOptions = useMemo(
+		() => [
+			{ id: "datev_lohn", label: t("settings.payrollExport.export.format.datev", "DATEV") },
+			{ id: "workday_api", label: t("settings.payrollExport.export.format.workday", "Workday") },
+		],
+		[t],
+	);
+
+	const exportButtonLabel = useMemo(() => {
+		switch (selectedFormatId) {
+			case "workday_api":
+				return t("settings.payrollExport.export.exportButtonWorkday", "Export to Workday");
+			case "datev_lohn":
+			default:
+				return t("settings.payrollExport.export.exportButtonDatev", "Export to DATEV");
+		}
+	}, [selectedFormatId, t]);
 
 	// Memoize static arrays to prevent recreation on each render (rerender-hoist-jsx)
 	const years = useMemo(
@@ -186,24 +202,6 @@ export function ExportForm({ organizationId, config, onExportComplete }: ExportF
 		);
 	}, []);
 
-	if (!config) {
-		return (
-			<Card className="border-warning">
-				<CardHeader>
-					<CardTitle>
-						{t("settings.payrollExport.export.notConfiguredTitle", "Configuration Required")}
-					</CardTitle>
-					<CardDescription>
-						{t(
-							"settings.payrollExport.export.notConfiguredDescription",
-							"Please configure DATEV master data and wage type mappings before exporting.",
-						)}
-					</CardDescription>
-				</CardHeader>
-			</Card>
-		);
-	}
-
 	return (
 		<Card>
 			<CardHeader>
@@ -218,6 +216,22 @@ export function ExportForm({ organizationId, config, onExportComplete }: ExportF
 				</CardDescription>
 			</CardHeader>
 			<CardContent className="space-y-6">
+				<div className="space-y-2">
+					<Label>{t("settings.payrollExport.export.format", "Export Format")}</Label>
+					<Select value={selectedFormatId} onValueChange={setSelectedFormatId}>
+						<SelectTrigger>
+							<SelectValue />
+						</SelectTrigger>
+						<SelectContent>
+							{exportFormatOptions.map((option) => (
+								<SelectItem key={option.id} value={option.id}>
+									{option.label}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+				</div>
+
 				{/* Date Range Selection */}
 				<div className="space-y-4">
 					<Label>{t("settings.payrollExport.export.dateRange", "Date Range")}</Label>
@@ -471,7 +485,7 @@ export function ExportForm({ organizationId, config, onExportComplete }: ExportF
 					) : (
 						<>
 							<IconDownload className="mr-2 h-4 w-4" />
-							{t("settings.payrollExport.export.exportButton", "Export to DATEV")}
+							{exportButtonLabel}
 						</>
 					)}
 				</Button>

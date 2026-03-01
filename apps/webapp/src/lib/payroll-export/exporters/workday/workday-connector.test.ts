@@ -196,6 +196,7 @@ describe("WorkdayConnector", () => {
 
 	it("returns stable sync threshold", () => {
 		const connector = new WorkdayConnector();
+		expect(connector.exporterId).toBe("workday_api");
 		expect(connector.getSyncThreshold()).toBe(500);
 	});
 });

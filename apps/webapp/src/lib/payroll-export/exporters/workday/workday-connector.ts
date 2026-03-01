@@ -27,7 +27,7 @@ interface WorkdayConnectorDeps {
 }
 
 export class WorkdayConnector implements IPayrollExporter {
-	readonly exporterId = "workday";
+	readonly exporterId = "workday_api";
 	readonly exporterName = "Workday";
 	readonly version = "1.0.0";
 

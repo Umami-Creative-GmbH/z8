@@ -132,6 +132,7 @@ export interface DeleteMappingInput {
 
 export interface StartExportInput {
 	organizationId: string;
+	formatId: string;
 	startDate: string; // ISO date
 	endDate: string; // ISO date
 	employeeIds?: string[];
@@ -1822,7 +1823,7 @@ export async function startExportAction(
 			Effect.promise(() =>
 				createExportJob({
 					organizationId: input.organizationId,
-					formatId: "datev_lohn",
+					formatId: input.formatId,
 					requestedById: currentEmployee.id,
 					filters,
 				}),
