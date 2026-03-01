@@ -1,9 +1,12 @@
 {
   "admin": {
     "layout": {
+      "title": "Amministrazione della piattaforma",
+      "subtitle": "Gestione della piattaforma",
       "nav": {
-        "workerQueue": "Coda dei worker"
-      }
+        "workerQueue": "Coda processi"
+      },
+      "exitAdmin": "Esci dall'amministrazione della piattaforma"
     }
   }
 }

@@ -1,9 +1,12 @@
 {
   "admin": {
     "layout": {
+      "title": "Administration de la plateforme",
+      "subtitle": "Gestion de la plateforme",
       "nav": {
-        "workerQueue": "File des workers"
-      }
+        "workerQueue": "File des processus"
+      },
+      "exitAdmin": "Quitter l'administration de la plateforme"
     }
   }
 }

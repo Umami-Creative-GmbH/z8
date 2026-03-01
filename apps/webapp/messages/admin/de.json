@@ -1,9 +1,12 @@
 {
   "admin": {
     "layout": {
+      "title": "Plattform-Admin",
+      "subtitle": "Plattformverwaltung",
       "nav": {
         "workerQueue": "Worker-Warteschlange"
-      }
+      },
+      "exitAdmin": "Plattform-Admin verlassen"
     }
   }
 }

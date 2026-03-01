@@ -26,13 +26,16 @@ The platform admin role is assigned at the database level and cannot be self-gra
 
 ## Accessing the Dashboard
 
-Navigate to `/admin` to access the Platform Admin Dashboard. The admin layout includes:
+Navigate to `/platform-admin` to access the Platform Admin Dashboard. The Platform Admin layout includes:
 
 - **Dashboard**: Overview statistics and quick access links
 - **Users**: Cross-platform user management
 - **Organizations**: Multi-tenant organization management
+- **Billing**: Platform-level subscription and revenue insights
+- **Settings**: Platform configuration controls
+- **Worker Queue**: Infrastructure queue health and execution visibility
 
-An "Exit Admin" link is always available in the header to return to the regular application.
+An "Exit Platform Admin" link is always available in the header to return to the regular application.
 
 ## Dashboard Overview
 
@@ -53,7 +56,7 @@ Cards for banned users and suspended organizations display a warning or destruct
 
 ## User Management
 
-The User Management page (`/admin/users`) provides tools to view and manage all users across the platform.
+The User Management page (`/platform-admin/users`) provides tools to view and manage all users across the platform.
 
 ### Viewing Users
 
@@ -110,7 +113,7 @@ Revoking sessions forces the user to sign in again on those devices.
 
 ## Organization Management
 
-The Organization Management page (`/admin/organizations`) provides oversight and control over all organizations on the platform.
+The Organization Management page (`/platform-admin/organizations`) provides oversight and control over all organizations on the platform.
 
 ### Viewing Organizations
 
@@ -270,7 +273,7 @@ organization_suspension (
 
 ## Troubleshooting
 
-### Cannot Access Admin Dashboard
+### Cannot Access Platform Admin Dashboard
 
 - Verify your account has the `admin` role in the database
 - Check that your account is not banned
