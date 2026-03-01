@@ -131,14 +131,14 @@ async function DashboardStats() {
 				value={totalUsers}
 				description={t("admin.overview.metrics.totalUsersDescription", "Registered platform accounts")}
 				icon={<IconUsers className="size-5" aria-hidden="true" />}
-				href="/admin/users"
+				href="/platform-admin/users"
 			/>
 			<StatCard
 				title={t("admin.overview.metrics.bannedUsers", "Banned Users")}
 				value={bannedUsers}
 				description={t("admin.overview.metrics.bannedUsersDescription", "Restricted from access")}
 				icon={<IconUserX className="size-5" aria-hidden="true" />}
-				href="/admin/users?status=banned"
+				href="/platform-admin/users?status=banned"
 				variant={bannedUsers > 0 ? "destructive" : "default"}
 			/>
 			<StatCard
@@ -146,14 +146,14 @@ async function DashboardStats() {
 				value={totalOrgs}
 				description={t("admin.overview.metrics.organizationsDescription", "Active workspaces")}
 				icon={<IconBuilding className="size-5" aria-hidden="true" />}
-				href="/admin/organizations"
+				href="/platform-admin/organizations"
 			/>
 			<StatCard
 				title={t("admin.overview.metrics.suspended", "Suspended")}
 				value={suspendedOrgs}
 				description={t("admin.overview.metrics.suspendedDescription", "Read-only organizations")}
 				icon={<IconAlertTriangle className="size-5" aria-hidden="true" />}
-				href="/admin/organizations?status=suspended"
+				href="/platform-admin/organizations?status=suspended"
 				variant={suspendedOrgs > 0 ? "warning" : "default"}
 			/>
 			{billingEnabled ? (
@@ -163,7 +163,7 @@ async function DashboardStats() {
 						value={billingStats.mrr}
 						description={t("admin.overview.metrics.mrrDescription", "Monthly recurring revenue (€)")}
 						icon={<IconCurrencyEuro className="size-5" aria-hidden="true" />}
-						href="/admin/billing"
+						href="/platform-admin/billing"
 						variant="success"
 					/>
 					<StatCard
@@ -171,7 +171,7 @@ async function DashboardStats() {
 						value={billingStats.totalSeats}
 						description={t("admin.overview.metrics.licensedSeatsDescription", "Across all subscriptions")}
 						icon={<IconCreditCard className="size-5" aria-hidden="true" />}
-						href="/admin/billing"
+						href="/platform-admin/billing"
 					/>
 				</>
 			) : null}
@@ -266,20 +266,20 @@ export default async function AdminDashboardPage() {
 					<QuickActionCard
 						title={t("admin.overview.quickActions.users.title", "User Management")}
 						description={t("admin.overview.quickActions.users.description", "Ban/unban users, manage sessions, view activity")}
-						href="/admin/users"
+						href="/platform-admin/users"
 						icon={<IconUserBolt className="size-5" />}
 					/>
 					<QuickActionCard
 						title={t("admin.overview.quickActions.organizations.title", "Organization Management")}
 						description={t("admin.overview.quickActions.organizations.description", "Suspend, delete, or review organizations")}
-						href="/admin/organizations"
+						href="/platform-admin/organizations"
 						icon={<IconBuilding className="size-5" />}
 					/>
 					{process.env.BILLING_ENABLED === "true" && (
 						<QuickActionCard
 							title={t("admin.overview.quickActions.billing.title", "Billing & Subscriptions")}
 							description={t("admin.overview.quickActions.billing.description", "Revenue metrics and subscription status")}
-							href="/admin/billing"
+							href="/platform-admin/billing"
 							icon={<IconCreditCard className="size-5" />}
 						/>
 					)}

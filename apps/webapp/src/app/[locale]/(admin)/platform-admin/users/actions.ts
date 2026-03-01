@@ -51,7 +51,7 @@ export async function banUserAction(
 			),
 		);
 
-		revalidatePath("/admin/users");
+		revalidatePath("/platform-admin/users");
 	}).pipe(Effect.provide(AppLayer));
 
 	return runServerActionSafe(effect);
@@ -69,7 +69,7 @@ export async function unbanUserAction(
 		// Unban user
 		yield* _(adminService.unbanUser(userId, admin.userId));
 
-		revalidatePath("/admin/users");
+		revalidatePath("/platform-admin/users");
 	}).pipe(Effect.provide(AppLayer));
 
 	return runServerActionSafe(effect);

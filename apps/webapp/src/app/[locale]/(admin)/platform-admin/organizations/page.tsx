@@ -132,7 +132,7 @@ export default function OrganizationsPage() {
 				const params = new URLSearchParams();
 				if (newSearch) params.set("search", newSearch);
 				if (newStatus !== "all") params.set("status", newStatus);
-				router.push(`/admin/organizations?${params.toString()}`);
+				router.push(`/platform-admin/organizations?${params.toString()}`);
 				return;
 			}
 
@@ -142,7 +142,7 @@ export default function OrganizationsPage() {
 				const params = new URLSearchParams();
 				if (newSearch) params.set("search", newSearch);
 				if (newStatus !== "all") params.set("status", newStatus);
-				router.push(`/admin/organizations?${params.toString()}`);
+				router.push(`/platform-admin/organizations?${params.toString()}`);
 			}, 300);
 		},
 		[router, status],

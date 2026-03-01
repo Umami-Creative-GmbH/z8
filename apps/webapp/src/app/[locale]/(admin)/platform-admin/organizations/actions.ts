@@ -42,7 +42,7 @@ export async function suspendOrganizationAction(
 		// Suspend organization
 		yield* _(adminService.suspendOrganization(organizationId, reason, admin.userId));
 
-		revalidatePath("/admin/organizations");
+		revalidatePath("/platform-admin/organizations");
 	}).pipe(Effect.provide(AppLayer));
 
 	return runServerActionSafe(effect);
@@ -60,7 +60,7 @@ export async function unsuspendOrganizationAction(
 		// Unsuspend organization
 		yield* _(adminService.unsuspendOrganization(organizationId, admin.userId));
 
-		revalidatePath("/admin/organizations");
+		revalidatePath("/platform-admin/organizations");
 	}).pipe(Effect.provide(AppLayer));
 
 	return runServerActionSafe(effect);
@@ -87,7 +87,7 @@ export async function deleteOrganizationAction(
 			),
 		);
 
-		revalidatePath("/admin/organizations");
+		revalidatePath("/platform-admin/organizations");
 	}).pipe(Effect.provide(AppLayer));
 
 	return runServerActionSafe(effect);

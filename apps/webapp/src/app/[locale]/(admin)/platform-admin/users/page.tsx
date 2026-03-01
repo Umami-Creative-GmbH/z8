@@ -123,7 +123,7 @@ export default function UsersPage() {
 				const params = new URLSearchParams();
 				if (newSearch) params.set("search", newSearch);
 				if (newStatus !== "all") params.set("status", newStatus);
-				router.push(`/admin/users?${params.toString()}`);
+				router.push(`/platform-admin/users?${params.toString()}`);
 				return;
 			}
 
@@ -133,7 +133,7 @@ export default function UsersPage() {
 				const params = new URLSearchParams();
 				if (newSearch) params.set("search", newSearch);
 				if (newStatus !== "all") params.set("status", newStatus);
-				router.push(`/admin/users?${params.toString()}`);
+				router.push(`/platform-admin/users?${params.toString()}`);
 			}, 300);
 		},
 		[router, status],

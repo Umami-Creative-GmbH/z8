@@ -30,7 +30,7 @@ import { cn } from "@/lib/utils";
 export default function AdminBillingPage() {
 	// Check if billing is enabled
 	if (process.env.BILLING_ENABLED !== "true") {
-		redirect("/admin");
+		redirect("/platform-admin");
 	}
 
 	return (
