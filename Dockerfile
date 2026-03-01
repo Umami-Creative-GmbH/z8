@@ -3,11 +3,12 @@
 # =============================================================================
 # Z8 Multi-Stage Dockerfile
 # =============================================================================
-# Builds optimized containers for: webapp, migration, db-seed, worker
+# Builds optimized containers for: webapp, marketing, migration, db-seed, worker
 # Supports both Alpine (debuggable) and Distroless (secure) variants
 #
 # Build targets:
 #   docker build --target webapp -t z8-webapp .
+#   docker build --target marketing -t z8-marketing .
 #   docker build --target webapp-distroless -t z8-webapp:distroless .
 #   docker build --target migration -t z8-migration .
 #   docker build --target db-seed -t z8-db-seed .
@@ -56,7 +57,7 @@ WORKDIR /app
 FROM base AS pruner
 
 # Install turbo globally for workspace pruning
-RUN pnpm add -g turbo@2.7.5
+RUN pnpm add -g turbo@2.8.10
 
 # Copy workspace configuration files first (better caching)
 COPY pnpm-workspace.yaml package.json pnpm-lock.yaml turbo.json ./
@@ -176,7 +177,113 @@ CMD ["pnpm", "start"]
 # =============================================================================
 
 # =============================================================================
-# Stage 8: migration - One-shot Drizzle migration runner
+# Stage 8: marketing - Production Next.js server (Alpine)
+# =============================================================================
+FROM base AS marketing-pruner
+
+# Install turbo globally for workspace pruning
+RUN pnpm add -g turbo@2.8.10
+
+# Copy workspace configuration files first (better caching)
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml turbo.json ./
+
+# Copy all workspace packages for turbo prune
+COPY apps ./apps
+COPY packages ./packages
+
+# Prune the monorepo to only marketing and its dependencies
+RUN turbo prune marketing --docker
+
+FROM base AS marketing-deps
+
+# Copy pruned workspace manifest files
+COPY --from=marketing-pruner /app/out/json/ ./
+COPY --from=marketing-pruner /app/out/pnpm-lock.yaml ./
+
+# Install all dependencies (including dev for build)
+RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
+    pnpm install --frozen-lockfile
+
+FROM base AS marketing-workspace
+
+# Skip strict env validation during image build.
+# Runtime containers still require real environment variables.
+ENV SKIP_ENV_VALIDATION=1
+
+# Copy installed dependencies
+COPY --from=marketing-deps /app/node_modules ./node_modules
+COPY --from=marketing-deps /app/apps/marketing/node_modules ./apps/marketing/node_modules
+
+# Copy source code from pruned workspace
+COPY --from=marketing-pruner /app/out/full/ ./
+COPY --from=marketing-pruner /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
+
+FROM marketing-workspace AS marketing-builder
+
+# Build the marketing app
+RUN mkdir -p /app/apps/marketing/public
+RUN --mount=type=cache,id=next-cache-marketing,target=/app/apps/marketing/.next/cache \
+    pnpm --filter marketing exec next build
+
+FROM base AS marketing-prod-deps
+
+# Copy pruned workspace manifest files
+COPY --from=marketing-pruner /app/out/json/ ./
+COPY --from=marketing-pruner /app/out/pnpm-lock.yaml ./
+
+# Install production dependencies only
+RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
+    pnpm install --frozen-lockfile --prod
+
+FROM oven/bun:1.2.22-alpine AS marketing
+
+# Install runtime utilities
+RUN apk add --no-cache tini curl
+
+# Set production environment
+ENV NODE_ENV=production \
+    NEXT_TELEMETRY_DISABLED=1 \
+    PORT=3000 \
+    HOSTNAME=0.0.0.0
+
+WORKDIR /app
+
+# Create non-root user
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 marketing
+
+# Copy production dependencies
+COPY --from=marketing-prod-deps --chown=marketing:nodejs /app/node_modules ./node_modules
+COPY --from=marketing-prod-deps --chown=marketing:nodejs /app/apps/marketing/node_modules ./apps/marketing/node_modules
+
+# Copy built application
+COPY --from=marketing-builder --chown=marketing:nodejs /app/apps/marketing/.next ./apps/marketing/.next
+COPY --from=marketing-builder --chown=marketing:nodejs /app/apps/marketing/public ./apps/marketing/public
+COPY --from=marketing-workspace --chown=marketing:nodejs /app/apps/marketing/package.json ./apps/marketing/
+COPY --from=marketing-workspace --chown=marketing:nodejs /app/apps/marketing/next.config.ts ./apps/marketing/
+
+# Copy workspace config for pnpm/next to work correctly
+COPY --from=marketing-workspace --chown=marketing:nodejs /app/package.json ./
+COPY --from=marketing-workspace --chown=marketing:nodejs /app/pnpm-workspace.yaml ./
+
+WORKDIR /app/apps/marketing
+
+USER marketing
+
+EXPOSE 3000
+
+# Health check for Kubernetes liveness/readiness probes
+HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:3000 || exit 1
+
+# Use tini as PID 1 for proper signal handling
+ENTRYPOINT ["/sbin/tini", "--"]
+
+# Start Next.js production server
+CMD ["bun", "x", "next", "start", "-p", "3000"]
+
+# =============================================================================
+# Stage 9: migration - One-shot Drizzle migration runner
 # =============================================================================
 FROM base AS migration
 
@@ -200,7 +307,7 @@ WORKDIR /app/apps/webapp
 CMD ["node", "./scripts/migrate-with-lock.js"]
 
 # =============================================================================
-# Stage 9: db-seed - One-shot database seeder
+# Stage 10: db-seed - One-shot database seeder
 # =============================================================================
 FROM base AS db-seed
 
@@ -222,7 +329,7 @@ WORKDIR /app/apps/webapp
 CMD ["tsx", "src/db/seed/do-seed.ts"]
 
 # =============================================================================
-# Stage 10: worker - BullMQ worker with repeatable cron jobs (Alpine)
+# Stage 11: worker - BullMQ worker with repeatable cron jobs (Alpine)
 # =============================================================================
 FROM base AS worker
 
@@ -257,7 +364,7 @@ ENTRYPOINT ["/sbin/tini", "--"]
 CMD ["tsx", "src/worker.ts"]
 
 # =============================================================================
-# Stage 11: worker-distroless - Secure worker variant
+# Stage 12: worker-distroless - Secure worker variant
 # =============================================================================
 # NOTE: Distroless worker is NOT recommended because:
 # 1. Worker uses tsx to run TypeScript directly

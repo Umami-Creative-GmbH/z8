@@ -1,0 +1,135 @@
+name: Publish Marketing Image
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: publish-marketing-image-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-native:
+    name: Build Native (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 120
+
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - arch: amd64
+            platform: linux/amd64
+            runner: ubuntu-latest
+          - arch: arm64
+            platform: linux/arm64
+            runner: ubuntu-24.04-arm
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push marketing image by digest
+        id: build_marketing
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          target: marketing
+          platforms: ${{ matrix.platform }}
+          outputs: type=image,name=ghcr.io/umami-creative-gmbh/z8-marketing,push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=gha,scope=${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.arch }}
+
+      - name: Export digest artifact
+        env:
+          MARKETING_DIGEST: ${{ steps.build_marketing.outputs.digest }}
+        run: |
+          mkdir -p /tmp/digests/marketing
+          touch "/tmp/digests/marketing/${MARKETING_DIGEST#sha256:}"
+
+      - name: Upload marketing digest
+        uses: actions/upload-artifact@v4
+        with:
+          name: digests-marketing-${{ matrix.arch }}
+          path: /tmp/digests/marketing/*
+          if-no-files-found: error
+
+  publish-manifest:
+    name: Publish Manifest
+    needs: build-native
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download amd64 digest
+        uses: actions/download-artifact@v4
+        with:
+          name: digests-marketing-amd64
+          path: /tmp/digests/amd64
+
+      - name: Download arm64 digest
+        uses: actions/download-artifact@v4
+        with:
+          name: digests-marketing-arm64
+          path: /tmp/digests/arm64
+
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/umami-creative-gmbh/z8-marketing
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,prefix=sha-
+            type=semver,pattern=v{{version}}
+            type=semver,pattern=v{{major}}.{{minor}}
+            type=semver,pattern=v{{major}}
+
+      - name: Create and push multi-arch manifests
+        env:
+          IMAGE_NAME: ghcr.io/umami-creative-gmbh/z8-marketing
+          TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          set -euo pipefail
+
+          set -- /tmp/digests/amd64/*
+          AMD64_DIGEST="sha256:${1##*/}"
+
+          set -- /tmp/digests/arm64/*
+          ARM64_DIGEST="sha256:${1##*/}"
+
+          for tag in $TAGS; do
+            docker buildx imagetools create \
+              -t "$tag" \
+              "$IMAGE_NAME@$AMD64_DIGEST" \
+              "$IMAGE_NAME@$ARM64_DIGEST"
+          done
