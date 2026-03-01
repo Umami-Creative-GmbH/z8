@@ -5,6 +5,8 @@
 
 // Types
 export * from "./types";
+export * from "./connectors/types";
+export * from "./connectors/registry";
 
 // Data fetcher functions
 export {

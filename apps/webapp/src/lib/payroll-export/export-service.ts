@@ -22,6 +22,7 @@ import {
 	successFactorsExporter,
 	successFactorsFormatter,
 } from "./exporters/successfactors";
+import { PayrollConnectorRegistry } from "./connectors/registry";
 import type {
 	IPayrollExportFormatter,
 	IPayrollExporter,
@@ -44,7 +45,7 @@ const formatters = new Map<string, IPayrollExportFormatter>();
 /**
  * Registry of available API-based exporters (Personio, etc.)
  */
-const exporters = new Map<string, IPayrollExporter>();
+const connectorRegistry = new PayrollConnectorRegistry();
 
 // Register DATEV formatter
 const datevFormatter = new DatevLohnFormatter();
@@ -59,10 +60,10 @@ const sageFormatter = new SageLohnFormatter();
 formatters.set(sageFormatter.formatId, sageFormatter);
 
 // Register Personio exporter
-exporters.set(personioExporter.exporterId, personioExporter);
+connectorRegistry.register(personioExporter);
 
 // Register SAP SuccessFactors exporter (API mode)
-exporters.set(successFactorsExporter.exporterId, successFactorsExporter);
+connectorRegistry.register(successFactorsExporter);
 
 // Register SAP SuccessFactors formatter (CSV mode)
 formatters.set(successFactorsFormatter.formatId, successFactorsFormatter);
@@ -85,21 +86,21 @@ export function getAvailableFormatters(): IPayrollExportFormatter[] {
  * Get exporter by ID
  */
 export function getExporter(exporterId: string): IPayrollExporter | undefined {
-	return exporters.get(exporterId);
+	return connectorRegistry.get(exporterId);
 }
 
 /**
  * Get all available exporters
  */
 export function getAvailableExporters(): IPayrollExporter[] {
-	return Array.from(exporters.values());
+	return connectorRegistry.list();
 }
 
 /**
  * Check if a format is API-based (exporter) or file-based (formatter)
  */
 export function isApiBasedExport(formatId: string): boolean {
-	return exporters.has(formatId);
+	return connectorRegistry.has(formatId);
 }
 
 /**
@@ -122,7 +123,7 @@ export async function createExportJob(params: {
 
 	// Check both formatters (file-based) and exporters (API-based)
 	const formatter = formatters.get(params.formatId);
-	const exporter = exporters.get(params.formatId);
+	const exporter = connectorRegistry.get(params.formatId);
 
 	if (!formatter && !exporter) {
 		throw new Error(`Unknown export format: ${params.formatId}`);
@@ -209,7 +210,7 @@ export async function processExportJob(jobId: string): Promise<{
 
 		// Check if this is a file-based formatter or API-based exporter
 		const formatter = formatters.get(job.config.formatId);
-		const exporter = exporters.get(job.config.formatId);
+		const exporter = connectorRegistry.get(job.config.formatId);
 
 		if (!formatter && !exporter) {
 			throw new Error(`Unknown format/exporter: ${job.config.formatId}`);
