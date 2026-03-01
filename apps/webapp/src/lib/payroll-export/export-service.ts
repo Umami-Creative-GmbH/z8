@@ -21,6 +21,7 @@ import { personioConnector } from "./connectors/personio-connector";
 import {
 	successFactorsFormatter,
 } from "./exporters/successfactors";
+import { workdayConnector } from "./exporters/workday/workday-connector";
 import { successFactorsConnector } from "./connectors/successfactors-connector";
 import { PayrollConnectorRegistry } from "./connectors/registry";
 import type {
@@ -64,6 +65,9 @@ connectorRegistry.register(personioConnector);
 
 // Register SAP SuccessFactors exporter (API mode)
 connectorRegistry.register(successFactorsConnector);
+
+// Register Workday exporter (API mode)
+connectorRegistry.register(workdayConnector);
 
 // Register SAP SuccessFactors formatter (CSV mode)
 formatters.set(successFactorsFormatter.formatId, successFactorsFormatter);
