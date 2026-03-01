@@ -45,6 +45,9 @@ next-env.d.ts
 # Auto Claude data directory
 .auto-claude/
 
+# Git worktrees
+.worktrees/
+
 # Turborepo
 .turbo
 
