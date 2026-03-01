@@ -68,14 +68,13 @@ export function useOrganizations() {
     staleTime: 30000,
   });
 
-  const switchMutation = useMutation({
+  const switchMutation = useMutation<void, Error, string>({
     mutationFn: async (organizationId: string) => {
       const session = await invoke<SessionResponse>("get_session");
       if (!session.token || !settings?.webappUrl) {
         throw new Error("Not authenticated");
       }
       await switchOrganization(settings.webappUrl, session.token, organizationId);
-      return organizationId;
     },
     onSuccess: async () => {
       // Force immediate refetch to get updated activeOrganizationId
