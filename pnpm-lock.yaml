@@ -206,6 +206,9 @@ importers:
       tailwind-merge:
         specifier: ^3.5.0
         version: 3.5.0
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
     devDependencies:
       '@biomejs/biome':
         specifier: ^2.4.4
@@ -228,9 +231,6 @@ importers:
       tailwindcss:
         specifier: ^4.2.0
         version: 4.2.0
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
       ultracite:
         specifier: ^7.2.3
         version: 7.2.3
