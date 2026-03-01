@@ -17,11 +17,11 @@ import {
 import { DatevLohnFormatter } from "./formatters/datev-lohn-formatter";
 import { LexwareLohnFormatter } from "./formatters/lexware-lohn-formatter";
 import { SageLohnFormatter } from "./formatters/sage-lohn-formatter";
-import { personioExporter } from "./exporters/personio";
+import { personioConnector } from "./connectors/personio-connector";
 import {
-	successFactorsExporter,
 	successFactorsFormatter,
 } from "./exporters/successfactors";
+import { successFactorsConnector } from "./connectors/successfactors-connector";
 import { PayrollConnectorRegistry } from "./connectors/registry";
 import type {
 	IPayrollExportFormatter,
@@ -60,10 +60,10 @@ const sageFormatter = new SageLohnFormatter();
 formatters.set(sageFormatter.formatId, sageFormatter);
 
 // Register Personio exporter
-connectorRegistry.register(personioExporter);
+connectorRegistry.register(personioConnector);
 
 // Register SAP SuccessFactors exporter (API mode)
-connectorRegistry.register(successFactorsExporter);
+connectorRegistry.register(successFactorsConnector);
 
 // Register SAP SuccessFactors formatter (CSV mode)
 formatters.set(successFactorsFormatter.formatId, successFactorsFormatter);
