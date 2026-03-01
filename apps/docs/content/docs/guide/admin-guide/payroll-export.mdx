@@ -16,6 +16,7 @@ The Payroll Export feature allows you to export employee time tracking data dire
 **API Integrations:**
 - **Personio**: Direct API integration with Personio HR
 - **SAP SuccessFactors**: Direct API integration with SAP SuccessFactors Employee Central
+- **Workday**: Direct API integration with Workday via OAuth2
 
 Access payroll export at **Settings** → **Payroll Export**.
 
@@ -241,6 +242,56 @@ Non-retryable errors are logged with detailed error messages from the SAP Succes
 
 ---
 
+## Workday Integration
+
+Connect Z8 directly to Workday to validate credentials and prepare payroll export workflows through Workday APIs.
+
+### Setting Up Workday
+
+1. Go to **Settings** -> **Payroll Export** -> **Workday** tab
+2. Enter your Workday instance details:
+   - **Instance URL**: Your Workday API base URL (e.g., `https://wd5-impl-services1.workday.com`)
+   - **Tenant ID**: Your Workday tenant identifier
+3. Configure API credentials in the vault:
+   - **Client ID**: OAuth2 client ID for your Workday integration app
+   - **Client Secret**: OAuth2 client secret
+   - **Scope** (optional): OAuth scope required by your Workday tenant
+4. Click **Save Configuration** and **Save Credentials**
+
+Workday OAuth credentials are stored securely in the encrypted organization vault and are never persisted in plain text in payroll export settings.
+
+### Employee Matching
+
+Configure how Z8 matches employees to Workday workers:
+
+| Strategy | Description | Recommendation |
+|----------|-------------|----------------|
+| **Employee Number** | Match by employee number between Z8 and Workday | Recommended when IDs are aligned |
+| **Email** | Match by employee email address | Fallback if employee numbers are not synchronized |
+
+Use **Employee Number** whenever possible for stable and deterministic matching.
+
+### Testing the Connection
+
+After saving configuration and credentials:
+
+1. Click **Test Connection**
+2. Z8 requests an OAuth token with your configured credentials
+3. Z8 validates API access against your Workday tenant
+4. A success message confirms connectivity
+
+If the test fails, verify instance URL, tenant ID, OAuth client credentials, and scope.
+
+### v1 Behavior (Safe Placeholder Export)
+
+In v1, Workday export uses a safe placeholder path after connection validation:
+
+- Export records are not posted to Workday yet
+- Each attendance/absence record is marked as not synced with a clear placeholder error message
+- This prevents silent data loss while preserving full export traceability and retry visibility
+
+---
+
 ## Wage Type Mappings
 
 Map Z8 work categories and absence types to payroll wage codes.
@@ -370,6 +421,14 @@ View all previous exports:
 4. **Test connection first**: Always verify API access before running exports
 5. **Monitor sync results**: Review failed and skipped records after each export
 
+### For Workday Integration
+
+1. **Prefer Employee Number matching**: Use email only when employee numbers are not aligned
+2. **Store only OAuth secrets in vault**: Keep Client ID/Secret (and optional scope) in encrypted vault entries
+3. **Always test connection before export**: Validate OAuth and tenant access before each run
+4. **Account for v1 placeholder behavior**: Current Workday export run validates connectivity but does not post records yet
+5. **Review failed records after each run**: Placeholder export marks records unsynced by design in v1
+
 ### Data Quality
 
 - Ensure work periods are approved before export
@@ -425,6 +484,17 @@ View all previous exports:
 | Rate limit exceeded (429) | The system automatically retries with exponential backoff; reduce batch size if persistent |
 | API timeout | Increase the API Timeout setting or reduce batch size |
 | Absence skipped | Configure wage type mappings for all absence categories |
+
+### Workday Connection Issues
+
+| Issue | Solution |
+|-------|----------|
+| Authentication failed | Verify Workday Client ID, Client Secret, and optional scope in vault |
+| Invalid Instance URL | Confirm your Workday URL is correct and reachable (for example, `https://wd5-impl-services1.workday.com`) |
+| Tenant ID invalid | Ensure Tenant ID matches your Workday tenant exactly |
+| Connection test fails | Re-save configuration and credentials, then retry **Test Connection** |
+| Employee not matched | Align employee numbers or switch to email matching strategy |
+| Records not synced in v1 | Expected behavior: Workday export is a safe placeholder in v1 and does not push records yet |
 
 ### Common Errors
 

@@ -5,6 +5,8 @@
 
 // Types
 export * from "./types";
+export * from "./connectors/types";
+export * from "./connectors/registry";
 
 // Data fetcher functions
 export {
@@ -57,3 +59,7 @@ export type {
 	SuccessFactorsConfig,
 	SuccessFactorsCredentials,
 } from "./exporters/successfactors";
+
+// Workday API connector
+export { WorkdayConnector, workdayConnector } from "./exporters/workday";
+export type { WorkdayConfig } from "./exporters/workday";

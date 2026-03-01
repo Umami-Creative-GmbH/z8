@@ -8,6 +8,7 @@ import { LexwareConfigForm } from "@/components/settings/payroll-export/lexware-
 import { SageConfigForm } from "@/components/settings/payroll-export/sage-config-form";
 import { PersonioConfigForm } from "@/components/settings/payroll-export/personio-config-form";
 import { SuccessFactorsConfigForm } from "@/components/settings/payroll-export/successfactors-config-form";
+import { WorkdayConfigForm } from "@/components/settings/payroll-export/workday-config-form";
 import { ExportForm } from "@/components/settings/payroll-export/export-form";
 import { ExportHistory } from "@/components/settings/payroll-export/export-history";
 import { WageTypeMappings } from "@/components/settings/payroll-export/wage-type-mappings";
@@ -22,6 +23,7 @@ import {
 	getSageConfigAction,
 	getPersonioConfigAction,
 	getSuccessFactorsConfigAction,
+	getWorkdayConfigAction,
 	getExportHistoryAction,
 } from "./actions";
 
@@ -49,12 +51,13 @@ async function PayrollExportContent() {
 	const organizationId = authContext.employee.organizationId;
 
 	// Fetch configs and history in parallel
-	const [datevConfigResult, lexwareConfigResult, sageConfigResult, personioConfigResult, successFactorsConfigResult, historyResult] = await Promise.all([
+	const [datevConfigResult, lexwareConfigResult, sageConfigResult, personioConfigResult, successFactorsConfigResult, workdayConfigResult, historyResult] = await Promise.all([
 		getDatevConfigAction(organizationId),
 		getLexwareConfigAction(organizationId),
 		getSageConfigAction(organizationId),
 		getPersonioConfigAction(organizationId),
 		getSuccessFactorsConfigAction(organizationId),
+		getWorkdayConfigAction(organizationId),
 		getExportHistoryAction(organizationId),
 	]);
 
@@ -63,6 +66,7 @@ async function PayrollExportContent() {
 	const sageConfig = sageConfigResult.success ? sageConfigResult.data : null;
 	const personioConfig = personioConfigResult.success ? personioConfigResult.data : null;
 	const successFactorsConfig = successFactorsConfigResult.success ? successFactorsConfigResult.data : null;
+	const workdayConfig = workdayConfigResult.success ? workdayConfigResult.data : null;
 	const exports = historyResult.success ? historyResult.data : [];
 
 	// For backward compatibility, use datevConfig as main config
@@ -102,6 +106,9 @@ async function PayrollExportContent() {
 					<TabsTrigger value="successfactors">
 						{t("settings.payrollExport.tabs.successfactors", "SAP SuccessFactors")}
 					</TabsTrigger>
+					<TabsTrigger value="workday">
+						{t("settings.payrollExport.tabs.workday", "Workday")}
+					</TabsTrigger>
 					<TabsTrigger value="mappings">
 						{t("settings.payrollExport.tabs.mappings", "Wage Types")}
 					</TabsTrigger>
@@ -132,6 +139,10 @@ async function PayrollExportContent() {
 
 				<TabsContent value="successfactors" className="mt-4">
 					<SuccessFactorsConfigForm organizationId={organizationId} initialConfig={successFactorsConfig} />
+				</TabsContent>
+
+				<TabsContent value="workday" className="mt-4">
+					<WorkdayConfigForm organizationId={organizationId} initialConfig={workdayConfig} />
 				</TabsContent>
 
 				<TabsContent value="mappings" className="mt-4">

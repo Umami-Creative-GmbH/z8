@@ -14,7 +14,7 @@ import {
 } from "@/db";
 import { employee } from "@/db/schema";
 import { isOrgAdminCasl } from "@/lib/auth-helpers";
-import { AuthorizationError, NotFoundError } from "@/lib/effect/errors";
+import { AuthorizationError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
@@ -35,6 +35,7 @@ import {
 	type DatevLohnConfig,
 	type LexwareLohnConfig,
 	type SageLohnConfig,
+	type WorkdayConfig,
 	type WageTypeMapping,
 	type PayrollExportJobSummary,
 } from "@/lib/payroll-export";
@@ -131,6 +132,7 @@ export interface DeleteMappingInput {
 
 export interface StartExportInput {
 	organizationId: string;
+	formatId: string;
 	startDate: string; // ISO date
 	endDate: string; // ISO date
 	employeeIds?: string[];
@@ -968,6 +970,366 @@ export async function deleteSuccessFactorsCredentialsAction(
 }
 
 // ============================================
+// WORKDAY CONFIGURATION TYPES
+// ============================================
+
+export const WORKDAY_FORMAT_ID = "workday_api";
+
+const WORKDAY_VAULT_KEY_CLIENT_ID = "payroll/workday/client_id";
+const WORKDAY_VAULT_KEY_CLIENT_SECRET = "payroll/workday/client_secret";
+
+export interface WorkdayConfigResult {
+	id: string;
+	formatId: string;
+	config: WorkdayConfig;
+	isActive: boolean;
+	hasCredentials: boolean;
+	createdAt: Date;
+	updatedAt: Date;
+}
+
+export interface SaveWorkdayConfigInput {
+	organizationId: string;
+	config: WorkdayConfig;
+}
+
+export interface SaveWorkdayCredentialsInput {
+	organizationId: string;
+	clientId: string;
+	clientSecret: string;
+}
+
+// ============================================
+// WORKDAY CONFIGURATION ACTIONS
+// ============================================
+
+export async function getWorkdayConfigAction(
+	organizationId: string,
+): Promise<ServerActionResult<WorkdayConfigResult | null>> {
+	const effect = Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
+
+		const hasPermission = yield* _(
+			Effect.promise(() => isOrgAdminCasl(organizationId)),
+		);
+
+		if (!hasPermission) {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Insufficient permissions - admin role required",
+						userId: session.user.id,
+						resource: "payroll_export_config",
+						action: "read",
+					}),
+				),
+			);
+		}
+
+		const configResult = yield* _(
+			Effect.promise(() => getPayrollExportConfig(organizationId, WORKDAY_FORMAT_ID)),
+		);
+
+		if (!configResult) {
+			return null;
+		}
+
+		const hasCredentials = yield* _(
+			Effect.promise(async () => {
+				const clientId = await getOrgSecret(organizationId, WORKDAY_VAULT_KEY_CLIENT_ID);
+				const clientSecret = await getOrgSecret(
+					organizationId,
+					WORKDAY_VAULT_KEY_CLIENT_SECRET,
+				);
+				return (
+					clientId !== null &&
+					clientSecret !== null &&
+					clientId.trim().length > 0 &&
+					clientSecret.trim().length > 0
+				);
+			}),
+		);
+
+		return {
+			id: configResult.config.id,
+			formatId: configResult.config.formatId,
+			config: configResult.config.config as unknown as WorkdayConfig,
+			isActive: configResult.config.isActive,
+			hasCredentials,
+			createdAt: configResult.config.createdAt,
+			updatedAt: configResult.config.updatedAt,
+		};
+	});
+
+	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+}
+
+export async function saveWorkdayConfigAction(
+	input: SaveWorkdayConfigInput,
+): Promise<ServerActionResult<WorkdayConfigResult>> {
+	const effect = Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
+
+		const hasPermission = yield* _(
+			Effect.promise(() => isOrgAdminCasl(input.organizationId)),
+		);
+
+		if (!hasPermission) {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Insufficient permissions - admin role required",
+						userId: session.user.id,
+						resource: "payroll_export_config",
+						action: "create",
+					}),
+				),
+			);
+		}
+
+		yield* _(
+			Effect.promise(async () => {
+				const format = await db.query.payrollExportFormat.findFirst({
+					where: eq(payrollExportFormat.id, WORKDAY_FORMAT_ID),
+				});
+
+				if (!format) {
+					await db.insert(payrollExportFormat).values({
+						id: WORKDAY_FORMAT_ID,
+						name: "Workday (API)",
+						version: "1.0.0",
+						description: "Export to Workday via REST API",
+						isEnabled: true,
+						requiresConfiguration: true,
+						supportsAsync: true,
+						syncThreshold: 500,
+						updatedAt: new Date(),
+					});
+				}
+			}),
+		);
+
+		const config = yield* _(
+			Effect.promise(async () => {
+				const existing = await db.query.payrollExportConfig.findFirst({
+					where: and(
+						eq(payrollExportConfig.organizationId, input.organizationId),
+						eq(payrollExportConfig.formatId, WORKDAY_FORMAT_ID),
+					),
+				});
+
+				if (existing) {
+					const [updated] = await db
+						.update(payrollExportConfig)
+						.set({
+							config: input.config as unknown as Record<string, unknown>,
+							updatedBy: session.user.id,
+						})
+						.where(eq(payrollExportConfig.id, existing.id))
+						.returning();
+
+					return updated;
+				}
+
+				const [inserted] = await db
+					.insert(payrollExportConfig)
+					.values({
+						organizationId: input.organizationId,
+						formatId: WORKDAY_FORMAT_ID,
+						config: input.config as unknown as Record<string, unknown>,
+						isActive: true,
+						createdBy: session.user.id,
+						updatedAt: new Date(),
+					})
+					.returning();
+
+				return inserted;
+			}),
+		);
+
+		const hasCredentials = yield* _(
+			Effect.promise(async () => {
+				const clientId = await getOrgSecret(input.organizationId, WORKDAY_VAULT_KEY_CLIENT_ID);
+				const clientSecret = await getOrgSecret(
+					input.organizationId,
+					WORKDAY_VAULT_KEY_CLIENT_SECRET,
+				);
+				return (
+					clientId !== null &&
+					clientSecret !== null &&
+					clientId.trim().length > 0 &&
+					clientSecret.trim().length > 0
+				);
+			}),
+		);
+
+		revalidatePath("/settings/payroll-export");
+
+		return {
+			id: config.id,
+			formatId: config.formatId,
+			config: config.config as unknown as WorkdayConfig,
+			isActive: config.isActive,
+			hasCredentials,
+			createdAt: config.createdAt,
+			updatedAt: config.updatedAt,
+		};
+	});
+
+	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+}
+
+export async function saveWorkdayCredentialsAction(
+	input: SaveWorkdayCredentialsInput,
+): Promise<ServerActionResult<{ success: boolean }>> {
+	const effect = Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
+
+		const hasPermission = yield* _(
+			Effect.promise(() => isOrgAdminCasl(input.organizationId)),
+		);
+
+		if (!hasPermission) {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Insufficient permissions - admin role required",
+						userId: session.user.id,
+						resource: "payroll_export_config",
+						action: "create",
+					}),
+				),
+			);
+		}
+
+		const clientId = input.clientId.trim();
+		if (clientId.length === 0) {
+			yield* _(
+				Effect.fail(
+					new ValidationError({
+						message: "Workday client ID cannot be empty",
+						field: "clientId",
+					}),
+				),
+			);
+		}
+
+		const clientSecret = input.clientSecret.trim();
+		if (clientSecret.length === 0) {
+			yield* _(
+				Effect.fail(
+					new ValidationError({
+						message: "Workday client secret cannot be empty",
+						field: "clientSecret",
+					}),
+				),
+			);
+		}
+
+		yield* _(
+			Effect.promise(async () => {
+				await storeOrgSecret(input.organizationId, WORKDAY_VAULT_KEY_CLIENT_ID, clientId);
+				await storeOrgSecret(
+					input.organizationId,
+					WORKDAY_VAULT_KEY_CLIENT_SECRET,
+					clientSecret,
+				);
+			}),
+		);
+
+		revalidatePath("/settings/payroll-export");
+
+		return { success: true };
+	});
+
+	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+}
+
+export async function deleteWorkdayCredentialsAction(
+	organizationId: string,
+): Promise<ServerActionResult<{ success: boolean }>> {
+	const effect = Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
+
+		const hasPermission = yield* _(
+			Effect.promise(() => isOrgAdminCasl(organizationId)),
+		);
+
+		if (!hasPermission) {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Insufficient permissions - admin role required",
+						userId: session.user.id,
+						resource: "payroll_export_config",
+						action: "delete",
+					}),
+				),
+			);
+		}
+
+		yield* _(
+			Effect.promise(async () => {
+				await deleteOrgSecret(organizationId, WORKDAY_VAULT_KEY_CLIENT_ID);
+				await deleteOrgSecret(organizationId, WORKDAY_VAULT_KEY_CLIENT_SECRET);
+			}),
+		);
+
+		revalidatePath("/settings/payroll-export");
+
+		return { success: true };
+	});
+
+	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+}
+
+export async function testWorkdayConnectionAction(input: {
+	organizationId: string;
+	config: WorkdayConfig;
+}): Promise<ServerActionResult<{ success: boolean; error?: string }>> {
+	const effect = Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
+
+		const hasPermission = yield* _(
+			Effect.promise(() => isOrgAdminCasl(input.organizationId)),
+		);
+
+		if (!hasPermission) {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Insufficient permissions - admin role required",
+						userId: session.user.id,
+						resource: "payroll_export_config",
+						action: "read",
+					}),
+				),
+			);
+		}
+
+		const { workdayConnector } = yield* _(
+			Effect.promise(() => import("@/lib/payroll-export/exporters/workday/workday-connector")),
+		);
+
+		return yield* _(
+			Effect.promise(() =>
+				workdayConnector.testConnection(
+					input.organizationId,
+					input.config as unknown as Record<string, unknown>,
+				),
+			),
+		);
+	});
+
+	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+}
+
+// ============================================
 // WAGE TYPE MAPPING ACTIONS
 // ============================================
 
@@ -1461,7 +1823,7 @@ export async function startExportAction(
 			Effect.promise(() =>
 				createExportJob({
 					organizationId: input.organizationId,
-					formatId: "datev_lohn",
+					formatId: input.formatId,
 					requestedById: currentEmployee.id,
 					filters,
 				}),

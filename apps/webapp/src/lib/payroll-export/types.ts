@@ -83,6 +83,13 @@ export type {
 } from "./exporters/successfactors/types";
 export { DEFAULT_SUCCESSFACTORS_CONFIG } from "./exporters/successfactors/types";
 
+// Workday types - re-exported from exporter module
+export type {
+	WorkdayConfig,
+	WorkdayEmployeeMatchStrategy,
+} from "./exporters/workday/types";
+export { DEFAULT_WORKDAY_CONFIG } from "./exporters/workday/types";
+
 // ============================================
 // WAGE TYPE MAPPING TYPES
 // ============================================
