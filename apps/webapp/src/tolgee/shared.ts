@@ -35,9 +35,9 @@ export const ROUTE_NAMESPACES: Record<string, Namespace[]> = {
 	"/forgot-password": ["common", "auth"],
 	"/reset-password": ["common", "auth"],
 	"/verify-email": ["common", "auth"],
-	// Admin routes
-	"/admin": ["common", "admin"],
-	"/admin/worker-queue": ["common", "admin", "settings"],
+	// Platform admin routes
+	"/platform-admin": ["common", "admin"],
+	"/platform-admin/worker-queue": ["common", "admin", "settings"],
 	// Main app routes
 	"/": ["common", "dashboard"],
 	"/calendar": ["common", "calendar"],
@@ -58,8 +58,13 @@ export function getNamespacesForRoute(pathname: string): Namespace[] {
 	}
 
 	// Check prefix matches (e.g., /settings/employees matches /settings)
-	for (const [route, namespaces] of Object.entries(ROUTE_NAMESPACES)) {
-		if (pathname.startsWith(route) && route !== "/") {
+	const prefixRoutes = Object.entries(ROUTE_NAMESPACES)
+		.filter(([route]) => route !== "/")
+		.sort(([a], [b]) => b.length - a.length);
+
+	for (const [route, namespaces] of prefixRoutes) {
+		const isSegmentBoundaryMatch = pathname === route || pathname.startsWith(`${route}/`);
+		if (isSegmentBoundaryMatch) {
 			return namespaces;
 		}
 	}

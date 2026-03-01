@@ -76,8 +76,8 @@ export function CategoryDialog({
 			};
 
 			const endpoint = isEditing
-				? `/api/admin/holiday-categories/${editingCategory.id}`
-				: "/api/admin/holiday-categories";
+				? `/api/org-admin/holiday-categories/${editingCategory.id}`
+				: "/api/org-admin/holiday-categories";
 			const method = isEditing ? "PATCH" : "POST";
 
 			const response = await fetch(endpoint, {

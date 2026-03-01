@@ -1,9 +1,12 @@
 {
   "admin": {
     "layout": {
+      "title": "Administración de la plataforma",
+      "subtitle": "Administración de la plataforma",
       "nav": {
-        "workerQueue": "Cola de workers"
-      }
+        "workerQueue": "Cola de procesos"
+      },
+      "exitAdmin": "Salir de la administración de la plataforma"
     }
   }
 }

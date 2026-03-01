@@ -32,25 +32,25 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 	const t = await getTranslate();
 
 	const navItems = [
-		{ href: "/admin", icon: IconChartBar, label: t("admin.layout.nav.overview", "Overview") },
-		{ href: "/admin/users", icon: IconUsers, label: t("admin.layout.nav.users", "Users") },
+		{ href: "/platform-admin", icon: IconChartBar, label: t("admin.layout.nav.overview", "Overview") },
+		{ href: "/platform-admin/users", icon: IconUsers, label: t("admin.layout.nav.users", "Users") },
 		{
-			href: "/admin/organizations",
+			href: "/platform-admin/organizations",
 			icon: IconBuilding,
 			label: t("admin.layout.nav.organizations", "Organizations"),
 		},
 		{
-			href: "/admin/billing",
+			href: "/platform-admin/billing",
 			icon: IconCreditCard,
 			label: t("admin.layout.nav.billing", "Billing"),
 		},
 		{
-			href: "/admin/settings",
+			href: "/platform-admin/settings",
 			icon: IconSettings,
 			label: t("admin.layout.nav.settings", "Settings"),
 		},
 		{
-			href: "/admin/worker-queue",
+			href: "/platform-admin/worker-queue",
 			icon: IconServer,
 			label: t("admin.layout.nav.workerQueue", "Worker Queue"),
 		},
@@ -65,7 +65,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 					<div className="flex items-center gap-8">
 						{/* Branding */}
 						<Link
-							href="/admin"
+							href="/platform-admin"
 							className="group flex items-center gap-3 transition-opacity hover:opacity-80"
 						>
 							<div className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">

@@ -1,8 +1,8 @@
 {
   "admin": {
     "layout": {
-      "title": "Admin Console",
-      "subtitle": "Platform Management",
+      "title": "Platform Admin",
+      "subtitle": "Platform Administration",
       "nav": {
         "overview": "Overview",
         "users": "Users",
@@ -11,7 +11,7 @@
         "settings": "Settings",
         "workerQueue": "Worker Queue"
       },
-      "exitAdmin": "Exit Admin"
+      "exitAdmin": "Exit Platform Admin"
     },
     "overview": {
       "title": "Overview",
