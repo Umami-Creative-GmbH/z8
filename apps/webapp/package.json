@@ -111,7 +111,7 @@
 		"effect": "^3.19.19",
 		"embla-carousel-react": "^8.6.0",
 		"exceljs": "^4.4.0",
-		"fast-xml-parser": "^5.3.7",
+		"fast-xml-parser": "^5.3.8",
 		"file-type": "^21.3.0",
 		"input-otp": "^1.4.2",
 		"ioredis": "^5.9.3",
