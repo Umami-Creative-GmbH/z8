@@ -319,6 +319,3 @@ export async function isQueueHealthy(): Promise<boolean> {
 		return false;
 	}
 }
-
-// Export the queue for direct access if needed
-export const jobQueue = getJobQueue();

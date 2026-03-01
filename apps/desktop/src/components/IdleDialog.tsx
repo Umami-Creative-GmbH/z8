@@ -1,4 +1,4 @@
-import { Coffee, Briefcase, X } from "lucide-react";
+import { Coffee, Briefcase } from "lucide-react";
 import { formatIdleDuration, cn } from "../lib/utils";
 import type { IdleEvent } from "../types";
 

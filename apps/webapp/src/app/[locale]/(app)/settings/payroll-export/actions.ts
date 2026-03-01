@@ -973,7 +973,7 @@ export async function deleteSuccessFactorsCredentialsAction(
 // WORKDAY CONFIGURATION TYPES
 // ============================================
 
-export const WORKDAY_FORMAT_ID = "workday_api";
+const WORKDAY_FORMAT_ID = "workday_api";
 
 const WORKDAY_VAULT_KEY_CLIENT_ID = "payroll/workday/client_id";
 const WORKDAY_VAULT_KEY_CLIENT_SECRET = "payroll/workday/client_secret";

@@ -153,13 +153,14 @@ vi.mock("@/lib/effect/result", async () => {
 });
 
 const {
-	WORKDAY_FORMAT_ID,
 	deleteWorkdayCredentialsAction,
 	getWorkdayConfigAction,
 	saveWorkdayConfigAction,
 	saveWorkdayCredentialsAction,
 	testWorkdayConnectionAction,
 } = await import("./actions");
+
+const WORKDAY_FORMAT_ID = "workday_api";
 
 describe("payroll export workday actions", () => {
 	beforeEach(() => {

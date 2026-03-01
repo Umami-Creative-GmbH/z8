@@ -26,12 +26,12 @@ export const storage = {
   // Settings
   async getSettings(): Promise<ExtensionSettings> {
     try {
-      const result = await chrome.storage.sync.get([
+      const result = (await chrome.storage.sync.get([
         "webappUrl",
         "notificationsEnabled",
         "notifyOnClockIn",
         "notifyOnClockOut",
-      ]);
+      ])) as Partial<ExtensionSettings>;
       return {
         webappUrl: result.webappUrl || DEFAULT_SETTINGS.webappUrl,
         notificationsEnabled: result.notificationsEnabled ?? DEFAULT_SETTINGS.notificationsEnabled,
@@ -72,7 +72,9 @@ export const storage = {
   // Offline Queue
   async getQueuedActions(): Promise<QueuedAction[]> {
     try {
-      const result = await chrome.storage.local.get(["actionQueue"]);
+      const result = (await chrome.storage.local.get(["actionQueue"])) as {
+        actionQueue?: QueuedAction[];
+      };
       return result.actionQueue || [];
     } catch {
       return [];
@@ -104,7 +106,9 @@ export const storage = {
   // Optimistic state for offline mode
   async getOptimisticState(): Promise<{ isClockedIn: boolean; startTime: string | null } | null> {
     try {
-      const result = await chrome.storage.local.get(["optimisticState"]);
+      const result = (await chrome.storage.local.get(["optimisticState"])) as {
+        optimisticState?: { isClockedIn: boolean; startTime: string | null } | null;
+      };
       return result.optimisticState || null;
     } catch {
       return null;

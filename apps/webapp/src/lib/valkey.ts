@@ -5,8 +5,22 @@ import { env } from "@/env";
 const logger = createLogger("Valkey");
 const hasValkeyConfig = Boolean(env.VALKEY_HOST || env.REDIS_HOST);
 const shouldDisableValkeyDuringBuild =
+	(!hasValkeyConfig && env.NODE_ENV === "production") ||
 	process.env.NEXT_PHASE === "phase-production-build" ||
+	process.env.npm_lifecycle_event === "build" ||
 	(process.env.CI === "true" && !hasValkeyConfig);
+
+const noopValkeyClient = {
+	status: "end",
+	get: async () => null,
+	set: async () => "OK",
+	del: async () => 0,
+	publish: async () => 0,
+	ping: async () => "PONG",
+	eval: async () => null,
+	evalsha: async () => null,
+	on: () => noopValkeyClient,
+} as unknown as Redis;
 
 // Singleton pattern for Valkey connection
 const globalForValkey = globalThis as unknown as {
@@ -53,10 +67,14 @@ function createValkeyClient(): Redis {
 	return client;
 }
 
-export const valkey = globalForValkey.valkey ?? createValkeyClient();
+export const valkey = shouldDisableValkeyDuringBuild
+	? noopValkeyClient
+	: globalForValkey.valkey ?? createValkeyClient();
 
 // Dedicated publisher client for pub/sub (pub/sub clients can't be used for regular commands)
-export const valkeyPub = globalForValkey.valkeyPub ?? createValkeyClient();
+export const valkeyPub = shouldDisableValkeyDuringBuild
+	? noopValkeyClient
+	: globalForValkey.valkeyPub ?? createValkeyClient();
 
 if (env.NODE_ENV !== "production") {
 	globalForValkey.valkey = valkey;
@@ -68,6 +86,10 @@ if (env.NODE_ENV !== "production") {
  * Each SSE connection needs its own subscriber client
  */
 export function createValkeySubscriber(): Redis {
+	if (shouldDisableValkeyDuringBuild) {
+		return noopValkeyClient;
+	}
+
 	return createValkeyClient();
 }
 

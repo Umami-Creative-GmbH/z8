@@ -25,9 +25,9 @@ export function useSettings() {
     };
   }, []);
 
-  const saveMutation = useMutation({
+  const saveMutation = useMutation<void, Error, Omit<Settings, "version">>({
     mutationFn: (settings: Omit<Settings, "version">) =>
-      invoke("save_settings", settings),
+      invoke<void>("save_settings", settings),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["settings"] });
     },

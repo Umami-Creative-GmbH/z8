@@ -48,6 +48,9 @@ class ExceptionOnlySpanProcessor implements SpanProcessor {
 
 export async function register() {
 	if (process.env.NEXT_RUNTIME === "nodejs") {
+		const isBuildTime =
+			process.env.NEXT_PHASE === "phase-production-build" ||
+			process.env.npm_lifecycle_event === "build";
 		const isDev = process.env.NODE_ENV === "development";
 		const hasRemoteOtel = !!process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
 
@@ -97,16 +100,18 @@ export async function register() {
 			}
 		}
 
-		// Run startup health checks after OpenTelemetry and storage are initialized
-		const { runStartupChecks } = await import("@/lib/health");
-		const healthy = await runStartupChecks();
+		if (!isBuildTime) {
+			// Run startup health checks after OpenTelemetry and storage are initialized
+			const { runStartupChecks } = await import("@/lib/health");
+			const healthy = await runStartupChecks();
 
-		if (!healthy) {
-			console.error(
-				"[FATAL] Critical startup checks failed - database or storage unavailable",
-			);
-			if (process.env.NODE_ENV === "production") {
-				process.exit(1);
+			if (!healthy) {
+				console.error(
+					"[FATAL] Critical startup checks failed - database or storage unavailable",
+				);
+				if (process.env.NODE_ENV === "production") {
+					process.exit(1);
+				}
 			}
 		}
 
