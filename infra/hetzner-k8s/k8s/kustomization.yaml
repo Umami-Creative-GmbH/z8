@@ -9,6 +9,10 @@ resources:
   - app/valkey.yaml
   - app/rustfs.yaml
   - app/web-deployment.yaml
+  - app/marketing-deployment.yaml
   - app/worker-deployment.yaml
   - app/web-service.yaml
+  - app/marketing-service.yaml
+  - app/www-redirect-middleware.yaml
   - app/web-ingress.yaml
+  - app/marketing-ingress.yaml

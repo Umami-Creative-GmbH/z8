@@ -4,19 +4,18 @@ import { sso } from "@better-auth/sso";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { betterAuth } from "better-auth/minimal";
 import { nextCookies } from "better-auth/next-js";
-import { admin, apiKey, bearer, organization, twoFactor } from "better-auth/plugins";
-import { and, eq } from "drizzle-orm";
+import { apiKey } from "@better-auth/api-key";
+import { admin } from "better-auth/plugins/admin";
+import { bearer } from "better-auth/plugins/bearer";
+import { organization } from "better-auth/plugins/organization";
+import { twoFactor } from "better-auth/plugins/two-factor";
+import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import * as schema from "@/db/auth-schema";
 import {
 	employee,
-	roleTemplate,
-	roleTemplateMapping,
-	scimProviderConfig,
 	scimProvisioningLog,
 	teamPermissions,
-	userLifecycleEvent,
-	userRoleTemplateAssignment,
 } from "@/db/schema";
 import { getDefaultAppBaseUrl, getOrganizationBaseUrl } from "./app-url";
 import { getDomainConfig } from "./domain/domain-service";
@@ -28,8 +27,13 @@ import {
 } from "./email/render";
 import { createLogger } from "./logger";
 import { secondaryStorage } from "./valkey";
+import { env } from "@/env";
 
 const logger = createLogger("Auth");
+
+const BILLING_ENABLED = process.env.BILLING_ENABLED === "true";
+
+type MemberSeatChange = "added" | "removed";
 
 /**
  * Get the primary organization ID for a user (for auth emails)
@@ -48,8 +52,80 @@ async function getUserPrimaryOrganizationId(userId: string): Promise<string | un
 	}
 }
 
+async function getOrganizationEmailContext(userId: string, url: string) {
+	const organizationId = await getUserPrimaryOrganizationId(userId);
+	const appUrl = await getOrganizationBaseUrl(organizationId);
+	const urlObj = new URL(url);
+
+	return {
+		organizationId,
+		appUrl,
+		correctedUrl: `${appUrl}${urlObj.pathname}${urlObj.search}`,
+	};
+}
+
+async function syncBillingSeats({
+	organizationId,
+	memberId,
+	userId,
+	change,
+}: {
+	organizationId: string;
+	memberId: string;
+	userId: string;
+	change: MemberSeatChange;
+}) {
+	if (!BILLING_ENABLED) {
+		return;
+	}
+
+	try {
+		const { Effect, Layer } = await import("effect");
+		const {
+			SeatSyncService,
+			SeatSyncServiceLive,
+			StripeServiceLive,
+			SubscriptionServiceLive,
+		} = await import("@/lib/effect/services/billing");
+
+		const layers = SeatSyncServiceLive.pipe(
+			Layer.provide(StripeServiceLive),
+			Layer.provide(SubscriptionServiceLive),
+		);
+
+		const program = Effect.gen(function* () {
+			const seatSyncService = yield* SeatSyncService;
+
+			if (change === "added") {
+				yield* seatSyncService.handleMemberAdded(organizationId, memberId, userId);
+				return;
+			}
+
+			yield* seatSyncService.handleMemberRemoved(organizationId, memberId, userId);
+		});
+
+		await Effect.runPromise(program.pipe(Effect.provide(layers)));
+	} catch (error) {
+		logger.error(
+			{ error, organizationId },
+			change === "added"
+				? "Failed to sync seats after member added"
+				: "Failed to sync seats after member removed",
+		);
+	}
+}
+
 export const auth = betterAuth({
-	baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
+	baseURL: {
+    allowedHosts: [
+      env.APP_URL || "ui.z8-time.app",
+      "ui.z8-time.app", // Production
+      "localhost:3000", // Local development
+    ],
+    fallback: env.APP_URL || "https://ui.z8-time.app",
+    protocol: "auto",
+  },
+	//baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
 
 	// Dynamic trusted origins for custom domains
 	// This allows auth requests from verified custom domains that proxy to the app
@@ -137,13 +213,7 @@ export const auth = betterAuth({
 		enabled: true,
 		requireEmailVerification: true,
 		sendResetPassword: async ({ user, url }, _request) => {
-			// Look up user's org for org-specific email config and custom domain
-			const organizationId = await getUserPrimaryOrganizationId(user.id);
-			const appUrl = await getOrganizationBaseUrl(organizationId);
-
-			// Rewrite URL to use correct base (organization's custom domain if available)
-			const urlObj = new URL(url);
-			const correctedUrl = `${appUrl}${urlObj.pathname}${urlObj.search}`;
+			const { organizationId, correctedUrl } = await getOrganizationEmailContext(user.id, url);
 
 			const html = await renderPasswordReset({
 				userName: user.name,
@@ -161,14 +231,11 @@ export const auth = betterAuth({
 	},
 	emailVerification: {
 		sendOnSignUp: true,
-		sendVerificationEmail: async ({ user, url, token }, _request) => {
-			// Look up user's org for org-specific email config and custom domain
-			const organizationId = await getUserPrimaryOrganizationId(user.id);
-			const appUrl = await getOrganizationBaseUrl(organizationId);
-
-			// Rewrite URL to use correct base (organization's custom domain if available)
-			const urlObj = new URL(url);
-			const correctedUrl = `${appUrl}${urlObj.pathname}${urlObj.search}`;
+		sendVerificationEmail: async ({ user, url }, _request) => {
+			const { organizationId, appUrl, correctedUrl } = await getOrganizationEmailContext(
+				user.id,
+				url,
+			);
 
 			const html = await renderEmailVerification({
 				userName: user.name,
@@ -244,6 +311,8 @@ export const auth = betterAuth({
 				}
 				return userRecord?.canCreateOrganizations ?? false;
 			},
+			organizationLimit: 5,
+			membershipLimit: 100,
 			organizationRoles: ["owner", "admin", "member"],
 			creatorRole: "owner",
 			// Schema customization for organization and invitation tables
@@ -406,72 +475,22 @@ export const auth = betterAuth({
 						}
 					}
 
-					// Sync seat count to Stripe if billing is enabled
-					if (process.env.BILLING_ENABLED === "true") {
-						try {
-							const { Effect, Layer } = await import("effect");
-							const {
-								SeatSyncService,
-								SeatSyncServiceLive,
-								StripeServiceLive,
-								SubscriptionServiceLive,
-							} = await import("@/lib/effect/services/billing");
-
-							const layers = SeatSyncServiceLive.pipe(
-								Layer.provide(StripeServiceLive),
-								Layer.provide(SubscriptionServiceLive),
-							);
-
-							const program = Effect.gen(function* () {
-								const seatSyncService = yield* SeatSyncService;
-								yield* seatSyncService.handleMemberAdded(organization.id, member.id, user.id);
-							});
-
-							await Effect.runPromise(program.pipe(Effect.provide(layers)));
-						} catch (error) {
-							// Log but don't fail - seat sync is non-blocking
-							logger.error(
-								{ error, organizationId: organization.id },
-								"Failed to sync seats after member added",
-							);
-						}
-					}
+					await syncBillingSeats({
+						organizationId: organization.id,
+						memberId: member.id,
+						userId: user.id,
+						change: "added",
+					});
 				},
 
 				// Sync seat count when member is removed
 				afterRemoveMember: async ({ member, organization }) => {
-					if (process.env.BILLING_ENABLED === "true") {
-						try {
-							const { Effect, Layer } = await import("effect");
-							const {
-								SeatSyncService,
-								SeatSyncServiceLive,
-								StripeServiceLive,
-								SubscriptionServiceLive,
-							} = await import("@/lib/effect/services/billing");
-
-							const layers = SeatSyncServiceLive.pipe(
-								Layer.provide(StripeServiceLive),
-								Layer.provide(SubscriptionServiceLive),
-							);
-
-							const program = Effect.gen(function* () {
-								const seatSyncService = yield* SeatSyncService;
-								yield* seatSyncService.handleMemberRemoved(
-									organization.id,
-									member.id,
-									member.userId,
-								);
-							});
-
-							await Effect.runPromise(program.pipe(Effect.provide(layers)));
-						} catch (error) {
-							logger.error(
-								{ error, organizationId: organization.id },
-								"Failed to sync seats after member removed",
-							);
-						}
-					}
+					await syncBillingSeats({
+						organizationId: organization.id,
+						memberId: member.id,
+						userId: member.userId,
+						change: "removed",
+					});
 				},
 			},
 		}),
@@ -551,7 +570,7 @@ export const auth = betterAuth({
 		}),
 		// SCIM 2.0 provisioning for enterprise identity management
 		// Integrates with Azure AD, Okta, Google Workspace, and generic SCIM 2.0 providers
-		// User lifecycle events are handled via databaseHooks below
+		// User lifecycle events are handled by the provisioning services
 		scim({
 			// Store SCIM tokens encrypted for security
 			storeSCIMToken: "encrypted",
