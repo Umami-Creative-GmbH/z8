@@ -3,6 +3,9 @@ import { z } from "zod";
 
 export const env = createEnv({
 	server: {
+		APP_URL: z.url().optional(),
+		BETTER_AUTH_SECRET: z.string().min(32),
+
 		// DATABASE_URL: z.string().url(), // Not used, using individual vars
 		// Postgres connection details
 		POSTGRES_HOST: z.string().optional(),
@@ -11,7 +14,6 @@ export const env = createEnv({
 		POSTGRES_USER: z.string().optional(),
 		POSTGRES_PASSWORD: z.string().optional(),
 
-		BETTER_AUTH_SECRET: z.string().min(1),
 		// Valkey / Redis
 		VALKEY_HOST: z.string().optional(),
 		VALKEY_PORT: z.string().optional(),
@@ -106,6 +108,8 @@ export const env = createEnv({
 		NEXT_PUBLIC_TOLGEE_API_URL: z.url().optional(),
 	},
 	runtimeEnv: {
+		APP_URL: process.env.APP_URL,
+
 		// DATABASE_URL: process.env.DATABASE_URL,
 		POSTGRES_HOST: process.env.POSTGRES_HOST,
 		POSTGRES_PORT: process.env.POSTGRES_PORT,
