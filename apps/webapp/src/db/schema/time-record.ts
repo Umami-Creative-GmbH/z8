@@ -1,4 +1,5 @@
-import { boolean, index, integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import { boolean, check, index, integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 
 import { organization, user } from "../auth-schema";
@@ -47,11 +48,20 @@ export const timeRecord = pgTable(
 		index("timeRecord_employeeId_idx").on(table.employeeId),
 		index("timeRecord_recordKind_idx").on(table.recordKind),
 		index("timeRecord_approvalState_idx").on(table.approvalState),
+		index("timeRecord_org_startAt_idx").on(table.organizationId, table.startAt),
 		index("timeRecord_startAt_idx").on(table.startAt),
 		index("timeRecord_employee_org_startAt_idx").on(
 			table.employeeId,
 			table.organizationId,
 			table.startAt,
+		),
+		check(
+			"timeRecord_durationMinutes_nonNegative_chk",
+			sql`${table.durationMinutes} IS NULL OR ${table.durationMinutes} >= 0`,
+		),
+		check(
+			"timeRecord_endAt_afterStartAt_chk",
+			sql`${table.endAt} IS NULL OR ${table.endAt} >= ${table.startAt}`,
 		),
 	],
 );
@@ -137,6 +147,14 @@ export const timeRecordAllocation = pgTable(
 		index("timeRecordAllocation_recordId_idx").on(table.recordId),
 		index("timeRecordAllocation_projectId_idx").on(table.projectId),
 		index("timeRecordAllocation_costCenterId_idx").on(table.costCenterId),
+		check(
+			"timeRecordAllocation_kind_target_chk",
+			sql`(
+				${table.allocationKind} = 'project' AND ${table.projectId} IS NOT NULL AND ${table.costCenterId} IS NULL
+			) OR (
+				${table.allocationKind} = 'cost_center' AND ${table.costCenterId} IS NOT NULL AND ${table.projectId} IS NULL
+			)`,
+		),
 	],
 );
 
