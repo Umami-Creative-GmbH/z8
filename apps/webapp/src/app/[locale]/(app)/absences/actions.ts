@@ -31,8 +31,9 @@ import { ConflictError, NotFoundError, ValidationError } from "@/lib/effect/erro
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
-import { DatabaseService } from "@/lib/effect/services/database.service";
+import { DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { EmailService } from "@/lib/effect/services/email.service";
+import { TimeRecordService, TimeRecordServiceLive } from "@/lib/effect/services/time-record.service";
 import {
 	renderAbsenceRequestPendingApproval,
 	renderAbsenceRequestSubmitted,
@@ -45,6 +46,65 @@ import {
 import { addCalendarSyncJob } from "@/lib/queue";
 
 const logger = createLogger("AbsenceActionsEffect");
+
+export const canonicalAbsenceRecordClient = {
+	create: async (input: {
+		organizationId: string;
+		employeeId: string;
+		startDate: string;
+		endDate: string;
+		requiresApproval: boolean;
+		createdBy: string;
+	}) => {
+		const startAt = DateTime.fromISO(input.startDate, { zone: "utc" }).startOf("day").toJSDate();
+		const endAt = DateTime.fromISO(input.endDate, { zone: "utc" }).endOf("day").toJSDate();
+
+		const effect = Effect.gen(function* (_) {
+			const service = yield* _(TimeRecordService);
+			return yield* _(
+				service.create({
+					organizationId: input.organizationId,
+					employeeId: input.employeeId,
+					recordKind: "absence",
+					startAt,
+					endAt,
+					approvalState: input.requiresApproval ? "pending" : "approved",
+					origin: "manual",
+					createdBy: input.createdBy,
+					updatedBy: input.createdBy,
+				}),
+			);
+		}).pipe(Effect.provide(TimeRecordServiceLive), Effect.provide(DatabaseServiceLive));
+
+		return Effect.runPromise(effect);
+	},
+};
+
+export async function syncAbsenceRequestToCanonicalRecord(input: {
+	organizationId: string;
+	employeeId: string;
+	startDate: string;
+	endDate: string;
+	requiresApproval: boolean;
+	createdBy: string;
+	absenceId: string;
+}): Promise<void> {
+	try {
+		await canonicalAbsenceRecordClient.create({
+			organizationId: input.organizationId,
+			employeeId: input.employeeId,
+			startDate: input.startDate,
+			endDate: input.endDate,
+			requiresApproval: input.requiresApproval,
+			createdBy: input.createdBy,
+		});
+	} catch (error) {
+		logger.warn(
+			{ error, absenceId: input.absenceId, organizationId: input.organizationId },
+			"Failed to sync absence request to canonical model",
+		);
+	}
+}
 
 /**
  * Request an absence with Effect-based workflow
@@ -244,6 +304,20 @@ export async function requestAbsenceEffect(
 
 				span.setAttribute("absence.id", newAbsence.id);
 				span.setAttribute("absence.status", newAbsence.status);
+
+				yield* _(
+					Effect.promise(() =>
+						syncAbsenceRequestToCanonicalRecord({
+							organizationId: currentEmployee.organizationId,
+							employeeId: currentEmployee.id,
+							startDate: data.startDate,
+							endDate: data.endDate,
+							requiresApproval: category.requiresApproval,
+							createdBy: session.user.id,
+							absenceId: newAbsence.id,
+						}),
+					),
+				);
 
 				logger.info({ absenceId: newAbsence.id }, "Absence entry created");
 

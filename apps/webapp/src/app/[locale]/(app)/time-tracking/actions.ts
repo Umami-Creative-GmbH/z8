@@ -37,6 +37,7 @@ import {
 } from "@/lib/effect/services/change-policy.service";
 import { DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { EmailService } from "@/lib/effect/services/email.service";
+import { TimeEntryService, TimeEntryServiceLive } from "@/lib/effect/services/time-entry.service";
 import { SurchargeService, SurchargeServiceLive } from "@/lib/effect/services/surcharge.service";
 import type { ComplianceWarning } from "@/lib/effect/services/work-policy.service";
 import {
@@ -53,7 +54,6 @@ import {
 	onClockOutPendingApproval,
 	onClockOutPendingApprovalToManager,
 } from "@/lib/notifications/triggers";
-import { calculateHash } from "@/lib/time-tracking/blockchain";
 import { isSameDayInTimezone } from "@/lib/time-tracking/time-utils";
 import {
 	getMonthRangeInTimezone,
@@ -65,6 +65,43 @@ import { validateTimeEntry, validateTimeEntryRange } from "@/lib/time-tracking/v
 import type { WorkPeriodWithEntries } from "./types";
 
 const logger = createLogger("TimeTrackingActionsEffect");
+
+export const canonicalTimeEntryClient = {
+	createTimeEntry: async (input: {
+		employeeId: string;
+		organizationId: string;
+		type: "clock_in" | "clock_out" | "correction";
+		timestamp: Date;
+		createdBy: string;
+		notes?: string;
+		ipAddress?: string;
+		deviceInfo?: string;
+	}) => {
+		const effect = Effect.gen(function* (_) {
+			const service = yield* _(TimeEntryService);
+			return yield* _(service.createTimeEntry(input));
+		}).pipe(Effect.provide(TimeEntryServiceLive), Effect.provide(DatabaseServiceLive));
+
+		return Effect.runPromise(effect);
+	},
+	createCorrectionEntry: async (input: {
+		employeeId: string;
+		organizationId: string;
+		replacesEntryId: string;
+		timestamp: Date;
+		createdBy: string;
+		notes: string;
+		ipAddress?: string;
+		deviceInfo?: string;
+	}) => {
+		const effect = Effect.gen(function* (_) {
+			const service = yield* _(TimeEntryService);
+			return yield* _(service.createCorrectionEntry(input));
+		}).pipe(Effect.provide(TimeEntryServiceLive), Effect.provide(DatabaseServiceLive));
+
+		return Effect.runPromise(effect);
+	},
+};
 
 interface CorrectionRequest {
 	workPeriodId: string;
@@ -1007,45 +1044,13 @@ export async function clockIn(
 	}
 
 	try {
-		// Get previous entry for blockchain linking (per employee-per-org)
-		const [previousEntry] = await db
-			.select()
-			.from(timeEntry)
-			.where(
-				and(eq(timeEntry.employeeId, emp.id), eq(timeEntry.organizationId, emp.organizationId)),
-			)
-			.orderBy(desc(timeEntry.createdAt))
-			.limit(1);
-
-		// Calculate hash
-		const hash = calculateHash({
+		const entry = await createTimeEntry({
 			employeeId: emp.id,
+			organizationId: emp.organizationId,
 			type: "clock_in",
-			timestamp: now.toISOString(),
-			previousHash: previousEntry?.hash || null,
+			timestamp: now,
+			createdBy: session.user.id,
 		});
-
-		// Get request metadata
-		const headersList = await headers();
-		const ipAddress =
-			headersList.get("x-forwarded-for") || headersList.get("x-real-ip") || "unknown";
-		const userAgent = headersList.get("user-agent") || "unknown";
-
-		// Create clock in entry with organizationId
-		const [entry] = await db
-			.insert(timeEntry)
-			.values({
-				employeeId: emp.id,
-				organizationId: emp.organizationId,
-				type: "clock_in",
-				timestamp: now,
-				hash,
-				previousHash: previousEntry?.hash || null,
-				ipAddress,
-				deviceInfo: userAgent,
-				createdBy: session.user.id,
-			})
-			.returning();
 
 		// Create work period with organizationId
 		await db.insert(workPeriod).values({
@@ -1154,45 +1159,13 @@ export async function clockOut(
 	}
 
 	try {
-		// Get previous entry for blockchain linking (per employee-per-org)
-		const [previousEntry] = await db
-			.select()
-			.from(timeEntry)
-			.where(
-				and(eq(timeEntry.employeeId, emp.id), eq(timeEntry.organizationId, emp.organizationId)),
-			)
-			.orderBy(desc(timeEntry.createdAt))
-			.limit(1);
-
-		// Calculate hash
-		const hash = calculateHash({
+		const entry = await createTimeEntry({
 			employeeId: emp.id,
+			organizationId: emp.organizationId,
 			type: "clock_out",
-			timestamp: now.toISOString(),
-			previousHash: previousEntry?.hash || null,
+			timestamp: now,
+			createdBy: session.user.id,
 		});
-
-		// Get request metadata
-		const headersList = await headers();
-		const ipAddress =
-			headersList.get("x-forwarded-for") || headersList.get("x-real-ip") || "unknown";
-		const userAgent = headersList.get("user-agent") || "unknown";
-
-		// Create clock out entry with organizationId
-		const [entry] = await db
-			.insert(timeEntry)
-			.values({
-				employeeId: emp.id,
-				organizationId: emp.organizationId,
-				type: "clock_out",
-				timestamp: now,
-				hash,
-				previousHash: previousEntry?.hash || null,
-				ipAddress,
-				deviceInfo: userAgent,
-				createdBy: session.user.id,
-			})
-			.returning();
 
 		// Update work period
 		const durationMs = now.getTime() - activePeriod.startTime.getTime();
@@ -1540,46 +1513,34 @@ export async function createTimeEntry(params: {
 }): Promise<typeof timeEntry.$inferSelect> {
 	const { employeeId, organizationId, type, timestamp, createdBy, replacesEntryId, notes } = params;
 
-	// Get previous entry for blockchain linking (per employee-per-org)
-	const [previousEntry] = await db
-		.select()
-		.from(timeEntry)
-		.where(and(eq(timeEntry.employeeId, employeeId), eq(timeEntry.organizationId, organizationId)))
-		.orderBy(desc(timeEntry.createdAt))
-		.limit(1);
-
-	// Calculate hash
-	const hash = calculateHash({
-		employeeId,
-		type,
-		timestamp: timestamp.toISOString(),
-		previousHash: previousEntry?.hash || null,
-	});
-
 	// Get request metadata
 	const headersList = await headers();
 	const ipAddress = headersList.get("x-forwarded-for") || headersList.get("x-real-ip") || "unknown";
 	const userAgent = headersList.get("user-agent") || "unknown";
 
-	// Create time entry with organizationId
-	const [entry] = await db
-		.insert(timeEntry)
-		.values({
+	if (type === "correction" && replacesEntryId) {
+		return canonicalTimeEntryClient.createCorrectionEntry({
 			employeeId,
 			organizationId,
-			type,
+			replacesEntryId,
 			timestamp,
-			hash,
-			previousHash: previousEntry?.hash || null,
+			createdBy,
+			notes: notes ?? "",
 			ipAddress,
 			deviceInfo: userAgent,
-			createdBy,
-			replacesEntryId,
-			notes,
-		})
-		.returning();
+		});
+	}
 
-	return entry;
+	return canonicalTimeEntryClient.createTimeEntry({
+		employeeId,
+		organizationId,
+		type,
+		timestamp,
+		createdBy,
+		notes,
+		ipAddress,
+		deviceInfo: userAgent,
+	});
 }
 
 // Re-export Effect functions with cleaner names (backward compatibility)
