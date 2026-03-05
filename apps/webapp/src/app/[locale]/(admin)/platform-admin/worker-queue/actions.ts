@@ -51,6 +51,8 @@ export interface WorkerQueueStats {
 	fetchedAt: string;
 }
 
+const HIDDEN_WORKER_NAMES = new Set(["cron:telemetry"]);
+
 export async function getWorkerQueueStats(): Promise<ServerActionResult<WorkerQueueStats>> {
 	const effect = Effect.gen(function* () {
 		const adminService = yield* PlatformAdminService;
@@ -96,11 +98,13 @@ export async function getWorkerQueueStats(): Promise<ServerActionResult<WorkerQu
 				Effect.orElseSucceed(() => [] as Awaited<ReturnType<typeof queue.getRepeatableJobs>>),
 			);
 
-			repeatableJobs = repeatables.map((job) => ({
-				name: job.name,
-				pattern: job.pattern || "",
-				next: job.next ? new Date(job.next).toISOString() : null,
-			}));
+			repeatableJobs = repeatables
+				.filter((job) => !HIDDEN_WORKER_NAMES.has(job.name))
+				.map((job) => ({
+					name: job.name,
+					pattern: job.pattern || "",
+					next: job.next ? new Date(job.next).toISOString() : null,
+				}));
 		}
 
 		const executions = yield* Effect.tryPromise({
@@ -113,15 +117,17 @@ export async function getWorkerQueueStats(): Promise<ServerActionResult<WorkerQu
 				}),
 		});
 
-		const recentExecutions: RecentExecution[] = executions.map((exec) => ({
-			id: exec.id,
-			jobName: exec.jobName,
-			status: exec.status,
-			startedAt: exec.startedAt.toISOString(),
-			completedAt: exec.completedAt?.toISOString() ?? null,
-			durationMs: exec.durationMs,
-			error: exec.error,
-		}));
+		const recentExecutions: RecentExecution[] = executions
+			.filter((exec) => !HIDDEN_WORKER_NAMES.has(exec.jobName))
+			.map((exec) => ({
+				id: exec.id,
+				jobName: exec.jobName,
+				status: exec.status,
+				startedAt: exec.startedAt.toISOString(),
+				completedAt: exec.completedAt?.toISOString() ?? null,
+				durationMs: exec.durationMs,
+				error: exec.error,
+			}));
 
 		const metrics = yield* Effect.tryPromise({
 			try: () => getAllJobMetrics(30),
@@ -133,14 +139,16 @@ export async function getWorkerQueueStats(): Promise<ServerActionResult<WorkerQu
 				}),
 		});
 
-		const jobMetrics: JobMetric[] = metrics.map((m) => ({
-			jobName: m.jobName,
-			totalRuns: m.totalRuns,
-			successfulRuns: m.successfulRuns,
-			failedRuns: m.failedRuns,
-			successRate: m.successRate,
-			avgDurationMs: m.avgDurationMs,
-		}));
+		const jobMetrics: JobMetric[] = metrics
+			.filter((m) => !HIDDEN_WORKER_NAMES.has(m.jobName))
+			.map((m) => ({
+				jobName: m.jobName,
+				totalRuns: m.totalRuns,
+				successfulRuns: m.successfulRuns,
+				failedRuns: m.failedRuns,
+				successRate: m.successRate,
+				avgDurationMs: m.avgDurationMs,
+			}));
 
 		return {
 			isConnected,
