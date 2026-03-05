@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { cookies } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
@@ -33,8 +33,31 @@ function isValidCallbackURL(url: string): boolean {
 	return true;
 }
 
+function decodeStateParam(encodedState: string): string | null {
+	if (!encodedState || encodedState.length > 4096) {
+		return null;
+	}
+
+	try {
+		return Buffer.from(encodedState, "base64url").toString("utf8");
+	} catch {
+		return null;
+	}
+}
+
+function timingSafeEqualText(left: string, right: string): boolean {
+	const leftBuffer = Buffer.from(left, "utf8");
+	const rightBuffer = Buffer.from(right, "utf8");
+
+	if (leftBuffer.length !== rightBuffer.length) {
+		return false;
+	}
+
+	return crypto.timingSafeEqual(leftBuffer, rightBuffer);
+}
+
 // Session settings (match Better Auth defaults)
-const SESSION_EXPIRY_DAYS = 7;
+const SESSION_EXPIRY_DAYS = 30;
 const SESSION_COOKIE_NAME = "better-auth.session_token";
 
 /**
@@ -101,6 +124,7 @@ async function findOrCreateUserWithAccount(params: {
 		idToken,
 		expiresIn,
 	} = params;
+	const normalizedEmail = email.trim().toLowerCase();
 
 	// Check if account already exists
 	const existingAccount = await db.query.account.findFirst({
@@ -128,7 +152,7 @@ async function findOrCreateUserWithAccount(params: {
 
 	// Check if user exists with this email
 	const existingUser = await db.query.user.findFirst({
-		where: eq(authSchema.user.email, email),
+		where: sql`lower(${authSchema.user.email}) = ${normalizedEmail}`,
 	});
 
 	if (existingUser) {
@@ -155,8 +179,8 @@ async function findOrCreateUserWithAccount(params: {
 
 	await db.insert(authSchema.user).values({
 		id: userId,
-		email,
-		name: name || email.split("@")[0],
+		email: normalizedEmail,
+		name: name || normalizedEmail.split("@")[0],
 		image,
 		emailVerified: emailVerified,
 		createdAt: now,
@@ -245,8 +269,19 @@ async function handleCallback(
 		return NextResponse.redirect(new URL("/sign-in?error=invalid_state", request.url));
 	}
 
+	const stateFromParam = decodeStateParam(stateParam);
+	if (!stateFromParam) {
+		logger.warn({ provider }, "State parameter decode failed");
+		return NextResponse.redirect(new URL("/sign-in?error=invalid_state", request.url));
+	}
+
+	if (!timingSafeEqualText(stateCookie.value, stateFromParam)) {
+		logger.warn({ provider }, "State cookie does not match callback state");
+		return NextResponse.redirect(new URL("/sign-in?error=invalid_state", request.url));
+	}
+
 	// Verify state
-	const state = verifyOAuthState(stateCookie.value);
+	const state = verifyOAuthState(stateFromParam);
 	if (!state) {
 		logger.warn({ provider }, "State verification failed");
 		return NextResponse.redirect(new URL("/sign-in?error=invalid_state", request.url));
@@ -281,7 +316,7 @@ async function handleCallback(
 		const userInfo = await getUserInfo(
 			provider,
 			tokens.accessToken,
-			appleIdToken || tokens.idToken,
+			tokens.idToken || appleIdToken,
 		);
 
 		// For Apple, user info (especially name) is only provided on first auth

@@ -28,6 +28,7 @@ interface SSOProviderDialogProps {
 		domain: string;
 		providerId: string;
 		domainVerified: boolean | null;
+		domainVerificationToken: string | null;
 		createdAt: Date | null;
 	}) => void;
 }
@@ -63,15 +64,10 @@ export function SSOProviderDialog({ open, onOpenChange, onProviderAdded }: SSOPr
 				return;
 			}
 
-			onProviderAdded({
-				id: crypto.randomUUID(),
-				issuer: value.issuer,
-				domain: value.domain.toLowerCase(),
-				providerId: value.providerId,
-				domainVerified: false,
-				createdAt: new Date(),
-			});
+			onProviderAdded(result.response);
+			toast.success("SSO provider added successfully");
 			form.reset();
+			onOpenChange(false);
 			setIsSubmitting(false);
 		},
 	});
