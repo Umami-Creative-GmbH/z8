@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { boolean, check, index, integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { boolean, check, foreignKey, index, integer, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 
 import { organization, user } from "../auth-schema";
@@ -44,6 +44,8 @@ export const timeRecord = pgTable(
 		updatedBy: text("updated_by").references(() => user.id),
 	},
 	(table) => [
+		uniqueIndex("timeRecord_id_organizationId_idx").on(table.id, table.organizationId),
+		uniqueIndex("timeRecord_id_recordKind_idx").on(table.id, table.recordKind),
 		index("timeRecord_organizationId_idx").on(table.organizationId),
 		index("timeRecord_employeeId_idx").on(table.employeeId),
 		index("timeRecord_recordKind_idx").on(table.recordKind),
@@ -70,11 +72,11 @@ export const timeRecordWork = pgTable(
 	"time_record_work",
 	{
 		recordId: uuid("record_id")
-			.primaryKey()
-			.references(() => timeRecord.id, { onDelete: "cascade" }),
+			.primaryKey(),
 		organizationId: text("organization_id")
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
+		recordKind: timeRecordKindEnum("record_kind").default("work").notNull(),
 		workCategoryId: uuid("work_category_id").references(() => workCategory.id, {
 			onDelete: "set null",
 		}),
@@ -82,8 +84,18 @@ export const timeRecordWork = pgTable(
 		computationMetadata: text("computation_metadata"),
 	},
 	(table) => [
+		uniqueIndex("timeRecordWork_record_org_idx").on(table.recordId, table.organizationId),
 		index("timeRecordWork_organizationId_idx").on(table.organizationId),
 		index("timeRecordWork_workCategoryId_idx").on(table.workCategoryId),
+		check("timeRecordWork_recordKind_work_chk", sql`${table.recordKind} = 'work'`),
+		foreignKey({
+			columns: [table.recordId, table.organizationId],
+			foreignColumns: [timeRecord.id, timeRecord.organizationId],
+		}).onDelete("cascade"),
+		foreignKey({
+			columns: [table.recordId, table.recordKind],
+			foreignColumns: [timeRecord.id, timeRecord.recordKind],
+		}).onDelete("cascade"),
 	],
 );
 
@@ -91,11 +103,11 @@ export const timeRecordAbsence = pgTable(
 	"time_record_absence",
 	{
 		recordId: uuid("record_id")
-			.primaryKey()
-			.references(() => timeRecord.id, { onDelete: "cascade" }),
+			.primaryKey(),
 		organizationId: text("organization_id")
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
+		recordKind: timeRecordKindEnum("record_kind").default("absence").notNull(),
 		absenceCategoryId: uuid("absence_category_id")
 			.notNull()
 			.references(() => absenceCategory.id),
@@ -106,6 +118,15 @@ export const timeRecordAbsence = pgTable(
 	(table) => [
 		index("timeRecordAbsence_organizationId_idx").on(table.organizationId),
 		index("timeRecordAbsence_absenceCategoryId_idx").on(table.absenceCategoryId),
+		check("timeRecordAbsence_recordKind_absence_chk", sql`${table.recordKind} = 'absence'`),
+		foreignKey({
+			columns: [table.recordId, table.organizationId],
+			foreignColumns: [timeRecord.id, timeRecord.organizationId],
+		}).onDelete("cascade"),
+		foreignKey({
+			columns: [table.recordId, table.recordKind],
+			foreignColumns: [timeRecord.id, timeRecord.recordKind],
+		}).onDelete("cascade"),
 	],
 );
 
@@ -113,15 +134,26 @@ export const timeRecordBreak = pgTable(
 	"time_record_break",
 	{
 		recordId: uuid("record_id")
-			.primaryKey()
-			.references(() => timeRecord.id, { onDelete: "cascade" }),
+			.primaryKey(),
 		organizationId: text("organization_id")
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
+		recordKind: timeRecordKindEnum("record_kind").default("break").notNull(),
 		isPaid: boolean("is_paid").default(false).notNull(),
 		autoInsertReason: text("auto_insert_reason"),
 	},
-	(table) => [index("timeRecordBreak_organizationId_idx").on(table.organizationId)],
+	(table) => [
+		index("timeRecordBreak_organizationId_idx").on(table.organizationId),
+		check("timeRecordBreak_recordKind_break_chk", sql`${table.recordKind} = 'break'`),
+		foreignKey({
+			columns: [table.recordId, table.organizationId],
+			foreignColumns: [timeRecord.id, timeRecord.organizationId],
+		}).onDelete("cascade"),
+		foreignKey({
+			columns: [table.recordId, table.recordKind],
+			foreignColumns: [timeRecord.id, timeRecord.recordKind],
+		}).onDelete("cascade"),
+	],
 );
 
 export const timeRecordAllocation = pgTable(
@@ -132,8 +164,7 @@ export const timeRecordAllocation = pgTable(
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
 		recordId: uuid("record_id")
-			.notNull()
-			.references(() => timeRecord.id, { onDelete: "cascade" }),
+			.notNull(),
 		allocationKind: timeRecordAllocationKindEnum("allocation_kind").notNull(),
 		projectId: uuid("project_id").references(() => project.id, { onDelete: "set null" }),
 		costCenterId: uuid("cost_center_id").references(() => costCenter.id, {
@@ -147,6 +178,10 @@ export const timeRecordAllocation = pgTable(
 		index("timeRecordAllocation_recordId_idx").on(table.recordId),
 		index("timeRecordAllocation_projectId_idx").on(table.projectId),
 		index("timeRecordAllocation_costCenterId_idx").on(table.costCenterId),
+		foreignKey({
+			columns: [table.recordId, table.organizationId],
+			foreignColumns: [timeRecordWork.recordId, timeRecordWork.organizationId],
+		}).onDelete("cascade"),
 		check(
 			"timeRecordAllocation_kind_target_chk",
 			sql`(
@@ -166,8 +201,7 @@ export const timeRecordApprovalDecision = pgTable(
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
 		recordId: uuid("record_id")
-			.notNull()
-			.references(() => timeRecord.id, { onDelete: "cascade" }),
+			.notNull(),
 		actorEmployeeId: uuid("actor_employee_id")
 			.notNull()
 			.references(() => employee.id, { onDelete: "cascade" }),
@@ -180,5 +214,9 @@ export const timeRecordApprovalDecision = pgTable(
 		index("timeRecordApprovalDecision_recordId_idx").on(table.recordId),
 		index("timeRecordApprovalDecision_actorEmployeeId_idx").on(table.actorEmployeeId),
 		index("timeRecordApprovalDecision_createdAt_idx").on(table.createdAt),
+		foreignKey({
+			columns: [table.recordId, table.organizationId],
+			foreignColumns: [timeRecord.id, timeRecord.organizationId],
+		}).onDelete("cascade"),
 	],
 );

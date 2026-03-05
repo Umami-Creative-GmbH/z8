@@ -51,4 +51,10 @@ describe("time-record schema", () => {
 		expect(timeRecordAllocation.recordId.name).toBe("record_id");
 		expect(timeRecordApprovalDecision.recordId.name).toBe("record_id");
 	});
+
+	it("stores canonical kind on subtype extension tables", () => {
+		expect(timeRecordWork.recordKind.name).toBe("record_kind");
+		expect(timeRecordAbsence.recordKind.name).toBe("record_kind");
+		expect(timeRecordBreak.recordKind.name).toBe("record_kind");
+	});
 });
