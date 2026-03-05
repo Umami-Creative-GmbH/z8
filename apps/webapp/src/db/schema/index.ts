@@ -64,6 +64,7 @@ export * from "./teams-integration";
 // Telegram integration
 export * from "./telegram-integration";
 export * from "./time-tracking";
+export * from "./travel-expense";
 // TypeScript types
 export * from "./types";
 export * from "./user-settings";

@@ -242,6 +242,18 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		group: "administration",
 	},
 	{
+		id: "travel-expenses",
+		titleKey: "settings.travelExpenses.title",
+		titleDefault: "Travel Expense Policies",
+		descriptionKey: "settings.travelExpenses.description",
+		descriptionDefault:
+			"Configure reimbursement rates and effective periods for mileage and per diem claims.",
+		href: "/settings/travel-expenses",
+		icon: "map-pin",
+		adminOnly: true,
+		group: "administration",
+	},
+	{
 		id: "work-policies",
 		titleKey: "settings.workPolicies.title",
 		titleDefault: "Work Policies",

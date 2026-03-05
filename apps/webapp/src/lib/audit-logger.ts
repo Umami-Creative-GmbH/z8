@@ -58,6 +58,8 @@ export enum AuditAction {
 	APPROVAL_SUBMITTED = "approval.submitted",
 	APPROVAL_APPROVED = "approval.approved",
 	APPROVAL_REJECTED = "approval.rejected",
+	TRAVEL_EXPENSE_DRAFT_CREATED = "travel_expense.draft_created",
+	TRAVEL_EXPENSE_SUBMITTED = "travel_expense.submitted",
 
 	// Vacation Operations
 	VACATION_CARRYOVER_APPLIED = "vacation.carryover_applied",

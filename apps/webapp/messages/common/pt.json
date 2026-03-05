@@ -160,7 +160,8 @@
     "settings": "Definições",
     "team": "Equipa",
     "team-label": "Equipa",
-    "time-tracking": "Rastreio de Tempo"
+    "time-tracking": "Rastreio de Tempo",
+    "travel-expenses": "Despesas de viagem"
   },
   "table": {
     "clearFilters": "Limpar filtros",

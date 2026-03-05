@@ -8,6 +8,7 @@ import {
 	IconClock,
 	IconDashboard,
 	IconHelp,
+	IconReceipt,
 	IconReport,
 	IconSettings,
 	IconUsers,
@@ -69,6 +70,12 @@ export function AppSidebar({
 			url: "/absences",
 			icon: IconBeach,
 			dataTour: "nav-absences",
+		},
+		{
+			title: t("nav.travel-expenses", "Travel Expenses"),
+			url: "/travel-expenses",
+			icon: IconReceipt,
+			dataTour: "nav-travel-expenses",
 		},
 		{
 			title: t("nav.reports", "Reports"),

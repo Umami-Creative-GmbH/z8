@@ -102,6 +102,12 @@ import {
 	surchargeRule,
 } from "./surcharge";
 import { timeEntry, workPeriod } from "./time-tracking";
+import {
+	travelExpenseAttachment,
+	travelExpenseClaim,
+	travelExpenseDecisionLog,
+	travelExpensePolicy,
+} from "./travel-expense";
 import { userSettings } from "./user-settings";
 import {
 	employeeVacationAllowance,
@@ -212,6 +218,11 @@ export const organizationRelations = relations(
 		// Custom roles
 		customRoles: many(customRole),
 		customRoleAuditLogs: many(customRoleAuditLog),
+		// Travel expenses
+		travelExpenseClaims: many(travelExpenseClaim),
+		travelExpenseAttachments: many(travelExpenseAttachment),
+		travelExpensePolicies: many(travelExpensePolicy),
+		travelExpenseDecisionLogs: many(travelExpenseDecisionLog),
 	}),
 );
 
@@ -398,6 +409,19 @@ export const employeeRelations = relations(employee, ({ one, many }) => ({
 	// Projects
 	projectManagements: many(projectManager),
 	projectAssignments: many(projectAssignment),
+	travelExpenseClaimsAsEmployee: many(travelExpenseClaim, {
+		relationName: "travel_expense_claim_employee",
+	}),
+	travelExpenseClaimsAsApprover: many(travelExpenseClaim, {
+		relationName: "travel_expense_claim_approver",
+	}),
+	travelExpenseAttachmentsUploaded: many(travelExpenseAttachment),
+	travelExpenseDecisionLogsAsActor: many(travelExpenseDecisionLog, {
+		relationName: "travel_expense_decision_log_actor",
+	}),
+	travelExpenseDecisionLogsAsApprover: many(travelExpenseDecisionLog, {
+		relationName: "travel_expense_decision_log_approver",
+	}),
 	// Cost centers
 	costCenterAssignments: many(employeeCostCenterAssignment),
 	// Surcharges
@@ -891,6 +915,7 @@ export const projectRelations = relations(project, ({ one, many }) => ({
 	managers: many(projectManager),
 	assignments: many(projectAssignment),
 	workPeriods: many(workPeriod),
+	travelExpenseClaims: many(travelExpenseClaim),
 	notificationState: one(projectNotificationState),
 	creator: one(user, {
 		fields: [project.createdBy],
@@ -949,6 +974,101 @@ export const projectNotificationStateRelations = relations(
 		project: one(project, {
 			fields: [projectNotificationState.projectId],
 			references: [project.id],
+		}),
+	}),
+);
+
+// Travel expense relations
+export const travelExpenseClaimRelations = relations(
+	travelExpenseClaim,
+	({ one, many }) => ({
+		organization: one(organization, {
+			fields: [travelExpenseClaim.organizationId],
+			references: [organization.id],
+		}),
+		employee: one(employee, {
+			fields: [travelExpenseClaim.employeeId],
+			references: [employee.id],
+			relationName: "travel_expense_claim_employee",
+		}),
+		approver: one(employee, {
+			fields: [travelExpenseClaim.approverId],
+			references: [employee.id],
+			relationName: "travel_expense_claim_approver",
+		}),
+		project: one(project, {
+			fields: [travelExpenseClaim.projectId],
+			references: [project.id],
+		}),
+		attachments: many(travelExpenseAttachment),
+		decisionLogs: many(travelExpenseDecisionLog),
+		creator: one(user, {
+			fields: [travelExpenseClaim.createdBy],
+			references: [user.id],
+		}),
+		updater: one(user, {
+			fields: [travelExpenseClaim.updatedBy],
+			references: [user.id],
+		}),
+	}),
+);
+
+export const travelExpenseAttachmentRelations = relations(
+	travelExpenseAttachment,
+	({ one }) => ({
+		claim: one(travelExpenseClaim, {
+			fields: [travelExpenseAttachment.claimId],
+			references: [travelExpenseClaim.id],
+		}),
+		organization: one(organization, {
+			fields: [travelExpenseAttachment.organizationId],
+			references: [organization.id],
+		}),
+		uploader: one(employee, {
+			fields: [travelExpenseAttachment.uploadedBy],
+			references: [employee.id],
+		}),
+	}),
+);
+
+export const travelExpensePolicyRelations = relations(
+	travelExpensePolicy,
+	({ one }) => ({
+		organization: one(organization, {
+			fields: [travelExpensePolicy.organizationId],
+			references: [organization.id],
+		}),
+		creator: one(user, {
+			fields: [travelExpensePolicy.createdBy],
+			references: [user.id],
+		}),
+		updater: one(user, {
+			fields: [travelExpensePolicy.updatedBy],
+			references: [user.id],
+		}),
+	}),
+);
+
+export const travelExpenseDecisionLogRelations = relations(
+	travelExpenseDecisionLog,
+	({ one }) => ({
+		claim: one(travelExpenseClaim, {
+			fields: [travelExpenseDecisionLog.claimId],
+			references: [travelExpenseClaim.id],
+		}),
+		organization: one(organization, {
+			fields: [travelExpenseDecisionLog.organizationId],
+			references: [organization.id],
+		}),
+		actorEmployee: one(employee, {
+			fields: [travelExpenseDecisionLog.actorEmployeeId],
+			references: [employee.id],
+			relationName: "travel_expense_decision_log_actor",
+		}),
+		approver: one(employee, {
+			fields: [travelExpenseDecisionLog.approverId],
+			references: [employee.id],
+			relationName: "travel_expense_decision_log_approver",
 		}),
 	}),
 );

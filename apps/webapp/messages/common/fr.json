@@ -160,7 +160,8 @@
     "settings": "Paramètres",
     "team": "Équipe",
     "team-label": "Équipe",
-    "time-tracking": "Suivi du temps"
+    "time-tracking": "Suivi du temps",
+    "travel-expenses": "Notes de frais"
   },
   "table": {
     "clearFilters": "Effacer les filtres",

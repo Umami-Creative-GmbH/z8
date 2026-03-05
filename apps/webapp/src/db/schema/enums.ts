@@ -253,6 +253,25 @@ export const payrollExportStatusEnum = pgEnum("payroll_export_status", [
 	"failed",
 ]);
 
+// Travel expense enums
+export const travelExpenseTypeEnum = pgEnum("travel_expense_type", [
+	"receipt",
+	"mileage",
+	"per_diem",
+]);
+
+export const travelExpenseClaimStatusEnum = pgEnum("travel_expense_claim_status", [
+	"draft",
+	"submitted",
+	"approved",
+	"rejected",
+]);
+
+export const travelExpenseDecisionActionEnum = pgEnum("travel_expense_decision_action", [
+	"approved",
+	"rejected",
+]);
+
 // ============================================
 // SCHEDULED EXPORT ENUMS
 // ============================================
