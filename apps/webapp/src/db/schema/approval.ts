@@ -1,4 +1,4 @@
-import { index, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { foreignKey, index, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { organization } from "../auth-schema";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { approvalStatusEnum } from "./enums";
@@ -25,9 +25,7 @@ export const approvalRequest = pgTable(
 		entityId: uuid("entity_id").notNull(),
 
 		// Legacy-to-canonical linkage used during big-bang cutover.
-		canonicalRecordId: uuid("canonical_record_id").references(() => timeRecord.id, {
-			onDelete: "set null",
-		}),
+		canonicalRecordId: uuid("canonical_record_id"),
 
 		requestedBy: uuid("requested_by")
 			.notNull()
@@ -55,6 +53,10 @@ export const approvalRequest = pgTable(
 			table.organizationId,
 			table.canonicalRecordId,
 		),
+		foreignKey({
+			columns: [table.organizationId, table.canonicalRecordId],
+			foreignColumns: [timeRecord.organizationId, timeRecord.id],
+		}),
 		index("approvalRequest_approverId_idx").on(table.approverId),
 		index("approvalRequest_status_idx").on(table.status),
 	],

@@ -1,4 +1,4 @@
-import { boolean, index, integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { boolean, foreignKey, index, integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 
 // Import auth tables for FK references
@@ -126,9 +126,7 @@ export const workPeriod = pgTable(
 		originalDurationMinutes: integer("original_duration_minutes"),
 
 		// Legacy-to-canonical linkage used during big-bang cutover.
-		canonicalRecordId: uuid("canonical_record_id").references(() => timeRecord.id, {
-			onDelete: "set null",
-		}),
+		canonicalRecordId: uuid("canonical_record_id"),
 
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at")
@@ -146,6 +144,10 @@ export const workPeriod = pgTable(
 			table.organizationId,
 			table.canonicalRecordId,
 		),
+		foreignKey({
+			columns: [table.organizationId, table.canonicalRecordId],
+			foreignColumns: [timeRecord.organizationId, timeRecord.id],
+		}),
 		// Composite index for calendar queries (most common)
 		index("workPeriod_org_startTime_idx").on(table.organizationId, table.startTime),
 		// Composite index for employee-org queries
