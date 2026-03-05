@@ -8,6 +8,7 @@
 import { db } from "@/db";
 import { auditLog } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
+import type { TimeRecordApprovalDecision } from "@/lib/time-record/approval";
 
 const logger = createLogger("AuditLog");
 
@@ -126,18 +127,23 @@ export enum AuditAction {
 	AUDIT_PACK_RETRY_REQUESTED = "audit_pack.retry_requested",
 }
 
-export type ApprovalAuditDecision = "submit" | "approve" | "reject";
+export type ApprovalAuditDecision = TimeRecordApprovalDecision;
+
+function assertNeverDecision(decision: never): never {
+	throw new Error(`Unhandled approval decision: ${String(decision)}`);
+}
 
 export function getApprovalAuditAction(decision: ApprovalAuditDecision): AuditAction {
-	if (decision === "submit") {
-		return AuditAction.APPROVAL_SUBMITTED;
+	switch (decision) {
+		case "submit":
+			return AuditAction.APPROVAL_SUBMITTED;
+		case "approve":
+			return AuditAction.APPROVAL_APPROVED;
+		case "reject":
+			return AuditAction.APPROVAL_REJECTED;
+		default:
+			return assertNeverDecision(decision);
 	}
-
-	if (decision === "approve") {
-		return AuditAction.APPROVAL_APPROVED;
-	}
-
-	return AuditAction.APPROVAL_REJECTED;
 }
 
 export interface AuditLogEntry {
