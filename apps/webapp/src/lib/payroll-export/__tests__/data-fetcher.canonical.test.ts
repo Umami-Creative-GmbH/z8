@@ -188,4 +188,33 @@ describe("payroll export canonical data fetching", () => {
 			},
 		]);
 	});
+
+	it("counts work export rows from canonical time records", async () => {
+		mockState.timeRecordFindMany.mockResolvedValue([
+			{
+				id: "record-1",
+				employee: { teamId: "team-1" },
+				allocations: [{ projectId: "project-1" }],
+			},
+			{
+				id: "record-2",
+				employee: { teamId: "team-2" },
+				allocations: [{ projectId: "project-2" }],
+			},
+		]);
+
+		const count = await dataFetcher.countWorkPeriods("org-1", {
+			dateRange: {
+				start: DateTime.fromISO("2026-01-01T00:00:00.000Z"),
+				end: DateTime.fromISO("2026-01-31T23:59:59.999Z"),
+			},
+			employeeIds: ["emp-1"],
+			teamIds: ["team-1"],
+			projectIds: ["project-1"],
+		});
+
+		expect(mockState.timeRecordFindMany).toHaveBeenCalledTimes(1);
+		expect(mockState.workPeriodFindMany).not.toHaveBeenCalled();
+		expect(count).toBe(1);
+	});
 });

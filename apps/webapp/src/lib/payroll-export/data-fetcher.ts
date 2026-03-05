@@ -12,7 +12,6 @@ import {
 	payrollExportFormat,
 	payrollWageTypeMapping,
 	workCategory,
-	workPeriod,
 } from "@/db";
 import { timeRecord } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
@@ -395,26 +394,53 @@ export async function countWorkPeriods(
 	filters: PayrollExportFilters,
 ): Promise<number> {
 	const whereConditions = [
-		eq(workPeriod.organizationId, organizationId),
-		gte(workPeriod.startTime, filters.dateRange.start.toJSDate()),
-		lte(workPeriod.startTime, filters.dateRange.end.endOf("day").toJSDate()),
-		eq(workPeriod.isActive, false),
+		eq(timeRecord.organizationId, organizationId),
+		eq(timeRecord.recordKind, "work"),
+		eq(timeRecord.approvalState, "approved"),
+		gte(timeRecord.startAt, filters.dateRange.start.toJSDate()),
+		lte(timeRecord.startAt, filters.dateRange.end.endOf("day").toJSDate()),
 	];
 
 	if (filters.employeeIds && filters.employeeIds.length > 0) {
-		whereConditions.push(inArray(workPeriod.employeeId, filters.employeeIds));
+		whereConditions.push(inArray(timeRecord.employeeId, filters.employeeIds));
+	}
+
+	const result = await db.query.timeRecord.findMany({
+		where: and(...whereConditions),
+		columns: { id: true },
+		with: {
+			employee: {
+				columns: {
+					teamId: true,
+				},
+			},
+			allocations: {
+				columns: {
+					projectId: true,
+				},
+			},
+		},
+	});
+
+	let filteredRecords = result;
+
+	if (filters.teamIds && filters.teamIds.length > 0) {
+		const teamIdSet = new Set(filters.teamIds);
+		filteredRecords = filteredRecords.filter(
+			(record) => record.employee?.teamId && teamIdSet.has(record.employee.teamId),
+		);
 	}
 
 	if (filters.projectIds && filters.projectIds.length > 0) {
-		whereConditions.push(inArray(workPeriod.projectId, filters.projectIds));
+		const projectIdSet = new Set(filters.projectIds);
+		filteredRecords = filteredRecords.filter((record) =>
+			(record.allocations || []).some((allocation) =>
+				allocation.projectId ? projectIdSet.has(allocation.projectId) : false,
+			),
+		);
 	}
 
-	const result = await db.query.workPeriod.findMany({
-		where: and(...whereConditions),
-		columns: { id: true },
-	});
-
-	return result.length;
+	return filteredRecords.length;
 }
 
 /**
