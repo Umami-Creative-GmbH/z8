@@ -30,6 +30,18 @@ describe("time-record validation", () => {
 		);
 	});
 
+	it("rejects non-finite durations", () => {
+		expect(() => validateTimeRecordInput(createInput({ durationMinutes: Number.NaN }))).toThrowError(
+			TIME_RECORD_VALIDATION_MESSAGES.INVALID_DURATION,
+		);
+		expect(() => validateTimeRecordInput(createInput({ durationMinutes: Number.POSITIVE_INFINITY }))).toThrowError(
+			TIME_RECORD_VALIDATION_MESSAGES.INVALID_DURATION,
+		);
+		expect(() => validateTimeRecordInput(createInput({ durationMinutes: Number.NEGATIVE_INFINITY }))).toThrowError(
+			TIME_RECORD_VALIDATION_MESSAGES.INVALID_DURATION,
+		);
+	});
+
 	it("rejects invalid time windows where end is before start", () => {
 		expect(() =>
 			validateTimeRecordInput(
@@ -48,8 +60,28 @@ describe("time-record validation", () => {
 					recordKind: "break",
 					endAt: null,
 				}),
-			),
+		),
 		).toThrowError(TIME_RECORD_VALIDATION_MESSAGES.BREAK_END_REQUIRED);
+	});
+
+	it("rejects invalid startAt DateTime", () => {
+		expect(() =>
+			validateTimeRecordInput(
+				createInput({
+					startAt: DateTime.fromISO("not-a-date"),
+				}),
+			),
+		).toThrowError(TIME_RECORD_VALIDATION_MESSAGES.INVALID_START_TIME);
+	});
+
+	it("rejects invalid endAt DateTime when provided", () => {
+		expect(() =>
+			validateTimeRecordInput(
+				createInput({
+					endAt: DateTime.fromISO("not-a-date"),
+				}),
+			),
+		).toThrowError(TIME_RECORD_VALIDATION_MESSAGES.INVALID_END_TIME);
 	});
 
 	it("throws typed validation error with a stable code", () => {

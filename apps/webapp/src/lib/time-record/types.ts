@@ -10,6 +10,9 @@ export interface TimeRecordValidationInput {
 }
 
 export const TIME_RECORD_VALIDATION_MESSAGES = {
+	INVALID_START_TIME: "Start time is invalid",
+	INVALID_END_TIME: "End time is invalid",
+	INVALID_DURATION: "Duration must be a finite number",
 	NEGATIVE_DURATION: "Duration cannot be negative",
 	INVALID_TIME_WINDOW: "End time must be on or after start time",
 	BREAK_END_REQUIRED: "Break records require an end time",

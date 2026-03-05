@@ -19,6 +19,18 @@ function throwValidationError(code: TimeRecordValidationCode): never {
 }
 
 export function validateTimeRecordInput(input: TimeRecordValidationInput): void {
+	if (!input.startAt.isValid) {
+		throwValidationError("INVALID_START_TIME");
+	}
+
+	if (input.endAt && !input.endAt.isValid) {
+		throwValidationError("INVALID_END_TIME");
+	}
+
+	if (input.durationMinutes !== null && input.durationMinutes !== undefined && !Number.isFinite(input.durationMinutes)) {
+		throwValidationError("INVALID_DURATION");
+	}
+
 	if (input.durationMinutes !== null && input.durationMinutes !== undefined && input.durationMinutes < 0) {
 		throwValidationError("NEGATIVE_DURATION");
 	}
