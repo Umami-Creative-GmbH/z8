@@ -1,5 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("@/env", () => ({
+	env: {},
+}));
+
+vi.mock("@/lib/auth", () => ({
+	auth: {
+		api: {
+			getSession: vi.fn(),
+		},
+	},
+}));
+
 const mockState = vi.hoisted(() => {
 	const headers = vi.fn();
 	const dbInsert = vi.fn();

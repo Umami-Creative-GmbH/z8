@@ -47,17 +47,44 @@ import { addCalendarSyncJob } from "@/lib/queue";
 
 const logger = createLogger("AbsenceActionsEffect");
 
+type DayPeriod = "full_day" | "am" | "pm";
+
+export function mapAbsenceRangeToCanonicalTimestamps(input: {
+	startDate: string;
+	endDate: string;
+	startPeriod: DayPeriod;
+	endPeriod: DayPeriod;
+}): { startAt: Date; endAt: Date } {
+	const startOfStartDate = DateTime.fromISO(input.startDate, { zone: "utc" }).startOf("day");
+	const endOfEndDate = DateTime.fromISO(input.endDate, { zone: "utc" }).endOf("day");
+
+	const startAt =
+		input.startPeriod === "pm" ? startOfStartDate.plus({ hours: 12 }) : startOfStartDate;
+	const endAt = input.endPeriod === "am" ? endOfEndDate.minus({ hours: 12 }) : endOfEndDate;
+
+	return {
+		startAt: startAt.toJSDate(),
+		endAt: endAt.toJSDate(),
+	};
+}
+
 export const canonicalAbsenceRecordClient = {
 	create: async (input: {
 		organizationId: string;
 		employeeId: string;
 		startDate: string;
+		startPeriod: DayPeriod;
 		endDate: string;
+		endPeriod: DayPeriod;
 		requiresApproval: boolean;
 		createdBy: string;
 	}) => {
-		const startAt = DateTime.fromISO(input.startDate, { zone: "utc" }).startOf("day").toJSDate();
-		const endAt = DateTime.fromISO(input.endDate, { zone: "utc" }).endOf("day").toJSDate();
+		const { startAt, endAt } = mapAbsenceRangeToCanonicalTimestamps({
+			startDate: input.startDate,
+			startPeriod: input.startPeriod,
+			endDate: input.endDate,
+			endPeriod: input.endPeriod,
+		});
 
 		const effect = Effect.gen(function* (_) {
 			const service = yield* _(TimeRecordService);
@@ -84,7 +111,9 @@ export async function syncAbsenceRequestToCanonicalRecord(input: {
 	organizationId: string;
 	employeeId: string;
 	startDate: string;
+	startPeriod: DayPeriod;
 	endDate: string;
+	endPeriod: DayPeriod;
 	requiresApproval: boolean;
 	createdBy: string;
 	absenceId: string;
@@ -94,7 +123,9 @@ export async function syncAbsenceRequestToCanonicalRecord(input: {
 			organizationId: input.organizationId,
 			employeeId: input.employeeId,
 			startDate: input.startDate,
+			startPeriod: input.startPeriod,
 			endDate: input.endDate,
+			endPeriod: input.endPeriod,
 			requiresApproval: input.requiresApproval,
 			createdBy: input.createdBy,
 		});
@@ -311,7 +342,9 @@ export async function requestAbsenceEffect(
 							organizationId: currentEmployee.organizationId,
 							employeeId: currentEmployee.id,
 							startDate: data.startDate,
+							startPeriod: data.startPeriod,
 							endDate: data.endDate,
+							endPeriod: data.endPeriod,
 							requiresApproval: category.requiresApproval,
 							createdBy: session.user.id,
 							absenceId: newAbsence.id,
