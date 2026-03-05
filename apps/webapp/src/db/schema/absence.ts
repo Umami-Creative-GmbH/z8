@@ -5,6 +5,7 @@ import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { organization } from "../auth-schema";
 import { absenceTypeEnum, approvalStatusEnum, dayPeriodEnum } from "./enums";
 import { employee } from "./organization";
+import { timeRecord } from "./time-record";
 
 // ============================================
 // ABSENCE MANAGEMENT
@@ -56,7 +57,9 @@ export const absenceEntry = pgTable(
 		notes: text("notes"),
 
 		// Legacy-to-canonical linkage used during big-bang cutover.
-		canonicalRecordId: uuid("canonical_record_id"),
+		canonicalRecordId: uuid("canonical_record_id").references(() => timeRecord.id, {
+			onDelete: "set null",
+		}),
 
 		// Approval tracking
 		approvedBy: uuid("approved_by").references(() => employee.id),

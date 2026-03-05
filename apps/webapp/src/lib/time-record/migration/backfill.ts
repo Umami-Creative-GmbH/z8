@@ -1,7 +1,8 @@
 import { DateTime } from "luxon";
 
 type LegacyApprovalStatus = "pending" | "approved" | "rejected";
-type LegacyDayPeriod = "full_day" | "morning" | "afternoon";
+type CanonicalDayPeriod = "full_day" | "am" | "pm";
+type LegacyDayPeriod = CanonicalDayPeriod | "morning" | "afternoon";
 type LegacyEntityType = "time_entry" | "absence_entry";
 
 export type LegacyWorkPeriod = {
@@ -91,8 +92,8 @@ export type CanonicalBackfillPayload = {
 		organizationId: string;
 		recordKind: "absence";
 		absenceCategoryId: string;
-		startPeriod: LegacyDayPeriod;
-		endPeriod: LegacyDayPeriod;
+		startPeriod: CanonicalDayPeriod;
+		endPeriod: CanonicalDayPeriod;
 		countsAgainstVacation: boolean;
 	}>;
 	timeRecordApprovalDecision: Array<{
@@ -165,11 +166,14 @@ export function buildCanonicalBackfillPayload(
 	}
 
 	for (const absenceEntry of absences) {
+		const startPeriod = normalizeLegacyDayPeriod(absenceEntry.startPeriod);
+		const endPeriod = normalizeLegacyDayPeriod(absenceEntry.endPeriod);
+
 		const interval = mapAbsenceToInterval(
 			absenceEntry.startDate,
-			absenceEntry.startPeriod,
+			startPeriod,
 			absenceEntry.endDate,
-			absenceEntry.endPeriod,
+			endPeriod,
 		);
 
 		timeRecords.push({
@@ -193,8 +197,8 @@ export function buildCanonicalBackfillPayload(
 			organizationId: input.organizationId,
 			recordKind: "absence",
 			absenceCategoryId: absenceEntry.categoryId,
-			startPeriod: absenceEntry.startPeriod,
-			endPeriod: absenceEntry.endPeriod,
+			startPeriod,
+			endPeriod,
 			countsAgainstVacation: categoryVacationFlagById.get(absenceEntry.categoryId) ?? true,
 		});
 
@@ -269,9 +273,9 @@ function mapApprovalStatusToAction(status: LegacyApprovalStatus): "submitted" | 
 
 function mapAbsenceToInterval(
 	startDate: string,
-	startPeriod: LegacyDayPeriod,
+	startPeriod: CanonicalDayPeriod,
 	endDate: string,
-	endPeriod: LegacyDayPeriod,
+	endPeriod: CanonicalDayPeriod,
 ): {
 	startAt: Date;
 	endAt: Date;
@@ -291,7 +295,7 @@ function mapAbsenceToInterval(
 
 function dateWithPeriod(
 	dateIso: string,
-	period: LegacyDayPeriod,
+	period: CanonicalDayPeriod,
 	edge: "start" | "end",
 ): DateTime {
 	const day = DateTime.fromISO(dateIso, { zone: "utc" });
@@ -300,15 +304,27 @@ function dateWithPeriod(
 		throw new Error(`Invalid absence date for backfill: ${dateIso}`);
 	}
 
-	if (period === "morning") {
+	if (period === "am") {
 		return edge === "start" ? day.startOf("day") : day.startOf("day").plus({ hours: 12 });
 	}
 
-	if (period === "afternoon") {
+	if (period === "pm") {
 		return edge === "start"
 			? day.startOf("day").plus({ hours: 12 })
 			: day.endOf("day").plus({ millisecond: 1 });
 	}
 
 	return edge === "start" ? day.startOf("day") : day.endOf("day").plus({ millisecond: 1 });
+}
+
+function normalizeLegacyDayPeriod(period: LegacyDayPeriod): CanonicalDayPeriod {
+	if (period === "morning") {
+		return "am";
+	}
+
+	if (period === "afternoon") {
+		return "pm";
+	}
+
+	return period;
 }

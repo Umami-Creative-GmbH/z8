@@ -6,6 +6,7 @@ import { organization, user } from "../auth-schema";
 import { approvalStatusEnum, timeEntryTypeEnum, workLocationTypeEnum } from "./enums";
 import { employee } from "./organization";
 import { project } from "./project";
+import { timeRecord } from "./time-record";
 import type { WorkPeriodAutoAdjustmentReason, WorkPeriodPendingChanges } from "./types";
 import { workCategory } from "./work-category";
 
@@ -125,7 +126,9 @@ export const workPeriod = pgTable(
 		originalDurationMinutes: integer("original_duration_minutes"),
 
 		// Legacy-to-canonical linkage used during big-bang cutover.
-		canonicalRecordId: uuid("canonical_record_id"),
+		canonicalRecordId: uuid("canonical_record_id").references(() => timeRecord.id, {
+			onDelete: "set null",
+		}),
 
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at")
@@ -139,7 +142,10 @@ export const workPeriod = pgTable(
 		index("workPeriod_projectId_idx").on(table.projectId),
 		index("workPeriod_workCategoryId_idx").on(table.workCategoryId),
 		index("workPeriod_approvalStatus_idx").on(table.approvalStatus),
-		index("workPeriod_canonicalRecordId_idx").on(table.canonicalRecordId),
+		index("workPeriod_org_canonicalRecordId_idx").on(
+			table.organizationId,
+			table.canonicalRecordId,
+		),
 		// Composite index for calendar queries (most common)
 		index("workPeriod_org_startTime_idx").on(table.organizationId, table.startTime),
 		// Composite index for employee-org queries
