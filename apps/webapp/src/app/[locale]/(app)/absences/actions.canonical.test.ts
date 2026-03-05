@@ -1,4 +1,8 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const mockState = vi.hoisted(() => ({
+	dbTransaction: vi.fn(),
+}));
 
 vi.mock("@/env", () => ({
 	env: {},
@@ -12,9 +16,20 @@ vi.mock("@/lib/auth", () => ({
 	},
 }));
 
+vi.mock("@/db", () => ({
+	db: {
+		transaction: mockState.dbTransaction,
+	},
+}));
+
 const actions = await import("./actions");
 
 describe("absence canonical action routing", () => {
+	beforeEach(() => {
+		vi.restoreAllMocks();
+		vi.clearAllMocks();
+	});
+
 	it("syncs absence requests to canonical records with org scoping", async () => {
 		const createSpy = vi
 			.spyOn(actions.canonicalAbsenceRecordClient, "create")
@@ -23,22 +38,25 @@ describe("absence canonical action routing", () => {
 		await actions.syncAbsenceRequestToCanonicalRecord({
 			organizationId: "org-1",
 			employeeId: "emp-1",
+			absenceCategoryId: "cat-1",
 			startDate: "2026-02-10",
 			startPeriod: "full_day",
 			endDate: "2026-02-12",
 			endPeriod: "full_day",
+			countsAgainstVacation: false,
 			requiresApproval: true,
 			createdBy: "user-1",
-			absenceId: "abs-1",
 		});
 
 		expect(createSpy).toHaveBeenCalledWith({
 			organizationId: "org-1",
 			employeeId: "emp-1",
+			absenceCategoryId: "cat-1",
 			startDate: "2026-02-10",
 			startPeriod: "full_day",
 			endDate: "2026-02-12",
 			endPeriod: "full_day",
+			countsAgainstVacation: false,
 			requiresApproval: true,
 			createdBy: "user-1",
 		});
@@ -56,7 +74,7 @@ describe("absence canonical action routing", () => {
 		expect(mapped.endAt.toISOString()).toBe("2026-02-10T23:59:59.999Z");
 	});
 
-	it("does not fail the action when canonical sync fails", async () => {
+	it("fails the action when canonical sync fails", async () => {
 		vi.spyOn(actions.canonicalAbsenceRecordClient, "create").mockRejectedValue(
 			new Error("canonical write failed"),
 		);
@@ -65,14 +83,56 @@ describe("absence canonical action routing", () => {
 			actions.syncAbsenceRequestToCanonicalRecord({
 			organizationId: "org-1",
 			employeeId: "emp-1",
+			absenceCategoryId: "cat-1",
 			startDate: "2026-02-10",
 			startPeriod: "full_day",
 			endDate: "2026-02-12",
 			endPeriod: "full_day",
+			countsAgainstVacation: true,
 			requiresApproval: false,
 			createdBy: "user-1",
-			absenceId: "abs-1",
 			}),
-		).resolves.toBeUndefined();
+		).rejects.toThrow("canonical write failed");
+	});
+
+	it("persists canonical absence subtype with category linkage", async () => {
+		const valuesRecord = vi.fn().mockReturnValue({
+			returning: vi.fn().mockResolvedValue([{ id: "record-1" }]),
+		});
+		const valuesAbsence = vi.fn().mockResolvedValue(undefined);
+
+		const txInsert = vi
+			.fn()
+			.mockReturnValueOnce({ values: valuesRecord })
+			.mockReturnValueOnce({ values: valuesAbsence });
+
+		mockState.dbTransaction.mockImplementation(async (callback: any) =>
+			callback({ insert: txInsert }),
+		);
+
+		const record = await actions.canonicalAbsenceRecordClient.create({
+			organizationId: "org-1",
+			employeeId: "emp-1",
+			absenceCategoryId: "cat-1",
+			startDate: "2026-02-10",
+			startPeriod: "am",
+			endDate: "2026-02-10",
+			endPeriod: "pm",
+			countsAgainstVacation: false,
+			requiresApproval: true,
+			createdBy: "user-1",
+		});
+
+		expect(record).toEqual({ id: "record-1" });
+		expect(valuesAbsence).toHaveBeenCalledWith(
+			expect.objectContaining({
+				recordId: "record-1",
+				organizationId: "org-1",
+				absenceCategoryId: "cat-1",
+				startPeriod: "am",
+				endPeriod: "pm",
+				countsAgainstVacation: false,
+			}),
+		);
 	});
 });

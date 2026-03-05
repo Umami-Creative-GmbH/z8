@@ -13,6 +13,9 @@ import {
 	projectAssignment,
 	surchargeCalculation,
 	timeEntry,
+	timeRecord,
+	timeRecordAllocation,
+	timeRecordWork,
 	userSettings,
 	workPeriod,
 	workPolicy,
@@ -100,6 +103,61 @@ export const canonicalTimeEntryClient = {
 		}).pipe(Effect.provide(TimeEntryServiceLive), Effect.provide(DatabaseServiceLive));
 
 		return Effect.runPromise(effect);
+	},
+};
+
+export const canonicalWorkRecordClient = {
+	createForCompletedPeriod: async (input: {
+		organizationId: string;
+		employeeId: string;
+		startAt: Date;
+		endAt: Date;
+		durationMinutes: number;
+		approvalState: "pending" | "approved" | "rejected";
+		createdBy: string;
+		workCategoryId?: string | null;
+		workLocationType?: "office" | "home" | "field" | "other" | null;
+		projectId?: string | null;
+		origin: "clock" | "manual";
+	}) => {
+		return db.transaction(async (tx) => {
+			const [record] = await tx
+				.insert(timeRecord)
+				.values({
+					organizationId: input.organizationId,
+					employeeId: input.employeeId,
+					recordKind: "work",
+					startAt: input.startAt,
+					endAt: input.endAt,
+					durationMinutes: input.durationMinutes,
+					approvalState: input.approvalState,
+					origin: input.origin,
+					createdBy: input.createdBy,
+					updatedBy: input.createdBy,
+				})
+				.returning({ id: timeRecord.id });
+
+			await tx.insert(timeRecordWork).values({
+				recordId: record.id,
+				organizationId: input.organizationId,
+				recordKind: "work",
+				workCategoryId: input.workCategoryId ?? null,
+				workLocationType: input.workLocationType ?? null,
+				computationMetadata: null,
+			});
+
+			if (input.projectId) {
+				await tx.insert(timeRecordAllocation).values({
+					organizationId: input.organizationId,
+					recordId: record.id,
+					allocationKind: "project",
+					projectId: input.projectId,
+					weightPercent: 100,
+				});
+			}
+
+			return record;
+		});
 	},
 };
 
@@ -1187,6 +1245,20 @@ export async function clockOut(
 				}
 			: null;
 
+		const canonicalRecord = await canonicalWorkRecordClient.createForCompletedPeriod({
+			organizationId: emp.organizationId,
+			employeeId: emp.id,
+			startAt: activePeriod.startTime,
+			endAt: now,
+			durationMinutes,
+			approvalState: approvalStatus,
+			createdBy: session.user.id,
+			workCategoryId: workCategoryId || null,
+			workLocationType: activePeriod.workLocationType ?? null,
+			projectId: projectId || null,
+			origin: "clock",
+		});
+
 		await db
 			.update(workPeriod)
 			.set({
@@ -1195,12 +1267,18 @@ export async function clockOut(
 				durationMinutes,
 				projectId: projectId || null,
 				workCategoryId: workCategoryId || null,
+				canonicalRecordId: canonicalRecord.id,
 				isActive: false,
 				approvalStatus,
 				pendingChanges: pendingChangesData,
 				updatedAt: new Date(),
 			})
-			.where(eq(workPeriod.id, activePeriod.id));
+			.where(
+				and(
+					eq(workPeriod.id, activePeriod.id),
+					eq(workPeriod.organizationId, emp.organizationId),
+				),
+			);
 
 		// If clock-out needs approval, create an approval request
 		if (needsClockOutApproval && emp.managerId) {
@@ -2730,6 +2808,19 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 				}
 			: null;
 
+		const canonicalRecord = await canonicalWorkRecordClient.createForCompletedPeriod({
+			organizationId: emp.organizationId,
+			employeeId: emp.id,
+			startAt: finalClockIn,
+			endAt: finalClockOut,
+			durationMinutes,
+			approvalState: approvalStatus,
+			createdBy: session.user.id,
+			workCategoryId: data.workCategoryId || null,
+			projectId: data.projectId || null,
+			origin: "manual",
+		});
+
 		// Create work period with adjusted times
 		const [period] = await db
 			.insert(workPeriod)
@@ -2743,6 +2834,7 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 				durationMinutes,
 				projectId: data.projectId || null,
 				workCategoryId: data.workCategoryId || null,
+				canonicalRecordId: canonicalRecord.id,
 				isActive: false,
 				approvalStatus,
 				pendingChanges: pendingChangesData,

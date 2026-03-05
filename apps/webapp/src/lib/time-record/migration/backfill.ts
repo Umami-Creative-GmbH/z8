@@ -13,6 +13,7 @@ export type LegacyWorkPeriod = {
 	endTime: Date | null;
 	durationMinutes: number | null;
 	approvalStatus: LegacyApprovalStatus;
+	projectId: string | null;
 	workCategoryId: string | null;
 	workLocationType: "office" | "home" | "field" | "other" | null;
 	createdAt: Date;
@@ -96,6 +97,13 @@ export type CanonicalBackfillPayload = {
 		endPeriod: CanonicalDayPeriod;
 		countsAgainstVacation: boolean;
 	}>;
+	timeRecordAllocation: Array<{
+		organizationId: string;
+		recordId: string;
+		allocationKind: "project";
+		projectId: string;
+		weightPercent: number;
+	}>;
 	timeRecordApprovalDecision: Array<{
 		organizationId: string;
 		recordId: string;
@@ -131,6 +139,7 @@ export function buildCanonicalBackfillPayload(
 	const timeRecords: CanonicalBackfillPayload["timeRecords"] = [];
 	const timeRecordWork: CanonicalBackfillPayload["timeRecordWork"] = [];
 	const timeRecordAbsence: CanonicalBackfillPayload["timeRecordAbsence"] = [];
+	const timeRecordAllocation: CanonicalBackfillPayload["timeRecordAllocation"] = [];
 	const timeRecordApprovalDecision: CanonicalBackfillPayload["timeRecordApprovalDecision"] = [];
 
 	const workPeriodRecordMap = new Map<string, string>();
@@ -161,6 +170,16 @@ export function buildCanonicalBackfillPayload(
 			workLocationType: workPeriod.workLocationType,
 			computationMetadata: null,
 		});
+
+		if (workPeriod.projectId) {
+			timeRecordAllocation.push({
+				organizationId: input.organizationId,
+				recordId: workPeriod.id,
+				allocationKind: "project",
+				projectId: workPeriod.projectId,
+				weightPercent: 100,
+			});
+		}
 
 		workPeriodRecordMap.set(workPeriod.id, workPeriod.id);
 	}
@@ -232,6 +251,7 @@ export function buildCanonicalBackfillPayload(
 		timeRecords,
 		timeRecordWork,
 		timeRecordAbsence,
+		timeRecordAllocation,
 		timeRecordApprovalDecision,
 		legacyLinks: {
 			workPeriod: workPeriods.map((workPeriod) => ({
