@@ -1,0 +1,22 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: telemetry
+  namespace: app-prod
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - z8-time.app
+      secretName: marketing-tls
+  rules:
+    - host: z8-time.app
+      http:
+        paths:
+          - path: /telemetry
+            pathType: Prefix
+            backend:
+              service:
+                name: telemetry-external
+                port:
+                  number: 3000
