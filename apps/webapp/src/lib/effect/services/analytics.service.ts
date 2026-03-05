@@ -40,6 +40,7 @@ import {
 	calculateExpectedWorkHoursForEmployee,
 	calculateWorkHours,
 } from "@/lib/time-tracking/calculations";
+import { computeOvertimeDelta } from "@/lib/time-record/overtime";
 import type { DatabaseError, NotFoundError, ValidationError } from "../errors";
 import { DatabaseService } from "./database.service";
 
@@ -563,7 +564,11 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 								dateRange.end,
 							);
 
-							const overtimeHours = Math.max(0, actual.totalHours - expected.totalHours);
+							const overtimeHours =
+								computeOvertimeDelta({
+									actualMinutes: actual.totalHours * 60,
+									expectedMinutes: expected.totalHours * 60,
+								}) / 60;
 							const undertimeHours = Math.max(0, expected.totalHours - actual.totalHours);
 
 							return {
@@ -583,7 +588,11 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 						// Calculate summary
 						const totalHours = employeeData.reduce((sum, e) => sum + e.totalHours, 0);
 						const totalExpected = employeeData.reduce((sum, e) => sum + e.expectedHours, 0);
-						const overtimeHours = Math.max(0, totalHours - totalExpected);
+						const overtimeHours =
+							computeOvertimeDelta({
+								actualMinutes: totalHours * 60,
+								expectedMinutes: totalExpected * 60,
+							}) / 60;
 						const undertimeHours = Math.max(0, totalExpected - totalHours);
 
 						const avgHoursPerWeek =
