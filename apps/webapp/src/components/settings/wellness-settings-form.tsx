@@ -52,11 +52,15 @@ export function WellnessSettingsForm({ initialSettings }: WellnessSettingsFormPr
 
 	// Sync form state to component state for conditional rendering
 	useEffect(() => {
-		return form.store.subscribe(() => {
+		const subscription = form.store.subscribe(() => {
 			const state = form.store.state;
 			setIsEnabled(state.values.enabled);
 			setIsDirty(state.isDirty);
 		});
+
+		return () => {
+			subscription.unsubscribe();
+		};
 	}, [form.store]);
 
 	return (

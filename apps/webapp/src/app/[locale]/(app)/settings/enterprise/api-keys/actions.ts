@@ -69,6 +69,23 @@ function toISOString(value: unknown): string | null {
 	return null;
 }
 
+function extractApiKeys(result: unknown): unknown[] {
+	if (Array.isArray(result)) {
+		return result;
+	}
+
+	if (
+		result &&
+		typeof result === "object" &&
+		"apiKeys" in result &&
+		Array.isArray((result as { apiKeys?: unknown[] }).apiKeys)
+	) {
+		return (result as { apiKeys: unknown[] }).apiKeys;
+	}
+
+	return [];
+}
+
 /**
  * Verify that the current user has admin/owner permissions for the organization
  * Returns session and member record if authorized
@@ -229,7 +246,7 @@ export async function listApiKeys(
 							const result = await auth.api.listApiKeys({
 								headers: await headers(),
 							});
-							return result || [];
+							return extractApiKeys(result);
 						},
 						catch: (error) => {
 							logger.error({ error }, "Failed to list API keys via auth API");
@@ -316,7 +333,7 @@ export async function createApiKey(
 							const result = await auth.api.listApiKeys({
 								headers: await headers(),
 							});
-							return transformApiKeysResponse((result || []) as unknown[], organizationId);
+							return transformApiKeysResponse(extractApiKeys(result), organizationId);
 						},
 						catch: (error) => {
 							logger.error({ error, organizationId }, "Failed to check existing API keys");
