@@ -1,5 +1,6 @@
 import { Effect, Layer } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { NotFoundError, ValidationError } from "../../errors";
 import { DatabaseService } from "../database.service";
 import { TimeRecordService, TimeRecordServiceLive } from "../time-record.service";
 
@@ -13,6 +14,7 @@ const mockState = vi.hoisted(() => {
 	const selectWhere = vi.fn(() => ({ orderBy: selectOrderBy }));
 	const selectFrom = vi.fn(() => ({ where: selectWhere }));
 	const select = vi.fn(() => ({ from: selectFrom }));
+	const employeeFindFirst = vi.fn();
 
 	return {
 		insert,
@@ -23,6 +25,7 @@ const mockState = vi.hoisted(() => {
 		selectWhere,
 		selectOrderBy,
 		selectLimit,
+		employeeFindFirst,
 	};
 });
 
@@ -47,6 +50,10 @@ vi.mock("@/db/schema", () => ({
 		startAt: "startAt",
 		createdAt: "createdAt",
 	},
+	employee: {
+		id: "id",
+		organizationId: "organizationId",
+	},
 }));
 
 describe("TimeRecordService", () => {
@@ -64,6 +71,10 @@ describe("TimeRecordService", () => {
 			createdAt: new Date("2026-01-01T08:01:00.000Z"),
 		};
 
+		mockState.employeeFindFirst.mockResolvedValue({
+			id: "emp-1",
+			organizationId: "org-1",
+		});
 		mockState.insertReturning.mockResolvedValue([createdRecord]);
 
 		const dbLayer = Layer.succeed(
@@ -72,6 +83,11 @@ describe("TimeRecordService", () => {
 				db: {
 					insert: mockState.insert,
 					select: mockState.select,
+					query: {
+						employee: {
+							findFirst: mockState.employeeFindFirst,
+						},
+					},
 				} as never,
 				query: (_name, query) => Effect.promise(query) as never,
 			}),
@@ -104,6 +120,98 @@ describe("TimeRecordService", () => {
 		);
 	});
 
+	it("create rejects when employee belongs to another organization", async () => {
+		mockState.employeeFindFirst.mockResolvedValue(undefined);
+
+		const dbLayer = Layer.succeed(
+			DatabaseService,
+			DatabaseService.of({
+				db: {
+					insert: mockState.insert,
+					select: mockState.select,
+					query: {
+						employee: {
+							findFirst: mockState.employeeFindFirst,
+						},
+					},
+				} as never,
+				query: (_name, query) => Effect.promise(query) as never,
+			}),
+		);
+
+		const error = await Effect.runPromise(
+			Effect.gen(function* (_) {
+				const service = yield* _(TimeRecordService);
+				return yield* _(
+					service
+						.create({
+							organizationId: "org-1",
+							employeeId: "emp-2",
+							recordKind: "work",
+							startAt: new Date("2026-01-01T08:00:00.000Z"),
+							createdBy: "user-1",
+						})
+						.pipe(Effect.flip),
+				);
+			}).pipe(Effect.provide(TimeRecordServiceLive), Effect.provide(dbLayer)),
+		);
+
+		expect(error).toBeInstanceOf(NotFoundError);
+		expect(error).toMatchObject({
+			_tag: "NotFoundError",
+			entityType: "employee",
+			entityId: "emp-2",
+		});
+		expect(mockState.insert).not.toHaveBeenCalled();
+	});
+
+	it("create fails when insert returning() has no row", async () => {
+		mockState.employeeFindFirst.mockResolvedValue({
+			id: "emp-1",
+			organizationId: "org-1",
+		});
+		mockState.insertReturning.mockResolvedValue([]);
+
+		const dbLayer = Layer.succeed(
+			DatabaseService,
+			DatabaseService.of({
+				db: {
+					insert: mockState.insert,
+					select: mockState.select,
+					query: {
+						employee: {
+							findFirst: mockState.employeeFindFirst,
+						},
+					},
+				} as never,
+				query: (_name, query) => Effect.promise(query) as never,
+			}),
+		);
+
+		const error = await Effect.runPromise(
+			Effect.gen(function* (_) {
+				const service = yield* _(TimeRecordService);
+				return yield* _(
+					service
+						.create({
+							organizationId: "org-1",
+							employeeId: "emp-1",
+							recordKind: "work",
+							startAt: new Date("2026-01-01T08:00:00.000Z"),
+							createdBy: "user-1",
+						})
+						.pipe(Effect.flip),
+				);
+			}).pipe(Effect.provide(TimeRecordServiceLive), Effect.provide(dbLayer)),
+		);
+
+		expect(error).toBeInstanceOf(ValidationError);
+		expect(error).toMatchObject({
+			_tag: "ValidationError",
+			field: "createTimeRecord",
+		});
+	});
+
 	it("listByOrganization enforces organization-scoped query", async () => {
 		mockState.selectLimit.mockResolvedValue([]);
 
@@ -113,6 +221,11 @@ describe("TimeRecordService", () => {
 				db: {
 					insert: mockState.insert,
 					select: mockState.select,
+					query: {
+						employee: {
+							findFirst: mockState.employeeFindFirst,
+						},
+					},
 				} as never,
 				query: (_name, query) => Effect.promise(query) as never,
 			}),
@@ -140,5 +253,38 @@ describe("TimeRecordService", () => {
 				expect.objectContaining({ type: "eq", column: "organizationId", value: "org-1" }),
 			]),
 		);
+	});
+
+	it.each([0, -1, 1.5])("listByOrganization rejects invalid limit: %s", async (limit) => {
+		const dbLayer = Layer.succeed(
+			DatabaseService,
+			DatabaseService.of({
+				db: {
+					insert: mockState.insert,
+					select: mockState.select,
+					query: {
+						employee: {
+							findFirst: mockState.employeeFindFirst,
+						},
+					},
+				} as never,
+				query: (_name, query) => Effect.promise(query) as never,
+			}),
+		);
+
+		const error = await Effect.runPromise(
+			Effect.gen(function* (_) {
+				const service = yield* _(TimeRecordService);
+				return yield* _(service.listByOrganization("org-1", { limit }).pipe(Effect.flip));
+			}).pipe(Effect.provide(TimeRecordServiceLive), Effect.provide(dbLayer)),
+		);
+
+		expect(error).toBeInstanceOf(ValidationError);
+		expect(error).toMatchObject({
+			_tag: "ValidationError",
+			field: "limit",
+			value: limit,
+		});
+		expect(mockState.select).not.toHaveBeenCalled();
 	});
 });
