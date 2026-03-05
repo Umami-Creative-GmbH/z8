@@ -124,6 +124,9 @@ export const workPeriod = pgTable(
 		originalEndTime: timestamp("original_end_time", { withTimezone: true }), // Audit trail
 		originalDurationMinutes: integer("original_duration_minutes"),
 
+		// Legacy-to-canonical linkage used during big-bang cutover.
+		canonicalRecordId: uuid("canonical_record_id"),
+
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at")
 			.$onUpdate(() => currentTimestamp())
@@ -136,6 +139,7 @@ export const workPeriod = pgTable(
 		index("workPeriod_projectId_idx").on(table.projectId),
 		index("workPeriod_workCategoryId_idx").on(table.workCategoryId),
 		index("workPeriod_approvalStatus_idx").on(table.approvalStatus),
+		index("workPeriod_canonicalRecordId_idx").on(table.canonicalRecordId),
 		// Composite index for calendar queries (most common)
 		index("workPeriod_org_startTime_idx").on(table.organizationId, table.startTime),
 		// Composite index for employee-org queries

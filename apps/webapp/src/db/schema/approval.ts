@@ -23,6 +23,9 @@ export const approvalRequest = pgTable(
 		entityType: text("entity_type").notNull(), // "time_entry" | "absence_entry"
 		entityId: uuid("entity_id").notNull(),
 
+		// Legacy-to-canonical linkage used during big-bang cutover.
+		canonicalRecordId: uuid("canonical_record_id"),
+
 		requestedBy: uuid("requested_by")
 			.notNull()
 			.references(() => employee.id),
@@ -45,6 +48,7 @@ export const approvalRequest = pgTable(
 	(table) => [
 		index("approvalRequest_organizationId_idx").on(table.organizationId),
 		index("approvalRequest_entityType_entityId_idx").on(table.entityType, table.entityId),
+		index("approvalRequest_canonicalRecordId_idx").on(table.canonicalRecordId),
 		index("approvalRequest_approverId_idx").on(table.approverId),
 		index("approvalRequest_status_idx").on(table.status),
 	],

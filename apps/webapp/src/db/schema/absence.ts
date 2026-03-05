@@ -55,6 +55,9 @@ export const absenceEntry = pgTable(
 		status: approvalStatusEnum("status").default("pending").notNull(),
 		notes: text("notes"),
 
+		// Legacy-to-canonical linkage used during big-bang cutover.
+		canonicalRecordId: uuid("canonical_record_id"),
+
 		// Approval tracking
 		approvedBy: uuid("approved_by").references(() => employee.id),
 		approvedAt: timestamp("approved_at"),
@@ -69,6 +72,7 @@ export const absenceEntry = pgTable(
 		index("absenceEntry_employeeId_idx").on(table.employeeId),
 		index("absenceEntry_startDate_idx").on(table.startDate),
 		index("absenceEntry_status_idx").on(table.status),
+		index("absenceEntry_canonicalRecordId_idx").on(table.canonicalRecordId),
 		index("absenceEntry_employeeId_status_idx").on(table.employeeId, table.status),
 	],
 );
