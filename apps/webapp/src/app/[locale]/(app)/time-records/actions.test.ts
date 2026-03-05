@@ -80,7 +80,7 @@ describe("time-record canonical actions", () => {
 		const createResult = await createTimeRecord({
 			employeeId: "emp-1",
 			recordKind: "work",
-			startAt: new Date("2026-01-01T08:00:00.000Z"),
+			startAt: "2026-01-01T08:00:00.000Z",
 		});
 
 		const listResult = await listTimeRecords({});
@@ -110,7 +110,7 @@ describe("time-record canonical actions", () => {
 		const result = await createTimeRecord({
 			employeeId: "emp-1",
 			recordKind: "work",
-			startAt: new Date("2026-01-01T08:00:00.000Z"),
+			startAt: "2026-01-01T08:00:00.000Z",
 		});
 
 		expect(result).toEqual({ success: true, data: insertedRecord });
@@ -123,6 +123,48 @@ describe("time-record canonical actions", () => {
 				updatedBy: "user-1",
 			}),
 		);
+	});
+
+	it("denies create for another employee when actor is a regular employee", async () => {
+		mockState.getAuthContext.mockResolvedValue({
+			user: { id: "user-1" },
+			employee: { id: "emp-1", organizationId: "org-1", role: "employee", teamId: null },
+		});
+
+		const result = await createTimeRecord({
+			employeeId: "emp-2",
+			recordKind: "work",
+			startAt: "2026-01-01T08:00:00.000Z",
+		});
+
+		expect(result).toEqual({ success: false, error: "Forbidden" });
+		expect(mockState.employeeFindFirst).not.toHaveBeenCalled();
+		expect(mockState.dbInsert).not.toHaveBeenCalled();
+	});
+
+	it("allows create for another employee when actor is manager", async () => {
+		const insertedRecord = {
+			id: "rec-2",
+			organizationId: "org-1",
+			employeeId: "emp-2",
+			recordKind: "work",
+			startAt: new Date("2026-01-01T08:00:00.000Z"),
+		};
+
+		mockState.getAuthContext.mockResolvedValue({
+			user: { id: "user-1" },
+			employee: { id: "mgr-1", organizationId: "org-1", role: "manager", teamId: null },
+		});
+		mockState.employeeFindFirst.mockResolvedValue({ id: "emp-2" });
+		mockState.insertReturning.mockResolvedValue([insertedRecord]);
+
+		const result = await createTimeRecord({
+			employeeId: "emp-2",
+			recordKind: "work",
+			startAt: "2026-01-01T08:00:00.000Z",
+		});
+
+		expect(result).toEqual({ success: true, data: insertedRecord });
 	});
 
 	it("lists records with organization predicate and limit", async () => {
@@ -144,5 +186,57 @@ describe("time-record canonical actions", () => {
 			]),
 		);
 		expect(mockState.selectLimit).toHaveBeenCalledWith(10);
+	});
+
+	it("denies list for another employee when actor is a regular employee", async () => {
+		mockState.getAuthContext.mockResolvedValue({
+			user: { id: "user-1" },
+			employee: { id: "emp-1", organizationId: "org-1", role: "employee", teamId: null },
+		});
+
+		const result = await listTimeRecords({ employeeId: "emp-2", limit: 10 });
+
+		expect(result).toEqual({ success: false, error: "Forbidden" });
+		expect(mockState.dbSelect).not.toHaveBeenCalled();
+	});
+
+	it("enforces self-scope list when employeeId filter is omitted for regular employee", async () => {
+		mockState.getAuthContext.mockResolvedValue({
+			user: { id: "user-1" },
+			employee: { id: "emp-1", organizationId: "org-1", role: "employee", teamId: null },
+		});
+		mockState.selectLimit.mockResolvedValue([]);
+
+		const result = await listTimeRecords({ recordKind: "work", limit: 10 });
+
+		expect(result).toEqual({ success: true, data: [] });
+		const whereArg = mockState.selectWhere.mock.calls[0]?.[0] as {
+			conditions: Array<{ type: string; column: string; value: string }>;
+		};
+		expect(whereArg.conditions).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ type: "eq", column: "timeRecord.employeeId", value: "emp-1" }),
+			]),
+		);
+	});
+
+	it("allows list for another employee when actor is admin", async () => {
+		mockState.getAuthContext.mockResolvedValue({
+			user: { id: "user-1" },
+			employee: { id: "admin-1", organizationId: "org-1", role: "admin", teamId: null },
+		});
+		mockState.selectLimit.mockResolvedValue([]);
+
+		const result = await listTimeRecords({ employeeId: "emp-2", limit: 10 });
+
+		expect(result).toEqual({ success: true, data: [] });
+		const whereArg = mockState.selectWhere.mock.calls[0]?.[0] as {
+			conditions: Array<{ type: string; column: string; value: string }>;
+		};
+		expect(whereArg.conditions).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ type: "eq", column: "timeRecord.employeeId", value: "emp-2" }),
+			]),
+		);
 	});
 });

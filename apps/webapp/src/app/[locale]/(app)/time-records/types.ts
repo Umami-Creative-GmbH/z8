@@ -8,8 +8,8 @@ export type TimeRecordOrigin = typeof timeRecord.$inferInsert.origin;
 export interface CreateTimeRecordInput {
 	employeeId: string;
 	recordKind: TimeRecordKind;
-	startAt: Date;
-	endAt?: Date | null;
+	startAt: string;
+	endAt?: string | null;
 	durationMinutes?: number | null;
 	approvalState?: TimeRecordApprovalState;
 	origin?: TimeRecordOrigin;
@@ -18,7 +18,7 @@ export interface CreateTimeRecordInput {
 export interface ListTimeRecordsFilters {
 	employeeId?: string;
 	recordKind?: TimeRecordKind;
-	startAtFrom?: Date;
-	startAtTo?: Date;
+	startAtFrom?: string;
+	startAtTo?: string;
 	limit?: number;
 }
