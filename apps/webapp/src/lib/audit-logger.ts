@@ -126,6 +126,20 @@ export enum AuditAction {
 	AUDIT_PACK_RETRY_REQUESTED = "audit_pack.retry_requested",
 }
 
+export type ApprovalAuditDecision = "submit" | "approve" | "reject";
+
+export function getApprovalAuditAction(decision: ApprovalAuditDecision): AuditAction {
+	if (decision === "submit") {
+		return AuditAction.APPROVAL_SUBMITTED;
+	}
+
+	if (decision === "approve") {
+		return AuditAction.APPROVAL_APPROVED;
+	}
+
+	return AuditAction.APPROVAL_REJECTED;
+}
+
 export interface AuditLogEntry {
 	action: AuditAction;
 	actorId: string; // User ID of who performed the action
