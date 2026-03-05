@@ -26,6 +26,7 @@ interface SSOProvider {
 	domain: string;
 	providerId: string;
 	domainVerified: boolean | null;
+	domainVerificationToken: string | null;
 	createdAt: Date | null;
 }
 
