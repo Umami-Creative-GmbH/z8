@@ -149,6 +149,51 @@ export async function syncAbsenceRequestToCanonicalRecord(input: {
 	return canonicalRecord.id;
 }
 
+export async function syncCanonicalAbsenceApprovalState(input: {
+	organizationId: string;
+	canonicalRecordId: string | null;
+	approvalState: "approved" | "rejected";
+	updatedBy: string;
+}): Promise<void> {
+	if (!input.canonicalRecordId) {
+		return;
+	}
+
+	await db
+		.update(timeRecord)
+		.set({
+			approvalState: input.approvalState,
+			updatedAt: currentTimestamp(),
+			updatedBy: input.updatedBy,
+		})
+		.where(
+			and(
+				eq(timeRecord.id, input.canonicalRecordId),
+				eq(timeRecord.organizationId, input.organizationId),
+				eq(timeRecord.recordKind, "absence"),
+			),
+		);
+}
+
+export async function removeCanonicalAbsenceRecord(input: {
+	organizationId: string;
+	canonicalRecordId: string | null;
+}): Promise<void> {
+	if (!input.canonicalRecordId) {
+		return;
+	}
+
+	await db
+		.delete(timeRecord)
+		.where(
+			and(
+				eq(timeRecord.id, input.canonicalRecordId),
+				eq(timeRecord.organizationId, input.organizationId),
+				eq(timeRecord.recordKind, "absence"),
+			),
+		);
+}
+
 /**
  * Request an absence with Effect-based workflow
  * - Type-safe error handling
@@ -573,6 +618,17 @@ export async function requestAbsenceEffect(
 						}),
 					);
 
+					yield* _(
+						Effect.promise(() =>
+							syncCanonicalAbsenceApprovalState({
+								organizationId: currentEmployee.organizationId,
+								canonicalRecordId,
+								approvalState: "approved",
+								updatedBy: session.user.id,
+							}),
+						),
+					);
+
 					span.setAttribute("absence.auto_approved", true);
 					span.setAttribute("absence.no_manager", true);
 
@@ -857,6 +913,11 @@ export async function cancelAbsenceRequest(
 		absenceId: absenceId,
 		employeeId: absence.employeeId,
 		action: "delete",
+	});
+
+	await removeCanonicalAbsenceRecord({
+		organizationId: absence.organizationId,
+		canonicalRecordId: absence.canonicalRecordId,
 	});
 
 	// Delete the absence

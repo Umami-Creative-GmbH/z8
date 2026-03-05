@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockState = vi.hoisted(() => ({
 	dbTransaction: vi.fn(),
+	dbUpdate: vi.fn(),
+	dbDelete: vi.fn(),
 }));
 
 vi.mock("@/env", () => ({
@@ -19,6 +21,8 @@ vi.mock("@/lib/auth", () => ({
 vi.mock("@/db", () => ({
 	db: {
 		transaction: mockState.dbTransaction,
+		update: mockState.dbUpdate,
+		delete: mockState.dbDelete,
 	},
 }));
 
@@ -134,5 +138,49 @@ describe("absence canonical action routing", () => {
 				countsAgainstVacation: false,
 			}),
 		);
+	});
+
+	it("updates canonical absence approval state with org scoping", async () => {
+		const whereUpdate = vi.fn().mockResolvedValue(undefined);
+		const setUpdate = vi.fn().mockReturnValue({ where: whereUpdate });
+		mockState.dbUpdate.mockReturnValue({ set: setUpdate });
+
+		await actions.syncCanonicalAbsenceApprovalState({
+			canonicalRecordId: "record-1",
+			organizationId: "org-1",
+			approvalState: "approved",
+			updatedBy: "user-1",
+		});
+
+		expect(mockState.dbUpdate).toHaveBeenCalledTimes(1);
+		expect(setUpdate).toHaveBeenCalledWith(
+			expect.objectContaining({
+				approvalState: "approved",
+				updatedBy: "user-1",
+			}),
+		);
+		expect(whereUpdate).toHaveBeenCalledTimes(1);
+	});
+
+	it("deletes canonical absence record on cancellation when linked", async () => {
+		const whereDelete = vi.fn().mockResolvedValue(undefined);
+		mockState.dbDelete.mockReturnValue({ where: whereDelete });
+
+		await actions.removeCanonicalAbsenceRecord({
+			canonicalRecordId: "record-1",
+			organizationId: "org-1",
+		});
+
+		expect(mockState.dbDelete).toHaveBeenCalledTimes(1);
+		expect(whereDelete).toHaveBeenCalledTimes(1);
+	});
+
+	it("skips canonical absence deletion when no linkage exists", async () => {
+		await actions.removeCanonicalAbsenceRecord({
+			canonicalRecordId: null,
+			organizationId: "org-1",
+		});
+
+		expect(mockState.dbDelete).not.toHaveBeenCalled();
 	});
 });
