@@ -564,19 +564,20 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 								dateRange.end,
 							);
 
-							const overtimeHours =
-								computeOvertimeDelta({
-									actualMinutes: actual.totalHours * 60,
-									expectedMinutes: expected.totalHours * 60,
-								}) / 60;
+							const overtimeMinutes = computeOvertimeDelta({
+								actualMinutes: actual.totalMinutes,
+								expectedMinutes: expected.totalMinutes,
+							});
 							const undertimeHours = Math.max(0, expected.totalHours - actual.totalHours);
 
 							return {
 								employeeId: emp.id,
 								employeeName: emp.user.name || "Unknown",
 								totalHours: actual.totalHours,
+								totalMinutes: actual.totalMinutes,
 								expectedHours: expected.totalHours,
-								overtimeHours,
+								expectedMinutes: expected.totalMinutes,
+								overtimeMinutes,
 								undertimeHours,
 								avgHoursPerWeek:
 									expected.workDays > 0 ? (actual.totalHours / expected.workDays) * 5 : 0,
@@ -587,12 +588,13 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 
 						// Calculate summary
 						const totalHours = employeeData.reduce((sum, e) => sum + e.totalHours, 0);
+						const totalMinutes = employeeData.reduce((sum, e) => sum + e.totalMinutes, 0);
 						const totalExpected = employeeData.reduce((sum, e) => sum + e.expectedHours, 0);
-						const overtimeHours =
-							computeOvertimeDelta({
-								actualMinutes: totalHours * 60,
-								expectedMinutes: totalExpected * 60,
-							}) / 60;
+						const totalExpectedMinutes = employeeData.reduce((sum, e) => sum + e.expectedMinutes, 0);
+						const overtimeMinutes = computeOvertimeDelta({
+							actualMinutes: totalMinutes,
+							expectedMinutes: totalExpectedMinutes,
+						});
 						const undertimeHours = Math.max(0, totalExpected - totalHours);
 
 						const avgHoursPerWeek =
@@ -641,7 +643,7 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 							summary: {
 								totalHours: Math.round(totalHours * 100) / 100,
 								avgHoursPerWeek: Math.round(avgHoursPerWeek * 100) / 100,
-								overtimeHours: Math.round(overtimeHours * 100) / 100,
+								overtimeHours: roundToTwoDecimals(overtimeMinutes / 60),
 								undertimeHours: Math.round(undertimeHours * 100) / 100,
 							},
 							distribution,
@@ -649,7 +651,7 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 								employeeId: e.employeeId,
 								employeeName: e.employeeName,
 								totalHours: Math.round(e.totalHours * 100) / 100,
-								overtimeHours: Math.round(e.overtimeHours * 100) / 100,
+								overtimeHours: roundToTwoDecimals(e.overtimeMinutes / 60),
 								undertimeHours: Math.round(e.undertimeHours * 100) / 100,
 								avgHoursPerWeek: Math.round(e.avgHoursPerWeek * 100) / 100,
 							})),
