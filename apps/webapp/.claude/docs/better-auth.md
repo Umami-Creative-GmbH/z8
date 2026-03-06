@@ -43,7 +43,7 @@ organization({
 
 1. Regenerate schema:
    ```bash
-   pnpm dlx @better-auth/cli generate -y --output src/db/auth-schema.ts
+   pnpm dlx auth@latest generate --config ./src/lib/auth.ts --output ./src/db/auth-schema.ts
    ```
 
 2. For ssoProvider table only - manually add:

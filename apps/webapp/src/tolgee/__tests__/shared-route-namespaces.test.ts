@@ -30,4 +30,8 @@ describe("route namespaces", () => {
 	it("does not special-case legacy /admin", () => {
 		expect(getNamespacesForRoute("/admin")).toEqual(["common"]);
 	});
+
+	it("loads common+settings namespaces for /travel-expenses", () => {
+		expect(getNamespacesForRoute("/travel-expenses")).toEqual(["common", "settings"]);
+	});
 });

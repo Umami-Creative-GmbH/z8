@@ -66,8 +66,24 @@ describe("Notification Types", () => {
 			expect(NOTIFICATION_CHANNELS).toContain("email");
 		});
 
-		it("has exactly 3 channels", () => {
-			expect(NOTIFICATION_CHANNELS).toHaveLength(3);
+		it("contains teams channel", () => {
+			expect(NOTIFICATION_CHANNELS).toContain("teams");
+		});
+
+		it("contains telegram channel", () => {
+			expect(NOTIFICATION_CHANNELS).toContain("telegram");
+		});
+
+		it("contains discord channel", () => {
+			expect(NOTIFICATION_CHANNELS).toContain("discord");
+		});
+
+		it("contains slack channel", () => {
+			expect(NOTIFICATION_CHANNELS).toContain("slack");
+		});
+
+		it("has expected total channels", () => {
+			expect(NOTIFICATION_CHANNELS.length).toBeGreaterThanOrEqual(7);
 		});
 
 		it("is a readonly array", () => {

@@ -3,17 +3,19 @@ kind: Ingress
 metadata:
   name: telemetry
   namespace: app-prod
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
 spec:
   ingressClassName: traefik
   tls:
     - hosts:
-        - z8-time.app
-      secretName: marketing-tls
+        - telemetry.z8-time.app
+      secretName: telemetry-tls
   rules:
-    - host: z8-time.app
+    - host: telemetry.z8-time.app
       http:
         paths:
-          - path: /telemetry
+          - path: /
             pathType: Prefix
             backend:
               service:

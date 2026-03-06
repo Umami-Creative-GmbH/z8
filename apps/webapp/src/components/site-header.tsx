@@ -22,6 +22,7 @@ export function SiteHeader() {
 		if (path.startsWith("/calendar")) return "calendar.title";
 		if (path.startsWith("/time-tracking")) return "timeTracking.title";
 		if (path.startsWith("/absences")) return "absences.title";
+		if (path.startsWith("/travel-expenses")) return "settings.travelExpenses.title";
 		if (path.startsWith("/reports")) return "reports.title";
 		if (path.startsWith("/settings/holidays")) return "settings.holidays.title";
 		if (path.startsWith("/settings")) return "settings.title";
@@ -37,6 +38,7 @@ export function SiteHeader() {
 		if (path.startsWith("/calendar")) return "Calendar";
 		if (path.startsWith("/time-tracking")) return "Time Tracking";
 		if (path.startsWith("/absences")) return "Absences";
+		if (path.startsWith("/travel-expenses")) return "Travel Expenses";
 		if (path.startsWith("/reports")) return "Reports";
 		if (path.startsWith("/settings/holidays")) return "Holiday Management";
 		if (path.startsWith("/settings")) return "Settings";
@@ -55,7 +57,12 @@ export function SiteHeader() {
 				<Separator className="mx-2 data-[orientation=vertical]:h-4" orientation="vertical" />
 				<h1 className="font-medium text-base">{t(titleKey, defaultTitle)}</h1>
 				<div className="ml-auto flex items-center gap-2">
-					<Button size="sm" variant="outline" data-tour="request-absence">
+					<Button
+						size="sm"
+						variant="outline"
+						data-tour="request-absence"
+						aria-label={t("header.request-absence", "Request Absence")}
+					>
 						<IconPlus className="size-4" />
 						<span className="hidden sm:inline">
 							{t("header.request-absence", "Request Absence")}

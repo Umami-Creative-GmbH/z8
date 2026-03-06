@@ -1,20 +1,11 @@
 "use server";
 
-import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { db } from "@/db";
-import { ssoProvider } from "@/db/auth-schema";
+import { headers } from "next/headers";
 import type { SocialOAuthProvider, SocialOAuthProviderConfig } from "@/db/schema";
+import { auth } from "@/lib/auth";
 import { requireUser } from "@/lib/auth-helpers";
 import type { AuthConfig, OrganizationBranding } from "@/lib/domain";
-import {
-	createSocialOAuthConfig,
-	deleteSocialOAuthConfig,
-	getConfiguredProviders,
-	listOrgSocialOAuthConfigs,
-	updateSocialOAuthConfig,
-	updateTestStatus,
-} from "@/lib/social-oauth";
 import {
 	deleteCustomDomain,
 	getOrganizationBranding,
@@ -25,6 +16,14 @@ import {
 	updateOrganizationBranding,
 	verifyDomainOwnership,
 } from "@/lib/domain";
+import {
+	createSocialOAuthConfig,
+	deleteSocialOAuthConfig,
+	getConfiguredProviders,
+	listOrgSocialOAuthConfigs,
+	updateSocialOAuthConfig,
+	updateTestStatus,
+} from "@/lib/social-oauth";
 import { deleteOrgSecret, storeOrgSecret } from "@/lib/vault";
 
 // ============ Domain Actions ============
@@ -116,11 +115,50 @@ export interface SSOProviderResponse {
 	domain: string;
 	providerId: string;
 	domainVerified: boolean | null;
+	domainVerificationToken: string | null;
 	organizationId: string | null;
 	userId: string | null;
+	createdAt: Date | null;
 	// Note: oidcConfig and samlConfig are NOT returned to protect secrets
 	hasOidcConfig: boolean;
 	hasSamlConfig: boolean;
+}
+
+type RawSSOProvider = {
+	id?: string;
+	issuer?: string;
+	domain?: string;
+	providerId?: string;
+	domainVerified?: boolean | null;
+	domainVerificationToken?: string | null;
+	organizationId?: string | null;
+	userId?: string | null;
+	createdAt?: Date | string | null;
+	oidcConfig?: unknown;
+	samlConfig?: unknown;
+};
+
+function normalizeSSOProvider(provider: RawSSOProvider): SSOProviderResponse {
+	const createdAt =
+		provider.createdAt instanceof Date
+			? provider.createdAt
+			: typeof provider.createdAt === "string"
+				? new Date(provider.createdAt)
+				: null;
+
+	return {
+		id: provider.id || provider.providerId || "",
+		issuer: provider.issuer || "",
+		domain: provider.domain || "",
+		providerId: provider.providerId || provider.id || "",
+		domainVerified: provider.domainVerified ?? null,
+		domainVerificationToken: provider.domainVerificationToken ?? null,
+		organizationId: provider.organizationId ?? null,
+		userId: provider.userId ?? null,
+		createdAt: createdAt && !Number.isNaN(createdAt.getTime()) ? createdAt : null,
+		hasOidcConfig: !!provider.oidcConfig,
+		hasSamlConfig: !!provider.samlConfig,
+	};
 }
 
 export async function listSSOProvidersAction(): Promise<SSOProviderResponse[]> {
@@ -134,22 +172,21 @@ export async function listSSOProvidersAction(): Promise<SSOProviderResponse[]> {
 		throw new Error("No organization selected");
 	}
 
-	const providers = await db.query.ssoProvider.findMany({
-		where: eq(ssoProvider.organizationId, authContext.employee.organizationId),
+	const organizationId = authContext.employee.organizationId;
+
+	const rawResult = await (auth.api as any).listSSOProviders({
+		headers: await headers(),
 	});
 
-	// Return providers without exposing secrets (oidcConfig contains clientSecret)
-	return providers.map((provider) => ({
-		id: provider.id,
-		issuer: provider.issuer,
-		domain: provider.domain,
-		providerId: provider.providerId,
-		domainVerified: provider.domainVerified,
-		organizationId: provider.organizationId,
-		userId: provider.userId,
-		hasOidcConfig: !!provider.oidcConfig,
-		hasSamlConfig: !!provider.samlConfig,
-	}));
+	const providers: RawSSOProvider[] = Array.isArray(rawResult)
+		? rawResult
+		: Array.isArray(rawResult?.providers)
+			? rawResult.providers
+			: [];
+
+	return providers
+		.filter((provider) => provider.organizationId === organizationId)
+		.map(normalizeSSOProvider);
 }
 
 export interface OIDCProviderInput {
@@ -172,31 +209,42 @@ export async function registerSSOProviderAction(data: OIDCProviderInput) {
 	}
 
 	const organizationId = authContext.employee.organizationId;
-	const ssoProviderId = crypto.randomUUID();
+	const providerId = data.providerId.trim();
+	const issuer = data.issuer.trim();
+	const domain = data.domain.trim().toLowerCase();
+	const clientId = data.clientId.trim();
+	const clientSecret = data.clientSecret.trim();
+
+	if (!providerId || !issuer || !domain || !clientId || !clientSecret) {
+		throw new Error("Provider ID, issuer, domain, client ID, and client secret are required");
+	}
 
 	// Store clientSecret in Vault for secure storage
-	// Path: secret/data/organizations/{orgId}/sso/{providerId}/client_secret
-	await storeOrgSecret(organizationId, `sso/${ssoProviderId}/client_secret`, data.clientSecret);
+	await storeOrgSecret(organizationId, `sso/${providerId}/client_secret`, clientSecret);
 
-	// Store OIDC config with clientSecret for Better Auth compatibility
-	// Note: Better Auth reads this directly from DB, so we need to keep the secret here
-	// The Vault copy serves as secure backup and audit trail
-	const oidcConfig = JSON.stringify({
-		clientId: data.clientId,
-		clientSecret: data.clientSecret,
-	});
-
-	await db.insert(ssoProvider).values({
-		id: ssoProviderId,
-		issuer: data.issuer,
-		domain: data.domain.toLowerCase(),
-		providerId: data.providerId,
-		organizationId,
-		oidcConfig,
-		domainVerified: false,
-	});
+	let rawProvider: RawSSOProvider;
+	try {
+		rawProvider = (await (auth.api as any).registerSSOProvider({
+			body: {
+				providerId,
+				issuer,
+				domain,
+				organizationId,
+				oidcConfig: {
+					clientId,
+					clientSecret,
+				},
+			},
+			headers: await headers(),
+		})) as RawSSOProvider;
+	} catch (error) {
+		await deleteOrgSecret(organizationId, `sso/${providerId}/client_secret`).catch(() => undefined);
+		throw error;
+	}
 
 	revalidatePath("/settings/enterprise/sso");
+
+	return normalizeSSOProvider(rawProvider);
 }
 
 export async function deleteSSOProviderAction(providerId: string) {
@@ -211,15 +259,88 @@ export async function deleteSSOProviderAction(providerId: string) {
 	}
 
 	const organizationId = authContext.employee.organizationId;
+	const providers = await listSSOProvidersAction();
+	const provider = providers.find(
+		(entry) => entry.id === providerId || entry.providerId === providerId,
+	);
 
-	// Delete the SSO provider from database
-	await db.delete(ssoProvider).where(eq(ssoProvider.id, providerId));
+	if (!provider || provider.organizationId !== organizationId) {
+		throw new Error("SSO provider not found in organization");
+	}
+
+	await (auth.api as any).deleteSSOProvider({
+		body: { providerId: provider.providerId },
+		headers: await headers(),
+	});
 
 	// Clean up the clientSecret from Vault
 	// Path: secret/data/organizations/{orgId}/sso/{providerId}/client_secret
-	await deleteOrgSecret(organizationId, `sso/${providerId}/client_secret`);
+	await deleteOrgSecret(organizationId, `sso/${provider.providerId}/client_secret`);
 
 	revalidatePath("/settings/enterprise/sso");
+}
+
+export async function requestSSODomainVerificationAction(providerId: string) {
+	const authContext = await requireUser();
+
+	if (authContext.employee?.role !== "admin") {
+		throw new Error("Unauthorized");
+	}
+
+	if (!authContext.employee?.organizationId) {
+		throw new Error("No organization selected");
+	}
+
+	const provider = (await listSSOProvidersAction()).find(
+		(entry) => entry.id === providerId || entry.providerId === providerId,
+	);
+
+	if (!provider || provider.organizationId !== authContext.employee.organizationId) {
+		throw new Error("SSO provider not found in organization");
+	}
+
+	const result = await (auth.api as any).requestDomainVerification({
+		body: { providerId: provider.providerId },
+		headers: await headers(),
+	});
+
+	revalidatePath("/settings/enterprise/domains");
+	revalidatePath("/settings/enterprise/sso");
+
+	return {
+		domainVerificationToken:
+			typeof result?.domainVerificationToken === "string" ? result.domainVerificationToken : null,
+	};
+}
+
+export async function verifySSODomainAction(providerId: string) {
+	const authContext = await requireUser();
+
+	if (authContext.employee?.role !== "admin") {
+		throw new Error("Unauthorized");
+	}
+
+	if (!authContext.employee?.organizationId) {
+		throw new Error("No organization selected");
+	}
+
+	const provider = (await listSSOProvidersAction()).find(
+		(entry) => entry.id === providerId || entry.providerId === providerId,
+	);
+
+	if (!provider || provider.organizationId !== authContext.employee.organizationId) {
+		throw new Error("SSO provider not found in organization");
+	}
+
+	await (auth.api as any).verifyDomain({
+		body: { providerId: provider.providerId },
+		headers: await headers(),
+	});
+
+	revalidatePath("/settings/enterprise/domains");
+	revalidatePath("/settings/enterprise/sso");
+
+	return { verified: true };
 }
 
 // ============ Branding Actions ============
@@ -361,7 +482,11 @@ export async function updateSocialOAuthConfigAction(
 		throw new Error("Unauthorized");
 	}
 
-	const config = await updateSocialOAuthConfig(configId, {
+	if (!authContext.employee?.organizationId) {
+		throw new Error("No organization selected");
+	}
+
+	const config = await updateSocialOAuthConfig(configId, authContext.employee.organizationId, {
 		clientId: data.clientId,
 		clientSecret: data.clientSecret,
 		providerConfig: data.providerConfig,
@@ -392,7 +517,11 @@ export async function deleteSocialOAuthConfigAction(configId: string) {
 		throw new Error("Unauthorized");
 	}
 
-	await deleteSocialOAuthConfig(configId);
+	if (!authContext.employee?.organizationId) {
+		throw new Error("No organization selected");
+	}
+
+	await deleteSocialOAuthConfig(configId, authContext.employee.organizationId);
 	revalidatePath("/settings/enterprise/social-oauth");
 }
 
@@ -403,15 +532,21 @@ export async function testSocialOAuthConfigAction(configId: string) {
 		throw new Error("Unauthorized");
 	}
 
+	if (!authContext.employee?.organizationId) {
+		throw new Error("No organization selected");
+	}
+
+	const organizationId = authContext.employee.organizationId;
+
 	// For now, just validate that the config exists and mark it as tested
 	// A full test would require initiating an OAuth flow, which needs user interaction
 	try {
-		await updateTestStatus(configId, true);
+		await updateTestStatus(configId, organizationId, true);
 		revalidatePath("/settings/enterprise/social-oauth");
 		return { success: true };
 	} catch (error) {
 		const errorMessage = error instanceof Error ? error.message : "Unknown error";
-		await updateTestStatus(configId, false, errorMessage);
+		await updateTestStatus(configId, organizationId, false, errorMessage);
 		revalidatePath("/settings/enterprise/social-oauth");
 		return { success: false, error: errorMessage };
 	}

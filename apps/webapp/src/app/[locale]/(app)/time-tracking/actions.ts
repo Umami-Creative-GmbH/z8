@@ -13,6 +13,9 @@ import {
 	projectAssignment,
 	surchargeCalculation,
 	timeEntry,
+	timeRecord,
+	timeRecordAllocation,
+	timeRecordWork,
 	userSettings,
 	workPeriod,
 	workPolicy,
@@ -37,6 +40,7 @@ import {
 } from "@/lib/effect/services/change-policy.service";
 import { DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { EmailService } from "@/lib/effect/services/email.service";
+import { TimeEntryService, TimeEntryServiceLive } from "@/lib/effect/services/time-entry.service";
 import { SurchargeService, SurchargeServiceLive } from "@/lib/effect/services/surcharge.service";
 import type { ComplianceWarning } from "@/lib/effect/services/work-policy.service";
 import {
@@ -53,7 +57,6 @@ import {
 	onClockOutPendingApproval,
 	onClockOutPendingApprovalToManager,
 } from "@/lib/notifications/triggers";
-import { calculateHash } from "@/lib/time-tracking/blockchain";
 import { isSameDayInTimezone } from "@/lib/time-tracking/time-utils";
 import {
 	getMonthRangeInTimezone,
@@ -65,6 +68,98 @@ import { validateTimeEntry, validateTimeEntryRange } from "@/lib/time-tracking/v
 import type { WorkPeriodWithEntries } from "./types";
 
 const logger = createLogger("TimeTrackingActionsEffect");
+
+export const canonicalTimeEntryClient = {
+	createTimeEntry: async (input: {
+		employeeId: string;
+		organizationId: string;
+		type: "clock_in" | "clock_out" | "correction";
+		timestamp: Date;
+		createdBy: string;
+		notes?: string;
+		ipAddress?: string;
+		deviceInfo?: string;
+	}) => {
+		const effect = Effect.gen(function* (_) {
+			const service = yield* _(TimeEntryService);
+			return yield* _(service.createTimeEntry(input));
+		}).pipe(Effect.provide(TimeEntryServiceLive), Effect.provide(DatabaseServiceLive));
+
+		return Effect.runPromise(effect);
+	},
+	createCorrectionEntry: async (input: {
+		employeeId: string;
+		organizationId: string;
+		replacesEntryId: string;
+		timestamp: Date;
+		createdBy: string;
+		notes: string;
+		ipAddress?: string;
+		deviceInfo?: string;
+	}) => {
+		const effect = Effect.gen(function* (_) {
+			const service = yield* _(TimeEntryService);
+			return yield* _(service.createCorrectionEntry(input));
+		}).pipe(Effect.provide(TimeEntryServiceLive), Effect.provide(DatabaseServiceLive));
+
+		return Effect.runPromise(effect);
+	},
+};
+
+export const canonicalWorkRecordClient = {
+	createForCompletedPeriod: async (input: {
+		organizationId: string;
+		employeeId: string;
+		startAt: Date;
+		endAt: Date;
+		durationMinutes: number;
+		approvalState: "pending" | "approved" | "rejected";
+		createdBy: string;
+		workCategoryId?: string | null;
+		workLocationType?: "office" | "home" | "field" | "other" | null;
+		projectId?: string | null;
+		origin: "clock" | "manual";
+	}) => {
+		return db.transaction(async (tx) => {
+			const [record] = await tx
+				.insert(timeRecord)
+				.values({
+					organizationId: input.organizationId,
+					employeeId: input.employeeId,
+					recordKind: "work",
+					startAt: input.startAt,
+					endAt: input.endAt,
+					durationMinutes: input.durationMinutes,
+					approvalState: input.approvalState,
+					origin: input.origin,
+					createdBy: input.createdBy,
+					updatedBy: input.createdBy,
+				})
+				.returning({ id: timeRecord.id });
+
+			await tx.insert(timeRecordWork).values({
+				recordId: record.id,
+				organizationId: input.organizationId,
+				recordKind: "work",
+				workCategoryId: input.workCategoryId ?? null,
+				workLocationType: input.workLocationType ?? null,
+				computationMetadata: null,
+			});
+
+			if (input.projectId) {
+				await tx.insert(timeRecordAllocation).values({
+					organizationId: input.organizationId,
+					recordId: record.id,
+					allocationKind: "project",
+					projectId: input.projectId,
+					weightPercent: 100,
+				});
+			}
+
+			return record;
+		});
+	},
+};
 
 interface CorrectionRequest {
 	workPeriodId: string;
@@ -1007,45 +1102,13 @@ export async function clockIn(
 	}
 
 	try {
-		// Get previous entry for blockchain linking (per employee-per-org)
-		const [previousEntry] = await db
-			.select()
-			.from(timeEntry)
-			.where(
-				and(eq(timeEntry.employeeId, emp.id), eq(timeEntry.organizationId, emp.organizationId)),
-			)
-			.orderBy(desc(timeEntry.createdAt))
-			.limit(1);
-
-		// Calculate hash
-		const hash = calculateHash({
+		const entry = await createTimeEntry({
 			employeeId: emp.id,
+			organizationId: emp.organizationId,
 			type: "clock_in",
-			timestamp: now.toISOString(),
-			previousHash: previousEntry?.hash || null,
+			timestamp: now,
+			createdBy: session.user.id,
 		});
-
-		// Get request metadata
-		const headersList = await headers();
-		const ipAddress =
-			headersList.get("x-forwarded-for") || headersList.get("x-real-ip") || "unknown";
-		const userAgent = headersList.get("user-agent") || "unknown";
-
-		// Create clock in entry with organizationId
-		const [entry] = await db
-			.insert(timeEntry)
-			.values({
-				employeeId: emp.id,
-				organizationId: emp.organizationId,
-				type: "clock_in",
-				timestamp: now,
-				hash,
-				previousHash: previousEntry?.hash || null,
-				ipAddress,
-				deviceInfo: userAgent,
-				createdBy: session.user.id,
-			})
-			.returning();
 
 		// Create work period with organizationId
 		await db.insert(workPeriod).values({
@@ -1154,45 +1217,13 @@ export async function clockOut(
 	}
 
 	try {
-		// Get previous entry for blockchain linking (per employee-per-org)
-		const [previousEntry] = await db
-			.select()
-			.from(timeEntry)
-			.where(
-				and(eq(timeEntry.employeeId, emp.id), eq(timeEntry.organizationId, emp.organizationId)),
-			)
-			.orderBy(desc(timeEntry.createdAt))
-			.limit(1);
-
-		// Calculate hash
-		const hash = calculateHash({
+		const entry = await createTimeEntry({
 			employeeId: emp.id,
+			organizationId: emp.organizationId,
 			type: "clock_out",
-			timestamp: now.toISOString(),
-			previousHash: previousEntry?.hash || null,
+			timestamp: now,
+			createdBy: session.user.id,
 		});
-
-		// Get request metadata
-		const headersList = await headers();
-		const ipAddress =
-			headersList.get("x-forwarded-for") || headersList.get("x-real-ip") || "unknown";
-		const userAgent = headersList.get("user-agent") || "unknown";
-
-		// Create clock out entry with organizationId
-		const [entry] = await db
-			.insert(timeEntry)
-			.values({
-				employeeId: emp.id,
-				organizationId: emp.organizationId,
-				type: "clock_out",
-				timestamp: now,
-				hash,
-				previousHash: previousEntry?.hash || null,
-				ipAddress,
-				deviceInfo: userAgent,
-				createdBy: session.user.id,
-			})
-			.returning();
 
 		// Update work period
 		const durationMs = now.getTime() - activePeriod.startTime.getTime();
@@ -1214,6 +1245,20 @@ export async function clockOut(
 				}
 			: null;
 
+		const canonicalRecord = await canonicalWorkRecordClient.createForCompletedPeriod({
+			organizationId: emp.organizationId,
+			employeeId: emp.id,
+			startAt: activePeriod.startTime,
+			endAt: now,
+			durationMinutes,
+			approvalState: approvalStatus,
+			createdBy: session.user.id,
+			workCategoryId: workCategoryId || null,
+			workLocationType: activePeriod.workLocationType ?? null,
+			projectId: projectId || null,
+			origin: "clock",
+		});
+
 		await db
 			.update(workPeriod)
 			.set({
@@ -1222,12 +1267,18 @@ export async function clockOut(
 				durationMinutes,
 				projectId: projectId || null,
 				workCategoryId: workCategoryId || null,
+				canonicalRecordId: canonicalRecord.id,
 				isActive: false,
 				approvalStatus,
 				pendingChanges: pendingChangesData,
 				updatedAt: new Date(),
 			})
-			.where(eq(workPeriod.id, activePeriod.id));
+			.where(
+				and(
+					eq(workPeriod.id, activePeriod.id),
+					eq(workPeriod.organizationId, emp.organizationId),
+				),
+			);
 
 		// If clock-out needs approval, create an approval request
 		if (needsClockOutApproval && emp.managerId) {
@@ -1540,46 +1591,34 @@ export async function createTimeEntry(params: {
 }): Promise<typeof timeEntry.$inferSelect> {
 	const { employeeId, organizationId, type, timestamp, createdBy, replacesEntryId, notes } = params;
 
-	// Get previous entry for blockchain linking (per employee-per-org)
-	const [previousEntry] = await db
-		.select()
-		.from(timeEntry)
-		.where(and(eq(timeEntry.employeeId, employeeId), eq(timeEntry.organizationId, organizationId)))
-		.orderBy(desc(timeEntry.createdAt))
-		.limit(1);
-
-	// Calculate hash
-	const hash = calculateHash({
-		employeeId,
-		type,
-		timestamp: timestamp.toISOString(),
-		previousHash: previousEntry?.hash || null,
-	});
-
 	// Get request metadata
 	const headersList = await headers();
 	const ipAddress = headersList.get("x-forwarded-for") || headersList.get("x-real-ip") || "unknown";
 	const userAgent = headersList.get("user-agent") || "unknown";
 
-	// Create time entry with organizationId
-	const [entry] = await db
-		.insert(timeEntry)
-		.values({
+	if (type === "correction" && replacesEntryId) {
+		return canonicalTimeEntryClient.createCorrectionEntry({
 			employeeId,
 			organizationId,
-			type,
+			replacesEntryId,
 			timestamp,
-			hash,
-			previousHash: previousEntry?.hash || null,
+			createdBy,
+			notes: notes ?? "",
 			ipAddress,
 			deviceInfo: userAgent,
-			createdBy,
-			replacesEntryId,
-			notes,
-		})
-		.returning();
+		});
+	}
 
-	return entry;
+	return canonicalTimeEntryClient.createTimeEntry({
+		employeeId,
+		organizationId,
+		type,
+		timestamp,
+		createdBy,
+		notes,
+		ipAddress,
+		deviceInfo: userAgent,
+	});
 }
 
 // Re-export Effect functions with cleaner names (backward compatibility)
@@ -2769,6 +2808,19 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 				}
 			: null;
 
+		const canonicalRecord = await canonicalWorkRecordClient.createForCompletedPeriod({
+			organizationId: emp.organizationId,
+			employeeId: emp.id,
+			startAt: finalClockIn,
+			endAt: finalClockOut,
+			durationMinutes,
+			approvalState: approvalStatus,
+			createdBy: session.user.id,
+			workCategoryId: data.workCategoryId || null,
+			projectId: data.projectId || null,
+			origin: "manual",
+		});
+
 		// Create work period with adjusted times
 		const [period] = await db
 			.insert(workPeriod)
@@ -2782,6 +2834,7 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 				durationMinutes,
 				projectId: data.projectId || null,
 				workCategoryId: data.workCategoryId || null,
+				canonicalRecordId: canonicalRecord.id,
 				isActive: false,
 				approvalStatus,
 				pendingChanges: pendingChangesData,

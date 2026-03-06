@@ -160,7 +160,8 @@
     "settings": "Settings",
     "team": "Team",
     "team-label": "Team",
-    "time-tracking": "Time Tracking"
+    "time-tracking": "Time Tracking",
+    "travel-expenses": "Travel Expenses"
   },
   "table": {
     "clearFilters": "Clear filters",

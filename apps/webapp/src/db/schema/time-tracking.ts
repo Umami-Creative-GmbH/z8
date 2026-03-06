@@ -1,4 +1,4 @@
-import { boolean, index, integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { boolean, foreignKey, index, integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 
 // Import auth tables for FK references
@@ -6,6 +6,7 @@ import { organization, user } from "../auth-schema";
 import { approvalStatusEnum, timeEntryTypeEnum, workLocationTypeEnum } from "./enums";
 import { employee } from "./organization";
 import { project } from "./project";
+import { timeRecord } from "./time-record";
 import type { WorkPeriodAutoAdjustmentReason, WorkPeriodPendingChanges } from "./types";
 import { workCategory } from "./work-category";
 
@@ -124,6 +125,9 @@ export const workPeriod = pgTable(
 		originalEndTime: timestamp("original_end_time", { withTimezone: true }), // Audit trail
 		originalDurationMinutes: integer("original_duration_minutes"),
 
+		// Legacy-to-canonical linkage used during big-bang cutover.
+		canonicalRecordId: uuid("canonical_record_id"),
+
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at")
 			.$onUpdate(() => currentTimestamp())
@@ -136,6 +140,14 @@ export const workPeriod = pgTable(
 		index("workPeriod_projectId_idx").on(table.projectId),
 		index("workPeriod_workCategoryId_idx").on(table.workCategoryId),
 		index("workPeriod_approvalStatus_idx").on(table.approvalStatus),
+		index("workPeriod_org_canonicalRecordId_idx").on(
+			table.organizationId,
+			table.canonicalRecordId,
+		),
+		foreignKey({
+			columns: [table.organizationId, table.canonicalRecordId],
+			foreignColumns: [timeRecord.organizationId, timeRecord.id],
+		}),
 		// Composite index for calendar queries (most common)
 		index("workPeriod_org_startTime_idx").on(table.organizationId, table.startTime),
 		// Composite index for employee-org queries

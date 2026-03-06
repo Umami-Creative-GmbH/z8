@@ -63,6 +63,15 @@ export const queryKeys = {
 			["approvals", "time-corrections", params] as const,
 	},
 
+	// Travel expenses
+	travelExpenses: {
+		all: ["travel-expenses"] as const,
+		list: <T extends object>(params?: T) => ["travel-expenses", "list", params] as const,
+		detail: (claimId: string) => ["travel-expenses", "detail", claimId] as const,
+		approvals: <T extends object>(params?: T) =>
+			["travel-expenses", "approvals", params] as const,
+	},
+
 	// Employees
 	employees: {
 		all: ["employees"] as const,
@@ -95,6 +104,13 @@ export const queryKeys = {
 	timeClock: {
 		status: () => ["time-clock", "status"] as const,
 		breakStatus: () => ["time-clock", "break-status"] as const,
+	},
+
+	// Canonical time records
+	timeRecords: {
+		all: ["time-records"] as const,
+		list: <T extends object>(params?: T) => ["time-records", "list", params] as const,
+		detail: (recordId: string) => ["time-records", "detail", recordId] as const,
 	},
 
 	// Offline queue

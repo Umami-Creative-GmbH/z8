@@ -13,6 +13,8 @@ import {
 	employee,
 	employeeVacationAllowance,
 	holiday,
+	timeRecord,
+	timeRecordAbsence,
 	vacationAllowance,
 } from "@/db/schema";
 import { calculateBusinessDaysWithHalfDays, dateRangesOverlap } from "@/lib/absences/date-utils";
@@ -45,6 +47,152 @@ import {
 import { addCalendarSyncJob } from "@/lib/queue";
 
 const logger = createLogger("AbsenceActionsEffect");
+
+type DayPeriod = "full_day" | "am" | "pm";
+
+export function mapAbsenceRangeToCanonicalTimestamps(input: {
+	startDate: string;
+	endDate: string;
+	startPeriod: DayPeriod;
+	endPeriod: DayPeriod;
+}): { startAt: Date; endAt: Date } {
+	const startOfStartDate = DateTime.fromISO(input.startDate, { zone: "utc" }).startOf("day");
+	const endOfEndDate = DateTime.fromISO(input.endDate, { zone: "utc" }).endOf("day");
+
+	const startAt =
+		input.startPeriod === "pm" ? startOfStartDate.plus({ hours: 12 }) : startOfStartDate;
+	const endAt = input.endPeriod === "am" ? endOfEndDate.minus({ hours: 12 }) : endOfEndDate;
+
+	return {
+		startAt: startAt.toJSDate(),
+		endAt: endAt.toJSDate(),
+	};
+}
+
+export const canonicalAbsenceRecordClient = {
+	create: async (input: {
+		organizationId: string;
+		employeeId: string;
+		absenceCategoryId: string;
+		startDate: string;
+		startPeriod: DayPeriod;
+		endDate: string;
+		endPeriod: DayPeriod;
+		countsAgainstVacation: boolean;
+		requiresApproval: boolean;
+		createdBy: string;
+	}) => {
+		const { startAt, endAt } = mapAbsenceRangeToCanonicalTimestamps({
+			startDate: input.startDate,
+			startPeriod: input.startPeriod,
+			endDate: input.endDate,
+			endPeriod: input.endPeriod,
+		});
+
+		return db.transaction(async (tx) => {
+			const [record] = await tx
+				.insert(timeRecord)
+				.values({
+					organizationId: input.organizationId,
+					employeeId: input.employeeId,
+					recordKind: "absence",
+					startAt,
+					endAt,
+					durationMinutes: Math.max(0, Math.floor((endAt.getTime() - startAt.getTime()) / 60000)),
+					approvalState: input.requiresApproval ? "pending" : "approved",
+					origin: "manual",
+					createdBy: input.createdBy,
+					updatedBy: input.createdBy,
+				})
+				.returning({ id: timeRecord.id });
+
+			await tx.insert(timeRecordAbsence).values({
+				recordId: record.id,
+				organizationId: input.organizationId,
+				recordKind: "absence",
+				absenceCategoryId: input.absenceCategoryId,
+				startPeriod: input.startPeriod,
+				endPeriod: input.endPeriod,
+				countsAgainstVacation: input.countsAgainstVacation,
+			});
+
+			return record;
+		});
+	},
+};
+
+export async function syncAbsenceRequestToCanonicalRecord(input: {
+	organizationId: string;
+	employeeId: string;
+	absenceCategoryId: string;
+	startDate: string;
+	startPeriod: DayPeriod;
+	endDate: string;
+	endPeriod: DayPeriod;
+	countsAgainstVacation: boolean;
+	requiresApproval: boolean;
+	createdBy: string;
+}): Promise<string> {
+	const canonicalRecord = await canonicalAbsenceRecordClient.create({
+		organizationId: input.organizationId,
+		employeeId: input.employeeId,
+		absenceCategoryId: input.absenceCategoryId,
+		startDate: input.startDate,
+		startPeriod: input.startPeriod,
+		endDate: input.endDate,
+		endPeriod: input.endPeriod,
+		countsAgainstVacation: input.countsAgainstVacation,
+		requiresApproval: input.requiresApproval,
+		createdBy: input.createdBy,
+	});
+
+	return canonicalRecord.id;
+}
+
+export async function syncCanonicalAbsenceApprovalState(input: {
+	organizationId: string;
+	canonicalRecordId: string | null;
+	approvalState: "approved" | "rejected";
+	updatedBy: string;
+}): Promise<void> {
+	if (!input.canonicalRecordId) {
+		return;
+	}
+
+	await db
+		.update(timeRecord)
+		.set({
+			approvalState: input.approvalState,
+			updatedAt: currentTimestamp(),
+			updatedBy: input.updatedBy,
+		})
+		.where(
+			and(
+				eq(timeRecord.id, input.canonicalRecordId),
+				eq(timeRecord.organizationId, input.organizationId),
+				eq(timeRecord.recordKind, "absence"),
+			),
+		);
+}
+
+export async function removeCanonicalAbsenceRecord(input: {
+	organizationId: string;
+	canonicalRecordId: string | null;
+}): Promise<void> {
+	if (!input.canonicalRecordId) {
+		return;
+	}
+
+	await db
+		.delete(timeRecord)
+		.where(
+			and(
+				eq(timeRecord.id, input.canonicalRecordId),
+				eq(timeRecord.organizationId, input.organizationId),
+				eq(timeRecord.recordKind, "absence"),
+			),
+		);
+}
 
 /**
  * Request an absence with Effect-based workflow
@@ -230,6 +378,7 @@ export async function requestAbsenceEffect(
 							.insert(absenceEntry)
 							.values({
 								employeeId: currentEmployee.id,
+								organizationId: currentEmployee.organizationId,
 								categoryId: data.categoryId,
 								startDate: data.startDate,
 								startPeriod: data.startPeriod,
@@ -244,6 +393,49 @@ export async function requestAbsenceEffect(
 
 				span.setAttribute("absence.id", newAbsence.id);
 				span.setAttribute("absence.status", newAbsence.status);
+
+				const canonicalRecordId = yield* _(
+					Effect.promise(() =>
+						syncAbsenceRequestToCanonicalRecord({
+							organizationId: currentEmployee.organizationId,
+							employeeId: currentEmployee.id,
+							absenceCategoryId: data.categoryId,
+							startDate: data.startDate,
+							startPeriod: data.startPeriod,
+							endDate: data.endDate,
+							endPeriod: data.endPeriod,
+							countsAgainstVacation: category.countsAgainstVacation,
+							requiresApproval: category.requiresApproval,
+							createdBy: session.user.id,
+						}),
+					).pipe(
+						Effect.tapError((error) =>
+							Effect.sync(() => {
+								logger.error(
+									{ error, absenceId: newAbsence.id, organizationId: currentEmployee.organizationId },
+									"Failed to sync absence request to canonical model",
+								);
+							}),
+						),
+						Effect.mapError(
+							() =>
+								new ValidationError({
+									message: "Failed to persist canonical absence record",
+									field: "canonicalRecordId",
+									value: newAbsence.id,
+								}),
+						),
+					),
+				);
+
+				yield* _(
+					dbService.query("linkAbsenceCanonicalRecord", async () => {
+						return await dbService.db
+							.update(absenceEntry)
+							.set({ canonicalRecordId })
+							.where(eq(absenceEntry.id, newAbsence.id));
+					}),
+				);
 
 				logger.info({ absenceId: newAbsence.id }, "Absence entry created");
 
@@ -424,6 +616,17 @@ export async function requestAbsenceEffect(
 								})
 								.where(eq(absenceEntry.id, newAbsence.id));
 						}),
+					);
+
+					yield* _(
+						Effect.promise(() =>
+							syncCanonicalAbsenceApprovalState({
+								organizationId: currentEmployee.organizationId,
+								canonicalRecordId,
+								approvalState: "approved",
+								updatedBy: session.user.id,
+							}),
+						),
 					);
 
 					span.setAttribute("absence.auto_approved", true);
@@ -710,6 +913,11 @@ export async function cancelAbsenceRequest(
 		absenceId: absenceId,
 		employeeId: absence.employeeId,
 		action: "delete",
+	});
+
+	await removeCanonicalAbsenceRecord({
+		organizationId: absence.organizationId,
+		canonicalRecordId: absence.canonicalRecordId,
 	});
 
 	// Delete the absence

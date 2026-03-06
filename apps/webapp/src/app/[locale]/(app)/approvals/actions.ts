@@ -10,6 +10,7 @@ import {
 	employee,
 	holiday,
 	timeEntry,
+	timeRecord,
 	workPeriod,
 } from "@/db/schema";
 import { calculateBusinessDays } from "@/lib/absences/date-utils";
@@ -30,7 +31,7 @@ import {
 	onTimeCorrectionRejected,
 } from "@/lib/notifications/triggers";
 import { addCalendarSyncJob } from "@/lib/queue";
-import { getCurrentEmployee } from "../absences/actions";
+import { getCurrentEmployee, syncCanonicalAbsenceApprovalState } from "../absences/actions";
 
 const logger = createLogger("ApprovalsActionsEffect");
 
@@ -243,6 +244,36 @@ async function processApproval<T>(
 	return runServerActionSafe(effect as any);
 }
 
+export async function syncCanonicalWorkCorrection(input: {
+	organizationId: string;
+	canonicalRecordId: string | null;
+	startAt: Date;
+	endAt: Date | null;
+	durationMinutes: number | null;
+	updatedBy: string;
+}): Promise<void> {
+	if (!input.canonicalRecordId) {
+		return;
+	}
+
+	await db
+		.update(timeRecord)
+		.set({
+			startAt: input.startAt,
+			endAt: input.endAt,
+			durationMinutes: input.durationMinutes,
+			updatedAt: currentTimestamp(),
+			updatedBy: input.updatedBy,
+		})
+		.where(
+			and(
+				eq(timeRecord.id, input.canonicalRecordId),
+				eq(timeRecord.organizationId, input.organizationId),
+				eq(timeRecord.recordKind, "work"),
+			),
+		);
+}
+
 /**
  * Approve an absence request
  */
@@ -285,6 +316,17 @@ export async function approveAbsenceEffect(absenceId: string): Promise<ServerAct
 										entityType: "absence_entry",
 									}),
 								),
+					),
+				);
+
+				yield* _(
+					Effect.promise(() =>
+						syncCanonicalAbsenceApprovalState({
+							organizationId: absence.organizationId,
+							canonicalRecordId: absence.canonicalRecordId,
+							approvalState: "approved",
+							updatedBy: currentEmployee.user.id,
+						}),
 					),
 				);
 
@@ -399,6 +441,17 @@ export async function rejectAbsenceEffect(
 										entityType: "absence_entry",
 									}),
 								),
+					),
+				);
+
+				yield* _(
+					Effect.promise(() =>
+						syncCanonicalAbsenceApprovalState({
+							organizationId: absence.organizationId,
+							canonicalRecordId: absence.canonicalRecordId,
+							approvalState: "rejected",
+							updatedBy: currentEmployee.user.id,
+						}),
 					),
 				);
 
@@ -566,6 +619,19 @@ export async function approveTimeCorrectionEffect(
 							})
 							.where(eq(workPeriod.id, entityId));
 					}),
+				);
+
+				yield* _(
+					Effect.promise(() =>
+						syncCanonicalWorkCorrection({
+							organizationId: period.organizationId,
+							canonicalRecordId: period.canonicalRecordId,
+							startAt: clockInCorrection.timestamp,
+							endAt,
+							durationMinutes,
+							updatedBy: currentEmployee.user.id,
+						}),
+					),
 				);
 
 				// Trigger in-app notification (fire-and-forget)

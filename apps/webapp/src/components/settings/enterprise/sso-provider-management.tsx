@@ -1,9 +1,21 @@
 "use client";
 
-import { IconCheck, IconExternalLink, IconPlus, IconTrash, IconX } from "@tabler/icons-react";
+import {
+	IconCheck,
+	IconExternalLink,
+	IconKey,
+	IconPlus,
+	IconRefresh,
+	IconTrash,
+	IconX,
+} from "@tabler/icons-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { deleteSSOProviderAction } from "@/app/[locale]/(app)/settings/enterprise/actions";
+import {
+	deleteSSOProviderAction,
+	requestSSODomainVerificationAction,
+	verifySSODomainAction,
+} from "@/app/[locale]/(app)/settings/enterprise/actions";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -33,6 +45,7 @@ interface SSOProvider {
 	domain: string;
 	providerId: string;
 	domainVerified: boolean | null;
+	domainVerificationToken: string | null;
 	createdAt: Date | null;
 }
 
@@ -43,6 +56,14 @@ interface SSOProviderManagementProps {
 export function SSOProviderManagement({ initialProviders }: SSOProviderManagementProps) {
 	const [providers, setProviders] = useState<SSOProvider[]>(initialProviders);
 	const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+	const [tokenByProviderId, setTokenByProviderId] = useState<Record<string, string>>(() =>
+		Object.fromEntries(
+			initialProviders
+				.filter((provider) => provider.domainVerificationToken)
+				.map((provider) => [provider.providerId, provider.domainVerificationToken as string]),
+		),
+	);
+	const [busyProviderId, setBusyProviderId] = useState<string | null>(null);
 	const [deleteDialog, setDeleteDialog] = useState<{
 		isOpen: boolean;
 		provider: SSOProvider | null;
@@ -50,8 +71,62 @@ export function SSOProviderManagement({ initialProviders }: SSOProviderManagemen
 
 	const handleProviderAdded = (newProvider: SSOProvider) => {
 		setProviders((prev) => [...prev, newProvider]);
+		if (newProvider.domainVerificationToken) {
+			setTokenByProviderId((prev) => ({
+				...prev,
+				[newProvider.providerId]: newProvider.domainVerificationToken as string,
+			}));
+		}
 		setIsAddDialogOpen(false);
-		toast.success("SSO provider added successfully");
+	};
+
+	const handleRequestVerificationToken = async (provider: SSOProvider) => {
+		setBusyProviderId(provider.id);
+		const result = await requestSSODomainVerificationAction(provider.id).then(
+			(response) => ({ ok: true as const, response }),
+			(error) => ({ ok: false as const, error }),
+		);
+
+		if (!result.ok || !result.response.domainVerificationToken) {
+			toast.error("Failed to generate domain verification token");
+			setBusyProviderId(null);
+			return;
+		}
+
+		setTokenByProviderId((prev) => ({
+			...prev,
+			[provider.providerId]: result.response.domainVerificationToken,
+		}));
+		toast.success("Verification token generated");
+		setBusyProviderId(null);
+	};
+
+	const handleVerifyDomain = async (provider: SSOProvider) => {
+		setBusyProviderId(provider.id);
+		const verified = await verifySSODomainAction(provider.id)
+			.then(() => true)
+			.catch(() => false);
+
+		if (!verified) {
+			toast.error("Domain verification failed. Check your DNS TXT record and retry.");
+			setBusyProviderId(null);
+			return;
+		}
+
+		setProviders((prev) =>
+			prev.map((entry) =>
+				entry.id === provider.id
+					? { ...entry, domainVerified: true, domainVerificationToken: null }
+					: entry,
+			),
+		);
+		setTokenByProviderId((prev) => {
+			const next = { ...prev };
+			delete next[provider.providerId];
+			return next;
+		});
+		toast.success("Domain verified");
+		setBusyProviderId(null);
 	};
 
 	const handleDelete = async () => {
@@ -64,6 +139,11 @@ export function SSOProviderManagement({ initialProviders }: SSOProviderManagemen
 
 		if (didDelete) {
 			setProviders((prev) => prev.filter((p) => p.id !== provider.id));
+			setTokenByProviderId((prev) => {
+				const next = { ...prev };
+				delete next[provider.providerId];
+				return next;
+			});
 			toast.success("SSO provider deleted");
 		} else {
 			toast.error("Failed to delete SSO provider");
@@ -115,47 +195,81 @@ export function SSOProviderManagement({ initialProviders }: SSOProviderManagemen
 								</TableRow>
 							</TableHeader>
 							<TableBody>
-								{providers.map((provider) => (
-									<TableRow key={provider.id}>
-										<TableCell className="font-medium">
-											{getProviderDisplayName(provider.issuer)}
-										</TableCell>
-										<TableCell>{provider.domain}</TableCell>
-										<TableCell>
-											{provider.domainVerified ? (
-												<Badge variant="default" className="bg-green-600">
-													<IconCheck className="mr-1 h-3 w-3" />
-													Verified
-												</Badge>
-											) : (
-												<Badge variant="secondary">
-													<IconX className="mr-1 h-3 w-3" />
-													Pending
-												</Badge>
-											)}
-										</TableCell>
-										<TableCell>
-											<a
-												href={provider.issuer}
-												target="_blank"
-												rel="noopener noreferrer"
-												className="flex items-center text-sm text-muted-foreground hover:text-foreground"
-											>
-												<span className="max-w-[200px] truncate">{provider.issuer}</span>
-												<IconExternalLink className="ml-1 h-3 w-3" />
-											</a>
-										</TableCell>
-										<TableCell className="text-right">
-											<Button
-												variant="outline"
-												size="sm"
-												onClick={() => setDeleteDialog({ isOpen: true, provider })}
-											>
-												<IconTrash className="h-4 w-4 text-destructive" />
-											</Button>
-										</TableCell>
-									</TableRow>
-								))}
+								{providers.map((provider) => {
+									const dnsToken =
+										tokenByProviderId[provider.providerId] ?? provider.domainVerificationToken;
+
+									return (
+										<TableRow key={provider.id}>
+											<TableCell className="font-medium">
+												{getProviderDisplayName(provider.issuer)}
+											</TableCell>
+											<TableCell>{provider.domain}</TableCell>
+											<TableCell>
+												{provider.domainVerified ? (
+													<Badge variant="default" className="bg-green-600">
+														<IconCheck className="mr-1 h-3 w-3" />
+														Verified
+													</Badge>
+												) : (
+													<Badge variant="secondary">
+														<IconX className="mr-1 h-3 w-3" />
+														Pending
+													</Badge>
+												)}
+												{!provider.domainVerified && dnsToken && (
+													<p className="mt-1 text-xs text-muted-foreground">
+														TXT token: <code className="bg-muted px-1 rounded">{dnsToken}</code>
+													</p>
+												)}
+											</TableCell>
+											<TableCell>
+												<a
+													href={provider.issuer}
+													target="_blank"
+													rel="noopener noreferrer"
+													className="flex items-center text-sm text-muted-foreground hover:text-foreground"
+												>
+													<span className="max-w-[200px] truncate">{provider.issuer}</span>
+													<IconExternalLink className="ml-1 h-3 w-3" />
+												</a>
+											</TableCell>
+											<TableCell className="text-right">
+												<div className="flex justify-end gap-2">
+													{!provider.domainVerified && (
+														<>
+															<Button
+																variant="outline"
+																size="sm"
+																disabled={busyProviderId === provider.id}
+																onClick={() => handleRequestVerificationToken(provider)}
+															>
+																<IconKey className="mr-1 h-4 w-4" />
+																Token
+															</Button>
+															<Button
+																variant="outline"
+																size="sm"
+																disabled={busyProviderId === provider.id}
+																onClick={() => handleVerifyDomain(provider)}
+															>
+																<IconRefresh className="mr-1 h-4 w-4" />
+																Verify
+															</Button>
+														</>
+													)}
+													<Button
+														variant="outline"
+														size="sm"
+														onClick={() => setDeleteDialog({ isOpen: true, provider })}
+													>
+														<IconTrash className="h-4 w-4 text-destructive" />
+													</Button>
+												</div>
+											</TableCell>
+										</TableRow>
+									);
+								})}
 							</TableBody>
 						</Table>
 					)}
@@ -170,8 +284,8 @@ export function SSOProviderManagement({ initialProviders }: SSOProviderManagemen
 						Configure the callback URL:{" "}
 						<code className="bg-background px-1 rounded">
 							{typeof window !== "undefined"
-								? `${window.location.origin}/api/auth/callback/sso`
-								: "/api/auth/callback/sso"}
+								? `${window.location.origin}/api/auth/sso/callback`
+								: "/api/auth/sso/callback"}
 						</code>
 					</li>
 					<li>Copy the Issuer URL, Client ID, and Client Secret from your IdP</li>
