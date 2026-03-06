@@ -1,10 +1,10 @@
+import { apiKey } from "@better-auth/api-key";
+import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { passkey } from "@better-auth/passkey";
 import { scim } from "@better-auth/scim";
 import { sso } from "@better-auth/sso";
-import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { betterAuth } from "better-auth/minimal";
 import { nextCookies } from "better-auth/next-js";
-import { apiKey } from "@better-auth/api-key";
 import { admin } from "better-auth/plugins/admin";
 import { bearer } from "better-auth/plugins/bearer";
 import { organization } from "better-auth/plugins/organization";
@@ -12,11 +12,8 @@ import { twoFactor } from "better-auth/plugins/two-factor";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import * as schema from "@/db/auth-schema";
-import {
-	employee,
-	scimProvisioningLog,
-	teamPermissions,
-} from "@/db/schema";
+import { employee, scimProvisioningLog, teamPermissions } from "@/db/schema";
+import { env } from "@/env";
 import { getDefaultAppBaseUrl, getOrganizationBaseUrl } from "./app-url";
 import { getDomainConfig } from "./domain/domain-service";
 import { sendEmail } from "./email/email-service";
@@ -27,11 +24,80 @@ import {
 } from "./email/render";
 import { createLogger } from "./logger";
 import { secondaryStorage } from "./valkey";
-import { env } from "@/env";
 
 const logger = createLogger("Auth");
 
 const BILLING_ENABLED = process.env.BILLING_ENABLED === "true";
+
+function getAuthSecrets() {
+	const fallback = [{ version: 1, value: env.BETTER_AUTH_SECRET }];
+	const secrets = env.BETTER_AUTH_SECRETS;
+
+	if (!secrets) {
+		return fallback;
+	}
+
+	const parsed = secrets
+		.split(",")
+		.map((entry) => entry.trim())
+		.filter(Boolean)
+		.map((entry) => {
+			const [versionRaw, ...valueParts] = entry.split(":");
+			const version = Number(versionRaw);
+			const value = valueParts.join(":").trim();
+
+			if (!Number.isInteger(version) || version <= 0 || value.length < 32) {
+				return null;
+			}
+
+			return { version, value };
+		})
+		.filter((value): value is { version: number; value: string } => value !== null);
+
+	if (parsed.length === 0) {
+		logger.warn("BETTER_AUTH_SECRETS was provided but no valid entries were found. Falling back.");
+		return fallback;
+	}
+
+	return parsed;
+}
+
+async function getSSOTrustedOrigins(request: Request, pathname: string): Promise<string[]> {
+	if (!pathname.includes("/sso/")) {
+		return [];
+	}
+
+	const origins = new Set<string>();
+
+	const providers = await db.query.ssoProvider.findMany({
+		columns: { issuer: true },
+	});
+
+	for (const provider of providers) {
+		if (!provider.issuer) {
+			continue;
+		}
+
+		try {
+			origins.add(new URL(provider.issuer).origin);
+		} catch {
+			logger.warn({ issuer: provider.issuer }, "Invalid SSO issuer URL in provider table");
+		}
+	}
+
+	if (pathname.endsWith("/sso/register")) {
+		try {
+			const body = (await request.clone().json()) as { issuer?: string };
+			if (body.issuer) {
+				origins.add(new URL(body.issuer).origin);
+			}
+		} catch {
+			// Ignore non-JSON or unreadable request bodies.
+		}
+	}
+
+	return [...origins];
+}
 
 type MemberSeatChange = "added" | "removed";
 
@@ -81,12 +147,8 @@ async function syncBillingSeats({
 
 	try {
 		const { Effect, Layer } = await import("effect");
-		const {
-			SeatSyncService,
-			SeatSyncServiceLive,
-			StripeServiceLive,
-			SubscriptionServiceLive,
-		} = await import("@/lib/effect/services/billing");
+		const { SeatSyncService, SeatSyncServiceLive, StripeServiceLive, SubscriptionServiceLive } =
+			await import("@/lib/effect/services/billing");
 
 		const layers = SeatSyncServiceLive.pipe(
 			Layer.provide(StripeServiceLive),
@@ -116,15 +178,16 @@ async function syncBillingSeats({
 }
 
 export const auth = betterAuth({
+	secrets: getAuthSecrets(),
 	baseURL: {
-    allowedHosts: [
-      env.APP_URL || "ui.z8-time.app",
-      "ui.z8-time.app", // Production
-      "localhost:3000", // Local development
-    ],
-    fallback: env.APP_URL || "https://ui.z8-time.app",
-    protocol: "auto",
-  },
+		allowedHosts: [
+			env.APP_URL || "ui.z8-time.app",
+			"ui.z8-time.app", // Production
+			"localhost:3000", // Local development
+		],
+		fallback: env.APP_URL || "https://ui.z8-time.app",
+		protocol: "auto",
+	},
 	//baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
 
 	// Dynamic trusted origins for custom domains
@@ -134,6 +197,7 @@ export const auth = betterAuth({
 
 		if (!request) return origins;
 
+		const pathname = new URL(request.url).pathname;
 		const host = request.headers.get("host");
 		if (!host) return origins;
 
@@ -154,6 +218,13 @@ export const auth = betterAuth({
 			logger.warn({ error, host }, "Failed to verify custom domain for trusted origins");
 		}
 
+		try {
+			const ssoOrigins = await getSSOTrustedOrigins(request, pathname);
+			origins.push(...ssoOrigins);
+		} catch (error) {
+			logger.warn({ error }, "Failed to resolve SSO trusted origins");
+		}
+
 		return [...new Set(origins)];
 	},
 
@@ -162,9 +233,26 @@ export const auth = betterAuth({
 		joins: true,
 	},
 
+	advanced: {
+		ipAddress: {
+			ipv6Subnet: 64,
+		},
+	},
+
 	// Secondary storage for session caching (Valkey/Redis)
 	// This dramatically improves session retrieval performance
 	secondaryStorage,
+
+	verification: {
+		storeIdentifier: {
+			default: "plain",
+			overrides: {
+				"email-verification": "hashed",
+				"password-reset": "hashed",
+			},
+		},
+		storeInDatabase: true,
+	},
 
 	// User additional fields - these will be included in the generated schema
 	user: {
@@ -512,6 +600,22 @@ export const auth = betterAuth({
 				enabled: true,
 				tokenPrefix: "z8-auth-",
 			},
+			saml: {
+				enableSingleLogout: true,
+				wantLogoutRequestSigned: true,
+				wantLogoutResponseSigned: true,
+				enableInResponseToValidation: true,
+				allowIdpInitiated: true,
+				requestTTL: 10 * 60 * 1000,
+				clockSkew: 60 * 1000,
+				requireTimestamps: true,
+				algorithms: {
+					onDeprecated: "reject",
+				},
+				maxResponseSize: 512 * 1024,
+				maxMetadataSize: 100 * 1024,
+			},
+			redirectURI: "/sso/callback",
 			// Organization provisioning: auto-add users to linked organizations
 			organizationProvisioning: {
 				disabled: false,

@@ -5,6 +5,7 @@ export const env = createEnv({
 	server: {
 		APP_URL: z.url().optional(),
 		BETTER_AUTH_SECRET: z.string().min(32),
+		BETTER_AUTH_SECRETS: z.string().optional(),
 
 		// DATABASE_URL: z.string().url(), // Not used, using individual vars
 		// Postgres connection details
@@ -59,9 +60,7 @@ export const env = createEnv({
 		SMTP_FROM_EMAIL: z.email().optional(),
 		SMTP_FROM_NAME: z.string().optional(),
 
-		NODE_ENV: z
-			.enum(["development", "test", "production"])
-			.default("development"),
+		NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
 
 		// Security headers
 		SECURITY_HSTS_PRELOAD: z.enum(["true", "false"]).optional(),
@@ -118,6 +117,7 @@ export const env = createEnv({
 		POSTGRES_PASSWORD: process.env.POSTGRES_PASSWORD,
 
 		BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
+		BETTER_AUTH_SECRETS: process.env.BETTER_AUTH_SECRETS,
 		VALKEY_HOST: process.env.VALKEY_HOST,
 		VALKEY_PORT: process.env.VALKEY_PORT,
 		VALKEY_PASSWORD: process.env.VALKEY_PASSWORD,
@@ -170,8 +170,7 @@ export const env = createEnv({
 		CALENDAR_GOOGLE_CLIENT_ID: process.env.CALENDAR_GOOGLE_CLIENT_ID,
 		CALENDAR_GOOGLE_CLIENT_SECRET: process.env.CALENDAR_GOOGLE_CLIENT_SECRET,
 		CALENDAR_MICROSOFT_CLIENT_ID: process.env.CALENDAR_MICROSOFT_CLIENT_ID,
-		CALENDAR_MICROSOFT_CLIENT_SECRET:
-			process.env.CALENDAR_MICROSOFT_CLIENT_SECRET,
+		CALENDAR_MICROSOFT_CLIENT_SECRET: process.env.CALENDAR_MICROSOFT_CLIENT_SECRET,
 		TURNSTILE_SITE_KEY: process.env.TURNSTILE_SITE_KEY,
 		TURNSTILE_SECRET_KEY: process.env.TURNSTILE_SECRET_KEY,
 		BILLING_ENABLED: process.env.BILLING_ENABLED,
@@ -188,9 +187,7 @@ export const env = createEnv({
 	onValidationError: (issues) => {
 		console.error("❌ Invalid environment variables:");
 		for (const issue of issues) {
-			console.error(
-				`   - ${issue.path?.join(".") ?? "unknown"}: ${issue.message}`,
-			);
+			console.error(`   - ${issue.path?.join(".") ?? "unknown"}: ${issue.message}`);
 		}
 		process.exit(1);
 	},

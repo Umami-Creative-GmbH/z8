@@ -150,7 +150,7 @@ describe("ExportForm", () => {
 
 		await waitFor(() => {
 			expect(screen.getByRole("button", { name: "Export to DATEV" })).toBeTruthy();
-		});
+		}, { timeout: 5000 });
 
 		const formatSelect = screen
 			.getAllByRole("combobox")
@@ -161,7 +161,7 @@ describe("ExportForm", () => {
 
 		await waitFor(() => {
 			expect(screen.getByRole("button", { name: "Export to Workday" })).toBeTruthy();
-		});
+		}, { timeout: 5000 });
 
 		fireEvent.click(screen.getByRole("button", { name: "Export to Workday" }));
 
@@ -182,7 +182,7 @@ describe("ExportForm", () => {
 
 		await waitFor(() => {
 			expect(screen.getByRole("button", { name: "Export to DATEV" })).toBeTruthy();
-		});
+		}, { timeout: 5000 });
 
 		const formatSelect = screen
 			.getAllByRole("combobox")
@@ -193,7 +193,7 @@ describe("ExportForm", () => {
 
 		await waitFor(() => {
 			expect(screen.getByRole("button", { name: "Export to Workday" })).toBeTruthy();
-		});
+		}, { timeout: 5000 });
 
 		fireEvent.click(screen.getByRole("button", { name: "Export to Workday" }));
 

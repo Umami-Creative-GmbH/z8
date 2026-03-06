@@ -478,9 +478,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 							});
 							// Optionally redirect to verification pending page
 							setTimeout(() => {
-								router.push(
-									`/verify-email-pending?email=${encodeURIComponent(email)}`,
-								);
+								router.push(`/verify-email-pending?email=${encodeURIComponent(email)}`);
 							}, 3000);
 						} else {
 							dispatch({
@@ -636,7 +634,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 		dispatch({ type: "SET_ERROR", error: null });
 
 		try {
-			await (authClient.sso as any).signIn({
+			await authClient.signIn.sso({
 				providerId: ssoProviderId,
 				callbackURL: "/init",
 			});

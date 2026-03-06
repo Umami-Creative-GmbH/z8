@@ -35,6 +35,16 @@ const {
 	mockSendPushToUser,
 	mockIsPushAvailable,
 	mockSendEmailNotification,
+	mockIsTeamsAvailable,
+	mockSendTeamsNotification,
+	mockIsTelegramAvailable,
+	mockSendTelegramNotification,
+	mockIsDiscordAvailable,
+	mockSendDiscordNotification,
+	mockIsSlackAvailable,
+	mockSendSlackNotification,
+	mockPublishEventAsync,
+	mockPublishNotificationEvent,
 } = vi.hoisted(() => {
 	const mockReturning = vi.fn();
 	const mockValues = vi.fn(() => ({ returning: mockReturning }));
@@ -72,6 +82,16 @@ const {
 	const mockSendPushToUser = vi.fn(() => Promise.resolve());
 	const mockIsPushAvailable = vi.fn(() => false);
 	const mockSendEmailNotification = vi.fn(() => Promise.resolve());
+	const mockIsTeamsAvailable = vi.fn(() => Promise.resolve(false));
+	const mockSendTeamsNotification = vi.fn(() => Promise.resolve());
+	const mockIsTelegramAvailable = vi.fn(() => Promise.resolve(false));
+	const mockSendTelegramNotification = vi.fn(() => Promise.resolve());
+	const mockIsDiscordAvailable = vi.fn(() => Promise.resolve(false));
+	const mockSendDiscordNotification = vi.fn(() => Promise.resolve());
+	const mockIsSlackAvailable = vi.fn(() => Promise.resolve(false));
+	const mockSendSlackNotification = vi.fn(() => Promise.resolve());
+	const mockPublishEventAsync = vi.fn();
+	const mockPublishNotificationEvent = vi.fn(() => Promise.resolve());
 
 	return {
 		mockReturning,
@@ -95,6 +115,16 @@ const {
 		mockSendPushToUser,
 		mockIsPushAvailable,
 		mockSendEmailNotification,
+		mockIsTeamsAvailable,
+		mockSendTeamsNotification,
+		mockIsTelegramAvailable,
+		mockSendTelegramNotification,
+		mockIsDiscordAvailable,
+		mockSendDiscordNotification,
+		mockIsSlackAvailable,
+		mockSendSlackNotification,
+		mockPublishEventAsync,
+		mockPublishNotificationEvent,
 	};
 });
 
@@ -146,6 +176,34 @@ vi.mock("../push-service", () => ({
 
 vi.mock("../email-notifications", () => ({
 	sendEmailNotification: mockSendEmailNotification,
+}));
+
+vi.mock("../teams-channel", () => ({
+	isTeamsAvailable: mockIsTeamsAvailable,
+	sendTeamsNotification: mockSendTeamsNotification,
+}));
+
+vi.mock("../telegram-channel", () => ({
+	isTelegramAvailable: mockIsTelegramAvailable,
+	sendTelegramNotification: mockSendTelegramNotification,
+}));
+
+vi.mock("../discord-channel", () => ({
+	isDiscordAvailable: mockIsDiscordAvailable,
+	sendDiscordNotification: mockSendDiscordNotification,
+}));
+
+vi.mock("../slack-channel", () => ({
+	isSlackAvailable: mockIsSlackAvailable,
+	sendSlackNotification: mockSendSlackNotification,
+}));
+
+vi.mock("@/lib/events", () => ({
+	publishEventAsync: mockPublishEventAsync,
+}));
+
+vi.mock("@/lib/valkey", () => ({
+	publishNotificationEvent: mockPublishNotificationEvent,
 }));
 
 describe("Notification Service", () => {
