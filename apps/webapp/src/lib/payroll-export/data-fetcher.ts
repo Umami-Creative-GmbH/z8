@@ -2,19 +2,18 @@
  * Data fetcher for payroll export
  * Fetches work periods, absences, and configuration from database
  */
-import { and, eq, gte, inArray, lte } from "drizzle-orm";
+import { and, asc, eq, gte, inArray, isNull, lte, or } from "drizzle-orm";
 import { DateTime } from "luxon";
 import {
 	absenceCategory,
-	absenceEntry,
 	db,
 	employee,
 	payrollExportConfig,
 	payrollExportFormat,
 	payrollWageTypeMapping,
 	workCategory,
-	workPeriod,
 } from "@/db";
+import { timeRecord } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
 import type {
 	AbsenceData,
@@ -36,24 +35,20 @@ export async function fetchWorkPeriodsForExport(
 
 	// Build where conditions
 	const whereConditions = [
-		eq(workPeriod.organizationId, organizationId),
-		gte(workPeriod.startTime, filters.dateRange.start.toJSDate()),
-		lte(workPeriod.startTime, filters.dateRange.end.endOf("day").toJSDate()),
-		eq(workPeriod.isActive, false), // Only completed periods
+		eq(timeRecord.organizationId, organizationId),
+		eq(timeRecord.recordKind, "work"),
+		eq(timeRecord.approvalState, "approved"),
+		gte(timeRecord.startAt, filters.dateRange.start.toJSDate()),
+		lte(timeRecord.startAt, filters.dateRange.end.endOf("day").toJSDate()),
 	];
 
 	// Add employee filter if specified
 	if (filters.employeeIds && filters.employeeIds.length > 0) {
-		whereConditions.push(inArray(workPeriod.employeeId, filters.employeeIds));
-	}
-
-	// Add project filter if specified
-	if (filters.projectIds && filters.projectIds.length > 0) {
-		whereConditions.push(inArray(workPeriod.projectId, filters.projectIds));
+		whereConditions.push(inArray(timeRecord.employeeId, filters.employeeIds));
 	}
 
 	// Fetch work periods with employee and category data
-	const periods = await db.query.workPeriod.findMany({
+	const periods = await db.query.timeRecord.findMany({
 		where: and(...whereConditions),
 		with: {
 			employee: {
@@ -65,21 +60,36 @@ export async function fetchWorkPeriodsForExport(
 					teamId: true,
 				},
 			},
-			workCategory: {
+			work: {
 				columns: {
-					id: true,
-					name: true,
-					factor: true,
+					workCategoryId: true,
+				},
+				with: {
+					workCategory: {
+						columns: {
+							id: true,
+							name: true,
+							factor: true,
+						},
+					},
 				},
 			},
-			project: {
+			allocations: {
 				columns: {
-					id: true,
-					name: true,
+					projectId: true,
+					weightPercent: true,
+				},
+				with: {
+					project: {
+						columns: {
+							id: true,
+							name: true,
+						},
+					},
 				},
 			},
 		},
-		orderBy: (wp, { asc }) => [asc(wp.startTime)],
+		orderBy: [asc(timeRecord.startAt)],
 	});
 
 	// Apply team filter if specified (requires filtering after fetch)
@@ -87,6 +97,15 @@ export async function fetchWorkPeriodsForExport(
 	if (filters.teamIds && filters.teamIds.length > 0) {
 		const teamIdSet = new Set(filters.teamIds);
 		filteredPeriods = periods.filter((p) => p.employee?.teamId && teamIdSet.has(p.employee.teamId));
+	}
+
+	if (filters.projectIds && filters.projectIds.length > 0) {
+		const projectIdSet = new Set(filters.projectIds);
+		filteredPeriods = filteredPeriods.filter((p) =>
+			(p.allocations || []).some((allocation) =>
+				allocation.projectId ? projectIdSet.has(allocation.projectId) : false,
+			),
+		);
 	}
 
 	logger.info({ count: filteredPeriods.length }, "Fetched work periods for payroll export");
@@ -97,14 +116,22 @@ export async function fetchWorkPeriodsForExport(
 		employeeNumber: p.employee?.employeeNumber || null,
 		firstName: p.employee?.firstName || null,
 		lastName: p.employee?.lastName || null,
-		startTime: DateTime.fromJSDate(p.startTime),
-		endTime: p.endTime ? DateTime.fromJSDate(p.endTime) : null,
+		startTime: DateTime.fromJSDate(p.startAt),
+		endTime: p.endAt ? DateTime.fromJSDate(p.endAt) : null,
 		durationMinutes: p.durationMinutes,
-		workCategoryId: p.workCategoryId,
-		workCategoryName: p.workCategory?.name || null,
-		workCategoryFactor: p.workCategory?.factor || null,
-		projectId: p.projectId,
-		projectName: p.project?.name || null,
+		workCategoryId: p.work?.workCategoryId || null,
+		workCategoryName: p.work?.workCategory?.name || null,
+		workCategoryFactor: p.work?.workCategory?.factor || null,
+		projectId:
+			p.allocations
+				?.slice()
+				.sort((a, b) => b.weightPercent - a.weightPercent)
+				.find((allocation) => allocation.projectId)?.projectId || null,
+		projectName:
+			p.allocations
+				?.slice()
+				.sort((a, b) => b.weightPercent - a.weightPercent)
+				.find((allocation) => allocation.projectId)?.project?.name || null,
 	}));
 }
 
@@ -145,21 +172,17 @@ export async function fetchAbsencesForExport(
 		return [];
 	}
 
-	// Fetch absences in date range
-	const startDateStr = filters.dateRange.start.toISODate();
-	const endDateStr = filters.dateRange.end.toISODate();
-
-	if (!startDateStr || !endDateStr) {
-		throw new Error("Invalid date range: could not convert to ISO date strings");
-	}
-
-	const absences = await db.query.absenceEntry.findMany({
+	const absences = await db.query.timeRecord.findMany({
 		where: and(
-			inArray(absenceEntry.employeeId, employeeIds),
-			// Overlapping date range check: absence overlaps if start <= filterEnd AND end >= filterStart
-			lte(absenceEntry.startDate, endDateStr),
-			gte(absenceEntry.endDate, startDateStr),
-			eq(absenceEntry.status, "approved"), // Only approved absences
+			eq(timeRecord.organizationId, organizationId),
+			eq(timeRecord.recordKind, "absence"),
+			eq(timeRecord.approvalState, "approved"),
+			inArray(timeRecord.employeeId, employeeIds),
+			lte(timeRecord.startAt, filters.dateRange.end.endOf("day").toJSDate()),
+			or(
+				gte(timeRecord.endAt, filters.dateRange.start.startOf("day").toJSDate()),
+				isNull(timeRecord.endAt),
+			),
 		),
 		with: {
 			employee: {
@@ -170,14 +193,22 @@ export async function fetchAbsencesForExport(
 					lastName: true,
 				},
 			},
-			category: {
+			absence: {
 				columns: {
-					id: true,
-					name: true,
-					type: true,
+					absenceCategoryId: true,
+				},
+				with: {
+					absenceCategory: {
+						columns: {
+							id: true,
+							name: true,
+							type: true,
+						},
+					},
 				},
 			},
 		},
+		orderBy: [asc(timeRecord.startAt)],
 	});
 
 	logger.info({ count: absences.length }, "Fetched absences for payroll export");
@@ -188,12 +219,12 @@ export async function fetchAbsencesForExport(
 		employeeNumber: a.employee?.employeeNumber || null,
 		firstName: a.employee?.firstName || null,
 		lastName: a.employee?.lastName || null,
-		startDate: a.startDate,
-		endDate: a.endDate,
-		absenceCategoryId: a.categoryId,
-		absenceCategoryName: a.category?.name || null,
-		absenceType: a.category?.type || null,
-		status: a.status,
+		startDate: DateTime.fromJSDate(a.startAt, { zone: "utc" }).toISODate() || "",
+		endDate: DateTime.fromJSDate(a.endAt || a.startAt, { zone: "utc" }).toISODate() || "",
+		absenceCategoryId: a.absence?.absenceCategoryId || "",
+		absenceCategoryName: a.absence?.absenceCategory?.name || null,
+		absenceType: a.absence?.absenceCategory?.type || null,
+		status: a.approvalState,
 	}));
 }
 
@@ -363,26 +394,53 @@ export async function countWorkPeriods(
 	filters: PayrollExportFilters,
 ): Promise<number> {
 	const whereConditions = [
-		eq(workPeriod.organizationId, organizationId),
-		gte(workPeriod.startTime, filters.dateRange.start.toJSDate()),
-		lte(workPeriod.startTime, filters.dateRange.end.endOf("day").toJSDate()),
-		eq(workPeriod.isActive, false),
+		eq(timeRecord.organizationId, organizationId),
+		eq(timeRecord.recordKind, "work"),
+		eq(timeRecord.approvalState, "approved"),
+		gte(timeRecord.startAt, filters.dateRange.start.toJSDate()),
+		lte(timeRecord.startAt, filters.dateRange.end.endOf("day").toJSDate()),
 	];
 
 	if (filters.employeeIds && filters.employeeIds.length > 0) {
-		whereConditions.push(inArray(workPeriod.employeeId, filters.employeeIds));
+		whereConditions.push(inArray(timeRecord.employeeId, filters.employeeIds));
+	}
+
+	const result = await db.query.timeRecord.findMany({
+		where: and(...whereConditions),
+		columns: { id: true },
+		with: {
+			employee: {
+				columns: {
+					teamId: true,
+				},
+			},
+			allocations: {
+				columns: {
+					projectId: true,
+				},
+			},
+		},
+	});
+
+	let filteredRecords = result;
+
+	if (filters.teamIds && filters.teamIds.length > 0) {
+		const teamIdSet = new Set(filters.teamIds);
+		filteredRecords = filteredRecords.filter(
+			(record) => record.employee?.teamId && teamIdSet.has(record.employee.teamId),
+		);
 	}
 
 	if (filters.projectIds && filters.projectIds.length > 0) {
-		whereConditions.push(inArray(workPeriod.projectId, filters.projectIds));
+		const projectIdSet = new Set(filters.projectIds);
+		filteredRecords = filteredRecords.filter((record) =>
+			(record.allocations || []).some((allocation) =>
+				allocation.projectId ? projectIdSet.has(allocation.projectId) : false,
+			),
+		);
 	}
 
-	const result = await db.query.workPeriod.findMany({
-		where: and(...whereConditions),
-		columns: { id: true },
-	});
-
-	return result.length;
+	return filteredRecords.length;
 }
 
 /**

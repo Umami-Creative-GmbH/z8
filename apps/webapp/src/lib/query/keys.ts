@@ -106,6 +106,13 @@ export const queryKeys = {
 		breakStatus: () => ["time-clock", "break-status"] as const,
 	},
 
+	// Canonical time records
+	timeRecords: {
+		all: ["time-records"] as const,
+		list: <T extends object>(params?: T) => ["time-records", "list", params] as const,
+		detail: (recordId: string) => ["time-records", "detail", recordId] as const,
+	},
+
 	// Offline queue
 	offlineQueue: {
 		all: ["offline-queue"] as const,

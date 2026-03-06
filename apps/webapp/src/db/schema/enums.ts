@@ -17,6 +17,32 @@ export const absenceTypeEnum = pgEnum("absence_type", [
 ]);
 export const approvalStatusEnum = pgEnum("approval_status", ["pending", "approved", "rejected"]);
 export const timeEntryTypeEnum = pgEnum("time_entry_type", ["clock_in", "clock_out", "correction"]);
+export const timeRecordKindEnum = pgEnum("time_record_kind", [
+	"work",
+	"absence",
+	"break",
+	"adjustment",
+]);
+export const timeRecordApprovalStateEnum = pgEnum("time_record_approval_state", [
+	"draft",
+	"pending",
+	"approved",
+	"rejected",
+]);
+export const timeRecordOriginEnum = pgEnum("time_record_origin", [
+	"manual",
+	"clock",
+	"import",
+	"system",
+]);
+export const timeRecordAllocationKindEnum = pgEnum("time_record_allocation_kind", [
+	"project",
+	"cost_center",
+]);
+export const timeRecordApprovalDecisionActionEnum = pgEnum(
+	"time_record_approval_decision_action",
+	["submitted", "approved", "rejected"],
+);
 export const holidayCategoryEnum = pgEnum("holiday_category_type", [
 	"public_holiday",
 	"company_holiday",

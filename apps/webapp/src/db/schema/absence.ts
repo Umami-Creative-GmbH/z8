@@ -1,10 +1,11 @@
-import { boolean, date, index, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { boolean, date, foreignKey, index, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 
 // Import auth tables for FK references
 import { organization } from "../auth-schema";
 import { absenceTypeEnum, approvalStatusEnum, dayPeriodEnum } from "./enums";
 import { employee } from "./organization";
+import { timeRecord } from "./time-record";
 
 // ============================================
 // ABSENCE MANAGEMENT
@@ -54,6 +55,12 @@ export const absenceEntry = pgTable(
 
 		status: approvalStatusEnum("status").default("pending").notNull(),
 		notes: text("notes"),
+		organizationId: text("organization_id").references(() => organization.id, {
+			onDelete: "set null",
+		}),
+
+		// Legacy-to-canonical linkage used during big-bang cutover.
+		canonicalRecordId: uuid("canonical_record_id"),
 
 		// Approval tracking
 		approvedBy: uuid("approved_by").references(() => employee.id),
@@ -69,6 +76,14 @@ export const absenceEntry = pgTable(
 		index("absenceEntry_employeeId_idx").on(table.employeeId),
 		index("absenceEntry_startDate_idx").on(table.startDate),
 		index("absenceEntry_status_idx").on(table.status),
+		index("absenceEntry_org_canonicalRecordId_idx").on(
+			table.organizationId,
+			table.canonicalRecordId,
+		),
+		foreignKey({
+			columns: [table.organizationId, table.canonicalRecordId],
+			foreignColumns: [timeRecord.organizationId, timeRecord.id],
+		}),
 		index("absenceEntry_employeeId_status_idx").on(table.employeeId, table.status),
 	],
 );
