@@ -59,6 +59,13 @@ export async function fetchWorkPeriodsForExport(
 					lastName: true,
 					teamId: true,
 				},
+				with: {
+					user: {
+						columns: {
+							email: true,
+						},
+					},
+				},
 			},
 			work: {
 				columns: {
@@ -114,6 +121,7 @@ export async function fetchWorkPeriodsForExport(
 		id: p.id,
 		employeeId: p.employeeId,
 		employeeNumber: p.employee?.employeeNumber || null,
+		email: p.employee?.user?.email || null,
 		firstName: p.employee?.firstName || null,
 		lastName: p.employee?.lastName || null,
 		startTime: DateTime.fromJSDate(p.startAt),
@@ -192,6 +200,13 @@ export async function fetchAbsencesForExport(
 					firstName: true,
 					lastName: true,
 				},
+				with: {
+					user: {
+						columns: {
+							email: true,
+						},
+					},
+				},
 			},
 			absence: {
 				columns: {
@@ -217,6 +232,7 @@ export async function fetchAbsencesForExport(
 		id: a.id,
 		employeeId: a.employeeId,
 		employeeNumber: a.employee?.employeeNumber || null,
+		email: a.employee?.user?.email || null,
 		firstName: a.employee?.firstName || null,
 		lastName: a.employee?.lastName || null,
 		startDate: DateTime.fromJSDate(a.startAt, { zone: "utc" }).toISODate() || "",

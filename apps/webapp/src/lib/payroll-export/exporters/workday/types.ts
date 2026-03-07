@@ -37,3 +37,28 @@ export interface WorkdayAuthToken {
 	tokenType: string;
 	expiresAt: number;
 }
+
+export interface WorkdayWorker {
+	id: string;
+	employeeNumber?: string;
+	email?: string;
+}
+
+export interface WorkdayAttendancePayload {
+	workerId: string;
+	sourceId: string;
+	startDate: string;
+	endDate: string;
+	hours: number;
+	projectName: string | null;
+	categoryName: string | null;
+}
+
+export interface WorkdayAbsencePayload {
+	workerId: string;
+	sourceId: string;
+	startDate: string;
+	endDate: string;
+	absenceCategoryName: string | null;
+	absenceType: string | null;
+}

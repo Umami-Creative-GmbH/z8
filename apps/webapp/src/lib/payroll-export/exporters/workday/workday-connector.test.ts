@@ -103,19 +103,32 @@ describe("WorkdayConnector", () => {
 		});
 	});
 
-	it("returns safe v1 export result when records are not pushed", async () => {
+	it("exports matched records and skips zero-hour rows", async () => {
 		const testConnection = vi.fn().mockResolvedValue({ success: true });
 		const getOAuthToken = vi.fn().mockResolvedValue({
 			accessToken: "token_123",
 			tokenType: "Bearer",
 			expiresAt: Date.now() + 3600_000,
 		});
+		const findWorkerByEmployeeNumber = vi
+			.fn()
+			.mockResolvedValueOnce({ id: "worker-1" })
+			.mockResolvedValueOnce({ id: "worker-2" });
+		const createAttendance = vi.fn().mockResolvedValue(undefined);
+		const createAbsence = vi.fn().mockResolvedValue(undefined);
 		const connector = new WorkdayConnector({
 			getCredentials: vi.fn().mockResolvedValue({
 				clientId: "client_123",
 				clientSecret: "secret_123",
 			}),
-			createApiClient: () => ({ getOAuthToken, testConnection }),
+			createApiClient: () => ({
+				getOAuthToken,
+				testConnection,
+				findWorkerByEmployeeNumber,
+				findWorkerByEmail: vi.fn(),
+				createAttendance,
+				createAbsence,
+			}),
 		});
 
 		const workPeriods: WorkPeriodData[] = [
@@ -125,11 +138,28 @@ describe("WorkdayConnector", () => {
 				employeeNumber: "1001",
 				firstName: "Ada",
 				lastName: "Lovelace",
+				email: "ada@example.com",
 				startTime: DateTime.fromISO("2026-01-10T08:00:00Z"),
 				endTime: DateTime.fromISO("2026-01-10T12:00:00Z"),
 				durationMinutes: 240,
 				workCategoryId: null,
 				workCategoryName: null,
+				workCategoryFactor: null,
+				projectId: null,
+				projectName: null,
+			},
+			{
+				id: "wp_2",
+				employeeId: "emp_3",
+				employeeNumber: "1003",
+				firstName: "Zero",
+				lastName: "Hours",
+				email: "zero@example.com",
+				startTime: DateTime.fromISO("2026-01-12T08:00:00Z"),
+				endTime: DateTime.fromISO("2026-01-12T08:00:00Z"),
+				durationMinutes: 0,
+				workCategoryId: null,
+				workCategoryName: "Regular",
 				workCategoryFactor: null,
 				projectId: null,
 				projectName: null,
@@ -143,6 +173,7 @@ describe("WorkdayConnector", () => {
 				employeeNumber: "1002",
 				firstName: "Grace",
 				lastName: "Hopper",
+				email: "grace@example.com",
 				startDate: "2026-01-11",
 				endDate: "2026-01-11",
 				absenceCategoryId: "cat_1",
@@ -164,34 +195,103 @@ describe("WorkdayConnector", () => {
 			},
 		);
 
-		expect(result.success).toBe(false);
-		expect(result.totalRecords).toBe(2);
-		expect(result.syncedRecords).toBe(0);
-		expect(result.failedRecords).toBe(2);
-		expect(result.skippedRecords).toBe(0);
-		expect(result.errors).toEqual([
+		expect(result.success).toBe(true);
+		expect(result.totalRecords).toBe(3);
+		expect(result.syncedRecords).toBe(2);
+		expect(result.failedRecords).toBe(0);
+		expect(result.skippedRecords).toBe(1);
+		expect(result.errors).toEqual([]);
+		expect(result.skipped).toEqual([
 			{
-				recordId: "wp_1",
+				recordId: "wp_2",
 				recordType: "attendance",
-				employeeId: "emp_1",
-				errorMessage: "Workday export placeholder is not implemented; record was not synced.",
-				isRetryable: false,
-			},
-			{
-				recordId: "abs_1",
-				recordType: "absence",
-				employeeId: "emp_2",
-				errorMessage: "Workday export placeholder is not implemented; record was not synced.",
-				isRetryable: false,
+				employeeId: "emp_3",
+				reason: "Skipped zero-hour work period because includeZeroHours is disabled.",
 			},
 		]);
-		expect(result.metadata.employeeCount).toBe(2);
+		expect(result.metadata.employeeCount).toBe(3);
 		expect(result.metadata.dateRange).toEqual({
 			start: "2026-01-10",
-			end: "2026-01-11",
+			end: "2026-01-12",
 		});
-		expect(result.metadata.apiCallCount).toBe(0);
+		expect(result.metadata.apiCallCount).toBe(4);
+		expect(findWorkerByEmployeeNumber).toHaveBeenCalledTimes(2);
+		expect(createAttendance).toHaveBeenCalledWith("token_123", {
+			workerId: "worker-1",
+			sourceId: "wp_1",
+			startDate: "2026-01-10",
+			endDate: "2026-01-10",
+			hours: 4,
+			projectName: null,
+			categoryName: null,
+		});
+		expect(createAbsence).toHaveBeenCalledWith("token_123", {
+			workerId: "worker-2",
+			sourceId: "abs_1",
+			startDate: "2026-01-11",
+			endDate: "2026-01-11",
+			absenceCategoryName: "Vacation",
+			absenceType: "vacation",
+		});
 		expect(testConnection).toHaveBeenCalledTimes(1);
+	});
+
+	it("uses email matching when configured", async () => {
+		const testConnection = vi.fn().mockResolvedValue({ success: true });
+		const getOAuthToken = vi.fn().mockResolvedValue({
+			accessToken: "token_123",
+			tokenType: "Bearer",
+			expiresAt: Date.now() + 3600_000,
+		});
+		const findWorkerByEmail = vi.fn().mockResolvedValue({ id: "worker-email" });
+		const createAttendance = vi.fn().mockResolvedValue(undefined);
+		const connector = new WorkdayConnector({
+			getCredentials: vi.fn().mockResolvedValue({
+				clientId: "client_123",
+				clientSecret: "secret_123",
+			}),
+			createApiClient: () => ({
+				getOAuthToken,
+				testConnection,
+				findWorkerByEmployeeNumber: vi.fn(),
+				findWorkerByEmail,
+				createAttendance,
+				createAbsence: vi.fn(),
+			}),
+		});
+
+		await connector.export(
+			"org_123",
+			[
+				{
+					id: "wp_email",
+					employeeId: "emp_email",
+					employeeNumber: null,
+					firstName: "Email",
+					lastName: "Match",
+					email: "email@example.com",
+					startTime: DateTime.fromISO("2026-01-10T08:00:00Z"),
+					endTime: DateTime.fromISO("2026-01-10T10:00:00Z"),
+					durationMinutes: 120,
+					workCategoryId: null,
+					workCategoryName: "Regular",
+					workCategoryFactor: null,
+					projectId: null,
+					projectName: null,
+				},
+			],
+			[],
+			[],
+			{
+				...DEFAULT_WORKDAY_CONFIG,
+				instanceUrl: "https://example.workday.com",
+				tenantId: "acme",
+				employeeMatchStrategy: "email",
+			},
+		);
+
+		expect(findWorkerByEmail).toHaveBeenCalledWith("token_123", "email@example.com");
+		expect(createAttendance).toHaveBeenCalledTimes(1);
 	});
 
 	it("returns stable sync threshold", () => {
