@@ -12,6 +12,7 @@ const IGNORE_SEGMENTS = new Set([
 	"messages",
 	"docs",
 	".source",
+	".next",
 	"node_modules",
 ]);
 

@@ -6,8 +6,8 @@ import {
 	type LocationWithSubareas,
 } from "@/app/[locale]/(app)/scheduling/actions";
 import {
-	type EmployeeWithRelations,
-	listEmployees,
+	listEmployeesForSelect,
+	type SelectableEmployee,
 } from "@/app/[locale]/(app)/settings/employees/actions";
 import { queryKeys } from "@/lib/query/keys";
 import { useSkillValidation } from "@/lib/query/use-skills";
@@ -32,7 +32,7 @@ export function useShiftDialogData({
 	const { data: employeesResult } = useQuery({
 		queryKey: queryKeys.employees.list(organizationId),
 		queryFn: async () => {
-			const result = await listEmployees({ limit: 1000 });
+			const result = await listEmployeesForSelect({ limit: 1000 });
 			if (!result.success) throw new Error(result.error);
 			return result.data;
 		},
@@ -64,5 +64,5 @@ export function useShiftDialogData({
 	};
 }
 
-export type ShiftDialogEmployee = EmployeeWithRelations;
+export type ShiftDialogEmployee = SelectableEmployee;
 export type ShiftDialogLocation = LocationWithSubareas;

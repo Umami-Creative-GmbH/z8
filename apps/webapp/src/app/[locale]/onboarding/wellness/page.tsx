@@ -78,11 +78,15 @@ export default function WellnessPage() {
 
 	// Sync form state to component state for conditional rendering
 	useEffect(() => {
-		return form.store.subscribe(() => {
+		const subscription = form.store.subscribe(() => {
 			const values = form.store.state.values;
 			setIsEnabled(values.enableWaterReminder);
 			setSelectedPreset(values.waterReminderPreset);
 		});
+
+		return () => {
+			subscription.unsubscribe();
+		};
 	}, [form.store]);
 
 	function handlePresetChange(preset: WaterReminderPreset) {

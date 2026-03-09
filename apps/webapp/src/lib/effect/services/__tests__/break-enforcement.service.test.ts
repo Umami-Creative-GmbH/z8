@@ -204,7 +204,7 @@ describe("Break Enforcement Service", () => {
 
 			expect(result.deficit).toBe(0);
 			expect(result.applicableRule).toBeNull();
-			expect(result.regulationName).toBe("German Time Law");
+			expect(result.regulationName).toBe("German Time Law Policy");
 		});
 
 		test("should calculate correct deficit for 6+ hour shift with no breaks", async () => {

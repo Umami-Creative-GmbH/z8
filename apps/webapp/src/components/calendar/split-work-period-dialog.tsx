@@ -19,6 +19,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type { CalendarEvent } from "@/lib/calendar/types";
 import { format } from "@/lib/datetime/luxon-utils";
+import {
+	formatDuration,
+	formatTimeToHHMM,
+	getWorkPeriodDialogMetadata,
+} from "./work-period-dialog-utils";
 
 interface SplitWorkPeriodDialogProps {
 	event: CalendarEvent;
@@ -36,11 +41,7 @@ export function SplitWorkPeriodDialog({
 	const { t } = useTranslate();
 
 	// Get metadata with defaults
-	const metadata = event.metadata as {
-		durationMinutes: number;
-		employeeName: string;
-		notes?: string;
-	};
+	const metadata = getWorkPeriodDialogMetadata(event);
 
 	// State for split configuration
 	const [splitTime, setSplitTime] = useState("");
@@ -48,25 +49,9 @@ export function SplitWorkPeriodDialog({
 	const [afterNotes, setAfterNotes] = useState("");
 	const [isSaving, setIsSaving] = useState(false);
 
-	// Format time to HH:mm
-	const formatTimeToHHMM = (date: Date): string => {
-		const hours = date.getHours().toString().padStart(2, "0");
-		const minutes = date.getMinutes().toString().padStart(2, "0");
-		return `${hours}:${minutes}`;
-	};
-
 	// Get start and end times as HH:mm
 	const startTimeHHMM = formatTimeToHHMM(event.date);
 	const endTimeHHMM = event.endDate ? formatTimeToHHMM(event.endDate) : "";
-
-	// Format duration
-	const formatDuration = (minutes: number) => {
-		const hours = Math.floor(minutes / 60);
-		const mins = minutes % 60;
-		if (hours === 0) return `${mins}m`;
-		if (mins === 0) return `${hours}h`;
-		return `${hours}h ${mins}m`;
-	};
 
 	// Calculate preview durations
 	const previewDurations = useMemo(() => {
@@ -106,24 +91,24 @@ export function SplitWorkPeriodDialog({
 		if (!isValidSplitTime) return;
 
 		setIsSaving(true);
-		try {
-			const result = await splitWorkPeriod(
-				event.id,
-				splitTime,
-				beforeNotes.trim() || undefined,
-				afterNotes.trim() || undefined,
-			);
+		const result = await splitWorkPeriod(
+			event.id,
+			splitTime,
+			beforeNotes.trim() || undefined,
+			afterNotes.trim() || undefined,
+		).catch(() => null);
 
-			if (result.success) {
-				toast.success(t("calendar.split.success", "Work period split successfully"));
-				onSplitComplete?.();
-				onOpenChange(false);
-			} else {
-				toast.error(result.error || t("calendar.split.failed", "Failed to split work period"));
-			}
-		} finally {
-			setIsSaving(false);
+		if (!result) {
+			toast.error(t("calendar.split.failed", "Failed to split work period"));
+		} else if (result.success) {
+			toast.success(t("calendar.split.success", "Work period split successfully"));
+			onSplitComplete?.();
+			onOpenChange(false);
+		} else {
+			toast.error(result.error || t("calendar.split.failed", "Failed to split work period"));
 		}
+
+		setIsSaving(false);
 	}, [
 		event.id,
 		splitTime,

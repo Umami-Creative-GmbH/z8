@@ -148,7 +148,7 @@ export async function sendTelemetryReport(
 	const effect = pipe(
 		Effect.tryPromise({
 			try: async () => {
-				const response = await fetch("https://z8-time.app/telemetry", {
+			const response = await fetch("https://telemetry.z8-time.app", {
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
 					body: JSON.stringify(payload),

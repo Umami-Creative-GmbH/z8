@@ -1,4 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("@/lib/time-tracking/calculations", () => ({
+	calculateExpectedWorkHours: vi.fn(),
+	calculateExpectedWorkHoursForEmployee: vi.fn(),
+	calculateWorkHours: vi.fn(),
+}));
+
 import { buildOvertimeBurnDownDataForTesting } from "../analytics.service";
 
 describe("buildOvertimeBurnDownDataForTesting", () => {

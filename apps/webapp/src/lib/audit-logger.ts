@@ -8,6 +8,7 @@
 import { db } from "@/db";
 import { auditLog } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
+import type { TimeRecordApprovalDecision } from "@/lib/time-record/approval";
 
 const logger = createLogger("AuditLog");
 
@@ -58,6 +59,8 @@ export enum AuditAction {
 	APPROVAL_SUBMITTED = "approval.submitted",
 	APPROVAL_APPROVED = "approval.approved",
 	APPROVAL_REJECTED = "approval.rejected",
+	TRAVEL_EXPENSE_DRAFT_CREATED = "travel_expense.draft_created",
+	TRAVEL_EXPENSE_SUBMITTED = "travel_expense.submitted",
 
 	// Vacation Operations
 	VACATION_CARRYOVER_APPLIED = "vacation.carryover_applied",
@@ -122,6 +125,25 @@ export enum AuditAction {
 	AUDIT_PACK_CREATED = "audit_pack.created",
 	AUDIT_PACK_DOWNLOADED = "audit_pack.downloaded",
 	AUDIT_PACK_RETRY_REQUESTED = "audit_pack.retry_requested",
+}
+
+export type ApprovalAuditDecision = TimeRecordApprovalDecision;
+
+function assertNeverDecision(decision: never): never {
+	throw new Error(`Unhandled approval decision: ${String(decision)}`);
+}
+
+export function getApprovalAuditAction(decision: ApprovalAuditDecision): AuditAction {
+	switch (decision) {
+		case "submit":
+			return AuditAction.APPROVAL_SUBMITTED;
+		case "approve":
+			return AuditAction.APPROVAL_APPROVED;
+		case "reject":
+			return AuditAction.APPROVAL_REJECTED;
+		default:
+			return assertNeverDecision(decision);
+	}
 }
 
 export interface AuditLogEntry {

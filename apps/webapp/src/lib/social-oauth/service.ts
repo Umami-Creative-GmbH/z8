@@ -155,7 +155,10 @@ export function verifyOAuthState(stateJson: string): OAuthState | null {
 			.update(dataToSign)
 			.digest("base64url");
 
-		if (state.signature !== expectedSignature) {
+		const provided = Buffer.from(state.signature);
+		const expected = Buffer.from(expectedSignature);
+
+		if (provided.length !== expected.length || !crypto.timingSafeEqual(provided, expected)) {
 			logger.warn("OAuth state signature mismatch");
 			return null;
 		}
@@ -441,11 +444,15 @@ export async function createSocialOAuthConfig(
  */
 export async function updateSocialOAuthConfig(
 	configId: string,
+	organizationId: string,
 	input: UpdateSocialOAuthInput,
 ): Promise<OrgSocialOAuthConfig> {
 	// Get existing config
 	const existing = await db.query.organizationSocialOAuth.findFirst({
-		where: eq(organizationSocialOAuth.id, configId),
+		where: and(
+			eq(organizationSocialOAuth.id, configId),
+			eq(organizationSocialOAuth.organizationId, organizationId),
+		),
 	});
 
 	if (!existing) {
@@ -476,7 +483,12 @@ export async function updateSocialOAuthConfig(
 				: existing.providerConfig,
 			isActive: input.isActive ?? existing.isActive,
 		})
-		.where(eq(organizationSocialOAuth.id, configId))
+		.where(
+			and(
+				eq(organizationSocialOAuth.id, configId),
+				eq(organizationSocialOAuth.organizationId, organizationId),
+			),
+		)
 		.returning();
 
 	return {
@@ -497,10 +509,16 @@ export async function updateSocialOAuthConfig(
 /**
  * Delete a social OAuth config
  */
-export async function deleteSocialOAuthConfig(configId: string): Promise<void> {
+export async function deleteSocialOAuthConfig(
+	configId: string,
+	organizationId: string,
+): Promise<void> {
 	// Get existing config
 	const existing = await db.query.organizationSocialOAuth.findFirst({
-		where: eq(organizationSocialOAuth.id, configId),
+		where: and(
+			eq(organizationSocialOAuth.id, configId),
+			eq(organizationSocialOAuth.organizationId, organizationId),
+		),
 	});
 
 	if (!existing) {
@@ -516,7 +534,14 @@ export async function deleteSocialOAuthConfig(configId: string): Promise<void> {
 	}
 
 	// Delete database record
-	await db.delete(organizationSocialOAuth).where(eq(organizationSocialOAuth.id, configId));
+	await db
+		.delete(organizationSocialOAuth)
+		.where(
+			and(
+				eq(organizationSocialOAuth.id, configId),
+				eq(organizationSocialOAuth.organizationId, organizationId),
+			),
+		);
 }
 
 /**
@@ -524,17 +549,28 @@ export async function deleteSocialOAuthConfig(configId: string): Promise<void> {
  */
 export async function updateTestStatus(
 	configId: string,
+	organizationId: string,
 	success: boolean,
 	error?: string,
 ): Promise<void> {
-	await db
+	const updated = await db
 		.update(organizationSocialOAuth)
 		.set({
 			lastTestAt: new Date(),
 			lastTestSuccess: success,
 			lastTestError: success ? null : error || "Unknown error",
 		})
-		.where(eq(organizationSocialOAuth.id, configId));
+		.where(
+			and(
+				eq(organizationSocialOAuth.id, configId),
+				eq(organizationSocialOAuth.organizationId, organizationId),
+			),
+		)
+		.returning({ id: organizationSocialOAuth.id });
+
+	if (updated.length === 0) {
+		throw new Error("Social OAuth config not found");
+	}
 }
 
 /**
