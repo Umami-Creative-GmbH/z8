@@ -2,8 +2,6 @@
 
 import { IconAlertTriangle } from "@tabler/icons-react";
 import { Loader2 } from "lucide-react";
-import type { PublishShiftsResult } from "@/app/[locale]/(app)/scheduling/types";
-import type { ScheduleComplianceSummary } from "@/lib/scheduling/compliance/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,25 +12,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-
-type PublishAcknowledgmentRequiredResult = Extract<
-	PublishShiftsResult,
-	{ published: false; requiresAcknowledgment: true }
->;
-
-export function shouldOpenComplianceDialog(
-	result: PublishShiftsResult | null | undefined,
-): result is PublishAcknowledgmentRequiredResult {
-	if (!result) {
-		return false;
-	}
-
-	if (result.published || !result.requiresAcknowledgment) {
-		return false;
-	}
-
-	return result.complianceSummary.totalFindings > 0 && result.evaluationFingerprint.length > 0;
-}
+import type { ScheduleComplianceSummary } from "@/lib/scheduling/compliance/types";
 
 interface PublishComplianceDialogProps {
 	open: boolean;

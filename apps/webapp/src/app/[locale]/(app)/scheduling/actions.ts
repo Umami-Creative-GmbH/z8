@@ -10,7 +10,12 @@ import { AuthorizationError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
+import { CoverageService } from "@/lib/effect/services/coverage.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
+import {
+	ScheduleComplianceService,
+	ScheduleComplianceServiceLive,
+} from "@/lib/effect/services/schedule-compliance.service";
 import {
 	type IncompleteDayInfo,
 	type ShiftMetadata,
@@ -21,14 +26,9 @@ import {
 	ShiftRequestService,
 	type ShiftRequestWithRelations,
 } from "@/lib/effect/services/shift-request.service";
-import { CoverageService } from "@/lib/effect/services/coverage.service";
-import {
-	ScheduleComplianceService,
-	ScheduleComplianceServiceLive,
-} from "@/lib/effect/services/schedule-compliance.service";
 import { createLogger } from "@/lib/logger";
-import { getEffectiveTimezone } from "@/lib/timezone/effective-timezone";
 import type { ScheduleComplianceSummary } from "@/lib/scheduling/compliance/types";
+import { getEffectiveTimezone } from "@/lib/timezone/effective-timezone";
 import { buildPublishDecision } from "./publish-decision";
 import type {
 	CreateTemplateInput,
@@ -39,7 +39,6 @@ import type {
 	ShiftQuery,
 	ShiftRequest,
 	ShiftTemplate,
-	SubareaInfo,
 	SwapRequestInput,
 	UpdateTemplateInput,
 	UpsertShiftInput,
@@ -603,9 +602,7 @@ export async function getIncompleteDays(
 	return runServerActionSafe(effect);
 }
 
-export async function getScheduleComplianceSummary(
-	dateRange: DateRange,
-): Promise<
+export async function getScheduleComplianceSummary(dateRange: DateRange): Promise<
 	ServerActionResult<{
 		summary: ScheduleComplianceSummary;
 		evaluationFingerprint: string;

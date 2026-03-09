@@ -1,15 +1,15 @@
-import { and, desc, eq, gt, gte, inArray, isNull, lte, or, sql } from "drizzle-orm";
+import { and, desc, eq, gt, gte, isNull, lte, or, sql } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import {
 	employee,
 	employeeSkill,
-	shiftTemplateSkillRequirement,
-	subareaSkillRequirement,
-	skill,
 	type shift as ShiftTable,
 	type shiftTemplate as ShiftTemplateTable,
 	shift,
 	shiftTemplate,
+	shiftTemplateSkillRequirement,
+	type skill,
+	subareaSkillRequirement,
 } from "@/db/schema";
 import { AuthorizationError, type DatabaseError, NotFoundError, ValidationError } from "../errors";
 import { DatabaseService } from "./database.service";
@@ -449,7 +449,11 @@ export const ShiftServiceLive = Layer.effect(
 						);
 
 						// Get template requirements if applicable
-						let templateReqs: Array<{ skillId: string; isRequired: boolean; skill: typeof skill.$inferSelect }> = [];
+						let templateReqs: Array<{
+							skillId: string;
+							isRequired: boolean;
+							skill: typeof skill.$inferSelect;
+						}> = [];
 						if (input.templateId) {
 							templateReqs = yield* _(
 								dbService.query("getTemplateSkillRequirements", async () => {
@@ -462,7 +466,10 @@ export const ShiftServiceLive = Layer.effect(
 						}
 
 						// Combine all requirements (deduped by skillId)
-						const allRequirements = new Map<string, { skill: typeof skill.$inferSelect; isRequired: boolean }>();
+						const allRequirements = new Map<
+							string,
+							{ skill: typeof skill.$inferSelect; isRequired: boolean }
+						>();
 						for (const req of [...subareaReqs, ...templateReqs]) {
 							const existing = allRequirements.get(req.skillId);
 							if (!existing || (req.isRequired && !existing.isRequired)) {
@@ -584,10 +591,47 @@ export const ShiftServiceLive = Layer.effect(
 
 			deleteShift: (id, userId) =>
 				Effect.gen(function* (_) {
+					const actingEmployee = yield* _(
+						dbService.query("getActingEmployee", async () => {
+							return await dbService.db.query.employee.findFirst({
+								where: eq(employee.userId, userId),
+							});
+						}),
+					);
+
+					if (!actingEmployee) {
+						return yield* _(
+							Effect.fail(
+								new AuthorizationError({
+									message: "Employee context is required to delete shifts",
+									userId,
+									resource: "shift",
+									action: "delete",
+								}),
+							),
+						);
+					}
+
+					if (actingEmployee.role !== "manager" && actingEmployee.role !== "admin") {
+						yield* _(
+							Effect.fail(
+								new AuthorizationError({
+									message: "Only managers and admins can delete shifts",
+									userId,
+									resource: "shift",
+									action: "delete",
+								}),
+							),
+						);
+					}
+
 					const existing = yield* _(
 						dbService.query("getShiftById", async () => {
 							return await dbService.db.query.shift.findFirst({
-								where: eq(shift.id, id),
+								where: and(
+									eq(shift.id, id),
+									eq(shift.organizationId, actingEmployee.organizationId),
+								),
 							});
 						}),
 					);
@@ -604,7 +648,6 @@ export const ShiftServiceLive = Layer.effect(
 						);
 					}
 
-					// Only allow deleting draft shifts, or published by admins
 					if (existing.status === "published") {
 						yield* _(
 							Effect.fail(
@@ -620,7 +663,11 @@ export const ShiftServiceLive = Layer.effect(
 
 					yield* _(
 						dbService.query("deleteShift", async () => {
-							await dbService.db.delete(shift).where(eq(shift.id, id));
+							await dbService.db
+								.delete(shift)
+								.where(
+									and(eq(shift.id, id), eq(shift.organizationId, actingEmployee.organizationId)),
+								);
 						}),
 					);
 				}),
