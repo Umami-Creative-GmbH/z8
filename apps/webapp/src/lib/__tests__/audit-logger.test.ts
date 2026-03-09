@@ -6,7 +6,12 @@
  */
 
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { AuditAction, type AuditLogEntry } from "../audit-logger";
+import {
+	AuditAction,
+	getApprovalAuditAction,
+	type AuditLogEntry,
+} from "../audit-logger";
+import type { TimeRecordApprovalDecision } from "../time-record/approval";
 
 // Use vi.hoisted() for variables that need to be available in vi.mock factories
 const { mockInsert, mockLoggerInfo, mockLoggerError } = vi.hoisted(() => ({
@@ -82,6 +87,26 @@ describe("Audit Logger", () => {
 			expect(AuditAction.VACATION_CARRYOVER_APPLIED).toBe("vacation.carryover_applied");
 			expect(AuditAction.VACATION_CARRYOVER_EXPIRED).toBe("vacation.carryover_expired");
 			expect(AuditAction.VACATION_ALLOWANCE_UPDATED).toBe("vacation.allowance_updated");
+		});
+	});
+
+	describe("getApprovalAuditAction", () => {
+		test("maps submit decision to approval submitted action", () => {
+			expect(getApprovalAuditAction("submit")).toBe(AuditAction.APPROVAL_SUBMITTED);
+		});
+
+		test("maps approve decision to approval approved action", () => {
+			expect(getApprovalAuditAction("approve")).toBe(AuditAction.APPROVAL_APPROVED);
+		});
+
+		test("maps reject decision to approval rejected action", () => {
+			expect(getApprovalAuditAction("reject")).toBe(AuditAction.APPROVAL_REJECTED);
+		});
+
+		test("throws for unknown decision at runtime", () => {
+			expect(() =>
+				getApprovalAuditAction("invalid" as unknown as TimeRecordApprovalDecision),
+			).toThrowError("Unhandled approval decision: invalid");
 		});
 	});
 

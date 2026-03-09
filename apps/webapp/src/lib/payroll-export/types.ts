@@ -211,6 +211,7 @@ export interface WorkPeriodData {
 	id: string;
 	employeeId: string;
 	employeeNumber: string | null;
+	email?: string | null;
 	firstName: string | null;
 	lastName: string | null;
 	startTime: DateTime;
@@ -230,6 +231,7 @@ export interface AbsenceData {
 	id: string;
 	employeeId: string;
 	employeeNumber: string | null;
+	email?: string | null;
 	firstName: string | null;
 	lastName: string | null;
 	startDate: string; // ISO date string
@@ -346,6 +348,12 @@ export interface ApiExportResult {
 		employeeId: string;
 		errorMessage: string;
 		isRetryable: boolean;
+	}>;
+	skipped?: Array<{
+		recordId: string;
+		recordType: "attendance" | "absence";
+		employeeId: string;
+		reason: string;
 	}>;
 	metadata: {
 		employeeCount: number;

@@ -1,0 +1,10 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: redirect-to-www
+  namespace: app-prod
+spec:
+  redirectRegex:
+    regex: ^https?://z8-time\.app/(.*)
+    replacement: https://www.z8-time.app/$1
+    permanent: true

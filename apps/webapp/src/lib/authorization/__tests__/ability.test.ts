@@ -149,11 +149,11 @@ describe("Organization Admin", () => {
 		expect(ability.can("manage", "OrgMembers")).toBe(true);
 	});
 
-	it("cannot manage billing", () => {
+	it("can manage billing", () => {
 		const ability = defineAbilityFor(adminPrincipal);
 
-		expect(ability.can("manage", "OrgBilling")).toBe(false);
-		expect(ability.can("read", "OrgBilling")).toBe(false);
+		expect(ability.can("manage", "OrgBilling")).toBe(true);
+		expect(ability.can("read", "OrgBilling")).toBe(true);
 	});
 });
 

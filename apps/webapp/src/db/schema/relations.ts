@@ -101,7 +101,21 @@ import {
 	surchargeModelAssignment,
 	surchargeRule,
 } from "./surcharge";
+import {
+	timeRecord,
+	timeRecordAbsence,
+	timeRecordAllocation,
+	timeRecordApprovalDecision,
+	timeRecordBreak,
+	timeRecordWork,
+} from "./time-record";
 import { timeEntry, workPeriod } from "./time-tracking";
+import {
+	travelExpenseAttachment,
+	travelExpenseClaim,
+	travelExpenseDecisionLog,
+	travelExpensePolicy,
+} from "./travel-expense";
 import { userSettings } from "./user-settings";
 import {
 	employeeVacationAllowance,
@@ -193,6 +207,12 @@ export const organizationRelations = relations(
 		// Time tracking
 		timeEntries: many(timeEntry),
 		workPeriods: many(workPeriod),
+		timeRecords: many(timeRecord),
+		timeRecordWorks: many(timeRecordWork),
+		timeRecordAbsences: many(timeRecordAbsence),
+		timeRecordBreaks: many(timeRecordBreak),
+		timeRecordAllocations: many(timeRecordAllocation),
+		timeRecordApprovalDecisions: many(timeRecordApprovalDecision),
 		// Approval workflows
 		approvalRequests: many(approvalRequest),
 		// Compliance exceptions
@@ -212,6 +232,11 @@ export const organizationRelations = relations(
 		// Custom roles
 		customRoles: many(customRole),
 		customRoleAuditLogs: many(customRoleAuditLog),
+		// Travel expenses
+		travelExpenseClaims: many(travelExpenseClaim),
+		travelExpenseAttachments: many(travelExpenseAttachment),
+		travelExpensePolicies: many(travelExpensePolicy),
+		travelExpenseDecisionLogs: many(travelExpenseDecisionLog),
 	}),
 );
 
@@ -358,6 +383,8 @@ export const employeeRelations = relations(employee, ({ one, many }) => ({
 	// Time tracking
 	timeEntries: many(timeEntry),
 	workPeriods: many(workPeriod),
+	timeRecords: many(timeRecord),
+	timeRecordApprovalDecisionsAsActor: many(timeRecordApprovalDecision),
 	absenceEntries: many(absenceEntry),
 	vacationAllowances: many(employeeVacationAllowance),
 	requestedApprovals: many(approvalRequest, {
@@ -398,6 +425,19 @@ export const employeeRelations = relations(employee, ({ one, many }) => ({
 	// Projects
 	projectManagements: many(projectManager),
 	projectAssignments: many(projectAssignment),
+	travelExpenseClaimsAsEmployee: many(travelExpenseClaim, {
+		relationName: "travel_expense_claim_employee",
+	}),
+	travelExpenseClaimsAsApprover: many(travelExpenseClaim, {
+		relationName: "travel_expense_claim_approver",
+	}),
+	travelExpenseAttachmentsUploaded: many(travelExpenseAttachment),
+	travelExpenseDecisionLogsAsActor: many(travelExpenseDecisionLog, {
+		relationName: "travel_expense_decision_log_actor",
+	}),
+	travelExpenseDecisionLogsAsApprover: many(travelExpenseDecisionLog, {
+		relationName: "travel_expense_decision_log_approver",
+	}),
 	// Cost centers
 	costCenterAssignments: many(employeeCostCenterAssignment),
 	// Surcharges
@@ -497,6 +537,119 @@ export const workPeriodRelations = relations(workPeriod, ({ one }) => ({
 	}),
 }));
 
+export const timeRecordRelations = relations(timeRecord, ({ one, many }) => ({
+	employee: one(employee, {
+		fields: [timeRecord.employeeId],
+		references: [employee.id],
+	}),
+	organization: one(organization, {
+		fields: [timeRecord.organizationId],
+		references: [organization.id],
+	}),
+	work: one(timeRecordWork, {
+		fields: [timeRecord.id],
+		references: [timeRecordWork.recordId],
+	}),
+	absence: one(timeRecordAbsence, {
+		fields: [timeRecord.id],
+		references: [timeRecordAbsence.recordId],
+	}),
+	break: one(timeRecordBreak, {
+		fields: [timeRecord.id],
+		references: [timeRecordBreak.recordId],
+	}),
+	allocations: many(timeRecordAllocation),
+	approvalDecisions: many(timeRecordApprovalDecision),
+	creator: one(user, {
+		fields: [timeRecord.createdBy],
+		references: [user.id],
+		relationName: "time_record_creator",
+	}),
+	updater: one(user, {
+		fields: [timeRecord.updatedBy],
+		references: [user.id],
+		relationName: "time_record_updater",
+	}),
+}));
+
+export const timeRecordWorkRelations = relations(timeRecordWork, ({ one }) => ({
+	record: one(timeRecord, {
+		fields: [timeRecordWork.recordId],
+		references: [timeRecord.id],
+	}),
+	organization: one(organization, {
+		fields: [timeRecordWork.organizationId],
+		references: [organization.id],
+	}),
+	workCategory: one(workCategory, {
+		fields: [timeRecordWork.workCategoryId],
+		references: [workCategory.id],
+	}),
+}));
+
+export const timeRecordAbsenceRelations = relations(timeRecordAbsence, ({ one }) => ({
+	record: one(timeRecord, {
+		fields: [timeRecordAbsence.recordId],
+		references: [timeRecord.id],
+	}),
+	organization: one(organization, {
+		fields: [timeRecordAbsence.organizationId],
+		references: [organization.id],
+	}),
+	absenceCategory: one(absenceCategory, {
+		fields: [timeRecordAbsence.absenceCategoryId],
+		references: [absenceCategory.id],
+	}),
+}));
+
+export const timeRecordBreakRelations = relations(timeRecordBreak, ({ one }) => ({
+	record: one(timeRecord, {
+		fields: [timeRecordBreak.recordId],
+		references: [timeRecord.id],
+	}),
+	organization: one(organization, {
+		fields: [timeRecordBreak.organizationId],
+		references: [organization.id],
+	}),
+}));
+
+export const timeRecordAllocationRelations = relations(timeRecordAllocation, ({ one }) => ({
+	record: one(timeRecord, {
+		fields: [timeRecordAllocation.recordId],
+		references: [timeRecord.id],
+	}),
+	organization: one(organization, {
+		fields: [timeRecordAllocation.organizationId],
+		references: [organization.id],
+	}),
+	project: one(project, {
+		fields: [timeRecordAllocation.projectId],
+		references: [project.id],
+	}),
+	costCenter: one(costCenter, {
+		fields: [timeRecordAllocation.costCenterId],
+		references: [costCenter.id],
+	}),
+}));
+
+export const timeRecordApprovalDecisionRelations = relations(
+	timeRecordApprovalDecision,
+	({ one }) => ({
+		record: one(timeRecord, {
+			fields: [timeRecordApprovalDecision.recordId],
+			references: [timeRecord.id],
+		}),
+		organization: one(organization, {
+			fields: [timeRecordApprovalDecision.organizationId],
+			references: [organization.id],
+		}),
+		actorEmployee: one(employee, {
+			fields: [timeRecordApprovalDecision.actorEmployeeId],
+			references: [employee.id],
+		}),
+	}),
+);
+
 // Absence relations
 export const absenceCategoryRelations = relations(
 	absenceCategory,
@@ -506,6 +659,7 @@ export const absenceCategoryRelations = relations(
 			references: [organization.id],
 		}),
 		absenceEntries: many(absenceEntry),
+		timeRecordAbsences: many(timeRecordAbsence),
 	}),
 );
 
@@ -891,6 +1045,8 @@ export const projectRelations = relations(project, ({ one, many }) => ({
 	managers: many(projectManager),
 	assignments: many(projectAssignment),
 	workPeriods: many(workPeriod),
+	timeRecordAllocations: many(timeRecordAllocation),
+	travelExpenseClaims: many(travelExpenseClaim),
 	notificationState: one(projectNotificationState),
 	creator: one(user, {
 		fields: [project.createdBy],
@@ -953,12 +1109,108 @@ export const projectNotificationStateRelations = relations(
 	}),
 );
 
+// Travel expense relations
+export const travelExpenseClaimRelations = relations(
+	travelExpenseClaim,
+	({ one, many }) => ({
+		organization: one(organization, {
+			fields: [travelExpenseClaim.organizationId],
+			references: [organization.id],
+		}),
+		employee: one(employee, {
+			fields: [travelExpenseClaim.employeeId],
+			references: [employee.id],
+			relationName: "travel_expense_claim_employee",
+		}),
+		approver: one(employee, {
+			fields: [travelExpenseClaim.approverId],
+			references: [employee.id],
+			relationName: "travel_expense_claim_approver",
+		}),
+		project: one(project, {
+			fields: [travelExpenseClaim.projectId],
+			references: [project.id],
+		}),
+		attachments: many(travelExpenseAttachment),
+		decisionLogs: many(travelExpenseDecisionLog),
+		creator: one(user, {
+			fields: [travelExpenseClaim.createdBy],
+			references: [user.id],
+		}),
+		updater: one(user, {
+			fields: [travelExpenseClaim.updatedBy],
+			references: [user.id],
+		}),
+	}),
+);
+
+export const travelExpenseAttachmentRelations = relations(
+	travelExpenseAttachment,
+	({ one }) => ({
+		claim: one(travelExpenseClaim, {
+			fields: [travelExpenseAttachment.claimId],
+			references: [travelExpenseClaim.id],
+		}),
+		organization: one(organization, {
+			fields: [travelExpenseAttachment.organizationId],
+			references: [organization.id],
+		}),
+		uploader: one(employee, {
+			fields: [travelExpenseAttachment.uploadedBy],
+			references: [employee.id],
+		}),
+	}),
+);
+
+export const travelExpensePolicyRelations = relations(
+	travelExpensePolicy,
+	({ one }) => ({
+		organization: one(organization, {
+			fields: [travelExpensePolicy.organizationId],
+			references: [organization.id],
+		}),
+		creator: one(user, {
+			fields: [travelExpensePolicy.createdBy],
+			references: [user.id],
+		}),
+		updater: one(user, {
+			fields: [travelExpensePolicy.updatedBy],
+			references: [user.id],
+		}),
+	}),
+);
+
+export const travelExpenseDecisionLogRelations = relations(
+	travelExpenseDecisionLog,
+	({ one }) => ({
+		claim: one(travelExpenseClaim, {
+			fields: [travelExpenseDecisionLog.claimId],
+			references: [travelExpenseClaim.id],
+		}),
+		organization: one(organization, {
+			fields: [travelExpenseDecisionLog.organizationId],
+			references: [organization.id],
+		}),
+		actorEmployee: one(employee, {
+			fields: [travelExpenseDecisionLog.actorEmployeeId],
+			references: [employee.id],
+			relationName: "travel_expense_decision_log_actor",
+		}),
+		approver: one(employee, {
+			fields: [travelExpenseDecisionLog.approverId],
+			references: [employee.id],
+			relationName: "travel_expense_decision_log_approver",
+		}),
+	}),
+);
+
 export const costCenterRelations = relations(costCenter, ({ one, many }) => ({
 	organization: one(organization, {
 		fields: [costCenter.organizationId],
 		references: [organization.id],
 	}),
 	assignments: many(employeeCostCenterAssignment),
+	timeRecordAllocations: many(timeRecordAllocation),
 }));
 
 export const employeeCostCenterAssignmentRelations = relations(
@@ -1260,6 +1512,7 @@ export const workCategoryRelations = relations(
 		// Many-to-many through junction table
 		setCategories: many(workCategorySetCategory),
 		workPeriods: many(workPeriod),
+		timeRecordWorks: many(timeRecordWork),
 		creator: one(user, {
 			fields: [workCategory.createdBy],
 			references: [user.id],

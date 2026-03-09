@@ -43,6 +43,7 @@ export const ROUTE_NAMESPACES: Record<string, Namespace[]> = {
 	"/calendar": ["common", "calendar"],
 	"/absences": ["common", "calendar"],
 	"/time-tracking": ["common", "timeTracking"],
+	"/travel-expenses": ["common", "settings"],
 	"/reports": ["common", "reports"],
 	"/settings": ["common", "settings"],
 	"/onboarding": ["common", "onboarding"],

@@ -9,8 +9,11 @@ import type {
 import { WorkdayApiClient } from "./api-client";
 import {
 	DEFAULT_WORKDAY_CONFIG,
+	type WorkdayAbsencePayload,
+	type WorkdayAttendancePayload,
 	type WorkdayConfig,
 	type WorkdayOAuthCredentials,
+	type WorkdayWorker,
 } from "./types";
 
 const SYNC_THRESHOLD = 500;
@@ -23,8 +26,14 @@ interface WorkdayConnectorDeps {
 	createApiClient?: (config: WorkdayConfig) => {
 		getOAuthToken: (credentials: WorkdayOAuthCredentials) => Promise<{ accessToken: string }>;
 		testConnection: (accessToken?: string) => Promise<{ success: boolean; error?: string }>;
+		findWorkerByEmployeeNumber: (accessToken: string, employeeNumber: string) => Promise<WorkdayWorker | null>;
+		findWorkerByEmail: (accessToken: string, email: string) => Promise<WorkdayWorker | null>;
+		createAttendance: (accessToken: string, payload: WorkdayAttendancePayload) => Promise<void>;
+		createAbsence: (accessToken: string, payload: WorkdayAbsencePayload) => Promise<void>;
 	};
 }
+
+type MatchableRecord = Pick<WorkPeriodData, "employeeId" | "employeeNumber" | "email">;
 
 export class WorkdayConnector implements IPayrollExporter {
 	readonly exporterId = "workday_api";
@@ -112,42 +121,144 @@ export class WorkdayConnector implements IPayrollExporter {
 			throw new Error(connectionResult.error ?? "Workday connection test failed");
 		}
 
+		const { config: workdayConfig, errors: configErrors } = this.parseConfig(config);
+		if (configErrors.length > 0 || !workdayConfig) {
+			throw new Error(configErrors.join(", ") || "Invalid Workday configuration");
+		}
+
+		const credentials = await this.getCredentials(organizationId);
+		if (!credentials) {
+			throw new Error(
+				"Workday credentials not configured. Please enter your Client ID and Client Secret.",
+			);
+		}
+
+		const client = this.createApiClient(workdayConfig);
+		const token = await client.getOAuthToken(credentials);
+
 		const dateRange = this.getDateRange(workPeriods, absences);
 		const employeeCount = new Set([
 			...workPeriods.map((period) => period.employeeId),
 			...absences.map((absence) => absence.employeeId),
 		]).size;
 		const totalRecords = workPeriods.length + absences.length;
-		const errorMessage =
-			"Workday export placeholder is not implemented; record was not synced.";
 		const errors: ApiExportResult["errors"] = [
-			...workPeriods.map((period) => ({
-				recordId: period.id,
-				recordType: "attendance" as const,
-				employeeId: period.employeeId,
-				errorMessage,
-				isRetryable: false,
-			})),
-			...absences.map((absence) => ({
-				recordId: absence.id,
-				recordType: "absence" as const,
-				employeeId: absence.employeeId,
-				errorMessage,
-				isRetryable: false,
-			})),
 		];
+		const skipped: NonNullable<ApiExportResult["skipped"]> = [];
+		let apiCallCount = 0;
+		let syncedRecords = 0;
+		const workerCache = new Map<string, WorkdayWorker | null>();
+
+		for (const batch of this.chunk(workPeriods, workdayConfig.batchSize)) {
+			for (const period of batch) {
+				if (!workdayConfig.includeZeroHours && (period.durationMinutes ?? 0) <= 0) {
+					skipped.push({
+						recordId: period.id,
+						recordType: "attendance",
+						employeeId: period.employeeId,
+						reason: "Skipped zero-hour work period because includeZeroHours is disabled.",
+					});
+					continue;
+				}
+
+				const worker = await this.resolveWorker({
+					record: period,
+					recordType: "attendance",
+					strategy: workdayConfig.employeeMatchStrategy,
+					accessToken: token.accessToken,
+					client,
+					workerCache,
+					skipped,
+					onLookup: () => {
+						apiCallCount += 1;
+					},
+				});
+
+				if (!worker) {
+					continue;
+				}
+
+				try {
+					await client.createAttendance(token.accessToken, {
+						workerId: worker.id,
+						sourceId: period.id,
+						startDate: period.startTime.toISODate() ?? "",
+						endDate: (period.endTime ?? period.startTime).toISODate() ?? "",
+						hours: Number(((period.durationMinutes ?? 0) / 60).toFixed(2)),
+						projectName: period.projectName,
+						categoryName: period.workCategoryName,
+					});
+					apiCallCount += 1;
+					syncedRecords += 1;
+				} catch (error) {
+					errors.push({
+						recordId: period.id,
+						recordType: "attendance",
+						employeeId: period.employeeId,
+						errorMessage: error instanceof Error ? error.message : "Unknown error",
+						isRetryable: this.isRetryableError(error),
+					});
+				}
+			}
+		}
+
+		for (const batch of this.chunk(absences, workdayConfig.batchSize)) {
+			for (const absence of batch) {
+				const worker = await this.resolveWorker({
+					record: absence,
+					recordType: "absence",
+					strategy: workdayConfig.employeeMatchStrategy,
+					accessToken: token.accessToken,
+					client,
+					workerCache,
+					skipped,
+					onLookup: () => {
+						apiCallCount += 1;
+					},
+				});
+
+				if (!worker) {
+					continue;
+				}
+
+				try {
+					await client.createAbsence(token.accessToken, {
+						workerId: worker.id,
+						sourceId: absence.id,
+						startDate: absence.startDate,
+						endDate: absence.endDate,
+						absenceCategoryName: absence.absenceCategoryName,
+						absenceType: absence.absenceType,
+					});
+					apiCallCount += 1;
+					syncedRecords += 1;
+				} catch (error) {
+					errors.push({
+						recordId: absence.id,
+						recordType: "absence",
+						employeeId: absence.employeeId,
+						errorMessage: error instanceof Error ? error.message : "Unknown error",
+						isRetryable: this.isRetryableError(error),
+					});
+				}
+			}
+		}
+
+		const failedRecords = errors.length;
+		const skippedRecords = skipped.length;
 
 		return {
-			success: false,
+			success: failedRecords === 0,
 			totalRecords,
-			syncedRecords: 0,
-			failedRecords: totalRecords,
-			skippedRecords: 0,
+			syncedRecords,
+			failedRecords,
+			skippedRecords,
 			errors,
+			skipped,
 			metadata: {
 				employeeCount,
 				dateRange,
-				apiCallCount: 0,
+				apiCallCount,
 				durationMs: Date.now() - startedAt,
 			},
 		};
@@ -292,6 +403,87 @@ export class WorkdayConnector implements IPayrollExporter {
 			start: start?.toISODate() ?? "",
 			end: end?.toISODate() ?? "",
 		};
+	}
+
+	private chunk<T>(items: T[], size: number): T[][] {
+		const chunks: T[][] = [];
+		for (let index = 0; index < items.length; index += size) {
+			chunks.push(items.slice(index, index + size));
+		}
+		return chunks;
+	}
+
+	private async resolveWorker(params: {
+		record: MatchableRecord;
+		recordType: "attendance" | "absence";
+		strategy: WorkdayConfig["employeeMatchStrategy"];
+		accessToken: string;
+		client: ReturnType<NonNullable<WorkdayConnectorDeps["createApiClient"]>>;
+		workerCache: Map<string, WorkdayWorker | null>;
+		skipped: NonNullable<ApiExportResult["skipped"]>;
+		onLookup: () => void;
+	}): Promise<WorkdayWorker | null> {
+		const matchValue = this.getMatchValue(params.record, params.strategy);
+		if (!matchValue) {
+			params.skipped.push({
+				recordId: (params.record as WorkPeriodData | AbsenceData).id,
+				recordType: params.recordType,
+				employeeId: params.record.employeeId,
+				reason:
+					params.strategy === "email"
+						? "Skipped record because employee email is missing for Workday matching."
+						: "Skipped record because employee number is missing for Workday matching.",
+			});
+			return null;
+		}
+
+		const cacheKey = `${params.strategy}:${matchValue}`;
+		if (!params.workerCache.has(cacheKey)) {
+			params.onLookup();
+			const worker =
+				params.strategy === "email"
+					? await params.client.findWorkerByEmail(params.accessToken, matchValue)
+					: await params.client.findWorkerByEmployeeNumber(params.accessToken, matchValue);
+			params.workerCache.set(cacheKey, worker);
+		}
+
+		const worker = params.workerCache.get(cacheKey) ?? null;
+		if (!worker) {
+			params.skipped.push({
+				recordId: (params.record as WorkPeriodData | AbsenceData).id,
+				recordType: params.recordType,
+				employeeId: params.record.employeeId,
+				reason: `Skipped record because no Workday worker matched ${params.strategy} '${matchValue}'.`,
+			});
+		}
+
+		return worker;
+	}
+
+	private getMatchValue(
+		record: MatchableRecord,
+		strategy: WorkdayConfig["employeeMatchStrategy"],
+	): string | null {
+		if (strategy === "email") {
+			return record.email?.trim() || null;
+		}
+
+		return record.employeeNumber?.trim() || null;
+	}
+
+	private isRetryableError(error: unknown): boolean {
+		if (!(error instanceof Error)) {
+			return false;
+		}
+
+		const statusMatch = error.message.match(/status (\d{3})/);
+		if (statusMatch) {
+			const status = Number(statusMatch[1]);
+			return status === 429 || status >= 500;
+		}
+
+		const message = error.message.toLowerCase();
+		return message.includes("timeout") || message.includes("network") || message.includes("fetch");
 	}
 }
 

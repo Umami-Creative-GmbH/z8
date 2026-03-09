@@ -381,41 +381,46 @@ async function saveSyncRecords(
 		errorMap.set(error.recordId, error);
 	}
 
+	const skippedMap = new Map<string, NonNullable<typeof result.skipped>[0]>();
+	for (const skipped of result.skipped ?? []) {
+		skippedMap.set(skipped.recordId, skipped);
+	}
+
 	const records: Array<typeof payrollExportSyncRecord.$inferInsert> = [];
 
 	// Create sync records for work periods (attendances)
 	for (const period of workPeriods) {
 		const error = errorMap.get(period.id);
+		const skipped = skippedMap.get(period.id);
 		records.push({
 			jobId,
 			recordType: "attendance",
 			sourceRecordId: period.id,
 			employeeId: period.employeeId,
-			status: error ? "failed" : "synced",
-			errorMessage: error?.errorMessage,
+			status: error ? "failed" : skipped ? "skipped" : "synced",
+			errorMessage: error?.errorMessage ?? skipped?.reason,
 			isRetryable: error?.isRetryable ?? true,
 			attemptCount: 1,
 			lastAttemptAt: new Date(),
-			syncedAt: error ? null : new Date(),
+			syncedAt: error || skipped ? null : new Date(),
 		});
 	}
 
 	// Create sync records for absences
 	for (const absence of absences) {
 		const error = errorMap.get(absence.id);
-		// Check if it was skipped (no mapping) vs failed
-		const wasSkipped = !error && result.skippedRecords > 0;
+		const skipped = skippedMap.get(absence.id);
 		records.push({
 			jobId,
 			recordType: "absence",
 			sourceRecordId: absence.id,
 			employeeId: absence.employeeId,
-			status: error ? "failed" : wasSkipped ? "skipped" : "synced",
-			errorMessage: error?.errorMessage,
+			status: error ? "failed" : skipped ? "skipped" : "synced",
+			errorMessage: error?.errorMessage ?? skipped?.reason,
 			isRetryable: error?.isRetryable ?? true,
 			attemptCount: 1,
 			lastAttemptAt: new Date(),
-			syncedAt: error || wasSkipped ? null : new Date(),
+			syncedAt: error || skipped ? null : new Date(),
 		});
 	}
 

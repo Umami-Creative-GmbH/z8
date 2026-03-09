@@ -305,9 +305,10 @@ export const TimeCorrectionHandler: ApprovalTypeHandler<WorkPeriodWithRelations>
 
 	approve: (entityId, _approverId) =>
 		Effect.gen(function* (_) {
-			// Delegate to existing approval logic
 			const { approveTimeCorrectionEffect } = yield* _(
-				Effect.promise(async () => import("@/app/[locale]/(app)/approvals/actions")),
+				Effect.promise(
+					async () => import("@/lib/approvals/server/time-correction-approvals"),
+				),
 			);
 
 			const result = yield* _(Effect.promise(() => approveTimeCorrectionEffect(entityId)));
@@ -327,9 +328,10 @@ export const TimeCorrectionHandler: ApprovalTypeHandler<WorkPeriodWithRelations>
 
 	reject: (entityId, _approverId, reason) =>
 		Effect.gen(function* (_) {
-			// Delegate to existing rejection logic
 			const { rejectTimeCorrectionEffect } = yield* _(
-				Effect.promise(async () => import("@/app/[locale]/(app)/approvals/actions")),
+				Effect.promise(
+					async () => import("@/lib/approvals/server/time-correction-approvals"),
+				),
 			);
 
 			const result = yield* _(Effect.promise(() => rejectTimeCorrectionEffect(entityId, reason)));

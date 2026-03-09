@@ -1,23 +1,19 @@
+import { apiKey } from "@better-auth/api-key";
+import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { passkey } from "@better-auth/passkey";
 import { scim } from "@better-auth/scim";
 import { sso } from "@better-auth/sso";
-import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { betterAuth } from "better-auth/minimal";
 import { nextCookies } from "better-auth/next-js";
-import { admin, apiKey, bearer, organization, twoFactor } from "better-auth/plugins";
-import { and, eq } from "drizzle-orm";
+import { admin } from "better-auth/plugins/admin";
+import { bearer } from "better-auth/plugins/bearer";
+import { organization } from "better-auth/plugins/organization";
+import { twoFactor } from "better-auth/plugins/two-factor";
+import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import * as schema from "@/db/auth-schema";
-import {
-	employee,
-	roleTemplate,
-	roleTemplateMapping,
-	scimProviderConfig,
-	scimProvisioningLog,
-	teamPermissions,
-	userLifecycleEvent,
-	userRoleTemplateAssignment,
-} from "@/db/schema";
+import { employee, scimProvisioningLog, teamPermissions } from "@/db/schema";
+import { env } from "@/env";
 import { getDefaultAppBaseUrl, getOrganizationBaseUrl } from "./app-url";
 import { getDomainConfig } from "./domain/domain-service";
 import { sendEmail } from "./email/email-service";
@@ -30,6 +26,80 @@ import { createLogger } from "./logger";
 import { secondaryStorage } from "./valkey";
 
 const logger = createLogger("Auth");
+
+const BILLING_ENABLED = process.env.BILLING_ENABLED === "true";
+
+function getAuthSecrets() {
+	const fallback = [{ version: 1, value: env.BETTER_AUTH_SECRET }];
+	const secrets = env.BETTER_AUTH_SECRETS;
+
+	if (!secrets) {
+		return fallback;
+	}
+
+	const parsed = secrets
+		.split(",")
+		.map((entry) => entry.trim())
+		.filter(Boolean)
+		.map((entry) => {
+			const [versionRaw, ...valueParts] = entry.split(":");
+			const version = Number(versionRaw);
+			const value = valueParts.join(":").trim();
+
+			if (!Number.isInteger(version) || version <= 0 || value.length < 32) {
+				return null;
+			}
+
+			return { version, value };
+		})
+		.filter((value): value is { version: number; value: string } => value !== null);
+
+	if (parsed.length === 0) {
+		logger.warn("BETTER_AUTH_SECRETS was provided but no valid entries were found. Falling back.");
+		return fallback;
+	}
+
+	return parsed;
+}
+
+async function getSSOTrustedOrigins(request: Request, pathname: string): Promise<string[]> {
+	if (!pathname.includes("/sso/")) {
+		return [];
+	}
+
+	const origins = new Set<string>();
+
+	const providers = await db.query.ssoProvider.findMany({
+		columns: { issuer: true },
+	});
+
+	for (const provider of providers) {
+		if (!provider.issuer) {
+			continue;
+		}
+
+		try {
+			origins.add(new URL(provider.issuer).origin);
+		} catch {
+			logger.warn({ issuer: provider.issuer }, "Invalid SSO issuer URL in provider table");
+		}
+	}
+
+	if (pathname.endsWith("/sso/register")) {
+		try {
+			const body = (await request.clone().json()) as { issuer?: string };
+			if (body.issuer) {
+				origins.add(new URL(body.issuer).origin);
+			}
+		} catch {
+			// Ignore non-JSON or unreadable request bodies.
+		}
+	}
+
+	return [...origins];
+}
+
+type MemberSeatChange = "added" | "removed";
 
 /**
  * Get the primary organization ID for a user (for auth emails)
@@ -48,8 +118,77 @@ async function getUserPrimaryOrganizationId(userId: string): Promise<string | un
 	}
 }
 
+async function getOrganizationEmailContext(userId: string, url: string) {
+	const organizationId = await getUserPrimaryOrganizationId(userId);
+	const appUrl = await getOrganizationBaseUrl(organizationId);
+	const urlObj = new URL(url);
+
+	return {
+		organizationId,
+		appUrl,
+		correctedUrl: `${appUrl}${urlObj.pathname}${urlObj.search}`,
+	};
+}
+
+async function syncBillingSeats({
+	organizationId,
+	memberId,
+	userId,
+	change,
+}: {
+	organizationId: string;
+	memberId: string;
+	userId: string;
+	change: MemberSeatChange;
+}) {
+	if (!BILLING_ENABLED) {
+		return;
+	}
+
+	try {
+		const { Effect, Layer } = await import("effect");
+		const { SeatSyncService, SeatSyncServiceLive, StripeServiceLive, SubscriptionServiceLive } =
+			await import("@/lib/effect/services/billing");
+
+		const layers = SeatSyncServiceLive.pipe(
+			Layer.provide(StripeServiceLive),
+			Layer.provide(SubscriptionServiceLive),
+		);
+
+		const program = Effect.gen(function* () {
+			const seatSyncService = yield* SeatSyncService;
+
+			if (change === "added") {
+				yield* seatSyncService.handleMemberAdded(organizationId, memberId, userId);
+				return;
+			}
+
+			yield* seatSyncService.handleMemberRemoved(organizationId, memberId, userId);
+		});
+
+		await Effect.runPromise(program.pipe(Effect.provide(layers)));
+	} catch (error) {
+		logger.error(
+			{ error, organizationId },
+			change === "added"
+				? "Failed to sync seats after member added"
+				: "Failed to sync seats after member removed",
+		);
+	}
+}
+
 export const auth = betterAuth({
-	baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
+	secrets: getAuthSecrets(),
+	baseURL: {
+		allowedHosts: [
+			env.APP_URL || "ui.z8-time.app",
+			"ui.z8-time.app", // Production
+			"localhost:3000", // Local development
+		],
+		fallback: env.APP_URL || "https://ui.z8-time.app",
+		protocol: "auto",
+	},
+	//baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
 
 	// Dynamic trusted origins for custom domains
 	// This allows auth requests from verified custom domains that proxy to the app
@@ -58,6 +197,7 @@ export const auth = betterAuth({
 
 		if (!request) return origins;
 
+		const pathname = new URL(request.url).pathname;
 		const host = request.headers.get("host");
 		if (!host) return origins;
 
@@ -78,6 +218,13 @@ export const auth = betterAuth({
 			logger.warn({ error, host }, "Failed to verify custom domain for trusted origins");
 		}
 
+		try {
+			const ssoOrigins = await getSSOTrustedOrigins(request, pathname);
+			origins.push(...ssoOrigins);
+		} catch (error) {
+			logger.warn({ error }, "Failed to resolve SSO trusted origins");
+		}
+
 		return [...new Set(origins)];
 	},
 
@@ -86,9 +233,26 @@ export const auth = betterAuth({
 		joins: true,
 	},
 
+	advanced: {
+		ipAddress: {
+			ipv6Subnet: 64,
+		},
+	},
+
 	// Secondary storage for session caching (Valkey/Redis)
 	// This dramatically improves session retrieval performance
 	secondaryStorage,
+
+	verification: {
+		storeIdentifier: {
+			default: "plain",
+			overrides: {
+				"email-verification": "hashed",
+				"password-reset": "hashed",
+			},
+		},
+		storeInDatabase: true,
+	},
 
 	// User additional fields - these will be included in the generated schema
 	user: {
@@ -137,13 +301,7 @@ export const auth = betterAuth({
 		enabled: true,
 		requireEmailVerification: true,
 		sendResetPassword: async ({ user, url }, _request) => {
-			// Look up user's org for org-specific email config and custom domain
-			const organizationId = await getUserPrimaryOrganizationId(user.id);
-			const appUrl = await getOrganizationBaseUrl(organizationId);
-
-			// Rewrite URL to use correct base (organization's custom domain if available)
-			const urlObj = new URL(url);
-			const correctedUrl = `${appUrl}${urlObj.pathname}${urlObj.search}`;
+			const { organizationId, correctedUrl } = await getOrganizationEmailContext(user.id, url);
 
 			const html = await renderPasswordReset({
 				userName: user.name,
@@ -161,14 +319,11 @@ export const auth = betterAuth({
 	},
 	emailVerification: {
 		sendOnSignUp: true,
-		sendVerificationEmail: async ({ user, url, token }, _request) => {
-			// Look up user's org for org-specific email config and custom domain
-			const organizationId = await getUserPrimaryOrganizationId(user.id);
-			const appUrl = await getOrganizationBaseUrl(organizationId);
-
-			// Rewrite URL to use correct base (organization's custom domain if available)
-			const urlObj = new URL(url);
-			const correctedUrl = `${appUrl}${urlObj.pathname}${urlObj.search}`;
+		sendVerificationEmail: async ({ user, url }, _request) => {
+			const { organizationId, appUrl, correctedUrl } = await getOrganizationEmailContext(
+				user.id,
+				url,
+			);
 
 			const html = await renderEmailVerification({
 				userName: user.name,
@@ -244,6 +399,8 @@ export const auth = betterAuth({
 				}
 				return userRecord?.canCreateOrganizations ?? false;
 			},
+			organizationLimit: 5,
+			membershipLimit: 100,
 			organizationRoles: ["owner", "admin", "member"],
 			creatorRole: "owner",
 			// Schema customization for organization and invitation tables
@@ -406,72 +563,22 @@ export const auth = betterAuth({
 						}
 					}
 
-					// Sync seat count to Stripe if billing is enabled
-					if (process.env.BILLING_ENABLED === "true") {
-						try {
-							const { Effect, Layer } = await import("effect");
-							const {
-								SeatSyncService,
-								SeatSyncServiceLive,
-								StripeServiceLive,
-								SubscriptionServiceLive,
-							} = await import("@/lib/effect/services/billing");
-
-							const layers = SeatSyncServiceLive.pipe(
-								Layer.provide(StripeServiceLive),
-								Layer.provide(SubscriptionServiceLive),
-							);
-
-							const program = Effect.gen(function* () {
-								const seatSyncService = yield* SeatSyncService;
-								yield* seatSyncService.handleMemberAdded(organization.id, member.id, user.id);
-							});
-
-							await Effect.runPromise(program.pipe(Effect.provide(layers)));
-						} catch (error) {
-							// Log but don't fail - seat sync is non-blocking
-							logger.error(
-								{ error, organizationId: organization.id },
-								"Failed to sync seats after member added",
-							);
-						}
-					}
+					await syncBillingSeats({
+						organizationId: organization.id,
+						memberId: member.id,
+						userId: user.id,
+						change: "added",
+					});
 				},
 
 				// Sync seat count when member is removed
 				afterRemoveMember: async ({ member, organization }) => {
-					if (process.env.BILLING_ENABLED === "true") {
-						try {
-							const { Effect, Layer } = await import("effect");
-							const {
-								SeatSyncService,
-								SeatSyncServiceLive,
-								StripeServiceLive,
-								SubscriptionServiceLive,
-							} = await import("@/lib/effect/services/billing");
-
-							const layers = SeatSyncServiceLive.pipe(
-								Layer.provide(StripeServiceLive),
-								Layer.provide(SubscriptionServiceLive),
-							);
-
-							const program = Effect.gen(function* () {
-								const seatSyncService = yield* SeatSyncService;
-								yield* seatSyncService.handleMemberRemoved(
-									organization.id,
-									member.id,
-									member.userId,
-								);
-							});
-
-							await Effect.runPromise(program.pipe(Effect.provide(layers)));
-						} catch (error) {
-							logger.error(
-								{ error, organizationId: organization.id },
-								"Failed to sync seats after member removed",
-							);
-						}
-					}
+					await syncBillingSeats({
+						organizationId: organization.id,
+						memberId: member.id,
+						userId: member.userId,
+						change: "removed",
+					});
 				},
 			},
 		}),
@@ -493,6 +600,22 @@ export const auth = betterAuth({
 				enabled: true,
 				tokenPrefix: "z8-auth-",
 			},
+			saml: {
+				enableSingleLogout: true,
+				wantLogoutRequestSigned: true,
+				wantLogoutResponseSigned: true,
+				enableInResponseToValidation: true,
+				allowIdpInitiated: true,
+				requestTTL: 10 * 60 * 1000,
+				clockSkew: 60 * 1000,
+				requireTimestamps: true,
+				algorithms: {
+					onDeprecated: "reject",
+				},
+				maxResponseSize: 512 * 1024,
+				maxMetadataSize: 100 * 1024,
+			},
+			redirectURI: "/sso/callback",
 			// Organization provisioning: auto-add users to linked organizations
 			organizationProvisioning: {
 				disabled: false,
@@ -551,7 +674,7 @@ export const auth = betterAuth({
 		}),
 		// SCIM 2.0 provisioning for enterprise identity management
 		// Integrates with Azure AD, Okta, Google Workspace, and generic SCIM 2.0 providers
-		// User lifecycle events are handled via databaseHooks below
+		// User lifecycle events are handled by the provisioning services
 		scim({
 			// Store SCIM tokens encrypted for security
 			storeSCIMToken: "encrypted",
