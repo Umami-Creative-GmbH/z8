@@ -4,16 +4,33 @@ import { Cause, Effect, Exit, Option } from "effect";
 import { DateTime } from "luxon";
 import { getAuthContext } from "@/lib/auth-helpers";
 import type { ServerActionResult } from "@/lib/effect/result";
-import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
-import { TimeRecordService, TimeRecordServiceLive } from "@/lib/effect/services/time-record.service";
-import type { CreateTimeRecordInput, ListTimeRecordsFilters, TimeRecord } from "./types";
+import {
+	type DatabaseService,
+	DatabaseServiceLive,
+} from "@/lib/effect/services/database.service";
+import {
+	TimeRecordService,
+	TimeRecordServiceLive,
+} from "@/lib/effect/services/time-record.service";
+import type {
+	CreateTimeRecordInput,
+	ListTimeRecordsFilters,
+	TimeRecord,
+} from "./types";
 
-const hasElevatedRecordScope = (role: string) => role === "manager" || role === "admin";
+const hasElevatedRecordScope = (role: string) =>
+	role === "manager" || role === "admin";
 
-function parseIsoDate(value: string, fieldName: string): ServerActionResult<Date> {
+function parseIsoDate(
+	value: string,
+	fieldName: string,
+): ServerActionResult<Date> {
 	const parsed = DateTime.fromISO(value, { setZone: true });
 	if (!parsed.isValid) {
-		return { success: false, error: `${fieldName} must be a valid ISO datetime` };
+		return {
+			success: false,
+			error: `${fieldName} must be a valid ISO datetime`,
+		};
 	}
 
 	return { success: true, data: parsed.toJSDate() };
@@ -30,11 +47,14 @@ function parseOptionalIsoDate(
 	return parseIsoDate(value, fieldName);
 }
 
-async function runTimeRecordEffect<T>(
-	effect: Effect.Effect<T, unknown, never>,
+async function runTimeRecordEffect<T, E>(
+	effect: Effect.Effect<T, E, TimeRecordService | DatabaseService>,
 ): Promise<ServerActionResult<T>> {
 	const exit = await Effect.runPromiseExit(
-		effect.pipe(Effect.provide(TimeRecordServiceLive), Effect.provide(DatabaseServiceLive)),
+		effect.pipe(
+			Effect.provide(TimeRecordServiceLive),
+			Effect.provide(DatabaseServiceLive),
+		),
 	);
 
 	if (Exit.isSuccess(exit)) {
@@ -63,8 +83,10 @@ export async function createTimeRecord(
 			return { success: false, error: "Unauthorized" };
 		}
 
-		const isElevated = hasElevatedRecordScope(authContext.employee.role);
-		if (!isElevated && input.employeeId !== authContext.employee.id) {
+		const currentEmployee = authContext.employee;
+
+		const isElevated = hasElevatedRecordScope(currentEmployee.role);
+		if (!isElevated && input.employeeId !== currentEmployee.id) {
 			return { success: false, error: "Forbidden" };
 		}
 
@@ -83,7 +105,7 @@ export async function createTimeRecord(
 				const service = yield* _(TimeRecordService);
 				return yield* _(
 					service.create({
-						organizationId: authContext.employee.organizationId,
+						organizationId: currentEmployee.organizationId,
 						employeeId: input.employeeId,
 						recordKind: input.recordKind,
 						startAt: startAtResult.data,
@@ -111,17 +133,29 @@ export async function listTimeRecords(
 			return { success: false, error: "Unauthorized" };
 		}
 
-		const isElevated = hasElevatedRecordScope(authContext.employee.role);
-		if (!isElevated && filters.employeeId && filters.employeeId !== authContext.employee.id) {
+		const currentEmployee = authContext.employee;
+
+		const isElevated = hasElevatedRecordScope(currentEmployee.role);
+		if (
+			!isElevated &&
+			filters.employeeId &&
+			filters.employeeId !== currentEmployee.id
+		) {
 			return { success: false, error: "Forbidden" };
 		}
 
-		const startAtFromResult = parseOptionalIsoDate(filters.startAtFrom, "startAtFrom");
+		const startAtFromResult = parseOptionalIsoDate(
+			filters.startAtFrom,
+			"startAtFrom",
+		);
 		if (!startAtFromResult.success) {
 			return startAtFromResult;
 		}
 
-		const startAtToResult = parseOptionalIsoDate(filters.startAtTo, "startAtTo");
+		const startAtToResult = parseOptionalIsoDate(
+			filters.startAtTo,
+			"startAtTo",
+		);
 		if (!startAtToResult.success) {
 			return startAtToResult;
 		}
@@ -130,11 +164,69 @@ export async function listTimeRecords(
 			Effect.gen(function* (_) {
 				const service = yield* _(TimeRecordService);
 				return yield* _(
-					service.listByOrganization(authContext.employee.organizationId, {
-						employeeId: isElevated ? filters.employeeId : authContext.employee.id,
+					service.listByOrganization(currentEmployee.organizationId, {
+						employeeId: isElevated ? filters.employeeId : currentEmployee.id,
 						recordKind: filters.recordKind,
-						startAtFrom: startAtFromResult.data,
-						startAtTo: startAtToResult.data,
+						startAtFrom: startAtFromResult.data ?? undefined,
+						startAtTo: startAtToResult.data ?? undefined,
+						limit: filters.limit,
+					}),
+				);
+			}),
+		);
+	} catch (_error) {
+		return { success: false, error: "Failed to list time records" };
+	}
+}
+			return startAtFromResult;
+		}
+
+		const startAtToResult = parseOptionalIsoDate(
+			filters.startAtTo,
+			"startAtTo",
+		);
+		if (!startAtToResult.success) {
+			return startAtToResult;
+		}
+
+		return await runTimeRecordEffect(
+			Effect.gen(function* (_) {
+				const service = yield* _(TimeRecordService);
+				return yield* _(
+					service.listByOrganization(currentEmployee.organizationId, {
+						employeeId: isElevated ? filters.employeeId : currentEmployee.id,
+						recordKind: filters.recordKind,
+						startAtFrom: startAtFromResult.data ?? undefined,
+						startAtTo: startAtToResult.data ?? undefined,
+						limit: filters.limit,
+					}),
+				);
+			}),
+		);
+	} catch (_error) {
+		return { success: false, error: "Failed to list time records" };
+	}
+}
+			return startAtFromResult;
+		}
+
+		const startAtToResult = parseOptionalIsoDate(
+			filters.startAtTo,
+			"startAtTo",
+		);
+		if (!startAtToResult.success) {
+			return startAtToResult;
+		}
+
+		return await runTimeRecordEffect(
+			Effect.gen(function* (_) {
+				const service = yield* _(TimeRecordService);
+				return yield* _(
+					service.listByOrganization(currentEmployee.organizationId, {
+						employeeId: isElevated ? filters.employeeId : currentEmployee.id,
+						recordKind: filters.recordKind,
+						startAtFrom: startAtFromResult.data ?? undefined,
+						startAtTo: startAtToResult.data ?? undefined,
 						limit: filters.limit,
 					}),
 				);

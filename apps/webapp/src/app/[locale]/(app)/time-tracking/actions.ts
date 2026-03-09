@@ -24,8 +24,15 @@ import {
 import { getOrganizationBaseUrl } from "@/lib/app-url";
 import { auth } from "@/lib/auth";
 import { dateFromDB, dateToDB } from "@/lib/datetime/drizzle-adapter";
-import { AuthorizationError, NotFoundError, ValidationError } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import {
+	AuthorizationError,
+	NotFoundError,
+	ValidationError,
+} from "@/lib/effect/errors";
+import {
+	runServerActionSafe,
+	type ServerActionResult,
+} from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import {
@@ -38,10 +45,19 @@ import {
 	ChangePolicyServiceLive,
 	type EditCapability,
 } from "@/lib/effect/services/change-policy.service";
-import { DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/database.service";
+import {
+	DatabaseService,
+	DatabaseServiceLive,
+} from "@/lib/effect/services/database.service";
 import { EmailService } from "@/lib/effect/services/email.service";
-import { TimeEntryService, TimeEntryServiceLive } from "@/lib/effect/services/time-entry.service";
-import { SurchargeService, SurchargeServiceLive } from "@/lib/effect/services/surcharge.service";
+import {
+	SurchargeService,
+	SurchargeServiceLive,
+} from "@/lib/effect/services/surcharge.service";
+import {
+	TimeEntryService,
+	TimeEntryServiceLive,
+} from "@/lib/effect/services/time-entry.service";
 import type { ComplianceWarning } from "@/lib/effect/services/work-policy.service";
 import {
 	WorkPolicyService,
@@ -64,7 +80,10 @@ import {
 	getWeekRangeInTimezone,
 } from "@/lib/time-tracking/timezone-utils";
 import type { TimeSummary } from "@/lib/time-tracking/types";
-import { validateTimeEntry, validateTimeEntryRange } from "@/lib/time-tracking/validation";
+import {
+	validateTimeEntry,
+	validateTimeEntryRange,
+} from "@/lib/time-tracking/validation";
 import type { WorkPeriodWithEntries } from "./types";
 
 const logger = createLogger("TimeTrackingActionsEffect");
@@ -83,7 +102,10 @@ export const canonicalTimeEntryClient = {
 		const effect = Effect.gen(function* (_) {
 			const service = yield* _(TimeEntryService);
 			return yield* _(service.createTimeEntry(input));
-		}).pipe(Effect.provide(TimeEntryServiceLive), Effect.provide(DatabaseServiceLive));
+		}).pipe(
+			Effect.provide(TimeEntryServiceLive),
+			Effect.provide(DatabaseServiceLive),
+		);
 
 		return Effect.runPromise(effect);
 	},
@@ -100,7 +122,10 @@ export const canonicalTimeEntryClient = {
 		const effect = Effect.gen(function* (_) {
 			const service = yield* _(TimeEntryService);
 			return yield* _(service.createCorrectionEntry(input));
-		}).pipe(Effect.provide(TimeEntryServiceLive), Effect.provide(DatabaseServiceLive));
+		}).pipe(
+			Effect.provide(TimeEntryServiceLive),
+			Effect.provide(DatabaseServiceLive),
+		);
 
 		return Effect.runPromise(effect);
 	},
@@ -182,7 +207,9 @@ interface SameDayEditRequest {
  */
 export async function editSameDayTimeEntry(
 	data: SameDayEditRequest,
-): Promise<ServerActionResult<{ workPeriodId: string; requiresApproval?: boolean }>> {
+): Promise<
+	ServerActionResult<{ workPeriodId: string; requiresApproval?: boolean }>
+> {
 	const session = await auth.api.getSession({ headers: await headers() });
 	if (!session?.user) {
 		return { success: false, error: "Not authenticated" };
@@ -219,7 +246,10 @@ export async function editSameDayTimeEntry(
 
 	// Verify work period is completed
 	if (!period.endTime) {
-		return { success: false, error: "Cannot edit an active work period. Please clock out first." };
+		return {
+			success: false,
+			error: "Cannot edit an active work period. Please clock out first.",
+		};
 	}
 
 	// Check edit capability using change policy
@@ -234,7 +264,10 @@ export async function editSameDayTimeEntry(
 					timezone,
 				}),
 			);
-		}).pipe(Effect.provide(ChangePolicyServiceLive), Effect.provide(DatabaseServiceLive));
+		}).pipe(
+			Effect.provide(ChangePolicyServiceLive),
+			Effect.provide(DatabaseServiceLive),
+		);
 
 		editCapability = await Effect.runPromise(capabilityEffect);
 	} catch (error) {
@@ -243,7 +276,8 @@ export async function editSameDayTimeEntry(
 		if (!isSameDayInTimezone(period.startTime, timezone)) {
 			return {
 				success: false,
-				error: "Past entries require manager approval. Please use the correction request.",
+				error:
+					"Past entries require manager approval. Please use the correction request.",
 			};
 		}
 		editCapability = { type: "direct", reason: "within_self_service" };
@@ -261,9 +295,13 @@ export async function editSameDayTimeEntry(
 		// For approval_required, redirect to correction request flow
 		return {
 			success: false,
-			error: "This edit requires manager approval. Please use the correction request.",
+			error:
+				"This edit requires manager approval. Please use the correction request.",
 			requiresApproval: true,
-		} as ServerActionResult<{ workPeriodId: string; requiresApproval?: boolean }>;
+		} as ServerActionResult<{
+			workPeriodId: string;
+			requiresApproval?: boolean;
+		}>;
 	}
 
 	// editCapability.type === "direct" - proceed with the edit
@@ -316,14 +354,20 @@ export async function editSameDayTimeEntry(
 
 			// Validate: clock out time cannot be in the future
 			if (correctedClockOutDate > now) {
-				return { success: false, error: "Clock out time cannot be in the future" };
+				return {
+					success: false,
+					error: "Clock out time cannot be in the future",
+				};
 			}
 		}
 	}
 
 	// Validate time span - clock out must be after clock in
 	if (correctedClockOutDate && correctedClockOutDate <= correctedClockInDate) {
-		return { success: false, error: "Clock out time must be after clock in time" };
+		return {
+			success: false,
+			error: "Clock out time must be after clock in time",
+		};
 	}
 
 	// Validate the correction dates (check for holidays)
@@ -425,7 +469,10 @@ export async function editSameDayTimeEntry(
 		return { success: true, data: { workPeriodId: period.id } };
 	} catch (error) {
 		logger.error({ error }, "Failed to edit same-day time entry");
-		return { success: false, error: "Failed to update time entry. Please try again." };
+		return {
+			success: false,
+			error: "Failed to update time entry. Please try again.",
+		};
 	}
 }
 
@@ -470,7 +517,12 @@ export async function requestTimeCorrectionEffect(
 		);
 
 		yield* _(Effect.annotateCurrentSpan("employee.id", currentEmployee.id));
-		yield* _(Effect.annotateCurrentSpan("organization.id", currentEmployee.organizationId));
+		yield* _(
+			Effect.annotateCurrentSpan(
+				"organization.id",
+				currentEmployee.organizationId,
+			),
+		);
 
 		// Step 3: Check if employee has a manager
 		if (!currentEmployee.managerId) {
@@ -484,7 +536,9 @@ export async function requestTimeCorrectionEffect(
 			);
 		}
 
-		yield* _(Effect.annotateCurrentSpan("manager.id", currentEmployee.managerId!));
+		yield* _(
+			Effect.annotateCurrentSpan("manager.id", currentEmployee.managerId!),
+		);
 
 		// Get user's timezone for time conversion from userSettings
 		const settingsData = yield* _(
@@ -533,11 +587,17 @@ export async function requestTimeCorrectionEffect(
 		);
 
 		yield* _(
-			Effect.annotateCurrentSpan("correction.original_clock_in", period.startTime.toISOString()),
+			Effect.annotateCurrentSpan(
+				"correction.original_clock_in",
+				period.startTime.toISOString(),
+			),
 		);
 		if (period.endTime) {
 			yield* _(
-				Effect.annotateCurrentSpan("correction.original_clock_out", period.endTime.toISOString()),
+				Effect.annotateCurrentSpan(
+					"correction.original_clock_out",
+					period.endTime.toISOString(),
+				),
 			);
 		}
 
@@ -645,7 +705,9 @@ export async function requestTimeCorrectionEffect(
 			yield* _(
 				Effect.fail(
 					new ValidationError({
-						message: validation.error || "Cannot create time correction for this period",
+						message:
+							validation.error ||
+							"Cannot create time correction for this period",
 						field: "timestamp",
 						value: validation.holidayName,
 					}),
@@ -670,7 +732,12 @@ export async function requestTimeCorrectionEffect(
 			),
 		);
 
-		yield* _(Effect.annotateCurrentSpan("correction.clock_in_correction_id", clockInCorrection.id));
+		yield* _(
+			Effect.annotateCurrentSpan(
+				"correction.clock_in_correction_id",
+				clockInCorrection.id,
+			),
+		);
 
 		// Step 8: Mark original clock in as superseded
 		yield* _(
@@ -704,7 +771,10 @@ export async function requestTimeCorrectionEffect(
 
 			clockOutCorrectionId = clockOutCorrection.id;
 			yield* _(
-				Effect.annotateCurrentSpan("correction.clock_out_correction_id", clockOutCorrection.id),
+				Effect.annotateCurrentSpan(
+					"correction.clock_out_correction_id",
+					clockOutCorrection.id,
+				),
 			);
 
 			// Mark original clock out as superseded
@@ -781,7 +851,9 @@ export async function requestTimeCorrectionEffect(
 		);
 
 		const appUrl = yield* _(
-			Effect.promise(() => getOrganizationBaseUrl(currentEmployee.organizationId)),
+			Effect.promise(() =>
+				getOrganizationBaseUrl(currentEmployee.organizationId),
+			),
 		);
 		const formatDate = (date: Date) =>
 			date.toLocaleDateString("en-US", {
@@ -806,7 +878,9 @@ export async function requestTimeCorrectionEffect(
 					originalClockIn: formatTime(period.startTime),
 					originalClockOut: period.endTime ? formatTime(period.endTime) : "—",
 					correctedClockIn: formatTime(correctedClockInDate),
-					correctedClockOut: correctedClockOutDate ? formatTime(correctedClockOutDate) : "—",
+					correctedClockOut: correctedClockOutDate
+						? formatTime(correctedClockOutDate)
+						: "—",
 					reason: data.reason,
 					approvalUrl: `${appUrl}/approvals`,
 				}),
@@ -861,7 +935,9 @@ export async function requestTimeCorrectionEffect(
 /**
  * Get current employee from session
  */
-export async function getCurrentEmployee(): Promise<typeof employee.$inferSelect | null> {
+export async function getCurrentEmployee(): Promise<
+	typeof employee.$inferSelect | null
+> {
 	const session = await auth.api.getSession({ headers: await headers() });
 	if (!session?.user) {
 		return null;
@@ -883,7 +959,10 @@ export async function getCurrentEmployee(): Promise<typeof employee.$inferSelect
 
 	// Fall back to first active employee record (for backwards compatibility)
 	const emp = await db.query.employee.findFirst({
-		where: and(eq(employee.userId, session.user.id), eq(employee.isActive, true)),
+		where: and(
+			eq(employee.userId, session.user.id),
+			eq(employee.isActive, true),
+		),
 	});
 
 	return emp ?? null;
@@ -901,7 +980,12 @@ export async function getTimeClockStatus(): Promise<{
 }> {
 	const session = await auth.api.getSession({ headers: await headers() });
 	if (!session?.user) {
-		return { hasEmployee: false, employeeId: null, isClockedIn: false, activeWorkPeriod: null };
+		return {
+			hasEmployee: false,
+			employeeId: null,
+			isClockedIn: false,
+			activeWorkPeriod: null,
+		};
 	}
 
 	const emp = await db.query.employee.findFirst({
@@ -909,7 +993,12 @@ export async function getTimeClockStatus(): Promise<{
 	});
 
 	if (!emp) {
-		return { hasEmployee: false, employeeId: null, isClockedIn: false, activeWorkPeriod: null };
+		return {
+			hasEmployee: false,
+			employeeId: null,
+			isClockedIn: false,
+			activeWorkPeriod: null,
+		};
 	}
 
 	const period = await db.query.workPeriod.findFirst({
@@ -920,7 +1009,9 @@ export async function getTimeClockStatus(): Promise<{
 		hasEmployee: true,
 		employeeId: emp.id,
 		isClockedIn: !!period,
-		activeWorkPeriod: period ? { id: period.id, startTime: period.startTime } : null,
+		activeWorkPeriod: period
+			? { id: period.id, startTime: period.startTime }
+			: null,
 	};
 }
 
@@ -931,7 +1022,10 @@ export async function getActiveWorkPeriod(
 	employeeId: string,
 ): Promise<WorkPeriodWithEntries | null> {
 	const period = await db.query.workPeriod.findFirst({
-		where: and(eq(workPeriod.employeeId, employeeId), isNull(workPeriod.endTime)),
+		where: and(
+			eq(workPeriod.employeeId, employeeId),
+			isNull(workPeriod.endTime),
+		),
 		with: {
 			clockIn: true,
 			clockOut: true,
@@ -941,11 +1035,7 @@ export async function getActiveWorkPeriod(
 	if (!period) return null;
 
 	return {
-		id: period.id,
-		employeeId: period.employeeId,
-		startTime: period.startTime,
-		endTime: period.endTime,
-		durationMinutes: period.durationMinutes,
+		...period,
 		clockIn: period.clockIn,
 		clockOut: period.clockOut || undefined,
 	};
@@ -973,11 +1063,7 @@ export async function getWorkPeriods(
 	});
 
 	return periods.map((p) => ({
-		id: p.id,
-		employeeId: p.employeeId,
-		startTime: p.startTime,
-		endTime: p.endTime,
-		durationMinutes: p.durationMinutes,
+		...p,
 		clockIn: p.clockIn,
 		clockOut: p.clockOut || undefined,
 	}));
@@ -993,9 +1079,16 @@ export async function getTimeSummary(
 	timezone: string = "UTC",
 ): Promise<TimeSummary> {
 	// Use timezone-aware boundaries for accurate day/week/month calculations
-	const { start: todayStartDT, end: todayEndDT } = getTodayRangeInTimezone(timezone);
-	const { start: weekStartDT, end: weekEndDT } = getWeekRangeInTimezone(new Date(), timezone);
-	const { start: monthStartDT, end: monthEndDT } = getMonthRangeInTimezone(new Date(), timezone);
+	const { start: todayStartDT, end: todayEndDT } =
+		getTodayRangeInTimezone(timezone);
+	const { start: weekStartDT, end: weekEndDT } = getWeekRangeInTimezone(
+		new Date(),
+		timezone,
+	);
+	const { start: monthStartDT, end: monthEndDT } = getMonthRangeInTimezone(
+		new Date(),
+		timezone,
+	);
 
 	const todayStart = dateToDB(todayStartDT)!;
 	const todayEnd = dateToDB(todayEndDT)!;
@@ -1013,7 +1106,10 @@ export async function getTimeSummary(
 			surchargeMinutes: surchargeCalculation.surchargeMinutes,
 		})
 		.from(workPeriod)
-		.leftJoin(surchargeCalculation, eq(surchargeCalculation.workPeriodId, workPeriod.id))
+		.leftJoin(
+			surchargeCalculation,
+			eq(surchargeCalculation.workPeriodId, workPeriod.id),
+		)
 		.where(
 			and(
 				eq(workPeriod.employeeId, employeeId),
@@ -1031,7 +1127,10 @@ export async function getTimeSummary(
 		.filter((p) => p.startTime >= weekStart && p.startTime <= weekEnd)
 		.reduce((sum, p) => sum + (p.durationMinutes || 0), 0);
 
-	const monthMinutes = periodsWithSurcharges.reduce((sum, p) => sum + (p.durationMinutes || 0), 0);
+	const monthMinutes = periodsWithSurcharges.reduce(
+		(sum, p) => sum + (p.durationMinutes || 0),
+		0,
+	);
 
 	// Calculate surcharge minutes for each time range
 	const todaySurchargeMinutes = periodsWithSurcharges
@@ -1193,7 +1292,11 @@ export async function clockOut(
 
 	// Validate project if provided
 	if (projectId) {
-		const projectValidation = await validateProjectAssignment(projectId, emp.id, emp.teamId);
+		const projectValidation = await validateProjectAssignment(
+			projectId,
+			emp.id,
+			emp.teamId,
+		);
 		if (!projectValidation.isValid) {
 			return {
 				success: false,
@@ -1208,7 +1311,10 @@ export async function clockOut(
 		const checkEffect = Effect.gen(function* (_) {
 			const policyService = yield* _(ChangePolicyService);
 			return yield* _(policyService.checkClockOutNeedsApproval(emp.id));
-		}).pipe(Effect.provide(ChangePolicyServiceLive), Effect.provide(DatabaseServiceLive));
+		}).pipe(
+			Effect.provide(ChangePolicyServiceLive),
+			Effect.provide(DatabaseServiceLive),
+		);
 
 		needsClockOutApproval = await Effect.runPromise(checkEffect);
 	} catch (error) {
@@ -1245,19 +1351,20 @@ export async function clockOut(
 				}
 			: null;
 
-		const canonicalRecord = await canonicalWorkRecordClient.createForCompletedPeriod({
-			organizationId: emp.organizationId,
-			employeeId: emp.id,
-			startAt: activePeriod.startTime,
-			endAt: now,
-			durationMinutes,
-			approvalState: approvalStatus,
-			createdBy: session.user.id,
-			workCategoryId: workCategoryId || null,
-			workLocationType: activePeriod.workLocationType ?? null,
-			projectId: projectId || null,
-			origin: "clock",
-		});
+		const canonicalRecord =
+			await canonicalWorkRecordClient.createForCompletedPeriod({
+				organizationId: emp.organizationId,
+				employeeId: emp.id,
+				startAt: activePeriod.startTime,
+				endAt: now,
+				durationMinutes,
+				approvalState: approvalStatus,
+				createdBy: session.user.id,
+				workCategoryId: workCategoryId || null,
+				workLocationType: activePeriod.workLocationType ?? null,
+				projectId: projectId || null,
+				origin: "clock",
+			});
 
 		await db
 			.update(workPeriod)
@@ -1317,16 +1424,22 @@ export async function clockOut(
 
 		// Fire-and-forget: Check project budget warnings if project was assigned
 		if (projectId) {
-			checkProjectBudgetAfterClockOut(projectId, emp.organizationId).catch((err) => {
-				logger.error({ error: err, projectId }, "Failed to check project budget warnings");
-			});
+			checkProjectBudgetAfterClockOut(projectId, emp.organizationId).catch(
+				(err) => {
+					logger.error(
+						{ error: err, projectId },
+						"Failed to check project budget warnings",
+					);
+				},
+			);
 		}
 
 		return {
 			success: true,
 			data: {
 				...entry,
-				complianceWarnings: complianceWarnings.length > 0 ? complianceWarnings : undefined,
+				complianceWarnings:
+					complianceWarnings.length > 0 ? complianceWarnings : undefined,
 				breakAdjustment: breakEnforcementResult.wasAdjusted
 					? breakEnforcementResult.adjustment
 					: undefined,
@@ -1380,9 +1493,15 @@ async function validateProjectAssignment(
 					eq(projectAssignment.projectId, projectId),
 					eq(projectAssignment.employeeId, employeeId),
 				),
-				and(eq(projectAssignment.projectId, projectId), eq(projectAssignment.teamId, teamId)),
+				and(
+					eq(projectAssignment.projectId, projectId),
+					eq(projectAssignment.teamId, teamId),
+				),
 			)
-		: and(eq(projectAssignment.projectId, projectId), eq(projectAssignment.employeeId, employeeId));
+		: and(
+				eq(projectAssignment.projectId, projectId),
+				eq(projectAssignment.employeeId, employeeId),
+			);
 
 	const assignment = await db.query.projectAssignment.findFirst({
 		where: assignmentQuery,
@@ -1391,7 +1510,8 @@ async function validateProjectAssignment(
 	if (!assignment) {
 		return {
 			isValid: false,
-			error: "You are not assigned to this project. Contact your administrator.",
+			error:
+				"You are not assigned to this project. Contact your administrator.",
 		};
 	}
 
@@ -1432,7 +1552,9 @@ export async function checkComplianceAfterClockOut(
 
 			// Log violations if any
 			if (result.warnings.length > 0) {
-				const effectivePolicy = yield* _(workPolicyService.getEffectivePolicy(employeeId));
+				const effectivePolicy = yield* _(
+					workPolicyService.getEffectivePolicy(employeeId),
+				);
 
 				if (effectivePolicy?.regulation) {
 					for (const warning of result.warnings) {
@@ -1458,7 +1580,10 @@ export async function checkComplianceAfterClockOut(
 			}
 
 			return result.warnings;
-		}).pipe(Effect.provide(WorkPolicyServiceLive), Effect.provide(DatabaseServiceLive));
+		}).pipe(
+			Effect.provide(WorkPolicyServiceLive),
+			Effect.provide(DatabaseServiceLive),
+		);
 
 		const warnings = await Effect.runPromise(complianceEffect);
 		return warnings;
@@ -1477,7 +1602,8 @@ async function calculateBreaksTakenToday(
 	employeeId: string,
 	timezone: string = "UTC",
 ): Promise<number> {
-	const { start: todayStartDT, end: todayEndDT } = getTodayRangeInTimezone(timezone);
+	const { start: todayStartDT, end: todayEndDT } =
+		getTodayRangeInTimezone(timezone);
 	const todayStart = dateToDB(todayStartDT)!;
 	const todayEnd = dateToDB(todayEndDT)!;
 
@@ -1525,19 +1651,27 @@ export async function calculateAndPersistSurcharges(
 			const surchargeService = yield* _(SurchargeService);
 
 			// Check if surcharges are enabled for this organization
-			const isEnabled = yield* _(surchargeService.isSurchargesEnabled(organizationId));
+			const isEnabled = yield* _(
+				surchargeService.isSurchargesEnabled(organizationId),
+			);
 			if (!isEnabled) {
 				return;
 			}
 
 			// Persist the surcharge calculation
 			yield* _(surchargeService.persistSurchargeCalculation(workPeriodId));
-		}).pipe(Effect.provide(SurchargeServiceLive), Effect.provide(DatabaseServiceLive));
+		}).pipe(
+			Effect.provide(SurchargeServiceLive),
+			Effect.provide(DatabaseServiceLive),
+		);
 
 		await Effect.runPromise(surchargeEffect);
 	} catch (error) {
 		// Log the error but don't fail the clock-out
-		logger.error({ error, workPeriodId }, "Failed to calculate surcharges after clock-out");
+		logger.error(
+			{ error, workPeriodId },
+			"Failed to calculate surcharges after clock-out",
+		);
 	}
 }
 
@@ -1589,11 +1723,22 @@ export async function createTimeEntry(params: {
 	replacesEntryId?: string;
 	notes?: string;
 }): Promise<typeof timeEntry.$inferSelect> {
-	const { employeeId, organizationId, type, timestamp, createdBy, replacesEntryId, notes } = params;
+	const {
+		employeeId,
+		organizationId,
+		type,
+		timestamp,
+		createdBy,
+		replacesEntryId,
+		notes,
+	} = params;
 
 	// Get request metadata
 	const headersList = await headers();
-	const ipAddress = headersList.get("x-forwarded-for") || headersList.get("x-real-ip") || "unknown";
+	const ipAddress =
+		headersList.get("x-forwarded-for") ||
+		headersList.get("x-real-ip") ||
+		"unknown";
 	const userAgent = headersList.get("user-agent") || "unknown";
 
 	if (type === "correction" && replacesEntryId) {
@@ -1745,7 +1890,10 @@ export async function getBreakReminderStatus(): Promise<
 						}
 					: null,
 			};
-		}).pipe(Effect.provide(WorkPolicyServiceLive), Effect.provide(DatabaseServiceLive));
+		}).pipe(
+			Effect.provide(WorkPolicyServiceLive),
+			Effect.provide(DatabaseServiceLive),
+		);
 
 		const breakStatus = await Effect.runPromise(breakStatusEffect);
 		return { success: true, data: breakStatus };
@@ -1787,21 +1935,33 @@ export async function updateWorkPeriodNotes(
 
 		// Verify ownership
 		if (period.employeeId !== emp.id) {
-			return { success: false, error: "You can only update your own work periods" };
+			return {
+				success: false,
+				error: "You can only update your own work periods",
+			};
 		}
 
 		// Work period must be completed (have a clock-out entry)
 		if (!period.clockOutId) {
-			return { success: false, error: "Cannot add notes to an active work period" };
+			return {
+				success: false,
+				error: "Cannot add notes to an active work period",
+			};
 		}
 
 		// Update the clock-out entry's notes
-		await db.update(timeEntry).set({ notes }).where(eq(timeEntry.id, period.clockOutId));
+		await db
+			.update(timeEntry)
+			.set({ notes })
+			.where(eq(timeEntry.id, period.clockOutId));
 
 		return { success: true, data: { workPeriodId } };
 	} catch (error) {
 		logger.error({ error }, "Update work period notes error");
-		return { success: false, error: "Failed to update notes. Please try again." };
+		return {
+			success: false,
+			error: "Failed to update notes. Please try again.",
+		};
 	}
 }
 
@@ -1837,7 +1997,10 @@ export async function deleteWorkPeriod(
 
 		// Verify ownership
 		if (period.employeeId !== emp.id) {
-			return { success: false, error: "You can only delete your own work periods" };
+			return {
+				success: false,
+				error: "You can only delete your own work periods",
+			};
 		}
 
 		// Cannot delete active work periods
@@ -1881,7 +2044,10 @@ export async function deleteWorkPeriod(
 		return { success: true, data: { deleted: true } };
 	} catch (error) {
 		logger.error({ error }, "Delete work period error");
-		return { success: false, error: "Failed to delete work period. Please try again." };
+		return {
+			success: false,
+			error: "Failed to delete work period. Please try again.",
+		};
 	}
 }
 
@@ -1894,7 +2060,9 @@ export async function splitWorkPeriod(
 	splitTime: string, // HH:mm format
 	beforeNotes?: string,
 	afterNotes?: string,
-): Promise<ServerActionResult<{ firstPeriodId: string; secondPeriodId: string }>> {
+): Promise<
+	ServerActionResult<{ firstPeriodId: string; secondPeriodId: string }>
+> {
 	const session = await auth.api.getSession({ headers: await headers() });
 	if (!session?.user) {
 		return { success: false, error: "Not authenticated" };
@@ -1919,7 +2087,10 @@ export async function splitWorkPeriod(
 
 		// Verify ownership
 		if (period.employeeId !== emp.id) {
-			return { success: false, error: "You can only split your own work periods" };
+			return {
+				success: false,
+				error: "You can only split your own work periods",
+			};
 		}
 
 		// Work period must be completed (have an end time)
@@ -1973,7 +2144,9 @@ export async function splitWorkPeriod(
 		// Get request metadata
 		const headersList = await headers();
 		const ipAddress =
-			headersList.get("x-forwarded-for") || headersList.get("x-real-ip") || "unknown";
+			headersList.get("x-forwarded-for") ||
+			headersList.get("x-real-ip") ||
+			"unknown";
 		const userAgent = headersList.get("user-agent") || "unknown";
 
 		// Create clock-out entry for first period at split time
@@ -2065,7 +2238,10 @@ export async function splitWorkPeriod(
 		};
 	} catch (error) {
 		logger.error({ error }, "Split work period error");
-		return { success: false, error: "Failed to split work period. Please try again." };
+		return {
+			success: false,
+			error: "Failed to split work period. Please try again.",
+		};
 	}
 }
 
@@ -2089,7 +2265,11 @@ export async function updateTimeEntryNotes(
 
 	try {
 		// Get the time entry
-		const [entry] = await db.select().from(timeEntry).where(eq(timeEntry.id, entryId)).limit(1);
+		const [entry] = await db
+			.select()
+			.from(timeEntry)
+			.where(eq(timeEntry.id, entryId))
+			.limit(1);
 
 		if (!entry) {
 			return { success: false, error: "Time entry not found" };
@@ -2097,7 +2277,10 @@ export async function updateTimeEntryNotes(
 
 		// Verify ownership
 		if (entry.employeeId !== emp.id) {
-			return { success: false, error: "You can only update your own time entries" };
+			return {
+				success: false,
+				error: "You can only update your own time entries",
+			};
 		}
 
 		// Update the notes
@@ -2106,7 +2289,10 @@ export async function updateTimeEntryNotes(
 		return { success: true, data: { entryId } };
 	} catch (error) {
 		logger.error({ error }, "Update time entry notes error");
-		return { success: false, error: "Failed to update notes. Please try again." };
+		return {
+			success: false,
+			error: "Failed to update notes. Please try again.",
+		};
 	}
 }
 
@@ -2126,7 +2312,9 @@ export interface AssignedProject {
  * - Are in bookable status (planned, active, paused)
  * - The employee is assigned to (directly or via team)
  */
-export async function getAssignedProjects(): Promise<ServerActionResult<AssignedProject[]>> {
+export async function getAssignedProjects(): Promise<
+	ServerActionResult<AssignedProject[]>
+> {
 	const session = await auth.api.getSession({ headers: await headers() });
 	if (!session?.user) {
 		return { success: false, error: "Not authenticated" };
@@ -2174,7 +2362,11 @@ export async function getAssignedProjects(): Promise<ServerActionResult<Assigned
 
 		for (const assignment of [...directAssignments, ...teamAssignments]) {
 			const proj = assignment.project;
-			if (proj && bookableStatuses.includes(proj.status) && !bookableProjects.has(proj.id)) {
+			if (
+				proj &&
+				bookableStatuses.includes(proj.status) &&
+				!bookableProjects.has(proj.id)
+			) {
 				bookableProjects.set(proj.id, {
 					id: proj.id,
 					name: proj.name,
@@ -2227,7 +2419,9 @@ export async function getAssignedProjects(): Promise<ServerActionResult<Assigned
 		}
 
 		// Sort by name
-		const projects = Array.from(projectsMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+		const projects = Array.from(projectsMap.values()).sort((a, b) =>
+			a.name.localeCompare(b.name),
+		);
 
 		return { success: true, data: projects };
 	} catch (error) {
@@ -2243,7 +2437,9 @@ export async function getAssignedProjects(): Promise<ServerActionResult<Assigned
 export async function updateWorkPeriodProject(
 	workPeriodId: string,
 	projectId: string | null,
-): Promise<ServerActionResult<{ workPeriodId: string; projectId: string | null }>> {
+): Promise<
+	ServerActionResult<{ workPeriodId: string; projectId: string | null }>
+> {
 	const session = await auth.api.getSession({ headers: await headers() });
 	if (!session?.user) {
 		return { success: false, error: "Not authenticated" };
@@ -2268,12 +2464,19 @@ export async function updateWorkPeriodProject(
 
 		// Verify ownership
 		if (period.employeeId !== emp.id) {
-			return { success: false, error: "You can only update your own work periods" };
+			return {
+				success: false,
+				error: "You can only update your own work periods",
+			};
 		}
 
 		// Validate project if provided
 		if (projectId) {
-			const projectValidation = await validateProjectAssignment(projectId, emp.id, emp.teamId);
+			const projectValidation = await validateProjectAssignment(
+				projectId,
+				emp.id,
+				emp.teamId,
+			);
 			if (!projectValidation.isValid) {
 				return {
 					success: false,
@@ -2363,7 +2566,10 @@ export async function createClockOutApprovalRequest(params: {
 				endTime,
 				durationMinutes,
 			}).catch((err) => {
-				logger.error({ error: err }, "Failed to send clock-out pending notification to employee");
+				logger.error(
+					{ error: err },
+					"Failed to send clock-out pending notification to employee",
+				);
 			});
 		}
 
@@ -2378,7 +2584,10 @@ export async function createClockOutApprovalRequest(params: {
 				durationMinutes,
 				managerUserId,
 			}).catch((err) => {
-				logger.error({ error: err }, "Failed to send clock-out pending notification to manager");
+				logger.error(
+					{ error: err },
+					"Failed to send clock-out pending notification to manager",
+				);
 			});
 		}
 
@@ -2393,7 +2602,10 @@ export async function createClockOutApprovalRequest(params: {
 		);
 	} catch (error) {
 		// Log but don't fail - approval request is secondary to clock-out completing
-		logger.error({ error, workPeriodId }, "Failed to create clock-out approval request");
+		logger.error(
+			{ error, workPeriodId },
+			"Failed to create clock-out approval request",
+		);
 	}
 }
 
@@ -2442,7 +2654,9 @@ async function checkProjectBudgetAfterClockOut(
  * Get the edit capability for a work period based on change policy
  * Returns information about what kind of edits are allowed
  */
-export async function getWorkPeriodEditCapability(workPeriodId: string): Promise<
+export async function getWorkPeriodEditCapability(
+	workPeriodId: string,
+): Promise<
 	ServerActionResult<{
 		capability: EditCapability;
 		policyName: string | null;
@@ -2478,7 +2692,10 @@ export async function getWorkPeriodEditCapability(workPeriodId: string): Promise
 
 	// Verify ownership
 	if (period.employeeId !== emp.id) {
-		return { success: false, error: "You can only check your own work periods" };
+		return {
+			success: false,
+			error: "You can only check your own work periods",
+		};
 	}
 
 	// Work period must be completed
@@ -2486,7 +2703,11 @@ export async function getWorkPeriodEditCapability(workPeriodId: string): Promise
 		return {
 			success: true,
 			data: {
-				capability: { type: "forbidden", reason: "beyond_approval_window", daysBack: 0 },
+				capability: {
+					type: "forbidden",
+					reason: "beyond_approval_window",
+					daysBack: 0,
+				},
 				policyName: null,
 			},
 		};
@@ -2513,7 +2734,10 @@ export async function getWorkPeriodEditCapability(workPeriodId: string): Promise
 					capability,
 					policyName: policy?.policyName || null,
 				};
-			}).pipe(Effect.provide(ChangePolicyServiceLive), Effect.provide(DatabaseServiceLive)),
+			}).pipe(
+				Effect.provide(ChangePolicyServiceLive),
+				Effect.provide(DatabaseServiceLive),
+			),
 		);
 
 		return { success: true, data: result };
@@ -2539,7 +2763,9 @@ interface ManualTimeEntryInput {
  * Create a manual time entry for a past date
  * Respects the organization's change policy for approval requirements
  */
-export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise<
+export async function createManualTimeEntry(
+	data: ManualTimeEntryInput,
+): Promise<
 	ServerActionResult<{
 		workPeriodId: string;
 		requiresApproval: boolean;
@@ -2636,11 +2862,18 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 
 	// Validate: clock out must be after clock in
 	if (clockOutDate <= clockInDate) {
-		return { success: false, error: "Clock out time must be after clock in time" };
+		return {
+			success: false,
+			error: "Clock out time must be after clock in time",
+		};
 	}
 
 	// Validate the date range (check for holidays)
-	const validation = await validateTimeEntryRange(emp.organizationId, clockInDate, clockOutDate);
+	const validation = await validateTimeEntryRange(
+		emp.organizationId,
+		clockInDate,
+		clockOutDate,
+	);
 	if (!validation.isValid) {
 		return {
 			success: false,
@@ -2651,7 +2884,11 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 
 	// Validate project if provided
 	if (data.projectId) {
-		const projectValidation = await validateProjectAssignment(data.projectId, emp.id, emp.teamId);
+		const projectValidation = await validateProjectAssignment(
+			data.projectId,
+			emp.id,
+			emp.teamId,
+		);
 		if (!projectValidation.isValid) {
 			return {
 				success: false,
@@ -2673,7 +2910,10 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 					timezone,
 				}),
 			);
-		}).pipe(Effect.provide(ChangePolicyServiceLive), Effect.provide(DatabaseServiceLive));
+		}).pipe(
+			Effect.provide(ChangePolicyServiceLive),
+			Effect.provide(DatabaseServiceLive),
+		);
 
 		editCapability = await Effect.runPromise(capabilityEffect);
 	} catch (error) {
@@ -2733,11 +2973,19 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 				wasAdjusted = true;
 
 				// Case 1: Manual entry starts before existing period - clip the end
-				if (newStart < periodStart && newEnd > periodStart && newEnd <= periodEnd) {
+				if (
+					newStart < periodStart &&
+					newEnd > periodStart &&
+					newEnd <= periodEnd
+				) {
 					adjustedClockOut = new Date(periodStart - 60000); // 1 minute before
 				}
 				// Case 2: Manual entry ends after existing period - clip the start
-				else if (newStart >= periodStart && newStart < periodEnd && newEnd > periodEnd) {
+				else if (
+					newStart >= periodStart &&
+					newStart < periodEnd &&
+					newEnd > periodEnd
+				) {
 					adjustedClockIn = new Date(periodEnd + 60000); // 1 minute after
 				}
 				// Case 3: Manual entry spans the existing period - clip to before it
@@ -2748,14 +2996,16 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 				else if (newStart >= periodStart && newEnd <= periodEnd) {
 					return {
 						success: false,
-						error: "The selected time range is completely covered by an existing work period.",
+						error:
+							"The selected time range is completely covered by an existing work period.",
 					};
 				}
 			}
 		}
 
 		// Validate adjusted times are still valid (at least 1 minute duration)
-		const adjustedDurationMs = adjustedClockOut.getTime() - adjustedClockIn.getTime();
+		const adjustedDurationMs =
+			adjustedClockOut.getTime() - adjustedClockIn.getTime();
 		if (adjustedDurationMs < 60000) {
 			return {
 				success: false,
@@ -2808,18 +3058,19 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 				}
 			: null;
 
-		const canonicalRecord = await canonicalWorkRecordClient.createForCompletedPeriod({
-			organizationId: emp.organizationId,
-			employeeId: emp.id,
-			startAt: finalClockIn,
-			endAt: finalClockOut,
-			durationMinutes,
-			approvalState: approvalStatus,
-			createdBy: session.user.id,
-			workCategoryId: data.workCategoryId || null,
-			projectId: data.projectId || null,
-			origin: "manual",
-		});
+		const canonicalRecord =
+			await canonicalWorkRecordClient.createForCompletedPeriod({
+				organizationId: emp.organizationId,
+				employeeId: emp.id,
+				startAt: finalClockIn,
+				endAt: finalClockOut,
+				durationMinutes,
+				approvalState: approvalStatus,
+				createdBy: session.user.id,
+				workCategoryId: data.workCategoryId || null,
+				projectId: data.projectId || null,
+				origin: "manual",
+			});
 
 		// Create work period with adjusted times
 		const [period] = await db
@@ -2892,7 +3143,10 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 		};
 	} catch (error) {
 		logger.error({ error }, "Failed to create manual time entry");
-		return { success: false, error: "Failed to create time entry. Please try again." };
+		return {
+			success: false,
+			error: "Failed to create time entry. Please try again.",
+		};
 	}
 }
 
@@ -2977,7 +3231,10 @@ async function createManualEntryApprovalRequest(params: {
 				durationMinutes,
 				managerUserId,
 			}).catch((err) => {
-				logger.error({ error: err }, "Failed to send manual entry pending notification to manager");
+				logger.error(
+					{ error: err },
+					"Failed to send manual entry pending notification to manager",
+				);
 			});
 		}
 
@@ -2992,7 +3249,10 @@ async function createManualEntryApprovalRequest(params: {
 		);
 	} catch (error) {
 		// Log but don't fail - approval request is secondary to entry creation
-		logger.error({ error, workPeriodId }, "Failed to create manual entry approval request");
+		logger.error(
+			{ error, workPeriodId },
+			"Failed to create manual entry approval request",
+		);
 	}
 }
 
@@ -3013,7 +3273,10 @@ export async function getPresenceStatus(employeeId: string): Promise<
 		.object({ employeeId: z.string().uuid("Invalid employee ID") })
 		.safeParse({ employeeId });
 	if (!parsed.success) {
-		return { success: false as const, error: parsed.error.issues[0]?.message || "Invalid input" };
+		return {
+			success: false as const,
+			error: parsed.error.issues[0]?.message || "Invalid input",
+		};
 	}
 	const validatedEmployeeId = parsed.data.employeeId;
 
@@ -3064,7 +3327,9 @@ export async function getPresenceStatus(employeeId: string): Promise<
 
 		// Get employee's effective work policy
 		const workPolicyService = yield* _(WorkPolicyService);
-		const effectivePolicy = yield* _(workPolicyService.getEffectivePolicy(validatedEmployeeId));
+		const effectivePolicy = yield* _(
+			workPolicyService.getEffectivePolicy(validatedEmployeeId),
+		);
 
 		if (!effectivePolicy) {
 			return {
@@ -3135,7 +3400,10 @@ export async function getPresenceStatus(employeeId: string): Promise<
 		// Count on-site days
 		const onsiteDates = new Set<string>();
 		for (const period of periods) {
-			if (period.workLocationType === "office" || period.workLocationType === "field") {
+			if (
+				period.workLocationType === "office" ||
+				period.workLocationType === "field"
+			) {
 				const dateStr = DateTime.fromJSDate(period.startTime).toISODate();
 				if (dateStr) onsiteDates.add(dateStr);
 			}
@@ -3145,7 +3413,560 @@ export async function getPresenceStatus(employeeId: string): Promise<
 			presenceConfig.presenceMode === "minimum_count"
 				? (presenceConfig.requiredOnsiteDays ?? 0)
 				: presenceConfig.requiredOnsiteFixedDays
-					? (JSON.parse(presenceConfig.requiredOnsiteFixedDays) as string[]).length
+					? (JSON.parse(presenceConfig.requiredOnsiteFixedDays) as string[])
+							.length
+					: 0;
+
+		return {
+			required,
+			actual: onsiteDates.size,
+			period: presenceConfig.evaluationPeriod,
+			mode: presenceConfig.presenceMode,
+			presenceEnabled: true,
+		};
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
+}
+ */
+async function createManualEntryApprovalRequest(params: {
+	workPeriodId: string;
+	employeeId: string;
+	managerId: string;
+	organizationId: string;
+	startTime: Date;
+	endTime: Date;
+	durationMinutes: number;
+	reason: string;
+}): Promise<void> {
+	const {
+		workPeriodId,
+		employeeId,
+		managerId,
+		organizationId,
+		startTime,
+		endTime,
+		durationMinutes,
+		reason,
+	} = params;
+
+	try {
+		// Create approval request
+		await db.insert(approvalRequest).values({
+			organizationId,
+			entityType: "time_entry",
+			entityId: workPeriodId,
+			requestedBy: employeeId,
+			approverId: managerId,
+			status: "pending",
+			reason: `Manual time entry: ${reason}`,
+		});
+
+		// Get employee and manager details for notifications
+		const [employeeData, managerData] = await Promise.all([
+			db.query.employee.findFirst({
+				where: eq(employee.id, employeeId),
+				with: { user: { columns: { id: true, name: true } } },
+			}),
+			db.query.employee.findFirst({
+				where: eq(employee.id, managerId),
+				columns: { userId: true },
+			}),
+		]);
+
+		const employeeUserId = employeeData?.userId;
+		const employeeName = employeeData?.user?.name || "Employee";
+		const managerUserId = managerData?.userId;
+
+		// Fire-and-forget: Send notifications
+		if (employeeUserId) {
+			void onClockOutPendingApproval({
+				workPeriodId,
+				employeeUserId,
+				employeeName,
+				organizationId,
+				startTime,
+				endTime,
+				durationMinutes,
+			}).catch((err) => {
+				logger.error(
+					{ error: err },
+					"Failed to send manual entry pending notification to employee",
+				);
+			});
+		}
+
+		if (managerUserId) {
+			void onClockOutPendingApprovalToManager({
+				workPeriodId,
+				employeeUserId: employeeUserId || "",
+				employeeName,
+				organizationId,
+				startTime,
+				endTime,
+				durationMinutes,
+				managerUserId,
+			}).catch((err) => {
+				logger.error(
+					{ error: err },
+					"Failed to send manual entry pending notification to manager",
+				);
+			});
+		}
+
+		logger.info(
+			{
+				workPeriodId,
+				employeeId,
+				managerId,
+				durationMinutes,
+			},
+			"Manual entry approval request created",
+		);
+	} catch (error) {
+		// Log but don't fail - approval request is secondary to entry creation
+		logger.error(
+			{ error, workPeriodId },
+			"Failed to create manual entry approval request",
+		);
+	}
+}
+
+/**
+ * Get presence status for an employee
+ * Returns on-site requirement progress for the current evaluation period
+ */
+export async function getPresenceStatus(employeeId: string): Promise<
+	ServerActionResult<{
+		required: number;
+		actual: number;
+		period: string;
+		mode: string;
+		presenceEnabled: boolean;
+	}>
+> {
+	const parsed = z
+		.object({ employeeId: z.string().uuid("Invalid employee ID") })
+		.safeParse({ employeeId });
+	if (!parsed.success) {
+		return {
+			success: false as const,
+			error: parsed.error.issues[0]?.message || "Invalid input",
+		};
+	}
+	const validatedEmployeeId = parsed.data.employeeId;
+
+	const effect = Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
+		const dbService = yield* _(DatabaseService);
+
+		// Require an active organization
+		if (!session.session.activeOrganizationId) {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "No active organization",
+						userId: session.user.id,
+						resource: "employee",
+						action: "getPresenceStatus",
+					}),
+				),
+			);
+		}
+
+		// Verify the employee belongs to the caller's active organization
+		const targetEmployee = yield* _(
+			dbService.query("getEmployeeForAuth", async () => {
+				return await dbService.db.query.employee.findFirst({
+					where: and(
+						eq(employee.id, validatedEmployeeId),
+						eq(employee.organizationId, session.session.activeOrganizationId!),
+					),
+					columns: { id: true },
+				});
+			}),
+		);
+
+		if (!targetEmployee) {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Employee not found in your organization",
+						userId: session.user.id,
+						resource: "employee",
+						action: "getPresenceStatus",
+					}),
+				),
+			);
+		}
+
+		// Get employee's effective work policy
+		const workPolicyService = yield* _(WorkPolicyService);
+		const effectivePolicy = yield* _(
+			workPolicyService.getEffectivePolicy(validatedEmployeeId),
+		);
+
+		if (!effectivePolicy) {
+			return {
+				required: 0,
+				actual: 0,
+				period: "weekly",
+				mode: "minimum_count",
+				presenceEnabled: false,
+			};
+		}
+
+		// Check if presence is enabled on the policy
+		const policyRow = yield* _(
+			dbService.query("getWorkPolicy", async () => {
+				return await dbService.db.query.workPolicy.findFirst({
+					where: eq(workPolicy.id, effectivePolicy.policyId),
+					columns: { presenceEnabled: true },
+				});
+			}),
+		);
+
+		if (!policyRow?.presenceEnabled) {
+			return {
+				required: 0,
+				actual: 0,
+				period: "weekly",
+				mode: "minimum_count",
+				presenceEnabled: false,
+			};
+		}
+
+		// Load presence config
+		const presenceConfig = yield* _(
+			dbService.query("getPresenceConfig", async () => {
+				return await dbService.db.query.workPolicyPresence.findFirst({
+					where: eq(workPolicyPresence.policyId, effectivePolicy.policyId),
+				});
+			}),
+		);
+
+		if (!presenceConfig) {
+			return {
+				required: 0,
+				actual: 0,
+				period: "weekly",
+				mode: "minimum_count",
+				presenceEnabled: false,
+			};
+		}
+
+		// Get current week's work periods for this employee
+		const now = DateTime.now();
+		const weekStart = now.startOf("week");
+		const weekEnd = now.endOf("week");
+
+		const periods = yield* _(
+			dbService.query("getWeekWorkPeriods", async () => {
+				return await dbService.db.query.workPeriod.findMany({
+					where: and(
+						eq(workPeriod.employeeId, validatedEmployeeId),
+						gte(workPeriod.startTime, weekStart.toJSDate()),
+						lte(workPeriod.startTime, weekEnd.toJSDate()),
+					),
+				});
+			}),
+		);
+
+		// Count on-site days
+		const onsiteDates = new Set<string>();
+		for (const period of periods) {
+			if (
+				period.workLocationType === "office" ||
+				period.workLocationType === "field"
+			) {
+				const dateStr = DateTime.fromJSDate(period.startTime).toISODate();
+				if (dateStr) onsiteDates.add(dateStr);
+			}
+		}
+
+		const required =
+			presenceConfig.presenceMode === "minimum_count"
+				? (presenceConfig.requiredOnsiteDays ?? 0)
+				: presenceConfig.requiredOnsiteFixedDays
+					? (JSON.parse(presenceConfig.requiredOnsiteFixedDays) as string[])
+							.length
+					: 0;
+
+		return {
+			required,
+			actual: onsiteDates.size,
+			period: presenceConfig.evaluationPeriod,
+			mode: presenceConfig.presenceMode,
+			presenceEnabled: true,
+		};
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
+}
+ */
+async function createManualEntryApprovalRequest(params: {
+	workPeriodId: string;
+	employeeId: string;
+	managerId: string;
+	organizationId: string;
+	startTime: Date;
+	endTime: Date;
+	durationMinutes: number;
+	reason: string;
+}): Promise<void> {
+	const {
+		workPeriodId,
+		employeeId,
+		managerId,
+		organizationId,
+		startTime,
+		endTime,
+		durationMinutes,
+		reason,
+	} = params;
+
+	try {
+		// Create approval request
+		await db.insert(approvalRequest).values({
+			organizationId,
+			entityType: "time_entry",
+			entityId: workPeriodId,
+			requestedBy: employeeId,
+			approverId: managerId,
+			status: "pending",
+			reason: `Manual time entry: ${reason}`,
+		});
+
+		// Get employee and manager details for notifications
+		const [employeeData, managerData] = await Promise.all([
+			db.query.employee.findFirst({
+				where: eq(employee.id, employeeId),
+				with: { user: { columns: { id: true, name: true } } },
+			}),
+			db.query.employee.findFirst({
+				where: eq(employee.id, managerId),
+				columns: { userId: true },
+			}),
+		]);
+
+		const employeeUserId = employeeData?.userId;
+		const employeeName = employeeData?.user?.name || "Employee";
+		const managerUserId = managerData?.userId;
+
+		// Fire-and-forget: Send notifications
+		if (employeeUserId) {
+			void onClockOutPendingApproval({
+				workPeriodId,
+				employeeUserId,
+				employeeName,
+				organizationId,
+				startTime,
+				endTime,
+				durationMinutes,
+			}).catch((err) => {
+				logger.error(
+					{ error: err },
+					"Failed to send manual entry pending notification to employee",
+				);
+			});
+		}
+
+		if (managerUserId) {
+			void onClockOutPendingApprovalToManager({
+				workPeriodId,
+				employeeUserId: employeeUserId || "",
+				employeeName,
+				organizationId,
+				startTime,
+				endTime,
+				durationMinutes,
+				managerUserId,
+			}).catch((err) => {
+				logger.error(
+					{ error: err },
+					"Failed to send manual entry pending notification to manager",
+				);
+			});
+		}
+
+		logger.info(
+			{
+				workPeriodId,
+				employeeId,
+				managerId,
+				durationMinutes,
+			},
+			"Manual entry approval request created",
+		);
+	} catch (error) {
+		// Log but don't fail - approval request is secondary to entry creation
+		logger.error(
+			{ error, workPeriodId },
+			"Failed to create manual entry approval request",
+		);
+	}
+}
+
+/**
+ * Get presence status for an employee
+ * Returns on-site requirement progress for the current evaluation period
+ */
+export async function getPresenceStatus(employeeId: string): Promise<
+	ServerActionResult<{
+		required: number;
+		actual: number;
+		period: string;
+		mode: string;
+		presenceEnabled: boolean;
+	}>
+> {
+	const parsed = z
+		.object({ employeeId: z.string().uuid("Invalid employee ID") })
+		.safeParse({ employeeId });
+	if (!parsed.success) {
+		return {
+			success: false as const,
+			error: parsed.error.issues[0]?.message || "Invalid input",
+		};
+	}
+	const validatedEmployeeId = parsed.data.employeeId;
+
+	const effect = Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
+		const dbService = yield* _(DatabaseService);
+
+		// Require an active organization
+		if (!session.session.activeOrganizationId) {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "No active organization",
+						userId: session.user.id,
+						resource: "employee",
+						action: "getPresenceStatus",
+					}),
+				),
+			);
+		}
+
+		// Verify the employee belongs to the caller's active organization
+		const targetEmployee = yield* _(
+			dbService.query("getEmployeeForAuth", async () => {
+				return await dbService.db.query.employee.findFirst({
+					where: and(
+						eq(employee.id, validatedEmployeeId),
+						eq(employee.organizationId, session.session.activeOrganizationId!),
+					),
+					columns: { id: true },
+				});
+			}),
+		);
+
+		if (!targetEmployee) {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Employee not found in your organization",
+						userId: session.user.id,
+						resource: "employee",
+						action: "getPresenceStatus",
+					}),
+				),
+			);
+		}
+
+		// Get employee's effective work policy
+		const workPolicyService = yield* _(WorkPolicyService);
+		const effectivePolicy = yield* _(
+			workPolicyService.getEffectivePolicy(validatedEmployeeId),
+		);
+
+		if (!effectivePolicy) {
+			return {
+				required: 0,
+				actual: 0,
+				period: "weekly",
+				mode: "minimum_count",
+				presenceEnabled: false,
+			};
+		}
+
+		// Check if presence is enabled on the policy
+		const policyRow = yield* _(
+			dbService.query("getWorkPolicy", async () => {
+				return await dbService.db.query.workPolicy.findFirst({
+					where: eq(workPolicy.id, effectivePolicy.policyId),
+					columns: { presenceEnabled: true },
+				});
+			}),
+		);
+
+		if (!policyRow?.presenceEnabled) {
+			return {
+				required: 0,
+				actual: 0,
+				period: "weekly",
+				mode: "minimum_count",
+				presenceEnabled: false,
+			};
+		}
+
+		// Load presence config
+		const presenceConfig = yield* _(
+			dbService.query("getPresenceConfig", async () => {
+				return await dbService.db.query.workPolicyPresence.findFirst({
+					where: eq(workPolicyPresence.policyId, effectivePolicy.policyId),
+				});
+			}),
+		);
+
+		if (!presenceConfig) {
+			return {
+				required: 0,
+				actual: 0,
+				period: "weekly",
+				mode: "minimum_count",
+				presenceEnabled: false,
+			};
+		}
+
+		// Get current week's work periods for this employee
+		const now = DateTime.now();
+		const weekStart = now.startOf("week");
+		const weekEnd = now.endOf("week");
+
+		const periods = yield* _(
+			dbService.query("getWeekWorkPeriods", async () => {
+				return await dbService.db.query.workPeriod.findMany({
+					where: and(
+						eq(workPeriod.employeeId, validatedEmployeeId),
+						gte(workPeriod.startTime, weekStart.toJSDate()),
+						lte(workPeriod.startTime, weekEnd.toJSDate()),
+					),
+				});
+			}),
+		);
+
+		// Count on-site days
+		const onsiteDates = new Set<string>();
+		for (const period of periods) {
+			if (
+				period.workLocationType === "office" ||
+				period.workLocationType === "field"
+			) {
+				const dateStr = DateTime.fromJSDate(period.startTime).toISODate();
+				if (dateStr) onsiteDates.add(dateStr);
+			}
+		}
+
+		const required =
+			presenceConfig.presenceMode === "minimum_count"
+				? (presenceConfig.requiredOnsiteDays ?? 0)
+				: presenceConfig.requiredOnsiteFixedDays
+					? (JSON.parse(presenceConfig.requiredOnsiteFixedDays) as string[])
+							.length
 					: 0;
 
 		return {
