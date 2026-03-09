@@ -1,12 +1,12 @@
 import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { connection } from "next/server";
-import { db } from "@/db";
-import { employee, userSettings } from "@/db/schema";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { ClockInOutWidget } from "@/components/time-tracking/clock-in-out-widget";
 import { TimeEntriesTable } from "@/components/time-tracking/time-entries-table";
 import { WeeklySummaryCards } from "@/components/time-tracking/weekly-summary-cards";
+import { db } from "@/db";
+import { employee, userSettings } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { dateToDB } from "@/lib/datetime/drizzle-adapter";
 import { getWeekRangeInTimezone } from "@/lib/time-tracking/timezone-utils";

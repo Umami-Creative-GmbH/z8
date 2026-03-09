@@ -3428,7 +3428,6 @@ export async function getPresenceStatus(employeeId: string): Promise<
 
 	return runServerActionSafe(effect);
 }
- */
 async function createManualEntryApprovalRequest(params: {
 	workPeriodId: string;
 	employeeId: string;
