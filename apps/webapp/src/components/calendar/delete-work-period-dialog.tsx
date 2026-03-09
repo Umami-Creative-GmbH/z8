@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import type { CalendarEvent } from "@/lib/calendar/types";
 import { format } from "@/lib/datetime/luxon-utils";
+import { formatDuration, getWorkPeriodDialogMetadata } from "./work-period-dialog-utils";
 
 interface DeleteWorkPeriodDialogProps {
 	event: CalendarEvent;
@@ -34,36 +35,23 @@ export function DeleteWorkPeriodDialog({
 	const [isDeleting, setIsDeleting] = useState(false);
 
 	// Get metadata with defaults
-	const metadata = event.metadata as {
-		durationMinutes: number;
-		employeeName: string;
-		notes?: string;
-	};
-
-	// Format duration
-	const formatDuration = (minutes: number) => {
-		const hours = Math.floor(minutes / 60);
-		const mins = minutes % 60;
-		if (hours === 0) return `${mins}m`;
-		if (mins === 0) return `${hours}h`;
-		return `${hours}h ${mins}m`;
-	};
+	const metadata = getWorkPeriodDialogMetadata(event);
 
 	const handleDelete = useCallback(async () => {
 		setIsDeleting(true);
-		try {
-			const result = await deleteWorkPeriod(event.id);
+		const result = await deleteWorkPeriod(event.id).catch(() => null);
 
-			if (result.success) {
-				toast.success(t("calendar.delete.success", "Work period converted to break"));
-				onDeleteComplete?.();
-				onOpenChange(false);
-			} else {
-				toast.error(result.error || t("calendar.delete.failed", "Failed to delete work period"));
-			}
-		} finally {
-			setIsDeleting(false);
+		if (!result) {
+			toast.error(t("calendar.delete.failed", "Failed to delete work period"));
+		} else if (result.success) {
+			toast.success(t("calendar.delete.success", "Work period converted to break"));
+			onDeleteComplete?.();
+			onOpenChange(false);
+		} else {
+			toast.error(result.error || t("calendar.delete.failed", "Failed to delete work period"));
 		}
+
+		setIsDeleting(false);
 	}, [event.id, onDeleteComplete, onOpenChange, t]);
 
 	return (
