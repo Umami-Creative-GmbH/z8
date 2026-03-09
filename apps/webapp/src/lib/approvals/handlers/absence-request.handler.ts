@@ -287,9 +287,10 @@ export const AbsenceRequestHandler: ApprovalTypeHandler<AbsenceWithRelations> = 
 
 	approve: (entityId, _approverId) =>
 		Effect.gen(function* (_) {
-			// Delegate to existing approval logic
 			const { approveAbsenceEffect } = yield* _(
-				Effect.promise(async () => import("@/app/[locale]/(app)/approvals/actions")),
+				Effect.promise(
+					async () => import("@/lib/approvals/server/absence-approvals"),
+				),
 			);
 
 			const result = yield* _(Effect.promise(() => approveAbsenceEffect(entityId)));
@@ -309,9 +310,10 @@ export const AbsenceRequestHandler: ApprovalTypeHandler<AbsenceWithRelations> = 
 
 	reject: (entityId, _approverId, reason) =>
 		Effect.gen(function* (_) {
-			// Delegate to existing rejection logic
 			const { rejectAbsenceEffect } = yield* _(
-				Effect.promise(async () => import("@/app/[locale]/(app)/approvals/actions")),
+				Effect.promise(
+					async () => import("@/lib/approvals/server/absence-approvals"),
+				),
 			);
 
 			const result = yield* _(Effect.promise(() => rejectAbsenceEffect(entityId, reason)));
