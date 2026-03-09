@@ -46,6 +46,20 @@ export {
 	BulkApprovalServiceLive,
 } from "./application/bulk-approval.service";
 
+export type { ApprovalWithAbsence, ApprovalWithTimeCorrection } from "./server/types";
+export {
+	approveAbsenceEffect,
+	rejectAbsenceEffect,
+	formatAbsenceDateForEmail,
+} from "./server/absence-approvals";
+export {
+	approveTimeCorrectionEffect,
+	rejectTimeCorrectionEffect,
+	calculateCorrectedDurationMinutes,
+	syncCanonicalWorkCorrection,
+} from "./server/time-correction-approvals";
+export { getPendingApprovalCounts, getPendingApprovals, getCurrentEmployee } from "./server/queries";
+
 export {
 	ApprovalAuditLogger,
 	ApprovalAuditLoggerLive,
