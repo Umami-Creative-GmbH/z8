@@ -87,6 +87,9 @@ describe("payroll export canonical data fetching", () => {
 					employeeNumber: "E-001",
 					firstName: "Ada",
 					lastName: "Lovelace",
+					user: {
+						email: "ada@example.com",
+					},
 					teamId: "team-1",
 				},
 				work: {
@@ -127,6 +130,7 @@ describe("payroll export canonical data fetching", () => {
 				employeeNumber: "E-001",
 				firstName: "Ada",
 				lastName: "Lovelace",
+				email: "ada@example.com",
 				startTime: DateTime.fromISO("2026-01-10T08:00:00.000Z"),
 				endTime: DateTime.fromISO("2026-01-10T16:00:00.000Z"),
 				durationMinutes: 480,
@@ -151,6 +155,9 @@ describe("payroll export canonical data fetching", () => {
 					employeeNumber: "E-002",
 					firstName: "Grace",
 					lastName: "Hopper",
+					user: {
+						email: "grace@example.com",
+					},
 				},
 				absence: {
 					absenceCategoryId: "ac-1",
@@ -179,6 +186,7 @@ describe("payroll export canonical data fetching", () => {
 				employeeNumber: "E-002",
 				firstName: "Grace",
 				lastName: "Hopper",
+				email: "grace@example.com",
 				startDate: "2026-01-12",
 				endDate: "2026-01-13",
 				absenceCategoryId: "ac-1",
