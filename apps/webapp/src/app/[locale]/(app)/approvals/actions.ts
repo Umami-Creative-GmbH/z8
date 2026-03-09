@@ -16,13 +16,23 @@ import {
 import { calculateBusinessDays } from "@/lib/absences/date-utils";
 import { getOrganizationBaseUrl } from "@/lib/app-url";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
-import { type AnyAppError, AuthorizationError, NotFoundError } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import {
+	type AnyAppError,
+	AuthorizationError,
+	NotFoundError,
+} from "@/lib/effect/errors";
+import {
+	runServerActionSafe,
+	type ServerActionResult,
+} from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { EmailService } from "@/lib/effect/services/email.service";
-import { renderAbsenceRequestApproved, renderAbsenceRequestRejected } from "@/lib/email/render";
+import {
+	renderAbsenceRequestApproved,
+	renderAbsenceRequestRejected,
+} from "@/lib/email/render";
 import { createLogger } from "@/lib/logger";
 import {
 	onAbsenceRequestApproved,
@@ -31,7 +41,8 @@ import {
 	onTimeCorrectionRejected,
 } from "@/lib/notifications/triggers";
 import { addCalendarSyncJob } from "@/lib/queue";
-import { getCurrentEmployee, syncCanonicalAbsenceApprovalState } from "../absences/actions";
+import { getCurrentEmployee } from "../absences/actions";
+import { syncCanonicalAbsenceApprovalState } from "../absences/actions.canonical";
 
 const logger = createLogger("ApprovalsActionsEffect");
 
@@ -197,8 +208,10 @@ async function processApproval<T>(
 							.update(approvalRequest)
 							.set({
 								status: action === "approve" ? "approved" : "rejected",
-								approvedAt: action === "approve" ? currentTimestamp() : undefined,
-								rejectionReason: action === "reject" ? rejectionReason : undefined,
+								approvedAt:
+									action === "approve" ? currentTimestamp() : undefined,
+								rejectionReason:
+									action === "reject" ? rejectionReason : undefined,
 								updatedAt: currentTimestamp(),
 							})
 							.where(eq(approvalRequest.id, approval.id));
@@ -231,7 +244,10 @@ async function processApproval<T>(
 							message: String(error),
 						});
 
-						logger.error({ error, entityType, entityId, action }, "Failed to process approval");
+						logger.error(
+							{ error, entityType, entityId, action },
+							"Failed to process approval",
+						);
 						return yield* _(Effect.fail(error as AnyAppError));
 					}),
 				),
@@ -277,7 +293,9 @@ export async function syncCanonicalWorkCorrection(input: {
 /**
  * Approve an absence request
  */
-export async function approveAbsenceEffect(absenceId: string): Promise<ServerActionResult<void>> {
+export async function approveAbsenceEffect(
+	absenceId: string,
+): Promise<ServerActionResult<void>> {
 	return processApproval(
 		"absence_entry",
 		absenceId,
@@ -334,14 +352,23 @@ export async function approveAbsenceEffect(absenceId: string): Promise<ServerAct
 				const holidays: any = yield* _(
 					dbService.query("getHolidays", async () => {
 						return await dbService.db.query.holiday.findMany({
-							where: eq(holiday.organizationId, absence.employee.organizationId),
+							where: eq(
+								holiday.organizationId,
+								absence.employee.organizationId,
+							),
 						});
 					}),
 				);
 
-				const days = calculateBusinessDays(absence.startDate, absence.endDate, holidays);
+				const days = calculateBusinessDays(
+					absence.startDate,
+					absence.endDate,
+					holidays,
+				);
 				const appUrl = yield* _(
-					Effect.promise(() => getOrganizationBaseUrl(absence.employee.organizationId)),
+					Effect.promise(() =>
+						getOrganizationBaseUrl(absence.employee.organizationId),
+					),
 				);
 
 				const formatDate = (date: Date) =>
@@ -459,14 +486,23 @@ export async function rejectAbsenceEffect(
 				const holidays: any = yield* _(
 					dbService.query("getHolidays", async () => {
 						return await dbService.db.query.holiday.findMany({
-							where: eq(holiday.organizationId, absence.employee.organizationId),
+							where: eq(
+								holiday.organizationId,
+								absence.employee.organizationId,
+							),
 						});
 					}),
 				);
 
-				const days = calculateBusinessDays(absence.startDate, absence.endDate, holidays);
+				const days = calculateBusinessDays(
+					absence.startDate,
+					absence.endDate,
+					holidays,
+				);
 				const appUrl = yield* _(
-					Effect.promise(() => getOrganizationBaseUrl(absence.employee.organizationId)),
+					Effect.promise(() =>
+						getOrganizationBaseUrl(absence.employee.organizationId),
+					),
 				);
 
 				const formatDate = (date: Date) =>
@@ -587,7 +623,9 @@ export async function approveTimeCorrectionEffect(
 				);
 
 				if (!clockInCorrection) {
-					return yield* _(Effect.fail(new Error("Clock in correction not found")));
+					return yield* _(
+						Effect.fail(new Error("Clock in correction not found")),
+					);
 				}
 
 				// Calculate new duration
@@ -596,11 +634,13 @@ export async function approveTimeCorrectionEffect(
 
 				if (clockOutCorrection) {
 					const durationMs =
-						clockOutCorrection.timestamp.getTime() - clockInCorrection.timestamp.getTime();
+						clockOutCorrection.timestamp.getTime() -
+						clockInCorrection.timestamp.getTime();
 					durationMinutes = Math.floor(durationMs / 60000);
 					endTime = clockOutCorrection.timestamp;
 				} else if (period.endTime) {
-					const durationMs = period.endTime.getTime() - clockInCorrection.timestamp.getTime();
+					const durationMs =
+						period.endTime.getTime() - clockInCorrection.timestamp.getTime();
 					durationMinutes = Math.floor(durationMs / 60000);
 				}
 
@@ -627,7 +667,7 @@ export async function approveTimeCorrectionEffect(
 							organizationId: period.organizationId,
 							canonicalRecordId: period.canonicalRecordId,
 							startAt: clockInCorrection.timestamp,
-							endAt,
+							endAt: endTime,
 							durationMinutes,
 							updatedBy: currentEmployee.user.id,
 						}),
@@ -717,7 +757,8 @@ export async function getPendingApprovals(): Promise<{
 	timeCorrectionApprovals: ApprovalWithTimeCorrection[];
 }> {
 	const currentEmployee = await getCurrentEmployee();
-	if (!currentEmployee) return { absenceApprovals: [], timeCorrectionApprovals: [] };
+	if (!currentEmployee)
+		return { absenceApprovals: [], timeCorrectionApprovals: [] };
 
 	const pendingRequests = await db.query.approvalRequest.findMany({
 		where: and(
@@ -809,8 +850,10 @@ export async function getPendingApprovalCounts() {
 		.groupBy(approvalRequest.entityType);
 
 	return {
-		absences: Number(counts.find((c) => c.type === "absence_entry")?.count) || 0,
-		timeCorrections: Number(counts.find((c) => c.type === "time_entry")?.count) || 0,
+		absences:
+			Number(counts.find((c) => c.type === "absence_entry")?.count) || 0,
+		timeCorrections:
+			Number(counts.find((c) => c.type === "time_entry")?.count) || 0,
 	};
 }
 

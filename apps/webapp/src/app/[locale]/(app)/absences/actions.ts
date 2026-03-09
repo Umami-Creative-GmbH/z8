@@ -17,7 +17,10 @@ import {
 	timeRecordAbsence,
 	vacationAllowance,
 } from "@/db/schema";
-import { calculateBusinessDaysWithHalfDays, dateRangesOverlap } from "@/lib/absences/date-utils";
+import {
+	calculateBusinessDaysWithHalfDays,
+	dateRangesOverlap,
+} from "@/lib/absences/date-utils";
 import { canCancelAbsence } from "@/lib/absences/permissions";
 import type {
 	AbsenceRequest,
@@ -29,8 +32,15 @@ import { calculateVacationBalance } from "@/lib/absences/vacation-calculator";
 import { getOrganizationBaseUrl } from "@/lib/app-url";
 import { auth } from "@/lib/auth";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
-import { ConflictError, NotFoundError, ValidationError } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import {
+	ConflictError,
+	NotFoundError,
+	ValidationError,
+} from "@/lib/effect/errors";
+import {
+	runServerActionSafe,
+	type ServerActionResult,
+} from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
@@ -45,154 +55,13 @@ import {
 	onAbsenceRequestSubmitted,
 } from "@/lib/notifications/triggers";
 import { addCalendarSyncJob } from "@/lib/queue";
+import {
+	removeCanonicalAbsenceRecord,
+	syncAbsenceRequestToCanonicalRecord,
+	syncCanonicalAbsenceApprovalState,
+} from "./actions.canonical";
 
 const logger = createLogger("AbsenceActionsEffect");
-
-type DayPeriod = "full_day" | "am" | "pm";
-
-export function mapAbsenceRangeToCanonicalTimestamps(input: {
-	startDate: string;
-	endDate: string;
-	startPeriod: DayPeriod;
-	endPeriod: DayPeriod;
-}): { startAt: Date; endAt: Date } {
-	const startOfStartDate = DateTime.fromISO(input.startDate, { zone: "utc" }).startOf("day");
-	const endOfEndDate = DateTime.fromISO(input.endDate, { zone: "utc" }).endOf("day");
-
-	const startAt =
-		input.startPeriod === "pm" ? startOfStartDate.plus({ hours: 12 }) : startOfStartDate;
-	const endAt = input.endPeriod === "am" ? endOfEndDate.minus({ hours: 12 }) : endOfEndDate;
-
-	return {
-		startAt: startAt.toJSDate(),
-		endAt: endAt.toJSDate(),
-	};
-}
-
-export const canonicalAbsenceRecordClient = {
-	create: async (input: {
-		organizationId: string;
-		employeeId: string;
-		absenceCategoryId: string;
-		startDate: string;
-		startPeriod: DayPeriod;
-		endDate: string;
-		endPeriod: DayPeriod;
-		countsAgainstVacation: boolean;
-		requiresApproval: boolean;
-		createdBy: string;
-	}) => {
-		const { startAt, endAt } = mapAbsenceRangeToCanonicalTimestamps({
-			startDate: input.startDate,
-			startPeriod: input.startPeriod,
-			endDate: input.endDate,
-			endPeriod: input.endPeriod,
-		});
-
-		return db.transaction(async (tx) => {
-			const [record] = await tx
-				.insert(timeRecord)
-				.values({
-					organizationId: input.organizationId,
-					employeeId: input.employeeId,
-					recordKind: "absence",
-					startAt,
-					endAt,
-					durationMinutes: Math.max(0, Math.floor((endAt.getTime() - startAt.getTime()) / 60000)),
-					approvalState: input.requiresApproval ? "pending" : "approved",
-					origin: "manual",
-					createdBy: input.createdBy,
-					updatedBy: input.createdBy,
-				})
-				.returning({ id: timeRecord.id });
-
-			await tx.insert(timeRecordAbsence).values({
-				recordId: record.id,
-				organizationId: input.organizationId,
-				recordKind: "absence",
-				absenceCategoryId: input.absenceCategoryId,
-				startPeriod: input.startPeriod,
-				endPeriod: input.endPeriod,
-				countsAgainstVacation: input.countsAgainstVacation,
-			});
-
-			return record;
-		});
-	},
-};
-
-export async function syncAbsenceRequestToCanonicalRecord(input: {
-	organizationId: string;
-	employeeId: string;
-	absenceCategoryId: string;
-	startDate: string;
-	startPeriod: DayPeriod;
-	endDate: string;
-	endPeriod: DayPeriod;
-	countsAgainstVacation: boolean;
-	requiresApproval: boolean;
-	createdBy: string;
-}): Promise<string> {
-	const canonicalRecord = await canonicalAbsenceRecordClient.create({
-		organizationId: input.organizationId,
-		employeeId: input.employeeId,
-		absenceCategoryId: input.absenceCategoryId,
-		startDate: input.startDate,
-		startPeriod: input.startPeriod,
-		endDate: input.endDate,
-		endPeriod: input.endPeriod,
-		countsAgainstVacation: input.countsAgainstVacation,
-		requiresApproval: input.requiresApproval,
-		createdBy: input.createdBy,
-	});
-
-	return canonicalRecord.id;
-}
-
-export async function syncCanonicalAbsenceApprovalState(input: {
-	organizationId: string;
-	canonicalRecordId: string | null;
-	approvalState: "approved" | "rejected";
-	updatedBy: string;
-}): Promise<void> {
-	if (!input.canonicalRecordId) {
-		return;
-	}
-
-	await db
-		.update(timeRecord)
-		.set({
-			approvalState: input.approvalState,
-			updatedAt: currentTimestamp(),
-			updatedBy: input.updatedBy,
-		})
-		.where(
-			and(
-				eq(timeRecord.id, input.canonicalRecordId),
-				eq(timeRecord.organizationId, input.organizationId),
-				eq(timeRecord.recordKind, "absence"),
-			),
-		);
-}
-
-export async function removeCanonicalAbsenceRecord(input: {
-	organizationId: string;
-	canonicalRecordId: string | null;
-}): Promise<void> {
-	if (!input.canonicalRecordId) {
-		return;
-	}
-
-	await db
-		.delete(timeRecord)
-		.where(
-			and(
-				eq(timeRecord.id, input.canonicalRecordId),
-				eq(timeRecord.organizationId, input.organizationId),
-				eq(timeRecord.recordKind, "absence"),
-			),
-		);
-}
 
 /**
  * Request an absence with Effect-based workflow
@@ -280,7 +149,8 @@ export async function requestAbsenceEffect(
 						yield* _(
 							Effect.fail(
 								new ValidationError({
-									message: "Cannot end in the morning if starting in the afternoon on the same day",
+									message:
+										"Cannot end in the morning if starting in the afternoon on the same day",
 									field: "endPeriod",
 									value: data.endPeriod,
 								}),
@@ -295,7 +165,10 @@ export async function requestAbsenceEffect(
 						return await dbService.db.query.absenceEntry.findMany({
 							where: and(
 								eq(absenceEntry.employeeId, currentEmployee.id),
-								or(eq(absenceEntry.status, "approved"), eq(absenceEntry.status, "pending")),
+								or(
+									eq(absenceEntry.status, "approved"),
+									eq(absenceEntry.status, "pending"),
+								),
 							),
 						});
 					}),
@@ -303,7 +176,12 @@ export async function requestAbsenceEffect(
 
 				for (const existing of overlappingAbsences) {
 					if (
-						dateRangesOverlap(data.startDate, data.endDate, existing.startDate, existing.endDate)
+						dateRangesOverlap(
+							data.startDate,
+							data.endDate,
+							existing.startDate,
+							existing.endDate,
+						)
 					) {
 						const isPending = existing.status === "pending";
 						yield* _(
@@ -349,7 +227,10 @@ export async function requestAbsenceEffect(
 				);
 
 				span.setAttribute("absence.category_name", category.name);
-				span.setAttribute("absence.requires_approval", category.requiresApproval);
+				span.setAttribute(
+					"absence.requires_approval",
+					category.requiresApproval,
+				);
 
 				// Step 6: Calculate business days (with half-day support)
 				const businessDays = calculateBusinessDaysWithHalfDays(
@@ -412,7 +293,11 @@ export async function requestAbsenceEffect(
 						Effect.tapError((error) =>
 							Effect.sync(() => {
 								logger.error(
-									{ error, absenceId: newAbsence.id, organizationId: currentEmployee.organizationId },
+									{
+										error,
+										absenceId: newAbsence.id,
+										organizationId: currentEmployee.organizationId,
+									},
 									"Failed to sync absence request to canonical model",
 								);
 							}),
@@ -490,12 +375,18 @@ export async function requestAbsenceEffect(
 					);
 
 					const appUrl = yield* _(
-						Effect.promise(() => getOrganizationBaseUrl(currentEmployee.organizationId)),
+						Effect.promise(() =>
+							getOrganizationBaseUrl(currentEmployee.organizationId),
+						),
 					);
 					// Format YYYY-MM-DD date strings for display
 					const formatDate = (dateStr: string) => {
 						const dt = DateTime.fromISO(dateStr);
-						return dt.toLocaleString({ month: "short", day: "numeric", year: "numeric" });
+						return dt.toLocaleString({
+							month: "short",
+							day: "numeric",
+							year: "numeric",
+						});
 					};
 
 					// Step 10: Render email templates
@@ -602,7 +493,10 @@ export async function requestAbsenceEffect(
 						action: "create",
 					});
 
-					logger.info({ absenceId: newAbsence.id }, "Absence auto-approved (no approval required)");
+					logger.info(
+						{ absenceId: newAbsence.id },
+						"Absence auto-approved (no approval required)",
+					);
 				} else {
 					// No manager assigned - auto-approve since there's no one to approve
 					yield* _(
@@ -703,7 +597,10 @@ export async function getCurrentEmployee() {
 
 	// Fall back to first active employee record (for backwards compatibility)
 	const emp = await db.query.employee.findFirst({
-		where: and(eq(employee.userId, session.user.id), eq(employee.isActive, true)),
+		where: and(
+			eq(employee.userId, session.user.id),
+			eq(employee.isActive, true),
+		),
 	});
 
 	return emp;
@@ -899,7 +796,11 @@ export async function cancelAbsenceRequest(
 	}
 
 	// Check permissions
-	const canCancel = await canCancelAbsence(currentEmployee.id, absence.employeeId, absence.status);
+	const canCancel = await canCancelAbsence(
+		currentEmployee.id,
+		absence.employeeId,
+		absence.status,
+	);
 
 	if (!canCancel) {
 		return {
@@ -915,6 +816,10 @@ export async function cancelAbsenceRequest(
 		action: "delete",
 	});
 
+	if (!absence.organizationId) {
+		return { success: false, error: "Absence organization not found" };
+	}
+
 	await removeCanonicalAbsenceRecord({
 		organizationId: absence.organizationId,
 		canonicalRecordId: absence.canonicalRecordId,
@@ -927,7 +832,10 @@ export async function cancelAbsenceRequest(
 	await db
 		.delete(approvalRequest)
 		.where(
-			and(eq(approvalRequest.entityType, "absence_entry"), eq(approvalRequest.entityId, absenceId)),
+			and(
+				eq(approvalRequest.entityType, "absence_entry"),
+				eq(approvalRequest.entityId, absenceId),
+			),
 		);
 
 	return { success: true };

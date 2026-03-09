@@ -26,7 +26,7 @@ vi.mock("@/db", () => ({
 	},
 }));
 
-const actions = await import("./actions");
+const canonicalActions = await import("./actions.canonical");
 
 describe("absence canonical action routing", () => {
 	beforeEach(() => {
@@ -36,10 +36,10 @@ describe("absence canonical action routing", () => {
 
 	it("syncs absence requests to canonical records with org scoping", async () => {
 		const createSpy = vi
-			.spyOn(actions.canonicalAbsenceRecordClient, "create")
+			.spyOn(canonicalActions.canonicalAbsenceRecordClient, "create")
 			.mockResolvedValue({ id: "rec-1" } as never);
 
-		await actions.syncAbsenceRequestToCanonicalRecord({
+		await canonicalActions.syncAbsenceRequestToCanonicalRecord({
 			organizationId: "org-1",
 			employeeId: "emp-1",
 			absenceCategoryId: "cat-1",
@@ -67,7 +67,7 @@ describe("absence canonical action routing", () => {
 	});
 
 	it("maps same-day half-day requests to partial canonical timestamps", () => {
-		const mapped = actions.mapAbsenceRangeToCanonicalTimestamps({
+		const mapped = canonicalActions.mapAbsenceRangeToCanonicalTimestamps({
 			startDate: "2026-02-10",
 			startPeriod: "pm",
 			endDate: "2026-02-10",
@@ -79,22 +79,23 @@ describe("absence canonical action routing", () => {
 	});
 
 	it("fails the action when canonical sync fails", async () => {
-		vi.spyOn(actions.canonicalAbsenceRecordClient, "create").mockRejectedValue(
-			new Error("canonical write failed"),
-		);
+		vi.spyOn(
+			canonicalActions.canonicalAbsenceRecordClient,
+			"create",
+		).mockRejectedValue(new Error("canonical write failed"));
 
 		await expect(
-			actions.syncAbsenceRequestToCanonicalRecord({
-			organizationId: "org-1",
-			employeeId: "emp-1",
-			absenceCategoryId: "cat-1",
-			startDate: "2026-02-10",
-			startPeriod: "full_day",
-			endDate: "2026-02-12",
-			endPeriod: "full_day",
-			countsAgainstVacation: true,
-			requiresApproval: false,
-			createdBy: "user-1",
+			canonicalActions.syncAbsenceRequestToCanonicalRecord({
+				organizationId: "org-1",
+				employeeId: "emp-1",
+				absenceCategoryId: "cat-1",
+				startDate: "2026-02-10",
+				startPeriod: "full_day",
+				endDate: "2026-02-12",
+				endPeriod: "full_day",
+				countsAgainstVacation: true,
+				requiresApproval: false,
+				createdBy: "user-1",
 			}),
 		).rejects.toThrow("canonical write failed");
 	});
@@ -114,7 +115,7 @@ describe("absence canonical action routing", () => {
 			callback({ insert: txInsert }),
 		);
 
-		const record = await actions.canonicalAbsenceRecordClient.create({
+		const record = await canonicalActions.canonicalAbsenceRecordClient.create({
 			organizationId: "org-1",
 			employeeId: "emp-1",
 			absenceCategoryId: "cat-1",
@@ -145,7 +146,7 @@ describe("absence canonical action routing", () => {
 		const setUpdate = vi.fn().mockReturnValue({ where: whereUpdate });
 		mockState.dbUpdate.mockReturnValue({ set: setUpdate });
 
-		await actions.syncCanonicalAbsenceApprovalState({
+		await canonicalActions.syncCanonicalAbsenceApprovalState({
 			canonicalRecordId: "record-1",
 			organizationId: "org-1",
 			approvalState: "approved",
@@ -166,7 +167,7 @@ describe("absence canonical action routing", () => {
 		const whereDelete = vi.fn().mockResolvedValue(undefined);
 		mockState.dbDelete.mockReturnValue({ where: whereDelete });
 
-		await actions.removeCanonicalAbsenceRecord({
+		await canonicalActions.removeCanonicalAbsenceRecord({
 			canonicalRecordId: "record-1",
 			organizationId: "org-1",
 		});
@@ -176,7 +177,7 @@ describe("absence canonical action routing", () => {
 	});
 
 	it("skips canonical absence deletion when no linkage exists", async () => {
-		await actions.removeCanonicalAbsenceRecord({
+		await canonicalActions.removeCanonicalAbsenceRecord({
 			canonicalRecordId: null,
 			organizationId: "org-1",
 		});
