@@ -6,7 +6,7 @@ import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
 import {
 	type EmployeeWithRelations,
 	getEmployee,
-	listEmployees,
+	listEmployeesForSelect,
 	updateEmployee,
 } from "@/app/[locale]/(app)/settings/employees/actions";
 import {
@@ -102,21 +102,17 @@ export function useEmployee(options: UseEmployeeOptions) {
 	const managersQuery = useQuery({
 		queryKey: ["available-managers", employeeId],
 		queryFn: async () => {
-			const [adminsResult, managersResult] = await Promise.all([
-				listEmployees({ role: "admin" }),
-				listEmployees({ role: "manager" }),
-			]);
+			const result = await listEmployeesForSelect({
+				roles: ["admin", "manager"],
+				excludeIds: [employeeId],
+				limit: 1000,
+			});
 
-			if (!adminsResult.success || !managersResult.success) {
+			if (!result.success) {
 				return [];
 			}
 
-			const allManagers = [
-				...(adminsResult.data?.employees || []),
-				...(managersResult.data?.employees || []),
-			].filter((m) => m.id !== employeeId);
-
-			return allManagers;
+			return result.data?.employees ?? [];
 		},
 		enabled: enabled && isAdmin,
 		staleTime: 60 * 1000, // 1 minute

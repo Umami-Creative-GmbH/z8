@@ -16,7 +16,7 @@ import {
 	upsertShift,
 } from "@/app/[locale]/(app)/scheduling/actions";
 import type { ShiftTemplate, ShiftWithRelations } from "@/app/[locale]/(app)/scheduling/types";
-import { listEmployees } from "@/app/[locale]/(app)/settings/employees/actions";
+import { listEmployeesForSelect } from "@/app/[locale]/(app)/settings/employees/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -74,7 +74,7 @@ export function ShiftDialog({
 	const { data: employeesResult } = useQuery({
 		queryKey: queryKeys.employees.list(organizationId),
 		queryFn: async () => {
-			const result = await listEmployees({ limit: 1000 });
+			const result = await listEmployeesForSelect({ limit: 1000 });
 			if (!result.success) throw new Error(result.error);
 			return result.data;
 		},
