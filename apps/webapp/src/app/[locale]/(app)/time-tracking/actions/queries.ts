@@ -36,21 +36,12 @@ import { getAssignedProjectsWithHours } from "./entry-helpers";
 import { logger } from "./shared";
 import type { AssignedProject } from "./types";
 
-function mapWorkPeriodWithEntries(period: {
-	id: string;
-	employeeId: string;
-	startTime: Date;
-	endTime: Date | null;
-	durationMinutes: number | null;
+function mapWorkPeriodWithEntries(period: typeof workPeriod.$inferSelect & {
 	clockIn: WorkPeriodWithEntries["clockIn"];
 	clockOut: WorkPeriodWithEntries["clockOut"] | null;
 }): WorkPeriodWithEntries {
 	return {
-		id: period.id,
-		employeeId: period.employeeId,
-		startTime: period.startTime,
-		endTime: period.endTime,
-		durationMinutes: period.durationMinutes,
+		...period,
 		clockIn: period.clockIn,
 		clockOut: period.clockOut || undefined,
 	};
