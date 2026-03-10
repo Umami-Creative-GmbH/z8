@@ -36,6 +36,7 @@ vi.mock("@/db", () => ({
 }));
 
 const actions = await import("./actions");
+const canonicalActions = await import("./actions.canonical");
 
 describe("time-tracking canonical action routing", () => {
 	beforeEach(() => {
@@ -51,10 +52,10 @@ describe("time-tracking canonical action routing", () => {
 
 	it("routes standard time entry writes through canonical client", async () => {
 		const createTimeEntrySpy = vi
-			.spyOn(actions.canonicalTimeEntryClient, "createTimeEntry")
+			.spyOn(canonicalActions.canonicalTimeEntryClient, "createTimeEntry")
 			.mockResolvedValue({ id: "entry-1" } as never);
 		const createCorrectionSpy = vi
-			.spyOn(actions.canonicalTimeEntryClient, "createCorrectionEntry")
+			.spyOn(canonicalActions.canonicalTimeEntryClient, "createCorrectionEntry")
 			.mockResolvedValue({ id: "entry-corr" } as never);
 
 		const result = await actions.createTimeEntry({
@@ -83,10 +84,10 @@ describe("time-tracking canonical action routing", () => {
 
 	it("routes correction writes through canonical correction client", async () => {
 		const createTimeEntrySpy = vi
-			.spyOn(actions.canonicalTimeEntryClient, "createTimeEntry")
+			.spyOn(canonicalActions.canonicalTimeEntryClient, "createTimeEntry")
 			.mockResolvedValue({ id: "entry-1" } as never);
 		const createCorrectionSpy = vi
-			.spyOn(actions.canonicalTimeEntryClient, "createCorrectionEntry")
+			.spyOn(canonicalActions.canonicalTimeEntryClient, "createCorrectionEntry")
 			.mockResolvedValue({ id: "entry-corr" } as never);
 
 		const result = await actions.createTimeEntry({
@@ -130,7 +131,7 @@ describe("time-tracking canonical action routing", () => {
 			callback({ insert: txInsert }),
 		);
 
-		const result = await actions.canonicalWorkRecordClient.createForCompletedPeriod({
+		const result = await canonicalActions.canonicalWorkRecordClient.createForCompletedPeriod({
 			organizationId: "org-1",
 			employeeId: "emp-1",
 			startAt: new Date("2026-01-01T08:00:00.000Z"),

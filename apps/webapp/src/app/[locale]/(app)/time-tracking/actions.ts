@@ -13,9 +13,6 @@ import {
 	projectAssignment,
 	surchargeCalculation,
 	timeEntry,
-	timeRecord,
-	timeRecordAllocation,
-	timeRecordWork,
 	userSettings,
 	workPeriod,
 	workPolicy,
@@ -84,107 +81,13 @@ import {
 	validateTimeEntry,
 	validateTimeEntryRange,
 } from "@/lib/time-tracking/validation";
+import {
+	canonicalTimeEntryClient,
+	canonicalWorkRecordClient,
+} from "./actions.canonical";
 import type { WorkPeriodWithEntries } from "./types";
 
 const logger = createLogger("TimeTrackingActionsEffect");
-
-export const canonicalTimeEntryClient = {
-	createTimeEntry: async (input: {
-		employeeId: string;
-		organizationId: string;
-		type: "clock_in" | "clock_out" | "correction";
-		timestamp: Date;
-		createdBy: string;
-		notes?: string;
-		ipAddress?: string;
-		deviceInfo?: string;
-	}) => {
-		const effect = Effect.gen(function* (_) {
-			const service = yield* _(TimeEntryService);
-			return yield* _(service.createTimeEntry(input));
-		}).pipe(
-			Effect.provide(TimeEntryServiceLive),
-			Effect.provide(DatabaseServiceLive),
-		);
-
-		return Effect.runPromise(effect);
-	},
-	createCorrectionEntry: async (input: {
-		employeeId: string;
-		organizationId: string;
-		replacesEntryId: string;
-		timestamp: Date;
-		createdBy: string;
-		notes: string;
-		ipAddress?: string;
-		deviceInfo?: string;
-	}) => {
-		const effect = Effect.gen(function* (_) {
-			const service = yield* _(TimeEntryService);
-			return yield* _(service.createCorrectionEntry(input));
-		}).pipe(
-			Effect.provide(TimeEntryServiceLive),
-			Effect.provide(DatabaseServiceLive),
-		);
-
-		return Effect.runPromise(effect);
-	},
-};
-
-export const canonicalWorkRecordClient = {
-	createForCompletedPeriod: async (input: {
-		organizationId: string;
-		employeeId: string;
-		startAt: Date;
-		endAt: Date;
-		durationMinutes: number;
-		approvalState: "pending" | "approved" | "rejected";
-		createdBy: string;
-		workCategoryId?: string | null;
-		workLocationType?: "office" | "home" | "field" | "other" | null;
-		projectId?: string | null;
-		origin: "clock" | "manual";
-	}) => {
-		return db.transaction(async (tx) => {
-			const [record] = await tx
-				.insert(timeRecord)
-				.values({
-					organizationId: input.organizationId,
-					employeeId: input.employeeId,
-					recordKind: "work",
-					startAt: input.startAt,
-					endAt: input.endAt,
-					durationMinutes: input.durationMinutes,
-					approvalState: input.approvalState,
-					origin: input.origin,
-					createdBy: input.createdBy,
-					updatedBy: input.createdBy,
-				})
-				.returning({ id: timeRecord.id });
-
-			await tx.insert(timeRecordWork).values({
-				recordId: record.id,
-				organizationId: input.organizationId,
-				recordKind: "work",
-				workCategoryId: input.workCategoryId ?? null,
-				workLocationType: input.workLocationType ?? null,
-				computationMetadata: null,
-			});
-
-			if (input.projectId) {
-				await tx.insert(timeRecordAllocation).values({
-					organizationId: input.organizationId,
-					recordId: record.id,
-					allocationKind: "project",
-					projectId: input.projectId,
-					weightPercent: 100,
-				});
-			}
-
-			return record;
-		});
-	},
-};
 
 interface CorrectionRequest {
 	workPeriodId: string;
@@ -1766,8 +1669,11 @@ export async function createTimeEntry(params: {
 	});
 }
 
-// Re-export Effect functions with cleaner names (backward compatibility)
-export const requestTimeCorrection = requestTimeCorrectionEffect;
+export async function requestTimeCorrection(
+	data: CorrectionRequest,
+): Promise<ServerActionResult<{ approvalId: string }>> {
+	return requestTimeCorrectionEffect(data);
+}
 
 /**
  * Get break reminder status for the currently active session
