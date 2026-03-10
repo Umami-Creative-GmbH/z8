@@ -25,6 +25,11 @@ export async function GET(request: NextRequest) {
 
 	// List of all better-auth cookies to clear
 	const authCookies = [
+		"__Secure-better-auth.session-token",
+		"__Secure-better-auth.session_token",
+		"__Secure-better-auth.session_data",
+		"__Secure-better-auth.session-token.sig",
+		"__Secure-better-auth.session_token.sig",
 		"better-auth.session-token",
 		"better-auth.session_token",
 		"better-auth.session_data",
