@@ -120,6 +120,11 @@
   },
   "errors": {
     "failedToLoad": "Falha ao carregar dados",
+    "notFound": {
+      "description": "A página pode ter sido movida, a ligação pode estar desatualizada ou o endereço pode estar incorreto.",
+      "eyebrow": "404",
+      "title": "Página não encontrada"
+    },
     "noEmployee": {
       "contactAdmin": "Contactar administrador",
       "createOrg": "Criar organização",
@@ -135,6 +140,11 @@
       "title": "Nenhuma organização encontrada",
       "waiting": "À espera de um convite?",
       "waitingDesc": "O seu administrador enviar-lhe-á um e-mail de convite. Verifique a sua caixa de entrada e pasta de spam."
+    },
+    "unexpected": {
+      "description": "Não foi possível carregar esta página agora. Tente novamente ou volte para uma área segura da aplicação.",
+      "digest": "Referência: {digest}",
+      "title": "Algo correu mal"
     }
   },
   "generic": {

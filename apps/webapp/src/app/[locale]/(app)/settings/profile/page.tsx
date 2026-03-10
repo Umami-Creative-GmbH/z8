@@ -26,14 +26,7 @@ export default async function ProfilePage() {
 
 				<ProfileForm user={authContext.user} />
 
-				<TimezoneSettings
-					currentTimezone={currentTimezone}
-					onUpdate={async (timezone) => {
-						"use server";
-						const result = await updateTimezone(timezone);
-						return result.success ? { success: true } : { success: false, error: result.error };
-					}}
-				/>
+				<TimezoneSettings currentTimezone={currentTimezone} onUpdate={updateTimezone} />
 			</div>
 		</div>
 	);

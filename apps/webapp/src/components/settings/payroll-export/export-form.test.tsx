@@ -41,6 +41,12 @@ vi.mock("@/components/ui/button", () => ({
 	),
 }));
 
+vi.mock("@/components/ui/badge", () => ({
+	Badge: ({ children, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
+		<div {...props}>{children}</div>
+	),
+}));
+
 vi.mock("@/components/ui/input", () => ({
 	Input: (props: React.InputHTMLAttributes<HTMLInputElement>) => <input {...props} />,
 }));
@@ -60,8 +66,18 @@ vi.mock("@/components/ui/select", () => ({
 	SelectTrigger: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 	SelectValue: () => null,
 	SelectContent: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-	SelectItem: ({ value, children }: { value: string; children: React.ReactNode }) => (
-		<option value={value}>{children}</option>
+	SelectItem: ({
+		value,
+		children,
+		disabled,
+	}: {
+		value: string;
+		children: React.ReactNode;
+		disabled?: boolean;
+	}) => (
+		<option value={value} disabled={disabled}>
+			{children}
+		</option>
 	),
 }));
 
@@ -93,6 +109,16 @@ vi.mock("@/components/ui/alert", () => ({
 }));
 
 import { ExportForm } from "./export-form";
+
+const fullyConfiguredAvailability = {
+	datev_lohn: { configured: true, reason: null },
+	lexware_lohn: { configured: true, reason: null },
+	sage_lohn: { configured: true, reason: null },
+	personio: { configured: true, reason: null },
+	successfactors_api: { configured: true, reason: null },
+	successfactors_csv: { configured: true, reason: null },
+	workday_api: { configured: true, reason: null },
+};
 
 beforeAll(() => {
 	if (!globalThis.ResizeObserver) {
@@ -128,6 +154,7 @@ describe("ExportForm", () => {
 		render(
 			<ExportForm
 				organizationId="org_123"
+				exportAvailability={fullyConfiguredAvailability}
 				config={{
 					id: "cfg_123",
 					formatId: "datev_lohn",
@@ -177,11 +204,97 @@ describe("ExportForm", () => {
 		);
 	});
 
+	it("renders all export options and disables unconfigured exporters", async () => {
+		render(
+			<ExportForm
+				organizationId="org_123"
+				config={null}
+				exportAvailability={{
+					datev_lohn: { configured: true, reason: null },
+					lexware_lohn: { configured: false, reason: "missingConfiguration" },
+					sage_lohn: { configured: false, reason: "missingConfiguration" },
+					personio: { configured: false, reason: "missingCredentials" },
+					successfactors_api: { configured: false, reason: "missingCredentials" },
+					successfactors_csv: { configured: true, reason: null },
+					workday_api: { configured: true, reason: null },
+				}}
+			/>,
+		);
+
+		const formatSelect = await waitFor(() => {
+			const combobox = screen.getAllByRole("combobox")[0];
+			expect(combobox).toBeTruthy();
+			return combobox as HTMLSelectElement;
+		});
+
+		const optionLabels = Array.from(formatSelect.options).map((option) => option.textContent);
+		expect(optionLabels).toEqual([
+			"DATEV",
+			"Lexware",
+			"Sage",
+			"Personio",
+			"SAP SuccessFactors (API)",
+			"SAP SuccessFactors (CSV)",
+			"Workday",
+		]);
+
+		expect(
+			(within(formatSelect).getByRole("option", { name: "DATEV" }) as HTMLOptionElement).disabled,
+		).toBe(false);
+		expect(
+			(within(formatSelect).getByRole("option", { name: "Lexware" }) as HTMLOptionElement)
+				.disabled,
+		).toBe(true);
+		expect(
+			(within(formatSelect).getByRole("option", { name: "Sage" }) as HTMLOptionElement).disabled,
+		).toBe(true);
+		expect(
+			(within(formatSelect).getByRole("option", { name: "Personio" }) as HTMLOptionElement)
+				.disabled,
+		).toBe(true);
+		expect(
+			(
+				within(formatSelect).getByRole("option", {
+					name: "SAP SuccessFactors (API)",
+				}) as HTMLOptionElement
+			).disabled,
+		).toBe(true);
+		expect(
+			(
+				within(formatSelect).getByRole("option", {
+					name: "SAP SuccessFactors (CSV)",
+				}) as HTMLOptionElement
+			).disabled,
+		).toBe(false);
+		expect(
+			(within(formatSelect).getByRole("option", { name: "Workday" }) as HTMLOptionElement)
+				.disabled,
+		).toBe(false);
+		expect(screen.getByText("Lexware - config")).toBeTruthy();
+		expect(screen.getByText("Sage - config")).toBeTruthy();
+		expect(screen.getByText("Personio - credentials")).toBeTruthy();
+		expect(screen.getByText("SAP SuccessFactors (API) - credentials")).toBeTruthy();
+	});
+
 	it("renders export flow without DATEV config and allows Workday selection", async () => {
-		render(<ExportForm organizationId="org_123" config={null} />);
+		render(
+			<ExportForm
+				organizationId="org_123"
+				config={null}
+				exportAvailability={{
+					datev_lohn: { configured: false, reason: "missingConfiguration" },
+					lexware_lohn: { configured: false, reason: "missingConfiguration" },
+					sage_lohn: { configured: false, reason: "missingConfiguration" },
+					personio: { configured: false, reason: "missingConfiguration" },
+					successfactors_api: { configured: false, reason: "missingConfiguration" },
+					successfactors_csv: { configured: false, reason: "missingConfiguration" },
+					workday_api: { configured: true, reason: null },
+				}}
+			/>,
+		);
 
 		await waitFor(() => {
-			expect(screen.getByRole("button", { name: "Export to DATEV" })).toBeTruthy();
+			expect(screen.getByRole("button", { name: "Export to Workday" })).toBeTruthy();
 		}, { timeout: 5000 });
 
 		const formatSelect = screen
@@ -202,6 +315,49 @@ describe("ExportForm", () => {
 				expect.objectContaining({
 					organizationId: "org_123",
 					formatId: "workday_api",
+				}),
+			);
+		});
+	});
+
+	it("allows separate SAP SuccessFactors CSV export selection", async () => {
+		render(
+			<ExportForm
+				organizationId="org_123"
+				config={null}
+				exportAvailability={{
+					datev_lohn: { configured: true, reason: null },
+					lexware_lohn: { configured: false, reason: "missingConfiguration" },
+					sage_lohn: { configured: false, reason: "missingConfiguration" },
+					personio: { configured: false, reason: "missingConfiguration" },
+					successfactors_api: { configured: false, reason: "missingCredentials" },
+					successfactors_csv: { configured: true, reason: null },
+					workday_api: { configured: false, reason: "missingConfiguration" },
+				}}
+			/>,
+		);
+
+		const formatSelect = screen
+			.getAllByRole("combobox")
+			.find((combobox) =>
+				within(combobox).queryByRole("option", { name: "SAP SuccessFactors (CSV)" }),
+			);
+
+		fireEvent.change(formatSelect as HTMLSelectElement, {
+			target: { value: "successfactors_csv" },
+		});
+
+		await waitFor(() => {
+			expect(screen.getByRole("button", { name: "Export SAP SuccessFactors CSV" })).toBeTruthy();
+		});
+
+		fireEvent.click(screen.getByRole("button", { name: "Export SAP SuccessFactors CSV" }));
+
+		await waitFor(() => {
+			expect(startExportActionMock).toHaveBeenCalledWith(
+				expect.objectContaining({
+					organizationId: "org_123",
+					formatId: "successfactors_csv",
 				}),
 			);
 		});

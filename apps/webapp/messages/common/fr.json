@@ -120,6 +120,11 @@
   },
   "errors": {
     "failedToLoad": "Échec du chargement des données",
+    "notFound": {
+      "description": "La page a peut-être été déplacée, le lien est peut-être obsolète ou l'adresse est incorrecte.",
+      "eyebrow": "404",
+      "title": "Page introuvable"
+    },
     "noEmployee": {
       "contactAdmin": "Contacter l'administrateur",
       "createOrg": "Créer une organisation",
@@ -135,6 +140,11 @@
       "title": "Aucune organisation trouvée",
       "waiting": "En attente d'une invitation ?",
       "waitingDesc": "Votre administrateur vous enverra un e-mail d'invitation. Vérifiez votre boîte de réception et votre dossier spam."
+    },
+    "unexpected": {
+      "description": "Nous ne pouvons pas charger cette page pour le moment. Veuillez réessayer ou revenir à un endroit sûr de l'application.",
+      "digest": "Référence : {digest}",
+      "title": "Un problème est survenu"
     }
   },
   "generic": {

@@ -68,8 +68,52 @@ async function PayrollExportContent() {
 	const successFactorsConfig = successFactorsConfigResult.success ? successFactorsConfigResult.data : null;
 	const workdayConfig = workdayConfigResult.success ? workdayConfigResult.data : null;
 	const exports = historyResult.success ? historyResult.data : [];
+	const exportAvailability = {
+		datev_lohn: {
+			configured: Boolean(datevConfig),
+			reason: datevConfig ? null : "missingConfiguration",
+		},
+		lexware_lohn: {
+			configured: Boolean(lexwareConfig),
+			reason: lexwareConfig ? null : "missingConfiguration",
+		},
+		sage_lohn: {
+			configured: Boolean(sageConfig),
+			reason: sageConfig ? null : "missingConfiguration",
+		},
+		personio: {
+			configured: Boolean(personioConfig?.hasCredentials),
+			reason: !personioConfig
+				? "missingConfiguration"
+				: personioConfig.hasCredentials
+					? null
+					: "missingCredentials",
+		},
+		successfactors_api: {
+			configured: Boolean(successFactorsConfig?.hasCredentials),
+			reason: !successFactorsConfig
+				? "missingConfiguration"
+				: successFactorsConfig.hasCredentials
+					? null
+					: "missingCredentials",
+		},
+		successfactors_csv: {
+			configured: Boolean(successFactorsConfig),
+			reason: successFactorsConfig ? null : "missingConfiguration",
+		},
+		workday_api: {
+			configured: Boolean(workdayConfig?.hasCredentials),
+			reason: !workdayConfig
+				? "missingConfiguration"
+				: workdayConfig.hasCredentials
+					? null
+					: "missingCredentials",
+		},
+	};
+	const hasConfiguredExportTarget = Object.values(exportAvailability).some(
+		(entry) => entry.configured,
+	);
 
-	// For backward compatibility, use datevConfig as main config
 	const config = datevConfig;
 
 	return (
@@ -86,7 +130,7 @@ async function PayrollExportContent() {
 				</p>
 			</div>
 
-			<Tabs defaultValue={config ? "export" : "datev"} className="w-full">
+			<Tabs defaultValue={hasConfiguredExportTarget ? "export" : "datev"} className="w-full">
 				<TabsList>
 					<TabsTrigger value="export">
 						{t("settings.payrollExport.tabs.export", "Export")}
@@ -118,7 +162,11 @@ async function PayrollExportContent() {
 				</TabsList>
 
 				<TabsContent value="export" className="mt-4">
-					<ExportForm organizationId={organizationId} config={config} />
+					<ExportForm
+						organizationId={organizationId}
+						config={config}
+						exportAvailability={exportAvailability}
+					/>
 				</TabsContent>
 
 				<TabsContent value="datev" className="mt-4">

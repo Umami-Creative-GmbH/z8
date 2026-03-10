@@ -120,6 +120,11 @@
   },
   "errors": {
     "failedToLoad": "Daten konnten nicht geladen werden",
+    "notFound": {
+      "description": "Die Seite wurde möglicherweise verschoben, der Link ist veraltet oder die Adresse ist falsch.",
+      "eyebrow": "404",
+      "title": "Seite nicht gefunden"
+    },
     "noEmployee": {
       "contactAdmin": "Administrator kontaktieren",
       "createOrg": "Organisation erstellen",
@@ -135,6 +140,11 @@
       "title": "Keine Organisation gefunden",
       "waiting": "Warten Sie auf eine Einladung?",
       "waitingDesc": "Ihr Administrator wird Ihnen eine Einladungs-E-Mail senden. Überprüfen Sie Ihren Posteingang und Spam-Ordner."
+    },
+    "unexpected": {
+      "description": "Wir konnten diese Seite gerade nicht laden. Bitte versuchen Sie es erneut oder kehren Sie zu einem sicheren Bereich der App zurück.",
+      "digest": "Referenz: {digest}",
+      "title": "Etwas ist schiefgelaufen"
     }
   },
   "generic": {

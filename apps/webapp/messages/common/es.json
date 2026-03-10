@@ -120,6 +120,11 @@
   },
   "errors": {
     "failedToLoad": "Error al cargar los datos",
+    "notFound": {
+      "description": "Es posible que la página se haya movido, que el enlace esté desactualizado o que la dirección sea incorrecta.",
+      "eyebrow": "404",
+      "title": "Página no encontrada"
+    },
     "noEmployee": {
       "contactAdmin": "Contactar con el administrador",
       "createOrg": "Crear organización",
@@ -135,6 +140,11 @@
       "title": "No se encontró organización",
       "waiting": "¿Esperando una invitación?",
       "waitingDesc": "Su administrador le enviará un correo de invitación. Revise su bandeja de entrada y carpeta de spam."
+    },
+    "unexpected": {
+      "description": "No pudimos cargar esta página en este momento. Inténtelo de nuevo o vuelva a un lugar seguro de la aplicación.",
+      "digest": "Referencia: {digest}",
+      "title": "Algo salió mal"
     }
   },
   "generic": {

@@ -120,6 +120,11 @@
   },
   "errors": {
     "failedToLoad": "Failed to load data",
+    "notFound": {
+      "description": "The page may have moved, the link may be outdated, or the address may be incorrect.",
+      "eyebrow": "404",
+      "title": "Page not found"
+    },
     "noEmployee": {
       "contactAdmin": "Contact Administrator",
       "createOrg": "Create Organization",
@@ -135,6 +140,11 @@
       "title": "No Organization Found",
       "waiting": "Waiting for an invitation?",
       "waitingDesc": "Your administrator will send you an invitation email. Check your inbox and spam folder."
+    },
+    "unexpected": {
+      "description": "We couldn't load this page right now. Please try again or return to a safe place in the app.",
+      "digest": "Reference: {digest}",
+      "title": "Something went wrong"
     }
   },
   "generic": {

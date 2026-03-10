@@ -1,0 +1,10 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: marketing-ip-allowlist
+  namespace: app-prod
+spec:
+  ipAllowList:
+    sourceRange:
+      - 2a02:8106:2e1:e400::/64
+      - 77.24.0.237/32

@@ -5,11 +5,12 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import type { ServerActionResult } from "@/lib/effect/result";
 import { TimezonePicker } from "./timezone-picker";
 
 interface TimezoneSettingsProps {
 	currentTimezone?: string;
-	onUpdate: (timezone: string) => Promise<{ success: boolean; error?: string }>;
+	onUpdate: (timezone: string) => Promise<ServerActionResult<void>>;
 }
 
 export function TimezoneSettings({ currentTimezone = "UTC", onUpdate }: TimezoneSettingsProps) {
@@ -18,7 +19,10 @@ export function TimezoneSettings({ currentTimezone = "UTC", onUpdate }: Timezone
 
 	const handleSave = async () => {
 		setIsLoading(true);
-		const result = await onUpdate(timezone).then((response) => response, () => null);
+		const result = await onUpdate(timezone).then(
+			(response) => response,
+			() => null,
+		);
 
 		if (!result) {
 			toast.error("An error occurred while updating timezone");
