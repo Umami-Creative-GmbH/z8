@@ -639,6 +639,7 @@ export interface SuccessFactorsConfigResult {
 	formatId: string;
 	config: SuccessFactorsConfig;
 	isActive: boolean;
+	hasCredentials: boolean;
 	createdAt: Date;
 	updatedAt: Date;
 }
@@ -683,11 +684,25 @@ export async function getSuccessFactorsConfigAction(
 			return null;
 		}
 
+		const hasCredentials = yield* _(
+			Effect.promise(async () => {
+				const clientId = await getOrgSecret(organizationId, SF_VAULT_KEY_CLIENT_ID);
+				const clientSecret = await getOrgSecret(organizationId, SF_VAULT_KEY_CLIENT_SECRET);
+				return (
+					clientId !== null &&
+					clientSecret !== null &&
+					clientId.trim().length > 0 &&
+					clientSecret.trim().length > 0
+				);
+			}),
+		);
+
 		return {
 			id: configResult.config.id,
 			formatId: configResult.config.formatId,
 			config: configResult.config.config as unknown as SuccessFactorsConfig,
 			isActive: configResult.config.isActive,
+			hasCredentials,
 			createdAt: configResult.config.createdAt,
 			updatedAt: configResult.config.updatedAt,
 		};
@@ -805,6 +820,22 @@ export async function saveSuccessFactorsConfigAction(
 			}),
 		);
 
+		const hasCredentials = yield* _(
+			Effect.promise(async () => {
+				const clientId = await getOrgSecret(input.organizationId, SF_VAULT_KEY_CLIENT_ID);
+				const clientSecret = await getOrgSecret(
+					input.organizationId,
+					SF_VAULT_KEY_CLIENT_SECRET,
+				);
+				return (
+					clientId !== null &&
+					clientSecret !== null &&
+					clientId.trim().length > 0 &&
+					clientSecret.trim().length > 0
+				);
+			}),
+		);
+
 		revalidatePath("/settings/payroll-export");
 
 		return {
@@ -812,6 +843,7 @@ export async function saveSuccessFactorsConfigAction(
 			formatId: config.formatId,
 			config: config.config as unknown as SuccessFactorsConfig,
 			isActive: config.isActive,
+			hasCredentials,
 			createdAt: config.createdAt,
 			updatedAt: config.updatedAt,
 		};
