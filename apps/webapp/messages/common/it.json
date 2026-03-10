@@ -120,6 +120,11 @@
   },
   "errors": {
     "failedToLoad": "Impossibile caricare i dati",
+    "notFound": {
+      "description": "La pagina potrebbe essere stata spostata, il link potrebbe non essere più aggiornato oppure l'indirizzo potrebbe essere errato.",
+      "eyebrow": "404",
+      "title": "Pagina non trovata"
+    },
     "noEmployee": {
       "contactAdmin": "Contatta amministratore",
       "createOrg": "Crea organizzazione",
@@ -135,6 +140,11 @@
       "title": "Nessuna organizzazione trovata",
       "waiting": "In attesa di un invito?",
       "waitingDesc": "Il tuo amministratore ti invierà un'email di invito. Controlla la tua casella di posta e la cartella spam."
+    },
+    "unexpected": {
+      "description": "Non siamo riusciti a caricare questa pagina in questo momento. Riprova oppure torna a una sezione sicura dell'app.",
+      "digest": "Riferimento: {digest}",
+      "title": "Qualcosa è andato storto"
     }
   },
   "generic": {

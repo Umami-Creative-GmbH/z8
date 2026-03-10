@@ -12,6 +12,7 @@ import {
 	type FilterOptions,
 } from "@/app/[locale]/(app)/settings/payroll-export/actions";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
 	Card,
 	CardContent,
@@ -42,14 +43,79 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 interface ExportFormProps {
 	organizationId: string;
 	config: DatevConfigResult | null;
+	exportAvailability: Record<string, { configured: boolean; reason: "missingConfiguration" | "missingCredentials" | null }>;
 	onExportComplete?: () => void;
 }
 
-export function ExportForm({ organizationId, config, onExportComplete }: ExportFormProps) {
+const EXPORT_FORMAT_IDS = [
+	"datev_lohn",
+	"lexware_lohn",
+	"sage_lohn",
+	"personio",
+	"successfactors_api",
+	"successfactors_csv",
+	"workday_api",
+] as const;
+
+export function ExportForm({
+	organizationId,
+	config,
+	exportAvailability,
+	onExportComplete,
+}: ExportFormProps) {
 	const { t } = useTranslate();
 	const [isPending, startTransition] = useTransition();
 	const [filterOptions, setFilterOptions] = useState<FilterOptions | null>(null);
-	const [selectedFormatId, setSelectedFormatId] = useState<string>(config?.formatId ?? "datev_lohn");
+	const exportFormatOptions = useMemo(
+		() => [
+			{
+				id: "datev_lohn",
+				label: t("settings.payrollExport.export.format.datev", "DATEV"),
+			},
+			{
+				id: "lexware_lohn",
+				label: t("settings.payrollExport.export.format.lexware", "Lexware"),
+			},
+			{
+				id: "sage_lohn",
+				label: t("settings.payrollExport.export.format.sage", "Sage"),
+			},
+			{
+				id: "personio",
+				label: t("settings.payrollExport.export.format.personio", "Personio"),
+			},
+			{
+				id: "successfactors_api",
+				label: t(
+					"settings.payrollExport.export.format.successfactorsApi",
+					"SAP SuccessFactors (API)",
+				),
+			},
+			{
+				id: "successfactors_csv",
+				label: t(
+					"settings.payrollExport.export.format.successfactorsCsv",
+					"SAP SuccessFactors (CSV)",
+				),
+			},
+			{
+				id: "workday_api",
+				label: t("settings.payrollExport.export.format.workday", "Workday"),
+			},
+		],
+		[t],
+	);
+	const firstConfiguredFormatId = useMemo(
+		() =>
+			EXPORT_FORMAT_IDS.find((formatId) => exportAvailability[formatId]?.configured) ?? "datev_lohn",
+		[exportAvailability],
+	);
+	const [selectedFormatId, setSelectedFormatId] = useState<string>(
+		config?.formatId && exportAvailability[config.formatId]?.configured
+			? config.formatId
+			: firstConfiguredFormatId,
+	);
+	const isSelectedFormatConfigured = Boolean(exportAvailability[selectedFormatId]?.configured);
 
 	// Date selection
 	const [dateMode, setDateMode] = useState<"month" | "custom">("month");
@@ -88,6 +154,14 @@ export function ExportForm({ organizationId, config, onExportComplete }: ExportF
 	useEffect(() => {
 		loadFilterOptions();
 	}, [loadFilterOptions]);
+
+	useEffect(() => {
+		if (exportAvailability[selectedFormatId]?.configured) {
+			return;
+		}
+
+		setSelectedFormatId(firstConfiguredFormatId);
+	}, [exportAvailability, firstConfiguredFormatId, selectedFormatId]);
 
 	const getDateRange = () => {
 		if (dateMode === "month") {
@@ -151,16 +225,24 @@ export function ExportForm({ organizationId, config, onExportComplete }: ExportF
 		});
 	};
 
-	const exportFormatOptions = useMemo(
-		() => [
-			{ id: "datev_lohn", label: t("settings.payrollExport.export.format.datev", "DATEV") },
-			{ id: "workday_api", label: t("settings.payrollExport.export.format.workday", "Workday") },
-		],
-		[t],
-	);
-
 	const exportButtonLabel = useMemo(() => {
 		switch (selectedFormatId) {
+			case "lexware_lohn":
+				return t("settings.payrollExport.export.exportButtonLexware", "Export to Lexware");
+			case "sage_lohn":
+				return t("settings.payrollExport.export.exportButtonSage", "Export to Sage");
+			case "personio":
+				return t("settings.payrollExport.export.exportButtonPersonio", "Export to Personio");
+			case "successfactors_api":
+				return t(
+					"settings.payrollExport.export.exportButtonSuccessFactorsApi",
+					"Export to SAP SuccessFactors (API)",
+				);
+			case "successfactors_csv":
+				return t(
+					"settings.payrollExport.export.exportButtonSuccessFactorsCsv",
+					"Export SAP SuccessFactors CSV",
+				);
 			case "workday_api":
 				return t("settings.payrollExport.export.exportButtonWorkday", "Export to Workday");
 			case "datev_lohn":
@@ -168,6 +250,38 @@ export function ExportForm({ organizationId, config, onExportComplete }: ExportF
 				return t("settings.payrollExport.export.exportButtonDatev", "Export to DATEV");
 		}
 	}, [selectedFormatId, t]);
+
+	const unavailableExportHints = useMemo(
+		() =>
+			exportFormatOptions
+				.filter((option) => !exportAvailability[option.id]?.configured)
+				.map((option) => {
+					const reason = exportAvailability[option.id]?.reason;
+					return {
+						id: option.id,
+						label: option.label,
+						isMissingCredentials: reason === "missingCredentials",
+						reason:
+							reason === "missingCredentials"
+								? t(
+									"settings.payrollExport.export.unavailable.missingCredentials",
+									"credentials",
+								)
+								: t(
+									"settings.payrollExport.export.unavailable.missingConfiguration",
+									"config",
+								),
+					};
+				})
+				.sort((left, right) => {
+					if (left.isMissingCredentials === right.isMissingCredentials) {
+						return left.label.localeCompare(right.label);
+					}
+
+					return left.isMissingCredentials ? -1 : 1;
+				}),
+		[exportAvailability, exportFormatOptions, t],
+	);
 
 	// Memoize static arrays to prevent recreation on each render (rerender-hoist-jsx)
 	const years = useMemo(
@@ -222,15 +336,35 @@ export function ExportForm({ organizationId, config, onExportComplete }: ExportF
 						<SelectTrigger>
 							<SelectValue />
 						</SelectTrigger>
-						<SelectContent>
-							{exportFormatOptions.map((option) => (
-								<SelectItem key={option.id} value={option.id}>
-									{option.label}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
-				</div>
+					<SelectContent>
+						{exportFormatOptions.map((option) => (
+							<SelectItem
+								key={option.id}
+								value={option.id}
+								disabled={!exportAvailability[option.id]?.configured}
+							>
+								{option.label}
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
+				{unavailableExportHints.length > 0 ? (
+					<div className="flex flex-wrap gap-2">
+						{unavailableExportHints.map((entry) => (
+							<Badge
+								key={entry.id}
+								variant="outline"
+								className={entry.isMissingCredentials
+									? "border-amber-300 bg-amber-50 text-amber-700 text-xs"
+									: "border-slate-300 bg-slate-50 text-slate-700 text-xs"
+								}
+							>
+								{entry.label} - {entry.reason}
+							</Badge>
+						))}
+					</div>
+				) : null}
+			</div>
 
 				{/* Date Range Selection */}
 				<div className="space-y-4">
@@ -476,7 +610,7 @@ export function ExportForm({ organizationId, config, onExportComplete }: ExportF
 				</div>
 			</CardContent>
 			<CardFooter>
-				<Button onClick={handleExport} disabled={isPending}>
+				<Button onClick={handleExport} disabled={isPending || !isSelectedFormatConfigured}>
 					{isPending ? (
 						<>
 							<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />

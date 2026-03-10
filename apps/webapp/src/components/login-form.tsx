@@ -3,6 +3,7 @@
 import { IconFingerprint, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { Key } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import { memo, useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -115,6 +116,14 @@ const SOCIAL_SKELETON_KEYS = [
 	"social-5",
 	"social-6",
 ];
+
+function sanitizeCallbackUrl(callbackUrl: string | null) {
+	if (!callbackUrl || !callbackUrl.startsWith("/") || callbackUrl.startsWith("//")) {
+		return "/init";
+	}
+
+	return callbackUrl;
+}
 
 type LoginCredentialsFieldsProps = {
 	email: string;
@@ -263,6 +272,8 @@ const LoginAlternativeAuth = memo(function LoginAlternativeAuth({
 export function LoginForm({ className, ...props }: React.ComponentProps<"div">) {
 	const { t } = useTranslate();
 	const router = useRouter();
+	const searchParams = useSearchParams();
+	const callbackUrl = sanitizeCallbackUrl(searchParams.get("callbackUrl"));
 	const [state, dispatch] = useReducer(formReducer, initialState);
 	const { enabledProviders, isLoading: providersLoading } = useEnabledProviders();
 
@@ -528,8 +539,8 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 					// Continue to dashboard if check fails
 				}
 
-				// Onboarding complete, redirect to init page to set up org context
-				router.push("/init");
+				// Onboarding complete, continue where the user intended to go
+				router.push(callbackUrl);
 			}
 		} catch (err) {
 			dispatch({ type: "SET_LOADING", loading: false });
@@ -557,12 +568,12 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 				// Check if org has custom OAuth credentials for this provider
 				if (socialOAuthConfigured?.[provider]) {
 					// Use custom OAuth flow for org-specific credentials
-					window.location.href = `/api/auth/social-org/${provider}?callbackURL=/init`;
+					window.location.href = `/api/auth/social-org/${provider}?callbackURL=${encodeURIComponent(callbackUrl)}`;
 				} else {
 					// Use global Better Auth flow
 					await authClient.signIn.social({
 						provider,
-						callbackURL: "/init",
+						callbackURL: callbackUrl,
 					});
 				}
 			} catch (err) {
@@ -576,7 +587,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 				});
 			}
 		},
-		[t, socialOAuthConfigured],
+		[callbackUrl, t, socialOAuthConfigured],
 	);
 
 	const handlePasskeyLogin = useCallback(async () => {
@@ -610,7 +621,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 					console.error("Error checking onboarding status:", fetchError);
 				}
 
-				router.push("/init");
+				router.push(callbackUrl);
 			}
 		} catch (_error) {
 			dispatch({
@@ -619,7 +630,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 			});
 			dispatch({ type: "SET_LOADING", loading: false });
 		}
-	}, [t, router]);
+	}, [callbackUrl, t, router]);
 
 	const handleSSOLogin = useCallback(async () => {
 		if (!ssoProviderId) {
@@ -636,7 +647,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 		try {
 			await authClient.signIn.sso({
 				providerId: ssoProviderId,
-				callbackURL: "/init",
+				callbackURL: callbackUrl,
 			});
 		} catch (err) {
 			dispatch({ type: "SET_LOADING", loading: false });
@@ -648,7 +659,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 						: t("auth.sso-login-error", "An error occurred during SSO sign-in"),
 			});
 		}
-	}, [ssoProviderId, t]);
+	}, [callbackUrl, ssoProviderId, t]);
 
 	const handleVerify2FA = useCallback(async () => {
 		if (otpValue.length !== 6) {
@@ -693,8 +704,8 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 					// Continue to dashboard if check fails
 				}
 
-				// Onboarding complete, redirect to init page to set up org context
-				router.push("/init");
+				// Onboarding complete, continue where the user intended to go
+				router.push(callbackUrl);
 			}
 		} catch (err) {
 			dispatch({
@@ -706,7 +717,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 			});
 			dispatch({ type: "SET_LOADING", loading: false });
 		}
-	}, [otpValue, trustDevice, t, router]);
+	}, [callbackUrl, otpValue, trustDevice, t, router]);
 
 	return (
 		<AuthFormWrapper
