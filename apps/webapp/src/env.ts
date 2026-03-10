@@ -103,6 +103,7 @@ export const env = createEnv({
 	},
 	client: {
 		NEXT_PUBLIC_APP_URL: z.url().optional(),
+		NEXT_PUBLIC_BUILD_HASH: z.string().optional(),
 		NEXT_PUBLIC_TOLGEE_API_KEY: z.string().optional(),
 		NEXT_PUBLIC_TOLGEE_API_URL: z.url().optional(),
 	},
@@ -158,6 +159,7 @@ export const env = createEnv({
 		RATE_LIMIT_API: process.env.RATE_LIMIT_API,
 		RATE_LIMIT_EXPORT: process.env.RATE_LIMIT_EXPORT,
 		NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+		NEXT_PUBLIC_BUILD_HASH: process.env.NEXT_PUBLIC_BUILD_HASH,
 		MAIN_DOMAIN: process.env.MAIN_DOMAIN,
 		NEXT_PUBLIC_TOLGEE_API_KEY: process.env.NEXT_PUBLIC_TOLGEE_API_KEY,
 		NEXT_PUBLIC_TOLGEE_API_URL: process.env.NEXT_PUBLIC_TOLGEE_API_URL,

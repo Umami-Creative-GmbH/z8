@@ -1,9 +1,10 @@
 import { HeadBucketCommand } from "@aws-sdk/client-s3";
 import { sql } from "drizzle-orm";
 import { db } from "@/db";
+import { env } from "@/env";
 import { createLogger } from "@/lib/logger";
 import { isQueueHealthy } from "@/lib/queue";
-import { s3Client, S3_BUCKET } from "@/lib/storage/s3-client";
+import { S3_BUCKET, s3Client } from "@/lib/storage/s3-client";
 import { valkey } from "@/lib/valkey";
 
 const logger = createLogger("Health");
@@ -167,6 +168,18 @@ export async function checkHealth(): Promise<HealthCheckResult> {
  */
 export async function runStartupChecks(): Promise<boolean> {
 	logger.info("Running startup health checks...");
+	logger.info(
+		{
+			environment: env.NODE_ENV,
+			buildHash: env.NEXT_PUBLIC_BUILD_HASH ?? "unknown",
+			appUrlConfigured: Boolean(env.APP_URL || env.NEXT_PUBLIC_APP_URL),
+			mainDomainConfigured: Boolean(env.MAIN_DOMAIN),
+			valkeyConfigured: Boolean(env.VALKEY_HOST || env.REDIS_HOST),
+			turnstileConfigured: Boolean(env.TURNSTILE_SITE_KEY),
+			billingEnabled: env.BILLING_ENABLED === "true",
+		},
+		"Startup configuration summary",
+	);
 
 	const result = await checkHealth();
 
@@ -208,8 +221,7 @@ export async function runStartupChecks(): Promise<boolean> {
 
 	// Return true only if database AND storage are healthy (cache is optional)
 	const success =
-		result.services.database.status === "healthy" &&
-		result.services.storage.status === "healthy";
+		result.services.database.status === "healthy" && result.services.storage.status === "healthy";
 
 	if (success) {
 		logger.info({ status: result.status }, "Startup checks completed");

@@ -6,6 +6,11 @@ import { member } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
 import { getDefaultAppBaseUrl } from "@/lib/app-url";
 import { auth } from "@/lib/auth";
+import { getAuthRequestDiagnostics } from "@/lib/diagnostics";
+import { createLogger } from "@/lib/logger";
+
+const logger = createLogger("OrganizationSwitchRoute");
+const shouldLogAuthDiagnostics = process.env.NODE_ENV === "production";
 
 function getCorsHeaders(origin: string | null): Record<string, string> {
 	const appUrl = getDefaultAppBaseUrl();
@@ -36,9 +41,19 @@ export async function POST(request: NextRequest) {
 	const origin = request.headers.get("origin");
 	const corsHeaders = getCorsHeaders(origin);
 	try {
-		const session = await auth.api.getSession({ headers: await headers() });
+		const resolvedHeaders = await headers();
+		const session = await auth.api.getSession({ headers: resolvedHeaders });
 
 		if (!session?.user) {
+			if (shouldLogAuthDiagnostics) {
+				logger.warn(
+					{
+						...getAuthRequestDiagnostics(resolvedHeaders),
+						requestOrigin: origin,
+					},
+					"Organization switch requested without an authenticated session",
+				);
+			}
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: corsHeaders });
 		}
 
@@ -81,11 +96,24 @@ export async function POST(request: NextRequest) {
 
 		// Update the session's active organization
 		await auth.api.setActiveOrganization({
-			headers: await headers(),
+			headers: resolvedHeaders,
 			body: {
 				organizationId,
 			},
 		});
+
+		if (shouldLogAuthDiagnostics) {
+			logger.info(
+				{
+					...getAuthRequestDiagnostics(resolvedHeaders),
+					requestOrigin: origin,
+					userId: session.user.id,
+					organizationId,
+					hasEmployeeRecord: !!employeeRecord,
+				},
+				"Organization switched successfully",
+			);
+		}
 
 		return NextResponse.json(
 			{
@@ -95,7 +123,10 @@ export async function POST(request: NextRequest) {
 			},
 			{ headers: corsHeaders },
 		);
-	} catch (_error) {
+	} catch (error) {
+		if (shouldLogAuthDiagnostics) {
+			logger.error({ error, requestOrigin: origin }, "Failed to switch organization");
+		}
 		return NextResponse.json(
 			{ error: "Failed to switch organization" },
 			{ status: 500, headers: corsHeaders },

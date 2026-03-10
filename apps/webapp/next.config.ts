@@ -1,4 +1,5 @@
 import path from "node:path";
+import { execSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
@@ -7,9 +8,35 @@ const withNextIntl = createNextIntlPlugin();
 const configDir = path.dirname(fileURLToPath(import.meta.url));
 const workspaceRoot = path.resolve(configDir, "../..");
 
+function getBuildHash() {
+	const providedHash =
+		process.env.NEXT_PUBLIC_BUILD_HASH ??
+		process.env.VERCEL_GIT_COMMIT_SHA ??
+		process.env.GITHUB_SHA ??
+		process.env.CI_COMMIT_SHA;
+
+	if (providedHash) {
+		return providedHash.slice(0, 7);
+	}
+
+	try {
+		return execSync("git rev-parse --short HEAD", {
+			cwd: workspaceRoot,
+			encoding: "utf8",
+		}).trim();
+	} catch {
+		return "dev";
+	}
+}
+
+const buildHash = getBuildHash();
+
 const nextConfig: NextConfig = {
 	reactStrictMode: true,
 	reactCompiler: true,
+	env: {
+		NEXT_PUBLIC_BUILD_HASH: buildHash,
+	},
 	// Note: standalone output is not compatible with cacheComponents in Next.js 16
 	// Using standard build with full node_modules for Docker deployment
 	// Enable cache components for static dashboard shells and improved performance
