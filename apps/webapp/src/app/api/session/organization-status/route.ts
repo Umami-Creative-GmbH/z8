@@ -1,7 +1,12 @@
 import { headers } from "next/headers";
-import { NextResponse, connection } from "next/server";
-import { getUserOrganizations, validateAppAccess } from "@/lib/auth-helpers";
+import { connection, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import { getUserOrganizations, validateAppAccess } from "@/lib/auth-helpers";
+import { getAuthRequestDiagnostics } from "@/lib/diagnostics";
+import { createLogger } from "@/lib/logger";
+
+const logger = createLogger("SessionOrganizationStatusRoute");
+const shouldLogAuthDiagnostics = process.env.NODE_ENV === "production";
 
 /**
  * Returns the current session's organization status.
@@ -15,6 +20,14 @@ export async function GET() {
 		const session = await auth.api.getSession({ headers: resolvedHeaders });
 
 		if (!session?.user) {
+			if (shouldLogAuthDiagnostics) {
+				logger.warn(
+					{
+						...getAuthRequestDiagnostics(resolvedHeaders),
+					},
+					"Organization status requested without an authenticated session",
+				);
+			}
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 		}
 
@@ -34,6 +47,18 @@ export async function GET() {
 		const activeOrganizationId = session.session?.activeOrganizationId || null;
 		const organizations = await getUserOrganizations();
 
+		if (shouldLogAuthDiagnostics) {
+			logger.info(
+				{
+					...getAuthRequestDiagnostics(resolvedHeaders),
+					userId: session.user.id,
+					activeOrganizationId,
+					organizationCount: organizations.length,
+				},
+				"Organization status resolved",
+			);
+		}
+
 		return NextResponse.json({
 			hasActiveOrganization: !!activeOrganizationId,
 			activeOrganizationId,
@@ -43,7 +68,7 @@ export async function GET() {
 			})),
 		});
 	} catch (error) {
-		console.error("Failed to get organization status:", error);
+		logger.error({ error }, "Failed to get organization status");
 		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
 	}
 }

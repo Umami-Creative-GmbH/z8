@@ -15,7 +15,7 @@ spec:
       containers:
         - name: migrate
           image: ghcr.io/umami-creative-gmbh/z8-migration:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           env:
             - name: VALKEY_HOST
               value: valkey
