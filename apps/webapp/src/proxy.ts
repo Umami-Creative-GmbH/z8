@@ -3,13 +3,9 @@ import { NextResponse } from "next/server";
 import createMiddleware from "next-intl/middleware";
 import { env } from "@/env";
 import { routing } from "@/i18n/routing";
-import {
-	checkRateLimit,
-	createRateLimitResponse,
-	getClientIp,
-} from "@/lib/rate-limit";
+import { checkRateLimit, createRateLimitResponse, getClientIp } from "@/lib/rate-limit";
 import { applySecurityHeaders } from "@/lib/security";
-import { ALL_LANGUAGES, DEFAULT_LANGUAGE } from "@/tolgee/shared";
+import { DEFAULT_LANGUAGE } from "@/tolgee/shared";
 
 // Main domain from environment variable
 const MAIN_DOMAIN = env.MAIN_DOMAIN || "localhost:3000";
@@ -47,6 +43,9 @@ const AUTH_ROUTES = ["/sign-in", "/sign-up", "/forgot-password", "/welcome"];
 const i18nMiddleware = createMiddleware(routing);
 
 const SESSION_COOKIE_NAMES = [
+	"__Secure-better-auth.session-token",
+	"__Secure-better-auth.session_token",
+	"__Secure-better-auth.session_data",
 	"better-auth.session-token",
 	"better-auth.session_token",
 	"better-auth.session_data",
@@ -57,10 +56,8 @@ export async function proxy(request: NextRequest) {
 
 	// Extract locale and path without locale for consistent handling
 	const pathWithoutLocale = pathname.replace(/^\/[a-z]{2}(?:\/|$)/, "/");
-	const locale =
-		pathname.match(/^\/([a-z]{2})(?:\/|$)/)?.[1] || DEFAULT_LANGUAGE;
-	const isSetupPage =
-		pathWithoutLocale === "/setup" || pathWithoutLocale.startsWith("/setup/");
+	const locale = pathname.match(/^\/([a-z]{2})(?:\/|$)/)?.[1] || DEFAULT_LANGUAGE;
+	const isSetupPage = pathWithoutLocale === "/setup" || pathWithoutLocale.startsWith("/setup/");
 
 	// Platform setup check - redirect to /setup if not configured
 	// This runs before all other checks to ensure unconfigured instances are protected
@@ -113,28 +110,27 @@ export async function proxy(request: NextRequest) {
 
 	// Check if this is a public route
 	const isPublicRoute = PUBLIC_ROUTES.some(
-		(route) =>
-			pathWithoutLocale === route || pathWithoutLocale.startsWith(`${route}/`),
+		(route) => pathWithoutLocale === route || pathWithoutLocale.startsWith(`${route}/`),
 	);
 
 	// Check if this is an auth route (sign-in, sign-up, etc.)
 	const isAuthRoute = AUTH_ROUTES.some(
-		(route) =>
-			pathWithoutLocale === route || pathWithoutLocale.startsWith(`${route}/`),
+		(route) => pathWithoutLocale === route || pathWithoutLocale.startsWith(`${route}/`),
 	);
 
 	// Check for session cookie presence
 	// NOTE: We only check cookie existence, not signature validity.
 	// getCookieCache signature verification fails with externalized better-auth.
 	// Real authentication happens server-side in pages/API routes via auth.api.getSession()
-	const hasSessionCookie = SESSION_COOKIE_NAMES.some((cookieName) => request.cookies.has(cookieName));
+	const hasSessionCookie = SESSION_COOKIE_NAMES.some((cookieName) =>
+		request.cookies.has(cookieName),
+	);
 
 	// Handle authentication redirects
 	if (!hasSessionCookie) {
 		// Not authenticated - redirect to sign-in if trying to access protected route
 		if (!isPublicRoute) {
-			const locale =
-				pathname.match(/^\/([a-z]{2})(?:\/|$)/)?.[1] || DEFAULT_LANGUAGE;
+			const locale = pathname.match(/^\/([a-z]{2})(?:\/|$)/)?.[1] || DEFAULT_LANGUAGE;
 			const signInUrl = new URL(`/${locale}/sign-in`, request.url);
 			signInUrl.searchParams.set("callbackUrl", pathname);
 			return NextResponse.redirect(signInUrl);
@@ -142,8 +138,7 @@ export async function proxy(request: NextRequest) {
 	} else {
 		// Authenticated - redirect away from auth routes
 		if (isAuthRoute) {
-			const locale =
-				pathname.match(/^\/([a-z]{2})(?:\/|$)/)?.[1] || DEFAULT_LANGUAGE;
+			const locale = pathname.match(/^\/([a-z]{2})(?:\/|$)/)?.[1] || DEFAULT_LANGUAGE;
 			const dashboardUrl = new URL(`/${locale}/`, request.url);
 			return NextResponse.redirect(dashboardUrl);
 		}

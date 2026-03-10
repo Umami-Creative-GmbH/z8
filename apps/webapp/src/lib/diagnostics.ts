@@ -1,4 +1,7 @@
 const SESSION_COOKIE_NAMES = [
+	"__Secure-better-auth.session-token",
+	"__Secure-better-auth.session_token",
+	"__Secure-better-auth.session_data",
 	"better-auth.session-token",
 	"better-auth.session_token",
 	"better-auth.session_data",
