@@ -1,5 +1,5 @@
+import { execFileSync } from "node:child_process";
 import path from "node:path";
-import { execSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
@@ -20,9 +20,10 @@ function getBuildHash() {
 	}
 
 	try {
-		return execSync("git rev-parse --short HEAD", {
+		return execFileSync("git", ["rev-parse", "--short", "HEAD"], {
 			cwd: workspaceRoot,
 			encoding: "utf8",
+			stdio: ["ignore", "pipe", "ignore"],
 		}).trim();
 	} catch {
 		return "dev";

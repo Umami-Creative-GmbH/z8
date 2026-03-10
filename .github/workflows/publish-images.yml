@@ -54,6 +54,8 @@ jobs:
           context: .
           file: ./Dockerfile
           target: webapp
+          build-args: |
+            NEXT_PUBLIC_BUILD_HASH=${{ github.sha }}
           platforms: ${{ matrix.platform }}
           outputs: type=image,name=ghcr.io/umami-creative-gmbh/z8-webapp,push-by-digest=true,name-canonical=true,push=true
           cache-from: type=gha,scope=${{ matrix.arch }}
