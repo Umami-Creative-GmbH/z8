@@ -5,8 +5,8 @@ import { describe, expect, it } from "vitest";
 
 const approvalsDir = dirname(fileURLToPath(import.meta.url));
 
-describe("approvals actions module structure", () => {
-	it("exposes extracted approvals server modules", () => {
+	describe("approvals actions module structure", () => {
+	it("wraps extracted approvals server modules with async exports", () => {
 		const actionsSource = readFileSync(join(approvalsDir, "actions.ts"), "utf8");
 
 		expect(
@@ -26,27 +26,20 @@ describe("approvals actions module structure", () => {
 		expect(actionsSource).toContain(
 			'export type { ApprovalWithAbsence, ApprovalWithTimeCorrection } from "@/lib/approvals/server/types";',
 		);
-		expect(actionsSource).toMatch(
-			/export\s*\{\s*approveAbsenceEffect,\s*rejectAbsenceEffect\s*\}\s*from\s*"@\/lib\/approvals\/server\/absence-approvals";/,
-		);
-		expect(actionsSource).toContain("approveTimeCorrectionEffect");
-		expect(actionsSource).toContain("rejectTimeCorrectionEffect");
+		expect(actionsSource).toMatch(/approveAbsenceEffect as approveAbsenceAction/);
+		expect(actionsSource).toMatch(/rejectAbsenceEffect as rejectAbsenceAction/);
+		expect(actionsSource).toContain("approveTimeCorrectionAction");
+		expect(actionsSource).toContain("rejectTimeCorrectionAction");
 		expect(actionsSource).toContain('from "@/lib/approvals/server/time-correction-approvals";');
-		expect(actionsSource).toContain(
-			'export { getPendingApprovalCounts, getPendingApprovals, getCurrentEmployee } from "@/lib/approvals/server/queries";',
-		);
-		expect(actionsSource).toContain(
-			'export { approveAbsenceEffect as approveAbsence } from "@/lib/approvals/server/absence-approvals";',
-		);
-		expect(actionsSource).toContain(
-			'export { rejectAbsenceEffect as rejectAbsence } from "@/lib/approvals/server/absence-approvals";',
-		);
-		expect(actionsSource).toContain(
-			'export { approveTimeCorrectionEffect as approveTimeCorrection } from "@/lib/approvals/server/time-correction-approvals";',
-		);
-		expect(actionsSource).toContain(
-			'export { rejectTimeCorrectionEffect as rejectTimeCorrection } from "@/lib/approvals/server/time-correction-approvals";',
-		);
+		expect(actionsSource).toMatch(/getCurrentEmployee as getCurrentEmployeeAction/);
+		expect(actionsSource).toMatch(/getPendingApprovalCounts as getPendingApprovalCountsAction/);
+		expect(actionsSource).toMatch(/getPendingApprovals as getPendingApprovalsAction/);
+		expect(actionsSource).toContain("export async function approveAbsence(");
+		expect(actionsSource).toContain("export async function rejectAbsence(");
+		expect(actionsSource).toContain("export async function approveTimeCorrection(");
+		expect(actionsSource).toContain("export async function rejectTimeCorrection(");
+		expect(actionsSource).toContain("export async function getPendingApprovals(");
+		expect(actionsSource).not.toMatch(/export\s*\{[^}]+\}\s*from\s*"@\/lib\/approvals\/server\//);
 		expect(actionsSource).not.toContain("@opentelemetry/api");
 		expect(actionsSource).not.toContain("drizzle-orm");
 	});
