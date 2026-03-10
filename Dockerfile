@@ -20,6 +20,7 @@
 ARG NODE_VERSION=22
 ARG PNPM_VERSION=10.28.0
 ARG ALPINE_VERSION=3.21
+ARG NEXT_PUBLIC_BUILD_HASH
 
 # =============================================================================
 # Stage 1: base - Alpine runtime with Node.js and pnpm
@@ -105,6 +106,9 @@ COPY --from=pruner /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
 # Stage 5: webapp-builder - Build Next.js webapp
 # =============================================================================
 FROM workspace AS webapp-builder
+
+ARG NEXT_PUBLIC_BUILD_HASH
+ENV NEXT_PUBLIC_BUILD_HASH=${NEXT_PUBLIC_BUILD_HASH}
 
 # Generate license report (required by build script)
 RUN pnpm --filter webapp run generate-licenses || echo "{}" > apps/webapp/src/data/licenses.json
