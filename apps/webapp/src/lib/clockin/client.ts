@@ -9,6 +9,12 @@ import type {
 
 const BASE_URL = "https://customerapi.clockin.de";
 
+type ClockinSearchScope = {
+	key: string;
+	operator: string;
+	value: string | number[];
+};
+
 export class ClockinClient {
 	constructor(private readonly token: string) {}
 
@@ -65,7 +71,7 @@ export class ClockinClient {
 	}
 
 	async searchAbsences(input: ClockinAbsenceSearchRequest): Promise<ClockinAbsence[]> {
-		const scopes = [
+		const scopes: ClockinSearchScope[] = [
 			{ key: "starts_at", operator: ">=", value: input.startDate },
 			{ key: "ends_at", operator: "<=", value: input.endDate },
 		];
