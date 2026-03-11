@@ -27,6 +27,11 @@ import {
 	getExportHistoryAction,
 } from "./actions";
 
+type ExportAvailabilityEntry = {
+	configured: boolean;
+	reason: "missingConfiguration" | "missingCredentials" | null;
+};
+
 async function PayrollExportContent() {
 	await connection(); // Mark as fully dynamic
 
@@ -68,10 +73,7 @@ async function PayrollExportContent() {
 	const successFactorsConfig = successFactorsConfigResult.success ? successFactorsConfigResult.data : null;
 	const workdayConfig = workdayConfigResult.success ? workdayConfigResult.data : null;
 	const exports = historyResult.success ? historyResult.data : [];
-	const exportAvailability: Record<
-		string,
-		{ configured: boolean; reason: "missingConfiguration" | "missingCredentials" | null }
-	> = {
+	const exportAvailability: Record<string, ExportAvailabilityEntry> = {
 		datev_lohn: {
 			configured: Boolean(datevConfig),
 			reason: datevConfig ? null : "missingConfiguration",
