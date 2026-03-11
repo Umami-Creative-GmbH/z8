@@ -94,8 +94,13 @@ export function ClockinImportWizard({ organizationId }: ClockinImportWizardProps
 				fetchZ8Employees(organizationId),
 			]);
 
-			if (!clockinResult.success || !z8Result.success) {
-				toast.error(clockinResult.success ? z8Result.error : clockinResult.error);
+			if (!clockinResult.success) {
+				toast.error(clockinResult.error);
+				return;
+			}
+
+			if (!z8Result.success) {
+				toast.error(z8Result.error);
 				return;
 			}
 
