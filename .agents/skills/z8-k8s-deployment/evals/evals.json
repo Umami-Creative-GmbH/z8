@@ -1,0 +1,23 @@
+{
+  "skill_name": "z8-k8s-deployment",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "there is a new image on gh refresh webapp, migration and worker. do not execute anything yet - inspect this repo and tell me the exact safe sequence of commands and checks you would run in this environment, including how you would verify live digests afterwards",
+      "expected_output": "Inspects the repo-specific deployment workflow, proposes the correct web/worker restart plus migration-job recreation sequence, and includes concrete verification steps for live image digests without executing the changes.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "i want rustfs.z8-time.app restricted to office ips. do not apply anything yet - inspect the manifests in this repo and tell me exactly which files you would change, what resources you would add, and how you would verify ingress and certificate state afterwards",
+      "expected_output": "Finds the RustFS manifest source of truth, proposes an ingress plus Traefik IP allowlist update, and explains the post-change ingress and cert-manager verification steps without touching the cluster.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "check whether the current hetzner setup uses the ssh key i just mentioned for the control planes. inspect the repo first, do not guess, and if live hetzner access is required tell me exactly which env var is missing",
+      "expected_output": "Uses the repo-managed Hetzner/OpenTofu context first, distinguishes repo knowledge from live cloud state, and explicitly names `HCLOUD_TOKEN` if live verification is required.",
+      "files": []
+    }
+  ]
+}
