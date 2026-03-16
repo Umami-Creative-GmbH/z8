@@ -28,6 +28,18 @@ const globalForValkey = globalThis as unknown as {
 	valkeyPub: Redis | undefined;
 };
 
+type ValkeyStatus = Redis["status"];
+
+const activeStatuses = new Set<ValkeyStatus>(["ready", "connect", "connecting"]);
+
+function isAlreadyConnectingError(error: unknown): boolean {
+	return (
+		error instanceof Error &&
+		(error.message.includes("already connecting") ||
+			error.message.includes("Connection is closed"))
+	);
+}
+
 function createValkeyClient(): Redis {
 	const host = env.VALKEY_HOST || env.REDIS_HOST || "localhost";
 	const port = Number(env.VALKEY_PORT || env.REDIS_PORT || 6379);
@@ -69,16 +81,51 @@ function createValkeyClient(): Redis {
 
 export const valkey = shouldDisableValkeyDuringBuild
 	? noopValkeyClient
-	: globalForValkey.valkey ?? createValkeyClient();
+	: (() => {
+		if (!globalForValkey.valkey) {
+			globalForValkey.valkey = createValkeyClient();
+		}
+
+		return globalForValkey.valkey;
+	})();
 
 // Dedicated publisher client for pub/sub (pub/sub clients can't be used for regular commands)
 export const valkeyPub = shouldDisableValkeyDuringBuild
 	? noopValkeyClient
-	: globalForValkey.valkeyPub ?? createValkeyClient();
+	: (() => {
+		if (!globalForValkey.valkeyPub) {
+			globalForValkey.valkeyPub = createValkeyClient();
+		}
 
-if (env.NODE_ENV !== "production") {
-	globalForValkey.valkey = valkey;
-	globalForValkey.valkeyPub = valkeyPub;
+		return globalForValkey.valkeyPub;
+	})();
+
+export async function ensureValkeyReady(): Promise<boolean> {
+	if (shouldDisableValkeyDuringBuild) {
+		return false;
+	}
+
+	if (activeStatuses.has(valkey.status)) {
+		return true;
+	}
+
+	if (valkey.status === "wait" || valkey.status === "end") {
+		try {
+			await valkey.connect();
+		} catch (error) {
+			if (!isAlreadyConnectingError(error)) {
+				logger.warn({ error, status: valkey.status }, "Failed to start Valkey connection");
+			}
+		}
+	}
+
+	try {
+		await valkey.ping();
+		return true;
+	} catch (error) {
+		logger.warn({ error, status: valkey.status }, "Valkey readiness check failed");
+		return false;
+	}
 }
 
 /**
