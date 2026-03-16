@@ -15,7 +15,7 @@
 
 import { Ratelimit } from "@upstash/ratelimit";
 import { createLogger } from "@/lib/logger";
-import { valkey } from "@/lib/valkey";
+import { ensureValkeyReady, valkey } from "@/lib/valkey";
 import { env } from "@/env";
 
 /**
@@ -238,7 +238,7 @@ export async function checkRateLimit(
 		}
 
 		// Check if Valkey is available
-		if (valkey.status !== "ready") {
+		if (!(await ensureValkeyReady())) {
 			logger.warn({ identifier, endpoint }, "Rate limiting unavailable - Valkey not connected");
 			return {
 				allowed: true,

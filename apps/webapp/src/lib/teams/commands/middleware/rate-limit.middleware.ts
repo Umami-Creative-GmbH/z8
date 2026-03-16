@@ -7,7 +7,7 @@
 
 import { Ratelimit } from "@upstash/ratelimit";
 import { createLogger } from "@/lib/logger";
-import { valkey } from "@/lib/valkey";
+import { ensureValkeyReady, valkey } from "@/lib/valkey";
 import { isRateLimitDisabled } from "@/lib/rate-limit";
 import type { BotCommandContext, BotCommandResponse } from "../../types";
 
@@ -166,7 +166,7 @@ export async function checkCommandRateLimit(
 		}
 
 		// Check Valkey connection
-		if (valkey.status !== "ready") {
+		if (!(await ensureValkeyReady())) {
 			logger.warn({ commandName }, "Rate limiting unavailable - Valkey not connected");
 			return {
 				allowed: true,
