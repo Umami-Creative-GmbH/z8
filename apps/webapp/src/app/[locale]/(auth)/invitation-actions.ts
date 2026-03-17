@@ -4,6 +4,7 @@ import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
+import { type AnyAppError, DatabaseError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
@@ -23,13 +24,26 @@ export async function storePendingInvitation(
 							eq(authSchema.invitation.status, "pending"),
 						),
 					}),
-				catch: (error) =>
-					error instanceof Error ? error : new Error("Failed to load pending invitation"),
+				catch: (error): DatabaseError =>
+					new DatabaseError({
+						message: "Failed to load pending invitation",
+						operation: "select",
+						table: "invitation",
+						cause: error,
+					}),
 			}),
 		);
 
 		if (!invitation) {
-			throw new Error("Invitation not found or does not match the signed-in user");
+			yield* _(
+				Effect.fail(
+					new NotFoundError({
+						message: "Invitation not found or does not match the signed-in user",
+						entityType: "invitation",
+						entityId: invitationId,
+					}),
+				),
+			);
 		}
 
 		yield* _(
@@ -40,13 +54,20 @@ export async function storePendingInvitation(
 						.set({ invitedVia: invitationId })
 						.where(eq(authSchema.user.email, email));
 				},
-				catch: (error) =>
-					error instanceof Error ? error : new Error("Failed to store pending invitation"),
+				catch: (error): DatabaseError =>
+					new DatabaseError({
+						message: "Failed to store pending invitation",
+						operation: "update",
+						table: "user",
+						cause: error,
+					}),
 			}),
 		);
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(
+		effect.pipe(Effect.provide(AppLayer)) as Effect.Effect<void, AnyAppError, never>,
+	);
 }
 
 export async function getPendingInvitation(): Promise<ServerActionResult<string | null>> {
@@ -63,8 +84,13 @@ export async function getPendingInvitation(): Promise<ServerActionResult<string 
 							invitedVia: true,
 						},
 					}),
-				catch: (error) =>
-					error instanceof Error ? error : new Error("Failed to load user invitation state"),
+				catch: (error): DatabaseError =>
+					new DatabaseError({
+						message: "Failed to load user invitation state",
+						operation: "select",
+						table: "user",
+						cause: error,
+					}),
 			}),
 		);
 		const pendingInvitationId = userRecord?.invitedVia;
@@ -83,8 +109,13 @@ export async function getPendingInvitation(): Promise<ServerActionResult<string 
 							eq(authSchema.invitation.status, "pending"),
 						),
 					}),
-				catch: (error) =>
-					error instanceof Error ? error : new Error("Failed to load pending invitation"),
+				catch: (error): DatabaseError =>
+					new DatabaseError({
+						message: "Failed to load pending invitation",
+						operation: "select",
+						table: "invitation",
+						cause: error,
+					}),
 			}),
 		);
 
@@ -95,5 +126,7 @@ export async function getPendingInvitation(): Promise<ServerActionResult<string 
 		return invitation.id;
 	});
 
-	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+	return runServerActionSafe(
+		effect.pipe(Effect.provide(AppLayer)) as Effect.Effect<string | null, AnyAppError, never>,
+	);
 }
