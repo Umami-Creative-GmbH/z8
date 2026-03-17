@@ -109,6 +109,10 @@ spec:
                   name: z8-secrets
                   key: resend-api-key
                   optional: true
+            # Explicitly disable background job processing – cron jobs and
+            # queue workers run exclusively in the dedicated worker pods.
+            - name: ENABLE_CRON_JOBS
+              value: "false"
             # Logging
             - name: LOG_LEVEL
               valueFrom:
