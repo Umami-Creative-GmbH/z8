@@ -52,7 +52,7 @@ export type OnboardingHolidaySetupFormValues = z.infer<typeof onboardingHolidayS
 export type OnboardingWorkTemplateFormValues = z.infer<typeof onboardingWorkTemplateSchema>;
 export type OnboardingNotificationsFormValues = z.infer<typeof onboardingNotificationsSchema>;
 
-// Step navigation types - base steps shown to all users
+// Step navigation types
 export type OnboardingStep =
 	| "welcome"
 	| "organization"
@@ -164,7 +164,7 @@ export function getVisibleSteps(isAdmin: boolean): OnboardingStep[] {
 			(typeof ONBOARDING_STEPS)[OnboardingStep],
 		][]
 	)
-		.filter(([, config]) => !config.adminOnly || isAdmin)
+		.filter(([step, config]) => (!config.adminOnly || isAdmin) && (isAdmin || step !== "work_schedule"))
 		.sort(([, a], [, b]) => a.order - b.order)
 		.map(([step]) => step);
 }

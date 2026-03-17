@@ -3,7 +3,7 @@
 import { IconClock, IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { ProgressIndicator } from "@/components/onboarding/progress-indicator";
@@ -19,7 +19,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { useRouter } from "@/navigation";
-import { setWorkScheduleOnboarding, skipWorkScheduleSetup } from "./actions";
+import { checkIsAdmin, setWorkScheduleOnboarding, skipWorkScheduleSetup } from "./actions";
 
 const defaultValues = {
 	hoursPerWeek: 40,
@@ -31,6 +31,7 @@ export default function WorkSchedulePage() {
 	const { t } = useTranslate();
 	const router = useRouter();
 	const [loading, setLoading] = useState(false);
+	const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
 
 	const form = useForm({
 		defaultValues,
@@ -51,6 +52,33 @@ export default function WorkSchedulePage() {
 		},
 	});
 
+	useEffect(() => {
+		async function loadAccess() {
+			const accessResult = await checkIsAdmin();
+
+			if (!accessResult.success) {
+				router.replace("/onboarding/wellness");
+				return;
+			}
+
+			if (!accessResult.data) {
+				const skipResult = await skipWorkScheduleSetup();
+
+				if (skipResult.success) {
+					router.replace(skipResult.data.nextStep);
+					return;
+				}
+
+				router.replace("/onboarding/wellness");
+				return;
+			}
+
+			setIsAdmin(true);
+		}
+
+		void loadAccess();
+	}, [router]);
+
 	async function handleSkip() {
 		setLoading(true);
 
@@ -64,9 +92,20 @@ export default function WorkSchedulePage() {
 		router.push(result.data.nextStep);
 	}
 
+	if (isAdmin === null) {
+		return (
+			<div className="flex min-h-[50vh] items-center justify-center">
+				<div className="text-center">
+					<div className="inline-block size-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent" />
+					<p className="mt-4 text-muted-foreground">{t("common.loading", "Loading...")}</p>
+				</div>
+			</div>
+		);
+	}
+
 	return (
 		<>
-			<ProgressIndicator currentStep="work_schedule" />
+			<ProgressIndicator currentStep="work_schedule" isAdmin={isAdmin} />
 
 			<div className="mx-auto max-w-2xl">
 				<div className="mb-8 text-center">

@@ -46,7 +46,7 @@ export default function ProfilePage() {
 
 			if (result.success) {
 				toast.success(t("onboarding.profile.success", "Profile updated successfully!"));
-				router.push("/onboarding/work-schedule");
+				router.push(result.data.nextStep);
 			} else {
 				setLoading(false);
 				toast.error(result.error || t("onboarding.profile.error", "Failed to update profile"));
@@ -60,7 +60,7 @@ export default function ProfilePage() {
 		const result = await skipProfileSetup();
 
 		if (result.success) {
-			router.push("/onboarding/work-schedule");
+			router.push(result.data.nextStep);
 		} else {
 			setLoading(false);
 			toast.error(result.error || "Failed to skip profile setup");

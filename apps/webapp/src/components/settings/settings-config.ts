@@ -155,7 +155,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Manage organization members, invitations, and teams",
 		href: "/settings/organizations",
 		icon: "building",
-		adminOnly: false,
+		adminOnly: true,
 		group: "organization",
 	},
 	{

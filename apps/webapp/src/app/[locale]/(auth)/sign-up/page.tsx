@@ -6,10 +6,24 @@ export async function generateStaticParams() {
 }
 
 interface PageProps {
-	searchParams: Promise<{ inviteCode?: string }>;
+	searchParams: Promise<{
+		callbackUrl?: string;
+		inviteCode?: string;
+		invitedEmail?: string;
+		invitationId?: string;
+		organizationName?: string;
+	}>;
 }
 
 export default async function Page({ searchParams }: PageProps) {
-	const { inviteCode } = await searchParams;
-	return <SignupForm inviteCode={inviteCode} />;
+	const { callbackUrl, inviteCode, invitedEmail, invitationId, organizationName } = await searchParams;
+	return (
+		<SignupForm
+			callbackUrl={callbackUrl}
+			initialEmail={invitedEmail}
+			initialInvitationId={invitationId}
+			initialOrganizationName={organizationName}
+			inviteCode={inviteCode}
+		/>
+	);
 }

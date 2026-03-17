@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { generateSlug } from "@/lib/validations/organization";
 import { useRouter } from "@/navigation";
-import { createOrganizationOnboarding, skipOrganizationSetup } from "./actions";
+import { createOrganizationOnboarding, getOnboardingSummary, skipOrganizationSetup } from "./actions";
 
 const defaultValues = {
 	name: "",
@@ -29,6 +29,7 @@ export default function OrganizationPage() {
 	const [checkingSlug, setCheckingSlug] = useState(false);
 	const [slugError, setSlugError] = useState<string | null>(null);
 	const [showCreateForm, _setShowCreateForm] = useState(true);
+	const [checkingMembership, setCheckingMembership] = useState(true);
 	const slugManuallyEdited = useRef(false);
 
 	const form = useForm({
@@ -56,6 +57,22 @@ export default function OrganizationPage() {
 	const formValues = useStore(form.store, (state) => state.values);
 	const name = formValues.name;
 	const slug = formValues.slug;
+
+	useEffect(() => {
+		const checkMembership = async () => {
+			const summary = await getOnboardingSummary();
+
+			if (summary.success && summary.data?.hasOrganization) {
+				await skipOrganizationSetup();
+				router.replace("/onboarding/profile");
+				return;
+			}
+
+			setCheckingMembership(false);
+		};
+
+		void checkMembership();
+	}, [router]);
 
 	// Auto-generate slug from name
 	useEffect(() => {
@@ -107,6 +124,17 @@ export default function OrganizationPage() {
 			setLoading(false);
 			toast.error(result.error || "Failed to skip organization setup");
 		}
+	}
+
+	if (checkingMembership) {
+		return (
+			<>
+				<ProgressIndicator currentStep="organization" />
+				<div className="mx-auto flex max-w-2xl justify-center py-12">
+					<IconLoader2 className="size-8 animate-spin text-muted-foreground" />
+				</div>
+			</>
+		);
 	}
 
 	return (

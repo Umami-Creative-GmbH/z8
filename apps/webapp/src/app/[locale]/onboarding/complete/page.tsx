@@ -54,7 +54,7 @@ export default function CompletePage() {
 	}, []);
 
 	const handleGoToDashboard = () => {
-		router.push("/");
+		router.push("/init");
 	};
 
 	if (loading) {
