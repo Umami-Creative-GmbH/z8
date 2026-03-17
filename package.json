@@ -9,7 +9,17 @@
 			"msgpackr-extract",
 			"msw",
 			"sharp"
-		]
+		],
+		"overrides": {
+			"@hono/node-server": "1.19.11",
+			"@types/react": "19.2.8",
+			"@types/react-dom": "19.2.3",
+			"esbuild": "0.25.12",
+			"hono": "4.12.7",
+			"lodash": "4.17.23",
+			"pako": "1.0.11",
+			"undici": "7.24.0"
+		}
 	},
 	"workspaces": [
 		"apps/*",
@@ -52,10 +62,5 @@
 		"shadcn": "^4.0.2",
 		"turbo": "^2.8.14"
 	},
-	"packageManager": "pnpm@10.31.0",
-	"overrides": {
-		"@types/react": "19.2.8",
-		"@types/react-dom": "19.2.3",
-		"pako": "1.0.11"
-	}
+	"packageManager": "pnpm@10.31.0"
 }
