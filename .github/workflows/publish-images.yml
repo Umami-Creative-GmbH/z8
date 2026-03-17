@@ -47,54 +47,37 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push webapp by digest
-        id: build_webapp
-        uses: docker/build-push-action@v6
+      - name: Build and push all images by digest
+        id: bake
+        uses: docker/bake-action@v6
         with:
-          context: .
-          file: ./Dockerfile
-          target: webapp
-          build-args: |
-            NEXT_PUBLIC_BUILD_HASH=${{ github.sha }}
-          platforms: ${{ matrix.platform }}
-          outputs: type=image,name=ghcr.io/umami-creative-gmbh/z8-webapp,push-by-digest=true,name-canonical=true,push=true
-          cache-from: type=gha,scope=${{ matrix.arch }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.arch }}
-
-      - name: Build and push worker by digest
-        id: build_worker
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./Dockerfile
-          target: worker
-          platforms: ${{ matrix.platform }}
-          outputs: type=image,name=ghcr.io/umami-creative-gmbh/z8-worker,push-by-digest=true,name-canonical=true,push=true
-          cache-from: type=gha,scope=${{ matrix.arch }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.arch }}
-
-      - name: Build and push migration by digest
-        id: build_migration
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./Dockerfile
-          target: migration
-          platforms: ${{ matrix.platform }}
-          outputs: type=image,name=ghcr.io/umami-creative-gmbh/z8-migration,push-by-digest=true,name-canonical=true,push=true
-          cache-from: type=gha,scope=${{ matrix.arch }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.arch }}
+          files: ./docker-bake.hcl
+          set: |
+            *.platform=${{ matrix.platform }}
+            *.cache-from=type=gha,scope=${{ matrix.arch }}
+            *.cache-to=type=gha,mode=max,scope=${{ matrix.arch }}
+        env:
+          NEXT_PUBLIC_BUILD_HASH: ${{ github.sha }}
 
       - name: Export digest artifacts
         env:
-          WEBAPP_DIGEST: ${{ steps.build_webapp.outputs.digest }}
-          WORKER_DIGEST: ${{ steps.build_worker.outputs.digest }}
-          MIGRATION_DIGEST: ${{ steps.build_migration.outputs.digest }}
+          BAKE_METADATA: ${{ steps.bake.outputs.metadata }}
         run: |
+          set -euo pipefail
+          if [ -z "${BAKE_METADATA}" ]; then
+            echo "::error::bake metadata output is empty"
+            exit 1
+          fi
           mkdir -p /tmp/digests/webapp /tmp/digests/worker /tmp/digests/migration
-          touch "/tmp/digests/webapp/${WEBAPP_DIGEST#sha256:}"
-          touch "/tmp/digests/worker/${WORKER_DIGEST#sha256:}"
-          touch "/tmp/digests/migration/${MIGRATION_DIGEST#sha256:}"
+          printf '%s' "$BAKE_METADATA" > /tmp/bake-metadata.json
+          for target in webapp worker migration; do
+            digest=$(jq -r ".\"$target\".\"containerimage.digest\"" /tmp/bake-metadata.json)
+            if [ -z "${digest}" ] || [ "${digest}" = "null" ]; then
+              echo "::error::missing digest for target ${target}"
+              exit 1
+            fi
+            touch "/tmp/digests/$target/${digest#sha256:}"
+          done
 
       - name: Upload webapp digest
         uses: actions/upload-artifact@v4
