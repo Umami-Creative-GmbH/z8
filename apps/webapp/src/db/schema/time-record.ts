@@ -1,8 +1,21 @@
 import { sql } from "drizzle-orm";
-import { boolean, check, foreignKey, index, integer, pgTable, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
+import {
+	boolean,
+	check,
+	foreignKey,
+	index,
+	integer,
+	pgTable,
+	text,
+	timestamp,
+	unique,
+	uuid,
+} from "drizzle-orm/pg-core";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 
 import { organization, user } from "../auth-schema";
+import { absenceCategory } from "./absence";
+import { costCenter } from "./cost-center";
 import {
 	dayPeriodEnum,
 	timeRecordAllocationKindEnum,
@@ -12,8 +25,6 @@ import {
 	timeRecordOriginEnum,
 	workLocationTypeEnum,
 } from "./enums";
-import { absenceCategory } from "./absence";
-import { costCenter } from "./cost-center";
 import { employee } from "./organization";
 import { project } from "./project";
 import { workCategory } from "./work-category";
@@ -71,8 +82,7 @@ export const timeRecord = pgTable(
 export const timeRecordWork = pgTable(
 	"time_record_work",
 	{
-		recordId: uuid("record_id")
-			.primaryKey(),
+		recordId: uuid("record_id").primaryKey(),
 		organizationId: text("organization_id")
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
@@ -84,7 +94,6 @@ export const timeRecordWork = pgTable(
 		computationMetadata: text("computation_metadata"),
 	},
 	(table) => [
-		unique("timeRecordWork_record_org_idx").on(table.recordId, table.organizationId),
 		index("timeRecordWork_organizationId_idx").on(table.organizationId),
 		index("timeRecordWork_workCategoryId_idx").on(table.workCategoryId),
 		check("timeRecordWork_recordKind_work_chk", sql`${table.recordKind} = 'work'`),
@@ -102,8 +111,7 @@ export const timeRecordWork = pgTable(
 export const timeRecordAbsence = pgTable(
 	"time_record_absence",
 	{
-		recordId: uuid("record_id")
-			.primaryKey(),
+		recordId: uuid("record_id").primaryKey(),
 		organizationId: text("organization_id")
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
@@ -133,8 +141,7 @@ export const timeRecordAbsence = pgTable(
 export const timeRecordBreak = pgTable(
 	"time_record_break",
 	{
-		recordId: uuid("record_id")
-			.primaryKey(),
+		recordId: uuid("record_id").primaryKey(),
 		organizationId: text("organization_id")
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
@@ -163,8 +170,7 @@ export const timeRecordAllocation = pgTable(
 		organizationId: text("organization_id")
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
-		recordId: uuid("record_id")
-			.notNull(),
+		recordId: uuid("record_id").notNull(),
 		allocationKind: timeRecordAllocationKindEnum("allocation_kind").notNull(),
 		projectId: uuid("project_id").references(() => project.id, { onDelete: "set null" }),
 		costCenterId: uuid("cost_center_id").references(() => costCenter.id, {
@@ -179,8 +185,14 @@ export const timeRecordAllocation = pgTable(
 		index("timeRecordAllocation_projectId_idx").on(table.projectId),
 		index("timeRecordAllocation_costCenterId_idx").on(table.costCenterId),
 		foreignKey({
+			name: "timeRecordAllocation_recordId_work_fk",
+			columns: [table.recordId],
+			foreignColumns: [timeRecordWork.recordId],
+		}).onDelete("cascade"),
+		foreignKey({
+			name: "timeRecordAllocation_record_org_fk",
 			columns: [table.recordId, table.organizationId],
-			foreignColumns: [timeRecordWork.recordId, timeRecordWork.organizationId],
+			foreignColumns: [timeRecord.id, timeRecord.organizationId],
 		}).onDelete("cascade"),
 		check(
 			"timeRecordAllocation_kind_target_chk",
@@ -200,8 +212,7 @@ export const timeRecordApprovalDecision = pgTable(
 		organizationId: text("organization_id")
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
-		recordId: uuid("record_id")
-			.notNull(),
+		recordId: uuid("record_id").notNull(),
 		actorEmployeeId: uuid("actor_employee_id")
 			.notNull()
 			.references(() => employee.id, { onDelete: "cascade" }),
