@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { NoOrganizationError } from "@/components/errors/no-organization-error";
 import { SectionCards, SectionCardsSkeleton } from "@/components/section-cards";
-import { getOnboardingStatus, getUserOrganizations } from "@/lib/auth-helpers";
+import { getOnboardingStatus, getPendingInvitationId, getUserOrganizations } from "@/lib/auth-helpers";
 import { getOnboardingStepPath } from "@/lib/validations/onboarding";
 
 const AppTour = dynamic(() => import("@/components/tour/app-tour").then((m) => m.AppTour));
@@ -13,16 +13,21 @@ export default async function Page() {
 	await connection(); // Mark as fully dynamic for cacheComponents mode
 
 	// Fetch onboarding status and organizations in parallel to eliminate waterfall
-	const [onboardingStatus, organizations] = await Promise.all([
+	const [onboardingStatus, organizations, pendingInvitationId] = await Promise.all([
 		getOnboardingStatus(),
 		getUserOrganizations(),
+		getPendingInvitationId(),
 	]);
+	const hasOrganizations = organizations.length > 0;
+
+	if (!hasOrganizations && pendingInvitationId) {
+		redirect(`/accept-invitation/${pendingInvitationId}`);
+	}
 
 	// Redirect if onboarding not complete
 	if (onboardingStatus && !onboardingStatus.onboardingComplete) {
 		redirect(getOnboardingStepPath(onboardingStatus.onboardingStep));
 	}
-	const hasOrganizations = organizations.length > 0;
 
 	if (!hasOrganizations) {
 		return (

@@ -23,6 +23,7 @@ export const DOMAIN_HEADERS = {
 const PUBLIC_ROUTES = [
 	"/sign-in",
 	"/sign-up",
+	"/accept-invitation",
 	"/forgot-password",
 	"/reset-password",
 	"/verify-email",

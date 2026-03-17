@@ -4,6 +4,7 @@ import { useTranslate } from "@tolgee/react";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { processPendingInviteCode } from "@/app/[locale]/(auth)/invite-code-actions";
+import { getPendingInvitation } from "@/app/[locale]/(auth)/invitation-actions";
 import { AuthFormWrapper } from "@/components/auth-form-wrapper";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
@@ -22,6 +23,7 @@ export default function VerifyEmailPage() {
 	const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
 	const [errorMessage, setErrorMessage] = useState<string>("");
 	const [joinResult, setJoinResult] = useState<JoinResult>(null);
+	const [pendingInvitationId, setPendingInvitationId] = useState<string | null>(null);
 
 	useEffect(() => {
 		const verifyEmail = async () => {
@@ -64,12 +66,19 @@ export default function VerifyEmailPage() {
 				setJoinResult(pendingJoinResult);
 			}
 
+			const pendingInvitationResult = await getPendingInvitation().catch(() => null);
+			const invitationId =
+				pendingInvitationResult?.success && pendingInvitationResult.data
+					? pendingInvitationResult.data
+					: null;
+			setPendingInvitationId(invitationId);
+
 			setStatus("success");
 			setTimeout(() => {
-				// If user joined an organization, go to onboarding
-				// Otherwise, go to sign-in
 				if (pendingJoinResult) {
 					router.push("/onboarding");
+				} else if (invitationId) {
+					router.push(`/accept-invitation/${invitationId}`);
 				} else {
 					router.push("/sign-in");
 				}
@@ -123,15 +132,30 @@ export default function VerifyEmailPage() {
 					<p className="text-sm text-muted-foreground">
 						{joinResult
 							? t("auth.redirecting-to-onboarding", "Redirecting to complete setup...")
-							: t("auth.redirecting-to-signin", "Redirecting to sign in page in 3 seconds...")}
+							: pendingInvitationId
+								? t(
+									"auth.redirecting-to-invitation",
+									"Redirecting to finish your organization invitation...",
+								)
+								: t("auth.redirecting-to-signin", "Redirecting to sign in page in 3 seconds...")}
 					</p>
 					<Button
 						className="mt-4 w-full"
-						onClick={() => router.push(joinResult ? "/onboarding" : "/sign-in")}
+						onClick={() =>
+							router.push(
+								joinResult
+									? "/onboarding"
+									: pendingInvitationId
+										? `/accept-invitation/${pendingInvitationId}`
+										: "/sign-in",
+							)
+						}
 					>
 						{joinResult
 							? t("auth.continue-setup", "Continue Setup")
-							: t("auth.sign-in-now", "Sign in now")}
+							: pendingInvitationId
+								? t("auth.continue-invitation", "Continue invitation")
+								: t("auth.sign-in-now", "Sign in now")}
 					</Button>
 				</div>
 			)}

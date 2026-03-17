@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { and, eq } from "drizzle-orm";
 import { listTeams } from "@/app/[locale]/(app)/settings/teams/actions";
 import { OrganizationsPageClient } from "@/components/organization/organizations-page-client";
@@ -15,21 +16,11 @@ export default async function OrganizationsPage() {
 		authContext.session.activeOrganizationId || authContext.employee?.organizationId;
 
 	if (!activeOrgId) {
-		return (
-			<div className="flex-1 p-6">
-				<div className="mx-auto max-w-4xl">
-					<h1 className="text-2xl font-semibold">
-						{t("settings.organizations.noActive.title", "No Active Organization")}
-					</h1>
-					<p className="text-muted-foreground mt-2">
-						{t(
-							"settings.organizations.noActive.description",
-							"Please select or create an organization to continue.",
-						)}
-					</p>
-				</div>
-			</div>
-		);
+		redirect("/settings");
+	}
+
+	if (authContext.employee?.role !== "admin") {
+		redirect("/settings");
 	}
 
 	// Parallel data loading for better performance
@@ -69,7 +60,7 @@ export default async function OrganizationsPage() {
 		// Get teams with employees
 		listTeams(activeOrgId),
 
-		// Get current user's member role
+		// Get current user's member role for page-level capabilities
 		db.query.member.findFirst({
 			where: and(
 				eq(authSchema.member.userId, authContext.user.id),

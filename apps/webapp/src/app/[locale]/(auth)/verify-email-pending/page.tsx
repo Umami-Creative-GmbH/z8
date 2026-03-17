@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { AuthFormWrapper } from "@/components/auth-form-wrapper";
 import { Button } from "@/components/ui/button";
+import { sanitizeCallbackUrl, withCallbackUrl } from "@/lib/auth/callback-url";
 import { authClient, useSession } from "@/lib/auth-client";
 import { Link } from "@/navigation";
 
@@ -14,6 +15,7 @@ export default function VerifyEmailPendingPage() {
 	const { data: session } = useSession();
 	const [isResending, setIsResending] = useState(false);
 	const [resendMessage, setResendMessage] = useState<string>("");
+	const callbackUrl = sanitizeCallbackUrl(searchParams.get("callbackUrl"), "");
 	const email = (searchParams.get("email") || session?.user?.email || "").trim();
 
 	const handleResendEmail = async () => {
@@ -112,7 +114,7 @@ export default function VerifyEmailPendingPage() {
 					</div>
 
 					<div className="pt-4">
-						<Link href="/sign-in">
+						<Link href={withCallbackUrl("/sign-in", callbackUrl)}>
 							<Button variant="link" className="w-full">
 								{t("auth.back-to-signin", "Back to Sign In")}
 							</Button>

@@ -7,20 +7,20 @@ import type { OnboardingProfileFormValues } from "@/lib/validations/onboarding";
 
 export async function updateProfileOnboarding(
 	data: OnboardingProfileFormValues,
-): Promise<ServerActionResult<void>> {
+): Promise<ServerActionResult<{ nextStep: string }>> {
 	return runServerActionSafe(
 		Effect.gen(function* () {
 			const onboardingService = yield* OnboardingService;
-			yield* onboardingService.updateProfile(data);
+			return yield* onboardingService.updateProfile(data);
 		}),
 	);
 }
 
-export async function skipProfileSetup(): Promise<ServerActionResult<void>> {
+export async function skipProfileSetup(): Promise<ServerActionResult<{ nextStep: string }>> {
 	return runServerActionSafe(
 		Effect.gen(function* () {
 			const onboardingService = yield* OnboardingService;
-			yield* onboardingService.skipProfileSetup();
+			return yield* onboardingService.skipProfileSetup();
 		}),
 	);
 }

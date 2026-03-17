@@ -1,13 +1,13 @@
 import { getVisibleGroups, getVisibleSettings } from "@/components/settings/settings-config";
 import { SettingsGrid } from "@/components/settings/settings-grid";
-import { requireUser } from "@/lib/auth-helpers";
+import { canManageCurrentOrganizationSettings, requireUser } from "@/lib/auth-helpers";
 
 export default async function SettingsPage() {
-	const authContext = await requireUser();
-	const isAdmin = authContext.employee?.role === "admin";
+	await requireUser();
+	const canManageOrgSettings = await canManageCurrentOrganizationSettings();
 
-	const visibleSettings = getVisibleSettings(isAdmin);
-	const visibleGroups = getVisibleGroups(isAdmin);
+	const visibleSettings = getVisibleSettings(canManageOrgSettings);
+	const visibleGroups = getVisibleGroups(canManageOrgSettings);
 
 	return (
 		<div className="flex-1 p-6">

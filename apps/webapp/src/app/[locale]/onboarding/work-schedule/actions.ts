@@ -34,3 +34,12 @@ export async function skipWorkScheduleSetup(): Promise<ServerActionResult<{ next
 		}),
 	);
 }
+
+export async function checkIsAdmin(): Promise<ServerActionResult<boolean>> {
+	return runServerActionSafe(
+		Effect.gen(function* () {
+			const onboardingService = yield* OnboardingService;
+			return yield* onboardingService.isUserAdmin();
+		}),
+	);
+}

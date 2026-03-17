@@ -11,4 +11,10 @@ describe("settings import entry", () => {
 		expect(importEntries.some((entry) => entry.href === "/settings/import")).toBe(true);
 		expect(entries.some((entry) => entry.href === "/settings/clockodo-import")).toBe(false);
 	});
+
+	it("hides organization settings for non-admins", () => {
+		const entries = getVisibleSettings(false, false);
+
+		expect(entries.some((entry) => entry.href === "/settings/organizations")).toBe(false);
+	});
 });

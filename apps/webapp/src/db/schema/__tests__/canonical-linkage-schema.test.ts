@@ -15,10 +15,10 @@ function hasCompositeCanonicalFk(table: Parameters<typeof getTableConfig>[0]): b
 		return (
 			reference.columns.length === 2
 			&& reference.foreignColumns.length === 2
-			&& reference.columns[0]?.name === "organization_id"
-			&& reference.columns[1]?.name === "canonical_record_id"
-			&& reference.foreignColumns[0]?.name === "organization_id"
-			&& reference.foreignColumns[1]?.name === "id"
+			&& reference.columns[0]?.name === "canonical_record_id"
+			&& reference.columns[1]?.name === "organization_id"
+			&& reference.foreignColumns[0]?.name === "id"
+			&& reference.foreignColumns[1]?.name === "organization_id"
 			&& reference.foreignColumns[0]?.table === timeRecord
 			&& reference.foreignColumns[1]?.table === timeRecord
 		);

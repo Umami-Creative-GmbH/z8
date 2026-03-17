@@ -7,6 +7,7 @@ export interface Session {
 	user: {
 		id: string;
 		email: string;
+		invitedVia?: string | null;
 		name: string;
 		role?: string;
 	};

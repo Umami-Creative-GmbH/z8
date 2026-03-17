@@ -145,8 +145,8 @@ export const workPeriod = pgTable(
 			table.canonicalRecordId,
 		),
 		foreignKey({
-			columns: [table.organizationId, table.canonicalRecordId],
-			foreignColumns: [timeRecord.organizationId, timeRecord.id],
+			columns: [table.canonicalRecordId, table.organizationId],
+			foreignColumns: [timeRecord.id, timeRecord.organizationId],
 		}),
 		// Composite index for calendar queries (most common)
 		index("workPeriod_org_startTime_idx").on(table.organizationId, table.startTime),

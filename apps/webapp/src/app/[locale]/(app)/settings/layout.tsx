@@ -1,7 +1,7 @@
 import { connection } from "next/server";
 import { SettingsBreadcrumbs } from "@/components/settings/settings-breadcrumbs";
 import { SettingsNav } from "@/components/settings/settings-nav";
-import { getAuthContext } from "@/lib/auth-helpers";
+import { canManageCurrentOrganizationSettings } from "@/lib/auth-helpers";
 
 export default async function SettingsLayout({
 	children,
@@ -11,14 +11,13 @@ export default async function SettingsLayout({
 }) {
 	await connection(); // Mark as fully dynamic for cacheComponents mode
 
-	const authContext = await getAuthContext();
-	const isAdmin = authContext?.employee?.role === "admin";
+	const canManageOrgSettings = await canManageCurrentOrganizationSettings();
 
 	return (
 		<div className="flex flex-1 overflow-hidden">
 			{/* Settings navigation sidebar */}
 			<aside className="w-64 border-r bg-card p-4 hidden md:block overflow-auto">
-				<SettingsNav isAdmin={isAdmin} />
+				<SettingsNav isAdmin={canManageOrgSettings} />
 			</aside>
 
 			{/* Main content area */}

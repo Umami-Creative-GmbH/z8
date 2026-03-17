@@ -4,7 +4,7 @@ import { and, eq, inArray } from "drizzle-orm";
 import { Effect } from "effect";
 import { headers } from "next/headers";
 import { db } from "@/db";
-import { member, organization } from "@/db/auth-schema";
+import { invitation, member, organization, user as authUser } from "@/db/auth-schema";
 import { employee, employeeManagers, teamPermissions, userSettings } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
@@ -309,6 +309,49 @@ export async function canApproveFor(targetEmployeeId: string): Promise<boolean> 
 export interface OnboardingStatus {
 	onboardingComplete: boolean;
 	onboardingStep: string | null;
+}
+
+export async function getPendingInvitationId(): Promise<string | null> {
+	const session = await auth.api.getSession({ headers: await headers() });
+
+	if (!session?.user) {
+		return null;
+	}
+
+	const [userRecord] = await db
+		.select({ invitedVia: authUser.invitedVia })
+		.from(authUser)
+		.where(eq(authUser.id, session.user.id))
+		.limit(1);
+
+	if (!userRecord?.invitedVia) {
+		return null;
+	}
+
+	const [pendingInvitation] = await db
+		.select({
+			id: invitation.id,
+			expiresAt: invitation.expiresAt,
+		})
+		.from(invitation)
+		.where(
+			and(
+				eq(invitation.id, userRecord.invitedVia),
+				eq(invitation.email, session.user.email),
+				eq(invitation.status, "pending"),
+			),
+		)
+		.limit(1);
+
+	if (!pendingInvitation) {
+		return null;
+	}
+
+	if (pendingInvitation.expiresAt < new Date()) {
+		return null;
+	}
+
+	return pendingInvitation.id;
 }
 
 /**
@@ -854,6 +897,21 @@ export async function isOrgAdminCasl(organizationId: string): Promise<boolean> {
 	}
 
 	return ability.can("manage", "OrgSettings");
+}
+
+/**
+ * Check whether the current user can manage organization settings in the current org.
+ * This follows the employee admin role used throughout the settings UI and intentionally
+ * ignores platform-admin overrides.
+ */
+export async function canManageCurrentOrganizationSettings(): Promise<boolean> {
+	const context = await getAuthContext();
+
+	if (!context) {
+		return false;
+	}
+
+	return context.employee?.role === "admin";
 }
 
 /**

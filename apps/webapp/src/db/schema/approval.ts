@@ -54,8 +54,8 @@ export const approvalRequest = pgTable(
 			table.canonicalRecordId,
 		),
 		foreignKey({
-			columns: [table.organizationId, table.canonicalRecordId],
-			foreignColumns: [timeRecord.organizationId, timeRecord.id],
+			columns: [table.canonicalRecordId, table.organizationId],
+			foreignColumns: [timeRecord.id, timeRecord.organizationId],
 		}),
 		index("approvalRequest_approverId_idx").on(table.approverId),
 		index("approvalRequest_status_idx").on(table.status),

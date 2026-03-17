@@ -379,7 +379,12 @@ export const employeeRelations = relations(employee, ({ one, many }) => ({
 		relationName: "manager_employees",
 	}),
 	// Team permissions
-	teamPermissions: many(teamPermissions),
+	teamPermissions: many(teamPermissions, {
+		relationName: "team_permissions_employee",
+	}),
+	grantedTeamPermissions: many(teamPermissions, {
+		relationName: "team_permissions_grantor",
+	}),
 	// Time tracking
 	timeEntries: many(timeEntry),
 	workPeriods: many(workPeriod),
@@ -914,6 +919,7 @@ export const teamPermissionsRelations = relations(
 		employee: one(employee, {
 			fields: [teamPermissions.employeeId],
 			references: [employee.id],
+			relationName: "team_permissions_employee",
 		}),
 		organization: one(organization, {
 			fields: [teamPermissions.organizationId],
@@ -926,6 +932,7 @@ export const teamPermissionsRelations = relations(
 		grantor: one(employee, {
 			fields: [teamPermissions.grantedBy],
 			references: [employee.id],
+			relationName: "team_permissions_grantor",
 		}),
 	}),
 );
