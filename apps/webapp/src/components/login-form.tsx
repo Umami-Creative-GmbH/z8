@@ -12,6 +12,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { sanitizeCallbackUrl, withCallbackUrl } from "@/lib/auth/callback-url";
 import { useDomainAuth, useTurnstile } from "@/lib/auth/domain-auth-context";
 import { authClient } from "@/lib/auth-client";
 import { useEnabledProviders } from "@/lib/hooks/use-enabled-providers";
@@ -116,14 +117,6 @@ const SOCIAL_SKELETON_KEYS = [
 	"social-5",
 	"social-6",
 ];
-
-function sanitizeCallbackUrl(callbackUrl: string | null) {
-	if (!callbackUrl || !callbackUrl.startsWith("/") || callbackUrl.startsWith("//")) {
-		return "/init";
-	}
-
-	return callbackUrl;
-}
 
 type LoginCredentialsFieldsProps = {
 	email: string;
@@ -489,7 +482,12 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 							});
 							// Optionally redirect to verification pending page
 							setTimeout(() => {
-								router.push(`/verify-email-pending?email=${encodeURIComponent(email)}`);
+								router.push(
+									withCallbackUrl(
+										`/verify-email-pending?email=${encodeURIComponent(email)}`,
+										callbackUrl,
+									),
+								);
 							}, 3000);
 						} else {
 							dispatch({
@@ -865,7 +863,10 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 			{!requires2FA && showEmailPassword && (
 				<div className="text-center text-sm">
 					{t("auth.dont-have-account", "Don't have an account?")}{" "}
-					<Link className="underline underline-offset-4" href="/sign-up">
+					<Link
+						className="underline underline-offset-4"
+						href={withCallbackUrl("/sign-up", callbackUrl)}
+					>
 						{t("auth.sign-up", "Sign up")}
 					</Link>
 				</div>
