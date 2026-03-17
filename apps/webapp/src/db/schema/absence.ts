@@ -81,8 +81,8 @@ export const absenceEntry = pgTable(
 			table.canonicalRecordId,
 		),
 		foreignKey({
-			columns: [table.organizationId, table.canonicalRecordId],
-			foreignColumns: [timeRecord.organizationId, timeRecord.id],
+			columns: [table.canonicalRecordId, table.organizationId],
+			foreignColumns: [timeRecord.id, timeRecord.organizationId],
 		}),
 		index("absenceEntry_employeeId_status_idx").on(table.employeeId, table.status),
 	],

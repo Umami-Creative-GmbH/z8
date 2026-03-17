@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { boolean, check, foreignKey, index, integer, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { boolean, check, foreignKey, index, integer, pgTable, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 
 import { organization, user } from "../auth-schema";
@@ -44,8 +44,8 @@ export const timeRecord = pgTable(
 		updatedBy: text("updated_by").references(() => user.id),
 	},
 	(table) => [
-		uniqueIndex("timeRecord_id_organizationId_idx").on(table.id, table.organizationId),
-		uniqueIndex("timeRecord_id_recordKind_idx").on(table.id, table.recordKind),
+		unique("timeRecord_id_organizationId_idx").on(table.id, table.organizationId),
+		unique("timeRecord_id_recordKind_idx").on(table.id, table.recordKind),
 		index("timeRecord_organizationId_idx").on(table.organizationId),
 		index("timeRecord_employeeId_idx").on(table.employeeId),
 		index("timeRecord_recordKind_idx").on(table.recordKind),
@@ -84,7 +84,7 @@ export const timeRecordWork = pgTable(
 		computationMetadata: text("computation_metadata"),
 	},
 	(table) => [
-		uniqueIndex("timeRecordWork_record_org_idx").on(table.recordId, table.organizationId),
+		unique("timeRecordWork_record_org_idx").on(table.recordId, table.organizationId),
 		index("timeRecordWork_organizationId_idx").on(table.organizationId),
 		index("timeRecordWork_workCategoryId_idx").on(table.workCategoryId),
 		check("timeRecordWork_recordKind_work_chk", sql`${table.recordKind} = 'work'`),

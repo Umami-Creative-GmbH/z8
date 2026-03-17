@@ -1,3 +1,4 @@
+import { getTableConfig } from "drizzle-orm/pg-core";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -56,5 +57,21 @@ describe("time-record schema", () => {
 		expect(timeRecordWork.recordKind.name).toBe("record_kind");
 		expect(timeRecordAbsence.recordKind.name).toBe("record_kind");
 		expect(timeRecordBreak.recordKind.name).toBe("record_kind");
+	});
+
+	it("materializes composite uniqueness needed by canonical foreign keys as constraints", () => {
+		const timeRecordUniqueConstraints = getTableConfig(timeRecord).uniqueConstraints.map((constraint) =>
+			constraint.getName(),
+		);
+		const timeRecordWorkUniqueConstraints = getTableConfig(timeRecordWork).uniqueConstraints.map((constraint) =>
+			constraint.getName(),
+		);
+
+		expect(timeRecordUniqueConstraints).toEqual(
+			expect.arrayContaining(["timeRecord_id_organizationId_idx", "timeRecord_id_recordKind_idx"]),
+		);
+		expect(timeRecordWorkUniqueConstraints).toEqual(
+			expect.arrayContaining(["timeRecordWork_record_org_idx"]),
+		);
 	});
 });
