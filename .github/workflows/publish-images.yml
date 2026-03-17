@@ -57,6 +57,7 @@ jobs:
             *.platform=${{ matrix.platform }}
             *.cache-from=type=gha,scope=${{ matrix.arch }}
             *.cache-to=type=gha,mode=max,scope=${{ matrix.arch }}
+            *.provenance=false
         env:
           NEXT_PUBLIC_BUILD_HASH: ${{ github.sha }}
 
