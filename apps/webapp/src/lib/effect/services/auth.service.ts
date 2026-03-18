@@ -1,15 +1,12 @@
 import { Context, Effect, Layer } from "effect";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
+import type { SessionAuthUser } from "@/lib/auth/auth-context-user";
 import { AuthenticationError } from "../errors";
 
 export interface Session {
-	user: {
-		id: string;
-		email: string;
+	user: SessionAuthUser & {
 		invitedVia?: string | null;
-		name: string;
-		role?: string;
 	};
 	session: {
 		id: string;

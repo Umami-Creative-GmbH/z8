@@ -257,6 +257,16 @@ export const auth = betterAuth({
 	// User additional fields - these will be included in the generated schema
 	user: {
 		additionalFields: {
+			firstName: {
+				type: "string",
+				required: false,
+				input: true,
+			},
+			lastName: {
+				type: "string",
+				required: false,
+				input: true,
+			},
 			canCreateOrganizations: {
 				type: "boolean",
 				required: false,

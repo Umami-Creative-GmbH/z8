@@ -7,6 +7,10 @@ import { db } from "@/db";
 import { invitation, member, organization, user as authUser } from "@/db/auth-schema";
 import { employee, employeeManagers, teamPermissions, userSettings } from "@/db/schema";
 import { auth } from "@/lib/auth";
+import {
+	mapSessionUserToAuthContextUser,
+	type AuthContextUser,
+} from "@/lib/auth/auth-context-user";
 import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { ManagerService, ManagerServiceLive } from "@/lib/effect/services/manager.service";
 import { detectAppType, type AppPermissions } from "@/lib/effect/services/app-access.service";
@@ -20,18 +24,7 @@ import {
 import type { PermissionFlags } from "@/lib/effect/services/permissions.service";
 
 export interface AuthContext {
-	user: {
-		id: string;
-		email: string;
-		name: string;
-		image?: string;
-		role?: string;
-		canCreateOrganizations: boolean;
-		// App access permissions
-		canUseWebapp: boolean;
-		canUseDesktop: boolean;
-		canUseMobile: boolean;
-	};
+	user: AuthContextUser;
 	session: {
 		activeOrganizationId: string | null;
 	};
@@ -42,7 +35,6 @@ export interface AuthContext {
 		teamId: string | null;
 	} | null;
 }
-
 export interface UserOrganization {
 	id: string;
 	name: string;
@@ -92,18 +84,7 @@ export async function getAuthContext(): Promise<AuthContext | null> {
 	// No fallback - if no active org, employee stays null
 
 	return {
-		user: {
-			id: session.user.id,
-			email: session.user.email,
-			name: session.user.name,
-			image: session.user.image ?? undefined,
-			role: session.user.role ?? undefined,
-			canCreateOrganizations: session.user.canCreateOrganizations ?? false,
-			// App access permissions - default to true for backward compatibility
-			canUseWebapp: session.user.canUseWebapp ?? true,
-			canUseDesktop: session.user.canUseDesktop ?? true,
-			canUseMobile: session.user.canUseMobile ?? true,
-		},
+		user: mapSessionUserToAuthContextUser(session.user),
 		session: {
 			activeOrganizationId,
 		},
@@ -547,17 +528,7 @@ export async function getVerifiedOrgContext(requestedOrgId: string | null): Prom
 	}
 
 	return {
-		user: {
-			id: session.user.id,
-			email: session.user.email,
-			name: session.user.name,
-			image: session.user.image ?? undefined,
-			role: session.user.role ?? undefined,
-			canCreateOrganizations: session.user.canCreateOrganizations ?? false,
-			canUseWebapp: session.user.canUseWebapp ?? true,
-			canUseDesktop: session.user.canUseDesktop ?? true,
-			canUseMobile: session.user.canUseMobile ?? true,
-		},
+		user: mapSessionUserToAuthContextUser(session.user),
 		organizationId: verification.organizationId,
 		employeeId: verification.employeeId,
 		role: verification.role,

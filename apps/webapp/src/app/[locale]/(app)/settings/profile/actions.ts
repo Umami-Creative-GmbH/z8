@@ -1,32 +1,170 @@
 "use server";
 
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { headers } from "next/headers";
 import { db } from "@/db";
-import { userSettings } from "@/db/schema";
+import { employee, userSettings } from "@/db/schema";
+import { toAuthStructuredName, trimStructuredNamePart } from "@/lib/auth/derived-user-name";
 import { auth } from "@/lib/auth";
 import { ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
-import { passwordChangeSchema, profileUpdateSchema } from "@/lib/validations/profile";
+import {
+	passwordChangeSchema,
+	profileDetailsUpdateSchema,
+	profileImageUpdateSchema,
+} from "@/lib/validations/profile";
+
+type AuthProfileUpdate = {
+	firstName: string | undefined;
+	lastName: string | undefined;
+	name: string;
+	image?: string | null;
+};
+
+type StructuredProfileDetailsInput = {
+	firstName: string;
+	lastName: string;
+	gender?: "male" | "female" | "other" | null;
+	birthday?: Date | null;
+	image?: string | null;
+};
+
+type LegacyProfileUpdateInput = {
+	name: string;
+	image?: string | null;
+};
+
+function normalizeProfileImage(image: string | null | undefined): string | null | undefined {
+	if (image === null || image === "") {
+		return null;
+	}
+
+	if (image) {
+		return image;
+	}
+
+	return undefined;
+}
+
+async function updateBetterAuthProfile(
+	updateData: AuthProfileUpdate,
+): Promise<void> {
+	await auth.api.updateUser({
+		body: updateData,
+		headers: await headers(),
+	});
+}
+
+function buildStructuredAuthProfile(
+	data: StructuredProfileDetailsInput,
+	fallbackName: string,
+): AuthProfileUpdate {
+	const updateData: AuthProfileUpdate = {
+		...toAuthStructuredName({
+			firstName: data.firstName,
+			lastName: data.lastName,
+			fallbackName,
+		}),
+	};
+	const normalizedImage = normalizeProfileImage(data.image);
+
+	if (normalizedImage !== undefined) {
+		updateData.image = normalizedImage;
+	}
+
+	return updateData;
+}
+
+function buildSessionAuthProfile(session: {
+	user: {
+		firstName?: string | null;
+		lastName?: string | null;
+		name: string;
+		image?: string | null;
+	};
+}): AuthProfileUpdate {
+	const updateData: AuthProfileUpdate = {
+		...toAuthStructuredName({
+			firstName: session.user.firstName ?? "",
+			lastName: session.user.lastName ?? "",
+			fallbackName: session.user.name,
+		}),
+	};
+	const normalizedImage = normalizeProfileImage(session.user.image);
+
+	if (normalizedImage !== undefined) {
+		updateData.image = normalizedImage;
+	}
+
+	return updateData;
+}
+
+function syncActiveEmployeeProfile(
+	dbService: InstanceType<typeof DatabaseService>["Type"],
+	userId: string,
+	activeOrganizationId: string | undefined,
+	data: StructuredProfileDetailsInput,
+): Effect.Effect<void, unknown, unknown> {
+	return Effect.gen(function* (_) {
+		if (!activeOrganizationId) {
+			return;
+		}
+
+		const activeEmployee = (yield* _(
+			dbService.query("findActiveProfileEmployee", async () =>
+				dbService.db.query.employee.findFirst({
+					where: and(
+						eq(employee.userId, userId),
+						eq(employee.organizationId, activeOrganizationId),
+						eq(employee.isActive, true),
+					),
+					columns: { id: true },
+				}),
+			),
+		)) as { id: string } | null | undefined;
+
+		if (!activeEmployee) {
+			return;
+		}
+
+		yield* _(
+			dbService.query("syncActiveProfileEmployee", async () => {
+				await dbService.db
+					.update(employee)
+					.set({
+						firstName: trimStructuredNamePart(data.firstName) ?? null,
+						lastName: trimStructuredNamePart(data.lastName) ?? null,
+						gender: data.gender ?? null,
+						birthday: data.birthday ?? null,
+					})
+					.where(
+						and(eq(employee.id, activeEmployee.id), eq(employee.organizationId, activeOrganizationId)),
+					);
+			}),
+		);
+	});
+}
 
 /**
- * Update user profile (name and/or image) using Effect pattern
+ * Update user profile details using structured names.
  */
-export async function updateProfile(data: {
-	name: string;
+export async function updateProfileDetails(data: {
+	firstName: string;
+	lastName: string;
+	gender?: "male" | "female" | "other" | null;
+	birthday?: Date | null;
 	image?: string | null;
 }): Promise<ServerActionResult<void>> {
 	const effect = Effect.gen(function* (_) {
-		// Step 1: Get session via AuthService
 		const authService = yield* _(AuthService);
-		const _session = yield* _(authService.getSession());
+		const session = yield* _(authService.getSession());
+		const dbService = yield* _(DatabaseService);
 
-		// Step 2: Validate input
-		const result = profileUpdateSchema.safeParse(data);
+		const result = profileDetailsUpdateSchema.safeParse(data);
 		if (!result.success) {
 			return yield* _(
 				Effect.fail(
@@ -38,26 +176,104 @@ export async function updateProfile(data: {
 			);
 		}
 
-		// Step 3: Prepare update data
-		const updateData: { name: string; image?: string | null } = { name: data.name };
-		// Handle image: if null, explicitly set to null to remove it
-		// if empty string, also set to null to remove it
-		// if has value, set it
-		if (data.image === null || data.image === "") {
-			updateData.image = null;
-		} else if (data.image) {
-			updateData.image = data.image;
-		}
+		const updateData = buildStructuredAuthProfile(result.data, session.user.name);
+		const rollbackData = buildSessionAuthProfile(session);
 
-		// Step 4: Update user using Better Auth API
 		yield* _(
 			Effect.tryPromise({
-				try: async () => {
-					await auth.api.updateUser({
-						body: updateData,
-						headers: await headers(),
+				try: async () => updateBetterAuthProfile(updateData),
+				catch: (error) => {
+					return new ValidationError({
+						message: error instanceof Error ? error.message : "Failed to update profile",
+						field: "profile",
 					});
 				},
+			}),
+		);
+
+		yield* _(
+			syncActiveEmployeeProfile(
+				dbService,
+				session.user.id,
+				session.session.activeOrganizationId,
+				result.data,
+			).pipe(
+				Effect.catchAll(() =>
+					Effect.gen(function* (_) {
+						yield* _(
+							Effect.tryPromise({
+								try: async () => updateBetterAuthProfile(rollbackData),
+								catch: () =>
+									new ValidationError({
+										message: "Failed to update profile",
+										field: "profile",
+									}),
+							}),
+						);
+
+						return yield* _(
+							Effect.fail(
+								new ValidationError({
+									message: "Failed to update profile",
+									field: "profile",
+								}),
+							),
+						);
+					}),
+				),
+			),
+		);
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
+}
+
+export async function updateProfile(data: StructuredProfileDetailsInput): Promise<ServerActionResult<void>>;
+export async function updateProfile(data: LegacyProfileUpdateInput): Promise<ServerActionResult<void>>;
+export async function updateProfile(
+	data: StructuredProfileDetailsInput | LegacyProfileUpdateInput,
+): Promise<ServerActionResult<void>> {
+	if ("firstName" in data && "lastName" in data) {
+		return updateProfileDetails(data);
+	}
+
+	return updateProfileImage({ image: data.image });
+}
+
+/**
+ * Update user profile image while preserving stored structured names.
+ */
+export async function updateProfileImage(data: {
+	image?: string | null;
+}): Promise<ServerActionResult<void>> {
+	const effect = Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
+
+		const result = profileImageUpdateSchema.safeParse(data);
+		if (!result.success) {
+			return yield* _(
+				Effect.fail(
+					new ValidationError({
+						message: result.error.issues[0]?.message || "Invalid input",
+						field: "profile",
+					}),
+				),
+			);
+		}
+
+		const updateData = buildSessionAuthProfile({
+			user: {
+				firstName: session.user.firstName,
+				lastName: session.user.lastName,
+				name: session.user.name,
+				image: result.data.image,
+			},
+		});
+
+		yield* _(
+			Effect.tryPromise({
+				try: async () => updateBetterAuthProfile(updateData),
 				catch: (error) => {
 					return new ValidationError({
 						message: error instanceof Error ? error.message : "Failed to update profile",

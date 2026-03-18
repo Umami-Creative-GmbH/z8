@@ -1,6 +1,6 @@
 /* @vitest-environment jsdom */
 
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -96,6 +96,7 @@ describe("SignupForm", () => {
 		pushMock.mockReset();
 		signInSocialMock.mockReset();
 		signUpEmailMock.mockReset();
+		signUpEmailMock.mockResolvedValue({ error: null });
 		useTurnstileMock.mockReset();
 		useTurnstileMock.mockReturnValue(null);
 	});
@@ -146,15 +147,39 @@ describe("SignupForm", () => {
 		);
 	});
 
-	it("focuses the first invalid field and associates its error on submit", () => {
+	it("focuses the first invalid field and associates its error on submit", async () => {
 		render(<SignupForm />);
 
 		fireEvent.click(screen.getByRole("button", { name: "Sign up" }));
 
-		const nameInput = screen.getByLabelText("Name");
-		expect(document.activeElement).toBe(nameInput);
-		expect(nameInput.getAttribute("aria-describedby")).toContain("name-error");
-		expect(screen.getByText("Name is required").id).toBe("name-error");
+		const firstNameInput = screen.getByLabelText("First Name");
+		await waitFor(() => {
+			expect(document.activeElement).toBe(firstNameInput);
+			expect(firstNameInput.getAttribute("aria-describedby")).toContain("firstName-error");
+			expect(screen.getByText("First Name is required").id).toBe("firstName-error");
+		});
+	});
+
+	it("uses example-style placeholders for the structured name fields", () => {
+		render(<SignupForm />);
+
+		expect(screen.getByLabelText("First Name").getAttribute("placeholder")).toBe("John…");
+		expect(screen.getByLabelText("Last Name").getAttribute("placeholder")).toBe("Doe…");
+		expect(screen.getByLabelText("Email").getAttribute("placeholder")).toBe("jane@example.com…");
+	});
+
+	it("wires the last-name required error to the input on blur", () => {
+		render(<SignupForm />);
+
+		const lastNameInput = screen.getByLabelText("Last Name");
+
+		fireEvent.blur(lastNameInput, {
+			target: { value: "" },
+		});
+
+		const errorMessage = screen.getByText("Last Name is required");
+		expect(errorMessage.id).toBe("lastName-error");
+		expect(lastNameInput.getAttribute("aria-describedby")).toContain("lastName-error");
 	});
 
 	it("uses the required confirmation message for an empty confirm-password blur", () => {
@@ -170,7 +195,7 @@ describe("SignupForm", () => {
 		expect(screen.getByText("Please confirm your password")).toBeTruthy();
 	});
 
-	it("keeps submit available when turnstile is enabled and explains what is missing", () => {
+	it("keeps submit available when turnstile is enabled and explains what is missing", async () => {
 		useTurnstileMock.mockReturnValue({
 			enabled: true,
 			siteKey: "site-key",
@@ -180,8 +205,11 @@ describe("SignupForm", () => {
 
 		const submitButton = screen.getByRole("button", { name: "Sign up" });
 		expect(submitButton.hasAttribute("disabled")).toBe(false);
-		fireEvent.change(screen.getByLabelText("Name"), {
-			target: { value: "Jamie Admin" },
+		fireEvent.change(screen.getByLabelText("First Name"), {
+			target: { value: "Jamie" },
+		});
+		fireEvent.change(screen.getByLabelText("Last Name"), {
+			target: { value: "Admin" },
 		});
 		fireEvent.change(screen.getByLabelText("Email"), {
 			target: { value: "jamie@example.com" },
@@ -195,6 +223,43 @@ describe("SignupForm", () => {
 
 		fireEvent.click(submitButton);
 
-		expect(screen.getByText("Please complete the verification.")).toBeTruthy();
+		await waitFor(() => {
+			expect(screen.getByText("Please complete the verification.")).toBeTruthy();
+		});
+		expect(signUpEmailMock).not.toHaveBeenCalled();
+		expect(submitButton.hasAttribute("disabled")).toBe(false);
+		expect(screen.queryByText("Loading…")).toBeNull();
+	});
+
+	it("passes structured names and the derived name to Better Auth", async () => {
+		render(<SignupForm />);
+
+		fireEvent.change(screen.getByLabelText("First Name"), {
+			target: { value: "  Jamie  " },
+		});
+		fireEvent.change(screen.getByLabelText("Last Name"), {
+			target: { value: "  Admin  " },
+		});
+		fireEvent.change(screen.getByLabelText("Email"), {
+			target: { value: "jamie@example.com" },
+		});
+		fireEvent.change(screen.getByLabelText("Password"), {
+			target: { value: "Password1!" },
+		});
+		fireEvent.change(screen.getByLabelText("Confirm Password"), {
+			target: { value: "Password1!" },
+		});
+
+		fireEvent.click(screen.getByRole("button", { name: "Sign up" }));
+
+		await waitFor(() => {
+			expect(signUpEmailMock).toHaveBeenCalledWith({
+				email: "jamie@example.com",
+				password: "Password1!",
+				firstName: "Jamie",
+				lastName: "Admin",
+				name: "Jamie Admin",
+			});
+		});
 	});
 });
