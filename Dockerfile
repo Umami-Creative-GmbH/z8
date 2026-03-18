@@ -90,14 +90,12 @@ COPY --from=workspace --chown=app:nodejs /app/pnpm-workspace.yaml ./
 
 WORKDIR /app/apps/webapp
 
+FROM app-runtime AS webapp
 USER app
-
 EXPOSE 3000
-
 ENTRYPOINT ["/sbin/tini", "--"]
 CMD ["pnpm", "start"]
 
-FROM app-runtime AS webapp
 HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:3000/api/health || exit 1
 
@@ -105,9 +103,12 @@ FROM app-runtime AS migration
 CMD ["node", "./scripts/migrate-with-lock.js"]
 
 FROM app-runtime AS worker
+USER app
+ENTRYPOINT ["/sbin/tini", "--"]
+CMD ["tsx", "src/worker.ts"]
+
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
     CMD node -e "const Redis=require('ioredis');const r=new Redis({host:process.env.VALKEY_HOST||'localhost',port:process.env.VALKEY_PORT||6379,password:process.env.VALKEY_PASSWORD,lazyConnect:false});r.ping().then(()=>process.exit(0)).catch(()=>process.exit(1))"
-CMD ["tsx", "src/worker.ts"]
 
 # Marketing build graph.
 FROM turbo-source AS marketing-pruner
