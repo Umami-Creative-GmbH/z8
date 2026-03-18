@@ -48,9 +48,9 @@ The workflow at `.github/workflows/publish-images.yml` builds and publishes the 
 Workflow details:
 
 - Uses native `amd64` and native `arm64` runners (no QEMU emulation)
-- Builds per-architecture images first, then publishes multi-arch manifest tags
-- Keeps three role-specific images (`webapp`, `worker`, `migration`) with different runtime commands
-- Optimizes build graph so worker/migration builds do not compile the Next.js app bundle
+- Builds one shared runtime image per architecture, then publishes multi-arch manifest tags for all three repositories
+- Publishes `z8-webapp`, `z8-worker`, and `z8-migration` as different tags that point to the same image digest
+- Specializes worker and migration at deploy time via explicit command overrides in the runtime manifests
 
 ### Triggers
 
