@@ -16,6 +16,12 @@ concurrency:
   group: publish-images-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  DIGEST_ROOT: /tmp/digests
+  IMAGE_NAMESPACE: umami-creative-gmbh
+  REGISTRY: ghcr.io
+  SHARED_IMAGE: ghcr.io/umami-creative-gmbh/z8-webapp
+
 jobs:
   build-native:
     name: Build Native (${{ matrix.arch }})
@@ -47,63 +53,41 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push all images by digest
-        id: bake
-        uses: docker/bake-action@v6
+      - name: Build and push shared runtime by digest
+        id: build_runtime
+        uses: docker/build-push-action@v6
         with:
-          source: .
-          files: ./docker-bake.hcl
-          set: |
-            *.platform=${{ matrix.platform }}
-            *.cache-from=type=gha,scope=${{ matrix.arch }}
-            *.cache-to=type=gha,mode=max,scope=${{ matrix.arch }}
-            *.provenance=false
-        env:
-          NEXT_PUBLIC_BUILD_HASH: ${{ github.sha }}
+          context: .
+          file: ./Dockerfile
+          target: app-runtime
+          platforms: ${{ matrix.platform }}
+          outputs: type=image,name=${{ env.SHARED_IMAGE }},push-by-digest=true,name-canonical=true,push=true
+          build-args: |
+            NEXT_PUBLIC_BUILD_HASH=${{ github.sha }}
+          cache-from: type=gha,scope=app-runtime-${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=app-runtime-${{ matrix.arch }}
 
-      - name: Export digest artifacts
+      - name: Export digest artifact
         env:
-          BAKE_METADATA: ${{ steps.bake.outputs.metadata }}
+          IMAGE_DIGEST: ${{ steps.build_runtime.outputs.digest }}
         run: |
           set -euo pipefail
-          if [ -z "${BAKE_METADATA}" ]; then
-            echo "::error::bake metadata output is empty"
+          if [ -z "${IMAGE_DIGEST}" ]; then
+            echo "::error::image digest output is empty"
             exit 1
           fi
-          mkdir -p /tmp/digests/webapp /tmp/digests/worker /tmp/digests/migration
-          printf '%s' "$BAKE_METADATA" > /tmp/bake-metadata.json
-          for target in webapp worker migration; do
-            digest=$(jq -r ".\"$target\".\"containerimage.digest\"" /tmp/bake-metadata.json)
-            if [ -z "${digest}" ] || [ "${digest}" = "null" ]; then
-              echo "::error::missing digest for target ${target}"
-              exit 1
-            fi
-            touch "/tmp/digests/$target/${digest#sha256:}"
-          done
+          mkdir -p "${DIGEST_ROOT}/shared"
+          touch "${DIGEST_ROOT}/shared/${IMAGE_DIGEST#sha256:}"
 
-      - name: Upload webapp digest
+      - name: Upload digest
         uses: actions/upload-artifact@v4
         with:
-          name: digests-webapp-${{ matrix.arch }}
-          path: /tmp/digests/webapp/*
-          if-no-files-found: error
-
-      - name: Upload worker digest
-        uses: actions/upload-artifact@v4
-        with:
-          name: digests-worker-${{ matrix.arch }}
-          path: /tmp/digests/worker/*
-          if-no-files-found: error
-
-      - name: Upload migration digest
-        uses: actions/upload-artifact@v4
-        with:
-          name: digests-migration-${{ matrix.arch }}
-          path: /tmp/digests/migration/*
+          name: digests-shared-${{ matrix.arch }}
+          path: ${{ env.DIGEST_ROOT }}/shared/*
           if-no-files-found: error
 
   publish-manifests:
-    name: Publish Manifests (${{ matrix.image }})
+    name: Publish Manifests (${{ matrix.repository }})
     needs: build-native
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -111,13 +95,10 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        include:
-          - image: z8-webapp
-            artifact: webapp
-          - image: z8-worker
-            artifact: worker
-          - image: z8-migration
-            artifact: migration
+        repository:
+          - z8-webapp
+          - z8-worker
+          - z8-migration
 
     steps:
       - name: Set up Docker Buildx
@@ -133,20 +114,20 @@ jobs:
       - name: Download amd64 digest
         uses: actions/download-artifact@v4
         with:
-          name: digests-${{ matrix.artifact }}-amd64
-          path: /tmp/digests/amd64
+          name: digests-shared-amd64
+          path: ${{ env.DIGEST_ROOT }}/amd64
 
       - name: Download arm64 digest
         uses: actions/download-artifact@v4
         with:
-          name: digests-${{ matrix.artifact }}-arm64
-          path: /tmp/digests/arm64
+          name: digests-shared-arm64
+          path: ${{ env.DIGEST_ROOT }}/arm64
 
       - name: Docker metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/umami-creative-gmbh/${{ matrix.image }}
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/${{ matrix.repository }}
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
             type=sha,prefix=sha-
@@ -156,20 +137,19 @@ jobs:
 
       - name: Create and push multi-arch manifests
         env:
-          IMAGE_NAME: ghcr.io/umami-creative-gmbh/${{ matrix.image }}
           TAGS: ${{ steps.meta.outputs.tags }}
         run: |
           set -euo pipefail
 
-          set -- /tmp/digests/amd64/*
+          set -- "${DIGEST_ROOT}/amd64"/*
           AMD64_DIGEST="sha256:${1##*/}"
 
-          set -- /tmp/digests/arm64/*
+          set -- "${DIGEST_ROOT}/arm64"/*
           ARM64_DIGEST="sha256:${1##*/}"
 
           for tag in $TAGS; do
             docker buildx imagetools create \
               -t "$tag" \
-              "$IMAGE_NAME@$AMD64_DIGEST" \
-              "$IMAGE_NAME@$ARM64_DIGEST"
+              "${SHARED_IMAGE}@$AMD64_DIGEST" \
+              "${SHARED_IMAGE}@$ARM64_DIGEST"
           done
