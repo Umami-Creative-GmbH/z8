@@ -20,11 +20,10 @@ env:
   DIGEST_ROOT: /tmp/digests
   IMAGE_NAMESPACE: umami-creative-gmbh
   REGISTRY: ghcr.io
-  SHARED_IMAGE: ghcr.io/umami-creative-gmbh/z8-webapp
 
 jobs:
   build-native:
-    name: Build Native (${{ matrix.arch }})
+    name: Build Native (${{ matrix.repository }} ${{ matrix.arch }})
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 120
 
@@ -34,10 +33,34 @@ jobs:
         include:
           - arch: amd64
             platform: linux/amd64
+            repository: z8-webapp
             runner: ubuntu-latest
+            target: webapp
           - arch: arm64
             platform: linux/arm64
+            repository: z8-webapp
             runner: ubuntu-24.04-arm
+            target: webapp
+          - arch: amd64
+            platform: linux/amd64
+            repository: z8-worker
+            runner: ubuntu-latest
+            target: worker
+          - arch: arm64
+            platform: linux/arm64
+            repository: z8-worker
+            runner: ubuntu-24.04-arm
+            target: worker
+          - arch: amd64
+            platform: linux/amd64
+            repository: z8-migration
+            runner: ubuntu-latest
+            target: migration
+          - arch: arm64
+            platform: linux/arm64
+            repository: z8-migration
+            runner: ubuntu-24.04-arm
+            target: migration
 
     steps:
       - name: Checkout
@@ -53,19 +76,19 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push shared runtime by digest
+      - name: Build and push target by digest
         id: build_runtime
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
-          target: app-runtime
+          target: ${{ matrix.target }}
           platforms: ${{ matrix.platform }}
-          outputs: type=image,name=${{ env.SHARED_IMAGE }},push-by-digest=true,name-canonical=true,push=true
+          outputs: type=image,name=${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/${{ matrix.repository }},push-by-digest=true,name-canonical=true,push=true
           build-args: |
             NEXT_PUBLIC_BUILD_HASH=${{ github.sha }}
-          cache-from: type=gha,scope=app-runtime-${{ matrix.arch }}
-          cache-to: type=gha,mode=max,scope=app-runtime-${{ matrix.arch }}
+          cache-from: type=gha,scope=${{ matrix.target }}-${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.target }}-${{ matrix.arch }}
 
       - name: Export digest artifact
         env:
@@ -82,7 +105,7 @@ jobs:
       - name: Upload digest
         uses: actions/upload-artifact@v4
         with:
-          name: digests-shared-${{ matrix.arch }}
+          name: digests-${{ matrix.repository }}-${{ matrix.arch }}
           path: ${{ env.DIGEST_ROOT }}/shared/*
           if-no-files-found: error
 
@@ -114,13 +137,13 @@ jobs:
       - name: Download amd64 digest
         uses: actions/download-artifact@v4
         with:
-          name: digests-shared-amd64
+          name: digests-${{ matrix.repository }}-amd64
           path: ${{ env.DIGEST_ROOT }}/amd64
 
       - name: Download arm64 digest
         uses: actions/download-artifact@v4
         with:
-          name: digests-shared-arm64
+          name: digests-${{ matrix.repository }}-arm64
           path: ${{ env.DIGEST_ROOT }}/arm64
 
       - name: Docker metadata
@@ -150,6 +173,6 @@ jobs:
           for tag in $TAGS; do
             docker buildx imagetools create \
               -t "$tag" \
-              "${SHARED_IMAGE}@$AMD64_DIGEST" \
-              "${SHARED_IMAGE}@$ARM64_DIGEST"
+              "${REGISTRY}/${IMAGE_NAMESPACE}/${{ matrix.repository }}@$AMD64_DIGEST" \
+              "${REGISTRY}/${IMAGE_NAMESPACE}/${{ matrix.repository }}@$ARM64_DIGEST"
           done
