@@ -20,10 +20,11 @@ env:
   DIGEST_ROOT: /tmp/digests
   IMAGE_NAMESPACE: umami-creative-gmbh
   REGISTRY: ghcr.io
+  SHARED_RUNTIME_REPOSITORY: z8-app-runtime
 
 jobs:
-  build-native:
-    name: Build Native (${{ matrix.repository }} ${{ matrix.arch }})
+  build-shared:
+    name: Build Shared Runtime (${{ matrix.arch }})
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 120
 
@@ -33,34 +34,10 @@ jobs:
         include:
           - arch: amd64
             platform: linux/amd64
-            repository: z8-webapp
             runner: ubuntu-latest
-            target: webapp
           - arch: arm64
             platform: linux/arm64
-            repository: z8-webapp
             runner: ubuntu-24.04-arm
-            target: webapp
-          - arch: amd64
-            platform: linux/amd64
-            repository: z8-worker
-            runner: ubuntu-latest
-            target: worker
-          - arch: arm64
-            platform: linux/arm64
-            repository: z8-worker
-            runner: ubuntu-24.04-arm
-            target: worker
-          - arch: amd64
-            platform: linux/amd64
-            repository: z8-migration
-            runner: ubuntu-latest
-            target: migration
-          - arch: arm64
-            platform: linux/arm64
-            repository: z8-migration
-            runner: ubuntu-24.04-arm
-            target: migration
 
     steps:
       - name: Checkout
@@ -76,8 +53,191 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push target by digest
+      - name: Build and push shared runtime by digest
         id: build_runtime
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          target: app-runtime
+          platforms: ${{ matrix.platform }}
+          outputs: type=image,name=${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/${{ env.SHARED_RUNTIME_REPOSITORY }},push-by-digest=true,name-canonical=true,push=true
+          build-args: |
+            NEXT_PUBLIC_BUILD_HASH=${{ github.sha }}
+          cache-from: type=gha,scope=app-runtime-${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=app-runtime-${{ matrix.arch }}
+
+      - name: Export shared runtime artifact
+        env:
+          IMAGE_REFERENCE: ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/${{ env.SHARED_RUNTIME_REPOSITORY }}
+          IMAGE_DIGEST: ${{ steps.build_runtime.outputs.digest }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${IMAGE_DIGEST}" ]; then
+            echo "::error::shared runtime artifact digest is empty"
+            exit 1
+          fi
+
+          if [ "${IMAGE_DIGEST#sha256:}" = "${IMAGE_DIGEST}" ]; then
+            echo "::error::shared runtime artifact digest must start with sha256:"
+            exit 1
+          fi
+
+          IMAGE_REFERENCE_WITH_DIGEST="${IMAGE_REFERENCE}@${IMAGE_DIGEST}"
+
+          case "${IMAGE_REFERENCE_WITH_DIGEST}" in
+            ghcr.io/umami-creative-gmbh/z8-app-runtime@sha256:*)
+              ;;
+            *)
+              echo "::error::shared runtime artifact reference is malformed"
+              exit 1
+              ;;
+          esac
+
+          ARTIFACT_DIR="${DIGEST_ROOT}/shared-runtime/${{ matrix.arch }}"
+          mkdir -p "${ARTIFACT_DIR}"
+
+          printf '%s\n' "${IMAGE_REFERENCE_WITH_DIGEST}" > "${ARTIFACT_DIR}/reference.txt"
+          printf '%s\n' "${IMAGE_DIGEST}" > "${ARTIFACT_DIR}/digest.txt"
+          printf '%s\n' "${IMAGE_REFERENCE}" > "${ARTIFACT_DIR}/repository.txt"
+          printf '%s\n' "${{ matrix.arch }}" > "${ARTIFACT_DIR}/arch.txt"
+
+          if [ ! -s "${ARTIFACT_DIR}/reference.txt" ]; then
+            echo "::error::shared runtime artifact is missing reference.txt"
+            exit 1
+          fi
+          if [ ! -s "${ARTIFACT_DIR}/digest.txt" ]; then
+            echo "::error::shared runtime artifact is missing digest.txt"
+            exit 1
+          fi
+          if [ ! -s "${ARTIFACT_DIR}/repository.txt" ]; then
+            echo "::error::shared runtime artifact is missing repository.txt"
+            exit 1
+          fi
+          if [ ! -s "${ARTIFACT_DIR}/arch.txt" ]; then
+            echo "::error::shared runtime artifact is missing arch.txt"
+            exit 1
+          fi
+
+      - name: Upload shared runtime artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: shared-runtime-${{ matrix.arch }}
+          path: ${{ env.DIGEST_ROOT }}/shared-runtime/${{ matrix.arch }}
+          if-no-files-found: error
+
+  publish-targets:
+    name: Publish Target (${{ matrix.repository }} ${{ matrix.arch }})
+    needs: build-shared
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 120
+
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - repository: z8-webapp
+            target: webapp
+            arch: amd64
+            platform: linux/amd64
+            runner: ubuntu-latest
+          - repository: z8-webapp
+            target: webapp
+            arch: arm64
+            platform: linux/arm64
+            runner: ubuntu-24.04-arm
+          - repository: z8-worker
+            target: worker
+            arch: amd64
+            platform: linux/amd64
+            runner: ubuntu-latest
+          - repository: z8-worker
+            target: worker
+            arch: arm64
+            platform: linux/arm64
+            runner: ubuntu-24.04-arm
+          - repository: z8-migration
+            target: migration
+            arch: amd64
+            platform: linux/amd64
+            runner: ubuntu-latest
+          - repository: z8-migration
+            target: migration
+            arch: arm64
+            platform: linux/arm64
+            runner: ubuntu-24.04-arm
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download shared runtime artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: shared-runtime-${{ matrix.arch }}
+          path: ${{ env.DIGEST_ROOT }}/shared
+
+      - name: Validate shared runtime artifact
+        run: |
+          set -euo pipefail
+
+          SHARED_ARTIFACT_DIR="${DIGEST_ROOT}/shared"
+
+          if [ ! -s "${SHARED_ARTIFACT_DIR}/reference.txt" ]; then
+            echo "::error::shared runtime artifact is missing reference.txt"
+            exit 1
+          fi
+          if [ ! -s "${SHARED_ARTIFACT_DIR}/digest.txt" ]; then
+            echo "::error::shared runtime artifact is missing digest.txt"
+            exit 1
+          fi
+          if [ ! -s "${SHARED_ARTIFACT_DIR}/repository.txt" ]; then
+            echo "::error::shared runtime artifact is missing repository.txt"
+            exit 1
+          fi
+          if [ ! -s "${SHARED_ARTIFACT_DIR}/arch.txt" ]; then
+            echo "::error::shared runtime artifact is missing arch.txt"
+            exit 1
+          fi
+
+          SHARED_ARCH="$(tr -d '\n' < "${SHARED_ARTIFACT_DIR}/arch.txt")"
+          if [ "${SHARED_ARCH}" != "${{ matrix.arch }}" ]; then
+            echo "::error::shared runtime artifact arch mismatch"
+            exit 1
+          fi
+          SHARED_REPOSITORY="$(tr -d '\n' < "${SHARED_ARTIFACT_DIR}/repository.txt")"
+          if [ "${SHARED_REPOSITORY}" != "${REGISTRY}/${IMAGE_NAMESPACE}/${SHARED_RUNTIME_REPOSITORY}" ]; then
+            echo "::error::shared runtime artifact repository mismatch"
+            exit 1
+          fi
+
+      - name: Export runtime base image
+        run: |
+          set -euo pipefail
+
+          SHARED_ARTIFACT_DIR="${DIGEST_ROOT}/shared"
+          RUNTIME_BASE_IMAGE="$(tr -d '\n' < "${SHARED_ARTIFACT_DIR}/reference.txt")"
+
+          if [ -z "${RUNTIME_BASE_IMAGE}" ]; then
+            echo "::error::shared runtime artifact reference is empty"
+            exit 1
+          fi
+
+          printf 'RUNTIME_BASE_IMAGE=%s\n' "${RUNTIME_BASE_IMAGE}" >> "${GITHUB_ENV}"
+
+      - name: Build and push target image by digest
+        id: build_target
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -87,31 +247,63 @@ jobs:
           outputs: type=image,name=${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/${{ matrix.repository }},push-by-digest=true,name-canonical=true,push=true
           build-args: |
             NEXT_PUBLIC_BUILD_HASH=${{ github.sha }}
-          cache-from: type=gha,scope=${{ matrix.target }}-${{ matrix.arch }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.target }}-${{ matrix.arch }}
+            RUNTIME_BASE_IMAGE=${{ env.RUNTIME_BASE_IMAGE }}
+          cache-from: type=gha,scope=${{ matrix.repository }}-${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.repository }}-${{ matrix.arch }}
 
-      - name: Export digest artifact
+      - name: Export target artifact
         env:
-          IMAGE_DIGEST: ${{ steps.build_runtime.outputs.digest }}
+          IMAGE_REFERENCE: ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/${{ matrix.repository }}
+          IMAGE_DIGEST: ${{ steps.build_target.outputs.digest }}
         run: |
           set -euo pipefail
+
           if [ -z "${IMAGE_DIGEST}" ]; then
-            echo "::error::image digest output is empty"
+            echo "::error::target artifact digest is empty"
             exit 1
           fi
-          mkdir -p "${DIGEST_ROOT}/shared"
-          touch "${DIGEST_ROOT}/shared/${IMAGE_DIGEST#sha256:}"
 
-      - name: Upload digest
+          if [ "${IMAGE_DIGEST#sha256:}" = "${IMAGE_DIGEST}" ]; then
+            echo "::error::target artifact digest must start with sha256:"
+            exit 1
+          fi
+
+          IMAGE_REFERENCE_WITH_DIGEST="${IMAGE_REFERENCE}@${IMAGE_DIGEST}"
+          ARTIFACT_DIR="${DIGEST_ROOT}/targets/${{ matrix.repository }}/${{ matrix.arch }}"
+          mkdir -p "${ARTIFACT_DIR}"
+
+          printf '%s\n' "${IMAGE_REFERENCE_WITH_DIGEST}" > "${ARTIFACT_DIR}/reference.txt"
+          printf '%s\n' "${IMAGE_DIGEST}" > "${ARTIFACT_DIR}/digest.txt"
+          printf '%s\n' "${IMAGE_REFERENCE}" > "${ARTIFACT_DIR}/repository.txt"
+          printf '%s\n' "${{ matrix.arch }}" > "${ARTIFACT_DIR}/arch.txt"
+
+          if [ ! -s "${ARTIFACT_DIR}/reference.txt" ]; then
+            echo "::error::target artifact is missing reference.txt"
+            exit 1
+          fi
+          if [ ! -s "${ARTIFACT_DIR}/digest.txt" ]; then
+            echo "::error::target artifact is missing digest.txt"
+            exit 1
+          fi
+          if [ ! -s "${ARTIFACT_DIR}/repository.txt" ]; then
+            echo "::error::target artifact is missing repository.txt"
+            exit 1
+          fi
+          if [ ! -s "${ARTIFACT_DIR}/arch.txt" ]; then
+            echo "::error::target artifact is missing arch.txt"
+            exit 1
+          fi
+
+      - name: Upload target artifact
         uses: actions/upload-artifact@v4
         with:
-          name: digests-${{ matrix.repository }}-${{ matrix.arch }}
-          path: ${{ env.DIGEST_ROOT }}/shared/*
+          name: target-digest-${{ matrix.repository }}-${{ matrix.arch }}
+          path: ${{ env.DIGEST_ROOT }}/targets/${{ matrix.repository }}/${{ matrix.arch }}
           if-no-files-found: error
 
   publish-manifests:
     name: Publish Manifests (${{ matrix.repository }})
-    needs: build-native
+    needs: publish-targets
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -137,14 +329,75 @@ jobs:
       - name: Download amd64 digest
         uses: actions/download-artifact@v4
         with:
-          name: digests-${{ matrix.repository }}-amd64
-          path: ${{ env.DIGEST_ROOT }}/amd64
+          name: target-digest-${{ matrix.repository }}-amd64
+          path: ${{ env.DIGEST_ROOT }}/targets/amd64
 
       - name: Download arm64 digest
         uses: actions/download-artifact@v4
         with:
-          name: digests-${{ matrix.repository }}-arm64
-          path: ${{ env.DIGEST_ROOT }}/arm64
+          name: target-digest-${{ matrix.repository }}-arm64
+          path: ${{ env.DIGEST_ROOT }}/targets/arm64
+
+      - name: Validate target artifacts
+        run: |
+          set -euo pipefail
+
+          AMD64_ARTIFACT_DIR="${DIGEST_ROOT}/targets/amd64"
+          ARM64_ARTIFACT_DIR="${DIGEST_ROOT}/targets/arm64"
+          EXPECTED_REPOSITORY="${REGISTRY}/${IMAGE_NAMESPACE}/${{ matrix.repository }}"
+
+          for artifact_dir in "${AMD64_ARTIFACT_DIR}" "${ARM64_ARTIFACT_DIR}"; do
+            if [ ! -s "${artifact_dir}/reference.txt" ]; then
+              echo "::error::target artifact is missing reference.txt"
+              exit 1
+            fi
+            if [ ! -s "${artifact_dir}/digest.txt" ]; then
+              echo "::error::target artifact is missing digest.txt"
+              exit 1
+            fi
+            if [ ! -s "${artifact_dir}/repository.txt" ]; then
+              echo "::error::target artifact is missing repository.txt"
+              exit 1
+            fi
+            if [ ! -s "${artifact_dir}/arch.txt" ]; then
+              echo "::error::target artifact is missing arch.txt"
+              exit 1
+            fi
+
+            ARTIFACT_REFERENCE="$(tr -d '\n' < "${artifact_dir}/reference.txt")"
+            ARTIFACT_DIGEST="$(tr -d '\n' < "${artifact_dir}/digest.txt")"
+            ARTIFACT_REPOSITORY="$(tr -d '\n' < "${artifact_dir}/repository.txt")"
+
+            if [ -z "${ARTIFACT_REFERENCE}" ]; then
+              echo "::error::target artifact reference is empty"
+              exit 1
+            fi
+
+            if [ -z "${ARTIFACT_DIGEST}" ]; then
+              echo "::error::target artifact digest is empty"
+              exit 1
+            fi
+
+            if [ "${ARTIFACT_REPOSITORY}" != "${EXPECTED_REPOSITORY}" ]; then
+              echo "::error::target artifact repository mismatch"
+              exit 1
+            fi
+
+            if [ "${ARTIFACT_REFERENCE}" != "${ARTIFACT_REPOSITORY}@${ARTIFACT_DIGEST}" ]; then
+              echo "::error::target artifact reference does not match repository and digest"
+              exit 1
+            fi
+          done
+
+          if [ "$(tr -d '\n' < "${AMD64_ARTIFACT_DIR}/arch.txt")" != "amd64" ]; then
+            echo "::error::target artifact arch mismatch for amd64"
+            exit 1
+          fi
+
+          if [ "$(tr -d '\n' < "${ARM64_ARTIFACT_DIR}/arch.txt")" != "arm64" ]; then
+            echo "::error::target artifact arch mismatch for arm64"
+            exit 1
+          fi
 
       - name: Docker metadata
         id: meta
@@ -164,15 +417,12 @@ jobs:
         run: |
           set -euo pipefail
 
-          set -- "${DIGEST_ROOT}/amd64"/*
-          AMD64_DIGEST="sha256:${1##*/}"
-
-          set -- "${DIGEST_ROOT}/arm64"/*
-          ARM64_DIGEST="sha256:${1##*/}"
+          AMD64_REFERENCE="$(tr -d '\n' < "${DIGEST_ROOT}/targets/amd64/reference.txt")"
+          ARM64_REFERENCE="$(tr -d '\n' < "${DIGEST_ROOT}/targets/arm64/reference.txt")"
 
           for tag in $TAGS; do
             docker buildx imagetools create \
               -t "$tag" \
-              "${REGISTRY}/${IMAGE_NAMESPACE}/${{ matrix.repository }}@$AMD64_DIGEST" \
-              "${REGISTRY}/${IMAGE_NAMESPACE}/${{ matrix.repository }}@$ARM64_DIGEST"
+              "$AMD64_REFERENCE" \
+              "$ARM64_REFERENCE"
           done
