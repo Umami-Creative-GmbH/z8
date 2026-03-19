@@ -195,7 +195,7 @@ export async function updateProfileDetails(data: {
 			syncActiveEmployeeProfile(
 				dbService,
 				session.user.id,
-				session.session.activeOrganizationId,
+				session.session.activeOrganizationId ?? undefined,
 				result.data,
 			).pipe(
 				Effect.catchAll(() =>
