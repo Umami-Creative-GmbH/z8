@@ -1,12 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
 import { useTranslate } from "@tolgee/react";
+import { useCallback, useEffect, useRef } from "react";
+import { useSidebar } from "@/components/ui/sidebar";
 import { useOrganization } from "@/hooks/use-organization";
 import { useSession } from "@/lib/auth-client";
 import { isTourCompleted, markTourCompleted } from "./tour-constants";
 import { buildDriverSteps, getStepsForRole } from "./tour-steps";
-import { useSidebar } from "@/components/ui/sidebar";
 
 interface UseAppTourOptions {
 	autoStart?: boolean;
@@ -27,11 +27,7 @@ export function useAppTour({ autoStart = false }: UseAppTourOptions = {}) {
 
 		// On mobile, skip sidebar-targeted steps
 		const steps = isMobile
-			? filteredSteps.filter(
-					(s) =>
-						!s.element.includes("sidebar") &&
-						!s.element.includes("nav-"),
-				)
+			? filteredSteps.filter((s) => !s.element.includes("sidebar") && !s.element.includes("nav-"))
 			: filteredSteps;
 
 		const driverSteps = buildDriverSteps(steps, (key, def) => t(key, def));

@@ -77,7 +77,7 @@ export async function exportAvvToPDF(organizationName: string): Promise<Uint8Arr
 			<Page size="A4" style={styles.page}>
 				<Text style={styles.title}>Auftragsverarbeitungsvertrag</Text>
 				<Text style={styles.subtitle}>
-					gem\u00e4\u00df Art. 28 Datenschutz-Grundverordnung (DSGVO)
+					gemäß Art. 28 Datenschutz-Grundverordnung (DSGVO)
 				</Text>
 
 				<Text style={{ ...styles.paragraph, marginBottom: 15 }}>zwischen</Text>
@@ -97,7 +97,7 @@ export async function exportAvvToPDF(organizationName: string): Promise<Uint8Arr
 				<View style={styles.partyBox}>
 					<Text style={styles.partyLabel}>Auftragnehmer (Auftragsverarbeiter):</Text>
 					<Text>Umami Creative GmbH</Text>
-					<Text>Bismarckstra\u00dfe 9</Text>
+					<Text>Bismarckstraße 9</Text>
 					<Text>91054 Erlangen, Bayern</Text>
 					<Text>Deutschland</Text>
 					<Text style={{ fontSize: 9, color: "#666666", marginTop: 4 }}>
@@ -112,8 +112,8 @@ export async function exportAvvToPDF(organizationName: string): Promise<Uint8Arr
 				<Text style={styles.paragraph}>
 					Der Auftragnehmer verarbeitet personenbezogene Daten im Auftrag des
 					Auftraggebers im Rahmen der Bereitstellung der SaaS-Plattform
-					&quot;Z8&quot; f\u00fcr Zeiterfassung und Mitarbeiterverwaltung. Die
-					Verarbeitung erfolgt ausschlie\u00dflich auf dokumentierte Weisung des
+					&quot;Z8&quot; für Zeiterfassung und Mitarbeiterverwaltung. Die
+					Verarbeitung erfolgt ausschließlich auf dokumentierte Weisung des
 					Auftraggebers.
 				</Text>
 				<Text style={styles.paragraph}>
@@ -126,9 +126,9 @@ export async function exportAvvToPDF(organizationName: string): Promise<Uint8Arr
 					\u00a7 2 Art und Zweck der Verarbeitung
 				</Text>
 				<Text style={styles.paragraph}>
-					Die Verarbeitung umfasst die Erhebung, Speicherung, Ver\u00e4nderung,
-					Abfrage, \u00dcbermittlung und L\u00f6schung personenbezogener Daten im
-					Rahmen folgender T\u00e4tigkeiten:
+					Die Verarbeitung umfasst die Erhebung, Speicherung, Veränderung,
+					Abfrage, Übermittlung und Löschung personenbezogener Daten im
+					Rahmen folgender Tätigkeiten:
 				</Text>
 				<Text style={styles.listItem}>
 					\u2022 Arbeitszeiterfassung und -auswertung
@@ -148,13 +148,13 @@ export async function exportAvvToPDF(organizationName: string): Promise<Uint8Arr
 					\u00a7 3 Kategorien betroffener Personen
 				</Text>
 				<Text style={styles.listItem}>
-					\u2022 Besch\u00e4ftigte des Auftraggebers
+					\u2022 Beschäftigte des Auftraggebers
 				</Text>
 				<Text style={styles.listItem}>
-					\u2022 Administratoren und F\u00fchrungskr\u00e4fte
+					\u2022 Administratoren und Führungskräfte
 				</Text>
 				<Text style={styles.listItem}>
-					\u2022 Tempor\u00e4re und freie Mitarbeiter
+					\u2022 Temporäre und freie Mitarbeiter
 				</Text>
 
 				{/* --- Section 4 --- */}
@@ -165,10 +165,10 @@ export async function exportAvvToPDF(organizationName: string): Promise<Uint8Arr
 					\u2022 Stammdaten (Name, E-Mail-Adresse, Personalnummer)
 				</Text>
 				<Text style={styles.listItem}>
-					\u2022 Arbeitszeitdaten (Zeitstempel, Pausen, \u00dcberstunden)
+					\u2022 Arbeitszeitdaten (Zeitstempel, Pausen, Überstunden)
 				</Text>
 				<Text style={styles.listItem}>
-					\u2022 Abwesenheitsdaten (Urlaub, Krankheit, Antr\u00e4ge)
+					\u2022 Abwesenheitsdaten (Urlaub, Krankheit, Anträge)
 				</Text>
 				<Text style={styles.listItem}>
 					\u2022 Organisationsdaten (Team, Position, Standort)
@@ -187,17 +187,17 @@ export async function exportAvvToPDF(organizationName: string): Promise<Uint8Arr
 			<Page size="A4" style={styles.page}>
 				{/* --- Section 5 --- */}
 				<Text style={styles.sectionTitle}>
-					\u00a7 5 Technische und organisatorische Ma\u00dfnahmen (Art. 32 DSGVO)
+					\u00a7 5 Technische und organisatorische Maßnahmen (Art. 32 DSGVO)
 				</Text>
 				<Text style={styles.paragraph}>
-					Der Auftragnehmer hat folgende Ma\u00dfnahmen zum Schutz
+					Der Auftragnehmer hat folgende Maßnahmen zum Schutz
 					personenbezogener Daten getroffen:
 				</Text>
 				<Text style={styles.listItem}>
-					\u2022 Verschl\u00fcsselung der Daten\u00fcbertragung (TLS 1.3)
+					\u2022 Verschlüsselung der Datenübertragung (TLS 1.3)
 				</Text>
 				<Text style={styles.listItem}>
-					\u2022 Verschl\u00fcsselung gespeicherter Daten (AES-256)
+					\u2022 Verschlüsselung gespeicherter Daten (AES-256)
 				</Text>
 				<Text style={styles.listItem}>
 					\u2022 Mehrstufige Zugriffskontrolle und rollenbasierte Berechtigungen
@@ -206,10 +206,10 @@ export async function exportAvvToPDF(organizationName: string): Promise<Uint8Arr
 					\u2022 Zwei-Faktor-Authentifizierung (TOTP, Passkeys)
 				</Text>
 				<Text style={styles.listItem}>
-					\u2022 Regelm\u00e4\u00dfige Sicherheitsupdates und Patches
+					\u2022 Regelmäßige Sicherheitsupdates und Patches
 				</Text>
 				<Text style={styles.listItem}>
-					\u2022 T\u00e4gliche verschl\u00fcsselte Datensicherungen
+					\u2022 Tägliche verschlüsselte Datensicherungen
 				</Text>
 				<Text style={styles.listItem}>
 					\u2022 Protokollierung sicherheitsrelevanter Ereignisse (Audit-Log)
@@ -223,12 +223,12 @@ export async function exportAvvToPDF(organizationName: string): Promise<Uint8Arr
 					\u00a7 6 Rechte und Pflichten des Auftraggebers
 				</Text>
 				<Text style={styles.paragraph}>
-					Der Auftraggeber ist f\u00fcr die Einhaltung der
+					Der Auftraggeber ist für die Einhaltung der
 					datenschutzrechtlichen Bestimmungen verantwortlich, insbesondere
-					f\u00fcr die Rechtm\u00e4\u00dfigkeit der Daten\u00fcbermittlung an
+					für die Rechtmäßigkeit der Datenübermittlung an
 					den Auftragnehmer sowie die Wahrung der Rechte der betroffenen
 					Personen. Der Auftraggeber hat das Recht, die Einhaltung der
-					Bestimmungen dieses Vertrages beim Auftragnehmer zu \u00fcberpr\u00fcfen.
+					Bestimmungen dieses Vertrages beim Auftragnehmer zu überprüfen.
 				</Text>
 
 				{/* --- Section 7 --- */}
@@ -236,17 +236,17 @@ export async function exportAvvToPDF(organizationName: string): Promise<Uint8Arr
 					\u00a7 7 Pflichten des Auftragnehmers
 				</Text>
 				<Text style={styles.paragraph}>
-					Der Auftragnehmer verarbeitet personenbezogene Daten ausschlie\u00dflich
+					Der Auftragnehmer verarbeitet personenbezogene Daten ausschließlich
 					auf dokumentierte Weisung des Auftraggebers und informiert diesen
-					unverz\u00fcglich, falls eine Weisung gegen Datenschutzvorschriften
-					verst\u00f6\u00dft. Alle zur Verarbeitung befugten Personen sind zur
+					unverzüglich, falls eine Weisung gegen Datenschutzvorschriften
+					verstößt. Alle zur Verarbeitung befugten Personen sind zur
 					Vertraulichkeit verpflichtet.
 				</Text>
 				<Text style={styles.paragraph}>
-					Der Auftragnehmer unterst\u00fctzt den Auftraggeber bei der
-					Erf\u00fcllung seiner Pflichten gem\u00e4\u00df Art. 32\u201336 DSGVO
-					sowie bei der Beantwortung von Antr\u00e4gen betroffener Personen
-					gem\u00e4\u00df Art. 12\u201322 DSGVO.
+					Der Auftragnehmer unterstützt den Auftraggeber bei der
+					Erfüllung seiner Pflichten gemäß Art. 32§ DSGVO
+					sowie bei der Beantwortung von Anträgen betroffener Personen
+					gemäß Art. 12\u201322 DSGVO.
 				</Text>
 
 				{/* --- Section 8 --- */}
@@ -255,9 +255,9 @@ export async function exportAvvToPDF(organizationName: string): Promise<Uint8Arr
 				</Text>
 				<Text style={styles.paragraph}>
 					Der Auftraggeber erteilt dem Auftragnehmer die allgemeine Genehmigung
-					zur Beauftragung von Unterauftragnehmern gem\u00e4\u00df Art. 28
-					Abs. 2 DSGVO. Der Auftragnehmer informiert den Auftraggeber \u00fcber
-					jede beabsichtigte \u00c4nderung in Bezug auf die Hinzuziehung oder
+					zur Beauftragung von Unterauftragnehmern gemäß Art. 28
+					Abs. 2 DSGVO. Der Auftragnehmer informiert den Auftraggeber über
+					jede beabsichtigte Änderung in Bezug auf die Hinzuziehung oder
 					Ersetzung von Unterauftragnehmern.
 				</Text>
 				<Text style={styles.paragraph}>
@@ -268,23 +268,23 @@ export async function exportAvvToPDF(organizationName: string): Promise<Uint8Arr
 					Deutschland \u2013 Hosting und Infrastruktur
 				</Text>
 				<Text style={{ ...styles.paragraph, marginTop: 8 }}>
-					Es werden keine weiteren Subprozessoren f\u00fcr die Verarbeitung
+					Es werden keine weiteren Subprozessoren für die Verarbeitung
 					personenbezogener Daten eingesetzt.
 				</Text>
 
 				{/* --- Section 9 --- */}
 				<Text style={styles.sectionTitle}>
-					\u00a7 9 L\u00f6schung und R\u00fcckgabe personenbezogener Daten
+					\u00a7 9 Löschung und Rückgabe personenbezogener Daten
 				</Text>
 				<Text style={styles.paragraph}>
-					Nach Beendigung der vertraglichen Leistungen l\u00f6scht der
+					Nach Beendigung der vertraglichen Leistungen löscht der
 					Auftragnehmer alle im Auftrag verarbeiteten personenbezogenen Daten
-					einschlie\u00dflich vorhandener Kopien, sofern keine gesetzliche
+					einschließlich vorhandener Kopien, sofern keine gesetzliche
 					Aufbewahrungspflicht besteht. Auf Wunsch des Auftraggebers wird vor
-					der L\u00f6schung ein vollst\u00e4ndiger Datenexport bereitgestellt.
+					der Löschung ein vollständiger Datenexport bereitgestellt.
 				</Text>
 				<Text style={styles.paragraph}>
-					Die L\u00f6schung wird dem Auftraggeber schriftlich best\u00e4tigt.
+					Die Löschung wird dem Auftraggeber schriftlich bestätigt.
 				</Text>
 
 				<Text style={styles.footer}>
