@@ -2,6 +2,7 @@
 
 import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -10,6 +11,7 @@ import {
 	type CustomerData,
 	updateCustomer,
 } from "@/app/[locale]/(app)/settings/customers/actions";
+import { getProjects } from "@/app/[locale]/(app)/settings/projects/actions";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -21,9 +23,24 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { queryKeys } from "@/lib/query";
+import type { SettingsAccessTier } from "@/lib/settings-access";
+import {
+	buildCreateCustomerInput,
+	requiresScopedProjectSelection,
+	type CustomerDialogFormValues,
+} from "./customer-dialog.helpers";
 
 interface CustomerDialogProps {
+	accessTier: SettingsAccessTier;
 	organizationId: string;
 	customer: CustomerData | null;
 	open: boolean;
@@ -31,17 +48,8 @@ interface CustomerDialogProps {
 	onSuccess: () => void;
 }
 
-interface FormValues {
-	name: string;
-	address: string;
-	vatId: string;
-	email: string;
-	contactPerson: string;
-	phone: string;
-	website: string;
-}
-
 export function CustomerDialog({
+	accessTier,
 	organizationId,
 	customer,
 	open,
@@ -51,8 +59,25 @@ export function CustomerDialog({
 	const { t } = useTranslate();
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const isEditing = !!customer;
+	const requiresScopedProject = requiresScopedProjectSelection(accessTier, isEditing);
 
-	const defaultValues: FormValues = {
+	const { data: projectsData } = useQuery({
+		queryKey: queryKeys.projects.list(organizationId, { scope: "customer-dialog" }),
+		queryFn: async () => {
+			const result = await getProjects(organizationId);
+			if (!result.success) {
+				return [];
+			}
+
+			return result.data.map((project) => ({ id: project.id, name: project.name }));
+		},
+		enabled: open && !isEditing,
+	});
+
+	const availableProjects = projectsData ?? [];
+
+	const defaultValues: CustomerDialogFormValues = {
+		projectId: "",
 		name: customer?.name || "",
 		address: customer?.address || "",
 		vatId: customer?.vatId || "",
@@ -66,6 +91,13 @@ export function CustomerDialog({
 		defaultValues,
 		onSubmit: async ({ value }) => {
 			setIsSubmitting(true);
+
+			if (requiresScopedProject && !value.projectId) {
+				toast.error(t("settings.customers.projectRequired", "Select a project first"));
+				setIsSubmitting(false);
+				return;
+			}
+
 			if (isEditing && customer) {
 				const result = await updateCustomer(customer.id, {
 					name: value.name,
@@ -87,16 +119,10 @@ export function CustomerDialog({
 					);
 				}
 			} else {
-				const result = await createCustomer({
-					organizationId,
-					name: value.name,
-					address: value.address || undefined,
-					vatId: value.vatId || undefined,
-					email: value.email || undefined,
-					contactPerson: value.contactPerson || undefined,
-					phone: value.phone || undefined,
-					website: value.website || undefined,
-				}).then((response) => response, () => null);
+				const result = await createCustomer(buildCreateCustomerInput(organizationId, value)).then(
+					(response) => response,
+					() => null,
+				);
 
 				if (result?.success) {
 					toast.success(t("settings.customers.created", "Customer created"));
@@ -142,6 +168,41 @@ export function CustomerDialog({
 					}}
 				>
 					<div className="grid gap-4 py-4">
+				{/* Company Name (required) */}
+						{!isEditing && availableProjects.length > 0 ? (
+							<form.Field name="projectId">
+								{(field) => (
+									<div className="grid gap-2">
+										<Label htmlFor="projectId">
+											{requiresScopedProject
+												? t("settings.customers.field.project", "Project") + " *"
+												: t("settings.customers.field.project", "Project")}
+										</Label>
+										<Select
+											value={field.state.value}
+											onValueChange={(value) => field.handleChange(value)}
+										>
+											<SelectTrigger>
+												<SelectValue
+													placeholder={t(
+														"settings.customers.field.projectPlaceholder",
+														"Select a project",
+													)}
+												/>
+											</SelectTrigger>
+											<SelectContent>
+												{availableProjects.map((project) => (
+													<SelectItem key={project.id} value={project.id}>
+														{project.name}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									</div>
+								)}
+							</form.Field>
+						) : null}
+
 						{/* Company Name (required) */}
 						<form.Field name="name">
 							{(field) => (

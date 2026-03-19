@@ -1,26 +1,28 @@
-import { redirect } from "next/navigation";
 import { connection } from "next/server";
-import { NoEmployeeError } from "@/components/errors/no-employee-error";
+import { redirect } from "next/navigation";
 import { HolidayManagement } from "@/components/settings/holiday-management";
-import { getAuthContext } from "@/lib/auth-helpers";
+import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 
 export default async function HolidaySettingsPage() {
 	await connection(); // Mark as fully dynamic for cacheComponents mode
 
-	const authContext = await getAuthContext();
+	const settingsRouteContext = await getCurrentSettingsRouteContext();
 
-	if (!authContext?.employee) {
-		return (
-			<div className="flex flex-1 items-center justify-center p-6">
-				<NoEmployeeError feature="manage holidays" />
-			</div>
-		);
+	if (!settingsRouteContext) {
+		redirect("/settings");
 	}
 
-	// Only admins can access holiday settings
-	if (authContext.employee.role !== "admin") {
-		redirect("/");
+	const { authContext, accessTier } = settingsRouteContext;
+	const organizationId = authContext.session.activeOrganizationId;
+
+	if (accessTier === "member" || !organizationId) {
+		redirect("/settings");
 	}
 
-	return <HolidayManagement organizationId={authContext.employee.organizationId} />;
+	return (
+		<HolidayManagement
+			organizationId={organizationId}
+			canManage={accessTier === "orgAdmin"}
+		/>
+	);
 }

@@ -52,6 +52,7 @@ export interface EmployeeSelectParams {
 	excludeIds?: string[];
 	limit?: number;
 	offset?: number;
+	managerId?: string;
 }
 
 export interface EmployeeSelectResponse {

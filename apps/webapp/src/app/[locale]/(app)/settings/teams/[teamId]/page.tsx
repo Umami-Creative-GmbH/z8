@@ -4,10 +4,8 @@ import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { use, useEffect } from "react";
+import { use } from "react";
 import { toast } from "sonner";
-import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
-import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { queryKeys } from "@/lib/query";
 import { useRouter } from "@/navigation";
 import { listEmployeesForSelect } from "../../employees/actions";
@@ -48,23 +46,8 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
 		},
 	});
 
-	useEffect(() => {
-		async function loadCurrentEmployee() {
-			const currentEmployee = await getCurrentEmployee();
-			if (!currentEmployee) {
-				dispatch({ type: "setNoEmployee", value: true });
-				return;
-			}
-
-			dispatch({ type: "setCurrentEmployee", currentEmployee });
-		}
-
-		void loadCurrentEmployee();
-	}, [dispatch]);
-
-	const isAdmin = uiState.currentEmployee?.role === "admin";
-	const canManageSettings = Boolean((team as any)?.canManageSettings || isAdmin);
-	const canManageMembers = Boolean((team as any)?.canManageMembers || isAdmin);
+	const canManageSettings = team?.canManageSettings ?? false;
+	const canManageMembers = team?.canManageMembers ?? false;
 
 	async function loadAvailableEmployees() {
 		if (!team) return;
@@ -182,14 +165,6 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
 		addMemberMutation.isPending ||
 		removeMemberMutation.isPending ||
 		deleteTeamMutation.isPending;
-
-	if (uiState.noEmployee) {
-		return (
-			<div className="flex flex-1 items-center justify-center p-6">
-				<NoEmployeeError feature="view teams" />
-			</div>
-		);
-	}
 
 	if (isLoadingTeam || !team) {
 		return (

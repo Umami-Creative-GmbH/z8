@@ -1,20 +1,20 @@
 import {
-	IconBuilding,
 	IconCalendarStats,
 	IconChartBar,
 	IconClock,
 	IconRefresh,
 	IconUsers,
 } from "@tabler/icons-react";
-import { redirect } from "next/navigation";
+import { DateTime } from "luxon";
 import { connection } from "next/server";
+import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getAuthContext } from "@/lib/auth-helpers";
+import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
-import { getInstanceStats } from "./actions";
+import type { ManagerStatisticsReadView, OrganizationStats } from "./actions";
+import { getManagerStatisticsReadView, getOrganizationStats } from "./actions";
 
 interface StatCardProps {
 	title: string;
@@ -37,10 +37,10 @@ function StatCard({ title, value, description, icon, trend }: StatCardProps) {
 			</CardHeader>
 			<CardContent>
 				<div className="text-2xl font-bold">{value.toLocaleString()}</div>
-				{description && <p className="text-xs text-muted-foreground mt-1">{description}</p>}
+				{description && <p className="mt-1 text-xs text-muted-foreground">{description}</p>}
 				{trend && (
 					<p
-						className={`text-xs mt-1 ${trend.positive ? "text-green-600" : trend.positive === false ? "text-red-600" : "text-muted-foreground"}`}
+						className={`mt-1 text-xs ${trend.positive ? "text-green-600" : trend.positive === false ? "text-red-600" : "text-muted-foreground"}`}
 					>
 						{trend.positive !== undefined && (trend.positive ? "+" : "")}
 						{trend.value.toLocaleString()} {trend.label}
@@ -52,24 +52,28 @@ function StatCard({ title, value, description, icon, trend }: StatCardProps) {
 }
 
 async function StatisticsContent() {
-	await connection(); // Mark as fully dynamic for cacheComponents mode
+	await connection();
 
-	const t = await getTranslate();
-	const authContext = await getAuthContext();
+	const [settingsRouteContext, t] = await Promise.all([
+		getCurrentSettingsRouteContext(),
+		getTranslate(),
+	]);
 
-	if (!authContext?.employee) {
-		return (
-			<div className="flex flex-1 items-center justify-center p-6">
-				<NoEmployeeError feature={t("settings.statistics.feature", "view instance statistics")} />
-			</div>
-		);
+	if (!settingsRouteContext) {
+		redirect("/settings");
 	}
 
-	if (authContext.employee.role !== "admin") {
-		redirect("/");
+	const { authContext, accessTier } = settingsRouteContext;
+	const organizationId = authContext.session.activeOrganizationId;
+
+	if (accessTier === "member" || !organizationId) {
+		redirect("/settings");
 	}
 
-	const statsResult = await getInstanceStats();
+	const canViewOrgWideStatistics = accessTier === "orgAdmin";
+	const statsResult = await (canViewOrgWideStatistics
+		? getOrganizationStats()
+		: getManagerStatisticsReadView());
 
 	if (!statsResult.success) {
 		return (
@@ -77,10 +81,15 @@ async function StatisticsContent() {
 				<div className="space-y-1">
 					<h1 className="text-2xl font-semibold">{t("settings.statistics.title", "Statistics")}</h1>
 					<p className="text-muted-foreground">
-						{t(
-							"settings.statistics.description",
-							"View statistics and metrics about your instance",
-						)}
+						{canViewOrgWideStatistics
+							? t(
+								"settings.statistics.description",
+								"View statistics and metrics about your instance",
+							)
+							: t(
+								"settings.statistics.managerDescription",
+								"Review read-only analytics for the teams you manage.",
+							)}
 					</p>
 				</div>
 				<Card className="border-destructive">
@@ -94,44 +103,42 @@ async function StatisticsContent() {
 		);
 	}
 
-	const stats = statsResult.data;
+	const stats = statsResult.data as OrganizationStats | ManagerStatisticsReadView;
 	const timeEntryChange = stats.timeEntriesThisMonth - stats.timeEntriesLastMonth;
+	const lastUpdated = DateTime.fromISO(stats.fetchedAt).toLocaleString(DateTime.DATETIME_SHORT);
+
+	const orgStats = canViewOrgWideStatistics ? (stats as OrganizationStats) : null;
 
 	return (
 		<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
-			<div className="flex items-start justify-between">
+			<div className="flex items-start justify-between gap-4">
 				<div className="space-y-1">
 					<h1 className="text-2xl font-semibold">{t("settings.statistics.title", "Statistics")}</h1>
 					<p className="text-muted-foreground">
-						{t(
-							"settings.statistics.description",
-							"View statistics and metrics about your instance",
-						)}
+						{canViewOrgWideStatistics
+							? t(
+								"settings.statistics.description",
+								"View statistics and metrics about your instance",
+							)
+							: t(
+								"settings.statistics.managerDescription",
+								"Review read-only analytics for the teams you manage.",
+							)}
 					</p>
 				</div>
 				<p className="text-xs text-muted-foreground">
-					{t("settings.statistics.lastUpdated", "Last updated")}:{" "}
-					{new Date(stats.fetchedAt).toLocaleString()}
+					{t("settings.statistics.lastUpdated", "Last updated")}: {lastUpdated}
 				</p>
 			</div>
 
-			{/* Core Counts Section */}
 			<section>
-				<h2 className="text-lg font-medium mb-4 flex items-center gap-2">
+				<h2 className="mb-4 flex items-center gap-2 text-lg font-medium">
 					<IconUsers className="size-5" />
-					{t("settings.statistics.sections.coreCounts", "Core Counts")}
+					{canViewOrgWideStatistics
+						? t("settings.statistics.sections.coreCounts", "Core Counts")
+						: t("settings.statistics.sections.managedScope", "Managed Team Scope")}
 				</h2>
 				<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-					<StatCard
-						title={t("settings.statistics.cards.totalUsers", "Total Users")}
-						value={stats.totalUsers}
-						icon={<IconUsers className="size-4" />}
-					/>
-					<StatCard
-						title={t("settings.statistics.cards.organizations", "Organizations")}
-						value={stats.totalOrganizations}
-						icon={<IconBuilding className="size-4" />}
-					/>
 					<StatCard
 						title={t("settings.statistics.cards.employees", "Employees")}
 						value={stats.totalEmployees}
@@ -150,9 +157,8 @@ async function StatisticsContent() {
 				</div>
 			</section>
 
-			{/* Activity Metrics Section */}
 			<section>
-				<h2 className="text-lg font-medium mb-4 flex items-center gap-2">
+				<h2 className="mb-4 flex items-center gap-2 text-lg font-medium">
 					<IconCalendarStats className="size-5" />
 					{t("settings.statistics.sections.activityMetrics", "Activity Metrics")}
 				</h2>
@@ -192,9 +198,8 @@ async function StatisticsContent() {
 				</div>
 			</section>
 
-			{/* Absence Breakdown */}
 			<section>
-				<h2 className="text-lg font-medium mb-4 flex items-center gap-2">
+				<h2 className="mb-4 flex items-center gap-2 text-lg font-medium">
 					<IconChartBar className="size-5" />
 					{t("settings.statistics.sections.absenceBreakdown", "Absence Breakdown")}
 				</h2>
@@ -217,24 +222,25 @@ async function StatisticsContent() {
 				</div>
 			</section>
 
-			{/* System Health Section */}
-			<section>
-				<h2 className="text-lg font-medium mb-4 flex items-center gap-2">
-					<IconRefresh className="size-5" />
-					{t("settings.statistics.sections.systemHealth", "System Health")}
-				</h2>
-				<div className="grid gap-4 md:grid-cols-3">
-					<StatCard
-						title={t("settings.statistics.cards.activeSessions", "Active Sessions")}
-						value={stats.activeSessions}
-						description={t(
-							"settings.statistics.cards.activeSessionsDescription",
-							"Current database sessions",
-						)}
-						icon={<IconRefresh className="size-4" />}
-					/>
-				</div>
-			</section>
+			{orgStats ? (
+				<section>
+					<h2 className="mb-4 flex items-center gap-2 text-lg font-medium">
+						<IconRefresh className="size-5" />
+						{t("settings.statistics.sections.systemHealth", "System Health")}
+					</h2>
+					<div className="grid gap-4 md:grid-cols-3">
+						<StatCard
+							title={t("settings.statistics.cards.activeSessions", "Active Sessions")}
+							value={orgStats.activeSessions}
+							description={t(
+								"settings.statistics.cards.activeSessionsDescription",
+								"Current database sessions",
+							)}
+							icon={<IconRefresh className="size-4" />}
+						/>
+					</div>
+				</section>
+			) : null}
 		</div>
 	);
 }
@@ -248,17 +254,16 @@ function StatisticsLoading() {
 			</div>
 
 			<section>
-				<Skeleton className="h-6 w-32 mb-4" />
+				<Skeleton className="mb-4 h-6 w-32" />
 				<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
 					{[...Array(4)].map((_, i) => (
-						// biome-ignore lint/suspicious/noArrayIndexKey: Static loading skeleton
 						<Card key={i}>
 							<CardHeader className="pb-2">
 								<Skeleton className="h-4 w-24" />
 							</CardHeader>
 							<CardContent>
 								<Skeleton className="h-8 w-16" />
-								<Skeleton className="h-3 w-32 mt-2" />
+								<Skeleton className="mt-2 h-3 w-32" />
 							</CardContent>
 						</Card>
 					))}
@@ -266,17 +271,16 @@ function StatisticsLoading() {
 			</section>
 
 			<section>
-				<Skeleton className="h-6 w-40 mb-4" />
+				<Skeleton className="mb-4 h-6 w-40" />
 				<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
 					{[...Array(4)].map((_, i) => (
-						// biome-ignore lint/suspicious/noArrayIndexKey: Static loading skeleton
 						<Card key={i}>
 							<CardHeader className="pb-2">
 								<Skeleton className="h-4 w-24" />
 							</CardHeader>
 							<CardContent>
 								<Skeleton className="h-8 w-16" />
-								<Skeleton className="h-3 w-32 mt-2" />
+								<Skeleton className="mt-2 h-3 w-32" />
 							</CardContent>
 						</Card>
 					))}

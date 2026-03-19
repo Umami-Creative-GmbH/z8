@@ -10,13 +10,14 @@ import {
 	IconTrash,
 	IconUpload,
 } from "@tabler/icons-react";
+import { useForm } from "@tanstack/react-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useStore } from "@tanstack/react-store";
 import { useTranslate } from "@tolgee/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
-import { updateOwnProfile } from "@/app/[locale]/(app)/settings/employees/actions";
-import { updateProfile } from "@/app/[locale]/(app)/settings/profile/actions";
+import { updateProfileDetails, updateProfileImage } from "@/app/[locale]/(app)/settings/profile/actions";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,11 +26,13 @@ import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import { TFormControl, fieldHasError, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
 import { UserAvatar } from "@/components/user-avatar";
 import { useImageUpload } from "@/hooks/use-image-upload";
 import { format } from "@/lib/datetime/luxon-utils";
 import { queryKeys } from "@/lib/query";
 import { cn } from "@/lib/utils";
+import { validateStructuredProfileNameField } from "@/lib/validations/profile";
 import { useRouter } from "@/navigation";
 
 interface ProfileFormProps {
@@ -37,35 +40,99 @@ interface ProfileFormProps {
 		id: string;
 		name: string;
 		email: string;
+		firstName?: string | null;
+		lastName?: string | null;
 		image?: string | null;
 	};
 }
+
+type ProfileFormValues = {
+	image: string;
+	firstName: string;
+	lastName: string;
+	gender: "" | "male" | "female" | "other";
+	birthday: Date | null;
+};
 
 export function ProfileForm({ user }: ProfileFormProps) {
 	const { t } = useTranslate();
 	const router = useRouter();
 	const queryClient = useQueryClient();
-
-	// Profile form state
-	const [profileData, setProfileData] = useState({
-		name: user.name,
-		image: user.image || "",
-		firstName: "",
-		lastName: "",
-		gender: "",
-		birthday: null as Date | null,
-	});
 	const [isInitialLoading, setIsInitialLoading] = useState(true);
+	const defaultValues: ProfileFormValues = {
+		image: user.image || "",
+		firstName: user.firstName || "",
+		lastName: user.lastName || "",
+		gender: "",
+		birthday: null,
+	};
 
-	// Use ref to track current profile data for async operations
-	const profileDataRef = useRef(profileData);
-	useEffect(() => {
-		profileDataRef.current = profileData;
-	}, [profileData]);
+	const form = useForm({
+		defaultValues,
+		onSubmitInvalid: ({ formApi }) => {
+			for (const fieldName of ["firstName", "lastName"] as const) {
+				if (formApi.getFieldMeta(fieldName)?.errors.length) {
+					document.querySelector<HTMLInputElement>(`input[name="${fieldName}"]`)?.focus();
+					break;
+				}
+			}
+		},
+		onSubmit: async ({ value }) => {
+			try {
+				const profileResult = await updateProfileDetails({
+					firstName: value.firstName,
+					lastName: value.lastName,
+					gender: value.gender || null,
+					birthday: value.birthday,
+					image: value.image || null,
+				});
+
+				if (profileResult.success) {
+					toast.success(t("profile.update-success", "Profile updated successfully"));
+					await Promise.all([
+						queryClient.invalidateQueries({ queryKey: queryKeys.profile.current() }),
+						queryClient.invalidateQueries({ queryKey: queryKeys.employees.all }),
+					]);
+					router.refresh();
+					return;
+				}
+
+				toast.error(profileResult.error || t("profile.update-failed", "Failed to update profile"));
+			} catch {
+				toast.error(t("profile.update-failed", "Failed to update profile"));
+			}
+		},
+	});
+
+	const validateFirstName = useCallback(
+		(value: string) =>
+			validateStructuredProfileNameField("firstName", {
+				firstName: value,
+				lastName: form.store.state.values.lastName,
+			}),
+		[form.store],
+	);
+
+	const validateLastName = useCallback(
+		(value: string) =>
+			validateStructuredProfileNameField("lastName", {
+				firstName: form.store.state.values.firstName,
+				lastName: value,
+			}),
+		[form.store],
+	);
+
+	const avatarImage = useStore(form.store, (state) => state.values.image);
+	const selectedGender = useStore(form.store, (state) => state.values.gender);
+	const selectedBirthday = useStore(form.store, (state) => state.values.birthday);
+	const firstName = useStore(form.store, (state) => state.values.firstName);
+	const lastName = useStore(form.store, (state) => state.values.lastName);
+	const isSubmitting = useStore(form.store, (state) => state.isSubmitting);
+	const displayName = [firstName, lastName].filter(Boolean).join(" ").trim() || user.name;
 
 	// Avatar update mutation (for saving URL to user profile after upload)
 	const avatarUpdateMutation = useMutation({
-		mutationFn: (data: { name: string; image: string }) => updateProfile(data),
+		mutationFn: (data: { image: string | null }) => updateProfileImage(data),
 		onSuccess: (result) => {
 			if (result.success) {
 				toast.success(t("profile.avatar-uploaded", "Avatar uploaded successfully"));
@@ -88,14 +155,9 @@ export function ProfileForm({ user }: ProfileFormProps) {
 	} = useImageUpload({
 		uploadType: "avatar",
 		onSuccess: (imageUrl) => {
-			// Get current name from ref
-			const currentName = profileDataRef.current.name;
+			form.setFieldValue("image", imageUrl);
 
-			// Update local state immediately
-			setProfileData((prev) => ({ ...prev, image: imageUrl }));
-
-			// Save to database using mutation
-			avatarUpdateMutation.mutate({ name: currentName, image: imageUrl });
+			avatarUpdateMutation.mutate({ image: imageUrl });
 		},
 		onError: (error) => {
 			toast.error(error?.message || t("profile.avatar-upload-failed", "Failed to upload avatar"));
@@ -104,21 +166,29 @@ export function ProfileForm({ user }: ProfileFormProps) {
 
 	// Load employee personal info
 	useEffect(() => {
+		let isMounted = true;
+
 		async function loadEmployeeData() {
 			const emp = await getCurrentEmployee().then((value) => value, () => null);
-			if (emp) {
-				setProfileData((prev) => ({
-					...prev,
-					firstName: emp.firstName || "",
-					lastName: emp.lastName || "",
-					gender: emp.gender || "",
-					birthday: emp.birthday ? new Date(emp.birthday) : null,
-				}));
+
+			if (!isMounted) {
+				return;
 			}
+
+			form.setFieldValue("image", user.image || "");
+			form.setFieldValue("firstName", emp?.firstName || user.firstName || "");
+			form.setFieldValue("lastName", emp?.lastName || user.lastName || "");
+			form.setFieldValue("gender", (emp?.gender as ProfileFormValues["gender"] | null) || "");
+			form.setFieldValue("birthday", emp?.birthday ? new Date(emp.birthday) : null);
 			setIsInitialLoading(false);
 		}
+
 		loadEmployeeData();
-	}, []);
+
+		return () => {
+			isMounted = false;
+		};
+	}, [form, user.firstName, user.image, user.lastName]);
 
 	// Create ref for file input
 	const inputRef = useRef<HTMLInputElement>(null);
@@ -138,15 +208,10 @@ export function ProfileForm({ user }: ProfileFormProps) {
 
 	// Avatar removal mutation
 	const removeAvatarMutation = useMutation({
-		mutationFn: () =>
-			updateProfile({
-				name: profileDataRef.current.name,
-				image: null,
-			}),
+		mutationFn: () => updateProfileImage({ image: null }),
 		onMutate: () => {
-			// Optimistic update
-			const previousImage = profileData.image;
-			setProfileData((prev) => ({ ...prev, image: "" }));
+			const previousImage = form.store.state.values.image;
+			form.setFieldValue("image", "");
 			return { previousImage };
 		},
 		onSuccess: (result) => {
@@ -159,64 +224,12 @@ export function ProfileForm({ user }: ProfileFormProps) {
 			}
 		},
 		onError: (_error, _vars, context) => {
-			// Rollback on error
 			if (context?.previousImage) {
-				setProfileData((prev) => ({ ...prev, image: context.previousImage }));
+				form.setFieldValue("image", context.previousImage);
 			}
 			toast.error(t("profile.avatar-remove-failed", "Failed to remove avatar"));
 		},
 	});
-
-	// Profile update mutation
-	const updateProfileMutation = useMutation({
-		mutationFn: async (data: {
-			name: string;
-			image: string;
-			firstName: string;
-			lastName: string;
-			gender: string;
-			birthday: Date | null;
-		}) => {
-			// Update user profile and employee info in parallel
-			const [profileResult, employeeResult] = await Promise.all([
-				updateProfile({
-					name: data.name,
-					image: data.image,
-				}),
-				updateOwnProfile({
-					firstName: data.firstName || undefined,
-					lastName: data.lastName || undefined,
-					gender: data.gender as "male" | "female" | "other" | undefined,
-					birthday: data.birthday || undefined,
-				}),
-			]);
-			return { profileResult, employeeResult };
-		},
-		onSuccess: ({ profileResult, employeeResult }) => {
-			if (profileResult.success && employeeResult.success) {
-				toast.success(t("profile.update-success", "Profile updated successfully"));
-				queryClient.invalidateQueries({ queryKey: queryKeys.profile.current() });
-				queryClient.invalidateQueries({ queryKey: queryKeys.employees.all });
-				router.refresh(); // Refresh to update server components (sidebar)
-			} else {
-				const errorMsg = !profileResult.success
-					? profileResult.error
-					: !employeeResult.success
-						? employeeResult.error
-						: t("profile.update-failed", "Failed to update profile");
-				toast.error(errorMsg);
-			}
-		},
-		onError: () => {
-			toast.error(t("profile.update-failed", "Failed to update profile"));
-		},
-	});
-
-	// Handle profile form submit
-	const handleProfileSubmit = (e: React.FormEvent) => {
-		e.preventDefault();
-		updateProfileMutation.mutate(profileData);
-	};
 
 	return (
 		<div className="space-y-6">
@@ -248,9 +261,15 @@ export function ProfileForm({ user }: ProfileFormProps) {
 								</div>
 							</div>
 							{/* Name field skeleton */}
-							<div className="space-y-2">
-								<Skeleton className="h-4 w-12" />
-								<Skeleton className="h-10 w-full" />
+							<div className="grid gap-4 md:grid-cols-2">
+								<div className="space-y-2">
+									<Skeleton className="h-4 w-20" />
+									<Skeleton className="h-10 w-full" />
+								</div>
+								<div className="space-y-2">
+									<Skeleton className="h-4 w-20" />
+									<Skeleton className="h-10 w-full" />
+								</div>
 							</div>
 							{/* Email field skeleton */}
 							<div className="space-y-2">
@@ -291,7 +310,13 @@ export function ProfileForm({ user }: ProfileFormProps) {
 							<Skeleton className="h-10 w-32" />
 						</div>
 					) : (
-						<form onSubmit={handleProfileSubmit} className="space-y-6">
+						<form
+							onSubmit={(e) => {
+								e.preventDefault();
+								form.handleSubmit();
+							}}
+							className="space-y-6"
+						>
 							{/* Profile Picture Upload */}
 							<div className="space-y-4">
 								<Label className="text-sm font-medium">
@@ -310,8 +335,8 @@ export function ProfileForm({ user }: ProfileFormProps) {
 									<div className="relative">
 										<UserAvatar
 											seed={user.id}
-											image={previewUrl || profileData.image || undefined}
-											name={user.name}
+											image={previewUrl || avatarImage || undefined}
+											name={displayName}
 											size="xl"
 										/>
 										{isUploadingAvatar && (
@@ -338,14 +363,14 @@ export function ProfileForm({ user }: ProfileFormProps) {
 												onClick={() => inputRef.current?.click()}
 												disabled={
 													isUploadingAvatar ||
-													updateProfileMutation.isPending ||
+													isSubmitting ||
 													removeAvatarMutation.isPending
 												}
 											>
 												<IconUpload className="mr-2 h-4 w-4" />
 												{t("profile.change-picture", "Change Picture")}
 											</Button>
-											{profileData.image && (
+											{avatarImage && (
 												<Button
 													type="button"
 													variant="outline"
@@ -353,7 +378,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
 													onClick={() => removeAvatarMutation.mutate()}
 													disabled={
 														isUploadingAvatar ||
-														updateProfileMutation.isPending ||
+														isSubmitting ||
 														removeAvatarMutation.isPending
 													}
 												>
@@ -384,23 +409,19 @@ export function ProfileForm({ user }: ProfileFormProps) {
 								</div>
 							</div>
 
-							{/* Name Field */}
-							<div className="space-y-2">
-								<Label htmlFor="name">{t("profile.name", "Name")}</Label>
-								<Input
-									id="name"
-									autoComplete="name"
-									value={profileData.name}
-									onChange={(e) => setProfileData((prev) => ({ ...prev, name: e.target.value }))}
-									placeholder={t("profile.name-placeholder", "Enter your name")}
-									required
-								/>
-							</div>
-
 							{/* Email Field (Read-only) */}
 							<div className="space-y-2">
 								<Label htmlFor="email">{t("profile.email", "Email")}</Label>
-								<Input id="email" value={user.email} disabled className="bg-muted" />
+								<Input
+									id="email"
+									name="email"
+									type="email"
+									autoComplete="email"
+									spellCheck={false}
+									value={user.email}
+									disabled
+									className="bg-muted"
+								/>
 								<p className="text-muted-foreground text-sm">
 									{t("profile.email-readonly", "Email cannot be changed")}
 								</p>
@@ -411,35 +432,67 @@ export function ProfileForm({ user }: ProfileFormProps) {
 								<h3 className="text-lg font-medium">Personal Information</h3>
 
 								<div className="grid gap-4 md:grid-cols-2">
-									{/* First Name */}
-									<div className="space-y-2">
-										<Label htmlFor="firstName">First Name</Label>
-										<Input
-											id="firstName"
-											name="firstName"
-											autoComplete="given-name"
-											value={profileData.firstName}
-											onChange={(e) =>
-												setProfileData((prev) => ({ ...prev, firstName: e.target.value }))
-											}
-											placeholder="Enter your first name"
-										/>
-									</div>
+									<form.Field
+										name="firstName"
+										validators={{
+											onBlur: ({ value }) => validateFirstName(value),
+											onChangeListenTo: ["lastName"],
+											onChange: ({ value }) => validateFirstName(value),
+											onSubmit: ({ value }) => validateFirstName(value),
+										}}
+									>
+										{(field) => {
+											const hasError = fieldHasError(field);
 
-									{/* Last Name */}
-									<div className="space-y-2">
-										<Label htmlFor="lastName">Last Name</Label>
-										<Input
-											id="lastName"
-											name="lastName"
-											autoComplete="family-name"
-											value={profileData.lastName}
-											onChange={(e) =>
-												setProfileData((prev) => ({ ...prev, lastName: e.target.value }))
-											}
-											placeholder="Enter your last name"
-										/>
-									</div>
+											return (
+												<TFormItem>
+													<TFormLabel hasError={hasError}>First Name</TFormLabel>
+													<TFormControl hasError={hasError}>
+														<Input
+															name="firstName"
+															autoComplete="given-name"
+															value={field.state.value}
+															onChange={(e) => field.handleChange(e.target.value)}
+															onBlur={field.handleBlur}
+															placeholder="Ada…"
+														/>
+													</TFormControl>
+													<TFormMessage field={field} />
+												</TFormItem>
+											);
+										}}
+									</form.Field>
+
+									<form.Field
+										name="lastName"
+										validators={{
+											onBlur: ({ value }) => validateLastName(value),
+											onChangeListenTo: ["firstName"],
+											onChange: ({ value }) => validateLastName(value),
+											onSubmit: ({ value }) => validateLastName(value),
+										}}
+									>
+										{(field) => {
+											const hasError = fieldHasError(field);
+
+											return (
+												<TFormItem>
+													<TFormLabel hasError={hasError}>Last Name</TFormLabel>
+													<TFormControl hasError={hasError}>
+														<Input
+															name="lastName"
+															autoComplete="family-name"
+															value={field.state.value}
+															onChange={(e) => field.handleChange(e.target.value)}
+															onBlur={field.handleBlur}
+															placeholder="Lovelace…"
+														/>
+													</TFormControl>
+													<TFormMessage field={field} />
+												</TFormItem>
+											);
+										}}
+									</form.Field>
 								</div>
 
 								{/* Gender */}
@@ -453,11 +506,11 @@ export function ProfileForm({ user }: ProfileFormProps) {
 										<button
 											type="button"
 											role="radio"
-											aria-checked={profileData.gender === "male"}
-											onClick={() => setProfileData((prev) => ({ ...prev, gender: "male" }))}
+											aria-checked={selectedGender === "male"}
+											onClick={() => form.setFieldValue("gender", "male")}
 											className={cn(
 												"flex flex-col items-center justify-center gap-2 rounded-lg border-2 p-4 transition-[border-color,background-color] hover:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-												profileData.gender === "male"
+												selectedGender === "male"
 													? "border-primary bg-primary/5 text-primary"
 													: "border-border bg-background",
 											)}
@@ -468,11 +521,11 @@ export function ProfileForm({ user }: ProfileFormProps) {
 										<button
 											type="button"
 											role="radio"
-											aria-checked={profileData.gender === "female"}
-											onClick={() => setProfileData((prev) => ({ ...prev, gender: "female" }))}
+											aria-checked={selectedGender === "female"}
+											onClick={() => form.setFieldValue("gender", "female")}
 											className={cn(
 												"flex flex-col items-center justify-center gap-2 rounded-lg border-2 p-4 transition-[border-color,background-color] hover:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-												profileData.gender === "female"
+												selectedGender === "female"
 													? "border-primary bg-primary/5 text-primary"
 													: "border-border bg-background",
 											)}
@@ -483,11 +536,11 @@ export function ProfileForm({ user }: ProfileFormProps) {
 										<button
 											type="button"
 											role="radio"
-											aria-checked={profileData.gender === "other"}
-											onClick={() => setProfileData((prev) => ({ ...prev, gender: "other" }))}
+											aria-checked={selectedGender === "other"}
+											onClick={() => form.setFieldValue("gender", "other")}
 											className={cn(
 												"flex flex-col items-center justify-center gap-2 rounded-lg border-2 p-4 transition-[border-color,background-color] hover:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-												profileData.gender === "other"
+												selectedGender === "other"
 													? "border-primary bg-primary/5 text-primary"
 													: "border-border bg-background",
 											)}
@@ -508,33 +561,31 @@ export function ProfileForm({ user }: ProfileFormProps) {
 												variant="outline"
 												className={cn(
 													"w-full justify-start text-left font-normal",
-													!profileData.birthday && "text-muted-foreground",
+													!selectedBirthday && "text-muted-foreground",
 												)}
 											>
 												<IconCalendar className="mr-2 h-4 w-4" />
-												{profileData.birthday ? (
-													format(profileData.birthday, "PPP")
+												{selectedBirthday ? (
+													format(selectedBirthday, "PPP")
 												) : (
 													<span>Pick your birthday</span>
 												)}
-											</Button>
-										</PopoverTrigger>
-										<PopoverContent className="w-auto p-0" align="start">
-											<Calendar
-												mode="single"
-												selected={profileData.birthday || undefined}
-												onSelect={(date) =>
-													setProfileData((prev) => ({ ...prev, birthday: date || null }))
-												}
-												disabled={(date) => date > new Date()}
-												initialFocus
-												captionLayout="dropdown"
-												startMonth={new Date(1940, 0)}
-												endMonth={new Date()}
-												defaultMonth={profileData.birthday || new Date(2000, 0)}
-											/>
-										</PopoverContent>
-									</Popover>
+									</Button>
+								</PopoverTrigger>
+								<PopoverContent className="w-auto p-0" align="start">
+									<Calendar
+										mode="single"
+										selected={selectedBirthday || undefined}
+										onSelect={(date) => form.setFieldValue("birthday", date || null)}
+										disabled={(date) => date > new Date()}
+										initialFocus
+										captionLayout="dropdown"
+										startMonth={new Date(1940, 0)}
+										endMonth={new Date()}
+										defaultMonth={selectedBirthday || new Date(2000, 0)}
+									/>
+								</PopoverContent>
+							</Popover>
 									<p className="text-muted-foreground text-sm">
 										Your birthday helps us celebrate with you
 									</p>
@@ -542,11 +593,11 @@ export function ProfileForm({ user }: ProfileFormProps) {
 							</div>
 
 							{/* Submit Button */}
-							<Button type="submit" disabled={updateProfileMutation.isPending}>
-								{updateProfileMutation.isPending ? (
+							<Button type="submit" disabled={isSubmitting}>
+								{isSubmitting ? (
 									<>
 										<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
-										{t("common.saving", "Saving...")}
+										{t("common.saving", "Saving…")}
 									</>
 								) : (
 									t("profile.update-profile", "Update Profile")

@@ -34,6 +34,10 @@ spec:
         - name: worker
           image: z8-worker:latest
           imagePullPolicy: Always
+          workingDir: /app/apps/webapp
+          command:
+            - tsx
+            - src/worker.ts
           env:
             - name: NODE_ENV
               value: "production"

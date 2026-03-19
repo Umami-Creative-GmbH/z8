@@ -18,9 +18,7 @@ import { toast } from "sonner";
 import {
 	createShiftTemplate,
 	deleteShiftTemplate,
-	getLocationsWithSubareas,
 	getShiftTemplates,
-	type LocationWithSubareas,
 	updateShiftTemplate,
 } from "@/app/[locale]/(app)/scheduling/actions";
 import type { ShiftTemplate } from "@/app/[locale]/(app)/scheduling/types";
@@ -63,6 +61,16 @@ import { cn } from "@/lib/utils";
 
 interface ShiftTemplateManagementProps {
 	organizationId: string;
+	locations: Array<{
+		id: string;
+		name: string;
+		subareas: Array<{
+			id: string;
+			name: string;
+			isActive: boolean;
+		}>;
+	}>;
+	manageableSubareaIds: string[] | null;
 }
 
 // Predefined colors for shift templates
@@ -133,12 +141,17 @@ function useCalculateDuration() {
 	};
 }
 
-export function ShiftTemplateManagement({ organizationId }: ShiftTemplateManagementProps) {
+export function ShiftTemplateManagement({
+	organizationId,
+	locations,
+	manageableSubareaIds,
+}: ShiftTemplateManagementProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const getColorName = useColorName();
 	const formatTime = useFormatTime();
 	const calculateDuration = useCalculateDuration();
+	const manageableSubareaIdSet = manageableSubareaIds ? new Set(manageableSubareaIds) : null;
 
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const [editingTemplate, setEditingTemplate] = useState<ShiftTemplate | null>(null);
@@ -155,18 +168,15 @@ export function ShiftTemplateManagement({ organizationId }: ShiftTemplateManagem
 		},
 	});
 
-	// Fetch locations with subareas
-	const { data: locationsResult } = useQuery({
-		queryKey: queryKeys.locations.withSubareas(organizationId),
-		queryFn: async () => {
-			const result = await getLocationsWithSubareas();
-			if (!result.success) throw new Error(result.error);
-			return result.data;
-		},
-	});
-
 	const templates = templatesResult || [];
-	const locations = locationsResult || [];
+	const visibleLocations = manageableSubareaIdSet
+		? locations
+				.map((location) => ({
+					...location,
+					subareas: location.subareas.filter((subarea) => manageableSubareaIdSet.has(subarea.id)),
+				}))
+				.filter((location) => location.subareas.length > 0)
+		: locations;
 
 	// Create mutation
 	const createMutation = useMutation({
@@ -419,7 +429,8 @@ export function ShiftTemplateManagement({ organizationId }: ShiftTemplateManagem
 				open={dialogOpen}
 				onOpenChange={setDialogOpen}
 				template={editingTemplate}
-				locations={locations}
+				locations={visibleLocations}
+				requireScopedSubareaSelection={manageableSubareaIdSet !== null}
 				onSubmit={(values) => {
 					if (editingTemplate) {
 						updateMutation.mutate({ id: editingTemplate.id, values });
@@ -475,7 +486,8 @@ interface ShiftTemplateDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	template: ShiftTemplate | null;
-	locations: LocationWithSubareas[];
+	locations: ShiftTemplateManagementProps["locations"];
+	requireScopedSubareaSelection: boolean;
 	onSubmit: (values: {
 		name: string;
 		startTime: string;
@@ -491,6 +503,7 @@ function ShiftTemplateDialog({
 	onOpenChange,
 	template,
 	locations,
+	requireScopedSubareaSelection,
 	onSubmit,
 	isSubmitting,
 }: ShiftTemplateDialogProps) {
@@ -499,13 +512,17 @@ function ShiftTemplateDialog({
 	const formatTime = useFormatTime();
 	const calculateDuration = useCalculateDuration();
 
+	const defaultSubareaId = locations.flatMap((location) => location.subareas)
+		.find((subarea) => subarea.isActive)?.id;
+
 	const form = useForm({
 		defaultValues: {
 			name: template?.name || "",
 			startTime: template?.startTime || "09:00",
 			endTime: template?.endTime || "17:00",
 			color: template?.color || "#3b82f6",
-			subareaId: template?.subareaId || "",
+			subareaId:
+				template?.subareaId || (requireScopedSubareaSelection ? defaultSubareaId || "" : ""),
 		},
 		onSubmit: async ({ value }) => {
 			onSubmit({
@@ -521,7 +538,10 @@ function ShiftTemplateDialog({
 		form.setFieldValue("startTime", template?.startTime || "09:00");
 		form.setFieldValue("endTime", template?.endTime || "17:00");
 		form.setFieldValue("color", template?.color || "#3b82f6");
-		form.setFieldValue("subareaId", template?.subareaId || "");
+		form.setFieldValue(
+			"subareaId",
+			template?.subareaId || (requireScopedSubareaSelection ? defaultSubareaId || "" : ""),
+		);
 	};
 
 	// Helper to get subarea display name
@@ -688,13 +708,15 @@ function ShiftTemplateDialog({
 												: t("settings.shiftTemplates.form.noSubarea", "No default subarea")}
 										</SelectValue>
 									</SelectTrigger>
-									<SelectContent>
+								<SelectContent>
+									{!requireScopedSubareaSelection ? (
 										<SelectItem value="none">
 											{t("settings.shiftTemplates.form.noSubarea", "No default subarea")}
 										</SelectItem>
-										{locations.flatMap((location) =>
-											location.subareas
-												.filter((s) => s.isActive)
+									) : null}
+									{locations.flatMap((location) =>
+										location.subareas
+											.filter((s) => s.isActive)
 												.map((subarea) => (
 													<SelectItem key={subarea.id} value={subarea.id}>
 														{t(
@@ -757,7 +779,10 @@ function ShiftTemplateDialog({
 						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
 							{t("common.cancel", "Cancel")}
 						</Button>
-						<Button type="submit" disabled={isSubmitting}>
+						<Button
+							type="submit"
+							disabled={isSubmitting || (requireScopedSubareaSelection && !form.state.values.subareaId)}
+						>
 							{isSubmitting ? (
 								<>
 									<Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />

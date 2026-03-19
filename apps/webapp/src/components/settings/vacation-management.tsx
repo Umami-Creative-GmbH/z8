@@ -10,10 +10,15 @@ import { VacationAssignmentManager } from "./vacation-assignment-manager";
 
 interface VacationManagementProps {
 	organizationId: string;
+	allowedAssignmentTypes: readonly ("team" | "employee")[];
 	children: React.ReactNode; // The existing policy content
 }
 
-export function VacationManagement({ organizationId, children }: VacationManagementProps) {
+export function VacationManagement({
+	organizationId,
+	allowedAssignmentTypes,
+	children,
+}: VacationManagementProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 
@@ -23,6 +28,10 @@ export function VacationManagement({ organizationId, children }: VacationManagem
 
 	// Assignment handlers
 	const handleAssignClick = (type: "team" | "employee") => {
+		if (!allowedAssignmentTypes.includes(type)) {
+			return;
+		}
+
 		setAssignmentType(type);
 		setAssignmentDialogOpen(true);
 	};
@@ -64,6 +73,7 @@ export function VacationManagement({ organizationId, children }: VacationManagem
 				<TabsContent value="assignments" className="space-y-4">
 					<VacationAssignmentManager
 						organizationId={organizationId}
+						allowedAssignmentTypes={allowedAssignmentTypes}
 						onAssignClick={handleAssignClick}
 					/>
 				</TabsContent>

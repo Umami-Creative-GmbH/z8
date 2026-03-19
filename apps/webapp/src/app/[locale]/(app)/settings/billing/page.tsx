@@ -3,7 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
-import { requireUser } from "@/lib/auth-helpers";
+import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import {
 	SubscriptionService,
 	SubscriptionServiceLive,
@@ -18,12 +18,7 @@ export default async function BillingSettingsPage() {
 		redirect("/settings");
 	}
 
-	const authContext = await requireUser();
-
-	const organizationId = authContext.session.activeOrganizationId;
-	if (!organizationId) {
-		redirect("/");
-	}
+	const { authContext, organizationId } = await requireOrgAdminSettingsAccess();
 
 	// Get member record to check role
 	const memberRecord = await db.query.member.findFirst({
@@ -32,11 +27,6 @@ export default async function BillingSettingsPage() {
 			eq(authSchema.member.organizationId, organizationId),
 		),
 	});
-
-	// Only owners and admins can access billing
-	if (memberRecord?.role !== "owner" && memberRecord?.role !== "admin") {
-		redirect("/settings");
-	}
 
 	// Fetch subscription info
 	const program = Effect.gen(function* () {

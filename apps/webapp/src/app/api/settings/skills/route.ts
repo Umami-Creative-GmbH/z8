@@ -2,26 +2,32 @@ import { and, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { skill } from "@/db/schema";
-import { getAuthContext } from "@/lib/auth-helpers";
+import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 
 export async function GET(request: Request) {
-	const authContext = await getAuthContext();
+	const settingsRouteContext = await getCurrentSettingsRouteContext();
 
-	if (!authContext?.employee) {
+	if (!settingsRouteContext) {
 		return NextResponse.json({ success: false, error: "Authentication required" }, { status: 401 });
 	}
 
-	if (authContext.employee.role !== "admin") {
-		return NextResponse.json({ success: false, error: "Admin access required" }, { status: 403 });
+	if (settingsRouteContext.accessTier === "member") {
+		return NextResponse.json({ success: false, error: "Manager access required" }, { status: 403 });
+	}
+
+	const organizationId = settingsRouteContext.authContext.session.activeOrganizationId;
+
+	if (!organizationId) {
+		return NextResponse.json({ success: false, error: "No active organization" }, { status: 400 });
 	}
 
 	const includeInactive = new URL(request.url).searchParams.get("includeInactive") === "true";
 
 	const skills = await db.query.skill.findMany({
 		where: includeInactive
-			? eq(skill.organizationId, authContext.employee.organizationId)
+			? eq(skill.organizationId, organizationId)
 			: and(
-					eq(skill.organizationId, authContext.employee.organizationId),
+					eq(skill.organizationId, organizationId),
 					eq(skill.isActive, true),
 				),
 		orderBy: (skillTable, { asc: ascOrder }) => [ascOrder(skillTable.category), ascOrder(skillTable.name)],

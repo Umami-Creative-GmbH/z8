@@ -1,22 +1,19 @@
 import { Context, Effect, Layer } from "effect";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
+import type { SessionAuthUser } from "@/lib/auth/auth-context-user";
 import { AuthenticationError } from "../errors";
 
 export interface Session {
-	user: {
-		id: string;
-		email: string;
+	user: SessionAuthUser & {
 		invitedVia?: string | null;
-		name: string;
-		role?: string;
 	};
 	session: {
 		id: string;
 		userId: string;
 		expiresAt: Date;
 		token: string;
-		activeOrganizationId?: string;
+		activeOrganizationId: string | null;
 	};
 }
 
@@ -42,8 +39,14 @@ export const AuthServiceLive = Layer.effect(
 							throw new Error("No session found");
 						}
 
-						return session as Session;
-					},
+					return {
+						...session,
+						session: {
+							...session.session,
+							activeOrganizationId: session.session.activeOrganizationId ?? null,
+						},
+					} as Session;
+				},
 					catch: () =>
 						new AuthenticationError({
 							message: "Not authenticated",

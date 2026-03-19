@@ -25,6 +25,8 @@ export const user = pgTable("user", {
   banReason: text("ban_reason"),
   banExpires: timestamp("ban_expires"),
   twoFactorEnabled: boolean("two_factor_enabled").default(false),
+  firstName: text("first_name"),
+  lastName: text("last_name"),
   canCreateOrganizations: boolean("can_create_organizations").default(false),
   invitedVia: text("invited_via"),
   pendingInviteCode: text("pending_invite_code"),

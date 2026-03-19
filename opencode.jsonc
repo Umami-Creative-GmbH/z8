@@ -1,5 +1,12 @@
 {
   "$schema": "https://opencode.ai/config.json",
   "autoupdate": true,
+  "mcp": {
+    "better-auth": {
+      "url": "https://mcp.chonkie.ai/better-auth/better-auth-builder/mcp",
+      "type": "remote",
+      "enabled": true,
+    }
+  },
   "plugin": ["superpowers@git+https://github.com/obra/superpowers.git"]
 }

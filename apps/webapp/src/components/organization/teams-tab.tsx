@@ -4,6 +4,7 @@ import { IconPlus, IconUsers } from "@tabler/icons-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
+import type { ScopedTeam } from "@/app/[locale]/(app)/settings/teams/team-scope";
 import { deleteTeam } from "@/app/[locale]/(app)/settings/teams/actions";
 import {
 	AlertDialog,
@@ -21,21 +22,23 @@ import type { team } from "@/db/schema";
 import { queryKeys } from "@/lib/query";
 import { CreateTeamDialog } from "./create-team-dialog";
 import { EditTeamDialog } from "./edit-team-dialog";
-import type { MemberWithUserAndEmployee, TeamPermissions } from "./organizations-page-client";
+import type { MemberWithUserAndEmployee } from "./organizations-page-client";
 import { TeamCard } from "./team-card";
 import { TeamMembersDialog } from "./team-members-dialog";
 
 interface TeamsTabProps {
-	teams: Array<typeof team.$inferSelect & { _count?: { employees: number } }>;
+	teams: ScopedTeam[];
 	members: MemberWithUserAndEmployee[];
-	permissions: TeamPermissions;
+	canAccessOrganizationAdminSurface: boolean;
+	canCreateTeams: boolean;
 	organizationId: string;
 }
 
 export function TeamsTab({
 	teams: initialTeams,
 	members,
-	permissions,
+	canAccessOrganizationAdminSurface,
+	canCreateTeams,
 	organizationId,
 }: TeamsTabProps) {
 	const queryClient = useQueryClient();
@@ -48,7 +51,7 @@ export function TeamsTab({
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
 	// Selected team
-	const [selectedTeam, setSelectedTeam] = useState<typeof team.$inferSelect | null>(null);
+	const [selectedTeam, setSelectedTeam] = useState<ScopedTeam | null>(null);
 
 	// Sync with props when they change
 	if (initialTeams !== teams && initialTeams.length !== teams.length) {
@@ -83,24 +86,41 @@ export function TeamsTab({
 
 	// Callback for when a team is created
 	const handleTeamCreated = (newTeam: typeof team.$inferSelect) => {
-		setTeams((prev) => [...prev, newTeam]);
+		setTeams((prev) => [
+			...prev,
+			{
+				...newTeam,
+				canManageMembers: canAccessOrganizationAdminSurface,
+				canManageSettings: canAccessOrganizationAdminSurface,
+			},
+		]);
 		queryClient.invalidateQueries({ queryKey: queryKeys.teams.list(organizationId) });
 	};
 
 	// Callback for when a team is updated
 	const handleTeamUpdated = (updatedTeam: typeof team.$inferSelect) => {
-		setTeams((prev) => prev.map((t) => (t.id === updatedTeam.id ? updatedTeam : t)));
+		setTeams((prev) =>
+			prev.map((t) =>
+				t.id === updatedTeam.id
+					? {
+						...updatedTeam,
+						canManageMembers: t.canManageMembers,
+						canManageSettings: t.canManageSettings,
+					}
+					: t,
+			),
+		);
 		queryClient.invalidateQueries({ queryKey: queryKeys.teams.list(organizationId) });
 	};
 
 	// Handle team edit
-	const handleEdit = (teamToEdit: typeof team.$inferSelect) => {
+	const handleEdit = (teamToEdit: ScopedTeam) => {
 		setSelectedTeam(teamToEdit);
 		setEditDialogOpen(true);
 	};
 
 	// Handle team deletion
-	const handleDeleteRequest = (teamToDelete: typeof team.$inferSelect) => {
+	const handleDeleteRequest = (teamToDelete: ScopedTeam) => {
 		setSelectedTeam(teamToDelete);
 		setDeleteDialogOpen(true);
 	};
@@ -111,7 +131,7 @@ export function TeamsTab({
 	};
 
 	// Handle manage members
-	const handleManageMembers = (teamToManage: typeof team.$inferSelect) => {
+	const handleManageMembers = (teamToManage: ScopedTeam) => {
 		setSelectedTeam(teamToManage);
 		setMembersDialogOpen(true);
 	};
@@ -133,7 +153,7 @@ export function TeamsTab({
 								Organize your employees into teams for better collaboration
 							</CardDescription>
 						</div>
-						{permissions.canCreateTeams && (
+						{canCreateTeams && (
 							<Button onClick={() => setCreateDialogOpen(true)}>
 								<IconPlus className="mr-2 h-4 w-4" />
 								Create Team
@@ -150,7 +170,7 @@ export function TeamsTab({
 							<p className="text-sm mb-4">
 								Create your first team to start organizing your employees
 							</p>
-							{permissions.canCreateTeams && (
+							{canCreateTeams && (
 								<Button onClick={() => setCreateDialogOpen(true)} variant="outline">
 									<IconPlus className="mr-2 h-4 w-4" />
 									Create Your First Team
@@ -165,7 +185,8 @@ export function TeamsTab({
 									key={t.id}
 									team={t}
 									employees={getTeamEmployees(t.id)}
-									canManage={permissions.canManageTeamSettings}
+									canManageMembers={t.canManageMembers}
+									canManageSettings={t.canManageSettings}
 									onEdit={() => handleEdit(t)}
 									onDelete={() => handleDeleteRequest(t)}
 									onManageMembers={() => handleManageMembers(t)}
@@ -193,13 +214,13 @@ export function TeamsTab({
 			/>
 
 			{/* Team Members Dialog */}
-			<TeamMembersDialog
-				team={selectedTeam}
-				allMembers={members}
-				open={membersDialogOpen}
-				onOpenChange={setMembersDialogOpen}
-				canManageMembers={permissions.canManageTeamMembers}
-			/>
+				<TeamMembersDialog
+					team={selectedTeam}
+					allMembers={members}
+					open={membersDialogOpen}
+					onOpenChange={setMembersDialogOpen}
+					canManageMembers={selectedTeam?.canManageMembers ?? false}
+				/>
 
 			{/* Delete Confirmation Dialog */}
 			<AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

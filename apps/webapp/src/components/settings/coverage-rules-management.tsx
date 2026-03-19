@@ -40,6 +40,17 @@ import { CoverageRuleDialog } from "./coverage-rule-dialog";
 
 interface CoverageRulesManagementProps {
 	organizationId: string;
+	locations: Array<{
+		id: string;
+		name: string;
+		subareas: Array<{
+			id: string;
+			name: string;
+			isActive: boolean;
+		}>;
+	}>;
+	manageableSubareaIds: string[] | null;
+	canManageCoverageSettings: boolean;
 }
 
 const DAY_LABELS: Record<string, string> = {
@@ -52,7 +63,12 @@ const DAY_LABELS: Record<string, string> = {
 	sunday: "Sun",
 };
 
-export function CoverageRulesManagement({ organizationId }: CoverageRulesManagementProps) {
+export function CoverageRulesManagement({
+	organizationId,
+	locations,
+	manageableSubareaIds,
+	canManageCoverageSettings,
+}: CoverageRulesManagementProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 
@@ -74,6 +90,7 @@ export function CoverageRulesManagement({ organizationId }: CoverageRulesManagem
 	// Fetch coverage settings
 	const { data: settingsResult } = useQuery({
 		queryKey: ["coverage-settings", organizationId],
+		enabled: canManageCoverageSettings,
 		queryFn: async () => {
 			const result = await getCoverageSettings();
 			if (!result.success) throw new Error(result.error);
@@ -83,6 +100,10 @@ export function CoverageRulesManagement({ organizationId }: CoverageRulesManagem
 
 	const rules = rulesResult || [];
 	const settings = settingsResult;
+	const manageableSubareaIdSet = manageableSubareaIds ? new Set(manageableSubareaIds) : null;
+	const visibleRules = manageableSubareaIdSet
+		? rules.filter((rule) => manageableSubareaIdSet.has(rule.subareaId))
+		: rules;
 
 	// Delete mutation
 	const deleteRuleMutation = useMutation({
@@ -135,7 +156,7 @@ export function CoverageRulesManagement({ organizationId }: CoverageRulesManagem
 	};
 
 	// Group rules by subarea for display
-	const rulesBySubarea = rules.reduce(
+	const rulesBySubarea = visibleRules.reduce(
 		(acc, rule) => {
 			const key = rule.subareaId;
 			if (!acc[key]) {
@@ -184,44 +205,48 @@ export function CoverageRulesManagement({ organizationId }: CoverageRulesManagem
 				</p>
 			</div>
 
-			{/* Settings Card */}
-			<Card>
-				<CardHeader>
-					<CardTitle className="flex items-center gap-2 text-base">
-						<IconShieldCheck className="h-5 w-5" />
-						{t("settings.coverageRules.publishSettings", "Publishing Settings")}
-					</CardTitle>
-					<CardDescription>
-						{t(
-							"settings.coverageRules.publishSettingsDescription",
-							"Control whether schedules can be published when coverage gaps exist.",
-						)}
-					</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<div className="flex items-center justify-between">
-						<div className="space-y-0.5">
-							<Label htmlFor="allow-publish-gaps">
-								{t("settings.coverageRules.allowPublishWithGaps", "Allow publishing with coverage gaps")}
-							</Label>
-							<p className="text-muted-foreground text-sm">
-								{t(
-									"settings.coverageRules.allowPublishWithGapsDescription",
-									"When disabled, managers cannot publish schedules that have understaffed time blocks.",
-								)}
-							</p>
+			{canManageCoverageSettings ? (
+				<Card>
+					<CardHeader>
+						<CardTitle className="flex items-center gap-2 text-base">
+							<IconShieldCheck className="h-5 w-5" />
+							{t("settings.coverageRules.publishSettings", "Publishing Settings")}
+						</CardTitle>
+						<CardDescription>
+							{t(
+								"settings.coverageRules.publishSettingsDescription",
+								"Control whether schedules can be published when coverage gaps exist.",
+							)}
+						</CardDescription>
+					</CardHeader>
+					<CardContent>
+						<div className="flex items-center justify-between">
+							<div className="space-y-0.5">
+								<Label htmlFor="allow-publish-gaps">
+									{t(
+										"settings.coverageRules.allowPublishWithGaps",
+										"Allow publishing with coverage gaps",
+									)}
+								</Label>
+								<p className="text-muted-foreground text-sm">
+									{t(
+										"settings.coverageRules.allowPublishWithGapsDescription",
+										"When disabled, managers cannot publish schedules that have understaffed time blocks.",
+									)}
+								</p>
+							</div>
+							<Switch
+								id="allow-publish-gaps"
+								checked={settings?.allowPublishWithGaps ?? true}
+								onCheckedChange={(checked) => {
+									updateSettingsMutation.mutate({ allowPublishWithGaps: checked });
+								}}
+								disabled={updateSettingsMutation.isPending}
+							/>
 						</div>
-						<Switch
-							id="allow-publish-gaps"
-							checked={settings?.allowPublishWithGaps ?? true}
-							onCheckedChange={(checked) => {
-								updateSettingsMutation.mutate({ allowPublishWithGaps: checked });
-							}}
-							disabled={updateSettingsMutation.isPending}
-						/>
-					</div>
-				</CardContent>
-			</Card>
+					</CardContent>
+				</Card>
+			) : null}
 
 			<div className="flex justify-end">
 				<Button onClick={handleCreateRule}>
@@ -230,7 +255,7 @@ export function CoverageRulesManagement({ organizationId }: CoverageRulesManagem
 				</Button>
 			</div>
 
-			{rules.length === 0 ? (
+			{visibleRules.length === 0 ? (
 				<Card>
 					<CardContent className="flex flex-col items-center justify-center py-12">
 						<IconTarget className="text-muted-foreground mb-4 h-12 w-12" />
@@ -319,7 +344,8 @@ export function CoverageRulesManagement({ organizationId }: CoverageRulesManagem
 			<CoverageRuleDialog
 				open={dialogOpen}
 				onOpenChange={setDialogOpen}
-				organizationId={organizationId}
+				locations={locations}
+				requireScopedSubareaSelection={manageableSubareaIdSet !== null}
 				editingRule={editingRule}
 				onSuccess={handleDialogSuccess}
 			/>

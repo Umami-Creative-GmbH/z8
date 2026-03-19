@@ -2,37 +2,31 @@ import { IconTag } from "@tabler/icons-react";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
-import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { WorkCategoryManagement } from "@/components/settings/work-category-management";
 import { WorkCategorySetsTable } from "@/components/settings/work-category-sets-table";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getAuthContext } from "@/lib/auth-helpers";
+import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 
 async function WorkCategoriesSettingsContent() {
 	await connection(); // Mark as fully dynamic for cacheComponents mode
 
-	// Parallelize employee and auth context fetches
-	const [currentEmployee, authContext] = await Promise.all([
-		getCurrentEmployee(),
-		getAuthContext(),
-	]);
+	const settingsRouteContext = await getCurrentSettingsRouteContext();
 
-	if (!currentEmployee) {
-		return (
-			<div className="flex flex-1 items-center justify-center p-6">
-				<NoEmployeeError feature="manage work categories" />
-			</div>
-		);
+	if (!settingsRouteContext || settingsRouteContext.accessTier === "member") {
+		redirect("/settings");
 	}
 
-	if (!authContext?.employee || authContext.employee.role !== "admin") {
-		redirect("/");
+	const organizationId = settingsRouteContext.authContext.session.activeOrganizationId;
+
+	if (!organizationId) {
+		redirect("/settings");
 	}
+
+	const { accessTier } = settingsRouteContext;
 
 	return (
-		<WorkCategoryManagement organizationId={authContext.employee.organizationId}>
+		<WorkCategoryManagement organizationId={organizationId} canManage={accessTier === "orgAdmin"}>
 			<div className="grid gap-4">
 				<Card>
 					<CardHeader>
@@ -45,7 +39,10 @@ async function WorkCategoriesSettingsContent() {
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
-						<WorkCategorySetsTable organizationId={authContext.employee.organizationId} />
+						<WorkCategorySetsTable
+							organizationId={organizationId}
+							canManage={accessTier === "orgAdmin"}
+						/>
 					</CardContent>
 				</Card>
 			</div>

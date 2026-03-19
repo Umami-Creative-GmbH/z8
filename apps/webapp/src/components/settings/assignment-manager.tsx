@@ -41,6 +41,7 @@ import { queryKeys } from "@/lib/query";
 
 interface AssignmentManagerProps {
 	organizationId: string;
+	canManage: boolean;
 	onAssignClick: (type: "organization" | "team" | "employee") => void;
 	onHolidayAssignClick: (type: "organization" | "team" | "employee") => void;
 }
@@ -103,6 +104,7 @@ interface HolidayAssignmentData {
 
 export function AssignmentManager({
 	organizationId,
+	canManage,
 	onAssignClick,
 	onHolidayAssignClick,
 }: AssignmentManagerProps) {
@@ -309,7 +311,7 @@ export function AssignmentManager({
 								<h4 className="text-sm font-medium text-muted-foreground">
 									{t("settings.holidays.assignments.presetSection", "Holiday Preset")}
 								</h4>
-								{!orgPresetAssignment && (
+								{canManage && !orgPresetAssignment && (
 									<Button onClick={() => onAssignClick("organization")} size="sm" variant="outline">
 										<IconPlus className="mr-2 h-4 w-4" />
 										{t("settings.holidays.assignments.setDefault", "Set Default")}
@@ -337,14 +339,16 @@ export function AssignmentManager({
 											)}
 										</div>
 									</div>
-									<Button
-										variant="ghost"
+									{canManage ? (
+										<Button
+											variant="ghost"
 										size="icon"
 										className="h-8 w-8 text-muted-foreground hover:text-destructive"
 										onClick={() => handleDeletePresetClick(orgPresetAssignment)}
 									>
 										<IconTrash className="h-4 w-4" />
-									</Button>
+										</Button>
+									) : null}
 								</div>
 							) : (
 								<p className="text-sm text-muted-foreground text-center py-2 border rounded-lg bg-muted/30">
@@ -366,14 +370,16 @@ export function AssignmentManager({
 										</Badge>
 									)}
 								</h4>
-								<Button
-									onClick={() => onHolidayAssignClick("organization")}
+								{canManage ? (
+									<Button
+										onClick={() => onHolidayAssignClick("organization")}
 									size="sm"
 									variant="outline"
 								>
 									<IconPlus className="mr-2 h-4 w-4" />
 									{t("settings.holidays.assignments.addHoliday", "Add Holiday")}
-								</Button>
+									</Button>
+								) : null}
 							</div>
 							{orgHolidayAssignments.length > 0 ? (
 								<div className="space-y-2">
@@ -396,15 +402,17 @@ export function AssignmentManager({
 													</span>
 												</div>
 											</div>
-											<Button
-												variant="ghost"
+									{canManage ? (
+										<Button
+											variant="ghost"
 												size="icon"
 												className="h-8 w-8 text-muted-foreground hover:text-destructive"
 												onClick={() => handleDeleteHolidayClick(assignment)}
 											>
 												<IconTrash className="h-4 w-4" />
-											</Button>
-										</div>
+										</Button>
+									) : null}
+									</div>
 									))}
 								</div>
 							) : (
@@ -463,12 +471,12 @@ export function AssignmentManager({
 								</TabsTrigger>
 							</TabsList>
 							<TabsContent value="presets" className="mt-4">
-								<div className="flex justify-end mb-2">
+								{canManage ? <div className="flex justify-end mb-2">
 									<Button onClick={() => onAssignClick("team")} size="sm" variant="outline">
 										<IconPlus className="mr-2 h-4 w-4" />
 										{t("settings.holidays.assignments.assignTeam", "Assign Preset")}
 									</Button>
-								</div>
+								</div> : null}
 								{teamPresetAssignments.length > 0 ? (
 									<div className="space-y-2">
 										{teamPresetAssignments.map((assignment) => (
@@ -492,15 +500,17 @@ export function AssignmentManager({
 														</span>
 													</div>
 												</div>
-												<Button
-													variant="ghost"
+										{canManage ? (
+											<Button
+												variant="ghost"
 													size="icon"
 													className="h-8 w-8 text-muted-foreground hover:text-destructive"
 													onClick={() => handleDeletePresetClick(assignment)}
 												>
 													<IconTrash className="h-4 w-4" />
-												</Button>
-											</div>
+											</Button>
+										) : null}
+									</div>
 										))}
 									</div>
 								) : (
@@ -510,12 +520,12 @@ export function AssignmentManager({
 								)}
 							</TabsContent>
 							<TabsContent value="holidays" className="mt-4">
-								<div className="flex justify-end mb-2">
+								{canManage ? <div className="flex justify-end mb-2">
 									<Button onClick={() => onHolidayAssignClick("team")} size="sm" variant="outline">
 										<IconPlus className="mr-2 h-4 w-4" />
 										{t("settings.holidays.assignments.assignHoliday", "Assign Holiday")}
 									</Button>
-								</div>
+								</div> : null}
 								{teamHolidayAssignments.length > 0 ? (
 									<div className="space-y-2">
 										{teamHolidayAssignments.map((assignment) => (
@@ -541,15 +551,17 @@ export function AssignmentManager({
 														</span>
 													</div>
 												</div>
-												<Button
-													variant="ghost"
+										{canManage ? (
+											<Button
+												variant="ghost"
 													size="icon"
 													className="h-8 w-8 text-muted-foreground hover:text-destructive"
 													onClick={() => handleDeleteHolidayClick(assignment)}
 												>
 													<IconTrash className="h-4 w-4" />
-												</Button>
-											</div>
+											</Button>
+										) : null}
+									</div>
 										))}
 									</div>
 								) : (
@@ -610,12 +622,12 @@ export function AssignmentManager({
 								</TabsTrigger>
 							</TabsList>
 							<TabsContent value="presets" className="mt-4">
-								<div className="flex justify-end mb-2">
+								{canManage ? <div className="flex justify-end mb-2">
 									<Button onClick={() => onAssignClick("employee")} size="sm" variant="outline">
 										<IconPlus className="mr-2 h-4 w-4" />
 										{t("settings.holidays.assignments.assignEmployee", "Assign Preset")}
 									</Button>
-								</div>
+								</div> : null}
 								{employeePresetAssignments.length > 0 ? (
 									<div className="space-y-2">
 										{employeePresetAssignments.map((assignment) => (
@@ -641,15 +653,17 @@ export function AssignmentManager({
 														</span>
 													</div>
 												</div>
-												<Button
-													variant="ghost"
+										{canManage ? (
+											<Button
+												variant="ghost"
 													size="icon"
 													className="h-8 w-8 text-muted-foreground hover:text-destructive"
 													onClick={() => handleDeletePresetClick(assignment)}
 												>
 													<IconTrash className="h-4 w-4" />
-												</Button>
-											</div>
+											</Button>
+										) : null}
+									</div>
 										))}
 									</div>
 								) : (
@@ -662,7 +676,7 @@ export function AssignmentManager({
 								)}
 							</TabsContent>
 							<TabsContent value="holidays" className="mt-4">
-								<div className="flex justify-end mb-2">
+								{canManage ? <div className="flex justify-end mb-2">
 									<Button
 										onClick={() => onHolidayAssignClick("employee")}
 										size="sm"
@@ -671,7 +685,7 @@ export function AssignmentManager({
 										<IconPlus className="mr-2 h-4 w-4" />
 										{t("settings.holidays.assignments.assignHoliday", "Assign Holiday")}
 									</Button>
-								</div>
+								</div> : null}
 								{employeeHolidayAssignments.length > 0 ? (
 									<div className="space-y-2">
 										{employeeHolidayAssignments.map((assignment) => (
@@ -699,15 +713,17 @@ export function AssignmentManager({
 														</span>
 													</div>
 												</div>
-												<Button
-													variant="ghost"
+										{canManage ? (
+											<Button
+												variant="ghost"
 													size="icon"
 													className="h-8 w-8 text-muted-foreground hover:text-destructive"
 													onClick={() => handleDeleteHolidayClick(assignment)}
 												>
 													<IconTrash className="h-4 w-4" />
-												</Button>
-											</div>
+											</Button>
+										) : null}
+									</div>
 										))}
 									</div>
 								) : (

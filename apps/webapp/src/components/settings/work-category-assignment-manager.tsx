@@ -35,6 +35,7 @@ import { queryKeys } from "@/lib/query";
 
 interface WorkCategoryAssignmentManagerProps {
 	organizationId: string;
+	canManage: boolean;
 	onAssignClick: (type: "organization" | "team" | "employee") => void;
 }
 
@@ -68,6 +69,7 @@ interface AssignmentData {
 
 export function WorkCategoryAssignmentManager({
 	organizationId,
+	canManage,
 	onAssignClick,
 }: WorkCategoryAssignmentManagerProps) {
 	const { t } = useTranslate();
@@ -189,7 +191,7 @@ export function WorkCategoryAssignmentManager({
 							<h4 className="text-sm font-medium text-muted-foreground">
 								{t("settings.workCategories.defaultSet", "Default Category Set")}
 							</h4>
-							{!orgAssignment && (
+							{canManage && !orgAssignment && (
 								<Button onClick={() => onAssignClick("organization")} size="sm" variant="outline">
 									<IconPlus className="mr-2 h-4 w-4" />
 									{t("settings.workCategories.setDefault", "Set Default")}
@@ -209,15 +211,17 @@ export function WorkCategoryAssignmentManager({
 										)}
 									</div>
 								</div>
-								<Button
-									variant="ghost"
-									size="icon"
-									className="h-8 w-8 text-muted-foreground hover:text-destructive"
-									onClick={() => handleDeleteClick(orgAssignment)}
-									aria-label={t("common.remove", "Remove")}
-								>
-									<IconTrash className="h-4 w-4" />
-								</Button>
+								{canManage ? (
+									<Button
+										variant="ghost"
+										size="icon"
+										className="h-8 w-8 text-muted-foreground hover:text-destructive"
+										onClick={() => handleDeleteClick(orgAssignment)}
+										aria-label={t("common.remove", "Remove")}
+									>
+										<IconTrash className="h-4 w-4" />
+									</Button>
+								) : null}
 							</div>
 						) : (
 							<p className="text-sm text-muted-foreground text-center py-2 border rounded-lg bg-muted/30">
@@ -254,12 +258,12 @@ export function WorkCategoryAssignmentManager({
 						</div>
 					</CardHeader>
 					<CardContent>
-						<div className="flex justify-end mb-2">
+						{canManage ? <div className="flex justify-end mb-2">
 							<Button onClick={() => onAssignClick("team")} size="sm" variant="outline">
 								<IconPlus className="mr-2 h-4 w-4" />
 								{t("settings.workCategories.assignTeam", "Assign to Team")}
 							</Button>
-						</div>
+						</div> : null}
 						{teamAssignments.length > 0 ? (
 							<div className="space-y-2">
 								{teamAssignments.map((assignment) => (
@@ -275,6 +279,7 @@ export function WorkCategoryAssignmentManager({
 												<span className="text-sm">{assignment.set.name}</span>
 											</div>
 										</div>
+									{canManage ? (
 										<Button
 											variant="ghost"
 											size="icon"
@@ -284,7 +289,8 @@ export function WorkCategoryAssignmentManager({
 										>
 											<IconTrash className="h-4 w-4" />
 										</Button>
-									</div>
+									) : null}
+								</div>
 								))}
 							</div>
 						) : (
@@ -319,12 +325,12 @@ export function WorkCategoryAssignmentManager({
 						</div>
 					</CardHeader>
 					<CardContent>
-						<div className="flex justify-end mb-2">
+						{canManage ? <div className="flex justify-end mb-2">
 							<Button onClick={() => onAssignClick("employee")} size="sm" variant="outline">
 								<IconPlus className="mr-2 h-4 w-4" />
 								{t("settings.workCategories.assignEmployee", "Assign to Employee")}
 							</Button>
-						</div>
+						</div> : null}
 						{employeeAssignments.length > 0 ? (
 							<div className="space-y-2">
 								{employeeAssignments.map((assignment) => (
@@ -342,6 +348,7 @@ export function WorkCategoryAssignmentManager({
 												<span className="text-sm">{assignment.set.name}</span>
 											</div>
 										</div>
+									{canManage ? (
 										<Button
 											variant="ghost"
 											size="icon"
@@ -351,7 +358,8 @@ export function WorkCategoryAssignmentManager({
 										>
 											<IconTrash className="h-4 w-4" />
 										</Button>
-									</div>
+									) : null}
+								</div>
 								))}
 							</div>
 						) : (
@@ -364,7 +372,7 @@ export function WorkCategoryAssignmentManager({
 			</div>
 
 			{/* Delete Confirmation Dialog */}
-			<AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+			<AlertDialog open={canManage && deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
 						<AlertDialogTitle>

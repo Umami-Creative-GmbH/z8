@@ -70,7 +70,7 @@ type SkillCategory = "safety" | "equipment" | "certification" | "training" | "la
 interface EmployeeSkillsCardProps {
 	employeeId: string;
 	organizationId: string;
-	isAdmin: boolean;
+	canManageSkills: boolean;
 }
 
 const CATEGORY_ICONS: Record<SkillCategory, typeof IconShieldCheck> = {
@@ -101,7 +101,7 @@ function isExpiringSoon(expiresAt: Date | null, days = 30): boolean {
 export function EmployeeSkillsCard({
 	employeeId,
 	organizationId,
-	isAdmin,
+	canManageSkills,
 }: EmployeeSkillsCardProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
@@ -151,7 +151,7 @@ export function EmployeeSkillsCard({
 							{t("settings.skills.employeeSkillsDescription", "Certifications and skills assigned to this employee")}
 						</CardDescription>
 					</div>
-					{isAdmin && (
+					{canManageSkills && (
 						<Button size="sm" onClick={() => setDialogOpen(true)}>
 							<IconPlus className="mr-2 h-4 w-4" aria-hidden="true" />
 							{t("settings.skills.assignSkill", "Assign Skill")}
@@ -168,7 +168,7 @@ export function EmployeeSkillsCard({
 					<div className="py-8 text-center text-muted-foreground">
 						<IconAward className="mx-auto h-12 w-12 mb-4 opacity-50" aria-hidden="true" />
 						<p>{t("settings.skills.noSkillsAssigned", "No skills assigned")}</p>
-						{isAdmin && (
+						{canManageSkills && (
 							<p className="text-sm mt-1">
 								{t("settings.skills.assignSkillHint", "Click 'Assign Skill' to add qualifications")}
 							</p>
@@ -228,7 +228,7 @@ export function EmployeeSkillsCard({
 											)}
 										</div>
 									</div>
-									{isAdmin && (
+									{canManageSkills && (
 										<TooltipProvider>
 											<Tooltip>
 												<TooltipTrigger asChild>
@@ -255,14 +255,16 @@ export function EmployeeSkillsCard({
 			</CardContent>
 
 			{/* Assign Skill Dialog */}
-			<AssignSkillDialog
-				employeeId={employeeId}
-				organizationId={organizationId}
-				existingSkillIds={skills.map((s) => s.skillId)}
-				open={dialogOpen}
-				onOpenChange={setDialogOpen}
-				onSuccess={handleSuccess}
-			/>
+			{canManageSkills ? (
+				<AssignSkillDialog
+					employeeId={employeeId}
+					organizationId={organizationId}
+					existingSkillIds={skills.map((s) => s.skillId)}
+					open={dialogOpen}
+					onOpenChange={setDialogOpen}
+					onSuccess={handleSuccess}
+				/>
+			) : null}
 		</Card>
 	);
 }

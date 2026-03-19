@@ -30,6 +30,10 @@ spec:
         - name: migration
           image: z8-migration:latest
           imagePullPolicy: Always
+          workingDir: /app/apps/webapp
+          command:
+            - node
+            - ./scripts/migrate-with-lock.js
           env:
             - name: POSTGRES_HOST
               valueFrom:

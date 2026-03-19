@@ -1,21 +1,27 @@
-import { redirect } from "next/navigation";
 import { connection } from "next/server";
-import { getAuthContext } from "@/lib/auth-helpers";
-import { NoEmployeeError } from "@/components/errors/no-employee-error";
+import { redirect } from "next/navigation";
 import { SkillCatalogManagement } from "@/components/settings/skill-catalog-management";
+import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 
 export default async function SkillsSettingsPage() {
 	await connection();
 
-	const authContext = await getAuthContext();
+	const settingsRouteContext = await getCurrentSettingsRouteContext();
 
-	if (!authContext?.employee) {
-		return <NoEmployeeError feature="manage skills" />;
+	if (!settingsRouteContext || settingsRouteContext.accessTier === "member") {
+		redirect("/settings");
 	}
 
-	if (authContext.employee.role !== "admin") {
-		redirect("/");
+	const organizationId = settingsRouteContext.authContext.session.activeOrganizationId;
+
+	if (!organizationId) {
+		redirect("/settings");
 	}
 
-	return <SkillCatalogManagement organizationId={authContext.employee.organizationId} />;
+	return (
+		<SkillCatalogManagement
+			organizationId={organizationId}
+			canManageCatalog={settingsRouteContext.accessTier === "orgAdmin"}
+		/>
+	);
 }

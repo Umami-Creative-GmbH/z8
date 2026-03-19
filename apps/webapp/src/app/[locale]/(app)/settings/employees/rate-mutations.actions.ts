@@ -9,11 +9,10 @@ import type { ServerActionResult } from "@/lib/effect/result";
 import { createLogger } from "@/lib/logger";
 import { type CreateRateHistory, createRateHistorySchema } from "@/lib/validations/employee";
 import {
-	ensureSameOrganization,
-	getEmployeeContext,
+	ensureSettingsActorCanAccessEmployeeTarget,
+	getEmployeeSettingsActorContext,
 	getTargetEmployee,
 	parseHourlyRate,
-	requireAdmin,
 	revalidateEmployeesCache,
 	runTracedEmployeeAction,
 	validateInput,
@@ -35,21 +34,18 @@ export async function createRateHistoryEntryAction(
 		},
 		execute: () =>
 			Effect.gen(function* (_) {
-				const { session, dbService, currentEmployee } = yield* _(getEmployeeContext());
-
-				yield* _(
-					requireAdmin(currentEmployee, {
-						message: "Only admins can create rate history entries",
-						resource: "rate_history",
-						action: "create",
-					}),
-				);
+				const actor = yield* _(getEmployeeSettingsActorContext());
+				const { session, dbService } = actor;
 
 				const validatedData = yield* _(validateInput(createRateHistorySchema, data));
 				const targetEmployee = yield* _(getTargetEmployee(employeeId));
 
 				yield* _(
-					ensureSameOrganization(currentEmployee, targetEmployee, "rate_history", "create"),
+					ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
+						message: "You do not have access to this employee's rates",
+						resource: "rate_history",
+						action: "create",
+					}),
 				);
 
 				if (targetEmployee.contractType !== "hourly") {

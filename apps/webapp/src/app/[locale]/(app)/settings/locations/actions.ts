@@ -4,13 +4,13 @@ import { SpanStatusCode, trace } from "@opentelemetry/api";
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { Effect } from "effect";
 import { revalidatePath, revalidateTag } from "next/cache";
-import { db } from "@/db";
 import {
 	employee,
 	location,
 	locationEmployee,
 	locationSubarea,
 	subareaEmployee,
+	teamPermissions,
 } from "@/db/schema";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
 import {
@@ -21,10 +21,10 @@ import {
 } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
-import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { CACHE_TAGS } from "@/lib/cache/tags";
 import { logger } from "@/lib/logger";
+import { type SettingsAccessTier } from "@/lib/settings-access";
 import {
 	createLocationSchema,
 	updateLocationSchema,
@@ -33,8 +33,12 @@ import {
 	type CreateLocation,
 	type UpdateLocation,
 	type CreateSubarea,
-	type UpdateSubarea,
+	 type UpdateSubarea,
 } from "@/lib/validations/location";
+import {
+	getLocationSettingsActorContext,
+	requireLocationOrgAdminAccess,
+} from "./location-settings-actor";
 
 // ============================================
 // TYPES
@@ -94,6 +98,28 @@ export interface LocationListItem {
 	employeeCount: number;
 }
 
+function getScopedLocationSubareas<T extends { id: string }>(
+	locationId: string,
+	accessTier: SettingsAccessTier,
+	manageableLocationIds: Set<string> | null,
+	manageableSubareaIds: Set<string> | null,
+	subareas: T[],
+) {
+	if (accessTier === "orgAdmin") {
+		return subareas;
+	}
+
+	if (manageableLocationIds?.has(locationId)) {
+		return subareas;
+	}
+
+	if (!manageableSubareaIds) {
+		return subareas;
+	}
+
+	return subareas.filter((subarea) => manageableSubareaIds.has(subarea.id));
+}
+
 // ============================================
 // LOCATION CRUD
 // ============================================
@@ -111,39 +137,14 @@ export async function getLocations(
 		{ attributes: { "organization.id": organizationId } },
 		(span) => {
 			return Effect.gen(function* (_) {
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
-
-				// Verify admin access
-				yield* _(
-					dbService.query("getEmployee", async () => {
-						return await db.query.employee.findFirst({
-							where: and(
-								eq(employee.userId, session.user.id),
-								eq(employee.organizationId, organizationId),
-								eq(employee.isActive, true),
-							),
-						});
-					}),
-					Effect.flatMap((emp) =>
-						emp?.role === "admin"
-							? Effect.succeed(emp)
-							: Effect.fail(
-									new AuthorizationError({
-										message: "Only admins can manage locations",
-										userId: session.user.id,
-										resource: "location",
-										action: "read",
-									}),
-								),
-					),
+				const actor = yield* _(
+					getLocationSettingsActorContext({ organizationId, queryName: "getLocationsActor" }),
 				);
 
 				// Fetch all locations with relations
 				const locations = yield* _(
-					dbService.query("getLocations", async () => {
-						return await db.query.location.findMany({
+					actor.dbService.query("getLocations", async () => {
+						return await actor.dbService.db.query.location.findMany({
 							where: eq(location.organizationId, organizationId),
 							orderBy: [desc(location.createdAt)],
 							with: {
@@ -155,15 +156,32 @@ export async function getLocations(
 				);
 
 				// Map to list items
-				const result: LocationListItem[] = locations.map((loc) => ({
-					id: loc.id,
-					name: loc.name,
-					city: loc.city,
-					country: loc.country,
-					isActive: loc.isActive,
-					subareaCount: loc.subareas.length,
-					employeeCount: loc.employees.length,
-				}));
+				const result: LocationListItem[] = locations
+					.map((loc) => ({
+						...loc,
+						subareas: getScopedLocationSubareas(
+							loc.id,
+							actor.accessTier,
+							actor.manageableLocationIds,
+							actor.manageableSubareaIds,
+							loc.subareas,
+						),
+					}))
+					.filter(
+						(loc) =>
+							actor.accessTier === "orgAdmin" ||
+							actor.manageableLocationIds?.has(loc.id) ||
+							loc.subareas.length > 0,
+					)
+					.map((loc) => ({
+						id: loc.id,
+						name: loc.name,
+						city: loc.city,
+						country: loc.country,
+						isActive: loc.isActive,
+						subareaCount: loc.subareas.length,
+						employeeCount: loc.employees.length,
+					}));
 
 				span.setStatus({ code: SpanStatusCode.OK });
 				return result;
@@ -198,14 +216,11 @@ export async function getLocation(
 		{ attributes: { "location.id": locationId } },
 		(span) => {
 			return Effect.gen(function* (_) {
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
 				const dbService = yield* _(DatabaseService);
-
 				// Fetch location with relations
 				const loc = yield* _(
 					dbService.query("getLocation", async () => {
-						return await db.query.location.findFirst({
+						return await dbService.db.query.location.findFirst({
 							where: eq(location.id, locationId),
 							with: {
 								subareas: {
@@ -242,30 +257,36 @@ export async function getLocation(
 					),
 				);
 
-				// Verify admin access
-				yield* _(
-					dbService.query("getEmployee", async () => {
-						return await db.query.employee.findFirst({
-							where: and(
-								eq(employee.userId, session.user.id),
-								eq(employee.organizationId, loc.organizationId),
-								eq(employee.isActive, true),
-							),
-						});
+				const actor = yield* _(
+					getLocationSettingsActorContext({
+						organizationId: loc.organizationId,
+						queryName: "getLocationActor",
 					}),
-					Effect.flatMap((emp) =>
-						emp?.role === "admin"
-							? Effect.succeed(emp)
-							: Effect.fail(
-									new AuthorizationError({
-										message: "Only admins can manage locations",
-										userId: session.user.id,
-										resource: "location",
-										action: "read",
-									}),
-								),
-					),
 				);
+				const scopedSubareas = getScopedLocationSubareas(
+					loc.id,
+					actor.accessTier,
+					actor.manageableLocationIds,
+					actor.manageableSubareaIds,
+					loc.subareas,
+				);
+
+				if (
+					actor.accessTier !== "orgAdmin" &&
+					!actor.manageableLocationIds?.has(loc.id) &&
+					scopedSubareas.length === 0
+				) {
+					return yield* _(
+						Effect.fail(
+							new AuthorizationError({
+								message: "Only org admins can manage locations",
+								userId: actor.session.user.id,
+								resource: "location",
+								action: "read",
+							}),
+						),
+					);
+				}
 
 				// Map to LocationWithDetails
 				const result: LocationWithDetails = {
@@ -281,7 +302,7 @@ export async function getLocation(
 					createdBy: loc.createdBy,
 					updatedAt: loc.updatedAt,
 					updatedBy: loc.updatedBy,
-					subareas: loc.subareas.map((sub) => ({
+					subareas: scopedSubareas.map((sub) => ({
 						id: sub.id,
 						locationId: sub.locationId,
 						name: sub.name,
@@ -317,7 +338,7 @@ export async function getLocation(
 							},
 						},
 					})),
-					subareaCount: loc.subareas.length,
+					subareaCount: scopedSubareas.length,
 					employeeCount: loc.employees.length,
 				};
 
@@ -354,9 +375,9 @@ export async function createLocation(
 		{ attributes: { "organization.id": input.organizationId } },
 		(span) => {
 			return Effect.gen(function* (_) {
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
+				const actor = yield* _(
+					getLocationSettingsActorContext({ organizationId: input.organizationId, queryName: "createLocationActor" }),
+				);
 
 				// Validate input
 				const validationResult = createLocationSchema.safeParse(input);
@@ -371,35 +392,17 @@ export async function createLocation(
 					);
 				}
 
-				// Verify admin access
-				const currentEmployee = yield* _(
-					dbService.query("getEmployee", async () => {
-						return await db.query.employee.findFirst({
-							where: and(
-								eq(employee.userId, session.user.id),
-								eq(employee.organizationId, input.organizationId),
-								eq(employee.isActive, true),
-							),
-						});
+				yield* _(
+					requireLocationOrgAdminAccess(actor, {
+						message: "Only org admins can create locations",
+						action: "create",
 					}),
-					Effect.flatMap((emp) =>
-						emp?.role === "admin"
-							? Effect.succeed(emp)
-							: Effect.fail(
-									new AuthorizationError({
-										message: "Only admins can create locations",
-										userId: session.user.id,
-										resource: "location",
-										action: "create",
-									}),
-								),
-					),
 				);
 
 				// Check for duplicate name
 				const existing = yield* _(
-					dbService.query("checkDuplicate", async () => {
-						return await db.query.location.findFirst({
+					actor.dbService.query("checkDuplicate", async () => {
+						return await actor.dbService.db.query.location.findFirst({
 							where: and(
 								eq(location.organizationId, input.organizationId),
 								eq(location.name, input.name),
@@ -422,8 +425,8 @@ export async function createLocation(
 
 				// Create location
 				const [created] = yield* _(
-					dbService.query("createLocation", async () => {
-						return await db
+					actor.dbService.query("createLocation", async () => {
+						return await actor.dbService.db
 							.insert(location)
 							.values({
 								organizationId: input.organizationId,
@@ -432,7 +435,7 @@ export async function createLocation(
 								city: input.city,
 								postalCode: input.postalCode,
 								country: input.country,
-								createdBy: session.user.id,
+								createdBy: actor.session.user.id,
 								updatedAt: new Date(),
 							})
 							.returning({ id: location.id });
@@ -442,7 +445,7 @@ export async function createLocation(
 				// Log audit
 				logAudit({
 					action: AuditAction.LOCATION_CREATED,
-					actorId: session.user.id,
+					actorId: actor.session.user.id,
 					targetId: created.id,
 					targetType: "location",
 					organizationId: input.organizationId,
@@ -489,8 +492,6 @@ export async function updateLocation(
 		{ attributes: { "location.id": locationId } },
 		(span) => {
 			return Effect.gen(function* (_) {
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
 				const dbService = yield* _(DatabaseService);
 
 				// Validate input
@@ -509,7 +510,7 @@ export async function updateLocation(
 				// Fetch existing location
 				const existing = yield* _(
 					dbService.query("getLocation", async () => {
-						return await db.query.location.findFirst({
+						return await dbService.db.query.location.findFirst({
 							where: eq(location.id, locationId),
 						});
 					}),
@@ -526,36 +527,24 @@ export async function updateLocation(
 					),
 				);
 
-				// Verify admin access
-				yield* _(
-					dbService.query("getEmployee", async () => {
-						return await db.query.employee.findFirst({
-							where: and(
-								eq(employee.userId, session.user.id),
-								eq(employee.organizationId, existing.organizationId),
-								eq(employee.isActive, true),
-							),
-						});
+				const actor = yield* _(
+					getLocationSettingsActorContext({
+						organizationId: existing.organizationId,
+						queryName: "updateLocationActor",
 					}),
-					Effect.flatMap((emp) =>
-						emp?.role === "admin"
-							? Effect.succeed(emp)
-							: Effect.fail(
-									new AuthorizationError({
-										message: "Only admins can update locations",
-										userId: session.user.id,
-										resource: "location",
-										action: "update",
-									}),
-								),
-					),
+				);
+				yield* _(
+					requireLocationOrgAdminAccess(actor, {
+						message: "Only org admins can update locations",
+						action: "update",
+					}),
 				);
 
 				// Check for duplicate name if name is being changed
 				if (input.name && input.name !== existing.name) {
 					const duplicate = yield* _(
-						dbService.query("checkDuplicate", async () => {
-							return await db.query.location.findFirst({
+						actor.dbService.query("checkDuplicate", async () => {
+							return await actor.dbService.db.query.location.findFirst({
 								where: and(
 									eq(location.organizationId, existing.organizationId),
 									eq(location.name, input.name!),
@@ -579,12 +568,12 @@ export async function updateLocation(
 
 				// Update location
 				yield* _(
-					dbService.query("updateLocation", async () => {
-						return await db
+					actor.dbService.query("updateLocation", async () => {
+						return await actor.dbService.db
 							.update(location)
 							.set({
 								...input,
-								updatedBy: session.user.id,
+								updatedBy: actor.session.user.id,
 							})
 							.where(eq(location.id, locationId));
 					}),
@@ -593,7 +582,7 @@ export async function updateLocation(
 				// Log audit
 				logAudit({
 					action: AuditAction.LOCATION_UPDATED,
-					actorId: session.user.id,
+					actorId: actor.session.user.id,
 					targetId: locationId,
 					targetType: "location",
 					organizationId: existing.organizationId,
@@ -637,14 +626,12 @@ export async function deleteLocation(locationId: string): Promise<ServerActionRe
 		{ attributes: { "location.id": locationId } },
 		(span) => {
 			return Effect.gen(function* (_) {
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
 				const dbService = yield* _(DatabaseService);
 
 				// Fetch existing location
 				const existing = yield* _(
 					dbService.query("getLocation", async () => {
-						return await db.query.location.findFirst({
+						return await dbService.db.query.location.findFirst({
 							where: eq(location.id, locationId),
 						});
 					}),
@@ -661,42 +648,30 @@ export async function deleteLocation(locationId: string): Promise<ServerActionRe
 					),
 				);
 
-				// Verify admin access
-				yield* _(
-					dbService.query("getEmployee", async () => {
-						return await db.query.employee.findFirst({
-							where: and(
-								eq(employee.userId, session.user.id),
-								eq(employee.organizationId, existing.organizationId),
-								eq(employee.isActive, true),
-							),
-						});
+				const actor = yield* _(
+					getLocationSettingsActorContext({
+						organizationId: existing.organizationId,
+						queryName: "deleteLocationActor",
 					}),
-					Effect.flatMap((emp) =>
-						emp?.role === "admin"
-							? Effect.succeed(emp)
-							: Effect.fail(
-									new AuthorizationError({
-										message: "Only admins can delete locations",
-										userId: session.user.id,
-										resource: "location",
-										action: "delete",
-									}),
-								),
-					),
+				);
+				yield* _(
+					requireLocationOrgAdminAccess(actor, {
+						message: "Only org admins can delete locations",
+						action: "delete",
+					}),
 				);
 
 				// Delete location (cascade handles subareas and assignments)
 				yield* _(
-					dbService.query("deleteLocation", async () => {
-						return await db.delete(location).where(eq(location.id, locationId));
+					actor.dbService.query("deleteLocation", async () => {
+						return await actor.dbService.db.delete(location).where(eq(location.id, locationId));
 					}),
 				);
 
 				// Log audit
 				logAudit({
 					action: AuditAction.LOCATION_DELETED,
-					actorId: session.user.id,
+					actorId: actor.session.user.id,
 					targetId: locationId,
 					targetType: "location",
 					organizationId: existing.organizationId,
@@ -745,8 +720,6 @@ export async function createSubarea(
 		{ attributes: { "location.id": input.locationId } },
 		(span) => {
 			return Effect.gen(function* (_) {
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
 				const dbService = yield* _(DatabaseService);
 
 				// Validate input
@@ -765,7 +738,7 @@ export async function createSubarea(
 				// Fetch location to verify ownership
 				const loc = yield* _(
 					dbService.query("getLocation", async () => {
-						return await db.query.location.findFirst({
+						return await dbService.db.query.location.findFirst({
 							where: eq(location.id, input.locationId),
 						});
 					}),
@@ -782,35 +755,23 @@ export async function createSubarea(
 					),
 				);
 
-				// Verify admin access
-				yield* _(
-					dbService.query("getEmployee", async () => {
-						return await db.query.employee.findFirst({
-							where: and(
-								eq(employee.userId, session.user.id),
-								eq(employee.organizationId, loc.organizationId),
-								eq(employee.isActive, true),
-							),
-						});
+				const actor = yield* _(
+					getLocationSettingsActorContext({
+						organizationId: loc.organizationId,
+						queryName: "createSubareaActor",
 					}),
-					Effect.flatMap((emp) =>
-						emp?.role === "admin"
-							? Effect.succeed(emp)
-							: Effect.fail(
-									new AuthorizationError({
-										message: "Only admins can create subareas",
-										userId: session.user.id,
-										resource: "subarea",
-										action: "create",
-									}),
-								),
-					),
+				);
+				yield* _(
+					requireLocationOrgAdminAccess(actor, {
+						message: "Only org admins can create subareas",
+						action: "create",
+					}),
 				);
 
 				// Check for duplicate name within location
 				const existing = yield* _(
-					dbService.query("checkDuplicate", async () => {
-						return await db.query.locationSubarea.findFirst({
+					actor.dbService.query("checkDuplicate", async () => {
+						return await actor.dbService.db.query.locationSubarea.findFirst({
 							where: and(
 								eq(locationSubarea.locationId, input.locationId),
 								eq(locationSubarea.name, input.name),
@@ -833,13 +794,13 @@ export async function createSubarea(
 
 				// Create subarea
 				const [created] = yield* _(
-					dbService.query("createSubarea", async () => {
-						return await db
+					actor.dbService.query("createSubarea", async () => {
+						return await actor.dbService.db
 							.insert(locationSubarea)
 							.values({
 								locationId: input.locationId,
 								name: input.name,
-								createdBy: session.user.id,
+								createdBy: actor.session.user.id,
 								updatedAt: new Date(),
 							})
 							.returning({ id: locationSubarea.id });
@@ -881,8 +842,6 @@ export async function updateSubarea(
 		{ attributes: { "subarea.id": subareaId } },
 		(span) => {
 			return Effect.gen(function* (_) {
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
 				const dbService = yield* _(DatabaseService);
 
 				// Validate input
@@ -901,7 +860,7 @@ export async function updateSubarea(
 				// Fetch existing subarea with location
 				const existing = yield* _(
 					dbService.query("getSubarea", async () => {
-						return await db.query.locationSubarea.findFirst({
+						return await dbService.db.query.locationSubarea.findFirst({
 							where: eq(locationSubarea.id, subareaId),
 							with: { location: true },
 						});
@@ -919,36 +878,24 @@ export async function updateSubarea(
 					),
 				);
 
-				// Verify admin access
-				yield* _(
-					dbService.query("getEmployee", async () => {
-						return await db.query.employee.findFirst({
-							where: and(
-								eq(employee.userId, session.user.id),
-								eq(employee.organizationId, existing.location.organizationId),
-								eq(employee.isActive, true),
-							),
-						});
+				const actor = yield* _(
+					getLocationSettingsActorContext({
+						organizationId: existing.location.organizationId,
+						queryName: "updateSubareaActor",
 					}),
-					Effect.flatMap((emp) =>
-						emp?.role === "admin"
-							? Effect.succeed(emp)
-							: Effect.fail(
-									new AuthorizationError({
-										message: "Only admins can update subareas",
-										userId: session.user.id,
-										resource: "subarea",
-										action: "update",
-									}),
-								),
-					),
+				);
+				yield* _(
+					requireLocationOrgAdminAccess(actor, {
+						message: "Only org admins can update subareas",
+						action: "update",
+					}),
 				);
 
 				// Check for duplicate name if name is being changed
 				if (input.name && input.name !== existing.name) {
 					const duplicate = yield* _(
-						dbService.query("checkDuplicate", async () => {
-							return await db.query.locationSubarea.findFirst({
+						actor.dbService.query("checkDuplicate", async () => {
+							return await actor.dbService.db.query.locationSubarea.findFirst({
 								where: and(
 									eq(locationSubarea.locationId, existing.locationId),
 									eq(locationSubarea.name, input.name!),
@@ -972,12 +919,12 @@ export async function updateSubarea(
 
 				// Update subarea
 				yield* _(
-					dbService.query("updateSubarea", async () => {
-						return await db
+					actor.dbService.query("updateSubarea", async () => {
+						return await actor.dbService.db
 							.update(locationSubarea)
 							.set({
 								...input,
-								updatedBy: session.user.id,
+								updatedBy: actor.session.user.id,
 							})
 							.where(eq(locationSubarea.id, subareaId));
 					}),
@@ -1014,14 +961,12 @@ export async function deleteSubarea(subareaId: string): Promise<ServerActionResu
 		{ attributes: { "subarea.id": subareaId } },
 		(span) => {
 			return Effect.gen(function* (_) {
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
 				const dbService = yield* _(DatabaseService);
 
 				// Fetch existing subarea with location
 				const existing = yield* _(
 					dbService.query("getSubarea", async () => {
-						return await db.query.locationSubarea.findFirst({
+						return await dbService.db.query.locationSubarea.findFirst({
 							where: eq(locationSubarea.id, subareaId),
 							with: { location: true },
 						});
@@ -1039,35 +984,23 @@ export async function deleteSubarea(subareaId: string): Promise<ServerActionResu
 					),
 				);
 
-				// Verify admin access
-				yield* _(
-					dbService.query("getEmployee", async () => {
-						return await db.query.employee.findFirst({
-							where: and(
-								eq(employee.userId, session.user.id),
-								eq(employee.organizationId, existing.location.organizationId),
-								eq(employee.isActive, true),
-							),
-						});
+				const actor = yield* _(
+					getLocationSettingsActorContext({
+						organizationId: existing.location.organizationId,
+						queryName: "deleteSubareaActor",
 					}),
-					Effect.flatMap((emp) =>
-						emp?.role === "admin"
-							? Effect.succeed(emp)
-							: Effect.fail(
-									new AuthorizationError({
-										message: "Only admins can delete subareas",
-										userId: session.user.id,
-										resource: "subarea",
-										action: "delete",
-									}),
-								),
-					),
+				);
+				yield* _(
+					requireLocationOrgAdminAccess(actor, {
+						message: "Only org admins can delete subareas",
+						action: "delete",
+					}),
 				);
 
 				// Delete subarea (cascade handles employee assignments)
 				yield* _(
-					dbService.query("deleteSubarea", async () => {
-						return await db.delete(locationSubarea).where(eq(locationSubarea.id, subareaId));
+					actor.dbService.query("deleteSubarea", async () => {
+						return await actor.dbService.db.delete(locationSubarea).where(eq(locationSubarea.id, subareaId));
 					}),
 				);
 
@@ -1115,39 +1048,20 @@ export async function getAvailableEmployees(
 		{ attributes: { "organization.id": organizationId } },
 		(span) => {
 			return Effect.gen(function* (_) {
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
-
-				// Verify admin access
+				const actor = yield* _(
+					getLocationSettingsActorContext({ organizationId, queryName: "getAvailableEmployeesActor" }),
+				);
 				yield* _(
-					dbService.query("getEmployee", async () => {
-						return await db.query.employee.findFirst({
-							where: and(
-								eq(employee.userId, session.user.id),
-								eq(employee.organizationId, organizationId),
-								eq(employee.isActive, true),
-							),
-						});
+					requireLocationOrgAdminAccess(actor, {
+						message: "Only org admins can view employees",
+						action: "create",
 					}),
-					Effect.flatMap((emp) =>
-						emp?.role === "admin"
-							? Effect.succeed(emp)
-							: Effect.fail(
-									new AuthorizationError({
-										message: "Only admins can view employees",
-										userId: session.user.id,
-										resource: "employee",
-										action: "read",
-									}),
-								),
-					),
 				);
 
 				// Get all active employees
 				const employees = yield* _(
-					dbService.query("getEmployees", async () => {
-						return await db.query.employee.findMany({
+					actor.dbService.query("getEmployees", async () => {
+						return await actor.dbService.db.query.employee.findMany({
 							where: and(eq(employee.organizationId, organizationId), eq(employee.isActive, true)),
 							with: { user: true },
 						});
@@ -1159,8 +1073,8 @@ export async function getAvailableEmployees(
 
 				if (excludeLocationId) {
 					const assignments = yield* _(
-						dbService.query("getLocationAssignments", async () => {
-							return await db.query.locationEmployee.findMany({
+						actor.dbService.query("getLocationAssignments", async () => {
+							return await actor.dbService.db.query.locationEmployee.findMany({
 								where: eq(locationEmployee.locationId, excludeLocationId),
 							});
 						}),
@@ -1170,8 +1084,8 @@ export async function getAvailableEmployees(
 
 				if (excludeSubareaId) {
 					const assignments = yield* _(
-						dbService.query("getSubareaAssignments", async () => {
-							return await db.query.subareaEmployee.findMany({
+						actor.dbService.query("getSubareaAssignments", async () => {
+							return await actor.dbService.db.query.subareaEmployee.findMany({
 								where: eq(subareaEmployee.subareaId, excludeSubareaId),
 							});
 						}),

@@ -2,36 +2,45 @@
 
 import { Effect } from "effect";
 import { ShiftService } from "@/lib/effect/services/shift.service";
-import type { CreateTemplateInput, ShiftTemplate, UpdateTemplateInput } from "../types";
 import {
-	requireCurrentEmployee,
-	requireManagerEmployee,
-	runSchedulingAction,
-	type SchedulingActionResult,
-} from "./shared";
+	canManageScopedSchedulingSubarea,
+	filterItemsToManageableSubareas,
+	getSchedulingSettingsAccessContext,
+	getShiftTemplateScopeTarget,
+} from "@/lib/settings-scheduling-access";
+import type { CreateTemplateInput, ShiftTemplate, UpdateTemplateInput } from "../types";
+import { runSchedulingAction, type SchedulingActionResult } from "./shared";
 
 export async function createShiftTemplate(
 	input: CreateTemplateInput,
 ): Promise<SchedulingActionResult<ShiftTemplate>> {
+	const accessContext = await getSchedulingSettingsAccessContext();
+	if (!accessContext || !accessContext.canAccessShiftTemplates) {
+		return { success: false, error: "Unauthorized" };
+	}
+
+	if (
+		!canManageScopedSchedulingSubarea(
+			accessContext.accessTier,
+			accessContext.manageableShiftTemplateSubareaIds,
+			input.subareaId,
+		)
+	) {
+		return { success: false, error: "Unauthorized" };
+	}
+
 	const effect = Effect.gen(function* (_) {
 		const shiftService = yield* _(ShiftService);
-		const { currentEmployee, session } = yield* _(
-			requireManagerEmployee({
-				resource: "shiftTemplate",
-				action: "create",
-				message: "Only managers and admins can create shift templates",
-			}),
-		);
 
 		return yield* _(
 			shiftService.createTemplate({
-				organizationId: currentEmployee.organizationId,
+				organizationId: accessContext.organizationId,
 				name: input.name,
 				startTime: input.startTime,
 				endTime: input.endTime,
 				color: input.color,
 				subareaId: input.subareaId,
-				createdBy: session.user.id,
+				createdBy: accessContext.authContext.user.id,
 			}),
 		);
 	});
@@ -43,15 +52,33 @@ export async function updateShiftTemplate(
 	id: string,
 	input: UpdateTemplateInput,
 ): Promise<SchedulingActionResult<ShiftTemplate>> {
+	const accessContext = await getSchedulingSettingsAccessContext();
+	if (!accessContext || !accessContext.canAccessShiftTemplates) {
+		return { success: false, error: "Unauthorized" };
+	}
+
+	const existingTemplate = await getShiftTemplateScopeTarget(id);
+	if (!existingTemplate) {
+		return { success: false, error: "Shift template not found" };
+	}
+
+	if (existingTemplate.organizationId !== accessContext.organizationId) {
+		return { success: false, error: "Unauthorized" };
+	}
+
+	const nextSubareaId = input.subareaId !== undefined ? input.subareaId : existingTemplate.subareaId;
+	if (
+		!canManageScopedSchedulingSubarea(
+			accessContext.accessTier,
+			accessContext.manageableShiftTemplateSubareaIds,
+			nextSubareaId,
+		)
+	) {
+		return { success: false, error: "Unauthorized" };
+	}
+
 	const effect = Effect.gen(function* (_) {
 		const shiftService = yield* _(ShiftService);
-		yield* _(
-			requireManagerEmployee({
-				resource: "shiftTemplate",
-				action: "update",
-				message: "Only managers and admins can update shift templates",
-			}),
-		);
 
 		return yield* _(shiftService.updateTemplate(id, input));
 	});
@@ -60,15 +87,32 @@ export async function updateShiftTemplate(
 }
 
 export async function deleteShiftTemplate(id: string): Promise<SchedulingActionResult<void>> {
+	const accessContext = await getSchedulingSettingsAccessContext();
+	if (!accessContext || !accessContext.canAccessShiftTemplates) {
+		return { success: false, error: "Unauthorized" };
+	}
+
+	const existingTemplate = await getShiftTemplateScopeTarget(id);
+	if (!existingTemplate) {
+		return { success: false, error: "Shift template not found" };
+	}
+
+	if (existingTemplate.organizationId !== accessContext.organizationId) {
+		return { success: false, error: "Unauthorized" };
+	}
+
+	if (
+		!canManageScopedSchedulingSubarea(
+			accessContext.accessTier,
+			accessContext.manageableShiftTemplateSubareaIds,
+			existingTemplate.subareaId,
+		)
+	) {
+		return { success: false, error: "Unauthorized" };
+	}
+
 	const effect = Effect.gen(function* (_) {
 		const shiftService = yield* _(ShiftService);
-		yield* _(
-			requireManagerEmployee({
-				resource: "shiftTemplate",
-				action: "delete",
-				message: "Only managers and admins can delete shift templates",
-			}),
-		);
 
 		yield* _(shiftService.deleteTemplate(id));
 	});
@@ -77,12 +121,27 @@ export async function deleteShiftTemplate(id: string): Promise<SchedulingActionR
 }
 
 export async function getShiftTemplates(): Promise<SchedulingActionResult<ShiftTemplate[]>> {
+	const accessContext = await getSchedulingSettingsAccessContext();
+	if (!accessContext || !accessContext.canAccessShiftTemplates) {
+		return { success: false, error: "Unauthorized" };
+	}
+
 	const effect = Effect.gen(function* (_) {
 		const shiftService = yield* _(ShiftService);
-		const { currentEmployee } = yield* _(requireCurrentEmployee());
 
-		return yield* _(shiftService.getTemplates(currentEmployee.organizationId));
+		return yield* _(shiftService.getTemplates(accessContext.organizationId));
 	});
 
-	return runSchedulingAction("getShiftTemplates", effect);
+	const result = await runSchedulingAction("getShiftTemplates", effect);
+	if (!result.success) {
+		return result;
+	}
+
+	return {
+		success: true,
+		data: filterItemsToManageableSubareas(
+			result.data,
+			accessContext.manageableShiftTemplateSubareaIds,
+		),
+	};
 }

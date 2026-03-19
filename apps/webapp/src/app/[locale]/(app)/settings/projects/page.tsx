@@ -1,26 +1,22 @@
-import { redirect } from "next/navigation";
 import { connection } from "next/server";
-import { NoEmployeeError } from "@/components/errors/no-employee-error";
+import { redirect } from "next/navigation";
 import { ProjectManagement } from "@/components/settings/project-management";
-import { getAuthContext } from "@/lib/auth-helpers";
+import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 
 export default async function ProjectSettingsPage() {
 	await connection(); // Mark as fully dynamic for cacheComponents mode
 
-	const authContext = await getAuthContext();
+	const settingsRouteContext = await getCurrentSettingsRouteContext();
 
-	if (!authContext?.employee) {
-		return (
-			<div className="flex flex-1 items-center justify-center p-6">
-				<NoEmployeeError feature="manage projects" />
-			</div>
-		);
+	if (!settingsRouteContext || settingsRouteContext.accessTier === "member") {
+		redirect("/settings");
 	}
 
-	// Only admins can access project settings
-	if (authContext.employee.role !== "admin") {
-		redirect("/");
+	const organizationId = settingsRouteContext.authContext.session.activeOrganizationId;
+
+	if (!organizationId) {
+		redirect("/settings");
 	}
 
-	return <ProjectManagement organizationId={authContext.employee.organizationId} />;
+	return <ProjectManagement organizationId={organizationId} />;
 }

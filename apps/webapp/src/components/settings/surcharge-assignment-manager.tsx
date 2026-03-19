@@ -34,6 +34,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { queryKeys } from "@/lib/query";
 
 interface SurchargeAssignmentManagerProps {
+	canManage: boolean;
 	organizationId: string;
 	onAssignClick: (type: "organization" | "team" | "employee") => void;
 }
@@ -65,6 +66,7 @@ interface SurchargeAssignmentData {
 }
 
 export function SurchargeAssignmentManager({
+	canManage,
 	organizationId,
 	onAssignClick,
 }: SurchargeAssignmentManagerProps) {
@@ -188,7 +190,7 @@ export function SurchargeAssignmentManager({
 							<h4 className="text-sm font-medium text-muted-foreground">
 								{t("settings.surcharges.defaultModel", "Default Model")}
 							</h4>
-							{!orgAssignment && (
+							{canManage && !orgAssignment && (
 								<Button onClick={() => onAssignClick("organization")} size="sm" variant="outline">
 									<IconPlus className="mr-2 h-4 w-4" />
 									{t("settings.surcharges.setDefault", "Set Default")}
@@ -201,14 +203,16 @@ export function SurchargeAssignmentManager({
 									<IconPercentage className="h-4 w-4 text-muted-foreground" />
 									<span className="font-medium">{orgAssignment.model.name}</span>
 								</div>
-								<Button
-									variant="ghost"
-									size="icon"
-									className="h-8 w-8 text-muted-foreground hover:text-destructive"
-									onClick={() => handleDeleteClick(orgAssignment)}
-								>
-									<IconTrash className="h-4 w-4" />
-								</Button>
+								{canManage ? (
+									<Button
+										variant="ghost"
+										size="icon"
+										className="h-8 w-8 text-muted-foreground hover:text-destructive"
+										onClick={() => handleDeleteClick(orgAssignment)}
+									>
+										<IconTrash className="h-4 w-4" />
+									</Button>
+								) : null}
 							</div>
 						) : (
 							<p className="text-sm text-muted-foreground text-center py-2 border rounded-lg bg-muted/30">
@@ -242,12 +246,14 @@ export function SurchargeAssignmentManager({
 						</div>
 					</CardHeader>
 					<CardContent>
-						<div className="flex justify-end mb-2">
-							<Button onClick={() => onAssignClick("team")} size="sm" variant="outline">
-								<IconPlus className="mr-2 h-4 w-4" />
-								{t("settings.surcharges.assignTeam", "Assign to Team")}
-							</Button>
-						</div>
+						{canManage ? (
+							<div className="flex justify-end mb-2">
+								<Button onClick={() => onAssignClick("team")} size="sm" variant="outline">
+									<IconPlus className="mr-2 h-4 w-4" />
+									{t("settings.surcharges.assignTeam", "Assign to Team")}
+								</Button>
+							</div>
+						) : null}
 						{teamAssignments.length > 0 ? (
 							<div className="space-y-2">
 								{teamAssignments.map((assignment) => (
@@ -263,6 +269,7 @@ export function SurchargeAssignmentManager({
 												<span className="text-sm">{assignment.model.name}</span>
 											</div>
 										</div>
+									{canManage ? (
 										<Button
 											variant="ghost"
 											size="icon"
@@ -271,7 +278,8 @@ export function SurchargeAssignmentManager({
 										>
 											<IconTrash className="h-4 w-4" />
 										</Button>
-									</div>
+									) : null}
+								</div>
 								))}
 							</div>
 						) : (
@@ -306,12 +314,14 @@ export function SurchargeAssignmentManager({
 						</div>
 					</CardHeader>
 					<CardContent>
-						<div className="flex justify-end mb-2">
-							<Button onClick={() => onAssignClick("employee")} size="sm" variant="outline">
-								<IconPlus className="mr-2 h-4 w-4" />
-								{t("settings.surcharges.assignEmployee", "Assign to Employee")}
-							</Button>
-						</div>
+						{canManage ? (
+							<div className="flex justify-end mb-2">
+								<Button onClick={() => onAssignClick("employee")} size="sm" variant="outline">
+									<IconPlus className="mr-2 h-4 w-4" />
+									{t("settings.surcharges.assignEmployee", "Assign to Employee")}
+								</Button>
+							</div>
+						) : null}
 						{employeeAssignments.length > 0 ? (
 							<div className="space-y-2">
 								{employeeAssignments.map((assignment) => (
@@ -329,6 +339,7 @@ export function SurchargeAssignmentManager({
 												<span className="text-sm">{assignment.model.name}</span>
 											</div>
 										</div>
+									{canManage ? (
 										<Button
 											variant="ghost"
 											size="icon"
@@ -337,7 +348,8 @@ export function SurchargeAssignmentManager({
 										>
 											<IconTrash className="h-4 w-4" />
 										</Button>
-									</div>
+									) : null}
+								</div>
 								))}
 							</div>
 						) : (
@@ -350,7 +362,7 @@ export function SurchargeAssignmentManager({
 			</div>
 
 			{/* Delete Confirmation Dialog */}
-			<AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+			<AlertDialog open={canManage && deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
 						<AlertDialogTitle>
