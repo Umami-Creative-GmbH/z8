@@ -5,8 +5,8 @@ import { Effect } from "effect";
 import { headers } from "next/headers";
 import { db } from "@/db";
 import { employee, userSettings } from "@/db/schema";
-import { toAuthStructuredName, trimStructuredNamePart } from "@/lib/auth/derived-user-name";
 import { auth } from "@/lib/auth";
+import { toAuthStructuredName, trimStructuredNamePart } from "@/lib/auth/derived-user-name";
 import { ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
@@ -50,9 +50,7 @@ function normalizeProfileImage(image: string | null | undefined): string | null 
 	return undefined;
 }
 
-async function updateBetterAuthProfile(
-	updateData: AuthProfileUpdate,
-): Promise<void> {
+async function updateBetterAuthProfile(updateData: AuthProfileUpdate): Promise<void> {
 	await auth.api.updateUser({
 		body: updateData,
 		headers: await headers(),
@@ -142,7 +140,10 @@ function syncActiveEmployeeProfile(
 						birthday: data.birthday ?? null,
 					})
 					.where(
-						and(eq(employee.id, activeEmployee.id), eq(employee.organizationId, activeOrganizationId)),
+						and(
+							eq(employee.id, activeEmployee.id),
+							eq(employee.organizationId, activeOrganizationId),
+						),
 					);
 			}),
 		);
@@ -228,8 +229,12 @@ export async function updateProfileDetails(data: {
 	return runServerActionSafe(effect);
 }
 
-export async function updateProfile(data: StructuredProfileDetailsInput): Promise<ServerActionResult<void>>;
-export async function updateProfile(data: LegacyProfileUpdateInput): Promise<ServerActionResult<void>>;
+export async function updateProfile(
+	data: StructuredProfileDetailsInput,
+): Promise<ServerActionResult<void>>;
+export async function updateProfile(
+	data: LegacyProfileUpdateInput,
+): Promise<ServerActionResult<void>>;
 export async function updateProfile(
 	data: StructuredProfileDetailsInput | LegacyProfileUpdateInput,
 ): Promise<ServerActionResult<void>> {
