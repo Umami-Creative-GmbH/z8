@@ -4,7 +4,7 @@ import { and, desc, eq, ne } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { travelExpensePolicy } from "@/db/schema";
-import { getAuthContext } from "@/lib/auth-helpers";
+import { canManageCurrentOrganizationSettings, getAuthContext } from "@/lib/auth-helpers";
 import type { ServerActionResult } from "@/lib/effect/result";
 
 export type TravelExpensePolicyData = typeof travelExpensePolicy.$inferSelect;
@@ -19,17 +19,44 @@ export interface UpsertTravelExpensePolicyInput {
 	isActive: boolean;
 }
 
+type TravelExpenseOrgAdminAccess =
+	| { error: string }
+	| {
+			authContext: NonNullable<Awaited<ReturnType<typeof getAuthContext>>>;
+			organizationId: string;
+	  };
+
+async function requireTravelExpenseOrgAdmin(): Promise<TravelExpenseOrgAdminAccess> {
+	const authContext = await getAuthContext();
+
+	if (!authContext) {
+		return { error: "Unauthorized: Admin access required" } as const;
+	}
+
+	const organizationId = authContext.session.activeOrganizationId;
+
+	if (!organizationId) {
+		return { error: "No organization selected" } as const;
+	}
+
+	if (!(await canManageCurrentOrganizationSettings())) {
+		return { error: "Unauthorized: Admin access required" } as const;
+	}
+
+	return { authContext, organizationId } as const;
+}
+
 export async function getTravelExpensePolicies(): Promise<
 	ServerActionResult<TravelExpensePolicyData[]>
 > {
 	try {
-		const authContext = await getAuthContext();
-		if (!authContext?.employee || authContext.employee.role !== "admin") {
-			return { success: false, error: "Unauthorized: Admin access required" };
+		const access = await requireTravelExpenseOrgAdmin();
+		if ("error" in access) {
+			return { success: false, error: access.error };
 		}
 
 		const policies = await db.query.travelExpensePolicy.findMany({
-			where: eq(travelExpensePolicy.organizationId, authContext.employee.organizationId),
+			where: eq(travelExpensePolicy.organizationId, access.organizationId),
 			orderBy: [desc(travelExpensePolicy.effectiveFrom)],
 		});
 
@@ -44,13 +71,13 @@ export async function upsertTravelExpensePolicy(
 	input: UpsertTravelExpensePolicyInput,
 ): Promise<ServerActionResult<{ id: string }>> {
 	try {
-		const authContext = await getAuthContext();
-		if (!authContext?.employee || authContext.employee.role !== "admin") {
-			return { success: false, error: "Unauthorized: Admin access required" };
+		const access = await requireTravelExpenseOrgAdmin();
+		if ("error" in access) {
+			return { success: false, error: access.error };
 		}
 
-		const organizationId = authContext.employee.organizationId;
-		const userId = authContext.user.id;
+		const organizationId = access.organizationId;
+		const userId = access.authContext.user.id;
 
 		if (input.isActive) {
 			await db

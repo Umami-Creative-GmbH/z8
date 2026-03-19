@@ -5,11 +5,16 @@ import { revalidatePath } from "next/cache";
 import { Effect } from "effect";
 import {
 	employee,
+	locationEmployee,
+	projectManager,
+	subareaEmployee,
 	team,
+	teamPermissions,
 	workCategory,
 	workCategorySet,
 	workCategorySetAssignment,
 	workCategorySetCategory,
+	workPeriod,
 } from "@/db/schema";
 import {
 	AuthorizationError,
@@ -21,6 +26,11 @@ import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/resul
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
+import {
+	getEmployeeSettingsActorContext,
+	getManagedEmployeeIdsForSettingsActor,
+	requireOrgAdminEmployeeSettingsAccess,
+} from "../employees/employee-action-utils";
 
 // ============================================
 // Type definitions
@@ -136,6 +146,347 @@ interface CreateSetAssignmentInput {
 	effectiveUntil?: Date | null;
 }
 
+type WorkCategorySettingsActor = Awaited<ReturnType<typeof getEmployeeSettingsActorContext>> extends Effect.Effect<
+	infer Success,
+	any,
+	any
+>
+	? Success
+	: never;
+
+type WorkCategoryAccessContext = {
+	actor: WorkCategorySettingsActor;
+	managedEmployeeIds: Set<string> | null;
+	manageableTeamIds: Set<string> | null;
+	manageableLocationIds: Set<string> | null;
+	manageableSubareaIds: Set<string> | null;
+	managedProjectIds: Set<string> | null;
+};
+
+function getScopedOrganizationWorkCategory(
+	dbService: WorkCategorySettingsActor["dbService"],
+	organizationId: string,
+	categoryId: string,
+	queryName: string,
+) {
+	return dbService.query(queryName, async () => {
+		const [category] = await dbService.db
+			.select({ id: workCategory.id })
+			.from(workCategory)
+			.where(
+				and(
+					eq(workCategory.id, categoryId),
+					eq(workCategory.organizationId, organizationId),
+				),
+			)
+			.limit(1);
+
+		return category ?? null;
+	});
+}
+
+function getScopedOrganizationWorkCategorySet(
+	dbService: WorkCategorySettingsActor["dbService"],
+	organizationId: string,
+	setId: string,
+	queryName: string,
+) {
+	return dbService.query(queryName, async () => {
+		const [set] = await dbService.db
+			.select({ id: workCategorySet.id })
+			.from(workCategorySet)
+			.where(
+				and(eq(workCategorySet.id, setId), eq(workCategorySet.organizationId, organizationId)),
+			)
+			.limit(1);
+
+		return set ?? null;
+	});
+}
+
+function getScopedOrganizationSetAssignment(
+	dbService: WorkCategorySettingsActor["dbService"],
+	organizationId: string,
+	assignmentId: string,
+	queryName: string,
+) {
+	return dbService.query(queryName, async () => {
+		const [assignment] = await dbService.db
+			.select({ id: workCategorySetAssignment.id, setId: workCategorySetAssignment.setId })
+			.from(workCategorySetAssignment)
+			.where(
+				and(
+					eq(workCategorySetAssignment.id, assignmentId),
+					eq(workCategorySetAssignment.organizationId, organizationId),
+				),
+			)
+			.limit(1);
+
+		return assignment ?? null;
+	});
+}
+
+function ensureScopedCategoryIds(
+	dbService: WorkCategorySettingsActor["dbService"],
+	organizationId: string,
+	categoryIds: string[],
+	queryName: string,
+) {
+	return Effect.gen(function* (_) {
+		if (categoryIds.length === 0) {
+			return;
+		}
+
+		const rows = yield* _(
+			dbService.query(queryName, async () => {
+				return await dbService.db
+					.select({ id: workCategory.id })
+					.from(workCategory)
+					.where(
+						and(
+							eq(workCategory.organizationId, organizationId),
+							inArray(workCategory.id, categoryIds),
+						),
+					);
+			}),
+		);
+
+		if (rows.length !== new Set(categoryIds).size) {
+			yield* _(
+				Effect.fail(
+					new NotFoundError({
+						message: "One or more work categories were not found in this organization",
+						entityType: "work_category",
+						entityId: categoryIds.join(","),
+					}),
+				),
+			);
+		}
+	});
+}
+
+function getScopedWorkCategoryAccessContext(organizationId: string | undefined, queryName: string) {
+	return Effect.gen(function* (_) {
+		const actor = yield* _(getEmployeeSettingsActorContext({ organizationId, queryName }));
+		const scopedOrganizationId = actor.organizationId;
+
+		if (actor.accessTier === "orgAdmin") {
+			return {
+				actor,
+				managedEmployeeIds: null,
+				manageableTeamIds: null,
+				manageableLocationIds: null,
+				manageableSubareaIds: null,
+				managedProjectIds: null,
+			} satisfies WorkCategoryAccessContext;
+		}
+
+		const managedEmployeeIds = yield* _(getManagedEmployeeIdsForSettingsActor(actor));
+		const [teamPermissionRows, managedProjects, managerLocationAssignments, managerSubareaAssignments] =
+			actor.currentEmployee
+				? yield* _(
+						Effect.all([
+							actor.dbService.query(`${queryName}:teamPermissions`, async () => {
+								return await actor.dbService.db.query.teamPermissions.findMany({
+									where: and(
+										eq(teamPermissions.employeeId, actor.currentEmployee?.id ?? ""),
+										eq(teamPermissions.organizationId, scopedOrganizationId),
+									),
+									columns: { teamId: true, canManageTeamSettings: true },
+								});
+							}),
+							actor.dbService.query(`${queryName}:managedProjects`, async () => {
+								return await actor.dbService.db.query.projectManager.findMany({
+									where: eq(projectManager.employeeId, actor.currentEmployee?.id ?? ""),
+									columns: { projectId: true },
+								});
+							}),
+							actor.dbService.query(`${queryName}:locationAssignments`, async () => {
+								return await actor.dbService.db.query.locationEmployee.findMany({
+									where: eq(locationEmployee.employeeId, actor.currentEmployee?.id ?? ""),
+									columns: { locationId: true },
+								});
+							}),
+							actor.dbService.query(`${queryName}:subareaAssignments`, async () => {
+								return await actor.dbService.db.query.subareaEmployee.findMany({
+									where: eq(subareaEmployee.employeeId, actor.currentEmployee?.id ?? ""),
+									columns: { subareaId: true },
+								});
+							}),
+						]),
+				  )
+				: [[], [], [], []];
+
+		const manageableLocationIds = new Set(
+			managerLocationAssignments
+				.map((assignment) => assignment.locationId)
+				.filter((locationId): locationId is string => Boolean(locationId)),
+		);
+		const manageableSubareaIds = new Set(
+			managerSubareaAssignments
+				.map((assignment) => assignment.subareaId)
+				.filter((subareaId): subareaId is string => Boolean(subareaId)),
+		);
+
+		return {
+			actor,
+			managedEmployeeIds,
+			manageableTeamIds: new Set(
+				teamPermissionRows
+					.filter((permission) => permission.canManageTeamSettings && permission.teamId)
+					.map((permission) => permission.teamId as string),
+			),
+			manageableLocationIds,
+			manageableSubareaIds,
+			managedProjectIds: new Set(managedProjects.map((managedProject) => managedProject.projectId)),
+		} satisfies WorkCategoryAccessContext;
+	});
+}
+
+function getScopedEmployeeIds(accessContext: WorkCategoryAccessContext, queryName: string) {
+	return Effect.gen(function* (_) {
+		if (accessContext.actor.accessTier === "orgAdmin") {
+			return null as Set<string> | null;
+		}
+
+		const teamIds = accessContext.manageableTeamIds ? [...accessContext.manageableTeamIds] : [];
+		const locationIds = accessContext.manageableLocationIds ? [...accessContext.manageableLocationIds] : [];
+		const subareaIds = accessContext.manageableSubareaIds ? [...accessContext.manageableSubareaIds] : [];
+
+		const [teamEmployees, locationAreaEmployees, subareaAreaEmployees] = yield* _(
+			Effect.all([
+				teamIds.length > 0
+					? accessContext.actor.dbService.query(`${queryName}:teamEmployees`, async () => {
+						return await accessContext.actor.dbService.db.query.employee.findMany({
+							where: and(
+								eq(employee.organizationId, accessContext.actor.organizationId),
+								inArray(employee.teamId, teamIds),
+							),
+							columns: { id: true },
+						});
+					})
+					: Effect.succeed([] as Array<{ id: string }>),
+				locationIds.length > 0
+					? accessContext.actor.dbService.query(`${queryName}:locationAreaEmployees`, async () => {
+						return await accessContext.actor.dbService.db.query.locationEmployee.findMany({
+							where: inArray(locationEmployee.locationId, locationIds),
+							columns: { employeeId: true },
+						});
+					})
+					: Effect.succeed([] as Array<{ employeeId: string }>),
+				subareaIds.length > 0
+					? accessContext.actor.dbService.query(`${queryName}:subareaAreaEmployees`, async () => {
+						return await accessContext.actor.dbService.db.query.subareaEmployee.findMany({
+							where: inArray(subareaEmployee.subareaId, subareaIds),
+							columns: { employeeId: true },
+						});
+					})
+					: Effect.succeed([] as Array<{ employeeId: string }>),
+			]),
+		);
+
+		return new Set([
+			...(accessContext.managedEmployeeIds ? [...accessContext.managedEmployeeIds] : []),
+			...teamEmployees.map((employeeRecord) => employeeRecord.id),
+			...locationAreaEmployees.map((assignment) => assignment.employeeId),
+			...subareaAreaEmployees.map((assignment) => assignment.employeeId),
+		]);
+	});
+}
+
+function getVisibleCategoryIds(accessContext: WorkCategoryAccessContext, queryName: string) {
+	return Effect.gen(function* (_) {
+		if (accessContext.actor.accessTier === "orgAdmin") {
+			return null as Set<string> | null;
+		}
+
+		const scopedEmployeeIds = yield* _(getScopedEmployeeIds(accessContext, `${queryName}:employees`));
+		const employeeIds = scopedEmployeeIds ? [...scopedEmployeeIds] : [];
+		const projectIds = accessContext.managedProjectIds ? [...accessContext.managedProjectIds] : [];
+
+		const [employeeCategoryRows, projectCategoryRows] = yield* _(
+			Effect.all([
+				employeeIds.length > 0
+					? accessContext.actor.dbService.query(`${queryName}:employeeCategoryIds`, async () => {
+						return await accessContext.actor.dbService.db
+							.select({ workCategoryId: workPeriod.workCategoryId })
+							.from(workPeriod)
+							.where(
+								and(
+									eq(workPeriod.organizationId, accessContext.actor.organizationId),
+									inArray(workPeriod.employeeId, employeeIds),
+								),
+							);
+					})
+					: Effect.succeed([] as Array<{ workCategoryId: string | null }>),
+				projectIds.length > 0
+					? accessContext.actor.dbService.query(`${queryName}:projectCategoryIds`, async () => {
+						return await accessContext.actor.dbService.db
+							.select({ workCategoryId: workPeriod.workCategoryId })
+							.from(workPeriod)
+							.where(
+								and(
+									eq(workPeriod.organizationId, accessContext.actor.organizationId),
+									inArray(workPeriod.projectId, projectIds),
+								),
+							);
+					})
+					: Effect.succeed([] as Array<{ workCategoryId: string | null }>),
+			]),
+		);
+
+		return new Set(
+			[...employeeCategoryRows, ...projectCategoryRows]
+				.map((row) => row.workCategoryId)
+				.filter((categoryId): categoryId is string => Boolean(categoryId)),
+		);
+	});
+}
+
+function getVisibleSetIds(accessContext: WorkCategoryAccessContext, queryName: string) {
+	return Effect.gen(function* (_) {
+		if (accessContext.actor.accessTier === "orgAdmin") {
+			return null as Set<string> | null;
+		}
+
+		const visibleCategoryIds = yield* _(getVisibleCategoryIds(accessContext, `${queryName}:categories`));
+		const categoryIds = visibleCategoryIds ? [...visibleCategoryIds] : [];
+
+		if (categoryIds.length === 0) {
+			return new Set<string>();
+		}
+
+		const setLinks = yield* _(
+			accessContext.actor.dbService.query(`${queryName}:setLinks`, async () => {
+				return await accessContext.actor.dbService.db
+					.select({ setId: workCategorySetCategory.setId, categoryId: workCategorySetCategory.categoryId })
+					.from(workCategorySetCategory)
+					.where(inArray(workCategorySetCategory.categoryId, categoryIds));
+			}),
+		);
+
+		return new Set(setLinks.map((link) => link.setId));
+	});
+}
+
+function filterAssignmentsByManagerScope(
+	assignments: SetAssignmentListItem[],
+	manageableTeamIds: Set<string> | null,
+	scopedEmployeeIds: Set<string> | null,
+) {
+	return assignments.filter((assignment) => {
+		if (assignment.assignmentType === "team") {
+			return assignment.teamId ? manageableTeamIds?.has(assignment.teamId) ?? false : false;
+		}
+
+		if (assignment.assignmentType === "employee") {
+			return assignment.employeeId ? scopedEmployeeIds?.has(assignment.employeeId) ?? false : false;
+		}
+
+		return false;
+	});
+}
+
 // ============================================
 // ORGANIZATION CATEGORY QUERIES
 // ============================================
@@ -147,10 +498,10 @@ export async function getOrganizationCategories(
 	organizationId: string,
 ): Promise<ServerActionResult<OrganizationCategoryItem[]>> {
 	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		yield* _(authService.getSession());
-
-		const dbService = yield* _(DatabaseService);
+		const accessContext = yield* _(
+			getScopedWorkCategoryAccessContext(organizationId, "getOrganizationCategories:actor"),
+		);
+		const dbService = accessContext.actor.dbService;
 
 		const categories = yield* _(
 			dbService.query("getOrganizationCategories", async () => {
@@ -198,7 +549,15 @@ export async function getOrganizationCategories(
 			),
 		);
 
-		return categories;
+		if (accessContext.actor.accessTier === "orgAdmin") {
+			return categories;
+		}
+
+		const visibleCategoryIds = yield* _(
+			getVisibleCategoryIds(accessContext, "getOrganizationCategories:visible"),
+		);
+
+		return categories.filter((category) => visibleCategoryIds?.has(category.id));
 	});
 
 	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
@@ -215,42 +574,20 @@ export async function createOrganizationCategory(
 	input: CreateOrganizationCategoryInput,
 ): Promise<ServerActionResult<{ id: string }>> {
 	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-
-		const dbService = yield* _(DatabaseService);
-
-		// Get employee record and verify admin role
-		const [employeeRecord] = yield* _(
-			dbService.query("getEmployeeRecord", async () =>
-				dbService.db
-					.select()
-					.from(employee)
-					.where(and(eq(employee.userId, session.user.id), eq(employee.isActive, true)))
-					.limit(1),
-			),
-			Effect.mapError(
-				() =>
-					new NotFoundError({
-						message: "Employee record not found",
-						entityType: "employee",
-						entityId: session.user.id,
-					}),
-			),
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({
+				organizationId: input.organizationId,
+				queryName: "createOrganizationCategory:actor",
+			}),
 		);
-
-		if (!employeeRecord || employeeRecord.role !== "admin") {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Admin access required to create work categories",
-						userId: session.user.id,
-						resource: "work_category",
-						action: "create",
-					}),
-				),
-			);
-		}
+		yield* _(
+			requireOrgAdminEmployeeSettingsAccess(actor, {
+				message: "Admin access required to create work categories",
+				resource: "work_category",
+				action: "create",
+			}),
+		);
+		const dbService = actor.dbService;
 
 		// Validate factor is within range
 		const factor = parseFloat(input.factor);
@@ -305,7 +642,7 @@ export async function createOrganizationCategory(
 							description: input.description ?? null,
 							factor: input.factor,
 							color: input.color ?? null,
-							createdBy: session.user.id,
+							createdBy: actor.session.user.id,
 							updatedAt: new Date(),
 						})
 						.returning(),
@@ -334,30 +671,31 @@ export async function updateOrganizationCategory(
 	input: UpdateOrganizationCategoryInput,
 ): Promise<ServerActionResult<{ id: string }>> {
 	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-
-		const dbService = yield* _(DatabaseService);
-
-		// Get employee record and verify admin role
-		const [employeeRecord] = yield* _(
-			dbService.query("getEmployeeRecord", async () =>
-				dbService.db
-					.select()
-					.from(employee)
-					.where(and(eq(employee.userId, session.user.id), eq(employee.isActive, true)))
-					.limit(1),
+		const actor = yield* _(getEmployeeSettingsActorContext({ queryName: "updateOrganizationCategory:actor" }));
+		yield* _(
+			requireOrgAdminEmployeeSettingsAccess(actor, {
+				message: "Admin access required to update work categories",
+				resource: "work_category",
+				action: "update",
+			}),
+		);
+		const dbService = actor.dbService;
+		const scopedCategory = yield* _(
+			getScopedOrganizationWorkCategory(
+				dbService,
+				actor.organizationId,
+				input.categoryId,
+				"updateOrganizationCategory:scopedCategory",
 			),
 		);
 
-		if (!employeeRecord || employeeRecord.role !== "admin") {
+		if (!scopedCategory) {
 			yield* _(
 				Effect.fail(
-					new AuthorizationError({
-						message: "Admin access required to update work categories",
-						userId: session.user.id,
-						resource: "work_category",
-						action: "update",
+					new NotFoundError({
+						message: "Work category not found",
+						entityType: "work_category",
+						entityId: input.categoryId,
 					}),
 				),
 			);
@@ -389,9 +727,14 @@ export async function updateOrganizationCategory(
 							...(input.description !== undefined && { description: input.description }),
 							...(input.factor !== undefined && { factor: input.factor }),
 							...(input.color !== undefined && { color: input.color }),
-							updatedBy: session.user.id,
+							updatedBy: actor.session.user.id,
 						})
-						.where(eq(workCategory.id, input.categoryId))
+						.where(
+							and(
+								eq(workCategory.id, input.categoryId),
+								eq(workCategory.organizationId, actor.organizationId),
+							),
+						)
 						.returning(),
 				catch: (error) =>
 					new DatabaseError({
@@ -430,30 +773,31 @@ export async function deleteOrganizationCategory(
 	categoryId: string,
 ): Promise<ServerActionResult<{ success: boolean }>> {
 	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-
-		const dbService = yield* _(DatabaseService);
-
-		// Get employee record and verify admin role
-		const [employeeRecord] = yield* _(
-			dbService.query("getEmployeeRecord", async () =>
-				dbService.db
-					.select()
-					.from(employee)
-					.where(and(eq(employee.userId, session.user.id), eq(employee.isActive, true)))
-					.limit(1),
+		const actor = yield* _(getEmployeeSettingsActorContext({ queryName: "deleteOrganizationCategory:actor" }));
+		yield* _(
+			requireOrgAdminEmployeeSettingsAccess(actor, {
+				message: "Admin access required to delete work categories",
+				resource: "work_category",
+				action: "delete",
+			}),
+		);
+		const dbService = actor.dbService;
+		const scopedCategory = yield* _(
+			getScopedOrganizationWorkCategory(
+				dbService,
+				actor.organizationId,
+				categoryId,
+				"deleteOrganizationCategory:scopedCategory",
 			),
 		);
 
-		if (!employeeRecord || employeeRecord.role !== "admin") {
+		if (!scopedCategory) {
 			yield* _(
 				Effect.fail(
-					new AuthorizationError({
-						message: "Admin access required to delete work categories",
-						userId: session.user.id,
-						resource: "work_category",
-						action: "delete",
+					new NotFoundError({
+						message: "Work category not found",
+						entityType: "work_category",
+						entityId: categoryId,
 					}),
 				),
 			);
@@ -465,8 +809,13 @@ export async function deleteOrganizationCategory(
 				try: async () =>
 					dbService.db
 						.update(workCategory)
-						.set({ isActive: false, updatedBy: session.user.id })
-						.where(eq(workCategory.id, categoryId)),
+						.set({ isActive: false, updatedBy: actor.session.user.id })
+						.where(
+							and(
+								eq(workCategory.id, categoryId),
+								eq(workCategory.organizationId, actor.organizationId),
+							),
+						),
 				catch: (error) =>
 					new DatabaseError({
 						message: "Failed to delete work category",
@@ -512,10 +861,10 @@ export async function getWorkCategorySets(
 	organizationId: string,
 ): Promise<ServerActionResult<WorkCategorySetListItem[]>> {
 	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		yield* _(authService.getSession());
-
-		const dbService = yield* _(DatabaseService);
+		const accessContext = yield* _(
+			getScopedWorkCategoryAccessContext(organizationId, "getWorkCategorySets:actor"),
+		);
+		const dbService = accessContext.actor.dbService;
 
 		const sets = yield* _(
 			dbService.query("getWorkCategorySets", async () => {
@@ -582,7 +931,15 @@ export async function getWorkCategorySets(
 			),
 		);
 
-		return sets;
+		if (accessContext.actor.accessTier === "orgAdmin") {
+			return sets;
+		}
+
+		const visibleSetIds = yield* _(
+			getVisibleSetIds(accessContext, "getWorkCategorySets:visibleSets"),
+		);
+
+		return sets.filter((set) => visibleSetIds?.has(set.id));
 	});
 
 	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
@@ -595,10 +952,14 @@ export async function getWorkCategorySetDetail(
 	setId: string,
 ): Promise<ServerActionResult<WorkCategorySetDetail>> {
 	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		yield* _(authService.getSession());
-
-		const dbService = yield* _(DatabaseService);
+		const accessContext = yield* _(
+			getScopedWorkCategoryAccessContext(undefined, "getWorkCategorySetDetail:actor"),
+		);
+		const dbService = accessContext.actor.dbService;
+		const visibleCategoryIds =
+			accessContext.actor.accessTier === "orgAdmin"
+				? null
+				: yield* _(getVisibleCategoryIds(accessContext, "getWorkCategorySetDetail:visibleCategories"));
 
 		const [set] = yield* _(
 			dbService.query("getWorkCategorySet", async () =>
@@ -626,6 +987,49 @@ export async function getWorkCategorySetDetail(
 			);
 			// TypeScript doesn't know yield* Effect.fail never returns
 			throw new Error("unreachable");
+		}
+
+		if (accessContext.actor.accessTier !== "orgAdmin") {
+			if (set.organizationId !== accessContext.actor.organizationId) {
+				yield* _(
+					Effect.fail(
+						new AuthorizationError({
+							message: "Cannot access work category set from different organization",
+							userId: accessContext.actor.session.user.id,
+							resource: "work_category_set",
+							action: "read",
+						}),
+					),
+				);
+			}
+
+			const visibleSetIds = visibleCategoryIds
+				? new Set(
+						(
+							yield* _(
+								accessContext.actor.dbService.query("getWorkCategorySetDetail:visibleSetLinks", async () => {
+									return await accessContext.actor.dbService.db
+										.select({ setId: workCategorySetCategory.setId })
+										.from(workCategorySetCategory)
+										.where(inArray(workCategorySetCategory.categoryId, [...visibleCategoryIds]));
+								}),
+							)
+						).map((link) => link.setId),
+				)
+				: new Set<string>();
+
+			if (!visibleSetIds?.has(setId)) {
+				yield* _(
+					Effect.fail(
+						new AuthorizationError({
+							message: "You do not have access to this work category set",
+							userId: accessContext.actor.session.user.id,
+							resource: "work_category_set",
+							action: "read",
+						}),
+					),
+				);
+			}
 		}
 
 		// Get categories through junction table
@@ -656,6 +1060,13 @@ export async function getWorkCategorySetDetail(
 			),
 		);
 
+		if (accessContext.actor.accessTier !== "orgAdmin") {
+			return {
+				set,
+				categories: categories.filter((category) => visibleCategoryIds?.has(category.id)),
+			};
+		}
+
 		return { set, categories };
 	});
 
@@ -673,42 +1084,28 @@ export async function createWorkCategorySet(
 	input: CreateWorkCategorySetInput,
 ): Promise<ServerActionResult<{ id: string }>> {
 	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-
-		const dbService = yield* _(DatabaseService);
-
-		// Get employee record and verify admin role
-		const [employeeRecord] = yield* _(
-			dbService.query("getEmployeeRecord", async () =>
-				dbService.db
-					.select()
-					.from(employee)
-					.where(and(eq(employee.userId, session.user.id), eq(employee.isActive, true)))
-					.limit(1),
-			),
-			Effect.mapError(
-				() =>
-					new NotFoundError({
-						message: "Employee record not found",
-						entityType: "employee",
-						entityId: session.user.id,
-					}),
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({
+				organizationId: input.organizationId,
+				queryName: "createWorkCategorySet:actor",
+			}),
+		);
+		yield* _(
+			requireOrgAdminEmployeeSettingsAccess(actor, {
+				message: "Admin access required to create work category sets",
+				resource: "work_category_set",
+				action: "create",
+			}),
+		);
+		const dbService = actor.dbService;
+		yield* _(
+			ensureScopedCategoryIds(
+				dbService,
+				input.organizationId,
+				input.categoryIds ?? [],
+				"createWorkCategorySet:scopedCategoryIds",
 			),
 		);
-
-		if (!employeeRecord || employeeRecord.role !== "admin") {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Admin access required to create work category sets",
-						userId: session.user.id,
-						resource: "work_category_set",
-						action: "create",
-					}),
-				),
-			);
-		}
 
 		// Check for existing set with same name
 		const [existing] = yield* _(
@@ -748,7 +1145,7 @@ export async function createWorkCategorySet(
 							organizationId: input.organizationId,
 							name: input.name,
 							description: input.description ?? null,
-							createdBy: session.user.id,
+							createdBy: actor.session.user.id,
 							updatedAt: new Date(),
 						})
 						.returning(),
@@ -800,30 +1197,31 @@ export async function updateWorkCategorySet(
 	input: UpdateWorkCategorySetInput,
 ): Promise<ServerActionResult<{ id: string }>> {
 	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-
-		const dbService = yield* _(DatabaseService);
-
-		// Get employee record and verify admin role
-		const [employeeRecord] = yield* _(
-			dbService.query("getEmployeeRecord", async () =>
-				dbService.db
-					.select()
-					.from(employee)
-					.where(and(eq(employee.userId, session.user.id), eq(employee.isActive, true)))
-					.limit(1),
+		const actor = yield* _(getEmployeeSettingsActorContext({ queryName: "updateWorkCategorySet:actor" }));
+		yield* _(
+			requireOrgAdminEmployeeSettingsAccess(actor, {
+				message: "Admin access required to update work category sets",
+				resource: "work_category_set",
+				action: "update",
+			}),
+		);
+		const dbService = actor.dbService;
+		const scopedSet = yield* _(
+			getScopedOrganizationWorkCategorySet(
+				dbService,
+				actor.organizationId,
+				input.setId,
+				"updateWorkCategorySet:scopedSet",
 			),
 		);
 
-		if (!employeeRecord || employeeRecord.role !== "admin") {
+		if (!scopedSet) {
 			yield* _(
 				Effect.fail(
-					new AuthorizationError({
-						message: "Admin access required to update work category sets",
-						userId: session.user.id,
-						resource: "work_category_set",
-						action: "update",
+					new NotFoundError({
+						message: "Work category set not found",
+						entityType: "work_category_set",
+						entityId: input.setId,
 					}),
 				),
 			);
@@ -838,9 +1236,14 @@ export async function updateWorkCategorySet(
 						.set({
 							name: input.name,
 							description: input.description,
-							updatedBy: session.user.id,
+							updatedBy: actor.session.user.id,
 						})
-						.where(eq(workCategorySet.id, input.setId))
+						.where(
+							and(
+								eq(workCategorySet.id, input.setId),
+								eq(workCategorySet.organizationId, actor.organizationId),
+							),
+						)
 						.returning(),
 				catch: (error) =>
 					new DatabaseError({
@@ -879,30 +1282,31 @@ export async function deleteWorkCategorySet(
 	setId: string,
 ): Promise<ServerActionResult<{ success: boolean }>> {
 	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-
-		const dbService = yield* _(DatabaseService);
-
-		// Get employee record and verify admin role
-		const [employeeRecord] = yield* _(
-			dbService.query("getEmployeeRecord", async () =>
-				dbService.db
-					.select()
-					.from(employee)
-					.where(and(eq(employee.userId, session.user.id), eq(employee.isActive, true)))
-					.limit(1),
+		const actor = yield* _(getEmployeeSettingsActorContext({ queryName: "deleteWorkCategorySet:actor" }));
+		yield* _(
+			requireOrgAdminEmployeeSettingsAccess(actor, {
+				message: "Admin access required to delete work category sets",
+				resource: "work_category_set",
+				action: "delete",
+			}),
+		);
+		const dbService = actor.dbService;
+		const scopedSet = yield* _(
+			getScopedOrganizationWorkCategorySet(
+				dbService,
+				actor.organizationId,
+				setId,
+				"deleteWorkCategorySet:scopedSet",
 			),
 		);
 
-		if (!employeeRecord || employeeRecord.role !== "admin") {
+		if (!scopedSet) {
 			yield* _(
 				Effect.fail(
-					new AuthorizationError({
-						message: "Admin access required to delete work category sets",
-						userId: session.user.id,
-						resource: "work_category_set",
-						action: "delete",
+					new NotFoundError({
+						message: "Work category set not found",
+						entityType: "work_category_set",
+						entityId: setId,
 					}),
 				),
 			);
@@ -914,8 +1318,13 @@ export async function deleteWorkCategorySet(
 				try: async () =>
 					dbService.db
 						.update(workCategorySet)
-						.set({ isActive: false, updatedBy: session.user.id })
-						.where(eq(workCategorySet.id, setId)),
+						.set({ isActive: false, updatedBy: actor.session.user.id })
+						.where(
+							and(
+								eq(workCategorySet.id, setId),
+								eq(workCategorySet.organizationId, actor.organizationId),
+							),
+						),
 				catch: (error) =>
 					new DatabaseError({
 						message: "Failed to delete work category set",
@@ -933,7 +1342,12 @@ export async function deleteWorkCategorySet(
 					dbService.db
 						.update(workCategorySetAssignment)
 						.set({ isActive: false })
-						.where(eq(workCategorySetAssignment.setId, setId)),
+						.where(
+							and(
+								eq(workCategorySetAssignment.setId, setId),
+								eq(workCategorySetAssignment.organizationId, actor.organizationId),
+							),
+						),
 				catch: () =>
 					new DatabaseError({
 						message: "Failed to delete set assignments",
@@ -975,34 +1389,43 @@ export async function updateSetCategories(
 	categoryIds: string[],
 ): Promise<ServerActionResult<{ success: boolean }>> {
 	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-
-		const dbService = yield* _(DatabaseService);
-
-		// Get employee record and verify admin role
-		const [employeeRecord] = yield* _(
-			dbService.query("getEmployeeRecord", async () =>
-				dbService.db
-					.select()
-					.from(employee)
-					.where(and(eq(employee.userId, session.user.id), eq(employee.isActive, true)))
-					.limit(1),
+		const actor = yield* _(getEmployeeSettingsActorContext({ queryName: "updateSetCategories:actor" }));
+		yield* _(
+			requireOrgAdminEmployeeSettingsAccess(actor, {
+				message: "Admin access required to update set categories",
+				resource: "work_category_set_category",
+				action: "update",
+			}),
+		);
+		const dbService = actor.dbService;
+		const scopedSet = yield* _(
+			getScopedOrganizationWorkCategorySet(
+				dbService,
+				actor.organizationId,
+				setId,
+				"updateSetCategories:scopedSet",
 			),
 		);
 
-		if (!employeeRecord || employeeRecord.role !== "admin") {
+		if (!scopedSet) {
 			yield* _(
 				Effect.fail(
-					new AuthorizationError({
-						message: "Admin access required to update set categories",
-						userId: session.user.id,
-						resource: "work_category_set_category",
-						action: "update",
+					new NotFoundError({
+						message: "Work category set not found",
+						entityType: "work_category_set",
+						entityId: setId,
 					}),
 				),
 			);
 		}
+		yield* _(
+			ensureScopedCategoryIds(
+				dbService,
+				actor.organizationId,
+				categoryIds,
+				"updateSetCategories:scopedCategoryIds",
+			),
+		);
 
 		// Delete existing junction entries
 		yield* _(
@@ -1060,34 +1483,43 @@ export async function reorderSetCategories(
 	categoryIds: string[],
 ): Promise<ServerActionResult<{ success: boolean }>> {
 	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-
-		const dbService = yield* _(DatabaseService);
-
-		// Get employee record and verify admin role
-		const [employeeRecord] = yield* _(
-			dbService.query("getEmployeeRecord", async () =>
-				dbService.db
-					.select()
-					.from(employee)
-					.where(and(eq(employee.userId, session.user.id), eq(employee.isActive, true)))
-					.limit(1),
+		const actor = yield* _(getEmployeeSettingsActorContext({ queryName: "reorderSetCategories:actor" }));
+		yield* _(
+			requireOrgAdminEmployeeSettingsAccess(actor, {
+				message: "Admin access required to reorder categories",
+				resource: "work_category_set_category",
+				action: "update",
+			}),
+		);
+		const dbService = actor.dbService;
+		const scopedSet = yield* _(
+			getScopedOrganizationWorkCategorySet(
+				dbService,
+				actor.organizationId,
+				setId,
+				"reorderSetCategories:scopedSet",
 			),
 		);
 
-		if (!employeeRecord || employeeRecord.role !== "admin") {
+		if (!scopedSet) {
 			yield* _(
 				Effect.fail(
-					new AuthorizationError({
-						message: "Admin access required to reorder categories",
-						userId: session.user.id,
-						resource: "work_category_set_category",
-						action: "update",
+					new NotFoundError({
+						message: "Work category set not found",
+						entityType: "work_category_set",
+						entityId: setId,
 					}),
 				),
 			);
 		}
+		yield* _(
+			ensureScopedCategoryIds(
+				dbService,
+				actor.organizationId,
+				categoryIds,
+				"reorderSetCategories:scopedCategoryIds",
+			),
+		);
 
 		// Update sort order for each category in the junction table
 		yield* _(
@@ -1134,10 +1566,10 @@ export async function getWorkCategorySetAssignments(
 	organizationId: string,
 ): Promise<ServerActionResult<SetAssignmentListItem[]>> {
 	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		yield* _(authService.getSession());
-
-		const dbService = yield* _(DatabaseService);
+		const accessContext = yield* _(
+			getScopedWorkCategoryAccessContext(organizationId, "getWorkCategorySetAssignments:actor"),
+		);
+		const dbService = accessContext.actor.dbService;
 
 		const assignments = yield* _(
 			dbService.query("getSetAssignments", async () => {
@@ -1198,7 +1630,22 @@ export async function getWorkCategorySetAssignments(
 			),
 		);
 
-		return assignments;
+		if (accessContext.actor.accessTier === "orgAdmin") {
+			return assignments;
+		}
+
+		const visibleSetIds = yield* _(
+			getVisibleSetIds(accessContext, "getWorkCategorySetAssignments:visibleSets"),
+		);
+		const scopedEmployeeIds = yield* _(
+			getScopedEmployeeIds(accessContext, "getWorkCategorySetAssignments:scopedEmployees"),
+		);
+
+		return filterAssignmentsByManagerScope(
+			assignments.filter((assignment) => visibleSetIds?.has(assignment.setId)),
+			accessContext.manageableTeamIds,
+			scopedEmployeeIds,
+		);
 	});
 
 	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
@@ -1211,30 +1658,36 @@ export async function createSetAssignment(
 	input: CreateSetAssignmentInput,
 ): Promise<ServerActionResult<{ id: string }>> {
 	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-
-		const dbService = yield* _(DatabaseService);
-
-		// Get employee record and verify admin role
-		const [employeeRecord] = yield* _(
-			dbService.query("getEmployeeRecord", async () =>
-				dbService.db
-					.select()
-					.from(employee)
-					.where(and(eq(employee.userId, session.user.id), eq(employee.isActive, true)))
-					.limit(1),
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({
+				organizationId: input.organizationId,
+				queryName: "createSetAssignment:actor",
+			}),
+		);
+		yield* _(
+			requireOrgAdminEmployeeSettingsAccess(actor, {
+				message: "Admin access required to create set assignments",
+				resource: "work_category_set_assignment",
+				action: "create",
+			}),
+		);
+		const dbService = actor.dbService;
+		const scopedSet = yield* _(
+			getScopedOrganizationWorkCategorySet(
+				dbService,
+				input.organizationId,
+				input.setId,
+				"createSetAssignment:scopedSet",
 			),
 		);
 
-		if (!employeeRecord || employeeRecord.role !== "admin") {
+		if (!scopedSet) {
 			yield* _(
 				Effect.fail(
-					new AuthorizationError({
-						message: "Admin access required to create set assignments",
-						userId: session.user.id,
-						resource: "work_category_set_assignment",
-						action: "create",
+					new NotFoundError({
+						message: "Work category set not found",
+						entityType: "work_category_set",
+						entityId: input.setId,
 					}),
 				),
 			);
@@ -1259,7 +1712,7 @@ export async function createSetAssignment(
 							priority,
 							effectiveFrom: input.effectiveFrom ?? null,
 							effectiveUntil: input.effectiveUntil ?? null,
-							createdBy: session.user.id,
+							createdBy: actor.session.user.id,
 							updatedAt: new Date(),
 						})
 						.returning(),
@@ -1288,30 +1741,31 @@ export async function deleteSetAssignment(
 	assignmentId: string,
 ): Promise<ServerActionResult<{ success: boolean }>> {
 	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-
-		const dbService = yield* _(DatabaseService);
-
-		// Get employee record and verify admin role
-		const [employeeRecord] = yield* _(
-			dbService.query("getEmployeeRecord", async () =>
-				dbService.db
-					.select()
-					.from(employee)
-					.where(and(eq(employee.userId, session.user.id), eq(employee.isActive, true)))
-					.limit(1),
+		const actor = yield* _(getEmployeeSettingsActorContext({ queryName: "deleteSetAssignment:actor" }));
+		yield* _(
+			requireOrgAdminEmployeeSettingsAccess(actor, {
+				message: "Admin access required to delete set assignments",
+				resource: "work_category_set_assignment",
+				action: "delete",
+			}),
+		);
+		const dbService = actor.dbService;
+		const scopedAssignment = yield* _(
+			getScopedOrganizationSetAssignment(
+				dbService,
+				actor.organizationId,
+				assignmentId,
+				"deleteSetAssignment:scopedAssignment",
 			),
 		);
 
-		if (!employeeRecord || employeeRecord.role !== "admin") {
+		if (!scopedAssignment) {
 			yield* _(
 				Effect.fail(
-					new AuthorizationError({
-						message: "Admin access required to delete set assignments",
-						userId: session.user.id,
-						resource: "work_category_set_assignment",
-						action: "delete",
+					new NotFoundError({
+						message: "Work category set assignment not found",
+						entityType: "work_category_set_assignment",
+						entityId: assignmentId,
 					}),
 				),
 			);
@@ -1324,7 +1778,12 @@ export async function deleteSetAssignment(
 					dbService.db
 						.update(workCategorySetAssignment)
 						.set({ isActive: false })
-						.where(eq(workCategorySetAssignment.id, assignmentId)),
+						.where(
+							and(
+								eq(workCategorySetAssignment.id, assignmentId),
+								eq(workCategorySetAssignment.organizationId, actor.organizationId),
+							),
+						),
 				catch: (error) =>
 					new DatabaseError({
 						message: "Failed to delete set assignment",

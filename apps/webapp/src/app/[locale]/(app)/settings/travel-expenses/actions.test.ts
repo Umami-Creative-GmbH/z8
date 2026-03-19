@@ -10,6 +10,7 @@ const mockState = vi.hoisted(() => {
 
 	return {
 		getAuthContext: vi.fn(),
+		canManageCurrentOrganizationSettings: vi.fn(),
 		revalidatePath: vi.fn(),
 		dbInsert: vi.fn(() => ({ values: insertValues })),
 		dbUpdate: vi.fn(() => ({ set: updateSet })),
@@ -31,6 +32,7 @@ vi.mock("next/cache", () => ({
 
 vi.mock("@/lib/auth-helpers", () => ({
 	getAuthContext: mockState.getAuthContext,
+	canManageCurrentOrganizationSettings: mockState.canManageCurrentOrganizationSettings,
 }));
 
 vi.mock("@/db/schema", () => ({
@@ -54,16 +56,18 @@ vi.mock("@/db", () => ({
 	},
 }));
 
-const { upsertTravelExpensePolicy } = await import("./actions");
+const { getTravelExpensePolicies, upsertTravelExpensePolicy } = await import("./actions");
 
 describe("travel expense policy actions", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		mockState.canManageCurrentOrganizationSettings.mockResolvedValue(false);
 	});
 
 	it("unauthorized non-admin cannot upsert", async () => {
 		mockState.getAuthContext.mockResolvedValue({
 			user: { id: "user-1" },
+			session: { activeOrganizationId: "org-1" },
 			employee: {
 				id: "emp-1",
 				organizationId: "org-1",
@@ -83,15 +87,33 @@ describe("travel expense policy actions", () => {
 		expect(mockState.revalidatePath).not.toHaveBeenCalled();
 	});
 
+	it("allows owners without an admin employee row to read policies", async () => {
+		mockState.getAuthContext.mockResolvedValue({
+			user: { id: "user-owner" },
+			session: { activeOrganizationId: "org-1" },
+			employee: null,
+		});
+		mockState.canManageCurrentOrganizationSettings.mockResolvedValue(true);
+		const policies = [{ id: "policy-1", organizationId: "org-1", effectiveFrom: new Date() }];
+		const { db } = await import("@/db");
+		vi.mocked(db.query.travelExpensePolicy.findMany).mockResolvedValueOnce(policies as never);
+
+		const result = await getTravelExpensePolicies();
+
+		expect(result).toEqual({ success: true, data: policies });
+	});
+
 	it("admin can create policy and gets success id", async () => {
 		mockState.getAuthContext.mockResolvedValue({
 			user: { id: "user-1" },
+			session: { activeOrganizationId: "org-1" },
 			employee: {
 				id: "emp-admin",
 				organizationId: "org-1",
 				role: "admin",
 			},
 		});
+		mockState.canManageCurrentOrganizationSettings.mockResolvedValue(true);
 		mockState.updateWhere.mockResolvedValue(undefined);
 		mockState.insertReturning.mockResolvedValue([{ id: "policy-1" }]);
 

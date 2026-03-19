@@ -20,14 +20,17 @@ import {
 	updateEmployeeSchema,
 } from "@/lib/validations/employee";
 import type { ServerActionResult } from "@/lib/effect/result";
+import { filterEmployeeUpdateForScopedManager } from "./employee-scope";
 import {
-	ensureSameOrganization,
+	ensureCanAccessEmployeeSettingsTarget,
+	ensureSettingsActorCanAccessEmployeeTarget,
 	getEmployeeContext,
+	getEmployeeSettingsActorContext,
 	getTargetEmployee,
 	getTargetUser,
 	hasAppAccessChanges,
 	parseHourlyRate,
-	requireAdmin,
+	requireOrgAdminEmployeeSettingsAccess,
 	revalidateEmployeesCache,
 	runTracedEmployeeAction,
 	validateInput,
@@ -49,19 +52,22 @@ export async function createEmployeeAction(
 		},
 		execute: (span) =>
 			Effect.gen(function* (_) {
-				const { session, dbService, currentEmployee } = yield* _(
-					getEmployeeContext({ organizationId: data.organizationId }),
+				const actor = yield* _(
+					getEmployeeSettingsActorContext({ organizationId: data.organizationId }),
 				);
+				const { session, dbService } = actor;
 
 				yield* _(
-					requireAdmin(currentEmployee, {
-						message: "Only admins can create employee records",
+					requireOrgAdminEmployeeSettingsAccess(actor, {
+						message: "Only organization admins can create employee records",
 						resource: "employee",
 						action: "create",
 					}),
 				);
 
-				span.setAttribute("currentEmployee.id", currentEmployee.id);
+				if (actor.currentEmployee) {
+					span.setAttribute("currentEmployee.id", actor.currentEmployee.id);
+				}
 
 				const validatedData = yield* _(validateInput(createEmployeeSchema, data));
 
@@ -168,27 +174,31 @@ export async function updateEmployeeAction(
 		},
 		execute: () =>
 			Effect.gen(function* (_) {
-				const { session, dbService, currentEmployee } = yield* _(getEmployeeContext());
-
-				yield* _(
-					requireAdmin(currentEmployee, {
-						message: "Only admins can update employee records",
-						resource: "employee",
-						action: "update",
-					}),
-				);
+				const actor = yield* _(getEmployeeSettingsActorContext());
+				const { session, dbService } = actor;
 
 				const validatedData = yield* _(validateInput(updateEmployeeSchema, data));
 				const targetEmployee = yield* _(getTargetEmployee(employeeId));
 
 				yield* _(
-					ensureSameOrganization(currentEmployee, targetEmployee, "employee", "update"),
+					ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
+						message: "You do not have access to this employee",
+						resource: "employee",
+						action: "update",
+					}),
 				);
 
-				const newHourlyRate = parseHourlyRate(validatedData.hourlyRate);
+				const scopedData: UpdateEmployee =
+					actor.accessTier === "manager"
+						? (filterEmployeeUpdateForScopedManager(validatedData) as UpdateEmployee)
+						: validatedData;
+
+				const newHourlyRate = parseHourlyRate(
+					"hourlyRate" in scopedData ? (scopedData.hourlyRate as string | null | undefined) : undefined,
+				);
 				const currentRate = parseHourlyRate(targetEmployee.currentHourlyRate);
 
-				const { hourlyRate: _hourlyRate, ...updateData } = validatedData;
+				const { hourlyRate: _hourlyRate, ...updateData } = scopedData;
 				const updatePayload = {
 					...updateData,
 					currentHourlyRate: newHourlyRate?.toString() || null,
@@ -206,7 +216,7 @@ export async function updateEmployeeAction(
 					}),
 				);
 
-				if (hasAppAccessChanges(validatedData)) {
+				if (hasAppAccessChanges(scopedData)) {
 					const targetUser = yield* _(
 						dbService.query("getTargetUserForAppAccess", async () => {
 							return await dbService.db.query.user.findFirst({
@@ -226,9 +236,9 @@ export async function updateEmployeeAction(
 							appAccessService.updatePermissions({
 								userId: targetEmployee.userId,
 								permissions: {
-									canUseWebapp: validatedData.canUseWebapp,
-									canUseDesktop: validatedData.canUseDesktop,
-									canUseMobile: validatedData.canUseMobile,
+									canUseWebapp: scopedData.canUseWebapp,
+									canUseDesktop: scopedData.canUseDesktop,
+									canUseMobile: scopedData.canUseMobile,
 								},
 								changedBy: session.user.id,
 								changedByEmail: session.user.email,
@@ -242,16 +252,18 @@ export async function updateEmployeeAction(
 							{
 								employeeId,
 								userId: targetEmployee.userId,
-								canUseWebapp: validatedData.canUseWebapp,
-								canUseDesktop: validatedData.canUseDesktop,
-								canUseMobile: validatedData.canUseMobile,
+								canUseWebapp: scopedData.canUseWebapp,
+								canUseDesktop: scopedData.canUseDesktop,
+								canUseMobile: scopedData.canUseMobile,
 							},
 							"User app access permissions updated",
 						);
 					}
 				}
 
-				const effectiveContractType = validatedData.contractType ?? targetEmployee.contractType;
+				const effectiveContractType =
+					("contractType" in scopedData ? scopedData.contractType : undefined) ??
+					targetEmployee.contractType;
 				if (
 					effectiveContractType === "hourly" &&
 					newHourlyRate !== null &&
@@ -297,7 +309,7 @@ export async function updateEmployeeAction(
 				}
 
 				logger.info({ employeeId }, "Employee updated successfully");
-				revalidateEmployeesCache(currentEmployee.organizationId);
+				revalidateEmployeesCache(actor.organizationId);
 			}),
 	});
 }
@@ -354,20 +366,24 @@ export async function assignManagersAction(
 		},
 		execute: () =>
 			Effect.gen(function* (_) {
-				const { currentEmployee } = yield* _(getEmployeeContext());
+				const actor = yield* _(getEmployeeSettingsActorContext());
 				const managerService = yield* _(ManagerService);
 				const targetEmployee = yield* _(getTargetEmployee(employeeId));
 
 				yield* _(
-					requireAdmin(currentEmployee, {
-						message: "Only admins can assign managers",
+					requireOrgAdminEmployeeSettingsAccess(actor, {
+						message: "Only organization admins can assign managers",
 						resource: "manager_assignment",
 						action: "create",
 					}),
 				);
 
 				yield* _(
-					ensureSameOrganization(currentEmployee, targetEmployee, "manager_assignment", "create"),
+					ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
+						message: "You do not have access to this employee",
+						resource: "manager_assignment",
+						action: "create",
+					}),
 				);
 
 				const validatedData = yield* _(validateInput(assignManagersSchema, data));
@@ -389,7 +405,7 @@ export async function assignManagersAction(
 							employeeId,
 							assignment.managerId,
 							assignment.isPrimary,
-							currentEmployee.id,
+							actor.currentEmployee?.id ?? actor.session.user.id,
 						),
 					);
 				}

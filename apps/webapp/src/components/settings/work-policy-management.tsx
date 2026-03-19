@@ -6,6 +6,7 @@ import { useState } from "react";
 import type { WorkPolicyWithDetails } from "@/app/[locale]/(app)/settings/work-policies/actions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { queryKeys } from "@/lib/query";
+import type { SettingsAccessTier } from "@/lib/settings-access";
 import { WorkPolicyAssignmentDialog } from "./work-policy-assignment-dialog";
 import { WorkPolicyAssignmentManager } from "./work-policy-assignment-manager";
 import { WorkPolicyComplianceView } from "./work-policy-compliance-view";
@@ -15,11 +16,16 @@ import { WorkPolicyTable } from "./work-policy-table";
 
 interface WorkPolicyManagementProps {
 	organizationId: string;
+	accessTier: SettingsAccessTier;
 }
 
-export function WorkPolicyManagement({ organizationId }: WorkPolicyManagementProps) {
+export function WorkPolicyManagement({ organizationId, accessTier }: WorkPolicyManagementProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
+	const canManagePolicies = accessTier === "orgAdmin";
+	const allowedAssignmentTypes: ReadonlyArray<"organization" | "team" | "employee"> = canManagePolicies
+		? (["organization", "team", "employee"] as const)
+		: (["employee"] as const);
 
 	// Policy dialog state
 	const [policyDialogOpen, setPolicyDialogOpen] = useState(false);
@@ -33,11 +39,19 @@ export function WorkPolicyManagement({ organizationId }: WorkPolicyManagementPro
 
 	// Policy handlers
 	const handleCreatePolicy = () => {
+		if (!canManagePolicies) {
+			return;
+		}
+
 		setEditingPolicy(null);
 		setPolicyDialogOpen(true);
 	};
 
 	const handleEditPolicy = (policy: WorkPolicyWithDetails) => {
+		if (!canManagePolicies) {
+			return;
+		}
+
 		setEditingPolicy(policy);
 		setPolicyDialogOpen(true);
 	};
@@ -52,6 +66,10 @@ export function WorkPolicyManagement({ organizationId }: WorkPolicyManagementPro
 
 	// Assignment handlers
 	const handleAssignClick = (type: "organization" | "team" | "employee") => {
+		if (!allowedAssignmentTypes.includes(type)) {
+			return;
+		}
+
 		setAssignmentType(type);
 		setAssignmentDialogOpen(true);
 	};
@@ -90,16 +108,21 @@ export function WorkPolicyManagement({ organizationId }: WorkPolicyManagementPro
 					<TabsTrigger value="assignments">
 						{t("settings.workPolicies.tab.assignments", "Assignments")}
 					</TabsTrigger>
-					<TabsTrigger value="presets">
-						{t("settings.workPolicies.tab.presets", "Import Presets")}
-					</TabsTrigger>
-					<TabsTrigger value="compliance">
-						{t("settings.workPolicies.tab.compliance", "Compliance")}
-					</TabsTrigger>
+					{canManagePolicies ? (
+						<TabsTrigger value="presets">
+							{t("settings.workPolicies.tab.presets", "Import Presets")}
+						</TabsTrigger>
+					) : null}
+					{canManagePolicies ? (
+						<TabsTrigger value="compliance">
+							{t("settings.workPolicies.tab.compliance", "Compliance")}
+						</TabsTrigger>
+					) : null}
 				</TabsList>
 
 				<TabsContent value="policies" className="space-y-4">
 					<WorkPolicyTable
+						canManagePolicies={canManagePolicies}
 						organizationId={organizationId}
 						onCreateClick={handleCreatePolicy}
 						onEditClick={handleEditPolicy}
@@ -108,30 +131,37 @@ export function WorkPolicyManagement({ organizationId }: WorkPolicyManagementPro
 
 				<TabsContent value="assignments" className="space-y-4">
 					<WorkPolicyAssignmentManager
+						allowedAssignmentTypes={allowedAssignmentTypes}
 						organizationId={organizationId}
 						onAssignClick={handleAssignClick}
 					/>
 				</TabsContent>
 
-				<TabsContent value="presets" className="space-y-4">
-					<WorkPolicyPresetImport
-						organizationId={organizationId}
-						onImportSuccess={handlePresetImportSuccess}
-					/>
-				</TabsContent>
+				{canManagePolicies ? (
+					<TabsContent value="presets" className="space-y-4">
+						<WorkPolicyPresetImport
+							organizationId={organizationId}
+							onImportSuccess={handlePresetImportSuccess}
+						/>
+					</TabsContent>
+				) : null}
 
-				<TabsContent value="compliance" className="space-y-4">
-					<WorkPolicyComplianceView organizationId={organizationId} />
-				</TabsContent>
+				{canManagePolicies ? (
+					<TabsContent value="compliance" className="space-y-4">
+						<WorkPolicyComplianceView organizationId={organizationId} />
+					</TabsContent>
+				) : null}
 			</Tabs>
 
-			<WorkPolicyDialog
-				open={policyDialogOpen}
-				onOpenChange={setPolicyDialogOpen}
-				organizationId={organizationId}
-				editingPolicy={editingPolicy}
-				onSuccess={handlePolicySuccess}
-			/>
+			{canManagePolicies ? (
+				<WorkPolicyDialog
+					open={policyDialogOpen}
+					onOpenChange={setPolicyDialogOpen}
+					organizationId={organizationId}
+					editingPolicy={editingPolicy}
+					onSuccess={handlePolicySuccess}
+				/>
+			) : null}
 
 			<WorkPolicyAssignmentDialog
 				open={assignmentDialogOpen}

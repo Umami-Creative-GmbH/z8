@@ -18,6 +18,7 @@ import { PresetManager } from "./preset-manager";
 
 interface HolidayManagementProps {
 	organizationId: string;
+	canManage: boolean;
 }
 
 // Type definitions for entities used in handlers
@@ -62,7 +63,7 @@ interface Preset {
 
 type AssignmentType = "organization" | "team" | "employee";
 
-export function HolidayManagement({ organizationId }: HolidayManagementProps) {
+export function HolidayManagement({ organizationId, canManage }: HolidayManagementProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 
@@ -170,33 +171,40 @@ export function HolidayManagement({ organizationId }: HolidayManagementProps) {
 				</p>
 			</div>
 
-			<Tabs defaultValue="presets" className="space-y-4">
+			<Tabs defaultValue={canManage ? "presets" : "assignments"} className="space-y-4">
 				<TabsList>
-					<TabsTrigger value="presets">
-						{t("settings.holidays.tab.presets", "Holiday Presets")}
-					</TabsTrigger>
+					{canManage ? (
+						<TabsTrigger value="presets">
+							{t("settings.holidays.tab.presets", "Holiday Presets")}
+						</TabsTrigger>
+					) : null}
 					<TabsTrigger value="assignments">
 						{t("settings.holidays.tab.assignments", "Assignments")}
 					</TabsTrigger>
 					<TabsTrigger value="custom">
 						{t("settings.holidays.tab.custom", "Custom Holidays")}
 					</TabsTrigger>
-					<TabsTrigger value="categories">
-						{t("settings.holidays.tab.categories", "Categories")}
-					</TabsTrigger>
+					{canManage ? (
+						<TabsTrigger value="categories">
+							{t("settings.holidays.tab.categories", "Categories")}
+						</TabsTrigger>
+					) : null}
 				</TabsList>
 
-				<TabsContent value="presets" className="space-y-4">
-					<PresetManager
-						organizationId={organizationId}
-						onImportClick={handleImportClick}
-						onEditClick={handleEditPresetClick}
-					/>
-				</TabsContent>
+				{canManage ? (
+					<TabsContent value="presets" className="space-y-4">
+						<PresetManager
+							organizationId={organizationId}
+							onImportClick={handleImportClick}
+							onEditClick={handleEditPresetClick}
+						/>
+					</TabsContent>
+				) : null}
 
 				<TabsContent value="assignments" className="space-y-4">
 					<AssignmentManager
 						organizationId={organizationId}
+						canManage={canManage}
 						onAssignClick={handleAssignClick}
 						onHolidayAssignClick={handleHolidayAssignClick}
 					/>
@@ -205,66 +213,73 @@ export function HolidayManagement({ organizationId }: HolidayManagementProps) {
 				<TabsContent value="custom" className="space-y-4">
 					<HolidayList
 						organizationId={organizationId}
+						canManage={canManage}
 						onAddClick={handleAddHolidayClick}
 						onEditClick={handleEditHolidayClick}
 					/>
 				</TabsContent>
 
-				<TabsContent value="categories" className="space-y-4">
-					<CategoryManager
-						organizationId={organizationId}
-						onAddClick={handleAddCategoryClick}
-						onEditClick={handleEditCategoryClick}
-					/>
-				</TabsContent>
+				{canManage ? (
+					<TabsContent value="categories" className="space-y-4">
+						<CategoryManager
+							organizationId={organizationId}
+							onAddClick={handleAddCategoryClick}
+							onEditClick={handleEditCategoryClick}
+						/>
+					</TabsContent>
+				) : null}
 			</Tabs>
 
-			<HolidayDialog
-				open={holidayDialogOpen}
-				onOpenChange={setHolidayDialogOpen}
-				organizationId={organizationId}
-				editingHoliday={editingHoliday}
-				onSuccess={handleHolidaySuccess}
-			/>
+			{canManage ? (
+				<>
+					<HolidayDialog
+						open={holidayDialogOpen}
+						onOpenChange={setHolidayDialogOpen}
+						organizationId={organizationId}
+						editingHoliday={editingHoliday}
+						onSuccess={handleHolidaySuccess}
+					/>
 
-			<CategoryDialog
-				open={categoryDialogOpen}
-				onOpenChange={setCategoryDialogOpen}
-				organizationId={organizationId}
-				editingCategory={editingCategory}
-				onSuccess={handleCategorySuccess}
-			/>
+					<CategoryDialog
+						open={categoryDialogOpen}
+						onOpenChange={setCategoryDialogOpen}
+						organizationId={organizationId}
+						editingCategory={editingCategory}
+						onSuccess={handleCategorySuccess}
+					/>
 
-			<HolidayImportDialog
-				open={importDialogOpen}
-				onOpenChange={setImportDialogOpen}
-				organizationId={organizationId}
-				onSuccess={handlePresetSuccess}
-			/>
+					<HolidayImportDialog
+						open={importDialogOpen}
+						onOpenChange={setImportDialogOpen}
+						organizationId={organizationId}
+						onSuccess={handlePresetSuccess}
+					/>
 
-			<PresetDialog
-				open={presetDialogOpen}
-				onOpenChange={setPresetDialogOpen}
-				organizationId={organizationId}
-				presetId={editingPresetId}
-				onSuccess={handlePresetSuccess}
-			/>
+					<PresetDialog
+						open={presetDialogOpen}
+						onOpenChange={setPresetDialogOpen}
+						organizationId={organizationId}
+						presetId={editingPresetId}
+						onSuccess={handlePresetSuccess}
+					/>
 
-			<AssignmentDialog
-				open={assignmentDialogOpen}
-				onOpenChange={setAssignmentDialogOpen}
-				organizationId={organizationId}
-				assignmentType={assignmentType}
-				onSuccess={handleAssignmentSuccess}
-			/>
+					<AssignmentDialog
+						open={assignmentDialogOpen}
+						onOpenChange={setAssignmentDialogOpen}
+						organizationId={organizationId}
+						assignmentType={assignmentType}
+						onSuccess={handleAssignmentSuccess}
+					/>
 
-			<HolidayAssignmentDialog
-				open={holidayAssignmentDialogOpen}
-				onOpenChange={setHolidayAssignmentDialogOpen}
-				organizationId={organizationId}
-				assignmentType={holidayAssignmentType}
-				onSuccess={handleHolidayAssignmentSuccess}
-			/>
+					<HolidayAssignmentDialog
+						open={holidayAssignmentDialogOpen}
+						onOpenChange={setHolidayAssignmentDialogOpen}
+						organizationId={organizationId}
+						assignmentType={holidayAssignmentType}
+						onSuccess={handleHolidayAssignmentSuccess}
+					/>
+				</>
+			) : null}
 		</div>
 	);
 }

@@ -1,8 +1,5 @@
-import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
-import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { DatevConfigForm } from "@/components/settings/payroll-export/datev-config-form";
 import { LexwareConfigForm } from "@/components/settings/payroll-export/lexware-config-form";
 import { SageConfigForm } from "@/components/settings/payroll-export/sage-config-form";
@@ -15,7 +12,7 @@ import { WageTypeMappings } from "@/components/settings/payroll-export/wage-type
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getAuthContext } from "@/lib/auth-helpers";
+import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
 import {
 	getDatevConfigAction,
@@ -35,25 +32,10 @@ type ExportAvailabilityEntry = {
 async function PayrollExportContent() {
 	await connection(); // Mark as fully dynamic
 
-	const [t, currentEmployee] = await Promise.all([getTranslate(), getCurrentEmployee()]);
-
-	if (!currentEmployee) {
-		return (
-			<div className="flex flex-1 items-center justify-center p-6">
-				<NoEmployeeError
-					feature={t("settings.payrollExport.featureName", "Payroll Export")}
-				/>
-			</div>
-		);
-	}
-
-	const authContext = await getAuthContext();
-
-	if (!authContext?.employee || authContext.employee.role !== "admin") {
-		redirect("/");
-	}
-
-	const organizationId = authContext.employee.organizationId;
+	const [t, { organizationId }] = await Promise.all([
+		getTranslate(),
+		requireOrgAdminSettingsAccess(),
+	]);
 
 	// Fetch configs and history in parallel
 	const [datevConfigResult, lexwareConfigResult, sageConfigResult, personioConfigResult, successFactorsConfigResult, workdayConfigResult, historyResult] = await Promise.all([

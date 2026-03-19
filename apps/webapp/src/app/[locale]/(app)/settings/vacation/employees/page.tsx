@@ -1,9 +1,6 @@
 import { IconEdit, IconUser } from "@tabler/icons-react";
-import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
-import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,6 +14,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { UserAvatar } from "@/components/user-avatar";
+import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { Link } from "@/navigation";
 import { getTranslate } from "@/tolgee/server";
 import { getCompanyDefaultVacationPolicy, getEmployeesWithAllowances } from "../actions";
@@ -25,29 +23,16 @@ import { getVacationPolicyAssignments } from "../assignment-actions";
 async function EmployeeAllowancesContent() {
 	await connection(); // Mark as fully dynamic for cacheComponents mode
 
-	const [currentEmployee, t] = await Promise.all([getCurrentEmployee(), getTranslate()]);
-
-	if (!currentEmployee) {
-		return (
-			<div className="flex flex-1 items-center justify-center p-6">
-				<NoEmployeeError feature="manage employee vacation allowances" />
-			</div>
-		);
-	}
-
-	// Check if user has admin role
-	const { getAuthContext } = await import("@/lib/auth-helpers");
-	const authContext = await getAuthContext();
-
-	if (!authContext?.employee || authContext.employee.role !== "admin") {
-		redirect("/");
-	}
+	const [{ organizationId }, t] = await Promise.all([
+		requireOrgAdminSettingsAccess(),
+		getTranslate(),
+	]);
 
 	const currentYear = new Date().getFullYear();
 	const [employeesResult, policyResult, policyAssignmentsResult] = await Promise.all([
-		getEmployeesWithAllowances(authContext.employee.organizationId, currentYear),
-		getCompanyDefaultVacationPolicy(authContext.employee.organizationId),
-		getVacationPolicyAssignments(authContext.employee.organizationId),
+		getEmployeesWithAllowances(organizationId, currentYear),
+		getCompanyDefaultVacationPolicy(organizationId),
+		getVacationPolicyAssignments(organizationId),
 	]);
 
 	const employees = employeesResult.success ? employeesResult.data : [];

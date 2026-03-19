@@ -1,5 +1,6 @@
 import { and, eq, isNull } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
+import { member } from "@/db/auth-schema";
 import { employee, teamPermissions } from "@/db/schema";
 import {
 	AuthorizationError,
@@ -214,31 +215,39 @@ export const PermissionsServiceLive = Layer.effect(
 						);
 					}
 
-					// Step 3: Verify granter exists and has admin role
+					// Step 3: Verify granter has org-admin access.
 					const granter = yield* _(
 						dbService.query("getGranterEmployee", async () => {
 							return await dbService.db.query.employee.findFirst({
 								where: eq(employee.id, grantedBy),
 							});
 						}),
-						Effect.flatMap((g) =>
-							g
-								? Effect.succeed(g)
-								: Effect.fail(
-										new NotFoundError({
-											message: "Granter employee not found",
-											entityType: "employee",
-											entityId: grantedBy,
-										}),
-									),
-						),
 					);
 
-					if (granter.role !== "admin") {
+					let canGrant = granter?.role === "admin";
+
+					if (!canGrant) {
+						const granterMembership = yield* _(
+							dbService.query("getGranterMembership", async () => {
+								return await dbService.db.query.member.findFirst({
+									where: and(
+										eq(member.userId, grantedBy),
+										eq(member.organizationId, organizationId),
+									),
+									columns: { role: true },
+								});
+							}),
+						);
+
+						canGrant =
+							granterMembership?.role === "owner" || granterMembership?.role === "admin";
+					}
+
+					if (!canGrant) {
 						yield* _(
 							Effect.fail(
 								new AuthorizationError({
-									message: "Only admins can grant permissions",
+									message: "Only org admins can grant permissions",
 									userId: grantedBy,
 									resource: "team_permissions",
 									action: "grant",

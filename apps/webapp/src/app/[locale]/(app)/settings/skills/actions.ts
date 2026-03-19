@@ -30,6 +30,14 @@ export type { EmployeeSkillWithDetails, SkillValidationResult, SkillWithRelation
 
 import { CACHE_TAGS } from "@/lib/cache/tags";
 import { createLogger } from "@/lib/logger";
+import {
+	ensureCanAccessEmployeeSettingsTarget,
+	ensureSettingsActorCanAccessEmployeeTarget,
+	getEmployeeContext,
+	getEmployeeSettingsActorContext,
+	getTargetEmployee,
+	requireOrgAdminEmployeeSettingsAccess,
+} from "../employees/employee-action-utils";
 
 const logger = createLogger("SkillActions");
 
@@ -56,49 +64,26 @@ export async function createSkill(
 		},
 		(span) => {
 			return Effect.gen(function* (_) {
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
+				const actor = yield* _(getEmployeeSettingsActorContext());
+				const { session } = actor;
 				const skillService = yield* _(SkillService);
 
-				// Get current employee and verify admin role
-				const currentEmployee = yield* _(
-					dbService.query("getCurrentEmployee", async () => {
-						return await dbService.db.query.employee.findFirst({
-							where: eq(employee.userId, session.user.id),
-						});
+				yield* _(
+					requireOrgAdminEmployeeSettingsAccess(actor, {
+						message: "Only organization admins can create skills",
+						resource: "skill",
+						action: "create",
 					}),
-					Effect.flatMap((emp) =>
-						emp
-							? Effect.succeed(emp)
-							: Effect.fail(
-									new NotFoundError({
-										message: "Employee profile not found",
-										entityType: "employee",
-									}),
-								),
-					),
 				);
 
-				if (currentEmployee.role !== "admin") {
-					yield* _(
-						Effect.fail(
-							new AuthorizationError({
-								message: "Only admins can create skills",
-								userId: currentEmployee.id,
-								resource: "skill",
-								action: "create",
-							}),
-						),
-					);
+				if (actor.currentEmployee) {
+					span.setAttribute("employee.id", actor.currentEmployee.id);
 				}
-
-				span.setAttribute("employee.id", currentEmployee.id);
 
 				const newSkill = yield* _(
 					skillService.createSkill({
 						...data,
-						organizationId: currentEmployee.organizationId,
+						organizationId: actor.organizationId,
 						createdBy: session.user.id,
 					}),
 				);
@@ -112,7 +97,7 @@ export async function createSkill(
 					"Skill created successfully",
 				);
 
-				revalidateTag(CACHE_TAGS.SKILLS(currentEmployee.organizationId), "max");
+				revalidateTag(CACHE_TAGS.SKILLS(actor.organizationId), "max");
 
 				span.setAttribute("skill.id", newSkill.id);
 				span.setStatus({ code: SpanStatusCode.OK });
@@ -157,42 +142,17 @@ export async function updateSkill(
 		},
 		(span) => {
 			return Effect.gen(function* (_) {
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
+				const actor = yield* _(getEmployeeSettingsActorContext());
+				const { session } = actor;
 				const skillService = yield* _(SkillService);
 
-				// Get current employee and verify admin role
-				const currentEmployee = yield* _(
-					dbService.query("getCurrentEmployee", async () => {
-						return await dbService.db.query.employee.findFirst({
-							where: eq(employee.userId, session.user.id),
-						});
+				yield* _(
+					requireOrgAdminEmployeeSettingsAccess(actor, {
+						message: "Only organization admins can update skills",
+						resource: "skill",
+						action: "update",
 					}),
-					Effect.flatMap((emp) =>
-						emp
-							? Effect.succeed(emp)
-							: Effect.fail(
-									new NotFoundError({
-										message: "Employee profile not found",
-										entityType: "employee",
-									}),
-								),
-					),
 				);
-
-				if (currentEmployee.role !== "admin") {
-					yield* _(
-						Effect.fail(
-							new AuthorizationError({
-								message: "Only admins can update skills",
-								userId: currentEmployee.id,
-								resource: "skill",
-								action: "update",
-							}),
-						),
-					);
-				}
 
 				const updatedSkill = yield* _(
 					skillService.updateSkill(skillId, {
@@ -203,7 +163,7 @@ export async function updateSkill(
 
 				logger.info({ skillId }, "Skill updated successfully");
 
-				revalidateTag(CACHE_TAGS.SKILLS(currentEmployee.organizationId), "max");
+				revalidateTag(CACHE_TAGS.SKILLS(actor.organizationId), "max");
 
 				span.setStatus({ code: SpanStatusCode.OK });
 				return updatedSkill as SkillWithRelations;
@@ -244,48 +204,22 @@ export async function deleteSkill(skillId: string): Promise<ServerActionResult<v
 		},
 		(span) => {
 			return Effect.gen(function* (_) {
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
+				const actor = yield* _(getEmployeeSettingsActorContext());
 				const skillService = yield* _(SkillService);
 
-				// Get current employee and verify admin role
-				const currentEmployee = yield* _(
-					dbService.query("getCurrentEmployee", async () => {
-						return await dbService.db.query.employee.findFirst({
-							where: eq(employee.userId, session.user.id),
-						});
+				yield* _(
+					requireOrgAdminEmployeeSettingsAccess(actor, {
+						message: "Only organization admins can delete skills",
+						resource: "skill",
+						action: "delete",
 					}),
-					Effect.flatMap((emp) =>
-						emp
-							? Effect.succeed(emp)
-							: Effect.fail(
-									new NotFoundError({
-										message: "Employee profile not found",
-										entityType: "employee",
-									}),
-								),
-					),
 				);
-
-				if (currentEmployee.role !== "admin") {
-					yield* _(
-						Effect.fail(
-							new AuthorizationError({
-								message: "Only admins can delete skills",
-								userId: currentEmployee.id,
-								resource: "skill",
-								action: "delete",
-							}),
-						),
-					);
-				}
 
 				yield* _(skillService.deleteSkill(skillId));
 
 				logger.info({ skillId }, "Skill deleted successfully");
 
-				revalidateTag(CACHE_TAGS.SKILLS(currentEmployee.organizationId), "max");
+				revalidateTag(CACHE_TAGS.SKILLS(actor.organizationId), "max");
 
 				span.setStatus({ code: SpanStatusCode.OK });
 			}).pipe(
@@ -316,33 +250,10 @@ export async function getOrganizationSkills(options?: {
 	includeInactive?: boolean;
 }): Promise<ServerActionResult<SkillWithRelations[]>> {
 	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-		const dbService = yield* _(DatabaseService);
+		const actor = yield* _(getEmployeeSettingsActorContext());
 		const skillService = yield* _(SkillService);
 
-		// Get current employee
-		const currentEmployee = yield* _(
-			dbService.query("getCurrentEmployee", async () => {
-				return await dbService.db.query.employee.findFirst({
-					where: eq(employee.userId, session.user.id),
-				});
-			}),
-			Effect.flatMap((emp) =>
-				emp
-					? Effect.succeed(emp)
-					: Effect.fail(
-							new NotFoundError({
-								message: "Employee profile not found",
-								entityType: "employee",
-							}),
-						),
-			),
-		);
-
-		const skills = yield* _(
-			skillService.getOrganizationSkills(currentEmployee.organizationId, options),
-		);
+		const skills = yield* _(skillService.getOrganizationSkills(actor.organizationId, options));
 
 		return skills;
 	}).pipe(Effect.provide(AppLayer));
@@ -373,42 +284,32 @@ export async function assignSkillToEmployee(
 		},
 		(span) => {
 			return Effect.gen(function* (_) {
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
+				const actor = yield* _(getEmployeeSettingsActorContext());
+				const { session } = actor;
 				const skillService = yield* _(SkillService);
 
-				// Get current employee and verify role
-				const currentEmployee = yield* _(
-					dbService.query("getCurrentEmployee", async () => {
-						return await dbService.db.query.employee.findFirst({
-							where: eq(employee.userId, session.user.id),
-						});
-					}),
-					Effect.flatMap((emp) =>
-						emp
-							? Effect.succeed(emp)
-							: Effect.fail(
-									new NotFoundError({
-										message: "Employee profile not found",
-										entityType: "employee",
-									}),
-								),
-					),
-				);
-
-				if (currentEmployee.role !== "admin" && currentEmployee.role !== "manager") {
+				if (actor.accessTier !== "orgAdmin" && actor.accessTier !== "manager") {
 					yield* _(
 						Effect.fail(
 							new AuthorizationError({
 								message: "Only admins and managers can assign skills",
-								userId: currentEmployee.id,
+								userId: session.user.id,
 								resource: "employeeSkill",
 								action: "create",
 							}),
 						),
 					);
 				}
+
+				const targetEmployee = yield* _(getTargetEmployee(data.employeeId));
+
+				yield* _(
+					ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
+						message: "You do not have access to this employee's skills",
+						resource: "employeeSkill",
+						action: "create",
+					}),
+				);
 
 				const assignment = yield* _(
 					skillService.assignSkillToEmployee({
@@ -476,42 +377,31 @@ export async function removeSkillFromEmployee(
 		},
 		(span) => {
 			return Effect.gen(function* (_) {
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
+				const actor = yield* _(getEmployeeSettingsActorContext());
 				const skillService = yield* _(SkillService);
 
-				// Get current employee and verify role
-				const currentEmployee = yield* _(
-					dbService.query("getCurrentEmployee", async () => {
-						return await dbService.db.query.employee.findFirst({
-							where: eq(employee.userId, session.user.id),
-						});
-					}),
-					Effect.flatMap((emp) =>
-						emp
-							? Effect.succeed(emp)
-							: Effect.fail(
-									new NotFoundError({
-										message: "Employee profile not found",
-										entityType: "employee",
-									}),
-								),
-					),
-				);
-
-				if (currentEmployee.role !== "admin" && currentEmployee.role !== "manager") {
+				if (actor.accessTier !== "orgAdmin" && actor.accessTier !== "manager") {
 					yield* _(
 						Effect.fail(
 							new AuthorizationError({
 								message: "Only admins and managers can remove skills",
-								userId: currentEmployee.id,
+								userId: actor.session.user.id,
 								resource: "employeeSkill",
 								action: "delete",
 							}),
 						),
 					);
 				}
+
+				const targetEmployee = yield* _(getTargetEmployee(employeeId));
+
+				yield* _(
+					ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
+						message: "You do not have access to this employee's skills",
+						resource: "employeeSkill",
+						action: "delete",
+					}),
+				);
 
 				yield* _(skillService.removeSkillFromEmployee(employeeId, skillId));
 
@@ -554,62 +444,18 @@ export async function getEmployeeSkills(
 	employeeId: string,
 ): Promise<ServerActionResult<EmployeeSkillWithDetails[]>> {
 	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-		const dbService = yield* _(DatabaseService);
+		const actor = yield* _(getEmployeeSettingsActorContext());
 		const skillService = yield* _(SkillService);
 
-		// Get current employee
-		const currentEmployee = yield* _(
-			dbService.query("getCurrentEmployee", async () => {
-				return await dbService.db.query.employee.findFirst({
-					where: eq(employee.userId, session.user.id),
-				});
-			}),
-			Effect.flatMap((emp) =>
-				emp
-					? Effect.succeed(emp)
-					: Effect.fail(
-							new NotFoundError({
-								message: "Employee profile not found",
-								entityType: "employee",
-							}),
-						),
-			),
-		);
+		const targetEmployee = yield* _(getTargetEmployee(employeeId));
 
-		// Get target employee to verify same org
-		const targetEmployee = yield* _(
-			dbService.query("getTargetEmployee", async () => {
-				return await dbService.db.query.employee.findFirst({
-					where: eq(employee.id, employeeId),
-				});
+		yield* _(
+			ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
+				message: "You do not have access to this employee's skills",
+				resource: "employeeSkill",
+				action: "read",
 			}),
-			Effect.flatMap((emp) =>
-				emp
-					? Effect.succeed(emp)
-					: Effect.fail(
-							new NotFoundError({
-								message: "Employee not found",
-								entityType: "employee",
-								entityId: employeeId,
-							}),
-						),
-			),
 		);
-
-		if (targetEmployee.organizationId !== currentEmployee.organizationId) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Cannot access employee from different organization",
-						userId: currentEmployee.id,
-						resource: "employeeSkill",
-						action: "read",
-					}),
-				),
-			);
-		}
 
 		const skills = yield* _(skillService.getEmployeeSkills(employeeId));
 
@@ -643,42 +489,17 @@ export async function setSubareaSkillRequirements(
 		},
 		(span) => {
 			return Effect.gen(function* (_) {
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
+				const actor = yield* _(getEmployeeSettingsActorContext());
+				const { session } = actor;
 				const skillService = yield* _(SkillService);
 
-				// Get current employee and verify admin role
-				const currentEmployee = yield* _(
-					dbService.query("getCurrentEmployee", async () => {
-						return await dbService.db.query.employee.findFirst({
-							where: eq(employee.userId, session.user.id),
-						});
+				yield* _(
+					requireOrgAdminEmployeeSettingsAccess(actor, {
+						message: "Only organization admins can set subarea skill requirements",
+						resource: "subareaSkillRequirement",
+						action: "update",
 					}),
-					Effect.flatMap((emp) =>
-						emp
-							? Effect.succeed(emp)
-							: Effect.fail(
-									new NotFoundError({
-										message: "Employee profile not found",
-										entityType: "employee",
-									}),
-								),
-					),
 				);
-
-				if (currentEmployee.role !== "admin") {
-					yield* _(
-						Effect.fail(
-							new AuthorizationError({
-								message: "Only admins can set subarea skill requirements",
-								userId: currentEmployee.id,
-								resource: "subareaSkillRequirement",
-								action: "update",
-							}),
-						),
-					);
-				}
 
 				yield* _(
 					skillService.setSubareaSkillRequirements({
@@ -740,42 +561,17 @@ export async function setTemplateSkillRequirements(
 		},
 		(span) => {
 			return Effect.gen(function* (_) {
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
+				const actor = yield* _(getEmployeeSettingsActorContext());
+				const { session } = actor;
 				const skillService = yield* _(SkillService);
 
-				// Get current employee and verify admin role
-				const currentEmployee = yield* _(
-					dbService.query("getCurrentEmployee", async () => {
-						return await dbService.db.query.employee.findFirst({
-							where: eq(employee.userId, session.user.id),
-						});
+				yield* _(
+					requireOrgAdminEmployeeSettingsAccess(actor, {
+						message: "Only organization admins can set template skill requirements",
+						resource: "templateSkillRequirement",
+						action: "update",
 					}),
-					Effect.flatMap((emp) =>
-						emp
-							? Effect.succeed(emp)
-							: Effect.fail(
-									new NotFoundError({
-										message: "Employee profile not found",
-										entityType: "employee",
-									}),
-								),
-					),
 				);
-
-				if (currentEmployee.role !== "admin") {
-					yield* _(
-						Effect.fail(
-							new AuthorizationError({
-								message: "Only admins can set template skill requirements",
-								userId: currentEmployee.id,
-								resource: "templateSkillRequirement",
-								action: "update",
-							}),
-						),
-					);
-				}
 
 				yield* _(
 					skillService.setTemplateSkillRequirements({

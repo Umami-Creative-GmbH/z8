@@ -12,6 +12,7 @@ import {
 } from "@/db/schema";
 import {
 	AuthorizationError,
+	type AnyAppError,
 	ConflictError,
 	DatabaseError,
 	NotFoundError,
@@ -20,6 +21,14 @@ import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/resul
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
+import {
+	getEmployeeSettingsActorContext,
+	requireOrgAdminEmployeeSettingsAccess,
+} from "../employees/employee-action-utils";
+import {
+	filterAssignmentsForManagerHolidayScope,
+	getScopedHolidayAccessContext,
+} from "./holiday-scope";
 import type {
 	HolidayPresetAssignmentFormValues,
 	HolidayPresetFormValues,
@@ -90,6 +99,22 @@ type EmployeeListItem = {
 	lastName: string | null;
 	position: string | null;
 };
+
+function runPresetServerAction<T>(effect: Effect.Effect<T, AnyAppError, never>) {
+	return runServerActionSafe(effect);
+}
+
+function filterPresetAssignmentsForScope(
+	assignments: PresetAssignmentListItem[],
+	manageableTeamIds: Set<string> | null,
+	managedEmployeeIds: Set<string> | null,
+) {
+	return filterAssignmentsForManagerHolidayScope(
+		assignments,
+		manageableTeamIds,
+		managedEmployeeIds,
+	);
+}
 
 // ============================================
 // PRESET QUERIES
@@ -177,42 +202,20 @@ export async function getHolidayPreset(
 	presetId: string,
 ): Promise<ServerActionResult<HolidayPresetDetail>> {
 	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-
-		const dbService = yield* _(DatabaseService);
-
-		// Get employee to verify organization
-		const employeeRecord = yield* _(
-			dbService.query("getEmployeeRecord", async () => {
-				const [emp] = await dbService.db
-					.select()
-					.from(employee)
-					.where(and(eq(employee.userId, session.user.id), eq(employee.isActive, true)))
-					.limit(1);
-
-				if (!emp) throw new Error("Employee not found");
-				return emp;
-			}),
-			Effect.mapError(
-				() =>
-					new NotFoundError({
-						message: "Employee profile not found",
-						entityType: "employee",
-					}),
-			),
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({ queryName: "getHolidayPreset:actor" }),
 		);
 
 		// Fetch the preset
 		const preset = yield* _(
-			dbService.query("getPreset", async () => {
-				const [p] = await dbService.db
+			actor.dbService.query("getPreset", async () => {
+				const [p] = await actor.dbService.db
 					.select()
 					.from(holidayPreset)
 					.where(
 						and(
 							eq(holidayPreset.id, presetId),
-							eq(holidayPreset.organizationId, employeeRecord.organizationId),
+							eq(holidayPreset.organizationId, actor.organizationId),
 						),
 					)
 					.limit(1);
@@ -230,10 +233,80 @@ export async function getHolidayPreset(
 			),
 		);
 
+		if (actor.accessTier === "manager") {
+			const { manageableTeamIds, managedEmployeeIds } = yield* _(
+				getScopedHolidayAccessContext(actor.organizationId, "getHolidayPreset:scope"),
+			);
+
+			const presetAssignments = yield* _(
+				actor.dbService.query("getPresetAssignmentsForScope", async () => {
+					return await actor.dbService.db
+						.select({
+							id: holidayPresetAssignment.id,
+							presetId: holidayPresetAssignment.presetId,
+							assignmentType: holidayPresetAssignment.assignmentType,
+							teamId: holidayPresetAssignment.teamId,
+							employeeId: holidayPresetAssignment.employeeId,
+							priority: holidayPresetAssignment.priority,
+							effectiveFrom: holidayPresetAssignment.effectiveFrom,
+							effectiveUntil: holidayPresetAssignment.effectiveUntil,
+							isActive: holidayPresetAssignment.isActive,
+							createdAt: holidayPresetAssignment.createdAt,
+							preset: {
+								id: holidayPreset.id,
+								name: holidayPreset.name,
+								color: holidayPreset.color,
+								countryCode: holidayPreset.countryCode,
+								stateCode: holidayPreset.stateCode,
+							},
+							team: {
+								id: team.id,
+								name: team.name,
+							},
+							employee: {
+								id: employee.id,
+								firstName: employee.firstName,
+								lastName: employee.lastName,
+							},
+						})
+						.from(holidayPresetAssignment)
+						.innerJoin(holidayPreset, eq(holidayPresetAssignment.presetId, holidayPreset.id))
+						.leftJoin(team, eq(holidayPresetAssignment.teamId, team.id))
+						.leftJoin(employee, eq(holidayPresetAssignment.employeeId, employee.id))
+						.where(
+							and(
+								eq(holidayPresetAssignment.organizationId, actor.organizationId),
+								eq(holidayPresetAssignment.presetId, presetId),
+								eq(holidayPresetAssignment.isActive, true),
+							),
+						)
+						.orderBy(holidayPresetAssignment.createdAt);
+				}),
+			);
+
+			const visibleAssignments = filterPresetAssignmentsForScope(
+				presetAssignments as PresetAssignmentListItem[],
+				manageableTeamIds,
+				managedEmployeeIds,
+			);
+
+			if (visibleAssignments.length === 0) {
+				yield* _(
+					Effect.fail(
+						new NotFoundError({
+							message: "Preset not found",
+							entityType: "holiday_preset",
+							entityId: presetId,
+						}),
+					),
+				);
+			}
+		}
+
 		// Fetch holidays
 		const holidays = yield* _(
-			dbService.query("getPresetHolidays", async () => {
-				return await dbService.db
+			actor.dbService.query("getPresetHolidays", async () => {
+				return await actor.dbService.db
 					.select({
 						id: holidayPresetHoliday.id,
 						name: holidayPresetHoliday.name,
@@ -262,7 +335,7 @@ export async function getHolidayPreset(
 		return { preset, holidays };
 	}).pipe(Effect.provide(AppLayer));
 
-	return runServerActionSafe(effect);
+	return runPresetServerAction(effect);
 }
 
 // ============================================
@@ -277,45 +350,16 @@ export async function createHolidayPreset(
 	data: HolidayPresetFormValues,
 ): Promise<ServerActionResult<typeof holidayPreset.$inferSelect>> {
 	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-
-		const dbService = yield* _(DatabaseService);
-
-		// Get employee to verify admin role
-		const employeeRecord = yield* _(
-			dbService.query("getEmployeeRecord", async () => {
-				const [emp] = await dbService.db
-					.select()
-					.from(employee)
-					.where(and(eq(employee.userId, session.user.id), eq(employee.isActive, true)))
-					.limit(1);
-
-				if (!emp) throw new Error("Employee not found");
-				return emp;
-			}),
-			Effect.mapError(
-				() =>
-					new NotFoundError({
-						message: "Employee profile not found",
-						entityType: "employee",
-					}),
-			),
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({ organizationId, queryName: "createHolidayPreset:actor" }),
 		);
-
-		// Check admin role
-		if (employeeRecord.role !== "admin") {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Admin access required",
-						userId: session.user.id,
-						resource: "holiday_preset",
-						action: "create",
-					}),
-				),
-			);
-		}
+		yield* _(
+			requireOrgAdminEmployeeSettingsAccess(actor, {
+				message: "Only org admins can create holiday presets",
+				resource: "holiday_preset",
+				action: "create",
+			}),
+		);
 
 		// Check for existing preset with same location
 		if (data.countryCode) {
@@ -337,8 +381,8 @@ export async function createHolidayPreset(
 			}
 
 			const existing = yield* _(
-				dbService.query("checkExisting", async () => {
-					const [p] = await dbService.db
+				actor.dbService.query("checkExisting", async () => {
+					const [p] = await actor.dbService.db
 						.select()
 						.from(holidayPreset)
 						.where(and(...existingConditions))
@@ -362,8 +406,8 @@ export async function createHolidayPreset(
 
 		// Create preset
 		const newPreset = yield* _(
-			dbService.query("createPreset", async () => {
-				const [p] = await dbService.db
+			actor.dbService.query("createPreset", async () => {
+				const [p] = await actor.dbService.db
 					.insert(holidayPreset)
 					.values({
 						organizationId,
@@ -374,7 +418,7 @@ export async function createHolidayPreset(
 						regionCode: data.regionCode || null,
 						color: data.color || null,
 						isActive: data.isActive ?? true,
-						createdBy: session.user.id,
+						createdBy: actor.session.user.id,
 					})
 					.returning();
 				return p;
@@ -393,7 +437,7 @@ export async function createHolidayPreset(
 		return newPreset;
 	}).pipe(Effect.provide(AppLayer));
 
-	return runServerActionSafe(effect);
+	return runPresetServerAction(effect);
 }
 
 /**
@@ -404,56 +448,27 @@ export async function updateHolidayPreset(
 	data: HolidayPresetFormValues,
 ): Promise<ServerActionResult<typeof holidayPreset.$inferSelect>> {
 	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-
-		const dbService = yield* _(DatabaseService);
-
-		// Get employee to verify admin role
-		const employeeRecord = yield* _(
-			dbService.query("getEmployeeRecord", async () => {
-				const [emp] = await dbService.db
-					.select()
-					.from(employee)
-					.where(and(eq(employee.userId, session.user.id), eq(employee.isActive, true)))
-					.limit(1);
-
-				if (!emp) throw new Error("Employee not found");
-				return emp;
-			}),
-			Effect.mapError(
-				() =>
-					new NotFoundError({
-						message: "Employee profile not found",
-						entityType: "employee",
-					}),
-			),
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({ queryName: "updateHolidayPreset:actor" }),
 		);
-
-		// Check admin role
-		if (employeeRecord.role !== "admin") {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Admin access required",
-						userId: session.user.id,
-						resource: "holiday_preset",
-						action: "update",
-					}),
-				),
-			);
-		}
+		yield* _(
+			requireOrgAdminEmployeeSettingsAccess(actor, {
+				message: "Only org admins can update holiday presets",
+				resource: "holiday_preset",
+				action: "update",
+			}),
+		);
 
 		// Verify preset exists and belongs to organization
 		yield* _(
-			dbService.query("verifyPreset", async () => {
-				const [p] = await dbService.db
+			actor.dbService.query("verifyPreset", async () => {
+				const [p] = await actor.dbService.db
 					.select()
 					.from(holidayPreset)
 					.where(
 						and(
 							eq(holidayPreset.id, presetId),
-							eq(holidayPreset.organizationId, employeeRecord.organizationId),
+							eq(holidayPreset.organizationId, actor.organizationId),
 						),
 					)
 					.limit(1);
@@ -473,8 +488,8 @@ export async function updateHolidayPreset(
 
 		// Update preset
 		const updatedPreset = yield* _(
-			dbService.query("updatePreset", async () => {
-				const [p] = await dbService.db
+			actor.dbService.query("updatePreset", async () => {
+				const [p] = await actor.dbService.db
 					.update(holidayPreset)
 					.set({
 						name: data.name,
@@ -484,7 +499,7 @@ export async function updateHolidayPreset(
 						regionCode: data.regionCode || null,
 						color: data.color || null,
 						isActive: data.isActive ?? true,
-						updatedBy: session.user.id,
+						updatedBy: actor.session.user.id,
 					})
 					.where(eq(holidayPreset.id, presetId))
 					.returning();
@@ -504,7 +519,7 @@ export async function updateHolidayPreset(
 		return updatedPreset;
 	}).pipe(Effect.provide(AppLayer));
 
-	return runServerActionSafe(effect);
+	return runPresetServerAction(effect);
 }
 
 /**
@@ -512,56 +527,27 @@ export async function updateHolidayPreset(
  */
 export async function deleteHolidayPreset(presetId: string): Promise<ServerActionResult<void>> {
 	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-
-		const dbService = yield* _(DatabaseService);
-
-		// Get employee to verify admin role
-		const employeeRecord = yield* _(
-			dbService.query("getEmployeeRecord", async () => {
-				const [emp] = await dbService.db
-					.select()
-					.from(employee)
-					.where(and(eq(employee.userId, session.user.id), eq(employee.isActive, true)))
-					.limit(1);
-
-				if (!emp) throw new Error("Employee not found");
-				return emp;
-			}),
-			Effect.mapError(
-				() =>
-					new NotFoundError({
-						message: "Employee profile not found",
-						entityType: "employee",
-					}),
-			),
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({ queryName: "deleteHolidayPreset:actor" }),
 		);
-
-		// Check admin role
-		if (employeeRecord.role !== "admin") {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Admin access required",
-						userId: session.user.id,
-						resource: "holiday_preset",
-						action: "delete",
-					}),
-				),
-			);
-		}
+		yield* _(
+			requireOrgAdminEmployeeSettingsAccess(actor, {
+				message: "Only org admins can delete holiday presets",
+				resource: "holiday_preset",
+				action: "delete",
+			}),
+		);
 
 		// Verify preset exists
 		yield* _(
-			dbService.query("verifyPreset", async () => {
-				const [p] = await dbService.db
+			actor.dbService.query("verifyPreset", async () => {
+				const [p] = await actor.dbService.db
 					.select()
 					.from(holidayPreset)
 					.where(
 						and(
 							eq(holidayPreset.id, presetId),
-							eq(holidayPreset.organizationId, employeeRecord.organizationId),
+							eq(holidayPreset.organizationId, actor.organizationId),
 						),
 					)
 					.limit(1);
@@ -581,8 +567,8 @@ export async function deleteHolidayPreset(presetId: string): Promise<ServerActio
 
 		// Check for active assignments
 		const assignmentCount = yield* _(
-			dbService.query("checkAssignments", async () => {
-				const [result] = await dbService.db
+			actor.dbService.query("checkAssignments", async () => {
+				const [result] = await actor.dbService.db
 					.select({ count: sql<number>`count(*)::int` })
 					.from(holidayPresetAssignment)
 					.where(
@@ -609,10 +595,10 @@ export async function deleteHolidayPreset(presetId: string): Promise<ServerActio
 
 		// Soft delete
 		yield* _(
-			dbService.query("deletePreset", async () => {
-				await dbService.db
+			actor.dbService.query("deletePreset", async () => {
+				await actor.dbService.db
 					.update(holidayPreset)
-					.set({ isActive: false, updatedBy: session.user.id })
+					.set({ isActive: false, updatedBy: actor.session.user.id })
 					.where(eq(holidayPreset.id, presetId));
 			}),
 			Effect.mapError(
@@ -627,7 +613,7 @@ export async function deleteHolidayPreset(presetId: string): Promise<ServerActio
 		);
 	}).pipe(Effect.provide(AppLayer));
 
-	return runServerActionSafe(effect);
+	return runPresetServerAction(effect);
 }
 
 // ============================================
@@ -642,56 +628,27 @@ export async function addHolidayToPreset(
 	data: HolidayPresetHolidayFormValues,
 ): Promise<ServerActionResult<typeof holidayPresetHoliday.$inferSelect>> {
 	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-
-		const dbService = yield* _(DatabaseService);
-
-		// Get employee to verify admin role
-		const employeeRecord = yield* _(
-			dbService.query("getEmployeeRecord", async () => {
-				const [emp] = await dbService.db
-					.select()
-					.from(employee)
-					.where(and(eq(employee.userId, session.user.id), eq(employee.isActive, true)))
-					.limit(1);
-
-				if (!emp) throw new Error("Employee not found");
-				return emp;
-			}),
-			Effect.mapError(
-				() =>
-					new NotFoundError({
-						message: "Employee profile not found",
-						entityType: "employee",
-					}),
-			),
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({ queryName: "addHolidayToPreset:actor" }),
 		);
-
-		// Check admin role
-		if (employeeRecord.role !== "admin") {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Admin access required",
-						userId: session.user.id,
-						resource: "holiday_preset_holiday",
-						action: "create",
-					}),
-				),
-			);
-		}
+		yield* _(
+			requireOrgAdminEmployeeSettingsAccess(actor, {
+				message: "Only org admins can add preset holidays",
+				resource: "holiday_preset_holiday",
+				action: "create",
+			}),
+		);
 
 		// Verify preset exists and belongs to organization
 		yield* _(
-			dbService.query("verifyPreset", async () => {
-				const [p] = await dbService.db
+			actor.dbService.query("verifyPreset", async () => {
+				const [p] = await actor.dbService.db
 					.select()
 					.from(holidayPreset)
 					.where(
 						and(
 							eq(holidayPreset.id, presetId),
-							eq(holidayPreset.organizationId, employeeRecord.organizationId),
+							eq(holidayPreset.organizationId, actor.organizationId),
 						),
 					)
 					.limit(1);
@@ -711,8 +668,8 @@ export async function addHolidayToPreset(
 
 		// Create holiday
 		const newHoliday = yield* _(
-			dbService.query("createHoliday", async () => {
-				const [h] = await dbService.db
+			actor.dbService.query("createHoliday", async () => {
+				const [h] = await actor.dbService.db
 					.insert(holidayPresetHoliday)
 					.values({
 						presetId,
@@ -744,7 +701,7 @@ export async function addHolidayToPreset(
 		return newHoliday;
 	}).pipe(Effect.provide(AppLayer));
 
-	return runServerActionSafe(effect);
+	return runPresetServerAction(effect);
 }
 
 /**
@@ -756,56 +713,27 @@ export async function bulkAddHolidaysToPreset(
 	categoryId?: string,
 ): Promise<ServerActionResult<{ added: number }>> {
 	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-
-		const dbService = yield* _(DatabaseService);
-
-		// Get employee to verify admin role
-		const employeeRecord = yield* _(
-			dbService.query("getEmployeeRecord", async () => {
-				const [emp] = await dbService.db
-					.select()
-					.from(employee)
-					.where(and(eq(employee.userId, session.user.id), eq(employee.isActive, true)))
-					.limit(1);
-
-				if (!emp) throw new Error("Employee not found");
-				return emp;
-			}),
-			Effect.mapError(
-				() =>
-					new NotFoundError({
-						message: "Employee profile not found",
-						entityType: "employee",
-					}),
-			),
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({ queryName: "bulkAddHolidaysToPreset:actor" }),
 		);
-
-		// Check admin role
-		if (employeeRecord.role !== "admin") {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Admin access required",
-						userId: session.user.id,
-						resource: "holiday_preset_holiday",
-						action: "create",
-					}),
-				),
-			);
-		}
+		yield* _(
+			requireOrgAdminEmployeeSettingsAccess(actor, {
+				message: "Only org admins can add preset holidays",
+				resource: "holiday_preset_holiday",
+				action: "create",
+			}),
+		);
 
 		// Verify preset exists
 		yield* _(
-			dbService.query("verifyPreset", async () => {
-				const [p] = await dbService.db
+			actor.dbService.query("verifyPreset", async () => {
+				const [p] = await actor.dbService.db
 					.select()
 					.from(holidayPreset)
 					.where(
 						and(
 							eq(holidayPreset.id, presetId),
-							eq(holidayPreset.organizationId, employeeRecord.organizationId),
+							eq(holidayPreset.organizationId, actor.organizationId),
 						),
 					)
 					.limit(1);
@@ -825,7 +753,7 @@ export async function bulkAddHolidaysToPreset(
 
 		// Bulk insert holidays
 		const result = yield* _(
-			dbService.query("bulkInsert", async () => {
+			actor.dbService.query("bulkInsert", async () => {
 				const values = holidays.map((h) => ({
 					presetId,
 					name: h.name,
@@ -840,7 +768,7 @@ export async function bulkAddHolidaysToPreset(
 					isActive: h.isActive ?? true,
 				}));
 
-				await dbService.db.insert(holidayPresetHoliday).values(values);
+				await actor.dbService.db.insert(holidayPresetHoliday).values(values);
 				return { added: values.length };
 			}),
 			Effect.mapError(
@@ -857,7 +785,7 @@ export async function bulkAddHolidaysToPreset(
 		return result;
 	}).pipe(Effect.provide(AppLayer));
 
-	return runServerActionSafe(effect);
+	return runPresetServerAction(effect);
 }
 
 /**
@@ -867,50 +795,21 @@ export async function deleteHolidayFromPreset(
 	holidayId: string,
 ): Promise<ServerActionResult<void>> {
 	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-
-		const dbService = yield* _(DatabaseService);
-
-		// Get employee to verify admin role
-		const employeeRecord = yield* _(
-			dbService.query("getEmployeeRecord", async () => {
-				const [emp] = await dbService.db
-					.select()
-					.from(employee)
-					.where(and(eq(employee.userId, session.user.id), eq(employee.isActive, true)))
-					.limit(1);
-
-				if (!emp) throw new Error("Employee not found");
-				return emp;
-			}),
-			Effect.mapError(
-				() =>
-					new NotFoundError({
-						message: "Employee profile not found",
-						entityType: "employee",
-					}),
-			),
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({ queryName: "deleteHolidayFromPreset:actor" }),
 		);
-
-		// Check admin role
-		if (employeeRecord.role !== "admin") {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Admin access required",
-						userId: session.user.id,
-						resource: "holiday_preset_holiday",
-						action: "delete",
-					}),
-				),
-			);
-		}
+		yield* _(
+			requireOrgAdminEmployeeSettingsAccess(actor, {
+				message: "Only org admins can delete preset holidays",
+				resource: "holiday_preset_holiday",
+				action: "delete",
+			}),
+		);
 
 		// Delete (hard delete since it's a preset holiday)
 		yield* _(
-			dbService.query("deleteHoliday", async () => {
-				await dbService.db
+			actor.dbService.query("deleteHoliday", async () => {
+				await actor.dbService.db
 					.delete(holidayPresetHoliday)
 					.where(eq(holidayPresetHoliday.id, holidayId));
 			}),
@@ -926,7 +825,7 @@ export async function deleteHolidayFromPreset(
 		);
 	}).pipe(Effect.provide(AppLayer));
 
-	return runServerActionSafe(effect);
+	return runPresetServerAction(effect);
 }
 
 // ============================================
@@ -940,14 +839,13 @@ export async function getPresetAssignments(
 	organizationId: string,
 ): Promise<ServerActionResult<PresetAssignmentListItem[]>> {
 	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		yield* _(authService.getSession());
-
-		const dbService = yield* _(DatabaseService);
+		const { actor, managedEmployeeIds, manageableTeamIds } = yield* _(
+			getScopedHolidayAccessContext(organizationId, "getPresetAssignments:actor"),
+		);
 
 		const assignments = yield* _(
-			dbService.query("getAssignments", async () => {
-				return await dbService.db
+			actor.dbService.query("getAssignments", async () => {
+				return await actor.dbService.db
 					.select({
 						id: holidayPresetAssignment.id,
 						presetId: holidayPresetAssignment.presetId,
@@ -999,10 +897,14 @@ export async function getPresetAssignments(
 			),
 		);
 
-		return assignments;
+		return filterPresetAssignmentsForScope(
+			assignments as PresetAssignmentListItem[],
+			manageableTeamIds,
+			managedEmployeeIds,
+		);
 	}).pipe(Effect.provide(AppLayer));
 
-	return runServerActionSafe(effect);
+	return runPresetServerAction(effect);
 }
 
 // ============================================
@@ -1017,45 +919,16 @@ export async function createPresetAssignment(
 	data: HolidayPresetAssignmentFormValues,
 ): Promise<ServerActionResult<typeof holidayPresetAssignment.$inferSelect>> {
 	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-
-		const dbService = yield* _(DatabaseService);
-
-		// Get employee to verify admin role
-		const employeeRecord = yield* _(
-			dbService.query("getEmployeeRecord", async () => {
-				const [emp] = await dbService.db
-					.select()
-					.from(employee)
-					.where(and(eq(employee.userId, session.user.id), eq(employee.isActive, true)))
-					.limit(1);
-
-				if (!emp) throw new Error("Employee not found");
-				return emp;
-			}),
-			Effect.mapError(
-				() =>
-					new NotFoundError({
-						message: "Employee profile not found",
-						entityType: "employee",
-					}),
-			),
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({ organizationId, queryName: "createPresetAssignment:actor" }),
 		);
-
-		// Check admin role
-		if (employeeRecord.role !== "admin") {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Admin access required",
-						userId: session.user.id,
-						resource: "holiday_preset_assignment",
-						action: "create",
-					}),
-				),
-			);
-		}
+		yield* _(
+			requireOrgAdminEmployeeSettingsAccess(actor, {
+				message: "Only org admins can create preset assignments",
+				resource: "holiday_preset_assignment",
+				action: "create",
+			}),
+		);
 
 		// Calculate priority based on assignment type
 		const priority =
@@ -1076,8 +949,8 @@ export async function createPresetAssignment(
 		}
 
 		const existing = yield* _(
-			dbService.query("checkExisting", async () => {
-				const [a] = await dbService.db
+			actor.dbService.query("checkExisting", async () => {
+				const [a] = await actor.dbService.db
 					.select()
 					.from(holidayPresetAssignment)
 					.where(and(...existingConditions))
@@ -1100,8 +973,8 @@ export async function createPresetAssignment(
 
 		// Create assignment
 		const newAssignment = yield* _(
-			dbService.query("createAssignment", async () => {
-				const [a] = await dbService.db
+			actor.dbService.query("createAssignment", async () => {
+				const [a] = await actor.dbService.db
 					.insert(holidayPresetAssignment)
 					.values({
 						presetId: data.presetId,
@@ -1113,7 +986,7 @@ export async function createPresetAssignment(
 						effectiveFrom: data.effectiveFrom || null,
 						effectiveUntil: data.effectiveUntil || null,
 						isActive: data.isActive ?? true,
-						createdBy: session.user.id,
+						createdBy: actor.session.user.id,
 					})
 					.returning();
 				return a;
@@ -1132,7 +1005,7 @@ export async function createPresetAssignment(
 		return newAssignment;
 	}).pipe(Effect.provide(AppLayer));
 
-	return runServerActionSafe(effect);
+	return runPresetServerAction(effect);
 }
 
 /**
@@ -1142,50 +1015,21 @@ export async function deletePresetAssignment(
 	assignmentId: string,
 ): Promise<ServerActionResult<void>> {
 	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-
-		const dbService = yield* _(DatabaseService);
-
-		// Get employee to verify admin role
-		const employeeRecord = yield* _(
-			dbService.query("getEmployeeRecord", async () => {
-				const [emp] = await dbService.db
-					.select()
-					.from(employee)
-					.where(and(eq(employee.userId, session.user.id), eq(employee.isActive, true)))
-					.limit(1);
-
-				if (!emp) throw new Error("Employee not found");
-				return emp;
-			}),
-			Effect.mapError(
-				() =>
-					new NotFoundError({
-						message: "Employee profile not found",
-						entityType: "employee",
-					}),
-			),
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({ queryName: "deletePresetAssignment:actor" }),
 		);
-
-		// Check admin role
-		if (employeeRecord.role !== "admin") {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Admin access required",
-						userId: session.user.id,
-						resource: "holiday_preset_assignment",
-						action: "delete",
-					}),
-				),
-			);
-		}
+		yield* _(
+			requireOrgAdminEmployeeSettingsAccess(actor, {
+				message: "Only org admins can delete preset assignments",
+				resource: "holiday_preset_assignment",
+				action: "delete",
+			}),
+		);
 
 		// Soft delete
 		yield* _(
-			dbService.query("deleteAssignment", async () => {
-				await dbService.db
+			actor.dbService.query("deleteAssignment", async () => {
+				await actor.dbService.db
 					.update(holidayPresetAssignment)
 					.set({ isActive: false })
 					.where(eq(holidayPresetAssignment.id, assignmentId));
@@ -1202,7 +1046,7 @@ export async function deletePresetAssignment(
 		);
 	}).pipe(Effect.provide(AppLayer));
 
-	return runServerActionSafe(effect);
+	return runPresetServerAction(effect);
 }
 
 // ============================================

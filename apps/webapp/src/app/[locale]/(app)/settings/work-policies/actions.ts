@@ -29,6 +29,22 @@ import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/resul
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
+import {
+	ensureSettingsActorCanAccessEmployeeTarget,
+	filterItemsToManagedEmployees,
+	getEmployeeSettingsActorContext,
+	getManagedEmployeeIdsForSettingsActor,
+	getOrganizationTeam,
+	getTargetEmployee,
+	requireSettingsActorEmployeeRecord,
+	requireOrgAdminEmployeeSettingsAccess,
+	requireSettingsActorEmployeeAssignmentAccess,
+	validateAssignmentTargetFields,
+} from "../employees/employee-action-utils";
+import {
+	canAccessWorkPolicyComplianceActions,
+	policyBelongsToOrganization,
+} from "./policy-scope";
 
 // ============================================
 // TYPES
@@ -137,25 +153,9 @@ export async function getWorkPolicies(
 	organizationId: string,
 ): Promise<ServerActionResult<WorkPolicyWithDetails[]>> {
 	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(organizationId)),
+		yield* _(
+			getEmployeeSettingsActorContext({ organizationId, queryName: "getWorkPolicies:actor" }),
 		);
-
-		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions",
-						userId: session.user.id,
-						resource: "work_policy",
-						action: "read",
-					}),
-				),
-			);
-		}
 
 		const dbService = yield* _(DatabaseService);
 		const policies = yield* _(
@@ -195,9 +195,6 @@ export async function getWorkPolicy(
 	policyId: string,
 ): Promise<ServerActionResult<WorkPolicyWithDetails | null>> {
 	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-
 		const dbService = yield* _(DatabaseService);
 		const policy = yield* _(
 			dbService.query("getWorkPolicy", async () => {
@@ -229,22 +226,9 @@ export async function getWorkPolicy(
 			return null;
 		}
 
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(policy.organizationId)),
+		yield* _(
+			getEmployeeSettingsActorContext({ organizationId: policy.organizationId, queryName: "getWorkPolicy:actor" }),
 		);
-
-		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions",
-						userId: session.user.id,
-						resource: "work_policy",
-						action: "read",
-					}),
-				),
-			);
-		}
 
 		return policy as WorkPolicyWithDetails;
 	}).pipe(Effect.provide(AppLayer));
@@ -852,10 +836,11 @@ export async function getWorkPolicyAssignments(
 	organizationId: string,
 ): Promise<ServerActionResult<WorkPolicyAssignmentWithDetails[]>> {
 	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const _session = yield* _(authService.getSession());
-
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({ organizationId, queryName: "getWorkPolicyAssignments:actor" }),
+		);
 		const dbService = yield* _(DatabaseService);
+		const managedEmployeeIds = yield* _(getManagedEmployeeIdsForSettingsActor(actor));
 		const assignments = yield* _(
 			dbService.query("getWorkPolicyAssignments", async () => {
 				return await dbService.db.query.workPolicyAssignment.findMany({
@@ -879,7 +864,16 @@ export async function getWorkPolicyAssignments(
 			}),
 		);
 
-		return assignments as WorkPolicyAssignmentWithDetails[];
+		const typedAssignments = assignments as WorkPolicyAssignmentWithDetails[];
+
+		if (!managedEmployeeIds) {
+			return typedAssignments;
+		}
+
+		return filterItemsToManagedEmployees(
+			typedAssignments.filter((assignment) => assignment.assignmentType === "employee"),
+			managedEmployeeIds,
+		) as WorkPolicyAssignmentWithDetails[];
 	}).pipe(Effect.provide(AppLayer));
 
 	return runServerActionSafe(effect);
@@ -895,37 +889,78 @@ export async function createWorkPolicyAssignment(
 	},
 ): Promise<ServerActionResult<{ id: string }>> {
 	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({ organizationId, queryName: "createWorkPolicyAssignment:actor" }),
+		);
+		yield* _(
+			requireSettingsActorEmployeeAssignmentAccess(actor, data.assignmentType, {
+				message: "Insufficient permissions",
+				resource: "work_policy_assignment",
+				action: "create",
+			}),
+		);
+		yield* _(validateAssignmentTargetFields(data.assignmentType, data));
+
+		if (data.assignmentType !== "employee") {
+			yield* _(
+				requireOrgAdminEmployeeSettingsAccess(actor, {
+					message: "Insufficient permissions",
+					resource: "work_policy_assignment",
+					action: "create",
+				}),
+			);
+		}
+
+		if (data.employeeId) {
+			const targetEmployee = yield* _(
+				getTargetEmployee(data.employeeId, "createWorkPolicyAssignment:getTargetEmployee"),
+			);
+			yield* _(
+				ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
+					message: "Insufficient permissions",
+					resource: "work_policy_assignment",
+					action: "create",
+				}),
+			);
+		}
+
+		if (data.assignmentType === "team" && data.teamId) {
+			yield* _(
+				getOrganizationTeam(
+					data.teamId,
+					actor.organizationId,
+					"createWorkPolicyAssignment:getOrganizationTeam",
+				),
+			);
+		}
 
 		const dbService = yield* _(DatabaseService);
-
-		const employeeRecord = yield* _(
-			dbService.query("getEmployeeRecord", async () => {
-				const [emp] = await dbService.db
-					.select()
-					.from(employee)
-					.where(and(eq(employee.userId, session.user.id), eq(employee.isActive, true)))
-					.limit(1);
-
-				if (!emp) throw new Error("Employee not found");
-				return emp;
+		const policy = yield* _(
+			dbService.query("getAssignmentPolicy", async () => {
+				return await dbService.db.query.workPolicy.findFirst({
+					where: eq(workPolicy.id, data.policyId),
+					columns: { id: true, organizationId: true },
+				});
 			}),
-			Effect.mapError(
-				() =>
-					new NotFoundError({
-						message: "Employee profile not found",
-						entityType: "employee",
-					}),
+			Effect.flatMap((value) =>
+				value
+					? Effect.succeed(value)
+					: Effect.fail(
+							new NotFoundError({
+								message: "Policy not found",
+								entityType: "work_policy",
+								entityId: data.policyId,
+							}),
+						),
 			),
 		);
 
-		if (employeeRecord.role !== "admin") {
-			yield* _(
+		if (!policyBelongsToOrganization(policy.organizationId, actor.organizationId)) {
+			return yield* _(
 				Effect.fail(
 					new AuthorizationError({
-						message: "Admin access required",
-						userId: session.user.id,
+						message: "Insufficient permissions",
+						userId: actor.session.user.id,
 						resource: "work_policy_assignment",
 						action: "create",
 					}),
@@ -948,7 +983,7 @@ export async function createWorkPolicyAssignment(
 						employeeId: data.employeeId ?? null,
 						priority,
 						isActive: true,
-						createdBy: session.user.id,
+						createdBy: actor.session.user.id,
 						updatedAt: currentTimestamp(),
 					})
 					.returning();
@@ -965,41 +1000,48 @@ export async function deleteWorkPolicyAssignment(
 	assignmentId: string,
 ): Promise<ServerActionResult<void>> {
 	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({ queryName: "deleteWorkPolicyAssignment:actor" }),
+		);
 
 		const dbService = yield* _(DatabaseService);
-
-		const employeeRecord = yield* _(
-			dbService.query("getEmployeeRecord", async () => {
-				const [emp] = await dbService.db
-					.select()
-					.from(employee)
-					.where(and(eq(employee.userId, session.user.id), eq(employee.isActive, true)))
-					.limit(1);
-
-				if (!emp) throw new Error("Employee not found");
-				return emp;
+		const assignment = yield* _(
+			dbService.query("getExistingAssignment", async () => {
+				return await dbService.db.query.workPolicyAssignment.findFirst({
+					where: eq(workPolicyAssignment.id, assignmentId),
+				});
 			}),
-			Effect.mapError(
-				() =>
-					new NotFoundError({
-						message: "Employee profile not found",
-						entityType: "employee",
-					}),
+			Effect.flatMap((value) =>
+				value
+					? Effect.succeed(value)
+					: Effect.fail(
+							new NotFoundError({
+								message: "Work policy assignment not found",
+								entityType: "work_policy_assignment",
+								entityId: assignmentId,
+							}),
+						),
 			),
 		);
 
-		if (employeeRecord.role !== "admin") {
+		yield* _(
+			requireSettingsActorEmployeeAssignmentAccess(actor, assignment.assignmentType, {
+				message: "Insufficient permissions",
+				resource: "work_policy_assignment",
+				action: "delete",
+			}),
+		);
+
+		if (assignment.employeeId) {
+			const targetEmployee = yield* _(
+				getTargetEmployee(assignment.employeeId, "deleteWorkPolicyAssignment:getTargetEmployee"),
+			);
 			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Admin access required",
-						userId: session.user.id,
-						resource: "work_policy_assignment",
-						action: "delete",
-					}),
-				),
+				ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
+					message: "Insufficient permissions",
+					resource: "work_policy_assignment",
+					action: "delete",
+				}),
 			);
 		}
 
@@ -1011,7 +1053,7 @@ export async function deleteWorkPolicyAssignment(
 					.where(
 						and(
 							eq(workPolicyAssignment.id, assignmentId),
-							eq(workPolicyAssignment.organizationId, employeeRecord.organizationId),
+							eq(workPolicyAssignment.organizationId, actor.organizationId),
 						),
 					);
 			}),
@@ -1058,8 +1100,22 @@ export async function getWorkPolicyViolations(
 	endDate: Date,
 ): Promise<ServerActionResult<WorkPolicyViolationWithDetails[]>> {
 	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const _session = yield* _(authService.getSession());
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({ organizationId, queryName: "getWorkPolicyViolations:actor" }),
+		);
+
+		if (!canAccessWorkPolicyComplianceActions(actor.accessTier)) {
+			return yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Insufficient permissions",
+						userId: actor.session.user.id,
+						resource: "work_policy_violation",
+						action: "read",
+					}),
+				),
+			);
+		}
 
 		const dbService = yield* _(DatabaseService);
 		const violations = yield* _(
@@ -1094,29 +1150,30 @@ export async function acknowledgeWorkPolicyViolation(
 	note?: string,
 ): Promise<ServerActionResult<void>> {
 	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({ queryName: "acknowledgeWorkPolicyViolation:actor" }),
+		);
+
+		if (!canAccessWorkPolicyComplianceActions(actor.accessTier)) {
+			return yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Insufficient permissions",
+						userId: actor.session.user.id,
+						resource: "work_policy_violation",
+						action: "update",
+					}),
+				),
+			);
+		}
 
 		const dbService = yield* _(DatabaseService);
-
 		const employeeRecord = yield* _(
-			dbService.query("getEmployeeRecord", async () => {
-				const [emp] = await dbService.db
-					.select()
-					.from(employee)
-					.where(and(eq(employee.userId, session.user.id), eq(employee.isActive, true)))
-					.limit(1);
-
-				if (!emp) throw new Error("Employee not found");
-				return emp;
+			requireSettingsActorEmployeeRecord(actor, {
+				message: "Employee profile not found",
+				resource: "employee",
+				action: "update",
 			}),
-			Effect.mapError(
-				() =>
-					new NotFoundError({
-						message: "Employee profile not found",
-						entityType: "employee",
-					}),
-			),
 		);
 
 		yield* _(
@@ -1638,10 +1695,11 @@ export async function getEmployeesForAssignment(organizationId: string): Promise
 	>
 > {
 	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const _session = yield* _(authService.getSession());
-
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({ organizationId, queryName: "getEmployeesForAssignment:actor" }),
+		);
 		const dbService = yield* _(DatabaseService);
+		const managedEmployeeIds = yield* _(getManagedEmployeeIdsForSettingsActor(actor));
 		const employees = yield* _(
 			dbService.query("getEmployeesForAssignment", async () => {
 				return await dbService.db.query.employee.findMany({
@@ -1652,7 +1710,11 @@ export async function getEmployeesForAssignment(organizationId: string): Promise
 			}),
 		);
 
-		return employees;
+		if (!managedEmployeeIds) {
+			return employees;
+		}
+
+		return employees.filter((employeeRecord) => managedEmployeeIds.has(employeeRecord.id));
 	}).pipe(Effect.provide(AppLayer));
 
 	return runServerActionSafe(effect);

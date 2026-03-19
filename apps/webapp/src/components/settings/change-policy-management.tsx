@@ -13,9 +13,10 @@ import { ChangePolicyTable } from "./change-policy-table";
 
 interface ChangePolicyManagementProps {
 	organizationId: string;
+	canManage: boolean;
 }
 
-export function ChangePolicyManagement({ organizationId }: ChangePolicyManagementProps) {
+export function ChangePolicyManagement({ organizationId, canManage }: ChangePolicyManagementProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 
@@ -86,6 +87,7 @@ export function ChangePolicyManagement({ organizationId }: ChangePolicyManagemen
 
 				<TabsContent value="policies" className="space-y-4">
 					<ChangePolicyTable
+						canManage={canManage}
 						organizationId={organizationId}
 						onCreateClick={handleCreatePolicy}
 						onEditClick={handleEditPolicy}
@@ -94,27 +96,32 @@ export function ChangePolicyManagement({ organizationId }: ChangePolicyManagemen
 
 				<TabsContent value="assignments" className="space-y-4">
 					<ChangePolicyAssignmentManager
+						canManage={canManage}
 						organizationId={organizationId}
 						onAssignClick={handleAssignClick}
 					/>
 				</TabsContent>
 			</Tabs>
 
-			<ChangePolicyDialog
-				open={policyDialogOpen}
-				onOpenChange={setPolicyDialogOpen}
-				organizationId={organizationId}
-				editingPolicy={editingPolicy}
-				onSuccess={handlePolicySuccess}
-			/>
+			{canManage ? (
+				<>
+					<ChangePolicyDialog
+						open={policyDialogOpen}
+						onOpenChange={setPolicyDialogOpen}
+						organizationId={organizationId}
+						editingPolicy={editingPolicy}
+						onSuccess={handlePolicySuccess}
+					/>
 
-			<ChangePolicyAssignmentDialog
-				open={assignmentDialogOpen}
-				onOpenChange={setAssignmentDialogOpen}
-				organizationId={organizationId}
-				assignmentType={assignmentType}
-				onSuccess={handleAssignmentSuccess}
-			/>
+					<ChangePolicyAssignmentDialog
+						open={assignmentDialogOpen}
+						onOpenChange={setAssignmentDialogOpen}
+						organizationId={organizationId}
+						assignmentType={assignmentType}
+						onSuccess={handleAssignmentSuccess}
+					/>
+				</>
+			) : null}
 		</div>
 	);
 }

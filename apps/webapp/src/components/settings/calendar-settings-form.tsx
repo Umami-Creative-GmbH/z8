@@ -6,6 +6,7 @@ import {
 	IconCalendarShare,
 	IconInfoCircle,
 	IconLoader2,
+	IconLock,
 	IconUsers,
 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
@@ -17,6 +18,7 @@ import {
 	updateCalendarSettings,
 	type CalendarSettings,
 	type CalendarSettingsFormValues,
+	type ManagerCalendarReadView,
 } from "@/app/[locale]/(app)/settings/calendar/actions";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -28,25 +30,52 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 
 interface CalendarSettingsFormProps {
-	initialSettings: CalendarSettings;
+	initialSettings: CalendarSettings | ManagerCalendarReadView;
+	canManage: boolean;
 }
 
-export function CalendarSettingsForm({ initialSettings }: CalendarSettingsFormProps) {
+export function CalendarSettingsForm({ initialSettings, canManage }: CalendarSettingsFormProps) {
 	const { t } = useTranslate();
 	const [loading, setLoading] = useState(false);
+	const controlsDisabled = loading || !canManage;
+	const relevantConnections = initialSettings.relevantConnections;
+
+	if (!canManage) {
+		return (
+			<div className="space-y-6">
+				<Alert>
+					<IconLock className="h-4 w-4" aria-hidden="true" />
+					<AlertDescription>
+						{t(
+							"settings.calendar.readOnlyManagerNotice",
+							"Managers can review calendar sync coverage for their teams, areas, and projects, but only organization admins can change these settings.",
+						)}
+					</AlertDescription>
+				</Alert>
+
+				<CalendarConnectionsCard relevantConnections={relevantConnections} />
+			</div>
+		);
+	}
+
+	const manageableSettings = initialSettings as CalendarSettings;
 
 	const form = useForm({
 		defaultValues: {
-			googleEnabled: initialSettings.googleEnabled,
-			microsoft365Enabled: initialSettings.microsoft365Enabled,
-			icsFeedsEnabled: initialSettings.icsFeedsEnabled,
-			teamIcsFeedsEnabled: initialSettings.teamIcsFeedsEnabled,
-			autoSyncOnApproval: initialSettings.autoSyncOnApproval,
-			conflictDetectionRequired: initialSettings.conflictDetectionRequired,
-			eventTitleTemplate: initialSettings.eventTitleTemplate,
-			eventDescriptionTemplate: initialSettings.eventDescriptionTemplate,
+			googleEnabled: manageableSettings.googleEnabled,
+			microsoft365Enabled: manageableSettings.microsoft365Enabled,
+			icsFeedsEnabled: manageableSettings.icsFeedsEnabled,
+			teamIcsFeedsEnabled: manageableSettings.teamIcsFeedsEnabled,
+			autoSyncOnApproval: manageableSettings.autoSyncOnApproval,
+			conflictDetectionRequired: manageableSettings.conflictDetectionRequired,
+			eventTitleTemplate: manageableSettings.eventTitleTemplate,
+			eventDescriptionTemplate: manageableSettings.eventDescriptionTemplate,
 		},
 		onSubmit: async ({ value }) => {
+			if (!canManage) {
+				return;
+			}
+
 			setLoading(true);
 
 			const result = await updateCalendarSettings(value);
@@ -74,6 +103,8 @@ export function CalendarSettingsForm({ initialSettings }: CalendarSettingsFormPr
 			}}
 			className="space-y-6"
 		>
+			<CalendarConnectionsCard relevantConnections={relevantConnections} />
+
 			{/* Calendar Providers */}
 			<Card>
 				<CardHeader>
@@ -100,7 +131,7 @@ export function CalendarSettingsForm({ initialSettings }: CalendarSettingsFormPr
 									<span id="google-calendar-label" className="font-medium">
 										{t("settings.calendar.providers.google", "Google Calendar")}
 									</span>
-									{!initialSettings.googleAvailable && (
+									{!manageableSettings.googleAvailable && (
 										<Badge variant="secondary" className="text-xs">
 											{t("settings.calendar.notConfigured", "Not Configured")}
 										</Badge>
@@ -119,7 +150,7 @@ export function CalendarSettingsForm({ initialSettings }: CalendarSettingsFormPr
 								<Switch
 									checked={field.state.value}
 									onCheckedChange={field.handleChange}
-									disabled={loading || !initialSettings.googleAvailable}
+									disabled={controlsDisabled || !manageableSettings.googleAvailable}
 									aria-labelledby="google-calendar-label"
 									aria-describedby="google-calendar-desc"
 								/>
@@ -138,7 +169,7 @@ export function CalendarSettingsForm({ initialSettings }: CalendarSettingsFormPr
 									<span id="microsoft-calendar-label" className="font-medium">
 										{t("settings.calendar.providers.microsoft", "Microsoft 365")}
 									</span>
-									{!initialSettings.microsoft365Available && (
+									{!manageableSettings.microsoft365Available && (
 										<Badge variant="secondary" className="text-xs">
 											{t("settings.calendar.notConfigured", "Not Configured")}
 										</Badge>
@@ -157,7 +188,7 @@ export function CalendarSettingsForm({ initialSettings }: CalendarSettingsFormPr
 								<Switch
 									checked={field.state.value}
 									onCheckedChange={field.handleChange}
-									disabled={loading || !initialSettings.microsoft365Available}
+									disabled={controlsDisabled || !manageableSettings.microsoft365Available}
 									aria-labelledby="microsoft-calendar-label"
 									aria-describedby="microsoft-calendar-desc"
 								/>
@@ -165,7 +196,7 @@ export function CalendarSettingsForm({ initialSettings }: CalendarSettingsFormPr
 						</form.Field>
 					</div>
 
-					{!initialSettings.googleAvailable && !initialSettings.microsoft365Available && (
+					{!manageableSettings.googleAvailable && !manageableSettings.microsoft365Available && (
 						<Alert>
 							<IconInfoCircle className="h-4 w-4" aria-hidden="true" />
 							<AlertDescription>
@@ -217,7 +248,7 @@ export function CalendarSettingsForm({ initialSettings }: CalendarSettingsFormPr
 								<Switch
 									checked={field.state.value}
 									onCheckedChange={field.handleChange}
-									disabled={loading}
+									disabled={controlsDisabled}
 									aria-labelledby="personal-ics-label"
 									aria-describedby="personal-ics-desc"
 								/>
@@ -248,7 +279,7 @@ export function CalendarSettingsForm({ initialSettings }: CalendarSettingsFormPr
 								<Switch
 									checked={field.state.value}
 									onCheckedChange={field.handleChange}
-									disabled={loading}
+									disabled={controlsDisabled}
 									aria-labelledby="team-ics-label"
 									aria-describedby="team-ics-desc"
 								/>
@@ -288,7 +319,7 @@ export function CalendarSettingsForm({ initialSettings }: CalendarSettingsFormPr
 								<Switch
 									checked={field.state.value}
 									onCheckedChange={field.handleChange}
-									disabled={loading}
+									disabled={controlsDisabled}
 									aria-labelledby="auto-sync-label"
 									aria-describedby="auto-sync-desc"
 								/>
@@ -316,7 +347,7 @@ export function CalendarSettingsForm({ initialSettings }: CalendarSettingsFormPr
 								<Switch
 									checked={field.state.value}
 									onCheckedChange={field.handleChange}
-									disabled={loading}
+									disabled={controlsDisabled}
 									aria-labelledby="conflict-check-label"
 									aria-describedby="conflict-check-desc"
 								/>
@@ -352,7 +383,7 @@ export function CalendarSettingsForm({ initialSettings }: CalendarSettingsFormPr
 									value={field.state.value}
 									onChange={(e) => field.handleChange(e.target.value)}
 									placeholder="Out of Office - {categoryName}"
-									disabled={loading}
+									disabled={controlsDisabled}
 								/>
 								<p className="text-xs text-muted-foreground">
 									{t(
@@ -382,7 +413,7 @@ export function CalendarSettingsForm({ initialSettings }: CalendarSettingsFormPr
 										"settings.calendar.customization.descriptionPlaceholder",
 										"Absence recorded in Z8",
 									)}
-									disabled={loading}
+									disabled={controlsDisabled}
 									rows={3}
 								/>
 							</div>
@@ -393,11 +424,68 @@ export function CalendarSettingsForm({ initialSettings }: CalendarSettingsFormPr
 
 			{/* Save Button */}
 			<div className="flex justify-end">
-				<Button type="submit" disabled={loading || !isDirty}>
+				<Button type="submit" disabled={controlsDisabled || !isDirty}>
 					{loading && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />}
 					{t("common.saveChanges", "Save Changes")}
 				</Button>
 			</div>
 		</form>
+	);
+}
+
+function CalendarConnectionsCard({
+	relevantConnections,
+}: {
+	relevantConnections: ManagerCalendarReadView["relevantConnections"];
+}) {
+	const { t } = useTranslate();
+
+	return (
+		<Card>
+			<CardHeader>
+				<CardTitle>{t("settings.calendar.integrations.title", "Relevant Integrations")}</CardTitle>
+				<CardDescription>
+					{t(
+						"settings.calendar.integrations.description",
+						"Connected employee calendars that fall inside your current settings scope.",
+					)}
+				</CardDescription>
+			</CardHeader>
+			<CardContent className="space-y-3">
+				{relevantConnections.length === 0 ? (
+					<p className="text-sm text-muted-foreground">
+						{t(
+							"settings.calendar.integrations.empty",
+							"No calendar integrations are available in your current scope yet.",
+						)}
+					</p>
+				) : (
+					relevantConnections.map((connection) => (
+						<div
+							key={connection.id}
+							className="flex flex-col gap-2 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between"
+						>
+							<div className="space-y-1">
+								<p className="font-medium">{connection.employeeName}</p>
+								<p className="text-sm text-muted-foreground">{connection.providerAccountId}</p>
+							</div>
+							<div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+								<Badge variant="outline">{connection.providerLabel}</Badge>
+								<Badge variant={connection.pushEnabled ? "default" : "secondary"}>
+									{connection.pushEnabled
+										? t("settings.calendar.integrations.pushOn", "Push on")
+										: t("settings.calendar.integrations.pushOff", "Push off")}
+								</Badge>
+								{connection.lastSyncError && (
+									<Badge variant="destructive">
+										{t("settings.calendar.integrations.needsAttention", "Needs attention")}
+									</Badge>
+								)}
+							</div>
+						</div>
+					))
+				)}
+			</CardContent>
+		</Card>
 	);
 }

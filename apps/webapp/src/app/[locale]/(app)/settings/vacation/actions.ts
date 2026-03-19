@@ -3,8 +3,6 @@
 import { and, desc, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { revalidateTag } from "next/cache";
-import { headers } from "next/headers";
-import { db } from "@/db";
 import {
 	employee,
 	employeeVacationAllowance,
@@ -13,8 +11,6 @@ import {
 } from "@/db/schema";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
 import { CACHE_TAGS } from "@/lib/cache/tags";
-import { auth } from "@/lib/auth";
-import { isManagerOf, isOrgAdminCasl } from "@/lib/auth-helpers";
 import {
 	AuthorizationError,
 	ConflictError,
@@ -23,33 +19,15 @@ import {
 } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
-import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
-
-/**
- * Get current employee from session
- */
-async function _getCurrentEmployee() {
-	const session = await auth.api.getSession({ headers: await headers() });
-	if (!session?.user) {
-		return null;
-	}
-
-	const emp = await db.query.employee.findFirst({
-		where: eq(employee.userId, session.user.id),
-		with: {
-			user: {
-				with: {
-					members: true,
-				},
-			},
-		},
-	});
-
-	return emp;
-}
-
-// Using isOrgAdminCasl from auth-helpers for CASL-based authorization
+import {
+	ensureSettingsActorCanAccessEmployeeTarget,
+	getEmployeeSettingsActorContext,
+	getManagedEmployeeIdsForSettingsActor,
+	requireSettingsActorEmployeeRecord,
+	getTargetEmployee,
+	requireOrgAdminEmployeeSettingsAccess,
+} from "../employees/employee-action-utils";
 
 /**
  * Get a vacation policy by ID using Effect pattern
@@ -58,14 +36,9 @@ export async function getVacationPolicy(
 	policyId: string,
 ): Promise<ServerActionResult<typeof vacationAllowance.$inferSelect | null>> {
 	const effect = Effect.gen(function* (_) {
-		// Step 1: Get session via AuthService
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-
-		// Step 2: Get database service
+		const actor = yield* _(getEmployeeSettingsActorContext({ queryName: "getVacationPolicy:actor" }));
 		const dbService = yield* _(DatabaseService);
 
-		// Step 3: Get vacation policy
 		const policy = yield* _(
 			dbService.query("getVacationPolicy", async () => {
 				return await dbService.db.query.vacationAllowance.findFirst({
@@ -81,17 +54,12 @@ export async function getVacationPolicy(
 			return null;
 		}
 
-		// Step 4: Verify user is org admin
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(policy.organizationId)),
-		);
-
-		if (!hasPermission) {
+		if (actor.organizationId !== policy.organizationId) {
 			yield* _(
 				Effect.fail(
 					new AuthorizationError({
 						message: "Insufficient permissions",
-						userId: session.user.id,
+						userId: actor.session.user.id,
 						resource: "vacation_policy",
 						action: "read",
 					}),
@@ -112,21 +80,16 @@ export async function getCompanyDefaultVacationPolicy(
 	organizationId: string,
 ): Promise<ServerActionResult<typeof vacationAllowance.$inferSelect | null>> {
 	const effect = Effect.gen(function* (_) {
-		// Step 1: Get session via AuthService
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-
-		// Step 2: Verify user is org admin
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(organizationId)),
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({ organizationId, queryName: "getCompanyDefaultVacationPolicy:actor" }),
 		);
 
-		if (!hasPermission) {
+		if (actor.organizationId !== organizationId) {
 			yield* _(
 				Effect.fail(
 					new AuthorizationError({
 						message: "Insufficient permissions",
-						userId: session.user.id,
+						userId: actor.session.user.id,
 						resource: "vacation_policy",
 						action: "read",
 					}),
@@ -178,50 +141,18 @@ export async function createVacationPolicy(data: {
 	carryoverExpiryMonths?: number;
 }): Promise<ServerActionResult<typeof vacationAllowance.$inferSelect>> {
 	const effect = Effect.gen(function* (_) {
-		// Step 1: Get session via AuthService
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-
-		// Step 2: Get current employee
-		const dbService = yield* _(DatabaseService);
-		const _currentEmployee = yield* _(
-			dbService.query("getCurrentEmployee", async () => {
-				const emp = await dbService.db.query.employee.findFirst({
-					where: eq(employee.userId, session.user.id),
-				});
-
-				if (!emp) {
-					throw new Error("Employee not found");
-				}
-
-				return emp;
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({ organizationId: data.organizationId, queryName: "createVacationPolicy:actor" }),
+		);
+		yield* _(
+			requireOrgAdminEmployeeSettingsAccess(actor, {
+				message: "Insufficient permissions",
+				resource: "vacation_policy",
+				action: "create",
 			}),
-			Effect.mapError(
-				() =>
-					new NotFoundError({
-						message: "Employee profile not found",
-						entityType: "employee",
-					}),
-			),
 		);
 
-		// Step 3: Verify user is org admin
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(data.organizationId)),
-		);
-
-		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions",
-						userId: session.user.id,
-						resource: "vacation_policy",
-						action: "create",
-					}),
-				),
-			);
-		}
+		const dbService = yield* _(DatabaseService);
 
 		// Step 4: If this is a company default, close the previous default
 		if (data.isCompanyDefault) {
@@ -273,7 +204,7 @@ export async function createVacationPolicy(data: {
 						allowCarryover: data.allowCarryover,
 						maxCarryoverDays: data.maxCarryoverDays,
 						carryoverExpiryMonths: data.carryoverExpiryMonths,
-						createdBy: session.user.id,
+						createdBy: actor.session.user.id,
 					})
 					.returning();
 			}),
@@ -315,11 +246,7 @@ export async function updateVacationPolicy(
 	},
 ): Promise<ServerActionResult<typeof vacationAllowance.$inferSelect>> {
 	const effect = Effect.gen(function* (_) {
-		// Step 1: Get session via AuthService
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-
-		// Step 2: Get database service
+		const actor = yield* _(getEmployeeSettingsActorContext({ queryName: "updateVacationPolicy:actor" }));
 		const dbService = yield* _(DatabaseService);
 
 		// Step 3: Get the policy to check permissions
@@ -345,23 +272,13 @@ export async function updateVacationPolicy(
 			),
 		);
 
-		// Step 4: Verify user is org admin
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(policy.organizationId)),
+		yield* _(
+			requireOrgAdminEmployeeSettingsAccess(actor, {
+				message: "Insufficient permissions",
+				resource: "vacation_policy",
+				action: "update",
+			}),
 		);
-
-		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions",
-						userId: session.user.id,
-						resource: "vacation_policy",
-						action: "update",
-					}),
-				),
-			);
-		}
 
 		// Step 5: If setting as company default, unset previous default
 		if (data.isCompanyDefault && !policy.isCompanyDefault) {
@@ -428,30 +345,11 @@ export async function getEmployeesWithAllowances(
 	year: number,
 ): Promise<ServerActionResult<any[]>> {
 	const effect = Effect.gen(function* (_) {
-		// Step 1: Get session via AuthService
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-
-		// Step 2: Verify user is org admin
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(organizationId)),
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({ organizationId, queryName: "getEmployeesWithAllowances:actor" }),
 		);
-
-		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions",
-						userId: session.user.id,
-						resource: "employee_allowances",
-						action: "read",
-					}),
-				),
-			);
-		}
-
-		// Step 3: Get employees with allowances
 		const dbService = yield* _(DatabaseService);
+		const managedEmployeeIds = yield* _(getManagedEmployeeIdsForSettingsActor(actor));
 		const employees = yield* _(
 			dbService.query("getEmployeesWithAllowances", async () => {
 				return await dbService.db.query.employee.findMany({
@@ -467,7 +365,11 @@ export async function getEmployeesWithAllowances(
 			}),
 		);
 
-		return employees;
+		if (!managedEmployeeIds) {
+			return employees;
+		}
+
+		return employees.filter((employeeRecord) => managedEmployeeIds.has(employeeRecord.id));
 	}).pipe(Effect.provide(AppLayer));
 
 	return runServerActionSafe(effect);
@@ -481,11 +383,7 @@ export async function getEmployeeAllowance(
 	year: number,
 ): Promise<ServerActionResult<any | null>> {
 	const effect = Effect.gen(function* (_) {
-		// Step 1: Get session via AuthService
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-
-		// Step 2: Get database service
+		const actor = yield* _(getEmployeeSettingsActorContext({ queryName: "getEmployeeAllowance:actor" }));
 		const dbService = yield* _(DatabaseService);
 
 		// Step 3: Get employee
@@ -518,44 +416,13 @@ export async function getEmployeeAllowance(
 			),
 		);
 
-		// Step 4: Get current employee for permission check
-		const currentEmployee = yield* _(
-			dbService.query("getCurrentEmployee", async () => {
-				const curr = await dbService.db.query.employee.findFirst({
-					where: eq(employee.userId, session.user.id),
-				});
-
-				if (!curr) {
-					throw new Error("Current employee not found");
-				}
-
-				return curr;
+		yield* _(
+			ensureSettingsActorCanAccessEmployeeTarget(actor, emp, {
+				message: "Insufficient permissions",
+				resource: "employee_allowance",
+				action: "read",
 			}),
-			Effect.mapError(
-				() =>
-					new NotFoundError({
-						message: "Employee profile not found",
-						entityType: "employee",
-					}),
-			),
 		);
-
-		// Step 5: Verify user is org admin or manager of this employee
-		const isAdmin = yield* _(Effect.promise(() => isOrgAdminCasl(emp.organizationId)));
-		const isManager = yield* _(Effect.promise(() => isManagerOf(emp.id)));
-
-		if (!isAdmin && !isManager && currentEmployee.role !== "admin") {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions",
-						userId: session.user.id,
-						resource: "employee_allowance",
-						action: "read",
-					}),
-				),
-			);
-		}
 
 		return emp;
 	}).pipe(Effect.provide(AppLayer));
@@ -575,74 +442,17 @@ export async function updateEmployeeAllowance(
 	},
 ): Promise<ServerActionResult<typeof employeeVacationAllowance.$inferSelect>> {
 	const effect = Effect.gen(function* (_) {
-		// Step 1: Get session via AuthService
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-
-		// Step 2: Get database service
+		const actor = yield* _(getEmployeeSettingsActorContext({ queryName: "updateEmployeeAllowance:actor" }));
 		const dbService = yield* _(DatabaseService);
 
-		// Step 3: Get current employee
-		const currentEmployee = yield* _(
-			dbService.query("getCurrentEmployee", async () => {
-				const curr = await dbService.db.query.employee.findFirst({
-					where: eq(employee.userId, session.user.id),
-				});
-
-				if (!curr) {
-					throw new Error("Employee not found");
-				}
-
-				return curr;
+		const emp = yield* _(getTargetEmployee(employeeId, "updateEmployeeAllowance:getTargetEmployee"));
+		yield* _(
+			ensureSettingsActorCanAccessEmployeeTarget(actor, emp, {
+				message: "Insufficient permissions",
+				resource: "employee_allowance",
+				action: "update",
 			}),
-			Effect.mapError(
-				() =>
-					new NotFoundError({
-						message: "Employee profile not found",
-						entityType: "employee",
-					}),
-			),
 		);
-
-		// Step 4: Get target employee
-		const emp = yield* _(
-			dbService.query("getTargetEmployee", async () => {
-				const e = await dbService.db.query.employee.findFirst({
-					where: eq(employee.id, employeeId),
-				});
-
-				if (!e) {
-					throw new Error("Employee not found");
-				}
-
-				return e;
-			}),
-			Effect.mapError(
-				() =>
-					new NotFoundError({
-						message: "Employee not found",
-						entityType: "employee",
-						entityId: employeeId,
-					}),
-			),
-		);
-
-		// Step 5: Verify user is org admin or manager of this employee
-		const isAdmin = yield* _(Effect.promise(() => isOrgAdminCasl(emp.organizationId)));
-		const isManager = yield* _(Effect.promise(() => isManagerOf(emp.id)));
-
-		if (!isAdmin && !isManager && currentEmployee.role !== "admin") {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions",
-						userId: session.user.id,
-						resource: "employee_allowance",
-						action: "update",
-					}),
-				),
-			);
-		}
 
 		// Step 6: Check if allowance exists
 		const existing = yield* _(
@@ -713,74 +523,28 @@ export async function createVacationAdjustmentAction(
 	},
 ): Promise<ServerActionResult<typeof vacationAdjustment.$inferSelect>> {
 	const effect = Effect.gen(function* (_) {
-		// Step 1: Get session via AuthService
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-
-		// Step 2: Get database service
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({ queryName: "createVacationAdjustmentAction:actor" }),
+		);
 		const dbService = yield* _(DatabaseService);
 
-		// Step 3: Get current employee
-		const currentEmployee = yield* _(
-			dbService.query("getCurrentEmployee", async () => {
-				const curr = await dbService.db.query.employee.findFirst({
-					where: eq(employee.userId, session.user.id),
-				});
-
-				if (!curr) {
-					throw new Error("Employee not found");
-				}
-
-				return curr;
-			}),
-			Effect.mapError(
-				() =>
-					new NotFoundError({
-						message: "Employee profile not found",
-						entityType: "employee",
-					}),
-			),
-		);
-
-		// Step 4: Get target employee
 		const emp = yield* _(
-			dbService.query("getTargetEmployee", async () => {
-				const e = await dbService.db.query.employee.findFirst({
-					where: eq(employee.id, employeeId),
-				});
-
-				if (!e) {
-					throw new Error("Employee not found");
-				}
-
-				return e;
-			}),
-			Effect.mapError(
-				() =>
-					new NotFoundError({
-						message: "Employee not found",
-						entityType: "employee",
-						entityId: employeeId,
-					}),
-			),
+			getTargetEmployee(employeeId, "createVacationAdjustmentAction:getTargetEmployee"),
 		);
-
-		// Step 5: Verify user is org admin or manager of this employee
-		const isAdmin = yield* _(Effect.promise(() => isOrgAdminCasl(emp.organizationId)));
-		const isManager = yield* _(Effect.promise(() => isManagerOf(emp.id)));
-
-		if (!isAdmin && !isManager && currentEmployee.role !== "admin") {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions",
-						userId: session.user.id,
-						resource: "vacation_adjustment",
-						action: "create",
-					}),
-				),
-			);
-		}
+		const actorEmployee = yield* _(
+			requireSettingsActorEmployeeRecord(actor, {
+				message: "Employee profile not found for vacation adjustment",
+				resource: "employee",
+				action: "create",
+			}),
+		);
+		yield* _(
+			ensureSettingsActorCanAccessEmployeeTarget(actor, emp, {
+				message: "Insufficient permissions",
+				resource: "vacation_adjustment",
+				action: "create",
+			}),
+		);
 
 		// Step 6: Create the adjustment event
 		const adjustment = yield* _(
@@ -792,7 +556,7 @@ export async function createVacationAdjustmentAction(
 						year,
 						days: data.days,
 						reason: data.reason,
-						adjustedBy: currentEmployee.id,
+						adjustedBy: actorEmployee.id,
 					})
 					.returning();
 				return created;
@@ -813,8 +577,8 @@ export async function createVacationAdjustmentAction(
 			Effect.promise(async () => {
 				await logAudit({
 					action: AuditAction.VACATION_ALLOWANCE_UPDATED,
-					actorId: session.user.id,
-					actorEmail: session.user.email,
+					actorId: actor.session.user.id,
+					actorEmail: actor.session.user.email,
 					targetId: employeeId,
 					targetType: "vacation",
 					organizationId: emp.organizationId,
@@ -846,29 +610,9 @@ export async function getVacationPolicies(
 	organizationId: string,
 ): Promise<ServerActionResult<(typeof vacationAllowance.$inferSelect)[]>> {
 	const effect = Effect.gen(function* (_) {
-		// Step 1: Get session via AuthService
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-
-		// Step 2: Verify user is org admin
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(organizationId)),
+		yield* _(
+			getEmployeeSettingsActorContext({ organizationId, queryName: "getVacationPolicies:actor" }),
 		);
-
-		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions",
-						userId: session.user.id,
-						resource: "vacation_policies",
-						action: "read",
-					}),
-				),
-			);
-		}
-
-		// Step 3: Get all active vacation policies, ordered by startDate descending
 		const dbService = yield* _(DatabaseService);
 		const policies = yield* _(
 			dbService.query("getVacationPolicies", async () => {
@@ -910,11 +654,7 @@ export async function getVacationPolicyYears(
  */
 export async function deleteVacationPolicy(policyId: string): Promise<ServerActionResult<void>> {
 	const effect = Effect.gen(function* (_) {
-		// Step 1: Get session via AuthService
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-
-		// Step 2: Get database service
+		const actor = yield* _(getEmployeeSettingsActorContext({ queryName: "deleteVacationPolicy:actor" }));
 		const dbService = yield* _(DatabaseService);
 
 		// Step 3: Get the policy to check permissions
@@ -940,23 +680,13 @@ export async function deleteVacationPolicy(policyId: string): Promise<ServerActi
 			),
 		);
 
-		// Step 4: Verify user is org admin
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(policy.organizationId)),
+		yield* _(
+			requireOrgAdminEmployeeSettingsAccess(actor, {
+				message: "Insufficient permissions",
+				resource: "vacation_policy",
+				action: "delete",
+			}),
 		);
-
-		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions",
-						userId: session.user.id,
-						resource: "vacation_policy",
-						action: "delete",
-					}),
-				),
-			);
-		}
 
 		// Step 5: Prevent deleting the only active company default
 		if (policy.isCompanyDefault) {
@@ -1020,52 +750,21 @@ export async function getEmployeeAdjustmentTotal(
 	year: number,
 ): Promise<ServerActionResult<number>> {
 	const effect = Effect.gen(function* (_) {
-		// Step 1: Get session via AuthService
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-
-		// Step 2: Get database service
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({ queryName: "getEmployeeAdjustmentTotal:actor" }),
+		);
 		const dbService = yield* _(DatabaseService);
 
-		// Step 3: Get target employee for permission check
 		const emp = yield* _(
-			dbService.query("getTargetEmployee", async () => {
-				const e = await dbService.db.query.employee.findFirst({
-					where: eq(employee.id, employeeId),
-				});
-
-				if (!e) {
-					throw new Error("Employee not found");
-				}
-
-				return e;
-			}),
-			Effect.mapError(
-				() =>
-					new NotFoundError({
-						message: "Employee not found",
-						entityType: "employee",
-						entityId: employeeId,
-					}),
-			),
+			getTargetEmployee(employeeId, "getEmployeeAdjustmentTotal:getTargetEmployee"),
 		);
-
-		// Step 4: Verify user is org admin or manager
-		const isAdmin = yield* _(Effect.promise(() => isOrgAdminCasl(emp.organizationId)));
-		const isManager = yield* _(Effect.promise(() => isManagerOf(emp.id)));
-
-		if (!isAdmin && !isManager) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions",
-						userId: session.user.id,
-						resource: "vacation_adjustment",
-						action: "read",
-					}),
-				),
-			);
-		}
+		yield* _(
+			ensureSettingsActorCanAccessEmployeeTarget(actor, emp, {
+				message: "Insufficient permissions",
+				resource: "vacation_adjustment",
+				action: "read",
+			}),
+		);
 
 		// Step 5: Get adjustment total
 		const result = yield* _(

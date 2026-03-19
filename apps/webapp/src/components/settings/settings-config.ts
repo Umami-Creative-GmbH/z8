@@ -1,3 +1,5 @@
+import { hasSettingsAccessTier, type SettingsAccessTier } from "@/lib/settings-access";
+
 export type SettingsGroup =
 	| "account"
 	| "organization"
@@ -9,6 +11,14 @@ export type FeatureFlag =
 	| "shiftsEnabled"
 	| "projectsEnabled"
 	| "surchargesEnabled";
+
+export type FeatureFlagState = Partial<Record<FeatureFlag, boolean>>;
+
+interface ResolveSettingsVisibilityInput {
+	accessTier: SettingsAccessTier;
+	billingEnabled?: boolean;
+	featureFlags?: FeatureFlagState;
+}
 
 export type SettingsIconName =
 	| "user-circle"
@@ -54,7 +64,7 @@ export interface SettingsEntry {
 	descriptionDefault: string;
 	href: string;
 	icon: SettingsIconName;
-	adminOnly: boolean;
+	minimumTier: SettingsAccessTier;
 	group: SettingsGroup;
 	/** Feature flag that must be enabled for this setting to be accessible */
 	requiredFeature?: FeatureFlag;
@@ -66,7 +76,6 @@ export interface SettingsGroupConfig {
 	id: SettingsGroup;
 	labelKey: string;
 	labelDefault: string;
-	adminOnly: boolean;
 }
 
 export const SETTINGS_GROUPS: SettingsGroupConfig[] = [
@@ -74,31 +83,26 @@ export const SETTINGS_GROUPS: SettingsGroupConfig[] = [
 		id: "account",
 		labelKey: "settings.group.account",
 		labelDefault: "Account",
-		adminOnly: false,
 	},
 	{
 		id: "organization",
 		labelKey: "settings.group.organization",
 		labelDefault: "Organization",
-		adminOnly: false,
 	},
 	{
 		id: "administration",
 		labelKey: "settings.group.administration",
 		labelDefault: "Administration",
-		adminOnly: true,
 	},
 	{
 		id: "enterprise",
 		labelKey: "settings.group.enterprise",
 		labelDefault: "Enterprise",
-		adminOnly: true,
 	},
 	{
 		id: "data",
 		labelKey: "settings.group.data",
 		labelDefault: "Data",
-		adminOnly: true,
 	},
 ];
 
@@ -111,7 +115,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Manage your personal information and profile picture",
 		href: "/settings/profile",
 		icon: "user-circle",
-		adminOnly: false,
+		minimumTier: "member",
 		group: "account",
 	},
 	{
@@ -122,7 +126,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Manage your password and active sessions",
 		href: "/settings/security",
 		icon: "shield",
-		adminOnly: false,
+		minimumTier: "member",
 		group: "account",
 	},
 	{
@@ -133,7 +137,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Configure how you receive notifications",
 		href: "/settings/notifications",
 		icon: "bell",
-		adminOnly: false,
+		minimumTier: "member",
 		group: "account",
 	},
 	{
@@ -144,7 +148,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Configure water reminders and hydration tracking",
 		href: "/settings/wellness",
 		icon: "droplet",
-		adminOnly: false,
+		minimumTier: "member",
 		group: "account",
 	},
 	{
@@ -155,7 +159,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Manage organization members, invitations, and teams",
 		href: "/settings/organizations",
 		icon: "building",
-		adminOnly: true,
+		minimumTier: "manager",
 		group: "organization",
 	},
 	{
@@ -167,7 +171,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 			"Manage your subscription, payment methods, and invoices",
 		href: "/settings/billing",
 		icon: "credit-card",
-		adminOnly: true,
+		minimumTier: "orgAdmin",
 		group: "organization",
 		requiresBilling: true,
 	},
@@ -180,7 +184,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 			"Download your Data Processing Agreement (Auftragsverarbeitungsvertrag)",
 		href: "/settings/avv",
 		icon: "file-text",
-		adminOnly: true,
+		minimumTier: "orgAdmin",
 		group: "organization",
 		requiresBilling: true,
 	},
@@ -193,7 +197,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 			"Manage employee profiles, roles, and manager assignments",
 		href: "/settings/employees",
 		icon: "users",
-		adminOnly: true,
+		minimumTier: "manager",
 		group: "administration",
 	},
 	{
@@ -205,7 +209,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 			"Create custom permission roles for your organization",
 		href: "/settings/roles",
 		icon: "shield-check",
-		adminOnly: true,
+		minimumTier: "orgAdmin",
 		group: "administration",
 	},
 	{
@@ -216,7 +220,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Manage organization locations and subareas",
 		href: "/settings/locations",
 		icon: "map-pin",
-		adminOnly: true,
+		minimumTier: "manager",
 		group: "administration",
 	},
 	{
@@ -227,7 +231,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Configure organization holidays and time off",
 		href: "/settings/holidays",
 		icon: "calendar-event",
-		adminOnly: true,
+		minimumTier: "manager",
 		group: "administration",
 	},
 	{
@@ -238,7 +242,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Manage vacation policies and allowances",
 		href: "/settings/vacation",
 		icon: "beach",
-		adminOnly: true,
+		minimumTier: "manager",
 		group: "administration",
 	},
 	{
@@ -250,7 +254,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 			"Configure reimbursement rates and effective periods for mileage and per diem claims.",
 		href: "/settings/travel-expenses",
 		icon: "map-pin",
-		adminOnly: true,
+		minimumTier: "orgAdmin",
 		group: "administration",
 	},
 	{
@@ -262,7 +266,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 			"Configure work schedules, time limits, and break requirements",
 		href: "/settings/work-policies",
 		icon: "gavel",
-		adminOnly: true,
+		minimumTier: "manager",
 		group: "administration",
 	},
 	{
@@ -271,10 +275,10 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleDefault: "Work Categories",
 		descriptionKey: "settings.workCategories.description",
 		descriptionDefault:
-			"Define work categories with time factors for effective time calculation",
+		"Define work categories with time factors for effective time calculation",
 		href: "/settings/work-categories",
 		icon: "tag",
-		adminOnly: true,
+		minimumTier: "manager",
 		group: "administration",
 	},
 	{
@@ -286,7 +290,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 			"Control when employees can edit time entries and require manager approval",
 		href: "/settings/change-policies",
 		icon: "clock-edit",
-		adminOnly: true,
+		minimumTier: "manager",
 		group: "administration",
 	},
 	{
@@ -298,7 +302,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 			"Manage skill catalog, certifications, and employee qualifications",
 		href: "/settings/skills",
 		icon: "certificate",
-		adminOnly: true,
+		minimumTier: "manager",
 		group: "administration",
 	},
 	// Optional features (require feature flag to be enabled)
@@ -311,7 +315,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 			"Create reusable shift templates for scheduling (Morning, Night, etc.)",
 		href: "/settings/shifts",
 		icon: "calendar-clock",
-		adminOnly: true,
+		minimumTier: "manager",
 		group: "administration",
 		requiredFeature: "shiftsEnabled",
 	},
@@ -324,7 +328,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 			"Set minimum staffing requirements per location and time",
 		href: "/settings/coverage-rules",
 		icon: "target",
-		adminOnly: true,
+		minimumTier: "manager",
 		group: "administration",
 		requiredFeature: "shiftsEnabled",
 	},
@@ -334,10 +338,10 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleDefault: "Surcharges",
 		descriptionKey: "settings.surcharges.description",
 		descriptionDefault:
-			"Configure time surcharges for overtime, night work, and holidays",
+		"Configure time surcharges for overtime, night work, and holidays",
 		href: "/settings/surcharges",
 		icon: "percentage",
-		adminOnly: true,
+		minimumTier: "manager",
 		group: "administration",
 		requiredFeature: "surchargesEnabled",
 	},
@@ -349,7 +353,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Manage customer contacts for project assignments",
 		href: "/settings/customers",
 		icon: "address-book",
-		adminOnly: true,
+		minimumTier: "manager",
 		group: "administration",
 		requiredFeature: "projectsEnabled",
 	},
@@ -362,7 +366,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 			"Manage projects, budgets, deadlines, and time assignments",
 		href: "/settings/projects",
 		icon: "briefcase",
-		adminOnly: true,
+		minimumTier: "manager",
 		group: "administration",
 		requiredFeature: "projectsEnabled",
 	},
@@ -376,7 +380,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 			"Configure custom domain, branding, and SSO for your organization",
 		href: "/settings/enterprise/domains",
 		icon: "world",
-		adminOnly: true,
+		minimumTier: "orgAdmin",
 		group: "enterprise",
 	},
 	{
@@ -388,7 +392,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 			"Configure a custom email provider for organization emails",
 		href: "/settings/enterprise/email",
 		icon: "mail",
-		adminOnly: true,
+		minimumTier: "orgAdmin",
 		group: "enterprise",
 	},
 	{
@@ -400,7 +404,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 			"Manage API keys for programmatic access to your organization data",
 		href: "/settings/enterprise/api-keys",
 		icon: "key",
-		adminOnly: true,
+		minimumTier: "orgAdmin",
 		group: "enterprise",
 	},
 	{
@@ -411,7 +415,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "View activity history and security events",
 		href: "/settings/enterprise/audit-log",
 		icon: "history",
-		adminOnly: true,
+		minimumTier: "orgAdmin",
 		group: "enterprise",
 	},
 	{
@@ -423,7 +427,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 			"Configure webhook endpoints to receive real-time event notifications",
 		href: "/settings/webhooks",
 		icon: "webhook",
-		adminOnly: true,
+		minimumTier: "orgAdmin",
 		group: "enterprise",
 	},
 	{
@@ -435,7 +439,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 			"Configure calendar providers, ICS feeds, and sync settings",
 		href: "/settings/calendar",
 		icon: "calendar-sync",
-		adminOnly: true,
+		minimumTier: "manager",
 		group: "enterprise",
 	},
 	{
@@ -446,7 +450,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Configure Telegram bot for notifications and commands",
 		href: "/settings/telegram",
 		icon: "brand-telegram",
-		adminOnly: false,
+		minimumTier: "orgAdmin",
 		group: "enterprise",
 	},
 	// Data settings
@@ -458,7 +462,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "View statistics and metrics about your instance",
 		href: "/settings/statistics",
 		icon: "chart-bar",
-		adminOnly: true,
+		minimumTier: "manager",
 		group: "data",
 	},
 	{
@@ -469,7 +473,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Export organization data for backup or migration",
 		href: "/settings/export",
 		icon: "database-export",
-		adminOnly: true,
+		minimumTier: "orgAdmin",
 		group: "data",
 	},
 	{
@@ -480,7 +484,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Export work periods to DATEV Lohn & Gehalt",
 		href: "/settings/payroll-export",
 		icon: "database-export",
-		adminOnly: true,
+		minimumTier: "orgAdmin",
 		group: "data",
 	},
 	{
@@ -492,7 +496,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 			"GoBD-compliant export hardening with digital signatures",
 		href: "/settings/audit-export",
 		icon: "shield-check",
-		adminOnly: true,
+		minimumTier: "orgAdmin",
 		group: "data",
 	},
 	{
@@ -504,7 +508,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 			"Generate sample data for testing or clear all time-related data",
 		href: "/settings/demo",
 		icon: "test-pipe",
-		adminOnly: true,
+		minimumTier: "orgAdmin",
 		group: "data",
 	},
 	{
@@ -515,26 +519,63 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Import data from supported providers like Clockodo and Clockin",
 		href: "/settings/import",
 		icon: "database-import",
-		adminOnly: true,
+		minimumTier: "orgAdmin",
 		group: "data",
 	},
 ];
 
 export function getVisibleSettings(
-	isAdmin: boolean,
+	accessTier: SettingsAccessTier,
 	billingEnabled = false,
 ): SettingsEntry[] {
 	return SETTINGS_ENTRIES.filter((entry) => {
-		// Check admin requirement
-		if (entry.adminOnly && !isAdmin) return false;
-		// Check billing requirement (hide completely when billing disabled)
+		if (!hasSettingsAccessTier(accessTier, entry.minimumTier)) return false;
 		if (entry.requiresBilling && !billingEnabled) return false;
 		return true;
 	});
 }
 
-export function getVisibleGroups(isAdmin: boolean): SettingsGroupConfig[] {
-	return SETTINGS_GROUPS.filter((group) => !group.adminOnly || isAdmin);
+export function getVisibleGroups(entries: SettingsEntry[]): SettingsGroupConfig[] {
+	const visibleGroupIds = new Set(entries.map((entry) => entry.group));
+
+	return SETTINGS_GROUPS.filter((group) => visibleGroupIds.has(group.id));
+}
+
+export function filterSettingsByFeatureFlags(
+	entries: SettingsEntry[],
+	featureFlags: FeatureFlagState,
+): SettingsEntry[] {
+	return entries.filter((entry) => {
+		if (!entry.requiredFeature) return true;
+
+		return featureFlags[entry.requiredFeature] ?? false;
+	});
+}
+
+export function getVisibleGroupsForFeatureFlags(
+	entries: SettingsEntry[],
+	featureFlags: FeatureFlagState,
+): SettingsGroupConfig[] {
+	return getVisibleGroups(filterSettingsByFeatureFlags(entries, featureFlags));
+}
+
+export function getResolvedSettingsVisibility({
+	accessTier,
+	billingEnabled = false,
+	featureFlags,
+}: ResolveSettingsVisibilityInput): {
+	visibleSettings: SettingsEntry[];
+	visibleGroups: SettingsGroupConfig[];
+} {
+	const visibleSettings = getVisibleSettings(accessTier, billingEnabled);
+	const visibleGroups = featureFlags
+		? getVisibleGroupsForFeatureFlags(visibleSettings, featureFlags)
+		: getVisibleGroups(visibleSettings);
+
+	return {
+		visibleSettings,
+		visibleGroups,
+	};
 }
 
 export function getEntriesByGroup(

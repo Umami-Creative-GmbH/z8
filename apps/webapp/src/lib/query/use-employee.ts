@@ -16,6 +16,7 @@ import {
 } from "@/app/[locale]/(app)/settings/employees/rate-actions";
 import { getEmployeeEffectiveScheduleDetails } from "@/app/[locale]/(app)/settings/work-policies/actions";
 import type { CreateRateHistory, UpdateEmployee } from "@/lib/validations/employee";
+import type { SettingsAccessTier } from "@/lib/settings-access";
 import { queryKeys } from "./keys";
 
 type Manager = {
@@ -43,6 +44,7 @@ export type EmployeeDetail = EmployeeWithRelations & {
 interface UseEmployeeOptions {
 	employeeId: string;
 	enabled?: boolean;
+	accessTier: SettingsAccessTier;
 }
 
 /**
@@ -55,8 +57,8 @@ interface UseEmployeeOptions {
  * - Work schedule data
  * - Update mutation with automatic cache invalidation
  */
-export function useEmployee(options: UseEmployeeOptions) {
-	const { employeeId, enabled = true } = options;
+	export function useEmployee(options: UseEmployeeOptions) {
+	const { employeeId, enabled = true, accessTier } = options;
 	const queryClient = useQueryClient();
 
 	// Query for current employee (to check admin status)
@@ -67,8 +69,7 @@ export function useEmployee(options: UseEmployeeOptions) {
 		staleTime: 5 * 60 * 1000, // 5 minutes
 	});
 
-	const isAdmin = currentEmployeeQuery.data?.role === "admin";
-	const hasEmployee = !!currentEmployeeQuery.data;
+	const hasEmployee = !!currentEmployeeQuery.data || accessTier === "orgAdmin";
 
 	// Query for employee details
 	const employeeQuery = useQuery({
@@ -114,7 +115,7 @@ export function useEmployee(options: UseEmployeeOptions) {
 
 			return result.data?.employees ?? [];
 		},
-		enabled: enabled && isAdmin,
+		enabled: enabled && accessTier === "orgAdmin",
 		staleTime: 60 * 1000, // 1 minute
 	});
 
@@ -187,7 +188,7 @@ export function useEmployee(options: UseEmployeeOptions) {
 
 		// Auth state
 		hasEmployee,
-		isAdmin,
+		isAdmin: accessTier === "orgAdmin",
 
 		// Mutations
 		updateEmployee: updateMutation.mutateAsync,

@@ -73,6 +73,7 @@ type SkillCategory = "safety" | "equipment" | "certification" | "training" | "la
 
 interface SkillCatalogManagementProps {
 	organizationId: string;
+	canManageCatalog?: boolean;
 }
 
 const SKILL_CATEGORIES: Array<{ value: SkillCategory; label: string; icon: typeof IconShieldCheck }> = [
@@ -94,7 +95,10 @@ function getCategoryLabel(category: SkillCategory) {
 	return found?.label ?? category;
 }
 
-export function SkillCatalogManagement({ organizationId }: SkillCatalogManagementProps) {
+export function SkillCatalogManagement({
+	organizationId,
+	canManageCatalog = true,
+}: SkillCatalogManagementProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const [dialogOpen, setDialogOpen] = useState(false);
@@ -180,10 +184,12 @@ export function SkillCatalogManagement({ organizationId }: SkillCatalogManagemen
 					<Button variant="ghost" size="icon" onClick={() => refetch()} disabled={isFetching}>
 						<IconRefresh className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
 					</Button>
-					<Button onClick={handleCreate}>
-						<IconPlus className="mr-2 h-4 w-4" />
-						{t("settings.skills.addSkill", "Add Skill")}
-					</Button>
+					{canManageCatalog ? (
+						<Button onClick={handleCreate}>
+							<IconPlus className="mr-2 h-4 w-4" />
+							{t("settings.skills.addSkill", "Add Skill")}
+						</Button>
+					) : null}
 				</div>
 			</div>
 
@@ -264,39 +270,43 @@ export function SkillCatalogManagement({ organizationId }: SkillCatalogManagemen
 												)}
 											</TableCell>
 											<TableCell className="text-right">
-												<div className="flex items-center justify-end gap-1">
-													<TooltipProvider>
-														<Tooltip>
-															<TooltipTrigger asChild>
-																<Button
-																	variant="ghost"
-																	size="icon"
-																	className="h-8 w-8"
-																	onClick={() => handleEdit(skill)}
-																>
-																	<IconEdit className="h-4 w-4" />
-																</Button>
-															</TooltipTrigger>
-															<TooltipContent>{t("common.edit", "Edit")}</TooltipContent>
-														</Tooltip>
-													</TooltipProvider>
-													<TooltipProvider>
-														<Tooltip>
-															<TooltipTrigger asChild>
-																<Button
-																	variant="ghost"
-																	size="icon"
-																	className="h-8 w-8"
-																	onClick={() => handleDelete(skill)}
-																	disabled={deleteMutation.isPending}
-																>
-																	<IconTrash className="h-4 w-4" />
-																</Button>
-															</TooltipTrigger>
-															<TooltipContent>{t("common.delete", "Delete")}</TooltipContent>
-														</Tooltip>
-													</TooltipProvider>
-												</div>
+											<div className="flex items-center justify-end gap-1">
+												{canManageCatalog ? (
+													<>
+														<TooltipProvider>
+															<Tooltip>
+																<TooltipTrigger asChild>
+																	<Button
+																		variant="ghost"
+																		size="icon"
+																		className="h-8 w-8"
+																		onClick={() => handleEdit(skill)}
+																	>
+																		<IconEdit className="h-4 w-4" />
+																	</Button>
+																</TooltipTrigger>
+																<TooltipContent>{t("common.edit", "Edit")}</TooltipContent>
+															</Tooltip>
+														</TooltipProvider>
+														<TooltipProvider>
+															<Tooltip>
+																<TooltipTrigger asChild>
+																	<Button
+																		variant="ghost"
+																		size="icon"
+																		className="h-8 w-8"
+																		onClick={() => handleDelete(skill)}
+																		disabled={deleteMutation.isPending}
+																	>
+																		<IconTrash className="h-4 w-4" />
+																	</Button>
+																</TooltipTrigger>
+																<TooltipContent>{t("common.delete", "Delete")}</TooltipContent>
+															</Tooltip>
+														</TooltipProvider>
+													</>
+												) : null}
+											</div>
 											</TableCell>
 										</TableRow>
 									);
@@ -308,13 +318,15 @@ export function SkillCatalogManagement({ organizationId }: SkillCatalogManagemen
 			</Card>
 
 			{/* Create/Edit Dialog */}
-			<SkillDialog
-				organizationId={organizationId}
-				skill={editingSkill}
-				open={dialogOpen}
-				onOpenChange={setDialogOpen}
-				onSuccess={handleSuccess}
-			/>
+			{canManageCatalog ? (
+				<SkillDialog
+					organizationId={organizationId}
+					skill={editingSkill}
+					open={dialogOpen}
+					onOpenChange={setDialogOpen}
+					onSuccess={handleSuccess}
+				/>
+			) : null}
 		</div>
 	);
 }

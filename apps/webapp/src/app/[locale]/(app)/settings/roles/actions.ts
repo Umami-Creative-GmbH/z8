@@ -1,12 +1,12 @@
 "use server";
 
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { employee } from "@/db/schema";
+import { getSettingsAccessTierForUser } from "@/lib/auth-helpers";
 import {
 	type AnyAppError,
 	AuthorizationError,
-	NotFoundError,
 } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
@@ -23,36 +23,19 @@ import {
 // Helpers
 // =============================================================================
 
-function getAdminEmployee() {
+function getRolesActorContext() {
 	return Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 		const dbService = yield* _(DatabaseService);
+		const organizationId = session.session.activeOrganizationId;
 
-		const currentEmployee = yield* _(
-			dbService.query("getCurrentEmployeeForRoles", async () => {
-				return await dbService.db.query.employee.findFirst({
-					where: eq(employee.userId, session.user.id),
-				});
-			}),
-			Effect.flatMap((emp) =>
-				emp
-					? Effect.succeed(emp)
-					: Effect.fail(
-							new NotFoundError({
-								message: "Employee profile not found",
-								entityType: "employee",
-							}),
-						),
-			),
-		);
-
-		if (currentEmployee.role !== "admin") {
-			yield* _(
+		if (!organizationId) {
+			return yield* _(
 				Effect.fail(
 					new AuthorizationError({
-						message: "Only admins can manage custom roles",
-						userId: currentEmployee.id,
+						message: "An active organization is required to manage custom roles",
+						userId: session.user.id,
 						resource: "custom_role",
 						action: "manage",
 					}),
@@ -60,7 +43,38 @@ function getAdminEmployee() {
 			);
 		}
 
-		return { session, currentEmployee };
+		const activeOrganizationId: string = organizationId;
+
+		const settingsAccessTier = yield* _(
+			Effect.promise(() => getSettingsAccessTierForUser(session.user.id, activeOrganizationId)),
+		);
+
+		if (settingsAccessTier !== "orgAdmin") {
+			return yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Only org admins can manage custom roles",
+						userId: session.user.id,
+						resource: "custom_role",
+						action: "manage",
+					}),
+				),
+			);
+		}
+
+		const actingEmployee = yield* _(
+			dbService.query("getCurrentEmployeeForRoles", async () => {
+				return await dbService.db.query.employee.findFirst({
+					where: and(
+						eq(employee.userId, session.user.id),
+						eq(employee.organizationId, activeOrganizationId),
+						eq(employee.isActive, true),
+					),
+				});
+			}),
+		);
+
+		return { session, organizationId: activeOrganizationId, actingEmployee };
 	});
 }
 
@@ -72,10 +86,10 @@ export async function listCustomRoles(): Promise<
 	ServerActionResult<CustomRoleWithPermissions[]>
 > {
 	const effect = Effect.gen(function* (_) {
-		const { currentEmployee } = yield* _(getAdminEmployee());
+		const { organizationId } = yield* _(getRolesActorContext());
 		const customRoleService = yield* _(CustomRoleService);
 
-		return yield* _(customRoleService.listRoles(currentEmployee.organizationId));
+		return yield* _(customRoleService.listRoles(organizationId));
 	}).pipe(
 		Effect.catchAll((error) => Effect.fail(error as AnyAppError)),
 		Effect.provide(AppLayer),
@@ -88,12 +102,10 @@ export async function getCustomRole(
 	roleId: string,
 ): Promise<ServerActionResult<CustomRoleWithPermissions>> {
 	const effect = Effect.gen(function* (_) {
-		const { currentEmployee } = yield* _(getAdminEmployee());
+		const { organizationId } = yield* _(getRolesActorContext());
 		const customRoleService = yield* _(CustomRoleService);
 
-		return yield* _(
-			customRoleService.getRole(roleId, currentEmployee.organizationId),
-		);
+		return yield* _(customRoleService.getRole(roleId, organizationId));
 	}).pipe(
 		Effect.catchAll((error) => Effect.fail(error as AnyAppError)),
 		Effect.provide(AppLayer),
@@ -106,12 +118,12 @@ export async function createCustomRole(
 	input: CreateCustomRoleInput,
 ): Promise<ServerActionResult<{ id: string }>> {
 	const effect = Effect.gen(function* (_) {
-		const { session, currentEmployee } = yield* _(getAdminEmployee());
+		const { session, organizationId } = yield* _(getRolesActorContext());
 		const customRoleService = yield* _(CustomRoleService);
 
 		const id = yield* _(
 			customRoleService.createRole(
-				currentEmployee.organizationId,
+				organizationId,
 				input,
 				session.user.id,
 			),
@@ -131,13 +143,13 @@ export async function updateCustomRole(
 	input: UpdateCustomRoleInput,
 ): Promise<ServerActionResult<void>> {
 	const effect = Effect.gen(function* (_) {
-		const { session, currentEmployee } = yield* _(getAdminEmployee());
+		const { session, organizationId } = yield* _(getRolesActorContext());
 		const customRoleService = yield* _(CustomRoleService);
 
 		yield* _(
 			customRoleService.updateRole(
 				roleId,
-				currentEmployee.organizationId,
+				organizationId,
 				input,
 				session.user.id,
 			),
@@ -154,13 +166,13 @@ export async function deleteCustomRole(
 	roleId: string,
 ): Promise<ServerActionResult<void>> {
 	const effect = Effect.gen(function* (_) {
-		const { session, currentEmployee } = yield* _(getAdminEmployee());
+		const { session, organizationId } = yield* _(getRolesActorContext());
 		const customRoleService = yield* _(CustomRoleService);
 
 		yield* _(
 			customRoleService.deleteRole(
 				roleId,
-				currentEmployee.organizationId,
+				organizationId,
 				session.user.id,
 			),
 		);
@@ -177,13 +189,13 @@ export async function setRolePermissions(
 	permissions: Array<{ action: string; subject: string }>,
 ): Promise<ServerActionResult<void>> {
 	const effect = Effect.gen(function* (_) {
-		const { session, currentEmployee } = yield* _(getAdminEmployee());
+		const { session, organizationId } = yield* _(getRolesActorContext());
 		const customRoleService = yield* _(CustomRoleService);
 
 		yield* _(
 			customRoleService.setPermissions(
 				roleId,
-				currentEmployee.organizationId,
+				organizationId,
 				permissions,
 				session.user.id,
 			),
@@ -201,14 +213,14 @@ export async function assignRoleToEmployee(
 	roleId: string,
 ): Promise<ServerActionResult<void>> {
 	const effect = Effect.gen(function* (_) {
-		const { session, currentEmployee } = yield* _(getAdminEmployee());
+		const { session, organizationId } = yield* _(getRolesActorContext());
 		const customRoleService = yield* _(CustomRoleService);
 
 		yield* _(
 			customRoleService.assignRole(
 				employeeId,
 				roleId,
-				currentEmployee.organizationId,
+				organizationId,
 				session.user.id,
 			),
 		);
@@ -225,14 +237,14 @@ export async function unassignRoleFromEmployee(
 	roleId: string,
 ): Promise<ServerActionResult<void>> {
 	const effect = Effect.gen(function* (_) {
-		const { session, currentEmployee } = yield* _(getAdminEmployee());
+		const { session, organizationId } = yield* _(getRolesActorContext());
 		const customRoleService = yield* _(CustomRoleService);
 
 		yield* _(
 			customRoleService.unassignRole(
 				employeeId,
 				roleId,
-				currentEmployee.organizationId,
+				organizationId,
 				session.user.id,
 			),
 		);
@@ -248,10 +260,10 @@ export async function getEmployeeCustomRoles(
 	employeeId: string,
 ): Promise<ServerActionResult<CustomRoleWithPermissions[]>> {
 	const effect = Effect.gen(function* (_) {
-		const { currentEmployee } = yield* _(getAdminEmployee());
+		const { organizationId } = yield* _(getRolesActorContext());
 		const customRoleService = yield* _(CustomRoleService);
 
-		return yield* _(customRoleService.getEmployeeRoles(employeeId, currentEmployee.organizationId));
+		return yield* _(customRoleService.getEmployeeRoles(employeeId, organizationId));
 	}).pipe(
 		Effect.catchAll((error) => Effect.fail(error as AnyAppError)),
 		Effect.provide(AppLayer),

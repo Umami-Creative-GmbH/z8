@@ -5,6 +5,7 @@ import { useReducer } from "react";
 import { z } from "zod";
 import { queryKeys } from "@/lib/query";
 import type { SelectableEmployee } from "../../employees/actions";
+import type { ScopedTeam } from "../team-scope";
 
 export const teamFormSchema = z.object({
 	name: z.string().min(1, "Team name is required").max(100, "Team name is too long"),
@@ -13,9 +14,11 @@ export const teamFormSchema = z.object({
 
 export type TeamFormValues = z.infer<typeof teamFormSchema>;
 
+type TeamDetailRecord = ScopedTeam & {
+	employees?: Array<{ id: string }>;
+};
+
 export interface TeamPageUiState {
-	currentEmployee: { role?: string } | null;
-	noEmployee: boolean;
 	isEditing: boolean;
 	showAddMember: boolean;
 	showDeleteDialog: boolean;
@@ -25,8 +28,6 @@ export interface TeamPageUiState {
 }
 
 type TeamPageUiAction =
-	| { type: "setCurrentEmployee"; currentEmployee: TeamPageUiState["currentEmployee"] }
-	| { type: "setNoEmployee"; value: boolean }
 	| { type: "setEditing"; value: boolean }
 	| { type: "setShowAddMember"; value: boolean }
 	| { type: "setShowDeleteDialog"; value: boolean }
@@ -36,8 +37,6 @@ type TeamPageUiAction =
 	| { type: "resetAddMemberDialog" };
 
 export const initialTeamPageUiState: TeamPageUiState = {
-	currentEmployee: null,
-	noEmployee: false,
 	isEditing: false,
 	showAddMember: false,
 	showDeleteDialog: false,
@@ -51,10 +50,6 @@ export function teamPageUiReducer(
 	action: TeamPageUiAction,
 ): TeamPageUiState {
 	switch (action.type) {
-		case "setCurrentEmployee":
-			return { ...state, currentEmployee: action.currentEmployee };
-		case "setNoEmployee":
-			return { ...state, noEmployee: action.value };
 		case "setEditing":
 			return { ...state, isEditing: action.value };
 		case "setShowAddMember":
@@ -78,7 +73,7 @@ export function useTeamPageUiState() {
 	return useReducer(teamPageUiReducer, initialTeamPageUiState);
 }
 
-export function extractTeamMemberIds(team: any): string[] {
+export function extractTeamMemberIds(team: TeamDetailRecord | null | undefined): string[] {
 	return ((team?.employees as Array<{ id: string }> | undefined) ?? []).map((member) => member.id);
 }
 

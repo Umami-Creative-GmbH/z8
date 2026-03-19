@@ -50,9 +50,14 @@ import { SubareaEmployeeDialog } from "./subarea-employee-dialog";
 interface LocationDetailProps {
 	locationId: string;
 	organizationId: string;
+	canManageLocations: boolean;
 }
 
-export function LocationDetail({ locationId, organizationId }: LocationDetailProps) {
+export function LocationDetail({
+	locationId,
+	organizationId,
+	canManageLocations,
+}: LocationDetailProps) {
 	const { t } = useTranslate();
 	const router = useRouter();
 	const queryClient = useQueryClient();
@@ -212,14 +217,18 @@ export function LocationDetail({ locationId, organizationId }: LocationDetailPro
 					<Button variant="ghost" size="icon" onClick={() => refetch()} disabled={isFetching}>
 						<IconRefresh className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
 					</Button>
-					<Button variant="outline" onClick={() => setEditLocationOpen(true)}>
-						<IconEdit className="mr-2 h-4 w-4" />
-						{t("common.edit", "Edit")}
-					</Button>
-					<Button variant="destructive" onClick={() => setDeleteLocationOpen(true)}>
-						<IconTrash className="mr-2 h-4 w-4" />
-						{t("common.delete", "Delete")}
-					</Button>
+					{canManageLocations && (
+						<>
+							<Button variant="outline" onClick={() => setEditLocationOpen(true)}>
+								<IconEdit className="mr-2 h-4 w-4" />
+								{t("common.edit", "Edit")}
+							</Button>
+							<Button variant="destructive" onClick={() => setDeleteLocationOpen(true)}>
+								<IconTrash className="mr-2 h-4 w-4" />
+								{t("common.delete", "Delete")}
+							</Button>
+						</>
+					)}
 				</div>
 			</div>
 
@@ -275,10 +284,12 @@ export function LocationDetail({ locationId, organizationId }: LocationDetailPro
 								<IconUsers className="h-5 w-5" />
 								{t("settings.locations.supervisors", "Supervisors")}
 							</CardTitle>
-							<Button size="sm" variant="outline" onClick={() => setAddEmployeeOpen(true)}>
-								<IconPlus className="mr-2 h-4 w-4" />
-								{t("common.add", "Add")}
-							</Button>
+							{canManageLocations && (
+								<Button size="sm" variant="outline" onClick={() => setAddEmployeeOpen(true)}>
+									<IconPlus className="mr-2 h-4 w-4" />
+									{t("common.add", "Add")}
+								</Button>
+							)}
 						</div>
 						<CardDescription>
 							{t(
@@ -320,6 +331,7 @@ export function LocationDetail({ locationId, organizationId }: LocationDetailPro
 												</p>
 											</div>
 										</div>
+									{canManageLocations && (
 										<Button
 											variant="ghost"
 											size="icon"
@@ -327,6 +339,7 @@ export function LocationDetail({ locationId, organizationId }: LocationDetailPro
 										>
 											<IconTrash className="h-4 w-4" />
 										</Button>
+									)}
 									</div>
 								))}
 							</div>
@@ -339,10 +352,12 @@ export function LocationDetail({ locationId, organizationId }: LocationDetailPro
 					<CardHeader>
 						<div className="flex items-center justify-between">
 							<CardTitle>{t("settings.locations.subareas", "Subareas")}</CardTitle>
-							<Button size="sm" variant="outline" onClick={() => setAddSubareaOpen(true)}>
-								<IconPlus className="mr-2 h-4 w-4" />
-								{t("common.add", "Add")}
-							</Button>
+							{canManageLocations && (
+								<Button size="sm" variant="outline" onClick={() => setAddSubareaOpen(true)}>
+									<IconPlus className="mr-2 h-4 w-4" />
+									{t("common.add", "Add")}
+								</Button>
+							)}
 						</div>
 						<CardDescription>
 							{t("settings.locations.subareasDescription", "Areas within this location")}
@@ -367,6 +382,8 @@ export function LocationDetail({ locationId, organizationId }: LocationDetailPro
 												)}
 											</div>
 											<div className="flex items-center gap-1">
+										{canManageLocations && (
+											<>
 												<Button
 													variant="ghost"
 													size="icon"
@@ -390,6 +407,8 @@ export function LocationDetail({ locationId, organizationId }: LocationDetailPro
 												>
 													<IconTrash className="h-4 w-4" />
 												</Button>
+											</>
+										)}
 											</div>
 										</div>
 										{subarea.employees.length > 0 && (
@@ -400,14 +419,16 @@ export function LocationDetail({ locationId, organizationId }: LocationDetailPro
 															<span>{getEmployeeName(emp.employee)}</span>
 															{emp.isPrimary && <IconStar className="h-3 w-3 text-yellow-500" />}
 														</div>
-														<Button
-															variant="ghost"
-															size="icon"
-															className="h-6 w-6"
-															onClick={() => handleRemoveSubareaEmployee(emp.id)}
-														>
-															<IconTrash className="h-3 w-3" />
-														</Button>
+											{canManageLocations && (
+												<Button
+													variant="ghost"
+													size="icon"
+													className="h-6 w-6"
+													onClick={() => handleRemoveSubareaEmployee(emp.id)}
+												>
+													<IconTrash className="h-3 w-3" />
+												</Button>
+											)}
 													</div>
 												))}
 											</div>
@@ -421,27 +442,29 @@ export function LocationDetail({ locationId, organizationId }: LocationDetailPro
 			</div>
 
 			{/* Edit Location Dialog */}
-			<LocationDialog
-				organizationId={organizationId}
-				location={{
-					id: location.id,
-					name: location.name,
-					city: location.city,
-					country: location.country,
-					isActive: location.isActive,
-					subareaCount: location.subareaCount,
-					employeeCount: location.employeeCount,
-				}}
-				open={editLocationOpen}
-				onOpenChange={setEditLocationOpen}
-				onSuccess={() => {
-					setEditLocationOpen(false);
-					handleSuccess();
-				}}
-			/>
+			{canManageLocations && (
+				<LocationDialog
+					organizationId={organizationId}
+					location={{
+						id: location.id,
+						name: location.name,
+						city: location.city,
+						country: location.country,
+						isActive: location.isActive,
+						subareaCount: location.subareaCount,
+						employeeCount: location.employeeCount,
+					}}
+					open={editLocationOpen}
+					onOpenChange={setEditLocationOpen}
+					onSuccess={() => {
+						setEditLocationOpen(false);
+						handleSuccess();
+					}}
+				/>
+			)}
 
 			{/* Delete Location Dialog */}
-			<AlertDialog open={deleteLocationOpen} onOpenChange={setDeleteLocationOpen}>
+			{canManageLocations && <AlertDialog open={deleteLocationOpen} onOpenChange={setDeleteLocationOpen}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
 						<AlertDialogTitle>
@@ -461,31 +484,35 @@ export function LocationDetail({ locationId, organizationId }: LocationDetailPro
 						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>
-			</AlertDialog>
+			</AlertDialog>}
 
 			{/* Add Employee Dialog */}
-			<LocationEmployeeDialog
-				organizationId={organizationId}
-				locationId={locationId}
-				open={addEmployeeOpen}
-				onOpenChange={setAddEmployeeOpen}
-				onSuccess={handleSuccess}
-			/>
+			{canManageLocations && (
+				<LocationEmployeeDialog
+					organizationId={organizationId}
+					locationId={locationId}
+					open={addEmployeeOpen}
+					onOpenChange={setAddEmployeeOpen}
+					onSuccess={handleSuccess}
+				/>
+			)}
 
 			{/* Subarea Dialog (Create) */}
-			<SubareaDialog
-				locationId={locationId}
-				subarea={null}
-				open={addSubareaOpen}
-				onOpenChange={setAddSubareaOpen}
-				onSuccess={() => {
-					setAddSubareaOpen(false);
-					handleSuccess();
-				}}
-			/>
+			{canManageLocations && (
+				<SubareaDialog
+					locationId={locationId}
+					subarea={null}
+					open={addSubareaOpen}
+					onOpenChange={setAddSubareaOpen}
+					onSuccess={() => {
+						setAddSubareaOpen(false);
+						handleSuccess();
+					}}
+				/>
+			)}
 
 			{/* Subarea Dialog (Edit) */}
-			{editSubarea && (
+			{canManageLocations && editSubarea && (
 				<SubareaDialog
 					locationId={locationId}
 					subarea={editSubarea}
@@ -499,7 +526,7 @@ export function LocationDetail({ locationId, organizationId }: LocationDetailPro
 			)}
 
 			{/* Delete Subarea Dialog */}
-			<AlertDialog open={!!deleteSubareaId} onOpenChange={() => setDeleteSubareaId(null)}>
+			{canManageLocations && <AlertDialog open={!!deleteSubareaId} onOpenChange={() => setDeleteSubareaId(null)}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
 						<AlertDialogTitle>
@@ -519,10 +546,10 @@ export function LocationDetail({ locationId, organizationId }: LocationDetailPro
 						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>
-			</AlertDialog>
+			</AlertDialog>}
 
 			{/* Subarea Employee Dialog */}
-			{subareaEmployeeDialog && (
+			{canManageLocations && subareaEmployeeDialog && (
 				<SubareaEmployeeDialog
 					organizationId={organizationId}
 					subareaId={subareaEmployeeDialog.subareaId}
