@@ -35,6 +35,7 @@ import { WorkCategorySetDialog } from "./work-category-set-dialog";
 
 interface WorkCategorySetsTableProps {
 	organizationId: string;
+	canManage: boolean;
 }
 
 interface WorkCategorySetData {
@@ -46,7 +47,7 @@ interface WorkCategorySetData {
 	categoryCount: number;
 }
 
-export function WorkCategorySetsTable({ organizationId }: WorkCategorySetsTableProps) {
+export function WorkCategorySetsTable({ organizationId, canManage }: WorkCategorySetsTableProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 
@@ -187,12 +188,14 @@ export function WorkCategorySetsTable({ organizationId }: WorkCategorySetsTableP
 	return (
 		<>
 			<div className="space-y-4">
-				<div className="flex justify-end">
-					<Button onClick={() => setCreateDialogOpen(true)}>
-						<IconPlus className="mr-2 h-4 w-4" />
-						{t("settings.workCategories.createSet", "Create Set")}
-					</Button>
-				</div>
+				{canManage ? (
+					<div className="flex justify-end">
+						<Button onClick={() => setCreateDialogOpen(true)}>
+							<IconPlus className="mr-2 h-4 w-4" />
+							{t("settings.workCategories.createSet", "Create Set")}
+						</Button>
+					</div>
+				) : null}
 
 				{sets.length === 0 ? (
 					<div className="py-12 text-center">
@@ -206,12 +209,14 @@ export function WorkCategorySetsTable({ organizationId }: WorkCategorySetsTableP
 								"Create your first category set to define work types with time factors",
 							)}
 						</p>
-						<Button className="mt-4" onClick={() => setCreateDialogOpen(true)}>
-							<IconPlus className="mr-2 h-4 w-4" />
-							{t("settings.workCategories.createFirstSet", "Create First Set")}
-						</Button>
-					</div>
-				) : (
+							{canManage ? (
+								<Button className="mt-4" onClick={() => setCreateDialogOpen(true)}>
+									<IconPlus className="mr-2 h-4 w-4" />
+									{t("settings.workCategories.createFirstSet", "Create First Set")}
+								</Button>
+							) : null}
+						</div>
+					) : (
 					<div className="rounded-md border">
 						<Table>
 							<TableHeader>
@@ -221,7 +226,7 @@ export function WorkCategorySetsTable({ organizationId }: WorkCategorySetsTableP
 										{t("settings.workCategories.setDescription", "Description")}
 									</TableHead>
 									<TableHead>{t("settings.workCategories.categories", "Categories")}</TableHead>
-									<TableHead className="w-[100px]" />
+									{canManage ? <TableHead className="w-[100px]" /> : null}
 								</TableRow>
 							</TableHeader>
 							<TableBody>
@@ -234,6 +239,7 @@ export function WorkCategorySetsTable({ organizationId }: WorkCategorySetsTableP
 										<TableCell>
 											<Badge variant="secondary">{set.categoryCount}</Badge>
 										</TableCell>
+									{canManage ? (
 										<TableCell>
 											<div className="flex items-center gap-1">
 												<Button
@@ -256,7 +262,8 @@ export function WorkCategorySetsTable({ organizationId }: WorkCategorySetsTableP
 												</Button>
 											</div>
 										</TableCell>
-									</TableRow>
+									) : null}
+								</TableRow>
 								))}
 							</TableBody>
 						</Table>
@@ -265,27 +272,31 @@ export function WorkCategorySetsTable({ organizationId }: WorkCategorySetsTableP
 			</div>
 
 			{/* Create Dialog */}
-			<WorkCategorySetDialog
-				open={createDialogOpen}
-				onOpenChange={setCreateDialogOpen}
-				organizationId={organizationId}
-				onSuccess={handleCreateSuccess}
-			/>
+			{canManage ? (
+				<WorkCategorySetDialog
+					open={createDialogOpen}
+					onOpenChange={setCreateDialogOpen}
+					organizationId={organizationId}
+					onSuccess={handleCreateSuccess}
+				/>
+			) : null}
 
 			{/* Edit Dialog */}
-			<WorkCategorySetDialog
-				open={editDialogOpen}
-				onOpenChange={(open) => {
-					setEditDialogOpen(open);
-					if (!open) setSelectedSet(null);
-				}}
-				organizationId={organizationId}
-				categorySet={selectedSet}
-				onSuccess={handleEditSuccess}
-			/>
+			{canManage ? (
+				<WorkCategorySetDialog
+					open={editDialogOpen}
+					onOpenChange={(open) => {
+						setEditDialogOpen(open);
+						if (!open) setSelectedSet(null);
+					}}
+					organizationId={organizationId}
+					categorySet={selectedSet}
+					onSuccess={handleEditSuccess}
+				/>
+			) : null}
 
 			{/* Delete Confirmation Dialog */}
-			<AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+			<AlertDialog open={canManage && deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
 						<AlertDialogTitle>

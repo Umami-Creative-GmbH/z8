@@ -33,15 +33,15 @@ export function SettingsGrid({ visibleSettings, visibleGroups }: SettingsGridPro
 	return (
 		<div className="space-y-8">
 			{visibleGroups.map((group) => {
-				const groupEntries = getEntriesByGroup(visibleSettings, group.id);
+				const entriesForGroup = getEntriesByGroup(visibleSettings, group.id);
 
-				if (groupEntries.length === 0) return null;
+				if (entriesForGroup.length === 0) return null;
 
 				return (
 					<section key={group.id}>
 						<h2 className="text-lg font-medium mb-4">{t(group.labelKey, group.labelDefault)}</h2>
 						<div className="grid gap-4 md:grid-cols-2">
-							{groupEntries.map((entry) => {
+							{entriesForGroup.map((entry) => {
 								const hasFeatureFlag = !!entry.requiredFeature;
 								const isLoading = hasFeatureFlag && !isHydrated;
 								const isDisabled =

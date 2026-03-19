@@ -1,33 +1,22 @@
 import { and, eq } from "drizzle-orm";
-import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { TelegramSettings } from "@/components/settings/telegram-settings";
 import { db } from "@/db";
-import * as authSchema from "@/db/auth-schema";
 import { telegramBotConfig, telegramUserMapping } from "@/db/schema";
-import { requireUser } from "@/lib/auth-helpers";
+import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
 
 export default async function TelegramSettingsPage() {
 	await connection();
 
-	const [authContext, t] = await Promise.all([requireUser(), getTranslate()]);
-
-	const organizationId = authContext.session.activeOrganizationId;
-	if (!organizationId) {
-		redirect("/");
-	}
+	const [{ authContext, organizationId }, t] = await Promise.all([
+		requireOrgAdminSettingsAccess(),
+		getTranslate(),
+	]);
 
 	const userId = authContext.user.id;
 
-	// Parallelize member check, config fetch, and user link fetch
-	const [memberRecord, config, userMapping] = await Promise.all([
-		db.query.member.findFirst({
-			where: and(
-				eq(authSchema.member.userId, userId),
-				eq(authSchema.member.organizationId, organizationId),
-			),
-		}),
+	const [config, userMapping] = await Promise.all([
 		db.query.telegramBotConfig.findFirst({
 			where: eq(telegramBotConfig.organizationId, organizationId),
 		}),
@@ -39,12 +28,6 @@ export default async function TelegramSettingsPage() {
 			),
 		}),
 	]);
-
-	if (!memberRecord) {
-		redirect("/settings");
-	}
-
-	const isAdmin = memberRecord.role === "owner" || memberRecord.role === "admin";
 
 	// Map DB config to client-safe shape (exclude sensitive fields like botToken)
 	const initialConfig =
@@ -90,7 +73,7 @@ export default async function TelegramSettingsPage() {
 					initialUserLink={initialUserLink}
 					organizationId={organizationId}
 					userId={userId}
-					isAdmin={isAdmin}
+					isAdmin
 				/>
 			</div>
 		</div>

@@ -5,7 +5,7 @@ import { and, desc, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
-import { customer, employee } from "@/db/schema";
+import { customer, employee, project } from "@/db/schema";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
 import {
 	AuthorizationError,
@@ -17,6 +17,13 @@ import type { ServerActionResult } from "@/lib/effect/result";
 import { AuthService, AuthServiceLive } from "@/lib/effect/services/auth.service";
 import { DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { logger } from "@/lib/logger";
+import {
+	ensureSettingsActorCanAccessCustomerTarget,
+	ensureSettingsActorCanAccessProjectTarget,
+	getManagedCustomerIdsForSettingsActor,
+	getProjectSettingsActorContext,
+	getProjectTarget,
+} from "../projects/project-scope";
 
 // Types
 export interface CustomerData {
@@ -39,6 +46,7 @@ export interface CustomerData {
 export interface CreateCustomerInput {
 	organizationId: string;
 	name: string;
+	projectId?: string;
 	address?: string;
 	vatId?: string;
 	email?: string;
@@ -72,34 +80,11 @@ export async function getCustomers(
 		},
 		(span) => {
 			return Effect.gen(function* (_) {
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
-
-				// Verify admin access
-				yield* _(
-					dbService.query("getEmployee", async () => {
-						return await db.query.employee.findFirst({
-							where: and(
-								eq(employee.userId, session.user.id),
-								eq(employee.organizationId, organizationId),
-								eq(employee.isActive, true),
-							),
-						});
-					}),
-					Effect.flatMap((emp) =>
-						emp?.role === "admin"
-							? Effect.succeed(emp)
-							: Effect.fail(
-									new AuthorizationError({
-										message: "Only admins can manage customers",
-										userId: session.user.id,
-										resource: "customer",
-										action: "read",
-									}),
-								),
-					),
+				const actor = yield* _(
+					getProjectSettingsActorContext({ organizationId, queryName: "getCustomers:actor" }),
 				);
+				const managedCustomerIds = yield* _(getManagedCustomerIdsForSettingsActor(actor));
+				const dbService = actor.dbService;
 
 				// Fetch all active customers
 				const customers = yield* _(
@@ -115,7 +100,9 @@ export async function getCustomers(
 				);
 
 				span.setStatus({ code: SpanStatusCode.OK });
-				return customers as CustomerData[];
+				return managedCustomerIds
+					? (customers.filter((customerRecord) => managedCustomerIds.has(customerRecord.id)) as CustomerData[])
+					: (customers as CustomerData[]);
 			}).pipe(
 				Effect.catchAll((error) =>
 					Effect.gen(function* (_) {
@@ -158,34 +145,60 @@ export async function createCustomer(
 		},
 		(span) => {
 			return Effect.gen(function* (_) {
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
-
-				// Verify admin access
-				yield* _(
-					dbService.query("verifyAdmin", async () => {
-						return await db.query.employee.findFirst({
-							where: and(
-								eq(employee.userId, session.user.id),
-								eq(employee.organizationId, input.organizationId),
-								eq(employee.isActive, true),
-							),
-						});
-					}),
-					Effect.flatMap((emp) =>
-						emp?.role === "admin"
-							? Effect.succeed(emp)
-							: Effect.fail(
-									new AuthorizationError({
-										message: "Only admins can create customers",
-										userId: session.user.id,
-										resource: "customer",
-										action: "create",
-									}),
-								),
-					),
+				const actor = yield* _(
+					getProjectSettingsActorContext({ organizationId: input.organizationId, queryName: "createCustomer:actor" }),
 				);
+				const session = actor.session;
+				const dbService = actor.dbService;
+
+				let scopedProjectId: string | null = null;
+				let scopedProjectOrganizationId: string | null = null;
+
+				if (actor.accessTier !== "orgAdmin") {
+					const projectId = input.projectId;
+
+					if (!projectId) {
+						return yield* _(
+							Effect.fail(
+								new AuthorizationError({
+									message: "Managers can only create customers for managed projects",
+									userId: session.user.id,
+									resource: "customer",
+									action: "create",
+								}),
+							),
+						);
+					}
+
+					const scopedProject = yield* _(getProjectTarget(projectId, "createCustomer:getProject"));
+
+					yield* _(
+						ensureSettingsActorCanAccessProjectTarget(actor, scopedProject, {
+							message: "You do not have access to create customers for this project",
+							resource: "customer",
+							action: "create",
+						}),
+					);
+
+					scopedProjectId = scopedProject.id;
+					scopedProjectOrganizationId = scopedProject.organizationId;
+				} else if (input.projectId) {
+					const scopedProject = yield* _(getProjectTarget(input.projectId, "createCustomer:getProjectForOrgAdmin"));
+
+					if (scopedProject.organizationId !== input.organizationId) {
+						yield* _(
+							Effect.fail(
+								new ValidationError({
+									message: "Project not found",
+									field: "projectId",
+								}),
+							),
+						);
+					}
+
+					scopedProjectId = scopedProject.id;
+					scopedProjectOrganizationId = scopedProject.organizationId;
+				}
 
 				// Check for duplicate name (only among active customers)
 				const existing = yield* _(
@@ -211,31 +224,41 @@ export async function createCustomer(
 					);
 				}
 
-				// Create the customer
-				const [created] = yield* _(
+				const created = yield* _(
 					Effect.tryPromise({
 						try: async () => {
-							return await db
-								.insert(customer)
-								.values({
-									organizationId: input.organizationId,
-									name: input.name,
-									address: input.address || null,
-									vatId: input.vatId || null,
-									email: input.email || null,
-									contactPerson: input.contactPerson || null,
-									phone: input.phone || null,
-									website: input.website || null,
-									isActive: true,
-									createdBy: session.user.id,
-									updatedAt: new Date(),
-								})
-								.returning();
+							return await db.transaction(async (tx) => {
+								const [newCustomer] = await tx
+									.insert(customer)
+									.values({
+										organizationId: input.organizationId,
+										name: input.name,
+										address: input.address || null,
+										vatId: input.vatId || null,
+										email: input.email || null,
+										contactPerson: input.contactPerson || null,
+										phone: input.phone || null,
+										website: input.website || null,
+										isActive: true,
+										createdBy: session.user.id,
+										updatedAt: new Date(),
+									})
+									.returning();
+
+								if (scopedProjectId && scopedProjectOrganizationId === input.organizationId) {
+									await tx
+										.update(project)
+										.set({ customerId: newCustomer.id, updatedBy: session.user.id })
+										.where(eq(project.id, scopedProjectId));
+								}
+
+								return newCustomer;
+							});
 						},
 						catch: (error) =>
 							new DatabaseError({
 								message: error instanceof Error ? error.message : "Failed to create customer",
-								operation: "insert",
+								operation: "transaction",
 								table: "customer",
 							}),
 					}),
@@ -296,8 +319,6 @@ export async function updateCustomer(
 		},
 		(span) => {
 			return Effect.gen(function* (_) {
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
 				const dbService = yield* _(DatabaseService);
 
 				// Get the customer and verify access
@@ -319,29 +340,20 @@ export async function updateCustomer(
 					),
 				);
 
-				// Verify admin access
-				yield* _(
-					dbService.query("verifyAdmin", async () => {
-						return await db.query.employee.findFirst({
-							where: and(
-								eq(employee.userId, session.user.id),
-								eq(employee.organizationId, existingCustomer.organizationId),
-								eq(employee.isActive, true),
-							),
-						});
+				const actor = yield* _(
+					getProjectSettingsActorContext({
+						organizationId: existingCustomer.organizationId,
+						queryName: "updateCustomer:actor",
 					}),
-					Effect.flatMap((emp) =>
-						emp?.role === "admin"
-							? Effect.succeed(emp)
-							: Effect.fail(
-									new AuthorizationError({
-										message: "Only admins can update customers",
-										userId: session.user.id,
-										resource: "customer",
-										action: "update",
-									}),
-								),
-					),
+				);
+				const session = actor.session;
+
+				yield* _(
+					ensureSettingsActorCanAccessCustomerTarget(actor, existingCustomer, {
+						message: "You do not have access to update this customer",
+						resource: "customer",
+						action: "update",
+					}),
 				);
 
 				// Check for duplicate name if updating name (only among active customers)
@@ -449,8 +461,6 @@ export async function deleteCustomer(customerId: string): Promise<ServerActionRe
 		},
 		(span) => {
 			return Effect.gen(function* (_) {
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
 				const dbService = yield* _(DatabaseService);
 
 				// Get the customer
@@ -472,29 +482,20 @@ export async function deleteCustomer(customerId: string): Promise<ServerActionRe
 					),
 				);
 
-				// Verify admin access
-				yield* _(
-					dbService.query("verifyAdmin", async () => {
-						return await db.query.employee.findFirst({
-							where: and(
-								eq(employee.userId, session.user.id),
-								eq(employee.organizationId, existingCustomer.organizationId),
-								eq(employee.isActive, true),
-							),
-						});
+				const actor = yield* _(
+					getProjectSettingsActorContext({
+						organizationId: existingCustomer.organizationId,
+						queryName: "deleteCustomer:actor",
 					}),
-					Effect.flatMap((emp) =>
-						emp?.role === "admin"
-							? Effect.succeed(emp)
-							: Effect.fail(
-									new AuthorizationError({
-										message: "Only admins can delete customers",
-										userId: session.user.id,
-										resource: "customer",
-										action: "delete",
-									}),
-								),
-					),
+				);
+				const session = actor.session;
+
+				yield* _(
+					ensureSettingsActorCanAccessCustomerTarget(actor, existingCustomer, {
+						message: "You do not have access to delete this customer",
+						resource: "customer",
+						action: "delete",
+					}),
 				);
 
 				// Soft delete
@@ -569,34 +570,11 @@ export async function getCustomersForSelection(
 		},
 		(span) => {
 			return Effect.gen(function* (_) {
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
-
-				// Verify the user belongs to this organization
-				yield* _(
-					dbService.query("verifyOrgMembership", async () => {
-						return await db.query.employee.findFirst({
-							where: and(
-								eq(employee.userId, session.user.id),
-								eq(employee.organizationId, organizationId),
-								eq(employee.isActive, true),
-							),
-						});
-					}),
-					Effect.flatMap((emp) =>
-						emp
-							? Effect.succeed(emp)
-							: Effect.fail(
-									new AuthorizationError({
-										message: "Not a member of this organization",
-										userId: session.user.id,
-										resource: "customer",
-										action: "read",
-									}),
-								),
-					),
+				const actor = yield* _(
+					getProjectSettingsActorContext({ organizationId, queryName: "getCustomersForSelection:actor" }),
 				);
+				const managedCustomerIds = yield* _(getManagedCustomerIdsForSettingsActor(actor));
+				const dbService = actor.dbService;
 
 				const customers = yield* _(
 					dbService.query("getCustomersForSelection", async () => {
@@ -612,7 +590,9 @@ export async function getCustomersForSelection(
 				);
 
 				span.setStatus({ code: SpanStatusCode.OK });
-				return customers;
+				return managedCustomerIds
+					? customers.filter((customerRecord) => managedCustomerIds.has(customerRecord.id))
+					: customers;
 			}).pipe(
 				Effect.catchAll((error) =>
 					Effect.gen(function* (_) {

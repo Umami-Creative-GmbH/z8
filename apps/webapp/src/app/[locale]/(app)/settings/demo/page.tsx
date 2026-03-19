@@ -1,38 +1,21 @@
-import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { getTranslate } from "@/tolgee/server";
-import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
-import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { DemoDataWizard } from "@/components/settings/demo-data-wizard";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getAuthContext } from "@/lib/auth-helpers";
+import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { getOrganizationEmployees } from "./actions";
 
 async function DemoSettingsContent() {
 	await connection(); // Mark as fully dynamic for cacheComponents mode
-	const t = await getTranslate();
-
-	const currentEmployee = await getCurrentEmployee();
-
-	if (!currentEmployee) {
-		return (
-			<div className="flex flex-1 items-center justify-center p-6">
-				<NoEmployeeError feature="manage demo data" />
-			</div>
-		);
-	}
-
-	// Check if user has admin role
-	const authContext = await getAuthContext();
-
-	if (!authContext?.employee || authContext.employee.role !== "admin") {
-		redirect("/");
-	}
+	const [t, { organizationId }] = await Promise.all([
+		getTranslate(),
+		requireOrgAdminSettingsAccess(),
+	]);
 
 	// Get employees for the multi-select
-	const employeesResult = await getOrganizationEmployees(authContext.employee.organizationId);
+	const employeesResult = await getOrganizationEmployees(organizationId);
 	const employees = employeesResult.success ? employeesResult.data : [];
 
 	return (
@@ -48,8 +31,8 @@ async function DemoSettingsContent() {
 			</div>
 
 			<DemoDataWizard
-				key={authContext.employee.organizationId}
-				organizationId={authContext.employee.organizationId}
+				key={organizationId}
+				organizationId={organizationId}
 				employees={employees}
 			/>
 		</div>

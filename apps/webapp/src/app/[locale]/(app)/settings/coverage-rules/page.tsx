@@ -1,28 +1,35 @@
-import { redirect } from "next/navigation";
 import { connection } from "next/server";
-import { NoEmployeeError } from "@/components/errors/no-employee-error";
+import { redirect } from "next/navigation";
 import { CoverageRulesManagement } from "@/components/settings/coverage-rules-management";
-import { getAuthContext } from "@/lib/auth-helpers";
+import {
+	getSchedulingSettingsAccessContext,
+	getScopedSchedulingLocationsForSettings,
+} from "@/lib/settings-scheduling-access";
 import { getTranslate } from "@/tolgee/server";
 
 export default async function CoverageRulesSettingsPage() {
 	await connection(); // Mark as fully dynamic for cacheComponents mode
 
-	const t = await getTranslate();
-	const authContext = await getAuthContext();
+	await getTranslate();
+	const accessContext = await getSchedulingSettingsAccessContext();
 
-	if (!authContext?.employee) {
-		return (
-			<div className="flex flex-1 items-center justify-center p-6">
-				<NoEmployeeError feature={t("settings.coverageRules.feature", "manage coverage rules")} />
-			</div>
-		);
+	if (!accessContext || !accessContext.canAccessCoverageRules) {
+		redirect("/settings");
 	}
 
-	// Only admins can access coverage rules settings
-	if (authContext.employee.role !== "admin") {
-		redirect("/");
-	}
+	const locations = await getScopedSchedulingLocationsForSettings({
+		organizationId: accessContext.organizationId,
+		manageableSubareaIds: accessContext.manageableSubareaIds,
+	});
 
-	return <CoverageRulesManagement organizationId={authContext.employee.organizationId} />;
+	return (
+		<CoverageRulesManagement
+			organizationId={accessContext.organizationId}
+			locations={locations}
+			manageableSubareaIds={
+				accessContext.manageableSubareaIds ? [...accessContext.manageableSubareaIds] : null
+			}
+			canManageCoverageSettings={accessContext.canManageCoverageSettings}
+		/>
+	);
 }

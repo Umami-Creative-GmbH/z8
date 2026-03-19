@@ -1,6 +1,5 @@
-import { redirect } from "next/navigation";
 import { DomainsAndBrandingTabs } from "@/components/settings/enterprise/domains-branding-tabs";
-import { requireUser } from "@/lib/auth-helpers";
+import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
 import {
 	getBrandingAction,
@@ -10,11 +9,10 @@ import {
 } from "../actions";
 
 export default async function CustomDomainsPage() {
-	const [authContext, t] = await Promise.all([requireUser(), getTranslate()]);
-
-	if (authContext.employee?.role !== "admin") {
-		redirect("/settings");
-	}
+	const [{ organizationId }, t] = await Promise.all([
+		requireOrgAdminSettingsAccess(),
+		getTranslate(),
+	]);
 
 	const [domains, branding, providers, socialOAuthConfigs] = await Promise.all([
 		listDomainsAction(),
@@ -42,7 +40,7 @@ export default async function CustomDomainsPage() {
 					initialBranding={branding}
 					initialProviders={providers as any}
 					initialSocialOAuthConfigs={socialOAuthConfigs}
-					organizationId={authContext.employee?.organizationId ?? ""}
+					organizationId={organizationId}
 				/>
 			</div>
 		</div>

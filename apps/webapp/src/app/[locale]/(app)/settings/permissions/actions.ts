@@ -23,6 +23,10 @@ import {
 	PermissionsService,
 } from "@/lib/effect/services/permissions.service";
 import { createLogger } from "@/lib/logger";
+import {
+	getEmployeeSettingsActorContext,
+	requireOrgAdminEmployeeSettingsAccess,
+} from "../employees/employee-action-utils";
 
 const logger = createLogger("PermissionsActions");
 
@@ -69,44 +73,22 @@ export async function grantTeamPermissions(
 		},
 		(span) => {
 			return Effect.gen(function* (_) {
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
+				const actor = yield* _(getEmployeeSettingsActorContext());
 				const permissionsService = yield* _(PermissionsService);
 
-				// Get current employee and verify admin role
-				const currentEmployee = yield* _(
-					dbService.query("getCurrentEmployee", async () => {
-						return await dbService.db.query.employee.findFirst({
-							where: eq(employee.userId, session.user.id),
-						});
+				yield* _(
+					requireOrgAdminEmployeeSettingsAccess(actor, {
+						message: "Only org admins can grant permissions",
+						resource: "team_permissions",
+						action: "grant",
 					}),
-					Effect.flatMap((emp) =>
-						emp
-							? Effect.succeed(emp)
-							: Effect.fail(
-									new NotFoundError({
-										message: "Employee profile not found",
-										entityType: "employee",
-									}),
-								),
-					),
 				);
 
-				if (currentEmployee.role !== "admin") {
-					yield* _(
-						Effect.fail(
-							new AuthorizationError({
-								message: "Only admins can grant permissions",
-								userId: currentEmployee.id,
-								resource: "team_permissions",
-								action: "grant",
-							}),
-						),
-					);
-				}
+				const grantedBy = actor.currentEmployee?.role === "admin"
+					? actor.currentEmployee.id
+					: actor.session.user.id;
 
-				span.setAttribute("currentEmployee.id", currentEmployee.id);
+				span.setAttribute("currentEmployee.id", grantedBy);
 
 				// Validate data
 				const validationResult = grantPermissionsSchema.safeParse(data);
@@ -126,15 +108,15 @@ export async function grantTeamPermissions(
 				const validatedData = validationResult.data;
 
 				// Grant permissions using PermissionsService
-				yield* _(
-					permissionsService.grantPermissions(
-						validatedData.employeeId,
-						validatedData.organizationId,
-						validatedData.permissions,
-						validatedData.teamId || null,
-						currentEmployee.id,
-					),
-				);
+					yield* _(
+						permissionsService.grantPermissions(
+							validatedData.employeeId,
+							validatedData.organizationId,
+							validatedData.permissions,
+							validatedData.teamId || null,
+							grantedBy,
+						),
+					);
 
 				logger.info(
 					{
@@ -188,44 +170,21 @@ export async function revokeTeamPermissions(
 		},
 		(span) => {
 			return Effect.gen(function* (_) {
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
+				const actor = yield* _(getEmployeeSettingsActorContext());
 				const permissionsService = yield* _(PermissionsService);
 
-				// Get current employee and verify admin role
-				const currentEmployee = yield* _(
-					dbService.query("getCurrentEmployee", async () => {
-						return await dbService.db.query.employee.findFirst({
-							where: eq(employee.userId, session.user.id),
-						});
+				yield* _(
+					requireOrgAdminEmployeeSettingsAccess(actor, {
+						message: "Only org admins can revoke permissions",
+						resource: "team_permissions",
+						action: "revoke",
 					}),
-					Effect.flatMap((emp) =>
-						emp
-							? Effect.succeed(emp)
-							: Effect.fail(
-									new NotFoundError({
-										message: "Employee profile not found",
-										entityType: "employee",
-									}),
-								),
-					),
 				);
 
-				if (currentEmployee.role !== "admin") {
-					yield* _(
-						Effect.fail(
-							new AuthorizationError({
-								message: "Only admins can revoke permissions",
-								userId: currentEmployee.id,
-								resource: "team_permissions",
-								action: "revoke",
-							}),
-						),
-					);
-				}
-
-				span.setAttribute("currentEmployee.id", currentEmployee.id);
+				span.setAttribute(
+					"currentEmployee.id",
+					actor.currentEmployee?.id ?? actor.session.user.id,
+				);
 
 				// Revoke permissions using PermissionsService
 				yield* _(
@@ -278,37 +237,19 @@ export async function getEmployeePermissions(
 	employeeId: string,
 ): Promise<ServerActionResult<EmployeePermissions[]>> {
 	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+		const actor = yield* _(getEmployeeSettingsActorContext());
 		const dbService = yield* _(DatabaseService);
 		const permissionsService = yield* _(PermissionsService);
 
-		// Get current employee
-		const currentEmployee = yield* _(
-			dbService.query("getCurrentEmployee", async () => {
-				return await dbService.db.query.employee.findFirst({
-					where: eq(employee.userId, session.user.id),
-				});
-			}),
-			Effect.flatMap((emp) =>
-				emp
-					? Effect.succeed(emp)
-					: Effect.fail(
-							new NotFoundError({
-								message: "Employee profile not found",
-								entityType: "employee",
-							}),
-						),
-			),
-		);
+		const isOrgAdmin = actor.accessTier === "orgAdmin";
+		const isSelf = actor.currentEmployee?.id === employeeId;
 
-		// Allow admins or self to view permissions
-		if (currentEmployee.role !== "admin" && currentEmployee.id !== employeeId) {
+		if (!isOrgAdmin && !isSelf) {
 			yield* _(
 				Effect.fail(
 					new AuthorizationError({
 						message: "Cannot view permissions for other employees",
-						userId: currentEmployee.id,
+						userId: actor.session.user.id,
 						resource: "team_permissions",
 						action: "read",
 					}),
@@ -393,44 +334,19 @@ export async function listEmployeePermissions(organizationId?: string): Promise<
 	>
 > {
 	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+		const actor = yield* _(getEmployeeSettingsActorContext());
 		const dbService = yield* _(DatabaseService);
 		const permissionsService = yield* _(PermissionsService);
 
-		// Get current employee and verify admin role
-		const currentEmployee = yield* _(
-			dbService.query("getCurrentEmployee", async () => {
-				return await dbService.db.query.employee.findFirst({
-					where: eq(employee.userId, session.user.id),
-				});
+		yield* _(
+			requireOrgAdminEmployeeSettingsAccess(actor, {
+				message: "Only org admins can list all permissions",
+				resource: "team_permissions",
+				action: "list",
 			}),
-			Effect.flatMap((emp) =>
-				emp
-					? Effect.succeed(emp)
-					: Effect.fail(
-							new NotFoundError({
-								message: "Employee profile not found",
-								entityType: "employee",
-							}),
-						),
-			),
 		);
 
-		if (currentEmployee.role !== "admin") {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Only admins can list all permissions",
-						userId: currentEmployee.id,
-						resource: "team_permissions",
-						action: "list",
-					}),
-				),
-			);
-		}
-
-		const targetOrgId = organizationId || currentEmployee.organizationId;
+		const targetOrgId = organizationId || actor.organizationId;
 
 		// Get all employees in organization
 		const employees = yield* _(

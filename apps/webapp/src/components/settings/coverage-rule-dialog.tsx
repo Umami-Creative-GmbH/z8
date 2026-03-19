@@ -1,7 +1,7 @@
 "use client";
 
 import { useForm } from "@tanstack/react-form";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useEffect } from "react";
 import { toast } from "sonner";
@@ -9,7 +9,6 @@ import {
 	createCoverageRule,
 	updateCoverageRule,
 } from "@/app/[locale]/(app)/settings/coverage-rules/actions";
-import { getLocationsWithSubareas } from "@/app/[locale]/(app)/scheduling/actions";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -34,7 +33,16 @@ import type { DayOfWeek } from "@/lib/validations/coverage";
 interface CoverageRuleDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
-	organizationId: string;
+	locations: Array<{
+		id: string;
+		name: string;
+		subareas: Array<{
+			id: string;
+			name: string;
+			isActive: boolean;
+		}>;
+	}>;
+	requireScopedSubareaSelection: boolean;
 	editingRule: CoverageRuleWithRelations | null;
 	onSuccess: () => void;
 }
@@ -52,40 +60,29 @@ const DAYS_OF_WEEK: { value: DayOfWeek; label: string }[] = [
 export function CoverageRuleDialog({
 	open,
 	onOpenChange,
-	organizationId,
+	locations,
+	requireScopedSubareaSelection,
 	editingRule,
 	onSuccess,
 }: CoverageRuleDialogProps) {
 	const { t } = useTranslate();
 	const isEditing = !!editingRule;
 
-	// Fetch locations with subareas
-	const { data: locationsResult } = useQuery({
-		queryKey: ["locations", organizationId],
-		queryFn: async () => {
-			const result = await getLocationsWithSubareas();
-			if (!result.success) throw new Error(result.error);
-			return result.data;
-		},
-		enabled: open,
-	});
-
-	const locations = locationsResult || [];
-
 	// Build flat list of subareas with location names
 	const subareaOptions = locations.flatMap((loc) =>
-		loc.subareas.map((sub) => ({
+		loc.subareas.filter((sub) => sub.isActive).map((sub) => ({
 			id: sub.id,
 			name: sub.name,
 			locationName: loc.name,
 			locationId: loc.id,
 		})),
 	);
+	const defaultSubareaId = subareaOptions[0]?.id || "";
 
 	// Form
 	const form = useForm({
 		defaultValues: {
-			subareaId: editingRule?.subareaId || "",
+			subareaId: editingRule?.subareaId || (requireScopedSubareaSelection ? defaultSubareaId : ""),
 			dayOfWeek: (editingRule?.dayOfWeek || "monday") as DayOfWeek,
 			startTime: editingRule?.startTime || "09:00",
 			endTime: editingRule?.endTime || "17:00",
@@ -104,14 +101,15 @@ export function CoverageRuleDialog({
 	useEffect(() => {
 		if (open) {
 			form.reset({
-				subareaId: editingRule?.subareaId || "",
+				subareaId:
+					editingRule?.subareaId || (requireScopedSubareaSelection ? defaultSubareaId : ""),
 				dayOfWeek: (editingRule?.dayOfWeek || "monday") as DayOfWeek,
 				startTime: editingRule?.startTime || "09:00",
 				endTime: editingRule?.endTime || "17:00",
 				minimumStaffCount: editingRule?.minimumStaffCount || 1,
 			});
 		}
-	}, [open, editingRule, form]);
+	}, [defaultSubareaId, editingRule, form, open, requireScopedSubareaSelection]);
 
 	// Create mutation
 	const createMutation = useMutation({
@@ -308,7 +306,10 @@ export function CoverageRuleDialog({
 						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
 							{t("common.cancel", "Cancel")}
 						</Button>
-						<Button type="submit" disabled={isSubmitting}>
+						<Button
+							type="submit"
+							disabled={isSubmitting || (requireScopedSubareaSelection && !form.state.values.subareaId)}
+						>
 							{isSubmitting
 								? t("common.saving", "Saving...")
 								: isEditing

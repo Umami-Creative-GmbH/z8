@@ -26,6 +26,14 @@ import type { ServerActionResult } from "@/lib/effect/result";
 import { AuthService, AuthServiceLive } from "@/lib/effect/services/auth.service";
 import { DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { logger } from "@/lib/logger";
+import {
+	ensureSettingsActorCanAccessCustomerTarget,
+	ensureSettingsActorCanAccessProjectTarget,
+	filterItemsToManagedProjects,
+	getManagedProjectIdsForSettingsActor,
+	getProjectSettingsActorContext,
+	getProjectTarget,
+} from "./project-scope";
 
 // Types for project data
 export type ProjectStatus = "planned" | "active" | "paused" | "completed" | "archived";
@@ -102,34 +110,11 @@ export async function getProjects(
 		},
 		(span) => {
 			return Effect.gen(function* (_) {
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
-
-				// Verify admin access
-				yield* _(
-					dbService.query("getEmployee", async () => {
-						return await db.query.employee.findFirst({
-							where: and(
-								eq(employee.userId, session.user.id),
-								eq(employee.organizationId, organizationId),
-								eq(employee.isActive, true),
-							),
-						});
-					}),
-					Effect.flatMap((emp) =>
-						emp?.role === "admin"
-							? Effect.succeed(emp)
-							: Effect.fail(
-									new AuthorizationError({
-										message: "Only admins can manage projects",
-										userId: session.user.id,
-										resource: "project",
-										action: "read",
-									}),
-								),
-					),
+				const actor = yield* _(
+					getProjectSettingsActorContext({ organizationId, queryName: "getProjects:actor" }),
 				);
+				const managedProjectIds = yield* _(getManagedProjectIdsForSettingsActor(actor));
+				const dbService = actor.dbService;
 
 				// Fetch all projects with customer relation
 				const projects = yield* _(
@@ -147,7 +132,8 @@ export async function getProjects(
 				);
 
 				// Fetch managers for all projects
-				const projectIds = projects.map((p) => p.id);
+				const scopedProjects = filterItemsToManagedProjects(projects, managedProjectIds);
+				const projectIds = scopedProjects.map((p) => p.id);
 				const managers = yield* _(
 					dbService.query("getProjectManagers", async () => {
 						return projectIds.length > 0
@@ -205,7 +191,7 @@ export async function getProjects(
 				);
 
 				// Map to ProjectWithDetails
-				const result: ProjectWithDetails[] = projects.map((p) => ({
+				const result: ProjectWithDetails[] = scopedProjects.map((p) => ({
 					id: p.id,
 					organizationId: p.organizationId,
 					name: p.name,
@@ -286,34 +272,11 @@ export async function createProject(
 		},
 		(span) => {
 			return Effect.gen(function* (_) {
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
-
-				// Verify admin access
-				yield* _(
-					dbService.query("verifyAdmin", async () => {
-						return await db.query.employee.findFirst({
-							where: and(
-								eq(employee.userId, session.user.id),
-								eq(employee.organizationId, input.organizationId),
-								eq(employee.isActive, true),
-							),
-						});
-					}),
-					Effect.flatMap((emp) =>
-						emp?.role === "admin"
-							? Effect.succeed(emp)
-							: Effect.fail(
-									new AuthorizationError({
-										message: "Only admins can create projects",
-										userId: session.user.id,
-										resource: "project",
-										action: "create",
-									}),
-								),
-					),
+				const actor = yield* _(
+					getProjectSettingsActorContext({ organizationId: input.organizationId, queryName: "createProject:actor" }),
 				);
+				const session = actor.session;
+				const dbService = actor.dbService;
 
 				// Check for duplicate name
 				const existing = yield* _(
@@ -353,7 +316,7 @@ export async function createProject(
 					);
 
 					if (!customerExists) {
-						yield* _(
+						return yield* _(
 							Effect.fail(
 								new ValidationError({
 									message: "Customer not found",
@@ -362,56 +325,61 @@ export async function createProject(
 							),
 						);
 					}
+
+					yield* _(
+						ensureSettingsActorCanAccessCustomerTarget(actor, customerExists, {
+							message: "You do not have access to assign this customer",
+							resource: "project",
+							action: "create",
+						}),
+					);
 				}
 
-				// Create the project
-				const [created] = yield* _(
+				const created = yield* _(
 					Effect.tryPromise({
 						try: async () => {
-							return await db
-								.insert(project)
-								.values({
-									organizationId: input.organizationId,
-									name: input.name,
-									description: input.description || null,
-									status: input.status || "planned",
-									icon: input.icon || null,
-									color: input.color || null,
-									budgetHours: input.budgetHours?.toString() || null,
-									deadline: input.deadline || null,
-									customerId: input.customerId || null,
-									isActive: true,
-									createdBy: session.user.id,
-									updatedAt: new Date(),
-								})
-								.returning();
-						},
-						catch: (error) =>
-							new DatabaseError({
-								message: error instanceof Error ? error.message : "Failed to create project",
-								operation: "insert",
-								table: "project",
-							}),
-					}),
-				);
+							return await db.transaction(async (tx) => {
+								const [newProject] = await tx
+									.insert(project)
+									.values({
+										organizationId: input.organizationId,
+										name: input.name,
+										description: input.description || null,
+										status: input.status || "planned",
+										icon: input.icon || null,
+										color: input.color || null,
+										budgetHours: input.budgetHours?.toString() || null,
+										deadline: input.deadline || null,
+										customerId: input.customerId || null,
+										isActive: true,
+										createdBy: session.user.id,
+										updatedAt: new Date(),
+									})
+									.returning();
 
-				// Create notification state for the project
-				yield* _(
-					Effect.tryPromise({
-						try: async () => {
-							await db.insert(projectNotificationState).values({
-								projectId: created.id,
-								budgetThresholdsNotified: [],
-								deadlineThresholdsNotified: [],
-								updatedAt: new Date(),
+								await tx.insert(projectNotificationState).values({
+									projectId: newProject.id,
+									budgetThresholdsNotified: [],
+									deadlineThresholdsNotified: [],
+									updatedAt: new Date(),
+								});
+
+								if (actor.accessTier === "manager" && actor.currentEmployee) {
+									await tx.insert(projectManager).values({
+										projectId: newProject.id,
+										employeeId: actor.currentEmployee.id,
+										assignedBy: session.user.id,
+									});
+								}
+
+								return newProject;
 							});
 						},
 						catch: (error) =>
 							new DatabaseError({
-								message:
-									error instanceof Error ? error.message : "Failed to create notification state",
-								operation: "insert",
-								table: "projectNotificationState",
+								message: error instanceof Error ? error.message : "Failed to create project",
+								operation: "transaction",
+								table: "project",
 							}),
 					}),
 				);
@@ -471,52 +439,22 @@ export async function updateProject(
 		},
 		(span) => {
 			return Effect.gen(function* (_) {
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
-
-				// Get the project and verify access
-				const existingProject = yield* _(
-					dbService.query("getProject", async () => {
-						return await db.query.project.findFirst({
-							where: eq(project.id, projectId),
-						});
+				const existingProject = yield* _(getProjectTarget(projectId, "updateProject:getProject"));
+				const actor = yield* _(
+					getProjectSettingsActorContext({
+						organizationId: existingProject.organizationId,
+						queryName: "updateProject:actor",
 					}),
-					Effect.flatMap((p) =>
-						p
-							? Effect.succeed(p)
-							: Effect.fail(
-									new NotFoundError({
-										message: "Project not found",
-										entityType: "project",
-									}),
-								),
-					),
 				);
+				const session = actor.session;
+				const dbService = actor.dbService;
 
-				// Verify admin access
 				yield* _(
-					dbService.query("verifyAdmin", async () => {
-						return await db.query.employee.findFirst({
-							where: and(
-								eq(employee.userId, session.user.id),
-								eq(employee.organizationId, existingProject.organizationId),
-								eq(employee.isActive, true),
-							),
-						});
+					ensureSettingsActorCanAccessProjectTarget(actor, existingProject, {
+						message: "You do not have access to update this project",
+						resource: "project",
+						action: "update",
 					}),
-					Effect.flatMap((emp) =>
-						emp?.role === "admin"
-							? Effect.succeed(emp)
-							: Effect.fail(
-									new AuthorizationError({
-										message: "Only admins can update projects",
-										userId: session.user.id,
-										resource: "project",
-										action: "update",
-									}),
-								),
-					),
 				);
 
 				// Check for duplicate name if updating name
@@ -574,7 +512,7 @@ export async function updateProject(
 					);
 
 					if (!customerExists) {
-						yield* _(
+						return yield* _(
 							Effect.fail(
 								new ValidationError({
 									message: "Customer not found",
@@ -583,6 +521,14 @@ export async function updateProject(
 							),
 						);
 					}
+
+					yield* _(
+						ensureSettingsActorCanAccessCustomerTarget(actor, customerExists, {
+							message: "You do not have access to assign this customer",
+							resource: "project",
+							action: "update",
+						}),
+					);
 				}
 
 				// Update the project
@@ -661,52 +607,22 @@ export async function addProjectManager(
 		},
 		(span) => {
 			return Effect.gen(function* (_) {
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
-
-				// Get the project
-				const existingProject = yield* _(
-					dbService.query("getProject", async () => {
-						return await db.query.project.findFirst({
-							where: eq(project.id, projectId),
-						});
+				const existingProject = yield* _(getProjectTarget(projectId, "addProjectManager:getProject"));
+				const actor = yield* _(
+					getProjectSettingsActorContext({
+						organizationId: existingProject.organizationId,
+						queryName: "addProjectManager:actor",
 					}),
-					Effect.flatMap((p) =>
-						p
-							? Effect.succeed(p)
-							: Effect.fail(
-									new NotFoundError({
-										message: "Project not found",
-										entityType: "project",
-									}),
-								),
-					),
 				);
+				const session = actor.session;
+				const dbService = actor.dbService;
 
-				// Verify admin access
 				yield* _(
-					dbService.query("verifyAdmin", async () => {
-						return await db.query.employee.findFirst({
-							where: and(
-								eq(employee.userId, session.user.id),
-								eq(employee.organizationId, existingProject.organizationId),
-								eq(employee.isActive, true),
-							),
-						});
+					ensureSettingsActorCanAccessProjectTarget(actor, existingProject, {
+						message: "You do not have access to update this project",
+						resource: "projectManager",
+						action: "create",
 					}),
-					Effect.flatMap((emp) =>
-						emp?.role === "admin"
-							? Effect.succeed(emp)
-							: Effect.fail(
-									new AuthorizationError({
-										message: "Only admins can add project managers",
-										userId: session.user.id,
-										resource: "projectManager",
-										action: "create",
-									}),
-								),
-					),
 				);
 
 				// Check if already a manager
@@ -805,52 +721,22 @@ export async function removeProjectManager(
 		},
 		(span) => {
 			return Effect.gen(function* (_) {
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
-
-				// Get the project
-				const existingProject = yield* _(
-					dbService.query("getProject", async () => {
-						return await db.query.project.findFirst({
-							where: eq(project.id, projectId),
-						});
+				const existingProject = yield* _(getProjectTarget(projectId, "removeProjectManager:getProject"));
+				const actor = yield* _(
+					getProjectSettingsActorContext({
+						organizationId: existingProject.organizationId,
+						queryName: "removeProjectManager:actor",
 					}),
-					Effect.flatMap((p) =>
-						p
-							? Effect.succeed(p)
-							: Effect.fail(
-									new NotFoundError({
-										message: "Project not found",
-										entityType: "project",
-									}),
-								),
-					),
 				);
+				const session = actor.session;
+				const dbService = actor.dbService;
 
-				// Verify admin access
 				yield* _(
-					dbService.query("verifyAdmin", async () => {
-						return await db.query.employee.findFirst({
-							where: and(
-								eq(employee.userId, session.user.id),
-								eq(employee.organizationId, existingProject.organizationId),
-								eq(employee.isActive, true),
-							),
-						});
+					ensureSettingsActorCanAccessProjectTarget(actor, existingProject, {
+						message: "You do not have access to update this project",
+						resource: "projectManager",
+						action: "delete",
 					}),
-					Effect.flatMap((emp) =>
-						emp?.role === "admin"
-							? Effect.succeed(emp)
-							: Effect.fail(
-									new AuthorizationError({
-										message: "Only admins can remove project managers",
-										userId: session.user.id,
-										resource: "projectManager",
-										action: "delete",
-									}),
-								),
-					),
 				);
 
 				// Remove the manager
@@ -931,52 +817,22 @@ export async function addProjectAssignment(
 		},
 		(span) => {
 			return Effect.gen(function* (_) {
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
-
-				// Get the project
-				const existingProject = yield* _(
-					dbService.query("getProject", async () => {
-						return await db.query.project.findFirst({
-							where: eq(project.id, projectId),
-						});
+				const existingProject = yield* _(getProjectTarget(projectId, "addProjectAssignment:getProject"));
+				const actor = yield* _(
+					getProjectSettingsActorContext({
+						organizationId: existingProject.organizationId,
+						queryName: "addProjectAssignment:actor",
 					}),
-					Effect.flatMap((p) =>
-						p
-							? Effect.succeed(p)
-							: Effect.fail(
-									new NotFoundError({
-										message: "Project not found",
-										entityType: "project",
-									}),
-								),
-					),
 				);
+				const session = actor.session;
+				const dbService = actor.dbService;
 
-				// Verify admin access
 				yield* _(
-					dbService.query("verifyAdmin", async () => {
-						return await db.query.employee.findFirst({
-							where: and(
-								eq(employee.userId, session.user.id),
-								eq(employee.organizationId, existingProject.organizationId),
-								eq(employee.isActive, true),
-							),
-						});
+					ensureSettingsActorCanAccessProjectTarget(actor, existingProject, {
+						message: "You do not have access to update this project",
+						resource: "projectAssignment",
+						action: "create",
 					}),
-					Effect.flatMap((emp) =>
-						emp?.role === "admin"
-							? Effect.succeed(emp)
-							: Effect.fail(
-									new AuthorizationError({
-										message: "Only admins can add project assignments",
-										userId: session.user.id,
-										resource: "projectAssignment",
-										action: "create",
-									}),
-								),
-					),
 				);
 
 				// Check if already assigned
@@ -1085,9 +941,9 @@ export async function removeProjectAssignment(
 		},
 		(span) => {
 			return Effect.gen(function* (_) {
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
+				const actor = yield* _(getProjectSettingsActorContext({ queryName: "removeProjectAssignment:actor" }));
+				const session = actor.session;
+				const dbService = actor.dbService;
 
 				// Get the assignment
 				const existingAssignment = yield* _(
@@ -1108,29 +964,16 @@ export async function removeProjectAssignment(
 					),
 				);
 
-				// Verify admin access
+				const assignmentProject = yield* _(
+					getProjectTarget(existingAssignment.projectId, "removeProjectAssignment:getProject"),
+				);
+
 				yield* _(
-					dbService.query("verifyAdmin", async () => {
-						return await db.query.employee.findFirst({
-							where: and(
-								eq(employee.userId, session.user.id),
-								eq(employee.organizationId, existingAssignment.organizationId),
-								eq(employee.isActive, true),
-							),
-						});
+					ensureSettingsActorCanAccessProjectTarget(actor, assignmentProject, {
+						message: "You do not have access to update this project",
+						resource: "projectAssignment",
+						action: "delete",
 					}),
-					Effect.flatMap((emp) =>
-						emp?.role === "admin"
-							? Effect.succeed(emp)
-							: Effect.fail(
-									new AuthorizationError({
-										message: "Only admins can remove project assignments",
-										userId: session.user.id,
-										resource: "projectAssignment",
-										action: "delete",
-									}),
-								),
-					),
 				);
 
 				// Remove the assignment

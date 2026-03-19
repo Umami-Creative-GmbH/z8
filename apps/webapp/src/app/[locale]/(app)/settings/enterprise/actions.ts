@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import type { SocialOAuthProvider, SocialOAuthProviderConfig } from "@/db/schema";
 import { auth } from "@/lib/auth";
-import { requireUser } from "@/lib/auth-helpers";
+import { canManageCurrentOrganizationSettings, requireUser } from "@/lib/auth-helpers";
 import type { AuthConfig, OrganizationBranding } from "@/lib/domain";
 import {
 	deleteCustomDomain,
@@ -26,44 +26,37 @@ import {
 } from "@/lib/social-oauth";
 import { deleteOrgSecret, storeOrgSecret } from "@/lib/vault";
 
+async function requireEnterpriseOrgAdmin() {
+	const authContext = await requireUser();
+	const organizationId = authContext.session.activeOrganizationId;
+
+	if (!organizationId) {
+		throw new Error("No organization selected");
+	}
+
+	if (!(await canManageCurrentOrganizationSettings())) {
+		throw new Error("Unauthorized");
+	}
+
+	return { authContext, organizationId };
+}
+
 // ============ Domain Actions ============
 
 export async function listDomainsAction() {
-	const authContext = await requireUser();
-
-	if (authContext.employee?.role !== "admin") {
-		throw new Error("Unauthorized");
-	}
-
-	if (!authContext.employee?.organizationId) {
-		throw new Error("No organization selected");
-	}
-
-	return listOrganizationDomains(authContext.employee.organizationId);
+	const { organizationId } = await requireEnterpriseOrgAdmin();
+	return listOrganizationDomains(organizationId);
 }
 
 export async function addDomainAction(domain: string) {
-	const authContext = await requireUser();
-
-	if (authContext.employee?.role !== "admin") {
-		throw new Error("Unauthorized");
-	}
-
-	if (!authContext.employee?.organizationId) {
-		throw new Error("No organization selected");
-	}
-
-	const result = await registerCustomDomain(authContext.employee.organizationId, domain);
+	const { organizationId } = await requireEnterpriseOrgAdmin();
+	const result = await registerCustomDomain(organizationId, domain);
 	revalidatePath("/settings/enterprise/domains");
 	return result;
 }
 
 export async function verifyDomainAction(domainId: string) {
-	const authContext = await requireUser();
-
-	if (authContext.employee?.role !== "admin") {
-		throw new Error("Unauthorized");
-	}
+	await requireEnterpriseOrgAdmin();
 
 	const result = await verifyDomainOwnership(domainId);
 	revalidatePath("/settings/enterprise/domains");
@@ -71,11 +64,7 @@ export async function verifyDomainAction(domainId: string) {
 }
 
 export async function regenerateVerificationTokenAction(domainId: string) {
-	const authContext = await requireUser();
-
-	if (authContext.employee?.role !== "admin") {
-		throw new Error("Unauthorized");
-	}
+	await requireEnterpriseOrgAdmin();
 
 	const token = await requestNewVerificationToken(domainId);
 	revalidatePath("/settings/enterprise/domains");
@@ -83,22 +72,14 @@ export async function regenerateVerificationTokenAction(domainId: string) {
 }
 
 export async function updateDomainAuthConfigAction(domainId: string, config: AuthConfig) {
-	const authContext = await requireUser();
-
-	if (authContext.employee?.role !== "admin") {
-		throw new Error("Unauthorized");
-	}
+	await requireEnterpriseOrgAdmin();
 
 	await updateDomainAuthConfig(domainId, config);
 	revalidatePath("/settings/enterprise/domains");
 }
 
 export async function deleteDomainAction(domainId: string) {
-	const authContext = await requireUser();
-
-	if (authContext.employee?.role !== "admin") {
-		throw new Error("Unauthorized");
-	}
+	await requireEnterpriseOrgAdmin();
 
 	await deleteCustomDomain(domainId);
 	revalidatePath("/settings/enterprise/domains");
@@ -162,17 +143,7 @@ function normalizeSSOProvider(provider: RawSSOProvider): SSOProviderResponse {
 }
 
 export async function listSSOProvidersAction(): Promise<SSOProviderResponse[]> {
-	const authContext = await requireUser();
-
-	if (authContext.employee?.role !== "admin") {
-		throw new Error("Unauthorized");
-	}
-
-	if (!authContext.employee?.organizationId) {
-		throw new Error("No organization selected");
-	}
-
-	const organizationId = authContext.employee.organizationId;
+	const { organizationId } = await requireEnterpriseOrgAdmin();
 
 	const rawResult = await (auth.api as any).listSSOProviders({
 		headers: await headers(),
@@ -198,17 +169,7 @@ export interface OIDCProviderInput {
 }
 
 export async function registerSSOProviderAction(data: OIDCProviderInput) {
-	const authContext = await requireUser();
-
-	if (authContext.employee?.role !== "admin") {
-		throw new Error("Unauthorized");
-	}
-
-	if (!authContext.employee?.organizationId) {
-		throw new Error("No organization selected");
-	}
-
-	const organizationId = authContext.employee.organizationId;
+	const { organizationId } = await requireEnterpriseOrgAdmin();
 	const providerId = data.providerId.trim();
 	const issuer = data.issuer.trim();
 	const domain = data.domain.trim().toLowerCase();
@@ -248,17 +209,7 @@ export async function registerSSOProviderAction(data: OIDCProviderInput) {
 }
 
 export async function deleteSSOProviderAction(providerId: string) {
-	const authContext = await requireUser();
-
-	if (authContext.employee?.role !== "admin") {
-		throw new Error("Unauthorized");
-	}
-
-	if (!authContext.employee?.organizationId) {
-		throw new Error("No organization selected");
-	}
-
-	const organizationId = authContext.employee.organizationId;
+	const { organizationId } = await requireEnterpriseOrgAdmin();
 	const providers = await listSSOProvidersAction();
 	const provider = providers.find(
 		(entry) => entry.id === providerId || entry.providerId === providerId,
@@ -281,21 +232,13 @@ export async function deleteSSOProviderAction(providerId: string) {
 }
 
 export async function requestSSODomainVerificationAction(providerId: string) {
-	const authContext = await requireUser();
-
-	if (authContext.employee?.role !== "admin") {
-		throw new Error("Unauthorized");
-	}
-
-	if (!authContext.employee?.organizationId) {
-		throw new Error("No organization selected");
-	}
+	const { organizationId } = await requireEnterpriseOrgAdmin();
 
 	const provider = (await listSSOProvidersAction()).find(
 		(entry) => entry.id === providerId || entry.providerId === providerId,
 	);
 
-	if (!provider || provider.organizationId !== authContext.employee.organizationId) {
+	if (!provider || provider.organizationId !== organizationId) {
 		throw new Error("SSO provider not found in organization");
 	}
 
@@ -314,21 +257,13 @@ export async function requestSSODomainVerificationAction(providerId: string) {
 }
 
 export async function verifySSODomainAction(providerId: string) {
-	const authContext = await requireUser();
-
-	if (authContext.employee?.role !== "admin") {
-		throw new Error("Unauthorized");
-	}
-
-	if (!authContext.employee?.organizationId) {
-		throw new Error("No organization selected");
-	}
+	const { organizationId } = await requireEnterpriseOrgAdmin();
 
 	const provider = (await listSSOProvidersAction()).find(
 		(entry) => entry.id === providerId || entry.providerId === providerId,
 	);
 
-	if (!provider || provider.organizationId !== authContext.employee.organizationId) {
+	if (!provider || provider.organizationId !== organizationId) {
 		throw new Error("SSO provider not found in organization");
 	}
 
@@ -346,31 +281,13 @@ export async function verifySSODomainAction(providerId: string) {
 // ============ Branding Actions ============
 
 export async function getBrandingAction() {
-	const authContext = await requireUser();
-
-	if (authContext.employee?.role !== "admin") {
-		throw new Error("Unauthorized");
-	}
-
-	if (!authContext.employee?.organizationId) {
-		throw new Error("No organization selected");
-	}
-
-	return getOrganizationBranding(authContext.employee.organizationId);
+	const { organizationId } = await requireEnterpriseOrgAdmin();
+	return getOrganizationBranding(organizationId);
 }
 
 export async function updateBrandingAction(branding: Partial<OrganizationBranding>) {
-	const authContext = await requireUser();
-
-	if (authContext.employee?.role !== "admin") {
-		throw new Error("Unauthorized");
-	}
-
-	if (!authContext.employee?.organizationId) {
-		throw new Error("No organization selected");
-	}
-
-	await updateOrganizationBranding(authContext.employee.organizationId, branding);
+	const { organizationId } = await requireEnterpriseOrgAdmin();
+	await updateOrganizationBranding(organizationId, branding);
 	revalidatePath("/settings/enterprise/branding");
 }
 
@@ -394,17 +311,8 @@ export interface SocialOAuthConfigResponse {
 }
 
 export async function listSocialOAuthConfigsAction(): Promise<SocialOAuthConfigResponse[]> {
-	const authContext = await requireUser();
-
-	if (authContext.employee?.role !== "admin") {
-		throw new Error("Unauthorized");
-	}
-
-	if (!authContext.employee?.organizationId) {
-		throw new Error("No organization selected");
-	}
-
-	const configs = await listOrgSocialOAuthConfigs(authContext.employee.organizationId);
+	const { organizationId } = await requireEnterpriseOrgAdmin();
+	const configs = await listOrgSocialOAuthConfigs(organizationId);
 
 	// Return configs without exposing secrets
 	return configs.map((config) => ({
@@ -430,18 +338,10 @@ export interface AddSocialOAuthInput {
 }
 
 export async function addSocialOAuthConfigAction(data: AddSocialOAuthInput) {
-	const authContext = await requireUser();
-
-	if (authContext.employee?.role !== "admin") {
-		throw new Error("Unauthorized");
-	}
-
-	if (!authContext.employee?.organizationId) {
-		throw new Error("No organization selected");
-	}
+	const { organizationId } = await requireEnterpriseOrgAdmin();
 
 	const config = await createSocialOAuthConfig({
-		organizationId: authContext.employee.organizationId,
+		organizationId,
 		provider: data.provider,
 		clientId: data.clientId,
 		clientSecret: data.clientSecret,
@@ -476,17 +376,9 @@ export async function updateSocialOAuthConfigAction(
 	configId: string,
 	data: UpdateSocialOAuthInput,
 ) {
-	const authContext = await requireUser();
+	const { organizationId } = await requireEnterpriseOrgAdmin();
 
-	if (authContext.employee?.role !== "admin") {
-		throw new Error("Unauthorized");
-	}
-
-	if (!authContext.employee?.organizationId) {
-		throw new Error("No organization selected");
-	}
-
-	const config = await updateSocialOAuthConfig(configId, authContext.employee.organizationId, {
+	const config = await updateSocialOAuthConfig(configId, organizationId, {
 		clientId: data.clientId,
 		clientSecret: data.clientSecret,
 		providerConfig: data.providerConfig,
@@ -511,32 +403,13 @@ export async function updateSocialOAuthConfigAction(
 }
 
 export async function deleteSocialOAuthConfigAction(configId: string) {
-	const authContext = await requireUser();
-
-	if (authContext.employee?.role !== "admin") {
-		throw new Error("Unauthorized");
-	}
-
-	if (!authContext.employee?.organizationId) {
-		throw new Error("No organization selected");
-	}
-
-	await deleteSocialOAuthConfig(configId, authContext.employee.organizationId);
+	const { organizationId } = await requireEnterpriseOrgAdmin();
+	await deleteSocialOAuthConfig(configId, organizationId);
 	revalidatePath("/settings/enterprise/social-oauth");
 }
 
 export async function testSocialOAuthConfigAction(configId: string) {
-	const authContext = await requireUser();
-
-	if (authContext.employee?.role !== "admin") {
-		throw new Error("Unauthorized");
-	}
-
-	if (!authContext.employee?.organizationId) {
-		throw new Error("No organization selected");
-	}
-
-	const organizationId = authContext.employee.organizationId;
+	const { organizationId } = await requireEnterpriseOrgAdmin();
 
 	// For now, just validate that the config exists and mark it as tested
 	// A full test would require initiating an OAuth flow, which needs user interaction
@@ -555,19 +428,8 @@ export async function testSocialOAuthConfigAction(configId: string) {
 export async function getConfiguredSocialProvidersAction(): Promise<
 	Record<SocialOAuthProvider, boolean>
 > {
-	const authContext = await requireUser();
-
-	if (!authContext.employee?.organizationId) {
-		// Return all false if no org selected
-		return {
-			google: false,
-			github: false,
-			linkedin: false,
-			apple: false,
-		};
-	}
-
-	return getConfiguredProviders(authContext.employee.organizationId);
+	const { organizationId } = await requireEnterpriseOrgAdmin();
+	return getConfiguredProviders(organizationId);
 }
 
 // ============ Turnstile Actions ============
@@ -577,16 +439,7 @@ export async function getConfiguredSocialProvidersAction(): Promise<
  * Vault path: secret/organizations/{orgId}/turnstile/secret_key
  */
 export async function storeTurnstileSecretAction(secretKey: string) {
-	const authContext = await requireUser();
-
-	if (authContext.employee?.role !== "admin") {
-		throw new Error("Unauthorized");
-	}
-
-	if (!authContext.employee?.organizationId) {
-		throw new Error("No organization selected");
-	}
-
-	await storeOrgSecret(authContext.employee.organizationId, "turnstile/secret_key", secretKey);
+	const { organizationId } = await requireEnterpriseOrgAdmin();
+	await storeOrgSecret(organizationId, "turnstile/secret_key", secretKey);
 	revalidatePath("/settings/enterprise/domains");
 }

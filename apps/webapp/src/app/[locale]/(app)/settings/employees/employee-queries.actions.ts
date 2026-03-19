@@ -3,7 +3,7 @@
 import { and, asc, count, eq, ilike, inArray, notInArray, or, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import { user } from "@/db/auth-schema";
-import { employee, team } from "@/db/schema";
+import { employee, employeeManagers, team } from "@/db/schema";
 import { NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
@@ -15,7 +15,10 @@ import type {
 	PaginatedEmployeeResponse,
 	SelectableEmployee,
 } from "./employee-action-types";
-import { ensureSameOrganization, getEmployeeContext } from "./employee-action-utils";
+import {
+	ensureSettingsActorCanAccessEmployeeTarget,
+	getEmployeeSettingsActorContext,
+} from "./employee-action-utils";
 
 const DEFAULT_LIMIT = 20;
 
@@ -30,7 +33,7 @@ function buildEmployeeFilters(
 	organizationId: string,
 	params: Pick<
 		EmployeeSelectParams,
-		"search" | "role" | "roles" | "status" | "teamId" | "excludeIds"
+		"search" | "role" | "roles" | "status" | "teamId" | "excludeIds" | "managerId"
 	>,
 ) {
 	const conditions = [eq(employee.organizationId, organizationId)];
@@ -49,6 +52,17 @@ function buildEmployeeFilters(
 
 	if (params.teamId) {
 		conditions.push(eq(employee.teamId, params.teamId));
+	}
+
+	if (params.managerId) {
+		conditions.push(
+			sql<boolean>`exists (
+				select 1
+				from ${employeeManagers}
+				where ${employeeManagers.employeeId} = ${employee.id}
+				and ${employeeManagers.managerId} = ${params.managerId}
+			)`,
+		);
 	}
 
 	if (params.excludeIds?.length) {
@@ -101,10 +115,15 @@ function mapSelectableEmployeeRow(row: {
 
 function loadEmployeePage(params: EmployeeListParams) {
 	return Effect.gen(function* (_) {
-		const { currentEmployee, dbService } = yield* _(getEmployeeContext());
+		const actor = yield* _(getEmployeeSettingsActorContext());
+		const { dbService } = actor;
 		const limit = params.limit ?? DEFAULT_LIMIT;
 		const offset = params.offset ?? 0;
-		const where = buildEmployeeFilters(currentEmployee.organizationId, params);
+		const where = buildEmployeeFilters(actor.organizationId, {
+			...params,
+			managerId:
+				actor.accessTier === "manager" && actor.currentEmployee ? actor.currentEmployee.id : undefined,
+		});
 
 		const [totalResult, rows] = yield* _(
 			Effect.all([
@@ -140,10 +159,15 @@ function loadEmployeePage(params: EmployeeListParams) {
 
 function loadSelectableEmployeePage(params: EmployeeSelectParams) {
 	return Effect.gen(function* (_) {
-		const { currentEmployee, dbService } = yield* _(getEmployeeContext());
+		const actor = yield* _(getEmployeeSettingsActorContext());
+		const { dbService } = actor;
 		const limit = params.limit ?? DEFAULT_LIMIT;
 		const offset = params.offset ?? 0;
-		const where = buildEmployeeFilters(currentEmployee.organizationId, params);
+		const where = buildEmployeeFilters(actor.organizationId, {
+			...params,
+			managerId:
+				actor.accessTier === "manager" && actor.currentEmployee ? actor.currentEmployee.id : undefined,
+		});
 
 		const [totalResult, rows] = yield* _(
 			Effect.all([
@@ -202,7 +226,8 @@ export async function getEmployeeAction(
 	employeeId: string,
 ): Promise<ServerActionResult<EmployeeWithRelations>> {
 	const effect = Effect.gen(function* (_) {
-		const { currentEmployee, dbService } = yield* _(getEmployeeContext());
+		const actor = yield* _(getEmployeeSettingsActorContext());
+		const { dbService } = actor;
 
 		const rows = yield* _(
 			dbService.query("getTargetEmployee", async () => {
@@ -230,7 +255,11 @@ export async function getEmployeeAction(
 		}
 
 		yield* _(
-			ensureSameOrganization(currentEmployee, targetEmployee.employee, "employee", "read"),
+			ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee.employee, {
+				message: "You do not have access to this employee",
+				resource: "employee",
+				action: "read",
+			}),
 		);
 
 		const detail = yield* _(
@@ -311,10 +340,24 @@ export async function getEmployeesByIdsAction(
 	}
 
 	const effect = Effect.gen(function* (_) {
-		const { currentEmployee, dbService } = yield* _(getEmployeeContext());
+		const actor = yield* _(getEmployeeSettingsActorContext());
+		const { dbService } = actor;
 
 		const rows = yield* _(
 			dbService.query("getEmployeesByIds", async () => {
+				const scopeWhere = buildEmployeeFilters(actor.organizationId, {
+					excludeIds: [],
+					roles: undefined,
+					role: undefined,
+					search: undefined,
+					status: undefined,
+					teamId: undefined,
+					managerId:
+						actor.accessTier === "manager" && actor.currentEmployee
+							? actor.currentEmployee.id
+							: undefined,
+				});
+
 				return await dbService.db
 					.select({
 						employee: {
@@ -341,12 +384,7 @@ export async function getEmployeesByIdsAction(
 					.from(employee)
 					.innerJoin(user, eq(employee.userId, user.id))
 					.leftJoin(team, eq(employee.teamId, team.id))
-					.where(
-						and(
-							eq(employee.organizationId, currentEmployee.organizationId),
-							inArray(employee.id, employeeIds),
-						),
-					)
+					.where(and(scopeWhere, inArray(employee.id, employeeIds)))
 					.orderBy(asc(employeeSortName), asc(user.email), asc(employee.id));
 			}),
 		);

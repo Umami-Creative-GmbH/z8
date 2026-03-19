@@ -1,53 +1,45 @@
-import { and, eq } from "drizzle-orm";
 import { connection } from "next/server";
 import { redirect } from "next/navigation";
-import { db } from "@/db";
-import * as authSchema from "@/db/auth-schema";
-import { requireUser } from "@/lib/auth-helpers";
+import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
 import { CalendarSettingsForm } from "@/components/settings/calendar-settings-form";
-import { getCalendarSettings } from "./actions";
+import { getCalendarSettings, getManagerCalendarReadView } from "./actions";
 
 export default async function CalendarSettingsPage() {
 	await connection();
 
-	const [authContext, t] = await Promise.all([requireUser(), getTranslate()]);
-
-	const organizationId = authContext.session.activeOrganizationId;
-	if (!organizationId) {
-		redirect("/");
-	}
-
-	// Parallelize member check and settings fetch (async-parallel)
-	const [memberRecord, settingsResult] = await Promise.all([
-		db.query.member.findFirst({
-			where: and(
-				eq(authSchema.member.userId, authContext.user.id),
-				eq(authSchema.member.organizationId, organizationId),
-			),
-		}),
-		getCalendarSettings(),
+	const [settingsRouteContext, t] = await Promise.all([
+		getCurrentSettingsRouteContext(),
+		getTranslate(),
 	]);
 
-	// Check if user is admin/owner
-	if (!memberRecord || (memberRecord.role !== "owner" && memberRecord.role !== "admin")) {
+	if (!settingsRouteContext) {
 		redirect("/settings");
 	}
 
-	const settings = settingsResult.success
-		? settingsResult.data
-		: {
-				googleEnabled: true,
-				microsoft365Enabled: true,
-				icsFeedsEnabled: true,
-				teamIcsFeedsEnabled: true,
-				autoSyncOnApproval: true,
-				conflictDetectionRequired: false,
-				eventTitleTemplate: "Out of Office - {categoryName}",
-				eventDescriptionTemplate: null,
-				googleAvailable: false,
-				microsoft365Available: false,
-			};
+	const { authContext, accessTier } = settingsRouteContext;
+	const organizationId = authContext.session.activeOrganizationId;
+
+	if (accessTier === "member" || !organizationId) {
+		redirect("/settings");
+	}
+
+	const canManageCalendarSettings = accessTier === "orgAdmin";
+
+	const settingsResult = await (canManageCalendarSettings
+		? getCalendarSettings()
+		: getManagerCalendarReadView());
+
+	if (!settingsResult.success) {
+		redirect("/settings");
+	}
+
+	const settings =
+		canManageCalendarSettings
+			? settingsResult.data
+			: {
+					relevantConnections: settingsResult.data.relevantConnections,
+				};
 
 	return (
 		<div className="p-6">
@@ -57,14 +49,22 @@ export default async function CalendarSettingsPage() {
 						{t("settings.calendar.title", "Calendar Sync")}
 					</h1>
 					<p className="text-muted-foreground">
-						{t(
-							"settings.calendar.description",
-							"Configure calendar providers, ICS feeds, and sync settings for your organization",
-						)}
+						{accessTier === "orgAdmin"
+							? t(
+								"settings.calendar.description",
+								"Configure calendar providers, ICS feeds, and sync settings for your organization",
+							)
+							: t(
+								"settings.calendar.managerDescription",
+								"Review calendar integrations that affect your teams, areas, and managed projects.",
+							)}
 					</p>
 				</div>
 
-				<CalendarSettingsForm initialSettings={settings} />
+				<CalendarSettingsForm
+					initialSettings={settings}
+					canManage={canManageCalendarSettings}
+				/>
 			</div>
 		</div>
 	);

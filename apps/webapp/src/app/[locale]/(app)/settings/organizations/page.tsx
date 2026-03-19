@@ -1,70 +1,59 @@
 import { redirect } from "next/navigation";
 import { and, eq } from "drizzle-orm";
-import { listTeams } from "@/app/[locale]/(app)/settings/teams/actions";
+import { loadTeamSettingsPageData } from "@/app/[locale]/(app)/settings/teams/team-settings-page-data";
 import { OrganizationsPageClient } from "@/components/organization/organizations-page-client";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
-import { employee } from "@/db/schema";
-import { requireUser } from "@/lib/auth-helpers";
+import { getCurrentSettingsRouteContext, getPrincipalContext } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
 
 export default async function OrganizationsPage() {
-	const [authContext, t] = await Promise.all([requireUser(), getTranslate()]);
-	// Use session's activeOrganizationId, or fall back to employee's organizationId
-	// This ensures consistency with how the sidebar determines the current org
-	const activeOrgId =
-		authContext.session.activeOrganizationId || authContext.employee?.organizationId;
+	const [settingsRouteContext, principalContext, t] = await Promise.all([
+		getCurrentSettingsRouteContext(),
+		getPrincipalContext(),
+		getTranslate(),
+	]);
 
-	if (!activeOrgId) {
+	if (!settingsRouteContext || !principalContext) {
 		redirect("/settings");
 	}
 
-	if (authContext.employee?.role !== "admin") {
+	if (settingsRouteContext.accessTier === "member") {
 		redirect("/settings");
 	}
 
-	// Parallel data loading for better performance
-	const [organization, membersData, invitations, teamsResult, currentMember] = await Promise.all([
-		// Get organization details
+	const { authContext, accessTier } = settingsRouteContext;
+	const organizationId = authContext.session.activeOrganizationId;
+
+	if (!organizationId) {
+		redirect("/settings");
+	}
+
+	const [{ teamSurface, scopedMembers }, organization, invitations, currentMember] = await Promise.all([
+		loadTeamSettingsPageData({
+			organizationId,
+			settingsRouteContext,
+			principalContext,
+		}),
 		db.query.organization.findFirst({
-			where: eq(authSchema.organization.id, activeOrgId),
+			where: eq(authSchema.organization.id, organizationId),
 		}),
-
-		// Get members with user and employee data
-		db
-			.select({
-				member: authSchema.member,
-				user: authSchema.user,
-				employee: employee,
-			})
-			.from(authSchema.member)
-			.innerJoin(authSchema.user, eq(authSchema.member.userId, authSchema.user.id))
-			.leftJoin(
-				employee,
-				and(eq(employee.userId, authSchema.user.id), eq(employee.organizationId, activeOrgId)),
-			)
-			.where(eq(authSchema.member.organizationId, activeOrgId)),
-
-		// Get pending invitations with inviter information
-		db.query.invitation.findMany({
-			where: and(
-				eq(authSchema.invitation.organizationId, activeOrgId),
-				eq(authSchema.invitation.status, "pending"),
-			),
-			with: {
-				user: true, // The inviter - relation named "user" in auth-schema
-			},
-			orderBy: (invitation, { desc }) => [desc(invitation.createdAt)],
-		}),
-
-		// Get teams with employees
-		listTeams(activeOrgId),
-
-		// Get current user's member role for page-level capabilities
+		accessTier === "orgAdmin"
+			? db.query.invitation.findMany({
+					where: and(
+						eq(authSchema.invitation.organizationId, organizationId),
+						eq(authSchema.invitation.status, "pending"),
+					),
+					with: {
+						user: true,
+					},
+					orderBy: (invitation, { desc }) => [desc(invitation.createdAt)],
+				})
+			: Promise.resolve([]),
 		db.query.member.findFirst({
 			where: and(
 				eq(authSchema.member.userId, authContext.user.id),
-				eq(authSchema.member.organizationId, activeOrgId),
+				eq(authSchema.member.organizationId, organizationId),
 			),
 		}),
 	]);
@@ -87,33 +76,19 @@ export default async function OrganizationsPage() {
 		);
 	}
 
-	// Get team permissions from employee record
-	const permissions = authContext.employee
-		? {
-				canCreateTeams: authContext.employee.role === "admin", // Simplified - can be extended
-				canManageTeamSettings: authContext.employee.role === "admin",
-				canManageTeamMembers: authContext.employee.role === "admin",
-				canApproveTeamRequests: authContext.employee.role === "admin",
-			}
-		: {
-				canCreateTeams: false,
-				canManageTeamSettings: false,
-				canManageTeamMembers: false,
-				canApproveTeamRequests: false,
-			};
-
 	return (
 		<OrganizationsPageClient
 			organization={organization}
-			members={membersData}
+			members={scopedMembers}
 			invitations={invitations}
-			teams={teamsResult.success ? teamsResult.data : []}
+			teams={teamSurface.teams}
 			currentMemberRole={currentMember.role as "owner" | "admin" | "member"}
 			currentUserId={authContext.user.id}
+			canAccessOrganizationAdminSurface={teamSurface.canAccessOrganizationAdminSurface}
+			canCreateTeams={teamSurface.canCreateTeams}
 			canCreateOrganizations={
 				authContext.user.canCreateOrganizations || authContext.user.role === "admin"
 			}
-			permissions={permissions}
 		/>
 	);
 }

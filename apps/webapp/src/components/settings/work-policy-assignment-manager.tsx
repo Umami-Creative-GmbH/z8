@@ -33,14 +33,17 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { queryKeys } from "@/lib/query";
+import { getWorkPolicyAssignmentSectionVisibility } from "./policy-assignment-surface";
 
 interface WorkPolicyAssignmentManagerProps {
 	organizationId: string;
+	allowedAssignmentTypes: readonly ("organization" | "team" | "employee")[];
 	onAssignClick: (type: "organization" | "team" | "employee") => void;
 }
 
 export function WorkPolicyAssignmentManager({
 	organizationId,
+	allowedAssignmentTypes,
 	onAssignClick,
 }: WorkPolicyAssignmentManagerProps) {
 	const { t } = useTranslate();
@@ -105,6 +108,18 @@ export function WorkPolicyAssignmentManager({
 	const orgAssignment = assignments?.find((a) => a.assignmentType === "organization");
 	const teamAssignments = assignments?.filter((a) => a.assignmentType === "team") || [];
 	const employeeAssignments = assignments?.filter((a) => a.assignmentType === "employee") || [];
+	const canManageOrgAssignments = allowedAssignmentTypes.includes("organization");
+	const canManageTeamAssignments = allowedAssignmentTypes.includes("team");
+	const canManageEmployeeAssignments = allowedAssignmentTypes.includes("employee");
+	const { showOrgSection, showTeamSection, showEmployeeSection } =
+		getWorkPolicyAssignmentSectionVisibility({
+			canManageOrgAssignments,
+			hasOrgAssignment: Boolean(orgAssignment),
+			canManageTeamAssignments,
+			teamAssignmentsCount: teamAssignments.length,
+			canManageEmployeeAssignments,
+			employeeAssignmentsCount: employeeAssignments.length,
+		});
 
 	if (isLoading) {
 		return (
@@ -140,6 +155,7 @@ export function WorkPolicyAssignmentManager({
 		<>
 			<div className="space-y-6">
 				{/* Organization Level */}
+				{showOrgSection ? (
 				<Card>
 					<CardHeader>
 						<div className="flex items-center gap-2">
@@ -168,6 +184,7 @@ export function WorkPolicyAssignmentManager({
 										</p>
 									</div>
 								</div>
+							{canManageOrgAssignments ? (
 								<Button
 									variant="ghost"
 									size="icon"
@@ -176,22 +193,27 @@ export function WorkPolicyAssignmentManager({
 								>
 									<IconTrash className="h-4 w-4" />
 								</Button>
+							) : null}
 							</div>
 						) : (
 							<div className="flex items-center justify-between p-3 rounded-lg border border-dashed">
 								<p className="text-sm text-muted-foreground">
 									{t("settings.workPolicies.noOrgAssignment", "No organization default set")}
 								</p>
-								<Button onClick={() => onAssignClick("organization")} size="sm" variant="outline">
-									<IconPlus className="mr-2 h-4 w-4" />
-									{t("settings.workPolicies.assignPolicy", "Assign Policy")}
-								</Button>
+								{canManageOrgAssignments ? (
+									<Button onClick={() => onAssignClick("organization")} size="sm" variant="outline">
+										<IconPlus className="mr-2 h-4 w-4" />
+										{t("settings.workPolicies.assignPolicy", "Assign Policy")}
+									</Button>
+								) : null}
 							</div>
 						)}
 					</CardContent>
 				</Card>
+				) : null}
 
 				{/* Team Level */}
+				{showTeamSection ? (
 				<Card>
 					<CardHeader>
 						<div className="flex items-center justify-between">
@@ -214,10 +236,12 @@ export function WorkPolicyAssignmentManager({
 									</CardDescription>
 								</div>
 							</div>
-							<Button onClick={() => onAssignClick("team")} size="sm" variant="outline">
-								<IconPlus className="mr-2 h-4 w-4" />
-								{t("settings.workPolicies.addTeam", "Add Team")}
-							</Button>
+							{canManageTeamAssignments ? (
+								<Button onClick={() => onAssignClick("team")} size="sm" variant="outline">
+									<IconPlus className="mr-2 h-4 w-4" />
+									{t("settings.workPolicies.addTeam", "Add Team")}
+								</Button>
+							) : null}
 						</div>
 					</CardHeader>
 					<CardContent>
@@ -243,6 +267,7 @@ export function WorkPolicyAssignmentManager({
 												</p>
 											</div>
 										</div>
+									{canManageTeamAssignments ? (
 										<Button
 											variant="ghost"
 											size="icon"
@@ -251,14 +276,17 @@ export function WorkPolicyAssignmentManager({
 										>
 											<IconTrash className="h-4 w-4" />
 										</Button>
+									) : null}
 									</div>
 								))}
 							</div>
 						)}
 					</CardContent>
 				</Card>
+				) : null}
 
 				{/* Employee Level */}
+				{showEmployeeSection ? (
 				<Card>
 					<CardHeader>
 						<div className="flex items-center justify-between">
@@ -281,10 +309,12 @@ export function WorkPolicyAssignmentManager({
 									</CardDescription>
 								</div>
 							</div>
-							<Button onClick={() => onAssignClick("employee")} size="sm" variant="outline">
-								<IconPlus className="mr-2 h-4 w-4" />
-								{t("settings.workPolicies.addEmployee", "Add Employee")}
-							</Button>
+							{canManageEmployeeAssignments ? (
+								<Button onClick={() => onAssignClick("employee")} size="sm" variant="outline">
+									<IconPlus className="mr-2 h-4 w-4" />
+									{t("settings.workPolicies.addEmployee", "Add Employee")}
+								</Button>
+							) : null}
 						</div>
 					</CardHeader>
 					<CardContent>
@@ -313,6 +343,7 @@ export function WorkPolicyAssignmentManager({
 												</p>
 											</div>
 										</div>
+									{canManageEmployeeAssignments ? (
 										<Button
 											variant="ghost"
 											size="icon"
@@ -321,12 +352,14 @@ export function WorkPolicyAssignmentManager({
 										>
 											<IconTrash className="h-4 w-4" />
 										</Button>
+									) : null}
 									</div>
 								))}
 							</div>
 						)}
 					</CardContent>
 				</Card>
+				) : null}
 			</div>
 
 			<AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

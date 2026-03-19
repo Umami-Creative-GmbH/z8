@@ -9,10 +9,13 @@ import {
 	listEmployees,
 	type PaginatedEmployeeResponse,
 } from "@/app/[locale]/(app)/settings/employees/actions";
+import type { SettingsAccessTier } from "@/lib/settings-access";
 import { queryKeys } from "./keys";
 
 interface UseEmployeesOptions {
 	initialPageSize?: number;
+	organizationId?: string;
+	accessTier?: SettingsAccessTier;
 }
 
 export function useEmployees(options: UseEmployeesOptions = {}) {
@@ -46,9 +49,8 @@ export function useEmployees(options: UseEmployeesOptions = {}) {
 		staleTime: 5 * 60 * 1000,
 	});
 
-	const orgId = currentEmployeeQuery.data?.organizationId ?? "";
-	const isAdmin = currentEmployeeQuery.data?.role === "admin";
-	const hasEmployee = !!currentEmployeeQuery.data;
+	const orgId = options.organizationId ?? currentEmployeeQuery.data?.organizationId ?? "";
+	const hasEmployee = !!currentEmployeeQuery.data || options.accessTier === "orgAdmin";
 
 	// Main employees query
 	const employeesQuery = useQuery({
@@ -97,7 +99,7 @@ export function useEmployees(options: UseEmployeesOptions = {}) {
 
 		// Auth
 		hasEmployee,
-		isAdmin,
+		isAdmin: options.accessTier === "orgAdmin",
 
 		// Filters
 		search,

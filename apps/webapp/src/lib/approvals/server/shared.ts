@@ -138,7 +138,11 @@ export async function processApproval<T>(
 				const dbService = yield* _(DatabaseService);
 
 				const currentEmployee = yield* _(
-					loadCurrentApprover(dbService, session.user.id, session.session.activeOrganizationId),
+					loadCurrentApprover(
+						dbService,
+						session.user.id,
+						session.session.activeOrganizationId ?? undefined,
+					),
 				);
 
 				span.setAttribute("user.id", session.user.id);

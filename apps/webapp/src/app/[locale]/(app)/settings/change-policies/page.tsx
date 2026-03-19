@@ -1,28 +1,30 @@
-import { redirect } from "next/navigation";
 import { connection } from "next/server";
+import { redirect } from "next/navigation";
 import { getTranslate } from "@/tolgee/server";
-import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { ChangePolicyManagement } from "@/components/settings/change-policy-management";
-import { getAuthContext } from "@/lib/auth-helpers";
+import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 
 export default async function ChangePoliciesSettingsPage() {
 	await connection(); // Mark as fully dynamic for cacheComponents mode
 
-	const t = await getTranslate();
-	const authContext = await getAuthContext();
+	await getTranslate();
+	const settingsRouteContext = await getCurrentSettingsRouteContext();
 
-	if (!authContext?.employee) {
-		return (
-			<div className="flex flex-1 items-center justify-center p-6">
-				<NoEmployeeError feature={t("settings.changePolicies.feature", "manage change policies")} />
-			</div>
-		);
+	if (!settingsRouteContext) {
+		redirect("/settings");
 	}
 
-	// Only admins can access change policy settings
-	if (authContext.employee.role !== "admin") {
-		redirect("/");
+	const { authContext, accessTier } = settingsRouteContext;
+	const organizationId = authContext.session.activeOrganizationId;
+
+	if (accessTier === "member" || !organizationId) {
+		redirect("/settings");
 	}
 
-	return <ChangePolicyManagement organizationId={authContext.employee.organizationId} />;
+	return (
+		<ChangePolicyManagement
+			organizationId={organizationId}
+			canManage={accessTier === "orgAdmin"}
+		/>
+	);
 }

@@ -13,7 +13,7 @@ export interface Session {
 		userId: string;
 		expiresAt: Date;
 		token: string;
-		activeOrganizationId?: string;
+		activeOrganizationId: string | null;
 	};
 }
 
@@ -39,8 +39,14 @@ export const AuthServiceLive = Layer.effect(
 							throw new Error("No session found");
 						}
 
-						return session as Session;
-					},
+					return {
+						...session,
+						session: {
+							...session.session,
+							activeOrganizationId: session.session.activeOrganizationId ?? null,
+						},
+					} as Session;
+				},
 					catch: () =>
 						new AuthenticationError({
 							message: "Not authenticated",

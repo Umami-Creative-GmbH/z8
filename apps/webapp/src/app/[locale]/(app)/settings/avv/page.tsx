@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
-import { requireUser } from "@/lib/auth-helpers";
+import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { AvvDownloadButton } from "@/components/settings/avv/avv-download-button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -11,12 +11,7 @@ export default async function AvvPage() {
 		redirect("/settings");
 	}
 
-	const authContext = await requireUser();
-
-	const organizationId = authContext.session.activeOrganizationId;
-	if (!organizationId) {
-		redirect("/");
-	}
+	const { authContext, organizationId } = await requireOrgAdminSettingsAccess();
 
 	const [memberRecord, organization] = await Promise.all([
 		db.query.member.findFirst({
@@ -29,10 +24,6 @@ export default async function AvvPage() {
 			where: eq(authSchema.organization.id, organizationId),
 		}),
 	]);
-
-	if (memberRecord?.role !== "owner" && memberRecord?.role !== "admin") {
-		redirect("/settings");
-	}
 
 	if (!organization) {
 		redirect("/settings");
