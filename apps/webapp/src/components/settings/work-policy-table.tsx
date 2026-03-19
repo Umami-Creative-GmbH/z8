@@ -50,12 +50,14 @@ import { queryKeys } from "@/lib/query";
 
 interface WorkPolicyTableProps {
 	organizationId: string;
+	canManagePolicies?: boolean;
 	onCreateClick: () => void;
 	onEditClick: (policy: WorkPolicyWithDetails) => void;
 }
 
 export function WorkPolicyTable({
 	organizationId,
+	canManagePolicies = true,
 	onCreateClick,
 	onEditClick,
 }: WorkPolicyTableProps) {
@@ -311,9 +313,11 @@ export function WorkPolicyTable({
 					);
 				},
 			},
-			{
-				id: "actions",
-				cell: ({ row }) => (
+			...(canManagePolicies
+				? [
+					{
+						id: "actions",
+						cell: ({ row }: { row: { original: WorkPolicyWithDetails } }) => (
 					<DropdownMenu>
 						<DropdownMenuTrigger asChild>
 							<Button variant="ghost" size="icon" className="h-8 w-8">
@@ -353,21 +357,25 @@ export function WorkPolicyTable({
 							</DropdownMenuItem>
 						</DropdownMenuContent>
 					</DropdownMenu>
-				),
-			},
+						),
+					},
+				]
+				: []),
 		],
-		[t, onEditClick, duplicateMutation, setDefaultMutation],
+		[t, onEditClick, duplicateMutation, setDefaultMutation, canManagePolicies],
 	);
 
 	if (isLoading) {
 		return (
 			<div className="space-y-4">
-				<div className="flex justify-end">
-					<Button onClick={onCreateClick}>
-						<IconPlus className="mr-2 h-4 w-4" />
-						{t("settings.workPolicies.create", "Create Policy")}
-					</Button>
-				</div>
+				{canManagePolicies ? (
+					<div className="flex justify-end">
+						<Button onClick={onCreateClick}>
+							<IconPlus className="mr-2 h-4 w-4" />
+							{t("settings.workPolicies.create", "Create Policy")}
+						</Button>
+					</div>
+				) : null}
 				<DataTableSkeleton columnCount={5} rowCount={5} />
 			</div>
 		);
@@ -403,10 +411,12 @@ export function WorkPolicyTable({
 							)}
 							<span className="sr-only">{t("common.refresh", "Refresh")}</span>
 						</Button>
-						<Button onClick={onCreateClick}>
-							<IconPlus className="mr-2 h-4 w-4" />
-							{t("settings.workPolicies.create", "Create Policy")}
-						</Button>
+						{canManagePolicies ? (
+							<Button onClick={onCreateClick}>
+								<IconPlus className="mr-2 h-4 w-4" />
+								{t("settings.workPolicies.create", "Create Policy")}
+							</Button>
+						) : null}
 					</div>
 				}
 			/>

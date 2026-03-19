@@ -1,15 +1,12 @@
-import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
-import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { ExportForm } from "@/components/settings/export/export-form";
 import { ExportHistory } from "@/components/settings/export/export-history";
 import { StorageSettingsForm } from "@/components/settings/export/storage-settings-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getAuthContext } from "@/lib/auth-helpers";
+import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { isExportS3Configured } from "@/lib/storage/export-s3-client";
 import { getTranslate } from "@/tolgee/server";
 import { getExportHistoryAction, getStorageConfigAction } from "./actions";
@@ -17,25 +14,10 @@ import { getExportHistoryAction, getStorageConfigAction } from "./actions";
 async function ExportSettingsContent() {
 	await connection(); // Mark as fully dynamic for cacheComponents mode
 
-	// Parallelize initial fetches (translate + employee check)
-	const [t, currentEmployee] = await Promise.all([getTranslate(), getCurrentEmployee()]);
-
-	if (!currentEmployee) {
-		return (
-			<div className="flex flex-1 items-center justify-center p-6">
-				<NoEmployeeError feature={t("settings.dataExport.featureName", "Data Export")} />
-			</div>
-		);
-	}
-
-	// Check if user has admin role
-	const authContext = await getAuthContext();
-
-	if (!authContext?.employee || authContext.employee.role !== "admin") {
-		redirect("/");
-	}
-
-	const organizationId = authContext.employee.organizationId;
+	const [t, { organizationId }] = await Promise.all([
+		getTranslate(),
+		requireOrgAdminSettingsAccess(),
+	]);
 
 	// Parallelize S3 config, storage config, and export history fetches
 	const [s3Configured, storageConfigResult, historyResult] = await Promise.all([

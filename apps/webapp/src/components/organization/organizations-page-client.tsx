@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import type { ScopedTeam } from "@/app/[locale]/(app)/settings/teams/team-scope";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type * as authSchema from "@/db/auth-schema";
 import type { employee } from "@/db/schema";
@@ -18,22 +19,16 @@ export type InvitationWithInviter = typeof authSchema.invitation.$inferSelect & 
 	user: typeof authSchema.user.$inferSelect; // The inviter - relation named "user" in auth-schema
 };
 
-export interface TeamPermissions {
-	canCreateTeams: boolean;
-	canManageTeamSettings: boolean;
-	canManageTeamMembers: boolean;
-	canApproveTeamRequests: boolean;
-}
-
 interface OrganizationsPageClientProps {
 	organization: typeof authSchema.organization.$inferSelect;
 	members: MemberWithUserAndEmployee[];
 	invitations: InvitationWithInviter[];
-	teams: Array<typeof import("@/db/schema").team.$inferSelect>;
+	teams: ScopedTeam[];
 	currentMemberRole: "owner" | "admin" | "member";
 	currentUserId: string;
+	canAccessOrganizationAdminSurface: boolean;
+	canCreateTeams: boolean;
 	canCreateOrganizations: boolean;
-	permissions: TeamPermissions;
 }
 
 export function OrganizationsPageClient({
@@ -43,10 +38,13 @@ export function OrganizationsPageClient({
 	teams,
 	currentMemberRole,
 	currentUserId,
+	canAccessOrganizationAdminSurface,
+	canCreateTeams,
 	canCreateOrganizations,
-	permissions,
 }: OrganizationsPageClientProps) {
-	const [activeTab, setActiveTab] = useState("organizations");
+	const [activeTab, setActiveTab] = useState(
+		canAccessOrganizationAdminSurface ? "organizations" : "teams",
+	);
 
 	return (
 		<div className="flex-1 p-6">
@@ -60,26 +58,31 @@ export function OrganizationsPageClient({
 
 				<Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
 					<TabsList>
-						<TabsTrigger value="organizations">Organizations</TabsTrigger>
+						{canAccessOrganizationAdminSurface && (
+							<TabsTrigger value="organizations">Organizations</TabsTrigger>
+						)}
 						<TabsTrigger value="teams">Teams</TabsTrigger>
 					</TabsList>
 
-					<TabsContent value="organizations" className="space-y-6">
-						<OrganizationTab
-							organization={organization}
-							members={members}
-							invitations={invitations}
-							currentMemberRole={currentMemberRole}
-							currentUserId={currentUserId}
-							canCreateOrganizations={canCreateOrganizations}
-						/>
-					</TabsContent>
+					{canAccessOrganizationAdminSurface && (
+						<TabsContent value="organizations" className="space-y-6">
+							<OrganizationTab
+								organization={organization}
+								members={members}
+								invitations={invitations}
+								currentMemberRole={currentMemberRole}
+								currentUserId={currentUserId}
+								canCreateOrganizations={canCreateOrganizations}
+							/>
+						</TabsContent>
+					)}
 
 					<TabsContent value="teams" className="space-y-6">
 						<TeamsTab
 							teams={teams}
 							members={members}
-							permissions={permissions}
+							canAccessOrganizationAdminSurface={canAccessOrganizationAdminSurface}
+							canCreateTeams={canCreateTeams}
 							organizationId={organization.id}
 						/>
 					</TabsContent>

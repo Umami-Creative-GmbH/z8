@@ -6,8 +6,18 @@ import { employee, team, vacationAllowance, vacationPolicyAssignment } from "@/d
 import { AuthorizationError, DatabaseError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
-import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
+import {
+	ensureSettingsActorCanAccessEmployeeTarget,
+	filterItemsToManagedEmployees,
+	getEmployeeSettingsActorContext,
+	getManagedEmployeeIdsForSettingsActor,
+	getOrganizationTeam,
+	getTargetEmployee,
+	requireOrgAdminEmployeeSettingsAccess,
+	requireSettingsActorEmployeeAssignmentAccess,
+	validateAssignmentTargetFields,
+} from "../employees/employee-action-utils";
 
 // ============================================
 // VACATION POLICY ASSIGNMENTS (Policies to org/team/employee)
@@ -20,11 +30,9 @@ export async function getVacationPolicies(
 	organizationId: string,
 ): Promise<ServerActionResult<any[]>> {
 	const effect = Effect.gen(function* (_) {
-		// Step 1: Get session via AuthService
-		const authService = yield* _(AuthService);
-		const _session = yield* _(authService.getSession());
-
-		// Step 2: Get database service
+		yield* _(
+			getEmployeeSettingsActorContext({ organizationId, queryName: "getVacationPoliciesForAssignment:actor" }),
+		);
 		const dbService = yield* _(DatabaseService);
 
 		// Step 3: Get policies from database
@@ -60,12 +68,11 @@ export async function getVacationPolicyAssignments(
 	organizationId: string,
 ): Promise<ServerActionResult<any[]>> {
 	const effect = Effect.gen(function* (_) {
-		// Step 1: Get session via AuthService
-		const authService = yield* _(AuthService);
-		const _session = yield* _(authService.getSession());
-
-		// Step 2: Get database service
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({ organizationId, queryName: "getVacationPolicyAssignments:actor" }),
+		);
 		const dbService = yield* _(DatabaseService);
+		const managedEmployeeIds = yield* _(getManagedEmployeeIdsForSettingsActor(actor));
 
 		// Step 3: Get assignments from database with policy, team, and employee info
 		const assignments = yield* _(
@@ -127,7 +134,14 @@ export async function getVacationPolicyAssignments(
 			),
 		);
 
-		return assignments;
+		if (!managedEmployeeIds) {
+			return assignments;
+		}
+
+		return filterItemsToManagedEmployees(
+			assignments.filter((assignment) => assignment.assignmentType === "employee"),
+			managedEmployeeIds,
+		);
 	}).pipe(Effect.provide(AppLayer));
 
 	return runServerActionSafe(effect);
@@ -143,63 +157,13 @@ export async function createVacationPolicyAssignment(data: {
 	employeeId?: string;
 }): Promise<ServerActionResult<any>> {
 	const effect = Effect.gen(function* (_) {
-		// Step 1: Get session via AuthService
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-
-		// Step 2: Get database service
 		const dbService = yield* _(DatabaseService);
-
-		// Step 3: Get employee record to check role and organization
-		const employeeRecord = yield* _(
-			dbService.query("getEmployeeRecord", async () => {
-				const [emp] = await dbService.db
-					.select()
-					.from(employee)
-					.where(and(eq(employee.userId, session.user.id), eq(employee.isActive, true)))
-					.limit(1);
-
-				if (!emp) {
-					throw new Error("Employee not found");
-				}
-
-				return emp;
-			}),
-			Effect.mapError(
-				() =>
-					new NotFoundError({
-						message: "Employee profile not found",
-						entityType: "employee",
-					}),
-			),
-		);
-
-		// Step 4: Check admin role
-		if (employeeRecord.role !== "admin") {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Admin access required",
-						userId: session.user.id,
-						resource: "vacation_policy_assignment",
-						action: "create",
-					}),
-				),
-			);
-		}
-
-		// Step 5: Verify policy belongs to the same organization
-		const _existingPolicy = yield* _(
+		const policy = yield* _(
 			dbService.query("verifyPolicy", async () => {
 				const [p] = await dbService.db
 					.select()
 					.from(vacationAllowance)
-					.where(
-						and(
-							eq(vacationAllowance.id, data.policyId),
-							eq(vacationAllowance.organizationId, employeeRecord.organizationId),
-						),
-					)
+					.where(eq(vacationAllowance.id, data.policyId))
 					.limit(1);
 
 				if (!p) {
@@ -217,6 +181,53 @@ export async function createVacationPolicyAssignment(data: {
 					}),
 			),
 		);
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({
+				organizationId: policy.organizationId,
+				queryName: "createVacationPolicyAssignment:actor",
+			}),
+		);
+		yield* _(
+			requireSettingsActorEmployeeAssignmentAccess(actor, data.assignmentType, {
+				message: "Insufficient permissions",
+				resource: "vacation_policy_assignment",
+				action: "create",
+			}),
+		);
+		yield* _(validateAssignmentTargetFields(data.assignmentType, data));
+
+		if (data.assignmentType !== "employee") {
+			yield* _(
+				requireOrgAdminEmployeeSettingsAccess(actor, {
+					message: "Insufficient permissions",
+					resource: "vacation_policy_assignment",
+					action: "create",
+				}),
+			);
+		}
+
+		if (data.employeeId) {
+			const targetEmployee = yield* _(
+				getTargetEmployee(data.employeeId, "createVacationPolicyAssignment:getTargetEmployee"),
+			);
+			yield* _(
+				ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
+					message: "Insufficient permissions",
+					resource: "vacation_policy_assignment",
+					action: "create",
+				}),
+			);
+		}
+
+		if (data.assignmentType === "team" && data.teamId) {
+			yield* _(
+				getOrganizationTeam(
+					data.teamId,
+					actor.organizationId,
+					"createVacationPolicyAssignment:getOrganizationTeam",
+				),
+			);
+		}
 
 		// Step 6: Calculate priority based on assignment type
 		const priority =
@@ -224,18 +235,18 @@ export async function createVacationPolicyAssignment(data: {
 
 		// Step 7: Create the assignment
 		const newAssignment = yield* _(
-			dbService.query("createVacationPolicyAssignment", async () => {
-				const [assignment] = await dbService.db
-					.insert(vacationPolicyAssignment)
-					.values({
-						policyId: data.policyId,
-						organizationId: employeeRecord.organizationId,
-						assignmentType: data.assignmentType,
-						teamId: data.teamId || null,
-						employeeId: data.employeeId || null,
-						priority,
-						createdBy: session.user.id,
-					})
+				dbService.query("createVacationPolicyAssignment", async () => {
+					const [assignment] = await dbService.db
+						.insert(vacationPolicyAssignment)
+						.values({
+							policyId: data.policyId,
+							organizationId: actor.organizationId,
+							assignmentType: data.assignmentType,
+							teamId: data.teamId || null,
+							employeeId: data.employeeId || null,
+							priority,
+							createdBy: actor.session.user.id,
+						})
 					.returning();
 
 				return assignment;
@@ -264,9 +275,17 @@ export async function getEmployeePolicyAssignment(
 	employeeId: string,
 ): Promise<ServerActionResult<any | null>> {
 	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const _session = yield* _(authService.getSession());
-
+		const actor = yield* _(getEmployeeSettingsActorContext({ queryName: "getEmployeePolicyAssignment:actor" }));
+		const targetEmployee = yield* _(
+			getTargetEmployee(employeeId, "getEmployeePolicyAssignment:getTargetEmployee"),
+		);
+		yield* _(
+			ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
+				message: "Insufficient permissions",
+				resource: "vacation_policy_assignment",
+				action: "read",
+			}),
+		);
 		const dbService = yield* _(DatabaseService);
 
 		const assignment = yield* _(
@@ -312,48 +331,18 @@ export async function setEmployeePolicyAssignment(
 	policyId: string | null,
 ): Promise<ServerActionResult<void>> {
 	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-
-		const dbService = yield* _(DatabaseService);
-
-		// Get current user's employee record
-		const employeeRecord = yield* _(
-			dbService.query("getEmployeeRecord", async () => {
-				const [emp] = await dbService.db
-					.select()
-					.from(employee)
-					.where(and(eq(employee.userId, session.user.id), eq(employee.isActive, true)))
-					.limit(1);
-
-				if (!emp) {
-					throw new Error("Employee not found");
-				}
-
-				return emp;
-			}),
-			Effect.mapError(
-				() =>
-					new NotFoundError({
-						message: "Employee profile not found",
-						entityType: "employee",
-					}),
-			),
+		const actor = yield* _(getEmployeeSettingsActorContext({ queryName: "setEmployeePolicyAssignment:actor" }));
+		const targetEmployee = yield* _(
+			getTargetEmployee(employeeId, "setEmployeePolicyAssignment:getTargetEmployee"),
 		);
-
-		// Check admin role
-		if (employeeRecord.role !== "admin") {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Admin access required",
-						userId: session.user.id,
-						resource: "vacation_policy_assignment",
-						action: "update",
-					}),
-				),
-			);
-		}
+		yield* _(
+			ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
+				message: "Insufficient permissions",
+				resource: "vacation_policy_assignment",
+				action: "update",
+			}),
+		);
+		const dbService = yield* _(DatabaseService);
 
 		// First, deactivate any existing employee assignment
 		yield* _(
@@ -382,7 +371,7 @@ export async function setEmployeePolicyAssignment(
 						.where(
 							and(
 								eq(vacationAllowance.id, policyId),
-								eq(vacationAllowance.organizationId, employeeRecord.organizationId),
+								eq(vacationAllowance.organizationId, actor.organizationId),
 							),
 						)
 						.limit(1);
@@ -408,11 +397,11 @@ export async function setEmployeePolicyAssignment(
 				dbService.query("createAssignment", async () => {
 					await dbService.db.insert(vacationPolicyAssignment).values({
 						policyId,
-						organizationId: employeeRecord.organizationId,
+						organizationId: actor.organizationId,
 						assignmentType: "employee",
 						employeeId,
 						priority: 2, // Employee level = highest priority
-						createdBy: session.user.id,
+						createdBy: actor.session.user.id,
 					});
 				}),
 				Effect.mapError(
@@ -438,53 +427,13 @@ export async function deleteVacationPolicyAssignment(
 	assignmentId: string,
 ): Promise<ServerActionResult<void>> {
 	const effect = Effect.gen(function* (_) {
-		// Step 1: Get session via AuthService
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-
-		// Step 2: Get database service
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({ queryName: "deleteVacationPolicyAssignment:actor" }),
+		);
 		const dbService = yield* _(DatabaseService);
 
-		// Step 3: Get employee record to check role and organization
-		const employeeRecord = yield* _(
-			dbService.query("getEmployeeRecord", async () => {
-				const [emp] = await dbService.db
-					.select()
-					.from(employee)
-					.where(and(eq(employee.userId, session.user.id), eq(employee.isActive, true)))
-					.limit(1);
-
-				if (!emp) {
-					throw new Error("Employee not found");
-				}
-
-				return emp;
-			}),
-			Effect.mapError(
-				() =>
-					new NotFoundError({
-						message: "Employee profile not found",
-						entityType: "employee",
-					}),
-			),
-		);
-
-		// Step 4: Check admin role
-		if (employeeRecord.role !== "admin") {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Admin access required",
-						userId: session.user.id,
-						resource: "vacation_policy_assignment",
-						action: "delete",
-					}),
-				),
-			);
-		}
-
 		// Step 5: Verify assignment belongs to the same organization
-		const _existingAssignment = yield* _(
+		const existingAssignment = yield* _(
 			dbService.query("verifyAssignment", async () => {
 				const [a] = await dbService.db
 					.select()
@@ -492,7 +441,7 @@ export async function deleteVacationPolicyAssignment(
 					.where(
 						and(
 							eq(vacationPolicyAssignment.id, assignmentId),
-							eq(vacationPolicyAssignment.organizationId, employeeRecord.organizationId),
+							eq(vacationPolicyAssignment.organizationId, actor.organizationId),
 						),
 					)
 					.limit(1);
@@ -512,6 +461,27 @@ export async function deleteVacationPolicyAssignment(
 					}),
 			),
 		);
+
+		yield* _(
+			requireSettingsActorEmployeeAssignmentAccess(actor, existingAssignment.assignmentType, {
+				message: "Insufficient permissions",
+				resource: "vacation_policy_assignment",
+				action: "delete",
+			}),
+		);
+
+		if (existingAssignment.employeeId) {
+			const targetEmployee = yield* _(
+				getTargetEmployee(existingAssignment.employeeId, "deleteVacationPolicyAssignment:getTargetEmployee"),
+			);
+			yield* _(
+				ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
+					message: "Insufficient permissions",
+					resource: "vacation_policy_assignment",
+					action: "delete",
+				}),
+			);
+		}
 
 		// Step 6: Soft delete
 		yield* _(
@@ -547,9 +517,9 @@ export async function getCompanyDefaultPolicies(organizationId: string): Promise
 	}>
 > {
 	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const _session = yield* _(authService.getSession());
-
+		yield* _(
+			getEmployeeSettingsActorContext({ organizationId, queryName: "getCompanyDefaultPolicies:actor" }),
+		);
 		const dbService = yield* _(DatabaseService);
 
 		const today = new Date().toISOString().split("T")[0];

@@ -185,12 +185,14 @@ export function EmployeeOverviewCard({
 
 export function EmployeeEditFormCard({
 	form,
-	isAdmin,
+	canEditManagerFields,
+	canEditOrgAdminFields,
 	isUpdating,
 	onCancel,
 }: {
 	form: EmployeeDetailFormApi;
-	isAdmin: boolean;
+	canEditManagerFields: boolean;
+	canEditOrgAdminFields: boolean;
 	isUpdating: boolean;
 	onCancel: () => void;
 }) {
@@ -199,7 +201,7 @@ export function EmployeeEditFormCard({
 			<CardHeader>
 				<CardTitle>Edit Employee</CardTitle>
 				<CardDescription>
-					{isAdmin ? "Update employee details and permissions" : "View employee details"}
+					{canEditManagerFields ? "Update approved employee details" : "View employee details"}
 				</CardDescription>
 			</CardHeader>
 			<CardContent>
@@ -212,8 +214,8 @@ export function EmployeeEditFormCard({
 					className="space-y-6"
 				>
 					<div className="grid gap-4 md:grid-cols-2">
-						<TextField form={form} name="firstName" label="First Name" placeholder="Enter first name" disabled={!isAdmin || isUpdating} />
-						<TextField form={form} name="lastName" label="Last Name" placeholder="Enter last name" disabled={!isAdmin || isUpdating} />
+						<TextField form={form} name="firstName" label="First Name" placeholder="Enter first name" disabled={!canEditManagerFields || isUpdating} />
+						<TextField form={form} name="lastName" label="Last Name" placeholder="Enter last name" disabled={!canEditManagerFields || isUpdating} />
 					</div>
 
 					<form.Field name="gender">
@@ -223,7 +225,7 @@ export function EmployeeEditFormCard({
 								<Select
 									onValueChange={(value) => field.handleChange(value as EmployeeDetailFormValues["gender"])}
 									value={field.state.value || ""}
-									disabled={!isAdmin || isUpdating}
+									disabled={!canEditManagerFields || isUpdating}
 								>
 									<TFormControl hasError={fieldHasError(field)}>
 										<SelectTrigger>
@@ -242,15 +244,15 @@ export function EmployeeEditFormCard({
 					</form.Field>
 
 					<div className="grid gap-4 md:grid-cols-2">
-						<TextField form={form} name="position" label="Position" placeholder="Enter position" description="Job title or role" disabled={!isAdmin || isUpdating} />
-						<TextField form={form} name="employeeNumber" label="Employee Number" placeholder="e.g., EMP-001" description="External payroll system ID" disabled={!isAdmin || isUpdating} />
+						<TextField form={form} name="position" label="Position" placeholder="Enter position" description="Job title or role" disabled={!canEditManagerFields || isUpdating} />
+						<TextField form={form} name="employeeNumber" label="Employee Number" placeholder="e.g., EMP-001" description="External payroll system ID" disabled={!canEditOrgAdminFields || isUpdating} />
 					</div>
 
 					<form.Field name="role">
 						{(field) => (
 							<TFormItem>
 								<TFormLabel hasError={fieldHasError(field)}>System Role</TFormLabel>
-								<RoleSelector value={field.state.value} onChange={field.handleChange} disabled={!isAdmin || isUpdating} />
+								<RoleSelector value={field.state.value} onChange={field.handleChange} disabled={!canEditOrgAdminFields || isUpdating} />
 								<TFormDescription>Determines access level in the system</TFormDescription>
 								<TFormMessage field={field} />
 							</TFormItem>
@@ -261,7 +263,7 @@ export function EmployeeEditFormCard({
 						{(field) => (
 							<TFormItem>
 								<TFormLabel hasError={fieldHasError(field)}>Contract Type</TFormLabel>
-								<ContractTypeSelector value={field.state.value} onChange={field.handleChange} disabled={!isAdmin || isUpdating} />
+								<ContractTypeSelector value={field.state.value} onChange={field.handleChange} disabled={!canEditOrgAdminFields || isUpdating} />
 								<TFormDescription>Determines how compensation is calculated</TFormDescription>
 								<TFormMessage field={field} />
 							</TFormItem>
@@ -280,7 +282,7 @@ export function EmployeeEditFormCard({
 													value={field.state.value}
 													onChange={field.handleChange}
 													onBlur={field.handleBlur}
-													disabled={!isAdmin || isUpdating}
+													disabled={!canEditOrgAdminFields || isUpdating}
 													hasError={fieldHasError(field)}
 												/>
 											</TFormControl>
@@ -293,9 +295,9 @@ export function EmployeeEditFormCard({
 						}
 					</form.Subscribe>
 
-					{isAdmin && <EmployeeAppAccessFields form={form} isUpdating={isUpdating} />}
+					{canEditOrgAdminFields && <EmployeeAppAccessFields form={form} isUpdating={isUpdating} />}
 
-					{isAdmin && (
+					{canEditManagerFields && (
 						<div className="flex justify-end gap-2">
 							<Button type="button" variant="outline" onClick={onCancel} disabled={isUpdating}>
 								Cancel

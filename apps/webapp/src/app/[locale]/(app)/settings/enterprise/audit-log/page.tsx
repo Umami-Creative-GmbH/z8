@@ -1,15 +1,9 @@
-import { redirect } from "next/navigation";
 import { AuditLogViewer } from "@/components/settings/audit-log-viewer";
-import { requireUser } from "@/lib/auth-helpers";
+import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
 
 export default async function EnterpriseAuditLogPage() {
-	const [authContext, t] = await Promise.all([requireUser(), getTranslate()]);
-
-	// Only admins can access audit logs
-	if (authContext.employee?.role !== "admin") {
-		redirect("/settings");
-	}
+	const [, t] = await Promise.all([requireOrgAdminSettingsAccess(), getTranslate()]);
 
 	return (
 		<div className="p-6">

@@ -41,12 +41,14 @@ import {
 import { queryKeys } from "@/lib/query";
 
 interface ChangePolicyTableProps {
+	canManage: boolean;
 	organizationId: string;
 	onCreateClick: () => void;
 	onEditClick: (policy: ChangePolicyRecord) => void;
 }
 
 export function ChangePolicyTable({
+	canManage,
 	organizationId,
 	onCreateClick,
 	onEditClick,
@@ -212,7 +214,8 @@ export function ChangePolicyTable({
 			},
 			{
 				id: "actions",
-				cell: ({ row }) => (
+				cell: ({ row }) =>
+					canManage ? (
 					<DropdownMenu>
 						<DropdownMenuTrigger asChild>
 							<Button variant="ghost" size="icon" className="h-8 w-8">
@@ -235,10 +238,10 @@ export function ChangePolicyTable({
 							</DropdownMenuItem>
 						</DropdownMenuContent>
 					</DropdownMenu>
-				),
+					) : null,
 			},
 		],
-		[t, formatDays, onEditClick],
+		[t, canManage, formatDays, onEditClick],
 	);
 
 	if (isLoading) {
@@ -268,10 +271,12 @@ export function ChangePolicyTable({
 				actions={
 					<div className="flex items-center gap-2">
 						{isFetching && <IconLoader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
-						<Button onClick={onCreateClick}>
-							<IconPlus className="h-4 w-4 mr-2" />
-							{t("settings.changePolicies.create", "Create Policy")}
-						</Button>
+						{canManage ? (
+							<Button onClick={onCreateClick}>
+								<IconPlus className="h-4 w-4 mr-2" />
+								{t("settings.changePolicies.create", "Create Policy")}
+							</Button>
+						) : null}
 					</div>
 				}
 			/>
@@ -283,7 +288,7 @@ export function ChangePolicyTable({
 							? t("settings.changePolicies.noSearchResults", "No policies match your search")
 							: t("settings.changePolicies.noPolicies", "No change policies configured yet")}
 					</p>
-					{!search && (
+					{!search && canManage ? (
 						<>
 							<p className="text-sm text-muted-foreground max-w-md text-center">
 								{t(
@@ -296,13 +301,13 @@ export function ChangePolicyTable({
 								{t("settings.changePolicies.createFirst", "Create Your First Policy")}
 							</Button>
 						</>
-					)}
+					) : null}
 				</div>
 			) : (
 				<DataTable columns={columns} data={filteredPolicies} />
 			)}
 
-			<AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+			<AlertDialog open={canManage && deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
 						<AlertDialogTitle>

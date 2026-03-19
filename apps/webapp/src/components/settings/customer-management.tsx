@@ -16,6 +16,7 @@ import {
 	getCustomers,
 	type CustomerData,
 } from "@/app/[locale]/(app)/settings/customers/actions";
+import { getProjects } from "@/app/[locale]/(app)/settings/projects/actions";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -38,13 +39,15 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { queryKeys } from "@/lib/query";
+import type { SettingsAccessTier } from "@/lib/settings-access";
 import { CustomerDialog } from "./customer-dialog";
 
 interface CustomerManagementProps {
 	organizationId: string;
+	accessTier: SettingsAccessTier;
 }
 
-export function CustomerManagement({ organizationId }: CustomerManagementProps) {
+export function CustomerManagement({ organizationId, accessTier }: CustomerManagementProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const [dialogOpen, setDialogOpen] = useState(false);
@@ -67,8 +70,25 @@ export function CustomerManagement({ organizationId }: CustomerManagementProps) 
 	});
 
 	const customers = customersResult || [];
+	const { data: scopedProjectsResult } = useQuery({
+		queryKey: queryKeys.projects.list(organizationId, { scope: "customer-management" }),
+		queryFn: async () => {
+			const result = await getProjects(organizationId);
+			if (!result.success) {
+				return [];
+			}
+
+			return result.data;
+		},
+	});
+	const hasScopedProjects = (scopedProjectsResult?.length ?? 0) > 0;
+	const canCreateCustomer = accessTier !== "manager" || hasScopedProjects;
 
 	const handleCreate = () => {
+		if (!canCreateCustomer) {
+			return;
+		}
+
 		setEditingCustomer(null);
 		setDialogOpen(true);
 	};
@@ -125,12 +145,20 @@ export function CustomerManagement({ organizationId }: CustomerManagementProps) 
 						<IconRefresh className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
 						<span className="sr-only">{t("common.refresh", "Refresh")}</span>
 					</Button>
-					<Button onClick={handleCreate}>
+					<Button onClick={handleCreate} disabled={!canCreateCustomer}>
 						<IconPlus className="mr-2 h-4 w-4" />
 						{t("settings.customers.create", "Add Customer")}
 					</Button>
 				</div>
 			</div>
+			{!canCreateCustomer ? (
+				<p className="text-sm text-muted-foreground">
+					{t(
+						"settings.customers.managerNoProjects",
+						"No managed projects available. Create or manage a project before adding customers.",
+					)}
+				</p>
+			) : null}
 
 			{isLoading ? (
 				<Card>
@@ -155,10 +183,18 @@ export function CustomerManagement({ organizationId }: CustomerManagementProps) 
 								"Add your first customer to assign them to projects.",
 							)}
 						</p>
-						<Button onClick={handleCreate} className="mt-4">
+						<Button onClick={handleCreate} className="mt-4" disabled={!canCreateCustomer}>
 							<IconPlus className="mr-2 h-4 w-4" />
 							{t("settings.customers.create", "Add Customer")}
 						</Button>
+						{!canCreateCustomer ? (
+							<p className="mt-3 text-center text-sm text-muted-foreground">
+								{t(
+									"settings.customers.managerNoProjects",
+									"No managed projects available. Create or manage a project before adding customers.",
+								)}
+							</p>
+						) : null}
 					</CardContent>
 				</Card>
 			) : (
@@ -242,6 +278,7 @@ export function CustomerManagement({ organizationId }: CustomerManagementProps) 
 			)}
 
 			<CustomerDialog
+				accessTier={accessTier}
 				organizationId={organizationId}
 				customer={editingCustomer}
 				open={dialogOpen}

@@ -31,9 +31,10 @@ import { SurchargeModelDialog } from "./surcharge-model-dialog";
 
 interface SurchargeManagementProps {
 	organizationId: string;
+	canManage: boolean;
 }
 
-export function SurchargeManagement({ organizationId }: SurchargeManagementProps) {
+export function SurchargeManagement({ organizationId, canManage }: SurchargeManagementProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const [models, setModels] = useState<SurchargeModelWithRules[]>([]);
@@ -171,12 +172,14 @@ export function SurchargeManagement({ organizationId }: SurchargeManagementProps
 				</TabsList>
 
 				<TabsContent value="models" className="space-y-4">
-					<div className="flex justify-end">
-						<Button onClick={handleCreateModel}>
-							<IconPlus className="mr-2 h-4 w-4" />
-							{t("settings.surcharges.createModel", "Create Model")}
-						</Button>
-					</div>
+					{canManage ? (
+						<div className="flex justify-end">
+							<Button onClick={handleCreateModel}>
+								<IconPlus className="mr-2 h-4 w-4" />
+								{t("settings.surcharges.createModel", "Create Model")}
+							</Button>
+						</div>
+					) : null}
 
 					{models.length === 0 ? (
 						<Card>
@@ -191,10 +194,12 @@ export function SurchargeManagement({ organizationId }: SurchargeManagementProps
 										"Create a surcharge model to define rules for overtime, night work, and weekend premiums.",
 									)}
 								</p>
-								<Button onClick={handleCreateModel}>
-									<IconPlus className="mr-2 h-4 w-4" />
-									{t("settings.surcharges.createFirstModel", "Create First Model")}
-								</Button>
+								{canManage ? (
+									<Button onClick={handleCreateModel}>
+										<IconPlus className="mr-2 h-4 w-4" />
+										{t("settings.surcharges.createFirstModel", "Create First Model")}
+									</Button>
+								) : null}
 							</CardContent>
 						</Card>
 					) : (
@@ -211,6 +216,7 @@ export function SurchargeManagement({ organizationId }: SurchargeManagementProps
 													</CardDescription>
 												)}
 											</div>
+										{canManage ? (
 											<div className="flex items-center gap-1 ml-2">
 												<Button
 													variant="ghost"
@@ -229,8 +235,9 @@ export function SurchargeManagement({ organizationId }: SurchargeManagementProps
 													<IconTrash className="h-4 w-4" />
 												</Button>
 											</div>
-										</div>
-									</CardHeader>
+										) : null}
+									</div>
+								</CardHeader>
 									<CardContent>
 										<div className="space-y-2">
 											<div className="text-muted-foreground text-sm">
@@ -271,6 +278,7 @@ export function SurchargeManagement({ organizationId }: SurchargeManagementProps
 
 				<TabsContent value="assignments" className="space-y-4">
 					<SurchargeAssignmentManager
+						canManage={canManage}
 						organizationId={organizationId}
 						onAssignClick={handleAssignClick}
 					/>
@@ -296,25 +304,29 @@ export function SurchargeManagement({ organizationId }: SurchargeManagementProps
 			</Tabs>
 
 			{/* Model Dialog */}
-			<SurchargeModelDialog
-				open={modelDialogOpen}
-				onOpenChange={setModelDialogOpen}
-				organizationId={organizationId}
-				editingModel={editingModel}
-				onSuccess={handleModelDialogSuccess}
-			/>
+			{canManage ? (
+				<SurchargeModelDialog
+					open={modelDialogOpen}
+					onOpenChange={setModelDialogOpen}
+					organizationId={organizationId}
+					editingModel={editingModel}
+					onSuccess={handleModelDialogSuccess}
+				/>
+			) : null}
 
 			{/* Assignment Dialog */}
-			<SurchargeAssignmentDialog
-				open={assignmentDialogOpen}
-				onOpenChange={setAssignmentDialogOpen}
-				organizationId={organizationId}
-				assignmentType={assignmentType}
-				onSuccess={handleAssignmentDialogSuccess}
-			/>
+			{canManage ? (
+				<SurchargeAssignmentDialog
+					open={assignmentDialogOpen}
+					onOpenChange={setAssignmentDialogOpen}
+					organizationId={organizationId}
+					assignmentType={assignmentType}
+					onSuccess={handleAssignmentDialogSuccess}
+				/>
+			) : null}
 
 			{/* Delete Model Confirmation */}
-			<AlertDialog open={!!deleteModelId} onOpenChange={() => setDeleteModelId(null)}>
+			<AlertDialog open={canManage && !!deleteModelId} onOpenChange={() => setDeleteModelId(null)}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
 						<AlertDialogTitle>

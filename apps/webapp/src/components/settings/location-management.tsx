@@ -26,9 +26,10 @@ import { LocationDialog } from "./location-dialog";
 
 interface LocationManagementProps {
 	organizationId: string;
+	canManageLocations: boolean;
 }
 
-export function LocationManagement({ organizationId }: LocationManagementProps) {
+export function LocationManagement({ organizationId, canManageLocations }: LocationManagementProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const [dialogOpen, setDialogOpen] = useState(false);
@@ -77,10 +78,12 @@ export function LocationManagement({ organizationId }: LocationManagementProps) 
 						<IconRefresh className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
 						<span className="sr-only">{t("common.refresh", "Refresh")}</span>
 					</Button>
-					<Button onClick={handleCreate}>
-						<IconPlus className="mr-2 h-4 w-4" />
-						{t("settings.locations.create", "Create Location")}
-					</Button>
+					{canManageLocations && (
+						<Button onClick={handleCreate}>
+							<IconPlus className="mr-2 h-4 w-4" />
+							{t("settings.locations.create", "Create Location")}
+						</Button>
+					)}
 				</div>
 			</div>
 
@@ -107,10 +110,12 @@ export function LocationManagement({ organizationId }: LocationManagementProps) 
 								"Create your first location to organize your workspace.",
 							)}
 						</CardDescription>
-						<Button onClick={handleCreate}>
-							<IconPlus className="mr-2 h-4 w-4" />
-							{t("settings.locations.create", "Create Location")}
-						</Button>
+						{canManageLocations && (
+							<Button onClick={handleCreate}>
+								<IconPlus className="mr-2 h-4 w-4" />
+								{t("settings.locations.create", "Create Location")}
+							</Button>
+						)}
 					</CardContent>
 				</Card>
 			) : (
@@ -171,13 +176,15 @@ export function LocationManagement({ organizationId }: LocationManagementProps) 
 				</Card>
 			)}
 
-			<LocationDialog
-				organizationId={organizationId}
-				location={editingLocation}
-				open={dialogOpen}
-				onOpenChange={setDialogOpen}
-				onSuccess={handleSuccess}
-			/>
+			{canManageLocations && (
+				<LocationDialog
+					organizationId={organizationId}
+					location={editingLocation}
+					open={dialogOpen}
+					onOpenChange={setDialogOpen}
+					onSuccess={handleSuccess}
+				/>
+			)}
 		</div>
 	);
 }

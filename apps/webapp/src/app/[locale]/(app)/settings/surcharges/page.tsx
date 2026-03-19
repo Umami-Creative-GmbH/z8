@@ -1,28 +1,30 @@
-import { redirect } from "next/navigation";
 import { connection } from "next/server";
-import { NoEmployeeError } from "@/components/errors/no-employee-error";
+import { redirect } from "next/navigation";
 import { SurchargeManagement } from "@/components/settings/surcharge-management";
-import { getAuthContext } from "@/lib/auth-helpers";
+import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
 
 export default async function SurchargeSettingsPage() {
 	await connection(); // Mark as fully dynamic for cacheComponents mode
 
-	const t = await getTranslate();
-	const authContext = await getAuthContext();
+	await getTranslate();
+	const settingsRouteContext = await getCurrentSettingsRouteContext();
 
-	if (!authContext?.employee) {
-		return (
-			<div className="flex flex-1 items-center justify-center p-6">
-				<NoEmployeeError feature={t("settings.surcharges.feature", "manage surcharges")} />
-			</div>
-		);
+	if (!settingsRouteContext) {
+		redirect("/settings");
 	}
 
-	// Only admins can access surcharge settings
-	if (authContext.employee.role !== "admin") {
-		redirect("/");
+	const { authContext, accessTier } = settingsRouteContext;
+	const organizationId = authContext.session.activeOrganizationId;
+
+	if (accessTier === "member" || !organizationId) {
+		redirect("/settings");
 	}
 
-	return <SurchargeManagement organizationId={authContext.employee.organizationId} />;
+	return (
+		<SurchargeManagement
+			organizationId={organizationId}
+			canManage={accessTier === "orgAdmin"}
+		/>
+	);
 }

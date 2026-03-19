@@ -37,9 +37,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { queryKeys } from "@/lib/query";
+import { getVacationAssignmentSectionVisibility } from "./policy-assignment-surface";
 
 interface VacationAssignmentManagerProps {
 	organizationId: string;
+	allowedAssignmentTypes: readonly ("team" | "employee")[];
 	onAssignClick: (type: "team" | "employee") => void;
 }
 
@@ -99,6 +101,7 @@ const formatPolicySummary = (policy: PolicyData, t: ReturnType<typeof useTransla
 
 export function VacationAssignmentManager({
 	organizationId,
+	allowedAssignmentTypes,
 	onAssignClick,
 }: VacationAssignmentManagerProps) {
 	const { t } = useTranslate();
@@ -176,6 +179,14 @@ export function VacationAssignmentManager({
 	const policyAssignments = assignments || [];
 	const teamAssignments = policyAssignments.filter((a) => a.assignmentType === "team");
 	const employeeAssignments = policyAssignments.filter((a) => a.assignmentType === "employee");
+	const canManageTeamAssignments = allowedAssignmentTypes.includes("team");
+	const canManageEmployeeAssignments = allowedAssignmentTypes.includes("employee");
+	const { showTeamSection, showEmployeeSection } = getVacationAssignmentSectionVisibility({
+		canManageTeamAssignments,
+		teamAssignmentsCount: teamAssignments.length,
+		canManageEmployeeAssignments,
+		employeeAssignmentsCount: employeeAssignments.length,
+	});
 
 	const isLoading = defaultsLoading || assignmentsLoading;
 
@@ -316,6 +327,7 @@ export function VacationAssignmentManager({
 				</Card>
 
 				{/* Team Level */}
+				{showTeamSection ? (
 				<Card>
 					<CardHeader>
 						<div className="flex items-center gap-2">
@@ -339,12 +351,14 @@ export function VacationAssignmentManager({
 						</div>
 					</CardHeader>
 					<CardContent>
-						<div className="flex justify-end mb-4">
-							<Button onClick={() => onAssignClick("team")} size="sm" variant="outline">
-								<IconPlus className="mr-2 h-4 w-4" />
-								{t("settings.vacation.assignments.assignTeam", "Assign to Team")}
-							</Button>
-						</div>
+						{canManageTeamAssignments ? (
+							<div className="flex justify-end mb-4">
+								<Button onClick={() => onAssignClick("team")} size="sm" variant="outline">
+									<IconPlus className="mr-2 h-4 w-4" />
+									{t("settings.vacation.assignments.assignTeam", "Assign to Team")}
+								</Button>
+							</div>
+						) : null}
 						{teamAssignments.length > 0 ? (
 							<div className="space-y-3">
 								{teamAssignments.map((assignment) => (
@@ -357,15 +371,17 @@ export function VacationAssignmentManager({
 												<IconUsers className="h-4 w-4 text-muted-foreground" />
 												<span className="font-medium">{assignment.team?.name}</span>
 											</div>
-											<Button
-												variant="ghost"
-												size="icon"
-												className="h-8 w-8 text-muted-foreground hover:text-destructive"
-												onClick={() => handleDeleteClick(assignment)}
-											>
-												<IconTrash className="h-4 w-4" />
-											</Button>
-										</div>
+									{canManageTeamAssignments ? (
+										<Button
+											variant="ghost"
+											size="icon"
+											className="h-8 w-8 text-muted-foreground hover:text-destructive"
+											onClick={() => handleDeleteClick(assignment)}
+										>
+											<IconTrash className="h-4 w-4" />
+										</Button>
+									) : null}
+								</div>
 										<div className="mt-2 ml-7 space-y-1">
 											<div className="flex items-center gap-2 text-sm">
 												<Badge variant="outline" className="text-xs">
@@ -408,8 +424,10 @@ export function VacationAssignmentManager({
 						)}
 					</CardContent>
 				</Card>
+				) : null}
 
 				{/* Employee Level */}
+				{showEmployeeSection ? (
 				<Card>
 					<CardHeader>
 						<div className="flex items-center gap-2">
@@ -433,12 +451,14 @@ export function VacationAssignmentManager({
 						</div>
 					</CardHeader>
 					<CardContent>
-						<div className="flex justify-end mb-4">
-							<Button onClick={() => onAssignClick("employee")} size="sm" variant="outline">
-								<IconPlus className="mr-2 h-4 w-4" />
-								{t("settings.vacation.assignments.assignEmployee", "Assign to Employee")}
-							</Button>
-						</div>
+						{canManageEmployeeAssignments ? (
+							<div className="flex justify-end mb-4">
+								<Button onClick={() => onAssignClick("employee")} size="sm" variant="outline">
+									<IconPlus className="mr-2 h-4 w-4" />
+									{t("settings.vacation.assignments.assignEmployee", "Assign to Employee")}
+								</Button>
+							</div>
+						) : null}
 						{employeeAssignments.length > 0 ? (
 							<div className="space-y-3">
 								{employeeAssignments.map((assignment) => (
@@ -453,15 +473,17 @@ export function VacationAssignmentManager({
 													{assignment.employee?.firstName} {assignment.employee?.lastName}
 												</span>
 											</div>
-											<Button
-												variant="ghost"
-												size="icon"
-												className="h-8 w-8 text-muted-foreground hover:text-destructive"
-												onClick={() => handleDeleteClick(assignment)}
-											>
-												<IconTrash className="h-4 w-4" />
-											</Button>
-										</div>
+									{canManageEmployeeAssignments ? (
+										<Button
+											variant="ghost"
+											size="icon"
+											className="h-8 w-8 text-muted-foreground hover:text-destructive"
+											onClick={() => handleDeleteClick(assignment)}
+										>
+											<IconTrash className="h-4 w-4" />
+										</Button>
+									) : null}
+								</div>
 										<div className="mt-2 ml-7 space-y-1">
 											<div className="flex items-center gap-2 text-sm">
 												<Badge variant="outline" className="text-xs">
@@ -504,6 +526,7 @@ export function VacationAssignmentManager({
 						)}
 					</CardContent>
 				</Card>
+				) : null}
 			</div>
 
 			{/* Delete Confirmation Dialog */}

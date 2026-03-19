@@ -18,7 +18,8 @@ interface TeamCardProps {
 	employees?: Array<{
 		user: { id: string; name: string; image: string | null };
 	}>;
-	canManage: boolean;
+	canManageMembers: boolean;
+	canManageSettings: boolean;
 	onEdit?: () => void;
 	onDelete?: () => void;
 	onManageMembers?: () => void;
@@ -27,7 +28,8 @@ interface TeamCardProps {
 export function TeamCard({
 	team,
 	employees = [],
-	canManage,
+	canManageMembers,
+	canManageSettings,
 	onEdit,
 	onDelete,
 	onManageMembers,
@@ -54,15 +56,17 @@ export function TeamCard({
 								<IconDots className="h-4 w-4" />
 							</Button>
 						</DropdownMenuTrigger>
-						<DropdownMenuContent align="end">
+					<DropdownMenuContent align="end">
+						{canManageMembers && (
 							<DropdownMenuItem onClick={onManageMembers}>
 								<IconUsers className="mr-2 h-4 w-4" />
 								Manage Members
 							</DropdownMenuItem>
-							{canManage && (
-								<>
-									<DropdownMenuSeparator />
-									<DropdownMenuItem onClick={onEdit}>
+						)}
+						{canManageSettings && (
+							<>
+								{canManageMembers && <DropdownMenuSeparator />}
+								<DropdownMenuItem onClick={onEdit}>
 										<IconEdit className="mr-2 h-4 w-4" />
 										Edit Team
 									</DropdownMenuItem>

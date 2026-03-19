@@ -28,6 +28,7 @@ import { WorkCategoryDialog } from "./work-category-dialog";
 
 interface WorkCategoryTableProps {
 	organizationId: string;
+	canManage: boolean;
 }
 
 interface CategoryData {
@@ -42,7 +43,7 @@ interface CategoryData {
 	usedInSetsCount: number;
 }
 
-export function WorkCategoryTable({ organizationId }: WorkCategoryTableProps) {
+export function WorkCategoryTable({ organizationId, canManage }: WorkCategoryTableProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 
@@ -170,10 +171,12 @@ export function WorkCategoryTable({ organizationId }: WorkCategoryTableProps) {
 								)}
 							</CardDescription>
 						</div>
-						<Button onClick={handleCreateClick}>
-							<IconPlus className="mr-2 h-4 w-4" aria-hidden="true" />
-							{t("settings.workCategories.addCategory", "Add Category")}
-						</Button>
+						{canManage ? (
+							<Button onClick={handleCreateClick}>
+								<IconPlus className="mr-2 h-4 w-4" aria-hidden="true" />
+								{t("settings.workCategories.addCategory", "Add Category")}
+							</Button>
+						) : null}
 					</div>
 				</CardHeader>
 				<CardContent>
@@ -197,9 +200,11 @@ export function WorkCategoryTable({ organizationId }: WorkCategoryTableProps) {
 									<TableHead>{t("settings.workCategories.categoryName", "Name")}</TableHead>
 									<TableHead>{t("settings.workCategories.factor", "Factor")}</TableHead>
 									<TableHead>{t("settings.workCategories.usedInSets", "Used in Sets")}</TableHead>
-									<TableHead className="w-[100px] text-right">
-										{t("common.actions", "Actions")}
-									</TableHead>
+									{canManage ? (
+										<TableHead className="w-[100px] text-right">
+											{t("common.actions", "Actions")}
+										</TableHead>
+									) : null}
 								</TableRow>
 							</TableHeader>
 							<TableBody>
@@ -242,6 +247,7 @@ export function WorkCategoryTable({ organizationId }: WorkCategoryTableProps) {
 													: t("common.sets", "sets")}
 											</Badge>
 										</TableCell>
+									{canManage ? (
 										<TableCell className="text-right">
 											<div className="flex items-center justify-end gap-1">
 												<TooltipProvider>
@@ -272,9 +278,9 @@ export function WorkCategoryTable({ organizationId }: WorkCategoryTableProps) {
 																aria-label={
 																	category.usedInSetsCount > 0
 																		? t(
-																				"settings.workCategories.cannotDeleteInUse",
-																				"Remove from sets first",
-																			)
+																			"settings.workCategories.cannotDeleteInUse",
+																			"Remove from sets first",
+																		)
 																		: t("common.delete", "Delete")
 																}
 															>
@@ -286,14 +292,15 @@ export function WorkCategoryTable({ organizationId }: WorkCategoryTableProps) {
 																? t(
 																		"settings.workCategories.cannotDeleteInUse",
 																		"Remove from sets first",
-																	)
+																  )
 																: t("common.delete", "Delete")}
 														</TooltipContent>
 													</Tooltip>
 												</TooltipProvider>
 											</div>
 										</TableCell>
-									</TableRow>
+									) : null}
+								</TableRow>
 								))}
 							</TableBody>
 						</Table>
@@ -301,13 +308,15 @@ export function WorkCategoryTable({ organizationId }: WorkCategoryTableProps) {
 				</CardContent>
 			</Card>
 
-			<WorkCategoryDialog
-				open={dialogOpen}
-				onOpenChange={setDialogOpen}
-				organizationId={organizationId}
-				category={editingCategory}
-				onSuccess={handleDialogSuccess}
-			/>
+			{canManage ? (
+				<WorkCategoryDialog
+					open={dialogOpen}
+					onOpenChange={setDialogOpen}
+					organizationId={organizationId}
+					category={editingCategory}
+					onSuccess={handleDialogSuccess}
+				/>
+			) : null}
 		</>
 	);
 }

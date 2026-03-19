@@ -61,6 +61,7 @@ interface VacationPolicy {
 
 interface VacationPoliciesTableProps {
 	organizationId: string;
+	canManagePolicies?: boolean;
 }
 
 const getAccrualTypeLabel = (t: ReturnType<typeof useTranslate>["t"], type: string) => {
@@ -87,7 +88,10 @@ const isPolicySuperseded = (policy: VacationPolicy) => {
 	return policy.validUntil < today;
 };
 
-export function VacationPoliciesTable({ organizationId }: VacationPoliciesTableProps) {
+export function VacationPoliciesTable({
+	organizationId,
+	canManagePolicies = true,
+}: VacationPoliciesTableProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const [search, setSearch] = useState("");
@@ -261,9 +265,11 @@ export function VacationPoliciesTable({ organizationId }: VacationPoliciesTableP
 					return <Badge variant="outline">{t("vacation.policies.active", "Active")}</Badge>;
 				},
 			},
-			{
-				id: "actions",
-				cell: ({ row }) => (
+			...(canManagePolicies
+				? [
+					{
+						id: "actions",
+						cell: ({ row }: { row: { original: VacationPolicy } }) => (
 					<DropdownMenu>
 						<DropdownMenuTrigger asChild>
 							<Button variant="ghost" size="icon" className="h-8 w-8">
@@ -286,21 +292,25 @@ export function VacationPoliciesTable({ organizationId }: VacationPoliciesTableP
 							</DropdownMenuItem>
 						</DropdownMenuContent>
 					</DropdownMenu>
-				),
-			},
+						),
+					},
+				]
+				: []),
 		],
-		[t],
+		[t, canManagePolicies],
 	);
 
 	if (isLoading) {
 		return (
 			<div className="space-y-4">
-				<div className="flex justify-end">
-					<Button onClick={handleCreateClick}>
-						<IconPlus className="mr-2 h-4 w-4" />
-						{t("vacation.policies.add-policy", "Add Policy")}
-					</Button>
-				</div>
+				{canManagePolicies ? (
+					<div className="flex justify-end">
+						<Button onClick={handleCreateClick}>
+							<IconPlus className="mr-2 h-4 w-4" />
+							{t("vacation.policies.add-policy", "Add Policy")}
+						</Button>
+					</div>
+				) : null}
 				<DataTableSkeleton columnCount={8} rowCount={5} />
 			</div>
 		);
@@ -337,10 +347,12 @@ export function VacationPoliciesTable({ organizationId }: VacationPoliciesTableP
 								)}
 								<span className="sr-only">{t("common.refresh", "Refresh")}</span>
 							</Button>
-							<Button onClick={handleCreateClick}>
-								<IconPlus className="mr-2 h-4 w-4" />
-								{t("vacation.policies.add-policy", "Add Policy")}
-							</Button>
+							{canManagePolicies ? (
+								<Button onClick={handleCreateClick}>
+									<IconPlus className="mr-2 h-4 w-4" />
+									{t("vacation.policies.add-policy", "Add Policy")}
+								</Button>
+							) : null}
 						</div>
 					}
 				/>
@@ -396,7 +408,7 @@ export function VacationPoliciesTable({ organizationId }: VacationPoliciesTableP
 				</AlertDialogContent>
 			</AlertDialog>
 
-			{editingPolicy && (
+			{canManagePolicies && editingPolicy && (
 				<VacationPolicyForm
 					open={!!editingPolicy}
 					onOpenChange={handleFormClose}
@@ -405,7 +417,7 @@ export function VacationPoliciesTable({ organizationId }: VacationPoliciesTableP
 				/>
 			)}
 
-			{createFormOpen && (
+			{canManagePolicies && createFormOpen && (
 				<VacationPolicyForm
 					open={createFormOpen}
 					onOpenChange={handleFormClose}

@@ -3,6 +3,8 @@
 import { and, eq, inArray } from "drizzle-orm";
 import { Effect } from "effect";
 import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import { cache } from "react";
 import { db } from "@/db";
 import { invitation, member, organization, user as authUser } from "@/db/auth-schema";
 import { employee, employeeManagers, teamPermissions, userSettings } from "@/db/schema";
@@ -10,6 +12,13 @@ import { auth } from "@/lib/auth";
 import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { ManagerService, ManagerServiceLive } from "@/lib/effect/services/manager.service";
 import { detectAppType, type AppPermissions } from "@/lib/effect/services/app-access.service";
+import {
+	hasSettingsAccessTier,
+	isSettingsAccessMembershipRole,
+	resolveSettingsAccessTier,
+	type ResolveSettingsAccessTierInput,
+	type SettingsAccessTier,
+} from "@/lib/settings-access";
 import type { AppType } from "@/lib/audit-logger";
 import {
 	defineAbilityFor,
@@ -62,7 +71,7 @@ export interface UserOrganization {
  * If no activeOrganizationId is set, employee will be null.
  * This prevents cross-organization data leakage.
  */
-export async function getAuthContext(): Promise<AuthContext | null> {
+export const getAuthContext = cache(async (): Promise<AuthContext | null> => {
 	const session = await auth.api.getSession({ headers: await headers() });
 
 	if (!session?.user) {
@@ -116,7 +125,7 @@ export async function getAuthContext(): Promise<AuthContext | null> {
 				}
 			: null,
 	};
-}
+});
 
 /**
  * Require authenticated user (without requiring employee context)
@@ -803,6 +812,111 @@ export async function getPrincipalContext(): Promise<PrincipalContext | null> {
 	};
 }
 
+export async function getSettingsAccessInputForUser(
+	userId: string,
+	activeOrganizationId: string | null,
+): Promise<ResolveSettingsAccessTierInput> {
+	if (!activeOrganizationId) {
+		return {
+			activeOrganizationId: null,
+			membershipRole: null,
+			employeeRole: null,
+		};
+	}
+
+	const [membershipRecord, employeeRecord] = await Promise.all([
+		db
+			.select({ role: member.role })
+			.from(member)
+			.where(and(eq(member.userId, userId), eq(member.organizationId, activeOrganizationId)))
+			.limit(1)
+			.then((records) => records[0] ?? null),
+		db
+			.select({ role: employee.role })
+			.from(employee)
+			.where(
+				and(
+					eq(employee.userId, userId),
+					eq(employee.organizationId, activeOrganizationId),
+					eq(employee.isActive, true),
+				),
+			)
+			.limit(1)
+			.then((records) => records[0] ?? null),
+	]);
+
+	return {
+		activeOrganizationId,
+		membershipRole: isSettingsAccessMembershipRole(membershipRecord?.role)
+			? membershipRecord.role
+			: null,
+		employeeRole: employeeRecord?.role ?? null,
+	};
+}
+
+export async function getSettingsAccessTierForUser(
+	userId: string,
+	activeOrganizationId: string | null,
+): Promise<SettingsAccessTier> {
+	return resolveSettingsAccessTier(
+		await getSettingsAccessInputForUser(userId, activeOrganizationId),
+	);
+}
+
+export const getCurrentSettingsAccessTier = cache(async (): Promise<SettingsAccessTier | null> => {
+	const session = await auth.api.getSession({ headers: await headers() });
+
+	if (!session?.user) {
+		return null;
+	}
+
+	return getSettingsAccessTierForUser(session.user.id, session.session?.activeOrganizationId || null);
+});
+
+export const getCurrentSettingsRouteContext = cache(
+	async (): Promise<{
+		authContext: AuthContext;
+		accessTier: SettingsAccessTier;
+	} | null> => {
+		const authContext = await getAuthContext();
+
+		if (!authContext) {
+			return null;
+		}
+
+		return {
+			authContext,
+			accessTier: await getSettingsAccessTierForUser(
+				authContext.user.id,
+				authContext.session.activeOrganizationId || null,
+			),
+		};
+	},
+);
+
+export async function requireOrgAdminSettingsAccess(): Promise<{
+	authContext: AuthContext;
+	organizationId: string;
+}> {
+	const authContext = await requireUser();
+	const organizationId = authContext.session.activeOrganizationId;
+
+	if (!organizationId) {
+		redirect("/settings");
+	}
+
+	const settingsAccessTier = await getCurrentSettingsAccessTier();
+
+	if (settingsAccessTier !== "orgAdmin") {
+		redirect("/settings");
+	}
+
+	return {
+		authContext,
+		organizationId,
+	};
+}
+
 /**
  * Get CASL ability for the current authenticated user.
  * Convenience function that combines getPrincipalContext and defineAbilityFor.
@@ -901,17 +1015,17 @@ export async function isOrgAdminCasl(organizationId: string): Promise<boolean> {
 
 /**
  * Check whether the current user can manage organization settings in the current org.
- * This follows the employee admin role used throughout the settings UI and intentionally
- * ignores platform-admin overrides.
+	* This uses the centralized settings access tier for the active organization and
+	* intentionally ignores platform-admin overrides.
  */
 export async function canManageCurrentOrganizationSettings(): Promise<boolean> {
-	const context = await getAuthContext();
+	const settingsAccessTier = await getCurrentSettingsAccessTier();
 
-	if (!context) {
+	if (!settingsAccessTier) {
 		return false;
 	}
 
-	return context.employee?.role === "admin";
+	return hasSettingsAccessTier(settingsAccessTier, "orgAdmin");
 }
 
 /**

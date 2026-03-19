@@ -38,11 +38,12 @@ import { useHolidays } from "@/lib/query/use-holidays";
 
 interface HolidayListProps {
 	organizationId: string;
+	canManage: boolean;
 	onAddClick: () => void;
 	onEditClick: (holiday: HolidayWithCategory) => void;
 }
 
-export function HolidayList({ organizationId, onAddClick, onEditClick }: HolidayListProps) {
+export function HolidayList({ organizationId, canManage, onAddClick, onEditClick }: HolidayListProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 
@@ -193,7 +194,7 @@ export function HolidayList({ organizationId, onAddClick, onEditClick }: Holiday
 	// Column definitions
 	const columns = useMemo<ColumnDef<HolidayWithCategory>[]>(
 		() => [
-			createSelectionColumn<HolidayWithCategory>(),
+			...(canManage ? [createSelectionColumn<HolidayWithCategory>()] : []),
 			{
 				accessorKey: "name",
 				header: ({ column }) => (
@@ -242,38 +243,42 @@ export function HolidayList({ organizationId, onAddClick, onEditClick }: Holiday
 						<Badge variant="secondary">{t("settings.holidays.recurrence.yearly", "Yearly")}</Badge>
 					),
 			},
-			{
-				id: "actions",
-				header: () => (
-					<div className="text-right">{t("settings.holidays.list.actions", "Actions")}</div>
-				),
-				cell: ({ row }) => (
-					<div className="flex justify-end gap-2">
-						<Button
-							variant="ghost"
-							size="icon"
-							onClick={() => onEditClick(row.original)}
-							disabled={deleteMutation.isPending}
-						>
-							<IconPencil className="h-4 w-4" />
-						</Button>
-						<Button
-							variant="ghost"
-							size="icon"
-							onClick={() => handleDeleteClick(row.original)}
-							disabled={deleteMutation.isPending}
-						>
-							{deleteMutation.isPending && holidayToDelete?.id === row.original.id ? (
-								<IconLoader2 className="h-4 w-4 animate-spin" />
-							) : (
-								<IconTrash className="h-4 w-4" />
-							)}
-						</Button>
-					</div>
-				),
-			},
+			...(canManage
+				? [
+					{
+						id: "actions",
+						header: () => (
+							<div className="text-right">{t("settings.holidays.list.actions", "Actions")}</div>
+						),
+						cell: ({ row }: { row: { original: HolidayWithCategory } }) => (
+							<div className="flex justify-end gap-2">
+								<Button
+									variant="ghost"
+									size="icon"
+									onClick={() => onEditClick(row.original)}
+									disabled={deleteMutation.isPending}
+								>
+									<IconPencil className="h-4 w-4" />
+								</Button>
+								<Button
+									variant="ghost"
+									size="icon"
+									onClick={() => handleDeleteClick(row.original)}
+									disabled={deleteMutation.isPending}
+								>
+									{deleteMutation.isPending && holidayToDelete?.id === row.original.id ? (
+										<IconLoader2 className="h-4 w-4 animate-spin" />
+									) : (
+										<IconTrash className="h-4 w-4" />
+									)}
+								</Button>
+							</div>
+						),
+					},
+				]
+				: []),
 		],
-		[t, onEditClick, deleteMutation.isPending, holidayToDelete?.id],
+		[t, canManage, onEditClick, deleteMutation.isPending, holidayToDelete?.id],
 	);
 
 	const selectedCount = Object.keys(rowSelection).length;
@@ -284,12 +289,14 @@ export function HolidayList({ organizationId, onAddClick, onEditClick }: Holiday
 			<div className="space-y-4">
 				<div className="flex justify-between items-center">
 					<h3 className="text-lg font-medium">{t("settings.holidays.list.title", "Holidays")}</h3>
-					<Button size="sm" onClick={onAddClick}>
-						<IconPlus className="mr-2 h-4 w-4" />
-						{t("settings.holidays.add", "Add Holiday")}
-					</Button>
+					{canManage ? (
+						<Button size="sm" onClick={onAddClick}>
+							<IconPlus className="mr-2 h-4 w-4" />
+							{t("settings.holidays.add", "Add Holiday")}
+						</Button>
+					) : null}
 				</div>
-				<DataTableSkeleton columnCount={5} rowCount={10} showSelection />
+				<DataTableSkeleton columnCount={canManage ? 5 : 4} rowCount={10} showSelection={canManage} />
 			</div>
 		);
 	}
@@ -300,10 +307,12 @@ export function HolidayList({ organizationId, onAddClick, onEditClick }: Holiday
 			<div className="space-y-4">
 				<div className="flex justify-between items-center">
 					<h3 className="text-lg font-medium">{t("settings.holidays.list.title", "Holidays")}</h3>
-					<Button size="sm" onClick={onAddClick}>
-						<IconPlus className="mr-2 h-4 w-4" />
-						{t("settings.holidays.add", "Add Holiday")}
-					</Button>
+					{canManage ? (
+						<Button size="sm" onClick={onAddClick}>
+							<IconPlus className="mr-2 h-4 w-4" />
+							{t("settings.holidays.add", "Add Holiday")}
+						</Button>
+					) : null}
 				</div>
 				<div className="rounded-md border border-destructive/50 bg-destructive/10 p-8 flex flex-col items-center justify-center gap-4">
 					<div className="text-destructive">
@@ -334,7 +343,7 @@ export function HolidayList({ organizationId, onAddClick, onEditClick }: Holiday
 						if (key === "categoryId") setCategoryId(value);
 					}}
 					bulkActions={
-						selectedCount > 0 ? (
+						canManage && selectedCount > 0 ? (
 							<Button
 								size="sm"
 								variant="destructive"
@@ -353,10 +362,12 @@ export function HolidayList({ organizationId, onAddClick, onEditClick }: Holiday
 						) : null
 					}
 					actions={
-						<Button size="sm" onClick={onAddClick}>
-							<IconPlus className="mr-2 h-4 w-4" />
-							{t("settings.holidays.add", "Add Holiday")}
-						</Button>
+						canManage ? (
+							<Button size="sm" onClick={onAddClick}>
+								<IconPlus className="mr-2 h-4 w-4" />
+								{t("settings.holidays.add", "Add Holiday")}
+							</Button>
+						) : null
 					}
 				/>
 
@@ -372,7 +383,7 @@ export function HolidayList({ organizationId, onAddClick, onEditClick }: Holiday
 					onRowSelectionChange={setRowSelection}
 					manualPagination
 					manualSorting
-					enableRowSelection
+					enableRowSelection={canManage}
 					getRowId={(row) => row.id}
 					isFetching={isFetching}
 					emptyMessage={t(
@@ -399,12 +410,11 @@ export function HolidayList({ organizationId, onAddClick, onEditClick }: Holiday
 						} as any
 					}
 					totalRows={total}
-					showSelectedCount={selectedCount > 0}
+					showSelectedCount={canManage && selectedCount > 0}
 				/>
 			</div>
 
-			{/* Single Delete Confirmation */}
-			<AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+			{canManage ? <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
 						<AlertDialogTitle>
@@ -432,10 +442,9 @@ export function HolidayList({ organizationId, onAddClick, onEditClick }: Holiday
 						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>
-			</AlertDialog>
+			</AlertDialog> : null}
 
-			{/* Bulk Delete Confirmation */}
-			<AlertDialog open={bulkDeleteConfirmOpen} onOpenChange={setBulkDeleteConfirmOpen}>
+			{canManage ? <AlertDialog open={bulkDeleteConfirmOpen} onOpenChange={setBulkDeleteConfirmOpen}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
 						<AlertDialogTitle>
@@ -467,7 +476,7 @@ export function HolidayList({ organizationId, onAddClick, onEditClick }: Holiday
 						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>
-			</AlertDialog>
+			</AlertDialog> : null}
 		</>
 	);
 }

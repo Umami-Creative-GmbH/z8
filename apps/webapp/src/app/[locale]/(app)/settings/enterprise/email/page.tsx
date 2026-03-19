@@ -1,21 +1,13 @@
-import { redirect } from "next/navigation";
 import { EmailConfigForm } from "@/components/settings/enterprise/email-config-form";
-import { requireUser } from "@/lib/auth-helpers";
+import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
 import { getEmailConfig, getVaultConnectionStatus } from "./actions";
 
 export default async function EmailConfigPage() {
-	const [authContext, t] = await Promise.all([requireUser(), getTranslate()]);
-
-	// Only admins can access enterprise settings
-	if (authContext.employee?.role !== "admin") {
-		redirect("/settings");
-	}
-
-	const organizationId = authContext.employee?.organizationId;
-	if (!organizationId) {
-		redirect("/settings");
-	}
+	const [{ organizationId }, t] = await Promise.all([
+		requireOrgAdminSettingsAccess(),
+		getTranslate(),
+	]);
 
 	// Fetch email config and vault status in parallel
 	const [emailConfig, vaultStatus] = await Promise.all([

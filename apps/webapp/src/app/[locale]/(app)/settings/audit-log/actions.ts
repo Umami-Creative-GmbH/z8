@@ -1,6 +1,6 @@
 "use server";
 
-import { requireUser } from "@/lib/auth-helpers";
+import { canManageCurrentOrganizationSettings, requireUser } from "@/lib/auth-helpers";
 import {
 	type AuditLogFilters,
 	type AuditLogResult,
@@ -31,6 +31,21 @@ export interface AuditStatsResponse {
 	error?: string;
 }
 
+async function requireAuditLogOrgAdmin() {
+	const authContext = await requireUser();
+	const organizationId = authContext.session.activeOrganizationId;
+
+	if (!organizationId) {
+		return { error: "No active organization" } as const;
+	}
+
+	if (!(await canManageCurrentOrganizationSettings())) {
+		return { error: "Access denied. Admin role required." } as const;
+	}
+
+	return { organizationId } as const;
+}
+
 /**
  * Get paginated audit logs
  * Requires admin role
@@ -46,28 +61,16 @@ export async function getAuditLogsAction(filters: {
 	offset?: number;
 }): Promise<AuditLogResponse> {
 	try {
-		const authContext = await requireUser();
-		const employee = authContext.employee;
-
-		// Only admins can view audit logs
-		if (employee?.role !== "admin") {
+		const access = await requireAuditLogOrgAdmin();
+		if ("error" in access) {
 			return {
 				success: false,
-				error: "Access denied. Admin role required.",
-			};
-		}
-
-		const organizationId =
-			authContext.session.activeOrganizationId || authContext.employee?.organizationId;
-		if (!organizationId) {
-			return {
-				success: false,
-				error: "No active organization",
+				error: access.error,
 			};
 		}
 
 		const queryFilters: AuditLogFilters = {
-			organizationId,
+			organizationId: access.organizationId,
 			entityType: filters.entityType,
 			action: filters.action,
 			performedBy: filters.performedBy,
@@ -102,27 +105,19 @@ export async function getAuditStatsAction(
 	endDate: string,
 ): Promise<AuditStatsResponse> {
 	try {
-		const authContext = await requireUser();
-		const employee = authContext.employee;
-
-		// Only admins can view audit stats
-		if (employee?.role !== "admin") {
+		const access = await requireAuditLogOrgAdmin();
+		if ("error" in access) {
 			return {
 				success: false,
-				error: "Access denied. Admin role required.",
+				error: access.error,
 			};
 		}
 
-		const organizationId =
-			authContext.session.activeOrganizationId || authContext.employee?.organizationId;
-		if (!organizationId) {
-			return {
-				success: false,
-				error: "No active organization",
-			};
-		}
-
-		const stats = await getAuditLogStats(organizationId, new Date(startDate), new Date(endDate));
+		const stats = await getAuditLogStats(
+			access.organizationId,
+			new Date(startDate),
+			new Date(endDate),
+		);
 
 		return {
 			success: true,
@@ -146,27 +141,19 @@ export async function exportAuditLogsAction(
 	endDate: string,
 ): Promise<{ success: boolean; data?: AuditLogResult[]; error?: string }> {
 	try {
-		const authContext = await requireUser();
-		const employee = authContext.employee;
-
-		// Only admins can export audit logs
-		if (employee?.role !== "admin") {
+		const access = await requireAuditLogOrgAdmin();
+		if ("error" in access) {
 			return {
 				success: false,
-				error: "Access denied. Admin role required.",
+				error: access.error,
 			};
 		}
 
-		const organizationId =
-			authContext.session.activeOrganizationId || authContext.employee?.organizationId;
-		if (!organizationId) {
-			return {
-				success: false,
-				error: "No active organization",
-			};
-		}
-
-		const logs = await exportAuditLogs(organizationId, new Date(startDate), new Date(endDate));
+		const logs = await exportAuditLogs(
+			access.organizationId,
+			new Date(startDate),
+			new Date(endDate),
+		);
 
 		return {
 			success: true,

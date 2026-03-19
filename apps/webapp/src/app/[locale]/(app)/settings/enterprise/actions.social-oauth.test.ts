@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockState = vi.hoisted(() => ({
 	requireUser: vi.fn(),
+	canManageCurrentOrganizationSettings: vi.fn(),
 	revalidatePath: vi.fn(),
 	updateSocialOAuthConfig: vi.fn(),
 	deleteSocialOAuthConfig: vi.fn(),
@@ -24,6 +25,7 @@ vi.mock("@/lib/auth", () => ({
 
 vi.mock("@/lib/auth-helpers", () => ({
 	requireUser: mockState.requireUser,
+	canManageCurrentOrganizationSettings: mockState.canManageCurrentOrganizationSettings,
 }));
 
 vi.mock("@/lib/domain", () => ({
@@ -61,10 +63,48 @@ describe("enterprise social oauth actions org forwarding", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockState.requireUser.mockResolvedValue({
+			session: {
+				activeOrganizationId: "org-1",
+			},
 			employee: {
 				role: "admin",
 				organizationId: "org-1",
 			},
+		});
+		mockState.canManageCurrentOrganizationSettings.mockResolvedValue(true);
+	});
+
+	it("allows owners without an admin employee row to update social oauth configs", async () => {
+		mockState.requireUser.mockResolvedValue({
+			session: {
+				activeOrganizationId: "org-1",
+			},
+			employee: null,
+		});
+		mockState.updateSocialOAuthConfig.mockResolvedValue({
+			id: "cfg-1",
+			organizationId: "org-1",
+			provider: "google",
+			clientId: "client-id",
+			providerConfig: null,
+			isActive: true,
+			lastTestAt: null,
+			lastTestSuccess: null,
+			lastTestError: null,
+			createdAt: new Date("2026-01-01T00:00:00.000Z"),
+			updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+		});
+
+		await updateSocialOAuthConfigAction("cfg-1", {
+			clientId: "client-id",
+			isActive: true,
+		});
+
+		expect(mockState.updateSocialOAuthConfig).toHaveBeenCalledWith("cfg-1", "org-1", {
+			clientId: "client-id",
+			clientSecret: undefined,
+			providerConfig: undefined,
+			isActive: true,
 		});
 	});
 

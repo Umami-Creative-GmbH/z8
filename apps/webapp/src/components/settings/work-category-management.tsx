@@ -11,10 +11,11 @@ import { WorkCategoryTable } from "./work-category-table";
 
 interface WorkCategoryManagementProps {
 	organizationId: string;
+	canManage: boolean;
 	children: React.ReactNode; // The existing category sets content
 }
 
-export function WorkCategoryManagement({ organizationId, children }: WorkCategoryManagementProps) {
+export function WorkCategoryManagement({ organizationId, canManage, children }: WorkCategoryManagementProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 
@@ -64,7 +65,7 @@ export function WorkCategoryManagement({ organizationId, children }: WorkCategor
 				</TabsList>
 
 				<TabsContent value="categories" className="space-y-4">
-					<WorkCategoryTable organizationId={organizationId} />
+					<WorkCategoryTable organizationId={organizationId} canManage={canManage} />
 				</TabsContent>
 
 				<TabsContent value="sets" className="space-y-4">
@@ -74,18 +75,21 @@ export function WorkCategoryManagement({ organizationId, children }: WorkCategor
 				<TabsContent value="assignments" className="space-y-4">
 					<WorkCategoryAssignmentManager
 						organizationId={organizationId}
+						canManage={canManage}
 						onAssignClick={handleAssignClick}
 					/>
 				</TabsContent>
 			</Tabs>
 
-			<WorkCategoryAssignmentDialog
-				open={assignmentDialogOpen}
-				onOpenChange={setAssignmentDialogOpen}
-				organizationId={organizationId}
-				assignmentType={assignmentType}
-				onSuccess={handleAssignmentSuccess}
-			/>
+			{canManage ? (
+				<WorkCategoryAssignmentDialog
+					open={assignmentDialogOpen}
+					onOpenChange={setAssignmentDialogOpen}
+					organizationId={organizationId}
+					assignmentType={assignmentType}
+					onSuccess={handleAssignmentSuccess}
+				/>
+			) : null}
 		</div>
 	);
 }

@@ -1,26 +1,27 @@
-import { redirect } from "next/navigation";
 import { connection } from "next/server";
-import { NoEmployeeError } from "@/components/errors/no-employee-error";
+import { redirect } from "next/navigation";
 import { LocationManagement } from "@/components/settings/location-management";
-import { getAuthContext } from "@/lib/auth-helpers";
+import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 
 export default async function LocationSettingsPage() {
 	await connection(); // Mark as fully dynamic for cacheComponents mode
 
-	const authContext = await getAuthContext();
+	const settingsRouteContext = await getCurrentSettingsRouteContext();
 
-	if (!authContext?.employee) {
-		return (
-			<div className="flex flex-1 items-center justify-center p-6">
-				<NoEmployeeError feature="manage locations" />
-			</div>
-		);
+	if (!settingsRouteContext || settingsRouteContext.accessTier === "member") {
+		redirect("/settings");
 	}
 
-	// Only admins can access location settings
-	if (authContext.employee.role !== "admin") {
-		redirect("/");
+	const organizationId = settingsRouteContext.authContext.session.activeOrganizationId;
+
+	if (!organizationId) {
+		redirect("/settings");
 	}
 
-	return <LocationManagement organizationId={authContext.employee.organizationId} />;
+	return (
+		<LocationManagement
+			organizationId={organizationId}
+			canManageLocations={settingsRouteContext.accessTier === "orgAdmin"}
+		/>
+	);
 }

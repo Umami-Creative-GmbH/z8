@@ -1,12 +1,9 @@
-import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
-import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { ScheduledExportsTable } from "@/components/settings/scheduled-exports/scheduled-exports-table";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getAuthContext } from "@/lib/auth-helpers";
+import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
 import {
 	getScheduledExportsAction,
@@ -22,25 +19,8 @@ export const metadata = {
 async function ScheduledExportsContent() {
 	await connection(); // Mark as fully dynamic
 
-	const [t, currentEmployee] = await Promise.all([getTranslate(), getCurrentEmployee()]);
-
-	if (!currentEmployee) {
-		return (
-			<div className="flex flex-1 items-center justify-center p-6">
-				<NoEmployeeError
-					feature={t("settings.scheduledExports.featureName", "Scheduled Exports")}
-				/>
-			</div>
-		);
-	}
-
-	const authContext = await getAuthContext();
-
-	if (!authContext?.employee || authContext.employee.role !== "admin") {
-		redirect("/");
-	}
-
-	const organizationId = authContext.employee.organizationId;
+	await getTranslate();
+	const { organizationId } = await requireOrgAdminSettingsAccess();
 
 	// Fetch initial data in parallel
 	const [schedulesResult, filterOptionsResult, payrollConfigsResult] = await Promise.all([

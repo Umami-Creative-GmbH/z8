@@ -1,8 +1,5 @@
-import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
-import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { AuditConfigForm } from "@/components/settings/audit-export/audit-config-form";
 import { AuditPackGeneratorCard } from "@/components/settings/audit-export/audit-pack-generator-card";
 import { AuditPackagesTable } from "@/components/settings/audit-export/audit-packages-table";
@@ -10,7 +7,7 @@ import { KeyManagement } from "@/components/settings/audit-export/key-management
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getAuthContext } from "@/lib/auth-helpers";
+import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
 import { getAuditConfigAction, getAuditPackagesAction } from "./actions";
 
@@ -23,25 +20,10 @@ async function AuditExportSettingsContent() {
 	await connection();
 
 	// Parallelize all initial fetches to avoid waterfalls
-	const [t, currentEmployee, authContext] = await Promise.all([
+	const [t, { organizationId }] = await Promise.all([
 		getTranslate(),
-		getCurrentEmployee(),
-		getAuthContext(),
+		requireOrgAdminSettingsAccess(),
 	]);
-
-	if (!currentEmployee) {
-		return (
-			<div className="flex flex-1 items-center justify-center p-6">
-				<NoEmployeeError feature={t("settings.auditExport.featureName", "Audit Export")} />
-			</div>
-		);
-	}
-
-	if (!authContext?.employee || authContext.employee.role !== "admin") {
-		redirect("/");
-	}
-
-	const organizationId = authContext.employee.organizationId;
 
 	const [configResult, packagesResult] = await Promise.all([
 		getAuditConfigAction(organizationId),
