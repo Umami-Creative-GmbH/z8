@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.4
-
+ARG RUNTIME_BASE_IMAGE=app-runtime
 ARG ALPINE_VERSION=3.21
 ARG NODE_VERSION=22
 ARG PNPM_VERSION=10.28.0
@@ -90,7 +90,7 @@ COPY --from=workspace --chown=app:nodejs /app/pnpm-workspace.yaml ./
 
 WORKDIR /app/apps/webapp
 
-FROM app-runtime AS webapp
+FROM ${RUNTIME_BASE_IMAGE} AS webapp
 USER app
 EXPOSE 3000
 ENTRYPOINT ["/sbin/tini", "--"]
@@ -99,10 +99,10 @@ CMD ["pnpm", "start"]
 HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:3000/api/health || exit 1
 
-FROM app-runtime AS migration
+FROM ${RUNTIME_BASE_IMAGE} AS migration
 CMD ["node", "./scripts/migrate-with-lock.js"]
 
-FROM app-runtime AS worker
+FROM ${RUNTIME_BASE_IMAGE} AS worker
 USER app
 ENTRYPOINT ["/sbin/tini", "--"]
 CMD ["tsx", "src/worker.ts"]
