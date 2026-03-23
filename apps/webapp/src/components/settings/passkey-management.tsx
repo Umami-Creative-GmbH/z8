@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { getAuthErrorMessage } from "@/lib/auth/error-message";
 import { authClient } from "@/lib/auth-client";
 import { queryKeys } from "@/lib/query/keys";
 
@@ -36,7 +37,7 @@ export function PasskeyManagement() {
 		queryFn: async () => {
 			const result = await authClient.passkey.listUserPasskeys();
 			if (result.error) {
-				throw new Error(result.error.message);
+				throw new Error(getAuthErrorMessage(result.error, "Failed to load passkeys"));
 			}
 			return (result.data || []) as Passkey[];
 		},
@@ -50,7 +51,7 @@ export function PasskeyManagement() {
 				name: `Passkey ${new Date().toLocaleDateString()}`,
 			});
 			if (result.error) {
-				throw new Error(result.error.message);
+				throw new Error(getAuthErrorMessage(result.error, "Failed to add passkey"));
 			}
 			return result;
 		},
@@ -70,7 +71,7 @@ export function PasskeyManagement() {
 		mutationFn: async (id: string) => {
 			const result = await authClient.passkey.deletePasskey({ id });
 			if (result.error) {
-				throw new Error(result.error.message);
+				throw new Error(getAuthErrorMessage(result.error, "Failed to delete passkey"));
 			}
 			return result;
 		},

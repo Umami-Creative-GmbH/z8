@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { Label } from "@/components/ui/label";
+import { getAuthErrorMessage } from "@/lib/auth/error-message";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "@/navigation";
 
@@ -53,8 +54,10 @@ export function TwoFactorVerificationForm() {
 
 			if (result.error) {
 				toast.error(t("auth.2fa.verification-failed", "Verification failed"), {
-					description:
-						result.error.message || t("auth.2fa.invalid-backup-code", "Invalid backup code"),
+					description: getAuthErrorMessage(
+						result.error,
+						t("auth.2fa.invalid-backup-code", "Invalid backup code"),
+					),
 				});
 				setIsLoading(false);
 				return;
@@ -95,9 +98,10 @@ export function TwoFactorVerificationForm() {
 
 		if (result.error) {
 			toast.error(t("auth.2fa.verification-failed", "Verification failed"), {
-				description:
-					result.error.message ||
+				description: getAuthErrorMessage(
+					result.error,
 					t("auth.2fa.invalid-verification-code", "Invalid verification code"),
+				),
 			});
 			setIsLoading(false);
 			return;

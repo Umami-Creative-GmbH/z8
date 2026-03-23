@@ -8,6 +8,7 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { getAuthErrorMessage } from "@/lib/auth/error-message";
 import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { checkPasswordRequirements, passwordSchema } from "@/lib/validations/password";
@@ -154,8 +155,10 @@ export function ResetPasswordForm({ className, ...props }: React.ComponentProps<
 
 		if (response.error) {
 			setError(
-				response.error.message ||
+				getAuthErrorMessage(
+					response.error,
 					t("auth.reset-password-failed", "Failed to reset password. Please try again."),
+				),
 			);
 			setIsLoading(false);
 			return;

@@ -14,6 +14,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { sanitizeCallbackUrl, withCallbackUrl } from "@/lib/auth/callback-url";
 import { useDomainAuth, useTurnstile } from "@/lib/auth/domain-auth-context";
+import { getAuthErrorMessage } from "@/lib/auth/error-message";
 import { authClient } from "@/lib/auth-client";
 import { useEnabledProviders } from "@/lib/hooks/use-enabled-providers";
 import type { SocialProvider, SocialProviderId } from "@/lib/social-providers";
@@ -598,9 +599,10 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 			if (result.error) {
 				dispatch({
 					type: "SET_ERROR",
-					error:
-						result.error.message ||
+					error: getAuthErrorMessage(
+						result.error,
 						t("auth.passkey-login-failed", "Failed to sign in with passkey"),
+					),
 				});
 				dispatch({ type: "SET_LOADING", loading: false });
 			} else {

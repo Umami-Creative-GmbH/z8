@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { getAuthErrorMessage } from "@/lib/auth/error-message";
 import { authClient } from "@/lib/auth-client";
 import { generateSlug } from "@/lib/validations/organization";
 
@@ -76,9 +77,7 @@ export function CreateOrganizationDialog({
 			}
 
 			if (result.error) {
-				toast.error(
-					result.error.message || t("organization.createError", "Failed to create organization"),
-				);
+				toast.error(getAuthErrorMessage(result.error, t("organization.createError", "Failed to create organization")));
 				setLoading(false);
 				return;
 			}

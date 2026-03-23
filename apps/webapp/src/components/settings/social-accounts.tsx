@@ -17,6 +17,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { getAuthErrorMessage } from "@/lib/auth/error-message";
 import { authClient } from "@/lib/auth-client";
 import { queryKeys } from "@/lib/query/keys";
 
@@ -71,7 +72,7 @@ export function SocialAccounts() {
 		queryFn: async () => {
 			const result = await authClient.listAccounts();
 			if (result.error) {
-				throw new Error(result.error.message);
+				throw new Error(getAuthErrorMessage(result.error, "Failed to load connected accounts"));
 			}
 			return (result.data || []) as ConnectedAccount[];
 		},
@@ -83,7 +84,7 @@ export function SocialAccounts() {
 		mutationFn: async ({ providerId, accountId }: { providerId: string; accountId: string }) => {
 			const result = await authClient.unlinkAccount({ providerId, accountId });
 			if (result.error) {
-				throw new Error(result.error.message);
+				throw new Error(getAuthErrorMessage(result.error, "Failed to disconnect account"));
 			}
 			return result;
 		},
