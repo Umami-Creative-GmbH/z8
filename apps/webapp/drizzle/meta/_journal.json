@@ -15,6 +15,13 @@
       "when": 1773776155245,
       "tag": "0001_watery_stephen_strange",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1774282824858,
+      "tag": "0002_petite_eternity",
+      "breakpoints": true
     }
   ]
 }
