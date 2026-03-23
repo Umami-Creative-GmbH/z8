@@ -1,6 +1,11 @@
 hcloud_token         = "CHANGEME"
-ssh_public_key_path  = "~/.ssh/id_ed25519.pub"
-ssh_private_key_path = "~/.ssh/id_ed25519"
+ssh_public_key_path  = "/home/operator/.ssh/id_ed25519.pub"
+ssh_private_key_path = "/home/operator/.ssh/id_ed25519"
+
+ssh_additional_public_keys = [
+  "ssh-ed25519 AAAA... teammate-1",
+  "ssh-ed25519 AAAA... teammate-2",
+]
 
 cluster_name = "z8"
 

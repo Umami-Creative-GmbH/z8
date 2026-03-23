@@ -15,6 +15,12 @@ variable "ssh_private_key_path" {
   description = "Optional path to the SSH private key (leave empty to use ssh-agent)."
 }
 
+variable "ssh_additional_public_keys" {
+  type        = list(string)
+  default     = []
+  description = "Additional SSH public keys to install on cluster nodes."
+}
+
 variable "cluster_name" {
   type        = string
   default     = "z8"
