@@ -4,15 +4,12 @@
  * GET /api/approvals/inbox - Get paginated approvals
  */
 
-import { type NextRequest, NextResponse } from "next/server";
-import { headers } from "next/headers";
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
-import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+import { type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { employee } from "@/db/schema";
-import { getAbility } from "@/lib/auth-helpers";
-import { ForbiddenError, toHttpError } from "@/lib/authorization";
 import { getAllApprovalHandlers } from "@/lib/approvals/domain/registry";
 import { comparePriority } from "@/lib/approvals/domain/sla-calculator";
 import type {
@@ -22,8 +19,11 @@ import type {
 	ApprovalType,
 	UnifiedApprovalItem,
 } from "@/lib/approvals/domain/types";
-import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
+import { auth } from "@/lib/auth";
+import { getAbility } from "@/lib/auth-helpers";
+import { ForbiddenError, toHttpError } from "@/lib/authorization";
 import type { AnyAppError } from "@/lib/effect/errors";
+import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
 
 // Ensure handlers are registered
@@ -42,15 +42,15 @@ export async function GET(request: NextRequest) {
 		// Get active organization from session
 		const activeOrganizationId = session.session?.activeOrganizationId;
 		if (!activeOrganizationId) {
-			return NextResponse.json(
-				{ error: "No active organization" },
-				{ status: 400 },
-			);
+			return NextResponse.json({ error: "No active organization" }, { status: 400 });
 		}
 
 		// Check CASL permissions - must be able to approve or manage approvals
 		const ability = await getAbility();
-		if (!ability || (ability.cannot("approve", "Approval") && ability.cannot("manage", "Approval"))) {
+		if (
+			!ability ||
+			(ability.cannot("approve", "Approval") && ability.cannot("manage", "Approval"))
+		) {
 			const error = new ForbiddenError("approve", "Approval");
 			const httpError = toHttpError(error);
 			return NextResponse.json(httpError.body, { status: httpError.status });
@@ -73,9 +73,7 @@ export async function GET(request: NextRequest) {
 
 		const status = (searchParams.get("status") as ApprovalStatus) || "pending";
 		const typesParam = searchParams.get("types");
-		const types = typesParam
-			? (typesParam.split(",") as ApprovalType[])
-			: undefined;
+		const types = typesParam ? (typesParam.split(",") as ApprovalType[]) : undefined;
 		const teamId = searchParams.get("teamId") || undefined;
 		const search = searchParams.get("search") || undefined;
 		const priority = searchParams.get("priority") as ApprovalPriority | undefined;
@@ -113,16 +111,18 @@ export async function GET(request: NextRequest) {
 
 		// Get handlers
 		const handlers = getAllApprovalHandlers();
-		const activeHandlers = types
-			? handlers.filter((h) => types.includes(h.type))
-			: handlers;
+		const activeHandlers = types ? handlers.filter((h) => types.includes(h.type)) : handlers;
 
 		// Fetch from all handlers
 		const allItems: UnifiedApprovalItem[] = [];
 
 		for (const handler of activeHandlers) {
 			const result = await Effect.runPromise(
-				handler.getApprovals(params).pipe(Effect.provide(DatabaseServiceLive)) as Effect.Effect<UnifiedApprovalItem[], AnyAppError, never>,
+				handler.getApprovals(params).pipe(Effect.provide(DatabaseServiceLive)) as Effect.Effect<
+					UnifiedApprovalItem[],
+					AnyAppError,
+					never
+				>,
 			);
 			allItems.push(...result);
 		}
@@ -146,10 +146,11 @@ export async function GET(request: NextRequest) {
 			total: allItems.length,
 		});
 	} catch (error) {
+		if (error instanceof Error && "digest" in error) {
+			throw error;
+		}
+
 		logger.error({ error }, "Failed to fetch approvals");
-		return NextResponse.json(
-			{ error: "Failed to fetch approvals" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Failed to fetch approvals" }, { status: 500 });
 	}
 }
