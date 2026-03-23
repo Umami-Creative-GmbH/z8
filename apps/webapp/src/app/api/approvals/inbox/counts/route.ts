@@ -4,19 +4,19 @@
  * GET /api/approvals/inbox/counts - Get pending approval counts per type
  */
 
-import { NextResponse } from "next/server";
-import { headers } from "next/headers";
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
-import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { employee } from "@/db/schema";
-import { getAbility } from "@/lib/auth-helpers";
-import { ForbiddenError, toHttpError } from "@/lib/authorization";
 import { getAllApprovalHandlers } from "@/lib/approvals/domain/registry";
 import type { ApprovalType } from "@/lib/approvals/domain/types";
-import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
+import { auth } from "@/lib/auth";
+import { getAbility } from "@/lib/auth-helpers";
+import { ForbiddenError, toHttpError } from "@/lib/authorization";
 import type { AnyAppError } from "@/lib/effect/errors";
+import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
 
 // Ensure handlers are registered
@@ -35,15 +35,15 @@ export async function GET() {
 		// Get active organization from session
 		const activeOrganizationId = session.session?.activeOrganizationId;
 		if (!activeOrganizationId) {
-			return NextResponse.json(
-				{ error: "No active organization" },
-				{ status: 400 },
-			);
+			return NextResponse.json({ error: "No active organization" }, { status: 400 });
 		}
 
 		// Check CASL permissions - must be able to approve or manage approvals
 		const ability = await getAbility();
-		if (!ability || (ability.cannot("approve", "Approval") && ability.cannot("manage", "Approval"))) {
+		if (
+			!ability ||
+			(ability.cannot("approve", "Approval") && ability.cannot("manage", "Approval"))
+		) {
 			const error = new ForbiddenError("approve", "Approval");
 			const httpError = toHttpError(error);
 			return NextResponse.json(httpError.body, { status: httpError.status });
@@ -76,10 +76,11 @@ export async function GET() {
 
 		return NextResponse.json(counts);
 	} catch (error) {
+		if (error instanceof Error && "digest" in error) {
+			throw error;
+		}
+
 		logger.error({ error }, "Failed to fetch approval counts");
-		return NextResponse.json(
-			{ error: "Failed to fetch approval counts" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Failed to fetch approval counts" }, { status: 500 });
 	}
 }

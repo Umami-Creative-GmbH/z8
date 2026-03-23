@@ -1,25 +1,22 @@
+"use client";
+
 /**
  * Approval Inbox React Query Hooks
  *
  * Provides hooks for fetching and mutating approvals in the unified inbox.
  */
 
-import {
-	useInfiniteQuery,
-	useMutation,
-	useQuery,
-	useQueryClient,
-} from "@tanstack/react-query";
-import { queryKeys } from "./keys";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
+	ApprovalDetail,
 	ApprovalPriority,
 	ApprovalStatus,
 	ApprovalType,
+	BulkApproveResult,
 	PaginatedApprovalResult,
 	UnifiedApprovalItem,
-	BulkApproveResult,
-	ApprovalDetail,
 } from "@/lib/approvals/domain/types";
+import { queryKeys } from "./keys";
 
 // ============================================
 // TYPES
@@ -84,9 +81,7 @@ async function fetchApprovalDetail(approvalId: string): Promise<ApprovalDetail> 
 	return response.json();
 }
 
-async function approveApproval(
-	approvalId: string,
-): Promise<{ success: boolean; error?: string }> {
+async function approveApproval(approvalId: string): Promise<{ success: boolean; error?: string }> {
 	const response = await fetch(`/api/approvals/inbox/${approvalId}/approve`, {
 		method: "POST",
 	});
@@ -105,9 +100,7 @@ async function rejectApproval(
 	return response.json();
 }
 
-async function bulkApproveApprovals(
-	approvalIds: string[],
-): Promise<BulkApproveResult> {
+async function bulkApproveApprovals(approvalIds: string[]): Promise<BulkApproveResult> {
 	const response = await fetch("/api/approvals/inbox/bulk-approve", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
@@ -124,11 +117,14 @@ async function bulkApproveApprovals(
  * Hook for fetching paginated approvals with infinite scrolling.
  */
 export function useApprovalInbox(filters: ApprovalInboxFilters = {}) {
+	const isClient = typeof window !== "undefined";
+
 	return useInfiniteQuery({
 		queryKey: queryKeys.approvals.inbox(filters),
 		queryFn: ({ pageParam }) => fetchApprovals(filters, pageParam as string | undefined),
 		getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
 		initialPageParam: undefined as string | undefined,
+		enabled: isClient,
 	});
 }
 
@@ -136,9 +132,12 @@ export function useApprovalInbox(filters: ApprovalInboxFilters = {}) {
  * Hook for fetching approval counts per type.
  */
 export function useApprovalCounts() {
+	const isClient = typeof window !== "undefined";
+
 	return useQuery({
 		queryKey: queryKeys.approvals.inboxCounts(),
 		queryFn: fetchApprovalCounts,
+		enabled: isClient,
 		staleTime: 60 * 1000, // 1 minute
 	});
 }
@@ -147,10 +146,12 @@ export function useApprovalCounts() {
  * Hook for fetching approval detail.
  */
 export function useApprovalDetail(approvalId: string | null) {
+	const isClient = typeof window !== "undefined";
+
 	return useQuery({
 		queryKey: queryKeys.approvals.detail(approvalId || ""),
 		queryFn: () => fetchApprovalDetail(approvalId!),
-		enabled: !!approvalId,
+		enabled: isClient && !!approvalId,
 	});
 }
 

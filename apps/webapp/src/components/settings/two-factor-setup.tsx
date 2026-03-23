@@ -21,6 +21,7 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import { getAuthErrorMessage } from "@/lib/auth/error-message";
 import { authClient } from "@/lib/auth-client";
 
 interface TwoFactorSetupProps {
@@ -61,7 +62,7 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled, userEmail }: TwoFa
 
 				if (result.error) {
 					toast.error("Failed to setup 2FA", {
-						description: result.error.message,
+						description: getAuthErrorMessage(result.error, "Failed to setup 2FA"),
 					});
 				} else if (result.data) {
 					setTotpUri(result.data.totpURI);
@@ -94,7 +95,7 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled, userEmail }: TwoFa
 
 				if (result.error) {
 					toast.error("Verification failed", {
-						description: result.error.message,
+						description: getAuthErrorMessage(result.error, "Verification failed"),
 					});
 				} else {
 					setSetupDialogOpen(false);
@@ -127,7 +128,7 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled, userEmail }: TwoFa
 
 				if (result.error) {
 					toast.error("Failed to disable 2FA", {
-						description: result.error.message,
+						description: getAuthErrorMessage(result.error, "Failed to disable 2FA"),
 					});
 				} else {
 					setDisableDialogOpen(false);
@@ -164,7 +165,7 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled, userEmail }: TwoFa
 
 				if (result.error) {
 					toast.error("Failed to regenerate backup codes", {
-						description: result.error.message,
+						description: getAuthErrorMessage(result.error, "Failed to regenerate backup codes"),
 					});
 				} else if (result.data) {
 					setBackupCodes(result.data.backupCodes);

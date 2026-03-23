@@ -14,6 +14,7 @@ import { db } from "@/db";
 import * as schema from "@/db/auth-schema";
 import { employee, scimProvisioningLog, teamPermissions } from "@/db/schema";
 import { env } from "@/env";
+import { resolveAuthSecrets } from "@/lib/auth/auth-secrets";
 import { getDefaultAppBaseUrl, getOrganizationBaseUrl } from "./app-url";
 import { getDomainConfig } from "./domain/domain-service";
 import { sendEmail } from "./email/email-service";
@@ -30,36 +31,20 @@ const logger = createLogger("Auth");
 const BILLING_ENABLED = process.env.BILLING_ENABLED === "true";
 
 function getAuthSecrets() {
-	const fallback = [{ version: 1, value: env.BETTER_AUTH_SECRET }];
-	const secrets = env.BETTER_AUTH_SECRETS;
+	const resolved = resolveAuthSecrets({
+		primarySecret: env.BETTER_AUTH_SECRET,
+		rotatedSecrets: env.BETTER_AUTH_SECRETS,
+	});
 
-	if (!secrets) {
-		return fallback;
-	}
-
-	const parsed = secrets
-		.split(",")
-		.map((entry) => entry.trim())
-		.filter(Boolean)
-		.map((entry) => {
-			const [versionRaw, ...valueParts] = entry.split(":");
-			const version = Number(versionRaw);
-			const value = valueParts.join(":").trim();
-
-			if (!Number.isInteger(version) || version <= 0 || value.length < 32) {
-				return null;
-			}
-
-			return { version, value };
-		})
-		.filter((value): value is { version: number; value: string } => value !== null);
-
-	if (parsed.length === 0) {
+	if (resolved.hadInvalidRotatedSecrets) {
 		logger.warn("BETTER_AUTH_SECRETS was provided but no valid entries were found. Falling back.");
-		return fallback;
 	}
 
-	return parsed;
+	if (resolved.usedBuildTimeFallback) {
+		logger.warn("BETTER_AUTH_SECRET is unavailable during build; using a build-only auth secret fallback.");
+	}
+
+	return resolved.secrets;
 }
 
 async function getSSOTrustedOrigins(request: Request, pathname: string): Promise<string[]> {

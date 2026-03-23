@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useTurnstile } from "@/lib/auth/domain-auth-context";
+import { getAuthErrorMessage } from "@/lib/auth/error-message";
 import { authClient } from "@/lib/auth-client";
 import { verifyTurnstileWithServer } from "@/lib/turnstile/verify";
 import { Link } from "@/navigation";
@@ -165,8 +166,10 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
 
 		if (response.error) {
 			setError(
-				response.error.message ||
+				getAuthErrorMessage(
+					response.error,
 					t("auth.forgot-password-error", "Failed to send reset email. Please try again."),
+				),
 			);
 			// Reset Turnstile for retry (tokens are single-use)
 			if (turnstileConfig?.enabled) {
