@@ -23,8 +23,9 @@ module "kube-hetzner" {
 
   hcloud_token = var.hcloud_token
 
-  ssh_public_key  = file(var.ssh_public_key_path)
-  ssh_private_key = var.ssh_private_key_path == "" ? null : file(var.ssh_private_key_path)
+  ssh_public_key             = file(var.ssh_public_key_path)
+  ssh_private_key            = var.ssh_private_key_path == "" ? null : file(var.ssh_private_key_path)
+  ssh_additional_public_keys = var.ssh_additional_public_keys
 
   network_region = var.network_region
 
