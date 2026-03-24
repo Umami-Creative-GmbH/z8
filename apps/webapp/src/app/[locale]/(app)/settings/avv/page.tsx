@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import { redirect } from "next/navigation";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
@@ -7,6 +8,8 @@ import { AvvDownloadButton } from "@/components/settings/avv/avv-download-button
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default async function AvvPage() {
+	await connection();
+
 	if (process.env.BILLING_ENABLED !== "true") {
 		redirect("/settings");
 	}
