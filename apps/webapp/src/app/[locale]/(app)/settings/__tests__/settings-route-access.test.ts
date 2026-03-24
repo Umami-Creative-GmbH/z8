@@ -528,6 +528,33 @@ describe("org-admin settings route access", () => {
 
 		expect(offenders).toEqual([]);
 	});
+
+	it("marks billing and avv settings pages as fully dynamic before auth checks", () => {
+		const billingSource = stripComments(
+			readFileSync(join(SETTINGS_ROOT, "billing/page.tsx"), "utf8"),
+		);
+		const avvSource = stripComments(readFileSync(join(SETTINGS_ROOT, "avv/page.tsx"), "utf8"));
+
+		expect(billingSource.indexOf("await connection(")).toBeGreaterThan(-1);
+		expect(
+			billingSource.indexOf("await connection(") <
+				billingSource.indexOf('if (process.env.BILLING_ENABLED !== "true")'),
+		).toBe(true);
+		expect(
+			billingSource.indexOf("await connection(") <
+				billingSource.indexOf("await requireOrgAdminSettingsAccess()"),
+		).toBe(true);
+
+		expect(avvSource.indexOf("await connection(")).toBeGreaterThan(-1);
+		expect(
+			avvSource.indexOf("await connection(") <
+				avvSource.indexOf('if (process.env.BILLING_ENABLED !== "true")'),
+		).toBe(true);
+		expect(
+			avvSource.indexOf("await connection(") <
+				avvSource.indexOf("await requireOrgAdminSettingsAccess()"),
+		).toBe(true);
+	});
 });
 
 function resolveSettingsTierFromContext(input: {
