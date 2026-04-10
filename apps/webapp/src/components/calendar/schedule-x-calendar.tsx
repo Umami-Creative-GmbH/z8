@@ -21,10 +21,6 @@ import { ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
 import { DateTime } from "luxon";
 import { useTheme } from "next-themes";
 
-// Use global Temporal (polyfilled via temporal-polyfill/global in schedule-x-wrapper.tsx)
-// Do NOT import from temporal-polyfill directly - Schedule-X requires the global instance
-declare const Temporal: typeof import("temporal-polyfill").Temporal;
-
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
