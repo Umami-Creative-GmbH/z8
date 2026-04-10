@@ -1,9 +1,4 @@
-// Use global Temporal (polyfilled via temporal-polyfill/global in schedule-x-wrapper.tsx)
-// Do NOT import from temporal-polyfill directly - Schedule-X requires the global instance
 import type { CalendarEvent, CalendarEventType } from "./types";
-
-// Type declaration for global Temporal (provided by temporal-polyfill/global)
-declare const Temporal: typeof import("temporal-polyfill").Temporal;
 
 /**
  * Schedule-X event format for v3
