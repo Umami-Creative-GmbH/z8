@@ -4,6 +4,37 @@ description: Audit logs, notifications, health monitoring, demo data, and organi
 icon: Settings
 ---
 
+## Compliance Command Center
+
+Organization admins can use the top-level **Compliance** area for a risk-first overview before drilling into individual settings pages.
+
+### What It Shows
+
+The Compliance overview summarizes three signal groups:
+
+- **Audit evidence** - Audit export readiness, recent audit-pack failures, and verification issues
+- **Workforce compliance** - Recent work-policy violations and pending exception activity from the last 7 days
+- **Access controls** - Recent sensitive permission, manager, and app-access changes from the last 24 hours
+
+The page is intentionally read-only. It helps you identify where to look next instead of replacing the detailed settings workflows.
+
+### Accessing The Compliance Overview
+
+1. Open **Compliance** from the main sidebar
+2. Review the status summary and recent critical events
+3. Open the linked destination page for investigation:
+   - **Settings** -> **Audit Export** for audit evidence issues
+   - **Settings** -> **Audit Logs** for sensitive control changes
+   - **Settings** -> **Compliance** for workforce exceptions and follow-up review
+
+### When To Use It
+
+- Start your day with a quick compliance-risk check
+- Confirm audit readiness before an export or external review
+- Spot recent control changes without manually combing through the audit log
+
+---
+
 ## Audit Logging
 
 ### Understanding Audit Logs
@@ -43,6 +74,8 @@ For compliance and external audits:
 2. Click **"Export"**
 3. Choose format (CSV, JSON)
 4. Download for external review
+
+If you are starting from the Compliance overview, use the access-controls card to jump into Audit Logs with the current issue context in mind.
 
 ### Audit Log Retention
 
