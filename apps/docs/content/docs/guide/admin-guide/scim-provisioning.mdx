@@ -96,7 +96,7 @@ When a user is provisioned via SCIM:
 1. IdP sends a `POST /Users` request with user attributes
 2. Z8 creates the user account and organization membership
 3. If **auto-activate** is enabled, the user is immediately active
-4. If disabled, the user enters the [pending approval workflow](/guide/admin-guide/employee-management#pending-approvals)
+4. If disabled, the user stays inactive until your organization reviews the new member and related employee setup in the [Employee Management](/docs/guide/admin-guide/employee-management) flow
 5. Default role template is applied (if configured)
 6. Provisioning event is logged for audit
 
