@@ -26,7 +26,7 @@ function getCorsHeaders(origin: string | null): Record<string, string> {
 	return {
 		"Access-Control-Allow-Origin": allowOrigin,
 		"Access-Control-Allow-Methods": "POST, OPTIONS",
-		"Access-Control-Allow-Headers": "Content-Type, Authorization",
+		"Access-Control-Allow-Headers": "Content-Type, Authorization, X-Z8-App-Type",
 		"Access-Control-Allow-Credentials": "true",
 	};
 }
@@ -55,6 +55,15 @@ export async function POST(request: NextRequest) {
 				);
 			}
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: corsHeaders });
+		}
+
+		const authorization = resolvedHeaders.get("authorization");
+		if (authorization?.toLowerCase().startsWith("bearer ")) {
+			const hasAccess = (session.user.canUseDesktop ?? true) || (session.user.canUseMobile ?? true);
+
+			if (!hasAccess) {
+				return NextResponse.json({ error: "Access denied" }, { status: 403, headers: corsHeaders });
+			}
 		}
 
 		const body = await request.json();

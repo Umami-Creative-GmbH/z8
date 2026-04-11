@@ -1,9 +1,12 @@
+import { QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
+
+import { queryClient } from "@/src/lib/query/query-client";
 
 export default function RootLayout() {
   return (
-    <Stack>
-      <Stack.Screen name="index" options={{ title: "Z8 Mobile" }} />
-    </Stack>
+    <QueryClientProvider client={queryClient}>
+      <Stack screenOptions={{ headerShown: false }} />
+    </QueryClientProvider>
   );
 }
