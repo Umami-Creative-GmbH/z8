@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { connection } from "next/server";
 import { Suspense } from "react";
 
@@ -8,10 +9,17 @@ import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { getExportOperationsCockpit } from "@/lib/export-operations/get-export-operations-cockpit";
 import { getTranslate } from "@/tolgee/server";
 
-export const metadata = {
-	title: "Export Operations",
-	description: "Monitor payroll, audit, and scheduled export activity for your organization.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+	const t = await getTranslate();
+
+	return {
+		title: t("settings.exportOperations.title", "Export Operations"),
+		description: t(
+			"settings.exportOperations.description",
+			"Monitor payroll, audit, and scheduled export activity for your organization.",
+		),
+	};
+}
 
 async function ExportOperationsPageContent() {
 	await connection();

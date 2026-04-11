@@ -11,6 +11,7 @@ import {
 } from "@/db";
 import { auditPackRequestRepository } from "@/lib/audit-pack/application/request-repository";
 import { getExportJobHistory, type PayrollExportJobSummary } from "@/lib/payroll-export";
+import { getTranslate } from "@/tolgee/server";
 
 type ScheduledExportRecord = Awaited<ReturnType<typeof db.query.scheduledExport.findMany>>[number];
 type ScheduledExecutionRecord = Awaited<
@@ -19,7 +20,6 @@ type ScheduledExecutionRecord = Awaited<
 type AuditRequestRecord = Awaited<
 	ReturnType<typeof auditPackRequestRepository.listRequests>
 >[number];
-type AuditExportPackageRecord = Awaited<ReturnType<typeof db.query.auditExportPackage.findMany>>[number];
 type PayrollFailureCountRecord = { id: string };
 type LatestCompletedPayrollExportRecord = { completedAt: Date | null };
 type ScheduledFailureCountRecord = {
@@ -29,6 +29,7 @@ type ScheduledFailureCountRecord = {
 };
 type AuditFailureCountRecord = { id: string };
 type LatestCompletedAuditPackageRecord = { completedAt: Date | null };
+type TranslateFn = Awaited<ReturnType<typeof getTranslate>>;
 
 export interface ExportOperationsCoverageSummary {
 	activeSchedules: number;
@@ -80,15 +81,11 @@ export interface ExportOperationsCockpitData {
 	errors: ExportOperationsCockpitErrors;
 }
 
-const SUMMARY_ERROR = "Counts are based on the export data that could be loaded.";
-const ALERTS_ERROR = "Some alerts may be incomplete while export data is unavailable.";
-const UPCOMING_RUNS_ERROR = "Scheduled export data is temporarily unavailable.";
-const RECENT_ACTIVITY_ERROR = "Some activity data is temporarily unavailable.";
-
 export async function getExportOperationsCockpit(
 	organizationId: string,
 	now: DateTime = DateTime.utc(),
 ): Promise<ExportOperationsCockpitData> {
+	const tPromise = getTranslate();
 	const [
 		payrollJobsResult,
 		payrollFailuresLast7DaysResult,
@@ -98,7 +95,6 @@ export async function getExportOperationsCockpit(
 		scheduledFailuresLast7DaysResult,
 		auditRequestsResult,
 		auditFailuresLast7DaysResult,
-		auditPackagesResult,
 		latestCompletedAuditPackagesResult,
 	] = await Promise.allSettled([
 		getExportJobHistory(organizationId),
@@ -150,11 +146,6 @@ export async function getExportOperationsCockpit(
 			columns: { id: true },
 		}),
 		db.query.auditExportPackage.findMany({
-			where: eq(auditExportPackage.organizationId, organizationId),
-			orderBy: [desc(auditExportPackage.createdAt)],
-			limit: 10,
-		}),
-		db.query.auditExportPackage.findMany({
 			where: and(
 				eq(auditExportPackage.organizationId, organizationId),
 				eq(auditExportPackage.status, "completed"),
@@ -181,20 +172,21 @@ export async function getExportOperationsCockpit(
 	const auditFailuresLast7Days = getSettledValue<AuditFailureCountRecord[]>(
 		auditFailuresLast7DaysResult,
 	);
-	const auditPackages = getSettledValue(auditPackagesResult);
 	const latestCompletedAuditPackages = getSettledValue<LatestCompletedAuditPackageRecord[]>(
 		latestCompletedAuditPackagesResult,
 	);
+	const t = await tPromise;
 
 	const scheduledExportsById = new Map(scheduledExports.map((item) => [item.id, item]));
 
-	const alerts = buildAlerts(payrollJobs, scheduledExports, auditRequests);
+	const alerts = buildAlerts(payrollJobs, scheduledExports, auditRequests, t);
 	const upcomingRuns = buildUpcomingRuns(scheduledExports, now);
 	const recentActivity = buildRecentActivity(
 		payrollJobs,
 		scheduledExecutions,
 		auditRequests,
 		scheduledExportsById,
+		t,
 	);
 
 	const summary: ExportOperationsCoverageSummary = {
@@ -213,29 +205,43 @@ export async function getExportOperationsCockpit(
 		alerts,
 		upcomingRuns,
 		recentActivity,
-			errors: {
-				summary:
-					payrollFailuresLast7DaysResult.status === "rejected" ||
-					latestCompletedPayrollExportsResult.status === "rejected" ||
-					scheduledExportsResult.status === "rejected" ||
-					scheduledFailuresLast7DaysResult.status === "rejected" ||
-					auditFailuresLast7DaysResult.status === "rejected" ||
-					latestCompletedAuditPackagesResult.status === "rejected"
-						? SUMMARY_ERROR
-						: null,
+		errors: {
+			summary:
+				payrollFailuresLast7DaysResult.status === "rejected" ||
+				latestCompletedPayrollExportsResult.status === "rejected" ||
+				scheduledExportsResult.status === "rejected" ||
+				scheduledFailuresLast7DaysResult.status === "rejected" ||
+				auditFailuresLast7DaysResult.status === "rejected" ||
+				latestCompletedAuditPackagesResult.status === "rejected"
+					? t(
+						"settings.exportOperations.errors.summary",
+						"Counts are based on the export data that could be loaded.",
+					)
+					: null,
 			alerts:
 				payrollJobsResult.status === "rejected" ||
 				scheduledExportsResult.status === "rejected" ||
 				auditRequestsResult.status === "rejected"
-					? ALERTS_ERROR
+					? t(
+						"settings.exportOperations.errors.alerts",
+						"Some alerts may be incomplete while export data is unavailable.",
+					)
 					: null,
 			upcomingRuns:
-				scheduledExportsResult.status === "rejected" ? UPCOMING_RUNS_ERROR : null,
+				scheduledExportsResult.status === "rejected"
+					? t(
+						"settings.exportOperations.errors.upcomingRuns",
+						"Scheduled export data is temporarily unavailable.",
+					)
+					: null,
 			recentActivity:
 				payrollJobsResult.status === "rejected" ||
 				scheduledExecutionsResult.status === "rejected" ||
 				auditRequestsResult.status === "rejected"
-					? RECENT_ACTIVITY_ERROR
+					? t(
+						"settings.exportOperations.errors.recentActivity",
+						"Some activity data is temporarily unavailable.",
+					)
 					: null,
 		},
 	};
@@ -253,6 +259,7 @@ function buildAlerts(
 	payrollJobs: PayrollExportJobSummary[],
 	scheduledExports: ScheduledExportRecord[],
 	auditRequests: AuditRequestRecord[],
+	t: TranslateFn,
 ): ExportOperationsAlert[] {
 	const alerts: ExportOperationsAlert[] = [];
 	const latestFailedPayrollJob = payrollJobs.find((job) => job.status === "failed");
@@ -263,8 +270,13 @@ function buildAlerts(
 			id: latestFailedPayrollJob.id,
 			source: "payroll",
 			severity: "error",
-			title: "Payroll export failed",
-			description: latestFailedPayrollJob.errorMessage ?? "The latest payroll export did not complete.",
+			title: t("settings.exportOperations.alerts.payrollFailed.title", "Payroll export failed"),
+			description:
+				latestFailedPayrollJob.errorMessage ??
+				t(
+					"settings.exportOperations.alerts.payrollFailed.description",
+					"The latest payroll export did not complete.",
+				),
 			occurredAt: latestFailedPayrollJob.completedAt ?? latestFailedPayrollJob.createdAt,
 			href: "/settings/payroll-export",
 		});
@@ -279,8 +291,14 @@ function buildAlerts(
 			id: schedule.id,
 			source: "scheduled",
 			severity: "warning",
-			title: "Scheduled payroll export is blocked",
-			description: `${schedule.name} needs a payroll export configuration before it can run.`,
+			title: t(
+				"settings.exportOperations.alerts.blockedSchedule.title",
+				"Scheduled payroll export is blocked",
+			),
+			description: t(
+				"settings.exportOperations.alerts.blockedSchedule.description",
+				`${schedule.name} needs a payroll export configuration before it can run.`,
+			),
 			occurredAt: schedule.lastExecutionAt ?? schedule.updatedAt ?? schedule.createdAt,
 			href: "/settings/scheduled-exports",
 		});
@@ -291,9 +309,13 @@ function buildAlerts(
 			id: latestFailedAuditRequest.id,
 			source: "audit",
 			severity: "error",
-			title: "Audit export failed",
+			title: t("settings.exportOperations.alerts.auditFailed.title", "Audit export failed"),
 			description:
-				latestFailedAuditRequest.errorMessage ?? "The latest audit export request did not complete.",
+				latestFailedAuditRequest.errorMessage ??
+				t(
+					"settings.exportOperations.alerts.auditFailed.description",
+					"The latest audit export request did not complete.",
+				),
 			occurredAt: latestFailedAuditRequest.completedAt ?? latestFailedAuditRequest.createdAt,
 			href: "/settings/audit-export",
 		});
@@ -310,6 +332,7 @@ function buildUpcomingRuns(
 		.filter(
 			(schedule) =>
 				schedule.isActive &&
+				(schedule.reportType !== "payroll_export" || Boolean(schedule.payrollConfigId)) &&
 				schedule.nextExecutionAt &&
 				schedule.nextExecutionAt.getTime() > now.toJSDate().getTime(),
 		)
@@ -327,14 +350,21 @@ function buildRecentActivity(
 	scheduledExecutions: ScheduledExecutionRecord[],
 	auditRequests: AuditRequestRecord[],
 	scheduledExportsById: Map<string, ScheduledExportRecord>,
+	t: TranslateFn,
 ): ExportOperationsActivityItem[] {
 	const activity: ExportOperationsActivityItem[] = [
 		...payrollJobs.map((job) => ({
 			id: job.id,
 			source: "payroll" as const,
 			status: job.status,
-			title: "Payroll export",
-			description: job.fileName ?? job.errorMessage ?? "Payroll export job recorded.",
+			title: t("settings.exportOperations.activity.payroll.title", "Payroll export"),
+			description:
+				job.fileName ??
+				job.errorMessage ??
+				t(
+					"settings.exportOperations.activity.payroll.description",
+					"Payroll export job recorded.",
+				),
 			occurredAt: job.completedAt ?? job.createdAt,
 			href: "/settings/payroll-export" as const,
 		})),
@@ -342,8 +372,15 @@ function buildRecentActivity(
 			id: execution.id,
 			source: "scheduled" as const,
 			status: execution.status,
-			title: scheduledExportsById.get(execution.scheduledExportId)?.name ?? "Scheduled export",
-			description: execution.errorMessage ?? "Scheduled export execution recorded.",
+			title:
+				scheduledExportsById.get(execution.scheduledExportId)?.name ??
+				t("settings.exportOperations.activity.scheduled.title", "Scheduled export"),
+			description:
+				execution.errorMessage ??
+				t(
+					"settings.exportOperations.activity.scheduled.description",
+					"Scheduled export execution recorded.",
+				),
 			occurredAt: execution.completedAt ?? execution.triggeredAt,
 			href: "/settings/scheduled-exports" as const,
 		})),
@@ -351,8 +388,13 @@ function buildRecentActivity(
 			id: request.id,
 			source: "audit" as const,
 			status: request.status,
-			title: "Audit export",
-			description: request.errorMessage ?? "Audit export request recorded.",
+			title: t("settings.exportOperations.activity.audit.title", "Audit export"),
+			description:
+				request.errorMessage ??
+				t(
+					"settings.exportOperations.activity.audit.description",
+					"Audit export request recorded.",
+				),
 			occurredAt: request.completedAt ?? request.createdAt,
 			href: "/settings/audit-export" as const,
 		})),

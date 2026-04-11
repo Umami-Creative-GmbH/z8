@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mockState = vi.hoisted(() => ({
 	getExportJobHistory: vi.fn(),
 	listAuditPackRequests: vi.fn(),
+	getTranslate: vi.fn(async () => (_key: string, defaultValue?: string) => defaultValue ?? _key),
 	findPayrollFailuresLast7Days: vi.fn(),
 	findLatestCompletedPayrollExports: vi.fn(),
 	findScheduledExports: vi.fn(),
@@ -44,6 +45,10 @@ vi.mock("drizzle-orm", () => ({
 
 vi.mock("@/lib/payroll-export", () => ({
 	getExportJobHistory: mockState.getExportJobHistory,
+}));
+
+vi.mock("@/tolgee/server", () => ({
+	getTranslate: mockState.getTranslate,
 }));
 
 vi.mock("@/lib/audit-pack/application/request-repository", () => ({
@@ -284,7 +289,7 @@ describe("getExportOperationsCockpit", () => {
 		expect(mockState.listAuditPackRequests).toHaveBeenCalledWith({ organizationId: "org-1", limit: 10 });
 		expect(mockState.findScheduledExports).toHaveBeenCalledTimes(1);
 		expect(mockState.findScheduledExecutions).toHaveBeenCalledWith(expect.objectContaining({ limit: 25 }));
-		expect(mockState.findAuditExportPackages).toHaveBeenCalledWith(expect.objectContaining({ limit: 10 }));
+		expect(mockState.findAuditExportPackages).not.toHaveBeenCalled();
 		expect(mockState.findPayrollFailuresLast7Days).toHaveBeenCalledTimes(1);
 		expect(mockState.findLatestCompletedPayrollExports).toHaveBeenCalledTimes(1);
 		expect(mockState.findScheduledFailuresLast7Days).toHaveBeenCalledTimes(1);
@@ -327,19 +332,13 @@ describe("getExportOperationsCockpit", () => {
 
 		expect(result.upcomingRuns).toEqual([
 			expect.objectContaining({
-				id: "schedule-blocked",
-				name: "Blocked payroll export",
-				source: "scheduled",
-				href: "/settings/scheduled-exports",
-			}),
-			expect.objectContaining({
 				id: "schedule-ready",
 				name: "Weekly audit extract",
 				source: "scheduled",
 				href: "/settings/scheduled-exports",
 			}),
 		]);
-		expect(result.upcomingRuns).toHaveLength(2);
+		expect(result.upcomingRuns).toHaveLength(1);
 
 		expect(result.recentActivity.map((item) => item.id)).toEqual([
 			"payroll-job-pending",
