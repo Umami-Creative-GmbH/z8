@@ -56,42 +56,20 @@ function includesAll(text, snippets, context) {
 	}
 }
 
-const buildSharedJob = getJobBlock("build-shared");
 const publishTargetsJob = getJobBlock("publish-targets");
 const publishManifestsJob = getJobBlock("publish-manifests");
 
-expect(buildSharedJob, "Missing build-shared job");
 expect(publishTargetsJob, "Missing publish-targets job");
 expect(publishManifestsJob, "Missing publish-manifests job");
-
-if (buildSharedJob) {
-	includesAll(
-		buildSharedJob,
-		[
-			"name: Build Shared Runtime (${{ matrix.arch }})",
-			"name: shared-runtime-${{ matrix.arch }}",
-			"reference.txt",
-			"digest.txt",
-			"repository.txt",
-			"arch.txt",
-		],
-		"build-shared",
-	);
-}
 
 if (publishTargetsJob) {
 	includesAll(
 		publishTargetsJob,
 		[
 			"name: Publish Target (${{ matrix.repository }} ${{ matrix.arch }})",
-			"needs: build-shared",
 			"name: Checkout",
 			"uses: docker/setup-buildx-action@v3",
 			"uses: docker/login-action@v3",
-			"name: shared-runtime-${{ matrix.arch }}",
-			"path: ${{ env.DIGEST_ROOT }}/shared",
-			'echo "::error::shared runtime artifact is missing reference.txt"',
-			"RUNTIME_BASE_IMAGE=${{ env.RUNTIME_BASE_IMAGE }}",
 			"name: target-digest-${{ matrix.repository }}-${{ matrix.arch }}",
 			'echo "::error::target artifact digest is empty"',
 		],
@@ -100,7 +78,7 @@ if (publishTargetsJob) {
 
 	const includeMatches = [
 		...publishTargetsJob.matchAll(
-			/repository: (z8-webapp|z8-worker|z8-migration)\n\s+target: (webapp|worker|migration)\n\s+arch: (amd64|arm64)/g,
+			/repository: (z8-webapp|z8-worker|z8-migration)\n\s+dockerfile: (Dockerfile\.webapp|Dockerfile\.worker|Dockerfile\.migration)\n\s+arch: (amd64|arm64)/g,
 		),
 	];
 	expect(
@@ -109,12 +87,12 @@ if (publishTargetsJob) {
 	);
 
 	const expectedMatrixEntries = new Set([
-		"z8-webapp:webapp:amd64",
-		"z8-webapp:webapp:arm64",
-		"z8-worker:worker:amd64",
-		"z8-worker:worker:arm64",
-		"z8-migration:migration:amd64",
-		"z8-migration:migration:arm64",
+		"z8-webapp:Dockerfile.webapp:amd64",
+		"z8-webapp:Dockerfile.webapp:arm64",
+		"z8-worker:Dockerfile.worker:amd64",
+		"z8-worker:Dockerfile.worker:arm64",
+		"z8-migration:Dockerfile.migration:amd64",
+		"z8-migration:Dockerfile.migration:arm64",
 	]);
 
 	for (const match of includeMatches) {
@@ -124,6 +102,19 @@ if (publishTargetsJob) {
 	expect(
 		expectedMatrixEntries.size === 0,
 		`publish-targets missing matrix entries: ${[...expectedMatrixEntries].join(", ")}`,
+	);
+
+	expect(
+		!publishTargetsJob.includes("build-shared"),
+		"publish-targets still references removed build-shared job",
+	);
+	expect(
+		!publishTargetsJob.includes("shared-runtime-${{ matrix.arch }}"),
+		"publish-targets still references shared-runtime artifacts",
+	);
+	expect(
+		!publishTargetsJob.includes("RUNTIME_BASE_IMAGE=${{ env.RUNTIME_BASE_IMAGE }}"),
+		"publish-targets still passes shared runtime build arg",
 	);
 }
 
@@ -184,6 +175,9 @@ expect(
 	!workflow.includes("name: Build Native (${{ matrix.repository }} ${{ matrix.arch }})"),
 	"Legacy Build Native job name still present",
 );
+expect(!workflow.includes("  build-shared:"), "Removed build-shared job still present");
+expect(!workflow.includes("file: ./Dockerfile"), "Retired root Dockerfile reference still present");
+expect(!workflow.includes("SHARED_RUNTIME_REPOSITORY"), "Shared runtime repository env still present");
 expect(
 	!workflow.includes("name: digests-${{ matrix.repository }}-${{ matrix.arch }}"),
 	"Legacy digest artifact name still present",
