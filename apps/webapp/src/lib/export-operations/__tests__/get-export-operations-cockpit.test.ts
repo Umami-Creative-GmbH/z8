@@ -402,18 +402,18 @@ describe("getExportOperationsCockpit", () => {
 				href: "/settings/payroll-export",
 			}),
 			expect.objectContaining({
+				id: "audit-request-failed-late-completion",
+				source: "audit",
+				severity: "error",
+				href: "/settings/audit-export",
+			}),
+			expect.objectContaining({
 				id: "schedule-blocked",
 				source: "scheduled",
 				severity: "warning",
 				description:
 					"Blocked payroll export needs a payroll export configuration before it can run.",
 				href: "/settings/scheduled-exports",
-			}),
-			expect.objectContaining({
-				id: "audit-request-failed-late-completion",
-				source: "audit",
-				severity: "error",
-				href: "/settings/audit-export",
 			}),
 		]);
 

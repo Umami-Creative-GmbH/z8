@@ -361,7 +361,7 @@ function buildAlerts(
 		});
 	}
 
-	return alerts;
+	return alerts.sort((left, right) => right.occurredAt.getTime() - left.occurredAt.getTime());
 }
 
 function buildUpcomingRuns(

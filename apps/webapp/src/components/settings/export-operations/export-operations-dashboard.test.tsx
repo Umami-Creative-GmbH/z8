@@ -157,9 +157,9 @@ describe("ExportOperationsDashboard", () => {
 				t={t}
 				data={{
 					...dashboardData,
-					alerts: [],
+					alerts: dashboardData.alerts,
 					upcomingRuns: [],
-					recentActivity: [],
+					recentActivity: dashboardData.recentActivity,
 					errors: {
 						summary: "Counts are based on the export data that could be loaded.",
 						alerts: "Some alerts may be incomplete while export data is unavailable.",
@@ -174,6 +174,8 @@ describe("ExportOperationsDashboard", () => {
 		expect(screen.getByText("Some alerts may be incomplete while export data is unavailable.")).toBeTruthy();
 		expect(screen.getByText("Scheduled export data is temporarily unavailable.")).toBeTruthy();
 		expect(screen.getByText("Some activity data is temporarily unavailable.")).toBeTruthy();
+		expect(screen.getByText("Payroll export failed")).toBeTruthy();
+		expect(screen.getByText("Audit pack generated")).toBeTruthy();
 
 		expect(screen.queryByText("No alerts right now")).toBeNull();
 		expect(screen.queryByText("No upcoming runs")).toBeNull();

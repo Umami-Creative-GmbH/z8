@@ -134,7 +134,7 @@ function AlertsCard({
 				{error ? <p className="text-muted-foreground text-sm">{error}</p> : null}
 			</CardHeader>
 			<CardContent>
-				{error ? null : alerts.length === 0 ? (
+				{alerts.length === 0 ? (
 					<p className="text-muted-foreground text-sm">
 						{t("settings.exportOperations.alerts.empty", "No alerts right now")}
 					</p>
@@ -253,7 +253,7 @@ function RecentActivityCard({
 				{error ? <p className="text-muted-foreground text-sm">{error}</p> : null}
 			</CardHeader>
 			<CardContent>
-				{error ? null : items.length === 0 ? (
+				{items.length === 0 ? (
 					<p className="text-muted-foreground text-sm">
 						{t("settings.exportOperations.recentActivity.empty", "No recent export activity")}
 					</p>

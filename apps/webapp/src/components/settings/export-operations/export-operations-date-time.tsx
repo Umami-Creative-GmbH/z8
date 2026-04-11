@@ -29,7 +29,7 @@ export function ExportOperationsDateTime({
 		return <>{emptyLabel}</>;
 	}
 
-	const formattedValue = isMounted ? formatBrowserDateTime(date, locale) : formatServerDateTime(date);
+	const formattedValue = isMounted ? formatBrowserDateTime(date, locale) : formatServerDateTime(date, locale);
 
 	return (
 		<span suppressHydrationWarning>{formattedValue}</span>
@@ -43,8 +43,8 @@ function formatBrowserDateTime(date: Date, locale: string) {
 	}).format(date);
 }
 
-function formatServerDateTime(date: Date) {
-	return new Intl.DateTimeFormat("en-US", {
+function formatServerDateTime(date: Date, locale: string) {
+	return new Intl.DateTimeFormat(locale, {
 		dateStyle: "medium",
 		timeStyle: "short",
 		timeZone: "UTC",
