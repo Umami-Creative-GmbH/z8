@@ -142,6 +142,21 @@ await fetch('/api/organizations/switch', {
 });
 ```
 
+### Native App Login Handoff
+
+Desktop and mobile clients use a browser-based login handoff that returns a bearer session token to the native app:
+
+```text
+/api/auth/app-login?app=mobile&redirect=z8mobile://auth/callback
+/api/auth/app-login?app=desktop&redirect=z8://auth/callback
+```
+
+Flow summary:
+1. The native app opens `/api/auth/app-login` in the browser.
+2. If the user is not signed in, the route redirects to `/sign-in` with a `callbackUrl` back to the app-login request.
+3. After sign-in, the route validates app access and redirects back to the native deep link with a bearer session token.
+4. If access is denied, the route redirects back to the deep link with an error such as `access_denied`.
+
 ---
 
 ## App Access Control
@@ -163,8 +178,13 @@ Users can be restricted from specific applications:
 The system detects app type from request headers:
 
 - **Cookie auth** → Webapp
-- **Bearer token + mobile user agent** → Mobile
-- **Bearer token + other** → Desktop
+- **Bearer token + `X-Z8-App-Type: mobile`** → Mobile
+- **Bearer token + `X-Z8-App-Type: desktop`** → Desktop
+- **Bearer token without explicit app header** → Legacy fallback based on user agent for shared routes
+
+<Callout type="info" title="Mobile-Only Routes">
+  Mobile API routes under `/api/mobile/*` require a bearer token plus `X-Z8-App-Type: mobile`. Cookie-authenticated web requests are always treated as `webapp`, even if they send a spoofed app-type header.
+</Callout>
 
 ### Access Denied Handling
 

@@ -335,11 +335,14 @@ interface AppPermissions {
 
 The system automatically detects app type from request headers:
 
-| Auth Method | User Agent | App Type |
-|-------------|------------|----------|
+| Auth Method | Signal | App Type |
+|-------------|--------|----------|
 | Cookie | Any | Webapp |
-| Bearer token | Mobile/Android/iOS | Mobile |
-| Bearer token | Other | Desktop |
+| Bearer token | `X-Z8-App-Type: mobile` | Mobile |
+| Bearer token | `X-Z8-App-Type: desktop` | Desktop |
+| Bearer token | No explicit app header | Legacy fallback based on user agent |
+
+Mobile-only API routes use the stricter contract: bearer token plus `X-Z8-App-Type: mobile`.
 
 ### Access Validation
 

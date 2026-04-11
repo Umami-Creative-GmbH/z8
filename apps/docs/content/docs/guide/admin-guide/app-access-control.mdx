@@ -98,10 +98,13 @@ The system automatically detects which application is making the request:
 | Detection Method | App Type |
 |------------------|----------|
 | Cookie authentication | Web App |
-| Bearer token + mobile user agent | Mobile App |
-| Bearer token + other user agent | Desktop App |
+| Bearer token + `X-Z8-App-Type: mobile` | Mobile App |
+| Bearer token + `X-Z8-App-Type: desktop` | Desktop App |
+| Bearer token without explicit app header | Legacy fallback based on user agent |
 
-This detection is automatic and requires no user configuration.
+<Callout type="info" title="Native App Requests">
+  Mobile-only API routes require both a bearer token and `X-Z8-App-Type: mobile`. Older shared routes can still fall back to user-agent detection for legacy non-web clients.
+</Callout>
 
 ---
 
