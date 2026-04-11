@@ -1,3 +1,4 @@
+import { DateTime } from "luxon";
 import type {
 	ComplianceCommandCenterData,
 	ComplianceCriticalEvent,
@@ -7,8 +8,8 @@ import type {
 } from "./types";
 
 const STATUS_PRIORITY: Record<ComplianceSectionStatus, number> = {
-	unavailable: 3,
-	critical: 2,
+	critical: 3,
+	unavailable: 2,
 	warning: 1,
 	healthy: 0,
 };
@@ -50,7 +51,11 @@ function sortRecentCriticalEvents(
 	events: ComplianceCriticalEvent[],
 ): ComplianceCriticalEvent[] {
 	return [...events]
-		.sort((left, right) => right.occurredAt.localeCompare(left.occurredAt))
+		.sort(
+			(left, right) =>
+				DateTime.fromISO(right.occurredAt).toMillis() -
+				DateTime.fromISO(left.occurredAt).toMillis(),
+		)
 		.slice(0, 5);
 }
 
