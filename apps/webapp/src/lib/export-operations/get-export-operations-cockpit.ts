@@ -142,16 +142,20 @@ export async function getExportOperationsCockpit(
 			where: eq(scheduledExport.organizationId, organizationId),
 			orderBy: [asc(scheduledExport.nextExecutionAt)],
 		}),
-			db.query.scheduledExportExecution.findMany({
+		db.query.scheduledExportExecution.findMany({
 			where: eq(scheduledExportExecution.organizationId, organizationId),
-			orderBy: [desc(scheduledExportExecution.triggeredAt)],
+			orderBy: [
+				desc(
+					sql`coalesce(${scheduledExportExecution.completedAt}, ${scheduledExportExecution.triggeredAt})`,
+				),
+			],
 			limit: 25,
 		}),
 		db.query.scheduledExportExecution.findMany({
 			where: and(
 				eq(scheduledExportExecution.organizationId, organizationId),
 				eq(scheduledExportExecution.status, "failed"),
-				gte(scheduledExportExecution.triggeredAt, now.minus({ days: 7 }).toJSDate()),
+				gte(scheduledExportExecution.completedAt, now.minus({ days: 7 }).toJSDate()),
 			),
 			columns: {
 				id: true,

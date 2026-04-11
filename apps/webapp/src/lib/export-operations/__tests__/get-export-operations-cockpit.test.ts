@@ -253,10 +253,20 @@ describe("getExportOperationsCockpit", () => {
 
 		mockState.findScheduledExecutions.mockResolvedValue([
 			{
+				id: "scheduled-execution-failed-late-completion",
+				scheduledExportId: "schedule-ready",
+				organizationId: "org-1",
+				triggeredAt: new Date("2026-04-08T09:00:00.000Z"),
+				completedAt: new Date("2026-04-10T10:20:00.000Z"),
+				status: "failed",
+				errorMessage: "Delayed scheduled export failure",
+			},
+			{
 				id: "scheduled-execution-failed",
 				scheduledExportId: "schedule-ready",
 				organizationId: "org-1",
 				triggeredAt: new Date("2026-04-10T10:00:00.000Z"),
+				completedAt: null,
 				status: "failed",
 				errorMessage: "SMTP delivery failed",
 			},
@@ -265,6 +275,7 @@ describe("getExportOperationsCockpit", () => {
 				scheduledExportId: "schedule-ready",
 				organizationId: "org-1",
 				triggeredAt: new Date("2026-04-09T08:00:00.000Z"),
+				completedAt: new Date("2026-04-09T08:05:00.000Z"),
 				status: "completed",
 				errorMessage: null,
 			},
@@ -282,6 +293,11 @@ describe("getExportOperationsCockpit", () => {
 			},
 		]);
 		mockState.findScheduledFailuresLast7Days.mockResolvedValue([
+			{
+				id: "scheduled-failure-completed-late",
+				underlyingJobId: null,
+				underlyingJobType: null,
+			},
 			{
 				id: "scheduled-failure-1",
 				underlyingJobId: "scheduled-payroll-job-1",
@@ -367,7 +383,7 @@ describe("getExportOperationsCockpit", () => {
 
 		expect(result.summary).toEqual({
 			activeSchedules: 3,
-			failedRunsLast7Days: 7,
+			failedRunsLast7Days: 8,
 			lastPayrollExportAt: new Date("2026-04-09T09:30:00.000Z"),
 			lastAuditPackageAt: new Date("2026-04-10T09:15:00.000Z"),
 		});
@@ -415,6 +431,7 @@ describe("getExportOperationsCockpit", () => {
 			"payroll-job-pending",
 			"payroll-job-failed-late-completion",
 			"payroll-job-failed",
+			"scheduled-execution-failed-late-completion",
 			"audit-request-failed-late-completion",
 			"scheduled-execution-failed",
 			"audit-request-failed",
@@ -431,7 +448,7 @@ describe("getExportOperationsCockpit", () => {
 					href: "/settings/payroll-export",
 				}),
 				expect.objectContaining({
-					id: "scheduled-execution-failed",
+					id: "scheduled-execution-failed-late-completion",
 					source: "scheduled",
 					status: "failed",
 					href: "/settings/scheduled-exports",
