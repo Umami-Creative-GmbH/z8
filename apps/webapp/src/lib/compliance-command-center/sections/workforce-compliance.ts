@@ -99,10 +99,12 @@ export async function getWorkforceComplianceSection(
 	const snapshot: WorkforceComplianceSnapshot = {
 		restPeriodViolations:
 			violationRows.find((row) => row.violationType === "rest_period")?.count ?? 0,
-		maxDailyHourViolations:
-			violationRows.find(
-				(row) => row.violationType === "max_daily" || row.violationType === "max_daily_hours",
-			)?.count ?? 0,
+		maxDailyHourViolations: violationRows
+			.filter((row) => {
+				const violationType = String(row.violationType);
+				return violationType !== "rest_period" && !violationType.startsWith("overtime_");
+			})
+			.reduce((total, row) => total + row.count, 0),
 		overtimeViolations: violationRows
 			.filter((row) => String(row.violationType).startsWith("overtime_"))
 			.reduce((total, row) => total + row.count, 0),
