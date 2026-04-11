@@ -1,6 +1,8 @@
 import { DateTime } from "luxon";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+const mockAssertCanonicalCutoverReady = vi.fn();
+
 const mockState = vi.hoisted(() => ({
 	timeRecordFindMany: vi.fn(),
 	employeeFindMany: vi.fn(),
@@ -12,6 +14,10 @@ vi.mock("@/lib/logger", () => ({
 	createLogger: () => ({
 		info: vi.fn(),
 	}),
+}));
+
+vi.mock("@/lib/time-record/migration/cutover-state", () => ({
+	assertCanonicalCutoverReady: mockAssertCanonicalCutoverReady,
 }));
 
 vi.mock("@/db", () => ({
@@ -73,6 +79,22 @@ const dataFetcher = await import("../data-fetcher");
 describe("payroll export canonical data fetching", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		mockAssertCanonicalCutoverReady.mockResolvedValue(undefined);
+	});
+
+	it("rejects payroll export reads when canonical cutover is incomplete", async () => {
+		mockAssertCanonicalCutoverReady.mockRejectedValue(
+			new Error("Canonical time-record backfill is incomplete for organization org-1"),
+		);
+
+		await expect(
+			dataFetcher.fetchWorkPeriodsForExport("org-1", {
+				dateRange: {
+					start: DateTime.fromISO("2026-01-01T00:00:00.000Z"),
+					end: DateTime.fromISO("2026-01-31T23:59:59.999Z"),
+				},
+			}),
+		).rejects.toThrow("Canonical time-record backfill is incomplete for organization org-1");
 	});
 
 	it("fetches work export rows from canonical time records", async () => {

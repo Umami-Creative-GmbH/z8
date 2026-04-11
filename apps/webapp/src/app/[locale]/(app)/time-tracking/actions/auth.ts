@@ -20,25 +20,19 @@ async function getEmployeeForUser(
 	userId: string,
 	activeOrganizationId?: string | null,
 ): Promise<CurrentEmployee | null> {
-	if (activeOrganizationId) {
-		const employeeForActiveOrg = await db.query.employee.findFirst({
-			where: and(
-				eq(employee.userId, userId),
-				eq(employee.organizationId, activeOrganizationId),
-				eq(employee.isActive, true),
-			),
-		});
-
-		if (employeeForActiveOrg) {
-			return employeeForActiveOrg;
-		}
+	if (!activeOrganizationId) {
+		return null;
 	}
 
-	const fallbackEmployee = await db.query.employee.findFirst({
-		where: and(eq(employee.userId, userId), eq(employee.isActive, true)),
+	const employeeForActiveOrg = await db.query.employee.findFirst({
+		where: and(
+			eq(employee.userId, userId),
+			eq(employee.organizationId, activeOrganizationId),
+			eq(employee.isActive, true),
+		),
 	});
 
-	return fallbackEmployee ?? null;
+	return employeeForActiveOrg ?? null;
 }
 
 export async function getCurrentEmployee(): Promise<CurrentEmployee | null> {

@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
+  exchangeAppCallbackCode,
   extractAppCallbackResult,
   MOBILE_APP_TYPE_HEADER,
 } from "@/src/lib/auth/app-auth";
@@ -73,17 +74,26 @@ async function fetchMobileSession(): Promise<MobileSession | null> {
 export function createMobileSessionController(queryClient: ReturnType<typeof useQueryClient>) {
   return {
     async handleCallbackUrl(url: string) {
-      const { error, token } = extractAppCallbackResult(url);
+      const { error, code, token } = extractAppCallbackResult(url);
 
-      if (error) {
-        return { error, status: "error" } satisfies MobileSessionCallbackState;
+		if (error) {
+			return { error, status: "error" } satisfies MobileSessionCallbackState;
+		}
+
+		let resolvedToken = token;
+		if (code) {
+			try {
+				resolvedToken = await exchangeAppCallbackCode(code, "mobile");
+			} catch {
+				return { error: "code_exchange_failed", status: "error" } satisfies MobileSessionCallbackState;
+			}
+		}
+
+		if (!resolvedToken) {
+			return { error: null, status: "ignored" } satisfies MobileSessionCallbackState;
       }
 
-      if (!token) {
-        return { error: null, status: "ignored" } satisfies MobileSessionCallbackState;
-      }
-
-      await setStoredSessionToken(token);
+      await setStoredSessionToken(resolvedToken);
       await queryClient.invalidateQueries({ queryKey: MOBILE_SESSION_QUERY_KEY });
 
       return { error: null, status: "signed-in" } satisfies MobileSessionCallbackState;

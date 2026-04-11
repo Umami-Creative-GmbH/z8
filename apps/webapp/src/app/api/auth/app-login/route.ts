@@ -1,7 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-
-type SupportedApp = "desktop" | "mobile";
+import { createAppAuthCode, type SupportedApp } from "@/lib/auth/app-auth-code";
 
 function resolveApp(searchParams: URLSearchParams): SupportedApp {
 	return searchParams.get("app") === "desktop" ? "desktop" : "mobile";
@@ -48,6 +47,12 @@ export async function GET(request: NextRequest) {
 		return NextResponse.redirect(callbackUrl.toString());
 	}
 
-	callbackUrl.searchParams.set("token", session.session.token);
+	const authCode = await createAppAuthCode({
+		app,
+		sessionToken: session.session.token,
+		userId: session.user.id,
+	});
+
+	callbackUrl.searchParams.set("code", authCode.code);
 	return NextResponse.redirect(callbackUrl.toString());
 }

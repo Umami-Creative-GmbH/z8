@@ -22,6 +22,13 @@
       "when": 1774282824858,
       "tag": "0002_petite_eternity",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1775930095000,
+      "tag": "0003_app_auth_codes",
+      "breakpoints": true
     }
   ]
 }

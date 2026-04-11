@@ -40,15 +40,12 @@ pub fn run() {
                     if let Ok(url) = Url::parse(&arg) {
                         log::info!("Deep link from single-instance: {}", url);
                         if url.scheme() == "z8" {
-                            if let Some(token) = url.query_pairs().find(|(k, _)| k == "token") {
-                                let token_value = token.1.to_string();
-                                let handle = app.clone();
-                                tauri::async_runtime::spawn(async move {
-                                    if let Err(e) = auth::handle_oauth_callback(&handle, token_value).await {
-                                        log::error!("OAuth callback error: {}", e);
-                                    }
-                                });
-                            }
+                            let handle = app.clone();
+                            tauri::async_runtime::spawn(async move {
+                                if let Err(e) = auth::handle_deep_link_callback(&handle, &url).await {
+                                    log::error!("OAuth callback error: {}", e);
+                                }
+                            });
                         }
                     }
                 }
@@ -73,15 +70,12 @@ pub fn run() {
                 for url in urls {
                     log::info!("Deep link received: {}", url);
                     if url.scheme() == "z8" {
-                        if let Some(token) = url.query_pairs().find(|(k, _)| k == "token") {
-                            let token_value = token.1.to_string();
-                            let handle_clone = handle.clone();
-                            tauri::async_runtime::spawn(async move {
-                                if let Err(e) = auth::handle_oauth_callback(&handle_clone, token_value).await {
-                                    log::error!("OAuth callback error: {}", e);
-                                }
-                            });
-                        }
+                        let handle_clone = handle.clone();
+                        tauri::async_runtime::spawn(async move {
+                            if let Err(e) = auth::handle_deep_link_callback(&handle_clone, &url).await {
+                                log::error!("OAuth callback error: {}", e);
+                            }
+                        });
                     }
                 }
             });

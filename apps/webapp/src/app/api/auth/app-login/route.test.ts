@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockState = vi.hoisted(() => ({
 	getSession: vi.fn(),
+	createAppAuthCode: vi.fn(),
 }));
 
 vi.mock("@/lib/auth", () => ({
@@ -11,6 +12,10 @@ vi.mock("@/lib/auth", () => ({
 			getSession: mockState.getSession,
 		},
 	},
+}));
+
+vi.mock("@/lib/auth/app-auth-code", () => ({
+	createAppAuthCode: mockState.createAppAuthCode,
 }));
 
 const { GET } = await import("./route");
@@ -28,7 +33,7 @@ describe("GET /api/auth/app-login", () => {
 		vi.clearAllMocks();
 	});
 
-	it("accepts z8mobile redirects for authenticated mobile clients", async () => {
+	it("redirects authenticated mobile clients with a one-time code instead of a session token", async () => {
 		mockState.getSession.mockResolvedValue({
 			user: {
 				id: "user-1",
@@ -38,13 +43,19 @@ describe("GET /api/auth/app-login", () => {
 				token: "session-token",
 			},
 		});
+		mockState.createAppAuthCode.mockResolvedValue({ code: "ONE-TIME-CODE" });
 
 		const response = await GET(
 			createRequest("https://app.example.com/api/auth/app-login?redirect=z8mobile://auth/callback"),
 		);
 
 		expect(response.status).toBe(307);
-		expect(response.headers.get("location")).toBe("z8mobile://auth/callback?token=session-token");
+		expect(mockState.createAppAuthCode).toHaveBeenCalledWith({
+			app: "mobile",
+			sessionToken: "session-token",
+			userId: "user-1",
+		});
+		expect(response.headers.get("location")).toBe("z8mobile://auth/callback?code=ONE-TIME-CODE");
 	});
 
 	it("redirects unauthenticated mobile requests through sign-in with a callbackUrl", async () => {

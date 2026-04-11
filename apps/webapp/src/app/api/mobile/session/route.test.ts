@@ -154,7 +154,9 @@ describe("GET /api/mobile/session", () => {
 		);
 
 		expect(response.status).toBe(200);
-		expect(await response.json()).toEqual({
+		const payload = await response.json();
+
+		expect(payload).toEqual({
 			user: {
 				id: "user-1",
 				name: "Pat Example",
@@ -176,5 +178,8 @@ describe("GET /api/mobile/session", () => {
 				},
 			],
 		});
+		expect(payload.organizations[1]).toEqual(
+			expect.objectContaining({ hasEmployeeRecord: false }),
+		);
 	});
 });
