@@ -71,6 +71,16 @@ describe("settings visibility tiers", () => {
 		expect(entries.some((entry) => entry.id === "avv")).toBe(true);
 	});
 
+	it("shows export operations for org admins with the expected href", () => {
+		const entries = getVisibleSettings("orgAdmin", true);
+		const exportOperationsEntry = entries.find((entry) => entry.id === "export-operations");
+
+		expect(exportOperationsEntry).toMatchObject({
+			id: "export-operations",
+			href: "/settings/export-operations",
+		});
+	});
+
 	it("filters feature-flagged entries before deriving visible groups", () => {
 		const featureOnlyAdministrationEntries = SETTINGS_ENTRIES.filter(
 			(entry) => entry.group === "administration" && entry.requiredFeature,
