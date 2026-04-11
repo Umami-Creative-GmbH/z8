@@ -177,11 +177,15 @@ describe("getExportOperationsCockpit", () => {
 		]);
 
 		mockState.findPayrollFailuresLast7Days.mockResolvedValue([
-			{ id: "payroll-failure-1" },
+			{ id: "scheduled-payroll-job-1" },
 			{ id: "payroll-failure-2" },
 		]);
 		mockState.findScheduledFailuresLast7Days.mockResolvedValue([
-			{ id: "scheduled-failure-1" },
+			{
+				id: "scheduled-failure-1",
+				underlyingJobId: "scheduled-payroll-job-1",
+				underlyingJobType: "payroll_export",
+			},
 			{ id: "scheduled-failure-2" },
 			{ id: "scheduled-failure-3" },
 		]);
@@ -234,7 +238,7 @@ describe("getExportOperationsCockpit", () => {
 
 		expect(result.summary).toEqual({
 			activeSchedules: 3,
-			failedRunsLast7Days: 6,
+			failedRunsLast7Days: 5,
 			lastPayrollExportAt: new Date("2026-04-10T11:00:00.000Z"),
 			lastAuditPackageAt: new Date("2026-04-08T06:10:00.000Z"),
 			error: null,

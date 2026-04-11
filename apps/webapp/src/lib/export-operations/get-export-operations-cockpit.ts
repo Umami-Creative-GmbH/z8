@@ -20,6 +20,13 @@ type AuditRequestRecord = Awaited<
 	ReturnType<typeof auditPackRequestRepository.listRequests>
 >[number];
 type AuditExportPackageRecord = Awaited<ReturnType<typeof db.query.auditExportPackage.findMany>>[number];
+type PayrollFailureCountRecord = { id: string };
+type ScheduledFailureCountRecord = {
+	id: string;
+	underlyingJobId: string | null;
+	underlyingJobType: string | null;
+};
+type AuditFailureCountRecord = { id: string };
 
 export interface ExportOperationsCoverageSummary {
 	activeSchedules: number;
@@ -110,7 +117,11 @@ export async function getExportOperationsCockpit(
 				eq(scheduledExportExecution.status, "failed"),
 				gte(scheduledExportExecution.triggeredAt, now.minus({ days: 7 }).toJSDate()),
 			),
-			columns: { id: true },
+			columns: {
+				id: true,
+				underlyingJobId: true,
+				underlyingJobType: true,
+			},
 		}),
 		auditPackRequestRepository.listRequests({ organizationId, limit: 10 }),
 		db.query.auditPackRequest.findMany({
@@ -129,12 +140,18 @@ export async function getExportOperationsCockpit(
 	]);
 
 	const payrollJobs = getSettledValue(payrollJobsResult);
-	const payrollFailuresLast7Days = getSettledValue(payrollFailuresLast7DaysResult);
+	const payrollFailuresLast7Days = getSettledValue<PayrollFailureCountRecord[]>(
+		payrollFailuresLast7DaysResult,
+	);
 	const scheduledExports = getSettledValue(scheduledExportsResult);
 	const scheduledExecutions = getSettledValue(scheduledExecutionsResult);
-	const scheduledFailuresLast7Days = getSettledValue(scheduledFailuresLast7DaysResult);
+	const scheduledFailuresLast7Days = getSettledValue<ScheduledFailureCountRecord[]>(
+		scheduledFailuresLast7DaysResult,
+	);
 	const auditRequests = getSettledValue(auditRequestsResult);
-	const auditFailuresLast7Days = getSettledValue(auditFailuresLast7DaysResult);
+	const auditFailuresLast7Days = getSettledValue<AuditFailureCountRecord[]>(
+		auditFailuresLast7DaysResult,
+	);
 	const auditPackages = getSettledValue(auditPackagesResult);
 
 	const scheduledExportsById = new Map(scheduledExports.map((item) => [item.id, item]));
@@ -150,10 +167,11 @@ export async function getExportOperationsCockpit(
 
 	const summary: ExportOperationsCoverageSummary = {
 		activeSchedules: scheduledExports.filter((schedule) => schedule.isActive).length,
-		failedRunsLast7Days:
-			payrollFailuresLast7Days.length +
-			scheduledFailuresLast7Days.length +
-			auditFailuresLast7Days.length,
+		failedRunsLast7Days: countFailedRunsLast7Days(
+			payrollFailuresLast7Days,
+			scheduledFailuresLast7Days,
+			auditFailuresLast7Days,
+		),
 		lastPayrollExportAt: getLastPayrollExportAt(payrollJobs),
 		lastAuditPackageAt: getLastAuditPackageAt(auditPackages),
 		error:
@@ -321,4 +339,22 @@ function getLastPayrollExportAt(payrollJobs: PayrollExportJobSummary[]): Date | 
 
 function getLastAuditPackageAt(auditPackages: AuditExportPackageRecord[]): Date | null {
 	return auditPackages[0]?.createdAt ?? null;
+}
+
+function countFailedRunsLast7Days(
+	payrollFailures: PayrollFailureCountRecord[],
+	scheduledFailures: ScheduledFailureCountRecord[],
+	auditFailures: AuditFailureCountRecord[],
+): number {
+	const scheduledPayrollJobIds = new Set(
+		scheduledFailures
+			.filter((failure) => failure.underlyingJobType === "payroll_export" && failure.underlyingJobId)
+			.map((failure) => failure.underlyingJobId as string),
+	);
+
+	const standalonePayrollFailures = payrollFailures.filter(
+		(failure) => !scheduledPayrollJobIds.has(failure.id),
+	);
+
+	return standalonePayrollFailures.length + scheduledFailures.length + auditFailures.length;
 }
