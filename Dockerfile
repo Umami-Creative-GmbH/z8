@@ -177,6 +177,62 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
 ENTRYPOINT ["/sbin/tini", "--"]
 CMD ["bun", "x", "next", "start", "-p", "3000"]
 
+# Docs build graph.
+FROM turbo-source AS docs-pruner
+RUN turbo prune docs --docker
+
+FROM base AS docs-deps
+COPY --from=docs-pruner /app/out/json/ ./
+COPY --from=docs-pruner /app/out/pnpm-lock.yaml ./
+RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
+    pnpm install --frozen-lockfile
+
+FROM base AS docs-workspace
+ENV SKIP_ENV_VALIDATION=1
+COPY --from=docs-deps /app/node_modules ./node_modules
+COPY --from=docs-deps /app/apps/docs/node_modules ./apps/docs/node_modules
+COPY --from=docs-pruner /app/out/full/ ./
+COPY --from=docs-pruner /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
+
+FROM docs-workspace AS docs-builder
+RUN --mount=type=cache,id=next-cache-docs,target=/app/apps/docs/.next/cache \
+    pnpm --filter docs exec next build
+
+FROM base AS docs-runtime-deps
+COPY --from=docs-pruner /app/out/json/ ./
+COPY --from=docs-pruner /app/out/pnpm-lock.yaml ./
+RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
+    pnpm install --frozen-lockfile --prod
+
+FROM base AS docs
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 docs
+
+COPY --from=docs-runtime-deps --chown=docs:nodejs /app/node_modules ./node_modules
+COPY --from=docs-runtime-deps --chown=docs:nodejs /app/apps/docs/node_modules ./apps/docs/node_modules
+
+COPY --from=docs-builder --chown=docs:nodejs /app/apps/docs/.next ./apps/docs/.next
+COPY --from=docs-workspace --chown=docs:nodejs /app/apps/docs/public ./apps/docs/public
+COPY --from=docs-workspace --chown=docs:nodejs /app/apps/docs/content ./apps/docs/content
+COPY --from=docs-workspace --chown=docs:nodejs /app/apps/docs/next.config.mjs ./apps/docs/
+COPY --from=docs-workspace --chown=docs:nodejs /app/apps/docs/source.config.ts ./apps/docs/
+COPY --from=docs-workspace --chown=docs:nodejs /app/apps/docs/package.json ./apps/docs/
+
+COPY --from=docs-workspace --chown=docs:nodejs /app/package.json ./
+COPY --from=docs-workspace --chown=docs:nodejs /app/pnpm-workspace.yaml ./
+
+WORKDIR /app/apps/docs
+
+USER docs
+
+EXPOSE 3001
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:3001 || exit 1
+
+ENTRYPOINT ["/sbin/tini", "--"]
+CMD ["pnpm", "start"]
+
 # One-shot database seeder.
 FROM base AS db-seed
 
