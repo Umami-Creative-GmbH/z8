@@ -1,10 +1,11 @@
-import { getAuthContext, getUserOrganizations } from "@/lib/auth-helpers";
+import { getAuthContext, getCurrentSettingsAccessTier, getUserOrganizations } from "@/lib/auth-helpers";
 import { AppSidebar } from "./app-sidebar";
 
 export async function ServerAppSidebar(props: React.ComponentProps<typeof AppSidebar>) {
-	const [organizations, authContext] = await Promise.all([
+	const [organizations, authContext, settingsAccessTier] = await Promise.all([
 		getUserOrganizations(),
 		getAuthContext(),
+		getCurrentSettingsAccessTier(),
 	]);
 
 	// Find current organization from the list
@@ -19,6 +20,7 @@ export async function ServerAppSidebar(props: React.ComponentProps<typeof AppSid
 			currentOrganization={currentOrganization}
 			employeeRole={authContext?.employee?.role ?? null}
 			shiftsEnabled={currentOrganization?.shiftsEnabled ?? false}
+			showComplianceNav={settingsAccessTier === "orgAdmin"}
 		/>
 	);
 }

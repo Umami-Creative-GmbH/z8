@@ -11,6 +11,7 @@ import {
 	IconReceipt,
 	IconReport,
 	IconSettings,
+	IconShieldCheck,
 	IconUsers,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
@@ -29,6 +30,7 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
 	currentOrganization?: UserOrganization | null;
 	employeeRole?: "admin" | "manager" | "employee" | null;
 	shiftsEnabled?: boolean;
+	showComplianceNav?: boolean;
 }
 
 const isManagerOrAbove = (role: "admin" | "manager" | "employee" | null | undefined): boolean => {
@@ -40,6 +42,7 @@ export function AppSidebar({
 	currentOrganization = null,
 	employeeRole = null,
 	shiftsEnabled = false,
+	showComplianceNav = false,
 	...props
 }: AppSidebarProps) {
 	const { t } = useTranslate();
@@ -111,6 +114,15 @@ export function AppSidebar({
 	];
 
 	const navSecondary = [
+		...(showComplianceNav
+			? [
+					{
+						title: t("nav.compliance", "Compliance"),
+						url: "/compliance",
+						icon: IconShieldCheck,
+					},
+				]
+			: []),
 		{
 			title: t("nav.settings", "Settings"),
 			url: "/settings",
