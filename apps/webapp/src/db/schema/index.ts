@@ -7,6 +7,7 @@ export * from "./absence";
 // Conditional access policies
 export * from "./access-policy";
 export * from "./approval";
+export * from "./app-auth";
 export * from "./audit";
 export * from "./audit-pack";
 // Audit export (signed packages, WORM retention)

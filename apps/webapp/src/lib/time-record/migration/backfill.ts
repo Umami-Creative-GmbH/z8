@@ -1,4 +1,19 @@
 import { DateTime } from "luxon";
+import { eq, inArray, isNull } from "drizzle-orm";
+
+import {
+	absenceCategory,
+	absenceEntry,
+	approvalRequest,
+	db,
+	employee,
+	timeRecord,
+	timeRecordAbsence,
+	timeRecordAllocation,
+	timeRecordApprovalDecision,
+	timeRecordWork,
+	workPeriod,
+} from "@/db";
 
 type LegacyApprovalStatus = "pending" | "approved" | "rejected";
 type CanonicalDayPeriod = "full_day" | "am" | "pm";
@@ -64,6 +79,12 @@ export type CanonicalBackfillInput = {
 	};
 };
 
+export type CanonicalBackfillRunInput = {
+	organizationId: string;
+	actorId: string;
+	legacy?: CanonicalBackfillInput["legacy"];
+};
+
 export type CanonicalBackfillPayload = {
 	timeRecords: Array<{
 		id: string;
@@ -114,7 +135,7 @@ export type CanonicalBackfillPayload = {
 	}>;
 	legacyLinks: {
 		workPeriod: Array<{ id: string; canonicalRecordId: string }>;
-		absenceEntry: Array<{ id: string; canonicalRecordId: string }>;
+		absenceEntry: Array<{ id: string; canonicalRecordId: string; organizationId: string }>;
 		approvalRequest: Array<{ id: string; canonicalRecordId: string }>;
 	};
 };
@@ -261,6 +282,7 @@ export function buildCanonicalBackfillPayload(
 			absenceEntry: absences.map((absenceEntry) => ({
 				id: absenceEntry.id,
 				canonicalRecordId: absenceEntry.id,
+				organizationId: input.organizationId,
 			})),
 			approvalRequest: approvals
 				.map((approvalRequest) => {
@@ -281,6 +303,128 @@ export function buildCanonicalBackfillPayload(
 				.filter((value): value is { id: string; canonicalRecordId: string } => value !== null),
 		},
 	};
+}
+
+export async function runCanonicalBackfill(
+	input: CanonicalBackfillRunInput,
+): Promise<CanonicalBackfillPayload> {
+	const resolvedInput = input.legacy
+		? { organizationId: input.organizationId, actorId: input.actorId, legacy: input.legacy }
+		: await loadCanonicalBackfillInput(input);
+	const payload = buildCanonicalBackfillPayload(resolvedInput);
+
+	await db.transaction(async (tx) => {
+		await insertIfPresent(tx, timeRecord, payload.timeRecords);
+		await insertIfPresent(tx, timeRecordWork, payload.timeRecordWork);
+		await insertIfPresent(tx, timeRecordAbsence, payload.timeRecordAbsence);
+
+		const allocationRecordIds = payload.timeRecordAllocation.map((allocation) => allocation.recordId);
+		if (allocationRecordIds.length > 0) {
+			await tx
+				.delete(timeRecordAllocation)
+				.where(inArray(timeRecordAllocation.recordId, allocationRecordIds));
+			await tx.insert(timeRecordAllocation).values(payload.timeRecordAllocation);
+		}
+
+		const decisionRecordIds = payload.timeRecordApprovalDecision.map((decision) => decision.recordId);
+		if (decisionRecordIds.length > 0) {
+			await tx
+				.delete(timeRecordApprovalDecision)
+				.where(inArray(timeRecordApprovalDecision.recordId, decisionRecordIds));
+			await tx.insert(timeRecordApprovalDecision).values(payload.timeRecordApprovalDecision);
+		}
+
+		for (const link of payload.legacyLinks.workPeriod) {
+			await tx
+				.update(workPeriod)
+				.set({ canonicalRecordId: link.canonicalRecordId })
+				.where(eq(workPeriod.id, link.id));
+		}
+
+		for (const link of payload.legacyLinks.absenceEntry) {
+			await tx
+				.update(absenceEntry)
+				.set({
+					canonicalRecordId: link.canonicalRecordId,
+					organizationId: link.organizationId,
+				})
+				.where(eq(absenceEntry.id, link.id));
+		}
+
+		for (const link of payload.legacyLinks.approvalRequest) {
+			await tx
+				.update(approvalRequest)
+				.set({ canonicalRecordId: link.canonicalRecordId })
+				.where(eq(approvalRequest.id, link.id));
+		}
+	});
+
+	return payload;
+}
+
+async function loadCanonicalBackfillInput(
+	input: CanonicalBackfillRunInput,
+): Promise<CanonicalBackfillInput> {
+	const [targetEmployees, workPeriods, scopedAbsenceEntries, nullOrgAbsenceEntries, approvalRequests, absenceCategories] =
+		await Promise.all([
+			db.query.employee.findMany({
+				where: eq(employee.organizationId, input.organizationId),
+				columns: { id: true },
+			}),
+			db.query.workPeriod.findMany({
+				where: eq(workPeriod.organizationId, input.organizationId),
+			}),
+			db.query.absenceEntry.findMany({
+				where: eq(absenceEntry.organizationId, input.organizationId),
+			}),
+			db.query.absenceEntry.findMany({
+				where: isNull(absenceEntry.organizationId),
+			}),
+			db.query.approvalRequest.findMany({
+				where: eq(approvalRequest.organizationId, input.organizationId),
+			}),
+			db.query.absenceCategory.findMany({
+				where: eq(absenceCategory.organizationId, input.organizationId),
+				columns: { id: true, countsAgainstVacation: true },
+			}),
+		]);
+
+	const targetEmployeeIds = new Set(targetEmployees.map((record) => record.id));
+	const attributedNullOrgAbsenceEntries = nullOrgAbsenceEntries
+		.filter((record) => targetEmployeeIds.has(record.employeeId))
+		.map((record) => ({
+			...record,
+			organizationId: input.organizationId,
+		}));
+
+	return {
+		organizationId: input.organizationId,
+		actorId: input.actorId,
+		legacy: {
+			workPeriods,
+			absenceEntries: [...scopedAbsenceEntries, ...attributedNullOrgAbsenceEntries],
+			approvalRequests,
+			absenceCategories,
+		},
+	};
+}
+
+async function insertIfPresent<TTable, TValue>(
+	tx: {
+		insert: (table: TTable) => {
+			values: (values: TValue[]) => {
+				onConflictDoNothing: () => Promise<unknown>;
+			};
+		};
+	},
+	table: TTable,
+	values: TValue[],
+) {
+	if (values.length === 0) {
+		return;
+	}
+
+	await tx.insert(table).values(values).onConflictDoNothing();
 }
 
 function mapApprovalStatusToAction(status: LegacyApprovalStatus): "submitted" | "approved" | "rejected" {

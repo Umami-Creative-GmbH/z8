@@ -128,6 +128,7 @@ export async function POST(request: NextRequest) {
 			{
 				success: true,
 				organizationId,
+				// Keep this org-scoped signal strict so downstream consumers do not infer access from other orgs.
 				hasEmployeeRecord: !!employeeRecord,
 			},
 			{ headers: corsHeaders },

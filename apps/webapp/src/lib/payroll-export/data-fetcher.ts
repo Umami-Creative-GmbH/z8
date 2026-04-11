@@ -15,6 +15,7 @@ import {
 } from "@/db";
 import { timeRecord } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
+import { assertCanonicalCutoverReady } from "@/lib/time-record/migration/cutover-state";
 import type {
 	AbsenceData,
 	PayrollExportFilters,
@@ -31,6 +32,8 @@ export async function fetchWorkPeriodsForExport(
 	organizationId: string,
 	filters: PayrollExportFilters,
 ): Promise<WorkPeriodData[]> {
+	await assertCanonicalCutoverReady(organizationId);
+
 	logger.info({ organizationId, filters: serializeFilters(filters) }, "Fetching work periods for payroll export");
 
 	// Build where conditions
@@ -150,6 +153,8 @@ export async function fetchAbsencesForExport(
 	organizationId: string,
 	filters: PayrollExportFilters,
 ): Promise<AbsenceData[]> {
+	await assertCanonicalCutoverReady(organizationId);
+
 	logger.info({ organizationId, filters: serializeFilters(filters) }, "Fetching absences for payroll export");
 
 	// Get employee IDs for this org (optionally filtered)
@@ -409,6 +414,8 @@ export async function countWorkPeriods(
 	organizationId: string,
 	filters: PayrollExportFilters,
 ): Promise<number> {
+	await assertCanonicalCutoverReady(organizationId);
+
 	const whereConditions = [
 		eq(timeRecord.organizationId, organizationId),
 		eq(timeRecord.recordKind, "work"),

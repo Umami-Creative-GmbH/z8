@@ -267,7 +267,11 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 	const { t } = useTranslate();
 	const router = useRouter();
 	const searchParams = useSearchParams();
-	const callbackUrl = sanitizeCallbackUrl(searchParams.get("callbackUrl"));
+	const callbackUrl = sanitizeCallbackUrl(
+		searchParams.get("callbackUrl"),
+		"/init",
+		typeof window === "undefined" ? undefined : window.location.href,
+	);
 	const [state, dispatch] = useReducer(formReducer, initialState);
 	const { enabledProviders, isLoading: providersLoading } = useEnabledProviders();
 

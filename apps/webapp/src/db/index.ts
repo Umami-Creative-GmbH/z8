@@ -109,6 +109,9 @@ export {
 	absenceCategoryRelations,
 	absenceEntry,
 	absenceEntryRelations,
+	appAuthCode,
+	appAuthCodeStatusEnum,
+	appAuthTypeEnum,
 	// Enums
 	absenceTypeEnum,
 	// Approval tables

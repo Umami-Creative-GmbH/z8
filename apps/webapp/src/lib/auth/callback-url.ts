@@ -1,12 +1,32 @@
 export function sanitizeCallbackUrl(
 	callbackUrl: string | null | undefined,
 	fallback = "/init",
+	currentUrl?: string,
 ) {
-	if (!callbackUrl || !callbackUrl.startsWith("/") || callbackUrl.startsWith("//")) {
+	if (!callbackUrl) {
 		return fallback;
 	}
 
-	return callbackUrl;
+	if (callbackUrl.startsWith("/") && !callbackUrl.startsWith("//")) {
+		return callbackUrl;
+	}
+
+	if (!currentUrl) {
+		return fallback;
+	}
+
+	try {
+		const normalizedCurrentUrl = new URL(currentUrl);
+		const normalizedCallbackUrl = new URL(callbackUrl, normalizedCurrentUrl);
+
+		if (normalizedCallbackUrl.origin !== normalizedCurrentUrl.origin) {
+			return fallback;
+		}
+
+		return `${normalizedCallbackUrl.pathname}${normalizedCallbackUrl.search}${normalizedCallbackUrl.hash}`;
+	} catch {
+		return fallback;
+	}
 }
 
 export function withCallbackUrl(path: string, callbackUrl: string | null | undefined) {
