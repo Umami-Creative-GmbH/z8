@@ -390,20 +390,32 @@ async function loadCanonicalBackfillInput(
 		]);
 
 	const targetEmployeeIds = new Set(targetEmployees.map((record) => record.id));
-	const attributedNullOrgAbsenceEntries = nullOrgAbsenceEntries
+	const normalizedScopedAbsenceEntries: LegacyAbsenceEntry[] = scopedAbsenceEntries
+		.filter(
+			(record): record is typeof record & { organizationId: string } => record.organizationId !== null,
+		)
+		.map((record) => ({
+			...record,
+			organizationId: record.organizationId,
+		}));
+	const attributedNullOrgAbsenceEntries: LegacyAbsenceEntry[] = nullOrgAbsenceEntries
 		.filter((record) => targetEmployeeIds.has(record.employeeId))
 		.map((record) => ({
 			...record,
 			organizationId: input.organizationId,
 		}));
+	const normalizedApprovalRequests: LegacyApprovalRequest[] = approvalRequests.filter(
+		(record): record is typeof record & { entityType: LegacyEntityType } =>
+			record.entityType === "time_entry" || record.entityType === "absence_entry",
+	);
 
 	return {
 		organizationId: input.organizationId,
 		actorId: input.actorId,
 		legacy: {
 			workPeriods,
-			absenceEntries: [...scopedAbsenceEntries, ...attributedNullOrgAbsenceEntries],
-			approvalRequests,
+			absenceEntries: [...normalizedScopedAbsenceEntries, ...attributedNullOrgAbsenceEntries],
+			approvalRequests: normalizedApprovalRequests,
 			absenceCategories,
 		},
 	};

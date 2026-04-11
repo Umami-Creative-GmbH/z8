@@ -235,7 +235,7 @@ function countAbsenceDurationMismatches(
 
 function countWorkApprovalStateMismatches(
 	legacyWorkById: Map<string, { approvalStatus: "pending" | "approved" | "rejected" }>,
-	canonicalWorkById: Map<string, { approvalState: "pending" | "approved" | "rejected" }>,
+	canonicalWorkById: Map<string, { approvalState: "pending" | "approved" | "rejected" | "draft" }>,
 ) {
 	let count = 0;
 
@@ -255,7 +255,7 @@ function countWorkApprovalStateMismatches(
 
 function countAbsenceApprovalStateMismatches(
 	legacyAbsenceById: Map<string, { status: "pending" | "approved" | "rejected" }>,
-	canonicalAbsenceById: Map<string, { approvalState: "pending" | "approved" | "rejected" }>,
+	canonicalAbsenceById: Map<string, { approvalState: "pending" | "approved" | "rejected" | "draft" }>,
 ) {
 	let count = 0;
 

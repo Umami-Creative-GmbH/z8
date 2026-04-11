@@ -1,5 +1,3 @@
-"use server";
-
 import { DateTime } from "luxon";
 import { dateFromDB, dateToDB } from "@/lib/datetime/drizzle-adapter";
 

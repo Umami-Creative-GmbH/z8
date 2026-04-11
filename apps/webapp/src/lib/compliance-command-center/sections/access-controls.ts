@@ -3,7 +3,7 @@ import { DateTime } from "luxon";
 import { AuditAction } from "@/lib/audit-logger";
 import { db } from "@/db";
 import { auditLog } from "@/db/schema";
-import type { ComplianceSectionResult } from "../types";
+import type { ComplianceCriticalEvent, ComplianceSectionResult } from "../types";
 
 const ACCESS_CONTROL_LOOKBACK_HOURS = 24;
 const SENSITIVE_ACTIONS = new Set<string>([
@@ -28,7 +28,7 @@ export interface AccessControlEventSnapshot {
 export function deriveAccessControlsSection(input: {
 	recentSensitiveEvents: AccessControlEventSnapshot[];
 }): ComplianceSectionResult {
-	const recentCriticalEvents = input.recentSensitiveEvents.map((event) => ({
+	const recentCriticalEvents: ComplianceCriticalEvent[] = input.recentSensitiveEvents.map((event) => ({
 		id: event.id,
 		sectionKey: "accessControls" as const,
 		severity:

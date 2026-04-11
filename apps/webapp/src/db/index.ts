@@ -214,6 +214,11 @@ export {
 	timeEntry,
 	timeEntryRelations,
 	timeEntryTypeEnum,
+	timeRecord,
+	timeRecordAbsence,
+	timeRecordAllocation,
+	timeRecordApprovalDecision,
+	timeRecordWork,
 	// Vacation tables
 	vacationAllowance,
 	vacationAllowanceRelations,
