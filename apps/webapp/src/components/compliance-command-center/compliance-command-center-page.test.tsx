@@ -52,7 +52,20 @@ describe("ComplianceCommandCenterPage", () => {
 							primaryLink: { label: "Open Audit Log", href: "/settings/enterprise/audit-log" },
 						},
 					],
-					recentCriticalEvents: [],
+					recentCriticalEvents: [
+						{
+							id: "event_1",
+							sectionKey: "accessControls",
+							severity: "critical",
+							title: "Admin role changed outside scheduled review",
+							description: "A privileged role change occurred without an approval note.",
+							occurredAt: "2026-04-11T09:30:00.000Z",
+							primaryLink: {
+								label: "Review Audit Log",
+								href: "/settings/enterprise/audit-log",
+							},
+						},
+					],
 					coverageNotes: ["Access controls only summarize logged audit events."],
 				}}
 			/>,
@@ -61,6 +74,8 @@ describe("ComplianceCommandCenterPage", () => {
 		expect(screen.getByText("Compliance signals need review")).toBeTruthy();
 		expect(screen.getByText("Audit evidence signals look healthy")).toBeTruthy();
 		expect(screen.getByText("Access-control events could not be loaded.")).toBeTruthy();
+		expect(screen.getByRole("heading", { name: "Recent Critical Events" })).toBeTruthy();
+		expect(screen.getByText("Admin role changed outside scheduled review")).toBeTruthy();
 		expect(screen.getByText("Access controls only summarize logged audit events.")).toBeTruthy();
 	});
 
