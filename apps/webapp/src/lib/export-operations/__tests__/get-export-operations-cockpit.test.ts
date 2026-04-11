@@ -417,6 +417,12 @@ describe("getExportOperationsCockpit", () => {
 
 		expect(result.alerts).toEqual([
 			expect.objectContaining({
+				id: "scheduled-execution-failed-late-completion",
+				source: "scheduled",
+				severity: "error",
+				href: "/settings/scheduled-exports",
+			}),
+			expect.objectContaining({
 				id: "schedule-blocked",
 				source: "scheduled",
 				severity: "warning",
@@ -425,7 +431,7 @@ describe("getExportOperationsCockpit", () => {
 				href: "/settings/scheduled-exports",
 			}),
 		]);
-		expect(result.alerts).toHaveLength(1);
+		expect(result.alerts).toHaveLength(2);
 
 		expect(result.upcomingRuns).toEqual([
 			expect.objectContaining({

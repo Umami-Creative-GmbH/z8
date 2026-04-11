@@ -218,7 +218,7 @@ export async function getExportOperationsCockpit(
 
 	const scheduledExportsById = new Map(scheduledExports.map((item) => [item.id, item]));
 
-	const alerts = buildAlerts(payrollJobs, scheduledExports, auditRequests, t);
+	const alerts = buildAlerts(payrollJobs, scheduledExports, scheduledExecutions, auditRequests, t);
 	const upcomingRuns = buildUpcomingRuns(scheduledExports, now);
 	const recentActivity = buildRecentActivity(
 		payrollJobs,
@@ -297,12 +297,15 @@ function getSettledValue<T>(result: PromiseSettledResult<T>): T extends Array<in
 function buildAlerts(
 	payrollJobs: PayrollActivityRecord[],
 	scheduledExports: ScheduledExportRecord[],
+	scheduledExecutions: ScheduledExecutionRecord[],
 	auditRequests: AuditRequestRecord[],
 	t: TranslateFn,
 ): ExportOperationsAlert[] {
 	const alerts: ExportOperationsAlert[] = [];
 	const latestPayrollJob = payrollJobs[0];
 	const latestAuditRequest = auditRequests[0];
+	const latestFailedScheduledExecution = scheduledExecutions.find((execution) => execution.status === "failed");
+	const scheduledExportsById = new Map(scheduledExports.map((schedule) => [schedule.id, schedule]));
 
 	if (latestPayrollJob?.status === "failed") {
 		alerts.push({
@@ -318,6 +321,32 @@ function buildAlerts(
 				),
 			occurredAt: latestPayrollJob.completedAt ?? latestPayrollJob.createdAt,
 			href: "/settings/payroll-export",
+		});
+	}
+
+	if (latestFailedScheduledExecution) {
+		const scheduleName =
+			scheduledExportsById.get(latestFailedScheduledExecution.scheduledExportId)?.name ??
+			t("settings.exportOperations.activity.scheduled.title", "Scheduled export");
+
+		alerts.push({
+			id: latestFailedScheduledExecution.id,
+			source: "scheduled",
+			severity: "error",
+			title: t(
+				"settings.exportOperations.alerts.scheduledFailed.title",
+				"Scheduled export failed",
+			),
+			description:
+				latestFailedScheduledExecution.errorMessage ??
+				t(
+					"settings.exportOperations.alerts.scheduledFailed.description",
+					"{name} did not complete successfully.",
+					{ name: scheduleName },
+				),
+			occurredAt:
+				latestFailedScheduledExecution.completedAt ?? latestFailedScheduledExecution.triggeredAt,
+			href: "/settings/scheduled-exports",
 		});
 	}
 

@@ -135,9 +135,11 @@ function AlertsCard({
 			</CardHeader>
 			<CardContent>
 				{alerts.length === 0 ? (
+					error ? null : (
 					<p className="text-muted-foreground text-sm">
 						{t("settings.exportOperations.alerts.empty", "No alerts right now")}
 					</p>
+					)
 				) : (
 					<div className="space-y-3">
 						{alerts.map((alert) => (
@@ -254,9 +256,11 @@ function RecentActivityCard({
 			</CardHeader>
 			<CardContent>
 				{items.length === 0 ? (
+					error ? null : (
 					<p className="text-muted-foreground text-sm">
 						{t("settings.exportOperations.recentActivity.empty", "No recent export activity")}
 					</p>
+					)
 				) : (
 					<Table>
 						<TableHeader>

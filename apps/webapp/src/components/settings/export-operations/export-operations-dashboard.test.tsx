@@ -183,4 +183,31 @@ describe("ExportOperationsDashboard", () => {
 		expect(screen.getByText("Active schedules")).toBeTruthy();
 		expect(screen.getByText("Failed runs (7 days)")).toBeTruthy();
 	});
+
+	it("does not show misleading empty states for degraded empty alerts or activity sections", async () => {
+		const { ExportOperationsDashboard } = await import("./export-operations-dashboard");
+
+		render(
+			<ExportOperationsDashboard
+				t={t}
+				data={{
+					...dashboardData,
+					alerts: [],
+					upcomingRuns: [],
+					recentActivity: [],
+					errors: {
+						summary: null,
+						alerts: "Some alerts may be incomplete while export data is unavailable.",
+						upcomingRuns: null,
+						recentActivity: "Some activity data is temporarily unavailable.",
+					},
+				}}
+			/>,
+		);
+
+		expect(screen.getByText("Some alerts may be incomplete while export data is unavailable.")).toBeTruthy();
+		expect(screen.getByText("Some activity data is temporarily unavailable.")).toBeTruthy();
+		expect(screen.queryByText("No alerts right now")).toBeNull();
+		expect(screen.queryByText("No recent export activity")).toBeNull();
+	});
 });
