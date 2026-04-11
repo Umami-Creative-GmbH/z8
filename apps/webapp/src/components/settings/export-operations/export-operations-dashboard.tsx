@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +9,7 @@ import type {
 	ExportOperationsCockpitData,
 	ExportOperationsUpcomingRun,
 } from "@/lib/export-operations/get-export-operations-cockpit";
+import { Link } from "@/navigation";
 
 type TranslateFn = (key: string, defaultValue?: string) => string;
 
@@ -100,7 +99,9 @@ function AlertsCard({
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>{t("settings.exportOperations.alerts.title", "Alerts")}</CardTitle>
+				<CardTitle>
+					<h2 className="text-base font-semibold">{t("settings.exportOperations.alerts.title", "Alerts")}</h2>
+				</CardTitle>
 				<CardDescription>
 					{t(
 						"settings.exportOperations.alerts.description",
@@ -110,7 +111,7 @@ function AlertsCard({
 				{error ? <p className="text-muted-foreground text-sm">{error}</p> : null}
 			</CardHeader>
 			<CardContent>
-				{alerts.length === 0 ? (
+				{error ? null : alerts.length === 0 ? (
 					<p className="text-muted-foreground text-sm">
 						{t("settings.exportOperations.alerts.empty", "No alerts right now")}
 					</p>
@@ -152,7 +153,11 @@ function UpcomingRunsCard({
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>{t("settings.exportOperations.upcomingRuns.title", "Upcoming runs")}</CardTitle>
+				<CardTitle>
+					<h2 className="text-base font-semibold">
+						{t("settings.exportOperations.upcomingRuns.title", "Upcoming runs")}
+					</h2>
+				</CardTitle>
 				<CardDescription>
 					{t(
 						"settings.exportOperations.upcomingRuns.description",
@@ -162,7 +167,7 @@ function UpcomingRunsCard({
 				{error ? <p className="text-muted-foreground text-sm">{error}</p> : null}
 			</CardHeader>
 			<CardContent>
-				{runs.length === 0 ? (
+				{error ? null : runs.length === 0 ? (
 					<p className="text-muted-foreground text-sm">
 						{t("settings.exportOperations.upcomingRuns.empty", "No upcoming runs")}
 					</p>
@@ -207,7 +212,11 @@ function RecentActivityCard({
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>{t("settings.exportOperations.recentActivity.title", "Recent activity")}</CardTitle>
+				<CardTitle>
+					<h2 className="text-base font-semibold">
+						{t("settings.exportOperations.recentActivity.title", "Recent activity")}
+					</h2>
+				</CardTitle>
 				<CardDescription>
 					{t(
 						"settings.exportOperations.recentActivity.description",
@@ -217,7 +226,7 @@ function RecentActivityCard({
 				{error ? <p className="text-muted-foreground text-sm">{error}</p> : null}
 			</CardHeader>
 			<CardContent>
-				{items.length === 0 ? (
+				{error ? null : items.length === 0 ? (
 					<p className="text-muted-foreground text-sm">
 						{t("settings.exportOperations.recentActivity.empty", "No recent export activity")}
 					</p>

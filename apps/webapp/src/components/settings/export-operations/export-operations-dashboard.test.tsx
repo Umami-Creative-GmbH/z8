@@ -6,8 +6,8 @@ import { describe, expect, it, vi } from "vitest";
 
 import type { ExportOperationsCockpitData } from "@/lib/export-operations/get-export-operations-cockpit";
 
-vi.mock("next/link", () => ({
-	default: ({ href, children, ...props }: { href: string; children: ReactNode }) => (
+vi.mock("@/navigation", () => ({
+	Link: ({ href, children, ...props }: { href: string; children: ReactNode }) => (
 		<a href={href} {...props}>
 			{children}
 		</a>
@@ -17,7 +17,7 @@ vi.mock("next/link", () => ({
 vi.mock("@/components/ui/card", () => ({
 	Card: ({ children }: { children: ReactNode }) => <section>{children}</section>,
 	CardHeader: ({ children }: { children: ReactNode }) => <div>{children}</div>,
-	CardTitle: ({ children }: { children: ReactNode }) => <h2>{children}</h2>,
+	CardTitle: ({ children }: { children: ReactNode }) => <div>{children}</div>,
 	CardDescription: ({ children }: { children: ReactNode }) => <p>{children}</p>,
 	CardContent: ({ children }: { children: ReactNode }) => <div>{children}</div>,
 }));
@@ -101,6 +101,9 @@ describe("ExportOperationsDashboard", () => {
 		expect(screen.getByText("2")).toBeTruthy();
 		expect(screen.getByText("Last payroll export")).toBeTruthy();
 		expect(screen.getByText("Last audit pack")).toBeTruthy();
+		expect(screen.getByRole("heading", { name: "Alerts", level: 2 })).toBeTruthy();
+		expect(screen.getByRole("heading", { name: "Upcoming runs", level: 2 })).toBeTruthy();
+		expect(screen.getByRole("heading", { name: "Recent activity", level: 2 })).toBeTruthy();
 
 		const alertsSection = screen.getByRole("heading", { name: "Alerts" }).closest("section");
 		expect(alertsSection).toBeTruthy();
@@ -160,9 +163,9 @@ describe("ExportOperationsDashboard", () => {
 		expect(screen.getByText("Scheduled export data is temporarily unavailable.")).toBeTruthy();
 		expect(screen.getByText("Some activity data is temporarily unavailable.")).toBeTruthy();
 
-		expect(screen.getByText("No alerts right now")).toBeTruthy();
-		expect(screen.getByText("No upcoming runs")).toBeTruthy();
-		expect(screen.getByText("No recent export activity")).toBeTruthy();
+		expect(screen.queryByText("No alerts right now")).toBeNull();
+		expect(screen.queryByText("No upcoming runs")).toBeNull();
+		expect(screen.queryByText("No recent export activity")).toBeNull();
 		expect(screen.getByText("Active schedules")).toBeTruthy();
 		expect(screen.getByText("Failed runs (7 days)")).toBeTruthy();
 	});
