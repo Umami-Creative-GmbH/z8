@@ -7,7 +7,7 @@ icon: Users
 import { Callout } from 'fumadocs-ui/components/callout';
 import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
 
-Enterprise organizations can configure their own OAuth providers to enable branded single sign-on (SSO). Users can sign in using their existing Google, Microsoft, GitHub, LinkedIn, or Apple accounts tied to your organization's OAuth application.
+Enterprise organizations can configure their own OAuth providers to enable branded sign-in. Users sign in with the provider connected to that organization's OAuth application.
 
 ---
 
@@ -27,6 +27,8 @@ Enterprise organizations can configure their own OAuth providers to enable brand
 1. Go to **Settings** in the sidebar
 2. Click **Enterprise** > **Social Login**
 3. View and manage configured providers
+
+OAuth credentials are configured per organization in product settings. Do not treat them as tenant-wide environment variables.
 
 ---
 
@@ -140,6 +142,10 @@ Enterprise organizations can configure their own OAuth providers to enable brand
   </Tab>
 </Tabs>
 
+<Callout type="info" title="Redirect URIs must match exactly">
+  Register the callback URL for the exact domain your users sign in through. If you use multiple environments or custom domains, add the matching redirect URI for each one.
+</Callout>
+
 ---
 
 ## Testing Configuration
@@ -217,7 +223,7 @@ OIDC providers include nonce validation to prevent replay attacks.
 
 ### Secure Cookie Storage
 
-OAuth state is stored in secure, httpOnly cookies during the flow.
+OAuth state is stored in secure, httpOnly cookies during the flow, while provider credentials remain stored as organization-scoped secrets in Z8.
 
 ---
 

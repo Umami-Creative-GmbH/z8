@@ -1,298 +1,63 @@
 ---
 title: Platform Admin Dashboard
-description: Manage multiple organizations and platform-wide settings
+description: Manage cross-organization users, organizations, and platform-level operations
 icon: Server
 ---
 
+import { Callout } from "fumadocs-ui/components/callout";
+
 ## Overview
 
-The Platform Admin Dashboard provides super-administrators with centralized control over the entire z8 platform. This multi-tenant management interface allows platform administrators to oversee all organizations, manage users across the platform, and maintain overall system health.
-
-Platform administration is distinct from organization-level administration. While organization admins manage settings within their own workspace, platform admins have visibility and control across all organizations on the platform.
+Platform admin access is separate from organization administration. Organization admins manage a single workspace. Platform admins operate across all organizations through `/platform-admin`.
 
 <Callout type="warn">
-Platform admin access should be restricted to a very limited number of trusted individuals. All actions performed in the platform admin dashboard are logged for audit purposes.
+  Platform admin access should be limited to a very small group of trusted operators. Actions in this area affect the full tenant, not just one organization.
 </Callout>
 
-## Prerequisites
+## What Platform Admins Can Do
 
-To access the Platform Admin Dashboard, you must:
+- Review platform-wide users
+- Inspect organizations across the tenant base
+- Suspend or restore organizations when required
+- Review platform audit history and queue health where available
+- Access billing and platform settings surfaces when those features are enabled
 
-- Have an active user account with the `admin` role
-- Not be banned from the platform
-- Be signed in with valid credentials
+## Accessing The Dashboard
 
-The platform admin role is assigned at the database level and cannot be self-granted. Contact your system administrator or database team to assign platform admin privileges.
+Open `/platform-admin` to reach the platform-scoped admin area. The current route set includes an overview dashboard plus dedicated pages for users, organizations, worker queue operations, settings, and optional billing views.
 
-## Accessing the Dashboard
+The overview dashboard highlights platform-wide metrics such as total users, banned users, active organizations, and suspended organizations, with links into the related management pages.
 
-Navigate to `/platform-admin` to access the Platform Admin Dashboard. The Platform Admin layout includes:
+## Users
 
-- **Dashboard**: Overview statistics and quick access links
-- **Users**: Cross-platform user management
-- **Organizations**: Multi-tenant organization management
-- **Billing**: Platform-level subscription and revenue insights
-- **Settings**: Platform configuration controls
-- **Worker Queue**: Infrastructure queue health and execution visibility
+Use `/platform-admin/users` to search platform accounts, filter by status, ban or unban users, and inspect or revoke active sessions.
 
-An "Exit Platform Admin" link is always available in the header to return to the regular application.
+These actions are platform-scoped. They are not the same as adjusting a member's permissions inside one organization.
 
-## Dashboard Overview
+## Organizations
 
-The main dashboard displays four key statistics at a glance:
+Use `/platform-admin/organizations` to review organizations across the tenant base, search by name or slug, suspend organizations into read-only mode, restore them, or schedule deletion.
 
-| Metric | Description |
-|--------|-------------|
-| **Total Users** | All registered users across the platform |
-| **Banned Users** | Users currently banned from accessing the platform |
-| **Organizations** | Total active organizations (excluding deleted) |
-| **Suspended Orgs** | Organizations currently in read-only mode |
+Suspension is useful when the organization should keep read-only visibility while changes are paused. Deletion is a separate action and should be treated as an operational decision with higher risk.
 
-Each statistic card is clickable and navigates to the relevant management page with appropriate filters applied.
+## What Platform Admins Do Not Replace
 
-<Callout type="info">
-Cards for banned users and suspended organizations display a warning or destructive border color when counts are greater than zero, providing visual alerts for issues requiring attention.
-</Callout>
+Platform admin access does not replace normal organization settings workflows. Day-to-day payroll export, scheduling, member management, enterprise auth, and employee administration remain organization-scoped tasks handled inside that organization's own settings.
 
-## User Management
+If you need to manage invitations, app access, social OAuth, SCIM, or payroll settings for one customer workspace, use that organization's admin settings rather than `/platform-admin`.
 
-The User Management page (`/platform-admin/users`) provides tools to view and manage all users across the platform.
+## Access Requirements
 
-### Viewing Users
+- You must have a platform-level admin account.
+- The role is assigned outside normal organization settings workflows.
+- You still need an active account and valid session to enter `/platform-admin`.
 
-The user list displays:
+## Audit And Safety Notes
 
-- **User**: Name, email, and profile image
-- **Role**: Admin or standard user badge
-- **Status**: Active or Banned (with expiry date if temporary)
-- **Created**: Account creation date
-
-### Filtering Users
-
-Use the search and filter controls to find specific users:
-
-- **Search**: Filter by name or email (debounced 300ms)
-- **Status Filter**: All, Active, or Banned
-
-### Banning Users
-
-To ban a user from the platform:
-
-1. Click the ban icon in the user's row
-2. Enter a reason for the ban (required)
-3. Optionally set an expiry date for temporary bans
-4. Click "Ban User"
-
-<Callout type="warn">
-Platform admin users cannot be banned. You must first revoke their admin role before banning.
-</Callout>
-
-When a user is banned:
-
-- They are immediately logged out of all sessions
-- They cannot sign in until the ban is lifted or expires
-- The ban reason is recorded for audit purposes
-
-### Unbanning Users
-
-To restore a banned user's access:
-
-1. Filter to show banned users
-2. Click the checkmark icon in the user's row
-3. The ban is immediately lifted
-
-### Session Management
-
-Platform admins can view and revoke user sessions:
-
-1. Click the devices icon in a user's row
-2. View all active sessions with device info and IP addresses
-3. Revoke individual sessions or all sessions at once
-
-Revoking sessions forces the user to sign in again on those devices.
-
-## Organization Management
-
-The Organization Management page (`/platform-admin/organizations`) provides oversight and control over all organizations on the platform.
-
-### Viewing Organizations
-
-The organization list displays:
-
-- **Organization**: Name, slug, and logo
-- **Employees**: Count of active employees in the organization
-- **Members**: Count of platform users who are members
-- **Status**: Active, Suspended, or Deleted
-- **Created**: Organization creation date
-
-### Filtering Organizations
-
-Use the search and filter controls to find specific organizations:
-
-- **Search**: Filter by organization name or slug (debounced 300ms)
-- **Status Filter**: All, Active, Suspended, or Deleted
-
-### Suspending Organizations
-
-Suspension puts an organization in read-only mode. Members can view data but cannot create or edit records.
-
-To suspend an organization:
-
-1. Click the pause icon in the organization's row
-2. Enter a reason for the suspension (required)
-3. Click "Suspend Organization"
-
-Common reasons for suspension include:
-
-- Payment issues or subscription lapses
-- Policy violations
-- Pending investigation
-- Customer request
-
-<Callout type="info">
-Suspended organizations display a warning badge with the suspension reason visible on hover.
-</Callout>
-
-### Unsuspending Organizations
-
-To restore full access to a suspended organization:
-
-1. Filter to show suspended organizations
-2. Click the play icon in the organization's row
-3. The suspension is immediately lifted
-
-### Deleting Organizations
-
-To delete an organization and all its data:
-
-1. Click the trash icon in the organization's row
-2. Configure deletion options:
-   - **Delete immediately**: Skip the 5-day grace period
-   - **Skip notification**: Do not notify organization members
-3. Type the organization name to confirm
-4. Click "Delete Organization"
-
-<Callout type="error">
-Organization deletion is irreversible. All associated data including employees, time entries, projects, and documents will be permanently removed.
-</Callout>
-
-By default, deleted organizations enter a 5-day grace period before permanent deletion. This allows for recovery if the deletion was accidental.
-
-## Audit Logging
-
-All platform admin actions are recorded in the `platform_admin_audit_log` table. Logged actions include:
-
-| Action | Description |
-|--------|-------------|
-| `ban_user` | User was banned from the platform |
-| `unban_user` | User ban was lifted |
-| `revoke_session` | Individual session was revoked |
-| `revoke_all_sessions` | All user sessions were revoked |
-| `suspend_org` | Organization was suspended |
-| `unsuspend_org` | Organization suspension was lifted |
-| `delete_org` | Organization was scheduled for deletion |
-
-Each audit log entry includes:
-
-- Admin user ID
-- Action type
-- Target type and ID
-- Action metadata (reason, expiry, etc.)
-- IP address
-- Timestamp
-
-## Database Schema
-
-The platform admin feature introduces two new tables:
-
-### Platform Admin Audit Log
-
-Tracks all administrative actions:
-
-```sql
-platform_admin_audit_log (
-  id uuid PRIMARY KEY,
-  admin_user_id text REFERENCES user(id),
-  action text NOT NULL,
-  target_type text NOT NULL,
-  target_id text NOT NULL,
-  metadata text,
-  ip_address text,
-  user_agent text,
-  created_at timestamp DEFAULT now()
-)
-```
-
-### Organization Suspension
-
-Tracks organization suspension history:
-
-```sql
-organization_suspension (
-  id uuid PRIMARY KEY,
-  organization_id text REFERENCES organization(id),
-  reason text NOT NULL,
-  suspended_by text REFERENCES user(id),
-  suspended_at timestamp DEFAULT now(),
-  unsuspended_at timestamp,
-  unsuspended_by text REFERENCES user(id),
-  is_active boolean DEFAULT true
-)
-```
-
-## Best Practices
-
-### Security
-
-- Limit platform admin access to essential personnel only
-- Regularly audit who has platform admin privileges
-- Review the audit log periodically for unusual activity
-- Use strong authentication methods for admin accounts
-
-### User Management
-
-- Always document the reason when banning users
-- Prefer temporary bans with expiry dates when appropriate
-- Revoke sessions immediately when investigating suspicious activity
-- Consider suspending the organization rather than banning all its users
-
-### Organization Management
-
-- Attempt to resolve issues before suspending organizations
-- Communicate with organization owners before taking action
-- Use the 5-day grace period unless immediate deletion is critical
-- Notify organization members of pending deletion (default behavior)
-
-### Incident Response
-
-1. If suspicious activity is detected, immediately revoke affected sessions
-2. Ban compromised accounts while investigating
-3. Suspend affected organizations if data integrity is at risk
-4. Document all actions taken in an external incident log
-5. Review audit logs to understand the scope of the incident
-
-## Troubleshooting
-
-### Cannot Access Platform Admin Dashboard
-
-- Verify your account has the `admin` role in the database
-- Check that your account is not banned
-- Ensure you are signed in with the correct account
-
-### Actions Not Reflecting Immediately
-
-- The page revalidates after each action; try refreshing
-- Check for error toast messages indicating failed operations
-- Verify your network connection
-
-### Audit Logs Not Appearing
-
-- Audit logs are written asynchronously; allow a few seconds
-- Check the database connection and table permissions
-- Verify the `platform_admin_audit_log` table exists
+Platform admin actions are audit-sensitive. Use reasons for bans or suspensions consistently, and verify deletion options carefully before confirming them.
 
 ## Related Documentation
 
 - [System Administration](/docs/guide/admin-guide/system-administration) - Organization-level administration
-- [Permissions](/docs/guide/admin-guide/permissions) - Role and permission management
+- [Employee Management](/docs/guide/admin-guide/employee-management) - Organization-scoped people operations
 - [Troubleshooting](/docs/guide/admin-guide/troubleshooting) - Common issues and solutions

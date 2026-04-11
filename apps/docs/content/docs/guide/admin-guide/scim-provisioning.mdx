@@ -13,6 +13,10 @@ SCIM (System for Cross-domain Identity Management) 2.0 enables automatic user an
 
 ## Overview
 
+SCIM provisioning is organization-scoped. It automates member lifecycle changes for one organization at a time and does not create cross-organization access on its own.
+
+Each organization gets its own SCIM endpoint configuration and bearer token.
+
 SCIM provisioning automates the entire user lifecycle:
 
 | Event | SCIM Action | Z8 Behavior |
@@ -54,7 +58,7 @@ Click **Configure SCIM Provisioning**
 Copy the **SCIM Endpoint URL** and **Bearer Token**
 
 ```
-SCIM Endpoint: https://app.z8.io/api/scim/v2
+SCIM Endpoint: https://your-z8-domain.com/api/scim/v2
 Bearer Token: scim_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 </Step>
@@ -71,6 +75,10 @@ Configure your provisioning settings:
 
 <Callout type="warn" title="Secure Your Token">
   The SCIM bearer token provides full provisioning access to your organization. Store it securely and rotate it periodically.
+</Callout>
+
+<Callout type="info" title="Organization scope">
+  A SCIM token only applies to the organization that generated it. Configure SCIM separately for each organization you manage.
 </Callout>
 
 ### Step 2: Configure Your Identity Provider

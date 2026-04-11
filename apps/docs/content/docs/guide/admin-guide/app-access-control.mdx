@@ -6,11 +6,13 @@ icon: ShieldCheck
 
 import { Callout } from 'fumadocs-ui/components/callout';
 
-App Access Control allows administrators to restrict which Z8 applications users can access. This is useful for compliance, security policies, or limiting access based on user roles.
+App Access Control lets organization admins restrict which Z8 applications users can access inside a specific organization. This is useful for compliance, security policies, or staged rollout by role.
 
 ---
 
 ## Understanding App Access
+
+These restrictions are organization-scoped. A user can be allowed in one organization and restricted in another.
 
 Z8 offers multiple applications:
 
@@ -61,7 +63,7 @@ By default, all users can access all applications. Administrators can restrict a
 
 ### From Organization Settings
 
-1. Go to **Settings** > **Members**
+1. Go to **Settings** > **Organization**
 2. Find the user in the members list
 3. Click **Edit Access**
 4. Configure app permissions
@@ -91,9 +93,9 @@ By default, all users can access all applications. Administrators can restrict a
 
 ---
 
-## How Apps Are Detected
+## Access Enforcement
 
-The system automatically detects which application is making the request:
+The system detects which application is making the request and validates the matching permission for the active organization.
 
 | Detection Method | App Type |
 |------------------|----------|
@@ -102,6 +104,10 @@ The system automatically detects which application is making the request:
 | Bearer token + other user agent | Desktop App |
 
 This detection is automatic and requires no user configuration.
+
+<Callout type="info" title="Per-organization enforcement">
+  Restricting mobile, desktop, or web access affects the current organization only. It does not change access in other organizations the same user belongs to.
+</Callout>
 
 ---
 
@@ -162,7 +168,7 @@ New employees receive full access to all applications by default.
 
 ### Invited Users
 
-Users invited to the organization also receive full access by default. Adjust permissions after they join if needed.
+Invited users receive the default app permissions for the organization. Review their access after they join if your policy requires tighter restrictions.
 
 ### Deactivated Employees
 
