@@ -100,6 +100,18 @@ describe("getExportOperationsCockpit", () => {
 				updatedAt: new Date("2026-04-10T05:00:00.000Z"),
 			},
 			{
+				id: "schedule-overdue",
+				organizationId: "org-1",
+				name: "Overdue payroll sync",
+				isActive: true,
+				payrollConfigId: "config-2",
+				reportType: "payroll_export",
+				nextExecutionAt: new Date("2026-04-11T10:00:00.000Z"),
+				lastExecutionAt: new Date("2026-04-10T07:00:00.000Z"),
+				createdAt: new Date("2026-04-03T08:00:00.000Z"),
+				updatedAt: new Date("2026-04-10T07:00:00.000Z"),
+			},
+			{
 				id: "schedule-ready",
 				organizationId: "org-1",
 				name: "Weekly audit extract",
@@ -175,11 +187,10 @@ describe("getExportOperationsCockpit", () => {
 		expect(mockState.findAuditExportPackages).toHaveBeenCalledWith(expect.objectContaining({ limit: 10 }));
 
 		expect(result.summary).toEqual({
-			payrollJobs: 2,
-			scheduledExports: 2,
-			auditRequests: 2,
-			auditPackages: 1,
+			activeSchedules: 3,
 			failedRunsLast7Days: 3,
+			lastPayrollExportAt: new Date("2026-04-10T11:00:00.000Z"),
+			lastAuditPackageAt: new Date("2026-04-08T06:10:00.000Z"),
 			error: null,
 		});
 		expect(result.alertsError).toBeNull();
@@ -221,6 +232,7 @@ describe("getExportOperationsCockpit", () => {
 				href: "/settings/scheduled-exports",
 			}),
 		]);
+		expect(result.upcomingRuns).toHaveLength(2);
 
 		expect(result.recentActivity.map((item) => item.id)).toEqual([
 			"payroll-job-failed",
@@ -281,11 +293,10 @@ describe("getExportOperationsCockpit", () => {
 		);
 
 		expect(result.summary).toEqual({
-			payrollJobs: 1,
-			scheduledExports: 0,
-			auditRequests: 0,
-			auditPackages: 0,
+			activeSchedules: 0,
 			failedRunsLast7Days: 1,
+			lastPayrollExportAt: new Date("2026-04-10T11:00:00.000Z"),
+			lastAuditPackageAt: null,
 			error: "Counts are based on the export data that could be loaded.",
 		});
 		expect(result.alertsError).toBe(

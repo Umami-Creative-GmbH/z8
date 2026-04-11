@@ -20,11 +20,10 @@ type AuditRequestRecord = Awaited<
 type AuditExportPackageRecord = Awaited<ReturnType<typeof db.query.auditExportPackage.findMany>>[number];
 
 export interface ExportOperationsCoverageSummary {
-	payrollJobs: number;
-	scheduledExports: number;
-	auditRequests: number;
-	auditPackages: number;
+	activeSchedules: number;
 	failedRunsLast7Days: number;
+	lastPayrollExportAt: Date | null;
+	lastAuditPackageAt: Date | null;
 	error: string | null;
 }
 
@@ -109,7 +108,7 @@ export async function getExportOperationsCockpit(
 	const scheduledExportsById = new Map(scheduledExports.map((item) => [item.id, item]));
 
 	const alerts = buildAlerts(payrollJobs, scheduledExports, auditRequests);
-	const upcomingRuns = buildUpcomingRuns(scheduledExports);
+	const upcomingRuns = buildUpcomingRuns(scheduledExports, now);
 	const recentActivity = buildRecentActivity(
 		payrollJobs,
 		scheduledExecutions,
@@ -118,11 +117,10 @@ export async function getExportOperationsCockpit(
 	);
 
 	const summary: ExportOperationsCoverageSummary = {
-		payrollJobs: payrollJobs.length,
-		scheduledExports: scheduledExports.length,
-		auditRequests: auditRequests.length,
-		auditPackages: auditPackages.length,
+		activeSchedules: scheduledExports.filter((schedule) => schedule.isActive).length,
 		failedRunsLast7Days: countFailedRunsLast7Days(now, payrollJobs, scheduledExecutions, auditRequests),
+		lastPayrollExportAt: getLastPayrollExportAt(payrollJobs),
+		lastAuditPackageAt: getLastAuditPackageAt(auditPackages),
 		error:
 			payrollJobsResult.status === "rejected" ||
 			scheduledExportsResult.status === "rejected" ||
@@ -218,9 +216,15 @@ function buildAlerts(
 
 function buildUpcomingRuns(
 	scheduledExports: ScheduledExportRecord[],
+	now: DateTime,
 ): ExportOperationsUpcomingRun[] {
 	return scheduledExports
-		.filter((schedule) => schedule.isActive && schedule.nextExecutionAt)
+		.filter(
+			(schedule) =>
+				schedule.isActive &&
+				schedule.nextExecutionAt &&
+				schedule.nextExecutionAt.getTime() > now.toJSDate().getTime(),
+		)
 		.map((schedule) => ({
 			id: schedule.id,
 			source: "scheduled",
@@ -288,4 +292,18 @@ function countFailedRunsLast7Days(
 			.filter((request) => request.status === "failed")
 			.map((request) => (request.completedAt ?? request.createdAt).getTime()),
 	].filter((timestamp) => timestamp >= threshold).length;
+}
+
+function getLastPayrollExportAt(payrollJobs: PayrollExportJobSummary[]): Date | null {
+	const latestJob = payrollJobs[0];
+
+	if (!latestJob) {
+		return null;
+	}
+
+	return latestJob.completedAt ?? latestJob.createdAt;
+}
+
+function getLastAuditPackageAt(auditPackages: AuditExportPackageRecord[]): Date | null {
+	return auditPackages[0]?.createdAt ?? null;
 }
