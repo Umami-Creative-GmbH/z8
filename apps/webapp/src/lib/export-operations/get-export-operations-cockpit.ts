@@ -102,7 +102,7 @@ export async function getExportOperationsCockpit(
 			where: and(
 				eq(payrollExportJob.organizationId, organizationId),
 				eq(payrollExportJob.status, "failed"),
-				gte(payrollExportJob.createdAt, now.minus({ days: 7 }).toJSDate()),
+				gte(payrollExportJob.completedAt, now.minus({ days: 7 }).toJSDate()),
 			),
 			columns: { id: true },
 		}),
@@ -141,7 +141,7 @@ export async function getExportOperationsCockpit(
 			where: and(
 				eq(auditPackRequest.organizationId, organizationId),
 				eq(auditPackRequest.status, "failed"),
-				gte(auditPackRequest.createdAt, now.minus({ days: 7 }).toJSDate()),
+				gte(auditPackRequest.completedAt, now.minus({ days: 7 }).toJSDate()),
 			),
 			columns: { id: true },
 		}),

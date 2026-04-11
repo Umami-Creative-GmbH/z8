@@ -120,6 +120,7 @@ vi.mock("@/db", () => ({
 	auditPackRequest: {
 		organizationId: "auditPackRequest.organizationId",
 		status: "auditPackRequest.status",
+		completedAt: "auditPackRequest.completedAt",
 		createdAt: "auditPackRequest.createdAt",
 	},
 	auditExportPackage: {
@@ -236,6 +237,7 @@ describe("getExportOperationsCockpit", () => {
 		mockState.findPayrollFailuresLast7Days.mockResolvedValue([
 			{ id: "scheduled-payroll-job-1" },
 			{ id: "payroll-failure-2" },
+			{ id: "payroll-failure-completed-late" },
 		]);
 		mockState.findLatestCompletedPayrollExports.mockResolvedValue([
 			{
@@ -252,7 +254,10 @@ describe("getExportOperationsCockpit", () => {
 			{ id: "scheduled-failure-2" },
 			{ id: "scheduled-failure-3" },
 		]);
-		mockState.findAuditFailuresLast7Days.mockResolvedValue([{ id: "audit-failure-1" }]);
+		mockState.findAuditFailuresLast7Days.mockResolvedValue([
+			{ id: "audit-failure-1" },
+			{ id: "audit-failure-completed-late" },
+		]);
 
 		mockState.listAuditPackRequests.mockResolvedValue([
 			{
@@ -317,7 +322,7 @@ describe("getExportOperationsCockpit", () => {
 
 		expect(result.summary).toEqual({
 			activeSchedules: 3,
-			failedRunsLast7Days: 5,
+			failedRunsLast7Days: 7,
 			lastPayrollExportAt: new Date("2026-04-09T09:30:00.000Z"),
 			lastAuditPackageAt: new Date("2026-04-10T09:15:00.000Z"),
 		});

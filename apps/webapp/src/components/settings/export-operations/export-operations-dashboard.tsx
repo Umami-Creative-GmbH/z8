@@ -333,6 +333,16 @@ function getStatusLabel(status: ExportOperationsActivityItem["status"], t: Trans
 			return t("settings.exportOperations.status.pending", "Pending");
 		case "processing":
 			return t("settings.exportOperations.status.processing", "Processing");
+		case "requested":
+			return t("settings.exportOperations.status.requested", "Requested");
+		case "collecting":
+			return t("settings.exportOperations.status.collecting", "Collecting data");
+		case "lineage_expanding":
+			return t("settings.exportOperations.status.lineageExpanding", "Expanding lineage");
+		case "assembling":
+			return t("settings.exportOperations.status.assembling", "Assembling package");
+		case "hardening":
+			return t("settings.exportOperations.status.hardening", "Applying hardening");
 		default:
 			return status.replaceAll("_", " ").replace(/\b\w/g, (char) => char.toUpperCase());
 	}

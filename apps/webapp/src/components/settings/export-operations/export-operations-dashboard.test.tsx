@@ -80,7 +80,7 @@ const dashboardData: ExportOperationsCockpitData = {
 		{
 			id: "activity-audit",
 			source: "audit",
-			status: "completed",
+			status: "lineage_expanding",
 			title: "Audit pack generated",
 			description: "Quarterly audit package is ready to download.",
 			occurredAt: new Date("2026-04-08T11:15:00.000Z"),
@@ -137,8 +137,9 @@ describe("ExportOperationsDashboard", () => {
 		const recentActivitySection = screen.getByRole("heading", { name: "Recent activity" }).closest("section");
 		expect(recentActivitySection).toBeTruthy();
 		expect(within(recentActivitySection as HTMLElement).getByText("Audit pack generated")).toBeTruthy();
-		expect(within(recentActivitySection as HTMLElement).getByText("Completed")).toBeTruthy();
-		expect(within(recentActivitySection as HTMLElement).queryByText("completed")).toBeNull();
+		expect(within(recentActivitySection as HTMLElement).getByText("Expanding lineage")).toBeTruthy();
+		expect(within(recentActivitySection as HTMLElement).queryByText("Lineage Expanding")).toBeNull();
+		expect(within(recentActivitySection as HTMLElement).queryByText("lineage_expanding")).toBeNull();
 		expect(
 			within(recentActivitySection as HTMLElement)
 				.getByRole("link", {
