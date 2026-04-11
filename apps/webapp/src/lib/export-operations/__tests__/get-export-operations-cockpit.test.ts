@@ -4,15 +4,30 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mockState = vi.hoisted(() => ({
 	getExportJobHistory: vi.fn(),
 	listAuditPackRequests: vi.fn(),
+	findPayrollFailuresLast7Days: vi.fn(),
 	findScheduledExports: vi.fn(),
 	findScheduledExecutions: vi.fn(),
+	findScheduledFailuresLast7Days: vi.fn(),
+	findAuditFailuresLast7Days: vi.fn(),
 	findAuditExportPackages: vi.fn(),
 }));
 
+const scheduledExecutionQuery = vi.hoisted(() =>
+	vi.fn((input?: { limit?: number }) => {
+		if (input?.limit === 25) {
+			return mockState.findScheduledExecutions(input);
+		}
+
+		return mockState.findScheduledFailuresLast7Days(input);
+	}),
+);
+
 vi.mock("drizzle-orm", () => ({
+	and: vi.fn((...args: unknown[]) => ({ and: args })),
 	asc: vi.fn((value: unknown) => ({ direction: "asc", value })),
 	desc: vi.fn((value: unknown) => ({ direction: "desc", value })),
 	eq: vi.fn((left: unknown, right: unknown) => ({ left, right })),
+	gte: vi.fn((left: unknown, right: unknown) => ({ left, right, operator: ">=" })),
 }));
 
 vi.mock("@/lib/payroll-export", () => ({
@@ -28,16 +43,27 @@ vi.mock("@/lib/audit-pack/application/request-repository", () => ({
 vi.mock("@/db", () => ({
 	db: {
 		query: {
+			payrollExportJob: {
+				findMany: mockState.findPayrollFailuresLast7Days,
+			},
 			scheduledExport: {
 				findMany: mockState.findScheduledExports,
 			},
 			scheduledExportExecution: {
-				findMany: mockState.findScheduledExecutions,
+				findMany: scheduledExecutionQuery,
+			},
+			auditPackRequest: {
+				findMany: mockState.findAuditFailuresLast7Days,
 			},
 			auditExportPackage: {
 				findMany: mockState.findAuditExportPackages,
 			},
 		},
+	},
+	payrollExportJob: {
+		organizationId: "payrollExportJob.organizationId",
+		status: "payrollExportJob.status",
+		createdAt: "payrollExportJob.createdAt",
 	},
 	scheduledExport: {
 		organizationId: "scheduledExport.organizationId",
@@ -45,7 +71,13 @@ vi.mock("@/db", () => ({
 	},
 	scheduledExportExecution: {
 		organizationId: "scheduledExportExecution.organizationId",
+		status: "scheduledExportExecution.status",
 		triggeredAt: "scheduledExportExecution.triggeredAt",
+	},
+	auditPackRequest: {
+		organizationId: "auditPackRequest.organizationId",
+		status: "auditPackRequest.status",
+		createdAt: "auditPackRequest.createdAt",
 	},
 	auditExportPackage: {
 		organizationId: "auditExportPackage.organizationId",
@@ -144,6 +176,17 @@ describe("getExportOperationsCockpit", () => {
 			},
 		]);
 
+		mockState.findPayrollFailuresLast7Days.mockResolvedValue([
+			{ id: "payroll-failure-1" },
+			{ id: "payroll-failure-2" },
+		]);
+		mockState.findScheduledFailuresLast7Days.mockResolvedValue([
+			{ id: "scheduled-failure-1" },
+			{ id: "scheduled-failure-2" },
+			{ id: "scheduled-failure-3" },
+		]);
+		mockState.findAuditFailuresLast7Days.mockResolvedValue([{ id: "audit-failure-1" }]);
+
 		mockState.listAuditPackRequests.mockResolvedValue([
 			{
 				id: "audit-request-failed",
@@ -185,10 +228,13 @@ describe("getExportOperationsCockpit", () => {
 		expect(mockState.findScheduledExports).toHaveBeenCalledTimes(1);
 		expect(mockState.findScheduledExecutions).toHaveBeenCalledWith(expect.objectContaining({ limit: 25 }));
 		expect(mockState.findAuditExportPackages).toHaveBeenCalledWith(expect.objectContaining({ limit: 10 }));
+		expect(mockState.findPayrollFailuresLast7Days).toHaveBeenCalledTimes(1);
+		expect(mockState.findScheduledFailuresLast7Days).toHaveBeenCalledTimes(1);
+		expect(mockState.findAuditFailuresLast7Days).toHaveBeenCalledTimes(1);
 
 		expect(result.summary).toEqual({
 			activeSchedules: 3,
-			failedRunsLast7Days: 3,
+			failedRunsLast7Days: 6,
 			lastPayrollExportAt: new Date("2026-04-10T11:00:00.000Z"),
 			lastAuditPackageAt: new Date("2026-04-08T06:10:00.000Z"),
 			error: null,
@@ -283,6 +329,11 @@ describe("getExportOperationsCockpit", () => {
 		]);
 		mockState.findScheduledExports.mockRejectedValue(new Error("scheduled exports unavailable"));
 		mockState.findScheduledExecutions.mockRejectedValue(new Error("scheduled executions unavailable"));
+		mockState.findPayrollFailuresLast7Days.mockResolvedValue([{ id: "payroll-failure-1" }]);
+		mockState.findScheduledFailuresLast7Days.mockRejectedValue(
+			new Error("scheduled failure counts unavailable"),
+		);
+		mockState.findAuditFailuresLast7Days.mockResolvedValue([]);
 		mockState.listAuditPackRequests.mockResolvedValue([]);
 		mockState.findAuditExportPackages.mockResolvedValue([]);
 
