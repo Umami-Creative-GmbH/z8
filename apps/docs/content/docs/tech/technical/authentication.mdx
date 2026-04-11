@@ -29,7 +29,8 @@ Better Auth is the source of truth for sessions, with database-backed session re
 Key behaviors:
 
 - Web requests use secure, `httpOnly` session cookies through the Next.js Better Auth integration.
-- Desktop and mobile clients can use bearer-token auth where cookies are not the primary transport.
+- Desktop clients can use bearer-token auth where cookies are not the primary transport.
+- The mobile app is currently an Expo workspace in the monorepo, but it should not be documented as a finished bearer-token client until that runtime behavior exists.
 - Sessions carry `activeOrganizationId`, which is the current org context used by authorization and data-access layers.
 - Organization-scoped routes and services should trust `session.session.activeOrganizationId` rather than user-supplied org identifiers.
 - Email verification and password-reset links are rewritten to the correct organization-aware base URL when auth emails are sent.

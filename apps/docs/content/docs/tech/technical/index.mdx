@@ -7,7 +7,7 @@ icon: Code
 import { Cards, Card } from "fumadocs-ui/components/card";
 import { File, Folder, Files } from "fumadocs-ui/components/files";
 
-Technical documentation for developers working on Z8, a Turborepo monorepo with web, mobile, desktop, and documentation applications.
+Technical documentation for developers working on Z8, a Turborepo monorepo with product, docs, marketing, extension, mobile, and desktop applications.
 
 <Cards>
   <Card
@@ -56,11 +56,15 @@ Z8 is built as a **Turborepo monorepo**, managing shared logic and multiple appl
 | App | Path | Description |
 |-----|------|-------------|
 | **Web** | `apps/webapp` | Next.js 16 application for the main product UI and HTTP APIs. |
+| **Marketing** | `apps/marketing` | Next.js 16 marketing site for public-facing pages. |
 | **Mobile** | `apps/mobile` | Expo mobile app for on-the-go time tracking and employee workflows. |
 | **Desktop** | `apps/desktop` | Tauri desktop app for lightweight workstation workflows. |
+| **Extension** | `apps/extension` | Vite-based browser extension workspace. |
 | **Docs** | `apps/docs` | Next.js 16 + Fumadocs site for technical and product documentation. |
 
 ### Monorepo Structure
+
+The tree below is a simplified view of the current top-level app layout, not a full file listing:
 
 <Files>
   <Folder name="apps" defaultOpen>
@@ -72,6 +76,10 @@ Z8 is built as a **Turborepo monorepo**, managing shared logic and multiple appl
         <File name="components/" />
       </Folder>
     </Folder>
+    <Folder name="marketing">
+      <File name="package.json" />
+      <Folder name="src" />
+    </Folder>
     <Folder name="mobile">
       <File name="package.json" />
       <File name="app.json" />
@@ -79,6 +87,10 @@ Z8 is built as a **Turborepo monorepo**, managing shared logic and multiple appl
     <Folder name="desktop">
       <File name="package.json" />
       <File name="tauri.conf.json" />
+    </Folder>
+    <Folder name="extension">
+      <File name="package.json" />
+      <Folder name="src" />
     </Folder>
     <Folder name="docs">
       <File name="package.json" />
