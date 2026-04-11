@@ -305,7 +305,7 @@ function buildAlerts(
 	const alerts: ExportOperationsAlert[] = [];
 	const latestPayrollJob = payrollJobs[0];
 	const latestAuditRequest = auditRequests[0];
-	const latestFailedScheduledExecution = scheduledExecutions.find((execution) => execution.status === "failed");
+	const latestScheduledExecution = scheduledExecutions[0];
 	const scheduledExportsById = new Map(scheduledExports.map((schedule) => [schedule.id, schedule]));
 
 	if (latestPayrollJob?.status === "failed") {
@@ -325,13 +325,13 @@ function buildAlerts(
 		});
 	}
 
-	if (latestFailedScheduledExecution) {
+	if (latestScheduledExecution?.status === "failed") {
 		const scheduleName =
-			scheduledExportsById.get(latestFailedScheduledExecution.scheduledExportId)?.name ??
+			scheduledExportsById.get(latestScheduledExecution.scheduledExportId)?.name ??
 			t("settings.exportOperations.activity.scheduled.title", "Scheduled export");
 
 		alerts.push({
-			id: latestFailedScheduledExecution.id,
+			id: latestScheduledExecution.id,
 			source: "scheduled",
 			severity: "error",
 			title: t(
@@ -339,14 +339,14 @@ function buildAlerts(
 				"Scheduled export failed",
 			),
 			description:
-				latestFailedScheduledExecution.errorMessage ??
+				latestScheduledExecution.errorMessage ??
 				t(
 					"settings.exportOperations.alerts.scheduledFailed.description",
 					"{name} did not complete successfully.",
 					{ name: scheduleName },
 				),
 			occurredAt:
-				latestFailedScheduledExecution.completedAt ?? latestFailedScheduledExecution.triggeredAt,
+				latestScheduledExecution.completedAt ?? latestScheduledExecution.triggeredAt,
 			href: "/settings/scheduled-exports",
 		});
 	}

@@ -265,6 +265,15 @@ describe("getExportOperationsCockpit", () => {
 
 		mockState.findScheduledExecutions.mockResolvedValue([
 			{
+				id: "scheduled-execution-completed-latest",
+				scheduledExportId: "schedule-ready",
+				organizationId: "org-1",
+				triggeredAt: new Date("2026-04-10T10:40:00.000Z"),
+				completedAt: new Date("2026-04-10T10:50:00.000Z"),
+				status: "completed",
+				errorMessage: null,
+			},
+			{
 				id: "scheduled-execution-failed-late-completion",
 				scheduledExportId: "schedule-ready",
 				organizationId: "org-1",
@@ -417,12 +426,6 @@ describe("getExportOperationsCockpit", () => {
 
 		expect(result.alerts).toEqual([
 			expect.objectContaining({
-				id: "scheduled-execution-failed-late-completion",
-				source: "scheduled",
-				severity: "error",
-				href: "/settings/scheduled-exports",
-			}),
-			expect.objectContaining({
 				id: "schedule-blocked",
 				source: "scheduled",
 				severity: "warning",
@@ -431,7 +434,7 @@ describe("getExportOperationsCockpit", () => {
 				href: "/settings/scheduled-exports",
 			}),
 		]);
-		expect(result.alerts).toHaveLength(2);
+		expect(result.alerts).toHaveLength(1);
 
 		expect(result.upcomingRuns).toEqual([
 			expect.objectContaining({
@@ -448,6 +451,7 @@ describe("getExportOperationsCockpit", () => {
 			"payroll-job-failed-late-completion",
 			"payroll-job-completed-latest",
 			"payroll-job-failed",
+			"scheduled-execution-completed-latest",
 			"audit-request-completed-latest",
 			"scheduled-execution-failed-late-completion",
 			"audit-request-failed-late-completion",
