@@ -24,19 +24,16 @@ deploy/
 
 ## Container Images
 
-The root `Dockerfile` now uses a shared-runtime flow for the operational services:
+Production and support images now build from explicit Dockerfiles at the repository root.
 
-1. Build `app-runtime` once with the shared production filesystem and dependencies.
-2. Build `webapp`, `worker`, and `migration` from that runtime base so each final image keeps its own runtime metadata.
-
-| Target | Image Name | Purpose | Notes |
-|--------|------------|---------|-------|
-| `app-runtime` | z8-app-runtime | Shared runtime base for operational services | Published once per arch and reused by final images |
-| `webapp` | z8-webapp | Next.js production server | Final image extends `app-runtime` |
-| `worker` | z8-worker | BullMQ job processor + cron | Final image extends `app-runtime` |
-| `migration` | z8-migration | One-shot Drizzle migration | Final image extends `app-runtime` |
-| `db-seed` | z8-db-seed | One-shot database seeder | Built separately; does not use shared runtime flow |
-| `docs` | z8-docs | Next.js documentation site | Built from the root `Dockerfile` `docs` target |
+| Dockerfile | Image Name | Purpose |
+|--------|------------|---------|
+| `Dockerfile.webapp` | z8-webapp | Next.js production server |
+| `Dockerfile.worker` | z8-worker | BullMQ job processor + cron |
+| `Dockerfile.migration` | z8-migration | One-shot Drizzle migration |
+| `Dockerfile.db-seed` | z8-db-seed | One-shot database seeder |
+| `Dockerfile.docs` | z8-docs | Next.js documentation site |
+| `Dockerfile.marketing` | z8-marketing | Marketing site |
 
 > **Note:** Images are larger than standalone mode (~300MB) because Next.js 16's
 > `cacheComponents` feature is not compatible with `output: "standalone"`.
@@ -46,7 +43,6 @@ The root `Dockerfile` now uses a shared-runtime flow for the operational service
 
 The workflow at `.github/workflows/publish-images.yml` builds and publishes the main production images to GHCR:
 
-- `ghcr.io/umami-creative-gmbh/z8-app-runtime`
 - `ghcr.io/umami-creative-gmbh/z8-webapp`
 - `ghcr.io/umami-creative-gmbh/z8-worker`
 - `ghcr.io/umami-creative-gmbh/z8-migration`
@@ -54,17 +50,15 @@ The workflow at `.github/workflows/publish-images.yml` builds and publishes the 
 Workflow details:
 
 - Uses native `amd64` and native `arm64` runners (no QEMU emulation)
-- Publishes one per-architecture `z8-app-runtime` digest first, then passes that digest into downstream target builds through `RUNTIME_BASE_IMAGE`
-- Rebuilds `webapp`, `worker`, and `migration` as distinct final images so each repository gets its own user, entrypoint, command, port, and healthcheck metadata
+- Builds `webapp`, `worker`, and `migration` directly from `Dockerfile.webapp`, `Dockerfile.worker`, and `Dockerfile.migration`
 - Publishes multi-arch manifests for `z8-webapp`, `z8-worker`, and `z8-migration` from those target-specific digests
 
-### Shared Runtime vs Final Images
+### Runtime Images
 
-- `app-runtime` is the reusable filesystem layer for the operational services and is not intended to be deployed directly.
 - `webapp` runs as user `app`, starts through `tini`, exposes port `3000`, uses `pnpm start`, and keeps the HTTP `/api/health` probe.
 - `worker` runs as user `app`, starts through `tini`, uses `tsx src/worker.ts`, and keeps the Redis connectivity healthcheck in image metadata.
 - `migration` keeps the shared filesystem and sets the image default command to `node ./scripts/migrate-with-lock.js`.
-- The final targets now carry distinct image metadata by default, even though existing deploy manifests may still override command or security-context details.
+- `db-seed` runs `tsx src/db/seed/do-seed.ts` for one-shot bootstrap data when needed.
 
 ### Triggers
 
@@ -135,16 +129,12 @@ docker compose -f docker-compose.prod.yml --profile seed up db-seed
 
 ```bash
 # Build from repository root
-docker build --target app-runtime -t z8-app-runtime:latest .
-docker build --target webapp -t z8-webapp:latest .
-docker build --target worker -t z8-worker:latest .
-docker build --target migration -t z8-migration:latest .
-docker build --target db-seed -t z8-db-seed:latest .
-docker build --target docs -t z8-docs:latest .
-
-# Rebuild a final image from an already-published runtime base
-docker build --target webapp -t z8-webapp:latest \
-  --build-arg RUNTIME_BASE_IMAGE=ghcr.io/umami-creative-gmbh/z8-app-runtime@sha256:<digest> .
+docker build -f Dockerfile.webapp -t z8-webapp:latest .
+docker build -f Dockerfile.worker -t z8-worker:latest .
+docker build -f Dockerfile.migration -t z8-migration:latest .
+docker build -f Dockerfile.db-seed -t z8-db-seed:latest .
+docker build -f Dockerfile.docs -t z8-docs:latest .
+docker build -f Dockerfile.marketing -t z8-marketing:latest .
 
 # Or build all at once
 pnpm docker:build:all

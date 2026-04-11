@@ -1,0 +1,92 @@
+# syntax=docker/dockerfile:1.4
+ARG ALPINE_VERSION=3.21
+ARG NODE_VERSION=22
+ARG PNPM_VERSION=10.28.0
+ARG TURBO_VERSION=2.8.10
+ARG NEXT_PUBLIC_BUILD_HASH
+
+FROM node:${NODE_VERSION}-alpine${ALPINE_VERSION} AS base
+
+RUN apk add --no-cache \
+    ca-certificates \
+    curl \
+    libc6-compat \
+    libstdc++ \
+    tini
+
+ARG PNPM_VERSION
+RUN corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate
+
+ENV PNPM_HOME=/pnpm
+ENV PATH=${PNPM_HOME}:${PATH}
+ENV NODE_ENV=production \
+    NEXT_TELEMETRY_DISABLED=1 \
+    PORT=3000 \
+    HOSTNAME=0.0.0.0
+
+RUN mkdir -p "${PNPM_HOME}"
+
+WORKDIR /app
+
+FROM base AS turbo-source
+
+ARG TURBO_VERSION
+RUN pnpm add -g turbo@${TURBO_VERSION}
+
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml turbo.json ./
+COPY apps ./apps
+COPY packages ./packages
+
+FROM turbo-source AS pruner
+RUN turbo prune webapp --docker
+
+FROM base AS deps
+COPY --from=pruner /app/out/json/ ./
+COPY --from=pruner /app/out/pnpm-lock.yaml ./
+RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
+    pnpm install --frozen-lockfile
+
+FROM base AS workspace
+ENV SKIP_ENV_VALIDATION=1
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/apps/webapp/node_modules ./apps/webapp/node_modules
+COPY --from=pruner /app/out/full/ ./
+COPY --from=pruner /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
+
+FROM workspace AS webapp-builder
+ARG NEXT_PUBLIC_BUILD_HASH
+ENV NEXT_PUBLIC_BUILD_HASH=${NEXT_PUBLIC_BUILD_HASH}
+RUN pnpm --filter webapp run generate-licenses || echo "{}" > apps/webapp/src/data/licenses.json
+RUN --mount=type=cache,id=next-cache,target=/app/apps/webapp/.next/cache \
+    pnpm --filter webapp exec next build
+
+FROM base AS worker
+
+RUN pnpm add -g tsx
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 app
+
+COPY --from=deps --chown=app:nodejs /app/node_modules ./node_modules
+COPY --from=deps --chown=app:nodejs /app/apps/webapp/node_modules ./apps/webapp/node_modules
+
+COPY --from=webapp-builder --chown=app:nodejs /app/apps/webapp/.next ./apps/webapp/.next
+COPY --from=workspace --chown=app:nodejs /app/apps/webapp/public ./apps/webapp/public
+COPY --from=workspace --chown=app:nodejs /app/apps/webapp/src ./apps/webapp/src
+COPY --from=workspace --chown=app:nodejs /app/apps/webapp/scripts ./apps/webapp/scripts
+COPY --from=workspace --chown=app:nodejs /app/apps/webapp/drizzle ./apps/webapp/drizzle
+COPY --from=workspace --chown=app:nodejs /app/apps/webapp/drizzle.config.ts ./apps/webapp/
+COPY --from=workspace --chown=app:nodejs /app/apps/webapp/next.config.ts ./apps/webapp/
+COPY --from=workspace --chown=app:nodejs /app/apps/webapp/package.json ./apps/webapp/
+COPY --from=workspace --chown=app:nodejs /app/apps/webapp/tsconfig.json ./apps/webapp/
+
+COPY --from=workspace --chown=app:nodejs /app/package.json ./
+COPY --from=workspace --chown=app:nodejs /app/pnpm-workspace.yaml ./
+
+WORKDIR /app/apps/webapp
+
+USER app
+ENTRYPOINT ["/sbin/tini", "--"]
+CMD ["tsx", "src/worker.ts"]
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+    CMD node -e "const Redis=require('ioredis');const r=new Redis({host:process.env.VALKEY_HOST||'localhost',port:process.env.VALKEY_PORT||6379,password:process.env.VALKEY_PASSWORD,lazyConnect:false});r.ping().then(()=>process.exit(0)).catch(()=>process.exit(1))"

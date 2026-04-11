@@ -52,12 +52,11 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./Dockerfile
-          target: marketing
+          file: ./Dockerfile.marketing
           platforms: ${{ matrix.platform }}
           outputs: type=image,name=ghcr.io/umami-creative-gmbh/z8-marketing,push-by-digest=true,name-canonical=true,push=true
-          cache-from: type=gha,scope=${{ matrix.arch }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.arch }}
+          cache-from: type=gha,scope=marketing-${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=marketing-${{ matrix.arch }}
 
       - name: Export digest artifact
         env:

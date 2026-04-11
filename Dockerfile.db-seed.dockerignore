@@ -1,8 +1,3 @@
-# ===========================================
-# Docker Build Context Exclusions
-# ===========================================
-# Keep build context small and prevent cache invalidation
-
 # Dependencies (will be installed fresh in container)
 node_modules
 **/node_modules
@@ -52,6 +47,7 @@ pnpm-debug.log*
 .env.*
 !.env.example
 !.env.template
+apps/webapp/.env.local
 
 # OS files
 .DS_Store
@@ -63,11 +59,14 @@ Desktop.ini
 *.key
 *.crt
 
-# Documentation (not needed at runtime)
+# Documentation (not needed in image)
 *.md
+!apps/webapp/README.md
 docs/
 
-# Local apps not shipped in these images
+# Other apps not needed for db-seed container
+apps/docs
+apps/marketing
 apps/desktop
 apps/mobile
 

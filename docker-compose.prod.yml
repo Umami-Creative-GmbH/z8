@@ -203,8 +203,7 @@ services:
   migration:
     build:
       context: .
-      dockerfile: Dockerfile
-      target: migration
+      dockerfile: Dockerfile.migration
     environment:
       POSTGRES_HOST: db
       POSTGRES_PORT: 5432
@@ -225,8 +224,7 @@ services:
   db-seed:
     build:
       context: .
-      dockerfile: Dockerfile
-      target: db-seed
+      dockerfile: Dockerfile.db-seed
     environment:
       POSTGRES_HOST: pgbouncer
       POSTGRES_PORT: 5432
@@ -244,8 +242,7 @@ services:
   webapp:
     build:
       context: .
-      dockerfile: Dockerfile
-      target: webapp
+      dockerfile: Dockerfile.webapp
     restart: unless-stopped
     environment:
       # Database (via PgBouncer)
@@ -319,8 +316,7 @@ services:
   docs:
     build:
       context: .
-      dockerfile: Dockerfile
-      target: docs
+      dockerfile: Dockerfile.docs
     restart: unless-stopped
     ports:
       - "3001:3001"
@@ -344,8 +340,7 @@ services:
   worker:
     build:
       context: .
-      dockerfile: Dockerfile
-      target: worker
+      dockerfile: Dockerfile.worker
     restart: unless-stopped
     environment:
       # Database (via PgBouncer)
