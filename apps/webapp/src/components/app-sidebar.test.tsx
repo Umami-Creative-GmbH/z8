@@ -1,14 +1,16 @@
 /* @vitest-environment jsdom */
 
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { IconShieldCheck } from "@tabler/icons-react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { navSecondarySpy } = vi.hoisted(() => ({
+const { navSecondarySpy, appSidebarSpy, getUserOrganizationsMock, getAuthContextMock, getCurrentSettingsAccessTierMock } = vi.hoisted(() => ({
 	navSecondarySpy: vi.fn(),
+	appSidebarSpy: vi.fn(),
+	getUserOrganizationsMock: vi.fn(),
+	getAuthContextMock: vi.fn(),
+	getCurrentSettingsAccessTierMock: vi.fn(),
 }));
 
 vi.mock("@tolgee/react", () => ({
@@ -68,6 +70,11 @@ import { AppSidebar } from "./app-sidebar";
 describe("app sidebar compliance navigation", () => {
 	beforeEach(() => {
 		navSecondarySpy.mockClear();
+		appSidebarSpy.mockReset();
+		getUserOrganizationsMock.mockReset();
+		getAuthContextMock.mockReset();
+		getCurrentSettingsAccessTierMock.mockReset();
+		vi.resetModules();
 	});
 
 	it("renders the compliance entry in secondary nav only when enabled", () => {
@@ -99,13 +106,53 @@ describe("app sidebar compliance navigation", () => {
 		);
 	});
 
-	it("keeps the server sidebar wiring gated by the org-admin settings tier", () => {
-		const serverSidebarSource = readFileSync(
-			join(process.cwd(), "src/components/server-app-sidebar.tsx"),
-			"utf8",
+	it("passes showComplianceNav from the org-admin settings tier at runtime", async () => {
+		getUserOrganizationsMock.mockResolvedValue([
+			{ id: "org_1", shiftsEnabled: true },
+		]);
+		getAuthContextMock.mockResolvedValue({
+			employee: {
+				organizationId: "org_1",
+				role: "admin",
+			},
+		});
+		getCurrentSettingsAccessTierMock.mockResolvedValueOnce("orgAdmin");
+
+		vi.doMock("@/lib/auth-helpers", () => ({
+			getUserOrganizations: getUserOrganizationsMock,
+			getAuthContext: getAuthContextMock,
+			getCurrentSettingsAccessTier: getCurrentSettingsAccessTierMock,
+		}));
+
+		vi.doMock("./app-sidebar", () => ({
+			AppSidebar: (props: Record<string, unknown>) => {
+				appSidebarSpy(props);
+				return <div data-testid="server-sidebar-proxy" />;
+			},
+		}));
+
+		const { ServerAppSidebar } = await import("./server-app-sidebar");
+
+		render(await ServerAppSidebar({}));
+
+		expect(screen.getByTestId("server-sidebar-proxy")).toBeTruthy();
+		expect(appSidebarSpy).toHaveBeenCalledWith(
+			expect.objectContaining({
+				showComplianceNav: true,
+				employeeRole: "admin",
+				shiftsEnabled: true,
+			}),
 		);
 
-		expect(serverSidebarSource).toContain("getCurrentSettingsAccessTier");
-		expect(serverSidebarSource).toContain('showComplianceNav={settingsAccessTier === "orgAdmin"}');
+		appSidebarSpy.mockReset();
+		getCurrentSettingsAccessTierMock.mockResolvedValueOnce("member");
+
+		render(await ServerAppSidebar({}));
+
+		expect(appSidebarSpy).toHaveBeenCalledWith(
+			expect.objectContaining({
+				showComplianceNav: false,
+			}),
+		);
 	});
 });
