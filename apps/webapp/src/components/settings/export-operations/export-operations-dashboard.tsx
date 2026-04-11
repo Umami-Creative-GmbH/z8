@@ -22,10 +22,10 @@ interface ExportOperationsDashboardProps {
 export function ExportOperationsDashboard({ t, data }: ExportOperationsDashboardProps) {
 	return (
 		<div className="space-y-6">
-			{data.summary.error ? (
+			{data.errors.summary ? (
 				<Alert>
 					<AlertTitle>{t("settings.exportOperations.partialData", "Partial data")}</AlertTitle>
-					<AlertDescription>{data.summary.error}</AlertDescription>
+					<AlertDescription>{data.errors.summary}</AlertDescription>
 				</Alert>
 			) : null}
 
@@ -65,11 +65,11 @@ export function ExportOperationsDashboard({ t, data }: ExportOperationsDashboard
 			</div>
 
 			<div className="grid gap-6 xl:grid-cols-2">
-				<AlertsCard t={t} alerts={data.alerts} error={data.alertsError} />
-				<UpcomingRunsCard t={t} runs={data.upcomingRuns} error={data.upcomingRunsError} />
+				<AlertsCard t={t} alerts={data.alerts} error={data.errors.alerts} />
+				<UpcomingRunsCard t={t} runs={data.upcomingRuns} error={data.errors.upcomingRuns} />
 			</div>
 
-			<RecentActivityCard t={t} items={data.recentActivity} error={data.recentActivityError} />
+			<RecentActivityCard t={t} items={data.recentActivity} error={data.errors.recentActivity} />
 		</div>
 	);
 }

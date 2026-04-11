@@ -33,7 +33,13 @@ export interface ExportOperationsCoverageSummary {
 	failedRunsLast7Days: number;
 	lastPayrollExportAt: Date | null;
 	lastAuditPackageAt: Date | null;
-	error: string | null;
+}
+
+export interface ExportOperationsCockpitErrors {
+	summary: string | null;
+	alerts: string | null;
+	upcomingRuns: string | null;
+	recentActivity: string | null;
 }
 
 export interface ExportOperationsAlert {
@@ -67,11 +73,9 @@ export interface ExportOperationsActivityItem {
 export interface ExportOperationsCockpitData {
 	summary: ExportOperationsCoverageSummary;
 	alerts: ExportOperationsAlert[];
-	alertsError: string | null;
 	upcomingRuns: ExportOperationsUpcomingRun[];
-	upcomingRunsError: string | null;
 	recentActivity: ExportOperationsActivityItem[];
-	recentActivityError: string | null;
+	errors: ExportOperationsCockpitErrors;
 }
 
 const SUMMARY_ERROR = "Counts are based on the export data that could be loaded.";
@@ -174,36 +178,38 @@ export async function getExportOperationsCockpit(
 		),
 		lastPayrollExportAt: getLastPayrollExportAt(payrollJobs),
 		lastAuditPackageAt: getLastAuditPackageAt(auditPackages),
-		error:
-			payrollJobsResult.status === "rejected" ||
-			payrollFailuresLast7DaysResult.status === "rejected" ||
-			scheduledExportsResult.status === "rejected" ||
-			scheduledFailuresLast7DaysResult.status === "rejected" ||
-			auditFailuresLast7DaysResult.status === "rejected" ||
-			auditPackagesResult.status === "rejected"
-				? SUMMARY_ERROR
-				: null,
 	};
 
 	return {
 		summary,
 		alerts,
-		alertsError:
-			payrollJobsResult.status === "rejected" ||
-			scheduledExportsResult.status === "rejected" ||
-			auditRequestsResult.status === "rejected"
-				? ALERTS_ERROR
-				: null,
 		upcomingRuns,
-		upcomingRunsError:
-			scheduledExportsResult.status === "rejected" ? UPCOMING_RUNS_ERROR : null,
 		recentActivity,
-		recentActivityError:
-			payrollJobsResult.status === "rejected" ||
-			scheduledExecutionsResult.status === "rejected" ||
-			auditRequestsResult.status === "rejected"
-				? RECENT_ACTIVITY_ERROR
-				: null,
+		errors: {
+			summary:
+				payrollJobsResult.status === "rejected" ||
+				payrollFailuresLast7DaysResult.status === "rejected" ||
+				scheduledExportsResult.status === "rejected" ||
+				scheduledFailuresLast7DaysResult.status === "rejected" ||
+				auditFailuresLast7DaysResult.status === "rejected" ||
+				auditPackagesResult.status === "rejected"
+					? SUMMARY_ERROR
+					: null,
+			alerts:
+				payrollJobsResult.status === "rejected" ||
+				scheduledExportsResult.status === "rejected" ||
+				auditRequestsResult.status === "rejected"
+					? ALERTS_ERROR
+					: null,
+			upcomingRuns:
+				scheduledExportsResult.status === "rejected" ? UPCOMING_RUNS_ERROR : null,
+			recentActivity:
+				payrollJobsResult.status === "rejected" ||
+				scheduledExecutionsResult.status === "rejected" ||
+				auditRequestsResult.status === "rejected"
+					? RECENT_ACTIVITY_ERROR
+					: null,
+		},
 	};
 }
 

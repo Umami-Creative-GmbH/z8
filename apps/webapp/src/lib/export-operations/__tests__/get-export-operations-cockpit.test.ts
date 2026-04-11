@@ -241,11 +241,13 @@ describe("getExportOperationsCockpit", () => {
 			failedRunsLast7Days: 5,
 			lastPayrollExportAt: new Date("2026-04-10T11:00:00.000Z"),
 			lastAuditPackageAt: new Date("2026-04-08T06:10:00.000Z"),
-			error: null,
 		});
-		expect(result.alertsError).toBeNull();
-		expect(result.upcomingRunsError).toBeNull();
-		expect(result.recentActivityError).toBeNull();
+		expect(result.errors).toEqual({
+			summary: null,
+			alerts: null,
+			upcomingRuns: null,
+			recentActivity: null,
+		});
 
 		expect(result.alerts).toEqual([
 			expect.objectContaining({
@@ -352,14 +354,14 @@ describe("getExportOperationsCockpit", () => {
 			failedRunsLast7Days: 1,
 			lastPayrollExportAt: new Date("2026-04-10T11:00:00.000Z"),
 			lastAuditPackageAt: null,
-			error: "Counts are based on the export data that could be loaded.",
 		});
-		expect(result.alertsError).toBe(
-			"Some alerts may be incomplete while export data is unavailable.",
-		);
+		expect(result.errors).toEqual({
+			summary: "Counts are based on the export data that could be loaded.",
+			alerts: "Some alerts may be incomplete while export data is unavailable.",
+			upcomingRuns: "Scheduled export data is temporarily unavailable.",
+			recentActivity: "Some activity data is temporarily unavailable.",
+		});
 		expect(result.upcomingRuns).toEqual([]);
-		expect(result.upcomingRunsError).toBe("Scheduled export data is temporarily unavailable.");
-		expect(result.recentActivityError).toBe("Some activity data is temporarily unavailable.");
 		expect(result.alerts).toEqual([
 			expect.objectContaining({
 				id: "payroll-job-failed",
@@ -433,12 +435,12 @@ describe("getExportOperationsCockpit", () => {
 			failedRunsLast7Days: 0,
 			lastPayrollExportAt: new Date("2026-04-10T11:05:00.000Z"),
 			lastAuditPackageAt: new Date("2026-04-08T06:10:00.000Z"),
-			error: null,
 		});
-		expect(result.alertsError).toBe("Some alerts may be incomplete while export data is unavailable.");
-		expect(result.upcomingRunsError).toBeNull();
-		expect(result.recentActivityError).toBe(
-			"Some activity data is temporarily unavailable.",
-		);
+		expect(result.errors).toEqual({
+			summary: null,
+			alerts: "Some alerts may be incomplete while export data is unavailable.",
+			upcomingRuns: null,
+			recentActivity: "Some activity data is temporarily unavailable.",
+		});
 	});
 });

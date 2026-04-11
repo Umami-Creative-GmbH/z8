@@ -49,7 +49,6 @@ const dashboardData: ExportOperationsCockpitData = {
 		failedRunsLast7Days: 2,
 		lastPayrollExportAt: new Date("2026-04-10T08:30:00.000Z"),
 		lastAuditPackageAt: new Date("2026-04-09T16:45:00.000Z"),
-		error: null,
 	},
 	alerts: [
 		{
@@ -62,7 +61,6 @@ const dashboardData: ExportOperationsCockpitData = {
 			href: "/settings/payroll-export",
 		},
 	],
-	alertsError: null,
 	upcomingRuns: [
 		{
 			id: "run-1",
@@ -72,7 +70,6 @@ const dashboardData: ExportOperationsCockpitData = {
 			href: "/settings/scheduled-exports",
 		},
 	],
-	upcomingRunsError: null,
 	recentActivity: [
 		{
 			id: "activity-audit",
@@ -84,8 +81,13 @@ const dashboardData: ExportOperationsCockpitData = {
 			href: "/settings/audit-export",
 		},
 	],
-	recentActivityError: null,
-};
+	errors: {
+		summary: null,
+		alerts: null,
+		upcomingRuns: null,
+		recentActivity: null,
+	},
+} as ExportOperationsCockpitData;
 
 describe("ExportOperationsDashboard", () => {
 	it("renders summary cards, alerts, upcoming runs, and recent activity with deep links", async () => {
@@ -140,16 +142,15 @@ describe("ExportOperationsDashboard", () => {
 				t={t}
 				data={{
 					...dashboardData,
-					summary: {
-						...dashboardData.summary,
-						error: "Counts are based on the export data that could be loaded.",
-					},
 					alerts: [],
-					alertsError: "Some alerts may be incomplete while export data is unavailable.",
 					upcomingRuns: [],
-					upcomingRunsError: "Scheduled export data is temporarily unavailable.",
 					recentActivity: [],
-					recentActivityError: "Some activity data is temporarily unavailable.",
+					errors: {
+						summary: "Counts are based on the export data that could be loaded.",
+						alerts: "Some alerts may be incomplete while export data is unavailable.",
+						upcomingRuns: "Scheduled export data is temporarily unavailable.",
+						recentActivity: "Some activity data is temporarily unavailable.",
+					},
 				}}
 			/>,
 		);
