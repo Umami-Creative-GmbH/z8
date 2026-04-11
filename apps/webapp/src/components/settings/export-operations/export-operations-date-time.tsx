@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useLocale } from "next-intl";
 
 interface ExportOperationsDateTimeProps {
@@ -12,6 +13,11 @@ export function ExportOperationsDateTime({
 	emptyLabel = "",
 }: ExportOperationsDateTimeProps) {
 	const locale = useLocale();
+	const [isMounted, setIsMounted] = useState(false);
+
+	useEffect(() => {
+		setIsMounted(true);
+	}, []);
 
 	if (!value) {
 		return <>{emptyLabel}</>;
@@ -21,6 +27,10 @@ export function ExportOperationsDateTime({
 
 	if (Number.isNaN(date.getTime())) {
 		return <>{emptyLabel}</>;
+	}
+
+	if (!isMounted) {
+		return <span suppressHydrationWarning>{emptyLabel}</span>;
 	}
 
 	return (
