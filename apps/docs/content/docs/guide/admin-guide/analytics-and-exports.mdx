@@ -51,18 +51,20 @@ Customize reports using filters:
 - **Location**: By work location
 - **Status**: Active/inactive employees
 
-### Scheduled Reports
+### Scheduled Exports
 
-Set up automated report delivery:
+Set up automated delivery for payroll, data, and audit exports from **Settings** -> **Scheduled Exports**.
 
-1. Go to **Analytics** → **"Scheduled Reports"**
-2. Click **"Create Schedule"**
+1. Go to **Settings** -> **Scheduled Exports**
+2. Click **New Schedule**
 3. Configure:
-   - Report type
-   - Frequency (daily, weekly, monthly)
-   - Recipients (email addresses)
-   - Format (CSV, Excel, PDF)
+   - export type or target
+   - frequency (daily, weekly, monthly, quarterly, or custom cron)
+   - recipients and delivery method
+   - date-range behavior and optional filters
 4. Save the schedule
+
+Use **Settings** -> **Export Operations** to monitor failures, next run times, and recent activity across those scheduled jobs.
 
 ---
 
@@ -71,6 +73,19 @@ Set up automated report delivery:
 ### Data Export System
 
 The export system allows you to export organization data for backup, compliance, or integration with external systems.
+
+## Export Operations Monitoring
+
+Use **Settings** -> **Export Operations** when you need an operational overview instead of a setup page.
+
+The cockpit highlights:
+
+- current export-related alerts
+- upcoming scheduled runs
+- recent payroll, audit, and scheduled export activity
+- links back to the detailed settings pages that resolve each issue
+
+This is the right starting point when a scheduled export did not run, a payroll connector needs attention, or you want to confirm whether the latest export workflow completed successfully.
 
 ### Creating an Export
 

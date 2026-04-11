@@ -12,6 +12,21 @@ Z8 supports both file exports and selected API-based payroll integrations. The e
 
 Use **Settings** -> **Payroll Export** to configure export targets, store org-specific credentials, maintain wage type mappings, and start exports for a selected period.
 
+Use **Settings** -> **Export Operations** to monitor export failures, upcoming scheduled runs, and recent payroll, audit, and scheduled export activity across the organization.
+
+## Export Operations Cockpit
+
+The export operations cockpit is the operational overview for export-related work. It is designed for monitoring and triage rather than setup.
+
+From **Settings** -> **Export Operations**, org admins can:
+
+- review the latest payroll, audit, and scheduled export issues in one place
+- see which scheduled exports are due next
+- confirm the most recent payroll export and audit pack completion times
+- jump directly to **Payroll Export**, **Scheduled Exports**, or **Audit Export** for detailed configuration and history
+
+Use the cockpit to spot failures quickly, then return to **Settings** -> **Payroll Export** when you need to change connector configuration, wage type mappings, or run exports manually.
+
 ## Supported Export Targets
 
 - **DATEV, Lexware, Sage** for downloadable file exports
@@ -136,6 +151,8 @@ Review mappings before every first export for a new target, especially when abse
 4. Start the export.
 
 Small exports may finish immediately. Larger exports can continue in the background and appear in **History** with status tracking and retry visibility.
+
+If your organization also uses recurring export delivery, review **Settings** -> **Export Operations** or **Settings** -> **Scheduled Exports** after each change so you can confirm the next automated run still has a valid target and configuration.
 
 ---
 
