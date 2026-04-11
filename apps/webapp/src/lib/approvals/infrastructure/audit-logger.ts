@@ -9,6 +9,7 @@ import { auditLog } from "@/db/schema";
 import { DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import type { ApprovalStatus, ApprovalType } from "../domain/types";
 import type { AnyAppError } from "@/lib/effect/errors";
+import type { ApprovalDbService } from "../server/types";
 
 // ============================================
 // TYPES
@@ -19,6 +20,7 @@ export type ApprovalAuditAction =
 	| "reject"
 	| "escalate"
 	| "bulk_approve"
+	| "bulk_reject"
 	| "cancel";
 
 export interface ApprovalAuditEntry {
@@ -57,6 +59,60 @@ export class ApprovalAuditLogger extends Context.Tag("ApprovalAuditLogger")<
 	}
 >() {}
 
+function normalizeEntry(entry: ApprovalAuditEntry) {
+	const bulkOperation = entry.action === "bulk_approve" || entry.action === "bulk_reject";
+	const action = entry.action === "bulk_approve"
+		? "approve"
+		: entry.action === "bulk_reject"
+			? "reject"
+			: entry.action;
+	const metadata = {
+		...(entry.metadata ?? {}),
+		...(bulkOperation ? { bulkOperation: true } : {}),
+	};
+
+	return {
+		organizationId: entry.organizationId,
+		entityType: "approval_request" as const,
+		entityId: entry.approvalId,
+		action,
+		performedBy: entry.performedBy,
+		changes: JSON.stringify({
+			from: entry.previousStatus,
+			to: entry.newStatus,
+			approvalType: entry.approvalType,
+			targetEntityId: entry.entityId,
+			...(entry.reason && { reason: entry.reason }),
+		}),
+		metadata: Object.keys(metadata).length > 0 ? JSON.stringify(metadata) : null,
+		ipAddress: entry.ipAddress || null,
+		userAgent: entry.userAgent || null,
+		timestamp: new Date(),
+	};
+}
+
+export function createApprovalAuditLogger(dbService: ApprovalDbService) {
+	const logSingle = (entry: ApprovalAuditEntry) =>
+		dbService.query("logApprovalAudit", async () => {
+			await dbService.db.insert(auditLog).values(normalizeEntry(entry));
+		});
+
+	return ApprovalAuditLogger.of({
+		log: (entry) => logSingle(entry),
+
+		logBatch: (entries) =>
+			Effect.gen(function* (_) {
+				if (entries.length === 0) return;
+
+				yield* _(
+					dbService.query("logApprovalAuditBatch", async () => {
+						await dbService.db.insert(auditLog).values(entries.map(normalizeEntry));
+					}),
+				);
+			}),
+	});
+}
+
 // ============================================
 // LIVE IMPLEMENTATION
 // ============================================
@@ -66,60 +122,6 @@ export const ApprovalAuditLoggerLive = Layer.effect(
 	Effect.gen(function* (_) {
 		const dbService = yield* _(DatabaseService);
 
-		const logSingle = (entry: ApprovalAuditEntry) =>
-			dbService.query("logApprovalAudit", async () => {
-				await dbService.db.insert(auditLog).values({
-					organizationId: entry.organizationId,
-					entityType: "approval_request",
-					entityId: entry.approvalId,
-					action: entry.action,
-					performedBy: entry.performedBy,
-					changes: JSON.stringify({
-						from: entry.previousStatus,
-						to: entry.newStatus,
-						approvalType: entry.approvalType,
-						targetEntityId: entry.entityId,
-						...(entry.reason && { reason: entry.reason }),
-					}),
-					metadata: entry.metadata ? JSON.stringify(entry.metadata) : null,
-					ipAddress: entry.ipAddress || null,
-					userAgent: entry.userAgent || null,
-					timestamp: new Date(),
-				});
-			});
-
-		return ApprovalAuditLogger.of({
-			log: (entry) => logSingle(entry),
-
-			logBatch: (entries) =>
-				Effect.gen(function* (_) {
-					if (entries.length === 0) return;
-
-					yield* _(
-						dbService.query("logApprovalAuditBatch", async () => {
-							await dbService.db.insert(auditLog).values(
-								entries.map((entry) => ({
-									organizationId: entry.organizationId,
-									entityType: "approval_request" as const,
-									entityId: entry.approvalId,
-									action: entry.action,
-									performedBy: entry.performedBy,
-									changes: JSON.stringify({
-										from: entry.previousStatus,
-										to: entry.newStatus,
-										approvalType: entry.approvalType,
-										targetEntityId: entry.entityId,
-										...(entry.reason && { reason: entry.reason }),
-									}),
-									metadata: entry.metadata ? JSON.stringify(entry.metadata) : null,
-									ipAddress: entry.ipAddress || null,
-									userAgent: entry.userAgent || null,
-									timestamp: new Date(),
-								})),
-							);
-						}),
-					);
-				}),
-		});
+		return createApprovalAuditLogger(dbService);
 	}),
 ).pipe(Layer.provide(DatabaseServiceLive));

@@ -7,20 +7,53 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { and, eq } from "drizzle-orm";
-import { Effect } from "effect";
+import { Cause, Effect, Exit, Option } from "effect";
 import { auth } from "@/lib/auth";
+import { getAbility } from "@/lib/auth-helpers";
 import { db } from "@/db";
-import { approvalRequest, employee, auditLog } from "@/db/schema";
+import { approvalRequest, employee } from "@/db/schema";
 import { getApprovalHandler } from "@/lib/approvals/domain/registry";
 import type { ApprovalType } from "@/lib/approvals/domain/types";
+import { ApprovalAuditLoggerLive } from "@/lib/approvals/infrastructure/audit-logger";
 import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
-import type { AnyAppError } from "@/lib/effect/errors";
+import {
+	type AnyAppError,
+	AuthorizationError,
+	ConflictError,
+	NotFoundError,
+	ValidationError,
+} from "@/lib/effect/errors";
+import { ForbiddenError, toHttpError } from "@/lib/authorization";
 import { createLogger } from "@/lib/logger";
 
 // Ensure handlers are registered
 import "@/lib/approvals/init";
 
 const logger = createLogger("ApproveAPI");
+
+function toApprovalErrorResponse(error: unknown) {
+	if (error instanceof ConflictError) {
+		return NextResponse.json({ error: error.message }, { status: 409 });
+	}
+
+	if (error instanceof AuthorizationError) {
+		return NextResponse.json({ error: error.message }, { status: 403 });
+	}
+
+	if (error instanceof NotFoundError) {
+		return NextResponse.json({ error: error.message }, { status: 404 });
+	}
+
+	if (error instanceof ValidationError) {
+		return NextResponse.json({ error: error.message }, { status: 400 });
+	}
+
+	return null;
+}
+
+function extractApprovalError(cause: Cause.Cause<AnyAppError>) {
+	return Option.getOrNull(Cause.failureOption(cause)) ?? [...Cause.defects(cause)][0] ?? cause;
+}
 
 export async function POST(
 	_request: NextRequest,
@@ -44,11 +77,22 @@ export async function POST(
 			);
 		}
 
+		const ability = await getAbility();
+		if (
+			!ability ||
+			(ability.cannot("approve", "Approval") && ability.cannot("manage", "Approval"))
+		) {
+			const error = new ForbiddenError("approve", "Approval");
+			const httpError = toHttpError(error);
+			return NextResponse.json(httpError.body, { status: httpError.status });
+		}
+
 		// Get current employee for the active organization
 		const currentEmployee = await db.query.employee.findFirst({
 			where: and(
 				eq(employee.userId, session.user.id),
 				eq(employee.organizationId, activeOrganizationId),
+				eq(employee.isActive, true),
 			),
 		});
 
@@ -84,7 +128,7 @@ export async function POST(
 		if (request.status !== "pending") {
 			return NextResponse.json(
 				{ error: `Request is already ${request.status}` },
-				{ status: 400 },
+				{ status: 409 },
 			);
 		}
 
@@ -98,27 +142,23 @@ export async function POST(
 		}
 
 		// Execute approval
-		await Effect.runPromise(
+		const exit = await Effect.runPromiseExit(
 			handler
 				.approve(request.entityId, currentEmployee.id)
-				.pipe(Effect.provide(DatabaseServiceLive)) as Effect.Effect<void, AnyAppError, never>,
+				.pipe(
+					Effect.provide(DatabaseServiceLive),
+					Effect.provide(ApprovalAuditLoggerLive),
+				) as Effect.Effect<void, AnyAppError, never>,
 		);
 
-		// Log audit trail
-		await db.insert(auditLog).values({
-			organizationId: request.organizationId,
-			entityType: "approval_request",
-			entityId: id,
-			action: "approve",
-			performedBy: session.user.id,
-			changes: JSON.stringify({
-				from: "pending",
-				to: "approved",
-				approvalType: request.entityType,
-				targetEntityId: request.entityId,
-			}),
-			timestamp: new Date(),
-		});
+		if (Exit.isFailure(exit)) {
+			const errorResponse = toApprovalErrorResponse(extractApprovalError(exit.cause));
+			if (errorResponse) {
+				return errorResponse;
+			}
+
+			throw extractApprovalError(exit.cause);
+		}
 
 		logger.info(
 			{

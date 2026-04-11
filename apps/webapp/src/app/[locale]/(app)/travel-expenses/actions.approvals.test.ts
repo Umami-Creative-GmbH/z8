@@ -40,6 +40,12 @@ vi.mock("@/lib/audit-logger", () => ({
 	logAudit: vi.fn().mockResolvedValue(undefined),
 }));
 
+const processApproval = vi.fn();
+
+vi.mock("@/lib/approvals/server/shared", () => ({
+	processApproval,
+}));
+
 vi.mock("@/db/schema", () => ({
 	travelExpenseClaim: {
 		id: "id",
@@ -99,43 +105,39 @@ describe("travel expense approvals", () => {
 	});
 
 	it("approve succeeds for manager when claim is assigned and submitted", async () => {
-		mockState.findClaim.mockResolvedValue({
-			id: "claim-1",
-			organizationId: "org-1",
-			status: "submitted",
-			approverId: "manager-1",
-		});
-		mockState.updateReturning.mockResolvedValue([{ id: "claim-1" }]);
+		processApproval.mockResolvedValue({ success: true, data: undefined });
 
 		const result = await approveTravelExpenseClaim({ claimId: "claim-1", note: "Looks good" });
 
 		expect(result).toEqual({ success: true, data: { status: "approved" } });
-		expect(mockState.dbUpdate).toHaveBeenCalledTimes(1);
-		expect(mockState.dbInsert).toHaveBeenCalledTimes(1);
-		expect(mockState.insertValues).toHaveBeenCalledWith(
-			expect.objectContaining({
-				organizationId: "org-1",
-				claimId: "claim-1",
-				actorEmployeeId: "manager-1",
-				approverId: "manager-1",
-				action: "approved",
-				comment: "Looks good",
-			}),
+		expect(processApproval).toHaveBeenCalledWith(
+			"travel_expense_claim",
+			"claim-1",
+			"approve",
+			undefined,
+			expect.any(Function),
+			expect.any(Function),
+			{ transactional: true },
 		);
-		expect(mockState.revalidatePath).toHaveBeenCalledWith("/travel-expenses");
+		expect(mockState.dbUpdate).not.toHaveBeenCalled();
+		expect(mockState.dbInsert).not.toHaveBeenCalled();
 	});
 
 	it("reject fails for manager when claim approverId differs", async () => {
-		mockState.findClaim.mockResolvedValue({
-			id: "claim-2",
-			organizationId: "org-1",
-			status: "submitted",
-			approverId: "manager-2",
-		});
+		processApproval.mockResolvedValue({ success: false, error: "Unauthorized" });
 
 		const result = await rejectTravelExpenseClaim({ claimId: "claim-2", reason: "Missing receipt" });
 
 		expect(result).toEqual({ success: false, error: "Unauthorized" });
+		expect(processApproval).toHaveBeenCalledWith(
+			"travel_expense_claim",
+			"claim-2",
+			"reject",
+			"Missing receipt",
+			expect.any(Function),
+			expect.any(Function),
+			{ transactional: true },
+		);
 		expect(mockState.dbUpdate).not.toHaveBeenCalled();
 		expect(mockState.dbInsert).not.toHaveBeenCalled();
 		expect(mockState.revalidatePath).not.toHaveBeenCalled();

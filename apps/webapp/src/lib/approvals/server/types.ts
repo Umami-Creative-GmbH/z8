@@ -58,13 +58,14 @@ export interface ApprovalWithTimeCorrection {
 	};
 }
 
-export type ApprovalEntityType = "absence_entry" | "time_entry";
+export type ApprovalEntityType = "absence_entry" | "time_entry" | "travel_expense_claim";
 export type ApprovalAction = "approve" | "reject";
 
 export interface CurrentApprover {
 	id: string;
 	userId: string;
 	organizationId: string;
+	role?: "employee" | "manager" | "admin";
 	user: {
 		id: string;
 		name: string;

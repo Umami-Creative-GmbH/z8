@@ -4,12 +4,17 @@ import { and, asc, desc, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import {
+	approvalRequest,
 	employee,
 	travelExpenseAttachment,
 	travelExpenseClaim,
-	travelExpenseDecisionLog,
 } from "@/db/schema";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
+import { processApproval } from "@/lib/approvals/server/shared";
+import {
+	persistTravelExpenseDecision,
+	preflightTravelExpenseDecision,
+} from "@/lib/approvals/server/travel-expense-approvals";
 import { getAuthContext } from "@/lib/auth-helpers";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { logger } from "@/lib/logger";
@@ -30,8 +35,6 @@ export interface CreateTravelExpenseDraftInput {
 }
 
 type TravelExpenseClaimListItem = typeof travelExpenseClaim.$inferSelect;
-
-type TravelExpenseApprovalQueueItem = typeof travelExpenseClaim.$inferSelect;
 
 export async function getMyTravelExpenseClaims(): Promise<
 	ServerActionResult<TravelExpenseClaimListItem[]>
@@ -190,23 +193,40 @@ export async function submitTravelExpenseClaim(input: {
 		}
 
 		const submittedAt = new Date();
-		const [updatedClaim] = await db
-			.update(travelExpenseClaim)
-			.set({
-				status: "submitted",
+		const updatedClaim = await db.transaction(async (tx) => {
+			const [submittedClaim] = await tx
+				.update(travelExpenseClaim)
+				.set({
+					status: "submitted",
+					approverId,
+					submittedAt,
+					updatedBy: authContext.user.id,
+					updatedAt: submittedAt,
+				})
+				.where(
+					and(
+						eq(travelExpenseClaim.id, claim.id),
+						eq(travelExpenseClaim.organizationId, authContext.employee.organizationId),
+						eq(travelExpenseClaim.status, "draft"),
+					),
+				)
+				.returning({ id: travelExpenseClaim.id });
+
+			if (!submittedClaim) {
+				return null;
+			}
+
+			await tx.insert(approvalRequest).values({
+				organizationId: authContext.employee.organizationId,
+				entityType: "travel_expense_claim",
+				entityId: claim.id,
+				requestedBy: authContext.employee.id,
 				approverId,
-				submittedAt,
-				updatedBy: authContext.user.id,
-				updatedAt: submittedAt,
-			})
-			.where(
-				and(
-					eq(travelExpenseClaim.id, claim.id),
-					eq(travelExpenseClaim.organizationId, authContext.employee.organizationId),
-					eq(travelExpenseClaim.status, "draft"),
-				),
-			)
-			.returning({ id: travelExpenseClaim.id });
+				status: "pending",
+			});
+
+			return submittedClaim;
+		});
 
 		if (!updatedClaim) {
 			return { success: false, error: "Only draft claims can be submitted" };
@@ -234,41 +254,6 @@ export async function submitTravelExpenseClaim(input: {
 	}
 }
 
-export async function getTravelExpenseApprovalQueue(): Promise<
-	ServerActionResult<TravelExpenseApprovalQueueItem[]>
-> {
-	try {
-		const authContext = await getAuthContext();
-		if (!authContext?.employee) {
-			return { success: false, error: "Unauthorized" };
-		}
-
-		if (authContext.employee.role !== "manager" && authContext.employee.role !== "admin") {
-			return { success: false, error: "Unauthorized" };
-		}
-
-		const queue = await db.query.travelExpenseClaim.findMany({
-			where:
-				authContext.employee.role === "manager"
-					? and(
-						eq(travelExpenseClaim.organizationId, authContext.employee.organizationId),
-						eq(travelExpenseClaim.status, "submitted"),
-						eq(travelExpenseClaim.approverId, authContext.employee.id),
-					)
-					: and(
-						eq(travelExpenseClaim.organizationId, authContext.employee.organizationId),
-						eq(travelExpenseClaim.status, "submitted"),
-					),
-			orderBy: [asc(travelExpenseClaim.submittedAt), desc(travelExpenseClaim.createdAt)],
-		});
-
-		return { success: true, data: queue as TravelExpenseApprovalQueueItem[] };
-	} catch (error) {
-		logger.error({ error }, "Failed to get travel expense approval queue");
-		return { success: false, error: "Failed to get travel expense approval queue" };
-	}
-}
-
 export async function approveTravelExpenseClaim(input: {
 	claimId: string;
 	note?: string;
@@ -283,57 +268,21 @@ export async function approveTravelExpenseClaim(input: {
 			return { success: false, error: "Unauthorized" };
 		}
 
-		const claim = await db.query.travelExpenseClaim.findFirst({
-			where: and(
-				eq(travelExpenseClaim.id, input.claimId),
-				eq(travelExpenseClaim.organizationId, authContext.employee.organizationId),
-			),
-		});
+		const result = await processApproval(
+			"travel_expense_claim",
+			input.claimId,
+			"approve",
+			undefined,
+			(dbService, claimId, currentEmployee) =>
+				persistTravelExpenseDecision(dbService, claimId, currentEmployee, "approve", input.note),
+			(dbService, claimId, currentEmployee) =>
+				preflightTravelExpenseDecision(dbService, claimId, currentEmployee, "approve"),
+			{ transactional: true },
+		);
 
-		if (!claim) {
-			return { success: false, error: "Travel expense claim not found" };
+		if (!result.success) {
+			return result;
 		}
-
-		if (claim.status !== "submitted") {
-			return { success: false, error: "Only submitted claims can be decided" };
-		}
-
-		if (authContext.employee.role === "manager" && claim.approverId !== authContext.employee.id) {
-			return { success: false, error: "Unauthorized" };
-		}
-
-		const decidedAt = new Date();
-		const [updatedClaim] = await db
-			.update(travelExpenseClaim)
-			.set({
-				status: "approved",
-				decidedAt,
-				updatedBy: authContext.user.id,
-				updatedAt: decidedAt,
-			})
-			.where(
-				and(
-					eq(travelExpenseClaim.id, claim.id),
-					eq(travelExpenseClaim.organizationId, authContext.employee.organizationId),
-					eq(travelExpenseClaim.status, "submitted"),
-				),
-			)
-			.returning({ id: travelExpenseClaim.id });
-
-		if (!updatedClaim) {
-			return { success: false, error: "Only submitted claims can be decided" };
-		}
-
-		await db.insert(travelExpenseDecisionLog).values({
-			organizationId: authContext.employee.organizationId,
-			claimId: claim.id,
-			actorEmployeeId: authContext.employee.id,
-			approverId: authContext.employee.id,
-			action: "approved",
-			reason: null,
-			comment: input.note ?? null,
-			createdAt: decidedAt,
-		});
 
 		revalidatePath("/travel-expenses");
 		return { success: true, data: { status: "approved" } };
@@ -357,57 +306,21 @@ export async function rejectTravelExpenseClaim(input: {
 			return { success: false, error: "Unauthorized" };
 		}
 
-		const claim = await db.query.travelExpenseClaim.findFirst({
-			where: and(
-				eq(travelExpenseClaim.id, input.claimId),
-				eq(travelExpenseClaim.organizationId, authContext.employee.organizationId),
-			),
-		});
+		const result = await processApproval(
+			"travel_expense_claim",
+			input.claimId,
+			"reject",
+			input.reason,
+			(dbService, claimId, currentEmployee) =>
+				persistTravelExpenseDecision(dbService, claimId, currentEmployee, "reject", input.reason),
+			(dbService, claimId, currentEmployee) =>
+				preflightTravelExpenseDecision(dbService, claimId, currentEmployee, "reject"),
+			{ transactional: true },
+		);
 
-		if (!claim) {
-			return { success: false, error: "Travel expense claim not found" };
+		if (!result.success) {
+			return result;
 		}
-
-		if (claim.status !== "submitted") {
-			return { success: false, error: "Only submitted claims can be decided" };
-		}
-
-		if (authContext.employee.role === "manager" && claim.approverId !== authContext.employee.id) {
-			return { success: false, error: "Unauthorized" };
-		}
-
-		const decidedAt = new Date();
-		const [updatedClaim] = await db
-			.update(travelExpenseClaim)
-			.set({
-				status: "rejected",
-				decidedAt,
-				updatedBy: authContext.user.id,
-				updatedAt: decidedAt,
-			})
-			.where(
-				and(
-					eq(travelExpenseClaim.id, claim.id),
-					eq(travelExpenseClaim.organizationId, authContext.employee.organizationId),
-					eq(travelExpenseClaim.status, "submitted"),
-				),
-			)
-			.returning({ id: travelExpenseClaim.id });
-
-		if (!updatedClaim) {
-			return { success: false, error: "Only submitted claims can be decided" };
-		}
-
-		await db.insert(travelExpenseDecisionLog).values({
-			organizationId: authContext.employee.organizationId,
-			claimId: claim.id,
-			actorEmployeeId: authContext.employee.id,
-			approverId: authContext.employee.id,
-			action: "rejected",
-			reason: input.reason,
-			comment: null,
-			createdAt: decidedAt,
-		});
 
 		revalidatePath("/travel-expenses");
 		return { success: true, data: { status: "rejected" } };

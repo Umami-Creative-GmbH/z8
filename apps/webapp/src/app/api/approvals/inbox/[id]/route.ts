@@ -52,6 +52,7 @@ export async function GET(
 			where: and(
 				eq(employee.userId, session.user.id),
 				eq(employee.organizationId, activeOrganizationId),
+				eq(employee.isActive, true),
 			),
 		});
 

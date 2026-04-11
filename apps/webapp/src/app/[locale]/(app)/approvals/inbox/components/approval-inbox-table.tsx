@@ -7,6 +7,7 @@ import {
 	IconExchange,
 	IconAlertTriangle,
 	IconClock,
+	IconReceipt,
 } from "@tabler/icons-react";
 import type { ColumnDef, CellContext } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
@@ -31,6 +32,7 @@ const TYPE_ICONS: Record<ApprovalType, React.ComponentType<{ className?: string 
 	absence_entry: IconCalendarOff,
 	time_entry: IconClockEdit,
 	shift_request: IconExchange,
+	travel_expense_claim: IconReceipt,
 };
 
 // Priority badge variants
