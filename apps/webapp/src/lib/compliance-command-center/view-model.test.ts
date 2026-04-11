@@ -60,6 +60,6 @@ describe("buildComplianceCommandCenterData", () => {
 
 		expect(data.recentCriticalEvents).toHaveLength(5);
 		expect(data.recentCriticalEvents[0]?.id).toBe("evt-0");
-		expect(data.recentCriticalEvents[1]?.id).toBe("evt-2");
+		expect(data.recentCriticalEvents[1]?.id).toBe("evt-1");
 	});
 });

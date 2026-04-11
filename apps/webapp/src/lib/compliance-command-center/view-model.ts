@@ -50,13 +50,7 @@ function sortRecentCriticalEvents(
 	events: ComplianceCriticalEvent[],
 ): ComplianceCriticalEvent[] {
 	return [...events]
-		.sort((left, right) => {
-			if (left.severity !== right.severity) {
-				return left.severity === "critical" ? -1 : 1;
-			}
-
-			return right.occurredAt.localeCompare(left.occurredAt);
-		})
+		.sort((left, right) => right.occurredAt.localeCompare(left.occurredAt))
 		.slice(0, 5);
 }
 
