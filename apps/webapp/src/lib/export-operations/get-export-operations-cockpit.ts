@@ -21,12 +21,14 @@ type AuditRequestRecord = Awaited<
 >[number];
 type AuditExportPackageRecord = Awaited<ReturnType<typeof db.query.auditExportPackage.findMany>>[number];
 type PayrollFailureCountRecord = { id: string };
+type LatestCompletedPayrollExportRecord = { completedAt: Date | null };
 type ScheduledFailureCountRecord = {
 	id: string;
 	underlyingJobId: string | null;
 	underlyingJobType: string | null;
 };
 type AuditFailureCountRecord = { id: string };
+type LatestCompletedAuditPackageRecord = { completedAt: Date | null };
 
 export interface ExportOperationsCoverageSummary {
 	activeSchedules: number;
@@ -90,12 +92,14 @@ export async function getExportOperationsCockpit(
 	const [
 		payrollJobsResult,
 		payrollFailuresLast7DaysResult,
+		latestCompletedPayrollExportsResult,
 		scheduledExportsResult,
 		scheduledExecutionsResult,
 		scheduledFailuresLast7DaysResult,
 		auditRequestsResult,
 		auditFailuresLast7DaysResult,
 		auditPackagesResult,
+		latestCompletedAuditPackagesResult,
 	] = await Promise.allSettled([
 		getExportJobHistory(organizationId),
 		db.query.payrollExportJob.findMany({
@@ -105,6 +109,15 @@ export async function getExportOperationsCockpit(
 				gte(payrollExportJob.createdAt, now.minus({ days: 7 }).toJSDate()),
 			),
 			columns: { id: true },
+		}),
+		db.query.payrollExportJob.findMany({
+			where: and(
+				eq(payrollExportJob.organizationId, organizationId),
+				eq(payrollExportJob.status, "completed"),
+			),
+			orderBy: [desc(payrollExportJob.completedAt)],
+			limit: 1,
+			columns: { completedAt: true },
 		}),
 		db.query.scheduledExport.findMany({
 			where: eq(scheduledExport.organizationId, organizationId),
@@ -141,11 +154,23 @@ export async function getExportOperationsCockpit(
 			orderBy: [desc(auditExportPackage.createdAt)],
 			limit: 10,
 		}),
+		db.query.auditExportPackage.findMany({
+			where: and(
+				eq(auditExportPackage.organizationId, organizationId),
+				eq(auditExportPackage.status, "completed"),
+			),
+			orderBy: [desc(auditExportPackage.completedAt)],
+			limit: 1,
+			columns: { completedAt: true },
+		}),
 	]);
 
 	const payrollJobs = getSettledValue(payrollJobsResult);
 	const payrollFailuresLast7Days = getSettledValue<PayrollFailureCountRecord[]>(
 		payrollFailuresLast7DaysResult,
+	);
+	const latestCompletedPayrollExports = getSettledValue<LatestCompletedPayrollExportRecord[]>(
+		latestCompletedPayrollExportsResult,
 	);
 	const scheduledExports = getSettledValue(scheduledExportsResult);
 	const scheduledExecutions = getSettledValue(scheduledExecutionsResult);
@@ -157,6 +182,9 @@ export async function getExportOperationsCockpit(
 		auditFailuresLast7DaysResult,
 	);
 	const auditPackages = getSettledValue(auditPackagesResult);
+	const latestCompletedAuditPackages = getSettledValue<LatestCompletedAuditPackageRecord[]>(
+		latestCompletedAuditPackagesResult,
+	);
 
 	const scheduledExportsById = new Map(scheduledExports.map((item) => [item.id, item]));
 
@@ -176,8 +204,8 @@ export async function getExportOperationsCockpit(
 			scheduledFailuresLast7Days,
 			auditFailuresLast7Days,
 		),
-		lastPayrollExportAt: getLastPayrollExportAt(payrollJobs),
-		lastAuditPackageAt: getLastAuditPackageAt(auditPackages),
+		lastPayrollExportAt: getLastPayrollExportAt(latestCompletedPayrollExports),
+		lastAuditPackageAt: getLastAuditPackageAt(latestCompletedAuditPackages),
 	};
 
 	return {
@@ -185,16 +213,16 @@ export async function getExportOperationsCockpit(
 		alerts,
 		upcomingRuns,
 		recentActivity,
-		errors: {
-			summary:
-				payrollJobsResult.status === "rejected" ||
-				payrollFailuresLast7DaysResult.status === "rejected" ||
-				scheduledExportsResult.status === "rejected" ||
-				scheduledFailuresLast7DaysResult.status === "rejected" ||
-				auditFailuresLast7DaysResult.status === "rejected" ||
-				auditPackagesResult.status === "rejected"
-					? SUMMARY_ERROR
-					: null,
+			errors: {
+				summary:
+					payrollFailuresLast7DaysResult.status === "rejected" ||
+					latestCompletedPayrollExportsResult.status === "rejected" ||
+					scheduledExportsResult.status === "rejected" ||
+					scheduledFailuresLast7DaysResult.status === "rejected" ||
+					auditFailuresLast7DaysResult.status === "rejected" ||
+					latestCompletedAuditPackagesResult.status === "rejected"
+						? SUMMARY_ERROR
+						: null,
 			alerts:
 				payrollJobsResult.status === "rejected" ||
 				scheduledExportsResult.status === "rejected" ||
@@ -333,20 +361,16 @@ function buildRecentActivity(
 	return activity.sort((left, right) => right.occurredAt.getTime() - left.occurredAt.getTime());
 }
 
-function getLastPayrollExportAt(payrollJobs: PayrollExportJobSummary[]): Date | null {
-	const latestCompletedJob = payrollJobs.find(
-		(job) => job.status === "completed" && job.completedAt,
-	);
-
-	return latestCompletedJob?.completedAt ?? null;
+function getLastPayrollExportAt(
+	payrollExports: LatestCompletedPayrollExportRecord[],
+): Date | null {
+	return payrollExports[0]?.completedAt ?? null;
 }
 
-function getLastAuditPackageAt(auditPackages: AuditExportPackageRecord[]): Date | null {
-	const latestCompletedPackage = auditPackages.find(
-		(auditPackage) => auditPackage.status === "completed" && auditPackage.completedAt,
-	);
-
-	return latestCompletedPackage?.completedAt ?? null;
+function getLastAuditPackageAt(
+	auditPackages: LatestCompletedAuditPackageRecord[],
+): Date | null {
+	return auditPackages[0]?.completedAt ?? null;
 }
 
 function countFailedRunsLast7Days(

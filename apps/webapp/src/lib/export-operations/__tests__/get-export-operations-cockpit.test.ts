@@ -5,12 +5,24 @@ const mockState = vi.hoisted(() => ({
 	getExportJobHistory: vi.fn(),
 	listAuditPackRequests: vi.fn(),
 	findPayrollFailuresLast7Days: vi.fn(),
+	findLatestCompletedPayrollExports: vi.fn(),
 	findScheduledExports: vi.fn(),
 	findScheduledExecutions: vi.fn(),
 	findScheduledFailuresLast7Days: vi.fn(),
 	findAuditFailuresLast7Days: vi.fn(),
 	findAuditExportPackages: vi.fn(),
+	findLatestCompletedAuditPackages: vi.fn(),
 }));
+
+const payrollExportJobQuery = vi.hoisted(() =>
+	vi.fn((input?: { columns?: { id?: boolean } }) => {
+		if (input?.columns?.id) {
+			return mockState.findPayrollFailuresLast7Days(input);
+		}
+
+		return mockState.findLatestCompletedPayrollExports(input);
+	}),
+);
 
 const scheduledExecutionQuery = vi.hoisted(() =>
 	vi.fn((input?: { limit?: number }) => {
@@ -44,7 +56,7 @@ vi.mock("@/db", () => ({
 	db: {
 		query: {
 			payrollExportJob: {
-				findMany: mockState.findPayrollFailuresLast7Days,
+				findMany: payrollExportJobQuery,
 			},
 			scheduledExport: {
 				findMany: mockState.findScheduledExports,
@@ -56,13 +68,20 @@ vi.mock("@/db", () => ({
 				findMany: mockState.findAuditFailuresLast7Days,
 			},
 			auditExportPackage: {
-				findMany: mockState.findAuditExportPackages,
+				findMany: vi.fn((input?: { limit?: number }) => {
+					if (input?.limit === 10) {
+						return mockState.findAuditExportPackages(input);
+					}
+
+					return mockState.findLatestCompletedAuditPackages(input);
+				}),
 			},
 		},
 	},
 	payrollExportJob: {
 		organizationId: "payrollExportJob.organizationId",
 		status: "payrollExportJob.status",
+		completedAt: "payrollExportJob.completedAt",
 		createdAt: "payrollExportJob.createdAt",
 	},
 	scheduledExport: {
@@ -81,6 +100,8 @@ vi.mock("@/db", () => ({
 	},
 	auditExportPackage: {
 		organizationId: "auditExportPackage.organizationId",
+		status: "auditExportPackage.status",
+		completedAt: "auditExportPackage.completedAt",
 		createdAt: "auditExportPackage.createdAt",
 	},
 }));
@@ -192,6 +213,12 @@ describe("getExportOperationsCockpit", () => {
 			{ id: "scheduled-payroll-job-1" },
 			{ id: "payroll-failure-2" },
 		]);
+		mockState.findLatestCompletedPayrollExports.mockResolvedValue([
+			{
+				id: "payroll-job-completed-older-created",
+				completedAt: new Date("2026-04-09T09:30:00.000Z"),
+			},
+		]);
 		mockState.findScheduledFailuresLast7Days.mockResolvedValue([
 			{
 				id: "scheduled-failure-1",
@@ -240,6 +267,12 @@ describe("getExportOperationsCockpit", () => {
 				completedAt: new Date("2026-04-08T06:10:00.000Z"),
 			},
 		]);
+		mockState.findLatestCompletedAuditPackages.mockResolvedValue([
+			{
+				id: "audit-package-completed-older-created",
+				completedAt: new Date("2026-04-10T09:15:00.000Z"),
+			},
+		]);
 
 		const { getExportOperationsCockpit } = await import("../get-export-operations-cockpit");
 		const result = await getExportOperationsCockpit(
@@ -253,14 +286,16 @@ describe("getExportOperationsCockpit", () => {
 		expect(mockState.findScheduledExecutions).toHaveBeenCalledWith(expect.objectContaining({ limit: 25 }));
 		expect(mockState.findAuditExportPackages).toHaveBeenCalledWith(expect.objectContaining({ limit: 10 }));
 		expect(mockState.findPayrollFailuresLast7Days).toHaveBeenCalledTimes(1);
+		expect(mockState.findLatestCompletedPayrollExports).toHaveBeenCalledTimes(1);
 		expect(mockState.findScheduledFailuresLast7Days).toHaveBeenCalledTimes(1);
 		expect(mockState.findAuditFailuresLast7Days).toHaveBeenCalledTimes(1);
+		expect(mockState.findLatestCompletedAuditPackages).toHaveBeenCalledTimes(1);
 
 		expect(result.summary).toEqual({
 			activeSchedules: 3,
 			failedRunsLast7Days: 5,
-			lastPayrollExportAt: new Date("2026-04-09T09:05:00.000Z"),
-			lastAuditPackageAt: new Date("2026-04-08T06:10:00.000Z"),
+			lastPayrollExportAt: new Date("2026-04-09T09:30:00.000Z"),
+			lastAuditPackageAt: new Date("2026-04-10T09:15:00.000Z"),
 		});
 		expect(result.errors).toEqual({
 			summary: null,
@@ -357,12 +392,14 @@ describe("getExportOperationsCockpit", () => {
 		mockState.findScheduledExports.mockRejectedValue(new Error("scheduled exports unavailable"));
 		mockState.findScheduledExecutions.mockRejectedValue(new Error("scheduled executions unavailable"));
 		mockState.findPayrollFailuresLast7Days.mockResolvedValue([{ id: "payroll-failure-1" }]);
+		mockState.findLatestCompletedPayrollExports.mockResolvedValue([]);
 		mockState.findScheduledFailuresLast7Days.mockRejectedValue(
 			new Error("scheduled failure counts unavailable"),
 		);
 		mockState.findAuditFailuresLast7Days.mockResolvedValue([]);
 		mockState.listAuditPackRequests.mockResolvedValue([]);
 		mockState.findAuditExportPackages.mockResolvedValue([]);
+		mockState.findLatestCompletedAuditPackages.mockResolvedValue([]);
 
 		const { getExportOperationsCockpit } = await import("../get-export-operations-cockpit");
 		const result = await getExportOperationsCockpit(
@@ -416,6 +453,12 @@ describe("getExportOperationsCockpit", () => {
 			},
 		]);
 		mockState.findPayrollFailuresLast7Days.mockResolvedValue([]);
+		mockState.findLatestCompletedPayrollExports.mockResolvedValue([
+			{
+				id: "payroll-job-completed",
+				completedAt: new Date("2026-04-10T11:05:00.000Z"),
+			},
+		]);
 		mockState.findScheduledExports.mockResolvedValue([
 			{
 				id: "schedule-ready",
@@ -442,6 +485,12 @@ describe("getExportOperationsCockpit", () => {
 				organizationId: "org-1",
 				status: "completed",
 				createdAt: new Date("2026-04-08T06:00:00.000Z"),
+				completedAt: new Date("2026-04-08T06:10:00.000Z"),
+			},
+		]);
+		mockState.findLatestCompletedAuditPackages.mockResolvedValue([
+			{
+				id: "audit-package-1",
 				completedAt: new Date("2026-04-08T06:10:00.000Z"),
 			},
 		]);
@@ -494,6 +543,7 @@ describe("getExportOperationsCockpit", () => {
 			},
 		]);
 		mockState.findPayrollFailuresLast7Days.mockResolvedValue([{ id: "payroll-failure-1" }]);
+		mockState.findLatestCompletedPayrollExports.mockResolvedValue([]);
 		mockState.findScheduledExports.mockResolvedValue([]);
 		mockState.findScheduledExecutions.mockResolvedValue([]);
 		mockState.findScheduledFailuresLast7Days.mockResolvedValue([]);
@@ -515,6 +565,7 @@ describe("getExportOperationsCockpit", () => {
 				completedAt: null,
 			},
 		]);
+		mockState.findLatestCompletedAuditPackages.mockResolvedValue([]);
 
 		const { getExportOperationsCockpit } = await import("../get-export-operations-cockpit");
 		const result = await getExportOperationsCockpit(
@@ -524,5 +575,37 @@ describe("getExportOperationsCockpit", () => {
 
 		expect(result.summary.lastPayrollExportAt).toBeNull();
 		expect(result.summary.lastAuditPackageAt).toBeNull();
+	});
+
+	it("uses latest completion timestamps instead of latest creation timestamps", async () => {
+		mockState.getExportJobHistory.mockResolvedValue([]);
+		mockState.findPayrollFailuresLast7Days.mockResolvedValue([]);
+		mockState.findLatestCompletedPayrollExports.mockResolvedValue([
+			{
+				id: "payroll-job-created-earlier-finished-later",
+				completedAt: new Date("2026-04-11T09:30:00.000Z"),
+			},
+		]);
+		mockState.findScheduledExports.mockResolvedValue([]);
+		mockState.findScheduledExecutions.mockResolvedValue([]);
+		mockState.findScheduledFailuresLast7Days.mockResolvedValue([]);
+		mockState.listAuditPackRequests.mockResolvedValue([]);
+		mockState.findAuditFailuresLast7Days.mockResolvedValue([]);
+		mockState.findAuditExportPackages.mockResolvedValue([]);
+		mockState.findLatestCompletedAuditPackages.mockResolvedValue([
+			{
+				id: "audit-package-created-earlier-finished-later",
+				completedAt: new Date("2026-04-11T08:45:00.000Z"),
+			},
+		]);
+
+		const { getExportOperationsCockpit } = await import("../get-export-operations-cockpit");
+		const result = await getExportOperationsCockpit(
+			"org-1",
+			DateTime.fromISO("2026-04-11T12:00:00.000Z"),
+		);
+
+		expect(result.summary.lastPayrollExportAt).toEqual(new Date("2026-04-11T09:30:00.000Z"));
+		expect(result.summary.lastAuditPackageAt).toEqual(new Date("2026-04-11T08:45:00.000Z"));
 	});
 });
