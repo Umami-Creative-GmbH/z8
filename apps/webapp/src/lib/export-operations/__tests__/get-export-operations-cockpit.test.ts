@@ -1,4 +1,5 @@
 import { DateTime } from "luxon";
+import { gte } from "drizzle-orm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockState = vi.hoisted(() => ({
@@ -139,6 +140,7 @@ vi.mock("@/db", () => ({
 	scheduledExportExecution: {
 		organizationId: "scheduledExportExecution.organizationId",
 		status: "scheduledExportExecution.status",
+		completedAt: "scheduledExportExecution.completedAt",
 		triggeredAt: "scheduledExportExecution.triggeredAt",
 	},
 	auditPackRequest: {
@@ -306,6 +308,7 @@ describe("getExportOperationsCockpit", () => {
 			{ id: "scheduled-payroll-job-1" },
 			{ id: "payroll-failure-2" },
 			{ id: "payroll-failure-completed-late" },
+			{ id: "payroll-failure-null-completed-at" },
 		]);
 		mockState.findLatestCompletedPayrollExports.mockResolvedValue([
 			{
@@ -320,6 +323,11 @@ describe("getExportOperationsCockpit", () => {
 				underlyingJobType: null,
 			},
 			{
+				id: "scheduled-failure-null-completed-at",
+				underlyingJobId: null,
+				underlyingJobType: null,
+			},
+			{
 				id: "scheduled-failure-1",
 				underlyingJobId: "scheduled-payroll-job-1",
 				underlyingJobType: "payroll_export",
@@ -330,6 +338,7 @@ describe("getExportOperationsCockpit", () => {
 		mockState.findAuditFailuresLast7Days.mockResolvedValue([
 			{ id: "audit-failure-1" },
 			{ id: "audit-failure-completed-late" },
+			{ id: "audit-failure-null-completed-at" },
 		]);
 
 		mockState.findAuditRequestsByOccurrence.mockResolvedValue([
@@ -410,10 +419,14 @@ describe("getExportOperationsCockpit", () => {
 		expect(mockState.findScheduledFailuresLast7Days).toHaveBeenCalledTimes(1);
 		expect(mockState.findAuditFailuresLast7Days).toHaveBeenCalledTimes(1);
 		expect(mockState.findLatestCompletedAuditPackages).toHaveBeenCalledTimes(1);
+		expect(gte).toHaveBeenCalledWith(
+			expect.objectContaining({ strings: expect.any(Array) }),
+			expect.any(Date),
+		);
 
 		expect(result.summary).toEqual({
 			activeSchedules: 3,
-			failedRunsLast7Days: 8,
+			failedRunsLast7Days: 11,
 			lastPayrollExportAt: new Date("2026-04-09T09:30:00.000Z"),
 			lastAuditPackageAt: new Date("2026-04-10T09:15:00.000Z"),
 		});
