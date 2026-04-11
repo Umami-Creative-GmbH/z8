@@ -12,6 +12,7 @@ export interface AuditEvidenceSnapshot {
 	activeKeyFingerprint: string | null;
 	recentFailedRequests: number;
 	recentInvalidVerifications: number;
+	latestIncidentAt: string | null;
 	latestSuccessAt: string | null;
 }
 
@@ -71,16 +72,16 @@ export function deriveAuditEvidenceSection(
 			updatedAt: DateTime.utc().toISO(),
 			primaryLink: { label: "Open Audit Export", href: "/settings/audit-export" },
 		},
-		recentCriticalEvents:
-			status === "critical" && criticalEvent
-				? [
+			recentCriticalEvents:
+				status === "critical" && criticalEvent
+					? [
 						{
 							id: criticalEvent.id,
 							sectionKey: "auditEvidence",
 							severity: "critical",
 							title: criticalEvent.title,
 							description: criticalEvent.description,
-							occurredAt: DateTime.utc().toISO()!,
+							occurredAt: snapshot.latestIncidentAt ?? DateTime.utc().toISO()!,
 							primaryLink: {
 								label: "Review audit export",
 								href: "/settings/audit-export",
@@ -105,7 +106,7 @@ export async function getAuditEvidenceSection(
 				eq(auditPackRequest.status, "failed"),
 				gte(auditPackRequest.completedAt, lookbackStart),
 			),
-			columns: { id: true },
+			columns: { id: true, completedAt: true },
 		}),
 		db.query.auditPackRequest.findFirst({
 			where: and(
@@ -116,7 +117,7 @@ export async function getAuditEvidenceSection(
 			orderBy: [desc(auditPackRequest.completedAt)],
 		}),
 		db
-			.select({ id: auditVerificationLog.id })
+			.select({ id: auditVerificationLog.id, verifiedAt: auditVerificationLog.verifiedAt })
 			.from(auditVerificationLog)
 			.innerJoin(auditExportPackage, eq(auditVerificationLog.packageId, auditExportPackage.id))
 			.where(
@@ -130,11 +131,45 @@ export async function getAuditEvidenceSection(
 			.limit(10),
 	]);
 
+	const latestFailedRequestAt = recentFailedRequests.reduce<Date | null>(
+		(latest, request) => {
+			if (!(request.completedAt instanceof Date)) {
+				return latest;
+			}
+
+			if (!latest || request.completedAt.getTime() > latest.getTime()) {
+				return request.completedAt;
+			}
+
+			return latest;
+		},
+		null,
+	);
+	const latestInvalidVerificationAt = invalidVerifications.reduce<Date | null>(
+		(latest, verification) => {
+			if (!(verification.verifiedAt instanceof Date)) {
+				return latest;
+			}
+
+			if (!latest || verification.verifiedAt.getTime() > latest.getTime()) {
+				return verification.verifiedAt;
+			}
+
+			return latest;
+		},
+		null,
+	);
+	const latestIncidentAt = [latestFailedRequestAt, latestInvalidVerificationAt]
+		.filter((value): value is Date => value instanceof Date)
+		.sort((left, right) => right.getTime() - left.getTime())[0]
+		?.toISOString();
+
 	return deriveAuditEvidenceSection({
 		hasConfig: Boolean(config),
 		activeKeyFingerprint: config?.signingKeyFingerprint ?? null,
 		recentFailedRequests: recentFailedRequests.length,
 		recentInvalidVerifications: invalidVerifications.length,
+		latestIncidentAt: latestIncidentAt ?? null,
 		latestSuccessAt: latestSuccess?.completedAt?.toISOString() ?? null,
 	});
 }

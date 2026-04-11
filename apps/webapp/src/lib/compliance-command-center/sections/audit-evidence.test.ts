@@ -9,6 +9,7 @@ describe("deriveAuditEvidenceSection", () => {
 			activeKeyFingerprint: "fp_123",
 			recentFailedRequests: 1,
 			recentInvalidVerifications: 0,
+			latestIncidentAt: "2026-04-11T09:00:00.000Z",
 			latestSuccessAt: DateTime.utc().minus({ hours: 3 }).toISO(),
 		});
 
@@ -16,6 +17,7 @@ describe("deriveAuditEvidenceSection", () => {
 		expect(result.recentCriticalEvents[0]?.title).toContain(
 			"Audit pack generation failed",
 		);
+		expect(result.recentCriticalEvents[0]?.occurredAt).toBe("2026-04-11T09:00:00.000Z");
 	});
 
 	it("marks the section critical when a recent verification was invalid", () => {
@@ -24,6 +26,7 @@ describe("deriveAuditEvidenceSection", () => {
 			activeKeyFingerprint: "fp_123",
 			recentFailedRequests: 0,
 			recentInvalidVerifications: 1,
+			latestIncidentAt: "2026-04-11T10:00:00.000Z",
 			latestSuccessAt: DateTime.utc().minus({ hours: 2 }).toISO(),
 		});
 
@@ -40,6 +43,7 @@ describe("deriveAuditEvidenceSection", () => {
 			activeKeyFingerprint: null,
 			recentFailedRequests: 0,
 			recentInvalidVerifications: 0,
+			latestIncidentAt: null,
 			latestSuccessAt: null,
 		});
 
@@ -53,6 +57,7 @@ describe("deriveAuditEvidenceSection", () => {
 			activeKeyFingerprint: "fp_healthy",
 			recentFailedRequests: 0,
 			recentInvalidVerifications: 0,
+			latestIncidentAt: null,
 			latestSuccessAt: DateTime.utc().minus({ hours: 1 }).toISO(),
 		});
 

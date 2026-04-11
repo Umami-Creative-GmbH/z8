@@ -52,7 +52,7 @@ describe("buildComplianceCommandCenterData", () => {
 		expect(data.summary.topRiskKeys).toEqual(["workforceCompliance"]);
 	});
 
-	it("keeps the newest critical events first and drops overflow after five", () => {
+	it("keeps only critical events, newest first, and drops overflow after five", () => {
 		const events: ComplianceCriticalEvent[] = [
 			{
 				id: "evt-0",
@@ -121,13 +121,11 @@ describe("buildComplianceCommandCenterData", () => {
 			refreshedAt: now.toISO()!,
 		});
 
-		expect(data.recentCriticalEvents).toHaveLength(5);
+		expect(data.recentCriticalEvents).toHaveLength(3);
 		expect(data.recentCriticalEvents.map((event) => event.id)).toEqual([
-			"evt-1",
 			"evt-0",
-			"evt-3",
 			"evt-4",
-			"evt-5",
+			"evt-2",
 		]);
 	});
 });

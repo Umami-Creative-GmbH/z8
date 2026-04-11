@@ -91,6 +91,7 @@ export async function getWorkforceComplianceSection(
 			.where(
 				and(
 					eq(complianceException.organizationId, organizationId),
+					gte(complianceException.createdAt, sevenDaysAgo),
 					eq(complianceException.status, "pending"),
 				),
 			),

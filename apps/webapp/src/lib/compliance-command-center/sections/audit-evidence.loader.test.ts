@@ -68,17 +68,21 @@ describe("getAuditEvidenceSection", () => {
 
 	it("uses bounded recent failures and the actual latest successful audit pack", async () => {
 		mockState.getConfig.mockResolvedValue({ signingKeyFingerprint: "fp_123" });
-		mockState.failedFindMany.mockResolvedValue([]);
+		mockState.failedFindMany.mockResolvedValue([
+			{ id: "req-1", completedAt: new Date("2026-04-11T09:00:00.000Z") },
+		]);
 		mockState.successFindFirst.mockResolvedValue({
 			completedAt: new Date("2026-03-01T12:00:00.000Z"),
 		});
-		mockState.invalidLimit.mockResolvedValue([]);
+		mockState.invalidLimit.mockResolvedValue([
+			{ id: "verify-1", verifiedAt: new Date("2026-04-11T10:00:00.000Z") },
+		]);
 
 		const result = await getAuditEvidenceSection("org-1");
 		const [failedQuery] = mockState.failedFindMany.mock.calls[0] ?? [];
 		const [successQuery] = mockState.successFindFirst.mock.calls[0] ?? [];
 
-		expect(failedQuery.columns).toEqual({ id: true });
+		expect(failedQuery.columns).toEqual({ id: true, completedAt: true });
 		expect(failedQuery.where.and).toEqual(
 			expect.arrayContaining([
 				{ eq: ["auditPackRequest.organizationId", "org-1"] },
@@ -94,7 +98,8 @@ describe("getAuditEvidenceSection", () => {
 			]),
 		);
 		expect(successQuery.orderBy).toEqual([{ desc: "auditPackRequest.completedAt" }]);
-		expect(result.card.status).toBe("healthy");
+		expect(result.card.status).toBe("critical");
+		expect(result.recentCriticalEvents[0]?.occurredAt).toBe("2026-04-11T10:00:00.000Z");
 		expect(result.card.facts).toContain(
 			"Last successful audit pack: 2026-03-01T12:00:00.000Z",
 		);

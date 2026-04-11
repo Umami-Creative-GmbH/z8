@@ -51,6 +51,7 @@ function sortRecentCriticalEvents(
 	events: ComplianceCriticalEvent[],
 ): ComplianceCriticalEvent[] {
 	return [...events]
+		.filter((event) => event.severity === "critical")
 		.sort(
 			(left, right) =>
 				DateTime.fromISO(right.occurredAt).toMillis() -

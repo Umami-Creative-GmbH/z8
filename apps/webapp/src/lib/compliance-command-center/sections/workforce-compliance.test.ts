@@ -36,6 +36,7 @@ vi.mock("@/db", () => ({
 
 vi.mock("@/db/schema", () => ({
 	complianceException: {
+		createdAt: "complianceException.createdAt",
 		organizationId: "complianceException.organizationId",
 		status: "complianceException.status",
 	},
@@ -102,5 +103,24 @@ describe("getWorkforceComplianceSection", () => {
 
 		expect(result.card.status).toBe("critical");
 		expect(result.card.facts).toContain("Other policy violations: 3");
+	});
+
+	it("limits pending exception requests to the same seven-day lookback", async () => {
+		mockState.violationGroupBy.mockResolvedValue([]);
+		mockState.exceptionWhere.mockResolvedValue([{ count: 0 }]);
+
+		await getWorkforceComplianceSection("org-1");
+
+		expect(mockState.exceptionWhere).toHaveBeenCalledWith(
+			expect.objectContaining({
+				and: expect.arrayContaining([
+					{ eq: ["complianceException.organizationId", "org-1"] },
+					{ eq: ["complianceException.status", "pending"] },
+					expect.objectContaining({
+						gte: ["complianceException.createdAt", expect.any(Date)],
+					}),
+				]),
+			}),
+		);
 	});
 });
