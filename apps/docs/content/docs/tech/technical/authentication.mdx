@@ -1,190 +1,64 @@
 ---
 title: Authentication
-description: Better-Auth integration, 2FA, passkeys, OAuth, and organization-scoped access
+description: Better Auth integration, secure sessions, invitations, and organization-scoped access
 icon: Key
----
-
-import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
-import { Callout } from 'fumadocs-ui/components/callout';
-
-## Better-Auth Integration
-
-Z8 uses Better-Auth for authentication with support for:
-
-- **Email/Password**: Traditional authentication
-- **Two-Factor Authentication (2FA)**: TOTP-based
-- **Passkeys**: WebAuthn/FIDO2 passwordless authentication
-- **Social OAuth**: Google, Microsoft, GitHub, LinkedIn, Apple providers
-- **Organization OAuth**: Per-organization SSO configuration
-
 ---
 
 ## Configuration
 
+Z8 uses Better Auth as the system authentication layer. System secrets, base URLs, and default social-provider credentials are environment-backed. Organization-specific identity settings are configured inside the product for each organization instead of through tenant-specific environment variables.
+
+Typical auth maintenance commands from the repo root use `pnpm`:
+
 ```bash
-# Generate auth secret
-bunx @better-auth/cli@latest secret
+pnpm --dir apps/webapp run auth:generate
+pnpm --dir apps/webapp run auth:migrate
 ```
 
-Add to `.env`:
-```ini
-BETTER_AUTH_SECRET=<generated-secret>
-BETTER_AUTH_URL=http://localhost:3000
-```
+In practice this means:
 
----
+- `BETTER_AUTH_SECRET` and related auth secrets stay in environment configuration.
+- Default social providers such as Google, GitHub, LinkedIn, and Apple can be enabled from system env vars.
+- Organization-scoped SSO, SCIM, and branded social OAuth are configured per organization in settings and resolved against the current org context at runtime.
+- Organization-specific credentials are entered through org settings and stored through the app's org-scoped secret handling instead of per-tenant env vars.
 
-## Social OAuth Setup
+## Session And Cookie Behavior
 
-### System-Level OAuth
+Better Auth is the source of truth for sessions, with database-backed session records and cookie-based web sessions. Z8 also uses secondary storage to speed up session lookups and auth rate limiting without moving revocation authority out of the database.
 
-Configure default OAuth providers in `src/lib/auth/index.ts`:
+Key behaviors:
 
-```typescript
-export const auth = betterAuth({
-  socialProviders: {
-    google: {
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    },
-    github: {
-      clientId: process.env.GITHUB_CLIENT_ID,
-      clientSecret: process.env.GITHUB_CLIENT_SECRET,
-    },
-  },
-});
-```
+- Web requests use secure, `httpOnly` session cookies through the Next.js Better Auth integration.
+- Desktop and mobile clients can use bearer-token auth where cookies are not the primary transport.
+- Sessions carry `activeOrganizationId`, which is the current org context used by authorization and data-access layers.
+- Organization-scoped routes and services should trust `session.session.activeOrganizationId` rather than user-supplied org identifiers.
+- Email verification and password-reset links are rewritten to the correct organization-aware base URL when auth emails are sent.
 
-### Organization-Level OAuth (Enterprise)
+The auth surface supports email/password, required email verification, passkeys, 2FA, admin tooling, and Better Auth organization features in one shared session model.
 
-Organizations can configure their own OAuth credentials for branded SSO:
+## Invitation And Onboarding Flows
 
-<Tabs items={['Google', 'Microsoft', 'GitHub', 'Apple']}>
-  <Tab value="Google">
-    1. Create OAuth 2.0 credentials in Google Cloud Console
-    2. Set authorized redirect URI: `https://your-domain/api/auth/callback/social-org/google`
-    3. Configure in Z8: **Settings** > **Enterprise** > **Social Login**
-  </Tab>
-  <Tab value="Microsoft">
-    1. Register app in Azure AD portal
-    2. Configure redirect URI for your domain
-    3. Add client ID and secret in Z8 settings
-  </Tab>
-  <Tab value="GitHub">
-    1. Create OAuth App in GitHub Developer Settings
-    2. Set callback URL to your domain's callback endpoint
-    3. Configure in Z8 organization settings
-  </Tab>
-  <Tab value="Apple">
-    Apple Sign-In requires additional configuration:
-    - Team ID from Apple Developer account
-    - Key ID for the .p8 private key
-    - Private key contents (PEM format)
-  </Tab>
-</Tabs>
+Invitation acceptance and onboarding are part of the auth system, not separate ad hoc flows. The goal is to preserve organization context from the first email through post-login onboarding.
 
-### OAuth Security Features
+The current flow is:
 
-Organization OAuth includes enhanced security:
+1. An org admin sends an invitation for a specific organization.
+2. Z8 sends the invitation email using the organization's resolved app URL.
+3. The invited user signs up or verifies their email.
+4. Pending invitation state is preserved so the user returns to the correct `accept-invitation` flow after verification.
+5. Better Auth accepts the invitation, adds the member to the organization, and records that org relationship on the user session.
+6. Onboarding reads `activeOrganizationId` so employee creation, role-based steps, and defaults stay scoped to the invited organization.
 
-| Feature | Description |
-|---------|-------------|
-| **PKCE** | Proof Key for Code Exchange prevents code interception |
-| **State signing** | HMAC-signed state prevents CSRF attacks |
-| **Nonce validation** | OIDC nonce prevents replay attacks |
-| **Secure cookies** | httpOnly cookies store OAuth state |
-
-### OAuth Flow
-
-```
-User clicks "Sign in with Google"
-    ↓
-Detect organization from context
-    ↓
-Load org-specific or default credentials
-    ↓
-Redirect to provider with PKCE challenge
-    ↓
-User authenticates with provider
-    ↓
-Callback with code + state
-    ↓
-Verify state signature + exchange code
-    ↓
-Link/create user account
-    ↓
-Establish session with organization context
-```
-
----
-
-## Organization-Scoped Sessions
-
-Sessions are scoped to the active organization:
-
-```typescript
-// Get session with organization context
-const session = await auth.api.getSession({
-  headers: request.headers,
-});
-
-// session.session.activeOrganizationId
-// session.user.id
-```
-
-### Switching Organizations
-
-```typescript
-// Switch active organization
-await fetch('/api/organizations/switch', {
-  method: 'POST',
-  body: JSON.stringify({ organizationId }),
-});
-```
-
----
+This is also why callback handling matters for enterprise auth. Social OAuth, SSO, verification redirects, and invitation acceptance all need to land the user back in the correct organization context instead of dropping them into a generic global session.
 
 ## App Access Control
 
-Users can be restricted from specific applications:
+User-level app access flags remain part of the auth model:
 
 | Permission | Description |
 |------------|-------------|
-| `canUseWebapp` | Access to web application |
-| `canUseDesktop` | Access to desktop app |
-| `canUseMobile` | Access to mobile app |
+| `canUseWebapp` | Access to the web application |
+| `canUseDesktop` | Access to the desktop application |
+| `canUseMobile` | Access to the mobile application |
 
-<Callout type="info" title="Default Access">
-  All permissions default to `true`. Administrators can restrict access per user.
-</Callout>
-
-### Access Detection
-
-The system detects app type from request headers:
-
-- **Cookie auth** → Webapp
-- **Bearer token + mobile user agent** → Mobile
-- **Bearer token + other** → Desktop
-
-### Access Denied Handling
-
-When access is denied:
-1. Audit log entry created
-2. User redirected to `/access-denied` page
-3. Clear message explaining which app is restricted
-
----
-
-## Content Security Policy
-
-The app implements a strict CSP with nonce-based script execution:
-
-```typescript
-// CSP headers are set automatically
-// Scripts must include the nonce
-<script nonce={nonce}>...</script>
-```
-
-### CSP Reporting
-
-CSP violations are reported to `/api/csp-report` for monitoring.
+These permissions are evaluated after authentication so an authenticated user can still be denied a specific app surface while retaining access to other allowed clients.

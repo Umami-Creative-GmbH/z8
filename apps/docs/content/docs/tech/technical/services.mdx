@@ -1,230 +1,98 @@
 ---
 title: Services & Infrastructure
-description: Notifications, storage, background jobs, analytics, and DateTime handling
+description: Notifications, storage, background jobs, queues, and export orchestration
 icon: Cloud
 ---
 
-import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
-import { Callout } from 'fumadocs-ui/components/callout';
-import { File, Folder, Files } from 'fumadocs-ui/components/files';
+import { Callout } from "fumadocs-ui/components/callout";
+import { File, Folder, Files } from "fumadocs-ui/components/files";
 
 ## Notification System
 
-### Multi-Channel Architecture
+The notification system supports email, push, in-app, and chat-platform delivery while keeping event production separate from delivery mechanics.
 
-The notification system supports seven delivery channels:
+Core responsibilities:
 
-| Channel | Technology | Use Case |
-|---------|------------|----------|
-| **Email** | SMTP / Provider | Transactional emails |
-| **Push** | Web Push API | Browser notifications |
-| **In-App** | Server-Sent Events | Real-time updates |
-| **Microsoft Teams** | Bot Framework / Adaptive Cards | Workspace notifications |
-| **Slack** | Block Kit / OAuth | Workspace notifications |
-| **Telegram** | Bot API / Inline buttons | Direct messages |
-| **Discord** | Embeds / Slash commands | Server notifications |
-
-### Bot Platform Infrastructure
-
-The messaging platform integrations share a unified architecture:
-
-```
-Approval created / Digest triggered / Event occurs
-    ↓
-Notification service selects delivery channels
-    ↓
-For each bot channel: check user has linked account
-    ↓
-Platform-specific SDK handler formats message
-    ↓
-Send via platform API (Teams/Slack/Telegram/Discord)
-    ↓
-Track message for interactive updates (approve/reject)
-```
-
-#### Shared Bot Command Registry
-
-All four platforms use a unified command registry. Commands are registered once and dispatched to platform-specific handlers:
-
-| Command | Description | Role |
-|---------|-------------|------|
-| `help` | List available commands | All |
-| `pending` | Pending approval requests | Manager |
-| `clockedin` | Currently clocked-in employees | All |
-| `whosout` | Team members on leave | Manager |
-| `openshifts` | Unfilled shifts | Manager |
-| `coverage` | Coverage status for today | Manager |
-| `compliance` | Compliance exceptions | Manager |
-| `link` | Link z8 account via code | All |
-
-#### Database Schema
-
-Bot integrations use organization-scoped tables:
-
-| Table | Purpose |
-|-------|---------|
-| `slack_config` | OAuth tokens, feature toggles, digest settings |
-| `telegram_config` | Bot token, webhook secret, feature toggles |
-| `discord_config` | Bot token, app ID, public key, feature toggles |
-| `teams_config` | Tenant mapping, service URL, feature toggles |
-| `*_user_mapping` | Per-platform user account links |
-| `*_approval_message` | Tracks sent approval messages for updates |
-| `*_escalation` | Escalation audit trail with timeout tracking |
-
-### Billing Service
-
-The billing system integrates with Stripe for seat-based subscriptions:
-
-| Component | Purpose |
-|-----------|---------|
-| `BillingEnforcementService` | Gates feature access based on subscription state |
-| Stripe Webhook Handler | Processes 12 event types for subscription lifecycle |
-| Seat Sync | Automatically updates Stripe quantity on employee changes |
-
-Gated behind `BILLING_ENABLED` environment variable. When disabled, all features are available without subscription checks.
-
-### Turnstile Bot Protection
-
-Authentication pages are protected with Cloudflare Turnstile:
-
-- Login, signup, and password reset forms include a Turnstile widget
-- Server-side verification with fail-closed behavior
-- Enterprise organizations can use custom per-domain Turnstile keys stored in Vault
-- Configured via `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` environment variables
-
-### Push Notifications
-
-<Tabs items={['Generate Keys', 'Configure']}>
-  <Tab value="Generate Keys">
-    ```bash
-    bunx web-push generate-vapid-keys
-    ```
-  </Tab>
-  <Tab value="Configure">
-    ```ini
-    VAPID_PUBLIC_KEY=<generated-public-key>
-    VAPID_PRIVATE_KEY=<generated-private-key>
-    VAPID_SUBJECT=mailto:support@yourdomain.com
-    ```
-  </Tab>
-</Tabs>
-
-### SSE Implementation
-
-Real-time notifications use Server-Sent Events:
-- Endpoint: `/api/notifications/sse`
-- Auto-reconnection on disconnect
-- Event types: `notification`, `status`, `heartbeat`
-
----
+- domain services emit organization-scoped events
+- notification services choose channels and format messages
+- queue-backed delivery handles retries and slower integrations
 
 ## Storage Infrastructure
 
-### TUS Resumable Uploads
-
-File uploads use the TUS protocol for reliable, resumable uploads:
-
-- Large file support with chunking
-- Resume interrupted uploads
-- Progress tracking
-
-### S3 Integration (Required)
-
-S3-compatible object storage is **required** for all deployments. Configure S3 storage:
+S3-compatible object storage is required for uploads, exports, attachments, and generated artifacts.
 
 ```ini
 S3_BUCKET=your-bucket
 S3_REGION=eu-central-1
 S3_ACCESS_KEY_ID=<access-key>
 S3_SECRET_ACCESS_KEY=<secret-key>
-S3_ENDPOINT=https://s3.amazonaws.com  # Or compatible endpoint
-```
-
-For local development, z8 includes **RustFS** as a lightweight S3-compatible storage server:
-
-```ini
-# RustFS defaults for local development
-S3_BUCKET=z8
-S3_REGION=us-east-1
-S3_ACCESS_KEY_ID=minioadmin
-S3_SECRET_ACCESS_KEY=minioadmin
-S3_ENDPOINT=http://localhost:9000
+S3_ENDPOINT=https://s3.amazonaws.com
 ```
 
 <Callout type="info">
-S3 storage is no longer optional. The local filesystem fallback has been removed. All file uploads, exports, and attachments are stored in S3.
+  Production deployments should assume object storage is required. Generated exports are not treated as durable local-disk files.
 </Callout>
-
----
 
 ## Background Jobs
 
-### Cron Jobs
+Z8 uses BullMQ with Valkey/Redis for background processing.
 
-Background jobs are handled via cron endpoints:
+### Job Types
 
-| Job | Schedule | Description |
-|-----|----------|-------------|
-| `/api/cron/reminders` | Daily | Clock in/out reminders |
-| `/api/cron/reports` | Weekly | Scheduled report generation |
-| `/api/cron/cleanup` | Daily | Cleanup expired data |
-| `/api/cron/export` | On-demand | Data export processing |
+| Queue Responsibility | Purpose |
+|----------------------|---------|
+| Exports | Large data and payroll exports |
+| Scheduled exports | Recurring report and payroll runs |
+| Notifications | Deferred delivery and batching |
+| Cleanup | Maintenance and retention work |
+| Webhooks | Retried outbound webhook delivery |
 
-### Job Processing
+### Worker Runtime
 
-```typescript
-import { processExportJob } from '@/lib/jobs/export-processor';
-```
+The worker is a dedicated process that:
 
-### BullMQ Job Queue
+- processes one-off jobs
+- registers and runs repeatable cron-style jobs
+- shares database, queue, and storage infrastructure with the web app
+- scales independently from the HTTP runtime
 
-For reliable background job processing, the system uses BullMQ with Valkey/Redis:
+---
 
-```typescript
-import { Queue, Worker } from 'bullmq';
+## Canonical Time Model
 
-// Create a queue
-const exportQueue = new Queue('exports', {
-  connection: { host: 'localhost', port: 6379 }
-});
+Service boundaries increasingly revolve around the canonical time-record model instead of treating work entries, absences, approvals, and downstream exports as unrelated pipelines.
 
-// Add a job
-await exportQueue.add('generate-report', {
-  organizationId,
-  reportType: 'time-entries',
-  dateRange: { start, end }
-});
-```
+Operationally that means:
 
-#### Job Types
+- time-tracking services produce or reconcile normalized work and absence data
+- approval services add decision state that can travel with canonical records
+- reporting and payroll services consume normalized records instead of rebuilding business meaning from raw UI events
+- notification and webhook systems react to organization-scoped events rather than owning time-domain state themselves
 
-| Queue | Purpose |
-|-------|---------|
-| `exports` | Large data exports |
-| `reports` | Scheduled report generation |
-| `notifications` | Bulk notification delivery |
-| `cleanup` | Data cleanup and maintenance |
-| `webhooks` | Webhook delivery with retries |
+This separation keeps domain logic in time and approval services, while infrastructure services stay focused on delivery, storage, and background execution.
 
-#### Worker Configuration
+## Payroll Export Architecture
 
-```typescript
-const worker = new Worker('exports', async (job) => {
-  // Process the job
-  await generateExport(job.data);
-}, {
-  connection: { host: 'localhost', port: 6379 },
-  concurrency: 3
-});
-```
+Payroll export orchestration sits between the time domain and infrastructure services.
+
+The architecture has two distinct target types:
+
+- **File formatters** transform normalized work periods, absences, and wage mappings into downloadable artifacts such as DATEV, Lexware, Sage, and CSV-style SuccessFactors exports.
+- **API exporters** validate target config, push attendance and absence data into external systems such as Personio, Workday, and SuccessFactors API flows, and record per-record sync outcomes.
+
+Supporting service responsibilities are split as follows:
+
+- payroll export services fetch normalized source data and mappings
+- queue and worker infrastructure handles async export execution
+- object storage keeps generated files for later download
+- sync-record persistence captures partial success and retry behavior for API-based targets
+- notifications or webhooks can announce export completion without becoming part of the export domain itself
 
 ---
 
 ## Event Bus
 
 The event bus provides internal pub/sub messaging for decoupled event handling across the application.
-
-### Architecture
 
 <Files>
   <Folder name="src/lib/events" defaultOpen>
@@ -235,294 +103,10 @@ The event bus provides internal pub/sub messaging for decoupled event handling a
   </Folder>
 </Files>
 
-### Publishing Events
-
-```typescript
-import { eventBus } from '@/lib/events';
-
-// Emit an event when something happens
-eventBus.emit('time_entry.clock_in', {
-  employeeId,
-  organizationId,
-  timestamp: new Date(),
-  metadata: { source: 'desktop' }
-});
-```
-
-### Subscribing to Events
-
-```typescript
-import { eventBus } from '@/lib/events';
-
-// Subscribe to handle events
-eventBus.on('time_entry.clock_in', async (data) => {
-  // Send notifications
-  await notifyManagers(data);
-
-  // Update dashboards
-  await updateRealTimeDashboard(data);
-
-  // Trigger webhooks (handled by webhook subscriber)
-});
-```
-
-### Event Types
-
-| Category | Events |
-|----------|--------|
-| **Time Entries** | `clock_in`, `clock_out`, `created`, `updated`, `deleted` |
-| **Absences** | `requested`, `approved`, `denied`, `cancelled` |
-| **Employees** | `created`, `updated`, `deactivated` |
-| **Projects** | `created`, `budget_alert`, `deadline_approaching` |
-| **System** | `export_ready`, `report_generated` |
-
----
-
 ## Webhook System
 
-Webhooks deliver real-time notifications to external systems.
-
-### Webhook Queue
-
-<Files>
-  <Folder name="src/lib/webhooks" defaultOpen>
-    <File name="webhook-service.ts" />
-    <File name="webhook-queue.ts" />
-    <File name="webhook-worker.ts" />
-    <File name="webhook-delivery.ts" />
-    <File name="webhook-subscriber.ts" />
-    <File name="signature.ts" />
-    <File name="types.ts" />
-  </Folder>
-</Files>
-
-### Delivery Flow
-
-```
-Event occurs (e.g., clock in)
-    ↓
-Event bus emits event
-    ↓
-Webhook subscriber receives event
-    ↓
-Find matching webhook endpoints
-    ↓
-Queue delivery jobs in BullMQ
-    ↓
-Worker processes deliveries
-    ↓
-Sign payload with HMAC-SHA256
-    ↓
-POST to webhook URL
-    ↓
-Retry on failure (exponential backoff)
-```
-
-### Retry Strategy
-
-| Attempt | Delay |
-|---------|-------|
-| 1 | Immediate |
-| 2 | 1 second |
-| 3 | 5 seconds |
-| 4 | 30 seconds |
-| 5 | 2 minutes |
-| 6 | 10 minutes |
-
-### Webhook Payload
-
-```typescript
-interface WebhookPayload {
-  id: string;           // Unique delivery ID
-  type: string;         // Event type
-  createdAt: string;    // ISO timestamp
-  data: {               // Event-specific data
-    // Varies by event type
-  }
-}
-```
-
-### Signature Verification
-
-Payloads include an HMAC-SHA256 signature in the `X-Webhook-Signature` header:
-
-```typescript
-// Verify incoming webhook
-import crypto from 'crypto';
-
-const signature = request.headers['x-webhook-signature'];
-const expected = crypto
-  .createHmac('sha256', webhookSecret)
-  .update(JSON.stringify(body))
-  .digest('hex');
-
-const isValid = crypto.timingSafeEqual(
-  Buffer.from(signature),
-  Buffer.from(expected)
-);
-```
-
-### Auto-Disable
-
-Endpoints are automatically disabled after 10 consecutive failures to prevent resource waste.
-
----
+Webhooks consume organization-scoped events and hand delivery work off to queue-backed workers. This keeps external delivery concerns isolated from product-domain services.
 
 ## Rate Limiting
 
-### @upstash/ratelimit Integration
-
-API endpoints are protected with rate limiting using `@upstash/ratelimit`:
-
-```typescript
-import { Ratelimit } from '@upstash/ratelimit';
-import { Redis } from '@upstash/redis';
-
-const ratelimit = new Ratelimit({
-  redis: Redis.fromEnv(),
-  limiter: Ratelimit.slidingWindow(10, '10 s'),
-});
-
-// In API route
-const { success, limit, remaining } = await ratelimit.limit(identifier);
-```
-
-#### Rate Limit Tiers
-
-| Endpoint Type | Limit | Window |
-|---------------|-------|--------|
-| Authentication | 5 | 1 minute |
-| API Read | 100 | 1 minute |
-| API Write | 30 | 1 minute |
-| Exports | 5 | 1 hour |
-
----
-
-## Real-Time Infrastructure
-
-### Valkey Pub/Sub
-
-Real-time notifications use Valkey (Redis-compatible) pub/sub:
-
-```typescript
-import { createClient } from 'redis';
-
-const publisher = createClient({ url: process.env.VALKEY_URL });
-const subscriber = createClient({ url: process.env.VALKEY_URL });
-
-// Publish notification
-await publisher.publish('notifications', JSON.stringify({
-  userId,
-  type: 'approval-request',
-  data: { ... }
-}));
-
-// Subscribe in SSE handler
-await subscriber.subscribe('notifications', (message) => {
-  const notification = JSON.parse(message);
-  // Send to appropriate SSE connection
-});
-```
-
-#### Channel Structure
-
-| Channel | Purpose |
-|---------|---------|
-| `notifications:{userId}` | User-specific notifications |
-| `organization:{orgId}` | Organization-wide broadcasts |
-| `presence:{orgId}` | User presence tracking |
-
----
-
-## DateTime Handling
-
-### Luxon Integration
-
-All date/time operations use Luxon for timezone-aware handling:
-
-<Tabs items={['Create', 'Format', 'Convert']}>
-  <Tab value="Create">
-    ```typescript
-    import { DateTime } from 'luxon';
-
-    // Create with timezone
-    const dt = DateTime.now().setZone('Europe/Berlin');
-    ```
-  </Tab>
-  <Tab value="Format">
-    ```typescript
-    // Format for display
-    dt.toFormat('dd.MM.yyyy HH:mm');
-
-    // ISO format for API
-    dt.toISO();
-    ```
-  </Tab>
-  <Tab value="Convert">
-    ```typescript
-    // Convert to user's timezone
-    toLocalTime(date, userTimezone);
-
-    // Convert to UTC for storage
-    toUTC(date);
-    ```
-  </Tab>
-</Tabs>
-
-### Utilities
-
-Custom utilities in `src/lib/datetime/`:
-- `toLocalTime()` - Convert to user's timezone
-- `toUTC()` - Convert to UTC for storage
-- `formatDuration()` - Human-readable duration
-- `getWorkingDays()` - Calculate business days
-
----
-
-## Email Templates
-
-### React Email
-
-Email templates use React Email for consistent styling:
-
-<Files>
-  <Folder name="src/lib/email/templates" defaultOpen>
-    <File name="welcome.tsx" />
-    <File name="approval-request.tsx" />
-    <File name="approval-response.tsx" />
-    <File name="time-reminder.tsx" />
-    <File name="export-ready.tsx" />
-    <File name="export-failed.tsx" />
-  </Folder>
-</Files>
-
-### Rendering
-
-```typescript
-import { render } from '@/lib/email/render';
-import { WelcomeEmail } from '@/lib/email/templates/welcome';
-
-const html = await render(WelcomeEmail, { name: 'John' });
-```
-
----
-
-## Analytics Service
-
-### Team Performance Metrics
-
-The analytics service provides:
-
-- Work hours by team/employee
-- Overtime trends and patterns
-- Vacation usage and balance
-- Attendance metrics
-
-### API Endpoints
-
-| Endpoint | Description |
-|----------|-------------|
-| `GET /api/analytics/team-performance` | Team performance metrics |
-| `GET /api/analytics/vacation-trends` | Vacation usage trends |
-| `GET /api/analytics/work-hours` | Work hours summary |
-| `GET /api/analytics/export` | Export analytics data |
+Rate limiting uses the same Redis-compatible infrastructure family as queue processing so auth and API traffic controls can scale with the rest of the runtime.

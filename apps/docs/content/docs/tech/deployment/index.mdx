@@ -1,364 +1,184 @@
 ---
 title: Deployment
-description: Hosting and configuration guide for Z8
+description: Hosting and runtime guide for Z8
 ---
 
 This section covers deployment and hosting configuration for the Z8 Team Management System.
 
 ## Overview
 
-Z8 consists of multiple applications that can be deployed independently:
+Z8 consists of multiple runtime roles and supporting applications. For operators, the important distinction is less about the repo layout and more about which process owns which responsibility.
 
-| Application | Technology | Deployment Target |
-|-------------|------------|-------------------|
-| Web App | Next.js | Vercel, Docker, Node.js |
-| Mobile App | Expo/React Native | App Store, Google Play |
-| Desktop App | Tauri | Windows, macOS, Linux |
+| Runtime / App | Technology | Primary Responsibility |
+|---------------|------------|------------------------|
+| Web App | Next.js 16 | User-facing web UI and HTTP API |
+| Docs App | Next.js 16 + Fumadocs | Documentation site |
+| Worker | Node.js + BullMQ | Background jobs, cron-style processing, webhook delivery, exports |
+| Migration Job | Node.js | Schema migration at deploy time |
+| Seed Job | Node.js | Optional seed and bootstrap tasks |
+| Mobile App | Expo | Distributed mobile client |
+| Desktop App | Tauri | Distributed desktop client |
 
-## Web Application
+## Runtime Roles
 
-### Environment Variables
+Typical production deployments include:
 
-The web application requires the following environment variables:
+- one or more web app instances serving the main product
+- at least one worker instance connected to the same database, object storage, and Valkey/Redis infrastructure
+- a one-shot migration run during deploys before new web or worker pods take traffic
+- optional seed/bootstrap execution when an environment needs baseline data
 
-```ini
-# Database
-DATABASE_URL=postgres://...
+The repository already supports these roles through `webapp`, `worker`, `migration`, and `db-seed` Docker targets.
 
-# Authentication
-BETTER_AUTH_SECRET=<generated-secret>
-BETTER_AUTH_URL=https://your-domain.com
+## Workspace Commands
 
-# Storage (required)
-S3_BUCKET=your-bucket
-S3_REGION=eu-central-1
-S3_ACCESS_KEY_ID=<access-key>
-S3_SECRET_ACCESS_KEY=<secret-key>
-S3_ENDPOINT=https://s3.amazonaws.com
+Common build commands from the repo root use `pnpm`:
 
-# Push Notifications (optional)
-VAPID_PUBLIC_KEY=<generated-key>
-VAPID_PRIVATE_KEY=<generated-key>
-VAPID_SUBJECT=mailto:support@yourdomain.com
-
-# Bot Protection (optional)
-TURNSTILE_SITE_KEY=<cloudflare-site-key>
-TURNSTILE_SECRET_KEY=<cloudflare-secret-key>
-
-# Billing (optional)
-BILLING_ENABLED=true
-STRIPE_SECRET_KEY=<stripe-secret-key>
-STRIPE_WEBHOOK_SECRET=<stripe-webhook-signing-secret>
-STRIPE_PUBLISHABLE_KEY=<stripe-publishable-key>
+```bash
+pnpm --filter webapp build
+pnpm --filter docs build
+pnpm build:docs
 ```
 
-### Vercel Deployment
+Desktop packaging uses the desktop workspace directly:
 
-1. Connect your repository to Vercel
-2. Configure environment variables
-3. Set the root directory to `apps/webapp`
-4. Deploy
+```bash
+pnpm --dir apps/desktop run build
+pnpm --dir apps/desktop run tauri build
+```
+
+## Environment Variables
+
+The web app requires environment-backed system configuration for:
+
+- PostgreSQL connectivity
+- Better Auth secrets and base URL behavior
+- S3-compatible object storage
+- Valkey/Redis queue infrastructure
+- optional billing, email, bot protection, and other platform services
+
+Organization-specific credentials should be entered through organization settings. System secrets remain environment-backed.
+
+## Web Application
 
 ### Docker Deployment
 
 A Dockerfile is available for containerized deployments:
 
 ```bash
-docker build -t z8-webapp ./apps/webapp
-docker run -p 3000:3000 z8-webapp
+docker build --target webapp -t z8-webapp:latest .
+docker run -p 3000:3000 z8-webapp:latest
 ```
 
-## Mobile Application
+## Database And Migrations
 
-### Building for App Stores
+Z8 uses PostgreSQL with Drizzle ORM. Auth/schema generation and migrations use `pnpm`:
 
 ```bash
-# iOS
-cd apps/mobile
-eas build --platform ios
-
-# Android
-eas build --platform android
+pnpm --dir apps/webapp run auth:migrate
 ```
 
-## Desktop Application
-
-### Building Installers
+If you need baseline seed data after migrations:
 
 ```bash
-cd apps/desktop
-bun run build
+pnpm --dir apps/webapp run db:seed
 ```
 
-This produces installers for Windows (.msi), macOS (.dmg), and Linux (.deb, .AppImage).
+The deployment Dockerfile also exposes dedicated `migration` and `db-seed` targets for one-shot runtime jobs.
 
-## Database
+## Storage
 
-Z8 uses PostgreSQL with Drizzle ORM. Run migrations with:
-
-```bash
-cd apps/webapp
-bun run db:migrate
-```
-
-### Database Seeding
-
-After running migrations, seed the database with initial data (time regulation presets, etc.):
-
-```bash
-cd apps/webapp
-bun run db:seed
-```
-
-#### Seed CLI Options
-
-| Command | Description |
-|---------|-------------|
-| `bun run db:seed` | Run all seeders |
-| `bun run db:seed --list` | List available seeders |
-| `bun run db:seed --only=<name>` | Run a specific seeder |
-| `bun run db:seed --help` | Show help |
-
-#### Available Seeders
-
-| Seeder | Description |
-|--------|-------------|
-| `time-regulation-presets` | Labor law presets (German, EU, French, UK, Swiss, Austrian) |
-
-#### Idempotent Seeding
-
-All seeders are **idempotent**—safe to run multiple times. Existing records are skipped, so you can re-run seeding without duplicating data.
-
-#### Production Seeding
-
-For production deployments, run seeding as part of your deployment pipeline:
-
-```bash
-# After migrations
-bun run db:migrate
-
-# Seed initial data
-bun run db:seed
-```
-
-Or run directly:
-
-```bash
-bun --bun run src/db/seed/do-seed.ts
-```
-
-## Storage (Required)
-
-S3-compatible object storage is **required** for file uploads, exports, and attachments:
+S3-compatible object storage is required for file uploads, generated exports, and attachments.
 
 ```ini
 S3_BUCKET=your-bucket
 S3_REGION=eu-central-1
 S3_ACCESS_KEY_ID=<access-key>
 S3_SECRET_ACCESS_KEY=<secret-key>
-S3_ENDPOINT=https://s3.amazonaws.com  # Or MinIO, R2, RustFS, etc.
+S3_ENDPOINT=https://s3.amazonaws.com
 ```
 
-### Local Development with RustFS
+For local development and some self-hosted setups, Z8 can target compatible providers such as RustFS, MinIO, R2, or similar S3-compatible services.
 
-For local development, z8 includes RustFS as a lightweight S3-compatible server in the Docker Compose stack:
+## Queue Infrastructure
 
-```yaml
-services:
-  rustfs:
-    image: rustfs/rustfs:latest
-    ports:
-      - "9000:9000"
-    volumes:
-      - rustfs-data:/data
-```
+Z8 uses Valkey/Redis-compatible infrastructure for:
 
-Buckets are automatically created on startup via the storage initialization service.
-
-### Production Storage Options
-
-| Provider | Endpoint Example |
-|----------|-----------------|
-| AWS S3 | `https://s3.amazonaws.com` |
-| Cloudflare R2 | `https://<account>.r2.cloudflarestorage.com` |
-| MinIO | `https://minio.yourdomain.com` |
-| Hetzner Object Storage | `https://<region>.your-objectstorage.com` |
-
-## Valkey/Redis Configuration
-
-Z8 uses Valkey (Redis-compatible) for job queues, rate limiting, and real-time pub/sub.
-
-### Environment Variables
+- BullMQ worker queues
+- retries for exports and webhooks
+- rate limiting
+- selected realtime coordination paths
 
 ```ini
-# Valkey/Redis connection
 VALKEY_URL=redis://localhost:6379
-# Or with authentication
-VALKEY_URL=redis://:password@localhost:6379
-
-# For Upstash (serverless)
-UPSTASH_REDIS_REST_URL=https://your-instance.upstash.io
-UPSTASH_REDIS_REST_TOKEN=<your-token>
-```
-
-### Features Requiring Valkey
-
-| Feature | Purpose |
-|---------|---------|
-| Job Queue (BullMQ) | Background job processing |
-| Rate Limiting | API request throttling |
-| Real-time Notifications | Pub/sub for SSE |
-| Session Store (optional) | Distributed session storage |
-
-### Self-Hosted Valkey
-
-```bash
-# Docker
-docker run -d --name valkey -p 6379:6379 valkey/valkey:latest
-
-# With persistence
-docker run -d --name valkey -p 6379:6379 \
-  -v valkey-data:/data \
-  valkey/valkey:latest \
-  valkey-server --appendonly yes
 ```
 
 ## Worker Process Deployment
 
-For background job processing, deploy a separate worker process.
+For background job processing, deploy a separate worker process. The worker runs BullMQ jobs and repeatable cron-style jobs, so it should be treated as a first-class runtime, not an optional sidecar.
 
 ### Worker Configuration
 
-```bash
-# Start worker process
-bun run worker
+Example local command:
 
-# Or with specific queues
-QUEUES=exports,reports bun run worker
+```bash
+pnpm --dir apps/webapp exec tsx src/worker.ts
 ```
 
-### Docker Compose Example
+Important worker inputs include:
+
+- `VALKEY_*` or compatible Redis connection settings
+- `WORKER_CONCURRENCY`
+- `ENABLE_CRON_JOBS`
+- the same database and storage configuration used by the web app
+
+### Docker Compose Shape
 
 ```yaml
 services:
   webapp:
-    build: ./apps/webapp
-    ports:
-      - "3000:3000"
-    environment:
-      - DATABASE_URL=${DATABASE_URL}
-      - VALKEY_URL=redis://valkey:6379
-      - S3_ENDPOINT=http://rustfs:9000
-      - S3_BUCKET=z8
-      - S3_ACCESS_KEY_ID=minioadmin
-      - S3_SECRET_ACCESS_KEY=minioadmin
+    build:
+      context: .
+      target: webapp
 
   worker:
-    build: ./apps/webapp
-    command: bun run worker
-    environment:
-      - DATABASE_URL=${DATABASE_URL}
-      - VALKEY_URL=redis://valkey:6379
+    build:
+      context: .
+      target: worker
 
-  valkey:
-    image: valkey/valkey:latest
-    volumes:
-      - valkey-data:/data
-
-  rustfs:
-    image: rustfs/rustfs:latest
-    ports:
-      - "9000:9000"
-    volumes:
-      - rustfs-data:/data
+  migration:
+    build:
+      context: .
+      target: migration
 ```
 
-### Scaling Workers
+## Scheduled Work
 
-For high-load environments, scale workers horizontally:
+Scheduled work is registered in the worker and executed through BullMQ repeatable jobs. Common responsibilities include:
 
-```bash
-# Multiple worker instances
-docker-compose up -d --scale worker=3
-```
-
-Each worker processes jobs from the queue independently.
+| Responsibility | Description |
+|---------------|-------------|
+| Export processing | Long-running exports and payroll export follow-up |
+| Scheduled exports | Recurring report or payroll generation |
+| Notifications and reminders | Time tracking reminders and queued delivery |
+| Cleanup | Expired files and maintenance tasks |
+| Webhooks | Retried outbound delivery jobs |
 
 ## Desktop App Distribution
 
-### Building for Distribution
-
-```bash
-cd apps/desktop
-bun run build
-```
-
-This produces platform-specific installers in `apps/desktop/src-tauri/target/release/bundle/`:
-
-| Platform | Output |
-|----------|--------|
-| Windows | `.msi`, `.exe` |
-| macOS | `.dmg`, `.app` |
-| Linux | `.deb`, `.AppImage`, `.rpm` |
-
-### Code Signing
-
-For production distribution, configure code signing:
-
-**Windows:**
-```ini
-# In tauri.conf.json or environment
-TAURI_SIGNING_PRIVATE_KEY=<your-key>
-TAURI_SIGNING_PRIVATE_KEY_PASSWORD=<password>
-```
-
-**macOS:**
-```ini
-APPLE_SIGNING_IDENTITY="Developer ID Application: Your Company"
-APPLE_ID=your@email.com
-APPLE_PASSWORD=<app-specific-password>
-APPLE_TEAM_ID=<team-id>
-```
-
-### Distribution Channels
-
-- **Direct download**: Host installers on your website or CDN
-- **Windows**: Microsoft Store (optional)
-- **macOS**: Notarization required for distribution outside App Store
-- **Linux**: Package repositories or AppImage hosting
-
-## Health Checks
-
-Configure your orchestrator to use these health endpoints:
-
-| Endpoint | Purpose |
-|----------|---------|
-| `GET /api/health` | Overall system health |
-| `GET /api/health/db` | Database connectivity |
-| `GET /api/health/ready` | Readiness probe for load balancers |
-
-## Cron Jobs
-
-Set up scheduled jobs for:
-
-| Endpoint | Schedule | Description |
-|----------|----------|-------------|
-| `/api/cron/reminders` | Daily | Time tracking reminders |
-| `/api/cron/reports` | Weekly | Scheduled report generation |
-| `/api/cron/cleanup` | Daily | Cleanup of expired data |
-| `/api/cron/project-deadlines` | Daily | Project deadline notifications |
+The desktop app is a distributed Tauri client rather than a server runtime. Build it separately from the web deployment pipeline and publish platform installers as needed.
 
 ## Monitoring
 
-The application includes instrumentation for monitoring:
+Production monitoring should cover:
 
-- Response time metrics
-- Error rate tracking
-- Database query performance
-- Background job queue status
+- web health and readiness
+- worker health and queue depth
+- database connectivity and migration status
+- object-storage availability
+- webhook and export failure rates
 
 ## Additional Resources
 
 - [Technical Docs](/docs/tech/technical) - Development setup and architecture
-- [Admin Guide](/docs/ui/admin-guide) - System configuration after deployment
-- [Health Monitoring](/docs/ui/admin-guide/system-administration) - Monitoring setup
+- [Admin Guide](/docs/guide/admin-guide) - Product configuration after deployment
