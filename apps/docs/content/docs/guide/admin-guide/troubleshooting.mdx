@@ -94,6 +94,17 @@ import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
     4. Check if custom allowance overrides org default
     5. Confirm work schedule (part-time may have prorated vacation)
   </Accordion>
+
+  <Accordion title="Clockin import preview or results look incomplete">
+    **Problem**: The Clockin import preview shows fewer employees, workdays, or absences than expected, or the import stops with a provider response error.
+
+    **Solution**:
+    1. Re-run the preview after confirming you are using a current Z8 version. Current versions read all paginated Clockin employee, workday, and absence responses instead of stopping at the first page.
+    2. Verify the selected date range and employee mappings. The preview only counts data inside the chosen range, and unmapped employees are skipped during import.
+    3. Remember that duplicate workdays and absences are skipped rather than updated, so repeated imports may show high skipped counts.
+    4. If you see an error like `Clockin API error ... invalid JSON response`, retry the preview or import first. That usually means Clockin returned a malformed success payload instead of valid JSON.
+    5. If the problem persists, capture the exact error text and contact support or your Clockin provider contact with the affected date range and employee scope.
+  </Accordion>
 </Accordions>
 
 ---
