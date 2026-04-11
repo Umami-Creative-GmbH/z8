@@ -14,6 +14,12 @@ vi.mock("@/navigation", () => ({
 	),
 }));
 
+vi.mock("@/components/settings/export-operations/export-operations-date-time", () => ({
+	ExportOperationsDateTime: ({ value, emptyLabel }: { value: Date | string | null; emptyLabel?: string }) => (
+		<span>{value ? "formatted-date-time" : (emptyLabel ?? "")}</span>
+	),
+}));
+
 vi.mock("@/components/ui/card", () => ({
 	Card: ({ children }: { children: ReactNode }) => <section>{children}</section>,
 	CardHeader: ({ children }: { children: ReactNode }) => <div>{children}</div>,
@@ -101,6 +107,7 @@ describe("ExportOperationsDashboard", () => {
 		expect(screen.getByText("2")).toBeTruthy();
 		expect(screen.getByText("Last payroll export")).toBeTruthy();
 		expect(screen.getByText("Last audit pack")).toBeTruthy();
+		expect(screen.getAllByText("formatted-date-time").length).toBeGreaterThan(0);
 		expect(screen.getByRole("heading", { name: "Alerts", level: 2 })).toBeTruthy();
 		expect(screen.getByRole("heading", { name: "Upcoming runs", level: 2 })).toBeTruthy();
 		expect(screen.getByRole("heading", { name: "Recent activity", level: 2 })).toBeTruthy();

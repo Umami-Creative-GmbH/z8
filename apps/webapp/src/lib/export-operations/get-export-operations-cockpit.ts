@@ -297,7 +297,8 @@ function buildAlerts(
 			),
 			description: t(
 				"settings.exportOperations.alerts.blockedSchedule.description",
-				`${schedule.name} needs a payroll export configuration before it can run.`,
+				"{name} needs a payroll export configuration before it can run.",
+				{ name: schedule.name },
 			),
 			occurredAt: schedule.lastExecutionAt ?? schedule.updatedAt ?? schedule.createdAt,
 			href: "/settings/scheduled-exports",

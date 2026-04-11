@@ -4,7 +4,26 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mockState = vi.hoisted(() => ({
 	getExportJobHistory: vi.fn(),
 	listAuditPackRequests: vi.fn(),
-	getTranslate: vi.fn(async () => (_key: string, defaultValue?: string) => defaultValue ?? _key),
+	getTranslate: vi.fn(
+		async () =>
+			(
+				_key: string,
+				defaultValue?: string,
+				params?: Record<string, string | number>,
+			) => {
+				const template = defaultValue ?? _key;
+
+				if (!params) {
+					return template;
+				}
+
+				return Object.entries(params).reduce(
+					(result, [paramKey, paramValue]) =>
+						result.replaceAll(`{${paramKey}}`, String(paramValue)),
+					template,
+				);
+			},
+	),
 	findPayrollFailuresLast7Days: vi.fn(),
 	findLatestCompletedPayrollExports: vi.fn(),
 	findScheduledExports: vi.fn(),
@@ -320,6 +339,8 @@ describe("getExportOperationsCockpit", () => {
 				id: "schedule-blocked",
 				source: "scheduled",
 				severity: "warning",
+				description:
+					"Blocked payroll export needs a payroll export configuration before it can run.",
 				href: "/settings/scheduled-exports",
 			}),
 			expect.objectContaining({

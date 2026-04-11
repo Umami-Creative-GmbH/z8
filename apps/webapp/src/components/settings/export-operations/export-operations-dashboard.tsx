@@ -1,8 +1,9 @@
+import type { ReactNode } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ExportOperationsDateTime } from "@/components/settings/export-operations/export-operations-date-time";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { formatDateTime } from "@/lib/datetime/format";
 import type {
 	ExportOperationsActivityItem,
 	ExportOperationsAlert,
@@ -11,7 +12,11 @@ import type {
 } from "@/lib/export-operations/get-export-operations-cockpit";
 import { Link } from "@/navigation";
 
-type TranslateFn = (key: string, defaultValue?: string) => string;
+type TranslateFn = (
+	key: string,
+	defaultValue?: string,
+	params?: Record<string, string | number>,
+) => string;
 
 interface ExportOperationsDashboardProps {
 	t: TranslateFn;
@@ -47,7 +52,12 @@ export function ExportOperationsDashboard({ t, data }: ExportOperationsDashboard
 				/>
 				<SummaryCard
 					title={t("settings.exportOperations.summary.lastPayrollExport", "Last payroll export")}
-					value={formatOptionalDate(data.summary.lastPayrollExportAt, t)}
+					value={
+						<ExportOperationsDateTime
+							value={data.summary.lastPayrollExportAt}
+							emptyLabel={t("settings.exportOperations.summary.none", "Never")}
+						/>
+					}
 					description={t(
 						"settings.exportOperations.summary.lastPayrollExportDescription",
 						"Most recent payroll export completion.",
@@ -55,7 +65,12 @@ export function ExportOperationsDashboard({ t, data }: ExportOperationsDashboard
 				/>
 				<SummaryCard
 					title={t("settings.exportOperations.summary.lastAuditPack", "Last audit pack")}
-					value={formatOptionalDate(data.summary.lastAuditPackageAt, t)}
+					value={
+						<ExportOperationsDateTime
+							value={data.summary.lastAuditPackageAt}
+							emptyLabel={t("settings.exportOperations.summary.none", "Never")}
+						/>
+					}
 					description={t(
 						"settings.exportOperations.summary.lastAuditPackDescription",
 						"Most recent audit package generation.",
@@ -73,7 +88,15 @@ export function ExportOperationsDashboard({ t, data }: ExportOperationsDashboard
 	);
 }
 
-function SummaryCard({ title, value, description }: { title: string; value: string; description: string }) {
+function SummaryCard({
+	title,
+	value,
+	description,
+}: {
+	title: string;
+	value: ReactNode;
+	description: string;
+}) {
 	return (
 		<Card>
 			<CardHeader>
@@ -126,7 +149,9 @@ function AlertsCard({
 								<AlertDescription>
 									<div className="space-y-2">
 										<p className="break-words">{alert.description}</p>
-										<p className="text-muted-foreground text-xs">{formatDateTime(alert.occurredAt)}</p>
+										<p className="text-muted-foreground text-xs">
+											<ExportOperationsDateTime value={alert.occurredAt} />
+										</p>
 										<Link className={settingsLinkClassName} href={alert.href}>
 											{getSettingsLinkLabel(alert.href, t)}
 										</Link>
@@ -184,7 +209,9 @@ function UpcomingRunsCard({
 							{runs.map((run) => (
 								<TableRow key={run.id}>
 									<TableCell className="break-words">{run.name}</TableCell>
-									<TableCell>{formatDateTime(run.scheduledFor)}</TableCell>
+									<TableCell>
+										<ExportOperationsDateTime value={run.scheduledFor} />
+									</TableCell>
 									<TableCell>
 										<Link className={settingsLinkClassName} href={run.href}>
 											{getSettingsLinkLabel(run.href, t)}
@@ -252,7 +279,9 @@ function RecentActivityCard({
 									<TableCell>
 										<Badge>{item.status}</Badge>
 									</TableCell>
-									<TableCell>{formatDateTime(item.occurredAt)}</TableCell>
+									<TableCell>
+										<ExportOperationsDateTime value={item.occurredAt} />
+									</TableCell>
 									<TableCell>
 										<Link className={settingsLinkClassName} href={item.href}>
 											{getSettingsLinkLabel(item.href, t)}
@@ -266,14 +295,6 @@ function RecentActivityCard({
 			</CardContent>
 		</Card>
 	);
-}
-
-function formatOptionalDate(value: Date | null, t: TranslateFn) {
-	if (!value) {
-		return t("settings.exportOperations.summary.none", "Never");
-	}
-
-	return formatDateTime(value);
 }
 
 const settingsLinkClassName =
