@@ -2,8 +2,8 @@ import { DateTime } from "luxon";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockState = vi.hoisted(() => ({
-	getExportJobHistory: vi.fn(),
-	listAuditPackRequests: vi.fn(),
+	findPayrollJobsByOccurrence: vi.fn(),
+	findAuditRequestsByOccurrence: vi.fn(),
 	getTranslate: vi.fn(
 		async () =>
 			(
@@ -35,13 +35,45 @@ const mockState = vi.hoisted(() => ({
 }));
 
 const payrollExportJobQuery = vi.hoisted(() =>
-	vi.fn((input?: { columns?: { id?: boolean } }) => {
+	vi.fn((input?: { columns?: { id?: boolean; completedAt?: boolean } }) => {
 		if (input?.columns?.id) {
 			return mockState.findPayrollFailuresLast7Days(input);
 		}
 
-		return mockState.findLatestCompletedPayrollExports(input);
+		if (input?.columns?.completedAt) {
+			return mockState.findLatestCompletedPayrollExports(input);
+		}
+
+		return mockState.findPayrollJobsByOccurrence(input);
 	}),
+);
+
+const auditPackRequestQuery = vi.hoisted(() =>
+	vi.fn((input?: { columns?: { id?: boolean } }) => {
+		if (input?.columns?.id) {
+			return mockState.findAuditFailuresLast7Days(input);
+		}
+
+		return mockState.findAuditRequestsByOccurrence(input);
+	}),
+);
+
+const selectQuery = vi.hoisted(() =>
+	vi.fn((shape: Record<string, unknown>) => ({
+		from: () => ({
+			where: () => ({
+				orderBy: () => ({
+					limit: () => {
+						if ("fileName" in shape) {
+							return mockState.findPayrollJobsByOccurrence();
+						}
+
+						return mockState.findAuditRequestsByOccurrence();
+					},
+				}),
+			}),
+		}),
+	})),
 );
 
 const scheduledExecutionQuery = vi.hoisted(() =>
@@ -60,24 +92,16 @@ vi.mock("drizzle-orm", () => ({
 	desc: vi.fn((value: unknown) => ({ direction: "desc", value })),
 	eq: vi.fn((left: unknown, right: unknown) => ({ left, right })),
 	gte: vi.fn((left: unknown, right: unknown) => ({ left, right, operator: ">=" })),
-}));
-
-vi.mock("@/lib/payroll-export", () => ({
-	getExportJobHistory: mockState.getExportJobHistory,
+	sql: vi.fn((strings: TemplateStringsArray, ...values: unknown[]) => ({ strings, values })),
 }));
 
 vi.mock("@/tolgee/server", () => ({
 	getTranslate: mockState.getTranslate,
 }));
 
-vi.mock("@/lib/audit-pack/application/request-repository", () => ({
-	auditPackRequestRepository: {
-		listRequests: mockState.listAuditPackRequests,
-	},
-}));
-
 vi.mock("@/db", () => ({
 	db: {
+		select: selectQuery,
 		query: {
 			payrollExportJob: {
 				findMany: payrollExportJobQuery,
@@ -89,7 +113,7 @@ vi.mock("@/db", () => ({
 				findMany: scheduledExecutionQuery,
 			},
 			auditPackRequest: {
-				findMany: mockState.findAuditFailuresLast7Days,
+				findMany: auditPackRequestQuery,
 			},
 			auditExportPackage: {
 				findMany: vi.fn((input?: { limit?: number }) => {
@@ -137,7 +161,7 @@ describe("getExportOperationsCockpit", () => {
 	});
 
 	it("builds alerts, upcoming runs, and recent activity from all export sources", async () => {
-		mockState.getExportJobHistory.mockResolvedValue([
+		mockState.findPayrollJobsByOccurrence.mockResolvedValue([
 			{
 				id: "payroll-job-pending",
 				status: "pending",
@@ -148,6 +172,18 @@ describe("getExportOperationsCockpit", () => {
 				createdAt: new Date("2026-04-11T11:30:00.000Z"),
 				completedAt: null,
 				errorMessage: null,
+				filters: {},
+			},
+			{
+				id: "payroll-job-failed-late-completion",
+				status: "failed",
+				fileName: null,
+				fileSizeBytes: null,
+				workPeriodCount: null,
+				employeeCount: null,
+				createdAt: new Date("2026-04-08T07:00:00.000Z"),
+				completedAt: new Date("2026-04-10T11:15:00.000Z"),
+				errorMessage: "Payroll export worker crashed late",
 				filters: {},
 			},
 			{
@@ -259,7 +295,16 @@ describe("getExportOperationsCockpit", () => {
 			{ id: "audit-failure-completed-late" },
 		]);
 
-		mockState.listAuditPackRequests.mockResolvedValue([
+		mockState.findAuditRequestsByOccurrence.mockResolvedValue([
+			{
+				id: "audit-request-failed-late-completion",
+				organizationId: "org-1",
+				status: "failed",
+				createdAt: new Date("2026-04-08T05:00:00.000Z"),
+				completedAt: new Date("2026-04-10T10:15:00.000Z"),
+				errorMessage: "Late audit hardening failure",
+				artifact: null,
+			},
 			{
 				id: "audit-request-failed",
 				organizationId: "org-1",
@@ -309,8 +354,8 @@ describe("getExportOperationsCockpit", () => {
 			DateTime.fromISO("2026-04-11T12:00:00.000Z"),
 		);
 
-		expect(mockState.getExportJobHistory).toHaveBeenCalledWith("org-1");
-		expect(mockState.listAuditPackRequests).toHaveBeenCalledWith({ organizationId: "org-1", limit: 10 });
+		expect(mockState.findPayrollJobsByOccurrence).toHaveBeenCalledTimes(1);
+		expect(mockState.findAuditRequestsByOccurrence).toHaveBeenCalledTimes(1);
 		expect(mockState.findScheduledExports).toHaveBeenCalledTimes(1);
 		expect(mockState.findScheduledExecutions).toHaveBeenCalledWith(expect.objectContaining({ limit: 25 }));
 		expect(mockState.findAuditExportPackages).not.toHaveBeenCalled();
@@ -335,7 +380,7 @@ describe("getExportOperationsCockpit", () => {
 
 		expect(result.alerts).toEqual([
 			expect.objectContaining({
-				id: "payroll-job-failed",
+				id: "payroll-job-failed-late-completion",
 				source: "payroll",
 				severity: "error",
 				href: "/settings/payroll-export",
@@ -349,7 +394,7 @@ describe("getExportOperationsCockpit", () => {
 				href: "/settings/scheduled-exports",
 			}),
 			expect.objectContaining({
-				id: "audit-request-failed",
+				id: "audit-request-failed-late-completion",
 				source: "audit",
 				severity: "error",
 				href: "/settings/audit-export",
@@ -368,7 +413,9 @@ describe("getExportOperationsCockpit", () => {
 
 		expect(result.recentActivity.map((item) => item.id)).toEqual([
 			"payroll-job-pending",
+			"payroll-job-failed-late-completion",
 			"payroll-job-failed",
+			"audit-request-failed-late-completion",
 			"scheduled-execution-failed",
 			"audit-request-failed",
 			"payroll-job-completed",
@@ -378,7 +425,7 @@ describe("getExportOperationsCockpit", () => {
 		expect(result.recentActivity).toEqual(
 			expect.arrayContaining([
 				expect.objectContaining({
-					id: "payroll-job-failed",
+					id: "payroll-job-failed-late-completion",
 					source: "payroll",
 					status: "failed",
 					href: "/settings/payroll-export",
@@ -390,7 +437,7 @@ describe("getExportOperationsCockpit", () => {
 					href: "/settings/scheduled-exports",
 				}),
 				expect.objectContaining({
-					id: "audit-request-failed",
+					id: "audit-request-failed-late-completion",
 					source: "audit",
 					status: "failed",
 					href: "/settings/audit-export",
@@ -400,7 +447,7 @@ describe("getExportOperationsCockpit", () => {
 	});
 
 	it("keeps payroll results visible when scheduled export sources fail", async () => {
-		mockState.getExportJobHistory.mockResolvedValue([
+		mockState.findPayrollJobsByOccurrence.mockResolvedValue([
 			{
 				id: "payroll-job-failed",
 				status: "failed",
@@ -421,8 +468,8 @@ describe("getExportOperationsCockpit", () => {
 		mockState.findScheduledFailuresLast7Days.mockRejectedValue(
 			new Error("scheduled failure counts unavailable"),
 		);
+		mockState.findAuditRequestsByOccurrence.mockResolvedValue([]);
 		mockState.findAuditFailuresLast7Days.mockResolvedValue([]);
-		mockState.listAuditPackRequests.mockResolvedValue([]);
 		mockState.findAuditExportPackages.mockResolvedValue([]);
 		mockState.findLatestCompletedAuditPackages.mockResolvedValue([]);
 
@@ -463,7 +510,7 @@ describe("getExportOperationsCockpit", () => {
 	});
 
 	it("does not mark summary degraded when only recent activity sources fail", async () => {
-		mockState.getExportJobHistory.mockResolvedValue([
+		mockState.findPayrollJobsByOccurrence.mockResolvedValue([
 			{
 				id: "payroll-job-completed",
 				status: "completed",
@@ -502,7 +549,7 @@ describe("getExportOperationsCockpit", () => {
 			new Error("scheduled executions unavailable"),
 		);
 		mockState.findScheduledFailuresLast7Days.mockResolvedValue([]);
-		mockState.listAuditPackRequests.mockRejectedValue(new Error("audit requests unavailable"));
+		mockState.findAuditRequestsByOccurrence.mockRejectedValue(new Error("audit requests unavailable"));
 		mockState.findAuditFailuresLast7Days.mockResolvedValue([]);
 		mockState.findAuditExportPackages.mockResolvedValue([
 			{
@@ -541,7 +588,7 @@ describe("getExportOperationsCockpit", () => {
 	});
 
 	it("returns null summary timestamps when no successful payroll or audit export exists", async () => {
-		mockState.getExportJobHistory.mockResolvedValue([
+		mockState.findPayrollJobsByOccurrence.mockResolvedValue([
 			{
 				id: "payroll-job-pending",
 				status: "pending",
@@ -572,7 +619,7 @@ describe("getExportOperationsCockpit", () => {
 		mockState.findScheduledExports.mockResolvedValue([]);
 		mockState.findScheduledExecutions.mockResolvedValue([]);
 		mockState.findScheduledFailuresLast7Days.mockResolvedValue([]);
-		mockState.listAuditPackRequests.mockResolvedValue([]);
+		mockState.findAuditRequestsByOccurrence.mockResolvedValue([]);
 		mockState.findAuditFailuresLast7Days.mockResolvedValue([]);
 		mockState.findAuditExportPackages.mockResolvedValue([
 			{
@@ -603,7 +650,7 @@ describe("getExportOperationsCockpit", () => {
 	});
 
 	it("uses latest completion timestamps instead of latest creation timestamps", async () => {
-		mockState.getExportJobHistory.mockResolvedValue([]);
+		mockState.findPayrollJobsByOccurrence.mockResolvedValue([]);
 		mockState.findPayrollFailuresLast7Days.mockResolvedValue([]);
 		mockState.findLatestCompletedPayrollExports.mockResolvedValue([
 			{
@@ -614,7 +661,7 @@ describe("getExportOperationsCockpit", () => {
 		mockState.findScheduledExports.mockResolvedValue([]);
 		mockState.findScheduledExecutions.mockResolvedValue([]);
 		mockState.findScheduledFailuresLast7Days.mockResolvedValue([]);
-		mockState.listAuditPackRequests.mockResolvedValue([]);
+		mockState.findAuditRequestsByOccurrence.mockResolvedValue([]);
 		mockState.findAuditFailuresLast7Days.mockResolvedValue([]);
 		mockState.findAuditExportPackages.mockResolvedValue([]);
 		mockState.findLatestCompletedAuditPackages.mockResolvedValue([

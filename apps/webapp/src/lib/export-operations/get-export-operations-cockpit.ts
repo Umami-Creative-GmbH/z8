@@ -1,5 +1,5 @@
 import { DateTime } from "luxon";
-import { and, asc, desc, eq, gte } from "drizzle-orm";
+import { and, asc, desc, eq, gte, sql } from "drizzle-orm";
 
 import {
 	auditPackRequest,
@@ -9,17 +9,28 @@ import {
 	scheduledExport,
 	scheduledExportExecution,
 } from "@/db";
-import { auditPackRequestRepository } from "@/lib/audit-pack/application/request-repository";
-import { getExportJobHistory, type PayrollExportJobSummary } from "@/lib/payroll-export";
 import { getTranslate } from "@/tolgee/server";
 
 type ScheduledExportRecord = Awaited<ReturnType<typeof db.query.scheduledExport.findMany>>[number];
 type ScheduledExecutionRecord = Awaited<
 	ReturnType<typeof db.query.scheduledExportExecution.findMany>
 >[number];
-type AuditRequestRecord = Awaited<
-	ReturnType<typeof auditPackRequestRepository.listRequests>
->[number];
+type PayrollActivityRecord = {
+	id: string;
+	status: string;
+	fileName: string | null;
+	errorMessage: string | null;
+	createdAt: Date;
+	completedAt: Date | null;
+};
+type AuditRequestRecord = {
+	id: string;
+	organizationId: string;
+	status: string;
+	createdAt: Date;
+	completedAt: Date | null;
+	errorMessage: string | null;
+};
 type PayrollFailureCountRecord = { id: string };
 type LatestCompletedPayrollExportRecord = { completedAt: Date | null };
 type ScheduledFailureCountRecord = {
@@ -97,7 +108,19 @@ export async function getExportOperationsCockpit(
 		auditFailuresLast7DaysResult,
 		latestCompletedAuditPackagesResult,
 	] = await Promise.allSettled([
-		getExportJobHistory(organizationId),
+		db
+			.select({
+				id: payrollExportJob.id,
+				status: payrollExportJob.status,
+				fileName: payrollExportJob.fileName,
+				errorMessage: payrollExportJob.errorMessage,
+				createdAt: payrollExportJob.createdAt,
+				completedAt: payrollExportJob.completedAt,
+			})
+			.from(payrollExportJob)
+			.where(eq(payrollExportJob.organizationId, organizationId))
+			.orderBy(desc(sql`coalesce(${payrollExportJob.completedAt}, ${payrollExportJob.createdAt})`))
+			.limit(25),
 		db.query.payrollExportJob.findMany({
 			where: and(
 				eq(payrollExportJob.organizationId, organizationId),
@@ -136,7 +159,19 @@ export async function getExportOperationsCockpit(
 				underlyingJobType: true,
 			},
 		}),
-		auditPackRequestRepository.listRequests({ organizationId, limit: 10 }),
+		db
+			.select({
+				id: auditPackRequest.id,
+				organizationId: auditPackRequest.organizationId,
+				status: auditPackRequest.status,
+				createdAt: auditPackRequest.createdAt,
+				completedAt: auditPackRequest.completedAt,
+				errorMessage: auditPackRequest.errorMessage,
+			})
+			.from(auditPackRequest)
+			.where(eq(auditPackRequest.organizationId, organizationId))
+			.orderBy(desc(sql`coalesce(${auditPackRequest.completedAt}, ${auditPackRequest.createdAt})`))
+			.limit(10),
 		db.query.auditPackRequest.findMany({
 			where: and(
 				eq(auditPackRequest.organizationId, organizationId),
@@ -256,7 +291,7 @@ function getSettledValue<T>(result: PromiseSettledResult<T>): T extends Array<in
 }
 
 function buildAlerts(
-	payrollJobs: PayrollExportJobSummary[],
+	payrollJobs: PayrollActivityRecord[],
 	scheduledExports: ScheduledExportRecord[],
 	auditRequests: AuditRequestRecord[],
 	t: TranslateFn,
@@ -347,7 +382,7 @@ function buildUpcomingRuns(
 }
 
 function buildRecentActivity(
-	payrollJobs: PayrollExportJobSummary[],
+	payrollJobs: PayrollActivityRecord[],
 	scheduledExecutions: ScheduledExecutionRecord[],
 	auditRequests: AuditRequestRecord[],
 	scheduledExportsById: Map<string, ScheduledExportRecord>,
