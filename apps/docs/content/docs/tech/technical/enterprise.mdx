@@ -116,6 +116,56 @@ This is useful for mixed environments such as:
 - mobile-only field staff access
 - temporary desktop restrictions during rollout phases
 
+```typescript
+interface AppPermissions {
+  canUseWebapp: boolean;   // Web application access
+  canUseDesktop: boolean;  // Desktop app access
+  canUseMobile: boolean;   // Mobile app access
+}
+```
+
+### App Type Detection
+
+The system automatically detects app type from request headers:
+
+| Auth Method | Signal | App Type |
+|-------------|--------|----------|
+| Cookie | Any | Webapp |
+| Bearer token | `X-Z8-App-Type: mobile` | Mobile |
+| Bearer token | `X-Z8-App-Type: desktop` | Desktop |
+| Bearer token | No explicit app header | Legacy fallback based on user agent |
+
+Mobile-only API routes use the stricter contract: bearer token plus `X-Z8-App-Type: mobile`.
+
+### Access Validation
+
+```typescript
+import { AppAccessService } from '@/lib/effect/services/app-access.service';
+
+// Check access (returns result)
+const result = await AppAccessService.checkAccess(userId, headers);
+// { allowed: true, appType: 'webapp', permissions: {...} }
+
+// Validate access (throws if denied)
+const appType = await AppAccessService.validateAccess(userId, headers);
+```
+
+### Audit Logging
+
+All access changes and denials are logged:
+
+- **Access granted/revoked**: Who, when, which app
+- **Access denied**: User, app type, IP address, user agent
+
+### Use Cases
+
+- Restrict contractors to web-only access
+- Allow field workers mobile-only access
+- Limit desktop app to specific roles
+- Temporary access restrictions
+
+---
+
 ## Configuration
 
 ```ini

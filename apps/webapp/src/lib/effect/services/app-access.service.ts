@@ -32,6 +32,11 @@ export function detectAppType(headers: Headers): AppType {
 
 	// Bearer token = desktop or mobile app
 	if (authHeader?.toLowerCase().startsWith("bearer ")) {
+		const appTypeHeader = headers.get("x-z8-app-type")?.toLowerCase();
+		if (appTypeHeader === "mobile" || appTypeHeader === "desktop") {
+			return appTypeHeader;
+		}
+
 		// Distinguish by user-agent
 		const userAgent = headers.get("user-agent")?.toLowerCase() || "";
 		if (
