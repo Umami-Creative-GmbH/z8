@@ -160,9 +160,7 @@ export async function getExportOperationsCockpit(
 			payrollJobsResult.status === "rejected" ||
 			payrollFailuresLast7DaysResult.status === "rejected" ||
 			scheduledExportsResult.status === "rejected" ||
-			scheduledExecutionsResult.status === "rejected" ||
 			scheduledFailuresLast7DaysResult.status === "rejected" ||
-			auditRequestsResult.status === "rejected" ||
 			auditFailuresLast7DaysResult.status === "rejected" ||
 			auditPackagesResult.status === "rejected"
 				? SUMMARY_ERROR

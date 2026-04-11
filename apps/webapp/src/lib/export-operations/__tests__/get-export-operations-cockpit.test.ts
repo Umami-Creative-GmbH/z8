@@ -372,4 +372,69 @@ describe("getExportOperationsCockpit", () => {
 			}),
 		]);
 	});
+
+	it("does not mark summary degraded when only recent activity sources fail", async () => {
+		mockState.getExportJobHistory.mockResolvedValue([
+			{
+				id: "payroll-job-completed",
+				status: "completed",
+				fileName: "payroll-april.csv",
+				fileSizeBytes: 2048,
+				workPeriodCount: 14,
+				employeeCount: 6,
+				createdAt: new Date("2026-04-10T11:00:00.000Z"),
+				completedAt: new Date("2026-04-10T11:05:00.000Z"),
+				errorMessage: null,
+				filters: {},
+			},
+		]);
+		mockState.findPayrollFailuresLast7Days.mockResolvedValue([]);
+		mockState.findScheduledExports.mockResolvedValue([
+			{
+				id: "schedule-ready",
+				organizationId: "org-1",
+				name: "Weekly audit extract",
+				isActive: true,
+				payrollConfigId: "config-1",
+				reportType: "audit_report",
+				nextExecutionAt: new Date("2026-04-13T08:00:00.000Z"),
+				lastExecutionAt: new Date("2026-04-09T05:00:00.000Z"),
+				createdAt: new Date("2026-04-02T08:00:00.000Z"),
+				updatedAt: new Date("2026-04-09T05:00:00.000Z"),
+			},
+		]);
+		mockState.findScheduledExecutions.mockRejectedValue(
+			new Error("scheduled executions unavailable"),
+		);
+		mockState.findScheduledFailuresLast7Days.mockResolvedValue([]);
+		mockState.listAuditPackRequests.mockRejectedValue(new Error("audit requests unavailable"));
+		mockState.findAuditFailuresLast7Days.mockResolvedValue([]);
+		mockState.findAuditExportPackages.mockResolvedValue([
+			{
+				id: "audit-package-1",
+				organizationId: "org-1",
+				status: "completed",
+				createdAt: new Date("2026-04-08T06:10:00.000Z"),
+			},
+		]);
+
+		const { getExportOperationsCockpit } = await import("../get-export-operations-cockpit");
+		const result = await getExportOperationsCockpit(
+			"org-1",
+			DateTime.fromISO("2026-04-11T12:00:00.000Z"),
+		);
+
+		expect(result.summary).toEqual({
+			activeSchedules: 1,
+			failedRunsLast7Days: 0,
+			lastPayrollExportAt: new Date("2026-04-10T11:05:00.000Z"),
+			lastAuditPackageAt: new Date("2026-04-08T06:10:00.000Z"),
+			error: null,
+		});
+		expect(result.alertsError).toBe("Some alerts may be incomplete while export data is unavailable.");
+		expect(result.upcomingRunsError).toBeNull();
+		expect(result.recentActivityError).toBe(
+			"Some activity data is temporarily unavailable.",
+		);
+	});
 });
