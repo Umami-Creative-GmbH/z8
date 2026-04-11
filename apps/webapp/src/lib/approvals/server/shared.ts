@@ -1,14 +1,19 @@
 import { SpanStatusCode, trace } from "@opentelemetry/api";
 import { and, eq } from "drizzle-orm";
-import { Effect } from "effect";
+import { Cause, Effect, Exit, Option } from "effect";
 import { approvalRequest, employee } from "@/db/schema";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
-import { type AnyAppError, AuthorizationError, NotFoundError } from "@/lib/effect/errors";
+import { type AnyAppError, AuthorizationError, ConflictError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
+import {
+	ApprovalAuditLogger,
+	ApprovalAuditLoggerLive,
+	createApprovalAuditLogger,
+} from "../infrastructure/audit-logger";
 import type {
 	ApprovalAction,
 	ApprovalDbService,
@@ -26,7 +31,7 @@ export function getApprovalStatusUpdate(
 ): ApprovalStatusUpdate {
 	return {
 		status: action === "approve" ? "approved" : "rejected",
-		approvedAt: action === "approve" ? currentTimestamp() : undefined,
+		approvedAt: currentTimestamp(),
 		rejectionReason: action === "reject" ? rejectionReason : undefined,
 		updatedAt: currentTimestamp(),
 	};
@@ -101,10 +106,182 @@ function updatePendingApprovalRequest(
 	statusUpdate: ApprovalStatusUpdate,
 ) {
 	return dbService.query("updateApprovalStatus", async () => {
-		return await dbService.db
+		const updateQuery = dbService.db
 			.update(approvalRequest)
 			.set(statusUpdate)
-			.where(eq(approvalRequest.id, approvalId));
+			.where(and(eq(approvalRequest.id, approvalId), eq(approvalRequest.status, "pending")));
+
+		const updatedRows =
+			updateQuery && typeof updateQuery === "object" && "returning" in updateQuery
+				? await updateQuery.returning({ id: approvalRequest.id })
+				: await updateQuery;
+
+		return updatedRows;
+	}).pipe(
+		Effect.flatMap((updatedRows) =>
+			Array.isArray(updatedRows) && updatedRows.length === 0
+				? Effect.fail(
+						new ConflictError({
+							message: "Approval request is no longer pending",
+							conflictType: "approval_status",
+						}),
+					)
+				: Effect.succeed(updatedRows),
+		),
+	);
+}
+
+function executeApprovalWithCurrentEmployee<T>(
+	dbService: ApprovalDbService,
+	currentEmployee: CurrentApprover,
+	entityType: ApprovalEntityType,
+	entityId: string,
+	action: ApprovalAction,
+	rejectionReason?: string,
+	updateEntity?: (
+		dbService: ApprovalDbService,
+		entityId: string,
+		currentEmployee: CurrentApprover,
+	) => Effect.Effect<T, AnyAppError, unknown>,
+	preflightEntity?: (
+		dbService: ApprovalDbService,
+		entityId: string,
+		currentEmployee: CurrentApprover,
+	) => Effect.Effect<unknown, AnyAppError, unknown>,
+) {
+	const statusUpdate = getApprovalStatusUpdate(action, rejectionReason);
+
+	return Effect.gen(function* (_) {
+		const auditLogger = yield* _(ApprovalAuditLogger);
+
+		if (preflightEntity) {
+			yield* _(preflightEntity(dbService, entityId, currentEmployee));
+		}
+
+		const approval = yield* _(
+			loadPendingApprovalRequest(
+				dbService,
+				entityType,
+				entityId,
+				currentEmployee.id,
+				action,
+			),
+		);
+
+		logger.info(
+			{
+				approverId: currentEmployee.id,
+				entityType,
+				entityId,
+				action,
+			},
+			"Processing approval action",
+		);
+
+		yield* _(updatePendingApprovalRequest(dbService, approval.id, statusUpdate));
+
+		if (updateEntity) {
+			yield* _(updateEntity(dbService, entityId, currentEmployee));
+		}
+
+		yield* _(
+			auditLogger.log({
+				organizationId: currentEmployee.organizationId,
+				approvalId: approval.id,
+				approvalType: entityType,
+				entityId,
+				action,
+				performedBy: currentEmployee.user.id,
+				previousStatus: approval.status,
+				newStatus: statusUpdate.status,
+				reason: rejectionReason,
+			}),
+		);
+
+		logger.info(
+			{
+				approvalId: approval.id,
+				entityType,
+				entityId,
+				action,
+			},
+			`Successfully ${action === "approve" ? "approved" : "rejected"} ${entityType}`,
+		);
+	});
+}
+
+export function processApprovalWithCurrentEmployee<T>(
+	dbService: ApprovalDbService,
+	currentEmployee: CurrentApprover,
+	entityType: ApprovalEntityType,
+	entityId: string,
+	action: ApprovalAction,
+	rejectionReason?: string,
+	updateEntity?: (
+		dbService: ApprovalDbService,
+		entityId: string,
+		currentEmployee: CurrentApprover,
+	) => Effect.Effect<T, AnyAppError, unknown>,
+	preflightEntity?: (
+		dbService: ApprovalDbService,
+		entityId: string,
+		currentEmployee: CurrentApprover,
+	) => Effect.Effect<unknown, AnyAppError, unknown>,
+	options?: { transactional?: boolean },
+) {
+	return Effect.gen(function* (_) {
+		const auditLogger = yield* _(ApprovalAuditLogger);
+
+		if (!options?.transactional) {
+			return yield* _(
+				executeApprovalWithCurrentEmployee(
+					dbService,
+					currentEmployee,
+					entityType,
+					entityId,
+					action,
+					rejectionReason,
+					updateEntity,
+					preflightEntity,
+				).pipe(Effect.provideService(ApprovalAuditLogger, auditLogger)),
+			);
+		}
+
+		return yield* _(
+			Effect.tryPromise({
+				try: async () => {
+					await dbService.db.transaction(async (tx) => {
+						const transactionalDbService: ApprovalDbService = {
+							db: tx as ApprovalDbService["db"],
+							query: dbService.query,
+						};
+						const transactionalAuditLogger = createApprovalAuditLogger(transactionalDbService);
+
+						const exit = await Effect.runPromiseExit(
+							executeApprovalWithCurrentEmployee(
+								transactionalDbService,
+								currentEmployee,
+								entityType,
+								entityId,
+								action,
+								rejectionReason,
+								updateEntity,
+								preflightEntity,
+							).pipe(
+								Effect.provideService(ApprovalAuditLogger, transactionalAuditLogger),
+							),
+						);
+
+						if (Exit.isFailure(exit)) {
+							const failure = Option.getOrNull(Cause.failureOption(exit.cause));
+							const defects = [...Cause.defects(exit.cause)];
+							throw (failure ?? defects[0] ?? new Error("An error has occurred"));
+						}
+					});
+				},
+				catch: (error) => error as AnyAppError,
+			}),
+		);
 	});
 }
 
@@ -118,6 +295,12 @@ export async function processApproval<T>(
 		entityId: string,
 		currentEmployee: CurrentApprover,
 	) => Effect.Effect<T, AnyAppError, unknown>,
+	preflightEntity?: (
+		dbService: ApprovalDbService,
+		entityId: string,
+		currentEmployee: CurrentApprover,
+	) => Effect.Effect<unknown, AnyAppError, unknown>,
+	options?: { transactional?: boolean },
 ): Promise<ServerActionResult<void>> {
 	const tracer = trace.getTracer("approvals");
 	const statusUpdate = getApprovalStatusUpdate(action, rejectionReason);
@@ -148,40 +331,18 @@ export async function processApproval<T>(
 				span.setAttribute("user.id", session.user.id);
 				span.setAttribute("approver.id", currentEmployee.id);
 
-				const approval = yield* _(
-					loadPendingApprovalRequest(
+				yield* _(
+					processApprovalWithCurrentEmployee(
 						dbService,
+						currentEmployee,
 						entityType,
 						entityId,
-						currentEmployee.id,
 						action,
+						rejectionReason,
+						updateEntity,
+						preflightEntity,
+						options,
 					),
-				);
-
-				logger.info(
-					{
-						approverId: currentEmployee.id,
-						entityType,
-						entityId,
-						action,
-					},
-					"Processing approval action",
-				);
-
-				yield* _(updatePendingApprovalRequest(dbService, approval.id, statusUpdate));
-
-				if (updateEntity) {
-					yield* _(updateEntity(dbService, entityId, currentEmployee));
-				}
-
-				logger.info(
-					{
-						approvalId: approval.id,
-						entityType,
-						entityId,
-						action,
-					},
-					`Successfully ${action === "approve" ? "approved" : "rejected"} ${entityType}`,
 				);
 
 				span.setStatus({ code: SpanStatusCode.OK });
@@ -199,6 +360,7 @@ export async function processApproval<T>(
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
+				Effect.provide(ApprovalAuditLoggerLive),
 				Effect.provide(AppLayer),
 			);
 		},

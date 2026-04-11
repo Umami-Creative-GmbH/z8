@@ -7,7 +7,7 @@ icon: Users
 import { Callout } from 'fumadocs-ui/components/callout';
 import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
 
-Enterprise organizations can configure their own OAuth providers to enable branded single sign-on (SSO). Users can sign in using their existing Google, Microsoft, GitHub, LinkedIn, or Apple accounts tied to your organization's OAuth application.
+Enterprise organizations can configure their own OAuth providers to enable branded sign-in. Users sign in with the provider connected to that organization's OAuth application.
 
 ---
 
@@ -25,8 +25,10 @@ Enterprise organizations can configure their own OAuth providers to enable brand
 ## Accessing Social OAuth Settings
 
 1. Go to **Settings** in the sidebar
-2. Click **Enterprise** > **Social Login**
-3. View and manage configured providers
+2. Open **Enterprise** and go to the custom domain and branding area
+3. View the **Social Login Providers** management table
+
+OAuth credentials are configured per organization in product settings. Do not treat them as tenant-wide environment variables.
 
 ---
 
@@ -140,41 +142,22 @@ Enterprise organizations can configure their own OAuth providers to enable brand
   </Tab>
 </Tabs>
 
----
-
-## Testing Configuration
-
-Before enabling a provider for users, test the configuration:
-
-1. Click the provider card
-2. Click **Test Configuration**
-3. A new window opens to test the OAuth flow
-4. Complete the sign-in process
-5. Check the test result:
-   - **Success**: Provider is configured correctly
-   - **Failed**: Review error message and fix configuration
-
-<Callout type="info" title="Test Account">
-  Use a test account to verify the flow before enabling for all users.
+<Callout type="info" title="Redirect URIs must match exactly">
+  Register the callback URL for the exact domain your users sign in through. If you use multiple environments or custom domains, add the matching redirect URI for each one.
 </Callout>
 
 ---
 
-## Enabling/Disabling Providers
+## Managing Providers
 
-### Enable a Provider
+The current UI lets organization admins:
 
-1. Configure the provider with credentials
-2. Test the configuration successfully
-3. Toggle **Active** to enable
-4. The provider appears on the login page
+- Add a provider with org-specific credentials
+- Edit an existing provider
+- Remove a provider
+- Mark an existing provider active or inactive while editing it
 
-### Disable a Provider
-
-1. Click the provider card
-2. Toggle **Active** off
-3. The provider is hidden from the login page
-4. Existing sessions remain valid
+The provider table can show status metadata such as `Not Tested`, `Working`, or `Error`, but the current product should not be treated as offering a full end-user configuration test workflow from this page.
 
 ---
 
@@ -182,7 +165,7 @@ Before enabling a provider for users, test the configuration:
 
 ### Login Flow
 
-When organization OAuth is enabled:
+When an organization-specific provider is configured and active:
 
 1. User visits the organization's login page
 2. Clicks "Sign in with [Provider]"
@@ -217,26 +200,23 @@ OIDC providers include nonce validation to prevent replay attacks.
 
 ### Secure Cookie Storage
 
-OAuth state is stored in secure, httpOnly cookies during the flow.
+OAuth state is stored in secure, httpOnly cookies during the flow, while provider credentials remain stored as organization-scoped secrets in Z8.
 
 ---
 
-## Managing Providers
-
 ### Edit Configuration
 
-1. Click the provider card
+1. Open the provider row
 2. Click **Edit**
-3. Update credentials
-4. Click **Save**
-5. Test the new configuration
+3. Update the client ID, secret, or provider-specific values
+4. Save the changes
 
 ### Delete Provider
 
-1. Click the provider card
+1. Open the provider row
 2. Click **Delete**
 3. Confirm deletion
-4. Provider is immediately removed
+4. The custom provider is removed from the organization
 
 <Callout type="warn" title="User Impact">
   Deleting a provider doesn't affect users who have already linked accounts. They can still sign in with other methods or re-link when the provider is re-added.
@@ -279,8 +259,8 @@ For additional security, restrict which email domains can sign in:
 - For Google: Verify domain restrictions
 - Check if the email domain is allowed
 
-### Test succeeds but login fails
+### Saved configuration still fails during sign-in
 
-- Clear browser cookies and try again
-- Check for multiple Z8 organizations with the same provider
-- Verify the redirect URI is for your specific organization
+- Check the redirect URI and provider credentials again
+- Confirm the provider is active in the organization settings
+- Verify the callback is registered for the exact domain your users sign in through

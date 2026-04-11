@@ -73,7 +73,9 @@ export interface UnifiedApprovalItem {
  * Approval types supported by the system.
  * Extensible via union type.
  */
-export type ApprovalType = "absence_entry" | "time_entry" | "shift_request";
+export type ApprovalType = "absence_entry" | "time_entry" | "shift_request" | "travel_expense_claim";
+
+export type ApprovalDecisionAction = "approve" | "reject";
 
 export type ApprovalStatus = "pending" | "approved" | "rejected";
 
@@ -288,6 +290,23 @@ export interface EscalationConfig {
 // ============================================
 // BULK OPERATIONS
 // ============================================
+
+export interface BulkDecisionSuccess {
+	id: string;
+	approvalType: ApprovalType;
+	status: ApprovalStatus;
+}
+
+export interface BulkDecisionFailure {
+	id: string;
+	code: "forbidden" | "stale" | "validation_failed" | "not_found" | "unsupported";
+	message: string;
+}
+
+export interface BulkDecisionResult {
+	succeeded: BulkDecisionSuccess[];
+	failed: BulkDecisionFailure[];
+}
 
 /**
  * Result of a bulk approve operation.

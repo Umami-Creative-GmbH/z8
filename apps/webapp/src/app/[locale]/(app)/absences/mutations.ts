@@ -8,10 +8,22 @@ import { addCalendarSyncJob } from "@/lib/queue";
 import { removeCanonicalAbsenceRecord } from "./actions.canonical";
 import { getCurrentEmployee } from "./current-employee";
 
+export interface CancelAbsenceEmployeeContext {
+	id: string;
+	organizationId: string;
+}
+
 export async function cancelAbsenceRequest(
 	absenceId: string,
 ): Promise<{ success: boolean; error?: string }> {
-	const currentEmployee = await getCurrentEmployee();
+	return cancelAbsenceRequestForEmployee(absenceId);
+}
+
+export async function cancelAbsenceRequestForEmployee(
+	absenceId: string,
+	currentEmployeeContext?: CancelAbsenceEmployeeContext,
+): Promise<{ success: boolean; error?: string }> {
+	const currentEmployee = currentEmployeeContext ?? (await getCurrentEmployee());
 	if (!currentEmployee) {
 		return { success: false, error: "Employee profile not found" };
 	}
@@ -22,6 +34,10 @@ export async function cancelAbsenceRequest(
 
 	if (!absence) {
 		return { success: false, error: "Absence not found" };
+	}
+
+	if (absence.organizationId !== currentEmployee.organizationId) {
+		return { success: false, error: "Absence not found in the active organization" };
 	}
 
 	const canCancel = await canCancelAbsence(currentEmployee.id, absence.employeeId, absence.status);

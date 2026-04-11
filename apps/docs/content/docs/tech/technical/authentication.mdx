@@ -1,91 +1,59 @@
 ---
 title: Authentication
-description: Better-Auth integration, 2FA, passkeys, OAuth, and organization-scoped access
+description: Better Auth integration, secure sessions, invitations, and organization-scoped access
 icon: Key
----
-
-import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
-import { Callout } from 'fumadocs-ui/components/callout';
-
-## Better-Auth Integration
-
-Z8 uses Better-Auth for authentication with support for:
-
-- **Email/Password**: Traditional authentication
-- **Two-Factor Authentication (2FA)**: TOTP-based
-- **Passkeys**: WebAuthn/FIDO2 passwordless authentication
-- **Social OAuth**: Google, Microsoft, GitHub, LinkedIn, Apple providers
-- **Organization OAuth**: Per-organization SSO configuration
-
 ---
 
 ## Configuration
 
+Z8 uses Better Auth as the system authentication layer. System secrets, base URLs, and default social-provider credentials are environment-backed. Organization-specific identity settings are configured inside the product for each organization instead of through tenant-specific environment variables.
+
+Typical auth maintenance commands from the repo root use `pnpm`:
+
 ```bash
-# Generate auth secret
-bunx @better-auth/cli@latest secret
+pnpm --dir apps/webapp run auth:generate
+pnpm --dir apps/webapp run auth:migrate
 ```
 
-Add to `.env`:
-```ini
-BETTER_AUTH_SECRET=<generated-secret>
-BETTER_AUTH_URL=http://localhost:3000
-```
+In practice this means:
 
----
+- `BETTER_AUTH_SECRET` and related auth secrets stay in environment configuration.
+- Default social providers such as Google, GitHub, LinkedIn, and Apple can be enabled from system env vars.
+- Organization-scoped SSO and branded social OAuth are configured per organization in settings and resolved against the current org context at runtime.
+- SCIM is part of the enterprise auth stack, but the current product does not expose a dedicated self-serve SCIM settings page; managed rollout is coordinated outside a normal org settings flow.
+- Organization-specific credentials are entered through org settings and stored through the app's org-scoped secret handling instead of per-tenant env vars.
 
-## Social OAuth Setup
+## Session And Cookie Behavior
 
-### System-Level OAuth
+Better Auth is the source of truth for sessions, with database-backed session records and cookie-based web sessions. Z8 also uses secondary storage to speed up session lookups and auth rate limiting without moving revocation authority out of the database.
 
-Configure default OAuth providers in `src/lib/auth/index.ts`:
+Key behaviors:
 
-```typescript
-export const auth = betterAuth({
-  socialProviders: {
-    google: {
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    },
-    github: {
-      clientId: process.env.GITHUB_CLIENT_ID,
-      clientSecret: process.env.GITHUB_CLIENT_SECRET,
-    },
-  },
-});
-```
+- Web requests use secure, `httpOnly` session cookies through the Next.js Better Auth integration.
+- Desktop clients can use bearer-token auth where cookies are not the primary transport.
+- The mobile app is currently an Expo workspace in the monorepo, but it should not be documented as a finished bearer-token client until that runtime behavior exists.
+- Sessions carry `activeOrganizationId`, which is the current org context used by authorization and data-access layers.
+- Organization-scoped routes and services should trust `session.session.activeOrganizationId` rather than user-supplied org identifiers.
+- Email verification and password-reset links are rewritten to the correct organization-aware base URL when auth emails are sent.
 
-### Organization-Level OAuth (Enterprise)
+The auth surface supports email/password, required email verification, passkeys, 2FA, admin tooling, and Better Auth organization features in one shared session model.
 
-Organizations can configure their own OAuth credentials for branded SSO:
+## Invitation And Onboarding Flows
 
-<Tabs items={['Google', 'Microsoft', 'GitHub', 'Apple']}>
-  <Tab value="Google">
-    1. Create OAuth 2.0 credentials in Google Cloud Console
-    2. Set authorized redirect URI: `https://your-domain/api/auth/callback/social-org/google`
-    3. Configure in Z8: **Settings** > **Enterprise** > **Social Login**
-  </Tab>
-  <Tab value="Microsoft">
-    1. Register app in Azure AD portal
-    2. Configure redirect URI for your domain
-    3. Add client ID and secret in Z8 settings
-  </Tab>
-  <Tab value="GitHub">
-    1. Create OAuth App in GitHub Developer Settings
-    2. Set callback URL to your domain's callback endpoint
-    3. Configure in Z8 organization settings
-  </Tab>
-  <Tab value="Apple">
-    Apple Sign-In requires additional configuration:
-    - Team ID from Apple Developer account
-    - Key ID for the .p8 private key
-    - Private key contents (PEM format)
-  </Tab>
-</Tabs>
+Invitation acceptance and onboarding are part of the auth system, not separate ad hoc flows. The goal is to preserve organization context from the first email through post-login onboarding.
+
+The current flow is:
+
+1. An org admin sends an invitation for a specific organization.
+2. Z8 sends the invitation email using the organization's resolved app URL.
+3. The invited user signs up or verifies their email.
+4. Pending invitation state is preserved so the user returns to the correct `accept-invitation` flow after verification.
+5. Better Auth accepts the invitation, adds the member to the organization, and records that org relationship on the user session.
+6. Onboarding reads `activeOrganizationId` so employee creation, role-based steps, and defaults stay scoped to the invited organization.
+
+This is also why callback handling matters for enterprise auth. Social OAuth, SSO, verification redirects, and invitation acceptance all need to land the user back in the correct organization context instead of dropping them into a generic global session.
 
 ### OAuth Security Features
-
-Organization OAuth includes enhanced security:
 
 | Feature | Description |
 |---------|-------------|
@@ -142,17 +110,34 @@ await fetch('/api/organizations/switch', {
 });
 ```
 
+### Native App Login Handoff
+
+Desktop and mobile clients use a browser-based login handoff that returns a bearer session token to the native app:
+
+```text
+/api/auth/app-login?app=mobile&redirect=z8mobile://auth/callback
+/api/auth/app-login?app=desktop&redirect=z8://auth/callback
+```
+
+Flow summary:
+1. The native app opens `/api/auth/app-login` in the browser.
+2. If the user is not signed in, the route redirects to `/sign-in` with a `callbackUrl` back to the app-login request.
+3. After sign-in, the route validates app access and redirects back to the native deep link with a bearer session token.
+4. If access is denied, the route redirects back to the deep link with an error such as `access_denied`.
+
 ---
 
 ## App Access Control
 
-Users can be restricted from specific applications:
+User-level app access flags remain part of the auth model:
 
 | Permission | Description |
 |------------|-------------|
-| `canUseWebapp` | Access to web application |
-| `canUseDesktop` | Access to desktop app |
-| `canUseMobile` | Access to mobile app |
+| `canUseWebapp` | Access to the web application |
+| `canUseDesktop` | Access to the desktop application |
+| `canUseMobile` | Access to the mobile application |
+
+These permissions are evaluated after authentication so an authenticated user can still be denied a specific app surface while retaining access to other allowed clients.
 
 <Callout type="info" title="Default Access">
   All permissions default to `true`. Administrators can restrict access per user.
@@ -163,8 +148,13 @@ Users can be restricted from specific applications:
 The system detects app type from request headers:
 
 - **Cookie auth** → Webapp
-- **Bearer token + mobile user agent** → Mobile
-- **Bearer token + other** → Desktop
+- **Bearer token + `X-Z8-App-Type: mobile`** → Mobile
+- **Bearer token + `X-Z8-App-Type: desktop`** → Desktop
+- **Bearer token without explicit app header** → Legacy fallback based on user agent for shared routes
+
+<Callout type="info" title="Mobile-Only Routes">
+  Mobile API routes under `/api/mobile/*` require a bearer token plus `X-Z8-App-Type: mobile`. Cookie-authenticated web requests are always treated as `webapp`, even if they send a spoofed app-type header.
+</Callout>
 
 ### Access Denied Handling
 

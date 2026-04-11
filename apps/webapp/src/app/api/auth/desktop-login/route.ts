@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
+import { createAppAuthCode } from "@/lib/auth/app-auth-code";
 
 /**
  * GET /api/auth/desktop-login
@@ -42,20 +43,22 @@ export async function GET(request: NextRequest) {
 			return NextResponse.redirect(callbackUrl.toString());
 		}
 
-		// User is already logged in, generate a token and redirect
-		// For security, we create a short-lived session token for the desktop app
-		const token = session.session.token;
+		const authCode = await createAppAuthCode({
+			app: "desktop",
+			sessionToken: session.session.token,
+			userId: session.user.id,
+		});
 
-		// Redirect back to desktop app with token
+		// Redirect back to desktop app with a one-time code.
 		const callbackUrl = new URL(redirectUrl);
-		callbackUrl.searchParams.set("token", token);
+		callbackUrl.searchParams.set("code", authCode.code);
 
 		return NextResponse.redirect(callbackUrl.toString());
 	}
 
-	// User not logged in, show login page with desktop redirect
+	// User not logged in, continue through sign-in and then resume this auth route.
 	const loginUrl = new URL("/sign-in", request.nextUrl.origin);
-	loginUrl.searchParams.set("desktop_redirect", redirectUrl);
+	loginUrl.searchParams.set("callbackUrl", request.nextUrl.toString());
 
 	return NextResponse.redirect(loginUrl.toString());
 }

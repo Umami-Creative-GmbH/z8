@@ -36,6 +36,7 @@ The root `Dockerfile` now uses a shared-runtime flow for the operational service
 | `worker` | z8-worker | BullMQ job processor + cron | Final image extends `app-runtime` |
 | `migration` | z8-migration | One-shot Drizzle migration | Final image extends `app-runtime` |
 | `db-seed` | z8-db-seed | One-shot database seeder | Built separately; does not use shared runtime flow |
+| `docs` | z8-docs | Next.js documentation site | Built from the root `Dockerfile` `docs` target |
 
 > **Note:** Images are larger than standalone mode (~300MB) because Next.js 16's
 > `cacheComponents` feature is not compatible with `output: "standalone"`.
@@ -70,6 +71,12 @@ Workflow details:
 - Push to `main` (publishes rolling images)
 - Push semver tag `v*.*.*` (publishes release images)
 - Manual run via `workflow_dispatch`
+
+The docs image is published separately by `.github/workflows/publish-docs-image.yml`:
+
+- `ghcr.io/umami-creative-gmbh/z8-docs`
+
+That workflow follows the same native `amd64` and `arm64` multi-arch publishing pattern and publishes `latest` from `main` plus `sha-<shortsha>` and semver tags.
 
 ### Published Tags
 
@@ -133,6 +140,7 @@ docker build --target webapp -t z8-webapp:latest .
 docker build --target worker -t z8-worker:latest .
 docker build --target migration -t z8-migration:latest .
 docker build --target db-seed -t z8-db-seed:latest .
+docker build --target docs -t z8-docs:latest .
 
 # Rebuild a final image from an already-published runtime base
 docker build --target webapp -t z8-webapp:latest \
@@ -183,6 +191,35 @@ kubectl logs -n z8 -l app.kubernetes.io/component=webapp
 kubectl apply -f migration.yaml
 kubectl wait --for=condition=complete job/z8-migration -n z8 --timeout=300s
 ```
+
+### Docs App Deployment
+
+The docs app is prepared for deployment through the manifests under `infra/hetzner-k8s/k8s` and is intentionally configured to run as a single replica.
+
+Resources:
+
+- `infra/hetzner-k8s/k8s/app/docs-deployment.yaml`
+- `infra/hetzner-k8s/k8s/app/docs-service.yaml`
+- `infra/hetzner-k8s/k8s/app/docs-ingress.yaml`
+
+Image:
+
+- `ghcr.io/umami-creative-gmbh/z8-docs`
+
+When you are ready to roll it out, apply the manifests and restart `deployment/docs` so pods pull a newly published `latest` image:
+
+```bash
+kubectl apply -k infra/hetzner-k8s/k8s
+kubectl rollout restart deployment/docs -n app-prod
+kubectl rollout status deployment/docs -n app-prod --timeout=300s
+kubectl get deployment docs -n app-prod
+kubectl get service docs -n app-prod
+kubectl get ingress docs -n app-prod
+```
+
+Expected host:
+
+- `docs.z8-time.app`
 
 ## Services
 

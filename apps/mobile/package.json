@@ -8,14 +8,22 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "build": "expo export"
+    "build": "expo export",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
+    "@react-native-community/datetimepicker": "^8.4.4",
+    "@tanstack/react-form": "^1.25.1",
+    "@tanstack/react-query": "^5.97.0",
     "expo": "~55.0.14",
     "expo-constants": "~55.0.13",
     "expo-linking": "~55.0.12",
     "expo-router": "~55.0.12",
+    "expo-secure-store": "~15.0.7",
     "expo-status-bar": "~55.0.5",
+    "expo-web-browser": "~15.0.8",
+    "luxon": "^3.7.2",
     "react": "19.2.5",
     "react-dom": "19.2.5",
     "react-native": "0.83.4",
@@ -24,8 +32,10 @@
     "react-native-web": "~0.21.2"
   },
   "devDependencies": {
+    "@testing-library/react-native": "^13.3.3",
     "@babel/core": "^7.29.0",
     "@types/react": "19.2.14",
-    "typescript": "~6.0.2"
+    "typescript": "~6.0.2",
+    "vitest": "^4.1.4"
   }
 }

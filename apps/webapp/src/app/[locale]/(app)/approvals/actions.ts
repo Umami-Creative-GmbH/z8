@@ -16,6 +16,7 @@ import {
 } from "@/lib/approvals/server/time-correction-approvals";
 
 export type { ApprovalWithAbsence, ApprovalWithTimeCorrection } from "@/lib/approvals/server/types";
+export type { ApprovalDecisionAction, ApprovalType, BulkDecisionFailure, BulkDecisionResult, BulkDecisionSuccess } from "@/lib/approvals/domain/types";
 export { syncCanonicalWorkCorrection };
 
 export async function approveAbsence(...args: Parameters<typeof approveAbsenceAction>) {

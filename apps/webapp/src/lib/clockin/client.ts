@@ -15,11 +15,34 @@ type ClockinSearchScope = {
 	value: string | number[];
 };
 
+type ClockinResponseLinks = {
+	next: string | null;
+};
+
 export class ClockinClient {
 	constructor(private readonly token: string) {}
 
-	private async request<T>(path: string, init?: RequestInit): Promise<T> {
-		const response = await fetch(`${BASE_URL}${path}`, {
+	private isPaginatedResponse<T>(value: unknown): value is ClockinPaginatedResponse<T> {
+		if (!value || typeof value !== "object") {
+			return false;
+		}
+
+		const response = value as {
+			data?: unknown;
+			links?: ClockinResponseLinks | null;
+		};
+
+		return (
+			Array.isArray(response.data) &&
+			!!response.links &&
+			typeof response.links === "object" &&
+			("next" in response.links) &&
+			(response.links.next === null || typeof response.links.next === "string")
+		);
+	}
+
+	private getRequestInit(init?: RequestInit): RequestInit {
+		return {
 			...init,
 			headers: {
 				Accept: "application/json",
@@ -27,14 +50,47 @@ export class ClockinClient {
 				"Content-Type": "application/json",
 				...init?.headers,
 			},
-		});
+		};
+	}
 
+	private async parseResponse<T>(response: Response): Promise<T> {
 		if (!response.ok) {
 			const text = await response.text().catch(() => "");
 			throw new Error(`Clockin API error ${response.status}: ${text}`);
 		}
 
-		return response.json() as Promise<T>;
+		const text = await response.text().catch(() => "");
+
+		try {
+			return JSON.parse(text) as T;
+		} catch {
+			throw new Error(`Clockin API error ${response.status}: invalid JSON response`);
+		}
+	}
+
+	private async requestPage<T>(url: string, init?: RequestInit): Promise<ClockinPaginatedResponse<T>> {
+		const response = await fetch(url, this.getRequestInit(init));
+		const payload = await this.parseResponse<unknown>(response);
+
+		if (!this.isPaginatedResponse<T>(payload)) {
+			throw new Error(`Clockin API error ${response.status}: invalid JSON response`);
+		}
+
+		return payload;
+	}
+
+	private async fetchAllPages<T>(path: string, init?: RequestInit): Promise<T[]> {
+		const requestInit = this.getRequestInit(init);
+		let nextUrl: string | null = `${BASE_URL}${path}`;
+		const data: T[] = [];
+
+		while (nextUrl) {
+			const response: ClockinPaginatedResponse<T> = await this.requestPage<T>(nextUrl, requestInit);
+			data.push(...response.data);
+			nextUrl = response.links.next;
+		}
+
+		return data;
 	}
 
 	async testConnection(): Promise<{ success: true } | { success: false; error: string }> {
@@ -50,12 +106,11 @@ export class ClockinClient {
 	}
 
 	async getEmployees(): Promise<ClockinEmployee[]> {
-		const response = await this.request<ClockinPaginatedResponse<ClockinEmployee>>("/v3/employees");
-		return response.data;
+		return this.fetchAllPages<ClockinEmployee>("/v3/employees");
 	}
 
 	async searchWorkdays(input: ClockinWorkdaySearchRequest): Promise<ClockinWorkday[]> {
-		const response = await this.request<ClockinPaginatedResponse<ClockinWorkday>>(
+		return this.fetchAllPages<ClockinWorkday>(
 			"/v3/workdays/search",
 			{
 				method: "POST",
@@ -66,8 +121,6 @@ export class ClockinClient {
 				}),
 			},
 		);
-
-		return response.data;
 	}
 
 	async searchAbsences(input: ClockinAbsenceSearchRequest): Promise<ClockinAbsence[]> {
@@ -84,14 +137,12 @@ export class ClockinClient {
 			});
 		}
 
-		const response = await this.request<ClockinPaginatedResponse<ClockinAbsence>>(
+		return this.fetchAllPages<ClockinAbsence>(
 			"/v3/absences/search",
 			{
 				method: "POST",
 				body: JSON.stringify({ scopes }),
 			},
 		);
-
-		return response.data;
 	}
 }

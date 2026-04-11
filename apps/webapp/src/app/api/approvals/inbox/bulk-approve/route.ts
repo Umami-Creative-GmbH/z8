@@ -6,15 +6,16 @@
 
 import { type NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { auth } from "@/lib/auth";
+import { getAbility } from "@/lib/auth-helpers";
 import { db } from "@/db";
-import { approvalRequest, employee, auditLog } from "@/db/schema";
-import { getApprovalHandler } from "@/lib/approvals/domain/registry";
-import type { ApprovalType, BulkApproveResult } from "@/lib/approvals/domain/types";
-import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
+import { employee } from "@/db/schema";
+import type { BulkDecisionResult } from "@/lib/approvals/domain/types";
+import { BulkApprovalService, BulkApprovalServiceLive } from "@/lib/approvals/application/bulk-approval.service";
 import type { AnyAppError } from "@/lib/effect/errors";
+import { ForbiddenError, toHttpError } from "@/lib/authorization";
 import { createLogger } from "@/lib/logger";
 
 // Ensure handlers are registered
@@ -59,11 +60,22 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
+		const ability = await getAbility();
+		if (
+			!ability ||
+			(ability.cannot("approve", "Approval") && ability.cannot("manage", "Approval"))
+		) {
+			const error = new ForbiddenError("approve", "Approval");
+			const httpError = toHttpError(error);
+			return NextResponse.json(httpError.body, { status: httpError.status });
+		}
+
 		// Get current employee scoped to active organization
 		const currentEmployee = await db.query.employee.findFirst({
 			where: and(
 				eq(employee.userId, session.user.id),
 				eq(employee.organizationId, activeOrganizationId),
+				eq(employee.isActive, true),
 			),
 		});
 
@@ -71,108 +83,25 @@ export async function POST(request: NextRequest) {
 			return NextResponse.json({ error: "Employee not found" }, { status: 404 });
 		}
 
-		// Fetch all approval requests
-		const requests = await db.query.approvalRequest.findMany({
-			where: inArray(approvalRequest.id, approvalIds),
-		});
-
-		const result: BulkApproveResult = {
-			succeeded: [],
-			failed: [],
-		};
-
-		// Process each request
-		for (const req of requests) {
-			// Validate authorization
-			if (req.approverId !== currentEmployee.id) {
-				result.failed.push({
-					id: req.id,
-					error: "Not authorized to approve",
-				});
-				continue;
-			}
-
-			// Validate organization
-			if (req.organizationId !== currentEmployee.organizationId) {
-				result.failed.push({
-					id: req.id,
-					error: "Request belongs to different organization",
-				});
-				continue;
-			}
-
-			// Validate status
-			if (req.status !== "pending") {
-				result.failed.push({
-					id: req.id,
-					error: `Request is already ${req.status}`,
-				});
-				continue;
-			}
-
-			// Get handler
-			const handler = getApprovalHandler(req.entityType as ApprovalType);
-			if (!handler) {
-				result.failed.push({
-					id: req.id,
-					error: `Unknown approval type: ${req.entityType}`,
-				});
-				continue;
-			}
-
-			// Check if handler supports bulk approve
-			if (!handler.supportsBulkApprove) {
-				result.failed.push({
-					id: req.id,
-					error: `Bulk approve not supported for ${handler.displayName}`,
-				});
-				continue;
-			}
-
-			// Try to approve
-			try {
-				await Effect.runPromise(
-					handler
-						.approve(req.entityId, currentEmployee.id)
-						.pipe(Effect.provide(DatabaseServiceLive)) as Effect.Effect<void, AnyAppError, never>,
+		const result = await Effect.runPromise(
+			Effect.gen(function* (_) {
+				const bulkApprovalService = yield* _(BulkApprovalService);
+				return yield* _(
+					bulkApprovalService.bulkDecide(
+						approvalIds,
+						currentEmployee.id,
+						currentEmployee.organizationId,
+						"approve",
+						undefined,
+						session.user.id,
+					),
 				);
-
-				result.succeeded.push(req.id);
-
-				// Log audit trail
-				await db.insert(auditLog).values({
-					organizationId: req.organizationId,
-					entityType: "approval_request",
-					entityId: req.id,
-					action: "bulk_approve",
-					performedBy: session.user.id,
-					changes: JSON.stringify({
-						from: "pending",
-						to: "approved",
-						approvalType: req.entityType,
-						targetEntityId: req.entityId,
-						bulkOperation: true,
-					}),
-					timestamp: new Date(),
-				});
-			} catch (error) {
-				result.failed.push({
-					id: req.id,
-					error: error instanceof Error ? error.message : "Unknown error",
-				});
-			}
-		}
-
-		// Check for missing IDs
-		const foundIds = new Set(requests.map((r) => r.id));
-		for (const id of approvalIds) {
-			if (!foundIds.has(id)) {
-				result.failed.push({
-					id,
-					error: "Approval request not found",
-				});
-			}
-		}
+			}).pipe(Effect.provide(BulkApprovalServiceLive)) as Effect.Effect<
+				BulkDecisionResult,
+				AnyAppError,
+				never
+			>,
+		);
 
 		logger.info(
 			{

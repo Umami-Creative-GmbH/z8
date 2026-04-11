@@ -32,9 +32,11 @@ import {
 
 const logger = createLogger("AbsenceActionsEffect");
 
-type CurrentEmployee = NonNullable<
-	Awaited<ReturnType<typeof DatabaseService.Service.db.query.employee.findFirst>>
->;
+export interface RequestAbsenceEmployeeContext {
+	id: string;
+	organizationId: string;
+	managerId: string | null;
+}
 
 function validateRequestDates(data: AbsenceRequest) {
 	if (data.startDate > data.endDate) {
@@ -101,11 +103,19 @@ function checkForOverlappingAbsences(
 	});
 }
 
-function getAbsenceCategory(dbService: typeof DatabaseService.Service, categoryId: string) {
+function getAbsenceCategory(
+	dbService: typeof DatabaseService.Service,
+	categoryId: string,
+	organizationId: string,
+) {
 	return dbService
 		.query("getAbsenceCategory", async () => {
 			return await dbService.db.query.absenceCategory.findFirst({
-				where: eq(absenceCategory.id, categoryId),
+				where: and(
+					eq(absenceCategory.id, categoryId),
+					eq(absenceCategory.organizationId, organizationId),
+					eq(absenceCategory.isActive, true),
+				),
 			});
 		})
 		.pipe(
@@ -123,11 +133,21 @@ function getAbsenceCategory(dbService: typeof DatabaseService.Service, categoryI
 		);
 }
 
-function getRequestingEmployee(dbService: typeof DatabaseService.Service, userId: string) {
+function getRequestingEmployee(
+	dbService: typeof DatabaseService.Service,
+	userId: string,
+	activeOrganizationId?: string | null,
+) {
 	return dbService
 		.query("getEmployeeByUserId", async () => {
 			return await dbService.db.query.employee.findFirst({
-				where: eq(employee.userId, userId),
+				where: activeOrganizationId
+					? and(
+							eq(employee.userId, userId),
+							eq(employee.organizationId, activeOrganizationId),
+							eq(employee.isActive, true),
+						)
+					: and(eq(employee.userId, userId), eq(employee.isActive, true)),
 			});
 		})
 		.pipe(
@@ -146,7 +166,7 @@ function getRequestingEmployee(dbService: typeof DatabaseService.Service, userId
 
 function insertAbsenceEntry(
 	dbService: typeof DatabaseService.Service,
-	currentEmployee: CurrentEmployee,
+	currentEmployee: RequestAbsenceEmployeeContext,
 	data: AbsenceRequest,
 ) {
 	return dbService.query("insertAbsenceEntry", async () => {
@@ -170,7 +190,7 @@ function insertAbsenceEntry(
 }
 
 function createCanonicalAbsenceRecord(params: {
-	currentEmployee: CurrentEmployee;
+	currentEmployee: RequestAbsenceEmployeeContext;
 	absenceId: string;
 	data: AbsenceRequest;
 	countsAgainstVacation: boolean;
@@ -398,6 +418,46 @@ function sendApprovalEmails(
 export async function requestAbsenceEffect(
 	data: AbsenceRequest,
 ): Promise<ServerActionResult<{ absenceId: string }>> {
+	return requestAbsenceWithResolverEffect(
+		data,
+		Effect.gen(function* (_) {
+			const authService = yield* _(AuthService);
+			const session = yield* _(authService.getSession());
+			const dbService = yield* _(DatabaseService);
+			const currentEmployee = yield* _(
+				getRequestingEmployee(dbService, session.user.id, session.session.activeOrganizationId),
+			);
+
+			return {
+				currentEmployee,
+				userId: session.user.id,
+			};
+		}),
+	);
+}
+
+export async function requestAbsenceForEmployeeEffect(
+	data: AbsenceRequest,
+	currentEmployee: RequestAbsenceEmployeeContext,
+	userId: string,
+): Promise<ServerActionResult<{ absenceId: string }>> {
+	return requestAbsenceWithResolverEffect(
+		data,
+		Effect.succeed({
+			currentEmployee,
+			userId,
+		}),
+	);
+}
+
+function requestAbsenceWithResolverEffect(
+	data: AbsenceRequest,
+	resolveRequester: Effect.Effect<
+		{ currentEmployee: RequestAbsenceEmployeeContext; userId: string },
+		any,
+		any
+	>,
+): Promise<ServerActionResult<{ absenceId: string }>> {
 	const tracer = trace.getTracer("absences");
 
 	const effect = tracer.startActiveSpan(
@@ -413,15 +473,11 @@ export async function requestAbsenceEffect(
 		},
 		(span) => {
 			return Effect.gen(function* (_) {
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
+				const { currentEmployee, userId } = yield* _(resolveRequester);
 
-				span.setAttribute("user.id", session.user.id);
+				span.setAttribute("user.id", userId);
 
 				const dbService = yield* _(DatabaseService);
-				const currentEmployee: CurrentEmployee = yield* _(
-					getRequestingEmployee(dbService, session.user.id),
-				);
 
 				span.setAttribute("employee.id", currentEmployee.id);
 				span.setAttribute("organization.id", currentEmployee.organizationId);
@@ -430,7 +486,7 @@ export async function requestAbsenceEffect(
 					{
 						employeeId: currentEmployee.id,
 						organizationId: currentEmployee.organizationId,
-						userId: session.user.id,
+						userId,
 					},
 					"Processing absence request",
 				);
@@ -438,7 +494,9 @@ export async function requestAbsenceEffect(
 				yield* _(validateRequestDates(data));
 				yield* _(checkForOverlappingAbsences(dbService, currentEmployee.id, data));
 
-				const category = yield* _(getAbsenceCategory(dbService, data.categoryId));
+				const category = yield* _(
+					getAbsenceCategory(dbService, data.categoryId, currentEmployee.organizationId),
+				);
 
 				span.setAttribute("absence.category_name", category.name);
 				span.setAttribute("absence.requires_approval", category.requiresApproval);
@@ -474,7 +532,7 @@ export async function requestAbsenceEffect(
 						data,
 						countsAgainstVacation: category.countsAgainstVacation,
 						requiresApproval: category.requiresApproval,
-						createdBy: session.user.id,
+						createdBy: userId,
 					}),
 				);
 
@@ -554,13 +612,13 @@ export async function requestAbsenceEffect(
 					yield* _(
 						Effect.promise(() =>
 							syncCanonicalAbsenceApprovalState({
-								organizationId: currentEmployee.organizationId,
-								canonicalRecordId,
-								approvalState: "approved",
-								updatedBy: session.user.id,
-							}),
-						),
-					);
+							organizationId: currentEmployee.organizationId,
+							canonicalRecordId,
+							approvalState: "approved",
+							updatedBy: userId,
+						}),
+					),
+				);
 
 					span.setAttribute("absence.auto_approved", true);
 
@@ -577,13 +635,13 @@ export async function requestAbsenceEffect(
 					yield* _(
 						Effect.promise(() =>
 							syncCanonicalAbsenceApprovalState({
-								organizationId: currentEmployee.organizationId,
-								canonicalRecordId,
-								approvalState: "approved",
-								updatedBy: session.user.id,
-							}),
-						),
-					);
+							organizationId: currentEmployee.organizationId,
+							canonicalRecordId,
+							approvalState: "approved",
+							updatedBy: userId,
+						}),
+					),
+				);
 
 					span.setAttribute("absence.auto_approved", true);
 					span.setAttribute("absence.no_manager", true);

@@ -1,17 +1,20 @@
 "use client";
 
-import { useState } from "react";
 import {
 	IconCalendarOff,
 	IconCheck,
 	IconClockEdit,
 	IconExchange,
 	IconLoader2,
+	IconReceipt,
 	IconX,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { formatRelative, format } from "@/lib/datetime/luxon-utils";
+import { useState } from "react";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import {
 	Sheet,
 	SheetContent,
@@ -20,13 +23,15 @@ import {
 	SheetHeader,
 	SheetTitle,
 } from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Separator } from "@/components/ui/separator";
 import { UserAvatar } from "@/components/user-avatar";
-import { useApprovalDetail, useApproveApproval, useRejectApproval } from "@/lib/query/use-approval-inbox";
 import type { ApprovalType, UnifiedApprovalItem } from "@/lib/approvals/domain/types";
+import { format, formatRelative } from "@/lib/datetime/luxon-utils";
+import {
+	useApprovalDetail,
+	useApproveApproval,
+	useRejectApproval,
+} from "@/lib/query/use-approval-inbox";
 import { cn } from "@/lib/utils";
 
 interface ApprovalDetailPanelProps {
@@ -36,11 +41,33 @@ interface ApprovalDetailPanelProps {
 	onActioned: () => void;
 }
 
+interface TravelExpenseDetailEntity {
+	tripStart: Date | string;
+	tripEnd: Date | string;
+	destinationCity: string | null;
+	calculatedCurrency: string;
+	calculatedAmount: string;
+	notes: string | null;
+}
+
+function toDate(value: Date | string): Date {
+	return value instanceof Date ? value : new Date(value);
+}
+
+export function normalizeTravelExpenseDetailEntity(entity: TravelExpenseDetailEntity) {
+	return {
+		...entity,
+		tripStart: toDate(entity.tripStart),
+		tripEnd: toDate(entity.tripEnd),
+	};
+}
+
 // Icon mapping for approval types
 const TYPE_ICONS: Record<ApprovalType, React.ComponentType<{ className?: string }>> = {
 	absence_entry: IconCalendarOff,
 	time_entry: IconClockEdit,
 	shift_request: IconExchange,
+	travel_expense_claim: IconReceipt,
 };
 
 // Priority badge variants
@@ -61,7 +88,7 @@ export function ApprovalDetailPanel({
 	const [isRejecting, setIsRejecting] = useState(false);
 	const [rejectionReason, setRejectionReason] = useState("");
 
-	const { data: detail, isLoading } = useApprovalDetail(approval?.id ?? null);
+	const { data: detail } = useApprovalDetail(approval?.id ?? null);
 	const approveMutation = useApproveApproval();
 	const rejectMutation = useRejectApproval();
 
@@ -106,6 +133,10 @@ export function ApprovalDetailPanel({
 
 	const TypeIcon = TYPE_ICONS[approval.approvalType] || IconClockEdit;
 	const isPending = approveMutation.isPending || rejectMutation.isPending;
+	const travelExpenseDetail =
+		approval.approvalType === "travel_expense_claim" && detail?.entity
+			? normalizeTravelExpenseDetailEntity(detail.entity as TravelExpenseDetailEntity)
+			: null;
 
 	return (
 		<Sheet open={open} onOpenChange={handleClose}>
@@ -147,9 +178,7 @@ export function ApprovalDetailPanel({
 						</h4>
 						<div className="space-y-3">
 							<div className="flex justify-between">
-								<span className="text-sm text-muted-foreground">
-									{t("approvals.type", "Type")}
-								</span>
+								<span className="text-sm text-muted-foreground">{t("approvals.type", "Type")}</span>
 								<span className="text-sm font-medium">{approval.display.title}</span>
 							</div>
 							{approval.display.badge && (
@@ -168,12 +197,53 @@ export function ApprovalDetailPanel({
 									</Badge>
 								</div>
 							)}
-							<div className="flex justify-between">
-								<span className="text-sm text-muted-foreground">
-									{t("approvals.dates", "Dates")}
-								</span>
-								<span className="text-sm font-medium">{approval.display.subtitle}</span>
-							</div>
+							{travelExpenseDetail ? (
+								<>
+									<div className="flex justify-between">
+										<span className="text-sm text-muted-foreground">
+											{t("approvals.destination", "Destination")}
+										</span>
+										<span className="text-sm font-medium">
+											{travelExpenseDetail.destinationCity || t("common.notApplicable", "N/A")}
+										</span>
+									</div>
+									<div className="flex justify-between">
+										<span className="text-sm text-muted-foreground">
+											{t("approvals.amount", "Amount")}
+										</span>
+										<span className="text-sm font-medium">
+											{travelExpenseDetail.calculatedCurrency}{" "}
+											{travelExpenseDetail.calculatedAmount}
+										</span>
+									</div>
+									<div className="flex justify-between">
+										<span className="text-sm text-muted-foreground">
+											{t("approvals.tripDates", "Trip dates")}
+										</span>
+										<span className="text-sm font-medium">
+											{format(travelExpenseDetail.tripStart, "PP")} -{" "}
+											{format(travelExpenseDetail.tripEnd, "PP")}
+										</span>
+									</div>
+									{travelExpenseDetail.notes && (
+										<div className="flex justify-between gap-4">
+											<span className="text-sm text-muted-foreground">
+												{t("approvals.note", "Note")}
+											</span>
+											<span className="text-sm font-medium text-right">
+												{travelExpenseDetail.notes}
+											</span>
+										</div>
+									)}
+								</>
+							) : (
+								<div className="flex justify-between">
+									<span className="text-sm text-muted-foreground">
+										{t("approvals.dates", "Dates")}
+									</span>
+									<span className="text-sm font-medium">{approval.display.subtitle}</span>
+								</div>
+							)}
 						</div>
 					</div>
 
@@ -301,7 +371,12 @@ export function ApprovalDetailPanel({
 						</div>
 					) : (
 						<div className="flex w-full gap-2">
-							<Button variant="outline" className="flex-1" onClick={() => setIsRejecting(true)} disabled={isPending}>
+							<Button
+								variant="outline"
+								className="flex-1"
+								onClick={() => setIsRejecting(true)}
+								disabled={isPending}
+							>
 								<IconX className="mr-2 h-4 w-4" aria-hidden="true" />
 								{t("approvals.reject", "Reject")}
 							</Button>

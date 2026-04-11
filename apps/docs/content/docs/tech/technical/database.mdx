@@ -1,70 +1,62 @@
 ---
 title: Database Schema
-description: Core tables, schema generation, and Drizzle ORM configuration
+description: Core tables, canonical time records, and Drizzle ORM configuration
 icon: Database
 ---
 
 ## Core Tables
 
-The database uses Drizzle ORM with the following key entities:
+The database uses Drizzle ORM on PostgreSQL with organization-scoped tables across auth, workforce, time, export, and audit domains.
 
-- **users** - Authentication and user accounts
-- **employees** - Employee profiles linked to users
-- **organizations** - Multi-tenant organization support
+- **users** - Authentication and account-level fields
+- **organizations** - Tenant boundary for all scoped data
+- **members** - Organization membership and role assignment
+- **employees** - Employee profiles linked to users inside an organization
 - **teams** - Team structure and membership
-- **locations** - Physical work locations
-- **time_entries** - Clock in/out records
-- **absences** - Vacation and time-off requests
-- **holidays** - Public and custom holidays
-- **holiday_presets** - Reusable holiday collections
-- **vacation_assignments** - Flexible vacation allocation rules
-- **notifications** - Multi-channel notification records
-- **push_subscriptions** - Browser push notification subscriptions
-- **audit_logs** - Comprehensive audit trail
+- **work_period** - Legacy work-period source data used by operational flows and exports
+- **absence_entry** - Legacy absence requests and approved absence records
+- **approval_request** - Approval workflow state for time and absence changes
+- **time_record** - Canonical time record for normalized work, absence, and break history
+- **time_record_work / time_record_absence / time_record_break** - Canonical detail tables by record kind
+- **time_record_allocation** - Project or cost-center splits for canonical work records
+- **time_record_approval_decision** - Approval actions attached directly to canonical records
+- **payroll_export_config / payroll_wage_type_mapping / payroll_export_job / payroll_export_sync_record** - Payroll export configuration and execution state
+- **notifications / push_subscriptions / audit_logs** - Delivery, realtime, and compliance trails
 
 ---
 
 ## Schema Modularization
 
-The database schema is organized into domain-specific modules for maintainability:
+The schema is organized into domain-specific modules for maintainability:
 
-```
+```text
 src/db/schema/
 ├── index.ts              # Re-exports all schemas
 ├── auth.ts               # Authentication (users, sessions, accounts)
-├── organization.ts       # Organizations, members, invitations
-├── employee.ts           # Employee profiles, positions
-├── team.ts               # Teams, team members
-├── location.ts           # Work locations
-├── time-entry.ts         # Clock in/out records
-├── absence.ts            # Vacation, sick leave requests
-├── holiday.ts            # Holidays, holiday presets
-├── vacation.ts           # Vacation assignments, balances
-├── work-policy.ts        # Work policies (schedules + regulations)
-├── work-category.ts      # Work category sets and categories
-├── change-policy.ts      # Time entry change policies
-├── employee-rate.ts      # Employee rate history
-├── project.ts            # Projects, project assignments
-├── surcharge.ts          # Surcharges, surcharge rules
-├── notification.ts       # Notifications, push subscriptions
-├── audit.ts              # Audit logs
-├── export.ts             # Export jobs, export files
-├── payroll-export.ts     # Payroll export config, jobs, sync records
-└── ... (26+ domain files)
+├── organization.ts       # Organizations, employees, memberships
+├── team.ts               # Teams and team members
+├── time-tracking.ts      # Legacy work periods and tracking
+├── time-record.ts        # Canonical time records and allocations
+├── approval.ts           # Approval requests
+├── absence.ts            # Absence categories and entries
+├── payroll-export.ts     # Payroll export config, jobs, and sync records
+└── ...                   # Additional domain modules
 ```
 
 ### Key Tables
 
 | Table | Description |
 |-------|-------------|
-| `work_policy` | Unified work schedules and regulations |
-| `work_category` | Work categories with time factors |
-| `work_category_set` | Sets of categories for assignment |
-| `change_policy` | Time entry modification policies |
-| `employee_rate_history` | Hourly rate tracking over time |
-| `payroll_export_config` | Payroll export format configuration |
-| `payroll_wage_type_mapping` | Wage type mappings with format-specific codes |
-| `payroll_export_job` | Export job tracking with status |
+| `time_record` | Canonical parent record for work, absence, and break entries |
+| `time_record_work` | Work-specific canonical detail |
+| `time_record_absence` | Absence-specific canonical detail |
+| `time_record_break` | Break-specific canonical detail |
+| `time_record_allocation` | Project and cost-center splits for work records |
+| `time_record_approval_decision` | Approval history attached to canonical records |
+| `approval_request` | Approval request state, including canonical linkage during rollout |
+| `payroll_export_config` | Active export configuration per org and target |
+| `payroll_wage_type_mapping` | Mapping from Z8 categories to target-specific payroll codes |
+| `payroll_export_job` | Export job tracking with status and output metadata |
 | `payroll_export_sync_record` | Individual record sync status for API exports |
 
 ---
@@ -72,149 +64,42 @@ src/db/schema/
 ## Schema Generation
 
 ```bash
-# Generate Better-Auth schema
-bunx --bun @better-auth/cli generate --output ./src/db/schema.ts
+# Generate Better Auth schema
+pnpm --dir apps/webapp run auth:generate
 
-# Run database migrations
-bun db:migrate
+# Push Drizzle schema changes
+pnpm --dir apps/webapp drizzle-kit push
 ```
 
 ---
 
-## New Tables Reference
+## Canonical Time Model
 
-### work_policy
+Recent time-tracking work centers on a canonical time-record model that normalizes work records, absence records, approval transitions, and downstream payroll/export processing.
 
-```sql
-CREATE TABLE work_policy (
-  id UUID PRIMARY KEY,
-  organization_id UUID REFERENCES organization(id),
-  name TEXT NOT NULL,
-  schedule_enabled BOOLEAN DEFAULT true,
-  regulation_enabled BOOLEAN DEFAULT true,
-  schedule_type TEXT, -- 'simple' | 'detailed'
-  weekly_hours DECIMAL,
-  daily_hours JSONB, -- { monday: 8, tuesday: 8, ... }
-  max_daily_hours DECIMAL,
-  max_weekly_hours DECIMAL,
-  break_rules JSONB, -- [{ afterHours: 6, minBreakMinutes: 30 }]
-  created_at TIMESTAMPTZ,
-  updated_at TIMESTAMPTZ
-);
-```
+The important relationship is:
 
-### work_category
+- `work_period` and `absence_entry` remain important operational sources.
+- `approval_request` can point at legacy entities while also carrying `canonicalRecordId` during the canonical model rollout.
+- `time_record` is the normalized parent record used to represent one scoped unit of tracked time inside an organization.
+- Detail tables such as `time_record_work`, `time_record_absence`, and `time_record_break` capture record-kind-specific fields without duplicating the base record shape.
+- `time_record_allocation` adds project or cost-center allocation for work records.
+- `time_record_approval_decision` stores the approval trail directly on the canonical record timeline.
 
-```sql
-CREATE TABLE work_category (
-  id UUID PRIMARY KEY,
-  set_id UUID REFERENCES work_category_set(id),
-  name TEXT NOT NULL,
-  time_factor DECIMAL DEFAULT 1.0,
-  color TEXT,
-  sort_order INTEGER,
-  created_at TIMESTAMPTZ
-);
-```
+This layout keeps approval, categorization, allocation, and payroll processing aligned around a shared record identity while preserving compatibility with older operational tables where needed.
 
-### change_policy
+## Payroll Export Architecture
 
-```sql
-CREATE TABLE change_policy (
-  id UUID PRIMARY KEY,
-  organization_id UUID REFERENCES organization(id),
-  name TEXT NOT NULL,
-  self_service_days INTEGER DEFAULT 3,
-  approval_days INTEGER DEFAULT 30,
-  no_approval_required BOOLEAN DEFAULT false,
-  created_at TIMESTAMPTZ,
-  updated_at TIMESTAMPTZ
-);
-```
+Payroll export data stays organization-scoped end to end.
 
-### employee_rate_history
+- `payroll_export_config` stores the active export configuration for one organization and one export target.
+- `payroll_wage_type_mapping` maps work categories, absence categories, and special categories to target-specific payroll codes.
+- `payroll_export_job` stores filters, execution mode, status, and output metadata for each export run.
+- `payroll_export_sync_record` tracks record-level outcomes for API-based targets so partial success, retry, and audit review are possible.
 
-```sql
-CREATE TABLE employee_rate_history (
-  id UUID PRIMARY KEY,
-  employee_id UUID REFERENCES employee(id),
-  hourly_rate DECIMAL NOT NULL,
-  currency TEXT DEFAULT 'EUR',
-  effective_from DATE NOT NULL,
-  created_by UUID REFERENCES user(id),
-  created_at TIMESTAMPTZ
-);
-```
+The schema also reflects the split between file-based and API-based export targets:
 
-### payroll_export_config
+- File formatters produce artifacts such as DATEV, Lexware, Sage, and CSV-style SuccessFactors output.
+- API exporters push normalized attendance and absence data into systems such as Personio, SuccessFactors, and Workday, with target-specific maturity and sync semantics.
 
-```sql
-CREATE TABLE payroll_export_config (
-  id UUID PRIMARY KEY,
-  organization_id TEXT REFERENCES organization(id),
-  format_id TEXT NOT NULL,
-  config JSONB NOT NULL, -- Format-specific settings
-  is_active BOOLEAN DEFAULT true,
-  created_at TIMESTAMPTZ,
-  updated_at TIMESTAMPTZ
-);
-```
-
-### payroll_wage_type_mapping
-
-```sql
-CREATE TABLE payroll_wage_type_mapping (
-  id UUID PRIMARY KEY,
-  config_id UUID REFERENCES payroll_export_config(id),
-  work_category_id UUID REFERENCES work_category(id),
-  absence_category_id UUID REFERENCES absence_category(id),
-  special_category TEXT, -- 'overtime', 'holiday_compensation', etc.
-
-  -- Format-specific wage type codes
-  datev_wage_type_code TEXT,
-  datev_wage_type_name TEXT,
-  lexware_wage_type_code TEXT,
-  lexware_wage_type_name TEXT,
-  sage_wage_type_code TEXT,
-  sage_wage_type_name TEXT,
-
-  factor DECIMAL(4,2) DEFAULT 1.00,
-  is_active BOOLEAN DEFAULT true,
-  created_at TIMESTAMPTZ
-);
-```
-
-### payroll_export_job
-
-```sql
-CREATE TABLE payroll_export_job (
-  id UUID PRIMARY KEY,
-  organization_id TEXT REFERENCES organization(id),
-  config_id UUID REFERENCES payroll_export_config(id),
-  filters JSONB NOT NULL, -- { dateRange, employeeIds, teamIds }
-  status TEXT DEFAULT 'pending', -- pending | processing | completed | failed
-  file_name TEXT,
-  synced_record_count INTEGER, -- For API exports
-  failed_record_count INTEGER,
-  created_at TIMESTAMPTZ,
-  completed_at TIMESTAMPTZ
-);
-```
-
-### payroll_export_sync_record
-
-```sql
-CREATE TABLE payroll_export_sync_record (
-  id UUID PRIMARY KEY,
-  job_id UUID REFERENCES payroll_export_job(id),
-  record_type TEXT NOT NULL, -- 'attendance' | 'absence'
-  source_record_id UUID NOT NULL,
-  employee_id UUID NOT NULL,
-  status TEXT NOT NULL, -- 'pending' | 'synced' | 'failed' | 'skipped'
-  external_id TEXT, -- ID from Personio/external system
-  error_message TEXT,
-  is_retryable BOOLEAN DEFAULT true,
-  attempt_count INTEGER DEFAULT 0,
-  synced_at TIMESTAMPTZ
-);
-```
+That distinction matters because file outputs primarily care about a generated artifact, while API exports need per-record status, external IDs, and retryability.

@@ -43,4 +43,41 @@ const approvalsDir = dirname(fileURLToPath(import.meta.url));
 		expect(actionsSource).not.toContain("@opentelemetry/api");
 		expect(actionsSource).not.toContain("drizzle-orm");
 	});
+
+	it("routes travel expense approvals through the unified inbox entry point", () => {
+		const legacyApprovalsPageSource = readFileSync(
+			join(approvalsDir, "../travel-expenses/approvals/page.tsx"),
+			"utf8",
+		);
+		const travelExpensesPageSource = readFileSync(
+			join(approvalsDir, "../travel-expenses/page.tsx"),
+			"utf8",
+		);
+
+		expect(legacyApprovalsPageSource).toContain("params: Promise<{ locale: string }>");
+		expect(legacyApprovalsPageSource).toContain(
+			'redirect(`/${locale}/approvals/inbox?types=travel_expense_claim`)',
+		);
+		expect(travelExpensesPageSource).toContain(
+			'"/approvals/inbox?types=travel_expense_claim"',
+		);
+	});
+
+	it("removes the legacy travel expense approval queue implementation", () => {
+		const travelExpenseActionsSource = readFileSync(
+			join(approvalsDir, "../travel-expenses/actions.ts"),
+			"utf8",
+		);
+
+		expect(travelExpenseActionsSource).not.toContain("getTravelExpenseApprovalQueue");
+		expect(travelExpenseActionsSource).not.toContain("TravelExpenseApprovalQueueItem");
+		expect(
+			existsSync(join(approvalsDir, "../../../components/travel-expenses/travel-expense-approval-queue.tsx")),
+		).toBe(false);
+		expect(
+			existsSync(
+				join(approvalsDir, "../../../components/travel-expenses/travel-expense-approval-queue.test.tsx"),
+			),
+		).toBe(false);
+	});
 });

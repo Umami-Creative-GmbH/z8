@@ -6,11 +6,13 @@ icon: ShieldCheck
 
 import { Callout } from 'fumadocs-ui/components/callout';
 
-App Access Control allows administrators to restrict which Z8 applications users can access. This is useful for compliance, security policies, or limiting access based on user roles.
+App Access Control lets organization admins restrict which Z8 applications users can access inside a specific organization. This is useful for compliance, security policies, or staged rollout by role.
 
 ---
 
 ## Understanding App Access
+
+These restrictions are organization-scoped. A user can be allowed in one organization and restricted in another.
 
 Z8 offers multiple applications:
 
@@ -48,24 +50,18 @@ By default, all users can access all applications. Administrators can restrict a
 
 ## Managing User Access
 
-### From Employee Management
+App access is currently managed through the employee detail settings surface.
+
+### Employee Detail Flow
 
 1. Go to **Employees** in the sidebar
 2. Click on the employee's profile
-3. Scroll to **App Access** section
+3. Open the **App Access Permissions** section
 4. Toggle access for each application:
-   - Web Application
-   - Desktop Application
-   - Mobile Application
-5. Changes save automatically
-
-### From Organization Settings
-
-1. Go to **Settings** > **Members**
-2. Find the user in the members list
-3. Click **Edit Access**
-4. Configure app permissions
-5. Click **Save**
+    - Web Application
+    - Desktop Application
+    - Mobile Application
+5. Save the employee changes
 
 ---
 
@@ -91,17 +87,24 @@ By default, all users can access all applications. Administrators can restrict a
 
 ---
 
-## How Apps Are Detected
+## Access Enforcement
 
-The system automatically detects which application is making the request:
+The system detects which application is making the request and validates the matching permission for the active organization.
 
 | Detection Method | App Type |
 |------------------|----------|
 | Cookie authentication | Web App |
-| Bearer token + mobile user agent | Mobile App |
-| Bearer token + other user agent | Desktop App |
+| Bearer token + `X-Z8-App-Type: mobile` | Mobile App |
+| Bearer token + `X-Z8-App-Type: desktop` | Desktop App |
+| Bearer token without explicit app header | Legacy fallback based on user agent |
 
-This detection is automatic and requires no user configuration.
+<Callout type="info" title="Native App Requests">
+  Mobile-only API routes require both a bearer token and `X-Z8-App-Type: mobile`. Older shared routes can still fall back to user-agent detection for legacy non-web clients.
+</Callout>
+
+<Callout type="info" title="Per-organization enforcement">
+  Restricting mobile, desktop, or web access affects the current organization only. It does not change access in other organizations the same user belongs to.
+</Callout>
 
 ---
 
@@ -131,29 +134,6 @@ Access audit logs in **Settings** > **Audit Logs** and filter by "App Access".
 
 ---
 
-## Bulk Management
-
-### Using Filters
-
-1. Go to **Employees**
-2. Filter by team, location, or role
-3. Select multiple employees
-4. Click **Bulk Actions** > **Update App Access**
-5. Set permissions
-6. Click **Apply**
-
-### Import/Export
-
-App access settings can be included in employee data exports and imports:
-
-```csv
-email,canUseWebapp,canUseDesktop,canUseMobile
-john@example.com,true,true,false
-jane@example.com,true,false,false
-```
-
----
-
 ## Default Settings
 
 ### New Employees
@@ -162,7 +142,7 @@ New employees receive full access to all applications by default.
 
 ### Invited Users
 
-Users invited to the organization also receive full access by default. Adjust permissions after they join if needed.
+Invited users receive the default app permissions for the organization. Review their access after they join if your policy requires tighter restrictions.
 
 ### Deactivated Employees
 
@@ -207,11 +187,7 @@ Create clear policies about who gets access to which apps:
 
 ### Regular Reviews
 
-Periodically audit app access:
-1. Export user permissions
-2. Review against current policies
-3. Adjust as needed
-4. Document changes
+Periodically review employee access in the employee settings screens and adjust permissions as roles or device policies change.
 
 ### Communicate Changes
 
@@ -242,6 +218,6 @@ When restricting access:
 ### Can't modify user's access
 
 1. Verify you have admin permissions
-2. Check if the user is the organization owner
-3. Organization owners cannot have their webapp access restricted
+2. Confirm you are editing the employee detail page for the correct person
+3. Save the form after changing the switches
 4. Contact support if issues persist

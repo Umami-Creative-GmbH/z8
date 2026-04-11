@@ -19,23 +19,19 @@ export async function findCurrentEmployeeByUserId(
 	userId: string,
 	activeOrganizationId?: string | null,
 ) {
-	if (activeOrganizationId) {
-		const employeeForActiveOrg = await queryClient.query.employee.findFirst({
-			where: and(
-				eq(employee.userId, userId),
-				eq(employee.organizationId, activeOrganizationId),
-				eq(employee.isActive, true),
-			),
-		});
-
-		if (employeeForActiveOrg) {
-			return employeeForActiveOrg;
-		}
+	if (!activeOrganizationId) {
+		return null;
 	}
 
-	return queryClient.query.employee.findFirst({
-		where: and(eq(employee.userId, userId), eq(employee.isActive, true)),
+	const employeeForActiveOrg = await queryClient.query.employee.findFirst({
+		where: and(
+			eq(employee.userId, userId),
+			eq(employee.organizationId, activeOrganizationId),
+			eq(employee.isActive, true),
+		),
 	});
+
+	return employeeForActiveOrg ?? null;
 }
 
 /**
