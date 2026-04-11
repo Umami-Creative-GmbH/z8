@@ -37,6 +37,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Verify workflow contract
+        run: node scripts/ci/verify-publish-docs-image-workflow.mjs
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -55,6 +58,8 @@ jobs:
           file: ./Dockerfile.docs
           platforms: ${{ matrix.platform }}
           outputs: type=image,name=ghcr.io/umami-creative-gmbh/z8-docs,push-by-digest=true,name-canonical=true,push=true
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
           cache-from: type=gha,scope=docs-${{ matrix.arch }}
           cache-to: type=gha,mode=max,scope=docs-${{ matrix.arch }}
 
@@ -128,6 +133,7 @@ jobs:
 
           for tag in $TAGS; do
             docker buildx imagetools create \
+              --annotation "index:org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}" \
               -t "$tag" \
               "$IMAGE_NAME@$AMD64_DIGEST" \
               "$IMAGE_NAME@$ARM64_DIGEST"

@@ -252,12 +252,13 @@ export function processApprovalWithCurrentEmployee<T>(
 				try: async () => {
 					await dbService.db.transaction(async (tx) => {
 						const transactionalDbService: ApprovalDbService = {
-							db: tx as ApprovalDbService["db"],
+							db: tx,
 							query: dbService.query,
 						};
 						const transactionalAuditLogger = createApprovalAuditLogger(transactionalDbService);
 
 						const exit = await Effect.runPromiseExit(
+							// Transactional approvals currently run only self-contained handlers.
 							executeApprovalWithCurrentEmployee(
 								transactionalDbService,
 								currentEmployee,
@@ -269,7 +270,7 @@ export function processApprovalWithCurrentEmployee<T>(
 								preflightEntity,
 							).pipe(
 								Effect.provideService(ApprovalAuditLogger, transactionalAuditLogger),
-							),
+							) as Effect.Effect<void, AnyAppError, never>,
 						);
 
 						if (Exit.isFailure(exit)) {

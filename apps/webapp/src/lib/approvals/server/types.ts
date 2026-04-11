@@ -2,6 +2,8 @@ import type { Effect } from "effect";
 import type { db } from "@/db";
 import type { AnyAppError } from "@/lib/effect/errors";
 
+export type ApprovalDatabase = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
+
 export interface ApprovalWithAbsence {
 	id: string;
 	entityId: string;
@@ -93,6 +95,6 @@ export interface ApprovalStatusUpdate {
 }
 
 export interface ApprovalDbService {
-	db: typeof db;
+	db: ApprovalDatabase;
 	query: <T>(name: string, fn: () => Promise<T>) => Effect.Effect<T, AnyAppError, never>;
 }

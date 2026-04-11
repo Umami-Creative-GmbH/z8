@@ -126,11 +126,13 @@ export async function submitTravelExpenseClaim(input: {
 			return { success: false, error: "Unauthorized" };
 		}
 
-		const [claim, currentEmployee] = await Promise.all([
+		const currentEmployee = authContext.employee;
+
+		const [claim, currentEmployeeRecord] = await Promise.all([
 			db.query.travelExpenseClaim.findFirst({
 				where: and(
 					eq(travelExpenseClaim.id, input.claimId),
-					eq(travelExpenseClaim.organizationId, authContext.employee.organizationId),
+					eq(travelExpenseClaim.organizationId, currentEmployee.organizationId),
 				),
 				with: {
 					attachments: true,
@@ -138,8 +140,8 @@ export async function submitTravelExpenseClaim(input: {
 			}),
 			db.query.employee.findFirst({
 				where: and(
-					eq(employee.id, authContext.employee.id),
-					eq(employee.organizationId, authContext.employee.organizationId),
+					eq(employee.id, currentEmployee.id),
+					eq(employee.organizationId, currentEmployee.organizationId),
 					eq(employee.isActive, true),
 				),
 				columns: {
@@ -152,7 +154,7 @@ export async function submitTravelExpenseClaim(input: {
 			return { success: false, error: "Travel expense claim not found" };
 		}
 
-		if (claim.employeeId !== authContext.employee.id) {
+		if (claim.employeeId !== currentEmployee.id) {
 			return { success: false, error: "Unauthorized" };
 		}
 
@@ -167,15 +169,15 @@ export async function submitTravelExpenseClaim(input: {
 			};
 		}
 
-		if (!currentEmployee) {
+		if (!currentEmployeeRecord) {
 			return { success: false, error: "Employee not found" };
 		}
 
-		let approverId = currentEmployee.managerId;
+		let approverId = currentEmployeeRecord.managerId;
 		if (!approverId) {
 			const adminApprover = await db.query.employee.findFirst({
 				where: and(
-					eq(employee.organizationId, authContext.employee.organizationId),
+					eq(employee.organizationId, currentEmployee.organizationId),
 					eq(employee.role, "admin"),
 					eq(employee.isActive, true),
 				),
@@ -206,7 +208,7 @@ export async function submitTravelExpenseClaim(input: {
 				.where(
 					and(
 						eq(travelExpenseClaim.id, claim.id),
-						eq(travelExpenseClaim.organizationId, authContext.employee.organizationId),
+						eq(travelExpenseClaim.organizationId, currentEmployee.organizationId),
 						eq(travelExpenseClaim.status, "draft"),
 					),
 				)
@@ -217,10 +219,10 @@ export async function submitTravelExpenseClaim(input: {
 			}
 
 			await tx.insert(approvalRequest).values({
-				organizationId: authContext.employee.organizationId,
+				organizationId: currentEmployee.organizationId,
 				entityType: "travel_expense_claim",
 				entityId: claim.id,
-				requestedBy: authContext.employee.id,
+				requestedBy: currentEmployee.id,
 				approverId,
 				status: "pending",
 			});
@@ -235,10 +237,10 @@ export async function submitTravelExpenseClaim(input: {
 		logAudit({
 			action: AuditAction.TRAVEL_EXPENSE_SUBMITTED,
 			actorId: authContext.user.id,
-			employeeId: authContext.employee.id,
+			employeeId: currentEmployee.id,
 			targetId: claim.id,
 			targetType: "approval",
-			organizationId: authContext.employee.organizationId,
+			organizationId: currentEmployee.organizationId,
 			metadata: {
 				approverId,
 				type: claim.type,

@@ -48,14 +48,12 @@ export class ApprovalAuditLogger extends Context.Tag("ApprovalAuditLogger")<
 		/**
 		 * Log an approval action.
 		 */
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		readonly log: (entry: ApprovalAuditEntry) => Effect.Effect<void, AnyAppError, any>;
+		readonly log: (entry: ApprovalAuditEntry) => Effect.Effect<void, AnyAppError, never>;
 
 		/**
 		 * Log multiple actions in batch (for bulk operations).
 		 */
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		readonly logBatch: (entries: ApprovalAuditEntry[]) => Effect.Effect<void, AnyAppError, any>;
+		readonly logBatch: (entries: ApprovalAuditEntry[]) => Effect.Effect<void, AnyAppError, never>;
 	}
 >() {}
 
