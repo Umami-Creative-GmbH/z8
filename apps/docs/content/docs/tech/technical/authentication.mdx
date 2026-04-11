@@ -19,7 +19,8 @@ In practice this means:
 
 - `BETTER_AUTH_SECRET` and related auth secrets stay in environment configuration.
 - Default social providers such as Google, GitHub, LinkedIn, and Apple can be enabled from system env vars.
-- Organization-scoped SSO, SCIM, and branded social OAuth are configured per organization in settings and resolved against the current org context at runtime.
+- Organization-scoped SSO and branded social OAuth are configured per organization in settings and resolved against the current org context at runtime.
+- SCIM is part of the enterprise auth stack, but the current product does not expose a dedicated self-serve SCIM settings page; managed rollout is coordinated outside a normal org settings flow.
 - Organization-specific credentials are entered through org settings and stored through the app's org-scoped secret handling instead of per-tenant env vars.
 
 ## Session And Cookie Behavior

@@ -96,9 +96,10 @@ S3_REGION=eu-central-1
 S3_ACCESS_KEY_ID=<access-key>
 S3_SECRET_ACCESS_KEY=<secret-key>
 S3_ENDPOINT=https://s3.amazonaws.com
+S3_PUBLIC_URL=https://cdn.your-domain.com
 ```
 
-For local development and some self-hosted setups, Z8 can target compatible providers such as RustFS, MinIO, R2, or similar S3-compatible services.
+`S3_PUBLIC_URL` should resolve to the public base URL used when the app needs to serve or reference stored assets. For local development and some self-hosted setups, Z8 can target compatible providers such as RustFS, MinIO, R2, or similar S3-compatible services.
 
 ## Queue Infrastructure
 
@@ -110,7 +111,9 @@ Z8 uses Valkey/Redis-compatible infrastructure for:
 - selected realtime coordination paths
 
 ```ini
-VALKEY_URL=redis://localhost:6379
+VALKEY_HOST=localhost
+VALKEY_PORT=6379
+VALKEY_PASSWORD=<optional-password>
 ```
 
 ## Worker Process Deployment
@@ -127,7 +130,7 @@ pnpm --dir apps/webapp exec tsx src/worker.ts
 
 Important worker inputs include:
 
-- `VALKEY_*` or compatible Redis connection settings
+- `VALKEY_HOST`, `VALKEY_PORT`, and optional `VALKEY_PASSWORD`
 - `WORKER_CONCURRENCY`
 - `ENABLE_CRON_JOBS`
 - the same database and storage configuration used by the web app

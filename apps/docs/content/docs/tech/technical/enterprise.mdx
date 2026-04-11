@@ -27,6 +27,8 @@ Operator expectations are split cleanly:
 - system secrets remain environment-backed
 - every enterprise feature remains organization-scoped even when managed centrally by platform operators
 
+For SCIM specifically, keep expectations narrower: the current product supports SCIM in the enterprise auth stack, but it does not currently expose a dedicated self-serve SCIM setup page in normal admin settings.
+
 ---
 
 ## API Key Management
@@ -81,7 +83,7 @@ In practice this means:
 
 - one SCIM configuration provisions one organization at a time
 - provisioning activity can map members, role templates, and lifecycle events into that organization
-- SCIM rollout is usually coordinated by operators for enterprise customers rather than treated as a casual self-serve toggle
+- SCIM rollout is usually coordinated by operators for enterprise customers rather than treated as a casual self-serve toggle in the product UI
 
 ## Organization Social OAuth
 
