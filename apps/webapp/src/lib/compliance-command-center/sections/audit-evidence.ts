@@ -3,7 +3,6 @@ import { DateTime } from "luxon";
 import { db } from "@/db";
 import { auditExportPackage, auditPackRequest, auditVerificationLog } from "@/db/schema";
 import { configurationService } from "@/lib/audit-export";
-import { auditPackRequestRepository } from "@/lib/audit-pack/application/request-repository";
 import type { ComplianceSectionResult } from "../types";
 
 const AUDIT_EVIDENCE_LOOKBACK_DAYS = 7;
@@ -98,19 +97,24 @@ export async function getAuditEvidenceSection(
 	const lookbackStart = DateTime.utc()
 		.minus({ days: AUDIT_EVIDENCE_LOOKBACK_DAYS })
 		.toJSDate();
-	const [config, requests, recentFailedRequests, invalidVerifications] = await Promise.all([
+	const [config, recentFailedRequests, latestSuccess, invalidVerifications] = await Promise.all([
 		configurationService.getConfig(organizationId),
-		auditPackRequestRepository.listRequests({ organizationId, limit: 10 }),
-		db
-			.select({ id: auditPackRequest.id })
-			.from(auditPackRequest)
-			.where(
-				and(
-					eq(auditPackRequest.organizationId, organizationId),
-					eq(auditPackRequest.status, "failed"),
-					gte(auditPackRequest.completedAt, lookbackStart),
-				),
+		db.query.auditPackRequest.findMany({
+			where: and(
+				eq(auditPackRequest.organizationId, organizationId),
+				eq(auditPackRequest.status, "failed"),
+				gte(auditPackRequest.completedAt, lookbackStart),
 			),
+			columns: { id: true },
+		}),
+		db.query.auditPackRequest.findFirst({
+			where: and(
+				eq(auditPackRequest.organizationId, organizationId),
+				eq(auditPackRequest.status, "completed"),
+			),
+			columns: { completedAt: true },
+			orderBy: [desc(auditPackRequest.completedAt)],
+		}),
 		db
 			.select({ id: auditVerificationLog.id })
 			.from(auditVerificationLog)
@@ -131,8 +135,6 @@ export async function getAuditEvidenceSection(
 		activeKeyFingerprint: config?.signingKeyFingerprint ?? null,
 		recentFailedRequests: recentFailedRequests.length,
 		recentInvalidVerifications: invalidVerifications.length,
-		latestSuccessAt:
-			requests.find((request) => request.status === "completed")?.completedAt?.toISOString() ??
-			null,
+		latestSuccessAt: latestSuccess?.completedAt?.toISOString() ?? null,
 	});
 }

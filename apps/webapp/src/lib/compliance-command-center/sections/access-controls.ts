@@ -1,6 +1,8 @@
+import { and, desc, eq, gte } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { AuditAction } from "@/lib/audit-logger";
-import { getAuditLogs } from "@/lib/query/audit.queries";
+import { db } from "@/db";
+import { auditLog } from "@/db/schema";
 import type { ComplianceSectionResult } from "../types";
 
 const ACCESS_CONTROL_LOOKBACK_HOURS = 24;
@@ -82,14 +84,17 @@ export function deriveAccessControlsSection(input: {
 export async function getAccessControlsSection(
 	organizationId: string,
 ): Promise<ComplianceSectionResult> {
-	const result = await getAuditLogs({
-		organizationId,
-		limit: 50,
-		startDate: DateTime.utc()
-			.minus({ hours: ACCESS_CONTROL_LOOKBACK_HOURS })
-			.toJSDate(),
+	const lookbackStart = DateTime.utc()
+		.minus({ hours: ACCESS_CONTROL_LOOKBACK_HOURS })
+		.toJSDate();
+	const logs = await db.query.auditLog.findMany({
+		where: and(
+			eq(auditLog.organizationId, organizationId),
+			gte(auditLog.timestamp, lookbackStart),
+		),
+		orderBy: [desc(auditLog.timestamp)],
 	});
-	const recentSensitiveEvents = result.logs
+	const recentSensitiveEvents = logs
 		.filter((log) => SENSITIVE_ACTIONS.has(log.action))
 		.slice(0, 10)
 		.map((log) => ({
