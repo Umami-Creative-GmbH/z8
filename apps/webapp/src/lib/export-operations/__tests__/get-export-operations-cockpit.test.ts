@@ -175,6 +175,18 @@ describe("getExportOperationsCockpit", () => {
 				filters: {},
 			},
 			{
+				id: "payroll-job-completed-latest",
+				status: "completed",
+				fileName: "payroll-final.csv",
+				fileSizeBytes: 4096,
+				workPeriodCount: 18,
+				employeeCount: 8,
+				createdAt: new Date("2026-04-10T11:10:00.000Z"),
+				completedAt: new Date("2026-04-10T11:12:00.000Z"),
+				errorMessage: null,
+				filters: {},
+			},
+			{
 				id: "payroll-job-failed-late-completion",
 				status: "failed",
 				fileName: null,
@@ -313,6 +325,15 @@ describe("getExportOperationsCockpit", () => {
 
 		mockState.findAuditRequestsByOccurrence.mockResolvedValue([
 			{
+				id: "audit-request-completed-latest",
+				organizationId: "org-1",
+				status: "completed",
+				createdAt: new Date("2026-04-10T10:16:00.000Z"),
+				completedAt: new Date("2026-04-10T10:25:00.000Z"),
+				errorMessage: null,
+				artifact: null,
+			},
+			{
 				id: "audit-request-failed-late-completion",
 				organizationId: "org-1",
 				status: "failed",
@@ -396,18 +417,6 @@ describe("getExportOperationsCockpit", () => {
 
 		expect(result.alerts).toEqual([
 			expect.objectContaining({
-				id: "payroll-job-failed-late-completion",
-				source: "payroll",
-				severity: "error",
-				href: "/settings/payroll-export",
-			}),
-			expect.objectContaining({
-				id: "audit-request-failed-late-completion",
-				source: "audit",
-				severity: "error",
-				href: "/settings/audit-export",
-			}),
-			expect.objectContaining({
 				id: "schedule-blocked",
 				source: "scheduled",
 				severity: "warning",
@@ -416,6 +425,7 @@ describe("getExportOperationsCockpit", () => {
 				href: "/settings/scheduled-exports",
 			}),
 		]);
+		expect(result.alerts).toHaveLength(1);
 
 		expect(result.upcomingRuns).toEqual([
 			expect.objectContaining({
@@ -430,7 +440,9 @@ describe("getExportOperationsCockpit", () => {
 		expect(result.recentActivity.map((item) => item.id)).toEqual([
 			"payroll-job-pending",
 			"payroll-job-failed-late-completion",
+			"payroll-job-completed-latest",
 			"payroll-job-failed",
+			"audit-request-completed-latest",
 			"scheduled-execution-failed-late-completion",
 			"audit-request-failed-late-completion",
 			"scheduled-execution-failed",

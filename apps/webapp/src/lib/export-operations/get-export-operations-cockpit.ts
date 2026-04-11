@@ -301,22 +301,22 @@ function buildAlerts(
 	t: TranslateFn,
 ): ExportOperationsAlert[] {
 	const alerts: ExportOperationsAlert[] = [];
-	const latestFailedPayrollJob = payrollJobs.find((job) => job.status === "failed");
-	const latestFailedAuditRequest = auditRequests.find((request) => request.status === "failed");
+	const latestPayrollJob = payrollJobs[0];
+	const latestAuditRequest = auditRequests[0];
 
-	if (latestFailedPayrollJob) {
+	if (latestPayrollJob?.status === "failed") {
 		alerts.push({
-			id: latestFailedPayrollJob.id,
+			id: latestPayrollJob.id,
 			source: "payroll",
 			severity: "error",
 			title: t("settings.exportOperations.alerts.payrollFailed.title", "Payroll export failed"),
 			description:
-				latestFailedPayrollJob.errorMessage ??
+				latestPayrollJob.errorMessage ??
 				t(
 					"settings.exportOperations.alerts.payrollFailed.description",
 					"The latest payroll export did not complete.",
 				),
-			occurredAt: latestFailedPayrollJob.completedAt ?? latestFailedPayrollJob.createdAt,
+			occurredAt: latestPayrollJob.completedAt ?? latestPayrollJob.createdAt,
 			href: "/settings/payroll-export",
 		});
 	}
@@ -344,19 +344,19 @@ function buildAlerts(
 		});
 	}
 
-	if (latestFailedAuditRequest) {
+	if (latestAuditRequest?.status === "failed") {
 		alerts.push({
-			id: latestFailedAuditRequest.id,
+			id: latestAuditRequest.id,
 			source: "audit",
 			severity: "error",
 			title: t("settings.exportOperations.alerts.auditFailed.title", "Audit export failed"),
 			description:
-				latestFailedAuditRequest.errorMessage ??
+				latestAuditRequest.errorMessage ??
 				t(
 					"settings.exportOperations.alerts.auditFailed.description",
 					"The latest audit export request did not complete.",
 				),
-			occurredAt: latestFailedAuditRequest.completedAt ?? latestFailedAuditRequest.createdAt,
+			occurredAt: latestAuditRequest.completedAt ?? latestAuditRequest.createdAt,
 			href: "/settings/audit-export",
 		});
 	}
