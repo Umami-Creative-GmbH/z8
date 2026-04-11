@@ -93,6 +93,18 @@ describe("getExportOperationsCockpit", () => {
 	it("builds alerts, upcoming runs, and recent activity from all export sources", async () => {
 		mockState.getExportJobHistory.mockResolvedValue([
 			{
+				id: "payroll-job-pending",
+				status: "pending",
+				fileName: null,
+				fileSizeBytes: null,
+				workPeriodCount: null,
+				employeeCount: null,
+				createdAt: new Date("2026-04-11T11:30:00.000Z"),
+				completedAt: null,
+				errorMessage: null,
+				filters: {},
+			},
+			{
 				id: "payroll-job-failed",
 				status: "failed",
 				fileName: null,
@@ -214,10 +226,18 @@ describe("getExportOperationsCockpit", () => {
 
 		mockState.findAuditExportPackages.mockResolvedValue([
 			{
+				id: "audit-package-pending",
+				organizationId: "org-1",
+				status: "pending",
+				createdAt: new Date("2026-04-10T08:00:00.000Z"),
+				completedAt: null,
+			},
+			{
 				id: "audit-package-1",
 				organizationId: "org-1",
 				status: "completed",
-				createdAt: new Date("2026-04-08T06:10:00.000Z"),
+				createdAt: new Date("2026-04-08T06:00:00.000Z"),
+				completedAt: new Date("2026-04-08T06:10:00.000Z"),
 			},
 		]);
 
@@ -239,7 +259,7 @@ describe("getExportOperationsCockpit", () => {
 		expect(result.summary).toEqual({
 			activeSchedules: 3,
 			failedRunsLast7Days: 5,
-			lastPayrollExportAt: new Date("2026-04-10T11:00:00.000Z"),
+			lastPayrollExportAt: new Date("2026-04-09T09:05:00.000Z"),
 			lastAuditPackageAt: new Date("2026-04-08T06:10:00.000Z"),
 		});
 		expect(result.errors).toEqual({
@@ -287,6 +307,7 @@ describe("getExportOperationsCockpit", () => {
 		expect(result.upcomingRuns).toHaveLength(2);
 
 		expect(result.recentActivity.map((item) => item.id)).toEqual([
+			"payroll-job-pending",
 			"payroll-job-failed",
 			"scheduled-execution-failed",
 			"audit-request-failed",
@@ -352,7 +373,7 @@ describe("getExportOperationsCockpit", () => {
 		expect(result.summary).toEqual({
 			activeSchedules: 0,
 			failedRunsLast7Days: 1,
-			lastPayrollExportAt: new Date("2026-04-10T11:00:00.000Z"),
+			lastPayrollExportAt: null,
 			lastAuditPackageAt: null,
 		});
 		expect(result.errors).toEqual({
@@ -420,7 +441,8 @@ describe("getExportOperationsCockpit", () => {
 				id: "audit-package-1",
 				organizationId: "org-1",
 				status: "completed",
-				createdAt: new Date("2026-04-08T06:10:00.000Z"),
+				createdAt: new Date("2026-04-08T06:00:00.000Z"),
+				completedAt: new Date("2026-04-08T06:10:00.000Z"),
 			},
 		]);
 
@@ -442,5 +464,65 @@ describe("getExportOperationsCockpit", () => {
 			upcomingRuns: null,
 			recentActivity: "Some activity data is temporarily unavailable.",
 		});
+	});
+
+	it("returns null summary timestamps when no successful payroll or audit export exists", async () => {
+		mockState.getExportJobHistory.mockResolvedValue([
+			{
+				id: "payroll-job-pending",
+				status: "pending",
+				fileName: null,
+				fileSizeBytes: null,
+				workPeriodCount: null,
+				employeeCount: null,
+				createdAt: new Date("2026-04-11T11:30:00.000Z"),
+				completedAt: null,
+				errorMessage: null,
+				filters: {},
+			},
+			{
+				id: "payroll-job-failed",
+				status: "failed",
+				fileName: null,
+				fileSizeBytes: null,
+				workPeriodCount: null,
+				employeeCount: null,
+				createdAt: new Date("2026-04-10T11:00:00.000Z"),
+				completedAt: null,
+				errorMessage: "DATEV connector timed out",
+				filters: {},
+			},
+		]);
+		mockState.findPayrollFailuresLast7Days.mockResolvedValue([{ id: "payroll-failure-1" }]);
+		mockState.findScheduledExports.mockResolvedValue([]);
+		mockState.findScheduledExecutions.mockResolvedValue([]);
+		mockState.findScheduledFailuresLast7Days.mockResolvedValue([]);
+		mockState.listAuditPackRequests.mockResolvedValue([]);
+		mockState.findAuditFailuresLast7Days.mockResolvedValue([]);
+		mockState.findAuditExportPackages.mockResolvedValue([
+			{
+				id: "audit-package-pending",
+				organizationId: "org-1",
+				status: "pending",
+				createdAt: new Date("2026-04-10T08:00:00.000Z"),
+				completedAt: null,
+			},
+			{
+				id: "audit-package-failed",
+				organizationId: "org-1",
+				status: "failed",
+				createdAt: new Date("2026-04-09T08:00:00.000Z"),
+				completedAt: null,
+			},
+		]);
+
+		const { getExportOperationsCockpit } = await import("../get-export-operations-cockpit");
+		const result = await getExportOperationsCockpit(
+			"org-1",
+			DateTime.fromISO("2026-04-11T12:00:00.000Z"),
+		);
+
+		expect(result.summary.lastPayrollExportAt).toBeNull();
+		expect(result.summary.lastAuditPackageAt).toBeNull();
 	});
 });

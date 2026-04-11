@@ -334,17 +334,19 @@ function buildRecentActivity(
 }
 
 function getLastPayrollExportAt(payrollJobs: PayrollExportJobSummary[]): Date | null {
-	const latestJob = payrollJobs[0];
+	const latestCompletedJob = payrollJobs.find(
+		(job) => job.status === "completed" && job.completedAt,
+	);
 
-	if (!latestJob) {
-		return null;
-	}
-
-	return latestJob.completedAt ?? latestJob.createdAt;
+	return latestCompletedJob?.completedAt ?? null;
 }
 
 function getLastAuditPackageAt(auditPackages: AuditExportPackageRecord[]): Date | null {
-	return auditPackages[0]?.createdAt ?? null;
+	const latestCompletedPackage = auditPackages.find(
+		(auditPackage) => auditPackage.status === "completed" && auditPackage.completedAt,
+	);
+
+	return latestCompletedPackage?.completedAt ?? null;
 }
 
 function countFailedRunsLast7Days(
