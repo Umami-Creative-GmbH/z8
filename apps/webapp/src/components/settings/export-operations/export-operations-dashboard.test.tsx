@@ -115,6 +115,8 @@ describe("ExportOperationsDashboard", () => {
 		const alertsSection = screen.getByRole("heading", { name: "Alerts" }).closest("section");
 		expect(alertsSection).toBeTruthy();
 		expect(within(alertsSection as HTMLElement).getByText("Payroll export failed")).toBeTruthy();
+		expect(within(alertsSection as HTMLElement).getByText("Error")).toBeTruthy();
+		expect(within(alertsSection as HTMLElement).queryByText("error")).toBeNull();
 		expect(
 			within(alertsSection as HTMLElement)
 				.getByRole("link", { name: "Open payroll export settings" })
@@ -135,6 +137,8 @@ describe("ExportOperationsDashboard", () => {
 		const recentActivitySection = screen.getByRole("heading", { name: "Recent activity" }).closest("section");
 		expect(recentActivitySection).toBeTruthy();
 		expect(within(recentActivitySection as HTMLElement).getByText("Audit pack generated")).toBeTruthy();
+		expect(within(recentActivitySection as HTMLElement).getByText("Completed")).toBeTruthy();
+		expect(within(recentActivitySection as HTMLElement).queryByText("completed")).toBeNull();
 		expect(
 			within(recentActivitySection as HTMLElement)
 				.getByRole("link", {

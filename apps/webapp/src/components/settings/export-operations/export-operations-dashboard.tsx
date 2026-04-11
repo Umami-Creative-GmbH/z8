@@ -142,10 +142,10 @@ function AlertsCard({
 					<div className="space-y-3">
 						{alerts.map((alert) => (
 							<Alert key={alert.id}>
-								<AlertTitle className="flex items-center justify-between gap-3">
-									<span>{alert.title}</span>
-									<Badge>{alert.severity}</Badge>
-								</AlertTitle>
+							<AlertTitle className="flex items-center justify-between gap-3">
+								<span>{alert.title}</span>
+								<Badge>{getSeverityLabel(alert.severity, t)}</Badge>
+							</AlertTitle>
 								<AlertDescription>
 									<div className="space-y-2">
 										<p className="break-words">{alert.description}</p>
@@ -277,7 +277,7 @@ function RecentActivityCard({
 										</div>
 									</TableCell>
 									<TableCell>
-										<Badge>{item.status}</Badge>
+										<Badge>{getStatusLabel(item.status, t)}</Badge>
 									</TableCell>
 									<TableCell>
 										<ExportOperationsDateTime value={item.occurredAt} />
@@ -312,4 +312,28 @@ function getSettingsLinkLabel(
 			case "/settings/audit-export":
 				return t("settings.exportOperations.links.audit", "Open audit export settings");
 		}
+}
+
+function getSeverityLabel(severity: ExportOperationsAlert["severity"], t: TranslateFn) {
+	switch (severity) {
+		case "error":
+			return t("settings.exportOperations.severity.error", "Error");
+		case "warning":
+			return t("settings.exportOperations.severity.warning", "Warning");
+	}
+}
+
+function getStatusLabel(status: ExportOperationsActivityItem["status"], t: TranslateFn) {
+	switch (status) {
+		case "completed":
+			return t("settings.exportOperations.status.completed", "Completed");
+		case "failed":
+			return t("settings.exportOperations.status.failed", "Failed");
+		case "pending":
+			return t("settings.exportOperations.status.pending", "Pending");
+		case "processing":
+			return t("settings.exportOperations.status.processing", "Processing");
+		default:
+			return status.replaceAll("_", " ").replace(/\b\w/g, (char) => char.toUpperCase());
+	}
 }

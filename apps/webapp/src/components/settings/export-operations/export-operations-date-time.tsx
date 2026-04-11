@@ -29,16 +29,24 @@ export function ExportOperationsDateTime({
 		return <>{emptyLabel}</>;
 	}
 
-	if (!isMounted) {
-		return <span suppressHydrationWarning>{emptyLabel}</span>;
-	}
+	const formattedValue = isMounted ? formatBrowserDateTime(date, locale) : formatServerDateTime(date);
 
 	return (
-		<>
-			{new Intl.DateTimeFormat(locale, {
-				dateStyle: "medium",
-				timeStyle: "short",
-			}).format(date)}
-		</>
+		<span suppressHydrationWarning>{formattedValue}</span>
 	);
+}
+
+function formatBrowserDateTime(date: Date, locale: string) {
+	return new Intl.DateTimeFormat(locale, {
+		dateStyle: "medium",
+		timeStyle: "short",
+	}).format(date);
+}
+
+function formatServerDateTime(date: Date) {
+	return new Intl.DateTimeFormat("en-US", {
+		dateStyle: "medium",
+		timeStyle: "short",
+		timeZone: "UTC",
+	}).format(date);
 }
