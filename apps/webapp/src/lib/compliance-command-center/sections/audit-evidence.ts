@@ -1,10 +1,12 @@
 import { and, desc, eq, gte } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { db } from "@/db";
-import { auditExportPackage, auditVerificationLog } from "@/db/schema";
+import { auditExportPackage, auditPackRequest, auditVerificationLog } from "@/db/schema";
 import { configurationService } from "@/lib/audit-export";
 import { auditPackRequestRepository } from "@/lib/audit-pack/application/request-repository";
 import type { ComplianceSectionResult } from "../types";
+
+const AUDIT_EVIDENCE_LOOKBACK_DAYS = 7;
 
 export interface AuditEvidenceSnapshot {
 	hasConfig: boolean;
@@ -17,6 +19,27 @@ export interface AuditEvidenceSnapshot {
 export function deriveAuditEvidenceSection(
 	snapshot: AuditEvidenceSnapshot,
 ): ComplianceSectionResult {
+	const criticalEvent =
+		snapshot.recentFailedRequests > 0 && snapshot.recentInvalidVerifications > 0
+			? {
+				id: "audit-evidence-failure",
+				title: "Audit evidence failures detected",
+				description: `Recent failed jobs: ${snapshot.recentFailedRequests}; recent invalid verifications: ${snapshot.recentInvalidVerifications}`,
+			}
+			: snapshot.recentFailedRequests > 0
+				? {
+					id: "audit-pack-failure",
+					title: "Audit pack generation failed",
+					description: `Recent failed jobs: ${snapshot.recentFailedRequests}`,
+				}
+				: snapshot.recentInvalidVerifications > 0
+					? {
+						id: "audit-verification-failure",
+						title: "Audit verification failed",
+						description: `Recent invalid verifications: ${snapshot.recentInvalidVerifications}`,
+					}
+					: null;
+
 	const status =
 		snapshot.recentFailedRequests > 0 || snapshot.recentInvalidVerifications > 0
 			? "critical"
@@ -50,14 +73,14 @@ export function deriveAuditEvidenceSection(
 			primaryLink: { label: "Open Audit Export", href: "/settings/audit-export" },
 		},
 		recentCriticalEvents:
-			status === "critical"
+			status === "critical" && criticalEvent
 				? [
 						{
-							id: "audit-pack-failure",
+							id: criticalEvent.id,
 							sectionKey: "auditEvidence",
 							severity: "critical",
-							title: "Audit pack generation failed",
-							description: `Recent failed jobs: ${snapshot.recentFailedRequests}`,
+							title: criticalEvent.title,
+							description: criticalEvent.description,
 							occurredAt: DateTime.utc().toISO()!,
 							primaryLink: {
 								label: "Review audit export",
@@ -72,9 +95,22 @@ export function deriveAuditEvidenceSection(
 export async function getAuditEvidenceSection(
 	organizationId: string,
 ): Promise<ComplianceSectionResult> {
-	const [config, requests, invalidVerifications] = await Promise.all([
+	const lookbackStart = DateTime.utc()
+		.minus({ days: AUDIT_EVIDENCE_LOOKBACK_DAYS })
+		.toJSDate();
+	const [config, requests, recentFailedRequests, invalidVerifications] = await Promise.all([
 		configurationService.getConfig(organizationId),
 		auditPackRequestRepository.listRequests({ organizationId, limit: 10 }),
+		db
+			.select({ id: auditPackRequest.id })
+			.from(auditPackRequest)
+			.where(
+				and(
+					eq(auditPackRequest.organizationId, organizationId),
+					eq(auditPackRequest.status, "failed"),
+					gte(auditPackRequest.completedAt, lookbackStart),
+				),
+			),
 		db
 			.select({ id: auditVerificationLog.id })
 			.from(auditVerificationLog)
@@ -83,10 +119,7 @@ export async function getAuditEvidenceSection(
 				and(
 					eq(auditExportPackage.organizationId, organizationId),
 					eq(auditVerificationLog.isValid, false),
-					gte(
-						auditVerificationLog.verifiedAt,
-						DateTime.utc().minus({ days: 7 }).toJSDate(),
-					),
+					gte(auditVerificationLog.verifiedAt, lookbackStart),
 				),
 			)
 			.orderBy(desc(auditVerificationLog.verifiedAt))
@@ -96,7 +129,7 @@ export async function getAuditEvidenceSection(
 	return deriveAuditEvidenceSection({
 		hasConfig: Boolean(config),
 		activeKeyFingerprint: config?.signingKeyFingerprint ?? null,
-		recentFailedRequests: requests.filter((request) => request.status === "failed").length,
+		recentFailedRequests: recentFailedRequests.length,
 		recentInvalidVerifications: invalidVerifications.length,
 		latestSuccessAt:
 			requests.find((request) => request.status === "completed")?.completedAt?.toISOString() ??

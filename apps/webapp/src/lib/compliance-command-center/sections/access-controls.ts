@@ -1,8 +1,9 @@
 import { DateTime } from "luxon";
 import { AuditAction } from "@/lib/audit-logger";
-import { getRecentAuditLogs } from "@/lib/query/audit.queries";
+import { getAuditLogs } from "@/lib/query/audit.queries";
 import type { ComplianceSectionResult } from "../types";
 
+const ACCESS_CONTROL_LOOKBACK_HOURS = 24;
 const SENSITIVE_ACTIONS = new Set<string>([
 	AuditAction.PERMISSION_GRANTED,
 	AuditAction.PERMISSION_REVOKED,
@@ -81,8 +82,14 @@ export function deriveAccessControlsSection(input: {
 export async function getAccessControlsSection(
 	organizationId: string,
 ): Promise<ComplianceSectionResult> {
-	const logs = await getRecentAuditLogs(organizationId, 50);
-	const recentSensitiveEvents = logs
+	const result = await getAuditLogs({
+		organizationId,
+		limit: 50,
+		startDate: DateTime.utc()
+			.minus({ hours: ACCESS_CONTROL_LOOKBACK_HOURS })
+			.toJSDate(),
+	});
+	const recentSensitiveEvents = result.logs
 		.filter((log) => SENSITIVE_ACTIONS.has(log.action))
 		.slice(0, 10)
 		.map((log) => ({

@@ -29,6 +29,9 @@ describe("deriveAuditEvidenceSection", () => {
 
 		expect(result.card.status).toBe("critical");
 		expect(result.card.facts).toContain("Recent invalid verification attempts: 1");
+		expect(result.recentCriticalEvents[0]?.title).toContain(
+			"Audit verification failed",
+		);
 	});
 
 	it("marks the section warning when signing is not configured", () => {
