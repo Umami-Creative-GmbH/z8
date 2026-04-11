@@ -54,7 +54,7 @@ describe("deriveWorkforceComplianceSection", () => {
 	it("marks the section critical when rest-period or max-hours violations exist", () => {
 		const result = deriveWorkforceComplianceSection({
 			restPeriodViolations: 1,
-			maxDailyHourViolations: 0,
+			generalPolicyViolations: 0,
 			overtimeViolations: 2,
 			pendingExceptions: 0,
 			latestViolationAt: DateTime.utc().minus({ hours: 2 }).toISO(),
@@ -67,7 +67,7 @@ describe("deriveWorkforceComplianceSection", () => {
 	it("falls back to warning for overtime-only drift", () => {
 		const result = deriveWorkforceComplianceSection({
 			restPeriodViolations: 0,
-			maxDailyHourViolations: 0,
+			generalPolicyViolations: 0,
 			overtimeViolations: 3,
 			pendingExceptions: 1,
 			latestViolationAt: DateTime.utc().minus({ days: 1 }).toISO(),
@@ -101,6 +101,6 @@ describe("getWorkforceComplianceSection", () => {
 		const result = await getWorkforceComplianceSection("org-1");
 
 		expect(result.card.status).toBe("critical");
-		expect(result.card.facts).toContain("Max-hours violations: 3");
+		expect(result.card.facts).toContain("Other policy violations: 3");
 	});
 });

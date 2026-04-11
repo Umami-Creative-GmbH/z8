@@ -8,7 +8,7 @@ const WORKFORCE_COMPLIANCE_LOOKBACK_DAYS = 7;
 
 export interface WorkforceComplianceSnapshot {
 	restPeriodViolations: number;
-	maxDailyHourViolations: number;
+	generalPolicyViolations: number;
 	overtimeViolations: number;
 	pendingExceptions: number;
 	latestViolationAt: string | null;
@@ -18,7 +18,7 @@ export function deriveWorkforceComplianceSection(
 	snapshot: WorkforceComplianceSnapshot,
 ): ComplianceSectionResult {
 	const status =
-		snapshot.restPeriodViolations > 0 || snapshot.maxDailyHourViolations > 0
+		snapshot.restPeriodViolations > 0 || snapshot.generalPolicyViolations > 0
 			? "critical"
 			: snapshot.overtimeViolations > 0 || snapshot.pendingExceptions > 0
 				? "warning"
@@ -36,7 +36,7 @@ export function deriveWorkforceComplianceSection(
 						: "No recent workforce policy issues were detected",
 			facts: [
 				`Rest-period violations: ${snapshot.restPeriodViolations}`,
-				`Max-hours violations: ${snapshot.maxDailyHourViolations}`,
+				`Other policy violations: ${snapshot.generalPolicyViolations}`,
 				`Overtime violations: ${snapshot.overtimeViolations}`,
 				`Pending exceptions: ${snapshot.pendingExceptions}`,
 			],
@@ -52,7 +52,7 @@ export function deriveWorkforceComplianceSection(
 							sectionKey: "workforceCompliance",
 							severity: status === "critical" ? "critical" : "warning",
 							title: "Recent workforce policy findings",
-							description: `Rest: ${snapshot.restPeriodViolations}, Max hours: ${snapshot.maxDailyHourViolations}, Overtime: ${snapshot.overtimeViolations}`,
+							description: `Rest: ${snapshot.restPeriodViolations}, Other policy: ${snapshot.generalPolicyViolations}, Overtime: ${snapshot.overtimeViolations}`,
 							occurredAt: snapshot.latestViolationAt ?? DateTime.utc().toISO()!,
 							primaryLink: {
 								label: "Inspect compliance",
@@ -99,7 +99,7 @@ export async function getWorkforceComplianceSection(
 	const snapshot: WorkforceComplianceSnapshot = {
 		restPeriodViolations:
 			violationRows.find((row) => row.violationType === "rest_period")?.count ?? 0,
-		maxDailyHourViolations: violationRows
+		generalPolicyViolations: violationRows
 			.filter((row) => {
 				const violationType = String(row.violationType);
 				return violationType !== "rest_period" && !violationType.startsWith("overtime_");
