@@ -44,7 +44,9 @@ Suspension is useful when the organization should keep read-only visibility whil
 
 Platform admin access does not replace normal organization settings workflows. Day-to-day payroll export, scheduling, member management, enterprise auth, and employee administration remain organization-scoped tasks handled inside that organization's own settings.
 
-If you need to manage invitations, app access, social OAuth, SCIM, or payroll settings for one customer workspace, use that organization's admin settings rather than `/platform-admin`.
+If you need to manage invitations, app access, social OAuth, or payroll settings for one customer workspace, use that organization's admin settings rather than `/platform-admin`.
+
+SCIM is different: the current product does not expose a dedicated self-serve SCIM settings page, so treat it as a managed organization-scoped enterprise integration and follow the [SCIM Provisioning](/docs/guide/admin-guide/scim-provisioning) guidance instead of looking for a normal admin settings screen.
 
 ## Access Requirements
 
