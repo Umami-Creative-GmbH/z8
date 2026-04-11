@@ -285,6 +285,7 @@ export async function getExportOperationsCockpit(
 					: null,
 			recentActivity:
 				payrollJobsResult.status === "rejected" ||
+				scheduledExportsResult.status === "rejected" ||
 				scheduledExecutionsResult.status === "rejected" ||
 				auditRequestsResult.status === "rejected"
 					? t(

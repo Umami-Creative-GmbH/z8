@@ -597,6 +597,39 @@ describe("getExportOperationsCockpit", () => {
 		);
 	});
 
+	it("marks recent activity degraded when scheduled export definitions are unavailable", async () => {
+		mockState.findPayrollJobsByOccurrence.mockResolvedValue([]);
+		mockState.findPayrollFailuresLast7Days.mockResolvedValue([]);
+		mockState.findLatestCompletedPayrollExports.mockResolvedValue([]);
+		mockState.findScheduledExports.mockRejectedValue(new Error("scheduled exports unavailable"));
+		mockState.findScheduledExecutions.mockResolvedValue([
+			{
+				id: "scheduled-execution-failed",
+				scheduledExportId: "schedule-ready",
+				organizationId: "org-1",
+				triggeredAt: new Date("2026-04-10T10:00:00.000Z"),
+				completedAt: null,
+				status: "failed",
+				errorMessage: "SMTP delivery failed",
+			},
+		]);
+		mockState.findScheduledFailuresLast7Days.mockResolvedValue([]);
+		mockState.findAuditRequestsByOccurrence.mockResolvedValue([]);
+		mockState.findAuditFailuresLast7Days.mockResolvedValue([]);
+		mockState.findAuditExportPackages.mockResolvedValue([]);
+		mockState.findLatestCompletedAuditPackages.mockResolvedValue([]);
+
+		const { getExportOperationsCockpit } = await import("../get-export-operations-cockpit");
+		const result = await getExportOperationsCockpit(
+			"org-1",
+			DateTime.fromISO("2026-04-11T12:00:00.000Z"),
+		);
+
+		expect(result.errors.recentActivity).toBe(
+			"Some activity data is temporarily unavailable.",
+		);
+	});
+
 	it("does not mark summary degraded when only recent activity sources fail", async () => {
 		mockState.findPayrollJobsByOccurrence.mockResolvedValue([
 			{
