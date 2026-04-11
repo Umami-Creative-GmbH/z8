@@ -1,0 +1,103 @@
+# syntax=docker/dockerfile:1.4
+ARG ALPINE_VERSION=3.21
+ARG NODE_VERSION=22
+ARG PNPM_VERSION=10.28.0
+ARG TURBO_VERSION=2.8.10
+
+FROM node:${NODE_VERSION}-alpine${ALPINE_VERSION} AS base
+
+RUN apk add --no-cache \
+    ca-certificates \
+    curl \
+    libc6-compat \
+    libstdc++ \
+    tini
+
+ARG PNPM_VERSION
+RUN corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate
+
+ENV PNPM_HOME=/pnpm
+ENV PATH=${PNPM_HOME}:${PATH}
+ENV NODE_ENV=production \
+    NEXT_TELEMETRY_DISABLED=1 \
+    PORT=3000 \
+    HOSTNAME=0.0.0.0
+
+RUN mkdir -p "${PNPM_HOME}"
+
+WORKDIR /app
+
+FROM base AS turbo-source
+
+ARG TURBO_VERSION
+RUN pnpm add -g turbo@${TURBO_VERSION}
+
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml turbo.json ./
+COPY apps ./apps
+COPY packages ./packages
+
+FROM turbo-source AS marketing-pruner
+RUN turbo prune marketing --docker
+
+FROM base AS marketing-deps
+COPY --from=marketing-pruner /app/out/json/ ./
+COPY --from=marketing-pruner /app/out/pnpm-lock.yaml ./
+RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
+    pnpm install --frozen-lockfile
+
+FROM base AS marketing-workspace
+ENV SKIP_ENV_VALIDATION=1
+COPY --from=marketing-deps /app/node_modules ./node_modules
+COPY --from=marketing-deps /app/apps/marketing/node_modules ./apps/marketing/node_modules
+COPY --from=marketing-pruner /app/out/full/ ./
+COPY --from=marketing-pruner /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
+
+FROM marketing-workspace AS marketing-builder
+RUN mkdir -p /app/apps/marketing/public
+RUN --mount=type=cache,id=next-cache-marketing,target=/app/apps/marketing/.next/cache \
+    pnpm --filter marketing exec next build
+
+FROM base AS marketing-runtime-deps
+COPY --from=marketing-pruner /app/out/json/ ./
+COPY --from=marketing-pruner /app/out/pnpm-lock.yaml ./
+RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
+    pnpm install --frozen-lockfile --prod
+
+FROM oven/bun:1.3.11-alpine AS marketing-base
+
+RUN apk add --no-cache curl tini
+
+ENV NODE_ENV=production \
+    NEXT_TELEMETRY_DISABLED=1 \
+    PORT=3000 \
+    HOSTNAME=0.0.0.0
+
+WORKDIR /app
+
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 marketing
+
+FROM marketing-base AS marketing
+
+COPY --from=marketing-runtime-deps --chown=marketing:nodejs /app/node_modules ./node_modules
+COPY --from=marketing-runtime-deps --chown=marketing:nodejs /app/apps/marketing/node_modules ./apps/marketing/node_modules
+
+COPY --from=marketing-builder --chown=marketing:nodejs /app/apps/marketing/.next ./apps/marketing/.next
+COPY --from=marketing-builder --chown=marketing:nodejs /app/apps/marketing/public ./apps/marketing/public
+COPY --from=marketing-workspace --chown=marketing:nodejs /app/apps/marketing/next.config.ts ./apps/marketing/
+COPY --from=marketing-workspace --chown=marketing:nodejs /app/apps/marketing/package.json ./apps/marketing/
+
+COPY --from=marketing-workspace --chown=marketing:nodejs /app/package.json ./
+COPY --from=marketing-workspace --chown=marketing:nodejs /app/pnpm-workspace.yaml ./
+
+WORKDIR /app/apps/marketing
+
+USER marketing
+
+EXPOSE 3000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:3000 || exit 1
+
+ENTRYPOINT ["/sbin/tini", "--"]
+CMD ["bun", "x", "next", "start", "-p", "3000"]

@@ -28,7 +28,7 @@ Typical production deployments include:
 - a one-shot migration run during deploys before new web or worker pods take traffic
 - optional seed/bootstrap execution when an environment needs baseline data
 
-The repository already supports these roles through `webapp`, `worker`, `migration`, and `db-seed` Docker targets.
+The repository supports these roles with dedicated Dockerfiles: `Dockerfile.webapp`, `Dockerfile.worker`, `Dockerfile.migration`, and `Dockerfile.db-seed`.
 
 ## Workspace Commands
 
@@ -63,10 +63,10 @@ Organization-specific credentials should be entered through organization setting
 
 ### Docker Deployment
 
-A Dockerfile is available for containerized deployments:
+Build the web app image from the explicit Dockerfile:
 
 ```bash
-docker build --target webapp -t z8-webapp:latest .
+docker build -f Dockerfile.webapp -t z8-webapp:latest .
 docker run -p 3000:3000 z8-webapp:latest
 ```
 
@@ -84,7 +84,12 @@ If you need baseline seed data after migrations:
 pnpm --dir apps/webapp run db:seed
 ```
 
-The deployment Dockerfile also exposes dedicated `migration` and `db-seed` targets for one-shot runtime jobs.
+One-shot operational images are built separately:
+
+```bash
+docker build -f Dockerfile.migration -t z8-migration:latest .
+docker build -f Dockerfile.db-seed -t z8-db-seed:latest .
+```
 
 ## Storage
 
@@ -142,17 +147,17 @@ services:
   webapp:
     build:
       context: .
-      target: webapp
+      dockerfile: Dockerfile.webapp
 
   worker:
     build:
       context: .
-      target: worker
+      dockerfile: Dockerfile.worker
 
   migration:
     build:
       context: .
-      target: migration
+      dockerfile: Dockerfile.migration
 ```
 
 ## Scheduled Work

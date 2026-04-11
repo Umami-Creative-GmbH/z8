@@ -52,8 +52,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./Dockerfile
-          target: docs
+          file: ./Dockerfile.docs
           platforms: ${{ matrix.platform }}
           outputs: type=image,name=ghcr.io/umami-creative-gmbh/z8-docs,push-by-digest=true,name-canonical=true,push=true
           cache-from: type=gha,scope=docs-${{ matrix.arch }}
