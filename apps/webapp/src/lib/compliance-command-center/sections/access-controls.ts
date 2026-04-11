@@ -28,6 +28,21 @@ export interface AccessControlEventSnapshot {
 export function deriveAccessControlsSection(input: {
 	recentSensitiveEvents: AccessControlEventSnapshot[];
 }): ComplianceSectionResult {
+	const recentCriticalEvents = input.recentSensitiveEvents.map((event) => ({
+		id: event.id,
+		sectionKey: "accessControls" as const,
+		severity:
+			event.action === "permission.revoked" || event.action === "app_access.denied"
+				? "critical"
+				: "warning",
+		title: `Sensitive action: ${event.action}`,
+		description: event.description,
+		occurredAt: event.timestamp,
+		primaryLink: {
+			label: "Inspect in Audit Log",
+			href: "/settings/enterprise/audit-log",
+		},
+	}));
 	const hasCriticalSignals = input.recentSensitiveEvents.some(
 		(event) =>
 			event.action === "permission.revoked" ||
@@ -63,21 +78,9 @@ export function deriveAccessControlsSection(input: {
 				href: "/settings/enterprise/audit-log",
 			},
 		},
-		recentCriticalEvents: input.recentSensitiveEvents.slice(0, 3).map((event) => ({
-			id: event.id,
-			sectionKey: "accessControls",
-			severity:
-				event.action === "permission.revoked" || event.action === "app_access.denied"
-					? "critical"
-					: "warning",
-			title: `Sensitive action: ${event.action}`,
-			description: event.description,
-			occurredAt: event.timestamp,
-			primaryLink: {
-				label: "Inspect in Audit Log",
-				href: "/settings/enterprise/audit-log",
-			},
-		})),
+		recentCriticalEvents: recentCriticalEvents
+			.toSorted((left, right) => Number(right.severity === "critical") - Number(left.severity === "critical"))
+			.slice(0, 3),
 	};
 }
 

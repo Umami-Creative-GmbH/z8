@@ -35,6 +35,41 @@ describe("deriveAccessControlsSection", () => {
 		expect(result.recentCriticalEvents[0]?.severity).toBe("warning");
 	});
 
+	it("keeps recent critical incidents in the local event slice when newer warnings exist", () => {
+		const result = deriveAccessControlsSection({
+			recentSensitiveEvents: [
+				{
+					id: "evt-warning-1",
+					action: "manager.assigned",
+					timestamp: DateTime.utc().minus({ minutes: 1 }).toISO()!,
+					description: "Assigned a manager",
+				},
+				{
+					id: "evt-warning-2",
+					action: "manager.removed",
+					timestamp: DateTime.utc().minus({ minutes: 2 }).toISO()!,
+					description: "Removed a manager",
+				},
+				{
+					id: "evt-warning-3",
+					action: "permission.granted",
+					timestamp: DateTime.utc().minus({ minutes: 3 }).toISO()!,
+					description: "Granted a permission",
+				},
+				{
+					id: "evt-critical-1",
+					action: "permission.revoked",
+					timestamp: DateTime.utc().minus({ minutes: 4 }).toISO()!,
+					description: "Revoked a permission",
+				},
+			],
+		});
+
+		expect(result.card.status).toBe("critical");
+		expect(result.card.facts).toContain("Latest sensitive action: manager.assigned");
+		expect(result.recentCriticalEvents.map((event) => event.id)).toContain("evt-critical-1");
+	});
+
 	it("stays healthy when there are no recent sensitive control events", () => {
 		const result = deriveAccessControlsSection({ recentSensitiveEvents: [] });
 
