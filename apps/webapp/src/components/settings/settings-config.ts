@@ -522,6 +522,17 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		minimumTier: "orgAdmin",
 		group: "data",
 	},
+	{
+		id: "export-operations",
+		titleKey: "settings.exportOperations.title",
+		titleDefault: "Export Operations",
+		descriptionKey: "settings.exportOperations.description",
+		descriptionDefault: "Monitor payroll, audit, and scheduled export activity",
+		href: "/settings/export-operations",
+		icon: "history",
+		minimumTier: "orgAdmin",
+		group: "data",
+	},
 ];
 
 export function getVisibleSettings(

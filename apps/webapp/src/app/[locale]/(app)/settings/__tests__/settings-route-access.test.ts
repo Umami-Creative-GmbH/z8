@@ -26,6 +26,7 @@ const ORG_ADMIN_ROUTE_FILES = [
 	"audit-export/page.tsx",
 	"demo/page.tsx",
 	"import/page.tsx",
+	"export-operations/page.tsx",
 	"scheduled-exports/page.tsx",
 ] as const;
 
@@ -61,8 +62,18 @@ describe("org-admin settings route access", () => {
 			"/settings/audit-export",
 			"/settings/demo",
 			"/settings/import",
+			"/settings/export-operations",
 			"/settings/scheduled-exports",
 		]);
+	});
+
+	it("keeps the export operations page on the shared org-admin helper", () => {
+		const source = stripComments(
+			readFileSync(join(SETTINGS_ROOT, "export-operations/page.tsx"), "utf8"),
+		);
+
+		expect(source.includes("requireOrgAdminSettingsAccess(")).toBe(true);
+		expect(source.includes("getCurrentSettingsRouteContext(")).toBe(false);
 	});
 
 	it("allows managers through the scoped organization and teams route only", () => {

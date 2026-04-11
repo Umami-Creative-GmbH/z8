@@ -16,6 +16,7 @@ export const ORG_ADMIN_SETTINGS_ROUTES = [
 	"/settings/audit-export",
 	"/settings/demo",
 	"/settings/import",
+	"/settings/export-operations",
 	"/settings/scheduled-exports",
 ] as const;
 
