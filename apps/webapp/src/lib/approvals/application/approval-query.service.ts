@@ -9,6 +9,7 @@ import { Context, Effect, Layer } from "effect";
 import { getAllApprovalHandlers } from "../domain/registry";
 import { comparePriority } from "../domain/sla-calculator";
 import type {
+	ApprovalPriority,
 	ApprovalQueryParams,
 	ApprovalType,
 	PaginatedApprovalResult,
@@ -16,6 +17,88 @@ import type {
 } from "../domain/types";
 import { DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import type { AnyAppError } from "@/lib/effect/errors";
+
+interface ApprovalCursor {
+	priority: ApprovalPriority;
+	createdAt: string;
+	id: string;
+}
+
+interface LegacyApprovalCursor {
+	createdAt: string;
+}
+
+const ZERO_APPROVAL_COUNTS: Record<ApprovalType, number> = {
+	absence_entry: 0,
+	time_entry: 0,
+	shift_request: 0,
+	travel_expense_claim: 0,
+};
+
+function compareApprovalItems(a: UnifiedApprovalItem, b: UnifiedApprovalItem) {
+	const priorityDiff = comparePriority(a.priority, b.priority);
+	if (priorityDiff !== 0) {
+		return priorityDiff;
+	}
+
+	const createdAtDiff = b.createdAt.getTime() - a.createdAt.getTime();
+	if (createdAtDiff !== 0) {
+		return createdAtDiff;
+	}
+
+	return a.id.localeCompare(b.id);
+}
+
+function parseApprovalCursor(cursor: string): ApprovalCursor | LegacyApprovalCursor | null {
+	try {
+		const parsed = JSON.parse(cursor) as Partial<ApprovalCursor>;
+		if (
+			typeof parsed.priority === "string" &&
+			typeof parsed.createdAt === "string" &&
+			typeof parsed.id === "string"
+		) {
+			return {
+				priority: parsed.priority as ApprovalPriority,
+				createdAt: parsed.createdAt,
+				id: parsed.id,
+			};
+		}
+	} catch {
+		// Legacy cursors are plain ISO timestamps.
+	}
+
+	const createdAt = new Date(cursor);
+	if (Number.isNaN(createdAt.getTime())) {
+		return null;
+	}
+
+	return {
+		createdAt: createdAt.toISOString(),
+	};
+}
+
+function serializeApprovalCursor(item: UnifiedApprovalItem) {
+	return JSON.stringify({
+		priority: item.priority,
+		createdAt: item.createdAt.toISOString(),
+		id: item.id,
+	} satisfies ApprovalCursor);
+}
+
+function isItemAfterCursor(item: UnifiedApprovalItem, cursor: ApprovalCursor | LegacyApprovalCursor) {
+	if (!("id" in cursor)) {
+		return item.createdAt.getTime() <= new Date(cursor.createdAt).getTime();
+	}
+
+	const cursorItem = {
+		...item,
+		priority: cursor.priority,
+		createdAt: new Date(cursor.createdAt),
+		id: cursor.id,
+	};
+
+	return compareApprovalItems(item, cursorItem) > 0;
+}
 
 // ============================================
 // SERVICE DEFINITION
@@ -69,29 +152,22 @@ export const ApprovalQueryServiceLive = Layer.effect(
 					}
 
 					// Sort by priority (ascending: urgent first) then by createdAt (descending: newest first)
-					allItems.sort((a, b) => {
-						const priorityDiff = comparePriority(a.priority, b.priority);
-						if (priorityDiff !== 0) return priorityDiff;
-						return b.createdAt.getTime() - a.createdAt.getTime();
-					});
+					allItems.sort(compareApprovalItems);
 
 					// Apply cursor pagination after sorting
 					let paginatedItems = allItems;
 
 					if (params.cursor) {
-						const cursorDate = new Date(params.cursor);
-						const cursorIndex = allItems.findIndex(
-							(item) => item.createdAt.getTime() < cursorDate.getTime(),
-						);
-						if (cursorIndex >= 0) {
-							paginatedItems = allItems.slice(cursorIndex);
+						const cursor = parseApprovalCursor(params.cursor);
+						if (cursor) {
+							paginatedItems = allItems.filter((item) => isItemAfterCursor(item, cursor));
 						}
 					}
 
 					// Limit results
 					const hasMore = paginatedItems.length > params.limit;
 					const items = paginatedItems.slice(0, params.limit);
-					const nextCursor = hasMore ? items[items.length - 1].createdAt.toISOString() : null;
+					const nextCursor = hasMore ? serializeApprovalCursor(items[items.length - 1]) : null;
 
 					return {
 						items,
@@ -104,14 +180,14 @@ export const ApprovalQueryServiceLive = Layer.effect(
 			getCounts: (approverId, organizationId) =>
 				Effect.gen(function* (_) {
 					const handlers = getAllApprovalHandlers();
-					const counts: Partial<Record<ApprovalType, number>> = {};
+					const counts = { ...ZERO_APPROVAL_COUNTS };
 
 					for (const handler of handlers) {
 						const count = yield* _(handler.getCount(approverId, organizationId));
 						counts[handler.type] = count;
 					}
 
-					return counts as Record<ApprovalType, number>;
+					return counts;
 				}),
 		});
 	}),

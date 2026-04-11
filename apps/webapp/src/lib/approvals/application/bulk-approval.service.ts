@@ -6,11 +6,65 @@
 
 import { Context, Effect, Layer } from "effect";
 import { getApprovalHandler } from "../domain/registry";
-import type { ApprovalType, BulkApproveResult } from "../domain/types";
-import { type AnyAppError, NotFoundError, AuthorizationError } from "@/lib/effect/errors";
+import type {
+	ApprovalDecisionAction,
+	ApprovalType,
+	BulkDecisionFailure,
+	BulkDecisionResult,
+} from "../domain/types";
+import {
+	type AnyAppError,
+	AuthorizationError,
+	ConflictError,
+	NotFoundError,
+	ValidationError,
+} from "@/lib/effect/errors";
 import { DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { approvalRequest } from "@/db/schema";
-import { eq, inArray } from "drizzle-orm";
+import { inArray } from "drizzle-orm";
+import { ApprovalAuditLoggerLive } from "../infrastructure/audit-logger";
+
+const BULK_DECISION_NOT_FOUND_MESSAGE = "Approval request not found";
+
+export function mapBulkDecisionError(id: string, error: unknown): BulkDecisionFailure {
+	if (error instanceof ConflictError) {
+		return {
+			id,
+			code: "stale",
+			message: error.message,
+		};
+	}
+
+	if (error instanceof AuthorizationError) {
+		return {
+			id,
+			code: "forbidden",
+			message: error.message,
+		};
+	}
+
+	if (error instanceof NotFoundError) {
+		return {
+			id,
+			code: "not_found",
+			message: error.message,
+		};
+	}
+
+	if (error instanceof ValidationError) {
+		return {
+			id,
+			code: "validation_failed",
+			message: error.message,
+		};
+	}
+
+	return {
+		id,
+		code: "validation_failed",
+		message: error instanceof Error ? error.message : String(error),
+	};
+}
 
 // ============================================
 // SERVICE DEFINITION
@@ -20,15 +74,17 @@ export class BulkApprovalService extends Context.Tag("BulkApprovalService")<
 	BulkApprovalService,
 	{
 		/**
-		 * Bulk approve multiple approvals.
-		 * Only processes types that support bulk approve.
+		 * Execute a shared bulk decision across multiple approvals.
 		 */
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		readonly bulkApprove: (
+		readonly bulkDecide: (
 			approvalIds: string[],
 			approverId: string,
 			organizationId: string,
-		) => Effect.Effect<BulkApproveResult, AnyAppError, any>;
+			action: ApprovalDecisionAction,
+			reason?: string,
+			actorUserId?: string,
+		) => Effect.Effect<BulkDecisionResult, AnyAppError, any>;
 	}
 >() {}
 
@@ -42,10 +98,12 @@ export const BulkApprovalServiceLive = Layer.effect(
 		const dbService = yield* _(DatabaseService);
 
 		return BulkApprovalService.of({
-			bulkApprove: (approvalIds, approverId, organizationId) =>
+			bulkDecide: (approvalIds, approverId, organizationId, action, reason, actorUserId) =>
 				Effect.gen(function* (_) {
-					const succeeded: string[] = [];
-					const failed: Array<{ id: string; error: string }> = [];
+					const result: BulkDecisionResult = {
+						succeeded: [],
+						failed: [],
+					};
 
 					// Fetch all approval requests to get their types
 					const requests = yield* _(
@@ -56,28 +114,44 @@ export const BulkApprovalServiceLive = Layer.effect(
 						}),
 					);
 
+					const requestsById = new Map(requests.map((request) => [request.id, request]));
+
 					// Validate all requests belong to this approver and organization
-					for (const request of requests) {
+					for (const approvalId of approvalIds) {
+						const request = requestsById.get(approvalId);
+
+						if (!request) {
+							result.failed.push({
+								id: approvalId,
+								code: "not_found",
+								message: BULK_DECISION_NOT_FOUND_MESSAGE,
+							});
+							continue;
+						}
+
 						if (request.approverId !== approverId) {
-							failed.push({
+							result.failed.push({
 								id: request.id,
-								error: "You are not authorized to approve this request",
+								code: "forbidden",
+								message: "You are not authorized to decide this request",
 							});
 							continue;
 						}
 
 						if (request.organizationId !== organizationId) {
-							failed.push({
+							result.failed.push({
 								id: request.id,
-								error: "Request belongs to a different organization",
+								code: "forbidden",
+								message: "Request belongs to a different organization",
 							});
 							continue;
 						}
 
 						if (request.status !== "pending") {
-							failed.push({
+							result.failed.push({
 								id: request.id,
-								error: `Request is already ${request.status}`,
+								code: "stale",
+								message: `Request is already ${request.status}`,
 							});
 							continue;
 						}
@@ -86,56 +160,53 @@ export const BulkApprovalServiceLive = Layer.effect(
 						const handler = getApprovalHandler(request.entityType as ApprovalType);
 
 						if (!handler) {
-							failed.push({
+							result.failed.push({
 								id: request.id,
-								error: `Unknown approval type: ${request.entityType}`,
+								code: "unsupported",
+								message: `Unknown approval type: ${request.entityType}`,
 							});
 							continue;
 						}
 
 						if (!handler.supportsBulkApprove) {
-							failed.push({
+							result.failed.push({
 								id: request.id,
-								error: `Bulk approve not supported for ${handler.displayName}`,
+								code: "unsupported",
+								message: `Bulk ${action} not supported for ${handler.displayName}`,
 							});
 							continue;
 						}
 
-						// Try to approve
-						const result = yield* _(
-							handler.approve(request.entityId, approverId).pipe(
+						const decisionEffect =
+							action === "approve"
+								? handler.approve(request.entityId, approverId)
+								: handler.reject(request.entityId, approverId, reason ?? "Rejected in bulk");
+
+						const decisionResult = yield* _(
+							decisionEffect.pipe(
 								Effect.map(() => ({ success: true as const })),
 								Effect.catchAll((error) =>
 									Effect.succeed({
 										success: false as const,
-										error: error instanceof Error ? error.message : String(error),
+										failure: mapBulkDecisionError(request.id, error),
 									}),
 								),
 							),
 						);
 
-						if (result.success) {
-							succeeded.push(request.id);
-						} else {
-							failed.push({
+						if (decisionResult.success) {
+							result.succeeded.push({
 								id: request.id,
-								error: result.error || "Unknown error",
+								approvalType: request.entityType as ApprovalType,
+								status: action === "approve" ? "approved" : "rejected",
 							});
+						} else {
+							result.failed.push(decisionResult.failure);
 						}
 					}
 
-					// Check for missing IDs
-					const foundIds = requests.map((r) => r.id);
-					const missingIds = approvalIds.filter((id) => !foundIds.includes(id));
-					for (const id of missingIds) {
-						failed.push({
-							id,
-							error: "Approval request not found",
-						});
-					}
-
-					return { succeeded, failed };
+					return result;
 				}),
 		});
 	}),
-).pipe(Layer.provide(DatabaseServiceLive));
+).pipe(Layer.provideMerge(ApprovalAuditLoggerLive), Layer.provide(DatabaseServiceLive));

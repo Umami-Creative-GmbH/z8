@@ -79,11 +79,6 @@ export function buildBaseConditions(
 		eq(approvalRequest.status, params.status || "pending"),
 	];
 
-	// Add cursor condition for pagination
-	if (params.cursor) {
-		conditions.push(lte(approvalRequest.createdAt, new Date(params.cursor)));
-	}
-
 	// Add age filter
 	if (params.minAgeDays) {
 		const cutoffDate = DateTime.now().minus({ days: params.minAgeDays }).toJSDate();
@@ -118,8 +113,6 @@ export function fetchApprovals<TEntity>(
 						},
 					},
 					orderBy: [desc(approvalRequest.createdAt)],
-					// Fetch more than limit to account for filtering
-					limit: params.limit * 3,
 				});
 			}),
 		);
@@ -136,8 +129,6 @@ export function fetchApprovals<TEntity>(
 		const items: UnifiedApprovalItem[] = [];
 
 		for (const request of requests) {
-			if (items.length >= params.limit) break;
-
 			const entity = entitiesMap.get(request.entityId);
 			if (!entity) continue;
 

@@ -12,7 +12,7 @@ import type {
 	ApprovalPriority,
 	ApprovalStatus,
 	ApprovalType,
-	BulkApproveResult,
+	BulkDecisionResult,
 	PaginatedApprovalResult,
 	UnifiedApprovalItem,
 } from "@/lib/approvals/domain/types";
@@ -60,9 +60,31 @@ async function fetchApprovals(
 
 	const response = await fetch(`/api/approvals/inbox?${params}`);
 	if (!response.ok) {
-		throw new Error("Failed to fetch approvals");
+		return readQueryError(response, "Failed to fetch approvals");
 	}
 	return response.json();
+}
+
+export async function readQueryError(response: Response, fallback: string): Promise<never> {
+	const rawPayload = await response.text();
+	let payload: unknown = null;
+
+	if (rawPayload) {
+		try {
+			payload = JSON.parse(rawPayload);
+		} catch {
+			payload = null;
+		}
+	}
+
+	throw new Error(
+		typeof payload === "object" &&
+			payload !== null &&
+			"error" in payload &&
+			typeof payload.error === "string"
+			? payload.error
+			: fallback,
+	);
 }
 
 async function fetchApprovalCounts(): Promise<Record<ApprovalType, number>> {
@@ -100,13 +122,67 @@ async function rejectApproval(
 	return response.json();
 }
 
-async function bulkApproveApprovals(approvalIds: string[]): Promise<BulkApproveResult> {
+type BulkDecisionAction = "approve" | "reject";
+
+export async function readBulkDecisionResult(
+	response: Response,
+	action: BulkDecisionAction = "approve",
+): Promise<BulkDecisionResult> {
+	const rawPayload = await response.text();
+	let payload: unknown = null;
+
+	if (rawPayload) {
+		try {
+			payload = JSON.parse(rawPayload);
+		} catch {
+			payload = null;
+		}
+	}
+
+	if (!response.ok) {
+		throw new Error(
+			typeof payload === "object" &&
+				payload !== null &&
+				"error" in payload &&
+				typeof payload.error === "string"
+				? payload.error
+				: `Bulk ${action} request failed`,
+		);
+	}
+
+	if (
+		typeof payload !== "object" ||
+		payload === null ||
+		!("succeeded" in payload) ||
+		!("failed" in payload) ||
+		!Array.isArray(payload.succeeded) ||
+		!Array.isArray(payload.failed)
+	) {
+		throw new Error(`Invalid bulk ${action} response`);
+	}
+
+	return payload as BulkDecisionResult;
+}
+
+async function bulkApproveApprovals(approvalIds: string[]): Promise<BulkDecisionResult> {
 	const response = await fetch("/api/approvals/inbox/bulk-approve", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({ approvalIds }),
 	});
-	return response.json();
+	return readBulkDecisionResult(response, "approve");
+}
+
+async function bulkRejectApprovals(
+	approvalIds: string[],
+	reason: string,
+): Promise<BulkDecisionResult> {
+	const response = await fetch("/api/approvals/inbox/bulk-reject", {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ approvalIds, reason }),
+	});
+	return readBulkDecisionResult(response, "reject");
 }
 
 // ============================================
@@ -192,6 +268,21 @@ export function useBulkApprove() {
 
 	return useMutation({
 		mutationFn: bulkApproveApprovals,
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: queryKeys.approvals.all });
+		},
+	});
+}
+
+/**
+ * Hook for bulk rejecting multiple approvals.
+ */
+export function useBulkReject() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: ({ approvalIds, reason }: { approvalIds: string[]; reason: string }) =>
+			bulkRejectApprovals(approvalIds, reason),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: queryKeys.approvals.all });
 		},

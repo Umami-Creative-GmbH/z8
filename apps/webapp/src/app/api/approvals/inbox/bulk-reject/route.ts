@@ -1,7 +1,7 @@
 /**
- * Bulk Approve API
+ * Bulk Reject API
  *
- * POST /api/approvals/inbox/bulk-approve - Approve multiple approvals
+ * POST /api/approvals/inbox/bulk-reject - Reject multiple approvals
  */
 
 import { type NextRequest, NextResponse } from "next/server";
@@ -12,8 +12,8 @@ import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
 import { db } from "@/db";
 import { employee } from "@/db/schema";
-import type { BulkDecisionResult } from "@/lib/approvals/domain/types";
 import { BulkApprovalService, BulkApprovalServiceLive } from "@/lib/approvals/application/bulk-approval.service";
+import type { BulkDecisionResult } from "@/lib/approvals/domain/types";
 import type { AnyAppError } from "@/lib/effect/errors";
 import { ForbiddenError, toHttpError } from "@/lib/authorization";
 import { createLogger } from "@/lib/logger";
@@ -21,15 +21,15 @@ import { createLogger } from "@/lib/logger";
 // Ensure handlers are registered
 import "@/lib/approvals/init";
 
-const logger = createLogger("BulkApproveAPI");
+const logger = createLogger("BulkRejectAPI");
 
-const MAX_BULK_APPROVE = 50;
+const MAX_BULK_REJECT = 50;
 
 export async function POST(request: NextRequest) {
 	try {
-		// Parse body
 		const body = await request.json();
 		const approvalIds = body.approvalIds as string[];
+		const reason = body.reason as string;
 
 		if (!Array.isArray(approvalIds) || approvalIds.length === 0) {
 			return NextResponse.json(
@@ -38,20 +38,25 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
-		if (approvalIds.length > MAX_BULK_APPROVE) {
+		if (approvalIds.length > MAX_BULK_REJECT) {
 			return NextResponse.json(
-				{ error: `Maximum ${MAX_BULK_APPROVE} approvals at once` },
+				{ error: `Maximum ${MAX_BULK_REJECT} approvals at once` },
 				{ status: 400 },
 			);
 		}
 
-		// Authenticate
+		if (!reason || reason.trim().length === 0) {
+			return NextResponse.json(
+				{ error: "Rejection reason is required" },
+				{ status: 400 },
+			);
+		}
+
 		const session = await auth.api.getSession({ headers: await headers() });
 		if (!session?.user) {
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 		}
 
-		// Get active organization from session
 		const activeOrganizationId = session.session?.activeOrganizationId;
 		if (!activeOrganizationId) {
 			return NextResponse.json(
@@ -70,7 +75,6 @@ export async function POST(request: NextRequest) {
 			return NextResponse.json(httpError.body, { status: httpError.status });
 		}
 
-		// Get current employee scoped to active organization
 		const currentEmployee = await db.query.employee.findFirst({
 			where: and(
 				eq(employee.userId, session.user.id),
@@ -91,8 +95,8 @@ export async function POST(request: NextRequest) {
 						approvalIds,
 						currentEmployee.id,
 						currentEmployee.organizationId,
-						"approve",
-						undefined,
+						"reject",
+						reason,
 						session.user.id,
 					),
 				);
@@ -110,14 +114,14 @@ export async function POST(request: NextRequest) {
 				failed: result.failed.length,
 				approverId: currentEmployee.id,
 			},
-			"Bulk approve completed",
+			"Bulk reject completed",
 		);
 
 		return NextResponse.json(result);
 	} catch (error) {
-		logger.error({ error }, "Failed to bulk approve");
+		logger.error({ error }, "Failed to bulk reject");
 		return NextResponse.json(
-			{ error: "Failed to process bulk approval" },
+			{ error: "Failed to process bulk rejection" },
 			{ status: 500 },
 		);
 	}

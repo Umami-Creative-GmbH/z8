@@ -10,20 +10,21 @@ import { headers } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { employee } from "@/db/schema";
-import { getAllApprovalHandlers } from "@/lib/approvals/domain/registry";
-import { comparePriority } from "@/lib/approvals/domain/sla-calculator";
+import {
+	ApprovalQueryService,
+	ApprovalQueryServiceLive,
+} from "@/lib/approvals/application/approval-query.service";
 import type {
 	ApprovalPriority,
+	PaginatedApprovalResult,
 	ApprovalQueryParams,
 	ApprovalStatus,
 	ApprovalType,
-	UnifiedApprovalItem,
 } from "@/lib/approvals/domain/types";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
 import { ForbiddenError, toHttpError } from "@/lib/authorization";
 import type { AnyAppError } from "@/lib/effect/errors";
-import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
 
 // Ensure handlers are registered
@@ -61,6 +62,7 @@ export async function GET(request: NextRequest) {
 			where: and(
 				eq(employee.userId, session.user.id),
 				eq(employee.organizationId, activeOrganizationId),
+				eq(employee.isActive, true),
 			),
 		});
 
@@ -109,41 +111,22 @@ export async function GET(request: NextRequest) {
 			limit,
 		};
 
-		// Get handlers
-		const handlers = getAllApprovalHandlers();
-		const activeHandlers = types ? handlers.filter((h) => types.includes(h.type)) : handlers;
-
-		// Fetch from all handlers
-		const allItems: UnifiedApprovalItem[] = [];
-
-		for (const handler of activeHandlers) {
-			const result = await Effect.runPromise(
-				handler.getApprovals(params).pipe(Effect.provide(DatabaseServiceLive)) as Effect.Effect<
-					UnifiedApprovalItem[],
-					AnyAppError,
-					never
-				>,
-			);
-			allItems.push(...result);
-		}
-
-		// Sort by priority then by createdAt
-		allItems.sort((a, b) => {
-			const priorityDiff = comparePriority(a.priority, b.priority);
-			if (priorityDiff !== 0) return priorityDiff;
-			return b.createdAt.getTime() - a.createdAt.getTime();
-		});
-
-		// Apply pagination
-		const hasMore = allItems.length > limit;
-		const items = allItems.slice(0, limit);
-		const nextCursor = hasMore ? items[items.length - 1].createdAt.toISOString() : null;
+		const result = await Effect.runPromise(
+			Effect.gen(function* (_) {
+				const approvalQueryService = yield* _(ApprovalQueryService);
+				return yield* _(approvalQueryService.getApprovals(params));
+			}).pipe(Effect.provide(ApprovalQueryServiceLive)) as Effect.Effect<
+				PaginatedApprovalResult,
+				AnyAppError,
+				never
+			>,
+		);
 
 		return NextResponse.json({
-			items,
-			nextCursor,
-			hasMore,
-			total: allItems.length,
+			items: result.items,
+			nextCursor: result.nextCursor,
+			hasMore: result.hasMore,
+			total: result.total,
 		});
 	} catch (error) {
 		if (error instanceof Error && "digest" in error) {

@@ -1,4 +1,18 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, expectTypeOf, it, vi } from "vitest";
+import type {
+	ApprovalDecisionAction as DomainApprovalDecisionAction,
+	ApprovalType as DomainApprovalType,
+	BulkDecisionFailure as DomainBulkDecisionFailure,
+	BulkDecisionResult as DomainBulkDecisionResult,
+	BulkDecisionSuccess as DomainBulkDecisionSuccess,
+} from "@/lib/approvals/domain/types";
+import type {
+	ApprovalDecisionAction as ActionApprovalDecisionAction,
+	ApprovalType as ActionApprovalType,
+	BulkDecisionFailure as ActionBulkDecisionFailure,
+	BulkDecisionResult as ActionBulkDecisionResult,
+	BulkDecisionSuccess as ActionBulkDecisionSuccess,
+} from "./actions";
 
 vi.mock("@/env", () => ({
 	env: {
@@ -81,5 +95,33 @@ describe("approvals canonical sync", () => {
 		});
 
 		expect(mockState.dbUpdate).not.toHaveBeenCalled();
+	});
+
+	it("re-exports the richer approval contract types", () => {
+		const result: ActionBulkDecisionResult = {
+			succeeded: [
+				{
+					id: "approval-1",
+					approvalType: "travel_expense_claim",
+					status: "approved",
+				},
+			],
+			failed: [
+				{
+					id: "approval-2",
+					code: "validation_failed",
+					message: "Missing required data.",
+				},
+			],
+		};
+
+		expect(result.succeeded[0]?.approvalType).toBe("travel_expense_claim");
+		expect(result.failed[0]?.code).toBe("validation_failed");
+
+		expectTypeOf<ActionApprovalType>().toEqualTypeOf<DomainApprovalType>();
+		expectTypeOf<ActionApprovalDecisionAction>().toEqualTypeOf<DomainApprovalDecisionAction>();
+		expectTypeOf<ActionBulkDecisionSuccess>().toEqualTypeOf<DomainBulkDecisionSuccess>();
+		expectTypeOf<ActionBulkDecisionFailure>().toEqualTypeOf<DomainBulkDecisionFailure>();
+		expectTypeOf<ActionBulkDecisionResult>().toEqualTypeOf<DomainBulkDecisionResult>();
 	});
 });

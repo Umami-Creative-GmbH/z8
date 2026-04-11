@@ -1,10 +1,10 @@
 "use client";
 
-import { IconFilter, IconSearch, IconX } from "@tabler/icons-react";
+import { IconSearch, IconX } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
 import {
 	DropdownMenu,
 	DropdownMenuCheckboxItem,
@@ -13,9 +13,9 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Badge } from "@/components/ui/badge";
-import type { ApprovalInboxFilters } from "@/lib/query/use-approval-inbox";
+import { Input } from "@/components/ui/input";
 import type { ApprovalPriority, ApprovalType } from "@/lib/approvals/domain/types";
+import type { ApprovalInboxFilters } from "@/lib/query/use-approval-inbox";
 
 interface ApprovalInboxToolbarProps {
 	filters: ApprovalInboxFilters;
@@ -30,7 +30,12 @@ const APPROVAL_TYPES: { value: ApprovalType; label: string }[] = [
 	{ value: "absence_entry", label: "Absence Requests" },
 	{ value: "time_entry", label: "Time Corrections" },
 	{ value: "shift_request", label: "Shift Requests" },
+	{ value: "travel_expense_claim", label: "Travel Expenses" },
 ];
+
+export function getApprovalTypeLabel(type: ApprovalType): string {
+	return APPROVAL_TYPES.find((approvalType) => approvalType.value === type)?.label ?? type;
+}
 
 const PRIORITIES: { value: ApprovalPriority; label: string; color: string }[] = [
 	{ value: "urgent", label: "Urgent", color: "destructive" },
@@ -50,7 +55,7 @@ export function ApprovalInboxToolbar({
 	filters,
 	onFiltersChange,
 	selectedCount,
-	totalCount,
+	totalCount: _totalCount,
 	allSelected,
 	onSelectAll,
 }: ApprovalInboxToolbarProps) {
@@ -116,7 +121,10 @@ export function ApprovalInboxToolbar({
 				</div>
 
 				<div className="relative w-64">
-					<IconSearch className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+					<IconSearch
+						className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+						aria-hidden="true"
+					/>
 					<Input
 						placeholder={t("approvals.searchPlaceholder", "Search by name or email…")}
 						value={filters.search || ""}
@@ -169,7 +177,9 @@ export function ApprovalInboxToolbar({
 						</Button>
 					</DropdownMenuTrigger>
 					<DropdownMenuContent align="end">
-						<DropdownMenuLabel>{t("approvals.filterByPriority", "Filter by priority")}</DropdownMenuLabel>
+						<DropdownMenuLabel>
+							{t("approvals.filterByPriority", "Filter by priority")}
+						</DropdownMenuLabel>
 						<DropdownMenuSeparator />
 						{PRIORITIES.map((priority) => (
 							<DropdownMenuCheckboxItem
