@@ -18,6 +18,19 @@ describe("deriveAuditEvidenceSection", () => {
 		);
 	});
 
+	it("marks the section critical when a recent verification was invalid", () => {
+		const result = deriveAuditEvidenceSection({
+			hasConfig: true,
+			activeKeyFingerprint: "fp_123",
+			recentFailedRequests: 0,
+			recentInvalidVerifications: 1,
+			latestSuccessAt: DateTime.utc().minus({ hours: 2 }).toISO(),
+		});
+
+		expect(result.card.status).toBe("critical");
+		expect(result.card.facts).toContain("Recent invalid verification attempts: 1");
+	});
+
 	it("marks the section warning when signing is not configured", () => {
 		const result = deriveAuditEvidenceSection({
 			hasConfig: false,
@@ -29,5 +42,18 @@ describe("deriveAuditEvidenceSection", () => {
 
 		expect(result.card.status).toBe("warning");
 		expect(result.card.facts).toContain("Signing keys are not configured yet.");
+	});
+
+	it("marks the section healthy when signing is configured and recent signals are clean", () => {
+		const result = deriveAuditEvidenceSection({
+			hasConfig: true,
+			activeKeyFingerprint: "fp_healthy",
+			recentFailedRequests: 0,
+			recentInvalidVerifications: 0,
+			latestSuccessAt: DateTime.utc().minus({ hours: 1 }).toISO(),
+		});
+
+		expect(result.card.status).toBe("healthy");
+		expect(result.recentCriticalEvents).toEqual([]);
 	});
 });

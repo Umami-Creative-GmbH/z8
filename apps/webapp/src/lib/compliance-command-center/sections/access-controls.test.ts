@@ -19,6 +19,22 @@ describe("deriveAccessControlsSection", () => {
 		expect(result.recentCriticalEvents).toHaveLength(1);
 	});
 
+	it("marks the section warning when only non-critical sensitive events exist", () => {
+		const result = deriveAccessControlsSection({
+			recentSensitiveEvents: [
+				{
+					id: "evt-2",
+					action: "manager.assigned",
+					timestamp: DateTime.utc().minus({ minutes: 15 }).toISO()!,
+					description: "Assigned a new manager",
+				},
+			],
+		});
+
+		expect(result.card.status).toBe("warning");
+		expect(result.recentCriticalEvents[0]?.severity).toBe("warning");
+	});
+
 	it("stays healthy when there are no recent sensitive control events", () => {
 		const result = deriveAccessControlsSection({ recentSensitiveEvents: [] });
 

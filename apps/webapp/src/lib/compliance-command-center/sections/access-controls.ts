@@ -1,13 +1,19 @@
 import { DateTime } from "luxon";
+import { AuditAction } from "@/lib/audit-logger";
 import { getRecentAuditLogs } from "@/lib/query/audit.queries";
 import type { ComplianceSectionResult } from "../types";
 
-const SENSITIVE_ACTION_PREFIXES = [
-	"permission.",
-	"manager.",
-	"app_access.",
-	"employee.deactivated",
-];
+const SENSITIVE_ACTIONS = new Set<string>([
+	AuditAction.PERMISSION_GRANTED,
+	AuditAction.PERMISSION_REVOKED,
+	AuditAction.MANAGER_ASSIGNED,
+	AuditAction.MANAGER_REMOVED,
+	AuditAction.MANAGER_PRIMARY_CHANGED,
+	AuditAction.APP_ACCESS_GRANTED,
+	AuditAction.APP_ACCESS_REVOKED,
+	AuditAction.APP_ACCESS_DENIED,
+	AuditAction.EMPLOYEE_DEACTIVATED,
+]);
 
 export interface AccessControlEventSnapshot {
 	id: string;
@@ -77,9 +83,7 @@ export async function getAccessControlsSection(
 ): Promise<ComplianceSectionResult> {
 	const logs = await getRecentAuditLogs(organizationId, 50);
 	const recentSensitiveEvents = logs
-		.filter((log) =>
-			SENSITIVE_ACTION_PREFIXES.some((prefix) => log.action.startsWith(prefix)),
-		)
+		.filter((log) => SENSITIVE_ACTIONS.has(log.action))
 		.slice(0, 10)
 		.map((log) => ({
 			id: log.id,
