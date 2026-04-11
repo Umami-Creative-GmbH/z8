@@ -11,6 +11,7 @@ Across Web, Mobile, and Desktop, Z8 gives teams a dependable operational system 
 Z8 is designed to help organizations operate with confidence in compliance-sensitive environments.
 
 - **Audit-Ready Records**: Time, absence, and related workforce records are captured in a consistent structure that supports dependable reporting, review, and oversight.
+- **Immutable Ledger**: Time records keep an append-only, tamper-evident history for clear traceability and audit readiness.
 - **Traceable Corrections & Approvals**: Changes to recorded time move through clear approval flows with visible history for employees, managers, and compliance stakeholders.
 - **Digital Integrity**: Automated background checks verify the integrity of the data chain to protect against database manipulation.
 - **Audit Logs**: Comprehensive event logging for all administrative actions, from user permission changes to organization settings.
@@ -34,8 +35,17 @@ Z8 is designed to help organizations operate with confidence in compliance-sensi
 ## 📊 Insights & Reporting
 
 - **Advanced Analytics**: Interactive dashboards for team performance, location trends, and workforce distribution.
-- **Export Ready**: Generate payroll and audit-ready exports with advanced filtering, including support for workflows that integrate with systems such as Workday.
+- **Export Ready**: Generate payroll and audit-ready exports with advanced filtering for dependable downstream processing.
 - **Organization Management**: Manage multi-location organizations, team structures, member directories, invitation flows, and department hierarchies from one place.
+
+## 🔄 Integrations & Data Exchange
+
+- **DATEV**: Export payroll-ready time data for accounting and payroll workflows.
+- **Personio**: Export time and payroll data for HR workflows.
+- **SAP SuccessFactors**: Export time and payroll records for enterprise HR workflows.
+- **Workday**: Export payroll and workforce records for enterprise HR operations.
+- **Clockodo**: Import time records into Z8 for a smoother transition.
+- **Clockin**: Import clock-in records into Z8.
 
 ## 🔔 Modern Experience
 
