@@ -260,6 +260,7 @@ export async function getExportOperationsCockpit(
 			alerts:
 				payrollJobsResult.status === "rejected" ||
 				scheduledExportsResult.status === "rejected" ||
+				scheduledExecutionsResult.status === "rejected" ||
 				auditRequestsResult.status === "rejected"
 					? t(
 						"settings.exportOperations.errors.alerts",

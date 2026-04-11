@@ -544,6 +544,42 @@ describe("getExportOperationsCockpit", () => {
 		]);
 	});
 
+	it("marks alerts degraded when scheduled execution data is unavailable", async () => {
+		mockState.findPayrollJobsByOccurrence.mockResolvedValue([]);
+		mockState.findPayrollFailuresLast7Days.mockResolvedValue([]);
+		mockState.findLatestCompletedPayrollExports.mockResolvedValue([]);
+		mockState.findScheduledExports.mockResolvedValue([
+			{
+				id: "schedule-ready",
+				organizationId: "org-1",
+				name: "Weekly audit extract",
+				isActive: true,
+				payrollConfigId: "config-1",
+				reportType: "audit_report",
+				nextExecutionAt: new Date("2026-04-13T08:00:00.000Z"),
+				lastExecutionAt: new Date("2026-04-09T05:00:00.000Z"),
+				createdAt: new Date("2026-04-02T08:00:00.000Z"),
+				updatedAt: new Date("2026-04-09T05:00:00.000Z"),
+			},
+		]);
+		mockState.findScheduledExecutions.mockRejectedValue(new Error("scheduled executions unavailable"));
+		mockState.findScheduledFailuresLast7Days.mockResolvedValue([]);
+		mockState.findAuditRequestsByOccurrence.mockResolvedValue([]);
+		mockState.findAuditFailuresLast7Days.mockResolvedValue([]);
+		mockState.findAuditExportPackages.mockResolvedValue([]);
+		mockState.findLatestCompletedAuditPackages.mockResolvedValue([]);
+
+		const { getExportOperationsCockpit } = await import("../get-export-operations-cockpit");
+		const result = await getExportOperationsCockpit(
+			"org-1",
+			DateTime.fromISO("2026-04-11T12:00:00.000Z"),
+		);
+
+		expect(result.errors.alerts).toBe(
+			"Some alerts may be incomplete while export data is unavailable.",
+		);
+	});
+
 	it("does not mark summary degraded when only recent activity sources fail", async () => {
 		mockState.findPayrollJobsByOccurrence.mockResolvedValue([
 			{
