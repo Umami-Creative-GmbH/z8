@@ -122,13 +122,9 @@ This is useful for mixed environments such as:
 # API keys
 API_KEY_ENCRYPTION_KEY=<32-byte-hex-key>
 
-# Webhooks
-WEBHOOK_WORKER_CONCURRENCY=3
-WEBHOOK_MAX_RETRIES=6
-
 # Default social OAuth providers
 GOOGLE_CLIENT_ID=<default-client-id>
 GOOGLE_CLIENT_SECRET=<default-secret>
 ```
 
-Organization-specific OAuth credentials, webhook endpoints, and enterprise integration settings should be entered in the product's org settings rather than duplicated as tenant-specific environment variables.
+Organization-specific OAuth credentials, webhook endpoints, and enterprise integration settings should be entered in the product's org settings rather than duplicated as tenant-specific environment variables. Webhook retry and delivery behavior are handled by the application's worker and queue infrastructure, not by separate documented webhook-specific env knobs on this page.
