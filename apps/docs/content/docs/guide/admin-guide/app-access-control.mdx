@@ -50,24 +50,18 @@ By default, all users can access all applications. Administrators can restrict a
 
 ## Managing User Access
 
-### From Employee Management
+App access is currently managed through the employee detail settings surface.
+
+### Employee Detail Flow
 
 1. Go to **Employees** in the sidebar
 2. Click on the employee's profile
-3. Scroll to **App Access** section
+3. Open the **App Access Permissions** section
 4. Toggle access for each application:
-   - Web Application
-   - Desktop Application
-   - Mobile Application
-5. Changes save automatically
-
-### From Organization Settings
-
-1. Go to **Settings** > **Organization**
-2. Find the user in the members list
-3. Click **Edit Access**
-4. Configure app permissions
-5. Click **Save**
+    - Web Application
+    - Desktop Application
+    - Mobile Application
+5. Save the employee changes
 
 ---
 
@@ -137,29 +131,6 @@ Access audit logs in **Settings** > **Audit Logs** and filter by "App Access".
 
 ---
 
-## Bulk Management
-
-### Using Filters
-
-1. Go to **Employees**
-2. Filter by team, location, or role
-3. Select multiple employees
-4. Click **Bulk Actions** > **Update App Access**
-5. Set permissions
-6. Click **Apply**
-
-### Import/Export
-
-App access settings can be included in employee data exports and imports:
-
-```csv
-email,canUseWebapp,canUseDesktop,canUseMobile
-john@example.com,true,true,false
-jane@example.com,true,false,false
-```
-
----
-
 ## Default Settings
 
 ### New Employees
@@ -213,11 +184,7 @@ Create clear policies about who gets access to which apps:
 
 ### Regular Reviews
 
-Periodically audit app access:
-1. Export user permissions
-2. Review against current policies
-3. Adjust as needed
-4. Document changes
+Periodically review employee access in the employee settings screens and adjust permissions as roles or device policies change.
 
 ### Communicate Changes
 
@@ -248,6 +215,6 @@ When restricting access:
 ### Can't modify user's access
 
 1. Verify you have admin permissions
-2. Check if the user is the organization owner
-3. Organization owners cannot have their webapp access restricted
+2. Confirm you are editing the employee detail page for the correct person
+3. Save the form after changing the switches
 4. Contact support if issues persist

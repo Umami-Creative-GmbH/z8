@@ -17,7 +17,7 @@ Use **Settings** -> **Payroll Export** to configure export targets, store org-sp
 - **DATEV, Lexware, Sage** for downloadable file exports
 - **Personio** for API-based attendance and absence sync where configured
 - **SAP SuccessFactors** for tenant-specific API export workflows where configured
-- **Workday** for credential validation and configuration flows, with current export limitations documented below
+- **Workday** for API-based attendance and absence export, with rollout caveats documented below
 
 <Callout type="info" title="Connector maturity differs">
   Do not assume every payroll target has identical capabilities. Validate each connector against your payroll process before relying on it operationally.
@@ -90,7 +90,7 @@ Configured exports transform work periods and approved absences into the target 
 
 ## Workday
 
-Workday support currently focuses on secure credential storage, tenant validation, and integration setup.
+Workday is an API-based export target for attendance and absence records.
 
 ### Setup
 
@@ -98,18 +98,22 @@ Workday support currently focuses on secure credential storage, tenant validatio
 2. Enter the Workday hostname and tenant ID.
 3. Save the OAuth client credentials and optional scope.
 4. Choose the employee matching strategy.
-5. Use **Test Connection** to validate the tenant and credentials.
+5. Use **Test Connection** to validate the tenant and credentials before running exports.
 
 Workday credentials are stored securely as organization-scoped secrets in Z8.
 
+### Export Behavior
+
+When you start a Workday export, Z8 authenticates against your tenant, matches workers by employee number or email, then attempts to create attendance and absence records through Workday payroll input endpoints.
+
+As with the other API-based connectors, you should still review failed and skipped rows after each run, especially while employee matching and tenant-specific rollout details are being tuned.
+
 ## Workday Status
 
-If your organization is using the current v1 Workday path, verify whether the export run validates connectivity only or posts records before relying on it operationally.
-
-Today the safest assumption is that Workday setup and validation are available, while end-to-end posting maturity may still depend on your rollout path.
+Workday should be treated as a live export path, not as a validation-only placeholder. The main rollout caveats are tenant-specific configuration, worker matching, and export readiness in your own Workday environment.
 
 <Callout type="warn" title="Validate before production use">
-  Do not assume Workday has the same export maturity as DATEV, Lexware, Sage, Personio, or SAP SuccessFactors. Run a controlled test with your payroll and Workday teams first.
+  Workday exports post through live API endpoints. Run a controlled test with your payroll and Workday teams first so you can confirm worker matching, permissions, and payload expectations in your tenant.
 </Callout>
 
 ---
@@ -141,4 +145,4 @@ Small exports may finish immediately. Larger exports can continue in the backgro
 - Configure wage type mappings for both work and absence categories before your first real export.
 - Test each target with a small date range first.
 - Review failed and skipped rows after every API-based export.
-- Treat Workday as a setup-and-validation path until your team confirms live posting behavior.
+- Test Workday with a small controlled period before broader production use.
