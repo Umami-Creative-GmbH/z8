@@ -8,6 +8,8 @@
 
 **Tech Stack:** Next.js 16, Fumadocs, MDX, TypeScript, pnpm, Turborepo
 
+**Evidence window rule:** At the start of execution, capture the cutoff SHA for the rolling 240-commit review window with `git rev-list --max-count=1 --skip=239 HEAD` and record it in your notes. Use that anchored SHA for the remainder of the refresh so the evidence set does not drift if new commits land while the work is in progress.
+
 ---
 
 ## File Structure
@@ -64,53 +66,55 @@
 
 ### Task 1: Gather Commit Evidence And Lock The Content Map
 
-**Files:**
-- Modify: `apps/docs/content/docs/guide/admin-guide/payroll-export.mdx`
-- Modify: `apps/docs/content/docs/guide/admin-guide/platform-admin.mdx`
-- Modify: `apps/docs/content/docs/guide/user-guide/time-tracking.mdx`
-- Modify: `apps/docs/content/docs/tech/technical/authentication.mdx`
-- Modify: `apps/docs/content/docs/tech/technical/features.mdx`
-- Modify: `apps/docs/content/docs/tech/deployment/index.mdx`
+Task 1 is an evidence-locking and preparation pass only. Inspect the target docs pages and capture the content map that will govern later edits, but do not modify the docs pages listed below in this task. The only files committed in Task 1 should be the spec and plan documents.
 
-- [ ] **Step 1: Read the most relevant recent commits for each doc theme**
+**Files to inspect only in Task 1:**
+- Inspect: `apps/docs/content/docs/guide/admin-guide/payroll-export.mdx`
+- Inspect: `apps/docs/content/docs/guide/admin-guide/platform-admin.mdx`
+- Inspect: `apps/docs/content/docs/guide/user-guide/time-tracking.mdx`
+- Inspect: `apps/docs/content/docs/tech/technical/authentication.mdx`
+- Inspect: `apps/docs/content/docs/tech/technical/features.mdx`
+- Inspect: `apps/docs/content/docs/tech/deployment/index.mdx`
+
+- [ ] **Step 1: Anchor the evidence window and inspect the most relevant recent commits for each doc theme**
 
 Run:
 
 ```bash
+git rev-list --max-count=1 --skip=239 HEAD
 git log --oneline -n 240
-git show --stat 23bea68
-git show --stat 6173fa1
-git show --stat 7492d36
-git show --stat ed1124c
-git show --stat ce5190c
-git show --stat a099f9f
-git show --stat 339afba
-git show --stat e3fd4ae
-git show --stat 21c9204
-git show --stat 08705a8
+git show 23bea68 -- apps/webapp/src/lib/payroll-export apps/webapp/src/app/[locale]/(app)/settings/payroll-export
+git show 6173fa1 -- opencode.jsonc
+git show 7492d36 -- apps/webapp/src/lib/auth apps/webapp/src/components apps/webapp/src/app/[locale]/(auth)
+git show ed1124c -- apps/webapp/src/app/[locale]/accept-invitation apps/webapp/src/app/[locale]/onboarding apps/webapp/src/lib/effect/services/onboarding.service.ts apps/webapp/src/lib/auth-helpers.ts
+git show ce5190c -- apps/webapp/src/app/[locale]/(app)/time-records apps/webapp/src/lib/query/keys.ts
+git show a099f9f -- apps/webapp/src/db/schema/time-record.ts apps/webapp/src/lib/time-record apps/webapp/src/lib/payroll-export/data-fetcher.ts apps/webapp/src/app/[locale]/(app)/time-tracking/actions.ts apps/webapp/src/app/[locale]/(app)/approvals/actions.ts
+git show 339afba -- apps/webapp/src/app/[locale]/(app)/settings/payroll-export apps/webapp/src/lib/payroll-export/exporters/workday
+git show e3fd4ae -- apps/webapp/src/app/[locale]/(admin)/platform-admin apps/webapp/src/tolgee/shared.ts
+git show 21c9204 -- apps/webapp/src/app/[locale]/(app)/settings apps/webapp/src/components/settings apps/webapp/src/lib/settings-access.ts apps/webapp/src/lib/settings-scheduling-access.ts
+git show 08705a8 -- apps/webapp/src/app/[locale]/(app)/settings/import apps/webapp/src/components/settings/import apps/webapp/src/lib/clockin
 ```
 
-Expected: commit stats that confirm the refresh themes are payroll export, enterprise auth, invitation/member flows, canonical time, platform admin routing, settings-role behavior, and clock-in import.
+Expected: the anchored cutoff SHA is recorded, and the inspected commit contents confirm the refresh themes are payroll export, enterprise auth, invitation/member flows, canonical time, platform admin routing, settings-role behavior, and clock-in import.
 
 - [ ] **Step 2: Read the current docs pages that directly map to those themes**
 
-Run:
+Workflow:
 
-```bash
-pnpm exec prettier --check \
-  apps/docs/content/docs/guide/admin-guide/payroll-export.mdx \
-  apps/docs/content/docs/guide/admin-guide/platform-admin.mdx \
-  apps/docs/content/docs/guide/user-guide/time-tracking.mdx \
-  apps/docs/content/docs/tech/technical/authentication.mdx \
-  apps/docs/content/docs/tech/technical/features.mdx \
-  apps/docs/content/docs/tech/deployment/index.mdx
-```
+- Open and read each target page directly with your file-reading tool so you inspect the actual prose, headings, and claims:
+  - `apps/docs/content/docs/guide/admin-guide/payroll-export.mdx`
+  - `apps/docs/content/docs/guide/admin-guide/platform-admin.mdx`
+  - `apps/docs/content/docs/guide/user-guide/time-tracking.mdx`
+  - `apps/docs/content/docs/tech/technical/authentication.mdx`
+  - `apps/docs/content/docs/tech/technical/features.mdx`
+  - `apps/docs/content/docs/tech/deployment/index.mdx`
+- While reading, note stale claims, unsupported assumptions, and any wording that will need to be reconciled against the anchored commit evidence and current code.
 
-Expected: either `All matched files use Prettier code style!` or a failure that simply confirms the files are present and parseable before editing.
+Expected: each target page has been actually inspected, and the stale or risky claims are documented for the content-map pass.
 
 - [ ] **Step 3: Replace stale claims with a fixed content map before touching prose**
 
-Use this content map while editing the files above:
+Use this content map to lock the later editing scope for the files above. Do not edit those docs pages yet in Task 1:
 
 ```md
 - payroll-export.mdx
@@ -295,7 +299,7 @@ git add \
 git commit -m "docs: refresh admin and manager guides"
 ```
 
-Expected: a commit containing only the guide landing pages and admin-facing docs refresh.
+Expected: a focused commit containing only the guide landing pages and admin-facing docs refresh.
 
 ### Task 3: Refresh User And Manager Workflow Docs
 

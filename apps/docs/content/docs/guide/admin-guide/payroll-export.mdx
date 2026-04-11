@@ -1,505 +1,148 @@
 ---
 title: Payroll Export
-description: Export time tracking data to payroll systems like DATEV, Lexware, Sage, Personio, and SAP SuccessFactors
+description: Export time and absence data to file-based payroll formats and supported API integrations
 icon: BankNote
 ---
 
+import { Callout } from "fumadocs-ui/components/callout";
+
 ## Overview
 
-The Payroll Export feature allows you to export employee time tracking data directly to your payroll system. Z8 supports multiple export formats and integrations:
+Z8 supports both file exports and selected API-based payroll integrations. The exact behavior depends on the target system.
 
-**File-Based Exports:**
-- **DATEV Lohn & Gehalt**: Standard German payroll format
-- **Lexware lohn+gehalt**: Lexware ASCII import format
-- **Sage Lohn**: Sage-native or DATEV-compatible format
+Use **Settings** -> **Payroll Export** to configure export targets, store org-specific credentials, maintain wage type mappings, and start exports for a selected period.
 
-**API Integrations:**
-- **Personio**: Direct API integration with Personio HR
-- **SAP SuccessFactors**: Direct API integration with SAP SuccessFactors Employee Central
-- **Workday**: Direct API integration with Workday via OAuth2
+## Supported Export Targets
 
-Access payroll export at **Settings** → **Payroll Export**.
+- **DATEV, Lexware, Sage** for downloadable file exports
+- **Personio** for API-based attendance and absence sync where configured
+- **SAP SuccessFactors** for tenant-specific API export workflows where configured
+- **Workday** for API-based attendance and absence export, with rollout caveats documented below
+
+<Callout type="info" title="Connector maturity differs">
+  Do not assume every payroll target has identical capabilities. Validate each connector against your payroll process before relying on it operationally.
+</Callout>
 
 ---
 
-## DATEV Configuration
+## File-Based Exports
 
-Configure DATEV Lohn & Gehalt export settings for German payroll processing.
+DATEV, Lexware, and Sage are configured as downloadable exports.
+
+### DATEV
+
+Use the **DATEV** tab to save your client and consultant numbers, choose the personnel number strategy, and control whether zero-hour rows are included.
+
+DATEV exports generate CSV files compatible with DATEV Lohn & Gehalt using semicolon delimiters, UTF-8 encoding, Windows line endings, and wage-type based rows.
+
+### Lexware
+
+Use the **Lexware** tab to choose the personnel number strategy, zero-hour behavior, and whether hours or hourly-rate columns should be included.
+
+Lexware exports generate semicolon-delimited CSV files with the Lexware-specific decimal and wage-type format.
+
+### Sage
+
+Use the **Sage** tab to choose the personnel number strategy, zero-hour behavior, and whether you need the DATEV-compatible or Sage-native output format.
+
+---
+
+## Personio
+
+Personio is an API-based export path for attendance and absence sync.
 
 ### Setup
 
-1. Go to **Settings** → **Payroll Export** → **DATEV** tab
-2. Enter your DATEV credentials:
-   - **Mandantennummer** (Client Number): 1-5 digits
-   - **Beraternummer** (Consultant Number): 1-7 digits
-3. Configure settings:
-   - **Personnel Number Type**: Use Employee Number or Employee ID as identifier
-   - **Include Zero Hours**: Whether to include rows with no recorded time
-4. Click **Save Configuration**
+1. Open **Settings** -> **Payroll Export** -> **Personio**.
+2. Enter the Personio **Client ID** and **API Secret** from your Personio API credentials.
+3. Save the credentials.
+4. Configure employee matching and other export options.
+5. Use **Test Connection** before your first live run.
 
-### Export Format
+Credentials are stored securely as organization-scoped secrets in Z8.
 
-DATEV exports generate CSV files compatible with DATEV Lohn & Gehalt software:
-- Semicolon-delimited with UTF-8 encoding
-- Windows line endings (CRLF)
-- Columns: Personalnummer, Lohnart, Betrag, Datum, Bemerkung
+### Export Behavior
+
+When you start a Personio export, Z8 matches employees with the configured strategy and attempts to push attendance periods and approved absences. Each record is tracked individually so you can review synced, failed, and skipped results.
 
 ---
 
-## Lexware Configuration
+## SAP SuccessFactors
 
-Configure Lexware lohn+gehalt export settings.
+SAP SuccessFactors supports tenant-specific API export workflows where configured.
 
 ### Setup
 
-1. Go to **Settings** → **Payroll Export** → **Lexware** tab
-2. Configure settings:
-   - **Personnel Number Type**: Use Employee Number or Employee ID as identifier
-   - **Include Zero Hours**: Whether to include rows with no recorded time
-   - **Include Stunden**: Add optional hours column
-   - **Include Stundensatz**: Add optional hourly rate column
-3. Click **Save Configuration**
+1. Open **Settings** -> **Payroll Export** -> **SAP SuccessFactors**.
+2. Enter your instance URL and company ID.
+3. Save the OAuth client credentials.
+4. Choose the employee matching strategy.
+5. Configure SuccessFactors-specific time type codes in your wage type mappings.
+6. Use **Test Connection** before your first export run.
 
-### Export Format
+Credentials are stored securely as organization-scoped secrets in Z8.
 
-Lexware exports generate CSV files with:
-- Semicolon delimiter
-- Comma as decimal separator
-- Required columns: Jahr, Monat, Personalnummer, Lohnartennummer, Wert
-- Optional columns: Stunden, Stundensatz
+### Export Behavior
+
+Configured exports transform work periods and approved absences into the target SuccessFactors payloads. Review failed or skipped rows after each run, especially when employee matching or time type mappings are still being tuned.
 
 ---
 
-## Sage Configuration
+## Workday
 
-Configure Sage Lohn export settings.
+Workday is an API-based export target for attendance and absence records.
 
 ### Setup
 
-1. Go to **Settings** → **Payroll Export** → **Sage** tab
-2. Configure settings:
-   - **Personnel Number Type**: Use Employee Number or Employee ID as identifier
-   - **Include Zero Hours**: Whether to include rows with no recorded time
-   - **Output Format**: Choose between DATEV-compatible or Sage-native format
-3. Click **Save Configuration**
+1. Open **Settings** -> **Payroll Export** -> **Workday**.
+2. Enter the Workday hostname and tenant ID.
+3. Save the OAuth client credentials and optional scope.
+4. Choose the employee matching strategy.
+5. Use **Test Connection** to validate the tenant and credentials before running exports.
 
-### Output Formats
+Workday credentials are stored securely as organization-scoped secrets in Z8.
 
-| Format | Decimal Separator | Use Case |
-|--------|-------------------|----------|
-| **DATEV-compatible** | Period (.) | When using DATEV import in Sage |
-| **Sage-native** | Comma (,) | Native Sage import |
+### Export Behavior
 
----
+When you start a Workday export, Z8 authenticates against your tenant, matches workers by employee number or email, then attempts to create attendance and absence records through Workday payroll input endpoints.
 
-## Personio Integration
+As with the other API-based connectors, you should still review failed and skipped rows after each run, especially while employee matching and tenant-specific rollout details are being tuned.
 
-Connect Z8 directly to Personio to automatically sync attendance and absence data via API.
+## Workday Status
 
-### Setting Up Personio
+Workday should be treated as a live export path, not as a validation-only placeholder. The main rollout caveats are tenant-specific configuration, worker matching, and export readiness in your own Workday environment.
 
-1. Go to **Settings** → **Payroll Export** → **Personio** tab
-2. Enter your Personio API credentials:
-   - **Client ID**: Found in Personio under Settings → Integrations → API credentials
-   - **API Secret**: The secret key associated with your Client ID
-3. Click **Save Credentials**
-
-API credentials are stored securely in an encrypted vault.
-
-### Export Settings
-
-Configure how time entries are exported to Personio:
-
-| Setting | Description |
-|---------|-------------|
-| **Employee Matching** | How to match employees between Z8 and Personio (Employee Number or Email) |
-| **Include Zero Hours** | Whether to export days with no recorded time |
-
-**Employee Number** matching is recommended as it provides a reliable unique identifier.
-
-### Testing the Connection
-
-After saving credentials:
-1. Click **Test Connection** to verify API access
-2. A success message confirms Personio is properly connected
-3. If the test fails, verify your credentials in Personio
-
-### How Syncing Works
-
-When you export to Personio:
-1. Z8 matches employees using your configured strategy
-2. Attendance periods are pushed to Personio's attendance API
-3. Absences are synced to Personio's time-off API
-4. Each record is tracked individually for partial success handling
-
-The system tracks sync status for each record:
-- **Pending**: Waiting to be synced
-- **Synced**: Successfully exported to Personio
-- **Failed**: Error occurred (can be retried)
-- **Skipped**: Record was skipped (e.g., employee not found in Personio)
-
----
-
-## SAP SuccessFactors Integration
-
-Connect Z8 directly to SAP SuccessFactors Employee Central to automatically sync time entries and absence data via the OData API.
-
-### Setting Up SAP SuccessFactors
-
-1. Go to **Settings** → **Payroll Export** → **SAP SuccessFactors** tab
-2. Enter your SuccessFactors instance details:
-   - **Instance URL**: Your SAP SuccessFactors API endpoint (e.g., `https://api.successfactors.com`)
-   - **Company ID**: Your SAP SuccessFactors company identifier
-3. Configure API credentials in the vault:
-   - **Client ID**: OAuth2 client ID with Employee Central Time Management permissions
-   - **Client Secret**: The client secret for authentication
-4. Click **Save Configuration**
-
-API credentials are stored securely in an encrypted vault and use OAuth2 client credentials flow for authentication.
-
-### Employee Matching
-
-Configure how Z8 matches employees to SAP SuccessFactors users:
-
-| Strategy | Description | Recommendation |
-|----------|-------------|----------------|
-| **User ID** | Match using SAP SuccessFactors userId field | Recommended - uses employee number from Z8 |
-| **Person ID External** | Match using personIdExternal field | Use when employee numbers map to external HR IDs |
-| **Email** | Match using email address | Fallback option when IDs don't align |
-
-**User ID** matching is recommended as it provides the most reliable unique identifier between systems. Ensure your Z8 employee numbers match the userId values in SAP SuccessFactors.
-
-### Time Data Sync
-
-When exporting time data to SAP SuccessFactors:
-
-1. Z8 transforms work periods into EmployeeTime records
-2. Each time entry includes:
-   - Start and end date/time
-   - Duration in hours (decimal format)
-   - Time type code (mapped from wage type settings)
-   - Optional comment with work category and project name
-3. Records are sent in configurable batch sizes (default: 100, max: 100)
-4. The externalCode field tracks the source work period ID for sync status
-
-**Time Type Mapping**: Work categories are mapped to SAP SuccessFactors time types using the SuccessFactors Time Type Code in wage type mappings. If no specific code is set, the system falls back to DATEV codes or a default "REGULAR" type.
-
-### Absence Data Sync
-
-When exporting absences to SAP SuccessFactors:
-
-1. Z8 transforms approved absences into EmployeeTimeOff records
-2. Each absence includes:
-   - Start and end date
-   - Duration in days (calculated from date range)
-   - Time off type code (mapped from wage type settings)
-   - Absence category name as comment
-3. Absences without a configured wage type mapping are skipped
-
-**Important**: Ensure all absence categories have corresponding wage type mappings with SuccessFactors time type codes configured.
-
-### Configuration Options
-
-| Setting | Description | Default |
-|---------|-------------|---------|
-| **Instance URL** | SAP SuccessFactors API endpoint URL | Required |
-| **Company ID** | Your SAP SuccessFactors company ID | Required |
-| **Employee Matching** | Strategy for matching employees | User ID |
-| **Include Zero Hours** | Export records with 0 hours | Disabled |
-| **Batch Size** | Records per API request (1-100) | 100 |
-| **API Timeout** | Request timeout in milliseconds | 60000 |
-
-### Testing the Connection
-
-After saving your configuration:
-
-1. Click **Test Connection** to verify API access
-2. The system authenticates using OAuth2 and queries the User endpoint
-3. A success message confirms SAP SuccessFactors is properly connected
-4. If the test fails, verify:
-   - Instance URL is correct and accessible
-   - Company ID matches your SAP SuccessFactors tenant
-   - Client credentials have sufficient permissions
-
-### Sync Status Tracking
-
-The system tracks sync status for each record:
-
-- **Pending**: Waiting to be synced
-- **Synced**: Successfully exported to SAP SuccessFactors
-- **Failed**: Error occurred (check error details, retryable errors are automatically retried up to 3 times)
-- **Skipped**: Record was skipped (e.g., employee not found or missing wage type mapping)
-
-### Error Handling
-
-The integration includes automatic retry logic with exponential backoff for transient errors:
-
-- Rate limiting (429)
-- Server errors (500, 502, 503, 504)
-- Request timeouts (408)
-
-Non-retryable errors are logged with detailed error messages from the SAP SuccessFactors API.
-
----
-
-## Workday Integration
-
-Connect Z8 directly to Workday to validate credentials and prepare payroll export workflows through Workday APIs.
-
-### Setting Up Workday
-
-1. Go to **Settings** -> **Payroll Export** -> **Workday** tab
-2. Enter your Workday instance details:
-   - **Instance URL**: Your Workday API base URL (e.g., `https://wd5-impl-services1.workday.com`)
-   - **Tenant ID**: Your Workday tenant identifier
-3. Configure API credentials in the vault:
-   - **Client ID**: OAuth2 client ID for your Workday integration app
-   - **Client Secret**: OAuth2 client secret
-   - **Scope** (optional): OAuth scope required by your Workday tenant
-4. Click **Save Configuration** and **Save Credentials**
-
-Workday OAuth credentials are stored securely in the encrypted organization vault and are never persisted in plain text in payroll export settings.
-
-### Employee Matching
-
-Configure how Z8 matches employees to Workday workers:
-
-| Strategy | Description | Recommendation |
-|----------|-------------|----------------|
-| **Employee Number** | Match by employee number between Z8 and Workday | Recommended when IDs are aligned |
-| **Email** | Match by employee email address | Fallback if employee numbers are not synchronized |
-
-Use **Employee Number** whenever possible for stable and deterministic matching.
-
-### Testing the Connection
-
-After saving configuration and credentials:
-
-1. Click **Test Connection**
-2. Z8 requests an OAuth token with your configured credentials
-3. Z8 validates API access against your Workday tenant
-4. A success message confirms connectivity
-
-If the test fails, verify instance URL, tenant ID, OAuth client credentials, and scope.
-
-### v1 Behavior (Safe Placeholder Export)
-
-In v1, Workday export uses a safe placeholder path after connection validation:
-
-- Export records are not posted to Workday yet
-- Each attendance/absence record is marked as not synced with a clear placeholder error message
-- This prevents silent data loss while preserving full export traceability and retry visibility
+<Callout type="warn" title="Validate before production use">
+  Workday exports post through live API endpoints. Run a controlled test with your payroll and Workday teams first so you can confirm worker matching, permissions, and payload expectations in your tenant.
+</Callout>
 
 ---
 
 ## Wage Type Mappings
 
-Map Z8 work categories and absence types to payroll wage codes.
+Use the **Wage Types** tab to map Z8 work categories, absence categories, and special categories to payroll-specific codes.
 
-### Accessing Mappings
+Each mapping can carry different codes per export target, which lets one organization maintain DATEV, Lexware, Sage, and SuccessFactors mappings without duplicating categories.
 
-1. Go to **Settings** → **Payroll Export** → **Wage Types** tab
-2. View all configured mappings
-
-### Mapping Types
-
-Mappings connect Z8 categories to payroll system codes:
-
-| Z8 Category Type | Description | Example |
-|------------------|-------------|---------|
-| **Work Category** | Regular work time categories | Normal Hours → 1000 |
-| **Absence Category** | Vacation, illness, etc. | Vacation → 1600 |
-| **Special Category** | Overtime, holiday compensation | Overtime → 1900 |
-
-### Special Categories
-
-The following special wage categories are available:
-
-- **Overtime**: Hours worked beyond regular schedule
-- **Holiday Compensation**: Pay for working on holidays
-- **Overtime Reduction**: Compensatory time off
-
-### Format-Specific Wage Type Codes
-
-Each mapping can have separate wage type codes for different payroll systems:
-
-| Format | Code Column | Example Codes |
-|--------|-------------|---------------|
-| **DATEV** | DATEV Wage Type | 1000, 1600, 1900 |
-| **Lexware** | Lexware Wage Type | 100, 200, 300 |
-| **Sage** | Sage Wage Type | 1000, 1600, 1900 |
-
-This allows you to use the same mapping with different export formats without reconfiguration.
-
-### Common Wage Type Codes
-
-**DATEV Lohnarten:**
-
-| Code | Name | Description |
-|------|------|-------------|
-| 1000 | Arbeitszeit | Regular work time |
-| 1600 | Urlaub | Vacation |
-| 1650 | Krankheit | Illness |
-| 1900 | Überstunden | Overtime |
-| 1910 | Überstunden-Abbau | Overtime reduction |
-| 1012 | Feiertagsausgleich | Holiday compensation |
-
-**Lexware Lohnarten:**
-
-| Code | Name | Description |
-|------|------|-------------|
-| 100 | Lohn | Regular wages |
-| 200 | Überstunden | Overtime |
-| 300 | Urlaub | Vacation |
-
-### Creating Mappings
-
-1. Click **Add Mapping**
-2. Select the category type (Work, Absence, or Special)
-3. Choose the Z8 category
-4. Enter format-specific wage type codes:
-   - DATEV code and name
-   - Lexware code and name
-   - Sage code and name
-5. Set the factor (e.g., 1.0 for regular, 1.5 for overtime)
-6. Save the mapping
+Review mappings before every first export for a new target, especially when absences or overtime should be represented differently across systems.
 
 ---
 
 ## Running Exports
 
-### Creating an Export
+1. Open **Settings** -> **Payroll Export** -> **Export**.
+2. Choose the date range.
+3. Optionally filter by employees, teams, or projects.
+4. Start the export.
 
-1. Go to **Settings** → **Payroll Export** → **Export** tab
-2. Select the date range for the export
-3. Optionally filter by:
-   - Employees
-   - Teams
-   - Projects
-4. Click **Start Export**
-
-### Export Processing
-
-Exports are processed based on data volume:
-
-- **Small exports**: Processed immediately, download starts automatically
-- **Large exports**: Queued for background processing with progress tracking
-
-### Export History
-
-View all previous exports:
-
-1. Go to **Settings** → **Payroll Export** → **History** tab
-2. See exports with:
-   - Date created
-   - Status (Pending, Processing, Completed, Failed)
-   - File size
-   - Record counts (employees, work periods)
-3. Download completed exports or retry failed ones
+Small exports may finish immediately. Larger exports can continue in the background and appear in **History** with status tracking and retry visibility.
 
 ---
 
 ## Best Practices
 
-### Before First Export
-
-1. **Verify employee numbers**: Ensure all employees have correct employee numbers matching your payroll system
-2. **Configure all wage types**: Map all work and absence categories to appropriate wage codes
-3. **Test with a small date range**: Run a test export for one week before processing larger periods
-
-### For Personio Integration
-
-1. **Use Employee Number matching**: More reliable than email matching
-2. **Test connection regularly**: Verify API access before running exports
-3. **Review sync results**: Check for failed or skipped records after each export
-
-### For SAP SuccessFactors Integration
-
-1. **Use User ID matching**: Most reliable strategy for employee matching
-2. **Configure time type codes**: Add SuccessFactors-specific time type codes in wage type mappings
-3. **Start with small batches**: Reduce batch size if experiencing timeouts
-4. **Test connection first**: Always verify API access before running exports
-5. **Monitor sync results**: Review failed and skipped records after each export
-
-### For Workday Integration
-
-1. **Prefer Employee Number matching**: Use email only when employee numbers are not aligned
-2. **Store only OAuth secrets in vault**: Keep Client ID/Secret (and optional scope) in encrypted vault entries
-3. **Always test connection before export**: Validate OAuth and tenant access before each run
-4. **Account for v1 placeholder behavior**: Current Workday export run validates connectivity but does not post records yet
-5. **Review failed records after each run**: Placeholder export marks records unsynced by design in v1
-
-### Data Quality
-
-- Ensure work periods are approved before export
-- Verify absence requests are in "approved" status
-- Review overtime calculations before export
-
----
-
-## Troubleshooting
-
-### DATEV Export Issues
-
-| Issue | Solution |
-|-------|----------|
-| Invalid Mandantennummer | Verify the client number is 1-5 digits |
-| Missing wage types | Add DATEV-specific codes for all work/absence categories |
-| Empty export file | Check date range contains approved work periods |
-
-### Lexware Export Issues
-
-| Issue | Solution |
-|-------|----------|
-| Import fails in Lexware | Verify file encoding is correct (UTF-8) |
-| Missing Lohnartennummer | Add Lexware-specific codes in wage type mappings |
-| Invalid decimal format | Lexware uses comma (,) as decimal separator |
-
-### Sage Export Issues
-
-| Issue | Solution |
-|-------|----------|
-| Wrong decimal separator | Check Output Format setting (DATEV-compatible vs Sage-native) |
-| Missing wage types | Add Sage-specific codes in wage type mappings |
-| Import errors | Try switching between DATEV-compatible and Sage-native format |
-
-### Personio Connection Issues
-
-| Issue | Solution |
-|-------|----------|
-| Authentication failed | Verify Client ID and API Secret in Personio settings |
-| Employee not found | Ensure employee numbers/emails match between systems |
-| Rate limit exceeded | Wait and retry, or reduce batch size |
-| API timeout | Increase timeout in export settings |
-
-### SAP SuccessFactors Connection Issues
-
-| Issue | Solution |
-|-------|----------|
-| Authentication failed | Verify Client ID and Client Secret, ensure OAuth2 credentials have Employee Central permissions |
-| Invalid Instance URL | Confirm the URL format (e.g., `https://api.successfactors.com`) and accessibility |
-| Company ID not found | Verify the Company ID matches your SAP SuccessFactors tenant |
-| Employee not matched | Ensure employee numbers in Z8 match userId or personIdExternal values in SuccessFactors |
-| Time type not found | Add SuccessFactors-specific time type codes in wage type mappings |
-| Rate limit exceeded (429) | The system automatically retries with exponential backoff; reduce batch size if persistent |
-| API timeout | Increase the API Timeout setting or reduce batch size |
-| Absence skipped | Configure wage type mappings for all absence categories |
-
-### Workday Connection Issues
-
-| Issue | Solution |
-|-------|----------|
-| Authentication failed | Verify Workday Client ID, Client Secret, and optional scope in vault |
-| Invalid Instance URL | Confirm your Workday URL is correct and reachable (for example, `https://wd5-impl-services1.workday.com`) |
-| Tenant ID invalid | Ensure Tenant ID matches your Workday tenant exactly |
-| Connection test fails | Re-save configuration and credentials, then retry **Test Connection** |
-| Employee not matched | Align employee numbers or switch to email matching strategy |
-| Records not synced in v1 | Expected behavior: Workday export is a safe placeholder in v1 and does not push records yet |
-
-### Common Errors
-
-**"Employee not matched"**: The employee exists in Z8 but couldn't be found in the target system. Verify the employee number or email matches.
-
-**"Invalid wage type"**: The wage type code doesn't exist in the target payroll system. Verify the code in your payroll software.
-
-**"Connection timeout"**: The API request took too long. This may indicate network issues or large data volumes. Try exporting a smaller date range.
+- Verify employee numbers before enabling any connector that depends on ID matching.
+- Configure wage type mappings for both work and absence categories before your first real export.
+- Test each target with a small date range first.
+- Review failed and skipped rows after every API-based export.
+- Test Workday with a small controlled period before broader production use.

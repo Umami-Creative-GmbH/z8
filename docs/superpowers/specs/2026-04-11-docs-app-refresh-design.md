@@ -53,6 +53,8 @@ Guide docs are the first priority. Technical docs come second once user/admin-fa
 
 Do not treat all 240 commits as equally important to the docs refresh.
 
+At execution time, first capture and record the cutoff SHA that defines the evidence window. Use `git rev-list --max-count=1 --skip=239 HEAD` to identify the oldest commit included in the rolling 240-commit set, and use that SHA for the rest of the task so the evidence set stays stable even if new commits land during implementation.
+
 Instead, group them into documentation themes and read the most relevant commits and diffs inside each theme:
 
 - auth and enterprise access
@@ -63,6 +65,8 @@ Instead, group them into documentation themes and read the most relevant commits
 - deployment and runtime changes suitable for operator documentation
 
 Low-signal commits such as dependency bumps, merge commits, lockfile churn, and purely internal cleanup should not drive new documentation unless they materially change documented behavior.
+
+Reading commit stats alone is not sufficient evidence for documentation changes. Later implementation work must inspect the relevant diffs or targeted file contents from each selected commit so documentation claims can be tied to actual shipped behavior rather than file-count summaries.
 
 ### Source-of-truth rule
 

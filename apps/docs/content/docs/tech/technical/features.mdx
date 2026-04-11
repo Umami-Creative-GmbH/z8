@@ -1,423 +1,88 @@
 ---
 title: Features & Compliance
-description: Blockchain verification, time regulations, export system, and avatars
+description: Canonical time, work policies, approvals, and payroll export architecture
 icon: Server
----
-
-## Blockchain Verification
-
-### GoBD Compliance
-
-Time entries are secured using blockchain-style hashing for GoBD (German record-keeping) compliance:
-
-- Each time entry receives a SHA-256 hash
-- Hashes chain together for tamper detection
-- Full audit trail with integrity verification
-
-### Hash Calculation
-
-```typescript
-import { calculateBlockchainHash } from '@/lib/blockchain';
-
-const hash = calculateBlockchainHash({
-  previousHash: entry.previousHash,
-  timestamp: entry.createdAt,
-  data: entry.data,
-});
-```
-
-### Validation
-
-```typescript
-import { validateBlockchainIntegrity } from '@/lib/blockchain';
-
-const isValid = await validateBlockchainIntegrity(entries);
-```
-
 ---
 
 ## Work Policy Service
 
-The Work Policy Service provides unified management of work schedules and time regulations.
+The work policy layer provides unified management of schedules, regulations, and expected-time calculations.
 
-### Policy Resolution
-
-Resolves the effective policy for an employee using hierarchical inheritance:
-
-```typescript
-import { WorkPolicyService } from '@/lib/effect/services/work-policy.service';
-
-// Get effective policy for an employee
-const policy = await WorkPolicyService.getEffectivePolicy({
-  employeeId,
-  organizationId,
-});
-// Returns: Employee policy → Team policy → Organization default
-```
-
-### Schedule Validation
-
-```typescript
-// Validate expected vs actual hours
-const result = await WorkPolicyService.validateSchedule({
-  employeeId,
-  date,
-  actualHours: 8.5,
-});
-// Returns: { expected: 8, actual: 8.5, variance: 0.5 }
-```
-
-### Labor Law Compliance
-
-```typescript
-// Validate work period against regulations
-const result = await WorkPolicyService.validateWorkPeriod({
-  employeeId,
-  startTime,
-  endTime,
-  breaks,
-});
-```
-
-### Break Rules
-
-Break rules are configured per policy:
-
-```typescript
-interface BreakRule {
-  afterHours: number;  // Hours threshold
-  minBreakMinutes: number;  // Required break duration
-}
-```
-
-### Compliance Validation
-
-```typescript
-// Check compliance for a date range
-const violations = await WorkPolicyService.checkCompliance({
-  employeeId,
-  startDate,
-  endDate,
-});
-```
-
----
+- Policy resolution follows employee -> team -> organization fallback.
+- Schedule validation compares expected hours and actual logged time.
+- Regulation checks enforce break rules and working-time constraints.
 
 ## Change Policy Service
 
-The Change Policy Service manages time entry modification rules.
+Change policies govern how far back entries can be edited, when approvals are required, and when self-service is allowed without manager intervention.
 
-### Policy Resolution
-
-```typescript
-import { ChangePolicyService } from '@/lib/effect/services/change-policy.service';
-
-// Get effective change policy
-const policy = await ChangePolicyService.getEffectivePolicy({
-  employeeId,
-  organizationId,
-});
-```
-
-### Edit Permission Check
-
-```typescript
-// Check if an entry can be edited
-const canEdit = await ChangePolicyService.canEditEntry({
-  employeeId,
-  entryDate,
-  policy,
-});
-// Returns: { allowed: true, requiresApproval: false }
-//      or: { allowed: true, requiresApproval: true }
-//      or: { allowed: false, reason: 'Entry too old' }
-```
-
-### Trust Mode
-
-```typescript
-// Check if approval is required
-if (policy.noApprovalRequired) {
-  // Auto-approve all changes
-} else {
-  // Check self-service window
-  const withinWindow = isWithinDays(entryDate, policy.selfServiceDays);
-}
-```
-
----
+This keeps correction behavior consistent across time-tracking and approval flows.
 
 ## Work Category Service
 
-The Work Category Service manages work categorization and time factors.
+Work categories apply business meaning to tracked time.
 
-### Category Set Resolution
-
-```typescript
-import { WorkCategoryService } from '@/lib/effect/services/work-category.service';
-
-// Get available categories for an employee
-const categories = await WorkCategoryService.getCategories({
-  employeeId,
-  organizationId,
-});
-```
-
-### Time Factor Calculation
-
-```typescript
-// Calculate adjusted hours
-const adjustedHours = await WorkCategoryService.calculateAdjustedHours({
-  actualHours: 4,
-  categoryId, // e.g., "overtime" with 1.5x factor
-});
-// Returns: 6 (4 * 1.5)
-```
-
-### Category Assignment
-
-```typescript
-// Assign category to time entry
-await WorkCategoryService.assignCategory({
-  timeEntryId,
-  categoryId,
-});
-```
+- categories can carry factors such as overtime multipliers
+- the same category model feeds time summaries and payroll mappings
+- category assignment stays organization-scoped so one tenant's wage logic does not leak into another's
 
 ---
 
-## Export System
+## Canonical Time Model
 
-### Export Service
+Recent time-tracking work centers on a canonical time-record model that normalizes work records, absence records, approval transitions, and downstream payroll/export processing.
 
-The export service handles asynchronous data exports:
+At a feature level this gives Z8 one shared vocabulary for:
 
-```typescript
-import { ExportService } from '@/lib/export/export-service';
+- tracked work and breaks
+- approved and pending absences
+- approval history attached to the same record lineage
+- project and cost-center allocation
+- payroll-ready data preparation
 
-// Create export job
-const job = await ExportService.createExport({
-  types: ['employees', 'timeEntries'],
-  format: 'csv',
-  dateRange: { start, end },
-});
-```
+The result is less drift between what employees see in time tracking, what managers approve, and what payroll integrations consume.
 
-### Formatters
+## Payroll Export Architecture
 
-Multiple export formats are supported:
-
-```
-src/lib/export/formatters/
-├── csv-formatter.ts   # CSV output
-├── json-formatter.ts  # JSON output
-└── zip-builder.ts     # ZIP archive creation
-```
-
-### Storage Integration
-
-Exports can be stored in S3-compatible storage:
-
-```typescript
-import { ExportS3Client } from '@/lib/storage/export-s3-client';
-
-await ExportS3Client.upload(exportBuffer, filename);
-```
-
----
-
-## Payroll Export System
-
-### Architecture
-
-The payroll export system supports both file-based and API-based exports:
-
-```
-src/lib/payroll-export/
-├── export-service.ts      # Core orchestration
-├── data-fetcher.ts        # Query work periods and absences
-├── types.ts               # Shared interfaces
-├── index.ts               # Public exports
-├── formatters/
-│   ├── datev-lohn-formatter.ts   # DATEV Lohn & Gehalt
-│   ├── lexware-lohn-formatter.ts # Lexware lohn+gehalt
-│   └── sage-lohn-formatter.ts    # Sage Lohn
-└── exporters/
-    └── personio/
-        ├── api-client.ts       # Personio API client
-        ├── personio-exporter.ts # Exporter implementation
-        └── types.ts            # Personio-specific types
-```
+The payroll export system uses the same normalized work-period, absence, and wage-mapping inputs across different targets.
 
 ### File-Based Formatters
 
-Three file-based export formatters are available:
+File-based targets generate downloadable artifacts.
 
-| Formatter | Format ID | Output |
-|-----------|-----------|--------|
-| `DatevLohnFormatter` | `datev_lohn` | CSV with semicolon delimiter, UTF-8 |
-| `LexwareLohnFormatter` | `lexware_lohn` | CSV with year/month columns |
-| `SageLohnFormatter` | `sage_lohn` | CSV with configurable decimal separator |
+| Formatter | Purpose |
+|-----------|---------|
+| DATEV | CSV-style payroll export for DATEV-compatible processing |
+| Lexware | File export for Lexware payroll flows |
+| Sage | File export for Sage payroll flows |
+| SuccessFactors CSV | CSV-oriented export path for SuccessFactors environments |
 
-### Exporter Interfaces
+### API Exporters
 
-Two interfaces support different export modes:
+API-based targets validate configuration, push records to the destination system, and track per-record outcomes.
 
-```typescript
-// File-based exports (DATEV)
-interface IPayrollExportFormatter {
-  formatId: string;
-  formatName: string;
-  validateConfig(config: Record<string, unknown>): { valid: boolean; errors?: string[] };
-  transform(workPeriods, absences, mappings, config): ExportResult;
-}
+Current technical examples include:
 
-// API-based exports (Personio)
-interface IPayrollExporter {
-  exporterId: string;
-  exporterName: string;
-  validateConfig(config: Record<string, unknown>): Promise<{ valid: boolean; errors?: string[] }>;
-  testConnection(organizationId, config): Promise<{ success: boolean; error?: string }>;
-  export(organizationId, workPeriods, absences, mappings, config): Promise<ApiExportResult>;
-}
-```
+- Personio
+- Workday
+- SAP SuccessFactors API flows
 
-### Sync Record Tracking
+### Connectors And Target Maturity
 
-API exports track individual record status for partial success handling:
+Different payroll targets are not identical in behavior:
 
-```typescript
-type SyncRecordStatus = 'pending' | 'synced' | 'failed' | 'skipped';
+- file-based targets focus on deterministic artifact generation
+- API targets focus on connection validation, push semantics, and record-level sync feedback
+- some systems expose both file and API-style integration paths depending on the connector
 
-interface ApiExportResult {
-  success: boolean;
-  totalRecords: number;
-  syncedRecords: number;
-  failedRecords: number;
-  skippedRecords: number;
-  errors: Array<{
-    recordId: string;
-    recordType: 'attendance' | 'absence';
-    employeeId: string;
-    errorMessage: string;
-    isRetryable: boolean;
-  }>;
-}
-```
-
-### Personio Integration
-
-The Personio exporter syncs attendance and absences via API:
-
-```typescript
-import { PersonioExporter } from '@/lib/payroll-export/exporters/personio';
-
-const result = await PersonioExporter.export(
-  organizationId,
-  workPeriods,
-  absences,
-  mappings,
-  config,
-);
-```
-
-#### Credential Storage
-
-API credentials are stored securely in Vault, separate from configuration:
-
-```typescript
-// Configuration (in database)
-interface PersonioConfig {
-  employeeMatchStrategy: 'employeeNumber' | 'email';
-  includeZeroHours: boolean;
-  batchSize: number;
-}
-
-// Credentials (in Vault)
-interface PersonioCredentials {
-  clientId: string;
-  clientSecret: string;
-}
-```
+Operators configure payroll targets in organization settings, while system-wide secrets and infrastructure remain environment-backed.
 
 ### Wage Type Mappings
 
-Map Z8 categories to payroll wage codes with format-specific codes:
+Wage type mappings bridge Z8's domain model to target-specific payroll codes.
 
-```typescript
-interface WageTypeMapping {
-  workCategoryId: string | null;
-  absenceCategoryId: string | null;
-  specialCategory: string | null; // 'overtime', 'holiday_compensation', etc.
+- work categories map tracked work into payroll-specific wage codes
+- absence categories map leave and non-work periods into target-specific codes
+- special categories cover cases such as overtime or compensatory handling
 
-  // Format-specific wage type codes
-  datevWageTypeCode: string | null;
-  datevWageTypeName: string | null;
-  lexwareWageTypeCode: string | null;
-  lexwareWageTypeName: string | null;
-  sageWageTypeCode: string | null;
-  sageWageTypeName: string | null;
-
-  factor: string;
-}
-```
-
-Each mapping can have different codes for each payroll system, allowing the same mapping to work across DATEV, Lexware, and Sage exports.
-
----
-
-## Avatar Generation
-
-### DiceBear Integration
-
-User avatars are generated using DiceBear:
-
-```typescript
-import { generateAvatar } from '@/lib/avatar';
-
-// Generate avatar URL from seed (e.g., user ID or email)
-const avatarUrl = generateAvatar(userId, {
-  style: 'initials',
-  backgroundColor: ['b6e3f4', 'c0aede'],
-});
-```
-
-### Avatar Styles
-
-Available styles:
-- `initials` - Letter-based avatars
-- `avataaars` - Cartoon-style avatars
-- `bottts` - Robot avatars
-- `identicon` - Geometric patterns
-
----
-
-## Demo Data Generation
-
-### Employee Generator
-
-Generate realistic demo employees:
-
-```typescript
-import { EmployeeGenerator } from '@/lib/demo/employee-generator';
-
-const employees = EmployeeGenerator.generate(count, {
-  includeManagers: true,
-  locale: 'de',
-});
-```
-
-### Demo Data Service
-
-Full demo data generation:
-
-```typescript
-import { DemoDataService } from '@/lib/demo/demo-data.service';
-
-await DemoDataService.seed({
-  employees: 50,
-  timeEntries: true,
-  absences: true,
-  dateRange: { months: 6 },
-});
-```
+The same source meaning can therefore feed multiple export targets without redefining the business meaning of the time itself.
