@@ -32,7 +32,7 @@ RUN node docker/scripts/prepare-target-runtime.mjs copy worker /runtime
 
 FROM base AS worker
 
-RUN pnpm add -g tsx
+RUN pnpm add -g tsx@4.21.0
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 app
 
