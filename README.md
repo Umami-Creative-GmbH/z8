@@ -4,6 +4,12 @@ Z8 is a workforce management platform built for organizations that need reliable
 
 Across Web, Mobile, and Desktop, Z8 gives teams a dependable operational system for time tracking, absences, travel expenses, and day-to-day workforce management.
 
+## WIP Notice
+
+Z8 is still a work in progress. It is already used by several companies of different sizes, but some parts of the product may still change as the platform continues to mature.
+
+Not all export options have been tested in all circumstances yet. If you run into a bug, an export edge case, or other unexpected behavior, please open a GitHub issue.
+
 ---
 
 ## 🛡️ GoBD & Legal Compliance
