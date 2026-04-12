@@ -1,0 +1,6 @@
+scripts/migrate-with-lock.js
+drizzle.config.ts
+drizzle/
+src/db/auth-schema.ts
+src/db/schema/index.ts
+tsconfig.json

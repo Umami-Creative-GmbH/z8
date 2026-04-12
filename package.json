@@ -38,7 +38,7 @@
 	"scripts": {
 		"dev": "turbo dev",
 		"build": "turbo build",
-		"test": "turbo test",
+		"test": "pnpm node --test docker/scripts/prepare-target-runtime.test.mjs && turbo test",
 		"test:watch": "turbo test:watch",
 		"dev:webapp": "turbo dev --filter=webapp",
 		"dev:desktop": "turbo dev --filter=desktop",
@@ -62,6 +62,7 @@
 		"docker:build:migration": "docker build -f docker/Dockerfile.migration -t z8-migration:latest .",
 		"docker:build:seed": "docker build -f docker/Dockerfile.db-seed -t z8-db-seed:latest .",
 		"docker:build:all": "docker build -f docker/Dockerfile.webapp -t z8-webapp:latest . && docker build -f docker/Dockerfile.worker -t z8-worker:latest . && docker build -f docker/Dockerfile.migration -t z8-migration:latest . && docker build -f docker/Dockerfile.db-seed -t z8-db-seed:latest .",
+		"docker:sync:non-web-targets": "pnpm node docker/scripts/prepare-target-runtime.mjs manifest worker && pnpm node docker/scripts/prepare-target-runtime.mjs manifest migration && pnpm node docker/scripts/prepare-target-runtime.mjs manifest db-seed && pnpm --dir docker/targets/worker install --lockfile-only --ignore-workspace && pnpm --dir docker/targets/migration install --lockfile-only --ignore-workspace && pnpm --dir docker/targets/db-seed install --lockfile-only --ignore-workspace",
 		"docker:prod:up": "docker compose -f docker-compose.prod.yml up -d",
 		"docker:prod:down": "docker compose -f docker-compose.prod.yml down",
 		"docker:prod:logs": "docker compose -f docker-compose.prod.yml logs -f"

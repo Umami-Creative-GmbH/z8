@@ -1,0 +1,2 @@
+src/db/seed/do-seed.ts
+tsconfig.json
