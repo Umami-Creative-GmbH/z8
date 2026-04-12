@@ -7,10 +7,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import type { OrganizationBranding } from "@/lib/domain";
 import { cn } from "@/lib/utils";
 
-interface AuthFormWrapperProps extends React.ComponentProps<"div"> {
+interface AuthFormWrapperProps extends React.ComponentPropsWithoutRef<"div"> {
 	title: string;
 	children: React.ReactNode;
-	formProps?: React.ComponentProps<"form">;
+	formProps?: React.ComponentPropsWithoutRef<"form">;
 	branding?: OrganizationBranding | null;
 }
 
@@ -52,6 +52,7 @@ export function AuthFormWrapper({
 											alt={`${appName} logo`}
 											className="object-contain"
 											fill
+											sizes="128px"
 											src={branding.logoUrl}
 										/>
 									</div>
