@@ -38,7 +38,7 @@
 	"scripts": {
 		"dev": "turbo dev",
 		"build": "turbo build",
-		"test": "turbo test",
+		"test": "pnpm node --test docker/scripts/prepare-target-runtime.test.mjs && turbo test",
 		"test:watch": "turbo test:watch",
 		"dev:webapp": "turbo dev --filter=webapp",
 		"dev:desktop": "turbo dev --filter=desktop",
