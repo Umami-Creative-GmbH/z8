@@ -32,7 +32,7 @@ if (!databaseUrl) {
 
 const migrateCommand =
   process.env.DRIZZLE_MIGRATE_COMMAND ??
-  "pnpm dlx drizzle-kit migrate --config ./drizzle.config.ts";
+  "pnpm exec drizzle-kit migrate --config ./drizzle.config.ts";
 
 const run = async () => {
   const client = new Client({ connectionString: databaseUrl });
