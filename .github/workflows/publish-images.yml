@@ -32,32 +32,32 @@ jobs:
       matrix:
         include:
           - repository: z8-webapp
-            dockerfile: Dockerfile.webapp
+            dockerfile: docker/Dockerfile.webapp
             arch: amd64
             platform: linux/amd64
             runner: ubuntu-latest
           - repository: z8-webapp
-            dockerfile: Dockerfile.webapp
+            dockerfile: docker/Dockerfile.webapp
             arch: arm64
             platform: linux/arm64
             runner: ubuntu-24.04-arm
           - repository: z8-worker
-            dockerfile: Dockerfile.worker
+            dockerfile: docker/Dockerfile.worker
             arch: amd64
             platform: linux/amd64
             runner: ubuntu-latest
           - repository: z8-worker
-            dockerfile: Dockerfile.worker
+            dockerfile: docker/Dockerfile.worker
             arch: arm64
             platform: linux/arm64
             runner: ubuntu-24.04-arm
           - repository: z8-migration
-            dockerfile: Dockerfile.migration
+            dockerfile: docker/Dockerfile.migration
             arch: amd64
             platform: linux/amd64
             runner: ubuntu-latest
           - repository: z8-migration
-            dockerfile: Dockerfile.migration
+            dockerfile: docker/Dockerfile.migration
             arch: arm64
             platform: linux/arm64
             runner: ubuntu-24.04-arm
@@ -65,6 +65,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Verify workflow contract
+        run: node scripts/ci/verify-publish-images-workflow.mjs
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
