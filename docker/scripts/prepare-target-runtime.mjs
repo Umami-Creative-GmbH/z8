@@ -7,6 +7,7 @@ const WEBAPP_ROOT = path.join(REPO_ROOT, "apps", "webapp");
 const TARGETS_ROOT = path.join(REPO_ROOT, "docker", "targets");
 const SOURCE_EXTENSIONS = [".ts", ".tsx", ".js", ".mjs", ".cjs", ".json"];
 const IMPORT_PATTERN = /(?:import|export)\s+(?:[^\"']+?\s+from\s+)?[\"']([^\"']+)[\"']|import\(\s*[\"']([^\"']+)[\"']\s*\)|require\(\s*[\"']([^\"']+)[\"']\s*\)/g;
+const NON_WEB_OVERRIDE_EXCLUSIONS = new Set(["@types/react", "@types/react-dom"]);
 
 function toPackageName(specifier) {
   if (specifier.startsWith("node:")) return null;
@@ -32,6 +33,21 @@ async function pathExists(filePath) {
 
 async function ensureDir(dirPath) {
   await fs.mkdir(dirPath, { recursive: true });
+}
+
+function buildTargetPnpmConfig(rootPnpm) {
+  if (!rootPnpm) return undefined;
+
+  const overrides = Object.fromEntries(
+    Object.entries(rootPnpm.overrides ?? {}).filter(
+      ([packageName]) => !NON_WEB_OVERRIDE_EXCLUSIONS.has(packageName),
+    ),
+  );
+
+  return {
+    ...rootPnpm,
+    ...(Object.keys(overrides).length > 0 ? { overrides } : {}),
+  };
 }
 
 async function readIncludeManifest(target) {
@@ -156,7 +172,7 @@ async function writeTargetPackage(target) {
     name: `@z8-target/${target}`,
     private: true,
     packageManager: rootPackage.packageManager,
-    pnpm: rootPackage.pnpm,
+    pnpm: buildTargetPnpmConfig(rootPackage.pnpm),
     dependencies: Object.fromEntries(dependencyEntries),
   };
 

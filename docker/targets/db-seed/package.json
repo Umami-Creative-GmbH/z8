@@ -13,8 +13,6 @@
     ],
     "overrides": {
       "@hono/node-server": "1.19.13",
-      "@types/react": "19.2.8",
-      "@types/react-dom": "19.2.3",
       "esbuild": "0.25.12",
       "fast-xml-parser": "5.5.11",
       "brace-expansion@1.1.12": "1.1.13",
