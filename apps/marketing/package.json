@@ -24,6 +24,6 @@
 		"@types/react-dom": "19.2.3",
 		"postcss": "^8.5.9",
 		"tailwindcss": "^4.2.2",
-		"ultracite": "^7.4.4"
+		"ultracite": "^7.5.6"
 	}
 }
