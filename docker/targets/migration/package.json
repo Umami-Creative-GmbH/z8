@@ -1,0 +1,41 @@
+{
+  "name": "@z8-target/migration",
+  "private": true,
+  "packageManager": "pnpm@10.32.1",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@parcel/watcher",
+      "@swc/core",
+      "esbuild",
+      "msgpackr-extract",
+      "msw",
+      "sharp"
+    ],
+    "overrides": {
+      "@hono/node-server": "1.19.13",
+      "@types/react": "19.2.8",
+      "@types/react-dom": "19.2.3",
+      "esbuild": "0.25.12",
+      "fast-xml-parser": "5.5.11",
+      "brace-expansion@1.1.12": "1.1.13",
+      "brace-expansion@2.0.2": "2.0.3",
+      "get-uri>basic-ftp": "5.2.1",
+      "get-uri": "6.0.5",
+      "glob@7.2.3>minimatch": "3.1.2",
+      "hono": "4.12.12",
+      "lodash": "4.18.1",
+      "lodash-es": "4.18.1",
+      "minimatch@3.1.5>brace-expansion": "1.1.13",
+      "minimatch@5.1.9>brace-expansion": "2.0.3",
+      "pako": "1.0.11",
+      "tinyglobby": "0.2.16",
+      "undici": "7.24.0"
+    }
+  },
+  "dependencies": {
+    "drizzle-kit": "^0.31.10",
+    "drizzle-orm": "^0.45.2",
+    "luxon": "^3.7.2",
+    "pg": "^8.20.0"
+  }
+}
