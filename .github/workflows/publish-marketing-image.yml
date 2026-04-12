@@ -37,6 +37,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Verify workflow contract
+        run: node scripts/ci/verify-publish-marketing-image-workflow.mjs
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -52,7 +55,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./Dockerfile.marketing
+          file: ./docker/Dockerfile.marketing
           platforms: ${{ matrix.platform }}
           outputs: type=image,name=ghcr.io/umami-creative-gmbh/z8-marketing,push-by-digest=true,name-canonical=true,push=true
           cache-from: type=gha,scope=marketing-${{ matrix.arch }}

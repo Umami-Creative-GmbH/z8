@@ -24,16 +24,16 @@ deploy/
 
 ## Container Images
 
-Production and support images now build from explicit Dockerfiles at the repository root.
+Production and support images now build from explicit Dockerfiles under `docker/`.
 
 | Dockerfile | Image Name | Purpose |
 |--------|------------|---------|
-| `Dockerfile.webapp` | z8-webapp | Next.js production server |
-| `Dockerfile.worker` | z8-worker | BullMQ job processor + cron |
-| `Dockerfile.migration` | z8-migration | One-shot Drizzle migration |
-| `Dockerfile.db-seed` | z8-db-seed | One-shot database seeder |
-| `Dockerfile.docs` | z8-docs | Next.js documentation site |
-| `Dockerfile.marketing` | z8-marketing | Marketing site |
+| `docker/Dockerfile.webapp` | z8-webapp | Next.js production server |
+| `docker/Dockerfile.worker` | z8-worker | BullMQ job processor + cron |
+| `docker/Dockerfile.migration` | z8-migration | One-shot Drizzle migration |
+| `docker/Dockerfile.db-seed` | z8-db-seed | One-shot database seeder |
+| `docker/Dockerfile.docs` | z8-docs | Next.js documentation site |
+| `docker/Dockerfile.marketing` | z8-marketing | Marketing site |
 
 > **Note:** Images are larger than standalone mode (~300MB) because Next.js 16's
 > `cacheComponents` feature is not compatible with `output: "standalone"`.
@@ -50,7 +50,7 @@ The workflow at `.github/workflows/publish-images.yml` builds and publishes the 
 Workflow details:
 
 - Uses native `amd64` and native `arm64` runners (no QEMU emulation)
-- Builds `webapp`, `worker`, and `migration` directly from `Dockerfile.webapp`, `Dockerfile.worker`, and `Dockerfile.migration`
+- Builds `webapp`, `worker`, and `migration` directly from `docker/Dockerfile.webapp`, `docker/Dockerfile.worker`, and `docker/Dockerfile.migration`
 - Publishes multi-arch manifests for `z8-webapp`, `z8-worker`, and `z8-migration` from those target-specific digests
 
 ### Runtime Images
@@ -69,6 +69,12 @@ Workflow details:
 The docs image is published separately by `.github/workflows/publish-docs-image.yml`:
 
 - `ghcr.io/umami-creative-gmbh/z8-docs`
+
+That workflow follows the same native `amd64` and `arm64` multi-arch publishing pattern and publishes `latest` from `main` plus `sha-<shortsha>` and semver tags.
+
+The marketing image is published separately by `.github/workflows/publish-marketing-image.yml`:
+
+- `ghcr.io/umami-creative-gmbh/z8-marketing`
 
 That workflow follows the same native `amd64` and `arm64` multi-arch publishing pattern and publishes `latest` from `main` plus `sha-<shortsha>` and semver tags.
 
@@ -129,14 +135,14 @@ docker compose -f docker-compose.prod.yml --profile seed up db-seed
 
 ```bash
 # Build from repository root
-docker build -f Dockerfile.webapp -t z8-webapp:latest .
-docker build -f Dockerfile.worker -t z8-worker:latest .
-docker build -f Dockerfile.migration -t z8-migration:latest .
-docker build -f Dockerfile.db-seed -t z8-db-seed:latest .
-docker build -f Dockerfile.docs -t z8-docs:latest .
-docker build -f Dockerfile.marketing -t z8-marketing:latest .
+docker build -f docker/Dockerfile.webapp -t z8-webapp:latest .
+docker build -f docker/Dockerfile.worker -t z8-worker:latest .
+docker build -f docker/Dockerfile.migration -t z8-migration:latest .
+docker build -f docker/Dockerfile.db-seed -t z8-db-seed:latest .
+docker build -f docker/Dockerfile.docs -t z8-docs:latest .
+docker build -f docker/Dockerfile.marketing -t z8-marketing:latest .
 
-# Or build all at once
+# Or build the main app images at once (`webapp`, `worker`, `migration`, `db-seed`)
 pnpm docker:build:all
 ```
 

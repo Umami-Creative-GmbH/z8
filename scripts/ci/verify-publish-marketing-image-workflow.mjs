@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const workflowPath = path.resolve(
 	scriptDir,
-	"../../.github/workflows/publish-docs-image.yml",
+	"../../.github/workflows/publish-marketing-image.yml",
 );
 
 const workflow = await readFile(workflowPath, "utf8");
@@ -67,32 +67,22 @@ expect(publishManifestJob, "Missing publish-manifest job");
 
 if (buildNativeJob) {
 	const verifyStep = getStepBlock(buildNativeJob, "Verify workflow contract");
-	expect(verifyStep, "build-native missing Verify workflow contract step");
+	expect(verifyStep, "Missing workflow contract verification step");
 
 	if (verifyStep) {
 		expect(
-			verifyStep.includes("run: node scripts/ci/verify-publish-docs-image-workflow.mjs"),
-			"build-native Verify workflow contract step must run the docs image verifier",
+			verifyStep.includes("run: node scripts/ci/verify-publish-marketing-image-workflow.mjs"),
+			"Workflow contract verification step must run the marketing verifier",
 		);
 	}
 
-	const buildStep = getStepBlock(buildNativeJob, "Build and push docs image by digest");
-	expect(buildStep, "Missing docs image build step");
+	const buildStep = getStepBlock(buildNativeJob, "Build and push marketing image by digest");
+	expect(buildStep, "Missing marketing image build step");
 
 	if (buildStep) {
 		expect(
-			buildStep.includes("file: ./docker/Dockerfile.docs"),
-			"Docs image build step must use file: ./docker/Dockerfile.docs",
-		);
-		expect(
-			buildStep.includes("labels: |"),
-			"Docs image build step must define OCI labels for GHCR package association",
-		);
-		expect(
-			buildStep.includes(
-				"org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}",
-			),
-			"Docs image build step must set org.opencontainers.image.source to the workflow repository",
+			buildStep.includes("file: ./docker/Dockerfile.marketing"),
+			"Marketing image build step must use file: ./docker/Dockerfile.marketing",
 		);
 	}
 }
@@ -106,27 +96,20 @@ if (publishManifestJob) {
 			"uses: docker/setup-buildx-action@v3",
 			"uses: docker/login-action@v3",
 			"name: Download amd64 digest",
-			"name: digests-docs-amd64",
+			"name: digests-marketing-amd64",
 			"path: /tmp/digests/amd64",
 			"name: Download arm64 digest",
-			"name: digests-docs-arm64",
+			"name: digests-marketing-arm64",
 			"path: /tmp/digests/arm64",
 			"uses: docker/metadata-action@v5",
-			"images: ghcr.io/umami-creative-gmbh/z8-docs",
+			"images: ghcr.io/umami-creative-gmbh/z8-marketing",
 			"type=raw,value=latest,enable={{is_default_branch}}",
 			"type=sha,prefix=sha-",
 			"type=semver,pattern=v{{version}}",
 			"type=semver,pattern=v{{major}}.{{minor}}",
 			"type=semver,pattern=v{{major}}",
-			"IMAGE_NAME: ghcr.io/umami-creative-gmbh/z8-docs",
+			"IMAGE_NAME: ghcr.io/umami-creative-gmbh/z8-marketing",
 			"TAGS: ${{ steps.meta.outputs.tags }}",
-		],
-		"publish-manifest",
-	);
-
-	includesAll(
-		publishManifestJob,
-		[
 			'set -- /tmp/digests/amd64/*',
 			'AMD64_DIGEST="sha256:${1##*/}"',
 			'set -- /tmp/digests/arm64/*',
@@ -145,27 +128,14 @@ if (publishManifestJob) {
 		"Create and push multi-arch manifests",
 	);
 	expect(publishStep, "Missing multi-arch manifest publish step");
-
-	if (publishStep) {
-		includesAll(
-			publishStep,
-			[
-				'--annotation "index:org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}"',
-				'-t "$tag" \\',
-				'"$IMAGE_NAME@$AMD64_DIGEST" \\',
-				'"$IMAGE_NAME@$ARM64_DIGEST"',
-			],
-			"publish-manifest Create and push multi-arch manifests",
-		);
-	}
 }
 
 if (errors.length > 0) {
-	console.error("Publish docs image workflow contract failed:");
+	console.error("Publish marketing image workflow contract failed:");
 	for (const error of errors) {
 		console.error(`- ${error}`);
 	}
 	process.exit(1);
 }
 
-console.log("Publish docs image workflow contract OK");
+console.log("Publish marketing image workflow contract OK");

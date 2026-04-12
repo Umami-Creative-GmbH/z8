@@ -1,5 +1,7 @@
 # Separate Image Dockerfiles Implementation Plan
 
+> Historical note: This document reflects the pre-2026-04-12 layout. Active Dockerfile paths were later relocated to `docker/Dockerfile.*` by the 2026-04-12 layout reorganization.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Replace the shared target-based root `Dockerfile` with one Dockerfile per published image and wire every publish workflow to the matching file and ignore rules.

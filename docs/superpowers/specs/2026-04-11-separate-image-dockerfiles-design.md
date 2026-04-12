@@ -1,5 +1,7 @@
 # Separate Image Dockerfiles Design
 
+> Historical note: This document reflects the pre-2026-04-12 layout. Active Dockerfile paths were later relocated to `docker/Dockerfile.*` by the 2026-04-12 layout reorganization.
+
 ## Summary
 
 Split the current shared root `Dockerfile` into one Dockerfile per published image, and give each Dockerfile its own Docker-specific ignore file so every publish workflow builds from an isolated, image-specific context contract.

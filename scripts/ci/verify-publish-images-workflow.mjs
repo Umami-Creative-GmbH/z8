@@ -63,6 +63,16 @@ expect(publishTargetsJob, "Missing publish-targets job");
 expect(publishManifestsJob, "Missing publish-manifests job");
 
 if (publishTargetsJob) {
+	const verifyStep = getStepBlock(publishTargetsJob, "Verify workflow contract");
+	expect(verifyStep, "publish-targets missing Verify workflow contract step");
+
+	if (verifyStep) {
+		expect(
+			verifyStep.includes("run: node scripts/ci/verify-publish-images-workflow.mjs"),
+			"publish-targets Verify workflow contract step must run the publish images verifier",
+		);
+	}
+
 	includesAll(
 		publishTargetsJob,
 		[
@@ -78,7 +88,7 @@ if (publishTargetsJob) {
 
 	const includeMatches = [
 		...publishTargetsJob.matchAll(
-			/repository: (z8-webapp|z8-worker|z8-migration)\n\s+dockerfile: (Dockerfile\.webapp|Dockerfile\.worker|Dockerfile\.migration)\n\s+arch: (amd64|arm64)/g,
+			/repository: (z8-webapp|z8-worker|z8-migration)\n\s+dockerfile: (docker\/Dockerfile\.webapp|docker\/Dockerfile\.worker|docker\/Dockerfile\.migration)\n\s+arch: (amd64|arm64)/g,
 		),
 	];
 	expect(
@@ -87,17 +97,22 @@ if (publishTargetsJob) {
 	);
 
 	const expectedMatrixEntries = new Set([
-		"z8-webapp:Dockerfile.webapp:amd64",
-		"z8-webapp:Dockerfile.webapp:arm64",
-		"z8-worker:Dockerfile.worker:amd64",
-		"z8-worker:Dockerfile.worker:arm64",
-		"z8-migration:Dockerfile.migration:amd64",
-		"z8-migration:Dockerfile.migration:arm64",
+		"z8-webapp:docker/Dockerfile.webapp:amd64",
+		"z8-webapp:docker/Dockerfile.webapp:arm64",
+		"z8-worker:docker/Dockerfile.worker:amd64",
+		"z8-worker:docker/Dockerfile.worker:arm64",
+		"z8-migration:docker/Dockerfile.migration:amd64",
+		"z8-migration:docker/Dockerfile.migration:arm64",
 	]);
 
 	for (const match of includeMatches) {
 		expectedMatrixEntries.delete(`${match[1]}:${match[2]}:${match[3]}`);
 	}
+
+	expect(
+		publishTargetsJob.includes("file: ./${{ matrix.dockerfile }}"),
+		"publish-targets build step must use file: ./${{ matrix.dockerfile }}",
+	);
 
 	expect(
 		expectedMatrixEntries.size === 0,
