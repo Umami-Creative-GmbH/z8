@@ -2,6 +2,7 @@
 ARG ALPINE_VERSION=3.21
 ARG NODE_VERSION=22
 ARG PNPM_VERSION=10.28.0
+ARG TSX_VERSION=4.21.0
 
 FROM node:${NODE_VERSION}-alpine${ALPINE_VERSION} AS base
 
@@ -33,7 +34,8 @@ RUN node docker/scripts/prepare-target-runtime.mjs copy db-seed /runtime
 FROM base AS db-seed
 WORKDIR /app
 
-RUN pnpm add -g tsx
+ARG TSX_VERSION
+RUN pnpm add -g tsx@${TSX_VERSION}
 
 COPY --from=assembler /runtime/package.json ./package.json
 COPY --from=assembler /runtime/pnpm-lock.yaml ./pnpm-lock.yaml
