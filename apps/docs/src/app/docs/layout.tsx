@@ -8,11 +8,9 @@ export default function Layout({ children }: { children: ReactNode }) {
     <DocsLayout
       tree={source.pageTree}
       tabs={docsTabs}
-      tabMode="top"
       nav={{
         title: <DocsNavTitle />,
         url: '/docs',
-        transparentMode: 'top',
       }}
       sidebar={{
         defaultOpenLevel: 1,
