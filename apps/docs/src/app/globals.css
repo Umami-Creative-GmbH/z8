@@ -1,6 +1,69 @@
 @import 'tailwindcss';
-@import 'fumadocs-ui/style.css';
+@import 'fumadocs-ui/css/neutral.css';
+@import 'fumadocs-ui/css/preset.css';
 
 :root {
-  --radius: 0.625rem;
+  --radius: 0.75rem;
+  --fd-layout-width: 92rem;
+}
+
+@theme {
+  --color-fd-background: oklch(0.98 0.005 260);
+  --color-fd-foreground: oklch(0.16 0.02 260);
+  --color-fd-muted: oklch(0.965 0.008 260);
+  --color-fd-muted-foreground: oklch(0.55 0.025 260);
+  --color-fd-popover: oklch(0.995 0.003 260);
+  --color-fd-popover-foreground: oklch(0.16 0.02 260);
+  --color-fd-card: oklch(0.995 0.003 260);
+  --color-fd-card-foreground: oklch(0.16 0.02 260);
+  --color-fd-border: oklch(0.905 0.012 260 / 0.7);
+  --color-fd-primary: oklch(0.45 0.17 265);
+  --color-fd-primary-foreground: oklch(0.985 0.008 265);
+  --color-fd-secondary: oklch(0.955 0.012 260);
+  --color-fd-secondary-foreground: oklch(0.2 0.02 260);
+  --color-fd-accent: oklch(0.94 0.025 265);
+  --color-fd-accent-foreground: oklch(0.2 0.02 260);
+  --color-fd-ring: oklch(0.55 0.12 265);
+  --color-fd-overlay: oklch(0.16 0.02 260 / 0.2);
+}
+
+.dark {
+  --color-fd-background: oklch(0.155 0.015 260);
+  --color-fd-foreground: oklch(0.985 0.008 260);
+  --color-fd-muted: oklch(0.25 0.015 260);
+  --color-fd-muted-foreground: oklch(0.65 0.025 260);
+  --color-fd-popover: oklch(0.195 0.015 260);
+  --color-fd-popover-foreground: oklch(0.985 0.008 260);
+  --color-fd-card: oklch(0.195 0.015 260);
+  --color-fd-card-foreground: oklch(0.985 0.008 260);
+  --color-fd-border: oklch(1 0 0 / 0.1);
+  --color-fd-primary: oklch(0.55 0.18 265);
+  --color-fd-primary-foreground: oklch(0.155 0.015 260);
+  --color-fd-secondary: oklch(0.25 0.015 260);
+  --color-fd-secondary-foreground: oklch(0.985 0.008 260);
+  --color-fd-accent: oklch(0.23 0.025 265);
+  --color-fd-accent-foreground: oklch(0.985 0.008 260);
+  --color-fd-ring: oklch(0.55 0.12 265);
+  --color-fd-overlay: oklch(0.04 0.01 260 / 0.45);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+body {
+  background:
+    radial-gradient(circle at top, color-mix(in oklab, var(--color-fd-primary) 14%, transparent), transparent 55%),
+    var(--color-fd-background);
+}
+
+::selection {
+  background: color-mix(in oklab, var(--color-fd-primary) 24%, white);
+  color: var(--color-fd-foreground);
+}
+
+.dark ::selection {
+  color: var(--color-fd-primary-foreground);
 }

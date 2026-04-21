@@ -33,6 +33,7 @@ import {
   IconBriefcase,
   IconPercentage,
   IconBook,
+  IconDeviceDesktop as IconMonitor,
 } from '@tabler/icons-react';
 
 // Map icon names to Tabler icon components
@@ -45,6 +46,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Code: IconCode,
   Server: IconServer,
   Book: IconBook,
+  Monitor: IconMonitor,
   // Admin Guide
   UserPlus: IconUserPlus,
   UserCog: IconUserCog,

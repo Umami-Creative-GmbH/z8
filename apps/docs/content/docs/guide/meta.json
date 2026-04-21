@@ -1,7 +1,7 @@
 {
   "root": true,
-  "title": "Docs",
-  "description": "User, Manager, and Admin guides for using Z8",
+  "title": "Product",
+  "description": "Role-based product guides for employees, managers, and workspace administrators",
   "icon": "Book",
   "pages": [
     "getting-started",

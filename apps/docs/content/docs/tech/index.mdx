@@ -1,22 +1,37 @@
 ---
 title: Technical Documentation
-description: Developer guides and deployment documentation
+description: Architecture, integrations, deployment, and operations guidance for Z8
 icon: Code
 ---
 
 import { Cards, Card } from "fumadocs-ui/components/card";
 
-Technical documentation for developers working on Z8 and operations teams deploying it.
+Technical documentation is for developers, operators, and implementation teams working on how Z8 is built, deployed, integrated, and operated.
 
 <Cards>
   <Card
-    title="Technical Docs"
-    description="Architecture, database, authentication, and services"
+    title="Architecture"
+    description="Understand the monorepo structure, runtime boundaries, and the major technical building blocks behind Z8."
     href="/docs/tech/technical"
   />
   <Card
+    title="Authentication"
+    description="Review Better Auth, invitations, app access, and organization-scoped authentication behavior."
+    href="/docs/tech/technical/authentication"
+  />
+  <Card
+    title="Database"
+    description="Explore core schema structure, time data modeling, and Drizzle-backed persistence patterns."
+    href="/docs/tech/technical/database"
+  />
+  <Card
+    title="Services"
+    description="Trace background jobs, notifications, exports, storage, and service-level infrastructure concerns."
+    href="/docs/tech/technical/services"
+  />
+  <Card
     title="Deployment"
-    description="Self-hosting, environment variables, and production setup"
+    description="Set up runtime roles, environment-backed system configuration, and production deployment workflows."
     href="/docs/tech/deployment"
   />
 </Cards>

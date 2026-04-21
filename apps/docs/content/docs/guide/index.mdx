@@ -1,13 +1,36 @@
 ---
-title: Z8 Documentation
-description: User guides, manager guides, and admin guides for the Z8 time tracking system
+title: Product Documentation
+description: Role-based guides for employees, managers, and administrators using Z8 every day
 ---
 
-# Z8 Documentation
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Cards, Card } from 'fumadocs-ui/components/card';
 
-Welcome to the Z8 documentation. Choose a guide based on your role:
+Product documentation covers the day-to-day workflows inside Z8, from getting started as a new employee to managing approvals and configuring organization settings.
 
-- **[Getting Started](/docs/guide/getting-started)** - New to Z8? Start here
-- **[User Guide](/docs/guide/user-guide)** - Daily time tracking and features
-- **[Manager Guide](/docs/guide/manager-guide)** - Team management and approvals
-- **[Admin Guide](/docs/guide/admin-guide)** - System configuration and administration
+<Callout type="info" title="Where to start">
+  Employees should begin with Getting Started or the User Guide, managers should open the Manager Guide, and organization administrators should head straight to the Admin Guide.
+</Callout>
+
+<Cards>
+  <Card
+    title="Getting Started"
+    description="Learn the core Z8 workflow for employees, managers, and admins setting up their day-to-day work."
+    href="/docs/guide/getting-started"
+  />
+  <Card
+    title="User Guide"
+    description="Follow employee-focused guidance for time tracking, schedules, notifications, and everyday product use."
+    href="/docs/guide/user-guide"
+  />
+  <Card
+    title="Manager Guide"
+    description="Review approvals, monitor team coverage, and understand the manager workflows available in your organization."
+    href="/docs/guide/manager-guide"
+  />
+  <Card
+    title="Admin Guide"
+    description="Configure people, permissions, policies, integrations, and organization-wide operations in Z8."
+    href="/docs/guide/admin-guide"
+  />
+</Cards>
