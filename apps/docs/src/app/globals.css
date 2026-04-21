@@ -47,8 +47,10 @@
   --color-fd-overlay: oklch(0.04 0.01 260 / 0.45);
 }
 
-html {
-  scroll-behavior: smooth;
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
 }
 
 body {
