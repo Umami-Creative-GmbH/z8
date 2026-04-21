@@ -60,3 +60,16 @@ test("generated non-web manifests exclude obvious web-only type overrides", asyn
   assert.equal(packageJson.pnpm.overrides["@types/react"], undefined);
   assert.equal(packageJson.pnpm.overrides["@types/react-dom"], undefined);
 });
+
+test("production worker and migration manifests use the trimmed runtime layout", async () => {
+  const [workerManifest, migrationManifest] = await Promise.all([
+    fs.readFile(new URL("../../infra/hetzner-k8s/k8s/app/worker-deployment.yaml", import.meta.url), "utf8"),
+    fs.readFile(new URL("../../infra/hetzner-k8s/k8s/app/migration-job.yaml", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(workerManifest, /workingDir:\s+\/app\b/);
+  assert.doesNotMatch(workerManifest, /workingDir:\s+\/app\/apps\/webapp\b/);
+
+  assert.match(migrationManifest, /workingDir:\s+\/app\b/);
+  assert.doesNotMatch(migrationManifest, /workingDir:\s+\/app\/apps\/webapp\b/);
+});

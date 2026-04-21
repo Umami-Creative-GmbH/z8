@@ -20,7 +20,7 @@ spec:
         - name: worker
           image: ghcr.io/umami-creative-gmbh/z8-worker:latest
           imagePullPolicy: Always
-          workingDir: /app/apps/webapp
+          workingDir: /app
           command: ["tsx", "src/worker.ts"]
           env:
             - name: VALKEY_HOST

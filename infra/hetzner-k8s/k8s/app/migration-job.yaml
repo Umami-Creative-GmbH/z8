@@ -25,7 +25,7 @@ spec:
               value: "74382643"
             - name: DRIZZLE_MIGRATE_COMMAND
               value: "pnpm exec drizzle-kit migrate --config ./drizzle.config.ts"
-          workingDir: /app/apps/webapp
+          workingDir: /app
           command: ["node", "./scripts/migrate-with-lock.js"]
           envFrom:
             - secretRef:
