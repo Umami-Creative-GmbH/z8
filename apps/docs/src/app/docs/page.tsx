@@ -28,7 +28,7 @@ export default function DocsOverviewPage() {
                 <div className="space-y-4">
                   <div className="flex items-start justify-between gap-3">
                     <span className="inline-flex rounded-full border border-fd-border bg-fd-background/80 px-2.5 py-1 text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-fd-muted-foreground backdrop-blur-sm">
-                      {title}
+                      {scope}
                     </span>
 
                     <span className={`inline-flex size-11 items-center justify-center rounded-xl border border-fd-border bg-fd-background/90 shadow-sm ${iconClassName}`}>
