@@ -59,5 +59,9 @@ body {
 
 ::selection {
   background: color-mix(in oklab, var(--color-fd-primary) 24%, white);
+  color: var(--color-fd-foreground);
+}
+
+.dark ::selection {
   color: var(--color-fd-primary-foreground);
 }
