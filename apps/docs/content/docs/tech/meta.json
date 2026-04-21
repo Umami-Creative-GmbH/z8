@@ -1,7 +1,7 @@
 {
   "root": true,
-  "title": "Tech Docs",
-  "description": "Technical documentation and deployment guides",
+  "title": "Technical",
+  "description": "Architecture, integrations, deployment, and operational guides",
   "icon": "Code",
   "pages": [
     "technical",
