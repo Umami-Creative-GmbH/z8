@@ -3,7 +3,7 @@ import {
   IconCode,
   IconDeviceDesktop as IconMonitor,
 } from '@tabler/icons-react';
-import type { ComponentProps, ComponentType } from 'react';
+import type { ComponentType } from 'react';
 
 export type DocsScope = 'product' | 'desktop' | 'technical';
 
@@ -12,7 +12,7 @@ interface DocsQuickLink {
   url: string;
 }
 
-interface DocsScopeConfig {
+export interface DocsScopeConfig {
   scope: DocsScope;
   title: string;
   description: string;
@@ -76,13 +76,13 @@ export const docsTabs = docsScopes.map(({ title, description, url, icon: Icon })
   icon: <Icon className="size-4" />,
 }));
 
-export function DocsNavTitle(props: ComponentProps<'a'>) {
+export function DocsNavTitle() {
   return (
-    <a {...props} className={`inline-flex items-center gap-2 font-medium ${props.className ?? ''}`.trim()}>
+    <span className="inline-flex items-center gap-2 font-medium">
       <span className="flex size-7 items-center justify-center rounded-md bg-blue-500/10 text-blue-600 dark:bg-blue-400/10 dark:text-blue-300">
         <span className="text-xs font-semibold">Z8</span>
       </span>
       <span className="text-sm">Z8 Docs</span>
-    </a>
+    </span>
   );
 }
