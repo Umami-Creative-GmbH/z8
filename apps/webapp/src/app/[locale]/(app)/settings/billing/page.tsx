@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import { redirect } from "next/navigation";
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
@@ -13,6 +14,8 @@ import {
 import { BillingPageClient } from "@/components/billing/billing-page-client";
 
 export default async function BillingSettingsPage() {
+	await connection();
+
 	// Check if billing is enabled
 	if (process.env.BILLING_ENABLED !== "true") {
 		redirect("/settings");
