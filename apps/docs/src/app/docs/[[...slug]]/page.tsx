@@ -5,7 +5,7 @@ import {
   DocsTitle,
   DocsDescription,
 } from 'fumadocs-ui/page';
-import { notFound, redirect } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { mdxComponents } from '@/mdx-components';
 
@@ -14,12 +14,9 @@ interface PageProps {
 }
 
 export default async function Page({ params }: PageProps) {
-  const { slug } = await params;
+  const { slug = [] } = await params;
 
-  // Redirect /docs to /docs/guide
-  if (!slug || slug.length === 0) {
-    redirect('/docs/guide');
-  }
+  if (slug.length === 0) notFound();
 
   const page = source.getPage(slug);
 
@@ -45,7 +42,10 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { slug } = await params;
+  const { slug = [] } = await params;
+
+  if (slug.length === 0) notFound();
+
   const page = source.getPage(slug);
 
   if (!page) notFound();

@@ -1,7 +1,7 @@
 {
   "root": true,
-  "title": "Desktop App",
-  "description": "Z8 Timer desktop application for Windows, macOS, and Linux",
+  "title": "Desktop",
+  "description": "Desktop app installation, tray workflows, offline behavior, and troubleshooting",
   "icon": "Monitor",
   "pages": [
     "getting-started",
