@@ -38,7 +38,7 @@ export default async function Page({ params }: PageProps) {
 }
 
 export async function generateStaticParams() {
-  return source.generateParams();
+  return source.generateParams().filter((params) => (params.slug?.length ?? 0) > 0);
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
