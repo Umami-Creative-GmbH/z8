@@ -171,6 +171,7 @@ export const twoFactor = pgTable(
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
+    verified: boolean("verified").default(true),
   },
   (table) => [
     index("twoFactor_secret_idx").on(table.secret),
@@ -206,7 +207,9 @@ export const ssoProvider = pgTable("sso_provider", {
   issuer: text("issuer").notNull(),
   oidcConfig: text("oidc_config"),
   samlConfig: text("saml_config"),
-  userId: text("user_id").references(() => user.id, { onDelete: "cascade" }),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
   providerId: text("provider_id").notNull().unique(),
   organizationId: text("organization_id"),
   domain: text("domain").notNull(),
