@@ -46,7 +46,10 @@ type ApprovalManagerRow = ManagerEffectivenessData["byManager"][number] &
 		managerName: string;
 	};
 
-export type ApprovalPerformanceData = Omit<ManagerEffectivenessData, "approvalMetrics" | "byManager"> & {
+export type ApprovalPerformanceData = Omit<
+	ManagerEffectivenessData,
+	"approvalMetrics" | "byManager"
+> & {
 	approvalMetrics: ApprovalMetricSummary;
 	byManager: ApprovalManagerRow[];
 	byTeam: ApprovalBottleneckRow[];
@@ -64,7 +67,9 @@ type GroupAccumulator = {
 
 const RESPONSE_TIME_BUCKETS = ["< 1 day", "1-3 days", "3-7 days", "> 7 days"] as const;
 
-export function buildApprovalPerformanceData(inputRows: ApprovalAnalyticsRow[]): ApprovalPerformanceData {
+export function buildApprovalPerformanceData(
+	inputRows: ApprovalAnalyticsRow[],
+): ApprovalPerformanceData {
 	const rows = inputRows.filter((row) => row.status !== "draft");
 	const approvedRows = rows.filter((row) => row.status === "approved");
 	const rejectedRows = rows.filter((row) => row.status === "rejected");
@@ -158,7 +163,9 @@ function buildGroupedRows(
 		});
 }
 
-function buildResponseTimeDistribution(decisionTimeHours: number[]): ApprovalPerformanceData["responseTimeDistribution"] {
+function buildResponseTimeDistribution(
+	decisionTimeHours: number[],
+): ApprovalPerformanceData["responseTimeDistribution"] {
 	const bucketCounts = new Map<(typeof RESPONSE_TIME_BUCKETS)[number], number>(
 		RESPONSE_TIME_BUCKETS.map((bucket) => [bucket, 0]),
 	);
@@ -182,7 +189,8 @@ function buildResponseTimeDistribution(decisionTimeHours: number[]): ApprovalPer
 		return {
 			bucket,
 			count,
-			percentage: decisionTimeHours.length > 0 ? Math.round((count / decisionTimeHours.length) * 100) : 0,
+			percentage:
+				decisionTimeHours.length > 0 ? Math.round((count / decisionTimeHours.length) * 100) : 0,
 		};
 	});
 }
@@ -229,11 +237,15 @@ function decisionTimeHoursFor(row: ApprovalAnalyticsRow): number[] {
 		return [];
 	}
 
-	return [row.decidedAt.getTime() - row.submittedAt.getTime()].map((milliseconds) => milliseconds / 3_600_000);
+	return [row.decidedAt.getTime() - row.submittedAt.getTime()].map(
+		(milliseconds) => milliseconds / 3_600_000,
+	);
 }
 
 function isPendingSlaWarning(row: ApprovalAnalyticsRow): boolean {
-	return row.status === "pending" && (row.slaStatus === "approaching" || row.slaStatus === "overdue");
+	return (
+		row.status === "pending" && (row.slaStatus === "approaching" || row.slaStatus === "overdue")
+	);
 }
 
 function average(values: number[]): number {
