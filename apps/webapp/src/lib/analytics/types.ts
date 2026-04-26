@@ -140,22 +140,40 @@ export type AbsencePatternsData = {
 /**
  * Manager Effectiveness Analytics
  */
+export type ApprovalBottleneckRow = {
+	id: string;
+	label: string;
+	approvedCount: number;
+	rejectedCount: number;
+	pendingCount: number;
+	pendingSlaWarnings: number;
+	avgDecisionTimeHours: number;
+	approvalRate: number;
+};
+
 export type ManagerEffectivenessData = {
 	approvalMetrics: {
 		avgResponseTime: number;
+		avgDecisionTimeHours: number;
 		totalApprovals: number;
 		totalRejections: number;
 		approvalRate: number;
+		pendingSlaWarnings: number;
 	};
 	byManager: Array<{
 		managerId: string;
 		managerName: string;
 		avgResponseTime: number;
+		avgDecisionTimeHours: number;
 		totalApprovals: number;
 		totalRejections: number;
 		approvalRate: number;
 		teamSize: number;
+		pendingCount: number;
+		pendingSlaWarnings: number;
 	}>;
+	byTeam: ApprovalBottleneckRow[];
+	byType: ApprovalBottleneckRow[];
 	responseTimeDistribution: Array<{
 		bucket: string;
 		count: number;
@@ -166,6 +184,7 @@ export type ManagerEffectivenessData = {
 		approvals: number;
 		rejections: number;
 		avgResponseTime: number;
+		avgDecisionTimeHours: number;
 	}>;
 };
 

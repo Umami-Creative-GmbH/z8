@@ -6,7 +6,7 @@
  * absence patterns, and manager effectiveness metrics.
  */
 
-import { and, eq, gte, isNull, lte, or, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, isNotNull, isNull, lte, or, sql } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { DateTime } from "luxon";
 import {
@@ -15,8 +15,13 @@ import {
 	employee,
 	employeeCostCenterAssignment,
 	employeeManagers,
+	travelExpenseClaim,
 	workPeriod,
 } from "@/db/schema";
+import {
+	buildApprovalPerformanceData,
+	type ApprovalAnalyticsRow,
+} from "@/lib/analytics/approval-performance";
 import type {
 	AbsencePatternsData,
 	AbsencePatternsParams,
@@ -33,6 +38,11 @@ import type {
 	WorkHoursAnalyticsData,
 	WorkHoursParams,
 } from "@/lib/analytics/types";
+import {
+	calculateSLADeadline,
+	calculateSLAStatus,
+} from "@/lib/approvals/domain/sla-calculator";
+import type { ApprovalPriority, ApprovalType } from "@/lib/approvals/domain/types";
 import { clampOvertime } from "@/lib/analytics/overtime-burndown";
 import { differenceInDays, format } from "@/lib/datetime/luxon-utils";
 import {
@@ -120,6 +130,23 @@ function toTrendDirection(delta: number): TrendDirection {
 	if (delta > 0) return "up";
 	if (delta < 0) return "down";
 	return "flat";
+}
+
+function isApprovalType(type: string): type is ApprovalType {
+	return ["absence_entry", "time_entry", "shift_request", "travel_expense_claim"].includes(type);
+}
+
+function getSlaStatusForAnalytics(
+	type: string,
+	priority: ApprovalPriority,
+	submittedAt: Date,
+): ApprovalAnalyticsRow["slaStatus"] {
+	if (!isApprovalType(type)) return null;
+
+	const deadline = calculateSLADeadline(type, priority, submittedAt);
+	if (!deadline) return null;
+
+	return calculateSLAStatus(deadline).status;
 }
 
 function buildGroupedOvertimeRows(
@@ -913,11 +940,11 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 					Effect.gen(function* (_) {
 						const { organizationId, dateRange, managerId } = params;
 
-						// Get all approval requests in date range
 						const approvals = yield* _(
 							dbService.query("getApprovalsForEffectiveness", async () => {
 								return await dbService.db.query.approvalRequest.findMany({
 									where: and(
+										eq(approvalRequest.organizationId, organizationId),
 										gte(approvalRequest.createdAt, dateRange.start),
 										lte(approvalRequest.createdAt, dateRange.end),
 										managerId ? eq(approvalRequest.approverId, managerId) : undefined,
@@ -931,6 +958,7 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 										requester: {
 											with: {
 												user: true,
+												team: true,
 											},
 										},
 									},
@@ -938,62 +966,73 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 							}),
 						);
 
-						// Calculate metrics
-						const totalApprovals = approvals.filter((a) => a.status === "approved").length;
-						const totalRejections = approvals.filter((a) => a.status === "rejected").length;
-						const approvalRate =
-							approvals.length > 0 ? (totalApprovals / approvals.length) * 100 : 0;
+						const travelClaims = yield* _(
+							dbService.query("getTravelExpenseClaimsForEffectiveness", async () => {
+								return await dbService.db.query.travelExpenseClaim.findMany({
+									where: and(
+										eq(travelExpenseClaim.organizationId, organizationId),
+										gte(travelExpenseClaim.submittedAt, dateRange.start),
+										lte(travelExpenseClaim.submittedAt, dateRange.end),
+										inArray(travelExpenseClaim.status, ["submitted", "approved", "rejected"]),
+										isNotNull(travelExpenseClaim.submittedAt),
+										managerId ? eq(travelExpenseClaim.approverId, managerId) : undefined,
+									),
+									with: {
+										employee: {
+											with: {
+												user: true,
+												team: true,
+											},
+										},
+										approver: {
+											with: {
+												user: true,
+											},
+										},
+									},
+								});
+							}),
+						);
 
-						// Calculate average response time
-						const responseTimes = approvals
-							.filter((a) => a.updatedAt && a.createdAt)
-							.map((a) => {
-								const created = new Date(a.createdAt);
-								const updated = new Date(a.updatedAt!);
-								return differenceInDays(updated, created);
-							});
+						const approvalRows: ApprovalAnalyticsRow[] = approvals.map((approval) => ({
+							source: "approval_request",
+							type: approval.entityType,
+							organizationId: approval.organizationId,
+							requesterEmployeeId: approval.requestedBy,
+							requesterTeamId: approval.requester?.teamId ?? null,
+							requesterTeamName: approval.requester?.team?.name ?? null,
+							approverEmployeeId: approval.approverId,
+							approverName: approval.approver?.user.name ?? null,
+							status: approval.status,
+							submittedAt: approval.createdAt,
+							decidedAt: approval.approvedAt,
+							slaStatus: getSlaStatusForAnalytics(approval.entityType, "normal", approval.createdAt),
+						}));
 
-						const avgResponseTime =
-							responseTimes.length > 0
-								? responseTimes.reduce((sum, t) => sum + t, 0) / responseTimes.length
-								: 0;
+						const travelRows: ApprovalAnalyticsRow[] = travelClaims
+							.filter((claim) => claim.submittedAt)
+							.map((claim) => ({
+								source: "travel_expense_claim",
+								type: "travel_expense_claim",
+								organizationId: claim.organizationId,
+								requesterEmployeeId: claim.employeeId,
+								requesterTeamId: claim.employee?.teamId ?? null,
+								requesterTeamName: claim.employee?.team?.name ?? null,
+								approverEmployeeId: claim.approverId,
+								approverName: claim.approver?.user.name ?? null,
+								status: claim.status === "submitted" ? "pending" : claim.status,
+								submittedAt: claim.submittedAt!,
+								decidedAt: claim.decidedAt,
+								slaStatus: getSlaStatusForAnalytics("travel_expense_claim", "normal", claim.submittedAt!),
+							}));
 
-						// Group by manager
-						const managerMap = new Map<
-							string,
-							{
-								name: string;
-								approvals: number;
-								rejections: number;
-								responseTimes: number[];
-							}
-						>();
-
-						for (const approval of approvals) {
-							if (!approval.approver) continue;
-
-							const key = approval.approverId;
-							const existing = managerMap.get(key) || {
-								name: approval.approver.user.name || "Unknown",
-								approvals: 0,
-								rejections: 0,
-								responseTimes: [] as number[],
-							};
-
-							if (approval.status === "approved") existing.approvals++;
-							if (approval.status === "rejected") existing.rejections++;
-
-							if (approval.updatedAt && approval.createdAt) {
-								const created = new Date(approval.createdAt);
-								const updated = new Date(approval.updatedAt);
-								existing.responseTimes.push(differenceInDays(updated, created));
-							}
-
-							managerMap.set(key, existing);
-						}
-
-						// Get team sizes for all managers
-						const managerIds = Array.from(managerMap.keys());
+						const managerEffectiveness = buildApprovalPerformanceData([
+							...approvalRows,
+							...travelRows,
+						]);
+						const managerIds = managerEffectiveness.byManager
+							.map((manager) => manager.managerId)
+							.filter((id) => id !== "unassigned");
 						const teamSizes = yield* _(
 							dbService.query("getTeamSizes", async () => {
 								if (managerIds.length === 0) return [];
@@ -1003,7 +1042,13 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 										count: sql<number>`count(*)::int`,
 									})
 									.from(employeeManagers)
-									.where(sql`${employeeManagers.managerId} = ANY(${managerIds})`)
+									.innerJoin(employee, eq(employeeManagers.employeeId, employee.id))
+									.where(
+										and(
+											inArray(employeeManagers.managerId, managerIds),
+											eq(employee.organizationId, organizationId),
+										),
+									)
 									.groupBy(employeeManagers.managerId);
 							}),
 						);
@@ -1013,103 +1058,12 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 							teamSizeMap.set(ts.managerId, ts.count);
 						}
 
-						const byManager = Array.from(managerMap.entries()).map(([managerId, data]) => {
-							const total = data.approvals + data.rejections;
-							const avgResponse =
-								data.responseTimes.length > 0
-									? data.responseTimes.reduce((sum, t) => sum + t, 0) / data.responseTimes.length
-									: 0;
-
-							return {
-								managerId,
-								managerName: data.name,
-								avgResponseTime: Math.round(avgResponse * 100) / 100,
-								totalApprovals: data.approvals,
-								totalRejections: data.rejections,
-								approvalRate: total > 0 ? (data.approvals / total) * 100 : 0,
-								teamSize: teamSizeMap.get(managerId) || 0,
-							};
-						});
-
-						// Calculate response time distribution
-						const distributionBuckets = {
-							"< 1 day": 0,
-							"1-3 days": 0,
-							"3-7 days": 0,
-							"> 7 days": 0,
-						};
-
-						for (const rt of responseTimes) {
-							if (rt < 1) {
-								distributionBuckets["< 1 day"]++;
-							} else if (rt <= 3) {
-								distributionBuckets["1-3 days"]++;
-							} else if (rt <= 7) {
-								distributionBuckets["3-7 days"]++;
-							} else {
-								distributionBuckets["> 7 days"]++;
-							}
-						}
-
-						const responseTimeDistribution = Object.entries(distributionBuckets).map(
-							([bucket, count]) => ({
-								bucket,
-								count,
-								percentage:
-									responseTimes.length > 0 ? Math.round((count / responseTimes.length) * 100) : 0,
-							}),
-						);
-
-						// Calculate monthly trends
-						const monthlyMap = new Map<
-							string,
-							{ approvals: number; rejections: number; totalResponseTime: number; count: number }
-						>();
-
-						for (const approval of approvals) {
-							const month = DateTime.fromJSDate(new Date(approval.createdAt)).toFormat("yyyy-MM");
-							const existing = monthlyMap.get(month) || {
-								approvals: 0,
-								rejections: 0,
-								totalResponseTime: 0,
-								count: 0,
-							};
-
-							if (approval.status === "approved") existing.approvals++;
-							if (approval.status === "rejected") existing.rejections++;
-
-							if (approval.updatedAt && approval.createdAt) {
-								const created = new Date(approval.createdAt);
-								const updated = new Date(approval.updatedAt);
-								existing.totalResponseTime += differenceInDays(updated, created);
-								existing.count++;
-							}
-
-							monthlyMap.set(month, existing);
-						}
-
-						const trends = Array.from(monthlyMap.entries())
-							.sort((a, b) => a[0].localeCompare(b[0]))
-							.map(([month, data]) => ({
-								month,
-								approvals: data.approvals,
-								rejections: data.rejections,
-								avgResponseTime:
-									data.count > 0
-										? Math.round((data.totalResponseTime / data.count) * 100) / 100
-										: 0,
-							}));
-
 						return {
-							approvalMetrics: {
-								avgResponseTime: Math.round(avgResponseTime * 100) / 100,
-								totalApprovals,
-								totalRejections,
-								approvalRate: Math.round(approvalRate * 100) / 100,
-							},
-							byManager,
-							responseTimeDistribution,
-							trends,
+							...managerEffectiveness,
+							byManager: managerEffectiveness.byManager.map((manager) => ({
+								...manager,
+								teamSize: teamSizeMap.get(manager.managerId) || 0,
+							})),
 						};
 					}),
 
