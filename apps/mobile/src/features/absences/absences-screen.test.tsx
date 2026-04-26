@@ -1,4 +1,5 @@
 import React from "react";
+import { DateTime } from "luxon";
 // @ts-expect-error react-dom server types are not installed in the mobile package.
 import { renderToStaticMarkup } from "react-dom/server";
 
@@ -26,11 +27,13 @@ vi.mock("react-native", () => ({
 }));
 
 function createAbsence(overrides: Partial<MobileAbsenceRecord>): MobileAbsenceRecord {
+  const futureDate = DateTime.now().plus({ days: 7 }).toISODate();
+
   return {
     id: "absence-1",
     employeeId: "employee-1",
-    startDate: "2026-04-12",
-    endDate: "2026-04-12",
+    startDate: futureDate,
+    endDate: futureDate,
     startPeriod: "full_day",
     endPeriod: "full_day",
     status: "pending",
