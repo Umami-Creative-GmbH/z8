@@ -53,6 +53,26 @@ describe("buildApprovalPerformanceData", () => {
 		expect(result.approvalMetrics.avgResponseTime).toBe(0.25);
 	});
 
+	it("excludes pending rows with accidental decision timestamps from decision time", () => {
+		const result = buildApprovalPerformanceData([
+			baseRow,
+			{
+				...baseRow,
+				status: "pending",
+				decidedAt: new Date("2026-04-03T08:00:00.000Z"),
+			},
+		]);
+
+		expect(result.approvalMetrics.avgDecisionTimeHours).toBe(4);
+		expect(result.byManager[0]?.avgDecisionTimeHours).toBe(4);
+		expect(result.responseTimeDistribution).toContainEqual({
+			bucket: "< 1 day",
+			count: 1,
+			percentage: 100,
+		});
+		expect(result.trends[0]?.avgDecisionTimeHours).toBe(4);
+	});
+
 	it("counts pending SLA warnings for approaching and overdue rows", () => {
 		const result = buildApprovalPerformanceData([
 			{

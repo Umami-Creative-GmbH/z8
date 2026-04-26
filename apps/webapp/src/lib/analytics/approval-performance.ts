@@ -221,7 +221,7 @@ function buildMonthlyTrends(rows: ApprovalAnalyticsRow[]): ApprovalPerformanceDa
 }
 
 function decisionTimeHoursFor(row: ApprovalAnalyticsRow): number[] {
-	if (!row.decidedAt) {
+	if ((row.status !== "approved" && row.status !== "rejected") || !row.decidedAt) {
 		return [];
 	}
 
