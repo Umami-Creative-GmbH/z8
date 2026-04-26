@@ -1019,15 +1019,19 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 								data.responseTimes.length > 0
 									? data.responseTimes.reduce((sum, t) => sum + t, 0) / data.responseTimes.length
 									: 0;
+							const roundedAvgResponse = Math.round(avgResponse * 100) / 100;
 
 							return {
 								managerId,
 								managerName: data.name,
-								avgResponseTime: Math.round(avgResponse * 100) / 100,
+								avgResponseTime: roundedAvgResponse,
+								avgDecisionTimeHours: Math.round(roundedAvgResponse * 24 * 100) / 100,
 								totalApprovals: data.approvals,
 								totalRejections: data.rejections,
 								approvalRate: total > 0 ? (data.approvals / total) * 100 : 0,
 								teamSize: teamSizeMap.get(managerId) || 0,
+								pendingCount: 0,
+								pendingSlaWarnings: 0,
 							};
 						});
 
@@ -1090,24 +1094,35 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 
 						const trends = Array.from(monthlyMap.entries())
 							.sort((a, b) => a[0].localeCompare(b[0]))
-							.map(([month, data]) => ({
-								month,
-								approvals: data.approvals,
-								rejections: data.rejections,
-								avgResponseTime:
+							.map(([month, data]) => {
+								const avgResponseTime =
 									data.count > 0
 										? Math.round((data.totalResponseTime / data.count) * 100) / 100
-										: 0,
-							}));
+										: 0;
+
+								return {
+									month,
+									approvals: data.approvals,
+									rejections: data.rejections,
+									avgResponseTime,
+									avgDecisionTimeHours: Math.round(avgResponseTime * 24 * 100) / 100,
+								};
+							});
+
+						const roundedAvgResponseTime = Math.round(avgResponseTime * 100) / 100;
 
 						return {
 							approvalMetrics: {
-								avgResponseTime: Math.round(avgResponseTime * 100) / 100,
+								avgResponseTime: roundedAvgResponseTime,
+								avgDecisionTimeHours: Math.round(roundedAvgResponseTime * 24 * 100) / 100,
 								totalApprovals,
 								totalRejections,
 								approvalRate: Math.round(approvalRate * 100) / 100,
+								pendingSlaWarnings: 0,
 							},
 							byManager,
+							byTeam: [],
+							byType: [],
 							responseTimeDistribution,
 							trends,
 						};

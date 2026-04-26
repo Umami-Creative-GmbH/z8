@@ -1,6 +1,6 @@
 import { DateTime } from "luxon";
 
-import type { ManagerEffectivenessData } from "./types";
+import type { ApprovalBottleneckRow, ManagerEffectivenessData } from "./types";
 
 export type ApprovalAnalyticsStatus = "approved" | "rejected" | "pending" | "draft";
 
@@ -23,28 +23,9 @@ export type ApprovalAnalyticsRow = {
 	slaStatus: ApprovalAnalyticsSlaStatus;
 };
 
-type ApprovalMetricSummary = ManagerEffectivenessData["approvalMetrics"] & {
-	avgDecisionTimeHours: number;
-	pendingSlaWarnings: number;
-};
+type ApprovalMetricSummary = ManagerEffectivenessData["approvalMetrics"];
 
-type ApprovalBottleneckRow = {
-	id: string;
-	label: string;
-	avgDecisionTimeHours: number;
-	avgResponseTime: number;
-	totalApprovals: number;
-	totalRejections: number;
-	approvalRate: number;
-	pendingCount: number;
-	pendingSlaWarnings: number;
-};
-
-type ApprovalManagerRow = ManagerEffectivenessData["byManager"][number] &
-	ApprovalBottleneckRow & {
-		managerId: string;
-		managerName: string;
-	};
+type ApprovalManagerRow = ManagerEffectivenessData["byManager"][number];
 
 export type ApprovalPerformanceData = Omit<
 	ManagerEffectivenessData,
@@ -91,10 +72,16 @@ export function buildApprovalPerformanceData(
 			id: row.approverEmployeeId ?? "unassigned",
 			label: row.approverName ?? "Unassigned",
 		})).map((row) => ({
-			...row,
 			managerId: row.id,
 			managerName: row.label,
+			avgResponseTime: round(row.avgDecisionTimeHours / 24),
+			avgDecisionTimeHours: row.avgDecisionTimeHours,
+			totalApprovals: row.approvedCount,
+			totalRejections: row.rejectedCount,
+			approvalRate: row.approvalRate,
 			teamSize: 0,
+			pendingCount: row.pendingCount,
+			pendingSlaWarnings: row.pendingSlaWarnings,
 		})),
 		byTeam: buildGroupedRows(rows, (row) => ({
 			id: row.requesterTeamId ?? "unassigned",
@@ -143,13 +130,12 @@ function buildGroupedRows(
 			return {
 				id,
 				label: group.label,
-				avgDecisionTimeHours: round(avgDecisionTimeHours),
-				avgResponseTime: round(avgDecisionTimeHours / 24),
-				totalApprovals: group.approvals,
-				totalRejections: group.rejections,
-				approvalRate: decidedCount > 0 ? round((group.approvals / decidedCount) * 100) : 0,
+				approvedCount: group.approvals,
+				rejectedCount: group.rejections,
 				pendingCount: group.pending,
 				pendingSlaWarnings: group.pendingSlaWarnings,
+				avgDecisionTimeHours: round(avgDecisionTimeHours),
+				approvalRate: decidedCount > 0 ? round((group.approvals / decidedCount) * 100) : 0,
 			};
 		})
 		.sort((a, b) => {
@@ -229,6 +215,8 @@ function buildMonthlyTrends(rows: ApprovalAnalyticsRow[]): ApprovalPerformanceDa
 			rejections: data.rejections,
 			avgResponseTime:
 				data.decidedCount > 0 ? round(data.totalDecisionTimeHours / data.decidedCount / 24) : 0,
+			avgDecisionTimeHours:
+				data.decidedCount > 0 ? round(data.totalDecisionTimeHours / data.decidedCount) : 0,
 		}));
 }
 

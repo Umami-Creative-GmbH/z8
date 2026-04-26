@@ -98,7 +98,35 @@ describe("buildApprovalPerformanceData", () => {
 
 		expect(result.byManager.map((row) => row.managerName)).toEqual(["Tara Travel", "Mina Manager"]);
 		expect(result.byTeam.map((row) => row.label)).toContain("Field Sales");
+		expect(result.byTeam[0]).toMatchObject({
+			approvedCount: 0,
+			rejectedCount: 0,
+			pendingCount: 1,
+			pendingSlaWarnings: 1,
+			avgDecisionTimeHours: 0,
+			approvalRate: 0,
+		});
 		expect(result.byType.map((row) => row.label)).toContain("Travel Expense Claim");
+	});
+
+	it("includes average decision time hours in monthly trends", () => {
+		const result = buildApprovalPerformanceData([
+			baseRow,
+			{
+				...baseRow,
+				decidedAt: new Date("2026-04-01T16:00:00.000Z"),
+			},
+		]);
+
+		expect(result.trends).toEqual([
+			{
+				month: "2026-04",
+				approvals: 2,
+				rejections: 0,
+				avgResponseTime: 0.25,
+				avgDecisionTimeHours: 6,
+			},
+		]);
 	});
 
 	it("excludes draft-like rows before calculation", () => {
