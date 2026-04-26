@@ -1,4 +1,8 @@
+import { createHash } from "node:crypto";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const TEST_VERIFIER = "test-verifier";
+const TEST_CHALLENGE = createHash("sha256").update(TEST_VERIFIER).digest("base64url");
 
 const mockState = vi.hoisted(() => ({
 	insertValues: vi.fn(),
@@ -41,6 +45,7 @@ describe("app auth code service", () => {
 
 		const result = await createAppAuthCode({
 			app: "mobile",
+			codeChallenge: TEST_CHALLENGE,
 			sessionToken: "session-token",
 			userId: "user-1",
 		});
@@ -50,6 +55,7 @@ describe("app auth code service", () => {
 		expect(mockState.insertValues).toHaveBeenCalledWith(
 			expect.objectContaining({
 				app: "mobile",
+				codeChallenge: TEST_CHALLENGE,
 				sessionToken: "session-token",
 				userId: "user-1",
 				status: "pending",
@@ -61,13 +67,16 @@ describe("app auth code service", () => {
 		mockState.findFirst.mockResolvedValue({
 			id: "code-1",
 			app: "mobile",
+			codeChallenge: TEST_CHALLENGE,
 			sessionToken: "session-token",
 			status: "pending",
 			expiresAt: new Date(Date.now() + 60_000),
 		});
 		mockState.updateReturning.mockResolvedValue([{ id: "code-1" }]);
 
-		await expect(consumeAppAuthCode({ app: "mobile", code: "ABCD" })).resolves.toEqual({
+		await expect(
+			consumeAppAuthCode({ app: "mobile", code: "ABCD", verifier: TEST_VERIFIER }),
+		).resolves.toEqual({
 			sessionToken: "session-token",
 			status: "success",
 		});
@@ -80,7 +89,9 @@ describe("app auth code service", () => {
 	it("rejects missing codes", async () => {
 		mockState.findFirst.mockResolvedValue(undefined);
 
-		await expect(consumeAppAuthCode({ app: "mobile", code: "MISSING" })).resolves.toEqual({
+		await expect(
+			consumeAppAuthCode({ app: "mobile", code: "MISSING", verifier: TEST_VERIFIER }),
+		).resolves.toEqual({
 			status: "invalid_code",
 		});
 	});
@@ -89,20 +100,43 @@ describe("app auth code service", () => {
 		mockState.findFirst.mockResolvedValue({
 			id: "code-used",
 			app: "mobile",
+			codeChallenge: TEST_CHALLENGE,
 			sessionToken: "session-token",
 			status: "used",
 			expiresAt: new Date(Date.now() + 60_000),
 		});
 
-		await expect(consumeAppAuthCode({ app: "mobile", code: "USED" })).resolves.toEqual({
+		await expect(
+			consumeAppAuthCode({ app: "mobile", code: "USED", verifier: TEST_VERIFIER }),
+		).resolves.toEqual({
 			status: "invalid_code",
 		});
+	});
+
+	it("rejects legacy codes without a stored challenge", async () => {
+		mockState.findFirst.mockResolvedValue({
+			id: "code-legacy",
+			app: "mobile",
+			codeChallenge: null,
+			sessionToken: "session-token",
+			status: "pending",
+			expiresAt: new Date(Date.now() + 60_000),
+		});
+
+		await expect(
+			consumeAppAuthCode({ app: "mobile", code: "LEGACY", verifier: TEST_VERIFIER }),
+		).resolves.toEqual({
+			status: "invalid_code",
+		});
+		expect(mockState.updateSet).not.toHaveBeenCalled();
 	});
 
 	it("rejects codes when the requested app does not match the stored app lookup", async () => {
 		mockState.findFirst.mockResolvedValue(undefined);
 
-		await expect(consumeAppAuthCode({ app: "mobile", code: "DESKTOP-CODE" })).resolves.toEqual({
+		await expect(
+			consumeAppAuthCode({ app: "mobile", code: "DESKTOP-CODE", verifier: TEST_VERIFIER }),
+		).resolves.toEqual({
 			status: "invalid_code",
 		});
 	});
@@ -111,13 +145,16 @@ describe("app auth code service", () => {
 		mockState.findFirst.mockResolvedValue({
 			id: "code-desktop",
 			app: "desktop",
+			codeChallenge: TEST_CHALLENGE,
 			sessionToken: "session-token",
 			status: "pending",
 			expiresAt: new Date(Date.now() + 60_000),
 		});
 		mockState.updateReturning.mockResolvedValueOnce([]).mockResolvedValueOnce([]);
 
-		await expect(consumeAppAuthCode({ app: "mobile", code: "DESKTOP-STORED" })).resolves.toEqual({
+		await expect(
+			consumeAppAuthCode({ app: "mobile", code: "DESKTOP-STORED", verifier: TEST_VERIFIER }),
+		).resolves.toEqual({
 			status: "invalid_code",
 		});
 
@@ -130,13 +167,16 @@ describe("app auth code service", () => {
 		mockState.findFirst.mockResolvedValue({
 			id: "code-3",
 			app: "mobile",
+			codeChallenge: TEST_CHALLENGE,
 			sessionToken: "session-token",
 			status: "pending",
 			expiresAt: new Date(Date.now() + 60_000),
 		});
 		mockState.updateReturning.mockResolvedValue([]);
 
-		await expect(consumeAppAuthCode({ app: "mobile", code: "RACE" })).resolves.toEqual({
+		await expect(
+			consumeAppAuthCode({ app: "mobile", code: "RACE", verifier: TEST_VERIFIER }),
+		).resolves.toEqual({
 			status: "invalid_code",
 		});
 	});
@@ -145,13 +185,16 @@ describe("app auth code service", () => {
 		mockState.findFirst.mockResolvedValue({
 			id: "code-4",
 			app: "mobile",
+			codeChallenge: TEST_CHALLENGE,
 			sessionToken: "session-token",
 			status: "pending",
 			expiresAt: new Date(Date.now() + 60_000),
 		});
 		mockState.updateReturning.mockResolvedValueOnce([]).mockResolvedValueOnce([{ id: "code-4" }]);
 
-		await expect(consumeAppAuthCode({ app: "mobile", code: "EDGE" })).resolves.toEqual({
+		await expect(
+			consumeAppAuthCode({ app: "mobile", code: "EDGE", verifier: TEST_VERIFIER }),
+		).resolves.toEqual({
 			status: "invalid_code",
 		});
 
@@ -169,13 +212,16 @@ describe("app auth code service", () => {
 		mockState.findFirst.mockResolvedValue({
 			id: "code-2",
 			app: "desktop",
+			codeChallenge: TEST_CHALLENGE,
 			sessionToken: "session-token",
 			status: "pending",
 			expiresAt: new Date(Date.now() - 60_000),
 		});
 		mockState.updateReturning.mockResolvedValueOnce([]).mockResolvedValueOnce([{ id: "code-2" }]);
 
-		await expect(consumeAppAuthCode({ app: "mobile", code: "EXPIRED" })).resolves.toEqual({
+		await expect(
+			consumeAppAuthCode({ app: "mobile", code: "EXPIRED", verifier: TEST_VERIFIER }),
+		).resolves.toEqual({
 			status: "invalid_code",
 		});
 
@@ -192,6 +238,7 @@ describe("app auth code service", () => {
 			mockState.findFirst.mockResolvedValue({
 				id: "code-boundary",
 				app: "mobile",
+				codeChallenge: TEST_CHALLENGE,
 				sessionToken: "session-token",
 				status: "pending",
 				expiresAt,
@@ -200,7 +247,9 @@ describe("app auth code service", () => {
 				.mockResolvedValueOnce([])
 				.mockResolvedValueOnce([{ id: "code-boundary" }]);
 
-			await expect(consumeAppAuthCode({ app: "mobile", code: "BOUNDARY" })).resolves.toEqual({
+			await expect(
+				consumeAppAuthCode({ app: "mobile", code: "BOUNDARY", verifier: TEST_VERIFIER }),
+			).resolves.toEqual({
 				status: "invalid_code",
 			});
 

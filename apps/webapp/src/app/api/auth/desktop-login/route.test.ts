@@ -51,7 +51,9 @@ describe("GET /api/auth/desktop-login", () => {
 		mockState.createAppAuthCode.mockResolvedValue({ code: "DESKTOP-CODE" });
 
 		const response = await GET(
-			createRequest("https://app.example.com/api/auth/desktop-login?redirect=z8://auth/callback"),
+			createRequest(
+				"https://app.example.com/api/auth/desktop-login?redirect=z8://auth/callback&challenge=CODE-CHALLENGE",
+			),
 		);
 
 		expect(response.status).toBe(307);
@@ -59,8 +61,19 @@ describe("GET /api/auth/desktop-login", () => {
 			app: "desktop",
 			sessionToken: "session-token",
 			userId: "user-1",
+			codeChallenge: "CODE-CHALLENGE",
 		});
 		expect(response.headers.get("location")).toBe("z8://auth/callback?code=DESKTOP-CODE");
+	});
+
+	it("requires a code challenge before minting a desktop auth code", async () => {
+		const response = await GET(
+			createRequest("https://app.example.com/api/auth/desktop-login?redirect=z8://auth/callback"),
+		);
+
+		expect(response.status).toBe(400);
+		expect(mockState.createAppAuthCode).not.toHaveBeenCalled();
+		expect(await response.json()).toEqual({ error: "Missing challenge parameter" });
 	});
 
 	it("preserves access-denied redirects for authenticated users without desktop access", async () => {
@@ -75,7 +88,9 @@ describe("GET /api/auth/desktop-login", () => {
 		});
 
 		const response = await GET(
-			createRequest("https://app.example.com/api/auth/desktop-login?redirect=z8://auth/callback"),
+			createRequest(
+				"https://app.example.com/api/auth/desktop-login?redirect=z8://auth/callback&challenge=CODE-CHALLENGE",
+			),
 		);
 
 		expect(response.status).toBe(307);
@@ -96,11 +111,23 @@ describe("GET /api/auth/desktop-login", () => {
 		});
 	});
 
+	it("rejects desktop deep links outside the expected auth callback", async () => {
+		const response = await GET(
+			createRequest("https://app.example.com/api/auth/desktop-login?redirect=z8://evil/callback"),
+		);
+
+		expect(response.status).toBe(400);
+		expect(mockState.createAppAuthCode).not.toHaveBeenCalled();
+		expect(await response.json()).toEqual({
+			error: "Invalid redirect URL. Must be z8://auth/callback",
+		});
+	});
+
 	it("redirects unauthenticated desktop requests through sign-in with a callbackUrl", async () => {
 		mockState.getSession.mockResolvedValue(null);
 
 		const requestUrl =
-			"https://app.example.com/api/auth/desktop-login?redirect=z8://auth/callback%3Fsource%3Ddesktop";
+			"https://app.example.com/api/auth/desktop-login?redirect=z8://auth/callback%3Fsource%3Ddesktop&challenge=CODE-CHALLENGE";
 
 		const response = await GET(createRequest(requestUrl));
 

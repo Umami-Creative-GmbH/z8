@@ -42,14 +42,14 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
-import type { WebhookEndpoint } from "@/lib/webhooks/types";
+import type { PublicWebhookEndpoint, WebhookEndpoint } from "@/lib/webhooks/types";
 import { useRouter } from "@/navigation";
 import { WebhookDeliveryLogsDialog } from "./webhook-delivery-logs-dialog";
 import { WebhookFormDialog } from "./webhook-form-dialog";
 import { WebhookSecretDialog } from "./webhook-secret-dialog";
 
 interface WebhookEndpointCardProps {
-	webhook: WebhookEndpoint;
+	webhook: PublicWebhookEndpoint;
 	onUpdated: (webhook: WebhookEndpoint) => void;
 	onDeleted: (webhookId: string) => void;
 }
@@ -65,7 +65,7 @@ export function WebhookEndpointCard({ webhook, onUpdated, onDeleted }: WebhookEn
 	const [newSecret, setNewSecret] = useState<string | null>(null);
 
 	// Mask URL for display
-	const maskedUrl = webhook.url.length > 50 ? `${webhook.url.slice(0, 50)}...` : webhook.url;
+	const maskedUrl = webhook.url.length > 50 ? `${webhook.url.slice(0, 50)}…` : webhook.url;
 
 	// Format last delivery time
 	const lastDeliveryTime = webhook.lastDeliveredAt

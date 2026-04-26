@@ -16,6 +16,7 @@ import type {
 	WebhookDeliveryResult,
 	WebhookEndpoint,
 	WebhookPayloadData,
+	PublicWebhookEndpoint,
 } from "./types";
 import { MAX_ATTEMPTS, RETRY_DELAYS_MS } from "./types";
 
@@ -110,11 +111,13 @@ export async function getWebhookEndpoint(webhookId: string): Promise<WebhookEndp
  */
 export async function getWebhookEndpointsByOrganization(
 	organizationId: string,
-): Promise<WebhookEndpoint[]> {
-	return db.query.webhookEndpoint.findMany({
+): Promise<PublicWebhookEndpoint[]> {
+	const endpoints = await db.query.webhookEndpoint.findMany({
 		where: eq(webhookEndpoint.organizationId, organizationId),
 		orderBy: (endpoint, { desc }) => [desc(endpoint.createdAt)],
 	});
+
+	return endpoints.map(({ secret: _secret, ...endpoint }) => endpoint);
 }
 
 /**

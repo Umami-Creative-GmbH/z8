@@ -62,6 +62,7 @@ export class WorkdayApiClient {
 				Accept: "application/json",
 			},
 			body,
+			redirect: "manual",
 			signal: AbortSignal.timeout(this.timeoutMs),
 		});
 
@@ -94,6 +95,7 @@ export class WorkdayApiClient {
 						}
 						: {}),
 				},
+				redirect: "manual",
 				signal: AbortSignal.timeout(this.timeoutMs),
 			});
 
@@ -170,6 +172,7 @@ export class WorkdayApiClient {
 				Accept: "application/json",
 				Authorization: `Bearer ${accessToken}`,
 			},
+			redirect: "manual",
 			signal: AbortSignal.timeout(this.timeoutMs),
 		});
 
@@ -203,6 +206,7 @@ export class WorkdayApiClient {
 				"Content-Type": "application/json",
 			},
 			body: JSON.stringify(payload),
+			redirect: "manual",
 			signal: AbortSignal.timeout(this.timeoutMs),
 		});
 

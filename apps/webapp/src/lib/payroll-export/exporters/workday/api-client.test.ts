@@ -34,6 +34,7 @@ describe("WorkdayApiClient", () => {
 			"https://example.workday.com/ccx/oauth2/acme/token",
 			expect.objectContaining({
 				method: "POST",
+				redirect: "manual",
 				headers: expect.objectContaining({
 					"Content-Type": "application/x-www-form-urlencoded",
 				}),

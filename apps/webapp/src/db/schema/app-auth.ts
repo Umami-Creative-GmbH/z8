@@ -17,6 +17,7 @@ export const appAuthCode = pgTable(
 			.references(() => user.id, { onDelete: "cascade" }),
 		app: appAuthTypeEnum("app").notNull(),
 		code: text("code").notNull(),
+		codeChallenge: text("code_challenge"),
 		sessionToken: text("session_token").notNull(),
 		status: appAuthCodeStatusEnum("status").default("pending").notNull(),
 		expiresAt: timestamp("expires_at").notNull(),

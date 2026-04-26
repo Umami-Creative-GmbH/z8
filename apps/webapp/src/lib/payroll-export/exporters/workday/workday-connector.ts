@@ -6,6 +6,7 @@ import type {
 	WageTypeMapping,
 	WorkPeriodData,
 } from "../../types";
+import { isPrivateIP } from "@/lib/webhooks/url-validation";
 import { WorkdayApiClient } from "./api-client";
 import {
 	DEFAULT_WORKDAY_CONFIG,
@@ -20,6 +21,25 @@ const SYNC_THRESHOLD = 500;
 const WORKDAY_VAULT_KEY_CLIENT_ID = "payroll/workday/client_id";
 const WORKDAY_VAULT_KEY_CLIENT_SECRET = "payroll/workday/client_secret";
 const WORKDAY_VAULT_KEY_SCOPE = "payroll/workday/scope";
+
+function validateInstanceUrl(instanceUrl: string): string[] {
+	const errors: string[] = [];
+
+	try {
+		const parsed = new URL(instanceUrl);
+		if (parsed.protocol !== "https:") {
+			errors.push("instanceUrl must use HTTPS");
+		}
+
+		if (isPrivateIP(parsed.hostname)) {
+			errors.push("instanceUrl cannot target private or internal addresses");
+		}
+	} catch {
+		errors.push("instanceUrl must be a valid URL");
+	}
+
+	return errors;
+}
 
 interface WorkdayConnectorDeps {
 	getCredentials?: (organizationId: string) => Promise<WorkdayOAuthCredentials | null>;
@@ -279,6 +299,7 @@ export class WorkdayConnector implements IPayrollExporter {
 		} else if (!instanceUrl.trim()) {
 			errors.push("instanceUrl is required");
 		} else {
+			errors.push(...validateInstanceUrl(instanceUrl));
 			config.instanceUrl = instanceUrl;
 		}
 

@@ -29,7 +29,7 @@ describe("POST /api/auth/app-exchange", () => {
 
 		expect(response.status).toBe(400);
 		expect(mockState.consumeAppAuthCode).not.toHaveBeenCalled();
-		expect(await response.json()).toEqual({ error: "Code is required" });
+		expect(await response.json()).toEqual({ error: "Code and verifier are required" });
 	});
 
 	it("returns the session token when a valid mobile code is exchanged", async () => {
@@ -40,7 +40,7 @@ describe("POST /api/auth/app-exchange", () => {
 
 		const response = await POST(
 			new Request("https://app.example.com/api/auth/app-exchange", {
-				body: JSON.stringify({ code: "ONE-TIME-CODE" }),
+				body: JSON.stringify({ code: "ONE-TIME-CODE", verifier: "VERIFIER" }),
 				headers: {
 					"Content-Type": "application/json",
 					"X-Z8-App-Type": "mobile",
@@ -53,7 +53,25 @@ describe("POST /api/auth/app-exchange", () => {
 		expect(mockState.consumeAppAuthCode).toHaveBeenCalledWith({
 			app: "mobile",
 			code: "ONE-TIME-CODE",
+			verifier: "VERIFIER",
 		});
 		expect(await response.json()).toEqual({ token: "session-token" });
+	});
+
+	it("requires a verifier to exchange app auth codes", async () => {
+		const response = await POST(
+			new Request("https://app.example.com/api/auth/app-exchange", {
+				body: JSON.stringify({ code: "ONE-TIME-CODE" }),
+				headers: {
+					"Content-Type": "application/json",
+					"X-Z8-App-Type": "mobile",
+				},
+				method: "POST",
+			}),
+		);
+
+		expect(response.status).toBe(400);
+		expect(mockState.consumeAppAuthCode).not.toHaveBeenCalled();
+		expect(await response.json()).toEqual({ error: "Code and verifier are required" });
 	});
 });

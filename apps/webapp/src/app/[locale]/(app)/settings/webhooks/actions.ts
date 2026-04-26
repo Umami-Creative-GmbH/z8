@@ -25,7 +25,12 @@ import {
 	updateWebhookEndpoint,
 } from "@/lib/webhooks";
 import { addWebhookJob } from "@/lib/webhooks/webhook-queue";
-import type { WebhookDelivery, WebhookEndpoint, WebhookPayloadData } from "@/lib/webhooks/types";
+import type {
+	PublicWebhookEndpoint,
+	WebhookDelivery,
+	WebhookEndpoint,
+	WebhookPayloadData,
+} from "@/lib/webhooks/types";
 
 const logger = createLogger("WebhookActions");
 
@@ -580,7 +585,7 @@ export async function testWebhook(
  */
 export async function getWebhooks(
 	organizationId: string,
-): Promise<ServerActionResult<{ webhooks: WebhookEndpoint[] }>> {
+): Promise<ServerActionResult<{ webhooks: PublicWebhookEndpoint[] }>> {
 	return runServerActionSafe(
 		Effect.gen(function* (_) {
 			const authService = yield* _(AuthService);

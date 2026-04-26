@@ -77,6 +77,7 @@ export async function executeWebhookRequest(params: {
 				method: "POST",
 				headers,
 				body: payloadString,
+				redirect: "manual",
 				signal: controller.signal,
 			});
 		} finally {
