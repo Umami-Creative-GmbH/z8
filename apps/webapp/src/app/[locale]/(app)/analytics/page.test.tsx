@@ -4,12 +4,17 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import type React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { getAbsencePatternsDataMock, getManagerEffectivenessDataMock, getTeamPerformanceDataMock } =
-	vi.hoisted(() => ({
-		getAbsencePatternsDataMock: vi.fn(),
-		getManagerEffectivenessDataMock: vi.fn(),
-		getTeamPerformanceDataMock: vi.fn(),
-	}));
+const {
+	getAbsencePatternsDataMock,
+	getManagerEffectivenessDataMock,
+	getTeamPerformanceDataMock,
+	toastErrorMock,
+} = vi.hoisted(() => ({
+	getAbsencePatternsDataMock: vi.fn(),
+	getManagerEffectivenessDataMock: vi.fn(),
+	getTeamPerformanceDataMock: vi.fn(),
+	toastErrorMock: vi.fn(),
+}));
 
 vi.mock("next/dynamic", () => ({
 	default: () =>
@@ -20,7 +25,7 @@ vi.mock("next/dynamic", () => ({
 
 vi.mock("sonner", () => ({
 	toast: {
-		error: vi.fn(),
+		error: toastErrorMock,
 	},
 }));
 
@@ -252,6 +257,7 @@ describe("AnalyticsOverviewPage", () => {
 		});
 		expect(screen.queryByText("Operations approvals")).toBeNull();
 		expect(screen.getAllByText("No data available")).toHaveLength(2);
+		expect(toastErrorMock).toHaveBeenCalledWith("Failed to load analytics data");
 	});
 
 	it("ignores stale responses when the date range changes before older requests finish", async () => {

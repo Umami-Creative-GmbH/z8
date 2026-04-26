@@ -71,11 +71,11 @@ export default function AnalyticsOverviewPage() {
 					return;
 				}
 
-				const rejectedResults = [teamResult, absenceResult, managerResult].filter(
-					(result) => result.status === "rejected",
+				const failedResults = [teamResult, absenceResult, managerResult].filter(
+					(result) => result.status === "rejected" || !result.value.success,
 				);
-				if (rejectedResults.length > 0) {
-					console.error("Failed to load analytics data:", rejectedResults);
+				if (failedResults.length > 0) {
+					console.error("Failed to load analytics data:", failedResults);
 					toast.error("Failed to load analytics data");
 				}
 
