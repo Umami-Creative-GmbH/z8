@@ -11,7 +11,7 @@ import { DatabaseService } from "../database.service";
 import { AnalyticsService } from "../analytics.service";
 
 describe("AnalyticsService.getManagerEffectiveness", () => {
-	it("combines approval requests and submitted travel expense claims with manager team sizes", async () => {
+	it("combines approval sources and scopes manager team sizes through managed employees", async () => {
 		const approvalRequestFindMany = vi.fn().mockResolvedValue([
 			{
 				id: "approval-1",
@@ -51,7 +51,8 @@ describe("AnalyticsService.getManagerEffectiveness", () => {
 		]);
 		const groupBy = vi.fn().mockResolvedValue([{ managerId: "manager-1", count: 7 }]);
 		const where = vi.fn().mockReturnValue({ groupBy });
-		const from = vi.fn().mockReturnValue({ where });
+		const innerJoin = vi.fn().mockReturnValue({ where });
+		const from = vi.fn().mockReturnValue({ innerJoin });
 		const select = vi.fn().mockReturnValue({ from });
 
 		const dbLayer = Layer.succeed(
@@ -84,6 +85,8 @@ describe("AnalyticsService.getManagerEffectiveness", () => {
 		);
 
 		expect(travelExpenseClaimFindMany).toHaveBeenCalledTimes(1);
+		expect(innerJoin).toHaveBeenCalledTimes(1);
+		expect(where).toHaveBeenCalledTimes(1);
 		expect(result.approvalMetrics.totalApprovals).toBe(1);
 		expect(result.approvalMetrics.avgDecisionTimeHours).toBe(4);
 		expect(result.approvalMetrics.pendingSlaWarnings).toBe(1);

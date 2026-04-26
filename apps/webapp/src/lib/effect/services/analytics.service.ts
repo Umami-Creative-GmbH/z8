@@ -1042,7 +1042,13 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 										count: sql<number>`count(*)::int`,
 									})
 									.from(employeeManagers)
-									.where(inArray(employeeManagers.managerId, managerIds))
+									.innerJoin(employee, eq(employeeManagers.employeeId, employee.id))
+									.where(
+										and(
+											inArray(employeeManagers.managerId, managerIds),
+											eq(employee.organizationId, organizationId),
+										),
+									)
 									.groupBy(employeeManagers.managerId);
 							}),
 						);

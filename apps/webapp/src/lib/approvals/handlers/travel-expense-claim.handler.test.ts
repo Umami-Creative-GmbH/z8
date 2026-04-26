@@ -297,9 +297,9 @@ describe("TravelExpenseClaimHandler", () => {
 				resolvedAt: null,
 				priority: "high",
 				sla: {
-					deadline: null,
-					status: "on_time",
-					hoursRemaining: null,
+					deadline: new Date("2026-04-10T10:00:00.000Z"),
+					status: "overdue",
+					hoursRemaining: -23,
 				},
 				display: {
 					title: "Travel Expense",
