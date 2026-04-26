@@ -54,6 +54,32 @@ const DEFAULT_SLA_RULES: SLARule[] = [
 		escalationEnabled: false,
 	},
 
+	// Travel expenses
+	{
+		approvalType: "travel_expense_claim",
+		priority: "urgent",
+		deadlineHours: 8,
+		escalationEnabled: true,
+	},
+	{
+		approvalType: "travel_expense_claim",
+		priority: "high",
+		deadlineHours: 24,
+		escalationEnabled: true,
+	},
+	{
+		approvalType: "travel_expense_claim",
+		priority: "normal",
+		deadlineHours: 48,
+		escalationEnabled: true,
+	},
+	{
+		approvalType: "travel_expense_claim",
+		priority: "low",
+		deadlineHours: 72,
+		escalationEnabled: false,
+	},
+
 	// Shift requests
 	{
 		approvalType: "shift_request",
