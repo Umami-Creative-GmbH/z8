@@ -918,6 +918,7 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 							dbService.query("getApprovalsForEffectiveness", async () => {
 								return await dbService.db.query.approvalRequest.findMany({
 									where: and(
+										eq(approvalRequest.organizationId, organizationId),
 										gte(approvalRequest.createdAt, dateRange.start),
 										lte(approvalRequest.createdAt, dateRange.end),
 										managerId ? eq(approvalRequest.approverId, managerId) : undefined,
@@ -945,17 +946,17 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 							approvals.length > 0 ? (totalApprovals / approvals.length) * 100 : 0;
 
 						// Calculate average response time
-						const responseTimes = approvals
+						const responseTimeHours = approvals
 							.filter((a) => a.updatedAt && a.createdAt)
 							.map((a) => {
 								const created = new Date(a.createdAt);
 								const updated = new Date(a.updatedAt!);
-								return differenceInDays(updated, created);
+								return (updated.getTime() - created.getTime()) / (1000 * 60 * 60);
 							});
 
-						const avgResponseTime =
-							responseTimes.length > 0
-								? responseTimes.reduce((sum, t) => sum + t, 0) / responseTimes.length
+						const avgResponseTimeHours =
+							responseTimeHours.length > 0
+								? responseTimeHours.reduce((sum, t) => sum + t, 0) / responseTimeHours.length
 								: 0;
 
 						// Group by manager
@@ -965,7 +966,7 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 								name: string;
 								approvals: number;
 								rejections: number;
-								responseTimes: number[];
+								responseTimeHours: number[];
 							}
 						>();
 
@@ -977,7 +978,7 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 								name: approval.approver.user.name || "Unknown",
 								approvals: 0,
 								rejections: 0,
-								responseTimes: [] as number[],
+								responseTimeHours: [] as number[],
 							};
 
 							if (approval.status === "approved") existing.approvals++;
@@ -986,7 +987,9 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 							if (approval.updatedAt && approval.createdAt) {
 								const created = new Date(approval.createdAt);
 								const updated = new Date(approval.updatedAt);
-								existing.responseTimes.push(differenceInDays(updated, created));
+								existing.responseTimeHours.push(
+									(updated.getTime() - created.getTime()) / (1000 * 60 * 60),
+								);
 							}
 
 							managerMap.set(key, existing);
@@ -1015,17 +1018,18 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 
 						const byManager = Array.from(managerMap.entries()).map(([managerId, data]) => {
 							const total = data.approvals + data.rejections;
-							const avgResponse =
-								data.responseTimes.length > 0
-									? data.responseTimes.reduce((sum, t) => sum + t, 0) / data.responseTimes.length
+							const avgResponseHours =
+								data.responseTimeHours.length > 0
+									? data.responseTimeHours.reduce((sum, t) => sum + t, 0) /
+										data.responseTimeHours.length
 									: 0;
-							const roundedAvgResponse = Math.round(avgResponse * 100) / 100;
+							const roundedAvgResponse = Math.round((avgResponseHours / 24) * 100) / 100;
 
 							return {
 								managerId,
 								managerName: data.name,
 								avgResponseTime: roundedAvgResponse,
-								avgDecisionTimeHours: Math.round(roundedAvgResponse * 24 * 100) / 100,
+								avgDecisionTimeHours: Math.round(avgResponseHours * 100) / 100,
 								totalApprovals: data.approvals,
 								totalRejections: data.rejections,
 								approvalRate: total > 0 ? (data.approvals / total) * 100 : 0,
@@ -1043,12 +1047,13 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 							"> 7 days": 0,
 						};
 
-						for (const rt of responseTimes) {
-							if (rt < 1) {
+						for (const rt of responseTimeHours) {
+							const days = rt / 24;
+							if (days < 1) {
 								distributionBuckets["< 1 day"]++;
-							} else if (rt <= 3) {
+							} else if (days <= 3) {
 								distributionBuckets["1-3 days"]++;
-							} else if (rt <= 7) {
+							} else if (days <= 7) {
 								distributionBuckets["3-7 days"]++;
 							} else {
 								distributionBuckets["> 7 days"]++;
@@ -1060,14 +1065,16 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 								bucket,
 								count,
 								percentage:
-									responseTimes.length > 0 ? Math.round((count / responseTimes.length) * 100) : 0,
+									responseTimeHours.length > 0
+										? Math.round((count / responseTimeHours.length) * 100)
+										: 0,
 							}),
 						);
 
 						// Calculate monthly trends
 						const monthlyMap = new Map<
 							string,
-							{ approvals: number; rejections: number; totalResponseTime: number; count: number }
+							{ approvals: number; rejections: number; totalResponseTimeHours: number; count: number }
 						>();
 
 						for (const approval of approvals) {
@@ -1075,7 +1082,7 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 							const existing = monthlyMap.get(month) || {
 								approvals: 0,
 								rejections: 0,
-								totalResponseTime: 0,
+								totalResponseTimeHours: 0,
 								count: 0,
 							};
 
@@ -1085,7 +1092,8 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 							if (approval.updatedAt && approval.createdAt) {
 								const created = new Date(approval.createdAt);
 								const updated = new Date(approval.updatedAt);
-								existing.totalResponseTime += differenceInDays(updated, created);
+								existing.totalResponseTimeHours +=
+									(updated.getTime() - created.getTime()) / (1000 * 60 * 60);
 								existing.count++;
 							}
 
@@ -1095,26 +1103,26 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 						const trends = Array.from(monthlyMap.entries())
 							.sort((a, b) => a[0].localeCompare(b[0]))
 							.map(([month, data]) => {
+								const avgResponseTimeHours =
+									data.count > 0 ? data.totalResponseTimeHours / data.count : 0;
 								const avgResponseTime =
-									data.count > 0
-										? Math.round((data.totalResponseTime / data.count) * 100) / 100
-										: 0;
+									data.count > 0 ? Math.round((avgResponseTimeHours / 24) * 100) / 100 : 0;
 
 								return {
 									month,
 									approvals: data.approvals,
 									rejections: data.rejections,
 									avgResponseTime,
-									avgDecisionTimeHours: Math.round(avgResponseTime * 24 * 100) / 100,
+									avgDecisionTimeHours: Math.round(avgResponseTimeHours * 100) / 100,
 								};
 							});
 
-						const roundedAvgResponseTime = Math.round(avgResponseTime * 100) / 100;
+						const roundedAvgResponseTime = Math.round((avgResponseTimeHours / 24) * 100) / 100;
 
 						return {
 							approvalMetrics: {
 								avgResponseTime: roundedAvgResponseTime,
-								avgDecisionTimeHours: Math.round(roundedAvgResponseTime * 24 * 100) / 100,
+								avgDecisionTimeHours: Math.round(avgResponseTimeHours * 100) / 100,
 								totalApprovals,
 								totalRejections,
 								approvalRate: Math.round(approvalRate * 100) / 100,
