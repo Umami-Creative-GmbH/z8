@@ -85,6 +85,10 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
+		if (session.session.activeOrganizationId !== organizationId) {
+			return NextResponse.json({ error: "Access denied" }, { status: 403 });
+		}
+
 		// Verify user has admin access using CASL
 		// First check they're a member of the organization
 		const emp = await db.query.employee.findFirst({
@@ -218,6 +222,10 @@ export async function DELETE(request: NextRequest) {
 				{ error: "Missing organizationId" },
 				{ status: 400 },
 			);
+		}
+
+		if (session.session.activeOrganizationId !== organizationId) {
+			return NextResponse.json({ error: "Access denied" }, { status: 403 });
 		}
 
 		// Verify user has admin access using CASL

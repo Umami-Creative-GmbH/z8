@@ -9,6 +9,7 @@ import type { WebhookDelivery, WebhookEndpoint } from "@/db/schema";
 
 // Re-export database types
 export type { WebhookDelivery, WebhookEndpoint };
+export type PublicWebhookEndpoint = Omit<WebhookEndpoint, "secret">;
 
 /**
  * Parameters for creating a webhook endpoint

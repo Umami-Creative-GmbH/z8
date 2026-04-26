@@ -1,6 +1,6 @@
 ---
 name: z8-k8s-deployment
-description: Manage the Z8 Kubernetes deployment, manifests, and Hetzner infrastructure for this repo. Use this whenever the user asks to refresh GHCR images, rollout restart workloads, scale deployments, rerun `drizzle-migrate`, update ingress or Traefik middleware, manage RustFS routes, inspect cert-manager or rollout state, or make Hetzner/OpenTofu changes for the existing cluster. Prefer this skill even if the user only mentions `kubectl`, `app-prod`, `drizzle-migrate`, `kubeconfig.recovered.yaml`, Traefik, ingress, middleware, RustFS, `rustfs.z8-time.app`, `s3.z8-time.app`, telemetry, marketing, cert-manager, GHCR, Hetzner, `hcloud`, `tofu`, or deployment refreshes without explicitly asking for a “skill.”
+description: Manage the Z8 Kubernetes deployment, manifests, and Hetzner infrastructure for this repo. Use this whenever the user asks to refresh GHCR images, rollout restart workloads like `web`, `worker`, or `docs`, scale deployments, rerun `drizzle-migrate`, update ingress or Traefik middleware, manage RustFS routes, inspect cert-manager or rollout state, or make Hetzner/OpenTofu changes for the existing cluster. Prefer this skill even if the user only mentions `kubectl`, `app-prod`, `drizzle-migrate`, `kubeconfig.recovered.yaml`, Traefik, ingress, middleware, RustFS, `rustfs.z8-time.app`, `s3.z8-time.app`, telemetry, docs, marketing, cert-manager, GHCR, Hetzner, `hcloud`, `tofu`, or deployment refreshes without explicitly asking for a “skill.”
 ---
 
 # Z8 K8s Deployment
@@ -11,7 +11,7 @@ This skill is repo-specific. It is not a generic Kubernetes tutorial. Use the re
 
 ## What this skill covers
 
-- Refresh `web`, `worker`, and `drizzle-migrate` images from GHCR
+- Refresh `web`, `worker`, `docs`, and `drizzle-migrate` images from GHCR
 - Restart, scale, and inspect workloads in `app-prod`
 - Recreate and verify migration jobs
 - Add or modify Kubernetes manifests under `infra/hetzner-k8s/k8s`
@@ -62,6 +62,7 @@ Use these paths as your first stop:
 - `infra/hetzner-k8s/k8s/kustomization.yaml` - top-level app manifest set
 - `infra/hetzner-k8s/k8s/app/web-deployment.yaml` - web deployment
 - `infra/hetzner-k8s/k8s/app/worker-deployment.yaml` - worker deployment
+- `infra/hetzner-k8s/k8s/app/docs-deployment.yaml` - docs deployment
 - `infra/hetzner-k8s/k8s/app/migration-job.yaml` - migration job
 - `infra/hetzner-k8s/k8s/app/web-ingress.yaml` - UI ingress
 - `infra/hetzner-k8s/k8s/app/marketing-ingress.yaml` - marketing ingress
@@ -94,7 +95,7 @@ Use for day-2 cluster operations.
 
 Examples:
 - refresh latest GHCR images
-- rollout restart `web` and `worker`
+- rollout restart `web`, `worker`, or `docs`
 - rerun `drizzle-migrate`
 - scale a deployment
 - apply manifest changes under `infra/hetzner-k8s/k8s`
@@ -122,15 +123,15 @@ Workflow:
 
 ## Core playbooks
 
-### Refresh web, worker, and migration images
+### Refresh web, worker, docs, and migration images
 
 Use this when the user says a new image was published to GHCR.
 
-1. Restart `deployment/web` and `deployment/worker` in `app-prod`.
-2. Wait for both rollouts to complete.
+1. Restart `deployment/web`, `deployment/worker`, and `deployment/docs` in `app-prod`.
+2. Wait for all three rollouts to complete.
 3. Delete and recreate `job/drizzle-migrate` from `infra/hetzner-k8s/k8s/app/migration-job.yaml`.
 4. Wait for the job to complete.
-5. Report the live image digests for `web`, `worker`, and the migration pod.
+5. Report the live image digests for `web`, `worker`, `docs`, and the migration pod.
 
 Why: `:latest` tags only become real after new pods are created, and the migration job must be recreated to pull the new image.
 
@@ -196,7 +197,7 @@ Always verify based on the task type.
 
 - rollout completed
 - new pods running
-- image digests reported
+- image digests reported for `web`, `worker`, and `docs`
 
 ### After migration rerun
 
@@ -241,9 +242,10 @@ Examples:
 
 ## Example prompts this skill should handle
 
-- "refresh webapp, worker and migration from the latest GH image"
+- "refresh webapp, worker, docs and migration from the latest GH image"
 - "scale marketing to 0 and verify it stayed down"
 - "add an IP allowlist to the rustfs webui ingress"
 - "route telemetry through Traefik to an external VM and verify TLS"
 - "check which Hetzner ssh keys can access the control planes"
-- "update the k8s deployment and pull the newest webapp images"
+- "update the k8s deployment and pull the newest webapp, worker, and docs images"
+- "restart the docs pod and verify the new image digest"

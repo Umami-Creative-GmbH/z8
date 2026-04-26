@@ -1,4 +1,4 @@
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { and, eq, gt, lte } from "drizzle-orm";
 import { appAuthCode, db } from "@/db";
 
@@ -10,6 +10,7 @@ export async function createAppAuthCode(input: {
 	userId: string;
 	sessionToken: string;
 	app: SupportedApp;
+	codeChallenge: string;
 }) {
 	const code = randomBytes(16).toString("hex").toUpperCase();
 	const expiresAt = new Date(Date.now() + APP_AUTH_CODE_TTL_MS);
@@ -18,6 +19,7 @@ export async function createAppAuthCode(input: {
 		userId: input.userId,
 		app: input.app,
 		code,
+		codeChallenge: input.codeChallenge,
 		sessionToken: input.sessionToken,
 		status: "pending",
 		expiresAt,
@@ -26,12 +28,31 @@ export async function createAppAuthCode(input: {
 	return { code, expiresAt };
 }
 
-export async function consumeAppAuthCode(input: { code: string; app: SupportedApp }) {
+function challengeForVerifier(verifier: string): string {
+	return createHash("sha256").update(verifier).digest("base64url");
+}
+
+function isMatchingChallenge(verifier: string, challenge: string): boolean {
+	const actual = Buffer.from(challengeForVerifier(verifier));
+	const expected = Buffer.from(challenge);
+	return actual.length === expected.length && timingSafeEqual(actual, expected);
+}
+
+export async function consumeAppAuthCode(input: {
+	code: string;
+	app: SupportedApp;
+	verifier: string;
+}) {
 	const record = await db.query.appAuthCode.findFirst({
 		where: and(eq(appAuthCode.code, input.code), eq(appAuthCode.app, input.app)),
 	});
 
-	if (!record || record.status !== "pending") {
+	if (
+		!record ||
+		record.status !== "pending" ||
+		!record.codeChallenge ||
+		!isMatchingChallenge(input.verifier, record.codeChallenge)
+	) {
 		return { status: "invalid_code" } as const;
 	}
 

@@ -46,7 +46,9 @@ describe("GET /api/auth/app-login", () => {
 		mockState.createAppAuthCode.mockResolvedValue({ code: "ONE-TIME-CODE" });
 
 		const response = await GET(
-			createRequest("https://app.example.com/api/auth/app-login?redirect=z8mobile://auth/callback"),
+			createRequest(
+				"https://app.example.com/api/auth/app-login?redirect=z8mobile://auth/callback&challenge=CODE-CHALLENGE",
+			),
 		);
 
 		expect(response.status).toBe(307);
@@ -54,15 +56,50 @@ describe("GET /api/auth/app-login", () => {
 			app: "mobile",
 			sessionToken: "session-token",
 			userId: "user-1",
+			codeChallenge: "CODE-CHALLENGE",
 		});
 		expect(response.headers.get("location")).toBe("z8mobile://auth/callback?code=ONE-TIME-CODE");
+	});
+
+	it("requires a code challenge before minting a mobile auth code", async () => {
+		const response = await GET(
+			createRequest("https://app.example.com/api/auth/app-login?redirect=z8mobile://auth/callback"),
+		);
+
+		expect(response.status).toBe(400);
+		expect(mockState.createAppAuthCode).not.toHaveBeenCalled();
+		expect(await response.json()).toEqual({ error: "Missing challenge parameter" });
+	});
+
+	it("rejects mobile deep links outside the expected auth callback", async () => {
+		const response = await GET(
+			createRequest("https://app.example.com/api/auth/app-login?redirect=z8mobile://evil/callback"),
+		);
+
+		expect(response.status).toBe(400);
+		expect(mockState.createAppAuthCode).not.toHaveBeenCalled();
+		expect(await response.json()).toEqual({
+			error: "Invalid redirect URL. Must be z8mobile://auth/callback",
+		});
+	});
+
+	it("rejects desktop deep links outside the expected auth callback", async () => {
+		const response = await GET(
+			createRequest("https://app.example.com/api/auth/app-login?app=desktop&redirect=z8://evil/callback"),
+		);
+
+		expect(response.status).toBe(400);
+		expect(mockState.createAppAuthCode).not.toHaveBeenCalled();
+		expect(await response.json()).toEqual({
+			error: "Invalid redirect URL. Must be z8://auth/callback",
+		});
 	});
 
 	it("redirects unauthenticated mobile requests through sign-in with a callbackUrl", async () => {
 		mockState.getSession.mockResolvedValue(null);
 
 		const requestUrl =
-			"https://app.example.com/api/auth/app-login?redirect=z8mobile://auth/callback%3Fsource%3Dmobile";
+			"https://app.example.com/api/auth/app-login?redirect=z8mobile://auth/callback%3Fsource%3Dmobile&challenge=CODE-CHALLENGE";
 
 		const response = await GET(createRequest(requestUrl));
 

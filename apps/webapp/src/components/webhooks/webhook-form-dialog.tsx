@@ -24,13 +24,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type { NotificationType } from "@/lib/notifications/types";
-import type { WebhookEndpoint } from "@/lib/webhooks/types";
+import type { PublicWebhookEndpoint, WebhookEndpoint } from "@/lib/webhooks/types";
 import { useRouter } from "@/navigation";
 import { WebhookSecretDialog } from "./webhook-secret-dialog";
 
 interface WebhookFormDialogProps {
 	organizationId: string;
-	webhook?: WebhookEndpoint;
+	webhook?: PublicWebhookEndpoint;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	onSuccess: (webhook: WebhookEndpoint) => void;

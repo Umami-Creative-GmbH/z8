@@ -3,6 +3,22 @@ import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { createAppAuthCode } from "@/lib/auth/app-auth-code";
 
+const DESKTOP_CALLBACK_URL = "z8://auth/callback";
+
+function isAllowedDesktopRedirect(redirectUrl: string): boolean {
+	try {
+		const requested = new URL(redirectUrl);
+		const allowed = new URL(DESKTOP_CALLBACK_URL);
+		return (
+			requested.protocol === allowed.protocol &&
+			requested.hostname === allowed.hostname &&
+			requested.pathname === allowed.pathname
+		);
+	} catch {
+		return false;
+	}
+}
+
 /**
  * GET /api/auth/desktop-login
  * Initiates OAuth login for desktop app, redirects to callback with token
@@ -13,17 +29,29 @@ import { createAppAuthCode } from "@/lib/auth/app-auth-code";
 export async function GET(request: NextRequest) {
 	const searchParams = request.nextUrl.searchParams;
 	const redirectUrl = searchParams.get("redirect");
+	const codeChallenge = searchParams.get("challenge");
 
 	if (!redirectUrl) {
 		return NextResponse.json({ error: "Missing redirect parameter" }, { status: 400 });
 	}
 
-	// Validate the redirect URL is a valid z8:// protocol
+	// Validate the redirect URL is the expected desktop callback.
 	if (!redirectUrl.startsWith("z8://")) {
 		return NextResponse.json(
 			{ error: "Invalid redirect URL. Must be z8:// protocol" },
 			{ status: 400 },
 		);
+	}
+
+	if (!isAllowedDesktopRedirect(redirectUrl)) {
+		return NextResponse.json(
+			{ error: `Invalid redirect URL. Must be ${DESKTOP_CALLBACK_URL}` },
+			{ status: 400 },
+		);
+	}
+
+	if (!codeChallenge) {
+		return NextResponse.json({ error: "Missing challenge parameter" }, { status: 400 });
 	}
 
 	// Check if user is already authenticated
@@ -45,6 +73,7 @@ export async function GET(request: NextRequest) {
 
 		const authCode = await createAppAuthCode({
 			app: "desktop",
+			codeChallenge,
 			sessionToken: session.session.token,
 			userId: session.user.id,
 		});

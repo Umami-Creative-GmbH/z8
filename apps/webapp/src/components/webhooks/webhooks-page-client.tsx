@@ -5,13 +5,13 @@ import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import type { WebhookEndpoint } from "@/lib/webhooks/types";
+import type { PublicWebhookEndpoint, WebhookEndpoint } from "@/lib/webhooks/types";
 import { WebhookEndpointCard } from "./webhook-endpoint-card";
 import { WebhookFormDialog } from "./webhook-form-dialog";
 
 interface WebhooksPageClientProps {
 	organizationId: string;
-	webhooks: WebhookEndpoint[];
+	webhooks: PublicWebhookEndpoint[];
 }
 
 export function WebhooksPageClient({
@@ -19,15 +19,17 @@ export function WebhooksPageClient({
 	webhooks: initialWebhooks,
 }: WebhooksPageClientProps) {
 	const { t } = useTranslate();
-	const [webhooks, setWebhooks] = useState(initialWebhooks);
+	const [webhooks, setWebhooks] = useState<PublicWebhookEndpoint[]>(initialWebhooks);
 	const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
 	const handleWebhookCreated = (webhook: WebhookEndpoint) => {
-		setWebhooks((prev) => [webhook, ...prev]);
+		const { secret: _secret, ...publicWebhook } = webhook;
+		setWebhooks((prev) => [publicWebhook, ...prev]);
 	};
 
 	const handleWebhookUpdated = (webhook: WebhookEndpoint) => {
-		setWebhooks((prev) => prev.map((w) => (w.id === webhook.id ? webhook : w)));
+		const { secret: _secret, ...publicWebhook } = webhook;
+		setWebhooks((prev) => prev.map((w) => (w.id === webhook.id ? publicWebhook : w)));
 	};
 
 	const handleWebhookDeleted = (webhookId: string) => {
@@ -50,43 +52,43 @@ export function WebhooksPageClient({
 						</p>
 					</div>
 					<Button onClick={() => setIsCreateDialogOpen(true)}>
-						<IconPlus className="mr-2 h-4 w-4" />
+						<IconPlus className="mr-2 h-4 w-4" aria-hidden="true" />
 						{t("webhooks.create", "Add Webhook")}
 					</Button>
 				</div>
 				<Card>
 					<CardContent className="pt-6">
-					{webhooks.length === 0 ? (
-						<div className="flex flex-col items-center justify-center py-12 text-center">
-							<IconWebhook className="h-12 w-12 text-muted-foreground/50" />
-							<h3 className="mt-4 text-lg font-semibold">
-								{t("webhooks.empty.title", "No webhooks configured")}
-							</h3>
-							<p className="mt-2 text-sm text-muted-foreground">
-								{t(
-									"webhooks.empty.description",
-									"Create your first webhook to start receiving event notifications.",
-								)}
-							</p>
-							<Button className="mt-4" onClick={() => setIsCreateDialogOpen(true)}>
-								<IconPlus className="mr-2 h-4 w-4" />
-								{t("webhooks.create", "Add Webhook")}
-							</Button>
-						</div>
-					) : (
-						<div className="space-y-4">
-							{webhooks.map((webhook) => (
-								<WebhookEndpointCard
-									key={webhook.id}
-									webhook={webhook}
-									onUpdated={handleWebhookUpdated}
-									onDeleted={handleWebhookDeleted}
-								/>
-							))}
-						</div>
-					)}
-				</CardContent>
-			</Card>
+						{webhooks.length === 0 ? (
+							<div className="flex flex-col items-center justify-center py-12 text-center">
+								<IconWebhook className="h-12 w-12 text-muted-foreground/50" aria-hidden="true" />
+								<h3 className="mt-4 text-lg font-semibold">
+									{t("webhooks.empty.title", "No webhooks configured")}
+								</h3>
+								<p className="mt-2 text-sm text-muted-foreground">
+									{t(
+										"webhooks.empty.description",
+										"Create your first webhook to start receiving event notifications.",
+									)}
+								</p>
+								<Button className="mt-4" onClick={() => setIsCreateDialogOpen(true)}>
+									<IconPlus className="mr-2 h-4 w-4" aria-hidden="true" />
+									{t("webhooks.create", "Add Webhook")}
+								</Button>
+							</div>
+						) : (
+							<div className="space-y-4">
+								{webhooks.map((webhook) => (
+									<WebhookEndpointCard
+										key={webhook.id}
+										webhook={webhook}
+										onUpdated={handleWebhookUpdated}
+										onDeleted={handleWebhookDeleted}
+									/>
+								))}
+							</div>
+						)}
+					</CardContent>
+				</Card>
 			</div>
 
 			<WebhookFormDialog

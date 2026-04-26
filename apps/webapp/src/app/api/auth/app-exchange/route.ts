@@ -2,7 +2,10 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { consumeAppAuthCode, type SupportedApp } from "@/lib/auth/app-auth-code";
 
-const bodySchema = z.object({ code: z.string().trim().min(1) });
+const bodySchema = z.object({
+	code: z.string().trim().min(1),
+	verifier: z.string().trim().min(1),
+});
 
 function resolveAppType(request: Request): SupportedApp | null {
 	const appType = request.headers.get("x-z8-app-type")?.toLowerCase();
@@ -19,10 +22,14 @@ export async function POST(request: Request) {
 	const body = await request.json().catch(() => null);
 	const parsed = bodySchema.safeParse(body);
 	if (!parsed.success) {
-		return NextResponse.json({ error: "Code is required" }, { status: 400 });
+		return NextResponse.json({ error: "Code and verifier are required" }, { status: 400 });
 	}
 
-	const result = await consumeAppAuthCode({ app, code: parsed.data.code });
+	const result = await consumeAppAuthCode({
+		app,
+		code: parsed.data.code,
+		verifier: parsed.data.verifier,
+	});
 	if (result.status !== "success") {
 		return NextResponse.json({ error: "Invalid or expired code" }, { status: 401 });
 	}

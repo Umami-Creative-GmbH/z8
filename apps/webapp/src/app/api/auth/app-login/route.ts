@@ -10,6 +10,24 @@ function getAllowedScheme(app: SupportedApp): string {
 	return app === "desktop" ? "z8://" : "z8mobile://";
 }
 
+function getAllowedRedirect(app: SupportedApp): string {
+	return app === "desktop" ? "z8://auth/callback" : "z8mobile://auth/callback";
+}
+
+function isAllowedRedirect(redirectUrl: string, app: SupportedApp): boolean {
+	try {
+		const requested = new URL(redirectUrl);
+		const allowed = new URL(getAllowedRedirect(app));
+		return (
+			requested.protocol === allowed.protocol &&
+			requested.hostname === allowed.hostname &&
+			requested.pathname === allowed.pathname
+		);
+	} catch {
+		return false;
+	}
+}
+
 function canUseRequestedApp(
 	user: { canUseDesktop?: boolean | null; canUseMobile?: boolean | null },
 	app: SupportedApp,
@@ -20,17 +38,21 @@ function canUseRequestedApp(
 export async function GET(request: NextRequest) {
 	const app = resolveApp(request.nextUrl.searchParams);
 	const redirectUrl = request.nextUrl.searchParams.get("redirect");
+	const codeChallenge = request.nextUrl.searchParams.get("challenge");
 
 	if (!redirectUrl) {
 		return NextResponse.json({ error: "Missing redirect parameter" }, { status: 400 });
 	}
 
-	const allowedScheme = getAllowedScheme(app);
-	if (!redirectUrl.startsWith(allowedScheme)) {
+	if (!isAllowedRedirect(redirectUrl, app)) {
 		return NextResponse.json(
-			{ error: `Invalid redirect URL. Must use ${allowedScheme} protocol` },
+			{ error: `Invalid redirect URL. Must be ${getAllowedRedirect(app)}` },
 			{ status: 400 },
 		);
+	}
+
+	if (!codeChallenge) {
+		return NextResponse.json({ error: "Missing challenge parameter" }, { status: 400 });
 	}
 
 	const session = await auth.api.getSession({ headers: request.headers });
@@ -49,6 +71,7 @@ export async function GET(request: NextRequest) {
 
 	const authCode = await createAppAuthCode({
 		app,
+		codeChallenge,
 		sessionToken: session.session.token,
 		userId: session.user.id,
 	});

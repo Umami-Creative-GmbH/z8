@@ -28,6 +28,21 @@ describe("WorkdayConnector", () => {
 		});
 	});
 
+	it("rejects Workday instance URLs that can target internal services", async () => {
+		const connector = new WorkdayConnector();
+
+		await expect(
+			connector.validateConfig({
+				...DEFAULT_WORKDAY_CONFIG,
+				instanceUrl: "http://169.254.169.254",
+				tenantId: "acme",
+			}),
+		).resolves.toEqual({
+			valid: false,
+			errors: ["instanceUrl must use HTTPS", "instanceUrl cannot target private or internal addresses"],
+		});
+	});
+
 	it("returns validation errors for malformed config types", async () => {
 		const connector = new WorkdayConnector();
 
@@ -63,9 +78,20 @@ describe("WorkdayConnector", () => {
 			expiresAt: Date.now() + 3600_000,
 		});
 		const testConnection = vi.fn().mockResolvedValue({ success: true });
+		const findWorkerByEmployeeNumber = vi.fn();
+		const findWorkerByEmail = vi.fn();
+		const createAttendance = vi.fn();
+		const createAbsence = vi.fn();
 		const connector = new WorkdayConnector({
 			getCredentials,
-			createApiClient: () => ({ getOAuthToken, testConnection }),
+			createApiClient: () => ({
+				getOAuthToken,
+				testConnection,
+				findWorkerByEmployeeNumber,
+				findWorkerByEmail,
+				createAttendance,
+				createAbsence,
+			}),
 		});
 
 		const response = await connector.testConnection("org_123", {
