@@ -942,12 +942,15 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 						// Calculate metrics
 						const totalApprovals = approvals.filter((a) => a.status === "approved").length;
 						const totalRejections = approvals.filter((a) => a.status === "rejected").length;
-						const approvalRate =
-							approvals.length > 0 ? (totalApprovals / approvals.length) * 100 : 0;
+						const decidedCount = totalApprovals + totalRejections;
+						const approvalRate = decidedCount > 0 ? (totalApprovals / decidedCount) * 100 : 0;
 
 						// Calculate average response time
 						const responseTimeHours = approvals
-							.filter((a) => a.updatedAt && a.createdAt)
+							.filter(
+								(a) =>
+									(a.status === "approved" || a.status === "rejected") && a.updatedAt && a.createdAt,
+							)
 							.map((a) => {
 								const created = new Date(a.createdAt);
 								const updated = new Date(a.updatedAt!);
@@ -984,7 +987,11 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 							if (approval.status === "approved") existing.approvals++;
 							if (approval.status === "rejected") existing.rejections++;
 
-							if (approval.updatedAt && approval.createdAt) {
+							if (
+								(approval.status === "approved" || approval.status === "rejected") &&
+								approval.updatedAt &&
+								approval.createdAt
+							) {
 								const created = new Date(approval.createdAt);
 								const updated = new Date(approval.updatedAt);
 								existing.responseTimeHours.push(
@@ -1089,7 +1096,11 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 							if (approval.status === "approved") existing.approvals++;
 							if (approval.status === "rejected") existing.rejections++;
 
-							if (approval.updatedAt && approval.createdAt) {
+							if (
+								(approval.status === "approved" || approval.status === "rejected") &&
+								approval.updatedAt &&
+								approval.createdAt
+							) {
 								const created = new Date(approval.createdAt);
 								const updated = new Date(approval.updatedAt);
 								existing.totalResponseTimeHours +=
