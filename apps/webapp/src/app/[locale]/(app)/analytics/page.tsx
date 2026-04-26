@@ -52,31 +52,40 @@ export default function AnalyticsOverviewPage() {
 	const { loading, teamData, absenceData, managerData } = analyticsData;
 
 	useEffect(() => {
-		async function loadData() {
-			setAnalyticsData((current) => ({ ...current, loading: true }));
-			try {
-				// Organization ID is now derived server-side from authenticated session
-				const [teamResult, absenceResult, managerResult] = await Promise.all([
-					getTeamPerformanceData(dateRange),
-					getAbsencePatternsData(dateRange),
-					getManagerEffectivenessData(dateRange),
-				]);
+		let canceled = false;
 
-				setAnalyticsData((current) => ({
+		setAnalyticsData((current) => ({ ...current, loading: true }));
+		// Organization ID is now derived server-side from authenticated session
+		Promise.all([
+			getTeamPerformanceData(dateRange),
+			getAbsencePatternsData(dateRange),
+			getManagerEffectivenessData(dateRange),
+		])
+			.then(([teamResult, absenceResult, managerResult]) => {
+				if (canceled) {
+					return;
+				}
+
+				setAnalyticsData({
 					loading: false,
-					teamData: teamResult.success && teamResult.data ? teamResult.data : current.teamData,
-					absenceData:
-						absenceResult.success && absenceResult.data ? absenceResult.data : current.absenceData,
+					teamData: teamResult.success && teamResult.data ? teamResult.data : null,
+					absenceData: absenceResult.success && absenceResult.data ? absenceResult.data : null,
 					managerData: managerResult.success && managerResult.data ? managerResult.data : null,
-				}));
-			} catch (error) {
-				console.error("Failed to load analytics data:", error);
-				setAnalyticsData((current) => ({ ...current, loading: false, managerData: null }));
-				toast.error("Failed to load analytics data");
-			}
-		}
+				});
+			})
+			.catch((error) => {
+				if (canceled) {
+					return;
+				}
 
-		loadData();
+				console.error("Failed to load analytics data:", error);
+				setAnalyticsData({ loading: false, teamData: null, absenceData: null, managerData: null });
+				toast.error("Failed to load analytics data");
+			});
+
+		return () => {
+			canceled = true;
+		};
 	}, [dateRange]);
 
 	// Calculate KPIs from loaded data
@@ -282,12 +291,16 @@ export default function AnalyticsOverviewPage() {
 }
 
 function BottleneckList({ title, rows }: { title: string; rows: ApprovalBottleneckRow[] }) {
+	const listId = `approval-bottlenecks-${title.toLowerCase().replaceAll(" ", "-")}`;
+
 	return (
 		<div className="space-y-3">
-			<h3 className="text-sm font-medium">{title}</h3>
-			<div className="divide-y rounded-md border">
+			<h3 id={listId} className="text-sm font-medium">
+				{title}
+			</h3>
+			<ul aria-labelledby={listId} className="divide-y rounded-md border">
 				{rows.slice(0, 3).map((row) => (
-					<div key={row.id} className="flex items-center justify-between gap-4 p-3 text-sm">
+					<li key={row.id} className="flex items-center justify-between gap-4 p-3 text-sm">
 						<div className="min-w-0">
 							<p className="truncate font-medium">{row.label}</p>
 							<p className="text-xs text-muted-foreground">
@@ -298,9 +311,9 @@ function BottleneckList({ title, rows }: { title: string; rows: ApprovalBottlene
 							<p>{row.approvalRate.toFixed(1)}% approved</p>
 							<p>{row.avgDecisionTimeHours.toFixed(1)}h avg decision</p>
 						</div>
-					</div>
+					</li>
 				))}
-			</div>
+			</ul>
 		</div>
 	);
 }
