@@ -39,6 +39,11 @@ type AnalyticsPageData = {
 	managerData: ManagerEffectivenessData | null;
 };
 
+type BottleneckListRow = Pick<
+	ApprovalBottleneckRow,
+	"id" | "label" | "pendingCount" | "pendingSlaWarnings" | "avgDecisionTimeHours" | "approvalRate"
+>;
+
 export default function AnalyticsOverviewPage() {
 	const [dateRange, setDateRange] = useState<DateRange>(() =>
 		getDateRangeForPreset("current_month"),
@@ -56,7 +61,7 @@ export default function AnalyticsOverviewPage() {
 
 		setAnalyticsData((current) => ({ ...current, loading: true }));
 		// Organization ID is now derived server-side from authenticated session
-		Promise.all([
+		Promise.allSettled([
 			getTeamPerformanceData(dateRange),
 			getAbsencePatternsData(dateRange),
 			getManagerEffectivenessData(dateRange),
@@ -66,11 +71,32 @@ export default function AnalyticsOverviewPage() {
 					return;
 				}
 
+				const rejectedResults = [teamResult, absenceResult, managerResult].filter(
+					(result) => result.status === "rejected",
+				);
+				if (rejectedResults.length > 0) {
+					console.error("Failed to load analytics data:", rejectedResults);
+					toast.error("Failed to load analytics data");
+				}
+
 				setAnalyticsData({
 					loading: false,
-					teamData: teamResult.success && teamResult.data ? teamResult.data : null,
-					absenceData: absenceResult.success && absenceResult.data ? absenceResult.data : null,
-					managerData: managerResult.success && managerResult.data ? managerResult.data : null,
+					teamData:
+						teamResult.status === "fulfilled" && teamResult.value.success && teamResult.value.data
+							? teamResult.value.data
+							: null,
+					absenceData:
+						absenceResult.status === "fulfilled" &&
+						absenceResult.value.success &&
+						absenceResult.value.data
+							? absenceResult.value.data
+							: null,
+					managerData:
+						managerResult.status === "fulfilled" &&
+						managerResult.value.success &&
+						managerResult.value.data
+							? managerResult.value.data
+							: null,
 				});
 			})
 			.catch((error) => {
@@ -111,9 +137,21 @@ export default function AnalyticsOverviewPage() {
 			category: cat.categoryName,
 			days: cat.totalDays,
 		})) || [];
+	const managerBottleneckRows =
+		managerData?.byManager.map((manager) => ({
+			id: manager.managerId,
+			label: manager.managerName,
+			pendingCount: manager.pendingCount,
+			pendingSlaWarnings: manager.pendingSlaWarnings,
+			avgDecisionTimeHours: manager.avgDecisionTimeHours,
+			approvalRate: manager.approvalRate,
+		})) ?? [];
 
 	const hasApprovalBottlenecks = Boolean(
-		managerData && (managerData.byTeam.length > 0 || managerData.byType.length > 0),
+		managerData &&
+			(managerBottleneckRows.length > 0 ||
+				managerData.byTeam.length > 0 ||
+				managerData.byType.length > 0),
 	);
 
 	return (
@@ -271,7 +309,10 @@ export default function AnalyticsOverviewPage() {
 						</CardHeader>
 						<CardContent>
 							{hasApprovalBottlenecks ? (
-								<div className="grid gap-6 md:grid-cols-2">
+								<div className="grid gap-6 md:grid-cols-3">
+									{managerBottleneckRows.length ? (
+										<BottleneckList title="By Manager" rows={managerBottleneckRows} />
+									) : null}
 									{managerData?.byTeam.length ? (
 										<BottleneckList title="By Team" rows={managerData.byTeam} />
 									) : null}
@@ -290,7 +331,7 @@ export default function AnalyticsOverviewPage() {
 	);
 }
 
-function BottleneckList({ title, rows }: { title: string; rows: ApprovalBottleneckRow[] }) {
+function BottleneckList({ title, rows }: { title: string; rows: BottleneckListRow[] }) {
 	const listId = `approval-bottlenecks-${title.toLowerCase().replaceAll(" ", "-")}`;
 
 	return (

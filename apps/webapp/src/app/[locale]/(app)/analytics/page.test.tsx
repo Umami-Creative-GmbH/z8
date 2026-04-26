@@ -110,6 +110,7 @@ function createAbsenceData(totalDays = 2) {
 
 function createManagerData({
 	approvalRate = 87.5,
+	managerName = "Avery Manager",
 	teamLabel = "Operations approvals",
 	withBottlenecks = true,
 } = {}) {
@@ -122,7 +123,22 @@ function createManagerData({
 			approvalRate,
 			pendingSlaWarnings: 3,
 		},
-		byManager: [],
+		byManager: withBottlenecks
+			? [
+					{
+						managerId: "manager-1",
+						managerName,
+						avgResponseTime: 8,
+						avgDecisionTimeHours: 14,
+						totalApprovals: 4,
+						totalRejections: 1,
+						approvalRate: 80,
+						teamSize: 6,
+						pendingCount: 3,
+						pendingSlaWarnings: 1,
+					},
+				]
+			: [],
 		byTeam: withBottlenecks
 			? [
 					{
@@ -190,10 +206,29 @@ describe("AnalyticsOverviewPage", () => {
 		expect(screen.getByText("87.5%")).toBeTruthy();
 		expect(screen.getByText("Of decided requests approved")).toBeTruthy();
 		expect(screen.getByText("Approval Bottlenecks")).toBeTruthy();
+		expect(screen.getByText("Avery Manager")).toBeTruthy();
 		expect(screen.getByText("Operations approvals")).toBeTruthy();
+		expect(
+			within(screen.getByRole("list", { name: "By Manager" })).getAllByRole("listitem"),
+		).toHaveLength(1);
 		expect(
 			within(screen.getByRole("list", { name: "By Team" })).getAllByRole("listitem"),
 		).toHaveLength(1);
+	});
+
+	it("keeps team and absence analytics visible when manager analytics rejects", async () => {
+		getManagerEffectivenessDataMock.mockRejectedValueOnce(new Error("Manager analytics failed"));
+
+		render(<AnalyticsOverviewPage />);
+
+		await waitFor(() => {
+			expect(screen.getByText("160.0h")).toBeTruthy();
+			expect(screen.getAllByText("2").length).toBeGreaterThanOrEqual(2);
+			expect(screen.getByText("0.0%")).toBeTruthy();
+			expect(screen.getByText("No approval bottlenecks found")).toBeTruthy();
+		});
+		expect(screen.queryByText("Avery Manager")).toBeNull();
+		expect(screen.queryByText("No data available")).toBeNull();
 	});
 
 	it("clears failed datasets and shows empty bottlenecks when analytics fail", async () => {
