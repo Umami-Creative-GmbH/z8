@@ -37,6 +37,7 @@ type AnalyticsPageData = {
 	teamData: TeamPerformanceData | null;
 	absenceData: AbsencePatternsData | null;
 	managerData: ManagerEffectivenessData | null;
+	managerDataUnavailable: boolean;
 };
 
 type BottleneckListRow = Pick<
@@ -53,8 +54,9 @@ export default function AnalyticsOverviewPage() {
 		teamData: null,
 		absenceData: null,
 		managerData: null,
+		managerDataUnavailable: false,
 	});
-	const { loading, teamData, absenceData, managerData } = analyticsData;
+	const { loading, teamData, absenceData, managerData, managerDataUnavailable } = analyticsData;
 
 	useEffect(() => {
 		let canceled = false;
@@ -97,6 +99,11 @@ export default function AnalyticsOverviewPage() {
 						managerResult.value.data
 							? managerResult.value.data
 							: null,
+					managerDataUnavailable: !(
+						managerResult.status === "fulfilled" &&
+						managerResult.value.success &&
+						managerResult.value.data
+					),
 				});
 			})
 			.catch((error) => {
@@ -105,7 +112,13 @@ export default function AnalyticsOverviewPage() {
 				}
 
 				console.error("Failed to load analytics data:", error);
-				setAnalyticsData({ loading: false, teamData: null, absenceData: null, managerData: null });
+				setAnalyticsData({
+					loading: false,
+					teamData: null,
+					absenceData: null,
+					managerData: null,
+					managerDataUnavailable: true,
+				});
 				toast.error("Failed to load analytics data");
 			});
 
@@ -122,7 +135,7 @@ export default function AnalyticsOverviewPage() {
 				(teamData.teams.reduce((sum, team) => sum + team.employeeCount, 0) || 1)
 			: 0,
 		absenceRate: absenceData?.summary.totalDays || 0,
-		approvalRate: managerData?.approvalMetrics.approvalRate ?? 0,
+		approvalRate: managerDataUnavailable ? null : (managerData?.approvalMetrics.approvalRate ?? 0),
 	};
 
 	// Prepare chart data
@@ -227,8 +240,16 @@ export default function AnalyticsOverviewPage() {
 								<IconCheck className="size-4 text-muted-foreground" aria-hidden="true" />
 							</CardHeader>
 							<CardContent>
-								<div className="text-2xl font-bold">{kpiData.approvalRate.toFixed(1)}%</div>
-								<p className="text-xs text-muted-foreground">Of decided requests approved</p>
+								<div className="text-2xl font-bold">
+									{kpiData.approvalRate === null
+										? "Unavailable"
+										: `${kpiData.approvalRate.toFixed(1)}%`}
+								</div>
+								<p className="text-xs text-muted-foreground">
+									{managerDataUnavailable
+										? "Approval analytics could not be loaded"
+										: "Of decided requests approved"}
+								</p>
 							</CardContent>
 						</Card>
 					</div>
@@ -308,7 +329,11 @@ export default function AnalyticsOverviewPage() {
 							</CardDescription>
 						</CardHeader>
 						<CardContent>
-							{hasApprovalBottlenecks ? (
+							{managerDataUnavailable ? (
+								<p className="text-sm text-muted-foreground">
+									Approval bottlenecks could not be loaded
+								</p>
+							) : hasApprovalBottlenecks ? (
 								<div className="grid gap-6 md:grid-cols-3">
 									{managerBottleneckRows.length ? (
 										<BottleneckList title="By Manager" rows={managerBottleneckRows} />

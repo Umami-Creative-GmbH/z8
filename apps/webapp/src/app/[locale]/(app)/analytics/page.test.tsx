@@ -229,11 +229,28 @@ describe("AnalyticsOverviewPage", () => {
 		await waitFor(() => {
 			expect(screen.getByText("160.0h")).toBeTruthy();
 			expect(screen.getAllByText("2").length).toBeGreaterThanOrEqual(2);
+			expect(screen.getByText("Unavailable")).toBeTruthy();
+			expect(screen.getByText("Approval analytics could not be loaded")).toBeTruthy();
+		});
+		expect(screen.queryByText("0.0%")).toBeNull();
+		expect(screen.queryByText("No approval bottlenecks found")).toBeNull();
+		expect(screen.queryByText("Avery Manager")).toBeNull();
+		expect(screen.queryByText("No data available")).toBeNull();
+	});
+
+	it("shows normal empty bottlenecks when manager analytics succeeds with no bottlenecks", async () => {
+		getManagerEffectivenessDataMock.mockResolvedValueOnce({
+			success: true,
+			data: createManagerData({ approvalRate: 0, withBottlenecks: false }),
+		});
+
+		render(<AnalyticsOverviewPage />);
+
+		await waitFor(() => {
 			expect(screen.getByText("0.0%")).toBeTruthy();
 			expect(screen.getByText("No approval bottlenecks found")).toBeTruthy();
 		});
-		expect(screen.queryByText("Avery Manager")).toBeNull();
-		expect(screen.queryByText("No data available")).toBeNull();
+		expect(screen.queryByText("Approval analytics could not be loaded")).toBeNull();
 	});
 
 	it("clears failed datasets and shows empty bottlenecks when analytics fail", async () => {
