@@ -1,6 +1,7 @@
 "use client";
 
 import { useThemeTokens } from "@/components/theme/theme-context";
+import { LanguageSwitcher } from "@/components/ui/language-switcher";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import type { LandingCopy } from "@/i18n/landing-copy";
 
@@ -57,6 +58,7 @@ export function Header({ copy }: HeaderProps) {
 				>
 					{copy.primaryCta}
 				</a>
+				<LanguageSwitcher />
 				<ThemeToggle />
 			</div>
 		</header>
