@@ -1,4 +1,6 @@
+import type { Metadata } from "next";
 import { cacheLife } from "next/cache";
+import { notFound } from "next/navigation";
 import { AnnouncementBar } from "@/components/landing/announcement-bar";
 import { ComparisonTable } from "@/components/landing/comparison-table";
 import { DetailedFeatures } from "@/components/landing/detailed-features";
@@ -18,31 +20,62 @@ import { ProductGallery } from "@/components/landing/product-gallery";
 import { StatsRibbon } from "@/components/landing/stats-ribbon";
 import { Testimonials } from "@/components/landing/testimonials";
 import { ThemeProvider } from "@/components/theme/theme-context";
+import { landingCopy } from "@/i18n/landing-copy";
+import { alternatePath, isLocale } from "@/i18n/locales";
 
-export default async function Home() {
+type PageProps = {
+	params: Promise<{ locale: string }>;
+};
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+	const { locale } = await params;
+
+	if (!isLocale(locale)) {
+		notFound();
+	}
+
+	const copy = landingCopy[locale];
+
+	return {
+		title: `${copy.hero.title.join(" ")} | ${copy.header.brand}`,
+		description: copy.hero.description,
+		alternates: {
+			languages: alternatePath("/"),
+		},
+	};
+}
+
+export default async function Home({ params }: PageProps) {
 	"use cache";
 	cacheLife("max");
+	const { locale } = await params;
+
+	if (!isLocale(locale)) {
+		notFound();
+	}
+
+	const copy = landingCopy[locale];
 
 	return (
 		<ThemeProvider>
-			<AnnouncementBar />
-			<Header />
-			<HeroSection />
-			<LogoBar />
-			<StatsRibbon />
-			<FeaturesGrid />
-			<DetailedFeatures />
-			<ProductGallery />
-			<Testimonials />
-			<LargeBanner />
-			<PricingSection />
-			<ComparisonTable />
-			<Integrations />
-			<HowItWorks />
-			<FaqSection />
-			<NewsletterCta />
-			<FinalCta />
-			<Footer />
+			<AnnouncementBar copy={copy.announcement} />
+			<Header copy={copy.header} />
+			<HeroSection copy={copy.hero} />
+			<LogoBar copy={copy.logos} />
+			<StatsRibbon stats={copy.stats} />
+			<FeaturesGrid copy={copy.featuresGrid} />
+			<DetailedFeatures copy={copy.detailedFeatures} />
+			<ProductGallery images={copy.galleryImages} />
+			<Testimonials copy={copy.testimonials} />
+			<LargeBanner copy={copy.largeBanner} />
+			<PricingSection copy={copy.pricing} />
+			<ComparisonTable copy={copy.comparisons} />
+			<Integrations copy={copy.integrations} />
+			<HowItWorks copy={copy.howItWorks} />
+			<FaqSection copy={copy.faqs} />
+			<NewsletterCta copy={copy.newsletterCta} />
+			<FinalCta copy={copy.finalCta} />
+			<Footer copy={copy.footer} />
 		</ThemeProvider>
 	);
 }

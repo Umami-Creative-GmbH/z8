@@ -1,7 +1,11 @@
 import { v } from "@/components/theme/tokens";
-import { logos } from "./data";
+import type { LandingCopy } from "@/i18n/landing-copy";
 
-export function LogoBar() {
+type LogoBarProps = {
+	copy: LandingCopy["logos"];
+};
+
+export function LogoBar({ copy }: LogoBarProps) {
 	return (
 		<section
 			className="relative z-10 px-8 py-16 lg:px-16"
@@ -12,9 +16,18 @@ export function LogoBar() {
 			}}
 		>
 			<div className="flex flex-wrap items-center justify-center gap-12">
-				<span className="text-[11px] font-bold uppercase tracking-[0.2em]" style={{ color: v("trustedLabel") }}>Vertraut von</span>
-				{logos.map((logo, i) => (
-					<span key={i} className="text-[18px] font-bold" style={{ letterSpacing: "-0.01em", color: v("logoColor") }}>
+				<span
+					className="text-[11px] font-bold uppercase tracking-[0.2em]"
+					style={{ color: v("trustedLabel") }}
+				>
+					{copy.label}
+				</span>
+				{copy.items.map((logo) => (
+					<span
+						key={logo}
+						className="text-[18px] font-bold"
+						style={{ letterSpacing: "-0.01em", color: v("logoColor") }}
+					>
 						{logo}
 					</span>
 				))}
