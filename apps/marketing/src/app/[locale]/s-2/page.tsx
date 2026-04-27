@@ -1,8 +1,23 @@
 import Image from "next/image";
 import Link from "next/link";
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { isLocale } from "@/i18n/locales";
+import { translateVariantTree, variantMetadata } from "@/i18n/variant-copy";
 
-export default function DesignS2() {
-	return (
+type PageProps = { params: Promise<{ locale: string }> };
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+	const { locale } = await params;
+	if (!isLocale(locale)) notFound();
+	return variantMetadata(locale, "s-2");
+}
+
+export default async function DesignS2({ params }: PageProps) {
+	const { locale } = await params;
+	if (!isLocale(locale)) notFound();
+	const homeHref = `/${locale}`;
+	return translateVariantTree(locale, "s-2", (
 		<div
 			className="min-h-screen"
 			style={{
@@ -223,11 +238,11 @@ export default function DesignS2() {
 					<span className="text-[12px] font-semibold" style={{ color: "#9a8e80" }}>
 						© 2025 Z8
 					</span>
-					<Link href="/" className="text-[12px] font-semibold transition-colors hover:text-[#5a4f44]" style={{ color: "#9a8e80" }}>
+					<Link href={homeHref} className="text-[12px] font-semibold transition-colors hover:text-[#5a4f44]" style={{ color: "#9a8e80" }}>
 						← Alle Designs
 					</Link>
 				</div>
 			</footer>
 		</div>
-	);
+	));
 }

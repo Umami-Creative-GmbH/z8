@@ -1,8 +1,23 @@
 import Image from "next/image";
 import Link from "next/link";
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { isLocale } from "@/i18n/locales";
+import { translateVariantTree, variantMetadata } from "@/i18n/variant-copy";
 
-export default function DesignS3() {
-	return (
+type PageProps = { params: Promise<{ locale: string }> };
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+	const { locale } = await params;
+	if (!isLocale(locale)) notFound();
+	return variantMetadata(locale, "s-3");
+}
+
+export default async function DesignS3({ params }: PageProps) {
+	const { locale } = await params;
+	if (!isLocale(locale)) notFound();
+	const homeHref = `/${locale}`;
+	return translateVariantTree(locale, "s-3", (
 		<div
 			className="noise min-h-screen"
 			style={{
@@ -263,11 +278,11 @@ export default function DesignS3() {
 					<span className="text-[11px]" style={{ color: "#0a3a34" }}>
 						/* z8 v2.0 */
 					</span>
-					<Link href="/" className="text-[11px] transition-colors hover:text-[#00dcc8]" style={{ color: "#1a5a50" }}>
+					<Link href={homeHref} className="text-[11px] transition-colors hover:text-[#00dcc8]" style={{ color: "#1a5a50" }}>
 						cd ~/designs
 					</Link>
 				</div>
 			</footer>
 		</div>
-	);
+	));
 }

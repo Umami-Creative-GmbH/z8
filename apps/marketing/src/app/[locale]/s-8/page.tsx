@@ -1,8 +1,23 @@
 import Image from "next/image";
 import Link from "next/link";
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { isLocale } from "@/i18n/locales";
+import { translateVariantTree, variantMetadata } from "@/i18n/variant-copy";
 
-export default function DesignS8() {
-	return (
+type PageProps = { params: Promise<{ locale: string }> };
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+	const { locale } = await params;
+	if (!isLocale(locale)) notFound();
+	return variantMetadata(locale, "s-8");
+}
+
+export default async function DesignS8({ params }: PageProps) {
+	const { locale } = await params;
+	if (!isLocale(locale)) notFound();
+	const homeHref = `/${locale}`;
+	return translateVariantTree(locale, "s-8", (
 		<div
 			className="min-h-screen"
 			style={{
@@ -252,11 +267,11 @@ export default function DesignS8() {
 					<span className="text-[10px] tracking-[0.1em] uppercase" style={{ color: "#8a8470" }}>
 						© 2025 Z8 Anzeiger — Alle Rechte vorbehalten
 					</span>
-					<Link href="/" className="text-[10px] tracking-[0.1em] uppercase transition-colors hover:text-[#b82020]" style={{ color: "#8a8470" }}>
+					<Link href={homeHref} className="text-[10px] tracking-[0.1em] uppercase transition-colors hover:text-[#b82020]" style={{ color: "#8a8470" }}>
 						← Alle Designs
 					</Link>
 				</div>
 			</footer>
 		</div>
-	);
+	));
 }

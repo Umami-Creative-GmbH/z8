@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { translateVariantTree } from "@/i18n/variant-copy";
 
 const themes = {
 	dark: {
@@ -79,11 +80,12 @@ const themes = {
 	},
 } as const;
 
-export default function DesignS1() {
+export function DesignS1Client({ locale }: { locale: "de" | "en" }) {
 	const [mode, setMode] = useState<"dark" | "light">("dark");
+	const homeHref = `/${locale}`;
 	const t = themes[mode];
 
-	return (
+	return translateVariantTree(locale, "s-1", (
 		<div
 			className="noise min-h-screen"
 			style={{
@@ -883,12 +885,12 @@ export default function DesignS1() {
 						<span className="text-[11px]" style={{ color: t.muted, transition: "color 0.6s ease" }}>
 							© 2025 Z8 — Made in Frankfurt am Main
 						</span>
-						<Link href="/" className="text-[11px] transition-colors" style={{ color: t.secondary }}>
+						<Link href={homeHref} className="text-[11px] transition-colors" style={{ color: t.secondary }}>
 							← Alle Designs
 						</Link>
 					</div>
 				</div>
 			</footer>
 		</div>
-	);
+	));
 }
