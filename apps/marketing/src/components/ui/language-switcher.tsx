@@ -9,6 +9,9 @@ const languageOptions: Array<{ locale: Locale; label: string; ariaLabel: string 
 	{ locale: "en", label: "EN", ariaLabel: "Switch to English version" },
 ];
 
+const languageControlClass =
+	"flex h-7 min-w-7 items-center justify-center rounded-md px-1.5 transition-colors sm:min-w-8 sm:px-2";
+
 export function LanguageSwitcher() {
 	const pathname = usePathname();
 	const { t, dark } = useThemeTokens();
@@ -18,7 +21,7 @@ export function LanguageSwitcher() {
 	return (
 		<nav
 			aria-label="Language"
-			className="hidden h-9 items-center rounded-lg p-0.5 text-[11px] font-bold tracking-[0.08em] sm:flex"
+			className="flex h-9 items-center rounded-lg p-0.5 text-[11px] font-bold tracking-[0.08em]"
 			style={{
 				backgroundColor: dark ? "#1e1e1e" : "#f0f0f0",
 				border: `1px solid ${dark ? "#252525" : "#e8e8e8"}`,
@@ -26,18 +29,32 @@ export function LanguageSwitcher() {
 		>
 			{languageOptions.map((option) => {
 				const active = option.locale === activeLocale;
+				const style = {
+					backgroundColor: active ? t.surface : "transparent",
+					color: active ? t.surfaceText : t.textSecondary,
+				};
+
+				if (active) {
+					return (
+						<span
+							key={option.locale}
+							aria-current="page"
+							aria-label={`${option.label} current language`}
+							className={languageControlClass}
+							style={style}
+						>
+							{option.label}
+						</span>
+					);
+				}
 
 				return (
 					<a
 						key={option.locale}
 						href={getLocalizedPath(pathname, option.locale)}
 						aria-label={option.ariaLabel}
-						aria-current={active ? "page" : undefined}
-						className="flex h-7 min-w-8 items-center justify-center rounded-md px-2 transition-colors"
-						style={{
-							backgroundColor: active ? t.surface : "transparent",
-							color: active ? t.surfaceText : t.textSecondary,
-						}}
+						className={languageControlClass}
+						style={style}
 					>
 						{option.label}
 					</a>

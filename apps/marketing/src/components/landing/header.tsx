@@ -14,7 +14,7 @@ export function Header({ copy }: HeaderProps) {
 
 	return (
 		<header
-			className="relative z-20 flex items-center justify-between px-8 py-5 lg:px-16"
+			className="relative z-20 flex items-center justify-between px-4 py-5 sm:px-8 lg:px-16"
 			style={{ transition: "background-color 0.4s ease" }}
 		>
 			<div className="flex items-center gap-8">
@@ -49,7 +49,7 @@ export function Header({ copy }: HeaderProps) {
 				</a>
 				<a
 					href="#contact"
-					className="rounded-lg px-5 py-2.5 text-[14px] font-semibold transition-all hover:opacity-90"
+					className="rounded-lg px-3 py-2.5 text-[13px] font-semibold transition-all hover:opacity-90 sm:px-5 sm:text-[14px]"
 					style={{
 						backgroundColor: t.surface,
 						color: t.surfaceText,
