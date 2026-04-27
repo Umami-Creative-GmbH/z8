@@ -21,7 +21,9 @@ import { StatsRibbon } from "@/components/landing/stats-ribbon";
 import { Testimonials } from "@/components/landing/testimonials";
 import { ThemeProvider } from "@/components/theme/theme-context";
 import { landingCopy } from "@/i18n/landing-copy";
-import { alternatePath, isLocale } from "@/i18n/locales";
+import { alternatePath, getLocalizedPath, isLocale } from "@/i18n/locales";
+
+const siteUrl = "https://z8-time.app";
 
 type PageProps = {
 	params: Promise<{ locale: string }>;
@@ -35,12 +37,19 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 	}
 
 	const copy = landingCopy[locale];
+	const path = getLocalizedPath("/", locale);
+	const alternates = alternatePath(path);
 
 	return {
 		title: `${copy.hero.title.join(" ")} | ${copy.header.brand}`,
 		description: copy.hero.description,
 		alternates: {
-			languages: alternatePath("/"),
+			canonical: `${siteUrl}${path}`,
+			languages: {
+				de: `${siteUrl}${alternates.de}`,
+				en: `${siteUrl}${alternates.en}`,
+				"x-default": `${siteUrl}${alternates["x-default"]}`,
+			},
 		},
 	};
 }
