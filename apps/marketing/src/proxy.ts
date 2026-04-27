@@ -3,7 +3,7 @@ import { defaultLocale, isLocale } from "@/i18n/locales";
 
 const localeLikeSegment = /^[a-z]{2}$/;
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
 	const { pathname } = request.nextUrl;
 
 	if (pathname === "/") {
