@@ -24,7 +24,7 @@ export function proxy(request: NextRequest) {
 	if (firstSegment && localeLikeSegment.test(firstSegment) && !isLocale(firstSegment)) {
 		const url = request.nextUrl.clone();
 		url.pathname = `/${defaultLocale}${rest.length > 0 ? `/${rest.join("/")}` : ""}`;
-		return NextResponse.redirect(url);
+		return NextResponse.redirect(url, 308);
 	}
 
 	return NextResponse.next();
