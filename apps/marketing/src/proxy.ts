@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { defaultLocale, isLocale } from "@/i18n/locales";
 
 const localeLikeSegment = /^[a-z]{2}$/;
+const variantRoute = /^\/s-(?:[1-9]|10)$/;
 
 export function proxy(request: NextRequest) {
 	const { pathname } = request.nextUrl;
@@ -9,6 +10,12 @@ export function proxy(request: NextRequest) {
 	if (pathname === "/") {
 		const url = request.nextUrl.clone();
 		url.pathname = `/${defaultLocale}`;
+		return NextResponse.redirect(url);
+	}
+
+	if (variantRoute.test(pathname)) {
+		const url = request.nextUrl.clone();
+		url.pathname = `/${defaultLocale}${pathname}`;
 		return NextResponse.redirect(url);
 	}
 

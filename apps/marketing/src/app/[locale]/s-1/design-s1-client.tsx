@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { cloneElement, isValidElement, type ReactNode, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { translateVariantTree } from "@/i18n/variant-copy";
 
 const themes = {
 	dark: {
@@ -80,12 +79,44 @@ const themes = {
 	},
 } as const;
 
-export function DesignS1Client({ locale }: { locale: "de" | "en" }) {
+function translateText(value: string, dictionary: Record<string, string>): string {
+	let translated = value;
+
+	for (const [source, target] of Object.entries(dictionary).sort((a, b) => b[0].length - a[0].length)) {
+		translated = translated.split(source).join(target);
+	}
+
+	return translated;
+}
+
+function translateTree(node: ReactNode, dictionary: Record<string, string>): ReactNode {
+	if (typeof node === "string") {
+		return translateText(node, dictionary);
+	}
+
+	if (Array.isArray(node)) {
+		return node.map((child) => translateTree(child, dictionary));
+	}
+
+	if (!isValidElement(node)) {
+		return node;
+	}
+
+	const props = node.props as { children?: ReactNode };
+
+	if (props.children === undefined) {
+		return node;
+	}
+
+	return cloneElement(node, undefined, translateTree(props.children, dictionary));
+}
+
+export function DesignS1Client({ locale, translationCopy }: { locale: "de" | "en"; translationCopy: Record<string, string> }) {
 	const [mode, setMode] = useState<"dark" | "light">("dark");
 	const homeHref = `/${locale}`;
 	const t = themes[mode];
 
-	return translateVariantTree(locale, "s-1", (
+	const page = (
 		<div
 			className="noise min-h-screen"
 			style={{
@@ -892,5 +923,7 @@ export function DesignS1Client({ locale }: { locale: "de" | "en" }) {
 				</div>
 			</footer>
 		</div>
-	));
+	);
+
+	return locale === "de" ? page : translateTree(page, translationCopy);
 }

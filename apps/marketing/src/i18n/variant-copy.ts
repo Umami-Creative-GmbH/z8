@@ -21,7 +21,7 @@ const variantMetadataCopy: Record<VariantId, Record<Locale, { title: string; des
 	"s-1": {
 		de: {
 			title: "Z8 | Die Kunst der Zeiterfassung",
-			description: "Eine ruhige, klare Z8 Variante fuer Zeiterfassung, Schichtplanung, Berichte und Lohnexport.",
+			description: "Eine ruhige, klare Z8-Variante für Zeiterfassung, Schichtplanung, Berichte und Lohnexport.",
 		},
 		en: {
 			title: "Z8 | The Art of Time Tracking",
@@ -30,8 +30,8 @@ const variantMetadataCopy: Record<VariantId, Record<Locale, { title: string; des
 	},
 	"s-2": {
 		de: {
-			title: "Z8 | Natuerliche Zeiterfassung",
-			description: "Eine weiche, organische Z8 Variante fuer einfache und verlaessliche Zeiterfassung.",
+			title: "Z8 | Natürliche Zeiterfassung",
+			description: "Eine weiche, organische Z8-Variante für einfache und verlässliche Zeiterfassung.",
 		},
 		en: {
 			title: "Z8 | Natural Time Tracking",
@@ -41,7 +41,7 @@ const variantMetadataCopy: Record<VariantId, Record<Locale, { title: string; des
 	"s-3": {
 		de: {
 			title: "Z8 | Zeit ist Code",
-			description: "Eine technische Z8 Variante mit Systemmodulen fuer praezise Arbeitszeiterfassung.",
+			description: "Eine technische Z8-Variante mit Systemmodulen für präzise Arbeitszeiterfassung.",
 		},
 		en: {
 			title: "Z8 | Time Is Code",
@@ -51,7 +51,7 @@ const variantMetadataCopy: Record<VariantId, Record<Locale, { title: string; des
 	"s-4": {
 		de: {
 			title: "Z8 | Handwerk trifft Technologie",
-			description: "Eine warme, handwerkliche Z8 Variante fuer strukturierte Zeiterfassung im Alltag.",
+			description: "Eine warme, handwerkliche Z8-Variante für strukturierte Zeiterfassung im Alltag.",
 		},
 		en: {
 			title: "Z8 | Craft Meets Technology",
@@ -61,7 +61,7 @@ const variantMetadataCopy: Record<VariantId, Record<Locale, { title: string; des
 	"s-5": {
 		de: {
 			title: "Z8 | Kristallklare Zeiterfassung",
-			description: "Eine klare Glassmorphism-Z8 Variante fuer transparente Arbeitszeitdaten.",
+			description: "Eine klare Glassmorphism-Z8-Variante für transparente Arbeitszeitdaten.",
 		},
 		en: {
 			title: "Z8 | Crystal-Clear Time Tracking",
@@ -71,7 +71,7 @@ const variantMetadataCopy: Record<VariantId, Record<Locale, { title: string; des
 	"s-6": {
 		de: {
 			title: "Z8 | Zeiterfassung wie auf dem Whiteboard",
-			description: "Eine skizzenhafte Z8 Variante fuer einfache digitale Zeiterfassung ohne Schnickschnack.",
+			description: "Eine skizzenhafte Z8-Variante für einfache digitale Zeiterfassung ohne Schnickschnack.",
 		},
 		en: {
 			title: "Z8 | Whiteboard-Style Time Tracking",
@@ -80,8 +80,8 @@ const variantMetadataCopy: Record<VariantId, Record<Locale, { title: string; des
 	},
 	"s-7": {
 		de: {
-			title: "Z8 | Bestaendig wie Kupfer",
-			description: "Eine dunkle Kupfer-Z8 Variante fuer langlebige und skalierbare Zeiterfassung.",
+			title: "Z8 | Beständig wie Kupfer",
+			description: "Eine dunkle Kupfer-Z8-Variante für langlebige und skalierbare Zeiterfassung.",
 		},
 		en: {
 			title: "Z8 | Durable as Copper",
@@ -91,7 +91,7 @@ const variantMetadataCopy: Record<VariantId, Record<Locale, { title: string; des
 	"s-8": {
 		de: {
 			title: "Z8 Anzeiger | Moderne Zeiterfassung",
-			description: "Eine Zeitungsvariante fuer Z8 mit digitaler Zeiterfassung, Berichten und Team-Verwaltung.",
+			description: "Eine Zeitungsvariante für Z8 mit digitaler Zeiterfassung, Berichten und Team-Verwaltung.",
 		},
 		en: {
 			title: "Z8 Gazette | Modern Time Tracking",
@@ -100,8 +100,8 @@ const variantMetadataCopy: Record<VariantId, Record<Locale, { title: string; des
 	},
 	"s-9": {
 		de: {
-			title: "Z8 | Jeder Morgen zaehlt",
-			description: "Eine warme Sonnenaufgangs-Z8 Variante fuer klare taegliche Zeiterfassung.",
+			title: "Z8 | Jeder Morgen zählt",
+			description: "Eine warme Sonnenaufgangs-Z8-Variante für klare tägliche Zeiterfassung.",
 		},
 		en: {
 			title: "Z8 | Every Morning Counts",
@@ -110,8 +110,8 @@ const variantMetadataCopy: Record<VariantId, Record<Locale, { title: string; des
 	},
 	"s-10": {
 		de: {
-			title: "Z8 | Praezision in jeder Sekunde",
-			description: "Eine praezise Slate-Blue-Z8 Variante fuer genaue Arbeitszeiterfassung und Berichte.",
+			title: "Z8 | Präzision in jeder Sekunde",
+			description: "Eine präzise Slate-Blue-Z8-Variante für genaue Arbeitszeiterfassung und Berichte.",
 		},
 		en: {
 			title: "Z8 | Precision in Every Second",
@@ -169,6 +169,9 @@ const commonVisibleCopy: Record<string, string> = {
 	Lohnexport: "Payroll Export",
 	Urlaubsverwaltung: "Absence Management",
 	Überstundenkonto: "Overtime Account",
+	Zeit: "Time",
+	Übersicht: "Overview",
+	Nutzer: "Users",
 	Registrieren: "Register",
 	Erfassen: "Track",
 	Auswerten: "Analyze",
@@ -517,6 +520,10 @@ const variantVisibleCopy: Record<VariantId, Record<string, string>> = {
 	},
 };
 
+export function variantTranslationCopy(variantId: VariantId): Record<string, string> {
+	return { ...commonVisibleCopy, ...variantVisibleCopy[variantId] };
+}
+
 function translateText(value: string, dictionary: Record<string, string>): string {
 	let translated = value;
 
@@ -532,7 +539,7 @@ export function translateVariantTree(locale: Locale, variantId: VariantId, node:
 		return node;
 	}
 
-	const dictionary = { ...commonVisibleCopy, ...variantVisibleCopy[variantId] };
+	const dictionary = variantTranslationCopy(variantId);
 
 	function translate(nodeToTranslate: ReactNode): ReactNode {
 		if (typeof nodeToTranslate === "string") {
