@@ -15,13 +15,11 @@ const themeScript = `(function(){try{var d=localStorage.getItem("z8-theme");if(d
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
 	return (
-		<html lang="en">
+		<html suppressHydrationWarning>
 			<head>
 				<script dangerouslySetInnerHTML={{ __html: themeScript }} />
 			</head>
-			<body className="antialiased">
-				{children}
-			</body>
+			<body className="antialiased">{children}</body>
 		</html>
 	);
 }
