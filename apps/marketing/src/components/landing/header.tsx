@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useThemeTokens } from "@/components/theme/theme-context";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
@@ -58,7 +59,9 @@ export function Header({ copy }: HeaderProps) {
 				>
 					{copy.primaryCta}
 				</a>
-				<LanguageSwitcher />
+				<Suspense fallback={null}>
+					<LanguageSwitcher />
+				</Suspense>
 				<ThemeToggle />
 			</div>
 		</header>

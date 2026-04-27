@@ -1,6 +1,7 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useThemeTokens } from "@/components/theme/theme-context";
 import { getLocalizedPath, isLocale, type Locale } from "@/i18n/locales";
 
@@ -14,9 +15,22 @@ const languageControlClass =
 
 export function LanguageSwitcher() {
 	const pathname = usePathname();
+	const searchParams = useSearchParams();
+	const [hash, setHash] = useState("");
 	const { t, dark } = useThemeTokens();
 	const firstSegment = pathname.split("/").filter(Boolean)[0];
 	const activeLocale: Locale = isLocale(firstSegment) ? firstSegment : "de";
+	const queryString = searchParams.toString();
+	const urlSuffix = `${queryString ? `?${queryString}` : ""}${hash}`;
+
+	useEffect(() => {
+		const syncHash = () => setHash(window.location.hash);
+
+		syncHash();
+		window.addEventListener("hashchange", syncHash);
+
+		return () => window.removeEventListener("hashchange", syncHash);
+	}, []);
 
 	return (
 		<nav
@@ -51,7 +65,7 @@ export function LanguageSwitcher() {
 				return (
 					<a
 						key={option.locale}
-						href={getLocalizedPath(pathname, option.locale)}
+						href={`${getLocalizedPath(pathname, option.locale)}${urlSuffix}`}
 						aria-label={option.ariaLabel}
 						className={languageControlClass}
 						style={style}
