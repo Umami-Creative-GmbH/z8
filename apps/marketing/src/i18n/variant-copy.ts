@@ -156,6 +156,7 @@ const commonVisibleCopy: Record<string, string> = {
 	Preise: "Pricing",
 	Starten: "Start",
 	"Kostenlos testen": "Try for free",
+	"Kostenlos starten": "Start for free",
 	"Jetzt starten": "Start now",
 	"Jetzt kostenlos starten": "Start free now",
 	"Mehr erfahren": "Learn more",
@@ -181,6 +182,11 @@ const commonVisibleCopy: Record<string, string> = {
 	Karriere: "Careers",
 	Presse: "Press",
 	"Made in Frankfurt am Main": "Made in Frankfurt am Main",
+	Verfügbarkeit: "Availability",
+	Verschlüsselung: "Encryption",
+	Zertifiziert: "Certified",
+	beginnt: "starts",
+	jetzt: "now",
 };
 
 const variantVisibleCopy: Record<VariantId, Record<string, string>> = {
@@ -251,6 +257,18 @@ const variantVisibleCopy: Record<VariantId, Record<string, string>> = {
 		Bewertung: "Rating",
 		Stimmen: "Voices",
 		"Was unsere Kunden sagen": "What our customers say",
+		"Z8 hat unsere Lohnbuchhaltung um 4 Stunden pro Woche entlastet. Der DATEV-Export funktioniert einwandfrei.":
+			"Z8 reduced our payroll accounting workload by 4 hours per week. The DATEV export works perfectly.",
+		"Geschäftsführer, 85 Mitarbeiter": "Managing Director, 85 employees",
+		"Endlich eine Zeiterfassung, die unsere Außendienstler genauso einfach nutzen wie das Büro-Team.":
+			"Finally, time tracking our field staff can use just as easily as the office team.",
+		"HR-Leiterin, 220 Mitarbeiter": "Head of HR, 220 employees",
+		"Die Schichtplanung allein hat sich sofort bezahlt gemacht. Keine Excel-Dateien mehr, keine Konflikte.":
+			"Shift planning alone paid for itself immediately. No more Excel files, no more conflicts.",
+		"Produktionsleiter, 140 Mitarbeiter": "Production Manager, 140 employees",
+		"Revisionssicher, DSGVO-konform und die Mitarbeiter lieben die App. Was will man mehr?":
+			"Audit-proof, GDPR-compliant, and employees love the app. What more could you want?",
+		Steuerberaterin: "Tax Advisor",
 		"Einfach. Transparent.": "Simple. Transparent.",
 		"Keine versteckten Kosten. Jederzeit kündbar.": "No hidden costs. Cancel anytime.",
 		"für immer": "forever",
@@ -269,6 +287,18 @@ const variantVisibleCopy: Record<VariantId, Record<string, string>> = {
 		"Ist Z8 wirklich kostenlos?": "Is Z8 really free?",
 		"Ja. Der Starter-Plan für bis zu 5 Mitarbeiter ist dauerhaft kostenlos — ohne Kreditkarte, ohne Ablaufdatum.":
 			"Yes. The Starter plan for up to 5 employees is permanently free - no credit card, no expiration date.",
+		"Wie funktioniert der DATEV-Export?": "How does the DATEV export work?",
+		"Z8 generiert automatisch eine DATEV-konforme Exportdatei. Ein Klick, und die Daten sind bei Ihrem Steuerberater.":
+			"Z8 automatically generates a DATEV-compliant export file. One click, and the data is with your tax advisor.",
+		"Wo werden meine Daten gespeichert?": "Where is my data stored?",
+		"Ausschließlich auf deutschen Servern, AES-256 verschlüsselt, ISO 27001 zertifiziert. Ihre Daten verlassen nie die EU.":
+			"Exclusively on German servers, AES-256 encrypted, ISO 27001 certified. Your data never leaves the EU.",
+		"Kann ich Z8 mit meiner bestehenden Software verbinden?": "Can I connect Z8 to my existing software?",
+		"Ja. Neben den fertigen Integrationen (DATEV, Lexware, Personio, SAP) bieten wir eine vollständige REST-API.":
+			"Yes. Alongside ready-made integrations (DATEV, Lexware, Personio, SAP), we offer a complete REST API.",
+		"Erfüllt Z8 die gesetzlichen Anforderungen?": "Does Z8 meet legal requirements?",
+		"Vollständig. GoBD-konform, revisionssicher, DSGVO-zertifiziert. Jeder Eintrag ist unveränderbar protokolliert.":
+			"Fully. GoBD-compliant, audit-proof, and GDPR-certified. Every entry is immutably logged.",
 		"Bereit für Klarheit?": "Ready for clarity?",
 		"Starten Sie heute mit Z8 und erleben Sie Zeiterfassung, die sich wie Intuition anfühlt. Kostenlos, unverbindlich, in unter einer Minute eingerichtet.":
 			"Start with Z8 today and experience time tracking that feels intuitive. Free, no commitment, set up in under a minute.",

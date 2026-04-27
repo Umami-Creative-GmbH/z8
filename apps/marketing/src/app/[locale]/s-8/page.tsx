@@ -16,6 +16,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function DesignS8({ params }: PageProps) {
 	const { locale } = await params;
 	if (!isLocale(locale)) notFound();
+	const en = locale === "en";
 	const homeHref = `/${locale}`;
 	return translateVariantTree(locale, "s-8", (
 		<div
@@ -97,11 +98,21 @@ export default async function DesignS8({ params }: PageProps) {
 							>
 								<p className="mb-4">
 									<span className="text-[36px] font-bold leading-none float-left mr-2 mt-1" style={{ color: "#b82020" }}>
-										D
+										{en ? "T" : "D"}
 									</span>
-									as Frankfurter Startup Z8 präsentiert eine neue Generation der
-									Arbeitszeiterfassung. Schluss mit Excel-Tabellen, handgeschriebenen
-									Stundenzetteln und verlorenen Daten.
+									{en ? (
+										<>
+											he Frankfurt startup Z8 presents a new generation of workforce
+											time tracking. No more Excel sheets, handwritten timesheets,
+											or lost data.
+										</>
+									) : (
+										<>
+											as Frankfurter Startup Z8 präsentiert eine neue Generation der
+											Arbeitszeiterfassung. Schluss mit Excel-Tabellen, handgeschriebenen
+											Stundenzetteln und verlorenen Daten.
+										</>
+									)}
 								</p>
 								<p className="mb-4">
 									Mit nur einem Klick erfassen Mitarbeiter ihre Arbeitszeit — präzise,
