@@ -10,13 +10,13 @@ export function proxy(request: NextRequest) {
 	if (pathname === "/") {
 		const url = request.nextUrl.clone();
 		url.pathname = `/${defaultLocale}`;
-		return NextResponse.redirect(url);
+		return NextResponse.redirect(url, 308);
 	}
 
 	if (variantRoute.test(pathname)) {
 		const url = request.nextUrl.clone();
 		url.pathname = `/${defaultLocale}${pathname}`;
-		return NextResponse.redirect(url);
+		return NextResponse.redirect(url, 308);
 	}
 
 	const [firstSegment, ...rest] = pathname.split("/").filter(Boolean);

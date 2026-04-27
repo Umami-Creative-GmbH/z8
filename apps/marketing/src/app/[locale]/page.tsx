@@ -51,6 +51,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 				"x-default": `${siteUrl}${alternates["x-default"]}`,
 			},
 		},
+		openGraph: {
+			title: `${copy.hero.title.join(" ")} | ${copy.header.brand}`,
+			description: copy.hero.description,
+			url: `${siteUrl}${path}`,
+			siteName: "Z8",
+			type: "website",
+			locale: locale === "de" ? "de_DE" : "en_US",
+		},
 	};
 }
 
