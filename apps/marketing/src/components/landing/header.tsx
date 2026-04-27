@@ -39,10 +39,10 @@ export function Header({ copy }: HeaderProps) {
 					))}
 				</nav>
 			</div>
-			<div className="flex items-center gap-3">
+			<div className="flex items-center gap-2 sm:gap-3">
 				<a
 					href="#contact"
-					className="text-[14px] transition-colors"
+					className="hidden text-[14px] transition-colors sm:inline"
 					style={{ color: t.textSecondary }}
 				>
 					{copy.loginCta}

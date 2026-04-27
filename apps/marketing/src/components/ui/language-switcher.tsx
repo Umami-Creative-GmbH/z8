@@ -18,7 +18,7 @@ export function LanguageSwitcher() {
 	return (
 		<nav
 			aria-label="Language"
-			className="flex h-9 items-center rounded-lg p-0.5 text-[11px] font-bold tracking-[0.08em]"
+			className="hidden h-9 items-center rounded-lg p-0.5 text-[11px] font-bold tracking-[0.08em] sm:flex"
 			style={{
 				backgroundColor: dark ? "#1e1e1e" : "#f0f0f0",
 				border: `1px solid ${dark ? "#252525" : "#e8e8e8"}`,
