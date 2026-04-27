@@ -15,12 +15,16 @@ type CustomPrice = {
 type PricingPlanPrice = NumericPrice | CustomPrice;
 
 const detailedFeatureImages = {
-	"time-clock": "https://images.unsplash.com/photo-1551434678-e076c223a692?w=800&q=80&auto=format&fit=crop",
-	analytics: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&q=80&auto=format&fit=crop",
-	"payroll-export": "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=800&q=80&auto=format&fit=crop",
+	"time-clock":
+		"https://images.unsplash.com/photo-1551434678-e076c223a692?w=800&q=80&auto=format&fit=crop",
+	analytics:
+		"https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&q=80&auto=format&fit=crop",
+	"payroll-export":
+		"https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=800&q=80&auto=format&fit=crop",
 } as const;
 
-const largeBannerImage = "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1400&q=80&auto=format&fit=crop";
+const largeBannerImage =
+	"https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1400&q=80&auto=format&fit=crop";
 
 const galleryImages = [
 	"https://images.unsplash.com/photo-1497215842964-222b430dc094?w=600&q=80&auto=format&fit=crop",
@@ -121,15 +125,17 @@ export type LandingCopy = {
 		description: string;
 		highlightBadge: string;
 		currencyPrefix: string;
-		plans: Array<PricingPlanPrice & {
-			id: StableId;
-			name: string;
-			period: string;
-			desc: string;
-			features: string[];
-			cta: string;
-			highlighted: boolean;
-		}>;
+		plans: Array<
+			PricingPlanPrice & {
+				id: StableId;
+				name: string;
+				period: string;
+				desc: string;
+				features: string[];
+				cta: string;
+				highlighted: boolean;
+			}
+		>;
 	};
 	comparisons: {
 		eyebrow: string;
@@ -201,7 +207,8 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 		},
 		hero: {
 			title: ["Zeiterfassung.", "Endlich gelöst."],
-			description: "Ersetzen Sie Ihre gesamte Tool-Landschaft. Stempeluhr, Lohnexport und Analyse \u2014 alles an einem Ort.",
+			description:
+				"Ersetzen Sie Ihre gesamte Tool-Landschaft. Stempeluhr, Lohnexport und Analyse \u2014 alles an einem Ort.",
 			primaryCta: "Kostenlos starten",
 			ctaNote: ["Dauerhaft kostenlos.", "Keine Kreditkarte."],
 			featureLabel: "ALLES IN EINEM WERKZEUG",
@@ -220,7 +227,14 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 			mockup: {
 				windowTitle: "Z8 \u2014 Dashboard",
 				company: "Umami GmbH",
-				sidebarItems: ["Dashboard", "Stempeluhr", "Mitarbeiter", "Berichte", "Lohnexport", "Einstellungen"],
+				sidebarItems: [
+					"Dashboard",
+					"Stempeluhr",
+					"Mitarbeiter",
+					"Berichte",
+					"Lohnexport",
+					"Einstellungen",
+				],
 				dateLabel: "Heute, 6. Februar",
 				activeEmployees: "12 Mitarbeiter aktiv",
 				weekLabel: "Woche",
@@ -243,14 +257,39 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 		featuresGrid: {
 			eyebrow: "Funktionen",
 			title: "Alles, was Ihr Team braucht.",
-			description: "Sechs Kernmodule. Null Kompromisse. Jedes einzelne so gebaut, dass es allein bestehen könnte \u2014 zusammen sind sie unschlagbar.",
+			description:
+				"Sechs Kernmodule. Null Kompromisse. Jedes einzelne so gebaut, dass es allein bestehen könnte \u2014 zusammen sind sie unschlagbar.",
 			items: [
-				{ id: "time-clock", title: "Stempeluhr", desc: "Ein Klick. Alle Geräte. Sofort synchronisiert über Web, Desktop und Mobile." },
-				{ id: "gobd-compliance", title: "GoBD-konform", desc: "Revisionssichere Einträge. Lückenlos dokumentiert und unantastbar." },
-				{ id: "payroll-export", title: "Lohnexport", desc: "DATEV, Lexware, Personio, SAP. Automatisch und fehlerfrei." },
-				{ id: "multi-tenant", title: "Multi-Tenant", desc: "Mandantenfähig. Jede Organisation strikt isoliert und sicher." },
-				{ id: "enterprise-sso", title: "Enterprise-SSO", desc: "SAML, OIDC, SCIM. Nahtlose Integration in Ihre IT-Infrastruktur." },
-				{ id: "analytics", title: "Echtzeit-Analyse", desc: "Überstunden, Trends, Dashboards. Immer live, immer aktuell." },
+				{
+					id: "time-clock",
+					title: "Stempeluhr",
+					desc: "Ein Klick. Alle Geräte. Sofort synchronisiert über Web, Desktop und Mobile.",
+				},
+				{
+					id: "gobd-compliance",
+					title: "GoBD-konform",
+					desc: "Revisionssichere Einträge. Lückenlos dokumentiert und unantastbar.",
+				},
+				{
+					id: "payroll-export",
+					title: "Lohnexport",
+					desc: "DATEV, Lexware, Personio, SAP. Automatisch und fehlerfrei.",
+				},
+				{
+					id: "multi-tenant",
+					title: "Multi-Tenant",
+					desc: "Mandantenfähig. Jede Organisation strikt isoliert und sicher.",
+				},
+				{
+					id: "enterprise-sso",
+					title: "Enterprise-SSO",
+					desc: "SAML, OIDC, SCIM. Nahtlose Integration in Ihre IT-Infrastruktur.",
+				},
+				{
+					id: "analytics",
+					title: "Echtzeit-Analyse",
+					desc: "Überstunden, Trends, Dashboards. Immer live, immer aktuell.",
+				},
 			],
 		},
 		detailedFeatures: {
@@ -288,21 +327,24 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 			items: [
 				{
 					id: "katharina-voss",
-					quote: "Wir haben drei Tools durch Z8 ersetzt. Die Zeitersparnis in der HR-Abteilung ist spürbar \u2014 mindestens 8 Stunden pro Woche.",
+					quote:
+						"Wir haben drei Tools durch Z8 ersetzt. Die Zeitersparnis in der HR-Abteilung ist spürbar \u2014 mindestens 8 Stunden pro Woche.",
 					name: "Dr. Katharina Voss",
 					role: "Head of People, Finleap",
 					avatar: "KV",
 				},
 				{
 					id: "markus-hein",
-					quote: "GoBD-Konformität war für uns ein Muss. Z8 ist das einzige Tool, das das sauber löst und gleichzeitig schön aussieht.",
+					quote:
+						"GoBD-Konformität war für uns ein Muss. Z8 ist das einzige Tool, das das sauber löst und gleichzeitig schön aussieht.",
 					name: "Markus Hein",
 					role: "Geschäftsführer, Hein & Partner",
 					avatar: "MH",
 				},
 				{
 					id: "sophie-brandt",
-					quote: "Unser Onboarding dauert jetzt 3 Minuten statt 2 Tage. Die SCIM-Integration mit unserem IdP funktioniert einwandfrei.",
+					quote:
+						"Unser Onboarding dauert jetzt 3 Minuten statt 2 Tage. Die SCIM-Integration mit unserem IdP funktioniert einwandfrei.",
 					name: "Sophie Brandt",
 					role: "IT-Leiterin, Commerz Real",
 					avatar: "SB",
@@ -313,12 +355,14 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 			image: largeBannerImage,
 			imageAlt: "Team collaboration",
 			title: "Gebaut für Teams, die es ernst meinen.",
-			description: "Von 3-Personen-Startups bis zu DAX-Konzernen \u2014 Z8 skaliert mit Ihren Anforderungen.",
+			description:
+				"Von 3-Personen-Startups bis zu DAX-Konzernen \u2014 Z8 skaliert mit Ihren Anforderungen.",
 		},
 		pricing: {
 			eyebrow: "Preise",
 			title: "Einfach. Transparent. Fair.",
-			description: "Keine versteckten Kosten. Keine langen Verträge. Starten Sie kostenlos und wachsen Sie mit Z8.",
+			description:
+				"Keine versteckten Kosten. Keine langen Verträge. Starten Sie kostenlos und wachsen Sie mit Z8.",
 			highlightBadge: "Beliebteste Wahl",
 			currencyPrefix: "€",
 			plans: [
@@ -329,7 +373,13 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 					price: "0",
 					period: "für immer",
 					desc: "Für kleine Teams, die einfach starten wollen.",
-					features: ["Bis 10 Mitarbeiter", "Stempeluhr & Dashboard", "Basis-Berichte", "E-Mail-Support", "1 Standort"],
+					features: [
+						"Bis 10 Mitarbeiter",
+						"Stempeluhr & Dashboard",
+						"Basis-Berichte",
+						"E-Mail-Support",
+						"1 Standort",
+					],
 					cta: "Kostenlos starten",
 				},
 				{
@@ -339,7 +389,14 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 					price: "4,90",
 					period: "pro Mitarbeiter / Monat",
 					desc: "Für wachsende Unternehmen mit Struktur.",
-					features: ["Unbegrenzte Mitarbeiter", "DATEV & Lexware Export", "GoBD-konform", "Multi-Standort", "Schichtplanung", "Priorisierter Support"],
+					features: [
+						"Unbegrenzte Mitarbeiter",
+						"DATEV & Lexware Export",
+						"GoBD-konform",
+						"Multi-Standort",
+						"Schichtplanung",
+						"Priorisierter Support",
+					],
 					cta: "14 Tage testen",
 				},
 				{
@@ -349,7 +406,14 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 					price: "Individuell",
 					period: "ab 200 Mitarbeiter",
 					desc: "Für Konzerne mit höchsten Anforderungen.",
-					features: ["Alles aus Business", "Enterprise-SSO (SAML)", "SCIM-Provisioning", "Eigener Account Manager", "SLA 99,99%", "On-Premise möglich"],
+					features: [
+						"Alles aus Business",
+						"Enterprise-SSO (SAML)",
+						"SCIM-Provisioning",
+						"Eigener Account Manager",
+						"SLA 99,99%",
+						"On-Premise möglich",
+					],
 					cta: "Kontakt aufnehmen",
 				},
 			],
@@ -361,15 +425,47 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 			z8Column: "Z8",
 			othersColumn: "Andere",
 			items: [
-				{ id: "time-clock", feature: "Stempeluhr (Web + Mobile)", ...comparisonAvailability["time-clock"] },
-				{ id: "gobd-archiving", feature: "GoBD-konforme Archivierung", ...comparisonAvailability["gobd-archiving"] },
-				{ id: "payroll-export", feature: "Automatischer Lohnexport", ...comparisonAvailability["payroll-export"] },
-				{ id: "enterprise-sso", feature: "Enterprise-SSO (SAML/OIDC)", ...comparisonAvailability["enterprise-sso"] },
-				{ id: "scim-provisioning", feature: "SCIM-Provisioning", ...comparisonAvailability["scim-provisioning"] },
-				{ id: "multi-tenant", feature: "Multi-Tenant Architektur", ...comparisonAvailability["multi-tenant"] },
-				{ id: "real-time-dashboards", feature: "Echtzeit-Dashboards", ...comparisonAvailability["real-time-dashboards"] },
+				{
+					id: "time-clock",
+					feature: "Stempeluhr (Web + Mobile)",
+					...comparisonAvailability["time-clock"],
+				},
+				{
+					id: "gobd-archiving",
+					feature: "GoBD-konforme Archivierung",
+					...comparisonAvailability["gobd-archiving"],
+				},
+				{
+					id: "payroll-export",
+					feature: "Automatischer Lohnexport",
+					...comparisonAvailability["payroll-export"],
+				},
+				{
+					id: "enterprise-sso",
+					feature: "Enterprise-SSO (SAML/OIDC)",
+					...comparisonAvailability["enterprise-sso"],
+				},
+				{
+					id: "scim-provisioning",
+					feature: "SCIM-Provisioning",
+					...comparisonAvailability["scim-provisioning"],
+				},
+				{
+					id: "multi-tenant",
+					feature: "Multi-Tenant Architektur",
+					...comparisonAvailability["multi-tenant"],
+				},
+				{
+					id: "real-time-dashboards",
+					feature: "Echtzeit-Dashboards",
+					...comparisonAvailability["real-time-dashboards"],
+				},
 				{ id: "geo-fencing", feature: "Geo-Fencing", ...comparisonAvailability["geo-fencing"] },
-				{ id: "sql-report-editor", feature: "SQL-Report-Editor", ...comparisonAvailability["sql-report-editor"] },
+				{
+					id: "sql-report-editor",
+					feature: "SQL-Report-Editor",
+					...comparisonAvailability["sql-report-editor"],
+				},
 				{ id: "api-access", feature: "API-Zugang", ...comparisonAvailability["api-access"] },
 			],
 		},
@@ -449,7 +545,8 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 		},
 		newsletterCta: {
 			title: "Immer auf dem Laufenden.",
-			description: "Produktupdates, Branchen-Insights und Best Practices für Zeiterfassung \u2014 direkt in Ihr Postfach. Kein Spam, jederzeit abmeldbar.",
+			description:
+				"Produktupdates, Branchen-Insights und Best Practices für Zeiterfassung \u2014 direkt in Ihr Postfach. Kein Spam, jederzeit abmeldbar.",
 			emailPlaceholder: "name@firma.de",
 			button: "Abonnieren",
 			note: "Kein Spam. Maximal 2\u00d7 pro Monat. Jederzeit abmeldbar.",
@@ -457,20 +554,28 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 		finalCta: {
 			eyebrow: "Jetzt starten",
 			title: "Bereit durchzustarten?",
-			description: "Starten Sie kostenlos \u2014 keine Kreditkarte, kein Risiko. Kein Vertriebsgespräch nötig.",
+			description:
+				"Starten Sie kostenlos \u2014 keine Kreditkarte, kein Risiko. Kein Vertriebsgespräch nötig.",
 			primaryCta: "Kostenlos starten",
 			secondaryCta: "Demo anfragen",
 			note: "Dauerhaft kostenlos für bis zu 10 Mitarbeiter · Keine Kreditkarte · DSGVO-konform",
 		},
 		footer: {
 			brand: "Z8",
-			description: "Workforce Management für moderne Unternehmen. Zeiterfassung, Lohnexport und Analyse in einem.",
+			description:
+				"Workforce Management für moderne Unternehmen. Zeiterfassung, Lohnexport und Analyse in einem.",
 			socialLinks: ["Li", "X", "GH"],
 			linkGroups: {
 				Produkt: ["Funktionen", "Preise", "Integrationen", "API", "Changelog", "Roadmap"],
 				Unternehmen: ["Über uns", "Karriere", "Blog", "Presse", "Partner"],
 				Ressourcen: ["Hilfe-Center", "Dokumentation", "Status", "Webinare", "Tutorials"],
-				Rechtliches: ["Datenschutz", "AGB", "Impressum", "Cookie-Einstellungen", "Auftragsverarbeitung"],
+				Rechtliches: [
+					"Datenschutz",
+					"AGB",
+					"Impressum",
+					"Cookie-Einstellungen",
+					"Auftragsverarbeitung",
+				],
 			},
 			copyright: "© 2025 Z8 GmbH",
 			legalLinks: ["Datenschutz", "AGB", "Impressum"],
@@ -496,7 +601,8 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 		},
 		hero: {
 			title: ["Time tracking.", "Finally solved."],
-			description: "Replace your entire tool stack. Time clock, payroll export, and analytics - all in one place.",
+			description:
+				"Replace your entire tool stack. Time clock, payroll export, and analytics - all in one place.",
 			primaryCta: "Start for free",
 			ctaNote: ["Free forever.", "No credit card."],
 			featureLabel: "EVERYTHING IN ONE TOOL",
@@ -515,7 +621,14 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 			mockup: {
 				windowTitle: "Z8 - Dashboard",
 				company: "Umami GmbH",
-				sidebarItems: ["Dashboard", "Time clock", "Employees", "Reports", "Payroll export", "Settings"],
+				sidebarItems: [
+					"Dashboard",
+					"Time clock",
+					"Employees",
+					"Reports",
+					"Payroll export",
+					"Settings",
+				],
 				dateLabel: "Today, February 6",
 				activeEmployees: "12 employees active",
 				weekLabel: "Week",
@@ -538,14 +651,39 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 		featuresGrid: {
 			eyebrow: "Features",
 			title: "Everything your team needs.",
-			description: "Six core modules. Zero compromises. Each one strong enough to stand alone - unbeatable together.",
+			description:
+				"Six core modules. Zero compromises. Each one strong enough to stand alone - unbeatable together.",
 			items: [
-				{ id: "time-clock", title: "Time clock", desc: "One click. Every device. Instantly synced across web, desktop, and mobile." },
-				{ id: "gobd-compliance", title: "GoBD-compliant", desc: "Audit-proof entries. Fully documented and tamper-resistant." },
-				{ id: "payroll-export", title: "Payroll export", desc: "DATEV, Lexware, Personio, SAP. Automatic and error-free." },
-				{ id: "multi-tenant", title: "Multi-tenant", desc: "Built for tenants. Every organization strictly isolated and secure." },
-				{ id: "enterprise-sso", title: "Enterprise SSO", desc: "SAML, OIDC, SCIM. Seamless integration with your IT infrastructure." },
-				{ id: "analytics", title: "Real-time analytics", desc: "Overtime, trends, dashboards. Always live, always current." },
+				{
+					id: "time-clock",
+					title: "Time clock",
+					desc: "One click. Every device. Instantly synced across web, desktop, and mobile.",
+				},
+				{
+					id: "gobd-compliance",
+					title: "GoBD-compliant",
+					desc: "Audit-proof entries. Fully documented and tamper-resistant.",
+				},
+				{
+					id: "payroll-export",
+					title: "Payroll export",
+					desc: "DATEV, Lexware, Personio, SAP. Automatic and error-free.",
+				},
+				{
+					id: "multi-tenant",
+					title: "Multi-tenant",
+					desc: "Built for tenants. Every organization strictly isolated and secure.",
+				},
+				{
+					id: "enterprise-sso",
+					title: "Enterprise SSO",
+					desc: "SAML, OIDC, SCIM. Seamless integration with your IT infrastructure.",
+				},
+				{
+					id: "analytics",
+					title: "Real-time analytics",
+					desc: "Overtime, trends, dashboards. Always live, always current.",
+				},
 			],
 		},
 		detailedFeatures: {
@@ -583,21 +721,24 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 			items: [
 				{
 					id: "katharina-voss",
-					quote: "We replaced three tools with Z8. The time savings for our HR team are noticeable - at least 8 hours per week.",
+					quote:
+						"We replaced three tools with Z8. The time savings for our HR team are noticeable - at least 8 hours per week.",
 					name: "Dr. Katharina Voss",
 					role: "Head of People, Finleap",
 					avatar: "KV",
 				},
 				{
 					id: "markus-hein",
-					quote: "GoBD compliance was non-negotiable for us. Z8 is the only tool that solves it cleanly and still looks great.",
+					quote:
+						"GoBD compliance was non-negotiable for us. Z8 is the only tool that solves it cleanly and still looks great.",
 					name: "Markus Hein",
 					role: "Managing Director, Hein & Partner",
 					avatar: "MH",
 				},
 				{
 					id: "sophie-brandt",
-					quote: "Our onboarding now takes 3 minutes instead of 2 days. The SCIM integration with our IdP works flawlessly.",
+					quote:
+						"Our onboarding now takes 3 minutes instead of 2 days. The SCIM integration with our IdP works flawlessly.",
 					name: "Sophie Brandt",
 					role: "Head of IT, Commerz Real",
 					avatar: "SB",
@@ -608,7 +749,8 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 			image: largeBannerImage,
 			imageAlt: "Team collaboration",
 			title: "Built for teams that mean business.",
-			description: "From 3-person startups to enterprise groups - Z8 scales with your requirements.",
+			description:
+				"From 3-person startups to enterprise groups - Z8 scales with your requirements.",
 		},
 		pricing: {
 			eyebrow: "Pricing",
@@ -624,7 +766,13 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 					price: "0",
 					period: "forever",
 					desc: "For small teams that want to get started simply.",
-					features: ["Up to 10 employees", "Time clock & dashboard", "Basic reports", "Email support", "1 location"],
+					features: [
+						"Up to 10 employees",
+						"Time clock & dashboard",
+						"Basic reports",
+						"Email support",
+						"1 location",
+					],
 					cta: "Start for free",
 				},
 				{
@@ -634,7 +782,14 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 					price: "4.90",
 					period: "per employee / month",
 					desc: "For growing companies with structure.",
-					features: ["Unlimited employees", "DATEV & Lexware export", "GoBD-compliant", "Multiple locations", "Shift planning", "Priority support"],
+					features: [
+						"Unlimited employees",
+						"DATEV & Lexware export",
+						"GoBD-compliant",
+						"Multiple locations",
+						"Shift planning",
+						"Priority support",
+					],
 					cta: "Try 14 days",
 				},
 				{
@@ -644,7 +799,14 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 					price: "Custom",
 					period: "from 200 employees",
 					desc: "For enterprises with the highest requirements.",
-					features: ["Everything in Business", "Enterprise SSO (SAML)", "SCIM provisioning", "Dedicated account manager", "99.99% SLA", "On-premise available"],
+					features: [
+						"Everything in Business",
+						"Enterprise SSO (SAML)",
+						"SCIM provisioning",
+						"Dedicated account manager",
+						"99.99% SLA",
+						"On-premise available",
+					],
 					cta: "Contact us",
 				},
 			],
@@ -656,15 +818,47 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 			z8Column: "Z8",
 			othersColumn: "Others",
 			items: [
-				{ id: "time-clock", feature: "Time clock (web + mobile)", ...comparisonAvailability["time-clock"] },
-				{ id: "gobd-archiving", feature: "GoBD-compliant archiving", ...comparisonAvailability["gobd-archiving"] },
-				{ id: "payroll-export", feature: "Automatic payroll export", ...comparisonAvailability["payroll-export"] },
-				{ id: "enterprise-sso", feature: "Enterprise SSO (SAML/OIDC)", ...comparisonAvailability["enterprise-sso"] },
-				{ id: "scim-provisioning", feature: "SCIM provisioning", ...comparisonAvailability["scim-provisioning"] },
-				{ id: "multi-tenant", feature: "Multi-tenant architecture", ...comparisonAvailability["multi-tenant"] },
-				{ id: "real-time-dashboards", feature: "Real-time dashboards", ...comparisonAvailability["real-time-dashboards"] },
+				{
+					id: "time-clock",
+					feature: "Time clock (web + mobile)",
+					...comparisonAvailability["time-clock"],
+				},
+				{
+					id: "gobd-archiving",
+					feature: "GoBD-compliant archiving",
+					...comparisonAvailability["gobd-archiving"],
+				},
+				{
+					id: "payroll-export",
+					feature: "Automatic payroll export",
+					...comparisonAvailability["payroll-export"],
+				},
+				{
+					id: "enterprise-sso",
+					feature: "Enterprise SSO (SAML/OIDC)",
+					...comparisonAvailability["enterprise-sso"],
+				},
+				{
+					id: "scim-provisioning",
+					feature: "SCIM provisioning",
+					...comparisonAvailability["scim-provisioning"],
+				},
+				{
+					id: "multi-tenant",
+					feature: "Multi-tenant architecture",
+					...comparisonAvailability["multi-tenant"],
+				},
+				{
+					id: "real-time-dashboards",
+					feature: "Real-time dashboards",
+					...comparisonAvailability["real-time-dashboards"],
+				},
 				{ id: "geo-fencing", feature: "Geo-fencing", ...comparisonAvailability["geo-fencing"] },
-				{ id: "sql-report-editor", feature: "SQL report editor", ...comparisonAvailability["sql-report-editor"] },
+				{
+					id: "sql-report-editor",
+					feature: "SQL report editor",
+					...comparisonAvailability["sql-report-editor"],
+				},
 				{ id: "api-access", feature: "API access", ...comparisonAvailability["api-access"] },
 			],
 		},
@@ -744,7 +938,8 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 		},
 		newsletterCta: {
 			title: "Stay up to date.",
-			description: "Product updates, industry insights, and time tracking best practices - straight to your inbox. No spam, unsubscribe anytime.",
+			description:
+				"Product updates, industry insights, and time tracking best practices - straight to your inbox. No spam, unsubscribe anytime.",
 			emailPlaceholder: "name@company.com",
 			button: "Subscribe",
 			note: "No spam. Maximum 2x per month. Unsubscribe anytime.",
@@ -759,7 +954,8 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 		},
 		footer: {
 			brand: "Z8",
-			description: "Workforce management for modern companies. Time tracking, payroll export, and analytics in one.",
+			description:
+				"Workforce management for modern companies. Time tracking, payroll export, and analytics in one.",
 			socialLinks: ["Li", "X", "GH"],
 			linkGroups: {
 				Product: ["Features", "Pricing", "Integrations", "API", "Changelog", "Roadmap"],

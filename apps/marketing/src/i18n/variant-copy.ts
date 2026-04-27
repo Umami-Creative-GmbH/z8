@@ -17,21 +17,27 @@ export type VariantId =
 
 const siteUrl = "https://z8-time.app";
 
-const variantMetadataCopy: Record<VariantId, Record<Locale, { title: string; description: string }>> = {
+const variantMetadataCopy: Record<
+	VariantId,
+	Record<Locale, { title: string; description: string }>
+> = {
 	"s-1": {
 		de: {
 			title: "Z8 | Die Kunst der Zeiterfassung",
-			description: "Eine ruhige, klare Z8-Variante für Zeiterfassung, Schichtplanung, Berichte und Lohnexport.",
+			description:
+				"Eine ruhige, klare Z8-Variante für Zeiterfassung, Schichtplanung, Berichte und Lohnexport.",
 		},
 		en: {
 			title: "Z8 | The Art of Time Tracking",
-			description: "A calm, precise Z8 variant for time tracking, scheduling, reports, and payroll export.",
+			description:
+				"A calm, precise Z8 variant for time tracking, scheduling, reports, and payroll export.",
 		},
 	},
 	"s-2": {
 		de: {
 			title: "Z8 | Natürliche Zeiterfassung",
-			description: "Eine weiche, organische Z8-Variante für einfache und verlässliche Zeiterfassung.",
+			description:
+				"Eine weiche, organische Z8-Variante für einfache und verlässliche Zeiterfassung.",
 		},
 		en: {
 			title: "Z8 | Natural Time Tracking",
@@ -41,17 +47,20 @@ const variantMetadataCopy: Record<VariantId, Record<Locale, { title: string; des
 	"s-3": {
 		de: {
 			title: "Z8 | Zeit ist Code",
-			description: "Eine technische Z8-Variante mit Systemmodulen für präzise Arbeitszeiterfassung.",
+			description:
+				"Eine technische Z8-Variante mit Systemmodulen für präzise Arbeitszeiterfassung.",
 		},
 		en: {
 			title: "Z8 | Time Is Code",
-			description: "A technical Z8 variant with system modules for precise workforce time tracking.",
+			description:
+				"A technical Z8 variant with system modules for precise workforce time tracking.",
 		},
 	},
 	"s-4": {
 		de: {
 			title: "Z8 | Handwerk trifft Technologie",
-			description: "Eine warme, handwerkliche Z8-Variante für strukturierte Zeiterfassung im Alltag.",
+			description:
+				"Eine warme, handwerkliche Z8-Variante für strukturierte Zeiterfassung im Alltag.",
 		},
 		en: {
 			title: "Z8 | Craft Meets Technology",
@@ -71,7 +80,8 @@ const variantMetadataCopy: Record<VariantId, Record<Locale, { title: string; des
 	"s-6": {
 		de: {
 			title: "Z8 | Zeiterfassung wie auf dem Whiteboard",
-			description: "Eine skizzenhafte Z8-Variante für einfache digitale Zeiterfassung ohne Schnickschnack.",
+			description:
+				"Eine skizzenhafte Z8-Variante für einfache digitale Zeiterfassung ohne Schnickschnack.",
 		},
 		en: {
 			title: "Z8 | Whiteboard-Style Time Tracking",
@@ -91,11 +101,13 @@ const variantMetadataCopy: Record<VariantId, Record<Locale, { title: string; des
 	"s-8": {
 		de: {
 			title: "Z8 Anzeiger | Moderne Zeiterfassung",
-			description: "Eine Zeitungsvariante für Z8 mit digitaler Zeiterfassung, Berichten und Team-Verwaltung.",
+			description:
+				"Eine Zeitungsvariante für Z8 mit digitaler Zeiterfassung, Berichten und Team-Verwaltung.",
 		},
 		en: {
 			title: "Z8 Gazette | Modern Time Tracking",
-			description: "A newspaper-style Z8 variant for digital time tracking, reports, and team management.",
+			description:
+				"A newspaper-style Z8 variant for digital time tracking, reports, and team management.",
 		},
 	},
 	"s-9": {
@@ -111,7 +123,8 @@ const variantMetadataCopy: Record<VariantId, Record<Locale, { title: string; des
 	"s-10": {
 		de: {
 			title: "Z8 | Präzision in jeder Sekunde",
-			description: "Eine präzise Slate-Blue-Z8-Variante für genaue Arbeitszeiterfassung und Berichte.",
+			description:
+				"Eine präzise Slate-Blue-Z8-Variante für genaue Arbeitszeiterfassung und Berichte.",
 		},
 		en: {
 			title: "Z8 | Precision in Every Second",
@@ -224,15 +237,18 @@ const variantVisibleCopy: Record<VariantId, Record<string, string>> = {
 		"Berichte generieren sich automatisch. Export an den Steuerberater oder direkt ins Lohnsystem.":
 			"Reports generate automatically. Export to your tax advisor or directly into payroll.",
 		"Ihr Dashboard": "Your Dashboard",
-		"Alles auf einen Blick — wer arbeitet, wer pausiert, wer im Urlaub ist.": "Everything at a glance - who is working, on break, or on leave.",
+		"Alles auf einen Blick — wer arbeitet, wer pausiert, wer im Urlaub ist.":
+			"Everything at a glance - who is working, on break, or on leave.",
 		"Skaliert mit Ihrem Unternehmen": "Scales with your company",
 		"Von 2 bis 20.000 Mitarbeiter — Z8 wächst mit Ihnen. Mandantenfähig, mit isolierten Organisationen und rollenbasierter Zugriffskontrolle.":
 			"From 2 to 20,000 employees - Z8 grows with you. Multi-tenant, with isolated organizations and role-based access control.",
 		Mandantenfähig: "Multi-tenant",
-		"Mehrere Organisationen unter einem Dach, strikt getrennt.": "Multiple organizations under one roof, strictly separated.",
+		"Mehrere Organisationen unter einem Dach, strikt getrennt.":
+			"Multiple organizations under one roof, strictly separated.",
 		"nahtlose IT-Integration": "seamless IT integration",
 		"Rollenbasierte Rechte": "Role-Based Permissions",
-		"Admin, Manager, Mitarbeiter — granular steuerbar.": "Admin, manager, employee - granularly controllable.",
+		"Admin, Manager, Mitarbeiter — granular steuerbar.":
+			"Admin, manager, employee - granularly controllable.",
 		Revisionssicher: "Audit-proof",
 		Rechtssicher: "Legally compliant",
 		"Jeder Eintrag ist unveränderbar protokolliert. Z8 erfüllt alle Anforderungen an die digitale Arbeitszeiterfassung nach deutschem Recht.":
@@ -284,7 +300,7 @@ const variantVisibleCopy: Record<VariantId, Record<string, string>> = {
 		"Alles aus Business": "Everything in Business",
 		Mandantenfähigkeit: "Multi-tenancy",
 		"Dedizierter Ansprechpartner": "Dedicated contact",
-		"Kontaktieren": "Contact us",
+		Kontaktieren: "Contact us",
 		"Häufige Fragen": "Frequently Asked Questions",
 		Antworten: "Answers",
 		"Ist Z8 wirklich kostenlos?": "Is Z8 really free?",
@@ -296,7 +312,8 @@ const variantVisibleCopy: Record<VariantId, Record<string, string>> = {
 		"Wo werden meine Daten gespeichert?": "Where is my data stored?",
 		"Ausschließlich auf deutschen Servern, AES-256 verschlüsselt, ISO 27001 zertifiziert. Ihre Daten verlassen nie die EU.":
 			"Exclusively on German servers, AES-256 encrypted, ISO 27001 certified. Your data never leaves the EU.",
-		"Kann ich Z8 mit meiner bestehenden Software verbinden?": "Can I connect Z8 to my existing software?",
+		"Kann ich Z8 mit meiner bestehenden Software verbinden?":
+			"Can I connect Z8 to my existing software?",
 		"Ja. Neben den fertigen Integrationen (DATEV, Lexware, Personio, SAP) bieten wir eine vollständige REST-API.":
 			"Yes. Alongside ready-made integrations (DATEV, Lexware, Personio, SAP), we offer a complete REST API.",
 		"Erfüllt Z8 die gesetzlichen Anforderungen?": "Does Z8 meet legal requirements?",
@@ -321,14 +338,19 @@ const variantVisibleCopy: Record<VariantId, Record<string, string>> = {
 		"Glatt geschliffen": "Smoothed down",
 		"Jede Funktion, reduziert auf ihre beste Form.": "Every feature reduced to its best form.",
 		"Ein-Klick Stempel": "One-Click Clock-In",
-		"Kein Formular, kein Suchen. Antippen und die Zeit läuft.": "No forms, no searching. Tap once and time starts running.",
-		"Alle Daten in Echtzeit, klar sortiert und sofort verständlich.": "All data in real time, clearly sorted and instantly understood.",
+		"Kein Formular, kein Suchen. Antippen und die Zeit läuft.":
+			"No forms, no searching. Tap once and time starts running.",
+		"Alle Daten in Echtzeit, klar sortiert und sofort verständlich.":
+			"All data in real time, clearly sorted and instantly understood.",
 		"Team-Übersicht": "Team Overview",
-		"Wer arbeitet, wer pausiert — auf einen Blick für Ihr ganzes Team.": "Who is working, who is on break - one view for your whole team.",
+		"Wer arbeitet, wer pausiert — auf einen Blick für Ihr ganzes Team.":
+			"Who is working, who is on break - one view for your whole team.",
 		"In drei Schritten": "In three steps",
 		"Team einladen": "Invite your team",
-		"Konto erstellen in unter einer Minute. Keine Kreditkarte.": "Create an account in under a minute. No credit card.",
-		"Mitarbeiter per Link hinzufügen. Sofort einsatzbereit.": "Add employees by link. Ready immediately.",
+		"Konto erstellen in unter einer Minute. Keine Kreditkarte.":
+			"Create an account in under a minute. No credit card.",
+		"Mitarbeiter per Link hinzufügen. Sofort einsatzbereit.":
+			"Add employees by link. Ready immediately.",
 		"Zeit erfassen": "Track time",
 		"Stempeln, pausieren, Berichte ziehen. Fertig.": "Clock in, pause, pull reports. Done.",
 		"Bereit für etwas": "Ready for something",
@@ -345,11 +367,15 @@ const variantVisibleCopy: Record<VariantId, Record<string, string>> = {
 			"Every millisecond captured. Every process optimized. Z8 is the operating system for your working time.",
 		"System-Module": "System Modules",
 		"Echtzeit-Tracking": "Real-Time Tracking",
-		"Starten, stoppen, pausieren — alles in Echtzeit synchronisiert.": "Start, stop, pause - everything synced in real time.",
-		"Berichte generieren sich selbst. Export als CSV, PDF oder JSON.": "Reports generate themselves. Export as CSV, PDF, or JSON.",
-		"REST-API für alle Endpunkte. Integriert sich in Ihren Stack.": "REST API for every endpoint. Integrates with your stack.",
+		"Starten, stoppen, pausieren — alles in Echtzeit synchronisiert.":
+			"Start, stop, pause - everything synced in real time.",
+		"Berichte generieren sich selbst. Export als CSV, PDF oder JSON.":
+			"Reports generate themselves. Export as CSV, PDF, or JSON.",
+		"REST-API für alle Endpunkte. Integriert sich in Ihren Stack.":
+			"REST API for every endpoint. Integrates with your stack.",
 		Verschlüsselt: "Encrypted",
-		"Ende-zu-Ende-Verschlüsselung. Ihre Daten bleiben Ihre Daten.": "End-to-end encryption. Your data stays yours.",
+		"Ende-zu-Ende-Verschlüsselung. Ihre Daten bleiben Ihre Daten.":
+			"End-to-end encryption. Your data stays yours.",
 	},
 	"s-4": {
 		Geschichte: "Story",
@@ -361,13 +387,17 @@ const variantVisibleCopy: Record<VariantId, Record<string, string>> = {
 		"Wie ein guter Ton, geformt von Hand — Z8 gibt Ihrer Arbeitszeit Form und Struktur. Warm, ehrlich und beständig.":
 			"Like fine clay shaped by hand - Z8 gives your working time form and structure. Warm, honest, and steady.",
 		"Geformt für den Alltag": "Shaped for everyday work",
-		"Start und Stopp mit einem Tippen. So einfach wie ein Lichtschalter.": "Start and stop with one tap. As simple as a light switch.",
+		"Start und Stopp mit einem Tippen. So einfach wie ein Lichtschalter.":
+			"Start and stop with one tap. As simple as a light switch.",
 		Stundenzettel: "Timesheets",
-		"Automatisch generiert, immer aktuell, bereit zum Export.": "Automatically generated, always current, ready to export.",
+		"Automatisch generiert, immer aktuell, bereit zum Export.":
+			"Automatically generated, always current, ready to export.",
 		Projekte: "Projects",
-		"Zeiten nach Projekt erfassen und zuordnen. Ohne Umwege.": "Track and assign time by project. Without detours.",
+		"Zeiten nach Projekt erfassen und zuordnen. Ohne Umwege.":
+			"Track and assign time by project. Without detours.",
 		Übersicht: "Overview",
-		"Ihr Dashboard zeigt, was zählt. Keine Ablenkung.": "Your dashboard shows what matters. No distractions.",
+		"Ihr Dashboard zeigt, was zählt. Keine Ablenkung.":
+			"Your dashboard shows what matters. No distractions.",
 		"Die beste Technologie ist die, die man nicht bemerkt — die einfach funktioniert, wie ein warmer Raum.":
 			"The best technology is the kind you do not notice - it simply works, like a warm room.",
 		"Formen Sie Ihre Zeit.": "Shape your time.",
@@ -381,13 +411,17 @@ const variantVisibleCopy: Record<VariantId, Record<string, string>> = {
 			"Like frosted glass - Z8 shows exactly what you need and filters out everything else. Pure clarity.",
 		"Schicht für Schicht": "Layer by layer",
 		"Ein-Klick Start": "One-Click Start",
-		"Stempeln ohne Nachdenken. Die Uhr läuft ab dem ersten Tippen.": "Clock in without thinking. The clock starts with the first tap.",
+		"Stempeln ohne Nachdenken. Die Uhr läuft ab dem ersten Tippen.":
+			"Clock in without thinking. The clock starts with the first tap.",
 		"Glasklare Berichte": "Crystal-Clear Reports",
-		"Daten, die sich von selbst erklären. Kein Rätselraten.": "Data that explains itself. No guessing.",
+		"Daten, die sich von selbst erklären. Kein Rätselraten.":
+			"Data that explains itself. No guessing.",
 		"Team-Transparenz": "Team Transparency",
-		"Jeder sieht, was er braucht. Nicht mehr, nicht weniger.": "Everyone sees what they need. No more, no less.",
+		"Jeder sieht, was er braucht. Nicht mehr, nicht weniger.":
+			"Everyone sees what they need. No more, no less.",
 		"Sehen Sie klar.": "See clearly.",
-		"Starten Sie heute — kostenlos und unverbindlich.": "Start today - free and without commitment.",
+		"Starten Sie heute — kostenlos und unverbindlich.":
+			"Start today - free and without commitment.",
 	},
 	"s-6": {
 		Skizze: "Sketch",
@@ -402,10 +436,13 @@ const variantVisibleCopy: Record<VariantId, Record<string, string>> = {
 		"~ skizze": "~ sketch",
 		"Was Z8 kann:": "What Z8 can do:",
 		Stempeln: "Clocking in",
-		"Ein Klick, die Zeit läuft. Nochmal klicken, Feierabend.": "One click, time runs. Click again, done for the day.",
-		"Wer hat wann was gemacht? Alles auf einer Seite.": "Who did what when? Everything on one page.",
+		"Ein Klick, die Zeit läuft. Nochmal klicken, Feierabend.":
+			"One click, time runs. Click again, done for the day.",
+		"Wer hat wann was gemacht? Alles auf einer Seite.":
+			"Who did what when? Everything on one page.",
 		Export: "Export",
-		"Daten raus als CSV oder PDF. Für den Steuerberater.": "Send data out as CSV or PDF. For your tax advisor.",
+		"Daten raus als CSV oder PDF. Für den Steuerberater.":
+			"Send data out as CSV or PDF. For your tax advisor.",
 		Team: "Team",
 		"Mitarbeiter einladen, Zeiten vergleichen, fertig.": "Invite employees, compare times, done.",
 		"Manchmal ist ein Stift alles, was man braucht.": "Sometimes a pen is all you need.",
@@ -421,9 +458,12 @@ const variantVisibleCopy: Record<VariantId, Record<string, string>> = {
 		"Kupfer wird mit der Zeit nicht schwächer — es entwickelt Charakter. Z8 ist die Zeiterfassung, die mit Ihrem Unternehmen reift.":
 			"Copper does not weaken over time - it develops character. Z8 is time tracking that matures with your company.",
 		Module: "Modules",
-		"Präzise Zeiterfassung, ein Klick zum Start, ein Klick zum Ende.": "Precise time tracking, one click to start, one click to finish.",
-		"Echtzeit-Übersicht über alle Mitarbeiter und laufende Projekte.": "Real-time overview of all employees and active projects.",
-		"Automatische Monats- und Projektberichte, exportbereit.": "Automatic monthly and project reports, ready to export.",
+		"Präzise Zeiterfassung, ein Klick zum Start, ein Klick zum Ende.":
+			"Precise time tracking, one click to start, one click to finish.",
+		"Echtzeit-Übersicht über alle Mitarbeiter und laufende Projekte.":
+			"Real-time overview of all employees and active projects.",
+		"Automatische Monats- und Projektberichte, exportbereit.":
+			"Automatic monthly and project reports, ready to export.",
 		"Software, die Patina ansetzt, statt zu veralten — das ist unser Versprechen.":
 			"Software that develops patina instead of becoming outdated - that is our promise.",
 		"Jahre am Markt": "Years on the market",
@@ -450,12 +490,14 @@ const variantVisibleCopy: Record<VariantId, Record<string, string>> = {
 			"For small and medium-sized businesses in particular, Z8 is a revelation: set it up, invite the team, and start immediately. No training required.",
 		Kurzmeldungen: "Briefs",
 		"10.000 Nutzer vertrauen bereits auf Z8": "10,000 users already trust Z8",
-		"DSGVO-konforme Datenhaltung auf deutschen Servern": "GDPR-compliant data storage on German servers",
+		"DSGVO-konforme Datenhaltung auf deutschen Servern":
+			"GDPR-compliant data storage on German servers",
 		"Neue API-Schnittstellen für SAP und DATEV": "New API interfaces for SAP and DATEV",
 		Anzeige: "Advertisement",
 		"Jetzt 30 Tage kostenlos": "Now free for 30 days",
 		Testen: "Try it",
-		"Team-Meeting bei einem Z8-Kunden in Frankfurt. Foto: Archiv": "Team meeting at a Z8 customer in Frankfurt. Photo: archive",
+		"Team-Meeting bei einem Z8-Kunden in Frankfurt. Foto: Archiv":
+			"Team meeting at a Z8 customer in Frankfurt. Photo: archive",
 		"Modernes Büro mit Z8-Integration": "Modern office with Z8 integration",
 		"Die digitale Stechuhr für das 21. Jahrhundert. Start, Pause, Ende — alles mit einem Fingertipp. Funktioniert auf Smartphone, Tablet und Desktop gleichermassen.":
 			"The digital time clock for the 21st century. Start, pause, finish - all with one tap. Works equally well on smartphone, tablet, and desktop.",
@@ -467,7 +509,8 @@ const variantVisibleCopy: Record<VariantId, Record<string, string>> = {
 			"Invite employees by email, assign roles, review working hours. Everything in one place. For teams from 2 to 2,000.",
 		Kleinanzeige: "Classified",
 		"Z8 — Jetzt abonnieren.": "Z8 - Subscribe now.",
-		"Kostenlos starten. Keine Kreditkarte erforderlich. Jederzeit kündbar.": "Start free. No credit card required. Cancel anytime.",
+		"Kostenlos starten. Keine Kreditkarte erforderlich. Jederzeit kündbar.":
+			"Start free. No credit card required. Cancel anytime.",
 		"Alle Rechte vorbehalten": "All rights reserved",
 	},
 	"s-9": {
@@ -481,12 +524,14 @@ const variantVisibleCopy: Record<VariantId, Record<string, string>> = {
 		"Warm. Klar. Einfach.": "Warm. Clear. Simple.",
 		Zeitstempel: "Time Stamps",
 		"Start und Stopp — so schnell wie ein Sonnenaufgang.": "Start and stop - as fast as a sunrise.",
-		"Automatische Zusammenfassungen, die leuchten vor Klarheit.": "Automatic summaries that glow with clarity.",
+		"Automatische Zusammenfassungen, die leuchten vor Klarheit.":
+			"Automatic summaries that glow with clarity.",
 		Teamwork: "Teamwork",
-		"Alle Mitarbeiter auf einem Dashboard. In Echtzeit.": "Every employee on one dashboard. In real time.",
+		"Alle Mitarbeiter auf einem Dashboard. In Echtzeit.":
+			"Every employee on one dashboard. In real time.",
 		"Z8 hat unseren Morgen verändert. Kein Stress mehr, keine Zettel — nur Klarheit ab dem ersten Kaffee.":
 			"Z8 changed our mornings. No more stress, no paper - just clarity from the first coffee.",
-		"Teamleiterin": "Team Lead",
+		Teamleiterin: "Team Lead",
 		Zufriedenheit: "Satisfaction",
 		"Der Tag wartet nicht.": "The day does not wait.",
 	},
@@ -527,14 +572,20 @@ export function variantTranslationCopy(variantId: VariantId): Record<string, str
 function translateText(value: string, dictionary: Record<string, string>): string {
 	let translated = value;
 
-	for (const [source, target] of Object.entries(dictionary).sort((a, b) => b[0].length - a[0].length)) {
+	for (const [source, target] of Object.entries(dictionary).sort(
+		(a, b) => b[0].length - a[0].length,
+	)) {
 		translated = translated.split(source).join(target);
 	}
 
 	return translated;
 }
 
-export function translateVariantTree(locale: Locale, variantId: VariantId, node: ReactNode): ReactNode {
+export function translateVariantTree(
+	locale: Locale,
+	variantId: VariantId,
+	node: ReactNode,
+): ReactNode {
 	if (locale === "de") {
 		return node;
 	}

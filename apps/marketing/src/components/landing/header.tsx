@@ -34,6 +34,8 @@ export function Header({ copy }: HeaderProps) {
 							style={{ color: t.textSecondary }}
 							onMouseOver={(e) => (e.currentTarget.style.color = t.navHover)}
 							onMouseOut={(e) => (e.currentTarget.style.color = t.textSecondary)}
+							onFocus={(e) => (e.currentTarget.style.color = t.navHover)}
+							onBlur={(e) => (e.currentTarget.style.color = t.textSecondary)}
 						>
 							{item.label}
 						</a>

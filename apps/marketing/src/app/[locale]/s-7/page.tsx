@@ -1,6 +1,6 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { isLocale } from "@/i18n/locales";
 import { translateVariantTree, variantMetadata } from "@/i18n/variant-copy";
@@ -17,7 +17,9 @@ export default async function DesignS7({ params }: PageProps) {
 	const { locale } = await params;
 	if (!isLocale(locale)) notFound();
 	const homeHref = `/${locale}`;
-	return translateVariantTree(locale, "s-7", (
+	return translateVariantTree(
+		locale,
+		"s-7",
 		<div
 			className="noise min-h-screen"
 			style={{
@@ -39,7 +41,8 @@ export default async function DesignS7({ params }: PageProps) {
 			<div
 				className="pointer-events-none fixed right-[15%] top-0 z-0 h-full w-[2px]"
 				style={{
-					background: "linear-gradient(to bottom, transparent, rgba(180,120,60,0.15) 20%, rgba(60,140,100,0.1) 50%, rgba(180,120,60,0.15) 80%, transparent)",
+					background:
+						"linear-gradient(to bottom, transparent, rgba(180,120,60,0.15) 20%, rgba(60,140,100,0.1) 50%, rgba(180,120,60,0.15) 80%, transparent)",
 				}}
 			/>
 
@@ -57,14 +60,26 @@ export default async function DesignS7({ params }: PageProps) {
 						Z8
 					</span>
 					<div className="h-4 w-px" style={{ backgroundColor: "rgba(180,120,60,0.2)" }} />
-					<span className="text-[10px] font-medium tracking-[0.3em] uppercase" style={{ color: "#3a5a48" }}>
+					<span
+						className="text-[10px] font-medium tracking-[0.3em] uppercase"
+						style={{ color: "#3a5a48" }}
+					>
 						Zeiterfassung
 					</span>
 				</div>
-				<nav className="hidden items-center gap-10 text-[11px] font-medium tracking-[0.15em] uppercase md:flex" style={{ color: "#3a5a48" }}>
-					<a href="#features" className="transition-colors hover:text-[#b87840]">Funktionen</a>
-					<a href="#craft" className="transition-colors hover:text-[#b87840]">Handwerk</a>
-					<a href="#contact" className="transition-colors hover:text-[#b87840]">Kontakt</a>
+				<nav
+					className="hidden items-center gap-10 text-[11px] font-medium tracking-[0.15em] uppercase md:flex"
+					style={{ color: "#3a5a48" }}
+				>
+					<a href="#features" className="transition-colors hover:text-[#b87840]">
+						Funktionen
+					</a>
+					<a href="#craft" className="transition-colors hover:text-[#b87840]">
+						Handwerk
+					</a>
+					<a href="#contact" className="transition-colors hover:text-[#b87840]">
+						Kontakt
+					</a>
 				</nav>
 				<a
 					href="#contact"
@@ -88,7 +103,10 @@ export default async function DesignS7({ params }: PageProps) {
 						}}
 					>
 						<div className="h-2 w-2 rounded-full" style={{ backgroundColor: "#4a9a6a" }} />
-						<span className="text-[11px] font-medium tracking-[0.15em] uppercase" style={{ color: "#4a9a6a" }}>
+						<span
+							className="text-[11px] font-medium tracking-[0.15em] uppercase"
+							style={{ color: "#4a9a6a" }}
+						>
 							Oxidiert, nicht veraltet
 						</span>
 					</div>
@@ -115,11 +133,14 @@ export default async function DesignS7({ params }: PageProps) {
 						className="animate-fade-up mt-8 max-w-md text-[15px] leading-[1.8]"
 						style={{ color: "#5a7a68", animationDelay: "0.3s" }}
 					>
-						Kupfer wird mit der Zeit nicht schwächer — es entwickelt Charakter.
-						Z8 ist die Zeiterfassung, die mit Ihrem Unternehmen reift.
+						Kupfer wird mit der Zeit nicht schwächer — es entwickelt Charakter. Z8 ist die
+						Zeiterfassung, die mit Ihrem Unternehmen reift.
 					</p>
 
-					<div className="animate-fade-up mt-12 flex items-center gap-6" style={{ animationDelay: "0.45s" }}>
+					<div
+						className="animate-fade-up mt-12 flex items-center gap-6"
+						style={{ animationDelay: "0.45s" }}
+					>
 						<a
 							href="#contact"
 							className="px-8 py-3.5 text-[12px] font-bold tracking-[0.1em] uppercase transition-all hover:shadow-[0_0_30px_rgba(184,120,64,0.2)]"
@@ -140,7 +161,10 @@ export default async function DesignS7({ params }: PageProps) {
 					</div>
 
 					{/* Hero image strip */}
-					<div className="animate-fade-up mt-16 grid grid-cols-2 gap-4" style={{ animationDelay: "0.6s" }}>
+					<div
+						className="animate-fade-up mt-16 grid grid-cols-2 gap-4"
+						style={{ animationDelay: "0.6s" }}
+					>
 						<div className="relative h-48 overflow-hidden">
 							<Image
 								src="https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?w=600&q=80&auto=format&fit=crop"
@@ -149,7 +173,12 @@ export default async function DesignS7({ params }: PageProps) {
 								className="object-cover"
 								style={{ filter: "saturate(0.25) sepia(0.2) brightness(0.55) contrast(1.2)" }}
 							/>
-							<div className="absolute inset-0" style={{ background: "linear-gradient(135deg, rgba(60,140,100,0.1), rgba(180,120,60,0.1))" }} />
+							<div
+								className="absolute inset-0"
+								style={{
+									background: "linear-gradient(135deg, rgba(60,140,100,0.1), rgba(180,120,60,0.1))",
+								}}
+							/>
 						</div>
 						<div className="relative h-48 overflow-hidden">
 							<Image
@@ -159,7 +188,12 @@ export default async function DesignS7({ params }: PageProps) {
 								className="object-cover"
 								style={{ filter: "saturate(0.25) sepia(0.2) brightness(0.55) contrast(1.2)" }}
 							/>
-							<div className="absolute inset-0" style={{ background: "linear-gradient(135deg, rgba(180,120,60,0.1), rgba(60,140,100,0.1))" }} />
+							<div
+								className="absolute inset-0"
+								style={{
+									background: "linear-gradient(135deg, rgba(180,120,60,0.1), rgba(60,140,100,0.1))",
+								}}
+							/>
 						</div>
 					</div>
 				</div>
@@ -170,20 +204,40 @@ export default async function DesignS7({ params }: PageProps) {
 				<div className="mx-auto max-w-5xl">
 					<div className="flex items-center gap-4 mb-4">
 						<div className="h-px flex-1" style={{ backgroundColor: "rgba(180,120,60,0.12)" }} />
-						<span className="text-[10px] font-medium tracking-[0.3em] uppercase" style={{ color: "#5a4a38" }}>
+						<span
+							className="text-[10px] font-medium tracking-[0.3em] uppercase"
+							style={{ color: "#5a4a38" }}
+						>
 							Module
 						</span>
 						<div className="h-px flex-1" style={{ backgroundColor: "rgba(60,140,100,0.08)" }} />
 					</div>
 
-					<div className="mt-12 grid gap-px md:grid-cols-3" style={{ backgroundColor: "rgba(60,140,100,0.06)" }}>
+					<div
+						className="mt-12 grid gap-px md:grid-cols-3"
+						style={{ backgroundColor: "rgba(60,140,100,0.06)" }}
+					>
 						{[
-							{ icon: "▣", title: "Stempeluhr", desc: "Präzise Zeiterfassung, ein Klick zum Start, ein Klick zum Ende." },
-							{ icon: "▤", title: "Dashboard", desc: "Echtzeit-Übersicht über alle Mitarbeiter und laufende Projekte." },
-							{ icon: "▥", title: "Berichte", desc: "Automatische Monats- und Projektberichte, exportbereit." },
+							{
+								icon: "▣",
+								title: "Stempeluhr",
+								desc: "Präzise Zeiterfassung, ein Klick zum Start, ein Klick zum Ende.",
+							},
+							{
+								icon: "▤",
+								title: "Dashboard",
+								desc: "Echtzeit-Übersicht über alle Mitarbeiter und laufende Projekte.",
+							},
+							{
+								icon: "▥",
+								title: "Berichte",
+								desc: "Automatische Monats- und Projektberichte, exportbereit.",
+							},
 						].map((f) => (
 							<div key={f.title} className="p-10" style={{ backgroundColor: "#0c0f0e" }}>
-								<div className="text-[24px]" style={{ color: "#4a9a6a" }}>{f.icon}</div>
+								<div className="text-[24px]" style={{ color: "#4a9a6a" }}>
+									{f.icon}
+								</div>
 								<h3 className="mt-4 text-[17px] font-semibold" style={{ color: "#b8c4b8" }}>
 									{f.title}
 								</h3>
@@ -205,8 +259,20 @@ export default async function DesignS7({ params }: PageProps) {
 						"https://images.unsplash.com/photo-1497215842964-222b430dc094?w=600&q=80&auto=format&fit=crop",
 					].map((src, i) => (
 						<div key={i} className="relative h-56 overflow-hidden">
-							<Image src={src} alt="" fill className="object-cover" style={{ filter: "saturate(0.3) sepia(0.2) brightness(0.6) contrast(1.15)" }} />
-							<div className="absolute inset-0" style={{ background: "linear-gradient(135deg, rgba(60,140,100,0.1), rgba(180,120,60,0.08))" }} />
+							<Image
+								src={src}
+								alt=""
+								fill
+								className="object-cover"
+								style={{ filter: "saturate(0.3) sepia(0.2) brightness(0.6) contrast(1.15)" }}
+							/>
+							<div
+								className="absolute inset-0"
+								style={{
+									background:
+										"linear-gradient(135deg, rgba(60,140,100,0.1), rgba(180,120,60,0.08))",
+								}}
+							/>
 						</div>
 					))}
 				</div>
@@ -225,14 +291,18 @@ export default async function DesignS7({ params }: PageProps) {
 							className="text-[clamp(1.5rem,3vw,2.5rem)] font-light leading-[1.3] tracking-[-0.01em]"
 							style={{ color: "#8aa898" }}
 						>
-							&ldquo;Software, die Patina ansetzt, statt zu veralten — das ist unser Versprechen.&rdquo;
+							&ldquo;Software, die Patina ansetzt, statt zu veralten — das ist unser
+							Versprechen.&rdquo;
 						</h2>
 					</div>
 				</div>
 			</section>
 
 			{/* Stats */}
-			<section className="relative z-10 px-8 py-16 lg:px-16" style={{ borderTop: "1px solid rgba(60,140,100,0.06)" }}>
+			<section
+				className="relative z-10 px-8 py-16 lg:px-16"
+				style={{ borderTop: "1px solid rgba(60,140,100,0.06)" }}
+			>
 				<div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-8">
 					{[
 						{ val: "5+", label: "Jahre am Markt" },
@@ -251,7 +321,10 @@ export default async function DesignS7({ params }: PageProps) {
 							>
 								{s.val}
 							</div>
-							<div className="mt-1 text-[10px] font-medium tracking-[0.2em] uppercase" style={{ color: "#3a5a48" }}>
+							<div
+								className="mt-1 text-[10px] font-medium tracking-[0.2em] uppercase"
+								style={{ color: "#3a5a48" }}
+							>
 								{s.label}
 							</div>
 						</div>
@@ -260,7 +333,10 @@ export default async function DesignS7({ params }: PageProps) {
 			</section>
 
 			{/* CTA */}
-			<section id="contact" className="relative z-10 flex flex-col items-center px-8 py-32 text-center lg:px-16">
+			<section
+				id="contact"
+				className="relative z-10 flex flex-col items-center px-8 py-32 text-center lg:px-16"
+			>
 				<h2
 					className="text-[clamp(2rem,4vw,3.5rem)] font-bold leading-[1.1] tracking-[-0.03em]"
 					style={{ color: "#d4dcd4" }}
@@ -279,7 +355,7 @@ export default async function DesignS7({ params }: PageProps) {
 					?
 				</h2>
 				<a
-					href="#"
+					href="#contact"
 					className="mt-10 px-10 py-4 text-[12px] font-bold tracking-[0.1em] uppercase transition-all hover:shadow-[0_0_30px_rgba(184,120,64,0.2)]"
 					style={{ background: "linear-gradient(135deg, #b87840, #8a5a2a)", color: "#0c0f0e" }}
 				>
@@ -288,16 +364,23 @@ export default async function DesignS7({ params }: PageProps) {
 			</section>
 
 			{/* Footer */}
-			<footer className="relative z-10 px-8 py-8 lg:px-16" style={{ borderTop: "1px solid rgba(60,140,100,0.04)" }}>
+			<footer
+				className="relative z-10 px-8 py-8 lg:px-16"
+				style={{ borderTop: "1px solid rgba(60,140,100,0.04)" }}
+			>
 				<div className="flex items-center justify-between">
 					<span className="text-[11px]" style={{ color: "#2a3a30" }}>
 						© 2025 Z8
 					</span>
-					<Link href={homeHref} className="text-[11px] transition-colors hover:text-[#b87840]" style={{ color: "#3a5a48" }}>
+					<Link
+						href={homeHref}
+						className="text-[11px] transition-colors hover:text-[#b87840]"
+						style={{ color: "#3a5a48" }}
+					>
 						← Alle Designs
 					</Link>
 				</div>
 			</footer>
-		</div>
-	));
+		</div>,
+	);
 }

@@ -1,6 +1,6 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { isLocale } from "@/i18n/locales";
 import { translateVariantTree, variantMetadata } from "@/i18n/variant-copy";
@@ -17,7 +17,9 @@ export default async function DesignS5({ params }: PageProps) {
 	const { locale } = await params;
 	if (!isLocale(locale)) notFound();
 	const homeHref = `/${locale}`;
-	return translateVariantTree(locale, "s-5", (
+	return translateVariantTree(
+		locale,
+		"s-5",
 		<div
 			className="min-h-screen"
 			style={{
@@ -42,10 +44,19 @@ export default async function DesignS5({ params }: PageProps) {
 						Z8
 					</span>
 				</div>
-				<nav className="hidden items-center gap-8 text-[13px] font-medium md:flex" style={{ color: "#7a84a0" }}>
-					<a href="#features" className="transition-colors hover:text-[#4a5a8a]">Funktionen</a>
-					<a href="#glass" className="transition-colors hover:text-[#4a5a8a]">Vorteile</a>
-					<a href="#contact" className="transition-colors hover:text-[#4a5a8a]">Preise</a>
+				<nav
+					className="hidden items-center gap-8 text-[13px] font-medium md:flex"
+					style={{ color: "#7a84a0" }}
+				>
+					<a href="#features" className="transition-colors hover:text-[#4a5a8a]">
+						Funktionen
+					</a>
+					<a href="#glass" className="transition-colors hover:text-[#4a5a8a]">
+						Vorteile
+					</a>
+					<a href="#contact" className="transition-colors hover:text-[#4a5a8a]">
+						Preise
+					</a>
 				</nav>
 				<a
 					href="#contact"
@@ -97,11 +108,14 @@ export default async function DesignS5({ params }: PageProps) {
 						className="animate-fade-up mx-auto mt-8 max-w-md text-[15px] leading-[1.75]"
 						style={{ color: "#5a6080", animationDelay: "0.45s" }}
 					>
-						Wie gefrostetes Glas — Z8 zeigt genau das, was Sie brauchen,
-						und blendet alles andere aus. Reine Klarheit.
+						Wie gefrostetes Glas — Z8 zeigt genau das, was Sie brauchen, und blendet alles andere
+						aus. Reine Klarheit.
 					</p>
 
-					<div className="animate-fade-up mt-10 flex items-center justify-center gap-4" style={{ animationDelay: "0.6s" }}>
+					<div
+						className="animate-fade-up mt-10 flex items-center justify-center gap-4"
+						style={{ animationDelay: "0.6s" }}
+					>
 						<a
 							href="#contact"
 							className="rounded-2xl px-8 py-3.5 text-[13px] font-bold transition-all hover:shadow-lg"
@@ -124,7 +138,10 @@ export default async function DesignS5({ params }: PageProps) {
 				</div>
 
 				{/* Hero image — frosted row below glass card */}
-				<div className="animate-fade-up mt-16 flex items-center justify-center gap-4" style={{ animationDelay: "0.75s" }}>
+				<div
+					className="animate-fade-up mt-16 flex items-center justify-center gap-4"
+					style={{ animationDelay: "0.75s" }}
+				>
 					{[
 						"https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&q=80&auto=format&fit=crop",
 						"https://images.unsplash.com/photo-1557804506-669a67965ba0?w=400&q=80&auto=format&fit=crop",
@@ -138,7 +155,13 @@ export default async function DesignS5({ params }: PageProps) {
 								boxShadow: "0 4px 30px rgba(100,120,180,0.06)",
 							}}
 						>
-							<Image src={src} alt="" fill className="object-cover" style={{ filter: "saturate(0.4) brightness(1.05)" }} />
+							<Image
+								src={src}
+								alt=""
+								fill
+								className="object-cover"
+								style={{ filter: "saturate(0.4) brightness(1.05)" }}
+							/>
 						</div>
 					))}
 				</div>
@@ -156,9 +179,21 @@ export default async function DesignS5({ params }: PageProps) {
 
 					<div className="mt-16 grid gap-6 md:grid-cols-3">
 						{[
-							{ icon: "◯", title: "Ein-Klick Start", desc: "Stempeln ohne Nachdenken. Die Uhr läuft ab dem ersten Tippen." },
-							{ icon: "△", title: "Glasklare Berichte", desc: "Daten, die sich von selbst erklären. Kein Rätselraten." },
-							{ icon: "□", title: "Team-Transparenz", desc: "Jeder sieht, was er braucht. Nicht mehr, nicht weniger." },
+							{
+								icon: "◯",
+								title: "Ein-Klick Start",
+								desc: "Stempeln ohne Nachdenken. Die Uhr läuft ab dem ersten Tippen.",
+							},
+							{
+								icon: "△",
+								title: "Glasklare Berichte",
+								desc: "Daten, die sich von selbst erklären. Kein Rätselraten.",
+							},
+							{
+								icon: "□",
+								title: "Team-Transparenz",
+								desc: "Jeder sieht, was er braucht. Nicht mehr, nicht weniger.",
+							},
 						].map((f) => (
 							<div
 								key={f.title}
@@ -205,7 +240,10 @@ export default async function DesignS5({ params }: PageProps) {
 								<div className="h-3 w-3 rounded-full" style={{ backgroundColor: "#e0dcc8" }} />
 								<div className="h-3 w-3 rounded-full" style={{ backgroundColor: "#c8e0cc" }} />
 							</div>
-							<div className="h-6 w-48 rounded-lg" style={{ backgroundColor: "rgba(74,90,138,0.08)" }} />
+							<div
+								className="h-6 w-48 rounded-lg"
+								style={{ backgroundColor: "rgba(74,90,138,0.08)" }}
+							/>
 						</div>
 						{/* Mock content rows */}
 						<div className="space-y-3">
@@ -220,9 +258,14 @@ export default async function DesignS5({ params }: PageProps) {
 									className="flex items-center gap-4 rounded-xl p-4"
 									style={{ backgroundColor: "rgba(255,255,255,0.5)" }}
 								>
-									<div className="h-8 w-8 rounded-full" style={{ backgroundColor: "rgba(74,90,138,0.12)" }} />
+									<div
+										className="h-8 w-8 rounded-full"
+										style={{ backgroundColor: "rgba(74,90,138,0.12)" }}
+									/>
 									<div className="flex-1">
-										<div className="text-[13px] font-semibold" style={{ color: "#2a2e3a" }}>{r.name}</div>
+										<div className="text-[13px] font-semibold" style={{ color: "#2a2e3a" }}>
+											{r.name}
+										</div>
 										<div
 											className="mt-1 h-2 rounded-full"
 											style={{
@@ -231,7 +274,9 @@ export default async function DesignS5({ params }: PageProps) {
 											}}
 										/>
 									</div>
-									<div className="text-[14px] font-bold" style={{ color: "#4a5a8a" }}>{r.hours}</div>
+									<div className="text-[14px] font-bold" style={{ color: "#4a5a8a" }}>
+										{r.hours}
+									</div>
 								</div>
 							))}
 						</div>
@@ -255,14 +300,23 @@ export default async function DesignS5({ params }: PageProps) {
 								border: "1px solid rgba(255,255,255,0.5)",
 							}}
 						>
-							<Image src={src} alt="" fill className="object-cover" style={{ filter: "saturate(0.5) brightness(1.05) contrast(0.95)" }} />
+							<Image
+								src={src}
+								alt=""
+								fill
+								className="object-cover"
+								style={{ filter: "saturate(0.5) brightness(1.05) contrast(0.95)" }}
+							/>
 						</div>
 					))}
 				</div>
 			</section>
 
 			{/* CTA */}
-			<section id="contact" className="relative z-10 flex flex-col items-center px-8 py-32 text-center lg:px-16">
+			<section
+				id="contact"
+				className="relative z-10 flex flex-col items-center px-8 py-32 text-center lg:px-16"
+			>
 				<h2
 					className="text-[clamp(2rem,4vw,3.2rem)] font-bold leading-[1.1] tracking-[-0.03em]"
 					style={{ color: "#2a2e3a" }}
@@ -273,7 +327,7 @@ export default async function DesignS5({ params }: PageProps) {
 					Starten Sie heute — kostenlos und unverbindlich.
 				</p>
 				<a
-					href="#"
+					href="#contact"
 					className="mt-10 rounded-2xl px-10 py-4 text-[14px] font-bold transition-all hover:shadow-lg"
 					style={{ backgroundColor: "#4a5a8a", color: "#f0f2f8" }}
 				>
@@ -282,16 +336,23 @@ export default async function DesignS5({ params }: PageProps) {
 			</section>
 
 			{/* Footer */}
-			<footer className="relative z-10 px-8 py-8 lg:px-16" style={{ borderTop: "1px solid rgba(74,90,138,0.1)" }}>
+			<footer
+				className="relative z-10 px-8 py-8 lg:px-16"
+				style={{ borderTop: "1px solid rgba(74,90,138,0.1)" }}
+			>
 				<div className="flex items-center justify-between">
 					<span className="text-[12px]" style={{ color: "#9a9eb8" }}>
 						© 2025 Z8
 					</span>
-					<Link href={homeHref} className="text-[12px] transition-colors hover:text-[#4a5a8a]" style={{ color: "#9a9eb8" }}>
+					<Link
+						href={homeHref}
+						className="text-[12px] transition-colors hover:text-[#4a5a8a]"
+						style={{ color: "#9a9eb8" }}
+					>
 						← Alle Designs
 					</Link>
 				</div>
 			</footer>
-		</div>
-	));
+		</div>,
+	);
 }

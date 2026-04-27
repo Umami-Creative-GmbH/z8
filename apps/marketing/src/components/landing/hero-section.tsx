@@ -70,20 +70,6 @@ export function HeroSection({ copy }: HeroSectionProps) {
 										color: i === 0 ? t.chipActiveText : t.textSecondary,
 										transition: "all 0.4s ease",
 									}}
-									onMouseOver={(e) => {
-										if (i !== 0) {
-											e.currentTarget.style.borderColor = t.surface;
-											e.currentTarget.style.backgroundColor = t.chipActiveBg;
-											e.currentTarget.style.color = t.chipActiveText;
-										}
-									}}
-									onMouseOut={(e) => {
-										if (i !== 0) {
-											e.currentTarget.style.borderColor = t.borderStrong;
-											e.currentTarget.style.backgroundColor = t.chipBg;
-											e.currentTarget.style.color = t.textSecondary;
-										}
-									}}
 								>
 									{f}
 								</span>

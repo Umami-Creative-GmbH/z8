@@ -1,6 +1,6 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { isLocale } from "@/i18n/locales";
 import { translateVariantTree, variantMetadata } from "@/i18n/variant-copy";
@@ -17,7 +17,9 @@ export default async function DesignS3({ params }: PageProps) {
 	const { locale } = await params;
 	if (!isLocale(locale)) notFound();
 	const homeHref = `/${locale}`;
-	return translateVariantTree(locale, "s-3", (
+	return translateVariantTree(
+		locale,
+		"s-3",
 		<div
 			className="noise min-h-screen"
 			style={{
@@ -30,7 +32,8 @@ export default async function DesignS3({ params }: PageProps) {
 			<div
 				className="pointer-events-none fixed inset-0 z-[1]"
 				style={{
-					background: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,220,0.015) 2px, rgba(0,255,220,0.015) 4px)",
+					background:
+						"repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,220,0.015) 2px, rgba(0,255,220,0.015) 4px)",
 				}}
 			/>
 
@@ -56,17 +59,29 @@ export default async function DesignS3({ params }: PageProps) {
 			{/* Header */}
 			<header className="relative z-20 flex items-center justify-between px-8 py-6 lg:px-16">
 				<div className="flex items-center gap-4">
-					<span className="text-[20px] font-bold" style={{ color: "#00dcc8", textShadow: "0 0 20px rgba(0,220,200,0.4)" }}>
+					<span
+						className="text-[20px] font-bold"
+						style={{ color: "#00dcc8", textShadow: "0 0 20px rgba(0,220,200,0.4)" }}
+					>
 						Z8_
 					</span>
 					<span className="text-[10px] uppercase tracking-[0.3em]" style={{ color: "#1a4a44" }}>
 						sys::zeiterfassung
 					</span>
 				</div>
-				<nav className="hidden items-center gap-8 text-[11px] uppercase tracking-[0.15em] md:flex" style={{ color: "#1a5a50" }}>
-					<a href="#features" className="transition-colors hover:text-[#00dcc8]">[funktionen]</a>
-					<a href="#specs" className="transition-colors hover:text-[#00dcc8]">[specs]</a>
-					<a href="#contact" className="transition-colors hover:text-[#00dcc8]">[kontakt]</a>
+				<nav
+					className="hidden items-center gap-8 text-[11px] uppercase tracking-[0.15em] md:flex"
+					style={{ color: "#1a5a50" }}
+				>
+					<a href="#features" className="transition-colors hover:text-[#00dcc8]">
+						[funktionen]
+					</a>
+					<a href="#specs" className="transition-colors hover:text-[#00dcc8]">
+						[specs]
+					</a>
+					<a href="#contact" className="transition-colors hover:text-[#00dcc8]">
+						[kontakt]
+					</a>
 				</nav>
 				<a
 					href="#contact"
@@ -111,11 +126,14 @@ export default async function DesignS3({ params }: PageProps) {
 						className="animate-fade-up mt-8 max-w-md text-[14px] leading-[1.8]"
 						style={{ color: "#2a6a60", animationDelay: "0.35s" }}
 					>
-						Jede Millisekunde erfasst. Jeder Prozess optimiert.
-						Z8 ist das Betriebssystem für Ihre Arbeitszeit.
+						Jede Millisekunde erfasst. Jeder Prozess optimiert. Z8 ist das Betriebssystem für Ihre
+						Arbeitszeit.
 					</p>
 
-					<div className="animate-fade-up mt-12 flex items-center gap-6" style={{ animationDelay: "0.5s" }}>
+					<div
+						className="animate-fade-up mt-12 flex items-center gap-6"
+						style={{ animationDelay: "0.5s" }}
+					>
 						<a
 							href="#contact"
 							className="px-8 py-3 text-[12px] uppercase tracking-[0.1em] transition-all hover:shadow-[0_0_30px_rgba(0,220,200,0.3)]"
@@ -154,7 +172,13 @@ export default async function DesignS3({ params }: PageProps) {
 						className="object-cover"
 						style={{ filter: "saturate(0.15) brightness(0.3) contrast(1.4) hue-rotate(140deg)" }}
 					/>
-					<div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, transparent 40%, rgba(6,8,12,0.9)), linear-gradient(to right, rgba(0,220,200,0.05), transparent)" }} />
+					<div
+						className="absolute inset-0"
+						style={{
+							background:
+								"linear-gradient(to bottom, transparent 40%, rgba(6,8,12,0.9)), linear-gradient(to right, rgba(0,220,200,0.05), transparent)",
+						}}
+					/>
 					{/* Overlay code snippet */}
 					<div className="absolute bottom-6 left-6 right-6">
 						<pre className="text-[10px] leading-[1.7]" style={{ color: "#1a6a5e" }}>
@@ -171,7 +195,7 @@ export default async function DesignS3({ params }: PageProps) {
 			<section id="features" className="relative z-10 px-8 py-32 lg:px-16">
 				<div className="mx-auto max-w-5xl">
 					<div className="text-[11px] uppercase tracking-[0.2em]" style={{ color: "#1a5a50" }}>
-						// features.config
+						{"// features.config"}
 					</div>
 					<h2
 						className="mt-4 text-[clamp(1.8rem,3.5vw,3rem)] font-bold tracking-[-0.03em]"
@@ -182,10 +206,26 @@ export default async function DesignS3({ params }: PageProps) {
 
 					<div className="mt-16 grid gap-4 md:grid-cols-2">
 						{[
-							{ cmd: "track", title: "Echtzeit-Tracking", desc: "Starten, stoppen, pausieren — alles in Echtzeit synchronisiert." },
-							{ cmd: "report", title: "Auto-Reports", desc: "Berichte generieren sich selbst. Export als CSV, PDF oder JSON." },
-							{ cmd: "sync", title: "API-First", desc: "REST-API für alle Endpunkte. Integriert sich in Ihren Stack." },
-							{ cmd: "secure", title: "Verschlüsselt", desc: "Ende-zu-Ende-Verschlüsselung. Ihre Daten bleiben Ihre Daten." },
+							{
+								cmd: "track",
+								title: "Echtzeit-Tracking",
+								desc: "Starten, stoppen, pausieren — alles in Echtzeit synchronisiert.",
+							},
+							{
+								cmd: "report",
+								title: "Auto-Reports",
+								desc: "Berichte generieren sich selbst. Export als CSV, PDF oder JSON.",
+							},
+							{
+								cmd: "sync",
+								title: "API-First",
+								desc: "REST-API für alle Endpunkte. Integriert sich in Ihren Stack.",
+							},
+							{
+								cmd: "secure",
+								title: "Verschlüsselt",
+								desc: "Ende-zu-Ende-Verschlüsselung. Ihre Daten bleiben Ihre Daten.",
+							},
 						].map((f) => (
 							<div
 								key={f.cmd}
@@ -218,9 +258,24 @@ export default async function DesignS3({ params }: PageProps) {
 						"https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=600&q=80&auto=format&fit=crop",
 						"https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=600&q=80&auto=format&fit=crop",
 					].map((src, i) => (
-						<div key={i} className="relative h-48 overflow-hidden" style={{ border: "1px solid rgba(0,220,200,0.06)" }}>
-							<Image src={src} alt="" fill className="object-cover" style={{ filter: "saturate(0.1) brightness(0.4) contrast(1.3) hue-rotate(140deg)" }} />
-							<div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, transparent 60%, rgba(6,8,12,0.8))" }} />
+						<div
+							key={i}
+							className="relative h-48 overflow-hidden"
+							style={{ border: "1px solid rgba(0,220,200,0.06)" }}
+						>
+							<Image
+								src={src}
+								alt=""
+								fill
+								className="object-cover"
+								style={{ filter: "saturate(0.1) brightness(0.4) contrast(1.3) hue-rotate(140deg)" }}
+							/>
+							<div
+								className="absolute inset-0"
+								style={{
+									background: "linear-gradient(to bottom, transparent 60%, rgba(6,8,12,0.8))",
+								}}
+							/>
 						</div>
 					))}
 				</div>
@@ -230,7 +285,10 @@ export default async function DesignS3({ params }: PageProps) {
 			<section
 				id="specs"
 				className="relative z-10 px-8 py-16 lg:px-16"
-				style={{ borderTop: "1px solid rgba(0,220,200,0.06)", borderBottom: "1px solid rgba(0,220,200,0.06)" }}
+				style={{
+					borderTop: "1px solid rgba(0,220,200,0.06)",
+					borderBottom: "1px solid rgba(0,220,200,0.06)",
+				}}
 			>
 				<div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-8">
 					{[
@@ -246,7 +304,10 @@ export default async function DesignS3({ params }: PageProps) {
 							>
 								{s.val}
 							</div>
-							<div className="mt-1 text-[10px] uppercase tracking-[0.2em]" style={{ color: "#1a5a50" }}>
+							<div
+								className="mt-1 text-[10px] uppercase tracking-[0.2em]"
+								style={{ color: "#1a5a50" }}
+							>
 								{s.label}
 							</div>
 						</div>
@@ -255,16 +316,22 @@ export default async function DesignS3({ params }: PageProps) {
 			</section>
 
 			{/* CTA */}
-			<section id="contact" className="relative z-10 flex flex-col items-center px-8 py-32 text-center lg:px-16">
+			<section
+				id="contact"
+				className="relative z-10 flex flex-col items-center px-8 py-32 text-center lg:px-16"
+			>
 				<h2
 					className="text-[clamp(2rem,4vw,3.5rem)] font-bold leading-[1.1] tracking-[-0.03em]"
 					style={{ color: "#8af0e4" }}
 				>
 					<span style={{ color: "#1a5a50" }}>&gt;</span> Ready to{" "}
-					<span style={{ color: "#00dcc8", textShadow: "0 0 30px rgba(0,220,200,0.3)" }}>execute</span>?
+					<span style={{ color: "#00dcc8", textShadow: "0 0 30px rgba(0,220,200,0.3)" }}>
+						execute
+					</span>
+					?
 				</h2>
 				<a
-					href="#"
+					href="#contact"
 					className="mt-10 px-10 py-4 text-[12px] font-bold uppercase tracking-[0.1em] transition-all hover:shadow-[0_0_40px_rgba(0,220,200,0.3)]"
 					style={{ backgroundColor: "#00dcc8", color: "#06080c" }}
 				>
@@ -273,16 +340,23 @@ export default async function DesignS3({ params }: PageProps) {
 			</section>
 
 			{/* Footer */}
-			<footer className="relative z-10 px-8 py-8 lg:px-16" style={{ borderTop: "1px solid rgba(0,220,200,0.04)" }}>
+			<footer
+				className="relative z-10 px-8 py-8 lg:px-16"
+				style={{ borderTop: "1px solid rgba(0,220,200,0.04)" }}
+			>
 				<div className="flex items-center justify-between">
 					<span className="text-[11px]" style={{ color: "#0a3a34" }}>
-						/* z8 v2.0 */
+						{"/* z8 v2.0 */"}
 					</span>
-					<Link href={homeHref} className="text-[11px] transition-colors hover:text-[#00dcc8]" style={{ color: "#1a5a50" }}>
+					<Link
+						href={homeHref}
+						className="text-[11px] transition-colors hover:text-[#00dcc8]"
+						style={{ color: "#1a5a50" }}
+					>
 						cd ~/designs
 					</Link>
 				</div>
 			</footer>
-		</div>
-	));
+		</div>,
+	);
 }

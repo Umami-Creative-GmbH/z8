@@ -1,6 +1,6 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { isLocale } from "@/i18n/locales";
 import { translateVariantTree, variantMetadata } from "@/i18n/variant-copy";
@@ -17,7 +17,9 @@ export default async function DesignS9({ params }: PageProps) {
 	const { locale } = await params;
 	if (!isLocale(locale)) notFound();
 	const homeHref = `/${locale}`;
-	return translateVariantTree(locale, "s-9", (
+	return translateVariantTree(
+		locale,
+		"s-9",
 		<div
 			className="min-h-screen"
 			style={{
@@ -40,7 +42,8 @@ export default async function DesignS9({ params }: PageProps) {
 			<div
 				className="pointer-events-none fixed inset-0 z-0"
 				style={{
-					background: "radial-gradient(ellipse 100% 40% at 50% 100%, rgba(240,140,80,0.12) 0%, transparent 60%)",
+					background:
+						"radial-gradient(ellipse 100% 40% at 50% 100%, rgba(240,140,80,0.12) 0%, transparent 60%)",
 				}}
 			/>
 
@@ -58,10 +61,19 @@ export default async function DesignS9({ params }: PageProps) {
 						Z8
 					</span>
 				</div>
-				<nav className="hidden items-center gap-8 text-[13px] font-medium md:flex" style={{ color: "#9a7868" }}>
-					<a href="#features" className="transition-colors hover:text-[#d04820]">Funktionen</a>
-					<a href="#warmth" className="transition-colors hover:text-[#d04820]">Vorteile</a>
-					<a href="#contact" className="transition-colors hover:text-[#d04820]">Preise</a>
+				<nav
+					className="hidden items-center gap-8 text-[13px] font-medium md:flex"
+					style={{ color: "#9a7868" }}
+				>
+					<a href="#features" className="transition-colors hover:text-[#d04820]">
+						Funktionen
+					</a>
+					<a href="#warmth" className="transition-colors hover:text-[#d04820]">
+						Vorteile
+					</a>
+					<a href="#contact" className="transition-colors hover:text-[#d04820]">
+						Preise
+					</a>
 				</nav>
 				<a
 					href="#contact"
@@ -78,16 +90,14 @@ export default async function DesignS9({ params }: PageProps) {
 			{/* Hero */}
 			<section className="relative z-10 flex min-h-[88vh] flex-col items-center justify-center px-8 text-center lg:px-16">
 				{/* Sun circle */}
-				<div
-					className="animate-scale-in mb-12"
-					style={{ animationDelay: "0s" }}
-				>
+				<div className="animate-scale-in mb-12" style={{ animationDelay: "0s" }}>
 					<div
 						style={{
 							width: 120,
 							height: 120,
 							borderRadius: "50%",
-							background: "radial-gradient(circle, #f8a860 0%, #e87040 40%, rgba(232,112,64,0) 70%)",
+							background:
+								"radial-gradient(circle, #f8a860 0%, #e87040 40%, rgba(232,112,64,0) 70%)",
 							boxShadow: "0 0 80px rgba(232,112,64,0.3), 0 0 160px rgba(232,112,64,0.1)",
 						}}
 					/>
@@ -123,11 +133,14 @@ export default async function DesignS9({ params }: PageProps) {
 					className="animate-fade-up mx-auto mt-8 max-w-lg text-[16px] leading-[1.75]"
 					style={{ color: "#8a6858", animationDelay: "0.45s" }}
 				>
-					Wie der erste Lichtstrahl am Horizont — Z8 bringt Wärme
-					und Klarheit in Ihre tägliche Zeiterfassung.
+					Wie der erste Lichtstrahl am Horizont — Z8 bringt Wärme und Klarheit in Ihre tägliche
+					Zeiterfassung.
 				</p>
 
-				<div className="animate-fade-up mt-10 flex items-center gap-4" style={{ animationDelay: "0.6s" }}>
+				<div
+					className="animate-fade-up mt-10 flex items-center gap-4"
+					style={{ animationDelay: "0.6s" }}
+				>
 					<a
 						href="#contact"
 						className="rounded-full px-8 py-3.5 text-[13px] font-bold transition-all hover:shadow-lg"
@@ -205,7 +218,13 @@ export default async function DesignS9({ params }: PageProps) {
 						"https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=600&q=80&auto=format&fit=crop",
 					].map((src, i) => (
 						<div key={i} className="relative h-56 overflow-hidden rounded-3xl">
-							<Image src={src} alt="" fill className="object-cover" style={{ filter: "saturate(0.7) brightness(1.05) sepia(0.1)" }} />
+							<Image
+								src={src}
+								alt=""
+								fill
+								className="object-cover"
+								style={{ filter: "saturate(0.7) brightness(1.05) sepia(0.1)" }}
+							/>
 						</div>
 					))}
 				</div>
@@ -225,8 +244,8 @@ export default async function DesignS9({ params }: PageProps) {
 							className="text-[clamp(1.3rem,2.5vw,1.8rem)] font-medium leading-[1.5]"
 							style={{ color: "#5a3828" }}
 						>
-							&ldquo;Z8 hat unseren Morgen verändert. Kein Stress mehr,
-							keine Zettel — nur Klarheit ab dem ersten Kaffee.&rdquo;
+							&ldquo;Z8 hat unseren Morgen verändert. Kein Stress mehr, keine Zettel — nur Klarheit
+							ab dem ersten Kaffee.&rdquo;
 						</blockquote>
 						<p className="mt-6 text-[13px] font-semibold" style={{ color: "#c87850" }}>
 							— Sarah K., Teamleiterin
@@ -255,7 +274,10 @@ export default async function DesignS9({ params }: PageProps) {
 							>
 								{s.val}
 							</div>
-							<div className="mt-1 text-[11px] font-semibold tracking-[0.15em] uppercase" style={{ color: "#9a7868" }}>
+							<div
+								className="mt-1 text-[11px] font-semibold tracking-[0.15em] uppercase"
+								style={{ color: "#9a7868" }}
+							>
 								{s.label}
 							</div>
 						</div>
@@ -264,7 +286,10 @@ export default async function DesignS9({ params }: PageProps) {
 			</section>
 
 			{/* CTA */}
-			<section id="contact" className="relative z-10 flex flex-col items-center px-8 py-32 text-center lg:px-16">
+			<section
+				id="contact"
+				className="relative z-10 flex flex-col items-center px-8 py-32 text-center lg:px-16"
+			>
 				<h2
 					className="text-[clamp(2rem,4vw,3.2rem)] font-bold leading-[1.1] tracking-[-0.03em]"
 					style={{ color: "#3a2828" }}
@@ -272,7 +297,7 @@ export default async function DesignS9({ params }: PageProps) {
 					Der Tag wartet nicht.
 				</h2>
 				<a
-					href="#"
+					href="#contact"
 					className="mt-10 rounded-full px-10 py-4 text-[14px] font-bold transition-all hover:shadow-lg"
 					style={{
 						background: "linear-gradient(135deg, #e87040, #d04820)",
@@ -284,16 +309,23 @@ export default async function DesignS9({ params }: PageProps) {
 			</section>
 
 			{/* Footer */}
-			<footer className="relative z-10 px-8 py-8 lg:px-16" style={{ borderTop: "1px solid rgba(208,72,32,0.1)" }}>
+			<footer
+				className="relative z-10 px-8 py-8 lg:px-16"
+				style={{ borderTop: "1px solid rgba(208,72,32,0.1)" }}
+			>
 				<div className="flex items-center justify-between">
 					<span className="text-[12px]" style={{ color: "#b8a090" }}>
 						© 2025 Z8
 					</span>
-					<Link href={homeHref} className="text-[12px] transition-colors hover:text-[#d04820]" style={{ color: "#b8a090" }}>
+					<Link
+						href={homeHref}
+						className="text-[12px] transition-colors hover:text-[#d04820]"
+						style={{ color: "#b8a090" }}
+					>
 						← Alle Designs
 					</Link>
 				</div>
 			</footer>
-		</div>
-	));
+		</div>,
+	);
 }

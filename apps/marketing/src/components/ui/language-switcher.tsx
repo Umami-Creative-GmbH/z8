@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { useThemeTokens } from "@/components/theme/theme-context";
 import { getLocalizedPath, isLocale, type Locale } from "@/i18n/locales";
 
@@ -53,7 +53,6 @@ export function LanguageSwitcher() {
 						<span
 							key={option.locale}
 							aria-current="page"
-							aria-label={`${option.label} current language`}
 							className={languageControlClass}
 							style={style}
 						>

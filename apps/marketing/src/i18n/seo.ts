@@ -7,11 +7,13 @@ const siteUrl = "https://z8-time.app";
 const homeMetadata: Record<Locale, { title: string; description: string }> = {
 	de: {
 		title: "Z8 | Zeiterfassung und Workforce Management",
-		description: "Z8 vereint Zeiterfassung, Lohnexport, Schichtplanung und Analysen fuer moderne Unternehmen.",
+		description:
+			"Z8 vereint Zeiterfassung, Lohnexport, Schichtplanung und Analysen fuer moderne Unternehmen.",
 	},
 	en: {
 		title: "Z8 | Time Tracking and Workforce Management",
-		description: "Z8 brings time tracking, payroll export, scheduling, and analytics together for modern teams.",
+		description:
+			"Z8 brings time tracking, payroll export, scheduling, and analytics together for modern teams.",
 	},
 };
 

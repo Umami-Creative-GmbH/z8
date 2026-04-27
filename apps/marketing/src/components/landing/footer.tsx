@@ -44,6 +44,16 @@ export function Footer({ copy }: FooterProps) {
 										e.currentTarget.style.color = t.textTertiary;
 										e.currentTarget.style.borderColor = t.socialBorder;
 									}}
+									onFocus={(e) => {
+										e.currentTarget.style.backgroundColor = t.surface;
+										e.currentTarget.style.color = t.surfaceText;
+										e.currentTarget.style.borderColor = t.surface;
+									}}
+									onBlur={(e) => {
+										e.currentTarget.style.backgroundColor = "transparent";
+										e.currentTarget.style.color = t.textTertiary;
+										e.currentTarget.style.borderColor = t.socialBorder;
+									}}
 								>
 									{social}
 								</a>
@@ -67,6 +77,8 @@ export function Footer({ copy }: FooterProps) {
 											style={{ color: t.textSecondary }}
 											onMouseOver={(e) => (e.currentTarget.style.color = t.footerHover)}
 											onMouseOut={(e) => (e.currentTarget.style.color = t.textSecondary)}
+											onFocus={(e) => (e.currentTarget.style.color = t.footerHover)}
+											onBlur={(e) => (e.currentTarget.style.color = t.textSecondary)}
 										>
 											{link}
 										</a>
@@ -94,6 +106,8 @@ export function Footer({ copy }: FooterProps) {
 									className="transition-colors"
 									onMouseOver={(e) => (e.currentTarget.style.color = t.footerHover)}
 									onMouseOut={(e) => (e.currentTarget.style.color = t.textQuaternary)}
+									onFocus={(e) => (e.currentTarget.style.color = t.footerHover)}
+									onBlur={(e) => (e.currentTarget.style.color = t.textQuaternary)}
 								>
 									{link}
 								</a>

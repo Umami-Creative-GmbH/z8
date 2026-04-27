@@ -1,4 +1,4 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { defaultLocale, isLocale } from "@/i18n/locales";
 
 const localeLikeSegment = /^[a-z]{2}$/;

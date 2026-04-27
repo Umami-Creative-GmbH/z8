@@ -1,8 +1,8 @@
 "use client";
 
-import { cloneElement, isValidElement, type ReactNode, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { cloneElement, isValidElement, type ReactNode, useState } from "react";
 
 const themes = {
 	dark: {
@@ -28,13 +28,17 @@ const themes = {
 		kanjiNum: "rgba(74,111,165,0.3)",
 		kanjiWorkflow: "rgba(74,111,165,0.06)",
 		badgeBorder: "rgba(74,111,165,0.1)",
-		ambient1: "radial-gradient(ellipse 80% 60% at 20% 30%, rgba(30,50,100,0.18) 0%, transparent 60%), radial-gradient(ellipse 50% 40% at 80% 70%, rgba(20,30,70,0.1) 0%, transparent 50%)",
-		inkLine: "linear-gradient(to bottom, transparent, rgba(100,130,200,0.15) 30%, rgba(100,130,200,0.08) 70%, transparent)",
+		ambient1:
+			"radial-gradient(ellipse 80% 60% at 20% 30%, rgba(30,50,100,0.18) 0%, transparent 60%), radial-gradient(ellipse 50% 40% at 80% 70%, rgba(20,30,70,0.1) 0%, transparent 50%)",
+		inkLine:
+			"linear-gradient(to bottom, transparent, rgba(100,130,200,0.15) 30%, rgba(100,130,200,0.08) 70%, transparent)",
 		imgFilter: "saturate(0.1) brightness(0.45) contrast(1.3)",
 		imgFilterAlt: "saturate(0.08) brightness(0.4) contrast(1.3)",
 		imgFilterSide: "saturate(0.08) brightness(0.45) contrast(1.25)",
-		heroOverlay: "linear-gradient(to bottom, rgba(10,14,26,0.3), rgba(10,14,26,0.7)), linear-gradient(to right, rgba(74,111,165,0.08), transparent)",
-		wideOverlay: "linear-gradient(to right, rgba(10,14,26,0.85) 0%, rgba(10,14,26,0.4) 50%, rgba(10,14,26,0.85) 100%)",
+		heroOverlay:
+			"linear-gradient(to bottom, rgba(10,14,26,0.3), rgba(10,14,26,0.7)), linear-gradient(to right, rgba(74,111,165,0.08), transparent)",
+		wideOverlay:
+			"linear-gradient(to right, rgba(10,14,26,0.85) 0%, rgba(10,14,26,0.4) 50%, rgba(10,14,26,0.85) 100%)",
 		imgOverlayL: "linear-gradient(to left, rgba(10,14,26,0.2), rgba(10,14,26,0.6))",
 		imgOverlayR: "linear-gradient(to right, rgba(10,14,26,0.2), rgba(10,14,26,0.6))",
 		gridImgOverlay: "linear-gradient(to bottom, transparent 50%, rgba(10,14,26,0.7))",
@@ -64,13 +68,17 @@ const themes = {
 		kanjiNum: "rgba(74,96,128,0.2)",
 		kanjiWorkflow: "rgba(74,96,128,0.07)",
 		badgeBorder: "rgba(74,96,128,0.12)",
-		ambient1: "radial-gradient(ellipse 80% 60% at 20% 30%, rgba(180,170,150,0.12) 0%, transparent 60%), radial-gradient(ellipse 50% 40% at 80% 70%, rgba(160,150,130,0.08) 0%, transparent 50%)",
-		inkLine: "linear-gradient(to bottom, transparent, rgba(90,100,120,0.1) 30%, rgba(90,100,120,0.05) 70%, transparent)",
+		ambient1:
+			"radial-gradient(ellipse 80% 60% at 20% 30%, rgba(180,170,150,0.12) 0%, transparent 60%), radial-gradient(ellipse 50% 40% at 80% 70%, rgba(160,150,130,0.08) 0%, transparent 50%)",
+		inkLine:
+			"linear-gradient(to bottom, transparent, rgba(90,100,120,0.1) 30%, rgba(90,100,120,0.05) 70%, transparent)",
 		imgFilter: "saturate(0.15) brightness(1.05) contrast(0.9)",
 		imgFilterAlt: "saturate(0.12) brightness(1.1) contrast(0.85)",
 		imgFilterSide: "saturate(0.12) brightness(1.08) contrast(0.88)",
-		heroOverlay: "linear-gradient(to bottom, rgba(246,244,240,0.2), rgba(246,244,240,0.5)), linear-gradient(to right, rgba(74,96,128,0.04), transparent)",
-		wideOverlay: "linear-gradient(to right, rgba(246,244,240,0.8) 0%, rgba(246,244,240,0.3) 50%, rgba(246,244,240,0.8) 100%)",
+		heroOverlay:
+			"linear-gradient(to bottom, rgba(246,244,240,0.2), rgba(246,244,240,0.5)), linear-gradient(to right, rgba(74,96,128,0.04), transparent)",
+		wideOverlay:
+			"linear-gradient(to right, rgba(246,244,240,0.8) 0%, rgba(246,244,240,0.3) 50%, rgba(246,244,240,0.8) 100%)",
 		imgOverlayL: "linear-gradient(to left, rgba(246,244,240,0.15), rgba(246,244,240,0.5))",
 		imgOverlayR: "linear-gradient(to right, rgba(246,244,240,0.15), rgba(246,244,240,0.5))",
 		gridImgOverlay: "linear-gradient(to bottom, transparent 50%, rgba(246,244,240,0.6))",
@@ -82,7 +90,9 @@ const themes = {
 function translateText(value: string, dictionary: Record<string, string>): string {
 	let translated = value;
 
-	for (const [source, target] of Object.entries(dictionary).sort((a, b) => b[0].length - a[0].length)) {
+	for (const [source, target] of Object.entries(dictionary).sort(
+		(a, b) => b[0].length - a[0].length,
+	)) {
 		translated = translated.split(source).join(target);
 	}
 
@@ -111,7 +121,13 @@ function translateTree(node: ReactNode, dictionary: Record<string, string>): Rea
 	return cloneElement(node, undefined, translateTree(props.children, dictionary));
 }
 
-export function DesignS1Client({ locale, translationCopy }: { locale: "de" | "en"; translationCopy: Record<string, string> }) {
+export function DesignS1Client({
+	locale,
+	translationCopy,
+}: {
+	locale: "de" | "en";
+	translationCopy: Record<string, string>;
+}) {
 	const [mode, setMode] = useState<"dark" | "light">("dark");
 	const homeHref = `/${locale}`;
 	const t = themes[mode];
@@ -154,16 +170,30 @@ export function DesignS1Client({ locale, translationCopy }: { locale: "de" | "en
 						Zeiterfassung
 					</span>
 				</div>
-				<nav className="hidden items-center gap-10 text-[11px] tracking-[0.2em] uppercase md:flex" style={{ color: t.secondary, transition: "color 0.6s ease" }}>
-					<a href="#features" className="transition-colors" style={{ color: "inherit" }}>Funktionen</a>
-					<a href="#workflow" className="transition-colors" style={{ color: "inherit" }}>Workflow</a>
-					<a href="#compliance" className="transition-colors" style={{ color: "inherit" }}>Compliance</a>
-					<a href="#integrations" className="transition-colors" style={{ color: "inherit" }}>Integrationen</a>
-					<a href="#contact" className="transition-colors" style={{ color: "inherit" }}>Kontakt</a>
+				<nav
+					className="hidden items-center gap-10 text-[11px] tracking-[0.2em] uppercase md:flex"
+					style={{ color: t.secondary, transition: "color 0.6s ease" }}
+				>
+					<a href="#features" className="transition-colors" style={{ color: "inherit" }}>
+						Funktionen
+					</a>
+					<a href="#workflow" className="transition-colors" style={{ color: "inherit" }}>
+						Workflow
+					</a>
+					<a href="#compliance" className="transition-colors" style={{ color: "inherit" }}>
+						Compliance
+					</a>
+					<a href="#integrations" className="transition-colors" style={{ color: "inherit" }}>
+						Integrationen
+					</a>
+					<a href="#contact" className="transition-colors" style={{ color: "inherit" }}>
+						Kontakt
+					</a>
 				</nav>
 				<div className="flex items-center gap-4">
 					{/* Mode toggle */}
 					<button
+						type="button"
 						onClick={() => setMode(mode === "dark" ? "light" : "dark")}
 						className="flex h-8 w-8 items-center justify-center text-[16px] transition-all"
 						style={{ color: t.secondary, opacity: 0.7 }}
@@ -174,7 +204,11 @@ export function DesignS1Client({ locale, translationCopy }: { locale: "de" | "en
 					<a
 						href="#contact"
 						className="rounded-none px-6 py-2.5 text-[11px] tracking-[0.15em] uppercase transition-all"
-						style={{ border: `1px solid ${t.outlineBorder}`, color: t.hoverAccent, transition: "border-color 0.6s ease, color 0.6s ease" }}
+						style={{
+							border: `1px solid ${t.outlineBorder}`,
+							color: t.hoverAccent,
+							transition: "border-color 0.6s ease, color 0.6s ease",
+						}}
 					>
 						Starten
 					</a>
@@ -214,16 +248,23 @@ export function DesignS1Client({ locale, translationCopy }: { locale: "de" | "en
 						className="animate-fade-up mt-8 max-w-md text-[16px] leading-[1.8]"
 						style={{ color: t.bodyAlt, animationDelay: "0.4s", transition: "color 0.6s ease" }}
 					>
-						Wie Tusche auf Papier — jede Sekunde hinterlässt eine Spur.
-						Z8 verwandelt flüchtige Momente in bleibende Klarheit.
-						Stempeluhr, Berichte, Schichtplanung und Lohnexport — in einem Werkzeug.
+						Wie Tusche auf Papier — jede Sekunde hinterlässt eine Spur. Z8 verwandelt flüchtige
+						Momente in bleibende Klarheit. Stempeluhr, Berichte, Schichtplanung und Lohnexport — in
+						einem Werkzeug.
 					</p>
 
-					<div className="animate-fade-up mt-12 flex items-center gap-6" style={{ animationDelay: "0.55s" }}>
+					<div
+						className="animate-fade-up mt-12 flex items-center gap-6"
+						style={{ animationDelay: "0.55s" }}
+					>
 						<a
 							href="#contact"
 							className={`px-8 py-3.5 text-[12px] tracking-[0.15em] uppercase transition-all hover:shadow-[${t.ctaShadow}]`}
-							style={{ backgroundColor: t.accent, color: t.btnText, transition: "background-color 0.6s ease, color 0.6s ease" }}
+							style={{
+								backgroundColor: t.accent,
+								color: t.btnText,
+								transition: "background-color 0.6s ease, color 0.6s ease",
+							}}
 						>
 							Kostenlos testen
 						</a>
@@ -249,14 +290,23 @@ export function DesignS1Client({ locale, translationCopy }: { locale: "de" | "en
 						className="object-cover"
 						style={{ filter: t.imgFilter, transition: "filter 0.6s ease" }}
 					/>
-					<div className="absolute inset-0" style={{ background: t.heroOverlay, transition: "background 0.6s ease" }} />
+					<div
+						className="absolute inset-0"
+						style={{ background: t.heroOverlay, transition: "background 0.6s ease" }}
+					/>
 				</div>
 			</section>
 
 			{/* Logo bar — trusted by */}
-			<section className="relative z-10 px-8 py-16 lg:px-20" style={{ borderTop: `1px solid ${t.border}`, transition: "border-color 0.6s ease" }}>
+			<section
+				className="relative z-10 px-8 py-16 lg:px-20"
+				style={{ borderTop: `1px solid ${t.border}`, transition: "border-color 0.6s ease" }}
+			>
 				<div className="mx-auto max-w-5xl">
-					<p className="text-center text-[10px] tracking-[0.3em] uppercase" style={{ color: t.muted, transition: "color 0.6s ease" }}>
+					<p
+						className="text-center text-[10px] tracking-[0.3em] uppercase"
+						style={{ color: t.muted, transition: "color 0.6s ease" }}
+					>
 						Vertraut von über 10.000 Unternehmen
 					</p>
 					<div className="mt-8 flex flex-wrap items-center justify-center gap-12">
@@ -289,24 +339,48 @@ export function DesignS1Client({ locale, translationCopy }: { locale: "de" | "en
 						Reduziert auf das Wesentliche
 					</h2>
 
-					<div className="mt-16 grid gap-px md:grid-cols-3" style={{ backgroundColor: t.gridGap, transition: "background-color 0.6s ease" }}>
+					<div
+						className="mt-16 grid gap-px md:grid-cols-3"
+						style={{ backgroundColor: t.gridGap, transition: "background-color 0.6s ease" }}
+					>
 						{[
-							{ num: "一", title: "Stempeluhr", desc: "Ein Klick genügt. Start, Stopp, Pause — auf Web, Desktop und Mobilgerät. Echtzeit-Synchronisation über alle Geräte." },
-							{ num: "二", title: "Berichte & Analyse", desc: "Echtzeit-Dashboards zeigen Überstunden, Trends und Auslastung. Klare Übersichten, die für sich sprechen." },
-							{ num: "三", title: "Schichtplanung", desc: "Schichten erstellen, zuweisen und verwalten. Automatische Konflikterkennung und Benachrichtigungen." },
+							{
+								num: "一",
+								title: "Stempeluhr",
+								desc: "Ein Klick genügt. Start, Stopp, Pause — auf Web, Desktop und Mobilgerät. Echtzeit-Synchronisation über alle Geräte.",
+							},
+							{
+								num: "二",
+								title: "Berichte & Analyse",
+								desc: "Echtzeit-Dashboards zeigen Überstunden, Trends und Auslastung. Klare Übersichten, die für sich sprechen.",
+							},
+							{
+								num: "三",
+								title: "Schichtplanung",
+								desc: "Schichten erstellen, zuweisen und verwalten. Automatische Konflikterkennung und Benachrichtigungen.",
+							},
 						].map((f) => (
 							<div
 								key={f.num}
 								className="p-10"
 								style={{ backgroundColor: t.cardBg, transition: "background-color 0.6s ease" }}
 							>
-								<span className="text-[32px] font-thin" style={{ color: t.kanjiNum, transition: "color 0.6s ease" }}>
+								<span
+									className="text-[32px] font-thin"
+									style={{ color: t.kanjiNum, transition: "color 0.6s ease" }}
+								>
 									{f.num}
 								</span>
-								<h3 className="mt-4 text-[18px] font-light tracking-[-0.01em]" style={{ color: t.cardHeading, transition: "color 0.6s ease" }}>
+								<h3
+									className="mt-4 text-[18px] font-light tracking-[-0.01em]"
+									style={{ color: t.cardHeading, transition: "color 0.6s ease" }}
+								>
 									{f.title}
 								</h3>
-								<p className="mt-3 text-[14px] leading-[1.7]" style={{ color: t.body, transition: "color 0.6s ease" }}>
+								<p
+									className="mt-3 text-[14px] leading-[1.7]"
+									style={{ color: t.body, transition: "color 0.6s ease" }}
+								>
 									{f.desc}
 								</p>
 							</div>
@@ -314,24 +388,48 @@ export function DesignS1Client({ locale, translationCopy }: { locale: "de" | "en
 					</div>
 
 					{/* Second row */}
-					<div className="mt-px grid gap-px md:grid-cols-3" style={{ backgroundColor: t.gridGap, transition: "background-color 0.6s ease" }}>
+					<div
+						className="mt-px grid gap-px md:grid-cols-3"
+						style={{ backgroundColor: t.gridGap, transition: "background-color 0.6s ease" }}
+					>
 						{[
-							{ num: "四", title: "Lohnexport", desc: "Automatischer Export zu DATEV, Lexware und Personio. Fehlerfrei, pünktlich, revisionssicher." },
-							{ num: "五", title: "Urlaubsverwaltung", desc: "Urlaubsanträge, Genehmigungen und Resttagekontingente — alles digital, alles transparent." },
-							{ num: "六", title: "Überstundenkonto", desc: "Automatische Berechnung, Auf- und Abbau, flexible Regeln pro Mitarbeiter oder Abteilung." },
+							{
+								num: "四",
+								title: "Lohnexport",
+								desc: "Automatischer Export zu DATEV, Lexware und Personio. Fehlerfrei, pünktlich, revisionssicher.",
+							},
+							{
+								num: "五",
+								title: "Urlaubsverwaltung",
+								desc: "Urlaubsanträge, Genehmigungen und Resttagekontingente — alles digital, alles transparent.",
+							},
+							{
+								num: "六",
+								title: "Überstundenkonto",
+								desc: "Automatische Berechnung, Auf- und Abbau, flexible Regeln pro Mitarbeiter oder Abteilung.",
+							},
 						].map((f) => (
 							<div
 								key={f.num}
 								className="p-10"
 								style={{ backgroundColor: t.cardBg, transition: "background-color 0.6s ease" }}
 							>
-								<span className="text-[32px] font-thin" style={{ color: t.kanjiNum, transition: "color 0.6s ease" }}>
+								<span
+									className="text-[32px] font-thin"
+									style={{ color: t.kanjiNum, transition: "color 0.6s ease" }}
+								>
 									{f.num}
 								</span>
-								<h3 className="mt-4 text-[18px] font-light tracking-[-0.01em]" style={{ color: t.cardHeading, transition: "color 0.6s ease" }}>
+								<h3
+									className="mt-4 text-[18px] font-light tracking-[-0.01em]"
+									style={{ color: t.cardHeading, transition: "color 0.6s ease" }}
+								>
 									{f.title}
 								</h3>
-								<p className="mt-3 text-[14px] leading-[1.7]" style={{ color: t.body, transition: "color 0.6s ease" }}>
+								<p
+									className="mt-3 text-[14px] leading-[1.7]"
+									style={{ color: t.body, transition: "color 0.6s ease" }}
+								>
 									{f.desc}
 								</p>
 							</div>
@@ -341,9 +439,16 @@ export function DesignS1Client({ locale, translationCopy }: { locale: "de" | "en
 			</section>
 
 			{/* Workflow — how it works */}
-			<section id="workflow" className="relative z-10 px-8 py-32 lg:px-20" style={{ borderTop: `1px solid ${t.border}`, transition: "border-color 0.6s ease" }}>
+			<section
+				id="workflow"
+				className="relative z-10 px-8 py-32 lg:px-20"
+				style={{ borderTop: `1px solid ${t.border}`, transition: "border-color 0.6s ease" }}
+			>
 				<div className="mx-auto max-w-5xl">
-					<p className="text-[11px] tracking-[0.3em] uppercase" style={{ color: t.accent, transition: "color 0.6s ease" }}>
+					<p
+						className="text-[11px] tracking-[0.3em] uppercase"
+						style={{ color: t.accent, transition: "color 0.6s ease" }}
+					>
 						Workflow
 					</p>
 					<h2
@@ -381,13 +486,22 @@ export function DesignS1Client({ locale, translationCopy }: { locale: "de" | "en
 								>
 									{s.kanji}
 								</div>
-								<div className="mt-4 text-[11px] tracking-[0.2em] uppercase" style={{ color: t.accent, transition: "color 0.6s ease" }}>
+								<div
+									className="mt-4 text-[11px] tracking-[0.2em] uppercase"
+									style={{ color: t.accent, transition: "color 0.6s ease" }}
+								>
 									Schritt {s.step}
 								</div>
-								<h3 className="mt-2 text-[20px] font-light" style={{ color: t.heading, transition: "color 0.6s ease" }}>
+								<h3
+									className="mt-2 text-[20px] font-light"
+									style={{ color: t.heading, transition: "color 0.6s ease" }}
+								>
 									{s.title}
 								</h3>
-								<p className="mt-3 text-[14px] leading-[1.7]" style={{ color: t.body, transition: "color 0.6s ease" }}>
+								<p
+									className="mt-3 text-[14px] leading-[1.7]"
+									style={{ color: t.body, transition: "color 0.6s ease" }}
+								>
 									{s.desc}
 								</p>
 							</div>
@@ -406,10 +520,16 @@ export function DesignS1Client({ locale, translationCopy }: { locale: "de" | "en
 						className="object-cover"
 						style={{ filter: t.imgFilterAlt, transition: "filter 0.6s ease" }}
 					/>
-					<div className="absolute inset-0" style={{ background: t.wideOverlay, transition: "background 0.6s ease" }} />
+					<div
+						className="absolute inset-0"
+						style={{ background: t.wideOverlay, transition: "background 0.6s ease" }}
+					/>
 					<div className="absolute inset-0 flex items-center justify-center">
 						<div className="text-center px-8">
-							<p className="text-[11px] tracking-[0.3em] uppercase" style={{ color: t.accent, transition: "color 0.6s ease" }}>
+							<p
+								className="text-[11px] tracking-[0.3em] uppercase"
+								style={{ color: t.accent, transition: "color 0.6s ease" }}
+							>
 								Ihr Dashboard
 							</p>
 							<h2
@@ -430,7 +550,10 @@ export function DesignS1Client({ locale, translationCopy }: { locale: "de" | "en
 				<div className="mx-auto max-w-5xl">
 					<div className="grid items-center gap-16 lg:grid-cols-2">
 						<div>
-							<p className="text-[11px] tracking-[0.3em] uppercase" style={{ color: t.accent, transition: "color 0.6s ease" }}>
+							<p
+								className="text-[11px] tracking-[0.3em] uppercase"
+								style={{ color: t.accent, transition: "color 0.6s ease" }}
+							>
 								Enterprise
 							</p>
 							<h2
@@ -441,24 +564,48 @@ export function DesignS1Client({ locale, translationCopy }: { locale: "de" | "en
 								<br />
 								Ihrem Unternehmen
 							</h2>
-							<p className="mt-6 text-[15px] leading-[1.8]" style={{ color: t.body, transition: "color 0.6s ease" }}>
-								Von 2 bis 20.000 Mitarbeiter — Z8 wächst mit Ihnen. Mandantenfähig,
-								mit isolierten Organisationen und rollenbasierter Zugriffskontrolle.
+							<p
+								className="mt-6 text-[15px] leading-[1.8]"
+								style={{ color: t.body, transition: "color 0.6s ease" }}
+							>
+								Von 2 bis 20.000 Mitarbeiter — Z8 wächst mit Ihnen. Mandantenfähig, mit isolierten
+								Organisationen und rollenbasierter Zugriffskontrolle.
 							</p>
 
 							<div className="mt-10 space-y-6">
 								{[
-									{ title: "Mandantenfähig", desc: "Mehrere Organisationen unter einem Dach, strikt getrennt." },
-									{ title: "Enterprise-SSO", desc: "SAML, OIDC und SCIM für nahtlose IT-Integration." },
-									{ title: "Rollenbasierte Rechte", desc: "Admin, Manager, Mitarbeiter — granular steuerbar." },
+									{
+										title: "Mandantenfähig",
+										desc: "Mehrere Organisationen unter einem Dach, strikt getrennt.",
+									},
+									{
+										title: "Enterprise-SSO",
+										desc: "SAML, OIDC und SCIM für nahtlose IT-Integration.",
+									},
+									{
+										title: "Rollenbasierte Rechte",
+										desc: "Admin, Manager, Mitarbeiter — granular steuerbar.",
+									},
 								].map((item) => (
 									<div key={item.title} className="flex items-start gap-4">
-										<div className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: t.accent, transition: "background-color 0.6s ease" }} />
+										<div
+											className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full"
+											style={{
+												backgroundColor: t.accent,
+												transition: "background-color 0.6s ease",
+											}}
+										/>
 										<div>
-											<h4 className="text-[15px] font-light" style={{ color: t.cardHeading, transition: "color 0.6s ease" }}>
+											<h4
+												className="text-[15px] font-light"
+												style={{ color: t.cardHeading, transition: "color 0.6s ease" }}
+											>
 												{item.title}
 											</h4>
-											<p className="mt-1 text-[13px] leading-[1.6]" style={{ color: t.secondary, transition: "color 0.6s ease" }}>
+											<p
+												className="mt-1 text-[13px] leading-[1.6]"
+												style={{ color: t.secondary, transition: "color 0.6s ease" }}
+											>
 												{item.desc}
 											</p>
 										</div>
@@ -476,14 +623,21 @@ export function DesignS1Client({ locale, translationCopy }: { locale: "de" | "en
 								className="object-cover"
 								style={{ filter: t.imgFilter, transition: "filter 0.6s ease" }}
 							/>
-							<div className="absolute inset-0" style={{ background: t.imgOverlayL, transition: "background 0.6s ease" }} />
+							<div
+								className="absolute inset-0"
+								style={{ background: t.imgOverlayL, transition: "background 0.6s ease" }}
+							/>
 						</div>
 					</div>
 				</div>
 			</section>
 
 			{/* Compliance & Security */}
-			<section id="compliance" className="relative z-10 px-8 py-32 lg:px-20" style={{ borderTop: `1px solid ${t.border}`, transition: "border-color 0.6s ease" }}>
+			<section
+				id="compliance"
+				className="relative z-10 px-8 py-32 lg:px-20"
+				style={{ borderTop: `1px solid ${t.border}`, transition: "border-color 0.6s ease" }}
+			>
 				<div className="mx-auto max-w-5xl">
 					<div className="grid items-center gap-16 lg:grid-cols-2">
 						{/* Left — image */}
@@ -495,11 +649,17 @@ export function DesignS1Client({ locale, translationCopy }: { locale: "de" | "en
 								className="object-cover"
 								style={{ filter: t.imgFilterSide, transition: "filter 0.6s ease" }}
 							/>
-							<div className="absolute inset-0" style={{ background: t.imgOverlayR, transition: "background 0.6s ease" }} />
+							<div
+								className="absolute inset-0"
+								style={{ background: t.imgOverlayR, transition: "background 0.6s ease" }}
+							/>
 						</div>
 
 						<div>
-							<p className="text-[11px] tracking-[0.3em] uppercase" style={{ color: t.accent, transition: "color 0.6s ease" }}>
+							<p
+								className="text-[11px] tracking-[0.3em] uppercase"
+								style={{ color: t.accent, transition: "color 0.6s ease" }}
+							>
 								Compliance
 							</p>
 							<h2
@@ -508,11 +668,16 @@ export function DesignS1Client({ locale, translationCopy }: { locale: "de" | "en
 							>
 								Revisionssicher.
 								<br />
-								<span style={{ color: t.accent, transition: "color 0.6s ease" }}>Rechtssicher.</span>
+								<span style={{ color: t.accent, transition: "color 0.6s ease" }}>
+									Rechtssicher.
+								</span>
 							</h2>
-							<p className="mt-6 text-[15px] leading-[1.8]" style={{ color: t.body, transition: "color 0.6s ease" }}>
-								Jeder Eintrag ist unveränderbar protokolliert. Z8 erfüllt alle
-								Anforderungen an die digitale Arbeitszeiterfassung nach deutschem Recht.
+							<p
+								className="mt-6 text-[15px] leading-[1.8]"
+								style={{ color: t.body, transition: "color 0.6s ease" }}
+							>
+								Jeder Eintrag ist unveränderbar protokolliert. Z8 erfüllt alle Anforderungen an die
+								digitale Arbeitszeiterfassung nach deutschem Recht.
 							</p>
 
 							<div className="mt-10 grid grid-cols-2 gap-6">
@@ -522,11 +687,24 @@ export function DesignS1Client({ locale, translationCopy }: { locale: "de" | "en
 									{ label: "AES-256", desc: "Verschlüsselung" },
 									{ label: "ISO 27001", desc: "Hosting" },
 								].map((badge) => (
-									<div key={badge.label} className="p-5" style={{ border: `1px solid ${t.badgeBorder}`, transition: "border-color 0.6s ease" }}>
-										<div className="text-[18px] font-light" style={{ color: t.accent, transition: "color 0.6s ease" }}>
+									<div
+										key={badge.label}
+										className="p-5"
+										style={{
+											border: `1px solid ${t.badgeBorder}`,
+											transition: "border-color 0.6s ease",
+										}}
+									>
+										<div
+											className="text-[18px] font-light"
+											style={{ color: t.accent, transition: "color 0.6s ease" }}
+										>
 											{badge.label}
 										</div>
-										<div className="mt-1 text-[12px] tracking-[0.1em] uppercase" style={{ color: t.secondary, transition: "color 0.6s ease" }}>
+										<div
+											className="mt-1 text-[12px] tracking-[0.1em] uppercase"
+											style={{ color: t.secondary, transition: "color 0.6s ease" }}
+										>
 											{badge.desc}
 										</div>
 									</div>
@@ -538,9 +716,16 @@ export function DesignS1Client({ locale, translationCopy }: { locale: "de" | "en
 			</section>
 
 			{/* Integrations */}
-			<section id="integrations" className="relative z-10 px-8 py-32 lg:px-20" style={{ borderTop: `1px solid ${t.border}`, transition: "border-color 0.6s ease" }}>
+			<section
+				id="integrations"
+				className="relative z-10 px-8 py-32 lg:px-20"
+				style={{ borderTop: `1px solid ${t.border}`, transition: "border-color 0.6s ease" }}
+			>
 				<div className="mx-auto max-w-5xl">
-					<p className="text-[11px] tracking-[0.3em] uppercase" style={{ color: t.accent, transition: "color 0.6s ease" }}>
+					<p
+						className="text-[11px] tracking-[0.3em] uppercase"
+						style={{ color: t.accent, transition: "color 0.6s ease" }}
+					>
 						Integrationen
 					</p>
 					<h2
@@ -549,12 +734,18 @@ export function DesignS1Client({ locale, translationCopy }: { locale: "de" | "en
 					>
 						Verbindet sich nahtlos
 					</h2>
-					<p className="mt-4 max-w-lg text-[15px] leading-[1.7]" style={{ color: t.body, transition: "color 0.6s ease" }}>
-						Z8 fügt sich in Ihren bestehenden Workflow ein — nicht umgekehrt.
-						Automatische Datenübernahme, kein manuelles Abtippen.
+					<p
+						className="mt-4 max-w-lg text-[15px] leading-[1.7]"
+						style={{ color: t.body, transition: "color 0.6s ease" }}
+					>
+						Z8 fügt sich in Ihren bestehenden Workflow ein — nicht umgekehrt. Automatische
+						Datenübernahme, kein manuelles Abtippen.
 					</p>
 
-					<div className="mt-16 grid gap-px md:grid-cols-4" style={{ backgroundColor: t.border, transition: "background-color 0.6s ease" }}>
+					<div
+						className="mt-16 grid gap-px md:grid-cols-4"
+						style={{ backgroundColor: t.border, transition: "background-color 0.6s ease" }}
+					>
 						{[
 							{ name: "DATEV", desc: "Lohndaten automatisch übertragen" },
 							{ name: "Lexware", desc: "Nahtloser Buchhaltungs-Export" },
@@ -565,11 +756,21 @@ export function DesignS1Client({ locale, translationCopy }: { locale: "de" | "en
 							{ name: "MS Teams", desc: "Stempeln direkt im Chat" },
 							{ name: "REST API", desc: "Eigene Integrationen bauen" },
 						].map((i) => (
-							<div key={i.name} className="p-6" style={{ backgroundColor: t.cardBg, transition: "background-color 0.6s ease" }}>
-								<div className="text-[15px] font-light" style={{ color: t.cardHeading, transition: "color 0.6s ease" }}>
+							<div
+								key={i.name}
+								className="p-6"
+								style={{ backgroundColor: t.cardBg, transition: "background-color 0.6s ease" }}
+							>
+								<div
+									className="text-[15px] font-light"
+									style={{ color: t.cardHeading, transition: "color 0.6s ease" }}
+								>
 									{i.name}
 								</div>
-								<p className="mt-1 text-[12px] leading-[1.5]" style={{ color: t.secondary, transition: "color 0.6s ease" }}>
+								<p
+									className="mt-1 text-[12px] leading-[1.5]"
+									style={{ color: t.secondary, transition: "color 0.6s ease" }}
+								>
 									{i.desc}
 								</p>
 							</div>
@@ -579,10 +780,16 @@ export function DesignS1Client({ locale, translationCopy }: { locale: "de" | "en
 			</section>
 
 			{/* Device showcase */}
-			<section className="relative z-10 px-8 py-24 lg:px-20" style={{ borderTop: `1px solid ${t.border}`, transition: "border-color 0.6s ease" }}>
+			<section
+				className="relative z-10 px-8 py-24 lg:px-20"
+				style={{ borderTop: `1px solid ${t.border}`, transition: "border-color 0.6s ease" }}
+			>
 				<div className="mx-auto max-w-5xl">
 					<div className="text-center">
-						<p className="text-[11px] tracking-[0.3em] uppercase" style={{ color: t.accent, transition: "color 0.6s ease" }}>
+						<p
+							className="text-[11px] tracking-[0.3em] uppercase"
+							style={{ color: t.accent, transition: "color 0.6s ease" }}
+						>
 							Plattformen
 						</p>
 						<h2
@@ -591,9 +798,12 @@ export function DesignS1Client({ locale, translationCopy }: { locale: "de" | "en
 						>
 							Überall. Jederzeit.
 						</h2>
-						<p className="mx-auto mt-4 max-w-md text-[15px] leading-[1.7]" style={{ color: t.body, transition: "color 0.6s ease" }}>
-							Web-App, native Desktop-App für Windows und Mac,
-							mobile Apps für iOS und Android. Alles synchron, alles in Echtzeit.
+						<p
+							className="mx-auto mt-4 max-w-md text-[15px] leading-[1.7]"
+							style={{ color: t.body, transition: "color 0.6s ease" }}
+						>
+							Web-App, native Desktop-App für Windows und Mac, mobile Apps für iOS und Android.
+							Alles synchron, alles in Echtzeit.
 						</p>
 					</div>
 
@@ -604,8 +814,17 @@ export function DesignS1Client({ locale, translationCopy }: { locale: "de" | "en
 							"https://images.unsplash.com/photo-1497215842964-222b430dc094?w=600&q=80&auto=format&fit=crop",
 						].map((src, idx) => (
 							<div key={idx} className="relative h-56 overflow-hidden">
-								<Image src={src} alt="" fill className="object-cover" style={{ filter: t.imgFilter, transition: "filter 0.6s ease" }} />
-								<div className="absolute inset-0" style={{ background: t.gridImgOverlay, transition: "background 0.6s ease" }} />
+								<Image
+									src={src}
+									alt=""
+									fill
+									className="object-cover"
+									style={{ filter: t.imgFilter, transition: "filter 0.6s ease" }}
+								/>
+								<div
+									className="absolute inset-0"
+									style={{ background: t.gridImgOverlay, transition: "background 0.6s ease" }}
+								/>
 							</div>
 						))}
 					</div>
@@ -613,7 +832,10 @@ export function DesignS1Client({ locale, translationCopy }: { locale: "de" | "en
 			</section>
 
 			{/* Stats */}
-			<section className="relative z-10 px-8 py-24 lg:px-20" style={{ borderTop: `1px solid ${t.gridGap}`, transition: "border-color 0.6s ease" }}>
+			<section
+				className="relative z-10 px-8 py-24 lg:px-20"
+				style={{ borderTop: `1px solid ${t.gridGap}`, transition: "border-color 0.6s ease" }}
+			>
 				<div className="mx-auto flex max-w-5xl items-center justify-between">
 					{[
 						{ value: "10k+", label: "Aktive Nutzer" },
@@ -622,10 +844,16 @@ export function DesignS1Client({ locale, translationCopy }: { locale: "de" | "en
 						{ value: "4.9★", label: "Bewertung" },
 					].map((s) => (
 						<div key={s.label} className="text-center">
-							<div className="text-[clamp(1.5rem,3vw,2.5rem)] font-light tracking-[-0.03em]" style={{ color: t.accent, transition: "color 0.6s ease" }}>
+							<div
+								className="text-[clamp(1.5rem,3vw,2.5rem)] font-light tracking-[-0.03em]"
+								style={{ color: t.accent, transition: "color 0.6s ease" }}
+							>
 								{s.value}
 							</div>
-							<div className="mt-2 text-[11px] tracking-[0.15em] uppercase" style={{ color: t.secondary, transition: "color 0.6s ease" }}>
+							<div
+								className="mt-2 text-[11px] tracking-[0.15em] uppercase"
+								style={{ color: t.secondary, transition: "color 0.6s ease" }}
+							>
 								{s.label}
 							</div>
 						</div>
@@ -634,9 +862,15 @@ export function DesignS1Client({ locale, translationCopy }: { locale: "de" | "en
 			</section>
 
 			{/* Testimonials */}
-			<section className="relative z-10 px-8 py-32 lg:px-20" style={{ borderTop: `1px solid ${t.border}`, transition: "border-color 0.6s ease" }}>
+			<section
+				className="relative z-10 px-8 py-32 lg:px-20"
+				style={{ borderTop: `1px solid ${t.border}`, transition: "border-color 0.6s ease" }}
+			>
 				<div className="mx-auto max-w-5xl">
-					<p className="text-center text-[11px] tracking-[0.3em] uppercase" style={{ color: t.accent, transition: "color 0.6s ease" }}>
+					<p
+						className="text-center text-[11px] tracking-[0.3em] uppercase"
+						style={{ color: t.accent, transition: "color 0.6s ease" }}
+					>
 						Stimmen
 					</p>
 					<h2
@@ -646,38 +880,58 @@ export function DesignS1Client({ locale, translationCopy }: { locale: "de" | "en
 						Was unsere Kunden sagen
 					</h2>
 
-					<div className="mt-16 grid gap-px md:grid-cols-2" style={{ backgroundColor: t.border, transition: "background-color 0.6s ease" }}>
+					<div
+						className="mt-16 grid gap-px md:grid-cols-2"
+						style={{ backgroundColor: t.border, transition: "background-color 0.6s ease" }}
+					>
 						{[
 							{
-								quote: "Z8 hat unsere Lohnbuchhaltung um 4 Stunden pro Woche entlastet. Der DATEV-Export funktioniert einwandfrei.",
+								quote:
+									"Z8 hat unsere Lohnbuchhaltung um 4 Stunden pro Woche entlastet. Der DATEV-Export funktioniert einwandfrei.",
 								name: "Thomas K.",
 								role: "Geschäftsführer, 85 Mitarbeiter",
 							},
 							{
-								quote: "Endlich eine Zeiterfassung, die unsere Außendienstler genauso einfach nutzen wie das Büro-Team.",
+								quote:
+									"Endlich eine Zeiterfassung, die unsere Außendienstler genauso einfach nutzen wie das Büro-Team.",
 								name: "Sarah M.",
 								role: "HR-Leiterin, 220 Mitarbeiter",
 							},
 							{
-								quote: "Die Schichtplanung allein hat sich sofort bezahlt gemacht. Keine Excel-Dateien mehr, keine Konflikte.",
+								quote:
+									"Die Schichtplanung allein hat sich sofort bezahlt gemacht. Keine Excel-Dateien mehr, keine Konflikte.",
 								name: "Michael W.",
 								role: "Produktionsleiter, 140 Mitarbeiter",
 							},
 							{
-								quote: "Revisionssicher, DSGVO-konform und die Mitarbeiter lieben die App. Was will man mehr?",
+								quote:
+									"Revisionssicher, DSGVO-konform und die Mitarbeiter lieben die App. Was will man mehr?",
 								name: "Anna L.",
 								role: "Steuerberaterin",
 							},
 						].map((testimonial) => (
-							<div key={testimonial.name} className="p-10" style={{ backgroundColor: t.cardBg, transition: "background-color 0.6s ease" }}>
-								<p className="text-[15px] italic leading-[1.7]" style={{ color: t.quote, transition: "color 0.6s ease" }}>
+							<div
+								key={testimonial.name}
+								className="p-10"
+								style={{ backgroundColor: t.cardBg, transition: "background-color 0.6s ease" }}
+							>
+								<p
+									className="text-[15px] italic leading-[1.7]"
+									style={{ color: t.quote, transition: "color 0.6s ease" }}
+								>
 									&ldquo;{testimonial.quote}&rdquo;
 								</p>
 								<div className="mt-6">
-									<div className="text-[14px] font-light" style={{ color: t.cardHeading, transition: "color 0.6s ease" }}>
+									<div
+										className="text-[14px] font-light"
+										style={{ color: t.cardHeading, transition: "color 0.6s ease" }}
+									>
 										{testimonial.name}
 									</div>
-									<div className="mt-1 text-[12px]" style={{ color: t.secondary, transition: "color 0.6s ease" }}>
+									<div
+										className="mt-1 text-[12px]"
+										style={{ color: t.secondary, transition: "color 0.6s ease" }}
+									>
 										{testimonial.role}
 									</div>
 								</div>
@@ -688,9 +942,15 @@ export function DesignS1Client({ locale, translationCopy }: { locale: "de" | "en
 			</section>
 
 			{/* Pricing preview */}
-			<section className="relative z-10 px-8 py-32 lg:px-20" style={{ borderTop: `1px solid ${t.border}`, transition: "border-color 0.6s ease" }}>
+			<section
+				className="relative z-10 px-8 py-32 lg:px-20"
+				style={{ borderTop: `1px solid ${t.border}`, transition: "border-color 0.6s ease" }}
+			>
 				<div className="mx-auto max-w-4xl text-center">
-					<p className="text-[11px] tracking-[0.3em] uppercase" style={{ color: t.accent, transition: "color 0.6s ease" }}>
+					<p
+						className="text-[11px] tracking-[0.3em] uppercase"
+						style={{ color: t.accent, transition: "color 0.6s ease" }}
+					>
 						Preise
 					</p>
 					<h2
@@ -699,11 +959,17 @@ export function DesignS1Client({ locale, translationCopy }: { locale: "de" | "en
 					>
 						Einfach. Transparent.
 					</h2>
-					<p className="mx-auto mt-4 max-w-md text-[15px] leading-[1.7]" style={{ color: t.body, transition: "color 0.6s ease" }}>
+					<p
+						className="mx-auto mt-4 max-w-md text-[15px] leading-[1.7]"
+						style={{ color: t.body, transition: "color 0.6s ease" }}
+					>
 						Keine versteckten Kosten. Jederzeit kündbar.
 					</p>
 
-					<div className="mt-16 grid gap-px md:grid-cols-3" style={{ backgroundColor: t.gridGap, transition: "background-color 0.6s ease" }}>
+					<div
+						className="mt-16 grid gap-px md:grid-cols-3"
+						style={{ backgroundColor: t.gridGap, transition: "background-color 0.6s ease" }}
+					>
 						{[
 							{
 								plan: "Starter",
@@ -715,14 +981,28 @@ export function DesignS1Client({ locale, translationCopy }: { locale: "de" | "en
 								plan: "Business",
 								price: "4,90 €",
 								per: "pro Nutzer / Monat",
-								features: ["Unbegrenzte Mitarbeiter", "Schichtplanung", "Lohnexport", "DATEV & Lexware", "Überstundenkonto", "Prioritäts-Support"],
+								features: [
+									"Unbegrenzte Mitarbeiter",
+									"Schichtplanung",
+									"Lohnexport",
+									"DATEV & Lexware",
+									"Überstundenkonto",
+									"Prioritäts-Support",
+								],
 								highlighted: true,
 							},
 							{
 								plan: "Enterprise",
 								price: "Individuell",
 								per: "auf Anfrage",
-								features: ["Alles aus Business", "SSO (SAML/OIDC)", "Mandantenfähigkeit", "Dedizierter Ansprechpartner", "SLA 99.99%", "On-Premise Option"],
+								features: [
+									"Alles aus Business",
+									"SSO (SAML/OIDC)",
+									"Mandantenfähigkeit",
+									"Dedizierter Ansprechpartner",
+									"SLA 99.99%",
+									"On-Premise Option",
+								],
 							},
 						].map((p) => (
 							<div
@@ -734,19 +1014,38 @@ export function DesignS1Client({ locale, translationCopy }: { locale: "de" | "en
 									transition: "background-color 0.6s ease, border-color 0.6s ease",
 								}}
 							>
-								<div className="text-[11px] tracking-[0.2em] uppercase" style={{ color: t.accent, transition: "color 0.6s ease" }}>
+								<div
+									className="text-[11px] tracking-[0.2em] uppercase"
+									style={{ color: t.accent, transition: "color 0.6s ease" }}
+								>
 									{p.plan}
 								</div>
-								<div className="mt-4 text-[clamp(1.5rem,2.5vw,2rem)] font-light" style={{ color: t.heading, transition: "color 0.6s ease" }}>
+								<div
+									className="mt-4 text-[clamp(1.5rem,2.5vw,2rem)] font-light"
+									style={{ color: t.heading, transition: "color 0.6s ease" }}
+								>
 									{p.price}
 								</div>
-								<div className="mt-1 text-[12px]" style={{ color: t.secondary, transition: "color 0.6s ease" }}>
+								<div
+									className="mt-1 text-[12px]"
+									style={{ color: t.secondary, transition: "color 0.6s ease" }}
+								>
 									{p.per}
 								</div>
 								<div className="mt-6 flex-1 space-y-3">
 									{p.features.map((f) => (
-										<div key={f} className="flex items-center gap-3 text-[13px]" style={{ color: t.feature, transition: "color 0.6s ease" }}>
-											<div className="h-1 w-1 shrink-0 rounded-full" style={{ backgroundColor: t.accent, transition: "background-color 0.6s ease" }} />
+										<div
+											key={f}
+											className="flex items-center gap-3 text-[13px]"
+											style={{ color: t.feature, transition: "color 0.6s ease" }}
+										>
+											<div
+												className="h-1 w-1 shrink-0 rounded-full"
+												style={{
+													backgroundColor: t.accent,
+													transition: "background-color 0.6s ease",
+												}}
+											/>
 											{f}
 										</div>
 									))}
@@ -758,7 +1057,8 @@ export function DesignS1Client({ locale, translationCopy }: { locale: "de" | "en
 										backgroundColor: p.highlighted ? t.accent : "transparent",
 										color: p.highlighted ? t.btnText : t.accent,
 										border: p.highlighted ? "none" : `1px solid ${t.badgeBorder}`,
-										transition: "background-color 0.6s ease, color 0.6s ease, border-color 0.6s ease",
+										transition:
+											"background-color 0.6s ease, color 0.6s ease, border-color 0.6s ease",
 									}}
 								>
 									{p.plan === "Enterprise" ? "Kontaktieren" : "Starten"}
@@ -770,9 +1070,15 @@ export function DesignS1Client({ locale, translationCopy }: { locale: "de" | "en
 			</section>
 
 			{/* FAQ */}
-			<section className="relative z-10 px-8 py-32 lg:px-20" style={{ borderTop: `1px solid ${t.border}`, transition: "border-color 0.6s ease" }}>
+			<section
+				className="relative z-10 px-8 py-32 lg:px-20"
+				style={{ borderTop: `1px solid ${t.border}`, transition: "border-color 0.6s ease" }}
+			>
 				<div className="mx-auto max-w-3xl">
-					<p className="text-[11px] tracking-[0.3em] uppercase" style={{ color: t.accent, transition: "color 0.6s ease" }}>
+					<p
+						className="text-[11px] tracking-[0.3em] uppercase"
+						style={{ color: t.accent, transition: "color 0.6s ease" }}
+					>
 						Häufige Fragen
 					</p>
 					<h2
@@ -808,12 +1114,21 @@ export function DesignS1Client({ locale, translationCopy }: { locale: "de" | "en
 							<div
 								key={faq.q}
 								className="py-8"
-								style={{ borderBottom: `1px solid ${t.border}`, transition: "border-color 0.6s ease" }}
+								style={{
+									borderBottom: `1px solid ${t.border}`,
+									transition: "border-color 0.6s ease",
+								}}
 							>
-								<h4 className="text-[16px] font-light" style={{ color: t.cardHeading, transition: "color 0.6s ease" }}>
+								<h4
+									className="text-[16px] font-light"
+									style={{ color: t.cardHeading, transition: "color 0.6s ease" }}
+								>
 									{faq.q}
 								</h4>
-								<p className="mt-3 text-[14px] leading-[1.7]" style={{ color: t.body, transition: "color 0.6s ease" }}>
+								<p
+									className="mt-3 text-[14px] leading-[1.7]"
+									style={{ color: t.body, transition: "color 0.6s ease" }}
+								>
 									{faq.a}
 								</p>
 							</div>
@@ -840,24 +1155,36 @@ export function DesignS1Client({ locale, translationCopy }: { locale: "de" | "en
 						className="text-[clamp(2rem,4vw,3.5rem)] font-light leading-[1.1] tracking-[-0.03em]"
 						style={{ color: t.heading, transition: "color 0.6s ease" }}
 					>
-						Bereit für <span style={{ color: t.accent, transition: "color 0.6s ease" }}>Klarheit</span>?
+						Bereit für{" "}
+						<span style={{ color: t.accent, transition: "color 0.6s ease" }}>Klarheit</span>?
 					</h2>
-					<p className="mt-6 max-w-md mx-auto text-[15px] leading-[1.7]" style={{ color: t.body, transition: "color 0.6s ease" }}>
+					<p
+						className="mt-6 max-w-md mx-auto text-[15px] leading-[1.7]"
+						style={{ color: t.body, transition: "color 0.6s ease" }}
+					>
 						Starten Sie heute mit Z8 und erleben Sie Zeiterfassung, die sich wie Intuition anfühlt.
 						Kostenlos, unverbindlich, in unter einer Minute eingerichtet.
 					</p>
 					<div className="mt-10 flex items-center justify-center gap-6">
 						<a
-							href="#"
+							href="#contact"
 							className={`px-10 py-4 text-[12px] tracking-[0.15em] uppercase transition-all hover:shadow-[${t.ctaShadow}]`}
-							style={{ backgroundColor: t.accent, color: t.btnText, transition: "background-color 0.6s ease, color 0.6s ease" }}
+							style={{
+								backgroundColor: t.accent,
+								color: t.btnText,
+								transition: "background-color 0.6s ease, color 0.6s ease",
+							}}
 						>
 							Jetzt kostenlos starten
 						</a>
 						<a
-							href="#"
+							href="#contact"
 							className="px-10 py-4 text-[12px] tracking-[0.15em] uppercase transition-all"
-							style={{ border: `1px solid ${t.badgeBorder}`, color: t.hoverAccent, transition: "border-color 0.6s ease, color 0.6s ease" }}
+							style={{
+								border: `1px solid ${t.badgeBorder}`,
+								color: t.hoverAccent,
+								transition: "border-color 0.6s ease, color 0.6s ease",
+							}}
 						>
 							Demo anfragen
 						</a>
@@ -866,14 +1193,23 @@ export function DesignS1Client({ locale, translationCopy }: { locale: "de" | "en
 			</section>
 
 			{/* Footer */}
-			<footer className="relative z-10 px-8 py-12 lg:px-20" style={{ borderTop: `1px solid ${t.border}`, transition: "border-color 0.6s ease" }}>
+			<footer
+				className="relative z-10 px-8 py-12 lg:px-20"
+				style={{ borderTop: `1px solid ${t.border}`, transition: "border-color 0.6s ease" }}
+			>
 				<div className="mx-auto max-w-5xl">
 					<div className="grid gap-12 md:grid-cols-4">
 						<div>
-							<span className="text-[18px] font-bold tracking-[-0.03em]" style={{ color: t.accent, transition: "color 0.6s ease" }}>
+							<span
+								className="text-[18px] font-bold tracking-[-0.03em]"
+								style={{ color: t.accent, transition: "color 0.6s ease" }}
+							>
 								Z8
 							</span>
-							<p className="mt-3 text-[13px] leading-[1.6]" style={{ color: t.secondary, transition: "color 0.6s ease" }}>
+							<p
+								className="mt-3 text-[13px] leading-[1.6]"
+								style={{ color: t.secondary, transition: "color 0.6s ease" }}
+							>
 								Die Kunst der
 								<br />
 								Zeiterfassung.
@@ -894,14 +1230,17 @@ export function DesignS1Client({ locale, translationCopy }: { locale: "de" | "en
 							},
 						].map((col) => (
 							<div key={col.title}>
-								<div className="text-[11px] tracking-[0.2em] uppercase" style={{ color: t.accent, transition: "color 0.6s ease" }}>
+								<div
+									className="text-[11px] tracking-[0.2em] uppercase"
+									style={{ color: t.accent, transition: "color 0.6s ease" }}
+								>
 									{col.title}
 								</div>
 								<div className="mt-4 space-y-2.5">
 									{col.links.map((link) => (
 										<a
 											key={link}
-											href="#"
+											href="#contact"
 											className="block text-[13px] transition-colors"
 											style={{ color: t.secondary }}
 										>
@@ -912,11 +1251,18 @@ export function DesignS1Client({ locale, translationCopy }: { locale: "de" | "en
 							</div>
 						))}
 					</div>
-					<div className="mt-12 flex items-center justify-between pt-8" style={{ borderTop: `1px solid ${t.border}`, transition: "border-color 0.6s ease" }}>
+					<div
+						className="mt-12 flex items-center justify-between pt-8"
+						style={{ borderTop: `1px solid ${t.border}`, transition: "border-color 0.6s ease" }}
+					>
 						<span className="text-[11px]" style={{ color: t.muted, transition: "color 0.6s ease" }}>
 							© 2025 Z8 — Made in Frankfurt am Main
 						</span>
-						<Link href={homeHref} className="text-[11px] transition-colors" style={{ color: t.secondary }}>
+						<Link
+							href={homeHref}
+							className="text-[11px] transition-colors"
+							style={{ color: t.secondary }}
+						>
 							← Alle Designs
 						</Link>
 					</div>
