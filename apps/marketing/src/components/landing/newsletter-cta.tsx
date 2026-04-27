@@ -1,8 +1,13 @@
 "use client";
 
 import { useThemeTokens } from "@/components/theme/theme-context";
+import type { LandingCopy } from "@/i18n/landing-copy";
 
-export function NewsletterCta() {
+type NewsletterCtaProps = {
+	copy: LandingCopy["newsletterCta"];
+};
+
+export function NewsletterCta({ copy }: NewsletterCtaProps) {
 	const { t, dark } = useThemeTokens();
 
 	return (
@@ -23,10 +28,10 @@ export function NewsletterCta() {
 								color: t.ctaInvertText,
 							}}
 						>
-							Immer auf dem Laufenden.
+							{copy.title}
 						</h2>
 						<p className="text-[14px] leading-relaxed" style={{ color: t.ctaInvertMuted }}>
-							Produktupdates, Branchen-Insights und Best Practices f&uuml;r Zeiterfassung &mdash; direkt in Ihr Postfach. Kein Spam, jederzeit abmeldbar.
+							{copy.description}
 						</p>
 					</div>
 					<div>
@@ -34,7 +39,7 @@ export function NewsletterCta() {
 							<div className="relative flex-1">
 								<input
 									type="email"
-									placeholder="name@firma.de"
+									placeholder={copy.emailPlaceholder}
 									className="w-full rounded-xl border-0 px-5 py-4 text-[14px] outline-none"
 									style={{
 										backgroundColor: dark ? "#252525" : "#2a2a2a",
@@ -51,11 +56,11 @@ export function NewsletterCta() {
 									color: dark ? "#e8e8e8" : "#1a1a1a",
 								}}
 							>
-								Abonnieren
+								{copy.button}
 							</button>
 						</div>
 						<p className="mt-3 text-[11px]" style={{ color: t.ctaInvertFaint }}>
-							Kein Spam. Maximal 2&times; pro Monat. Jederzeit abmeldbar.
+							{copy.note}
 						</p>
 					</div>
 				</div>

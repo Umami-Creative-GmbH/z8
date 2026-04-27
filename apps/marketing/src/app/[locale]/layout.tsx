@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { themes } from "@/components/theme/tokens";
-import "./globals.css";
+import { isLocale, locales } from "@/i18n/locales";
+import "../globals.css";
 
 export const metadata: Metadata = {
 	title: "Z8",
@@ -13,15 +15,29 @@ export const metadata: Metadata = {
  */
 const themeScript = `(function(){try{var d=localStorage.getItem("z8-theme");if(d==="dark"){document.documentElement.dataset.theme="dark";var t=${JSON.stringify(themes.dark)};for(var k in t)document.documentElement.style.setProperty("--z8-"+k,t[k])}}catch(e){}})()`;
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export function generateStaticParams() {
+	return locales.map((locale) => ({ locale }));
+}
+
+export default async function LocaleLayout({
+	children,
+	params,
+}: {
+	children: React.ReactNode;
+	params: Promise<{ locale: string }>;
+}) {
+	const { locale } = await params;
+
+	if (!isLocale(locale)) {
+		notFound();
+	}
+
 	return (
-		<html lang="en">
+		<html lang={locale} suppressHydrationWarning>
 			<head>
 				<script dangerouslySetInnerHTML={{ __html: themeScript }} />
 			</head>
-			<body className="antialiased">
-				{children}
-			</body>
+			<body className="antialiased">{children}</body>
 		</html>
 	);
 }

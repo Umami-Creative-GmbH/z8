@@ -1,8 +1,25 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { notFound } from "next/navigation";
+import { isLocale } from "@/i18n/locales";
+import { translateVariantTree, variantMetadata } from "@/i18n/variant-copy";
 
-export default function DesignS2() {
-	return (
+type PageProps = { params: Promise<{ locale: string }> };
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+	const { locale } = await params;
+	if (!isLocale(locale)) notFound();
+	return variantMetadata(locale, "s-2");
+}
+
+export default async function DesignS2({ params }: PageProps) {
+	const { locale } = await params;
+	if (!isLocale(locale)) notFound();
+	const homeHref = `/${locale}`;
+	return translateVariantTree(
+		locale,
+		"s-2",
 		<div
 			className="min-h-screen"
 			style={{
@@ -20,14 +37,26 @@ export default function DesignS2() {
 					>
 						Z8
 					</div>
-					<span className="text-[11px] font-semibold tracking-[0.15em] uppercase" style={{ color: "#9a8e80" }}>
+					<span
+						className="text-[11px] font-semibold tracking-[0.15em] uppercase"
+						style={{ color: "#9a8e80" }}
+					>
 						Zeiterfassung
 					</span>
 				</div>
-				<nav className="hidden items-center gap-8 text-[13px] font-semibold md:flex" style={{ color: "#8a7e70" }}>
-					<a href="#features" className="transition-colors hover:text-[#5a4f44]">Funktionen</a>
-					<a href="#how" className="transition-colors hover:text-[#5a4f44]">So gehts</a>
-					<a href="#contact" className="transition-colors hover:text-[#5a4f44]">Preise</a>
+				<nav
+					className="hidden items-center gap-8 text-[13px] font-semibold md:flex"
+					style={{ color: "#8a7e70" }}
+				>
+					<a href="#features" className="transition-colors hover:text-[#5a4f44]">
+						Funktionen
+					</a>
+					<a href="#how" className="transition-colors hover:text-[#5a4f44]">
+						So gehts
+					</a>
+					<a href="#contact" className="transition-colors hover:text-[#5a4f44]">
+						Preise
+					</a>
 				</nav>
 				<a
 					href="#contact"
@@ -43,11 +72,29 @@ export default function DesignS2() {
 				{/* Hero image — organic pebble shape */}
 				<div className="animate-scale-in relative mb-12" style={{ animationDelay: "0s" }}>
 					<div className="flex items-end gap-4">
-						<div className="relative overflow-hidden" style={{ width: 200, height: 140, borderRadius: "42% 58% 55% 45% / 60% 45% 55% 40%" }}>
-							<Image src="https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&q=80&auto=format&fit=crop" alt="" fill className="object-cover" style={{ filter: "saturate(0.5) sepia(0.2)" }} />
+						<div
+							className="relative overflow-hidden"
+							style={{ width: 200, height: 140, borderRadius: "42% 58% 55% 45% / 60% 45% 55% 40%" }}
+						>
+							<Image
+								src="https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&q=80&auto=format&fit=crop"
+								alt=""
+								fill
+								className="object-cover"
+								style={{ filter: "saturate(0.5) sepia(0.2)" }}
+							/>
 						</div>
-						<div className="relative overflow-hidden" style={{ width: 120, height: 100, borderRadius: "55% 45% 48% 52% / 45% 55% 50% 50%" }}>
-							<Image src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=300&q=80&auto=format&fit=crop" alt="" fill className="object-cover" style={{ filter: "saturate(0.5) sepia(0.2)" }} />
+						<div
+							className="relative overflow-hidden"
+							style={{ width: 120, height: 100, borderRadius: "55% 45% 48% 52% / 45% 55% 50% 50%" }}
+						>
+							<Image
+								src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=300&q=80&auto=format&fit=crop"
+								alt=""
+								fill
+								className="object-cover"
+								style={{ filter: "saturate(0.5) sepia(0.2)" }}
+							/>
 						</div>
 					</div>
 				</div>
@@ -74,11 +121,14 @@ export default function DesignS2() {
 					className="animate-fade-up mt-8 max-w-lg text-[16px] leading-[1.75]"
 					style={{ color: "#7a7068", animationDelay: "0.4s" }}
 				>
-					Rund geschliffen, glatt und verlässlich — Z8 ist das Werkzeug,
-					das in der Hand liegt, als wäre es schon immer da gewesen.
+					Rund geschliffen, glatt und verlässlich — Z8 ist das Werkzeug, das in der Hand liegt, als
+					wäre es schon immer da gewesen.
 				</p>
 
-				<div className="animate-fade-up mt-10 flex items-center gap-4" style={{ animationDelay: "0.55s" }}>
+				<div
+					className="animate-fade-up mt-10 flex items-center gap-4"
+					style={{ animationDelay: "0.55s" }}
+				>
 					<a
 						href="#contact"
 						className="rounded-full px-8 py-3.5 text-[13px] font-bold transition-all hover:shadow-lg"
@@ -161,9 +211,21 @@ export default function DesignS2() {
 					</h2>
 					<div className="mt-16 flex flex-col gap-12">
 						{[
-							{ step: "01", title: "Registrieren", desc: "Konto erstellen in unter einer Minute. Keine Kreditkarte." },
-							{ step: "02", title: "Team einladen", desc: "Mitarbeiter per Link hinzufügen. Sofort einsatzbereit." },
-							{ step: "03", title: "Zeit erfassen", desc: "Stempeln, pausieren, Berichte ziehen. Fertig." },
+							{
+								step: "01",
+								title: "Registrieren",
+								desc: "Konto erstellen in unter einer Minute. Keine Kreditkarte.",
+							},
+							{
+								step: "02",
+								title: "Team einladen",
+								desc: "Mitarbeiter per Link hinzufügen. Sofort einsatzbereit.",
+							},
+							{
+								step: "03",
+								title: "Zeit erfassen",
+								desc: "Stempeln, pausieren, Berichte ziehen. Fertig.",
+							},
 						].map((s) => (
 							<div key={s.step} className="flex items-start gap-8">
 								<div
@@ -190,10 +252,22 @@ export default function DesignS2() {
 			<section className="px-8 py-12 lg:px-16">
 				<div className="mx-auto max-w-5xl grid gap-6 md:grid-cols-2">
 					<div className="relative h-72 overflow-hidden rounded-[24px]">
-						<Image src="https://images.unsplash.com/photo-1497215842964-222b430dc094?w=800&q=80&auto=format&fit=crop" alt="" fill className="object-cover" style={{ filter: "saturate(0.6) sepia(0.15)" }} />
+						<Image
+							src="https://images.unsplash.com/photo-1497215842964-222b430dc094?w=800&q=80&auto=format&fit=crop"
+							alt=""
+							fill
+							className="object-cover"
+							style={{ filter: "saturate(0.6) sepia(0.15)" }}
+						/>
 					</div>
 					<div className="relative h-72 overflow-hidden rounded-[24px]">
-						<Image src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&q=80&auto=format&fit=crop" alt="" fill className="object-cover" style={{ filter: "saturate(0.6) sepia(0.15)" }} />
+						<Image
+							src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&q=80&auto=format&fit=crop"
+							alt=""
+							fill
+							className="object-cover"
+							style={{ filter: "saturate(0.6) sepia(0.15)" }}
+						/>
 					</div>
 				</div>
 			</section>
@@ -209,7 +283,7 @@ export default function DesignS2() {
 					<span style={{ color: "#8a7e70" }}>Rundes</span>?
 				</h2>
 				<a
-					href="#"
+					href="#contact"
 					className="mt-10 rounded-full px-10 py-4 text-[14px] font-bold transition-all hover:shadow-lg"
 					style={{ backgroundColor: "#5a4f44", color: "#f5f0eb" }}
 				>
@@ -223,11 +297,15 @@ export default function DesignS2() {
 					<span className="text-[12px] font-semibold" style={{ color: "#9a8e80" }}>
 						© 2025 Z8
 					</span>
-					<Link href="/" className="text-[12px] font-semibold transition-colors hover:text-[#5a4f44]" style={{ color: "#9a8e80" }}>
+					<Link
+						href={homeHref}
+						className="text-[12px] font-semibold transition-colors hover:text-[#5a4f44]"
+						style={{ color: "#9a8e80" }}
+					>
 						← Alle Designs
 					</Link>
 				</div>
 			</footer>
-		</div>
+		</div>,
 	);
 }

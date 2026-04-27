@@ -1,8 +1,25 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { notFound } from "next/navigation";
+import { isLocale } from "@/i18n/locales";
+import { translateVariantTree, variantMetadata } from "@/i18n/variant-copy";
 
-export default function DesignS10() {
-	return (
+type PageProps = { params: Promise<{ locale: string }> };
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+	const { locale } = await params;
+	if (!isLocale(locale)) notFound();
+	return variantMetadata(locale, "s-10");
+}
+
+export default async function DesignS10({ params }: PageProps) {
+	const { locale } = await params;
+	if (!isLocale(locale)) notFound();
+	const homeHref = `/${locale}`;
+	return translateVariantTree(
+		locale,
+		"s-10",
 		<div
 			className="noise min-h-screen"
 			style={{
@@ -26,14 +43,27 @@ export default function DesignS10() {
 					<span className="text-[20px] font-bold tracking-[-0.04em]" style={{ color: "#e0e4f0" }}>
 						Z8
 					</span>
-					<nav className="hidden items-center gap-6 text-[13px] font-medium md:flex" style={{ color: "#4a5470" }}>
-						<a href="#features" className="transition-colors hover:text-[#e0e4f0]">Produkt</a>
-						<a href="#precision" className="transition-colors hover:text-[#e0e4f0]">Preise</a>
-						<a href="#contact" className="transition-colors hover:text-[#e0e4f0]">Kontakt</a>
+					<nav
+						className="hidden items-center gap-6 text-[13px] font-medium md:flex"
+						style={{ color: "#4a5470" }}
+					>
+						<a href="#features" className="transition-colors hover:text-[#e0e4f0]">
+							Produkt
+						</a>
+						<a href="#precision" className="transition-colors hover:text-[#e0e4f0]">
+							Preise
+						</a>
+						<a href="#contact" className="transition-colors hover:text-[#e0e4f0]">
+							Kontakt
+						</a>
 					</nav>
 				</div>
 				<div className="flex items-center gap-3">
-					<a href="#contact" className="text-[13px] font-medium transition-colors hover:text-[#e0e4f0]" style={{ color: "#4a5470" }}>
+					<a
+						href="#contact"
+						className="text-[13px] font-medium transition-colors hover:text-[#e0e4f0]"
+						style={{ color: "#4a5470" }}
+					>
 						Anmelden
 					</a>
 					<a
@@ -80,11 +110,14 @@ export default function DesignS10() {
 							className="animate-fade-up mt-8 max-w-md text-[15px] leading-[1.75]"
 							style={{ color: "#5a6480", animationDelay: "0.3s" }}
 						>
-							Wie Schweizer Uhrmacherei — Z8 verbindet Präzision mit Einfachheit.
-							Keine überflüssigen Teile, jedes Zahnrad hat seinen Platz.
+							Wie Schweizer Uhrmacherei — Z8 verbindet Präzision mit Einfachheit. Keine
+							überflüssigen Teile, jedes Zahnrad hat seinen Platz.
 						</p>
 
-						<div className="animate-fade-up mt-10 flex items-center gap-4" style={{ animationDelay: "0.45s" }}>
+						<div
+							className="animate-fade-up mt-10 flex items-center gap-4"
+							style={{ animationDelay: "0.45s" }}
+						>
 							<a
 								href="#contact"
 								className="rounded-lg px-8 py-3.5 text-[13px] font-bold transition-all hover:bg-[#3a5aa0]"
@@ -115,10 +148,19 @@ export default function DesignS10() {
 							{/* Mock header bar */}
 							<div className="flex items-center justify-between mb-6">
 								<div className="flex items-center gap-2">
-									<div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "rgba(74,128,208,0.3)" }} />
-									<div className="h-3 w-24 rounded" style={{ backgroundColor: "rgba(74,128,208,0.08)" }} />
+									<div
+										className="h-2.5 w-2.5 rounded-full"
+										style={{ backgroundColor: "rgba(74,128,208,0.3)" }}
+									/>
+									<div
+										className="h-3 w-24 rounded"
+										style={{ backgroundColor: "rgba(74,128,208,0.08)" }}
+									/>
 								</div>
-								<div className="h-3 w-16 rounded" style={{ backgroundColor: "rgba(74,128,208,0.06)" }} />
+								<div
+									className="h-3 w-16 rounded"
+									style={{ backgroundColor: "rgba(74,128,208,0.06)" }}
+								/>
 							</div>
 
 							{/* Grid of data blocks */}
@@ -133,8 +175,12 @@ export default function DesignS10() {
 										className="rounded-lg p-4"
 										style={{ backgroundColor: "rgba(74,128,208,0.05)" }}
 									>
-										<div className="text-[10px] font-medium" style={{ color: "#4a5470" }}>{d.label}</div>
-										<div className="mt-1 text-[18px] font-bold" style={{ color: "#e0e4f0" }}>{d.val}</div>
+										<div className="text-[10px] font-medium" style={{ color: "#4a5470" }}>
+											{d.label}
+										</div>
+										<div className="mt-1 text-[18px] font-bold" style={{ color: "#e0e4f0" }}>
+											{d.val}
+										</div>
 									</div>
 								))}
 							</div>
@@ -154,7 +200,11 @@ export default function DesignS10() {
 							</div>
 							<div className="flex justify-between mt-2">
 								{["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"].map((d) => (
-									<span key={d} className="flex-1 text-center text-[9px]" style={{ color: "#3a4460" }}>
+									<span
+										key={d}
+										className="flex-1 text-center text-[9px]"
+										style={{ color: "#3a4460" }}
+									>
 										{d}
 									</span>
 								))}
@@ -215,16 +265,35 @@ export default function DesignS10() {
 						"https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=600&q=80&auto=format&fit=crop",
 						"https://images.unsplash.com/photo-1557804506-669a67965ba0?w=600&q=80&auto=format&fit=crop",
 					].map((src, i) => (
-						<div key={i} className="relative h-48 overflow-hidden rounded-xl" style={{ border: "1px solid rgba(42,64,128,0.08)" }}>
-							<Image src={src} alt="" fill className="object-cover" style={{ filter: "saturate(0.2) brightness(0.5) contrast(1.2)" }} />
-							<div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, transparent 50%, rgba(14,17,24,0.7))" }} />
+						<div
+							key={i}
+							className="relative h-48 overflow-hidden rounded-xl"
+							style={{ border: "1px solid rgba(42,64,128,0.08)" }}
+						>
+							<Image
+								src={src}
+								alt=""
+								fill
+								className="object-cover"
+								style={{ filter: "saturate(0.2) brightness(0.5) contrast(1.2)" }}
+							/>
+							<div
+								className="absolute inset-0"
+								style={{
+									background: "linear-gradient(to bottom, transparent 50%, rgba(14,17,24,0.7))",
+								}}
+							/>
 						</div>
 					))}
 				</div>
 			</section>
 
 			{/* Precision section */}
-			<section id="precision" className="relative z-10 px-8 py-16 lg:px-16" style={{ borderTop: "1px solid rgba(42,64,128,0.08)" }}>
+			<section
+				id="precision"
+				className="relative z-10 px-8 py-16 lg:px-16"
+				style={{ borderTop: "1px solid rgba(42,64,128,0.08)" }}
+			>
 				<div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-8">
 					{[
 						{ val: "0.1s", label: "Reaktionszeit" },
@@ -233,10 +302,16 @@ export default function DesignS10() {
 						{ val: "DSGVO", label: "Zertifiziert" },
 					].map((s) => (
 						<div key={s.label} className="text-center">
-							<div className="text-[clamp(1.5rem,3vw,2.5rem)] font-bold" style={{ color: "#4a80d0" }}>
+							<div
+								className="text-[clamp(1.5rem,3vw,2.5rem)] font-bold"
+								style={{ color: "#4a80d0" }}
+							>
 								{s.val}
 							</div>
-							<div className="mt-1 text-[11px] font-medium tracking-[0.1em] uppercase" style={{ color: "#3a4460" }}>
+							<div
+								className="mt-1 text-[11px] font-medium tracking-[0.1em] uppercase"
+								style={{ color: "#3a4460" }}
+							>
 								{s.label}
 							</div>
 						</div>
@@ -245,7 +320,10 @@ export default function DesignS10() {
 			</section>
 
 			{/* CTA */}
-			<section id="contact" className="relative z-10 flex flex-col items-center px-8 py-32 text-center lg:px-16">
+			<section
+				id="contact"
+				className="relative z-10 flex flex-col items-center px-8 py-32 text-center lg:px-16"
+			>
 				<h2
 					className="text-[clamp(2rem,4vw,3.5rem)] font-bold leading-[1.1] tracking-[-0.03em]"
 					style={{ color: "#e0e4f0" }}
@@ -253,7 +331,7 @@ export default function DesignS10() {
 					Präzision beginnt <span style={{ color: "#4a80d0" }}>jetzt</span>.
 				</h2>
 				<a
-					href="#"
+					href="#contact"
 					className="mt-10 rounded-lg px-10 py-4 text-[14px] font-bold transition-all hover:bg-[#3a5aa0]"
 					style={{ backgroundColor: "#2a4080", color: "#e0e4f0" }}
 				>
@@ -262,16 +340,23 @@ export default function DesignS10() {
 			</section>
 
 			{/* Footer */}
-			<footer className="relative z-10 px-8 py-8 lg:px-16" style={{ borderTop: "1px solid rgba(42,64,128,0.06)" }}>
+			<footer
+				className="relative z-10 px-8 py-8 lg:px-16"
+				style={{ borderTop: "1px solid rgba(42,64,128,0.06)" }}
+			>
 				<div className="flex items-center justify-between">
 					<span className="text-[11px]" style={{ color: "#2a3050" }}>
 						© 2025 Z8
 					</span>
-					<Link href="/" className="text-[11px] transition-colors hover:text-[#4a80d0]" style={{ color: "#3a4460" }}>
+					<Link
+						href={homeHref}
+						className="text-[11px] transition-colors hover:text-[#4a80d0]"
+						style={{ color: "#3a4460" }}
+					>
 						← Alle Designs
 					</Link>
 				</div>
 			</footer>
-		</div>
+		</div>,
 	);
 }

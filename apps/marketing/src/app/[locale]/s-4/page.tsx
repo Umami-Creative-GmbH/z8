@@ -1,8 +1,25 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { notFound } from "next/navigation";
+import { isLocale } from "@/i18n/locales";
+import { translateVariantTree, variantMetadata } from "@/i18n/variant-copy";
 
-export default function DesignS4() {
-	return (
+type PageProps = { params: Promise<{ locale: string }> };
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+	const { locale } = await params;
+	if (!isLocale(locale)) notFound();
+	return variantMetadata(locale, "s-4");
+}
+
+export default async function DesignS4({ params }: PageProps) {
+	const { locale } = await params;
+	if (!isLocale(locale)) notFound();
+	const homeHref = `/${locale}`;
+	return translateVariantTree(
+		locale,
+		"s-4",
 		<div
 			className="noise min-h-screen"
 			style={{
@@ -30,10 +47,19 @@ export default function DesignS4() {
 						Zeiterfassung
 					</span>
 				</div>
-				<nav className="hidden items-center gap-10 text-[12px] font-medium md:flex" style={{ color: "#9a7a60" }}>
-					<a href="#features" className="transition-colors hover:text-[#b85c30]">Funktionen</a>
-					<a href="#story" className="transition-colors hover:text-[#b85c30]">Geschichte</a>
-					<a href="#contact" className="transition-colors hover:text-[#b85c30]">Kontakt</a>
+				<nav
+					className="hidden items-center gap-10 text-[12px] font-medium md:flex"
+					style={{ color: "#9a7a60" }}
+				>
+					<a href="#features" className="transition-colors hover:text-[#b85c30]">
+						Funktionen
+					</a>
+					<a href="#story" className="transition-colors hover:text-[#b85c30]">
+						Geschichte
+					</a>
+					<a href="#contact" className="transition-colors hover:text-[#b85c30]">
+						Kontakt
+					</a>
 				</nav>
 				<a
 					href="#contact"
@@ -79,10 +105,13 @@ export default function DesignS4() {
 								fontFamily: "'DM Sans', 'General Sans', sans-serif",
 							}}
 						>
-							Wie ein guter Ton, geformt von Hand — Z8 gibt Ihrer Arbeitszeit
-							Form und Struktur. Warm, ehrlich und beständig.
+							Wie ein guter Ton, geformt von Hand — Z8 gibt Ihrer Arbeitszeit Form und Struktur.
+							Warm, ehrlich und beständig.
 						</p>
-						<div className="animate-fade-up mt-12 flex items-center gap-6" style={{ animationDelay: "0.55s" }}>
+						<div
+							className="animate-fade-up mt-12 flex items-center gap-6"
+							style={{ animationDelay: "0.55s" }}
+						>
 							<a
 								href="#contact"
 								className="px-8 py-3.5 text-[12px] font-bold tracking-[0.1em] uppercase transition-all hover:shadow-lg"
@@ -101,7 +130,10 @@ export default function DesignS4() {
 					</div>
 
 					{/* Right — terracotta arch with image */}
-					<div className="animate-scale-in mt-16 hidden flex-1 items-center justify-center lg:mt-0 lg:flex" style={{ animationDelay: "0.5s" }}>
+					<div
+						className="animate-scale-in mt-16 hidden flex-1 items-center justify-center lg:mt-0 lg:flex"
+						style={{ animationDelay: "0.5s" }}
+					>
 						<div className="relative">
 							{/* Arch shape with image */}
 							<div
@@ -121,7 +153,13 @@ export default function DesignS4() {
 									style={{ filter: "saturate(0.5) sepia(0.25) contrast(1.05)" }}
 								/>
 								{/* Terracotta overlay tint */}
-								<div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(200,112,64,0.15), rgba(184,92,48,0.25))" }} />
+								<div
+									className="absolute inset-0"
+									style={{
+										background:
+											"linear-gradient(to bottom, rgba(200,112,64,0.15), rgba(184,92,48,0.25))",
+									}}
+								/>
 							</div>
 							{/* Shadow */}
 							<div
@@ -140,7 +178,11 @@ export default function DesignS4() {
 			</section>
 
 			{/* Features — tiles */}
-			<section id="features" className="relative z-10 px-8 py-32 lg:px-16" style={{ backgroundColor: "#f2e8dc" }}>
+			<section
+				id="features"
+				className="relative z-10 px-8 py-32 lg:px-16"
+				style={{ backgroundColor: "#f2e8dc" }}
+			>
 				<div className="mx-auto max-w-5xl">
 					<h2
 						className="text-[clamp(1.8rem,3.5vw,2.8rem)] tracking-[-0.02em]"
@@ -151,9 +193,18 @@ export default function DesignS4() {
 
 					<div className="mt-16 grid gap-8 md:grid-cols-2">
 						{[
-							{ title: "Stempeluhr", desc: "Start und Stopp mit einem Tippen. So einfach wie ein Lichtschalter." },
-							{ title: "Stundenzettel", desc: "Automatisch generiert, immer aktuell, bereit zum Export." },
-							{ title: "Projekte", desc: "Zeiten nach Projekt erfassen und zuordnen. Ohne Umwege." },
+							{
+								title: "Stempeluhr",
+								desc: "Start und Stopp mit einem Tippen. So einfach wie ein Lichtschalter.",
+							},
+							{
+								title: "Stundenzettel",
+								desc: "Automatisch generiert, immer aktuell, bereit zum Export.",
+							},
+							{
+								title: "Projekte",
+								desc: "Zeiten nach Projekt erfassen und zuordnen. Ohne Umwege.",
+							},
 							{ title: "Übersicht", desc: "Ihr Dashboard zeigt, was zählt. Keine Ablenkung." },
 						].map((f, i) => (
 							<div
@@ -191,26 +242,39 @@ export default function DesignS4() {
 						"https://images.unsplash.com/photo-1557804506-669a67965ba0?w=600&q=80&auto=format&fit=crop",
 					].map((src, i) => (
 						<div key={i} className="relative h-64 overflow-hidden">
-							<Image src={src} alt="" fill className="object-cover" style={{ filter: "saturate(0.4) sepia(0.3) contrast(1.05)" }} />
+							<Image
+								src={src}
+								alt=""
+								fill
+								className="object-cover"
+								style={{ filter: "saturate(0.4) sepia(0.3) contrast(1.05)" }}
+							/>
 						</div>
 					))}
 				</div>
 			</section>
 
 			{/* Quote */}
-			<section id="story" className="relative z-10 flex flex-col items-center px-8 py-32 text-center lg:px-16">
+			<section
+				id="story"
+				className="relative z-10 flex flex-col items-center px-8 py-32 text-center lg:px-16"
+			>
 				<blockquote
 					className="max-w-2xl text-[clamp(1.5rem,3vw,2.2rem)] italic leading-[1.4] tracking-[-0.01em]"
 					style={{ color: "#5a3a28" }}
 				>
-					&ldquo;Die beste Technologie ist die, die man nicht bemerkt —
-					die einfach funktioniert, wie ein warmer Raum.&rdquo;
+					&ldquo;Die beste Technologie ist die, die man nicht bemerkt — die einfach funktioniert,
+					wie ein warmer Raum.&rdquo;
 				</blockquote>
 				<div className="mt-8 h-1 w-12" style={{ backgroundColor: "#b85c30" }} />
 			</section>
 
 			{/* CTA */}
-			<section id="contact" className="relative z-10 px-8 py-24 lg:px-16" style={{ backgroundColor: "#c87040" }}>
+			<section
+				id="contact"
+				className="relative z-10 px-8 py-24 lg:px-16"
+				style={{ backgroundColor: "#c87040" }}
+			>
 				<div className="mx-auto flex max-w-3xl flex-col items-center text-center">
 					<h2
 						className="text-[clamp(2rem,4vw,3rem)] leading-[1.1] tracking-[-0.02em]"
@@ -219,7 +283,7 @@ export default function DesignS4() {
 						Formen Sie Ihre Zeit.
 					</h2>
 					<a
-						href="#"
+						href="#contact"
 						className="mt-10 px-10 py-4 text-[12px] font-bold tracking-[0.15em] uppercase transition-all hover:bg-[#faf4ee] hover:text-[#b85c30]"
 						style={{ border: "2px solid #faf4ee", color: "#faf4ee" }}
 					>
@@ -229,16 +293,23 @@ export default function DesignS4() {
 			</section>
 
 			{/* Footer */}
-			<footer className="relative z-10 px-8 py-8 lg:px-16" style={{ borderTop: "1px solid #e0d0c0" }}>
+			<footer
+				className="relative z-10 px-8 py-8 lg:px-16"
+				style={{ borderTop: "1px solid #e0d0c0" }}
+			>
 				<div className="flex items-center justify-between">
 					<span className="text-[11px]" style={{ color: "#b89878" }}>
 						© 2025 Z8
 					</span>
-					<Link href="/" className="text-[11px] transition-colors hover:text-[#b85c30]" style={{ color: "#b89878" }}>
+					<Link
+						href={homeHref}
+						className="text-[11px] transition-colors hover:text-[#b85c30]"
+						style={{ color: "#b89878" }}
+					>
 						← Alle Designs
 					</Link>
 				</div>
 			</footer>
-		</div>
+		</div>,
 	);
 }
