@@ -147,7 +147,7 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 		},
 		hero: {
 			title: ["Zeiterfassung.", "Endlich gelöst."],
-			description: "Ersetzen Sie Ihre gesamte Tool-Landschaft. Stempeluhr, Lohnexport und Analyse - alles an einem Ort.",
+			description: "Ersetzen Sie Ihre gesamte Tool-Landschaft. Stempeluhr, Lohnexport und Analyse \u2014 alles an einem Ort.",
 			primaryCta: "Kostenlos starten",
 			ctaNote: ["Dauerhaft kostenlos.", "Keine Kreditkarte."],
 			featureLabel: "ALLES IN EINEM WERKZEUG",
@@ -164,7 +164,7 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 				"Schichtplanung",
 			],
 			mockup: {
-				windowTitle: "Z8 - Dashboard",
+				windowTitle: "Z8 \u2014 Dashboard",
 				company: "Umami GmbH",
 				sidebarItems: ["Dashboard", "Stempeluhr", "Mitarbeiter", "Berichte", "Lohnexport", "Einstellungen"],
 				dateLabel: "Heute, 6. Februar",
@@ -189,7 +189,7 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 		featuresGrid: {
 			eyebrow: "Funktionen",
 			title: "Alles, was Ihr Team braucht.",
-			description: "Sechs Kernmodule. Null Kompromisse. Jedes einzelne so gebaut, dass es allein bestehen könnte - zusammen sind sie unschlagbar.",
+			description: "Sechs Kernmodule. Null Kompromisse. Jedes einzelne so gebaut, dass es allein bestehen könnte \u2014 zusammen sind sie unschlagbar.",
 			items: [
 				{ title: "Stempeluhr", desc: "Ein Klick. Alle Geräte. Sofort synchronisiert über Web, Desktop und Mobile." },
 				{ title: "GoBD-konform", desc: "Revisionssichere Einträge. Lückenlos dokumentiert und unantastbar." },
@@ -207,19 +207,19 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 				{
 					tag: "Stempeluhr",
 					title: "Ein Klick. Überall.",
-					desc: "Ihre Mitarbeiter stempeln per Web, iOS, Android, Terminal oder NFC-Badge ein. Alles synchronisiert sich in Echtzeit - auch offline. Geo-Fencing und IP-Whitelisting verhindern Missbrauch, ohne ehrliche Mitarbeiter zu behindern.",
+					desc: "Ihre Mitarbeiter stempeln per Web, iOS, Android, Terminal oder NFC-Badge ein. Alles synchronisiert sich in Echtzeit \u2014 auch offline. Geo-Fencing und IP-Whitelisting verhindern Missbrauch, ohne ehrliche Mitarbeiter zu behindern.",
 					image: "https://images.unsplash.com/photo-1551434678-e076c223a692?w=800&q=80&auto=format&fit=crop",
 				},
 				{
 					tag: "Analyse",
 					title: "Daten, die Entscheidungen treiben.",
-					desc: "Überstunden-Trends, Abwesenheits-Muster, Abteilungsvergleiche. Dutzende vorgefertigte Reports plus ein SQL-Editor für Power-User. Automatischer Versand als PDF oder CSV an Stakeholder - täglich, wöchentlich oder monatlich.",
+					desc: "Überstunden-Trends, Abwesenheits-Muster, Abteilungsvergleiche. Dutzende vorgefertigte Reports plus ein SQL-Editor für Power-User. Automatischer Versand als PDF oder CSV an Stakeholder \u2014 täglich, wöchentlich oder monatlich.",
 					image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&q=80&auto=format&fit=crop",
 				},
 				{
 					tag: "Lohnexport",
 					title: "Null manuelle Schritte.",
-					desc: "Verbinden Sie Z8 direkt mit DATEV, Lexware, Sage, Personio oder SAP. Monatliche Lohndaten werden automatisch übertragen - ohne CSV-Download, ohne Copy-Paste, ohne Fehler. Ihre Buchhaltung liebt es.",
+					desc: "Verbinden Sie Z8 direkt mit DATEV, Lexware, Sage, Personio oder SAP. Monatliche Lohndaten werden automatisch übertragen \u2014 ohne CSV-Download, ohne Copy-Paste, ohne Fehler. Ihre Buchhaltung liebt es.",
 					image: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=800&q=80&auto=format&fit=crop",
 				},
 			],
@@ -234,7 +234,7 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 			title: "Was unsere Kunden sagen.",
 			items: [
 				{
-					quote: "Wir haben drei Tools durch Z8 ersetzt. Die Zeitersparnis in der HR-Abteilung ist spürbar - mindestens 8 Stunden pro Woche.",
+					quote: "Wir haben drei Tools durch Z8 ersetzt. Die Zeitersparnis in der HR-Abteilung ist spürbar \u2014 mindestens 8 Stunden pro Woche.",
 					name: "Dr. Katharina Voss",
 					role: "Head of People, Finleap",
 					avatar: "KV",
@@ -257,7 +257,7 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 			image: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1400&q=80&auto=format&fit=crop",
 			imageAlt: "Team collaboration",
 			title: "Gebaut für Teams, die es ernst meinen.",
-			description: "Von 3-Personen-Startups bis zu DAX-Konzernen - Z8 skaliert mit Ihren Anforderungen.",
+			description: "Von 3-Personen-Startups bis zu DAX-Konzernen \u2014 Z8 skaliert mit Ihren Anforderungen.",
 		},
 		pricing: {
 			eyebrow: "Preise",
@@ -361,7 +361,7 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 			items: [
 				{
 					q: "Wie schnell kann ich Z8 einrichten?",
-					a: "Die meisten Teams sind in unter 5 Minuten startklar. Erstellen Sie ein Konto, laden Sie Mitarbeiter per E-Mail ein - fertig. Für Enterprise-Kunden mit SSO-Integration rechnen wir mit 1-2 Werktagen.",
+					a: "Die meisten Teams sind in unter 5 Minuten startklar. Erstellen Sie ein Konto, laden Sie Mitarbeiter per E-Mail ein \u2014 fertig. Für Enterprise-Kunden mit SSO-Integration rechnen wir mit 1\u20132 Werktagen.",
 				},
 				{
 					q: "Ist Z8 wirklich GoBD-konform?",
@@ -383,15 +383,15 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 		},
 		newsletterCta: {
 			title: "Immer auf dem Laufenden.",
-			description: "Produktupdates, Branchen-Insights und Best Practices für Zeiterfassung - direkt in Ihr Postfach. Kein Spam, jederzeit abmeldbar.",
+			description: "Produktupdates, Branchen-Insights und Best Practices für Zeiterfassung \u2014 direkt in Ihr Postfach. Kein Spam, jederzeit abmeldbar.",
 			emailPlaceholder: "name@firma.de",
 			button: "Abonnieren",
-			note: "Kein Spam. Maximal 2x pro Monat. Jederzeit abmeldbar.",
+			note: "Kein Spam. Maximal 2\u00d7 pro Monat. Jederzeit abmeldbar.",
 		},
 		finalCta: {
 			eyebrow: "Jetzt starten",
 			title: "Bereit durchzustarten?",
-			description: "Starten Sie kostenlos - keine Kreditkarte, kein Risiko. Kein Vertriebsgespräch nötig.",
+			description: "Starten Sie kostenlos \u2014 keine Kreditkarte, kein Risiko. Kein Vertriebsgespräch nötig.",
 			primaryCta: "Kostenlos starten",
 			secondaryCta: "Demo anfragen",
 			note: "Dauerhaft kostenlos für bis zu 10 Mitarbeiter · Keine Kreditkarte · DSGVO-konform",
