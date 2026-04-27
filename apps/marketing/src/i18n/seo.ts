@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import type { Locale } from "./locales";
-import { alternatePath } from "./locales";
+import { alternatePath, getLocalizedPath } from "./locales";
 
 const siteUrl = "https://z8-time.app";
 
@@ -16,7 +16,7 @@ const homeMetadata: Record<Locale, { title: string; description: string }> = {
 };
 
 export function localizedMetadata(locale: Locale, pathname: string): Metadata {
-	const path = pathname.startsWith(`/${locale}`) ? pathname : `/${locale}${pathname === "/" ? "" : pathname}`;
+	const path = getLocalizedPath(pathname, locale);
 	const alternates = alternatePath(path);
 
 	return {
