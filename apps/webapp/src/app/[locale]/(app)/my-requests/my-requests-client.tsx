@@ -1,7 +1,7 @@
 "use client";
 
 import { DateTime } from "luxon";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 
 import { Link } from "@/navigation";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -29,6 +29,7 @@ import type {
 	SelfServiceRequestSourceType,
 	SelfServiceRequestStatus,
 } from "@/lib/self-service-requests/types";
+import { cancelMyAbsenceRequest } from "./actions";
 
 interface MyRequestsClientProps {
 	initialResult: SelfServiceRequestResult;
@@ -277,18 +278,41 @@ function RequestAction({
 	item: SelfServiceRequestItem;
 	preferFix?: boolean;
 }) {
+	const [isCancelPending, startCancelTransition] = useTransition();
 	const canFix = item.availableActions.includes("fix");
 	const canView = item.availableActions.includes("view");
+	const canCancel = item.availableActions.includes("cancel");
 	const label = preferFix && canFix ? "Fix" : canView ? "View" : canFix ? "Fix" : null;
 
-	if (!label) {
+	if (!label && !canCancel) {
 		return <span className="text-sm text-muted-foreground">Not available</span>;
 	}
 
+	function handleCancel() {
+		startCancelTransition(() => {
+			void cancelMyAbsenceRequest(item.sourceId);
+		});
+	}
+
 	return (
-		<Button asChild size="sm" variant={label === "Fix" ? "default" : "outline"}>
-			<Link href={item.sourceHref}>{label}</Link>
-		</Button>
+		<div className="flex flex-wrap justify-end gap-2">
+			{label ? (
+				<Button asChild size="sm" variant={label === "Fix" ? "default" : "outline"}>
+					<Link href={item.sourceHref}>{label}</Link>
+				</Button>
+			) : null}
+			{canCancel ? (
+				<Button
+					type="button"
+					size="sm"
+					variant="destructive"
+					disabled={isCancelPending}
+					onClick={handleCancel}
+				>
+					Cancel
+				</Button>
+			) : null}
+		</div>
 	);
 }
 

@@ -6,6 +6,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { SelfServiceRequestResult } from "@/lib/self-service-requests/types";
 
+const cancelMyAbsenceRequestMock = vi.hoisted(() => vi.fn());
+
 vi.mock("@/navigation", () => ({
 	Link: ({ href, children }: { href: string; children: ReactNode }) => (
 		<a href={href}>{children}</a>
@@ -21,6 +23,10 @@ vi.mock("@tabler/icons-react", () => ({
 	IconCheck: () => <span aria-hidden="true" />,
 	IconClock: () => <span aria-hidden="true" />,
 	IconFileDescription: () => <span aria-hidden="true" />,
+}));
+
+vi.mock("./actions", () => ({
+	cancelMyAbsenceRequest: cancelMyAbsenceRequestMock,
 }));
 
 import { MyRequestsClient } from "./my-requests-client";
@@ -147,5 +153,53 @@ describe("MyRequestsClient", () => {
 
 		const timeRow = screen.getByRole("row", { name: /Time correction/ });
 		expect(within(timeRow).queryByRole("link", { name: "Fix" })).toBeNull();
+	});
+
+	it("renders cancel for pending absence requests only", () => {
+		render(
+			<MyRequestsClient
+				initialResult={createResult({
+					items: [
+						{
+							id: "absence-pending",
+							sourceType: "absence",
+							sourceId: "absence-pending",
+							organizationId: "org-1",
+							employeeId: "employee-1",
+							status: "pending",
+							submittedAt: new Date("2026-04-25T08:00:00.000Z"),
+							resolvedAt: null,
+							title: "Pending vacation",
+							subtitle: "2026-05-01 - 2026-05-02",
+							decisionReason: null,
+							availableActions: ["view", "cancel"],
+							sourceHref: "/absences",
+						},
+						{
+							id: "time-1",
+							sourceType: "time_correction",
+							sourceId: "period-1",
+							organizationId: "org-1",
+							employeeId: "employee-1",
+							status: "pending",
+							submittedAt: new Date("2026-04-25T08:00:00.000Z"),
+							resolvedAt: null,
+							title: "Time correction",
+							subtitle: "Correction request for a work period",
+							decisionReason: null,
+							availableActions: ["view"],
+							sourceHref: "/time-tracking",
+						},
+					],
+				})}
+			/>,
+		);
+
+		const absenceRow = screen.getByRole("row", { name: /Pending vacation/ });
+		fireEvent.click(within(absenceRow).getByRole("button", { name: "Cancel" }));
+
+		expect(cancelMyAbsenceRequestMock).toHaveBeenCalledWith("absence-pending");
+		const timeRow = screen.getByRole("row", { name: /Time correction/ });
+		expect(within(timeRow).queryByRole("button", { name: "Cancel" })).toBeNull();
 	});
 });
