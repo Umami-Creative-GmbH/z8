@@ -83,7 +83,6 @@ function scanJob(overrides: Record<string, unknown> = {}) {
 		provider: "clockodo",
 		entityType: "employee",
 		dateRange: { startDate: "2026-01-01", endDate: "2026-01-31" },
-		employeeIds: [],
 		secretId: "secret_1",
 		...overrides,
 	} as Parameters<typeof scanClockodoImportPartition>[0];
@@ -199,6 +198,32 @@ describe("scanClockodoImportPartition", () => {
 		]);
 	});
 
+	it("stages zero Clockodo users when provider user IDs are explicitly empty", async () => {
+		mocks.getUsers.mockResolvedValue([
+			{
+				id: 1,
+				name: "Ada Lovelace",
+				number: "A-1",
+				email: "ada@example.com",
+				role: "user",
+				active: true,
+				teams_id: 2,
+				timezone: "Europe/Berlin",
+				wage_type: 1,
+				language: "en",
+			},
+		]);
+
+		const result = await scanClockodoImportPartition(scanJob({ employeeIds: [] }));
+
+		expect(result).toEqual({ stagedRows: 0, issues: 0 });
+		expect(mocks.insertStagedRows).toHaveBeenCalledWith({
+			batchId: "batch_1",
+			organizationId: "org_1",
+			rows: [],
+		});
+	});
+
 	it("stages work periods with missing employee mapping as blocking review rows", async () => {
 		mocks.getEntries.mockResolvedValue([
 			{
@@ -297,6 +322,27 @@ describe("scanClockodoImportPartition", () => {
 		expect(mocks.insertStagedRows.mock.calls[0][0].rows).toEqual([
 			expect.objectContaining({ providerSourceId: "clockodo:entry:6" }),
 		]);
+	});
+
+	it("stages zero work periods when provider user IDs are explicitly empty", async () => {
+		mocks.getEntries.mockResolvedValue([
+			{
+				id: 6,
+				users_id: 1,
+				services_id: 3,
+				time_since: "2026-01-05T08:00:00Z",
+				time_until: "2026-01-05T16:00:00Z",
+				duration: 28800,
+			},
+		]);
+
+		const result = await scanClockodoImportPartition(
+			scanJob({ entityType: "work_period", employeeIds: [] }),
+		);
+
+		expect(result).toEqual({ stagedRows: 0, issues: 0 });
+		expect(mocks.clockodoUserMappingFindMany).not.toHaveBeenCalled();
+		expect(mocks.insertStagedRows.mock.calls[0][0].rows).toEqual([]);
 	});
 
 	it("treats skipped Clockodo user mappings as unmatched blocking rows", async () => {
@@ -440,6 +486,30 @@ describe("scanClockodoImportPartition", () => {
 		expect(mocks.insertStagedRows.mock.calls[0][0].rows).toEqual([
 			expect.objectContaining({ providerSourceId: "clockodo:absence:8" }),
 		]);
+	});
+
+	it("stages zero absences when provider user IDs are explicitly empty", async () => {
+		mocks.getAbsences.mockResolvedValue([
+			{
+				id: 8,
+				users_id: 1,
+				date_since: "2026-01-10",
+				date_until: "2026-01-12",
+				status: 1,
+				type: 1,
+				note: null,
+				count_days: 3,
+				count_hours: null,
+			},
+		]);
+
+		const result = await scanClockodoImportPartition(
+			scanJob({ entityType: "absence", employeeIds: [] }),
+		);
+
+		expect(result).toEqual({ stagedRows: 0, issues: 0 });
+		expect(mocks.clockodoUserMappingFindMany).not.toHaveBeenCalled();
+		expect(mocks.insertStagedRows.mock.calls[0][0].rows).toEqual([]);
 	});
 
 	it("filters holiday rows to dates within the selected range", async () => {

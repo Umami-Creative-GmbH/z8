@@ -253,11 +253,13 @@ function mappedEmployeeId(mapping: ClockodoMapping | undefined): string | null {
 }
 
 function selectedProviderUserIds(job: ImportScanJobData): Set<number> | null {
+	if (!Array.isArray(job.employeeIds)) return null;
+
 	const ids = job.employeeIds
 		.filter((id) => /^\d+$/.test(id))
 		.map((id) => Number(id))
 		.filter((id) => Number.isSafeInteger(id));
-	return ids.length > 0 ? new Set(ids) : null;
+	return new Set(ids);
 }
 
 function isSelectedProviderUser(providerUserIds: Set<number> | null, clockodoUserId: number): boolean {

@@ -264,4 +264,48 @@ describe("ClockodoImportWizard", () => {
 		expect(screen.getByText("Select both a start and end date before starting the scan.")).toBeTruthy();
 		expect(mocks.startImportReviewScan).not.toHaveBeenCalled();
 	});
+
+	it("does not start an unsafe scan when all Clockodo users are skipped", async () => {
+		mocks.validateClockodoCredentials.mockResolvedValue({
+			success: true,
+			data: {
+				users: 1,
+				teams: 0,
+				services: 0,
+				entries: 1,
+				absences: 1,
+				targetHours: 0,
+				holidayQuotas: 0,
+				nonBusinessDays: 0,
+				surcharges: 0,
+			},
+		});
+		mocks.fetchClockodoUsers.mockResolvedValue({
+			success: true,
+			data: [{ id: 101, name: "Ada Lovelace", email: "ada@example.com", active: true }],
+		});
+		mocks.fetchZ8Employees.mockResolvedValue({ success: true, data: [] });
+		mocks.saveUserMappings.mockResolvedValue({ success: true, data: undefined });
+
+		renderWizard();
+
+		fireEvent.change(screen.getByLabelText("Clockodo Email"), {
+			target: { value: "admin@example.com" },
+		});
+		fireEvent.change(screen.getByLabelText("API Key"), { target: { value: "api-key-123" } });
+		fireEvent.click(screen.getByRole("button", { name: "Connect & Preview" }));
+		await screen.findByText("Data Preview");
+		fireEvent.click(screen.getByRole("button", { name: "Map Users" }));
+		fireEvent.click(await screen.findByRole("combobox"));
+		fireEvent.click(await screen.findByText("Skip"));
+		fireEvent.click(await screen.findByRole("button", { name: "Continue" }));
+		await screen.findByText("Select Data for Review");
+
+		expect(screen.getByRole("button", { name: "Start Review Scan" })).toHaveProperty(
+			"disabled",
+			true,
+		);
+		expect(screen.getByText("Select at least one Clockodo user before starting the scan.")).toBeTruthy();
+		expect(mocks.startImportReviewScan).not.toHaveBeenCalled();
+	});
 });

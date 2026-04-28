@@ -150,6 +150,26 @@ function resolveReviewDateRange(dateRange: ImportSelections["dateRange"]) {
 	return { startDate: start.toFormat("yyyy-MM-dd"), endDate: now.toFormat("yyyy-MM-dd") };
 }
 
+function selectedClockodoUserIds(
+	userMappings: UserMappingEntry[],
+	onlyImportMapped: boolean,
+): string[] {
+	return userMappings
+		.filter((mapping) => mapping.mappingType !== "skipped")
+		.filter((mapping) => !onlyImportMapped || mapping.employeeId != null)
+		.map((mapping) => String(mapping.clockodoUserId));
+}
+
+function hasSelectedUserScopedEntity(selections: ImportSelections): boolean {
+	return (
+		selections.users ||
+		selections.entries ||
+		selections.absences ||
+		selections.targetHours ||
+		selections.holidayQuotas
+	);
+}
+
 export function ClockodoImportWizard({ organizationId }: ClockodoImportWizardProps) {
 	const { t } = useTranslate();
 	const router = useRouter();
@@ -298,6 +318,9 @@ export function ClockodoImportWizard({ organizationId }: ClockodoImportWizardPro
 	const isCustomDateRangeIncomplete =
 		selections.dateRange.preset === "custom" &&
 		(!selections.dateRange.startDate || !selections.dateRange.endDate);
+	const selectedEmployeeIds = selectedClockodoUserIds(userMappings, onlyImportMapped);
+	const isUserScopedSelectionEmpty =
+		userMappings.length > 0 && hasSelectedUserScopedEntity(selections) && selectedEmployeeIds.length === 0;
 	const hasSelectedEntities = Object.entries(selections).some(
 		([key, val]) => key !== "dateRange" && val === true,
 	);
@@ -311,10 +334,6 @@ export function ClockodoImportWizard({ organizationId }: ClockodoImportWizardPro
 				userId: m.userId,
 				mappingType: m.mappingType,
 			}));
-			const employeeIds = serializedMappings
-				.filter((mapping) => mapping.mappingType !== "skipped")
-				.filter((mapping) => !onlyImportMapped || mapping.employeeId != null)
-				.map((mapping) => String(mapping.clockodoUserId));
 			const entityTypes = IMPORT_ENTITIES.flatMap((entity) =>
 				selections[entity.key] ? [CLOCKODO_ENTITY_TYPE_BY_SELECTION[entity.key]] : [],
 			);
@@ -325,7 +344,7 @@ export function ClockodoImportWizard({ organizationId }: ClockodoImportWizardPro
 				credential: JSON.stringify({ email, apiKey }),
 				selectedScope: selections,
 				dateRange: resolveReviewDateRange(selections.dateRange),
-				employeeIds,
+				employeeIds: selectedEmployeeIds,
 				entityTypes,
 			});
 		},
@@ -844,11 +863,13 @@ export function ClockodoImportWizard({ organizationId }: ClockodoImportWizardPro
 							</Button>
 							<Button
 								onClick={() => {
-									if (isCustomDateRangeIncomplete) return;
+									if (isCustomDateRangeIncomplete || isUserScopedSelectionEmpty) return;
 									setStep("importing");
 									importMutation.mutate();
 								}}
-								disabled={!hasSelectedEntities || isCustomDateRangeIncomplete}
+								disabled={
+									!hasSelectedEntities || isCustomDateRangeIncomplete || isUserScopedSelectionEmpty
+								}
 							>
 								<IconDatabaseImport className="mr-2 h-4 w-4" aria-hidden="true" />
 								{t("settings.clockodoImport.selection.startImport", "Start Review Scan")}
@@ -859,6 +880,14 @@ export function ClockodoImportWizard({ organizationId }: ClockodoImportWizardPro
 								{t(
 									"settings.clockodoImport.selection.incompleteCustomDateRange",
 									"Select both a start and end date before starting the scan.",
+								)}
+							</p>
+						)}
+						{isUserScopedSelectionEmpty && (
+							<p className="text-right text-sm text-destructive" aria-live="polite">
+								{t(
+									"settings.clockodoImport.selection.emptyUserScope",
+									"Select at least one Clockodo user before starting the scan.",
 								)}
 							</p>
 						)}
