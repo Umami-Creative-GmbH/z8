@@ -2630,7 +2630,7 @@ export const qualificationEvidenceRelations = relations(qualificationEvidence, (
 
 export const qualificationRenewalRequestRelations = relations(
 	qualificationRenewalRequest,
-	({ one, many }) => ({
+	({ one }) => ({
 		employee: one(employee, {
 			fields: [qualificationRenewalRequest.employeeId],
 			references: [employee.id],
@@ -2643,7 +2643,6 @@ export const qualificationRenewalRequestRelations = relations(
 			fields: [qualificationRenewalRequest.reviewerId],
 			references: [employee.id],
 		}),
-		evidence: many(qualificationEvidence),
 	}),
 );
 
