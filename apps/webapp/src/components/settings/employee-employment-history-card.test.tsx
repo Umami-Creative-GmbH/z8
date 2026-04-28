@@ -1,0 +1,91 @@
+/* @vitest-environment jsdom */
+
+import { render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import { EmployeeEmploymentHistoryCard } from "./employee-employment-history-card";
+
+const baseHistory = [
+	{
+		id: "history-current",
+		employeeId: "employee-1",
+		organizationId: "org-1",
+		validFrom: new Date("2026-01-01T00:00:00.000Z"),
+		validUntil: null,
+		status: "active",
+		contractType: "fixed",
+		weeklyContractMinutes: 2400,
+		probationStartsOn: null,
+		probationEndsOn: null,
+		workModel: "hybrid",
+		workPolicyId: null,
+		hourlyRate: null,
+		currency: "EUR",
+		changeReason: "Current agreement",
+		reviewState: "confirmed",
+		createdBy: "user-1",
+		confirmedBy: "user-1",
+		confirmedAt: new Date("2025-12-15T00:00:00.000Z"),
+		createdAt: new Date("2025-12-01T00:00:00.000Z"),
+		updatedAt: new Date("2025-12-15T00:00:00.000Z"),
+	},
+	{
+		id: "history-pending",
+		employeeId: "employee-1",
+		organizationId: "org-1",
+		validFrom: new Date("2026-03-01T00:00:00.000Z"),
+		validUntil: null,
+		status: "active",
+		contractType: "hourly",
+		weeklyContractMinutes: 1800,
+		probationStartsOn: null,
+		probationEndsOn: null,
+		workModel: "remote",
+		workPolicyId: null,
+		hourlyRate: "28.50",
+		currency: "EUR",
+		changeReason: "Scheduled change",
+		reviewState: "pending",
+		createdBy: "user-1",
+		confirmedBy: null,
+		confirmedAt: null,
+		createdAt: new Date("2026-02-01T00:00:00.000Z"),
+		updatedAt: new Date("2026-02-01T00:00:00.000Z"),
+	},
+] as const;
+
+function renderCard(canManage = true) {
+	return render(
+		<EmployeeEmploymentHistoryCard
+			history={[...baseHistory]}
+			canManage={canManage}
+			onCreate={vi.fn()}
+			onConfirm={vi.fn()}
+			onCancel={vi.fn()}
+			isCreating={false}
+			isMutating={false}
+		/>,
+	);
+}
+
+describe("EmployeeEmploymentHistoryCard", () => {
+	it("renders current contract context", () => {
+		renderCard();
+
+		expect(screen.getByText("Contract & Work Model")).toBeTruthy();
+		expect(screen.getAllByText("40h / week").length).toBeGreaterThan(0);
+		expect(screen.getAllByText("hybrid").length).toBeGreaterThan(0);
+	});
+
+	it("hides add action for read-only users", () => {
+		renderCard(false);
+
+		expect(screen.queryByRole("button", { name: /add change/i })).toBeNull();
+	});
+
+	it("hides confirm and cancel actions for read-only users", () => {
+		renderCard(false);
+
+		expect(screen.queryByRole("button", { name: /confirm/i })).toBeNull();
+		expect(screen.queryByRole("button", { name: /cancel/i })).toBeNull();
+	});
+});

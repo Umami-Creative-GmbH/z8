@@ -7,6 +7,7 @@ import { use, useEffect } from "react";
 import { toast } from "sonner";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { EmployeeCustomRolesCard } from "@/components/settings/custom-roles/employee-custom-roles-card";
+import { EmployeeEmploymentHistoryCard } from "@/components/settings/employee-employment-history-card";
 import { EmployeeSkillsCard } from "@/components/settings/employee-skills-card";
 import { ManagerAssignment } from "@/components/settings/manager-assignment";
 import { RateHistoryCard } from "@/components/settings/rate-history-card";
@@ -32,6 +33,7 @@ export function EmployeeDetailPageClient({
 		schedule,
 		availableManagers,
 		rateHistory,
+		employmentHistory,
 		isLoading,
 		isLoadingRateHistory,
 		hasEmployee,
@@ -39,6 +41,12 @@ export function EmployeeDetailPageClient({
 		isUpdating,
 		updateRate,
 		isUpdatingRate,
+		createEmploymentHistory,
+		isCreatingEmploymentHistory,
+		confirmEmploymentHistory,
+		isConfirmingEmploymentHistory,
+		cancelEmploymentHistory,
+		isCancelingEmploymentHistory,
 		refetch,
 	} = useEmployee({ employeeId, accessTier });
 	const canManageEmployeeDetails = accessTier === "orgAdmin" || accessTier === "manager";
@@ -46,6 +54,8 @@ export function EmployeeDetailPageClient({
 	const canManageSkills = accessTier === "orgAdmin" || accessTier === "manager";
 	const canManageRates = accessTier === "orgAdmin" || accessTier === "manager";
 	const canManageCustomRoles = accessTier === "orgAdmin";
+	const canManageEmploymentHistory = accessTier === "orgAdmin";
+	const isMutatingEmploymentHistory = isConfirmingEmploymentHistory || isCancelingEmploymentHistory;
 
 	const form = useForm({
 		defaultValues: defaultFormValues,
@@ -83,7 +93,11 @@ export function EmployeeDetailPageClient({
 	if (isLoading || !employee) {
 		return (
 			<div className="flex flex-1 flex-col gap-4 p-4">
-				<div className="flex items-center justify-center p-8" role="status" aria-label="Loading employee data">
+				<div
+					className="flex items-center justify-center p-8"
+					role="status"
+					aria-label="Loading employee data"
+				>
 					<IconLoader2 className="size-8 animate-spin text-muted-foreground" aria-hidden="true" />
 				</div>
 			</div>
@@ -124,6 +138,16 @@ export function EmployeeDetailPageClient({
 				employeeId={employeeId}
 				organizationId={employee.organizationId}
 				canManageSkills={canManageSkills}
+			/>
+
+			<EmployeeEmploymentHistoryCard
+				history={employmentHistory}
+				canManage={canManageEmploymentHistory}
+				onCreate={createEmploymentHistory}
+				onConfirm={confirmEmploymentHistory}
+				onCancel={cancelEmploymentHistory}
+				isCreating={isCreatingEmploymentHistory}
+				isMutating={isMutatingEmploymentHistory}
 			/>
 
 			{employee.contractType === "hourly" && (
