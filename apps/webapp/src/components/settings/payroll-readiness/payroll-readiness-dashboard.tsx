@@ -161,13 +161,13 @@ function AffectedEmployeesTable({
 					<TableRow key={employee.id}>
 						<TableCell>
 							<div className="min-w-0 space-y-1">
-								<p className="font-medium">{employee.name ?? employee.email ?? employee.id}</p>
+								<p className="break-words font-medium">{employee.name ?? employee.email ?? employee.id}</p>
 								{employee.email ? (
 									<p className="text-muted-foreground text-sm break-words">{employee.email}</p>
 								) : null}
 							</div>
 						</TableCell>
-						<TableCell>
+						<TableCell className="break-words">
 							{employee.employeeNumber ?? t("settings.payrollReadiness.affectedEmployees.noNumber", "Not set")}
 						</TableCell>
 					</TableRow>
