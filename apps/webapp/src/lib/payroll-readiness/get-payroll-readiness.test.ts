@@ -62,7 +62,7 @@ vi.mock("@/db", () => ({
 	},
 }));
 
-import { getPayrollReadiness } from "./get-payroll-readiness";
+import { derivePayrollReadinessStatus, getPayrollReadiness } from "./get-payroll-readiness";
 
 const period = {
 	start: DateTime.fromISO("2026-04-01T08:00:00.000Z"),
@@ -187,6 +187,18 @@ describe("getPayrollReadiness", () => {
 		});
 	});
 
+	it("blocks when no wage type mappings are configured", async () => {
+		mockState.payrollWageTypeMappingFindMany.mockResolvedValue([]);
+
+		const result = await getPayrollReadiness(defaultInput());
+
+		expect(result.status).toBe("blocked");
+		expect(getCheck(result, "wage-type-mappings")).toMatchObject({
+			status: "fail",
+			severity: "blocker",
+		});
+	});
+
 	it("blocks when latest payroll export failed", async () => {
 		mockState.payrollExportJobFindMany.mockResolvedValue([{ id: "job-1", status: "failed" }]);
 
@@ -223,5 +235,59 @@ describe("getPayrollReadiness", () => {
 			actionHref: "/travel-expenses/approvals",
 			affectedEmployees: [{ id: "employee-1", name: "Katherine Johnson", email: "kat@example.com" }],
 		});
+	});
+});
+
+describe("derivePayrollReadinessStatus", () => {
+	it("returns unavailable when a required check is unavailable", () => {
+		expect(
+			derivePayrollReadinessStatus([
+				{
+					id: "required-source",
+					group: "time",
+					title: "Required source",
+					status: "unavailable",
+					severity: "blocker",
+					count: 0,
+					description: "Unavailable",
+					required: true,
+					affectedEmployees: [],
+				},
+			]),
+		).toBe("unavailable");
+	});
+
+	it("keeps blocked and ready status behavior", () => {
+		expect(
+			derivePayrollReadinessStatus([
+				{
+					id: "blocker",
+					group: "payrollSetup",
+					title: "Blocker",
+					status: "fail",
+					severity: "blocker",
+					count: 1,
+					description: "Blocked",
+					required: true,
+					affectedEmployees: [],
+				},
+			]),
+		).toBe("blocked");
+
+		expect(
+			derivePayrollReadinessStatus([
+				{
+					id: "warning",
+					group: "time",
+					title: "Warning",
+					status: "warning",
+					severity: "warning",
+					count: 1,
+					description: "Warning-only",
+					required: false,
+					affectedEmployees: [],
+				},
+			]),
+		).toBe("ready");
 	});
 });

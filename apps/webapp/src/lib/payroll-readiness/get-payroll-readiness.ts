@@ -147,7 +147,7 @@ function buildGroups(checks: PayrollReadinessCheck[]): PayrollReadinessGroup[] {
 	});
 }
 
-function resolveStatus(checks: PayrollReadinessCheck[]): PayrollReadinessStatus {
+export function derivePayrollReadinessStatus(checks: PayrollReadinessCheck[]): PayrollReadinessStatus {
 	if (checks.some((check) => check.required && check.status === "unavailable")) {
 		return "unavailable";
 	}
@@ -350,7 +350,7 @@ export async function getPayrollReadiness(input: GetPayrollReadinessInput): Prom
 	);
 
 	return {
-		status: resolveStatus(checks),
+		status: derivePayrollReadinessStatus(checks),
 		period: {
 			start: start.toISODate() ?? start.toISO(),
 			end: end.toISODate() ?? end.toISO(),
