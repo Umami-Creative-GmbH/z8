@@ -10,7 +10,7 @@ const employeeSkill = {
 	skillId: "skill-1",
 	assignedBy: "manager-1",
 	issuedAt: new Date("2026-01-15T00:00:00Z"),
-	expiresAt: new Date("2027-01-15T00:00:00Z"),
+	expiresAt: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000),
 	issuer: "Safety Council With A Very Long Issuer Name",
 	certificateNumber: "CERT-VERY-LONG-1234567890",
 	notes: null,
@@ -24,7 +24,7 @@ const employeeSkill = {
 		category: "certification",
 		customCategoryName: null,
 		requiresExpiry: true,
-		expiryWarningDays: 30,
+		expiryWarningDays: 60,
 		isActive: true,
 		createdAt: new Date("2026-01-01T00:00:00Z"),
 		updatedAt: new Date("2026-01-01T00:00:00Z"),
@@ -34,7 +34,8 @@ const employeeSkill = {
 };
 
 vi.mock("@tanstack/react-query", async () => {
-	const actual = await vi.importActual<typeof import("@tanstack/react-query")>("@tanstack/react-query");
+	const actual =
+		await vi.importActual<typeof import("@tanstack/react-query")>("@tanstack/react-query");
 	return {
 		...actual,
 		useQueryClient: () => ({ invalidateQueries: vi.fn() }),
@@ -74,5 +75,11 @@ describe("EmployeeSkillsCard", () => {
 		expect(screen.getByText(/Issued Jan 15, 2026/)).toBeTruthy();
 		expect(screen.getByText(/Issuer: Safety Council With A Very Long Issuer Name/)).toBeTruthy();
 		expect(screen.getByText(/Certificate: CERT-VERY-LONG-1234567890/)).toBeTruthy();
+	});
+
+	it("uses the qualification warning window for expiring-soon status", () => {
+		render(<EmployeeSkillsCard employeeId="employee-1" organizationId="org-1" canManageSkills />);
+
+		expect(screen.getByText("Expiring Soon")).toBeTruthy();
 	});
 });

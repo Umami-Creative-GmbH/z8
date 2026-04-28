@@ -169,7 +169,10 @@ export function EmployeeSkillsCard({
 						{skills.map((employeeSkill) => {
 							const CategoryIcon = getCategoryIcon(employeeSkill.skill.category as SkillCategory);
 							const expired = isExpired(employeeSkill.expiresAt);
-							const expiringSoon = isExpiringSoon(employeeSkill.expiresAt);
+							const expiringSoon = isExpiringSoon(
+								employeeSkill.expiresAt,
+								employeeSkill.skill.expiryWarningDays ?? 30,
+							);
 
 							return (
 								<div
