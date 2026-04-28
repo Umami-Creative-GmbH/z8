@@ -107,7 +107,7 @@ function expectWhereConditions(
 ) {
 	const queryArgs = mock.mock.calls[0]?.[0];
 
-		expect(queryArgs?.where).toMatchObject({
+	expect(queryArgs?.where).toMatchObject({
 		type: "and",
 		conditions: expect.arrayContaining(
 			conditions.map(({ op = "eq", ...condition }) =>
@@ -159,7 +159,9 @@ describe("getSelfServiceRequests", () => {
 			{ left: "travelExpenseClaim.employeeId", right: "employee-1" },
 			{ left: "travelExpenseClaim.status", right: "draft", op: "ne" },
 		]);
-		expect(dbMocks.travelExpenseClaims).toHaveBeenCalledWith(expect.objectContaining({ limit: 100 }));
+		expect(dbMocks.travelExpenseClaims).toHaveBeenCalledWith(
+			expect.objectContaining({ limit: 100 }),
+		);
 	});
 
 	it("excludes draft travel expenses from result items and counts", async () => {

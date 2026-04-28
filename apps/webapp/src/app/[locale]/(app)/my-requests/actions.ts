@@ -1,7 +1,7 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { and, eq } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
 import { cancelAbsenceRequestForEmployee } from "@/app/[locale]/(app)/absences/actions";
 import { absenceEntry, db } from "@/db";
 import { getAuthContext } from "@/lib/auth-helpers";
@@ -15,11 +15,11 @@ export async function getMyRequests(filters?: SelfServiceRequestFilters): Promis
 	| {
 			success: true;
 			data: SelfServiceRequestResult;
-		}
+	  }
 	| {
 			success: false;
 			error: string;
-		}
+	  }
 > {
 	const authContext = await getAuthContext();
 	if (!authContext?.employee) {

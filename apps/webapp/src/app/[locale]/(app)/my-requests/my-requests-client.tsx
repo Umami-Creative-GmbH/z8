@@ -1,11 +1,9 @@
 "use client";
 
+import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import { useLocale } from "next-intl";
 import { useState, useTransition } from "react";
-import { useTranslate } from "@tolgee/react";
-
-import { Link } from "@/navigation";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,6 +23,7 @@ import type {
 	SelfServiceRequestSourceType,
 	SelfServiceRequestStatus,
 } from "@/lib/self-service-requests/types";
+import { Link } from "@/navigation";
 import { cancelMyAbsenceRequest } from "./actions";
 
 interface MyRequestsClientProps {
@@ -50,11 +49,17 @@ const statusLabels: Record<SelfServiceRequestStatus, { key: string; fallback: st
 
 function sourceErrorMessage(sourceType: SelfServiceRequestSourceType, t: Translate) {
 	if (sourceType === "time_correction") {
-		return t("myRequests.sourceError.timeCorrection", "Time correction requests could not be loaded.");
+		return t(
+			"myRequests.sourceError.timeCorrection",
+			"Time correction requests could not be loaded.",
+		);
 	}
 
 	if (sourceType === "travel_expense") {
-		return t("myRequests.sourceError.travelExpense", "Travel expense requests could not be loaded.");
+		return t(
+			"myRequests.sourceError.travelExpense",
+			"Travel expense requests could not be loaded.",
+		);
 	}
 
 	return t("myRequests.sourceError.absence", "Absence requests could not be loaded.");
@@ -112,9 +117,7 @@ function formatStoredDateRange(value: string, locale: string) {
 
 function formatTravelExpenseSubtitle(value: string, locale: string) {
 	const separator = " · ";
-	const [prefix, amountPart] = value.includes(separator)
-		? value.split(separator)
-		: [null, value];
+	const [prefix, amountPart] = value.includes(separator) ? value.split(separator) : [null, value];
 	const amountMatch = /^(\d+(?:\.\d+)?) ([A-Z]{3})$/.exec(amountPart);
 
 	if (!amountMatch) {
@@ -236,10 +239,10 @@ export function MyRequestsClient({ initialResult }: MyRequestsClientProps) {
 												{t("myRequests.status.rejected", "Rejected")}
 											</Badge>
 										</div>
-									<p className="text-sm text-muted-foreground">
-										{requestSubtitle(item, locale, t)}
-									</p>
-										<p className="text-sm">
+										<p className="break-words text-muted-foreground text-sm">
+											{requestSubtitle(item, locale, t)}
+										</p>
+										<p className="break-words text-sm">
 											{item.decisionReason?.trim() ||
 												t("myRequests.noReason", "No reason provided.")}
 										</p>
@@ -360,11 +363,11 @@ export function MyRequestsClient({ initialResult }: MyRequestsClientProps) {
 												<TableCell className="max-w-[320px] whitespace-normal">
 													<div className="space-y-1">
 														<p className="font-medium">{requestTitle(item, t)}</p>
-														<p className="text-muted-foreground text-sm">
+														<p className="break-words text-muted-foreground text-sm">
 															{requestSubtitle(item, locale, t)}
 														</p>
 														{item.decisionReason ? (
-															<p className="text-sm">
+															<p className="break-words text-sm">
 																{t("myRequests.reasonLabel", "Reason")}: {item.decisionReason}
 															</p>
 														) : null}
@@ -487,7 +490,9 @@ function RequestAction({
 						disabled={isCancelPending}
 						onClick={handleCancel}
 					>
-						{t("myRequests.actions.cancel", "Cancel")}
+						{isCancelPending
+							? t("myRequests.actions.cancelling", "Cancelling…")
+							: t("myRequests.actions.cancel", "Cancel")}
 					</Button>
 				) : null}
 			</div>

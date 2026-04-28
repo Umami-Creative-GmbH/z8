@@ -1,8 +1,8 @@
 /* @vitest-environment jsdom */
 
+import { IconShieldCheck } from "@tabler/icons-react";
 import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { IconShieldCheck } from "@tabler/icons-react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
@@ -40,7 +40,9 @@ vi.mock("@/components/nav-main", () => ({
 		return (
 			<nav aria-label="primary">
 				{items.map((item) => (
-					<a href={item.url} key={item.url}>{item.title}</a>
+					<a href={item.url} key={item.url}>
+						{item.title}
+					</a>
 				))}
 			</nav>
 		);
@@ -98,7 +100,9 @@ describe("app sidebar compliance navigation", () => {
 	it("renders My Requests as a primary personal navigation item", () => {
 		render(<AppSidebar />);
 
-		expect(screen.getByRole("link", { name: "My Requests" }).getAttribute("href")).toBe("/my-requests");
+		expect(screen.getByRole("link", { name: "My Requests" }).getAttribute("href")).toBe(
+			"/my-requests",
+		);
 		expect(navMainSpy).toHaveBeenLastCalledWith(
 			expect.arrayContaining([
 				expect.objectContaining({ title: "My Requests", url: "/my-requests" }),
@@ -136,9 +140,7 @@ describe("app sidebar compliance navigation", () => {
 	});
 
 	it("passes showComplianceNav from the org-admin settings tier at runtime", async () => {
-		getUserOrganizationsMock.mockResolvedValue([
-			{ id: "org_1", shiftsEnabled: true },
-		]);
+		getUserOrganizationsMock.mockResolvedValue([{ id: "org_1", shiftsEnabled: true }]);
 		getAuthContextMock.mockResolvedValue({
 			employee: {
 				organizationId: "org_1",
