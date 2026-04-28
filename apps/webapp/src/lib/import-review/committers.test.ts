@@ -263,6 +263,52 @@ describe("commitAcceptedRowsForEntity", () => {
 		);
 	});
 
+	it("leaves failed rows accepted on non-final attempts so BullMQ can retry them", async () => {
+		dbMock.rows = [
+			stagedRow({
+				normalizedPayload: {
+					employeeId: "emp_2",
+					startsAt: "2026-01-01T08:00:00.000Z",
+					endsAt: "2026-01-01T16:00:00.000Z",
+				},
+			}),
+		];
+		dbMock.query.employee.findFirst.mockResolvedValueOnce(null);
+
+		const result = await commitAcceptedRowsForEntity(commitJob("work_period"), { finalAttempt: false });
+
+		expect(result).toEqual({
+			committedRows: 0,
+			failedRows: 1,
+			errors: [{ rowId: "row_1", message: "Employee emp_2 does not belong to organization org_1" }],
+		});
+		expect(dbMock.insert).not.toHaveBeenCalled();
+		expect(dbMock.updates).toEqual([]);
+	});
+
+	it("marks failed rows commit_failed on final attempts", async () => {
+		dbMock.rows = [
+			stagedRow({
+				normalizedPayload: {
+					employeeId: "emp_2",
+					startsAt: "2026-01-01T08:00:00.000Z",
+					endsAt: "2026-01-01T16:00:00.000Z",
+				},
+			}),
+		];
+		dbMock.query.employee.findFirst.mockResolvedValueOnce(null);
+
+		const result = await commitAcceptedRowsForEntity(commitJob("work_period"), { finalAttempt: true });
+
+		expect(result.failedRows).toBe(1);
+		expect(dbMock.updates).toContainEqual(
+			expect.objectContaining({
+				rowStatus: "commit_failed",
+				commitError: "Employee emp_2 does not belong to organization org_1",
+			}),
+		);
+	});
+
 	it("chains multiple rows for the same employee through the in-memory chain head", async () => {
 		dbMock.rows = [
 			stagedRow({

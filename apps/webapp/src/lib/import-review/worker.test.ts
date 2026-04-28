@@ -129,6 +129,7 @@ describe("processImportReviewJob", () => {
 		});
 		expect(commitAcceptedRowsForEntityMock).toHaveBeenCalledWith(
 			expect.objectContaining({ entityType: "work_period", committedBy: "user_1" }),
+			{ finalAttempt: false },
 		);
 		expect(updateImportBatchJobMock).toHaveBeenNthCalledWith(2, {
 			jobId: "job_3",
@@ -146,7 +147,7 @@ describe("processImportReviewJob", () => {
 			errors: [{ rowId: "row_3", message: "Employee emp_2 does not belong to organization org_1" }],
 		});
 
-		await expect(processImportReviewJob(commitJob())).rejects.toThrow(
+		await expect(processImportReviewJob(commitJob({ attemptsMade: 2 }))).rejects.toThrow(
 			"Import review commit failed for 1 row(s): row_3: Employee emp_2 does not belong to organization org_1",
 		);
 
@@ -160,6 +161,49 @@ describe("processImportReviewJob", () => {
 		expect(updateImportBatchJobMock).not.toHaveBeenCalledWith(
 			expect.objectContaining({ status: "completed" }),
 		);
+	});
+
+	it("passes finalAttempt false and rejects row failures so retries cannot complete by skipping failed rows", async () => {
+		commitAcceptedRowsForEntityMock.mockResolvedValue({
+			committedRows: 0,
+			failedRows: 1,
+			errors: [{ rowId: "row_1", message: "temporary database failure" }],
+		});
+
+		await expect(processImportReviewJob(commitJob())).rejects.toThrow(
+			"Import review commit failed for 1 row(s): row_1: temporary database failure",
+		);
+
+		expect(commitAcceptedRowsForEntityMock).toHaveBeenCalledWith(
+			expect.objectContaining({ entityType: "work_period" }),
+			{ finalAttempt: false },
+		);
+		expect(updateImportBatchJobMock).not.toHaveBeenCalledWith(
+			expect.objectContaining({ status: "completed" }),
+		);
+	});
+
+	it("passes finalAttempt true to committers on exhausted commit attempts", async () => {
+		commitAcceptedRowsForEntityMock.mockResolvedValue({
+			committedRows: 0,
+			failedRows: 1,
+			errors: [{ rowId: "row_1", message: "permanent validation failure" }],
+		});
+
+		await expect(processImportReviewJob(commitJob({ attemptsMade: 2 }))).rejects.toThrow(
+			"Import review commit failed for 1 row(s): row_1: permanent validation failure",
+		);
+
+		expect(commitAcceptedRowsForEntityMock).toHaveBeenCalledWith(
+			expect.objectContaining({ entityType: "work_period" }),
+			{ finalAttempt: true },
+		);
+		expect(updateImportBatchJobMock).toHaveBeenNthCalledWith(2, {
+			jobId: "job_3",
+			organizationId: "org_1",
+			status: "failed",
+			errorMessage: "Import review commit failed for 1 row(s): row_1: permanent validation failure",
+		});
 	});
 
 	it("rejects placeholder scan failures without marking the job completed", async () => {

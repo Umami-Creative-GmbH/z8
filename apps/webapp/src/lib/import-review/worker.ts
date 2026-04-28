@@ -84,11 +84,14 @@ export async function processImportReviewJob(job: Job<ImportReviewJobData>): Pro
 			}
 
 			case "import-review-commit": {
-				const commitResult = await commitAcceptedRowsForEntity(data);
+				const finalAttempt = isFinalAttempt(job);
+				const commitResult = await commitAcceptedRowsForEntity(data, { finalAttempt });
 				if (commitResult.failedRows > 0) {
 					const errorMessage = formatCommitRowFailure(commitResult);
-					await markFailed(data, errorMessage);
-					failureAlreadyMarked = true;
+					if (finalAttempt) {
+						await markFailed(data, errorMessage);
+						failureAlreadyMarked = true;
+					}
 					throw new Error(errorMessage);
 				}
 				const { committedRows } = commitResult;

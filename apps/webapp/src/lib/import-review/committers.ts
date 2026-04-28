@@ -14,6 +14,7 @@ import type { ImportCommitJobData } from "./types";
 
 type CommitRowError = { rowId: string; message: string };
 type CommitResult = { committedRows: number; failedRows: number; errors: CommitRowError[] };
+type CommitOptions = { finalAttempt?: boolean };
 type ChainHead = { id: string; hash: string } | null;
 type CommitDb = Pick<typeof db, "insert" | "query" | "select" | "update">;
 
@@ -219,7 +220,11 @@ async function commitAbsence(database: CommitDb, row: typeof importStagedRow.$in
 	await markCommitted(database, row.id, job.organizationId, "absence_entry", absence.id);
 }
 
-export async function commitAcceptedRowsForEntity(job: ImportCommitJobData): Promise<CommitResult> {
+export async function commitAcceptedRowsForEntity(
+	job: ImportCommitJobData,
+	options: CommitOptions = {},
+): Promise<CommitResult> {
+	const finalAttempt = options.finalAttempt ?? true;
 	const rows = await db
 		.select()
 		.from(importStagedRow)
@@ -256,7 +261,7 @@ export async function commitAcceptedRowsForEntity(job: ImportCommitJobData): Pro
 			}
 			committedRows++;
 		} catch (error) {
-			await markCommitFailed(row.id, job.organizationId, error);
+			if (finalAttempt) await markCommitFailed(row.id, job.organizationId, error);
 			errors.push({
 				rowId: row.id,
 				message: error instanceof Error ? error.message : String(error),
