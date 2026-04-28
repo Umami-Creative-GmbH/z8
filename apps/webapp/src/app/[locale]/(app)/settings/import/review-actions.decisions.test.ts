@@ -13,6 +13,7 @@ const mockState = vi.hoisted(() => ({
 	enqueueImportCommitJob: vi.fn(),
 	select: vi.fn(),
 	update: vi.fn(),
+	transaction: vi.fn(),
 	findImportBatch: vi.fn(),
 }));
 
@@ -39,6 +40,7 @@ vi.mock("@/db", () => ({
 	db: {
 		select: mockState.select,
 		update: mockState.update,
+		transaction: mockState.transaction,
 		query: {
 			member: {
 				findFirst: mockState.findMember,
@@ -315,6 +317,9 @@ describe("import review repository decision safety", () => {
 				organizationId: "importStagedRow.organizationId",
 				rowStatus: "importStagedRow.rowStatus",
 				issueSeverity: "importStagedRow.issueSeverity",
+				decisionReason: "importStagedRow.decisionReason",
+				decidedBy: "importStagedRow.decidedBy",
+				decidedAt: "importStagedRow.decidedAt",
 			},
 		}));
 		return import("@/lib/import-review/repository");
@@ -323,11 +328,27 @@ describe("import review repository decision safety", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockState.findImportBatch.mockResolvedValue({ id: "batch_1", status: "needs_review" });
+		mockState.transaction.mockImplementation(async (callback: (tx: unknown) => unknown) =>
+			callback({
+				select: mockState.select,
+				update: mockState.update,
+			}),
+		);
 	});
 
+	function mockLockedBatch(status: "needs_review" | "committing") {
+		const batchFor = vi.fn().mockResolvedValue([{ status }]);
+		const batchWhere = vi.fn().mockReturnValue({ for: batchFor });
+		mockState.select.mockReturnValueOnce({
+			from: vi.fn().mockReturnValue({ where: batchWhere }),
+		});
+		return { batchFor, batchWhere };
+	}
+
 	it("does not mutate committing rows when applying decisions", async () => {
+		mockLockedBatch("needs_review");
 		const selectWhere = vi.fn().mockResolvedValue([]);
-		mockState.select.mockReturnValue({
+		mockState.select.mockReturnValueOnce({
 			from: vi.fn().mockReturnValue({ where: selectWhere }),
 		});
 		mockState.update.mockReturnValue({
@@ -360,7 +381,8 @@ describe("import review repository decision safety", () => {
 	});
 
 	it("does not mutate committed rows when applying decisions", async () => {
-		mockState.select.mockReturnValue({
+		mockLockedBatch("needs_review");
+		mockState.select.mockReturnValueOnce({
 			from: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue([]) }),
 		});
 		mockState.update.mockReturnValue({
@@ -381,7 +403,7 @@ describe("import review repository decision safety", () => {
 	});
 
 	it("requires the batch to be in needs_review before applying decisions", async () => {
-		mockState.findImportBatch.mockResolvedValue({ id: "batch_1", status: "committing" });
+		mockLockedBatch("committing");
 
 		const { applyImportRowDecision } = await importActualRepository();
 
@@ -395,5 +417,41 @@ describe("import review repository decision safety", () => {
 			}),
 		).rejects.toThrow("Import batch is not ready for review decisions");
 		expect(mockState.update).not.toHaveBeenCalled();
+	});
+
+	it("locks the batch row and rechecks review state before mutating rows", async () => {
+		const { batchFor, batchWhere } = mockLockedBatch("needs_review");
+		mockState.select.mockReturnValueOnce({
+			from: vi.fn().mockReturnValue({
+				where: vi.fn().mockResolvedValue([{ id: "row_1", issueSeverity: "none" }]),
+			}),
+		});
+		const updateWhere = vi
+			.fn()
+			.mockReturnValue({ returning: vi.fn().mockResolvedValue([{ id: "row_1" }]) });
+		mockState.update.mockReturnValue({
+			set: vi.fn().mockReturnValue({ where: updateWhere }),
+		});
+
+		const { applyImportRowDecision } = await importActualRepository();
+		const result = await applyImportRowDecision({
+			organizationId: "org_1",
+			batchId: "batch_1",
+			rowIds: ["row_1"],
+			decision: "accepted",
+			decidedBy: "user_1",
+		});
+
+		expect(result).toEqual({ updatedCount: 1 });
+		expect(mockState.transaction).toHaveBeenCalledTimes(1);
+		expect(batchWhere).toHaveBeenCalledWith(
+			expect.objectContaining({
+				and: expect.arrayContaining([
+					expect.objectContaining({ eq: ["importBatch.id", "batch_1"] }),
+					expect.objectContaining({ eq: ["importBatch.organizationId", "org_1"] }),
+				]),
+			}),
+		);
+		expect(batchFor).toHaveBeenCalledWith("update");
 	});
 });

@@ -288,71 +288,77 @@ export async function applyImportRowDecision(input: {
 	reason?: string | null;
 	decidedBy: string;
 }) {
-	const batch = await db.query.importBatch.findFirst({
-		where: and(
-			eq(importBatch.id, input.batchId),
-			eq(importBatch.organizationId, input.organizationId),
-		),
-	});
+	return db.transaction(async (tx) => {
+		const [batch] = await tx
+			.select({ status: importBatch.status })
+			.from(importBatch)
+			.where(
+				and(
+					eq(importBatch.id, input.batchId),
+					eq(importBatch.organizationId, input.organizationId),
+				),
+			)
+			.for("update");
 
-	if (batch?.status !== "needs_review") {
-		throw new Error("Import batch is not ready for review decisions");
-	}
+		if (batch?.status !== "needs_review") {
+			throw new Error("Import batch is not ready for review decisions");
+		}
 
-	const rows = await db
-		.select({ id: importStagedRow.id, issueSeverity: importStagedRow.issueSeverity })
-		.from(importStagedRow)
-		.where(
-			and(
-				eq(importStagedRow.batchId, input.batchId),
-				eq(importStagedRow.organizationId, input.organizationId),
-				inArray(importStagedRow.id, input.rowIds),
-				inArray(importStagedRow.rowStatus, REVIEW_DECISION_ROW_STATUSES),
-			),
-		);
-
-	const baseUpdate = {
-		decisionReason: input.reason ?? null,
-		decidedBy: input.decidedBy,
-		decidedAt: new Date(),
-	};
-
-	async function updateRows(rowIds: string[], rowStatus: ImportRowStatus) {
-		if (rowIds.length === 0) return [];
-		return db
-			.update(importStagedRow)
-			.set({ ...baseUpdate, rowStatus })
+		const rows = await tx
+			.select({ id: importStagedRow.id, issueSeverity: importStagedRow.issueSeverity })
+			.from(importStagedRow)
 			.where(
 				and(
 					eq(importStagedRow.batchId, input.batchId),
 					eq(importStagedRow.organizationId, input.organizationId),
-					inArray(importStagedRow.id, rowIds),
+					inArray(importStagedRow.id, input.rowIds),
 					inArray(importStagedRow.rowStatus, REVIEW_DECISION_ROW_STATUSES),
 				),
-			)
-			.returning({ id: importStagedRow.id });
-	}
+			);
 
-	if (input.decision === "rejected") {
-		const updated = await updateRows(
-			rows.map((row) => row.id),
-			"rejected",
-		);
-		return { updatedCount: updated.length };
-	}
+		const baseUpdate = {
+			decisionReason: input.reason ?? null,
+			decidedBy: input.decidedBy,
+			decidedAt: new Date(),
+		};
 
-	const blockingRows = rows
-		.filter((row: { issueSeverity: ImportIssueSeverity }) => row.issueSeverity === "blocking")
-		.map((row) => row.id);
-	const acceptedRows = rows
-		.filter((row: { issueSeverity: ImportIssueSeverity }) => row.issueSeverity !== "blocking")
-		.map((row) => row.id);
-	const [acceptedUpdated, blockedUpdated] = await Promise.all([
-		updateRows(acceptedRows, "accepted"),
-		updateRows(blockingRows, "blocked"),
-	]);
+		async function updateRows(rowIds: string[], rowStatus: ImportRowStatus) {
+			if (rowIds.length === 0) return [];
+			return tx
+				.update(importStagedRow)
+				.set({ ...baseUpdate, rowStatus })
+				.where(
+					and(
+						eq(importStagedRow.batchId, input.batchId),
+						eq(importStagedRow.organizationId, input.organizationId),
+						inArray(importStagedRow.id, rowIds),
+						inArray(importStagedRow.rowStatus, REVIEW_DECISION_ROW_STATUSES),
+					),
+				)
+				.returning({ id: importStagedRow.id });
+		}
 
-	return { updatedCount: acceptedUpdated.length + blockedUpdated.length };
+		if (input.decision === "rejected") {
+			const updated = await updateRows(
+				rows.map((row) => row.id),
+				"rejected",
+			);
+			return { updatedCount: updated.length };
+		}
+
+		const blockingRows = rows
+			.filter((row: { issueSeverity: ImportIssueSeverity }) => row.issueSeverity === "blocking")
+			.map((row) => row.id);
+		const acceptedRows = rows
+			.filter((row: { issueSeverity: ImportIssueSeverity }) => row.issueSeverity !== "blocking")
+			.map((row) => row.id);
+		const [acceptedUpdated, blockedUpdated] = await Promise.all([
+			updateRows(acceptedRows, "accepted"),
+			updateRows(blockingRows, "blocked"),
+		]);
+
+		return { updatedCount: acceptedUpdated.length + blockedUpdated.length };
+	});
 }
 
 export async function listRejectedImportReviewRowsForExport(input: {
