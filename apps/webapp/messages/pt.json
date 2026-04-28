@@ -328,7 +328,8 @@
 			"issueType": {
 				"expired": "Expirada",
 				"expiringSoon": "Expira em breve",
-				"missing": "Em falta"
+				"missing": "Em falta",
+				"preferred": "Preferencial"
 			},
 			"missingPreferred": "Habilidades Preferenciais Ausentes:",
 			"missingPreferredCount": "{{count}} preferenciais ausentes",

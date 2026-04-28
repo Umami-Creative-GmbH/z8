@@ -212,6 +212,78 @@ function createSkillServiceTestContext({
 	};
 }
 
+function createSkillValidationSecurityTestContext({
+	employeeRecord = { id: "employee-1", organizationId: "org-1" },
+	subareaRecord = { id: "subarea-1", location: { organizationId: "org-1" } },
+	templateRecord = { id: "template-1", organizationId: "org-1" },
+	subareaRequirements = [],
+	templateRequirements = [],
+}: {
+	employeeRecord?: unknown;
+	subareaRecord?: unknown;
+	templateRecord?: unknown;
+	subareaRequirements?: unknown[];
+	templateRequirements?: unknown[];
+} = {}) {
+	const mockDb = {
+		query: {
+			employee: {
+				findFirst: vi.fn(async () => employeeRecord),
+			},
+			employeeSkill: {
+				findMany: vi.fn(async () => []),
+			},
+			locationSubarea: {
+				findFirst: vi.fn(async () => subareaRecord),
+			},
+			shiftTemplate: {
+				findFirst: vi.fn(async () => templateRecord),
+			},
+			subareaSkillRequirement: {
+				findMany: vi.fn(async () => subareaRequirements),
+			},
+			shiftTemplateSkillRequirement: {
+				findMany: vi.fn(async () => templateRequirements),
+			},
+		},
+	};
+
+	const dbLayer = Layer.succeed(
+		DatabaseService,
+		DatabaseService.of({
+			db: mockDb as never,
+			query: (_name, query) =>
+				Effect.tryPromise({
+					try: query,
+					catch: (error) => error,
+				}) as never,
+		}),
+	);
+	const layer = SkillServiceLive.pipe(Layer.provide(dbLayer));
+
+	return {
+		mockDb,
+		runValidateEmployeeForShift: (input?: {
+			organizationId?: string;
+			templateId?: string | null;
+		}) =>
+			Effect.runPromise(
+				Effect.either(
+					Effect.gen(function* (_) {
+						const service = yield* _(SkillService);
+						return yield* _(
+							service.validateEmployeeForShift("employee-1", {
+								organizationId: input?.organizationId ?? "org-1",
+								subareaId: "subarea-1",
+								templateId: input?.templateId ?? "template-1",
+							}),
+						);
+					}).pipe(Effect.provide(layer)),
+				),
+			),
+	};
+}
+
 function createSkillCatalogSecurityTestContext({
 	existingSkill = {
 		id: "skill-1",
@@ -407,6 +479,86 @@ describe("SkillService catalog mutation security", () => {
 			left: expect.any(NotFoundError),
 		});
 		expect(insert).not.toHaveBeenCalled();
+	});
+});
+
+describe("SkillService shift qualification validation security", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	it("rejects shift validation when the employee is outside the caller organization", async () => {
+		const { mockDb, runValidateEmployeeForShift } = createSkillValidationSecurityTestContext({
+			employeeRecord: null,
+		});
+
+		expect(await runValidateEmployeeForShift()).toMatchObject({
+			_tag: "Left",
+			left: expect.any(NotFoundError),
+		});
+		expect(mockDb.query.employee.findFirst).toHaveBeenCalledWith(
+			expect.objectContaining({ where: expect.anything() }),
+		);
+		expect(mockDb.query.employeeSkill.findMany).not.toHaveBeenCalled();
+	});
+
+	it("rejects shift validation when the subarea is outside the caller organization", async () => {
+		const { mockDb, runValidateEmployeeForShift } = createSkillValidationSecurityTestContext({
+			subareaRecord: null,
+		});
+
+		expect(await runValidateEmployeeForShift()).toMatchObject({
+			_tag: "Left",
+			left: expect.any(NotFoundError),
+		});
+		expect(mockDb.query.subareaSkillRequirement.findMany).not.toHaveBeenCalled();
+	});
+
+	it("rejects shift validation when the template is outside the caller organization", async () => {
+		const { mockDb, runValidateEmployeeForShift } = createSkillValidationSecurityTestContext({
+			templateRecord: null,
+		});
+
+		expect(await runValidateEmployeeForShift()).toMatchObject({
+			_tag: "Left",
+			left: expect.any(NotFoundError),
+		});
+		expect(mockDb.query.shiftTemplateSkillRequirement.findMany).not.toHaveBeenCalled();
+	});
+
+	it("reports missing preferred qualifications as preferred informational issues", async () => {
+		const preferredSkill = {
+			id: "skill-preferred",
+			organizationId: "org-1",
+			name: "Forklift Familiarity",
+			category: "certification",
+		};
+		const { runValidateEmployeeForShift } = createSkillValidationSecurityTestContext({
+			subareaRequirements: [
+				{
+					skillId: preferredSkill.id,
+					isRequired: false,
+					enforcementMode: "warning",
+					blockOnExpiringSoon: false,
+					skill: preferredSkill,
+				},
+			],
+		});
+
+		expect(await runValidateEmployeeForShift({ templateId: null })).toMatchObject({
+			_tag: "Right",
+			right: {
+				isQualified: true,
+				requiresOverride: false,
+				issues: [
+					expect.objectContaining({
+						id: "skill-preferred",
+						isRequired: false,
+						issueType: "preferred",
+					}),
+				],
+			},
+		});
 	});
 });
 

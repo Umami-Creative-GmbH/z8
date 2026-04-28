@@ -4,7 +4,7 @@ import { SpanStatusCode, trace } from "@opentelemetry/api";
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { revalidateTag } from "next/cache";
-import { employee, qualificationRenewalRequest } from "@/db/schema";
+import { employee, locationSubarea, qualificationRenewalRequest, shiftTemplate } from "@/db/schema";
 import { type AnyAppError, AuthorizationError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
@@ -764,11 +764,90 @@ export async function validateEmployeeForShift(
 	},
 ): Promise<ServerActionResult<SkillValidationResult>> {
 	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		yield* _(authService.getSession());
+		const actor = yield* _(getEmployeeSettingsActorContext());
 		const skillService = yield* _(SkillService);
 
-		const result = yield* _(skillService.validateEmployeeForShift(employeeId, shiftData));
+		if (actor.accessTier !== "orgAdmin" && actor.accessTier !== "manager") {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Only admins and managers can validate shift qualifications",
+						userId: actor.session.user.id,
+						resource: "shiftQualification",
+						action: "read",
+					}),
+				),
+			);
+		}
+
+		const targetEmployee = yield* _(
+			getTargetEmployee(employeeId, "getShiftQualificationTargetEmployee"),
+		);
+
+		yield* _(
+			ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
+				message: "You do not have access to this employee's shift qualifications",
+				resource: "shiftQualification",
+				action: "read",
+			}),
+		);
+
+		const subarea = yield* _(
+			actor.dbService.query("validateShiftQualificationSubareaScope", async () => {
+				return await actor.dbService.db.query.locationSubarea.findFirst({
+					where: eq(locationSubarea.id, shiftData.subareaId),
+					with: {
+						location: {
+							columns: { organizationId: true },
+						},
+					},
+				});
+			}),
+		);
+
+		if (!subarea || subarea.location.organizationId !== actor.organizationId) {
+			yield* _(
+				Effect.fail(
+					new NotFoundError({
+						message: "Subarea not found",
+						entityType: "locationSubarea",
+						entityId: shiftData.subareaId,
+					}),
+				),
+			);
+		}
+
+		if (shiftData.templateId) {
+			const template = yield* _(
+				actor.dbService.query("validateShiftQualificationTemplateScope", async () => {
+					return await actor.dbService.db.query.shiftTemplate.findFirst({
+						where: and(
+							eq(shiftTemplate.id, shiftData.templateId!),
+							eq(shiftTemplate.organizationId, actor.organizationId),
+						),
+					});
+				}),
+			);
+
+			if (!template) {
+				yield* _(
+					Effect.fail(
+						new NotFoundError({
+							message: "Shift template not found",
+							entityType: "shiftTemplate",
+							entityId: shiftData.templateId,
+						}),
+					),
+				);
+			}
+		}
+
+		const result = yield* _(
+			skillService.validateEmployeeForShift(employeeId, {
+				...shiftData,
+				organizationId: actor.organizationId,
+			}),
+		);
 
 		return result;
 	}).pipe(Effect.provide(AppLayer));

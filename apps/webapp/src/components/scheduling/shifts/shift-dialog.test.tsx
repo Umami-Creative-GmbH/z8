@@ -434,4 +434,45 @@ describe("ShiftDialog", () => {
 		expect(await screen.findByText("Forklift License")).toBeTruthy();
 		expect(screen.getByRole("button", { name: "Update Shift" })).toHaveProperty("disabled", true);
 	});
+
+	it("keeps save enabled and override hidden for preferred-only qualification issues", async () => {
+		skillValidationMock.mockReturnValue({
+			isQualified: true,
+			hasBlockingIssues: false,
+			requiresOverride: false,
+			missingSkills: [
+				{
+					id: "skill-preferred",
+					name: "Forklift Familiarity",
+					category: "certification",
+					isRequired: false,
+				},
+			],
+			expiredSkills: [],
+			issues: [
+				{
+					id: "skill-preferred",
+					name: "Forklift Familiarity",
+					category: "certification",
+					isRequired: false,
+					enforcementMode: "warning",
+					issueType: "preferred",
+				},
+			],
+		});
+
+		renderShiftDialogWithLocalOpenState();
+
+		expect(await screen.findByText("Forklift Familiarity")).toBeTruthy();
+		expect(screen.queryByLabelText("Qualification override reason")).toBeNull();
+		expect(screen.getByRole("button", { name: "Update Shift" })).toHaveProperty("disabled", false);
+
+		fireEvent.click(screen.getByRole("button", { name: "Update Shift" }));
+
+		await waitFor(() => {
+			expect(upsertShiftMock).toHaveBeenCalledWith(
+				expect.not.objectContaining({ qualificationOverrideReason: expect.any(String) }),
+			);
+		});
+	});
 });

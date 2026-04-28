@@ -328,7 +328,8 @@
 			"issueType": {
 				"expired": "Scaduta",
 				"expiringSoon": "In scadenza",
-				"missing": "Mancante"
+				"missing": "Mancante",
+				"preferred": "Preferita"
 			},
 			"missingPreferred": "Competenze preferenziali mancanti:",
 			"missingPreferredCount": "{{count}} preferenziali mancanti",

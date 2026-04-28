@@ -328,7 +328,8 @@
 			"issueType": {
 				"expired": "Abgelaufen",
 				"expiringSoon": "Läuft bald ab",
-				"missing": "Fehlt"
+				"missing": "Fehlt",
+				"preferred": "Bevorzugt"
 			},
 			"missingPreferred": "Fehlende bevorzugte Qualifikationen:",
 			"missingPreferredCount": "{{count}} bevorzugte fehlen",

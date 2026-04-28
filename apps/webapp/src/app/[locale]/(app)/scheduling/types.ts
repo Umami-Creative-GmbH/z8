@@ -78,7 +78,7 @@ export interface QualificationIssueInfo {
 	category: string;
 	isRequired: boolean;
 	enforcementMode: "warning" | "blocking";
-	issueType: "missing" | "expired" | "expiringSoon";
+	issueType: "missing" | "expired" | "expiringSoon" | "preferred";
 	expiresAt?: Date;
 }
 

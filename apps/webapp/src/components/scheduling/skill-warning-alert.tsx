@@ -17,6 +17,8 @@ function getIssueTypeLabel(
 	switch (issueType) {
 		case "missing":
 			return t("scheduling.skills.issueType.missing", "Missing");
+		case "preferred":
+			return t("scheduling.skills.issueType.preferred", "Preferred");
 		case "expired":
 			return t("scheduling.skills.issueType.expired", "Expired");
 		case "expiringSoon":
@@ -79,7 +81,12 @@ export function SkillWarningAlert({ validation, isLoading }: SkillWarningAlertPr
 		return null;
 	}
 
-	if (validation.isQualified) {
+	const hasReportableIssues =
+		validation.issues.length > 0 ||
+		validation.missingSkills.length > 0 ||
+		validation.expiredSkills.length > 0;
+
+	if (!hasReportableIssues) {
 		return null;
 	}
 
@@ -95,7 +102,7 @@ export function SkillWarningAlert({ validation, isLoading }: SkillWarningAlertPr
 	}
 
 	const hasExpired = validation.expiredSkills.length > 0;
-	const hasIssues = validation.issues?.length > 0;
+	const hasIssues = validation.issues.length > 0;
 	const shouldShowOverrideCopy = validation.requiresOverride && !validation.hasBlockingIssues;
 
 	return (
@@ -227,13 +234,19 @@ export function SkillWarningBadge({
 }) {
 	const { t } = useTranslate();
 
-	if (!validation || validation.isQualified) {
+	if (!validation) {
+		return null;
+	}
+
+	const totalIssues =
+		validation.issues.length || validation.missingSkills.length + validation.expiredSkills.length;
+
+	if (totalIssues === 0) {
 		return null;
 	}
 
 	const hasMissingRequired = validation.missingSkills.some((s) => s.isRequired);
 	const hasExpired = validation.expiredSkills.length > 0;
-	const totalIssues = validation.missingSkills.length + validation.expiredSkills.length;
 
 	if (hasMissingRequired || hasExpired) {
 		return (

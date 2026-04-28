@@ -161,7 +161,7 @@ export interface SkillValidationResult {
 		category: SkillCategory;
 		isRequired: boolean;
 		enforcementMode: "warning" | "blocking";
-		issueType: "missing" | "expired" | "expiringSoon";
+		issueType: "missing" | "expired" | "expiringSoon" | "preferred";
 		expiresAt?: Date;
 	}>;
 	missingSkills: Array<{
@@ -278,10 +278,11 @@ export class SkillService extends Context.Tag("SkillService")<
 		readonly validateEmployeeForShift: (
 			employeeId: string,
 			shiftData: {
+				organizationId: string;
 				subareaId: string;
 				templateId?: string | null;
 			},
-		) => Effect.Effect<SkillValidationResult, DatabaseError>;
+		) => Effect.Effect<SkillValidationResult, NotFoundError | DatabaseError>;
 
 		readonly validateEmployeeForSubarea: (
 			employeeId: string,
@@ -1185,6 +1186,82 @@ export const SkillServiceLive = Layer.effect(
 				Effect.gen(function* (_) {
 					const expiryBoundary = getQualificationExpiryBoundary();
 
+					const employeeRecord = yield* _(
+						dbService.query("validateShiftEmployeeScope", async () => {
+							return await dbService.db.query.employee.findFirst({
+								where: and(
+									eq(employee.id, employeeId),
+									eq(employee.organizationId, shiftData.organizationId),
+								),
+							});
+						}),
+					);
+
+					if (!employeeRecord) {
+						yield* _(
+							Effect.fail(
+								new NotFoundError({
+									message: "Employee not found",
+									entityType: "employee",
+									entityId: employeeId,
+								}),
+							),
+						);
+					}
+
+					const subareaRecord = yield* _(
+						dbService.query("validateShiftSubareaScope", async () => {
+							return await dbService.db.query.locationSubarea.findFirst({
+								where: eq(locationSubarea.id, shiftData.subareaId),
+								with: {
+									location: {
+										columns: { organizationId: true },
+									},
+								},
+							});
+						}),
+					);
+
+					if (
+						!subareaRecord ||
+						subareaRecord.location.organizationId !== shiftData.organizationId
+					) {
+						yield* _(
+							Effect.fail(
+								new NotFoundError({
+									message: "Subarea not found",
+									entityType: "locationSubarea",
+									entityId: shiftData.subareaId,
+								}),
+							),
+						);
+					}
+
+					if (shiftData.templateId) {
+						const templateRecord = yield* _(
+							dbService.query("validateShiftTemplateScope", async () => {
+								return await dbService.db.query.shiftTemplate.findFirst({
+									where: and(
+										eq(shiftTemplate.id, shiftData.templateId!),
+										eq(shiftTemplate.organizationId, shiftData.organizationId),
+									),
+								});
+							}),
+						);
+
+						if (!templateRecord) {
+							yield* _(
+								Effect.fail(
+									new NotFoundError({
+										message: "Shift template not found",
+										entityType: "shiftTemplate",
+										entityId: shiftData.templateId,
+									}),
+								),
+							);
+						}
+					}
+
 					// Get employee's current valid skills
 					const employeeSkills = yield* _(
 						dbService.query("getEmployeeValidSkills", async () => {
@@ -1262,6 +1339,7 @@ export const SkillServiceLive = Layer.effect(
 					>();
 
 					for (const req of [...subareaReqs, ...templateReqs]) {
+						if (req.skill.organizationId !== shiftData.organizationId) continue;
 						const existing = allRequirements.get(req.skillId);
 						const enforcementMode = req.enforcementMode ?? "warning";
 						const blockOnExpiringSoon = req.blockOnExpiringSoon ?? false;
@@ -1307,7 +1385,7 @@ export const SkillServiceLive = Layer.effect(
 								category: skillData.category as SkillCategory,
 								isRequired,
 								enforcementMode,
-								issueType: "missing",
+								issueType: isRequired ? "missing" : "preferred",
 							});
 						}
 					}
