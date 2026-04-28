@@ -86,6 +86,15 @@ describe("PayrollReadinessDashboard", () => {
 		expect(screen.getByRole("heading", { name: "Pending approvals", level: 2 })).toBeTruthy();
 	});
 
+	it("renders a payroll export link", async () => {
+		const { PayrollReadinessDashboard } = await import("./payroll-readiness-dashboard");
+
+		render(<PayrollReadinessDashboard t={t} data={readyData} />);
+
+		const payrollExportLink = screen.getByRole("link", { name: "Open payroll export" });
+		expect(payrollExportLink.getAttribute("href")).toBe("/settings/payroll-export");
+	});
+
 	it("renders blocked summary and affected employee row with name and employee number", async () => {
 		const { PayrollReadinessDashboard } = await import("./payroll-readiness-dashboard");
 		const affectedEmployees: PayrollReadinessResult["groups"][number]["checks"][number]["affectedEmployees"] = [

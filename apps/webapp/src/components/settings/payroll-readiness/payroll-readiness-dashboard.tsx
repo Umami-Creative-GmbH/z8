@@ -64,6 +64,12 @@ export function PayrollReadinessDashboard({ t, data }: PayrollReadinessDashboard
 				/>
 			</div>
 
+			<div className="flex flex-wrap items-center gap-3">
+				<Link className={`${actionLinkClassName} text-sm`} href="/settings/payroll-export">
+					{t("settings.payrollReadiness.openPayrollExport", "Open payroll export")}
+				</Link>
+			</div>
+
 			<div className="grid gap-4 xl:grid-cols-2">
 				{checks.map((check) => (
 					<ChecklistCard key={check.id} t={t} check={check} />
