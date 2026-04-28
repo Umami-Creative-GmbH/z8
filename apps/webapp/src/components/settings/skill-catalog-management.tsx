@@ -443,7 +443,9 @@ function SkillDialog({ skill, open, onOpenChange, onSuccess }: SkillDialogProps)
 
 	// Reset form when dialog opens/closes
 	const handleOpenChange = (newOpen: boolean) => {
-		if (newOpen) {
+		if (!newOpen) {
+			form.reset();
+		} else {
 			form.reset();
 			form.setFieldValue("name", skill?.name ?? "");
 			form.setFieldValue("description", skill?.description ?? "");
@@ -643,7 +645,7 @@ function SkillDialog({ skill, open, onOpenChange, onSuccess }: SkillDialogProps)
 						<Button
 							type="button"
 							variant="outline"
-							onClick={() => onOpenChange(false)}
+							onClick={() => handleOpenChange(false)}
 							disabled={isMutating}
 						>
 							{t("common.cancel", "Cancel")}

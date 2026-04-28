@@ -72,7 +72,7 @@ export function RenewalSubmissionDialog({
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: queryKeys.qualifications.my() });
 			toast.success("Renewal evidence submitted");
-			onOpenChange(false);
+			closeDialog();
 		},
 		onError: (error) => {
 			toast.error(error.message || "Failed to submit renewal evidence");
@@ -97,6 +97,11 @@ export function RenewalSubmissionDialog({
 	const handleOpenChange = (newOpen: boolean) => {
 		if (!newOpen) form.reset();
 		onOpenChange(newOpen);
+	};
+
+	const closeDialog = () => {
+		form.reset();
+		onOpenChange(false);
 	};
 
 	return (
@@ -232,7 +237,7 @@ export function RenewalSubmissionDialog({
 						<Button
 							type="button"
 							variant="outline"
-							onClick={() => onOpenChange(false)}
+							onClick={closeDialog}
 							disabled={submitMutation.isPending}
 						>
 							Cancel

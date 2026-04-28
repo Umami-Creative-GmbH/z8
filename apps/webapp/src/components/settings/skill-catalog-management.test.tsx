@@ -111,6 +111,24 @@ describe("SkillCatalogManagement", () => {
 		expect((screen.getByLabelText("Warn before expiry") as HTMLInputElement).value).toBe("30");
 	});
 
+	it("resets the create form after canceling", () => {
+		render(<SkillCatalogManagement organizationId="org-1" canManageCatalog />);
+
+		fireEvent.click(screen.getByText("Add Skill"));
+		fireEvent.change(screen.getByLabelText("Name *"), { target: { value: "Draft Skill" } });
+		fireEvent.click(screen.getByRole("switch", { name: "Requires Expiry Date" }));
+		fireEvent.change(screen.getByLabelText("Warn before expiry"), { target: { value: "90" } });
+		fireEvent.click(screen.getByText("Cancel"));
+
+		fireEvent.click(screen.getByText("Add Skill"));
+
+		expect((screen.getByLabelText("Name *") as HTMLInputElement).value).toBe("");
+		expect(
+			screen.getByRole("switch", { name: "Requires Expiry Date" }).getAttribute("aria-checked"),
+		).toBe("false");
+		expect(screen.queryByLabelText("Warn before expiry")).toBeNull();
+	});
+
 	it("normalizes expiry warning days to finite whole days", () => {
 		expect(normalizeExpiryWarningDays(Number.NaN)).toBe(30);
 		expect(normalizeExpiryWarningDays(-3)).toBe(0);

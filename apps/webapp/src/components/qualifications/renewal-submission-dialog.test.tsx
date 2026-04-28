@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
+import { useState } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { RenewalSubmissionDialog } from "./renewal-submission-dialog";
 
@@ -53,6 +54,22 @@ function renderWithQueryClient(children: ReactNode) {
 	return render(<QueryClientProvider client={queryClient}>{children}</QueryClientProvider>);
 }
 
+function RenewalDialogHarness() {
+	const [open, setOpen] = useState(false);
+	const queryClient = new QueryClient({
+		defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+	});
+
+	return (
+		<QueryClientProvider client={queryClient}>
+			<button type="button" onClick={() => setOpen(true)}>
+				Open renewal
+			</button>
+			<RenewalSubmissionDialog qualification={qualification} open={open} onOpenChange={setOpen} />
+		</QueryClientProvider>
+	);
+}
+
 describe("RenewalSubmissionDialog", () => {
 	beforeEach(() => {
 		submitMyQualificationRenewalMock.mockResolvedValue({
@@ -101,5 +118,39 @@ describe("RenewalSubmissionDialog", () => {
 		});
 
 		expect(onOpenChange).toHaveBeenCalledWith(false);
+	});
+
+	it("resets renewal fields after canceling", () => {
+		render(<RenewalDialogHarness />);
+
+		fireEvent.click(screen.getByRole("button", { name: "Open renewal" }));
+		fireEvent.change(screen.getByLabelText("Evidence IDs"), {
+			target: { value: "evidence-1" },
+		});
+		fireEvent.change(screen.getByLabelText("New expiry date"), {
+			target: { value: "2027-01-15" },
+		});
+		fireEvent.change(screen.getByLabelText("Issue date"), {
+			target: { value: "2026-12-15" },
+		});
+		fireEvent.change(screen.getByLabelText("Issuer"), {
+			target: { value: "Safety Council" },
+		});
+		fireEvent.change(screen.getByLabelText("Certificate number"), {
+			target: { value: "CERT-98765" },
+		});
+		fireEvent.change(screen.getByLabelText("Notes"), {
+			target: { value: "Renewed certificate" },
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+
+		fireEvent.click(screen.getByRole("button", { name: "Open renewal" }));
+
+		expect((screen.getByLabelText("Evidence IDs") as HTMLInputElement).value).toBe("");
+		expect((screen.getByLabelText("New expiry date") as HTMLInputElement).value).toBe("");
+		expect((screen.getByLabelText("Issue date") as HTMLInputElement).value).toBe("");
+		expect((screen.getByLabelText("Issuer") as HTMLInputElement).value).toBe("");
+		expect((screen.getByLabelText("Certificate number") as HTMLInputElement).value).toBe("");
+		expect((screen.getByLabelText("Notes") as HTMLTextAreaElement).value).toBe("");
 	});
 });
