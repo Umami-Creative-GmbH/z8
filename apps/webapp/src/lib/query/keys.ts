@@ -77,6 +77,8 @@ export const queryKeys = {
 		detail: (employeeId: string) => ["employees", "detail", employeeId] as const,
 		rateHistory: (employeeId: string) =>
 			["employees", "detail", employeeId, "rate-history"] as const,
+		employmentHistory: (employeeId: string) =>
+			["employees", "detail", employeeId, "employment-history"] as const,
 	},
 
 	// Employee Select (for unified employee selection component)

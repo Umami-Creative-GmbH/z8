@@ -1,13 +1,14 @@
-import { and, desc, eq, gte, isNull, lte, or, sql } from "drizzle-orm";
+import { and, desc, eq, gt, gte, isNull, lte, or, sql } from "drizzle-orm";
 import { DateTime } from "luxon";
 import {
 	db,
+	employee,
 	payrollExportConfig,
 	payrollExportJob,
 	payrollWageTypeMapping,
 	timeRecord,
 } from "@/db";
-import { travelExpenseClaim } from "@/db/schema";
+import { employeeEmploymentHistory, travelExpenseClaim } from "@/db/schema";
 
 export type PayrollReadinessStatus = "ready" | "blocked" | "unavailable";
 export type PayrollReadinessSeverity = "info" | "warning" | "blocker";
@@ -34,6 +35,7 @@ export type PayrollReadinessCheck = {
 	required: boolean;
 	count: number;
 	actionHref?: string;
+	actionLabel?: string;
 	affectedEmployees: PayrollReadinessAffectedEmployee[];
 };
 export type PayrollReadinessResult = {
@@ -93,7 +95,9 @@ const GROUP_TITLES: Record<PayrollReadinessGroup["id"], string> = {
 	travelExpenses: "Travel expenses",
 };
 
-function normalizeAffectedEmployee(source: EmployeeSource): PayrollReadinessAffectedEmployee | null {
+function normalizeAffectedEmployee(
+	source: EmployeeSource,
+): PayrollReadinessAffectedEmployee | null {
 	const employee = source.employee ?? source.requester;
 	const id = employee?.id ?? source.employeeId ?? source.requestedBy;
 
@@ -123,26 +127,20 @@ function uniqueAffectedEmployees(sources: EmployeeSource[]): PayrollReadinessAff
 	return Array.from(employees.values());
 }
 
-function toISODateString(value: Date | string | null | undefined): string | null {
-	if (!value) {
-		return null;
-	}
-
-	const dateTime = value instanceof Date ? DateTime.fromJSDate(value) : DateTime.fromISO(value);
-
-	return dateTime.isValid ? dateTime.toISODate() : null;
-}
-
 function isExportForPeriod(job: PayrollExportJobLike, start: DateTime, end: DateTime): boolean {
 	const dateRange = job.filters?.dateRange;
 
 	return (
-		dateRange?.start?.slice(0, 10) === (start.toISODate() ?? "")
-		&& dateRange?.end?.slice(0, 10) === (end.toISODate() ?? "")
+		dateRange?.start?.slice(0, 10) === (start.toISODate() ?? "") &&
+		dateRange?.end?.slice(0, 10) === (end.toISODate() ?? "")
 	);
 }
 
-function buildCheck(input: Omit<PayrollReadinessCheck, "affectedEmployees"> & { affectedEmployees?: PayrollReadinessAffectedEmployee[] }): PayrollReadinessCheck {
+function buildCheck(
+	input: Omit<PayrollReadinessCheck, "affectedEmployees"> & {
+		affectedEmployees?: PayrollReadinessAffectedEmployee[];
+	},
+): PayrollReadinessCheck {
 	return {
 		...input,
 		affectedEmployees: input.affectedEmployees ?? [],
@@ -178,7 +176,9 @@ function buildGroups(checks: PayrollReadinessCheck[]): PayrollReadinessGroup[] {
 	});
 }
 
-export function derivePayrollReadinessStatus(checks: PayrollReadinessCheck[]): PayrollReadinessStatus {
+export function derivePayrollReadinessStatus(
+	checks: PayrollReadinessCheck[],
+): PayrollReadinessStatus {
 	if (checks.some((check) => check.required && check.status === "unavailable")) {
 		return "unavailable";
 	}
@@ -190,7 +190,9 @@ export function derivePayrollReadinessStatus(checks: PayrollReadinessCheck[]): P
 	return "ready";
 }
 
-export async function getPayrollReadiness(input: GetPayrollReadinessInput): Promise<PayrollReadinessResult> {
+export async function getPayrollReadiness(
+	input: GetPayrollReadinessInput,
+): Promise<PayrollReadinessResult> {
 	const organizationId = input.organizationId;
 	const start = input.period.start.startOf("day");
 	const end = input.period.end.endOf("day");
@@ -199,7 +201,15 @@ export async function getPayrollReadiness(input: GetPayrollReadinessInput): Prom
 	const now = input.now ?? DateTime.utc();
 	const staleActiveWorkCutoff = now.minus({ hours: 24 });
 
-	const [activeWorkRecords, pendingTimeRecords, exportConfigs, latestExportJobs, travelExpenseClaims] = await Promise.all([
+	const [
+		activeWorkRecords,
+		pendingTimeRecords,
+		activeEmployees,
+		employmentHistoryRows,
+		exportConfigs,
+		latestExportJobs,
+		travelExpenseClaims,
+	] = await Promise.all([
 		db.query.timeRecord.findMany({
 			where: and(
 				eq(timeRecord.organizationId, organizationId),
@@ -231,6 +241,23 @@ export async function getPayrollReadiness(input: GetPayrollReadinessInput): Prom
 				},
 			},
 		}),
+		db.query.employee.findMany({
+			where: and(eq(employee.organizationId, organizationId), eq(employee.isActive, true)),
+			with: {
+				user: true,
+			},
+		}),
+		db.query.employeeEmploymentHistory.findMany({
+			where: and(
+				eq(employeeEmploymentHistory.organizationId, organizationId),
+				eq(employeeEmploymentHistory.reviewState, "confirmed"),
+				lte(employeeEmploymentHistory.validFrom, end.toJSDate()),
+				or(
+					isNull(employeeEmploymentHistory.validUntil),
+					gt(employeeEmploymentHistory.validUntil, start.toJSDate()),
+				),
+			),
+		}),
 		db.query.payrollExportConfig.findMany({
 			where: and(
 				eq(payrollExportConfig.organizationId, organizationId),
@@ -249,10 +276,7 @@ export async function getPayrollReadiness(input: GetPayrollReadinessInput): Prom
 		db.query.travelExpenseClaim.findMany({
 			where: and(
 				eq(travelExpenseClaim.organizationId, organizationId),
-				or(
-					eq(travelExpenseClaim.status, "submitted"),
-					eq(travelExpenseClaim.status, "draft"),
-				),
+				or(eq(travelExpenseClaim.status, "submitted"), eq(travelExpenseClaim.status, "draft")),
 				lte(travelExpenseClaim.tripStart, end.toJSDate()),
 				gte(travelExpenseClaim.tripEnd, start.toJSDate()),
 			),
@@ -266,20 +290,27 @@ export async function getPayrollReadiness(input: GetPayrollReadinessInput): Prom
 		}),
 	]);
 
-	const wageMappings = exportConfigs.length > 0
-		? await db.query.payrollWageTypeMapping.findMany({
-			where: and(
-				eq(payrollWageTypeMapping.isActive, true),
-				or(...exportConfigs.map((config) => eq(payrollWageTypeMapping.configId, config.id))),
-			),
-		})
-		: [];
+	const wageMappings =
+		exportConfigs.length > 0
+			? await db.query.payrollWageTypeMapping.findMany({
+					where: and(
+						eq(payrollWageTypeMapping.isActive, true),
+						or(...exportConfigs.map((config) => eq(payrollWageTypeMapping.configId, config.id))),
+					),
+				})
+			: [];
 
 	const staleActiveWorkRecords = activeWorkRecords.filter((record) => {
 		const startAt = DateTime.fromJSDate(record.startAt);
 
 		return startAt <= staleActiveWorkCutoff;
 	});
+	const employeesWithEmploymentHistory = new Set(
+		employmentHistoryRows.map((row) => row.employeeId),
+	);
+	const missingEmploymentHistory = activeEmployees.filter(
+		(activeEmployee) => !employeesWithEmploymentHistory.has(activeEmployee.id),
+	);
 	const latestExportJob = latestExportJobs.find((job) => isExportForPeriod(job, start, end));
 
 	const checks: PayrollReadinessCheck[] = [
@@ -299,7 +330,8 @@ export async function getPayrollReadiness(input: GetPayrollReadinessInput): Prom
 			id: "stale-active-work",
 			group: "time",
 			title: "Stale active work periods",
-			description: "Open work periods older than 24 hours may need review but do not block payroll readiness.",
+			description:
+				"Open work periods older than 24 hours may need review but do not block payroll readiness.",
 			status: staleActiveWorkRecords.length > 0 ? "warning" : "pass",
 			severity: staleActiveWorkRecords.length > 0 ? "warning" : "info",
 			required: false,
@@ -326,6 +358,24 @@ export async function getPayrollReadiness(input: GetPayrollReadinessInput): Prom
 			severity: "info",
 			required: false,
 			count: 0,
+		}),
+		buildCheck({
+			id: "missing-employment-history",
+			group: "payrollSetup",
+			title: "Employment history coverage",
+			description:
+				missingEmploymentHistory.length > 0
+					? "Some active employees do not have confirmed employment history for this payroll period."
+					: "All active employees have confirmed employment history for this payroll period.",
+			status: missingEmploymentHistory.length > 0 ? "warning" : "pass",
+			severity: "warning",
+			required: false,
+			count: missingEmploymentHistory.length,
+			actionHref: "/settings/employees",
+			actionLabel: "Review employees",
+			affectedEmployees: uniqueAffectedEmployees(
+				missingEmploymentHistory.map((activeEmployee) => ({ employee: activeEmployee })),
+			),
 		}),
 		buildCheck({
 			id: "payroll-export-targets",
@@ -374,7 +424,8 @@ export async function getPayrollReadiness(input: GetPayrollReadinessInput): Prom
 			id: "travel-expense-warnings",
 			group: "travelExpenses",
 			title: "Travel expense warnings",
-			description: "Draft or submitted travel expense claims may need review but do not block payroll readiness.",
+			description:
+				"Draft or submitted travel expense claims may need review but do not block payroll readiness.",
 			status: travelExpenseClaims.length > 0 ? "warning" : "pass",
 			severity: travelExpenseClaims.length > 0 ? "warning" : "info",
 			required: false,
@@ -396,7 +447,9 @@ export async function getPayrollReadiness(input: GetPayrollReadinessInput): Prom
 			label: `${start.toFormat("dd LLL yyyy")} - ${end.toFormat("dd LLL yyyy")}`,
 		},
 		summary: {
-			blockerCount: checks.filter((check) => check.severity === "blocker" && check.status === "fail").length,
+			blockerCount: checks.filter(
+				(check) => check.severity === "blocker" && check.status === "fail",
+			).length,
 			warningCount: checks.filter((check) => check.status === "warning").length,
 			affectedEmployeeCount: affectedEmployeeIds.size,
 			configuredExportTargetCount: exportConfigs.length,
