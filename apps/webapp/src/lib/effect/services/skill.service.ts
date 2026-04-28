@@ -1,20 +1,23 @@
 import { and, eq, gt, inArray, isNull, lte, or } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import {
+	type employeeSkill as EmployeeSkillTable,
 	employee,
 	employeeSkill,
 	locationSubarea,
-	shift,
+	type skillRequirementOverride as OverrideTable,
+	type qualificationRenewalRequest as QualificationRenewalRequestTable,
+	qualificationEvidence,
+	qualificationRenewalRequest,
+	qualificationRenewalRequestEvidence,
+	type skill as SkillTable,
+	type subareaSkillRequirement as SubareaSkillReqTable,
 	shiftTemplate,
 	shiftTemplateSkillRequirement,
 	skill,
 	skillRequirementOverride,
 	subareaSkillRequirement,
-	type skill as SkillTable,
-	type employeeSkill as EmployeeSkillTable,
-	type subareaSkillRequirement as SubareaSkillReqTable,
 	type shiftTemplateSkillRequirement as TemplateSkillReqTable,
-	type skillRequirementOverride as OverrideTable,
 } from "@/db/schema";
 import { type DatabaseError, NotFoundError, ValidationError } from "../errors";
 import { DatabaseService } from "./database.service";
@@ -22,6 +25,8 @@ import { DatabaseService } from "./database.service";
 // Type definitions
 type Skill = typeof SkillTable.$inferSelect;
 type EmployeeSkill = typeof EmployeeSkillTable.$inferSelect;
+export type QualificationRenewalRequestRecord =
+	typeof QualificationRenewalRequestTable.$inferSelect;
 type SubareaSkillReq = typeof SubareaSkillReqTable.$inferSelect;
 type TemplateSkillReq = typeof TemplateSkillReqTable.$inferSelect;
 type SkillOverride = typeof OverrideTable.$inferSelect;
@@ -39,6 +44,7 @@ export interface CreateSkillInput {
 	category: SkillCategory;
 	customCategoryName?: string;
 	requiresExpiry: boolean;
+	expiryWarningDays?: number;
 	createdBy: string;
 }
 
@@ -48,6 +54,7 @@ export interface UpdateSkillInput {
 	category?: SkillCategory;
 	customCategoryName?: string;
 	requiresExpiry?: boolean;
+	expiryWarningDays?: number;
 	isActive?: boolean;
 	updatedBy: string;
 }
@@ -55,7 +62,10 @@ export interface UpdateSkillInput {
 export interface AssignSkillInput {
 	employeeId: string;
 	skillId: string;
+	issuedAt?: Date;
 	expiresAt?: Date;
+	issuer?: string;
+	certificateNumber?: string;
 	notes?: string;
 	assignedBy: string;
 }
@@ -65,8 +75,38 @@ export interface SetSkillRequirementsInput {
 	requirements: Array<{
 		skillId: string;
 		isRequired: boolean;
+		enforcementMode?: "warning" | "blocking";
+		blockOnExpiringSoon?: boolean;
 	}>;
 	createdBy: string;
+}
+
+export interface QualificationEvidenceRecord {
+	id: string;
+	employeeSkillId: string;
+	fileName: string;
+	mimeType: string;
+	fileSize: number;
+	fileKey: string;
+	createdAt: Date;
+}
+
+export interface CreateRenewalRequestInput {
+	employeeId: string;
+	employeeSkillId: string;
+	evidenceIds: string[];
+	requestedIssuedAt?: Date;
+	requestedExpiresAt?: Date;
+	requestedIssuer?: string;
+	requestedCertificateNumber?: string;
+	notes?: string;
+}
+
+export interface ReviewRenewalRequestInput {
+	requestId: string;
+	reviewerEmployeeId: string;
+	approved: boolean;
+	reviewNotes?: string;
 }
 
 export interface RecordOverrideInput {
@@ -157,6 +197,24 @@ export class SkillService extends Context.Tag("SkillService")<
 		readonly getEmployeeSkills: (
 			employeeId: string,
 		) => Effect.Effect<EmployeeSkillWithDetails[], DatabaseError>;
+
+		readonly createRenewalRequest: (
+			input: CreateRenewalRequestInput,
+		) => Effect.Effect<
+			QualificationRenewalRequestRecord,
+			ValidationError | NotFoundError | DatabaseError
+		>;
+
+		readonly reviewRenewalRequest: (
+			input: ReviewRenewalRequestInput,
+		) => Effect.Effect<
+			QualificationRenewalRequestRecord,
+			ValidationError | NotFoundError | DatabaseError
+		>;
+
+		readonly getPendingRenewalRequests: (
+			organizationId: string,
+		) => Effect.Effect<QualificationRenewalRequestRecord[], DatabaseError>;
 
 		readonly getQualifiedEmployeesForSkills: (
 			organizationId: string,
@@ -249,6 +307,7 @@ export const SkillServiceLive = Layer.effect(
 									category: input.category,
 									customCategoryName: input.customCategoryName,
 									requiresExpiry: input.requiresExpiry,
+									expiryWarningDays: input.expiryWarningDays ?? 30,
 									createdBy: input.createdBy,
 									updatedAt: new Date(),
 								})
@@ -285,7 +344,11 @@ export const SkillServiceLive = Layer.effect(
 
 					// Validate custom category
 					const newCategory = input.category ?? existing!.category;
-					if (newCategory === "custom" && !input.customCategoryName && !existing!.customCategoryName) {
+					if (
+						newCategory === "custom" &&
+						!input.customCategoryName &&
+						!existing!.customCategoryName
+					) {
 						yield* _(
 							Effect.fail(
 								new ValidationError({
@@ -307,7 +370,12 @@ export const SkillServiceLive = Layer.effect(
 									...(input.customCategoryName !== undefined && {
 										customCategoryName: input.customCategoryName,
 									}),
-									...(input.requiresExpiry !== undefined && { requiresExpiry: input.requiresExpiry }),
+									...(input.requiresExpiry !== undefined && {
+										requiresExpiry: input.requiresExpiry,
+									}),
+									...(input.expiryWarningDays !== undefined && {
+										expiryWarningDays: input.expiryWarningDays,
+									}),
 									...(input.isActive !== undefined && { isActive: input.isActive }),
 									updatedBy: input.updatedBy,
 								})
@@ -450,14 +518,26 @@ export const SkillServiceLive = Layer.effect(
 								.values({
 									employeeId: input.employeeId,
 									skillId: input.skillId,
+									issuedAt: input.issuedAt,
 									expiresAt: input.expiresAt,
+									issuer: input.issuer,
+									certificateNumber: input.certificateNumber,
+									status: "active" as const,
+									renewedAt: new Date(),
+									renewedBy: input.assignedBy,
 									notes: input.notes,
 									assignedBy: input.assignedBy,
 								})
 								.onConflictDoUpdate({
 									target: [employeeSkill.employeeId, employeeSkill.skillId],
 									set: {
+										issuedAt: input.issuedAt,
 										expiresAt: input.expiresAt,
+										issuer: input.issuer,
+										certificateNumber: input.certificateNumber,
+										status: "active" as const,
+										renewedAt: new Date(),
+										renewedBy: input.assignedBy,
 										notes: input.notes,
 										assignedBy: input.assignedBy,
 										assignedAt: new Date(),
@@ -521,6 +601,192 @@ export const SkillServiceLive = Layer.effect(
 					);
 
 					return skills as EmployeeSkillWithDetails[];
+				}),
+
+			createRenewalRequest: (input) =>
+				Effect.gen(function* (_) {
+					const assignment = yield* _(
+						dbService.query("getEmployeeSkillForRenewal", async () => {
+							return await dbService.db.query.employeeSkill.findFirst({
+								where: and(
+									eq(employeeSkill.id, input.employeeSkillId),
+									eq(employeeSkill.employeeId, input.employeeId),
+								),
+								with: { skill: true },
+							});
+						}),
+					);
+
+					if (!assignment) {
+						yield* _(
+							Effect.fail(
+								new NotFoundError({
+									message: "Qualification not found",
+									entityType: "employeeSkill",
+									entityId: input.employeeSkillId,
+								}),
+							),
+						);
+					}
+
+					if (assignment!.skill.requiresExpiry && !input.requestedExpiresAt) {
+						yield* _(
+							Effect.fail(
+								new ValidationError({
+									message: "This qualification requires an expiry date",
+									field: "requestedExpiresAt",
+								}),
+							),
+						);
+					}
+
+					if (input.evidenceIds.length === 0) {
+						yield* _(
+							Effect.fail(
+								new ValidationError({
+									message: "At least one evidence file is required",
+									field: "evidenceIds",
+								}),
+							),
+						);
+					}
+
+					const evidenceIds = Array.from(new Set(input.evidenceIds));
+					const evidenceRecords = yield* _(
+						dbService.query("getQualificationRenewalEvidence", async () => {
+							return await dbService.db.query.qualificationEvidence.findMany({
+								where: and(
+									inArray(qualificationEvidence.id, evidenceIds),
+									eq(qualificationEvidence.organizationId, assignment!.skill.organizationId),
+									eq(qualificationEvidence.employeeSkillId, input.employeeSkillId),
+								),
+							});
+						}),
+					);
+
+					if (evidenceRecords.length !== evidenceIds.length) {
+						yield* _(
+							Effect.fail(
+								new ValidationError({
+									message: "Evidence files must belong to this qualification",
+									field: "evidenceIds",
+								}),
+							),
+						);
+					}
+
+					return yield* _(
+						dbService.query("createQualificationRenewalRequest", async () => {
+							return await dbService.db.transaction(async (tx) => {
+								const [request] = await tx
+									.insert(qualificationRenewalRequest)
+									.values({
+										organizationId: assignment!.skill.organizationId,
+										employeeId: input.employeeId,
+										employeeSkillId: input.employeeSkillId,
+										requestedIssuedAt: input.requestedIssuedAt,
+										requestedExpiresAt: input.requestedExpiresAt,
+										requestedIssuer: input.requestedIssuer,
+										requestedCertificateNumber: input.requestedCertificateNumber,
+										notes: input.notes,
+									})
+									.returning();
+
+								await tx.insert(qualificationRenewalRequestEvidence).values(
+									evidenceIds.map((evidenceId) => ({
+										organizationId: assignment!.skill.organizationId,
+										renewalRequestId: request!.id,
+										evidenceId,
+									})),
+								);
+
+								return request!;
+							});
+						}),
+					);
+				}),
+
+			reviewRenewalRequest: (input) =>
+				Effect.gen(function* (_) {
+					const request = yield* _(
+						dbService.query("getQualificationRenewalRequest", async () => {
+							return await dbService.db.query.qualificationRenewalRequest.findFirst({
+								where: eq(qualificationRenewalRequest.id, input.requestId),
+							});
+						}),
+					);
+
+					if (!request) {
+						yield* _(
+							Effect.fail(
+								new NotFoundError({
+									message: "Renewal request not found",
+									entityType: "qualificationRenewalRequest",
+									entityId: input.requestId,
+								}),
+							),
+						);
+					}
+
+					if (request!.status !== "pending") {
+						yield* _(
+							Effect.fail(
+								new ValidationError({
+									message: "Renewal request has already been reviewed",
+									field: "status",
+								}),
+							),
+						);
+					}
+
+					if (input.approved) {
+						yield* _(
+							dbService.query("applyQualificationRenewal", async () => {
+								await dbService.db
+									.update(employeeSkill)
+									.set({
+										issuedAt: request!.requestedIssuedAt,
+										expiresAt: request!.requestedExpiresAt,
+										issuer: request!.requestedIssuer,
+										certificateNumber: request!.requestedCertificateNumber,
+										status: "active" as const,
+										renewedAt: new Date(),
+									})
+									.where(eq(employeeSkill.id, request!.employeeSkillId));
+							}),
+						);
+					}
+
+					return yield* _(
+						dbService.query("markQualificationRenewalReviewed", async () => {
+							const [updated] = await dbService.db
+								.update(qualificationRenewalRequest)
+								.set({
+									status: input.approved ? "approved" : "rejected",
+									reviewerId: input.reviewerEmployeeId,
+									reviewedAt: new Date(),
+									reviewNotes: input.reviewNotes,
+								})
+								.where(eq(qualificationRenewalRequest.id, input.requestId))
+								.returning();
+							return updated!;
+						}),
+					);
+				}),
+
+			getPendingRenewalRequests: (organizationId) =>
+				Effect.gen(function* (_) {
+					return yield* _(
+						dbService.query("getPendingQualificationRenewalRequests", async () => {
+							return await dbService.db.query.qualificationRenewalRequest.findMany({
+								where: and(
+									eq(qualificationRenewalRequest.organizationId, organizationId),
+									eq(qualificationRenewalRequest.status, "pending"),
+								),
+								orderBy: (table, { asc }) => [asc(table.createdAt)],
+							});
+						}),
+					);
 				}),
 
 			getQualifiedEmployeesForSkills: (organizationId, skillIds) =>
@@ -625,6 +891,8 @@ export const SkillServiceLive = Layer.effect(
 								subareaId: input.targetId,
 								skillId: req.skillId,
 								isRequired: req.isRequired,
+								enforcementMode: req.enforcementMode ?? "warning",
+								blockOnExpiringSoon: req.blockOnExpiringSoon ?? false,
 								createdBy: input.createdBy,
 							}));
 
@@ -694,6 +962,8 @@ export const SkillServiceLive = Layer.effect(
 								templateId: input.targetId,
 								skillId: req.skillId,
 								isRequired: req.isRequired,
+								enforcementMode: req.enforcementMode ?? "warning",
+								blockOnExpiringSoon: req.blockOnExpiringSoon ?? false,
 								createdBy: input.createdBy,
 							}));
 
@@ -790,10 +1060,7 @@ export const SkillServiceLive = Layer.effect(
 					}
 
 					// Combine all requirements (deduped by skillId, taking most restrictive isRequired)
-					const allRequirements = new Map<
-						string,
-						{ skill: Skill; isRequired: boolean }
-					>();
+					const allRequirements = new Map<string, { skill: Skill; isRequired: boolean }>();
 
 					for (const req of [...subareaReqs, ...templateReqs]) {
 						const existing = allRequirements.get(req.skillId);
