@@ -295,6 +295,13 @@ export function ClockodoImportWizard({ organizationId }: ClockodoImportWizardPro
 		},
 	});
 
+	const isCustomDateRangeIncomplete =
+		selections.dateRange.preset === "custom" &&
+		(!selections.dateRange.startDate || !selections.dateRange.endDate);
+	const hasSelectedEntities = Object.entries(selections).some(
+		([key, val]) => key !== "dateRange" && val === true,
+	);
+
 	const importMutation = useMutation({
 		mutationFn: () => {
 			// Convert user mappings to serialized format for the server action
@@ -813,14 +820,14 @@ export function ClockodoImportWizard({ organizationId }: ClockodoImportWizardPro
 											>
 												{entityLabel(entity.key, entity.label)}
 											</Label>
-											{missingDeps && selections[entity.key] && (
-												<p className="text-xs text-amber-600 dark:text-amber-400">
-											{t(
-												"settings.clockodoImport.selection.dependencyWarning",
-												"Dependencies will be scanned automatically",
-											)}
-												</p>
-											)}
+										{missingDeps && selections[entity.key] && (
+											<p className="text-xs text-amber-600 dark:text-amber-400">
+												{t(
+													"settings.clockodoImport.selection.dependencyWarning",
+													"Dependencies will be scanned automatically",
+												)}
+											</p>
+										)}
 										</div>
 									</div>
 									<Badge variant="secondary" className="tabular-nums">
@@ -837,19 +844,24 @@ export function ClockodoImportWizard({ organizationId }: ClockodoImportWizardPro
 							</Button>
 							<Button
 								onClick={() => {
+									if (isCustomDateRangeIncomplete) return;
 									setStep("importing");
 									importMutation.mutate();
 								}}
-								disabled={
-									!Object.entries(selections).some(
-										([key, val]) => key !== "dateRange" && val === true,
-									)
-								}
+								disabled={!hasSelectedEntities || isCustomDateRangeIncomplete}
 							>
 								<IconDatabaseImport className="mr-2 h-4 w-4" aria-hidden="true" />
 								{t("settings.clockodoImport.selection.startImport", "Start Review Scan")}
 							</Button>
 						</div>
+						{isCustomDateRangeIncomplete && (
+							<p className="text-right text-sm text-destructive" aria-live="polite">
+								{t(
+									"settings.clockodoImport.selection.incompleteCustomDateRange",
+									"Select both a start and end date before starting the scan.",
+								)}
+							</p>
+						)}
 					</CardContent>
 				</Card>
 			)}

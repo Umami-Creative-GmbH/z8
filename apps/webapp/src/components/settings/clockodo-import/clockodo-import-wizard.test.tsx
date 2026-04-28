@@ -68,6 +68,7 @@ function renderWizard() {
 describe("ClockodoImportWizard", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		Element.prototype.scrollIntoView = vi.fn();
 		vi.useFakeTimers({ shouldAdvanceTime: true });
 		vi.setSystemTime(new Date("2026-04-28T12:00:00.000Z"));
 		mocks.getExistingDataCounts.mockResolvedValue({
@@ -214,5 +215,53 @@ describe("ClockodoImportWizard", () => {
 		});
 		expect(await screen.findByText("Select Data for Review")).toBeTruthy();
 		expect(mocks.importClockodoData).not.toHaveBeenCalled();
+	});
+
+	it("does not start a review scan when a custom date range is incomplete", async () => {
+		mocks.validateClockodoCredentials.mockResolvedValue({
+			success: true,
+			data: {
+				users: 1,
+				teams: 0,
+				services: 0,
+				entries: 1,
+				absences: 0,
+				targetHours: 0,
+				holidayQuotas: 0,
+				nonBusinessDays: 0,
+				surcharges: 0,
+			},
+		});
+		mocks.fetchClockodoUsers.mockResolvedValue({
+			success: true,
+			data: [{ id: 101, name: "Ada Lovelace", email: "ada@example.com", active: true }],
+		});
+		mocks.fetchZ8Employees.mockResolvedValue({
+			success: true,
+			data: [{ id: "emp_1", userId: "user_1", name: "Ada Lovelace", email: "ada@example.com" }],
+		});
+		mocks.saveUserMappings.mockResolvedValue({ success: true, data: undefined });
+
+		renderWizard();
+
+		fireEvent.change(screen.getByLabelText("Clockodo Email"), {
+			target: { value: "admin@example.com" },
+		});
+		fireEvent.change(screen.getByLabelText("API Key"), { target: { value: "api-key-123" } });
+		fireEvent.click(screen.getByRole("button", { name: "Connect & Preview" }));
+		await screen.findByText("Data Preview");
+		fireEvent.click(screen.getByRole("button", { name: "Map Users" }));
+		fireEvent.click(await screen.findByRole("button", { name: "Continue" }));
+		await screen.findByText("Select Data for Review");
+
+		fireEvent.click(screen.getByRole("combobox"));
+		fireEvent.click(await screen.findByText("Custom date range"));
+
+		expect(screen.getByRole("button", { name: "Start Review Scan" })).toHaveProperty(
+			"disabled",
+			true,
+		);
+		expect(screen.getByText("Select both a start and end date before starting the scan.")).toBeTruthy();
+		expect(mocks.startImportReviewScan).not.toHaveBeenCalled();
 	});
 });

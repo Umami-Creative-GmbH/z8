@@ -252,6 +252,18 @@ function mappedEmployeeId(mapping: ClockodoMapping | undefined): string | null {
 	return mapping.employeeId ?? null;
 }
 
+function selectedProviderUserIds(job: ImportScanJobData): Set<number> | null {
+	const ids = job.employeeIds
+		.filter((id) => /^\d+$/.test(id))
+		.map((id) => Number(id))
+		.filter((id) => Number.isSafeInteger(id));
+	return ids.length > 0 ? new Set(ids) : null;
+}
+
+function isSelectedProviderUser(providerUserIds: Set<number> | null, clockodoUserId: number): boolean {
+	return providerUserIds === null || providerUserIds.has(clockodoUserId);
+}
+
 async function loadUserMappings(input: {
 	organizationId: string;
 	providerUserIds: number[];
@@ -577,11 +589,14 @@ export async function scanClockodoImportPartition(
 
 	const { start, end, timeSince, timeUntil } = validatedDateRange(job);
 	const client = await loadClient(job);
+	const scopedProviderUserIds = selectedProviderUserIds(job);
 	let staged: Array<{ row: NormalizedImportRow; issues: ImportIssueDraft[] }>;
 
 	if (job.entityType === "employee") {
 		const getUsers = assertClientMethod<() => Promise<ClockodoUser[]>>(client, "getUsers");
-		staged = (await getUsers()).map(stageUser);
+		staged = (await getUsers())
+			.filter((user) => isSelectedProviderUser(scopedProviderUserIds, user.id))
+			.map(stageUser);
 	} else if (job.entityType === "team") {
 		const getTeams = assertClientMethod<() => Promise<ClockodoTeam[]>>(client, "getTeams");
 		staged = (await getTeams()).map(stageTeam);
@@ -592,7 +607,9 @@ export async function scanClockodoImportPartition(
 		const getEntries = assertClientMethod<
 			(timeSince: string, timeUntil: string) => Promise<ClockodoEntry[]>
 		>(client, "getEntries");
-		const entries = await getEntries(timeSince, timeUntil);
+		const entries = (await getEntries(timeSince, timeUntil)).filter((entry) =>
+			isSelectedProviderUser(scopedProviderUserIds, entry.users_id),
+		);
 		const mappings = await loadUserMappings({
 			organizationId: job.organizationId,
 			providerUserIds: entries.map((entry) => entry.users_id),
@@ -606,14 +623,16 @@ export async function scanClockodoImportPartition(
 		const absences = (
 			await Promise.all(yearsInRange(start, end).map((year) => getAbsences(year)))
 		).flat();
-		const filteredAbsences = absences.filter((absence) =>
-			overlapsDateRange({
-				startsAt: absence.date_since,
-				endsAt: absence.date_until,
-				rangeStart: start,
-				rangeEnd: end,
-			}),
-		);
+		const filteredAbsences = absences
+			.filter((absence) => isSelectedProviderUser(scopedProviderUserIds, absence.users_id))
+			.filter((absence) =>
+				overlapsDateRange({
+					startsAt: absence.date_since,
+					endsAt: absence.date_until,
+					rangeStart: start,
+					rangeEnd: end,
+				}),
+			);
 		const mappings = await loadUserMappings({
 			organizationId: job.organizationId,
 			providerUserIds: filteredAbsences.map((absence) => absence.users_id),
