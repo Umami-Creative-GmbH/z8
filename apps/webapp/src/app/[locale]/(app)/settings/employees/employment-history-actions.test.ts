@@ -32,6 +32,7 @@ vi.mock("./employee-action-utils", () => ({
 import {
 	buildEmploymentAssignmentSyncPlan,
 	buildEmploymentAssignmentWindowUpdates,
+	buildEmploymentCancellationRestorationPlan,
 	canCancelEmploymentHistoryRow,
 	shouldConfirmEmploymentHistoryRow,
 	shouldUpdateCurrentEmployeeFields,
@@ -155,5 +156,98 @@ describe("employment history action helpers", () => {
 		expect(
 			canCancelEmploymentHistoryRow({ reviewState: "confirmed", validFrom: d("2026-03-01") }, now),
 		).toBe(false);
+	});
+
+	it("builds cancellation restoration updates when removing a future confirmed row", () => {
+		expect(
+			buildEmploymentCancellationRestorationPlan({
+				canceled: {
+					id: "history-2",
+					employeeId: "employee-1",
+					organizationId: "org-1",
+					workPolicyId: "policy-2",
+					validFrom: d("2026-04-01"),
+					validUntil: d("2026-08-01"),
+					reviewState: "confirmed",
+				},
+				existing: [
+					{
+						id: "history-1",
+						employeeId: "employee-1",
+						organizationId: "org-1",
+						workPolicyId: "policy-1",
+						validFrom: d("2026-01-01"),
+						validUntil: d("2026-04-01"),
+						reviewState: "confirmed",
+					},
+					{
+						id: "history-2",
+						employeeId: "employee-1",
+						organizationId: "org-1",
+						workPolicyId: "policy-2",
+						validFrom: d("2026-04-01"),
+						validUntil: d("2026-08-01"),
+						reviewState: "confirmed",
+					},
+					{
+						id: "history-3",
+						employeeId: "employee-1",
+						organizationId: "org-1",
+						workPolicyId: "policy-3",
+						validFrom: d("2026-08-01"),
+						validUntil: null,
+						reviewState: "confirmed",
+					},
+				],
+			}),
+		).toEqual({
+			historyUpdate: { id: "history-1", validUntil: d("2026-08-01") },
+			assignmentWindowUpdate: {
+				employeeId: "employee-1",
+				organizationId: "org-1",
+				workPolicyId: "policy-1",
+				effectiveFrom: d("2026-01-01"),
+				effectiveUntil: d("2026-08-01"),
+			},
+		});
+	});
+
+	it("does not build cancellation assignment restoration when previous row has no policy", () => {
+		expect(
+			buildEmploymentCancellationRestorationPlan({
+				canceled: {
+					id: "history-2",
+					employeeId: "employee-1",
+					organizationId: "org-1",
+					workPolicyId: "policy-2",
+					validFrom: d("2026-04-01"),
+					validUntil: null,
+					reviewState: "confirmed",
+				},
+				existing: [
+					{
+						id: "history-1",
+						employeeId: "employee-1",
+						organizationId: "org-1",
+						workPolicyId: null,
+						validFrom: d("2026-01-01"),
+						validUntil: d("2026-04-01"),
+						reviewState: "confirmed",
+					},
+					{
+						id: "history-2",
+						employeeId: "employee-1",
+						organizationId: "org-1",
+						workPolicyId: "policy-2",
+						validFrom: d("2026-04-01"),
+						validUntil: null,
+						reviewState: "confirmed",
+					},
+				],
+			}),
+		).toEqual({
+			historyUpdate: { id: "history-1", validUntil: null },
+			assignmentWindowUpdate: null,
+		});
 	});
 });

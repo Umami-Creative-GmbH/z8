@@ -49,6 +49,17 @@ type EmploymentHistoryAssignmentWindowRow = Pick<
 	"id" | "employeeId" | "organizationId" | "workPolicyId" | "validFrom" | "validUntil"
 >;
 
+type EmploymentHistoryCancellationRestorationRow = Pick<
+	EmployeeEmploymentHistory,
+	| "id"
+	| "employeeId"
+	| "organizationId"
+	| "workPolicyId"
+	| "validFrom"
+	| "validUntil"
+	| "reviewState"
+>;
+
 export function shouldUpdateCurrentEmployeeFields(
 	row: EmploymentHistoryEffectiveRow,
 	now = DateTime.utc().toJSDate(),
@@ -120,6 +131,48 @@ export function buildEmploymentAssignmentWindowUpdates({
 			},
 		];
 	});
+}
+
+export function buildEmploymentCancellationRestorationPlan({
+	canceled,
+	existing,
+}: {
+	canceled: EmploymentHistoryCancellationRestorationRow;
+	existing: EmploymentHistoryCancellationRestorationRow[];
+}) {
+	if (canceled.reviewState !== "confirmed") {
+		return null;
+	}
+
+	const confirmed = existing
+		.filter((row) => row.reviewState === "confirmed" && row.id !== canceled.id)
+		.sort((a, b) => a.validFrom.getTime() - b.validFrom.getTime());
+	const previous = confirmed
+		.filter((row) => row.validFrom.getTime() < canceled.validFrom.getTime())
+		.at(-1);
+
+	if (!previous) {
+		return null;
+	}
+
+	const next = confirmed.find((row) => row.validFrom.getTime() > canceled.validFrom.getTime());
+	const validUntil = next ? next.validFrom : null;
+
+	return {
+		historyUpdate: {
+			id: previous.id,
+			validUntil,
+		},
+		assignmentWindowUpdate: previous.workPolicyId
+			? {
+					employeeId: previous.employeeId,
+					organizationId: previous.organizationId,
+					workPolicyId: previous.workPolicyId,
+					effectiveFrom: previous.validFrom,
+					effectiveUntil: validUntil,
+				}
+			: null,
+	};
 }
 
 export async function listEmployeeEmploymentHistoryAction(
@@ -554,7 +607,7 @@ export async function cancelEmployeeEmploymentHistoryAction(
 		execute: () =>
 			Effect.gen(function* (_) {
 				const actor = yield* _(getEmployeeSettingsActorContext());
-				const { dbService } = actor;
+				const { dbService, session } = actor;
 
 				yield* _(
 					requireOrgAdminEmployeeSettingsAccess(actor, {
@@ -577,13 +630,21 @@ export async function cancelEmployeeEmploymentHistoryAction(
 				yield* _(
 					dbService.query("cancelEmployeeEmploymentHistory", async () => {
 						await dbService.db.transaction(async (tx) => {
-							const targetHistory = await tx.query.employeeEmploymentHistory.findFirst({
+							await tx.execute(sql`
+								select ${employee.id}
+								from ${employee}
+								where ${employee.id} = ${employeeId}
+									and ${employee.organizationId} = ${actor.organizationId}
+								for update
+							`);
+
+							const existing = await tx.query.employeeEmploymentHistory.findMany({
 								where: and(
-									eq(employeeEmploymentHistory.id, historyId),
 									eq(employeeEmploymentHistory.employeeId, employeeId),
 									eq(employeeEmploymentHistory.organizationId, actor.organizationId),
 								),
 							});
+							const targetHistory = existing.find((row) => row.id === historyId);
 
 							if (!targetHistory) {
 								throw new NotFoundError({
@@ -600,6 +661,12 @@ export async function cancelEmployeeEmploymentHistoryAction(
 								});
 							}
 
+							const now = currentTimestamp();
+							const restorationPlan = buildEmploymentCancellationRestorationPlan({
+								canceled: targetHistory,
+								existing,
+							});
+
 							await tx
 								.delete(employeeEmploymentHistory)
 								.where(
@@ -609,6 +676,54 @@ export async function cancelEmployeeEmploymentHistoryAction(
 										eq(employeeEmploymentHistory.organizationId, actor.organizationId),
 									),
 								);
+
+							if (restorationPlan) {
+								await tx
+									.update(employeeEmploymentHistory)
+									.set({
+										validUntil: restorationPlan.historyUpdate.validUntil,
+										updatedBy: session.user.id,
+										updatedAt: now,
+									})
+									.where(
+										and(
+											eq(employeeEmploymentHistory.id, restorationPlan.historyUpdate.id),
+											eq(employeeEmploymentHistory.employeeId, employeeId),
+											eq(employeeEmploymentHistory.organizationId, actor.organizationId),
+										),
+									);
+
+								if (restorationPlan.assignmentWindowUpdate) {
+									await tx
+										.update(workPolicyAssignment)
+										.set({
+											effectiveUntil: restorationPlan.assignmentWindowUpdate.effectiveUntil,
+											updatedAt: now,
+										})
+										.where(
+											and(
+												eq(
+													workPolicyAssignment.employeeId,
+													restorationPlan.assignmentWindowUpdate.employeeId,
+												),
+												eq(
+													workPolicyAssignment.organizationId,
+													restorationPlan.assignmentWindowUpdate.organizationId,
+												),
+												eq(
+													workPolicyAssignment.policyId,
+													restorationPlan.assignmentWindowUpdate.workPolicyId,
+												),
+												eq(workPolicyAssignment.assignmentType, "employee"),
+												eq(workPolicyAssignment.isActive, true),
+												eq(
+													workPolicyAssignment.effectiveFrom,
+													restorationPlan.assignmentWindowUpdate.effectiveFrom,
+												),
+											),
+										);
+								}
+							}
 
 							if (targetHistory.reviewState === "confirmed" && targetHistory.workPolicyId) {
 								await tx
