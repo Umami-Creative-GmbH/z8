@@ -141,14 +141,17 @@ describe("getSelfServiceRequests", () => {
 			{ left: "approvalRequest.requestedBy", right: "employee-1" },
 			{ left: "approvalRequest.entityType", right: "time_entry" },
 		]);
+		expect(dbMocks.approvalRequests).toHaveBeenCalledWith(expect.objectContaining({ limit: 100 }));
 		expectWhereConditions(dbMocks.absenceEntries, [
 			{ left: "absenceEntry.organizationId", right: "org-1" },
 			{ left: "absenceEntry.employeeId", right: "employee-1" },
 		]);
+		expect(dbMocks.absenceEntries).toHaveBeenCalledWith(expect.objectContaining({ limit: 100 }));
 		expectWhereConditions(dbMocks.travelExpenseClaims, [
 			{ left: "travelExpenseClaim.organizationId", right: "org-1" },
 			{ left: "travelExpenseClaim.employeeId", right: "employee-1" },
 		]);
+		expect(dbMocks.travelExpenseClaims).toHaveBeenCalledWith(expect.objectContaining({ limit: 100 }));
 	});
 
 	it("excludes draft travel expenses from result items and counts", async () => {

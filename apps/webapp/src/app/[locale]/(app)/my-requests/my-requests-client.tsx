@@ -33,6 +33,7 @@ interface MyRequestsClientProps {
 
 type StatusFilter = SelfServiceRequestStatus | "all";
 type SourceTypeFilter = SelfServiceRequestSourceType | "all";
+type Translate = (key: string, fallback: string) => string;
 
 const sourceTypeLabels: Record<SelfServiceRequestSourceType, { key: string; fallback: string }> = {
 	absence: { key: "myRequests.sourceTypes.absence", fallback: "Absence" },
@@ -47,6 +48,89 @@ const statusLabels: Record<SelfServiceRequestStatus, { key: string; fallback: st
 	cancelled: { key: "myRequests.status.cancelled", fallback: "Cancelled" },
 };
 
+function sourceErrorMessage(sourceType: SelfServiceRequestSourceType, t: Translate) {
+	if (sourceType === "time_correction") {
+		return t("myRequests.sourceError.timeCorrection", "Time correction requests could not be loaded.");
+	}
+
+	if (sourceType === "travel_expense") {
+		return t("myRequests.sourceError.travelExpense", "Travel expense requests could not be loaded.");
+	}
+
+	return t("myRequests.sourceError.absence", "Absence requests could not be loaded.");
+}
+
+function requestTitle(item: SelfServiceRequestItem, t: Translate) {
+	if (item.sourceType === "time_correction") {
+		return t("myRequests.requests.timeCorrection.title", "Time correction request");
+	}
+
+	if (item.sourceType === "travel_expense") {
+		return t("myRequests.requests.travelExpense.title", "Travel expense claim");
+	}
+
+	if (item.title === "absence") {
+		return t("myRequests.requests.absence.title", "Absence request");
+	}
+
+	return item.title;
+}
+
+function requestSubtitle(item: SelfServiceRequestItem, locale: string, t: Translate) {
+	if (item.sourceType === "time_correction") {
+		return t("myRequests.requests.timeCorrection.subtitle", "Correction for a time entry");
+	}
+
+	if (item.sourceType === "absence") {
+		const dateRange = formatStoredDateRange(item.subtitle, locale);
+		return dateRange ?? item.subtitle;
+	}
+
+	if (item.sourceType === "travel_expense") {
+		return formatTravelExpenseSubtitle(item.subtitle, locale);
+	}
+
+	return item.subtitle;
+}
+
+function formatStoredDateRange(value: string, locale: string) {
+	const match = /^(\d{4}-\d{2}-\d{2}) to (\d{4}-\d{2}-\d{2})$/.exec(value);
+	if (!match) {
+		return null;
+	}
+
+	const formatter = DateTime.DATE_MED;
+	const start = DateTime.fromISO(match[1], { zone: "utc" }).setLocale(locale);
+	const end = DateTime.fromISO(match[2], { zone: "utc" }).setLocale(locale);
+
+	if (!start.isValid || !end.isValid) {
+		return null;
+	}
+
+	return `${start.toLocaleString(formatter)} - ${end.toLocaleString(formatter)}`;
+}
+
+function formatTravelExpenseSubtitle(value: string, locale: string) {
+	const separator = " · ";
+	const [prefix, amountPart] = value.includes(separator)
+		? value.split(separator)
+		: [null, value];
+	const amountMatch = /^(\d+(?:\.\d+)?) ([A-Z]{3})$/.exec(amountPart);
+
+	if (!amountMatch) {
+		return value;
+	}
+
+	const amount = Number(amountMatch[1]);
+	const currency = amountMatch[2];
+	const formattedAmount = new Intl.NumberFormat(locale, {
+		style: "currency",
+		currency,
+	}).format(amount);
+
+	return prefix ? `${prefix}${separator}${formattedAmount}` : formattedAmount;
+}
+
 export function MyRequestsClient({ initialResult }: MyRequestsClientProps) {
 	const { t } = useTranslate();
 	const locale = useLocale();
@@ -59,8 +143,8 @@ export function MyRequestsClient({ initialResult }: MyRequestsClientProps) {
 		const matchesStatus = statusFilter === "all" || item.status === statusFilter;
 		const matchesSourceType = sourceTypeFilter === "all" || item.sourceType === sourceTypeFilter;
 		const searchableText = [
-			item.title,
-			item.subtitle,
+			requestTitle(item, t),
+			requestSubtitle(item, locale, t),
 			item.decisionReason ?? "",
 			t(sourceTypeLabels[item.sourceType].key, sourceTypeLabels[item.sourceType].fallback),
 			t(statusLabels[item.status].key, statusLabels[item.status].fallback),
@@ -117,7 +201,9 @@ export function MyRequestsClient({ initialResult }: MyRequestsClientProps) {
 						<AlertDescription>
 							<ul className="list-disc space-y-1 pl-4">
 								{initialResult.sourceErrors.map((error) => (
-									<li key={`${error.sourceType}-${error.message}`}>{error.message}</li>
+									<li key={`${error.sourceType}-${error.message}`}>
+										{sourceErrorMessage(error.sourceType, t)}
+									</li>
 								))}
 							</ul>
 						</AlertDescription>
@@ -145,12 +231,14 @@ export function MyRequestsClient({ initialResult }: MyRequestsClientProps) {
 								>
 									<div className="min-w-0 space-y-1">
 										<div className="flex flex-wrap items-center gap-2">
-											<p className="font-medium">{item.title}</p>
+											<p className="font-medium">{requestTitle(item, t)}</p>
 											<Badge variant="destructive">
 												{t("myRequests.status.rejected", "Rejected")}
 											</Badge>
 										</div>
-										<p className="text-sm text-muted-foreground">{item.subtitle}</p>
+									<p className="text-sm text-muted-foreground">
+										{requestSubtitle(item, locale, t)}
+									</p>
 										<p className="text-sm">
 											{item.decisionReason?.trim() ||
 												t("myRequests.noReason", "No reason provided.")}
@@ -271,8 +359,10 @@ export function MyRequestsClient({ initialResult }: MyRequestsClientProps) {
 												</TableCell>
 												<TableCell className="max-w-[320px] whitespace-normal">
 													<div className="space-y-1">
-														<p className="font-medium">{item.title}</p>
-														<p className="text-muted-foreground text-sm">{item.subtitle}</p>
+														<p className="font-medium">{requestTitle(item, t)}</p>
+														<p className="text-muted-foreground text-sm">
+															{requestSubtitle(item, locale, t)}
+														</p>
 														{item.decisionReason ? (
 															<p className="text-sm">
 																{t("myRequests.reasonLabel", "Reason")}: {item.decisionReason}

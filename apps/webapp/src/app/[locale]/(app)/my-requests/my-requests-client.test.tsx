@@ -105,8 +105,8 @@ describe("MyRequestsClient", () => {
 		expect(screen.getByText("Required fixes")).toBeTruthy();
 		expect(screen.getByText("Coverage needed")).toBeTruthy();
 		expect(screen.getByRole("link", { name: "Fix" }).getAttribute("href")).toBe("/absences");
-		expect(screen.getByText("Time correction")).toBeTruthy();
-		expect(screen.getByText("Travel expense")).toBeTruthy();
+		expect(screen.getByText("Time correction request")).toBeTruthy();
+		expect(screen.getByText("Travel expense claim")).toBeTruthy();
 	});
 
 	it("formats request dates with the active locale", () => {
@@ -120,7 +120,7 @@ describe("MyRequestsClient", () => {
 
 		fireEvent.change(screen.getByLabelText("Status"), { target: { value: "pending" } });
 
-		expect(screen.getByText("Time correction")).toBeTruthy();
+		expect(screen.getByText("Time correction request")).toBeTruthy();
 		expect(screen.queryByText("Vacation")).toBeNull();
 	});
 
@@ -163,7 +163,7 @@ describe("MyRequestsClient", () => {
 	it("does not render unsupported actions", () => {
 		render(<MyRequestsClient initialResult={createResult()} />);
 
-		const timeRow = screen.getByRole("row", { name: /Time correction/ });
+		const timeRow = screen.getByRole("row", { name: /Time correction request/ });
 		expect(within(timeRow).queryByRole("link", { name: "Fix" })).toBeNull();
 	});
 
@@ -214,7 +214,7 @@ describe("MyRequestsClient", () => {
 		await waitFor(() => {
 			expect(cancelMyAbsenceRequestMock).toHaveBeenCalledWith("absence-pending");
 		});
-		const timeRow = screen.getByRole("row", { name: /Time correction/ });
+		const timeRow = screen.getByRole("row", { name: /Time correction request/ });
 		expect(within(timeRow).queryByRole("button", { name: "Cancel" })).toBeNull();
 	});
 

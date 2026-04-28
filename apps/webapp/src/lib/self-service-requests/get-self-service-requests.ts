@@ -75,6 +75,8 @@ const SOURCE_ERROR_MESSAGES: Record<SelfServiceRequestSourceType, string> = {
 	travel_expense: "Travel expense requests could not be loaded.",
 };
 
+const SOURCE_QUERY_LIMIT = 100;
+
 export async function getSelfServiceRequests(
 	input: GetSelfServiceRequestsInput,
 ): Promise<SelfServiceRequestResult> {
@@ -116,6 +118,7 @@ async function loadTimeCorrections(
 			eq(approvalRequest.entityType, "time_entry"),
 		),
 		orderBy: [desc(approvalRequest.createdAt)],
+		limit: SOURCE_QUERY_LIMIT,
 	})) as TimeCorrectionRow[];
 
 	return rows.map((row) => ({
@@ -127,8 +130,8 @@ async function loadTimeCorrections(
 		status: row.status,
 		submittedAt: row.createdAt,
 		resolvedAt: row.approvedAt,
-		title: "Time correction request",
-		subtitle: "Correction for a time entry",
+		title: "time_correction",
+		subtitle: "time_entry_correction",
 		decisionReason: row.rejectionReason,
 		availableActions: actionsFor(row.status),
 		sourceHref: "/time-tracking",
@@ -143,6 +146,7 @@ async function loadAbsences(input: GetSelfServiceRequestsInput): Promise<SelfSer
 		),
 		with: { category: true },
 		orderBy: [desc(absenceEntry.createdAt)],
+		limit: SOURCE_QUERY_LIMIT,
 	})) as AbsenceRow[];
 
 	return rows.map((row) => ({
@@ -154,7 +158,7 @@ async function loadAbsences(input: GetSelfServiceRequestsInput): Promise<SelfSer
 		status: row.status,
 		submittedAt: row.createdAt,
 		resolvedAt: absenceResolvedAt(row),
-		title: `${row.category?.name ?? "Absence"} request`,
+		title: row.category?.name ?? "absence",
 		subtitle: `${row.startDate} to ${row.endDate}`,
 		decisionReason: row.rejectionReason,
 		availableActions: actionsFor(row.status, "absence"),
@@ -172,6 +176,7 @@ async function loadTravelExpenses(
 		),
 		with: { decisionLogs: true },
 		orderBy: [desc(travelExpenseClaim.createdAt)],
+		limit: SOURCE_QUERY_LIMIT,
 	})) as TravelExpenseRow[];
 
 	return rows.filter((row) => row.status !== "draft").map((row) => {
@@ -189,7 +194,7 @@ async function loadTravelExpenses(
 			status,
 			submittedAt: row.submittedAt ?? row.createdAt,
 			resolvedAt: row.decidedAt,
-			title: "Travel expense claim",
+			title: "travel_expense",
 			subtitle: travelExpenseSubtitle(row),
 			decisionReason: latestDecisionLog?.reason ?? latestDecisionLog?.comment ?? null,
 			availableActions: actionsFor(status),
