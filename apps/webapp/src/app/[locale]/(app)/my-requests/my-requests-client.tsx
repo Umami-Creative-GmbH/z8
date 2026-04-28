@@ -154,9 +154,10 @@ export function MyRequestsClient({ initialResult }: MyRequestsClientProps) {
 					</CardHeader>
 					<CardContent className="space-y-4">
 						<div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_180px_180px]">
-							<label className="grid gap-2 text-sm font-medium">
+							<label htmlFor="request-search" className="grid gap-2 text-sm font-medium">
 								Search
 								<Input
+									id="request-search"
 									name="request-search"
 									autoComplete="off"
 									value={search}
