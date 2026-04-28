@@ -14,10 +14,6 @@ type TranslateFn = (
 	params?: Record<string, string | number>,
 ) => string;
 
-type DashboardCheck = PayrollReadinessCheck & {
-	actionLabel?: string;
-};
-
 interface PayrollReadinessDashboardProps {
 	t: TranslateFn;
 	data: PayrollReadinessResult;
@@ -99,8 +95,8 @@ function SummaryCard({
 	);
 }
 
-function ChecklistCard({ t, check }: { t: TranslateFn; check: DashboardCheck }) {
-	const actionLabel = check.actionLabel ?? getActionLabel(check.actionHref, t);
+function ChecklistCard({ t, check }: { t: TranslateFn; check: PayrollReadinessCheck }) {
+	const actionLabel = getActionLabel(check.actionHref, t);
 
 	return (
 		<Card>
@@ -178,9 +174,8 @@ function AffectedEmployeesTable({
 const actionLinkClassName =
 	"rounded-sm font-medium underline underline-offset-4 transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
 
-function getChecks(data: PayrollReadinessResult): DashboardCheck[] {
-	return ((data as PayrollReadinessResult & { checks?: DashboardCheck[] }).checks
-		?? data.groups.flatMap((group) => group.checks));
+function getChecks(data: PayrollReadinessResult): PayrollReadinessCheck[] {
+	return data.groups.flatMap((group) => group.checks);
 }
 
 function getReadinessStatusLabel(status: PayrollReadinessResult["status"], t: TranslateFn) {
