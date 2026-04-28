@@ -16,10 +16,15 @@ describe("manager daily briefing logic", () => {
 			{ id: "shift-1", employeeId: "emp-1", employeeName: "Ada Lovelace", teamName: "Operations", date: "2026-04-28", startTime: "09:00", endTime: "17:00", status: "published" as const },
 			{ id: "shift-2", employeeId: "emp-2", employeeName: "Grace Hopper", teamName: "Operations", date: "2026-04-28", startTime: "10:00", endTime: "18:00", status: "published" as const },
 			{ id: "shift-3", employeeId: "emp-3", employeeName: "Draft Employee", teamName: "Operations", date: "2026-04-28", startTime: "08:00", endTime: "16:00", status: "draft" as const },
+			{ id: "shift-4", employeeId: "emp-4", employeeName: "Katherine Johnson", teamName: "Operations", date: "2026-04-28", startTime: "08:30", endTime: "16:30", status: "published" as const },
 		];
-		const records = [{ id: "record-1", employeeId: "emp-2", startAt: DateTime.fromISO("2026-04-28T09:55:00.000+02:00").toJSDate(), endAt: null }];
+		const records = [
+			{ id: "record-1", employeeId: "emp-2", startAt: DateTime.fromISO("2026-04-28T09:55:00.000+02:00").toJSDate(), endAt: null },
+			{ id: "record-2", employeeId: "emp-4", startAt: DateTime.fromISO("2026-04-28T08:31:00.000+02:00").toJSDate(), endAt: DateTime.fromISO("2026-04-28T08:40:00.000+02:00").toJSDate() },
+		];
 		expect(detectAttendanceExceptions({ now, shifts, records, graceMinutes: 5 })).toEqual([
 			expect.objectContaining({ id: "attendance:shift-1", severity: "critical", category: "attendance", title: "Ada Lovelace has not clocked in" }),
+			expect.objectContaining({ id: "attendance:shift-4", severity: "critical", category: "attendance", title: "Katherine Johnson has not clocked in" }),
 		]);
 	});
 
