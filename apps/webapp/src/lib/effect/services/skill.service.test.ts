@@ -7,7 +7,7 @@ import {
 } from "@/db/schema";
 import { NotFoundError, ValidationError } from "../errors";
 import { DatabaseService } from "./database.service";
-import { SkillService, SkillServiceLive } from "./skill.service";
+import { getQualificationExpiryBoundary, SkillService, SkillServiceLive } from "./skill.service";
 
 const baseAssignment = {
 	id: "employee-skill-1",
@@ -410,6 +410,43 @@ describe("SkillService qualification renewal behavior", () => {
 		);
 	});
 
+	it("approval preserves existing qualification metadata when renewal fields are omitted", async () => {
+		const existingIssuedAt = new Date("2025-01-01T00:00:00.000Z");
+		const existingExpiresAt = new Date("2026-01-01T00:00:00.000Z");
+		const { employeeUpdateSet, runReviewRenewalRequest } = createSkillServiceTestContext({
+			assignment: {
+				...baseAssignment,
+				issuedAt: existingIssuedAt,
+				expiresAt: existingExpiresAt,
+				issuer: "Existing Issuer",
+				certificateNumber: "EXISTING-CERT",
+			},
+			request: {
+				...baseRequest,
+				requestedIssuedAt: null,
+				requestedExpiresAt: null,
+				requestedIssuer: null,
+				requestedCertificateNumber: null,
+			},
+		});
+
+		expect(
+			await runReviewRenewalRequest({
+				requestId: "request-1",
+				reviewerEmployeeId: "reviewer-1",
+				approved: true,
+			}),
+		).toMatchObject({ _tag: "Right", right: { status: "approved" } });
+		expect(employeeUpdateSet).toHaveBeenCalledWith(
+			expect.objectContaining({
+				issuedAt: existingIssuedAt,
+				expiresAt: existingExpiresAt,
+				issuer: "Existing Issuer",
+				certificateNumber: "EXISTING-CERT",
+			}),
+		);
+	});
+
 	it("fails approval when employee qualification update affects no rows", async () => {
 		const {
 			employeeUpdateReturning,
@@ -471,6 +508,14 @@ describe("SkillService qualification renewal behavior", () => {
 				where: expect.anything(),
 				orderBy: expect.any(Function),
 			}),
+		);
+	});
+});
+
+describe("getQualificationExpiryBoundary", () => {
+	it("returns the start of today in UTC so expiry dates remain valid through today", () => {
+		expect(getQualificationExpiryBoundary(new Date("2026-04-28T12:34:56.000Z")).toISOString()).toBe(
+			"2026-04-28T00:00:00.000Z",
 		);
 	});
 });

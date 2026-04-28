@@ -18,6 +18,17 @@ describe("getQualificationStatus", () => {
 		).toBe("expired");
 	});
 
+	it("does not expire a qualification until the day after its expiry date", () => {
+		const now = DateTime.fromISO("2026-04-28T12:00:00Z");
+		expect(
+			getQualificationStatus({
+				expiresAt: DateTime.fromISO("2026-04-28T00:00:00Z").toJSDate(),
+				warningDays: 30,
+				now,
+			}),
+		).not.toBe("expired");
+	});
+
 	it("marks an expiry within the warning window as expiringSoon", () => {
 		const now = DateTime.fromISO("2026-04-28T12:00:00Z");
 		expect(

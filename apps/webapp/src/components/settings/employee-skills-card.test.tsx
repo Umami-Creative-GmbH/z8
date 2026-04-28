@@ -111,6 +111,7 @@ vi.mock("@/lib/query/use-skills", () => ({
 
 describe("EmployeeSkillsCard", () => {
 	beforeEach(() => {
+		vi.clearAllMocks();
 		assignSkillToEmployeeMock.mockResolvedValue({
 			success: true,
 			data: { id: "employee-skill-2" },
@@ -185,6 +186,47 @@ describe("EmployeeSkillsCard", () => {
 				expect.objectContaining({
 					issuedAt: new Date("2026-01-15T00:00:00.000Z"),
 					expiresAt: new Date("2027-01-15T00:00:00.000Z"),
+				}),
+			);
+		});
+	});
+
+	it("requires an expiry date for skills that require expiry", async () => {
+		render(<EmployeeSkillsCard employeeId="employee-1" organizationId="org-1" canManageSkills />);
+
+		fireEvent.click(screen.getByRole("button", { name: "Assign Skill" }));
+		fireEvent.click(screen.getByLabelText("Skill *"));
+		fireEvent.click(screen.getByRole("option", { name: /Crane Operator/ }));
+		fireEvent.click(screen.getByRole("button", { name: "Assign" }));
+
+		expect(await screen.findByText("Expiry date is required for this skill")).toBeTruthy();
+		expect(assignSkillToEmployeeMock).not.toHaveBeenCalled();
+	});
+
+	it("trims optional qualification metadata before assigning a skill", async () => {
+		render(<EmployeeSkillsCard employeeId="employee-1" organizationId="org-1" canManageSkills />);
+
+		fireEvent.click(screen.getByRole("button", { name: "Assign Skill" }));
+		fireEvent.click(screen.getByLabelText("Skill *"));
+		fireEvent.click(screen.getByRole("option", { name: /Crane Operator/ }));
+		fireEvent.change(screen.getByLabelText("Expiry Date *"), {
+			target: { value: "2027-01-15" },
+		});
+		fireEvent.change(screen.getByLabelText("Issuer"), { target: { value: "  Safety Council  " } });
+		fireEvent.change(screen.getByLabelText("Certificate Number"), {
+			target: { value: "  CERT-12345  " },
+		});
+		fireEvent.change(screen.getByLabelText("Notes"), {
+			target: { value: "  Crane operations  " },
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Assign" }));
+
+		await waitFor(() => {
+			expect(assignSkillToEmployeeMock).toHaveBeenCalledWith(
+				expect.objectContaining({
+					issuer: "Safety Council",
+					certificateNumber: "CERT-12345",
+					notes: "Crane operations",
 				}),
 			);
 		});

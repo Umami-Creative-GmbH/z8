@@ -347,6 +347,9 @@ function AssignSkillDialog({
 
 	const assignMutation = useMutation({
 		mutationFn: async (data: AssignSkillFormValues) => {
+			const issuer = data.issuer.trim();
+			const certificateNumber = data.certificateNumber.trim();
+			const notes = data.notes.trim();
 			const result = await assignSkillToEmployee({
 				employeeId,
 				skillId: data.skillId,
@@ -356,9 +359,9 @@ function AssignSkillDialog({
 				expiresAt: data.expiresAt
 					? DateTime.fromISO(data.expiresAt, { zone: "utc" }).toJSDate()
 					: undefined,
-				issuer: data.issuer || undefined,
-				certificateNumber: data.certificateNumber || undefined,
-				notes: data.notes || undefined,
+				issuer: issuer || undefined,
+				certificateNumber: certificateNumber || undefined,
+				notes: notes || undefined,
 			});
 			if (!result.success) throw new Error(result.error);
 			return result.data;
@@ -405,7 +408,13 @@ function AssignSkillDialog({
 				>
 					<div className="grid gap-4 py-4">
 						{/* Skill Selection */}
-						<form.Field name="skillId">
+						<form.Field
+							name="skillId"
+							validators={{
+								onSubmit: ({ value }) =>
+									value ? undefined : t("settings.skills.skillRequired", "Skill is required"),
+							}}
+						>
 							{(field) => (
 								<div className="grid gap-2">
 									<Label htmlFor="assign-skill">{t("settings.skills.skill", "Skill")} *</Label>
@@ -448,12 +457,28 @@ function AssignSkillDialog({
 											</SelectContent>
 										</Select>
 									)}
+									{field.state.meta.errors.length > 0 && (
+										<p className="text-sm text-destructive" aria-live="polite">
+											{field.state.meta.errors[0]}
+										</p>
+									)}
 								</div>
 							)}
 						</form.Field>
 
 						{/* Expiry Date */}
-						<form.Field name="expiresAt">
+						<form.Field
+							name="expiresAt"
+							validators={{
+								onSubmit: ({ value }) =>
+									selectedSkill?.requiresExpiry && !value
+										? t(
+												"settings.skills.expiryDateRequired",
+												"Expiry date is required for this skill",
+											)
+										: undefined,
+							}}
+						>
 							{(field) => (
 								<div className="grid gap-2">
 									<Label htmlFor="assign-expiry">
@@ -474,6 +499,11 @@ function AssignSkillDialog({
 												"settings.skills.expiryRequiredHint",
 												"This certification requires an expiry date",
 											)}
+										</p>
+									)}
+									{field.state.meta.errors.length > 0 && (
+										<p className="text-sm text-destructive" aria-live="polite">
+											{field.state.meta.errors[0]}
 										</p>
 									)}
 								</div>
@@ -575,9 +605,7 @@ function AssignSkillDialog({
 						</Button>
 						<Button
 							type="submit"
-							disabled={
-								assignMutation.isPending || !selectedSkillId || availableSkills.length === 0
-							}
+							disabled={assignMutation.isPending || availableSkills.length === 0}
 						>
 							{assignMutation.isPending && (
 								<IconLoader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />

@@ -4,10 +4,14 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { normalizeExpiryWarningDays, SkillCatalogManagement } from "./skill-catalog-management";
 
-const { deleteSkillMock, invalidateQueriesMock } = vi.hoisted(() => ({
-	deleteSkillMock: vi.fn(),
-	invalidateQueriesMock: vi.fn(),
-}));
+const { createSkillMock, deleteSkillMock, invalidateQueriesMock, updateSkillMock } = vi.hoisted(
+	() => ({
+		createSkillMock: vi.fn(),
+		deleteSkillMock: vi.fn(),
+		invalidateQueriesMock: vi.fn(),
+		updateSkillMock: vi.fn(),
+	}),
+);
 
 const catalogSkill = {
 	id: "skill-1",
@@ -46,10 +50,10 @@ vi.mock("@tanstack/react-query", async () => {
 		}),
 		useQueryClient: () => ({ invalidateQueries: invalidateQueriesMock }),
 		useMutation: (options: {
-			mutationFn: (input: string) => Promise<unknown>;
+			mutationFn: (input: unknown) => Promise<unknown>;
 			onSuccess?: () => void;
 		}) => ({
-			mutate: async (input: string) => {
+			mutate: async (input: unknown) => {
 				await options.mutationFn(input);
 				options.onSuccess?.();
 			},
@@ -65,15 +69,19 @@ vi.mock("@tolgee/react", () => ({
 vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 
 vi.mock("@/app/[locale]/(app)/settings/skills/actions", () => ({
-	createSkill: vi.fn(),
+	createSkill: createSkillMock,
 	deleteSkill: deleteSkillMock,
-	updateSkill: vi.fn(),
+	updateSkill: updateSkillMock,
 }));
 
 describe("SkillCatalogManagement", () => {
 	beforeEach(() => {
+		createSkillMock.mockResolvedValue({ success: true, data: { id: "skill-created" } });
 		deleteSkillMock.mockResolvedValue({ success: true });
+		updateSkillMock.mockResolvedValue({ success: true, data: { id: "skill-1" } });
+		createSkillMock.mockClear();
 		invalidateQueriesMock.mockClear();
+		updateSkillMock.mockClear();
 		vi.spyOn(window, "confirm").mockReturnValue(true);
 	});
 
@@ -143,5 +151,49 @@ describe("SkillCatalogManagement", () => {
 		expect(normalizeExpiryWarningDays(-3)).toBe(0);
 		expect(normalizeExpiryWarningDays(14.8)).toBe(14);
 		expect(normalizeExpiryWarningDays(400)).toBe(365);
+	});
+
+	it("requires a non-empty skill name", async () => {
+		render(<SkillCatalogManagement organizationId="org-1" canManageCatalog />);
+
+		fireEvent.click(screen.getByText("Add Skill"));
+		fireEvent.change(screen.getByLabelText("Name *"), { target: { value: "   " } });
+		fireEvent.click(screen.getByRole("button", { name: "Create" }));
+
+		expect(await screen.findByText("Name is required")).toBeTruthy();
+		expect(createSkillMock).not.toHaveBeenCalled();
+	});
+
+	it("requires a custom category name when custom category is selected", async () => {
+		render(<SkillCatalogManagement organizationId="org-1" canManageCatalog />);
+
+		fireEvent.click(screen.getByText("Add Skill"));
+		fireEvent.change(screen.getByLabelText("Name *"), { target: { value: "Compliance Skill" } });
+		fireEvent.click(screen.getByLabelText("Category"));
+		fireEvent.click(screen.getByRole("option", { name: "Custom" }));
+		fireEvent.click(screen.getByRole("button", { name: "Create" }));
+
+		expect(await screen.findByText("Custom category name is required")).toBeTruthy();
+		expect(createSkillMock).not.toHaveBeenCalled();
+	});
+
+	it("trims skill catalog text fields before creating a skill", async () => {
+		render(<SkillCatalogManagement organizationId="org-1" canManageCatalog />);
+
+		fireEvent.click(screen.getByText("Add Skill"));
+		fireEvent.change(screen.getByLabelText("Name *"), { target: { value: "  Confined Space  " } });
+		fireEvent.change(screen.getByLabelText("Description"), {
+			target: { value: "  Annual certification  " },
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Create" }));
+
+		await waitFor(() => {
+			expect(createSkillMock).toHaveBeenCalledWith(
+				expect.objectContaining({
+					name: "Confined Space",
+					description: "Annual certification",
+				}),
+			);
+		});
 	});
 });

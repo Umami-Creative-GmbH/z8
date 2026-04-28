@@ -405,11 +405,14 @@ function SkillDialog({ skill, open, onOpenChange, onSuccess }: SkillDialogProps)
 
 	const createMutation = useMutation({
 		mutationFn: async (data: SkillFormValues) => {
+			const name = data.name.trim();
+			const description = data.description.trim();
+			const customCategoryName = data.customCategoryName.trim();
 			const result = await createSkill({
-				name: data.name,
-				description: data.description || undefined,
+				name,
+				description: description || undefined,
 				category: data.category,
-				customCategoryName: data.category === "custom" ? data.customCategoryName : undefined,
+				customCategoryName: data.category === "custom" ? customCategoryName : undefined,
 				requiresExpiry: data.requiresExpiry,
 				expiryWarningDays: data.requiresExpiry
 					? normalizeExpiryWarningDays(data.expiryWarningDays)
@@ -429,11 +432,14 @@ function SkillDialog({ skill, open, onOpenChange, onSuccess }: SkillDialogProps)
 
 	const updateMutation = useMutation({
 		mutationFn: async (data: SkillFormValues & { skillId: string }) => {
+			const name = data.name.trim();
+			const description = data.description.trim();
+			const customCategoryName = data.customCategoryName.trim();
 			const result = await updateSkill(data.skillId, {
-				name: data.name,
-				description: data.description || undefined,
+				name,
+				description: description || undefined,
 				category: data.category,
-				customCategoryName: data.category === "custom" ? data.customCategoryName : undefined,
+				customCategoryName: data.category === "custom" ? customCategoryName : undefined,
 				requiresExpiry: data.requiresExpiry,
 				expiryWarningDays: data.requiresExpiry
 					? normalizeExpiryWarningDays(data.expiryWarningDays)
@@ -496,7 +502,13 @@ function SkillDialog({ skill, open, onOpenChange, onSuccess }: SkillDialogProps)
 				>
 					<div className="grid gap-4 py-4">
 						{/* Name */}
-						<form.Field name="name">
+						<form.Field
+							name="name"
+							validators={{
+								onSubmit: ({ value }) =>
+									value.trim() ? undefined : t("settings.skills.nameRequired", "Name is required"),
+							}}
+						>
 							{(field) => (
 								<div className="grid gap-2">
 									<Label htmlFor="skill-name">{t("settings.skills.skillName", "Name")} *</Label>
@@ -507,6 +519,11 @@ function SkillDialog({ skill, open, onOpenChange, onSuccess }: SkillDialogProps)
 										onBlur={field.handleBlur}
 										placeholder={t("settings.skills.namePlaceholder", "e.g., Forklift License")}
 									/>
+									{field.state.meta.errors.length > 0 && (
+										<p className="text-sm text-destructive" aria-live="polite">
+											{field.state.meta.errors[0]}
+										</p>
+									)}
 								</div>
 							)}
 						</form.Field>
@@ -546,7 +563,18 @@ function SkillDialog({ skill, open, onOpenChange, onSuccess }: SkillDialogProps)
 						<form.Subscribe selector={(state) => state.values.category}>
 							{(category) =>
 								category === "custom" && (
-									<form.Field name="customCategoryName">
+									<form.Field
+										name="customCategoryName"
+										validators={{
+											onSubmit: ({ value }) =>
+												value.trim()
+													? undefined
+													: t(
+															"settings.skills.customCategoryNameRequired",
+															"Custom category name is required",
+														),
+										}}
+									>
 										{(field) => (
 											<div className="grid gap-2">
 												<Label htmlFor="skill-custom-category">
@@ -562,6 +590,11 @@ function SkillDialog({ skill, open, onOpenChange, onSuccess }: SkillDialogProps)
 														"e.g., Compliance",
 													)}
 												/>
+												{field.state.meta.errors.length > 0 && (
+													<p className="text-sm text-destructive" aria-live="polite">
+														{field.state.meta.errors[0]}
+													</p>
+												)}
 											</div>
 										)}
 									</form.Field>

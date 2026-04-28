@@ -1,5 +1,6 @@
-import { and, eq, gt, inArray, isNull, lte, or } from "drizzle-orm";
+import { and, eq, gte, inArray, isNull, lt, or } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
+import { DateTime } from "luxon";
 import {
 	type employeeSkill as EmployeeSkillTable,
 	employee,
@@ -32,6 +33,10 @@ type TemplateSkillReq = typeof TemplateSkillReqTable.$inferSelect;
 type SkillOverride = typeof OverrideTable.$inferSelect;
 
 type SkillCategory = "safety" | "equipment" | "certification" | "training" | "language" | "custom";
+
+export function getQualificationExpiryBoundary(now = new Date()): Date {
+	return DateTime.fromJSDate(now, { zone: "utc" }).startOf("day").toJSDate();
+}
 
 // ============================================
 // INPUT TYPES
@@ -771,6 +776,31 @@ export const SkillServiceLive = Layer.effect(
 						);
 					}
 
+					const currentQualification = input.approved
+						? yield* _(
+								dbService.query("getQualificationForRenewalApproval", async () => {
+									return await dbService.db.query.employeeSkill.findFirst({
+										where: and(
+											eq(employeeSkill.id, request!.employeeSkillId),
+											eq(employeeSkill.employeeId, request!.employeeId),
+										),
+									});
+								}),
+							)
+						: null;
+
+					if (input.approved && !currentQualification) {
+						yield* _(
+							Effect.fail(
+								new NotFoundError({
+									message: "Employee qualification not found",
+									entityType: "employeeSkill",
+									entityId: request!.employeeSkillId,
+								}),
+							),
+						);
+					}
+
 					const updatedRequest = yield* _(
 						dbService.query("reviewQualificationRenewalRequest", async () => {
 							return await dbService.db.transaction(async (tx) => {
@@ -799,10 +829,12 @@ export const SkillServiceLive = Layer.effect(
 									const [qualification] = await tx
 										.update(employeeSkill)
 										.set({
-											issuedAt: request!.requestedIssuedAt,
-											expiresAt: request!.requestedExpiresAt,
-											issuer: request!.requestedIssuer,
-											certificateNumber: request!.requestedCertificateNumber,
+											issuedAt: request!.requestedIssuedAt ?? currentQualification!.issuedAt,
+											expiresAt: request!.requestedExpiresAt ?? currentQualification!.expiresAt,
+											issuer: request!.requestedIssuer ?? currentQualification!.issuer,
+											certificateNumber:
+												request!.requestedCertificateNumber ??
+												currentQualification!.certificateNumber,
 											status: "active" as const,
 											renewedAt: new Date(),
 										})
@@ -871,13 +903,13 @@ export const SkillServiceLive = Layer.effect(
 					const qualifiedEmployees = yield* _(
 						dbService.query("getQualifiedEmployees", async () => {
 							// Get employees who have ALL required skills and none are expired
-							const now = new Date();
+							const expiryBoundary = getQualificationExpiryBoundary();
 
 							// Find employees with valid (non-expired) assignments for ALL required skills
 							const employeeSkills = await dbService.db.query.employeeSkill.findMany({
 								where: and(
 									inArray(employeeSkill.skillId, skillIds),
-									or(isNull(employeeSkill.expiresAt), gt(employeeSkill.expiresAt, now)),
+									or(isNull(employeeSkill.expiresAt), gte(employeeSkill.expiresAt, expiryBoundary)),
 								),
 								with: {
 									employee: {
@@ -1062,7 +1094,7 @@ export const SkillServiceLive = Layer.effect(
 			// ----------------------------------------
 			validateEmployeeForShift: (employeeId, shiftData) =>
 				Effect.gen(function* (_) {
-					const now = new Date();
+					const expiryBoundary = getQualificationExpiryBoundary();
 
 					// Get employee's current valid skills
 					const employeeSkills = yield* _(
@@ -1070,7 +1102,7 @@ export const SkillServiceLive = Layer.effect(
 							return await dbService.db.query.employeeSkill.findMany({
 								where: and(
 									eq(employeeSkill.employeeId, employeeId),
-									or(isNull(employeeSkill.expiresAt), gt(employeeSkill.expiresAt, now)),
+									or(isNull(employeeSkill.expiresAt), gte(employeeSkill.expiresAt, expiryBoundary)),
 								),
 								with: {
 									skill: true,
@@ -1085,7 +1117,7 @@ export const SkillServiceLive = Layer.effect(
 							return await dbService.db.query.employeeSkill.findMany({
 								where: and(
 									eq(employeeSkill.employeeId, employeeId),
-									lte(employeeSkill.expiresAt, now),
+									lt(employeeSkill.expiresAt, expiryBoundary),
 								),
 								with: {
 									skill: true,
@@ -1169,7 +1201,7 @@ export const SkillServiceLive = Layer.effect(
 
 			validateEmployeeForSubarea: (employeeId, subareaId) =>
 				Effect.gen(function* (_) {
-					const now = new Date();
+					const expiryBoundary = getQualificationExpiryBoundary();
 
 					// Get employee's current valid skills
 					const validEmployeeSkills = yield* _(
@@ -1177,7 +1209,7 @@ export const SkillServiceLive = Layer.effect(
 							return await dbService.db.query.employeeSkill.findMany({
 								where: and(
 									eq(employeeSkill.employeeId, employeeId),
-									or(isNull(employeeSkill.expiresAt), gt(employeeSkill.expiresAt, now)),
+									or(isNull(employeeSkill.expiresAt), gte(employeeSkill.expiresAt, expiryBoundary)),
 								),
 								with: { skill: true },
 							});
@@ -1190,7 +1222,7 @@ export const SkillServiceLive = Layer.effect(
 							return await dbService.db.query.employeeSkill.findMany({
 								where: and(
 									eq(employeeSkill.employeeId, employeeId),
-									lte(employeeSkill.expiresAt, now),
+									lt(employeeSkill.expiresAt, expiryBoundary),
 								),
 								with: { skill: true },
 							});
