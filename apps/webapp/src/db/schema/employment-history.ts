@@ -46,10 +46,7 @@ export const employeeEmploymentHistory = pgTable(
 	(table) => [
 		index("employeeEmploymentHistory_employeeId_idx").on(table.employeeId),
 		index("employeeEmploymentHistory_organizationId_idx").on(table.organizationId),
-		index("employeeEmploymentHistory_employee_validFrom_idx").on(
-			table.employeeId,
-			table.validFrom,
-		),
+		index("employeeEmploymentHistory_employee_validFrom_idx").on(table.employeeId, table.validFrom),
 		index("employeeEmploymentHistory_employee_reviewState_idx").on(
 			table.employeeId,
 			table.reviewState,

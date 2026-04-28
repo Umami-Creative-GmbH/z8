@@ -39,10 +39,11 @@ export const timeRecordAllocationKindEnum = pgEnum("time_record_allocation_kind"
 	"project",
 	"cost_center",
 ]);
-export const timeRecordApprovalDecisionActionEnum = pgEnum(
-	"time_record_approval_decision_action",
-	["submitted", "approved", "rejected"],
-);
+export const timeRecordApprovalDecisionActionEnum = pgEnum("time_record_approval_decision_action", [
+	"submitted",
+	"approved",
+	"rejected",
+]);
 export const holidayCategoryEnum = pgEnum("holiday_category_type", [
 	"public_holiday",
 	"company_holiday",
@@ -202,16 +203,9 @@ export const workLocationTypeEnum = pgEnum("work_location_type", [
 	"other",
 ]);
 
-export const presenceModeEnum = pgEnum("presence_mode", [
-	"minimum_count",
-	"fixed_days",
-]);
+export const presenceModeEnum = pgEnum("presence_mode", ["minimum_count", "fixed_days"]);
 
-export const presenceEnforcementEnum = pgEnum("presence_enforcement", [
-	"block",
-	"warn",
-	"none",
-]);
+export const presenceEnforcementEnum = pgEnum("presence_enforcement", ["block", "warn", "none"]);
 
 export const presenceEvaluationPeriodEnum = pgEnum("presence_evaluation_period", [
 	"weekly",
@@ -367,4 +361,3 @@ export const skillCategoryEnum = pgEnum("skill_category", [
 	"language", // Language proficiency
 	"custom", // Custom category (uses customCategoryName field)
 ]);
-
