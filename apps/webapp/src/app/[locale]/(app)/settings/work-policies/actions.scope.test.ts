@@ -51,6 +51,10 @@ vi.mock("drizzle-orm", () => ({
 	isNull: vi.fn((value: unknown) => ({ isNull: value })),
 	lte: vi.fn((left: unknown, right: unknown) => ({ lte: [left, right] })),
 	or: vi.fn((...args: unknown[]) => ({ or: args })),
+	sql: vi.fn((strings: TemplateStringsArray, ...values: unknown[]) => ({
+		sql: Array.from(strings),
+		values,
+	})),
 }));
 
 vi.mock("@/db/schema", () => ({
@@ -469,12 +473,12 @@ describe("work policy settings scope actions", () => {
 		expect(conflictingIds).toMatchObject({ success: false, code: "ValidationError" });
 	});
 
-	it("looks up effective employee assignments using date predicates and newest effective assignment first", async () => {
+	it("looks up effective assignments using date predicates and null effective dates as fallback", async () => {
 		mockState.employeeQueue = [
 			{
 				id: "employee-1",
 				organizationId: "org-1",
-				teamId: null,
+				teamId: "team-1",
 				team: null,
 			},
 		];
@@ -482,17 +486,18 @@ describe("work policy settings scope actions", () => {
 		const result = await getEmployeeEffectiveScheduleDetails("employee-1");
 
 		expect(result).toEqual({ success: true, data: null });
-		expect(mockState.assignmentFindFirstArgs.length).toBeGreaterThanOrEqual(1);
-		const employeeLookup = mockState.assignmentFindFirstArgs[0];
-		expect(JSON.stringify(employeeLookup.where)).toContain("effectiveFrom");
-		expect(JSON.stringify(employeeLookup.where)).toContain("effectiveUntil");
-		expect(employeeLookup.orderBy).toBeDefined();
-		expect(
-			employeeLookup.orderBy(
-				{ effectiveFrom: "effectiveFrom", createdAt: "createdAt" },
-				{ desc: (value: unknown) => `desc:${String(value)}` },
-			),
-		).toEqual(["desc:effectiveFrom", "desc:createdAt"]);
+		expect(mockState.assignmentFindFirstArgs).toHaveLength(3);
+		for (const assignmentLookup of mockState.assignmentFindFirstArgs) {
+			expect(JSON.stringify(assignmentLookup.where)).toContain("effectiveFrom");
+			expect(JSON.stringify(assignmentLookup.where)).toContain("effectiveUntil");
+			expect(assignmentLookup.orderBy).toBeDefined();
+			expect(
+				assignmentLookup.orderBy(
+					{ effectiveFrom: "effectiveFrom", createdAt: "createdAt" },
+					{ desc: (value: unknown) => `desc:${String(value)}` },
+				),
+			).toEqual([{ sql: ["", " DESC NULLS LAST"], values: ["effectiveFrom"] }, "desc:createdAt"]);
+		}
 	});
 
 	it("rejects managers from hidden compliance actions", async () => {

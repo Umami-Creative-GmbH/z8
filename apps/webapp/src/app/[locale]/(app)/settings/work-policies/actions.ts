@@ -1,6 +1,6 @@
 "use server";
 
-import { and, desc, eq, gte, isNull, lte, or } from "drizzle-orm";
+import { and, desc, eq, gte, isNull, lte, or, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import {
 	employee,
@@ -1474,6 +1474,13 @@ export interface EmployeeScheduleDetails {
 	days?: ScheduleDayDetail[];
 }
 
+export function getEffectiveAssignmentOrder(
+	assignment: { effectiveFrom: unknown; createdAt: unknown },
+	{ desc }: { desc: (value: unknown) => unknown },
+) {
+	return [sql`${assignment.effectiveFrom} DESC NULLS LAST`, desc(assignment.createdAt)];
+}
+
 export async function getEmployeeEffectiveScheduleDetails(
 	employeeId: string,
 ): Promise<ServerActionResult<EmployeeScheduleDetails | null>> {
@@ -1516,10 +1523,7 @@ export async function getEmployeeEffectiveScheduleDetails(
 							gte(workPolicyAssignment.effectiveUntil, now),
 						),
 					),
-					orderBy: (assignment, { desc }) => [
-						desc(assignment.effectiveFrom),
-						desc(assignment.createdAt),
-					],
+					orderBy: getEffectiveAssignmentOrder,
 					with: {
 						policy: {
 							with: {
@@ -1571,10 +1575,7 @@ export async function getEmployeeEffectiveScheduleDetails(
 								gte(workPolicyAssignment.effectiveUntil, now),
 							),
 						),
-						orderBy: (assignment, { desc }) => [
-							desc(assignment.effectiveFrom),
-							desc(assignment.createdAt),
-						],
+						orderBy: getEffectiveAssignmentOrder,
 						with: {
 							policy: {
 								with: {
@@ -1627,10 +1628,7 @@ export async function getEmployeeEffectiveScheduleDetails(
 							gte(workPolicyAssignment.effectiveUntil, now),
 						),
 					),
-					orderBy: (assignment, { desc }) => [
-						desc(assignment.effectiveFrom),
-						desc(assignment.createdAt),
-					],
+					orderBy: getEffectiveAssignmentOrder,
 					with: {
 						policy: {
 							with: {
