@@ -3,7 +3,9 @@
 import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
+import { type ChangeEvent, useState } from "react";
 import { toast } from "sonner";
 
 import { submitMyQualificationRenewal } from "@/app/[locale]/(app)/my-qualifications/actions";
@@ -19,6 +21,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useQualificationEvidenceFileUpload } from "@/hooks/use-qualification-evidence-file-upload";
 import type { EmployeeSkillWithDetails } from "@/lib/effect/services/skill.service";
 import { queryKeys } from "@/lib/query/keys";
 
@@ -29,7 +32,6 @@ interface RenewalSubmissionDialogProps {
 }
 
 interface RenewalSubmissionFormValues {
-	evidenceIds: string;
 	requestedIssuedAt: string;
 	requestedExpiresAt: string;
 	requestedIssuer: string;
@@ -42,23 +44,46 @@ export function RenewalSubmissionDialog({
 	open,
 	onOpenChange,
 }: RenewalSubmissionDialogProps) {
+	const { t } = useTranslate();
 	const queryClient = useQueryClient();
+	const [uploadedEvidence, setUploadedEvidence] = useState<Array<{ id: string; fileName: string }>>(
+		[],
+	);
+	const [evidenceError, setEvidenceError] = useState<string | null>(null);
+	const evidenceRequiredMessage = t(
+		"qualifications.renewalEvidenceRequired",
+		"Upload at least one evidence file before submitting.",
+	);
+
+	const evidenceUpload = useQualificationEvidenceFileUpload({
+		employeeSkillId: qualification?.id ?? null,
+		onSuccess: (evidence) => {
+			setUploadedEvidence((current) => [
+				...current.filter((item) => item.id !== evidence.id),
+				{ id: evidence.id, fileName: evidence.fileName },
+			]);
+			setEvidenceError(null);
+			toast.success(t("qualifications.evidenceUploaded", "Evidence file uploaded"));
+		},
+		onError: (error) => {
+			toast.error(
+				error.message || t("qualifications.evidenceUploadFailed", "Evidence upload failed"),
+			);
+		},
+	});
 
 	const submitMutation = useMutation({
 		mutationFn: async (data: RenewalSubmissionFormValues) => {
-			if (!qualification) throw new Error("Qualification is required");
+			if (!qualification) {
+				throw new Error(t("qualifications.qualificationRequired", "Qualification is required"));
+			}
 			const requestedIssuer = data.requestedIssuer.trim();
 			const requestedCertificateNumber = data.requestedCertificateNumber.trim();
 			const notes = data.notes.trim();
 
-			const evidenceIds = data.evidenceIds.split(",").flatMap((id) => {
-				const trimmed = id.trim();
-				return trimmed ? [trimmed] : [];
-			});
-
 			const result = await submitMyQualificationRenewal({
 				employeeSkillId: qualification.id,
-				evidenceIds,
+				evidenceIds: uploadedEvidence.map((evidence) => evidence.id),
 				requestedIssuedAt: data.requestedIssuedAt
 					? DateTime.fromISO(data.requestedIssuedAt, { zone: "utc" }).toJSDate()
 					: undefined,
@@ -75,17 +100,19 @@ export function RenewalSubmissionDialog({
 		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: queryKeys.qualifications.my() });
-			toast.success("Renewal evidence submitted");
+			toast.success(t("qualifications.renewalSubmitted", "Renewal evidence submitted"));
 			closeDialog();
 		},
 		onError: (error) => {
-			toast.error(error.message || "Failed to submit renewal evidence");
+			toast.error(
+				error.message ||
+					t("qualifications.renewalSubmissionFailed", "Failed to submit renewal evidence"),
+			);
 		},
 	});
 
 	const form = useForm({
 		defaultValues: {
-			evidenceIds: "",
 			requestedIssuedAt: "",
 			requestedExpiresAt: "",
 			requestedIssuer: "",
@@ -94,29 +121,61 @@ export function RenewalSubmissionDialog({
 		} satisfies RenewalSubmissionFormValues,
 		onSubmit: async ({ value }) => {
 			if (!qualification) return;
+			if (uploadedEvidence.length === 0) {
+				setEvidenceError(evidenceRequiredMessage);
+				return;
+			}
+
 			await submitMutation.mutateAsync(value);
 		},
 	});
 
 	const handleOpenChange = (newOpen: boolean) => {
-		if (!newOpen) form.reset();
+		if (!newOpen) resetDialogState();
 		onOpenChange(newOpen);
 	};
 
 	const closeDialog = () => {
-		form.reset();
+		resetDialogState();
 		onOpenChange(false);
 	};
+
+	const resetDialogState = () => {
+		form.reset();
+		setUploadedEvidence([]);
+		setEvidenceError(null);
+		evidenceUpload.reset();
+	};
+
+	const handleEvidenceFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+		const file = event.target.files?.[0];
+		if (!file) return;
+
+		setEvidenceError(null);
+		evidenceUpload.addFile(file);
+		event.target.value = "";
+	};
+
+	const isUploadingEvidence = evidenceUpload.isUploading || evidenceUpload.isProcessing;
 
 	return (
 		<Dialog open={open} onOpenChange={handleOpenChange}>
 			<DialogContent className="sm:max-w-[480px]">
 				<DialogHeader>
-					<DialogTitle>Submit renewal evidence</DialogTitle>
+					<DialogTitle>
+						{t("qualifications.submitRenewalEvidence", "Submit renewal evidence")}
+					</DialogTitle>
 					<DialogDescription>
 						{qualification
-							? `Provide renewal evidence for ${qualification.skill.name}.`
-							: "Provide renewal evidence for this qualification."}
+							? t(
+									"qualifications.renewalDescriptionForSkill",
+									"Provide renewal evidence for {{skillName}}.",
+									{ skillName: qualification.skill.name },
+								)
+							: t(
+									"qualifications.renewalDescription",
+									"Provide renewal evidence for this qualification.",
+								)}
 					</DialogDescription>
 				</DialogHeader>
 
@@ -127,55 +186,70 @@ export function RenewalSubmissionDialog({
 					}}
 				>
 					<div className="grid gap-4 py-4">
-						<form.Field
-							name="evidenceIds"
-							validators={{
-								onSubmit: ({ value }) =>
-									value
-										.split(",")
-										.map((id) => id.trim())
-										.some(Boolean)
-										? undefined
-										: "At least one evidence ID is required",
-							}}
-						>
-							{(field) => (
-								<div className="grid gap-2">
-									<Label htmlFor="renewal-evidence-ids">Evidence IDs</Label>
-									<Input
-										id="renewal-evidence-ids"
-										name="evidenceIds"
-										autoComplete="off"
-										spellCheck={false}
-										value={field.state.value}
-										onChange={(event) => field.handleChange(event.target.value)}
-										onBlur={field.handleBlur}
-										placeholder="evidence-id-1, evidence-id-2…"
-									/>
-									<p className="text-xs text-muted-foreground">
-										Separate multiple evidence IDs with commas.
-									</p>
-									{field.state.meta.errors.length > 0 && (
-										<p className="text-sm text-destructive" aria-live="polite">
-											{field.state.meta.errors[0]}
-										</p>
-									)}
-								</div>
-							)}
-						</form.Field>
+						<div className="grid gap-2">
+							<Label htmlFor="renewal-evidence-file">
+								{t("qualifications.uploadEvidenceFile", "Upload evidence file")}
+							</Label>
+							<Input
+								id="renewal-evidence-file"
+								name="evidenceFile"
+								type="file"
+								autoComplete="off"
+								accept="application/pdf,image/jpeg,image/png,image/webp"
+								disabled={!qualification || isUploadingEvidence || submitMutation.isPending}
+								onChange={handleEvidenceFileChange}
+							/>
+							<p className="text-xs text-muted-foreground">
+								{t(
+									"qualifications.evidenceUploadHelp",
+									"Upload a PDF or image of your renewed certificate, license, or training record.",
+								)}
+							</p>
+							{isUploadingEvidence ? (
+								<p className="text-xs text-muted-foreground" aria-live="polite">
+									{t("qualifications.uploadingEvidence", "Uploading evidence…")}
+									{evidenceUpload.progress > 0 ? ` ${evidenceUpload.progress}%` : null}
+								</p>
+							) : null}
+							{uploadedEvidence.length > 0 ? (
+								<ul
+									className="space-y-1 text-sm"
+									aria-label={t("qualifications.uploadedEvidence", "Uploaded evidence")}
+								>
+									{uploadedEvidence.map((evidence) => (
+										<li
+											key={evidence.id}
+											className="break-words rounded-md border bg-muted/40 px-3 py-2"
+										>
+											{evidence.fileName}
+										</li>
+									))}
+								</ul>
+							) : null}
+							{evidenceError ? (
+								<p className="text-sm text-destructive" aria-live="polite">
+									{evidenceError}
+								</p>
+							) : null}
+						</div>
 
 						<form.Field
 							name="requestedExpiresAt"
 							validators={{
 								onSubmit: ({ value }) =>
 									qualification?.skill.requiresExpiry && !value
-										? "New expiry date is required for this qualification"
+										? t(
+												"qualifications.expiryRequired",
+												"New expiry date is required for this qualification",
+											)
 										: undefined,
 							}}
 						>
 							{(field) => (
 								<div className="grid gap-2">
-									<Label htmlFor="renewal-new-expiry">New expiry date</Label>
+									<Label htmlFor="renewal-new-expiry">
+										{t("qualifications.newExpiryDate", "New expiry date")}
+									</Label>
 									<Input
 										id="renewal-new-expiry"
 										name="requestedExpiresAt"
@@ -198,7 +272,9 @@ export function RenewalSubmissionDialog({
 						<form.Field name="requestedIssuedAt">
 							{(field) => (
 								<div className="grid gap-2">
-									<Label htmlFor="renewal-issue-date">Issue date</Label>
+									<Label htmlFor="renewal-issue-date">
+										{t("qualifications.issueDate", "Issue date")}
+									</Label>
 									<Input
 										id="renewal-issue-date"
 										name="requestedIssuedAt"
@@ -215,7 +291,7 @@ export function RenewalSubmissionDialog({
 						<form.Field name="requestedIssuer">
 							{(field) => (
 								<div className="grid gap-2">
-									<Label htmlFor="renewal-issuer">Issuer</Label>
+									<Label htmlFor="renewal-issuer">{t("qualifications.issuer", "Issuer")}</Label>
 									<Input
 										id="renewal-issuer"
 										name="requestedIssuer"
@@ -223,7 +299,7 @@ export function RenewalSubmissionDialog({
 										value={field.state.value}
 										onChange={(event) => field.handleChange(event.target.value)}
 										onBlur={field.handleBlur}
-										placeholder="e.g., Safety Council…"
+										placeholder={t("qualifications.issuerPlaceholder", "e.g., Safety Council…")}
 									/>
 								</div>
 							)}
@@ -232,7 +308,9 @@ export function RenewalSubmissionDialog({
 						<form.Field name="requestedCertificateNumber">
 							{(field) => (
 								<div className="grid gap-2">
-									<Label htmlFor="renewal-certificate-number">Certificate number</Label>
+									<Label htmlFor="renewal-certificate-number">
+										{t("qualifications.certificateNumber", "Certificate number")}
+									</Label>
 									<Input
 										id="renewal-certificate-number"
 										name="requestedCertificateNumber"
@@ -241,7 +319,7 @@ export function RenewalSubmissionDialog({
 										value={field.state.value}
 										onChange={(event) => field.handleChange(event.target.value)}
 										onBlur={field.handleBlur}
-										placeholder="e.g., CERT-12345…"
+										placeholder={t("qualifications.certificatePlaceholder", "e.g., CERT-12345…")}
 									/>
 								</div>
 							)}
@@ -250,7 +328,7 @@ export function RenewalSubmissionDialog({
 						<form.Field name="notes">
 							{(field) => (
 								<div className="grid gap-2">
-									<Label htmlFor="renewal-notes">Notes</Label>
+									<Label htmlFor="renewal-notes">{t("qualifications.notes", "Notes")}</Label>
 									<Textarea
 										id="renewal-notes"
 										name="notes"
@@ -258,7 +336,7 @@ export function RenewalSubmissionDialog({
 										value={field.state.value}
 										onChange={(event) => field.handleChange(event.target.value)}
 										onBlur={field.handleBlur}
-										placeholder="Add context for reviewers…"
+										placeholder={t("qualifications.notesPlaceholder", "Add context for reviewers…")}
 										rows={3}
 									/>
 								</div>
@@ -271,15 +349,20 @@ export function RenewalSubmissionDialog({
 							type="button"
 							variant="outline"
 							onClick={closeDialog}
-							disabled={submitMutation.isPending}
+							disabled={submitMutation.isPending || isUploadingEvidence}
 						>
-							Cancel
+							{t("common.cancel", "Cancel")}
 						</Button>
-						<Button type="submit" disabled={submitMutation.isPending || !qualification}>
+						<Button
+							type="submit"
+							disabled={submitMutation.isPending || isUploadingEvidence || !qualification}
+						>
 							{submitMutation.isPending && (
 								<IconLoader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
 							)}
-							{submitMutation.isPending ? "Submitting renewal…" : "Submit renewal"}
+							{submitMutation.isPending
+								? t("qualifications.submittingRenewal", "Submitting renewal…")
+								: t("qualifications.submitRenewal", "Submit renewal")}
 						</Button>
 					</DialogFooter>
 				</form>

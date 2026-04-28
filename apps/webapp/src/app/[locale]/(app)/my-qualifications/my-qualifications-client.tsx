@@ -21,7 +21,9 @@ export function MyQualificationsClient({ qualifications }: MyQualificationsClien
 		<div className="flex flex-1 flex-col gap-4 p-4">
 			<Card>
 				<CardHeader>
-					<CardTitle>{t("myQualifications.title", "My Qualifications")}</CardTitle>
+					<CardTitle>
+						<h1>{t("myQualifications.title", "My Qualifications")}</h1>
+					</CardTitle>
 					<CardDescription>
 						{t(
 							"myQualifications.description",

@@ -7,9 +7,12 @@ import { useState } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { RenewalSubmissionDialog } from "./renewal-submission-dialog";
 
-const { submitMyQualificationRenewalMock } = vi.hoisted(() => ({
-	submitMyQualificationRenewalMock: vi.fn(),
-}));
+const { submitMyQualificationRenewalMock, useQualificationEvidenceFileUploadMock } = vi.hoisted(
+	() => ({
+		submitMyQualificationRenewalMock: vi.fn(),
+		useQualificationEvidenceFileUploadMock: vi.fn(),
+	}),
+);
 
 const qualification = {
 	id: "employee-skill-1",
@@ -45,6 +48,22 @@ const qualification = {
 };
 
 vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
+
+vi.mock("@tolgee/react", () => ({
+	useTranslate: () => ({
+		t: (_key: string, fallback: string, params?: Record<string, string>) => {
+			if (!params) return fallback;
+			return Object.entries(params).reduce(
+				(text, [key, value]) => text.replace(`{{${key}}}`, value),
+				fallback,
+			);
+		},
+	}),
+}));
+
+vi.mock("@/hooks/use-qualification-evidence-file-upload", () => ({
+	useQualificationEvidenceFileUpload: useQualificationEvidenceFileUploadMock,
+}));
 
 vi.mock("@/app/[locale]/(app)/my-qualifications/actions", () => ({
 	submitMyQualificationRenewal: submitMyQualificationRenewalMock,
@@ -84,18 +103,30 @@ describe("RenewalSubmissionDialog", () => {
 			success: true,
 			data: { id: "request-1" },
 		});
+		useQualificationEvidenceFileUploadMock.mockImplementation(
+			({ onSuccess }: { onSuccess?: (evidence: { id: string; fileName: string }) => void }) => ({
+				addFile: (file: File) => onSuccess?.({ id: "evidence-1", fileName: file.name }),
+				progress: 0,
+				isUploading: false,
+				isProcessing: false,
+				reset: vi.fn(),
+			}),
+		);
 	});
 
-	it("submits comma-separated evidence IDs with renewal details", async () => {
+	it("uploads qualification evidence and submits returned evidence IDs with renewal details", async () => {
 		const onOpenChange = vi.fn();
 
 		renderWithQueryClient(
 			<RenewalSubmissionDialog qualification={qualification} open onOpenChange={onOpenChange} />,
 		);
 
-		fireEvent.change(screen.getByLabelText("Evidence IDs"), {
-			target: { value: "evidence-1, evidence-2" },
+		fireEvent.change(screen.getByLabelText("Upload evidence file"), {
+			target: {
+				files: [new File(["certificate"], "forklift-license.pdf", { type: "application/pdf" })],
+			},
 		});
+		expect(await screen.findByText("forklift-license.pdf")).toBeTruthy();
 		fireEvent.change(screen.getByLabelText("New expiry date"), {
 			target: { value: "2027-01-15" },
 		});
@@ -116,7 +147,7 @@ describe("RenewalSubmissionDialog", () => {
 		await waitFor(() => {
 			expect(submitMyQualificationRenewalMock).toHaveBeenCalledWith({
 				employeeSkillId: "employee-skill-1",
-				evidenceIds: ["evidence-1", "evidence-2"],
+				evidenceIds: ["evidence-1"],
 				requestedExpiresAt: new Date("2027-01-15T00:00:00.000Z"),
 				requestedIssuedAt: new Date("2026-12-15T00:00:00.000Z"),
 				requestedIssuer: "Safety Council",
@@ -133,8 +164,10 @@ describe("RenewalSubmissionDialog", () => {
 			<RenewalSubmissionDialog qualification={qualification} open onOpenChange={vi.fn()} />,
 		);
 
-		fireEvent.change(screen.getByLabelText("Evidence IDs"), {
-			target: { value: "evidence-1" },
+		fireEvent.change(screen.getByLabelText("Upload evidence file"), {
+			target: {
+				files: [new File(["certificate"], "forklift-license.pdf", { type: "application/pdf" })],
+			},
 		});
 		fireEvent.change(screen.getByLabelText("New expiry date"), {
 			target: { value: "2027-01-15" },
@@ -161,7 +194,7 @@ describe("RenewalSubmissionDialog", () => {
 		});
 	});
 
-	it("requires at least one evidence ID before submission", async () => {
+	it("requires at least one uploaded evidence file before submission", async () => {
 		renderWithQueryClient(
 			<RenewalSubmissionDialog qualification={qualification} open onOpenChange={vi.fn()} />,
 		);
@@ -171,7 +204,9 @@ describe("RenewalSubmissionDialog", () => {
 		});
 		fireEvent.click(screen.getByRole("button", { name: "Submit renewal" }));
 
-		expect(await screen.findByText("At least one evidence ID is required")).toBeTruthy();
+		expect(
+			await screen.findByText("Upload at least one evidence file before submitting."),
+		).toBeTruthy();
 		expect(submitMyQualificationRenewalMock).not.toHaveBeenCalled();
 	});
 
@@ -180,8 +215,10 @@ describe("RenewalSubmissionDialog", () => {
 			<RenewalSubmissionDialog qualification={qualification} open onOpenChange={vi.fn()} />,
 		);
 
-		fireEvent.change(screen.getByLabelText("Evidence IDs"), {
-			target: { value: "evidence-1" },
+		fireEvent.change(screen.getByLabelText("Upload evidence file"), {
+			target: {
+				files: [new File(["certificate"], "forklift-license.pdf", { type: "application/pdf" })],
+			},
 		});
 		fireEvent.click(screen.getByRole("button", { name: "Submit renewal" }));
 
@@ -198,8 +235,10 @@ describe("RenewalSubmissionDialog", () => {
 			<RenewalSubmissionDialog qualification={qualification} open onOpenChange={vi.fn()} />,
 		);
 
-		fireEvent.change(screen.getByLabelText("Evidence IDs"), {
-			target: { value: "evidence-1" },
+		fireEvent.change(screen.getByLabelText("Upload evidence file"), {
+			target: {
+				files: [new File(["certificate"], "forklift-license.pdf", { type: "application/pdf" })],
+			},
 		});
 		fireEvent.change(screen.getByLabelText("New expiry date"), {
 			target: { value: "2027-01-15" },
@@ -215,8 +254,10 @@ describe("RenewalSubmissionDialog", () => {
 		render(<RenewalDialogHarness />);
 
 		fireEvent.click(screen.getByRole("button", { name: "Open renewal" }));
-		fireEvent.change(screen.getByLabelText("Evidence IDs"), {
-			target: { value: "evidence-1" },
+		fireEvent.change(screen.getByLabelText("Upload evidence file"), {
+			target: {
+				files: [new File(["certificate"], "forklift-license.pdf", { type: "application/pdf" })],
+			},
 		});
 		fireEvent.change(screen.getByLabelText("New expiry date"), {
 			target: { value: "2027-01-15" },
@@ -237,7 +278,7 @@ describe("RenewalSubmissionDialog", () => {
 
 		fireEvent.click(screen.getByRole("button", { name: "Open renewal" }));
 
-		expect((screen.getByLabelText("Evidence IDs") as HTMLInputElement).value).toBe("");
+		expect(screen.queryByText("forklift-license.pdf")).toBeNull();
 		expect((screen.getByLabelText("New expiry date") as HTMLInputElement).value).toBe("");
 		expect((screen.getByLabelText("Issue date") as HTMLInputElement).value).toBe("");
 		expect((screen.getByLabelText("Issuer") as HTMLInputElement).value).toBe("");

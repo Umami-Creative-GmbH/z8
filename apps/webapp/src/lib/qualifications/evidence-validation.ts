@@ -1,14 +1,20 @@
 export const MAX_QUALIFICATION_EVIDENCE_BYTES = 10 * 1024 * 1024;
 
-const ALLOWED_QUALIFICATION_EVIDENCE_MIME_TYPES = new Set([
+export const ALLOWED_QUALIFICATION_EVIDENCE_MIME_TYPES = [
 	"application/pdf",
 	"image/jpeg",
 	"image/png",
 	"image/webp",
-]);
+] as const;
+
+const ALLOWED_QUALIFICATION_EVIDENCE_MIME_TYPE_SET = new Set(
+	ALLOWED_QUALIFICATION_EVIDENCE_MIME_TYPES,
+);
 
 export function isAllowedQualificationEvidenceMime(mimeType: string): boolean {
-	return ALLOWED_QUALIFICATION_EVIDENCE_MIME_TYPES.has(mimeType);
+	return ALLOWED_QUALIFICATION_EVIDENCE_MIME_TYPE_SET.has(
+		mimeType as (typeof ALLOWED_QUALIFICATION_EVIDENCE_MIME_TYPES)[number],
+	);
 }
 
 export function sanitizeQualificationEvidenceFileName(fileName: string): string {

@@ -62,6 +62,7 @@ describe("MyQualificationsClient", () => {
 	it("renders employee qualifications", () => {
 		renderWithQueryClient(<MyQualificationsClient qualifications={[qualification]} />);
 
+		expect(screen.getByRole("heading", { level: 1, name: "My Qualifications" })).toBeTruthy();
 		expect(screen.getByText("My Qualifications")).toBeTruthy();
 		expect(screen.getByText("Forklift License")).toBeTruthy();
 	});
