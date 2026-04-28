@@ -5,15 +5,19 @@ import { Settings } from "luxon";
 import { describe, expect, it, vi } from "vitest";
 import { EmployeeQualificationList } from "./employee-qualification-list";
 
+const { translateMock } = vi.hoisted(() => ({
+	translateMock: vi.fn((_key: string, fallback: string, params?: Record<string, string>) => {
+		if (!params) return fallback;
+		return Object.entries(params).reduce(
+			(text, [key, value]) => text.replace(`{{${key}}}`, value),
+			fallback,
+		);
+	}),
+}));
+
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
-		t: (_key: string, fallback: string, params?: Record<string, string>) => {
-			if (!params) return fallback;
-			return Object.entries(params).reduce(
-				(text, [key, value]) => text.replace(`{{${key}}}`, value),
-				fallback,
-			);
-		},
+		t: translateMock,
 	}),
 }));
 
@@ -63,6 +67,15 @@ describe("EmployeeQualificationList", () => {
 
 		fireEvent.click(screen.getByRole("button", { name: "Submit renewal evidence" }));
 		expect(onRenew).toHaveBeenCalledWith(qualification);
+		expect(translateMock).toHaveBeenCalledWith(
+			"qualifications.listAriaLabel",
+			"Employee qualifications",
+		);
+		expect(translateMock).toHaveBeenCalledWith("qualifications.status.valid", "Valid");
+		expect(translateMock).toHaveBeenCalledWith(
+			"qualifications.submitRenewalEvidence",
+			"Submit renewal evidence",
+		);
 	});
 
 	it("renders UTC date-only metadata without local timezone drift", () => {

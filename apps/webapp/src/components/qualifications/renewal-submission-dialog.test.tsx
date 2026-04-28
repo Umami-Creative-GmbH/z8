@@ -7,12 +7,15 @@ import { useState } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { RenewalSubmissionDialog } from "./renewal-submission-dialog";
 
-const { submitMyQualificationRenewalMock, useQualificationEvidenceFileUploadMock } = vi.hoisted(
-	() => ({
-		submitMyQualificationRenewalMock: vi.fn(),
-		useQualificationEvidenceFileUploadMock: vi.fn(),
-	}),
-);
+const {
+	routerRefreshMock,
+	submitMyQualificationRenewalMock,
+	useQualificationEvidenceFileUploadMock,
+} = vi.hoisted(() => ({
+	routerRefreshMock: vi.fn(),
+	submitMyQualificationRenewalMock: vi.fn(),
+	useQualificationEvidenceFileUploadMock: vi.fn(),
+}));
 
 const qualification = {
 	id: "employee-skill-1",
@@ -48,6 +51,10 @@ const qualification = {
 };
 
 vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
+
+vi.mock("next/navigation", () => ({
+	useRouter: () => ({ refresh: routerRefreshMock }),
+}));
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
@@ -157,6 +164,7 @@ describe("RenewalSubmissionDialog", () => {
 		});
 
 		expect(onOpenChange).toHaveBeenCalledWith(false);
+		expect(routerRefreshMock).toHaveBeenCalled();
 	});
 
 	it("trims renewal text metadata before submission", async () => {

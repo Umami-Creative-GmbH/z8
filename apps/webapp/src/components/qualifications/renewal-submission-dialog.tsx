@@ -5,6 +5,7 @@ import { useForm } from "@tanstack/react-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
+import { useRouter } from "next/navigation";
 import { type ChangeEvent, useState } from "react";
 import { toast } from "sonner";
 
@@ -45,6 +46,7 @@ export function RenewalSubmissionDialog({
 	onOpenChange,
 }: RenewalSubmissionDialogProps) {
 	const { t } = useTranslate();
+	const router = useRouter();
 	const queryClient = useQueryClient();
 	const [uploadedEvidence, setUploadedEvidence] = useState<Array<{ id: string; fileName: string }>>(
 		[],
@@ -100,6 +102,7 @@ export function RenewalSubmissionDialog({
 		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: queryKeys.qualifications.my() });
+			router.refresh();
 			toast.success(t("qualifications.renewalSubmitted", "Renewal evidence submitted"));
 			closeDialog();
 		},

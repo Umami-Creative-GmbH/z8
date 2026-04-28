@@ -13,10 +13,14 @@ interface EmployeeQualificationListProps {
 	onRenew?: (qualification: EmployeeSkillWithDetails) => void;
 }
 
-function getStatusLabel(status: ReturnType<typeof getQualificationStatus>) {
-	if (status === "expiringSoon") return "Expiring soon";
-	if (status === "expired") return "Expired";
-	return "Valid";
+type Translate = ReturnType<typeof useTranslate>["t"];
+
+function getStatusLabel(status: ReturnType<typeof getQualificationStatus>, t: Translate) {
+	if (status === "expiringSoon") {
+		return t("qualifications.status.expiringSoon", "Expiring soon");
+	}
+	if (status === "expired") return t("qualifications.status.expired", "Expired");
+	return t("qualifications.status.valid", "Valid");
 }
 
 export function EmployeeQualificationList({
@@ -34,12 +38,17 @@ export function EmployeeQualificationList({
 	}
 
 	return (
-		<div className="space-y-3" role="list" aria-label="Employee qualifications">
+		<div
+			className="space-y-3"
+			role="list"
+			aria-label={t("qualifications.listAriaLabel", "Employee qualifications")}
+		>
 			{qualifications.map((qualification) => {
 				const status = getQualificationStatus({
 					expiresAt: qualification.expiresAt,
 					warningDays: qualification.skill.expiryWarningDays ?? 30,
 				});
+				const statusLabel = getStatusLabel(status, t);
 
 				return (
 					<div key={qualification.id} className="rounded-lg border p-3" role="listitem">
@@ -83,8 +92,13 @@ export function EmployeeQualificationList({
 									</p>
 								) : null}
 							</div>
-							<Badge variant={status === "expired" ? "destructive" : "secondary"}>
-								{getStatusLabel(status)}
+							<Badge
+								variant={status === "expired" ? "destructive" : "secondary"}
+								aria-label={t("qualifications.statusAriaLabel", "Status: {{status}}", {
+									status: statusLabel,
+								})}
+							>
+								{statusLabel}
 							</Badge>
 						</div>
 						{onRenew ? (

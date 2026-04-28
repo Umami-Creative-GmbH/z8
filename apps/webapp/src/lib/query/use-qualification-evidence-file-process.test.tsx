@@ -65,4 +65,30 @@ describe("useQualificationEvidenceFileProcessMutation", () => {
 				?.isInvalidated,
 		).toBe(true);
 	});
+
+	it("does not retry failed upload processing requests", async () => {
+		const queryClient = new QueryClient({
+			defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+		});
+		const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+			new Response(JSON.stringify({ error: "Processing failed" }), {
+				status: 500,
+				headers: { "Content-Type": "application/json" },
+			}),
+		);
+
+		const { result } = renderHook(() => useQualificationEvidenceFileProcessMutation(), {
+			wrapper: createWrapper(queryClient),
+		});
+
+		await expect(
+			result.current.mutateAsync({
+				tusFileKey: "tmp-upload-key",
+				employeeSkillId: "employee-skill-1",
+				fileName: "forklift-license.pdf",
+			}),
+		).rejects.toThrow("Processing failed");
+
+		expect(fetchMock).toHaveBeenCalledTimes(1);
+	});
 });

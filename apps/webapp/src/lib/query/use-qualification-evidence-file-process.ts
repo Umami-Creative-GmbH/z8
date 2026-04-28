@@ -45,6 +45,6 @@ export function useQualificationEvidenceFileProcessMutation() {
 				queryKey: queryKeys.qualifications.evidence(variables.employeeSkillId),
 			});
 		},
-		retry: 1,
+		retry: false,
 	});
 }
