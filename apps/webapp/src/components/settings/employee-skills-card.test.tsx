@@ -1,6 +1,6 @@
 /* @vitest-environment jsdom */
 
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { EmployeeSkillsCard } from "./employee-skills-card";
 
@@ -33,6 +33,30 @@ const employeeSkill = {
 	},
 };
 
+const availableSkill = {
+	id: "skill-2",
+	organizationId: "org-1",
+	name: "Crane Operator",
+	description: null,
+	category: "equipment",
+	customCategoryName: null,
+	requiresExpiry: true,
+	expiryWarningDays: 30,
+	isActive: true,
+	createdAt: new Date("2026-01-01T00:00:00Z"),
+	updatedAt: new Date("2026-01-01T00:00:00Z"),
+	createdBy: "user-1",
+	updatedBy: null,
+};
+
+class ResizeObserverMock {
+	observe() {}
+	unobserve() {}
+	disconnect() {}
+}
+
+globalThis.ResizeObserver = ResizeObserverMock;
+
 vi.mock("@tanstack/react-query", async () => {
 	const actual =
 		await vi.importActual<typeof import("@tanstack/react-query")>("@tanstack/react-query");
@@ -64,7 +88,7 @@ vi.mock("@/app/[locale]/(app)/settings/skills/actions", () => ({
 
 vi.mock("@/lib/query/use-skills", () => ({
 	useEmployeeSkills: () => ({ data: [employeeSkill], isLoading: false }),
-	useOrganizationSkills: () => ({ data: [], isLoading: false }),
+	useOrganizationSkills: () => ({ data: [availableSkill], isLoading: false }),
 }));
 
 describe("EmployeeSkillsCard", () => {
@@ -81,5 +105,38 @@ describe("EmployeeSkillsCard", () => {
 		render(<EmployeeSkillsCard employeeId="employee-1" organizationId="org-1" canManageSkills />);
 
 		expect(screen.getByText("Expiring Soon")).toBeTruthy();
+	});
+
+	it("resets the assign form after canceling", () => {
+		render(<EmployeeSkillsCard employeeId="employee-1" organizationId="org-1" canManageSkills />);
+
+		fireEvent.click(screen.getByRole("button", { name: "Assign Skill" }));
+		fireEvent.click(screen.getByLabelText("Skill *"));
+		fireEvent.click(screen.getByRole("option", { name: /Crane Operator/ }));
+		fireEvent.change(screen.getByLabelText("Expiry Date *"), {
+			target: { value: "2027-01-15" },
+		});
+		fireEvent.change(screen.getByLabelText("Issue Date"), {
+			target: { value: "2026-01-15" },
+		});
+		fireEvent.change(screen.getByLabelText("Issuer"), {
+			target: { value: "Safety Council" },
+		});
+		fireEvent.change(screen.getByLabelText("Certificate Number"), {
+			target: { value: "CERT-12345" },
+		});
+		fireEvent.change(screen.getByLabelText("Notes"), {
+			target: { value: "Qualified for crane operations" },
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+
+		fireEvent.click(screen.getByRole("button", { name: "Assign Skill" }));
+
+		expect(screen.getByText("Select a skill")).toBeTruthy();
+		expect((screen.getByLabelText("Expiry Date") as HTMLInputElement).value).toBe("");
+		expect((screen.getByLabelText("Issue Date") as HTMLInputElement).value).toBe("");
+		expect((screen.getByLabelText("Issuer") as HTMLInputElement).value).toBe("");
+		expect((screen.getByLabelText("Certificate Number") as HTMLInputElement).value).toBe("");
+		expect((screen.getByLabelText("Notes") as HTMLTextAreaElement).value).toBe("");
 	});
 });

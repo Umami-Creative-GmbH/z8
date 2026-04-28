@@ -574,7 +574,7 @@ function AssignSkillDialog({
 						<Button
 							type="button"
 							variant="outline"
-							onClick={() => onOpenChange(false)}
+							onClick={() => handleOpenChange(false)}
 							disabled={assignMutation.isPending}
 						>
 							{t("common.cancel", "Cancel")}
