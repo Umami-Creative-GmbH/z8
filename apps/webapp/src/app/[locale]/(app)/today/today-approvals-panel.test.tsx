@@ -11,12 +11,18 @@ const { refreshMock, toastErrorMock, toastSuccessMock } = vi.hoisted(() => ({
 }));
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: refreshMock }) }));
+vi.mock("@/navigation", () => ({
+	Link: ({ children, href }: { children: React.ReactNode; href: string }) => (
+		<a href={href}>{children}</a>
+	),
+}));
 vi.mock("sonner", () => ({ toast: { success: toastSuccessMock, error: toastErrorMock } }));
 
 describe("TodayApprovalsPanel", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		global.fetch = vi.fn().mockResolvedValue({
+			ok: true,
 			json: async () => ({ success: true }),
 		}) as unknown as typeof fetch;
 	});
@@ -53,6 +59,7 @@ describe("TodayApprovalsPanel", () => {
 
 	it("keeps the row visible when approval fails", async () => {
 		global.fetch = vi.fn().mockResolvedValue({
+			ok: true,
 			json: async () => ({ success: false, error: "Cannot approve" }),
 		}) as unknown as typeof fetch;
 		render(<TodayApprovalsPanel items={[approvalItem()]} />);
@@ -66,6 +73,7 @@ describe("TodayApprovalsPanel", () => {
 
 	it("shows a generic error when the server omits error copy", async () => {
 		global.fetch = vi.fn().mockResolvedValue({
+			ok: true,
 			json: async () => ({ success: false }),
 		}) as unknown as typeof fetch;
 		render(<TodayApprovalsPanel items={[approvalItem()]} />);
@@ -76,6 +84,38 @@ describe("TodayApprovalsPanel", () => {
 			expect(toastErrorMock).toHaveBeenCalledWith("Unable to reject request");
 		});
 		expect(screen.getByText("Vacation request")).toBeTruthy();
+	});
+
+	it("does not refresh when the approval response is not ok", async () => {
+		global.fetch = vi.fn().mockResolvedValue({
+			ok: false,
+			json: async () => ({ success: true, error: "Forbidden" }),
+		}) as unknown as typeof fetch;
+		render(<TodayApprovalsPanel items={[approvalItem()]} />);
+
+		fireEvent.click(screen.getByRole("button", { name: /approve vacation request/i }));
+
+		await waitFor(() => {
+			expect(toastErrorMock).toHaveBeenCalledWith("Forbidden");
+		});
+		expect(screen.getByText("Vacation request")).toBeTruthy();
+		expect(refreshMock).not.toHaveBeenCalled();
+	});
+
+	it("does not refresh when the approval payload is malformed", async () => {
+		global.fetch = vi.fn().mockResolvedValue({
+			ok: true,
+			json: async () => ({ success: "false" }),
+		}) as unknown as typeof fetch;
+		render(<TodayApprovalsPanel items={[approvalItem()]} />);
+
+		fireEvent.click(screen.getByRole("button", { name: /approve vacation request/i }));
+
+		await waitFor(() => {
+			expect(toastErrorMock).toHaveBeenCalledWith("Unable to approve request");
+		});
+		expect(screen.getByText("Vacation request")).toBeTruthy();
+		expect(refreshMock).not.toHaveBeenCalled();
 	});
 
 	it("renders the empty state", () => {

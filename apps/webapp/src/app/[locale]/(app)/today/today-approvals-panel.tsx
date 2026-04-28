@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { startTransition, useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -8,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import type { BriefingApprovalActionItem } from "@/lib/manager-daily-briefing/types";
+import { Link } from "@/navigation";
 
 type TodayApprovalsPanelProps = {
 	items: BriefingApprovalActionItem[];
@@ -140,7 +140,29 @@ async function postApprovalDecision(
 			: {}),
 	});
 
-	return (await response.json()) as ApprovalDecisionResponse;
+	const payload: unknown = await response.json();
+	const parsed = parseApprovalDecisionResponse(payload);
+
+	if (!response.ok || !parsed.success) {
+		return { success: false, error: parsed.error };
+	}
+
+	return { success: true };
+}
+
+function parseApprovalDecisionResponse(payload: unknown): ApprovalDecisionResponse {
+	if (!isRecord(payload)) {
+		return { success: false };
+	}
+
+	return {
+		success: payload.success === true,
+		error: typeof payload.error === "string" ? payload.error : undefined,
+	};
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === "object" && value !== null;
 }
 
 function fallbackError(decision: ApprovalDecision) {
