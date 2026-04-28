@@ -35,4 +35,13 @@ describe("import review detection", () => {
 		expect(classifyTimeWindow({ startsAt: "not-a-date", endsAt: "2026-01-01T08:00:00.000Z" })).toContain("invalid_start");
 		expect(classifyTimeWindow({ startsAt: "2026-01-01T08:00:00.000Z", endsAt: "not-a-date" })).toContain("invalid_end");
 	});
+
+	it("classifies day boundaries in UTC for timestamps with explicit offsets", () => {
+		expect(
+			classifyTimeWindow({ startsAt: "2026-01-01T23:30:00-02:00", endsAt: "2026-01-02T00:30:00-02:00" }),
+		).not.toContain("crosses_day_boundary");
+		expect(
+			classifyTimeWindow({ startsAt: "2026-01-01T23:30:00+00:00", endsAt: "2026-01-02T00:30:00+00:00" }),
+		).toContain("crosses_day_boundary");
+	});
 });

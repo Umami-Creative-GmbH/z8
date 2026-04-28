@@ -29,8 +29,8 @@ export function detectMissingMapping(input: { entityType: ImportEntityType; prov
 
 export function classifyTimeWindow(input: { startsAt: string; endsAt: string | null }): string[] {
 	const flags: string[] = [];
-	const start = DateTime.fromISO(input.startsAt);
-	const end = input.endsAt ? DateTime.fromISO(input.endsAt) : null;
+	const start = DateTime.fromISO(input.startsAt, { zone: "utc" });
+	const end = input.endsAt ? DateTime.fromISO(input.endsAt, { zone: "utc" }) : null;
 	if (!start.isValid) flags.push("invalid_start");
 	if (!end) flags.push("missing_clock_out");
 	if (end && !end.isValid) flags.push("invalid_end");
