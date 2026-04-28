@@ -12,8 +12,7 @@ interface ImportReviewRouteProps {
 }
 
 export default async function ImportReviewRoute({ params }: ImportReviewRouteProps) {
-	await connection();
-	const { batchId } = await params;
+	const [, { batchId }] = await Promise.all([connection(), params]);
 	const batch = await db.query.importBatch.findFirst({
 		where: eq(importBatch.id, batchId),
 	});
