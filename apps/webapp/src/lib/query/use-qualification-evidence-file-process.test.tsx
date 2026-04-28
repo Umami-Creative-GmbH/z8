@@ -35,7 +35,6 @@ describe("useQualificationEvidenceFileProcessMutation", () => {
 						fileName: "forklift-license.pdf",
 						mimeType: "application/pdf",
 						fileSize: 1234,
-						fileKey: "qualification-evidence/file.pdf",
 					},
 				}),
 				{ status: 200, headers: { "Content-Type": "application/json" } },

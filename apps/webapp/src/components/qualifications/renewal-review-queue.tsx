@@ -146,7 +146,6 @@ export function RenewalReviewQueue({ organizationId }: RenewalReviewQueueProps) 
 			const result = await reviewQualificationRenewalRequest({
 				requestId,
 				approved,
-				reviewNotes: approved ? "Approved" : "Rejected",
 			});
 			if (!result.success) throw new Error(result.error);
 			return result.data;
@@ -161,7 +160,8 @@ export function RenewalReviewQueue({ organizationId }: RenewalReviewQueueProps) 
 			});
 			queryClient.invalidateQueries({ queryKey: queryKeys.skills.all });
 		},
-		onError: (error) => toast.error(error.message),
+		onError: (error) =>
+			toast.error(error.message || t("qualifications.renewalRequestReviewFailed", "Review failed")),
 	});
 
 	const requests = data ?? [];

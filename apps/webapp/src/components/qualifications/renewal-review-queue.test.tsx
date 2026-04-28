@@ -122,7 +122,6 @@ describe("RenewalReviewQueue", () => {
 			expect(reviewQualificationRenewalRequestMock).toHaveBeenCalledWith({
 				requestId: "renewal-request-1",
 				approved: true,
-				reviewNotes: "Approved",
 			});
 		});
 		expect(toastSuccessMock).toHaveBeenCalledWith("Renewal request reviewed");

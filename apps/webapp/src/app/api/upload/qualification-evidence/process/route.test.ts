@@ -99,16 +99,19 @@ describe("qualification evidence upload processing", () => {
 		);
 
 		expect(response.status).toBe(200);
-		expect(await response.json()).toMatchObject({
+		const body = await response.json();
+		expect(body).toMatchObject({
 			success: true,
 			evidence: { id: "evidence-1", fileName: "Forklift.pdf" },
 		});
+		expect(body.evidence).not.toHaveProperty("fileKey");
 		expect(insertValuesMock).toHaveBeenCalledWith(
 			expect.objectContaining({
 				employeeSkillId,
 				uploadedBy: "user-1",
 			}),
 		);
+		expect(insertValuesMock.mock.results[0]?.value.returning).toBeDefined();
 		expect(sendMock.mock.calls[1]?.[0].input.Metadata).toMatchObject({
 			"uploaded-by": "user-1",
 		});

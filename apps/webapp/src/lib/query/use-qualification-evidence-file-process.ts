@@ -16,7 +16,6 @@ export interface ProcessQualificationEvidenceFileResponse {
 		fileName: string;
 		mimeType: string;
 		fileSize: number;
-		fileKey: string;
 	};
 }
 

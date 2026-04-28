@@ -150,7 +150,6 @@ export async function POST(request: NextRequest) {
 				fileName: qualificationEvidence.fileName,
 				mimeType: qualificationEvidence.mimeType,
 				fileSize: qualificationEvidence.fileSize,
-				fileKey: qualificationEvidence.fileKey,
 			});
 
 		if (!createdEvidence) {
@@ -162,7 +161,15 @@ export async function POST(request: NextRequest) {
 
 		await s3Client.send(new DeleteObjectCommand({ Bucket: S3_BUCKET, Key: tusFileKey }));
 
-		return NextResponse.json({ success: true, evidence: createdEvidence });
+		return NextResponse.json({
+			success: true,
+			evidence: {
+				id: createdEvidence.id,
+				fileName: createdEvidence.fileName,
+				mimeType: createdEvidence.mimeType,
+				fileSize: createdEvidence.fileSize,
+			},
+		});
 	} catch (error) {
 		console.error("Qualification evidence upload processing failed", error);
 		return NextResponse.json(
