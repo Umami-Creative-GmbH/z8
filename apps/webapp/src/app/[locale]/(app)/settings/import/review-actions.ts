@@ -434,6 +434,12 @@ export async function startImportReviewScan(
 			}
 		}
 
+		await updateImportBatchStatus({
+			batchId: batch.id,
+			organizationId: validated.organizationId,
+			status: "scanning",
+		});
+
 		for (const job of scanJobs) {
 			await enqueueImportScanJob({
 				type: "import-review-scan",
@@ -448,12 +454,6 @@ export async function startImportReviewScan(
 				secretId: secret.id,
 			});
 		}
-
-		await updateImportBatchStatus({
-			batchId: batch.id,
-			organizationId: validated.organizationId,
-			status: "scanning",
-		});
 
 		return { success: true, data: { batchId: batch.id } };
 	} catch (error) {

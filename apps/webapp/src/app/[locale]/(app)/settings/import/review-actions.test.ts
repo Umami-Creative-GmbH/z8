@@ -180,8 +180,8 @@ describe("import review actions", () => {
 			employeeMappings: [],
 			secretId: "secret_1",
 		});
-		expect(mockState.enqueueImportScanJob.mock.invocationCallOrder.at(-1)).toBeLessThan(
-			mockState.updateImportBatchStatus.mock.invocationCallOrder[0],
+		expect(mockState.updateImportBatchStatus.mock.invocationCallOrder[0]).toBeLessThan(
+			mockState.enqueueImportScanJob.mock.invocationCallOrder[0],
 		);
 	});
 
@@ -354,11 +354,14 @@ describe("import review actions", () => {
 			status: "scan_failed",
 			errorMessage: "Failed to start import review scan",
 		});
-		expect(mockState.updateImportBatchStatus).not.toHaveBeenCalledWith({
+		expect(mockState.updateImportBatchStatus).toHaveBeenNthCalledWith(1, {
 			batchId: "batch_1",
 			organizationId: "org_1",
 			status: "scanning",
 		});
+		expect(mockState.updateImportBatchStatus.mock.invocationCallOrder[0]).toBeLessThan(
+			mockState.enqueueImportScanJob.mock.invocationCallOrder[0],
+		);
 		expect(JSON.stringify(result)).not.toContain("token_1");
 	});
 
