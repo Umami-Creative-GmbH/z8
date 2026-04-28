@@ -92,6 +92,7 @@ export interface QualificationEvidenceRecord {
 }
 
 export interface CreateRenewalRequestInput {
+	organizationId: string;
 	employeeId: string;
 	employeeSkillId: string;
 	evidenceIds: string[];
@@ -103,6 +104,7 @@ export interface CreateRenewalRequestInput {
 }
 
 export interface ReviewRenewalRequestInput {
+	organizationId: string;
 	requestId: string;
 	reviewerEmployeeId: string;
 	approved: boolean;
@@ -612,12 +614,16 @@ export const SkillServiceLive = Layer.effect(
 									eq(employeeSkill.id, input.employeeSkillId),
 									eq(employeeSkill.employeeId, input.employeeId),
 								),
-								with: { skill: true },
+								with: { employee: true, skill: true },
 							});
 						}),
 					);
 
-					if (!assignment) {
+					if (
+						!assignment ||
+						assignment.employee.organizationId !== input.organizationId ||
+						assignment.skill.organizationId !== input.organizationId
+					) {
 						yield* _(
 							Effect.fail(
 								new NotFoundError({
@@ -657,7 +663,7 @@ export const SkillServiceLive = Layer.effect(
 							return await dbService.db.query.qualificationEvidence.findMany({
 								where: and(
 									inArray(qualificationEvidence.id, evidenceIds),
-									eq(qualificationEvidence.organizationId, assignment!.skill.organizationId),
+									eq(qualificationEvidence.organizationId, input.organizationId),
 									eq(qualificationEvidence.employeeSkillId, input.employeeSkillId),
 								),
 							});
@@ -681,7 +687,7 @@ export const SkillServiceLive = Layer.effect(
 								const [request] = await tx
 									.insert(qualificationRenewalRequest)
 									.values({
-										organizationId: assignment!.skill.organizationId,
+										organizationId: input.organizationId,
 										employeeId: input.employeeId,
 										employeeSkillId: input.employeeSkillId,
 										requestedIssuedAt: input.requestedIssuedAt,
@@ -694,7 +700,7 @@ export const SkillServiceLive = Layer.effect(
 
 								await tx.insert(qualificationRenewalRequestEvidence).values(
 									evidenceIds.map((evidenceId) => ({
-										organizationId: assignment!.skill.organizationId,
+										organizationId: input.organizationId,
 										renewalRequestId: request!.id,
 										evidenceId,
 									})),
@@ -711,12 +717,15 @@ export const SkillServiceLive = Layer.effect(
 					const request = yield* _(
 						dbService.query("getQualificationRenewalRequest", async () => {
 							return await dbService.db.query.qualificationRenewalRequest.findFirst({
-								where: eq(qualificationRenewalRequest.id, input.requestId),
+								where: and(
+									eq(qualificationRenewalRequest.id, input.requestId),
+									eq(qualificationRenewalRequest.organizationId, input.organizationId),
+								),
 							});
 						}),
 					);
 
-					if (!request) {
+					if (!request || request.organizationId !== input.organizationId) {
 						yield* _(
 							Effect.fail(
 								new NotFoundError({
@@ -742,12 +751,15 @@ export const SkillServiceLive = Layer.effect(
 					const reviewer = yield* _(
 						dbService.query("getQualificationRenewalReviewer", async () => {
 							return await dbService.db.query.employee.findFirst({
-								where: eq(employee.id, input.reviewerEmployeeId),
+								where: and(
+									eq(employee.id, input.reviewerEmployeeId),
+									eq(employee.organizationId, input.organizationId),
+								),
 							});
 						}),
 					);
 
-					if (!reviewer || reviewer.organizationId !== request!.organizationId) {
+					if (!reviewer || reviewer.organizationId !== input.organizationId) {
 						yield* _(
 							Effect.fail(
 								new NotFoundError({
@@ -774,7 +786,7 @@ export const SkillServiceLive = Layer.effect(
 										and(
 											eq(qualificationRenewalRequest.id, input.requestId),
 											eq(qualificationRenewalRequest.status, "pending"),
-											eq(qualificationRenewalRequest.organizationId, request!.organizationId),
+											eq(qualificationRenewalRequest.organizationId, input.organizationId),
 										),
 									)
 									.returning();
@@ -784,7 +796,7 @@ export const SkillServiceLive = Layer.effect(
 								}
 
 								if (input.approved) {
-									await tx
+									const [qualification] = await tx
 										.update(employeeSkill)
 										.set({
 											issuedAt: request!.requestedIssuedAt,
@@ -799,7 +811,12 @@ export const SkillServiceLive = Layer.effect(
 												eq(employeeSkill.id, request!.employeeSkillId),
 												eq(employeeSkill.employeeId, request!.employeeId),
 											),
-										);
+										)
+										.returning();
+
+									if (!qualification) {
+										throw new Error("Employee qualification was not updated");
+									}
 								}
 
 								return updated;
