@@ -154,7 +154,8 @@ describe("fetchApprovals", () => {
 					status: "pending",
 					limit: 2,
 				},
-				fetchEntitiesByIds: (entityIds) => Effect.promise(() => mockState.fetchEntitiesByIds(entityIds)),
+				fetchEntitiesByIds: (entityIds) =>
+					Effect.promise(() => mockState.fetchEntitiesByIds(entityIds)),
 				transformToItem: (request, entity) => ({
 					id: request.id,
 					approvalType: request.entityType,
@@ -206,7 +207,8 @@ describe("fetchApprovals", () => {
 					status: "pending",
 					limit: 1,
 				},
-				fetchEntitiesByIds: (entityIds) => Effect.promise(() => mockState.fetchEntitiesByIds(entityIds)),
+				fetchEntitiesByIds: (entityIds) =>
+					Effect.promise(() => mockState.fetchEntitiesByIds(entityIds)),
 				transformToItem: (request, entity) => ({
 					id: request.id,
 					approvalType: request.entityType,
@@ -257,5 +259,28 @@ describe("fetchApprovals", () => {
 		});
 
 		expect(conditions).toHaveLength(4);
+	});
+
+	it("keeps approvals scoped to the current approver by default", () => {
+		const conditions = buildBaseConditions("absence_entry", {
+			approverId: "manager-1",
+			organizationId: "org-1",
+			status: "pending",
+			limit: 20,
+		});
+
+		expect(conditions).toHaveLength(4);
+	});
+
+	it("can include approvals assigned to other approvers for admin briefings", () => {
+		const conditions = buildBaseConditions("absence_entry", {
+			approverId: "admin-1",
+			organizationId: "org-1",
+			status: "pending",
+			limit: 20,
+			includeAllApprovers: true,
+		});
+
+		expect(conditions).toHaveLength(3);
 	});
 });

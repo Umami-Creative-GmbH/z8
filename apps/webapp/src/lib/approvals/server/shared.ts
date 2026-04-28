@@ -3,12 +3,18 @@ import { and, eq } from "drizzle-orm";
 import { Cause, Effect, Exit, Option } from "effect";
 import { approvalRequest, employee } from "@/db/schema";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
-import { type AnyAppError, AuthorizationError, ConflictError, NotFoundError } from "@/lib/effect/errors";
+import {
+	type AnyAppError,
+	AuthorizationError,
+	ConflictError,
+	NotFoundError,
+} from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
+import type { ApprovalActionOptions } from "../domain/types";
 import {
 	ApprovalAuditLogger,
 	ApprovalAuditLoggerLive,
@@ -42,29 +48,31 @@ function loadCurrentApprover(
 	userId: string,
 	activeOrganizationId?: string,
 ): Effect.Effect<CurrentApprover, AnyAppError, never> {
-	return dbService.query("getEmployeeByUserId", async () => {
-		return await dbService.db.query.employee.findFirst({
-			where: activeOrganizationId
-				? and(
-						eq(employee.userId, userId),
-						eq(employee.organizationId, activeOrganizationId),
-						eq(employee.isActive, true),
-					)
-				: and(eq(employee.userId, userId), eq(employee.isActive, true)),
-			with: { user: true },
-		});
-	}).pipe(
-		Effect.flatMap((approver) =>
-			approver
-				? Effect.succeed(approver as CurrentApprover)
-				: Effect.fail(
-						new NotFoundError({
-							message: "Employee profile not found",
-							entityType: "employee",
-						}),
-					),
-		),
-	);
+	return dbService
+		.query("getEmployeeByUserId", async () => {
+			return await dbService.db.query.employee.findFirst({
+				where: activeOrganizationId
+					? and(
+							eq(employee.userId, userId),
+							eq(employee.organizationId, activeOrganizationId),
+							eq(employee.isActive, true),
+						)
+					: and(eq(employee.userId, userId), eq(employee.isActive, true)),
+				with: { user: true },
+			});
+		})
+		.pipe(
+			Effect.flatMap((approver) =>
+				approver
+					? Effect.succeed(approver as CurrentApprover)
+					: Effect.fail(
+							new NotFoundError({
+								message: "Employee profile not found",
+								entityType: "employee",
+							}),
+						),
+			),
+		);
 }
 
 function loadPendingApprovalRequest(
@@ -72,32 +80,58 @@ function loadPendingApprovalRequest(
 	entityType: ApprovalEntityType,
 	entityId: string,
 	approverId: string,
+	actorOrganizationId: string,
 	action: ApprovalAction,
+	options?: ApprovalActionOptions,
 ): Effect.Effect<PendingApprovalRequest, AnyAppError, never> {
-	return dbService.query("getApprovalRequest", async () => {
-		return await dbService.db.query.approvalRequest.findFirst({
-			where: and(
-				eq(approvalRequest.entityType, entityType),
-				eq(approvalRequest.entityId, entityId),
-				eq(approvalRequest.approverId, approverId),
-				eq(approvalRequest.status, "pending"),
-			),
-		});
-	}).pipe(
-		Effect.flatMap((request) =>
-			request
-				? Effect.succeed(request as PendingApprovalRequest)
-				: Effect.fail(
+	return dbService
+		.query("getApprovalRequest", async () => {
+			const approvalRequestId = options?.allowAnyApprover ? options.approvalRequestId : null;
+
+			return await dbService.db.query.approvalRequest.findFirst({
+				where: approvalRequestId
+					? and(
+							eq(approvalRequest.id, approvalRequestId),
+							eq(approvalRequest.entityType, entityType),
+							eq(approvalRequest.entityId, entityId),
+							eq(approvalRequest.status, "pending"),
+						)
+					: and(
+							eq(approvalRequest.entityType, entityType),
+							eq(approvalRequest.entityId, entityId),
+							eq(approvalRequest.approverId, approverId),
+							eq(approvalRequest.status, "pending"),
+						),
+			});
+		})
+		.pipe(
+			Effect.flatMap((request) => {
+				if (!request) {
+					return Effect.fail(
 						new AuthorizationError({
-							message:
-								"Approval request not found, already processed, or you are not the approver",
+							message: "Approval request not found, already processed, or you are not the approver",
 							userId: approverId,
 							resource: entityType,
 							action,
 						}),
-					),
-		),
-	);
+					);
+				}
+
+				const pendingRequest = request as PendingApprovalRequest;
+				if (options?.allowAnyApprover && pendingRequest.organizationId !== actorOrganizationId) {
+					return Effect.fail(
+						new AuthorizationError({
+							message: "Approval request not found, already processed, or you are not the approver",
+							userId: approverId,
+							resource: entityType,
+							action,
+						}),
+					);
+				}
+
+				return Effect.succeed(pendingRequest);
+			}),
+		);
 }
 
 function updatePendingApprovalRequest(
@@ -105,30 +139,32 @@ function updatePendingApprovalRequest(
 	approvalId: string,
 	statusUpdate: ApprovalStatusUpdate,
 ) {
-	return dbService.query("updateApprovalStatus", async () => {
-		const updateQuery = dbService.db
-			.update(approvalRequest)
-			.set(statusUpdate)
-			.where(and(eq(approvalRequest.id, approvalId), eq(approvalRequest.status, "pending")));
+	return dbService
+		.query("updateApprovalStatus", async () => {
+			const updateQuery = dbService.db
+				.update(approvalRequest)
+				.set(statusUpdate)
+				.where(and(eq(approvalRequest.id, approvalId), eq(approvalRequest.status, "pending")));
 
-		const updatedRows =
-			updateQuery && typeof updateQuery === "object" && "returning" in updateQuery
-				? await updateQuery.returning({ id: approvalRequest.id })
-				: await updateQuery;
+			const updatedRows =
+				updateQuery && typeof updateQuery === "object" && "returning" in updateQuery
+					? await updateQuery.returning({ id: approvalRequest.id })
+					: await updateQuery;
 
-		return updatedRows;
-	}).pipe(
-		Effect.flatMap((updatedRows) =>
-			Array.isArray(updatedRows) && updatedRows.length === 0
-				? Effect.fail(
-						new ConflictError({
-							message: "Approval request is no longer pending",
-							conflictType: "approval_status",
-						}),
-					)
-				: Effect.succeed(updatedRows),
-		),
-	);
+			return updatedRows;
+		})
+		.pipe(
+			Effect.flatMap((updatedRows) =>
+				Array.isArray(updatedRows) && updatedRows.length === 0
+					? Effect.fail(
+							new ConflictError({
+								message: "Approval request is no longer pending",
+								conflictType: "approval_status",
+							}),
+						)
+					: Effect.succeed(updatedRows),
+			),
+		);
 }
 
 function executeApprovalWithCurrentEmployee<T>(
@@ -147,7 +183,9 @@ function executeApprovalWithCurrentEmployee<T>(
 		dbService: ApprovalDbService,
 		entityId: string,
 		currentEmployee: CurrentApprover,
+		options?: ApprovalActionOptions,
 	) => Effect.Effect<unknown, AnyAppError, unknown>,
+	options?: ApprovalActionOptions,
 ) {
 	const statusUpdate = getApprovalStatusUpdate(action, rejectionReason);
 
@@ -155,7 +193,7 @@ function executeApprovalWithCurrentEmployee<T>(
 		const auditLogger = yield* _(ApprovalAuditLogger);
 
 		if (preflightEntity) {
-			yield* _(preflightEntity(dbService, entityId, currentEmployee));
+			yield* _(preflightEntity(dbService, entityId, currentEmployee, options));
 		}
 
 		const approval = yield* _(
@@ -164,7 +202,9 @@ function executeApprovalWithCurrentEmployee<T>(
 				entityType,
 				entityId,
 				currentEmployee.id,
+				currentEmployee.organizationId,
 				action,
+				options,
 			),
 		);
 
@@ -226,8 +266,9 @@ export function processApprovalWithCurrentEmployee<T>(
 		dbService: ApprovalDbService,
 		entityId: string,
 		currentEmployee: CurrentApprover,
+		options?: ApprovalActionOptions,
 	) => Effect.Effect<unknown, AnyAppError, unknown>,
-	options?: { transactional?: boolean },
+	options?: ApprovalActionOptions,
 ) {
 	return Effect.gen(function* (_) {
 		const auditLogger = yield* _(ApprovalAuditLogger);
@@ -243,6 +284,7 @@ export function processApprovalWithCurrentEmployee<T>(
 					rejectionReason,
 					updateEntity,
 					preflightEntity,
+					options,
 				).pipe(Effect.provideService(ApprovalAuditLogger, auditLogger)),
 			);
 		}
@@ -268,6 +310,7 @@ export function processApprovalWithCurrentEmployee<T>(
 								rejectionReason,
 								updateEntity,
 								preflightEntity,
+								options,
 							).pipe(
 								Effect.provideService(ApprovalAuditLogger, transactionalAuditLogger),
 							) as Effect.Effect<void, AnyAppError, never>,
@@ -276,7 +319,7 @@ export function processApprovalWithCurrentEmployee<T>(
 						if (Exit.isFailure(exit)) {
 							const failure = Option.getOrNull(Cause.failureOption(exit.cause));
 							const defects = [...Cause.defects(exit.cause)];
-							throw (failure ?? defects[0] ?? new Error("An error has occurred"));
+							throw failure ?? defects[0] ?? new Error("An error has occurred");
 						}
 					});
 				},
@@ -300,11 +343,11 @@ export async function processApproval<T>(
 		dbService: ApprovalDbService,
 		entityId: string,
 		currentEmployee: CurrentApprover,
+		options?: ApprovalActionOptions,
 	) => Effect.Effect<unknown, AnyAppError, unknown>,
-	options?: { transactional?: boolean },
+	options?: ApprovalActionOptions,
 ): Promise<ServerActionResult<void>> {
 	const tracer = trace.getTracer("approvals");
-	const statusUpdate = getApprovalStatusUpdate(action, rejectionReason);
 
 	const effect = tracer.startActiveSpan(
 		`${action}Entity`,

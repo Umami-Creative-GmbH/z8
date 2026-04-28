@@ -5,14 +5,14 @@
  * and optimize database queries.
  */
 
-import { and, count, desc, eq, inArray, lte } from "drizzle-orm";
-import { DateTime } from "luxon";
+import { and, count, desc, eq, lte } from "drizzle-orm";
 import { Effect } from "effect";
+import { DateTime } from "luxon";
 import { approvalRequest } from "@/db/schema";
-import { DatabaseService } from "@/lib/effect/services/database.service";
-import type { ApprovalQueryParams, ApprovalType, UnifiedApprovalItem } from "../domain/types";
-import { calculateSLAStatus } from "../domain/sla-calculator";
 import type { AnyAppError } from "@/lib/effect/errors";
+import { DatabaseService } from "@/lib/effect/services/database.service";
+import { calculateSLAStatus } from "../domain/sla-calculator";
+import type { ApprovalQueryParams, ApprovalType, UnifiedApprovalItem } from "../domain/types";
 
 /**
  * Configuration for building approval request queries
@@ -25,14 +25,13 @@ interface ApprovalQueryConfig<TEntity> {
 	 * This is the key optimization - fetching all entities in one query
 	 */
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	fetchEntitiesByIds: (entityIds: string[]) => Effect.Effect<Map<string, TEntity>, AnyAppError, any>;
+	fetchEntitiesByIds: (
+		entityIds: string[],
+	) => Effect.Effect<Map<string, TEntity>, AnyAppError, any>;
 	/**
 	 * Transform an entity to UnifiedApprovalItem
 	 */
-	transformToItem: (
-		request: ApprovalRequestRow,
-		entity: TEntity,
-	) => UnifiedApprovalItem | null;
+	transformToItem: (request: ApprovalRequestRow, entity: TEntity) => UnifiedApprovalItem | null;
 	/**
 	 * Optional filter to apply after fetching entities
 	 */
@@ -68,16 +67,16 @@ export interface ApprovalRequestRow {
 /**
  * Build base conditions for approval request queries
  */
-export function buildBaseConditions(
-	entityType: ApprovalType,
-	params: ApprovalQueryParams,
-) {
+export function buildBaseConditions(entityType: ApprovalType, params: ApprovalQueryParams) {
 	const conditions = [
 		eq(approvalRequest.entityType, entityType),
-		eq(approvalRequest.approverId, params.approverId),
 		eq(approvalRequest.organizationId, params.organizationId),
 		eq(approvalRequest.status, params.status || "pending"),
 	];
+
+	if (!params.includeAllApprovers) {
+		conditions.push(eq(approvalRequest.approverId, params.approverId));
+	}
 
 	// Add age filter
 	if (params.minAgeDays) {

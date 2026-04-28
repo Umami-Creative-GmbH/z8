@@ -6,6 +6,8 @@
  */
 
 import { Context, Effect, Layer } from "effect";
+import type { AnyAppError } from "@/lib/effect/errors";
+import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { getAllApprovalHandlers } from "../domain/registry";
 import { comparePriority } from "../domain/sla-calculator";
 import type {
@@ -15,8 +17,6 @@ import type {
 	PaginatedApprovalResult,
 	UnifiedApprovalItem,
 } from "../domain/types";
-import { DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/database.service";
-import type { AnyAppError } from "@/lib/effect/errors";
 
 interface ApprovalCursor {
 	priority: ApprovalPriority;
@@ -85,7 +85,10 @@ function serializeApprovalCursor(item: UnifiedApprovalItem) {
 	} satisfies ApprovalCursor);
 }
 
-function isItemAfterCursor(item: UnifiedApprovalItem, cursor: ApprovalCursor | LegacyApprovalCursor) {
+function isItemAfterCursor(
+	item: UnifiedApprovalItem,
+	cursor: ApprovalCursor | LegacyApprovalCursor,
+) {
 	if (!("id" in cursor)) {
 		return item.createdAt.getTime() <= new Date(cursor.createdAt).getTime();
 	}
@@ -151,16 +154,21 @@ export const ApprovalQueryServiceLive = Layer.effect(
 						allItems.push(...items);
 					}
 
+					const requesterEmployeeIds = params.requesterEmployeeIds;
+					const filteredItems = requesterEmployeeIds
+						? allItems.filter((item) => requesterEmployeeIds.includes(item.requester.id))
+						: allItems;
+
 					// Sort by priority (ascending: urgent first) then by createdAt (descending: newest first)
-					allItems.sort(compareApprovalItems);
+					filteredItems.sort(compareApprovalItems);
 
 					// Apply cursor pagination after sorting
-					let paginatedItems = allItems;
+					let paginatedItems = filteredItems;
 
 					if (params.cursor) {
 						const cursor = parseApprovalCursor(params.cursor);
 						if (cursor) {
-							paginatedItems = allItems.filter((item) => isItemAfterCursor(item, cursor));
+							paginatedItems = filteredItems.filter((item) => isItemAfterCursor(item, cursor));
 						}
 					}
 
@@ -173,7 +181,7 @@ export const ApprovalQueryServiceLive = Layer.effect(
 						items,
 						nextCursor,
 						hasMore,
-						total: allItems.length,
+						total: filteredItems.length,
 					};
 				}),
 

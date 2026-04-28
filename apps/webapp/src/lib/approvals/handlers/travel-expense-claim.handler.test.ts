@@ -65,8 +65,8 @@ vi.mock("../infrastructure/audit-logger", async () => {
 });
 
 import { DatabaseService } from "@/lib/effect/services/database.service";
-import { ApprovalAuditLogger } from "../infrastructure/audit-logger";
 import { getApprovalHandler } from "../domain/registry";
+import { ApprovalAuditLogger } from "../infrastructure/audit-logger";
 import { initializeApprovalCenter } from "../init";
 
 function createDatabaseService() {
@@ -109,7 +109,7 @@ function createAuditLogger() {
 
 function createUpdateBuilder() {
 	return {
-				set: testState.updateSet,
+		set: testState.updateSet,
 	};
 }
 
@@ -267,13 +267,13 @@ describe("TravelExpenseClaimHandler", () => {
 		expect(handler.supportsBulkApprove).toBe(true);
 
 		const items = await Effect.runPromise(
-			handler.getApprovals({
-				approverId: "manager-1",
-				organizationId: "org-1",
-				limit: 10,
-			}).pipe(
-				Effect.provideService(DatabaseService, createDatabaseService()),
-			),
+			handler
+				.getApprovals({
+					approverId: "manager-1",
+					organizationId: "org-1",
+					limit: 10,
+				})
+				.pipe(Effect.provideService(DatabaseService, createDatabaseService())),
 		);
 
 		expect(items).toEqual([
@@ -392,10 +392,12 @@ describe("TravelExpenseClaimHandler", () => {
 		}
 
 		const items = await Effect.runPromise(
-			handler.getApprovals({ approverId: "manager-1", organizationId: "org-1", limit: 10 }).pipe(
-				Effect.provideService(DatabaseService, createDatabaseService()),
-				Effect.provideService(ApprovalAuditLogger, createAuditLogger()),
-			),
+			handler
+				.getApprovals({ approverId: "manager-1", organizationId: "org-1", limit: 10 })
+				.pipe(
+					Effect.provideService(DatabaseService, createDatabaseService()),
+					Effect.provideService(ApprovalAuditLogger, createAuditLogger()),
+				),
 		);
 
 		expect(items).toEqual([]);
@@ -423,7 +425,10 @@ describe("TravelExpenseClaimHandler", () => {
 
 		expect(count).toBe(3);
 		expect(testState.countWhere).toHaveBeenCalledTimes(1);
-		expect(testState.query).toHaveBeenCalledWith("gettravel_expense_claimCount", expect.any(Function));
+		expect(testState.query).toHaveBeenCalledWith(
+			"gettravel_expense_claimCount",
+			expect.any(Function),
+		);
 	});
 
 	it("routes approve and reject through the shared approval state machine", async () => {
@@ -507,10 +512,12 @@ describe("TravelExpenseClaimHandler", () => {
 		});
 
 		const detail = await Effect.runPromise(
-			handler.getDetail("claim-1", "org-1").pipe(
-				Effect.provideService(DatabaseService, createDatabaseService()),
-				Effect.provideService(ApprovalAuditLogger, createAuditLogger()),
-			),
+			handler
+				.getDetail("claim-1", "org-1")
+				.pipe(
+					Effect.provideService(DatabaseService, createDatabaseService()),
+					Effect.provideService(ApprovalAuditLogger, createAuditLogger()),
+				),
 		);
 
 		expect(detail).toEqual({
@@ -553,10 +560,12 @@ describe("TravelExpenseClaimHandler", () => {
 
 		await expect(
 			Effect.runPromise(
-				handler.approve("claim-1", "manager-1").pipe(
-					Effect.provideService(DatabaseService, createDatabaseService()),
-					Effect.provideService(ApprovalAuditLogger, createAuditLogger()),
-				),
+				handler
+					.approve("claim-1", "manager-1")
+					.pipe(
+						Effect.provideService(DatabaseService, createDatabaseService()),
+						Effect.provideService(ApprovalAuditLogger, createAuditLogger()),
+					),
 			),
 		).resolves.toBeUndefined();
 
@@ -599,10 +608,12 @@ describe("TravelExpenseClaimHandler", () => {
 
 		await expect(
 			Effect.runPromise(
-				handler.reject("claim-1", "manager-1", "Missing receipt").pipe(
-					Effect.provideService(DatabaseService, createDatabaseService()),
-					Effect.provideService(ApprovalAuditLogger, createAuditLogger()),
-				),
+				handler
+					.reject("claim-1", "manager-1", "Missing receipt")
+					.pipe(
+						Effect.provideService(DatabaseService, createDatabaseService()),
+						Effect.provideService(ApprovalAuditLogger, createAuditLogger()),
+					),
 			),
 		).resolves.toBeUndefined();
 
@@ -666,10 +677,12 @@ describe("TravelExpenseClaimHandler", () => {
 		await expect(
 			Effect.runPromise(
 				Effect.flip(
-					handler.approve("claim-missing", "manager-1").pipe(
-						Effect.provideService(DatabaseService, createDatabaseService()),
-						Effect.provideService(ApprovalAuditLogger, createAuditLogger()),
-					),
+					handler
+						.approve("claim-missing", "manager-1")
+						.pipe(
+							Effect.provideService(DatabaseService, createDatabaseService()),
+							Effect.provideService(ApprovalAuditLogger, createAuditLogger()),
+						),
 				),
 			),
 		).resolves.toEqual(
@@ -725,10 +738,12 @@ describe("TravelExpenseClaimHandler", () => {
 		await expect(
 			Effect.runPromise(
 				Effect.flip(
-					handler.approve("claim-1", "manager-1").pipe(
-						Effect.provideService(DatabaseService, createDatabaseService()),
-						Effect.provideService(ApprovalAuditLogger, createAuditLogger()),
-					),
+					handler
+						.approve("claim-1", "manager-1")
+						.pipe(
+							Effect.provideService(DatabaseService, createDatabaseService()),
+							Effect.provideService(ApprovalAuditLogger, createAuditLogger()),
+						),
 				),
 			),
 		).resolves.toEqual(
@@ -742,6 +757,69 @@ describe("TravelExpenseClaimHandler", () => {
 		expect(testState.insertValues).toHaveBeenCalledTimes(1);
 		expect(testState.committedUpdates).toEqual([]);
 		expect(testState.committedInserts).toEqual([]);
+	});
+
+	it("allows a route-verified manage Approval actor to approve another approver's travel claim in the same organization", async () => {
+		const handler = getApprovalHandler("travel_expense_claim");
+
+		expect(handler).toBeDefined();
+		if (!handler) {
+			return;
+		}
+
+		testState.employeeFindFirst.mockResolvedValue({
+			id: "ops-1",
+			userId: "user-ops-1",
+			organizationId: "org-1",
+			role: "manager",
+			user: {
+				id: "user-ops-1",
+				name: "Morgan Ops",
+				email: "morgan@example.com",
+				image: null,
+			},
+		});
+		testState.approvalFindFirst.mockResolvedValue({
+			id: "approval-1",
+			entityId: "claim-1",
+			entityType: "travel_expense_claim",
+			approverId: "manager-1",
+			organizationId: "org-1",
+			status: "pending",
+			approvedAt: null,
+			rejectionReason: null,
+			updatedAt: new Date("2026-04-09T09:30:00.000Z"),
+		});
+		testState.travelExpenseFindFirst.mockResolvedValue({
+			id: "claim-1",
+			organizationId: "org-1",
+			approverId: "manager-1",
+			status: "submitted",
+		});
+		testState.updateReturning.mockResolvedValue([{ id: "claim-1" }]);
+		testState.insertValues.mockResolvedValue(undefined);
+
+		await expect(
+			Effect.runPromise(
+				handler
+					.approve("claim-1", "ops-1", {
+						approvalRequestId: "approval-1",
+						allowAnyApprover: true,
+					})
+					.pipe(
+						Effect.provideService(DatabaseService, createDatabaseService()),
+						Effect.provideService(ApprovalAuditLogger, createAuditLogger()),
+					),
+			),
+		).resolves.toBeUndefined();
+
+		expect(testState.insertValues).toHaveBeenCalledWith(
+			expect.objectContaining({
+				claimId: "claim-1",
+				actorEmployeeId: "ops-1",
+				action: "approved",
+			}),
+		);
 	});
 
 	it("allows admins to approve when the shared approval request is assigned to them but the legacy claim approver differs", async () => {
@@ -786,10 +864,12 @@ describe("TravelExpenseClaimHandler", () => {
 
 		await expect(
 			Effect.runPromise(
-				handler.approve("claim-1", "admin-1").pipe(
-					Effect.provideService(DatabaseService, createDatabaseService()),
-					Effect.provideService(ApprovalAuditLogger, createAuditLogger()),
-				),
+				handler
+					.approve("claim-1", "admin-1")
+					.pipe(
+						Effect.provideService(DatabaseService, createDatabaseService()),
+						Effect.provideService(ApprovalAuditLogger, createAuditLogger()),
+					),
 			),
 		).resolves.toBeUndefined();
 
