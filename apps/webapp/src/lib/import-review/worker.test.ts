@@ -25,29 +25,55 @@ const { processImportReviewJob } = await import("./worker");
 
 beforeEach(() => {
 	vi.clearAllMocks();
-	scanClockinImportPartitionMock.mockResolvedValue(0);
-	scanClockodoImportPartitionMock.mockResolvedValue(0);
-	commitAcceptedRowsForEntityMock.mockResolvedValue(0);
+	scanClockinImportPartitionMock.mockRejectedValue(new Error("Clockin import scan is not implemented"));
+	scanClockodoImportPartitionMock.mockRejectedValue(new Error("Clockodo import scan is not implemented"));
+	commitAcceptedRowsForEntityMock.mockRejectedValue(new Error("Import review commit is not implemented"));
 });
+
+function scanJob(overrides: Record<string, unknown> = {}) {
+	const { attemptsMade = 0, opts = { attempts: 3 }, ...dataOverrides } = overrides;
+	return {
+		id: "bull_1",
+		attemptsMade,
+		opts,
+		data: {
+			type: "import-review-scan",
+			batchId: "batch_1",
+			jobId: "job_1",
+			organizationId: "org_1",
+			provider: "clockin",
+			entityType: "work_period",
+			dateRange: { startDate: "2026-01-01", endDate: "2026-01-31" },
+			employeeIds: ["emp_1"],
+			secretId: "secret_1",
+			...dataOverrides,
+		},
+	} as Parameters<typeof processImportReviewJob>[0];
+}
+
+function commitJob(overrides: Record<string, unknown> = {}) {
+	const { attemptsMade = 0, opts = { attempts: 3 }, ...dataOverrides } = overrides;
+	return {
+		id: "bull_3",
+		attemptsMade,
+		opts,
+		data: {
+			type: "import-review-commit",
+			batchId: "batch_1",
+			jobId: "job_3",
+			organizationId: "org_1",
+			entityType: "work_period",
+			committedBy: "user_1",
+			...dataOverrides,
+		},
+	} as Parameters<typeof processImportReviewJob>[0];
+}
 
 describe("processImportReviewJob", () => {
 	it("routes clockin scan jobs and marks them completed with processed row count", async () => {
 		scanClockinImportPartitionMock.mockResolvedValue(7);
 
-		const result = await processImportReviewJob({
-			id: "bull_1",
-			data: {
-				type: "import-review-scan",
-				batchId: "batch_1",
-				jobId: "job_1",
-				organizationId: "org_1",
-				provider: "clockin",
-				entityType: "work_period",
-				dateRange: { startDate: "2026-01-01", endDate: "2026-01-31" },
-				employeeIds: ["emp_1"],
-				secretId: "secret_1",
-			},
-		} as Parameters<typeof processImportReviewJob>[0]);
+		const result = await processImportReviewJob(scanJob());
 
 		expect(result).toEqual({
 			success: true,
@@ -76,20 +102,14 @@ describe("processImportReviewJob", () => {
 	it("routes clockodo scan jobs to the clockodo adapter", async () => {
 		scanClockodoImportPartitionMock.mockResolvedValue(3);
 
-		const result = await processImportReviewJob({
-			id: "bull_2",
-			data: {
-				type: "import-review-scan",
-				batchId: "batch_1",
+		const result = await processImportReviewJob(
+			scanJob({
 				jobId: "job_2",
-				organizationId: "org_1",
 				provider: "clockodo",
 				entityType: "time_entry",
 				dateRange: { startDate: "2026-02-01", endDate: "2026-02-28" },
-				employeeIds: ["emp_1"],
-				secretId: "secret_1",
-			},
-		} as Parameters<typeof processImportReviewJob>[0]);
+			}),
+		);
 
 		expect(result.success).toBe(true);
 		expect(result.data).toEqual({ processedRows: 3 });
@@ -100,17 +120,7 @@ describe("processImportReviewJob", () => {
 	it("routes commit jobs and marks them completed with committed row count", async () => {
 		commitAcceptedRowsForEntityMock.mockResolvedValue(5);
 
-		const result = await processImportReviewJob({
-			id: "bull_3",
-			data: {
-				type: "import-review-commit",
-				batchId: "batch_1",
-				jobId: "job_3",
-				organizationId: "org_1",
-				entityType: "work_period",
-				committedBy: "user_1",
-			},
-		} as Parameters<typeof processImportReviewJob>[0]);
+		const result = await processImportReviewJob(commitJob());
 
 		expect(result).toEqual({
 			success: true,
@@ -129,30 +139,60 @@ describe("processImportReviewJob", () => {
 		});
 	});
 
-	it("marks jobs failed and returns the thrown error message", async () => {
+	it("rejects placeholder scan failures without marking the job completed", async () => {
+		await expect(processImportReviewJob(scanJob())).rejects.toThrow("Clockin import scan is not implemented");
+
+		expect(updateImportBatchJobMock).toHaveBeenCalledTimes(1);
+		expect(updateImportBatchJobMock).toHaveBeenCalledWith({
+			jobId: "job_1",
+			organizationId: "org_1",
+			status: "running",
+			errorMessage: null,
+		});
+		expect(updateImportBatchJobMock).not.toHaveBeenCalledWith(
+			expect.objectContaining({ status: "completed" }),
+		);
+	});
+
+	it("rejects retryable failures without marking the job failed before the final attempt", async () => {
 		scanClockinImportPartitionMock.mockRejectedValue(new Error("provider unavailable"));
 
-		const result = await processImportReviewJob({
-			id: "bull_4",
-			data: {
-				type: "import-review-scan",
-				batchId: "batch_1",
-				jobId: "job_4",
-				organizationId: "org_1",
-				provider: "clockin",
-				entityType: "work_period",
-				dateRange: { startDate: "2026-01-01", endDate: "2026-01-31" },
-				employeeIds: [],
-				secretId: "secret_1",
-			},
-		} as Parameters<typeof processImportReviewJob>[0]);
+		await expect(processImportReviewJob(scanJob({ jobId: "job_4" }))).rejects.toThrow("provider unavailable");
 
-		expect(result).toEqual({ success: false, error: "provider unavailable" });
+		expect(updateImportBatchJobMock).toHaveBeenCalledTimes(1);
+		expect(updateImportBatchJobMock).not.toHaveBeenCalledWith(
+			expect.objectContaining({ status: "failed" }),
+		);
+	});
+
+	it("marks failed and rejects when the final BullMQ attempt is exhausted", async () => {
+		scanClockinImportPartitionMock.mockRejectedValue(new Error("provider unavailable"));
+
+		await expect(
+			processImportReviewJob(scanJob({ jobId: "job_4", attemptsMade: 2 })),
+		).rejects.toThrow("provider unavailable");
+
 		expect(updateImportBatchJobMock).toHaveBeenNthCalledWith(2, {
 			jobId: "job_4",
 			organizationId: "org_1",
 			status: "failed",
 			errorMessage: "provider unavailable",
 		});
+	});
+
+	it("rejects unsupported providers", async () => {
+		await expect(processImportReviewJob(scanJob({ provider: "unknown" }))).rejects.toThrow(
+			"Unsupported import review provider: unknown",
+		);
+		expect(scanClockinImportPartitionMock).not.toHaveBeenCalled();
+		expect(scanClockodoImportPartitionMock).not.toHaveBeenCalled();
+	});
+
+	it("rejects unsupported job types", async () => {
+		await expect(processImportReviewJob(scanJob({ type: "unknown-job" }))).rejects.toThrow(
+			"Unsupported import review job type: unknown-job",
+		);
+		expect(scanClockinImportPartitionMock).not.toHaveBeenCalled();
+		expect(commitAcceptedRowsForEntityMock).not.toHaveBeenCalled();
 	});
 });

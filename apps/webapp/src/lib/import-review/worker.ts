@@ -8,6 +8,11 @@ import type { ImportCommitJobData, ImportScanJobData } from "./types";
 
 type ImportReviewJobData = ImportScanJobData | ImportCommitJobData;
 
+function isFinalAttempt(job: Job<ImportReviewJobData>): boolean {
+	const maxAttempts = typeof job.opts.attempts === "number" && job.opts.attempts > 0 ? job.opts.attempts : 1;
+	return job.attemptsMade + 1 >= maxAttempts;
+}
+
 async function markRunning(data: ImportReviewJobData) {
 	await updateImportBatchJob({
 		jobId: data.jobId,
@@ -42,31 +47,45 @@ export async function processImportReviewJob(job: Job<ImportReviewJobData>): Pro
 	try {
 		await markRunning(data);
 
-		if (data.type === "import-review-scan") {
-			const processedRows =
-				data.provider === "clockin"
-					? await scanClockinImportPartition(data)
-					: await scanClockodoImportPartition(data);
+		switch (data.type) {
+			case "import-review-scan": {
+				let processedRows: number;
+				switch (data.provider) {
+					case "clockin":
+						processedRows = await scanClockinImportPartition(data);
+						break;
+					case "clockodo":
+						processedRows = await scanClockodoImportPartition(data);
+						break;
+					default:
+						throw new Error(`Unsupported import review provider: ${String(data.provider)}`);
+				}
 
-			await markCompleted(data, processedRows);
-			return {
-				success: true,
-				message: "Import review scan completed",
-				data: { processedRows },
-			};
+				await markCompleted(data, processedRows);
+				return {
+					success: true,
+					message: "Import review scan completed",
+					data: { processedRows },
+				};
+			}
+
+			case "import-review-commit": {
+				const committedRows = await commitAcceptedRowsForEntity(data);
+				await markCompleted(data, committedRows);
+				return {
+					success: true,
+					message: "Import review commit completed",
+					data: { committedRows },
+				};
+			}
+
+			default:
+				throw new Error(`Unsupported import review job type: ${String(data.type)}`);
 		}
-
-		const committedRows = await commitAcceptedRowsForEntity(data);
-		await markCompleted(data, committedRows);
-		return {
-			success: true,
-			message: "Import review commit completed",
-			data: { committedRows },
-		};
 	} catch (error) {
 		const errorMessage = error instanceof Error ? error.message : String(error);
-		await markFailed(data, errorMessage);
-		return { success: false, error: errorMessage };
+		if (isFinalAttempt(job)) await markFailed(data, errorMessage);
+		throw error;
 	}
 }
 

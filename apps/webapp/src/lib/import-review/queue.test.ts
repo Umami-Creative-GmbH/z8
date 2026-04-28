@@ -184,4 +184,26 @@ describe("import review worker routing", () => {
 		expect(result.success).toBe(true);
 		expect(processImportReviewJob).toHaveBeenCalledTimes(1);
 	});
+
+	it("propagates import review processor failures so BullMQ can retry", async () => {
+		vi.mocked(processImportReviewJob).mockRejectedValueOnce(new Error("retry me"));
+
+		await expect(
+			processOneOffJob({
+				id: "bull_3",
+				name: "import-review-scan-job_3",
+				data: {
+					type: "import-review-scan",
+					batchId: "batch_1",
+					jobId: "job_3",
+					organizationId: "org_1",
+					provider: "clockin",
+					entityType: "work_period",
+					dateRange: { startDate: "2026-01-01", endDate: "2026-01-31" },
+					employeeIds: ["emp_1"],
+					secretId: "secret_1",
+				},
+			} as Parameters<typeof processOneOffJob>[0]),
+		).rejects.toThrow("retry me");
+	});
 });
