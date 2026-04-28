@@ -19,6 +19,12 @@ interface ProcessQualificationEvidenceUploadRequest {
 	fileName?: string;
 }
 
+function isUuid(value: string): boolean {
+	return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+		value,
+	);
+}
+
 export async function POST(request: NextRequest) {
 	await connection();
 
@@ -37,6 +43,10 @@ export async function POST(request: NextRequest) {
 
 		if (!isValidTusFileKey(tusFileKey)) {
 			return NextResponse.json({ error: "Invalid file key" }, { status: 400 });
+		}
+
+		if (!isUuid(employeeSkillId)) {
+			return NextResponse.json({ error: "Invalid employeeSkillId" }, { status: 400 });
 		}
 
 		const assignment = await db.query.employeeSkill.findFirst({
@@ -87,7 +97,7 @@ export async function POST(request: NextRequest) {
 				Body: buffer,
 				ContentType: detectedType.mime,
 				Metadata: {
-					"uploaded-by": authContext.session.user.id,
+					"uploaded-by": authContext.user.id,
 					"original-key": tusFileKey,
 					"upload-timestamp": new Date().toISOString(),
 				},
@@ -99,7 +109,7 @@ export async function POST(request: NextRequest) {
 			.values({
 				organizationId: authContext.employee.organizationId,
 				employeeSkillId,
-				uploadedBy: authContext.session.user.id,
+				uploadedBy: authContext.user.id,
 				storageProvider: "s3",
 				storageBucket: S3_BUCKET,
 				fileKey: finalStorageKey,

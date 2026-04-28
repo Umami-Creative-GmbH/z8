@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const sendMock = vi.fn();
 const findEmployeeSkillMock = vi.fn();
 const insertValuesMock = vi.fn();
+const employeeSkillId = "11111111-1111-4111-8111-111111111111";
 
 vi.mock("next/server", async () => {
 	const actual = await vi.importActual<typeof import("next/server")>("next/server");
@@ -16,7 +17,8 @@ vi.mock("next/server", async () => {
 vi.mock("@/lib/auth-helpers", () => ({
 	getAuthContext: vi.fn(async () => ({
 		employee: { id: "employee-1", organizationId: "org-1" },
-		session: { user: { id: "user-1" } },
+		user: { id: "user-1" },
+		session: { activeOrganizationId: "org-1" },
 	})),
 }));
 
@@ -68,7 +70,7 @@ describe("qualification evidence upload processing", () => {
 		sendMock.mockReset();
 		findEmployeeSkillMock.mockReset();
 		insertValuesMock.mockReset();
-		findEmployeeSkillMock.mockResolvedValue({ id: "employee-skill-1", employeeId: "employee-1" });
+		findEmployeeSkillMock.mockResolvedValue({ id: employeeSkillId, employeeId: "employee-1" });
 		sendMock.mockResolvedValueOnce({
 			ContentLength: 4,
 			Body: { transformToByteArray: async () => new Uint8Array([1, 2, 3, 4]) },
@@ -80,7 +82,7 @@ describe("qualification evidence upload processing", () => {
 					fileName: "Forklift.pdf",
 					mimeType: "application/pdf",
 					fileSize: 4,
-					fileKey: "qualification-evidence/org-1/employee-skill-1/Forklift.pdf",
+					fileKey: `qualification-evidence/org-1/${employeeSkillId}/Forklift.pdf`,
 				},
 			],
 		});
@@ -91,7 +93,7 @@ describe("qualification evidence upload processing", () => {
 		const response = await POST(
 			request({
 				tusFileKey: "tmp-upload-key",
-				employeeSkillId: "employee-skill-1",
+				employeeSkillId,
 				fileName: "Forklift.pdf",
 			}),
 		);
@@ -101,5 +103,29 @@ describe("qualification evidence upload processing", () => {
 			success: true,
 			evidence: { id: "evidence-1", fileName: "Forklift.pdf" },
 		});
+		expect(insertValuesMock).toHaveBeenCalledWith(
+			expect.objectContaining({
+				employeeSkillId,
+				uploadedBy: "user-1",
+			}),
+		);
+		expect(sendMock.mock.calls[1]?.[0].input.Metadata).toMatchObject({
+			"uploaded-by": "user-1",
+		});
+	});
+
+	it("rejects invalid employee skill IDs before querying", async () => {
+		const { POST } = await import("./route");
+		const response = await POST(
+			request({
+				tusFileKey: "tmp-upload-key",
+				employeeSkillId: "not-a-uuid",
+				fileName: "Forklift.pdf",
+			}),
+		);
+
+		expect(response.status).toBe(400);
+		expect(await response.json()).toEqual({ error: "Invalid employeeSkillId" });
+		expect(findEmployeeSkillMock).not.toHaveBeenCalled();
 	});
 });
