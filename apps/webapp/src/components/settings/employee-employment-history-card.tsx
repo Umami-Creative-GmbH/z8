@@ -108,7 +108,9 @@ const defaultFormValues: FormValues = {
 
 function toDateTime(value: Date | string | null | undefined) {
 	if (!value) return null;
-	return value instanceof Date ? DateTime.fromJSDate(value) : DateTime.fromISO(value);
+	return value instanceof Date
+		? DateTime.fromJSDate(value, { zone: "utc" })
+		: DateTime.fromISO(value, { zone: "utc" });
 }
 
 function dateInputToDate(value: string) {
@@ -117,7 +119,7 @@ function dateInputToDate(value: string) {
 
 function formatDate(value: Date | string | null | undefined) {
 	const date = toDateTime(value);
-	return date?.isValid ? date.toFormat("LLL d, yyyy") : "Present";
+	return date?.isValid ? date.toLocaleString(DateTime.DATE_MED) : "Present";
 }
 
 function formatCurrency(amount: string | null, currency: string) {

@@ -1,8 +1,13 @@
 /* @vitest-environment jsdom */
 
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { Settings } from "luxon";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { EmployeeEmploymentHistoryCard } from "./employee-employment-history-card";
+
+afterEach(() => {
+	Settings.defaultZone = "system";
+});
 
 const baseHistory = [
 	{
@@ -87,5 +92,14 @@ describe("EmployeeEmploymentHistoryCard", () => {
 
 		expect(screen.queryByRole("button", { name: /confirm/i })).toBeNull();
 		expect(screen.queryByRole("button", { name: /cancel/i })).toBeNull();
+	});
+
+	it("renders UTC-midnight effective dates without shifting to the previous local day", () => {
+		Settings.defaultZone = "America/Los_Angeles";
+
+		renderCard();
+
+		expect(screen.getAllByText(/Jan 1, 2026/).length).toBeGreaterThan(0);
+		expect(screen.queryByText(/Dec 31, 2025/)).toBeNull();
 	});
 });
