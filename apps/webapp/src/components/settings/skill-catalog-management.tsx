@@ -242,6 +242,10 @@ export function SkillCatalogManagement({
 							<TableBody>
 								{skills.map((skill) => {
 									const CategoryIcon = getCategoryIcon(skill.category as SkillCategory);
+									const categoryLabel =
+										skill.category === "custom" && skill.customCategoryName
+											? skill.customCategoryName
+											: getCategoryLabel(skill.category as SkillCategory);
 									return (
 										<TableRow key={skill.id}>
 											<TableCell>
@@ -249,14 +253,14 @@ export function SkillCatalogManagement({
 													<Tooltip>
 														<TooltipTrigger asChild>
 															<div className="flex items-center justify-center">
-																<CategoryIcon className="h-5 w-5 text-muted-foreground" />
+																<CategoryIcon
+																	className="h-5 w-5 text-muted-foreground"
+																	aria-hidden="true"
+																/>
+																<span className="sr-only">{categoryLabel}</span>
 															</div>
 														</TooltipTrigger>
-														<TooltipContent>
-															{skill.category === "custom" && skill.customCategoryName
-																? skill.customCategoryName
-																: getCategoryLabel(skill.category as SkillCategory)}
-														</TooltipContent>
+														<TooltipContent>{categoryLabel}</TooltipContent>
 													</Tooltip>
 												</TooltipProvider>
 											</TableCell>

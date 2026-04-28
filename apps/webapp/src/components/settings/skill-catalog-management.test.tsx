@@ -95,6 +95,12 @@ describe("SkillCatalogManagement", () => {
 		});
 	});
 
+	it("exposes category text in catalog rows", () => {
+		render(<SkillCatalogManagement organizationId="org-1" canManageCatalog />);
+
+		expect(screen.getByText("Certification")).toBeTruthy();
+	});
+
 	it("prefills the edit form with catalog qualification details", () => {
 		render(<SkillCatalogManagement organizationId="org-1" canManageCatalog />);
 

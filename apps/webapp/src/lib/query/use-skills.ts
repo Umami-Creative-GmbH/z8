@@ -63,7 +63,8 @@ export function useCreateSkill(organizationId: string) {
 			return result.data;
 		},
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: queryKeys.skills.list(organizationId) });
+			queryClient.invalidateQueries({ queryKey: queryKeys.skills.list(organizationId, false) });
+			queryClient.invalidateQueries({ queryKey: queryKeys.skills.list(organizationId, true) });
 		},
 	});
 }
@@ -92,7 +93,8 @@ export function useUpdateSkill(organizationId: string) {
 			return result.data;
 		},
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: queryKeys.skills.list(organizationId) });
+			queryClient.invalidateQueries({ queryKey: queryKeys.skills.list(organizationId, false) });
+			queryClient.invalidateQueries({ queryKey: queryKeys.skills.list(organizationId, true) });
 		},
 	});
 }
@@ -106,7 +108,8 @@ export function useDeleteSkill(organizationId: string) {
 			if (!result.success) throw new Error(result.error);
 		},
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: queryKeys.skills.list(organizationId) });
+			queryClient.invalidateQueries({ queryKey: queryKeys.skills.list(organizationId, false) });
+			queryClient.invalidateQueries({ queryKey: queryKeys.skills.list(organizationId, true) });
 		},
 	});
 }
