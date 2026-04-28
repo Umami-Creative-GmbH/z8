@@ -1,6 +1,7 @@
 import { env } from "@/env";
 import { ClockinClient } from "@/lib/clockin/client";
 import type { ClockinAbsence, ClockinWorkday } from "@/lib/clockin/types";
+import { DateTime } from "luxon";
 import { decryptImportCredential } from "./credential-secret";
 import { classifyTimeWindow, detectMissingMapping } from "./detection";
 import { getImportJobSecret, insertImportIssues, insertStagedRows } from "./repository";
@@ -54,6 +55,18 @@ function issueSeverityFor(issues: ImportIssueDraft[]) {
 	return "none";
 }
 
+function classifyAbsenceRange(input: { startsAt: string; endsAt: string }): string[] {
+	const flags: string[] = [];
+	const start = DateTime.fromISO(input.startsAt, { zone: "utc" });
+	const end = DateTime.fromISO(input.endsAt, { zone: "utc" });
+
+	if (!start.isValid) flags.push("invalid_start");
+	if (!end.isValid) flags.push("invalid_end");
+	if (start.isValid && end.isValid && end < start) flags.push("non_positive_range");
+
+	return flags;
+}
+
 function stagedWorkday(workday: ClockinWorkday & { id?: unknown }): {
 	row: NormalizedImportRow;
 	issues: ImportIssueDraft[];
@@ -93,7 +106,7 @@ function stagedAbsence(absence: ClockinAbsence): {
 	issues: ImportIssueDraft[];
 } {
 	const providerSourceId = sourceId("absence", absence.id);
-	const suspiciousFlags = classifyTimeWindow({ startsAt: absence.starts_at, endsAt: absence.ends_at });
+	const suspiciousFlags = classifyAbsenceRange({ startsAt: absence.starts_at, endsAt: absence.ends_at });
 	const issues = [
 		detectMissingMapping({ entityType: "absence", providerSourceId, employeeId: null }),
 		suspiciousFlags.length > 0
@@ -147,7 +160,7 @@ async function loadClient(job: ImportScanJobData): Promise<ClockinClient> {
 
 export async function scanClockinImportPartition(job: ImportScanJobData): Promise<ClockinScanResult> {
 	if (job.entityType !== "work_period" && job.entityType !== "absence") {
-		return { stagedRows: 0, issues: 0 };
+		throw new Error(`Unsupported Clockin import review entity type: ${job.entityType}`);
 	}
 
 	const employeeIds = toClockinEmployeeIds(job.employeeIds);

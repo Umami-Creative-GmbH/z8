@@ -171,6 +171,37 @@ describe("scanClockinImportPartition", () => {
 		]);
 	});
 
+	it("does not flag valid multi-day absences as suspicious shift windows", async () => {
+		mocks.searchAbsences.mockResolvedValue([
+			{
+				id: 7002,
+				employee_id: 101,
+				absencecategory_name: "Sick leave",
+				approval: "approved",
+				duration: 3,
+				note: null,
+				starts_at: "2026-01-10",
+				ends_at: "2026-01-12",
+				created_at: "2025-12-01T00:00:00.000Z",
+				updated_at: "2025-12-02T00:00:00.000Z",
+			},
+		]);
+
+		const result = await scanClockinImportPartition(scanJob({ entityType: "absence", employeeIds: ["101"] }));
+
+		expect(result).toEqual({ stagedRows: 1, issues: 1 });
+		expect(mocks.insertStagedRows.mock.calls[0][0].rows[0].normalizedPayload).toEqual(
+			expect.objectContaining({
+				startsAt: "2026-01-10",
+				endsAt: "2026-01-12",
+				suspiciousFlags: [],
+			}),
+		);
+		expect(mocks.insertImportIssues.mock.calls[0][0].issues).toEqual([
+			expect.objectContaining({ issueType: "unmatched_employee", severity: "blocking" }),
+		]);
+	});
+
 	it("returns zero without calling Clockin when no valid numeric employee IDs are provided", async () => {
 		const result = await scanClockinImportPartition(scanJob({ employeeIds: ["abc", "", "12.3"] }));
 
@@ -180,10 +211,11 @@ describe("scanClockinImportPartition", () => {
 		expect(mocks.insertImportIssues).not.toHaveBeenCalled();
 	});
 
-	it("returns zero for unsupported entity types without fetching provider data", async () => {
-		const result = await scanClockinImportPartition(scanJob({ entityType: "employee" }));
+	it("rejects unsupported entity types without fetching provider data", async () => {
+		await expect(scanClockinImportPartition(scanJob({ entityType: "employee" }))).rejects.toThrow(
+			"Unsupported Clockin import review entity type: employee",
+		);
 
-		expect(result).toEqual({ stagedRows: 0, issues: 0 });
 		expect(mocks.searchWorkdays).not.toHaveBeenCalled();
 		expect(mocks.searchAbsences).not.toHaveBeenCalled();
 	});
