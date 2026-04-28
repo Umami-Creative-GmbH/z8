@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import type { BriefingApprovalActionItem } from "@/lib/manager-daily-briefing/types";
 
 type TodayApprovalsPanelProps = {
@@ -13,7 +13,7 @@ export function TodayApprovalsPanel({ items, error }: TodayApprovalsPanelProps) 
 			<CardHeader className="gap-2">
 				<div className="flex items-start justify-between gap-3">
 					<div className="space-y-1">
-						<CardTitle className="text-base">Approvals</CardTitle>
+						<h2 className="font-semibold text-base leading-none">Approvals</h2>
 						<CardDescription>Requests waiting for a manager decision.</CardDescription>
 					</div>
 					<Badge variant={items.length > 0 ? "default" : "secondary"}>{items.length}</Badge>

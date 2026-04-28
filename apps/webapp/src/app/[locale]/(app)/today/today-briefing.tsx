@@ -11,7 +11,7 @@ import {
 import { DateTime } from "luxon";
 import type { ComponentType, SVGProps } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import type {
 	BriefingActionItem,
 	BriefingActionSeverity,
@@ -189,7 +189,7 @@ function NeedsActionCard({ items }: { items: BriefingActionItem[] }) {
 			<CardHeader className="gap-2">
 				<div className="flex items-start justify-between gap-3">
 					<div className="space-y-1">
-						<CardTitle className="text-base">Needs Action</CardTitle>
+						<h2 className="font-semibold text-base leading-none">Needs Action</h2>
 						<CardDescription>Start here for the most urgent operational follow-up.</CardDescription>
 					</div>
 					<Badge variant={items.length > 0 ? "default" : "secondary"}>{items.length}</Badge>
@@ -216,10 +216,10 @@ function SectionCard({ section, icon: Icon }: SectionCardProps) {
 			<CardHeader className="gap-2">
 				<div className="flex items-start justify-between gap-3">
 					<div className="space-y-1">
-						<CardTitle className="flex items-center gap-2 text-base">
+						<h3 className="flex items-center gap-2 font-semibold text-base leading-none">
 							<Icon className="size-4 text-primary" aria-hidden="true" />
 							{section.title}
-						</CardTitle>
+						</h3>
 						<CardDescription>{section.description}</CardDescription>
 					</div>
 					<Badge variant={section.items.length > 0 ? "outline" : "secondary"}>
@@ -249,13 +249,13 @@ function ActionRow({ item, compact = false }: { item: BriefingActionItem; compac
 			href={item.href}
 			className="group flex items-start justify-between gap-3 px-3 py-3 outline-none transition-colors hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring"
 		>
-			<div className="min-w-0 space-y-1">
+			<div className="min-w-0 space-y-1 break-words">
 				<div className="flex flex-wrap items-center gap-2">
 					<SeverityBadge severity={item.severity} />
-					<span className="font-medium text-sm leading-snug">{item.title}</span>
+					<span className="min-w-0 break-words font-medium text-sm leading-snug">{item.title}</span>
 				</div>
 				<p
-					className={`text-muted-foreground text-sm leading-relaxed ${compact ? "line-clamp-2" : ""}`}
+					className={`break-words text-muted-foreground text-sm leading-relaxed ${compact ? "line-clamp-2" : ""}`}
 				>
 					{item.description}
 				</p>
