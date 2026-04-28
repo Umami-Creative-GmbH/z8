@@ -88,11 +88,7 @@ describe("PayrollReadinessDashboard", () => {
 
 	it("renders blocked summary and affected employee row with name and employee number", async () => {
 		const { PayrollReadinessDashboard } = await import("./payroll-readiness-dashboard");
-		const affectedEmployees: Array<
-			PayrollReadinessResult["groups"][number]["checks"][number]["affectedEmployees"][number] & {
-				employeeNumber: string;
-			}
-		> = [
+		const affectedEmployees: PayrollReadinessResult["groups"][number]["checks"][number]["affectedEmployees"] = [
 			{
 				id: "employee-1",
 				name: "Ada Lovelace",

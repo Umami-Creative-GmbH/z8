@@ -138,7 +138,11 @@ describe("getPayrollReadiness", () => {
 			{
 				id: "approval-1",
 				requestedBy: "employee-1",
-				requester: { id: "employee-1", user: { name: "Ada Lovelace", email: "ada@example.com" } },
+				requester: {
+					id: "employee-1",
+					employeeNumber: "E-1001",
+					user: { name: "Ada Lovelace", email: "ada@example.com" },
+				},
 			},
 		]);
 
@@ -152,7 +156,12 @@ describe("getPayrollReadiness", () => {
 			severity: "blocker",
 			count: 1,
 			actionHref: "/approvals/inbox",
-			affectedEmployees: [{ id: "employee-1", name: "Ada Lovelace", email: "ada@example.com" }],
+			affectedEmployees: [{
+				id: "employee-1",
+				name: "Ada Lovelace",
+				email: "ada@example.com",
+				employeeNumber: "E-1001",
+			}],
 		});
 	});
 
@@ -163,7 +172,11 @@ describe("getPayrollReadiness", () => {
 				id: "stale",
 				employeeId: "employee-2",
 				startAt: new Date("2026-04-27T10:00:00.000Z"),
-				employee: { id: "employee-2", user: { name: "Grace Hopper", email: "grace@example.com" } },
+				employee: {
+					id: "employee-2",
+					employeeNumber: "E-1002",
+					user: { name: "Grace Hopper", email: "grace@example.com" },
+				},
 			},
 		]);
 
@@ -176,7 +189,12 @@ describe("getPayrollReadiness", () => {
 			severity: "warning",
 			count: 1,
 			actionHref: "/time-tracking",
-			affectedEmployees: [{ id: "employee-2", name: "Grace Hopper", email: "grace@example.com" }],
+			affectedEmployees: [{
+				id: "employee-2",
+				name: "Grace Hopper",
+				email: "grace@example.com",
+				employeeNumber: "E-1002",
+			}],
 		});
 	});
 
@@ -242,7 +260,11 @@ describe("getPayrollReadiness", () => {
 			{
 				id: "claim-1",
 				employeeId: "employee-1",
-				employee: { id: "employee-1", user: { name: "Katherine Johnson", email: "kat@example.com" } },
+				employee: {
+					id: "employee-1",
+					employeeNumber: "E-1003",
+					user: { name: "Katherine Johnson", email: "kat@example.com" },
+				},
 			},
 		]);
 
@@ -256,7 +278,12 @@ describe("getPayrollReadiness", () => {
 			severity: "warning",
 			count: 1,
 			actionHref: "/travel-expenses/approvals",
-			affectedEmployees: [{ id: "employee-1", name: "Katherine Johnson", email: "kat@example.com" }],
+			affectedEmployees: [{
+				id: "employee-1",
+				name: "Katherine Johnson",
+				email: "kat@example.com",
+				employeeNumber: "E-1003",
+			}],
 		});
 	});
 });

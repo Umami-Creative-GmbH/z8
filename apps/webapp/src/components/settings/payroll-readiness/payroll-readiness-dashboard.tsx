@@ -18,10 +18,6 @@ type DashboardCheck = PayrollReadinessCheck & {
 	actionLabel?: string;
 };
 
-type DashboardAffectedEmployee = PayrollReadinessCheck["affectedEmployees"][number] & {
-	employeeNumber?: string | null;
-};
-
 interface PayrollReadinessDashboardProps {
 	t: TranslateFn;
 	data: PayrollReadinessResult;
@@ -135,7 +131,7 @@ function ChecklistCard({ t, check }: { t: TranslateFn; check: DashboardCheck }) 
 				{check.affectedEmployees?.length ? (
 					<AffectedEmployeesTable
 						t={t}
-						employees={check.affectedEmployees as DashboardAffectedEmployee[]}
+						employees={check.affectedEmployees}
 					/>
 				) : null}
 			</CardContent>
@@ -148,7 +144,7 @@ function AffectedEmployeesTable({
 	employees,
 }: {
 	t: TranslateFn;
-	employees: DashboardAffectedEmployee[];
+	employees: PayrollReadinessCheck["affectedEmployees"];
 }) {
 	return (
 		<Table>
@@ -184,7 +180,7 @@ const actionLinkClassName =
 
 function getChecks(data: PayrollReadinessResult): DashboardCheck[] {
 	return ((data as PayrollReadinessResult & { checks?: DashboardCheck[] }).checks
-		?? data.groups.flatMap((group) => group.checks)) as DashboardCheck[];
+		?? data.groups.flatMap((group) => group.checks));
 }
 
 function getReadinessStatusLabel(status: PayrollReadinessResult["status"], t: TranslateFn) {

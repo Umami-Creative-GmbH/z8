@@ -23,6 +23,7 @@ export type PayrollReadinessAffectedEmployee = {
 	id: string;
 	name?: string | null;
 	email?: string | null;
+	employeeNumber: string | null;
 };
 export type PayrollReadinessCheck = {
 	id: string;
@@ -62,6 +63,7 @@ export type GetPayrollReadinessInput = {
 
 type EmployeeLike = {
 	id?: string | null;
+	employeeNumber?: string | null;
 	user?: {
 		name?: string | null;
 		email?: string | null;
@@ -94,6 +96,7 @@ function normalizeAffectedEmployee(source: EmployeeSource): PayrollReadinessAffe
 		id,
 		name: employee?.user?.name,
 		email: employee?.user?.email,
+		employeeNumber: employee?.employeeNumber ?? null,
 	};
 }
 
