@@ -1,22 +1,24 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { submitMyQualificationRenewal } from "@/app/[locale]/(app)/my-qualifications/actions";
 import {
-	createSkill,
-	updateSkill,
-	deleteSkill,
-	getOrganizationSkills,
 	assignSkillToEmployee,
-	removeSkillFromEmployee,
+	createSkill,
+	deleteSkill,
+	type EmployeeSkillWithDetails,
 	getEmployeeSkills,
+	getOrganizationSkills,
+	getQualifiedEmployeesForSkills,
+	removeSkillFromEmployee,
+	type SkillValidationResult,
+	type SkillWithRelations,
 	setSubareaSkillRequirements,
 	setTemplateSkillRequirements,
+	updateSkill,
 	validateEmployeeForShift,
-	getQualifiedEmployeesForSkills,
-	type SkillWithRelations,
-	type EmployeeSkillWithDetails,
-	type SkillValidationResult,
 } from "@/app/[locale]/(app)/settings/skills/actions";
+import type { CreateRenewalRequestInput } from "@/lib/effect/services/skill.service";
 import { queryKeys } from "./keys";
 
 // =============================================================================
@@ -54,6 +56,7 @@ export function useCreateSkill(organizationId: string) {
 			category: "safety" | "equipment" | "certification" | "training" | "language" | "custom";
 			customCategoryName?: string;
 			requiresExpiry: boolean;
+			expiryWarningDays?: number;
 		}) => {
 			const result = await createSkill(data);
 			if (!result.success) throw new Error(result.error);
@@ -80,6 +83,7 @@ export function useUpdateSkill(organizationId: string) {
 				category?: "safety" | "equipment" | "certification" | "training" | "language" | "custom";
 				customCategoryName?: string;
 				requiresExpiry?: boolean;
+				expiryWarningDays?: number;
 				isActive?: boolean;
 			};
 		}) => {
@@ -138,7 +142,10 @@ export function useAssignSkillToEmployee() {
 		mutationFn: async (data: {
 			employeeId: string;
 			skillId: string;
+			issuedAt?: Date;
 			expiresAt?: Date;
+			issuer?: string;
+			certificateNumber?: string;
 			notes?: string;
 		}) => {
 			const result = await assignSkillToEmployee(data);
@@ -165,6 +172,21 @@ export function useRemoveSkillFromEmployee() {
 			queryClient.invalidateQueries({
 				queryKey: queryKeys.skills.employee(variables.employeeId),
 			});
+		},
+	});
+}
+
+export function useSubmitQualificationRenewal() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: async (data: Omit<CreateRenewalRequestInput, "employeeId" | "organizationId">) => {
+			const result = await submitMyQualificationRenewal(data);
+			if (!result.success) throw new Error(result.error);
+			return result.data;
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: queryKeys.qualifications.my() });
 		},
 	});
 }

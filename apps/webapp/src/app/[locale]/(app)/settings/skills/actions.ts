@@ -1,39 +1,41 @@
 "use server";
 
 import { SpanStatusCode, trace } from "@opentelemetry/api";
-import { revalidateTag } from "next/cache";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { Effect } from "effect";
+import { revalidateTag } from "next/cache";
 import { employee } from "@/db/schema";
-import {
-	type AnyAppError,
-	AuthorizationError,
-	NotFoundError,
-	ValidationError,
-} from "@/lib/effect/errors";
+import { type AnyAppError, AuthorizationError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import {
-	SkillService,
-	type CreateSkillInput,
-	type UpdateSkillInput,
 	type AssignSkillInput,
-	type SetSkillRequirementsInput,
-	type SkillWithRelations,
+	type CreateRenewalRequestInput,
+	type CreateSkillInput,
 	type EmployeeSkillWithDetails,
+	type QualificationRenewalRequestRecord,
+	type ReviewRenewalRequestInput,
+	SkillService,
 	type SkillValidationResult,
+	type SkillWithRelations,
+	type UpdateSkillInput,
 } from "@/lib/effect/services/skill.service";
 
-export type { EmployeeSkillWithDetails, SkillValidationResult, SkillWithRelations };
+export type {
+	CreateRenewalRequestInput,
+	EmployeeSkillWithDetails,
+	QualificationRenewalRequestRecord,
+	ReviewRenewalRequestInput,
+	SkillValidationResult,
+	SkillWithRelations,
+};
 
 import { CACHE_TAGS } from "@/lib/cache/tags";
 import { createLogger } from "@/lib/logger";
 import {
-	ensureCanAccessEmployeeSettingsTarget,
 	ensureSettingsActorCanAccessEmployeeTarget,
-	getEmployeeContext,
 	getEmployeeSettingsActorContext,
 	getTargetEmployee,
 	requireOrgAdminEmployeeSettingsAccess,
@@ -460,6 +462,92 @@ export async function getEmployeeSkills(
 		const skills = yield* _(skillService.getEmployeeSkills(employeeId));
 
 		return skills;
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
+}
+
+export async function createQualificationRenewalRequest(
+	data: Omit<CreateRenewalRequestInput, "employeeId" | "organizationId"> & { employeeId: string },
+): Promise<ServerActionResult<QualificationRenewalRequestRecord>> {
+	const effect = Effect.gen(function* (_) {
+		const actor = yield* _(getEmployeeSettingsActorContext());
+		const skillService = yield* _(SkillService);
+		const targetEmployee = yield* _(getTargetEmployee(data.employeeId));
+
+		yield* _(
+			ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
+				message: "You do not have access to this employee's qualifications",
+				resource: "employeeSkill",
+				action: "update",
+			}),
+		);
+
+		return yield* _(
+			skillService.createRenewalRequest({
+				...data,
+				organizationId: actor.organizationId,
+			}),
+		);
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
+}
+
+export async function reviewQualificationRenewalRequest(
+	data: Omit<ReviewRenewalRequestInput, "reviewerEmployeeId" | "organizationId">,
+): Promise<ServerActionResult<QualificationRenewalRequestRecord>> {
+	const effect = Effect.gen(function* (_) {
+		const actor = yield* _(getEmployeeSettingsActorContext());
+		const skillService = yield* _(SkillService);
+		const reviewerEmployee = actor.currentEmployee;
+
+		if (!reviewerEmployee || (actor.accessTier !== "orgAdmin" && actor.accessTier !== "manager")) {
+			return yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Only admins and managers can review qualification renewals",
+						userId: actor.session.user.id,
+						resource: "qualificationRenewalRequest",
+						action: "update",
+					}),
+				),
+			);
+		}
+
+		return yield* _(
+			skillService.reviewRenewalRequest({
+				...data,
+				organizationId: actor.organizationId,
+				reviewerEmployeeId: reviewerEmployee.id,
+			}),
+		);
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
+}
+
+export async function getPendingQualificationRenewalRequests(): Promise<
+	ServerActionResult<QualificationRenewalRequestRecord[]>
+> {
+	const effect = Effect.gen(function* (_) {
+		const actor = yield* _(getEmployeeSettingsActorContext());
+		const skillService = yield* _(SkillService);
+
+		if (actor.accessTier !== "orgAdmin" && actor.accessTier !== "manager") {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Only admins and managers can view qualification renewals",
+						userId: actor.session.user.id,
+						resource: "qualificationRenewalRequest",
+						action: "read",
+					}),
+				),
+			);
+		}
+
+		return yield* _(skillService.getPendingRenewalRequests(actor.organizationId));
 	}).pipe(Effect.provide(AppLayer));
 
 	return runServerActionSafe(effect);

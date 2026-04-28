@@ -418,6 +418,11 @@ export const queryKeys = {
 		// Qualified employees for a set of skills
 		qualified: (skillIds: string[]) => ["skills", "qualified", skillIds] as const,
 	},
+	qualifications: {
+		my: () => ["qualifications", "my"] as const,
+		renewalRequests: (orgId: string) => ["qualifications", "renewal-requests", orgId] as const,
+		evidence: (employeeSkillId: string) => ["qualifications", "evidence", employeeSkillId] as const,
+	},
 	// Telegram integration
 	telegram: {
 		all: ["telegram"] as const,
