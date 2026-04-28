@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
  * Each ID corresponds to a specific dashboard widget.
  */
 export type WidgetId =
+	| "manager-today"
 	| "managed-employees"
 	| "pending-approvals"
 	| "team-overview"
@@ -22,6 +23,7 @@ export type WidgetId =
  * This order matches the original hardcoded layout in section-cards.tsx.
  */
 export const DEFAULT_WIDGET_ORDER: WidgetId[] = [
+	"manager-today",
 	"managed-employees",
 	"pending-approvals",
 	"team-overview",
