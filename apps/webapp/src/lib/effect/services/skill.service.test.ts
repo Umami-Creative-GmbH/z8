@@ -710,6 +710,55 @@ describe("SkillService qualification renewal behavior", () => {
 			}),
 		);
 	});
+
+	it("returns pending renewal requests with employee, skill, and evidence metadata", async () => {
+		const enrichedRequest = {
+			...baseRequest,
+			employee: {
+				id: "employee-1",
+				firstName: "Avery",
+				lastName: "Nguyen",
+				email: "avery@example.com",
+			},
+			employeeSkill: {
+				id: "employee-skill-1",
+				skill: {
+					id: "skill-1",
+					name: "Forklift License",
+				},
+			},
+			evidenceLinks: [
+				{
+					id: "request-evidence-1",
+					evidence: {
+						id: "evidence-1",
+						fileName: "forklift-renewal.pdf",
+						mimeType: "application/pdf",
+						fileSize: 12345,
+						fileKey: "private/org-1/forklift-renewal.pdf",
+					},
+				},
+			],
+		};
+		const { mockDb, runGetPendingRenewalRequests } = createSkillServiceTestContext({
+			pendingRequests: [enrichedRequest],
+		});
+
+		expect(await runGetPendingRenewalRequests("org-1")).toEqual([enrichedRequest]);
+		expect(mockDb.query.qualificationRenewalRequest.findMany).toHaveBeenCalledWith(
+			expect.objectContaining({
+				with: expect.objectContaining({
+					employee: expect.anything(),
+					employeeSkill: expect.objectContaining({
+						with: expect.objectContaining({ skill: expect.anything() }),
+					}),
+					evidenceLinks: expect.objectContaining({
+						with: expect.objectContaining({ evidence: expect.anything() }),
+					}),
+				}),
+			}),
+		);
+	});
 });
 
 describe("getQualificationExpiryBoundary", () => {

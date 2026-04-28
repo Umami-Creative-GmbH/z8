@@ -139,6 +139,20 @@ export interface EmployeeSkillWithDetails extends EmployeeSkill {
 	skill: Skill;
 }
 
+export interface QualificationRenewalRequestWithDetails extends QualificationRenewalRequestRecord {
+	employee: Pick<typeof employee.$inferSelect, "id" | "firstName" | "lastName" | "email">;
+	employeeSkill: Pick<EmployeeSkill, "id"> & {
+		skill: Pick<Skill, "id" | "name">;
+	};
+	evidenceLinks: Array<{
+		id: string;
+		evidence: Pick<
+			QualificationEvidenceRecord,
+			"id" | "fileName" | "mimeType" | "fileSize" | "fileKey"
+		>;
+	}>;
+}
+
 export interface SkillValidationResult {
 	isQualified: boolean;
 	missingSkills: Array<{
@@ -226,7 +240,7 @@ export class SkillService extends Context.Tag("SkillService")<
 
 		readonly getPendingRenewalRequests: (
 			organizationId: string,
-		) => Effect.Effect<QualificationRenewalRequestRecord[], DatabaseError>;
+		) => Effect.Effect<QualificationRenewalRequestWithDetails[], DatabaseError>;
 
 		readonly getQualifiedEmployeesForSkills: (
 			organizationId: string,
@@ -907,6 +921,45 @@ export const SkillServiceLive = Layer.effect(
 									eq(qualificationRenewalRequest.organizationId, organizationId),
 									eq(qualificationRenewalRequest.status, "pending"),
 								),
+								with: {
+									employee: {
+										columns: {
+											id: true,
+											firstName: true,
+											lastName: true,
+											email: true,
+										},
+									},
+									employeeSkill: {
+										columns: {
+											id: true,
+										},
+										with: {
+											skill: {
+												columns: {
+													id: true,
+													name: true,
+												},
+											},
+										},
+									},
+									evidenceLinks: {
+										columns: {
+											id: true,
+										},
+										with: {
+											evidence: {
+												columns: {
+													id: true,
+													fileName: true,
+													mimeType: true,
+													fileSize: true,
+													fileKey: true,
+												},
+											},
+										},
+									},
+								},
 								orderBy: (table, { asc }) => [asc(table.createdAt)],
 							});
 						}),

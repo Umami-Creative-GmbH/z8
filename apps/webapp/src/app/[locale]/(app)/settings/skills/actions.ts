@@ -16,6 +16,7 @@ import {
 	type CreateSkillInput,
 	type EmployeeSkillWithDetails,
 	type QualificationRenewalRequestRecord,
+	type QualificationRenewalRequestWithDetails,
 	type ReviewRenewalRequestInput,
 	SkillService,
 	type SkillValidationResult,
@@ -27,6 +28,7 @@ export type {
 	CreateRenewalRequestInput,
 	EmployeeSkillWithDetails,
 	QualificationRenewalRequestRecord,
+	QualificationRenewalRequestWithDetails,
 	ReviewRenewalRequestInput,
 	SkillValidationResult,
 	SkillWithRelations,
@@ -570,7 +572,7 @@ export async function reviewQualificationRenewalRequest(
 }
 
 export async function getPendingQualificationRenewalRequests(): Promise<
-	ServerActionResult<QualificationRenewalRequestRecord[]>
+	ServerActionResult<QualificationRenewalRequestWithDetails[]>
 > {
 	const effect = Effect.gen(function* (_) {
 		const actor = yield* _(getEmployeeSettingsActorContext());

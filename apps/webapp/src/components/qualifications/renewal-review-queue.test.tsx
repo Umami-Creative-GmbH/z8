@@ -21,6 +21,31 @@ const pendingRequest = {
 	organizationId: "org-1",
 	employeeId: "employee-1",
 	employeeSkillId: "employee-skill-1",
+	employee: {
+		id: "employee-1",
+		firstName: "Avery",
+		lastName: "Nguyen",
+		email: "avery@example.com",
+	},
+	employeeSkill: {
+		id: "employee-skill-1",
+		skill: {
+			id: "skill-1",
+			name: "Forklift License",
+		},
+	},
+	evidenceLinks: [
+		{
+			id: "request-evidence-1",
+			evidence: {
+				id: "evidence-1",
+				fileName: "forklift-renewal.pdf",
+				mimeType: "application/pdf",
+				fileSize: 12345,
+				fileKey: "private/org-1/forklift-renewal.pdf",
+			},
+		},
+	],
 	requestedIssuedAt: new Date("2026-01-01T00:00:00Z"),
 	requestedExpiresAt: new Date("2027-01-15T00:00:00Z"),
 	requestedIssuer: "Safety Council",
@@ -57,8 +82,12 @@ function renderWithQueryClient(children: ReactNode) {
 	const queryClient = new QueryClient({
 		defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
 	});
+	const invalidateQueriesSpy = vi.spyOn(queryClient, "invalidateQueries");
 
-	return render(<QueryClientProvider client={queryClient}>{children}</QueryClientProvider>);
+	return {
+		...render(<QueryClientProvider client={queryClient}>{children}</QueryClientProvider>),
+		invalidateQueriesSpy,
+	};
 }
 
 describe("RenewalReviewQueue", () => {
@@ -77,7 +106,9 @@ describe("RenewalReviewQueue", () => {
 	it("renders pending renewal details and approves a request", async () => {
 		renderWithQueryClient(<RenewalReviewQueue organizationId="org-1" />);
 
-		expect(await screen.findByText("Qualification renewal request")).toBeTruthy();
+		expect(await screen.findByText("Forklift License")).toBeTruthy();
+		expect(screen.getByText("Avery Nguyen")).toBeTruthy();
+		expect(screen.getByText("forklift-renewal.pdf")).toBeTruthy();
 		expect(screen.getByText("Issuer: Safety Council")).toBeTruthy();
 		expect(screen.getByText("Certificate: CERT-98765")).toBeTruthy();
 		expect(screen.getByText("Notes: Updated forklift license")).toBeTruthy();
@@ -92,6 +123,21 @@ describe("RenewalReviewQueue", () => {
 			});
 		});
 		expect(toastSuccessMock).toHaveBeenCalledWith("Renewal request reviewed");
+	});
+
+	it("invalidates reviewed employee skill data after approval", async () => {
+		const { invalidateQueriesSpy } = renderWithQueryClient(
+			<RenewalReviewQueue organizationId="org-1" />,
+		);
+
+		await screen.findByText("Forklift License");
+		fireEvent.click(screen.getByRole("button", { name: "Approve renewal request" }));
+
+		await waitFor(() => {
+			expect(invalidateQueriesSpy).toHaveBeenCalledWith({
+				queryKey: ["skills", "employee", "employee-1"],
+			});
+		});
 	});
 
 	it("shows an empty state when there are no pending renewal requests", async () => {
