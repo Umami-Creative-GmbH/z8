@@ -2,7 +2,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { deleteShift, upsertShift } from "@/app/[locale]/(app)/scheduling/actions";
 import type { ShiftTemplate, ShiftWithRelations } from "@/app/[locale]/(app)/scheduling/types";
@@ -42,6 +42,9 @@ export function ShiftDialog({
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const qualificationOverrideReasonRef = useRef<HTMLTextAreaElement>(null);
+	const [qualificationOverrideReasonError, setQualificationOverrideReasonError] = useState<
+		string | null
+	>(null);
 
 	const isEditing = !!shift;
 	const title = isEditing
@@ -138,6 +141,18 @@ export function ShiftDialog({
 		templates,
 		defaultDate,
 		onSubmit: (values) => {
+			if (requiresOverride && !qualificationOverrideReasonRef.current?.value.trim()) {
+				setQualificationOverrideReasonError(
+					t(
+						"scheduling.shiftDialog.overrideReasonRequired",
+						"Explain why this override is needed before saving.",
+					),
+				);
+				qualificationOverrideReasonRef.current?.focus();
+				return;
+			}
+
+			setQualificationOverrideReasonError(null);
 			upsertMutation.mutate(values);
 		},
 	});
@@ -177,6 +192,7 @@ export function ShiftDialog({
 	const currentSubareaId = formValues.subareaId;
 	const currentTemplateId = formValues.templateId;
 	const overrideResetKey = `${open ? "open" : "closed"}-${currentEmployeeId ?? "none"}-${currentSubareaId}-${currentTemplateId ?? "none"}`;
+	const overrideReasonErrorId = "qualificationOverrideReason-error";
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
@@ -214,13 +230,29 @@ export function ShiftDialog({
 							<Textarea
 								key={overrideResetKey}
 								id="qualificationOverrideReason"
+								name="qualificationOverrideReason"
+								autoComplete="off"
 								ref={qualificationOverrideReasonRef}
+								aria-invalid={qualificationOverrideReasonError ? "true" : undefined}
+								aria-describedby={
+									qualificationOverrideReasonError ? overrideReasonErrorId : undefined
+								}
 								placeholder={t(
 									"scheduling.shiftDialog.overrideReasonPlaceholder",
 									"Explain why this assignment is acceptable despite qualification warnings.",
 								)}
 								className="resize-none"
+								onChange={() => setQualificationOverrideReasonError(null)}
 							/>
+							{qualificationOverrideReasonError && (
+								<p
+									id={overrideReasonErrorId}
+									className="text-sm font-medium text-destructive"
+									aria-live="polite"
+								>
+									{qualificationOverrideReasonError}
+								</p>
+							)}
 						</div>
 					)}
 

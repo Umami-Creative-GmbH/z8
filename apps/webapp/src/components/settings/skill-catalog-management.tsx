@@ -66,25 +66,35 @@ interface SkillCatalogManagementProps {
 
 const SKILL_CATEGORIES: Array<{
 	value: SkillCategory;
-	label: string;
 	icon: typeof IconShieldCheck;
 }> = [
-	{ value: "safety", label: "Safety", icon: IconShieldCheck },
-	{ value: "equipment", label: "Equipment", icon: IconTools },
-	{ value: "certification", label: "Certification", icon: IconCertificate },
-	{ value: "training", label: "Training", icon: IconSchool },
-	{ value: "language", label: "Language", icon: IconLanguage },
-	{ value: "custom", label: "Custom", icon: IconAward },
+	{ value: "safety", icon: IconShieldCheck },
+	{ value: "equipment", icon: IconTools },
+	{ value: "certification", icon: IconCertificate },
+	{ value: "training", icon: IconSchool },
+	{ value: "language", icon: IconLanguage },
+	{ value: "custom", icon: IconAward },
 ];
+
+const SKILL_CATEGORY_LABEL_FALLBACKS: Record<SkillCategory, string> = {
+	safety: "Safety",
+	equipment: "Equipment",
+	certification: "Certification",
+	training: "Training",
+	language: "Language",
+	custom: "Custom",
+};
 
 function getCategoryIcon(category: SkillCategory) {
 	const found = SKILL_CATEGORIES.find((c) => c.value === category);
 	return found?.icon ?? IconAward;
 }
 
-function getCategoryLabel(category: SkillCategory) {
-	const found = SKILL_CATEGORIES.find((c) => c.value === category);
-	return found?.label ?? category;
+function getCategoryLabel(category: SkillCategory, t: ReturnType<typeof useTranslate>["t"]) {
+	return t(
+		`settings.skills.categories.${category}`,
+		SKILL_CATEGORY_LABEL_FALLBACKS[category] ?? category,
+	);
 }
 
 export function normalizeExpiryWarningDays(value: number) {
@@ -252,7 +262,7 @@ export function SkillCatalogManagement({
 									const categoryLabel =
 										skill.category === "custom" && skill.customCategoryName
 											? skill.customCategoryName
-											: getCategoryLabel(skill.category as SkillCategory);
+											: getCategoryLabel(skill.category as SkillCategory, t);
 									return (
 										<TableRow key={skill.id}>
 											<TableCell>
@@ -513,6 +523,8 @@ function SkillDialog({ skill, open, onOpenChange, onSuccess }: SkillDialogProps)
 									<Label htmlFor="skill-name">{t("settings.skills.skillName", "Name")} *</Label>
 									<Input
 										id="skill-name"
+										name="name"
+										autoComplete="off"
 										value={field.state.value}
 										onChange={(e) => field.handleChange(e.target.value)}
 										onBlur={field.handleBlur}
@@ -548,7 +560,7 @@ function SkillDialog({ skill, open, onOpenChange, onSuccess }: SkillDialogProps)
 												<SelectItem key={cat.value} value={cat.value}>
 													<span className="flex items-center gap-2">
 														<cat.icon className="h-4 w-4" aria-hidden="true" />
-														{cat.label}
+														{getCategoryLabel(cat.value, t)}
 													</span>
 												</SelectItem>
 											))}
@@ -581,6 +593,8 @@ function SkillDialog({ skill, open, onOpenChange, onSuccess }: SkillDialogProps)
 												</Label>
 												<Input
 													id="skill-custom-category"
+													name="customCategoryName"
+													autoComplete="off"
 													value={field.state.value}
 													onChange={(e) => field.handleChange(e.target.value)}
 													onBlur={field.handleBlur}
@@ -610,6 +624,8 @@ function SkillDialog({ skill, open, onOpenChange, onSuccess }: SkillDialogProps)
 									</Label>
 									<Textarea
 										id="skill-description"
+										name="description"
+										autoComplete="off"
 										value={field.state.value}
 										onChange={(e) => field.handleChange(e.target.value)}
 										onBlur={field.handleBlur}

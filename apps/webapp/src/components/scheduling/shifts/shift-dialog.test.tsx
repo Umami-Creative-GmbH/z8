@@ -304,6 +304,27 @@ describe("ShiftDialog", () => {
 		});
 	});
 
+	it("requires and focuses an override reason before submitting an override assignment", async () => {
+		skillValidationMock.mockReturnValue({
+			isQualified: false,
+			hasBlockingIssues: false,
+			requiresOverride: true,
+			missingSkills: [],
+			expiredSkills: [],
+			issues: [],
+		});
+
+		renderShiftDialogWithLocalOpenState();
+
+		fireEvent.click(screen.getByRole("button", { name: "Update Shift" }));
+
+		const overrideReason = screen.getByLabelText("Qualification override reason");
+		expect(await screen.findByText("Explain why this override is needed before saving."));
+		expect(upsertShiftMock).not.toHaveBeenCalled();
+		expect(overrideReason.getAttribute("aria-invalid")).toBe("true");
+		expect(document.activeElement).toBe(overrideReason);
+	});
+
 	it("resets delete confirmation after cancel closes the dialog", async () => {
 		renderShiftDialogWithLocalOpenState();
 

@@ -433,7 +433,11 @@ function AssignSkillDialog({
 											)}
 										</p>
 									) : (
-										<Select value={field.state.value} onValueChange={field.handleChange}>
+										<Select
+											name="skillId"
+											value={field.state.value}
+											onValueChange={field.handleChange}
+										>
 											<SelectTrigger id="assign-skill">
 												<SelectValue
 													placeholder={t("settings.skills.selectSkill", "Select a skill")}
@@ -489,7 +493,9 @@ function AssignSkillDialog({
 									</Label>
 									<Input
 										id="assign-expiry"
+										name="expiresAt"
 										type="date"
+										autoComplete="off"
 										value={field.state.value}
 										onChange={(e) => field.handleChange(e.target.value)}
 										onBlur={field.handleBlur}
@@ -582,6 +588,8 @@ function AssignSkillDialog({
 									<Label htmlFor="assign-notes">{t("settings.skills.notes", "Notes")}</Label>
 									<Textarea
 										id="assign-notes"
+										name="notes"
+										autoComplete="off"
 										value={field.state.value}
 										onChange={(e) => field.handleChange(e.target.value)}
 										onBlur={field.handleBlur}

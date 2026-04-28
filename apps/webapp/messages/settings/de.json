@@ -2140,6 +2140,14 @@
       "catalog": "Qualifikationskatalog",
       "catalogDescription": "Definieren Sie Qualifikationen, die für Teilbereiche und Schichtvorlagen erforderlich sein können",
       "category": "Kategorie",
+      "categories": {
+        "certification": "Zertifizierung",
+        "custom": "Benutzerdefiniert",
+        "equipment": "Ausrüstung",
+        "language": "Sprache",
+        "safety": "Sicherheit",
+        "training": "Schulung"
+      },
       "confirmDelete": "Sind Sie sicher, dass Sie diese Qualifikation löschen möchten?",
       "confirmRemove": "„${skillName}“ von diesem Mitarbeiter entfernen?",
       "createError": "Qualifikation konnte nicht erstellt werden",
