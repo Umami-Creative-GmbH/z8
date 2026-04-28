@@ -1,7 +1,8 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useTranslate } from "@tolgee/react";
+import { useRef } from "react";
 import { toast } from "sonner";
 import { deleteShift, upsertShift } from "@/app/[locale]/(app)/scheduling/actions";
 import type { ShiftTemplate, ShiftWithRelations } from "@/app/[locale]/(app)/scheduling/types";
@@ -38,17 +39,21 @@ export function ShiftDialog({
 	defaultDate,
 	organizationId,
 }: ShiftDialogProps) {
+	const { t } = useTranslate();
 	const queryClient = useQueryClient();
-	const [qualificationOverrideReason, setQualificationOverrideReason] = useState("");
+	const qualificationOverrideReasonRef = useRef<HTMLTextAreaElement>(null);
 
 	const isEditing = !!shift;
-	const title = isEditing ? "Edit Shift" : "Create Shift";
+	const title = isEditing
+		? t("scheduling.shiftDialog.editTitle", "Edit Shift")
+		: t("scheduling.shiftDialog.createTitle", "Create Shift");
 	const description = isEditing
-		? "Update the shift details below"
-		: "Fill in the details for the new shift";
+		? t("scheduling.shiftDialog.editDescription", "Update the shift details below")
+		: t("scheduling.shiftDialog.createDescription", "Fill in the details for the new shift");
 
 	const upsertMutation = useMutation({
 		mutationFn: async (values: ShiftDialogFormValues) => {
+			const qualificationOverrideReason = qualificationOverrideReasonRef.current?.value;
 			const result = await upsertShift({
 				id: shift?.id,
 				employeeId: values.employeeId,
@@ -59,7 +64,7 @@ export function ShiftDialog({
 				endTime: values.endTime,
 				notes: values.notes,
 				color: values.color,
-				qualificationOverrideReason,
+				qualificationOverrideReason: requiresOverride ? qualificationOverrideReason : undefined,
 			});
 			if (!result.success) throw new Error(result.error);
 			return result.data;
@@ -68,7 +73,11 @@ export function ShiftDialog({
 			const warnings: string[] = [];
 
 			if (result.metadata.hasOverlap) {
-				warnings.push(`Overlaps with ${result.metadata.overlappingShifts.length} other shift(s)`);
+				warnings.push(
+					t("scheduling.shiftDialog.overlapWarning", "Overlaps with {{count}} other shift(s)", {
+						count: result.metadata.overlappingShifts.length,
+					}),
+				);
 			}
 
 			if (result.metadata.skillWarning && !result.metadata.skillWarning.isQualified) {
@@ -76,24 +85,50 @@ export function ShiftDialog({
 				const expiredCount = result.metadata.skillWarning.expiredSkills?.length ?? 0;
 				if (missingCount > 0 || expiredCount > 0) {
 					const parts: string[] = [];
-					if (missingCount > 0) parts.push(`${missingCount} missing skill(s)`);
-					if (expiredCount > 0) parts.push(`${expiredCount} expired certification(s)`);
-					warnings.push(`Employee has ${parts.join(" and ")}`);
+					if (missingCount > 0) {
+						parts.push(
+							t("scheduling.shiftDialog.missingSkillsWarningPart", "{{count}} missing skill(s)", {
+								count: missingCount,
+							}),
+						);
+					}
+					if (expiredCount > 0) {
+						parts.push(
+							t(
+								"scheduling.shiftDialog.expiredSkillsWarningPart",
+								"{{count}} expired certification(s)",
+								{
+									count: expiredCount,
+								},
+							),
+						);
+					}
+					warnings.push(
+						t("scheduling.shiftDialog.employeeQualificationWarning", "Employee has {{details}}", {
+							details: parts.join(` ${t("scheduling.shiftDialog.and", "and")} `),
+						}),
+					);
 				}
 			}
 
 			if (warnings.length > 0) {
-				toast.warning("Shift saved with warnings", {
+				toast.warning(t("scheduling.shiftDialog.savedWithWarnings", "Shift saved with warnings"), {
 					description: warnings.join(". "),
 				});
 			} else {
-				toast.success(isEditing ? "Shift updated" : "Shift created");
+				toast.success(
+					isEditing
+						? t("scheduling.shiftDialog.updated", "Shift updated")
+						: t("scheduling.shiftDialog.created", "Shift created"),
+				);
 			}
 			queryClient.invalidateQueries({ queryKey: queryKeys.shifts.all });
 			onOpenChange(false);
 		},
 		onError: (error) => {
-			toast.error("Failed to save shift", { description: error.message });
+			toast.error(t("scheduling.shiftDialog.saveFailed", "Failed to save shift"), {
+				description: error.message,
+			});
 		},
 	});
 
@@ -124,18 +159,24 @@ export function ShiftDialog({
 			return result.data;
 		},
 		onSuccess: () => {
-			toast.success("Shift deleted");
+			toast.success(t("scheduling.shiftDialog.deleted", "Shift deleted"));
 			queryClient.invalidateQueries({ queryKey: queryKeys.shifts.all });
 			onOpenChange(false);
 		},
 		onError: (error) => {
-			toast.error("Failed to delete shift", { description: error.message });
+			toast.error(t("scheduling.shiftDialog.deleteFailed", "Failed to delete shift"), {
+				description: error.message,
+			});
 		},
 	});
 
 	const requiresOverride = skillValidation?.requiresOverride ?? false;
 	const hasBlockingIssues = skillValidation?.hasBlockingIssues ?? false;
 	const isPending = upsertMutation.isPending || deleteMutation.isPending;
+	const currentEmployeeId = formValues.employeeId;
+	const currentSubareaId = formValues.subareaId;
+	const currentTemplateId = formValues.templateId;
+	const overrideResetKey = `${open ? "open" : "closed"}-${currentEmployeeId ?? "none"}-${currentSubareaId}-${currentTemplateId ?? "none"}`;
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
@@ -167,12 +208,17 @@ export function ShiftDialog({
 
 					{requiresOverride && (
 						<div className="space-y-2">
-							<Label htmlFor="qualificationOverrideReason">Qualification override reason</Label>
+							<Label htmlFor="qualificationOverrideReason">
+								{t("scheduling.shiftDialog.overrideReasonLabel", "Qualification override reason")}
+							</Label>
 							<Textarea
+								key={overrideResetKey}
 								id="qualificationOverrideReason"
-								value={qualificationOverrideReason}
-								onChange={(event) => setQualificationOverrideReason(event.target.value)}
-								placeholder="Explain why this assignment is acceptable despite qualification warnings."
+								ref={qualificationOverrideReasonRef}
+								placeholder={t(
+									"scheduling.shiftDialog.overrideReasonPlaceholder",
+									"Explain why this assignment is acceptable despite qualification warnings.",
+								)}
 								className="resize-none"
 							/>
 						</div>

@@ -161,7 +161,7 @@ export interface SkillValidationResult {
 		category: SkillCategory;
 		isRequired: boolean;
 		enforcementMode: "warning" | "blocking";
-		issueType: "missing" | "expired" | "expiringSoon" | "preferred";
+		issueType: "missing" | "expired" | "expiringSoon";
 		expiresAt?: Date;
 	}>;
 	missingSkills: Array<{
@@ -1307,7 +1307,7 @@ export const SkillServiceLive = Layer.effect(
 								category: skillData.category as SkillCategory,
 								isRequired,
 								enforcementMode,
-								issueType: isRequired ? "missing" : "preferred",
+								issueType: "missing",
 							});
 						}
 					}
@@ -1328,9 +1328,9 @@ export const SkillServiceLive = Layer.effect(
 							});
 
 							return {
-							id: es.skillId,
-							name: es.skill.name,
-							expiresAt: es.expiresAt!,
+								id: es.skillId,
+								name: es.skill.name,
+								expiresAt: es.expiresAt!,
 							};
 						});
 

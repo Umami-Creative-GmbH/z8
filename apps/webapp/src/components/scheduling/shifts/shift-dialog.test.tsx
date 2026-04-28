@@ -5,12 +5,20 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { useState } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { deleteShiftMock, upsertShiftMock, toastSuccessMock, toastErrorMock, skillValidationMock } = vi.hoisted(() => ({
+const {
+	deleteShiftMock,
+	upsertShiftMock,
+	toastSuccessMock,
+	toastErrorMock,
+	skillValidationMock,
+	formValuesMock,
+} = vi.hoisted(() => ({
 	deleteShiftMock: vi.fn(),
 	upsertShiftMock: vi.fn(),
 	toastSuccessMock: vi.fn(),
 	toastErrorMock: vi.fn(),
 	skillValidationMock: vi.fn(),
+	formValuesMock: vi.fn(),
 }));
 
 vi.mock("sonner", () => ({
@@ -19,6 +27,12 @@ vi.mock("sonner", () => ({
 		error: toastErrorMock,
 		warning: vi.fn(),
 	},
+}));
+
+vi.mock("@tolgee/react", () => ({
+	useTranslate: () => ({
+		t: (_key: string, fallback: string) => fallback,
+	}),
 }));
 
 vi.mock("@/app/[locale]/(app)/scheduling/actions", () => ({
@@ -36,15 +50,11 @@ vi.mock("./use-shift-dialog-data", () => ({
 }));
 
 vi.mock("./use-shift-dialog-form", () => ({
-	useShiftDialogForm: () => ({
+	useShiftDialogForm: ({ onSubmit }: { onSubmit: (values: unknown) => void }) => ({
 		form: {
-			handleSubmit: vi.fn(),
+			handleSubmit: vi.fn(() => onSubmit(formValuesMock())),
 		},
-		formValues: {
-			employeeId: "",
-			templateId: "",
-			subareaId: "",
-		},
+		formValues: formValuesMock(),
 	}),
 }));
 
@@ -61,7 +71,9 @@ vi.mock("./shift-dialog-sections", async () => {
 		}) => (
 			<div>
 				sections
-				{skillValidation?.issues?.map((issue) => <div key={issue.id}>{issue.name}</div>)}
+				{skillValidation?.issues?.map((issue) => (
+					<div key={issue.id}>{issue.name}</div>
+				))}
 			</div>
 		),
 	};
@@ -135,6 +147,16 @@ describe("ShiftDialog", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		skillValidationMock.mockReturnValue(null);
+		formValuesMock.mockReturnValue({
+			employeeId: "employee-1",
+			templateId: null,
+			subareaId: "subarea-1",
+			date: new Date("2026-04-29T00:00:00.000Z"),
+			startTime: "09:00",
+			endTime: "17:00",
+			notes: "",
+			color: undefined,
+		});
 		deleteShiftMock.mockResolvedValue({ success: true, data: undefined });
 		upsertShiftMock.mockResolvedValue({
 			success: true,
@@ -145,6 +167,140 @@ describe("ShiftDialog", () => {
 					skillWarning: null,
 				},
 			},
+		});
+	});
+
+	it("submits override reasons only while the current validation requires an override", async () => {
+		skillValidationMock.mockReturnValue({
+			isQualified: false,
+			hasBlockingIssues: false,
+			requiresOverride: true,
+			missingSkills: [],
+			expiredSkills: [],
+			issues: [],
+		});
+
+		const queryClient = createQueryClient();
+		const { rerender } = render(
+			<QueryClientProvider client={queryClient}>
+				<ShiftDialog
+					open
+					onOpenChange={vi.fn()}
+					shift={buildShift("shift-1")}
+					templates={[]}
+					isManager
+					defaultDate={null}
+					organizationId="org-1"
+				/>
+			</QueryClientProvider>,
+		);
+
+		fireEvent.change(screen.getByLabelText("Qualification override reason"), {
+			target: { value: "Supervisor approved" },
+		});
+
+		skillValidationMock.mockReturnValue({
+			isQualified: true,
+			hasBlockingIssues: false,
+			requiresOverride: false,
+			missingSkills: [],
+			expiredSkills: [],
+			issues: [],
+		});
+		formValuesMock.mockReturnValue({
+			employeeId: "employee-2",
+			templateId: null,
+			subareaId: "subarea-1",
+			date: new Date("2026-04-29T00:00:00.000Z"),
+			startTime: "09:00",
+			endTime: "17:00",
+			notes: "",
+			color: undefined,
+		});
+
+		rerender(
+			<QueryClientProvider client={queryClient}>
+				<ShiftDialog
+					open
+					onOpenChange={vi.fn()}
+					shift={buildShift("shift-1")}
+					templates={[]}
+					isManager
+					defaultDate={null}
+					organizationId="org-1"
+				/>
+			</QueryClientProvider>,
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: "Update Shift" }));
+
+		await waitFor(() => {
+			expect(upsertShiftMock).toHaveBeenCalledWith(
+				expect.not.objectContaining({ qualificationOverrideReason: "Supervisor approved" }),
+			);
+		});
+	});
+
+	it("resets the override reason when assignment inputs change", async () => {
+		skillValidationMock.mockReturnValue({
+			isQualified: false,
+			hasBlockingIssues: false,
+			requiresOverride: true,
+			missingSkills: [],
+			expiredSkills: [],
+			issues: [],
+		});
+
+		const queryClient = createQueryClient();
+		const { rerender } = render(
+			<QueryClientProvider client={queryClient}>
+				<ShiftDialog
+					open
+					onOpenChange={vi.fn()}
+					shift={buildShift("shift-1")}
+					templates={[]}
+					isManager
+					defaultDate={null}
+					organizationId="org-1"
+				/>
+			</QueryClientProvider>,
+		);
+
+		fireEvent.change(screen.getByLabelText("Qualification override reason"), {
+			target: { value: "Supervisor approved" },
+		});
+		expect(screen.getByLabelText("Qualification override reason")).toHaveProperty(
+			"value",
+			"Supervisor approved",
+		);
+
+		formValuesMock.mockReturnValue({
+			employeeId: "employee-1",
+			templateId: "template-2",
+			subareaId: "subarea-1",
+			date: new Date("2026-04-29T00:00:00.000Z"),
+			startTime: "09:00",
+			endTime: "17:00",
+			notes: "",
+			color: undefined,
+		});
+
+		rerender(
+			<QueryClientProvider client={queryClient}>
+				<ShiftDialog
+					open
+					onOpenChange={vi.fn()}
+					shift={buildShift("shift-1")}
+					templates={[]}
+					isManager
+					defaultDate={null}
+					organizationId="org-1"
+				/>
+			</QueryClientProvider>,
+		);
+
+		await waitFor(() => {
+			expect(screen.getByLabelText("Qualification override reason")).toHaveProperty("value", "");
 		});
 	});
 

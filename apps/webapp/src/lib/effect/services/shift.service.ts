@@ -3,18 +3,19 @@ import { Context, Effect, Layer } from "effect";
 import {
 	employee,
 	employeeSkill,
+	locationSubarea,
 	type shift as ShiftTable,
 	type shiftTemplate as ShiftTemplateTable,
 	shift,
 	shiftTemplate,
 	shiftTemplateSkillRequirement,
 	type skill,
+	skillRequirementOverride,
 	subareaSkillRequirement,
 } from "@/db/schema";
 import { getQualificationStatus, mergeRequirementMode } from "@/lib/qualifications/status";
 import { AuthorizationError, type DatabaseError, NotFoundError, ValidationError } from "../errors";
 import { DatabaseService } from "./database.service";
-import { SkillService, SkillServiceLive } from "./skill.service";
 
 // Type definitions
 type Shift = typeof ShiftTable.$inferSelect;
@@ -81,7 +82,7 @@ export interface SkillWarning {
 		category: string;
 		isRequired: boolean;
 		enforcementMode: "warning" | "blocking";
-		issueType: "missing" | "expired" | "expiringSoon" | "preferred";
+		issueType: "missing" | "expired" | "expiringSoon";
 		expiresAt?: Date;
 	}>;
 	missingSkills: Array<{
@@ -355,6 +356,56 @@ export const ShiftServiceLive = Layer.effect(
 						);
 					}
 
+					const subareaRecord = yield* _(
+						dbService.query("verifySubareaForOrganization", async () => {
+							return await dbService.db.query.locationSubarea.findFirst({
+								where: eq(locationSubarea.id, input.subareaId),
+								with: {
+									location: {
+										columns: { organizationId: true },
+									},
+								},
+							});
+						}),
+					);
+
+					if (!subareaRecord || subareaRecord.location.organizationId !== input.organizationId) {
+						yield* _(
+							Effect.fail(
+								new NotFoundError({
+									message: "Subarea not found",
+									entityType: "locationSubarea",
+									entityId: input.subareaId,
+								}),
+							),
+						);
+					}
+
+					if (input.templateId) {
+						const templateRecord = yield* _(
+							dbService.query("verifyTemplateForOrganization", async () => {
+								return await dbService.db.query.shiftTemplate.findFirst({
+									where: and(
+										eq(shiftTemplate.id, input.templateId!),
+										eq(shiftTemplate.organizationId, input.organizationId),
+									),
+								});
+							}),
+						);
+
+						if (!templateRecord || templateRecord.organizationId !== input.organizationId) {
+							yield* _(
+								Effect.fail(
+									new NotFoundError({
+										message: "Shift template not found",
+										entityType: "shiftTemplate",
+										entityId: input.templateId,
+									}),
+								),
+							);
+						}
+					}
+
 					// Check for overlapping shifts if employee is assigned
 					let overlappingShifts: Array<{
 						id: string;
@@ -369,12 +420,15 @@ export const ShiftServiceLive = Layer.effect(
 						const employeeRecord = yield* _(
 							dbService.query("verifyEmployeeExists", async () => {
 								return await dbService.db.query.employee.findFirst({
-									where: eq(employee.id, employeeId),
+									where: and(
+										eq(employee.id, employeeId),
+										eq(employee.organizationId, input.organizationId),
+									),
 								});
 							}),
 						);
 
-						if (!employeeRecord) {
+						if (!employeeRecord || employeeRecord.organizationId !== input.organizationId) {
 							yield* _(
 								Effect.fail(
 									new NotFoundError({
@@ -396,6 +450,7 @@ export const ShiftServiceLive = Layer.effect(
 
 								const existingShifts = await dbService.db.query.shift.findMany({
 									where: and(
+										eq(shift.organizationId, input.organizationId),
 										eq(shift.employeeId, employeeId),
 										gte(shift.date, dayStart),
 										lte(shift.date, dayEnd),
@@ -431,7 +486,10 @@ export const ShiftServiceLive = Layer.effect(
 								return await dbService.db.query.employeeSkill.findMany({
 									where: and(
 										eq(employeeSkill.employeeId, empId),
-										or(isNull(employeeSkill.expiresAt), gte(employeeSkill.expiresAt, expiryBoundary)),
+										or(
+											isNull(employeeSkill.expiresAt),
+											gte(employeeSkill.expiresAt, expiryBoundary),
+										),
 									),
 									with: { skill: true },
 								});
@@ -538,7 +596,7 @@ export const ShiftServiceLive = Layer.effect(
 									category: skillData.category,
 									isRequired,
 									enforcementMode,
-									issueType: isRequired ? "missing" : "preferred",
+									issueType: "missing",
 								});
 							}
 						}
@@ -630,6 +688,48 @@ export const ShiftServiceLive = Layer.effect(
 						);
 					}
 
+					const persistShift = async (database: {
+						insert: typeof dbService.db.insert;
+						update: typeof dbService.db.update;
+					}) => {
+						if (input.id) {
+							const [s] = await database
+								.update(shift)
+								.set({
+									employeeId: input.employeeId,
+									templateId: input.templateId,
+									subareaId: input.subareaId,
+									date: input.date,
+									startTime: input.startTime,
+									endTime: input.endTime,
+									notes: input.notes,
+									color: input.color,
+								})
+								.where(and(eq(shift.id, input.id), eq(shift.organizationId, input.organizationId)))
+								.returning();
+							return s;
+						}
+
+						const [s] = await database
+							.insert(shift)
+							.values({
+								organizationId: input.organizationId,
+								employeeId: input.employeeId,
+								templateId: input.templateId,
+								subareaId: input.subareaId,
+								date: input.date,
+								startTime: input.startTime,
+								endTime: input.endTime,
+								notes: input.notes,
+								color: input.color,
+								status: "draft",
+								createdBy: input.createdBy,
+								updatedAt: new Date(),
+							})
+							.returning();
+						return s;
+					};
+
 					let createdShift: Shift;
 
 					if (input.id) {
@@ -638,12 +738,12 @@ export const ShiftServiceLive = Layer.effect(
 						const existing = yield* _(
 							dbService.query("getShiftById", async () => {
 								return await dbService.db.query.shift.findFirst({
-									where: eq(shift.id, shiftId),
+									where: and(eq(shift.id, shiftId), eq(shift.organizationId, input.organizationId)),
 								});
 							}),
 						);
 
-						if (!existing) {
+						if (!existing || existing.organizationId !== input.organizationId) {
 							yield* _(
 								Effect.fail(
 									new NotFoundError({
@@ -654,72 +754,36 @@ export const ShiftServiceLive = Layer.effect(
 								),
 							);
 						}
-
-						createdShift = yield* _(
-							dbService.query("updateShift", async () => {
-								const [s] = await dbService.db
-									.update(shift)
-									.set({
-										employeeId: input.employeeId,
-										templateId: input.templateId,
-										subareaId: input.subareaId,
-										date: input.date,
-										startTime: input.startTime,
-										endTime: input.endTime,
-										notes: input.notes,
-										color: input.color,
-									})
-									.where(eq(shift.id, shiftId))
-									.returning();
-								return s;
-							}),
-						);
-					} else {
-						// Create new shift
-						createdShift = yield* _(
-							dbService.query("createShift", async () => {
-								const [s] = await dbService.db
-									.insert(shift)
-									.values({
-										organizationId: input.organizationId,
-										employeeId: input.employeeId,
-										templateId: input.templateId,
-										subareaId: input.subareaId,
-										date: input.date,
-										startTime: input.startTime,
-										endTime: input.endTime,
-										notes: input.notes,
-										color: input.color,
-										status: "draft",
-										createdBy: input.createdBy,
-										updatedAt: new Date(),
-									})
-									.returning();
-								return s;
-							}),
-						);
 					}
 
 					if (input.employeeId && skillWarning?.requiresOverride) {
-						const warningIssueIds = [...new Set(skillWarning.issues.map((issue) => issue.id))];
-						yield* _(
-							Effect.gen(function* (_) {
-								const skillService = yield* _(SkillService);
-								return yield* _(
-									skillService.recordOverride({
-										organizationId: input.organizationId,
-										shiftId: createdShift.id,
-										employeeId: input.employeeId!,
-										missingSkillIds: warningIssueIds,
-										overrideReason: input.qualificationOverrideReason!.trim(),
-										overriddenBy: input.createdBy,
-									}),
-								);
-							}).pipe(
-								Effect.provide(
-									SkillServiceLive.pipe(Layer.provide(Layer.succeed(DatabaseService, dbService))),
-								),
-							),
+						const warningIssueIds = skillWarning.issues
+							.filter((issue) => issue.isRequired && issue.enforcementMode === "warning")
+							.map((issue) => issue.id);
+						createdShift = yield* _(
+							dbService.query("upsertShiftWithQualificationOverride", async () => {
+								return await dbService.db.transaction(async (tx) => {
+									const persistedShift = await persistShift(tx);
+									await tx
+										.insert(skillRequirementOverride)
+										.values({
+											organizationId: input.organizationId,
+											shiftId: persistedShift.id,
+											employeeId: input.employeeId!,
+											missingSkillIds: JSON.stringify(warningIssueIds),
+											overrideReason: input.qualificationOverrideReason!.trim(),
+											overriddenBy: input.createdBy,
+										})
+										.returning();
+									return persistedShift;
+								});
+							}),
+						);
+					} else {
+						createdShift = yield* _(
+							dbService.query(input.id ? "updateShift" : "createShift", async () => {
+								return await persistShift(dbService.db);
+							}),
 						);
 					}
 

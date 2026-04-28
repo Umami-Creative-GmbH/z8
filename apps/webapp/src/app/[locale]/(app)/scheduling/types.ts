@@ -20,17 +20,17 @@ export interface PublishAcknowledgmentInput {
 
 export type PublishShiftsResult =
 	| {
-		published: true;
-		requiresAcknowledgment: false;
-		count: number;
-	}
+			published: true;
+			requiresAcknowledgment: false;
+			count: number;
+	  }
 	| {
-		published: false;
-		requiresAcknowledgment: true;
-		count: 0;
-		complianceSummary: ScheduleComplianceSummary;
-		evaluationFingerprint: string;
-	};
+			published: false;
+			requiresAcknowledgment: true;
+			count: 0;
+			complianceSummary: ScheduleComplianceSummary;
+			evaluationFingerprint: string;
+	  };
 
 export interface SubareaInfo {
 	id: string;
@@ -78,7 +78,7 @@ export interface QualificationIssueInfo {
 	category: string;
 	isRequired: boolean;
 	enforcementMode: "warning" | "blocking";
-	issueType: "missing" | "expired" | "expiringSoon" | "preferred";
+	issueType: "missing" | "expired" | "expiringSoon";
 	expiresAt?: Date;
 }
 
