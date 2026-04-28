@@ -56,16 +56,18 @@ export interface BriefingSection<TItem extends BriefingActionItem = BriefingActi
 }
 
 export interface ManagerDailyBriefing {
-	generatedAt: Date;
+	generatedAt: string;
 	date: string;
 	summary: BriefingSummaryCounts;
 	needsAction: BriefingActionItem[];
-	approvals: BriefingSection<BriefingApprovalActionItem>;
-	attendance: BriefingSection;
-	absences: BriefingSection;
-	coverage: BriefingSection;
-	overtime: BriefingSection;
-	payroll: BriefingSection;
+	sections: {
+		approvals: BriefingSection<BriefingApprovalActionItem>;
+		attendance: BriefingSection;
+		absences: BriefingSection;
+		coverage: BriefingSection;
+		overtime: BriefingSection;
+		payroll: BriefingSection;
+	};
 }
 
 export interface BriefingShift {

@@ -20,11 +20,11 @@ describe("manager daily briefing logic", () => {
 		];
 		const records = [
 			{ id: "record-1", employeeId: "emp-2", startAt: DateTime.fromISO("2026-04-28T09:55:00.000+02:00").toJSDate(), endAt: null },
-			{ id: "record-2", employeeId: "emp-4", startAt: DateTime.fromISO("2026-04-28T08:31:00.000+02:00").toJSDate(), endAt: DateTime.fromISO("2026-04-28T08:40:00.000+02:00").toJSDate() },
+			{ id: "record-2", employeeId: "emp-4", startAt: DateTime.fromISO("2026-04-28T08:40:00.000+02:00").toJSDate(), endAt: null },
 		];
 		expect(detectAttendanceExceptions({ now, shifts, records, graceMinutes: 5 })).toEqual([
 			expect.objectContaining({ id: "attendance:shift-1", severity: "critical", category: "attendance", title: "Ada Lovelace has not clocked in" }),
-			expect.objectContaining({ id: "attendance:shift-4", severity: "critical", category: "attendance", title: "Katherine Johnson has not clocked in" }),
+			expect.objectContaining({ id: "attendance:shift-4", severity: "high", category: "attendance", title: "Katherine Johnson clocked in late" }),
 		]);
 	});
 

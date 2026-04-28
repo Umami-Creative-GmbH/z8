@@ -47,13 +47,13 @@ export function detectAttendanceExceptions({
 		}
 
 		const scheduledStart = DateTime.fromISO(`${shift.date}T${shift.startTime}`, { zone: now.zone });
-		const openRecord = records.find((record) => {
-			const startAt = DateTime.fromJSDate(record.startAt).setZone(now.zone);
+		const firstClockIn = records
+			.filter((record) => record.employeeId === shift.employeeId)
+			.map((record) => DateTime.fromJSDate(record.startAt).setZone(now.zone))
+			.filter((startAt) => startAt.toISODate() === shift.date)
+			.sort((left, right) => left.toMillis() - right.toMillis())[0];
 
-			return record.employeeId === shift.employeeId && record.endAt === null && startAt.toISODate() === shift.date;
-		});
-
-		if (!openRecord) {
+		if (!firstClockIn) {
 			if (now < scheduledStart.plus({ minutes: graceMinutes })) {
 				return [];
 			}
@@ -65,6 +65,19 @@ export function detectAttendanceExceptions({
 					severity: "critical",
 					title: `${shift.employeeName} has not clocked in`,
 					description: `${shift.employeeName} was scheduled to start at ${shift.startTime}${formatTeamSuffix(shift.teamName)}.`,
+					href: "/time-tracking",
+				},
+			];
+		}
+
+		if (firstClockIn > scheduledStart.plus({ minutes: graceMinutes })) {
+			return [
+				{
+					id: `attendance:${shift.id}`,
+					category: "attendance",
+					severity: "high",
+					title: `${shift.employeeName} clocked in late`,
+					description: `${shift.employeeName} was scheduled to start at ${shift.startTime} and clocked in at ${firstClockIn.toFormat("HH:mm")}${formatTeamSuffix(shift.teamName)}.`,
 					href: "/time-tracking",
 				},
 			];
