@@ -47,6 +47,7 @@ interface AbsenceRow {
 	rejectionReason: string | null;
 	approvedAt: Date | null;
 	createdAt: Date;
+	updatedAt: Date;
 	category?: { name: string; type: string; color: string | null } | null;
 }
 
@@ -152,7 +153,7 @@ async function loadAbsences(input: GetSelfServiceRequestsInput): Promise<SelfSer
 		employeeId: row.employeeId,
 		status: row.status,
 		submittedAt: row.createdAt,
-		resolvedAt: row.approvedAt,
+		resolvedAt: absenceResolvedAt(row),
 		title: `${row.category?.name ?? "Absence"} request`,
 		subtitle: `${row.startDate} to ${row.endDate}`,
 		decisionReason: row.rejectionReason,
@@ -173,7 +174,7 @@ async function loadTravelExpenses(
 		orderBy: [desc(travelExpenseClaim.createdAt)],
 	})) as TravelExpenseRow[];
 
-	return rows.map((row) => {
+	return rows.filter((row) => row.status !== "draft").map((row) => {
 		const status = mapTravelExpenseStatus(row.status);
 		const latestDecisionLog = row.decisionLogs?.toSorted(
 			(a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
@@ -195,6 +196,18 @@ async function loadTravelExpenses(
 			sourceHref: "/travel-expenses",
 		};
 	});
+}
+
+function absenceResolvedAt(row: AbsenceRow): Date | null {
+	if (row.status === "approved") {
+		return row.approvedAt;
+	}
+
+	if (row.status === "rejected") {
+		return row.approvedAt ?? row.updatedAt;
+	}
+
+	return null;
 }
 
 function mapTravelExpenseStatus(status: TravelExpenseRow["status"]): SelfServiceRequestStatus {

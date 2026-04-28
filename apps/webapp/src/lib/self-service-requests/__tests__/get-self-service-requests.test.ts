@@ -69,6 +69,7 @@ function absence(overrides: Record<string, unknown> = {}) {
 		rejectionReason: "Coverage needed",
 		approvedAt: new Date("2026-04-22T10:00:00.000Z"),
 		createdAt: new Date("2026-04-18T09:00:00.000Z"),
+		updatedAt: new Date("2026-04-22T10:00:00.000Z"),
 		category: { name: "Vacation", type: "vacation", color: null },
 		...overrides,
 	};
@@ -93,6 +94,20 @@ function travelExpense(overrides: Record<string, unknown> = {}) {
 		decisionLogs: [],
 		...overrides,
 	};
+}
+
+function expectWhereConditions(
+	mock: ReturnType<typeof vi.fn>,
+	conditions: Array<{ left: unknown; right: unknown }>,
+) {
+	const queryArgs = mock.mock.calls[0]?.[0];
+
+	expect(queryArgs?.where).toMatchObject({
+		type: "and",
+		conditions: expect.arrayContaining(
+			conditions.map((condition) => expect.objectContaining({ op: "eq", ...condition })),
+		),
+	});
 }
 
 describe("getSelfServiceRequests", () => {
@@ -120,6 +135,59 @@ describe("getSelfServiceRequests", () => {
 		]);
 		expect(result.counts).toEqual({ pending: 1, requiredFixes: 1, recentDecisions: 2, total: 3 });
 		expect(result.sourceErrors).toEqual([]);
+
+		expectWhereConditions(dbMocks.approvalRequests, [
+			{ left: "approvalRequest.organizationId", right: "org-1" },
+			{ left: "approvalRequest.requestedBy", right: "employee-1" },
+			{ left: "approvalRequest.entityType", right: "time_entry" },
+		]);
+		expectWhereConditions(dbMocks.absenceEntries, [
+			{ left: "absenceEntry.organizationId", right: "org-1" },
+			{ left: "absenceEntry.employeeId", right: "employee-1" },
+		]);
+		expectWhereConditions(dbMocks.travelExpenseClaims, [
+			{ left: "travelExpenseClaim.organizationId", right: "org-1" },
+			{ left: "travelExpenseClaim.employeeId", right: "employee-1" },
+		]);
+	});
+
+	it("excludes draft travel expenses from result items and counts", async () => {
+		dbMocks.travelExpenseClaims.mockResolvedValue([
+			travelExpense({ id: "draft-claim", status: "draft" }),
+			travelExpense({ id: "submitted-claim", status: "submitted", decidedAt: null }),
+		]);
+
+		const result = await getSelfServiceRequests({
+			employeeId: "employee-1",
+			organizationId: "org-1",
+			now: new Date("2026-04-28T12:00:00.000Z"),
+		});
+
+		expect(result.items.map((item) => item.sourceId)).toEqual([
+			"absence-1",
+			"approval-time-1",
+			"submitted-claim",
+		]);
+		expect(result.counts).toEqual({ pending: 2, requiredFixes: 1, recentDecisions: 1, total: 3 });
+	});
+
+	it("uses updatedAt as rejected absence resolvedAt when approvedAt is missing", async () => {
+		const updatedAt = new Date("2026-04-23T11:00:00.000Z");
+		dbMocks.absenceEntries.mockResolvedValue([
+			absence({ approvedAt: null, updatedAt }),
+			absence({ id: "pending-absence", status: "pending", approvedAt: null }),
+		]);
+
+		const result = await getSelfServiceRequests({
+			employeeId: "employee-1",
+			organizationId: "org-1",
+			now: new Date("2026-04-28T12:00:00.000Z"),
+		});
+
+		expect(result.items.find((item) => item.sourceId === "absence-1")?.resolvedAt).toEqual(
+			updatedAt,
+		);
+		expect(result.items.find((item) => item.sourceId === "pending-absence")?.resolvedAt).toBeNull();
 	});
 
 	it("filters by status, source type, and search text", async () => {
