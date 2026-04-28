@@ -49,18 +49,18 @@ export function EmployeeQualificationList({
 								{qualification.expiresAt ? (
 									<p className="break-words text-xs text-muted-foreground">
 										{t("qualifications.expiresOn", "Expires {{date}}", {
-											date: DateTime.fromJSDate(qualification.expiresAt).toLocaleString(
-												DateTime.DATE_MED,
-											),
+											date: DateTime.fromJSDate(qualification.expiresAt, {
+												zone: "utc",
+											}).toLocaleString(DateTime.DATE_MED),
 										})}
 									</p>
 								) : null}
 								{qualification.issuedAt ? (
 									<p className="break-words text-xs text-muted-foreground">
 										{t("qualifications.issuedOn", "Issued {{date}}", {
-											date: DateTime.fromJSDate(qualification.issuedAt).toLocaleString(
-												DateTime.DATE_MED,
-											),
+											date: DateTime.fromJSDate(qualification.issuedAt, {
+												zone: "utc",
+											}).toLocaleString(DateTime.DATE_MED),
 										})}
 									</p>
 								) : null}

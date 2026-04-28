@@ -79,6 +79,7 @@ function RenewalDialogHarness() {
 
 describe("RenewalSubmissionDialog", () => {
 	beforeEach(() => {
+		vi.clearAllMocks();
 		submitMyQualificationRenewalMock.mockResolvedValue({
 			success: true,
 			data: { id: "request-1" },
@@ -127,6 +128,69 @@ describe("RenewalSubmissionDialog", () => {
 		expect(onOpenChange).toHaveBeenCalledWith(false);
 	});
 
+	it("trims renewal text metadata before submission", async () => {
+		renderWithQueryClient(
+			<RenewalSubmissionDialog qualification={qualification} open onOpenChange={vi.fn()} />,
+		);
+
+		fireEvent.change(screen.getByLabelText("Evidence IDs"), {
+			target: { value: "evidence-1" },
+		});
+		fireEvent.change(screen.getByLabelText("New expiry date"), {
+			target: { value: "2027-01-15" },
+		});
+		fireEvent.change(screen.getByLabelText("Issuer"), {
+			target: { value: "  Safety Council  " },
+		});
+		fireEvent.change(screen.getByLabelText("Certificate number"), {
+			target: { value: "  CERT-98765  " },
+		});
+		fireEvent.change(screen.getByLabelText("Notes"), {
+			target: { value: "   " },
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Submit renewal" }));
+
+		await waitFor(() => {
+			expect(submitMyQualificationRenewalMock).toHaveBeenCalledWith(
+				expect.objectContaining({
+					requestedIssuer: "Safety Council",
+					requestedCertificateNumber: "CERT-98765",
+					notes: undefined,
+				}),
+			);
+		});
+	});
+
+	it("requires at least one evidence ID before submission", async () => {
+		renderWithQueryClient(
+			<RenewalSubmissionDialog qualification={qualification} open onOpenChange={vi.fn()} />,
+		);
+
+		fireEvent.change(screen.getByLabelText("New expiry date"), {
+			target: { value: "2027-01-15" },
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Submit renewal" }));
+
+		expect(await screen.findByText("At least one evidence ID is required")).toBeTruthy();
+		expect(submitMyQualificationRenewalMock).not.toHaveBeenCalled();
+	});
+
+	it("requires an expiry date when the qualification requires expiry", async () => {
+		renderWithQueryClient(
+			<RenewalSubmissionDialog qualification={qualification} open onOpenChange={vi.fn()} />,
+		);
+
+		fireEvent.change(screen.getByLabelText("Evidence IDs"), {
+			target: { value: "evidence-1" },
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Submit renewal" }));
+
+		expect(
+			await screen.findByText("New expiry date is required for this qualification"),
+		).toBeTruthy();
+		expect(submitMyQualificationRenewalMock).not.toHaveBeenCalled();
+	});
+
 	it("shows pending feedback while submitting renewal evidence", async () => {
 		submitMyQualificationRenewalMock.mockReturnValue(new Promise(() => {}));
 
@@ -134,6 +198,12 @@ describe("RenewalSubmissionDialog", () => {
 			<RenewalSubmissionDialog qualification={qualification} open onOpenChange={vi.fn()} />,
 		);
 
+		fireEvent.change(screen.getByLabelText("Evidence IDs"), {
+			target: { value: "evidence-1" },
+		});
+		fireEvent.change(screen.getByLabelText("New expiry date"), {
+			target: { value: "2027-01-15" },
+		});
 		fireEvent.click(screen.getByRole("button", { name: "Submit renewal" }));
 
 		await waitFor(() => {

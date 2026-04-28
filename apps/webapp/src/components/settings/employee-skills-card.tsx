@@ -199,23 +199,23 @@ export function EmployeeSkillsCard({
 												>
 													{expired
 														? t("settings.skills.expiredOn", "Expired on {{date}}", {
-																date: DateTime.fromJSDate(employeeSkill.expiresAt).toLocaleString(
-																	DateTime.DATE_MED,
-																),
+																date: DateTime.fromJSDate(employeeSkill.expiresAt, {
+																	zone: "utc",
+																}).toLocaleString(DateTime.DATE_MED),
 															})
 														: t("settings.skills.expiresOn", "Expires {{date}}", {
-																date: DateTime.fromJSDate(employeeSkill.expiresAt).toLocaleString(
-																	DateTime.DATE_MED,
-																),
+																date: DateTime.fromJSDate(employeeSkill.expiresAt, {
+																	zone: "utc",
+																}).toLocaleString(DateTime.DATE_MED),
 															})}
 												</p>
 											)}
 											{employeeSkill.issuedAt && (
 												<p className="break-words text-xs text-muted-foreground">
 													{t("settings.skills.issuedOn", "Issued {{date}}", {
-														date: DateTime.fromJSDate(employeeSkill.issuedAt).toLocaleString(
-															DateTime.DATE_MED,
-														),
+														date: DateTime.fromJSDate(employeeSkill.issuedAt, {
+															zone: "utc",
+														}).toLocaleString(DateTime.DATE_MED),
 													})}
 												</p>
 											)}

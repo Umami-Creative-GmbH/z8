@@ -47,11 +47,14 @@ export function RenewalSubmissionDialog({
 	const submitMutation = useMutation({
 		mutationFn: async (data: RenewalSubmissionFormValues) => {
 			if (!qualification) throw new Error("Qualification is required");
+			const requestedIssuer = data.requestedIssuer.trim();
+			const requestedCertificateNumber = data.requestedCertificateNumber.trim();
+			const notes = data.notes.trim();
 
-			const evidenceIds = data.evidenceIds
-				.split(",")
-				.map((id) => id.trim())
-				.filter(Boolean);
+			const evidenceIds = data.evidenceIds.split(",").flatMap((id) => {
+				const trimmed = id.trim();
+				return trimmed ? [trimmed] : [];
+			});
 
 			const result = await submitMyQualificationRenewal({
 				employeeSkillId: qualification.id,
@@ -62,9 +65,9 @@ export function RenewalSubmissionDialog({
 				requestedExpiresAt: data.requestedExpiresAt
 					? DateTime.fromISO(data.requestedExpiresAt, { zone: "utc" }).toJSDate()
 					: undefined,
-				requestedIssuer: data.requestedIssuer || undefined,
-				requestedCertificateNumber: data.requestedCertificateNumber || undefined,
-				notes: data.notes || undefined,
+				requestedIssuer: requestedIssuer || undefined,
+				requestedCertificateNumber: requestedCertificateNumber || undefined,
+				notes: notes || undefined,
 			});
 
 			if (!result.success) throw new Error(result.error);
@@ -124,7 +127,18 @@ export function RenewalSubmissionDialog({
 					}}
 				>
 					<div className="grid gap-4 py-4">
-						<form.Field name="evidenceIds">
+						<form.Field
+							name="evidenceIds"
+							validators={{
+								onSubmit: ({ value }) =>
+									value
+										.split(",")
+										.map((id) => id.trim())
+										.some(Boolean)
+										? undefined
+										: "At least one evidence ID is required",
+							}}
+						>
 							{(field) => (
 								<div className="grid gap-2">
 									<Label htmlFor="renewal-evidence-ids">Evidence IDs</Label>
@@ -141,11 +155,24 @@ export function RenewalSubmissionDialog({
 									<p className="text-xs text-muted-foreground">
 										Separate multiple evidence IDs with commas.
 									</p>
+									{field.state.meta.errors.length > 0 && (
+										<p className="text-sm text-destructive" aria-live="polite">
+											{field.state.meta.errors[0]}
+										</p>
+									)}
 								</div>
 							)}
 						</form.Field>
 
-						<form.Field name="requestedExpiresAt">
+						<form.Field
+							name="requestedExpiresAt"
+							validators={{
+								onSubmit: ({ value }) =>
+									qualification?.skill.requiresExpiry && !value
+										? "New expiry date is required for this qualification"
+										: undefined,
+							}}
+						>
 							{(field) => (
 								<div className="grid gap-2">
 									<Label htmlFor="renewal-new-expiry">New expiry date</Label>
@@ -159,6 +186,11 @@ export function RenewalSubmissionDialog({
 										onBlur={field.handleBlur}
 										min={DateTime.now().toISODate() ?? undefined}
 									/>
+									{field.state.meta.errors.length > 0 && (
+										<p className="text-sm text-destructive" aria-live="polite">
+											{field.state.meta.errors[0]}
+										</p>
+									)}
 								</div>
 							)}
 						</form.Field>

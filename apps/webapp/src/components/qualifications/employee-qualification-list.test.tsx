@@ -1,6 +1,7 @@
 /* @vitest-environment jsdom */
 
 import { fireEvent, render, screen } from "@testing-library/react";
+import { Settings } from "luxon";
 import { describe, expect, it, vi } from "vitest";
 import { EmployeeQualificationList } from "./employee-qualification-list";
 
@@ -62,5 +63,19 @@ describe("EmployeeQualificationList", () => {
 
 		fireEvent.click(screen.getByRole("button", { name: "Submit renewal evidence" }));
 		expect(onRenew).toHaveBeenCalledWith(qualification);
+	});
+
+	it("renders UTC date-only metadata without local timezone drift", () => {
+		Settings.defaultZone = "America/Los_Angeles";
+		try {
+			render(<EmployeeQualificationList qualifications={[qualification]} />);
+
+			expect(screen.getByText(/Expires Jan 15, 2027/)).toBeTruthy();
+			expect(screen.getByText(/Issued Jan 15, 2026/)).toBeTruthy();
+			expect(screen.queryByText(/Expires Jan 14, 2027/)).toBeNull();
+			expect(screen.queryByText(/Issued Jan 14, 2026/)).toBeNull();
+		} finally {
+			Settings.defaultZone = "system";
+		}
 	});
 });

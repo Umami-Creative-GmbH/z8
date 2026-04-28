@@ -1,6 +1,7 @@
 /* @vitest-environment jsdom */
 
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { Settings } from "luxon";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { EmployeeSkillWithDetails } from "@/lib/effect/services/skill.service";
 import { EmployeeSkillsCard } from "./employee-skills-card";
@@ -126,6 +127,18 @@ describe("EmployeeSkillsCard", () => {
 		expect(screen.getByText(/Issued Jan 15, 2026/)).toBeTruthy();
 		expect(screen.getByText(/Issuer: Safety Council With A Very Long Issuer Name/)).toBeTruthy();
 		expect(screen.getByText(/Certificate: CERT-VERY-LONG-1234567890/)).toBeTruthy();
+	});
+
+	it("renders UTC date-only qualification metadata without local timezone drift", () => {
+		Settings.defaultZone = "America/Los_Angeles";
+		try {
+			render(<EmployeeSkillsCard employeeId="employee-1" organizationId="org-1" canManageSkills />);
+
+			expect(screen.getByText(/Issued Jan 15, 2026/)).toBeTruthy();
+			expect(screen.queryByText(/Issued Jan 14, 2026/)).toBeNull();
+		} finally {
+			Settings.defaultZone = "system";
+		}
 	});
 
 	it("uses the qualification warning window for expiring-soon status", () => {
