@@ -41,6 +41,32 @@ function formatFileSize(fileSize: number) {
 	return `${formatter.format(fileSize / (1024 * 1024))} MB`;
 }
 
+function getReviewActionLabel({
+	action,
+	employeeName,
+	skillName,
+	t,
+}: {
+	action: "approve" | "reject";
+	employeeName: string;
+	skillName: string;
+	t: Translate;
+}) {
+	if (action === "approve") {
+		return t(
+			"qualifications.approveRenewalRequestForEmployeeSkill",
+			"Approve {{skillName}} renewal request for {{employeeName}}",
+			{ employeeName, skillName },
+		);
+	}
+
+	return t(
+		"qualifications.rejectRenewalRequestForEmployeeSkill",
+		"Reject {{skillName}} renewal request for {{employeeName}}",
+		{ employeeName, skillName },
+	);
+}
+
 function ReviewRequestDetails({
 	request,
 	t,
@@ -185,6 +211,8 @@ export function RenewalReviewQueue({ organizationId }: RenewalReviewQueueProps) 
 						aria-label={t("qualifications.renewalRequestsList", "Pending renewal requests")}
 					>
 						{requests.map((request) => {
+							const employeeName = getEmployeeDisplayName(request);
+							const skillName = request.employeeSkill.skill.name;
 							const isReviewingRequest =
 								reviewMutation.isPending && reviewMutation.variables?.requestId === request.id;
 							const isRejectingRequest =
@@ -196,10 +224,8 @@ export function RenewalReviewQueue({ organizationId }: RenewalReviewQueueProps) 
 								<div key={request.id} className="rounded-lg border bg-card/60 p-3" role="listitem">
 									<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
 										<div className="min-w-0">
-											<p className="break-words font-medium">{request.employeeSkill.skill.name}</p>
-											<p className="break-words text-sm text-muted-foreground">
-												{getEmployeeDisplayName(request)}
-											</p>
+											<p className="break-words font-medium">{skillName}</p>
+											<p className="break-words text-sm text-muted-foreground">{employeeName}</p>
 											<p className="text-xs text-muted-foreground">
 												{t("qualifications.submittedOn", "Submitted {{date}}", {
 													date: formatDate(request.createdAt),
@@ -213,10 +239,12 @@ export function RenewalReviewQueue({ organizationId }: RenewalReviewQueueProps) 
 												size="sm"
 												variant="outline"
 												disabled={reviewMutation.isPending}
-												aria-label={t(
-													"qualifications.rejectRenewalRequest",
-													"Reject renewal request",
-												)}
+												aria-label={getReviewActionLabel({
+													action: "reject",
+													employeeName,
+													skillName,
+													t,
+												})}
 												onClick={() => handleReview(request.id, false)}
 											>
 												{isRejectingRequest ? (
@@ -228,10 +256,12 @@ export function RenewalReviewQueue({ organizationId }: RenewalReviewQueueProps) 
 												type="button"
 												size="sm"
 												disabled={reviewMutation.isPending}
-												aria-label={t(
-													"qualifications.approveRenewalRequest",
-													"Approve renewal request",
-												)}
+												aria-label={getReviewActionLabel({
+													action: "approve",
+													employeeName,
+													skillName,
+													t,
+												})}
 												onClick={() => handleReview(request.id, true)}
 											>
 												{isApprovingRequest ? (

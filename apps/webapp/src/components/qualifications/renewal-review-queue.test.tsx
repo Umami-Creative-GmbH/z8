@@ -42,7 +42,6 @@ const pendingRequest = {
 				fileName: "forklift-renewal.pdf",
 				mimeType: "application/pdf",
 				fileSize: 12345,
-				fileKey: "private/org-1/forklift-renewal.pdf",
 			},
 		},
 	],
@@ -113,7 +112,11 @@ describe("RenewalReviewQueue", () => {
 		expect(screen.getByText("Certificate: CERT-98765")).toBeTruthy();
 		expect(screen.getByText("Notes: Updated forklift license")).toBeTruthy();
 
-		fireEvent.click(screen.getByRole("button", { name: "Approve renewal request" }));
+		fireEvent.click(
+			screen.getByRole("button", {
+				name: "Approve Forklift License renewal request for Avery Nguyen",
+			}),
+		);
 
 		await waitFor(() => {
 			expect(reviewQualificationRenewalRequestMock).toHaveBeenCalledWith({
@@ -131,7 +134,11 @@ describe("RenewalReviewQueue", () => {
 		);
 
 		await screen.findByText("Forklift License");
-		fireEvent.click(screen.getByRole("button", { name: "Approve renewal request" }));
+		fireEvent.click(
+			screen.getByRole("button", {
+				name: "Approve Forklift License renewal request for Avery Nguyen",
+			}),
+		);
 
 		await waitFor(() => {
 			expect(invalidateQueriesSpy).toHaveBeenCalledWith({

@@ -735,7 +735,6 @@ describe("SkillService qualification renewal behavior", () => {
 						fileName: "forklift-renewal.pdf",
 						mimeType: "application/pdf",
 						fileSize: 12345,
-						fileKey: "private/org-1/forklift-renewal.pdf",
 					},
 				},
 			],
@@ -753,7 +752,11 @@ describe("SkillService qualification renewal behavior", () => {
 						with: expect.objectContaining({ skill: expect.anything() }),
 					}),
 					evidenceLinks: expect.objectContaining({
-						with: expect.objectContaining({ evidence: expect.anything() }),
+						with: expect.objectContaining({
+							evidence: expect.objectContaining({
+								columns: expect.not.objectContaining({ fileKey: true }),
+							}),
+						}),
 					}),
 				}),
 			}),

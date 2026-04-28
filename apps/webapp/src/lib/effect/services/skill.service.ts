@@ -146,10 +146,7 @@ export interface QualificationRenewalRequestWithDetails extends QualificationRen
 	};
 	evidenceLinks: Array<{
 		id: string;
-		evidence: Pick<
-			QualificationEvidenceRecord,
-			"id" | "fileName" | "mimeType" | "fileSize" | "fileKey"
-		>;
+		evidence: Pick<QualificationEvidenceRecord, "id" | "fileName" | "mimeType" | "fileSize">;
 	}>;
 }
 
@@ -954,7 +951,6 @@ export const SkillServiceLive = Layer.effect(
 													fileName: true,
 													mimeType: true,
 													fileSize: true,
-													fileKey: true,
 												},
 											},
 										},
