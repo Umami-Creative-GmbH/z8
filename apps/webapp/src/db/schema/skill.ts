@@ -249,6 +249,34 @@ export const qualificationRenewalRequest = pgTable(
 	],
 );
 
+export const qualificationRenewalRequestEvidence = pgTable(
+	"qualification_renewal_request_evidence",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		renewalRequestId: uuid("renewal_request_id")
+			.notNull()
+			.references(() => qualificationRenewalRequest.id, { onDelete: "cascade" }),
+		evidenceId: uuid("evidence_id")
+			.notNull()
+			.references(() => qualificationEvidence.id, { onDelete: "cascade" }),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+	},
+	(table) => [
+		index("qualificationRenewalEvidence_organizationId_idx").on(table.organizationId),
+		index("qualificationRenewalEvidence_renewalRequestId_idx").on(
+			table.renewalRequestId,
+		),
+		index("qualificationRenewalEvidence_evidenceId_idx").on(table.evidenceId),
+		uniqueIndex("qualificationRenewalEvidence_request_evidence_idx").on(
+			table.renewalRequestId,
+			table.evidenceId,
+		),
+	],
+);
+
 /**
  * Skill requirement override log
  * Records when a manager assigns an unqualified employee with an override reason.
