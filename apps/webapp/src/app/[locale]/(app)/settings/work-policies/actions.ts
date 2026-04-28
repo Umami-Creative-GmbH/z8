@@ -1474,13 +1474,6 @@ export interface EmployeeScheduleDetails {
 	days?: ScheduleDayDetail[];
 }
 
-export function getEffectiveAssignmentOrder(
-	assignment: { effectiveFrom: unknown; createdAt: unknown },
-	{ desc }: { desc: (value: unknown) => unknown },
-) {
-	return [sql`${assignment.effectiveFrom} DESC NULLS LAST`, desc(assignment.createdAt)];
-}
-
 export async function getEmployeeEffectiveScheduleDetails(
 	employeeId: string,
 ): Promise<ServerActionResult<EmployeeScheduleDetails | null>> {
@@ -1523,7 +1516,10 @@ export async function getEmployeeEffectiveScheduleDetails(
 							gte(workPolicyAssignment.effectiveUntil, now),
 						),
 					),
-					orderBy: getEffectiveAssignmentOrder,
+					orderBy: (assignment, { desc }) => [
+						sql`${assignment.effectiveFrom} DESC NULLS LAST`,
+						desc(assignment.createdAt),
+					],
 					with: {
 						policy: {
 							with: {
@@ -1575,7 +1571,10 @@ export async function getEmployeeEffectiveScheduleDetails(
 								gte(workPolicyAssignment.effectiveUntil, now),
 							),
 						),
-						orderBy: getEffectiveAssignmentOrder,
+						orderBy: (assignment, { desc }) => [
+							sql`${assignment.effectiveFrom} DESC NULLS LAST`,
+							desc(assignment.createdAt),
+						],
 						with: {
 							policy: {
 								with: {
@@ -1628,7 +1627,10 @@ export async function getEmployeeEffectiveScheduleDetails(
 							gte(workPolicyAssignment.effectiveUntil, now),
 						),
 					),
-					orderBy: getEffectiveAssignmentOrder,
+					orderBy: (assignment, { desc }) => [
+						sql`${assignment.effectiveFrom} DESC NULLS LAST`,
+						desc(assignment.createdAt),
+					],
 					with: {
 						policy: {
 							with: {
