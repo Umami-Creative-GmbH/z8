@@ -75,7 +75,7 @@ export async function processImportReviewJob(job: Job<ImportReviewJobData>): Pro
 			}
 
 			case "import-review-commit": {
-				const committedRows = await commitAcceptedRowsForEntity(data);
+				const { committedRows } = await commitAcceptedRowsForEntity(data);
 				await markCompleted(data, committedRows);
 				return {
 					success: true,
@@ -85,7 +85,7 @@ export async function processImportReviewJob(job: Job<ImportReviewJobData>): Pro
 			}
 
 			default:
-				throw new Error(`Unsupported import review job type: ${String(data.type)}`);
+				throw new Error(`Unsupported import review job type: ${String((data as { type?: unknown }).type)}`);
 		}
 	} catch (error) {
 		const errorMessage = error instanceof Error ? error.message : String(error);

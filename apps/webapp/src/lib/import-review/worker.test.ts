@@ -118,7 +118,7 @@ describe("processImportReviewJob", () => {
 	});
 
 	it("routes commit jobs and marks them completed with committed row count", async () => {
-		commitAcceptedRowsForEntityMock.mockResolvedValue(5);
+		commitAcceptedRowsForEntityMock.mockResolvedValue({ committedRows: 5 });
 
 		const result = await processImportReviewJob(commitJob());
 
