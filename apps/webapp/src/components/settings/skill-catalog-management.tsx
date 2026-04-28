@@ -125,6 +125,11 @@ export function SkillCatalogManagement({
 
 	const skills = skillsResult ?? [];
 
+	const invalidateSkillCatalogQueries = () => {
+		queryClient.invalidateQueries({ queryKey: queryKeys.skills.list(organizationId, false) });
+		queryClient.invalidateQueries({ queryKey: queryKeys.skills.list(organizationId, true) });
+	};
+
 	// Delete mutation
 	const deleteMutation = useMutation({
 		mutationFn: async (skillId: string) => {
@@ -133,7 +138,7 @@ export function SkillCatalogManagement({
 		},
 		onSuccess: () => {
 			toast.success(t("settings.skills.skillDeleted", "Skill deleted"));
-			queryClient.invalidateQueries({ queryKey: queryKeys.skills.list(organizationId, false) });
+			invalidateSkillCatalogQueries();
 		},
 		onError: (error) => {
 			toast.error(error.message || t("settings.skills.deleteError", "Failed to delete skill"));
@@ -159,7 +164,7 @@ export function SkillCatalogManagement({
 	};
 
 	const handleSuccess = () => {
-		queryClient.invalidateQueries({ queryKey: queryKeys.skills.list(organizationId, false) });
+		invalidateSkillCatalogQueries();
 		setDialogOpen(false);
 		setEditingSkill(null);
 	};

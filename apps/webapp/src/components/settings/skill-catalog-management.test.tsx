@@ -92,6 +92,9 @@ describe("SkillCatalogManagement", () => {
 			expect(invalidateQueriesMock).toHaveBeenCalledWith({
 				queryKey: ["skills", "list", "org-1", false],
 			});
+			expect(invalidateQueriesMock).toHaveBeenCalledWith({
+				queryKey: ["skills", "list", "org-1", true],
+			});
 		});
 	});
 

@@ -60,9 +60,12 @@ function renderWithQueryClient(children: ReactNode) {
 
 function RenewalDialogHarness() {
 	const [open, setOpen] = useState(false);
-	const queryClient = new QueryClient({
-		defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
-	});
+	const [queryClient] = useState(
+		() =>
+			new QueryClient({
+				defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+			}),
+	);
 
 	return (
 		<QueryClientProvider client={queryClient}>
@@ -122,6 +125,20 @@ describe("RenewalSubmissionDialog", () => {
 		});
 
 		expect(onOpenChange).toHaveBeenCalledWith(false);
+	});
+
+	it("shows pending feedback while submitting renewal evidence", async () => {
+		submitMyQualificationRenewalMock.mockReturnValue(new Promise(() => {}));
+
+		renderWithQueryClient(
+			<RenewalSubmissionDialog qualification={qualification} open onOpenChange={vi.fn()} />,
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: "Submit renewal" }));
+
+		await waitFor(() => {
+			expect(screen.getByRole("button", { name: "Submitting renewal…" })).toBeTruthy();
+		});
 	});
 
 	it("resets renewal fields after canceling", () => {

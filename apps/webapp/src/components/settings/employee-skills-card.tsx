@@ -46,6 +46,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { getQualificationStatus } from "@/lib/qualifications/status";
 import { queryKeys } from "@/lib/query/keys";
 import { useEmployeeSkills, useOrganizationSkills } from "@/lib/query/use-skills";
 
@@ -68,18 +69,6 @@ const CATEGORY_ICONS: Record<SkillCategory, typeof IconShieldCheck> = {
 
 function getCategoryIcon(category: SkillCategory) {
 	return CATEGORY_ICONS[category] ?? IconAward;
-}
-
-function isExpired(expiresAt: Date | null): boolean {
-	if (!expiresAt) return false;
-	return DateTime.fromJSDate(expiresAt) < DateTime.now();
-}
-
-function isExpiringSoon(expiresAt: Date | null, days = 30): boolean {
-	if (!expiresAt) return false;
-	const expiry = DateTime.fromJSDate(expiresAt);
-	const threshold = DateTime.now().plus({ days });
-	return expiry > DateTime.now() && expiry <= threshold;
 }
 
 export function EmployeeSkillsCard({
@@ -168,11 +157,12 @@ export function EmployeeSkillsCard({
 					<div className="space-y-3">
 						{skills.map((employeeSkill) => {
 							const CategoryIcon = getCategoryIcon(employeeSkill.skill.category as SkillCategory);
-							const expired = isExpired(employeeSkill.expiresAt);
-							const expiringSoon = isExpiringSoon(
-								employeeSkill.expiresAt,
-								employeeSkill.skill.expiryWarningDays ?? 30,
-							);
+							const qualificationStatus = getQualificationStatus({
+								expiresAt: employeeSkill.expiresAt,
+								warningDays: employeeSkill.skill.expiryWarningDays ?? 30,
+							});
+							const expired = qualificationStatus === "expired";
+							const expiringSoon = qualificationStatus === "expiringSoon";
 
 							return (
 								<div

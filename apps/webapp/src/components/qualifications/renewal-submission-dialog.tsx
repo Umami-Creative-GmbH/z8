@@ -1,5 +1,6 @@
 "use client";
 
+import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { DateTime } from "luxon";
@@ -243,7 +244,10 @@ export function RenewalSubmissionDialog({
 							Cancel
 						</Button>
 						<Button type="submit" disabled={submitMutation.isPending || !qualification}>
-							Submit renewal
+							{submitMutation.isPending && (
+								<IconLoader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+							)}
+							{submitMutation.isPending ? "Submitting renewal…" : "Submit renewal"}
 						</Button>
 					</DialogFooter>
 				</form>
