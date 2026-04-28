@@ -16,6 +16,7 @@ const dbMock = vi.hoisted(() => ({
 	query: {
 		employee: { findFirst: vi.fn() },
 		absenceCategory: { findFirst: vi.fn() },
+		holidayCategory: { findFirst: vi.fn() },
 		timeEntry: { findFirst: vi.fn() },
 	},
 }));
@@ -98,6 +99,7 @@ beforeEach(() => {
 		const id = `created_${dbMock.insertCalls.length}`;
 		return Promise.resolve([{ id }]);
 	});
+	dbMock.query.holidayCategory.findFirst.mockResolvedValue({ id: "holiday_category_1" });
 });
 
 describe("commitAcceptedRowsForEntity setup/reference rows", () => {
@@ -211,6 +213,44 @@ describe("commitAcceptedRowsForEntity setup/reference rows", () => {
 			expect.objectContaining({
 				rowStatus: "blocked",
 				commitError: "holiday import row requires a confirmed categoryId before commit",
+			}),
+		);
+	});
+
+	it("blocks holiday rows when the category is missing from the organization", async () => {
+		dbMock.rows = [
+			stagedRow({
+				entityType: "holiday",
+				normalizedPayload: {
+					name: "New Year",
+					date: "2026-01-01",
+					categoryId: "holiday_category_other_org",
+				},
+			}),
+		];
+		dbMock.query.holidayCategory.findFirst.mockResolvedValueOnce(null);
+
+		const result = await commitAcceptedRowsForEntity(commitJob("holiday"));
+
+		expect(result).toEqual({
+			committedRows: 0,
+			failedRows: 1,
+			errors: [
+				{
+					rowId: "row_1",
+					message:
+						"Holiday category holiday_category_other_org does not belong to organization org_1",
+				},
+			],
+		});
+		expect(dbMock.query.holidayCategory.findFirst).toHaveBeenCalledWith(
+			expect.objectContaining({ where: expect.objectContaining({ queryChunks: expect.any(Array) }) }),
+		);
+		expect(dbMock.insert).not.toHaveBeenCalled();
+		expect(dbMock.updates).toContainEqual(
+			expect.objectContaining({
+				rowStatus: "blocked",
+				commitError: "Holiday category holiday_category_other_org does not belong to organization org_1",
 			}),
 		);
 	});

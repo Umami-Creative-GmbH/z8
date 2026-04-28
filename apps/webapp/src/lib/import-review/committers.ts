@@ -6,6 +6,7 @@ import {
 	absenceEntry,
 	employee,
 	holiday,
+	holidayCategory,
 	importStagedRow,
 	surchargeModel,
 	timeEntry,
@@ -307,6 +308,18 @@ async function commitHoliday(
 	const payload = row.normalizedPayload as unknown as SetupReferencePayload;
 	if (!payload.categoryId) {
 		const message = "holiday import row requires a confirmed categoryId before commit";
+		await markBlocked(database, row.id, job.organizationId, message);
+		return { status: "blocked", message };
+	}
+	const category = await database.query.holidayCategory.findFirst({
+		where: and(
+			eq(holidayCategory.id, payload.categoryId),
+			eq(holidayCategory.organizationId, job.organizationId),
+		),
+		columns: { id: true },
+	});
+	if (!category) {
+		const message = `Holiday category ${payload.categoryId} does not belong to organization ${job.organizationId}`;
 		await markBlocked(database, row.id, job.organizationId, message);
 		return { status: "blocked", message };
 	}
