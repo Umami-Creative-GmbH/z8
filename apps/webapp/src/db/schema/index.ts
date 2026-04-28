@@ -19,6 +19,8 @@ export * from "./calendar-sync";
 export * from "./change-policy";
 // Clockodo import (user mapping)
 export * from "./clockodo-import";
+// Import review staging and audit tables
+export * from "./import-review";
 // ArbZG Compliance
 export * from "./compliance";
 // Coverage targets (minimum staffing requirements)
