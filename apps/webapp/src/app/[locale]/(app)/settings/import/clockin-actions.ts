@@ -1,13 +1,12 @@
 "use server";
 
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import { employee } from "@/db/schema";
 import { requireUser } from "@/lib/auth-helpers";
 import { ClockinClient } from "@/lib/clockin/client";
-import { orchestrateClockinImport } from "@/lib/clockin/import-orchestrator";
 import type {
 	ClockinImportResult,
 	ClockinImportSelections,
@@ -50,24 +49,6 @@ async function requireAdmin(organizationId: string) {
 	}
 
 	return authContext;
-}
-
-async function validateEmployeeOwnership(
-	employeeIds: string[],
-	organizationId: string,
-): Promise<void> {
-	if (employeeIds.length === 0) return;
-
-	const validEmployees = await db
-		.select({ id: employee.id })
-		.from(employee)
-		.where(and(eq(employee.organizationId, organizationId), inArray(employee.id, employeeIds)));
-
-	const validIds = new Set(validEmployees.map((entry) => entry.id));
-	const invalidIds = employeeIds.filter((id) => !validIds.has(id));
-	if (invalidIds.length > 0) {
-		throw new Error("One or more employee IDs do not belong to this organization");
-	}
 }
 
 export async function validateClockinCredentials(
@@ -191,42 +172,13 @@ export async function fetchZ8Employees(
 }
 
 export async function importClockinData(
-	token: string,
-	organizationId: string,
-	selections: ClockinImportSelections,
-	mappings: ClockinImportUserMapping[],
+	_token: string,
+	_organizationId: string,
+	_selections: ClockinImportSelections,
+	_mappings: ClockinImportUserMapping[],
 ): Promise<ActionResult<ClockinImportResult>> {
-	try {
-		const authContext = await requireAdmin(organizationId);
-
-		if (!token.trim()) {
-			return { success: false, error: "API token is required" };
-		}
-
-		await validateEmployeeOwnership(
-			mappings.map((entry) => entry.employeeId).filter((entry): entry is string => entry != null),
-			organizationId,
-		);
-
-		const client = new ClockinClient(token.trim());
-		const connection = await client.testConnection();
-		if (!connection.success) {
-			return { success: false, error: connection.error };
-		}
-
-		const result = await orchestrateClockinImport(
-			client,
-			organizationId,
-			authContext.user.id,
-			selections,
-			mappings,
-		);
-
-		return { success: true, data: result };
-	} catch (error) {
-		return {
-			success: false,
-			error: error instanceof Error ? error.message : "Failed to import Clockin data",
-		};
-	}
+	return {
+		success: false,
+		error: "Direct Clockin imports are disabled. Start an import review scan instead.",
+	};
 }

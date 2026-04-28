@@ -14,23 +14,19 @@ import { toast } from "sonner";
 import {
 	fetchClockinEmployees,
 	fetchZ8Employees,
-	importClockinData,
 	validateClockinCredentials,
 	type ClockinEmployeeInfo,
 	type ClockinPreview,
 	type Z8EmployeeInfo,
 } from "@/app/[locale]/(app)/settings/import/clockin-actions";
+import { startImportReviewScan } from "@/app/[locale]/(app)/settings/import/review-actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type {
-	ClockinImportResult,
-	ClockinImportSelections,
-	ClockinImportUserMapping,
-} from "@/lib/clockin/import-types";
+import type { ClockinImportSelections, ClockinImportUserMapping } from "@/lib/clockin/import-types";
 
-type WizardStep = "connect" | "preview" | "mapping" | "selection" | "importing" | "complete";
+type WizardStep = "connect" | "preview" | "mapping" | "selection" | "importing" | "review";
 
 interface ClockinImportWizardProps {
 	organizationId: string;
@@ -54,7 +50,7 @@ export function ClockinImportWizard({ organizationId }: ClockinImportWizardProps
 	const [z8Employees, setZ8Employees] = useState<Z8EmployeeInfo[]>([]);
 	const [mappings, setMappings] = useState<MappingRow[]>([]);
 	const [busyAction, setBusyAction] = useState<"connect" | "mapping" | "import" | null>(null);
-	const [result, setResult] = useState<ClockinImportResult | null>(null);
+	const [reviewBatchId, setReviewBatchId] = useState<string | null>(null);
 	const [selections, setSelections] = useState<ClockinImportSelections>({
 		workdays: true,
 		absences: true,
@@ -134,26 +130,29 @@ export function ClockinImportWizard({ organizationId }: ClockinImportWizardProps
 		setBusyAction("import");
 		setStep("importing");
 		try {
-			const importResult = await importClockinData(
-				token,
+			const entityTypes = [
+				...(selections.workdays ? (["work_period"] as const) : []),
+				...(selections.absences ? (["absence"] as const) : []),
+			];
+			const scanResult = await startImportReviewScan({
 				organizationId,
-				selections,
-				mappings.map((entry) => ({
-					clockinEmployeeId: entry.clockinEmployeeId,
-					employeeId: entry.employeeId,
-					userId: entry.userId,
-					mappingType: entry.mappingType,
-				})),
-			);
+				provider: "clockin",
+				credential: token,
+				selectedScope: selections,
+				dateRange: selections.dateRange,
+				employeeIds: mappings.map((entry) => String(entry.clockinEmployeeId)),
+				entityTypes,
+			});
 
-			if (!importResult.success) {
-				toast.error(importResult.error);
+			if (!scanResult.success) {
+				toast.error(scanResult.error);
 				setStep("selection");
 				return;
 			}
 
-			setResult(importResult.data);
-			setStep("complete");
+			setReviewBatchId(scanResult.data.batchId);
+			toast.success("Import review scan started. Review is required before records are committed.");
+			setStep("review");
 		} finally {
 			setBusyAction(null);
 		}
@@ -227,7 +226,7 @@ export function ClockinImportWizard({ organizationId }: ClockinImportWizardProps
 						<CardDescription>
 							{t(
 								"settings.clockinImport.preview.description",
-								"Review what Clockin data is available before mapping employees and importing records.",
+								"Review what Clockin data is available before mapping employees and scanning records.",
 							)}
 						</CardDescription>
 					</CardHeader>
@@ -285,6 +284,7 @@ export function ClockinImportWizard({ organizationId }: ClockinImportWizardProps
 									</div>
 									<select
 										value={entry.employeeId ?? ""}
+										aria-label={`Map ${entry.clockinEmployeeName}`}
 										onChange={(event) =>
 											updateMapping(entry.clockinEmployeeId, event.target.value)
 										}
@@ -321,7 +321,7 @@ export function ClockinImportWizard({ organizationId }: ClockinImportWizardProps
 						<CardDescription>
 							{t(
 								"settings.clockinImport.selection.description",
-								"Choose which Clockin records to import. Duplicates are skipped automatically.",
+								"Choose which Clockin records to scan for review. Records must be reviewed before commit.",
 							)}
 						</CardDescription>
 					</CardHeader>
@@ -391,7 +391,7 @@ export function ClockinImportWizard({ organizationId }: ClockinImportWizardProps
 								}
 							>
 								<IconArrowRight className="mr-2 h-4 w-4" />
-								Start Import
+								Start Review Scan
 							</Button>
 						</div>
 					</CardContent>
@@ -402,27 +402,26 @@ export function ClockinImportWizard({ organizationId }: ClockinImportWizardProps
 				<Card>
 					<CardContent className="flex items-center gap-3 py-8 text-sm text-muted-foreground">
 						<IconLoader2 className="h-4 w-4 animate-spin" />
-						Importing Clockin data...
+						Starting Clockin import review scan…
 					</CardContent>
 				</Card>
 			)}
 
-			{step === "complete" && result && (
+			{step === "review" && reviewBatchId && (
 				<Card>
 					<CardHeader>
 						<CardTitle className="flex items-center gap-2">
 							<IconCheck className="h-5 w-5 text-green-600" />
-							Import complete
+							Import review scan started
 						</CardTitle>
 						<CardDescription>
-							Status: {result.status} - completed in {Math.round(result.durationMs / 1000)}s
+							Review batch {reviewBatchId} is scanning. Review and approve records before commit.
 						</CardDescription>
 					</CardHeader>
-					<CardContent className="grid gap-3 sm:grid-cols-2">
-						<ResultStat label="Workdays imported" value={result.workdays.imported} />
-						<ResultStat label="Workdays skipped" value={result.workdays.skipped} />
-						<ResultStat label="Absences imported" value={result.absences.imported} />
-						<ResultStat label="Absences skipped" value={result.absences.skipped} />
+					<CardContent>
+						<p className="text-sm text-muted-foreground">
+							No production records have been imported yet.
+						</p>
 					</CardContent>
 				</Card>
 			)}
@@ -435,15 +434,6 @@ function PreviewStat({ label, value }: { label: string; value: number }) {
 		<div className="rounded-lg border p-4">
 			<p className="text-sm text-muted-foreground">{label}</p>
 			<p className="font-semibold text-2xl">{value}</p>
-		</div>
-	);
-}
-
-function ResultStat({ label, value }: { label: string; value: number }) {
-	return (
-		<div className="rounded-lg border p-4">
-			<p className="text-sm text-muted-foreground">{label}</p>
-			<p className="font-semibold text-xl">{value}</p>
 		</div>
 	);
 }

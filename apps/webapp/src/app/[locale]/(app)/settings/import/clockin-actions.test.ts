@@ -72,7 +72,9 @@ vi.mock("@/lib/clockin/client", () => ({
 	},
 }));
 
-const { fetchClockinEmployees, validateClockinCredentials } = await import("./clockin-actions");
+const { fetchClockinEmployees, importClockinData, validateClockinCredentials } = await import(
+	"./clockin-actions"
+);
 
 describe("Clockin actions", () => {
 	beforeEach(() => {
@@ -111,5 +113,25 @@ describe("Clockin actions", () => {
 				{ id: 1, name: "Ada Lovelace", email: "ada@example.com" },
 			],
 		});
+	});
+
+	it("disables direct Clockin production imports", async () => {
+		const result = await importClockinData(
+			"token_1",
+			"org_123",
+			{
+				workdays: true,
+				absences: true,
+				schedules: false,
+				dateRange: { startDate: "2026-01-01", endDate: "2026-01-31" },
+			},
+			[],
+		);
+
+		expect(result).toEqual({
+			success: false,
+			error: "Direct Clockin imports are disabled. Start an import review scan instead.",
+		});
+		expect(mockState.requireUser).not.toHaveBeenCalled();
 	});
 });
