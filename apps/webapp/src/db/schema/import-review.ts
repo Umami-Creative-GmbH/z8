@@ -34,12 +34,8 @@ export const importBatch = pgTable(
 			>()
 			.notNull()
 			.default("draft"),
-		selectedScope: jsonb("selected_scope")
-			.$type<Record<string, unknown>>()
-			.notNull(),
-		dateRange: jsonb("date_range")
-			.$type<{ startDate: string; endDate: string }>()
-			.notNull(),
+		selectedScope: jsonb("selected_scope").$type<Record<string, unknown>>().notNull(),
+		dateRange: jsonb("date_range").$type<{ startDate: string; endDate: string }>().notNull(),
 		totalRows: integer("total_rows").notNull().default(0),
 		processedRows: integer("processed_rows").notNull().default(0),
 		issueCount: integer("issue_count").notNull().default(0),
@@ -117,12 +113,8 @@ export const importStagedRow = pgTable(
 		entityType: text("entity_type").notNull(),
 		providerSourceId: text("provider_source_id").notNull(),
 		sourcePayloadHash: text("source_payload_hash").notNull(),
-		sourcePayload: jsonb("source_payload")
-			.$type<Record<string, unknown>>()
-			.notNull(),
-		normalizedPayload: jsonb("normalized_payload")
-			.$type<Record<string, unknown>>()
-			.notNull(),
+		sourcePayload: jsonb("source_payload").$type<Record<string, unknown>>().notNull(),
+		normalizedPayload: jsonb("normalized_payload").$type<Record<string, unknown>>().notNull(),
 		matchTarget: jsonb("match_target").$type<Record<string, unknown> | null>(),
 		rowStatus: text("row_status")
 			.$type<
@@ -153,14 +145,17 @@ export const importStagedRow = pgTable(
 			.notNull(),
 	},
 	(table) => [
-		unique("importStagedRow_id_batch_org_idx").on(
-			table.id,
-			table.batchId,
-			table.organizationId,
-		),
+		unique("importStagedRow_id_batch_org_idx").on(table.id, table.batchId, table.organizationId),
 		index("importStagedRow_batchId_idx").on(table.batchId),
 		index("importStagedRow_org_entity_idx").on(table.organizationId, table.entityType),
 		index("importStagedRow_status_idx").on(table.rowStatus),
+		index("importStagedRow_org_batch_status_created_id_idx").on(
+			table.organizationId,
+			table.batchId,
+			table.rowStatus,
+			table.createdAt,
+			table.id,
+		),
 		foreignKey({
 			columns: [table.batchId, table.organizationId],
 			foreignColumns: [importBatch.id, importBatch.organizationId],
@@ -193,15 +188,10 @@ export const importIssue = pgTable(
 				| "dependency_blocker"
 			>()
 			.notNull(),
-		severity: text("severity")
-			.$type<"info" | "warning" | "blocking">()
-			.notNull(),
+		severity: text("severity").$type<"info" | "warning" | "blocking">().notNull(),
 		clusterKey: text("cluster_key"),
 		message: text("message").notNull(),
-		details: jsonb("details")
-			.$type<Record<string, unknown>>()
-			.notNull()
-			.default({}),
+		details: jsonb("details").$type<Record<string, unknown>>().notNull().default({}),
 		detectionRuleVersion: text("detection_rule_version").notNull(),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 	},
@@ -215,11 +205,7 @@ export const importIssue = pgTable(
 		}).onDelete("cascade"),
 		foreignKey({
 			columns: [table.stagedRowId, table.batchId, table.organizationId],
-			foreignColumns: [
-				importStagedRow.id,
-				importStagedRow.batchId,
-				importStagedRow.organizationId,
-			],
+			foreignColumns: [importStagedRow.id, importStagedRow.batchId, importStagedRow.organizationId],
 		}).onDelete("cascade"),
 	],
 );

@@ -24,6 +24,13 @@ import type {
 } from "./types";
 
 type ImportRowDecision = "accepted" | "rejected";
+const REVIEW_DECISION_ROW_STATUSES: ImportRowStatus[] = [
+	"staged",
+	"accepted",
+	"rejected",
+	"blocked",
+	"needs_mapping",
+];
 
 function stableStringify(value: unknown): string {
 	if (Array.isArray(value)) return `[${value.map(stableStringify).join(",")}]`;
@@ -59,6 +66,7 @@ export async function updateImportBatchStatus(input: {
 	organizationId: string;
 	status: ImportBatchStatus;
 	errorMessage?: string | null;
+	expectedStatus?: ImportBatchStatus;
 }) {
 	const update: { status: ImportBatchStatus; errorMessage?: string | null } = {
 		status: input.status,
@@ -66,12 +74,20 @@ export async function updateImportBatchStatus(input: {
 
 	if ("errorMessage" in input) update.errorMessage = input.errorMessage;
 
-	await db
+	const conditions = [
+		eq(importBatch.id, input.batchId),
+		eq(importBatch.organizationId, input.organizationId),
+	];
+	if (input.expectedStatus) conditions.push(eq(importBatch.status, input.expectedStatus));
+
+	const [batch] = await db
 		.update(importBatch)
 		.set(update)
-		.where(
-			and(eq(importBatch.id, input.batchId), eq(importBatch.organizationId, input.organizationId)),
-		);
+		.where(and(...conditions))
+		.returning();
+
+	if (!batch) throw new Error("Import batch not found or status changed");
+	return batch;
 }
 
 export async function createImportBatchJob(input: {
@@ -272,6 +288,17 @@ export async function applyImportRowDecision(input: {
 	reason?: string | null;
 	decidedBy: string;
 }) {
+	const batch = await db.query.importBatch.findFirst({
+		where: and(
+			eq(importBatch.id, input.batchId),
+			eq(importBatch.organizationId, input.organizationId),
+		),
+	});
+
+	if (batch?.status !== "needs_review") {
+		throw new Error("Import batch is not ready for review decisions");
+	}
+
 	const rows = await db
 		.select({ id: importStagedRow.id, issueSeverity: importStagedRow.issueSeverity })
 		.from(importStagedRow)
@@ -280,6 +307,7 @@ export async function applyImportRowDecision(input: {
 				eq(importStagedRow.batchId, input.batchId),
 				eq(importStagedRow.organizationId, input.organizationId),
 				inArray(importStagedRow.id, input.rowIds),
+				inArray(importStagedRow.rowStatus, REVIEW_DECISION_ROW_STATUSES),
 			),
 		);
 
@@ -299,6 +327,7 @@ export async function applyImportRowDecision(input: {
 					eq(importStagedRow.batchId, input.batchId),
 					eq(importStagedRow.organizationId, input.organizationId),
 					inArray(importStagedRow.id, rowIds),
+					inArray(importStagedRow.rowStatus, REVIEW_DECISION_ROW_STATUSES),
 				),
 			)
 			.returning({ id: importStagedRow.id });
@@ -326,10 +355,46 @@ export async function applyImportRowDecision(input: {
 	return { updatedCount: acceptedUpdated.length + blockedUpdated.length };
 }
 
+export async function listRejectedImportReviewRowsForExport(input: {
+	batchId: string;
+	organizationId: string;
+}) {
+	return db
+		.select({
+			id: importStagedRow.id,
+			entityType: importStagedRow.entityType,
+			providerSourceId: importStagedRow.providerSourceId,
+			issueSeverity: importStagedRow.issueSeverity,
+			decisionReason: importStagedRow.decisionReason,
+			normalizedPayload: importStagedRow.normalizedPayload,
+			sourcePayload: importStagedRow.sourcePayload,
+		})
+		.from(importStagedRow)
+		.where(
+			and(
+				eq(importStagedRow.batchId, input.batchId),
+				eq(importStagedRow.organizationId, input.organizationId),
+				eq(importStagedRow.rowStatus, "rejected"),
+			),
+		)
+		.orderBy(asc(importStagedRow.createdAt), asc(importStagedRow.id));
+}
+
 export async function createCommitJobsForAcceptedRows(input: {
 	batchId: string;
 	organizationId: string;
 }) {
+	const batch = await db.query.importBatch.findFirst({
+		where: and(
+			eq(importBatch.id, input.batchId),
+			eq(importBatch.organizationId, input.organizationId),
+		),
+	});
+
+	if (batch?.status !== "needs_review") {
+		throw new Error("Import batch is not ready to commit");
+	}
+
 	const entityTypes = await db
 		.selectDistinct({ entityType: importStagedRow.entityType })
 		.from(importStagedRow)

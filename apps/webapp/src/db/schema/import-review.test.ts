@@ -20,16 +20,21 @@ function hasCompositeForeignKey(
 		const reference = foreignKey.reference();
 
 		return (
-			reference.columns.map((column) => column.name).join(",") === columns.join(",")
-			&& reference.foreignColumns.map((column) => column.name).join(",")
-				=== foreignColumns.join(",")
-			&& reference.foreignColumns.every((column) => column.table === foreignTable)
+			reference.columns.map((column) => column.name).join(",") === columns.join(",") &&
+			reference.foreignColumns.map((column) => column.name).join(",") ===
+				foreignColumns.join(",") &&
+			reference.foreignColumns.every((column) => column.table === foreignTable)
 		);
 	});
 }
 
 function uniqueConstraintNames(table: Parameters<typeof getTableConfig>[0]): string[] {
 	return getTableConfig(table).uniqueConstraints.map((constraint) => constraint.getName());
+}
+
+function indexColumnNames(table: Parameters<typeof getTableConfig>[0], name: string): string[] {
+	const index = getTableConfig(table).indexes.find((candidate) => candidate.config.name === name);
+	return index?.config.columns.map((column) => column.name) ?? [];
 }
 
 describe("import review schema exports", () => {
@@ -58,12 +63,10 @@ describe("import review schema exports", () => {
 			importJobSecret,
 		]) {
 			expect(
-				hasCompositeForeignKey(
-					table,
-					["batch_id", "organization_id"],
-					importBatch,
-					["id", "organization_id"],
-				),
+				hasCompositeForeignKey(table, ["batch_id", "organization_id"], importBatch, [
+					"id",
+					"organization_id",
+				]),
 			).toBe(true);
 		}
 
@@ -102,6 +105,17 @@ describe("import review schema exports", () => {
 		);
 		expect(migration).toContain(
 			'FOREIGN KEY ("staged_row_id","batch_id","organization_id") REFERENCES "public"."import_staged_row"("id","batch_id","organization_id") ON DELETE cascade ON UPDATE no action',
+		);
+	});
+
+	it("indexes review row listing by tenant batch status and stable order", () => {
+		expect(
+			indexColumnNames(importStagedRow, "importStagedRow_org_batch_status_created_id_idx"),
+		).toEqual(["organization_id", "batch_id", "row_status", "created_at", "id"]);
+
+		const migration = readFileSync("drizzle/0006_import_review_row_listing_idx.sql", "utf8");
+		expect(migration).toContain(
+			'CREATE INDEX "importStagedRow_org_batch_status_created_id_idx" ON "import_staged_row" USING btree ("organization_id","batch_id","row_status","created_at","id")',
 		);
 	});
 });

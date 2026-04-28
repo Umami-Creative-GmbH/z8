@@ -6,10 +6,14 @@ const mockState = vi.hoisted(() => ({
 	getImportReviewSummary: vi.fn(),
 	listImportReviewRows: vi.fn(),
 	applyImportRowDecision: vi.fn(),
+	listRejectedImportReviewRowsForExport: vi.fn(),
 	recordRejectedExport: vi.fn(),
 	createCommitJobsForAcceptedRows: vi.fn(),
 	updateImportBatchStatus: vi.fn(),
 	enqueueImportCommitJob: vi.fn(),
+	select: vi.fn(),
+	update: vi.fn(),
+	findImportBatch: vi.fn(),
 }));
 
 vi.mock("drizzle-orm", async (importOriginal) => {
@@ -19,6 +23,7 @@ vi.mock("drizzle-orm", async (importOriginal) => {
 		...actual,
 		and: vi.fn((...args: unknown[]) => ({ and: args })),
 		eq: vi.fn((left: unknown, right: unknown) => ({ eq: [left, right] })),
+		inArray: vi.fn((left: unknown, right: unknown) => ({ inArray: [left, right] })),
 	};
 });
 
@@ -32,9 +37,14 @@ vi.mock("@/lib/auth-helpers", () => ({
 
 vi.mock("@/db", () => ({
 	db: {
+		select: mockState.select,
+		update: mockState.update,
 		query: {
 			member: {
 				findFirst: mockState.findMember,
+			},
+			importBatch: {
+				findFirst: mockState.findImportBatch,
 			},
 		},
 	},
@@ -58,6 +68,7 @@ vi.mock("@/lib/import-review/repository", () => ({
 	getImportReviewSummary: mockState.getImportReviewSummary,
 	listImportReviewRows: mockState.listImportReviewRows,
 	applyImportRowDecision: mockState.applyImportRowDecision,
+	listRejectedImportReviewRowsForExport: mockState.listRejectedImportReviewRowsForExport,
 	recordRejectedExport: mockState.recordRejectedExport,
 	createCommitJobsForAcceptedRows: mockState.createCommitJobsForAcceptedRows,
 	updateImportBatchStatus: mockState.updateImportBatchStatus,
@@ -91,9 +102,20 @@ describe("import review decision actions", () => {
 		});
 		mockState.listImportReviewRows.mockResolvedValue([{ id: "row_1" }]);
 		mockState.applyImportRowDecision.mockResolvedValue({ updatedCount: 2 });
+		mockState.listRejectedImportReviewRowsForExport.mockResolvedValue([
+			{
+				id: "row_1",
+				entityType: "employee",
+				providerSourceId: "provider_1",
+				issueSeverity: "warning",
+				decisionReason: "Duplicate employee",
+				normalizedPayload: { employeeNumber: "E-1", name: "Ada" },
+				sourcePayload: { id: "provider_1" },
+			},
+		]);
 		mockState.recordRejectedExport.mockResolvedValue({
 			id: "export_1",
-			fileName: "import-batch_1-rejected.json",
+			fileName: "import-batch_1-rejected.csv",
 		});
 		mockState.createCommitJobsForAcceptedRows.mockResolvedValue([
 			{ id: "job_1", entityType: "employee" },
@@ -175,14 +197,28 @@ describe("import review decision actions", () => {
 		expect(mockState.applyImportRowDecision).not.toHaveBeenCalled();
 	});
 
-	it("records rejected export metadata without generating a CSV", async () => {
+	it("returns rejected export CSV content and records the included row count", async () => {
+		mockState.getImportReviewSummary.mockResolvedValue({
+			totalRows: 20,
+			acceptedRows: 10,
+			rejectedRows: 7,
+			blockedRows: 1,
+			committedRows: 0,
+			issueCount: 8,
+		});
+
 		const result = await exportRejectedRowsAction({ organizationId: "org_1", batchId: "batch_1" });
 
 		expect(result).toEqual({
 			success: true,
-			data: { exportId: "export_1", fileName: "import-batch_1-rejected.json" },
+			data: {
+				exportId: "export_1",
+				fileName: "import-batch_1-rejected.csv",
+				content:
+					'id,entityType,providerSourceId,issueSeverity,decisionReason,normalizedPayload,sourcePayload\nrow_1,employee,provider_1,warning,Duplicate employee,"{""employeeNumber"":""E-1"",""name"":""Ada""}","{""id"":""provider_1""}"',
+			},
 		});
-		expect(mockState.getImportReviewSummary).toHaveBeenCalledWith({
+		expect(mockState.listRejectedImportReviewRowsForExport).toHaveBeenCalledWith({
 			organizationId: "org_1",
 			batchId: "batch_1",
 		});
@@ -191,7 +227,7 @@ describe("import review decision actions", () => {
 			batchId: "batch_1",
 			exportedBy: "user_1",
 			rowCount: 1,
-			fileName: "import-batch_1-rejected.json",
+			fileName: "import-batch_1-rejected.csv",
 		});
 	});
 
@@ -203,6 +239,7 @@ describe("import review decision actions", () => {
 			organizationId: "org_1",
 			batchId: "batch_1",
 			status: "committing",
+			expectedStatus: "needs_review",
 		});
 		expect(mockState.createCommitJobsForAcceptedRows).toHaveBeenCalledWith({
 			organizationId: "org_1",
@@ -216,6 +253,19 @@ describe("import review decision actions", () => {
 			entityType: "employee",
 			committedBy: "user_1",
 		});
+	});
+
+	it("does not transition to committing when there are no accepted rows", async () => {
+		mockState.createCommitJobsForAcceptedRows.mockResolvedValue([]);
+
+		const result = await startImportCommitAction({ organizationId: "org_1", batchId: "batch_1" });
+
+		expect(result).toEqual({
+			success: false,
+			error: "No accepted import review rows are available to commit",
+		});
+		expect(mockState.updateImportBatchStatus).not.toHaveBeenCalled();
+		expect(mockState.enqueueImportCommitJob).not.toHaveBeenCalled();
 	});
 
 	it("does not mutate batch status when commit authorization fails", async () => {
@@ -242,5 +292,108 @@ describe("import review decision actions", () => {
 			status: "commit_failed",
 			errorMessage: "queue failed because secret token leaked",
 		});
+	});
+});
+
+describe("import review repository decision safety", () => {
+	async function importActualRepository() {
+		vi.resetModules();
+		vi.doUnmock("@/lib/import-review/repository");
+		vi.doMock("@/db/schema", () => ({
+			importBatch: {
+				id: "importBatch.id",
+				organizationId: "importBatch.organizationId",
+				status: "importBatch.status",
+			},
+			importBatchJob: {},
+			importIssue: {},
+			importJobSecret: {},
+			importRejectedExport: {},
+			importStagedRow: {
+				id: "importStagedRow.id",
+				batchId: "importStagedRow.batchId",
+				organizationId: "importStagedRow.organizationId",
+				rowStatus: "importStagedRow.rowStatus",
+				issueSeverity: "importStagedRow.issueSeverity",
+			},
+		}));
+		return import("@/lib/import-review/repository");
+	}
+
+	beforeEach(() => {
+		vi.clearAllMocks();
+		mockState.findImportBatch.mockResolvedValue({ id: "batch_1", status: "needs_review" });
+	});
+
+	it("does not mutate committing rows when applying decisions", async () => {
+		const selectWhere = vi.fn().mockResolvedValue([]);
+		mockState.select.mockReturnValue({
+			from: vi.fn().mockReturnValue({ where: selectWhere }),
+		});
+		mockState.update.mockReturnValue({
+			set: vi.fn().mockReturnValue({ where: vi.fn().mockReturnValue({ returning: vi.fn() }) }),
+		});
+
+		const { applyImportRowDecision } = await importActualRepository();
+		const result = await applyImportRowDecision({
+			organizationId: "org_1",
+			batchId: "batch_1",
+			rowIds: ["row_committing"],
+			decision: "rejected",
+			decidedBy: "user_1",
+		});
+
+		expect(result).toEqual({ updatedCount: 0 });
+		expect(mockState.update).not.toHaveBeenCalled();
+		expect(selectWhere).toHaveBeenCalledWith(
+			expect.objectContaining({
+				and: expect.arrayContaining([
+					expect.objectContaining({
+						inArray: expect.arrayContaining([
+							expect.anything(),
+							["staged", "accepted", "rejected", "blocked", "needs_mapping"],
+						]),
+					}),
+				]),
+			}),
+		);
+	});
+
+	it("does not mutate committed rows when applying decisions", async () => {
+		mockState.select.mockReturnValue({
+			from: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue([]) }),
+		});
+		mockState.update.mockReturnValue({
+			set: vi.fn().mockReturnValue({ where: vi.fn().mockReturnValue({ returning: vi.fn() }) }),
+		});
+
+		const { applyImportRowDecision } = await importActualRepository();
+		const result = await applyImportRowDecision({
+			organizationId: "org_1",
+			batchId: "batch_1",
+			rowIds: ["row_committed"],
+			decision: "accepted",
+			decidedBy: "user_1",
+		});
+
+		expect(result).toEqual({ updatedCount: 0 });
+		expect(mockState.update).not.toHaveBeenCalled();
+	});
+
+	it("requires the batch to be in needs_review before applying decisions", async () => {
+		mockState.findImportBatch.mockResolvedValue({ id: "batch_1", status: "committing" });
+
+		const { applyImportRowDecision } = await importActualRepository();
+
+		await expect(
+			applyImportRowDecision({
+				organizationId: "org_1",
+				batchId: "batch_1",
+				rowIds: ["row_1"],
+				decision: "rejected",
+				decidedBy: "user_1",
+			}),
+		).rejects.toThrow("Import batch is not ready for review decisions");
+		expect(mockState.update).not.toHaveBeenCalled();
 	});
 });

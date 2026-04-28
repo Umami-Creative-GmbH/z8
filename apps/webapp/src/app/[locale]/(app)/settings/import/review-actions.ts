@@ -16,6 +16,7 @@ import {
 	createImportBatchJob,
 	getImportReviewSummary,
 	listImportReviewRows,
+	listRejectedImportReviewRowsForExport,
 	recordRejectedExport,
 	saveImportJobSecret,
 	updateImportBatchStatus,
@@ -461,26 +462,62 @@ export async function applyImportDecisionAction(
 
 export async function exportRejectedRowsAction(
 	input: unknown,
-): Promise<ActionResult<{ exportId: string; fileName: string }>> {
+): Promise<ActionResult<{ exportId: string; fileName: string; content: string }>> {
 	try {
 		const validated = validateImportReviewBatchInput(input);
 		const authContext = await requireImportAdmin(validated.organizationId);
-		const summary = await getImportReviewSummary(validated);
-		const fileName = `import-${validated.batchId}-rejected.json`;
+		const rows = await listRejectedImportReviewRowsForExport(validated);
+		const fileName = `import-${validated.batchId}-rejected.csv`;
+		const content = buildRejectedRowsCsv(rows);
 		const rejectedExport = await recordRejectedExport({
 			...validated,
 			exportedBy: authContext.user.id,
-			rowCount: summary.rejectedRows,
+			rowCount: rows.length,
 			fileName,
 		});
 
 		return {
 			success: true,
-			data: { exportId: rejectedExport.id, fileName: rejectedExport.fileName },
+			data: { exportId: rejectedExport.id, fileName: rejectedExport.fileName, content },
 		};
 	} catch (error) {
 		return { success: false, error: sanitizeErrorMessage(error) };
 	}
+}
+
+function csvCell(value: unknown): string {
+	const text = typeof value === "string" ? value : JSON.stringify(value ?? "");
+	if (!/[",\n\r]/.test(text)) return text;
+	return `"${text.replaceAll('"', '""')}"`;
+}
+
+function buildRejectedRowsCsv(
+	rows: Awaited<ReturnType<typeof listRejectedImportReviewRowsForExport>>,
+): string {
+	const header = [
+		"id",
+		"entityType",
+		"providerSourceId",
+		"issueSeverity",
+		"decisionReason",
+		"normalizedPayload",
+		"sourcePayload",
+	];
+	const lines = rows.map((row) =>
+		[
+			row.id,
+			row.entityType,
+			row.providerSourceId,
+			row.issueSeverity,
+			row.decisionReason ?? "",
+			row.normalizedPayload,
+			row.sourcePayload,
+		]
+			.map(csvCell)
+			.join(","),
+	);
+
+	return [header.join(","), ...lines].join("\n");
 }
 
 export async function startImportCommitAction(
@@ -492,9 +529,20 @@ export async function startImportCommitAction(
 		const validated = validateImportReviewBatchInput(input);
 		const authContext = await requireImportAdmin(validated.organizationId);
 
-		await updateImportBatchStatus({ ...validated, status: "committing" });
-		batchContext = validated;
 		const jobs = await createCommitJobsForAcceptedRows(validated);
+		if (jobs.length === 0) {
+			return {
+				success: false,
+				error: "No accepted import review rows are available to commit",
+			};
+		}
+
+		await updateImportBatchStatus({
+			...validated,
+			status: "committing",
+			expectedStatus: "needs_review",
+		});
+		batchContext = validated;
 
 		for (const job of jobs) {
 			await enqueueImportCommitJob({
