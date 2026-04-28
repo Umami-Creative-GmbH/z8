@@ -139,14 +139,20 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 			);
 		}
 
+		const handlerOptions =
+			approvalReq.approverId !== currentEmployee.id
+				? { approvalRequestId: approvalReq.id, allowAnyApprover: true }
+				: undefined;
+
 		// Execute rejection
 		const exit = await Effect.runPromiseExit(
-			handler
-				.reject(approvalReq.entityId, currentEmployee.id, reason)
-				.pipe(
-					Effect.provide(DatabaseServiceLive),
-					Effect.provide(ApprovalAuditLoggerLive),
-				) as Effect.Effect<void, AnyAppError, never>,
+			(handlerOptions
+				? handler.reject(approvalReq.entityId, currentEmployee.id, reason, handlerOptions)
+				: handler.reject(approvalReq.entityId, currentEmployee.id, reason)
+			).pipe(
+				Effect.provide(DatabaseServiceLive),
+				Effect.provide(ApprovalAuditLoggerLive),
+			) as Effect.Effect<void, AnyAppError, never>,
 		);
 
 		if (Exit.isFailure(exit)) {

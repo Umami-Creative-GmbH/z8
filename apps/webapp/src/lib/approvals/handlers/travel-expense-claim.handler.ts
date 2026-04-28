@@ -1,10 +1,11 @@
 import { IconReceipt2 } from "@tabler/icons-react";
 import { and, eq, inArray } from "drizzle-orm";
-import { DateTime } from "luxon";
 import { Effect } from "effect";
+import { DateTime } from "luxon";
 import { approvalRequest, travelExpenseClaim } from "@/db/schema";
 import { NotFoundError } from "@/lib/effect/errors";
 import { DatabaseService } from "@/lib/effect/services/database.service";
+import { calculateSLADeadline } from "../domain/sla-calculator";
 import type {
 	ApprovalDetail,
 	ApprovalDisplayMetadata,
@@ -13,13 +14,12 @@ import type {
 	ApprovalTimelineEvent,
 	ApprovalTypeHandler,
 } from "../domain/types";
-import { calculateSLADeadline } from "../domain/sla-calculator";
+import { processApprovalWithCurrentEmployee } from "../server/shared";
 import {
 	loadTravelExpenseApprover,
 	persistTravelExpenseDecision,
 	preflightTravelExpenseDecision,
 } from "../server/travel-expense-approvals";
-import { processApprovalWithCurrentEmployee } from "../server/shared";
 import { buildSLAInfo, fetchApprovals, getApprovalCount } from "./base-handler";
 
 interface TravelExpenseClaimWithRelations {
@@ -182,7 +182,10 @@ export const TravelExpenseClaimHandler: ApprovalTypeHandler<TravelExpenseClaimWi
 			},
 			transformToItem: (request, entity) => {
 				const priority = TravelExpenseClaimHandler.calculatePriority(entity, request.createdAt);
-				const slaDeadline = TravelExpenseClaimHandler.calculateSLADeadline(entity, request.createdAt);
+				const slaDeadline = TravelExpenseClaimHandler.calculateSLADeadline(
+					entity,
+					request.createdAt,
+				);
 
 				return {
 					id: request.id,
@@ -221,9 +224,7 @@ export const TravelExpenseClaimHandler: ApprovalTypeHandler<TravelExpenseClaimWi
 					return await dbService.db.query.travelExpenseClaim.findFirst({
 						where: and(
 							eq(travelExpenseClaim.id, entityId),
-							...(organizationId
-								? [eq(travelExpenseClaim.organizationId, organizationId)]
-								: []),
+							...(organizationId ? [eq(travelExpenseClaim.organizationId, organizationId)] : []),
 						),
 						with: {
 							employee: { with: { user: true } },
@@ -347,7 +348,7 @@ export const TravelExpenseClaimHandler: ApprovalTypeHandler<TravelExpenseClaimWi
 			} as ApprovalDetail<TravelExpenseClaimWithRelations>;
 		}),
 
-	approve: (entityId, approverId) =>
+	approve: (entityId, approverId, options) =>
 		Effect.gen(function* (_) {
 			const dbService = yield* _(DatabaseService);
 			const currentEmployee = yield* _(loadTravelExpenseApprover(dbService, approverId));
@@ -368,12 +369,12 @@ export const TravelExpenseClaimHandler: ApprovalTypeHandler<TravelExpenseClaimWi
 							approver,
 							"approve",
 						),
-					{ transactional: true },
+					{ ...options, transactional: true },
 				),
 			);
 		}),
 
-	reject: (entityId, approverId, reason) =>
+	reject: (entityId, approverId, reason, options) =>
 		Effect.gen(function* (_) {
 			const dbService = yield* _(DatabaseService);
 			const currentEmployee = yield* _(loadTravelExpenseApprover(dbService, approverId));
@@ -394,13 +395,8 @@ export const TravelExpenseClaimHandler: ApprovalTypeHandler<TravelExpenseClaimWi
 							reason,
 						),
 					(decisionDbService, decisionEntityId, approver) =>
-						preflightTravelExpenseDecision(
-							decisionDbService,
-							decisionEntityId,
-							approver,
-							"reject",
-						),
-					{ transactional: true },
+						preflightTravelExpenseDecision(decisionDbService, decisionEntityId, approver, "reject"),
+					{ ...options, transactional: true },
 				),
 			);
 		}),
@@ -415,7 +411,10 @@ export const TravelExpenseClaimHandler: ApprovalTypeHandler<TravelExpenseClaimWi
 	},
 
 	calculateSLADeadline: (entity, createdAt) => {
-		const priority: ApprovalPriority = TravelExpenseClaimHandler.calculatePriority(entity, createdAt);
+		const priority: ApprovalPriority = TravelExpenseClaimHandler.calculatePriority(
+			entity,
+			createdAt,
+		);
 		return calculateSLADeadline("travel_expense_claim", priority, createdAt);
 	},
 

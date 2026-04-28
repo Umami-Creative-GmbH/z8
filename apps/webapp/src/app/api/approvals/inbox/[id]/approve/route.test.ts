@@ -182,7 +182,10 @@ describe("POST /api/approvals/inbox/[id]/approve", () => {
 		});
 
 		expect(response.status).toBe(200);
-		expect(mockState.handlerApprove).toHaveBeenCalledWith("entity-1", "employee-1");
+		expect(mockState.handlerApprove).toHaveBeenCalledWith("entity-1", "employee-1", {
+			approvalRequestId: "approval-1",
+			allowAnyApprover: true,
+		});
 	});
 
 	it("returns 403 when a non-manage user approves a request assigned to another employee", async () => {

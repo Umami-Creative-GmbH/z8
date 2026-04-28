@@ -191,6 +191,10 @@ describe("POST /api/approvals/inbox/[id]/reject", () => {
 			"entity-1",
 			"employee-1",
 			"Missing receipt",
+			{
+				approvalRequestId: "approval-1",
+				allowAnyApprover: true,
+			},
 		);
 	});
 
