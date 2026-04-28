@@ -43,6 +43,20 @@ describe("manager daily briefing logic", () => {
 		]);
 	});
 
+	it("does not let earlier closed records suppress later split-shift exceptions", () => {
+		const now = DateTime.fromISO("2026-04-28T14:20:00.000+02:00");
+		const shifts = [
+			{ id: "shift-1", employeeId: "emp-1", employeeName: "Ada Lovelace", teamName: "Operations", date: "2026-04-28", startTime: "14:00", endTime: "18:00", status: "published" as const },
+		];
+		const records = [
+			{ id: "record-1", employeeId: "emp-1", startAt: DateTime.fromISO("2026-04-28T12:00:00.000+02:00").toJSDate(), endAt: DateTime.fromISO("2026-04-28T13:00:00.000+02:00").toJSDate() },
+		];
+
+		expect(detectAttendanceExceptions({ now, shifts, records, graceMinutes: 5 })).toEqual([
+			expect.objectContaining({ id: "attendance:shift-1", severity: "critical", category: "attendance", title: "Ada Lovelace has not clocked in" }),
+		]);
+	});
+
 	it("allows early clock-ins within two hours before shift start", () => {
 		const now = DateTime.fromISO("2026-04-28T09:20:00.000+02:00");
 		const shifts = [

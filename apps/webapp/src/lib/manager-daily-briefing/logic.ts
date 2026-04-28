@@ -51,8 +51,13 @@ export function detectAttendanceExceptions({
 		const associationStart = scheduledStart.minus({ hours: 2 });
 		const firstClockIn = records
 			.filter((record) => record.employeeId === shift.employeeId)
+			.filter((record) => {
+				const startAt = DateTime.fromJSDate(record.startAt).setZone(now.zone);
+				const endAt = record.endAt ? DateTime.fromJSDate(record.endAt).setZone(now.zone) : null;
+
+				return startAt >= associationStart && startAt < scheduledEnd && (endAt === null || endAt > scheduledStart);
+			})
 			.map((record) => DateTime.fromJSDate(record.startAt).setZone(now.zone))
-			.filter((startAt) => startAt >= associationStart && startAt < scheduledEnd)
 			.sort((left, right) => left.toMillis() - right.toMillis())[0];
 
 		if (!firstClockIn) {
