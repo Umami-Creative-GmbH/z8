@@ -3,8 +3,8 @@ import type { ImportDateRange } from "./types";
 
 export function partitionDateRangeByMonth(startDate: string, endDate: string): ImportDateRange[] {
 	const partitions: ImportDateRange[] = [];
-	let cursor = DateTime.fromISO(startDate).startOf("day");
-	const final = DateTime.fromISO(endDate).startOf("day");
+	let cursor: DateTime = DateTime.fromISO(startDate).startOf("day");
+	const final: DateTime = DateTime.fromISO(endDate).startOf("day");
 	if (!cursor.isValid) throw new Error(`Invalid import start date: ${startDate}`);
 	if (!final.isValid) throw new Error(`Invalid import end date: ${endDate}`);
 	if (cursor > final) throw new Error("Import start date must be on or before end date");
