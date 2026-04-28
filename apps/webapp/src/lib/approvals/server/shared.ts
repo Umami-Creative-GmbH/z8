@@ -183,6 +183,7 @@ function executeApprovalWithCurrentEmployee<T>(
 		dbService: ApprovalDbService,
 		entityId: string,
 		currentEmployee: CurrentApprover,
+		options?: ApprovalActionOptions,
 	) => Effect.Effect<unknown, AnyAppError, unknown>,
 	options?: ApprovalActionOptions,
 ) {
@@ -192,7 +193,7 @@ function executeApprovalWithCurrentEmployee<T>(
 		const auditLogger = yield* _(ApprovalAuditLogger);
 
 		if (preflightEntity) {
-			yield* _(preflightEntity(dbService, entityId, currentEmployee));
+			yield* _(preflightEntity(dbService, entityId, currentEmployee, options));
 		}
 
 		const approval = yield* _(
@@ -265,6 +266,7 @@ export function processApprovalWithCurrentEmployee<T>(
 		dbService: ApprovalDbService,
 		entityId: string,
 		currentEmployee: CurrentApprover,
+		options?: ApprovalActionOptions,
 	) => Effect.Effect<unknown, AnyAppError, unknown>,
 	options?: ApprovalActionOptions,
 ) {
@@ -341,6 +343,7 @@ export async function processApproval<T>(
 		dbService: ApprovalDbService,
 		entityId: string,
 		currentEmployee: CurrentApprover,
+		options?: ApprovalActionOptions,
 	) => Effect.Effect<unknown, AnyAppError, unknown>,
 	options?: ApprovalActionOptions,
 ): Promise<ServerActionResult<void>> {

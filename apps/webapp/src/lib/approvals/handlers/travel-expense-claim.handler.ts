@@ -362,12 +362,13 @@ export const TravelExpenseClaimHandler: ApprovalTypeHandler<TravelExpenseClaimWi
 					undefined,
 					(decisionDbService, decisionEntityId, approver) =>
 						persistTravelExpenseDecision(decisionDbService, decisionEntityId, approver, "approve"),
-					(decisionDbService, decisionEntityId, approver) =>
+					(decisionDbService, decisionEntityId, approver, actionOptions) =>
 						preflightTravelExpenseDecision(
 							decisionDbService,
 							decisionEntityId,
 							approver,
 							"approve",
+							actionOptions,
 						),
 					{ ...options, transactional: true },
 				),
@@ -394,8 +395,14 @@ export const TravelExpenseClaimHandler: ApprovalTypeHandler<TravelExpenseClaimWi
 							"reject",
 							reason,
 						),
-					(decisionDbService, decisionEntityId, approver) =>
-						preflightTravelExpenseDecision(decisionDbService, decisionEntityId, approver, "reject"),
+					(decisionDbService, decisionEntityId, approver, actionOptions) =>
+						preflightTravelExpenseDecision(
+							decisionDbService,
+							decisionEntityId,
+							approver,
+							"reject",
+							actionOptions,
+						),
 					{ ...options, transactional: true },
 				),
 			);
