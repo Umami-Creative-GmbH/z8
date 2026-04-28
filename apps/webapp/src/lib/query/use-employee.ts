@@ -14,7 +14,7 @@ import {
 	confirmEmployeeEmploymentHistoryAction,
 	createEmployeeEmploymentHistoryAction,
 	listEmployeeEmploymentHistoryAction,
-} from "@/app/[locale]/(app)/settings/employees/employment-history-actions";
+} from "@/app/[locale]/(app)/settings/employees/employment-history-client-actions";
 import {
 	createRateHistoryEntry,
 	getEmployeeRateHistory,
