@@ -5,8 +5,12 @@ import {
 	absenceCategory,
 	absenceEntry,
 	employee,
+	holiday,
 	importStagedRow,
+	surchargeModel,
 	timeEntry,
+	team,
+	workCategory,
 	workPeriod,
 } from "@/db/schema";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
@@ -17,6 +21,9 @@ type CommitResult = { committedRows: number; failedRows: number; errors: CommitR
 type CommitOptions = { finalAttempt?: boolean };
 type ChainHead = { id: string; hash: string } | null;
 type CommitDb = Pick<typeof db, "insert" | "query" | "select" | "update">;
+type CommitRowOutcome =
+	| { status: "committed"; chainHead?: ChainHead }
+	| { status: "blocked"; message: string };
 
 interface WorkPeriodPayload {
 	employeeId: string;
@@ -30,6 +37,22 @@ interface AbsencePayload {
 	endsAt: string;
 	categoryName?: string | null;
 	note?: string | null;
+}
+
+interface SetupReferencePayload {
+	name?: string | null;
+	description?: string | null;
+	note?: string | null;
+	active?: boolean | null;
+	isActive?: boolean | null;
+	factor?: string | number | null;
+	color?: string | null;
+	categoryId?: string | null;
+	date?: string | null;
+	startDate?: string | null;
+	endDate?: string | null;
+	recurrenceType?: "none" | "yearly" | "custom" | null;
+	recurrenceRule?: string | null;
 }
 
 async function markCommitted(
@@ -46,6 +69,16 @@ async function markCommitted(
 			commitTargetTable: tableName,
 			commitTargetId: targetId,
 			commitError: null,
+		})
+		.where(and(eq(importStagedRow.id, rowId), eq(importStagedRow.organizationId, organizationId)));
+}
+
+async function markBlocked(database: CommitDb, rowId: string, organizationId: string, message: string) {
+	await database
+		.update(importStagedRow)
+		.set({
+			rowStatus: "blocked",
+			commitError: message,
 		})
 		.where(and(eq(importStagedRow.id, rowId), eq(importStagedRow.organizationId, organizationId)));
 }
@@ -96,6 +129,16 @@ function parseUtcDateTime(value: string, fieldName: string): DateTime {
 	const parsed = DateTime.fromISO(value, { zone: "utc" }).toUTC();
 	if (!parsed.isValid) throw new Error(`Invalid ${fieldName}: ${value}`);
 	return parsed;
+}
+
+function requiredName(payload: SetupReferencePayload, entityType: string) {
+	const name = payload.name?.trim();
+	if (!name) throw new Error(`${entityType} import row requires a name before commit`);
+	return name;
+}
+
+function isActiveValue(payload: SetupReferencePayload) {
+	return payload.isActive ?? payload.active ?? true;
 }
 
 async function commitWorkPeriod(
@@ -220,6 +263,107 @@ async function commitAbsence(database: CommitDb, row: typeof importStagedRow.$in
 	await markCommitted(database, row.id, job.organizationId, "absence_entry", absence.id);
 }
 
+async function commitTeam(database: CommitDb, row: typeof importStagedRow.$inferSelect, job: ImportCommitJobData) {
+	const payload = row.normalizedPayload as unknown as SetupReferencePayload;
+	const [created] = await database
+		.insert(team)
+		.values({
+			organizationId: job.organizationId,
+			name: requiredName(payload, "team"),
+			description: payload.description?.trim() || null,
+		})
+		.returning({ id: team.id });
+
+	await markCommitted(database, row.id, job.organizationId, "team", created.id);
+}
+
+async function commitWorkCategory(
+	database: CommitDb,
+	row: typeof importStagedRow.$inferSelect,
+	job: ImportCommitJobData,
+) {
+	const payload = row.normalizedPayload as unknown as SetupReferencePayload;
+	const [created] = await database
+		.insert(workCategory)
+		.values({
+			organizationId: job.organizationId,
+			name: requiredName(payload, "work_category"),
+			description: payload.description?.trim() || payload.note?.trim() || null,
+			factor: payload.factor == null ? "1.00" : String(payload.factor),
+			color: payload.color?.trim() || null,
+			isActive: isActiveValue(payload),
+			createdBy: job.committedBy,
+		})
+		.returning({ id: workCategory.id });
+
+	await markCommitted(database, row.id, job.organizationId, "work_category", created.id);
+}
+
+async function commitHoliday(
+	database: CommitDb,
+	row: typeof importStagedRow.$inferSelect,
+	job: ImportCommitJobData,
+): Promise<CommitRowOutcome> {
+	const payload = row.normalizedPayload as unknown as SetupReferencePayload;
+	if (!payload.categoryId) {
+		const message = "holiday import row requires a confirmed categoryId before commit";
+		await markBlocked(database, row.id, job.organizationId, message);
+		return { status: "blocked", message };
+	}
+	const startsAt = payload.startDate ?? payload.date;
+	const endsAt = payload.endDate ?? startsAt;
+	if (!startsAt || !endsAt) {
+		const message = "holiday import row requires date or startDate before commit";
+		await markBlocked(database, row.id, job.organizationId, message);
+		return { status: "blocked", message };
+	}
+	const name = payload.name?.trim();
+	if (!name) {
+		const message = "holiday import row requires a name before commit";
+		await markBlocked(database, row.id, job.organizationId, message);
+		return { status: "blocked", message };
+	}
+
+	const [created] = await database
+		.insert(holiday)
+		.values({
+			organizationId: job.organizationId,
+			categoryId: payload.categoryId,
+			name,
+			description: payload.description?.trim() || null,
+			startDate: parseUtcDateTime(startsAt, "startDate").toJSDate(),
+			endDate: parseUtcDateTime(endsAt, "endDate").toJSDate(),
+			recurrenceType: payload.recurrenceType ?? "none",
+			recurrenceRule: payload.recurrenceRule ?? null,
+			isActive: isActiveValue(payload),
+			createdBy: job.committedBy,
+		})
+		.returning({ id: holiday.id });
+
+	await markCommitted(database, row.id, job.organizationId, "holiday", created.id);
+	return { status: "committed" };
+}
+
+async function commitSurcharge(database: CommitDb, row: typeof importStagedRow.$inferSelect, job: ImportCommitJobData) {
+	const payload = row.normalizedPayload as unknown as SetupReferencePayload;
+	const [created] = await database
+		.insert(surchargeModel)
+		.values({
+			organizationId: job.organizationId,
+			name: requiredName(payload, "surcharge"),
+			description: payload.description?.trim() || payload.note?.trim() || null,
+			isActive: isActiveValue(payload),
+			createdBy: job.committedBy,
+		})
+		.returning({ id: surchargeModel.id });
+
+	await markCommitted(database, row.id, job.organizationId, "surcharge_model", created.id);
+}
+
+function mappingRequiredMessage(entityType: ImportCommitJobData["entityType"]) {
+	return `${entityType} import rows require mapping confirmation before commit`;
+}
+
 export async function commitAcceptedRowsForEntity(
 	job: ImportCommitJobData,
 	options: CommitOptions = {},
@@ -244,20 +388,48 @@ export async function commitAcceptedRowsForEntity(
 		if (row.rowStatus !== "accepted") continue;
 
 		try {
-			const latestChainHead = await db.transaction(async (tx) => {
+			const outcome = await db.transaction(async (tx): Promise<CommitRowOutcome> => {
 				switch (job.entityType) {
 					case "work_period":
-						return commitWorkPeriod(tx as CommitDb, row, job, chainHeads);
+						return {
+							status: "committed",
+							chainHead: await commitWorkPeriod(tx as CommitDb, row, job, chainHeads),
+						};
 					case "absence":
 						await commitAbsence(tx as CommitDb, row, job);
-						return null;
+						return { status: "committed" };
+					case "team":
+						await commitTeam(tx as CommitDb, row, job);
+						return { status: "committed" };
+					case "service":
+					case "work_category":
+						await commitWorkCategory(tx as CommitDb, row, job);
+						return { status: "committed" };
+					case "holiday":
+						return commitHoliday(tx as CommitDb, row, job);
+					case "surcharge":
+						await commitSurcharge(tx as CommitDb, row, job);
+						return { status: "committed" };
+					case "target_hours":
+					case "work_policy":
+					case "holiday_quota":
+					case "employee":
+					case "absence_category": {
+						const message = mappingRequiredMessage(job.entityType);
+						await markBlocked(tx as CommitDb, row.id, job.organizationId, message);
+						return { status: "blocked", message };
+					}
 					default:
 						throw new Error(`Unsupported import review commit entity type: ${job.entityType}`);
 				}
 			});
+			if (outcome.status === "blocked") {
+				errors.push({ rowId: row.id, message: outcome.message });
+				continue;
+			}
 			if (job.entityType === "work_period") {
 				const payload = row.normalizedPayload as unknown as WorkPeriodPayload;
-				chainHeads.set(payload.employeeId, latestChainHead);
+				chainHeads.set(payload.employeeId, outcome.chainHead ?? null);
 			}
 			committedRows++;
 		} catch (error) {
