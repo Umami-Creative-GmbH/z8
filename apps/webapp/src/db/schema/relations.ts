@@ -36,6 +36,7 @@ import {
 	organizationEmailConfig,
 	organizationSocialOAuth,
 } from "./enterprise";
+import { employeeEmploymentHistory } from "./employment-history";
 import { dataExport, exportStorageConfig } from "./export";
 import {
 	holiday,
@@ -371,6 +372,7 @@ export const employeeRelations = relations(employee, ({ one, many }) => ({
 		relationName: "manager_employee",
 	}),
 	rateHistory: many(employeeRateHistory),
+	employmentHistory: many(employeeEmploymentHistory),
 	// Multiple managers support
 	managers: many(employeeManagers, {
 		relationName: "employee_managers",
@@ -476,6 +478,32 @@ export const employeeRateHistoryRelations = relations(
 		}),
 		creator: one(user, {
 			fields: [employeeRateHistory.createdBy],
+			references: [user.id],
+		}),
+	}),
+);
+
+export const employeeEmploymentHistoryRelations = relations(
+	employeeEmploymentHistory,
+	({ one }) => ({
+		employee: one(employee, {
+			fields: [employeeEmploymentHistory.employeeId],
+			references: [employee.id],
+		}),
+		organization: one(organization, {
+			fields: [employeeEmploymentHistory.organizationId],
+			references: [organization.id],
+		}),
+		workPolicy: one(workPolicy, {
+			fields: [employeeEmploymentHistory.workPolicyId],
+			references: [workPolicy.id],
+		}),
+		creator: one(user, {
+			fields: [employeeEmploymentHistory.createdBy],
+			references: [user.id],
+		}),
+		updater: one(user, {
+			fields: [employeeEmploymentHistory.updatedBy],
 			references: [user.id],
 		}),
 	}),

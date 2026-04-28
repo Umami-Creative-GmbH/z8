@@ -44,6 +44,7 @@ export * from "./invite-code";
 export * from "./notification";
 // Domain tables
 export * from "./organization";
+export * from "./employment-history";
 // Payroll export
 export * from "./payroll-export";
 // Platform admin (audit log, org suspension)
