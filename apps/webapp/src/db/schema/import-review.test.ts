@@ -37,6 +37,10 @@ function indexColumnNames(table: Parameters<typeof getTableConfig>[0], name: str
 	return index?.config.columns.map((column) => column.name) ?? [];
 }
 
+function columnDefault(table: Parameters<typeof getTableConfig>[0], columnName: string): unknown {
+	return getTableConfig(table).columns.find((column) => column.name === columnName)?.default;
+}
+
 describe("import review schema exports", () => {
 	it("exports all import review tables", () => {
 		expect(importBatch).toBeDefined();
@@ -105,6 +109,31 @@ describe("import review schema exports", () => {
 		);
 		expect(migration).toContain(
 			'FOREIGN KEY ("staged_row_id","batch_id","organization_id") REFERENCES "public"."import_staged_row"("id","batch_id","organization_id") ON DELETE cascade ON UPDATE no action',
+		);
+	});
+
+	it("sets database defaults for updated_at columns used by repository inserts", () => {
+		for (const table of [importBatch, importBatchJob, importStagedRow]) {
+			expect(columnDefault(table, "updated_at")).toBeDefined();
+		}
+
+		const migration = readFileSync("drizzle/0005_import_review.sql", "utf8");
+		expect(migration).toContain('"updated_at" timestamp DEFAULT now() NOT NULL');
+	});
+
+	it("uniquely identifies duplicate import issues for scan retries", () => {
+		expect(indexColumnNames(importIssue, "importIssue_retry_unique_idx")).toEqual([
+			"batch_id",
+			"organization_id",
+			"staged_row_id",
+			"issue_type",
+			"cluster_key",
+			"detection_rule_version",
+		]);
+
+		const migration = readFileSync("drizzle/0005_import_review.sql", "utf8");
+		expect(migration).toContain(
+			'CREATE UNIQUE INDEX "importIssue_retry_unique_idx" ON "import_issue" USING btree ("batch_id","organization_id","staged_row_id","issue_type","cluster_key","detection_rule_version")',
 		);
 	});
 

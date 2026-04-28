@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const insertMock = vi.fn();
 const findImportBatchJobMock = vi.fn();
+const findImportBatchMock = vi.fn();
+const selectDistinctMock = vi.fn();
 
 vi.mock("@/lib/queue", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@/lib/queue")>()),
@@ -10,10 +12,14 @@ vi.mock("@/lib/queue", async (importOriginal) => ({
 }));
 
 vi.mock("@/db", () => ({
-	db: {
-		insert: insertMock,
-		query: {
-			importBatchJob: {
+		db: {
+			insert: insertMock,
+			selectDistinct: selectDistinctMock,
+			query: {
+				importBatch: {
+					findFirst: findImportBatchMock,
+				},
+				importBatchJob: {
 				findFirst: findImportBatchJobMock,
 			},
 		},
@@ -28,12 +34,14 @@ vi.mock("./worker", () => ({
 
 const { addJob } = await import("@/lib/queue");
 const { enqueueImportScanJob, enqueueImportCommitJob } = await import("./queue");
-const { createImportBatchJob, insertStagedRows } = await import("./repository");
+const { createCommitJobsForAcceptedRows, createImportBatchJob, insertImportIssues, insertStagedRows } =
+	await import("./repository");
 const { processOneOffJob } = await import("@/worker");
 const { processImportReviewJob } = await import("./worker");
 
 beforeEach(() => {
 	vi.clearAllMocks();
+	findImportBatchMock.mockResolvedValue({ status: "needs_review" });
 });
 
 describe("import review queue", () => {
@@ -142,6 +150,60 @@ describe("import review repository", () => {
 		expect(insertedRows[0]?.sourcePayloadHash).toBe(expectedHash);
 		expect(insertedRows[1]?.sourcePayloadHash).toBe(expectedHash);
 		expect(insertedRows[0]?.sourcePayloadHash).not.toBe("provider-controlled");
+	});
+
+	it("inserts import issues idempotently using the natural issue key", async () => {
+		const onConflictDoNothing = vi.fn().mockReturnValue({
+			returning: vi.fn().mockResolvedValue([{ id: "issue_1" }]),
+		});
+		insertMock.mockReturnValueOnce({
+			values: vi.fn().mockReturnValue({ onConflictDoNothing }),
+		});
+
+		await insertImportIssues({
+			batchId: "batch_1",
+			organizationId: "org_1",
+			stagedRowId: "row_1",
+			issues: [
+				{
+					issueType: "duplicate",
+					severity: "warning",
+					clusterKey: "duplicate:1",
+					message: "Duplicate row",
+					details: {},
+					detectionRuleVersion: "v1",
+				},
+			],
+		});
+
+		expect(onConflictDoNothing).toHaveBeenCalledTimes(1);
+	});
+
+	it("orders commit jobs by dependency group instead of alphabetically", async () => {
+		const orderBy = vi.fn().mockResolvedValue([
+			{ entityType: "absence" },
+			{ entityType: "employee" },
+			{ entityType: "work_category" },
+			{ entityType: "work_period" },
+		]);
+		const where = vi.fn().mockReturnValue({ orderBy });
+		const from = vi.fn().mockReturnValue({ where });
+		selectDistinctMock.mockReturnValue({ from });
+		insertMock.mockImplementation((_table) => ({
+			values: vi.fn((value) => ({
+				onConflictDoNothing: vi.fn().mockReturnValue({
+					returning: vi.fn().mockResolvedValue([{ id: `job_${value.entityType}`, ...value }]),
+				}),
+			})),
+		}));
+		const jobs = await createCommitJobsForAcceptedRows({ batchId: "batch_1", organizationId: "org_1" });
+
+		expect(jobs.map((job) => job?.entityType)).toEqual([
+			"employee",
+			"work_category",
+			"absence",
+			"work_period",
+		]);
 	});
 });
 

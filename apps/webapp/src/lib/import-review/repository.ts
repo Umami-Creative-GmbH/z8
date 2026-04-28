@@ -22,6 +22,7 @@ import type {
 	ImportRowStatus,
 	NormalizedImportRow,
 } from "./types";
+import { nextBatchStatusAfterJobs } from "./state";
 
 type ImportRowDecision = "accepted" | "rejected";
 const REVIEW_DECISION_ROW_STATUSES: ImportRowStatus[] = [
@@ -31,6 +32,55 @@ const REVIEW_DECISION_ROW_STATUSES: ImportRowStatus[] = [
 	"blocked",
 	"needs_mapping",
 ];
+const COMMIT_ENTITY_DEPENDENCY_ORDER: ImportEntityType[] = [
+	"employee",
+	"team",
+	"service",
+	"work_category",
+	"absence_category",
+	"target_hours",
+	"work_policy",
+	"holiday_quota",
+	"holiday",
+	"surcharge",
+	"absence",
+	"time_entry",
+	"work_period",
+];
+const COMMIT_OPERATIONAL_ENTITIES = new Set<ImportEntityType>([
+	"absence",
+	"time_entry",
+	"work_period",
+]);
+
+function commitEntitySortIndex(entityType: ImportEntityType): number {
+	const index = COMMIT_ENTITY_DEPENDENCY_ORDER.indexOf(entityType);
+	return index === -1 ? COMMIT_ENTITY_DEPENDENCY_ORDER.length : index;
+}
+
+function commitDependencyGroup(entityType: ImportEntityType): number {
+	return COMMIT_OPERATIONAL_ENTITIES.has(entityType) ? 1 : 0;
+}
+
+export function readyCommitJobsFromJobs<T extends { entityType: string; status: ImportJobStatus }>(jobs: T[]): T[] {
+	if (jobs.some((job) => job.status === "failed")) return [];
+
+	const commitJobs = [...jobs].sort(
+		(left, right) =>
+			commitEntitySortIndex(left.entityType as ImportEntityType) -
+			commitEntitySortIndex(right.entityType as ImportEntityType),
+	);
+	const nextGroup = commitJobs.reduce<number | null>((current, job) => {
+		if (job.status === "completed") return current;
+		const group = commitDependencyGroup(job.entityType as ImportEntityType);
+		return current === null ? group : Math.min(current, group);
+	}, null);
+
+	if (nextGroup === null) return [];
+	return commitJobs.filter(
+		(job) => job.status === "queued" && commitDependencyGroup(job.entityType as ImportEntityType) === nextGroup,
+	);
+}
 
 function stableStringify(value: unknown): string {
 	if (Array.isArray(value)) return `[${value.map(stableStringify).join(",")}]`;
@@ -141,6 +191,49 @@ export async function updateImportBatchJob(input: {
 		);
 }
 
+export async function listImportBatchJobsForBatch(input: {
+	batchId: string;
+	organizationId: string;
+	kind: ImportJobKind;
+}) {
+	return db
+		.select()
+		.from(importBatchJob)
+		.where(
+			and(
+				eq(importBatchJob.batchId, input.batchId),
+				eq(importBatchJob.organizationId, input.organizationId),
+				eq(importBatchJob.kind, input.kind),
+			),
+		);
+}
+
+export async function advanceImportBatchAfterJob(input: {
+	batchId: string;
+	organizationId: string;
+	kind: ImportJobKind;
+}) {
+	const [batch, jobs] = await Promise.all([
+		db.query.importBatch.findFirst({
+			where: and(
+				eq(importBatch.id, input.batchId),
+				eq(importBatch.organizationId, input.organizationId),
+			),
+		}),
+		listImportBatchJobsForBatch(input),
+	]);
+
+	if (!batch) return null;
+	const nextStatus = nextBatchStatusAfterJobs(batch.status as ImportBatchStatus, jobs);
+	if (nextStatus === batch.status) return batch;
+
+	return updateImportBatchStatus({
+		batchId: input.batchId,
+		organizationId: input.organizationId,
+		status: nextStatus,
+	});
+}
+
 export async function saveImportJobSecret(input: {
 	batchId: string;
 	organizationId: string;
@@ -219,6 +312,7 @@ export async function insertImportIssues(input: {
 				detectionRuleVersion: issue.detectionRuleVersion,
 			})),
 		)
+		.onConflictDoNothing()
 		.returning();
 }
 
@@ -414,8 +508,10 @@ export async function createCommitJobsForAcceptedRows(input: {
 		.orderBy(asc(importStagedRow.entityType));
 
 	const jobs = [];
-	for (const row of entityTypes) {
-		const entityType = row.entityType as ImportEntityType;
+	const sortedEntityTypes = entityTypes
+		.map((row) => row.entityType as ImportEntityType)
+		.sort((left, right) => commitEntitySortIndex(left) - commitEntitySortIndex(right));
+	for (const entityType of sortedEntityTypes) {
 		const job = await createImportBatchJob({
 			batchId: input.batchId,
 			organizationId: input.organizationId,

@@ -13,7 +13,7 @@ CREATE TABLE "import_batch" (
 	"reviewed_by" text,
 	"committed_by" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "importBatch_id_organizationId_idx" UNIQUE("id","organization_id")
 );
 --> statement-breakpoint
@@ -31,7 +31,7 @@ CREATE TABLE "import_batch_job" (
 	"started_at" timestamp,
 	"completed_at" timestamp,
 	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp NOT NULL
+	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "import_staged_row" (
@@ -53,7 +53,7 @@ CREATE TABLE "import_staged_row" (
 	"commit_target_id" text,
 	"commit_error" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "importStagedRow_id_batch_org_idx" UNIQUE("id","batch_id","organization_id")
 );
 --> statement-breakpoint
@@ -122,6 +122,7 @@ CREATE UNIQUE INDEX "importStagedRow_batch_source_unique_idx" ON "import_staged_
 CREATE INDEX "importIssue_batchId_idx" ON "import_issue" USING btree ("batch_id");--> statement-breakpoint
 CREATE INDEX "importIssue_org_type_idx" ON "import_issue" USING btree ("organization_id","issue_type");--> statement-breakpoint
 CREATE INDEX "importIssue_clusterKey_idx" ON "import_issue" USING btree ("cluster_key");--> statement-breakpoint
+CREATE UNIQUE INDEX "importIssue_retry_unique_idx" ON "import_issue" USING btree ("batch_id","organization_id","staged_row_id","issue_type","cluster_key","detection_rule_version") NULLS NOT DISTINCT;--> statement-breakpoint
 CREATE INDEX "importRejectedExport_batchId_idx" ON "import_rejected_export" USING btree ("batch_id");--> statement-breakpoint
 CREATE INDEX "importRejectedExport_organizationId_idx" ON "import_rejected_export" USING btree ("organization_id");--> statement-breakpoint
 CREATE INDEX "importJobSecret_batchId_idx" ON "import_job_secret" USING btree ("batch_id");--> statement-breakpoint

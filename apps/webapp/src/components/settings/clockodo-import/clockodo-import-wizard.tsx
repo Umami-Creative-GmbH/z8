@@ -947,9 +947,9 @@ export function ClockodoImportWizard({ organizationId }: ClockodoImportWizardPro
 						</div>
 
 						<div className="mt-6 flex justify-end">
-							<Button onClick={() => router.push("/settings")}>
-								<IconCheck className="mr-2 h-4 w-4" aria-hidden="true" />
-								{t("settings.clockodoImport.complete.done", "Done")}
+							<Button onClick={() => router.push(`/settings/import/${reviewBatchId}`)}>
+								<IconExternalLink className="mr-2 h-4 w-4" aria-hidden="true" />
+								{t("settings.clockodoImport.complete.openReview", "Open review")}
 							</Button>
 						</div>
 					</CardContent>

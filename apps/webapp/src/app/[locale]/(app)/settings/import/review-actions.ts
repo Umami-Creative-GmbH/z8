@@ -19,6 +19,7 @@ import {
 	listImportReviewRows,
 	listRejectedImportReviewRowsForExport,
 	recordRejectedExport,
+	readyCommitJobsFromJobs,
 	saveImportJobSecret,
 	updateImportBatchStatus,
 } from "@/lib/import-review/repository";
@@ -612,7 +613,7 @@ export async function startImportCommitAction(
 		});
 		batchContext = validated;
 
-		for (const job of jobs) {
+		for (const job of readyCommitJobsFromJobs(jobs)) {
 			await enqueueImportCommitJob({
 				type: "import-review-commit",
 				batchId: validated.batchId,

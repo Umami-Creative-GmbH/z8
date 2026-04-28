@@ -168,6 +168,8 @@ describe("ClockodoImportWizard", () => {
 		expect(mocks.saveUserMappings).toHaveBeenCalled();
 		expect(mocks.importClockodoData).not.toHaveBeenCalled();
 		expect(await screen.findByText("Import review scan started")).toBeTruthy();
+		fireEvent.click(screen.getByRole("button", { name: "Open review" }));
+		expect(mocks.push).toHaveBeenCalledWith("/settings/import/batch_1");
 		expect(screen.queryByText("Import Complete")).toBeNull();
 	});
 

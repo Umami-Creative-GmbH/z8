@@ -25,6 +25,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { ClockinImportSelections, ClockinImportUserMapping } from "@/lib/clockin/import-types";
+import { Link } from "@/navigation";
 
 type WizardStep = "connect" | "preview" | "mapping" | "selection" | "importing" | "review";
 
@@ -419,17 +420,18 @@ export function ClockinImportWizard({ organizationId }: ClockinImportWizardProps
 				<Card>
 					<CardHeader>
 						<CardTitle className="flex items-center gap-2">
-							<IconCheck className="h-5 w-5 text-green-600" />
+							<IconCheck className="h-5 w-5 text-green-600" aria-hidden="true" />
 							Import review scan started
 						</CardTitle>
 						<CardDescription>
 							Review batch {reviewBatchId} is scanning. Review and approve records before commit.
 						</CardDescription>
 					</CardHeader>
-					<CardContent>
-						<p className="text-sm text-muted-foreground">
-							No production records have been imported yet.
-						</p>
+					<CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+						<p className="text-sm text-muted-foreground">No production records have been imported yet.</p>
+						<Button asChild>
+							<Link href={`/settings/import/${reviewBatchId}`}>Open review</Link>
+						</Button>
 					</CardContent>
 				</Card>
 			)}

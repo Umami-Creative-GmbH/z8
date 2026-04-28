@@ -1,12 +1,23 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const updateImportBatchJobMock = vi.fn();
+const advanceImportBatchAfterJobMock = vi.fn();
+const listImportBatchJobsForBatchMock = vi.fn();
+const readyCommitJobsFromJobsMock = vi.fn();
+const enqueueImportCommitJobMock = vi.fn();
 const scanClockinImportPartitionMock = vi.fn();
 const scanClockodoImportPartitionMock = vi.fn();
 const commitAcceptedRowsForEntityMock = vi.fn();
 
 vi.mock("./repository", () => ({
+	advanceImportBatchAfterJob: advanceImportBatchAfterJobMock,
+	listImportBatchJobsForBatch: listImportBatchJobsForBatchMock,
+	readyCommitJobsFromJobs: readyCommitJobsFromJobsMock,
 	updateImportBatchJob: updateImportBatchJobMock,
+}));
+
+vi.mock("./queue", () => ({
+	enqueueImportCommitJob: enqueueImportCommitJobMock,
 }));
 
 vi.mock("./clockin-adapter", () => ({
@@ -25,6 +36,10 @@ const { processImportReviewJob } = await import("./worker");
 
 beforeEach(() => {
 	vi.clearAllMocks();
+	advanceImportBatchAfterJobMock.mockResolvedValue(undefined);
+	listImportBatchJobsForBatchMock.mockResolvedValue([]);
+	readyCommitJobsFromJobsMock.mockReturnValue([]);
+	enqueueImportCommitJobMock.mockResolvedValue(undefined);
 	scanClockinImportPartitionMock.mockRejectedValue(new Error("Clockin import scan is not implemented"));
 	scanClockodoImportPartitionMock.mockRejectedValue(new Error("Clockodo import scan is not implemented"));
 	commitAcceptedRowsForEntityMock.mockRejectedValue(new Error("Import review commit is not implemented"));
@@ -97,6 +112,11 @@ describe("processImportReviewJob", () => {
 			processedRows: 7,
 			errorMessage: null,
 		});
+		expect(advanceImportBatchAfterJobMock).toHaveBeenCalledWith({
+			batchId: "batch_1",
+			organizationId: "org_1",
+			kind: "scan",
+		});
 	});
 
 	it("routes clockodo scan jobs to the clockodo adapter", async () => {
@@ -138,6 +158,11 @@ describe("processImportReviewJob", () => {
 			processedRows: 5,
 			errorMessage: null,
 		});
+		expect(advanceImportBatchAfterJobMock).toHaveBeenCalledWith({
+			batchId: "batch_1",
+			organizationId: "org_1",
+			kind: "commit",
+		});
 	});
 
 	it("marks commit jobs failed and rejects when committed rows report row failures", async () => {
@@ -157,6 +182,11 @@ describe("processImportReviewJob", () => {
 			status: "failed",
 			errorMessage:
 				"Import review commit failed for 1 row(s): row_3: Employee emp_2 does not belong to organization org_1",
+		});
+		expect(advanceImportBatchAfterJobMock).toHaveBeenCalledWith({
+			batchId: "batch_1",
+			organizationId: "org_1",
+			kind: "commit",
 		});
 		expect(updateImportBatchJobMock).not.toHaveBeenCalledWith(
 			expect.objectContaining({ status: "completed" }),
@@ -255,6 +285,7 @@ describe("processImportReviewJob", () => {
 		expect(updateImportBatchJobMock).not.toHaveBeenCalledWith(
 			expect.objectContaining({ status: "failed" }),
 		);
+		expect(advanceImportBatchAfterJobMock).not.toHaveBeenCalled();
 	});
 
 	it("marks failed and rejects when the final BullMQ attempt is exhausted", async () => {
@@ -269,6 +300,11 @@ describe("processImportReviewJob", () => {
 			organizationId: "org_1",
 			status: "failed",
 			errorMessage: "provider unavailable",
+		});
+		expect(advanceImportBatchAfterJobMock).toHaveBeenCalledWith({
+			batchId: "batch_1",
+			organizationId: "org_1",
+			kind: "scan",
 		});
 	});
 

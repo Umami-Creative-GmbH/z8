@@ -9,6 +9,7 @@ const mockState = vi.hoisted(() => ({
 	listRejectedImportReviewRowsForExport: vi.fn(),
 	recordRejectedExport: vi.fn(),
 	createCommitJobsForAcceptedRows: vi.fn(),
+	readyCommitJobsFromJobs: vi.fn((jobs) => jobs),
 	updateImportBatchStatus: vi.fn(),
 	enqueueImportCommitJob: vi.fn(),
 	select: vi.fn(),
@@ -59,6 +60,14 @@ vi.mock("@/db/auth-schema", () => ({
 	},
 }));
 
+vi.mock("@/db/schema", () => ({
+	employee: {
+		id: "employee.id",
+		organizationId: "employee.organizationId",
+		userId: "employee.userId",
+	},
+}));
+
 vi.mock("@/lib/import-review/credential-secret", () => ({
 	encryptImportCredential: vi.fn(),
 }));
@@ -73,6 +82,7 @@ vi.mock("@/lib/import-review/repository", () => ({
 	listRejectedImportReviewRowsForExport: mockState.listRejectedImportReviewRowsForExport,
 	recordRejectedExport: mockState.recordRejectedExport,
 	createCommitJobsForAcceptedRows: mockState.createCommitJobsForAcceptedRows,
+	readyCommitJobsFromJobs: mockState.readyCommitJobsFromJobs,
 	updateImportBatchStatus: mockState.updateImportBatchStatus,
 }));
 
@@ -123,6 +133,7 @@ describe("import review decision actions", () => {
 			{ id: "job_1", entityType: "employee" },
 			{ id: "job_2", entityType: "work_period" },
 		]);
+		mockState.readyCommitJobsFromJobs.mockImplementation((jobs) => jobs);
 		mockState.updateImportBatchStatus.mockResolvedValue(undefined);
 		mockState.enqueueImportCommitJob.mockResolvedValue(undefined);
 	});
@@ -255,6 +266,26 @@ describe("import review decision actions", () => {
 			entityType: "employee",
 			committedBy: "user_1",
 		});
+	});
+
+	it("enqueues only dependency-ready commit jobs when starting a commit", async () => {
+		mockState.createCommitJobsForAcceptedRows.mockResolvedValue([
+			{ id: "job_employee", entityType: "employee" },
+			{ id: "job_work_period", entityType: "work_period" },
+		]);
+		mockState.readyCommitJobsFromJobs.mockReturnValue([{ id: "job_employee", entityType: "employee" }]);
+
+		const result = await startImportCommitAction({ organizationId: "org_1", batchId: "batch_1" });
+
+		expect(result).toEqual({ success: true, data: { queuedCount: 2 } });
+		expect(mockState.readyCommitJobsFromJobs).toHaveBeenCalledWith([
+			{ id: "job_employee", entityType: "employee" },
+			{ id: "job_work_period", entityType: "work_period" },
+		]);
+		expect(mockState.enqueueImportCommitJob).toHaveBeenCalledTimes(1);
+		expect(mockState.enqueueImportCommitJob).toHaveBeenCalledWith(
+			expect.objectContaining({ jobId: "job_employee", entityType: "employee" }),
+		);
 	});
 
 	it("does not transition to committing when there are no accepted rows", async () => {

@@ -1,17 +1,18 @@
 /* @vitest-environment jsdom */
 
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({
+		const mocks = vi.hoisted(() => ({
 	validateClockinCredentials: vi.fn(),
 	fetchClockinEmployees: vi.fn(),
 	fetchZ8Employees: vi.fn(),
 	importClockinData: vi.fn(),
 	startImportReviewScan: vi.fn(),
 	toastError: vi.fn(),
-	toastSuccess: vi.fn(),
-}));
+		toastSuccess: vi.fn(),
+	}));
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
@@ -24,6 +25,10 @@ vi.mock("sonner", () => ({
 		error: mocks.toastError,
 		success: mocks.toastSuccess,
 	},
+}));
+
+vi.mock("@/navigation", () => ({
+	Link: ({ children, href }: { children: ReactNode; href: string }) => <a href={href}>{children}</a>,
 }));
 
 vi.mock("@/app/[locale]/(app)/settings/import/clockin-actions", () => ({
@@ -126,6 +131,9 @@ describe("ClockinImportWizard", () => {
 		});
 		expect(mocks.importClockinData).not.toHaveBeenCalled();
 		expect(await screen.findByText("Import review scan started")).toBeTruthy();
+		expect(screen.getByRole("link", { name: "Open review" }).getAttribute("href")).toBe(
+			"/settings/import/batch_1",
+		);
 		expect(screen.queryByText("Import complete")).toBeNull();
 	});
 

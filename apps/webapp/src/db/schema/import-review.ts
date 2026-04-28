@@ -47,6 +47,7 @@ export const importBatch = pgTable(
 		committedBy: text("committed_by").references(() => user.id),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at")
+			.defaultNow()
 			.$onUpdate(() => currentTimestamp())
 			.notNull(),
 	},
@@ -84,6 +85,7 @@ export const importBatchJob = pgTable(
 		completedAt: timestamp("completed_at"),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at")
+			.defaultNow()
 			.$onUpdate(() => currentTimestamp())
 			.notNull(),
 	},
@@ -141,6 +143,7 @@ export const importStagedRow = pgTable(
 		commitError: text("commit_error"),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at")
+			.defaultNow()
 			.$onUpdate(() => currentTimestamp())
 			.notNull(),
 	},
@@ -199,6 +202,14 @@ export const importIssue = pgTable(
 		index("importIssue_batchId_idx").on(table.batchId),
 		index("importIssue_org_type_idx").on(table.organizationId, table.issueType),
 		index("importIssue_clusterKey_idx").on(table.clusterKey),
+		uniqueIndex("importIssue_retry_unique_idx").on(
+			table.batchId,
+			table.organizationId,
+			table.stagedRowId,
+			table.issueType,
+			table.clusterKey,
+			table.detectionRuleVersion,
+		),
 		foreignKey({
 			columns: [table.batchId, table.organizationId],
 			foreignColumns: [importBatch.id, importBatch.organizationId],

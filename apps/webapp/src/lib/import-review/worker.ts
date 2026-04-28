@@ -3,7 +3,13 @@ import type { JobResult } from "@/lib/queue";
 import { scanClockinImportPartition } from "./clockin-adapter";
 import { scanClockodoImportPartition } from "./clockodo-adapter";
 import { commitAcceptedRowsForEntity } from "./committers";
-import { updateImportBatchJob } from "./repository";
+import { enqueueImportCommitJob } from "./queue";
+import {
+	advanceImportBatchAfterJob,
+	listImportBatchJobsForBatch,
+	readyCommitJobsFromJobs,
+	updateImportBatchJob,
+} from "./repository";
 import type { ImportCommitJobData, ImportScanJobData } from "./types";
 
 type ImportReviewJobData = ImportScanJobData | ImportCommitJobData;
@@ -54,6 +60,33 @@ async function markFailed(data: ImportReviewJobData, errorMessage: string) {
 	});
 }
 
+async function advanceBatchAfterJob(data: ImportReviewJobData) {
+	await advanceImportBatchAfterJob({
+		batchId: data.batchId,
+		organizationId: data.organizationId,
+		kind: data.type === "import-review-scan" ? "scan" : "commit",
+	});
+}
+
+async function enqueueReadyCommitJobs(data: ImportCommitJobData) {
+	const jobs = await listImportBatchJobsForBatch({
+		batchId: data.batchId,
+		organizationId: data.organizationId,
+		kind: "commit",
+	});
+
+	for (const job of readyCommitJobsFromJobs(jobs)) {
+		await enqueueImportCommitJob({
+			type: "import-review-commit",
+			batchId: data.batchId,
+			jobId: job.id,
+			organizationId: data.organizationId,
+			entityType: job.entityType as ImportCommitJobData["entityType"],
+			committedBy: data.committedBy,
+		});
+	}
+}
+
 export async function processImportReviewJob(job: Job<ImportReviewJobData>): Promise<JobResult> {
 	const { data } = job;
 	let failureAlreadyMarked = false;
@@ -76,6 +109,7 @@ export async function processImportReviewJob(job: Job<ImportReviewJobData>): Pro
 				}
 
 				await markCompleted(data, scanResult.stagedRows);
+				await advanceBatchAfterJob(data);
 				return {
 					success: true,
 					message: "Import review scan completed",
@@ -90,12 +124,15 @@ export async function processImportReviewJob(job: Job<ImportReviewJobData>): Pro
 					const errorMessage = formatCommitRowFailure(commitResult);
 					if (finalAttempt) {
 						await markFailed(data, errorMessage);
+						await advanceBatchAfterJob(data);
 						failureAlreadyMarked = true;
 					}
 					throw new Error(errorMessage);
 				}
 				const { committedRows } = commitResult;
 				await markCompleted(data, committedRows);
+				await advanceBatchAfterJob(data);
+				await enqueueReadyCommitJobs(data);
 				return {
 					success: true,
 					message: "Import review commit completed",
@@ -108,7 +145,10 @@ export async function processImportReviewJob(job: Job<ImportReviewJobData>): Pro
 		}
 	} catch (error) {
 		const errorMessage = error instanceof Error ? error.message : String(error);
-		if (!failureAlreadyMarked && isFinalAttempt(job)) await markFailed(data, errorMessage);
+		if (!failureAlreadyMarked && isFinalAttempt(job)) {
+			await markFailed(data, errorMessage);
+			await advanceBatchAfterJob(data);
+		}
 		throw error;
 	}
 }
