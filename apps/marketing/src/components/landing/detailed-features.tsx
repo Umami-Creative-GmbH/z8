@@ -1,24 +1,29 @@
 import Image from "next/image";
 import { v } from "@/components/theme/tokens";
-import { detailedFeatures } from "./data";
+import type { LandingCopy } from "@/i18n/landing-copy";
 
-export function DetailedFeatures() {
+type DetailedFeaturesProps = {
+	copy: LandingCopy["detailedFeatures"];
+};
+
+export function DetailedFeatures({ copy }: DetailedFeaturesProps) {
 	return (
 		<section id="detailed" className="relative z-10 px-8 py-28 lg:px-16">
 			<div className="mx-auto max-w-6xl">
 				<div className="mb-20 text-center">
-					<span className="mb-3 block text-[12px] font-bold uppercase tracking-[0.15em]" style={{ color: v("textTertiary") }}>
-						Im Detail
+					<span
+						className="mb-3 block text-[12px] font-bold uppercase tracking-[0.15em]"
+						style={{ color: v("textTertiary") }}
+					>
+						{copy.eyebrow}
 					</span>
-					<h2 className="text-[clamp(2rem,4vw,3rem)] font-bold tracking-[-0.02em]">
-						Gebaut f&uuml;r den Alltag.
-					</h2>
+					<h2 className="text-[clamp(2rem,4vw,3rem)] font-bold tracking-[-0.02em]">{copy.title}</h2>
 				</div>
 
 				<div className="space-y-32">
-					{detailedFeatures.map((feat, i) => (
+					{copy.items.map((feat, i) => (
 						<div
-							key={i}
+							key={feat.id}
 							className={`grid items-center gap-16 lg:grid-cols-2 ${i % 2 === 1 ? "direction-rtl" : ""}`}
 						>
 							<div className={i % 2 === 1 ? "order-2 lg:order-1" : ""}>
@@ -39,14 +44,17 @@ export function DetailedFeatures() {
 								>
 									{feat.title}
 								</h3>
-								<p className="max-w-md text-[15px] leading-[1.8]" style={{ color: v("textSecondary") }}>
+								<p
+									className="max-w-md text-[15px] leading-[1.8]"
+									style={{ color: v("textSecondary") }}
+								>
 									{feat.desc}
 								</p>
 								<a
 									href="#contact"
 									className="mt-6 inline-flex items-center gap-2 text-[14px] font-semibold transition-colors"
 								>
-									Mehr erfahren
+									{copy.learnMoreCta}
 									<span style={{ fontSize: "18px" }}>&rarr;</span>
 								</a>
 							</div>
@@ -68,7 +76,8 @@ export function DetailedFeatures() {
 									<div
 										className="absolute inset-0"
 										style={{
-											background: "linear-gradient(to top, rgba(26,26,26,0.15) 0%, transparent 40%)",
+											background:
+												"linear-gradient(to top, rgba(26,26,26,0.15) 0%, transparent 40%)",
 										}}
 									/>
 								</div>

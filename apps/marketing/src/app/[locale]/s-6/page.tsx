@@ -1,8 +1,25 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { notFound } from "next/navigation";
+import { isLocale } from "@/i18n/locales";
+import { translateVariantTree, variantMetadata } from "@/i18n/variant-copy";
 
-export default function DesignS6() {
-	return (
+type PageProps = { params: Promise<{ locale: string }> };
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+	const { locale } = await params;
+	if (!isLocale(locale)) notFound();
+	return variantMetadata(locale, "s-6");
+}
+
+export default async function DesignS6({ params }: PageProps) {
+	const { locale } = await params;
+	if (!isLocale(locale)) notFound();
+	const homeHref = `/${locale}`;
+	return translateVariantTree(
+		locale,
+		"s-6",
 		<div
 			className="min-h-screen"
 			style={{
@@ -46,9 +63,15 @@ export default function DesignS6() {
 					</span>
 				</div>
 				<nav className="hidden items-center gap-8 text-[16px] md:flex" style={{ color: "#7a7668" }}>
-					<a href="#features" className="transition-colors hover:text-[#e8e4d4]">Funktionen</a>
-					<a href="#sketch" className="transition-colors hover:text-[#e8e4d4]">Skizze</a>
-					<a href="#contact" className="transition-colors hover:text-[#e8e4d4]">Kontakt</a>
+					<a href="#features" className="transition-colors hover:text-[#e8e4d4]">
+						Funktionen
+					</a>
+					<a href="#sketch" className="transition-colors hover:text-[#e8e4d4]">
+						Skizze
+					</a>
+					<a href="#contact" className="transition-colors hover:text-[#e8e4d4]">
+						Kontakt
+					</a>
 				</nav>
 				<a
 					href="#contact"
@@ -99,11 +122,14 @@ export default function DesignS6() {
 						className="animate-fade-up mt-10 max-w-md text-[20px] leading-[1.7]"
 						style={{ color: "#7a7668", animationDelay: "0.4s" }}
 					>
-						Kein fancy Dashboard nötig. Kein Schnickschnack.
-						Z8 ist wie ein Block und ein Stift — nur digital.
+						Kein fancy Dashboard nötig. Kein Schnickschnack. Z8 ist wie ein Block und ein Stift —
+						nur digital.
 					</p>
 
-					<div className="animate-fade-up mt-12 flex items-center gap-6" style={{ animationDelay: "0.55s" }}>
+					<div
+						className="animate-fade-up mt-12 flex items-center gap-6"
+						style={{ animationDelay: "0.55s" }}
+					>
 						<a
 							href="#contact"
 							className="px-8 py-3.5 text-[18px] font-bold transition-all hover:bg-[#f0ecdc] hover:text-[#1a1a18]"
@@ -136,8 +162,16 @@ export default function DesignS6() {
 						className="object-cover"
 						style={{ filter: "saturate(0) brightness(0.35) contrast(1.4)" }}
 					/>
-					<div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(26,26,24,0.2), rgba(26,26,24,0.6))" }} />
-					<div className="absolute bottom-4 left-4 text-[14px]" style={{ color: "rgba(200,196,180,0.4)" }}>
+					<div
+						className="absolute inset-0"
+						style={{
+							background: "linear-gradient(to bottom, rgba(26,26,24,0.2), rgba(26,26,24,0.6))",
+						}}
+					/>
+					<div
+						className="absolute bottom-4 left-4 text-[14px]"
+						style={{ color: "rgba(200,196,180,0.4)" }}
+					>
 						~ skizze
 					</div>
 				</div>
@@ -146,19 +180,32 @@ export default function DesignS6() {
 			{/* Features — notebook style */}
 			<section id="features" className="relative z-10 px-8 py-32 lg:px-16">
 				<div className="mx-auto max-w-4xl">
-					<h2
-						className="text-[clamp(2rem,4vw,3.5rem)]"
-						style={{ color: "#e8e4d4" }}
-					>
+					<h2 className="text-[clamp(2rem,4vw,3.5rem)]" style={{ color: "#e8e4d4" }}>
 						Was Z8 kann:
 					</h2>
 
 					<div className="mt-12 space-y-6">
 						{[
-							{ bullet: "→", title: "Stempeln", desc: "Ein Klick, die Zeit läuft. Nochmal klicken, Feierabend." },
-							{ bullet: "→", title: "Übersicht", desc: "Wer hat wann was gemacht? Alles auf einer Seite." },
-							{ bullet: "→", title: "Export", desc: "Daten raus als CSV oder PDF. Für den Steuerberater." },
-							{ bullet: "→", title: "Team", desc: "Mitarbeiter einladen, Zeiten vergleichen, fertig." },
+							{
+								bullet: "→",
+								title: "Stempeln",
+								desc: "Ein Klick, die Zeit läuft. Nochmal klicken, Feierabend.",
+							},
+							{
+								bullet: "→",
+								title: "Übersicht",
+								desc: "Wer hat wann was gemacht? Alles auf einer Seite.",
+							},
+							{
+								bullet: "→",
+								title: "Export",
+								desc: "Daten raus als CSV oder PDF. Für den Steuerberater.",
+							},
+							{
+								bullet: "→",
+								title: "Team",
+								desc: "Mitarbeiter einladen, Zeiten vergleichen, fertig.",
+							},
 						].map((f) => (
 							<div
 								key={f.title}
@@ -192,16 +239,28 @@ export default function DesignS6() {
 						<div
 							key={i}
 							className="relative h-56 overflow-hidden"
-							style={{ border: "2px dashed rgba(200,196,180,0.1)", transform: i === 0 ? "rotate(-0.5deg)" : "rotate(0.5deg)" }}
+							style={{
+								border: "2px dashed rgba(200,196,180,0.1)",
+								transform: i === 0 ? "rotate(-0.5deg)" : "rotate(0.5deg)",
+							}}
 						>
-							<Image src={src} alt="" fill className="object-cover" style={{ filter: "saturate(0) brightness(0.5) contrast(1.3)" }} />
+							<Image
+								src={src}
+								alt=""
+								fill
+								className="object-cover"
+								style={{ filter: "saturate(0) brightness(0.5) contrast(1.3)" }}
+							/>
 						</div>
 					))}
 				</div>
 			</section>
 
 			{/* Sketch section */}
-			<section id="sketch" className="relative z-10 flex flex-col items-center px-8 py-24 text-center lg:px-16">
+			<section
+				id="sketch"
+				className="relative z-10 flex flex-col items-center px-8 py-24 text-center lg:px-16"
+			>
 				<div
 					className="inline-block px-12 py-8"
 					style={{
@@ -219,15 +278,15 @@ export default function DesignS6() {
 			</section>
 
 			{/* CTA */}
-			<section id="contact" className="relative z-10 flex flex-col items-center px-8 py-32 text-center lg:px-16">
-				<h2
-					className="text-[clamp(2.2rem,5vw,4rem)] leading-[1.1]"
-					style={{ color: "#e8e4d4" }}
-				>
+			<section
+				id="contact"
+				className="relative z-10 flex flex-col items-center px-8 py-32 text-center lg:px-16"
+			>
+				<h2 className="text-[clamp(2.2rem,5vw,4rem)] leading-[1.1]" style={{ color: "#e8e4d4" }}>
 					Stift gezückt?
 				</h2>
 				<a
-					href="#"
+					href="#contact"
 					className="mt-10 px-10 py-4 text-[20px] font-bold transition-all hover:bg-[#f0ecdc] hover:text-[#1a1a18]"
 					style={{
 						backgroundColor: "#d8d4c8",
@@ -240,16 +299,23 @@ export default function DesignS6() {
 			</section>
 
 			{/* Footer */}
-			<footer className="relative z-10 px-8 py-8 lg:px-16" style={{ borderTop: "1px dashed rgba(200,196,180,0.1)" }}>
+			<footer
+				className="relative z-10 px-8 py-8 lg:px-16"
+				style={{ borderTop: "1px dashed rgba(200,196,180,0.1)" }}
+			>
 				<div className="flex items-center justify-between">
 					<span className="text-[14px]" style={{ color: "#4a4838" }}>
 						© 2025 Z8
 					</span>
-					<Link href="/" className="text-[14px] transition-colors hover:text-[#e8e4d4]" style={{ color: "#5a5848" }}>
+					<Link
+						href={homeHref}
+						className="text-[14px] transition-colors hover:text-[#e8e4d4]"
+						style={{ color: "#5a5848" }}
+					>
 						← Alle Designs
 					</Link>
 				</div>
 			</footer>
-		</div>
+		</div>,
 	);
 }

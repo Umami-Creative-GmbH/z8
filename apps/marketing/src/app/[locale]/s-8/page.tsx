@@ -1,8 +1,26 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { notFound } from "next/navigation";
+import { isLocale } from "@/i18n/locales";
+import { translateVariantTree, variantMetadata } from "@/i18n/variant-copy";
 
-export default function DesignS8() {
-	return (
+type PageProps = { params: Promise<{ locale: string }> };
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+	const { locale } = await params;
+	if (!isLocale(locale)) notFound();
+	return variantMetadata(locale, "s-8");
+}
+
+export default async function DesignS8({ params }: PageProps) {
+	const { locale } = await params;
+	if (!isLocale(locale)) notFound();
+	const en = locale === "en";
+	const homeHref = `/${locale}`;
+	return translateVariantTree(
+		locale,
+		"s-8",
 		<div
 			className="min-h-screen"
 			style={{
@@ -44,11 +62,17 @@ export default function DesignS8() {
 					className="flex items-center justify-center gap-8 py-3 text-[11px] font-bold tracking-[0.15em] uppercase"
 					style={{ color: "#4a4438", borderBottom: "1px solid #d0c8b8" }}
 				>
-					<a href="#lead" className="transition-colors hover:text-[#b82020]">Titelstory</a>
+					<a href="#lead" className="transition-colors hover:text-[#b82020]">
+						Titelstory
+					</a>
 					<span style={{ color: "#d0c8b8" }}>|</span>
-					<a href="#features" className="transition-colors hover:text-[#b82020]">Rubriken</a>
+					<a href="#features" className="transition-colors hover:text-[#b82020]">
+						Rubriken
+					</a>
 					<span style={{ color: "#d0c8b8" }}>|</span>
-					<a href="#contact" className="transition-colors hover:text-[#b82020]">Abonnement</a>
+					<a href="#contact" className="transition-colors hover:text-[#b82020]">
+						Abonnement
+					</a>
 				</nav>
 			</header>
 
@@ -81,22 +105,33 @@ export default function DesignS8() {
 								style={{ color: "#3a3a30", animationDelay: "0.35s" }}
 							>
 								<p className="mb-4">
-									<span className="text-[36px] font-bold leading-none float-left mr-2 mt-1" style={{ color: "#b82020" }}>
-										D
+									<span
+										className="text-[36px] font-bold leading-none float-left mr-2 mt-1"
+										style={{ color: "#b82020" }}
+									>
+										{en ? "T" : "D"}
 									</span>
-									as Frankfurter Startup Z8 präsentiert eine neue Generation der
-									Arbeitszeiterfassung. Schluss mit Excel-Tabellen, handgeschriebenen
-									Stundenzetteln und verlorenen Daten.
+									{en ? (
+										<>
+											he Frankfurt startup Z8 presents a new generation of workforce time tracking.
+											No more Excel sheets, handwritten timesheets, or lost data.
+										</>
+									) : (
+										<>
+											as Frankfurter Startup Z8 präsentiert eine neue Generation der
+											Arbeitszeiterfassung. Schluss mit Excel-Tabellen, handgeschriebenen
+											Stundenzetteln und verlorenen Daten.
+										</>
+									)}
 								</p>
 								<p className="mb-4">
-									Mit nur einem Klick erfassen Mitarbeiter ihre Arbeitszeit — präzise,
-									digital und in Echtzeit. Das Dashboard zeigt sofort alle relevanten
-									Kennzahlen auf einen Blick.
+									Mit nur einem Klick erfassen Mitarbeiter ihre Arbeitszeit — präzise, digital und
+									in Echtzeit. Das Dashboard zeigt sofort alle relevanten Kennzahlen auf einen
+									Blick.
 								</p>
 								<p>
-									Besonders für kleine und mittlere Unternehmen ist Z8 eine Offenbarung:
-									Einfach einrichten, Team einladen und sofort loslegen.
-									Keine Schulung nötig.
+									Besonders für kleine und mittlere Unternehmen ist Z8 eine Offenbarung: Einfach
+									einrichten, Team einladen und sofort loslegen. Keine Schulung nötig.
 								</p>
 							</div>
 						</div>
@@ -107,7 +142,10 @@ export default function DesignS8() {
 							style={{ borderColor: "#d0c8b8", animationDelay: "0.5s" }}
 						>
 							<div>
-								<h3 className="text-[13px] font-bold tracking-[0.1em] uppercase" style={{ color: "#b82020" }}>
+								<h3
+									className="text-[13px] font-bold tracking-[0.1em] uppercase"
+									style={{ color: "#b82020" }}
+								>
 									Kurzmeldungen
 								</h3>
 								<div className="mt-4 space-y-4">
@@ -116,11 +154,7 @@ export default function DesignS8() {
 										"DSGVO-konforme Datenhaltung auf deutschen Servern",
 										"Neue API-Schnittstellen für SAP und DATEV",
 									].map((item, i) => (
-										<div
-											key={i}
-											className="pb-4"
-											style={{ borderBottom: "1px solid #e0d8c8" }}
-										>
+										<div key={i} className="pb-4" style={{ borderBottom: "1px solid #e0d8c8" }}>
 											<p className="text-[13px] leading-[1.5]" style={{ color: "#3a3a30" }}>
 												{item}
 											</p>
@@ -163,15 +197,37 @@ export default function DesignS8() {
 			<section className="relative z-10 mx-8 mb-8 lg:mx-16">
 				<div className="mx-auto max-w-5xl grid gap-6 md:grid-cols-[2fr_1fr]">
 					<div className="relative h-72 overflow-hidden">
-						<Image src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=900&q=80&auto=format&fit=crop" alt="" fill className="object-cover" style={{ filter: "saturate(0.2) contrast(1.1)" }} />
-						<div className="absolute bottom-0 left-0 right-0 px-4 py-3" style={{ backgroundColor: "rgba(248,244,236,0.9)" }}>
-							<p className="text-[11px] italic" style={{ color: "#6a6458" }}>Team-Meeting bei einem Z8-Kunden in Frankfurt. Foto: Archiv</p>
+						<Image
+							src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=900&q=80&auto=format&fit=crop"
+							alt=""
+							fill
+							className="object-cover"
+							style={{ filter: "saturate(0.2) contrast(1.1)" }}
+						/>
+						<div
+							className="absolute bottom-0 left-0 right-0 px-4 py-3"
+							style={{ backgroundColor: "rgba(248,244,236,0.9)" }}
+						>
+							<p className="text-[11px] italic" style={{ color: "#6a6458" }}>
+								Team-Meeting bei einem Z8-Kunden in Frankfurt. Foto: Archiv
+							</p>
 						</div>
 					</div>
 					<div className="relative h-72 overflow-hidden">
-						<Image src="https://images.unsplash.com/photo-1557804506-669a67965ba0?w=600&q=80&auto=format&fit=crop" alt="" fill className="object-cover" style={{ filter: "saturate(0.2) contrast(1.1)" }} />
-						<div className="absolute bottom-0 left-0 right-0 px-4 py-3" style={{ backgroundColor: "rgba(248,244,236,0.9)" }}>
-							<p className="text-[11px] italic" style={{ color: "#6a6458" }}>Modernes Büro mit Z8-Integration</p>
+						<Image
+							src="https://images.unsplash.com/photo-1557804506-669a67965ba0?w=600&q=80&auto=format&fit=crop"
+							alt=""
+							fill
+							className="object-cover"
+							style={{ filter: "saturate(0.2) contrast(1.1)" }}
+						/>
+						<div
+							className="absolute bottom-0 left-0 right-0 px-4 py-3"
+							style={{ backgroundColor: "rgba(248,244,236,0.9)" }}
+						>
+							<p className="text-[11px] italic" style={{ color: "#6a6458" }}>
+								Modernes Büro mit Z8-Integration
+							</p>
 						</div>
 					</div>
 				</div>
@@ -233,11 +289,10 @@ export default function DesignS8() {
 						Z8 — Jetzt abonnieren.
 					</h2>
 					<p className="mt-3 text-[14px] leading-[1.6]" style={{ color: "#5a5a50" }}>
-						Kostenlos starten. Keine Kreditkarte erforderlich.
-						Jederzeit kündbar.
+						Kostenlos starten. Keine Kreditkarte erforderlich. Jederzeit kündbar.
 					</p>
 					<a
-						href="#"
+						href="#contact"
 						className="mt-8 px-10 py-3.5 text-[11px] font-bold tracking-[0.15em] uppercase transition-colors hover:bg-[#1a1a18] hover:text-[#f8f4ec]"
 						style={{ border: "2px solid #1a1a18" }}
 					>
@@ -252,11 +307,15 @@ export default function DesignS8() {
 					<span className="text-[10px] tracking-[0.1em] uppercase" style={{ color: "#8a8470" }}>
 						© 2025 Z8 Anzeiger — Alle Rechte vorbehalten
 					</span>
-					<Link href="/" className="text-[10px] tracking-[0.1em] uppercase transition-colors hover:text-[#b82020]" style={{ color: "#8a8470" }}>
+					<Link
+						href={homeHref}
+						className="text-[10px] tracking-[0.1em] uppercase transition-colors hover:text-[#b82020]"
+						style={{ color: "#8a8470" }}
+					>
 						← Alle Designs
 					</Link>
 				</div>
 			</footer>
-		</div>
+		</div>,
 	);
 }

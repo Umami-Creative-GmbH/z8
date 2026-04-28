@@ -1,7 +1,15 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, useRef, type ReactNode, type CSSProperties } from "react";
-import { themes, type ThemeTokens } from "./tokens";
+import {
+	type CSSProperties,
+	createContext,
+	type ReactNode,
+	useContext,
+	useEffect,
+	useRef,
+	useState,
+} from "react";
+import { type ThemeTokens, themes } from "./tokens";
 
 interface ThemeContextValue {
 	t: ThemeTokens;
@@ -58,13 +66,15 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 			<div
 				ref={wrapperRef}
 				className="min-h-screen"
-				style={{
-					...cssVars,
-					fontFamily: "'Satoshi', 'General Sans', 'Switzer', 'Cerebri Sans', sans-serif",
-					backgroundColor: "var(--z8-bg)",
-					color: "var(--z8-text)",
-					transition: "background-color 0.4s ease, color 0.4s ease",
-				} as CSSProperties}
+				style={
+					{
+						...cssVars,
+						fontFamily: "'Satoshi', 'General Sans', 'Switzer', 'Cerebri Sans', sans-serif",
+						backgroundColor: "var(--z8-bg)",
+						color: "var(--z8-text)",
+						transition: "background-color 0.4s ease, color 0.4s ease",
+					} as CSSProperties
+				}
 			>
 				{children}
 			</div>

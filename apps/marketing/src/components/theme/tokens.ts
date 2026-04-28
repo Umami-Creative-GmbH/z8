@@ -55,6 +55,7 @@ export const themes = {
 		socialBorder: "#e8e8e8",
 		logoColor: "#d0d0d0",
 		trustedLabel: "#ccc",
+		trustBannerBg: "transparent",
 	},
 	dark: {
 		bg: "#0a0a0a",
@@ -111,6 +112,7 @@ export const themes = {
 		socialBorder: "#252525",
 		logoColor: "#444",
 		trustedLabel: "#444",
+		trustBannerBg: "#10151c",
 	},
 } as const;
 

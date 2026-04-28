@@ -1,9 +1,16 @@
 /* ─── Static data for landing page sections ─── */
 
 export const features = [
-	"Stempeluhr", "GoBD-konform", "Lohnexport", "Multi-Tenant",
-	"Enterprise-SSO", "Echtzeit-Analyse", "Dashboards", "Automatisierung",
-	"DATEV-Export", "Schichtplanung",
+	"Stempeluhr",
+	"GoBD-konform",
+	"Lohnexport",
+	"Multi-Tenant",
+	"Enterprise-SSO",
+	"Echtzeit-Analyse",
+	"Dashboards",
+	"Automatisierung",
+	"DATEV-Export",
+	"Schichtplanung",
 ];
 
 export const logos = ["DATEV", "Lexware", "Personio", "SAP", "Sage"];
@@ -20,37 +27,43 @@ export const detailedFeatures = [
 		tag: "Stempeluhr",
 		title: "Ein Klick. Überall.",
 		desc: "Ihre Mitarbeiter stempeln per Web, iOS, Android, Terminal oder NFC-Badge ein. Alles synchronisiert sich in Echtzeit \u2014 auch offline. Geo-Fencing und IP-Whitelisting verhindern Missbrauch, ohne ehrliche Mitarbeiter zu behindern.",
-		image: "https://images.unsplash.com/photo-1551434678-e076c223a692?w=800&q=80&auto=format&fit=crop",
+		image:
+			"https://images.unsplash.com/photo-1551434678-e076c223a692?w=800&q=80&auto=format&fit=crop",
 	},
 	{
 		tag: "Analyse",
 		title: "Daten, die Entscheidungen treiben.",
 		desc: "Überstunden-Trends, Abwesenheits-Muster, Abteilungsvergleiche. Dutzende vorgefertigte Reports plus ein SQL-Editor für Power-User. Automatischer Versand als PDF oder CSV an Stakeholder \u2014 täglich, wöchentlich oder monatlich.",
-		image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&q=80&auto=format&fit=crop",
+		image:
+			"https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&q=80&auto=format&fit=crop",
 	},
 	{
 		tag: "Lohnexport",
 		title: "Null manuelle Schritte.",
 		desc: "Verbinden Sie Z8 direkt mit DATEV, Lexware, Sage, Personio oder SAP. Monatliche Lohndaten werden automatisch übertragen \u2014 ohne CSV-Download, ohne Copy-Paste, ohne Fehler. Ihre Buchhaltung liebt es.",
-		image: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=800&q=80&auto=format&fit=crop",
+		image:
+			"https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=800&q=80&auto=format&fit=crop",
 	},
 ];
 
 export const testimonials = [
 	{
-		quote: "Wir haben drei Tools durch Z8 ersetzt. Die Zeitersparnis in der HR-Abteilung ist spürbar \u2014 mindestens 8 Stunden pro Woche.",
+		quote:
+			"Wir haben drei Tools durch Z8 ersetzt. Die Zeitersparnis in der HR-Abteilung ist spürbar \u2014 mindestens 8 Stunden pro Woche.",
 		name: "Dr. Katharina Voss",
 		role: "Head of People, Finleap",
 		avatar: "KV",
 	},
 	{
-		quote: "GoBD-Konformität war für uns ein Muss. Z8 ist das einzige Tool, das das sauber löst und gleichzeitig schön aussieht.",
+		quote:
+			"GoBD-Konformität war für uns ein Muss. Z8 ist das einzige Tool, das das sauber löst und gleichzeitig schön aussieht.",
 		name: "Markus Hein",
 		role: "Geschäftsführer, Hein & Partner",
 		avatar: "MH",
 	},
 	{
-		quote: "Unser Onboarding dauert jetzt 3 Minuten statt 2 Tage. Die SCIM-Integration mit unserem IdP funktioniert einwandfrei.",
+		quote:
+			"Unser Onboarding dauert jetzt 3 Minuten statt 2 Tage. Die SCIM-Integration mit unserem IdP funktioniert einwandfrei.",
 		name: "Sophie Brandt",
 		role: "IT-Leiterin, Commerz Real",
 		avatar: "SB",
@@ -63,7 +76,13 @@ export const pricingPlans = [
 		price: "0",
 		period: "für immer",
 		desc: "Für kleine Teams, die einfach starten wollen.",
-		features: ["Bis 10 Mitarbeiter", "Stempeluhr & Dashboard", "Basis-Berichte", "E-Mail-Support", "1 Standort"],
+		features: [
+			"Bis 10 Mitarbeiter",
+			"Stempeluhr & Dashboard",
+			"Basis-Berichte",
+			"E-Mail-Support",
+			"1 Standort",
+		],
 		cta: "Kostenlos starten",
 		highlighted: false,
 	},
@@ -72,7 +91,14 @@ export const pricingPlans = [
 		price: "4,90",
 		period: "pro Mitarbeiter / Monat",
 		desc: "Für wachsende Unternehmen mit Struktur.",
-		features: ["Unbegrenzte Mitarbeiter", "DATEV & Lexware Export", "GoBD-konform", "Multi-Standort", "Schichtplanung", "Priorisierter Support"],
+		features: [
+			"Unbegrenzte Mitarbeiter",
+			"DATEV & Lexware Export",
+			"GoBD-konform",
+			"Multi-Standort",
+			"Schichtplanung",
+			"Priorisierter Support",
+		],
 		cta: "14 Tage testen",
 		highlighted: true,
 	},
@@ -81,7 +107,14 @@ export const pricingPlans = [
 		price: "Individuell",
 		period: "ab 200 Mitarbeiter",
 		desc: "Für Konzerne mit höchsten Anforderungen.",
-		features: ["Alles aus Business", "Enterprise-SSO (SAML)", "SCIM-Provisioning", "Eigener Account Manager", "SLA 99,99%", "On-Premise möglich"],
+		features: [
+			"Alles aus Business",
+			"Enterprise-SSO (SAML)",
+			"SCIM-Provisioning",
+			"Eigener Account Manager",
+			"SLA 99,99%",
+			"On-Premise möglich",
+		],
 		cta: "Kontakt aufnehmen",
 		highlighted: false,
 	},
@@ -154,12 +187,24 @@ export const navItems = [
 ];
 
 export const featuresGridItems = [
-	{ title: "Stempeluhr", desc: "Ein Klick. Alle Geräte. Sofort synchronisiert über Web, Desktop und Mobile." },
-	{ title: "GoBD-konform", desc: "Revisionssichere Einträge. Lückenlos dokumentiert und unantastbar." },
+	{
+		title: "Stempeluhr",
+		desc: "Ein Klick. Alle Geräte. Sofort synchronisiert über Web, Desktop und Mobile.",
+	},
+	{
+		title: "GoBD-konform",
+		desc: "Revisionssichere Einträge. Lückenlos dokumentiert und unantastbar.",
+	},
 	{ title: "Lohnexport", desc: "DATEV, Lexware, Personio, SAP. Automatisch und fehlerfrei." },
 	{ title: "Multi-Tenant", desc: "Mandantenfähig. Jede Organisation strikt isoliert und sicher." },
-	{ title: "Enterprise-SSO", desc: "SAML, OIDC, SCIM. Nahtlose Integration in Ihre IT-Infrastruktur." },
-	{ title: "Echtzeit-Analyse", desc: "Überstunden, Trends, Dashboards. Immer live, immer aktuell." },
+	{
+		title: "Enterprise-SSO",
+		desc: "SAML, OIDC, SCIM. Nahtlose Integration in Ihre IT-Infrastruktur.",
+	},
+	{
+		title: "Echtzeit-Analyse",
+		desc: "Überstunden, Trends, Dashboards. Immer live, immer aktuell.",
+	},
 ];
 
 export const howItWorksSteps = [
