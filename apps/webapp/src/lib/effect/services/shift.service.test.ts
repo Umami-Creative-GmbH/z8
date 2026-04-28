@@ -157,13 +157,6 @@ function createShiftServiceTestContext({
 	};
 }
 
-function expectLeft(result: { _tag: string }) {
-	expect(result._tag).toBe("Left");
-	if (result._tag !== "Left") {
-		throw new Error("Expected effect to fail");
-	}
-}
-
 describe("ShiftService qualification enforcement", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
@@ -177,7 +170,9 @@ describe("ShiftService qualification enforcement", () => {
 
 		const result = await context.runUpsertShift();
 
-		expectLeft(result);
+		if (result._tag !== "Left") {
+			throw new Error("Expected effect to fail");
+		}
 		expect(result.left).toBeInstanceOf(NotFoundError);
 		expect(context.mockDb.insert).not.toHaveBeenCalled();
 	});
@@ -190,7 +185,9 @@ describe("ShiftService qualification enforcement", () => {
 
 		const result = await context.runUpsertShift({ employeeId: null });
 
-		expectLeft(result);
+		if (result._tag !== "Left") {
+			throw new Error("Expected effect to fail");
+		}
 		expect(result.left).toBeInstanceOf(NotFoundError);
 		expect(context.mockDb.insert).not.toHaveBeenCalled();
 	});
@@ -203,7 +200,9 @@ describe("ShiftService qualification enforcement", () => {
 
 		const result = await context.runUpsertShift({ employeeId: null, templateId: "template-1" });
 
-		expectLeft(result);
+		if (result._tag !== "Left") {
+			throw new Error("Expected effect to fail");
+		}
 		expect(result.left).toBeInstanceOf(NotFoundError);
 		expect(context.mockDb.insert).not.toHaveBeenCalled();
 	});
@@ -215,7 +214,9 @@ describe("ShiftService qualification enforcement", () => {
 
 		const result = await context.runUpsertShift();
 
-		expectLeft(result);
+		if (result._tag !== "Left") {
+			throw new Error("Expected effect to fail");
+		}
 		expect(result.left).toBeInstanceOf(ValidationError);
 		expect(context.mockDb.insert).not.toHaveBeenCalled();
 	});
@@ -225,7 +226,9 @@ describe("ShiftService qualification enforcement", () => {
 
 		const result = await context.runUpsertShift();
 
-		expectLeft(result);
+		if (result._tag !== "Left") {
+			throw new Error("Expected effect to fail");
+		}
 		expect(result.left).toBeInstanceOf(ValidationError);
 		expect(context.mockDb.insert).not.toHaveBeenCalled();
 	});
