@@ -133,7 +133,7 @@ export async function createSkill(
  */
 export async function updateSkill(
 	skillId: string,
-	data: Omit<UpdateSkillInput, "updatedBy">,
+	data: Omit<UpdateSkillInput, "organizationId" | "updatedBy">,
 ): Promise<ServerActionResult<SkillWithRelations>> {
 	const tracer = trace.getTracer("skills");
 
@@ -161,6 +161,7 @@ export async function updateSkill(
 				const updatedSkill = yield* _(
 					skillService.updateSkill(skillId, {
 						...data,
+						organizationId: actor.organizationId,
 						updatedBy: session.user.id,
 					}),
 				);
@@ -219,7 +220,7 @@ export async function deleteSkill(skillId: string): Promise<ServerActionResult<v
 					}),
 				);
 
-				yield* _(skillService.deleteSkill(skillId));
+				yield* _(skillService.deleteSkill(skillId, actor.organizationId));
 
 				logger.info({ skillId }, "Skill deleted successfully");
 
@@ -274,7 +275,7 @@ export async function getOrganizationSkills(options?: {
  * Requires admin or manager role
  */
 export async function assignSkillToEmployee(
-	data: Omit<AssignSkillInput, "assignedBy">,
+	data: Omit<AssignSkillInput, "organizationId" | "assignedBy">,
 ): Promise<ServerActionResult<EmployeeSkillWithDetails>> {
 	const tracer = trace.getTracer("skills");
 
@@ -318,6 +319,7 @@ export async function assignSkillToEmployee(
 				const assignment = yield* _(
 					skillService.assignSkillToEmployee({
 						...data,
+						organizationId: actor.organizationId,
 						assignedBy: session.user.id,
 					}),
 				);

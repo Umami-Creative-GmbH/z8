@@ -4,6 +4,7 @@ import {
 	employeeSkill,
 	qualificationRenewalRequest,
 	qualificationRenewalRequestEvidence,
+	skill,
 } from "@/db/schema";
 import { NotFoundError, ValidationError } from "../errors";
 import { DatabaseService } from "./database.service";
@@ -210,6 +211,204 @@ function createSkillServiceTestContext({
 			),
 	};
 }
+
+function createSkillCatalogSecurityTestContext({
+	existingSkill = {
+		id: "skill-1",
+		organizationId: "org-2",
+		name: "Forklift",
+		category: "certification",
+		customCategoryName: null,
+		requiresExpiry: true,
+		expiryWarningDays: 30,
+		isActive: true,
+	},
+	employeeRecord = { id: "employee-1", organizationId: "org-1" },
+	skillRecord = {
+		id: "skill-1",
+		organizationId: "org-2",
+		isActive: true,
+		requiresExpiry: false,
+	},
+}: {
+	existingSkill?: unknown;
+	employeeRecord?: unknown;
+	skillRecord?: unknown;
+} = {}) {
+	const conditionHasParam = (condition: unknown, columnName: string, value: string): boolean => {
+		const seen = new WeakSet<object>();
+
+		const visit = (node: unknown): boolean => {
+			if (!node || typeof node !== "object") {
+				return false;
+			}
+
+			if (seen.has(node)) {
+				return false;
+			}
+			seen.add(node);
+
+			if (
+				"value" in node &&
+				"encoder" in node &&
+				(node as { value?: unknown }).value === value &&
+				(node as { encoder?: { name?: unknown } }).encoder?.name === columnName
+			) {
+				return true;
+			}
+
+			return Object.values(node).some(visit);
+		};
+
+		return visit(condition);
+	};
+
+	const updateReturning = vi.fn(async () => [{ ...(existingSkill as object), name: "Updated" }]);
+	const updateWhere = vi.fn(() => ({ returning: updateReturning }));
+	const updateSet = vi.fn(() => ({ where: updateWhere }));
+	const update = vi.fn((table) => {
+		if (table === skill) {
+			return { set: updateSet };
+		}
+
+		throw new Error("Unexpected update table");
+	});
+
+	const deleteWhere = vi.fn(async () => undefined);
+	const deleteMock = vi.fn((table) => {
+		if (table === employeeSkill) {
+			return { where: deleteWhere };
+		}
+
+		throw new Error("Unexpected delete table");
+	});
+
+	const insertReturning = vi.fn(async () => [{ id: "employee-skill-1" }]);
+	const onConflictDoUpdate = vi.fn(() => ({ returning: insertReturning }));
+	const insertValues = vi.fn(() => ({ onConflictDoUpdate }));
+	const insert = vi.fn((table) => {
+		if (table === employeeSkill) {
+			return { values: insertValues };
+		}
+
+		throw new Error("Unexpected insert table");
+	});
+
+	const mockDb = {
+		query: {
+			skill: {
+				findFirst: vi.fn(async (options?: { where?: unknown }) => {
+					const record = existingSkill ?? skillRecord;
+					if (
+						record &&
+						conditionHasParam(options?.where, "organization_id", "org-1") &&
+						(record as { organizationId?: string }).organizationId !== "org-1"
+					) {
+						return undefined;
+					}
+
+					return record;
+				}),
+			},
+			employee: {
+				findFirst: vi.fn(async () => employeeRecord),
+			},
+		},
+		delete: deleteMock,
+		insert,
+		update,
+	};
+
+	const dbLayer = Layer.succeed(
+		DatabaseService,
+		DatabaseService.of({
+			db: mockDb as never,
+			query: (_name, query) =>
+				Effect.tryPromise({
+					try: query,
+					catch: (error) => error,
+				}) as never,
+		}),
+	);
+	const layer = SkillServiceLive.pipe(Layer.provide(dbLayer));
+
+	return {
+		deleteMock,
+		insert,
+		mockDb,
+		update,
+		runAssignSkillToEmployee: () =>
+			Effect.runPromise(
+				Effect.either(
+					Effect.gen(function* (_) {
+						const service = yield* _(SkillService);
+						return yield* _(
+							service.assignSkillToEmployee({
+								employeeId: "employee-1",
+								skillId: "skill-1",
+								assignedBy: "user-1",
+								organizationId: "org-1",
+							}),
+						);
+					}).pipe(Effect.provide(layer)),
+				),
+			),
+		runDeleteSkill: () =>
+			Effect.runPromise(
+				Effect.either(
+					Effect.gen(function* (_) {
+						const service = yield* _(SkillService);
+						return yield* _(service.deleteSkill("skill-1", "org-1"));
+					}).pipe(Effect.provide(layer)),
+				),
+			),
+		runUpdateSkill: () =>
+			Effect.runPromise(
+				Effect.either(
+					Effect.gen(function* (_) {
+						const service = yield* _(SkillService);
+						return yield* _(
+							service.updateSkill("skill-1", {
+								name: "Updated",
+								updatedBy: "user-1",
+								organizationId: "org-1",
+							}),
+						);
+					}).pipe(Effect.provide(layer)),
+				),
+			),
+	};
+}
+
+describe("SkillService catalog mutation security", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	it("rejects catalog updates for skills outside the caller organization", async () => {
+		const { runUpdateSkill, update } = createSkillCatalogSecurityTestContext();
+
+		expect(await runUpdateSkill()).toMatchObject({ _tag: "Left", left: expect.any(NotFoundError) });
+		expect(update).not.toHaveBeenCalled();
+	});
+
+	it("rejects catalog deletes for skills outside the caller organization", async () => {
+		const { runDeleteSkill, update } = createSkillCatalogSecurityTestContext();
+
+		expect(await runDeleteSkill()).toMatchObject({ _tag: "Left", left: expect.any(NotFoundError) });
+		expect(update).not.toHaveBeenCalled();
+	});
+
+	it("rejects assigning a skill from a different organization than the employee", async () => {
+		const { insert, runAssignSkillToEmployee } = createSkillCatalogSecurityTestContext();
+
+		expect(await runAssignSkillToEmployee()).toMatchObject({
+			_tag: "Left",
+			left: expect.any(NotFoundError),
+		});
+		expect(insert).not.toHaveBeenCalled();
+	});
+});
 
 describe("SkillService qualification renewal behavior", () => {
 	beforeEach(() => {

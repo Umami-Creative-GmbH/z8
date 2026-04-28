@@ -54,6 +54,7 @@ export interface CreateSkillInput {
 }
 
 export interface UpdateSkillInput {
+	organizationId: string;
 	name?: string;
 	description?: string;
 	category?: SkillCategory;
@@ -65,6 +66,7 @@ export interface UpdateSkillInput {
 }
 
 export interface AssignSkillInput {
+	organizationId: string;
 	employeeId: string;
 	skillId: string;
 	issuedAt?: Date;
@@ -182,7 +184,10 @@ export class SkillService extends Context.Tag("SkillService")<
 			input: UpdateSkillInput,
 		) => Effect.Effect<Skill, NotFoundError | ValidationError | DatabaseError>;
 
-		readonly deleteSkill: (id: string) => Effect.Effect<void, NotFoundError | DatabaseError>;
+		readonly deleteSkill: (
+			id: string,
+			organizationId: string,
+		) => Effect.Effect<void, NotFoundError | DatabaseError>;
 
 		readonly getOrganizationSkills: (
 			organizationId: string,
@@ -332,7 +337,7 @@ export const SkillServiceLive = Layer.effect(
 					const existing = yield* _(
 						dbService.query("getSkillById", async () => {
 							return await dbService.db.query.skill.findFirst({
-								where: eq(skill.id, id),
+								where: and(eq(skill.id, id), eq(skill.organizationId, input.organizationId)),
 							});
 						}),
 					);
@@ -386,21 +391,33 @@ export const SkillServiceLive = Layer.effect(
 									...(input.isActive !== undefined && { isActive: input.isActive }),
 									updatedBy: input.updatedBy,
 								})
-								.where(eq(skill.id, id))
+								.where(and(eq(skill.id, id), eq(skill.organizationId, input.organizationId)))
 								.returning();
 							return updated;
 						}),
 					);
 
+					if (!updatedSkill) {
+						yield* _(
+							Effect.fail(
+								new NotFoundError({
+									message: "Skill not found",
+									entityType: "skill",
+									entityId: id,
+								}),
+							),
+						);
+					}
+
 					return updatedSkill;
 				}),
 
-			deleteSkill: (id) =>
+			deleteSkill: (id, organizationId) =>
 				Effect.gen(function* (_) {
 					const existing = yield* _(
 						dbService.query("getSkillById", async () => {
 							return await dbService.db.query.skill.findFirst({
-								where: eq(skill.id, id),
+								where: and(eq(skill.id, id), eq(skill.organizationId, organizationId)),
 							});
 						}),
 					);
@@ -420,7 +437,10 @@ export const SkillServiceLive = Layer.effect(
 					// Soft delete by setting isActive to false
 					yield* _(
 						dbService.query("softDeleteSkill", async () => {
-							await dbService.db.update(skill).set({ isActive: false }).where(eq(skill.id, id));
+							await dbService.db
+								.update(skill)
+								.set({ isActive: false })
+								.where(and(eq(skill.id, id), eq(skill.organizationId, organizationId)));
 						}),
 					);
 				}),
@@ -467,7 +487,10 @@ export const SkillServiceLive = Layer.effect(
 					const employeeRecord = yield* _(
 						dbService.query("verifyEmployeeExists", async () => {
 							return await dbService.db.query.employee.findFirst({
-								where: eq(employee.id, input.employeeId),
+								where: and(
+									eq(employee.id, input.employeeId),
+									eq(employee.organizationId, input.organizationId),
+								),
 							});
 						}),
 					);
@@ -488,7 +511,11 @@ export const SkillServiceLive = Layer.effect(
 					const skillRecord = yield* _(
 						dbService.query("verifySkillExists", async () => {
 							return await dbService.db.query.skill.findFirst({
-								where: and(eq(skill.id, input.skillId), eq(skill.isActive, true)),
+								where: and(
+									eq(skill.id, input.skillId),
+									eq(skill.organizationId, input.organizationId),
+									eq(skill.isActive, true),
+								),
 							});
 						}),
 					);
