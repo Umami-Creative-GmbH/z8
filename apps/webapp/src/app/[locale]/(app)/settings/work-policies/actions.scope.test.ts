@@ -201,7 +201,8 @@ vi.mock("../employees/employee-action-utils", async () => {
 		),
 		ensureSettingsActorCanAccessEmployeeTarget: vi.fn(
 			(actor: typeof mockState.actor, target: any, options: any) =>
-				actor.accessTier === "orgAdmin" || mockState.managedEmployeeIds.has(target.id)
+				actor.organizationId === target.organizationId &&
+				(actor.accessTier === "orgAdmin" || mockState.managedEmployeeIds.has(target.id))
 					? Effect.void
 					: Effect.fail(
 							new AuthorizationError({
@@ -498,6 +499,28 @@ describe("work policy settings scope actions", () => {
 				),
 			).toEqual([{ sql: ["", " DESC NULLS LAST"], values: ["effectiveFrom"] }, "desc:createdAt"]);
 		}
+	});
+
+	it("rejects effective schedule lookups for employees outside the actor organization", async () => {
+		mockState.targetEmployee = {
+			id: "employee-outside-org",
+			organizationId: "org-2",
+			role: "employee",
+		};
+		mockState.managedEmployeeIds = new Set(["employee-outside-org"]);
+		mockState.employeeQueue = [
+			{
+				id: "employee-outside-org",
+				organizationId: "org-2",
+				teamId: "team-2",
+				team: null,
+			},
+		];
+
+		const result = await getEmployeeEffectiveScheduleDetails("employee-outside-org");
+
+		expect(result).toMatchObject({ success: false, code: "AuthorizationError" });
+		expect(mockState.assignmentFindFirstArgs).toHaveLength(0);
 	});
 
 	it("rejects managers from hidden compliance actions", async () => {

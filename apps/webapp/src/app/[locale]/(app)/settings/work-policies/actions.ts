@@ -1478,16 +1478,31 @@ export async function getEmployeeEffectiveScheduleDetails(
 	employeeId: string,
 ): Promise<ServerActionResult<EmployeeScheduleDetails | null>> {
 	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const _session = yield* _(authService.getSession());
-
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({
+				queryName: "getEmployeeEffectiveScheduleDetails:actor",
+			}),
+		);
 		const dbService = yield* _(DatabaseService);
+		const targetEmployee = yield* _(
+			getTargetEmployee(employeeId, "getEmployeeEffectiveScheduleDetails:getTargetEmployee"),
+		);
+		yield* _(
+			ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
+				message: "Insufficient permissions",
+				resource: "employee_schedule_details",
+				action: "read",
+			}),
+		);
 
 		// Get employee with organization
 		const emp = yield* _(
 			dbService.query("getEmployee", async () => {
 				return await dbService.db.query.employee.findFirst({
-					where: eq(employee.id, employeeId),
+					where: and(
+						eq(employee.id, employeeId),
+						eq(employee.organizationId, actor.organizationId),
+					),
 					with: { team: true },
 				});
 			}),
@@ -1504,6 +1519,7 @@ export async function getEmployeeEffectiveScheduleDetails(
 			dbService.query("getEmployeePolicyAssignment", async () => {
 				return await dbService.db.query.workPolicyAssignment.findFirst({
 					where: and(
+						eq(workPolicyAssignment.organizationId, actor.organizationId),
 						eq(workPolicyAssignment.employeeId, employeeId),
 						eq(workPolicyAssignment.assignmentType, "employee"),
 						eq(workPolicyAssignment.isActive, true),
@@ -1559,6 +1575,7 @@ export async function getEmployeeEffectiveScheduleDetails(
 				dbService.query("getTeamPolicyAssignment", async () => {
 					return await dbService.db.query.workPolicyAssignment.findFirst({
 						where: and(
+							eq(workPolicyAssignment.organizationId, actor.organizationId),
 							eq(workPolicyAssignment.teamId, emp.teamId!),
 							eq(workPolicyAssignment.assignmentType, "team"),
 							eq(workPolicyAssignment.isActive, true),
@@ -1615,7 +1632,7 @@ export async function getEmployeeEffectiveScheduleDetails(
 			dbService.query("getOrgPolicyAssignment", async () => {
 				return await dbService.db.query.workPolicyAssignment.findFirst({
 					where: and(
-						eq(workPolicyAssignment.organizationId, emp.organizationId),
+						eq(workPolicyAssignment.organizationId, actor.organizationId),
 						eq(workPolicyAssignment.assignmentType, "organization"),
 						eq(workPolicyAssignment.isActive, true),
 						or(
