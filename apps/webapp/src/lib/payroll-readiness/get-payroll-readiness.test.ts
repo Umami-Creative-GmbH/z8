@@ -91,7 +91,11 @@ function mockReadyQueries() {
 	mockState.approvalRequestFindMany.mockResolvedValue([]);
 	mockState.payrollExportConfigFindMany.mockResolvedValue([{ id: "config-1" }]);
 	mockState.payrollWageTypeMappingFindMany.mockResolvedValue([{ id: "mapping-1" }]);
-	mockState.payrollExportJobFindMany.mockResolvedValue([{ id: "job-1", status: "completed" }]);
+	mockState.payrollExportJobFindMany.mockResolvedValue([{
+		id: "job-1",
+		status: "completed",
+		filters: { dateRange: { start: "2026-04-01", end: "2026-04-30" } },
+	}]);
 	mockState.travelExpenseClaimFindMany.mockResolvedValue([]);
 }
 
@@ -138,6 +142,7 @@ describe("getPayrollReadiness", () => {
 			{
 				id: "approval-1",
 				requestedBy: "employee-1",
+				canonicalRecord: { startAt: new Date("2026-04-15T08:00:00.000Z") },
 				requester: {
 					id: "employee-1",
 					employeeNumber: "E-1001",
@@ -162,6 +167,54 @@ describe("getPayrollReadiness", () => {
 				email: "ada@example.com",
 				employeeNumber: "E-1001",
 			}],
+		});
+	});
+
+	it("does not block for pending approvals outside the selected period", async () => {
+		mockState.approvalRequestFindMany.mockResolvedValue([
+			{
+				id: "approval-1",
+				requestedBy: "employee-1",
+				canonicalRecord: { startAt: new Date("2026-03-31T08:00:00.000Z") },
+				requester: {
+					id: "employee-1",
+					employeeNumber: "E-1001",
+					user: { name: "Ada Lovelace", email: "ada@example.com" },
+				},
+			},
+		]);
+
+		const result = await getPayrollReadiness(defaultInput());
+
+		expect(result.status).toBe("ready");
+		expect(getCheck(result, "pending-approvals")).toMatchObject({
+			status: "pass",
+			count: 0,
+			affectedEmployees: [],
+		});
+	});
+
+	it("blocks for pending approvals inside the selected period", async () => {
+		mockState.approvalRequestFindMany.mockResolvedValue([
+			{
+				id: "approval-1",
+				requestedBy: "employee-1",
+				canonicalRecord: { startAt: new Date("2026-04-30T08:00:00.000Z") },
+				requester: {
+					id: "employee-1",
+					employeeNumber: "E-1001",
+					user: { name: "Ada Lovelace", email: "ada@example.com" },
+				},
+			},
+		]);
+
+		const result = await getPayrollReadiness(defaultInput());
+
+		expect(result.status).toBe("blocked");
+		expect(getCheck(result, "pending-approvals")).toMatchObject({
+			status: "fail",
+			severity: "blocker",
+			count: 1,
 		});
 	});
 
@@ -241,7 +294,11 @@ describe("getPayrollReadiness", () => {
 	});
 
 	it("blocks when latest payroll export failed", async () => {
-		mockState.payrollExportJobFindMany.mockResolvedValue([{ id: "job-1", status: "failed" }]);
+		mockState.payrollExportJobFindMany.mockResolvedValue([{
+			id: "job-1",
+			status: "failed",
+			filters: { dateRange: { start: "2026-04-01", end: "2026-04-30" } },
+		}]);
 
 		const result = await getPayrollReadiness(defaultInput());
 
@@ -252,6 +309,53 @@ describe("getPayrollReadiness", () => {
 			severity: "blocker",
 			count: 1,
 			actionHref: "/settings/payroll-export",
+		});
+	});
+
+	it("does not block when the latest failed payroll export is for a different period", async () => {
+		mockState.payrollExportJobFindMany.mockResolvedValue([
+			{
+				id: "job-1",
+				status: "failed",
+				filters: { dateRange: { start: "2026-03-01", end: "2026-03-31" } },
+			},
+		]);
+
+		const result = await getPayrollReadiness(defaultInput());
+
+		expect(result.status).toBe("ready");
+		expect(getCheck(result, "latest-payroll-export")).toMatchObject({
+			status: "pass",
+			count: 0,
+		});
+	});
+
+	it("blocks when the most recent payroll export for the selected period failed", async () => {
+		mockState.payrollExportJobFindMany.mockResolvedValue([
+			{
+				id: "newer-other-period",
+				status: "completed",
+				filters: { dateRange: { start: "2026-05-01", end: "2026-05-31" } },
+			},
+			{
+				id: "selected-period-failed",
+				status: "failed",
+				filters: { dateRange: { start: "2026-04-01", end: "2026-04-30" } },
+			},
+			{
+				id: "selected-period-completed",
+				status: "completed",
+				filters: { dateRange: { start: "2026-04-01", end: "2026-04-30" } },
+			},
+		]);
+
+		const result = await getPayrollReadiness(defaultInput());
+
+		expect(result.status).toBe("blocked");
+		expect(getCheck(result, "latest-payroll-export")).toMatchObject({
+			status: "fail",
+			severity: "blocker",
+			count: 1,
 		});
 	});
 
@@ -285,6 +389,34 @@ describe("getPayrollReadiness", () => {
 				employeeNumber: "E-1003",
 			}],
 		});
+	});
+
+	it("treats travel claims overlapping the selected period as warning-only", async () => {
+		mockState.travelExpenseClaimFindMany.mockResolvedValue([
+			{
+				id: "claim-1",
+				employeeId: "employee-1",
+				tripStart: new Date("2026-03-30T08:00:00.000Z"),
+				tripEnd: new Date("2026-04-02T17:00:00.000Z"),
+				employee: {
+					id: "employee-1",
+					employeeNumber: "E-1003",
+					user: { name: "Katherine Johnson", email: "kat@example.com" },
+				},
+			},
+		]);
+
+		const result = await getPayrollReadiness(defaultInput());
+
+		expect(result.status).toBe("ready");
+		expect(result.summary.warningCount).toBe(1);
+		expect(getCheck(result, "travel-expense-warnings")).toMatchObject({
+			status: "warning",
+			severity: "warning",
+			count: 1,
+		});
+		expect(JSON.stringify(mockState.travelExpenseClaimFindMany.mock.calls[0]?.[0]?.where)).toContain("lte");
+		expect(JSON.stringify(mockState.travelExpenseClaimFindMany.mock.calls[0]?.[0]?.where)).toContain("gte");
 	});
 });
 
