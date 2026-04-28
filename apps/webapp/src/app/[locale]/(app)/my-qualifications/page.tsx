@@ -9,7 +9,7 @@ export default async function MyQualificationsPage() {
 
 	const result = await getMyQualifications();
 	if (!result.success) {
-		if (result.error.includes("Employee")) {
+		if (result.error === "Employee profile not found") {
 			return (
 				<div className="@container/main flex flex-1 items-center justify-center p-6">
 					<NoEmployeeError feature="view your qualifications" />
