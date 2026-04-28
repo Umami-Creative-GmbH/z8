@@ -121,6 +121,9 @@ export interface ApprovalQueryParams {
 	/** Employee ID of the approver */
 	approverId: string;
 
+	/** Include approvals assigned to any approver. Used by org-wide admin briefings. */
+	includeAllApprovers?: boolean;
+
 	/** Organization ID for multi-tenancy */
 	organizationId: string;
 

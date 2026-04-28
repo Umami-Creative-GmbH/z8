@@ -57,8 +57,13 @@ export type ManagerDailyBriefingSources = {
 	getPublishedShifts(input: DateSourceScope): Promise<BriefingShift[]>;
 	getOpenTimeRecords(input: TimeRecordSourceScope): Promise<BriefingTimeRecord[]>;
 	getApprovedAbsences(input: DateSourceScope): Promise<BriefingAbsence[]>;
-	getCoverageRules(input: { organizationId: string }): Promise<BriefingCoverageRule[]>;
-	getApprovals(input: SourceScope & { approverId: string }): Promise<BriefingApproval[]>;
+	getCoverageRules(input: {
+		organizationId: string;
+		subareaIds?: string[];
+	}): Promise<BriefingCoverageRule[]>;
+	getApprovals(
+		input: SourceScope & { approverId: string; includeAllApprovers?: boolean },
+	): Promise<BriefingApproval[]>;
 	getOvertimeWarnings(input: SourceScope): Promise<BriefingActionItem[]>;
 	getPayrollIssues(input: SourceScope): Promise<BriefingActionItem[]>;
 };
@@ -133,8 +138,18 @@ export async function getManagerDailyBriefingFromSources({
 		to: now.endOf("day").plus({ days: 1 }).toJSDate(),
 	};
 
+	const shiftsPromise = sources.getPublishedShifts({ ...sourceScope, date });
+	const [shiftsResult] = await Promise.allSettled([shiftsPromise]);
+	const shifts = settledValue(shiftsResult, []);
+	const managerCoverageSubareaIds =
+		currentEmployee.role === "manager"
+			? [...new Set(shifts.flatMap((shift) => (shift.subareaId ? [shift.subareaId] : [])))]
+			: undefined;
+	const coverageRulesPromise =
+		currentEmployee.role === "manager" && managerCoverageSubareaIds?.length === 0
+			? Promise.resolve([])
+			: sources.getCoverageRules({ organizationId, subareaIds: managerCoverageSubareaIds });
 	const [
-		shiftsResult,
 		timeRecordsResult,
 		absencesResult,
 		coverageRulesResult,
@@ -142,19 +157,25 @@ export async function getManagerDailyBriefingFromSources({
 		overtimeResult,
 		payrollResult,
 	] = await Promise.allSettled([
-		sources.getPublishedShifts({ ...sourceScope, date }),
 		sources.getOpenTimeRecords({ ...sourceScope, ...timeRecordWindow }),
 		sources.getApprovedAbsences({ ...sourceScope, date }),
-		sources.getCoverageRules({ organizationId }),
-		sources.getApprovals({ ...sourceScope, approverId: currentEmployee.id }),
+		coverageRulesPromise,
+		sources.getApprovals({
+			...sourceScope,
+			approverId: currentEmployee.id,
+			...(currentEmployee.role === "admin" ? { includeAllApprovers: true } : {}),
+		}),
 		sources.getOvertimeWarnings(sourceScope),
 		sources.getPayrollIssues(sourceScope),
 	]);
 
-	const shifts = settledValue(shiftsResult, []);
 	const timeRecords = settledValue(timeRecordsResult, []);
 	const absences = settledValue(absencesResult, []);
-	const coverageRules = settledValue(coverageRulesResult, []);
+	const coverageRules = managerCoverageSubareaIds
+		? settledValue(coverageRulesResult, []).filter((rule) =>
+				managerCoverageSubareaIds.includes(rule.subareaId),
+			)
+		: settledValue(coverageRulesResult, []);
 	const scopedEmployeeIds = new Set(employeeIds);
 	const approvalItems = settledValue(approvalsResult, [])
 		.filter((approval) => scopedEmployeeIds.has(approval.requester.id))
@@ -201,7 +222,6 @@ export async function getManagerDailyBriefingFromSources({
 	};
 	const sectionItems = {
 		needsAction: sortActionItems([
-			...sections.approvals.items,
 			...sections.attendance.items,
 			...sections.absences.items,
 			...sections.coverage.items,
@@ -452,9 +472,18 @@ const databaseSources: ManagerDailyBriefingSources = {
 		}));
 	},
 
-	async getCoverageRules({ organizationId }) {
+	async getCoverageRules({ organizationId, subareaIds }) {
 		const { db } = await import("@/db");
 		const { coverageRule, locationSubarea } = await import("@/db/schema");
+		const conditions = [eq(coverageRule.organizationId, organizationId)];
+
+		if (subareaIds) {
+			if (subareaIds.length === 0) {
+				return [];
+			}
+
+			conditions.push(inArray(coverageRule.subareaId, subareaIds));
+		}
 
 		const rows = await db
 			.select({
@@ -468,12 +497,12 @@ const databaseSources: ManagerDailyBriefingSources = {
 			})
 			.from(coverageRule)
 			.innerJoin(locationSubarea, eq(coverageRule.subareaId, locationSubarea.id))
-			.where(eq(coverageRule.organizationId, organizationId));
+			.where(and(...conditions));
 
 		return rows;
 	},
 
-	async getApprovals({ organizationId, approverId, employeeIds }) {
+	async getApprovals({ organizationId, approverId, employeeIds, includeAllApprovers }) {
 		await import("@/lib/approvals/init");
 		const { ApprovalQueryService, ApprovalQueryServiceLive } = await import(
 			"@/lib/approvals/application/approval-query.service"
@@ -489,6 +518,7 @@ const databaseSources: ManagerDailyBriefingSources = {
 						organizationId,
 						status: "pending",
 						requesterEmployeeIds: employeeIds,
+						includeAllApprovers,
 						limit: 25,
 					}),
 				);

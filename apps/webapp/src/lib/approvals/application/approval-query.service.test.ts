@@ -40,6 +40,7 @@ function createUnifiedApprovalItem(params: {
 	createdAt: string;
 	priority: ApprovalPriority;
 	requesterId?: string;
+	approverId?: string;
 }): UnifiedApprovalItem {
 	return {
 		id: params.id,
@@ -54,7 +55,7 @@ function createUnifiedApprovalItem(params: {
 			image: null,
 			teamId: "team-1",
 		},
-		approverId: "manager-1",
+		approverId: params.approverId ?? "manager-1",
 		organizationId: "org-1",
 		status: "pending",
 		createdAt: new Date(params.createdAt),
@@ -161,6 +162,59 @@ describe("ApprovalQueryService", () => {
 			shift_request: 0,
 			travel_expense_claim: 0,
 		});
+	});
+
+	it("passes includeAllApprovers through while preserving requester filtering before pagination", async () => {
+		const handlerGetApprovals = vi.fn(() =>
+			Effect.succeed([
+				createUnifiedApprovalItem({
+					id: "approval-a",
+					approvalType: "absence_entry",
+					createdAt: "2026-04-11T09:00:00.000Z",
+					priority: "normal",
+					requesterId: "employee-1",
+					approverId: "manager-1",
+				}),
+				createUnifiedApprovalItem({
+					id: "approval-b",
+					approvalType: "absence_entry",
+					createdAt: "2026-04-12T09:00:00.000Z",
+					priority: "normal",
+					requesterId: "employee-2",
+					approverId: "manager-2",
+				}),
+			]),
+		);
+		approvalQueryTestState.handlers = [
+			{
+				type: "absence_entry",
+				getApprovals: handlerGetApprovals,
+				getCount: vi.fn(() => Effect.succeed(2)),
+			},
+		];
+
+		const result = await runApprovalQuery(
+			Effect.gen(function* (_) {
+				const service = yield* _(ApprovalQueryService);
+				return yield* _(
+					service.getApprovals({
+						approverId: "admin-1",
+						organizationId: "org-1",
+						status: "pending",
+						requesterEmployeeIds: ["employee-1", "employee-2"],
+						includeAllApprovers: true,
+						limit: 1,
+					}),
+				);
+			}),
+		);
+
+		expect(handlerGetApprovals).toHaveBeenCalledWith(
+			expect.objectContaining({ includeAllApprovers: true }),
+		);
+		expect(result.total).toBe(2);
+		expect(result.items).toHaveLength(1);
+		expect(result.hasMore).toBe(true);
 	});
 
 	it("keeps same-timestamp items reachable across cursor pages", async () => {

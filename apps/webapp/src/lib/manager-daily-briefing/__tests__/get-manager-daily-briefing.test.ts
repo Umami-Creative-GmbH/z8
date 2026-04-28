@@ -69,6 +69,88 @@ describe("getManagerDailyBriefingFromSources", () => {
 		});
 	});
 
+	it("loads all approvers for admin briefing approvals", async () => {
+		const sources = createSources();
+		await getManagerDailyBriefingFromSources({
+			organizationId: "org-1",
+			currentEmployee: { id: "admin-1", role: "admin" },
+			now: DateTime.fromISO("2026-04-28T09:20:00.000+02:00"),
+			sources,
+		});
+
+		expect(sources.getApprovals).toHaveBeenCalledWith({
+			organizationId: "org-1",
+			approverId: "admin-1",
+			employeeIds: ["emp-1"],
+			includeAllApprovers: true,
+		});
+	});
+
+	it("does not surface manager coverage risks for subareas outside scoped shifts", async () => {
+		const sources = createSources({
+			getCoverageRules: vi.fn().mockResolvedValue([
+				{
+					id: "rule-1",
+					subareaId: "subarea-1",
+					subareaName: "Front desk",
+					dayOfWeek: "tuesday",
+					startTime: "09:00",
+					endTime: "17:00",
+					minimumStaffCount: 2,
+				},
+				{
+					id: "rule-2",
+					subareaId: "subarea-2",
+					subareaName: "Loading dock",
+					dayOfWeek: "tuesday",
+					startTime: "09:00",
+					endTime: "17:00",
+					minimumStaffCount: 1,
+				},
+			]),
+		});
+
+		const briefing = await getManagerDailyBriefingFromSources({
+			organizationId: "org-1",
+			currentEmployee: { id: "manager-1", role: "manager" },
+			now: DateTime.fromISO("2026-04-28T09:20:00.000+02:00"),
+			sources,
+		});
+
+		expect(briefing.sections.coverage.items).toEqual([
+			expect.objectContaining({ id: "coverage:rule-1", title: "Front desk is understaffed" }),
+		]);
+		expect(briefing.sections.coverage.items).not.toEqual([
+			expect.objectContaining({ title: expect.stringContaining("Loading dock") }),
+		]);
+	});
+
+	it("does not surface org-wide coverage risks when a manager has no scoped shifts today", async () => {
+		const sources = createSources({
+			getPublishedShifts: vi.fn().mockResolvedValue([]),
+			getCoverageRules: vi.fn().mockResolvedValue([
+				{
+					id: "rule-1",
+					subareaId: "subarea-1",
+					subareaName: "Front desk",
+					dayOfWeek: "tuesday",
+					startTime: "09:00",
+					endTime: "17:00",
+					minimumStaffCount: 1,
+				},
+			]),
+		});
+
+		const briefing = await getManagerDailyBriefingFromSources({
+			organizationId: "org-1",
+			currentEmployee: { id: "manager-1", role: "manager" },
+			now: DateTime.fromISO("2026-04-28T09:20:00.000+02:00"),
+			sources,
+		});
+
+		expect(briefing.sections.coverage.items).toEqual([]);
+	});
+
 	it("excludes approvals requested by employees outside the scoped employees", async () => {
 		const sources = createSources({
 			getApprovals: vi
@@ -90,6 +172,29 @@ describe("getManagerDailyBriefingFromSources", () => {
 		expect(briefing.sections.approvals.items).toEqual([
 			expect.objectContaining({ approvalId: "approval-1", requesterName: "Ada Lovelace" }),
 		]);
+	});
+
+	it("excludes approval items from needs action while keeping approval sections and summary counts", async () => {
+		const sources = createSources({
+			getApprovals: vi
+				.fn()
+				.mockResolvedValue([
+					createApproval({ id: "approval-1", requesterId: "emp-1", requesterName: "Ada Lovelace" }),
+				]),
+		});
+
+		const briefing = await getManagerDailyBriefingFromSources({
+			organizationId: "org-1",
+			currentEmployee: { id: "manager-1", role: "manager" },
+			now: DateTime.fromISO("2026-04-28T08:20:00.000+02:00"),
+			sources,
+		});
+
+		expect(briefing.summary.openApprovals).toBe(1);
+		expect(briefing.sections.approvals.items).toEqual([
+			expect.objectContaining({ approvalId: "approval-1", category: "approval" }),
+		]);
+		expect(briefing.needsAction).not.toEqual([expect.objectContaining({ category: "approval" })]);
 	});
 
 	it("keeps rendering sections when approvals fail", async () => {
@@ -143,6 +248,8 @@ function createSources(overrides = {}) {
 				startTime: "09:00",
 				endTime: "17:00",
 				status: "published",
+				subareaId: "subarea-1",
+				subareaName: "Front desk",
 			},
 		]),
 		getOpenTimeRecords: vi.fn().mockResolvedValue([]),
