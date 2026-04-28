@@ -275,6 +275,23 @@ describe("org-admin settings route access", () => {
 		expect(skillsActionsSource.includes('currentEmployee.role !== "admin"')).toBe(false);
 	});
 
+	it("scopes qualification renewal review actions to managed employee targets", () => {
+		const skillsActionsSource = stripComments(
+			readFileSync(join(SETTINGS_ROOT, "skills/actions.ts"), "utf8"),
+		);
+
+		expect(skillsActionsSource.includes("getManagedEmployeeIdsForSettingsActor(")).toBe(true);
+		expect(skillsActionsSource.includes("filterItemsToManagedEmployees(")).toBe(true);
+		expect(skillsActionsSource.includes("getQualificationRenewalRequestForReview")).toBe(true);
+		expect(skillsActionsSource.includes("renewalRequest.employeeId")).toBe(true);
+		expect(skillsActionsSource.includes("ensureSettingsActorCanAccessEmployeeTarget(")).toBe(true);
+		expect(
+			skillsActionsSource.includes(
+				"You do not have access to this employee's qualification renewal",
+			),
+		).toBe(true);
+	});
+
 	it("uses shared scoped access helpers for vacation and work-policy actions", () => {
 		const vacationActionsSource = stripComments(
 			readFileSync(join(SETTINGS_ROOT, "vacation/actions.ts"), "utf8"),

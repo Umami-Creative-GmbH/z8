@@ -1,10 +1,10 @@
 "use server";
 
 import { SpanStatusCode, trace } from "@opentelemetry/api";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { revalidateTag } from "next/cache";
-import { employee } from "@/db/schema";
+import { employee, qualificationRenewalRequest } from "@/db/schema";
 import { type AnyAppError, AuthorizationError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
@@ -36,7 +36,9 @@ import { CACHE_TAGS } from "@/lib/cache/tags";
 import { createLogger } from "@/lib/logger";
 import {
 	ensureSettingsActorCanAccessEmployeeTarget,
+	filterItemsToManagedEmployees,
 	getEmployeeSettingsActorContext,
+	getManagedEmployeeIdsForSettingsActor,
 	getTargetEmployee,
 	requireOrgAdminEmployeeSettingsAccess,
 } from "../employees/employee-action-utils";
@@ -515,6 +517,44 @@ export async function reviewQualificationRenewalRequest(
 			);
 		}
 
+		const renewalRequest = yield* _(
+			actor.dbService.query("getQualificationRenewalRequestForReview", async () => {
+				return await actor.dbService.db.query.qualificationRenewalRequest.findFirst({
+					where: and(
+						eq(qualificationRenewalRequest.id, data.requestId),
+						eq(qualificationRenewalRequest.organizationId, actor.organizationId),
+					),
+				});
+			}),
+		);
+
+		if (!renewalRequest) {
+			return yield* _(
+				Effect.fail(
+					new NotFoundError({
+						message: "Renewal request not found",
+						entityType: "qualificationRenewalRequest",
+						entityId: data.requestId,
+					}),
+				),
+			);
+		}
+
+		const targetEmployee = yield* _(
+			getTargetEmployee(
+				renewalRequest.employeeId,
+				"getQualificationRenewalRequestEmployeeForReview",
+			),
+		);
+
+		yield* _(
+			ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
+				message: "You do not have access to this employee's qualification renewal",
+				resource: "qualificationRenewalRequest",
+				action: "update",
+			}),
+		);
+
 		return yield* _(
 			skillService.reviewRenewalRequest({
 				...data,
@@ -547,7 +587,10 @@ export async function getPendingQualificationRenewalRequests(): Promise<
 			);
 		}
 
-		return yield* _(skillService.getPendingRenewalRequests(actor.organizationId));
+		const pendingRequests = yield* _(skillService.getPendingRenewalRequests(actor.organizationId));
+		const managedEmployeeIds = yield* _(getManagedEmployeeIdsForSettingsActor(actor));
+
+		return filterItemsToManagedEmployees(pendingRequests, managedEmployeeIds);
 	}).pipe(Effect.provide(AppLayer));
 
 	return runServerActionSafe(effect);
