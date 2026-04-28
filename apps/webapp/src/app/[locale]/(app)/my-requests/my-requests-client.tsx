@@ -279,6 +279,7 @@ function RequestAction({
 	preferFix?: boolean;
 }) {
 	const [isCancelPending, startCancelTransition] = useTransition();
+	const [cancelError, setCancelError] = useState<string | null>(null);
 	const canFix = item.availableActions.includes("fix");
 	const canView = item.availableActions.includes("view");
 	const canCancel = item.availableActions.includes("cancel");
@@ -289,28 +290,46 @@ function RequestAction({
 	}
 
 	function handleCancel() {
-		startCancelTransition(() => {
-			void cancelMyAbsenceRequest(item.sourceId);
+		if (!window.confirm("Cancel this absence request?")) {
+			return;
+		}
+
+		setCancelError(null);
+		startCancelTransition(async () => {
+			const result = await cancelMyAbsenceRequest(item.sourceId);
+			if (result.success) {
+				setCancelError(null);
+				return;
+			}
+
+			setCancelError(result.error ?? "Absence request could not be cancelled.");
 		});
 	}
 
 	return (
-		<div className="flex flex-wrap justify-end gap-2">
-			{label ? (
-				<Button asChild size="sm" variant={label === "Fix" ? "default" : "outline"}>
-					<Link href={item.sourceHref}>{label}</Link>
-				</Button>
-			) : null}
-			{canCancel ? (
-				<Button
-					type="button"
-					size="sm"
-					variant="destructive"
-					disabled={isCancelPending}
-					onClick={handleCancel}
-				>
-					Cancel
-				</Button>
+		<div className="grid justify-items-end gap-2">
+			<div className="flex flex-wrap justify-end gap-2">
+				{label ? (
+					<Button asChild size="sm" variant={label === "Fix" ? "default" : "outline"}>
+						<Link href={item.sourceHref}>{label}</Link>
+					</Button>
+				) : null}
+				{canCancel ? (
+					<Button
+						type="button"
+						size="sm"
+						variant="destructive"
+						disabled={isCancelPending}
+						onClick={handleCancel}
+					>
+						Cancel
+					</Button>
+				) : null}
+			</div>
+			{cancelError ? (
+				<p role="alert" className="max-w-64 text-destructive text-sm">
+					{cancelError}
+				</p>
 			) : null}
 		</div>
 	);
@@ -332,5 +351,7 @@ function formatDate(date: Date | null) {
 		return "-";
 	}
 
-	return DateTime.fromJSDate(date).toLocaleString(DateTime.DATE_MED);
+	return DateTime.fromJSDate(date, { zone: "utc" })
+		.setLocale("en")
+		.toLocaleString(DateTime.DATE_MED);
 }

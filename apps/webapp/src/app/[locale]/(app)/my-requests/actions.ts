@@ -1,7 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { and, eq } from "drizzle-orm";
 import { cancelAbsenceRequestForEmployee } from "@/app/[locale]/(app)/absences/actions";
+import { absenceEntry, db } from "@/db";
 import { getAuthContext } from "@/lib/auth-helpers";
 import { getSelfServiceRequests } from "@/lib/self-service-requests/get-self-service-requests";
 import type {
@@ -43,6 +45,22 @@ export async function cancelMyAbsenceRequest(
 	const authContext = await getAuthContext();
 	if (!authContext?.employee) {
 		return { success: false, error: "Employee profile not found" };
+	}
+
+	const [absence] = await db
+		.select({ id: absenceEntry.id })
+		.from(absenceEntry)
+		.where(
+			and(
+				eq(absenceEntry.id, absenceId),
+				eq(absenceEntry.organizationId, authContext.employee.organizationId),
+				eq(absenceEntry.employeeId, authContext.employee.id),
+			),
+		)
+		.limit(1);
+
+	if (!absence) {
+		return { success: false, error: "Absence not found" };
 	}
 
 	const result = await cancelAbsenceRequestForEmployee(absenceId, {

@@ -1,6 +1,6 @@
 /* @vitest-environment jsdom */
 
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -87,7 +87,11 @@ function createResult(overrides: Partial<SelfServiceRequestResult> = {}): SelfSe
 }
 
 describe("MyRequestsClient", () => {
-	beforeEach(() => vi.clearAllMocks());
+	beforeEach(() => {
+		vi.clearAllMocks();
+		cancelMyAbsenceRequestMock.mockResolvedValue({ success: true });
+		vi.spyOn(window, "confirm").mockReturnValue(true);
+	});
 
 	it("renders summary cards, needs-attention items, and unified rows", () => {
 		render(<MyRequestsClient initialResult={createResult()} />);
@@ -155,7 +159,7 @@ describe("MyRequestsClient", () => {
 		expect(within(timeRow).queryByRole("link", { name: "Fix" })).toBeNull();
 	});
 
-	it("renders cancel for pending absence requests only", () => {
+	it("renders cancel for pending absence requests only", async () => {
 		render(
 			<MyRequestsClient
 				initialResult={createResult({
@@ -198,8 +202,74 @@ describe("MyRequestsClient", () => {
 		const absenceRow = screen.getByRole("row", { name: /Pending vacation/ });
 		fireEvent.click(within(absenceRow).getByRole("button", { name: "Cancel" }));
 
-		expect(cancelMyAbsenceRequestMock).toHaveBeenCalledWith("absence-pending");
+		expect(window.confirm).toHaveBeenCalledWith("Cancel this absence request?");
+		await waitFor(() => {
+			expect(cancelMyAbsenceRequestMock).toHaveBeenCalledWith("absence-pending");
+		});
 		const timeRow = screen.getByRole("row", { name: /Time correction/ });
 		expect(within(timeRow).queryByRole("button", { name: "Cancel" })).toBeNull();
+	});
+
+	it("does not cancel when confirmation is declined", () => {
+		vi.mocked(window.confirm).mockReturnValue(false);
+		render(
+			<MyRequestsClient
+				initialResult={createResult({
+					items: [
+						{
+							id: "absence-pending",
+							sourceType: "absence",
+							sourceId: "absence-pending",
+							organizationId: "org-1",
+							employeeId: "employee-1",
+							status: "pending",
+							submittedAt: new Date("2026-04-25T08:00:00.000Z"),
+							resolvedAt: null,
+							title: "Pending vacation",
+							subtitle: "2026-05-01 - 2026-05-02",
+							decisionReason: null,
+							availableActions: ["view", "cancel"],
+							sourceHref: "/absences",
+						},
+					],
+				})}
+			/>,
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+
+		expect(window.confirm).toHaveBeenCalledWith("Cancel this absence request?");
+		expect(cancelMyAbsenceRequestMock).not.toHaveBeenCalled();
+	});
+
+	it("shows cancellation errors returned by the action", async () => {
+		cancelMyAbsenceRequestMock.mockResolvedValue({ success: false, error: "Cannot cancel" });
+		render(
+			<MyRequestsClient
+				initialResult={createResult({
+					items: [
+						{
+							id: "absence-pending",
+							sourceType: "absence",
+							sourceId: "absence-pending",
+							organizationId: "org-1",
+							employeeId: "employee-1",
+							status: "pending",
+							submittedAt: new Date("2026-04-25T08:00:00.000Z"),
+							resolvedAt: null,
+							title: "Pending vacation",
+							subtitle: "2026-05-01 - 2026-05-02",
+							decisionReason: null,
+							availableActions: ["view", "cancel"],
+							sourceHref: "/absences",
+						},
+					],
+				})}
+			/>,
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+
+		expect((await screen.findByRole("alert")).textContent).toContain("Cannot cancel");
 	});
 });
