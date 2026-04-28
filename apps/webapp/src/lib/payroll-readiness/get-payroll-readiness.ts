@@ -137,8 +137,8 @@ function isExportForPeriod(job: PayrollExportJobLike, start: DateTime, end: Date
 	const dateRange = job.filters?.dateRange;
 
 	return (
-		toISODateString(dateRange?.start) === (start.toISODate() ?? "")
-		&& toISODateString(dateRange?.end) === (end.toISODate() ?? "")
+		dateRange?.start?.slice(0, 10) === (start.toISODate() ?? "")
+		&& dateRange?.end?.slice(0, 10) === (end.toISODate() ?? "")
 	);
 }
 
@@ -240,8 +240,8 @@ export async function getPayrollReadiness(input: GetPayrollReadinessInput): Prom
 		db.query.payrollExportJob.findMany({
 			where: and(
 				eq(payrollExportJob.organizationId, organizationId),
-				sql`${payrollExportJob.filters}->'dateRange'->>'start' = ${selectedStartDate}`,
-				sql`${payrollExportJob.filters}->'dateRange'->>'end' = ${selectedEndDate}`,
+				sql`left(${payrollExportJob.filters}->'dateRange'->>'start', 10) = ${selectedStartDate}`,
+				sql`left(${payrollExportJob.filters}->'dateRange'->>'end', 10) = ${selectedEndDate}`,
 			),
 			orderBy: [desc(payrollExportJob.createdAt)],
 			limit: 1,

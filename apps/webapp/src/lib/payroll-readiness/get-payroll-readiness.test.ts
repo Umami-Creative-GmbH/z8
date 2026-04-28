@@ -101,7 +101,7 @@ function mockReadyQueries() {
 	mockState.payrollExportJobFindMany.mockResolvedValue([{
 		id: "job-1",
 		status: "completed",
-		filters: { dateRange: { start: "2026-04-01", end: "2026-04-30" } },
+		filters: { dateRange: { start: "2026-04-01T00:00:00.000Z", end: "2026-04-30T23:59:59.999Z" } },
 	}]);
 	mockState.travelExpenseClaimFindMany.mockResolvedValue([]);
 }
@@ -311,7 +311,7 @@ describe("getPayrollReadiness", () => {
 		mockState.payrollExportJobFindMany.mockResolvedValue([{
 			id: "job-1",
 			status: "failed",
-			filters: { dateRange: { start: "2026-04-01", end: "2026-04-30" } },
+			filters: { dateRange: { start: "2026-04-01T00:00:00.000Z", end: "2026-04-30T23:59:59.999Z" } },
 		}]);
 
 		const result = await getPayrollReadiness(defaultInput());
@@ -331,7 +331,7 @@ describe("getPayrollReadiness", () => {
 			{
 				id: "job-1",
 				status: "failed",
-				filters: { dateRange: { start: "2026-03-01", end: "2026-03-31" } },
+				filters: { dateRange: { start: "2026-03-01T00:00:00.000Z", end: "2026-03-31T23:59:59.999Z" } },
 			},
 		]);
 
@@ -344,6 +344,7 @@ describe("getPayrollReadiness", () => {
 		});
 		expect(JSON.stringify(mockState.payrollExportJobFindMany.mock.calls[0]?.[0]?.where)).toContain("2026-04-01");
 		expect(JSON.stringify(mockState.payrollExportJobFindMany.mock.calls[0]?.[0]?.where)).toContain("2026-04-30");
+		expect(JSON.stringify(mockState.payrollExportJobFindMany.mock.calls[0]?.[0]?.where)).toContain("left(");
 		expect(mockState.payrollExportJobFindMany.mock.calls[0]?.[0]?.limit).toBe(1);
 	});
 
@@ -352,17 +353,17 @@ describe("getPayrollReadiness", () => {
 			{
 				id: "newer-other-period",
 				status: "completed",
-				filters: { dateRange: { start: "2026-05-01", end: "2026-05-31" } },
+				filters: { dateRange: { start: "2026-05-01T00:00:00.000Z", end: "2026-05-31T23:59:59.999Z" } },
 			},
 			{
 				id: "selected-period-failed",
 				status: "failed",
-				filters: { dateRange: { start: "2026-04-01", end: "2026-04-30" } },
+				filters: { dateRange: { start: "2026-04-01T00:00:00.000Z", end: "2026-04-30T23:59:59.999Z" } },
 			},
 			{
 				id: "selected-period-completed",
 				status: "completed",
-				filters: { dateRange: { start: "2026-04-01", end: "2026-04-30" } },
+				filters: { dateRange: { start: "2026-04-01T00:00:00.000Z", end: "2026-04-30T23:59:59.999Z" } },
 			},
 		]);
 
