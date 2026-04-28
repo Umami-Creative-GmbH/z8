@@ -356,4 +356,20 @@ export const skillCategoryEnum = pgEnum("skill_category", [
 	"custom", // Custom category (uses customCategoryName field)
 ]);
 
+export const qualificationStatusEnum = pgEnum("qualification_status", [
+	"active",
+	"superseded",
+	"revoked",
+]);
+
+export const qualificationRenewalStatusEnum = pgEnum("qualification_renewal_status", [
+	"pending",
+	"approved",
+	"rejected",
+]);
+
+export const requirementEnforcementModeEnum = pgEnum("requirement_enforcement_mode", [
+	"warning",
+	"blocking",
+]);
 

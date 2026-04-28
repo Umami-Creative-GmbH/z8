@@ -1,6 +1,7 @@
 import {
 	boolean,
 	index,
+	integer,
 	pgTable,
 	text,
 	timestamp,
@@ -10,7 +11,12 @@ import {
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 
 import { organization, user } from "../auth-schema";
-import { skillCategoryEnum } from "./enums";
+import {
+	qualificationRenewalStatusEnum,
+	qualificationStatusEnum,
+	requirementEnforcementModeEnum,
+	skillCategoryEnum,
+} from "./enums";
 import { employee, locationSubarea } from "./organization";
 import { shift, shiftTemplate } from "./shift";
 
@@ -41,6 +47,7 @@ export const skill = pgTable(
 
 		// Whether this skill requires expiry tracking (certifications typically do)
 		requiresExpiry: boolean("requires_expiry").default(false).notNull(),
+		expiryWarningDays: integer("expiry_warning_days").default(30).notNull(),
 
 		isActive: boolean("is_active").default(true).notNull(),
 
@@ -79,6 +86,12 @@ export const employeeSkill = pgTable(
 
 		// Optional expiry tracking
 		expiresAt: timestamp("expires_at", { mode: "date" }), // null = never expires
+		issuedAt: timestamp("issued_at", { mode: "date" }),
+		issuer: text("issuer"),
+		certificateNumber: text("certificate_number"),
+		status: qualificationStatusEnum("status").default("active").notNull(),
+		renewedAt: timestamp("renewed_at"),
+		renewedBy: text("renewed_by").references(() => user.id),
 
 		// Optional notes (certification number, training date, etc.)
 		notes: text("notes"),
@@ -115,6 +128,10 @@ export const subareaSkillRequirement = pgTable(
 
 		// Whether this is a hard requirement vs preferred
 		isRequired: boolean("is_required").default(true).notNull(),
+		enforcementMode: requirementEnforcementModeEnum("enforcement_mode")
+			.default("warning")
+			.notNull(),
+		blockOnExpiringSoon: boolean("block_on_expiring_soon").default(false).notNull(),
 
 		// Audit
 		createdBy: text("created_by")
@@ -146,6 +163,10 @@ export const shiftTemplateSkillRequirement = pgTable(
 
 		// Whether this is a hard requirement vs preferred
 		isRequired: boolean("is_required").default(true).notNull(),
+		enforcementMode: requirementEnforcementModeEnum("enforcement_mode")
+			.default("warning")
+			.notNull(),
+		blockOnExpiringSoon: boolean("block_on_expiring_soon").default(false).notNull(),
 
 		// Audit
 		createdBy: text("created_by")
@@ -157,6 +178,74 @@ export const shiftTemplateSkillRequirement = pgTable(
 		index("shiftTemplateSkillReq_templateId_idx").on(table.templateId),
 		index("shiftTemplateSkillReq_skillId_idx").on(table.skillId),
 		uniqueIndex("shiftTemplateSkillReq_unique_idx").on(table.templateId, table.skillId),
+	],
+);
+
+export const qualificationEvidence = pgTable(
+	"qualification_evidence",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		employeeSkillId: uuid("employee_skill_id")
+			.notNull()
+			.references(() => employeeSkill.id, { onDelete: "cascade" }),
+		uploadedBy: text("uploaded_by")
+			.notNull()
+			.references(() => user.id),
+		storageProvider: text("storage_provider").default("s3").notNull(),
+		storageBucket: text("storage_bucket"),
+		fileKey: text("file_key").notNull(),
+		fileName: text("file_name").notNull(),
+		mimeType: text("mime_type").notNull(),
+		fileSize: integer("file_size").notNull(),
+		checksumSha256: text("checksum_sha256"),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+	},
+	(table) => [
+		index("qualificationEvidence_organizationId_idx").on(table.organizationId),
+		index("qualificationEvidence_employeeSkillId_idx").on(table.employeeSkillId),
+		index("qualificationEvidence_uploadedBy_idx").on(table.uploadedBy),
+		uniqueIndex("qualificationEvidence_employeeSkill_fileKey_idx").on(
+			table.employeeSkillId,
+			table.fileKey,
+		),
+	],
+);
+
+export const qualificationRenewalRequest = pgTable(
+	"qualification_renewal_request",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		employeeId: uuid("employee_id")
+			.notNull()
+			.references(() => employee.id, { onDelete: "cascade" }),
+		employeeSkillId: uuid("employee_skill_id")
+			.notNull()
+			.references(() => employeeSkill.id, { onDelete: "cascade" }),
+		requestedIssuedAt: timestamp("requested_issued_at", { mode: "date" }),
+		requestedExpiresAt: timestamp("requested_expires_at", { mode: "date" }),
+		requestedIssuer: text("requested_issuer"),
+		requestedCertificateNumber: text("requested_certificate_number"),
+		notes: text("notes"),
+		status: qualificationRenewalStatusEnum("status").default("pending").notNull(),
+		reviewerId: uuid("reviewer_id").references(() => employee.id, { onDelete: "set null" }),
+		reviewedAt: timestamp("reviewed_at"),
+		reviewNotes: text("review_notes"),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+		updatedAt: timestamp("updated_at")
+			.$onUpdate(() => currentTimestamp())
+			.notNull(),
+	},
+	(table) => [
+		index("qualificationRenewal_organizationId_idx").on(table.organizationId),
+		index("qualificationRenewal_employeeId_idx").on(table.employeeId),
+		index("qualificationRenewal_employeeSkillId_idx").on(table.employeeSkillId),
+		index("qualificationRenewal_status_idx").on(table.status),
 	],
 );
 
