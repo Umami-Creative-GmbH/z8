@@ -1,7 +1,8 @@
 /* @vitest-environment jsdom */
 
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { startImportCommitAction } from "@/app/[locale]/(app)/settings/import/review-actions";
 import { ImportReviewPage } from "@/components/settings/import/import-review-page";
 
 vi.mock("sonner", () => ({
@@ -33,6 +34,14 @@ const acceptedRow = {
 };
 
 describe("ImportReviewPage", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		vi.mocked(startImportCommitAction).mockResolvedValue({
+			success: true,
+			data: { queuedCount: 2 },
+		});
+	});
+
 	it("disables commit when blocked rows remain", () => {
 		render(
 			<ImportReviewPage
@@ -63,6 +72,56 @@ describe("ImportReviewPage", () => {
 			"disabled",
 			false,
 		);
+	});
+
+	it("starts commit for the current organization and batch", async () => {
+		render(
+			<ImportReviewPage
+				organizationId="org_1"
+				batchId="batch_1"
+				summary={baseSummary}
+				rows={[acceptedRow]}
+			/>,
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: /commit accepted rows/i }));
+
+		await waitFor(() => {
+			expect(startImportCommitAction).toHaveBeenCalledWith({
+				organizationId: "org_1",
+				batchId: "batch_1",
+			});
+		});
+	});
+
+	it("does not start commit when blocked rows keep the button disabled", async () => {
+		render(
+			<ImportReviewPage
+				organizationId="org_1"
+				batchId="batch_1"
+				summary={{ ...baseSummary, blockedRows: 1 }}
+				rows={[{ ...acceptedRow, id: "row_blocked", rowStatus: "blocked", issueSeverity: "blocking" }]}
+			/>,
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: /commit accepted rows/i }));
+
+		expect(startImportCommitAction).not.toHaveBeenCalled();
+	});
+
+	it("does not start commit when there are no accepted rows", async () => {
+		render(
+			<ImportReviewPage
+				organizationId="org_1"
+				batchId="batch_1"
+				summary={{ ...baseSummary, acceptedRows: 0 }}
+				rows={[]}
+			/>,
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: /commit accepted rows/i }));
+
+		expect(startImportCommitAction).not.toHaveBeenCalled();
 	});
 
 	it("renders the title and summary values", () => {

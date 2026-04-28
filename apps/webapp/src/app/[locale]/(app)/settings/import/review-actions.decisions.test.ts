@@ -98,7 +98,7 @@ describe("import review decision actions", () => {
 			totalRows: 4,
 			acceptedRows: 1,
 			rejectedRows: 1,
-			blockedRows: 1,
+			blockedRows: 0,
 			committedRows: 1,
 			issueCount: 2,
 		});
@@ -266,6 +266,27 @@ describe("import review decision actions", () => {
 			success: false,
 			error: "No accepted import review rows are available to commit",
 		});
+		expect(mockState.updateImportBatchStatus).not.toHaveBeenCalled();
+		expect(mockState.enqueueImportCommitJob).not.toHaveBeenCalled();
+	});
+
+	it("does not transition to committing when blocked rows remain", async () => {
+		mockState.getImportReviewSummary.mockResolvedValue({
+			totalRows: 4,
+			acceptedRows: 2,
+			rejectedRows: 0,
+			blockedRows: 1,
+			committedRows: 0,
+			issueCount: 1,
+		});
+
+		const result = await startImportCommitAction({ organizationId: "org_1", batchId: "batch_1" });
+
+		expect(result).toEqual({
+			success: false,
+			error: "Resolve blocked import review rows before committing",
+		});
+		expect(mockState.createCommitJobsForAcceptedRows).not.toHaveBeenCalled();
 		expect(mockState.updateImportBatchStatus).not.toHaveBeenCalled();
 		expect(mockState.enqueueImportCommitJob).not.toHaveBeenCalled();
 	});

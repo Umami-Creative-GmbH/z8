@@ -528,6 +528,14 @@ export async function startImportCommitAction(
 	try {
 		const validated = validateImportReviewBatchInput(input);
 		const authContext = await requireImportAdmin(validated.organizationId);
+		const summary = await getImportReviewSummary(validated);
+
+		if (summary.blockedRows > 0) {
+			return {
+				success: false,
+				error: "Resolve blocked import review rows before committing",
+			};
+		}
 
 		const jobs = await createCommitJobsForAcceptedRows(validated);
 		if (jobs.length === 0) {
