@@ -46,7 +46,7 @@ export function useOrganizationSkills(options: UseOrganizationSkillsOptions) {
 	});
 }
 
-export function useCreateSkill(organizationId: string) {
+export function useCreateSkill(_organizationId: string) {
 	const queryClient = useQueryClient();
 
 	return useMutation({
@@ -63,13 +63,12 @@ export function useCreateSkill(organizationId: string) {
 			return result.data;
 		},
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: queryKeys.skills.list(organizationId, false) });
-			queryClient.invalidateQueries({ queryKey: queryKeys.skills.list(organizationId, true) });
+			queryClient.invalidateQueries({ queryKey: queryKeys.skills.all });
 		},
 	});
 }
 
-export function useUpdateSkill(organizationId: string) {
+export function useUpdateSkill(_organizationId: string) {
 	const queryClient = useQueryClient();
 
 	return useMutation({
@@ -93,13 +92,12 @@ export function useUpdateSkill(organizationId: string) {
 			return result.data;
 		},
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: queryKeys.skills.list(organizationId, false) });
-			queryClient.invalidateQueries({ queryKey: queryKeys.skills.list(organizationId, true) });
+			queryClient.invalidateQueries({ queryKey: queryKeys.skills.all });
 		},
 	});
 }
 
-export function useDeleteSkill(organizationId: string) {
+export function useDeleteSkill(_organizationId: string) {
 	const queryClient = useQueryClient();
 
 	return useMutation({
@@ -108,8 +106,7 @@ export function useDeleteSkill(organizationId: string) {
 			if (!result.success) throw new Error(result.error);
 		},
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: queryKeys.skills.list(organizationId, false) });
-			queryClient.invalidateQueries({ queryKey: queryKeys.skills.list(organizationId, true) });
+			queryClient.invalidateQueries({ queryKey: queryKeys.skills.all });
 		},
 	});
 }
@@ -159,6 +156,7 @@ export function useAssignSkillToEmployee() {
 			queryClient.invalidateQueries({
 				queryKey: queryKeys.skills.employee(variables.employeeId),
 			});
+			queryClient.invalidateQueries({ queryKey: queryKeys.skills.all });
 		},
 	});
 }
@@ -175,6 +173,7 @@ export function useRemoveSkillFromEmployee() {
 			queryClient.invalidateQueries({
 				queryKey: queryKeys.skills.employee(variables.employeeId),
 			});
+			queryClient.invalidateQueries({ queryKey: queryKeys.skills.all });
 		},
 	});
 }

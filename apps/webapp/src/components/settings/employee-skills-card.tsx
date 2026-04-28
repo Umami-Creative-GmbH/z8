@@ -95,6 +95,7 @@ export function EmployeeSkillsCard({
 		onSuccess: () => {
 			toast.success(t("settings.skills.skillRemoved", "Skill removed"));
 			queryClient.invalidateQueries({ queryKey: queryKeys.skills.employee(employeeId) });
+			queryClient.invalidateQueries({ queryKey: queryKeys.skills.all });
 		},
 		onError: (error) => {
 			toast.error(error.message || t("settings.skills.removeError", "Failed to remove skill"));
@@ -109,6 +110,7 @@ export function EmployeeSkillsCard({
 
 	const handleSuccess = () => {
 		queryClient.invalidateQueries({ queryKey: queryKeys.skills.employee(employeeId) });
+		queryClient.invalidateQueries({ queryKey: queryKeys.skills.all });
 		setDialogOpen(false);
 	};
 

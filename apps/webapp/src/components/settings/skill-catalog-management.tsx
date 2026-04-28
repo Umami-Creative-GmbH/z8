@@ -126,8 +126,7 @@ export function SkillCatalogManagement({
 	const skills = skillsResult ?? [];
 
 	const invalidateSkillCatalogQueries = () => {
-		queryClient.invalidateQueries({ queryKey: queryKeys.skills.list(organizationId, false) });
-		queryClient.invalidateQueries({ queryKey: queryKeys.skills.list(organizationId, true) });
+		queryClient.invalidateQueries({ queryKey: queryKeys.skills.all });
 	};
 
 	// Delete mutation

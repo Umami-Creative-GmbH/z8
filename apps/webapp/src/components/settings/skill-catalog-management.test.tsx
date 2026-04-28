@@ -91,17 +91,14 @@ describe("SkillCatalogManagement", () => {
 		expect(screen.getByText(/Manage skills and certifications/)).toBeTruthy();
 	});
 
-	it("invalidates the active skill catalog query after deleting a skill", async () => {
+	it("invalidates the skills namespace after deleting a skill", async () => {
 		render(<SkillCatalogManagement organizationId="org-1" canManageCatalog />);
 
 		fireEvent.click(screen.getByLabelText("Delete"));
 
 		await waitFor(() => {
 			expect(invalidateQueriesMock).toHaveBeenCalledWith({
-				queryKey: ["skills", "list", "org-1", false],
-			});
-			expect(invalidateQueriesMock).toHaveBeenCalledWith({
-				queryKey: ["skills", "list", "org-1", true],
+				queryKey: ["skills"],
 			});
 		});
 	});

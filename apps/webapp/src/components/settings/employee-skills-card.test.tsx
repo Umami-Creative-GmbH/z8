@@ -6,10 +6,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { EmployeeSkillWithDetails } from "@/lib/effect/services/skill.service";
 import { EmployeeSkillsCard } from "./employee-skills-card";
 
-const { assignSkillToEmployeeMock, removeSkillFromEmployeeMock } = vi.hoisted(() => ({
-	assignSkillToEmployeeMock: vi.fn(),
-	removeSkillFromEmployeeMock: vi.fn(),
-}));
+const { assignSkillToEmployeeMock, invalidateQueriesMock, removeSkillFromEmployeeMock } =
+	vi.hoisted(() => ({
+		assignSkillToEmployeeMock: vi.fn(),
+		invalidateQueriesMock: vi.fn(),
+		removeSkillFromEmployeeMock: vi.fn(),
+	}));
 
 const employeeSkill = {
 	id: "employee-skill-1",
@@ -72,7 +74,7 @@ vi.mock("@tanstack/react-query", async () => {
 		await vi.importActual<typeof import("@tanstack/react-query")>("@tanstack/react-query");
 	return {
 		...actual,
-		useQueryClient: () => ({ invalidateQueries: vi.fn() }),
+		useQueryClient: () => ({ invalidateQueries: invalidateQueriesMock }),
 		useMutation: (options: {
 			mutationFn: (input: unknown) => Promise<unknown>;
 			onSuccess?: () => void;
@@ -118,6 +120,18 @@ describe("EmployeeSkillsCard", () => {
 			data: { id: "employee-skill-2" },
 		});
 		removeSkillFromEmployeeMock.mockResolvedValue({ success: true });
+	});
+
+	it("invalidates the skills namespace after removing a skill", async () => {
+		vi.spyOn(window, "confirm").mockReturnValue(true);
+		render(<EmployeeSkillsCard employeeId="employee-1" organizationId="org-1" canManageSkills />);
+
+		fireEvent.click(screen.getByLabelText("Remove"));
+
+		await waitFor(() => {
+			expect(removeSkillFromEmployeeMock).toHaveBeenCalledWith("employee-1", "skill-1");
+			expect(invalidateQueriesMock).toHaveBeenCalledWith({ queryKey: ["skills"] });
+		});
 	});
 
 	it("renders qualification assignment metadata", () => {
@@ -201,6 +215,7 @@ describe("EmployeeSkillsCard", () => {
 					expiresAt: new Date("2027-01-15T00:00:00.000Z"),
 				}),
 			);
+			expect(invalidateQueriesMock).toHaveBeenCalledWith({ queryKey: ["skills"] });
 		});
 	});
 
