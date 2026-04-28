@@ -171,6 +171,49 @@ describe("scanClockinImportPartition", () => {
 		]);
 	});
 
+	it("stages mapped Clockin workdays as accepted without unmatched employee issues", async () => {
+		mocks.searchWorkdays.mockResolvedValue([
+			{
+				id: 9002,
+				employee_id: 101,
+				date: "2026-01-05",
+				starts_at: "2026-01-05T08:00:00.000Z",
+				ends_at: "2026-01-05T16:00:00.000Z",
+				break_seconds: 1800,
+				work_seconds: 28800,
+				target_seconds: 28800,
+				activities: [],
+				events: [],
+			},
+		]);
+
+		const result = await scanClockinImportPartition(
+			scanJob({
+				employeeIds: ["101"],
+				employeeMappings: [
+					{ providerEmployeeId: "101", employeeId: "emp_1", userId: "user_1" },
+				],
+			}),
+		);
+
+		expect(result).toEqual({ stagedRows: 1, issues: 0 });
+		expect(mocks.insertStagedRows.mock.calls[0][0].rows).toEqual([
+			expect.objectContaining({
+				entityType: "work_period",
+				providerSourceId: "clockin:workday:9002",
+				rowStatus: "accepted",
+				issueSeverity: "none",
+				normalizedPayload: expect.objectContaining({ employeeId: "emp_1" }),
+				matchTarget: { providerEmployeeId: 101, employeeId: "emp_1", userId: "user_1" },
+			}),
+		]);
+		expect(mocks.insertImportIssues).toHaveBeenCalledWith({
+			batchId: "batch_1",
+			organizationId: "org_1",
+			issues: [],
+		});
+	});
+
 	it("does not flag valid multi-day absences as suspicious shift windows", async () => {
 		mocks.searchAbsences.mockResolvedValue([
 			{

@@ -26,6 +26,12 @@ export interface ImportDateRange {
 	endDate: string;
 }
 
+export interface ImportEmployeeMapping {
+	providerEmployeeId: string;
+	employeeId: string;
+	userId?: string | null;
+}
+
 export interface NormalizedImportRow {
 	entityType: ImportEntityType;
 	providerSourceId: string;
@@ -54,6 +60,7 @@ export interface ImportScanJobData {
 	entityType: ImportEntityType;
 	dateRange: ImportDateRange;
 	employeeIds: string[];
+	employeeMappings?: ImportEmployeeMapping[];
 	secretId: string;
 }
 

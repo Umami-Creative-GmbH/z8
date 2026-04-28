@@ -1,9 +1,10 @@
 "use server";
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
+import { employee } from "@/db/schema";
 import { env } from "@/env";
 import { requireUser } from "@/lib/auth-helpers";
 import { encryptImportCredential } from "@/lib/import-review/credential-secret";
@@ -23,6 +24,7 @@ import {
 } from "@/lib/import-review/repository";
 import type {
 	ImportDateRange,
+	ImportEmployeeMapping,
 	ImportEntityType,
 	ImportProvider,
 	ImportRowStatus,
@@ -74,11 +76,13 @@ export interface StartImportReviewScanInput {
 	selectedScope: Record<string, unknown>;
 	dateRange: ImportDateRange;
 	employeeIds: string[];
+	employeeMappings?: ImportEmployeeMapping[];
 	entityTypes: ImportEntityType[];
 }
 
 interface ValidatedStartImportReviewScanInput extends StartImportReviewScanInput {
 	credential: string;
+	employeeMappings: ImportEmployeeMapping[];
 }
 
 interface ImportReviewBatchInput {
@@ -267,6 +271,40 @@ function validateStartImportReviewScanInput(input: unknown): ValidatedStartImpor
 		throw new Error("Invalid import employee ID");
 	}
 
+	let employeeMappings: ImportEmployeeMapping[] = [];
+	if (input.employeeMappings !== undefined) {
+		if (!Array.isArray(input.employeeMappings)) {
+			throw new Error("Import employee mappings must be an array");
+		}
+
+		if (input.employeeMappings.length > MAX_EMPLOYEE_IDS) {
+			throw new Error("Too many employee mappings requested");
+		}
+
+		employeeMappings = input.employeeMappings.map((mapping) => {
+			if (!isRecord(mapping)) throw new Error("Invalid import employee mapping");
+
+			const providerEmployeeId =
+				typeof mapping.providerEmployeeId === "string" ? mapping.providerEmployeeId.trim() : "";
+			if (!providerEmployeeId || providerEmployeeId.length > MAX_EMPLOYEE_ID_LENGTH) {
+				throw new Error("Invalid import provider employee ID");
+			}
+
+			let userId: string | null | undefined;
+			if (mapping.userId !== undefined && mapping.userId !== null) {
+				userId = validateSafeId(mapping.userId, "Mapped user ID");
+			} else if (mapping.userId === null) {
+				userId = null;
+			}
+
+			return {
+				providerEmployeeId,
+				employeeId: validateSafeId(mapping.employeeId, "Mapped employee ID"),
+				userId,
+			};
+		});
+	}
+
 	if (!Array.isArray(input.entityTypes) || input.entityTypes.length === 0) {
 		throw new Error("At least one import entity type is required");
 	}
@@ -287,8 +325,28 @@ function validateStartImportReviewScanInput(input: unknown): ValidatedStartImpor
 		selectedScope: input.selectedScope,
 		dateRange: { startDate, endDate },
 		employeeIds: input.employeeIds,
+		employeeMappings,
 		entityTypes: input.entityTypes as ImportEntityType[],
 	};
+}
+
+async function validateMappedEmployeeOwnership(
+	employeeMappings: ImportEmployeeMapping[],
+	organizationId: string,
+): Promise<void> {
+	if (employeeMappings.length === 0) return;
+
+	const mappedEmployeeIds = [...new Set(employeeMappings.map((mapping) => mapping.employeeId))];
+	const validEmployees = await db
+		.select({ id: employee.id })
+		.from(employee)
+		.where(and(eq(employee.organizationId, organizationId), inArray(employee.id, mappedEmployeeIds)));
+
+	const validIds = new Set(validEmployees.map((entry) => entry.id));
+	const invalidIds = mappedEmployeeIds.filter((id) => !validIds.has(id));
+	if (invalidIds.length > 0) {
+		throw new Error("One or more mapped employee IDs do not belong to this organization");
+	}
 }
 
 function sanitizeErrorMessage(
@@ -329,6 +387,7 @@ export async function startImportReviewScan(
 		const validated = validateStartImportReviewScanInput(input);
 		credential = validated.credential;
 		const authContext = await requireImportAdmin(validated.organizationId);
+		await validateMappedEmployeeOwnership(validated.employeeMappings, validated.organizationId);
 
 		const datePartitions = partitionDateRangeByMonth(
 			validated.dateRange.startDate,
@@ -384,6 +443,7 @@ export async function startImportReviewScan(
 				entityType: job.entityType,
 				dateRange: job.dateRange,
 				employeeIds: validated.employeeIds,
+				employeeMappings: validated.employeeMappings,
 				secretId: secret.id,
 			});
 		}

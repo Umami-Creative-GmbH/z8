@@ -66,7 +66,7 @@ describe("ClockinImportWizard", () => {
 		expect(screen.getByText("12")).toBeTruthy();
 	});
 
-	it("starts an import review scan instead of importing directly", async () => {
+	it("starts an import review scan with mapped employees instead of importing directly", async () => {
 		mocks.validateClockinCredentials.mockResolvedValue({
 			success: true,
 			data: { employees: 2, workdays: 12, absences: 2, schedules: 0 },
@@ -97,6 +97,7 @@ describe("ClockinImportWizard", () => {
 
 		fireEvent.click(screen.getByRole("button", { name: "Map Employees" }));
 		await screen.findByRole("button", { name: "Continue" });
+		fireEvent.change(screen.getByLabelText("Map Grace Hopper"), { target: { value: "" } });
 
 		fireEvent.click(screen.getByRole("button", { name: "Continue" }));
 		await screen.findByText("Import Scope");
@@ -116,7 +117,10 @@ describe("ClockinImportWizard", () => {
 					dateRange: { startDate: "2026-01-01", endDate: "2026-01-31" },
 				},
 				dateRange: { startDate: "2026-01-01", endDate: "2026-01-31" },
-				employeeIds: ["101", "202"],
+				employeeIds: ["101"],
+				employeeMappings: [
+					{ providerEmployeeId: "101", employeeId: "emp_1", userId: "user_1" },
+				],
 				entityTypes: ["work_period", "absence"],
 			});
 		});

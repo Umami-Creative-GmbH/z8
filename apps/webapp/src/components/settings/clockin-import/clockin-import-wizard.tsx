@@ -130,6 +130,13 @@ export function ClockinImportWizard({ organizationId }: ClockinImportWizardProps
 		setBusyAction("import");
 		setStep("importing");
 		try {
+			const employeeMappings = mappings
+				.filter((entry) => entry.employeeId != null)
+				.map((entry) => ({
+					providerEmployeeId: String(entry.clockinEmployeeId),
+					employeeId: entry.employeeId as string,
+					userId: entry.userId,
+				}));
 			const entityTypes = [
 				...(selections.workdays ? (["work_period"] as const) : []),
 				...(selections.absences ? (["absence"] as const) : []),
@@ -140,7 +147,8 @@ export function ClockinImportWizard({ organizationId }: ClockinImportWizardProps
 				credential: token,
 				selectedScope: selections,
 				dateRange: selections.dateRange,
-				employeeIds: mappings.map((entry) => String(entry.clockinEmployeeId)),
+				employeeIds: employeeMappings.map((entry) => entry.providerEmployeeId),
+				employeeMappings,
 				entityTypes,
 			});
 
