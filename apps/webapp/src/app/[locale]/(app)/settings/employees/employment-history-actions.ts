@@ -10,7 +10,7 @@ import {
 	workPolicyAssignment,
 } from "@/db/schema";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
-import { NotFoundError } from "@/lib/effect/errors";
+import { NotFoundError, ValidationError } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { adjustConfirmedTimeline, type TimelineUpdate } from "@/lib/employment-history/timeline";
 import { createLogger } from "@/lib/logger";
@@ -35,6 +35,10 @@ type EmploymentHistoryEffectiveRow = Pick<
 	"reviewState" | "validFrom" | "validUntil"
 >;
 
+type EmploymentHistoryReviewRow = Pick<EmployeeEmploymentHistory, "reviewState">;
+
+type EmploymentHistoryCancelableRow = Pick<EmployeeEmploymentHistory, "reviewState" | "validFrom">;
+
 type EmploymentHistoryAssignmentRow = Pick<
 	EmployeeEmploymentHistory,
 	"employeeId" | "organizationId" | "workPolicyId" | "validFrom" | "validUntil" | "reviewState"
@@ -58,6 +62,21 @@ export function shouldUpdateCurrentEmployeeFields(
 	const validUntil = row.validUntil ? DateTime.fromJSDate(row.validUntil).toUTC() : null;
 
 	return validFrom <= current && (!validUntil || validUntil > current);
+}
+
+export function shouldConfirmEmploymentHistoryRow(row: EmploymentHistoryReviewRow) {
+	return row.reviewState === "draft" || row.reviewState === "pending";
+}
+
+export function canCancelEmploymentHistoryRow(
+	row: EmploymentHistoryCancelableRow,
+	now = DateTime.utc().toJSDate(),
+) {
+	if (row.reviewState === "draft" || row.reviewState === "pending") {
+		return true;
+	}
+
+	return DateTime.fromJSDate(row.validFrom).toUTC() > DateTime.fromJSDate(now).toUTC();
 }
 
 export function buildEmploymentAssignmentSyncPlan(row: EmploymentHistoryAssignmentRow) {
@@ -336,6 +355,280 @@ export async function createEmployeeEmploymentHistoryAction(
 				revalidateEmployeesCache(actor.organizationId);
 
 				return createdHistory;
+			}),
+	});
+}
+
+export async function confirmEmployeeEmploymentHistoryAction(
+	employeeId: string,
+	historyId: string,
+): Promise<ServerActionResult<EmployeeEmploymentHistory>> {
+	"use server";
+
+	return runTracedEmployeeAction({
+		name: "confirmEmployeeEmploymentHistory",
+		attributes: {
+			"employee.id": employeeId,
+			"employment_history.id": historyId,
+		},
+		logError: (error) => {
+			logger.error({ error, employeeId, historyId }, "Failed to confirm employment history");
+		},
+		execute: () =>
+			Effect.gen(function* (_) {
+				const actor = yield* _(getEmployeeSettingsActorContext());
+				const { dbService, session } = actor;
+
+				yield* _(
+					requireOrgAdminEmployeeSettingsAccess(actor, {
+						message: "Only organization admins can confirm employment history",
+						resource: "employment_history",
+						action: "confirm",
+					}),
+				);
+
+				const targetEmployee = yield* _(getTargetEmployee(employeeId));
+
+				yield* _(
+					ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
+						message: "You do not have access to this employee's employment history",
+						resource: "employment_history",
+						action: "confirm",
+					}),
+				);
+
+				const confirmedHistory = yield* _(
+					dbService.query("confirmEmployeeEmploymentHistory", async () => {
+						return await dbService.db.transaction(async (tx) => {
+							await tx.execute(sql`
+								select ${employee.id}
+								from ${employee}
+								where ${employee.id} = ${employeeId}
+									and ${employee.organizationId} = ${actor.organizationId}
+								for update
+							`);
+
+							const existing = await tx.query.employeeEmploymentHistory.findMany({
+								where: and(
+									eq(employeeEmploymentHistory.employeeId, employeeId),
+									eq(employeeEmploymentHistory.organizationId, actor.organizationId),
+								),
+							});
+							const targetHistory = existing.find((row) => row.id === historyId);
+
+							if (!targetHistory) {
+								throw new NotFoundError({
+									message: "Employment history not found",
+									entityType: "employment_history",
+									entityId: historyId,
+								});
+							}
+
+							if (!shouldConfirmEmploymentHistoryRow(targetHistory)) {
+								throw new ValidationError({
+									message: "Employment history is already confirmed",
+									field: "reviewState",
+								});
+							}
+
+							const now = currentTimestamp();
+							const adjusted = adjustConfirmedTimeline({
+								existing,
+								next: { ...targetHistory, reviewState: "confirmed" as const },
+							});
+							const assignmentWindowUpdates = buildEmploymentAssignmentWindowUpdates({
+								updates: adjusted.updates,
+								existing,
+							});
+
+							for (const update of adjusted.updates) {
+								await tx
+									.update(employeeEmploymentHistory)
+									.set({
+										validUntil: update.validUntil,
+										updatedBy: session.user.id,
+										updatedAt: now,
+									})
+									.where(
+										and(
+											eq(employeeEmploymentHistory.id, update.id),
+											eq(employeeEmploymentHistory.employeeId, employeeId),
+											eq(employeeEmploymentHistory.organizationId, actor.organizationId),
+										),
+									);
+							}
+
+							for (const update of assignmentWindowUpdates) {
+								await tx
+									.update(workPolicyAssignment)
+									.set({
+										effectiveUntil: update.effectiveUntil,
+										updatedAt: now,
+									})
+									.where(
+										and(
+											eq(workPolicyAssignment.employeeId, update.employeeId),
+											eq(workPolicyAssignment.organizationId, update.organizationId),
+											eq(workPolicyAssignment.policyId, update.workPolicyId),
+											eq(workPolicyAssignment.assignmentType, "employee"),
+											eq(workPolicyAssignment.isActive, true),
+											eq(workPolicyAssignment.effectiveFrom, update.effectiveFrom),
+										),
+									);
+							}
+
+							const [updated] = await tx
+								.update(employeeEmploymentHistory)
+								.set({
+									validUntil: adjusted.next.validUntil,
+									reviewState: "confirmed",
+									updatedBy: session.user.id,
+									updatedAt: now,
+								})
+								.where(
+									and(
+										eq(employeeEmploymentHistory.id, historyId),
+										eq(employeeEmploymentHistory.employeeId, employeeId),
+										eq(employeeEmploymentHistory.organizationId, actor.organizationId),
+									),
+								)
+								.returning();
+
+							if (!updated) {
+								throw new Error("Employment history update returned no row");
+							}
+
+							if (shouldUpdateCurrentEmployeeFields(updated, now)) {
+								await tx
+									.update(employee)
+									.set({
+										contractType: updated.contractType,
+										currentHourlyRate: updated.hourlyRate,
+										updatedAt: now,
+									})
+									.where(
+										and(
+											eq(employee.id, employeeId),
+											eq(employee.organizationId, actor.organizationId),
+										),
+									);
+							}
+
+							const assignmentPlan = buildEmploymentAssignmentSyncPlan(updated);
+							if (assignmentPlan) {
+								await tx.insert(workPolicyAssignment).values({
+									...assignmentPlan,
+									createdBy: session.user.id,
+									createdAt: now,
+									updatedAt: now,
+								});
+							}
+
+							return updated;
+						});
+					}),
+				);
+
+				revalidateEmployeesCache(actor.organizationId);
+
+				return confirmedHistory;
+			}),
+	});
+}
+
+export async function cancelEmployeeEmploymentHistoryAction(
+	employeeId: string,
+	historyId: string,
+): Promise<ServerActionResult<void>> {
+	"use server";
+
+	return runTracedEmployeeAction({
+		name: "cancelEmployeeEmploymentHistory",
+		attributes: {
+			"employee.id": employeeId,
+			"employment_history.id": historyId,
+		},
+		logError: (error) => {
+			logger.error({ error, employeeId, historyId }, "Failed to cancel employment history");
+		},
+		execute: () =>
+			Effect.gen(function* (_) {
+				const actor = yield* _(getEmployeeSettingsActorContext());
+				const { dbService } = actor;
+
+				yield* _(
+					requireOrgAdminEmployeeSettingsAccess(actor, {
+						message: "Only organization admins can cancel employment history",
+						resource: "employment_history",
+						action: "cancel",
+					}),
+				);
+
+				const targetEmployee = yield* _(getTargetEmployee(employeeId));
+
+				yield* _(
+					ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
+						message: "You do not have access to this employee's employment history",
+						resource: "employment_history",
+						action: "cancel",
+					}),
+				);
+
+				yield* _(
+					dbService.query("cancelEmployeeEmploymentHistory", async () => {
+						await dbService.db.transaction(async (tx) => {
+							const targetHistory = await tx.query.employeeEmploymentHistory.findFirst({
+								where: and(
+									eq(employeeEmploymentHistory.id, historyId),
+									eq(employeeEmploymentHistory.employeeId, employeeId),
+									eq(employeeEmploymentHistory.organizationId, actor.organizationId),
+								),
+							});
+
+							if (!targetHistory) {
+								throw new NotFoundError({
+									message: "Employment history not found",
+									entityType: "employment_history",
+									entityId: historyId,
+								});
+							}
+
+							if (!canCancelEmploymentHistoryRow(targetHistory)) {
+								throw new ValidationError({
+									message: "Employment history has already taken effect",
+									field: "validFrom",
+								});
+							}
+
+							await tx
+								.delete(employeeEmploymentHistory)
+								.where(
+									and(
+										eq(employeeEmploymentHistory.id, historyId),
+										eq(employeeEmploymentHistory.employeeId, employeeId),
+										eq(employeeEmploymentHistory.organizationId, actor.organizationId),
+									),
+								);
+
+							if (targetHistory.reviewState === "confirmed" && targetHistory.workPolicyId) {
+								await tx
+									.delete(workPolicyAssignment)
+									.where(
+										and(
+											eq(workPolicyAssignment.employeeId, targetHistory.employeeId),
+											eq(workPolicyAssignment.organizationId, targetHistory.organizationId),
+											eq(workPolicyAssignment.policyId, targetHistory.workPolicyId),
+											eq(workPolicyAssignment.assignmentType, "employee"),
+											eq(workPolicyAssignment.isActive, true),
+											eq(workPolicyAssignment.effectiveFrom, targetHistory.validFrom),
+										),
+									);
+							}
+						});
+					}),
+				);
+
+				revalidateEmployeesCache(actor.organizationId);
 			}),
 	});
 }

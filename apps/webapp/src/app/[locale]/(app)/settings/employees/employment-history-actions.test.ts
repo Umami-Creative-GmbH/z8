@@ -32,6 +32,8 @@ vi.mock("./employee-action-utils", () => ({
 import {
 	buildEmploymentAssignmentSyncPlan,
 	buildEmploymentAssignmentWindowUpdates,
+	canCancelEmploymentHistoryRow,
+	shouldConfirmEmploymentHistoryRow,
 	shouldUpdateCurrentEmployeeFields,
 } from "./employment-history-actions";
 
@@ -131,5 +133,27 @@ describe("employment history action helpers", () => {
 				],
 			}),
 		).toEqual([]);
+	});
+
+	it("allows confirming draft and pending rows", () => {
+		expect(shouldConfirmEmploymentHistoryRow({ reviewState: "draft" })).toBe(true);
+		expect(shouldConfirmEmploymentHistoryRow({ reviewState: "pending" })).toBe(true);
+		expect(shouldConfirmEmploymentHistoryRow({ reviewState: "confirmed" })).toBe(false);
+	});
+
+	it("allows canceling rows that have not taken effect", () => {
+		const now = d("2026-04-01");
+		expect(
+			canCancelEmploymentHistoryRow({ reviewState: "draft", validFrom: d("2026-01-01") }, now),
+		).toBe(true);
+		expect(
+			canCancelEmploymentHistoryRow({ reviewState: "pending", validFrom: d("2026-01-01") }, now),
+		).toBe(true);
+		expect(
+			canCancelEmploymentHistoryRow({ reviewState: "confirmed", validFrom: d("2026-05-01") }, now),
+		).toBe(true);
+		expect(
+			canCancelEmploymentHistoryRow({ reviewState: "confirmed", validFrom: d("2026-03-01") }, now),
+		).toBe(false);
 	});
 });
