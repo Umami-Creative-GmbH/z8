@@ -1,6 +1,6 @@
 /* @vitest-environment jsdom */
 
-import { IconShieldCheck } from "@tabler/icons-react";
+import { IconCertificate, IconShieldCheck } from "@tabler/icons-react";
 import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -106,6 +106,23 @@ describe("app sidebar compliance navigation", () => {
 		expect(navMainSpy).toHaveBeenLastCalledWith(
 			expect.arrayContaining([
 				expect.objectContaining({ title: "My Requests", url: "/my-requests" }),
+			]),
+		);
+	});
+
+	it("renders My Qualifications as a personal navigation item for employees", () => {
+		render(<AppSidebar employeeRole="employee" />);
+
+		expect(screen.getByRole("link", { name: "My Qualifications" }).getAttribute("href")).toBe(
+			"/my-qualifications",
+		);
+		expect(navMainSpy).toHaveBeenLastCalledWith(
+			expect.arrayContaining([
+				expect.objectContaining({
+					title: "My Qualifications",
+					url: "/my-qualifications",
+					icon: IconCertificate,
+				}),
 			]),
 		);
 	});
