@@ -227,14 +227,14 @@ export async function getPayrollReadiness(input: GetPayrollReadinessInput): Prom
 		}),
 	]);
 
-	const wageMappings = await db.query.payrollWageTypeMapping.findMany({
-		where: exportConfigs.length > 0
-			? and(
+	const wageMappings = exportConfigs.length > 0
+		? await db.query.payrollWageTypeMapping.findMany({
+			where: and(
 				eq(payrollWageTypeMapping.isActive, true),
 				or(...exportConfigs.map((config) => eq(payrollWageTypeMapping.configId, config.id))),
-			)
-			: eq(payrollWageTypeMapping.isActive, true),
-	});
+			),
+		})
+		: [];
 
 	const staleActiveWorkRecords = activeWorkRecords.filter((record) => {
 		const startAt = DateTime.fromJSDate(record.startAt);

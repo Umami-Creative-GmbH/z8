@@ -177,7 +177,7 @@ describe("getPayrollReadiness", () => {
 		const result = await getPayrollReadiness(defaultInput());
 
 		expect(result.status).toBe("blocked");
-		expect(result.summary.blockerCount).toBe(1);
+		expect(result.summary.blockerCount).toBe(2);
 		expect(result.summary.configuredExportTargetCount).toBe(0);
 		expect(getCheck(result, "payroll-export-targets")).toMatchObject({
 			status: "fail",
@@ -185,6 +185,20 @@ describe("getPayrollReadiness", () => {
 			count: 0,
 			actionHref: "/settings/payroll-export",
 		});
+	});
+
+	it("does not pass wage mappings from global data when no org export target exists", async () => {
+		mockState.payrollExportConfigFindMany.mockResolvedValue([]);
+		mockState.payrollWageTypeMappingFindMany.mockResolvedValue([{ id: "other-org-mapping" }]);
+
+		const result = await getPayrollReadiness(defaultInput());
+
+		expect(result.status).toBe("blocked");
+		expect(getCheck(result, "wage-type-mappings")).toMatchObject({
+			status: "fail",
+			severity: "blocker",
+		});
+		expect(mockState.payrollWageTypeMappingFindMany).not.toHaveBeenCalled();
 	});
 
 	it("blocks when no wage type mappings are configured", async () => {
