@@ -70,15 +70,15 @@ function commitJob(overrides: Record<string, unknown> = {}) {
 }
 
 describe("processImportReviewJob", () => {
-	it("routes clockin scan jobs and marks them completed with processed row count", async () => {
-		scanClockinImportPartitionMock.mockResolvedValue(7);
+	it("routes clockin scan jobs and marks them completed with staged row count", async () => {
+		scanClockinImportPartitionMock.mockResolvedValue({ stagedRows: 7, issues: 2 });
 
 		const result = await processImportReviewJob(scanJob());
 
 		expect(result).toEqual({
 			success: true,
 			message: "Import review scan completed",
-			data: { processedRows: 7 },
+			data: { stagedRows: 7, issues: 2 },
 		});
 		expect(updateImportBatchJobMock).toHaveBeenNthCalledWith(1, {
 			jobId: "job_1",
@@ -100,7 +100,7 @@ describe("processImportReviewJob", () => {
 	});
 
 	it("routes clockodo scan jobs to the clockodo adapter", async () => {
-		scanClockodoImportPartitionMock.mockResolvedValue(3);
+		scanClockodoImportPartitionMock.mockResolvedValue({ stagedRows: 3, issues: 1 });
 
 		const result = await processImportReviewJob(
 			scanJob({
@@ -112,7 +112,7 @@ describe("processImportReviewJob", () => {
 		);
 
 		expect(result.success).toBe(true);
-		expect(result.data).toEqual({ processedRows: 3 });
+		expect(result.data).toEqual({ stagedRows: 3, issues: 1 });
 		expect(scanClockodoImportPartitionMock).toHaveBeenCalledTimes(1);
 		expect(scanClockinImportPartitionMock).not.toHaveBeenCalled();
 	});

@@ -8,6 +8,11 @@ import type { ImportCommitJobData, ImportScanJobData } from "./types";
 
 type ImportReviewJobData = ImportScanJobData | ImportCommitJobData;
 
+interface ImportScanResult {
+	stagedRows: number;
+	issues: number;
+}
+
 function isFinalAttempt(job: Job<ImportReviewJobData>): boolean {
 	const maxAttempts = typeof job.opts.attempts === "number" && job.opts.attempts > 0 ? job.opts.attempts : 1;
 	return job.attemptsMade + 1 >= maxAttempts;
@@ -49,23 +54,23 @@ export async function processImportReviewJob(job: Job<ImportReviewJobData>): Pro
 
 		switch (data.type) {
 			case "import-review-scan": {
-				let processedRows: number;
+				let scanResult: ImportScanResult;
 				switch (data.provider) {
 					case "clockin":
-						processedRows = await scanClockinImportPartition(data);
+						scanResult = await scanClockinImportPartition(data);
 						break;
 					case "clockodo":
-						processedRows = await scanClockodoImportPartition(data);
+						scanResult = await scanClockodoImportPartition(data);
 						break;
 					default:
 						throw new Error(`Unsupported import review provider: ${String(data.provider)}`);
 				}
 
-				await markCompleted(data, processedRows);
+				await markCompleted(data, scanResult.stagedRows);
 				return {
 					success: true,
 					message: "Import review scan completed",
-					data: { processedRows },
+					data: scanResult,
 				};
 			}
 
