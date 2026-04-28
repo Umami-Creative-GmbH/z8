@@ -7,6 +7,7 @@ import {
 	IconClipboardCheck,
 	IconClock,
 	IconDashboard,
+	IconFileDescription,
 	IconHelp,
 	IconReceipt,
 	IconReport,
@@ -61,6 +62,12 @@ export function AppSidebar({
 			url: "/time-tracking",
 			icon: IconClock,
 			dataTour: "nav-time-tracking",
+		},
+		{
+			title: t("nav.my-requests", "My Requests"),
+			url: "/my-requests",
+			icon: IconFileDescription,
+			dataTour: "nav-my-requests",
 		},
 		{
 			title: t("nav.calendar", "Calendar"),
