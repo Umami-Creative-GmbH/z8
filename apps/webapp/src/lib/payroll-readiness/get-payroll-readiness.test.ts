@@ -18,6 +18,11 @@ const operatorState = vi.hoisted(() => ({
 	lte: vi.fn((column: unknown, value: unknown) => ({ op: "lte", column, value })),
 	or: vi.fn((...conditions: unknown[]) => ({ op: "or", conditions })),
 	isNull: vi.fn((column: unknown) => ({ op: "isNull", column })),
+	sql: vi.fn((strings: TemplateStringsArray, ...values: unknown[]) => ({
+		op: "sql",
+		strings: Array.from(strings),
+		values,
+	})),
 }));
 
 vi.mock("drizzle-orm", () => operatorState);
@@ -36,6 +41,7 @@ vi.mock("@/db", () => ({
 	timeRecord: {
 		organizationId: "time-record.organizationId",
 		recordKind: "time-record.recordKind",
+		approvalState: "time-record.approvalState",
 		startAt: "time-record.startAt",
 		endAt: "time-record.endAt",
 	},
@@ -52,6 +58,7 @@ vi.mock("@/db", () => ({
 	},
 	payrollExportJob: {
 		organizationId: "payroll-export-job.organizationId",
+		filters: "payroll-export-job.filters",
 		createdAt: "payroll-export-job.createdAt",
 	},
 	travelExpenseClaim: {
@@ -128,7 +135,6 @@ describe("getPayrollReadiness", () => {
 
 		for (const findMany of [
 			mockState.timeRecordFindMany,
-			mockState.approvalRequestFindMany,
 			mockState.payrollExportConfigFindMany,
 			mockState.payrollExportJobFindMany,
 			mockState.travelExpenseClaimFindMany,
@@ -137,13 +143,15 @@ describe("getPayrollReadiness", () => {
 		}
 	});
 
-	it("blocks for pending approval requests", async () => {
-		mockState.approvalRequestFindMany.mockResolvedValue([
+	it("blocks for pending approval records", async () => {
+		mockState.timeRecordFindMany
+			.mockResolvedValueOnce([])
+			.mockResolvedValueOnce([
 			{
-				id: "approval-1",
-				requestedBy: "employee-1",
-				canonicalRecord: { startAt: new Date("2026-04-15T08:00:00.000Z") },
-				requester: {
+				id: "record-1",
+				employeeId: "employee-1",
+				startAt: new Date("2026-04-15T08:00:00.000Z"),
+				employee: {
 					id: "employee-1",
 					employeeNumber: "E-1001",
 					user: { name: "Ada Lovelace", email: "ada@example.com" },
@@ -170,19 +178,21 @@ describe("getPayrollReadiness", () => {
 		});
 	});
 
-	it("does not block for pending approvals outside the selected period", async () => {
-		mockState.approvalRequestFindMany.mockResolvedValue([
+	it("does not block for out-of-period active records when pending approval records query is empty", async () => {
+		mockState.timeRecordFindMany
+			.mockResolvedValueOnce([
 			{
-				id: "approval-1",
-				requestedBy: "employee-1",
-				canonicalRecord: { startAt: new Date("2026-03-31T08:00:00.000Z") },
-				requester: {
+				id: "active-out-of-period",
+				employeeId: "employee-1",
+				startAt: new Date("2026-03-31T08:00:00.000Z"),
+				employee: {
 					id: "employee-1",
 					employeeNumber: "E-1001",
 					user: { name: "Ada Lovelace", email: "ada@example.com" },
 				},
 			},
-		]);
+			])
+			.mockResolvedValueOnce([]);
 
 		const result = await getPayrollReadiness(defaultInput());
 
@@ -194,13 +204,15 @@ describe("getPayrollReadiness", () => {
 		});
 	});
 
-	it("blocks for pending approvals inside the selected period", async () => {
-		mockState.approvalRequestFindMany.mockResolvedValue([
+	it("blocks for pending approval records inside the selected period", async () => {
+		mockState.timeRecordFindMany
+			.mockResolvedValueOnce([])
+			.mockResolvedValueOnce([
 			{
-				id: "approval-1",
-				requestedBy: "employee-1",
-				canonicalRecord: { startAt: new Date("2026-04-30T08:00:00.000Z") },
-				requester: {
+				id: "record-1",
+				employeeId: "employee-1",
+				startAt: new Date("2026-04-30T08:00:00.000Z"),
+				employee: {
 					id: "employee-1",
 					employeeNumber: "E-1001",
 					user: { name: "Ada Lovelace", email: "ada@example.com" },
@@ -216,10 +228,12 @@ describe("getPayrollReadiness", () => {
 			severity: "blocker",
 			count: 1,
 		});
+		expect(JSON.stringify(mockState.timeRecordFindMany.mock.calls[1]?.[0]?.where)).toContain("time-record.approvalState");
+		expect(JSON.stringify(mockState.timeRecordFindMany.mock.calls[1]?.[0]?.where)).toContain("pending");
 	});
 
 	it("treats stale active work periods as warning-only", async () => {
-		mockState.timeRecordFindMany.mockResolvedValue([
+		mockState.timeRecordFindMany.mockResolvedValueOnce([
 			{ id: "recent", employeeId: "employee-1", startAt: new Date("2026-04-28T08:00:00.000Z") },
 			{
 				id: "stale",
@@ -231,7 +245,7 @@ describe("getPayrollReadiness", () => {
 					user: { name: "Grace Hopper", email: "grace@example.com" },
 				},
 			},
-		]);
+		]).mockResolvedValueOnce([]);
 
 		const result = await getPayrollReadiness(defaultInput());
 
@@ -328,6 +342,9 @@ describe("getPayrollReadiness", () => {
 			status: "pass",
 			count: 0,
 		});
+		expect(JSON.stringify(mockState.payrollExportJobFindMany.mock.calls[0]?.[0]?.where)).toContain("2026-04-01");
+		expect(JSON.stringify(mockState.payrollExportJobFindMany.mock.calls[0]?.[0]?.where)).toContain("2026-04-30");
+		expect(mockState.payrollExportJobFindMany.mock.calls[0]?.[0]?.limit).toBe(1);
 	});
 
 	it("blocks when the most recent payroll export for the selected period failed", async () => {
@@ -417,6 +434,31 @@ describe("getPayrollReadiness", () => {
 		});
 		expect(JSON.stringify(mockState.travelExpenseClaimFindMany.mock.calls[0]?.[0]?.where)).toContain("lte");
 		expect(JSON.stringify(mockState.travelExpenseClaimFindMany.mock.calls[0]?.[0]?.where)).toContain("gte");
+	});
+
+	it("treats travel claims starting inside and ending after the selected period as warning-only", async () => {
+		mockState.travelExpenseClaimFindMany.mockResolvedValue([
+			{
+				id: "claim-1",
+				employeeId: "employee-1",
+				tripStart: new Date("2026-04-29T08:00:00.000Z"),
+				tripEnd: new Date("2026-05-02T17:00:00.000Z"),
+				employee: {
+					id: "employee-1",
+					employeeNumber: "E-1003",
+					user: { name: "Katherine Johnson", email: "kat@example.com" },
+				},
+			},
+		]);
+
+		const result = await getPayrollReadiness(defaultInput());
+
+		expect(result.status).toBe("ready");
+		expect(getCheck(result, "travel-expense-warnings")).toMatchObject({
+			status: "warning",
+			severity: "warning",
+			count: 1,
+		});
 	});
 });
 

@@ -1,7 +1,6 @@
-import { and, desc, eq, gte, isNull, lte, or } from "drizzle-orm";
+import { and, desc, eq, gte, isNull, lte, or, sql } from "drizzle-orm";
 import { DateTime } from "luxon";
 import {
-	approvalRequest,
 	db,
 	payrollExportConfig,
 	payrollExportJob,
@@ -77,12 +76,6 @@ type EmployeeSource = {
 	requester?: EmployeeLike | null;
 };
 
-type ApprovalLike = EmployeeSource & {
-	canonicalRecord?: { startAt?: Date | string | null } | null;
-	record?: { startAt?: Date | string | null } | null;
-	startAt?: Date | string | null;
-};
-
 type PayrollExportJobLike = {
 	status?: string | null;
 	filters?: {
@@ -138,17 +131,6 @@ function toISODateString(value: Date | string | null | undefined): string | null
 	const dateTime = value instanceof Date ? DateTime.fromJSDate(value) : DateTime.fromISO(value);
 
 	return dateTime.isValid ? dateTime.toISODate() : null;
-}
-
-function isApprovalInPeriod(approval: ApprovalLike, start: DateTime, end: DateTime): boolean {
-	const recordStart = approval.canonicalRecord?.startAt ?? approval.record?.startAt ?? approval.startAt;
-	const recordStartDate = toISODateString(recordStart);
-
-	if (!recordStartDate) {
-		return false;
-	}
-
-	return recordStartDate >= (start.toISODate() ?? "") && recordStartDate <= (end.toISODate() ?? "");
 }
 
 function isExportForPeriod(job: PayrollExportJobLike, start: DateTime, end: DateTime): boolean {
@@ -212,10 +194,12 @@ export async function getPayrollReadiness(input: GetPayrollReadinessInput): Prom
 	const organizationId = input.organizationId;
 	const start = input.period.start.startOf("day");
 	const end = input.period.end.endOf("day");
+	const selectedStartDate = start.toISODate() ?? "";
+	const selectedEndDate = end.toISODate() ?? "";
 	const now = input.now ?? DateTime.utc();
 	const staleActiveWorkCutoff = now.minus({ hours: 24 });
 
-	const [activeWorkRecords, pendingApprovals, exportConfigs, latestExportJobs, travelExpenseClaims] = await Promise.all([
+	const [activeWorkRecords, pendingTimeRecords, exportConfigs, latestExportJobs, travelExpenseClaims] = await Promise.all([
 		db.query.timeRecord.findMany({
 			where: and(
 				eq(timeRecord.organizationId, organizationId),
@@ -232,13 +216,15 @@ export async function getPayrollReadiness(input: GetPayrollReadinessInput): Prom
 				},
 			},
 		}),
-		db.query.approvalRequest.findMany({
+		db.query.timeRecord.findMany({
 			where: and(
-				eq(approvalRequest.organizationId, organizationId),
-				eq(approvalRequest.status, "pending"),
+				eq(timeRecord.organizationId, organizationId),
+				eq(timeRecord.approvalState, "pending"),
+				gte(timeRecord.startAt, start.toJSDate()),
+				lte(timeRecord.startAt, end.toJSDate()),
 			),
 			with: {
-				requester: {
+				employee: {
 					with: {
 						user: true,
 					},
@@ -252,9 +238,13 @@ export async function getPayrollReadiness(input: GetPayrollReadinessInput): Prom
 			),
 		}),
 		db.query.payrollExportJob.findMany({
-			where: eq(payrollExportJob.organizationId, organizationId),
+			where: and(
+				eq(payrollExportJob.organizationId, organizationId),
+				sql`${payrollExportJob.filters}->'dateRange'->>'start' = ${selectedStartDate}`,
+				sql`${payrollExportJob.filters}->'dateRange'->>'end' = ${selectedEndDate}`,
+			),
 			orderBy: [desc(payrollExportJob.createdAt)],
-			limit: 25,
+			limit: 1,
 		}),
 		db.query.travelExpenseClaim.findMany({
 			where: and(
@@ -290,7 +280,6 @@ export async function getPayrollReadiness(input: GetPayrollReadinessInput): Prom
 
 		return startAt <= staleActiveWorkCutoff;
 	});
-	const pendingApprovalsInPeriod = pendingApprovals.filter((approval) => isApprovalInPeriod(approval, start, end));
 	const latestExportJob = latestExportJobs.find((job) => isExportForPeriod(job, start, end));
 
 	const checks: PayrollReadinessCheck[] = [
@@ -299,12 +288,12 @@ export async function getPayrollReadiness(input: GetPayrollReadinessInput): Prom
 			group: "time",
 			title: "Pending approvals",
 			description: "All time and absence approval requests must be resolved before payroll export.",
-			status: pendingApprovalsInPeriod.length > 0 ? "fail" : "pass",
+			status: pendingTimeRecords.length > 0 ? "fail" : "pass",
 			severity: "blocker",
 			required: true,
-			count: pendingApprovalsInPeriod.length,
+			count: pendingTimeRecords.length,
 			actionHref: "/approvals/inbox",
-			affectedEmployees: uniqueAffectedEmployees(pendingApprovalsInPeriod),
+			affectedEmployees: uniqueAffectedEmployees(pendingTimeRecords),
 		}),
 		buildCheck({
 			id: "stale-active-work",
