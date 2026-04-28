@@ -164,6 +164,54 @@ describe("import review actions", () => {
 			employeeIds: ["emp_1"],
 			secretId: "secret_1",
 		});
+		expect(mockState.enqueueImportScanJob.mock.invocationCallOrder.at(-1)).toBeLessThan(
+			mockState.updateImportBatchStatus.mock.invocationCallOrder[0],
+		);
+	});
+
+	it("rejects unknown providers before creating a batch", async () => {
+		const result = await startImportReviewScan({
+			organizationId: "org_1",
+			provider: "unknown",
+			credential: "token_1",
+			selectedScope: {},
+			dateRange: { startDate: "2026-01-01", endDate: "2026-01-31" },
+			employeeIds: [],
+			entityTypes: ["employee"],
+		});
+
+		expect(result).toEqual({ success: false, error: "Invalid import provider" });
+		expect(mockState.createImportBatch).not.toHaveBeenCalled();
+	});
+
+	it("rejects unknown entity types before creating a batch", async () => {
+		const result = await startImportReviewScan({
+			organizationId: "org_1",
+			provider: "clockin",
+			credential: "token_1",
+			selectedScope: {},
+			dateRange: { startDate: "2026-01-01", endDate: "2026-01-31" },
+			employeeIds: [],
+			entityTypes: ["employee", "unknown"],
+		});
+
+		expect(result).toEqual({ success: false, error: "Invalid import entity type" });
+		expect(mockState.createImportBatch).not.toHaveBeenCalled();
+	});
+
+	it("rejects invalid date strings before creating a batch", async () => {
+		const result = await startImportReviewScan({
+			organizationId: "org_1",
+			provider: "clockin",
+			credential: "token_1",
+			selectedScope: {},
+			dateRange: { startDate: "2026-2-01", endDate: "2026-02-31" },
+			employeeIds: [],
+			entityTypes: ["employee"],
+		});
+
+		expect(result).toEqual({ success: false, error: "Invalid import start date: 2026-2-01" });
+		expect(mockState.createImportBatch).not.toHaveBeenCalled();
 	});
 
 	it("rejects blank credentials without creating a batch", async () => {
@@ -209,6 +257,68 @@ describe("import review actions", () => {
 
 		expect(result).toEqual({ success: false, error: "Import start date must be on or before end date" });
 		expect(mockState.createImportBatch).not.toHaveBeenCalled();
+	});
+
+	it("rejects abusive employee ID payloads before creating a batch", async () => {
+		const result = await startImportReviewScan({
+			organizationId: "org_1",
+			provider: "clockin",
+			credential: "token_1",
+			selectedScope: {},
+			dateRange: { startDate: "2026-01-01", endDate: "2026-01-31" },
+			employeeIds: Array.from({ length: 501 }, (_, index) => `emp_${index}`),
+			entityTypes: ["employee"],
+		});
+
+		expect(result).toEqual({ success: false, error: "Too many employee IDs requested" });
+		expect(mockState.createImportBatch).not.toHaveBeenCalled();
+	});
+
+	it("rejects non-plain selected scopes before creating a batch", async () => {
+		const result = await startImportReviewScan({
+			organizationId: "org_1",
+			provider: "clockin",
+			credential: "token_1",
+			selectedScope: [],
+			dateRange: { startDate: "2026-01-01", endDate: "2026-01-31" },
+			employeeIds: [],
+			entityTypes: ["employee"],
+		});
+
+		expect(result).toEqual({ success: false, error: "Import selected scope must be a plain object" });
+		expect(mockState.createImportBatch).not.toHaveBeenCalled();
+	});
+
+	it("marks the batch scan_failed when enqueue fails after a job was enqueued", async () => {
+		mockState.enqueueImportScanJob
+			.mockResolvedValueOnce(undefined)
+			.mockRejectedValueOnce(new Error("queue failed for token_1"));
+
+		const result = await startImportReviewScan({
+			organizationId: "org_1",
+			provider: "clockin",
+			credential: "token_1",
+			selectedScope: {},
+			dateRange: { startDate: "2026-01-01", endDate: "2026-02-10" },
+			employeeIds: [],
+			entityTypes: ["employee"],
+		});
+
+		expect(result).toEqual({ success: false, error: "Failed to start import review scan" });
+		expect(mockState.createImportBatchJob).toHaveBeenCalledTimes(2);
+		expect(mockState.enqueueImportScanJob).toHaveBeenCalledTimes(2);
+		expect(mockState.updateImportBatchStatus).toHaveBeenCalledWith({
+			batchId: "batch_1",
+			organizationId: "org_1",
+			status: "scan_failed",
+			errorMessage: "Failed to start import review scan",
+		});
+		expect(mockState.updateImportBatchStatus).not.toHaveBeenCalledWith({
+			batchId: "batch_1",
+			organizationId: "org_1",
+			status: "scanning",
+		});
+		expect(JSON.stringify(result)).not.toContain("token_1");
 	});
 
 	it("returns repository errors without including the credential", async () => {
