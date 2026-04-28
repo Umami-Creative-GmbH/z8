@@ -25,6 +25,7 @@ type CommitDb = Pick<typeof db, "insert" | "query" | "select" | "update">;
 type CommitRowOutcome =
 	| { status: "committed"; chainHead?: ChainHead }
 	| { status: "blocked"; message: string };
+type BlockOptions = { finalAttempt: boolean };
 
 interface WorkPeriodPayload {
 	employeeId: string;
@@ -82,6 +83,17 @@ async function markBlocked(database: CommitDb, rowId: string, organizationId: st
 			commitError: message,
 		})
 		.where(and(eq(importStagedRow.id, rowId), eq(importStagedRow.organizationId, organizationId)));
+}
+
+async function blockRow(
+	database: CommitDb,
+	rowId: string,
+	organizationId: string,
+	message: string,
+	options: BlockOptions,
+): Promise<CommitRowOutcome> {
+	if (options.finalAttempt) await markBlocked(database, rowId, organizationId, message);
+	return { status: "blocked", message };
 }
 
 async function markCommitFailed(rowId: string, organizationId: string, error: unknown) {
@@ -304,12 +316,12 @@ async function commitHoliday(
 	database: CommitDb,
 	row: typeof importStagedRow.$inferSelect,
 	job: ImportCommitJobData,
+	options: BlockOptions,
 ): Promise<CommitRowOutcome> {
 	const payload = row.normalizedPayload as unknown as SetupReferencePayload;
 	if (!payload.categoryId) {
 		const message = "holiday import row requires a confirmed categoryId before commit";
-		await markBlocked(database, row.id, job.organizationId, message);
-		return { status: "blocked", message };
+		return blockRow(database, row.id, job.organizationId, message, options);
 	}
 	const category = await database.query.holidayCategory.findFirst({
 		where: and(
@@ -320,21 +332,18 @@ async function commitHoliday(
 	});
 	if (!category) {
 		const message = `Holiday category ${payload.categoryId} does not belong to organization ${job.organizationId}`;
-		await markBlocked(database, row.id, job.organizationId, message);
-		return { status: "blocked", message };
+		return blockRow(database, row.id, job.organizationId, message, options);
 	}
 	const startsAt = payload.startDate ?? payload.date;
 	const endsAt = payload.endDate ?? startsAt;
 	if (!startsAt || !endsAt) {
 		const message = "holiday import row requires date or startDate before commit";
-		await markBlocked(database, row.id, job.organizationId, message);
-		return { status: "blocked", message };
+		return blockRow(database, row.id, job.organizationId, message, options);
 	}
 	const name = payload.name?.trim();
 	if (!name) {
 		const message = "holiday import row requires a name before commit";
-		await markBlocked(database, row.id, job.organizationId, message);
-		return { status: "blocked", message };
+		return blockRow(database, row.id, job.organizationId, message, options);
 	}
 
 	const [created] = await database
@@ -396,6 +405,7 @@ export async function commitAcceptedRowsForEntity(
 	const chainHeads = new Map<string, ChainHead>();
 	let committedRows = 0;
 	const errors: CommitRowError[] = [];
+	const blockOptions = { finalAttempt };
 
 	for (const row of rows) {
 		if (row.rowStatus !== "accepted") continue;
@@ -419,7 +429,7 @@ export async function commitAcceptedRowsForEntity(
 						await commitWorkCategory(tx as CommitDb, row, job);
 						return { status: "committed" };
 					case "holiday":
-						return commitHoliday(tx as CommitDb, row, job);
+						return commitHoliday(tx as CommitDb, row, job, blockOptions);
 					case "surcharge":
 						await commitSurcharge(tx as CommitDb, row, job);
 						return { status: "committed" };
@@ -429,8 +439,7 @@ export async function commitAcceptedRowsForEntity(
 					case "employee":
 					case "absence_category": {
 						const message = mappingRequiredMessage(job.entityType);
-						await markBlocked(tx as CommitDb, row.id, job.organizationId, message);
-						return { status: "blocked", message };
+						return blockRow(tx as CommitDb, row.id, job.organizationId, message, blockOptions);
 					}
 					default:
 						throw new Error(`Unsupported import review commit entity type: ${job.entityType}`);

@@ -159,7 +159,31 @@ describe("commitAcceptedRowsForEntity setup/reference rows", () => {
 		);
 	});
 
-	it("blocks mapping-required setup rows instead of guessing", async () => {
+	it("reports mapping-required setup rows without blocking on non-final attempts", async () => {
+		dbMock.rows = [
+			stagedRow({
+				entityType: "employee",
+				normalizedPayload: { name: "Ada Lovelace", email: "ada@example.com" },
+			}),
+		];
+
+		const result = await commitAcceptedRowsForEntity(commitJob("employee"), { finalAttempt: false });
+
+		expect(result).toEqual({
+			committedRows: 0,
+			failedRows: 1,
+			errors: [
+				{
+					rowId: "row_1",
+					message: "employee import rows require mapping confirmation before commit",
+				},
+			],
+		});
+		expect(dbMock.insert).not.toHaveBeenCalled();
+		expect(dbMock.updates).toEqual([]);
+	});
+
+	it("blocks mapping-required setup rows on final attempts", async () => {
 		dbMock.rows = [
 			stagedRow({
 				entityType: "employee",
@@ -217,7 +241,37 @@ describe("commitAcceptedRowsForEntity setup/reference rows", () => {
 		);
 	});
 
-	it("blocks holiday rows when the category is missing from the organization", async () => {
+	it("reports missing holiday category without blocking on non-final attempts", async () => {
+		dbMock.rows = [
+			stagedRow({
+				entityType: "holiday",
+				normalizedPayload: {
+					name: "New Year",
+					date: "2026-01-01",
+					categoryId: "holiday_category_other_org",
+				},
+			}),
+		];
+		dbMock.query.holidayCategory.findFirst.mockResolvedValueOnce(null);
+
+		const result = await commitAcceptedRowsForEntity(commitJob("holiday"), { finalAttempt: false });
+
+		expect(result).toEqual({
+			committedRows: 0,
+			failedRows: 1,
+			errors: [
+				{
+					rowId: "row_1",
+					message:
+						"Holiday category holiday_category_other_org does not belong to organization org_1",
+				},
+			],
+		});
+		expect(dbMock.insert).not.toHaveBeenCalled();
+		expect(dbMock.updates).toEqual([]);
+	});
+
+	it("blocks holiday rows when the category is missing from the organization on final attempts", async () => {
 		dbMock.rows = [
 			stagedRow({
 				entityType: "holiday",

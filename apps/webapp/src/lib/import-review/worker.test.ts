@@ -183,6 +183,31 @@ describe("processImportReviewJob", () => {
 		);
 	});
 
+	it("rejects non-final setup blockers so retry path cannot complete by skipping blocked rows", async () => {
+		commitAcceptedRowsForEntityMock.mockResolvedValue({
+			committedRows: 0,
+			failedRows: 1,
+			errors: [
+				{
+					rowId: "row_1",
+					message: "employee import rows require mapping confirmation before commit",
+				},
+			],
+		});
+
+		await expect(processImportReviewJob(commitJob({ entityType: "employee" }))).rejects.toThrow(
+			"Import review commit failed for 1 row(s): row_1: employee import rows require mapping confirmation before commit",
+		);
+
+		expect(commitAcceptedRowsForEntityMock).toHaveBeenCalledWith(
+			expect.objectContaining({ entityType: "employee" }),
+			{ finalAttempt: false },
+		);
+		expect(updateImportBatchJobMock).not.toHaveBeenCalledWith(
+			expect.objectContaining({ status: "completed" }),
+		);
+	});
+
 	it("passes finalAttempt true to committers on exhausted commit attempts", async () => {
 		commitAcceptedRowsForEntityMock.mockResolvedValue({
 			committedRows: 0,
