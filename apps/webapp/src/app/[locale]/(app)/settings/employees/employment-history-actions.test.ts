@@ -98,6 +98,7 @@ describe("employment history action helpers", () => {
 						id: "history-1",
 						employeeId: "employee-1",
 						organizationId: "org-1",
+						workPolicyId: "policy-1",
 						validFrom: d("2026-01-01"),
 						validUntil: null,
 					},
@@ -107,9 +108,28 @@ describe("employment history action helpers", () => {
 			{
 				employeeId: "employee-1",
 				organizationId: "org-1",
+				workPolicyId: "policy-1",
 				effectiveFrom: d("2026-01-01"),
 				effectiveUntil: d("2026-04-01"),
 			},
 		]);
+	});
+
+	it("does not build assignment window updates for rows without a policy", () => {
+		expect(
+			buildEmploymentAssignmentWindowUpdates({
+				updates: [{ id: "history-1", validUntil: d("2026-04-01") }],
+				existing: [
+					{
+						id: "history-1",
+						employeeId: "employee-1",
+						organizationId: "org-1",
+						workPolicyId: null,
+						validFrom: d("2026-01-01"),
+						validUntil: null,
+					},
+				],
+			}),
+		).toEqual([]);
 	});
 });

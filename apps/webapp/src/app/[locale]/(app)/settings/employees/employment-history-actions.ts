@@ -42,7 +42,7 @@ type EmploymentHistoryAssignmentRow = Pick<
 
 type EmploymentHistoryAssignmentWindowRow = Pick<
 	EmployeeEmploymentHistory,
-	"id" | "employeeId" | "organizationId" | "validFrom" | "validUntil"
+	"id" | "employeeId" | "organizationId" | "workPolicyId" | "validFrom" | "validUntil"
 >;
 
 export function shouldUpdateCurrentEmployeeFields(
@@ -87,7 +87,7 @@ export function buildEmploymentAssignmentWindowUpdates({
 }) {
 	return updates.flatMap((update) => {
 		const historyRow = existing.find((row) => row.id === update.id);
-		if (!historyRow) {
+		if (!historyRow?.workPolicyId) {
 			return [];
 		}
 
@@ -95,6 +95,7 @@ export function buildEmploymentAssignmentWindowUpdates({
 			{
 				employeeId: historyRow.employeeId,
 				organizationId: historyRow.organizationId,
+				workPolicyId: historyRow.workPolicyId,
 				effectiveFrom: historyRow.validFrom,
 				effectiveUntil: update.validUntil,
 			},
@@ -284,6 +285,7 @@ export async function createEmployeeEmploymentHistoryAction(
 										and(
 											eq(workPolicyAssignment.employeeId, update.employeeId),
 											eq(workPolicyAssignment.organizationId, update.organizationId),
+											eq(workPolicyAssignment.policyId, update.workPolicyId),
 											eq(workPolicyAssignment.assignmentType, "employee"),
 											eq(workPolicyAssignment.isActive, true),
 											eq(workPolicyAssignment.effectiveFrom, update.effectiveFrom),
