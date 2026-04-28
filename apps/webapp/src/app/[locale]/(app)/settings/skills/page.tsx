@@ -1,5 +1,6 @@
 import { connection } from "next/server";
 import { redirect } from "next/navigation";
+import { RenewalReviewQueue } from "@/components/qualifications/renewal-review-queue";
 import { SkillCatalogManagement } from "@/components/settings/skill-catalog-management";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 
@@ -19,9 +20,14 @@ export default async function SkillsSettingsPage() {
 	}
 
 	return (
-		<SkillCatalogManagement
-			organizationId={organizationId}
-			canManageCatalog={settingsRouteContext.accessTier === "orgAdmin"}
-		/>
+		<>
+			<SkillCatalogManagement
+				organizationId={organizationId}
+				canManageCatalog={settingsRouteContext.accessTier === "orgAdmin"}
+			/>
+			<div className="px-4 pb-4">
+				<RenewalReviewQueue organizationId={organizationId} />
+			</div>
+		</>
 	);
 }
