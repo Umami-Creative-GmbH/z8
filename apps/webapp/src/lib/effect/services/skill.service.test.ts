@@ -45,20 +45,24 @@ function createSkillServiceTestContext({
 	],
 	request = baseRequest,
 	reviewer = { id: "reviewer-1", organizationId: "org-1" },
+	reviewedRows,
 	pendingRequests = [baseRequest],
 }: {
 	assignment?: unknown;
 	evidenceRecords?: unknown[];
 	request?: unknown;
 	reviewer?: unknown;
+	reviewedRows?: unknown[];
 	pendingRequests?: unknown[];
 } = {}) {
 	const createdRequest = { ...baseRequest, id: "request-created" };
 	const reviewedRequest = { ...baseRequest, status: "approved", reviewerId: "reviewer-1" };
+	const requestReviewRows = reviewedRows ?? [reviewedRequest];
+	const operationOrder: string[] = [];
 	const renewalRequestReturning = vi.fn(async () => [createdRequest]);
 	const renewalRequestValues = vi.fn(() => ({ returning: renewalRequestReturning }));
 	const evidenceLinkValues = vi.fn(async () => undefined);
-	const txInsert = vi.fn((table) => {
+	const insert = vi.fn((table) => {
 		if (table === qualificationRenewalRequest) {
 			return { values: renewalRequestValues };
 		}
@@ -69,13 +73,21 @@ function createSkillServiceTestContext({
 
 		throw new Error("Unexpected insert table");
 	});
-	const transaction = vi.fn(async (callback) => callback({ insert: txInsert }));
 
 	const employeeUpdateWhere = vi.fn(async () => undefined);
-	const employeeUpdateSet = vi.fn(() => ({ where: employeeUpdateWhere }));
-	const renewalReviewReturning = vi.fn(async () => [reviewedRequest]);
-	const renewalReviewWhere = vi.fn(() => ({ returning: renewalReviewReturning }));
-	const renewalReviewSet = vi.fn(() => ({ where: renewalReviewWhere }));
+	const employeeUpdateSet = vi.fn(() => {
+		operationOrder.push("employeeQualificationUpdate");
+		return { where: employeeUpdateWhere };
+	});
+	const renewalReviewReturning = vi.fn(async () => requestReviewRows);
+	const renewalReviewWhere = vi.fn(() => {
+		operationOrder.push("renewalRequestWhere");
+		return { returning: renewalReviewReturning };
+	});
+	const renewalReviewSet = vi.fn(() => {
+		operationOrder.push("renewalRequestStatusUpdate");
+		return { where: renewalReviewWhere };
+	});
 	const update = vi.fn((table) => {
 		if (table === employeeSkill) {
 			return { set: employeeUpdateSet };
@@ -87,6 +99,7 @@ function createSkillServiceTestContext({
 
 		throw new Error("Unexpected update table");
 	});
+	const transaction = vi.fn(async (callback) => callback({ insert, update }));
 
 	const qualificationRenewalRequestFindMany = vi.fn(async () => pendingRequests);
 	const mockDb = {
@@ -123,6 +136,7 @@ function createSkillServiceTestContext({
 		employeeUpdateSet,
 		employeeUpdateWhere,
 		mockDb,
+		operationOrder,
 		renewalReviewSet,
 		renewalReviewReturning,
 		runCreateRenewalRequest: (input: {
@@ -238,7 +252,24 @@ describe("SkillService qualification renewal behavior", () => {
 		]);
 	});
 
-	it("only reviews pending renewal requests", async () => {
+	it("only reviews requests still pending at transaction update time", async () => {
+		const { employeeUpdateSet, renewalReviewSet, runReviewRenewalRequest } =
+			createSkillServiceTestContext({
+				reviewedRows: [],
+			});
+
+		expect(
+			await runReviewRenewalRequest({
+				requestId: "request-1",
+				reviewerEmployeeId: "reviewer-1",
+				approved: true,
+			}),
+		).toMatchObject({ _tag: "Left", left: expect.any(ValidationError) });
+		expect(employeeUpdateSet).not.toHaveBeenCalled();
+		expect(renewalReviewSet).toHaveBeenCalledWith(expect.objectContaining({ status: "approved" }));
+	});
+
+	it("rejects requests that were already reviewed before the transaction", async () => {
 		const { employeeUpdateSet, renewalReviewSet, runReviewRenewalRequest } =
 			createSkillServiceTestContext({
 				request: { ...baseRequest, status: "approved" },
@@ -273,7 +304,7 @@ describe("SkillService qualification renewal behavior", () => {
 	});
 
 	it("approval updates employee qualification and request status", async () => {
-		const { employeeUpdateSet, renewalReviewSet, runReviewRenewalRequest } =
+		const { employeeUpdateSet, mockDb, operationOrder, renewalReviewSet, runReviewRenewalRequest } =
 			createSkillServiceTestContext();
 
 		expect(
@@ -293,6 +324,12 @@ describe("SkillService qualification renewal behavior", () => {
 				status: "active",
 			}),
 		);
+		expect(mockDb.transaction).toHaveBeenCalledTimes(1);
+		expect(operationOrder).toEqual([
+			"renewalRequestStatusUpdate",
+			"renewalRequestWhere",
+			"employeeQualificationUpdate",
+		]);
 		expect(renewalReviewSet).toHaveBeenCalledWith(
 			expect.objectContaining({
 				status: "approved",

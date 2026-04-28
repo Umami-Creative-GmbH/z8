@@ -759,39 +759,66 @@ export const SkillServiceLive = Layer.effect(
 						);
 					}
 
-					if (input.approved) {
-						yield* _(
-							dbService.query("applyQualificationRenewal", async () => {
-								await dbService.db
-									.update(employeeSkill)
+					const updatedRequest = yield* _(
+						dbService.query("reviewQualificationRenewalRequest", async () => {
+							return await dbService.db.transaction(async (tx) => {
+								const [updated] = await tx
+									.update(qualificationRenewalRequest)
 									.set({
-										issuedAt: request!.requestedIssuedAt,
-										expiresAt: request!.requestedExpiresAt,
-										issuer: request!.requestedIssuer,
-										certificateNumber: request!.requestedCertificateNumber,
-										status: "active" as const,
-										renewedAt: new Date(),
+										status: input.approved ? "approved" : "rejected",
+										reviewerId: input.reviewerEmployeeId,
+										reviewedAt: new Date(),
+										reviewNotes: input.reviewNotes,
 									})
-									.where(eq(employeeSkill.id, request!.employeeSkillId));
-							}),
+									.where(
+										and(
+											eq(qualificationRenewalRequest.id, input.requestId),
+											eq(qualificationRenewalRequest.status, "pending"),
+											eq(qualificationRenewalRequest.organizationId, request!.organizationId),
+										),
+									)
+									.returning();
+
+								if (!updated) {
+									return null;
+								}
+
+								if (input.approved) {
+									await tx
+										.update(employeeSkill)
+										.set({
+											issuedAt: request!.requestedIssuedAt,
+											expiresAt: request!.requestedExpiresAt,
+											issuer: request!.requestedIssuer,
+											certificateNumber: request!.requestedCertificateNumber,
+											status: "active" as const,
+											renewedAt: new Date(),
+										})
+										.where(
+											and(
+												eq(employeeSkill.id, request!.employeeSkillId),
+												eq(employeeSkill.employeeId, request!.employeeId),
+											),
+										);
+								}
+
+								return updated;
+							});
+						}),
+					);
+
+					if (!updatedRequest) {
+						yield* _(
+							Effect.fail(
+								new ValidationError({
+									message: "Renewal request has already been reviewed",
+									field: "status",
+								}),
+							),
 						);
 					}
 
-					return yield* _(
-						dbService.query("markQualificationRenewalReviewed", async () => {
-							const [updated] = await dbService.db
-								.update(qualificationRenewalRequest)
-								.set({
-									status: input.approved ? "approved" : "rejected",
-									reviewerId: input.reviewerEmployeeId,
-									reviewedAt: new Date(),
-									reviewNotes: input.reviewNotes,
-								})
-								.where(eq(qualificationRenewalRequest.id, input.requestId))
-								.returning();
-							return updated!;
-						}),
-					);
+					return updatedRequest!;
 				}),
 
 			getPendingRenewalRequests: (organizationId) =>
