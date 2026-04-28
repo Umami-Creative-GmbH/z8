@@ -4,18 +4,18 @@
  * POST /api/approvals/inbox/[id]/reject - Reject a single approval
  */
 
-import { type NextRequest, NextResponse } from "next/server";
-import { headers } from "next/headers";
 import { and, eq } from "drizzle-orm";
 import { Cause, Effect, Exit, Option } from "effect";
-import { auth } from "@/lib/auth";
-import { getAbility } from "@/lib/auth-helpers";
+import { headers } from "next/headers";
+import { type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { approvalRequest, employee } from "@/db/schema";
 import { getApprovalHandler } from "@/lib/approvals/domain/registry";
 import type { ApprovalType } from "@/lib/approvals/domain/types";
 import { ApprovalAuditLoggerLive } from "@/lib/approvals/infrastructure/audit-logger";
-import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
+import { auth } from "@/lib/auth";
+import { getAbility } from "@/lib/auth-helpers";
+import { ForbiddenError, toHttpError } from "@/lib/authorization";
 import {
 	type AnyAppError,
 	AuthorizationError,
@@ -23,7 +23,7 @@ import {
 	NotFoundError,
 	ValidationError,
 } from "@/lib/effect/errors";
-import { ForbiddenError, toHttpError } from "@/lib/authorization";
+import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
 
 // Ensure handlers are registered
@@ -55,10 +55,7 @@ function extractApprovalError(cause: Cause.Cause<AnyAppError>) {
 	return Option.getOrNull(Cause.failureOption(cause)) ?? [...Cause.defects(cause)][0] ?? cause;
 }
 
-export async function POST(
-	request: NextRequest,
-	{ params }: { params: Promise<{ id: string }> },
-) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
 	try {
 		const { id } = await params;
 
@@ -67,10 +64,7 @@ export async function POST(
 		const reason = body.reason as string;
 
 		if (!reason || reason.trim().length === 0) {
-			return NextResponse.json(
-				{ error: "Rejection reason is required" },
-				{ status: 400 },
-			);
+			return NextResponse.json({ error: "Rejection reason is required" }, { status: 400 });
 		}
 
 		// Authenticate
@@ -81,10 +75,7 @@ export async function POST(
 
 		const activeOrganizationId = session.session?.activeOrganizationId;
 		if (!activeOrganizationId) {
-			return NextResponse.json(
-				{ error: "No active organization" },
-				{ status: 400 },
-			);
+			return NextResponse.json({ error: "No active organization" }, { status: 400 });
 		}
 
 		const ability = await getAbility();
@@ -119,18 +110,15 @@ export async function POST(
 			return NextResponse.json({ error: "Approval not found" }, { status: 404 });
 		}
 
-		// Verify authorization - must be the approver and in the same organization
-		if (approvalReq.approverId !== currentEmployee.id) {
+		if (approvalReq.organizationId !== currentEmployee.organizationId) {
+			return NextResponse.json({ error: "Approval not found" }, { status: 404 });
+		}
+
+		// Managers can only action assigned approvals; Approval managers can action org-wide approvals.
+		if (approvalReq.approverId !== currentEmployee.id && ability.cannot("manage", "Approval")) {
 			return NextResponse.json(
 				{ error: "You are not authorized to reject this request" },
 				{ status: 403 },
-			);
-		}
-
-		if (approvalReq.organizationId !== currentEmployee.organizationId) {
-			return NextResponse.json(
-				{ error: "Approval not found" },
-				{ status: 404 },
 			);
 		}
 
