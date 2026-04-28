@@ -17,7 +17,6 @@ import {
 import { requireUser } from "@/lib/auth-helpers";
 import { ClockodoClient } from "@/lib/clockodo/client";
 import type { ImportUserMapping } from "@/lib/clockodo/import-orchestrator";
-import { orchestrateImport } from "@/lib/clockodo/import-orchestrator";
 import type {
 	ClockodoDataPreview,
 	ImportResult,
@@ -311,67 +310,17 @@ export async function saveUserMappings(
 // ============================================
 
 export async function importClockodoData(
-	email: string,
-	apiKey: string,
-	organizationId: string,
-	selections: ImportSelections,
-	serializedMappings?: ImportUserMapping[],
-	onlyImportMapped?: boolean,
+	_email: string,
+	_apiKey: string,
+	_organizationId: string,
+	_selections: ImportSelections,
+	_serializedMappings?: ImportUserMapping[],
+	_onlyImportMapped?: boolean,
 ): Promise<ActionResult<ImportResult>> {
-	try {
-		const authContext = await requireAdmin(organizationId);
-
-		if (!email?.trim() || !apiKey?.trim()) {
-			return { success: false, error: "Email and API key are required" };
-		}
-
-		const client = new ClockodoClient(email.trim(), apiKey.trim());
-
-		// Verify connection before starting import
-		const connected = await client.testConnection();
-		if (!connected) {
-			return { success: false, error: "Invalid credentials" };
-		}
-
-		// Validate that all employee IDs in mappings belong to this organization
-		if (serializedMappings) {
-			const employeeIds = serializedMappings
-				.map((m) => m.employeeId)
-				.filter((id): id is string => id != null);
-			await validateEmployeeOwnership(employeeIds, organizationId);
-		}
-
-		logger.info(
-			{ organizationId, selections, userId: authContext.user.id },
-			"Starting Clockodo import",
-		);
-
-		const result = await orchestrateImport(
-			client,
-			organizationId,
-			authContext.user.id,
-			selections,
-			serializedMappings,
-			onlyImportMapped,
-		);
-
-		logger.info(
-			{
-				organizationId,
-				status: result.status,
-				durationMs: result.durationMs,
-			},
-			"Clockodo import completed",
-		);
-
-		return { success: true, data: result };
-	} catch (error) {
-		logger.error({ error }, "Clockodo import failed");
-		return {
-			success: false,
-			error: error instanceof Error ? error.message : "Import failed",
-		};
-	}
+	return {
+		success: false,
+		error: "Direct Clockodo imports are disabled. Start an import review scan instead.",
+	};
 }
 
 // ============================================
