@@ -13,6 +13,10 @@ vi.mock("@tolgee/react", () => ({
 
 vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 
+vi.mock("next/navigation", () => ({
+	useRouter: () => ({ refresh: vi.fn() }),
+}));
+
 vi.mock("./actions", () => ({
 	submitMyQualificationRenewal: vi.fn(),
 }));
