@@ -73,7 +73,11 @@ export interface UnifiedApprovalItem {
  * Approval types supported by the system.
  * Extensible via union type.
  */
-export type ApprovalType = "absence_entry" | "time_entry" | "shift_request" | "travel_expense_claim";
+export type ApprovalType =
+	| "absence_entry"
+	| "time_entry"
+	| "shift_request"
+	| "travel_expense_claim";
 
 export type ApprovalDecisionAction = "approve" | "reject";
 
@@ -131,6 +135,9 @@ export interface ApprovalQueryParams {
 
 	/** Search by requester name/email */
 	search?: string;
+
+	/** Filter by requester employee IDs before pagination */
+	requesterEmployeeIds?: string[];
 
 	/** Filter by date range (request creation date) */
 	dateRange?: {
@@ -215,10 +222,7 @@ export interface ApprovalTypeHandler<TEntity = unknown> {
 	 * Get count of pending approvals (for badges).
 	 */
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	getCount: (
-		approverId: string,
-		organizationId: string,
-	) => Effect.Effect<number, AnyAppError, any>;
+	getCount: (approverId: string, organizationId: string) => Effect.Effect<number, AnyAppError, any>;
 
 	/**
 	 * Get full details for the slide-over panel.

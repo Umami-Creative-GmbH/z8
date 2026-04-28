@@ -1,6 +1,7 @@
 import { DateTime } from "luxon";
 import { describe, expect, it, vi } from "vitest";
 import { getManagerDailyBriefingFromSources } from "../get-manager-daily-briefing";
+import type { BriefingApproval } from "../types";
 
 describe("getManagerDailyBriefingFromSources", () => {
 	it("uses all active organization employees for admins", async () => {
@@ -115,7 +116,7 @@ function createApproval({
 	id: string;
 	requesterId: string;
 	requesterName: string;
-}) {
+}): BriefingApproval {
 	return {
 		id,
 		approvalType: "absence_entry",

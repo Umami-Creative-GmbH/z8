@@ -157,7 +157,7 @@ export async function getManagerDailyBriefingFromSources({
 	const coverageRules = settledValue(coverageRulesResult, []);
 	const scopedEmployeeIds = new Set(employeeIds);
 	const approvalItems = settledValue(approvalsResult, [])
-		.filter((approval) => scopedEmployeeIds.has(approvalRequesterId(approval)))
+		.filter((approval) => scopedEmployeeIds.has(approval.requester.id))
 		.map(approvalToBriefingItem);
 	const overtimeItems = settledValue(overtimeResult, []);
 	const payrollItems = settledValue(payrollResult, []);
@@ -488,6 +488,7 @@ const databaseSources: ManagerDailyBriefingSources = {
 						approverId,
 						organizationId,
 						status: "pending",
+						requesterEmployeeIds: employeeIds,
 						limit: 25,
 					}),
 				);
@@ -574,10 +575,4 @@ function employeeDisplayName(row: {
 	id: string;
 }): string {
 	return [row.firstName, row.lastName].filter(Boolean).join(" ") || row.userName || row.id;
-}
-
-function approvalRequesterId(approval: BriefingApproval): string {
-	return "id" in approval.requester && typeof approval.requester.id === "string"
-		? approval.requester.id
-		: "";
 }

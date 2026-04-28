@@ -1,6 +1,10 @@
 import { Effect } from "effect";
 import { describe, expect, it, vi } from "vitest";
-import type { ApprovalPriority, ApprovalType, UnifiedApprovalItem } from "@/lib/approvals/domain/types";
+import type {
+	ApprovalPriority,
+	ApprovalType,
+	UnifiedApprovalItem,
+} from "@/lib/approvals/domain/types";
 
 const approvalQueryTestState = vi.hoisted(() => ({
 	handlers: [] as Array<{
@@ -35,6 +39,7 @@ function createUnifiedApprovalItem(params: {
 	approvalType: ApprovalType;
 	createdAt: string;
 	priority: ApprovalPriority;
+	requesterId?: string;
 }): UnifiedApprovalItem {
 	return {
 		id: params.id,
@@ -42,7 +47,7 @@ function createUnifiedApprovalItem(params: {
 		entityId: `${params.approvalType}-${params.id}`,
 		typeName: params.approvalType,
 		requester: {
-			id: "employee-1",
+			id: params.requesterId ?? "employee-1",
 			userId: "user-1",
 			name: "Casey Booker",
 			email: "casey@example.com",
@@ -350,6 +355,52 @@ describe("ApprovalQueryService", () => {
 			"normal-same-time",
 			"older-low",
 		]);
+	});
+
+	it("filters requester employee IDs before pagination", async () => {
+		approvalQueryTestState.handlers = [
+			{
+				type: "absence_entry",
+				getApprovals: vi.fn(() =>
+					Effect.succeed([
+						createUnifiedApprovalItem({
+							id: "out-of-scope-urgent",
+							approvalType: "absence_entry",
+							createdAt: "2026-04-11T09:00:00.000Z",
+							priority: "urgent",
+							requesterId: "employee-out",
+						}),
+						createUnifiedApprovalItem({
+							id: "in-scope-normal",
+							approvalType: "absence_entry",
+							createdAt: "2026-04-10T09:00:00.000Z",
+							priority: "normal",
+							requesterId: "employee-in",
+						}),
+					]),
+				),
+				getCount: vi.fn(() => Effect.succeed(2)),
+			},
+		];
+
+		const result = await runApprovalQuery(
+			Effect.gen(function* (_) {
+				const service = yield* _(ApprovalQueryService);
+				return yield* _(
+					service.getApprovals({
+						approverId: "manager-1",
+						organizationId: "org-1",
+						status: "pending",
+						requesterEmployeeIds: ["employee-in"],
+						limit: 1,
+					}),
+				);
+			}),
+		);
+
+		expect(result.items.map((item) => item.id)).toEqual(["in-scope-normal"]);
+		expect(result.total).toBe(1);
+		expect(result.hasMore).toBe(false);
 	});
 
 	it("keeps older approvals reachable when paging deep into a single busy handler", async () => {

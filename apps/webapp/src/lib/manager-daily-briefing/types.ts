@@ -117,6 +117,7 @@ export interface BriefingApproval {
 	entityId: string;
 	typeName: string;
 	requester: {
+		id: string;
 		name: string;
 	};
 	priority: "urgent" | "high" | "normal" | "low";
@@ -129,7 +130,12 @@ export function approvalToBriefingItem(approval: BriefingApproval): BriefingAppr
 	return {
 		id: `approval:${approval.id}`,
 		category: "approval",
-		severity: approval.priority === "urgent" ? "critical" : approval.priority === "high" ? "high" : "warning",
+		severity:
+			approval.priority === "urgent"
+				? "critical"
+				: approval.priority === "high"
+					? "high"
+					: "warning",
 		title: `${approval.requester.name} needs ${approval.typeName} approval`,
 		description: approval.display.summary,
 		href: "/approvals",
