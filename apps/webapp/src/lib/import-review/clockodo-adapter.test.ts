@@ -13,8 +13,10 @@ const mocks = vi.hoisted(() => ({
 	getTargetHours: vi.fn(),
 	getTeams: vi.fn(),
 	getUsers: vi.fn(),
+	clockodoUserMappingFindMany: vi.fn(),
 	insertImportIssues: vi.fn(),
 	insertStagedRows: vi.fn(),
+	missingClientMethods: new Set<string>(),
 }));
 
 vi.mock("@/env", () => ({
@@ -25,17 +27,40 @@ vi.mock("@/lib/clockodo/client", () => ({
 	ClockodoClient: class {
 		constructor(email: string, apiKey: string) {
 			mocks.clientConstructor(email, apiKey);
+			if (!mocks.missingClientMethods.has("getAbsences")) this.getAbsences = mocks.getAbsences;
+			if (!mocks.missingClientMethods.has("getEntries")) this.getEntries = mocks.getEntries;
+			if (!mocks.missingClientMethods.has("getHolidayQuotas"))
+				this.getHolidayQuotas = mocks.getHolidayQuotas;
+			if (!mocks.missingClientMethods.has("getNonBusinessDays"))
+				this.getNonBusinessDays = mocks.getNonBusinessDays;
+			if (!mocks.missingClientMethods.has("getServices")) this.getServices = mocks.getServices;
+			if (!mocks.missingClientMethods.has("getSurcharges"))
+				this.getSurcharges = mocks.getSurcharges;
+			if (!mocks.missingClientMethods.has("getTargetHours"))
+				this.getTargetHours = mocks.getTargetHours;
+			if (!mocks.missingClientMethods.has("getTeams")) this.getTeams = mocks.getTeams;
+			if (!mocks.missingClientMethods.has("getUsers")) this.getUsers = mocks.getUsers;
 		}
 
-		getAbsences = mocks.getAbsences;
-		getEntries = mocks.getEntries;
-		getHolidayQuotas = mocks.getHolidayQuotas;
-		getNonBusinessDays = mocks.getNonBusinessDays;
-		getServices = mocks.getServices;
-		getSurcharges = mocks.getSurcharges;
-		getTargetHours = mocks.getTargetHours;
-		getTeams = mocks.getTeams;
-		getUsers = mocks.getUsers;
+		getAbsences?: typeof mocks.getAbsences;
+		getEntries?: typeof mocks.getEntries;
+		getHolidayQuotas?: typeof mocks.getHolidayQuotas;
+		getNonBusinessDays?: typeof mocks.getNonBusinessDays;
+		getServices?: typeof mocks.getServices;
+		getSurcharges?: typeof mocks.getSurcharges;
+		getTargetHours?: typeof mocks.getTargetHours;
+		getTeams?: typeof mocks.getTeams;
+		getUsers?: typeof mocks.getUsers;
+	},
+}));
+
+vi.mock("@/db", () => ({
+	db: {
+		query: {
+			clockodoUserMapping: {
+				findMany: mocks.clockodoUserMappingFindMany,
+			},
+		},
 	},
 }));
 
@@ -88,6 +113,8 @@ beforeEach(() => {
 	mocks.getTargetHours.mockResolvedValue([]);
 	mocks.getTeams.mockResolvedValue([]);
 	mocks.getUsers.mockResolvedValue([]);
+	mocks.clockodoUserMappingFindMany.mockResolvedValue([]);
+	mocks.missingClientMethods.clear();
 });
 
 describe("scanClockodoImportPartition", () => {
@@ -172,6 +199,67 @@ describe("scanClockodoImportPartition", () => {
 		]);
 	});
 
+	it("stages work periods with mapped employee IDs without unmatched blocking issues", async () => {
+		mocks.clockodoUserMappingFindMany.mockResolvedValue([
+			{ clockodoUserId: 1, employeeId: "employee_1", mappingType: "manual" },
+		]);
+		mocks.getEntries.mockResolvedValue([
+			{
+				id: 6,
+				users_id: 1,
+				services_id: 3,
+				time_since: "2026-01-05T08:00:00Z",
+				time_until: "2026-01-05T16:00:00Z",
+				duration: 28800,
+			},
+		]);
+
+		const result = await scanClockodoImportPartition(scanJob({ entityType: "work_period" }));
+
+		expect(result).toEqual({ stagedRows: 1, issues: 0 });
+		expect(mocks.clockodoUserMappingFindMany).toHaveBeenCalledTimes(1);
+		expect(mocks.insertStagedRows.mock.calls[0][0].rows[0]).toEqual(
+			expect.objectContaining({
+				providerSourceId: "clockodo:entry:6",
+				rowStatus: "staged",
+				issueSeverity: "none",
+				normalizedPayload: expect.objectContaining({ employeeId: "employee_1" }),
+			}),
+		);
+		expect(mocks.insertImportIssues.mock.calls[0][0].issues).toEqual([]);
+	});
+
+	it("treats skipped Clockodo user mappings as unmatched blocking rows", async () => {
+		mocks.clockodoUserMappingFindMany.mockResolvedValue([
+			{ clockodoUserId: 1, employeeId: null, mappingType: "skipped" },
+		]);
+		mocks.getEntries.mockResolvedValue([
+			{
+				id: 7,
+				users_id: 1,
+				services_id: 3,
+				time_since: "2026-01-05T08:00:00Z",
+				time_until: "2026-01-05T16:00:00Z",
+				duration: 28800,
+			},
+		]);
+
+		const result = await scanClockodoImportPartition(scanJob({ entityType: "work_period" }));
+
+		expect(result).toEqual({ stagedRows: 1, issues: 1 });
+		expect(mocks.insertStagedRows.mock.calls[0][0].rows[0]).toEqual(
+			expect.objectContaining({
+				providerSourceId: "clockodo:entry:7",
+				rowStatus: "needs_mapping",
+				issueSeverity: "blocking",
+				normalizedPayload: expect.objectContaining({ employeeId: null }),
+			}),
+		);
+		expect(mocks.insertImportIssues.mock.calls[0][0].issues).toEqual([
+			expect.objectContaining({ issueType: "unmatched_employee", severity: "blocking" }),
+		]);
+	});
+
 	it("stages valid multi-day absences without shift-window warnings", async () => {
 		mocks.getAbsences.mockResolvedValue([
 			{
@@ -210,10 +298,105 @@ describe("scanClockodoImportPartition", () => {
 		]);
 	});
 
-	it("rejects unsupported entity types without fetching provider data", async () => {
-		await expect(scanClockodoImportPartition(scanJob({ entityType: "time_entry" }))).rejects.toThrow(
-			"Unsupported Clockodo import review entity type: time_entry",
+	it("stages absences with mapped employee IDs without unmatched blocking issues", async () => {
+		mocks.clockodoUserMappingFindMany.mockResolvedValue([
+			{ clockodoUserId: 1, employeeId: "employee_1", mappingType: "auto_email" },
+		]);
+		mocks.getAbsences.mockResolvedValue([
+			{
+				id: 8,
+				users_id: 1,
+				date_since: "2026-01-10",
+				date_until: "2026-01-12",
+				status: 1,
+				type: 1,
+				note: null,
+				count_days: 3,
+				count_hours: null,
+			},
+		]);
+
+		const result = await scanClockodoImportPartition(scanJob({ entityType: "absence" }));
+
+		expect(result).toEqual({ stagedRows: 1, issues: 0 });
+		expect(mocks.insertStagedRows.mock.calls[0][0].rows[0]).toEqual(
+			expect.objectContaining({
+				providerSourceId: "clockodo:absence:8",
+				rowStatus: "staged",
+				issueSeverity: "none",
+				normalizedPayload: expect.objectContaining({
+					employeeId: "employee_1",
+					suspiciousFlags: [],
+				}),
+			}),
 		);
+	});
+
+	it("filters holiday rows to dates within the selected range", async () => {
+		mocks.getNonBusinessDays.mockResolvedValue([
+			{ id: 1, date: "2025-12-31", name: "Before", half_day: 0, nonbusinessgroups_id: 1 },
+			{ id: 2, date: "2026-01-15", name: "Inside", half_day: 0, nonbusinessgroups_id: 1 },
+			{ id: 3, date: "2026-02-01", name: "After", half_day: 0, nonbusinessgroups_id: 1 },
+		]);
+
+		const result = await scanClockodoImportPartition(scanJob({ entityType: "holiday" }));
+
+		expect(result).toEqual({ stagedRows: 1, issues: 0 });
+		expect(mocks.insertStagedRows.mock.calls[0][0].rows).toEqual([
+			expect.objectContaining({ providerSourceId: "clockodo:holiday:2" }),
+		]);
+	});
+
+	it("filters holiday quotas by year overlap across multi-year ranges", async () => {
+		mocks.getHolidayQuotas.mockResolvedValue([
+			{ id: 1, users_id: 1, year_since: 2024, year_until: 2024, count: 24 },
+			{ id: 2, users_id: 1, year_since: 2025, year_until: 2026, count: 24 },
+			{ id: 3, users_id: 1, year_since: 2027, year_until: null, count: 24 },
+		]);
+
+		const result = await scanClockodoImportPartition(
+			scanJob({
+				entityType: "holiday_quota",
+				dateRange: { startDate: "2025-12-01", endDate: "2026-01-31" },
+			}),
+		);
+
+		expect(result).toEqual({ stagedRows: 1, issues: 0 });
+		expect(mocks.insertStagedRows.mock.calls[0][0].rows).toEqual([
+			expect.objectContaining({ providerSourceId: "clockodo:holiday_quota:2" }),
+		]);
+	});
+
+	it("filters target hours by date range overlap", async () => {
+		mocks.getTargetHours.mockResolvedValue([
+			{ id: 1, users_id: 1, type: "weekly", date_since: "2025-01-01", date_until: "2025-12-31" },
+			{ id: 2, users_id: 1, type: "weekly", date_since: "2026-01-15", date_until: "2026-02-15" },
+			{ id: 3, users_id: 1, type: "weekly", date_since: "2026-02-01", date_until: null },
+		]);
+
+		const result = await scanClockodoImportPartition(scanJob({ entityType: "target_hours" }));
+
+		expect(result).toEqual({ stagedRows: 1, issues: 0 });
+		expect(mocks.insertStagedRows.mock.calls[0][0].rows).toEqual([
+			expect.objectContaining({ providerSourceId: "clockodo:target_hours:2" }),
+		]);
+	});
+
+	it("fails loudly when a required Clockodo reference client method is missing", async () => {
+		mocks.missingClientMethods.add("getTargetHours");
+
+		await expect(
+			scanClockodoImportPartition(scanJob({ entityType: "target_hours" })),
+		).rejects.toThrow("Clockodo client method getTargetHours is not implemented");
+
+		expect(mocks.insertStagedRows).not.toHaveBeenCalled();
+		expect(mocks.insertImportIssues).not.toHaveBeenCalled();
+	});
+
+	it("rejects unsupported entity types without fetching provider data", async () => {
+		await expect(
+			scanClockodoImportPartition(scanJob({ entityType: "time_entry" })),
+		).rejects.toThrow("Unsupported Clockodo import review entity type: time_entry");
 
 		expect(mocks.clientConstructor).not.toHaveBeenCalled();
 		expect(mocks.getUsers).not.toHaveBeenCalled();
