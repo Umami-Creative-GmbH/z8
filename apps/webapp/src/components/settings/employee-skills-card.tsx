@@ -284,7 +284,10 @@ interface AssignSkillDialogProps {
 
 interface AssignSkillFormValues {
 	skillId: string;
+	issuedAt: string;
 	expiresAt: string;
+	issuer: string;
+	certificateNumber: string;
 	notes: string;
 }
 
@@ -310,7 +313,10 @@ function AssignSkillDialog({
 
 	const defaultValues: AssignSkillFormValues = {
 		skillId: "",
+		issuedAt: "",
 		expiresAt: "",
+		issuer: "",
+		certificateNumber: "",
 		notes: "",
 	};
 
@@ -326,7 +332,10 @@ function AssignSkillDialog({
 			const result = await assignSkillToEmployee({
 				employeeId,
 				skillId: data.skillId,
-				expiresAt: data.expiresAt ? new Date(data.expiresAt) : undefined,
+				issuedAt: data.issuedAt ? DateTime.fromISO(data.issuedAt).toJSDate() : undefined,
+				expiresAt: data.expiresAt ? DateTime.fromISO(data.expiresAt).toJSDate() : undefined,
+				issuer: data.issuer || undefined,
+				certificateNumber: data.certificateNumber || undefined,
 				notes: data.notes || undefined,
 			});
 			if (!result.success) throw new Error(result.error);
@@ -443,6 +452,66 @@ function AssignSkillDialog({
 											)}
 										</p>
 									)}
+								</div>
+							)}
+						</form.Field>
+
+						{/* Issue Date */}
+						<form.Field name="issuedAt">
+							{(field) => (
+								<div className="grid gap-2">
+									<Label htmlFor="assign-issued-at">
+										{t("settings.skills.issueDate", "Issue Date")}
+									</Label>
+									<Input
+										id="assign-issued-at"
+										name="issuedAt"
+										type="date"
+										autoComplete="off"
+										value={field.state.value}
+										onChange={(e) => field.handleChange(e.target.value)}
+										onBlur={field.handleBlur}
+										max={DateTime.now().toISODate() ?? undefined}
+									/>
+								</div>
+							)}
+						</form.Field>
+
+						{/* Issuer */}
+						<form.Field name="issuer">
+							{(field) => (
+								<div className="grid gap-2">
+									<Label htmlFor="assign-issuer">{t("settings.skills.issuer", "Issuer")}</Label>
+									<Input
+										id="assign-issuer"
+										name="issuer"
+										autoComplete="off"
+										value={field.state.value}
+										onChange={(e) => field.handleChange(e.target.value)}
+										onBlur={field.handleBlur}
+										placeholder={t("settings.skills.issuerPlaceholder", "e.g., Safety Council…")}
+									/>
+								</div>
+							)}
+						</form.Field>
+
+						{/* Certificate Number */}
+						<form.Field name="certificateNumber">
+							{(field) => (
+								<div className="grid gap-2">
+									<Label htmlFor="assign-certificate-number">
+										{t("settings.skills.certificateNumber", "Certificate Number")}
+									</Label>
+									<Input
+										id="assign-certificate-number"
+										name="certificateNumber"
+										autoComplete="off"
+										spellCheck={false}
+										value={field.state.value}
+										onChange={(e) => field.handleChange(e.target.value)}
+										onBlur={field.handleBlur}
+										placeholder={t("settings.skills.certificateNumberPlaceholder", "e.g., CERT-12345…")}
+									/>
 								</div>
 							)}
 						</form.Field>

@@ -181,8 +181,14 @@ export function SkillCatalogManagement({
 					</p>
 				</div>
 				<div className="flex items-center gap-2">
-					<Button variant="ghost" size="icon" onClick={() => refetch()} disabled={isFetching}>
-						<IconRefresh className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
+					<Button
+						variant="ghost"
+						size="icon"
+						onClick={() => refetch()}
+						disabled={isFetching}
+						aria-label={t("common.refresh", "Refresh")}
+					>
+						<IconRefresh className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} aria-hidden="true" />
 					</Button>
 					{canManageCatalog ? (
 						<Button onClick={handleCreate}>
@@ -267,9 +273,9 @@ export function SkillCatalogManagement({
 													<span className="text-muted-foreground text-sm">
 														{t("settings.skills.noExpiry", "No")}
 													</span>
-												)}
-											</TableCell>
-											<TableCell className="text-right">
+											)}
+										</TableCell>
+										<TableCell className="text-right">
 											<div className="flex items-center justify-end gap-1">
 												{canManageCatalog ? (
 													<>
@@ -281,8 +287,9 @@ export function SkillCatalogManagement({
 																		size="icon"
 																		className="h-8 w-8"
 																		onClick={() => handleEdit(skill)}
+																		aria-label={t("common.edit", "Edit")}
 																	>
-																		<IconEdit className="h-4 w-4" />
+																		<IconEdit className="h-4 w-4" aria-hidden="true" />
 																	</Button>
 																</TooltipTrigger>
 																<TooltipContent>{t("common.edit", "Edit")}</TooltipContent>
@@ -297,8 +304,9 @@ export function SkillCatalogManagement({
 																		className="h-8 w-8"
 																		onClick={() => handleDelete(skill)}
 																		disabled={deleteMutation.isPending}
+																		aria-label={t("common.delete", "Delete")}
 																	>
-																		<IconTrash className="h-4 w-4" />
+																		<IconTrash className="h-4 w-4" aria-hidden="true" />
 																	</Button>
 																</TooltipTrigger>
 																<TooltipContent>{t("common.delete", "Delete")}</TooltipContent>
@@ -307,8 +315,8 @@ export function SkillCatalogManagement({
 													</>
 												) : null}
 											</div>
-											</TableCell>
-										</TableRow>
+										</TableCell>
+									</TableRow>
 									);
 								})}
 							</TableBody>
@@ -349,6 +357,7 @@ interface SkillFormValues {
 	category: SkillCategory;
 	customCategoryName: string;
 	requiresExpiry: boolean;
+	expiryWarningDays: number;
 }
 
 function SkillDialog({ organizationId, skill, open, onOpenChange, onSuccess }: SkillDialogProps) {
@@ -361,6 +370,7 @@ function SkillDialog({ organizationId, skill, open, onOpenChange, onSuccess }: S
 		category: (skill?.category as SkillCategory) ?? "certification",
 		customCategoryName: skill?.customCategoryName ?? "",
 		requiresExpiry: skill?.requiresExpiry ?? false,
+		expiryWarningDays: skill?.expiryWarningDays ?? 30,
 	};
 
 	const form = useForm({
@@ -382,6 +392,7 @@ function SkillDialog({ organizationId, skill, open, onOpenChange, onSuccess }: S
 				category: data.category,
 				customCategoryName: data.category === "custom" ? data.customCategoryName : undefined,
 				requiresExpiry: data.requiresExpiry,
+				expiryWarningDays: data.requiresExpiry ? data.expiryWarningDays : 30,
 			});
 			if (!result.success) throw new Error(result.error);
 			return result.data;
@@ -403,6 +414,7 @@ function SkillDialog({ organizationId, skill, open, onOpenChange, onSuccess }: S
 				category: data.category,
 				customCategoryName: data.category === "custom" ? data.customCategoryName : undefined,
 				requiresExpiry: data.requiresExpiry,
+				expiryWarningDays: data.requiresExpiry ? data.expiryWarningDays : 30,
 			});
 			if (!result.success) throw new Error(result.error);
 			return result.data;
@@ -427,6 +439,7 @@ function SkillDialog({ organizationId, skill, open, onOpenChange, onSuccess }: S
 			form.setFieldValue("category", (skill?.category as SkillCategory) ?? "certification");
 			form.setFieldValue("customCategoryName", skill?.customCategoryName ?? "");
 			form.setFieldValue("requiresExpiry", skill?.requiresExpiry ?? false);
+			form.setFieldValue("expiryWarningDays", skill?.expiryWarningDays ?? 30);
 		}
 		onOpenChange(newOpen);
 	};
@@ -573,6 +586,39 @@ function SkillDialog({ organizationId, skill, open, onOpenChange, onSuccess }: S
 								</div>
 							)}
 						</form.Field>
+
+						<form.Subscribe selector={(state) => state.values.requiresExpiry}>
+							{(requiresExpiry) =>
+								requiresExpiry ? (
+									<form.Field name="expiryWarningDays">
+										{(field) => (
+											<div className="grid gap-2">
+												<Label htmlFor="skill-warning-days">
+													{t("settings.skills.expiryWarningDays", "Warn before expiry")}
+												</Label>
+												<Input
+													id="skill-warning-days"
+													name="expiryWarningDays"
+													type="number"
+													autoComplete="off"
+													min={0}
+													max={365}
+													value={field.state.value}
+													onChange={(event) => field.handleChange(Number(event.target.value))}
+													onBlur={field.handleBlur}
+												/>
+												<p className="text-xs text-muted-foreground">
+													{t(
+														"settings.skills.expiryWarningDaysHint",
+														"Show expiring-soon warnings this many days before expiry.",
+													)}
+												</p>
+											</div>
+										)}
+									</form.Field>
+								) : null
+							}
+						</form.Subscribe>
 					</div>
 
 					<DialogFooter>
