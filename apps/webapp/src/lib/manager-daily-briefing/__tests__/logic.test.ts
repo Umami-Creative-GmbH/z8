@@ -28,6 +28,21 @@ describe("manager daily briefing logic", () => {
 		]);
 	});
 
+	it("matches attendance records to the shift window before suppressing exceptions", () => {
+		const now = DateTime.fromISO("2026-04-28T14:20:00.000+02:00");
+		const shifts = [
+			{ id: "shift-1", employeeId: "emp-1", employeeName: "Ada Lovelace", teamName: "Operations", date: "2026-04-28", startTime: "09:00", endTime: "12:00", status: "published" as const },
+			{ id: "shift-2", employeeId: "emp-1", employeeName: "Ada Lovelace", teamName: "Operations", date: "2026-04-28", startTime: "14:00", endTime: "18:00", status: "published" as const },
+		];
+		const records = [
+			{ id: "record-1", employeeId: "emp-1", startAt: DateTime.fromISO("2026-04-28T09:03:00.000+02:00").toJSDate(), endAt: DateTime.fromISO("2026-04-28T12:00:00.000+02:00").toJSDate() },
+		];
+
+		expect(detectAttendanceExceptions({ now, shifts, records, graceMinutes: 5 })).toEqual([
+			expect.objectContaining({ id: "attendance:shift-2", severity: "critical", category: "attendance", title: "Ada Lovelace has not clocked in" }),
+		]);
+	});
+
 	it("returns approved absences overlapping today", () => {
 		const today = DateTime.fromISO("2026-04-28T12:00:00.000+02:00");
 		const result = detectAbsencesToday({
@@ -48,6 +63,21 @@ describe("manager daily briefing logic", () => {
 			publishedShifts: [{ id: "shift-1", employeeId: "emp-1", employeeName: "Ada Lovelace", teamName: "Operations", subareaId: "subarea-1", subareaName: "Front desk", date: "2026-04-28", startTime: "09:00", endTime: "12:00", status: "published" as const }],
 		});
 		expect(risks).toEqual([expect.objectContaining({ id: "coverage:rule-1", severity: "high", title: "Front desk is understaffed" })]);
+	});
+
+	it("detects coverage risks for uncovered segments inside the rule window", () => {
+		const risks = detectCoverageRisks({
+			dayOfWeek: "tuesday",
+			coverageRules: [{ id: "rule-1", subareaId: "subarea-1", subareaName: "Front desk", dayOfWeek: "tuesday", startTime: "09:00", endTime: "17:00", minimumStaffCount: 1 }],
+			publishedShifts: [
+				{ id: "shift-1", employeeId: "emp-1", employeeName: "Ada Lovelace", teamName: "Operations", subareaId: "subarea-1", subareaName: "Front desk", date: "2026-04-28", startTime: "09:00", endTime: "11:00", status: "published" as const },
+				{ id: "shift-2", employeeId: "emp-2", employeeName: "Grace Hopper", teamName: "Operations", subareaId: "subarea-1", subareaName: "Front desk", date: "2026-04-28", startTime: "15:00", endTime: "17:00", status: "published" as const },
+			],
+		});
+
+		expect(risks).toEqual([
+			expect.objectContaining({ id: "coverage:rule-1", severity: "high", title: "Front desk is understaffed", description: "0 scheduled for 09:00-17:00; minimum is 1." }),
+		]);
 	});
 
 	it("sorts action items by severity and stable title", () => {

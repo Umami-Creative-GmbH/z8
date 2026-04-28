@@ -47,10 +47,11 @@ export function detectAttendanceExceptions({
 		}
 
 		const scheduledStart = DateTime.fromISO(`${shift.date}T${shift.startTime}`, { zone: now.zone });
+		const scheduledEnd = DateTime.fromISO(`${shift.date}T${shift.endTime}`, { zone: now.zone });
 		const firstClockIn = records
 			.filter((record) => record.employeeId === shift.employeeId)
 			.map((record) => DateTime.fromJSDate(record.startAt).setZone(now.zone))
-			.filter((startAt) => startAt.toISODate() === shift.date)
+			.filter((startAt) => startAt.toISODate() === shift.date && startAt >= scheduledStart && startAt < scheduledEnd)
 			.sort((left, right) => left.toMillis() - right.toMillis())[0];
 
 		if (!firstClockIn) {
@@ -138,12 +139,7 @@ export function detectCoverageRisks({
 				return [];
 			}
 
-			const scheduledStaffCount = publishedShifts.filter(
-				(shift) =>
-					shift.status === "published" &&
-					shift.subareaId === rule.subareaId &&
-					timeRangesOverlap(shift.startTime, shift.endTime, rule.startTime, rule.endTime),
-			).length;
+			const scheduledStaffCount = getLowestStaffedSegmentCount(rule, publishedShifts);
 
 			if (scheduledStaffCount >= rule.minimumStaffCount) {
 				return [];
@@ -179,8 +175,53 @@ function formatTeamSuffix(teamName: string | null): string {
 	return teamName ? ` (${teamName})` : "";
 }
 
-function timeRangesOverlap(leftStart: string, leftEnd: string, rightStart: string, rightEnd: string): boolean {
-	return timeToMinutes(leftStart) < timeToMinutes(rightEnd) && timeToMinutes(leftEnd) > timeToMinutes(rightStart);
+function getLowestStaffedSegmentCount(rule: BriefingCoverageRule, shifts: BriefingShift[]): number {
+	const ruleStart = timeToMinutes(rule.startTime);
+	const ruleEnd = timeToMinutes(rule.endTime);
+	const assignedShifts = shifts.filter((shift) => {
+		const shiftStart = timeToMinutes(shift.startTime);
+		const shiftEnd = timeToMinutes(shift.endTime);
+
+		return shift.status === "published" && shift.subareaId === rule.subareaId && shiftStart < ruleEnd && shiftEnd > ruleStart;
+	});
+
+	const boundaries = new Set([ruleStart, ruleEnd]);
+
+	for (const shift of assignedShifts) {
+		const shiftStart = timeToMinutes(shift.startTime);
+		const shiftEnd = timeToMinutes(shift.endTime);
+
+		if (shiftStart > ruleStart && shiftStart < ruleEnd) {
+			boundaries.add(shiftStart);
+		}
+
+		if (shiftEnd > ruleStart && shiftEnd < ruleEnd) {
+			boundaries.add(shiftEnd);
+		}
+	}
+
+	const orderedBoundaries = [...boundaries].sort((left, right) => left - right);
+	let lowestStaffCount = Number.POSITIVE_INFINITY;
+
+	for (let index = 0; index < orderedBoundaries.length - 1; index++) {
+		const segmentStart = orderedBoundaries[index];
+		const segmentEnd = orderedBoundaries[index + 1];
+
+		if (segmentStart === undefined || segmentEnd === undefined || segmentStart === segmentEnd) {
+			continue;
+		}
+
+		const segmentStaffCount = assignedShifts.filter((shift) => {
+			const shiftStart = timeToMinutes(shift.startTime);
+			const shiftEnd = timeToMinutes(shift.endTime);
+
+			return shiftStart <= segmentStart && shiftEnd >= segmentEnd;
+		}).length;
+
+		lowestStaffCount = Math.min(lowestStaffCount, segmentStaffCount);
+	}
+
+	return lowestStaffCount === Number.POSITIVE_INFINITY ? 0 : lowestStaffCount;
 }
 
 function timeToMinutes(time: string): number {
