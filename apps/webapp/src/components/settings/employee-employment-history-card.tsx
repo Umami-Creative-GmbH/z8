@@ -225,6 +225,11 @@ export function EmployeeEmploymentHistoryCard({
 	};
 
 	const handleCancel = async (historyId: string) => {
+		const confirmed = window.confirm(
+			"Cancel this employment change? This removes the scheduled or draft employment change.",
+		);
+		if (!confirmed) return;
+
 		const result = await onCancel(historyId).catch(() => null);
 		if (result?.success) {
 			toast.success("Employment history change canceled");

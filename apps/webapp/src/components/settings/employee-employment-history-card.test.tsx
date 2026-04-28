@@ -1,12 +1,13 @@
 /* @vitest-environment jsdom */
 
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { Settings } from "luxon";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { EmployeeEmploymentHistoryCard } from "./employee-employment-history-card";
 
 afterEach(() => {
 	Settings.defaultZone = "system";
+	vi.restoreAllMocks();
 });
 
 const baseHistory = [
@@ -58,14 +59,20 @@ const baseHistory = [
 	},
 ] as const;
 
-function renderCard(canManage = true) {
+function renderCard({
+	canManage = true,
+	onCancel = vi.fn(),
+}: {
+	canManage?: boolean;
+	onCancel?: ReturnType<typeof vi.fn>;
+} = {}) {
 	return render(
 		<EmployeeEmploymentHistoryCard
 			history={[...baseHistory]}
 			canManage={canManage}
 			onCreate={vi.fn()}
 			onConfirm={vi.fn()}
-			onCancel={vi.fn()}
+			onCancel={onCancel}
 			isCreating={false}
 			isMutating={false}
 		/>,
@@ -82,13 +89,13 @@ describe("EmployeeEmploymentHistoryCard", () => {
 	});
 
 	it("hides add action for read-only users", () => {
-		renderCard(false);
+		renderCard({ canManage: false });
 
 		expect(screen.queryByRole("button", { name: /add change/i })).toBeNull();
 	});
 
 	it("hides confirm and cancel actions for read-only users", () => {
-		renderCard(false);
+		renderCard({ canManage: false });
 
 		expect(screen.queryByRole("button", { name: /confirm/i })).toBeNull();
 		expect(screen.queryByRole("button", { name: /cancel/i })).toBeNull();
@@ -101,5 +108,30 @@ describe("EmployeeEmploymentHistoryCard", () => {
 
 		expect(screen.getAllByText(/Jan 1, 2026/).length).toBeGreaterThan(0);
 		expect(screen.queryByText(/Dec 31, 2025/)).toBeNull();
+	});
+
+	it("does not cancel an employment change when confirmation is declined", () => {
+		const onCancel = vi.fn().mockResolvedValue({ success: true });
+		const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
+
+		renderCard({ onCancel });
+
+		fireEvent.click(screen.getByRole("button", { name: /cancel/i }));
+
+		expect(confirmSpy).toHaveBeenCalledWith(
+			"Cancel this employment change? This removes the scheduled or draft employment change.",
+		);
+		expect(onCancel).not.toHaveBeenCalled();
+	});
+
+	it("cancels an employment change after confirmation is accepted", () => {
+		const onCancel = vi.fn().mockResolvedValue({ success: true });
+		vi.spyOn(window, "confirm").mockReturnValue(true);
+
+		renderCard({ onCancel });
+
+		fireEvent.click(screen.getByRole("button", { name: /cancel/i }));
+
+		expect(onCancel).toHaveBeenCalledWith("history-pending");
 	});
 });
