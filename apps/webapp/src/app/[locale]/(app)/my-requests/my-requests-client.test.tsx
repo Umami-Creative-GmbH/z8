@@ -18,6 +18,10 @@ vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({ t: (_key: string, fallback?: string) => fallback ?? _key }),
 }));
 
+vi.mock("next-intl", () => ({
+	useLocale: () => "de",
+}));
+
 vi.mock("@tabler/icons-react", () => ({
 	IconAlertTriangle: () => <span aria-hidden="true" />,
 	IconCheck: () => <span aria-hidden="true" />,
@@ -100,11 +104,15 @@ describe("MyRequestsClient", () => {
 		expect(screen.getByText("Pending")).toBeTruthy();
 		expect(screen.getByText("Required fixes")).toBeTruthy();
 		expect(screen.getByText("Coverage needed")).toBeTruthy();
-		expect(screen.getByRole("link", { name: "Fix" }).getAttribute("href")).toBe(
-			"/absences",
-		);
+		expect(screen.getByRole("link", { name: "Fix" }).getAttribute("href")).toBe("/absences");
 		expect(screen.getByText("Time correction")).toBeTruthy();
 		expect(screen.getByText("Travel expense")).toBeTruthy();
+	});
+
+	it("formats request dates with the active locale", () => {
+		render(<MyRequestsClient initialResult={createResult()} />);
+
+		expect(screen.getByText("18. Apr. 2026")).toBeTruthy();
 	});
 
 	it("filters by status", () => {

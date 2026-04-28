@@ -1,19 +1,15 @@
 "use client";
 
 import { DateTime } from "luxon";
+import { useLocale } from "next-intl";
 import { useState, useTransition } from "react";
+import { useTranslate } from "@tolgee/react";
 
 import { Link } from "@/navigation";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
 	Table,
@@ -38,20 +34,22 @@ interface MyRequestsClientProps {
 type StatusFilter = SelfServiceRequestStatus | "all";
 type SourceTypeFilter = SelfServiceRequestSourceType | "all";
 
-const sourceTypeLabels: Record<SelfServiceRequestSourceType, string> = {
-	absence: "Absence",
-	time_correction: "Time",
-	travel_expense: "Expense",
+const sourceTypeLabels: Record<SelfServiceRequestSourceType, { key: string; fallback: string }> = {
+	absence: { key: "myRequests.sourceTypes.absence", fallback: "Absence" },
+	time_correction: { key: "myRequests.sourceTypes.timeCorrection", fallback: "Time" },
+	travel_expense: { key: "myRequests.sourceTypes.travelExpense", fallback: "Expense" },
 };
 
-const statusLabels: Record<SelfServiceRequestStatus, string> = {
-	pending: "Pending",
-	approved: "Approved",
-	rejected: "Rejected",
-	cancelled: "Cancelled",
+const statusLabels: Record<SelfServiceRequestStatus, { key: string; fallback: string }> = {
+	pending: { key: "myRequests.status.pending", fallback: "Pending" },
+	approved: { key: "myRequests.status.approved", fallback: "Approved" },
+	rejected: { key: "myRequests.status.rejected", fallback: "Rejected" },
+	cancelled: { key: "myRequests.status.cancelled", fallback: "Cancelled" },
 };
 
 export function MyRequestsClient({ initialResult }: MyRequestsClientProps) {
+	const { t } = useTranslate();
+	const locale = useLocale();
 	const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 	const [sourceTypeFilter, setSourceTypeFilter] = useState<SourceTypeFilter>("all");
 	const [search, setSearch] = useState("");
@@ -59,47 +57,63 @@ export function MyRequestsClient({ initialResult }: MyRequestsClientProps) {
 	const normalizedSearch = search.trim().toLowerCase();
 	const filteredItems = initialResult.items.filter((item) => {
 		const matchesStatus = statusFilter === "all" || item.status === statusFilter;
-		const matchesSourceType =
-			sourceTypeFilter === "all" || item.sourceType === sourceTypeFilter;
+		const matchesSourceType = sourceTypeFilter === "all" || item.sourceType === sourceTypeFilter;
 		const searchableText = [
 			item.title,
 			item.subtitle,
 			item.decisionReason ?? "",
-			sourceTypeLabels[item.sourceType],
-			statusLabels[item.status],
+			t(sourceTypeLabels[item.sourceType].key, sourceTypeLabels[item.sourceType].fallback),
+			t(statusLabels[item.status].key, statusLabels[item.status].fallback),
 		]
 			.join(" ")
 			.toLowerCase();
 
-		return (
-			matchesStatus && matchesSourceType && searchableText.includes(normalizedSearch)
-		);
+		return matchesStatus && matchesSourceType && searchableText.includes(normalizedSearch);
 	});
 	const rejectedItems = filteredItems.filter((item) => item.status === "rejected");
 
 	return (
 		<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
 			<header className="px-4 lg:px-6">
-				<h1 className="text-2xl font-semibold tracking-tight">My Requests</h1>
+				<h1 className="text-2xl font-semibold tracking-tight">
+					{t("myRequests.title", "My Requests")}
+				</h1>
 				<p className="text-sm text-muted-foreground">
-					Track pending requests, required fixes, and recent decisions in one place.
+					{t(
+						"myRequests.subtitle",
+						"Track pending requests, required fixes, and recent decisions in one place.",
+					)}
 				</p>
 			</header>
 
 			<section
-				aria-label="Request summary"
+				aria-label={t("myRequests.summary.ariaLabel", "Request summary")}
 				className="grid gap-4 px-4 sm:grid-cols-2 lg:grid-cols-4 lg:px-6"
 			>
-				<SummaryCard label="Pending" value={initialResult.counts.pending} />
-				<SummaryCard label="Required fixes" value={initialResult.counts.requiredFixes} />
-				<SummaryCard label="Recent decisions" value={initialResult.counts.recentDecisions} />
-				<SummaryCard label="Total loaded" value={initialResult.counts.total} />
+				<SummaryCard
+					label={t("myRequests.summary.pending", "Pending")}
+					value={initialResult.counts.pending}
+				/>
+				<SummaryCard
+					label={t("myRequests.summary.requiredFixes", "Required fixes")}
+					value={initialResult.counts.requiredFixes}
+				/>
+				<SummaryCard
+					label={t("myRequests.summary.recentDecisions", "Recent decisions")}
+					value={initialResult.counts.recentDecisions}
+				/>
+				<SummaryCard
+					label={t("myRequests.summary.totalLoaded", "Total loaded")}
+					value={initialResult.counts.total}
+				/>
 			</section>
 
 			{initialResult.sourceErrors.length > 0 ? (
 				<section className="px-4 lg:px-6">
 					<Alert variant="destructive">
-						<AlertTitle>Some requests could not be loaded.</AlertTitle>
+						<AlertTitle>
+							{t("myRequests.sourceError.title", "Some requests could not be loaded.")}
+						</AlertTitle>
 						<AlertDescription>
 							<ul className="list-disc space-y-1 pl-4">
 								{initialResult.sourceErrors.map((error) => (
@@ -115,9 +129,12 @@ export function MyRequestsClient({ initialResult }: MyRequestsClientProps) {
 				<section className="px-4 lg:px-6">
 					<Card className="border-destructive/30 bg-destructive/5">
 						<CardHeader>
-							<CardTitle>Needs attention</CardTitle>
+							<CardTitle>{t("myRequests.needsAttention.title", "Needs attention")}</CardTitle>
 							<CardDescription>
-								Rejected requests that may require a correction before resubmission.
+								{t(
+									"myRequests.needsAttention.description",
+									"Rejected requests that may require a correction before resubmission.",
+								)}
 							</CardDescription>
 						</CardHeader>
 						<CardContent className="grid gap-3">
@@ -129,11 +146,14 @@ export function MyRequestsClient({ initialResult }: MyRequestsClientProps) {
 									<div className="min-w-0 space-y-1">
 										<div className="flex flex-wrap items-center gap-2">
 											<p className="font-medium">{item.title}</p>
-											<Badge variant="destructive">Rejected</Badge>
+											<Badge variant="destructive">
+												{t("myRequests.status.rejected", "Rejected")}
+											</Badge>
 										</div>
 										<p className="text-sm text-muted-foreground">{item.subtitle}</p>
 										<p className="text-sm">
-											{item.decisionReason?.trim() || "No reason provided."}
+											{item.decisionReason?.trim() ||
+												t("myRequests.noReason", "No reason provided.")}
 										</p>
 									</div>
 									<RequestAction item={item} preferFix />
@@ -147,97 +167,131 @@ export function MyRequestsClient({ initialResult }: MyRequestsClientProps) {
 			<section className="px-4 lg:px-6">
 				<Card>
 					<CardHeader>
-						<CardTitle>All requests</CardTitle>
+						<CardTitle>{t("myRequests.all.title", "All requests")}</CardTitle>
 						<CardDescription>
-							Review requests across absences, time corrections, and expenses.
+							{t(
+								"myRequests.all.description",
+								"Review requests across absences, time corrections, and expenses.",
+							)}
 						</CardDescription>
 					</CardHeader>
 					<CardContent className="space-y-4">
 						<div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_180px_180px]">
 							<label htmlFor="request-search" className="grid gap-2 text-sm font-medium">
-								Search
+								{t("myRequests.filters.search", "Search")}
 								<Input
 									id="request-search"
 									name="request-search"
 									autoComplete="off"
 									value={search}
 									onChange={(event) => setSearch(event.target.value)}
-									placeholder="Search by title…"
+									placeholder={t("myRequests.filters.searchPlaceholder", "Search by title…")}
 								/>
 							</label>
 							<label className="grid gap-2 text-sm font-medium">
-								Status
+								{t("myRequests.filters.status", "Status")}
 								<select
 									className="h-9 rounded-md border border-input bg-background px-3 text-foreground text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
 									value={statusFilter}
 									onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}
 								>
-									<option value="all">All statuses</option>
-									<option value="pending">Pending requests</option>
-									<option value="approved">Approved requests</option>
-									<option value="rejected">Rejected requests</option>
-									<option value="cancelled">Cancelled requests</option>
+									<option value="all">{t("myRequests.filters.allStatuses", "All statuses")}</option>
+									<option value="pending">
+										{t("myRequests.filters.pendingRequests", "Pending requests")}
+									</option>
+									<option value="approved">
+										{t("myRequests.filters.approvedRequests", "Approved requests")}
+									</option>
+									<option value="rejected">
+										{t("myRequests.filters.rejectedRequests", "Rejected requests")}
+									</option>
+									<option value="cancelled">
+										{t("myRequests.filters.cancelledRequests", "Cancelled requests")}
+									</option>
 								</select>
 							</label>
 							<label className="grid gap-2 text-sm font-medium">
-								Type
+								{t("myRequests.filters.type", "Type")}
 								<select
 									className="h-9 rounded-md border border-input bg-background px-3 text-foreground text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
 									value={sourceTypeFilter}
-									onChange={(event) =>
-										setSourceTypeFilter(event.target.value as SourceTypeFilter)
-									}
+									onChange={(event) => setSourceTypeFilter(event.target.value as SourceTypeFilter)}
 								>
-									<option value="all">All types</option>
-									<option value="absence">Absence</option>
-									<option value="time_correction">Time</option>
-									<option value="travel_expense">Expense</option>
+									<option value="all">{t("myRequests.filters.allTypes", "All types")}</option>
+									<option value="absence">{t("myRequests.sourceTypes.absence", "Absence")}</option>
+									<option value="time_correction">
+										{t("myRequests.sourceTypes.timeCorrection", "Time")}
+									</option>
+									<option value="travel_expense">
+										{t("myRequests.sourceTypes.travelExpense", "Expense")}
+									</option>
 								</select>
 							</label>
 						</div>
 
 						{initialResult.items.length === 0 ? (
-							<EmptyState title="No requests yet" />
+							<EmptyState
+								title={t("myRequests.empty.none.title", "No requests yet")}
+								description={t(
+									"myRequests.empty.none.description",
+									"Requests will appear here when they are submitted or loaded.",
+								)}
+							/>
 						) : filteredItems.length === 0 ? (
-							<EmptyState title="No requests match your filters" />
+							<EmptyState
+								title={t("myRequests.empty.filtered.title", "No requests match your filters")}
+								description={t(
+									"myRequests.empty.filtered.description",
+									"Requests will appear here when they are submitted or loaded.",
+								)}
+							/>
 						) : (
 							<div className="overflow-x-auto">
-							<Table>
-								<TableHeader>
-									<TableRow>
-										<TableHead>Type</TableHead>
-										<TableHead>Request</TableHead>
-										<TableHead>Status</TableHead>
-										<TableHead>Submitted</TableHead>
-										<TableHead>Decision</TableHead>
-										<TableHead className="text-right">Action</TableHead>
-									</TableRow>
-								</TableHeader>
-								<TableBody>
-									{filteredItems.map((item) => (
-										<TableRow key={item.id}>
-											<TableCell>{sourceTypeLabels[item.sourceType]}</TableCell>
-											<TableCell className="max-w-[320px] whitespace-normal">
-												<div className="space-y-1">
-													<p className="font-medium">{item.title}</p>
-													<p className="text-muted-foreground text-sm">{item.subtitle}</p>
-													{item.decisionReason ? (
-														<p className="text-sm">Reason: {item.decisionReason}</p>
-													) : null}
-												</div>
-											</TableCell>
-											<TableCell>
-												<StatusBadge status={item.status} />
-											</TableCell>
-											<TableCell>{formatDate(item.submittedAt)}</TableCell>
-											<TableCell>{formatDate(item.resolvedAt)}</TableCell>
-											<TableCell className="text-right">
-												<RequestAction item={item} />
-											</TableCell>
+								<Table>
+									<TableHeader>
+										<TableRow>
+											<TableHead>{t("myRequests.table.type", "Type")}</TableHead>
+											<TableHead>{t("myRequests.table.request", "Request")}</TableHead>
+											<TableHead>{t("myRequests.table.status", "Status")}</TableHead>
+											<TableHead>{t("myRequests.table.submitted", "Submitted")}</TableHead>
+											<TableHead>{t("myRequests.table.decision", "Decision")}</TableHead>
+											<TableHead className="text-right">
+												{t("myRequests.table.action", "Action")}
+											</TableHead>
 										</TableRow>
-									))}
-								</TableBody>
-							</Table>
+									</TableHeader>
+									<TableBody>
+										{filteredItems.map((item) => (
+											<TableRow key={item.id}>
+												<TableCell>
+													{t(
+														sourceTypeLabels[item.sourceType].key,
+														sourceTypeLabels[item.sourceType].fallback,
+													)}
+												</TableCell>
+												<TableCell className="max-w-[320px] whitespace-normal">
+													<div className="space-y-1">
+														<p className="font-medium">{item.title}</p>
+														<p className="text-muted-foreground text-sm">{item.subtitle}</p>
+														{item.decisionReason ? (
+															<p className="text-sm">
+																{t("myRequests.reasonLabel", "Reason")}: {item.decisionReason}
+															</p>
+														) : null}
+													</div>
+												</TableCell>
+												<TableCell>
+													<StatusBadge status={item.status} />
+												</TableCell>
+												<TableCell>{formatDate(item.submittedAt, locale)}</TableCell>
+												<TableCell>{formatDate(item.resolvedAt, locale)}</TableCell>
+												<TableCell className="text-right">
+													<RequestAction item={item} />
+												</TableCell>
+											</TableRow>
+										))}
+									</TableBody>
+								</Table>
 							</div>
 						)}
 					</CardContent>
@@ -259,19 +313,21 @@ function SummaryCard({ label, value }: { label: string; value: number }) {
 }
 
 function StatusBadge({ status }: { status: SelfServiceRequestStatus }) {
+	const { t } = useTranslate();
+
 	if (status === "rejected") {
-		return <Badge variant="destructive">Rejected</Badge>;
+		return <Badge variant="destructive">{t("myRequests.status.rejected", "Rejected")}</Badge>;
 	}
 
 	if (status === "approved") {
-		return <Badge variant="default">Approved</Badge>;
+		return <Badge variant="default">{t("myRequests.status.approved", "Approved")}</Badge>;
 	}
 
 	if (status === "pending") {
-		return <Badge variant="secondary">In review</Badge>;
+		return <Badge variant="secondary">{t("myRequests.status.inReview", "In review")}</Badge>;
 	}
 
-	return <Badge variant="outline">Cancelled</Badge>;
+	return <Badge variant="outline">{t("myRequests.status.cancelled", "Cancelled")}</Badge>;
 }
 
 function RequestAction({
@@ -281,19 +337,32 @@ function RequestAction({
 	item: SelfServiceRequestItem;
 	preferFix?: boolean;
 }) {
+	const { t } = useTranslate();
 	const [isCancelPending, startCancelTransition] = useTransition();
 	const [cancelError, setCancelError] = useState<string | null>(null);
 	const canFix = item.availableActions.includes("fix");
 	const canView = item.availableActions.includes("view");
 	const canCancel = item.availableActions.includes("cancel");
-	const label = preferFix && canFix ? "Fix" : canView ? "View" : canFix ? "Fix" : null;
+	const primaryAction = preferFix && canFix ? "fix" : canView ? "view" : canFix ? "fix" : null;
+	const primaryActionLabel =
+		primaryAction === "fix"
+			? t("myRequests.actions.fix", "Fix")
+			: primaryAction === "view"
+				? t("myRequests.actions.view", "View")
+				: null;
 
-	if (!label && !canCancel) {
-		return <span className="text-sm text-muted-foreground">Not available</span>;
+	if (!primaryActionLabel && !canCancel) {
+		return (
+			<span className="text-sm text-muted-foreground">
+				{t("myRequests.actions.notAvailable", "Not available")}
+			</span>
+		);
 	}
 
 	function handleCancel() {
-		if (!window.confirm("Cancel this absence request?")) {
+		if (
+			!window.confirm(t("myRequests.actions.cancelConfirmation", "Cancel this absence request?"))
+		) {
 			return;
 		}
 
@@ -305,16 +374,19 @@ function RequestAction({
 				return;
 			}
 
-			setCancelError(result.error ?? "Absence request could not be cancelled.");
+			setCancelError(
+				result.error ??
+					t("myRequests.actions.cancelError", "Absence request could not be cancelled."),
+			);
 		});
 	}
 
 	return (
 		<div className="grid justify-items-end gap-2">
 			<div className="flex flex-wrap justify-end gap-2">
-				{label ? (
-					<Button asChild size="sm" variant={label === "Fix" ? "default" : "outline"}>
-						<Link href={item.sourceHref}>{label}</Link>
+				{primaryActionLabel ? (
+					<Button asChild size="sm" variant={primaryAction === "fix" ? "default" : "outline"}>
+						<Link href={item.sourceHref}>{primaryActionLabel}</Link>
 					</Button>
 				) : null}
 				{canCancel ? (
@@ -325,7 +397,7 @@ function RequestAction({
 						disabled={isCancelPending}
 						onClick={handleCancel}
 					>
-						Cancel
+						{t("myRequests.actions.cancel", "Cancel")}
 					</Button>
 				) : null}
 			</div>
@@ -338,23 +410,21 @@ function RequestAction({
 	);
 }
 
-function EmptyState({ title }: { title: string }) {
+function EmptyState({ title, description }: { title: string; description: string }) {
 	return (
 		<div className="rounded-lg border border-dashed p-8 text-center">
 			<p className="font-medium">{title}</p>
-			<p className="mt-1 text-sm text-muted-foreground">
-				Requests will appear here when they are submitted or loaded.
-			</p>
+			<p className="mt-1 text-sm text-muted-foreground">{description}</p>
 		</div>
 	);
 }
 
-function formatDate(date: Date | null) {
+function formatDate(date: Date | null, locale: string) {
 	if (!date) {
 		return "-";
 	}
 
 	return DateTime.fromJSDate(date, { zone: "utc" })
-		.setLocale("en")
+		.setLocale(locale)
 		.toLocaleString(DateTime.DATE_MED);
 }
