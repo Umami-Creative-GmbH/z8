@@ -1,4 +1,7 @@
-import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
+import { createCipheriv, createDecipheriv, hkdfSync, randomBytes } from "node:crypto";
+
+const CREDENTIAL_SECRET_INFO = "z8/import-review/credential-secret/v1";
+const MIN_SECRET_LENGTH = 32;
 
 export interface EncryptedImportCredential {
 	ciphertext: string;
@@ -8,7 +11,23 @@ export interface EncryptedImportCredential {
 }
 
 function deriveKey(secret: string): Buffer {
-	return createHash("sha256").update(secret).digest();
+	if (secret.length < MIN_SECRET_LENGTH) {
+		throw new Error("Import credential secret must be at least 32 characters");
+	}
+
+	return Buffer.from(
+		hkdfSync(
+			"sha256",
+			Buffer.from(secret, "utf8"),
+			Buffer.alloc(0),
+			Buffer.from(CREDENTIAL_SECRET_INFO, "utf8"),
+			32,
+		),
+	);
+}
+
+function expiryAad(expiresAt: Date): Buffer {
+	return Buffer.from(expiresAt.toISOString(), "utf8");
 }
 
 export function encryptImportCredential(
@@ -18,6 +37,7 @@ export function encryptImportCredential(
 ): EncryptedImportCredential {
 	const iv = randomBytes(12);
 	const cipher = createCipheriv("aes-256-gcm", deriveKey(secret), iv);
+	cipher.setAAD(expiryAad(expiresAt));
 	const ciphertext = Buffer.concat([cipher.update(plaintext, "utf8"), cipher.final()]);
 	const authTag = cipher.getAuthTag();
 
@@ -37,6 +57,7 @@ export function decryptImportCredential(
 	if (credential.expiresAt <= now) throw new Error("Import credential has expired");
 
 	const decipher = createDecipheriv("aes-256-gcm", deriveKey(secret), Buffer.from(credential.iv, "base64"));
+	decipher.setAAD(expiryAad(credential.expiresAt));
 	decipher.setAuthTag(Buffer.from(credential.authTag, "base64"));
 
 	return Buffer.concat([
