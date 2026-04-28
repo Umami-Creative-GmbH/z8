@@ -47,11 +47,12 @@ export function detectAttendanceExceptions({
 		}
 
 		const scheduledStart = DateTime.fromISO(`${shift.date}T${shift.startTime}`, { zone: now.zone });
-		const scheduledEnd = DateTime.fromISO(`${shift.date}T${shift.endTime}`, { zone: now.zone });
+		const scheduledEnd = getShiftEnd(scheduledStart, shift.endTime);
+		const associationStart = scheduledStart.minus({ hours: 2 });
 		const firstClockIn = records
 			.filter((record) => record.employeeId === shift.employeeId)
 			.map((record) => DateTime.fromJSDate(record.startAt).setZone(now.zone))
-			.filter((startAt) => startAt.toISODate() === shift.date && startAt >= scheduledStart && startAt < scheduledEnd)
+			.filter((startAt) => startAt >= associationStart && startAt < scheduledEnd)
 			.sort((left, right) => left.toMillis() - right.toMillis())[0];
 
 		if (!firstClockIn) {
@@ -175,6 +176,12 @@ function formatTeamSuffix(teamName: string | null): string {
 	return teamName ? ` (${teamName})` : "";
 }
 
+function getShiftEnd(scheduledStart: DateTime, endTime: string): DateTime {
+	const scheduledEnd = DateTime.fromISO(`${scheduledStart.toISODate()}T${endTime}`, { zone: scheduledStart.zone });
+
+	return scheduledEnd <= scheduledStart ? scheduledEnd.plus({ days: 1 }) : scheduledEnd;
+}
+
 function getLowestStaffedSegmentCount(rule: BriefingCoverageRule, shifts: BriefingShift[]): number {
 	const ruleStart = timeToMinutes(rule.startTime);
 	const ruleEnd = timeToMinutes(rule.endTime);
@@ -211,12 +218,12 @@ function getLowestStaffedSegmentCount(rule: BriefingCoverageRule, shifts: Briefi
 			continue;
 		}
 
-		const segmentStaffCount = assignedShifts.filter((shift) => {
+		const segmentStaffCount = new Set(assignedShifts.filter((shift) => {
 			const shiftStart = timeToMinutes(shift.startTime);
 			const shiftEnd = timeToMinutes(shift.endTime);
 
 			return shiftStart <= segmentStart && shiftEnd >= segmentEnd;
-		}).length;
+		}).map((shift) => shift.employeeId)).size;
 
 		lowestStaffCount = Math.min(lowestStaffCount, segmentStaffCount);
 	}
