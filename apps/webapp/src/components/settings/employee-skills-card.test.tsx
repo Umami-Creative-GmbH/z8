@@ -1,21 +1,30 @@
 /* @vitest-environment jsdom */
 
-import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { EmployeeSkillWithDetails } from "@/lib/effect/services/skill.service";
 import { EmployeeSkillsCard } from "./employee-skills-card";
+
+const { assignSkillToEmployeeMock, removeSkillFromEmployeeMock } = vi.hoisted(() => ({
+	assignSkillToEmployeeMock: vi.fn(),
+	removeSkillFromEmployeeMock: vi.fn(),
+}));
 
 const employeeSkill = {
 	id: "employee-skill-1",
 	employeeId: "employee-1",
 	skillId: "skill-1",
+	status: "active",
 	assignedBy: "manager-1",
+	assignedAt: new Date("2026-01-01T00:00:00Z"),
 	issuedAt: new Date("2026-01-15T00:00:00Z"),
 	expiresAt: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000),
+	renewedAt: null,
+	renewedBy: null,
 	issuer: "Safety Council With A Very Long Issuer Name",
 	certificateNumber: "CERT-VERY-LONG-1234567890",
 	notes: null,
 	createdAt: new Date("2026-01-01T00:00:00Z"),
-	updatedAt: new Date("2026-01-01T00:00:00Z"),
 	skill: {
 		id: "skill-1",
 		organizationId: "org-1",
@@ -31,7 +40,7 @@ const employeeSkill = {
 		createdBy: "user-1",
 		updatedBy: null,
 	},
-};
+} satisfies EmployeeSkillWithDetails;
 
 const availableSkill = {
 	id: "skill-2",
@@ -63,7 +72,16 @@ vi.mock("@tanstack/react-query", async () => {
 	return {
 		...actual,
 		useQueryClient: () => ({ invalidateQueries: vi.fn() }),
-		useMutation: () => ({ mutate: vi.fn(), isPending: false }),
+		useMutation: (options: {
+			mutationFn: (input: unknown) => Promise<unknown>;
+			onSuccess?: () => void;
+		}) => ({
+			mutate: async (input: unknown) => {
+				await options.mutationFn(input);
+				options.onSuccess?.();
+			},
+			isPending: false,
+		}),
 	};
 });
 
@@ -82,8 +100,8 @@ vi.mock("@tolgee/react", () => ({
 vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 
 vi.mock("@/app/[locale]/(app)/settings/skills/actions", () => ({
-	assignSkillToEmployee: vi.fn(),
-	removeSkillFromEmployee: vi.fn(),
+	assignSkillToEmployee: assignSkillToEmployeeMock,
+	removeSkillFromEmployee: removeSkillFromEmployeeMock,
 }));
 
 vi.mock("@/lib/query/use-skills", () => ({
@@ -92,6 +110,14 @@ vi.mock("@/lib/query/use-skills", () => ({
 }));
 
 describe("EmployeeSkillsCard", () => {
+	beforeEach(() => {
+		assignSkillToEmployeeMock.mockResolvedValue({
+			success: true,
+			data: { id: "employee-skill-2" },
+		});
+		removeSkillFromEmployeeMock.mockResolvedValue({ success: true });
+	});
+
 	it("renders qualification assignment metadata", () => {
 		render(<EmployeeSkillsCard employeeId="employee-1" organizationId="org-1" canManageSkills />);
 
@@ -138,5 +164,29 @@ describe("EmployeeSkillsCard", () => {
 		expect((screen.getByLabelText("Issuer") as HTMLInputElement).value).toBe("");
 		expect((screen.getByLabelText("Certificate Number") as HTMLInputElement).value).toBe("");
 		expect((screen.getByLabelText("Notes") as HTMLTextAreaElement).value).toBe("");
+	});
+
+	it("submits assignment dates as UTC date-only values", async () => {
+		render(<EmployeeSkillsCard employeeId="employee-1" organizationId="org-1" canManageSkills />);
+
+		fireEvent.click(screen.getByRole("button", { name: "Assign Skill" }));
+		fireEvent.click(screen.getByLabelText("Skill *"));
+		fireEvent.click(screen.getByRole("option", { name: /Crane Operator/ }));
+		fireEvent.change(screen.getByLabelText("Expiry Date *"), {
+			target: { value: "2027-01-15" },
+		});
+		fireEvent.change(screen.getByLabelText("Issue Date"), {
+			target: { value: "2026-01-15" },
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Assign" }));
+
+		await waitFor(() => {
+			expect(assignSkillToEmployeeMock).toHaveBeenCalledWith(
+				expect.objectContaining({
+					issuedAt: new Date("2026-01-15T00:00:00.000Z"),
+					expiresAt: new Date("2027-01-15T00:00:00.000Z"),
+				}),
+			);
+		});
 	});
 });

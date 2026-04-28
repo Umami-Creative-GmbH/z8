@@ -350,8 +350,12 @@ function AssignSkillDialog({
 			const result = await assignSkillToEmployee({
 				employeeId,
 				skillId: data.skillId,
-				issuedAt: data.issuedAt ? DateTime.fromISO(data.issuedAt).toJSDate() : undefined,
-				expiresAt: data.expiresAt ? DateTime.fromISO(data.expiresAt).toJSDate() : undefined,
+				issuedAt: data.issuedAt
+					? DateTime.fromISO(data.issuedAt, { zone: "utc" }).toJSDate()
+					: undefined,
+				expiresAt: data.expiresAt
+					? DateTime.fromISO(data.expiresAt, { zone: "utc" }).toJSDate()
+					: undefined,
 				issuer: data.issuer || undefined,
 				certificateNumber: data.certificateNumber || undefined,
 				notes: data.notes || undefined,

@@ -199,7 +199,7 @@ export function SkillCatalogManagement({
 					</Button>
 					{canManageCatalog ? (
 						<Button onClick={handleCreate}>
-							<IconPlus className="mr-2 h-4 w-4" />
+							<IconPlus className="mr-2 h-4 w-4" aria-hidden="true" />
 							{t("settings.skills.addSkill", "Add Skill")}
 						</Button>
 					) : null}
@@ -220,11 +220,14 @@ export function SkillCatalogManagement({
 				<CardContent>
 					{isLoading ? (
 						<div className="flex items-center justify-center py-8">
-							<IconLoader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+							<IconLoader2
+								className="h-6 w-6 animate-spin text-muted-foreground"
+								aria-hidden="true"
+							/>
 						</div>
 					) : skills.length === 0 ? (
 						<div className="py-8 text-center text-muted-foreground">
-							<IconAward className="mx-auto h-12 w-12 mb-4 opacity-50" />
+							<IconAward className="mx-auto h-12 w-12 mb-4 opacity-50" aria-hidden="true" />
 							<p>{t("settings.skills.noSkills", "No skills defined yet")}</p>
 							<p className="text-sm mt-1">
 								{t("settings.skills.noSkillsHint", "Create your first skill to get started")}
@@ -528,7 +531,7 @@ function SkillDialog({ skill, open, onOpenChange, onSuccess }: SkillDialogProps)
 											{SKILL_CATEGORIES.map((cat) => (
 												<SelectItem key={cat.value} value={cat.value}>
 													<span className="flex items-center gap-2">
-														<cat.icon className="h-4 w-4" />
+														<cat.icon className="h-4 w-4" aria-hidden="true" />
 														{cat.label}
 													</span>
 												</SelectItem>
@@ -660,7 +663,9 @@ function SkillDialog({ skill, open, onOpenChange, onSuccess }: SkillDialogProps)
 							{t("common.cancel", "Cancel")}
 						</Button>
 						<Button type="submit" disabled={isMutating}>
-							{isMutating && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
+							{isMutating && (
+								<IconLoader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+							)}
 							{isEditing ? t("common.save", "Save") : t("common.create", "Create")}
 						</Button>
 					</DialogFooter>
