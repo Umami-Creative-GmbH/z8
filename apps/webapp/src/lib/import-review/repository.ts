@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { and, eq } from "drizzle-orm";
+import { and, asc, count, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
 	importBatch,
@@ -15,11 +15,15 @@ import type {
 	ImportDateRange,
 	ImportEntityType,
 	ImportIssueDraft,
+	ImportIssueSeverity,
 	ImportJobKind,
 	ImportJobStatus,
 	ImportProvider,
+	ImportRowStatus,
 	NormalizedImportRow,
 } from "./types";
+
+type ImportRowDecision = "accepted" | "rejected";
 
 function stableStringify(value: unknown): string {
 	if (Array.isArray(value)) return `[${value.map(stableStringify).join(",")}]`;
@@ -65,7 +69,9 @@ export async function updateImportBatchStatus(input: {
 	await db
 		.update(importBatch)
 		.set(update)
-		.where(and(eq(importBatch.id, input.batchId), eq(importBatch.organizationId, input.organizationId)));
+		.where(
+			and(eq(importBatch.id, input.batchId), eq(importBatch.organizationId, input.organizationId)),
+		);
 }
 
 export async function createImportBatchJob(input: {
@@ -75,11 +81,7 @@ export async function createImportBatchJob(input: {
 	entityType: ImportEntityType;
 	partitionKey: string;
 }) {
-	const [job] = await db
-		.insert(importBatchJob)
-		.values(input)
-		.onConflictDoNothing()
-		.returning();
+	const [job] = await db.insert(importBatchJob).values(input).onConflictDoNothing().returning();
 	if (job) return job;
 
 	return db.query.importBatchJob.findFirst({
@@ -115,7 +117,12 @@ export async function updateImportBatchJob(input: {
 	await db
 		.update(importBatchJob)
 		.set(update)
-		.where(and(eq(importBatchJob.id, input.jobId), eq(importBatchJob.organizationId, input.organizationId)));
+		.where(
+			and(
+				eq(importBatchJob.id, input.jobId),
+				eq(importBatchJob.organizationId, input.organizationId),
+			),
+		);
 }
 
 export async function saveImportJobSecret(input: {
@@ -139,7 +146,10 @@ export async function saveImportJobSecret(input: {
 
 export async function getImportJobSecret(input: { secretId: string; organizationId: string }) {
 	return db.query.importJobSecret.findFirst({
-		where: and(eq(importJobSecret.id, input.secretId), eq(importJobSecret.organizationId, input.organizationId)),
+		where: and(
+			eq(importJobSecret.id, input.secretId),
+			eq(importJobSecret.organizationId, input.organizationId),
+		),
 	});
 }
 
@@ -194,6 +204,159 @@ export async function insertImportIssues(input: {
 			})),
 		)
 		.returning();
+}
+
+export async function getImportReviewSummary(input: { batchId: string; organizationId: string }) {
+	const rowBaseWhere = and(
+		eq(importStagedRow.batchId, input.batchId),
+		eq(importStagedRow.organizationId, input.organizationId),
+	);
+	const issueBaseWhere = and(
+		eq(importIssue.batchId, input.batchId),
+		eq(importIssue.organizationId, input.organizationId),
+	);
+
+	const [rowCounts] = await db
+		.select({
+			totalRows: count(),
+			acceptedRows: sql<number>`count(*) filter (where ${importStagedRow.rowStatus} = 'accepted')::int`,
+			rejectedRows: sql<number>`count(*) filter (where ${importStagedRow.rowStatus} = 'rejected')::int`,
+			blockedRows: sql<number>`count(*) filter (where ${importStagedRow.rowStatus} = 'blocked')::int`,
+			committedRows: sql<number>`count(*) filter (where ${importStagedRow.rowStatus} = 'committed')::int`,
+		})
+		.from(importStagedRow)
+		.where(rowBaseWhere);
+	const [issueCounts] = await db
+		.select({ issueCount: count() })
+		.from(importIssue)
+		.where(issueBaseWhere);
+
+	return {
+		totalRows: Number(rowCounts?.totalRows ?? 0),
+		acceptedRows: Number(rowCounts?.acceptedRows ?? 0),
+		rejectedRows: Number(rowCounts?.rejectedRows ?? 0),
+		blockedRows: Number(rowCounts?.blockedRows ?? 0),
+		committedRows: Number(rowCounts?.committedRows ?? 0),
+		issueCount: Number(issueCounts?.issueCount ?? 0),
+	};
+}
+
+export async function listImportReviewRows(input: {
+	batchId: string;
+	organizationId: string;
+	status?: ImportRowStatus;
+	limit: number;
+	offset: number;
+}) {
+	const conditions = [
+		eq(importStagedRow.batchId, input.batchId),
+		eq(importStagedRow.organizationId, input.organizationId),
+	];
+
+	if (input.status) conditions.push(eq(importStagedRow.rowStatus, input.status));
+
+	return db
+		.select()
+		.from(importStagedRow)
+		.where(and(...conditions))
+		.orderBy(asc(importStagedRow.createdAt), asc(importStagedRow.id))
+		.limit(input.limit)
+		.offset(input.offset);
+}
+
+export async function applyImportRowDecision(input: {
+	batchId: string;
+	organizationId: string;
+	rowIds: string[];
+	decision: ImportRowDecision;
+	reason?: string | null;
+	decidedBy: string;
+}) {
+	const rows = await db
+		.select({ id: importStagedRow.id, issueSeverity: importStagedRow.issueSeverity })
+		.from(importStagedRow)
+		.where(
+			and(
+				eq(importStagedRow.batchId, input.batchId),
+				eq(importStagedRow.organizationId, input.organizationId),
+				inArray(importStagedRow.id, input.rowIds),
+			),
+		);
+
+	const baseUpdate = {
+		decisionReason: input.reason ?? null,
+		decidedBy: input.decidedBy,
+		decidedAt: new Date(),
+	};
+
+	async function updateRows(rowIds: string[], rowStatus: ImportRowStatus) {
+		if (rowIds.length === 0) return [];
+		return db
+			.update(importStagedRow)
+			.set({ ...baseUpdate, rowStatus })
+			.where(
+				and(
+					eq(importStagedRow.batchId, input.batchId),
+					eq(importStagedRow.organizationId, input.organizationId),
+					inArray(importStagedRow.id, rowIds),
+				),
+			)
+			.returning({ id: importStagedRow.id });
+	}
+
+	if (input.decision === "rejected") {
+		const updated = await updateRows(
+			rows.map((row) => row.id),
+			"rejected",
+		);
+		return { updatedCount: updated.length };
+	}
+
+	const blockingRows = rows
+		.filter((row: { issueSeverity: ImportIssueSeverity }) => row.issueSeverity === "blocking")
+		.map((row) => row.id);
+	const acceptedRows = rows
+		.filter((row: { issueSeverity: ImportIssueSeverity }) => row.issueSeverity !== "blocking")
+		.map((row) => row.id);
+	const [acceptedUpdated, blockedUpdated] = await Promise.all([
+		updateRows(acceptedRows, "accepted"),
+		updateRows(blockingRows, "blocked"),
+	]);
+
+	return { updatedCount: acceptedUpdated.length + blockedUpdated.length };
+}
+
+export async function createCommitJobsForAcceptedRows(input: {
+	batchId: string;
+	organizationId: string;
+}) {
+	const entityTypes = await db
+		.selectDistinct({ entityType: importStagedRow.entityType })
+		.from(importStagedRow)
+		.where(
+			and(
+				eq(importStagedRow.batchId, input.batchId),
+				eq(importStagedRow.organizationId, input.organizationId),
+				eq(importStagedRow.rowStatus, "accepted"),
+			),
+		)
+		.orderBy(asc(importStagedRow.entityType));
+
+	const jobs = [];
+	for (const row of entityTypes) {
+		const entityType = row.entityType as ImportEntityType;
+		const job = await createImportBatchJob({
+			batchId: input.batchId,
+			organizationId: input.organizationId,
+			kind: "commit",
+			entityType,
+			partitionKey: `commit:${entityType}`,
+		});
+
+		if (job) jobs.push(job);
+	}
+
+	return jobs;
 }
 
 export async function recordRejectedExport(input: {

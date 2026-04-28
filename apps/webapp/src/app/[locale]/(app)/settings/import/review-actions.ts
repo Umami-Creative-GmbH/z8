@@ -8,22 +8,48 @@ import { env } from "@/env";
 import { requireUser } from "@/lib/auth-helpers";
 import { encryptImportCredential } from "@/lib/import-review/credential-secret";
 import { partitionDateRangeByMonth } from "@/lib/import-review/partitioning";
-import { enqueueImportScanJob } from "@/lib/import-review/queue";
+import { enqueueImportCommitJob, enqueueImportScanJob } from "@/lib/import-review/queue";
 import {
+	applyImportRowDecision,
+	createCommitJobsForAcceptedRows,
 	createImportBatch,
 	createImportBatchJob,
+	getImportReviewSummary,
+	listImportReviewRows,
+	recordRejectedExport,
 	saveImportJobSecret,
 	updateImportBatchStatus,
 } from "@/lib/import-review/repository";
-import type { ImportDateRange, ImportEntityType, ImportProvider } from "@/lib/import-review/types";
+import type {
+	ImportDateRange,
+	ImportEntityType,
+	ImportProvider,
+	ImportRowStatus,
+} from "@/lib/import-review/types";
 
 type ActionResult<T> = { success: true; data: T } | { success: false; error: string };
 
 const MAX_EMPLOYEE_IDS = 500;
 const MAX_EMPLOYEE_ID_LENGTH = 128;
+const MAX_ROW_IDS = 500;
+const MAX_REVIEW_PAGE_LIMIT = 500;
+const MAX_REVIEW_PAGE_OFFSET = 100_000;
+const MAX_DECISION_REASON_LENGTH = 1_000;
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const SAFE_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/;
 const GENERIC_SCAN_START_ERROR = "Failed to start import review scan";
+const GENERIC_COMMIT_START_ERROR = "Failed to start import commit";
 const IMPORT_PROVIDERS = new Set<ImportProvider>(["clockodo", "clockin"]);
+const IMPORT_ROW_STATUSES = new Set<ImportRowStatus>([
+	"staged",
+	"accepted",
+	"rejected",
+	"blocked",
+	"needs_mapping",
+	"committing",
+	"committed",
+	"commit_failed",
+]);
 const IMPORT_ENTITY_TYPES = new Set<ImportEntityType>([
 	"employee",
 	"team",
@@ -54,6 +80,23 @@ interface ValidatedStartImportReviewScanInput extends StartImportReviewScanInput
 	credential: string;
 }
 
+interface ImportReviewBatchInput {
+	organizationId: string;
+	batchId: string;
+}
+
+interface ListImportReviewRowsInput extends ImportReviewBatchInput {
+	status?: ImportRowStatus;
+	limit: number;
+	offset: number;
+}
+
+interface ApplyImportDecisionInput extends ImportReviewBatchInput {
+	rowIds: string[];
+	decision: "accepted" | "rejected";
+	reason?: string | null;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -77,6 +120,98 @@ function validateImportDate(value: unknown, label: "start" | "end"): string {
 	return value;
 }
 
+function validateSafeId(value: unknown, label: string): string {
+	if (typeof value !== "string" || !SAFE_ID_PATTERN.test(value.trim())) {
+		throw new Error(`${label} is invalid`);
+	}
+
+	return value.trim();
+}
+
+function validateImportReviewBatchInput(input: unknown): ImportReviewBatchInput {
+	if (!isRecord(input)) throw new Error("Invalid import review input");
+
+	return {
+		organizationId: validateSafeId(input.organizationId, "Organization ID"),
+		batchId: validateSafeId(input.batchId, "Import batch ID"),
+	};
+}
+
+function validateListImportReviewRowsInput(input: unknown): ListImportReviewRowsInput {
+	const batchInput = validateImportReviewBatchInput(input);
+	if (!isRecord(input)) throw new Error("Invalid import review row list input");
+
+	if (
+		typeof input.limit !== "number" ||
+		!Number.isInteger(input.limit) ||
+		input.limit < 1 ||
+		input.limit > MAX_REVIEW_PAGE_LIMIT
+	) {
+		throw new Error("Invalid import review page limit");
+	}
+
+	if (
+		typeof input.offset !== "number" ||
+		!Number.isInteger(input.offset) ||
+		input.offset < 0 ||
+		input.offset > MAX_REVIEW_PAGE_OFFSET
+	) {
+		throw new Error("Invalid import review page offset");
+	}
+
+	if (
+		input.status !== undefined &&
+		(typeof input.status !== "string" || !IMPORT_ROW_STATUSES.has(input.status as ImportRowStatus))
+	) {
+		throw new Error("Invalid import review row status");
+	}
+
+	return {
+		...batchInput,
+		status: input.status as ImportRowStatus | undefined,
+		limit: input.limit,
+		offset: input.offset,
+	};
+}
+
+function validateApplyImportDecisionInput(input: unknown): ApplyImportDecisionInput {
+	const batchInput = validateImportReviewBatchInput(input);
+	if (!isRecord(input)) throw new Error("Invalid import review decision input");
+
+	if (!Array.isArray(input.rowIds) || input.rowIds.length === 0) {
+		throw new Error("At least one import review row is required");
+	}
+
+	if (input.rowIds.length > MAX_ROW_IDS) {
+		throw new Error("Too many import review rows requested");
+	}
+
+	const rowIds = input.rowIds.map((rowId) => validateSafeId(rowId, "Import review row ID"));
+	if (new Set(rowIds).size !== rowIds.length) {
+		throw new Error("Duplicate import review row IDs are not allowed");
+	}
+
+	if (input.decision !== "accepted" && input.decision !== "rejected") {
+		throw new Error("Invalid import review decision");
+	}
+
+	let reason: string | null | undefined;
+	if (input.reason !== undefined && input.reason !== null) {
+		if (typeof input.reason !== "string") throw new Error("Invalid import review decision reason");
+		reason = input.reason.trim();
+		if (reason.length > MAX_DECISION_REASON_LENGTH)
+			throw new Error("Import review decision reason is too long");
+		if (!reason) reason = null;
+	}
+
+	return {
+		...batchInput,
+		rowIds,
+		decision: input.decision,
+		reason,
+	};
+}
+
 function validateStartImportReviewScanInput(input: unknown): ValidatedStartImportReviewScanInput {
 	if (!isRecord(input)) {
 		throw new Error("Invalid import review scan input");
@@ -86,7 +221,10 @@ function validateStartImportReviewScanInput(input: unknown): ValidatedStartImpor
 		throw new Error("Organization ID is required");
 	}
 
-	if (typeof input.provider !== "string" || !IMPORT_PROVIDERS.has(input.provider as ImportProvider)) {
+	if (
+		typeof input.provider !== "string" ||
+		!IMPORT_PROVIDERS.has(input.provider as ImportProvider)
+	) {
 		throw new Error("Invalid import provider");
 	}
 
@@ -134,7 +272,8 @@ function validateStartImportReviewScanInput(input: unknown): ValidatedStartImpor
 
 	if (
 		input.entityTypes.some(
-			(entityType) => typeof entityType !== "string" || !IMPORT_ENTITY_TYPES.has(entityType as ImportEntityType),
+			(entityType) =>
+				typeof entityType !== "string" || !IMPORT_ENTITY_TYPES.has(entityType as ImportEntityType),
 		)
 	) {
 		throw new Error("Invalid import entity type");
@@ -151,11 +290,15 @@ function validateStartImportReviewScanInput(input: unknown): ValidatedStartImpor
 	};
 }
 
-function sanitizeErrorMessage(error: unknown, credential?: string): string {
-	if (!(error instanceof Error)) return GENERIC_SCAN_START_ERROR;
+function sanitizeErrorMessage(
+	error: unknown,
+	credential?: string,
+	fallback = GENERIC_SCAN_START_ERROR,
+): string {
+	if (!(error instanceof Error)) return fallback;
 	const message = error.message.trim();
-	if (!message) return GENERIC_SCAN_START_ERROR;
-	if (credential && message.includes(credential)) return GENERIC_SCAN_START_ERROR;
+	if (!message) return fallback;
+	if (credential && message.includes(credential)) return fallback;
 	return message.length > 500 ? `${message.slice(0, 497)}...` : message;
 }
 
@@ -267,5 +410,115 @@ export async function startImportReviewScan(
 			success: false,
 			error: errorMessage,
 		};
+	}
+}
+
+export async function getImportReviewSummaryAction(
+	organizationId: unknown,
+	batchId: unknown,
+): Promise<ActionResult<Awaited<ReturnType<typeof getImportReviewSummary>>>> {
+	try {
+		const validated = {
+			organizationId: validateSafeId(organizationId, "Organization ID"),
+			batchId: validateSafeId(batchId, "Import batch ID"),
+		};
+		await requireImportAdmin(validated.organizationId);
+		const summary = await getImportReviewSummary(validated);
+		return { success: true, data: summary };
+	} catch (error) {
+		return { success: false, error: sanitizeErrorMessage(error) };
+	}
+}
+
+export async function listImportReviewRowsAction(
+	input: unknown,
+): Promise<ActionResult<Awaited<ReturnType<typeof listImportReviewRows>>>> {
+	try {
+		const validated = validateListImportReviewRowsInput(input);
+		await requireImportAdmin(validated.organizationId);
+		const rows = await listImportReviewRows(validated);
+		return { success: true, data: rows };
+	} catch (error) {
+		return { success: false, error: sanitizeErrorMessage(error) };
+	}
+}
+
+export async function applyImportDecisionAction(
+	input: unknown,
+): Promise<ActionResult<{ updatedCount: number }>> {
+	try {
+		const validated = validateApplyImportDecisionInput(input);
+		const authContext = await requireImportAdmin(validated.organizationId);
+		const result = await applyImportRowDecision({
+			...validated,
+			decidedBy: authContext.user.id,
+		});
+		return { success: true, data: result };
+	} catch (error) {
+		return { success: false, error: sanitizeErrorMessage(error) };
+	}
+}
+
+export async function exportRejectedRowsAction(
+	input: unknown,
+): Promise<ActionResult<{ exportId: string; fileName: string }>> {
+	try {
+		const validated = validateImportReviewBatchInput(input);
+		const authContext = await requireImportAdmin(validated.organizationId);
+		const summary = await getImportReviewSummary(validated);
+		const fileName = `import-${validated.batchId}-rejected.json`;
+		const rejectedExport = await recordRejectedExport({
+			...validated,
+			exportedBy: authContext.user.id,
+			rowCount: summary.rejectedRows,
+			fileName,
+		});
+
+		return {
+			success: true,
+			data: { exportId: rejectedExport.id, fileName: rejectedExport.fileName },
+		};
+	} catch (error) {
+		return { success: false, error: sanitizeErrorMessage(error) };
+	}
+}
+
+export async function startImportCommitAction(
+	input: unknown,
+): Promise<ActionResult<{ queuedCount: number }>> {
+	let batchContext: ImportReviewBatchInput | null = null;
+
+	try {
+		const validated = validateImportReviewBatchInput(input);
+		const authContext = await requireImportAdmin(validated.organizationId);
+
+		await updateImportBatchStatus({ ...validated, status: "committing" });
+		batchContext = validated;
+		const jobs = await createCommitJobsForAcceptedRows(validated);
+
+		for (const job of jobs) {
+			await enqueueImportCommitJob({
+				type: "import-review-commit",
+				batchId: validated.batchId,
+				jobId: job.id,
+				organizationId: validated.organizationId,
+				entityType: job.entityType as ImportEntityType,
+				committedBy: authContext.user.id,
+			});
+		}
+
+		return { success: true, data: { queuedCount: jobs.length } };
+	} catch (error) {
+		const errorMessage = sanitizeErrorMessage(error, undefined, GENERIC_COMMIT_START_ERROR);
+
+		if (batchContext) {
+			await updateImportBatchStatus({
+				...batchContext,
+				status: "commit_failed",
+				errorMessage,
+			});
+		}
+
+		return { success: false, error: errorMessage };
 	}
 }
