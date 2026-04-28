@@ -31,6 +31,7 @@ vi.mock("./employee-action-utils", () => ({
 
 import {
 	buildEmploymentAssignmentSyncPlan,
+	buildEmploymentAssignmentWindowUpdates,
 	shouldUpdateCurrentEmployeeFields,
 } from "./employment-history-actions";
 
@@ -86,5 +87,29 @@ describe("employment history action helpers", () => {
 			priority: 2,
 			isActive: true,
 		});
+	});
+
+	it("builds assignment window updates for shortened previous rows", () => {
+		expect(
+			buildEmploymentAssignmentWindowUpdates({
+				updates: [{ id: "history-1", validUntil: d("2026-04-01") }],
+				existing: [
+					{
+						id: "history-1",
+						employeeId: "employee-1",
+						organizationId: "org-1",
+						validFrom: d("2026-01-01"),
+						validUntil: null,
+					},
+				],
+			}),
+		).toEqual([
+			{
+				employeeId: "employee-1",
+				organizationId: "org-1",
+				effectiveFrom: d("2026-01-01"),
+				effectiveUntil: d("2026-04-01"),
+			},
+		]);
 	});
 });

@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
 import {
@@ -12,7 +12,7 @@ import {
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { NotFoundError } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
-import { adjustConfirmedTimeline } from "@/lib/employment-history/timeline";
+import { adjustConfirmedTimeline, type TimelineUpdate } from "@/lib/employment-history/timeline";
 import { createLogger } from "@/lib/logger";
 import {
 	type UpsertEmploymentHistory,
@@ -38,6 +38,11 @@ type EmploymentHistoryEffectiveRow = Pick<
 type EmploymentHistoryAssignmentRow = Pick<
 	EmployeeEmploymentHistory,
 	"employeeId" | "organizationId" | "workPolicyId" | "validFrom" | "validUntil" | "reviewState"
+>;
+
+type EmploymentHistoryAssignmentWindowRow = Pick<
+	EmployeeEmploymentHistory,
+	"id" | "employeeId" | "organizationId" | "validFrom" | "validUntil"
 >;
 
 export function shouldUpdateCurrentEmployeeFields(
@@ -71,6 +76,30 @@ export function buildEmploymentAssignmentSyncPlan(row: EmploymentHistoryAssignme
 		effectiveUntil: row.validUntil,
 		isActive: true,
 	};
+}
+
+export function buildEmploymentAssignmentWindowUpdates({
+	updates,
+	existing,
+}: {
+	updates: TimelineUpdate[];
+	existing: EmploymentHistoryAssignmentWindowRow[];
+}) {
+	return updates.flatMap((update) => {
+		const historyRow = existing.find((row) => row.id === update.id);
+		if (!historyRow) {
+			return [];
+		}
+
+		return [
+			{
+				employeeId: historyRow.employeeId,
+				organizationId: historyRow.organizationId,
+				effectiveFrom: historyRow.validFrom,
+				effectiveUntil: update.validUntil,
+			},
+		];
+	});
 }
 
 export async function listEmployeeEmploymentHistoryAction(
@@ -184,6 +213,14 @@ export async function createEmployeeEmploymentHistoryAction(
 				const createdHistory = yield* _(
 					dbService.query("createEmployeeEmploymentHistory", async () => {
 						return await dbService.db.transaction(async (tx) => {
+							await tx.execute(sql`
+								select ${employee.id}
+								from ${employee}
+								where ${employee.id} = ${employeeId}
+									and ${employee.organizationId} = ${actor.organizationId}
+								for update
+							`);
+
 							const existing = await tx.query.employeeEmploymentHistory.findMany({
 								where: and(
 									eq(employeeEmploymentHistory.employeeId, employeeId),
@@ -214,6 +251,10 @@ export async function createEmployeeEmploymentHistoryAction(
 								updatedAt: now,
 							};
 							const adjusted = adjustConfirmedTimeline({ existing, next: nextRow });
+							const assignmentWindowUpdates = buildEmploymentAssignmentWindowUpdates({
+								updates: adjusted.updates,
+								existing,
+							});
 
 							for (const update of adjusted.updates) {
 								await tx
@@ -228,6 +269,24 @@ export async function createEmployeeEmploymentHistoryAction(
 											eq(employeeEmploymentHistory.id, update.id),
 											eq(employeeEmploymentHistory.employeeId, employeeId),
 											eq(employeeEmploymentHistory.organizationId, actor.organizationId),
+										),
+									);
+							}
+
+							for (const update of assignmentWindowUpdates) {
+								await tx
+									.update(workPolicyAssignment)
+									.set({
+										effectiveUntil: update.effectiveUntil,
+										updatedAt: now,
+									})
+									.where(
+										and(
+											eq(workPolicyAssignment.employeeId, update.employeeId),
+											eq(workPolicyAssignment.organizationId, update.organizationId),
+											eq(workPolicyAssignment.assignmentType, "employee"),
+											eq(workPolicyAssignment.isActive, true),
+											eq(workPolicyAssignment.effectiveFrom, update.effectiveFrom),
 										),
 									);
 							}
