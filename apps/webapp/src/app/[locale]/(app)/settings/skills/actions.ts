@@ -638,6 +638,7 @@ export async function setSubareaSkillRequirements(
 
 				yield* _(
 					skillService.setSubareaSkillRequirements({
+						organizationId: actor.organizationId,
 						targetId: subareaId,
 						requirements,
 						createdBy: session.user.id,
@@ -710,6 +711,7 @@ export async function setTemplateSkillRequirements(
 
 				yield* _(
 					skillService.setTemplateSkillRequirements({
+						organizationId: actor.organizationId,
 						targetId: templateId,
 						requirements,
 						createdBy: session.user.id,

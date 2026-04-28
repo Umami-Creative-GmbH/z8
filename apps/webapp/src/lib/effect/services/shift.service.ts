@@ -82,7 +82,7 @@ export interface SkillWarning {
 		category: string;
 		isRequired: boolean;
 		enforcementMode: "warning" | "blocking";
-		issueType: "missing" | "expired" | "expiringSoon";
+		issueType: "missing" | "expired" | "expiringSoon" | "preferred";
 		expiresAt?: Date;
 	}>;
 	missingSkills: Array<{
@@ -551,6 +551,7 @@ export const ShiftServiceLive = Layer.effect(
 							}
 						>();
 						for (const req of [...subareaReqs, ...templateReqs]) {
+							if (req.skill.organizationId !== input.organizationId) continue;
 							const existing = allRequirements.get(req.skillId);
 							const enforcementMode = req.enforcementMode ?? "warning";
 							const blockOnExpiringSoon = req.blockOnExpiringSoon ?? false;
@@ -596,7 +597,7 @@ export const ShiftServiceLive = Layer.effect(
 									category: skillData.category,
 									isRequired,
 									enforcementMode,
-									issueType: "missing",
+									issueType: isRequired ? "missing" : "preferred",
 								});
 							}
 						}

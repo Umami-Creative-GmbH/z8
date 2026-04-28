@@ -22,6 +22,7 @@ const requiredWarningRequirement = {
 	blockOnExpiringSoon: false,
 	skill: {
 		id: "skill-required-warning",
+		organizationId: "org-1",
 		name: "Forklift License",
 		category: "certification",
 		expiryWarningDays: 30,
@@ -35,6 +36,7 @@ const preferredWarningRequirement = {
 	blockOnExpiringSoon: false,
 	skill: {
 		id: "skill-preferred-warning",
+		organizationId: "org-1",
 		name: "First Aid",
 		category: "training",
 		expiryWarningDays: 30,
@@ -48,6 +50,7 @@ const blockingRequirement = {
 	blockOnExpiringSoon: false,
 	skill: {
 		id: "skill-blocking",
+		organizationId: "org-1",
 		name: "Hazmat Certification",
 		category: "certification",
 		expiryWarningDays: 30,
@@ -231,6 +234,35 @@ describe("ShiftService qualification enforcement", () => {
 		}
 		expect(result.left).toBeInstanceOf(ValidationError);
 		expect(context.mockDb.insert).not.toHaveBeenCalled();
+	});
+
+	it("allows missing preferred-only requirements and reports preferred metadata", async () => {
+		const context = createShiftServiceTestContext({
+			subareaRequirements: [preferredWarningRequirement],
+		});
+
+		const result = await context.runUpsertShift();
+
+		expect(result).toMatchObject({
+			_tag: "Right",
+			right: {
+				metadata: {
+					skillWarning: {
+						isQualified: true,
+						requiresOverride: false,
+						issues: [
+							expect.objectContaining({
+								id: "skill-preferred-warning",
+								isRequired: false,
+								issueType: "preferred",
+							}),
+						],
+					},
+				},
+			},
+		});
+		expect(context.mockDb.insert).toHaveBeenCalledWith(shift);
+		expect(context.mockDb.transaction).not.toHaveBeenCalled();
 	});
 
 	it("records only required warning issue IDs in the same transaction as the shift", async () => {

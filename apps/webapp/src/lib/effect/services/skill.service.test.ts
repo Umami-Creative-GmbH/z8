@@ -4,7 +4,9 @@ import {
 	employeeSkill,
 	qualificationRenewalRequest,
 	qualificationRenewalRequestEvidence,
+	shiftTemplateSkillRequirement,
 	skill,
+	subareaSkillRequirement,
 } from "@/db/schema";
 import { NotFoundError, ValidationError } from "../errors";
 import { DatabaseService } from "./database.service";
@@ -452,6 +454,107 @@ function createSkillCatalogSecurityTestContext({
 	};
 }
 
+function createRequirementMutationSecurityTestContext({
+	subareaRecord = { id: "subarea-1", location: { organizationId: "org-1" } },
+	templateRecord = { id: "template-1", organizationId: "org-1" },
+	skillRecords = [{ id: "skill-1", organizationId: "org-1" }],
+}: {
+	subareaRecord?: unknown;
+	templateRecord?: unknown;
+	skillRecords?: unknown[];
+} = {}) {
+	const subareaDeleteWhere = vi.fn(async () => undefined);
+	const templateDeleteWhere = vi.fn(async () => undefined);
+	const deleteMock = vi.fn((table) => {
+		if (table === subareaSkillRequirement) {
+			return { where: subareaDeleteWhere };
+		}
+
+		if (table === shiftTemplateSkillRequirement) {
+			return { where: templateDeleteWhere };
+		}
+
+		throw new Error("Unexpected delete table");
+	});
+
+	const insertReturning = vi.fn(async () => [{ id: "requirement-1" }]);
+	const insertValues = vi.fn(() => ({ returning: insertReturning }));
+	const insert = vi.fn((table) => {
+		if (table === subareaSkillRequirement || table === shiftTemplateSkillRequirement) {
+			return { values: insertValues };
+		}
+
+		throw new Error("Unexpected insert table");
+	});
+
+	const mockDb = {
+		query: {
+			locationSubarea: {
+				findFirst: vi.fn(async () => subareaRecord),
+			},
+			shiftTemplate: {
+				findFirst: vi.fn(async () => templateRecord),
+			},
+			skill: {
+				findMany: vi.fn(async () => skillRecords),
+			},
+		},
+		delete: deleteMock,
+		insert,
+	};
+
+	const dbLayer = Layer.succeed(
+		DatabaseService,
+		DatabaseService.of({
+			db: mockDb as never,
+			query: (_name, query) =>
+				Effect.tryPromise({
+					try: query,
+					catch: (error) => error,
+				}) as never,
+		}),
+	);
+	const layer = SkillServiceLive.pipe(Layer.provide(dbLayer));
+
+	return {
+		insert,
+		mockDb,
+		deleteMock,
+		runSetSubareaSkillRequirements: () =>
+			Effect.runPromise(
+				Effect.either(
+					Effect.gen(function* (_) {
+						const service = yield* _(SkillService);
+						return yield* _(
+							service.setSubareaSkillRequirements({
+								organizationId: "org-1",
+								targetId: "subarea-1",
+								requirements: [{ skillId: "skill-1", isRequired: true }],
+								createdBy: "user-1",
+							}),
+						);
+					}).pipe(Effect.provide(layer)),
+				),
+			),
+		runSetTemplateSkillRequirements: () =>
+			Effect.runPromise(
+				Effect.either(
+					Effect.gen(function* (_) {
+						const service = yield* _(SkillService);
+						return yield* _(
+							service.setTemplateSkillRequirements({
+								organizationId: "org-1",
+								targetId: "template-1",
+								requirements: [{ skillId: "skill-1", isRequired: true }],
+								createdBy: "user-1",
+							}),
+						);
+					}).pipe(Effect.provide(layer)),
+				),
+			),
+	};
+}
+
 describe("SkillService catalog mutation security", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
@@ -478,6 +581,64 @@ describe("SkillService catalog mutation security", () => {
 			_tag: "Left",
 			left: expect.any(NotFoundError),
 		});
+		expect(insert).not.toHaveBeenCalled();
+	});
+});
+
+describe("SkillService requirement mutation security", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	it("rejects subarea requirement updates outside the caller organization before deleting", async () => {
+		const { deleteMock, insert, runSetSubareaSkillRequirements } =
+			createRequirementMutationSecurityTestContext({
+				subareaRecord: { id: "subarea-1", location: { organizationId: "org-2" } },
+			});
+
+		expect(await runSetSubareaSkillRequirements()).toMatchObject({
+			_tag: "Left",
+			left: expect.any(NotFoundError),
+		});
+		expect(deleteMock).not.toHaveBeenCalled();
+		expect(insert).not.toHaveBeenCalled();
+	});
+
+	it("rejects subarea requirement skills outside the caller organization before deleting", async () => {
+		const { deleteMock, insert, runSetSubareaSkillRequirements } =
+			createRequirementMutationSecurityTestContext({ skillRecords: [] });
+
+		expect(await runSetSubareaSkillRequirements()).toMatchObject({
+			_tag: "Left",
+			left: expect.any(NotFoundError),
+		});
+		expect(deleteMock).not.toHaveBeenCalled();
+		expect(insert).not.toHaveBeenCalled();
+	});
+
+	it("rejects template requirement updates outside the caller organization before deleting", async () => {
+		const { deleteMock, insert, runSetTemplateSkillRequirements } =
+			createRequirementMutationSecurityTestContext({
+				templateRecord: { id: "template-1", organizationId: "org-2" },
+			});
+
+		expect(await runSetTemplateSkillRequirements()).toMatchObject({
+			_tag: "Left",
+			left: expect.any(NotFoundError),
+		});
+		expect(deleteMock).not.toHaveBeenCalled();
+		expect(insert).not.toHaveBeenCalled();
+	});
+
+	it("rejects template requirement skills outside the caller organization before deleting", async () => {
+		const { deleteMock, insert, runSetTemplateSkillRequirements } =
+			createRequirementMutationSecurityTestContext({ skillRecords: [] });
+
+		expect(await runSetTemplateSkillRequirements()).toMatchObject({
+			_tag: "Left",
+			left: expect.any(NotFoundError),
+		});
+		expect(deleteMock).not.toHaveBeenCalled();
 		expect(insert).not.toHaveBeenCalled();
 	});
 });

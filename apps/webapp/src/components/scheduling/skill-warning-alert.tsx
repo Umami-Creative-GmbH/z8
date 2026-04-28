@@ -103,12 +103,18 @@ export function SkillWarningAlert({ validation, isLoading }: SkillWarningAlertPr
 
 	const hasExpired = validation.expiredSkills.length > 0;
 	const hasIssues = validation.issues.length > 0;
+	const hasRequiredMissing = hasIssues
+		? validation.issues.some((issue) => issue.isRequired && issue.issueType === "missing")
+		: requiredMissing.length > 0;
+	const hasRequiredExpired = hasIssues
+		? validation.issues.some((issue) => issue.isRequired && issue.issueType === "expired")
+		: hasExpired;
 	const shouldShowOverrideCopy = validation.requiresOverride && !validation.hasBlockingIssues;
 
 	return (
 		<Alert
 			variant={
-				validation.hasBlockingIssues || requiredMissing.length > 0 || hasExpired
+				validation.hasBlockingIssues || hasRequiredMissing || hasRequiredExpired
 					? "destructive"
 					: "default"
 			}
@@ -117,8 +123,8 @@ export function SkillWarningAlert({ validation, isLoading }: SkillWarningAlertPr
 			<AlertTitle>
 				{validation.hasBlockingIssues ||
 				validation.requiresOverride ||
-				requiredMissing.length > 0 ||
-				hasExpired
+				hasRequiredMissing ||
+				hasRequiredExpired
 					? t("scheduling.skills.requirementsNotMet", "Skill Requirements Not Met")
 					: t("scheduling.skills.preferredSkillsMissing", "Preferred Skills Missing")}
 			</AlertTitle>
@@ -245,8 +251,13 @@ export function SkillWarningBadge({
 		return null;
 	}
 
-	const hasMissingRequired = validation.missingSkills.some((s) => s.isRequired);
-	const hasExpired = validation.expiredSkills.length > 0;
+	const hasIssues = validation.issues.length > 0;
+	const hasMissingRequired = hasIssues
+		? validation.issues.some((issue) => issue.isRequired && issue.issueType === "missing")
+		: validation.missingSkills.some((s) => s.isRequired);
+	const hasExpired = hasIssues
+		? validation.issues.some((issue) => issue.isRequired && issue.issueType === "expired")
+		: validation.expiredSkills.length > 0;
 
 	if (hasMissingRequired || hasExpired) {
 		return (

@@ -79,6 +79,7 @@ export interface AssignSkillInput {
 }
 
 export interface SetSkillRequirementsInput {
+	organizationId: string;
 	targetId: string; // subareaId or templateId
 	requirements: Array<{
 		skillId: string;
@@ -1039,16 +1040,21 @@ export const SkillServiceLive = Layer.effect(
 			// ----------------------------------------
 			setSubareaSkillRequirements: (input) =>
 				Effect.gen(function* (_) {
-					// Verify subarea exists
+					// Verify subarea exists within the actor organization before mutating requirements.
 					const subareaRecord = yield* _(
 						dbService.query("verifySubareaExists", async () => {
 							return await dbService.db.query.locationSubarea.findFirst({
 								where: eq(locationSubarea.id, input.targetId),
+								with: {
+									location: {
+										columns: { organizationId: true },
+									},
+								},
 							});
 						}),
 					);
 
-					if (!subareaRecord) {
+					if (!subareaRecord || subareaRecord.location.organizationId !== input.organizationId) {
 						yield* _(
 							Effect.fail(
 								new NotFoundError({
@@ -1058,6 +1064,35 @@ export const SkillServiceLive = Layer.effect(
 								}),
 							),
 						);
+					}
+
+					const skillIds = [...new Set(input.requirements.map((req) => req.skillId))];
+					if (skillIds.length > 0) {
+						const organizationSkills = yield* _(
+							dbService.query("verifyRequirementSkillsInOrganization", async () => {
+								return await dbService.db.query.skill.findMany({
+									where: and(
+										inArray(skill.id, skillIds),
+										eq(skill.organizationId, input.organizationId),
+									),
+									columns: { id: true },
+								});
+							}),
+						);
+
+						if (organizationSkills.length !== skillIds.length) {
+							yield* _(
+								Effect.fail(
+									new NotFoundError({
+										message: "Skill not found",
+										entityType: "skill",
+										entityId: skillIds.find(
+											(skillId) => !organizationSkills.some((record) => record.id === skillId),
+										),
+									}),
+								),
+							);
+						}
 					}
 
 					// Delete existing requirements and insert new ones
@@ -1110,16 +1145,19 @@ export const SkillServiceLive = Layer.effect(
 			// ----------------------------------------
 			setTemplateSkillRequirements: (input) =>
 				Effect.gen(function* (_) {
-					// Verify template exists
+					// Verify template exists within the actor organization before mutating requirements.
 					const templateRecord = yield* _(
 						dbService.query("verifyTemplateExists", async () => {
 							return await dbService.db.query.shiftTemplate.findFirst({
-								where: eq(shiftTemplate.id, input.targetId),
+								where: and(
+									eq(shiftTemplate.id, input.targetId),
+									eq(shiftTemplate.organizationId, input.organizationId),
+								),
 							});
 						}),
 					);
 
-					if (!templateRecord) {
+					if (!templateRecord || templateRecord.organizationId !== input.organizationId) {
 						yield* _(
 							Effect.fail(
 								new NotFoundError({
@@ -1129,6 +1167,35 @@ export const SkillServiceLive = Layer.effect(
 								}),
 							),
 						);
+					}
+
+					const skillIds = [...new Set(input.requirements.map((req) => req.skillId))];
+					if (skillIds.length > 0) {
+						const organizationSkills = yield* _(
+							dbService.query("verifyRequirementSkillsInOrganization", async () => {
+								return await dbService.db.query.skill.findMany({
+									where: and(
+										inArray(skill.id, skillIds),
+										eq(skill.organizationId, input.organizationId),
+									),
+									columns: { id: true },
+								});
+							}),
+						);
+
+						if (organizationSkills.length !== skillIds.length) {
+							yield* _(
+								Effect.fail(
+									new NotFoundError({
+										message: "Skill not found",
+										entityType: "skill",
+										entityId: skillIds.find(
+											(skillId) => !organizationSkills.some((record) => record.id === skillId),
+										),
+									}),
+								),
+							);
+						}
 					}
 
 					// Delete existing requirements and insert new ones
