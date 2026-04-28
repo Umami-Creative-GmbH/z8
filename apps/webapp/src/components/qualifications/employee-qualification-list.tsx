@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 
 import { Badge } from "@/components/ui/badge";
@@ -18,13 +19,22 @@ function getStatusLabel(status: ReturnType<typeof getQualificationStatus>) {
 	return "Valid";
 }
 
-export function EmployeeQualificationList({ qualifications, onRenew }: EmployeeQualificationListProps) {
+export function EmployeeQualificationList({
+	qualifications,
+	onRenew,
+}: EmployeeQualificationListProps) {
+	const { t } = useTranslate();
+
 	if (qualifications.length === 0) {
-		return <p className="text-sm text-muted-foreground">No qualifications assigned.</p>;
+		return (
+			<p className="text-sm text-muted-foreground">
+				{t("qualifications.empty", "No qualifications assigned.")}
+			</p>
+		);
 	}
 
 	return (
-		<div className="space-y-3" aria-label="Employee qualifications">
+		<div className="space-y-3" role="list" aria-label="Employee qualifications">
 			{qualifications.map((qualification) => {
 				const status = getQualificationStatus({
 					expiresAt: qualification.expiresAt,
@@ -32,21 +42,44 @@ export function EmployeeQualificationList({ qualifications, onRenew }: EmployeeQ
 				});
 
 				return (
-					<div key={qualification.id} className="rounded-lg border p-3">
+					<div key={qualification.id} className="rounded-lg border p-3" role="listitem">
 						<div className="flex items-start justify-between gap-3">
 							<div className="min-w-0 space-y-1">
 								<p className="break-words font-medium">{qualification.skill.name}</p>
 								{qualification.expiresAt ? (
-									<p className="text-xs text-muted-foreground">
-										Expires {DateTime.fromJSDate(qualification.expiresAt).toLocaleString(DateTime.DATE_MED)}
+									<p className="break-words text-xs text-muted-foreground">
+										{t("qualifications.expiresOn", "Expires {{date}}", {
+											date: DateTime.fromJSDate(qualification.expiresAt).toLocaleString(
+												DateTime.DATE_MED,
+											),
+										})}
+									</p>
+								) : null}
+								{qualification.issuedAt ? (
+									<p className="break-words text-xs text-muted-foreground">
+										{t("qualifications.issuedOn", "Issued {{date}}", {
+											date: DateTime.fromJSDate(qualification.issuedAt).toLocaleString(
+												DateTime.DATE_MED,
+											),
+										})}
 									</p>
 								) : null}
 								{qualification.issuer ? (
-									<p className="text-xs text-muted-foreground">Issuer: {qualification.issuer}</p>
+									<p className="break-words text-xs text-muted-foreground">
+										{t("qualifications.issuerValue", "Issuer: {{issuer}}", {
+											issuer: qualification.issuer,
+										})}
+									</p>
 								) : null}
 								{qualification.certificateNumber ? (
-									<p className="text-xs text-muted-foreground">
-										Certificate: {qualification.certificateNumber}
+									<p className="break-words text-xs text-muted-foreground">
+										{t(
+											"qualifications.certificateNumberValue",
+											"Certificate: {{certificateNumber}}",
+											{
+												certificateNumber: qualification.certificateNumber,
+											},
+										)}
 									</p>
 								) : null}
 							</div>
@@ -61,7 +94,7 @@ export function EmployeeQualificationList({ qualifications, onRenew }: EmployeeQ
 								className="mt-3 h-auto p-0 text-sm font-medium"
 								onClick={() => onRenew(qualification)}
 							>
-								Submit renewal evidence
+								{t("qualifications.submitRenewalEvidence", "Submit renewal evidence")}
 							</Button>
 						) : null}
 					</div>

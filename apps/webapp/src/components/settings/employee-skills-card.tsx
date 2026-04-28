@@ -1,9 +1,5 @@
 "use client";
 
-import { useForm } from "@tanstack/react-form";
-import { useStore } from "@tanstack/react-store";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useTranslate } from "@tolgee/react";
 import {
 	IconAlertTriangle,
 	IconAward,
@@ -17,19 +13,20 @@ import {
 	IconTools,
 	IconTrash,
 } from "@tabler/icons-react";
+import { useForm } from "@tanstack/react-form";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useStore } from "@tanstack/react-store";
+import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import { useState } from "react";
 import { toast } from "sonner";
-
+import {
+	assignSkillToEmployee,
+	removeSkillFromEmployee,
+} from "@/app/[locale]/(app)/settings/skills/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
 	Dialog,
 	DialogContent,
@@ -48,22 +45,9 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipProvider,
-	TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
-	assignSkillToEmployee,
-	removeSkillFromEmployee,
-} from "@/app/[locale]/(app)/settings/skills/actions";
-import type { EmployeeSkillWithDetails } from "@/lib/effect/services/skill.service";
-import {
-	useEmployeeSkills,
-	useOrganizationSkills,
-} from "@/lib/query/use-skills";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { queryKeys } from "@/lib/query/keys";
+import { useEmployeeSkills, useOrganizationSkills } from "@/lib/query/use-skills";
 
 type SkillCategory = "safety" | "equipment" | "certification" | "training" | "language" | "custom";
 
@@ -148,7 +132,10 @@ export function EmployeeSkillsCard({
 					<div>
 						<CardTitle>{t("settings.skills.employeeSkills", "Skills & Qualifications")}</CardTitle>
 						<CardDescription>
-							{t("settings.skills.employeeSkillsDescription", "Certifications and skills assigned to this employee")}
+							{t(
+								"settings.skills.employeeSkillsDescription",
+								"Certifications and skills assigned to this employee",
+							)}
 						</CardDescription>
 					</div>
 					{canManageSkills && (
@@ -162,7 +149,10 @@ export function EmployeeSkillsCard({
 			<CardContent>
 				{isLoading ? (
 					<div className="flex items-center justify-center py-8">
-						<IconLoader2 className="h-6 w-6 animate-spin text-muted-foreground" aria-hidden="true" />
+						<IconLoader2
+							className="h-6 w-6 animate-spin text-muted-foreground"
+							aria-hidden="true"
+						/>
 					</div>
 				) : skills.length === 0 ? (
 					<div className="py-8 text-center text-muted-foreground">
@@ -188,13 +178,15 @@ export function EmployeeSkillsCard({
 										expired ? "border-destructive/50 bg-destructive/5" : ""
 									} ${expiringSoon && !expired ? "border-yellow-500/50 bg-yellow-500/5" : ""}`}
 								>
-									<div className="flex items-start gap-3">
-										<div className={`mt-0.5 ${expired ? "text-destructive" : "text-muted-foreground"}`}>
+									<div className="flex min-w-0 items-start gap-3">
+										<div
+											className={`mt-0.5 ${expired ? "text-destructive" : "text-muted-foreground"}`}
+										>
 											<CategoryIcon className="h-5 w-5" aria-hidden="true" />
 										</div>
-										<div className="space-y-1">
+										<div className="min-w-0 space-y-1">
 											<div className="flex items-center gap-2">
-												<span className="font-medium">{employeeSkill.skill.name}</span>
+												<span className="break-words font-medium">{employeeSkill.skill.name}</span>
 												{expired && (
 													<Badge variant="destructive">
 														<IconAlertTriangle className="mr-1 h-3 w-3" aria-hidden="true" />
@@ -209,22 +201,53 @@ export function EmployeeSkillsCard({
 												)}
 											</div>
 											{employeeSkill.expiresAt && (
-												<p className={`text-xs ${expired ? "text-destructive" : "text-muted-foreground"}`}>
+												<p
+													className={`text-xs ${expired ? "text-destructive" : "text-muted-foreground"}`}
+												>
 													{expired
 														? t("settings.skills.expiredOn", "Expired on {{date}}", {
 																date: DateTime.fromJSDate(employeeSkill.expiresAt).toLocaleString(
-																	DateTime.DATE_MED
+																	DateTime.DATE_MED,
 																),
 															})
 														: t("settings.skills.expiresOn", "Expires {{date}}", {
 																date: DateTime.fromJSDate(employeeSkill.expiresAt).toLocaleString(
-																	DateTime.DATE_MED
+																	DateTime.DATE_MED,
 																),
 															})}
 												</p>
 											)}
+											{employeeSkill.issuedAt && (
+												<p className="break-words text-xs text-muted-foreground">
+													{t("settings.skills.issuedOn", "Issued {{date}}", {
+														date: DateTime.fromJSDate(employeeSkill.issuedAt).toLocaleString(
+															DateTime.DATE_MED,
+														),
+													})}
+												</p>
+											)}
+											{employeeSkill.issuer && (
+												<p className="break-words text-xs text-muted-foreground">
+													{t("settings.skills.issuerValue", "Issuer: {{issuer}}", {
+														issuer: employeeSkill.issuer,
+													})}
+												</p>
+											)}
+											{employeeSkill.certificateNumber && (
+												<p className="break-words text-xs text-muted-foreground">
+													{t(
+														"settings.skills.certificateNumberValue",
+														"Certificate: {{certificateNumber}}",
+														{
+															certificateNumber: employeeSkill.certificateNumber,
+														},
+													)}
+												</p>
+											)}
 											{employeeSkill.notes && (
-												<p className="text-xs text-muted-foreground">{employeeSkill.notes}</p>
+												<p className="break-words text-xs text-muted-foreground">
+													{employeeSkill.notes}
+												</p>
 											)}
 										</div>
 									</div>
@@ -236,7 +259,9 @@ export function EmployeeSkillsCard({
 														variant="ghost"
 														size="icon"
 														className="h-8 w-8"
-														onClick={() => handleRemove(employeeSkill.skillId, employeeSkill.skill.name)}
+														onClick={() =>
+															handleRemove(employeeSkill.skillId, employeeSkill.skill.name)
+														}
 														disabled={removeMutation.isPending}
 														aria-label={t("common.remove", "Remove")}
 													>
@@ -368,7 +393,10 @@ function AssignSkillDialog({
 				<DialogHeader>
 					<DialogTitle>{t("settings.skills.assignSkill", "Assign Skill")}</DialogTitle>
 					<DialogDescription>
-						{t("settings.skills.assignSkillDescription", "Add a skill or certification to this employee")}
+						{t(
+							"settings.skills.assignSkillDescription",
+							"Add a skill or certification to this employee",
+						)}
 					</DialogDescription>
 				</DialogHeader>
 
@@ -393,16 +421,15 @@ function AssignSkillDialog({
 										<p className="text-sm text-muted-foreground">
 											{t(
 												"settings.skills.noAvailableSkills",
-												"All skills have been assigned or no skills are defined"
+												"All skills have been assigned or no skills are defined",
 											)}
 										</p>
 									) : (
-										<Select
-											value={field.state.value}
-											onValueChange={field.handleChange}
-										>
+										<Select value={field.state.value} onValueChange={field.handleChange}>
 											<SelectTrigger id="assign-skill">
-												<SelectValue placeholder={t("settings.skills.selectSkill", "Select a skill")} />
+												<SelectValue
+													placeholder={t("settings.skills.selectSkill", "Select a skill")}
+												/>
 											</SelectTrigger>
 											<SelectContent>
 												{availableSkills.map((skill) => {
@@ -448,7 +475,7 @@ function AssignSkillDialog({
 										<p className="text-xs text-muted-foreground">
 											{t(
 												"settings.skills.expiryRequiredHint",
-												"This certification requires an expiry date"
+												"This certification requires an expiry date",
 											)}
 										</p>
 									)}
@@ -510,7 +537,10 @@ function AssignSkillDialog({
 										value={field.state.value}
 										onChange={(e) => field.handleChange(e.target.value)}
 										onBlur={field.handleBlur}
-										placeholder={t("settings.skills.certificateNumberPlaceholder", "e.g., CERT-12345…")}
+										placeholder={t(
+											"settings.skills.certificateNumberPlaceholder",
+											"e.g., CERT-12345…",
+										)}
 									/>
 								</div>
 							)}
@@ -528,7 +558,7 @@ function AssignSkillDialog({
 										onBlur={field.handleBlur}
 										placeholder={t(
 											"settings.skills.notesPlaceholder",
-											"e.g., Certificate number, training date…"
+											"e.g., Certificate number, training date…",
 										)}
 										rows={2}
 									/>
@@ -548,9 +578,13 @@ function AssignSkillDialog({
 						</Button>
 						<Button
 							type="submit"
-							disabled={assignMutation.isPending || !selectedSkillId || availableSkills.length === 0}
+							disabled={
+								assignMutation.isPending || !selectedSkillId || availableSkills.length === 0
+							}
 						>
-							{assignMutation.isPending && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />}
+							{assignMutation.isPending && (
+								<IconLoader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+							)}
 							{t("settings.skills.assign", "Assign")}
 						</Button>
 					</DialogFooter>

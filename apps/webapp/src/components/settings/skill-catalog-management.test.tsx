@@ -1,16 +1,44 @@
 /* @vitest-environment jsdom */
 
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
-import { SkillCatalogManagement } from "./skill-catalog-management";
+import { fireEvent, waitFor } from "@testing-library/react";
+import { describe, expect, it, vi, beforeEach } from "vitest";
+import { normalizeExpiryWarningDays, SkillCatalogManagement } from "./skill-catalog-management";
+
+const { deleteSkillMock, invalidateQueriesMock } = vi.hoisted(() => ({
+	deleteSkillMock: vi.fn(),
+	invalidateQueriesMock: vi.fn(),
+}));
+
+const catalogSkill = {
+	id: "skill-1",
+	organizationId: "org-1",
+	name: "Forklift License",
+	description: null,
+	category: "certification",
+	customCategoryName: null,
+	requiresExpiry: true,
+	expiryWarningDays: 30,
+	isActive: true,
+	createdAt: new Date("2026-01-01T00:00:00Z"),
+	updatedAt: new Date("2026-01-01T00:00:00Z"),
+	createdBy: "user-1",
+	updatedBy: null,
+};
 
 vi.mock("@tanstack/react-query", async () => {
 	const actual = await vi.importActual<typeof import("@tanstack/react-query")>("@tanstack/react-query");
 	return {
 		...actual,
-		useQuery: () => ({ data: [], isLoading: false, isFetching: false, refetch: vi.fn() }),
-		useQueryClient: () => ({ invalidateQueries: vi.fn() }),
-		useMutation: () => ({ mutate: vi.fn(), isPending: false }),
+		useQuery: () => ({ data: [catalogSkill], isLoading: false, isFetching: false, refetch: vi.fn() }),
+		useQueryClient: () => ({ invalidateQueries: invalidateQueriesMock }),
+		useMutation: (options: { mutationFn: (input: string) => Promise<unknown>; onSuccess?: () => void }) => ({
+			mutate: async (input: string) => {
+				await options.mutationFn(input);
+				options.onSuccess?.();
+			},
+			isPending: false,
+		}),
 	};
 });
 
@@ -20,14 +48,39 @@ vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 
 vi.mock("@/app/[locale]/(app)/settings/skills/actions", () => ({
 	createSkill: vi.fn(),
-	deleteSkill: vi.fn(),
+	deleteSkill: deleteSkillMock,
 	updateSkill: vi.fn(),
 }));
 
 describe("SkillCatalogManagement", () => {
+	beforeEach(() => {
+		deleteSkillMock.mockResolvedValue({ success: true });
+		invalidateQueriesMock.mockClear();
+		vi.spyOn(window, "confirm").mockReturnValue(true);
+	});
+
 	it("uses qualification-oriented catalog copy", () => {
 		render(<SkillCatalogManagement organizationId="org-1" canManageCatalog />);
 		expect(screen.getByText("Skills & Qualifications")).toBeTruthy();
 		expect(screen.getByText(/Manage skills and certifications/)).toBeTruthy();
+	});
+
+	it("invalidates the active skill catalog query after deleting a skill", async () => {
+		render(<SkillCatalogManagement organizationId="org-1" canManageCatalog />);
+
+		fireEvent.click(screen.getByLabelText("Delete"));
+
+		await waitFor(() => {
+			expect(invalidateQueriesMock).toHaveBeenCalledWith({
+				queryKey: ["skills", "list", "org-1", false],
+			});
+		});
+	});
+
+	it("normalizes expiry warning days to finite whole days", () => {
+		expect(normalizeExpiryWarningDays(Number.NaN)).toBe(30);
+		expect(normalizeExpiryWarningDays(-3)).toBe(0);
+		expect(normalizeExpiryWarningDays(14.8)).toBe(14);
+		expect(normalizeExpiryWarningDays(400)).toBe(365);
 	});
 });

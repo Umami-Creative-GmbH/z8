@@ -53,7 +53,7 @@ export function RenewalSubmissionDialog({
 				employeeSkillId: qualification.id,
 				evidenceIds,
 				requestedExpiresAt: data.requestedExpiresAt
-					? DateTime.fromISO(data.requestedExpiresAt).toJSDate()
+					? DateTime.fromISO(data.requestedExpiresAt, { zone: "utc" }).toJSDate()
 					: undefined,
 				notes: data.notes || undefined,
 			});
