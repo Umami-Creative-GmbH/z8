@@ -184,17 +184,17 @@ export async function processOneOffJob(job: Job<JobData>): Promise<JobResult> {
 			}
 
 			case "import-review-scan": {
-				const { processImportReviewScanJob } = await import(
+				const { processImportReviewJob } = await import(
 					"@/lib/import-review/worker"
 				);
-				return processImportReviewScanJob(job as Job<typeof job.data>);
+				return processImportReviewJob(job as Job<typeof job.data>);
 			}
 
 			case "import-review-commit": {
-				const { processImportReviewCommitJob } = await import(
+				const { processImportReviewJob } = await import(
 					"@/lib/import-review/worker"
 				);
-				return processImportReviewCommitJob(job as Job<typeof job.data>);
+				return processImportReviewJob(job as Job<typeof job.data>);
 			}
 
 			default:

@@ -21,6 +21,7 @@ vi.mock("@/db", () => ({
 }));
 
 vi.mock("./worker", () => ({
+	processImportReviewJob: vi.fn().mockResolvedValue({ success: true, message: "Import review job completed" }),
 	processImportReviewScanJob: vi.fn().mockResolvedValue({ success: true, message: "Import review scan queued" }),
 	processImportReviewCommitJob: vi.fn().mockResolvedValue({ success: true, message: "Import review commit queued" }),
 }));
@@ -29,7 +30,7 @@ const { addJob } = await import("@/lib/queue");
 const { enqueueImportScanJob, enqueueImportCommitJob } = await import("./queue");
 const { createImportBatchJob, insertStagedRows } = await import("./repository");
 const { processOneOffJob } = await import("@/worker");
-const { processImportReviewScanJob, processImportReviewCommitJob } = await import("./worker");
+const { processImportReviewJob } = await import("./worker");
 
 beforeEach(() => {
 	vi.clearAllMocks();
@@ -163,7 +164,7 @@ describe("import review worker routing", () => {
 		} as Parameters<typeof processOneOffJob>[0]);
 
 		expect(result.success).toBe(true);
-		expect(processImportReviewScanJob).toHaveBeenCalledTimes(1);
+		expect(processImportReviewJob).toHaveBeenCalledTimes(1);
 	});
 
 	it("routes import review commit jobs without falling through to unknown job type", async () => {
@@ -181,6 +182,6 @@ describe("import review worker routing", () => {
 		} as Parameters<typeof processOneOffJob>[0]);
 
 		expect(result.success).toBe(true);
-		expect(processImportReviewCommitJob).toHaveBeenCalledTimes(1);
+		expect(processImportReviewJob).toHaveBeenCalledTimes(1);
 	});
 });
