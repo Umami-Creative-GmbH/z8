@@ -13,6 +13,14 @@ interface ImportScanResult {
 	issues: number;
 }
 
+function formatCommitRowFailure(result: {
+	failedRows: number;
+	errors: Array<{ rowId: string; message: string }>;
+}) {
+	const details = result.errors.map((error) => `${error.rowId}: ${error.message}`).join("; ");
+	return `Import review commit failed for ${result.failedRows} row(s)${details ? `: ${details}` : ""}`;
+}
+
 function isFinalAttempt(job: Job<ImportReviewJobData>): boolean {
 	const maxAttempts = typeof job.opts.attempts === "number" && job.opts.attempts > 0 ? job.opts.attempts : 1;
 	return job.attemptsMade + 1 >= maxAttempts;
@@ -48,6 +56,7 @@ async function markFailed(data: ImportReviewJobData, errorMessage: string) {
 
 export async function processImportReviewJob(job: Job<ImportReviewJobData>): Promise<JobResult> {
 	const { data } = job;
+	let failureAlreadyMarked = false;
 
 	try {
 		await markRunning(data);
@@ -75,7 +84,14 @@ export async function processImportReviewJob(job: Job<ImportReviewJobData>): Pro
 			}
 
 			case "import-review-commit": {
-				const { committedRows } = await commitAcceptedRowsForEntity(data);
+				const commitResult = await commitAcceptedRowsForEntity(data);
+				if (commitResult.failedRows > 0) {
+					const errorMessage = formatCommitRowFailure(commitResult);
+					await markFailed(data, errorMessage);
+					failureAlreadyMarked = true;
+					throw new Error(errorMessage);
+				}
+				const { committedRows } = commitResult;
 				await markCompleted(data, committedRows);
 				return {
 					success: true,
@@ -89,7 +105,7 @@ export async function processImportReviewJob(job: Job<ImportReviewJobData>): Pro
 		}
 	} catch (error) {
 		const errorMessage = error instanceof Error ? error.message : String(error);
-		if (isFinalAttempt(job)) await markFailed(data, errorMessage);
+		if (!failureAlreadyMarked && isFinalAttempt(job)) await markFailed(data, errorMessage);
 		throw error;
 	}
 }

@@ -5,6 +5,7 @@ const dbMock = vi.hoisted(() => ({
 	latestEntries: new Map<string, { id: string; hash: string }>(),
 	employees: new Map<string, { id: string; organizationId: string }>(),
 	categories: new Map<string, { id: string; organizationId: string; name: string }>(),
+	transaction: vi.fn(),
 	select: vi.fn(),
 	update: vi.fn(),
 	insert: vi.fn(),
@@ -26,6 +27,7 @@ const dbMock = vi.hoisted(() => ({
 
 vi.mock("@/db", () => ({
 	db: {
+		transaction: dbMock.transaction,
 		select: dbMock.select,
 		update: dbMock.update,
 		insert: dbMock.insert,
@@ -73,6 +75,22 @@ beforeEach(() => {
 	dbMock.categories = new Map();
 	dbMock.insertCalls = [];
 	dbMock.updates = [];
+	dbMock.transaction.mockImplementation(async (callback) => {
+		const insertSnapshot = [...dbMock.insertCalls];
+		const updateSnapshot = [...dbMock.updates];
+		try {
+			return await callback({
+				select: dbMock.select,
+				update: dbMock.update,
+				insert: dbMock.insert,
+				query: dbMock.query,
+			});
+		} catch (error) {
+			dbMock.insertCalls = insertSnapshot;
+			dbMock.updates = updateSnapshot;
+			throw error;
+		}
+	});
 
 	dbMock.from.mockReturnValue({ where: dbMock.where });
 	dbMock.where.mockImplementation(() => Promise.resolve(dbMock.rows));
@@ -116,7 +134,7 @@ describe("commitAcceptedRowsForEntity", () => {
 
 		const result = await commitAcceptedRowsForEntity(commitJob("work_period"));
 
-		expect(result).toEqual({ committedRows: 1 });
+		expect(result).toEqual({ committedRows: 1, failedRows: 0, errors: [] });
 		expect(calculateHash).toHaveBeenNthCalledWith(1, {
 			employeeId: "emp_1",
 			type: "clock_in",
@@ -175,7 +193,7 @@ describe("commitAcceptedRowsForEntity", () => {
 
 		const result = await commitAcceptedRowsForEntity(commitJob("absence"));
 
-		expect(result).toEqual({ committedRows: 1 });
+		expect(result).toEqual({ committedRows: 1, failedRows: 0, errors: [] });
 		expect(dbMock.insertCalls).toContainEqual(
 			expect.objectContaining({
 				employeeId: "emp_1",
@@ -211,7 +229,7 @@ describe("commitAcceptedRowsForEntity", () => {
 
 		const result = await commitAcceptedRowsForEntity(commitJob("work_period"));
 
-		expect(result).toEqual({ committedRows: 0 });
+		expect(result).toEqual({ committedRows: 0, failedRows: 0, errors: [] });
 		expect(dbMock.where).toHaveBeenCalledWith(expect.objectContaining({ queryChunks: expect.any(Array) }));
 		expect(dbMock.insert).not.toHaveBeenCalled();
 	});
@@ -226,12 +244,16 @@ describe("commitAcceptedRowsForEntity", () => {
 				},
 			}),
 		];
-	dbMock.employees.set("emp_2", { id: "emp_2", organizationId: "org_2" });
-	dbMock.query.employee.findFirst.mockResolvedValueOnce(null);
+		dbMock.employees.set("emp_2", { id: "emp_2", organizationId: "org_2" });
+		dbMock.query.employee.findFirst.mockResolvedValueOnce(null);
 
 		const result = await commitAcceptedRowsForEntity(commitJob("work_period"));
 
-		expect(result).toEqual({ committedRows: 0 });
+		expect(result).toEqual({
+			committedRows: 0,
+			failedRows: 1,
+			errors: [{ rowId: "row_1", message: "Employee emp_2 does not belong to organization org_1" }],
+		});
 		expect(dbMock.insert).not.toHaveBeenCalled();
 		expect(dbMock.updates).toContainEqual(
 			expect.objectContaining({
@@ -239,5 +261,83 @@ describe("commitAcceptedRowsForEntity", () => {
 				commitError: "Employee emp_2 does not belong to organization org_1",
 			}),
 		);
+	});
+
+	it("chains multiple rows for the same employee through the in-memory chain head", async () => {
+		dbMock.rows = [
+			stagedRow({
+				id: "row_1",
+				normalizedPayload: {
+					employeeId: "emp_1",
+					startsAt: "2026-01-01T08:00:00.000Z",
+					endsAt: "2026-01-01T12:00:00.000Z",
+				},
+			}),
+			stagedRow({
+				id: "row_2",
+				normalizedPayload: {
+					employeeId: "emp_1",
+					startsAt: "2026-01-02T08:00:00.000Z",
+					endsAt: "2026-01-02T12:00:00.000Z",
+				},
+			}),
+		];
+		dbMock.latestEntries.set("emp_1", { id: "entry_prev", hash: "hash_prev" });
+
+		const result = await commitAcceptedRowsForEntity(commitJob("work_period"));
+
+		expect(result).toEqual({ committedRows: 2, failedRows: 0, errors: [] });
+		expect(dbMock.query.timeEntry.findFirst).toHaveBeenCalledTimes(1);
+		expect(dbMock.insertCalls[3]).toEqual(
+			expect.objectContaining({
+				type: "clock_in",
+				previousEntryId: "created_2",
+				previousHash: expect.stringContaining("clock_out"),
+			}),
+		);
+	});
+
+	it("selects the existing chain head by latest createdAt instead of latest timestamp", async () => {
+		dbMock.rows = [
+			stagedRow({
+				normalizedPayload: {
+					employeeId: "emp_1",
+					startsAt: "2026-01-02T08:00:00.000Z",
+					endsAt: null,
+				},
+			}),
+		];
+
+		await commitAcceptedRowsForEntity(commitJob("work_period"));
+
+		const orderBy = dbMock.query.timeEntry.findFirst.mock.calls[0][0].orderBy;
+		expect(orderBy).toHaveLength(1);
+		expect(orderBy[0].queryChunks[1].config.name).toBe("created_at");
+	});
+
+	it("rolls back production writes when a row fails before marking commit_failed", async () => {
+		dbMock.rows = [
+			stagedRow({
+				normalizedPayload: {
+					employeeId: "emp_1",
+					startsAt: "2026-01-01T08:00:00.000Z",
+					endsAt: "2026-01-01T16:00:00.000Z",
+				},
+			}),
+		];
+		dbMock.returning.mockImplementationOnce(() => Promise.resolve([{ id: "created_1", hash: "hash_1" }]));
+		dbMock.returning.mockImplementationOnce(() => Promise.reject(new Error("clock out insert failed")));
+
+		const result = await commitAcceptedRowsForEntity(commitJob("work_period"));
+
+		expect(result).toEqual({
+			committedRows: 0,
+			failedRows: 1,
+			errors: [{ rowId: "row_1", message: "clock out insert failed" }],
+		});
+		expect(dbMock.insertCalls).toEqual([]);
+		expect(dbMock.updates).toEqual([
+			expect.objectContaining({ rowStatus: "commit_failed", commitError: "clock out insert failed" }),
+		]);
 	});
 });

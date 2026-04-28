@@ -12,8 +12,10 @@ import {
 import { calculateHash } from "@/lib/time-tracking/blockchain";
 import type { ImportCommitJobData } from "./types";
 
-type CommitResult = { committedRows: number };
+type CommitRowError = { rowId: string; message: string };
+type CommitResult = { committedRows: number; failedRows: number; errors: CommitRowError[] };
 type ChainHead = { id: string; hash: string } | null;
+type CommitDb = Pick<typeof db, "insert" | "query" | "select" | "update">;
 
 interface WorkPeriodPayload {
 	employeeId: string;
@@ -30,12 +32,13 @@ interface AbsencePayload {
 }
 
 async function markCommitted(
+	database: CommitDb,
 	rowId: string,
 	organizationId: string,
 	tableName: string,
 	targetId: string,
 ) {
-	await db
+	await database
 		.update(importStagedRow)
 		.set({
 			rowStatus: "committed",
@@ -56,8 +59,8 @@ async function markCommitFailed(rowId: string, organizationId: string, error: un
 		.where(and(eq(importStagedRow.id, rowId), eq(importStagedRow.organizationId, organizationId)));
 }
 
-async function assertEmployeeInOrganization(employeeId: string, organizationId: string) {
-	const found = await db.query.employee.findFirst({
+async function assertEmployeeInOrganization(database: CommitDb, employeeId: string, organizationId: string) {
+	const found = await database.query.employee.findFirst({
 		where: and(eq(employee.id, employeeId), eq(employee.organizationId, organizationId)),
 	});
 
@@ -67,19 +70,20 @@ async function assertEmployeeInOrganization(employeeId: string, organizationId: 
 }
 
 async function getChainHead(
+	database: CommitDb,
 	employeeId: string,
 	organizationId: string,
 	chainHeads: Map<string, ChainHead>,
 ): Promise<ChainHead> {
 	if (chainHeads.has(employeeId)) return chainHeads.get(employeeId) ?? null;
 
-	const latest = await db.query.timeEntry.findFirst({
+	const latest = await database.query.timeEntry.findFirst({
 		where: and(
 			eq(timeEntry.employeeId, employeeId),
 			eq(timeEntry.organizationId, organizationId),
 			eq(timeEntry.isSuperseded, false),
 		),
-		orderBy: [desc(timeEntry.timestamp), desc(timeEntry.createdAt)],
+		orderBy: [desc(timeEntry.createdAt)],
 		columns: { id: true, hash: true },
 	});
 	const chainHead = latest ? { id: latest.id, hash: latest.hash } : null;
@@ -94,23 +98,24 @@ function parseUtcDateTime(value: string, fieldName: string): DateTime {
 }
 
 async function commitWorkPeriod(
+	database: CommitDb,
 	row: typeof importStagedRow.$inferSelect,
 	job: ImportCommitJobData,
 	chainHeads: Map<string, ChainHead>,
-) {
+): Promise<ChainHead> {
 	const payload = row.normalizedPayload as unknown as WorkPeriodPayload;
-	await assertEmployeeInOrganization(payload.employeeId, job.organizationId);
+	await assertEmployeeInOrganization(database, payload.employeeId, job.organizationId);
 
 	const startAt = parseUtcDateTime(payload.startsAt, "startsAt");
 	const endAt = payload.endsAt ? parseUtcDateTime(payload.endsAt, "endsAt") : null;
-	const previous = await getChainHead(payload.employeeId, job.organizationId, chainHeads);
+	const previous = await getChainHead(database, payload.employeeId, job.organizationId, chainHeads);
 	const clockInHash = calculateHash({
 		employeeId: payload.employeeId,
 		type: "clock_in",
 		timestamp: startAt.toISO()!,
 		previousHash: previous?.hash ?? null,
 	});
-	const [clockIn] = await db
+	const [clockIn] = await database
 		.insert(timeEntry)
 		.values({
 			employeeId: payload.employeeId,
@@ -133,7 +138,7 @@ async function commitWorkPeriod(
 			timestamp: endAt.toISO()!,
 			previousHash: latestEntry.hash,
 		});
-		const [clockOut] = await db
+		const [clockOut] = await database
 			.insert(timeEntry)
 			.values({
 				employeeId: payload.employeeId,
@@ -150,7 +155,7 @@ async function commitWorkPeriod(
 		latestEntry = { id: clockOut.id, hash: clockOut.hash };
 	}
 
-	const [period] = await db
+	const [period] = await database
 		.insert(workPeriod)
 		.values({
 			employeeId: payload.employeeId,
@@ -163,19 +168,19 @@ async function commitWorkPeriod(
 			isActive: !endAt,
 		})
 		.returning({ id: workPeriod.id });
-	chainHeads.set(payload.employeeId, latestEntry);
 
-	await markCommitted(row.id, job.organizationId, "work_period", period.id);
+	await markCommitted(database, row.id, job.organizationId, "work_period", period.id);
+	return latestEntry;
 }
 
-async function ensureAbsenceCategory(organizationId: string, categoryName: string) {
-	const existing = await db.query.absenceCategory.findFirst({
+async function ensureAbsenceCategory(database: CommitDb, organizationId: string, categoryName: string) {
+	const existing = await database.query.absenceCategory.findFirst({
 		where: and(eq(absenceCategory.organizationId, organizationId), eq(absenceCategory.name, categoryName)),
 		columns: { id: true },
 	});
 	if (existing) return existing.id;
 
-	const [created] = await db
+	const [created] = await database
 		.insert(absenceCategory)
 		.values({
 			organizationId,
@@ -189,15 +194,16 @@ async function ensureAbsenceCategory(organizationId: string, categoryName: strin
 	return created.id;
 }
 
-async function commitAbsence(row: typeof importStagedRow.$inferSelect, job: ImportCommitJobData) {
+async function commitAbsence(database: CommitDb, row: typeof importStagedRow.$inferSelect, job: ImportCommitJobData) {
 	const payload = row.normalizedPayload as unknown as AbsencePayload;
-	await assertEmployeeInOrganization(payload.employeeId, job.organizationId);
+	await assertEmployeeInOrganization(database, payload.employeeId, job.organizationId);
 
 	const categoryId = await ensureAbsenceCategory(
+		database,
 		job.organizationId,
 		payload.categoryName?.trim() || "Imported absence",
 	);
-	const [absence] = await db
+	const [absence] = await database
 		.insert(absenceEntry)
 		.values({
 			employeeId: payload.employeeId,
@@ -210,7 +216,7 @@ async function commitAbsence(row: typeof importStagedRow.$inferSelect, job: Impo
 		})
 		.returning({ id: absenceEntry.id });
 
-	await markCommitted(row.id, job.organizationId, "absence_entry", absence.id);
+	await markCommitted(database, row.id, job.organizationId, "absence_entry", absence.id);
 }
 
 export async function commitAcceptedRowsForEntity(job: ImportCommitJobData): Promise<CommitResult> {
@@ -227,26 +233,36 @@ export async function commitAcceptedRowsForEntity(job: ImportCommitJobData): Pro
 		);
 	const chainHeads = new Map<string, ChainHead>();
 	let committedRows = 0;
+	const errors: CommitRowError[] = [];
 
 	for (const row of rows) {
 		if (row.rowStatus !== "accepted") continue;
 
 		try {
-			switch (job.entityType) {
-				case "work_period":
-					await commitWorkPeriod(row, job, chainHeads);
-					break;
-				case "absence":
-					await commitAbsence(row, job);
-					break;
-				default:
-					throw new Error(`Unsupported import review commit entity type: ${job.entityType}`);
+			const latestChainHead = await db.transaction(async (tx) => {
+				switch (job.entityType) {
+					case "work_period":
+						return commitWorkPeriod(tx as CommitDb, row, job, chainHeads);
+					case "absence":
+						await commitAbsence(tx as CommitDb, row, job);
+						return null;
+					default:
+						throw new Error(`Unsupported import review commit entity type: ${job.entityType}`);
+				}
+			});
+			if (job.entityType === "work_period") {
+				const payload = row.normalizedPayload as unknown as WorkPeriodPayload;
+				chainHeads.set(payload.employeeId, latestChainHead);
 			}
 			committedRows++;
 		} catch (error) {
 			await markCommitFailed(row.id, job.organizationId, error);
+			errors.push({
+				rowId: row.id,
+				message: error instanceof Error ? error.message : String(error),
+			});
 		}
 	}
 
-	return { committedRows };
+	return { committedRows, failedRows: errors.length, errors };
 }

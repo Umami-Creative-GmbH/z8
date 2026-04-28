@@ -118,7 +118,7 @@ describe("processImportReviewJob", () => {
 	});
 
 	it("routes commit jobs and marks them completed with committed row count", async () => {
-		commitAcceptedRowsForEntityMock.mockResolvedValue({ committedRows: 5 });
+		commitAcceptedRowsForEntityMock.mockResolvedValue({ committedRows: 5, failedRows: 0, errors: [] });
 
 		const result = await processImportReviewJob(commitJob());
 
@@ -137,6 +137,29 @@ describe("processImportReviewJob", () => {
 			processedRows: 5,
 			errorMessage: null,
 		});
+	});
+
+	it("marks commit jobs failed and rejects when committed rows report row failures", async () => {
+		commitAcceptedRowsForEntityMock.mockResolvedValue({
+			committedRows: 2,
+			failedRows: 1,
+			errors: [{ rowId: "row_3", message: "Employee emp_2 does not belong to organization org_1" }],
+		});
+
+		await expect(processImportReviewJob(commitJob())).rejects.toThrow(
+			"Import review commit failed for 1 row(s): row_3: Employee emp_2 does not belong to organization org_1",
+		);
+
+		expect(updateImportBatchJobMock).toHaveBeenNthCalledWith(2, {
+			jobId: "job_3",
+			organizationId: "org_1",
+			status: "failed",
+			errorMessage:
+				"Import review commit failed for 1 row(s): row_3: Employee emp_2 does not belong to organization org_1",
+		});
+		expect(updateImportBatchJobMock).not.toHaveBeenCalledWith(
+			expect.objectContaining({ status: "completed" }),
+		);
 	});
 
 	it("rejects placeholder scan failures without marking the job completed", async () => {
