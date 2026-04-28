@@ -360,6 +360,7 @@
 			"employeeQualificationWarning": "O funcionário tem {{details}}",
 			"endTime": "Hora de fim",
 			"expiredSkillsWarningPart": "{{count}} certificação(ões) expirada(s)",
+			"invalidTimeFormat": "Formato de hora inválido",
 			"missingSkillsWarningPart": "{{count}} habilidade(s) em falta",
 			"noTemplate": "Sem modelo",
 			"notesOptional": "Notas (opcional)",

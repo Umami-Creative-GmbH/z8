@@ -147,6 +147,7 @@ export function ShiftDialogSections({
 								{t("scheduling.shiftDialog.templateOptional", "Template (Optional)")}
 							</Label>
 							<Select
+								name="templateId"
 								onValueChange={(value) => field.handleChange(value === "none" ? null : value)}
 								value={field.state.value || "none"}
 							>
@@ -183,7 +184,12 @@ export function ShiftDialogSections({
 				<form.Field
 					name="startTime"
 					validators={{
-						onChange: z.string().regex(/^\d{2}:\d{2}$/, "Invalid time format"),
+						onChange: z
+							.string()
+							.regex(
+								/^\d{2}:\d{2}$/,
+								t("scheduling.shiftDialog.invalidTimeFormat", "Invalid time format"),
+							),
 					}}
 				>
 					{(field) => (
@@ -209,7 +215,12 @@ export function ShiftDialogSections({
 				<form.Field
 					name="endTime"
 					validators={{
-						onChange: z.string().regex(/^\d{2}:\d{2}$/, "Invalid time format"),
+						onChange: z
+							.string()
+							.regex(
+								/^\d{2}:\d{2}$/,
+								t("scheduling.shiftDialog.invalidTimeFormat", "Invalid time format"),
+							),
 					}}
 				>
 					{(field) => (
@@ -244,7 +255,7 @@ export function ShiftDialogSections({
 									<span className="text-destructive">*</span>
 								</span>
 							</Label>
-							<Select onValueChange={field.handleChange} value={field.state.value}>
+							<Select name="subareaId" onValueChange={field.handleChange} value={field.state.value}>
 								<SelectTrigger id="shift-dialog-subarea">
 									<SelectValue
 										placeholder={t("scheduling.shiftDialog.selectSubarea", "Select a subarea…")}
@@ -281,6 +292,7 @@ export function ShiftDialogSections({
 								</span>
 							</Label>
 							<Select
+								name="employeeId"
 								onValueChange={(value) => field.handleChange(value === "open" ? null : value)}
 								value={field.state.value || "open"}
 							>

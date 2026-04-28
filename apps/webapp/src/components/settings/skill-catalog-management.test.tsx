@@ -125,6 +125,15 @@ describe("SkillCatalogManagement", () => {
 		expect((screen.getByLabelText("Warn before expiry") as HTMLInputElement).value).toBe("30");
 	});
 
+	it("adds form metadata to non-text controls", () => {
+		render(<SkillCatalogManagement organizationId="org-1" canManageCatalog />);
+
+		fireEvent.click(screen.getByText("Add Skill"));
+
+		expect(document.querySelector('[name="category"]')).toBeTruthy();
+		expect(document.querySelector('[name="requiresExpiry"]')).toBeTruthy();
+	});
+
 	it("resets the create form after canceling", () => {
 		render(<SkillCatalogManagement organizationId="org-1" canManageCatalog />);
 

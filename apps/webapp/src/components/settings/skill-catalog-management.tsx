@@ -547,6 +547,7 @@ function SkillDialog({ skill, open, onOpenChange, onSuccess }: SkillDialogProps)
 										{t("settings.skills.category", "Category")}
 									</Label>
 									<Select
+										name="category"
 										value={field.state.value}
 										onValueChange={(value) => field.handleChange(value as SkillCategory)}
 									>
@@ -656,6 +657,7 @@ function SkillDialog({ skill, open, onOpenChange, onSuccess }: SkillDialogProps)
 									</div>
 									<Switch
 										id="skill-expiry"
+										name="requiresExpiry"
 										checked={field.state.value}
 										onCheckedChange={field.handleChange}
 									/>

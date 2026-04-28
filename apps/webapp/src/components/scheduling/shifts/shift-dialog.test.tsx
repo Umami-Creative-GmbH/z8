@@ -12,6 +12,7 @@ const {
 	toastErrorMock,
 	skillValidationMock,
 	formValuesMock,
+	translateMock,
 } = vi.hoisted(() => ({
 	deleteShiftMock: vi.fn(),
 	upsertShiftMock: vi.fn(),
@@ -19,6 +20,7 @@ const {
 	toastErrorMock: vi.fn(),
 	skillValidationMock: vi.fn(),
 	formValuesMock: vi.fn(),
+	translateMock: vi.fn((_key: string, fallback: string) => fallback),
 }));
 
 vi.mock("sonner", () => ({
@@ -31,7 +33,7 @@ vi.mock("sonner", () => ({
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
-		t: (_key: string, fallback: string) => fallback,
+		t: translateMock,
 	}),
 }));
 
@@ -107,6 +109,50 @@ function createQueryClient() {
 	});
 }
 
+function createShiftDialogSectionsForm() {
+	const fields: Record<string, unknown> = {
+		date: new Date("2026-04-29T00:00:00.000Z"),
+		templateId: null,
+		startTime: "09:00",
+		endTime: "17:00",
+		subareaId: "subarea-1",
+		employeeId: "employee-1",
+		notes: "",
+	};
+	const validators = new Map<string, unknown>();
+
+	return {
+		validators,
+		form: {
+			Field: ({
+				name,
+				validators: fieldValidators,
+				children,
+			}: {
+				name: string;
+				validators?: unknown;
+				children: (field: {
+					state: { value: unknown; meta: { errors: readonly unknown[] } };
+					handleChange: (value: unknown) => void;
+					handleBlur: () => void;
+				}) => React.ReactNode;
+			}) => {
+				if (fieldValidators) {
+					validators.set(name, fieldValidators);
+				}
+
+				return children({
+					state: { value: fields[name], meta: { errors: [] } },
+					handleChange: (value) => {
+						fields[name] = value;
+					},
+					handleBlur: vi.fn(),
+				});
+			},
+		},
+	};
+}
+
 function renderShiftDialogWithLocalOpenState(props?: {
 	shift?: ReturnType<typeof buildShift>;
 	initiallyOpen?: boolean;
@@ -146,6 +192,7 @@ function renderShiftDialogWithLocalOpenState(props?: {
 describe("ShiftDialog", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		translateMock.mockImplementation((_key: string, fallback: string) => fallback);
 		skillValidationMock.mockReturnValue(null);
 		formValuesMock.mockReturnValue({
 			employeeId: "employee-1",
@@ -168,6 +215,81 @@ describe("ShiftDialog", () => {
 				},
 			},
 		});
+	});
+
+	it("adds form metadata to shift select controls", async () => {
+		const actual =
+			await vi.importActual<typeof import("./shift-dialog-sections")>("./shift-dialog-sections");
+		const { form } = createShiftDialogSectionsForm();
+
+		render(
+			<form>
+				<actual.ShiftDialogSections
+					form={form as never}
+					formValues={formValuesMock()}
+					isManager
+					templates={[
+						{
+							id: "template-1",
+							name: "Day Shift",
+							startTime: "09:00",
+							endTime: "17:00",
+							isActive: true,
+						} as never,
+					]}
+					locations={[
+						{
+							name: "HQ",
+							subareas: [{ id: "subarea-1", name: "Floor 1", isActive: true }],
+						} as never,
+					]}
+					employees={[{ id: "employee-1", firstName: "Kai", lastName: "Avery" } as never]}
+					skillValidation={null}
+					isValidatingSkills={false}
+					isEditing={false}
+					shift={null}
+				/>
+			</form>,
+		);
+
+		expect(document.querySelector('[name="templateId"]')).toBeTruthy();
+		expect(document.querySelector('[name="subareaId"]')).toBeTruthy();
+		expect(document.querySelector('[name="employeeId"]')).toBeTruthy();
+	});
+
+	it("uses translated invalid time validation messages", async () => {
+		translateMock.mockImplementation((key: string, fallback: string) =>
+			key === "scheduling.shiftDialog.invalidTimeFormat" ? "Translated invalid time" : fallback,
+		);
+		const actual =
+			await vi.importActual<typeof import("./shift-dialog-sections")>("./shift-dialog-sections");
+		const { form, validators } = createShiftDialogSectionsForm();
+
+		render(
+			<actual.ShiftDialogSections
+				form={form as never}
+				formValues={formValuesMock()}
+				isManager
+				templates={[]}
+				locations={[]}
+				employees={[]}
+				skillValidation={null}
+				isValidatingSkills={false}
+				isEditing={false}
+				shift={null}
+			/>,
+		);
+
+		for (const fieldName of ["startTime", "endTime"]) {
+			const fieldValidators = validators.get(fieldName) as {
+				onChange: {
+					safeParse: (value: string) => { error?: { issues: Array<{ message: string }> } };
+				};
+			};
+			expect(fieldValidators.onChange.safeParse("bad").error?.issues[0]?.message).toBe(
+				"Translated invalid time",
+			);
+		}
 	});
 
 	it("submits override reasons only while the current validation requires an override", async () => {
