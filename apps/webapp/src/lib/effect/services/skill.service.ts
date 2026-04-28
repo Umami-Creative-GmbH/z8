@@ -739,6 +739,26 @@ export const SkillServiceLive = Layer.effect(
 						);
 					}
 
+					const reviewer = yield* _(
+						dbService.query("getQualificationRenewalReviewer", async () => {
+							return await dbService.db.query.employee.findFirst({
+								where: eq(employee.id, input.reviewerEmployeeId),
+							});
+						}),
+					);
+
+					if (!reviewer || reviewer.organizationId !== request!.organizationId) {
+						yield* _(
+							Effect.fail(
+								new NotFoundError({
+									message: "Reviewer not found",
+									entityType: "employee",
+									entityId: input.reviewerEmployeeId,
+								}),
+							),
+						);
+					}
+
 					if (input.approved) {
 						yield* _(
 							dbService.query("applyQualificationRenewal", async () => {
