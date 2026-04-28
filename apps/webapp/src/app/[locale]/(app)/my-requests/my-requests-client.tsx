@@ -200,6 +200,7 @@ export function MyRequestsClient({ initialResult }: MyRequestsClientProps) {
 						) : filteredItems.length === 0 ? (
 							<EmptyState title="No requests match your filters" />
 						) : (
+							<div className="overflow-x-auto">
 							<Table>
 								<TableHeader>
 									<TableRow>
@@ -236,6 +237,7 @@ export function MyRequestsClient({ initialResult }: MyRequestsClientProps) {
 									))}
 								</TableBody>
 							</Table>
+							</div>
 						)}
 					</CardContent>
 				</Card>
