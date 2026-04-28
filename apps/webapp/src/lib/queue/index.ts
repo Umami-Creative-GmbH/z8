@@ -13,6 +13,7 @@
 
 import { type ConnectionOptions, type Job, type JobsOptions, Queue, Worker } from "bullmq";
 import type { CronJobData, CronJobName, CronJobResult } from "@/lib/cron/registry";
+import type { ImportCommitJobData, ImportScanJobData } from "@/lib/import-review/types";
 import { createLogger } from "@/lib/logger";
 import { env } from "@/env";
 
@@ -34,7 +35,9 @@ export type JobType =
 	| "cleanup"
 	| "webhook"
 	| "calendar-sync"
-	| "audit-pack";
+	| "audit-pack"
+	| "import-review-scan"
+	| "import-review-commit";
 
 // Job data interfaces
 export interface ReportJobData {
@@ -92,6 +95,10 @@ export interface AuditPackJobData {
 	organizationId: string;
 }
 
+export type ImportReviewScanQueueJobData = ImportScanJobData;
+
+export type ImportReviewCommitQueueJobData = ImportCommitJobData;
+
 export type JobData =
 	| ReportJobData
 	| ExportJobData
@@ -100,7 +107,9 @@ export type JobData =
 	| CronJobData
 	| WebhookJobData
 	| CalendarSyncJobData
-	| AuditPackJobData;
+	| AuditPackJobData
+	| ImportReviewScanQueueJobData
+	| ImportReviewCommitQueueJobData;
 
 // Job result interfaces
 export interface JobResult {
