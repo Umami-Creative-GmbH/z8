@@ -1,8 +1,7 @@
 /* @vitest-environment jsdom */
 
-import { render, screen } from "@testing-library/react";
-import { fireEvent, waitFor } from "@testing-library/react";
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { normalizeExpiryWarningDays, SkillCatalogManagement } from "./skill-catalog-management";
 
 const { deleteSkillMock, invalidateQueriesMock } = vi.hoisted(() => ({
@@ -26,13 +25,30 @@ const catalogSkill = {
 	updatedBy: null,
 };
 
+class ResizeObserverMock {
+	observe() {}
+	unobserve() {}
+	disconnect() {}
+}
+
+globalThis.ResizeObserver = ResizeObserverMock;
+
 vi.mock("@tanstack/react-query", async () => {
-	const actual = await vi.importActual<typeof import("@tanstack/react-query")>("@tanstack/react-query");
+	const actual =
+		await vi.importActual<typeof import("@tanstack/react-query")>("@tanstack/react-query");
 	return {
 		...actual,
-		useQuery: () => ({ data: [catalogSkill], isLoading: false, isFetching: false, refetch: vi.fn() }),
+		useQuery: () => ({
+			data: [catalogSkill],
+			isLoading: false,
+			isFetching: false,
+			refetch: vi.fn(),
+		}),
 		useQueryClient: () => ({ invalidateQueries: invalidateQueriesMock }),
-		useMutation: (options: { mutationFn: (input: string) => Promise<unknown>; onSuccess?: () => void }) => ({
+		useMutation: (options: {
+			mutationFn: (input: string) => Promise<unknown>;
+			onSuccess?: () => void;
+		}) => ({
 			mutate: async (input: string) => {
 				await options.mutationFn(input);
 				options.onSuccess?.();
@@ -42,7 +58,9 @@ vi.mock("@tanstack/react-query", async () => {
 	};
 });
 
-vi.mock("@tolgee/react", () => ({ useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }) }));
+vi.mock("@tolgee/react", () => ({
+	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
+}));
 
 vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 
@@ -75,6 +93,22 @@ describe("SkillCatalogManagement", () => {
 				queryKey: ["skills", "list", "org-1", false],
 			});
 		});
+	});
+
+	it("prefills the edit form with catalog qualification details", () => {
+		render(<SkillCatalogManagement organizationId="org-1" canManageCatalog />);
+
+		fireEvent.click(screen.getByText("Add Skill"));
+		fireEvent.change(screen.getByLabelText("Name *"), { target: { value: "Stale draft" } });
+		fireEvent.click(screen.getByText("Cancel"));
+
+		fireEvent.click(screen.getByLabelText("Edit"));
+
+		expect((screen.getByLabelText("Name *") as HTMLInputElement).value).toBe("Forklift License");
+		expect(
+			screen.getByRole("switch", { name: "Requires Expiry Date" }).getAttribute("aria-checked"),
+		).toBe("true");
+		expect((screen.getByLabelText("Warn before expiry") as HTMLInputElement).value).toBe("30");
 	});
 
 	it("normalizes expiry warning days to finite whole days", () => {

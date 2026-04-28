@@ -334,6 +334,7 @@ export function SkillCatalogManagement({
 			{/* Create/Edit Dialog */}
 			{canManageCatalog ? (
 				<SkillDialog
+					key={editingSkill?.id ?? "create"}
 					organizationId={organizationId}
 					skill={editingSkill}
 					open={dialogOpen}
