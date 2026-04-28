@@ -1,4 +1,4 @@
-import { and, desc, eq, gt, gte, isNull, lte, or, sql } from "drizzle-orm";
+import { and, desc, eq, gte, isNull, lt, lte, or, sql } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import {
 	employee,
@@ -11,8 +11,10 @@ import {
 	type skill,
 	subareaSkillRequirement,
 } from "@/db/schema";
+import { getQualificationStatus, mergeRequirementMode } from "@/lib/qualifications/status";
 import { AuthorizationError, type DatabaseError, NotFoundError, ValidationError } from "../errors";
 import { DatabaseService } from "./database.service";
+import { SkillService, SkillServiceLive } from "./skill.service";
 
 // Type definitions
 type Shift = typeof ShiftTable.$inferSelect;
@@ -49,6 +51,7 @@ export interface UpsertShiftInput {
 	endTime: string;
 	notes?: string;
 	color?: string;
+	qualificationOverrideReason?: string;
 	createdBy: string;
 }
 
@@ -70,6 +73,17 @@ export interface DateRange {
 export interface SkillWarning {
 	employeeId: string;
 	isQualified: boolean;
+	hasBlockingIssues: boolean;
+	requiresOverride: boolean;
+	issues: Array<{
+		id: string;
+		name: string;
+		category: string;
+		isRequired: boolean;
+		enforcementMode: "warning" | "blocking";
+		issueType: "missing" | "expired" | "expiringSoon" | "preferred";
+		expiresAt?: Date;
+	}>;
 	missingSkills: Array<{
 		id: string;
 		name: string;
@@ -408,7 +422,8 @@ export const ShiftServiceLive = Layer.effect(
 					let skillWarning: SkillWarning | undefined;
 					if (input.employeeId) {
 						const empId = input.employeeId;
-						const now = new Date();
+						const expiryBoundary = new Date();
+						expiryBoundary.setUTCHours(0, 0, 0, 0);
 
 						// Get employee's current valid skills
 						const validEmployeeSkills = yield* _(
@@ -416,7 +431,7 @@ export const ShiftServiceLive = Layer.effect(
 								return await dbService.db.query.employeeSkill.findMany({
 									where: and(
 										eq(employeeSkill.employeeId, empId),
-										or(isNull(employeeSkill.expiresAt), gt(employeeSkill.expiresAt, now)),
+										or(isNull(employeeSkill.expiresAt), gte(employeeSkill.expiresAt, expiryBoundary)),
 									),
 									with: { skill: true },
 								});
@@ -429,7 +444,7 @@ export const ShiftServiceLive = Layer.effect(
 								return await dbService.db.query.employeeSkill.findMany({
 									where: and(
 										eq(employeeSkill.employeeId, empId),
-										lte(employeeSkill.expiresAt, now),
+										lt(employeeSkill.expiresAt, expiryBoundary),
 									),
 									with: { skill: true },
 								});
@@ -452,6 +467,8 @@ export const ShiftServiceLive = Layer.effect(
 						let templateReqs: Array<{
 							skillId: string;
 							isRequired: boolean;
+							enforcementMode: "warning" | "blocking";
+							blockOnExpiringSoon: boolean;
 							skill: typeof skill.$inferSelect;
 						}> = [];
 						if (input.templateId) {
@@ -468,18 +485,46 @@ export const ShiftServiceLive = Layer.effect(
 						// Combine all requirements (deduped by skillId)
 						const allRequirements = new Map<
 							string,
-							{ skill: typeof skill.$inferSelect; isRequired: boolean }
+							{
+								skill: typeof skill.$inferSelect;
+								isRequired: boolean;
+								enforcementMode: "warning" | "blocking";
+								blockOnExpiringSoon: boolean;
+							}
 						>();
 						for (const req of [...subareaReqs, ...templateReqs]) {
 							const existing = allRequirements.get(req.skillId);
-							if (!existing || (req.isRequired && !existing.isRequired)) {
-								allRequirements.set(req.skillId, { skill: req.skill, isRequired: req.isRequired });
+							const enforcementMode = req.enforcementMode ?? "warning";
+							const blockOnExpiringSoon = req.blockOnExpiringSoon ?? false;
+
+							if (!existing) {
+								allRequirements.set(req.skillId, {
+									skill: req.skill,
+									isRequired: req.isRequired,
+									enforcementMode,
+									blockOnExpiringSoon,
+								});
+								continue;
 							}
+
+							allRequirements.set(req.skillId, {
+								skill: existing.skill,
+								isRequired: existing.isRequired || req.isRequired,
+								enforcementMode:
+									existing.isRequired && req.isRequired
+										? mergeRequirementMode(existing.enforcementMode, enforcementMode)
+										: req.isRequired && !existing.isRequired
+											? enforcementMode
+											: existing.enforcementMode,
+								blockOnExpiringSoon: existing.blockOnExpiringSoon || blockOnExpiringSoon,
+							});
 						}
 
 						// Find missing skills
 						const missingSkills: SkillWarning["missingSkills"] = [];
-						for (const [skillId, { skill: skillData, isRequired }] of allRequirements) {
+						const issues: SkillWarning["issues"] = [];
+						for (const [skillId, requirement] of allRequirements) {
+							const { skill: skillData, isRequired, enforcementMode } = requirement;
 							if (!validSkillIds.has(skillId)) {
 								missingSkills.push({
 									id: skillId,
@@ -487,26 +532,102 @@ export const ShiftServiceLive = Layer.effect(
 									category: skillData.category,
 									isRequired,
 								});
+								issues.push({
+									id: skillId,
+									name: skillData.name,
+									category: skillData.category,
+									isRequired,
+									enforcementMode,
+									issueType: isRequired ? "missing" : "preferred",
+								});
 							}
 						}
 
 						// Map expired skills (only those that are required)
 						const expiredSkills: SkillWarning["expiredSkills"] = expiredEmployeeSkills
 							.filter((es) => allRequirements.has(es.skillId))
-							.map((es) => ({
-								id: es.skillId,
-								name: es.skill.name,
-								expiresAt: es.expiresAt!,
-							}));
+							.map((es) => {
+								const requirement = allRequirements.get(es.skillId)!;
+								issues.push({
+									id: es.skillId,
+									name: es.skill.name,
+									category: es.skill.category,
+									isRequired: requirement.isRequired,
+									enforcementMode: requirement.enforcementMode,
+									issueType: "expired",
+									expiresAt: es.expiresAt!,
+								});
 
-						if (missingSkills.length > 0 || expiredSkills.length > 0) {
+								return {
+									id: es.skillId,
+									name: es.skill.name,
+									expiresAt: es.expiresAt!,
+								};
+							});
+
+						for (const employeeSkill of validEmployeeSkills) {
+							const requirement = allRequirements.get(employeeSkill.skillId);
+							if (!requirement || !employeeSkill.expiresAt) continue;
+
+							const status = getQualificationStatus({
+								expiresAt: employeeSkill.expiresAt,
+								warningDays: employeeSkill.skill.expiryWarningDays ?? 0,
+							});
+							if (status !== "expiringSoon") continue;
+
+							issues.push({
+								id: employeeSkill.skillId,
+								name: employeeSkill.skill.name,
+								category: employeeSkill.skill.category,
+								isRequired: requirement.isRequired,
+								enforcementMode: requirement.blockOnExpiringSoon
+									? requirement.enforcementMode
+									: "warning",
+								issueType: "expiringSoon",
+								expiresAt: employeeSkill.expiresAt,
+							});
+						}
+
+						const hasBlockingIssues = issues.some(
+							(issue) => issue.enforcementMode === "blocking" && issue.isRequired,
+						);
+						const requiresOverride = issues.some(
+							(issue) => issue.enforcementMode === "warning" && issue.isRequired,
+						);
+
+						if (issues.length > 0) {
 							skillWarning = {
 								employeeId: empId,
-								isQualified: false,
+								isQualified: !hasBlockingIssues && !requiresOverride,
+								hasBlockingIssues,
+								requiresOverride,
+								issues,
 								missingSkills,
 								expiredSkills,
 							};
 						}
+					}
+
+					if (skillWarning?.hasBlockingIssues) {
+						yield* _(
+							Effect.fail(
+								new ValidationError({
+									message: "This employee is missing a blocking qualification requirement",
+									field: "employeeId",
+								}),
+							),
+						);
+					}
+
+					if (skillWarning?.requiresOverride && !input.qualificationOverrideReason?.trim()) {
+						yield* _(
+							Effect.fail(
+								new ValidationError({
+									message: "An override reason is required for qualification warnings",
+									field: "qualificationOverrideReason",
+								}),
+							),
+						);
 					}
 
 					let createdShift: Shift;
@@ -576,6 +697,29 @@ export const ShiftServiceLive = Layer.effect(
 									.returning();
 								return s;
 							}),
+						);
+					}
+
+					if (input.employeeId && skillWarning?.requiresOverride) {
+						const warningIssueIds = [...new Set(skillWarning.issues.map((issue) => issue.id))];
+						yield* _(
+							Effect.gen(function* (_) {
+								const skillService = yield* _(SkillService);
+								return yield* _(
+									skillService.recordOverride({
+										organizationId: input.organizationId,
+										shiftId: createdShift.id,
+										employeeId: input.employeeId!,
+										missingSkillIds: warningIssueIds,
+										overrideReason: input.qualificationOverrideReason!.trim(),
+										overriddenBy: input.createdBy,
+									}),
+								);
+							}).pipe(
+								Effect.provide(
+									SkillServiceLive.pipe(Layer.provide(Layer.succeed(DatabaseService, dbService))),
+								),
+							),
 						);
 					}
 

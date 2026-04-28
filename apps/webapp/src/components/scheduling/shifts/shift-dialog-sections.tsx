@@ -44,6 +44,7 @@ interface ShiftDialogFooterProps {
 	isPending: boolean;
 	isSaving: boolean;
 	isDeleting: boolean;
+	isSaveDisabled?: boolean;
 	onDelete: () => void;
 	onCancel: () => void;
 }
@@ -323,6 +324,7 @@ export function ShiftDialogFooterActions({
 	isPending,
 	isSaving,
 	isDeleting,
+	isSaveDisabled,
 	onDelete,
 	onCancel,
 }: ShiftDialogFooterProps) {
@@ -366,7 +368,7 @@ export function ShiftDialogFooterActions({
 				Cancel
 			</Button>
 			{isManager && (
-				<Button type="submit" disabled={isPending}>
+				<Button type="submit" disabled={isPending || isSaveDisabled}>
 					{isSaving ? (
 						<>
 							<Loader2 className="h-4 w-4 mr-2 animate-spin" />

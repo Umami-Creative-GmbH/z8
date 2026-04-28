@@ -20,6 +20,7 @@ import {
 	subareaSkillRequirement,
 	type shiftTemplateSkillRequirement as TemplateSkillReqTable,
 } from "@/db/schema";
+import { getQualificationStatus, mergeRequirementMode } from "@/lib/qualifications/status";
 import { type DatabaseError, NotFoundError, ValidationError } from "../errors";
 import { DatabaseService } from "./database.service";
 
@@ -152,6 +153,17 @@ export interface QualificationRenewalRequestWithDetails extends QualificationRen
 
 export interface SkillValidationResult {
 	isQualified: boolean;
+	hasBlockingIssues: boolean;
+	requiresOverride: boolean;
+	issues: Array<{
+		id: string;
+		name: string;
+		category: SkillCategory;
+		isRequired: boolean;
+		enforcementMode: "warning" | "blocking";
+		issueType: "missing" | "expired" | "expiringSoon" | "preferred";
+		expiresAt?: Date;
+	}>;
 	missingSkills: Array<{
 		id: string;
 		name: string;
@@ -1218,7 +1230,13 @@ export const SkillServiceLive = Layer.effect(
 					);
 
 					// Get template requirements if applicable
-					let templateReqs: Array<{ skillId: string; isRequired: boolean; skill: Skill }> = [];
+					let templateReqs: Array<{
+						skillId: string;
+						isRequired: boolean;
+						enforcementMode: "warning" | "blocking";
+						blockOnExpiringSoon: boolean;
+						skill: Skill;
+					}> = [];
 					if (shiftData.templateId) {
 						templateReqs = yield* _(
 							dbService.query("getTemplateRequirements", async () => {
@@ -1232,22 +1250,50 @@ export const SkillServiceLive = Layer.effect(
 						);
 					}
 
-					// Combine all requirements (deduped by skillId, taking most restrictive isRequired)
-					const allRequirements = new Map<string, { skill: Skill; isRequired: boolean }>();
+					// Combine all requirements (deduped by skillId, taking most restrictive settings)
+					const allRequirements = new Map<
+						string,
+						{
+							skill: Skill;
+							isRequired: boolean;
+							enforcementMode: "warning" | "blocking";
+							blockOnExpiringSoon: boolean;
+						}
+					>();
 
 					for (const req of [...subareaReqs, ...templateReqs]) {
 						const existing = allRequirements.get(req.skillId);
-						if (!existing || (req.isRequired && !existing.isRequired)) {
+						const enforcementMode = req.enforcementMode ?? "warning";
+						const blockOnExpiringSoon = req.blockOnExpiringSoon ?? false;
+
+						if (!existing) {
 							allRequirements.set(req.skillId, {
 								skill: req.skill,
 								isRequired: req.isRequired,
+								enforcementMode,
+								blockOnExpiringSoon,
 							});
+							continue;
 						}
+
+						allRequirements.set(req.skillId, {
+							skill: existing.skill,
+							isRequired: existing.isRequired || req.isRequired,
+							enforcementMode:
+								existing.isRequired && req.isRequired
+									? mergeRequirementMode(existing.enforcementMode, enforcementMode)
+									: req.isRequired && !existing.isRequired
+										? enforcementMode
+										: existing.enforcementMode,
+							blockOnExpiringSoon: existing.blockOnExpiringSoon || blockOnExpiringSoon,
+						});
 					}
 
 					// Find missing skills
 					const missingSkills: SkillValidationResult["missingSkills"] = [];
-					for (const [skillId, { skill: skillData, isRequired }] of allRequirements) {
+					const issues: SkillValidationResult["issues"] = [];
+					for (const [skillId, requirement] of allRequirements) {
+						const { skill: skillData, isRequired, enforcementMode } = requirement;
 						if (!validSkillIds.has(skillId)) {
 							missingSkills.push({
 								id: skillId,
@@ -1255,22 +1301,74 @@ export const SkillServiceLive = Layer.effect(
 								category: skillData.category as SkillCategory,
 								isRequired,
 							});
+							issues.push({
+								id: skillId,
+								name: skillData.name,
+								category: skillData.category as SkillCategory,
+								isRequired,
+								enforcementMode,
+								issueType: isRequired ? "missing" : "preferred",
+							});
 						}
 					}
 
 					// Map expired skills
 					const expiredSkillsResult: SkillValidationResult["expiredSkills"] = expiredSkills
 						.filter((es) => allRequirements.has(es.skillId))
-						.map((es) => ({
+						.map((es) => {
+							const requirement = allRequirements.get(es.skillId)!;
+							issues.push({
+								id: es.skillId,
+								name: es.skill.name,
+								category: es.skill.category as SkillCategory,
+								isRequired: requirement.isRequired,
+								enforcementMode: requirement.enforcementMode,
+								issueType: "expired",
+								expiresAt: es.expiresAt!,
+							});
+
+							return {
 							id: es.skillId,
 							name: es.skill.name,
 							expiresAt: es.expiresAt!,
-						}));
+							};
+						});
 
-					const hasRequiredMissing = missingSkills.some((s) => s.isRequired);
+					for (const employeeSkill of employeeSkills) {
+						const requirement = allRequirements.get(employeeSkill.skillId);
+						if (!requirement || !employeeSkill.expiresAt) continue;
+
+						const status = getQualificationStatus({
+							expiresAt: employeeSkill.expiresAt,
+							warningDays: employeeSkill.skill.expiryWarningDays ?? 0,
+						});
+						if (status !== "expiringSoon") continue;
+
+						issues.push({
+							id: employeeSkill.skillId,
+							name: employeeSkill.skill.name,
+							category: employeeSkill.skill.category as SkillCategory,
+							isRequired: requirement.isRequired,
+							enforcementMode: requirement.blockOnExpiringSoon
+								? requirement.enforcementMode
+								: "warning",
+							issueType: "expiringSoon",
+							expiresAt: employeeSkill.expiresAt,
+						});
+					}
+
+					const hasBlockingIssues = issues.some(
+						(issue) => issue.enforcementMode === "blocking" && issue.isRequired,
+					);
+					const requiresOverride = issues.some(
+						(issue) => issue.enforcementMode === "warning" && issue.isRequired,
+					);
 
 					return {
-						isQualified: !hasRequiredMissing && expiredSkillsResult.length === 0,
+						isQualified: !hasBlockingIssues && !requiresOverride,
+						hasBlockingIssues,
+						requiresOverride,
+						issues,
 						missingSkills,
 						expiredSkills: expiredSkillsResult,
 					};
@@ -1345,6 +1443,9 @@ export const SkillServiceLive = Layer.effect(
 
 					return {
 						isQualified: !hasRequiredMissing && expiredSkillsResult.length === 0,
+						hasBlockingIssues: false,
+						requiresOverride: hasRequiredMissing || expiredSkillsResult.length > 0,
+						issues: [],
 						missingSkills,
 						expiredSkills: expiredSkillsResult,
 					};

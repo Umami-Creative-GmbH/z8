@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { toast } from "sonner";
 import { deleteShift, upsertShift } from "@/app/[locale]/(app)/scheduling/actions";
 import type { ShiftTemplate, ShiftWithRelations } from "@/app/[locale]/(app)/scheduling/types";
@@ -11,6 +12,8 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { queryKeys } from "@/lib/query/keys";
 import { ShiftDialogFooterActions, ShiftDialogSections } from "./shift-dialog-sections";
 import { useShiftDialogData } from "./use-shift-dialog-data";
@@ -36,6 +39,7 @@ export function ShiftDialog({
 	organizationId,
 }: ShiftDialogProps) {
 	const queryClient = useQueryClient();
+	const [qualificationOverrideReason, setQualificationOverrideReason] = useState("");
 
 	const isEditing = !!shift;
 	const title = isEditing ? "Edit Shift" : "Create Shift";
@@ -55,6 +59,7 @@ export function ShiftDialog({
 				endTime: values.endTime,
 				notes: values.notes,
 				color: values.color,
+				qualificationOverrideReason,
 			});
 			if (!result.success) throw new Error(result.error);
 			return result.data;
@@ -128,6 +133,8 @@ export function ShiftDialog({
 		},
 	});
 
+	const requiresOverride = skillValidation?.requiresOverride ?? false;
+	const hasBlockingIssues = skillValidation?.hasBlockingIssues ?? false;
 	const isPending = upsertMutation.isPending || deleteMutation.isPending;
 
 	return (
@@ -158,6 +165,19 @@ export function ShiftDialog({
 						shift={shift}
 					/>
 
+					{requiresOverride && (
+						<div className="space-y-2">
+							<Label htmlFor="qualificationOverrideReason">Qualification override reason</Label>
+							<Textarea
+								id="qualificationOverrideReason"
+								value={qualificationOverrideReason}
+								onChange={(event) => setQualificationOverrideReason(event.target.value)}
+								placeholder="Explain why this assignment is acceptable despite qualification warnings."
+								className="resize-none"
+							/>
+						</div>
+					)}
+
 					<ShiftDialogFooterActions
 						key={`${open ? "open" : "closed"}-${shift?.id ?? "new"}`}
 						isEditing={isEditing}
@@ -165,6 +185,7 @@ export function ShiftDialog({
 						isPending={isPending}
 						isSaving={upsertMutation.isPending}
 						isDeleting={deleteMutation.isPending}
+						isSaveDisabled={hasBlockingIssues}
 						onDelete={deleteMutation.mutate}
 						onCancel={() => onOpenChange(false)}
 					/>

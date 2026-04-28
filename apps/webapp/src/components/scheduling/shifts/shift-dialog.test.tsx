@@ -5,11 +5,12 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { useState } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { deleteShiftMock, upsertShiftMock, toastSuccessMock, toastErrorMock } = vi.hoisted(() => ({
+const { deleteShiftMock, upsertShiftMock, toastSuccessMock, toastErrorMock, skillValidationMock } = vi.hoisted(() => ({
 	deleteShiftMock: vi.fn(),
 	upsertShiftMock: vi.fn(),
 	toastSuccessMock: vi.fn(),
 	toastErrorMock: vi.fn(),
+	skillValidationMock: vi.fn(),
 }));
 
 vi.mock("sonner", () => ({
@@ -29,7 +30,7 @@ vi.mock("./use-shift-dialog-data", () => ({
 	useShiftDialogData: () => ({
 		employees: [],
 		locations: [],
-		skillValidation: null,
+		skillValidation: skillValidationMock(),
 		isValidatingSkills: false,
 	}),
 }));
@@ -53,7 +54,16 @@ vi.mock("./shift-dialog-sections", async () => {
 
 	return {
 		...actual,
-		ShiftDialogSections: () => <div>sections</div>,
+		ShiftDialogSections: ({
+			skillValidation,
+		}: {
+			skillValidation: null | { issues?: Array<{ id: string; name: string }> };
+		}) => (
+			<div>
+				sections
+				{skillValidation?.issues?.map((issue) => <div key={issue.id}>{issue.name}</div>)}
+			</div>
+		),
 	};
 });
 
@@ -124,6 +134,7 @@ function renderShiftDialogWithLocalOpenState(props?: {
 describe("ShiftDialog", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		skillValidationMock.mockReturnValue(null);
 		deleteShiftMock.mockResolvedValue({ success: true, data: undefined });
 		upsertShiftMock.mockResolvedValue({
 			success: true,
@@ -215,5 +226,56 @@ describe("ShiftDialog", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Delete" }));
 		expect(deleteShiftMock).toHaveBeenCalledTimes(1);
 		expect(screen.getByRole("button", { name: "Confirm Delete" })).toBeTruthy();
+	});
+
+	it("disables save for blocking qualification issues", async () => {
+		skillValidationMock.mockReturnValue({
+			isQualified: false,
+			hasBlockingIssues: true,
+			requiresOverride: false,
+			missingSkills: [],
+			expiredSkills: [],
+			issues: [
+				{
+					id: "skill-1",
+					name: "Forklift License",
+					category: "certification",
+					isRequired: true,
+					enforcementMode: "blocking",
+					issueType: "missing",
+				},
+			],
+		});
+		upsertShiftMock.mockResolvedValue({
+			success: true,
+			data: {
+				metadata: {
+					hasOverlap: false,
+					overlappingShifts: [],
+					skillWarning: {
+						isQualified: false,
+						hasBlockingIssues: true,
+						requiresOverride: false,
+						missingSkills: [],
+						expiredSkills: [],
+						issues: [
+							{
+								id: "skill-1",
+								name: "Forklift License",
+								category: "certification",
+								isRequired: true,
+								enforcementMode: "blocking",
+								issueType: "missing",
+							},
+						],
+					},
+				},
+			},
+		});
+
+		renderShiftDialogWithLocalOpenState();
+
+		expect(await screen.findByText("Forklift License")).toBeTruthy();
+		expect(screen.getByRole("button", { name: "Update Shift" })).toHaveProperty("disabled", true);
 	});
 });

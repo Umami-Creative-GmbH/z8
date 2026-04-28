@@ -48,19 +48,30 @@ export function SkillWarningAlert({ validation, isLoading }: SkillWarningAlertPr
 	}
 
 	const hasExpired = validation.expiredSkills.length > 0;
+	const hasIssues = validation.issues?.length > 0;
 
 	return (
-		<Alert variant={requiredMissing.length > 0 || hasExpired ? "destructive" : "default"}>
+		<Alert variant={validation.hasBlockingIssues || requiredMissing.length > 0 || hasExpired ? "destructive" : "default"}>
 			<IconAlertTriangle className="h-4 w-4" aria-hidden="true" />
 			<AlertTitle>
-				{requiredMissing.length > 0 || hasExpired
+				{validation.hasBlockingIssues || validation.requiresOverride || requiredMissing.length > 0 || hasExpired
 					? t("scheduling.skills.requirementsNotMet", "Skill Requirements Not Met")
 					: t("scheduling.skills.preferredSkillsMissing", "Preferred Skills Missing")}
 			</AlertTitle>
 			<AlertDescription>
 				<div className="space-y-3 mt-2">
+					{hasIssues && (
+						<ul className="space-y-1 pl-5">
+							{validation.issues.map((issue) => (
+								<li key={`${issue.id}-${issue.issueType}`}>
+									{issue.name}: {issue.issueType} ({issue.enforcementMode})
+								</li>
+							))}
+						</ul>
+					)}
+
 					{/* Missing Required Skills */}
-					{requiredMissing.length > 0 && (
+					{!hasIssues && requiredMissing.length > 0 && (
 						<div>
 							<p className="font-medium text-sm mb-1.5 flex items-center gap-1.5">
 								<IconCertificate className="h-4 w-4" aria-hidden="true" />
@@ -81,7 +92,7 @@ export function SkillWarningAlert({ validation, isLoading }: SkillWarningAlertPr
 					)}
 
 					{/* Missing Preferred Skills */}
-					{preferredMissing.length > 0 && (
+					{!hasIssues && preferredMissing.length > 0 && (
 						<div>
 							<p className="font-medium text-sm mb-1.5">
 								{t("scheduling.skills.missingPreferred", "Missing Preferred Skills:")}
@@ -101,7 +112,7 @@ export function SkillWarningAlert({ validation, isLoading }: SkillWarningAlertPr
 					)}
 
 					{/* Expired Certifications */}
-					{hasExpired && (
+					{!hasIssues && hasExpired && (
 						<div>
 							<p className="font-medium text-sm mb-1.5">
 								{t("scheduling.skills.expiredCertifications", "Expired Certifications:")}
@@ -123,7 +134,7 @@ export function SkillWarningAlert({ validation, isLoading }: SkillWarningAlertPr
 					)}
 
 					{/* Warning Message */}
-					{(requiredMissing.length > 0 || hasExpired) && (
+					{(validation.requiresOverride || requiredMissing.length > 0 || hasExpired) && (
 						<p className="text-xs text-muted-foreground mt-2 pt-2 border-t">
 							{t(
 								"scheduling.skills.warningMessage",
