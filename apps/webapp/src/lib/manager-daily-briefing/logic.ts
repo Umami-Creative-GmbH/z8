@@ -55,7 +55,11 @@ export function detectAttendanceExceptions({
 				const startAt = DateTime.fromJSDate(record.startAt).setZone(now.zone);
 				const endAt = record.endAt ? DateTime.fromJSDate(record.endAt).setZone(now.zone) : null;
 
-				return startAt >= associationStart && startAt < scheduledEnd && (endAt === null || endAt > scheduledStart);
+				return (
+					startAt >= associationStart &&
+					startAt < scheduledEnd &&
+					(endAt === null || endAt > scheduledStart)
+				);
 			})
 			.map((record) => DateTime.fromJSDate(record.startAt).setZone(now.zone))
 			.sort((left, right) => left.toMillis() - right.toMillis())[0];
@@ -101,7 +105,10 @@ interface DetectAbsencesTodayInput {
 	absences: BriefingAbsence[];
 }
 
-export function detectAbsencesToday({ today, absences }: DetectAbsencesTodayInput): BriefingActionItem[] {
+export function detectAbsencesToday({
+	today,
+	absences,
+}: DetectAbsencesTodayInput): BriefingActionItem[] {
 	const todayDate = today.toISODate();
 
 	if (!todayDate) {
@@ -110,7 +117,11 @@ export function detectAbsencesToday({ today, absences }: DetectAbsencesTodayInpu
 
 	return sortActionItems(
 		absences.flatMap((absence): BriefingActionItem[] => {
-			if (absence.status !== "approved" || absence.startDate > todayDate || absence.endDate < todayDate) {
+			if (
+				absence.status !== "approved" ||
+				absence.startDate > todayDate ||
+				absence.endDate < todayDate
+			) {
 				return [];
 			}
 
@@ -182,7 +193,9 @@ function formatTeamSuffix(teamName: string | null): string {
 }
 
 function getShiftEnd(scheduledStart: DateTime, endTime: string): DateTime {
-	const scheduledEnd = DateTime.fromISO(`${scheduledStart.toISODate()}T${endTime}`, { zone: scheduledStart.zone });
+	const scheduledEnd = DateTime.fromISO(`${scheduledStart.toISODate()}T${endTime}`, {
+		zone: scheduledStart.zone,
+	});
 
 	return scheduledEnd <= scheduledStart ? scheduledEnd.plus({ days: 1 }) : scheduledEnd;
 }
@@ -194,7 +207,12 @@ function getLowestStaffedSegmentCount(rule: BriefingCoverageRule, shifts: Briefi
 		const shiftStart = timeToMinutes(shift.startTime);
 		const shiftEnd = timeToMinutes(shift.endTime);
 
-		return shift.status === "published" && shift.subareaId === rule.subareaId && shiftStart < ruleEnd && shiftEnd > ruleStart;
+		return (
+			shift.status === "published" &&
+			shift.subareaId === rule.subareaId &&
+			shiftStart < ruleEnd &&
+			shiftEnd > ruleStart
+		);
 	});
 
 	const boundaries = new Set([ruleStart, ruleEnd]);
@@ -223,12 +241,16 @@ function getLowestStaffedSegmentCount(rule: BriefingCoverageRule, shifts: Briefi
 			continue;
 		}
 
-		const segmentStaffCount = new Set(assignedShifts.filter((shift) => {
-			const shiftStart = timeToMinutes(shift.startTime);
-			const shiftEnd = timeToMinutes(shift.endTime);
+		const segmentStaffCount = new Set(
+			assignedShifts
+				.filter((shift) => {
+					const shiftStart = timeToMinutes(shift.startTime);
+					const shiftEnd = timeToMinutes(shift.endTime);
 
-			return shiftStart <= segmentStart && shiftEnd >= segmentEnd;
-		}).map((shift) => shift.employeeId)).size;
+					return shiftStart <= segmentStart && shiftEnd >= segmentEnd;
+				})
+				.map((shift) => shift.employeeId),
+		).size;
 
 		lowestStaffCount = Math.min(lowestStaffCount, segmentStaffCount);
 	}
