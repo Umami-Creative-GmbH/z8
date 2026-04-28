@@ -1,10 +1,12 @@
 import {
+	foreignKey,
 	index,
 	integer,
 	jsonb,
 	pgTable,
 	text,
 	timestamp,
+	unique,
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
@@ -53,6 +55,7 @@ export const importBatch = pgTable(
 			.notNull(),
 	},
 	(table) => [
+		unique("importBatch_id_organizationId_idx").on(table.id, table.organizationId),
 		index("importBatch_organizationId_idx").on(table.organizationId),
 		index("importBatch_status_idx").on(table.status),
 		index("importBatch_org_status_created_idx").on(
@@ -67,9 +70,7 @@ export const importBatchJob = pgTable(
 	"import_batch_job",
 	{
 		id: uuid("id").defaultRandom().primaryKey(),
-		batchId: uuid("batch_id")
-			.notNull()
-			.references(() => importBatch.id, { onDelete: "cascade" }),
+		batchId: uuid("batch_id").notNull(),
 		organizationId: text("organization_id")
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
@@ -93,6 +94,10 @@ export const importBatchJob = pgTable(
 	(table) => [
 		index("importBatchJob_batchId_idx").on(table.batchId),
 		index("importBatchJob_org_status_idx").on(table.organizationId, table.status),
+		foreignKey({
+			columns: [table.batchId, table.organizationId],
+			foreignColumns: [importBatch.id, importBatch.organizationId],
+		}).onDelete("cascade"),
 		uniqueIndex("importBatchJob_batch_kind_partition_idx").on(
 			table.batchId,
 			table.kind,
@@ -105,9 +110,7 @@ export const importStagedRow = pgTable(
 	"import_staged_row",
 	{
 		id: uuid("id").defaultRandom().primaryKey(),
-		batchId: uuid("batch_id")
-			.notNull()
-			.references(() => importBatch.id, { onDelete: "cascade" }),
+		batchId: uuid("batch_id").notNull(),
 		organizationId: text("organization_id")
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
@@ -150,9 +153,18 @@ export const importStagedRow = pgTable(
 			.notNull(),
 	},
 	(table) => [
+		unique("importStagedRow_id_batch_org_idx").on(
+			table.id,
+			table.batchId,
+			table.organizationId,
+		),
 		index("importStagedRow_batchId_idx").on(table.batchId),
 		index("importStagedRow_org_entity_idx").on(table.organizationId, table.entityType),
 		index("importStagedRow_status_idx").on(table.rowStatus),
+		foreignKey({
+			columns: [table.batchId, table.organizationId],
+			foreignColumns: [importBatch.id, importBatch.organizationId],
+		}).onDelete("cascade"),
 		uniqueIndex("importStagedRow_batch_source_unique_idx").on(
 			table.batchId,
 			table.entityType,
@@ -166,15 +178,11 @@ export const importIssue = pgTable(
 	"import_issue",
 	{
 		id: uuid("id").defaultRandom().primaryKey(),
-		batchId: uuid("batch_id")
-			.notNull()
-			.references(() => importBatch.id, { onDelete: "cascade" }),
+		batchId: uuid("batch_id").notNull(),
 		organizationId: text("organization_id")
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
-		stagedRowId: uuid("staged_row_id").references(() => importStagedRow.id, {
-			onDelete: "cascade",
-		}),
+		stagedRowId: uuid("staged_row_id"),
 		issueType: text("issue_type")
 			.$type<
 				| "duplicate"
@@ -201,6 +209,18 @@ export const importIssue = pgTable(
 		index("importIssue_batchId_idx").on(table.batchId),
 		index("importIssue_org_type_idx").on(table.organizationId, table.issueType),
 		index("importIssue_clusterKey_idx").on(table.clusterKey),
+		foreignKey({
+			columns: [table.batchId, table.organizationId],
+			foreignColumns: [importBatch.id, importBatch.organizationId],
+		}).onDelete("cascade"),
+		foreignKey({
+			columns: [table.stagedRowId, table.batchId, table.organizationId],
+			foreignColumns: [
+				importStagedRow.id,
+				importStagedRow.batchId,
+				importStagedRow.organizationId,
+			],
+		}).onDelete("cascade"),
 	],
 );
 
@@ -208,9 +228,7 @@ export const importRejectedExport = pgTable(
 	"import_rejected_export",
 	{
 		id: uuid("id").defaultRandom().primaryKey(),
-		batchId: uuid("batch_id")
-			.notNull()
-			.references(() => importBatch.id, { onDelete: "cascade" }),
+		batchId: uuid("batch_id").notNull(),
 		organizationId: text("organization_id")
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
@@ -224,6 +242,10 @@ export const importRejectedExport = pgTable(
 	(table) => [
 		index("importRejectedExport_batchId_idx").on(table.batchId),
 		index("importRejectedExport_organizationId_idx").on(table.organizationId),
+		foreignKey({
+			columns: [table.batchId, table.organizationId],
+			foreignColumns: [importBatch.id, importBatch.organizationId],
+		}).onDelete("cascade"),
 	],
 );
 
@@ -231,9 +253,7 @@ export const importJobSecret = pgTable(
 	"import_job_secret",
 	{
 		id: uuid("id").defaultRandom().primaryKey(),
-		batchId: uuid("batch_id")
-			.notNull()
-			.references(() => importBatch.id, { onDelete: "cascade" }),
+		batchId: uuid("batch_id").notNull(),
 		organizationId: text("organization_id")
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
@@ -247,5 +267,9 @@ export const importJobSecret = pgTable(
 		index("importJobSecret_batchId_idx").on(table.batchId),
 		index("importJobSecret_organizationId_idx").on(table.organizationId),
 		index("importJobSecret_expiresAt_idx").on(table.expiresAt),
+		foreignKey({
+			columns: [table.batchId, table.organizationId],
+			foreignColumns: [importBatch.id, importBatch.organizationId],
+		}).onDelete("cascade"),
 	],
 );
