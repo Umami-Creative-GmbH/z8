@@ -11,6 +11,7 @@ vi.mock("drizzle-orm", () => ({
 	desc: vi.fn((column: unknown) => ({ direction: "desc", column })),
 	eq: vi.fn((left: unknown, right: unknown) => ({ op: "eq", left, right })),
 	gte: vi.fn((left: unknown, right: unknown) => ({ op: "gte", left, right })),
+	ne: vi.fn((left: unknown, right: unknown) => ({ op: "ne", left, right })),
 }));
 
 vi.mock("@/db", () => ({
@@ -39,6 +40,10 @@ vi.mock("@/db/schema", () => ({
 		createdAt: "travelExpenseClaim.createdAt",
 		employeeId: "travelExpenseClaim.employeeId",
 		organizationId: "travelExpenseClaim.organizationId",
+		status: "travelExpenseClaim.status",
+	},
+	travelExpenseDecisionLog: {
+		createdAt: "travelExpenseDecisionLog.createdAt",
 	},
 }));
 
@@ -98,14 +103,16 @@ function travelExpense(overrides: Record<string, unknown> = {}) {
 
 function expectWhereConditions(
 	mock: ReturnType<typeof vi.fn>,
-	conditions: Array<{ left: unknown; right: unknown }>,
+	conditions: Array<{ left: unknown; right: unknown; op?: "eq" | "ne" }>,
 ) {
 	const queryArgs = mock.mock.calls[0]?.[0];
 
-	expect(queryArgs?.where).toMatchObject({
+		expect(queryArgs?.where).toMatchObject({
 		type: "and",
 		conditions: expect.arrayContaining(
-			conditions.map((condition) => expect.objectContaining({ op: "eq", ...condition })),
+			conditions.map(({ op = "eq", ...condition }) =>
+				expect.objectContaining({ op, ...condition }),
+			),
 		),
 	});
 }
@@ -150,6 +157,7 @@ describe("getSelfServiceRequests", () => {
 		expectWhereConditions(dbMocks.travelExpenseClaims, [
 			{ left: "travelExpenseClaim.organizationId", right: "org-1" },
 			{ left: "travelExpenseClaim.employeeId", right: "employee-1" },
+			{ left: "travelExpenseClaim.status", right: "draft", op: "ne" },
 		]);
 		expect(dbMocks.travelExpenseClaims).toHaveBeenCalledWith(expect.objectContaining({ limit: 100 }));
 	});

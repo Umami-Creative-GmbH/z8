@@ -1,8 +1,13 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, ne } from "drizzle-orm";
 import { DateTime } from "luxon";
 
 import { db } from "@/db";
-import { absenceEntry, approvalRequest, travelExpenseClaim } from "@/db/schema";
+import {
+	absenceEntry,
+	approvalRequest,
+	travelExpenseClaim,
+	travelExpenseDecisionLog,
+} from "@/db/schema";
 
 import type {
 	SelfServiceRequestAction,
@@ -173,17 +178,21 @@ async function loadTravelExpenses(
 		where: and(
 			eq(travelExpenseClaim.organizationId, input.organizationId),
 			eq(travelExpenseClaim.employeeId, input.employeeId),
+			ne(travelExpenseClaim.status, "draft"),
 		),
-		with: { decisionLogs: true },
+		with: {
+			decisionLogs: {
+				orderBy: [desc(travelExpenseDecisionLog.createdAt)],
+				limit: 1,
+			},
+		},
 		orderBy: [desc(travelExpenseClaim.createdAt)],
 		limit: SOURCE_QUERY_LIMIT,
 	})) as TravelExpenseRow[];
 
 	return rows.filter((row) => row.status !== "draft").map((row) => {
 		const status = mapTravelExpenseStatus(row.status);
-		const latestDecisionLog = row.decisionLogs?.toSorted(
-			(a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
-		)[0];
+		const latestDecisionLog = row.decisionLogs?.[0];
 
 		return {
 			id: `travel_expense:${row.id}`,
