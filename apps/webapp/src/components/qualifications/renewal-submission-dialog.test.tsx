@@ -3,7 +3,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { RenewalSubmissionDialog } from "./renewal-submission-dialog";
 
 const { submitMyQualificationRenewalMock } = vi.hoisted(() => ({
@@ -55,7 +55,10 @@ function renderWithQueryClient(children: ReactNode) {
 
 describe("RenewalSubmissionDialog", () => {
 	beforeEach(() => {
-		submitMyQualificationRenewalMock.mockResolvedValue({ success: true, data: { id: "request-1" } });
+		submitMyQualificationRenewalMock.mockResolvedValue({
+			success: true,
+			data: { id: "request-1" },
+		});
 	});
 
 	it("submits comma-separated evidence IDs with renewal details", async () => {
@@ -71,6 +74,15 @@ describe("RenewalSubmissionDialog", () => {
 		fireEvent.change(screen.getByLabelText("New expiry date"), {
 			target: { value: "2027-01-15" },
 		});
+		fireEvent.change(screen.getByLabelText("Issue date"), {
+			target: { value: "2026-12-15" },
+		});
+		fireEvent.change(screen.getByLabelText("Issuer"), {
+			target: { value: "Safety Council" },
+		});
+		fireEvent.change(screen.getByLabelText("Certificate number"), {
+			target: { value: "CERT-98765" },
+		});
 		fireEvent.change(screen.getByLabelText("Notes"), {
 			target: { value: "Renewed certificate" },
 		});
@@ -81,6 +93,9 @@ describe("RenewalSubmissionDialog", () => {
 				employeeSkillId: "employee-skill-1",
 				evidenceIds: ["evidence-1", "evidence-2"],
 				requestedExpiresAt: new Date("2027-01-15T00:00:00.000Z"),
+				requestedIssuedAt: new Date("2026-12-15T00:00:00.000Z"),
+				requestedIssuer: "Safety Council",
+				requestedCertificateNumber: "CERT-98765",
 				notes: "Renewed certificate",
 			});
 		});

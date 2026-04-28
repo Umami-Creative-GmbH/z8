@@ -29,7 +29,10 @@ interface RenewalSubmissionDialogProps {
 
 interface RenewalSubmissionFormValues {
 	evidenceIds: string;
+	requestedIssuedAt: string;
 	requestedExpiresAt: string;
+	requestedIssuer: string;
+	requestedCertificateNumber: string;
 	notes: string;
 }
 
@@ -52,9 +55,14 @@ export function RenewalSubmissionDialog({
 			const result = await submitMyQualificationRenewal({
 				employeeSkillId: qualification.id,
 				evidenceIds,
+				requestedIssuedAt: data.requestedIssuedAt
+					? DateTime.fromISO(data.requestedIssuedAt, { zone: "utc" }).toJSDate()
+					: undefined,
 				requestedExpiresAt: data.requestedExpiresAt
 					? DateTime.fromISO(data.requestedExpiresAt, { zone: "utc" }).toJSDate()
 					: undefined,
+				requestedIssuer: data.requestedIssuer || undefined,
+				requestedCertificateNumber: data.requestedCertificateNumber || undefined,
 				notes: data.notes || undefined,
 			});
 
@@ -74,7 +82,10 @@ export function RenewalSubmissionDialog({
 	const form = useForm({
 		defaultValues: {
 			evidenceIds: "",
+			requestedIssuedAt: "",
 			requestedExpiresAt: "",
+			requestedIssuer: "",
+			requestedCertificateNumber: "",
 			notes: "",
 		} satisfies RenewalSubmissionFormValues,
 		onSubmit: async ({ value }) => {
@@ -141,6 +152,58 @@ export function RenewalSubmissionDialog({
 										onChange={(event) => field.handleChange(event.target.value)}
 										onBlur={field.handleBlur}
 										min={DateTime.now().toISODate() ?? undefined}
+									/>
+								</div>
+							)}
+						</form.Field>
+
+						<form.Field name="requestedIssuedAt">
+							{(field) => (
+								<div className="grid gap-2">
+									<Label htmlFor="renewal-issue-date">Issue date</Label>
+									<Input
+										id="renewal-issue-date"
+										name="requestedIssuedAt"
+										type="date"
+										autoComplete="off"
+										value={field.state.value}
+										onChange={(event) => field.handleChange(event.target.value)}
+										onBlur={field.handleBlur}
+									/>
+								</div>
+							)}
+						</form.Field>
+
+						<form.Field name="requestedIssuer">
+							{(field) => (
+								<div className="grid gap-2">
+									<Label htmlFor="renewal-issuer">Issuer</Label>
+									<Input
+										id="renewal-issuer"
+										name="requestedIssuer"
+										autoComplete="off"
+										value={field.state.value}
+										onChange={(event) => field.handleChange(event.target.value)}
+										onBlur={field.handleBlur}
+										placeholder="e.g., Safety Council…"
+									/>
+								</div>
+							)}
+						</form.Field>
+
+						<form.Field name="requestedCertificateNumber">
+							{(field) => (
+								<div className="grid gap-2">
+									<Label htmlFor="renewal-certificate-number">Certificate number</Label>
+									<Input
+										id="renewal-certificate-number"
+										name="requestedCertificateNumber"
+										autoComplete="off"
+										spellCheck={false}
+										value={field.state.value}
+										onChange={(event) => field.handleChange(event.target.value)}
+										onBlur={field.handleBlur}
+										placeholder="e.g., CERT-12345…"
 									/>
 								</div>
 							)}
