@@ -1,11 +1,39 @@
-import { describe, expect, it, vi } from "vitest";
+import { createHash } from "node:crypto";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@/lib/queue", () => ({
+const insertMock = vi.fn();
+const findImportBatchJobMock = vi.fn();
+
+vi.mock("@/lib/queue", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/queue")>()),
 	addJob: vi.fn().mockResolvedValue({ id: "bull-job-1" }),
+}));
+
+vi.mock("@/db", () => ({
+	db: {
+		insert: insertMock,
+		query: {
+			importBatchJob: {
+				findFirst: findImportBatchJobMock,
+			},
+		},
+	},
+}));
+
+vi.mock("./worker", () => ({
+	processImportReviewScanJob: vi.fn().mockResolvedValue({ success: true, message: "Import review scan queued" }),
+	processImportReviewCommitJob: vi.fn().mockResolvedValue({ success: true, message: "Import review commit queued" }),
 }));
 
 const { addJob } = await import("@/lib/queue");
 const { enqueueImportScanJob, enqueueImportCommitJob } = await import("./queue");
+const { createImportBatchJob, insertStagedRows } = await import("./repository");
+const { processOneOffJob } = await import("@/worker");
+const { processImportReviewScanJob, processImportReviewCommitJob } = await import("./worker");
+
+beforeEach(() => {
+	vi.clearAllMocks();
+});
 
 describe("import review queue", () => {
 	it("enqueues scan jobs with import-review-scan type", async () => {
@@ -24,7 +52,7 @@ describe("import review queue", () => {
 		expect(addJob).toHaveBeenCalledWith(
 			"import-review-scan-job_1",
 			expect.objectContaining({ type: "import-review-scan", jobId: "job_1" }),
-			expect.objectContaining({ priority: 4 }),
+			expect.objectContaining({ priority: 4, jobId: "import-review-scan-job_1" }),
 		);
 	});
 
@@ -41,7 +69,118 @@ describe("import review queue", () => {
 		expect(addJob).toHaveBeenCalledWith(
 			"import-review-commit-job_2",
 			expect.objectContaining({ type: "import-review-commit", jobId: "job_2" }),
-			expect.objectContaining({ priority: 4 }),
+			expect.objectContaining({ priority: 4, jobId: "import-review-commit-job_2" }),
 		);
+	});
+});
+
+describe("import review repository", () => {
+	it("returns an existing import batch job when duplicate creation conflicts", async () => {
+		const existingJob = { id: "job_existing", organizationId: "org_1" };
+		insertMock.mockReturnValueOnce({
+			values: vi.fn().mockReturnValue({
+				onConflictDoNothing: vi.fn().mockReturnValue({
+					returning: vi.fn().mockResolvedValue([]),
+				}),
+			}),
+		});
+		findImportBatchJobMock.mockResolvedValue(existingJob);
+
+		const job = await createImportBatchJob({
+			batchId: "batch_1",
+			organizationId: "org_1",
+			kind: "scan",
+			entityType: "work_period",
+			partitionKey: "work_period:2026-01",
+		});
+
+		expect(job).toBe(existingJob);
+		expect(findImportBatchJobMock).toHaveBeenCalledTimes(1);
+	});
+
+	it("derives staged row hashes from canonical source payload serialization", async () => {
+		let insertedRows: Array<{ sourcePayloadHash: string }> = [];
+		insertMock.mockReturnValueOnce({
+			values: vi.fn((rows) => {
+				insertedRows = rows;
+				return {
+					onConflictDoNothing: vi.fn().mockReturnValue({
+						returning: vi.fn().mockResolvedValue(rows),
+					}),
+				};
+			}),
+		});
+
+		await insertStagedRows({
+			batchId: "batch_1",
+			organizationId: "org_1",
+			rows: [
+				{
+					entityType: "work_period",
+					providerSourceId: "source_1",
+					sourcePayload: { z: 1, hash: "provider-controlled", a: { y: 2, x: 1 } },
+					normalizedPayload: {},
+					issueSeverity: "none",
+					rowStatus: "staged",
+				},
+				{
+					entityType: "work_period",
+					providerSourceId: "source_2",
+					sourcePayload: { hash: "different-provider-hash", a: { x: 1, y: 2 }, z: 1 },
+					normalizedPayload: {},
+					issueSeverity: "none",
+					rowStatus: "staged",
+				},
+			],
+		});
+
+		const expectedHash = createHash("sha256")
+			.update('{"a":{"x":1,"y":2},"z":1}')
+			.digest("hex");
+
+		expect(insertedRows[0]?.sourcePayloadHash).toBe(expectedHash);
+		expect(insertedRows[1]?.sourcePayloadHash).toBe(expectedHash);
+		expect(insertedRows[0]?.sourcePayloadHash).not.toBe("provider-controlled");
+	});
+});
+
+describe("import review worker routing", () => {
+	it("routes import review scan jobs without falling through to unknown job type", async () => {
+		const result = await processOneOffJob({
+			id: "bull_1",
+			name: "import-review-scan-job_1",
+			data: {
+				type: "import-review-scan",
+				batchId: "batch_1",
+				jobId: "job_1",
+				organizationId: "org_1",
+				provider: "clockin",
+				entityType: "work_period",
+				dateRange: { startDate: "2026-01-01", endDate: "2026-01-31" },
+				employeeIds: ["emp_1"],
+				secretId: "secret_1",
+			},
+		} as Parameters<typeof processOneOffJob>[0]);
+
+		expect(result.success).toBe(true);
+		expect(processImportReviewScanJob).toHaveBeenCalledTimes(1);
+	});
+
+	it("routes import review commit jobs without falling through to unknown job type", async () => {
+		const result = await processOneOffJob({
+			id: "bull_2",
+			name: "import-review-commit-job_2",
+			data: {
+				type: "import-review-commit",
+				batchId: "batch_1",
+				jobId: "job_2",
+				organizationId: "org_1",
+				entityType: "work_period",
+				committedBy: "user_1",
+			},
+		} as Parameters<typeof processOneOffJob>[0]);
+
+		expect(result.success).toBe(true);
+		expect(processImportReviewCommitJob).toHaveBeenCalledTimes(1);
 	});
 });

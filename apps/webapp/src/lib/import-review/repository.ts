@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import {
@@ -25,6 +26,7 @@ function stableStringify(value: unknown): string {
 	if (value && typeof value === "object") {
 		const record = value as Record<string, unknown>;
 		return `{${Object.keys(record)
+			.filter((key) => key !== "hash")
 			.sort()
 			.map((key) => `${JSON.stringify(key)}:${stableStringify(record[key])}`)
 			.join(",")}}`;
@@ -34,16 +36,7 @@ function stableStringify(value: unknown): string {
 }
 
 function sourcePayloadHash(row: NormalizedImportRow): string {
-	const existingHash = row.sourcePayload.hash;
-	if (existingHash !== undefined && existingHash !== null) {
-		return String(existingHash);
-	}
-
-	return stableStringify({
-		entityType: row.entityType,
-		providerSourceId: row.providerSourceId,
-		sourcePayload: row.sourcePayload,
-	});
+	return createHash("sha256").update(stableStringify(row.sourcePayload)).digest("hex");
 }
 
 export async function createImportBatch(input: {
@@ -82,8 +75,21 @@ export async function createImportBatchJob(input: {
 	entityType: ImportEntityType;
 	partitionKey: string;
 }) {
-	const [job] = await db.insert(importBatchJob).values(input).returning();
-	return job;
+	const [job] = await db
+		.insert(importBatchJob)
+		.values(input)
+		.onConflictDoNothing()
+		.returning();
+	if (job) return job;
+
+	return db.query.importBatchJob.findFirst({
+		where: and(
+			eq(importBatchJob.batchId, input.batchId),
+			eq(importBatchJob.organizationId, input.organizationId),
+			eq(importBatchJob.kind, input.kind),
+			eq(importBatchJob.partitionKey, input.partitionKey),
+		),
+	});
 }
 
 export async function updateImportBatchJob(input: {
