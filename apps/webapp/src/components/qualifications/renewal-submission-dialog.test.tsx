@@ -10,10 +10,12 @@ import { RenewalSubmissionDialog } from "./renewal-submission-dialog";
 const {
 	routerRefreshMock,
 	submitMyQualificationRenewalMock,
+	toastErrorMock,
 	useQualificationEvidenceFileUploadMock,
 } = vi.hoisted(() => ({
 	routerRefreshMock: vi.fn(),
 	submitMyQualificationRenewalMock: vi.fn(),
+	toastErrorMock: vi.fn(),
 	useQualificationEvidenceFileUploadMock: vi.fn(),
 }));
 
@@ -50,7 +52,7 @@ const qualification = {
 	},
 };
 
-vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
+vi.mock("sonner", () => ({ toast: { error: toastErrorMock, success: vi.fn() } }));
 
 vi.mock("next/navigation", () => ({
 	useRouter: () => ({ refresh: routerRefreshMock }),
@@ -216,6 +218,34 @@ describe("RenewalSubmissionDialog", () => {
 			await screen.findByText("Upload at least one evidence file before submitting."),
 		).toBeTruthy();
 		expect(submitMyQualificationRenewalMock).not.toHaveBeenCalled();
+	});
+
+	it("maps upload error codes to localized messages", () => {
+		useQualificationEvidenceFileUploadMock.mockImplementation(
+			({ onError }: { onError?: (error: Error & { code?: string }) => void }) => ({
+				addFile: () => {
+					const error = new Error("Unsupported file type") as Error & { code?: string };
+					error.code = "unsupported_file_type";
+					onError?.(error);
+				},
+				progress: 0,
+				isUploading: false,
+				isProcessing: false,
+				reset: vi.fn(),
+			}),
+		);
+
+		renderWithQueryClient(
+			<RenewalSubmissionDialog qualification={qualification} open onOpenChange={vi.fn()} />,
+		);
+
+		fireEvent.change(screen.getByLabelText("Upload evidence file"), {
+			target: {
+				files: [new File(["certificate"], "forklift-license.txt", { type: "text/plain" })],
+			},
+		});
+
+		expect(toastErrorMock).toHaveBeenCalledWith("Unsupported file type");
 	});
 
 	it("requires an expiry date when the qualification requires expiry", async () => {

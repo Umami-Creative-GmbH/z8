@@ -41,7 +41,7 @@ export function EmployeeQualificationList({
 		<div
 			className="space-y-3"
 			role="list"
-			aria-label={t("qualifications.listAriaLabel", "Employee qualifications")}
+			aria-label={t("qualifications.listLabel", "Employee qualifications")}
 		>
 			{qualifications.map((qualification) => {
 				const status = getQualificationStatus({

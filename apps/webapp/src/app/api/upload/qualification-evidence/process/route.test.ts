@@ -125,7 +125,10 @@ describe("qualification evidence upload processing", () => {
 		);
 
 		expect(response.status).toBe(400);
-		expect(await response.json()).toEqual({ error: "Invalid employeeSkillId" });
+		expect(await response.json()).toEqual({
+			error: "Invalid employeeSkillId",
+			code: "invalid_employee_skill_id",
+		});
 		expect(findEmployeeSkillMock).not.toHaveBeenCalled();
 	});
 });

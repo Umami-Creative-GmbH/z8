@@ -1,14 +1,14 @@
 import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { and, eq } from "drizzle-orm";
 import { fileTypeFromBuffer } from "file-type";
-import { type NextRequest, NextResponse, connection } from "next/server";
+import { connection, type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { employeeSkill, qualificationEvidence } from "@/db/schema";
 import { getAuthContext } from "@/lib/auth-helpers";
 import {
-	MAX_QUALIFICATION_EVIDENCE_BYTES,
 	isAllowedQualificationEvidenceMime,
 	isValidTusFileKey,
+	MAX_QUALIFICATION_EVIDENCE_BYTES,
 	sanitizeQualificationEvidenceFileName,
 } from "@/lib/qualifications/evidence-validation";
 import { S3_BUCKET, s3Client } from "@/lib/storage/s3-client";
@@ -20,9 +20,7 @@ interface ProcessQualificationEvidenceUploadRequest {
 }
 
 function isUuid(value: string): boolean {
-	return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-		value,
-	);
+	return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }
 
 export async function POST(request: NextRequest) {
@@ -31,22 +29,37 @@ export async function POST(request: NextRequest) {
 	try {
 		const authContext = await getAuthContext();
 		if (!authContext?.employee) {
-			return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+			return NextResponse.json(
+				{ error: "Not authenticated", code: "not_authenticated" },
+				{ status: 401 },
+			);
 		}
 
 		const body = (await request.json()) as ProcessQualificationEvidenceUploadRequest;
 		const { tusFileKey, employeeSkillId, fileName } = body;
 
 		if (!tusFileKey || !employeeSkillId) {
-			return NextResponse.json({ error: "Missing tusFileKey or employeeSkillId" }, { status: 400 });
+			return NextResponse.json(
+				{
+					error: "Missing tusFileKey or employeeSkillId",
+					code: "missing_upload_parameters",
+				},
+				{ status: 400 },
+			);
 		}
 
 		if (!isValidTusFileKey(tusFileKey)) {
-			return NextResponse.json({ error: "Invalid file key" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "Invalid file key", code: "invalid_file_key" },
+				{ status: 400 },
+			);
 		}
 
 		if (!isUuid(employeeSkillId)) {
-			return NextResponse.json({ error: "Invalid employeeSkillId" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "Invalid employeeSkillId", code: "invalid_employee_skill_id" },
+				{ status: 400 },
+			);
 		}
 
 		const assignment = await db.query.employeeSkill.findFirst({
@@ -58,7 +71,10 @@ export async function POST(request: NextRequest) {
 		});
 
 		if (!assignment) {
-			return NextResponse.json({ error: "Qualification not found" }, { status: 404 });
+			return NextResponse.json(
+				{ error: "Qualification not found", code: "qualification_not_found" },
+				{ status: 404 },
+			);
 		}
 
 		const getResponse = await s3Client.send(
@@ -66,22 +82,34 @@ export async function POST(request: NextRequest) {
 		);
 
 		if (getResponse.ContentLength && getResponse.ContentLength > MAX_QUALIFICATION_EVIDENCE_BYTES) {
-			return NextResponse.json({ error: "File too large. Maximum size is 10MB" }, { status: 413 });
+			return NextResponse.json(
+				{ error: "File too large. Maximum size is 10MB", code: "file_too_large" },
+				{ status: 413 },
+			);
 		}
 
 		const byteArray = await getResponse.Body?.transformToByteArray();
 		if (!byteArray) {
-			return NextResponse.json({ error: "Failed to read uploaded file" }, { status: 500 });
+			return NextResponse.json(
+				{ error: "Failed to read uploaded file", code: "failed_to_read_file" },
+				{ status: 500 },
+			);
 		}
 
 		const buffer = Buffer.from(byteArray);
 		if (buffer.length > MAX_QUALIFICATION_EVIDENCE_BYTES) {
-			return NextResponse.json({ error: "File too large. Maximum size is 10MB" }, { status: 413 });
+			return NextResponse.json(
+				{ error: "File too large. Maximum size is 10MB", code: "file_too_large" },
+				{ status: 413 },
+			);
 		}
 
 		const detectedType = await fileTypeFromBuffer(buffer);
 		if (!detectedType || !isAllowedQualificationEvidenceMime(detectedType.mime)) {
-			return NextResponse.json({ error: "Unsupported file type" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "Unsupported file type", code: "unsupported_file_type" },
+				{ status: 400 },
+			);
 		}
 
 		const safeName = sanitizeQualificationEvidenceFileName(
@@ -126,7 +154,10 @@ export async function POST(request: NextRequest) {
 			});
 
 		if (!createdEvidence) {
-			return NextResponse.json({ error: "Failed to create evidence record" }, { status: 500 });
+			return NextResponse.json(
+				{ error: "Failed to create evidence record", code: "failed_to_create_evidence" },
+				{ status: 500 },
+			);
 		}
 
 		await s3Client.send(new DeleteObjectCommand({ Bucket: S3_BUCKET, Key: tusFileKey }));
@@ -134,6 +165,9 @@ export async function POST(request: NextRequest) {
 		return NextResponse.json({ success: true, evidence: createdEvidence });
 	} catch (error) {
 		console.error("Qualification evidence upload processing failed", error);
-		return NextResponse.json({ error: "Processing failed" }, { status: 500 });
+		return NextResponse.json(
+			{ error: "Processing failed", code: "processing_failed" },
+			{ status: 500 },
+		);
 	}
 }

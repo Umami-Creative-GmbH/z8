@@ -40,6 +40,27 @@ interface RenewalSubmissionFormValues {
 	notes: string;
 }
 
+type CodedError = Error & { code?: string };
+
+function getEvidenceUploadErrorMessage(error: CodedError, t: ReturnType<typeof useTranslate>["t"]) {
+	if (error.code === "unsupported_file_type") {
+		return t("qualifications.uploadErrors.unsupportedFileType", "Unsupported file type");
+	}
+	if (error.code === "file_too_large") {
+		return t("qualifications.uploadErrors.fileTooLarge", "File too large. Maximum size is 10MB");
+	}
+	if (error.code === "qualification_not_found") {
+		return t("qualifications.uploadErrors.qualificationNotFound", "Qualification not found");
+	}
+	if (error.code === "not_authenticated") {
+		return t("qualifications.uploadErrors.notAuthenticated", "Not authenticated");
+	}
+	if (error.code) {
+		return t("qualifications.evidenceUploadFailed", "Evidence upload failed");
+	}
+	return error.message || t("qualifications.evidenceUploadFailed", "Evidence upload failed");
+}
+
 export function RenewalSubmissionDialog({
 	qualification,
 	open,
@@ -68,9 +89,7 @@ export function RenewalSubmissionDialog({
 			toast.success(t("qualifications.evidenceUploaded", "Evidence file uploaded"));
 		},
 		onError: (error) => {
-			toast.error(
-				error.message || t("qualifications.evidenceUploadFailed", "Evidence upload failed"),
-			);
+			toast.error(getEvidenceUploadErrorMessage(error, t));
 		},
 	});
 

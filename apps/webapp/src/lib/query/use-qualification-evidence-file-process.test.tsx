@@ -5,7 +5,10 @@ import { renderHook, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { queryKeys } from "./keys";
-import { useQualificationEvidenceFileProcessMutation } from "./use-qualification-evidence-file-process";
+import {
+	QualificationEvidenceFileProcessError,
+	useQualificationEvidenceFileProcessMutation,
+} from "./use-qualification-evidence-file-process";
 
 function createWrapper(queryClient: QueryClient) {
 	return function Wrapper({ children }: { children: ReactNode }) {
@@ -71,7 +74,7 @@ describe("useQualificationEvidenceFileProcessMutation", () => {
 			defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
 		});
 		const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
-			new Response(JSON.stringify({ error: "Processing failed" }), {
+			new Response(JSON.stringify({ error: "Processing failed", code: "processing_failed" }), {
 				status: 500,
 				headers: { "Content-Type": "application/json" },
 			}),
@@ -87,8 +90,18 @@ describe("useQualificationEvidenceFileProcessMutation", () => {
 				employeeSkillId: "employee-skill-1",
 				fileName: "forklift-license.pdf",
 			}),
-		).rejects.toThrow("Processing failed");
+		).rejects.toMatchObject({
+			message: "Processing failed",
+			code: "processing_failed",
+		});
+		await expect(
+			result.current.mutateAsync({
+				tusFileKey: "tmp-upload-key-2",
+				employeeSkillId: "employee-skill-1",
+				fileName: "forklift-license.pdf",
+			}),
+		).rejects.toBeInstanceOf(QualificationEvidenceFileProcessError);
 
-		expect(fetchMock).toHaveBeenCalledTimes(1);
+		expect(fetchMock).toHaveBeenCalledTimes(2);
 	});
 });

@@ -68,7 +68,7 @@ describe("EmployeeQualificationList", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Submit renewal evidence" }));
 		expect(onRenew).toHaveBeenCalledWith(qualification);
 		expect(translateMock).toHaveBeenCalledWith(
-			"qualifications.listAriaLabel",
+			"qualifications.listLabel",
 			"Employee qualifications",
 		);
 		expect(translateMock).toHaveBeenCalledWith("qualifications.status.valid", "Valid");

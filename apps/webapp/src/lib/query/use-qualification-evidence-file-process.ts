@@ -20,6 +20,16 @@ export interface ProcessQualificationEvidenceFileResponse {
 	};
 }
 
+export class QualificationEvidenceFileProcessError extends Error {
+	constructor(
+		message: string,
+		public readonly code?: string,
+	) {
+		super(message);
+		this.name = "QualificationEvidenceFileProcessError";
+	}
+}
+
 export function useQualificationEvidenceFileProcessMutation() {
 	const queryClient = useQueryClient();
 
@@ -35,7 +45,10 @@ export function useQualificationEvidenceFileProcessMutation() {
 
 			if (!response.ok) {
 				const errorData = await response.json().catch(() => ({}));
-				throw new Error(errorData.error || "Failed to process qualification evidence file");
+				throw new QualificationEvidenceFileProcessError(
+					errorData.error || "Failed to process qualification evidence file",
+					errorData.code,
+				);
 			}
 
 			return response.json();
