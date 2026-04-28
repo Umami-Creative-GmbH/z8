@@ -10,13 +10,20 @@ import {
 	updateEmployee,
 } from "@/app/[locale]/(app)/settings/employees/actions";
 import {
+	cancelEmployeeEmploymentHistoryAction,
+	confirmEmployeeEmploymentHistoryAction,
+	createEmployeeEmploymentHistoryAction,
+	listEmployeeEmploymentHistoryAction,
+} from "@/app/[locale]/(app)/settings/employees/employment-history-actions";
+import {
 	createRateHistoryEntry,
 	getEmployeeRateHistory,
 	type RateHistoryEntry,
 } from "@/app/[locale]/(app)/settings/employees/rate-actions";
 import { getEmployeeEffectiveScheduleDetails } from "@/app/[locale]/(app)/settings/work-policies/actions";
-import type { CreateRateHistory, UpdateEmployee } from "@/lib/validations/employee";
 import type { SettingsAccessTier } from "@/lib/settings-access";
+import type { CreateRateHistory, UpdateEmployee } from "@/lib/validations/employee";
+import type { UpsertEmploymentHistory } from "@/lib/validations/employment-history";
 import { queryKeys } from "./keys";
 
 type Manager = {
@@ -57,7 +64,7 @@ interface UseEmployeeOptions {
  * - Work schedule data
  * - Update mutation with automatic cache invalidation
  */
-	export function useEmployee(options: UseEmployeeOptions) {
+export function useEmployee(options: UseEmployeeOptions) {
 	const { employeeId, enabled = true, accessTier } = options;
 	const queryClient = useQueryClient();
 
@@ -133,6 +140,55 @@ interface UseEmployeeOptions {
 		staleTime: 30 * 1000, // 30 seconds
 	});
 
+	const employmentHistoryQuery = useQuery({
+		queryKey: queryKeys.employees.employmentHistory(employeeId),
+		queryFn: async () => {
+			const result = await listEmployeeEmploymentHistoryAction(employeeId);
+			if (!result.success) return [];
+			return result.data ?? [];
+		},
+		enabled: enabled && hasEmployee,
+		staleTime: 30 * 1000,
+	});
+
+	const invalidateEmploymentHistoryQueries = () => {
+		queryClient.invalidateQueries({
+			queryKey: queryKeys.employees.employmentHistory(employeeId),
+		});
+		queryClient.invalidateQueries({
+			queryKey: queryKeys.employees.detail(employeeId),
+		});
+	};
+
+	const createEmploymentHistoryMutation = useMutation({
+		mutationFn: (data: UpsertEmploymentHistory) =>
+			createEmployeeEmploymentHistoryAction(employeeId, data),
+		onSuccess: (result) => {
+			if (result.success) {
+				invalidateEmploymentHistoryQueries();
+			}
+		},
+	});
+
+	const confirmEmploymentHistoryMutation = useMutation({
+		mutationFn: (historyId: string) =>
+			confirmEmployeeEmploymentHistoryAction(employeeId, historyId),
+		onSuccess: (result) => {
+			if (result.success) {
+				invalidateEmploymentHistoryQueries();
+			}
+		},
+	});
+
+	const cancelEmploymentHistoryMutation = useMutation({
+		mutationFn: (historyId: string) => cancelEmployeeEmploymentHistoryAction(employeeId, historyId),
+		onSuccess: (result) => {
+			if (result.success) {
+				invalidateEmploymentHistoryQueries();
+			}
+		},
+	});
+
 	// Update rate mutation
 	const updateRateMutation = useMutation({
 		mutationFn: (data: CreateRateHistory) => createRateHistoryEntry(employeeId, data),
@@ -178,11 +234,13 @@ interface UseEmployeeOptions {
 		schedule: scheduleQuery.data ?? null,
 		availableManagers: managersQuery.data ?? [],
 		rateHistory: (rateHistoryQuery.data ?? []) as RateHistoryEntry[],
+		employmentHistory: employmentHistoryQuery.data ?? [],
 
 		// Loading states
 		isLoading: currentEmployeeQuery.isLoading || employeeQuery.isLoading || scheduleQuery.isLoading,
 		isFetching: employeeQuery.isFetching,
 		isLoadingRateHistory: rateHistoryQuery.isLoading,
+		isLoadingEmploymentHistory: employmentHistoryQuery.isLoading,
 		isError: employeeQuery.isError,
 		error: employeeQuery.error,
 
@@ -195,6 +253,12 @@ interface UseEmployeeOptions {
 		isUpdating: updateMutation.isPending,
 		updateRate: updateRateMutation.mutateAsync,
 		isUpdatingRate: updateRateMutation.isPending,
+		createEmploymentHistory: createEmploymentHistoryMutation.mutateAsync,
+		isCreatingEmploymentHistory: createEmploymentHistoryMutation.isPending,
+		confirmEmploymentHistory: confirmEmploymentHistoryMutation.mutateAsync,
+		isConfirmingEmploymentHistory: confirmEmploymentHistoryMutation.isPending,
+		cancelEmploymentHistory: cancelEmploymentHistoryMutation.mutateAsync,
+		isCancelingEmploymentHistory: cancelEmploymentHistoryMutation.isPending,
 
 		// Utilities
 		refetch,
