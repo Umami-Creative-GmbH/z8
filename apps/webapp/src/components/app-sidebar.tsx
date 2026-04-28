@@ -38,8 +38,10 @@ const isManagerOrAbove = (role: "admin" | "manager" | "employee" | null | undefi
 	return role === "admin" || role === "manager";
 };
 
+const EMPTY_ORGANIZATIONS: UserOrganization[] = [];
+
 export function AppSidebar({
-	organizations = [],
+	organizations = EMPTY_ORGANIZATIONS,
 	currentOrganization = null,
 	employeeRole = null,
 	shiftsEnabled = false,
