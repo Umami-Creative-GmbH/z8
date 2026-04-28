@@ -48,7 +48,7 @@ function createSkillServiceTestContext({
 		{ id: "evidence-1", organizationId: "org-1", employeeSkillId: "employee-skill-1" },
 	],
 	request = baseRequest,
-	reviewer = { id: "reviewer-1", organizationId: "org-1" },
+	reviewer = { id: "reviewer-1", organizationId: "org-1", userId: "reviewer-user-1" },
 	reviewedRows,
 	employeeSkillRows,
 	pendingRequests = [baseRequest],
@@ -443,6 +443,7 @@ describe("SkillService qualification renewal behavior", () => {
 				expiresAt: existingExpiresAt,
 				issuer: "Existing Issuer",
 				certificateNumber: "EXISTING-CERT",
+				renewedBy: "reviewer-user-1",
 			}),
 		);
 	});

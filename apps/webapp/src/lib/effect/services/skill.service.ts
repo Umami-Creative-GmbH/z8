@@ -837,6 +837,7 @@ export const SkillServiceLive = Layer.effect(
 												currentQualification!.certificateNumber,
 											status: "active" as const,
 											renewedAt: new Date(),
+											renewedBy: reviewer!.userId,
 										})
 										.where(
 											and(
