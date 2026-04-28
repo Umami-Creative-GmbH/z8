@@ -62,6 +62,15 @@ vi.mock("@/db", () => ({
 	},
 }));
 
+vi.mock("@/db/schema", () => ({
+	travelExpenseClaim: {
+		organizationId: "travel-expense-claim.organizationId",
+		status: "travel-expense-claim.status",
+		tripStart: "travel-expense-claim.tripStart",
+		tripEnd: "travel-expense-claim.tripEnd",
+	},
+}));
+
 import { derivePayrollReadinessStatus, getPayrollReadiness } from "./get-payroll-readiness";
 
 const period = {

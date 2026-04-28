@@ -7,8 +7,8 @@ import {
 	payrollExportJob,
 	payrollWageTypeMapping,
 	timeRecord,
-	travelExpenseClaim,
 } from "@/db";
+import { travelExpenseClaim } from "@/db/schema";
 
 export type PayrollReadinessStatus = "ready" | "blocked" | "unavailable";
 export type PayrollReadinessSeverity = "info" | "warning" | "blocker";
@@ -352,8 +352,8 @@ export async function getPayrollReadiness(input: GetPayrollReadinessInput): Prom
 	return {
 		status: derivePayrollReadinessStatus(checks),
 		period: {
-			start: start.toISODate() ?? start.toISO(),
-			end: end.toISODate() ?? end.toISO(),
+			start: start.toISODate() ?? "",
+			end: end.toISODate() ?? "",
 			label: `${start.toFormat("dd LLL yyyy")} - ${end.toFormat("dd LLL yyyy")}`,
 		},
 		summary: {
