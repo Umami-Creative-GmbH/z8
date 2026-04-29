@@ -114,7 +114,7 @@ export function WebhookDeliveryLogsDialog({
 
 	return (
 		<ActionPanel open={open} onOpenChange={onOpenChange}>
-			<ActionPanelContent>
+			<ActionPanelContent size="wide">
 				<ActionPanelHeader>
 					<ActionPanelTitle>
 						{t("webhooks.logs.title", "Delivery Logs")} - {webhookName}

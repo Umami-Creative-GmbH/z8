@@ -138,7 +138,7 @@ export function ExecutionHistoryDialog({
 
 	return (
 		<ActionPanel open={open} onOpenChange={onOpenChange}>
-			<ActionPanelContent>
+			<ActionPanelContent size="wide">
 				<ActionPanelHeader>
 					<ActionPanelTitle>{t("settings.scheduledExports.history.title", "Execution History")}</ActionPanelTitle>
 					<ActionPanelDescription>
