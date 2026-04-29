@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { requestAbsence } from "@/app/[locale]/(app)/absences/actions";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
 	Dialog,
 	DialogContent,
@@ -16,7 +17,6 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import {
 	Select,
 	SelectContent,
@@ -253,10 +253,9 @@ export function RequestAbsenceDialog({
 									{(field) => (
 										<TFormItem className="gap-0">
 											<TFormControl hasError={field.state.meta.errors.length > 0}>
-												<Input
-													type="date"
+												<DatePicker
 													value={field.state.value}
-													onChange={(e) => field.handleChange(e.target.value)}
+													onChange={field.handleChange}
 													onBlur={field.handleBlur}
 													required
 												/>
@@ -305,11 +304,10 @@ export function RequestAbsenceDialog({
 												{(field) => (
 													<TFormItem className="gap-0">
 														<TFormControl hasError={field.state.meta.errors.length > 0}>
-															<Input
-																type="date"
+															<DatePicker
 																value={field.state.value}
 																min={values.startDate}
-																onChange={(e) => field.handleChange(e.target.value)}
+																onChange={field.handleChange}
 																onBlur={field.handleBlur}
 																required
 															/>

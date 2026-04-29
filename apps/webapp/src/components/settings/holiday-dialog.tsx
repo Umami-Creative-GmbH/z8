@@ -3,10 +3,12 @@
 import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
+import { DateTime } from "luxon";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { getHolidayCategories } from "@/app/[locale]/(app)/settings/holidays/actions";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
 	Dialog,
 	DialogContent,
@@ -36,6 +38,21 @@ interface HolidayDialogProps {
 }
 
 type RecurrenceType = "none" | "yearly" | "custom";
+
+export function formatHolidayDatePickerValue(value: Date | null | undefined) {
+	return value && !Number.isNaN(value.getTime())
+		? DateTime.fromJSDate(value, { zone: "utc" }).toISODate()
+		: "";
+}
+
+export function parseHolidayDatePickerValue(value: string) {
+	const date = DateTime.fromISO(value, { zone: "utc" });
+	return date.isValid ? date.toJSDate() : null;
+}
+
+export function createYearlyHolidayRecurrenceRule(value: Date) {
+	return JSON.stringify({ month: value.getUTCMonth() + 1, day: value.getUTCDate() });
+}
 
 export function HolidayDialog({
 	open,
@@ -68,9 +85,7 @@ export function HolidayDialog({
 			// Generate recurrence rule for yearly holidays
 			let recurrenceRule = value.recurrenceRule;
 			if (value.recurrenceType === "yearly" && !recurrenceRule) {
-				const month = value.startDate.getMonth() + 1; // 1-12
-				const day = value.startDate.getDate();
-				recurrenceRule = JSON.stringify({ month, day });
+				recurrenceRule = createYearlyHolidayRecurrenceRule(value.startDate);
 			}
 
 			const payload = {
@@ -288,10 +303,13 @@ export function HolidayDialog({
 							{(field) => (
 								<div className="space-y-2">
 									<Label>{t("settings.holidays.form.startDate", "Start Date")}</Label>
-									<Input
-										type="date"
-										value={field.state.value?.toISOString().split("T")[0] || ""}
-										onChange={(e) => field.handleChange(new Date(e.target.value))}
+									<DatePicker
+										required
+										value={formatHolidayDatePickerValue(field.state.value)}
+										onChange={(value) => {
+											const date = parseHolidayDatePickerValue(value);
+											if (date) field.handleChange(date);
+										}}
 									/>
 									{field.state.meta.errors.length > 0 && (
 										<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
@@ -315,10 +333,13 @@ export function HolidayDialog({
 							{(field) => (
 								<div className="space-y-2">
 									<Label>{t("settings.holidays.form.endDate", "End Date")}</Label>
-									<Input
-										type="date"
-										value={field.state.value?.toISOString().split("T")[0] || ""}
-										onChange={(e) => field.handleChange(new Date(e.target.value))}
+									<DatePicker
+										required
+										value={formatHolidayDatePickerValue(field.state.value)}
+										onChange={(value) => {
+											const date = parseHolidayDatePickerValue(value);
+											if (date) field.handleChange(date);
+										}}
 									/>
 									{field.state.meta.errors.length > 0 && (
 										<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>

@@ -23,6 +23,7 @@ import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
 	Card,
 	CardContent,
@@ -427,11 +428,10 @@ function AssignSkillDialog({
 										{t("settings.skills.expiryDate", "Expiry Date")}
 										{selectedSkill?.requiresExpiry && " *"}
 									</Label>
-									<Input
+									<DatePicker
 										id="assign-expiry"
-										type="date"
 										value={field.state.value}
-										onChange={(e) => field.handleChange(e.target.value)}
+										onChange={field.handleChange}
 										onBlur={field.handleBlur}
 										min={DateTime.now().toISODate() ?? undefined}
 									/>

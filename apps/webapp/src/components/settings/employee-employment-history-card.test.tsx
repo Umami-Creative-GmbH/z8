@@ -3,11 +3,14 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { Settings } from "luxon";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { EmployeeEmploymentHistoryCard } from "./employee-employment-history-card";
+import {
+	EmployeeEmploymentHistoryCard,
+	type EmployeeEmploymentHistoryCardProps,
+} from "./employee-employment-history-card";
 
 afterEach(() => {
 	Settings.defaultZone = "system";
-	Settings.defaultLocale = null;
+	Settings.defaultLocale = "en-US";
 	vi.restoreAllMocks();
 });
 
@@ -62,16 +65,18 @@ const baseHistory = [
 
 function renderCard({
 	canManage = true,
+	onCreate = vi.fn(),
 	onCancel = vi.fn(),
 }: {
 	canManage?: boolean;
-	onCancel?: ReturnType<typeof vi.fn>;
+	onCreate?: EmployeeEmploymentHistoryCardProps["onCreate"];
+	onCancel?: EmployeeEmploymentHistoryCardProps["onCancel"];
 } = {}) {
 	return render(
 		<EmployeeEmploymentHistoryCard
 			history={[...baseHistory]}
 			canManage={canManage}
-			onCreate={vi.fn()}
+			onCreate={onCreate}
 			onConfirm={vi.fn()}
 			onCancel={onCancel}
 			isCreating={false}
@@ -110,6 +115,18 @@ describe("EmployeeEmploymentHistoryCard", () => {
 
 		expect(screen.getAllByText(/Jan 1, 2026/).length).toBeGreaterThan(0);
 		expect(screen.queryByText(/Dec 31, 2025/)).toBeNull();
+	});
+
+	it("requires an effective date before creating an employment change", async () => {
+		const onCreate = vi.fn().mockResolvedValue({ success: true });
+
+		renderCard({ onCreate });
+
+		fireEvent.click(screen.getByRole("button", { name: /add change/i }));
+		fireEvent.click(screen.getByRole("button", { name: /save change/i }));
+
+		expect(await screen.findByText("Effective Date is required")).toBeTruthy();
+		expect(onCreate).not.toHaveBeenCalled();
 	});
 
 	it("does not cancel an employment change when confirmation is declined", () => {

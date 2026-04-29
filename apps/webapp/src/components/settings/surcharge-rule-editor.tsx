@@ -2,8 +2,10 @@
 
 import { IconTrash } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
+import { DateTime } from "luxon";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import {
 	Select,
@@ -48,6 +50,16 @@ export type SurchargeRuleFormValues = {
 type SurchargeFormApi = any;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type FormField = any;
+
+function dateFieldToString(value: unknown): string {
+	if (!(value instanceof Date) || Number.isNaN(value.getTime())) return "";
+
+	return DateTime.fromJSDate(value, { zone: "utc" }).toISODate() ?? "";
+}
+
+function stringToDateField(value: string): Date | null {
+	return value ? DateTime.fromISO(value, { zone: "utc" }).toJSDate() : null;
+}
 
 interface SurchargeRuleEditorProps {
 	ruleIndex: number;
@@ -310,17 +322,9 @@ export function SurchargeRuleEditor({ ruleIndex, form, onRemove }: SurchargeRule
 													{t("settings.surcharges.specificDate", "Specific Date")}
 												</TFormLabel>
 												<TFormControl hasError={fieldHasError(field)}>
-													<Input
-														type="date"
-														value={
-															field.state.value
-																? new Date(field.state.value as Date).toISOString().split("T")[0]
-																: ""
-														}
-														onChange={(e) => {
-															const date = e.target.value ? new Date(e.target.value) : null;
-															field.handleChange(date);
-														}}
+													<DatePicker
+														value={dateFieldToString(field.state.value)}
+														onChange={(value) => field.handleChange(stringToDateField(value))}
 														onBlur={field.handleBlur}
 													/>
 												</TFormControl>
@@ -347,17 +351,9 @@ export function SurchargeRuleEditor({ ruleIndex, form, onRemove }: SurchargeRule
 														{t("settings.surcharges.rangeStart", "Range Start")}
 													</TFormLabel>
 													<TFormControl hasError={fieldHasError(field)}>
-														<Input
-															type="date"
-															value={
-																field.state.value
-																	? new Date(field.state.value as Date).toISOString().split("T")[0]
-																	: ""
-															}
-															onChange={(e) => {
-																const date = e.target.value ? new Date(e.target.value) : null;
-																field.handleChange(date);
-															}}
+														<DatePicker
+															value={dateFieldToString(field.state.value)}
+															onChange={(value) => field.handleChange(stringToDateField(value))}
 															onBlur={field.handleBlur}
 														/>
 													</TFormControl>
@@ -373,17 +369,9 @@ export function SurchargeRuleEditor({ ruleIndex, form, onRemove }: SurchargeRule
 														{t("settings.surcharges.rangeEnd", "Range End")}
 													</TFormLabel>
 													<TFormControl hasError={fieldHasError(field)}>
-														<Input
-															type="date"
-															value={
-																field.state.value
-																	? new Date(field.state.value as Date).toISOString().split("T")[0]
-																	: ""
-															}
-															onChange={(e) => {
-																const date = e.target.value ? new Date(e.target.value) : null;
-																field.handleChange(date);
-															}}
+														<DatePicker
+															value={dateFieldToString(field.state.value)}
+															onChange={(value) => field.handleChange(stringToDateField(value))}
 															onBlur={field.handleBlur}
 														/>
 													</TFormControl>

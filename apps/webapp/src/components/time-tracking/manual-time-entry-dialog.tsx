@@ -10,6 +10,7 @@ import { createManualTimeEntry } from "@/app/[locale]/(app)/time-tracking/action
 import { ProjectSelector } from "@/components/time-tracking/project-selector";
 import { WorkCategorySelector } from "@/components/time-tracking/work-category-selector";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
 	Dialog,
 	DialogClose,
@@ -211,12 +212,10 @@ export function ManualTimeEntryDialog({
 										{t("timeTracking.manualEntry.dateLabel", "Date")}
 									</TFormLabel>
 									<TFormControl hasError={fieldHasError(field)}>
-										<Input
-											type="date"
+										<DatePicker
 											name="date"
-											autoComplete="off"
 											value={field.state.value}
-											onChange={(e) => field.handleChange(e.target.value)}
+											onChange={field.handleChange}
 											onBlur={field.handleBlur}
 											max={DateTime.now().setZone(employeeTimezone).toISODate() || undefined}
 											required

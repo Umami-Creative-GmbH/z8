@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import {
 	Select,
@@ -627,22 +628,27 @@ function DateField({
 	required?: boolean;
 }) {
 	return (
-		<form.Field name={name}>
+		<form.Field
+			name={name}
+			validators={{
+				onSubmit: required
+					? ({ value }) => (value ? undefined : `${label} is required`)
+					: undefined,
+			}}
+		>
 			{(field) => (
 				<TFormItem>
 					<TFormLabel hasError={fieldHasError(field)} required={required}>
 						{label}
 					</TFormLabel>
 					<TFormControl hasError={fieldHasError(field)}>
-						<Input
+						<DatePicker
 							name={name}
-							type="date"
 							value={field.state.value}
-							onChange={(event) => field.handleChange(event.target.value)}
+							onChange={field.handleChange}
 							onBlur={field.handleBlur}
 							disabled={disabled}
 							required={required}
-							autoComplete="off"
 						/>
 					</TFormControl>
 					{name === "validFrom" && (
