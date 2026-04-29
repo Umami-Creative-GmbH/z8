@@ -18,13 +18,14 @@ import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "../ui/dialog";
+	ActionPanel,
+	ActionPanelBody,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Label } from "../ui/label";
 import { Skeleton } from "../ui/skeleton";
 import { Textarea } from "../ui/textarea";
@@ -218,21 +219,21 @@ export function ComplianceExceptionsManager({
 			</Card>
 
 			{/* Rejection Dialog */}
-			<Dialog open={rejectionDialogOpen} onOpenChange={setRejectionDialogOpen}>
-				<DialogContent>
-					<DialogHeader>
-						<DialogTitle>
+			<ActionPanel open={rejectionDialogOpen} onOpenChange={setRejectionDialogOpen}>
+				<ActionPanelContent>
+					<ActionPanelHeader>
+						<ActionPanelTitle>
 							{t("compliance.exception.rejectTitle", "Reject Exception Request")}
-						</DialogTitle>
-						<DialogDescription>
+						</ActionPanelTitle>
+						<ActionPanelDescription>
 							{t(
 								"compliance.exception.rejectDescription",
 								"Provide a reason for rejecting this exception request (optional)",
 							)}
-						</DialogDescription>
-					</DialogHeader>
+						</ActionPanelDescription>
+					</ActionPanelHeader>
 
-					<div className="space-y-4">
+					<ActionPanelBody className="space-y-4">
 						{rejectingException && (
 							<div className="rounded-lg border bg-muted/50 p-3">
 								<p className="text-sm font-medium">
@@ -260,9 +261,9 @@ export function ComplianceExceptionsManager({
 								rows={3}
 							/>
 						</div>
-					</div>
+					</ActionPanelBody>
 
-					<DialogFooter>
+					<ActionPanelFooter>
 						<Button variant="outline" onClick={() => setRejectionDialogOpen(false)}>
 							{t("common.cancel", "Cancel")}
 						</Button>
@@ -275,9 +276,9 @@ export function ComplianceExceptionsManager({
 								? t("common.rejecting", "Rejecting…")
 								: t("common.reject", "Reject")}
 						</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
+					</ActionPanelFooter>
+				</ActionPanelContent>
+			</ActionPanel>
 		</div>
 	);
 }

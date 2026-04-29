@@ -9,13 +9,14 @@ import { requestComplianceException } from "@/app/[locale]/(app)/settings/compli
 import { queryKeys } from "@/lib/query/keys";
 import { Button } from "../ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "../ui/dialog";
+	ActionPanel,
+	ActionPanelBody,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
@@ -141,23 +142,23 @@ export function ExceptionRequestDialog({
 	};
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-md">
-				<form onSubmit={handleSubmit}>
-					<DialogHeader>
-						<DialogTitle className="flex items-center gap-2">
+		<ActionPanel open={open} onOpenChange={onOpenChange}>
+			<ActionPanelContent size="compact">
+				<form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+					<ActionPanelHeader>
+						<ActionPanelTitle className="flex items-center gap-2">
 							<Shield className="h-5 w-5" aria-hidden="true" />
 							{t("compliance.exception.requestTitle", "Request Compliance Exception")}
-						</DialogTitle>
-						<DialogDescription>
+						</ActionPanelTitle>
+						<ActionPanelDescription>
 							{t(
 								"compliance.exception.requestDescription",
 								"Request pre-approval from your manager to proceed despite compliance restrictions. Approved exceptions are valid for 24 hours.",
 							)}
-						</DialogDescription>
-					</DialogHeader>
+						</ActionPanelDescription>
+					</ActionPanelHeader>
 
-					<div className="space-y-4 py-4">
+					<ActionPanelBody className="space-y-4">
 						{/* Exception Type Selection */}
 						<div className="space-y-2">
 							<Label>{t("compliance.exception.type", "Exception Type")}</Label>
@@ -211,7 +212,9 @@ export function ExceptionRequestDialog({
 							<div className="space-y-2">
 								<Label>
 									{t("compliance.exception.plannedDuration", "Planned Additional Duration")}{" "}
-									<span className="text-muted-foreground">({t("common.optional", "optional")})</span>
+									<span className="text-muted-foreground">
+										({t("common.optional", "optional")})
+									</span>
 								</Label>
 								<div className="flex items-center gap-2">
 									<div className="flex items-center gap-1">
@@ -251,9 +254,9 @@ export function ExceptionRequestDialog({
 								</p>
 							</div>
 						)}
-					</div>
+					</ActionPanelBody>
 
-					<DialogFooter>
+					<ActionPanelFooter>
 						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
 							{t("common.cancel", "Cancel")}
 						</Button>
@@ -262,9 +265,9 @@ export function ExceptionRequestDialog({
 								? t("common.submitting", "Submitting…")
 								: t("compliance.exception.submit", "Submit Request")}
 						</Button>
-					</DialogFooter>
+					</ActionPanelFooter>
 				</form>
-			</DialogContent>
-		</Dialog>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }
