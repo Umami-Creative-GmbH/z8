@@ -12,6 +12,7 @@ import {
 	type UpsertTravelExpensePolicyInput,
 } from "@/app/[locale]/(app)/settings/travel-expenses/actions";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
 	Dialog,
 	DialogContent,
@@ -199,12 +200,10 @@ export function TravelExpensePolicyDialog({
 										{t("settings.travelExpenses.effectiveFrom", "Effective From")}
 									</TFormLabel>
 									<TFormControl>
-										<Input
+										<DatePicker
 											name="effectiveFrom"
-											autoComplete="off"
-											type="date"
 											value={field.state.value}
-											onChange={(event) => field.handleChange(event.target.value)}
+											onChange={field.handleChange}
 											onBlur={field.handleBlur}
 										/>
 									</TFormControl>
@@ -220,12 +219,10 @@ export function TravelExpensePolicyDialog({
 										{t("settings.travelExpenses.effectiveTo", "Effective To")}
 									</TFormLabel>
 									<TFormControl>
-										<Input
+										<DatePicker
 											name="effectiveTo"
-											autoComplete="off"
-											type="date"
 											value={field.state.value}
-											onChange={(event) => field.handleChange(event.target.value)}
+											onChange={field.handleChange}
 											onBlur={field.handleBlur}
 										/>
 									</TFormControl>

@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
 	Dialog,
 	DialogContent,
@@ -166,10 +167,9 @@ export function RateHistoryCard({
 										<TFormItem>
 											<TFormLabel hasError={fieldHasError(field)}>Effective From</TFormLabel>
 											<TFormControl hasError={fieldHasError(field)}>
-												<Input
-													type="date"
+												<DatePicker
 													value={field.state.value}
-													onChange={(e) => field.handleChange(e.target.value)}
+													onChange={field.handleChange}
 													onBlur={field.handleBlur}
 												/>
 											</TFormControl>

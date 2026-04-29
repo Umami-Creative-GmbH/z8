@@ -1,7 +1,7 @@
 /* @vitest-environment jsdom */
 
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import type { ReactNode } from "react";
+import type { ChangeEvent, InputHTMLAttributes, ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 		const mocks = vi.hoisted(() => ({
@@ -25,6 +25,20 @@ vi.mock("sonner", () => ({
 		error: mocks.toastError,
 		success: mocks.toastSuccess,
 	},
+}));
+
+vi.mock("@/components/ui/date-picker", () => ({
+	DatePicker: ({
+		onChange,
+		...props
+	}: Omit<InputHTMLAttributes<HTMLInputElement>, "onChange"> & {
+		onChange: (value: string) => void;
+	}) => (
+		<input
+			{...props}
+			onChange={(event: ChangeEvent<HTMLInputElement>) => onChange(event.target.value)}
+		/>
+	),
 }));
 
 vi.mock("@/navigation", () => ({

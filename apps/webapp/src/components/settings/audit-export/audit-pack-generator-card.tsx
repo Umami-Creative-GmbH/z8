@@ -15,15 +15,15 @@ import { DateTime } from "luxon";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
+	type AuditPackRequestInfo,
 	createAuditPackAction,
 	getAuditPackDownloadUrlAction,
 	getAuditPackRequestsAction,
-	type AuditPackRequestInfo,
 } from "@/app/[locale]/(app)/settings/audit-export/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Progress } from "@/components/ui/progress";
 import {
 	Table,
@@ -97,10 +97,7 @@ export function AuditPackGeneratorCard({ organizationId }: AuditPackGeneratorCar
 
 			toast.error(
 				result.error ||
-					t(
-						"settings.auditExport.auditPack.requestsError",
-						"Failed to load audit pack requests",
-					),
+					t("settings.auditExport.auditPack.requestsError", "Failed to load audit pack requests"),
 			);
 		} catch (error) {
 			toast.error(t("common.unexpectedError", "An unexpected error occurred"));
@@ -125,10 +122,7 @@ export function AuditPackGeneratorCard({ organizationId }: AuditPackGeneratorCar
 
 			if (!startDate.isValid || !endDate.isValid || startDate > endDate) {
 				toast.error(
-					t(
-						"settings.auditExport.auditPack.invalidDateRange",
-						"Please select a valid date range",
-					),
+					t("settings.auditExport.auditPack.invalidDateRange", "Please select a valid date range"),
 				);
 				return;
 			}
@@ -151,10 +145,7 @@ export function AuditPackGeneratorCard({ organizationId }: AuditPackGeneratorCar
 
 				setActiveJobId(result.data.jobId);
 				toast.success(
-					t(
-						"settings.auditExport.auditPack.createSuccess",
-						"Audit pack request created",
-					),
+					t("settings.auditExport.auditPack.createSuccess", "Audit pack request created"),
 				);
 				await loadRequests();
 			} catch (error) {
@@ -176,7 +167,9 @@ export function AuditPackGeneratorCard({ organizationId }: AuditPackGeneratorCar
 			void loadRequests();
 		},
 		onError: (error) => {
-			toast.error(error || t("settings.auditExport.auditPack.jobFailed", "Audit pack generation failed"));
+			toast.error(
+				error || t("settings.auditExport.auditPack.jobFailed", "Audit pack generation failed"),
+			);
 			setActiveJobId(null);
 			void loadRequests();
 		},
@@ -189,10 +182,7 @@ export function AuditPackGeneratorCard({ organizationId }: AuditPackGeneratorCar
 			if (!result.success) {
 				toast.error(
 					result.error ||
-						t(
-							"settings.auditExport.auditPack.downloadError",
-							"Failed to start download",
-						),
+						t("settings.auditExport.auditPack.downloadError", "Failed to start download"),
 				);
 				return;
 			}
@@ -241,7 +231,10 @@ export function AuditPackGeneratorCard({ organizationId }: AuditPackGeneratorCar
 								onSubmit: ({ value }) =>
 									value
 										? undefined
-										: t("settings.auditExport.auditPack.startDateRequired", "Start date is required"),
+										: t(
+												"settings.auditExport.auditPack.startDateRequired",
+												"Start date is required",
+											),
 							}}
 						>
 							{(field) => (
@@ -250,10 +243,9 @@ export function AuditPackGeneratorCard({ organizationId }: AuditPackGeneratorCar
 										{t("settings.auditExport.auditPack.startDate", "Start date")}
 									</TFormLabel>
 									<TFormControl hasError={fieldHasError(field)}>
-										<Input
-											type="date"
+										<DatePicker
 											value={field.state.value}
-											onChange={(event) => field.handleChange(event.target.value)}
+											onChange={field.handleChange}
 											onBlur={field.handleBlur}
 											disabled={isSubmitting}
 										/>
@@ -278,10 +270,9 @@ export function AuditPackGeneratorCard({ organizationId }: AuditPackGeneratorCar
 										{t("settings.auditExport.auditPack.endDate", "End date")}
 									</TFormLabel>
 									<TFormControl hasError={fieldHasError(field)}>
-										<Input
-											type="date"
+										<DatePicker
 											value={field.state.value}
-											onChange={(event) => field.handleChange(event.target.value)}
+											onChange={field.handleChange}
 											onBlur={field.handleBlur}
 											disabled={isSubmitting}
 										/>
@@ -354,7 +345,9 @@ export function AuditPackGeneratorCard({ organizationId }: AuditPackGeneratorCar
 						<Table>
 							<TableHeader>
 								<TableRow>
-									<TableHead>{t("settings.auditExport.auditPack.colRequested", "Requested")}</TableHead>
+									<TableHead>
+										{t("settings.auditExport.auditPack.colRequested", "Requested")}
+									</TableHead>
 									<TableHead>{t("settings.auditExport.auditPack.colRange", "Range")}</TableHead>
 									<TableHead>{t("settings.auditExport.auditPack.colStatus", "Status")}</TableHead>
 									<TableHead>{t("settings.auditExport.auditPack.colRecords", "Records")}</TableHead>
