@@ -10,7 +10,8 @@ export type SettingsGroup =
 export type FeatureFlag =
 	| "shiftsEnabled"
 	| "projectsEnabled"
-	| "surchargesEnabled";
+	| "surchargesEnabled"
+	| "demoDataEnabled";
 
 export type FeatureFlagState = Partial<Record<FeatureFlag, boolean>>;
 
@@ -521,6 +522,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		icon: "test-pipe",
 		minimumTier: "orgAdmin",
 		group: "data",
+		requiredFeature: "demoDataEnabled",
 	},
 	{
 		id: "data-import",

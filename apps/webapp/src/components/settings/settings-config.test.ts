@@ -89,6 +89,7 @@ describe("settings visibility tiers", () => {
 			shiftsEnabled: false,
 			projectsEnabled: false,
 			surchargesEnabled: false,
+			demoDataEnabled: false,
 		});
 
 		expect(entries).toHaveLength(0);
@@ -105,6 +106,7 @@ describe("settings visibility tiers", () => {
 				shiftsEnabled: false,
 				projectsEnabled: false,
 				surchargesEnabled: false,
+				demoDataEnabled: false,
 			}),
 		).toEqual([]);
 	});
@@ -130,6 +132,7 @@ describe("settings visibility tiers", () => {
 				shiftsEnabled: false,
 				projectsEnabled: false,
 				surchargesEnabled: false,
+				demoDataEnabled: true,
 			},
 		});
 
@@ -139,6 +142,7 @@ describe("settings visibility tiers", () => {
 				shiftsEnabled: false,
 				projectsEnabled: false,
 				surchargesEnabled: false,
+				demoDataEnabled: true,
 			}),
 		);
 	});
