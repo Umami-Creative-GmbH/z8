@@ -12,6 +12,9 @@ const migration0008 = readFileSync(
 const migrationJournal = JSON.parse(
 	readFileSync(new URL("../../../drizzle/meta/_journal.json", import.meta.url), "utf8"),
 ) as { entries: Array<{ tag: string }> };
+const migration0008Snapshot = JSON.parse(
+	readFileSync(new URL("../../../drizzle/meta/0008_snapshot.json", import.meta.url), "utf8"),
+) as { tables: { "public.organization": { columns: Record<string, { default?: boolean }> } } };
 
 const migration0004Statements = migration0004
 	.split("--> statement-breakpoint")
@@ -29,5 +32,8 @@ describe("drizzle follow-up migrations", () => {
 	it("registers the demo data feature flag migration", () => {
 		expect(migrationJournal.entries.some((entry) => entry.tag === "0008_demo_data_feature_flag")).toBe(true);
 		expect(migration0008).toContain('ADD COLUMN "demo_data_enabled" boolean DEFAULT true');
+		expect(
+			migration0008Snapshot.tables["public.organization"].columns.demo_data_enabled?.default,
+		).toBe(true);
 	});
 });

@@ -203,4 +203,14 @@ describe("settings visibility tiers", () => {
 
 		expect(entries.some((entry) => entry.id === "demo-data")).toBe(true);
 	});
+
+	it("keeps demo data visible when partial feature flags omit the new flag", () => {
+		const entries = filterSettingsByFeatureFlags(SETTINGS_ENTRIES, {
+			shiftsEnabled: true,
+			projectsEnabled: true,
+			surchargesEnabled: true,
+		});
+
+		expect(entries.some((entry) => entry.id === "demo-data")).toBe(true);
+	});
 });

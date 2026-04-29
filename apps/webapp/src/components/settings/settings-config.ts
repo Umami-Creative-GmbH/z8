@@ -571,6 +571,9 @@ export function filterSettingsByFeatureFlags(
 ): SettingsEntry[] {
 	return entries.filter((entry) => {
 		if (!entry.requiredFeature) return true;
+		if (entry.requiredFeature === "demoDataEnabled") {
+			return featureFlags.demoDataEnabled ?? true;
+		}
 
 		return featureFlags[entry.requiredFeature] ?? false;
 	});
