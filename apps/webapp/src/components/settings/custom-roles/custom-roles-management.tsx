@@ -22,6 +22,8 @@ import {
 } from "@/components/ui/action-panel";
 import {
 	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
 	AlertDialogContent,
 	AlertDialogDescription,
 	AlertDialogFooter,
@@ -265,17 +267,20 @@ export function CustomRolesManagement({ organizationId }: CustomRolesManagementP
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
-						<Button variant="outline" onClick={() => setDeleteTarget(null)}>
-							Cancel
-						</Button>
-						<Button
-							variant="destructive"
-							onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
-							disabled={deleteMutation.isPending}
-						>
-							{deleteMutation.isPending && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
-							Delete
-						</Button>
+						<AlertDialogCancel onClick={() => setDeleteTarget(null)}>Cancel</AlertDialogCancel>
+						<AlertDialogAction asChild>
+							<Button
+								variant="destructive"
+								onClick={(event) => {
+									event.preventDefault();
+									if (deleteTarget) deleteMutation.mutate(deleteTarget.id);
+								}}
+								disabled={deleteMutation.isPending}
+							>
+								{deleteMutation.isPending && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
+								Delete
+							</Button>
+						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>
 			</AlertDialog>

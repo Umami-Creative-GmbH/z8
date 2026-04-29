@@ -24,6 +24,8 @@ import {
 } from "@/components/ui/action-panel";
 import {
 	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
 	AlertDialogContent,
 	AlertDialogDescription,
 	AlertDialogFooter,
@@ -431,8 +433,7 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled }: TwoFactorSetupPr
 						</div>
 					</div>
 					<AlertDialogFooter>
-						<Button
-							variant="outline"
+						<AlertDialogCancel
 							onClick={() => {
 								setDisableDialogOpen(false);
 								setDisablePassword("");
@@ -440,14 +441,19 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled }: TwoFactorSetupPr
 							disabled={isPending}
 						>
 							Cancel
-						</Button>
-						<Button
-							variant="destructive"
-							onClick={handleDisable2FA}
-							disabled={isPending || !disablePassword}
-						>
-							Disable 2FA
-						</Button>
+						</AlertDialogCancel>
+						<AlertDialogAction asChild>
+							<Button
+								variant="destructive"
+								onClick={(event) => {
+									event.preventDefault();
+									handleDisable2FA();
+								}}
+								disabled={isPending || !disablePassword}
+							>
+								Disable 2FA
+							</Button>
+						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>
 			</AlertDialog>

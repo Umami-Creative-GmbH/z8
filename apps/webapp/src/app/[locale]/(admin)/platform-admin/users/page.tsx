@@ -17,6 +17,8 @@ import {
 } from "@/components/ui/action-panel";
 import {
 	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
 	AlertDialogContent,
 	AlertDialogDescription,
 	AlertDialogFooter,
@@ -491,12 +493,21 @@ export default function UsersPage() {
 						</div>
 					</div>
 					<AlertDialogFooter>
-						<Button variant="outline" onClick={() => setBanDialogUser(null)}>
+						<AlertDialogCancel onClick={() => setBanDialogUser(null)}>
 							{t("common.cancel", "Cancel")}
-						</Button>
-						<Button variant="destructive" onClick={handleBan} disabled={!banReason || isPending}>
-							{t("admin.users.banDialog.confirmButton", "Ban User")}
-						</Button>
+						</AlertDialogCancel>
+						<AlertDialogAction asChild>
+							<Button
+								variant="destructive"
+								onClick={(event) => {
+									event.preventDefault();
+									handleBan();
+								}}
+								disabled={!banReason || isPending}
+							>
+								{t("admin.users.banDialog.confirmButton", "Ban User")}
+							</Button>
+						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>
 			</AlertDialog>

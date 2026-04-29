@@ -22,6 +22,8 @@ import {
 } from "@/components/ui/action-panel";
 import {
 	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
 	AlertDialogContent,
 	AlertDialogDescription,
 	AlertDialogFooter,
@@ -348,13 +350,22 @@ export function RemoveMemberDialog(props: {
 					</AlertDialogDescription>
 				</AlertDialogHeader>
 				<AlertDialogFooter>
-					<Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
+					<AlertDialogCancel onClick={() => onOpenChange(false)} disabled={loading}>
 						Cancel
-					</Button>
-					<Button variant="destructive" onClick={onConfirm} disabled={loading}>
-						{loading ? <IconLoader2 className="mr-2 size-4 animate-spin" /> : null}
-						Remove
-					</Button>
+					</AlertDialogCancel>
+					<AlertDialogAction asChild>
+						<Button
+							variant="destructive"
+							onClick={(event) => {
+								event.preventDefault();
+								onConfirm();
+							}}
+							disabled={loading}
+						>
+							{loading ? <IconLoader2 className="mr-2 size-4 animate-spin" /> : null}
+							Remove
+						</Button>
+					</AlertDialogAction>
 				</AlertDialogFooter>
 			</AlertDialogContent>
 		</AlertDialog>
@@ -380,13 +391,22 @@ export function DeleteTeamDialog(props: {
 					</AlertDialogDescription>
 				</AlertDialogHeader>
 				<AlertDialogFooter>
-					<Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
+					<AlertDialogCancel onClick={() => onOpenChange(false)} disabled={loading}>
 						Cancel
-					</Button>
-					<Button variant="destructive" onClick={onConfirm} disabled={loading}>
-						{loading ? <IconLoader2 className="mr-2 size-4 animate-spin" /> : null}
-						Delete Team
-					</Button>
+					</AlertDialogCancel>
+					<AlertDialogAction asChild>
+						<Button
+							variant="destructive"
+							onClick={(event) => {
+								event.preventDefault();
+								onConfirm();
+							}}
+							disabled={loading}
+						>
+							{loading ? <IconLoader2 className="mr-2 size-4 animate-spin" /> : null}
+							Delete Team
+						</Button>
+					</AlertDialogAction>
 				</AlertDialogFooter>
 			</AlertDialogContent>
 		</AlertDialog>

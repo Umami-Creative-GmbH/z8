@@ -17,6 +17,8 @@ import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
 	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
 	AlertDialogContent,
 	AlertDialogDescription,
 	AlertDialogFooter,
@@ -513,16 +515,18 @@ export default function OrganizationsPage() {
 						</div>
 					</div>
 					<AlertDialogFooter>
-						<Button variant="outline" onClick={() => setSuspendDialogOrg(null)}>
+						<AlertDialogCancel onClick={() => setSuspendDialogOrg(null)}>
 							{t("common.cancel", "Cancel")}
-						</Button>
-						<Button
-							variant="default"
-							onClick={handleSuspend}
+						</AlertDialogCancel>
+						<AlertDialogAction
+							onClick={(event) => {
+								event.preventDefault();
+								handleSuspend();
+							}}
 							disabled={!suspendReason || isPending}
 						>
 							{t("admin.organizations.suspendDialog.confirmButton", "Suspend Organization")}
-						</Button>
+						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>
 			</AlertDialog>
@@ -595,16 +599,21 @@ export default function OrganizationsPage() {
 						</div>
 					</div>
 					<AlertDialogFooter>
-						<Button variant="outline" onClick={() => setDeleteDialogOrg(null)}>
+						<AlertDialogCancel onClick={() => setDeleteDialogOrg(null)}>
 							{t("common.cancel", "Cancel")}
-						</Button>
-						<Button
-							variant="destructive"
-							onClick={handleDelete}
-							disabled={deleteConfirmName !== deleteDialogOrg?.name || isPending}
-						>
-							{t("admin.organizations.deleteDialog.confirmButton", "Delete Organization")}
-						</Button>
+						</AlertDialogCancel>
+						<AlertDialogAction asChild>
+							<Button
+								variant="destructive"
+								onClick={(event) => {
+									event.preventDefault();
+									handleDelete();
+								}}
+								disabled={deleteConfirmName !== deleteDialogOrg?.name || isPending}
+							>
+								{t("admin.organizations.deleteDialog.confirmButton", "Delete Organization")}
+							</Button>
+						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>
 			</AlertDialog>
