@@ -51,7 +51,8 @@ describe("ActionPanel", () => {
 	it("always renders from the right side", () => {
 		render(
 			<ActionPanel open>
-				<ActionPanelContent {...({ side: "left" } as never)}>
+				{/* @ts-expect-error ActionPanelContent intentionally disallows side in its public API. */}
+				<ActionPanelContent side="left">
 					<ActionPanelTitle>Right-only panel</ActionPanelTitle>
 				</ActionPanelContent>
 			</ActionPanel>,
