@@ -143,8 +143,13 @@ export function NotificationsInbox() {
 		() => filteredNotifications.map((notification) => notification.id),
 		[filteredNotifications],
 	);
+	const hasSearch = deferredSearch.trim().length > 0;
 	const selectedVisibleIds = visibleIds.filter((id) => selectedIds.has(id));
+	const selectedUnreadVisibleIds = filteredNotifications
+		.filter((notification) => selectedIds.has(notification.id) && !notification.isRead)
+		.map((notification) => notification.id);
 	const selectedVisibleCount = selectedVisibleIds.length;
+	const selectedUnreadVisibleCount = selectedUnreadVisibleIds.length;
 	const allVisibleSelected = visibleIds.length > 0 && selectedVisibleCount === visibleIds.length;
 	const someVisibleSelected = selectedVisibleCount > 0 && !allVisibleSelected;
 	const hasSelection = selectedVisibleCount > 0;
@@ -180,15 +185,28 @@ export function NotificationsInbox() {
 
 	const handleBulkMarkRead = async () => {
 		try {
-			await Promise.all(selectedVisibleIds.map((id) => markAsRead(id)));
+			await Promise.all(selectedUnreadVisibleIds.map((id) => markAsRead(id)));
 			toast.success(
-				`Marked ${selectedVisibleCount} notification${selectedVisibleCount === 1 ? "" : "s"} as read`,
+				`Marked ${selectedUnreadVisibleCount} notification${selectedUnreadVisibleCount === 1 ? "" : "s"} as read`,
 			);
 			clearSelection();
 		} catch {
 			toast.error("Failed to mark notifications as read");
 		}
 	};
+
+	const emptyTitle =
+		readFilter === "unread" && !hasSearch
+			? "No unread notifications"
+			: notifications.length === 0
+				? "No notifications"
+				: "No matching notifications";
+	const emptyDescription =
+		readFilter === "unread" && !hasSearch
+			? "You are all caught up. New unread updates will appear here."
+			: notifications.length === 0
+				? "You are all caught up. New updates will appear here."
+				: "Adjust the search or read filter to widen this inbox view.";
 
 	const handleBulkDelete = async () => {
 		try {
@@ -295,7 +313,7 @@ export function NotificationsInbox() {
 								Clear
 							</Button>
 							<Button
-								disabled={isMutating}
+								disabled={isMutating || selectedUnreadVisibleCount === 0}
 								onClick={handleBulkMarkRead}
 								size="sm"
 								type="button"
@@ -326,14 +344,8 @@ export function NotificationsInbox() {
 							<EmptyMedia variant="icon">
 								<IconBell className="size-5" />
 							</EmptyMedia>
-							<EmptyTitle>
-								{notifications.length === 0 ? "No notifications" : "No matching notifications"}
-							</EmptyTitle>
-							<EmptyDescription>
-								{notifications.length === 0
-									? "You are all caught up. New updates will appear here."
-									: "Adjust the search or read filter to widen this inbox view."}
-							</EmptyDescription>
+							<EmptyTitle>{emptyTitle}</EmptyTitle>
+							<EmptyDescription>{emptyDescription}</EmptyDescription>
 						</EmptyHeader>
 						<EmptyContent>
 							<Button onClick={refresh} type="button" variant="outline">
