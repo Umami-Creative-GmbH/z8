@@ -126,7 +126,7 @@ async function processCronJob(job: Job<CronJobData>): Promise<JobResult> {
 /**
  * Process one-off jobs (reports, exports, emails, cleanup)
  */
-async function processOneOffJob(job: Job<JobData>): Promise<JobResult> {
+export async function processOneOffJob(job: Job<JobData>): Promise<JobResult> {
 	const { type } = job.data;
 	logger.info({ jobId: job.id, type, name: job.name }, "Processing job");
 
@@ -183,6 +183,20 @@ async function processOneOffJob(job: Job<JobData>): Promise<JobResult> {
 				return { success: true, message: "Audit pack processed" };
 			}
 
+			case "import-review-scan": {
+				const { processImportReviewJob } = await import(
+					"@/lib/import-review/worker"
+				);
+				return processImportReviewJob(job as Job<typeof job.data>);
+			}
+
+			case "import-review-commit": {
+				const { processImportReviewJob } = await import(
+					"@/lib/import-review/worker"
+				);
+				return processImportReviewJob(job as Job<typeof job.data>);
+			}
+
 			default:
 				throw new Error(`Unknown job type: ${(job.data as JobData).type}`);
 		}
@@ -199,7 +213,7 @@ async function processOneOffJob(job: Job<JobData>): Promise<JobResult> {
 /**
  * Main job processor that routes to cron or one-off handlers
  */
-async function processJob(job: Job<AllJobData>): Promise<JobResult> {
+export async function processJob(job: Job<AllJobData>): Promise<JobResult> {
 	// Check if this is a cron job (either by type prefix or by checking registry)
 	if (
 		typeof job.data.type === "string" &&
@@ -343,8 +357,10 @@ async function main(): Promise<void> {
 	);
 }
 
-// Start the worker
-main().catch((error) => {
-	logger.error({ error }, "Worker failed to start");
-	process.exit(1);
-});
+// Start the worker when this file is executed as the worker entrypoint.
+if (!process.env.VITEST) {
+	main().catch((error) => {
+		logger.error({ error }, "Worker failed to start");
+		process.exit(1);
+	});
+}

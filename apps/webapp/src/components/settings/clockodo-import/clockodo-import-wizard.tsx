@@ -1,34 +1,32 @@
 "use client";
 
 import {
-	IconAlertTriangle,
 	IconArrowLeft,
 	IconArrowRight,
 	IconCalendar,
 	IconCheck,
 	IconCircleCheck,
-	IconCircleX,
 	IconDatabaseImport,
 	IconExternalLink,
 	IconKey,
 	IconLink,
 	IconLoader2,
-	IconMinus,
 	IconUserPlus,
 	IconUsers,
 	IconUserX,
 } from "@tabler/icons-react";
 import { useMutation } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
+import { DateTime } from "luxon";
 import { useState } from "react";
 import type { DateRange } from "react-day-picker";
 import { toast } from "sonner";
+import { startImportReviewScan } from "@/app/[locale]/(app)/settings/import/review-actions";
 import {
 	type ExistingDataCounts,
 	fetchClockodoUsers,
 	fetchZ8Employees,
 	getExistingDataCounts,
-	importClockodoData,
 	saveUserMappings,
 	validateClockodoCredentials,
 	type Z8EmployeeInfo,
@@ -54,11 +52,11 @@ import type { ImportUserMapping } from "@/lib/clockodo/import-orchestrator";
 import type {
 	ClockodoDataPreview,
 	DateRangePreset,
-	ImportResult,
 	ImportSelections,
 	UserMappingEntry,
 	UserMappingType,
 } from "@/lib/clockodo/types";
+import type { ImportEntityType } from "@/lib/import-review/types";
 import { useRouter } from "@/navigation";
 
 type WizardStep =
@@ -102,6 +100,18 @@ const IMPORT_ENTITIES = [
 
 type EntityKey = (typeof IMPORT_ENTITIES)[number]["key"];
 
+const CLOCKODO_ENTITY_TYPE_BY_SELECTION = {
+	users: "employee",
+	teams: "team",
+	services: "work_category",
+	entries: "work_period",
+	absences: "absence",
+	targetHours: "target_hours",
+	holidayQuotas: "holiday_quota",
+	nonBusinessDays: "holiday",
+	surcharges: "surcharge",
+} satisfies Record<EntityKey, ImportEntityType>;
+
 const DATE_RANGE_PRESETS: { value: DateRangePreset; label: string }[] = [
 	{ value: "all_data", label: "All data (last 10 years)" },
 	{ value: "this_year", label: "This year" },
@@ -110,6 +120,55 @@ const DATE_RANGE_PRESETS: { value: DateRangePreset; label: string }[] = [
 	{ value: "last_12_months", label: "Last 12 months" },
 	{ value: "custom", label: "Custom date range" },
 ];
+
+function resolveReviewDateRange(dateRange: ImportSelections["dateRange"]) {
+	const now = DateTime.utc();
+
+	if (dateRange.preset === "custom" && dateRange.startDate && dateRange.endDate) {
+		return {
+			startDate: DateTime.fromISO(dateRange.startDate).toISODate() ?? dateRange.startDate.slice(0, 10),
+			endDate: DateTime.fromISO(dateRange.endDate).toISODate() ?? dateRange.endDate.slice(0, 10),
+		};
+	}
+
+	let start = now.minus({ years: 10 });
+	switch (dateRange.preset) {
+		case "this_year":
+			start = now.startOf("year");
+			break;
+		case "this_year_and_last":
+			start = now.minus({ years: 1 }).startOf("year");
+			break;
+		case "last_6_months":
+			start = now.minus({ months: 6 });
+			break;
+		case "last_12_months":
+			start = now.minus({ years: 1 });
+			break;
+	}
+
+	return { startDate: start.toFormat("yyyy-MM-dd"), endDate: now.toFormat("yyyy-MM-dd") };
+}
+
+function selectedClockodoUserIds(
+	userMappings: UserMappingEntry[],
+	onlyImportMapped: boolean,
+): string[] {
+	return userMappings
+		.filter((mapping) => mapping.mappingType !== "skipped")
+		.filter((mapping) => !onlyImportMapped || mapping.employeeId != null)
+		.map((mapping) => String(mapping.clockodoUserId));
+}
+
+function hasSelectedUserScopedEntity(selections: ImportSelections): boolean {
+	return (
+		selections.users ||
+		selections.entries ||
+		selections.absences ||
+		selections.targetHours ||
+		selections.holidayQuotas
+	);
+}
 
 export function ClockodoImportWizard({ organizationId }: ClockodoImportWizardProps) {
 	const { t } = useTranslate();
@@ -152,7 +211,7 @@ export function ClockodoImportWizard({ organizationId }: ClockodoImportWizardPro
 	});
 
 	// Results
-	const [importResult, setImportResult] = useState<ImportResult | null>(null);
+	const [reviewBatchId, setReviewBatchId] = useState<string | null>(null);
 
 	// Mutations
 	const validateMutation = useMutation({
@@ -256,6 +315,16 @@ export function ClockodoImportWizard({ organizationId }: ClockodoImportWizardPro
 		},
 	});
 
+	const isCustomDateRangeIncomplete =
+		selections.dateRange.preset === "custom" &&
+		(!selections.dateRange.startDate || !selections.dateRange.endDate);
+	const selectedEmployeeIds = selectedClockodoUserIds(userMappings, onlyImportMapped);
+	const isUserScopedSelectionEmpty =
+		userMappings.length > 0 && hasSelectedUserScopedEntity(selections) && selectedEmployeeIds.length === 0;
+	const hasSelectedEntities = Object.entries(selections).some(
+		([key, val]) => key !== "dateRange" && val === true,
+	);
+
 	const importMutation = useMutation({
 		mutationFn: () => {
 			// Convert user mappings to serialized format for the server action
@@ -265,25 +334,38 @@ export function ClockodoImportWizard({ organizationId }: ClockodoImportWizardPro
 				userId: m.userId,
 				mappingType: m.mappingType,
 			}));
-			return importClockodoData(
-				email,
-				apiKey,
-				organizationId,
-				selections,
-				serializedMappings,
-				onlyImportMapped,
+			const entityTypes = IMPORT_ENTITIES.flatMap((entity) =>
+				selections[entity.key] ? [CLOCKODO_ENTITY_TYPE_BY_SELECTION[entity.key]] : [],
 			);
+
+			return startImportReviewScan({
+				organizationId,
+				provider: "clockodo",
+				credential: JSON.stringify({ email, apiKey }),
+				selectedScope: selections,
+				dateRange: resolveReviewDateRange(selections.dateRange),
+				employeeIds: selectedEmployeeIds,
+				entityTypes,
+			});
 		},
 		onSuccess: (result) => {
 			if (result.success) {
-				setImportResult(result.data);
+				setReviewBatchId(result.data.batchId);
+				toast.success(
+					t(
+						"settings.clockodoImport.review.startedToast",
+						"Import review scan started. Review is required before records are committed.",
+					),
+				);
 				setStep("complete");
 			} else {
 				toast.error(result.error);
+				setStep("selection");
 			}
 		},
 		onError: () => {
-			toast.error(t("settings.clockodoImport.errors.importFailed", "Import failed"));
+			toast.error(t("settings.clockodoImport.errors.importFailed", "Import review scan failed"));
+			setStep("selection");
 		},
 	});
 
@@ -562,7 +644,7 @@ export function ClockodoImportWizard({ organizationId }: ClockodoImportWizardPro
 							<Label htmlFor="only-import-mapped" className="cursor-pointer text-sm">
 								{t(
 									"settings.clockodoImport.userMapping.onlyMapped",
-									"Only import mapped users (don't create new accounts for unmapped users)",
+									"Only scan mapped users (don't create new accounts for unmapped users)",
 								)}
 							</Label>
 						</div>
@@ -653,12 +735,12 @@ export function ClockodoImportWizard({ organizationId }: ClockodoImportWizardPro
 				<Card>
 					<CardHeader>
 						<CardTitle>
-							{t("settings.clockodoImport.selection.title", "Select Data to Import")}
+							{t("settings.clockodoImport.selection.title", "Select Data for Review")}
 						</CardTitle>
 						<CardDescription>
 							{t(
 								"settings.clockodoImport.selection.description",
-								"Choose which data types to import. Duplicates will be automatically skipped.",
+								"Choose which data types to scan. Review is required before records are committed.",
 							)}
 						</CardDescription>
 					</CardHeader>
@@ -676,7 +758,7 @@ export function ClockodoImportWizard({ organizationId }: ClockodoImportWizardPro
 								<CardDescription className="text-xs">
 									{t(
 										"settings.clockodoImport.selection.dateRangeDescription",
-										"This only affects time entries and absences. Other data (users, teams, etc.) is always imported fully.",
+										"This only affects time entries and absences. Other data (users, teams, etc.) is always scanned fully.",
 									)}
 								</CardDescription>
 							</CardHeader>
@@ -757,14 +839,14 @@ export function ClockodoImportWizard({ organizationId }: ClockodoImportWizardPro
 											>
 												{entityLabel(entity.key, entity.label)}
 											</Label>
-											{missingDeps && selections[entity.key] && (
-												<p className="text-xs text-amber-600 dark:text-amber-400">
-													{t(
-														"settings.clockodoImport.selection.dependencyWarning",
-														"Dependencies will be imported automatically",
-													)}
-												</p>
-											)}
+										{missingDeps && selections[entity.key] && (
+											<p className="text-xs text-amber-600 dark:text-amber-400">
+												{t(
+													"settings.clockodoImport.selection.dependencyWarning",
+													"Dependencies will be scanned automatically",
+												)}
+											</p>
+										)}
 										</div>
 									</div>
 									<Badge variant="secondary" className="tabular-nums">
@@ -781,19 +863,34 @@ export function ClockodoImportWizard({ organizationId }: ClockodoImportWizardPro
 							</Button>
 							<Button
 								onClick={() => {
+									if (isCustomDateRangeIncomplete || isUserScopedSelectionEmpty) return;
 									setStep("importing");
 									importMutation.mutate();
 								}}
 								disabled={
-									!Object.entries(selections).some(
-										([key, val]) => key !== "dateRange" && val === true,
-									)
+									!hasSelectedEntities || isCustomDateRangeIncomplete || isUserScopedSelectionEmpty
 								}
 							>
 								<IconDatabaseImport className="mr-2 h-4 w-4" aria-hidden="true" />
-								{t("settings.clockodoImport.selection.startImport", "Start Import")}
+								{t("settings.clockodoImport.selection.startImport", "Start Review Scan")}
 							</Button>
 						</div>
+						{isCustomDateRangeIncomplete && (
+							<p className="text-right text-sm text-destructive" aria-live="polite">
+								{t(
+									"settings.clockodoImport.selection.incompleteCustomDateRange",
+									"Select both a start and end date before starting the scan.",
+								)}
+							</p>
+						)}
+						{isUserScopedSelectionEmpty && (
+							<p className="text-right text-sm text-destructive" aria-live="polite">
+								{t(
+									"settings.clockodoImport.selection.emptyUserScope",
+									"Select at least one Clockodo user before starting the scan.",
+								)}
+							</p>
+						)}
 					</CardContent>
 				</Card>
 			)}
@@ -804,12 +901,12 @@ export function ClockodoImportWizard({ organizationId }: ClockodoImportWizardPro
 					<CardHeader>
 						<CardTitle className="flex items-center gap-2">
 							<IconLoader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
-							{t("settings.clockodoImport.importing.title", "Importing Data\u2026")}
+							{t("settings.clockodoImport.importing.title", "Starting Review Scan…")}
 						</CardTitle>
 						<CardDescription>
 							{t(
 								"settings.clockodoImport.importing.description",
-								"Please do not close this page. The import is running and may take a while for large datasets.",
+								"Please do not close this page. The review scan is being queued and may take a while for large datasets.",
 							)}
 						</CardDescription>
 					</CardHeader>
@@ -819,7 +916,7 @@ export function ClockodoImportWizard({ organizationId }: ClockodoImportWizardPro
 							<p className="text-center text-sm text-muted-foreground">
 								{t(
 									"settings.clockodoImport.importing.patience",
-									"Fetching and importing your data from Clockodo\u2026",
+									"Fetching Clockodo data for review…",
 								)}
 							</p>
 						</div>
@@ -828,120 +925,31 @@ export function ClockodoImportWizard({ organizationId }: ClockodoImportWizardPro
 			)}
 
 			{/* Step 6: Complete */}
-			{step === "complete" && importResult && (
+			{step === "complete" && reviewBatchId && (
 				<Card>
 					<CardHeader>
 						<CardTitle className="flex items-center gap-2">
-							{importResult.status === "success" ? (
-								<IconCircleCheck className="h-5 w-5 text-emerald-500" aria-hidden="true" />
-							) : importResult.status === "partial" ? (
-								<IconAlertTriangle className="h-5 w-5 text-amber-500" aria-hidden="true" />
-							) : (
-								<IconCircleX className="h-5 w-5 text-destructive" aria-hidden="true" />
-							)}
-							{importResult.status === "success"
-								? t("settings.clockodoImport.complete.successTitle", "Import Complete")
-								: importResult.status === "partial"
-									? t("settings.clockodoImport.complete.partialTitle", "Import Partially Complete")
-									: t("settings.clockodoImport.complete.failedTitle", "Import Failed")}
+							<IconCircleCheck className="h-5 w-5 text-emerald-500" aria-hidden="true" />
+							{t("settings.clockodoImport.complete.successTitle", "Import review scan started")}
 						</CardTitle>
 						<CardDescription>
-							{t("settings.clockodoImport.complete.duration", "Completed in {seconds}s", {
-								seconds: Math.round(importResult.durationMs / 1000),
-							})}
+							{t(
+								"settings.clockodoImport.complete.description",
+								"Review is required before Clockodo records are committed to production.",
+							)}
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
-						{importResult.errorMessage && (
-							<div className="mb-4 rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
-								{importResult.errorMessage}
-							</div>
-						)}
-
-						<div className="overflow-x-auto">
-							<table className="w-full text-sm">
-								<thead>
-									<tr className="border-b text-left">
-										<th className="pb-2 font-medium">
-											{t("settings.clockodoImport.complete.dataType", "Data Type")}
-										</th>
-										<th className="pb-2 text-right font-medium">
-											{t("settings.clockodoImport.complete.imported", "Imported")}
-										</th>
-										<th className="pb-2 text-right font-medium">
-											{t("settings.clockodoImport.complete.skipped", "Skipped")}
-										</th>
-										<th className="pb-2 text-right font-medium">
-											{t("settings.clockodoImport.complete.errors", "Errors")}
-										</th>
-									</tr>
-								</thead>
-								<tbody className="divide-y">
-									{IMPORT_ENTITIES.map((entity) => {
-										const entityResult = importResult[entity.key as keyof ImportResult];
-										if (
-											!entityResult ||
-											typeof entityResult !== "object" ||
-											!("imported" in entityResult)
-										)
-											return null;
-										if (!selections[entity.key]) return null;
-
-										return (
-											<ResultRow
-												key={entity.key}
-												label={entityLabel(entity.key, entity.label)}
-												imported={entityResult.imported}
-												skipped={entityResult.skipped}
-												errors={entityResult.errors}
-											/>
-										);
-									})}
-								</tbody>
-							</table>
+						<div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-700 dark:text-emerald-300">
+							{t("settings.clockodoImport.complete.batch", "Review batch {batchId} is scanning.", {
+								batchId: reviewBatchId,
+							})}
 						</div>
 
-						{/* Error details */}
-						{Object.entries(importResult)
-							.filter(
-								([_key, value]) =>
-									typeof value === "object" && "errors" in value && value.errors.length > 0,
-							)
-							.map(([key, value]) => {
-								const entityResult = value as { errors: string[] };
-								const entity = IMPORT_ENTITIES.find((e) => e.key === key);
-								return (
-									<details key={key} className="mt-3">
-										<summary className="cursor-pointer text-sm font-medium text-destructive">
-											{entity ? entityLabel(entity.key, entity.label) : key}:{" "}
-											{t("settings.clockodoImport.complete.errorCount", "{count} error(s)", {
-												count: entityResult.errors.length,
-											})}
-										</summary>
-										<ul className="mt-1 list-inside list-disc space-y-1 text-xs text-muted-foreground">
-											{entityResult.errors.slice(0, 20).map((err, i) => (
-												<li key={i}>{err}</li>
-											))}
-											{entityResult.errors.length > 20 && (
-												<li>
-													{t(
-														"settings.clockodoImport.complete.moreErrors",
-														"\u2026and {count} more",
-														{
-															count: entityResult.errors.length - 20,
-														},
-													)}
-												</li>
-											)}
-										</ul>
-									</details>
-								);
-							})}
-
 						<div className="mt-6 flex justify-end">
-							<Button onClick={() => router.push("/settings")}>
-								<IconCheck className="mr-2 h-4 w-4" aria-hidden="true" />
-								{t("settings.clockodoImport.complete.done", "Done")}
+							<Button onClick={() => router.push(`/settings/import/${reviewBatchId}`)}>
+								<IconExternalLink className="mr-2 h-4 w-4" aria-hidden="true" />
+								{t("settings.clockodoImport.complete.openReview", "Open review")}
 							</Button>
 						</div>
 					</CardContent>
@@ -962,8 +970,8 @@ function StepIndicator({ currentStep }: { currentStep: WizardStep }) {
 		{ key: "preview", label: t("settings.clockodoImport.step.preview", "Preview") },
 		{ key: "user-mapping", label: t("settings.clockodoImport.step.userMapping", "User Mapping") },
 		{ key: "selection", label: t("settings.clockodoImport.step.selection", "Selection") },
-		{ key: "importing", label: t("settings.clockodoImport.step.import", "Import") },
-		{ key: "complete", label: t("settings.clockodoImport.step.complete", "Complete") },
+		{ key: "importing", label: t("settings.clockodoImport.step.import", "Review") },
+		{ key: "complete", label: t("settings.clockodoImport.step.complete", "Review Started") },
 	];
 
 	const currentIndex = steps.findIndex((s) => s.key === currentStep);
@@ -1116,37 +1124,4 @@ function MappingStatusBadge({ type }: { type: UserMappingType }) {
 				</Badge>
 			);
 	}
-}
-
-function ResultRow({
-	label,
-	imported,
-	skipped,
-	errors,
-}: {
-	label: string;
-	imported: number;
-	skipped: number;
-	errors: string[];
-}) {
-	return (
-		<tr>
-			<td className="py-2">{label}</td>
-			<td className="py-2 text-right tabular-nums">
-				{imported > 0 ? (
-					<span className="text-emerald-600 dark:text-emerald-400">{imported}</span>
-				) : (
-					<IconMinus className="ml-auto h-4 w-4 text-muted-foreground" />
-				)}
-			</td>
-			<td className="py-2 text-right tabular-nums text-muted-foreground">{skipped}</td>
-			<td className="py-2 text-right tabular-nums">
-				{errors.length > 0 ? (
-					<span className="text-destructive">{errors.length}</span>
-				) : (
-					<IconMinus className="ml-auto h-4 w-4 text-muted-foreground" />
-				)}
-			</td>
-		</tr>
-	);
 }

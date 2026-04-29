@@ -1,7 +1,7 @@
+import { eq } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import type { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { eq } from "drizzle-orm";
 import { AuthorizationError, ConflictError, NotFoundError } from "@/lib/effect/errors";
 
 const mockState = vi.hoisted(() => ({
@@ -165,6 +165,66 @@ describe("POST /api/approvals/inbox/[id]/approve", () => {
 		expect(response.status).toBe(200);
 		expect(mockState.handlerApprove).toHaveBeenCalledWith("entity-1", "employee-1");
 		expect(mockState.insertAuditLog).not.toHaveBeenCalled();
+	});
+
+	it("allows manage-Approval users to approve requests assigned to another employee in the same organization", async () => {
+		mockState.findApprovalRequest.mockResolvedValue({
+			id: "approval-1",
+			entityId: "entity-1",
+			entityType: "absence_entry",
+			approverId: "employee-2",
+			organizationId: "org-1",
+			status: "pending",
+		});
+
+		const response = await POST(createRequest(), {
+			params: Promise.resolve({ id: "approval-1" }),
+		});
+
+		expect(response.status).toBe(200);
+		expect(mockState.handlerApprove).toHaveBeenCalledWith("entity-1", "employee-1", {
+			approvalRequestId: "approval-1",
+			allowAnyApprover: true,
+		});
+	});
+
+	it("returns 403 when a non-manage user approves a request assigned to another employee", async () => {
+		mockState.getAbility.mockResolvedValue({
+			cannot: vi.fn((action) => action === "manage"),
+		});
+		mockState.findApprovalRequest.mockResolvedValue({
+			id: "approval-1",
+			entityId: "entity-1",
+			entityType: "absence_entry",
+			approverId: "employee-2",
+			organizationId: "org-1",
+			status: "pending",
+		});
+
+		const response = await POST(createRequest(), {
+			params: Promise.resolve({ id: "approval-1" }),
+		});
+
+		expect(response.status).toBe(403);
+		expect(mockState.handlerApprove).not.toHaveBeenCalled();
+	});
+
+	it("returns 404 before approver authorization when the approval belongs to another organization", async () => {
+		mockState.findApprovalRequest.mockResolvedValue({
+			id: "approval-1",
+			entityId: "entity-1",
+			entityType: "absence_entry",
+			approverId: "employee-2",
+			organizationId: "org-2",
+			status: "pending",
+		});
+
+		const response = await POST(createRequest(), {
+			params: Promise.resolve({ id: "approval-1" }),
+		});
+
+		expect(response.status).toBe(404);
+		expect(mockState.handlerApprove).not.toHaveBeenCalled();
 	});
 
 	it("provides the approval audit logger layer required by shared approval handlers", async () => {

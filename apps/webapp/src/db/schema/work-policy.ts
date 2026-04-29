@@ -352,10 +352,12 @@ export const workPolicyAssignment = pgTable(
 		uniqueIndex("workPolicyAssignment_team_idx")
 			.on(table.teamId)
 			.where(sql`team_id IS NOT NULL AND is_active = true`),
-		// One assignment per employee
-		uniqueIndex("workPolicyAssignment_employee_idx")
-			.on(table.employeeId)
-			.where(sql`employee_id IS NOT NULL AND is_active = true`),
+		index("workPolicyAssignment_employee_effective_idx").on(
+			table.employeeId,
+			table.effectiveFrom,
+			table.effectiveUntil,
+		),
+		index("workPolicyAssignment_employee_active_idx").on(table.employeeId, table.isActive),
 	],
 );
 

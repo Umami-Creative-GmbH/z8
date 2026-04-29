@@ -13,6 +13,7 @@ export const ORG_ADMIN_SETTINGS_ROUTES = [
 	"/settings/webhooks",
 	"/settings/export",
 	"/settings/payroll-export",
+	"/settings/payroll-readiness",
 	"/settings/audit-export",
 	"/settings/demo",
 	"/settings/import",

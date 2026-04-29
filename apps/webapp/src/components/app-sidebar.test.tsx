@@ -1,11 +1,19 @@
 /* @vitest-environment jsdom */
 
+import { IconShieldCheck } from "@tabler/icons-react";
 import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { IconShieldCheck } from "@tabler/icons-react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { navSecondarySpy, appSidebarSpy, getUserOrganizationsMock, getAuthContextMock, getCurrentSettingsAccessTierMock } = vi.hoisted(() => ({
+const {
+	navMainSpy,
+	navSecondarySpy,
+	appSidebarSpy,
+	getUserOrganizationsMock,
+	getAuthContextMock,
+	getCurrentSettingsAccessTierMock,
+} = vi.hoisted(() => ({
+	navMainSpy: vi.fn(),
 	navSecondarySpy: vi.fn(),
 	appSidebarSpy: vi.fn(),
 	getUserOrganizationsMock: vi.fn(),
@@ -27,7 +35,18 @@ vi.mock("@/lib/auth-client", () => ({
 }));
 
 vi.mock("@/components/nav-main", () => ({
-	NavMain: () => <div data-testid="nav-main" />,
+	NavMain: ({ items }: { items: Array<{ title: string; url: string; icon: unknown }> }) => {
+		navMainSpy(items);
+		return (
+			<nav aria-label="primary">
+				{items.map((item) => (
+					<a href={item.url} key={item.url}>
+						{item.title}
+					</a>
+				))}
+			</nav>
+		);
+	},
 }));
 
 vi.mock("@/components/nav-team", () => ({
@@ -69,12 +88,26 @@ import { AppSidebar } from "./app-sidebar";
 
 describe("app sidebar compliance navigation", () => {
 	beforeEach(() => {
+		navMainSpy.mockClear();
 		navSecondarySpy.mockClear();
 		appSidebarSpy.mockReset();
 		getUserOrganizationsMock.mockReset();
 		getAuthContextMock.mockReset();
 		getCurrentSettingsAccessTierMock.mockReset();
 		vi.resetModules();
+	});
+
+	it("renders My Requests as a primary personal navigation item", () => {
+		render(<AppSidebar />);
+
+		expect(screen.getByRole("link", { name: "My Requests" }).getAttribute("href")).toBe(
+			"/my-requests",
+		);
+		expect(navMainSpy).toHaveBeenLastCalledWith(
+			expect.arrayContaining([
+				expect.objectContaining({ title: "My Requests", url: "/my-requests" }),
+			]),
+		);
 	});
 
 	it("renders the compliance entry in secondary nav only when enabled", () => {
@@ -107,9 +140,7 @@ describe("app sidebar compliance navigation", () => {
 	});
 
 	it("passes showComplianceNav from the org-admin settings tier at runtime", async () => {
-		getUserOrganizationsMock.mockResolvedValue([
-			{ id: "org_1", shiftsEnabled: true },
-		]);
+		getUserOrganizationsMock.mockResolvedValue([{ id: "org_1", shiftsEnabled: true }]);
 		getAuthContextMock.mockResolvedValue({
 			employee: {
 				organizationId: "org_1",

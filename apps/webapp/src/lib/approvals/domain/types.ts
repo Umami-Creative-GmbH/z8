@@ -73,7 +73,11 @@ export interface UnifiedApprovalItem {
  * Approval types supported by the system.
  * Extensible via union type.
  */
-export type ApprovalType = "absence_entry" | "time_entry" | "shift_request" | "travel_expense_claim";
+export type ApprovalType =
+	| "absence_entry"
+	| "time_entry"
+	| "shift_request"
+	| "travel_expense_claim";
 
 export type ApprovalDecisionAction = "approve" | "reject";
 
@@ -117,6 +121,9 @@ export interface ApprovalQueryParams {
 	/** Employee ID of the approver */
 	approverId: string;
 
+	/** Include approvals assigned to any approver. Used by org-wide admin briefings. */
+	includeAllApprovers?: boolean;
+
 	/** Organization ID for multi-tenancy */
 	organizationId: string;
 
@@ -131,6 +138,9 @@ export interface ApprovalQueryParams {
 
 	/** Search by requester name/email */
 	search?: string;
+
+	/** Filter by requester employee IDs before pagination */
+	requesterEmployeeIds?: string[];
 
 	/** Filter by date range (request creation date) */
 	dateRange?: {
@@ -186,6 +196,12 @@ export interface ApprovalTimelineEvent {
 	message: string;
 }
 
+export interface ApprovalActionOptions {
+	transactional?: boolean;
+	approvalRequestId?: string;
+	allowAnyApprover?: boolean;
+}
+
 /**
  * Handler interface for each approval type.
  * Implement this to add support for a new approval type.
@@ -215,10 +231,7 @@ export interface ApprovalTypeHandler<TEntity = unknown> {
 	 * Get count of pending approvals (for badges).
 	 */
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	getCount: (
-		approverId: string,
-		organizationId: string,
-	) => Effect.Effect<number, AnyAppError, any>;
+	getCount: (approverId: string, organizationId: string) => Effect.Effect<number, AnyAppError, any>;
 
 	/**
 	 * Get full details for the slide-over panel.
@@ -235,7 +248,11 @@ export interface ApprovalTypeHandler<TEntity = unknown> {
 	 * Approve the entity.
 	 */
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	approve: (entityId: string, approverId: string) => Effect.Effect<void, AnyAppError, any>;
+	approve: (
+		entityId: string,
+		approverId: string,
+		options?: ApprovalActionOptions,
+	) => Effect.Effect<void, AnyAppError, any>;
 
 	/**
 	 * Reject the entity with a reason.
@@ -245,6 +262,7 @@ export interface ApprovalTypeHandler<TEntity = unknown> {
 		entityId: string,
 		approverId: string,
 		reason: string,
+		options?: ApprovalActionOptions,
 	) => Effect.Effect<void, AnyAppError, any>;
 
 	/**
