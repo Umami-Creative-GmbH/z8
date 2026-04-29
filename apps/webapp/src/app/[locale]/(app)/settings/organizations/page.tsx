@@ -1,61 +1,66 @@
 import { redirect } from "next/navigation";
 import { and, eq } from "drizzle-orm";
-import { loadTeamSettingsPageData } from "@/app/[locale]/(app)/settings/teams/team-settings-page-data";
 import { OrganizationsPageClient } from "@/components/organization/organizations-page-client";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
-import { getCurrentSettingsRouteContext, getPrincipalContext } from "@/lib/auth-helpers";
+import { employee } from "@/db/schema";
+import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
 
 export default async function OrganizationsPage() {
-	const [settingsRouteContext, principalContext, t] = await Promise.all([
+	const [settingsRouteContext, t] = await Promise.all([
 		getCurrentSettingsRouteContext(),
-		getPrincipalContext(),
 		getTranslate(),
 	]);
 
-	if (!settingsRouteContext || !principalContext) {
+	if (!settingsRouteContext) {
 		redirect("/settings");
 	}
 
-	if (settingsRouteContext.accessTier === "member") {
+	if (settingsRouteContext.accessTier !== "orgAdmin") {
 		redirect("/settings");
 	}
 
-	const { authContext, accessTier } = settingsRouteContext;
+	const { authContext } = settingsRouteContext;
 	const organizationId = authContext.session.activeOrganizationId;
 
 	if (!organizationId) {
 		redirect("/settings");
 	}
 
-	const [{ teamSurface, scopedMembers }, organization, invitations, currentMember] = await Promise.all([
-		loadTeamSettingsPageData({
-			organizationId,
-			settingsRouteContext,
-			principalContext,
-		}),
+	const [organization, invitations, currentMember, members] = await Promise.all([
 		db.query.organization.findFirst({
 			where: eq(authSchema.organization.id, organizationId),
 		}),
-		accessTier === "orgAdmin"
-			? db.query.invitation.findMany({
-					where: and(
-						eq(authSchema.invitation.organizationId, organizationId),
-						eq(authSchema.invitation.status, "pending"),
-					),
-					with: {
-						user: true,
-					},
-					orderBy: (invitation, { desc }) => [desc(invitation.createdAt)],
-				})
-			: Promise.resolve([]),
+		db.query.invitation.findMany({
+			where: and(
+				eq(authSchema.invitation.organizationId, organizationId),
+				eq(authSchema.invitation.status, "pending"),
+			),
+			with: {
+				user: true,
+			},
+			orderBy: (invitation, { desc }) => [desc(invitation.createdAt)],
+		}),
 		db.query.member.findFirst({
 			where: and(
 				eq(authSchema.member.userId, authContext.user.id),
 				eq(authSchema.member.organizationId, organizationId),
 			),
 		}),
+		db
+			.select({
+				member: authSchema.member,
+				user: authSchema.user,
+				employee: employee,
+			})
+			.from(authSchema.member)
+			.innerJoin(authSchema.user, eq(authSchema.member.userId, authSchema.user.id))
+			.leftJoin(
+				employee,
+				and(eq(employee.userId, authSchema.user.id), eq(employee.organizationId, organizationId)),
+			)
+			.where(eq(authSchema.member.organizationId, organizationId)),
 	]);
 
 	if (!organization || !currentMember) {
@@ -79,13 +84,10 @@ export default async function OrganizationsPage() {
 	return (
 		<OrganizationsPageClient
 			organization={organization}
-			members={scopedMembers}
+			members={members}
 			invitations={invitations}
-			teams={teamSurface.teams}
 			currentMemberRole={currentMember.role as "owner" | "admin" | "member"}
 			currentUserId={authContext.user.id}
-			canAccessOrganizationAdminSurface={teamSurface.canAccessOrganizationAdminSurface}
-			canCreateTeams={teamSurface.canCreateTeams}
 			canCreateOrganizations={
 				authContext.user.canCreateOrganizations || authContext.user.role === "admin"
 			}

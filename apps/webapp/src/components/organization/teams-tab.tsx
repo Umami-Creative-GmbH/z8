@@ -1,8 +1,8 @@
 "use client";
 
-import { IconPlus, IconUsers } from "@tabler/icons-react";
+import { IconPlus, IconRefresh, IconUsers } from "@tabler/icons-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import type { ScopedTeam } from "@/app/[locale]/(app)/settings/teams/team-scope";
 import { deleteTeam } from "@/app/[locale]/(app)/settings/teams/actions";
@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { team } from "@/db/schema";
 import { queryKeys } from "@/lib/query";
+import { useRouter } from "@/navigation";
 import { CreateTeamDialog } from "./create-team-dialog";
 import { EditTeamDialog } from "./edit-team-dialog";
 import type { MemberWithUserAndEmployee } from "./organizations-page-client";
@@ -34,6 +35,20 @@ interface TeamsTabProps {
 	organizationId: string;
 }
 
+type TeamPatches = {
+	baseTeams: ScopedTeam[];
+	createdTeams: ScopedTeam[];
+	updatedTeamsById: Record<string, ScopedTeam>;
+	deletedTeamIds: Set<string>;
+};
+
+const emptyTeamPatches = (baseTeams: ScopedTeam[]): TeamPatches => ({
+	baseTeams,
+	createdTeams: [],
+	updatedTeamsById: {},
+	deletedTeamIds: new Set(),
+});
+
 export function TeamsTab({
 	teams: initialTeams,
 	members,
@@ -42,7 +57,11 @@ export function TeamsTab({
 	organizationId,
 }: TeamsTabProps) {
 	const queryClient = useQueryClient();
-	const [teams, setTeams] = useState(initialTeams);
+	const router = useRouter();
+	const [isRefreshing, startRefreshTransition] = useTransition();
+	const [teamPatches, setTeamPatches] = useState<TeamPatches>(() =>
+		emptyTeamPatches(initialTeams),
+	);
 
 	// Dialog states
 	const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -53,32 +72,66 @@ export function TeamsTab({
 	// Selected team
 	const [selectedTeam, setSelectedTeam] = useState<ScopedTeam | null>(null);
 
-	// Sync with props when they change
-	if (initialTeams !== teams && initialTeams.length !== teams.length) {
-		setTeams(initialTeams);
-	}
+	const activeTeamPatches =
+		teamPatches.baseTeams === initialTeams ? teamPatches : emptyTeamPatches(initialTeams);
+	const initialTeamIds = new Set(initialTeams.map((team) => team.id));
+	const teams = [
+		...initialTeams
+			.filter((team) => !activeTeamPatches.deletedTeamIds.has(team.id))
+			.map((team) => activeTeamPatches.updatedTeamsById[team.id] ?? team),
+		...activeTeamPatches.createdTeams
+			.filter(
+				(team) =>
+					!initialTeamIds.has(team.id) && !activeTeamPatches.deletedTeamIds.has(team.id),
+			)
+			.map((team) => activeTeamPatches.updatedTeamsById[team.id] ?? team),
+	];
+
+	// Get employees for a specific team
+	const getTeamEmployees = (teamId: string) => {
+		return members.filter((m) => m.employee?.teamId === teamId);
+	};
+
+	const refreshTeams = () => {
+		startRefreshTransition(() => {
+			void queryClient.invalidateQueries({ queryKey: queryKeys.teams.list(organizationId) });
+			router.refresh();
+		});
+	};
 
 	// Delete mutation with optimistic update
 	const deleteMutation = useMutation({
 		mutationFn: (teamId: string) => deleteTeam(teamId),
 		onMutate: async (teamId) => {
-			const previousTeams = teams;
-			setTeams((prev) => prev.filter((t) => t.id !== teamId));
+			const previousTeamPatches = teamPatches;
+			setTeamPatches((previous) => {
+				const patches =
+					previous.baseTeams === initialTeams ? previous : emptyTeamPatches(initialTeams);
+				return {
+					...patches,
+					baseTeams: initialTeams,
+					deletedTeamIds: new Set(patches.deletedTeamIds).add(teamId),
+				};
+			});
 			setDeleteDialogOpen(false);
 			setSelectedTeam(null);
-			return { previousTeams };
+			return { previousTeamPatches };
 		},
-		onSuccess: (result) => {
+		onSuccess: (result, _teamId, context) => {
 			if (result.success) {
 				toast.success("Team deleted successfully");
-				queryClient.invalidateQueries({ queryKey: queryKeys.teams.list(organizationId) });
-			} else {
-				toast.error(result.error || "Failed to delete team");
+				refreshTeams();
+				return;
 			}
+
+			if (context?.previousTeamPatches) {
+				setTeamPatches(context.previousTeamPatches);
+			}
+			toast.error(result.error || "Failed to delete team");
 		},
 		onError: (_error, _teamId, context) => {
-			if (context?.previousTeams) {
-				setTeams(context.previousTeams);
+			if (context?.previousTeamPatches) {
+				setTeamPatches(context.previousTeamPatches);
 			}
 			toast.error("Failed to delete team");
 		},
@@ -86,31 +139,44 @@ export function TeamsTab({
 
 	// Callback for when a team is created
 	const handleTeamCreated = (newTeam: typeof team.$inferSelect) => {
-		setTeams((prev) => [
-			...prev,
-			{
-				...newTeam,
-				canManageMembers: canAccessOrganizationAdminSurface,
-				canManageSettings: canAccessOrganizationAdminSurface,
-			},
-		]);
-		queryClient.invalidateQueries({ queryKey: queryKeys.teams.list(organizationId) });
+		const createdTeam = {
+			...newTeam,
+			canManageMembers: canAccessOrganizationAdminSurface,
+			canManageSettings: canAccessOrganizationAdminSurface,
+		};
+		setTeamPatches((previous) => {
+			const patches =
+				previous.baseTeams === initialTeams ? previous : emptyTeamPatches(initialTeams);
+			return {
+				...patches,
+				baseTeams: initialTeams,
+				createdTeams: [...patches.createdTeams, createdTeam],
+			};
+		});
+		refreshTeams();
 	};
 
 	// Callback for when a team is updated
 	const handleTeamUpdated = (updatedTeam: typeof team.$inferSelect) => {
-		setTeams((prev) =>
-			prev.map((t) =>
-				t.id === updatedTeam.id
-					? {
-						...updatedTeam,
-						canManageMembers: t.canManageMembers,
-						canManageSettings: t.canManageSettings,
-					}
-					: t,
-			),
-		);
-		queryClient.invalidateQueries({ queryKey: queryKeys.teams.list(organizationId) });
+		const existingTeam = teams.find((t) => t.id === updatedTeam.id);
+		const patchedTeam = {
+			...updatedTeam,
+			canManageMembers: existingTeam?.canManageMembers ?? canAccessOrganizationAdminSurface,
+			canManageSettings: existingTeam?.canManageSettings ?? canAccessOrganizationAdminSurface,
+		};
+		setTeamPatches((previous) => {
+			const patches =
+				previous.baseTeams === initialTeams ? previous : emptyTeamPatches(initialTeams);
+			return {
+				...patches,
+				baseTeams: initialTeams,
+				updatedTeamsById: {
+					...patches.updatedTeamsById,
+					[updatedTeam.id]: patchedTeam,
+				},
+			};
+		});
+		refreshTeams();
 	};
 
 	// Handle team edit
@@ -136,29 +202,36 @@ export function TeamsTab({
 		setMembersDialogOpen(true);
 	};
 
-	// Get employees for a specific team
-	const getTeamEmployees = (teamId: string) => {
-		return members.filter((m) => m.employee?.teamId === teamId);
-	};
-
 	return (
 		<div className="space-y-6">
 			{/* Header with Create Button */}
 			<Card>
 				<CardHeader>
-					<div className="flex items-start justify-between">
+					<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
 						<div>
 							<CardTitle>Teams</CardTitle>
 							<CardDescription>
 								Organize your employees into teams for better collaboration
 							</CardDescription>
 						</div>
-						{canCreateTeams && (
-							<Button onClick={() => setCreateDialogOpen(true)}>
-								<IconPlus className="mr-2 h-4 w-4" />
-								Create Team
+						<div className="flex flex-wrap items-center gap-2">
+							<Button
+								type="button"
+								variant="outline"
+								onClick={refreshTeams}
+								disabled={isRefreshing}
+								className="w-full sm:w-auto"
+							>
+								<IconRefresh className="mr-2 h-4 w-4" />
+								{isRefreshing ? "Refreshing..." : "Refresh"}
 							</Button>
-						)}
+							{canCreateTeams && (
+								<Button onClick={() => setCreateDialogOpen(true)} className="w-full sm:w-auto">
+									<IconPlus className="mr-2 h-4 w-4" />
+									Create Team
+								</Button>
+							)}
+						</div>
 					</div>
 				</CardHeader>
 				<CardContent>
