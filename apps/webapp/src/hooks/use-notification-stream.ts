@@ -73,37 +73,32 @@ export function useNotificationStream(options: UseNotificationStreamOptions = {}
 				try {
 					const notification = JSON.parse(event.data) as NotificationWithMeta;
 
-					// Update the notifications list cache by prepending the new notification
-					queryClient.setQueryData<NotificationsListResponse>(
-						queryKeys.notifications.list({ unreadOnly: false }),
-						(oldData) => {
-							if (!oldData) return oldData;
-							// Avoid duplicates
-							if (oldData.notifications.some((n) => n.id === notification.id)) {
-								return oldData;
-							}
-							return {
-								...oldData,
-								notifications: [notification, ...oldData.notifications],
-								total: oldData.total + 1,
-								unreadCount: oldData.unreadCount + 1,
-							};
-						},
-					);
+					// Update every cached notification list, regardless of list options like limit.
+					queryClient.setQueriesData<NotificationsListResponse>(
+						{
+							predicate: (query) => {
+								const [scope, type, options] = query.queryKey;
+								if (scope !== "notifications" || type !== "list") {
+									return false;
+								}
 
-					// Also update unread-only list if it exists
-					queryClient.setQueryData<NotificationsListResponse>(
-						queryKeys.notifications.list({ unreadOnly: true }),
+								return (
+									!notification.isRead ||
+									!(options as { unreadOnly?: boolean } | undefined)?.unreadOnly
+								);
+							},
+						},
 						(oldData) => {
 							if (!oldData) return oldData;
 							if (oldData.notifications.some((n) => n.id === notification.id)) {
 								return oldData;
 							}
+
 							return {
 								...oldData,
 								notifications: [notification, ...oldData.notifications],
 								total: oldData.total + 1,
-								unreadCount: oldData.unreadCount + 1,
+								unreadCount: notification.isRead ? oldData.unreadCount : oldData.unreadCount + 1,
 							};
 						},
 					);
