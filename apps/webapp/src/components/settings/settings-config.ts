@@ -591,10 +591,11 @@ export function getResolvedSettingsVisibility({
 	visibleSettings: SettingsEntry[];
 	visibleGroups: SettingsGroupConfig[];
 } {
-	const visibleSettings = getVisibleSettings(accessTier, billingEnabled);
-	const visibleGroups = featureFlags
-		? getVisibleGroupsForFeatureFlags(visibleSettings, featureFlags)
-		: getVisibleGroups(visibleSettings);
+	const tierVisibleSettings = getVisibleSettings(accessTier, billingEnabled);
+	const visibleSettings = featureFlags
+		? filterSettingsByFeatureFlags(tierVisibleSettings, featureFlags)
+		: tierVisibleSettings;
+	const visibleGroups = getVisibleGroups(visibleSettings);
 
 	return {
 		visibleSettings,

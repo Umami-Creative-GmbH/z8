@@ -78,6 +78,16 @@ describe("org-admin settings route access", () => {
 		expect(source.includes("getCurrentSettingsRouteContext(")).toBe(false);
 	});
 
+	it("guards direct demo route and mutations with the demo data feature helper", () => {
+		const pageSource = stripComments(readFileSync(join(SETTINGS_ROOT, "demo/page.tsx"), "utf8"));
+		const actionsSource = stripComments(readFileSync(join(SETTINGS_ROOT, "demo/actions.ts"), "utf8"));
+
+		expect(pageSource.includes("assertDemoDataEnabledForOrganization(")).toBe(true);
+		expect(pageSource.includes("notFound(")).toBe(true);
+		expect(actionsSource.includes("canUseDemoData(")).toBe(true);
+		expect(actionsSource).not.toMatch(/Effect\.promise\(\(\) => isOrgAdminCasl\(/);
+	});
+
 	it("allows managers through the scoped organization and teams route only", () => {
 		const managerTier = resolveSettingsTierFromContext({
 			activeOrganizationId: "org-1",
