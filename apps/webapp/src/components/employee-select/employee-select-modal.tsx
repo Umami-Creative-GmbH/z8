@@ -288,6 +288,7 @@ export function EmployeeSelectModal({
 							{/* Close button integrated in search bar */}
 							<button
 								type="button"
+								aria-label={t("common.close", "Close")}
 								onClick={handleCancel}
 								className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
 							>
