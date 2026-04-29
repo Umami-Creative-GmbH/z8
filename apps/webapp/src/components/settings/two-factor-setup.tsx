@@ -12,6 +12,7 @@ const QRCodeSVG = dynamic(() => import("qrcode.react").then((mod) => mod.QRCodeS
 	loading: () => <Skeleton className="h-[200px] w-[200px]" />,
 	ssr: false,
 });
+
 import {
 	ActionPanel,
 	ActionPanelContent,
@@ -20,6 +21,14 @@ import {
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import {
+	AlertDialog,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { getAuthErrorMessage } from "@/lib/auth/error-message";
 import { authClient } from "@/lib/auth-client";
@@ -29,7 +38,7 @@ interface TwoFactorSetupProps {
 	userEmail: string;
 }
 
-export function TwoFactorSetup({ isEnabled: initialIsEnabled, userEmail }: TwoFactorSetupProps) {
+export function TwoFactorSetup({ isEnabled: initialIsEnabled }: TwoFactorSetupProps) {
 	const [isPending, startTransition] = useTransition();
 	const [isEnabled, setIsEnabled] = useState(initialIsEnabled);
 	const [setupDialogOpen, setSetupDialogOpen] = useState(false);
@@ -233,8 +242,11 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled, userEmail }: TwoFa
 					</ActionPanelHeader>
 					<div className="space-y-4">
 						<div className="space-y-2">
-							<label className="text-sm font-medium">Password</label>
+							<label className="text-sm font-medium" htmlFor="enable-2fa-password">
+								Password
+							</label>
 							<input
+								id="enable-2fa-password"
 								type="password"
 								value={password}
 								onChange={(e) => setPassword(e.target.value)}
@@ -272,8 +284,11 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled, userEmail }: TwoFa
 					</ActionPanelHeader>
 					<div className="space-y-4">
 						<div className="space-y-2">
-							<label className="text-sm font-medium">Password</label>
+							<label className="text-sm font-medium" htmlFor="regenerate-2fa-password">
+								Password
+							</label>
 							<input
+								id="regenerate-2fa-password"
 								type="password"
 								value={regeneratePassword}
 								onChange={(e) => setRegeneratePassword(e.target.value)}
@@ -308,7 +323,9 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled, userEmail }: TwoFa
 				<ActionPanelContent>
 					<ActionPanelHeader>
 						<ActionPanelTitle>Setup Two-Factor Authentication</ActionPanelTitle>
-						<ActionPanelDescription>Scan the QR code with your authenticator app</ActionPanelDescription>
+						<ActionPanelDescription>
+							Scan the QR code with your authenticator app
+						</ActionPanelDescription>
 					</ActionPanelHeader>
 
 					<div className="space-y-4">
@@ -323,9 +340,9 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled, userEmail }: TwoFa
 
 						{/* OTP Input */}
 						<div className="space-y-2">
-							<label className="text-sm font-medium">
+							<div className="text-sm font-medium">
 								Enter the 6-digit code from your authenticator app
-							</label>
+							</div>
 							<div className="flex justify-center">
 								<InputOTP maxLength={6} value={otpValue} onChange={setOtpValue}>
 									<InputOTPGroup>
@@ -369,8 +386,8 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled, userEmail }: TwoFa
 
 					<div className="space-y-4">
 						<div className="grid grid-cols-2 gap-2 rounded-lg bg-muted p-4">
-							{backupCodes.map((code, index) => (
-								<code key={index} className="text-sm font-mono">
+							{backupCodes.map((code) => (
+								<code key={code} className="text-sm font-mono">
 									{code}
 								</code>
 							))}
@@ -387,20 +404,23 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled, userEmail }: TwoFa
 				</ActionPanelContent>
 			</ActionPanel>
 
-			{/* Disable Confirmation ActionPanel */}
-			<ActionPanel open={disableDialogOpen} onOpenChange={setDisableDialogOpen}>
-				<ActionPanelContent>
-					<ActionPanelHeader>
-						<ActionPanelTitle>Disable Two-Factor Authentication?</ActionPanelTitle>
-						<ActionPanelDescription>
+			{/* Disable confirmation */}
+			<AlertDialog open={disableDialogOpen} onOpenChange={setDisableDialogOpen}>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Disable Two-Factor Authentication?</AlertDialogTitle>
+						<AlertDialogDescription>
 							This will remove the extra layer of security from your account. Please enter your
 							password to confirm.
-						</ActionPanelDescription>
-					</ActionPanelHeader>
+						</AlertDialogDescription>
+					</AlertDialogHeader>
 					<div className="space-y-4">
 						<div className="space-y-2">
-							<label className="text-sm font-medium">Password</label>
+							<label className="text-sm font-medium" htmlFor="disable-2fa-password">
+								Password
+							</label>
 							<input
+								id="disable-2fa-password"
 								type="password"
 								value={disablePassword}
 								onChange={(e) => setDisablePassword(e.target.value)}
@@ -409,7 +429,7 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled, userEmail }: TwoFa
 							/>
 						</div>
 					</div>
-					<ActionPanelFooter>
+					<AlertDialogFooter>
 						<Button
 							variant="outline"
 							onClick={() => {
@@ -427,9 +447,9 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled, userEmail }: TwoFa
 						>
 							Disable 2FA
 						</Button>
-					</ActionPanelFooter>
-				</ActionPanelContent>
-			</ActionPanel>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 		</div>
 	);
 }
