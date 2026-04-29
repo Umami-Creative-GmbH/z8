@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
 	ActionPanel,
+	ActionPanelBody,
 	ActionPanelContent,
 	ActionPanelDescription,
 	ActionPanelFooter,
@@ -122,7 +123,7 @@ export function CategoryDialog({
 
 	return (
 		<ActionPanel open={open} onOpenChange={onOpenChange}>
-			<ActionPanelContent className="max-h-[90vh] overflow-y-auto">
+			<ActionPanelContent>
 				<ActionPanelHeader>
 					<ActionPanelTitle>
 						{isEditing
@@ -142,10 +143,11 @@ export function CategoryDialog({
 						e.preventDefault();
 						form.handleSubmit();
 					}}
-					className="space-y-4"
+					className="flex min-h-0 flex-1 flex-col"
 				>
-					{/* Category Type */}
-					<form.Field name="type">
+					<ActionPanelBody className="space-y-4">
+						{/* Category Type */}
+						<form.Field name="type">
 						{(field) => (
 							<div className="space-y-2">
 								<Label>{t("settings.holidays.categories.form.type", "Type")}</Label>
@@ -178,10 +180,10 @@ export function CategoryDialog({
 								</Select>
 							</div>
 						)}
-					</form.Field>
+						</form.Field>
 
 					{/* Name */}
-					<form.Field
+						<form.Field
 						name="name"
 						validators={{
 							onChange: ({ value }) => {
@@ -208,10 +210,10 @@ export function CategoryDialog({
 								)}
 							</div>
 						)}
-					</form.Field>
+						</form.Field>
 
 					{/* Description */}
-					<form.Field name="description">
+						<form.Field name="description">
 						{(field) => (
 							<div className="space-y-2">
 								<Label>
@@ -230,10 +232,10 @@ export function CategoryDialog({
 								/>
 							</div>
 						)}
-					</form.Field>
+						</form.Field>
 
 					{/* Color */}
-					<form.Field name="color">
+						<form.Field name="color">
 						{(field) => (
 							<div className="space-y-2">
 								<Label>
@@ -263,10 +265,10 @@ export function CategoryDialog({
 								</p>
 							</div>
 						)}
-					</form.Field>
+						</form.Field>
 
 					{/* Blocks Time Entry Toggle */}
-					<form.Field name="blocksTimeEntry">
+						<form.Field name="blocksTimeEntry">
 						{(field) => (
 							<div className="flex items-center justify-between rounded-lg border p-3">
 								<div className="space-y-0.5">
@@ -283,10 +285,10 @@ export function CategoryDialog({
 								<Switch checked={field.state.value} onCheckedChange={field.handleChange} />
 							</div>
 						)}
-					</form.Field>
+						</form.Field>
 
 					{/* Exclude from Calculations Toggle */}
-					<form.Field name="excludeFromCalculations">
+						<form.Field name="excludeFromCalculations">
 						{(field) => (
 							<div className="flex items-center justify-between rounded-lg border p-3">
 								<div className="space-y-0.5">
@@ -306,10 +308,10 @@ export function CategoryDialog({
 								<Switch checked={field.state.value} onCheckedChange={field.handleChange} />
 							</div>
 						)}
-					</form.Field>
+						</form.Field>
 
 					{/* Active Toggle */}
-					<form.Field name="isActive">
+						<form.Field name="isActive">
 						{(field) => (
 							<div className="flex items-center justify-between rounded-lg border p-3">
 								<div className="space-y-0.5">
@@ -324,7 +326,8 @@ export function CategoryDialog({
 								<Switch checked={field.state.value} onCheckedChange={field.handleChange} />
 							</div>
 						)}
-					</form.Field>
+						</form.Field>
+					</ActionPanelBody>
 
 					<ActionPanelFooter>
 						<Button

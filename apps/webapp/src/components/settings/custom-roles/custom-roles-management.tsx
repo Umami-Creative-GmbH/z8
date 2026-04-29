@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/card";
 import {
 	ActionPanel,
+	ActionPanelBody,
 	ActionPanelContent,
 	ActionPanelDescription,
 	ActionPanelFooter,
@@ -213,14 +214,16 @@ export function CustomRolesManagement({ organizationId }: CustomRolesManagementP
 
 			{/* Create ActionPanel */}
 			<ActionPanel open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-				<ActionPanelContent className="max-h-[85vh] overflow-y-auto" size="wide">
+				<ActionPanelContent size="wide">
 					<ActionPanelHeader>
 						<ActionPanelTitle>Create Custom Role</ActionPanelTitle>
 						<ActionPanelDescription>
 							Define a new role with specific permissions for your organization.
 						</ActionPanelDescription>
 					</ActionPanelHeader>
-					<RoleEditor onSaved={handleSaved} onCancel={() => setIsCreateOpen(false)} />
+					<ActionPanelBody>
+						<RoleEditor onSaved={handleSaved} onCancel={() => setIsCreateOpen(false)} />
+					</ActionPanelBody>
 				</ActionPanelContent>
 			</ActionPanel>
 
@@ -229,20 +232,22 @@ export function CustomRolesManagement({ organizationId }: CustomRolesManagementP
 				open={!!editingRole}
 				onOpenChange={(open) => !open && setEditingRole(null)}
 			>
-				<ActionPanelContent className="max-h-[85vh] overflow-y-auto" size="wide">
+				<ActionPanelContent size="wide">
 					<ActionPanelHeader>
 						<ActionPanelTitle>Edit Custom Role</ActionPanelTitle>
 						<ActionPanelDescription>
 							Update the role details and permissions.
 						</ActionPanelDescription>
 					</ActionPanelHeader>
-					{editingRole && (
-						<RoleEditor
-							role={editingRole}
-							onSaved={handleSaved}
-							onCancel={() => setEditingRole(null)}
-						/>
-					)}
+					<ActionPanelBody>
+						{editingRole && (
+							<RoleEditor
+								role={editingRole}
+								onSaved={handleSaved}
+								onCancel={() => setEditingRole(null)}
+							/>
+						)}
+					</ActionPanelBody>
 				</ActionPanelContent>
 			</ActionPanel>
 

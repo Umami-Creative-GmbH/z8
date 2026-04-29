@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import {
 	ActionPanel,
+	ActionPanelBody,
 	ActionPanelClose,
 	ActionPanelContent,
 	ActionPanelDescription,
@@ -194,8 +195,9 @@ export function ManualTimeEntryDialog({
 						e.preventDefault();
 						form.handleSubmit();
 					}}
+					className="flex min-h-0 flex-1 flex-col"
 				>
-					<div className="grid gap-4 py-4">
+					<ActionPanelBody className="grid gap-4">
 						<p className="text-xs text-muted-foreground">
 							{t(
 								"timeTracking.correction.timezoneNote",
@@ -319,7 +321,7 @@ export function ManualTimeEntryDialog({
 								/>
 							)}
 						</form.Field>
-					</div>
+					</ActionPanelBody>
 
 					<ActionPanelFooter className="gap-2 sm:gap-0">
 						<ActionPanelClose asChild>

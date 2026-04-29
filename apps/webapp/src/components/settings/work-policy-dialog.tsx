@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
 	ActionPanel,
+	ActionPanelBody,
 	ActionPanelContent,
 	ActionPanelDescription,
 	ActionPanelFooter,
@@ -334,7 +335,7 @@ export function WorkPolicyDialog({
 
 	return (
 		<ActionPanel open={open} onOpenChange={onOpenChange}>
-			<ActionPanelContent className="max-h-[90vh] overflow-y-auto" size="wide">
+			<ActionPanelContent size="wide">
 				<ActionPanelHeader>
 					<ActionPanelTitle>
 						{isEditing
@@ -354,10 +355,11 @@ export function WorkPolicyDialog({
 						e.preventDefault();
 						form.handleSubmit();
 					}}
-					className="space-y-6"
+					className="flex min-h-0 flex-1 flex-col"
 				>
-					{/* Basic Info */}
-					<div className="grid gap-4 sm:grid-cols-2">
+					<ActionPanelBody className="space-y-6">
+						{/* Basic Info */}
+						<div className="grid gap-4 sm:grid-cols-2">
 						<form.Field
 							name="name"
 							validators={{
@@ -403,10 +405,10 @@ export function WorkPolicyDialog({
 								</div>
 							)}
 						</form.Field>
-					</div>
+						</div>
 
-					{/* Feature Toggles */}
-					<div className="space-y-4">
+						{/* Feature Toggles */}
+						<div className="space-y-4">
 						<h3 className="text-sm font-medium">
 							{t("settings.workPolicies.enabledFeatures", "Enabled Features")}
 						</h3>
@@ -472,10 +474,10 @@ export function WorkPolicyDialog({
 								)}
 							</p>
 						)}
-					</div>
+						</div>
 
-					{/* Schedule Configuration */}
-					{scheduleEnabled && (
+						{/* Schedule Configuration */}
+						{scheduleEnabled && (
 						<>
 							<Separator />
 							<div className="space-y-4">
@@ -671,10 +673,10 @@ export function WorkPolicyDialog({
 								</div>
 							</div>
 						</>
-					)}
+						)}
 
-					{/* Regulation Configuration */}
-					{regulationEnabled && (
+						{/* Regulation Configuration */}
+						{regulationEnabled && (
 						<>
 							<Separator />
 							<div className="space-y-4">
@@ -822,10 +824,10 @@ export function WorkPolicyDialog({
 								</div>
 							</div>
 						</>
-					)}
+						)}
 
-				{/* Presence Configuration */}
-					{presenceEnabled && (
+						{/* Presence Configuration */}
+						{presenceEnabled && (
 						<>
 							<Separator />
 							<div className="space-y-4">
@@ -1158,7 +1160,8 @@ export function WorkPolicyDialog({
 								</div>
 							</div>
 						</>
-					)}
+						)}
+					</ActionPanelBody>
 
 					<ActionPanelFooter>
 						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

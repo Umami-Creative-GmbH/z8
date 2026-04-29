@@ -14,6 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
 	ActionPanel,
+	ActionPanelBody,
 	ActionPanelContent,
 	ActionPanelDescription,
 	ActionPanelFooter,
@@ -226,7 +227,7 @@ export function WebhookFormDialog({
 	return (
 		<>
 			<ActionPanel open={open} onOpenChange={onOpenChange}>
-				<ActionPanelContent className="max-h-[90vh] overflow-y-auto" size="wide">
+				<ActionPanelContent size="wide">
 					<ActionPanelHeader>
 						<ActionPanelTitle>
 							{isEditing
@@ -243,9 +244,10 @@ export function WebhookFormDialog({
 						</ActionPanelDescription>
 					</ActionPanelHeader>
 
-					<form onSubmit={handleSubmit} className="space-y-6">
-						{/* Basic Info */}
-						<div className="space-y-4">
+					<form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+						<ActionPanelBody className="space-y-6">
+							{/* Basic Info */}
+							<div className="space-y-4">
 							<div className="space-y-2">
 								<Label htmlFor="webhook-name">{t("webhooks.form.name", "Name")}</Label>
 								<Input
@@ -291,10 +293,10 @@ export function WebhookFormDialog({
 									rows={2}
 								/>
 							</div>
-						</div>
+							</div>
 
-						{/* Event Selection */}
-						<div className="space-y-3">
+							{/* Event Selection */}
+							<div className="space-y-3">
 							<div className="flex items-center justify-between">
 								<Label>{t("webhooks.form.events", "Events to receive")}</Label>
 								<Button type="button" variant="ghost" size="sm" onClick={handleSelectAll}>
@@ -369,7 +371,8 @@ export function WebhookFormDialog({
 									count: selectedEvents.size,
 								})}
 							</p>
-						</div>
+							</div>
+						</ActionPanelBody>
 
 						<ActionPanelFooter>
 							<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
