@@ -20,6 +20,7 @@ import {
 	TFormLabel,
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
+import { TimeInput } from "@/components/ui/time-input";
 
 export type SurchargeRuleFormValues = {
 	ruleType: "day_of_week" | "time_window" | "date_based";
@@ -256,8 +257,7 @@ export function SurchargeRuleEditor({ ruleIndex, form, onRemove }: SurchargeRule
 													{t("settings.surcharges.startTime", "Start Time")}
 												</TFormLabel>
 												<TFormControl hasError={fieldHasError(field)}>
-													<Input
-														type="time"
+													<TimeInput
 														value={(field.state.value as string) || ""}
 														onChange={(e) => field.handleChange(e.target.value)}
 														onBlur={field.handleBlur}
@@ -281,8 +281,7 @@ export function SurchargeRuleEditor({ ruleIndex, form, onRemove }: SurchargeRule
 													{t("settings.surcharges.endTime", "End Time")}
 												</TFormLabel>
 												<TFormControl hasError={fieldHasError(field)}>
-													<Input
-														type="time"
+													<TimeInput
 														value={(field.state.value as string) || ""}
 														onChange={(e) => field.handleChange(e.target.value)}
 														onBlur={field.handleBlur}

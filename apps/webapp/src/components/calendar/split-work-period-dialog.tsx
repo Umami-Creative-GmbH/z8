@@ -14,9 +14,9 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { TimeInput } from "@/components/ui/time-input";
 import type { CalendarEvent } from "@/lib/calendar/types";
 import { format } from "@/lib/datetime/luxon-utils";
 import {
@@ -157,9 +157,8 @@ export function SplitWorkPeriodDialog({
 					{/* Split time input */}
 					<div className="space-y-2">
 						<Label htmlFor="splitTime">{t("calendar.split.splitAt", "Split at")}</Label>
-						<Input
+						<TimeInput
 							id="splitTime"
-							type="time"
 							value={splitTime}
 							onChange={(e) => setSplitTime(e.target.value)}
 							min={startTimeHHMM}

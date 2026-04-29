@@ -20,7 +20,6 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import {
 	fieldHasError,
 	TFormControl,
@@ -29,6 +28,7 @@ import {
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
 import { Textarea } from "@/components/ui/textarea";
+import { TimeInput } from "@/components/ui/time-input";
 import { getTimezoneAbbreviation } from "@/lib/time-tracking/timezone-utils";
 import { useRouter } from "@/navigation";
 import {
@@ -172,8 +172,7 @@ export function TimeCorrectionDialog({ workPeriod, isSameDay, employeeTimezone }
 										{t("timeTracking.correction.clockIn", "Clock In")}
 									</TFormLabel>
 									<TFormControl hasError={fieldHasError(field)}>
-										<Input
-											type="time"
+										<TimeInput
 											name="clockInTime"
 											autoComplete="off"
 											value={field.state.value}
@@ -195,8 +194,7 @@ export function TimeCorrectionDialog({ workPeriod, isSameDay, employeeTimezone }
 											{t("timeTracking.correction.clockOut", "Clock Out")}
 										</TFormLabel>
 										<TFormControl hasError={fieldHasError(field)}>
-											<Input
-												type="time"
+											<TimeInput
 												name="clockOutTime"
 												autoComplete="off"
 												value={field.state.value}

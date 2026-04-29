@@ -29,6 +29,7 @@ import {
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
 import { Textarea } from "@/components/ui/textarea";
+import { TimeInput } from "@/components/ui/time-input";
 import { getTimezoneAbbreviation } from "@/lib/time-tracking/timezone-utils";
 import { useRouter } from "@/navigation";
 
@@ -235,8 +236,7 @@ export function ManualTimeEntryDialog({
 											{t("timeTracking.manualEntry.clockInLabel", "Clock In")}
 										</TFormLabel>
 										<TFormControl hasError={fieldHasError(field)}>
-											<Input
-												type="time"
+											<TimeInput
 												name="clockInTime"
 												autoComplete="off"
 												value={field.state.value}
@@ -257,8 +257,7 @@ export function ManualTimeEntryDialog({
 											{t("timeTracking.manualEntry.clockOutLabel", "Clock Out")}
 										</TFormLabel>
 										<TFormControl hasError={fieldHasError(field)}>
-											<Input
-												type="time"
+											<TimeInput
 												name="clockOutTime"
 												autoComplete="off"
 												value={field.state.value}
