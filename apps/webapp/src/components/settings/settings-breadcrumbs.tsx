@@ -52,7 +52,7 @@ export function SettingsBreadcrumbs() {
 		if (segment === "profile") {
 			label = t("settings.profile.title", "Profile");
 		} else if (segment === "organizations") {
-			label = t("settings.organizations.title", "Organization & Teams");
+			label = t("settings.organizations.title", "Organization");
 		} else if (segment === "security") {
 			label = t("settings.security.title", "Security");
 		} else if (segment === "holidays") {
