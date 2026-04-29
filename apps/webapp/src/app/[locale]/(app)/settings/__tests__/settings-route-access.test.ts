@@ -23,6 +23,7 @@ const ORG_ADMIN_ROUTE_FILES = [
 	"webhooks/page.tsx",
 	"export/page.tsx",
 	"payroll-export/page.tsx",
+	"payroll-readiness/page.tsx",
 	"audit-export/page.tsx",
 	"demo/page.tsx",
 	"import/page.tsx",
@@ -59,6 +60,7 @@ describe("org-admin settings route access", () => {
 			"/settings/webhooks",
 			"/settings/export",
 			"/settings/payroll-export",
+			"/settings/payroll-readiness",
 			"/settings/audit-export",
 			"/settings/demo",
 			"/settings/import",
@@ -271,6 +273,23 @@ describe("org-admin settings route access", () => {
 		expect(rateMutationsSource.includes("requireAdmin(currentEmployee")).toBe(false);
 		expect(rateMutationsSource.includes("ensureSettingsActorCanAccessEmployeeTarget(")).toBe(true);
 		expect(skillsActionsSource.includes('currentEmployee.role !== "admin"')).toBe(false);
+	});
+
+	it("scopes qualification renewal review actions to managed employee targets", () => {
+		const skillsActionsSource = stripComments(
+			readFileSync(join(SETTINGS_ROOT, "skills/actions.ts"), "utf8"),
+		);
+
+		expect(skillsActionsSource.includes("getManagedEmployeeIdsForSettingsActor(")).toBe(true);
+		expect(skillsActionsSource.includes("filterItemsToManagedEmployees(")).toBe(true);
+		expect(skillsActionsSource.includes("getQualificationRenewalRequestForReview")).toBe(true);
+		expect(skillsActionsSource.includes("renewalRequest.employeeId")).toBe(true);
+		expect(skillsActionsSource.includes("ensureSettingsActorCanAccessEmployeeTarget(")).toBe(true);
+		expect(
+			skillsActionsSource.includes(
+				"You do not have access to this employee's qualification renewal",
+			),
+		).toBe(true);
 	});
 
 	it("uses shared scoped access helpers for vacation and work-policy actions", () => {

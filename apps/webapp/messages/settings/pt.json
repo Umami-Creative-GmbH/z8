@@ -2140,6 +2140,14 @@
       "catalog": "Catálogo de Habilidades",
       "catalogDescription": "Defina habilidades que podem ser exigidas para subáreas e modelos de turno",
       "category": "Categoria",
+      "categories": {
+        "certification": "Certificação",
+        "custom": "Personalizada",
+        "equipment": "Equipamento",
+        "language": "Idioma",
+        "safety": "Segurança",
+        "training": "Formação"
+      },
       "confirmDelete": "Tem certeza de que deseja excluir esta habilidade?",
       "confirmRemove": "Remover \"${skillName}\" deste funcionário?",
       "createError": "Falha ao criar habilidade",

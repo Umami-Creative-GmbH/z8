@@ -115,6 +115,7 @@ export async function upsertShift(
 				endTime: input.endTime,
 				notes: input.notes,
 				color: input.color,
+				qualificationOverrideReason: input.qualificationOverrideReason,
 				createdBy: session.user.id,
 			}),
 		);

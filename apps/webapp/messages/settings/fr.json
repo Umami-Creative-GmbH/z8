@@ -2140,6 +2140,14 @@
       "catalog": "Catalogue de compétences",
       "catalogDescription": "Définir les compétences qui peuvent être requises pour les sous-zones et les modèles de quart",
       "category": "Catégorie",
+      "categories": {
+        "certification": "Certification",
+        "custom": "Personnalisé",
+        "equipment": "Équipement",
+        "language": "Langue",
+        "safety": "Sécurité",
+        "training": "Formation"
+      },
       "confirmDelete": "Êtes-vous sûr de vouloir supprimer cette compétence ?",
       "confirmRemove": "Retirer « ${skillName} » de cet employé ?",
       "createError": "Échec de la création de la compétence",

@@ -488,6 +488,17 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		group: "data",
 	},
 	{
+		id: "payroll-readiness",
+		titleKey: "settings.payrollReadiness.title",
+		titleDefault: "Payroll Readiness",
+		descriptionKey: "settings.payrollReadiness.description",
+		descriptionDefault: "Check whether a payroll period is ready before export",
+		href: "/settings/payroll-readiness",
+		icon: "shield-check",
+		minimumTier: "orgAdmin",
+		group: "data",
+	},
+	{
 		id: "audit-export",
 		titleKey: "settings.auditExport.title",
 		titleDefault: "Audit Export",

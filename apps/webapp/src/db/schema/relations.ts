@@ -90,6 +90,9 @@ import { shift, shiftRecurrence, shiftRequest, shiftTemplate } from "./shift";
 // Skills & qualifications
 import {
 	employeeSkill,
+	qualificationEvidence,
+	qualificationRenewalRequest,
+	qualificationRenewalRequestEvidence,
 	shiftTemplateSkillRequirement,
 	skill,
 	skillRequirementOverride,
@@ -2598,7 +2601,7 @@ export const skillRelations = relations(skill, ({ one, many }) => ({
 	templateRequirements: many(shiftTemplateSkillRequirement),
 }));
 
-export const employeeSkillRelations = relations(employeeSkill, ({ one }) => ({
+export const employeeSkillRelations = relations(employeeSkill, ({ one, many }) => ({
 	employee: one(employee, {
 		fields: [employeeSkill.employeeId],
 		references: [employee.id],
@@ -2611,7 +2614,54 @@ export const employeeSkillRelations = relations(employeeSkill, ({ one }) => ({
 		fields: [employeeSkill.assignedBy],
 		references: [user.id],
 	}),
+	evidence: many(qualificationEvidence),
+	renewalRequests: many(qualificationRenewalRequest),
 }));
+
+export const qualificationEvidenceRelations = relations(qualificationEvidence, ({ one, many }) => ({
+	employeeSkill: one(employeeSkill, {
+		fields: [qualificationEvidence.employeeSkillId],
+		references: [employeeSkill.id],
+	}),
+	uploader: one(user, {
+		fields: [qualificationEvidence.uploadedBy],
+		references: [user.id],
+	}),
+	renewalRequestLinks: many(qualificationRenewalRequestEvidence),
+}));
+
+export const qualificationRenewalRequestRelations = relations(
+	qualificationRenewalRequest,
+	({ one, many }) => ({
+		employee: one(employee, {
+			fields: [qualificationRenewalRequest.employeeId],
+			references: [employee.id],
+		}),
+		employeeSkill: one(employeeSkill, {
+			fields: [qualificationRenewalRequest.employeeSkillId],
+			references: [employeeSkill.id],
+		}),
+		reviewer: one(employee, {
+			fields: [qualificationRenewalRequest.reviewerId],
+			references: [employee.id],
+		}),
+		evidenceLinks: many(qualificationRenewalRequestEvidence),
+	}),
+);
+
+export const qualificationRenewalRequestEvidenceRelations = relations(
+	qualificationRenewalRequestEvidence,
+	({ one }) => ({
+		renewalRequest: one(qualificationRenewalRequest, {
+			fields: [qualificationRenewalRequestEvidence.renewalRequestId],
+			references: [qualificationRenewalRequest.id],
+		}),
+		evidence: one(qualificationEvidence, {
+			fields: [qualificationRenewalRequestEvidence.evidenceId],
+			references: [qualificationEvidence.id],
+		}),
+	}),
+);
 
 export const subareaSkillRequirementRelations = relations(
 	subareaSkillRequirement,

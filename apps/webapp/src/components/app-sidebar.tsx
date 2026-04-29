@@ -4,9 +4,11 @@ import {
 	IconBeach,
 	IconCalendar,
 	IconCalendarEvent,
+	IconCertificate,
 	IconClipboardCheck,
 	IconClock,
 	IconDashboard,
+	IconFileDescription,
 	IconHelp,
 	IconReceipt,
 	IconReport,
@@ -37,8 +39,10 @@ const isManagerOrAbove = (role: "admin" | "manager" | "employee" | null | undefi
 	return role === "admin" || role === "manager";
 };
 
+const EMPTY_ORGANIZATIONS: UserOrganization[] = [];
+
 export function AppSidebar({
-	organizations = [],
+	organizations = EMPTY_ORGANIZATIONS,
 	currentOrganization = null,
 	employeeRole = null,
 	shiftsEnabled = false,
@@ -61,6 +65,18 @@ export function AppSidebar({
 			url: "/time-tracking",
 			icon: IconClock,
 			dataTour: "nav-time-tracking",
+		},
+		{
+			title: t("nav.my-requests", "My Requests"),
+			url: "/my-requests",
+			icon: IconFileDescription,
+			dataTour: "nav-my-requests",
+		},
+		{
+			title: t("nav.my-qualifications", "My Qualifications"),
+			url: "/my-qualifications",
+			icon: IconCertificate,
+			dataTour: "nav-my-qualifications",
 		},
 		{
 			title: t("nav.calendar", "Calendar"),

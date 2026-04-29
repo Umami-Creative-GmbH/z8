@@ -1,9 +1,5 @@
 "use client";
 
-import { useForm } from "@tanstack/react-form";
-import { useStore } from "@tanstack/react-store";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useTranslate } from "@tolgee/react";
 import {
 	IconAlertTriangle,
 	IconAward,
@@ -17,19 +13,20 @@ import {
 	IconTools,
 	IconTrash,
 } from "@tabler/icons-react";
+import { useForm } from "@tanstack/react-form";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useStore } from "@tanstack/react-store";
+import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import { useState } from "react";
 import { toast } from "sonner";
-
+import {
+	assignSkillToEmployee,
+	removeSkillFromEmployee,
+} from "@/app/[locale]/(app)/settings/skills/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
 	Dialog,
 	DialogContent,
@@ -48,22 +45,10 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipProvider,
-	TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
-	assignSkillToEmployee,
-	removeSkillFromEmployee,
-} from "@/app/[locale]/(app)/settings/skills/actions";
-import type { EmployeeSkillWithDetails } from "@/lib/effect/services/skill.service";
-import {
-	useEmployeeSkills,
-	useOrganizationSkills,
-} from "@/lib/query/use-skills";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { getQualificationStatus } from "@/lib/qualifications/status";
 import { queryKeys } from "@/lib/query/keys";
+import { useEmployeeSkills, useOrganizationSkills } from "@/lib/query/use-skills";
 
 type SkillCategory = "safety" | "equipment" | "certification" | "training" | "language" | "custom";
 
@@ -84,18 +69,6 @@ const CATEGORY_ICONS: Record<SkillCategory, typeof IconShieldCheck> = {
 
 function getCategoryIcon(category: SkillCategory) {
 	return CATEGORY_ICONS[category] ?? IconAward;
-}
-
-function isExpired(expiresAt: Date | null): boolean {
-	if (!expiresAt) return false;
-	return DateTime.fromJSDate(expiresAt) < DateTime.now();
-}
-
-function isExpiringSoon(expiresAt: Date | null, days = 30): boolean {
-	if (!expiresAt) return false;
-	const expiry = DateTime.fromJSDate(expiresAt);
-	const threshold = DateTime.now().plus({ days });
-	return expiry > DateTime.now() && expiry <= threshold;
 }
 
 export function EmployeeSkillsCard({
@@ -122,6 +95,7 @@ export function EmployeeSkillsCard({
 		onSuccess: () => {
 			toast.success(t("settings.skills.skillRemoved", "Skill removed"));
 			queryClient.invalidateQueries({ queryKey: queryKeys.skills.employee(employeeId) });
+			queryClient.invalidateQueries({ queryKey: queryKeys.skills.all });
 		},
 		onError: (error) => {
 			toast.error(error.message || t("settings.skills.removeError", "Failed to remove skill"));
@@ -136,6 +110,7 @@ export function EmployeeSkillsCard({
 
 	const handleSuccess = () => {
 		queryClient.invalidateQueries({ queryKey: queryKeys.skills.employee(employeeId) });
+		queryClient.invalidateQueries({ queryKey: queryKeys.skills.all });
 		setDialogOpen(false);
 	};
 
@@ -148,7 +123,10 @@ export function EmployeeSkillsCard({
 					<div>
 						<CardTitle>{t("settings.skills.employeeSkills", "Skills & Qualifications")}</CardTitle>
 						<CardDescription>
-							{t("settings.skills.employeeSkillsDescription", "Certifications and skills assigned to this employee")}
+							{t(
+								"settings.skills.employeeSkillsDescription",
+								"Certifications and skills assigned to this employee",
+							)}
 						</CardDescription>
 					</div>
 					{canManageSkills && (
@@ -162,7 +140,10 @@ export function EmployeeSkillsCard({
 			<CardContent>
 				{isLoading ? (
 					<div className="flex items-center justify-center py-8">
-						<IconLoader2 className="h-6 w-6 animate-spin text-muted-foreground" aria-hidden="true" />
+						<IconLoader2
+							className="h-6 w-6 animate-spin text-muted-foreground"
+							aria-hidden="true"
+						/>
 					</div>
 				) : skills.length === 0 ? (
 					<div className="py-8 text-center text-muted-foreground">
@@ -178,8 +159,12 @@ export function EmployeeSkillsCard({
 					<div className="space-y-3">
 						{skills.map((employeeSkill) => {
 							const CategoryIcon = getCategoryIcon(employeeSkill.skill.category as SkillCategory);
-							const expired = isExpired(employeeSkill.expiresAt);
-							const expiringSoon = isExpiringSoon(employeeSkill.expiresAt);
+							const qualificationStatus = getQualificationStatus({
+								expiresAt: employeeSkill.expiresAt,
+								warningDays: employeeSkill.skill.expiryWarningDays ?? 30,
+							});
+							const expired = qualificationStatus === "expired";
+							const expiringSoon = qualificationStatus === "expiringSoon";
 
 							return (
 								<div
@@ -188,13 +173,15 @@ export function EmployeeSkillsCard({
 										expired ? "border-destructive/50 bg-destructive/5" : ""
 									} ${expiringSoon && !expired ? "border-yellow-500/50 bg-yellow-500/5" : ""}`}
 								>
-									<div className="flex items-start gap-3">
-										<div className={`mt-0.5 ${expired ? "text-destructive" : "text-muted-foreground"}`}>
+									<div className="flex min-w-0 items-start gap-3">
+										<div
+											className={`mt-0.5 ${expired ? "text-destructive" : "text-muted-foreground"}`}
+										>
 											<CategoryIcon className="h-5 w-5" aria-hidden="true" />
 										</div>
-										<div className="space-y-1">
+										<div className="min-w-0 space-y-1">
 											<div className="flex items-center gap-2">
-												<span className="font-medium">{employeeSkill.skill.name}</span>
+												<span className="break-words font-medium">{employeeSkill.skill.name}</span>
 												{expired && (
 													<Badge variant="destructive">
 														<IconAlertTriangle className="mr-1 h-3 w-3" aria-hidden="true" />
@@ -209,22 +196,53 @@ export function EmployeeSkillsCard({
 												)}
 											</div>
 											{employeeSkill.expiresAt && (
-												<p className={`text-xs ${expired ? "text-destructive" : "text-muted-foreground"}`}>
+												<p
+													className={`text-xs ${expired ? "text-destructive" : "text-muted-foreground"}`}
+												>
 													{expired
 														? t("settings.skills.expiredOn", "Expired on {{date}}", {
-																date: DateTime.fromJSDate(employeeSkill.expiresAt).toLocaleString(
-																	DateTime.DATE_MED
-																),
+																date: DateTime.fromJSDate(employeeSkill.expiresAt, {
+																	zone: "utc",
+																}).toLocaleString(DateTime.DATE_MED),
 															})
 														: t("settings.skills.expiresOn", "Expires {{date}}", {
-																date: DateTime.fromJSDate(employeeSkill.expiresAt).toLocaleString(
-																	DateTime.DATE_MED
-																),
+																date: DateTime.fromJSDate(employeeSkill.expiresAt, {
+																	zone: "utc",
+																}).toLocaleString(DateTime.DATE_MED),
 															})}
 												</p>
 											)}
+											{employeeSkill.issuedAt && (
+												<p className="break-words text-xs text-muted-foreground">
+													{t("settings.skills.issuedOn", "Issued {{date}}", {
+														date: DateTime.fromJSDate(employeeSkill.issuedAt, {
+															zone: "utc",
+														}).toLocaleString(DateTime.DATE_MED),
+													})}
+												</p>
+											)}
+											{employeeSkill.issuer && (
+												<p className="break-words text-xs text-muted-foreground">
+													{t("settings.skills.issuerValue", "Issuer: {{issuer}}", {
+														issuer: employeeSkill.issuer,
+													})}
+												</p>
+											)}
+											{employeeSkill.certificateNumber && (
+												<p className="break-words text-xs text-muted-foreground">
+													{t(
+														"settings.skills.certificateNumberValue",
+														"Certificate: {{certificateNumber}}",
+														{
+															certificateNumber: employeeSkill.certificateNumber,
+														},
+													)}
+												</p>
+											)}
 											{employeeSkill.notes && (
-												<p className="text-xs text-muted-foreground">{employeeSkill.notes}</p>
+												<p className="break-words text-xs text-muted-foreground">
+													{employeeSkill.notes}
+												</p>
 											)}
 										</div>
 									</div>
@@ -236,7 +254,9 @@ export function EmployeeSkillsCard({
 														variant="ghost"
 														size="icon"
 														className="h-8 w-8"
-														onClick={() => handleRemove(employeeSkill.skillId, employeeSkill.skill.name)}
+														onClick={() =>
+															handleRemove(employeeSkill.skillId, employeeSkill.skill.name)
+														}
 														disabled={removeMutation.isPending}
 														aria-label={t("common.remove", "Remove")}
 													>
@@ -284,7 +304,10 @@ interface AssignSkillDialogProps {
 
 interface AssignSkillFormValues {
 	skillId: string;
+	issuedAt: string;
 	expiresAt: string;
+	issuer: string;
+	certificateNumber: string;
 	notes: string;
 }
 
@@ -310,7 +333,10 @@ function AssignSkillDialog({
 
 	const defaultValues: AssignSkillFormValues = {
 		skillId: "",
+		issuedAt: "",
 		expiresAt: "",
+		issuer: "",
+		certificateNumber: "",
 		notes: "",
 	};
 
@@ -323,11 +349,21 @@ function AssignSkillDialog({
 
 	const assignMutation = useMutation({
 		mutationFn: async (data: AssignSkillFormValues) => {
+			const issuer = data.issuer.trim();
+			const certificateNumber = data.certificateNumber.trim();
+			const notes = data.notes.trim();
 			const result = await assignSkillToEmployee({
 				employeeId,
 				skillId: data.skillId,
-				expiresAt: data.expiresAt ? new Date(data.expiresAt) : undefined,
-				notes: data.notes || undefined,
+				issuedAt: data.issuedAt
+					? DateTime.fromISO(data.issuedAt, { zone: "utc" }).toJSDate()
+					: undefined,
+				expiresAt: data.expiresAt
+					? DateTime.fromISO(data.expiresAt, { zone: "utc" }).toJSDate()
+					: undefined,
+				issuer: issuer || undefined,
+				certificateNumber: certificateNumber || undefined,
+				notes: notes || undefined,
 			});
 			if (!result.success) throw new Error(result.error);
 			return result.data;
@@ -359,7 +395,10 @@ function AssignSkillDialog({
 				<DialogHeader>
 					<DialogTitle>{t("settings.skills.assignSkill", "Assign Skill")}</DialogTitle>
 					<DialogDescription>
-						{t("settings.skills.assignSkillDescription", "Add a skill or certification to this employee")}
+						{t(
+							"settings.skills.assignSkillDescription",
+							"Add a skill or certification to this employee",
+						)}
 					</DialogDescription>
 				</DialogHeader>
 
@@ -371,7 +410,13 @@ function AssignSkillDialog({
 				>
 					<div className="grid gap-4 py-4">
 						{/* Skill Selection */}
-						<form.Field name="skillId">
+						<form.Field
+							name="skillId"
+							validators={{
+								onSubmit: ({ value }) =>
+									value ? undefined : t("settings.skills.skillRequired", "Skill is required"),
+							}}
+						>
 							{(field) => (
 								<div className="grid gap-2">
 									<Label htmlFor="assign-skill">{t("settings.skills.skill", "Skill")} *</Label>
@@ -384,16 +429,19 @@ function AssignSkillDialog({
 										<p className="text-sm text-muted-foreground">
 											{t(
 												"settings.skills.noAvailableSkills",
-												"All skills have been assigned or no skills are defined"
+												"All skills have been assigned or no skills are defined",
 											)}
 										</p>
 									) : (
 										<Select
+											name="skillId"
 											value={field.state.value}
 											onValueChange={field.handleChange}
 										>
 											<SelectTrigger id="assign-skill">
-												<SelectValue placeholder={t("settings.skills.selectSkill", "Select a skill")} />
+												<SelectValue
+													placeholder={t("settings.skills.selectSkill", "Select a skill")}
+												/>
 											</SelectTrigger>
 											<SelectContent>
 												{availableSkills.map((skill) => {
@@ -415,12 +463,28 @@ function AssignSkillDialog({
 											</SelectContent>
 										</Select>
 									)}
+									{field.state.meta.errors.length > 0 && (
+										<p className="text-sm text-destructive" aria-live="polite">
+											{field.state.meta.errors[0]}
+										</p>
+									)}
 								</div>
 							)}
 						</form.Field>
 
 						{/* Expiry Date */}
-						<form.Field name="expiresAt">
+						<form.Field
+							name="expiresAt"
+							validators={{
+								onSubmit: ({ value }) =>
+									selectedSkill?.requiresExpiry && !value
+										? t(
+												"settings.skills.expiryDateRequired",
+												"Expiry date is required for this skill",
+											)
+										: undefined,
+							}}
+						>
 							{(field) => (
 								<div className="grid gap-2">
 									<Label htmlFor="assign-expiry">
@@ -429,7 +493,9 @@ function AssignSkillDialog({
 									</Label>
 									<Input
 										id="assign-expiry"
+										name="expiresAt"
 										type="date"
+										autoComplete="off"
 										value={field.state.value}
 										onChange={(e) => field.handleChange(e.target.value)}
 										onBlur={field.handleBlur}
@@ -439,10 +505,78 @@ function AssignSkillDialog({
 										<p className="text-xs text-muted-foreground">
 											{t(
 												"settings.skills.expiryRequiredHint",
-												"This certification requires an expiry date"
+												"This certification requires an expiry date",
 											)}
 										</p>
 									)}
+									{field.state.meta.errors.length > 0 && (
+										<p className="text-sm text-destructive" aria-live="polite">
+											{field.state.meta.errors[0]}
+										</p>
+									)}
+								</div>
+							)}
+						</form.Field>
+
+						{/* Issue Date */}
+						<form.Field name="issuedAt">
+							{(field) => (
+								<div className="grid gap-2">
+									<Label htmlFor="assign-issued-at">
+										{t("settings.skills.issueDate", "Issue Date")}
+									</Label>
+									<Input
+										id="assign-issued-at"
+										name="issuedAt"
+										type="date"
+										autoComplete="off"
+										value={field.state.value}
+										onChange={(e) => field.handleChange(e.target.value)}
+										onBlur={field.handleBlur}
+										max={DateTime.now().toISODate() ?? undefined}
+									/>
+								</div>
+							)}
+						</form.Field>
+
+						{/* Issuer */}
+						<form.Field name="issuer">
+							{(field) => (
+								<div className="grid gap-2">
+									<Label htmlFor="assign-issuer">{t("settings.skills.issuer", "Issuer")}</Label>
+									<Input
+										id="assign-issuer"
+										name="issuer"
+										autoComplete="off"
+										value={field.state.value}
+										onChange={(e) => field.handleChange(e.target.value)}
+										onBlur={field.handleBlur}
+										placeholder={t("settings.skills.issuerPlaceholder", "e.g., Safety Council…")}
+									/>
+								</div>
+							)}
+						</form.Field>
+
+						{/* Certificate Number */}
+						<form.Field name="certificateNumber">
+							{(field) => (
+								<div className="grid gap-2">
+									<Label htmlFor="assign-certificate-number">
+										{t("settings.skills.certificateNumber", "Certificate Number")}
+									</Label>
+									<Input
+										id="assign-certificate-number"
+										name="certificateNumber"
+										autoComplete="off"
+										spellCheck={false}
+										value={field.state.value}
+										onChange={(e) => field.handleChange(e.target.value)}
+										onBlur={field.handleBlur}
+										placeholder={t(
+											"settings.skills.certificateNumberPlaceholder",
+											"e.g., CERT-12345…",
+										)}
+									/>
 								</div>
 							)}
 						</form.Field>
@@ -454,12 +588,14 @@ function AssignSkillDialog({
 									<Label htmlFor="assign-notes">{t("settings.skills.notes", "Notes")}</Label>
 									<Textarea
 										id="assign-notes"
+										name="notes"
+										autoComplete="off"
 										value={field.state.value}
 										onChange={(e) => field.handleChange(e.target.value)}
 										onBlur={field.handleBlur}
 										placeholder={t(
 											"settings.skills.notesPlaceholder",
-											"e.g., Certificate number, training date…"
+											"e.g., Certificate number, training date…",
 										)}
 										rows={2}
 									/>
@@ -472,16 +608,18 @@ function AssignSkillDialog({
 						<Button
 							type="button"
 							variant="outline"
-							onClick={() => onOpenChange(false)}
+							onClick={() => handleOpenChange(false)}
 							disabled={assignMutation.isPending}
 						>
 							{t("common.cancel", "Cancel")}
 						</Button>
 						<Button
 							type="submit"
-							disabled={assignMutation.isPending || !selectedSkillId || availableSkills.length === 0}
+							disabled={assignMutation.isPending || availableSkills.length === 0}
 						>
-							{assignMutation.isPending && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />}
+							{assignMutation.isPending && (
+								<IconLoader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+							)}
 							{t("settings.skills.assign", "Assign")}
 						</Button>
 					</DialogFooter>

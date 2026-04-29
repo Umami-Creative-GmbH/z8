@@ -20,17 +20,17 @@ export interface PublishAcknowledgmentInput {
 
 export type PublishShiftsResult =
 	| {
-		published: true;
-		requiresAcknowledgment: false;
-		count: number;
-	}
+			published: true;
+			requiresAcknowledgment: false;
+			count: number;
+	  }
 	| {
-		published: false;
-		requiresAcknowledgment: true;
-		count: 0;
-		complianceSummary: ScheduleComplianceSummary;
-		evaluationFingerprint: string;
-	};
+			published: false;
+			requiresAcknowledgment: true;
+			count: 0;
+			complianceSummary: ScheduleComplianceSummary;
+			evaluationFingerprint: string;
+	  };
 
 export interface SubareaInfo {
 	id: string;
@@ -72,8 +72,21 @@ export interface ShiftRequestWithRelations extends ShiftRequest {
 	} | null;
 }
 
+export interface QualificationIssueInfo {
+	id: string;
+	name: string;
+	category: string;
+	isRequired: boolean;
+	enforcementMode: "warning" | "blocking";
+	issueType: "missing" | "expired" | "expiringSoon" | "preferred";
+	expiresAt?: Date;
+}
+
 export interface SkillWarningInfo {
 	isQualified: boolean;
+	hasBlockingIssues: boolean;
+	requiresOverride: boolean;
+	issues: QualificationIssueInfo[];
 	missingSkills: Array<{
 		id: string;
 		name: string;
@@ -130,6 +143,7 @@ export interface UpsertShiftInput {
 	endTime: string;
 	notes?: string;
 	color?: string;
+	qualificationOverrideReason?: string;
 }
 
 export interface ShiftQuery {

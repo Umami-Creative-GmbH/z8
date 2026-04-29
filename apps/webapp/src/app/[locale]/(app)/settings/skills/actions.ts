@@ -1,40 +1,46 @@
 "use server";
 
 import { SpanStatusCode, trace } from "@opentelemetry/api";
-import { revalidateTag } from "next/cache";
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
-import { employee } from "@/db/schema";
-import {
-	type AnyAppError,
-	AuthorizationError,
-	NotFoundError,
-	ValidationError,
-} from "@/lib/effect/errors";
+import { revalidateTag } from "next/cache";
+import { employee, locationSubarea, qualificationRenewalRequest, shiftTemplate } from "@/db/schema";
+import { type AnyAppError, AuthorizationError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import {
-	SkillService,
-	type CreateSkillInput,
-	type UpdateSkillInput,
 	type AssignSkillInput,
-	type SetSkillRequirementsInput,
-	type SkillWithRelations,
+	type CreateRenewalRequestInput,
+	type CreateSkillInput,
 	type EmployeeSkillWithDetails,
+	type QualificationRenewalRequestRecord,
+	type QualificationRenewalRequestWithDetails,
+	type ReviewRenewalRequestInput,
+	SkillService,
 	type SkillValidationResult,
+	type SkillWithRelations,
+	type UpdateSkillInput,
 } from "@/lib/effect/services/skill.service";
 
-export type { EmployeeSkillWithDetails, SkillValidationResult, SkillWithRelations };
+export type {
+	CreateRenewalRequestInput,
+	EmployeeSkillWithDetails,
+	QualificationRenewalRequestRecord,
+	QualificationRenewalRequestWithDetails,
+	ReviewRenewalRequestInput,
+	SkillValidationResult,
+	SkillWithRelations,
+};
 
 import { CACHE_TAGS } from "@/lib/cache/tags";
 import { createLogger } from "@/lib/logger";
 import {
-	ensureCanAccessEmployeeSettingsTarget,
 	ensureSettingsActorCanAccessEmployeeTarget,
-	getEmployeeContext,
+	filterItemsToManagedEmployees,
 	getEmployeeSettingsActorContext,
+	getManagedEmployeeIdsForSettingsActor,
 	getTargetEmployee,
 	requireOrgAdminEmployeeSettingsAccess,
 } from "../employees/employee-action-utils";
@@ -129,7 +135,7 @@ export async function createSkill(
  */
 export async function updateSkill(
 	skillId: string,
-	data: Omit<UpdateSkillInput, "updatedBy">,
+	data: Omit<UpdateSkillInput, "organizationId" | "updatedBy">,
 ): Promise<ServerActionResult<SkillWithRelations>> {
 	const tracer = trace.getTracer("skills");
 
@@ -157,6 +163,7 @@ export async function updateSkill(
 				const updatedSkill = yield* _(
 					skillService.updateSkill(skillId, {
 						...data,
+						organizationId: actor.organizationId,
 						updatedBy: session.user.id,
 					}),
 				);
@@ -215,7 +222,7 @@ export async function deleteSkill(skillId: string): Promise<ServerActionResult<v
 					}),
 				);
 
-				yield* _(skillService.deleteSkill(skillId));
+				yield* _(skillService.deleteSkill(skillId, actor.organizationId));
 
 				logger.info({ skillId }, "Skill deleted successfully");
 
@@ -270,7 +277,7 @@ export async function getOrganizationSkills(options?: {
  * Requires admin or manager role
  */
 export async function assignSkillToEmployee(
-	data: Omit<AssignSkillInput, "assignedBy">,
+	data: Omit<AssignSkillInput, "organizationId" | "assignedBy">,
 ): Promise<ServerActionResult<EmployeeSkillWithDetails>> {
 	const tracer = trace.getTracer("skills");
 
@@ -314,6 +321,7 @@ export async function assignSkillToEmployee(
 				const assignment = yield* _(
 					skillService.assignSkillToEmployee({
 						...data,
+						organizationId: actor.organizationId,
 						assignedBy: session.user.id,
 					}),
 				);
@@ -465,6 +473,133 @@ export async function getEmployeeSkills(
 	return runServerActionSafe(effect);
 }
 
+export async function createQualificationRenewalRequest(
+	data: Omit<CreateRenewalRequestInput, "employeeId" | "organizationId"> & { employeeId: string },
+): Promise<ServerActionResult<QualificationRenewalRequestRecord>> {
+	const effect = Effect.gen(function* (_) {
+		const actor = yield* _(getEmployeeSettingsActorContext());
+		const skillService = yield* _(SkillService);
+		const targetEmployee = yield* _(getTargetEmployee(data.employeeId));
+
+		yield* _(
+			ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
+				message: "You do not have access to this employee's qualifications",
+				resource: "employeeSkill",
+				action: "update",
+			}),
+		);
+
+		return yield* _(
+			skillService.createRenewalRequest({
+				...data,
+				organizationId: actor.organizationId,
+			}),
+		);
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
+}
+
+export async function reviewQualificationRenewalRequest(
+	data: Omit<ReviewRenewalRequestInput, "reviewerEmployeeId" | "organizationId">,
+): Promise<ServerActionResult<QualificationRenewalRequestRecord>> {
+	const effect = Effect.gen(function* (_) {
+		const actor = yield* _(getEmployeeSettingsActorContext());
+		const skillService = yield* _(SkillService);
+		const reviewerEmployee = actor.currentEmployee;
+
+		if (!reviewerEmployee || (actor.accessTier !== "orgAdmin" && actor.accessTier !== "manager")) {
+			return yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Only admins and managers can review qualification renewals",
+						userId: actor.session.user.id,
+						resource: "qualificationRenewalRequest",
+						action: "update",
+					}),
+				),
+			);
+		}
+
+		const renewalRequest = yield* _(
+			actor.dbService.query("getQualificationRenewalRequestForReview", async () => {
+				return await actor.dbService.db.query.qualificationRenewalRequest.findFirst({
+					where: and(
+						eq(qualificationRenewalRequest.id, data.requestId),
+						eq(qualificationRenewalRequest.organizationId, actor.organizationId),
+					),
+				});
+			}),
+		);
+
+		if (!renewalRequest) {
+			return yield* _(
+				Effect.fail(
+					new NotFoundError({
+						message: "Renewal request not found",
+						entityType: "qualificationRenewalRequest",
+						entityId: data.requestId,
+					}),
+				),
+			);
+		}
+
+		const targetEmployee = yield* _(
+			getTargetEmployee(
+				renewalRequest.employeeId,
+				"getQualificationRenewalRequestEmployeeForReview",
+			),
+		);
+
+		yield* _(
+			ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
+				message: "You do not have access to this employee's qualification renewal",
+				resource: "qualificationRenewalRequest",
+				action: "update",
+			}),
+		);
+
+		return yield* _(
+			skillService.reviewRenewalRequest({
+				...data,
+				organizationId: actor.organizationId,
+				reviewerEmployeeId: reviewerEmployee.id,
+			}),
+		);
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
+}
+
+export async function getPendingQualificationRenewalRequests(): Promise<
+	ServerActionResult<QualificationRenewalRequestWithDetails[]>
+> {
+	const effect = Effect.gen(function* (_) {
+		const actor = yield* _(getEmployeeSettingsActorContext());
+		const skillService = yield* _(SkillService);
+
+		if (actor.accessTier !== "orgAdmin" && actor.accessTier !== "manager") {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Only admins and managers can view qualification renewals",
+						userId: actor.session.user.id,
+						resource: "qualificationRenewalRequest",
+						action: "read",
+					}),
+				),
+			);
+		}
+
+		const pendingRequests = yield* _(skillService.getPendingRenewalRequests(actor.organizationId));
+		const managedEmployeeIds = yield* _(getManagedEmployeeIdsForSettingsActor(actor));
+
+		return filterItemsToManagedEmployees(pendingRequests, managedEmployeeIds);
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
+}
+
 // =============================================================================
 // Skill Requirements Actions (Subareas & Templates)
 // =============================================================================
@@ -503,6 +638,7 @@ export async function setSubareaSkillRequirements(
 
 				yield* _(
 					skillService.setSubareaSkillRequirements({
+						organizationId: actor.organizationId,
 						targetId: subareaId,
 						requirements,
 						createdBy: session.user.id,
@@ -575,6 +711,7 @@ export async function setTemplateSkillRequirements(
 
 				yield* _(
 					skillService.setTemplateSkillRequirements({
+						organizationId: actor.organizationId,
 						targetId: templateId,
 						requirements,
 						createdBy: session.user.id,
@@ -629,11 +766,90 @@ export async function validateEmployeeForShift(
 	},
 ): Promise<ServerActionResult<SkillValidationResult>> {
 	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		yield* _(authService.getSession());
+		const actor = yield* _(getEmployeeSettingsActorContext());
 		const skillService = yield* _(SkillService);
 
-		const result = yield* _(skillService.validateEmployeeForShift(employeeId, shiftData));
+		if (actor.accessTier !== "orgAdmin" && actor.accessTier !== "manager") {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Only admins and managers can validate shift qualifications",
+						userId: actor.session.user.id,
+						resource: "shiftQualification",
+						action: "read",
+					}),
+				),
+			);
+		}
+
+		const targetEmployee = yield* _(
+			getTargetEmployee(employeeId, "getShiftQualificationTargetEmployee"),
+		);
+
+		yield* _(
+			ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
+				message: "You do not have access to this employee's shift qualifications",
+				resource: "shiftQualification",
+				action: "read",
+			}),
+		);
+
+		const subarea = yield* _(
+			actor.dbService.query("validateShiftQualificationSubareaScope", async () => {
+				return await actor.dbService.db.query.locationSubarea.findFirst({
+					where: eq(locationSubarea.id, shiftData.subareaId),
+					with: {
+						location: {
+							columns: { organizationId: true },
+						},
+					},
+				});
+			}),
+		);
+
+		if (!subarea || subarea.location.organizationId !== actor.organizationId) {
+			yield* _(
+				Effect.fail(
+					new NotFoundError({
+						message: "Subarea not found",
+						entityType: "locationSubarea",
+						entityId: shiftData.subareaId,
+					}),
+				),
+			);
+		}
+
+		if (shiftData.templateId) {
+			const template = yield* _(
+				actor.dbService.query("validateShiftQualificationTemplateScope", async () => {
+					return await actor.dbService.db.query.shiftTemplate.findFirst({
+						where: and(
+							eq(shiftTemplate.id, shiftData.templateId!),
+							eq(shiftTemplate.organizationId, actor.organizationId),
+						),
+					});
+				}),
+			);
+
+			if (!template) {
+				yield* _(
+					Effect.fail(
+						new NotFoundError({
+							message: "Shift template not found",
+							entityType: "shiftTemplate",
+							entityId: shiftData.templateId,
+						}),
+					),
+				);
+			}
+		}
+
+		const result = yield* _(
+			skillService.validateEmployeeForShift(employeeId, {
+				...shiftData,
+				organizationId: actor.organizationId,
+			}),
+		);
 
 		return result;
 	}).pipe(Effect.provide(AppLayer));
