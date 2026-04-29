@@ -8,16 +8,17 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { getAvailableEmployees } from "@/app/[locale]/(app)/settings/locations/actions";
 import { assignSubareaEmployee } from "@/app/[locale]/(app)/settings/locations/assignment-actions";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
 	ActionPanel,
+	ActionPanelBody,
 	ActionPanelContent,
 	ActionPanelDescription,
 	ActionPanelFooter,
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import {
 	Select,
@@ -70,7 +71,10 @@ export function SubareaEmployeeDialog({
 				subareaId,
 				employeeId: value.employeeId,
 				isPrimary: value.isPrimary,
-			}).then((response) => response, () => null);
+			}).then(
+				(response) => response,
+				() => null,
+			);
 
 			if (result?.success) {
 				toast.success(t("settings.locations.employeeAssigned", "Employee assigned"));
@@ -131,25 +135,26 @@ export function SubareaEmployeeDialog({
 				</ActionPanelHeader>
 
 				{isLoading ? (
-					<div className="space-y-4 py-4">
+					<ActionPanelBody className="space-y-4">
 						<Skeleton className="h-10 w-full" />
 						<Skeleton className="h-10 w-full" />
-					</div>
+					</ActionPanelBody>
 				) : employees?.length === 0 ? (
-					<div className="py-6 text-center text-muted-foreground">
+					<ActionPanelBody className="text-center text-muted-foreground">
 						{t(
 							"settings.locations.noAvailableEmployeesSubarea",
 							"All employees are already assigned to this subarea",
 						)}
-					</div>
+					</ActionPanelBody>
 				) : (
 					<form
 						onSubmit={(e) => {
 							e.preventDefault();
 							form.handleSubmit();
 						}}
+						className="flex min-h-0 flex-1 flex-col"
 					>
-						<div className="space-y-4 py-4">
+						<ActionPanelBody className="space-y-4">
 							{/* Employee Selection */}
 							<form.Field name="employeeId">
 								{(field) => (
@@ -204,7 +209,7 @@ export function SubareaEmployeeDialog({
 									</div>
 								)}
 							</form.Field>
-						</div>
+						</ActionPanelBody>
 
 						<ActionPanelFooter>
 							<Button

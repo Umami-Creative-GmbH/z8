@@ -5,15 +5,16 @@ import { useTranslate } from "@tolgee/react";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { splitWorkPeriod } from "@/app/[locale]/(app)/time-tracking/actions";
-import { Button } from "@/components/ui/button";
 import {
 	ActionPanel,
+	ActionPanelBody,
 	ActionPanelContent,
 	ActionPanelDescription,
 	ActionPanelFooter,
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { TimeInput } from "@/components/ui/time-input";
@@ -140,7 +141,7 @@ export function SplitWorkPeriodDialog({
 					</ActionPanelDescription>
 				</ActionPanelHeader>
 
-				<div className="space-y-4 py-4">
+				<ActionPanelBody className="space-y-4">
 					{/* Current work period info */}
 					<div className="rounded-lg bg-muted p-3">
 						<div className="text-sm font-medium">
@@ -221,7 +222,7 @@ export function SplitWorkPeriodDialog({
 							</div>
 						</div>
 					)}
-				</div>
+				</ActionPanelBody>
 
 				<ActionPanelFooter className="gap-2 sm:gap-0">
 					<Button variant="outline" onClick={handleClose} disabled={isSaving}>

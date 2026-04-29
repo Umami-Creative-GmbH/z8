@@ -5,16 +5,18 @@ import { useMutation } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
+import { createApiKey } from "@/app/[locale]/(app)/settings/enterprise/api-keys/actions";
 import {
 	ActionPanel,
+	ActionPanelBody,
 	ActionPanelContent,
 	ActionPanelDescription,
 	ActionPanelFooter,
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -24,13 +26,12 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { createApiKey } from "@/app/[locale]/(app)/settings/enterprise/api-keys/actions";
 import {
 	API_KEY_SCOPES,
-	EXPIRATION_OPTIONS,
-	SCOPE_LABELS,
 	type ApiKeyScope,
 	type CreateApiKeyResponse,
+	EXPIRATION_OPTIONS,
+	SCOPE_LABELS,
 } from "@/lib/validations/api-key";
 
 interface ApiKeyCreateDialogProps {
@@ -111,7 +112,7 @@ export function ApiKeyCreateDialog({
 					</ActionPanelDescription>
 				</ActionPanelHeader>
 
-				<div className="space-y-4 py-4">
+				<ActionPanelBody className="space-y-4">
 					{/* Name */}
 					<div className="space-y-2">
 						<Label htmlFor="name">{t("settings.apiKeys.form.name", "Name")} *</Label>
@@ -202,7 +203,7 @@ export function ApiKeyCreateDialog({
 							</div>
 						)}
 					</div>
-				</div>
+				</ActionPanelBody>
 
 				<ActionPanelFooter>
 					<Button variant="outline" onClick={() => onOpenChange(false)}>

@@ -10,15 +10,16 @@ import {
 	type LocationListItem,
 	updateLocation,
 } from "@/app/[locale]/(app)/settings/locations/actions";
-import { Button } from "@/components/ui/button";
 import {
 	ActionPanel,
+	ActionPanelBody,
 	ActionPanelContent,
 	ActionPanelDescription,
 	ActionPanelFooter,
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -72,7 +73,10 @@ export function LocationDialog({
 					postalCode: value.postalCode || undefined,
 					country: value.country || undefined,
 					isActive: value.isActive,
-				}).then((response) => response, () => null);
+				}).then(
+					(response) => response,
+					() => null,
+				);
 
 				if (result?.success) {
 					toast.success(t("settings.locations.updated", "Location updated"));
@@ -90,7 +94,10 @@ export function LocationDialog({
 					city: value.city || undefined,
 					postalCode: value.postalCode || undefined,
 					country: value.country || undefined,
-				}).then((response) => response, () => null);
+				}).then(
+					(response) => response,
+					() => null,
+				);
 
 				if (result?.success) {
 					toast.success(t("settings.locations.created", "Location created"));
@@ -130,8 +137,9 @@ export function LocationDialog({
 						e.preventDefault();
 						form.handleSubmit();
 					}}
+					className="flex min-h-0 flex-1 flex-col"
 				>
-					<div className="grid gap-4 py-4">
+					<ActionPanelBody className="grid gap-4">
 						{/* Name */}
 						<form.Field name="name">
 							{(field) => (
@@ -252,7 +260,7 @@ export function LocationDialog({
 								)}
 							</form.Field>
 						)}
-					</div>
+					</ActionPanelBody>
 
 					<ActionPanelFooter>
 						<Button

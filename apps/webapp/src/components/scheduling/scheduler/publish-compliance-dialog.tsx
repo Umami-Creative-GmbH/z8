@@ -2,16 +2,17 @@
 
 import { IconAlertTriangle } from "@tabler/icons-react";
 import { Loader2 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
 	ActionPanel,
+	ActionPanelBody,
 	ActionPanelContent,
 	ActionPanelDescription,
 	ActionPanelFooter,
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import type { ScheduleComplianceSummary } from "@/lib/scheduling/compliance/types";
 
 interface PublishComplianceDialogProps {
@@ -47,16 +48,18 @@ export function PublishComplianceDialog({
 					</ActionPanelDescription>
 				</ActionPanelHeader>
 
-				<div className="rounded-md border border-amber-300/70 bg-amber-50/60 p-3">
-					<p className="text-sm font-medium text-amber-900">
-						{summary.totalFindings} total finding{summary.totalFindings === 1 ? "" : "s"}
-					</p>
-					<div className="mt-2 flex flex-wrap gap-2">
-						<Badge variant="outline">Rest time: {summary.byType.restTime}</Badge>
-						<Badge variant="outline">Max hours: {summary.byType.maxHours}</Badge>
-						<Badge variant="outline">Overtime: {summary.byType.overtime}</Badge>
+				<ActionPanelBody>
+					<div className="rounded-md border border-amber-300/70 bg-amber-50/60 p-3">
+						<p className="text-sm font-medium text-amber-900">
+							{summary.totalFindings} total finding{summary.totalFindings === 1 ? "" : "s"}
+						</p>
+						<div className="mt-2 flex flex-wrap gap-2">
+							<Badge variant="outline">Rest time: {summary.byType.restTime}</Badge>
+							<Badge variant="outline">Max hours: {summary.byType.maxHours}</Badge>
+							<Badge variant="outline">Overtime: {summary.byType.overtime}</Badge>
+						</div>
 					</div>
-				</div>
+				</ActionPanelBody>
 
 				<ActionPanelFooter>
 					<Button

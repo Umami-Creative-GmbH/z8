@@ -1,15 +1,16 @@
 "use client";
 
 import { IconBell, IconLoader2, IconX } from "@tabler/icons-react";
-import { Button } from "@/components/ui/button";
 import {
 	ActionPanel,
+	ActionPanelBody,
 	ActionPanelContent,
 	ActionPanelDescription,
 	ActionPanelFooter,
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import { Button } from "@/components/ui/button";
 
 interface PushPermissionModalProps {
 	open: boolean;
@@ -52,28 +53,30 @@ export function PushPermissionModal({
 					</ActionPanelDescription>
 				</ActionPanelHeader>
 
-				<div className="space-y-3 rounded-lg bg-muted/50 p-4 text-sm">
-					<div className="flex items-start gap-3">
-						<div className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
-							<span className="text-xs text-green-600 dark:text-green-400">1</span>
+				<ActionPanelBody>
+					<div className="space-y-3 rounded-lg bg-muted/50 p-4 text-sm">
+						<div className="flex items-start gap-3">
+							<div className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
+								<span className="text-xs text-green-600 dark:text-green-400">1</span>
+							</div>
+							<p className="text-muted-foreground">
+								Get notified when your requests are approved or rejected
+							</p>
 						</div>
-						<p className="text-muted-foreground">
-							Get notified when your requests are approved or rejected
-						</p>
-					</div>
-					<div className="flex items-start gap-3">
-						<div className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
-							<span className="text-xs text-green-600 dark:text-green-400">2</span>
+						<div className="flex items-start gap-3">
+							<div className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
+								<span className="text-xs text-green-600 dark:text-green-400">2</span>
+							</div>
+							<p className="text-muted-foreground">Receive alerts for pending approval requests</p>
 						</div>
-						<p className="text-muted-foreground">Receive alerts for pending approval requests</p>
-					</div>
-					<div className="flex items-start gap-3">
-						<div className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
-							<span className="text-xs text-green-600 dark:text-green-400">3</span>
+						<div className="flex items-start gap-3">
+							<div className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
+								<span className="text-xs text-green-600 dark:text-green-400">3</span>
+							</div>
+							<p className="text-muted-foreground">Stay informed about team and security updates</p>
 						</div>
-						<p className="text-muted-foreground">Stay informed about team and security updates</p>
 					</div>
-				</div>
+				</ActionPanelBody>
 
 				<ActionPanelFooter className="flex-col gap-2 sm:flex-col">
 					<Button onClick={handleEnable} disabled={isLoading} className="w-full">

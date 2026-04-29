@@ -17,16 +17,17 @@ import {
 	type AuditPackageInfo,
 	verifyAuditPackageAction,
 } from "@/app/[locale]/(app)/settings/audit-export/actions";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
 	ActionPanel,
+	ActionPanelBody,
 	ActionPanelContent,
 	ActionPanelDescription,
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
 	Table,
 	TableBody,
@@ -225,37 +226,39 @@ export function AuditPackagesTable({ organizationId, packages }: AuditPackagesTa
 						</ActionPanelTitle>
 						<ActionPanelDescription>{verificationResult?.result.summary}</ActionPanelDescription>
 					</ActionPanelHeader>
-					{verificationResult && (
-						<div className="space-y-4">
-							<div className="space-y-2">
-								{verificationResult.result.checks.map((check) => (
-									<div
-										key={check.name}
-										className={`flex items-start gap-2 rounded-lg border p-3 ${
-											check.passed
-												? "border-green-500/30 bg-green-500/5"
-												: "border-red-500/30 bg-red-500/5"
-										}`}
-									>
-										{check.passed ? (
-											<IconCheck className="size-4 text-green-600 mt-0.5" />
-										) : (
-											<IconX className="size-4 text-red-600 mt-0.5" />
-										)}
-										<div className="flex-1 min-w-0">
-											<p className="font-medium text-sm">{check.name}</p>
-											<p className="text-xs text-muted-foreground">{check.details}</p>
+					<ActionPanelBody className="space-y-4">
+						{verificationResult && (
+							<>
+								<div className="space-y-2">
+									{verificationResult.result.checks.map((check) => (
+										<div
+											key={check.name}
+											className={`flex items-start gap-2 rounded-lg border p-3 ${
+												check.passed
+													? "border-green-500/30 bg-green-500/5"
+													: "border-red-500/30 bg-red-500/5"
+											}`}
+										>
+											{check.passed ? (
+												<IconCheck className="size-4 text-green-600 mt-0.5" />
+											) : (
+												<IconX className="size-4 text-red-600 mt-0.5" />
+											)}
+											<div className="flex-1 min-w-0">
+												<p className="font-medium text-sm">{check.name}</p>
+												<p className="text-xs text-muted-foreground">{check.details}</p>
+											</div>
 										</div>
-									</div>
-								))}
-							</div>
-							<p className="text-xs text-muted-foreground text-center">
-								{t("settings.auditExport.verification.verifiedAt", "Verified at {time}", {
-									time: new Date(verificationResult.result.verifiedAt).toLocaleString(),
-								})}
-							</p>
-						</div>
-					)}
+									))}
+								</div>
+								<p className="text-xs text-muted-foreground text-center">
+									{t("settings.auditExport.verification.verifiedAt", "Verified at {time}", {
+										time: new Date(verificationResult.result.verifiedAt).toLocaleString(),
+									})}
+								</p>
+							</>
+						)}
+					</ActionPanelBody>
 				</ActionPanelContent>
 			</ActionPanel>
 		</>

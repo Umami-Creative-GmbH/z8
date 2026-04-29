@@ -3,16 +3,17 @@
 import { IconCheck, IconCopy, IconRefresh } from "@tabler/icons-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
 import {
 	ActionPanel,
+	ActionPanelBody,
 	ActionPanelContent,
 	ActionPanelDescription,
 	ActionPanelFooter,
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 
 interface Domain {
 	id: string;
@@ -73,7 +74,7 @@ export function DomainVerificationDialog({
 					</ActionPanelDescription>
 				</ActionPanelHeader>
 
-				<div className="space-y-4">
+				<ActionPanelBody className="space-y-4">
 					{isExpired && (
 						<Alert variant="destructive">
 							<AlertTitle>Token Expired</AlertTitle>
@@ -140,7 +141,7 @@ export function DomainVerificationDialog({
 							</p>
 						)}
 					</div>
-				</div>
+				</ActionPanelBody>
 
 				<ActionPanelFooter className="flex-col sm:flex-row gap-2">
 					<Button variant="outline" onClick={handleRegenerateToken} disabled={isRegenerating}>

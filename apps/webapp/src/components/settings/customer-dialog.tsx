@@ -7,20 +7,21 @@ import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
-	createCustomer,
 	type CustomerData,
+	createCustomer,
 	updateCustomer,
 } from "@/app/[locale]/(app)/settings/customers/actions";
 import { getProjects } from "@/app/[locale]/(app)/settings/projects/actions";
-import { Button } from "@/components/ui/button";
 import {
 	ActionPanel,
+	ActionPanelBody,
 	ActionPanelContent,
 	ActionPanelDescription,
 	ActionPanelFooter,
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -35,8 +36,8 @@ import { queryKeys } from "@/lib/query";
 import type { SettingsAccessTier } from "@/lib/settings-access";
 import {
 	buildCreateCustomerInput,
-	requiresScopedProjectSelection,
 	type CustomerDialogFormValues,
+	requiresScopedProjectSelection,
 } from "./customer-dialog.helpers";
 
 interface CustomerDialogProps {
@@ -107,15 +108,17 @@ export function CustomerDialog({
 					contactPerson: value.contactPerson || null,
 					phone: value.phone || null,
 					website: value.website || null,
-				}).then((response) => response, () => null);
+				}).then(
+					(response) => response,
+					() => null,
+				);
 
 				if (result?.success) {
 					toast.success(t("settings.customers.updated", "Customer updated"));
 					onSuccess();
 				} else {
 					toast.error(
-						result?.error ||
-							t("settings.customers.updateFailed", "Failed to update customer"),
+						result?.error || t("settings.customers.updateFailed", "Failed to update customer"),
 					);
 				}
 			} else {
@@ -129,8 +132,7 @@ export function CustomerDialog({
 					onSuccess();
 				} else {
 					toast.error(
-						result?.error ||
-							t("settings.customers.createFailed", "Failed to create customer"),
+						result?.error || t("settings.customers.createFailed", "Failed to create customer"),
 					);
 				}
 			}
@@ -150,10 +152,7 @@ export function CustomerDialog({
 					</ActionPanelTitle>
 					<ActionPanelDescription>
 						{isEditing
-							? t(
-									"settings.customers.dialog.editDescription",
-									"Update customer details",
-								)
+							? t("settings.customers.dialog.editDescription", "Update customer details")
 							: t(
 									"settings.customers.dialog.createDescription",
 									"Add a new customer for project assignments",
@@ -166,16 +165,17 @@ export function CustomerDialog({
 						e.preventDefault();
 						form.handleSubmit();
 					}}
+					className="flex min-h-0 flex-1 flex-col"
 				>
-					<div className="grid gap-4 py-4">
-				{/* Company Name (required) */}
+					<ActionPanelBody className="grid gap-4">
+						{/* Company Name (required) */}
 						{!isEditing && availableProjects.length > 0 ? (
 							<form.Field name="projectId">
 								{(field) => (
 									<div className="grid gap-2">
 										<Label htmlFor="projectId">
 											{requiresScopedProject
-												? t("settings.customers.field.project", "Project") + " *"
+												? `${t("settings.customers.field.project", "Project")} *`
 												: t("settings.customers.field.project", "Project")}
 										</Label>
 										<Select
@@ -250,9 +250,7 @@ export function CustomerDialog({
 							<form.Field name="email">
 								{(field) => (
 									<div className="grid gap-2">
-										<Label htmlFor="email">
-											{t("settings.customers.field.email", "Email")}
-										</Label>
+										<Label htmlFor="email">{t("settings.customers.field.email", "Email")}</Label>
 										<Input
 											id="email"
 											type="email"
@@ -268,9 +266,7 @@ export function CustomerDialog({
 							<form.Field name="phone">
 								{(field) => (
 									<div className="grid gap-2">
-										<Label htmlFor="phone">
-											{t("settings.customers.field.phone", "Phone")}
-										</Label>
+										<Label htmlFor="phone">{t("settings.customers.field.phone", "Phone")}</Label>
 										<Input
 											id="phone"
 											type="tel"
@@ -311,9 +307,7 @@ export function CustomerDialog({
 							<form.Field name="vatId">
 								{(field) => (
 									<div className="grid gap-2">
-										<Label htmlFor="vatId">
-											{t("settings.customers.field.vatId", "VAT ID")}
-										</Label>
+										<Label htmlFor="vatId">{t("settings.customers.field.vatId", "VAT ID")}</Label>
 										<Input
 											id="vatId"
 											value={field.state.value}
@@ -342,7 +336,7 @@ export function CustomerDialog({
 								)}
 							</form.Field>
 						</div>
-					</div>
+					</ActionPanelBody>
 
 					<ActionPanelFooter>
 						<Button

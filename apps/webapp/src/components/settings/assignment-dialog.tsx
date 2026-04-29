@@ -12,15 +12,16 @@ import {
 	getTeamsForAssignment,
 } from "@/app/[locale]/(app)/settings/holidays/preset-actions";
 import { EmployeeSingleSelect } from "@/components/employee-select";
-import { Button } from "@/components/ui/button";
 import {
 	ActionPanel,
+	ActionPanelBody,
 	ActionPanelContent,
 	ActionPanelDescription,
 	ActionPanelFooter,
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
 	Select,
@@ -199,129 +200,131 @@ export function AssignmentDialog({
 				</ActionPanelHeader>
 
 				{isLoading ? (
-					<div className="space-y-4 py-4">
+					<ActionPanelBody className="space-y-4">
 						<Skeleton className="h-10 w-full" />
 						{assignmentType !== "organization" && <Skeleton className="h-10 w-full" />}
-					</div>
+					</ActionPanelBody>
 				) : (
 					<form
 						onSubmit={(e) => {
 							e.preventDefault();
 							form.handleSubmit();
 						}}
-						className="space-y-4"
+						className="flex min-h-0 flex-1 flex-col"
 					>
-						{/* Preset Selection */}
-						<form.Field name="presetId">
-							{(field) => (
-								<div className="space-y-2">
-									<Label>{t("settings.holidays.assignments.preset", "Holiday Preset")}</Label>
-									<Select value={field.state.value} onValueChange={field.handleChange}>
-										<SelectTrigger>
-											<SelectValue
-												placeholder={t(
-													"settings.holidays.assignments.selectPreset",
-													"Select a preset",
-												)}
-											/>
-										</SelectTrigger>
-										<SelectContent>
-											{presets?.map((preset) => (
-												<SelectItem key={preset.id} value={preset.id}>
-													<div className="flex items-center gap-2">
-														{preset.color && (
-															<div
-																className="w-3 h-3 rounded-full"
-																style={{ backgroundColor: preset.color }}
-															/>
-														)}
-														<span>{preset.name}</span>
-														{preset.countryCode && (
-															<span className="text-muted-foreground">
-																({preset.countryCode}
-																{preset.stateCode && `-${preset.stateCode}`})
-															</span>
-														)}
-													</div>
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-									<p className="text-sm text-muted-foreground">
-										{t(
-											"settings.holidays.assignments.presetDescription",
-											"The holiday preset to assign",
-										)}
-									</p>
-									{validationErrors.presetId && (
-										<p className="text-sm text-destructive">{validationErrors.presetId}</p>
-									)}
-								</div>
-							)}
-						</form.Field>
-
-						{/* Team Selection (for team assignment) */}
-						{assignmentType === "team" && (
-							<form.Field name="teamId">
+						<ActionPanelBody className="space-y-4">
+							{/* Preset Selection */}
+							<form.Field name="presetId">
 								{(field) => (
 									<div className="space-y-2">
-										<Label>{t("settings.holidays.assignments.team", "Team")}</Label>
+										<Label>{t("settings.holidays.assignments.preset", "Holiday Preset")}</Label>
 										<Select value={field.state.value} onValueChange={field.handleChange}>
 											<SelectTrigger>
 												<SelectValue
 													placeholder={t(
-														"settings.holidays.assignments.selectTeam",
-														"Select a team",
+														"settings.holidays.assignments.selectPreset",
+														"Select a preset",
 													)}
 												/>
 											</SelectTrigger>
 											<SelectContent>
-												{teams?.map((team) => (
-													<SelectItem key={team.id} value={team.id}>
-														{team.name}
+												{presets?.map((preset) => (
+													<SelectItem key={preset.id} value={preset.id}>
+														<div className="flex items-center gap-2">
+															{preset.color && (
+																<div
+																	className="w-3 h-3 rounded-full"
+																	style={{ backgroundColor: preset.color }}
+																/>
+															)}
+															<span>{preset.name}</span>
+															{preset.countryCode && (
+																<span className="text-muted-foreground">
+																	({preset.countryCode}
+																	{preset.stateCode && `-${preset.stateCode}`})
+																</span>
+															)}
+														</div>
 													</SelectItem>
 												))}
 											</SelectContent>
 										</Select>
 										<p className="text-sm text-muted-foreground">
 											{t(
-												"settings.holidays.assignments.teamDescription",
-												"All employees in this team will use this preset",
+												"settings.holidays.assignments.presetDescription",
+												"The holiday preset to assign",
 											)}
 										</p>
-										{validationErrors.teamId && (
-											<p className="text-sm text-destructive">{validationErrors.teamId}</p>
+										{validationErrors.presetId && (
+											<p className="text-sm text-destructive">{validationErrors.presetId}</p>
 										)}
 									</div>
 								)}
 							</form.Field>
-						)}
 
-						{/* Employee Selection (for employee assignment) */}
-						{assignmentType === "employee" && (
-							<form.Field name="employeeId">
-								{(field) => (
-									<div className="space-y-2">
-										<EmployeeSingleSelect
-											value={field.state.value || null}
-											onChange={(val) => field.handleChange(val || "")}
-											label={t("settings.holidays.assignments.employee", "Employee")}
-											placeholder={t(
-												"settings.holidays.assignments.selectEmployee",
-												"Select an employee",
+							{/* Team Selection (for team assignment) */}
+							{assignmentType === "team" && (
+								<form.Field name="teamId">
+									{(field) => (
+										<div className="space-y-2">
+											<Label>{t("settings.holidays.assignments.team", "Team")}</Label>
+											<Select value={field.state.value} onValueChange={field.handleChange}>
+												<SelectTrigger>
+													<SelectValue
+														placeholder={t(
+															"settings.holidays.assignments.selectTeam",
+															"Select a team",
+														)}
+													/>
+												</SelectTrigger>
+												<SelectContent>
+													{teams?.map((team) => (
+														<SelectItem key={team.id} value={team.id}>
+															{team.name}
+														</SelectItem>
+													))}
+												</SelectContent>
+											</Select>
+											<p className="text-sm text-muted-foreground">
+												{t(
+													"settings.holidays.assignments.teamDescription",
+													"All employees in this team will use this preset",
+												)}
+											</p>
+											{validationErrors.teamId && (
+												<p className="text-sm text-destructive">{validationErrors.teamId}</p>
 											)}
-											error={validationErrors.employeeId}
-										/>
-										<p className="text-sm text-muted-foreground">
-											{t(
-												"settings.holidays.assignments.employeeDescription",
-												"This employee will use this preset instead of team/organization defaults",
-											)}
-										</p>
-									</div>
-								)}
-							</form.Field>
-						)}
+										</div>
+									)}
+								</form.Field>
+							)}
+
+							{/* Employee Selection (for employee assignment) */}
+							{assignmentType === "employee" && (
+								<form.Field name="employeeId">
+									{(field) => (
+										<div className="space-y-2">
+											<EmployeeSingleSelect
+												value={field.state.value || null}
+												onChange={(val) => field.handleChange(val || "")}
+												label={t("settings.holidays.assignments.employee", "Employee")}
+												placeholder={t(
+													"settings.holidays.assignments.selectEmployee",
+													"Select an employee",
+												)}
+												error={validationErrors.employeeId}
+											/>
+											<p className="text-sm text-muted-foreground">
+												{t(
+													"settings.holidays.assignments.employeeDescription",
+													"This employee will use this preset instead of team/organization defaults",
+												)}
+											</p>
+										</div>
+									)}
+								</form.Field>
+							)}
+						</ActionPanelBody>
 
 						<ActionPanelFooter>
 							<Button

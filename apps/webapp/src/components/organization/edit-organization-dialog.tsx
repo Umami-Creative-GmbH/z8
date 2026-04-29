@@ -4,15 +4,16 @@ import { IconLoader2 } from "@tabler/icons-react";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { updateOrganizationDetails } from "@/app/[locale]/(app)/settings/organizations/actions";
-import { Button } from "@/components/ui/button";
 import {
 	ActionPanel,
+	ActionPanelBody,
 	ActionPanelContent,
 	ActionPanelDescription,
 	ActionPanelFooter,
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -79,48 +80,50 @@ export function EditOrganizationDialog({
 					</ActionPanelDescription>
 				</ActionPanelHeader>
 
-				<form onSubmit={handleSubmit} className="space-y-4">
-					<div className="space-y-2">
-						<Label htmlFor="name">Organization Name</Label>
-						<Input
-							id="name"
-							value={formData.name}
-							onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-							placeholder="Acme Corporation"
-							required
-						/>
-					</div>
+				<form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+					<ActionPanelBody className="space-y-4">
+						<div className="space-y-2">
+							<Label htmlFor="name">Organization Name</Label>
+							<Input
+								id="name"
+								value={formData.name}
+								onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+								placeholder="Acme Corporation"
+								required
+							/>
+						</div>
 
-					<div className="space-y-2">
-						<Label htmlFor="slug">Organization Slug</Label>
-						<Input
-							id="slug"
-							value={formData.slug}
-							onChange={(e) =>
-								setFormData({
-									...formData,
-									slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""),
-								})
-							}
-							placeholder="acme-corp"
-							pattern="[a-z0-9-]+"
-							title="Only lowercase letters, numbers, and hyphens"
-						/>
-						<p className="text-xs text-muted-foreground">
-							Only lowercase letters, numbers, and hyphens
-						</p>
-					</div>
+						<div className="space-y-2">
+							<Label htmlFor="slug">Organization Slug</Label>
+							<Input
+								id="slug"
+								value={formData.slug}
+								onChange={(e) =>
+									setFormData({
+										...formData,
+										slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""),
+									})
+								}
+								placeholder="acme-corp"
+								pattern="[a-z0-9-]+"
+								title="Only lowercase letters, numbers, and hyphens"
+							/>
+							<p className="text-xs text-muted-foreground">
+								Only lowercase letters, numbers, and hyphens
+							</p>
+						</div>
 
-					<div className="space-y-2">
-						<Label htmlFor="description">Description</Label>
-						<Textarea
-							id="description"
-							value={formData.description}
-							onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-							placeholder="A brief description of your organization"
-							rows={3}
-						/>
-					</div>
+						<div className="space-y-2">
+							<Label htmlFor="description">Description</Label>
+							<Textarea
+								id="description"
+								value={formData.description}
+								onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+								placeholder="A brief description of your organization"
+								rows={3}
+							/>
+						</div>
+					</ActionPanelBody>
 
 					<ActionPanelFooter>
 						<Button

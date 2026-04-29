@@ -14,6 +14,7 @@ import { useTranslate } from "@tolgee/react";
 import { z } from "zod";
 import {
 	ActionPanel,
+	ActionPanelBody,
 	ActionPanelContent,
 	ActionPanelDescription,
 	ActionPanelFooter,
@@ -300,7 +301,7 @@ export function AddMemberDialog(props: {
 					<ActionPanelTitle>Add Team Member</ActionPanelTitle>
 					<ActionPanelDescription>Select an employee to add to this team</ActionPanelDescription>
 				</ActionPanelHeader>
-				<div className="space-y-4 py-4">
+				<ActionPanelBody className="space-y-4">
 					<Select value={selectedEmployee} onValueChange={onSelectedEmployeeChange}>
 						<SelectTrigger>
 							<SelectValue placeholder="Select employee" />
@@ -316,7 +317,7 @@ export function AddMemberDialog(props: {
 							))}
 						</SelectContent>
 					</Select>
-				</div>
+				</ActionPanelBody>
 				<ActionPanelFooter>
 					<Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
 						Cancel

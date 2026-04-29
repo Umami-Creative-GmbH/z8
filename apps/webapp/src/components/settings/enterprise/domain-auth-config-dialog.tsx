@@ -1,16 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
 	ActionPanel,
+	ActionPanelBody,
 	ActionPanelContent,
 	ActionPanelDescription,
 	ActionPanelFooter,
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
@@ -42,7 +43,7 @@ export function DomainAuthConfigDialog({
 	open,
 	onOpenChange,
 	domain,
-	organizationId,
+	organizationId: _organizationId,
 	onSave,
 }: DomainAuthConfigDialogProps) {
 	const [config, setConfig] = useState<AuthConfig>({
@@ -92,7 +93,7 @@ export function DomainAuthConfigDialog({
 					</ActionPanelDescription>
 				</ActionPanelHeader>
 
-				<div className="space-y-6">
+				<ActionPanelBody className="space-y-6">
 					{/* Email/Password */}
 					<div className="flex items-center justify-between">
 						<div className="space-y-0.5">
@@ -189,7 +190,10 @@ export function DomainAuthConfigDialog({
 									id="turnstile-site-key"
 									value={config.turnstileSiteKey ?? ""}
 									onChange={(e) =>
-										setConfig((prev) => ({ ...prev, turnstileSiteKey: e.target.value || undefined }))
+										setConfig((prev) => ({
+											...prev,
+											turnstileSiteKey: e.target.value || undefined,
+										}))
 									}
 									placeholder="0x4AAA..."
 								/>
@@ -211,7 +215,7 @@ export function DomainAuthConfigDialog({
 							</div>
 						</div>
 					</div>
-				</div>
+				</ActionPanelBody>
 
 				<ActionPanelFooter>
 					<Button variant="outline" onClick={() => onOpenChange(false)}>

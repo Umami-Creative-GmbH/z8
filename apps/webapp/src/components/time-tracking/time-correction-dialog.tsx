@@ -9,9 +9,9 @@ import {
 	editSameDayTimeEntry,
 	requestTimeCorrection,
 } from "@/app/[locale]/(app)/time-tracking/actions";
-import { Button } from "@/components/ui/button";
 import {
 	ActionPanel,
+	ActionPanelBody,
 	ActionPanelClose,
 	ActionPanelContent,
 	ActionPanelDescription,
@@ -20,6 +20,7 @@ import {
 	ActionPanelTitle,
 	ActionPanelTrigger,
 } from "@/components/ui/action-panel";
+import { Button } from "@/components/ui/button";
 import {
 	fieldHasError,
 	TFormControl,
@@ -156,7 +157,7 @@ export function TimeCorrectionDialog({ workPeriod, isSameDay, employeeTimezone }
 								)}
 					</ActionPanelDescription>
 				</ActionPanelHeader>
-				<div className="grid gap-4 py-4">
+				<ActionPanelBody className="grid gap-4">
 					<p className="text-xs text-muted-foreground">
 						{t(
 							"timeTracking.correction.timezoneNote",
@@ -242,7 +243,7 @@ export function TimeCorrectionDialog({ workPeriod, isSameDay, employeeTimezone }
 							</TFormItem>
 						)}
 					</form.Field>
-				</div>
+				</ActionPanelBody>
 
 				<ActionPanelFooter className="gap-2 sm:gap-0">
 					<ActionPanelClose asChild>

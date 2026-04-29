@@ -3,29 +3,30 @@
 import { IconLoader2 } from "@tabler/icons-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
+import { DateTime } from "luxon";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
+import { updateApiKey } from "@/app/[locale]/(app)/settings/enterprise/api-keys/actions";
 import {
 	ActionPanel,
+	ActionPanelBody,
 	ActionPanelContent,
 	ActionPanelDescription,
 	ActionPanelFooter,
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { updateApiKey } from "@/app/[locale]/(app)/settings/enterprise/api-keys/actions";
 import {
 	API_KEY_SCOPES,
-	SCOPE_LABELS,
 	type ApiKeyResponse,
 	type ApiKeyScope,
+	SCOPE_LABELS,
 } from "@/lib/validations/api-key";
-import { DateTime } from "luxon";
 
 interface ApiKeyEditDialogProps {
 	organizationId: string;
@@ -108,7 +109,7 @@ export function ApiKeyEditDialog({
 					</ActionPanelDescription>
 				</ActionPanelHeader>
 
-				<div className="space-y-4 py-4">
+				<ActionPanelBody className="space-y-4">
 					{/* Key Identifier */}
 					<div className="flex items-center gap-3 p-3 bg-muted rounded-md">
 						<code className="font-mono text-sm">{apiKey.prefix || "z8_org_***"}</code>
@@ -205,7 +206,7 @@ export function ApiKeyEditDialog({
 							</div>
 						)}
 					</div>
-				</div>
+				</ActionPanelBody>
 
 				<ActionPanelFooter>
 					<Button variant="outline" onClick={() => onOpenChange(false)}>

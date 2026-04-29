@@ -9,15 +9,16 @@ import {
 	createCoverageRule,
 	updateCoverageRule,
 } from "@/app/[locale]/(app)/settings/coverage-rules/actions";
-import { Button } from "@/components/ui/button";
 import {
 	ActionPanel,
+	ActionPanelBody,
 	ActionPanelContent,
 	ActionPanelDescription,
 	ActionPanelFooter,
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -195,8 +196,9 @@ export function CoverageRuleDialog({
 						e.stopPropagation();
 						form.handleSubmit();
 					}}
+					className="flex min-h-0 flex-1 flex-col"
 				>
-					<div className="grid gap-4 py-4">
+					<ActionPanelBody className="grid gap-4">
 						{/* Subarea Select */}
 						<form.Field name="subareaId">
 							{(field) => (
@@ -305,7 +307,7 @@ export function CoverageRuleDialog({
 								</div>
 							)}
 						</form.Field>
-					</div>
+					</ActionPanelBody>
 
 					<ActionPanelFooter>
 						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

@@ -12,15 +12,16 @@ import {
 	getWorkPolicies,
 } from "@/app/[locale]/(app)/settings/work-policies/actions";
 import { EmployeeSingleSelect } from "@/components/employee-select";
-import { Button } from "@/components/ui/button";
 import {
 	ActionPanel,
+	ActionPanelBody,
 	ActionPanelContent,
 	ActionPanelDescription,
 	ActionPanelFooter,
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import { Button } from "@/components/ui/button";
 import {
 	Select,
 	SelectContent,
@@ -193,104 +194,109 @@ export function WorkPolicyAssignmentDialog({
 						e.stopPropagation();
 						form.handleSubmit();
 					}}
-					className="space-y-4"
+					className="flex min-h-0 flex-1 flex-col"
 				>
-					<form.Field name="policyId">
-						{(field) => (
-							<TFormItem>
-								<TFormLabel hasError={fieldHasError(field)}>
-									{t("settings.workPolicies.policy", "Policy")}
-								</TFormLabel>
-								<TFormControl hasError={fieldHasError(field)}>
-									<Select value={field.state.value} onValueChange={field.handleChange}>
-										<SelectTrigger>
-											<SelectValue
-												placeholder={t("settings.workPolicies.selectPolicy", "Select a policy")}
-											/>
-										</SelectTrigger>
-										<SelectContent>
-											{loadingPolicies ? (
-												<SelectItem value="" disabled>
-													{t("common.loading", "Loading...")}
-												</SelectItem>
-											) : policies && policies.length > 0 ? (
-												policies.map((policy) => (
-													<SelectItem key={policy.id} value={policy.id}>
-														{policy.name}
-													</SelectItem>
-												))
-											) : (
-												<SelectItem value="" disabled>
-													{t("settings.workPolicies.noPoliciesAvailable", "No policies available")}
-												</SelectItem>
-											)}
-										</SelectContent>
-									</Select>
-								</TFormControl>
-								<TFormDescription>
-									{t(
-										"settings.workPolicies.policySelectDescription",
-										"Choose the work policy to assign",
-									)}
-								</TFormDescription>
-								<TFormMessage field={field} />
-							</TFormItem>
-						)}
-					</form.Field>
-
-					{/* Team Selection */}
-					{assignmentType === "team" && (
-						<form.Field name="teamId">
+					<ActionPanelBody className="space-y-4">
+						<form.Field name="policyId">
 							{(field) => (
 								<TFormItem>
 									<TFormLabel hasError={fieldHasError(field)}>
-										{t("settings.workPolicies.team", "Team")}
+										{t("settings.workPolicies.policy", "Policy")}
 									</TFormLabel>
 									<TFormControl hasError={fieldHasError(field)}>
-										<Select value={field.state.value || ""} onValueChange={field.handleChange}>
+										<Select value={field.state.value} onValueChange={field.handleChange}>
 											<SelectTrigger>
 												<SelectValue
-													placeholder={t("settings.workPolicies.selectTeam", "Select a team")}
+													placeholder={t("settings.workPolicies.selectPolicy", "Select a policy")}
 												/>
 											</SelectTrigger>
 											<SelectContent>
-												{loadingTeams ? (
+												{loadingPolicies ? (
 													<SelectItem value="" disabled>
 														{t("common.loading", "Loading...")}
 													</SelectItem>
-												) : teams && teams.length > 0 ? (
-													teams.map((team) => (
-														<SelectItem key={team.id} value={team.id}>
-															{team.name}
+												) : policies && policies.length > 0 ? (
+													policies.map((policy) => (
+														<SelectItem key={policy.id} value={policy.id}>
+															{policy.name}
 														</SelectItem>
 													))
 												) : (
 													<SelectItem value="" disabled>
-														{t("settings.workPolicies.noTeamsAvailable", "No teams available")}
+														{t(
+															"settings.workPolicies.noPoliciesAvailable",
+															"No policies available",
+														)}
 													</SelectItem>
 												)}
 											</SelectContent>
 										</Select>
 									</TFormControl>
+									<TFormDescription>
+										{t(
+											"settings.workPolicies.policySelectDescription",
+											"Choose the work policy to assign",
+										)}
+									</TFormDescription>
 									<TFormMessage field={field} />
 								</TFormItem>
 							)}
 						</form.Field>
-					)}
 
-					{/* Employee Selection */}
-					{assignmentType === "employee" && (
-						<form.Field name="employeeId">
-							{(field) => (
-								<EmployeeSingleSelect
-									value={field.state.value}
-									onChange={field.handleChange}
-									label={t("settings.workPolicies.employee", "Employee")}
-									placeholder={t("settings.workPolicies.selectEmployee", "Select an employee")}
-								/>
-							)}
-						</form.Field>
-					)}
+						{/* Team Selection */}
+						{assignmentType === "team" && (
+							<form.Field name="teamId">
+								{(field) => (
+									<TFormItem>
+										<TFormLabel hasError={fieldHasError(field)}>
+											{t("settings.workPolicies.team", "Team")}
+										</TFormLabel>
+										<TFormControl hasError={fieldHasError(field)}>
+											<Select value={field.state.value || ""} onValueChange={field.handleChange}>
+												<SelectTrigger>
+													<SelectValue
+														placeholder={t("settings.workPolicies.selectTeam", "Select a team")}
+													/>
+												</SelectTrigger>
+												<SelectContent>
+													{loadingTeams ? (
+														<SelectItem value="" disabled>
+															{t("common.loading", "Loading...")}
+														</SelectItem>
+													) : teams && teams.length > 0 ? (
+														teams.map((team) => (
+															<SelectItem key={team.id} value={team.id}>
+																{team.name}
+															</SelectItem>
+														))
+													) : (
+														<SelectItem value="" disabled>
+															{t("settings.workPolicies.noTeamsAvailable", "No teams available")}
+														</SelectItem>
+													)}
+												</SelectContent>
+											</Select>
+										</TFormControl>
+										<TFormMessage field={field} />
+									</TFormItem>
+								)}
+							</form.Field>
+						)}
+
+						{/* Employee Selection */}
+						{assignmentType === "employee" && (
+							<form.Field name="employeeId">
+								{(field) => (
+									<EmployeeSingleSelect
+										value={field.state.value}
+										onChange={field.handleChange}
+										label={t("settings.workPolicies.employee", "Employee")}
+										placeholder={t("settings.workPolicies.selectEmployee", "Select an employee")}
+									/>
+								)}
+							</form.Field>
+						)}
+					</ActionPanelBody>
 
 					<ActionPanelFooter>
 						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

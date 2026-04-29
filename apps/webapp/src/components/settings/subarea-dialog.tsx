@@ -7,18 +7,19 @@ import { useState } from "react";
 import { toast } from "sonner";
 import {
 	createSubarea,
-	updateSubarea,
 	type SubareaWithEmployees,
+	updateSubarea,
 } from "@/app/[locale]/(app)/settings/locations/actions";
-import { Button } from "@/components/ui/button";
 import {
 	ActionPanel,
+	ActionPanelBody,
 	ActionPanelContent,
 	ActionPanelDescription,
 	ActionPanelFooter,
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -60,7 +61,10 @@ export function SubareaDialog({
 				const result = await updateSubarea(subarea.id, {
 					name: value.name,
 					isActive: value.isActive,
-				}).then((response) => response, () => null);
+				}).then(
+					(response) => response,
+					() => null,
+				);
 
 				if (result?.success) {
 					toast.success(t("settings.locations.subareaUpdated", "Subarea updated"));
@@ -75,7 +79,10 @@ export function SubareaDialog({
 				const result = await createSubarea({
 					locationId,
 					name: value.name,
-				}).then((response) => response, () => null);
+				}).then(
+					(response) => response,
+					() => null,
+				);
 
 				if (result?.success) {
 					toast.success(t("settings.locations.subareaCreated", "Subarea created"));
@@ -116,8 +123,9 @@ export function SubareaDialog({
 						e.preventDefault();
 						form.handleSubmit();
 					}}
+					className="flex min-h-0 flex-1 flex-col"
 				>
-					<div className="grid gap-4 py-4">
+					<ActionPanelBody className="grid gap-4">
 						{/* Name */}
 						<form.Field name="name">
 							{(field) => (
@@ -164,7 +172,7 @@ export function SubareaDialog({
 								)}
 							</form.Field>
 						)}
-					</div>
+					</ActionPanelBody>
 
 					<ActionPanelFooter>
 						<Button

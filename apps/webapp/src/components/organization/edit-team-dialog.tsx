@@ -4,15 +4,16 @@ import { IconLoader2 } from "@tabler/icons-react";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { updateTeam } from "@/app/[locale]/(app)/settings/teams/actions";
-import { Button } from "@/components/ui/button";
 import {
 	ActionPanel,
+	ActionPanelBody,
 	ActionPanelContent,
 	ActionPanelDescription,
 	ActionPanelFooter,
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -68,28 +69,30 @@ export function EditTeamDialog({ team, open, onOpenChange, onSuccess }: EditTeam
 					<ActionPanelDescription>Update team name and description</ActionPanelDescription>
 				</ActionPanelHeader>
 
-				<form key={team.id} onSubmit={handleSubmit} className="space-y-4">
-					<div className="space-y-2">
-						<Label htmlFor="name">Team Name</Label>
-						<Input
-							id="name"
-							name="name"
-							defaultValue={team.name}
-							placeholder="Engineering, Sales, Marketing..."
-							required
-						/>
-					</div>
+				<form key={team.id} onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+					<ActionPanelBody className="space-y-4">
+						<div className="space-y-2">
+							<Label htmlFor="name">Team Name</Label>
+							<Input
+								id="name"
+								name="name"
+								defaultValue={team.name}
+								placeholder="Engineering, Sales, Marketing..."
+								required
+							/>
+						</div>
 
-					<div className="space-y-2">
-						<Label htmlFor="description">Description (Optional)</Label>
-						<Textarea
-							id="description"
-							name="description"
-							defaultValue={team.description || ""}
-							placeholder="A brief description of this team"
-							rows={3}
-						/>
-					</div>
+						<div className="space-y-2">
+							<Label htmlFor="description">Description (Optional)</Label>
+							<Textarea
+								id="description"
+								name="description"
+								defaultValue={team.description || ""}
+								placeholder="A brief description of this team"
+								rows={3}
+							/>
+						</div>
+					</ActionPanelBody>
 
 					<ActionPanelFooter>
 						<Button

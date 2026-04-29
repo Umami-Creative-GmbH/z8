@@ -11,15 +11,16 @@ import {
 	getTeamsForAssignment,
 } from "@/app/[locale]/(app)/settings/surcharges/actions";
 import { EmployeeSingleSelect } from "@/components/employee-select";
-import { Button } from "@/components/ui/button";
 import {
 	ActionPanel,
+	ActionPanelBody,
 	ActionPanelContent,
 	ActionPanelDescription,
 	ActionPanelFooter,
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import { Button } from "@/components/ui/button";
 import {
 	Select,
 	SelectContent,
@@ -175,71 +176,40 @@ export function SurchargeAssignmentDialog({
 						e.stopPropagation();
 						form.handleSubmit();
 					}}
-					className="space-y-4"
+					className="flex min-h-0 flex-1 flex-col"
 				>
-					{/* Model Selection */}
-					<form.Field name="modelId">
-						{(field) => (
-							<TFormItem>
-								<TFormLabel hasError={fieldHasError(field)}>
-									{t("settings.surcharges.selectModel", "Surcharge Model")}
-								</TFormLabel>
-								<Select value={field.state.value} onValueChange={field.handleChange}>
-									<TFormControl hasError={fieldHasError(field)}>
-										<SelectTrigger>
-											<SelectValue
-												placeholder={t(
-													"settings.surcharges.selectModelPlaceholder",
-													"Select a model",
-												)}
-											/>
-										</SelectTrigger>
-									</TFormControl>
-									<SelectContent>
-										{activeModels.map((model) => (
-											<SelectItem key={model.id} value={model.id}>
-												<div>
-													<div>{model.name}</div>
-													<div className="text-xs text-muted-foreground">
-														{t(
-															"settings.surcharges.ruleCountLabel",
-															"{count, plural, one {# rule} other {# rules}}",
-															{ count: model.rules.length },
-														)}
-													</div>
-												</div>
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-								<TFormMessage field={field} />
-							</TFormItem>
-						)}
-					</form.Field>
-
-					{/* Team Selection - only for team assignments */}
-					{assignmentType === "team" && (
-						<form.Field name="teamId">
+					<ActionPanelBody className="space-y-4">
+						{/* Model Selection */}
+						<form.Field name="modelId">
 							{(field) => (
 								<TFormItem>
 									<TFormLabel hasError={fieldHasError(field)}>
-										{t("settings.surcharges.selectTeam", "Select Team")}
+										{t("settings.surcharges.selectModel", "Surcharge Model")}
 									</TFormLabel>
-									<Select value={field.state.value || ""} onValueChange={field.handleChange}>
+									<Select value={field.state.value} onValueChange={field.handleChange}>
 										<TFormControl hasError={fieldHasError(field)}>
 											<SelectTrigger>
 												<SelectValue
 													placeholder={t(
-														"settings.surcharges.selectTeamPlaceholder",
-														"Select a team",
+														"settings.surcharges.selectModelPlaceholder",
+														"Select a model",
 													)}
 												/>
 											</SelectTrigger>
 										</TFormControl>
 										<SelectContent>
-											{teams.map((team) => (
-												<SelectItem key={team.id} value={team.id}>
-													{team.name}
+											{activeModels.map((model) => (
+												<SelectItem key={model.id} value={model.id}>
+													<div>
+														<div>{model.name}</div>
+														<div className="text-xs text-muted-foreground">
+															{t(
+																"settings.surcharges.ruleCountLabel",
+																"{count, plural, one {# rule} other {# rules}}",
+																{ count: model.rules.length },
+															)}
+														</div>
+													</div>
 												</SelectItem>
 											))}
 										</SelectContent>
@@ -248,24 +218,57 @@ export function SurchargeAssignmentDialog({
 								</TFormItem>
 							)}
 						</form.Field>
-					)}
 
-					{/* Employee Selection - only for employee assignments */}
-					{assignmentType === "employee" && (
-						<form.Field name="employeeId">
-							{(field) => (
-								<EmployeeSingleSelect
-									value={field.state.value}
-									onChange={field.handleChange}
-									label={t("settings.surcharges.selectEmployee", "Select Employee")}
-									placeholder={t(
-										"settings.surcharges.selectEmployeePlaceholder",
-										"Select an employee",
-									)}
-								/>
-							)}
-						</form.Field>
-					)}
+						{/* Team Selection - only for team assignments */}
+						{assignmentType === "team" && (
+							<form.Field name="teamId">
+								{(field) => (
+									<TFormItem>
+										<TFormLabel hasError={fieldHasError(field)}>
+											{t("settings.surcharges.selectTeam", "Select Team")}
+										</TFormLabel>
+										<Select value={field.state.value || ""} onValueChange={field.handleChange}>
+											<TFormControl hasError={fieldHasError(field)}>
+												<SelectTrigger>
+													<SelectValue
+														placeholder={t(
+															"settings.surcharges.selectTeamPlaceholder",
+															"Select a team",
+														)}
+													/>
+												</SelectTrigger>
+											</TFormControl>
+											<SelectContent>
+												{teams.map((team) => (
+													<SelectItem key={team.id} value={team.id}>
+														{team.name}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+										<TFormMessage field={field} />
+									</TFormItem>
+								)}
+							</form.Field>
+						)}
+
+						{/* Employee Selection - only for employee assignments */}
+						{assignmentType === "employee" && (
+							<form.Field name="employeeId">
+								{(field) => (
+									<EmployeeSingleSelect
+										value={field.state.value}
+										onChange={field.handleChange}
+										label={t("settings.surcharges.selectEmployee", "Select Employee")}
+										placeholder={t(
+											"settings.surcharges.selectEmployeePlaceholder",
+											"Select an employee",
+										)}
+									/>
+								)}
+							</form.Field>
+						)}
+					</ActionPanelBody>
 
 					<ActionPanelFooter>
 						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

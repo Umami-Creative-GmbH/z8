@@ -1,8 +1,8 @@
 "use client";
 
 import { IconLoader2, IconPalette } from "@tabler/icons-react";
-import { useMutation } from "@tanstack/react-query";
 import { useForm } from "@tanstack/react-form";
+import { useMutation } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useEffect } from "react";
 import { toast } from "sonner";
@@ -10,15 +10,16 @@ import {
 	createOrganizationCategory,
 	updateOrganizationCategory,
 } from "@/app/[locale]/(app)/settings/work-categories/actions";
-import { Button } from "@/components/ui/button";
 import {
 	ActionPanel,
+	ActionPanelBody,
 	ActionPanelContent,
 	ActionPanelDescription,
 	ActionPanelFooter,
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -184,8 +185,9 @@ export function WorkCategoryDialog({
 						e.preventDefault();
 						form.handleSubmit();
 					}}
+					className="flex min-h-0 flex-1 flex-col"
 				>
-					<div className="space-y-4 py-4">
+					<ActionPanelBody className="space-y-4">
 						{/* Name and Color */}
 						<div className="flex gap-2">
 							<form.Field name="color">
@@ -265,7 +267,7 @@ export function WorkCategoryDialog({
 								)}
 							</p>
 						</div>
-					</div>
+					</ActionPanelBody>
 
 					<ActionPanelFooter>
 						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

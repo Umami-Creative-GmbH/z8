@@ -2,20 +2,20 @@
 
 import { IconLoader2, IconMail } from "@tabler/icons-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "@/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { sendInvitation } from "@/app/[locale]/(app)/settings/organizations/actions";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
 	ActionPanel,
+	ActionPanelBody,
 	ActionPanelContent,
 	ActionPanelDescription,
 	ActionPanelFooter,
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -26,6 +26,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { queryKeys } from "@/lib/query";
+import { useRouter } from "@/navigation";
 
 interface InviteMemberDialogProps {
 	organizationId: string;
@@ -93,86 +94,90 @@ export function InviteMemberDialog({
 			<ActionPanelContent>
 				<ActionPanelHeader>
 					<ActionPanelTitle>Invite Member</ActionPanelTitle>
-					<ActionPanelDescription>Send an invitation to join {organizationName}</ActionPanelDescription>
+					<ActionPanelDescription>
+						Send an invitation to join {organizationName}
+					</ActionPanelDescription>
 				</ActionPanelHeader>
 
-				<form onSubmit={handleSubmit} className="space-y-4">
-					<div className="space-y-2">
-						<Label htmlFor="email">Email Address</Label>
-						<div className="relative">
-							<IconMail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-							<Input
-								id="email"
-								type="email"
-								autoComplete="email"
-								value={formData.email}
-								onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-								placeholder="colleague@example.com"
-								className="pl-9"
-								required
-							/>
+				<form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+					<ActionPanelBody className="space-y-4">
+						<div className="space-y-2">
+							<Label htmlFor="email">Email Address</Label>
+							<div className="relative">
+								<IconMail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+								<Input
+									id="email"
+									type="email"
+									autoComplete="email"
+									value={formData.email}
+									onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+									placeholder="colleague@example.com"
+									className="pl-9"
+									required
+								/>
+							</div>
 						</div>
-					</div>
 
-					<div className="space-y-2">
-						<Label htmlFor="role">Role</Label>
-						<Select
-							value={formData.role}
-							onValueChange={(value: "owner" | "admin" | "member") =>
-								setFormData({ ...formData, role: value })
-							}
-						>
-							<SelectTrigger id="role">
-								<SelectValue />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="member">
-									<div className="flex flex-col items-start">
-										<span className="font-medium">Member</span>
-										<span className="text-xs text-muted-foreground">
-											Basic access to organization
-										</span>
-									</div>
-								</SelectItem>
-								<SelectItem value="admin">
-									<div className="flex flex-col items-start">
-										<span className="font-medium">Admin</span>
-										<span className="text-xs text-muted-foreground">
-											Can invite members and manage settings
-										</span>
-									</div>
-								</SelectItem>
-								{currentMemberRole === "owner" && (
-									<SelectItem value="owner">
+						<div className="space-y-2">
+							<Label htmlFor="role">Role</Label>
+							<Select
+								value={formData.role}
+								onValueChange={(value: "owner" | "admin" | "member") =>
+									setFormData({ ...formData, role: value })
+								}
+							>
+								<SelectTrigger id="role">
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="member">
 										<div className="flex flex-col items-start">
-											<span className="font-medium">Owner</span>
+											<span className="font-medium">Member</span>
 											<span className="text-xs text-muted-foreground">
-												Full control of organization
+												Basic access to organization
 											</span>
 										</div>
 									</SelectItem>
-								)}
-							</SelectContent>
-						</Select>
-					</div>
-
-					{currentMemberRole === "owner" && (
-						<div className="flex items-center space-x-2">
-							<Checkbox
-								id="canCreateOrganizations"
-								checked={formData.canCreateOrganizations}
-								onCheckedChange={(checked) =>
-									setFormData({ ...formData, canCreateOrganizations: checked as boolean })
-								}
-							/>
-							<label
-								htmlFor="canCreateOrganizations"
-								className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-							>
-								Allow this user to create organizations
-							</label>
+									<SelectItem value="admin">
+										<div className="flex flex-col items-start">
+											<span className="font-medium">Admin</span>
+											<span className="text-xs text-muted-foreground">
+												Can invite members and manage settings
+											</span>
+										</div>
+									</SelectItem>
+									{currentMemberRole === "owner" && (
+										<SelectItem value="owner">
+											<div className="flex flex-col items-start">
+												<span className="font-medium">Owner</span>
+												<span className="text-xs text-muted-foreground">
+													Full control of organization
+												</span>
+											</div>
+										</SelectItem>
+									)}
+								</SelectContent>
+							</Select>
 						</div>
-					)}
+
+						{currentMemberRole === "owner" && (
+							<div className="flex items-center space-x-2">
+								<Checkbox
+									id="canCreateOrganizations"
+									checked={formData.canCreateOrganizations}
+									onCheckedChange={(checked) =>
+										setFormData({ ...formData, canCreateOrganizations: checked as boolean })
+									}
+								/>
+								<label
+									htmlFor="canCreateOrganizations"
+									className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+								>
+									Allow this user to create organizations
+								</label>
+							</div>
+						)}
+					</ActionPanelBody>
 
 					<ActionPanelFooter>
 						<Button

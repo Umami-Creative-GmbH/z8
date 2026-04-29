@@ -3,15 +3,16 @@
 import { IconCheck, IconLoader2, IconX } from "@tabler/icons-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import {
 	ActionPanel,
+	ActionPanelBody,
 	ActionPanelContent,
 	ActionPanelDescription,
 	ActionPanelFooter,
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -60,27 +61,27 @@ export function ApprovalActionDialog({
 					<ActionPanelDescription>{description}</ActionPanelDescription>
 				</ActionPanelHeader>
 
-				{action === "reject" && (
-					<div className="grid gap-2 py-4">
-						<Label htmlFor="reason">Reason for rejection *</Label>
-						<Textarea
-							id="reason"
-							placeholder="Provide a clear reason for rejecting this request..."
-							value={rejectionReason}
-							onChange={(e) => setRejectionReason(e.target.value)}
-							rows={4}
-							required
-						/>
-					</div>
-				)}
+				<ActionPanelBody>
+					{action === "reject" && (
+						<div className="grid gap-2">
+							<Label htmlFor="reason">Reason for rejection *</Label>
+							<Textarea
+								id="reason"
+								placeholder="Provide a clear reason for rejecting this request..."
+								value={rejectionReason}
+								onChange={(e) => setRejectionReason(e.target.value)}
+								rows={4}
+								required
+							/>
+						</div>
+					)}
 
-				{action === "approve" && (
-					<div className="py-4">
+					{action === "approve" && (
 						<p className="text-sm text-muted-foreground">
 							This action will approve the request and notify the employee.
 						</p>
-					</div>
-				)}
+					)}
+				</ActionPanelBody>
 
 				<ActionPanelFooter>
 					<Button

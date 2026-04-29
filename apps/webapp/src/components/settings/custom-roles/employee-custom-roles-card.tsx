@@ -1,38 +1,26 @@
 "use client";
 
+import { IconLoader2, IconPlus, IconX } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-	IconLoader2,
-	IconPlus,
-	IconX,
-} from "@tabler/icons-react";
 import { useState } from "react";
 import { toast } from "sonner";
-
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
+	assignRoleToEmployee,
+	getEmployeeCustomRoles,
+	listCustomRoles,
+	unassignRoleFromEmployee,
+} from "@/app/[locale]/(app)/settings/roles/actions";
 import {
 	ActionPanel,
+	ActionPanelBody,
 	ActionPanelContent,
 	ActionPanelDescription,
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
-
-import {
-	listCustomRoles,
-	getEmployeeCustomRoles,
-	assignRoleToEmployee,
-	unassignRoleFromEmployee,
-} from "@/app/[locale]/(app)/settings/roles/actions";
-import type { CustomRoleWithPermissions } from "@/lib/effect/services/custom-role.service";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface EmployeeCustomRolesCardProps {
 	employeeId: string;
@@ -105,16 +93,10 @@ export function EmployeeCustomRolesCard({
 				<div className="flex items-center justify-between">
 					<div>
 						<CardTitle>Custom Roles</CardTitle>
-						<CardDescription>
-							Additional permission roles assigned to this employee
-						</CardDescription>
+						<CardDescription>Additional permission roles assigned to this employee</CardDescription>
 					</div>
 					{isAdmin && (
-						<Button
-							variant="outline"
-							size="sm"
-							onClick={() => setIsAssignOpen(true)}
-						>
+						<Button variant="outline" size="sm" onClick={() => setIsAssignOpen(true)}>
 							<IconPlus className="mr-1 h-4 w-4" />
 							Assign Role
 						</Button>
@@ -127,9 +109,7 @@ export function EmployeeCustomRolesCard({
 						<IconLoader2 className="h-5 w-5 animate-spin text-muted-foreground" />
 					</div>
 				) : !assignedRoles?.length ? (
-					<p className="text-sm text-muted-foreground">
-						No custom roles assigned.
-					</p>
+					<p className="text-sm text-muted-foreground">No custom roles assigned.</p>
 				) : (
 					<div className="flex flex-wrap gap-2">
 						{assignedRoles.map((role) => (
@@ -177,11 +157,11 @@ export function EmployeeCustomRolesCard({
 							Select a role to assign to this employee.
 						</ActionPanelDescription>
 					</ActionPanelHeader>
-					<div className="space-y-2">
+					<ActionPanelBody className="space-y-2">
 						{!availableRoles.length ? (
 							<p className="text-sm text-muted-foreground py-4 text-center">
-								No available roles to assign. All roles are already assigned
-								or none have been created.
+								No available roles to assign. All roles are already assigned or none have been
+								created.
 							</p>
 						) : (
 							availableRoles.map((role) => (
@@ -199,9 +179,7 @@ export function EmployeeCustomRolesCard({
 									<div className="flex-1">
 										<div className="font-medium text-sm">{role.name}</div>
 										{role.description && (
-											<div className="text-xs text-muted-foreground">
-												{role.description}
-											</div>
+											<div className="text-xs text-muted-foreground">{role.description}</div>
 										)}
 									</div>
 									<Badge variant="outline" className="text-xs">
@@ -210,7 +188,7 @@ export function EmployeeCustomRolesCard({
 								</button>
 							))
 						)}
-					</div>
+					</ActionPanelBody>
 				</ActionPanelContent>
 			</ActionPanel>
 		</Card>

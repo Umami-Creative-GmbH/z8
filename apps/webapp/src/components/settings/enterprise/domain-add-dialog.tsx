@@ -5,15 +5,16 @@ import { DateTime } from "luxon";
 import { useState } from "react";
 import { toast } from "sonner";
 import { addDomainAction } from "@/app/[locale]/(app)/settings/enterprise/actions";
-import { Button } from "@/components/ui/button";
 import {
 	ActionPanel,
+	ActionPanelBody,
 	ActionPanelContent,
 	ActionPanelDescription,
 	ActionPanelFooter,
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -108,39 +109,41 @@ export function DomainAddDialog({ open, onOpenChange, onDomainAdded }: DomainAdd
 						e.preventDefault();
 						form.handleSubmit();
 					}}
-					className="space-y-4"
+					className="flex min-h-0 flex-1 flex-col"
 				>
-					<form.Field
-						name="domain"
-						validators={{
-							onChange: ({ value }) => {
-								if (!value) return "Domain is required";
-								if (!DOMAIN_REGEX.test(value)) {
-									return "Please enter a valid domain (e.g., login.example.com)";
-								}
-								return undefined;
-							},
-						}}
-					>
-						{(field) => (
-							<div className="space-y-2">
-								<Label htmlFor="domain">Domain</Label>
-								<Input
-									id="domain"
-									placeholder="login.example.com"
-									value={field.state.value}
-									onChange={(e) => field.handleChange(e.target.value)}
-									onBlur={field.handleBlur}
-								/>
-								<p className="text-sm text-muted-foreground">
-									Enter the domain where users will access the login page.
-								</p>
-								{field.state.meta.errors.length > 0 && (
-									<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
-								)}
-							</div>
-						)}
-					</form.Field>
+					<ActionPanelBody className="space-y-4">
+						<form.Field
+							name="domain"
+							validators={{
+								onChange: ({ value }) => {
+									if (!value) return "Domain is required";
+									if (!DOMAIN_REGEX.test(value)) {
+										return "Please enter a valid domain (e.g., login.example.com)";
+									}
+									return undefined;
+								},
+							}}
+						>
+							{(field) => (
+								<div className="space-y-2">
+									<Label htmlFor="domain">Domain</Label>
+									<Input
+										id="domain"
+										placeholder="login.example.com"
+										value={field.state.value}
+										onChange={(e) => field.handleChange(e.target.value)}
+										onBlur={field.handleBlur}
+									/>
+									<p className="text-sm text-muted-foreground">
+										Enter the domain where users will access the login page.
+									</p>
+									{field.state.meta.errors.length > 0 && (
+										<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
+									)}
+								</div>
+							)}
+						</form.Field>
+					</ActionPanelBody>
 					<ActionPanelFooter>
 						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
 							Cancel

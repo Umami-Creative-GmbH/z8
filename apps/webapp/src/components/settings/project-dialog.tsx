@@ -13,16 +13,17 @@ import {
 	type ProjectWithDetails,
 	updateProject,
 } from "@/app/[locale]/(app)/settings/projects/actions";
-import { Button } from "@/components/ui/button";
-import { DatePicker } from "@/components/ui/date-picker";
 import {
 	ActionPanel,
+	ActionPanelBody,
 	ActionPanelContent,
 	ActionPanelDescription,
 	ActionPanelFooter,
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -137,7 +138,9 @@ export function ProjectDialog({
 					toast.success(t("settings.projects.updated", "Project updated"));
 					onSuccess();
 				} else {
-					toast.error(result.error || t("settings.projects.updateFailed", "Failed to update project"));
+					toast.error(
+						result.error || t("settings.projects.updateFailed", "Failed to update project"),
+					);
 				}
 				setIsSubmitting(false);
 				return;
@@ -164,7 +167,9 @@ export function ProjectDialog({
 				toast.success(t("settings.projects.created", "Project created"));
 				onSuccess();
 			} else {
-				toast.error(result.error || t("settings.projects.createFailed", "Failed to create project"));
+				toast.error(
+					result.error || t("settings.projects.createFailed", "Failed to create project"),
+				);
 			}
 
 			setIsSubmitting(false);
@@ -195,8 +200,9 @@ export function ProjectDialog({
 						e.preventDefault();
 						form.handleSubmit();
 					}}
+					className="flex min-h-0 flex-1 flex-col"
 				>
-					<div className="grid gap-4 py-4">
+					<ActionPanelBody className="grid gap-4">
 						{/* Name */}
 						<form.Field name="name">
 							{(field) => (
@@ -372,7 +378,7 @@ export function ProjectDialog({
 								</div>
 							)}
 						</form.Field>
-					</div>
+					</ActionPanelBody>
 
 					<ActionPanelFooter>
 						<Button

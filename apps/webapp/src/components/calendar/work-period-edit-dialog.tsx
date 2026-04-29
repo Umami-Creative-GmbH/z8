@@ -8,15 +8,16 @@ import {
 	updateWorkPeriodNotes,
 	updateWorkPeriodProject,
 } from "@/app/[locale]/(app)/time-tracking/actions";
-import { Button } from "@/components/ui/button";
 import {
 	ActionPanel,
+	ActionPanelBody,
 	ActionPanelContent,
 	ActionPanelDescription,
 	ActionPanelFooter,
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import { Button } from "@/components/ui/button";
 import type { CalendarEvent } from "@/lib/calendar/types";
 import { useProjectsEnabled } from "@/stores/organization-settings-store";
 import { getWorkPeriodDialogMetadata } from "./work-period-dialog-utils";
@@ -160,7 +161,7 @@ export function WorkPeriodEditDialog({
 					<ActionPanelDescription />
 				</ActionPanelHeader>
 
-				<div className="space-y-4 py-4">
+				<ActionPanelBody className="space-y-4">
 					<ApprovalStatusBanner status={approvalStatus} t={t} />
 					<WorkPeriodSummaryBlock event={event} metadata={metadata} t={t} />
 					<WorkPeriodDurationSection metadata={metadata} t={t} />
@@ -188,7 +189,7 @@ export function WorkPeriodEditDialog({
 						onSave={handleSaveNotes}
 						t={t}
 					/>
-				</div>
+				</ActionPanelBody>
 
 				<ActionPanelFooter className="flex-col gap-2 sm:flex-row">
 					<div className="flex w-full gap-2 sm:w-auto">

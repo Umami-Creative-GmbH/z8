@@ -5,15 +5,16 @@ import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import {
 	ActionPanel,
+	ActionPanelBody,
 	ActionPanelContent,
 	ActionPanelDescription,
 	ActionPanelFooter,
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import type { CreateApiKeyResponse } from "@/lib/validations/api-key";
 
@@ -66,7 +67,7 @@ export function ApiKeyShowDialog({ apiKey, open, onOpenChange }: ApiKeyShowDialo
 					</ActionPanelDescription>
 				</ActionPanelHeader>
 
-				<div className="py-4 space-y-4">
+				<ActionPanelBody className="space-y-4">
 					{/* Warning Banner */}
 					<div className="flex items-start gap-3 p-3 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-md">
 						<IconAlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
@@ -134,7 +135,7 @@ export function ApiKeyShowDialog({ apiKey, open, onOpenChange }: ApiKeyShowDialo
 							{t("settings.apiKeys.showCopied", "Key copied to clipboard")}
 						</div>
 					)}
-				</div>
+				</ActionPanelBody>
 
 				<ActionPanelFooter className="flex-col sm:flex-row gap-2">
 					{!copied && hasConfirmed && (

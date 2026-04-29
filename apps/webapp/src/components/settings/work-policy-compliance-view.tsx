@@ -17,17 +17,18 @@ import {
 	getWorkPolicyViolations,
 	type WorkPolicyViolationWithDetails,
 } from "@/app/[locale]/(app)/settings/work-policies/actions";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import {
 	ActionPanel,
+	ActionPanelBody,
 	ActionPanelContent,
 	ActionPanelDescription,
 	ActionPanelFooter,
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import {
 	Select,
 	SelectContent,
@@ -470,7 +471,7 @@ export function WorkPolicyComplianceView({ organizationId }: WorkPolicyComplianc
 						</ActionPanelDescription>
 					</ActionPanelHeader>
 
-					<div className="space-y-4">
+					<ActionPanelBody className="space-y-4">
 						{selectedViolation && (
 							<div className="rounded-lg border p-4 bg-muted/30">
 								<div className="grid grid-cols-2 gap-2 text-sm">
@@ -522,7 +523,7 @@ export function WorkPolicyComplianceView({ organizationId }: WorkPolicyComplianc
 								rows={3}
 							/>
 						</div>
-					</div>
+					</ActionPanelBody>
 
 					<ActionPanelFooter>
 						<Button type="button" variant="outline" onClick={() => setAcknowledgeDialogOpen(false)}>
