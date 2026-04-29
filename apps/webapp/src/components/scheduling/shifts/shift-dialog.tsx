@@ -133,7 +133,7 @@ export function ShiftDialog({
 
 	return (
 		<ActionPanel open={open} onOpenChange={onOpenChange}>
-			<ActionPanelContent className="sm:max-w-[500px]">
+			<ActionPanelContent>
 				<ActionPanelHeader>
 					<ActionPanelTitle>{title}</ActionPanelTitle>
 					<ActionPanelDescription>{description}</ActionPanelDescription>

@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import {
 	ActionPanel,
+	ActionPanelBody,
 	ActionPanelContent,
 	ActionPanelDescription,
 	ActionPanelFooter,
@@ -185,12 +186,13 @@ export function RequestAbsenceDialog({
 					{trigger || <Button>{t("absences.requestAbsence", "Request Absence")}</Button>}
 				</ActionPanelTrigger>
 			)}
-			<ActionPanelContent className="sm:max-w-[500px]">
+			<ActionPanelContent>
 				<form
 					onSubmit={(e) => {
 						e.preventDefault();
 						form.handleSubmit();
 					}}
+					className="flex min-h-0 flex-1 flex-col"
 				>
 					<ActionPanelHeader>
 						<ActionPanelTitle>{t("absences.form.title", "Request Absence")}</ActionPanelTitle>
@@ -202,7 +204,7 @@ export function RequestAbsenceDialog({
 						</ActionPanelDescription>
 					</ActionPanelHeader>
 
-					<div className="grid gap-4 py-4">
+					<ActionPanelBody className="grid gap-4">
 						{/* Category Select */}
 						<form.Field name="categoryId">
 							{(field) => (
@@ -440,7 +442,7 @@ export function RequestAbsenceDialog({
 								</TFormItem>
 							)}
 						</form.Field>
-					</div>
+					</ActionPanelBody>
 
 					{/* Footer with submit button that uses form.Subscribe for dirty/submitting state */}
 					<form.Subscribe
