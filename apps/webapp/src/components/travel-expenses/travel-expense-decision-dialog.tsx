@@ -8,15 +8,16 @@ import {
 	approveTravelExpenseClaim,
 	rejectTravelExpenseClaim,
 } from "@/app/[locale]/(app)/travel-expenses/actions";
-import { Button } from "@/components/ui/button";
 import {
 	ActionPanel,
+	ActionPanelBody,
 	ActionPanelContent,
 	ActionPanelDescription,
 	ActionPanelFooter,
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -93,13 +94,16 @@ export function TravelExpenseDecisionDialog({
 		<ActionPanel open={open} onOpenChange={onOpenChange}>
 			<ActionPanelContent>
 				<form
+					className="flex min-h-0 flex-1 flex-col"
 					onSubmit={(event) => {
 						event.preventDefault();
 						form.handleSubmit();
 					}}
 				>
 					<ActionPanelHeader>
-						<ActionPanelTitle>{action === "approve" ? "Approve Claim" : "Reject Claim"}</ActionPanelTitle>
+						<ActionPanelTitle>
+							{action === "approve" ? "Approve Claim" : "Reject Claim"}
+						</ActionPanelTitle>
 						<ActionPanelDescription>
 							{action === "approve"
 								? "Add an optional note for the claimant before approving."
@@ -107,7 +111,7 @@ export function TravelExpenseDecisionDialog({
 						</ActionPanelDescription>
 					</ActionPanelHeader>
 
-					<div className="grid gap-2 py-4">
+					<ActionPanelBody className="grid gap-2 py-4">
 						{action === "approve" ? (
 							<form.Field name="note">
 								{(field) => (
@@ -142,7 +146,7 @@ export function TravelExpenseDecisionDialog({
 								)}
 							</form.Field>
 						)}
-					</div>
+					</ActionPanelBody>
 
 					<form.Subscribe selector={(state) => state.isSubmitting}>
 						{(isSubmitting) => (

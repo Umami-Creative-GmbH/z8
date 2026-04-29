@@ -15,6 +15,7 @@ const QRCodeSVG = dynamic(() => import("qrcode.react").then((mod) => mod.QRCodeS
 
 import {
 	ActionPanel,
+	ActionPanelBody,
 	ActionPanelContent,
 	ActionPanelDescription,
 	ActionPanelFooter,
@@ -240,7 +241,7 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled }: TwoFactorSetupPr
 							Please confirm your password to enable two-factor authentication
 						</ActionPanelDescription>
 					</ActionPanelHeader>
-					<div className="space-y-4">
+					<ActionPanelBody className="space-y-4">
 						<div className="space-y-2">
 							<label className="text-sm font-medium" htmlFor="enable-2fa-password">
 								Password
@@ -254,7 +255,7 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled }: TwoFactorSetupPr
 								placeholder="Enter your password"
 							/>
 						</div>
-					</div>
+					</ActionPanelBody>
 					<ActionPanelFooter>
 						<Button
 							variant="outline"
@@ -282,7 +283,7 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled }: TwoFactorSetupPr
 							Please confirm your password to regenerate backup codes
 						</ActionPanelDescription>
 					</ActionPanelHeader>
-					<div className="space-y-4">
+					<ActionPanelBody className="space-y-4">
 						<div className="space-y-2">
 							<label className="text-sm font-medium" htmlFor="regenerate-2fa-password">
 								Password
@@ -296,7 +297,7 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled }: TwoFactorSetupPr
 								placeholder="Enter your password"
 							/>
 						</div>
-					</div>
+					</ActionPanelBody>
 					<ActionPanelFooter>
 						<Button
 							variant="outline"
@@ -328,7 +329,7 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled }: TwoFactorSetupPr
 						</ActionPanelDescription>
 					</ActionPanelHeader>
 
-					<div className="space-y-4">
+					<ActionPanelBody className="space-y-4">
 						{/* QR Code */}
 						<div className="flex justify-center">
 							{totpUri && (
@@ -356,7 +357,7 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled }: TwoFactorSetupPr
 								</InputOTP>
 							</div>
 						</div>
-					</div>
+					</ActionPanelBody>
 
 					<ActionPanelFooter>
 						<Button
@@ -384,7 +385,7 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled }: TwoFactorSetupPr
 						</ActionPanelDescription>
 					</ActionPanelHeader>
 
-					<div className="space-y-4">
+					<ActionPanelBody className="space-y-4">
 						<div className="grid grid-cols-2 gap-2 rounded-lg bg-muted p-4">
 							{backupCodes.map((code) => (
 								<code key={code} className="text-sm font-mono">
@@ -396,7 +397,7 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled }: TwoFactorSetupPr
 						<Button variant="outline" onClick={handleCopyBackupCodes} className="w-full">
 							Copy Codes
 						</Button>
-					</div>
+					</ActionPanelBody>
 
 					<ActionPanelFooter>
 						<Button onClick={() => setBackupCodesDialogOpen(false)}>I've Saved These Codes</Button>

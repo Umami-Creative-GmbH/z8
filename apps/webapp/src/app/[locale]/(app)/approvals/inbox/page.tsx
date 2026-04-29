@@ -5,16 +5,17 @@ import { useTranslate } from "@tolgee/react";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
 	ActionPanel,
+	ActionPanelBody,
 	ActionPanelContent,
 	ActionPanelDescription,
 	ActionPanelFooter,
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import type {
@@ -420,7 +421,7 @@ export default function ApprovalInboxPage() {
 							)}
 						</ActionPanelDescription>
 					</ActionPanelHeader>
-					<div className="space-y-2">
+					<ActionPanelBody className="space-y-2">
 						<label className="text-sm font-medium" htmlFor="bulk-reject-reason">
 							{t("approvals.rejectionReason", "Reason for rejection")}
 						</label>
@@ -434,7 +435,7 @@ export default function ApprovalInboxPage() {
 							)}
 							rows={4}
 						/>
-					</div>
+					</ActionPanelBody>
 					<ActionPanelFooter>
 						<Button
 							variant="outline"
