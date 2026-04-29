@@ -9,15 +9,16 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { checkSlugAvailability } from "@/app/[locale]/(app)/organization-actions";
-import { Button } from "@/components/ui/button";
 import {
 	ActionPanel,
+	ActionPanelBody,
 	ActionPanelContent,
 	ActionPanelDescription,
 	ActionPanelFooter,
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getAuthErrorMessage } from "@/lib/auth/error-message";
@@ -77,7 +78,12 @@ export function CreateOrganizationDialog({
 			}
 
 			if (result.error) {
-				toast.error(getAuthErrorMessage(result.error, t("organization.createError", "Failed to create organization")));
+				toast.error(
+					getAuthErrorMessage(
+						result.error,
+						t("organization.createError", "Failed to create organization"),
+					),
+				);
 				setLoading(false);
 				return;
 			}
@@ -172,91 +178,93 @@ export function CreateOrganizationDialog({
 						e.preventDefault();
 						form.handleSubmit();
 					}}
-					className="space-y-4"
+					className="flex min-h-0 flex-1 flex-col"
 				>
-					{/* Organization Name */}
-					<form.Field
-						name="name"
-						validators={{
-							onChange: z
-								.string()
-								.min(2, "Organization name must be at least 2 characters")
-								.max(100),
-						}}
-					>
-						{(field) => (
-							<div className="space-y-2">
-								<Label>{t("organization.nameLabel", "Organization Name")}</Label>
-								<Input
-									value={field.state.value}
-									onChange={(e) => field.handleChange(e.target.value)}
-									onBlur={field.handleBlur}
-									placeholder={t("organization.namePlaceholder", "Acme Inc.")}
-									disabled={loading}
-								/>
-								{field.state.meta.errors.length > 0 && (
-									<p className="text-sm font-medium text-destructive">
-										{typeof field.state.meta.errors[0] === "string"
-											? field.state.meta.errors[0]
-											: (field.state.meta.errors[0] as any)?.message}
-									</p>
-								)}
-							</div>
-						)}
-					</form.Field>
-
-					{/* Organization Slug */}
-					<form.Field
-						name="slug"
-						validators={{
-							onChange: z
-								.string()
-								.min(2, "Slug must be at least 2 characters")
-								.max(50, "Slug must be less than 50 characters")
-								.regex(
-									/^[a-z0-9-]+$/,
-									"Slug must contain only lowercase letters, numbers, and hyphens",
-								)
-								.refine((slug) => !slug.startsWith("-") && !slug.endsWith("-"), {
-									message: "Slug cannot start or end with a hyphen",
-								}),
-						}}
-					>
-						{(field) => (
-							<div className="space-y-2">
-								<Label>{t("organization.slugLabel", "Organization Slug")}</Label>
-								<div className="relative">
+					<ActionPanelBody className="space-y-4">
+						{/* Organization Name */}
+						<form.Field
+							name="name"
+							validators={{
+								onChange: z
+									.string()
+									.min(2, "Organization name must be at least 2 characters")
+									.max(100),
+							}}
+						>
+							{(field) => (
+								<div className="space-y-2">
+									<Label>{t("organization.nameLabel", "Organization Name")}</Label>
 									<Input
 										value={field.state.value}
-										onChange={(e) => {
-											slugManuallyEdited.current = true;
-											setSlugError(null);
-											field.handleChange(e.target.value);
-										}}
+										onChange={(e) => field.handleChange(e.target.value)}
 										onBlur={field.handleBlur}
-										placeholder={t("organization.slugPlaceholder", "acme-inc")}
+										placeholder={t("organization.namePlaceholder", "Acme Inc.")}
 										disabled={loading}
 									/>
-									{checkingSlug && (
-										<div className="absolute right-3 top-1/2 -translate-y-1/2">
-											<IconLoader2 className="size-4 animate-spin text-muted-foreground" />
-										</div>
+									{field.state.meta.errors.length > 0 && (
+										<p className="text-sm font-medium text-destructive">
+											{typeof field.state.meta.errors[0] === "string"
+												? field.state.meta.errors[0]
+												: (field.state.meta.errors[0] as any)?.message}
+										</p>
 									)}
 								</div>
-								<p className="text-sm text-muted-foreground">
-									{t("organization.slugDescription", "Used in URLs. Auto-generated from name.")}
-								</p>
-								{slugError && <p className="text-sm font-medium text-destructive">{slugError}</p>}
-								{field.state.meta.errors.length > 0 && (
-									<p className="text-sm font-medium text-destructive">
-										{typeof field.state.meta.errors[0] === "string"
-											? field.state.meta.errors[0]
-											: (field.state.meta.errors[0] as any)?.message}
+							)}
+						</form.Field>
+
+						{/* Organization Slug */}
+						<form.Field
+							name="slug"
+							validators={{
+								onChange: z
+									.string()
+									.min(2, "Slug must be at least 2 characters")
+									.max(50, "Slug must be less than 50 characters")
+									.regex(
+										/^[a-z0-9-]+$/,
+										"Slug must contain only lowercase letters, numbers, and hyphens",
+									)
+									.refine((slug) => !slug.startsWith("-") && !slug.endsWith("-"), {
+										message: "Slug cannot start or end with a hyphen",
+									}),
+							}}
+						>
+							{(field) => (
+								<div className="space-y-2">
+									<Label>{t("organization.slugLabel", "Organization Slug")}</Label>
+									<div className="relative">
+										<Input
+											value={field.state.value}
+											onChange={(e) => {
+												slugManuallyEdited.current = true;
+												setSlugError(null);
+												field.handleChange(e.target.value);
+											}}
+											onBlur={field.handleBlur}
+											placeholder={t("organization.slugPlaceholder", "acme-inc")}
+											disabled={loading}
+										/>
+										{checkingSlug && (
+											<div className="absolute right-3 top-1/2 -translate-y-1/2">
+												<IconLoader2 className="size-4 animate-spin text-muted-foreground" />
+											</div>
+										)}
+									</div>
+									<p className="text-sm text-muted-foreground">
+										{t("organization.slugDescription", "Used in URLs. Auto-generated from name.")}
 									</p>
-								)}
-							</div>
-						)}
-					</form.Field>
+									{slugError && <p className="text-sm font-medium text-destructive">{slugError}</p>}
+									{field.state.meta.errors.length > 0 && (
+										<p className="text-sm font-medium text-destructive">
+											{typeof field.state.meta.errors[0] === "string"
+												? field.state.meta.errors[0]
+												: (field.state.meta.errors[0] as any)?.message}
+										</p>
+									)}
+								</div>
+							)}
+						</form.Field>
+					</ActionPanelBody>
 
 					<ActionPanelFooter>
 						<Button

@@ -17,6 +17,15 @@ import {
 	rotateSigningKeyAction,
 } from "@/app/[locale]/(app)/settings/audit-export/actions";
 import {
+	ActionPanel,
+	ActionPanelBody,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelHeader,
+	ActionPanelTitle,
+	ActionPanelTrigger,
+} from "@/components/ui/action-panel";
+import {
 	AlertDialog,
 	AlertDialogAction,
 	AlertDialogCancel,
@@ -30,14 +39,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-	ActionPanel,
-	ActionPanelContent,
-	ActionPanelDescription,
-	ActionPanelHeader,
-	ActionPanelTitle,
-	ActionPanelTrigger,
-} from "@/components/ui/action-panel";
 import {
 	Table,
 	TableBody,
@@ -95,10 +96,14 @@ export function KeyManagement({
 		}
 
 		if (result.success) {
-			toast.success(t("settings.auditExport.keys.rotateSuccess", "Signing key rotated successfully"));
+			toast.success(
+				t("settings.auditExport.keys.rotateSuccess", "Signing key rotated successfully"),
+			);
 			router.refresh();
 		} else {
-			toast.error(result.error || t("settings.auditExport.keys.rotateError", "Key rotation failed"));
+			toast.error(
+				result.error || t("settings.auditExport.keys.rotateError", "Key rotation failed"),
+			);
 		}
 
 		setLoading(false);
@@ -120,7 +125,9 @@ export function KeyManagement({
 		if (result.success) {
 			setKeyHistory(result.data);
 		} else {
-			toast.error(result.error || t("settings.auditExport.keys.historyError", "Failed to load key history"));
+			toast.error(
+				result.error || t("settings.auditExport.keys.historyError", "Failed to load key history"),
+			);
 		}
 
 		setHistoryLoading(false);
@@ -142,7 +149,9 @@ export function KeyManagement({
 		if (result.success) {
 			setPublicKey(result.data);
 		} else {
-			toast.error(result.error || t("settings.auditExport.keys.exportError", "Failed to export public key"));
+			toast.error(
+				result.error || t("settings.auditExport.keys.exportError", "Failed to export public key"),
+			);
 		}
 
 		setPublicKeyLoading(false);
@@ -236,54 +245,56 @@ export function KeyManagement({
 									)}
 								</ActionPanelDescription>
 							</ActionPanelHeader>
-							{publicKeyLoading ? (
-								<div className="flex items-center justify-center py-8">
-									<IconLoader2 className="size-6 animate-spin" />
-								</div>
-							) : publicKey ? (
-								<div className="space-y-4">
-									<div className="space-y-2">
-										<div className="flex items-center justify-between">
-											<p className="text-sm font-medium">
-												{t("settings.auditExport.keys.pemFormat", "PEM Format")}
-											</p>
-											<div className="flex gap-2">
-												<Button variant="outline" size="sm" onClick={handleCopyPublicKey}>
-													<IconCopy className="mr-2 size-4" />
-													{t("common.copy", "Copy")}
-												</Button>
-												<Button variant="outline" size="sm" onClick={handleDownloadPublicKey}>
-													<IconDownload className="mr-2 size-4" />
-													{t("common.download", "Download")}
-												</Button>
+							<ActionPanelBody>
+								{publicKeyLoading ? (
+									<div className="flex items-center justify-center py-8">
+										<IconLoader2 className="size-6 animate-spin" />
+									</div>
+								) : publicKey ? (
+									<div className="space-y-4">
+										<div className="space-y-2">
+											<div className="flex items-center justify-between">
+												<p className="text-sm font-medium">
+													{t("settings.auditExport.keys.pemFormat", "PEM Format")}
+												</p>
+												<div className="flex gap-2">
+													<Button variant="outline" size="sm" onClick={handleCopyPublicKey}>
+														<IconCopy className="mr-2 size-4" />
+														{t("common.copy", "Copy")}
+													</Button>
+													<Button variant="outline" size="sm" onClick={handleDownloadPublicKey}>
+														<IconDownload className="mr-2 size-4" />
+														{t("common.download", "Download")}
+													</Button>
+												</div>
+											</div>
+											<Textarea
+												readOnly
+												value={publicKey.publicKeyPem}
+												className="font-mono text-xs h-32"
+											/>
+										</div>
+										<div className="grid grid-cols-2 gap-4 text-sm">
+											<div>
+												<p className="text-muted-foreground">
+													{t("settings.auditExport.keys.algorithm", "Algorithm")}
+												</p>
+												<p className="font-medium">{publicKey.algorithm}</p>
+											</div>
+											<div>
+												<p className="text-muted-foreground">
+													{t("settings.auditExport.keys.keyVersion", "Version")}
+												</p>
+												<p className="font-medium">{publicKey.version}</p>
 											</div>
 										</div>
-										<Textarea
-											readOnly
-											value={publicKey.publicKeyPem}
-											className="font-mono text-xs h-32"
-										/>
 									</div>
-									<div className="grid grid-cols-2 gap-4 text-sm">
-										<div>
-											<p className="text-muted-foreground">
-												{t("settings.auditExport.keys.algorithm", "Algorithm")}
-											</p>
-											<p className="font-medium">{publicKey.algorithm}</p>
-										</div>
-										<div>
-											<p className="text-muted-foreground">
-												{t("settings.auditExport.keys.keyVersion", "Version")}
-											</p>
-											<p className="font-medium">{publicKey.version}</p>
-										</div>
-									</div>
-								</div>
-							) : (
-								<p className="text-muted-foreground text-center py-4">
-									{t("settings.auditExport.keys.noKeyData", "No key data available")}
-								</p>
-							)}
+								) : (
+									<p className="text-muted-foreground text-center py-4">
+										{t("settings.auditExport.keys.noKeyData", "No key data available")}
+									</p>
+								)}
+							</ActionPanelBody>
 						</ActionPanelContent>
 					</ActionPanel>
 
@@ -311,48 +322,54 @@ export function KeyManagement({
 									)}
 								</ActionPanelDescription>
 							</ActionPanelHeader>
-							{historyLoading ? (
-								<div className="flex items-center justify-center py-8">
-									<IconLoader2 className="size-6 animate-spin" />
-								</div>
-							) : keyHistory.length > 0 ? (
-								<Table>
-									<TableHeader>
-										<TableRow>
-											<TableHead>{t("settings.auditExport.keys.colVersion", "Version")}</TableHead>
-											<TableHead>
-												{t("settings.auditExport.keys.colFingerprint", "Fingerprint")}
-											</TableHead>
-											<TableHead>{t("settings.auditExport.keys.colCreated", "Created")}</TableHead>
-											<TableHead>{t("settings.auditExport.keys.colStatus", "Status")}</TableHead>
-										</TableRow>
-									</TableHeader>
-									<TableBody>
-										{keyHistory.map((key) => (
-											<TableRow key={key.keyId}>
-												<TableCell>v{key.version}</TableCell>
-												<TableCell className="font-mono text-xs">
-													{key.fingerprint.substring(0, 16)}…
-												</TableCell>
-												<TableCell>{new Date(key.createdAt).toLocaleDateString()}</TableCell>
-												<TableCell>
-													{key.isActive ? (
-														<Badge>{t("settings.auditExport.keys.active", "Active")}</Badge>
-													) : (
-														<Badge variant="secondary">
-															{t("settings.auditExport.keys.rotated", "Rotated")}
-														</Badge>
-													)}
-												</TableCell>
+							<ActionPanelBody>
+								{historyLoading ? (
+									<div className="flex items-center justify-center py-8">
+										<IconLoader2 className="size-6 animate-spin" />
+									</div>
+								) : keyHistory.length > 0 ? (
+									<Table>
+										<TableHeader>
+											<TableRow>
+												<TableHead>
+													{t("settings.auditExport.keys.colVersion", "Version")}
+												</TableHead>
+												<TableHead>
+													{t("settings.auditExport.keys.colFingerprint", "Fingerprint")}
+												</TableHead>
+												<TableHead>
+													{t("settings.auditExport.keys.colCreated", "Created")}
+												</TableHead>
+												<TableHead>{t("settings.auditExport.keys.colStatus", "Status")}</TableHead>
 											</TableRow>
-										))}
-									</TableBody>
-								</Table>
-							) : (
-								<p className="text-muted-foreground text-center py-4">
-									{t("settings.auditExport.keys.noHistory", "No key history available")}
-								</p>
-							)}
+										</TableHeader>
+										<TableBody>
+											{keyHistory.map((key) => (
+												<TableRow key={key.keyId}>
+													<TableCell>v{key.version}</TableCell>
+													<TableCell className="font-mono text-xs">
+														{key.fingerprint.substring(0, 16)}…
+													</TableCell>
+													<TableCell>{new Date(key.createdAt).toLocaleDateString()}</TableCell>
+													<TableCell>
+														{key.isActive ? (
+															<Badge>{t("settings.auditExport.keys.active", "Active")}</Badge>
+														) : (
+															<Badge variant="secondary">
+																{t("settings.auditExport.keys.rotated", "Rotated")}
+															</Badge>
+														)}
+													</TableCell>
+												</TableRow>
+											))}
+										</TableBody>
+									</Table>
+								) : (
+									<p className="text-muted-foreground text-center py-4">
+										{t("settings.auditExport.keys.noHistory", "No key history available")}
+									</p>
+								)}
+							</ActionPanelBody>
 						</ActionPanelContent>
 					</ActionPanel>
 

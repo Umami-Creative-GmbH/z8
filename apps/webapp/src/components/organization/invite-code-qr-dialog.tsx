@@ -9,15 +9,16 @@ import {
 	generateInviteQRCode,
 	type InviteCodeWithRelations,
 } from "@/app/[locale]/(app)/settings/organizations/invite-code-actions";
-import { Button } from "@/components/ui/button";
 import {
 	ActionPanel,
+	ActionPanelBody,
 	ActionPanelContent,
 	ActionPanelDescription,
 	ActionPanelFooter,
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface InviteCodeQRDialogProps {
@@ -129,7 +130,7 @@ export function InviteCodeQRDialog({
 					</ActionPanelDescription>
 				</ActionPanelHeader>
 
-				<div className="py-4">
+				<ActionPanelBody className="py-4">
 					{/* Code and URL display */}
 					<div className="mb-4 text-center">
 						<div className="text-2xl font-mono font-bold">{inviteCode?.code}</div>
@@ -185,7 +186,7 @@ export function InviteCodeQRDialog({
 							</div>
 						</TabsContent>
 					</Tabs>
-				</div>
+				</ActionPanelBody>
 
 				<ActionPanelFooter>
 					<Button variant="outline" onClick={() => onOpenChange(false)}>
