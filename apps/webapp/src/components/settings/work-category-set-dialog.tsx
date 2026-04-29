@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
 	ActionPanel,
+	ActionPanelBody,
 	ActionPanelContent,
 	ActionPanelDescription,
 	ActionPanelFooter,
@@ -284,7 +285,7 @@ export function WorkCategorySetDialog({
 
 	return (
 		<ActionPanel open={open} onOpenChange={onOpenChange}>
-			<ActionPanelContent className="max-h-[90vh] overflow-hidden flex flex-col" size="wide">
+			<ActionPanelContent size="wide">
 				<ActionPanelHeader>
 					<ActionPanelTitle>
 						{isEditing
@@ -306,9 +307,9 @@ export function WorkCategorySetDialog({
 
 				<form
 					onSubmit={handleSubmit}
-					className="flex-1 overflow-hidden flex flex-col"
+					className="flex min-h-0 flex-1 flex-col"
 				>
-					<div className="flex-1 overflow-y-auto space-y-4 py-4">
+					<ActionPanelBody className="space-y-4">
 						{/* Set Name */}
 						<div className="space-y-2 px-1">
 							<Label htmlFor="set-name">{t("settings.workCategories.setName", "Name")}</Label>
@@ -500,7 +501,7 @@ export function WorkCategorySetDialog({
 								</div>
 							)}
 						</div>
-					</div>
+					</ActionPanelBody>
 
 					<ActionPanelFooter className="pt-4 border-t">
 						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

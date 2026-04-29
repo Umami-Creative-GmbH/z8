@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { DatePicker } from "@/components/ui/date-picker";
 import {
 	ActionPanel,
+	ActionPanelBody,
 	ActionPanelContent,
 	ActionPanelDescription,
 	ActionPanelFooter,
@@ -191,9 +192,8 @@ export function InviteCodeDialog({
 
 	return (
 		<ActionPanel open={open} onOpenChange={onOpenChange}>
-			<ActionPanelContent className="max-h-[90vh] flex flex-col">
-				<form onSubmit={handleSubmit} className="flex flex-col overflow-hidden">
-					<ActionPanelHeader>
+			<ActionPanelContent>
+				<ActionPanelHeader>
 						<ActionPanelTitle>
 							{isEditing
 								? t("settings.inviteCodes.editCode", "Edit Invite Code")
@@ -210,9 +210,10 @@ export function InviteCodeDialog({
 										"Create a new invite code for users to join your organization",
 									)}
 						</ActionPanelDescription>
-					</ActionPanelHeader>
+				</ActionPanelHeader>
 
-					<div className="grid gap-4 py-4 overflow-y-auto flex-1 pr-2">
+				<form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+					<ActionPanelBody className="grid gap-4">
 						{/* Code */}
 						<div className="grid gap-2">
 							<Label htmlFor="code">{t("settings.inviteCodes.code", "Code")}</Label>
@@ -383,7 +384,7 @@ export function InviteCodeDialog({
 								</Select>
 							</div>
 						)}
-					</div>
+					</ActionPanelBody>
 
 					<ActionPanelFooter>
 						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

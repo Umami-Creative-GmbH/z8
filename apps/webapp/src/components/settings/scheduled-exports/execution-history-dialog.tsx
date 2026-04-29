@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	ActionPanel,
+	ActionPanelBody,
 	ActionPanelContent,
 	ActionPanelDescription,
 	ActionPanelHeader,
@@ -137,7 +138,7 @@ export function ExecutionHistoryDialog({
 
 	return (
 		<ActionPanel open={open} onOpenChange={onOpenChange}>
-			<ActionPanelContent className="max-h-[80vh] overflow-hidden flex flex-col">
+			<ActionPanelContent>
 				<ActionPanelHeader>
 					<ActionPanelTitle>{t("settings.scheduledExports.history.title", "Execution History")}</ActionPanelTitle>
 					<ActionPanelDescription>
@@ -145,7 +146,7 @@ export function ExecutionHistoryDialog({
 					</ActionPanelDescription>
 				</ActionPanelHeader>
 
-				<div className="flex-1 overflow-auto" role="region" aria-label={t("settings.scheduledExports.history.tableRegion", "Execution history table")}>
+				<ActionPanelBody role="region" aria-label={t("settings.scheduledExports.history.tableRegion", "Execution history table")}>
 					{isLoading && (
 						<div className="flex items-center justify-center py-12">
 							<Loader2 className="h-8 w-8 animate-spin text-muted-foreground" aria-label={t("common.loading", "Loading")} />
@@ -252,7 +253,7 @@ export function ExecutionHistoryDialog({
 							</TableBody>
 						</Table>
 					)}
-				</div>
+				</ActionPanelBody>
 			</ActionPanelContent>
 		</ActionPanel>
 	);

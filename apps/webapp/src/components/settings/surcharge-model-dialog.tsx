@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import {
 	ActionPanel,
+	ActionPanelBody,
 	ActionPanelContent,
 	ActionPanelDescription,
 	ActionPanelFooter,
@@ -177,7 +178,7 @@ export function SurchargeModelDialog({
 
 	return (
 		<ActionPanel open={open} onOpenChange={onOpenChange}>
-			<ActionPanelContent className="max-h-[90vh] overflow-y-auto" size="wide">
+			<ActionPanelContent size="wide">
 				<ActionPanelHeader>
 					<ActionPanelTitle>
 						{isEditing
@@ -198,10 +199,11 @@ export function SurchargeModelDialog({
 						e.stopPropagation();
 						form.handleSubmit();
 					}}
-					className="space-y-6"
+					className="flex min-h-0 flex-1 flex-col"
 				>
-					{/* Basic Info */}
-					<div className="grid gap-4">
+					<ActionPanelBody className="space-y-6">
+						{/* Basic Info */}
+						<div className="grid gap-4">
 						<form.Field name="name">
 							{(field) => (
 								<TFormItem>
@@ -245,10 +247,10 @@ export function SurchargeModelDialog({
 								</TFormItem>
 							)}
 						</form.Field>
-					</div>
+						</div>
 
-					{/* Surcharge Rules */}
-					<div className="space-y-4">
+						{/* Surcharge Rules */}
+						<div className="space-y-4">
 						<div className="flex items-center justify-between">
 							<h3 className="text-sm font-medium">
 								{t("settings.surcharges.rules", "Surcharge Rules")}
@@ -302,10 +304,10 @@ export function SurchargeModelDialog({
 								</div>
 							)}
 						</form.Field>
-					</div>
+						</div>
 
-					{/* Active Status */}
-					<form.Field name="isActive">
+						{/* Active Status */}
+						<form.Field name="isActive">
 						{(field) => (
 							<div className="flex items-center justify-between rounded-lg border p-4">
 								<div className="space-y-0.5">
@@ -320,7 +322,8 @@ export function SurchargeModelDialog({
 								<Switch checked={field.state.value} onCheckedChange={field.handleChange} />
 							</div>
 						)}
-					</form.Field>
+						</form.Field>
+					</ActionPanelBody>
 
 					<ActionPanelFooter>
 						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

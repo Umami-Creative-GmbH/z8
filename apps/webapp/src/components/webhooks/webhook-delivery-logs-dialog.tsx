@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	ActionPanel,
+	ActionPanelBody,
 	ActionPanelContent,
 	ActionPanelDescription,
 	ActionPanelHeader,
@@ -113,7 +114,7 @@ export function WebhookDeliveryLogsDialog({
 
 	return (
 		<ActionPanel open={open} onOpenChange={onOpenChange}>
-			<ActionPanelContent className="max-h-[80vh] overflow-hidden flex flex-col">
+			<ActionPanelContent>
 				<ActionPanelHeader>
 					<ActionPanelTitle>
 						{t("webhooks.logs.title", "Delivery Logs")} - {webhookName}
@@ -123,7 +124,7 @@ export function WebhookDeliveryLogsDialog({
 					</ActionPanelDescription>
 				</ActionPanelHeader>
 
-				<div className="flex-1 overflow-auto">
+				<ActionPanelBody>
 					{isLoading && deliveries.length === 0 ? (
 						<div className="flex items-center justify-center py-12">
 							<IconLoader2
@@ -235,7 +236,7 @@ export function WebhookDeliveryLogsDialog({
 							</TableBody>
 						</Table>
 					)}
-				</div>
+				</ActionPanelBody>
 
 				{/* Pagination */}
 				{total > limit && (

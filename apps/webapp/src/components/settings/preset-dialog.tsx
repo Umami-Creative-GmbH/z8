@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	ActionPanel,
+	ActionPanelBody,
 	ActionPanelContent,
 	ActionPanelDescription,
 	ActionPanelFooter,
@@ -188,7 +189,7 @@ export function PresetDialog({
 
 	return (
 		<ActionPanel open={open} onOpenChange={onOpenChange}>
-			<ActionPanelContent className="max-h-[90vh] flex flex-col" size="wide">
+			<ActionPanelContent size="wide">
 				<ActionPanelHeader>
 					<ActionPanelTitle>{t("settings.holidays.presets.editTitle", "Edit Preset")}</ActionPanelTitle>
 					<ActionPanelDescription>
@@ -200,13 +201,14 @@ export function PresetDialog({
 				</ActionPanelHeader>
 
 				{isLoading ? (
-					<div className="space-y-4 py-4">
+					<ActionPanelBody className="space-y-4">
 						<Skeleton className="h-10 w-full" />
 						<Skeleton className="h-20 w-full" />
 						<Skeleton className="h-40 w-full" />
-					</div>
+					</ActionPanelBody>
 				) : (
 					<>
+						<ActionPanelBody className="space-y-4">
 						<form
 							onSubmit={(e) => {
 								e.preventDefault();
@@ -379,6 +381,7 @@ export function PresetDialog({
 								)}
 							</ScrollArea>
 						</div>
+						</ActionPanelBody>
 
 						<ActionPanelFooter>
 							<Button

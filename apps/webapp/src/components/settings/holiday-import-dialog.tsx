@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
 	ActionPanel,
+	ActionPanelBody,
 	ActionPanelContent,
 	ActionPanelDescription,
 	ActionPanelFooter,
@@ -459,7 +460,7 @@ export function HolidayImportDialog({
 
 	return (
 		<ActionPanel open={open} onOpenChange={handleDialogOpenChange}>
-			<ActionPanelContent className="max-h-[90vh] overflow-hidden flex flex-col" size="wide">
+			<ActionPanelContent size="wide">
 				<ActionPanelHeader>
 					<ActionPanelTitle className="flex items-center gap-2">
 						<IconDownload className="h-5 w-5" />
@@ -473,8 +474,9 @@ export function HolidayImportDialog({
 					</ActionPanelDescription>
 				</ActionPanelHeader>
 
+				<ActionPanelBody className="space-y-4">
 				{/* Step indicator */}
-				<div className="flex items-center justify-center gap-2 py-2">
+				<div className="flex items-center justify-center gap-2">
 					<div
 						className={cn(
 							"flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium",
@@ -504,7 +506,7 @@ export function HolidayImportDialog({
 				</div>
 
 				{/* Step content */}
-				<div className="flex-1 overflow-y-auto py-4">
+				<div>
 					{step === 1 && (
 						<div className="space-y-4">
 							<h3 className="font-medium">
@@ -796,6 +798,7 @@ export function HolidayImportDialog({
 						</div>
 					)}
 				</div>
+				</ActionPanelBody>
 
 				<ActionPanelFooter className="flex-shrink-0">
 					{step > 1 && (

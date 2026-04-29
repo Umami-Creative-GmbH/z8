@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import {
 	ActionPanel,
+	ActionPanelBody,
 	ActionPanelContent,
 	ActionPanelDescription,
 	ActionPanelFooter,
@@ -247,7 +248,8 @@ export function ScheduledExportDialog({
 		<ActionPanel open={open} onOpenChange={handleOpenChange}>
 			<ActionPanelContent
 				aria-describedby="wizard-description"
-			 className="max-h-[90vh] overflow-y-auto" size="wide">
+				size="wide"
+			>
 				<ActionPanelHeader>
 					<ActionPanelTitle>
 						{isEditing
@@ -259,22 +261,33 @@ export function ScheduledExportDialog({
 					</ActionPanelDescription>
 				</ActionPanelHeader>
 
-				{/* Progress indicator */}
-				<div className="space-y-2" role="progressbar" aria-valuenow={currentStep + 1} aria-valuemin={1} aria-valuemax={STEPS.length}>
-					<Progress value={progress} className="h-2" aria-label={t("settings.scheduledExports.dialog.progress", "Wizard progress")} />
-					<div className="flex justify-between text-xs text-muted-foreground">
-						<span>
-							{t("settings.scheduledExports.dialog.stepOf", "Step {current} of {total}", {
-								current: currentStep + 1,
-								total: STEPS.length,
-							})}
-						</span>
-						<span>{STEPS[currentStep].name}</span>
+				<ActionPanelBody className="space-y-4">
+					{/* Progress indicator */}
+					<div
+						className="space-y-2"
+						role="progressbar"
+						aria-valuenow={currentStep + 1}
+						aria-valuemin={1}
+						aria-valuemax={STEPS.length}
+					>
+						<Progress
+							value={progress}
+							className="h-2"
+							aria-label={t("settings.scheduledExports.dialog.progress", "Wizard progress")}
+						/>
+						<div className="flex justify-between text-xs text-muted-foreground">
+							<span>
+								{t("settings.scheduledExports.dialog.stepOf", "Step {current} of {total}", {
+									current: currentStep + 1,
+									total: STEPS.length,
+								})}
+							</span>
+							<span>{STEPS[currentStep].name}</span>
+						</div>
 					</div>
-				</div>
 
-				{/* Step content */}
-				<div className="py-4 min-h-[300px]">
+					{/* Step content */}
+					<div className="min-h-[300px]">
 					{currentStep === 0 && <StepSchedule form={form} />}
 					{currentStep === 1 && (
 						<StepReport form={form} payrollConfigs={payrollConfigs} />
@@ -290,7 +303,8 @@ export function ScheduledExportDialog({
 							payrollConfigs={payrollConfigs}
 						/>
 					)}
-				</div>
+					</div>
+				</ActionPanelBody>
 
 				<ActionPanelFooter className="flex justify-between sm:justify-between">
 					<Button
