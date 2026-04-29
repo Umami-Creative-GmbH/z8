@@ -19,6 +19,7 @@ export function SiteHeader() {
 		const path = pathname.replace(/^\/[a-z]{2}(\/|$)/, "/");
 
 		if (path === "/" || path === "") return "dashboard.title";
+		if (path.startsWith("/notifications")) return "notifications.title";
 		if (path.startsWith("/calendar")) return "calendar.title";
 		if (path.startsWith("/time-tracking")) return "timeTracking.title";
 		if (path.startsWith("/absences")) return "absences.title";
@@ -35,6 +36,7 @@ export function SiteHeader() {
 		const path = pathname.replace(/^\/[a-z]{2}(\/|$)/, "/");
 
 		if (path === "/" || path === "") return "Dashboard";
+		if (path.startsWith("/notifications")) return "Notifications";
 		if (path.startsWith("/calendar")) return "Calendar";
 		if (path.startsWith("/time-tracking")) return "Time Tracking";
 		if (path.startsWith("/absences")) return "Absences";

@@ -12,16 +12,17 @@ import { useTranslate } from "@tolgee/react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
+	type ClockinEmployeeInfo,
+	type ClockinPreview,
 	fetchClockinEmployees,
 	fetchZ8Employees,
 	validateClockinCredentials,
-	type ClockinEmployeeInfo,
-	type ClockinPreview,
 	type Z8EmployeeInfo,
 } from "@/app/[locale]/(app)/settings/import/clockin-actions";
 import { startImportReviewScan } from "@/app/[locale]/(app)/settings/import/review-actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { ClockinImportSelections, ClockinImportUserMapping } from "@/lib/clockin/import-types";
@@ -294,9 +295,7 @@ export function ClockinImportWizard({ organizationId }: ClockinImportWizardProps
 									<select
 										value={entry.employeeId ?? ""}
 										aria-label={`Map ${entry.clockinEmployeeName}`}
-										onChange={(event) =>
-											updateMapping(entry.clockinEmployeeId, event.target.value)
-										}
+										onChange={(event) => updateMapping(entry.clockinEmployeeId, event.target.value)}
 										className="h-10 rounded-md border border-input bg-background px-3 text-sm"
 									>
 										<option value="">Skip this employee</option>
@@ -358,28 +357,26 @@ export function ClockinImportWizard({ organizationId }: ClockinImportWizardProps
 						<div className="grid gap-4 md:grid-cols-2">
 							<div className="space-y-2">
 								<Label htmlFor="clockin-start-date">Start date</Label>
-								<Input
+								<DatePicker
 									id="clockin-start-date"
-									type="date"
 									value={selections.dateRange.startDate}
-									onChange={(event) =>
+									onChange={(value) =>
 										setSelections((current) => ({
 											...current,
-											dateRange: { ...current.dateRange, startDate: event.target.value },
+											dateRange: { ...current.dateRange, startDate: value },
 										}))
 									}
 								/>
 							</div>
 							<div className="space-y-2">
 								<Label htmlFor="clockin-end-date">End date</Label>
-								<Input
+								<DatePicker
 									id="clockin-end-date"
-									type="date"
 									value={selections.dateRange.endDate}
-									onChange={(event) =>
+									onChange={(value) =>
 										setSelections((current) => ({
 											...current,
-											dateRange: { ...current.dateRange, endDate: event.target.value },
+											dateRange: { ...current.dateRange, endDate: value },
 										}))
 									}
 								/>
@@ -428,7 +425,9 @@ export function ClockinImportWizard({ organizationId }: ClockinImportWizardProps
 						</CardDescription>
 					</CardHeader>
 					<CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-						<p className="text-sm text-muted-foreground">No production records have been imported yet.</p>
+						<p className="text-sm text-muted-foreground">
+							No production records have been imported yet.
+						</p>
 						<Button asChild>
 							<Link href={`/settings/import/${reviewBatchId}`}>Open review</Link>
 						</Button>

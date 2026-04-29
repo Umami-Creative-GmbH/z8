@@ -2,11 +2,16 @@
 
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { NotificationsListResponse, NotificationWithMeta } from "@/lib/notifications/types";
+import type {
+	NotificationsListResponse,
+	NotificationWithMeta,
+	UnreadCountResponse,
+} from "@/lib/notifications/types";
 import { queryKeys } from "@/lib/query/keys";
 
 interface UseNotificationStreamOptions {
 	enabled?: boolean;
+	organizationId?: string | null;
 	onCountUpdate?: (count: number) => void;
 	onNewNotification?: (notification: NotificationWithMeta) => void;
 }
@@ -20,7 +25,7 @@ interface UseNotificationStreamOptions {
  * - Handles reconnection on disconnect
  */
 export function useNotificationStream(options: UseNotificationStreamOptions = {}) {
-	const { enabled = true, onCountUpdate, onNewNotification } = options;
+	const { enabled = true, organizationId, onCountUpdate, onNewNotification } = options;
 	const queryClient = useQueryClient();
 	const eventSourceRef = useRef<EventSource | null>(null);
 	const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -57,8 +62,11 @@ export function useNotificationStream(options: UseNotificationStreamOptions = {}
 			eventSource.addEventListener("count_update", (event) => {
 				try {
 					const data = JSON.parse(event.data);
+					if (organizationId && data.organizationId !== organizationId) {
+						return;
+					}
 					// Update the query cache directly
-					queryClient.setQueryData(queryKeys.notifications.unreadCount(), {
+					queryClient.setQueryData(queryKeys.notifications.unreadCount(organizationId), {
 						count: data.count,
 					});
 					onCountUpdateRef.current?.(data.count);
@@ -72,41 +80,49 @@ export function useNotificationStream(options: UseNotificationStreamOptions = {}
 			eventSource.addEventListener("new_notification", (event) => {
 				try {
 					const notification = JSON.parse(event.data) as NotificationWithMeta;
+					if (organizationId && notification.organizationId !== organizationId) {
+						return;
+					}
 
-					// Update the notifications list cache by prepending the new notification
-					queryClient.setQueryData<NotificationsListResponse>(
-						queryKeys.notifications.list({ unreadOnly: false }),
+					// Update every cached notification list, regardless of list options like limit.
+					queryClient.setQueriesData<NotificationsListResponse>(
+						{
+							predicate: (query) => {
+								const [scope, type, options] = query.queryKey;
+								const listOptions = options as
+									| { unreadOnly?: boolean; organizationId?: string | null }
+									| undefined;
+								if (scope !== "notifications" || type !== "list") {
+									return false;
+								}
+								if (organizationId && listOptions?.organizationId !== organizationId) {
+									return false;
+								}
+
+								return !notification.isRead || !listOptions?.unreadOnly;
+							},
+						},
 						(oldData) => {
 							if (!oldData) return oldData;
-							// Avoid duplicates
 							if (oldData.notifications.some((n) => n.id === notification.id)) {
 								return oldData;
 							}
+
 							return {
 								...oldData,
 								notifications: [notification, ...oldData.notifications],
 								total: oldData.total + 1,
-								unreadCount: oldData.unreadCount + 1,
+								unreadCount: notification.isRead ? oldData.unreadCount : oldData.unreadCount + 1,
 							};
 						},
 					);
 
-					// Also update unread-only list if it exists
-					queryClient.setQueryData<NotificationsListResponse>(
-						queryKeys.notifications.list({ unreadOnly: true }),
-						(oldData) => {
-							if (!oldData) return oldData;
-							if (oldData.notifications.some((n) => n.id === notification.id)) {
-								return oldData;
-							}
-							return {
-								...oldData,
-								notifications: [notification, ...oldData.notifications],
-								total: oldData.total + 1,
-								unreadCount: oldData.unreadCount + 1,
-							};
-						},
-					);
+					if (!notification.isRead) {
+						queryClient.setQueryData<UnreadCountResponse>(
+							queryKeys.notifications.unreadCount(organizationId),
+							(oldData) => ({ count: (oldData?.count ?? 0) + 1 }),
+						);
+					}
 
 					onNewNotificationRef.current?.(notification);
 					reconnectAttempts.current = 0;
@@ -144,7 +160,7 @@ export function useNotificationStream(options: UseNotificationStreamOptions = {}
 			// EventSource not supported or connection failed
 			setIsConnected(false);
 		}
-	}, [enabled, queryClient]);
+	}, [enabled, organizationId, queryClient]);
 
 	const disconnect = useCallback(() => {
 		if (reconnectTimeoutRef.current) {

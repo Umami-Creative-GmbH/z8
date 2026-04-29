@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { createTravelExpenseDraft } from "@/app/[locale]/(app)/travel-expenses/actions";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
 	Dialog,
 	DialogContent,
@@ -88,8 +89,8 @@ export function TravelExpenseClaimDialog({
 		tripEnd?: string;
 		amount?: string;
 	}>({});
-	const tripStartRef = useRef<HTMLInputElement>(null);
-	const tripEndRef = useRef<HTMLInputElement>(null);
+	const tripStartRef = useRef<HTMLButtonElement>(null);
+	const tripEndRef = useRef<HTMLButtonElement>(null);
 	const amountRef = useRef<HTMLInputElement>(null);
 
 	const form = useForm({
@@ -228,15 +229,13 @@ export function TravelExpenseClaimDialog({
 										Trip Start
 									</TFormLabel>
 									<TFormControl hasError={fieldHasError(field) || !!submitErrors.tripStart}>
-										<Input
+										<DatePicker
 											name="tripStart"
-											autoComplete="off"
-											type="date"
 											ref={tripStartRef}
 											value={field.state.value}
-											onChange={(event) => {
+											onChange={(value) => {
 												setSubmitErrors((current) => ({ ...current, tripStart: undefined }));
-												field.handleChange(event.target.value);
+												field.handleChange(value);
 											}}
 											onBlur={field.handleBlur}
 											required
@@ -254,15 +253,13 @@ export function TravelExpenseClaimDialog({
 										Trip End
 									</TFormLabel>
 									<TFormControl hasError={fieldHasError(field) || !!submitErrors.tripEnd}>
-										<Input
+										<DatePicker
 											name="tripEnd"
-											autoComplete="off"
-											type="date"
 											ref={tripEndRef}
 											value={field.state.value}
-											onChange={(event) => {
+											onChange={(value) => {
 												setSubmitErrors((current) => ({ ...current, tripEnd: undefined }));
-												field.handleChange(event.target.value);
+												field.handleChange(value);
 											}}
 											onBlur={field.handleBlur}
 											required

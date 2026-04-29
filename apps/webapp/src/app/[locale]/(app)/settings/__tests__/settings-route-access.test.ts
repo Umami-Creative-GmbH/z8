@@ -47,7 +47,8 @@ describe("org-admin settings route access", () => {
 	});
 
 	it("keeps the exported org-admin route list aligned with the approved sweep", () => {
-			expect(ORG_ADMIN_SETTINGS_ROUTES).toEqual([
+		expect(ORG_ADMIN_SETTINGS_ROUTES).toEqual([
+			"/settings/organizations",
 			"/settings/billing",
 			"/settings/avv",
 			"/settings/roles",
@@ -78,14 +79,15 @@ describe("org-admin settings route access", () => {
 		expect(source.includes("getCurrentSettingsRouteContext(")).toBe(false);
 	});
 
-	it("allows managers through the scoped organization and teams route only", () => {
+	it("allows managers through teams but not organization management", () => {
 		const managerTier = resolveSettingsTierFromContext({
 			activeOrganizationId: "org-1",
 			membershipRole: "member",
 			employeeRole: "manager",
 		});
 
-		expect(canResolvedTierAccessRoute(managerTier, "/settings/organizations")).toBe(true);
+		expect(canResolvedTierAccessRoute(managerTier, "/settings/organizations")).toBe(false);
+		expect(canResolvedTierAccessRoute(managerTier, "/settings/teams")).toBe(true);
 		expect(canResolvedTierAccessRoute(managerTier, "/settings/statistics")).toBe(true);
 		expect(canResolvedTierAccessRoute(managerTier, "/settings/change-policies")).toBe(true);
 		expect(canResolvedTierAccessRoute(managerTier, "/settings/employees")).toBe(true);
@@ -473,13 +475,14 @@ describe("org-admin settings route access", () => {
 		expect(querySource.includes('isAdmin: options.accessTier === "orgAdmin"')).toBe(true);
 	});
 
-	it("lets the organizations route use scoped settings access instead of the org-admin helper", () => {
+	it("keeps organization management org-admin-only and separate from teams", () => {
 		const source = stripComments(
 			readFileSync(join(SETTINGS_ROOT, "organizations/page.tsx"), "utf8"),
 		);
 
 		expect(source.includes("getCurrentSettingsRouteContext(")).toBe(true);
-		expect(source.includes("loadTeamSettingsPageData(")).toBe(true);
+		expect(source.includes('accessTier !== "orgAdmin"')).toBe(true);
+		expect(source.includes("loadTeamSettingsPageData(")).toBe(false);
 		expect(source.includes("requireOrgAdminSettingsAccess(")).toBe(false);
 	});
 

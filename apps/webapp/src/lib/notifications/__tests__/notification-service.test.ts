@@ -6,25 +6,16 @@
  */
 
 import { beforeEach, describe, expect, test, vi } from "vitest";
-import {
-	createMockNotification,
-	createMockNotificationList,
-	createMockPreference,
-} from "./helpers";
+import { createMockNotification, createMockPreference } from "./helpers";
 
 // Use vi.hoisted() for all mocks that will be used in vi.mock factories
 const {
 	mockReturning,
-	mockValues,
 	mockInsert,
 	mockUpdateWhere,
-	mockUpdateSet,
 	mockUpdate,
 	mockDeleteWhere,
 	mockDelete,
-	mockSelectOrderBy,
-	mockSelectWhere,
-	mockSelectFrom,
 	mockSelect,
 	mockFindFirst,
 	mockFindMany,
@@ -325,10 +316,30 @@ describe("Notification Service", () => {
 
 			const { markAsRead } = await import("../notification-service");
 
-			const result = await markAsRead("notif-1", "user-1");
+			const result = await markAsRead("notif-1", "user-1", "org-1");
 
 			expect(result).not.toBeNull();
 			expect(mockUpdate).toHaveBeenCalled();
+		});
+
+		test("requires organizationId and publishes scoped count updates", async () => {
+			const mockNotification = createMockNotification({
+				isRead: true,
+				organizationId: "org-a",
+				readAt: new Date(),
+			});
+			mockReturning.mockImplementation(() => Promise.resolve([mockNotification]));
+
+			const { markAsRead } = await import("../notification-service");
+
+			expect(markAsRead.length).toBe(3);
+			await markAsRead("notif-1", "user-1", "org-a");
+
+			expect(mockPublishNotificationEvent).toHaveBeenCalledWith(
+				"user-1",
+				"count_update",
+				expect.objectContaining({ organizationId: "org-a" }),
+			);
 		});
 
 		test("returns null when notification not found", async () => {
@@ -336,7 +347,7 @@ describe("Notification Service", () => {
 
 			const { markAsRead } = await import("../notification-service");
 
-			const result = await markAsRead("notif-1", "user-1");
+			const result = await markAsRead("notif-1", "user-1", "org-1");
 
 			expect(result).toBeNull();
 		});
@@ -351,6 +362,19 @@ describe("Notification Service", () => {
 			// Should return a number (0 or positive count)
 			expect(typeof result).toBe("number");
 			expect(result).toBeGreaterThanOrEqual(0);
+		});
+
+		test("publishes scoped count updates", async () => {
+			mockReturning.mockImplementation(() => Promise.resolve([{ id: "notif-1" }]));
+
+			const { markAllAsRead } = await import("../notification-service");
+
+			await markAllAsRead("user-1", "org-a");
+
+			expect(mockPublishNotificationEvent).toHaveBeenCalledWith("user-1", "count_update", {
+				count: 0,
+				organizationId: "org-a",
+			});
 		});
 
 		test("returns 0 on error", async () => {
@@ -370,10 +394,16 @@ describe("Notification Service", () => {
 		test("returns boolean when deleting notification", async () => {
 			const { deleteNotification } = await import("../notification-service");
 
-			const result = await deleteNotification("notif-1", "user-1");
+			const result = await deleteNotification("notif-1", "user-1", "org-1");
 
 			// Should return a boolean
 			expect(typeof result).toBe("boolean");
+		});
+
+		test("requires organizationId", async () => {
+			const { deleteNotification } = await import("../notification-service");
+
+			expect(deleteNotification.length).toBe(3);
 		});
 
 		test("returns false when notification not found", async () => {
@@ -381,7 +411,7 @@ describe("Notification Service", () => {
 
 			const { deleteNotification } = await import("../notification-service");
 
-			const result = await deleteNotification("notif-1", "user-1");
+			const result = await deleteNotification("notif-1", "user-1", "org-1");
 
 			expect(result).toBe(false);
 		});
@@ -393,7 +423,7 @@ describe("Notification Service", () => {
 
 			const { deleteNotification } = await import("../notification-service");
 
-			const result = await deleteNotification("notif-1", "user-1");
+			const result = await deleteNotification("notif-1", "user-1", "org-1");
 
 			expect(result).toBe(false);
 		});

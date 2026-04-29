@@ -21,12 +21,13 @@ describe("settings visibility tiers", () => {
 		]);
 	});
 
-	it("shows the scoped organization and teams entry for managers without exposing billing", () => {
+	it("shows teams but not organization management for managers", () => {
 		const entries = getVisibleSettings("manager", true);
 
+		expect(entries.some((entry) => entry.id === "teams")).toBe(true);
+		expect(entries.some((entry) => entry.id === "organizations")).toBe(false);
 		expect(entries.some((entry) => entry.id === "statistics")).toBe(true);
 		expect(entries.some((entry) => entry.id === "calendar")).toBe(true);
-		expect(entries.some((entry) => entry.id === "organizations")).toBe(true);
 		expect(entries.some((entry) => entry.id === "change-policies")).toBe(true);
 		expect(entries.some((entry) => entry.id === "employees")).toBe(true);
 		expect(entries.some((entry) => entry.id === "holidays")).toBe(true);
@@ -41,6 +42,21 @@ describe("settings visibility tiers", () => {
 		expect(entries.some((entry) => entry.id === "customers")).toBe(true);
 		expect(entries.some((entry) => entry.id === "surcharges")).toBe(true);
 		expect(entries.some((entry) => entry.id === "billing")).toBe(false);
+	});
+
+	it("shows organization and teams entries for org admins", () => {
+		const entries = getVisibleSettings("orgAdmin", true);
+
+		expect(entries.find((entry) => entry.id === "organizations")).toMatchObject({
+			titleDefault: "Organization",
+			href: "/settings/organizations",
+			minimumTier: "orgAdmin",
+		});
+		expect(entries.find((entry) => entry.id === "teams")).toMatchObject({
+			titleDefault: "Teams",
+			href: "/settings/teams",
+			minimumTier: "manager",
+		});
 	});
 
 	it("derives visible groups from the remaining visible entries", () => {

@@ -43,6 +43,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { TimeInput } from "@/components/ui/time-input";
 import { queryKeys } from "@/lib/query/keys";
 
 interface TelegramSettingsProps {
@@ -429,9 +430,8 @@ function FeatureSettingsCard({
 													<Label htmlFor="digestTime" className="text-xs">
 														{t("settings.telegram.features.digestTime", "Time")}
 													</Label>
-													<Input
+													<TimeInput
 														id="digestTime"
-														type="time"
 														value={field.state.value}
 														onChange={(e) => field.handleChange(e.target.value)}
 														disabled={loading}

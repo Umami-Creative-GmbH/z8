@@ -1566,7 +1566,8 @@
         "description": "L'organisation n'a pas pu être trouvée ou vous n'y avez pas accès.",
         "title": "Organisation non trouvée"
       },
-      "title": "Organisations & Équipes"
+      "description": "Gérer les membres, invitations et détails de l'organisation",
+      "title": "Organisation"
     },
     "payrollExport": {
       "datev": {
@@ -2484,7 +2485,7 @@
       }
     },
     "teams": {
-      "description": "Organisez les employés en équipes pour une meilleure gestion",
+      "description": "Organiser les employés en équipes et gérer les affectations d'équipe",
       "details": "Détails de l'équipe",
       "details.description": "Gérer les informations et les membres de l'équipe",
       "details.title": "Détails de l'équipe",

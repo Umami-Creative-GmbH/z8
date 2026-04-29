@@ -27,6 +27,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { TimeInput } from "@/components/ui/time-input";
 import type { CoverageRuleWithRelations } from "@/lib/effect/services/coverage.service";
 import type { DayOfWeek } from "@/lib/validations/coverage";
 
@@ -70,12 +71,14 @@ export function CoverageRuleDialog({
 
 	// Build flat list of subareas with location names
 	const subareaOptions = locations.flatMap((loc) =>
-		loc.subareas.filter((sub) => sub.isActive).map((sub) => ({
-			id: sub.id,
-			name: sub.name,
-			locationName: loc.name,
-			locationId: loc.id,
-		})),
+		loc.subareas
+			.filter((sub) => sub.isActive)
+			.map((sub) => ({
+				id: sub.id,
+				name: sub.name,
+				locationName: loc.name,
+				locationId: loc.id,
+			})),
 	);
 	const defaultSubareaId = subareaOptions[0]?.id || "";
 
@@ -130,7 +133,9 @@ export function CoverageRuleDialog({
 			onSuccess();
 		},
 		onError: (error) => {
-			toast.error(error.message || t("settings.coverageRules.createFailed", "Failed to create rule"));
+			toast.error(
+				error.message || t("settings.coverageRules.createFailed", "Failed to create rule"),
+			);
 		},
 	});
 
@@ -159,7 +164,9 @@ export function CoverageRuleDialog({
 			onSuccess();
 		},
 		onError: (error) => {
-			toast.error(error.message || t("settings.coverageRules.updateFailed", "Failed to update rule"));
+			toast.error(
+				error.message || t("settings.coverageRules.updateFailed", "Failed to update rule"),
+			);
 		},
 	});
 
@@ -249,9 +256,8 @@ export function CoverageRuleDialog({
 										<Label htmlFor="startTime">
 											{t("settings.coverageRules.startTime", "Start Time")}
 										</Label>
-										<Input
+										<TimeInput
 											id="startTime"
-											type="time"
 											value={field.state.value}
 											onChange={(e) => field.handleChange(e.target.value)}
 										/>
@@ -265,9 +271,8 @@ export function CoverageRuleDialog({
 										<Label htmlFor="endTime">
 											{t("settings.coverageRules.endTime", "End Time")}
 										</Label>
-										<Input
+										<TimeInput
 											id="endTime"
-											type="time"
 											value={field.state.value}
 											onChange={(e) => field.handleChange(e.target.value)}
 										/>
@@ -308,7 +313,9 @@ export function CoverageRuleDialog({
 						</Button>
 						<Button
 							type="submit"
-							disabled={isSubmitting || (requireScopedSubareaSelection && !form.state.values.subareaId)}
+							disabled={
+								isSubmitting || (requireScopedSubareaSelection && !form.state.values.subareaId)
+							}
 						>
 							{isSubmitting
 								? t("common.saving", "Saving...")

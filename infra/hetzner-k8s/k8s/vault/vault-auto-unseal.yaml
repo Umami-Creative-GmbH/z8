@@ -1,0 +1,48 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: vault-auto-unseal
+  namespace: app-prod
+spec:
+  schedule: "*/1 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      ttlSecondsAfterFinished: 300
+      backoffLimit: 0
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: vault-auto-unseal
+              image: hashicorp/vault:1.16.2
+              env:
+                - name: VAULT_ADDR
+                  value: http://vault.vault.svc.cluster.local:8200
+                - name: VAULT_UNSEAL_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: app-secrets
+                      key: VAULT_UNSEAL_KEY
+              command:
+                - sh
+                - -c
+                - |
+                  status="$(vault status -format=json 2>/dev/null || true)"
+
+                  if echo "$status" | grep -q '"sealed":[[:space:]]*true'; then
+                    umask 077
+                    printf '{"key":"%s"}' "$VAULT_UNSEAL_KEY" > /tmp/vault-unseal.json
+                    wget -qO- \
+                      --header='Content-Type: application/json' \
+                      --post-file=/tmp/vault-unseal.json \
+                      "$VAULT_ADDR/v1/sys/unseal" >/dev/null
+                    rm -f /tmp/vault-unseal.json
+                  elif echo "$status" | grep -q '"sealed":[[:space:]]*false'; then
+                    echo "Vault already unsealed"
+                  else
+                    echo "Unable to determine Vault seal status"
+                    exit 1
+                  fi

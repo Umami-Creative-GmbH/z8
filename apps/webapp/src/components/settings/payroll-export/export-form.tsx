@@ -1,18 +1,19 @@
 "use client";
 
-import { IconCalendar, IconDownload, IconLoader2 } from "@tabler/icons-react";
+import { IconDownload, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
-	getFilterOptionsAction,
-	startExportAction,
 	type DatevConfigResult,
 	type FilterOptions,
+	getFilterOptionsAction,
+	startExportAction,
 } from "@/app/[locale]/(app)/settings/payroll-export/actions";
-import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
 	Card,
 	CardContent,
@@ -21,8 +22,11 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
 	Select,
 	SelectContent,
@@ -30,20 +34,15 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-} from "@/components/ui/popover";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface ExportFormProps {
 	organizationId: string;
 	config: DatevConfigResult | null;
-	exportAvailability: Record<string, { configured: boolean; reason: "missingConfiguration" | "missingCredentials" | null }>;
+	exportAvailability: Record<
+		string,
+		{ configured: boolean; reason: "missingConfiguration" | "missingCredentials" | null }
+	>;
 	onExportComplete?: () => void;
 }
 
@@ -107,7 +106,8 @@ export function ExportForm({
 	);
 	const firstConfiguredFormatId = useMemo(
 		() =>
-			EXPORT_FORMAT_IDS.find((formatId) => exportAvailability[formatId]?.configured) ?? "datev_lohn",
+			EXPORT_FORMAT_IDS.find((formatId) => exportAvailability[formatId]?.configured) ??
+			"datev_lohn",
 		[exportAvailability],
 	);
 	const [selectedFormatId, setSelectedFormatId] = useState<string>(
@@ -193,15 +193,12 @@ export function ExportForm({
 
 			if (result.success) {
 				if (result.data.isAsync) {
-					toast.success(
-						t("settings.payrollExport.export.asyncStarted", "Export started"),
-						{
-							description: t(
-								"settings.payrollExport.export.asyncDescription",
-								"Your export is being processed. Check the history tab for progress.",
-							),
-						},
-					);
+					toast.success(t("settings.payrollExport.export.asyncStarted", "Export started"), {
+						description: t(
+							"settings.payrollExport.export.asyncDescription",
+							"Your export is being processed. Check the history tab for progress.",
+						),
+					});
 				} else if (result.data.fileContent) {
 					// Sync export - trigger download
 					const blob = new Blob([result.data.fileContent], { type: "text/csv;charset=utf-8" });
@@ -263,14 +260,8 @@ export function ExportForm({
 						isMissingCredentials: reason === "missingCredentials",
 						reason:
 							reason === "missingCredentials"
-								? t(
-									"settings.payrollExport.export.unavailable.missingCredentials",
-									"credentials",
-								)
-								: t(
-									"settings.payrollExport.export.unavailable.missingConfiguration",
-									"config",
-								),
+								? t("settings.payrollExport.export.unavailable.missingCredentials", "credentials")
+								: t("settings.payrollExport.export.unavailable.missingConfiguration", "config"),
 					};
 				})
 				.sort((left, right) => {
@@ -284,10 +275,7 @@ export function ExportForm({
 	);
 
 	// Memoize static arrays to prevent recreation on each render (rerender-hoist-jsx)
-	const years = useMemo(
-		() => Array.from({ length: 5 }, (_, i) => DateTime.now().year - i),
-		[],
-	);
+	const years = useMemo(() => Array.from({ length: 5 }, (_, i) => DateTime.now().year - i), []);
 	const months = useMemo(
 		() =>
 			Array.from({ length: 12 }, (_, i) => ({
@@ -319,9 +307,7 @@ export function ExportForm({
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>
-					{t("settings.payrollExport.export.title", "Export Payroll Data")}
-				</CardTitle>
+				<CardTitle>{t("settings.payrollExport.export.title", "Export Payroll Data")}</CardTitle>
 				<CardDescription>
 					{t(
 						"settings.payrollExport.export.description",
@@ -336,35 +322,36 @@ export function ExportForm({
 						<SelectTrigger>
 							<SelectValue />
 						</SelectTrigger>
-					<SelectContent>
-						{exportFormatOptions.map((option) => (
-							<SelectItem
-								key={option.id}
-								value={option.id}
-								disabled={!exportAvailability[option.id]?.configured}
-							>
-								{option.label}
-							</SelectItem>
-						))}
-					</SelectContent>
-				</Select>
-				{unavailableExportHints.length > 0 ? (
-					<div className="flex flex-wrap gap-2">
-						{unavailableExportHints.map((entry) => (
-							<Badge
-								key={entry.id}
-								variant="outline"
-								className={entry.isMissingCredentials
-									? "border-amber-300 bg-amber-50 text-amber-700 text-xs"
-									: "border-slate-300 bg-slate-50 text-slate-700 text-xs"
-								}
-							>
-								{entry.label} - {entry.reason}
-							</Badge>
-						))}
-					</div>
-				) : null}
-			</div>
+						<SelectContent>
+							{exportFormatOptions.map((option) => (
+								<SelectItem
+									key={option.id}
+									value={option.id}
+									disabled={!exportAvailability[option.id]?.configured}
+								>
+									{option.label}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+					{unavailableExportHints.length > 0 ? (
+						<div className="flex flex-wrap gap-2">
+							{unavailableExportHints.map((entry) => (
+								<Badge
+									key={entry.id}
+									variant="outline"
+									className={
+										entry.isMissingCredentials
+											? "border-amber-300 bg-amber-50 text-amber-700 text-xs"
+											: "border-slate-300 bg-slate-50 text-slate-700 text-xs"
+									}
+								>
+									{entry.label} - {entry.reason}
+								</Badge>
+							))}
+						</div>
+					) : null}
+				</div>
 
 				{/* Date Range Selection */}
 				<div className="space-y-4">
@@ -422,19 +409,11 @@ export function ExportForm({
 							<div className="grid gap-4 md:grid-cols-2">
 								<div className="space-y-2">
 									<Label>{t("settings.payrollExport.export.startDate", "Start Date")}</Label>
-									<Input
-										type="date"
-										value={customStartDate}
-										onChange={(e) => setCustomStartDate(e.target.value)}
-									/>
+									<DatePicker value={customStartDate} onChange={setCustomStartDate} />
 								</div>
 								<div className="space-y-2">
 									<Label>{t("settings.payrollExport.export.endDate", "End Date")}</Label>
-									<Input
-										type="date"
-										value={customEndDate}
-										onChange={(e) => setCustomEndDate(e.target.value)}
-									/>
+									<DatePicker value={customEndDate} onChange={setCustomEndDate} />
 								</div>
 							</div>
 						</TabsContent>
@@ -463,25 +442,16 @@ export function ExportForm({
 								<PopoverContent className="w-[300px] p-0" align="start">
 									<ScrollArea className="h-[200px] p-4">
 										{filterOptions?.employees.map((emp) => (
-											<div
-												key={emp.id}
-												className="flex items-center space-x-2 py-1"
-											>
+											<div key={emp.id} className="flex items-center space-x-2 py-1">
 												<Checkbox
 													id={`emp-${emp.id}`}
 													checked={selectedEmployeeIds.includes(emp.id)}
 													onCheckedChange={() => toggleEmployee(emp.id)}
 												/>
-												<label
-													htmlFor={`emp-${emp.id}`}
-													className="text-sm cursor-pointer"
-												>
+												<label htmlFor={`emp-${emp.id}`} className="text-sm cursor-pointer">
 													{emp.firstName} {emp.lastName}
 													{emp.employeeNumber && (
-														<span className="text-muted-foreground">
-															{" "}
-															({emp.employeeNumber})
-														</span>
+														<span className="text-muted-foreground"> ({emp.employeeNumber})</span>
 													)}
 												</label>
 											</div>
@@ -521,19 +491,13 @@ export function ExportForm({
 								<PopoverContent className="w-[300px] p-0" align="start">
 									<ScrollArea className="h-[200px] p-4">
 										{filterOptions?.teams.map((team) => (
-											<div
-												key={team.id}
-												className="flex items-center space-x-2 py-1"
-											>
+											<div key={team.id} className="flex items-center space-x-2 py-1">
 												<Checkbox
 													id={`team-${team.id}`}
 													checked={selectedTeamIds.includes(team.id)}
 													onCheckedChange={() => toggleTeam(team.id)}
 												/>
-												<label
-													htmlFor={`team-${team.id}`}
-													className="text-sm cursor-pointer"
-												>
+												<label htmlFor={`team-${team.id}`} className="text-sm cursor-pointer">
 													{team.name}
 												</label>
 											</div>
@@ -573,19 +537,13 @@ export function ExportForm({
 								<PopoverContent className="w-[300px] p-0" align="start">
 									<ScrollArea className="h-[200px] p-4">
 										{filterOptions?.projects.map((project) => (
-											<div
-												key={project.id}
-												className="flex items-center space-x-2 py-1"
-											>
+											<div key={project.id} className="flex items-center space-x-2 py-1">
 												<Checkbox
 													id={`project-${project.id}`}
 													checked={selectedProjectIds.includes(project.id)}
 													onCheckedChange={() => toggleProject(project.id)}
 												/>
-												<label
-													htmlFor={`project-${project.id}`}
-													className="text-sm cursor-pointer"
-												>
+												<label htmlFor={`project-${project.id}`} className="text-sm cursor-pointer">
 													{project.name}
 												</label>
 											</div>

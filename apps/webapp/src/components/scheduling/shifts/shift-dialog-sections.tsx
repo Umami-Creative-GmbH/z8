@@ -10,7 +10,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { DialogFooter } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
@@ -21,6 +20,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { TimeInput } from "@/components/ui/time-input";
 import { cn } from "@/lib/utils";
 import type { ShiftDialogEmployee, ShiftDialogLocation } from "./use-shift-dialog-data";
 import type { ShiftDialogFormApi, ShiftDialogFormValues } from "./use-shift-dialog-form";
@@ -171,8 +171,7 @@ export function ShiftDialogSections({
 					{(field) => (
 						<div className="space-y-2">
 							<Label>Start Time</Label>
-							<Input
-								type="time"
+							<TimeInput
 								value={field.state.value}
 								onChange={(event) => field.handleChange(event.target.value)}
 								onBlur={field.handleBlur}
@@ -192,8 +191,7 @@ export function ShiftDialogSections({
 					{(field) => (
 						<div className="space-y-2">
 							<Label>End Time</Label>
-							<Input
-								type="time"
+							<TimeInput
 								value={field.state.value}
 								onChange={(event) => field.handleChange(event.target.value)}
 								onBlur={field.handleBlur}

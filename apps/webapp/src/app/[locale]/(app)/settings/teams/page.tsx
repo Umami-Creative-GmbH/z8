@@ -40,7 +40,7 @@ export default async function TeamsPage() {
 				<p className="text-sm text-muted-foreground">
 					{t(
 						"settings.teams.description",
-						"Organize employees into teams for better management",
+						"Organize employees into teams and manage team assignments",
 					)}
 				</p>
 			</div>

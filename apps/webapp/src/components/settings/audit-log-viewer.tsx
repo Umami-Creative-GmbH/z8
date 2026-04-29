@@ -19,6 +19,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
 	Dialog,
 	DialogContent,
@@ -121,7 +122,11 @@ export function AuditLogViewer() {
 		return new Date().toISOString().split("T")[0];
 	});
 
-	const { data: logsResult, isLoading: loading, refetch } = useQuery({
+	const {
+		data: logsResult,
+		isLoading: loading,
+		refetch,
+	} = useQuery({
 		queryKey: ["audit-logs", entityType, actionCategory, search, startDate, endDate, page] as const,
 
 		queryFn: async () => {
@@ -240,24 +245,28 @@ export function AuditLogViewer() {
 						</div>
 						<div className="flex flex-wrap gap-4 items-end">
 							<div>
-								<label className="text-sm text-muted-foreground">From</label>
-								<Input
-									type="date"
+								<label htmlFor="audit-log-start-date" className="text-sm text-muted-foreground">
+									From
+								</label>
+								<DatePicker
+									id="audit-log-start-date"
 									value={startDate}
-									onChange={(e) => {
-										setStartDate(e.target.value);
+									onChange={(value) => {
+										setStartDate(value);
 										setPage(0);
 									}}
 									className="w-[160px]"
 								/>
 							</div>
 							<div>
-								<label className="text-sm text-muted-foreground">To</label>
-								<Input
-									type="date"
+								<label htmlFor="audit-log-end-date" className="text-sm text-muted-foreground">
+									To
+								</label>
+								<DatePicker
+									id="audit-log-end-date"
 									value={endDate}
-									onChange={(e) => {
-										setEndDate(e.target.value);
+									onChange={(value) => {
+										setEndDate(value);
 										setPage(0);
 									}}
 									className="w-[160px]"
@@ -346,12 +355,12 @@ export function AuditLogViewer() {
 												{log.ipAddress || "-"}
 											</TableCell>
 											<TableCell>
-													<Dialog>
-														<DialogTrigger asChild>
-															<Button variant="ghost" size="sm">
-																<IconEye className="size-4" />
-															</Button>
-														</DialogTrigger>
+												<Dialog>
+													<DialogTrigger asChild>
+														<Button variant="ghost" size="sm">
+															<IconEye className="size-4" />
+														</Button>
+													</DialogTrigger>
 													<DialogContent className="max-w-2xl">
 														<DialogHeader>
 															<DialogTitle>Audit Log Details</DialogTitle>
@@ -431,21 +440,21 @@ export function AuditLogViewer() {
 										Page {page + 1} of {totalPages}
 									</div>
 									<div className="flex gap-2">
-									<Button
-										variant="outline"
-										size="sm"
-										onClick={() => setPage((p) => Math.max(0, p - 1))}
-										disabled={page === 0}
-									>
+										<Button
+											variant="outline"
+											size="sm"
+											onClick={() => setPage((p) => Math.max(0, p - 1))}
+											disabled={page === 0}
+										>
 											<IconChevronLeft className="size-4 mr-1" />
 											Previous
 										</Button>
-									<Button
-										variant="outline"
-										size="sm"
-										onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-										disabled={page >= totalPages - 1}
-									>
+										<Button
+											variant="outline"
+											size="sm"
+											onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+											disabled={page >= totalPages - 1}
+										>
 											Next
 											<IconChevronRight className="size-4 ml-1" />
 										</Button>

@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { requestAbsence } from "@/app/[locale]/(app)/absences/actions";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
 	Dialog,
 	DialogContent,
@@ -16,7 +17,6 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import {
 	Select,
 	SelectContent,
@@ -247,19 +247,21 @@ export function RequestAbsenceDialog({
 
 						{/* Start Date and Period */}
 						<div className="grid gap-2">
-							<TFormLabel>{t("absences.form.startDate", "Start Date *")}</TFormLabel>
+							<div className="font-medium text-sm">{t("absences.form.startDate", "Start Date *")}</div>
 							<div className="grid grid-cols-2 gap-2">
 								<form.Field name="startDate">
 									{(field) => (
-										<TFormControl hasError={field.state.meta.errors.length > 0}>
-											<Input
-												type="date"
-												value={field.state.value}
-												onChange={(e) => field.handleChange(e.target.value)}
-												onBlur={field.handleBlur}
-												required
-											/>
-										</TFormControl>
+										<TFormItem className="gap-0">
+											<TFormControl hasError={field.state.meta.errors.length > 0}>
+												<DatePicker
+													value={field.state.value}
+													onChange={field.handleChange}
+													onBlur={field.handleBlur}
+													required
+												/>
+											</TFormControl>
+											<TFormMessage field={field} />
+										</TFormItem>
 									)}
 								</form.Field>
 								<form.Field name="startPeriod">
@@ -294,20 +296,24 @@ export function RequestAbsenceDialog({
 
 								return (
 									<div className="grid gap-2">
-										<TFormLabel>{t("absences.form.endDate", "End Date *")}</TFormLabel>
+										<div className="font-medium text-sm">
+											{t("absences.form.endDate", "End Date *")}
+										</div>
 										<div className="grid grid-cols-2 gap-2">
 											<form.Field name="endDate">
 												{(field) => (
-													<TFormControl hasError={field.state.meta.errors.length > 0}>
-														<Input
-															type="date"
-															value={field.state.value}
-															min={values.startDate}
-															onChange={(e) => field.handleChange(e.target.value)}
-															onBlur={field.handleBlur}
-															required
-														/>
-													</TFormControl>
+													<TFormItem className="gap-0">
+														<TFormControl hasError={field.state.meta.errors.length > 0}>
+															<DatePicker
+																value={field.state.value}
+																min={values.startDate}
+																onChange={field.handleChange}
+																onBlur={field.handleBlur}
+																required
+															/>
+														</TFormControl>
+														<TFormMessage field={field} />
+													</TFormItem>
 												)}
 											</form.Field>
 											<form.Field name="endPeriod">

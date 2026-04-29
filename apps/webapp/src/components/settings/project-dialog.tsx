@@ -14,6 +14,7 @@ import {
 	updateProject,
 } from "@/app/[locale]/(app)/settings/projects/actions";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
 	Dialog,
 	DialogContent,
@@ -362,11 +363,10 @@ export function ProjectDialog({
 									<Label htmlFor="deadline">
 										{t("settings.projects.field.deadline", "Deadline")}
 									</Label>
-									<Input
+									<DatePicker
 										id="deadline"
-										type="date"
 										value={field.state.value}
-										onChange={(e) => field.handleChange(e.target.value)}
+										onChange={field.handleChange}
 										onBlur={field.handleBlur}
 									/>
 								</div>

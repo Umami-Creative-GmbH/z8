@@ -12,10 +12,10 @@ export function NotificationBell() {
 	const { organizationId } = useOrganization();
 	const hasOrganization = Boolean(organizationId);
 
-	const { unreadCount } = useNotifications({ enabled: hasOrganization });
+	const { unreadCount } = useNotifications({ enabled: hasOrganization, organizationId });
 
 	// Connect to SSE for real-time updates
-	useNotificationStream({ enabled: hasOrganization });
+	useNotificationStream({ enabled: hasOrganization, organizationId });
 
 	return (
 		<NotificationPopover>

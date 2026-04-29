@@ -10,6 +10,7 @@ import { createManualTimeEntry } from "@/app/[locale]/(app)/time-tracking/action
 import { ProjectSelector } from "@/components/time-tracking/project-selector";
 import { WorkCategorySelector } from "@/components/time-tracking/work-category-selector";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
 	Dialog,
 	DialogClose,
@@ -29,6 +30,7 @@ import {
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
 import { Textarea } from "@/components/ui/textarea";
+import { TimeInput } from "@/components/ui/time-input";
 import { getTimezoneAbbreviation } from "@/lib/time-tracking/timezone-utils";
 import { useRouter } from "@/navigation";
 
@@ -210,12 +212,10 @@ export function ManualTimeEntryDialog({
 										{t("timeTracking.manualEntry.dateLabel", "Date")}
 									</TFormLabel>
 									<TFormControl hasError={fieldHasError(field)}>
-										<Input
-											type="date"
+										<DatePicker
 											name="date"
-											autoComplete="off"
 											value={field.state.value}
-											onChange={(e) => field.handleChange(e.target.value)}
+											onChange={field.handleChange}
 											onBlur={field.handleBlur}
 											max={DateTime.now().setZone(employeeTimezone).toISODate() || undefined}
 											required
@@ -235,8 +235,7 @@ export function ManualTimeEntryDialog({
 											{t("timeTracking.manualEntry.clockInLabel", "Clock In")}
 										</TFormLabel>
 										<TFormControl hasError={fieldHasError(field)}>
-											<Input
-												type="time"
+											<TimeInput
 												name="clockInTime"
 												autoComplete="off"
 												value={field.state.value}
@@ -257,8 +256,7 @@ export function ManualTimeEntryDialog({
 											{t("timeTracking.manualEntry.clockOutLabel", "Clock Out")}
 										</TFormLabel>
 										<TFormControl hasError={fieldHasError(field)}>
-											<Input
-												type="time"
+											<TimeInput
 												name="clockOutTime"
 												autoComplete="off"
 												value={field.state.value}

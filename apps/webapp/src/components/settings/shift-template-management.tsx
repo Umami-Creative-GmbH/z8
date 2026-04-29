@@ -56,6 +56,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { TimeInput } from "@/components/ui/time-input";
 import { queryKeys } from "@/lib/query/keys";
 import { cn } from "@/lib/utils";
 
@@ -512,7 +513,8 @@ function ShiftTemplateDialog({
 	const formatTime = useFormatTime();
 	const calculateDuration = useCalculateDuration();
 
-	const defaultSubareaId = locations.flatMap((location) => location.subareas)
+	const defaultSubareaId = locations
+		.flatMap((location) => location.subareas)
 		.find((subarea) => subarea.isActive)?.id;
 
 	const form = useForm({
@@ -619,9 +621,8 @@ function ShiftTemplateDialog({
 									<Label htmlFor="startTime">
 										{t("settings.shiftTemplates.form.startTime", "Start Time")}
 									</Label>
-									<Input
+									<TimeInput
 										id="startTime"
-										type="time"
 										value={field.state.value}
 										onChange={(e) => field.handleChange(e.target.value)}
 										onBlur={field.handleBlur}
@@ -636,9 +637,8 @@ function ShiftTemplateDialog({
 									<Label htmlFor="endTime">
 										{t("settings.shiftTemplates.form.endTime", "End Time")}
 									</Label>
-									<Input
+									<TimeInput
 										id="endTime"
-										type="time"
 										value={field.state.value}
 										onChange={(e) => field.handleChange(e.target.value)}
 										onBlur={field.handleBlur}
@@ -708,15 +708,15 @@ function ShiftTemplateDialog({
 												: t("settings.shiftTemplates.form.noSubarea", "No default subarea")}
 										</SelectValue>
 									</SelectTrigger>
-								<SelectContent>
-									{!requireScopedSubareaSelection ? (
-										<SelectItem value="none">
-											{t("settings.shiftTemplates.form.noSubarea", "No default subarea")}
-										</SelectItem>
-									) : null}
-									{locations.flatMap((location) =>
-										location.subareas
-											.filter((s) => s.isActive)
+									<SelectContent>
+										{!requireScopedSubareaSelection ? (
+											<SelectItem value="none">
+												{t("settings.shiftTemplates.form.noSubarea", "No default subarea")}
+											</SelectItem>
+										) : null}
+										{locations.flatMap((location) =>
+											location.subareas
+												.filter((s) => s.isActive)
 												.map((subarea) => (
 													<SelectItem key={subarea.id} value={subarea.id}>
 														{t(
@@ -781,7 +781,9 @@ function ShiftTemplateDialog({
 						</Button>
 						<Button
 							type="submit"
-							disabled={isSubmitting || (requireScopedSubareaSelection && !form.state.values.subareaId)}
+							disabled={
+								isSubmitting || (requireScopedSubareaSelection && !form.state.values.subareaId)
+							}
 						>
 							{isSubmitting ? (
 								<>

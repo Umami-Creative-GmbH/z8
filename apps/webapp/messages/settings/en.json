@@ -1566,7 +1566,8 @@
         "description": "The organization could not be found or you don't have access to it.",
         "title": "Organization Not Found"
       },
-      "title": "Organizations & Teams"
+      "description": "Manage organization members, invitations, and details",
+      "title": "Organization"
     },
     "payrollExport": {
       "datev": {
@@ -2484,7 +2485,7 @@
       }
     },
     "teams": {
-      "description": "Organize employees into teams for better management",
+      "description": "Organize employees into teams and manage team assignments",
       "details": "Team Details",
       "details.description": "Manage team information and members",
       "details.title": "Team Details",

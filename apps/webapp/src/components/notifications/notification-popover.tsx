@@ -29,7 +29,7 @@ export function NotificationPopover({ children }: NotificationPopoverProps) {
 		deleteAllNotifications,
 		isMarkingAllRead,
 		isDeletingAll,
-	} = useNotifications({ enabled: open && hasOrganization });
+	} = useNotifications({ enabled: open && hasOrganization, organizationId });
 
 	const handleMarkAsRead = async (id: string) => {
 		try {

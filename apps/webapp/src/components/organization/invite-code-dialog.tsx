@@ -7,6 +7,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
 	Dialog,
 	DialogContent,
@@ -296,11 +297,10 @@ export function InviteCodeDialog({
 							<Label htmlFor="expiresAt">
 								{t("settings.inviteCodes.expiresAt", "Expiration Date")}
 							</Label>
-							<Input
+							<DatePicker
 								id="expiresAt"
-								type="date"
 								value={values.expiresAt}
-								onChange={(e) => updateDraft({ expiresAt: e.target.value })}
+								onChange={(value) => updateDraft({ expiresAt: value })}
 								min={new Date().toISOString().split("T")[0]}
 							/>
 							<p className="text-sm text-muted-foreground">
