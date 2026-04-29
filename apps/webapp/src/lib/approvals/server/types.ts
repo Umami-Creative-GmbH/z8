@@ -81,6 +81,7 @@ export interface PendingApprovalRequest {
 	entityId: string;
 	entityType: ApprovalEntityType;
 	approverId: string;
+	organizationId: string;
 	status: "pending" | "approved" | "rejected";
 	approvedAt: Date | null;
 	rejectionReason: string | null;

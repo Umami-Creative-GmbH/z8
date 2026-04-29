@@ -77,6 +77,8 @@ export const queryKeys = {
 		detail: (employeeId: string) => ["employees", "detail", employeeId] as const,
 		rateHistory: (employeeId: string) =>
 			["employees", "detail", employeeId, "rate-history"] as const,
+		employmentHistory: (employeeId: string) =>
+			["employees", "detail", employeeId, "employment-history"] as const,
 	},
 
 	// Employee Select (for unified employee selection component)
@@ -417,11 +419,6 @@ export const queryKeys = {
 			["skills", "validation", employeeId, subareaId, templateId] as const,
 		// Qualified employees for a set of skills
 		qualified: (skillIds: string[]) => ["skills", "qualified", skillIds] as const,
-	},
-	qualifications: {
-		my: () => ["qualifications", "my"] as const,
-		renewalRequests: (orgId: string) => ["qualifications", "renewal-requests", orgId] as const,
-		evidence: (employeeSkillId: string) => ["qualifications", "evidence", employeeSkillId] as const,
 	},
 	// Telegram integration
 	telegram: {

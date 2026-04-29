@@ -7,26 +7,43 @@
 
 import { IconClockEdit } from "@tabler/icons-react";
 import { and, eq, inArray } from "drizzle-orm";
-import { DateTime } from "luxon";
 import { Effect } from "effect";
-import { approvalRequest, workPeriod } from "@/db/schema";
-import { DatabaseService } from "@/lib/effect/services/database.service";
+import { DateTime } from "luxon";
+import { approvalRequest, employee, workPeriod } from "@/db/schema";
 import { NotFoundError } from "@/lib/effect/errors";
+import { DatabaseService } from "@/lib/effect/services/database.service";
+import { calculateSLADeadline } from "../domain/sla-calculator";
 import type {
 	ApprovalDetail,
-	ApprovalPriority,
 	ApprovalQueryParams,
 	ApprovalTimelineEvent,
 	ApprovalTypeHandler,
-	UnifiedApprovalItem,
 } from "../domain/types";
-import { calculateSLADeadline } from "../domain/sla-calculator";
-import {
-	fetchApprovals,
-	getApprovalCount,
-	buildSLAInfo,
-	type ApprovalRequestRow,
-} from "./base-handler";
+import type { ApprovalDbService, CurrentApprover } from "../server/types";
+import { buildSLAInfo, fetchApprovals, getApprovalCount } from "./base-handler";
+
+function loadCurrentApproverById(dbService: ApprovalDbService, approverId: string) {
+	return dbService
+		.query("getApprovalActor", async () => {
+			return await dbService.db.query.employee.findFirst({
+				where: and(eq(employee.id, approverId), eq(employee.isActive, true)),
+				with: { user: true },
+			});
+		})
+		.pipe(
+			Effect.flatMap((approver) =>
+				approver
+					? Effect.succeed(approver as CurrentApprover)
+					: Effect.fail(
+							new NotFoundError({
+								message: "Employee profile not found",
+								entityType: "employee",
+								entityId: approverId,
+							}),
+						),
+			),
+		);
+}
 
 // Type for work period entity with relations
 interface WorkPeriodWithRelations {
@@ -303,50 +320,41 @@ export const TimeCorrectionHandler: ApprovalTypeHandler<WorkPeriodWithRelations>
 			} as ApprovalDetail<WorkPeriodWithRelations>;
 		}),
 
-	approve: (entityId, _approverId) =>
+	approve: (entityId, approverId, options) =>
 		Effect.gen(function* (_) {
-			const { approveTimeCorrectionEffect } = yield* _(
-				Effect.promise(
-					async () => import("@/lib/approvals/server/time-correction-approvals"),
-				),
+			const dbService = yield* _(DatabaseService);
+			const currentEmployee = yield* _(loadCurrentApproverById(dbService, approverId));
+			const { approveTimeCorrectionWithCurrentApproverEffect } = yield* _(
+				Effect.promise(async () => import("@/lib/approvals/server/time-correction-approvals")),
 			);
 
-			const result = yield* _(Effect.promise(() => approveTimeCorrectionEffect(entityId)));
-
-			if (!result.success) {
-				return yield* _(
-					Effect.fail(
-						new NotFoundError({
-							message: result.error || "Failed to approve time correction",
-							entityType: "work_period",
-							entityId,
-						}),
-					),
-				);
-			}
+			yield* _(
+				approveTimeCorrectionWithCurrentApproverEffect(
+					dbService,
+					currentEmployee,
+					entityId,
+					options,
+				),
+			);
 		}),
 
-	reject: (entityId, _approverId, reason) =>
+	reject: (entityId, approverId, reason, options) =>
 		Effect.gen(function* (_) {
-			const { rejectTimeCorrectionEffect } = yield* _(
-				Effect.promise(
-					async () => import("@/lib/approvals/server/time-correction-approvals"),
-				),
+			const dbService = yield* _(DatabaseService);
+			const currentEmployee = yield* _(loadCurrentApproverById(dbService, approverId));
+			const { rejectTimeCorrectionWithCurrentApproverEffect } = yield* _(
+				Effect.promise(async () => import("@/lib/approvals/server/time-correction-approvals")),
 			);
 
-			const result = yield* _(Effect.promise(() => rejectTimeCorrectionEffect(entityId, reason)));
-
-			if (!result.success) {
-				return yield* _(
-					Effect.fail(
-						new NotFoundError({
-							message: result.error || "Failed to reject time correction",
-							entityType: "work_period",
-							entityId,
-						}),
-					),
-				);
-			}
+			yield* _(
+				rejectTimeCorrectionWithCurrentApproverEffect(
+					dbService,
+					currentEmployee,
+					entityId,
+					reason,
+					options,
+				),
+			);
 		}),
 
 	calculatePriority: (_entity, createdAt) => {

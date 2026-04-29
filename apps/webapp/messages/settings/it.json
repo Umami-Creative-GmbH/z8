@@ -2140,14 +2140,6 @@
       "catalog": "Catalogo competenze",
       "catalogDescription": "Definisci le competenze che possono essere richieste per sottoaree e modelli di turno",
       "category": "Categoria",
-      "categories": {
-        "certification": "Certificazione",
-        "custom": "Personalizzata",
-        "equipment": "Attrezzatura",
-        "language": "Lingua",
-        "safety": "Sicurezza",
-        "training": "Formazione"
-      },
       "confirmDelete": "Sei sicuro di voler eliminare questa competenza?",
       "confirmRemove": "Rimuovere \"${skillName}\" da questo dipendente?",
       "createError": "Impossibile creare la competenza",

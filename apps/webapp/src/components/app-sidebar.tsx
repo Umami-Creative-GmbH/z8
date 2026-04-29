@@ -4,7 +4,6 @@ import {
 	IconBeach,
 	IconCalendar,
 	IconCalendarEvent,
-	IconCertificate,
 	IconClipboardCheck,
 	IconClock,
 	IconDashboard,
@@ -71,12 +70,6 @@ export function AppSidebar({
 			url: "/my-requests",
 			icon: IconFileDescription,
 			dataTour: "nav-my-requests",
-		},
-		{
-			title: t("nav.my-qualifications", "My Qualifications"),
-			url: "/my-qualifications",
-			icon: IconCertificate,
-			dataTour: "nav-my-qualifications",
 		},
 		{
 			title: t("nav.calendar", "Calendar"),

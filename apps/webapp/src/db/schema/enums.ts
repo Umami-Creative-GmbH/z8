@@ -39,10 +39,11 @@ export const timeRecordAllocationKindEnum = pgEnum("time_record_allocation_kind"
 	"project",
 	"cost_center",
 ]);
-export const timeRecordApprovalDecisionActionEnum = pgEnum(
-	"time_record_approval_decision_action",
-	["submitted", "approved", "rejected"],
-);
+export const timeRecordApprovalDecisionActionEnum = pgEnum("time_record_approval_decision_action", [
+	"submitted",
+	"approved",
+	"rejected",
+]);
 export const holidayCategoryEnum = pgEnum("holiday_category_type", [
 	"public_holiday",
 	"company_holiday",
@@ -57,6 +58,18 @@ export const holidayPresetAssignmentTypeEnum = pgEnum("holiday_preset_assignment
 ]);
 export const genderEnum = pgEnum("gender", ["male", "female", "other"]);
 export const contractTypeEnum = pgEnum("contract_type", ["fixed", "hourly"]);
+export const employmentStatusEnum = pgEnum("employment_status", [
+	"active",
+	"inactive",
+	"terminated",
+	"leave",
+]);
+export const workModelEnum = pgEnum("work_model", ["onsite", "hybrid", "remote", "flexible"]);
+export const employmentReviewStateEnum = pgEnum("employment_review_state", [
+	"draft",
+	"pending",
+	"confirmed",
+]);
 export const scheduleCycleEnum = pgEnum("schedule_cycle", [
 	"daily",
 	"weekly",
@@ -190,16 +203,9 @@ export const workLocationTypeEnum = pgEnum("work_location_type", [
 	"other",
 ]);
 
-export const presenceModeEnum = pgEnum("presence_mode", [
-	"minimum_count",
-	"fixed_days",
-]);
+export const presenceModeEnum = pgEnum("presence_mode", ["minimum_count", "fixed_days"]);
 
-export const presenceEnforcementEnum = pgEnum("presence_enforcement", [
-	"block",
-	"warn",
-	"none",
-]);
+export const presenceEnforcementEnum = pgEnum("presence_enforcement", ["block", "warn", "none"]);
 
 export const presenceEvaluationPeriodEnum = pgEnum("presence_evaluation_period", [
 	"weekly",
@@ -355,21 +361,3 @@ export const skillCategoryEnum = pgEnum("skill_category", [
 	"language", // Language proficiency
 	"custom", // Custom category (uses customCategoryName field)
 ]);
-
-export const qualificationStatusEnum = pgEnum("qualification_status", [
-	"active",
-	"superseded",
-	"revoked",
-]);
-
-export const qualificationRenewalStatusEnum = pgEnum("qualification_renewal_status", [
-	"pending",
-	"approved",
-	"rejected",
-]);
-
-export const requirementEnforcementModeEnum = pgEnum("requirement_enforcement_mode", [
-	"warning",
-	"blocking",
-]);
-

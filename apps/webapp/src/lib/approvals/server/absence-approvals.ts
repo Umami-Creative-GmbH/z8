@@ -12,7 +12,8 @@ import { EmailService } from "@/lib/effect/services/email.service";
 import { renderAbsenceRequestApproved, renderAbsenceRequestRejected } from "@/lib/email/render";
 import { onAbsenceRequestApproved, onAbsenceRequestRejected } from "@/lib/notifications/triggers";
 import { addCalendarSyncJob } from "@/lib/queue";
-import { processApproval } from "./shared";
+import type { ApprovalActionOptions } from "../domain/types";
+import { processApproval, processApprovalWithCurrentEmployee } from "./shared";
 import type { ApprovalDbService, CurrentApprover } from "./types";
 
 interface AbsenceRecord {
@@ -40,7 +41,9 @@ interface AbsenceRecord {
 	};
 }
 
-function ensureAbsenceRecord(absence: AbsenceRecord | null): Effect.Effect<AbsenceRecord, NotFoundError> {
+function ensureAbsenceRecord(
+	absence: AbsenceRecord | null,
+): Effect.Effect<AbsenceRecord, NotFoundError> {
 	return absence
 		? Effect.succeed(absence)
 		: Effect.fail(
@@ -58,25 +61,29 @@ function updateAbsenceStatus(
 	status: "approved" | "rejected",
 	reason?: string,
 ) {
-	return dbService.query("updateAbsenceStatus", async () => {
-		await dbService.db
-			.update(absenceEntry)
-			.set({
-				status,
-				approvedAt: status === "approved" ? currentTimestamp() : undefined,
-				approvedBy: status === "approved" ? currentEmployee.id : undefined,
-				rejectionReason: status === "rejected" ? reason : undefined,
-			})
-			.where(eq(absenceEntry.id, entityId));
+	return dbService
+		.query("updateAbsenceStatus", async () => {
+			await dbService.db
+				.update(absenceEntry)
+				.set({
+					status,
+					approvedAt: status === "approved" ? currentTimestamp() : undefined,
+					approvedBy: status === "approved" ? currentEmployee.id : undefined,
+					rejectionReason: status === "rejected" ? reason : undefined,
+				})
+				.where(eq(absenceEntry.id, entityId));
 
-		return await dbService.db.query.absenceEntry.findFirst({
-			where: eq(absenceEntry.id, entityId),
-			with: {
-				category: true,
-				employee: { with: { user: true } },
-			},
-		});
-	}).pipe(Effect.flatMap((absence) => ensureAbsenceRecord(absence as unknown as AbsenceRecord | null)));
+			return await dbService.db.query.absenceEntry.findFirst({
+				where: eq(absenceEntry.id, entityId),
+				with: {
+					category: true,
+					employee: { with: { user: true } },
+				},
+			});
+		})
+		.pipe(
+			Effect.flatMap((absence) => ensureAbsenceRecord(absence as unknown as AbsenceRecord | null)),
+		);
 }
 
 function loadHolidays(dbService: ApprovalDbService, organizationId: string) {
@@ -92,7 +99,51 @@ export function formatAbsenceDateForEmail(date: Date | string) {
 	return value.toFormat("LLL d, yyyy");
 }
 
-function buildAbsenceEmailContext(absence: AbsenceRecord, currentEmployee: CurrentApprover, days: number) {
+export function approveAbsenceWithCurrentApproverEffect(
+	dbService: ApprovalDbService,
+	currentEmployee: CurrentApprover,
+	absenceId: string,
+	options?: ApprovalActionOptions,
+) {
+	return processApprovalWithCurrentEmployee(
+		dbService,
+		currentEmployee,
+		"absence_entry",
+		absenceId,
+		"approve",
+		undefined,
+		handleApprovedAbsence,
+		undefined,
+		options,
+	);
+}
+
+export function rejectAbsenceWithCurrentApproverEffect(
+	dbService: ApprovalDbService,
+	currentEmployee: CurrentApprover,
+	absenceId: string,
+	reason: string,
+	options?: ApprovalActionOptions,
+) {
+	return processApprovalWithCurrentEmployee(
+		dbService,
+		currentEmployee,
+		"absence_entry",
+		absenceId,
+		"reject",
+		reason,
+		(decisionDbService, entityId, approver) =>
+			handleRejectedAbsence(decisionDbService, entityId, approver, reason),
+		undefined,
+		options,
+	);
+}
+
+function buildAbsenceEmailContext(
+	absence: AbsenceRecord,
+	currentEmployee: CurrentApprover,
+	days: number,
+) {
 	return Effect.gen(function* (_) {
 		const appUrl = yield* _(
 			Effect.promise(() => getOrganizationBaseUrl(absence.employee.organizationId)),
@@ -110,7 +161,11 @@ function buildAbsenceEmailContext(absence: AbsenceRecord, currentEmployee: Curre
 	});
 }
 
-function notifyApprovedAbsence(absence: AbsenceRecord, entityId: string, currentEmployee: CurrentApprover) {
+function notifyApprovedAbsence(
+	absence: AbsenceRecord,
+	entityId: string,
+	currentEmployee: CurrentApprover,
+) {
 	void onAbsenceRequestApproved({
 		absenceId: entityId,
 		employeeUserId: absence.employee.userId,
@@ -155,9 +210,7 @@ function handleApprovedAbsence(
 ) {
 	return Effect.gen(function* (_) {
 		const emailService = yield* _(EmailService);
-		const absence = yield* _(
-			updateAbsenceStatus(dbService, entityId, currentEmployee, "approved"),
-		);
+		const absence = yield* _(updateAbsenceStatus(dbService, entityId, currentEmployee, "approved"));
 		yield* _(
 			Effect.promise(() =>
 				syncCanonicalAbsenceApprovalState({
@@ -175,9 +228,7 @@ function handleApprovedAbsence(
 			holidays,
 		);
 		const emailContext = yield* _(buildAbsenceEmailContext(absence, currentEmployee, days));
-		const html = yield* _(
-			Effect.promise(() => renderAbsenceRequestApproved(emailContext)),
-		);
+		const html = yield* _(Effect.promise(() => renderAbsenceRequestApproved(emailContext)));
 
 		yield* _(
 			emailService.send({

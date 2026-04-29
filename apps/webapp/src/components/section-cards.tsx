@@ -3,6 +3,7 @@
 import { BirthdayRemindersWidget } from "@/components/dashboard/birthday-reminders-widget";
 import { HydrationWidget } from "@/components/dashboard/hydration-widget";
 import { ManagedEmployeesWidget } from "@/components/dashboard/managed-employees-widget";
+import { ManagerTodayWidget } from "@/components/dashboard/manager-today-widget";
 import { PendingApprovalsWidget } from "@/components/dashboard/pending-approvals-widget";
 import { PresenceStatusWidget } from "@/components/dashboard/presence-status-widget";
 import { QuickStatsWidget } from "@/components/dashboard/quick-stats-widget";
@@ -12,9 +13,9 @@ import { TeamOverviewWidget } from "@/components/dashboard/team-overview-widget"
 import { UpcomingTimeOffWidget } from "@/components/dashboard/upcoming-time-off-widget";
 import { useWidgetOrder } from "@/components/dashboard/use-widget-order";
 import { VacationBalanceWidget } from "@/components/dashboard/vacation-balance-widget";
-import { WidgetVisibilityProvider } from "@/components/dashboard/widget-visibility-context";
-import type { WidgetId } from "@/components/dashboard/widget-registry";
 import { WhosOutTodayWidget } from "@/components/dashboard/whos-out-today-widget";
+import type { WidgetId } from "@/components/dashboard/widget-registry";
+import { WidgetVisibilityProvider } from "@/components/dashboard/widget-visibility-context";
 import { Skeleton } from "@/components/ui/skeleton";
 
 /**
@@ -22,6 +23,7 @@ import { Skeleton } from "@/components/ui/skeleton";
  * Widgets handle their own DashboardWidget wrapper internally.
  */
 const WIDGET_COMPONENTS: Record<WidgetId, React.ComponentType> = {
+	"manager-today": ManagerTodayWidget,
 	"managed-employees": ManagedEmployeesWidget,
 	"pending-approvals": PendingApprovalsWidget,
 	"team-overview": TeamOverviewWidget,
@@ -34,6 +36,8 @@ const WIDGET_COMPONENTS: Record<WidgetId, React.ComponentType> = {
 	"vacation-balance": VacationBalanceWidget,
 	"presence-status": PresenceStatusWidget,
 };
+
+const WIDGET_SKELETON_KEYS = Array.from({ length: 8 }, (_, index) => `widget-skeleton-${index}`);
 
 function WidgetSkeleton() {
 	return (
@@ -54,8 +58,8 @@ function WidgetSkeleton() {
 export function SectionCardsSkeleton() {
 	return (
 		<div className="grid @5xl/main:grid-cols-3 @xl/main:grid-cols-2 grid-cols-1 gap-4 px-4 lg:px-6 items-start">
-			{Array.from({ length: 8 }).map((_, i) => (
-				<WidgetSkeleton key={i} />
+			{WIDGET_SKELETON_KEYS.map((key) => (
+				<WidgetSkeleton key={key} />
 			))}
 		</div>
 	);
@@ -70,15 +74,15 @@ export function SectionCards() {
 
 	return (
 		<div data-tour="dashboard-widgets">
-		<WidgetVisibilityProvider>
-			<SortableWidgetGrid widgetOrder={widgetOrder} onReorder={onReorder}>
-				{widgetOrder.map((widgetId) => {
-					const WidgetComponent = WIDGET_COMPONENTS[widgetId];
-					if (!WidgetComponent) return null;
-					return <WidgetComponent key={widgetId} />;
-				})}
-			</SortableWidgetGrid>
-		</WidgetVisibilityProvider>
+			<WidgetVisibilityProvider>
+				<SortableWidgetGrid widgetOrder={widgetOrder} onReorder={onReorder}>
+					{widgetOrder.map((widgetId) => {
+						const WidgetComponent = WIDGET_COMPONENTS[widgetId];
+						if (!WidgetComponent) return null;
+						return <WidgetComponent key={widgetId} />;
+					})}
+				</SortableWidgetGrid>
+			</WidgetVisibilityProvider>
 		</div>
 	);
 }

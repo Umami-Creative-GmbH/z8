@@ -1,61 +1,12 @@
 "use client";
 
-import { IconAlertTriangle, IconCertificate, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
+import { IconAlertTriangle, IconCertificate, IconLoader2 } from "@tabler/icons-react";
 import { DateTime } from "luxon";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import type { SkillValidationResult } from "@/lib/effect/services/skill.service";
-
-type QualificationIssue = SkillValidationResult["issues"][number];
-
-function getIssueTypeLabel(
-	t: ReturnType<typeof useTranslate>["t"],
-	issueType: QualificationIssue["issueType"],
-) {
-	switch (issueType) {
-		case "missing":
-			return t("scheduling.skills.issueType.missing", "Missing");
-		case "preferred":
-			return t("scheduling.skills.issueType.preferred", "Preferred");
-		case "expired":
-			return t("scheduling.skills.issueType.expired", "Expired");
-		case "expiringSoon":
-			return t("scheduling.skills.issueType.expiringSoon", "Expiring soon");
-	}
-}
-
-function getEnforcementModeLabel(
-	t: ReturnType<typeof useTranslate>["t"],
-	enforcementMode: QualificationIssue["enforcementMode"],
-) {
-	switch (enforcementMode) {
-		case "warning":
-			return t("scheduling.skills.enforcementMode.warning", "Warning");
-		case "blocking":
-			return t("scheduling.skills.enforcementMode.blocking", "Blocking");
-	}
-}
-
-function getSkillCategoryLabel(t: ReturnType<typeof useTranslate>["t"], category: string) {
-	switch (category) {
-		case "safety":
-			return t("scheduling.skills.category.safety", "Safety");
-		case "equipment":
-			return t("scheduling.skills.category.equipment", "Equipment");
-		case "certification":
-			return t("scheduling.skills.category.certification", "Certification");
-		case "training":
-			return t("scheduling.skills.category.training", "Training");
-		case "language":
-			return t("scheduling.skills.category.language", "Language");
-		case "custom":
-			return t("scheduling.skills.category.custom", "Custom");
-		default:
-			return category;
-	}
-}
 
 interface SkillWarningAlertProps {
 	validation: SkillValidationResult | undefined;
@@ -81,12 +32,7 @@ export function SkillWarningAlert({ validation, isLoading }: SkillWarningAlertPr
 		return null;
 	}
 
-	const hasReportableIssues =
-		validation.issues.length > 0 ||
-		validation.missingSkills.length > 0 ||
-		validation.expiredSkills.length > 0;
-
-	if (!hasReportableIssues) {
+	if (validation.isQualified) {
 		return null;
 	}
 
@@ -102,47 +48,19 @@ export function SkillWarningAlert({ validation, isLoading }: SkillWarningAlertPr
 	}
 
 	const hasExpired = validation.expiredSkills.length > 0;
-	const hasIssues = validation.issues.length > 0;
-	const hasRequiredMissing = hasIssues
-		? validation.issues.some((issue) => issue.isRequired && issue.issueType === "missing")
-		: requiredMissing.length > 0;
-	const hasRequiredExpired = hasIssues
-		? validation.issues.some((issue) => issue.isRequired && issue.issueType === "expired")
-		: hasExpired;
-	const shouldShowOverrideCopy = validation.requiresOverride && !validation.hasBlockingIssues;
 
 	return (
-		<Alert
-			variant={
-				validation.hasBlockingIssues || hasRequiredMissing || hasRequiredExpired
-					? "destructive"
-					: "default"
-			}
-		>
+		<Alert variant={requiredMissing.length > 0 || hasExpired ? "destructive" : "default"}>
 			<IconAlertTriangle className="h-4 w-4" aria-hidden="true" />
 			<AlertTitle>
-				{validation.hasBlockingIssues ||
-				validation.requiresOverride ||
-				hasRequiredMissing ||
-				hasRequiredExpired
+				{requiredMissing.length > 0 || hasExpired
 					? t("scheduling.skills.requirementsNotMet", "Skill Requirements Not Met")
 					: t("scheduling.skills.preferredSkillsMissing", "Preferred Skills Missing")}
 			</AlertTitle>
 			<AlertDescription>
 				<div className="space-y-3 mt-2">
-					{hasIssues && (
-						<ul className="space-y-1 pl-5">
-							{validation.issues.map((issue) => (
-								<li key={`${issue.id}-${issue.issueType}`}>
-									{issue.name}: {getIssueTypeLabel(t, issue.issueType)} (
-									{getEnforcementModeLabel(t, issue.enforcementMode)})
-								</li>
-							))}
-						</ul>
-					)}
-
 					{/* Missing Required Skills */}
-					{!hasIssues && requiredMissing.length > 0 && (
+					{requiredMissing.length > 0 && (
 						<div>
 							<p className="font-medium text-sm mb-1.5 flex items-center gap-1.5">
 								<IconCertificate className="h-4 w-4" aria-hidden="true" />
@@ -154,7 +72,7 @@ export function SkillWarningAlert({ validation, isLoading }: SkillWarningAlertPr
 										<span className="w-1.5 h-1.5 rounded-full bg-destructive" />
 										{skill.name}
 										<Badge variant="outline" className="text-xs">
-											{getSkillCategoryLabel(t, skill.category)}
+											{skill.category}
 										</Badge>
 									</li>
 								))}
@@ -163,7 +81,7 @@ export function SkillWarningAlert({ validation, isLoading }: SkillWarningAlertPr
 					)}
 
 					{/* Missing Preferred Skills */}
-					{!hasIssues && preferredMissing.length > 0 && (
+					{preferredMissing.length > 0 && (
 						<div>
 							<p className="font-medium text-sm mb-1.5">
 								{t("scheduling.skills.missingPreferred", "Missing Preferred Skills:")}
@@ -183,7 +101,7 @@ export function SkillWarningAlert({ validation, isLoading }: SkillWarningAlertPr
 					)}
 
 					{/* Expired Certifications */}
-					{!hasIssues && hasExpired && (
+					{hasExpired && (
 						<div>
 							<p className="font-medium text-sm mb-1.5">
 								{t("scheduling.skills.expiredCertifications", "Expired Certifications:")}
@@ -195,9 +113,7 @@ export function SkillWarningAlert({ validation, isLoading }: SkillWarningAlertPr
 										{skill.name}
 										<span className="text-xs text-muted-foreground">
 											{t("scheduling.skills.expiredOn", "(Expired {{date}})", {
-												date: DateTime.fromJSDate(skill.expiresAt).toLocaleString(
-													DateTime.DATE_SHORT,
-												),
+												date: DateTime.fromJSDate(skill.expiresAt).toLocaleString(DateTime.DATE_SHORT),
 											})}
 										</span>
 									</li>
@@ -207,20 +123,11 @@ export function SkillWarningAlert({ validation, isLoading }: SkillWarningAlertPr
 					)}
 
 					{/* Warning Message */}
-					{validation.hasBlockingIssues && (
-						<p className="text-xs text-muted-foreground mt-2 pt-2 border-t">
-							{t(
-								"scheduling.skills.blockingMessage",
-								"This employee cannot be assigned until blocking qualification requirements are resolved.",
-							)}
-						</p>
-					)}
-
-					{shouldShowOverrideCopy && (
+					{(requiredMissing.length > 0 || hasExpired) && (
 						<p className="text-xs text-muted-foreground mt-2 pt-2 border-t">
 							{t(
 								"scheduling.skills.warningMessage",
-								"You can still assign this shift, but it will be logged as an override.",
+								"You can still assign this shift, but it will be logged as an override."
 							)}
 						</p>
 					)}
@@ -233,31 +140,16 @@ export function SkillWarningAlert({ validation, isLoading }: SkillWarningAlertPr
 /**
  * Compact version for inline display in employee lists
  */
-export function SkillWarningBadge({
-	validation,
-}: {
-	validation: SkillValidationResult | undefined;
-}) {
+export function SkillWarningBadge({ validation }: { validation: SkillValidationResult | undefined }) {
 	const { t } = useTranslate();
 
-	if (!validation) {
+	if (!validation || validation.isQualified) {
 		return null;
 	}
 
-	const totalIssues =
-		validation.issues.length || validation.missingSkills.length + validation.expiredSkills.length;
-
-	if (totalIssues === 0) {
-		return null;
-	}
-
-	const hasIssues = validation.issues.length > 0;
-	const hasMissingRequired = hasIssues
-		? validation.issues.some((issue) => issue.isRequired && issue.issueType === "missing")
-		: validation.missingSkills.some((s) => s.isRequired);
-	const hasExpired = hasIssues
-		? validation.issues.some((issue) => issue.isRequired && issue.issueType === "expired")
-		: validation.expiredSkills.length > 0;
+	const hasMissingRequired = validation.missingSkills.some((s) => s.isRequired);
+	const hasExpired = validation.expiredSkills.length > 0;
+	const totalIssues = validation.missingSkills.length + validation.expiredSkills.length;
 
 	if (hasMissingRequired || hasExpired) {
 		return (
@@ -270,9 +162,7 @@ export function SkillWarningBadge({
 
 	return (
 		<Badge variant="secondary" className="text-xs">
-			{t("scheduling.skills.missingPreferredCount", "{{count}} preferred missing", {
-				count: totalIssues,
-			})}
+			{t("scheduling.skills.missingPreferredCount", "{{count}} preferred missing", { count: totalIssues })}
 		</Badge>
 	);
 }

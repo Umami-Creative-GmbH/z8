@@ -2140,14 +2140,6 @@
       "catalog": "Skill Catalog",
       "catalogDescription": "Define skills that can be required for subareas and shift templates",
       "category": "Category",
-      "categories": {
-        "certification": "Certification",
-        "custom": "Custom",
-        "equipment": "Equipment",
-        "language": "Language",
-        "safety": "Safety",
-        "training": "Training"
-      },
       "confirmDelete": "Are you sure you want to delete this skill?",
       "confirmRemove": "Remove \"${skillName}\" from this employee?",
       "createError": "Failed to create skill",

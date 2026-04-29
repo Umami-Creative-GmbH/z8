@@ -6,28 +6,46 @@
  */
 
 import { IconCalendarOff } from "@tabler/icons-react";
-import { and, count, desc, eq, inArray } from "drizzle-orm";
-import { DateTime } from "luxon";
+import { and, eq, inArray } from "drizzle-orm";
 import { Effect } from "effect";
-import { absenceEntry, approvalRequest } from "@/db/schema";
-import { DatabaseService } from "@/lib/effect/services/database.service";
-import { NotFoundError } from "@/lib/effect/errors";
+import { DateTime } from "luxon";
+import { absenceEntry, approvalRequest, employee } from "@/db/schema";
 import { calculateBusinessDaysWithHalfDays, formatDateRange } from "@/lib/absences/date-utils";
+import { NotFoundError } from "@/lib/effect/errors";
+import { DatabaseService } from "@/lib/effect/services/database.service";
+import { EmailServiceLive } from "@/lib/effect/services/email.service";
+import { calculateSLADeadline } from "../domain/sla-calculator";
 import type {
 	ApprovalDetail,
-	ApprovalPriority,
 	ApprovalQueryParams,
 	ApprovalTimelineEvent,
 	ApprovalTypeHandler,
-	UnifiedApprovalItem,
 } from "../domain/types";
-import { calculateSLADeadline } from "../domain/sla-calculator";
-import {
-	fetchApprovals,
-	getApprovalCount,
-	buildSLAInfo,
-	type ApprovalRequestRow,
-} from "./base-handler";
+import type { ApprovalDbService, CurrentApprover } from "../server/types";
+import { buildSLAInfo, fetchApprovals, getApprovalCount } from "./base-handler";
+
+function loadCurrentApproverById(dbService: ApprovalDbService, approverId: string) {
+	return dbService
+		.query("getApprovalActor", async () => {
+			return await dbService.db.query.employee.findFirst({
+				where: and(eq(employee.id, approverId), eq(employee.isActive, true)),
+				with: { user: true },
+			});
+		})
+		.pipe(
+			Effect.flatMap((approver) =>
+				approver
+					? Effect.succeed(approver as CurrentApprover)
+					: Effect.fail(
+							new NotFoundError({
+								message: "Employee profile not found",
+								entityType: "employee",
+								entityId: approverId,
+							}),
+						),
+			),
+		);
+}
 
 // Type for absence entity with relations
 interface AbsenceWithRelations {
@@ -285,50 +303,38 @@ export const AbsenceRequestHandler: ApprovalTypeHandler<AbsenceWithRelations> = 
 			} as ApprovalDetail<AbsenceWithRelations>;
 		}),
 
-	approve: (entityId, _approverId) =>
+	approve: (entityId, approverId, options) =>
 		Effect.gen(function* (_) {
-			const { approveAbsenceEffect } = yield* _(
-				Effect.promise(
-					async () => import("@/lib/approvals/server/absence-approvals"),
-				),
+			const dbService = yield* _(DatabaseService);
+			const currentEmployee = yield* _(loadCurrentApproverById(dbService, approverId));
+			const { approveAbsenceWithCurrentApproverEffect } = yield* _(
+				Effect.promise(async () => import("@/lib/approvals/server/absence-approvals")),
 			);
 
-			const result = yield* _(Effect.promise(() => approveAbsenceEffect(entityId)));
-
-			if (!result.success) {
-				return yield* _(
-					Effect.fail(
-						new NotFoundError({
-							message: result.error || "Failed to approve absence",
-							entityType: "absence_entry",
-							entityId,
-						}),
-					),
-				);
-			}
+			yield* _(
+				approveAbsenceWithCurrentApproverEffect(dbService, currentEmployee, entityId, options).pipe(
+					Effect.provide(EmailServiceLive),
+				),
+			);
 		}),
 
-	reject: (entityId, _approverId, reason) =>
+	reject: (entityId, approverId, reason, options) =>
 		Effect.gen(function* (_) {
-			const { rejectAbsenceEffect } = yield* _(
-				Effect.promise(
-					async () => import("@/lib/approvals/server/absence-approvals"),
-				),
+			const dbService = yield* _(DatabaseService);
+			const currentEmployee = yield* _(loadCurrentApproverById(dbService, approverId));
+			const { rejectAbsenceWithCurrentApproverEffect } = yield* _(
+				Effect.promise(async () => import("@/lib/approvals/server/absence-approvals")),
 			);
 
-			const result = yield* _(Effect.promise(() => rejectAbsenceEffect(entityId, reason)));
-
-			if (!result.success) {
-				return yield* _(
-					Effect.fail(
-						new NotFoundError({
-							message: result.error || "Failed to reject absence",
-							entityType: "absence_entry",
-							entityId,
-						}),
-					),
-				);
-			}
+			yield* _(
+				rejectAbsenceWithCurrentApproverEffect(
+					dbService,
+					currentEmployee,
+					entityId,
+					reason,
+					options,
+				).pipe(Effect.provide(EmailServiceLive)),
+			);
 		}),
 
 	calculatePriority: (entity, createdAt) => {

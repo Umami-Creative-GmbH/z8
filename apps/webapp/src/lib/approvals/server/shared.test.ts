@@ -16,10 +16,13 @@ vi.mock("@/env", () => ({
 	},
 }));
 
-import { ApprovalAuditLogger } from "@/lib/approvals/infrastructure/audit-logger";
-import { DatabaseService } from "@/lib/effect/services/database.service";
-import { getApprovalStatusUpdate, processApprovalWithCurrentEmployee } from "@/lib/approvals/server/shared";
 import { mapBulkDecisionError } from "@/lib/approvals/application/bulk-approval.service";
+import { ApprovalAuditLogger } from "@/lib/approvals/infrastructure/audit-logger";
+import {
+	getApprovalStatusUpdate,
+	processApprovalWithCurrentEmployee,
+} from "@/lib/approvals/server/shared";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 
 describe("getApprovalStatusUpdate", () => {
 	it("builds approved status payload", () => {
@@ -154,6 +157,80 @@ describe("getApprovalStatusUpdate", () => {
 		);
 	});
 
+	it("allows an organization approval manager to process another employee's pending approval as the actor", async () => {
+		const approvalFindFirst = vi.fn().mockResolvedValue({
+			id: "approval-1",
+			entityId: "claim-1",
+			entityType: "travel_expense_claim",
+			approverId: "assigned-employee-1",
+			organizationId: "org-1",
+			status: "pending",
+			approvedAt: null,
+			rejectionReason: null,
+			updatedAt: new Date("2026-04-09T09:30:00.000Z"),
+		});
+		const returning = vi.fn().mockResolvedValue([{ id: "approval-1" }]);
+		const where = vi.fn().mockReturnValue({ returning });
+		const set = vi.fn().mockReturnValue({ where });
+		const updateEntity = vi.fn().mockReturnValue(Effect.void);
+		const log = vi.fn().mockReturnValue(Effect.void);
+
+		const dbService = DatabaseService.of({
+			db: {
+				query: {
+					approvalRequest: {
+						findFirst: approvalFindFirst,
+					},
+				},
+				update: vi.fn().mockReturnValue({ set }),
+			},
+			query: (_name: string, fn: () => Promise<unknown>) => Effect.promise(fn),
+		});
+
+		const auditLogger = ApprovalAuditLogger.of({
+			log,
+			logBatch: vi.fn(),
+		});
+
+		await Effect.runPromise(
+			processApprovalWithCurrentEmployee(
+				dbService,
+				{
+					id: "admin-employee-1",
+					userId: "admin-user-1",
+					organizationId: "org-1",
+					user: {
+						id: "admin-user-1",
+						name: "Avery Admin",
+						email: "avery@example.com",
+						image: null,
+					},
+				},
+				"travel_expense_claim",
+				"claim-1",
+				"approve",
+				undefined,
+				updateEntity,
+				undefined,
+				{ approvalRequestId: "approval-1", allowAnyApprover: true },
+			).pipe(Effect.provideService(ApprovalAuditLogger, auditLogger)),
+		);
+
+		expect(approvalFindFirst).toHaveBeenCalledTimes(1);
+		expect(updateEntity).toHaveBeenCalledWith(
+			dbService,
+			"claim-1",
+			expect.objectContaining({ id: "admin-employee-1" }),
+		);
+		expect(log).toHaveBeenCalledWith(
+			expect.objectContaining({
+				organizationId: "org-1",
+				approvalId: "approval-1",
+				performedBy: "admin-user-1",
+			}),
+		);
+	});
+
 	it("fails as stale when the pending approval row is no longer writable at update time", async () => {
 		const approvalFindFirst = vi.fn().mockResolvedValue({
 			id: "approval-1",
@@ -215,7 +292,7 @@ describe("getApprovalStatusUpdate", () => {
 		if (Exit.isFailure(exit)) {
 			const error =
 				Option.getOrNull(Cause.failureOption(exit.cause)) ??
-				([...(Cause.defects(exit.cause) as Iterable<unknown>)] [0] as unknown);
+				([...(Cause.defects(exit.cause) as Iterable<unknown>)][0] as unknown);
 			expect(error).toBeInstanceOf(ConflictError);
 			expect(error).toMatchObject({
 				message: "Approval request is no longer pending",

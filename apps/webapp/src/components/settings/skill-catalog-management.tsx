@@ -1,5 +1,8 @@
 "use client";
 
+import { useForm } from "@tanstack/react-form";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslate } from "@tolgee/react";
 import {
 	IconAward,
 	IconCertificate,
@@ -8,24 +11,23 @@ import {
 	IconLoader2,
 	IconPlus,
 	IconRefresh,
-	IconSchool,
 	IconShieldCheck,
 	IconTools,
 	IconTrash,
+	IconSchool,
 } from "@tabler/icons-react";
-import { useForm } from "@tanstack/react-form";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
-import {
-	createSkill,
-	deleteSkill,
-	updateSkill,
-} from "@/app/[locale]/(app)/settings/skills/actions";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import {
 	Dialog,
 	DialogContent,
@@ -53,7 +55,17 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+	createSkill,
+	updateSkill,
+	deleteSkill,
+} from "@/app/[locale]/(app)/settings/skills/actions";
 import type { SkillWithRelations } from "@/lib/effect/services/skill.service";
 import { queryKeys } from "@/lib/query/keys";
 
@@ -64,42 +76,23 @@ interface SkillCatalogManagementProps {
 	canManageCatalog?: boolean;
 }
 
-const SKILL_CATEGORIES: Array<{
-	value: SkillCategory;
-	icon: typeof IconShieldCheck;
-}> = [
-	{ value: "safety", icon: IconShieldCheck },
-	{ value: "equipment", icon: IconTools },
-	{ value: "certification", icon: IconCertificate },
-	{ value: "training", icon: IconSchool },
-	{ value: "language", icon: IconLanguage },
-	{ value: "custom", icon: IconAward },
+const SKILL_CATEGORIES: Array<{ value: SkillCategory; label: string; icon: typeof IconShieldCheck }> = [
+	{ value: "safety", label: "Safety", icon: IconShieldCheck },
+	{ value: "equipment", label: "Equipment", icon: IconTools },
+	{ value: "certification", label: "Certification", icon: IconCertificate },
+	{ value: "training", label: "Training", icon: IconSchool },
+	{ value: "language", label: "Language", icon: IconLanguage },
+	{ value: "custom", label: "Custom", icon: IconAward },
 ];
-
-const SKILL_CATEGORY_LABEL_FALLBACKS: Record<SkillCategory, string> = {
-	safety: "Safety",
-	equipment: "Equipment",
-	certification: "Certification",
-	training: "Training",
-	language: "Language",
-	custom: "Custom",
-};
 
 function getCategoryIcon(category: SkillCategory) {
 	const found = SKILL_CATEGORIES.find((c) => c.value === category);
 	return found?.icon ?? IconAward;
 }
 
-function getCategoryLabel(category: SkillCategory, t: ReturnType<typeof useTranslate>["t"]) {
-	return t(
-		`settings.skills.categories.${category}`,
-		SKILL_CATEGORY_LABEL_FALLBACKS[category] ?? category,
-	);
-}
-
-export function normalizeExpiryWarningDays(value: number) {
-	if (!Number.isFinite(value)) return 30;
-	return Math.min(365, Math.max(0, Math.trunc(value)));
+function getCategoryLabel(category: SkillCategory) {
+	const found = SKILL_CATEGORIES.find((c) => c.value === category);
+	return found?.label ?? category;
 }
 
 export function SkillCatalogManagement({
@@ -135,10 +128,6 @@ export function SkillCatalogManagement({
 
 	const skills = skillsResult ?? [];
 
-	const invalidateSkillCatalogQueries = () => {
-		queryClient.invalidateQueries({ queryKey: queryKeys.skills.all });
-	};
-
 	// Delete mutation
 	const deleteMutation = useMutation({
 		mutationFn: async (skillId: string) => {
@@ -147,7 +136,7 @@ export function SkillCatalogManagement({
 		},
 		onSuccess: () => {
 			toast.success(t("settings.skills.skillDeleted", "Skill deleted"));
-			invalidateSkillCatalogQueries();
+			queryClient.invalidateQueries({ queryKey: queryKeys.skills.list(organizationId) });
 		},
 		onError: (error) => {
 			toast.error(error.message || t("settings.skills.deleteError", "Failed to delete skill"));
@@ -165,15 +154,13 @@ export function SkillCatalogManagement({
 	};
 
 	const handleDelete = (skill: SkillWithRelations) => {
-		if (
-			confirm(t("settings.skills.confirmDelete", "Are you sure you want to delete this skill?"))
-		) {
+		if (confirm(t("settings.skills.confirmDelete", "Are you sure you want to delete this skill?"))) {
 			deleteMutation.mutate(skill.id);
 		}
 	};
 
 	const handleSuccess = () => {
-		invalidateSkillCatalogQueries();
+		queryClient.invalidateQueries({ queryKey: queryKeys.skills.list(organizationId) });
 		setDialogOpen(false);
 		setEditingSkill(null);
 	};
@@ -189,26 +176,17 @@ export function SkillCatalogManagement({
 					<p className="text-sm text-muted-foreground">
 						{t(
 							"settings.skills.description",
-							"Manage skills and certifications that can be assigned to employees",
+							"Manage skills and certifications that can be assigned to employees"
 						)}
 					</p>
 				</div>
 				<div className="flex items-center gap-2">
-					<Button
-						variant="ghost"
-						size="icon"
-						onClick={() => refetch()}
-						disabled={isFetching}
-						aria-label={t("common.refresh", "Refresh")}
-					>
-						<IconRefresh
-							className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`}
-							aria-hidden="true"
-						/>
+					<Button variant="ghost" size="icon" onClick={() => refetch()} disabled={isFetching}>
+						<IconRefresh className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
 					</Button>
 					{canManageCatalog ? (
 						<Button onClick={handleCreate}>
-							<IconPlus className="mr-2 h-4 w-4" aria-hidden="true" />
+							<IconPlus className="mr-2 h-4 w-4" />
 							{t("settings.skills.addSkill", "Add Skill")}
 						</Button>
 					) : null}
@@ -222,21 +200,18 @@ export function SkillCatalogManagement({
 					<CardDescription>
 						{t(
 							"settings.skills.catalogDescription",
-							"Define skills that can be required for subareas and shift templates",
+							"Define skills that can be required for subareas and shift templates"
 						)}
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
 					{isLoading ? (
 						<div className="flex items-center justify-center py-8">
-							<IconLoader2
-								className="h-6 w-6 animate-spin text-muted-foreground"
-								aria-hidden="true"
-							/>
+							<IconLoader2 className="h-6 w-6 animate-spin text-muted-foreground" />
 						</div>
 					) : skills.length === 0 ? (
 						<div className="py-8 text-center text-muted-foreground">
-							<IconAward className="mx-auto h-12 w-12 mb-4 opacity-50" aria-hidden="true" />
+							<IconAward className="mx-auto h-12 w-12 mb-4 opacity-50" />
 							<p>{t("settings.skills.noSkills", "No skills defined yet")}</p>
 							<p className="text-sm mt-1">
 								{t("settings.skills.noSkillsHint", "Create your first skill to get started")}
@@ -246,23 +221,15 @@ export function SkillCatalogManagement({
 						<Table>
 							<TableHeader>
 								<TableRow>
-									<TableHead className="w-[50px]">
-										{t("settings.skills.category", "Category")}
-									</TableHead>
+									<TableHead className="w-[50px]">{t("settings.skills.category", "Category")}</TableHead>
 									<TableHead>{t("settings.skills.name", "Name")}</TableHead>
 									<TableHead>{t("settings.skills.expiry", "Expiry Tracking")}</TableHead>
-									<TableHead className="w-[100px] text-right">
-										{t("common.actions", "Actions")}
-									</TableHead>
+									<TableHead className="w-[100px] text-right">{t("common.actions", "Actions")}</TableHead>
 								</TableRow>
 							</TableHeader>
 							<TableBody>
 								{skills.map((skill) => {
 									const CategoryIcon = getCategoryIcon(skill.category as SkillCategory);
-									const categoryLabel =
-										skill.category === "custom" && skill.customCategoryName
-											? skill.customCategoryName
-											: getCategoryLabel(skill.category as SkillCategory, t);
 									return (
 										<TableRow key={skill.id}>
 											<TableCell>
@@ -270,14 +237,14 @@ export function SkillCatalogManagement({
 													<Tooltip>
 														<TooltipTrigger asChild>
 															<div className="flex items-center justify-center">
-																<CategoryIcon
-																	className="h-5 w-5 text-muted-foreground"
-																	aria-hidden="true"
-																/>
-																<span className="sr-only">{categoryLabel}</span>
+																<CategoryIcon className="h-5 w-5 text-muted-foreground" />
 															</div>
 														</TooltipTrigger>
-														<TooltipContent>{categoryLabel}</TooltipContent>
+														<TooltipContent>
+															{skill.category === "custom" && skill.customCategoryName
+																? skill.customCategoryName
+																: getCategoryLabel(skill.category as SkillCategory)}
+														</TooltipContent>
 													</Tooltip>
 												</TooltipProvider>
 											</TableCell>
@@ -303,45 +270,43 @@ export function SkillCatalogManagement({
 												)}
 											</TableCell>
 											<TableCell className="text-right">
-												<div className="flex items-center justify-end gap-1">
-													{canManageCatalog ? (
-														<>
-															<TooltipProvider>
-																<Tooltip>
-																	<TooltipTrigger asChild>
-																		<Button
-																			variant="ghost"
-																			size="icon"
-																			className="h-8 w-8"
-																			onClick={() => handleEdit(skill)}
-																			aria-label={t("common.edit", "Edit")}
-																		>
-																			<IconEdit className="h-4 w-4" aria-hidden="true" />
-																		</Button>
-																	</TooltipTrigger>
-																	<TooltipContent>{t("common.edit", "Edit")}</TooltipContent>
-																</Tooltip>
-															</TooltipProvider>
-															<TooltipProvider>
-																<Tooltip>
-																	<TooltipTrigger asChild>
-																		<Button
-																			variant="ghost"
-																			size="icon"
-																			className="h-8 w-8"
-																			onClick={() => handleDelete(skill)}
-																			disabled={deleteMutation.isPending}
-																			aria-label={t("common.delete", "Delete")}
-																		>
-																			<IconTrash className="h-4 w-4" aria-hidden="true" />
-																		</Button>
-																	</TooltipTrigger>
-																	<TooltipContent>{t("common.delete", "Delete")}</TooltipContent>
-																</Tooltip>
-															</TooltipProvider>
-														</>
-													) : null}
-												</div>
+											<div className="flex items-center justify-end gap-1">
+												{canManageCatalog ? (
+													<>
+														<TooltipProvider>
+															<Tooltip>
+																<TooltipTrigger asChild>
+																	<Button
+																		variant="ghost"
+																		size="icon"
+																		className="h-8 w-8"
+																		onClick={() => handleEdit(skill)}
+																	>
+																		<IconEdit className="h-4 w-4" />
+																	</Button>
+																</TooltipTrigger>
+																<TooltipContent>{t("common.edit", "Edit")}</TooltipContent>
+															</Tooltip>
+														</TooltipProvider>
+														<TooltipProvider>
+															<Tooltip>
+																<TooltipTrigger asChild>
+																	<Button
+																		variant="ghost"
+																		size="icon"
+																		className="h-8 w-8"
+																		onClick={() => handleDelete(skill)}
+																		disabled={deleteMutation.isPending}
+																	>
+																		<IconTrash className="h-4 w-4" />
+																	</Button>
+																</TooltipTrigger>
+																<TooltipContent>{t("common.delete", "Delete")}</TooltipContent>
+															</Tooltip>
+														</TooltipProvider>
+													</>
+												) : null}
+											</div>
 											</TableCell>
 										</TableRow>
 									);
@@ -355,7 +320,6 @@ export function SkillCatalogManagement({
 			{/* Create/Edit Dialog */}
 			{canManageCatalog ? (
 				<SkillDialog
-					key={editingSkill?.id ?? "create"}
 					organizationId={organizationId}
 					skill={editingSkill}
 					open={dialogOpen}
@@ -385,10 +349,9 @@ interface SkillFormValues {
 	category: SkillCategory;
 	customCategoryName: string;
 	requiresExpiry: boolean;
-	expiryWarningDays: number;
 }
 
-function SkillDialog({ skill, open, onOpenChange, onSuccess }: SkillDialogProps) {
+function SkillDialog({ organizationId, skill, open, onOpenChange, onSuccess }: SkillDialogProps) {
 	const { t } = useTranslate();
 	const isEditing = !!skill;
 
@@ -398,7 +361,6 @@ function SkillDialog({ skill, open, onOpenChange, onSuccess }: SkillDialogProps)
 		category: (skill?.category as SkillCategory) ?? "certification",
 		customCategoryName: skill?.customCategoryName ?? "",
 		requiresExpiry: skill?.requiresExpiry ?? false,
-		expiryWarningDays: skill?.expiryWarningDays ?? 30,
 	};
 
 	const form = useForm({
@@ -414,18 +376,12 @@ function SkillDialog({ skill, open, onOpenChange, onSuccess }: SkillDialogProps)
 
 	const createMutation = useMutation({
 		mutationFn: async (data: SkillFormValues) => {
-			const name = data.name.trim();
-			const description = data.description.trim();
-			const customCategoryName = data.customCategoryName.trim();
 			const result = await createSkill({
-				name,
-				description: description || undefined,
+				name: data.name,
+				description: data.description || undefined,
 				category: data.category,
-				customCategoryName: data.category === "custom" ? customCategoryName : undefined,
+				customCategoryName: data.category === "custom" ? data.customCategoryName : undefined,
 				requiresExpiry: data.requiresExpiry,
-				expiryWarningDays: data.requiresExpiry
-					? normalizeExpiryWarningDays(data.expiryWarningDays)
-					: 30,
 			});
 			if (!result.success) throw new Error(result.error);
 			return result.data;
@@ -441,18 +397,12 @@ function SkillDialog({ skill, open, onOpenChange, onSuccess }: SkillDialogProps)
 
 	const updateMutation = useMutation({
 		mutationFn: async (data: SkillFormValues & { skillId: string }) => {
-			const name = data.name.trim();
-			const description = data.description.trim();
-			const customCategoryName = data.customCategoryName.trim();
 			const result = await updateSkill(data.skillId, {
-				name,
-				description: description || undefined,
+				name: data.name,
+				description: data.description || undefined,
 				category: data.category,
-				customCategoryName: data.category === "custom" ? customCategoryName : undefined,
+				customCategoryName: data.category === "custom" ? data.customCategoryName : undefined,
 				requiresExpiry: data.requiresExpiry,
-				expiryWarningDays: data.requiresExpiry
-					? normalizeExpiryWarningDays(data.expiryWarningDays)
-					: 30,
 			});
 			if (!result.success) throw new Error(result.error);
 			return result.data;
@@ -470,16 +420,13 @@ function SkillDialog({ skill, open, onOpenChange, onSuccess }: SkillDialogProps)
 
 	// Reset form when dialog opens/closes
 	const handleOpenChange = (newOpen: boolean) => {
-		if (!newOpen) {
-			form.reset();
-		} else {
+		if (newOpen) {
 			form.reset();
 			form.setFieldValue("name", skill?.name ?? "");
 			form.setFieldValue("description", skill?.description ?? "");
 			form.setFieldValue("category", (skill?.category as SkillCategory) ?? "certification");
 			form.setFieldValue("customCategoryName", skill?.customCategoryName ?? "");
 			form.setFieldValue("requiresExpiry", skill?.requiresExpiry ?? false);
-			form.setFieldValue("expiryWarningDays", skill?.expiryWarningDays ?? 30);
 		}
 		onOpenChange(newOpen);
 	};
@@ -498,7 +445,7 @@ function SkillDialog({ skill, open, onOpenChange, onSuccess }: SkillDialogProps)
 							? t("settings.skills.editSkillDescription", "Update the skill details")
 							: t(
 									"settings.skills.createSkillDescription",
-									"Create a new skill that can be assigned to employees",
+									"Create a new skill that can be assigned to employees"
 								)}
 					</DialogDescription>
 				</DialogHeader>
@@ -511,30 +458,19 @@ function SkillDialog({ skill, open, onOpenChange, onSuccess }: SkillDialogProps)
 				>
 					<div className="grid gap-4 py-4">
 						{/* Name */}
-						<form.Field
-							name="name"
-							validators={{
-								onSubmit: ({ value }) =>
-									value.trim() ? undefined : t("settings.skills.nameRequired", "Name is required"),
-							}}
-						>
+						<form.Field name="name">
 							{(field) => (
 								<div className="grid gap-2">
-									<Label htmlFor="skill-name">{t("settings.skills.skillName", "Name")} *</Label>
+									<Label htmlFor="skill-name">
+										{t("settings.skills.skillName", "Name")} *
+									</Label>
 									<Input
 										id="skill-name"
-										name="name"
-										autoComplete="off"
 										value={field.state.value}
 										onChange={(e) => field.handleChange(e.target.value)}
 										onBlur={field.handleBlur}
 										placeholder={t("settings.skills.namePlaceholder", "e.g., Forklift License")}
 									/>
-									{field.state.meta.errors.length > 0 && (
-										<p className="text-sm text-destructive" aria-live="polite">
-											{field.state.meta.errors[0]}
-										</p>
-									)}
 								</div>
 							)}
 						</form.Field>
@@ -547,21 +483,18 @@ function SkillDialog({ skill, open, onOpenChange, onSuccess }: SkillDialogProps)
 										{t("settings.skills.category", "Category")}
 									</Label>
 									<Select
-										name="category"
 										value={field.state.value}
 										onValueChange={(value) => field.handleChange(value as SkillCategory)}
 									>
 										<SelectTrigger id="skill-category">
-											<SelectValue
-												placeholder={t("settings.skills.selectCategory", "Select category")}
-											/>
+											<SelectValue placeholder={t("settings.skills.selectCategory", "Select category")} />
 										</SelectTrigger>
 										<SelectContent>
 											{SKILL_CATEGORIES.map((cat) => (
 												<SelectItem key={cat.value} value={cat.value}>
 													<span className="flex items-center gap-2">
-														<cat.icon className="h-4 w-4" aria-hidden="true" />
-														{getCategoryLabel(cat.value, t)}
+														<cat.icon className="h-4 w-4" />
+														{cat.label}
 													</span>
 												</SelectItem>
 											))}
@@ -575,18 +508,7 @@ function SkillDialog({ skill, open, onOpenChange, onSuccess }: SkillDialogProps)
 						<form.Subscribe selector={(state) => state.values.category}>
 							{(category) =>
 								category === "custom" && (
-									<form.Field
-										name="customCategoryName"
-										validators={{
-											onSubmit: ({ value }) =>
-												value.trim()
-													? undefined
-													: t(
-															"settings.skills.customCategoryNameRequired",
-															"Custom category name is required",
-														),
-										}}
-									>
+									<form.Field name="customCategoryName">
 										{(field) => (
 											<div className="grid gap-2">
 												<Label htmlFor="skill-custom-category">
@@ -594,21 +516,11 @@ function SkillDialog({ skill, open, onOpenChange, onSuccess }: SkillDialogProps)
 												</Label>
 												<Input
 													id="skill-custom-category"
-													name="customCategoryName"
-													autoComplete="off"
 													value={field.state.value}
 													onChange={(e) => field.handleChange(e.target.value)}
 													onBlur={field.handleBlur}
-													placeholder={t(
-														"settings.skills.customCategoryPlaceholder",
-														"e.g., Compliance",
-													)}
+													placeholder={t("settings.skills.customCategoryPlaceholder", "e.g., Compliance")}
 												/>
-												{field.state.meta.errors.length > 0 && (
-													<p className="text-sm text-destructive" aria-live="polite">
-														{field.state.meta.errors[0]}
-													</p>
-												)}
 											</div>
 										)}
 									</form.Field>
@@ -625,14 +537,12 @@ function SkillDialog({ skill, open, onOpenChange, onSuccess }: SkillDialogProps)
 									</Label>
 									<Textarea
 										id="skill-description"
-										name="description"
-										autoComplete="off"
 										value={field.state.value}
 										onChange={(e) => field.handleChange(e.target.value)}
 										onBlur={field.handleBlur}
 										placeholder={t(
 											"settings.skills.descriptionPlaceholder",
-											"Optional description of the skill or certification",
+											"Optional description of the skill or certification"
 										)}
 										rows={2}
 									/>
@@ -651,72 +561,34 @@ function SkillDialog({ skill, open, onOpenChange, onSuccess }: SkillDialogProps)
 										<p className="text-sm text-muted-foreground">
 											{t(
 												"settings.skills.requiresExpiryHint",
-												"Enable if this certification needs renewal (e.g., First Aid)",
+												"Enable if this certification needs renewal (e.g., First Aid)"
 											)}
 										</p>
 									</div>
 									<Switch
 										id="skill-expiry"
-										name="requiresExpiry"
 										checked={field.state.value}
 										onCheckedChange={field.handleChange}
 									/>
 								</div>
 							)}
 						</form.Field>
-
-						<form.Subscribe selector={(state) => state.values.requiresExpiry}>
-							{(requiresExpiry) =>
-								requiresExpiry ? (
-									<form.Field name="expiryWarningDays">
-										{(field) => (
-											<div className="grid gap-2">
-												<Label htmlFor="skill-warning-days">
-													{t("settings.skills.expiryWarningDays", "Warn before expiry")}
-												</Label>
-												<Input
-													id="skill-warning-days"
-													name="expiryWarningDays"
-													type="number"
-													autoComplete="off"
-													min={0}
-													max={365}
-													value={field.state.value}
-													onChange={(event) =>
-														field.handleChange(
-															normalizeExpiryWarningDays(Number(event.target.value)),
-														)
-													}
-													onBlur={field.handleBlur}
-												/>
-												<p className="text-xs text-muted-foreground">
-													{t(
-														"settings.skills.expiryWarningDaysHint",
-														"Show expiring-soon warnings this many days before expiry.",
-													)}
-												</p>
-											</div>
-										)}
-									</form.Field>
-								) : null
-							}
-						</form.Subscribe>
 					</div>
 
 					<DialogFooter>
 						<Button
 							type="button"
 							variant="outline"
-							onClick={() => handleOpenChange(false)}
+							onClick={() => onOpenChange(false)}
 							disabled={isMutating}
 						>
 							{t("common.cancel", "Cancel")}
 						</Button>
 						<Button type="submit" disabled={isMutating}>
-							{isMutating && (
-								<IconLoader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
-							)}
-							{isEditing ? t("common.save", "Save") : t("common.create", "Create")}
+							{isMutating && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
+							{isEditing
+								? t("common.save", "Save")
+								: t("common.create", "Create")}
 						</Button>
 					</DialogFooter>
 				</form>

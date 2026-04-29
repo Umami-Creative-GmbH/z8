@@ -1,8 +1,7 @@
 "use server";
 
-import { and, desc, eq, gte, isNull, lte, or } from "drizzle-orm";
+import { and, desc, eq, gte, isNull, lte, or, sql } from "drizzle-orm";
 import { Effect } from "effect";
-import { db } from "@/db";
 import {
 	employee,
 	team,
@@ -36,15 +35,12 @@ import {
 	getManagedEmployeeIdsForSettingsActor,
 	getOrganizationTeam,
 	getTargetEmployee,
-	requireSettingsActorEmployeeRecord,
 	requireOrgAdminEmployeeSettingsAccess,
 	requireSettingsActorEmployeeAssignmentAccess,
+	requireSettingsActorEmployeeRecord,
 	validateAssignmentTargetFields,
 } from "../employees/employee-action-utils";
-import {
-	canAccessWorkPolicyComplianceActions,
-	policyBelongsToOrganization,
-} from "./policy-scope";
+import { canAccessWorkPolicyComplianceActions, policyBelongsToOrganization } from "./policy-scope";
 
 // ============================================
 // TYPES
@@ -63,7 +59,7 @@ export type WorkPolicyWithDetails = typeof workPolicy.$inferSelect & {
 				})[];
 		  })
 		| null;
-	presence: (typeof workPolicyPresence.$inferSelect) | null;
+	presence: typeof workPolicyPresence.$inferSelect | null;
 };
 
 export type WorkPolicyAssignmentWithDetails = typeof workPolicyAssignment.$inferSelect & {
@@ -198,7 +194,7 @@ export async function getWorkPolicy(
 		const dbService = yield* _(DatabaseService);
 		const policy = yield* _(
 			dbService.query("getWorkPolicy", async () => {
-			return await dbService.db.query.workPolicy.findFirst({
+				return await dbService.db.query.workPolicy.findFirst({
 					where: eq(workPolicy.id, policyId),
 					with: {
 						schedule: {
@@ -227,7 +223,10 @@ export async function getWorkPolicy(
 		}
 
 		yield* _(
-			getEmployeeSettingsActorContext({ organizationId: policy.organizationId, queryName: "getWorkPolicy:actor" }),
+			getEmployeeSettingsActorContext({
+				organizationId: policy.organizationId,
+				queryName: "getWorkPolicy:actor",
+			}),
 		);
 
 		return policy as WorkPolicyWithDetails;
@@ -248,9 +247,7 @@ export async function createWorkPolicy(
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -837,7 +834,10 @@ export async function getWorkPolicyAssignments(
 ): Promise<ServerActionResult<WorkPolicyAssignmentWithDetails[]>> {
 	const effect = Effect.gen(function* (_) {
 		const actor = yield* _(
-			getEmployeeSettingsActorContext({ organizationId, queryName: "getWorkPolicyAssignments:actor" }),
+			getEmployeeSettingsActorContext({
+				organizationId,
+				queryName: "getWorkPolicyAssignments:actor",
+			}),
 		);
 		const dbService = yield* _(DatabaseService);
 		const managedEmployeeIds = yield* _(getManagedEmployeeIdsForSettingsActor(actor));
@@ -890,7 +890,10 @@ export async function createWorkPolicyAssignment(
 ): Promise<ServerActionResult<{ id: string }>> {
 	const effect = Effect.gen(function* (_) {
 		const actor = yield* _(
-			getEmployeeSettingsActorContext({ organizationId, queryName: "createWorkPolicyAssignment:actor" }),
+			getEmployeeSettingsActorContext({
+				organizationId,
+				queryName: "createWorkPolicyAssignment:actor",
+			}),
 		);
 		yield* _(
 			requireSettingsActorEmployeeAssignmentAccess(actor, data.assignmentType, {
@@ -1101,7 +1104,10 @@ export async function getWorkPolicyViolations(
 ): Promise<ServerActionResult<WorkPolicyViolationWithDetails[]>> {
 	const effect = Effect.gen(function* (_) {
 		const actor = yield* _(
-			getEmployeeSettingsActorContext({ organizationId, queryName: "getWorkPolicyViolations:actor" }),
+			getEmployeeSettingsActorContext({
+				organizationId,
+				queryName: "getWorkPolicyViolations:actor",
+			}),
 		);
 
 		if (!canAccessWorkPolicyComplianceActions(actor.accessTier)) {
@@ -1229,9 +1235,7 @@ export async function setDefaultWorkPolicy(policyId: string): Promise<ServerActi
 			);
 		}
 
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(policy!.organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(policy!.organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -1298,9 +1302,7 @@ export async function importWorkPolicyPreset(
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -1476,16 +1478,31 @@ export async function getEmployeeEffectiveScheduleDetails(
 	employeeId: string,
 ): Promise<ServerActionResult<EmployeeScheduleDetails | null>> {
 	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const _session = yield* _(authService.getSession());
-
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({
+				queryName: "getEmployeeEffectiveScheduleDetails:actor",
+			}),
+		);
 		const dbService = yield* _(DatabaseService);
+		const targetEmployee = yield* _(
+			getTargetEmployee(employeeId, "getEmployeeEffectiveScheduleDetails:getTargetEmployee"),
+		);
+		yield* _(
+			ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
+				message: "Insufficient permissions",
+				resource: "employee_schedule_details",
+				action: "read",
+			}),
+		);
 
 		// Get employee with organization
 		const emp = yield* _(
 			dbService.query("getEmployee", async () => {
 				return await dbService.db.query.employee.findFirst({
-					where: eq(employee.id, employeeId),
+					where: and(
+						eq(employee.id, employeeId),
+						eq(employee.organizationId, actor.organizationId),
+					),
 					with: { team: true },
 				});
 			}),
@@ -1502,6 +1519,7 @@ export async function getEmployeeEffectiveScheduleDetails(
 			dbService.query("getEmployeePolicyAssignment", async () => {
 				return await dbService.db.query.workPolicyAssignment.findFirst({
 					where: and(
+						eq(workPolicyAssignment.organizationId, actor.organizationId),
 						eq(workPolicyAssignment.employeeId, employeeId),
 						eq(workPolicyAssignment.assignmentType, "employee"),
 						eq(workPolicyAssignment.isActive, true),
@@ -1514,6 +1532,10 @@ export async function getEmployeeEffectiveScheduleDetails(
 							gte(workPolicyAssignment.effectiveUntil, now),
 						),
 					),
+					orderBy: (assignment, { desc }) => [
+						sql`${assignment.effectiveFrom} DESC NULLS LAST`,
+						desc(assignment.createdAt),
+					],
 					with: {
 						policy: {
 							with: {
@@ -1553,6 +1575,7 @@ export async function getEmployeeEffectiveScheduleDetails(
 				dbService.query("getTeamPolicyAssignment", async () => {
 					return await dbService.db.query.workPolicyAssignment.findFirst({
 						where: and(
+							eq(workPolicyAssignment.organizationId, actor.organizationId),
 							eq(workPolicyAssignment.teamId, emp.teamId!),
 							eq(workPolicyAssignment.assignmentType, "team"),
 							eq(workPolicyAssignment.isActive, true),
@@ -1565,6 +1588,10 @@ export async function getEmployeeEffectiveScheduleDetails(
 								gte(workPolicyAssignment.effectiveUntil, now),
 							),
 						),
+						orderBy: (assignment, { desc }) => [
+							sql`${assignment.effectiveFrom} DESC NULLS LAST`,
+							desc(assignment.createdAt),
+						],
 						with: {
 							policy: {
 								with: {
@@ -1605,7 +1632,7 @@ export async function getEmployeeEffectiveScheduleDetails(
 			dbService.query("getOrgPolicyAssignment", async () => {
 				return await dbService.db.query.workPolicyAssignment.findFirst({
 					where: and(
-						eq(workPolicyAssignment.organizationId, emp.organizationId),
+						eq(workPolicyAssignment.organizationId, actor.organizationId),
 						eq(workPolicyAssignment.assignmentType, "organization"),
 						eq(workPolicyAssignment.isActive, true),
 						or(
@@ -1617,6 +1644,10 @@ export async function getEmployeeEffectiveScheduleDetails(
 							gte(workPolicyAssignment.effectiveUntil, now),
 						),
 					),
+					orderBy: (assignment, { desc }) => [
+						sql`${assignment.effectiveFrom} DESC NULLS LAST`,
+						desc(assignment.createdAt),
+					],
 					with: {
 						policy: {
 							with: {
@@ -1696,7 +1727,10 @@ export async function getEmployeesForAssignment(organizationId: string): Promise
 > {
 	const effect = Effect.gen(function* (_) {
 		const actor = yield* _(
-			getEmployeeSettingsActorContext({ organizationId, queryName: "getEmployeesForAssignment:actor" }),
+			getEmployeeSettingsActorContext({
+				organizationId,
+				queryName: "getEmployeesForAssignment:actor",
+			}),
 		);
 		const dbService = yield* _(DatabaseService);
 		const managedEmployeeIds = yield* _(getManagedEmployeeIdsForSettingsActor(actor));

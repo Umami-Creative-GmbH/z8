@@ -6,7 +6,8 @@ import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { type AnyAppError, NotFoundError } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { onTimeCorrectionApproved, onTimeCorrectionRejected } from "@/lib/notifications/triggers";
-import { processApproval } from "./shared";
+import type { ApprovalActionOptions } from "../domain/types";
+import { processApproval, processApprovalWithCurrentEmployee } from "./shared";
 import type { ApprovalDbService, CurrentApprover } from "./types";
 
 interface WorkPeriodRecord {
@@ -36,7 +37,9 @@ interface CorrectionEntry {
 	replacesEntryId: string | null;
 }
 
-function ensureWorkPeriod(period: WorkPeriodRecord | null): Effect.Effect<WorkPeriodRecord, NotFoundError> {
+function ensureWorkPeriod(
+	period: WorkPeriodRecord | null,
+): Effect.Effect<WorkPeriodRecord, NotFoundError> {
 	return period
 		? Effect.succeed(period)
 		: Effect.fail(
@@ -51,46 +54,54 @@ function loadWorkPeriod(
 	dbService: ApprovalDbService,
 	entityId: string,
 ): Effect.Effect<WorkPeriodRecord, AnyAppError, never> {
-	return dbService.query("getWorkPeriod", async () => {
-		return await dbService.db.query.workPeriod.findFirst({
-			where: eq(workPeriod.id, entityId),
-			with: {
-				employee: {
-					with: { user: true },
+	return dbService
+		.query("getWorkPeriod", async () => {
+			return await dbService.db.query.workPeriod.findFirst({
+				where: eq(workPeriod.id, entityId),
+				with: {
+					employee: {
+						with: { user: true },
+					},
 				},
-			},
-		});
-	}).pipe(Effect.flatMap((period) => ensureWorkPeriod(period as unknown as WorkPeriodRecord | null)));
+			});
+		})
+		.pipe(
+			Effect.flatMap((period) => ensureWorkPeriod(period as unknown as WorkPeriodRecord | null)),
+		);
 }
 
 function loadClockInCorrectionEntries(dbService: ApprovalDbService, period: WorkPeriodRecord) {
-	return dbService.query("getCorrectionEntries", async () => {
-		return await dbService.db
-			.select()
-			.from(timeEntry)
-			.where(
-				and(
-					eq(timeEntry.type, "correction"),
-					eq(timeEntry.employeeId, period.employeeId),
-					eq(timeEntry.replacesEntryId, period.clockInId),
-				),
-			);
-	}).pipe(Effect.map((entries) => entries as CorrectionEntry[]));
+	return dbService
+		.query("getCorrectionEntries", async () => {
+			return await dbService.db
+				.select()
+				.from(timeEntry)
+				.where(
+					and(
+						eq(timeEntry.type, "correction"),
+						eq(timeEntry.employeeId, period.employeeId),
+						eq(timeEntry.replacesEntryId, period.clockInId),
+					),
+				);
+		})
+		.pipe(Effect.map((entries) => entries as CorrectionEntry[]));
 }
 
 function loadClockOutCorrection(dbService: ApprovalDbService, period: WorkPeriodRecord) {
-	return dbService.query("getClockOutCorrection", async () => {
-		if (!period.clockOutId) {
-			return null;
-		}
+	return dbService
+		.query("getClockOutCorrection", async () => {
+			if (!period.clockOutId) {
+				return null;
+			}
 
-		return await dbService.db.query.timeEntry.findFirst({
-			where: and(
-				eq(timeEntry.type, "correction"),
-				eq(timeEntry.replacesEntryId, period.clockOutId),
-			),
-		});
-	}).pipe(Effect.map((entry) => entry as CorrectionEntry | null));
+			return await dbService.db.query.timeEntry.findFirst({
+				where: and(
+					eq(timeEntry.type, "correction"),
+					eq(timeEntry.replacesEntryId, period.clockOutId),
+				),
+			});
+		})
+		.pipe(Effect.map((entry) => entry as CorrectionEntry | null));
 }
 
 function ensureClockInCorrection(
@@ -138,6 +149,46 @@ export async function syncCanonicalWorkCorrection(input: {
 				eq(timeRecord.recordKind, "work"),
 			),
 		);
+}
+
+export function approveTimeCorrectionWithCurrentApproverEffect(
+	dbService: ApprovalDbService,
+	currentEmployee: CurrentApprover,
+	workPeriodId: string,
+	options?: ApprovalActionOptions,
+) {
+	return processApprovalWithCurrentEmployee(
+		dbService,
+		currentEmployee,
+		"time_entry",
+		workPeriodId,
+		"approve",
+		undefined,
+		handleApprovedTimeCorrection,
+		undefined,
+		options,
+	);
+}
+
+export function rejectTimeCorrectionWithCurrentApproverEffect(
+	dbService: ApprovalDbService,
+	currentEmployee: CurrentApprover,
+	workPeriodId: string,
+	reason: string,
+	options?: ApprovalActionOptions,
+) {
+	return processApprovalWithCurrentEmployee(
+		dbService,
+		currentEmployee,
+		"time_entry",
+		workPeriodId,
+		"reject",
+		reason,
+		(decisionDbService, entityId, approver) =>
+			handleRejectedTimeCorrection(decisionDbService, entityId, approver, reason),
+		undefined,
+		options,
+	);
 }
 
 function calculateCorrectedPeriod(
