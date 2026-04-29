@@ -40,12 +40,29 @@ describe("useNotifications", () => {
 	it("includes every list fetch option in the notification list query key", async () => {
 		const { useNotifications } = await import("./use-notifications");
 
-		useNotifications({ limit: 100, unreadOnly: true });
+		useNotifications({ limit: 100, unreadOnly: true, organizationId: "org-a" });
 
 		expect(useQueryMock).toHaveBeenNthCalledWith(
 			1,
 			expect.objectContaining({
-				queryKey: ["notifications", "list", { limit: 100, unreadOnly: true }],
+				queryKey: [
+					"notifications",
+					"list",
+					{ limit: 100, unreadOnly: true, organizationId: "org-a" },
+				],
+			}),
+		);
+	});
+
+	it("includes organization in the unread count query key", async () => {
+		const { useNotifications } = await import("./use-notifications");
+
+		useNotifications({ organizationId: "org-a" });
+
+		expect(useQueryMock).toHaveBeenNthCalledWith(
+			2,
+			expect.objectContaining({
+				queryKey: ["notifications", "unread-count", "org-a"],
 			}),
 		);
 	});

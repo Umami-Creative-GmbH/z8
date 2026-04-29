@@ -62,8 +62,11 @@ export function useNotificationStream(options: UseNotificationStreamOptions = {}
 			eventSource.addEventListener("count_update", (event) => {
 				try {
 					const data = JSON.parse(event.data);
+					if (organizationId && data.organizationId !== organizationId) {
+						return;
+					}
 					// Update the query cache directly
-					queryClient.setQueryData(queryKeys.notifications.unreadCount(), {
+					queryClient.setQueryData(queryKeys.notifications.unreadCount(organizationId), {
 						count: data.count,
 					});
 					onCountUpdateRef.current?.(data.count);
@@ -86,14 +89,17 @@ export function useNotificationStream(options: UseNotificationStreamOptions = {}
 						{
 							predicate: (query) => {
 								const [scope, type, options] = query.queryKey;
+								const listOptions = options as
+									| { unreadOnly?: boolean; organizationId?: string | null }
+									| undefined;
 								if (scope !== "notifications" || type !== "list") {
 									return false;
 								}
+								if (organizationId && listOptions?.organizationId !== organizationId) {
+									return false;
+								}
 
-								return (
-									!notification.isRead ||
-									!(options as { unreadOnly?: boolean } | undefined)?.unreadOnly
-								);
+								return !notification.isRead || !listOptions?.unreadOnly;
 							},
 						},
 						(oldData) => {
@@ -113,7 +119,7 @@ export function useNotificationStream(options: UseNotificationStreamOptions = {}
 
 					if (!notification.isRead) {
 						queryClient.setQueryData<UnreadCountResponse>(
-							queryKeys.notifications.unreadCount(),
+							queryKeys.notifications.unreadCount(organizationId),
 							(oldData) => ({ count: (oldData?.count ?? 0) + 1 }),
 						);
 					}

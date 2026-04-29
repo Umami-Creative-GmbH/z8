@@ -397,6 +397,7 @@ export async function getUnreadCount(userId: string, organizationId: string): Pr
 export async function markAsRead(
 	notificationId: string,
 	userId: string,
+	organizationId: string,
 ): Promise<Notification | null> {
 	try {
 		const [updated] = await db
@@ -405,7 +406,13 @@ export async function markAsRead(
 				isRead: true,
 				readAt: new Date(),
 			})
-			.where(and(eq(notification.id, notificationId), eq(notification.userId, userId)))
+			.where(
+				and(
+					eq(notification.id, notificationId),
+					eq(notification.userId, userId),
+					eq(notification.organizationId, organizationId),
+				),
+			)
 			.returning();
 
 		if (updated) {
@@ -413,8 +420,11 @@ export async function markAsRead(
 
 			// Publish count update to Valkey for real-time SSE updates
 			// Get organizationId from the updated notification
-			const newCount = await getUnreadCount(userId, updated.organizationId);
-			void publishNotificationEvent(userId, "count_update", { count: newCount }).catch((error) => {
+			const newCount = await getUnreadCount(userId, organizationId);
+			void publishNotificationEvent(userId, "count_update", {
+				count: newCount,
+				organizationId,
+			}).catch((error) => {
 				logger.error({ error, userId }, "Failed to publish count update event");
 			});
 		}
@@ -451,9 +461,11 @@ export async function markAllAsRead(userId: string, organizationId: string): Pro
 
 		// Publish count update to Valkey for real-time SSE updates (count is now 0)
 		if (updatedCount > 0) {
-			void publishNotificationEvent(userId, "count_update", { count: 0 }).catch((error) => {
-				logger.error({ error, userId }, "Failed to publish count update event");
-			});
+			void publishNotificationEvent(userId, "count_update", { count: 0, organizationId }).catch(
+				(error) => {
+					logger.error({ error, userId }, "Failed to publish count update event");
+				},
+			);
 		}
 
 		return updatedCount;
@@ -466,11 +478,21 @@ export async function markAllAsRead(userId: string, organizationId: string): Pro
 /**
  * Delete a notification
  */
-export async function deleteNotification(notificationId: string, userId: string): Promise<boolean> {
+export async function deleteNotification(
+	notificationId: string,
+	userId: string,
+	organizationId: string,
+): Promise<boolean> {
 	try {
 		const result = await db
 			.delete(notification)
-			.where(and(eq(notification.id, notificationId), eq(notification.userId, userId)))
+			.where(
+				and(
+					eq(notification.id, notificationId),
+					eq(notification.userId, userId),
+					eq(notification.organizationId, organizationId),
+				),
+			)
 			.returning({ id: notification.id });
 
 		const deleted = result.length > 0;

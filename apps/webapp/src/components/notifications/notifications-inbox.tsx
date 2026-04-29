@@ -35,6 +35,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useNotifications } from "@/hooks/use-notifications";
+import { useOrganization } from "@/hooks/use-organization";
 import type { NotificationWithMeta } from "@/lib/notifications/types";
 import { cn } from "@/lib/utils";
 import { Link } from "@/navigation";
@@ -85,6 +86,8 @@ function NotificationsInboxSkeleton() {
 }
 
 export function NotificationsInbox() {
+	const { organizationId } = useOrganization();
+	const hasOrganization = Boolean(organizationId);
 	const [search, setSearch] = useState("");
 	const [readFilter, setReadFilter] = useState<ReadFilter>("all");
 	const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
@@ -101,7 +104,7 @@ export function NotificationsInbox() {
 		isMarkingRead,
 		isDeleting,
 		refresh,
-	} = useNotifications({ limit: 100 });
+	} = useNotifications({ enabled: hasOrganization, limit: 100, organizationId });
 
 	const filteredNotifications = useMemo(() => {
 		const normalizedSearch = deferredSearch.trim().toLowerCase();

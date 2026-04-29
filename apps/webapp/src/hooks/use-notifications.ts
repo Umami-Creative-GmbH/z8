@@ -9,6 +9,7 @@ import { queryKeys } from "@/lib/query/keys";
 interface UseNotificationsOptions {
 	limit?: number;
 	unreadOnly?: boolean;
+	organizationId?: string | null;
 	enabled?: boolean;
 }
 
@@ -22,12 +23,15 @@ interface UseNotificationsOptions {
  * - Delete mutation
  */
 export function useNotifications(options: UseNotificationsOptions = {}) {
-	const { limit = 20, unreadOnly = false, enabled = true } = options;
+	const { limit = 20, unreadOnly = false, organizationId, enabled = true } = options;
 	const queryClient = useQueryClient();
+	const listOptions = organizationId
+		? { limit, unreadOnly, organizationId }
+		: { limit, unreadOnly };
 
 	// Query for notifications list
 	const notificationsQuery = useQuery({
-		queryKey: queryKeys.notifications.list({ limit, unreadOnly }),
+		queryKey: queryKeys.notifications.list(listOptions),
 		queryFn: async (): Promise<NotificationsListResponse> => {
 			const params = new URLSearchParams({
 				limit: limit.toString(),
@@ -43,7 +47,7 @@ export function useNotifications(options: UseNotificationsOptions = {}) {
 	// Query for unread count (separate for badge updates)
 	// Note: Real-time updates come via SSE (useNotificationStream hook)
 	const unreadCountQuery = useQuery({
-		queryKey: queryKeys.notifications.unreadCount(),
+		queryKey: queryKeys.notifications.unreadCount(organizationId),
 		queryFn: async (): Promise<UnreadCountResponse> => {
 			return fetchApi<UnreadCountResponse>("/api/notifications/count");
 		},

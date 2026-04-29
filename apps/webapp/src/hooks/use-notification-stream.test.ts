@@ -106,6 +106,51 @@ describe("useNotificationStream", () => {
 		expect(updateUnreadCount({ count: 2 })).toEqual({ count: 3 });
 	});
 
+	it("ignores count updates from a different organization", async () => {
+		const { useNotificationStream } = await import("./use-notification-stream");
+		const onCountUpdate = vi.fn();
+
+		useNotificationStream({ organizationId: "org-b", onCountUpdate });
+		MockEventSource.latest?.listeners.get("count_update")?.(
+			new MessageEvent("count_update", {
+				data: JSON.stringify({ count: 7, organizationId: "org-a" }),
+			}),
+		);
+
+		expect(setQueryDataMock).not.toHaveBeenCalled();
+		expect(onCountUpdate).not.toHaveBeenCalled();
+	});
+
+	it("ignores unscoped count updates when active organization is provided", async () => {
+		const { useNotificationStream } = await import("./use-notification-stream");
+		const onCountUpdate = vi.fn();
+
+		useNotificationStream({ organizationId: "org-b", onCountUpdate });
+		MockEventSource.latest?.listeners.get("count_update")?.(
+			new MessageEvent("count_update", { data: JSON.stringify({ count: 7 }) }),
+		);
+
+		expect(setQueryDataMock).not.toHaveBeenCalled();
+		expect(onCountUpdate).not.toHaveBeenCalled();
+	});
+
+	it("accepts count updates from the active organization", async () => {
+		const { useNotificationStream } = await import("./use-notification-stream");
+		const onCountUpdate = vi.fn();
+
+		useNotificationStream({ organizationId: "org-a", onCountUpdate });
+		MockEventSource.latest?.listeners.get("count_update")?.(
+			new MessageEvent("count_update", {
+				data: JSON.stringify({ count: 4, organizationId: "org-a" }),
+			}),
+		);
+
+		expect(setQueryDataMock).toHaveBeenCalledWith(["notifications", "unread-count", "org-a"], {
+			count: 4,
+		});
+		expect(onCountUpdate).toHaveBeenCalledWith(4);
+	});
+
 	it("ignores new notifications from a different organization", async () => {
 		const { useNotificationStream } = await import("./use-notification-stream");
 		const onNewNotification = vi.fn();
@@ -145,8 +190,19 @@ describe("useNotificationStream", () => {
 			expect.objectContaining({ predicate: expect.any(Function) }),
 			expect.any(Function),
 		);
+		const filters = setQueriesDataMock.mock.calls[0][0];
+		expect(
+			filters.predicate({
+				queryKey: ["notifications", "list", { limit: 20, organizationId: "org-a" }],
+			}),
+		).toBe(true);
+		expect(
+			filters.predicate({
+				queryKey: ["notifications", "list", { limit: 20, organizationId: "org-b" }],
+			}),
+		).toBe(false);
 		expect(setQueryDataMock).toHaveBeenCalledWith(
-			["notifications", "unread-count"],
+			["notifications", "unread-count", "org-a"],
 			expect.any(Function),
 		);
 		expect(onNewNotification).toHaveBeenCalledWith(notification);

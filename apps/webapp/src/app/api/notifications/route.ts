@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
-import { type NextRequest, NextResponse, connection } from "next/server";
+import { connection, type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { employee } from "@/db/schema";
 import { auth } from "@/lib/auth";
@@ -128,7 +128,7 @@ export async function PATCH(request: NextRequest) {
 		}
 
 		if (body.id) {
-			const updated = await markAsRead(body.id, session.user.id);
+			const updated = await markAsRead(body.id, session.user.id, organizationId);
 			if (!updated) {
 				return NextResponse.json({ error: "Notification not found" }, { status: 404 });
 			}
@@ -159,36 +159,34 @@ export async function DELETE(request: NextRequest) {
 		}
 
 		const body = await request.json();
+		const activeOrgId = session.session?.activeOrganizationId;
+		if (!activeOrgId) {
+			return NextResponse.json({ error: "No active organization" }, { status: 400 });
+		}
+
+		const [emp] = await db
+			.select({ organizationId: employee.organizationId })
+			.from(employee)
+			.where(
+				and(
+					eq(employee.userId, session.user.id),
+					eq(employee.organizationId, activeOrgId),
+					eq(employee.isActive, true),
+				),
+			)
+			.limit(1);
+
+		if (!emp) {
+			return NextResponse.json(
+				{ error: "No active employee record in this organization" },
+				{ status: 400 },
+			);
+		}
+		const organizationId = emp.organizationId;
 
 		// Delete all notifications
 		if (body.deleteAll) {
-			// SECURITY: Use activeOrganizationId from session
-			const activeOrgId = session.session?.activeOrganizationId;
-			if (!activeOrgId) {
-				return NextResponse.json({ error: "No active organization" }, { status: 400 });
-			}
-
-			// Get employee record for the active organization ONLY
-			const [emp] = await db
-				.select({ organizationId: employee.organizationId })
-				.from(employee)
-				.where(
-					and(
-						eq(employee.userId, session.user.id),
-						eq(employee.organizationId, activeOrgId),
-						eq(employee.isActive, true),
-					),
-				)
-				.limit(1);
-
-			if (!emp) {
-				return NextResponse.json(
-					{ error: "No active employee record in this organization" },
-					{ status: 400 },
-				);
-			}
-
-			const count = await deleteAllNotifications(session.user.id, emp.organizationId);
+			const count = await deleteAllNotifications(session.user.id, organizationId);
 			return NextResponse.json({ success: true, deletedCount: count });
 		}
 
@@ -197,7 +195,7 @@ export async function DELETE(request: NextRequest) {
 			return NextResponse.json({ error: "Notification ID required" }, { status: 400 });
 		}
 
-		const deleted = await deleteNotification(body.id, session.user.id);
+		const deleted = await deleteNotification(body.id, session.user.id, organizationId);
 		if (!deleted) {
 			return NextResponse.json({ error: "Notification not found" }, { status: 404 });
 		}

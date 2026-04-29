@@ -10,4 +10,15 @@ describe("queryKeys.notifications", () => {
 			queryKeys.notifications.list({ limit: 100, unreadOnly: true }),
 		);
 	});
+
+	it("separates notification list and count keys by organization", () => {
+		expect(
+			queryKeys.notifications.list({ limit: 100, unreadOnly: false, organizationId: "org-a" }),
+		).not.toEqual(
+			queryKeys.notifications.list({ limit: 100, unreadOnly: false, organizationId: "org-b" }),
+		);
+		expect(queryKeys.notifications.unreadCount("org-a")).not.toEqual(
+			queryKeys.notifications.unreadCount("org-b"),
+		);
+	});
 });
