@@ -448,6 +448,18 @@ describe("org-admin settings route access", () => {
 		expect(source.includes('authContext.employee.role !== "admin"')).toBe(false);
 	});
 
+	it("keeps the demo data feature flag out of direct Better Auth organization input", () => {
+		const source = stripComments(
+			readFileSync(join(SETTINGS_ROOT, "../../../../lib/auth.ts"), "utf8"),
+		);
+		const demoDataField = source.slice(
+			source.indexOf("demoDataEnabled:"),
+			source.indexOf("timezone:", source.indexOf("demoDataEnabled:")),
+		);
+
+		expect(demoDataField).toContain("input: false");
+	});
+
 	it("narrows manager employee editing away from org-admin-only form controls", () => {
 		const source = stripComments(
 			readFileSync(join(SETTINGS_ROOT, "employees/[employeeId]/page-sections.tsx"), "utf8"),

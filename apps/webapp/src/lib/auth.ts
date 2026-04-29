@@ -434,7 +434,7 @@ export const auth = betterAuth({
 							type: "boolean",
 							required: false,
 							defaultValue: true,
-							input: true,
+							input: false,
 						},
 						timezone: {
 							type: "string",
