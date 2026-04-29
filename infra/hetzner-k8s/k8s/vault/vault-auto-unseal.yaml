@@ -33,7 +33,13 @@ spec:
                   status="$(vault status -format=json 2>/dev/null || true)"
 
                   if echo "$status" | grep -q '"sealed":[[:space:]]*true'; then
-                    vault operator unseal "$VAULT_UNSEAL_KEY"
+                    umask 077
+                    printf '{"key":"%s"}' "$VAULT_UNSEAL_KEY" > /tmp/vault-unseal.json
+                    wget -qO- \
+                      --header='Content-Type: application/json' \
+                      --post-file=/tmp/vault-unseal.json \
+                      "$VAULT_ADDR/v1/sys/unseal" >/dev/null
+                    rm -f /tmp/vault-unseal.json
                   elif echo "$status" | grep -q '"sealed":[[:space:]]*false'; then
                     echo "Vault already unsealed"
                   else
