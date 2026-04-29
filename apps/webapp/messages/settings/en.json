@@ -168,10 +168,6 @@
       "keyCopied": "API key copied to clipboard",
       "lastUsed": "Last Used",
       "name": "Name",
-      "noOrg": {
-        "description": "You need to be part of an organization to manage API keys.",
-        "title": "No Organization"
-      },
       "prefix": "Key Prefix",
       "prefixCopied": "Key prefix copied",
       "scopes": "Permissions",
@@ -198,6 +194,41 @@
       "usage": "{count} of {max} keys used"
     },
     "auditExport": {
+      "auditPack": {
+        "activeJob": "Active generation job",
+        "colActions": "Actions",
+        "colRange": "Range",
+        "colRecords": "Records",
+        "colRequested": "Requested",
+        "colStatus": "Status",
+        "createError": "Failed to create audit pack",
+        "createSuccess": "Audit pack request created",
+        "defaultRangeHint": "Default range is the last 30 days",
+        "description": "Generate a GoBD-ready audit pack for a selected date range in one click",
+        "download": "Download",
+        "downloadError": "Failed to start download",
+        "downloadStarted": "Download started",
+        "endDate": "End date",
+        "endDateRequired": "End date is required",
+        "failed": "Failed",
+        "generate": "Generate audit pack",
+        "invalidDateRange": "Please select a valid date range",
+        "jobCompleted": "Audit pack generation completed",
+        "jobFailed": "Audit pack generation failed",
+        "loadingRequests": "Loading requests...",
+        "noRequests": "No audit pack requests yet. Create your first request above.",
+        "pending": "Pending",
+        "progressLabel": "Progress: {progress}%",
+        "recentRequests": "Recent requests",
+        "requestsError": "Failed to load audit pack requests",
+        "startDate": "Start date",
+        "startDateRequired": "Start date is required",
+        "statusCompleted": "Completed",
+        "statusFailed": "Failed",
+        "statusProcessing": "Processing",
+        "statusRequested": "Requested",
+        "title": "Audit Pack Generator"
+      },
       "config": {
         "autoEnableData": "Data Exports",
         "autoEnableDataHint": "Automatically create audit packages for all data exports",
@@ -235,7 +266,6 @@
         "yearsOption": "{years} years"
       },
       "description": "GoBD-compliant export hardening with digital signatures and WORM retention",
-      "featureName": "Audit Export",
       "keys": {
         "active": "Active",
         "activeKey": "Active Key",
@@ -287,6 +317,7 @@
         "statusPending": "Pending",
         "statusProcessing": "Processing",
         "title": "Audit Packages",
+        "typeAuditPack": "Audit Pack",
         "typeData": "Data",
         "typePayroll": "Payroll",
         "verify": "Verify",
@@ -365,6 +396,15 @@
         "teamDesc": "Team leads can create shared feeds showing all team absences",
         "title": "ICS Feeds"
       },
+      "integrations": {
+        "description": "Connected employee calendars that fall inside your current settings scope.",
+        "empty": "No calendar integrations are available in your current scope yet.",
+        "needsAttention": "Needs attention",
+        "pushOff": "Push off",
+        "pushOn": "Push on",
+        "title": "Relevant Integrations"
+      },
+      "managerDescription": "Review calendar integrations that affect your teams, areas, and managed projects.",
       "noProvidersConfigured": "No calendar providers are configured. Contact your system administrator to set up OAuth credentials.",
       "notConfigured": "Not Configured",
       "providers": {
@@ -375,6 +415,7 @@
         "microsoftDesc": "Sync absences with Outlook Calendar",
         "title": "Calendar Providers"
       },
+      "readOnlyManagerNotice": "Managers can review calendar sync coverage for their teams, areas, and projects, but only organization admins can change these settings.",
       "saved": "Calendar settings saved",
       "saveError": "Failed to save calendar settings",
       "syncBehavior": {
@@ -430,7 +471,6 @@
       "editTitle": "Edit Change Policy",
       "employeeOverrides": "Employee Overrides",
       "employeeOverridesDescription": "Override team or organization defaults for specific employees (e.g., special arrangements).",
-      "feature": "manage change policies",
       "inheritanceInfo": "Policies are applied in priority order: Employee overrides take precedence over Team overrides, which take precedence over the Organization Default. If no policy is assigned at any level, employees can edit their time entries without restrictions.",
       "loadError": "Failed to load change policies",
       "name": "Name",
@@ -483,18 +523,33 @@
       "updateFailed": "Failed to update policy",
       "zeroDayPolicy": "Every clock-out will require manager approval (strictest mode)."
     },
+    "clockinImport": {
+      "credentials": {
+        "connect": "Connect & Preview",
+        "description": "Enter a Clockin customer API bearer token. The token is only used for this import session.",
+        "title": "Clockin API Token",
+        "token": "Bearer Token"
+      },
+      "mapping": {
+        "description": "Match Clockin employees to existing Z8 employees. Automatic email matches are preselected.",
+        "summary": "Mapped employees",
+        "title": "Map Employees"
+      },
+      "preview": {
+        "description": "Review what Clockin data is available before mapping employees and scanning records.",
+        "next": "Map Employees",
+        "title": "Clockin Preview"
+      },
+      "selection": {
+        "description": "Choose which Clockin records to scan for review. Records must be reviewed before commit.",
+        "title": "Import Scope"
+      }
+    },
     "clockodoImport": {
       "complete": {
-        "dataType": "Data Type",
-        "done": "Done",
-        "duration": "Completed in {seconds}s",
-        "errorCount": "{count} error(s)",
-        "errors": "Errors",
-        "failedTitle": "Import Failed",
-        "imported": "Imported",
-        "moreErrors": "u2026and {count} more",
-        "partialTitle": "Import Partially Complete",
-        "skipped": "Skipped",
+        "batch": "Review batch {batchId} is scanning.",
+        "description": "Review is required before Clockodo records are committed to production.",
+        "openReview": "Open review",
         "successTitle": "Import Complete"
       },
       "credentials": {
@@ -505,7 +560,6 @@
         "email": "Clockodo Email",
         "title": "Clockodo Credentials"
       },
-      "description": "Import your data from Clockodo into Z8. This is a one-time migration wizard.",
       "entity": {
         "absences": "Absences",
         "entries": "Time Entries",
@@ -547,11 +601,16 @@
         "next": "Map Users",
         "title": "Data Preview"
       },
+      "review": {
+        "startedToast": "Import review scan started. Review is required before records are committed."
+      },
       "selection": {
         "dateRange": "Date range for time entries & absences",
         "dateRangeDescription": "This only affects time entries and absences. Other data (users, teams, etc.) is always imported fully.",
         "dependencyWarning": "Dependencies will be imported automatically",
         "description": "Choose which data types to import. Duplicates will be automatically skipped.",
+        "emptyUserScope": "Select at least one Clockodo user before starting the scan.",
+        "incompleteCustomDateRange": "Select both a start and end date before starting the scan.",
         "selectDateRange": "Select date range",
         "startImport": "Start Import",
         "title": "Select Data to Import"
@@ -564,7 +623,6 @@
         "selection": "Selection",
         "userMapping": "User Mapping"
       },
-      "title": "Clockodo Import",
       "userMapping": {
         "action": "Action",
         "autoMatched": "{count} auto-matched",
@@ -600,7 +658,6 @@
       "description": "Define minimum staffing requirements per location, day, and time block.",
       "editRule": "Edit Coverage Rule",
       "endTime": "End Time",
-      "feature": "manage coverage rules",
       "loading": "Loading coverage rules...",
       "minimumStaffCount": "Minimum Staff Count",
       "minimumStaffHint": "The minimum number of staff required during this time block.",
@@ -660,6 +717,8 @@
         "name": "Company Name",
         "namePlaceholder": "Enter company name",
         "phone": "Phone",
+        "project": "Project",
+        "projectPlaceholder": "Select a project",
         "vatId": "VAT ID",
         "website": "Website"
       },
@@ -667,13 +726,14 @@
         "description": "{count} customers total",
         "title": "All Customers"
       },
+      "managerNoProjects": "No managed projects available. Create or manage a project before adding customers.",
+      "projectRequired": "Select a project first",
       "title": "Customers",
       "updated": "Customer updated",
       "updateFailed": "Failed to update customer"
     },
     "dataExport": {
       "description": "Export your organization's data",
-      "featureName": "Data Export",
       "form": {
         "aboutAsync": "Exports are processed asynchronously and may take a few minutes",
         "aboutEmail": "You'll receive an email when ready",
@@ -985,8 +1045,6 @@
     "employees": {
       "description": "Manage employee profiles, teams, and permissions",
       "details": "Employee Details",
-      "details.description": "View and edit employee information",
-      "details.title": "Employee Details",
       "title": "Employees"
     },
     "enterprise": {
@@ -1032,11 +1090,11 @@
         "title": "Email Configuration",
         "transportType": "Email Provider",
         "vaultConnected": "Vault Connected",
-        "vaultConnectedDesc": "Secrets are stored securely in HashiCorp Vault.",
+        "vaultConnectedDesc": "Secrets are stored securely.",
         "vaultSealed": "Vault Sealed",
-        "vaultSealedDesc": "HashiCorp Vault is sealed. Please unseal it to store secrets.",
+        "vaultSealedDesc": "Vault is sealed. Please unseal it to store secrets.",
         "vaultUnavailable": "Vault Unavailable",
-        "vaultUnavailableDesc": "HashiCorp Vault is not available. Secrets cannot be stored securely."
+        "vaultUnavailableDesc": "Vault is not available. Secrets cannot be stored securely."
       },
       "tab": {
         "branding": "Branding",
@@ -1044,6 +1102,48 @@
         "social-oauth": "Social Login",
         "sso": "SSO Providers"
       }
+    },
+    "exportOperations": {
+      "activity": {
+        "audit": {
+          "description": "Audit export request recorded.",
+          "title": "Audit export"
+        },
+        "payroll": {
+          "description": "Payroll export job recorded.",
+          "title": "Payroll export"
+        },
+        "scheduled": {
+          "description": "Scheduled export execution recorded.",
+          "title": "Scheduled export"
+        }
+      },
+      "alerts": {
+        "auditFailed": {
+          "description": "The latest audit export request did not complete.",
+          "title": "Audit export failed"
+        },
+        "blockedSchedule": {
+          "description": "{name} needs a payroll export configuration before it can run.",
+          "title": "Scheduled payroll export is blocked"
+        },
+        "payrollFailed": {
+          "description": "The latest payroll export did not complete.",
+          "title": "Payroll export failed"
+        },
+        "scheduledFailed": {
+          "description": "{name} did not complete successfully.",
+          "title": "Scheduled export failed"
+        }
+      },
+      "description": "Monitor payroll, audit, and scheduled export activity for your organization.",
+      "errors": {
+        "alerts": "Some alerts may be incomplete while export data is unavailable.",
+        "recentActivity": "Some activity data is temporarily unavailable.",
+        "summary": "Counts are based on the export data that could be loaded.",
+        "upcomingRuns": "Scheduled export data is temporarily unavailable."
+      },
+      "title": "Export Operations"
     },
     "holidays": {
       "add": "Add Holiday",
@@ -1296,6 +1396,10 @@
       },
       "title": "Holidays"
     },
+    "import": {
+      "description": "Import data from supported providers like Clockodo and Clockin.",
+      "title": "Import Data"
+    },
     "inviteCodes": {
       "alreadyHaveAccount": "Already have an account?",
       "alreadyMember": "Already a Member",
@@ -1458,10 +1562,6 @@
       "title": "Notification Settings"
     },
     "organizations": {
-      "noActive": {
-        "description": "Please select or create an organization to continue.",
-        "title": "No Active Organization"
-      },
       "notFound": {
         "description": "The organization could not be found or you don't have access to it.",
         "title": "Organization Not Found"
@@ -1501,13 +1601,25 @@
         "employeesSelected": "{{count}} selected",
         "endDate": "End Date",
         "error": "Export failed",
-        "exportButton": "Export to DATEV",
+        "exportButtonDatev": "Export to DATEV",
+        "exportButtonLexware": "Export to Lexware",
+        "exportButtonPersonio": "Export to Personio",
+        "exportButtonSage": "Export to Sage",
+        "exportButtonSuccessFactorsApi": "Export to SAP SuccessFactors (API)",
+        "exportButtonSuccessFactorsCsv": "Export SAP SuccessFactors CSV",
+        "exportButtonWorkday": "Export to Workday",
         "exporting": "Exporting…",
         "filters": "Filters (Optional)",
+        "format": "Export Format",
+        "format.datev": "DATEV",
+        "format.lexware": "Lexware",
+        "format.personio": "Personio",
+        "format.sage": "Sage",
+        "format.successfactorsApi": "SAP SuccessFactors (API)",
+        "format.successfactorsCsv": "SAP SuccessFactors (CSV)",
+        "format.workday": "Workday",
         "month": "Month",
         "monthSelection": "Select Month",
-        "notConfiguredDescription": "Please configure DATEV master data and wage type mappings before exporting.",
-        "notConfiguredTitle": "Configuration Required",
         "projects": "Projects",
         "projectsSelected": "{{count}} selected",
         "startDate": "Start Date",
@@ -1515,9 +1627,12 @@
         "teams": "Teams",
         "teamsSelected": "{{count}} selected",
         "title": "Export Payroll Data",
+        "unavailable": {
+          "missingConfiguration": "config",
+          "missingCredentials": "credentials"
+        },
         "year": "Year"
       },
-      "featureName": "Payroll Export",
       "history": {
         "description": "View and download previous DATEV exports",
         "download": "Download export",
@@ -1699,9 +1814,51 @@
         "mappings": "Wage Types",
         "personio": "Personio",
         "sage": "Sage",
-        "successfactors": "SAP SuccessFactors"
+        "successfactors": "SAP SuccessFactors",
+        "workday": "Workday"
       },
-      "title": "Payroll Export"
+      "title": "Payroll Export",
+      "workday": {
+        "apiTimeoutMs": "API Timeout (ms)",
+        "batchSize": "Batch Size",
+        "clientId": "Client ID",
+        "clientSecret": "Client Secret",
+        "configDescription": "Configure how records are prepared and sent to Workday",
+        "configTitle": "Workday Export Settings",
+        "connected": "Connected",
+        "connectionFailed": "Connection test failed",
+        "connectionSuccess": "Successfully connected to Workday",
+        "credentialsConfigured": "Credentials configured",
+        "credentialsDeleted": "Credentials deleted",
+        "credentialsDeleteError": "Failed to delete credentials",
+        "credentialsDescription": "Store OAuth credentials used for Workday API access",
+        "credentialsRequired": "Please enter both Client ID and Client Secret",
+        "credentialsSaved": "Credentials saved securely",
+        "credentialsSaveError": "Failed to save credentials",
+        "credentialsSecure": "Stored securely in vault",
+        "credentialsTitle": "Workday API Credentials",
+        "deleteCredentials": "Delete credentials",
+        "deleteCredentialsDescription": "This removes stored Workday OAuth credentials for this organization.",
+        "deleteCredentialsTitle": "Delete Workday credentials?",
+        "employeeMatchStrategy": "Employee Matching",
+        "includeZeroHours": "Include Zero Hours",
+        "includeZeroHoursDescription": "Include records with zero hours in exports",
+        "instanceUrl": "Instance URL",
+        "matchByEmail": "Email Address",
+        "matchByEmployeeNumber": "Employee Number (Recommended)",
+        "save": "Save Settings",
+        "saveCredentials": "Save Credentials",
+        "saveError": "Failed to save configuration",
+        "saveSuccess": "Configuration saved",
+        "tenantId": "Tenant ID",
+        "testConnection": "Test Connection",
+        "testing": "Testing...",
+        "updateCredentials": "Update"
+      }
+    },
+    "payrollReadiness": {
+      "description": "Check whether a payroll period is ready before exporting time, absence, and payroll data.",
+      "title": "Payroll Readiness"
     },
     "pendingMembers": {
       "approve": "Approve",
@@ -1882,7 +2039,6 @@
         "loadFailed": "Failed to load scheduled exports",
         "toggleFailed": "Toggle failed"
       },
-      "featureName": "Scheduled Exports",
       "filters": {
         "allEmployees": "All Employees",
         "allProjects": "All Projects",
@@ -2194,7 +2350,6 @@
         "approvedAbsences": "Approved Absences",
         "employees": "Employees",
         "employeesDescription": "{active} active, {inactive} inactive",
-        "organizations": "Organizations",
         "pendingAbsences": "Pending Absences",
         "pendingCount": "{count} pending",
         "rejectedAbsences": "Rejected Absences",
@@ -2203,17 +2358,17 @@
         "timeEntries": "Time entries",
         "totalAbsences": "Total Absences",
         "totalTimeEntries": "Total Time Entries",
-        "totalUsers": "Total Users",
         "vsLastMonth": "vs last month"
       },
       "description": "View statistics and metrics about your instance",
-      "feature": "view instance statistics",
       "lastUpdated": "Last updated",
       "loadError": "Failed to load statistics",
+      "managerDescription": "Review read-only analytics for the teams you manage.",
       "sections": {
         "absenceBreakdown": "Absence Breakdown",
         "activityMetrics": "Activity Metrics",
         "coreCounts": "Core Counts",
+        "managedScope": "Managed Team Scope",
         "systemHealth": "System Health"
       },
       "title": "Statistics"
@@ -2254,7 +2409,6 @@
       "employeeLevelDescription": "Override team or organization defaults for specific employees",
       "endTime": "End Time",
       "endTimeDescription": "e.g., 06:00 for night shift",
-      "feature": "manage surcharges",
       "loadError": "Failed to load assignments",
       "loading": "Loading surcharge settings...",
       "modelCreated": "Surcharge model created",
@@ -2396,30 +2550,6 @@
       "webhookActive": "Webhook registered",
       "webhookPending": "Webhook pending"
     },
-    "travelExpenses": {
-      "activeDescription": "When enabled, this policy becomes the active default for new claims.",
-      "activeLabel": "Active Policy",
-      "addPolicy": "Add Policy",
-      "createPolicy": "Create Travel Expense Policy",
-      "created": "Travel expense policy created",
-      "currency": "Currency",
-      "description": "Configure reimbursement rates and effective periods for mileage and per diem claims.",
-      "dialogDescription": "Set effective dates and default reimbursement rates for mileage and per diem claims.",
-      "editPolicy": "Edit Travel Expense Policy",
-      "effectiveFrom": "Effective From",
-      "effectiveFromRequired": "Effective from is required",
-      "effectiveTo": "Effective To",
-      "empty": "No policies configured yet. Create your first travel expense policy.",
-      "feature": "manage travel expense policies",
-      "loading": "Loading policies...",
-      "mileageRate": "Mileage Rate per km",
-      "perDiemRate": "Per Diem Rate per day",
-      "policies": "Policies",
-      "policiesDescription": "Only one policy should be active at a time. Active policy is used for new claims.",
-      "saveFailed": "Failed to save travel expense policy",
-      "title": "Travel Expense Policies",
-      "updated": "Travel expense policy updated"
-    },
     "timeRegulations": {
       "addBreakRule": "Add Break Rule",
       "addOption": "Add Option",
@@ -2449,6 +2579,29 @@
       "workingTimeLimits": "Working Time Limits"
     },
     "title": "Settings",
+    "travelExpenses": {
+      "activeDescription": "When enabled, this policy becomes the active default for new claims.",
+      "activeLabel": "Active Policy",
+      "addPolicy": "Add Policy",
+      "created": "Travel expense policy created",
+      "createPolicy": "Create Travel Expense Policy",
+      "currency": "Currency",
+      "description": "Configure reimbursement rates and effective periods for mileage and per diem claims.",
+      "dialogDescription": "Set effective dates and default reimbursement rates for mileage and per diem claims.",
+      "editPolicy": "Edit Travel Expense Policy",
+      "effectiveFrom": "Effective From",
+      "effectiveFromRequired": "Effective from is required",
+      "effectiveTo": "Effective To",
+      "empty": "No policies configured yet. Create your first travel expense policy.",
+      "loading": "Loading policies…",
+      "mileageRate": "Mileage / km",
+      "perDiemRate": "Per diem / day",
+      "policies": "Policies",
+      "policiesDescription": "Only one policy should be active at a time. Active policy is used for new claims.",
+      "saveFailed": "Failed to save travel expense policy",
+      "title": "Travel Expense Policies",
+      "updated": "Travel expense policy updated"
+    },
     "vacation": {
       "assignments": {
         "assignEmployee": "Assign to Employee",
@@ -2652,7 +2805,6 @@
       "connected": "Connected",
       "description": "Monitor background job processing and cron job executions",
       "disconnected": "Disconnected",
-      "feature": "view worker queue status",
       "lastUpdated": "Last updated",
       "loadError": "Failed to load queue status",
       "noExecutions": "No recent executions found",
@@ -2772,6 +2924,36 @@
       "policyDescription": "Define work schedules and time regulations that can be assigned to your organization, teams, or employees.",
       "policyName": "Policy",
       "policySelectDescription": "Choose the work policy to assign",
+      "presenceAnyLocation": "Any location",
+      "presenceConfiguration": "Presence Configuration",
+      "presenceEnabled": "Presence",
+      "presenceEnabledDescription": "Set on-site attendance requirements for employees",
+      "presenceEnabledTooltip": "On-site presence required",
+      "presenceEnforcement": "Enforcement",
+      "presenceEnforcementEscalate": "Escalate",
+      "presenceEnforcementEscalateDescription": "Notify + flag on dashboard",
+      "presenceEnforcementNone": "None",
+      "presenceEnforcementNoneDescription": "Track only",
+      "presenceEnforcementWarn": "Warn",
+      "presenceEnforcementWarnDescription": "Notify employee & manager",
+      "presenceEvaluationBiweekly": "Biweekly",
+      "presenceEvaluationMonthly": "Monthly",
+      "presenceEvaluationPeriod": "Evaluation period",
+      "presenceEvaluationWeekly": "Weekly",
+      "presenceFixedDaysError": "At least one day must be selected",
+      "presenceFixedDaysLabel": "Required on-site days",
+      "presenceLocation": "Location",
+      "presenceLocationHelp": "Organization locations can be configured separately",
+      "presenceMode": "Mode",
+      "presenceModeFixedDays": "Fixed specific days",
+      "presenceModeFixedDaysDescription": "Require attendance on specific days of the week",
+      "presenceModeMinimumCount": "Minimum days on-site",
+      "presenceModeMinimumCountDescription": "Require a minimum number of on-site days per period",
+      "presenceRequiredDays": "Required on-site days",
+      "presenceRequiredDaysError": "Must be between 1 and 7",
+      "presenceRequiredDaysHelp": "Number of days per evaluation period employees must be on-site",
+      "presenceSummaryDaysPerWeek": "{count} days/{period} on-site",
+      "presenceSummaryFixedDays": "Fixed days on-site",
       "presetsLoadError": "Failed to load presets",
       "regulation": "Regulation",
       "regulationConfiguration": "Regulation Configuration",

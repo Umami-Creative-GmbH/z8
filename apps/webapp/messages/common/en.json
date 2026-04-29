@@ -14,6 +14,7 @@
     "clearSelection": "Clear",
     "close": "Close",
     "confirm": "Confirm",
+    "continue": "Continue",
     "copy": "Copy",
     "create": "Create",
     "days": {
@@ -34,7 +35,6 @@
     "download": "Download",
     "duplicate": "Duplicate",
     "edit": "Edit",
-    "employee": "Employee",
     "enabled": "Enabled",
     "error": "Error",
     "error-occurred": "An error occurred",
@@ -68,6 +68,8 @@
     "name": "Name",
     "new": "New",
     "next": "Next",
+    "notApplicable": "N/A",
+    "not-available": "Not available",
     "openMenu": "Open menu",
     "optional": "optional",
     "or": "Or",
@@ -120,11 +122,6 @@
   },
   "errors": {
     "failedToLoad": "Failed to load data",
-    "notFound": {
-      "description": "The page may have moved, the link may be outdated, or the address may be incorrect.",
-      "eyebrow": "404",
-      "title": "Page not found"
-    },
     "noEmployee": {
       "contactAdmin": "Contact Administrator",
       "createOrg": "Create Organization",
@@ -142,9 +139,7 @@
       "waitingDesc": "Your administrator will send you an invitation email. Check your inbox and spam folder."
     },
     "unexpected": {
-      "description": "We couldn't load this page right now. Please try again or return to a safe place in the app.",
-      "digest": "Reference: {digest}",
-      "title": "Something went wrong"
+      "digest": "Reference: {digest}"
     }
   },
   "generic": {
@@ -163,8 +158,10 @@
     "absences": "Absences",
     "approvals": "Approvals",
     "calendar": "Calendar",
+    "compliance": "Compliance",
     "dashboard": "Dashboard",
     "get-help": "Get Help",
+    "my-requests": "My Requests",
     "reports": "Reports",
     "scheduling": "Scheduling",
     "settings": "Settings",
@@ -228,9 +225,10 @@
     "time-settings": "Time Settings"
   },
   "validation": {
+    "first-name-required": "First Name is required",
     "invalid-email": "Invalid email address",
     "invalid-password": "Invalid password",
-    "name-required": "Name is required",
+    "last-name-required": "Last Name is required",
     "password-required": "Password is required"
   }
 }

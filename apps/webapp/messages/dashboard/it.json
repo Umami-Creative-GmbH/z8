@@ -29,6 +29,12 @@
       "view-all": "Vedi tutti",
       "view-all-members": "Vedi tutti i {count} membri del team"
     },
+    "manager-today": {
+      "description": "Controlla oggi stesso prima che piccoli problemi influiscano sulle buste paga o sulla copertura.",
+      "open": "Brief aperto",
+      "summary": "Inizia con assenze, timbrature mancanti, approvazioni, rischi di copertura, straordinari e altri problemi che influiscono sulle buste paga.",
+      "title": "Manager oggi"
+    },
     "pending-approvals": {
       "absence-requests": "Richieste di assenza",
       "awaiting-approval": "In attesa della tua approvazione",
@@ -42,6 +48,10 @@
       "time-corrections": "Correzioni di tempo",
       "title": "Approvazioni in sospeso"
     },
+    "presenceBehind": "Altri {remaining} giorni necessari",
+    "presenceDescription": "Monitoraggio della presenza in sede",
+    "presenceProgress": "giorni in sede in questo {period}",
+    "presenceStatus": "Presenza",
     "quick-stats": {
       "behind": "In ritardo",
       "description": "Il tuo progresso settimanale e mensile",
@@ -73,7 +83,6 @@
       "avg-hours": "Ore medie",
       "description": "Statistiche del team in sintesi",
       "employees-button": "Dipendenti",
-      "error": "Impossibile caricare le statistiche del team",
       "per-week": "/settimana",
       "teams": "Team",
       "teams-button": "Team",

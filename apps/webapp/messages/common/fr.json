@@ -14,6 +14,7 @@
     "clearSelection": "Effacer",
     "close": "Fermer",
     "confirm": "Confirmer",
+    "continue": "Continuer",
     "copy": "Copier",
     "create": "Créer",
     "days": {
@@ -34,7 +35,6 @@
     "download": "Télécharger",
     "duplicate": "Dupliquer",
     "edit": "Modifier",
-    "employee": "Employé",
     "enabled": "Activé",
     "error": "Erreur",
     "error-occurred": "Une erreur s'est produite",
@@ -68,6 +68,8 @@
     "name": "Nom",
     "new": "Nouveau",
     "next": "Suivant",
+    "notApplicable": "N/A",
+    "not-available": "Non disponible",
     "openMenu": "Ouvrir le menu",
     "optional": "facultatif",
     "or": "Ou",
@@ -120,11 +122,6 @@
   },
   "errors": {
     "failedToLoad": "Échec du chargement des données",
-    "notFound": {
-      "description": "La page a peut-être été déplacée, le lien est peut-être obsolète ou l'adresse est incorrecte.",
-      "eyebrow": "404",
-      "title": "Page introuvable"
-    },
     "noEmployee": {
       "contactAdmin": "Contacter l'administrateur",
       "createOrg": "Créer une organisation",
@@ -142,9 +139,7 @@
       "waitingDesc": "Votre administrateur vous enverra un e-mail d'invitation. Vérifiez votre boîte de réception et votre dossier spam."
     },
     "unexpected": {
-      "description": "Nous ne pouvons pas charger cette page pour le moment. Veuillez réessayer ou revenir à un endroit sûr de l'application.",
-      "digest": "Référence : {digest}",
-      "title": "Un problème est survenu"
+      "digest": "Référence : {digest}"
     }
   },
   "generic": {
@@ -163,15 +158,17 @@
     "absences": "Absences",
     "approvals": "Approbations",
     "calendar": "Calendrier",
+    "compliance": "Conformité",
     "dashboard": "Tableau de bord",
     "get-help": "Obtenir de l'aide",
+    "my-requests": "Mes demandes",
     "reports": "Rapports",
     "scheduling": "Planification",
     "settings": "Paramètres",
     "team": "Équipe",
     "team-label": "Équipe",
     "time-tracking": "Suivi du temps",
-    "travel-expenses": "Notes de frais"
+    "travel-expenses": "Frais de déplacement"
   },
   "table": {
     "clearFilters": "Effacer les filtres",
@@ -228,9 +225,10 @@
     "time-settings": "Paramètres de temps"
   },
   "validation": {
+    "first-name-required": "Le prénom est requis",
     "invalid-email": "Adresse e-mail invalide",
     "invalid-password": "Mot de passe invalide",
-    "name-required": "Le nom est requis",
+    "last-name-required": "Le nom de famille est requis",
     "password-required": "Le mot de passe est requis"
   }
 }

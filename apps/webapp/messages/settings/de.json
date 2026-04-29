@@ -168,10 +168,6 @@
       "keyCopied": "API-Schlüssel in die Zwischenablage kopiert",
       "lastUsed": "Zuletzt verwendet",
       "name": "Name",
-      "noOrg": {
-        "description": "Sie müssen Teil einer Organisation sein, um API-Schlüssel zu verwalten.",
-        "title": "Keine Organisation"
-      },
       "prefix": "Schlüssel-Präfix",
       "prefixCopied": "Schlüssel-Präfix kopiert",
       "scopes": "Berechtigungen",
@@ -198,6 +194,41 @@
       "usage": "{count} von {max} Schlüsseln verwendet"
     },
     "auditExport": {
+      "auditPack": {
+        "activeJob": "Aktiver Generierungsauftrag",
+        "colActions": "Aktionen",
+        "colRange": "Zeitraum",
+        "colRecords": "Datensätze",
+        "colRequested": "Angefordert",
+        "colStatus": "Status",
+        "createError": "Erstellung des Audit-Pakets fehlgeschlagen",
+        "createSuccess": "Anfrage für Audit-Paket erstellt",
+        "defaultRangeHint": "Der Standardzeitraum sind die letzten 30 Tage",
+        "description": "Generieren Sie mit einem Klick ein GoBD-konformes Audit-Paket für einen ausgewählten Zeitraum",
+        "download": "Download",
+        "downloadError": "Starten des Downloads fehlgeschlagen",
+        "downloadStarted": "Download gestartet",
+        "endDate": "Enddatum",
+        "endDateRequired": "Enddatum ist erforderlich",
+        "failed": "Fehlgeschlagen",
+        "generate": "Audit-Paket erstellen",
+        "invalidDateRange": "Bitte wählen Sie einen gültigen Datumsbereich",
+        "jobCompleted": "Erstellung des Audit-Pakets abgeschlossen",
+        "jobFailed": "Erstellung des Audit-Pakets fehlgeschlagen",
+        "loadingRequests": "Anfragen werden geladen...",
+        "noRequests": "Noch keine Audit-Paket-Anfragen vorhanden. Erstellen Sie oben Ihre erste Anfrage.",
+        "pending": "Ausstehend",
+        "progressLabel": "Fortschritt: {progress}%",
+        "recentRequests": "Kürzliche Anfragen",
+        "requestsError": "Audit-Paket-Anfragen konnten nicht geladen werden",
+        "startDate": "Startdatum",
+        "startDateRequired": "Startdatum ist erforderlich",
+        "statusCompleted": "Abgeschlossen",
+        "statusFailed": "Fehlgeschlagen",
+        "statusProcessing": "Wird verarbeitet",
+        "statusRequested": "Angefordert",
+        "title": "Audit-Paket-Generator"
+      },
       "config": {
         "autoEnableData": "Datenexporte",
         "autoEnableDataHint": "Audit-Pakete automatisch für alle Datenexporte erstellen",
@@ -235,7 +266,6 @@
         "yearsOption": "{years} Jahre"
       },
       "description": "GoBD-konforme Exporthärtung mit digitalen Signaturen und WORM-Aufbewahrung",
-      "featureName": "Audit-Export",
       "keys": {
         "active": "Aktiv",
         "activeKey": "Aktiver Schlüssel",
@@ -287,6 +317,7 @@
         "statusPending": "Ausstehend",
         "statusProcessing": "Wird verarbeitet",
         "title": "Audit-Pakete",
+        "typeAuditPack": "Audit-Paket",
         "typeData": "Daten",
         "typePayroll": "Gehaltsabrechnung",
         "verify": "Verifizieren",
@@ -365,6 +396,15 @@
         "teamDesc": "Teamleiter können geteilte Feeds erstellen, die alle Teamabwesenheiten anzeigen",
         "title": "ICS-Feeds"
       },
+      "integrations": {
+        "description": "Verbundene Mitarbeiterkalender, die in Ihren aktuellen Einstellungsbereich fallen.",
+        "empty": "In Ihrem aktuellen Bereich sind noch keine Kalenderintegrationen verfügbar.",
+        "needsAttention": "Erfordert Aufmerksamkeit",
+        "pushOff": "Push aus",
+        "pushOn": "Push an",
+        "title": "Relevante Integrationen"
+      },
+      "managerDescription": "Überprüfen Sie Kalenderintegrationen, die sich auf Ihre Teams, Bereiche und verwalteten Projekte auswirken.",
       "noProvidersConfigured": "Es sind keine Kalenderanbieter konfiguriert. Kontaktieren Sie Ihren Systemadministrator, um OAuth-Anmeldedaten einzurichten.",
       "notConfigured": "Nicht konfiguriert",
       "providers": {
@@ -375,6 +415,7 @@
         "microsoftDesc": "Abwesenheiten mit Outlook-Kalender synchronisieren",
         "title": "Kalenderanbieter"
       },
+      "readOnlyManagerNotice": "Manager können die Kalendersynchronisierungsabdeckung für ihre Teams, Bereiche und Projekte überprüfen, aber nur Organisationsadministratoren können diese Einstellungen ändern.",
       "saved": "Kalendereinstellungen gespeichert",
       "saveError": "Kalendereinstellungen konnten nicht gespeichert werden",
       "syncBehavior": {
@@ -430,7 +471,6 @@
       "editTitle": "Änderungsrichtlinie bearbeiten",
       "employeeOverrides": "Mitarbeiter-Überschreibungen",
       "employeeOverridesDescription": "Team- oder Organisations-Standardeinstellungen für bestimmte Mitarbeiter überschreiben (z. B. Sondervereinbarungen).",
-      "feature": "Änderungsrichtlinien verwalten",
       "inheritanceInfo": "Richtlinien werden in der Reihenfolge ihrer Priorität angewendet: Mitarbeiter-Überschreibungen haben Vorrang vor Team-Überschreibungen, welche wiederum Vorrang vor dem Organisations-Standard haben. Wenn auf keiner Ebene eine Richtlinie zugewiesen ist, können Mitarbeiter ihre Zeiteinträge ohne Einschränkungen bearbeiten.",
       "loadError": "Änderungsrichtlinien konnten nicht geladen werden",
       "name": "Name",
@@ -483,18 +523,33 @@
       "updateFailed": "Richtlinie konnte nicht aktualisiert werden",
       "zeroDayPolicy": "Jedes Ausstempeln erfordert die Genehmigung durch einen Vorgesetzten (strengster Modus)."
     },
+    "clockinImport": {
+      "credentials": {
+        "connect": "Verbinden & Vorschau",
+        "description": "Geben Sie ein Clockin-Kunden-API-Bearer-Token ein. Das Token wird nur für diese Importsitzung verwendet.",
+        "title": "Clockin-API-Token",
+        "token": "Bearer-Token"
+      },
+      "mapping": {
+        "description": "Ordnen Sie Clockin-Mitarbeiter bestehenden Z8-Mitarbeitern zu. Automatische E-Mail-Übereinstimmungen sind vorausgewählt.",
+        "summary": "Zugeordnete Mitarbeiter",
+        "title": "Mitarbeiter zuordnen"
+      },
+      "preview": {
+        "description": "Überprüfen Sie, welche Clockin-Daten verfügbar sind, bevor Sie Mitarbeiter zuordnen und Datensätze scannen.",
+        "next": "Mitarbeiter zuordnen",
+        "title": "Clockin-Vorschau"
+      },
+      "selection": {
+        "description": "Wählen Sie aus, welche Clockin-Datensätze zur Überprüfung gescannt werden sollen. Datensätze müssen vor dem Commit überprüft werden.",
+        "title": "Importumfang"
+      }
+    },
     "clockodoImport": {
       "complete": {
-        "dataType": "Datentyp",
-        "done": "Fertig",
-        "duration": "Abgeschlossen in {seconds}s",
-        "errorCount": "{count} Fehler",
-        "errors": "Fehler",
-        "failedTitle": "Import fehlgeschlagen",
-        "imported": "Importiert",
-        "moreErrors": "…und {count} weitere",
-        "partialTitle": "Import teilweise abgeschlossen",
-        "skipped": "Übersprungen",
+        "batch": "Überprüfen Sie, was Batch {batchId} scannt.",
+        "description": "Eine Überprüfung ist erforderlich, bevor Clockodo-Datensätze in die Produktion übernommen werden.",
+        "openReview": "Überprüfung öffnen",
         "successTitle": "Import abgeschlossen"
       },
       "credentials": {
@@ -505,7 +560,6 @@
         "email": "Clockodo-E-Mail",
         "title": "Clockodo-Zugangsdaten"
       },
-      "description": "Importieren Sie Ihre Daten von Clockodo nach Z8. Dies ist ein einmaliger Migrationsassistent.",
       "entity": {
         "absences": "Abwesenheiten",
         "entries": "Zeiteinträge",
@@ -547,11 +601,16 @@
         "next": "Benutzer zuordnen",
         "title": "Datenvorschau"
       },
+      "review": {
+        "startedToast": "Import-Überprüfungsscan gestartet. Eine Überprüfung ist erforderlich, bevor Datensätze übernommen werden."
+      },
       "selection": {
         "dateRange": "Datumsbereich für Zeiteinträge & Abwesenheiten",
         "dateRangeDescription": "Dies betrifft nur Zeiteinträge und Abwesenheiten. Andere Daten (Benutzer, Teams usw.) werden immer vollständig importiert.",
         "dependencyWarning": "Abhängigkeiten werden automatisch importiert",
         "description": "Wählen Sie aus, welche Datentypen importiert werden sollen. Duplikate werden automatisch übersprungen.",
+        "emptyUserScope": "Wählen Sie mindestens einen Clockodo-Benutzer aus, bevor Sie den Scan starten.",
+        "incompleteCustomDateRange": "Wählen Sie sowohl ein Start- als auch ein Enddatum aus, bevor Sie den Scan starten.",
         "selectDateRange": "Datumsbereich auswählen",
         "startImport": "Import starten",
         "title": "Zu importierende Daten auswählen"
@@ -564,7 +623,6 @@
         "selection": "Auswahl",
         "userMapping": "Benutzerzuordnung"
       },
-      "title": "Clockodo-Import",
       "userMapping": {
         "action": "Aktion",
         "autoMatched": "{count} automatisch zugeordnet",
@@ -600,7 +658,6 @@
       "description": "Definieren Sie Mindestbesetzungsanforderungen pro Standort, Tag und Zeitblock.",
       "editRule": "Abdeckungsregel bearbeiten",
       "endTime": "Endzeit",
-      "feature": "Abdeckungsregeln verwalten",
       "loading": "Abdeckungsregeln werden geladen...",
       "minimumStaffCount": "Mindestanzahl an Personal",
       "minimumStaffHint": "Die Mindestanzahl an Mitarbeitern, die während dieses Zeitblocks erforderlich ist.",
@@ -660,6 +717,8 @@
         "name": "Unternehmensname",
         "namePlaceholder": "Unternehmensnamen eingeben",
         "phone": "Telefon",
+        "project": "Projekt",
+        "projectPlaceholder": "Wählen Sie ein Projekt aus",
         "vatId": "USt-IdNr.",
         "website": "Website"
       },
@@ -667,13 +726,14 @@
         "description": "{count} Kunden insgesamt",
         "title": "Alle Kunden"
       },
+      "managerNoProjects": "Keine verwalteten Projekte verfügbar. Erstellen oder verwalten Sie ein Projekt, bevor Sie Kunden hinzufügen.",
+      "projectRequired": "Wählen Sie zuerst ein Projekt aus",
       "title": "Kunden",
       "updated": "Kunde aktualisiert",
       "updateFailed": "Kunde konnte nicht aktualisiert werden"
     },
     "dataExport": {
       "description": "Exportieren Sie die Daten Ihrer Organisation",
-      "featureName": "Datenexport",
       "form": {
         "aboutAsync": "Exporte werden asynchron verarbeitet und können einige Minuten dauern",
         "aboutEmail": "Sie erhalten eine E-Mail, wenn es fertig ist",
@@ -985,8 +1045,6 @@
     "employees": {
       "description": "Mitarbeiterprofile, Teams und Berechtigungen verwalten",
       "details": "Mitarbeiterdetails",
-      "details.description": "Mitarbeiterinformationen anzeigen und bearbeiten",
-      "details.title": "Mitarbeiterdetails",
       "title": "Mitarbeiter"
     },
     "enterprise": {
@@ -1032,11 +1090,11 @@
         "title": "E-Mail-Konfiguration",
         "transportType": "E-Mail-Anbieter",
         "vaultConnected": "Vault verbunden",
-        "vaultConnectedDesc": "Geheimnisse werden sicher in HashiCorp Vault gespeichert.",
+        "vaultConnectedDesc": "Geheimnisse werden sicher gespeichert.",
         "vaultSealed": "Vault versiegelt",
-        "vaultSealedDesc": "HashiCorp Vault ist versiegelt. Bitte entsiegeln Sie ihn, um Geheimnisse zu speichern.",
+        "vaultSealedDesc": "Vault ist versiegelt. Bitte entsiegeln Sie ihn, um Geheimnisse zu speichern.",
         "vaultUnavailable": "Vault nicht verfügbar",
-        "vaultUnavailableDesc": "HashiCorp Vault ist nicht verfügbar. Geheimnisse können nicht sicher gespeichert werden."
+        "vaultUnavailableDesc": "Vault ist nicht verfügbar. Geheimnisse können nicht sicher gespeichert werden."
       },
       "tab": {
         "branding": "Branding",
@@ -1044,6 +1102,48 @@
         "social-oauth": "Social Login",
         "sso": "SSO-Anbieter"
       }
+    },
+    "exportOperations": {
+      "activity": {
+        "audit": {
+          "description": "Anfrage für Audit-Export erfasst.",
+          "title": "Audit-Export"
+        },
+        "payroll": {
+          "description": "Lohnabrechnungs-Exportauftrag erfasst.",
+          "title": "Lohnabrechnungs-Export"
+        },
+        "scheduled": {
+          "description": "Geplante Exportausführung erfasst.",
+          "title": "Geplanter Export"
+        }
+      },
+      "alerts": {
+        "auditFailed": {
+          "description": "Die letzte Anfrage für einen Audit-Export wurde nicht abgeschlossen.",
+          "title": "Audit-Export fehlgeschlagen"
+        },
+        "blockedSchedule": {
+          "description": "{name} benötigt eine Konfiguration für den Lohnabrechnungs-Export, bevor dieser ausgeführt werden kann.",
+          "title": "Geplanter Lohnabrechnungs-Export ist blockiert"
+        },
+        "payrollFailed": {
+          "description": "Der letzte Lohnabrechnungs-Export wurde nicht abgeschlossen.",
+          "title": "Lohnabrechnungs-Export fehlgeschlagen"
+        },
+        "scheduledFailed": {
+          "description": "{name} wurde nicht erfolgreich abgeschlossen.",
+          "title": "Geplanter Export fehlgeschlagen"
+        }
+      },
+      "description": "Überwachen Sie die Aktivitäten für Lohnabrechnungs-, Audit- und geplante Exporte für Ihr Unternehmen.",
+      "errors": {
+        "alerts": "Einige Warnmeldungen sind möglicherweise unvollständig, während Exportdaten nicht verfügbar sind.",
+        "recentActivity": "Einige Aktivitätsdaten sind vorübergehend nicht verfügbar.",
+        "summary": "Die Zählungen basieren auf den Exportdaten, die geladen werden konnten.",
+        "upcomingRuns": "Daten für geplante Exporte sind vorübergehend nicht verfügbar."
+      },
+      "title": "Exportvorgänge"
     },
     "holidays": {
       "add": "Feiertag hinzufügen",
@@ -1296,6 +1396,10 @@
       },
       "title": "Feiertage"
     },
+    "import": {
+      "description": "Importieren Sie Daten von unterstützten Anbietern wie Clockodo und Clockin.",
+      "title": "Daten importieren"
+    },
     "inviteCodes": {
       "alreadyHaveAccount": "Haben Sie bereits ein Konto?",
       "alreadyMember": "Bereits Mitglied",
@@ -1458,10 +1562,6 @@
       "title": "Benachrichtigungseinstellungen"
     },
     "organizations": {
-      "noActive": {
-        "description": "Bitte wählen oder erstellen Sie eine Organisation, um fortzufahren.",
-        "title": "Keine aktive Organisation"
-      },
       "notFound": {
         "description": "Die Organisation konnte nicht gefunden werden oder Sie haben keinen Zugriff darauf.",
         "title": "Organisation nicht gefunden"
@@ -1501,13 +1601,25 @@
         "employeesSelected": "{{count}} ausgewählt",
         "endDate": "Enddatum",
         "error": "Export fehlgeschlagen",
-        "exportButton": "Export nach DATEV",
+        "exportButtonDatev": "Export nach DATEV",
+        "exportButtonLexware": "Nach Lexware exportieren",
+        "exportButtonPersonio": "Nach Personio exportieren",
+        "exportButtonSage": "Nach Sage exportieren",
+        "exportButtonSuccessFactorsApi": "Nach SAP SuccessFactors (API) exportieren",
+        "exportButtonSuccessFactorsCsv": "SAP SuccessFactors CSV exportieren",
+        "exportButtonWorkday": "Nach Workday exportieren",
         "exporting": "Exportvorgang…",
         "filters": "Filter (Optional)",
+        "format": "Exportformat",
+        "format.datev": "DATEV",
+        "format.lexware": "Lexware",
+        "format.personio": "Personio",
+        "format.sage": "Sage",
+        "format.successfactorsApi": "SAP SuccessFactors (API)",
+        "format.successfactorsCsv": "SAP SuccessFactors (CSV)",
+        "format.workday": "Workday",
         "month": "Monat",
         "monthSelection": "Monat auswählen",
-        "notConfiguredDescription": "Bitte konfigurieren Sie die DATEV-Stammdaten und Lohnarten-Mappings vor dem Export.",
-        "notConfiguredTitle": "Konfiguration erforderlich",
         "projects": "Projekte",
         "projectsSelected": "{{count}} ausgewählt",
         "startDate": "Startdatum",
@@ -1515,9 +1627,12 @@
         "teams": "Teams",
         "teamsSelected": "{{count}} ausgewählt",
         "title": "Lohnabrechnungsdaten exportieren",
+        "unavailable": {
+          "missingConfiguration": "Konfiguration",
+          "missingCredentials": "Anmeldedaten"
+        },
         "year": "Jahr"
       },
-      "featureName": "Lohnabrechnungsexport",
       "history": {
         "description": "Vorherige DATEV-Exporte ansehen und herunterladen",
         "download": "Export herunterladen",
@@ -1699,9 +1814,51 @@
         "mappings": "Lohnarten",
         "personio": "Personio",
         "sage": "Sage",
-        "successfactors": "SAP SuccessFactors"
+        "successfactors": "SAP SuccessFactors",
+        "workday": "Workday"
       },
-      "title": "Lohnabrechnungsexport"
+      "title": "Lohnabrechnungsexport",
+      "workday": {
+        "apiTimeoutMs": "API-Zeitüberschreitung (ms)",
+        "batchSize": "Batch-Größe",
+        "clientId": "Client-ID",
+        "clientSecret": "Client-Secret",
+        "configDescription": "Konfigurieren Sie, wie Datensätze vorbereitet und an Workday gesendet werden",
+        "configTitle": "Workday-Exporteinstellungen",
+        "connected": "Verbunden",
+        "connectionFailed": "Verbindungstest fehlgeschlagen",
+        "connectionSuccess": "Erfolgreich mit Workday verbunden",
+        "credentialsConfigured": "Anmeldedaten konfiguriert",
+        "credentialsDeleted": "Anmeldedaten gelöscht",
+        "credentialsDeleteError": "Fehler beim Löschen der Anmeldedaten",
+        "credentialsDescription": "Speichern Sie die OAuth-Anmeldedaten für den Workday-API-Zugriff",
+        "credentialsRequired": "Bitte geben Sie sowohl die Client-ID als auch das Client-Secret ein",
+        "credentialsSaved": "Anmeldedaten sicher gespeichert",
+        "credentialsSaveError": "Fehler beim Speichern der Anmeldedaten",
+        "credentialsSecure": "Sicher im Tresor gespeichert",
+        "credentialsTitle": "Workday-API-Anmeldedaten",
+        "deleteCredentials": "Anmeldedaten löschen",
+        "deleteCredentialsDescription": "Dies entfernt die gespeicherten Workday-OAuth-Anmeldedaten für diese Organisation.",
+        "deleteCredentialsTitle": "Workday-Anmeldedaten löschen?",
+        "employeeMatchStrategy": "Mitarbeiterabgleich",
+        "includeZeroHours": "Nullstunden einbeziehen",
+        "includeZeroHoursDescription": "Datensätze mit Nullstunden in Exporte einbeziehen",
+        "instanceUrl": "Instanz-URL",
+        "matchByEmail": "E-Mail-Adresse",
+        "matchByEmployeeNumber": "Mitarbeiternummer (empfohlen)",
+        "save": "Einstellungen speichern",
+        "saveCredentials": "Anmeldedaten speichern",
+        "saveError": "Fehler beim Speichern der Konfiguration",
+        "saveSuccess": "Konfiguration gespeichert",
+        "tenantId": "Mandanten-ID",
+        "testConnection": "Verbindung testen",
+        "testing": "Test läuft...",
+        "updateCredentials": "Aktualisieren"
+      }
+    },
+    "payrollReadiness": {
+      "description": "Prüfen Sie, ob ein Abrechnungszeitraum bereit ist, bevor Sie Zeit-, Abwesenheits- und Lohnabrechnungsdaten exportieren.",
+      "title": "Abrechnungsbereitschaft"
     },
     "pendingMembers": {
       "approve": "Genehmigen",
@@ -1882,7 +2039,6 @@
         "loadFailed": "Geplante Exporte konnten nicht geladen werden",
         "toggleFailed": "Umschalten fehlgeschlagen"
       },
-      "featureName": "Geplante Exporte",
       "filters": {
         "allEmployees": "Alle Mitarbeiter",
         "allProjects": "Alle Projekte",
@@ -2194,7 +2350,6 @@
         "approvedAbsences": "Genehmigte Abwesenheiten",
         "employees": "Mitarbeiter",
         "employeesDescription": "{active} aktiv, {inactive} inaktiv",
-        "organizations": "Organisationen",
         "pendingAbsences": "Ausstehende Abwesenheiten",
         "pendingCount": "{count} ausstehend",
         "rejectedAbsences": "Abgelehnte Abwesenheiten",
@@ -2203,17 +2358,17 @@
         "timeEntries": "Zeiteinträge",
         "totalAbsences": "Gesamtabwesenheiten",
         "totalTimeEntries": "Gesamtzeiteinträge",
-        "totalUsers": "Gesamtbenutzer",
         "vsLastMonth": "ggü. letztem Monat"
       },
       "description": "Statistiken und Kennzahlen zu Ihrer Instanz anzeigen",
-      "feature": "Instanzstatistiken anzeigen",
       "lastUpdated": "Zuletzt aktualisiert",
       "loadError": "Laden der Statistiken fehlgeschlagen",
+      "managerDescription": "Überprüfen Sie schreibgeschützte Analysen für die Teams, die Sie verwalten.",
       "sections": {
         "absenceBreakdown": "Abwesenheitsaufschlüsselung",
         "activityMetrics": "Aktivitätsmetriken",
         "coreCounts": "Kernzahlen",
+        "managedScope": "Bereich der verwalteten Teams",
         "systemHealth": "Systemstatus"
       },
       "title": "Statistiken"
@@ -2254,7 +2409,6 @@
       "employeeLevelDescription": "Team- oder Organisationsstandards für bestimmte Mitarbeiter überschreiben",
       "endTime": "Endzeit",
       "endTimeDescription": "z.B. 06:00 für Nachtschicht",
-      "feature": "Zuschläge verwalten",
       "loadError": "Laden der Zuweisungen fehlgeschlagen",
       "loading": "Lade Zuschlagseinstellungen...",
       "modelCreated": "Zuschlagsmodell erstellt",
@@ -2396,30 +2550,6 @@
       "webhookActive": "Webhook registriert",
       "webhookPending": "Webhook ausstehend"
     },
-    "travelExpenses": {
-      "activeDescription": "Wenn aktiviert, wird diese Richtlinie zur aktiven Standardrichtlinie für neue Anträge.",
-      "activeLabel": "Aktive Richtlinie",
-      "addPolicy": "Richtlinie hinzufügen",
-      "createPolicy": "Reisekostenrichtlinie erstellen",
-      "created": "Reisekostenrichtlinie erstellt",
-      "currency": "Währung",
-      "description": "Konfigurieren Sie Erstattungssätze und Gültigkeitszeiträume für Kilometer- und Tagesspesen.",
-      "dialogDescription": "Legen Sie Gültigkeitszeiträume und Standarderstattungssätze für Kilometer- und Tagesspesen fest.",
-      "editPolicy": "Reisekostenrichtlinie bearbeiten",
-      "effectiveFrom": "Gültig ab",
-      "effectiveFromRequired": "Gültig ab ist erforderlich",
-      "effectiveTo": "Gültig bis",
-      "empty": "Noch keine Richtlinien konfiguriert. Erstellen Sie Ihre erste Reisekostenrichtlinie.",
-      "feature": "Reisekostenrichtlinien verwalten",
-      "loading": "Richtlinien werden geladen...",
-      "mileageRate": "Kilometersatz pro km",
-      "perDiemRate": "Tagesspesensatz pro Tag",
-      "policies": "Richtlinien",
-      "policiesDescription": "Es sollte jeweils nur eine Richtlinie aktiv sein. Die aktive Richtlinie wird für neue Anträge verwendet.",
-      "saveFailed": "Reisekostenrichtlinie konnte nicht gespeichert werden",
-      "title": "Reisekostenrichtlinien",
-      "updated": "Reisekostenrichtlinie aktualisiert"
-    },
     "timeRegulations": {
       "addBreakRule": "Pausenregel hinzufügen",
       "addOption": "Option hinzufügen",
@@ -2449,6 +2579,29 @@
       "workingTimeLimits": "Arbeitszeitlimits"
     },
     "title": "Einstellungen",
+    "travelExpenses": {
+      "activeDescription": "Wenn diese Richtlinie aktiviert ist, wird sie zum aktiven Standard für neue Anträge.",
+      "activeLabel": "Aktive Richtlinie",
+      "addPolicy": "Richtlinie hinzufügen",
+      "created": "Reisekostenrichtlinie erstellt",
+      "createPolicy": "Reisekostenrichtlinie erstellen",
+      "currency": "Währung",
+      "description": "Konfigurieren Sie Erstattungssätze und Gültigkeitszeiträume für Kilometer- und Verpflegungsmehraufwand.",
+      "dialogDescription": "Legen Sie Gültigkeitsdaten und Standarderstattungssätze für Kilometer- und Verpflegungsmehraufwand fest.",
+      "editPolicy": "Reisekostenrichtlinie bearbeiten",
+      "effectiveFrom": "Gültig ab",
+      "effectiveFromRequired": "Gültig ab ist erforderlich",
+      "effectiveTo": "Gültig bis",
+      "empty": "Noch keine Richtlinien konfiguriert. Erstellen Sie Ihre erste Reisekostenrichtlinie.",
+      "loading": "Richtlinien werden geladen…",
+      "mileageRate": "Kilometer / km",
+      "perDiemRate": "Verpflegungsmehraufwand / Tag",
+      "policies": "Richtlinien",
+      "policiesDescription": "Es sollte immer nur eine Richtlinie aktiv sein. Die aktive Richtlinie wird für neue Anträge verwendet.",
+      "saveFailed": "Speichern der Reisekostenrichtlinie fehlgeschlagen",
+      "title": "Reisekostenrichtlinien",
+      "updated": "Reisekostenrichtlinie aktualisiert"
+    },
     "vacation": {
       "assignments": {
         "assignEmployee": "Mitarbeiter zuweisen",
@@ -2652,7 +2805,6 @@
       "connected": "Verbunden",
       "description": "Überwachung der Hintergrundjob-Verarbeitung und Cron-Job-Ausführungen",
       "disconnected": "Getrennt",
-      "feature": "Status der Worker-Warteschlange anzeigen",
       "lastUpdated": "Zuletzt aktualisiert",
       "loadError": "Warteschlangenstatus konnte nicht geladen werden",
       "noExecutions": "Keine kürzlichen Ausführungen gefunden",
@@ -2772,6 +2924,36 @@
       "policyDescription": "Definieren Sie Arbeitszeitpläne und Zeitregelungen, die Ihrer Organisation, Ihren Teams oder Mitarbeitern zugewiesen werden können.",
       "policyName": "Richtlinie",
       "policySelectDescription": "Wählen Sie die zuzuweisende Arbeitsrichtlinie aus",
+      "presenceAnyLocation": "Beliebiger Standort",
+      "presenceConfiguration": "Anwesenheitskonfiguration",
+      "presenceEnabled": "Anwesenheit",
+      "presenceEnabledDescription": "Anwesenheitsanforderungen für Mitarbeiter festlegen",
+      "presenceEnabledTooltip": "Anwesenheit vor Ort erforderlich",
+      "presenceEnforcement": "Durchsetzung",
+      "presenceEnforcementEscalate": "Eskalieren",
+      "presenceEnforcementEscalateDescription": "Benachrichtigen + im Dashboard markieren",
+      "presenceEnforcementNone": "Keine",
+      "presenceEnforcementNoneDescription": "Nur erfassen",
+      "presenceEnforcementWarn": "Warnen",
+      "presenceEnforcementWarnDescription": "Mitarbeiter & Vorgesetzten benachrichtigen",
+      "presenceEvaluationBiweekly": "Zweiwöchentlich",
+      "presenceEvaluationMonthly": "Monatlich",
+      "presenceEvaluationPeriod": "Bewertungszeitraum",
+      "presenceEvaluationWeekly": "Wöchentlich",
+      "presenceFixedDaysError": "Mindestens ein Tag muss ausgewählt werden",
+      "presenceFixedDaysLabel": "Erforderliche Präsenztage",
+      "presenceLocation": "Standort",
+      "presenceLocationHelp": "Unternehmensstandorte können separat konfiguriert werden",
+      "presenceMode": "Modus",
+      "presenceModeFixedDays": "Feste Wochentage",
+      "presenceModeFixedDaysDescription": "Anwesenheit an bestimmten Wochentagen erforderlich",
+      "presenceModeMinimumCount": "Mindestanzahl der Tage vor Ort",
+      "presenceModeMinimumCountDescription": "Erfordert eine Mindestanzahl an Tagen vor Ort pro Zeitraum",
+      "presenceRequiredDays": "Erforderliche Tage vor Ort",
+      "presenceRequiredDaysError": "Muss zwischen 1 und 7 liegen",
+      "presenceRequiredDaysHelp": "Anzahl der Tage pro Bewertungszeitraum, die Mitarbeiter vor Ort sein müssen",
+      "presenceSummaryDaysPerWeek": "{count} Tage/{period} vor Ort",
+      "presenceSummaryFixedDays": "Feste Tage vor Ort",
       "presetsLoadError": "Voreinstellungen konnten nicht geladen werden",
       "regulation": "Regelung",
       "regulationConfiguration": "Regelungskonfiguration",

@@ -13,7 +13,8 @@
         "organizations": "Organisations",
         "overview": "Aperçu",
         "settings": "Paramètres",
-        "users": "Utilisateurs"
+        "users": "Utilisateurs",
+        "workerQueue": "File d'attente des travailleurs"
       },
       "subtitle": "Gestion de la plateforme",
       "title": "Console d'administration"
@@ -150,14 +151,16 @@
     "absenceApproved": "Demande d'absence approuvée",
     "absenceRejected": "Demande d'absence rejetée",
     "age": "Âge",
+    "amount": "Montant",
     "approve": "Approuver",
     "approved": "Demande approuvée",
     "approveFailed": "Échec de l'approbation",
     "approveSelected": "Approuver la sélection",
     "approveTimeCorrectionTitle": "Approuver la correction de temps",
     "approveTitle": "Approuver la demande d'absence",
-    "bulkApproveFailed": "${result.failed.length} demande(s) ont échoué",
-    "bulkApproveSuccess": "${result.succeeded.length} demande(s) approuvée(s)",
+    "bulkApproveRequestFailed": "Échec de l'approbation en masse",
+    "bulkRejectDescription": "Indiquez un motif qui sera appliqué à chaque demande sélectionnée.",
+    "bulkRejectRequestFailed": "Échec du rejet en masse",
     "category": "Catégorie",
     "changed": "Modifié",
     "confirmReject": "Confirmer le rejet",
@@ -165,6 +168,7 @@
     "date": "Date",
     "dates": "Dates",
     "days": "Jours",
+    "destination": "Destination",
     "details": "Détails",
     "employee": "Employé",
     "filterByAge": "Filtrer par âge",
@@ -172,11 +176,14 @@
     "filterByType": "Filtrer par type",
     "inbox": "Boîte de réception des approbations",
     "inboxDescription": "Examinez et approuvez les demandes en attente de votre équipe",
+    "inboxErrorDescription": "Échec de la récupération des approbations",
+    "inboxErrorTitle": "Impossible de charger la boîte de réception des approbations",
     "loadError": "Échec du chargement des approbations",
     "noAbsenceApprovals": "Aucune demande d'absence en attente à examiner.",
     "noRequests": "Aucune demande en attente",
     "noRequestsDescription": "Lorsque les membres de l'équipe soumettront des demandes, elles apparaîtront ici",
     "noSearchResults": "Aucune approbation ne correspond à votre recherche.",
+    "note": "Note",
     "notes": "Notes",
     "noTimeCorrectionApprovals": "Aucune demande de correction de temps en attente à examiner.",
     "offFrom": "en congé du",
@@ -190,6 +197,7 @@
     "rejectFailed": "Échec du rejet",
     "rejectionReason": "Motif du rejet",
     "rejectionReasonPlaceholder": "Veuillez fournir un motif pour le rejet de cette demande…",
+    "rejectSelected": "Rejeter la sélection",
     "rejectTimeCorrectionTitle": "Rejeter la correction de temps",
     "rejectTitle": "Rejeter la demande d'absence",
     "requested": "Demandé",
@@ -206,6 +214,7 @@
     "timeCorrectionApproved": "Correction d'heure approuvée",
     "timeCorrectionRejected": "Correction d'heure rejetée",
     "timeline": "Chronologie",
+    "tripDates": "Dates du voyage",
     "type": "Type"
   },
   "colors": {
@@ -277,6 +286,97 @@
     "redirecting": "Redirection...",
     "selectOrganization": "Sélectionner l'organisation",
     "selectOrganizationDescription": "Choisissez l'organisation avec laquelle vous souhaitez travailler"
+  },
+  "myRequests": {
+    "actions": {
+      "cancel": "Annuler",
+      "cancelConfirmation": "Annuler cette demande d'absence ?",
+      "cancelError": "La demande d'absence n'a pas pu être annulée.",
+      "cancelling": "Annulation en cours…",
+      "fix": "Corriger",
+      "notAvailable": "Non disponible",
+      "view": "Afficher"
+    },
+    "all": {
+      "description": "Examinez les demandes concernant les absences, les corrections de temps et les dépenses.",
+      "title": "Toutes les demandes"
+    },
+    "empty": {
+      "filtered": {
+        "description": "Les demandes apparaîtront ici lorsqu'elles seront soumises ou chargées.",
+        "title": "Aucune demande ne correspond à vos filtres"
+      },
+      "none": {
+        "description": "Les demandes apparaîtront ici lorsqu'elles seront soumises ou chargées.",
+        "title": "Aucune demande pour le moment"
+      }
+    },
+    "featureName": "voir vos demandes",
+    "filters": {
+      "allStatuses": "Tous les statuts",
+      "allTypes": "Tous les types",
+      "approvedRequests": "Demandes approuvées",
+      "cancelledRequests": "Demandes annulées",
+      "pendingRequests": "Demandes en attente",
+      "rejectedRequests": "Demandes rejetées",
+      "search": "Rechercher",
+      "searchPlaceholder": "Rechercher par titre…",
+      "status": "Statut",
+      "type": "Type"
+    },
+    "needsAttention": {
+      "description": "Demandes rejetées pouvant nécessiter une correction avant d'être soumises à nouveau.",
+      "title": "Nécessite une attention"
+    },
+    "noReason": "Aucune raison fournie.",
+    "reasonLabel": "Raison",
+    "requests": {
+      "absence": {
+        "title": "Demande d'absence"
+      },
+      "timeCorrection": {
+        "subtitle": "Correction d'une saisie de temps",
+        "title": "Demande de correction de temps"
+      },
+      "travelExpense": {
+        "title": "Note de frais de déplacement"
+      }
+    },
+    "sourceError": {
+      "absence": "Les demandes d'absence n'ont pas pu être chargées.",
+      "timeCorrection": "Les demandes de correction de temps n'ont pas pu être chargées.",
+      "title": "Certaines demandes n'ont pas pu être chargées.",
+      "travelExpense": "Les demandes de frais de déplacement n'ont pas pu être chargées."
+    },
+    "sourceTypes": {
+      "absence": "Absence",
+      "timeCorrection": "Temps",
+      "travelExpense": "Frais"
+    },
+    "status": {
+      "approved": "Approuvé",
+      "cancelled": "Annulé",
+      "inReview": "En cours d'examen",
+      "rejected": "Rejeté"
+    },
+    "subtitle": "Suivez les demandes en attente, les correctifs requis et les décisions récentes en un seul endroit.",
+    "summary": {
+      "ariaLabel": "Résumé de la demande",
+      "pending": "En attente",
+      "recentDecisions": "Décisions récentes",
+      "requiredFixes": "Correctifs requis",
+      "totalLoaded": "Total chargé"
+    },
+    "table": {
+      "action": "Action",
+      "decision": "Décision",
+      "request": "Demande",
+      "status": "Statut",
+      "submitted": "Soumis",
+      "type": "Type"
+    },
+    "title": "Mes demandes",
+    "unavailableTitle": "Demandes indisponibles"
   },
   "offline": {
     "banner": {

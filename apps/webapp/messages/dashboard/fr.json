@@ -29,6 +29,12 @@
       "view-all": "Voir tout",
       "view-all-members": "Voir tous les {count} membres de l'équipe"
     },
+    "manager-today": {
+      "description": "Passez en revue la journée d'aujourd'hui avant que des problèmes mineurs n'affectent la paie ou la couverture.",
+      "open": "Résumé",
+      "summary": "Commencez par les absences, les pointages manquants, les approbations, les risques de couverture, les heures supplémentaires et autres problèmes ayant un impact sur la paie.",
+      "title": "Aujourd'hui pour le manager"
+    },
     "pending-approvals": {
       "absence-requests": "Demandes d'absence",
       "awaiting-approval": "En attente de votre approbation",
@@ -42,6 +48,10 @@
       "time-corrections": "Corrections de temps",
       "title": "Approbations en attente"
     },
+    "presenceBehind": "{remaining} jours restants nécessaires",
+    "presenceDescription": "Suivi de présence sur site",
+    "presenceProgress": "jours sur site pour cette {period}",
+    "presenceStatus": "Presence",
     "quick-stats": {
       "behind": "En retard",
       "description": "Votre progression hebdomadaire et mensuelle",
@@ -73,7 +83,6 @@
       "avg-hours": "Heures moy.",
       "description": "Statistiques de l'équipe en un coup d'œil",
       "employees-button": "Employés",
-      "error": "Échec du chargement des statistiques de l'équipe",
       "per-week": "/semaine",
       "teams": "Équipes",
       "teams-button": "Équipes",

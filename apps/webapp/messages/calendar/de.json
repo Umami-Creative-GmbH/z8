@@ -130,13 +130,9 @@
       "duration": "Dauer",
       "employee": "Mitarbeiter",
       "notes": "Notizen",
-      "pendingApproval": "Ausstehende Genehmigung",
-      "pendingApprovalDescription": "Dieser Arbeitszeitraum wartet auf die Genehmigung durch den Manager. Die erfassten Zeiten können sich bei Ablehnung ändern.",
       "periods": "Arbeitszeiträume",
       "project": "Projekt",
       "recurring": "Jährlich wiederkehrend",
-      "rejected": "Abgelehnt",
-      "rejectedDescription": "Diese Änderung des Arbeitszeitraums wurde von einem Manager abgelehnt. Die ursprünglichen Zeiten wurden wiederhergestellt.",
       "status": "Status",
       "surcharge": "Zuschlag",
       "surchargeBreakdown": "Aufschlüsselung der Zuschläge",
@@ -145,14 +141,11 @@
     },
     "edit": {
       "convertToBreak": "In Pause umwandeln",
-      "noNotes": "Keine Notizen hinzugefügt",
-      "noProject": "Kein Projekt zugewiesen",
       "notesSaved": "Notizen gespeichert",
       "notesSaveFailed": "Speichern der Notizen fehlgeschlagen",
       "projectSaved": "Projekt aktualisiert",
       "projectSaveFailed": "Aktualisieren des Projekts fehlgeschlagen",
-      "split": "Teilen",
-      "title": "Arbeitszeitraum"
+      "split": "Teilen"
     },
     "employeeSelector": {
       "error": "Teammitglieder konnten nicht geladen werden",

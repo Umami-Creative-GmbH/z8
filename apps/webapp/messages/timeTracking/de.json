@@ -2,10 +2,6 @@
   "timeTracking": {
     "addNotePrompt": "Notiz zu Ihrer Arbeit hinzufügen (optional)",
     "autoAdjusted": {
-      "description": "Eine {breakMinutes}-minütige Pause wurde automatisch hinzugefügt, um {regulationName} zu entsprechen.",
-      "indicator": "Automatisch angepasst für Compliance",
-      "originalDuration": "Original: {duration}",
-      "title": "Automatisch angepasst für Compliance",
       "toast": {
         "description": "Eine {breakMinutes}-minütige Pause wurde hinzugefügt, um den Zeitvorschriften zu entsprechen.",
         "title": "Pause automatisch hinzugefügt für Compliance"
@@ -101,8 +97,6 @@
     "notesSaved": "Notizen gespeichert",
     "project": "Projekt",
     "readyToClockIn": "Bereit zum Arbeiten?",
-    "restPeriodWarning": "Warnung zur Ruhezeit",
-    "restPeriodWarningMessage": "Sie haben die erforderliche Ruhezeit nicht eingehalten. Das jetzige Einstempeln wird als Verstoß protokolliert.",
     "selectCategory": "Kategorie auswählen",
     "selectProject": "Projekt auswählen",
     "startedAt": "Begonnen um",
@@ -114,20 +108,11 @@
       "today": "Heute"
     },
     "table": {
-      "active": "Aktiv",
-      "clockIn": "Einstempeln",
-      "clockOut": "Ausstempeln",
-      "corrected": "Korrigiert",
-      "date": "Datum",
-      "description": "Beschreibung",
-      "duration": "Dauer",
       "emptyState": "Keine Zeiteinträge für diese Woche gefunden.",
       "title": "Zeiteinträge"
     },
-    "title": "Zeiterfassung",
     "unknownCategory": "Unbekannte Kategorie",
     "unknownProject": "Unbekanntes Projekt",
-    "welcomeBack": "Willkommen zurück, {name}",
     "workCategory": "Arbeitskategorie"
   },
   "wellness": {

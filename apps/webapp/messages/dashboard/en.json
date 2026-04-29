@@ -29,6 +29,12 @@
       "view-all": "View All",
       "view-all-members": "View all {count} team members"
     },
+    "manager-today": {
+      "description": "Review today before small issues affect payroll or coverage.",
+      "open": "Open Brief",
+      "summary": "Start with absences, missing punches, approvals, coverage risks, overtime, and other payroll-impacting issues.",
+      "title": "Manager Today"
+    },
     "pending-approvals": {
       "absence-requests": "Absence Requests",
       "awaiting-approval": "Awaiting your approval",
@@ -42,6 +48,10 @@
       "time-corrections": "Time Corrections",
       "title": "Pending Approvals"
     },
+    "presenceBehind": "{remaining} more days needed",
+    "presenceDescription": "On-site attendance tracking",
+    "presenceProgress": "days on-site this {period}",
+    "presenceStatus": "Presence",
     "quick-stats": {
       "behind": "Behind",
       "description": "Your weekly and monthly progress",
@@ -73,7 +83,6 @@
       "avg-hours": "Avg. Hours",
       "description": "Team statistics at a glance",
       "employees-button": "Employees",
-      "error": "Failed to load team statistics",
       "per-week": "/week",
       "teams": "Teams",
       "teams-button": "Teams",

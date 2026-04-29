@@ -2,10 +2,6 @@
   "timeTracking": {
     "addNotePrompt": "Add a note about your work (optional)",
     "autoAdjusted": {
-      "description": "A {breakMinutes}-minute break was automatically added to comply with {regulationName}.",
-      "indicator": "Auto-adjusted for compliance",
-      "originalDuration": "Original: {duration}",
-      "title": "Auto-adjusted for compliance",
       "toast": {
         "description": "A {breakMinutes}-minute break was added to comply with time regulations.",
         "title": "Break auto-added for compliance"
@@ -101,8 +97,6 @@
     "notesSaved": "Notes saved",
     "project": "Project",
     "readyToClockIn": "Ready to start working?",
-    "restPeriodWarning": "Rest Period Warning",
-    "restPeriodWarningMessage": "You have not completed the required rest period. Clocking in now will be logged as a violation.",
     "selectCategory": "Select a category",
     "selectProject": "Select a project",
     "startedAt": "Started at",
@@ -114,20 +108,11 @@
       "today": "Today"
     },
     "table": {
-      "active": "Active",
-      "clockIn": "Clock In",
-      "clockOut": "Clock Out",
-      "corrected": "Corrected",
-      "date": "Date",
-      "description": "Description",
-      "duration": "Duration",
       "emptyState": "No time entries found for this week.",
       "title": "Time Entries"
     },
-    "title": "Time Tracking",
     "unknownCategory": "Unknown category",
     "unknownProject": "Unknown project",
-    "welcomeBack": "Welcome back, {name}",
     "workCategory": "Work Category"
   },
   "wellness": {

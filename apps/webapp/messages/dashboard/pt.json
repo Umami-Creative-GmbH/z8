@@ -29,6 +29,12 @@
       "view-all": "Ver todos",
       "view-all-members": "Ver todos os {count} membros da equipa"
     },
+    "manager-today": {
+      "description": "Revise hoje antes que pequenos problemas afetem a folha de pagamento ou a cobertura.",
+      "open": "Resumo Aberto",
+      "summary": "Comece com ausências, marcações ausentes, aprovações, riscos de cobertura, horas extras e outros problemas que impactam a folha de pagamento.",
+      "title": "Gestor Hoje"
+    },
     "pending-approvals": {
       "absence-requests": "Pedidos de ausência",
       "awaiting-approval": "A aguardar a sua aprovação",
@@ -42,6 +48,10 @@
       "time-corrections": "Correções de tempo",
       "title": "Aprovações pendentes"
     },
+    "presenceBehind": "{remaining} dias adicionais necessários",
+    "presenceDescription": "Rastreamento de presença no local",
+    "presenceProgress": "dias no local neste {period}",
+    "presenceStatus": "Presença",
     "quick-stats": {
       "behind": "Em atraso",
       "description": "O seu progresso semanal e mensal",
@@ -73,7 +83,6 @@
       "avg-hours": "Média de horas",
       "description": "Estatísticas da equipa num relance",
       "employees-button": "Funcionários",
-      "error": "Falha ao carregar estatísticas da equipa",
       "per-week": "/semana",
       "teams": "Equipas",
       "teams-button": "Equipas",

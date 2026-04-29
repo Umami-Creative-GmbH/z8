@@ -14,6 +14,7 @@
     "clearSelection": "Pulisci",
     "close": "Chiudi",
     "confirm": "Conferma",
+    "continue": "Continua",
     "copy": "Copia",
     "create": "Crea",
     "days": {
@@ -34,7 +35,6 @@
     "download": "Scarica",
     "duplicate": "Duplica",
     "edit": "Modifica",
-    "employee": "Dipendente",
     "enabled": "Abilitato",
     "error": "Errore",
     "error-occurred": "Si è verificato un errore",
@@ -68,6 +68,8 @@
     "name": "Nome",
     "new": "Nuovo",
     "next": "Avanti",
+    "notApplicable": "N/D",
+    "not-available": "Non disponibile",
     "openMenu": "Apri menu",
     "optional": "opzionale",
     "or": "O",
@@ -120,11 +122,6 @@
   },
   "errors": {
     "failedToLoad": "Impossibile caricare i dati",
-    "notFound": {
-      "description": "La pagina potrebbe essere stata spostata, il link potrebbe non essere più aggiornato oppure l'indirizzo potrebbe essere errato.",
-      "eyebrow": "404",
-      "title": "Pagina non trovata"
-    },
     "noEmployee": {
       "contactAdmin": "Contatta amministratore",
       "createOrg": "Crea organizzazione",
@@ -142,9 +139,7 @@
       "waitingDesc": "Il tuo amministratore ti invierà un'email di invito. Controlla la tua casella di posta e la cartella spam."
     },
     "unexpected": {
-      "description": "Non siamo riusciti a caricare questa pagina in questo momento. Riprova oppure torna a una sezione sicura dell'app.",
-      "digest": "Riferimento: {digest}",
-      "title": "Qualcosa è andato storto"
+      "digest": "Riferimento: {digest}"
     }
   },
   "generic": {
@@ -163,8 +158,10 @@
     "absences": "Assenze",
     "approvals": "Approvazioni",
     "calendar": "Calendario",
+    "compliance": "Conformità",
     "dashboard": "Dashboard",
     "get-help": "Ottieni Aiuto",
+    "my-requests": "Le mie richieste",
     "reports": "Rapporti",
     "scheduling": "Pianificazione",
     "settings": "Impostazioni",
@@ -228,9 +225,10 @@
     "time-settings": "Impostazioni orario"
   },
   "validation": {
+    "first-name-required": "Il nome è obbligatorio",
     "invalid-email": "Indirizzo email non valido",
     "invalid-password": "Password non valida",
-    "name-required": "Il nome è obbligatorio",
+    "last-name-required": "Il cognome è obbligatorio",
     "password-required": "La password è obbligatoria"
   }
 }

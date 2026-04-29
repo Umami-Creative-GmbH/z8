@@ -13,7 +13,8 @@
         "organizations": "Organizations",
         "overview": "Overview",
         "settings": "Settings",
-        "users": "Users"
+        "users": "Users",
+        "workerQueue": "Worker Queue"
       },
       "subtitle": "Platform Management",
       "title": "Admin Console"
@@ -150,14 +151,16 @@
     "absenceApproved": "Absence request approved",
     "absenceRejected": "Absence request rejected",
     "age": "Age",
+    "amount": "Amount",
     "approve": "Approve",
     "approved": "Request approved",
     "approveFailed": "Failed to approve",
     "approveSelected": "Approve Selected",
     "approveTimeCorrectionTitle": "Approve Time Correction",
     "approveTitle": "Approve Absence Request",
-    "bulkApproveFailed": "${result.failed.length} request(s) failed",
-    "bulkApproveSuccess": "${result.succeeded.length} request(s) approved",
+    "bulkApproveRequestFailed": "Bulk approve failed",
+    "bulkRejectDescription": "Provide a reason that will be applied to each selected request.",
+    "bulkRejectRequestFailed": "Bulk reject failed",
     "category": "Category",
     "changed": "Changed",
     "confirmReject": "Confirm Rejection",
@@ -165,6 +168,7 @@
     "date": "Date",
     "dates": "Dates",
     "days": "Days",
+    "destination": "Destination",
     "details": "Details",
     "employee": "Employee",
     "filterByAge": "Filter by age",
@@ -172,11 +176,14 @@
     "filterByType": "Filter by type",
     "inbox": "Approval Inbox",
     "inboxDescription": "Review and approve pending requests from your team",
+    "inboxErrorDescription": "Failed to fetch approvals",
+    "inboxErrorTitle": "Unable to load approval inbox",
     "loadError": "Failed to load approvals",
     "noAbsenceApprovals": "No pending absence requests to review.",
     "noRequests": "No pending requests",
     "noRequestsDescription": "When team members submit requests, they will appear here",
     "noSearchResults": "No approvals match your search.",
+    "note": "Note",
     "notes": "Notes",
     "noTimeCorrectionApprovals": "No pending time correction requests to review.",
     "offFrom": "off from",
@@ -190,6 +197,7 @@
     "rejectFailed": "Failed to reject",
     "rejectionReason": "Reason for rejection",
     "rejectionReasonPlaceholder": "Please provide a reason for rejecting this request…",
+    "rejectSelected": "Reject Selected",
     "rejectTimeCorrectionTitle": "Reject Time Correction",
     "rejectTitle": "Reject Absence Request",
     "requested": "Requested",
@@ -206,6 +214,7 @@
     "timeCorrectionApproved": "Time correction approved",
     "timeCorrectionRejected": "Time correction rejected",
     "timeline": "Timeline",
+    "tripDates": "Trip dates",
     "type": "Type"
   },
   "colors": {
@@ -277,6 +286,97 @@
     "redirecting": "Redirecting...",
     "selectOrganization": "Select Organization",
     "selectOrganizationDescription": "Choose which organization you want to work with"
+  },
+  "myRequests": {
+    "actions": {
+      "cancel": "Cancel",
+      "cancelConfirmation": "Cancel this absence request?",
+      "cancelError": "Absence request could not be cancelled.",
+      "cancelling": "Cancelling…",
+      "fix": "Fix",
+      "notAvailable": "Not available",
+      "view": "View"
+    },
+    "all": {
+      "description": "Review requests across absences, time corrections, and expenses.",
+      "title": "All requests"
+    },
+    "empty": {
+      "filtered": {
+        "description": "Requests will appear here when they are submitted or loaded.",
+        "title": "No requests match your filters"
+      },
+      "none": {
+        "description": "Requests will appear here when they are submitted or loaded.",
+        "title": "No requests yet"
+      }
+    },
+    "featureName": "view your requests",
+    "filters": {
+      "allStatuses": "All statuses",
+      "allTypes": "All types",
+      "approvedRequests": "Approved requests",
+      "cancelledRequests": "Cancelled requests",
+      "pendingRequests": "Pending requests",
+      "rejectedRequests": "Rejected requests",
+      "search": "Search",
+      "searchPlaceholder": "Search by title…",
+      "status": "Status",
+      "type": "Type"
+    },
+    "needsAttention": {
+      "description": "Rejected requests that may require a correction before resubmission.",
+      "title": "Needs attention"
+    },
+    "noReason": "No reason provided.",
+    "reasonLabel": "Reason",
+    "requests": {
+      "absence": {
+        "title": "Absence request"
+      },
+      "timeCorrection": {
+        "subtitle": "Correction for a time entry",
+        "title": "Time correction request"
+      },
+      "travelExpense": {
+        "title": "Travel expense claim"
+      }
+    },
+    "sourceError": {
+      "absence": "Absence requests could not be loaded.",
+      "timeCorrection": "Time correction requests could not be loaded.",
+      "title": "Some requests could not be loaded.",
+      "travelExpense": "Travel expense requests could not be loaded."
+    },
+    "sourceTypes": {
+      "absence": "Absence",
+      "timeCorrection": "Time",
+      "travelExpense": "Expense"
+    },
+    "status": {
+      "approved": "Approved",
+      "cancelled": "Cancelled",
+      "inReview": "In review",
+      "rejected": "Rejected"
+    },
+    "subtitle": "Track pending requests, required fixes, and recent decisions in one place.",
+    "summary": {
+      "ariaLabel": "Request summary",
+      "pending": "Pending",
+      "recentDecisions": "Recent decisions",
+      "requiredFixes": "Required fixes",
+      "totalLoaded": "Total loaded"
+    },
+    "table": {
+      "action": "Action",
+      "decision": "Decision",
+      "request": "Request",
+      "status": "Status",
+      "submitted": "Submitted",
+      "type": "Type"
+    },
+    "title": "My Requests",
+    "unavailableTitle": "Requests unavailable"
   },
   "offline": {
     "banner": {
