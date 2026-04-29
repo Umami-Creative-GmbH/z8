@@ -62,6 +62,18 @@ export async function GET() {
 		const userId = session.user.id;
 		const organizationId = emp.organizationId;
 		const channel = `notifications:${userId}`;
+		const isScopedNotificationEvent = (event: string, data: unknown) => {
+			if (event !== "new_notification" && event !== "count_update") {
+				return false;
+			}
+
+			return (
+				typeof data === "object" &&
+				data !== null &&
+				"organizationId" in data &&
+				data.organizationId === organizationId
+			);
+		};
 
 		// Check if Valkey is available
 		const valkeyAvailable = valkey.status === "ready" || valkey.status === "connecting";
@@ -106,7 +118,7 @@ export async function GET() {
 				try {
 					// Send initial count
 					const initialCount = await getUnreadCount(userId, organizationId);
-					sendEvent("count_update", { count: initialCount });
+					sendEvent("count_update", { count: initialCount, organizationId });
 
 					if (valkeyAvailable) {
 						// Use Valkey Pub/Sub for real-time updates (preferred)
@@ -125,7 +137,7 @@ export async function GET() {
 						subscriber.on("message", (_receivedChannel, message) => {
 							try {
 								const parsed = JSON.parse(message);
-								if (parsed.event && parsed.data) {
+								if (isScopedNotificationEvent(parsed.event, parsed.data)) {
 									sendEvent(parsed.event, parsed.data);
 								}
 							} catch (error) {
@@ -143,7 +155,7 @@ export async function GET() {
 							try {
 								const currentCount = await getUnreadCount(userId, organizationId);
 								if (currentCount !== lastCount) {
-									sendEvent("count_update", { count: currentCount });
+									sendEvent("count_update", { count: currentCount, organizationId });
 									lastCount = currentCount;
 								}
 							} catch {
