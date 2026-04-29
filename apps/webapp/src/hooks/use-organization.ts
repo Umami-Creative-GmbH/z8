@@ -29,6 +29,7 @@ interface OrganizationSettingsResponse {
 	shiftsEnabled: boolean;
 	projectsEnabled: boolean;
 	surchargesEnabled: boolean;
+	demoDataEnabled: boolean;
 	timezone: string;
 	deletedAt: string | null;
 }

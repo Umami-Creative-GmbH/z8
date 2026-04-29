@@ -53,6 +53,7 @@ export interface UserOrganization {
 	hasEmployeeRecord: boolean;
 	shiftsEnabled: boolean;
 	projectsEnabled: boolean;
+	demoDataEnabled: boolean;
 }
 
 /**
@@ -241,6 +242,7 @@ export async function getUserOrganizations(): Promise<UserOrganization[]> {
 		hasEmployeeRecord: orgsWithEmployee.has(org.id),
 		shiftsEnabled: org.shiftsEnabled ?? false,
 		projectsEnabled: org.projectsEnabled ?? false,
+		demoDataEnabled: org.demoDataEnabled ?? true,
 	}));
 }
 

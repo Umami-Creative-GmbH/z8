@@ -430,6 +430,12 @@ export const auth = betterAuth({
 							defaultValue: false,
 							input: true,
 						},
+						demoDataEnabled: {
+							type: "boolean",
+							required: false,
+							defaultValue: true,
+							input: true,
+						},
 						timezone: {
 							type: "string",
 							required: false,
