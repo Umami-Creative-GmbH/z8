@@ -130,13 +130,9 @@
       "duration": "Duración",
       "employee": "Empleado",
       "notes": "Notas",
-      "pendingApproval": "Pendiente de aprobación",
-      "pendingApprovalDescription": "Este periodo de trabajo está pendiente de la aprobación del responsable. Los tiempos registrados pueden cambiar si se rechaza.",
       "periods": "Períodos de trabajo",
       "project": "Proyecto",
       "recurring": "Recurrente anualmente",
-      "rejected": "Rechazado",
-      "rejectedDescription": "Este cambio en el periodo de trabajo fue rechazado por un responsable. Se han restaurado los tiempos originales.",
       "status": "Estado",
       "surcharge": "Recargo",
       "surchargeBreakdown": "Desglose de recargos",
@@ -145,14 +141,11 @@
     },
     "edit": {
       "convertToBreak": "Convertir en descanso",
-      "noNotes": "No se añadieron notas",
-      "noProject": "Aún no hay proyecto asignado",
       "notesSaved": "Notas guardadas",
       "notesSaveFailed": "Error al guardar notas",
       "projectSaved": "Proyecto actualizado",
       "projectSaveFailed": "Error al actualizar el proyecto",
-      "split": "Dividir",
-      "title": "Período de trabajo"
+      "split": "Dividir"
     },
     "employeeSelector": {
       "error": "No se han podido cargar los miembros del equipo",

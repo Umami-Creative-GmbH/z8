@@ -130,13 +130,9 @@
       "duration": "Durée",
       "employee": "Employé",
       "notes": "Notes",
-      "pendingApproval": "En attente d'approbation",
-      "pendingApprovalDescription": "Cette période de travail est en attente de l'approbation du manager. Les horaires enregistrés peuvent changer en cas de refus.",
       "periods": "Périodes de travail",
       "project": "Projet",
       "recurring": "Récurrent annuellement",
-      "rejected": "Rejeté",
-      "rejectedDescription": "Cette modification de la période de travail a été rejetée par un manager. Les horaires originaux ont été rétablis.",
       "status": "Statut",
       "surcharge": "Supplément",
       "surchargeBreakdown": "Détail des suppléments",
@@ -145,14 +141,11 @@
     },
     "edit": {
       "convertToBreak": "Convertir en pause",
-      "noNotes": "Aucune note ajoutée",
-      "noProject": "Aucun projet assigné",
       "notesSaved": "Notes enregistrées",
       "notesSaveFailed": "Échec de l'enregistrement des notes",
       "projectSaved": "Projet mis à jour",
       "projectSaveFailed": "Échec de la mise à jour du projet",
-      "split": "Diviser",
-      "title": "Période de travail"
+      "split": "Diviser"
     },
     "employeeSelector": {
       "error": "Impossible de charger les membres de l'équipe",

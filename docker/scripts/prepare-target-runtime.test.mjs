@@ -49,7 +49,7 @@ test("collectTarget lists traced db-seed runtime files and packages", async () =
 });
 
 test("generated non-web manifests exclude obvious web-only type overrides", async () => {
-  await execFileAsync("pnpm", ["node", "docker/scripts/prepare-target-runtime.mjs", "manifest", "migration"], {
+  await execFileAsync(process.execPath, ["docker/scripts/prepare-target-runtime.mjs", "manifest", "migration"], {
     cwd: new URL("../../", import.meta.url),
   });
 

@@ -2,10 +2,6 @@
   "timeTracking": {
     "addNotePrompt": "Agregar una nota sobre tu trabajo (opcional)",
     "autoAdjusted": {
-      "description": "Se agregó automáticamente un descanso de {breakMinutes} minutos para cumplir con {regulationName}.",
-      "indicator": "Ajustado automáticamente por cumplimiento",
-      "originalDuration": "Original: {duration}",
-      "title": "Ajustado automáticamente por cumplimiento",
       "toast": {
         "description": "Se agregó un descanso de {breakMinutes} minutos para cumplir con las regulaciones de tiempo.",
         "title": "Descanso agregado automáticamente por cumplimiento"
@@ -101,8 +97,6 @@
     "notesSaved": "Notas guardadas",
     "project": "Proyecto",
     "readyToClockIn": "¿Listo para empezar a trabajar?",
-    "restPeriodWarning": "Advertencia de período de descanso",
-    "restPeriodWarningMessage": "No ha completado el período de descanso requerido. Fichar ahora se registrará como una infracción.",
     "selectCategory": "Seleccione una categoría",
     "selectProject": "Seleccionar un proyecto",
     "startedAt": "Iniciado a las",
@@ -114,20 +108,11 @@
       "today": "Hoy"
     },
     "table": {
-      "active": "Activo",
-      "clockIn": "Entrada",
-      "clockOut": "Salida",
-      "corrected": "Corregido",
-      "date": "Fecha",
-      "description": "Descripción",
-      "duration": "Duración",
       "emptyState": "No se encontraron entradas de tiempo para esta semana.",
       "title": "Entradas de tiempo"
     },
-    "title": "Control de tiempo",
     "unknownCategory": "Categoría desconocida",
     "unknownProject": "Proyecto desconocido",
-    "welcomeBack": "Bienvenido de nuevo, {name}",
     "workCategory": "Categoría de trabajo"
   },
   "wellness": {

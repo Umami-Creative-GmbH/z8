@@ -13,7 +13,8 @@
         "organizations": "Organisationen",
         "overview": "Übersicht",
         "settings": "Einstellungen",
-        "users": "Benutzer"
+        "users": "Benutzer",
+        "workerQueue": "Arbeitswarteschlange"
       },
       "subtitle": "Plattformverwaltung",
       "title": "Admin-Konsole"
@@ -150,14 +151,16 @@
     "absenceApproved": "Abwesenheitsantrag genehmigt",
     "absenceRejected": "Abwesenheitsantrag abgelehnt",
     "age": "Alter",
+    "amount": "Betrag",
     "approve": "Genehmigen",
     "approved": "Antrag genehmigt",
     "approveFailed": "Genehmigung fehlgeschlagen",
     "approveSelected": "Ausgewählte genehmigen",
     "approveTimeCorrectionTitle": "Zeitkorrektur genehmigen",
     "approveTitle": "Abwesenheitsantrag genehmigen",
-    "bulkApproveFailed": "${result.failed.length} Antrag/Anträge fehlgeschlagen",
-    "bulkApproveSuccess": "${result.succeeded.length} Antrag/Anträge genehmigt",
+    "bulkApproveRequestFailed": "Sammelgenehmigung fehlgeschlagen",
+    "bulkRejectDescription": "Geben Sie einen Grund an, der auf jede ausgewählte Anfrage angewendet wird.",
+    "bulkRejectRequestFailed": "Sammelablehnung fehlgeschlagen",
     "category": "Kategorie",
     "changed": "Geändert",
     "confirmReject": "Ablehnung bestätigen",
@@ -165,6 +168,7 @@
     "date": "Datum",
     "dates": "Daten",
     "days": "Tage",
+    "destination": "Ziel",
     "details": "Details",
     "employee": "Mitarbeiter",
     "filterByAge": "Nach Alter filtern",
@@ -172,11 +176,14 @@
     "filterByType": "Nach Typ filtern",
     "inbox": "Genehmigungs-Posteingang",
     "inboxDescription": "Überprüfen und genehmigen Sie ausstehende Anfragen Ihres Teams",
+    "inboxErrorDescription": "Abrufen der Genehmigungen fehlgeschlagen",
+    "inboxErrorTitle": "Genehmigungsposteingang konnte nicht geladen werden",
     "loadError": "Genehmigungen konnten nicht geladen werden",
     "noAbsenceApprovals": "Keine ausstehenden Abwesenheitsanfragen zur Überprüfung.",
     "noRequests": "Keine ausstehenden Anfragen",
     "noRequestsDescription": "Wenn Teammitglieder Anfragen einreichen, werden diese hier angezeigt",
     "noSearchResults": "Keine Genehmigungen entsprechen Ihrer Suche.",
+    "note": "Hinweis",
     "notes": "Notizen",
     "noTimeCorrectionApprovals": "Keine ausstehenden Zeitkorrekturanfragen zur Überprüfung.",
     "offFrom": "abwesend ab",
@@ -190,6 +197,7 @@
     "rejectFailed": "Ablehnung fehlgeschlagen",
     "rejectionReason": "Grund für die Ablehnung",
     "rejectionReasonPlaceholder": "Bitte geben Sie einen Grund für die Ablehnung dieser Anfrage an…",
+    "rejectSelected": "Ausgewählte ablehnen",
     "rejectTimeCorrectionTitle": "Zeitkorrektur ablehnen",
     "rejectTitle": "Abwesenheitsanfrage ablehnen",
     "requested": "Beantragt",
@@ -206,6 +214,7 @@
     "timeCorrectionApproved": "Zeitkorrektur genehmigt",
     "timeCorrectionRejected": "Zeitkorrektur abgelehnt",
     "timeline": "Zeitstrahl",
+    "tripDates": "Reisedaten",
     "type": "Typ"
   },
   "colors": {
@@ -277,6 +286,97 @@
     "redirecting": "Weiterleitung...",
     "selectOrganization": "Organisation auswählen",
     "selectOrganizationDescription": "Wählen Sie die Organisation aus, mit der Sie arbeiten möchten"
+  },
+  "myRequests": {
+    "actions": {
+      "cancel": "Abbrechen",
+      "cancelConfirmation": "Diese Abwesenheitsanfrage abbrechen?",
+      "cancelError": "Abwesenheitsanfrage konnte nicht abgebrochen werden.",
+      "cancelling": "Wird abgebrochen…",
+      "fix": "Beheben",
+      "notAvailable": "Nicht verfügbar",
+      "view": "Anzeigen"
+    },
+    "all": {
+      "description": "Überprüfen Sie Anfragen zu Abwesenheiten, Zeitkorrekturen und Ausgaben.",
+      "title": "Alle Anfragen"
+    },
+    "empty": {
+      "filtered": {
+        "description": "Anfragen erscheinen hier, sobald sie eingereicht oder geladen wurden.",
+        "title": "Keine Anfragen entsprechen Ihren Filtern"
+      },
+      "none": {
+        "description": "Anfragen erscheinen hier, sobald sie eingereicht oder geladen wurden.",
+        "title": "Noch keine Anfragen"
+      }
+    },
+    "featureName": "Ihre Anfragen anzeigen",
+    "filters": {
+      "allStatuses": "Alle Status",
+      "allTypes": "Alle Typen",
+      "approvedRequests": "Genehmigte Anfragen",
+      "cancelledRequests": "Stornierte Anfragen",
+      "pendingRequests": "Ausstehende Anfragen",
+      "rejectedRequests": "Abgelehnte Anfragen",
+      "search": "Suchen",
+      "searchPlaceholder": "Nach Titel suchen…",
+      "status": "Status",
+      "type": "Typ"
+    },
+    "needsAttention": {
+      "description": "Abgelehnte Anfragen, die vor einer erneuten Einreichung möglicherweise eine Korrektur erfordern.",
+      "title": "Erfordert Aufmerksamkeit"
+    },
+    "noReason": "Kein Grund angegeben.",
+    "reasonLabel": "Grund",
+    "requests": {
+      "absence": {
+        "title": "Abwesenheitsantrag"
+      },
+      "timeCorrection": {
+        "subtitle": "Korrektur für einen Zeiteintrag",
+        "title": "Zeitkorrekturantrag"
+      },
+      "travelExpense": {
+        "title": "Reisekostenabrechnung"
+      }
+    },
+    "sourceError": {
+      "absence": "Abwesenheitsanträge konnten nicht geladen werden.",
+      "timeCorrection": "Zeitkorrekturanträge konnten nicht geladen werden.",
+      "title": "Einige Anfragen konnten nicht geladen werden.",
+      "travelExpense": "Reisekostenanträge konnten nicht geladen werden."
+    },
+    "sourceTypes": {
+      "absence": "Abwesenheit",
+      "timeCorrection": "Zeit",
+      "travelExpense": "Ausgaben"
+    },
+    "status": {
+      "approved": "Genehmigt",
+      "cancelled": "Abgebrochen",
+      "inReview": "In Prüfung",
+      "rejected": "Abgelehnt"
+    },
+    "subtitle": "Verfolgen Sie ausstehende Anfragen, erforderliche Korrekturen und aktuelle Entscheidungen an einem Ort.",
+    "summary": {
+      "ariaLabel": "Anfragezusammenfassung",
+      "pending": "Ausstehend",
+      "recentDecisions": "Aktuelle Entscheidungen",
+      "requiredFixes": "Erforderliche Korrekturen",
+      "totalLoaded": "Insgesamt geladen"
+    },
+    "table": {
+      "action": "Aktion",
+      "decision": "Entscheidung",
+      "request": "Anfrage",
+      "status": "Status",
+      "submitted": "Eingereicht",
+      "type": "Typ"
+    },
+    "title": "Meine Anfragen",
+    "unavailableTitle": "Anfragen nicht verfügbar"
   },
   "offline": {
     "banner": {

@@ -13,7 +13,8 @@
         "organizations": "Organizações",
         "overview": "Visão Geral",
         "settings": "Configurações",
-        "users": "Usuários"
+        "users": "Usuários",
+        "workerQueue": "Fila de trabalhadores"
       },
       "subtitle": "Gerenciamento da Plataforma",
       "title": "Console de Administração"
@@ -150,14 +151,16 @@
     "absenceApproved": "Solicitação de ausência aprovada",
     "absenceRejected": "Solicitação de ausência rejeitada",
     "age": "Idade",
+    "amount": "Quantidade",
     "approve": "Aprovar",
     "approved": "Solicitação aprovada",
     "approveFailed": "Falha ao aprovar",
     "approveSelected": "Aprovar Selecionados",
     "approveTimeCorrectionTitle": "Aprovar Correção de Horário",
     "approveTitle": "Aprovar Solicitação de Ausência",
-    "bulkApproveFailed": "${result.failed.length} solicitação(ões) falharam",
-    "bulkApproveSuccess": "${result.succeeded.length} solicitação(ões) aprovadas",
+    "bulkApproveRequestFailed": "Falha na aprovação em massa",
+    "bulkRejectDescription": "Forneça um motivo que será aplicado a cada solicitação selecionada.",
+    "bulkRejectRequestFailed": "Falha na rejeição em massa",
     "category": "Categoria",
     "changed": "Alterado",
     "confirmReject": "Confirmar Rejeição",
@@ -165,6 +168,7 @@
     "date": "Data",
     "dates": "Datas",
     "days": "Dias",
+    "destination": "Destino",
     "details": "Detalhes",
     "employee": "Funcionário",
     "filterByAge": "Filtrar por idade",
@@ -172,11 +176,14 @@
     "filterByType": "Filtrar por tipo",
     "inbox": "Caixa de Entrada de Aprovações",
     "inboxDescription": "Revise e aprove solicitações pendentes da sua equipe",
+    "inboxErrorDescription": "Falha ao buscar aprovações",
+    "inboxErrorTitle": "Não foi possível carregar a caixa de entrada de aprovações",
     "loadError": "Falha ao carregar aprovações",
     "noAbsenceApprovals": "Nenhuma solicitação de ausência pendente para revisar.",
     "noRequests": "Nenhuma solicitação pendente",
     "noRequestsDescription": "Quando os membros da equipe enviarem solicitações, elas aparecerão aqui",
     "noSearchResults": "Nenhuma aprovação corresponde à sua pesquisa.",
+    "note": "Observação",
     "notes": "Notas",
     "noTimeCorrectionApprovals": "Nenhuma solicitação de correção de horário pendente para revisar.",
     "offFrom": "de folga de",
@@ -190,6 +197,7 @@
     "rejectFailed": "Falha ao rejeitar",
     "rejectionReason": "Motivo da rejeição",
     "rejectionReasonPlaceholder": "Por favor, forneça um motivo para rejeitar esta solicitação…",
+    "rejectSelected": "Rejeitar selecionados",
     "rejectTimeCorrectionTitle": "Rejeitar Correção de Horário",
     "rejectTitle": "Rejeitar Solicitação de Ausência",
     "requested": "Solicitado",
@@ -206,6 +214,7 @@
     "timeCorrectionApproved": "Correção de horário aprovada",
     "timeCorrectionRejected": "Correção de horário rejeitada",
     "timeline": "Cronograma",
+    "tripDates": "Datas da viagem",
     "type": "Tipo"
   },
   "colors": {
@@ -277,6 +286,97 @@
     "redirecting": "Redirecionando...",
     "selectOrganization": "Selecionar Organização",
     "selectOrganizationDescription": "Escolha com qual organização você deseja trabalhar"
+  },
+  "myRequests": {
+    "actions": {
+      "cancel": "Cancelar",
+      "cancelConfirmation": "Cancelar esta solicitação de ausência?",
+      "cancelError": "A solicitação de ausência não pôde ser cancelada.",
+      "cancelling": "Cancelando...",
+      "fix": "Corrigir",
+      "notAvailable": "Não disponível",
+      "view": "Visualizar"
+    },
+    "all": {
+      "description": "Analise solicitações de ausências, correções de tempo e despesas.",
+      "title": "Todas as solicitações"
+    },
+    "empty": {
+      "filtered": {
+        "description": "As solicitações aparecerão aqui quando forem enviadas ou carregadas.",
+        "title": "Nenhuma solicitação corresponde aos seus filtros"
+      },
+      "none": {
+        "description": "As solicitações aparecerão aqui quando forem enviadas ou carregadas.",
+        "title": "Nenhuma solicitação ainda"
+      }
+    },
+    "featureName": "visualizar suas solicitações",
+    "filters": {
+      "allStatuses": "Todos os status",
+      "allTypes": "Todos os tipos",
+      "approvedRequests": "Solicitações aprovadas",
+      "cancelledRequests": "Solicitações canceladas",
+      "pendingRequests": "Solicitações pendentes",
+      "rejectedRequests": "Solicitações rejeitadas",
+      "search": "Pesquisar",
+      "searchPlaceholder": "Pesquisar por título…",
+      "status": "Status",
+      "type": "Tipo"
+    },
+    "needsAttention": {
+      "description": "Solicitações rejeitadas que podem exigir correção antes do reenvio.",
+      "title": "Requer atenção"
+    },
+    "noReason": "Nenhum motivo fornecido.",
+    "reasonLabel": "Motivo",
+    "requests": {
+      "absence": {
+        "title": "Solicitação de ausência"
+      },
+      "timeCorrection": {
+        "subtitle": "Correção para um registro de horas",
+        "title": "Solicitação de correção de horas"
+      },
+      "travelExpense": {
+        "title": "Reembolso de despesas de viagem"
+      }
+    },
+    "sourceError": {
+      "absence": "Não foi possível carregar as solicitações de ausência.",
+      "timeCorrection": "Não foi possível carregar as solicitações de correção de horas.",
+      "title": "Não foi possível carregar algumas solicitações.",
+      "travelExpense": "Não foi possível carregar as solicitações de despesas de viagem."
+    },
+    "sourceTypes": {
+      "absence": "Ausência",
+      "timeCorrection": "Horas",
+      "travelExpense": "Despesa"
+    },
+    "status": {
+      "approved": "Aprovado",
+      "cancelled": "Cancelado",
+      "inReview": "Em análise",
+      "rejected": "Rejeitado"
+    },
+    "subtitle": "Acompanhe solicitações pendentes, correções necessárias e decisões recentes em um só lugar.",
+    "summary": {
+      "ariaLabel": "Resumo da solicitação",
+      "pending": "Pendente",
+      "recentDecisions": "Decisões recentes",
+      "requiredFixes": "Correções necessárias",
+      "totalLoaded": "Total carregado"
+    },
+    "table": {
+      "action": "Ação",
+      "decision": "Decisão",
+      "request": "Solicitação",
+      "status": "Status",
+      "submitted": "Enviado",
+      "type": "Tipo"
+    },
+    "title": "Minhas solicitações",
+    "unavailableTitle": "Solicitações indisponíveis"
   },
   "offline": {
     "banner": {

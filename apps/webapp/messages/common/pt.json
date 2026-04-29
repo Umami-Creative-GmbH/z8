@@ -14,6 +14,7 @@
     "clearSelection": "Limpar",
     "close": "Fechar",
     "confirm": "Confirmar",
+    "continue": "Continuar",
     "copy": "Copiar",
     "create": "Criar",
     "days": {
@@ -34,7 +35,6 @@
     "download": "Baixar",
     "duplicate": "Duplicar",
     "edit": "Editar",
-    "employee": "Funcionário",
     "enabled": "Ativado",
     "error": "Erro",
     "error-occurred": "Ocorreu um erro",
@@ -68,6 +68,8 @@
     "name": "Nome",
     "new": "Novo",
     "next": "Seguinte",
+    "notApplicable": "N/D",
+    "not-available": "Não disponível",
     "openMenu": "Abrir menu",
     "optional": "opcional",
     "or": "Ou",
@@ -120,11 +122,6 @@
   },
   "errors": {
     "failedToLoad": "Falha ao carregar dados",
-    "notFound": {
-      "description": "A página pode ter sido movida, a ligação pode estar desatualizada ou o endereço pode estar incorreto.",
-      "eyebrow": "404",
-      "title": "Página não encontrada"
-    },
     "noEmployee": {
       "contactAdmin": "Contactar administrador",
       "createOrg": "Criar organização",
@@ -142,9 +139,7 @@
       "waitingDesc": "O seu administrador enviar-lhe-á um e-mail de convite. Verifique a sua caixa de entrada e pasta de spam."
     },
     "unexpected": {
-      "description": "Não foi possível carregar esta página agora. Tente novamente ou volte para uma área segura da aplicação.",
-      "digest": "Referência: {digest}",
-      "title": "Algo correu mal"
+      "digest": "Referência: {digest}"
     }
   },
   "generic": {
@@ -163,15 +158,17 @@
     "absences": "Ausências",
     "approvals": "Aprovações",
     "calendar": "Calendário",
+    "compliance": "Conformidade",
     "dashboard": "Painel",
     "get-help": "Obter Ajuda",
+    "my-requests": "Minhas Solicitações",
     "reports": "Relatórios",
     "scheduling": "Agendamento",
     "settings": "Definições",
     "team": "Equipa",
     "team-label": "Equipa",
     "time-tracking": "Rastreio de Tempo",
-    "travel-expenses": "Despesas de viagem"
+    "travel-expenses": "Despesas de Viagem"
   },
   "table": {
     "clearFilters": "Limpar filtros",
@@ -228,9 +225,10 @@
     "time-settings": "Configurações de Tempo"
   },
   "validation": {
+    "first-name-required": "O nome é obrigatório",
     "invalid-email": "Email inválido",
     "invalid-password": "Senha inválida",
-    "name-required": "O nome é obrigatório",
+    "last-name-required": "O sobrenome é obrigatório",
     "password-required": "A senha é obrigatória"
   }
 }

@@ -29,6 +29,12 @@
       "view-all": "Alle anzeigen",
       "view-all-members": "Alle {count} Teammitglieder anzeigen"
     },
+    "manager-today": {
+      "description": "Überprüfen Sie den heutigen Tag, bevor kleine Probleme die Gehaltsabrechnung oder die Personalabdeckung beeinträchtigen.",
+      "open": "Kurzübersicht",
+      "summary": "Beginnen Sie mit Abwesenheiten, fehlenden Stempelungen, Genehmigungen, Abdeckungsrisiken, Überstunden und anderen Problemen, die sich auf die Gehaltsabrechnung auswirken.",
+      "title": "Manager Heute"
+    },
     "pending-approvals": {
       "absence-requests": "Abwesenheitsanträge",
       "awaiting-approval": "Wartet auf Ihre Genehmigung",
@@ -42,6 +48,10 @@
       "time-corrections": "Zeitkorrekturen",
       "title": "Ausstehende Genehmigungen"
     },
+    "presenceBehind": "{remaining} weitere Tage benötigt",
+    "presenceDescription": "Anwesenheitsverfolgung vor Ort",
+    "presenceProgress": "Tage vor Ort in diesem {period}",
+    "presenceStatus": "Anwesenheit",
     "quick-stats": {
       "behind": "Im Rückstand",
       "description": "Ihr wöchentlicher und monatlicher Fortschritt",
@@ -73,7 +83,6 @@
       "avg-hours": "Ø Stunden",
       "description": "Teamstatistiken auf einen Blick",
       "employees-button": "Mitarbeiter",
-      "error": "Fehler beim Laden der Teamstatistiken",
       "per-week": "/Woche",
       "teams": "Teams",
       "teams-button": "Teams",

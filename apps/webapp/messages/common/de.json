@@ -14,6 +14,7 @@
     "clearSelection": "Löschen",
     "close": "Schließen",
     "confirm": "Bestätigen",
+    "continue": "Weiter",
     "copy": "Kopieren",
     "create": "Erstellen",
     "days": {
@@ -34,7 +35,6 @@
     "download": "Herunterladen",
     "duplicate": "Duplizieren",
     "edit": "Bearbeiten",
-    "employee": "Mitarbeiter",
     "enabled": "Aktiviert",
     "error": "Fehler",
     "error-occurred": "Ein Fehler ist aufgetreten",
@@ -68,6 +68,8 @@
     "name": "Name",
     "new": "Neu",
     "next": "Weiter",
+    "notApplicable": "n. v.",
+    "not-available": "Nicht verfügbar",
     "openMenu": "Menü öffnen",
     "optional": "optional",
     "or": "Oder",
@@ -120,11 +122,6 @@
   },
   "errors": {
     "failedToLoad": "Daten konnten nicht geladen werden",
-    "notFound": {
-      "description": "Die Seite wurde möglicherweise verschoben, der Link ist veraltet oder die Adresse ist falsch.",
-      "eyebrow": "404",
-      "title": "Seite nicht gefunden"
-    },
     "noEmployee": {
       "contactAdmin": "Administrator kontaktieren",
       "createOrg": "Organisation erstellen",
@@ -142,9 +139,7 @@
       "waitingDesc": "Ihr Administrator wird Ihnen eine Einladungs-E-Mail senden. Überprüfen Sie Ihren Posteingang und Spam-Ordner."
     },
     "unexpected": {
-      "description": "Wir konnten diese Seite gerade nicht laden. Bitte versuchen Sie es erneut oder kehren Sie zu einem sicheren Bereich der App zurück.",
-      "digest": "Referenz: {digest}",
-      "title": "Etwas ist schiefgelaufen"
+      "digest": "Referenz: {digest}"
     }
   },
   "generic": {
@@ -163,8 +158,10 @@
     "absences": "Abwesenheiten",
     "approvals": "Genehmigungen",
     "calendar": "Kalender",
+    "compliance": "Compliance",
     "dashboard": "Dashboard",
     "get-help": "Hilfe",
+    "my-requests": "Meine Anfragen",
     "reports": "Berichte",
     "scheduling": "Planung",
     "settings": "Einstellungen",
@@ -228,9 +225,10 @@
     "time-settings": "Zeiteinstellungen"
   },
   "validation": {
+    "first-name-required": "Vorname ist erforderlich",
     "invalid-email": "Ungültige E-Mail-Adresse",
     "invalid-password": "Ungültiges Passwort",
-    "name-required": "Name ist erforderlich",
+    "last-name-required": "Nachname ist erforderlich",
     "password-required": "Passwort ist erforderlich"
   }
 }

@@ -7,6 +7,7 @@ import { EmployeeEmploymentHistoryCard } from "./employee-employment-history-car
 
 afterEach(() => {
 	Settings.defaultZone = "system";
+	Settings.defaultLocale = null;
 	vi.restoreAllMocks();
 });
 
@@ -103,6 +104,7 @@ describe("EmployeeEmploymentHistoryCard", () => {
 
 	it("renders UTC-midnight effective dates without shifting to the previous local day", () => {
 		Settings.defaultZone = "America/Los_Angeles";
+		Settings.defaultLocale = "en-US";
 
 		renderCard();
 

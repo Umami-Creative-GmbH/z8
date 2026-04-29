@@ -1,0 +1,23 @@
+{
+	"skill_name": "z8-docs-shooter",
+	"evals": [
+		{
+			"id": 1,
+			"prompt": "The absences guide in apps/docs/content/docs/guide needs fresh screenshots. Read the MDX, figure out the matching Z8 app route, capture the main page and any request dialog the doc describes, save the images under apps/docs/public/images, and update the MDX image references.",
+			"expected_output": "Uses the docs screenshot workflow: reads MDX, maps the route instead of guessing, captures overview and interactive dialog screenshots, saves stable kebab-case files in the correct docs image folder, and inserts descriptive /images/... references near relevant text.",
+			"files": []
+		},
+		{
+			"id": 2,
+			"prompt": "I added a new admin guide page for the time tracking settings. Please add screenshots for it. The app is already running locally with demo data.",
+			"expected_output": "Recognizes this as an admin/settings documentation screenshot task, locates the new MDX page, maps it to an /en/settings/... route, captures screenshots only after the UI is loaded, saves them under admin-guide, and updates the docs without adding placeholder images.",
+			"files": []
+		},
+		{
+			"id": 3,
+			"prompt": "Can you refresh the old screenshots in the getting started docs? Keep the image names stable if possible so links do not churn, but replace anything that no longer matches the current onboarding/profile UI.",
+			"expected_output": "Focuses on existing getting-started MDX image references, preserves filenames where the same UI state is refreshed, captures English-locale onboarding/profile screens, avoids unnecessary screenshot bloat, and verifies all MDX paths point to saved files.",
+			"files": []
+		}
+	]
+}

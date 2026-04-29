@@ -14,6 +14,7 @@
     "clearSelection": "Borrar",
     "close": "Cerrar",
     "confirm": "Confirmar",
+    "continue": "Continuar",
     "copy": "Copiar",
     "create": "Crear",
     "days": {
@@ -34,7 +35,6 @@
     "download": "Descargar",
     "duplicate": "Duplicar",
     "edit": "Editar",
-    "employee": "Empleado",
     "enabled": "Habilitado",
     "error": "Error",
     "error-occurred": "Ocurrió un error",
@@ -68,6 +68,8 @@
     "name": "Nombre",
     "new": "Nuevo",
     "next": "Siguiente",
+    "notApplicable": "N/D",
+    "not-available": "No disponible",
     "openMenu": "Abrir menú",
     "optional": "opcional",
     "or": "O",
@@ -120,11 +122,6 @@
   },
   "errors": {
     "failedToLoad": "Error al cargar los datos",
-    "notFound": {
-      "description": "Es posible que la página se haya movido, que el enlace esté desactualizado o que la dirección sea incorrecta.",
-      "eyebrow": "404",
-      "title": "Página no encontrada"
-    },
     "noEmployee": {
       "contactAdmin": "Contactar con el administrador",
       "createOrg": "Crear organización",
@@ -142,9 +139,7 @@
       "waitingDesc": "Su administrador le enviará un correo de invitación. Revise su bandeja de entrada y carpeta de spam."
     },
     "unexpected": {
-      "description": "No pudimos cargar esta página en este momento. Inténtelo de nuevo o vuelva a un lugar seguro de la aplicación.",
-      "digest": "Referencia: {digest}",
-      "title": "Algo salió mal"
+      "digest": "Referencia: {digest}"
     }
   },
   "generic": {
@@ -163,8 +158,10 @@
     "absences": "Ausencias",
     "approvals": "Aprobaciones",
     "calendar": "Calendario",
+    "compliance": "Cumplimiento",
     "dashboard": "Tablero",
     "get-help": "Obtener Ayuda",
+    "my-requests": "Mis solicitudes",
     "reports": "Informes",
     "scheduling": "Programación",
     "settings": "Configuración",
@@ -228,9 +225,10 @@
     "time-settings": "Ajustes de tiempo"
   },
   "validation": {
+    "first-name-required": "El nombre es obligatorio",
     "invalid-email": "Dirección de correo electrónico inválida",
     "invalid-password": "Contraseña inválida",
-    "name-required": "El nombre es obligatorio",
+    "last-name-required": "El apellido es obligatorio",
     "password-required": "La contraseña es obligatoria"
   }
 }

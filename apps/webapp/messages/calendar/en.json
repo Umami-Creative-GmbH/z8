@@ -130,13 +130,9 @@
       "duration": "Duration",
       "employee": "Employee",
       "notes": "Notes",
-      "pendingApproval": "Pending Approval",
-      "pendingApprovalDescription": "This work period is awaiting manager approval. The recorded times may change if rejected.",
       "periods": "Work Periods",
       "project": "Project",
       "recurring": "Recurring yearly",
-      "rejected": "Rejected",
-      "rejectedDescription": "This work period change was rejected by a manager. The original times have been restored.",
       "status": "Status",
       "surcharge": "Surcharge",
       "surchargeBreakdown": "Surcharge Breakdown",
@@ -145,14 +141,11 @@
     },
     "edit": {
       "convertToBreak": "Convert to Break",
-      "noNotes": "No notes added",
-      "noProject": "No project assigned",
       "notesSaved": "Notes saved",
       "notesSaveFailed": "Failed to save notes",
       "projectSaved": "Project updated",
       "projectSaveFailed": "Failed to update project",
-      "split": "Split",
-      "title": "Work Period"
+      "split": "Split"
     },
     "employeeSelector": {
       "error": "Unable to load team members",

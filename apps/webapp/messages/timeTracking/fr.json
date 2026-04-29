@@ -2,10 +2,6 @@
   "timeTracking": {
     "addNotePrompt": "Ajouter une note sur votre travail (optionnel)",
     "autoAdjusted": {
-      "description": "Une pause de {breakMinutes} minutes a été ajoutée automatiquement pour se conformer à {regulationName}.",
-      "indicator": "Ajusté automatiquement pour conformité",
-      "originalDuration": "Original : {duration}",
-      "title": "Ajusté automatiquement pour conformité",
       "toast": {
         "description": "Une pause de {breakMinutes} minutes a été ajoutée pour se conformer aux réglementations horaires.",
         "title": "Pause ajoutée automatiquement pour conformité"
@@ -101,8 +97,6 @@
     "notesSaved": "Notes enregistrées",
     "project": "Projet",
     "readyToClockIn": "Prêt à travailler ?",
-    "restPeriodWarning": "Avertissement sur le temps de repos",
-    "restPeriodWarningMessage": "Vous n'avez pas respecté la période de repos obligatoire. Pointer maintenant sera enregistré comme une infraction.",
     "selectCategory": "Sélectionner une catégorie",
     "selectProject": "Sélectionner un projet",
     "startedAt": "Commencé à",
@@ -114,20 +108,11 @@
       "today": "Aujourd'hui"
     },
     "table": {
-      "active": "Actif",
-      "clockIn": "Entrée",
-      "clockOut": "Sortie",
-      "corrected": "Corrigé",
-      "date": "Date",
-      "description": "Description",
-      "duration": "Durée",
       "emptyState": "Aucune entrée de temps trouvée pour cette semaine.",
       "title": "Entrées de temps"
     },
-    "title": "Suivi du temps",
     "unknownCategory": "Catégorie inconnue",
     "unknownProject": "Projet inconnu",
-    "welcomeBack": "Bon retour, {name}",
     "workCategory": "Catégorie de travail"
   },
   "wellness": {
