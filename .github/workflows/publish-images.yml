@@ -267,3 +267,28 @@ jobs:
               "$AMD64_REFERENCE" \
               "$ARM64_REFERENCE"
           done
+
+  cleanup-package-versions:
+    name: Cleanup Package Versions (${{ matrix.repository }})
+    needs: publish-manifests
+    if: ${{ github.event_name != 'pull_request' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    strategy:
+      fail-fast: false
+      matrix:
+        repository:
+          - z8-webapp
+          - z8-worker
+          - z8-migration
+
+    steps:
+      - name: Delete old package versions
+        uses: actions/delete-package-versions@v5
+        with:
+          owner: ${{ env.IMAGE_NAMESPACE }}
+          package-name: ${{ matrix.repository }}
+          package-type: container
+          min-versions-to-keep: 10
+          ignore-versions: '^(latest|v.*)$'

@@ -18,7 +18,7 @@ function expect(condition, message) {
 }
 
 function getJobBlock(jobName) {
-	const lines = workflow.split("\n");
+	const lines = workflow.split(/\r?\n/);
 	const startIndex = lines.findIndex((line) => line === `  ${jobName}:`);
 	if (startIndex === -1) {
 		return null;
@@ -36,7 +36,7 @@ function getJobBlock(jobName) {
 }
 
 function getStepBlock(jobBlock, stepName) {
-	const lines = jobBlock.split("\n");
+	const lines = jobBlock.split(/\r?\n/);
 	const startIndex = lines.findIndex((line) => line === `      - name: ${stepName}`);
 	if (startIndex === -1) {
 		return null;
@@ -61,9 +61,11 @@ function includesAll(text, snippets, context) {
 
 const buildNativeJob = getJobBlock("build-native");
 const publishManifestJob = getJobBlock("publish-manifest");
+const cleanupPackageVersionsJob = getJobBlock("cleanup-package-versions");
 
 expect(buildNativeJob, "Missing build-native job");
 expect(publishManifestJob, "Missing publish-manifest job");
+expect(cleanupPackageVersionsJob, "Missing cleanup-package-versions job");
 
 if (buildNativeJob) {
 	const verifyStep = getStepBlock(buildNativeJob, "Verify workflow contract");
@@ -128,6 +130,24 @@ if (publishManifestJob) {
 		"Create and push multi-arch manifests",
 	);
 	expect(publishStep, "Missing multi-arch manifest publish step");
+}
+
+if (cleanupPackageVersionsJob) {
+	includesAll(
+		cleanupPackageVersionsJob,
+		[
+			"name: Cleanup Package Versions",
+			"needs: publish-manifest",
+			"if: ${{ github.event_name != 'pull_request' }}",
+			"uses: actions/delete-package-versions@v5",
+			"owner: umami-creative-gmbh",
+			"package-name: z8-marketing",
+			"package-type: container",
+			"min-versions-to-keep: 10",
+			"ignore-versions: '^(latest|v.*)$'",
+		],
+		"cleanup-package-versions",
+	);
 }
 
 if (errors.length > 0) {

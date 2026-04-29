@@ -138,3 +138,20 @@ jobs:
               "$IMAGE_NAME@$AMD64_DIGEST" \
               "$IMAGE_NAME@$ARM64_DIGEST"
           done
+
+  cleanup-package-versions:
+    name: Cleanup Package Versions
+    needs: publish-manifest
+    if: ${{ github.event_name != 'pull_request' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Delete old package versions
+        uses: actions/delete-package-versions@v5
+        with:
+          owner: umami-creative-gmbh
+          package-name: z8-docs
+          package-type: container
+          min-versions-to-keep: 10
+          ignore-versions: '^(latest|v.*)$'
