@@ -15,7 +15,7 @@ function expect(condition, message) {
 }
 
 function getJobBlock(jobName) {
-	const lines = workflow.split("\n");
+	const lines = workflow.split(/\r?\n/);
 	const startIndex = lines.findIndex((line) => line === `  ${jobName}:`);
 	if (startIndex === -1) {
 		return null;
@@ -33,7 +33,7 @@ function getJobBlock(jobName) {
 }
 
 function getStepBlock(jobBlock, stepName) {
-	const lines = jobBlock.split("\n");
+	const lines = jobBlock.split(/\r?\n/);
 	const startIndex = lines.findIndex((line) => line === `      - name: ${stepName}`);
 	if (startIndex === -1) {
 		return null;
@@ -58,9 +58,11 @@ function includesAll(text, snippets, context) {
 
 const publishTargetsJob = getJobBlock("publish-targets");
 const publishManifestsJob = getJobBlock("publish-manifests");
+const cleanupPackageVersionsJob = getJobBlock("cleanup-package-versions");
 
 expect(publishTargetsJob, "Missing publish-targets job");
 expect(publishManifestsJob, "Missing publish-manifests job");
+expect(cleanupPackageVersionsJob, "Missing cleanup-package-versions job");
 
 if (publishTargetsJob) {
 	const verifyStep = getStepBlock(publishTargetsJob, "Verify workflow contract");
@@ -184,6 +186,28 @@ if (publishManifestsJob) {
 			"publish-manifests Validate target artifacts",
 		);
 	}
+}
+
+if (cleanupPackageVersionsJob) {
+	includesAll(
+		cleanupPackageVersionsJob,
+		[
+			"name: Cleanup Package Versions (${{ matrix.repository }})",
+			"needs: publish-manifests",
+			"if: ${{ github.event_name != 'pull_request' }}",
+			"repository:",
+			"- z8-webapp",
+			"- z8-worker",
+			"- z8-migration",
+			"uses: actions/delete-package-versions@v5",
+			"owner: ${{ env.IMAGE_NAMESPACE }}",
+			"package-name: ${{ matrix.repository }}",
+			"package-type: container",
+			"min-versions-to-keep: 10",
+			"ignore-versions: '^(latest|v.*)$'",
+		],
+		"cleanup-package-versions",
+	);
 }
 
 expect(
