@@ -15,7 +15,7 @@ export function NotificationBell() {
 	const { unreadCount } = useNotifications({ enabled: hasOrganization });
 
 	// Connect to SSE for real-time updates
-	useNotificationStream({ enabled: hasOrganization });
+	useNotificationStream({ enabled: hasOrganization, organizationId });
 
 	return (
 		<NotificationPopover>

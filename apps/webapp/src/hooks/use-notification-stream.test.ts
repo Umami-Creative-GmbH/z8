@@ -70,6 +70,7 @@ describe("useNotificationStream", () => {
 		const notification = {
 			id: "notification-1",
 			isRead: false,
+			organizationId: "org-1",
 			title: "New approval",
 		} as NotificationWithMeta;
 
@@ -103,5 +104,51 @@ describe("useNotificationStream", () => {
 
 		const updateUnreadCount = setQueryDataMock.mock.calls[0][1];
 		expect(updateUnreadCount({ count: 2 })).toEqual({ count: 3 });
+	});
+
+	it("ignores new notifications from a different organization", async () => {
+		const { useNotificationStream } = await import("./use-notification-stream");
+		const onNewNotification = vi.fn();
+		const notification = {
+			id: "notification-2",
+			isRead: false,
+			organizationId: "org-a",
+			title: "Other org approval",
+		} as NotificationWithMeta;
+
+		useNotificationStream({ organizationId: "org-b", onNewNotification });
+		MockEventSource.latest?.listeners.get("new_notification")?.(
+			new MessageEvent("new_notification", { data: JSON.stringify(notification) }),
+		);
+
+		expect(setQueriesDataMock).not.toHaveBeenCalled();
+		expect(setQueryDataMock).not.toHaveBeenCalled();
+		expect(onNewNotification).not.toHaveBeenCalled();
+	});
+
+	it("accepts new notifications from the active organization", async () => {
+		const { useNotificationStream } = await import("./use-notification-stream");
+		const onNewNotification = vi.fn();
+		const notification = {
+			id: "notification-3",
+			isRead: false,
+			organizationId: "org-a",
+			title: "Active org approval",
+		} as NotificationWithMeta;
+
+		useNotificationStream({ organizationId: "org-a", onNewNotification });
+		MockEventSource.latest?.listeners.get("new_notification")?.(
+			new MessageEvent("new_notification", { data: JSON.stringify(notification) }),
+		);
+
+		expect(setQueriesDataMock).toHaveBeenCalledWith(
+			expect.objectContaining({ predicate: expect.any(Function) }),
+			expect.any(Function),
+		);
+		expect(setQueryDataMock).toHaveBeenCalledWith(
+			["notifications", "unread-count"],
+			expect.any(Function),
+		);
+		expect(onNewNotification).toHaveBeenCalledWith(notification);
 	});
 });

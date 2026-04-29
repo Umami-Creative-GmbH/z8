@@ -11,6 +11,7 @@ import { queryKeys } from "@/lib/query/keys";
 
 interface UseNotificationStreamOptions {
 	enabled?: boolean;
+	organizationId?: string | null;
 	onCountUpdate?: (count: number) => void;
 	onNewNotification?: (notification: NotificationWithMeta) => void;
 }
@@ -24,7 +25,7 @@ interface UseNotificationStreamOptions {
  * - Handles reconnection on disconnect
  */
 export function useNotificationStream(options: UseNotificationStreamOptions = {}) {
-	const { enabled = true, onCountUpdate, onNewNotification } = options;
+	const { enabled = true, organizationId, onCountUpdate, onNewNotification } = options;
 	const queryClient = useQueryClient();
 	const eventSourceRef = useRef<EventSource | null>(null);
 	const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -76,6 +77,9 @@ export function useNotificationStream(options: UseNotificationStreamOptions = {}
 			eventSource.addEventListener("new_notification", (event) => {
 				try {
 					const notification = JSON.parse(event.data) as NotificationWithMeta;
+					if (organizationId && notification.organizationId !== organizationId) {
+						return;
+					}
 
 					// Update every cached notification list, regardless of list options like limit.
 					queryClient.setQueriesData<NotificationsListResponse>(
@@ -150,7 +154,7 @@ export function useNotificationStream(options: UseNotificationStreamOptions = {}
 			// EventSource not supported or connection failed
 			setIsConnected(false);
 		}
-	}, [enabled, queryClient]);
+	}, [enabled, organizationId, queryClient]);
 
 	const disconnect = useCallback(() => {
 		if (reconnectTimeoutRef.current) {
