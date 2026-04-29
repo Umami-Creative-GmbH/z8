@@ -13,12 +13,10 @@ import {
 	setTemplateSkillRequirements,
 	validateEmployeeForShift,
 	getQualifiedEmployeesForSkills,
+	type SkillWithRelations,
+	type EmployeeSkillWithDetails,
+	type SkillValidationResult,
 } from "@/app/[locale]/(app)/settings/skills/actions";
-import type {
-	EmployeeSkillWithDetails,
-	SkillValidationResult,
-	SkillWithRelations,
-} from "@/lib/effect/services/skill.service";
 import { queryKeys } from "./keys";
 
 // =============================================================================

@@ -156,7 +156,7 @@ export function BillingPageClient({ subscription, accessResult, isOwner }: Billi
 	};
 
 	return (
-		<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+		<div className="space-y-6">
 			{/* Success/Cancel Alerts */}
 			{success && (
 				<Alert className="border-green-500 bg-green-50 dark:bg-green-950">
