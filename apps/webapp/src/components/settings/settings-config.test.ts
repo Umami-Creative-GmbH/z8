@@ -165,4 +165,26 @@ describe("settings visibility tiers", () => {
 			adminEntries.map((entry) => entry.id),
 		);
 	});
+
+	it("hides demo data when the demo data feature is disabled", () => {
+		const entries = filterSettingsByFeatureFlags(SETTINGS_ENTRIES, {
+			shiftsEnabled: true,
+			projectsEnabled: true,
+			surchargesEnabled: true,
+			demoDataEnabled: false,
+		});
+
+		expect(entries.some((entry) => entry.id === "demo-data")).toBe(false);
+	});
+
+	it("shows demo data when the demo data feature is enabled", () => {
+		const entries = filterSettingsByFeatureFlags(SETTINGS_ENTRIES, {
+			shiftsEnabled: true,
+			projectsEnabled: true,
+			surchargesEnabled: true,
+			demoDataEnabled: true,
+		});
+
+		expect(entries.some((entry) => entry.id === "demo-data")).toBe(true);
+	});
 });
