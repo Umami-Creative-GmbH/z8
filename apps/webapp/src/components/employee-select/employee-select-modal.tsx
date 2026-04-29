@@ -1,6 +1,5 @@
 "use client";
 
-import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { IconX } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
@@ -8,6 +7,14 @@ import { Command as CommandPrimitive } from "cmdk";
 import { SearchIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 import { listTeams } from "@/app/[locale]/(app)/settings/teams/actions";
+import {
+	ActionPanel,
+	ActionPanelBody,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,8 +24,8 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
 import { queryKeys } from "@/lib/query/keys";
+import { cn } from "@/lib/utils";
 import { EmployeeSelectList } from "./employee-select-list";
 import type { EmployeeSelectModalProps, SelectableEmployee } from "./types";
 import { useEmployeeSelect } from "./use-employee-select";
@@ -224,48 +231,29 @@ export function EmployeeSelectModal({
 			!effectiveSelectedIds.every((id) => selectedIds.includes(id)));
 
 	return (
-		<DialogPrimitive.Root open={open} onOpenChange={handleCancel}>
-			<DialogPrimitive.Portal>
-				{/* Overlay with fade animation */}
-				<DialogPrimitive.Overlay
-					className={cn(
-						"fixed inset-0 z-50 bg-black/50",
-						"data-[state=open]:animate-in data-[state=closed]:animate-out",
-						"data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
-					)}
-				/>
-
-				{/* Floating command palette */}
-				<DialogPrimitive.Content
-					className={cn(
-						"fixed left-[50%] top-[50%] z-50 w-full max-w-[540px] translate-x-[-50%] translate-y-[-50%]",
-						"data-[state=open]:animate-in data-[state=closed]:animate-out",
-						"data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
-						"data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
-						"duration-200 outline-none",
-					)}
-				>
-					{/* Accessibility - hidden but required */}
-					<DialogPrimitive.Title className="sr-only">
+		<ActionPanel open={open} onOpenChange={handleCancel}>
+			<ActionPanelContent showCloseButton={false}>
+				<ActionPanelHeader className="sr-only">
+					<ActionPanelTitle>
 						{mode === "single"
 							? t("employeeSelect.selectEmployee", "Select Employee")
 							: t("employeeSelect.selectEmployees", "Select Employees")}
-					</DialogPrimitive.Title>
-					<DialogPrimitive.Description className="sr-only">
+					</ActionPanelTitle>
+					<ActionPanelDescription>
 						{mode === "single"
 							? t("employeeSelect.selectOneEmployee", "Choose an employee from the list")
 							: t(
 									"employeeSelect.selectMultipleEmployees",
 									"Choose one or more employees from the list",
 								)}
-					</DialogPrimitive.Description>
+					</ActionPanelDescription>
+				</ActionPanelHeader>
 
-					{/* Command palette container - floating style */}
+				<ActionPanelBody className="p-0">
 					<CommandPrimitive
 						shouldFilter={false}
 						className={cn(
-							"bg-popover text-popover-foreground flex flex-col overflow-hidden",
-							"rounded-xl shadow-2xl",
+							"bg-popover text-popover-foreground flex h-full flex-col overflow-hidden",
 							"border-0",
 						)}
 					>
@@ -352,7 +340,7 @@ export function EmployeeSelectModal({
 
 									{/* Selected badges (show first 3) */}
 									<div className="flex items-center gap-1">
-									{activePendingIds.slice(0, 3).map((id) => {
+										{activePendingIds.slice(0, 3).map((id) => {
 											const emp =
 												selectedEmployeesMap.get(id) || employees.find((e) => e.id === id);
 											if (!emp) return null;
@@ -449,8 +437,8 @@ export function EmployeeSelectModal({
 							</div>
 						</div>
 					</CommandPrimitive>
-				</DialogPrimitive.Content>
-			</DialogPrimitive.Portal>
-		</DialogPrimitive.Root>
+				</ActionPanelBody>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }
