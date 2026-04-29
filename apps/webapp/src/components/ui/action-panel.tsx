@@ -22,6 +22,11 @@ const actionPanelSizes = {
 
 type ActionPanelSize = keyof typeof actionPanelSizes;
 
+type ActionPanelContentProps = Omit<React.ComponentProps<typeof SheetContent>, "side"> & {
+	size?: ActionPanelSize;
+	showCloseButton?: boolean;
+};
+
 function ActionPanel({ ...props }: React.ComponentProps<typeof Sheet>) {
 	return <Sheet data-slot="action-panel" {...props} />;
 }
@@ -40,26 +45,20 @@ function ActionPanelContent({
 	size = "default",
 	showCloseButton = true,
 	...props
-}: React.ComponentProps<typeof SheetContent> & {
-	size?: ActionPanelSize;
-	showCloseButton?: boolean;
-}) {
+}: ActionPanelContentProps) {
 	return (
 		<SheetContent
+			{...props}
 			className={cn(
 				"w-[calc(100vw-1rem)] gap-0 overflow-hidden p-0 sm:w-3/4",
 				actionPanelSizes[size],
 				className,
 			)}
-			data-action-panel-hide-close={!showCloseButton ? "true" : undefined}
 			data-slot="action-panel-content"
+			showCloseButton={showCloseButton}
 			side="right"
-			{...props}
 		>
 			{children}
-			{!showCloseButton && (
-				<style>{'[data-action-panel-hide-close="true"] > button:last-child { display: none; }'}</style>
-			)}
 		</SheetContent>
 	);
 }

@@ -23,6 +23,8 @@ describe("ActionPanel", () => {
 
 		expect(source).toContain("SheetContent");
 		expect(source).not.toContain("DialogPrimitive");
+		expect(source).not.toContain("data-action-panel-hide-close");
+		expect(source).not.toContain("<style");
 	});
 
 	it("renders an accessible right-side panel shell", () => {
@@ -44,6 +46,21 @@ describe("ActionPanel", () => {
 		expect(screen.getByText("Panel body")).toBeTruthy();
 		expect(screen.getByText("Panel footer")).toBeTruthy();
 		expect(screen.getByRole("button", { name: "Close" })).toBeTruthy();
+	});
+
+	it("always renders from the right side", () => {
+		render(
+			<ActionPanel open>
+				<ActionPanelContent {...({ side: "left" } as never)}>
+					<ActionPanelTitle>Right-only panel</ActionPanelTitle>
+				</ActionPanelContent>
+			</ActionPanel>,
+		);
+
+		const dialogClassName = screen.getByRole("dialog", { name: "Right-only panel" }).className;
+
+		expect(dialogClassName).toContain("right-0");
+		expect(dialogClassName).not.toContain("left-0");
 	});
 
 	it("supports width variants", () => {
