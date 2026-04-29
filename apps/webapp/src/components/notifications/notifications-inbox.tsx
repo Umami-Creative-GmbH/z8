@@ -34,7 +34,6 @@ import {
 } from "@/components/ui/empty";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNotifications } from "@/hooks/use-notifications";
 import type { NotificationWithMeta } from "@/lib/notifications/types";
 import { cn } from "@/lib/utils";
@@ -44,6 +43,11 @@ import { NotificationItem } from "./notification-item";
 type ReadFilter = "all" | "unread" | "read";
 type TimelineGroup = "Today" | "Yesterday" | "Earlier";
 
+const readFilters: { label: string; value: ReadFilter }[] = [
+	{ label: "All", value: "all" },
+	{ label: "Unread", value: "unread" },
+	{ label: "Read", value: "read" },
+];
 const timelineGroups: TimelineGroup[] = ["Today", "Yesterday", "Earlier"];
 
 function getGroupLabel(notification: NotificationWithMeta): TimelineGroup {
@@ -142,6 +146,7 @@ export function NotificationsInbox() {
 	const selectedVisibleIds = visibleIds.filter((id) => selectedIds.has(id));
 	const selectedVisibleCount = selectedVisibleIds.length;
 	const allVisibleSelected = visibleIds.length > 0 && selectedVisibleCount === visibleIds.length;
+	const someVisibleSelected = selectedVisibleCount > 0 && !allVisibleSelected;
 	const hasSelection = selectedVisibleCount > 0;
 	const isMutating = isMarkingRead || isDeleting;
 
@@ -236,13 +241,29 @@ export function NotificationsInbox() {
 						/>
 					</div>
 
-					<Tabs onValueChange={(value) => setReadFilter(value as ReadFilter)} value={readFilter}>
-						<TabsList>
-							<TabsTrigger value="all">All</TabsTrigger>
-							<TabsTrigger value="unread">Unread</TabsTrigger>
-							<TabsTrigger value="read">Read</TabsTrigger>
-						</TabsList>
-					</Tabs>
+					<div
+						aria-label="Filter notifications by read status"
+						className="inline-flex h-9 w-fit items-center justify-center rounded-lg bg-muted p-[3px] text-muted-foreground"
+						role="group"
+					>
+						{readFilters.map((filter) => (
+							<Button
+								aria-pressed={readFilter === filter.value}
+								className={cn(
+									"h-[calc(100%-1px)] flex-1 rounded-md border border-transparent px-2 py-1 shadow-none",
+									readFilter === filter.value &&
+										"border-border bg-background text-foreground shadow-sm",
+								)}
+								key={filter.value}
+								onClick={() => setReadFilter(filter.value)}
+								size="sm"
+								type="button"
+								variant="ghost"
+							>
+								{filter.label}
+							</Button>
+						))}
+					</div>
 				</div>
 
 				{isError && (
@@ -326,7 +347,7 @@ export function NotificationsInbox() {
 						<div className="flex items-center gap-2 rounded-lg border px-3 py-2">
 							<Checkbox
 								aria-label="Select all visible notifications"
-								checked={allVisibleSelected}
+								checked={someVisibleSelected ? "indeterminate" : allVisibleSelected}
 								onCheckedChange={(checked) => toggleSelectAllVisible(checked === true)}
 							/>
 							<span className="text-sm text-muted-foreground">Select all visible</span>

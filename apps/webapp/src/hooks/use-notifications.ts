@@ -27,7 +27,7 @@ export function useNotifications(options: UseNotificationsOptions = {}) {
 
 	// Query for notifications list
 	const notificationsQuery = useQuery({
-		queryKey: queryKeys.notifications.list({ unreadOnly }),
+		queryKey: queryKeys.notifications.list({ limit, unreadOnly }),
 		queryFn: async (): Promise<NotificationsListResponse> => {
 			const params = new URLSearchParams({
 				limit: limit.toString(),
