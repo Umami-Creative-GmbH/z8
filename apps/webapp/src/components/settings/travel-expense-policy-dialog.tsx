@@ -14,13 +14,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -120,7 +120,9 @@ export function TravelExpensePolicyDialog({
 		defaultValues: defaultValues(editingPolicy),
 		onSubmit: async ({ value }) => {
 			if (!value.effectiveFrom) {
-				toast.error(t("settings.travelExpenses.effectiveFromRequired", "Effective from is required"));
+				toast.error(
+					t("settings.travelExpenses.effectiveFromRequired", "Effective from is required"),
+				);
 				return;
 			}
 
@@ -169,21 +171,21 @@ export function TravelExpensePolicyDialog({
 	const isPending = mutation.isPending;
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-[520px]">
-				<DialogHeader>
-					<DialogTitle>
+		<ActionPanel open={open} onOpenChange={onOpenChange}>
+			<ActionPanelContent>
+				<ActionPanelHeader>
+					<ActionPanelTitle>
 						{isEditing
 							? t("settings.travelExpenses.editPolicy", "Edit Travel Expense Policy")
 							: t("settings.travelExpenses.createPolicy", "Create Travel Expense Policy")}
-					</DialogTitle>
-					<DialogDescription>
+					</ActionPanelTitle>
+					<ActionPanelDescription>
 						{t(
 							"settings.travelExpenses.dialogDescription",
 							"Set effective dates and default reimbursement rates for mileage and per diem claims.",
 						)}
-					</DialogDescription>
-				</DialogHeader>
+					</ActionPanelDescription>
+				</ActionPanelHeader>
 
 				<form
 					onSubmit={(event) => {
@@ -235,16 +237,16 @@ export function TravelExpensePolicyDialog({
 					<form.Field name="currency">
 						{(field) => (
 							<TFormItem>
-								<TFormLabel required>{t("settings.travelExpenses.currency", "Currency")}</TFormLabel>
-							<TFormControl>
-								<Input
-									name="currency"
-									autoComplete="off"
-									maxLength={3}
+								<TFormLabel required>
+									{t("settings.travelExpenses.currency", "Currency")}
+								</TFormLabel>
+								<TFormControl>
+									<Input
+										name="currency"
+										autoComplete="off"
+										maxLength={3}
 										value={field.state.value}
-										onChange={(event) =>
-											field.handleChange(event.target.value.toUpperCase())
-										}
+										onChange={(event) => field.handleChange(event.target.value.toUpperCase())}
 										onBlur={field.handleBlur}
 										placeholder="EUR"
 									/>
@@ -325,7 +327,7 @@ export function TravelExpensePolicyDialog({
 						)}
 					</form.Field>
 
-					<DialogFooter>
+					<ActionPanelFooter>
 						<Button
 							type="button"
 							variant="outline"
@@ -336,13 +338,11 @@ export function TravelExpensePolicyDialog({
 						</Button>
 						<Button type="submit" disabled={isPending}>
 							{isPending && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
-							{isEditing
-								? t("common.saveChanges", "Save Changes")
-								: t("common.create", "Create")}
+							{isEditing ? t("common.saveChanges", "Save Changes") : t("common.create", "Create")}
 						</Button>
-					</DialogFooter>
+					</ActionPanelFooter>
 				</form>
-			</DialogContent>
-		</Dialog>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

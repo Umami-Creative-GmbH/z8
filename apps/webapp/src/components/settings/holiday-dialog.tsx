@@ -10,13 +10,14 @@ import { getHolidayCategories } from "@/app/[locale]/(app)/settings/holidays/act
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelBody,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -176,140 +177,49 @@ export function HolidayDialog({
 	}, [open, organizationId, t]);
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-				<DialogHeader>
-					<DialogTitle>
+		<ActionPanel open={open} onOpenChange={onOpenChange}>
+			<ActionPanelContent size="wide">
+				<ActionPanelHeader>
+					<ActionPanelTitle>
 						{isEditing
 							? t("settings.holidays.edit", "Edit Holiday")
 							: t("settings.holidays.add", "Add Holiday")}
-					</DialogTitle>
-					<DialogDescription>
+					</ActionPanelTitle>
+					<ActionPanelDescription>
 						{t(
 							"settings.holidays.form.description",
 							"Create or update a holiday for your organization",
 						)}
-					</DialogDescription>
-				</DialogHeader>
+					</ActionPanelDescription>
+				</ActionPanelHeader>
 
 				<form
 					onSubmit={(e) => {
 						e.preventDefault();
 						form.handleSubmit();
 					}}
-					className="space-y-4"
+					className="flex min-h-0 flex-1 flex-col"
 				>
-					{/* Name */}
-					<form.Field
-						name="name"
-						validators={{
-							onChange: ({ value }) => {
-								if (!value) return "Name is required";
-								if (value.length > 255) return "Name is too long";
-								return undefined;
-							},
-						}}
-					>
-						{(field) => (
-							<div className="space-y-2">
-								<Label>{t("settings.holidays.form.name", "Name")}</Label>
-								<Input
-									value={field.state.value}
-									onChange={(e) => field.handleChange(e.target.value)}
-									onBlur={field.handleBlur}
-									placeholder={t("settings.holidays.form.namePlaceholder", "e.g., Christmas Day")}
-								/>
-								{field.state.meta.errors.length > 0 && (
-									<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
-								)}
-							</div>
-						)}
-					</form.Field>
-
-					{/* Description */}
-					<form.Field name="description">
-						{(field) => (
-							<div className="space-y-2">
-								<Label>
-									{t("settings.holidays.form.description", "Description")} (
-									{t("settings.holidays.form.optional", "optional")})
-								</Label>
-								<Textarea
-									value={field.state.value}
-									onChange={(e) => field.handleChange(e.target.value)}
-									onBlur={field.handleBlur}
-									placeholder={t(
-										"settings.holidays.form.descriptionPlaceholder",
-										"Add a description...",
-									)}
-									rows={3}
-								/>
-							</div>
-						)}
-					</form.Field>
-
-					{/* Category */}
-					<form.Field
-						name="categoryId"
-						validators={{
-							onChange: ({ value }) => {
-								if (!value) return "Category is required";
-								return undefined;
-							},
-						}}
-					>
-						{(field) => (
-							<div className="space-y-2">
-								<Label>{t("settings.holidays.form.category", "Category")}</Label>
-								<Select
-									value={field.state.value}
-									onValueChange={field.handleChange}
-									disabled={categoriesLoading}
-								>
-									<SelectTrigger>
-										<SelectValue
-											placeholder={t(
-												"settings.holidays.form.categoryPlaceholder",
-												"Select a category",
-											)}
-										/>
-									</SelectTrigger>
-									<SelectContent>
-										{categories.map((category) => (
-											<SelectItem key={category.id} value={category.id}>
-												{category.name}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-								{field.state.meta.errors.length > 0 && (
-									<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
-								)}
-							</div>
-						)}
-					</form.Field>
-
-					{/* Date Range */}
-					<div className="grid grid-cols-2 gap-4">
+					<ActionPanelBody className="space-y-4">
+						{/* Name */}
 						<form.Field
-							name="startDate"
+							name="name"
 							validators={{
 								onChange: ({ value }) => {
-									if (!value) return "Start date is required";
+									if (!value) return "Name is required";
+									if (value.length > 255) return "Name is too long";
 									return undefined;
 								},
 							}}
 						>
 							{(field) => (
 								<div className="space-y-2">
-									<Label>{t("settings.holidays.form.startDate", "Start Date")}</Label>
-									<DatePicker
-										required
-										value={formatHolidayDatePickerValue(field.state.value)}
-										onChange={(value) => {
-											const date = parseHolidayDatePickerValue(value);
-											if (date) field.handleChange(date);
-										}}
+									<Label>{t("settings.holidays.form.name", "Name")}</Label>
+									<Input
+										value={field.state.value}
+										onChange={(e) => field.handleChange(e.target.value)}
+										onBlur={field.handleBlur}
+										placeholder={t("settings.holidays.form.namePlaceholder", "e.g., Christmas Day")}
 									/>
 									{field.state.meta.errors.length > 0 && (
 										<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
@@ -317,95 +227,187 @@ export function HolidayDialog({
 								</div>
 							)}
 						</form.Field>
+
+						{/* Description */}
+						<form.Field name="description">
+							{(field) => (
+								<div className="space-y-2">
+									<Label>
+										{t("settings.holidays.form.description", "Description")} (
+										{t("settings.holidays.form.optional", "optional")})
+									</Label>
+									<Textarea
+										value={field.state.value}
+										onChange={(e) => field.handleChange(e.target.value)}
+										onBlur={field.handleBlur}
+										placeholder={t(
+											"settings.holidays.form.descriptionPlaceholder",
+											"Add a description...",
+										)}
+										rows={3}
+									/>
+								</div>
+							)}
+						</form.Field>
+
+						{/* Category */}
 						<form.Field
-							name="endDate"
+							name="categoryId"
 							validators={{
-								onChange: ({ value, fieldApi }) => {
-									if (!value) return "End date is required";
-									const startDate = fieldApi.form.getFieldValue("startDate");
-									if (startDate && value < startDate) {
-										return "End date must be after or equal to start date";
-									}
+								onChange: ({ value }) => {
+									if (!value) return "Category is required";
 									return undefined;
 								},
 							}}
 						>
 							{(field) => (
 								<div className="space-y-2">
-									<Label>{t("settings.holidays.form.endDate", "End Date")}</Label>
-									<DatePicker
-										required
-										value={formatHolidayDatePickerValue(field.state.value)}
-										onChange={(value) => {
-											const date = parseHolidayDatePickerValue(value);
-											if (date) field.handleChange(date);
-										}}
-									/>
+									<Label>{t("settings.holidays.form.category", "Category")}</Label>
+									<Select
+										value={field.state.value}
+										onValueChange={field.handleChange}
+										disabled={categoriesLoading}
+									>
+										<SelectTrigger>
+											<SelectValue
+												placeholder={t(
+													"settings.holidays.form.categoryPlaceholder",
+													"Select a category",
+												)}
+											/>
+										</SelectTrigger>
+										<SelectContent>
+											{categories.map((category) => (
+												<SelectItem key={category.id} value={category.id}>
+													{category.name}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
 									{field.state.meta.errors.length > 0 && (
 										<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
 									)}
 								</div>
 							)}
 						</form.Field>
-					</div>
 
-					{/* Recurrence */}
-					<form.Field name="recurrenceType">
-						{(field) => (
-							<div className="space-y-2">
-								<Label>{t("settings.holidays.form.recurrence.title", "Recurrence")}</Label>
-								<Select
-									value={field.state.value}
-									onValueChange={(value) => field.handleChange(value as RecurrenceType)}
-								>
-									<SelectTrigger>
-										<SelectValue
-											placeholder={t(
-												"settings.holidays.form.recurrence.placeholder",
-												"Select recurrence type",
-											)}
+						{/* Date Range */}
+						<div className="grid grid-cols-2 gap-4">
+							<form.Field
+								name="startDate"
+								validators={{
+									onChange: ({ value }) => {
+										if (!value) return "Start date is required";
+										return undefined;
+									},
+								}}
+							>
+								{(field) => (
+									<div className="space-y-2">
+										<Label>{t("settings.holidays.form.startDate", "Start Date")}</Label>
+										<DatePicker
+											required
+											value={formatHolidayDatePickerValue(field.state.value)}
+											onChange={(value) => {
+												const date = parseHolidayDatePickerValue(value);
+												if (date) field.handleChange(date);
+											}}
 										/>
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value="none">
-											{t("settings.holidays.form.recurrence.none", "One-time")}
-										</SelectItem>
-										<SelectItem value="yearly">
-											{t("settings.holidays.form.recurrence.yearly", "Yearly")}
-										</SelectItem>
-									</SelectContent>
-								</Select>
-								{field.state.value === "yearly" && (
-									<p className="text-sm text-muted-foreground">
-										{t(
-											"settings.holidays.form.recurrence.yearlyDesc",
-											"This holiday will repeat every year on the same date",
+										{field.state.meta.errors.length > 0 && (
+											<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
 										)}
-									</p>
+									</div>
 								)}
-							</div>
-						)}
-					</form.Field>
-
-					{/* Active Toggle */}
-					<form.Field name="isActive">
-						{(field) => (
-							<div className="flex items-center justify-between rounded-lg border p-3">
-								<div className="space-y-0.5">
-									<Label>{t("settings.holidays.form.active", "Active")}</Label>
-									<p className="text-sm text-muted-foreground">
-										{t(
-											"settings.holidays.form.activeDescription",
-											"Inactive holidays won't appear in the calendar",
+							</form.Field>
+							<form.Field
+								name="endDate"
+								validators={{
+									onChange: ({ value, fieldApi }) => {
+										if (!value) return "End date is required";
+										const startDate = fieldApi.form.getFieldValue("startDate");
+										if (startDate && value < startDate) {
+											return "End date must be after or equal to start date";
+										}
+										return undefined;
+									},
+								}}
+							>
+								{(field) => (
+									<div className="space-y-2">
+										<Label>{t("settings.holidays.form.endDate", "End Date")}</Label>
+										<DatePicker
+											required
+											value={formatHolidayDatePickerValue(field.state.value)}
+											onChange={(value) => {
+												const date = parseHolidayDatePickerValue(value);
+												if (date) field.handleChange(date);
+											}}
+										/>
+										{field.state.meta.errors.length > 0 && (
+											<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
 										)}
-									</p>
-								</div>
-								<Switch checked={field.state.value} onCheckedChange={field.handleChange} />
-							</div>
-						)}
-					</form.Field>
+									</div>
+								)}
+							</form.Field>
+						</div>
 
-					<DialogFooter>
+						{/* Recurrence */}
+						<form.Field name="recurrenceType">
+							{(field) => (
+								<div className="space-y-2">
+									<Label>{t("settings.holidays.form.recurrence.title", "Recurrence")}</Label>
+									<Select
+										value={field.state.value}
+										onValueChange={(value) => field.handleChange(value as RecurrenceType)}
+									>
+										<SelectTrigger>
+											<SelectValue
+												placeholder={t(
+													"settings.holidays.form.recurrence.placeholder",
+													"Select recurrence type",
+												)}
+											/>
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="none">
+												{t("settings.holidays.form.recurrence.none", "One-time")}
+											</SelectItem>
+											<SelectItem value="yearly">
+												{t("settings.holidays.form.recurrence.yearly", "Yearly")}
+											</SelectItem>
+										</SelectContent>
+									</Select>
+									{field.state.value === "yearly" && (
+										<p className="text-sm text-muted-foreground">
+											{t(
+												"settings.holidays.form.recurrence.yearlyDesc",
+												"This holiday will repeat every year on the same date",
+											)}
+										</p>
+									)}
+								</div>
+							)}
+						</form.Field>
+
+						{/* Active Toggle */}
+						<form.Field name="isActive">
+							{(field) => (
+								<div className="flex items-center justify-between rounded-lg border p-3">
+									<div className="space-y-0.5">
+										<Label>{t("settings.holidays.form.active", "Active")}</Label>
+										<p className="text-sm text-muted-foreground">
+											{t(
+												"settings.holidays.form.activeDescription",
+												"Inactive holidays won't appear in the calendar",
+											)}
+										</p>
+									</div>
+									<Switch checked={field.state.value} onCheckedChange={field.handleChange} />
+								</div>
+							)}
+						</form.Field>
+					</ActionPanelBody>
+					<ActionPanelFooter>
 						<Button
 							type="button"
 							variant="outline"
@@ -418,9 +420,9 @@ export function HolidayDialog({
 							{loading && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
 							{isEditing ? t("common.save", "Save") : t("common.create", "Create")}
 						</Button>
-					</DialogFooter>
+					</ActionPanelFooter>
 				</form>
-			</DialogContent>
-		</Dialog>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }
