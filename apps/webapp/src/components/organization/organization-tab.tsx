@@ -74,6 +74,7 @@ export function OrganizationTab({
 				shiftsEnabled={organization.shiftsEnabled ?? false}
 				projectsEnabled={organization.projectsEnabled ?? false}
 				surchargesEnabled={organization.surchargesEnabled ?? false}
+				demoDataEnabled={organization.demoDataEnabled ?? true}
 				currentMemberRole={currentMemberRole}
 			/>
 

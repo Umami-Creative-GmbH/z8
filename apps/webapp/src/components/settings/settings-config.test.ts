@@ -105,6 +105,7 @@ describe("settings visibility tiers", () => {
 			shiftsEnabled: false,
 			projectsEnabled: false,
 			surchargesEnabled: false,
+			demoDataEnabled: false,
 		});
 
 		expect(entries).toHaveLength(0);
@@ -121,6 +122,7 @@ describe("settings visibility tiers", () => {
 				shiftsEnabled: false,
 				projectsEnabled: false,
 				surchargesEnabled: false,
+				demoDataEnabled: false,
 			}),
 		).toEqual([]);
 	});
@@ -138,25 +140,39 @@ describe("settings visibility tiers", () => {
 	});
 
 	it("resolves settings visibility with feature-filtered groups when feature flags are available", () => {
-		const expectedVisibleSettings = getVisibleSettings("orgAdmin", true);
+		const featureFlags = {
+			shiftsEnabled: false,
+			projectsEnabled: false,
+			surchargesEnabled: false,
+			demoDataEnabled: true,
+		};
+		const expectedVisibleSettings = filterSettingsByFeatureFlags(
+			getVisibleSettings("orgAdmin", true),
+			featureFlags,
+		);
+		const visibility = getResolvedSettingsVisibility({
+			accessTier: "orgAdmin",
+			billingEnabled: true,
+			featureFlags,
+		});
+
+		expect(visibility.visibleSettings).toEqual(expectedVisibleSettings);
+		expect(visibility.visibleGroups).toEqual(getVisibleGroups(expectedVisibleSettings));
+	});
+
+	it("excludes demo data from resolved visible settings when the demo data feature is disabled", () => {
 		const visibility = getResolvedSettingsVisibility({
 			accessTier: "orgAdmin",
 			billingEnabled: true,
 			featureFlags: {
-				shiftsEnabled: false,
-				projectsEnabled: false,
-				surchargesEnabled: false,
+				shiftsEnabled: true,
+				projectsEnabled: true,
+				surchargesEnabled: true,
+				demoDataEnabled: false,
 			},
 		});
 
-		expect(visibility.visibleSettings).toEqual(expectedVisibleSettings);
-		expect(visibility.visibleGroups).toEqual(
-			getVisibleGroupsForFeatureFlags(expectedVisibleSettings, {
-				shiftsEnabled: false,
-				projectsEnabled: false,
-				surchargesEnabled: false,
-			}),
-		);
+		expect(visibility.visibleSettings.some((entry) => entry.id === "demo-data")).toBe(false);
 	});
 
 	it("gives owner and admin memberships the same org admin menu", () => {
@@ -180,5 +196,37 @@ describe("settings visibility tiers", () => {
 		expect(ownerEntries.map((entry) => entry.id)).toEqual(
 			adminEntries.map((entry) => entry.id),
 		);
+	});
+
+	it("hides demo data when the demo data feature is disabled", () => {
+		const entries = filterSettingsByFeatureFlags(SETTINGS_ENTRIES, {
+			shiftsEnabled: true,
+			projectsEnabled: true,
+			surchargesEnabled: true,
+			demoDataEnabled: false,
+		});
+
+		expect(entries.some((entry) => entry.id === "demo-data")).toBe(false);
+	});
+
+	it("shows demo data when the demo data feature is enabled", () => {
+		const entries = filterSettingsByFeatureFlags(SETTINGS_ENTRIES, {
+			shiftsEnabled: true,
+			projectsEnabled: true,
+			surchargesEnabled: true,
+			demoDataEnabled: true,
+		});
+
+		expect(entries.some((entry) => entry.id === "demo-data")).toBe(true);
+	});
+
+	it("keeps demo data visible when partial feature flags omit the new flag", () => {
+		const entries = filterSettingsByFeatureFlags(SETTINGS_ENTRIES, {
+			shiftsEnabled: true,
+			projectsEnabled: true,
+			surchargesEnabled: true,
+		});
+
+		expect(entries.some((entry) => entry.id === "demo-data")).toBe(true);
 	});
 });

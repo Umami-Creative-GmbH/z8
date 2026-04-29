@@ -10,7 +10,8 @@ export type SettingsGroup =
 export type FeatureFlag =
 	| "shiftsEnabled"
 	| "projectsEnabled"
-	| "surchargesEnabled";
+	| "surchargesEnabled"
+	| "demoDataEnabled";
 
 export type FeatureFlagState = Partial<Record<FeatureFlag, boolean>>;
 
@@ -532,6 +533,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		icon: "test-pipe",
 		minimumTier: "orgAdmin",
 		group: "data",
+		requiredFeature: "demoDataEnabled",
 	},
 	{
 		id: "data-import",
@@ -580,6 +582,9 @@ export function filterSettingsByFeatureFlags(
 ): SettingsEntry[] {
 	return entries.filter((entry) => {
 		if (!entry.requiredFeature) return true;
+		if (entry.requiredFeature === "demoDataEnabled") {
+			return featureFlags.demoDataEnabled ?? true;
+		}
 
 		return featureFlags[entry.requiredFeature] ?? false;
 	});
@@ -600,10 +605,11 @@ export function getResolvedSettingsVisibility({
 	visibleSettings: SettingsEntry[];
 	visibleGroups: SettingsGroupConfig[];
 } {
-	const visibleSettings = getVisibleSettings(accessTier, billingEnabled);
-	const visibleGroups = featureFlags
-		? getVisibleGroupsForFeatureFlags(visibleSettings, featureFlags)
-		: getVisibleGroups(visibleSettings);
+	const tierVisibleSettings = getVisibleSettings(accessTier, billingEnabled);
+	const visibleSettings = featureFlags
+		? filterSettingsByFeatureFlags(tierVisibleSettings, featureFlags)
+		: tierVisibleSettings;
+	const visibleGroups = getVisibleGroups(visibleSettings);
 
 	return {
 		visibleSettings,

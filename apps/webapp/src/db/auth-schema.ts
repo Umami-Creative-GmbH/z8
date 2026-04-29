@@ -110,6 +110,7 @@ export const organization = pgTable(
     shiftsEnabled: boolean("shifts_enabled").default(false),
     projectsEnabled: boolean("projects_enabled").default(false),
     surchargesEnabled: boolean("surcharges_enabled").default(false),
+    demoDataEnabled: boolean("demo_data_enabled").default(true),
     timezone: text("timezone").default("UTC"),
     deletedAt: timestamp("deleted_at"),
     deletedBy: text("deleted_by"),
