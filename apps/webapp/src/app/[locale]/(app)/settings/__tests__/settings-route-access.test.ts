@@ -275,6 +275,12 @@ describe("org-admin settings route access", () => {
 		expect(skillsActionsSource.includes('currentEmployee.role !== "admin"')).toBe(false);
 	});
 
+	it("keeps skill server action type exports out of the runtime bundle", () => {
+		const source = stripComments(readFileSync(join(SETTINGS_ROOT, "skills/actions.ts"), "utf8"));
+
+		expect(source).not.toMatch(/^export\s+type\s+\{/m);
+	});
+
 	it("uses shared scoped access helpers for vacation and work-policy actions", () => {
 		const vacationActionsSource = stripComments(
 			readFileSync(join(SETTINGS_ROOT, "vacation/actions.ts"), "utf8"),
