@@ -6,7 +6,12 @@ import { PermissionEditor } from "@/components/settings/permission-editor";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+	ActionPanel,
+	ActionPanelContent,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Input } from "@/components/ui/input";
 import {
 	Table,
@@ -174,11 +179,11 @@ export function PermissionEditorDialog(props: {
 		props;
 
 	return (
-		<Dialog open={!!selectedEmployee} onOpenChange={(open) => !open && onClose()}>
-			<DialogContent className="max-w-2xl">
-				<DialogHeader>
-					<DialogTitle>Edit Permissions - {selectedEmployee?.user.name}</DialogTitle>
-				</DialogHeader>
+		<ActionPanel open={!!selectedEmployee} onOpenChange={(open) => !open && onClose()}>
+			<ActionPanelContent size="wide">
+				<ActionPanelHeader>
+					<ActionPanelTitle>Edit Permissions - {selectedEmployee?.user.name}</ActionPanelTitle>
+				</ActionPanelHeader>
 				{selectedEmployee && currentEmployee ? (
 					<PermissionEditor
 						employeeId={selectedEmployee.id}
@@ -190,7 +195,7 @@ export function PermissionEditorDialog(props: {
 						onCancel={onClose}
 					/>
 				) : null}
-			</DialogContent>
-		</Dialog>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

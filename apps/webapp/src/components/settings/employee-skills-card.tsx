@@ -32,13 +32,13 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -255,7 +255,7 @@ export function EmployeeSkillsCard({
 				)}
 			</CardContent>
 
-			{/* Assign Skill Dialog */}
+			{/* Assign Skill ActionPanel */}
 			{canManageSkills ? (
 				<AssignSkillDialog
 					employeeId={employeeId}
@@ -271,7 +271,7 @@ export function EmployeeSkillsCard({
 }
 
 // ============================================
-// Assign Skill Dialog
+// Assign Skill ActionPanel
 // ============================================
 
 interface AssignSkillDialogProps {
@@ -355,14 +355,14 @@ function AssignSkillDialog({
 	};
 
 	return (
-		<Dialog open={open} onOpenChange={handleOpenChange}>
-			<DialogContent className="sm:max-w-[450px]">
-				<DialogHeader>
-					<DialogTitle>{t("settings.skills.assignSkill", "Assign Skill")}</DialogTitle>
-					<DialogDescription>
+		<ActionPanel open={open} onOpenChange={handleOpenChange}>
+			<ActionPanelContent>
+				<ActionPanelHeader>
+					<ActionPanelTitle>{t("settings.skills.assignSkill", "Assign Skill")}</ActionPanelTitle>
+					<ActionPanelDescription>
 						{t("settings.skills.assignSkillDescription", "Add a skill or certification to this employee")}
-					</DialogDescription>
-				</DialogHeader>
+					</ActionPanelDescription>
+				</ActionPanelHeader>
 
 				<form
 					onSubmit={(e) => {
@@ -468,7 +468,7 @@ function AssignSkillDialog({
 						</form.Field>
 					</div>
 
-					<DialogFooter>
+					<ActionPanelFooter>
 						<Button
 							type="button"
 							variant="outline"
@@ -484,9 +484,9 @@ function AssignSkillDialog({
 							{assignMutation.isPending && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />}
 							{t("settings.skills.assign", "Assign")}
 						</Button>
-					</DialogFooter>
+					</ActionPanelFooter>
 				</form>
-			</DialogContent>
-		</Dialog>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

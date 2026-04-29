@@ -6,13 +6,13 @@ import { toast } from "sonner";
 import { updateTeam } from "@/app/[locale]/(app)/settings/teams/actions";
 import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -61,12 +61,12 @@ export function EditTeamDialog({ team, open, onOpenChange, onSuccess }: EditTeam
 	if (!team) return null;
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-[425px]">
-				<DialogHeader>
-					<DialogTitle>Edit Team</DialogTitle>
-					<DialogDescription>Update team name and description</DialogDescription>
-				</DialogHeader>
+		<ActionPanel open={open} onOpenChange={onOpenChange}>
+			<ActionPanelContent>
+				<ActionPanelHeader>
+					<ActionPanelTitle>Edit Team</ActionPanelTitle>
+					<ActionPanelDescription>Update team name and description</ActionPanelDescription>
+				</ActionPanelHeader>
 
 				<form key={team.id} onSubmit={handleSubmit} className="space-y-4">
 					<div className="space-y-2">
@@ -91,7 +91,7 @@ export function EditTeamDialog({ team, open, onOpenChange, onSuccess }: EditTeam
 						/>
 					</div>
 
-					<DialogFooter>
+					<ActionPanelFooter>
 						<Button
 							type="button"
 							variant="outline"
@@ -104,9 +104,9 @@ export function EditTeamDialog({ team, open, onOpenChange, onSuccess }: EditTeam
 							{updateMutation.isPending && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
 							Save Changes
 						</Button>
-					</DialogFooter>
+					</ActionPanelFooter>
 				</form>
-			</DialogContent>
-		</Dialog>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

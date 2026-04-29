@@ -21,13 +21,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -333,21 +333,21 @@ export function WorkPolicyDialog({
 	}, [scheduleType, days, workingDaysPreset, hoursPerCycle]);
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-				<DialogHeader>
-					<DialogTitle>
+		<ActionPanel open={open} onOpenChange={onOpenChange}>
+			<ActionPanelContent className="max-h-[90vh] overflow-y-auto" size="wide">
+				<ActionPanelHeader>
+					<ActionPanelTitle>
 						{isEditing
 							? t("settings.workPolicies.editPolicy", "Edit Policy")
 							: t("settings.workPolicies.createPolicy", "Create Policy")}
-					</DialogTitle>
-					<DialogDescription>
+					</ActionPanelTitle>
+					<ActionPanelDescription>
 						{t(
 							"settings.workPolicies.policyDescription",
 							"Define work schedules and time regulations that can be assigned to your organization, teams, or employees.",
 						)}
-					</DialogDescription>
-				</DialogHeader>
+					</ActionPanelDescription>
+				</ActionPanelHeader>
 
 				<form
 					onSubmit={(e) => {
@@ -1160,7 +1160,7 @@ export function WorkPolicyDialog({
 						</>
 					)}
 
-					<DialogFooter>
+					<ActionPanelFooter>
 						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
 							{t("common.cancel", "Cancel")}
 						</Button>
@@ -1173,9 +1173,9 @@ export function WorkPolicyDialog({
 							{isPending && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
 							{isEditing ? t("common.save", "Save") : t("common.create", "Create")}
 						</Button>
-					</DialogFooter>
+					</ActionPanelFooter>
 				</form>
-			</DialogContent>
-		</Dialog>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

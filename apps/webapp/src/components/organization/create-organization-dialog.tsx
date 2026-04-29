@@ -11,13 +11,13 @@ import { z } from "zod";
 import { checkSlugAvailability } from "@/app/[locale]/(app)/organization-actions";
 import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getAuthErrorMessage } from "@/lib/auth/error-message";
@@ -146,26 +146,26 @@ export function CreateOrganizationDialog({
 	}, [slug, t]);
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-[500px]">
-				<DialogHeader>
+		<ActionPanel open={open} onOpenChange={onOpenChange}>
+			<ActionPanelContent>
+				<ActionPanelHeader>
 					<div className="flex items-center gap-3">
 						<div className="flex size-10 items-center justify-center rounded-lg bg-primary/10">
 							<IconBuilding className="size-5 text-primary" />
 						</div>
 						<div>
-							<DialogTitle>
+							<ActionPanelTitle>
 								{t("organization.createDialog.title", "Create Organization")}
-							</DialogTitle>
-							<DialogDescription>
+							</ActionPanelTitle>
+							<ActionPanelDescription>
 								{t(
 									"organization.createDialog.description",
 									"Set up your organization to get started",
 								)}
-							</DialogDescription>
+							</ActionPanelDescription>
 						</div>
 					</div>
-				</DialogHeader>
+				</ActionPanelHeader>
 
 				<form
 					onSubmit={(e) => {
@@ -258,7 +258,7 @@ export function CreateOrganizationDialog({
 						)}
 					</form.Field>
 
-					<DialogFooter>
+					<ActionPanelFooter>
 						<Button
 							type="button"
 							variant="outline"
@@ -271,9 +271,9 @@ export function CreateOrganizationDialog({
 							{loading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
 							{t("common.create", "Create")}
 						</Button>
-					</DialogFooter>
+					</ActionPanelFooter>
 				</form>
-			</DialogContent>
-		</Dialog>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

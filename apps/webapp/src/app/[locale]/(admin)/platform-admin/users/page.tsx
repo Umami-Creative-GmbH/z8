@@ -10,13 +10,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -83,7 +83,7 @@ export default function UsersPage() {
 	const [isPending, startTransition] = useTransition();
 	const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-	// Dialog states
+	// ActionPanel states
 	const [banDialogUser, setBanDialogUser] = useState<PlatformUser | null>(null);
 	const [banReason, setBanReason] = useState("");
 	const [banExpiry, setBanExpiry] = useState("");
@@ -426,15 +426,15 @@ export default function UsersPage() {
 				</div>
 			)}
 
-			{/* Ban Dialog */}
-			<Dialog open={!!banDialogUser} onOpenChange={() => setBanDialogUser(null)}>
-				<DialogContent>
-					<DialogHeader>
-						<DialogTitle>{t("admin.users.banDialog.title", "Ban User")}</DialogTitle>
-						<DialogDescription>
+			{/* Ban ActionPanel */}
+			<ActionPanel open={!!banDialogUser} onOpenChange={() => setBanDialogUser(null)}>
+				<ActionPanelContent>
+					<ActionPanelHeader>
+						<ActionPanelTitle>{t("admin.users.banDialog.title", "Ban User")}</ActionPanelTitle>
+						<ActionPanelDescription>
 							{t("admin.users.banDialog.description", "Ban {email} from accessing the platform.", { email: banDialogUser?.email ?? "" })}
-						</DialogDescription>
-					</DialogHeader>
+						</ActionPanelDescription>
+					</ActionPanelHeader>
 					<div className="space-y-4 py-4">
 						<div className="space-y-2">
 							<Label htmlFor="reason">{t("admin.users.banDialog.reason", "Reason")}</Label>
@@ -458,26 +458,26 @@ export default function UsersPage() {
 							</p>
 						</div>
 					</div>
-					<DialogFooter>
+					<ActionPanelFooter>
 						<Button variant="outline" onClick={() => setBanDialogUser(null)}>
 							{t("common.cancel", "Cancel")}
 						</Button>
 						<Button variant="destructive" onClick={handleBan} disabled={!banReason || isPending}>
 							{t("admin.users.banDialog.confirmButton", "Ban User")}
 						</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
+					</ActionPanelFooter>
+				</ActionPanelContent>
+			</ActionPanel>
 
-			{/* Sessions Dialog */}
-			<Dialog open={!!sessionsDialogUser} onOpenChange={() => setSessionsDialogUser(null)}>
-				<DialogContent className="max-w-2xl">
-					<DialogHeader>
-						<DialogTitle>{t("admin.users.sessionsDialog.title", "User Sessions")}</DialogTitle>
-						<DialogDescription>
+			{/* Sessions ActionPanel */}
+			<ActionPanel open={!!sessionsDialogUser} onOpenChange={() => setSessionsDialogUser(null)}>
+				<ActionPanelContent size="wide">
+					<ActionPanelHeader>
+						<ActionPanelTitle>{t("admin.users.sessionsDialog.title", "User Sessions")}</ActionPanelTitle>
+						<ActionPanelDescription>
 							{t("admin.users.sessionsDialog.description", "Active sessions for {email}", { email: sessionsDialogUser?.email ?? "" })}
-						</DialogDescription>
-					</DialogHeader>
+						</ActionPanelDescription>
+					</ActionPanelHeader>
 					<div className="py-4">
 						{sessionsLoading ? (
 							<div className="space-y-2">
@@ -521,7 +521,7 @@ export default function UsersPage() {
 							</div>
 						)}
 					</div>
-					<DialogFooter>
+					<ActionPanelFooter>
 						<Button variant="outline" onClick={() => setSessionsDialogUser(null)}>
 							{t("common.close", "Close")}
 						</Button>
@@ -530,9 +530,9 @@ export default function UsersPage() {
 								{t("admin.users.sessionsDialog.revokeAll", "Revoke All Sessions")}
 							</Button>
 						)}
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
+					</ActionPanelFooter>
+				</ActionPanelContent>
+			</ActionPanel>
 		</div>
 	);
 }

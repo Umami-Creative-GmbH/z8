@@ -7,13 +7,13 @@ import { toast } from "sonner";
 import { createTeam } from "@/app/[locale]/(app)/settings/teams/actions";
 import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -65,12 +65,12 @@ export function CreateTeamDialog({
 	};
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-[425px]">
-				<DialogHeader>
-					<DialogTitle>Create Team</DialogTitle>
-					<DialogDescription>Create a new team to organize your employees</DialogDescription>
-				</DialogHeader>
+		<ActionPanel open={open} onOpenChange={onOpenChange}>
+			<ActionPanelContent>
+				<ActionPanelHeader>
+					<ActionPanelTitle>Create Team</ActionPanelTitle>
+					<ActionPanelDescription>Create a new team to organize your employees</ActionPanelDescription>
+				</ActionPanelHeader>
 
 				<form onSubmit={handleSubmit} className="space-y-4">
 					<div className="space-y-2">
@@ -95,7 +95,7 @@ export function CreateTeamDialog({
 						/>
 					</div>
 
-					<DialogFooter>
+					<ActionPanelFooter>
 						<Button
 							type="button"
 							variant="outline"
@@ -108,9 +108,9 @@ export function CreateTeamDialog({
 							{createMutation.isPending && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
 							Create Team
 						</Button>
-					</DialogFooter>
+					</ActionPanelFooter>
 				</form>
-			</DialogContent>
-		</Dialog>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

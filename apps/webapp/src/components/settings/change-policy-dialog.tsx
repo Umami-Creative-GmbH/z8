@@ -13,13 +13,13 @@ import {
 } from "@/app/[locale]/(app)/settings/change-policies/actions";
 import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -125,21 +125,21 @@ export function ChangePolicyDialog({
 	};
 
 	return (
-		<Dialog open={open} onOpenChange={handleOpenChange}>
-			<DialogContent className="sm:max-w-[500px]">
-				<DialogHeader>
-					<DialogTitle>
+		<ActionPanel open={open} onOpenChange={handleOpenChange}>
+			<ActionPanelContent>
+				<ActionPanelHeader>
+					<ActionPanelTitle>
 						{isEditing
 							? t("settings.changePolicies.editTitle", "Edit Change Policy")
 							: t("settings.changePolicies.createTitle", "Create Change Policy")}
-					</DialogTitle>
-					<DialogDescription>
+					</ActionPanelTitle>
+					<ActionPanelDescription>
 						{t(
 							"settings.changePolicies.dialogDescription",
 							"Configure when employees can edit their time entries and when approval is required.",
 						)}
-					</DialogDescription>
-				</DialogHeader>
+					</ActionPanelDescription>
+				</ActionPanelHeader>
 
 				<form
 					onSubmit={(e) => {
@@ -366,7 +366,7 @@ export function ChangePolicyDialog({
 						}
 					</form.Subscribe>
 
-					<DialogFooter>
+					<ActionPanelFooter>
 						<Button
 							type="button"
 							variant="outline"
@@ -385,9 +385,9 @@ export function ChangePolicyDialog({
 								</Button>
 							)}
 						</form.Subscribe>
-					</DialogFooter>
+					</ActionPanelFooter>
 				</form>
-			</DialogContent>
-		</Dialog>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

@@ -13,13 +13,13 @@ import {
 } from "@/app/[locale]/(app)/settings/work-categories/actions";
 import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Label } from "@/components/ui/label";
 import {
 	Select,
@@ -202,12 +202,12 @@ export function WorkCategoryAssignmentDialog({
 	};
 
 	return (
-		<Dialog open={open} onOpenChange={handleOpenChange}>
-			<DialogContent className="sm:max-w-md">
-				<DialogHeader>
-					<DialogTitle>{getTitle()}</DialogTitle>
-					<DialogDescription>{getDescription()}</DialogDescription>
-				</DialogHeader>
+		<ActionPanel open={open} onOpenChange={handleOpenChange}>
+			<ActionPanelContent size="compact">
+				<ActionPanelHeader>
+					<ActionPanelTitle>{getTitle()}</ActionPanelTitle>
+					<ActionPanelDescription>{getDescription()}</ActionPanelDescription>
+				</ActionPanelHeader>
 
 				<div className="space-y-4 py-4">
 					{/* Category Set Selection */}
@@ -317,7 +317,7 @@ export function WorkCategoryAssignmentDialog({
 					)}
 				</div>
 
-				<DialogFooter>
+				<ActionPanelFooter>
 					<Button variant="outline" onClick={() => handleOpenChange(false)}>
 						{t("common.cancel", "Cancel")}
 					</Button>
@@ -331,8 +331,8 @@ export function WorkCategoryAssignmentDialog({
 							t("common.assign", "Assign")
 						)}
 					</Button>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
+				</ActionPanelFooter>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

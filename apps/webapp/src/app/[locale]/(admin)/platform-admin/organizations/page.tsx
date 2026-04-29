@@ -20,13 +20,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -92,7 +92,7 @@ export default function OrganizationsPage() {
 	const [isPending, startTransition] = useTransition();
 	const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-	// Dialog states
+	// ActionPanel states
 	const [suspendDialogOrg, setSuspendDialogOrg] = useState<PlatformOrganization | null>(null);
 	const [suspendReason, setSuspendReason] = useState("");
 	const [deleteDialogOrg, setDeleteDialogOrg] = useState<PlatformOrganization | null>(null);
@@ -437,15 +437,15 @@ export default function OrganizationsPage() {
 				</div>
 			)}
 
-			{/* Suspend Dialog */}
-			<Dialog open={!!suspendDialogOrg} onOpenChange={() => setSuspendDialogOrg(null)}>
-				<DialogContent>
-					<DialogHeader>
-						<DialogTitle>{t("admin.organizations.suspendDialog.title", "Suspend Organization")}</DialogTitle>
-						<DialogDescription>
+			{/* Suspend ActionPanel */}
+			<ActionPanel open={!!suspendDialogOrg} onOpenChange={() => setSuspendDialogOrg(null)}>
+				<ActionPanelContent>
+					<ActionPanelHeader>
+						<ActionPanelTitle>{t("admin.organizations.suspendDialog.title", "Suspend Organization")}</ActionPanelTitle>
+						<ActionPanelDescription>
 							{t("admin.organizations.suspendDialog.description", "Suspend \"{name}\" and put it in read-only mode. Members will be able to view data but not create or edit anything.", { name: suspendDialogOrg?.name ?? "" })}
-						</DialogDescription>
-					</DialogHeader>
+						</ActionPanelDescription>
+					</ActionPanelHeader>
 					<div className="space-y-4 py-4">
 						<div className="space-y-2">
 							<Label htmlFor="suspendReason">{t("admin.organizations.suspendDialog.reason", "Reason")}</Label>
@@ -457,7 +457,7 @@ export default function OrganizationsPage() {
 							/>
 						</div>
 					</div>
-					<DialogFooter>
+					<ActionPanelFooter>
 						<Button variant="outline" onClick={() => setSuspendDialogOrg(null)}>
 							{t("common.cancel", "Cancel")}
 						</Button>
@@ -468,12 +468,12 @@ export default function OrganizationsPage() {
 						>
 							{t("admin.organizations.suspendDialog.confirmButton", "Suspend Organization")}
 						</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
+					</ActionPanelFooter>
+				</ActionPanelContent>
+			</ActionPanel>
 
-			{/* Delete Dialog */}
-			<Dialog
+			{/* Delete ActionPanel */}
+			<ActionPanel
 				open={!!deleteDialogOrg}
 				onOpenChange={() => {
 					setDeleteDialogOrg(null);
@@ -482,13 +482,13 @@ export default function OrganizationsPage() {
 					setDeleteConfirmName("");
 				}}
 			>
-				<DialogContent>
-					<DialogHeader>
-						<DialogTitle>{t("admin.organizations.deleteDialog.title", "Delete Organization")}</DialogTitle>
-						<DialogDescription>
+				<ActionPanelContent>
+					<ActionPanelHeader>
+						<ActionPanelTitle>{t("admin.organizations.deleteDialog.title", "Delete Organization")}</ActionPanelTitle>
+						<ActionPanelDescription>
 							{t("admin.organizations.deleteDialog.description", "This action will delete \"{name}\" and all associated data. This cannot be undone.", { name: deleteDialogOrg?.name ?? "" })}
-						</DialogDescription>
-					</DialogHeader>
+						</ActionPanelDescription>
+					</ActionPanelHeader>
 					<div className="space-y-4 py-4">
 						<div className="flex items-center space-x-2">
 							<Checkbox
@@ -522,7 +522,7 @@ export default function OrganizationsPage() {
 							/>
 						</div>
 					</div>
-					<DialogFooter>
+					<ActionPanelFooter>
 						<Button variant="outline" onClick={() => setDeleteDialogOrg(null)}>
 							{t("common.cancel", "Cancel")}
 						</Button>
@@ -533,9 +533,9 @@ export default function OrganizationsPage() {
 						>
 							{t("admin.organizations.deleteDialog.confirmButton", "Delete Organization")}
 						</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
+					</ActionPanelFooter>
+				</ActionPanelContent>
+			</ActionPanel>
 		</div>
 	);
 }

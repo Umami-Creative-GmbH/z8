@@ -13,13 +13,13 @@ const QRCodeSVG = dynamic(() => import("qrcode.react").then((mod) => mod.QRCodeS
 	ssr: false,
 });
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { getAuthErrorMessage } from "@/lib/auth/error-message";
 import { authClient } from "@/lib/auth-client";
@@ -222,15 +222,15 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled, userEmail }: TwoFa
 				)}
 			</div>
 
-			{/* Password Input Dialog for Enabling 2FA */}
-			<Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
-				<DialogContent>
-					<DialogHeader>
-						<DialogTitle>Enter Your Password</DialogTitle>
-						<DialogDescription>
+			{/* Password Input ActionPanel for Enabling 2FA */}
+			<ActionPanel open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
+				<ActionPanelContent>
+					<ActionPanelHeader>
+						<ActionPanelTitle>Enter Your Password</ActionPanelTitle>
+						<ActionPanelDescription>
 							Please confirm your password to enable two-factor authentication
-						</DialogDescription>
-					</DialogHeader>
+						</ActionPanelDescription>
+					</ActionPanelHeader>
 					<div className="space-y-4">
 						<div className="space-y-2">
 							<label className="text-sm font-medium">Password</label>
@@ -243,7 +243,7 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled, userEmail }: TwoFa
 							/>
 						</div>
 					</div>
-					<DialogFooter>
+					<ActionPanelFooter>
 						<Button
 							variant="outline"
 							onClick={() => {
@@ -257,19 +257,19 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled, userEmail }: TwoFa
 						<Button onClick={handleEnable2FA} disabled={isPending || !password}>
 							Continue
 						</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
+					</ActionPanelFooter>
+				</ActionPanelContent>
+			</ActionPanel>
 
-			{/* Password Input Dialog for Regenerating Backup Codes */}
-			<Dialog open={showRegenerateDialog} onOpenChange={setShowRegenerateDialog}>
-				<DialogContent>
-					<DialogHeader>
-						<DialogTitle>Enter Your Password</DialogTitle>
-						<DialogDescription>
+			{/* Password Input ActionPanel for Regenerating Backup Codes */}
+			<ActionPanel open={showRegenerateDialog} onOpenChange={setShowRegenerateDialog}>
+				<ActionPanelContent>
+					<ActionPanelHeader>
+						<ActionPanelTitle>Enter Your Password</ActionPanelTitle>
+						<ActionPanelDescription>
 							Please confirm your password to regenerate backup codes
-						</DialogDescription>
-					</DialogHeader>
+						</ActionPanelDescription>
+					</ActionPanelHeader>
 					<div className="space-y-4">
 						<div className="space-y-2">
 							<label className="text-sm font-medium">Password</label>
@@ -282,7 +282,7 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled, userEmail }: TwoFa
 							/>
 						</div>
 					</div>
-					<DialogFooter>
+					<ActionPanelFooter>
 						<Button
 							variant="outline"
 							onClick={() => {
@@ -299,17 +299,17 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled, userEmail }: TwoFa
 						>
 							Regenerate Codes
 						</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
+					</ActionPanelFooter>
+				</ActionPanelContent>
+			</ActionPanel>
 
-			{/* Setup Dialog */}
-			<Dialog open={setupDialogOpen} onOpenChange={setSetupDialogOpen}>
-				<DialogContent>
-					<DialogHeader>
-						<DialogTitle>Setup Two-Factor Authentication</DialogTitle>
-						<DialogDescription>Scan the QR code with your authenticator app</DialogDescription>
-					</DialogHeader>
+			{/* Setup ActionPanel */}
+			<ActionPanel open={setupDialogOpen} onOpenChange={setSetupDialogOpen}>
+				<ActionPanelContent>
+					<ActionPanelHeader>
+						<ActionPanelTitle>Setup Two-Factor Authentication</ActionPanelTitle>
+						<ActionPanelDescription>Scan the QR code with your authenticator app</ActionPanelDescription>
+					</ActionPanelHeader>
 
 					<div className="space-y-4">
 						{/* QR Code */}
@@ -341,7 +341,7 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled, userEmail }: TwoFa
 						</div>
 					</div>
 
-					<DialogFooter>
+					<ActionPanelFooter>
 						<Button
 							variant="outline"
 							onClick={() => setSetupDialogOpen(false)}
@@ -352,20 +352,20 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled, userEmail }: TwoFa
 						<Button onClick={handleVerifyAndEnable} disabled={isPending || otpValue.length !== 6}>
 							Verify and Enable
 						</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
+					</ActionPanelFooter>
+				</ActionPanelContent>
+			</ActionPanel>
 
-			{/* Backup Codes Dialog */}
-			<Dialog open={backupCodesDialogOpen} onOpenChange={setBackupCodesDialogOpen}>
-				<DialogContent>
-					<DialogHeader>
-						<DialogTitle>Save Your Backup Codes</DialogTitle>
-						<DialogDescription>
+			{/* Backup Codes ActionPanel */}
+			<ActionPanel open={backupCodesDialogOpen} onOpenChange={setBackupCodesDialogOpen}>
+				<ActionPanelContent>
+					<ActionPanelHeader>
+						<ActionPanelTitle>Save Your Backup Codes</ActionPanelTitle>
+						<ActionPanelDescription>
 							Keep these codes in a safe place. You can use them to access your account if you lose
 							access to your authenticator app. Each code can only be used once.
-						</DialogDescription>
-					</DialogHeader>
+						</ActionPanelDescription>
+					</ActionPanelHeader>
 
 					<div className="space-y-4">
 						<div className="grid grid-cols-2 gap-2 rounded-lg bg-muted p-4">
@@ -381,22 +381,22 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled, userEmail }: TwoFa
 						</Button>
 					</div>
 
-					<DialogFooter>
+					<ActionPanelFooter>
 						<Button onClick={() => setBackupCodesDialogOpen(false)}>I've Saved These Codes</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
+					</ActionPanelFooter>
+				</ActionPanelContent>
+			</ActionPanel>
 
-			{/* Disable Confirmation Dialog */}
-			<Dialog open={disableDialogOpen} onOpenChange={setDisableDialogOpen}>
-				<DialogContent>
-					<DialogHeader>
-						<DialogTitle>Disable Two-Factor Authentication?</DialogTitle>
-						<DialogDescription>
+			{/* Disable Confirmation ActionPanel */}
+			<ActionPanel open={disableDialogOpen} onOpenChange={setDisableDialogOpen}>
+				<ActionPanelContent>
+					<ActionPanelHeader>
+						<ActionPanelTitle>Disable Two-Factor Authentication?</ActionPanelTitle>
+						<ActionPanelDescription>
 							This will remove the extra layer of security from your account. Please enter your
 							password to confirm.
-						</DialogDescription>
-					</DialogHeader>
+						</ActionPanelDescription>
+					</ActionPanelHeader>
 					<div className="space-y-4">
 						<div className="space-y-2">
 							<label className="text-sm font-medium">Password</label>
@@ -409,7 +409,7 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled, userEmail }: TwoFa
 							/>
 						</div>
 					</div>
-					<DialogFooter>
+					<ActionPanelFooter>
 						<Button
 							variant="outline"
 							onClick={() => {
@@ -427,9 +427,9 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled, userEmail }: TwoFa
 						>
 							Disable 2FA
 						</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
+					</ActionPanelFooter>
+				</ActionPanelContent>
+			</ActionPanel>
 		</div>
 	);
 }

@@ -8,13 +8,13 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -99,17 +99,17 @@ export function ApiKeyCreateDialog({
 	const isValid = name.length >= 3 && selectedScopes.length > 0;
 
 	return (
-		<Dialog open={open} onOpenChange={handleOpenChange}>
-			<DialogContent className="sm:max-w-[500px]">
-				<DialogHeader>
-					<DialogTitle>{t("settings.apiKeys.createTitle", "Create API Key")}</DialogTitle>
-					<DialogDescription>
+		<ActionPanel open={open} onOpenChange={handleOpenChange}>
+			<ActionPanelContent>
+				<ActionPanelHeader>
+					<ActionPanelTitle>{t("settings.apiKeys.createTitle", "Create API Key")}</ActionPanelTitle>
+					<ActionPanelDescription>
 						{t(
 							"settings.apiKeys.createDescription",
 							"Create a new API key for programmatic access. The key will only be shown once.",
 						)}
-					</DialogDescription>
-				</DialogHeader>
+					</ActionPanelDescription>
+				</ActionPanelHeader>
 
 				<div className="space-y-4 py-4">
 					{/* Name */}
@@ -204,7 +204,7 @@ export function ApiKeyCreateDialog({
 					</div>
 				</div>
 
-				<DialogFooter>
+				<ActionPanelFooter>
 					<Button variant="outline" onClick={() => onOpenChange(false)}>
 						{t("common.cancel", "Cancel")}
 					</Button>
@@ -215,8 +215,8 @@ export function ApiKeyCreateDialog({
 						{createMutation.isPending && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
 						{t("settings.apiKeys.form.create", "Create Key")}
 					</Button>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
+				</ActionPanelFooter>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

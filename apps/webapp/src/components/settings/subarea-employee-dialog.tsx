@@ -11,13 +11,13 @@ import { assignSubareaEmployee } from "@/app/[locale]/(app)/settings/locations/a
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Label } from "@/components/ui/label";
 import {
 	Select,
@@ -115,20 +115,20 @@ export function SubareaEmployeeDialog({
 	};
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-[450px]">
-				<DialogHeader>
-					<DialogTitle>
+		<ActionPanel open={open} onOpenChange={onOpenChange}>
+			<ActionPanelContent>
+				<ActionPanelHeader>
+					<ActionPanelTitle>
 						{t("settings.locations.assignEmployeeToSubarea", "Assign Employee to Subarea")}
-					</DialogTitle>
-					<DialogDescription>
+					</ActionPanelTitle>
+					<ActionPanelDescription>
 						{t(
 							"settings.locations.assignEmployeeToSubareaDescription",
 							"Assign an employee as a supervisor for {subareaName}",
 							{ subareaName },
 						)}
-					</DialogDescription>
-				</DialogHeader>
+					</ActionPanelDescription>
+				</ActionPanelHeader>
 
 				{isLoading ? (
 					<div className="space-y-4 py-4">
@@ -206,7 +206,7 @@ export function SubareaEmployeeDialog({
 							</form.Field>
 						</div>
 
-						<DialogFooter>
+						<ActionPanelFooter>
 							<Button
 								type="button"
 								variant="outline"
@@ -219,10 +219,10 @@ export function SubareaEmployeeDialog({
 								{isSubmitting && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
 								{t("common.assign", "Assign")}
 							</Button>
-						</DialogFooter>
+						</ActionPanelFooter>
 					</form>
 				)}
-			</DialogContent>
-		</Dialog>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

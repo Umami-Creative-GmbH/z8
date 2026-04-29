@@ -29,13 +29,13 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -317,7 +317,7 @@ export function SkillCatalogManagement({
 				</CardContent>
 			</Card>
 
-			{/* Create/Edit Dialog */}
+			{/* Create/Edit ActionPanel */}
 			{canManageCatalog ? (
 				<SkillDialog
 					organizationId={organizationId}
@@ -332,7 +332,7 @@ export function SkillCatalogManagement({
 }
 
 // ============================================
-// Skill Dialog Component
+// Skill ActionPanel Component
 // ============================================
 
 interface SkillDialogProps {
@@ -432,23 +432,23 @@ function SkillDialog({ organizationId, skill, open, onOpenChange, onSuccess }: S
 	};
 
 	return (
-		<Dialog open={open} onOpenChange={handleOpenChange}>
-			<DialogContent className="sm:max-w-[500px]">
-				<DialogHeader>
-					<DialogTitle>
+		<ActionPanel open={open} onOpenChange={handleOpenChange}>
+			<ActionPanelContent>
+				<ActionPanelHeader>
+					<ActionPanelTitle>
 						{isEditing
 							? t("settings.skills.editSkill", "Edit Skill")
 							: t("settings.skills.createSkill", "Create Skill")}
-					</DialogTitle>
-					<DialogDescription>
+					</ActionPanelTitle>
+					<ActionPanelDescription>
 						{isEditing
 							? t("settings.skills.editSkillDescription", "Update the skill details")
 							: t(
 									"settings.skills.createSkillDescription",
 									"Create a new skill that can be assigned to employees"
 								)}
-					</DialogDescription>
-				</DialogHeader>
+					</ActionPanelDescription>
+				</ActionPanelHeader>
 
 				<form
 					onSubmit={(e) => {
@@ -575,7 +575,7 @@ function SkillDialog({ organizationId, skill, open, onOpenChange, onSuccess }: S
 						</form.Field>
 					</div>
 
-					<DialogFooter>
+					<ActionPanelFooter>
 						<Button
 							type="button"
 							variant="outline"
@@ -590,9 +590,9 @@ function SkillDialog({ organizationId, skill, open, onOpenChange, onSuccess }: S
 								? t("common.save", "Save")
 								: t("common.create", "Create")}
 						</Button>
-					</DialogFooter>
+					</ActionPanelFooter>
 				</form>
-			</DialogContent>
-		</Dialog>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

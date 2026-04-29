@@ -12,13 +12,13 @@ import {
 } from "@/app/[locale]/(app)/settings/locations/actions";
 import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -107,23 +107,23 @@ export function LocationDialog({
 	});
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-[500px]">
-				<DialogHeader>
-					<DialogTitle>
+		<ActionPanel open={open} onOpenChange={onOpenChange}>
+			<ActionPanelContent>
+				<ActionPanelHeader>
+					<ActionPanelTitle>
 						{isEditing
 							? t("settings.locations.dialog.editTitle", "Edit Location")
 							: t("settings.locations.dialog.createTitle", "Create Location")}
-					</DialogTitle>
-					<DialogDescription>
+					</ActionPanelTitle>
+					<ActionPanelDescription>
 						{isEditing
 							? t("settings.locations.dialog.editDescription", "Update location details")
 							: t(
 									"settings.locations.dialog.createDescription",
 									"Create a new location for your organization",
 								)}
-					</DialogDescription>
-				</DialogHeader>
+					</ActionPanelDescription>
+				</ActionPanelHeader>
 
 				<form
 					onSubmit={(e) => {
@@ -254,7 +254,7 @@ export function LocationDialog({
 						)}
 					</div>
 
-					<DialogFooter>
+					<ActionPanelFooter>
 						<Button
 							type="button"
 							variant="outline"
@@ -269,9 +269,9 @@ export function LocationDialog({
 								? t("settings.locations.dialog.save", "Save Changes")
 								: t("settings.locations.dialog.create", "Create Location")}
 						</Button>
-					</DialogFooter>
+					</ActionPanelFooter>
 				</form>
-			</DialogContent>
-		</Dialog>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

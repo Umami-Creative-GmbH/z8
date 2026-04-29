@@ -21,12 +21,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import {
 	Table,
 	TableBody,
@@ -203,14 +203,14 @@ export function AuditPackagesTable({ organizationId, packages }: AuditPackagesTa
 				</CardContent>
 			</Card>
 
-			{/* Verification Result Dialog */}
-			<Dialog
+			{/* Verification Result ActionPanel */}
+			<ActionPanel
 				open={verificationResult !== null}
 				onOpenChange={(open) => !open && setVerificationResult(null)}
 			>
-				<DialogContent className="max-w-lg">
-					<DialogHeader>
-						<DialogTitle className="flex items-center gap-2">
+				<ActionPanelContent>
+					<ActionPanelHeader>
+						<ActionPanelTitle className="flex items-center gap-2">
 							{verificationResult?.result.isValid ? (
 								<>
 									<IconCheck className="size-5 text-green-600" />
@@ -222,9 +222,9 @@ export function AuditPackagesTable({ organizationId, packages }: AuditPackagesTa
 									{t("settings.auditExport.verification.invalid", "Verification Failed")}
 								</>
 							)}
-						</DialogTitle>
-						<DialogDescription>{verificationResult?.result.summary}</DialogDescription>
-					</DialogHeader>
+						</ActionPanelTitle>
+						<ActionPanelDescription>{verificationResult?.result.summary}</ActionPanelDescription>
+					</ActionPanelHeader>
 					{verificationResult && (
 						<div className="space-y-4">
 							<div className="space-y-2">
@@ -256,8 +256,8 @@ export function AuditPackagesTable({ organizationId, packages }: AuditPackagesTa
 							</p>
 						</div>
 					)}
-				</DialogContent>
-			</Dialog>
+				</ActionPanelContent>
+			</ActionPanel>
 		</>
 	);
 }

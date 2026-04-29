@@ -9,13 +9,13 @@ import { sendInvitation } from "@/app/[locale]/(app)/settings/organizations/acti
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -89,12 +89,12 @@ export function InviteMemberDialog({
 	};
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-[425px]">
-				<DialogHeader>
-					<DialogTitle>Invite Member</DialogTitle>
-					<DialogDescription>Send an invitation to join {organizationName}</DialogDescription>
-				</DialogHeader>
+		<ActionPanel open={open} onOpenChange={onOpenChange}>
+			<ActionPanelContent>
+				<ActionPanelHeader>
+					<ActionPanelTitle>Invite Member</ActionPanelTitle>
+					<ActionPanelDescription>Send an invitation to join {organizationName}</ActionPanelDescription>
+				</ActionPanelHeader>
 
 				<form onSubmit={handleSubmit} className="space-y-4">
 					<div className="space-y-2">
@@ -174,7 +174,7 @@ export function InviteMemberDialog({
 						</div>
 					)}
 
-					<DialogFooter>
+					<ActionPanelFooter>
 						<Button
 							type="button"
 							variant="outline"
@@ -187,9 +187,9 @@ export function InviteMemberDialog({
 							{inviteMutation.isPending && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
 							Send Invitation
 						</Button>
-					</DialogFooter>
+					</ActionPanelFooter>
 				</form>
-			</DialogContent>
-		</Dialog>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

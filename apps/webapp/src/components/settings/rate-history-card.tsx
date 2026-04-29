@@ -16,14 +16,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DatePicker } from "@/components/ui/date-picker";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-	DialogTrigger,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+	ActionPanelTrigger,
+} from "@/components/ui/action-panel";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -116,20 +116,20 @@ export function RateHistoryCard({
 					<CardDescription>Hourly rate changes over time</CardDescription>
 				</div>
 				{isAdmin && (
-					<Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-						<DialogTrigger asChild>
+					<ActionPanel open={dialogOpen} onOpenChange={setDialogOpen}>
+						<ActionPanelTrigger asChild>
 							<Button size="sm">
 								<IconPlus className="mr-2 size-4" />
 								Change Rate
 							</Button>
-						</DialogTrigger>
-						<DialogContent>
-							<DialogHeader>
-								<DialogTitle>Update Hourly Rate</DialogTitle>
-								<DialogDescription>
+						</ActionPanelTrigger>
+						<ActionPanelContent>
+							<ActionPanelHeader>
+								<ActionPanelTitle>Update Hourly Rate</ActionPanelTitle>
+								<ActionPanelDescription>
 									Create a new rate entry. The current rate will be closed automatically.
-								</DialogDescription>
-							</DialogHeader>
+								</ActionPanelDescription>
+							</ActionPanelHeader>
 							<form
 								onSubmit={(e) => {
 									e.preventDefault();
@@ -197,7 +197,7 @@ export function RateHistoryCard({
 									)}
 								</form.Field>
 
-								<DialogFooter>
+								<ActionPanelFooter>
 									<Button
 										type="button"
 										variant="outline"
@@ -210,10 +210,10 @@ export function RateHistoryCard({
 										{isAddingRate && <IconLoader2 className="mr-2 size-4 animate-spin" />}
 										Update Rate
 									</Button>
-								</DialogFooter>
+								</ActionPanelFooter>
 							</form>
-						</DialogContent>
-					</Dialog>
+						</ActionPanelContent>
+					</ActionPanel>
 				)}
 			</CardHeader>
 			<CardContent>

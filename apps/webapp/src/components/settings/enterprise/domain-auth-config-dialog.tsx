@@ -4,13 +4,13 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
@@ -82,15 +82,15 @@ export function DomainAuthConfigDialog({
 	};
 
 	return (
-		<Dialog open={open} onOpenChange={handleOpenChange}>
-			<DialogContent className="max-w-md">
-				<DialogHeader>
-					<DialogTitle>Auth Configuration</DialogTitle>
-					<DialogDescription>
+		<ActionPanel open={open} onOpenChange={handleOpenChange}>
+			<ActionPanelContent>
+				<ActionPanelHeader>
+					<ActionPanelTitle>Auth Configuration</ActionPanelTitle>
+					<ActionPanelDescription>
 						Configure which authentication methods are available for users signing in via{" "}
 						{domain.domain}
-					</DialogDescription>
-				</DialogHeader>
+					</ActionPanelDescription>
+				</ActionPanelHeader>
 
 				<div className="space-y-6">
 					{/* Email/Password */}
@@ -213,15 +213,15 @@ export function DomainAuthConfigDialog({
 					</div>
 				</div>
 
-				<DialogFooter>
+				<ActionPanelFooter>
 					<Button variant="outline" onClick={() => onOpenChange(false)}>
 						Cancel
 					</Button>
 					<Button onClick={handleSave} disabled={isSaving}>
 						{isSaving ? "Saving..." : "Save Configuration"}
 					</Button>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
+				</ActionPanelFooter>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

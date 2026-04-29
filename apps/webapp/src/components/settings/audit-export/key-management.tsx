@@ -31,13 +31,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogHeader,
-	DialogTitle,
-	DialogTrigger,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelHeader,
+	ActionPanelTitle,
+	ActionPanelTrigger,
+} from "@/components/ui/action-panel";
 import {
 	Table,
 	TableBody,
@@ -217,25 +217,25 @@ export function KeyManagement({
 				{/* Actions */}
 				<div className="flex flex-wrap gap-2">
 					{/* Export Public Key */}
-					<Dialog>
-						<DialogTrigger asChild>
+					<ActionPanel>
+						<ActionPanelTrigger asChild>
 							<Button variant="outline" onClick={loadPublicKey}>
 								<IconDownload className="mr-2 size-4" />
 								{t("settings.auditExport.keys.exportPublicKey", "Export Public Key")}
 							</Button>
-						</DialogTrigger>
-						<DialogContent className="max-w-2xl">
-							<DialogHeader>
-								<DialogTitle>
+						</ActionPanelTrigger>
+						<ActionPanelContent size="wide">
+							<ActionPanelHeader>
+								<ActionPanelTitle>
 									{t("settings.auditExport.keys.exportTitle", "Export Public Key")}
-								</DialogTitle>
-								<DialogDescription>
+								</ActionPanelTitle>
+								<ActionPanelDescription>
 									{t(
 										"settings.auditExport.keys.exportDescription",
 										"Use this public key to verify audit package signatures externally",
 									)}
-								</DialogDescription>
-							</DialogHeader>
+								</ActionPanelDescription>
+							</ActionPanelHeader>
 							{publicKeyLoading ? (
 								<div className="flex items-center justify-center py-8">
 									<IconLoader2 className="size-6 animate-spin" />
@@ -284,12 +284,12 @@ export function KeyManagement({
 									{t("settings.auditExport.keys.noKeyData", "No key data available")}
 								</p>
 							)}
-						</DialogContent>
-					</Dialog>
+						</ActionPanelContent>
+					</ActionPanel>
 
 					{/* View History */}
-					<Dialog>
-						<DialogTrigger asChild>
+					<ActionPanel>
+						<ActionPanelTrigger asChild>
 							<Button variant="outline" onClick={loadKeyHistory}>
 								{historyLoading ? (
 									<IconLoader2 className="mr-2 size-4 animate-spin" />
@@ -298,19 +298,19 @@ export function KeyManagement({
 								)}
 								{t("settings.auditExport.keys.viewHistory", "Key History")}
 							</Button>
-						</DialogTrigger>
-						<DialogContent className="max-w-2xl">
-							<DialogHeader>
-								<DialogTitle>
+						</ActionPanelTrigger>
+						<ActionPanelContent size="wide">
+							<ActionPanelHeader>
+								<ActionPanelTitle>
 									{t("settings.auditExport.keys.historyTitle", "Signing Key History")}
-								</DialogTitle>
-								<DialogDescription>
+								</ActionPanelTitle>
+								<ActionPanelDescription>
 									{t(
 										"settings.auditExport.keys.historyDescription",
 										"All signing keys used by this organization",
 									)}
-								</DialogDescription>
-							</DialogHeader>
+								</ActionPanelDescription>
+							</ActionPanelHeader>
 							{historyLoading ? (
 								<div className="flex items-center justify-center py-8">
 									<IconLoader2 className="size-6 animate-spin" />
@@ -353,8 +353,8 @@ export function KeyManagement({
 									{t("settings.auditExport.keys.noHistory", "No key history available")}
 								</p>
 							)}
-						</DialogContent>
-					</Dialog>
+						</ActionPanelContent>
+					</ActionPanel>
 
 					{/* Rotate Key */}
 					<AlertDialog>

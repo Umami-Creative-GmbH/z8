@@ -13,13 +13,13 @@ import {
 import { EmployeeSingleSelect } from "@/components/employee-select";
 import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import {
 	Select,
 	SelectContent,
@@ -162,12 +162,12 @@ export function SurchargeAssignmentDialog({
 	};
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="max-w-md">
-				<DialogHeader>
-					<DialogTitle>{getDialogTitle()}</DialogTitle>
-					<DialogDescription>{getDialogDescription()}</DialogDescription>
-				</DialogHeader>
+		<ActionPanel open={open} onOpenChange={onOpenChange}>
+			<ActionPanelContent>
+				<ActionPanelHeader>
+					<ActionPanelTitle>{getDialogTitle()}</ActionPanelTitle>
+					<ActionPanelDescription>{getDialogDescription()}</ActionPanelDescription>
+				</ActionPanelHeader>
 
 				<form
 					onSubmit={(e) => {
@@ -267,7 +267,7 @@ export function SurchargeAssignmentDialog({
 						</form.Field>
 					)}
 
-					<DialogFooter>
+					<ActionPanelFooter>
 						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
 							{t("common.cancel", "Cancel")}
 						</Button>
@@ -284,9 +284,9 @@ export function SurchargeAssignmentDialog({
 								</Button>
 							)}
 						</form.Subscribe>
-					</DialogFooter>
+					</ActionPanelFooter>
 				</form>
-			</DialogContent>
-		</Dialog>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

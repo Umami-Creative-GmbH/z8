@@ -21,13 +21,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DatePicker } from "@/components/ui/date-picker";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogHeader,
-	DialogTitle,
-	DialogTrigger,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelHeader,
+	ActionPanelTitle,
+	ActionPanelTrigger,
+} from "@/components/ui/action-panel";
 import { Input } from "@/components/ui/input";
 import {
 	Select,
@@ -355,19 +355,19 @@ export function AuditLogViewer() {
 												{log.ipAddress || "-"}
 											</TableCell>
 											<TableCell>
-												<Dialog>
-													<DialogTrigger asChild>
+												<ActionPanel>
+													<ActionPanelTrigger asChild>
 														<Button variant="ghost" size="sm">
 															<IconEye className="size-4" />
 														</Button>
-													</DialogTrigger>
-													<DialogContent className="max-w-2xl">
-														<DialogHeader>
-															<DialogTitle>Audit Log Details</DialogTitle>
-															<DialogDescription>
+													</ActionPanelTrigger>
+													<ActionPanelContent size="wide">
+														<ActionPanelHeader>
+															<ActionPanelTitle>Audit Log Details</ActionPanelTitle>
+															<ActionPanelDescription>
 																Full details of this audit log entry
-															</DialogDescription>
-														</DialogHeader>
+															</ActionPanelDescription>
+														</ActionPanelHeader>
 														<div className="space-y-4">
 															<div className="grid grid-cols-2 gap-4">
 																<div>
@@ -425,8 +425,8 @@ export function AuditLogViewer() {
 																</div>
 															)}
 														</div>
-													</DialogContent>
-												</Dialog>
+													</ActionPanelContent>
+												</ActionPanel>
 											</TableCell>
 										</TableRow>
 									))}

@@ -17,12 +17,12 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import {
 	Table,
 	TableBody,
@@ -136,14 +136,14 @@ export function ExecutionHistoryDialog({
 	};
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
-				<DialogHeader>
-					<DialogTitle>{t("settings.scheduledExports.history.title", "Execution History")}</DialogTitle>
-					<DialogDescription>
+		<ActionPanel open={open} onOpenChange={onOpenChange}>
+			<ActionPanelContent className="max-h-[80vh] overflow-hidden flex flex-col">
+				<ActionPanelHeader>
+					<ActionPanelTitle>{t("settings.scheduledExports.history.title", "Execution History")}</ActionPanelTitle>
+					<ActionPanelDescription>
 						{t("settings.scheduledExports.history.description", "Past runs for \"{scheduleName}\"", { scheduleName })}
-					</DialogDescription>
-				</DialogHeader>
+					</ActionPanelDescription>
+				</ActionPanelHeader>
 
 				<div className="flex-1 overflow-auto" role="region" aria-label={t("settings.scheduledExports.history.tableRegion", "Execution history table")}>
 					{isLoading && (
@@ -253,7 +253,7 @@ export function ExecutionHistoryDialog({
 						</Table>
 					)}
 				</div>
-			</DialogContent>
-		</Dialog>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

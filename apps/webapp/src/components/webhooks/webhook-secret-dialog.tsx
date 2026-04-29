@@ -6,13 +6,13 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
@@ -40,20 +40,20 @@ export function WebhookSecretDialog({ secret, open, onOpenChange }: WebhookSecre
 	};
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent>
-				<DialogHeader>
-					<DialogTitle className="flex items-center gap-2">
+		<ActionPanel open={open} onOpenChange={onOpenChange}>
+			<ActionPanelContent>
+				<ActionPanelHeader>
+					<ActionPanelTitle className="flex items-center gap-2">
 						<IconKey className="h-5 w-5" aria-hidden="true" />
 						{t("webhooks.secret-dialog.title", "Webhook Secret")}
-					</DialogTitle>
-					<DialogDescription>
+					</ActionPanelTitle>
+					<ActionPanelDescription>
 						{t(
 							"webhooks.secret-dialog.description",
 							"This secret is used to verify webhook signatures. Store it securely.",
 						)}
-					</DialogDescription>
-				</DialogHeader>
+					</ActionPanelDescription>
+				</ActionPanelHeader>
 
 				<Alert variant="default" className="border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20">
 					<AlertTitle className="text-yellow-700 dark:text-yellow-400">
@@ -121,12 +121,12 @@ function verifySignature(payload, signature, secret) {
 					</pre>
 				</div>
 
-				<DialogFooter>
+				<ActionPanelFooter>
 					<Button onClick={() => onOpenChange(false)}>
 						{t("webhooks.secret-dialog.done", "I've saved the secret")}
 					</Button>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
+				</ActionPanelFooter>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

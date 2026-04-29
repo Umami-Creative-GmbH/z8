@@ -14,13 +14,13 @@ import {
 } from "@/app/[locale]/(app)/settings/change-policies/actions";
 import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Label } from "@/components/ui/label";
 import {
 	Select,
@@ -186,12 +186,12 @@ export function ChangePolicyAssignmentDialog({
 	};
 
 	return (
-		<Dialog open={open} onOpenChange={handleOpenChange}>
-			<DialogContent className="sm:max-w-[425px]">
-				<DialogHeader>
-					<DialogTitle>{getTitle()}</DialogTitle>
-					<DialogDescription>{getDescription()}</DialogDescription>
-				</DialogHeader>
+		<ActionPanel open={open} onOpenChange={handleOpenChange}>
+			<ActionPanelContent>
+				<ActionPanelHeader>
+					<ActionPanelTitle>{getTitle()}</ActionPanelTitle>
+					<ActionPanelDescription>{getDescription()}</ActionPanelDescription>
+				</ActionPanelHeader>
 
 				{isLoading ? (
 					<div className="flex items-center justify-center py-8">
@@ -321,7 +321,7 @@ export function ChangePolicyAssignmentDialog({
 							</form.Field>
 						)}
 
-						<DialogFooter>
+						<ActionPanelFooter>
 							<Button
 								type="button"
 								variant="outline"
@@ -345,10 +345,10 @@ export function ChangePolicyAssignmentDialog({
 									</Button>
 								)}
 							</form.Subscribe>
-						</DialogFooter>
+						</ActionPanelFooter>
 					</form>
 				)}
-			</DialogContent>
-		</Dialog>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

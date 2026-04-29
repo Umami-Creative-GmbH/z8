@@ -11,13 +11,13 @@ import {
 } from "@/app/[locale]/(app)/settings/organizations/invite-code-actions";
 import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface InviteCodeQRDialogProps {
@@ -120,14 +120,14 @@ export function InviteCodeQRDialog({
 	const joinUrl = inviteCode ? `${resolvedBaseUrl}/join/${inviteCode.code}` : "";
 
 	return (
-		<Dialog open={open} onOpenChange={handleOpenChange}>
-			<DialogContent className="sm:max-w-[400px]">
-				<DialogHeader>
-					<DialogTitle>{t("settings.inviteCodes.qrCode", "QR Code")}</DialogTitle>
-					<DialogDescription>
+		<ActionPanel open={open} onOpenChange={handleOpenChange}>
+			<ActionPanelContent>
+				<ActionPanelHeader>
+					<ActionPanelTitle>{t("settings.inviteCodes.qrCode", "QR Code")}</ActionPanelTitle>
+					<ActionPanelDescription>
 						{t("settings.inviteCodes.qrDescription", "Scan this QR code to join the organization")}
-					</DialogDescription>
-				</DialogHeader>
+					</ActionPanelDescription>
+				</ActionPanelHeader>
 
 				<div className="py-4">
 					{/* Code and URL display */}
@@ -187,7 +187,7 @@ export function InviteCodeQRDialog({
 					</Tabs>
 				</div>
 
-				<DialogFooter>
+				<ActionPanelFooter>
 					<Button variant="outline" onClick={() => onOpenChange(false)}>
 						{t("common.close", "Close")}
 					</Button>
@@ -197,8 +197,8 @@ export function InviteCodeQRDialog({
 							format: format.toUpperCase(),
 						})}
 					</Button>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
+				</ActionPanelFooter>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

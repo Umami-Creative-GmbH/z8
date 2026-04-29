@@ -11,15 +11,15 @@ import {
 } from "@/app/[locale]/(app)/time-tracking/actions";
 import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogClose,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-	DialogTrigger,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelClose,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+	ActionPanelTrigger,
+} from "@/components/ui/action-panel";
 import {
 	fieldHasError,
 	TFormControl,
@@ -126,8 +126,8 @@ export function TimeCorrectionDialog({ workPeriod, isSameDay, employeeTimezone }
 	};
 
 	return (
-		<Dialog open={open} onOpenChange={handleOpenChange}>
-			<DialogTrigger asChild>
+		<ActionPanel open={open} onOpenChange={handleOpenChange}>
+			<ActionPanelTrigger asChild>
 				<Button variant="ghost" size="icon">
 					<IconEdit className="size-4" />
 					<span className="sr-only">
@@ -136,15 +136,15 @@ export function TimeCorrectionDialog({ workPeriod, isSameDay, employeeTimezone }
 							: t("timeTracking.correction.requestCorrection", "Request time correction")}
 					</span>
 				</Button>
-			</DialogTrigger>
-			<DialogContent className="sm:max-w-md">
-				<DialogHeader>
-					<DialogTitle>
+			</ActionPanelTrigger>
+			<ActionPanelContent size="compact">
+				<ActionPanelHeader>
+					<ActionPanelTitle>
 						{isSameDay
 							? t("timeTracking.correction.editTitle", "Edit Time Entry")
 							: t("timeTracking.correction.requestTitle", "Request Time Correction")}
-					</DialogTitle>
-					<DialogDescription>
+					</ActionPanelTitle>
+					<ActionPanelDescription>
 						{isSameDay
 							? t(
 									"timeTracking.correction.editDescription",
@@ -154,8 +154,8 @@ export function TimeCorrectionDialog({ workPeriod, isSameDay, employeeTimezone }
 									"timeTracking.correction.requestDescription",
 									"Submit a correction request for this time entry. Your manager will need to approve it.",
 								)}
-					</DialogDescription>
-				</DialogHeader>
+					</ActionPanelDescription>
+				</ActionPanelHeader>
 				<div className="grid gap-4 py-4">
 					<p className="text-xs text-muted-foreground">
 						{t(
@@ -244,12 +244,12 @@ export function TimeCorrectionDialog({ workPeriod, isSameDay, employeeTimezone }
 					</form.Field>
 				</div>
 
-				<DialogFooter className="gap-2 sm:gap-0">
-					<DialogClose asChild>
+				<ActionPanelFooter className="gap-2 sm:gap-0">
+					<ActionPanelClose asChild>
 						<Button type="button" variant="outline">
 							{t("common.cancel", "Cancel")}
 						</Button>
-					</DialogClose>
+					</ActionPanelClose>
 					<form.Subscribe selector={(state) => state.isSubmitting}>
 						{(isSubmitting) => (
 							<Button type="button" onClick={() => form.handleSubmit()} disabled={isSubmitting}>
@@ -268,8 +268,8 @@ export function TimeCorrectionDialog({ workPeriod, isSameDay, employeeTimezone }
 							</Button>
 						)}
 					</form.Subscribe>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
+				</ActionPanelFooter>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

@@ -16,13 +16,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -252,12 +252,12 @@ export function AddMemberDialog(props: {
 	const { open, onOpenChange, availableEmployees, selectedEmployee, onSelectedEmployeeChange, onAddMember, loading } = props;
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent>
-				<DialogHeader>
-					<DialogTitle>Add Team Member</DialogTitle>
-					<DialogDescription>Select an employee to add to this team</DialogDescription>
-				</DialogHeader>
+		<ActionPanel open={open} onOpenChange={onOpenChange}>
+			<ActionPanelContent>
+				<ActionPanelHeader>
+					<ActionPanelTitle>Add Team Member</ActionPanelTitle>
+					<ActionPanelDescription>Select an employee to add to this team</ActionPanelDescription>
+				</ActionPanelHeader>
 				<div className="space-y-4 py-4">
 					<Select value={selectedEmployee} onValueChange={onSelectedEmployeeChange}>
 						<SelectTrigger>
@@ -275,7 +275,7 @@ export function AddMemberDialog(props: {
 						</SelectContent>
 					</Select>
 				</div>
-				<DialogFooter>
+				<ActionPanelFooter>
 					<Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
 						Cancel
 					</Button>
@@ -283,9 +283,9 @@ export function AddMemberDialog(props: {
 						{loading ? <IconLoader2 className="mr-2 size-4 animate-spin" /> : null}
 						Add Member
 					</Button>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
+				</ActionPanelFooter>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }
 
@@ -298,15 +298,15 @@ export function RemoveMemberDialog(props: {
 	const { open, onOpenChange, onConfirm, loading } = props;
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent>
-				<DialogHeader>
-					<DialogTitle>Remove Team Member</DialogTitle>
-					<DialogDescription>
+		<ActionPanel open={open} onOpenChange={onOpenChange}>
+			<ActionPanelContent>
+				<ActionPanelHeader>
+					<ActionPanelTitle>Remove Team Member</ActionPanelTitle>
+					<ActionPanelDescription>
 						Are you sure you want to remove this employee from the team? They will still have access to the organization.
-					</DialogDescription>
-				</DialogHeader>
-				<DialogFooter>
+					</ActionPanelDescription>
+				</ActionPanelHeader>
+				<ActionPanelFooter>
 					<Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
 						Cancel
 					</Button>
@@ -314,9 +314,9 @@ export function RemoveMemberDialog(props: {
 						{loading ? <IconLoader2 className="mr-2 size-4 animate-spin" /> : null}
 						Remove
 					</Button>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
+				</ActionPanelFooter>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }
 
@@ -329,15 +329,15 @@ export function DeleteTeamDialog(props: {
 	const { open, onOpenChange, onConfirm, loading } = props;
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent>
-				<DialogHeader>
-					<DialogTitle>Delete Team</DialogTitle>
-					<DialogDescription>
+		<ActionPanel open={open} onOpenChange={onOpenChange}>
+			<ActionPanelContent>
+				<ActionPanelHeader>
+					<ActionPanelTitle>Delete Team</ActionPanelTitle>
+					<ActionPanelDescription>
 						Are you sure you want to delete this team? This action cannot be undone. Team members will not be deleted.
-					</DialogDescription>
-				</DialogHeader>
-				<DialogFooter>
+					</ActionPanelDescription>
+				</ActionPanelHeader>
+				<ActionPanelFooter>
 					<Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
 						Cancel
 					</Button>
@@ -345,8 +345,8 @@ export function DeleteTeamDialog(props: {
 						{loading ? <IconLoader2 className="mr-2 size-4 animate-spin" /> : null}
 						Delete Team
 					</Button>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
+				</ActionPanelFooter>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

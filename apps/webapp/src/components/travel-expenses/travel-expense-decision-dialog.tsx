@@ -10,13 +10,13 @@ import {
 } from "@/app/[locale]/(app)/travel-expenses/actions";
 import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -90,22 +90,22 @@ export function TravelExpenseDecisionDialog({
 	}, [open, form]);
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-[500px]">
+		<ActionPanel open={open} onOpenChange={onOpenChange}>
+			<ActionPanelContent>
 				<form
 					onSubmit={(event) => {
 						event.preventDefault();
 						form.handleSubmit();
 					}}
 				>
-					<DialogHeader>
-						<DialogTitle>{action === "approve" ? "Approve Claim" : "Reject Claim"}</DialogTitle>
-						<DialogDescription>
+					<ActionPanelHeader>
+						<ActionPanelTitle>{action === "approve" ? "Approve Claim" : "Reject Claim"}</ActionPanelTitle>
+						<ActionPanelDescription>
 							{action === "approve"
 								? "Add an optional note for the claimant before approving."
 								: "Provide a clear reason to help the claimant update and resubmit."}
-						</DialogDescription>
-					</DialogHeader>
+						</ActionPanelDescription>
+					</ActionPanelHeader>
 
 					<div className="grid gap-2 py-4">
 						{action === "approve" ? (
@@ -146,7 +146,7 @@ export function TravelExpenseDecisionDialog({
 
 					<form.Subscribe selector={(state) => state.isSubmitting}>
 						{(isSubmitting) => (
-							<DialogFooter>
+							<ActionPanelFooter>
 								<Button
 									type="button"
 									variant="outline"
@@ -173,11 +173,11 @@ export function TravelExpenseDecisionDialog({
 										</>
 									)}
 								</Button>
-							</DialogFooter>
+							</ActionPanelFooter>
 						)}
 					</form.Subscribe>
 				</form>
-			</DialogContent>
-		</Dialog>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

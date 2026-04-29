@@ -14,13 +14,13 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -187,17 +187,17 @@ export function PresetDialog({
 	};
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
-				<DialogHeader>
-					<DialogTitle>{t("settings.holidays.presets.editTitle", "Edit Preset")}</DialogTitle>
-					<DialogDescription>
+		<ActionPanel open={open} onOpenChange={onOpenChange}>
+			<ActionPanelContent className="max-h-[90vh] flex flex-col" size="wide">
+				<ActionPanelHeader>
+					<ActionPanelTitle>{t("settings.holidays.presets.editTitle", "Edit Preset")}</ActionPanelTitle>
+					<ActionPanelDescription>
 						{t(
 							"settings.holidays.presets.editDescription",
 							"Update preset details and manage holidays",
 						)}
-					</DialogDescription>
-				</DialogHeader>
+					</ActionPanelDescription>
+				</ActionPanelHeader>
 
 				{isLoading ? (
 					<div className="space-y-4 py-4">
@@ -380,7 +380,7 @@ export function PresetDialog({
 							</ScrollArea>
 						</div>
 
-						<DialogFooter>
+						<ActionPanelFooter>
 							<Button
 								type="button"
 								variant="outline"
@@ -397,10 +397,10 @@ export function PresetDialog({
 								{updateMutation.isPending && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
 								{t("common.save", "Save")}
 							</Button>
-						</DialogFooter>
+						</ActionPanelFooter>
 					</>
 				)}
-			</DialogContent>
-		</Dialog>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

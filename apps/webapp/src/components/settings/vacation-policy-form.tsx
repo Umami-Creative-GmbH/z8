@@ -16,13 +16,13 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -168,21 +168,21 @@ export function VacationPolicyForm({
 	const allowCarryover = useStore(form.store, (state) => state.values.allowCarryover);
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-[600px]">
-				<DialogHeader>
-					<DialogTitle>
+		<ActionPanel open={open} onOpenChange={onOpenChange}>
+			<ActionPanelContent>
+				<ActionPanelHeader>
+					<ActionPanelTitle>
 						{existingPolicy
 							? t("settings.vacation.editPolicy", 'Edit "{name}"', { name: existingPolicy.name })
 							: t("settings.vacation.createPolicy", "Create Vacation Policy")}
-					</DialogTitle>
-					<DialogDescription>
+					</ActionPanelTitle>
+					<ActionPanelDescription>
 						{t(
 							"settings.vacation.policyDescription",
 							"Configure vacation allowance settings. Each policy can be assigned to the organization, specific teams, or individual employees.",
 						)}
-					</DialogDescription>
-				</DialogHeader>
+					</ActionPanelDescription>
+				</ActionPanelHeader>
 
 				<form
 					onSubmit={(e) => {
@@ -493,7 +493,7 @@ export function VacationPolicyForm({
 						</>
 					)}
 
-					<DialogFooter>
+					<ActionPanelFooter>
 						<Button
 							type="button"
 							variant="outline"
@@ -508,9 +508,9 @@ export function VacationPolicyForm({
 								? t("settings.vacation.updatePolicy", "Update Policy")
 								: t("settings.vacation.createPolicyBtn", "Create Policy")}
 						</Button>
-					</DialogFooter>
+					</ActionPanelFooter>
 				</form>
-			</DialogContent>
-		</Dialog>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

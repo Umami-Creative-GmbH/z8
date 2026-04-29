@@ -19,12 +19,12 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 
 import {
 	listCustomRoles,
@@ -168,15 +168,15 @@ export function EmployeeCustomRolesCard({
 				)}
 			</CardContent>
 
-			{/* Assign Role Dialog */}
-			<Dialog open={isAssignOpen} onOpenChange={setIsAssignOpen}>
-				<DialogContent>
-					<DialogHeader>
-						<DialogTitle>Assign Custom Role</DialogTitle>
-						<DialogDescription>
+			{/* Assign Role ActionPanel */}
+			<ActionPanel open={isAssignOpen} onOpenChange={setIsAssignOpen}>
+				<ActionPanelContent>
+					<ActionPanelHeader>
+						<ActionPanelTitle>Assign Custom Role</ActionPanelTitle>
+						<ActionPanelDescription>
 							Select a role to assign to this employee.
-						</DialogDescription>
-					</DialogHeader>
+						</ActionPanelDescription>
+					</ActionPanelHeader>
 					<div className="space-y-2">
 						{!availableRoles.length ? (
 							<p className="text-sm text-muted-foreground py-4 text-center">
@@ -211,8 +211,8 @@ export function EmployeeCustomRolesCard({
 							))
 						)}
 					</div>
-				</DialogContent>
-			</Dialog>
+				</ActionPanelContent>
+			</ActionPanel>
 		</Card>
 	);
 }

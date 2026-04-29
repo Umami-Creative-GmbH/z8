@@ -12,13 +12,13 @@ import {
 } from "@/app/[locale]/(app)/settings/scheduled-exports/actions";
 import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Progress } from "@/components/ui/progress";
 import { StepSchedule } from "./steps/step-schedule";
 import { StepReport } from "./steps/step-report";
@@ -244,21 +244,20 @@ export function ScheduledExportDialog({
 	const progress = ((currentStep + 1) / STEPS.length) * 100;
 
 	return (
-		<Dialog open={open} onOpenChange={handleOpenChange}>
-			<DialogContent
-				className="max-w-2xl max-h-[90vh] overflow-y-auto"
+		<ActionPanel open={open} onOpenChange={handleOpenChange}>
+			<ActionPanelContent
 				aria-describedby="wizard-description"
-			>
-				<DialogHeader>
-					<DialogTitle>
+			 className="max-h-[90vh] overflow-y-auto" size="wide">
+				<ActionPanelHeader>
+					<ActionPanelTitle>
 						{isEditing
 							? t("settings.scheduledExports.dialog.editTitle", "Edit Scheduled Export")
 							: t("settings.scheduledExports.dialog.createTitle", "New Scheduled Export")}
-					</DialogTitle>
-					<DialogDescription id="wizard-description">
+					</ActionPanelTitle>
+					<ActionPanelDescription id="wizard-description">
 						{STEPS[currentStep].description}
-					</DialogDescription>
-				</DialogHeader>
+					</ActionPanelDescription>
+				</ActionPanelHeader>
 
 				{/* Progress indicator */}
 				<div className="space-y-2" role="progressbar" aria-valuenow={currentStep + 1} aria-valuemin={1} aria-valuemax={STEPS.length}>
@@ -293,7 +292,7 @@ export function ScheduledExportDialog({
 					)}
 				</div>
 
-				<DialogFooter className="flex justify-between sm:justify-between">
+				<ActionPanelFooter className="flex justify-between sm:justify-between">
 					<Button
 						type="button"
 						variant="outline"
@@ -346,8 +345,8 @@ export function ScheduledExportDialog({
 							</Button>
 						)}
 					</div>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
+				</ActionPanelFooter>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

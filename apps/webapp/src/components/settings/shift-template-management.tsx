@@ -26,13 +26,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -425,7 +425,7 @@ export function ShiftTemplateManagement({
 				</CardContent>
 			</Card>
 
-			{/* Create/Edit Dialog */}
+			{/* Create/Edit ActionPanel */}
 			<ShiftTemplateDialog
 				open={dialogOpen}
 				onOpenChange={setDialogOpen}
@@ -442,22 +442,22 @@ export function ShiftTemplateManagement({
 				isSubmitting={createMutation.isPending || updateMutation.isPending}
 			/>
 
-			{/* Delete Confirmation Dialog */}
-			<Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-				<DialogContent>
-					<DialogHeader>
-						<DialogTitle>
+			{/* Delete Confirmation ActionPanel */}
+			<ActionPanel open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+				<ActionPanelContent>
+					<ActionPanelHeader>
+						<ActionPanelTitle>
 							{t("settings.shiftTemplates.deleteConfirm.title", "Delete Template")}
-						</DialogTitle>
-						<DialogDescription>
+						</ActionPanelTitle>
+						<ActionPanelDescription>
 							{t(
 								"settings.shiftTemplates.deleteConfirm.description",
 								'Are you sure you want to delete "{name}"? This action cannot be undone.',
 								{ name: templateToDelete?.name },
 							)}
-						</DialogDescription>
-					</DialogHeader>
-					<DialogFooter>
+						</ActionPanelDescription>
+					</ActionPanelHeader>
+					<ActionPanelFooter>
 						<Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
 							{t("common.cancel", "Cancel")}
 						</Button>
@@ -475,14 +475,14 @@ export function ShiftTemplateManagement({
 								t("common.delete", "Delete")
 							)}
 						</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
+					</ActionPanelFooter>
+				</ActionPanelContent>
+			</ActionPanel>
 		</div>
 	);
 }
 
-// Dialog component for creating/editing templates
+// ActionPanel component for creating/editing templates
 interface ShiftTemplateDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
@@ -561,7 +561,7 @@ function ShiftTemplateDialog({
 	};
 
 	return (
-		<Dialog
+		<ActionPanel
 			open={open}
 			onOpenChange={(isOpen) => {
 				if (isOpen) {
@@ -570,22 +570,22 @@ function ShiftTemplateDialog({
 				onOpenChange(isOpen);
 			}}
 		>
-			<DialogContent className="sm:max-w-[425px]">
-				<DialogHeader>
-					<DialogTitle>
+			<ActionPanelContent>
+				<ActionPanelHeader>
+					<ActionPanelTitle>
 						{template
 							? t("settings.shiftTemplates.edit.title", "Edit Template")
 							: t("settings.shiftTemplates.create.title", "Create Template")}
-					</DialogTitle>
-					<DialogDescription>
+					</ActionPanelTitle>
+					<ActionPanelDescription>
 						{template
 							? t("settings.shiftTemplates.edit.description", "Update the shift template details")
 							: t(
 									"settings.shiftTemplates.create.description",
 									"Create a new shift template for quick scheduling",
 								)}
-					</DialogDescription>
-				</DialogHeader>
+					</ActionPanelDescription>
+				</ActionPanelHeader>
 
 				<form
 					onSubmit={(e) => {
@@ -775,7 +775,7 @@ function ShiftTemplateDialog({
 						)}
 					</form.Subscribe>
 
-					<DialogFooter>
+					<ActionPanelFooter>
 						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
 							{t("common.cancel", "Cancel")}
 						</Button>
@@ -796,9 +796,9 @@ function ShiftTemplateDialog({
 								t("common.create", "Create")
 							)}
 						</Button>
-					</DialogFooter>
+					</ActionPanelFooter>
 				</form>
-			</DialogContent>
-		</Dialog>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

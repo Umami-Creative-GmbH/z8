@@ -6,13 +6,13 @@ import { toast } from "sonner";
 import { updateOrganizationDetails } from "@/app/[locale]/(app)/settings/organizations/actions";
 import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -70,14 +70,14 @@ export function EditOrganizationDialog({
 	};
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-[525px]">
-				<DialogHeader>
-					<DialogTitle>Edit Organization</DialogTitle>
-					<DialogDescription>
+		<ActionPanel open={open} onOpenChange={onOpenChange}>
+			<ActionPanelContent>
+				<ActionPanelHeader>
+					<ActionPanelTitle>Edit Organization</ActionPanelTitle>
+					<ActionPanelDescription>
 						Update your organization details. Changes will be visible to all members.
-					</DialogDescription>
-				</DialogHeader>
+					</ActionPanelDescription>
+				</ActionPanelHeader>
 
 				<form onSubmit={handleSubmit} className="space-y-4">
 					<div className="space-y-2">
@@ -122,7 +122,7 @@ export function EditOrganizationDialog({
 						/>
 					</div>
 
-					<DialogFooter>
+					<ActionPanelFooter>
 						<Button
 							type="button"
 							variant="outline"
@@ -135,9 +135,9 @@ export function EditOrganizationDialog({
 							{isPending && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
 							Save Changes
 						</Button>
-					</DialogFooter>
+					</ActionPanelFooter>
 				</form>
-			</DialogContent>
-		</Dialog>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

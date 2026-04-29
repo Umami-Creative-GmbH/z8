@@ -7,13 +7,13 @@ import { toast } from "sonner";
 import { addDomainAction } from "@/app/[locale]/(app)/settings/enterprise/actions";
 import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -94,15 +94,15 @@ export function DomainAddDialog({ open, onOpenChange, onDomainAdded }: DomainAdd
 	});
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent>
-				<DialogHeader>
-					<DialogTitle>Add Custom Domain</DialogTitle>
-					<DialogDescription>
+		<ActionPanel open={open} onOpenChange={onOpenChange}>
+			<ActionPanelContent>
+				<ActionPanelHeader>
+					<ActionPanelTitle>Add Custom Domain</ActionPanelTitle>
+					<ActionPanelDescription>
 						Add a custom domain to enable organization-specific login pages. You will need to verify
 						ownership via DNS records.
-					</DialogDescription>
-				</DialogHeader>
+					</ActionPanelDescription>
+				</ActionPanelHeader>
 				<form
 					onSubmit={(e) => {
 						e.preventDefault();
@@ -141,16 +141,16 @@ export function DomainAddDialog({ open, onOpenChange, onDomainAdded }: DomainAdd
 							</div>
 						)}
 					</form.Field>
-					<DialogFooter>
+					<ActionPanelFooter>
 						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
 							Cancel
 						</Button>
 						<Button type="submit" disabled={isSubmitting}>
 							{isSubmitting ? "Adding..." : "Add Domain"}
 						</Button>
-					</DialogFooter>
+					</ActionPanelFooter>
 				</form>
-			</DialogContent>
-		</Dialog>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

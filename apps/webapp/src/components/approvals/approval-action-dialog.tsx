@@ -5,13 +5,13 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -53,12 +53,12 @@ export function ApprovalActionDialog({
 	};
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-[500px]">
-				<DialogHeader>
-					<DialogTitle>{title}</DialogTitle>
-					<DialogDescription>{description}</DialogDescription>
-				</DialogHeader>
+		<ActionPanel open={open} onOpenChange={onOpenChange}>
+			<ActionPanelContent>
+				<ActionPanelHeader>
+					<ActionPanelTitle>{title}</ActionPanelTitle>
+					<ActionPanelDescription>{description}</ActionPanelDescription>
+				</ActionPanelHeader>
 
 				{action === "reject" && (
 					<div className="grid gap-2 py-4">
@@ -82,7 +82,7 @@ export function ApprovalActionDialog({
 					</div>
 				)}
 
-				<DialogFooter>
+				<ActionPanelFooter>
 					<Button
 						type="button"
 						variant="outline"
@@ -110,8 +110,8 @@ export function ApprovalActionDialog({
 							</>
 						)}
 					</Button>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
+				</ActionPanelFooter>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

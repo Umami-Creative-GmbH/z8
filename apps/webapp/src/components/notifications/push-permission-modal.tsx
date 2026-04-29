@@ -3,13 +3,13 @@
 import { IconBell, IconLoader2, IconX } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 
 interface PushPermissionModalProps {
 	open: boolean;
@@ -39,18 +39,18 @@ export function PushPermissionModal({
 	};
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent showCloseButton={false} className="sm:max-w-md">
-				<DialogHeader className="text-center sm:text-center">
+		<ActionPanel open={open} onOpenChange={onOpenChange}>
+			<ActionPanelContent showCloseButton={false} size="compact">
+				<ActionPanelHeader className="text-center sm:text-center">
 					<div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-primary/10">
 						<IconBell className="size-6 text-primary" />
 					</div>
-					<DialogTitle>Stay Updated</DialogTitle>
-					<DialogDescription className="text-center">
+					<ActionPanelTitle>Stay Updated</ActionPanelTitle>
+					<ActionPanelDescription className="text-center">
 						Enable push notifications to receive instant updates about approvals, time corrections,
 						and important team changes - even when you're not using the app.
-					</DialogDescription>
-				</DialogHeader>
+					</ActionPanelDescription>
+				</ActionPanelHeader>
 
 				<div className="space-y-3 rounded-lg bg-muted/50 p-4 text-sm">
 					<div className="flex items-start gap-3">
@@ -75,7 +75,7 @@ export function PushPermissionModal({
 					</div>
 				</div>
 
-				<DialogFooter className="flex-col gap-2 sm:flex-col">
+				<ActionPanelFooter className="flex-col gap-2 sm:flex-col">
 					<Button onClick={handleEnable} disabled={isLoading} className="w-full">
 						{isLoading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
 						Enable Notifications
@@ -89,8 +89,8 @@ export function PushPermissionModal({
 						<IconX className="mr-2 size-4" />
 						Not Now
 					</Button>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
+				</ActionPanelFooter>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

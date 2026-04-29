@@ -9,13 +9,13 @@ import {
 } from "@/app/[locale]/(app)/settings/enterprise/actions";
 import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -73,14 +73,14 @@ export function SSOProviderDialog({ open, onOpenChange, onProviderAdded }: SSOPr
 	});
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="max-w-lg">
-				<DialogHeader>
-					<DialogTitle>Add SSO Provider</DialogTitle>
-					<DialogDescription>
+		<ActionPanel open={open} onOpenChange={onOpenChange}>
+			<ActionPanelContent>
+				<ActionPanelHeader>
+					<ActionPanelTitle>Add SSO Provider</ActionPanelTitle>
+					<ActionPanelDescription>
 						Configure an OIDC identity provider for enterprise single sign-on.
-					</DialogDescription>
-				</DialogHeader>
+					</ActionPanelDescription>
+				</ActionPanelHeader>
 				<form
 					onSubmit={(e) => {
 						e.preventDefault();
@@ -240,16 +240,16 @@ export function SSOProviderDialog({ open, onOpenChange, onProviderAdded }: SSOPr
 						)}
 					</form.Field>
 
-					<DialogFooter>
+					<ActionPanelFooter>
 						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
 							Cancel
 						</Button>
 						<Button type="submit" disabled={isSubmitting}>
 							{isSubmitting ? "Adding..." : "Add Provider"}
 						</Button>
-					</DialogFooter>
+					</ActionPanelFooter>
 				</form>
-			</DialogContent>
-		</Dialog>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

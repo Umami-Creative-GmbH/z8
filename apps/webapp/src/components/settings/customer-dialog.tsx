@@ -14,13 +14,13 @@ import {
 import { getProjects } from "@/app/[locale]/(app)/settings/projects/actions";
 import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -140,15 +140,15 @@ export function CustomerDialog({
 	});
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-[500px]">
-				<DialogHeader>
-					<DialogTitle>
+		<ActionPanel open={open} onOpenChange={onOpenChange}>
+			<ActionPanelContent>
+				<ActionPanelHeader>
+					<ActionPanelTitle>
 						{isEditing
 							? t("settings.customers.dialog.editTitle", "Edit Customer")
 							: t("settings.customers.dialog.createTitle", "Add Customer")}
-					</DialogTitle>
-					<DialogDescription>
+					</ActionPanelTitle>
+					<ActionPanelDescription>
 						{isEditing
 							? t(
 									"settings.customers.dialog.editDescription",
@@ -158,8 +158,8 @@ export function CustomerDialog({
 									"settings.customers.dialog.createDescription",
 									"Add a new customer for project assignments",
 								)}
-					</DialogDescription>
-				</DialogHeader>
+					</ActionPanelDescription>
+				</ActionPanelHeader>
 
 				<form
 					onSubmit={(e) => {
@@ -344,7 +344,7 @@ export function CustomerDialog({
 						</div>
 					</div>
 
-					<DialogFooter>
+					<ActionPanelFooter>
 						<Button
 							type="button"
 							variant="outline"
@@ -359,9 +359,9 @@ export function CustomerDialog({
 								? t("settings.customers.dialog.save", "Save Changes")
 								: t("settings.customers.dialog.create", "Add Customer")}
 						</Button>
-					</DialogFooter>
+					</ActionPanelFooter>
 				</form>
-			</DialogContent>
-		</Dialog>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

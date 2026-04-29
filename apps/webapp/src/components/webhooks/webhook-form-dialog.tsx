@@ -13,13 +13,13 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -225,23 +225,23 @@ export function WebhookFormDialog({
 
 	return (
 		<>
-			<Dialog open={open} onOpenChange={onOpenChange}>
-				<DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-					<DialogHeader>
-						<DialogTitle>
+			<ActionPanel open={open} onOpenChange={onOpenChange}>
+				<ActionPanelContent className="max-h-[90vh] overflow-y-auto" size="wide">
+					<ActionPanelHeader>
+						<ActionPanelTitle>
 							{isEditing
 								? t("webhooks.form.edit-title", "Edit Webhook")
 								: t("webhooks.form.create-title", "Create Webhook")}
-						</DialogTitle>
-						<DialogDescription>
+						</ActionPanelTitle>
+						<ActionPanelDescription>
 							{isEditing
 								? t("webhooks.form.edit-description", "Update the webhook endpoint configuration.")
 								: t(
 										"webhooks.form.create-description",
 										"Configure a new webhook endpoint to receive event notifications.",
 									)}
-						</DialogDescription>
-					</DialogHeader>
+						</ActionPanelDescription>
+					</ActionPanelHeader>
 
 					<form onSubmit={handleSubmit} className="space-y-6">
 						{/* Basic Info */}
@@ -371,7 +371,7 @@ export function WebhookFormDialog({
 							</p>
 						</div>
 
-						<DialogFooter>
+						<ActionPanelFooter>
 							<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
 								{t("common.cancel", "Cancel")}
 							</Button>
@@ -381,10 +381,10 @@ export function WebhookFormDialog({
 								)}
 								{isEditing ? t("common.save", "Save") : t("webhooks.form.create", "Create Webhook")}
 							</Button>
-						</DialogFooter>
+						</ActionPanelFooter>
 					</form>
-				</DialogContent>
-			</Dialog>
+				</ActionPanelContent>
+			</ActionPanel>
 
 			<WebhookSecretDialog
 				secret={newSecret}

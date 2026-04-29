@@ -14,13 +14,13 @@ import {
 import { EmployeeSingleSelect } from "@/components/employee-select";
 import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Label } from "@/components/ui/label";
 import {
 	Select,
@@ -191,12 +191,12 @@ export function AssignmentDialog({
 	const isLoading = presetsLoading || teamsLoading;
 
 	return (
-		<Dialog open={open} onOpenChange={handleOpenChange}>
-			<DialogContent>
-				<DialogHeader>
-					<DialogTitle>{getDialogTitle()}</DialogTitle>
-					<DialogDescription>{getDialogDescription()}</DialogDescription>
-				</DialogHeader>
+		<ActionPanel open={open} onOpenChange={handleOpenChange}>
+			<ActionPanelContent>
+				<ActionPanelHeader>
+					<ActionPanelTitle>{getDialogTitle()}</ActionPanelTitle>
+					<ActionPanelDescription>{getDialogDescription()}</ActionPanelDescription>
+				</ActionPanelHeader>
 
 				{isLoading ? (
 					<div className="space-y-4 py-4">
@@ -323,7 +323,7 @@ export function AssignmentDialog({
 							</form.Field>
 						)}
 
-						<DialogFooter>
+						<ActionPanelFooter>
 							<Button
 								type="button"
 								variant="outline"
@@ -336,10 +336,10 @@ export function AssignmentDialog({
 								{createMutation.isPending && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
 								{t("common.assign", "Assign")}
 							</Button>
-						</DialogFooter>
+						</ActionPanelFooter>
 					</form>
 				)}
-			</DialogContent>
-		</Dialog>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

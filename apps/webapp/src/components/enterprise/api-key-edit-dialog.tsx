@@ -8,13 +8,13 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -96,17 +96,17 @@ export function ApiKeyEditDialog({
 	if (!apiKey) return null;
 
 	return (
-		<Dialog open={open} onOpenChange={handleOpenChange}>
-			<DialogContent className="sm:max-w-[500px]">
-				<DialogHeader>
-					<DialogTitle>{t("settings.apiKeys.editTitle", "Edit API Key")}</DialogTitle>
-					<DialogDescription>
+		<ActionPanel open={open} onOpenChange={handleOpenChange}>
+			<ActionPanelContent>
+				<ActionPanelHeader>
+					<ActionPanelTitle>{t("settings.apiKeys.editTitle", "Edit API Key")}</ActionPanelTitle>
+					<ActionPanelDescription>
 						{t(
 							"settings.apiKeys.editDescription",
 							"Update the settings for this API key. Note: You cannot view or change the key itself.",
 						)}
-					</DialogDescription>
-				</DialogHeader>
+					</ActionPanelDescription>
+				</ActionPanelHeader>
 
 				<div className="space-y-4 py-4">
 					{/* Key Identifier */}
@@ -207,7 +207,7 @@ export function ApiKeyEditDialog({
 					</div>
 				</div>
 
-				<DialogFooter>
+				<ActionPanelFooter>
 					<Button variant="outline" onClick={() => onOpenChange(false)}>
 						{t("common.cancel", "Cancel")}
 					</Button>
@@ -218,8 +218,8 @@ export function ApiKeyEditDialog({
 						{updateMutation.isPending && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
 						{t("common.save", "Save")}
 					</Button>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
+				</ActionPanelFooter>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

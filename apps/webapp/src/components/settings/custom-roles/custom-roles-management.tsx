@@ -19,13 +19,13 @@ import {
 	CardContent,
 } from "@/components/ui/card";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import {
 	Table,
 	TableBody,
@@ -211,31 +211,31 @@ export function CustomRolesManagement({ organizationId }: CustomRolesManagementP
 				</Card>
 			)}
 
-			{/* Create Dialog */}
-			<Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-				<DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
-					<DialogHeader>
-						<DialogTitle>Create Custom Role</DialogTitle>
-						<DialogDescription>
+			{/* Create ActionPanel */}
+			<ActionPanel open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+				<ActionPanelContent className="max-h-[85vh] overflow-y-auto" size="wide">
+					<ActionPanelHeader>
+						<ActionPanelTitle>Create Custom Role</ActionPanelTitle>
+						<ActionPanelDescription>
 							Define a new role with specific permissions for your organization.
-						</DialogDescription>
-					</DialogHeader>
+						</ActionPanelDescription>
+					</ActionPanelHeader>
 					<RoleEditor onSaved={handleSaved} onCancel={() => setIsCreateOpen(false)} />
-				</DialogContent>
-			</Dialog>
+				</ActionPanelContent>
+			</ActionPanel>
 
-			{/* Edit Dialog */}
-			<Dialog
+			{/* Edit ActionPanel */}
+			<ActionPanel
 				open={!!editingRole}
 				onOpenChange={(open) => !open && setEditingRole(null)}
 			>
-				<DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
-					<DialogHeader>
-						<DialogTitle>Edit Custom Role</DialogTitle>
-						<DialogDescription>
+				<ActionPanelContent className="max-h-[85vh] overflow-y-auto" size="wide">
+					<ActionPanelHeader>
+						<ActionPanelTitle>Edit Custom Role</ActionPanelTitle>
+						<ActionPanelDescription>
 							Update the role details and permissions.
-						</DialogDescription>
-					</DialogHeader>
+						</ActionPanelDescription>
+					</ActionPanelHeader>
 					{editingRole && (
 						<RoleEditor
 							role={editingRole}
@@ -243,18 +243,18 @@ export function CustomRolesManagement({ organizationId }: CustomRolesManagementP
 							onCancel={() => setEditingRole(null)}
 						/>
 					)}
-				</DialogContent>
-			</Dialog>
+				</ActionPanelContent>
+			</ActionPanel>
 
-			{/* Delete Confirmation Dialog */}
-			<Dialog
+			{/* Delete Confirmation ActionPanel */}
+			<ActionPanel
 				open={!!deleteTarget}
 				onOpenChange={(open) => !open && setDeleteTarget(null)}
 			>
-				<DialogContent>
-					<DialogHeader>
-						<DialogTitle>Delete Role</DialogTitle>
-						<DialogDescription>
+				<ActionPanelContent>
+					<ActionPanelHeader>
+						<ActionPanelTitle>Delete Role</ActionPanelTitle>
+						<ActionPanelDescription>
 							Are you sure you want to delete &quot;{deleteTarget?.name}&quot;?
 							{deleteTarget && deleteTarget.assignedCount > 0 && (
 								<span className="block mt-1 text-destructive">
@@ -263,9 +263,9 @@ export function CustomRolesManagement({ organizationId }: CustomRolesManagementP
 									lose the permissions granted by this role.
 								</span>
 							)}
-						</DialogDescription>
-					</DialogHeader>
-					<DialogFooter>
+						</ActionPanelDescription>
+					</ActionPanelHeader>
+					<ActionPanelFooter>
 						<Button
 							variant="outline"
 							onClick={() => setDeleteTarget(null)}
@@ -282,9 +282,9 @@ export function CustomRolesManagement({ organizationId }: CustomRolesManagementP
 							)}
 							Delete
 						</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
+					</ActionPanelFooter>
+				</ActionPanelContent>
+			</ActionPanel>
 		</div>
 	);
 }

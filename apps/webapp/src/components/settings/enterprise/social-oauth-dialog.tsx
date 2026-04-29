@@ -15,13 +15,13 @@ import { Google } from "@/components/ui/svgs/google";
 import { Linkedin } from "@/components/ui/svgs/linkedin";
 import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -165,20 +165,20 @@ export function SocialOAuthDialog({
 	});
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="max-w-lg">
-				<DialogHeader>
-					<DialogTitle>
+		<ActionPanel open={open} onOpenChange={onOpenChange}>
+			<ActionPanelContent>
+				<ActionPanelHeader>
+					<ActionPanelTitle>
 						{isEditing
 							? `Edit ${PROVIDER_INFO[editConfig.provider].name} OAuth`
 							: "Add Social OAuth Provider"}
-					</DialogTitle>
-					<DialogDescription>
+					</ActionPanelTitle>
+					<ActionPanelDescription>
 						{isEditing
 							? "Update your OAuth credentials."
 							: "Configure your own OAuth app for social login."}
-					</DialogDescription>
-				</DialogHeader>
+					</ActionPanelDescription>
+				</ActionPanelHeader>
 				<form
 					onSubmit={(e) => {
 						e.preventDefault();
@@ -400,7 +400,7 @@ export function SocialOAuthDialog({
 						</form.Field>
 					)}
 
-					<DialogFooter>
+					<ActionPanelFooter>
 						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
 							Cancel
 						</Button>
@@ -413,9 +413,9 @@ export function SocialOAuthDialog({
 									? "Update"
 									: "Add Provider"}
 						</Button>
-					</DialogFooter>
+					</ActionPanelFooter>
 				</form>
-			</DialogContent>
-		</Dialog>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

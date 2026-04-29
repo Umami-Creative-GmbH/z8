@@ -7,12 +7,12 @@ import { toast } from "sonner";
 import { addTeamMember, removeTeamMember } from "@/app/[locale]/(app)/settings/teams/actions";
 import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
 	Select,
@@ -111,15 +111,15 @@ export function TeamMembersDialog({
 		(removeMutation.isPending && removeMutation.variables?.employeeId === id);
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-[600px]">
-				<DialogHeader>
-					<DialogTitle className="flex items-center gap-2">
+		<ActionPanel open={open} onOpenChange={onOpenChange}>
+			<ActionPanelContent>
+				<ActionPanelHeader>
+					<ActionPanelTitle className="flex items-center gap-2">
 						<IconUsers className="h-5 w-5" />
 						{team.name} - Team Members
-					</DialogTitle>
-					<DialogDescription>Manage who belongs to this team</DialogDescription>
-				</DialogHeader>
+					</ActionPanelTitle>
+					<ActionPanelDescription>Manage who belongs to this team</ActionPanelDescription>
+				</ActionPanelHeader>
 
 				<div className="space-y-6">
 					{/* Add Member Section */}
@@ -235,7 +235,7 @@ export function TeamMembersDialog({
 						Close
 					</Button>
 				</div>
-			</DialogContent>
-		</Dialog>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

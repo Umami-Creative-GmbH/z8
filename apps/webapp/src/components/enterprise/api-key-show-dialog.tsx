@@ -7,13 +7,13 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Label } from "@/components/ui/label";
 import type { CreateApiKeyResponse } from "@/lib/validations/api-key";
 
@@ -50,21 +50,21 @@ export function ApiKeyShowDialog({ apiKey, open, onOpenChange }: ApiKeyShowDialo
 	if (!apiKey) return null;
 
 	return (
-		<Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
-			<DialogContent className="sm:max-w-[550px]" onPointerDownOutside={(e) => e.preventDefault()}>
-				<DialogHeader>
-					<DialogTitle className="flex items-center gap-2">
+		<ActionPanel open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
+			<ActionPanelContent onPointerDownOutside={(e) => e.preventDefault()}>
+				<ActionPanelHeader>
+					<ActionPanelTitle className="flex items-center gap-2">
 						<IconKey className="h-5 w-5 text-green-600" />
 						{t("settings.apiKeys.showTitle", "API Key Created")}
-					</DialogTitle>
-					<DialogDescription>
+					</ActionPanelTitle>
+					<ActionPanelDescription>
 						{t(
 							"settings.apiKeys.showDescription",
 							'Your new API key "{name}" has been created. Copy it now - you won\'t be able to see it again!',
 							{ name: apiKey.name },
 						)}
-					</DialogDescription>
-				</DialogHeader>
+					</ActionPanelDescription>
+				</ActionPanelHeader>
 
 				<div className="py-4 space-y-4">
 					{/* Warning Banner */}
@@ -136,7 +136,7 @@ export function ApiKeyShowDialog({ apiKey, open, onOpenChange }: ApiKeyShowDialo
 					)}
 				</div>
 
-				<DialogFooter className="flex-col sm:flex-row gap-2">
+				<ActionPanelFooter className="flex-col sm:flex-row gap-2">
 					{!copied && hasConfirmed && (
 						<p className="text-sm text-destructive mr-auto">
 							{t(
@@ -152,8 +152,8 @@ export function ApiKeyShowDialog({ apiKey, open, onOpenChange }: ApiKeyShowDialo
 								? t("settings.apiKeys.showCloseAnyway", "Close Anyway")
 								: t("settings.apiKeys.showClose", "Close")}
 					</Button>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
+				</ActionPanelFooter>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

@@ -12,13 +12,13 @@ import {
 } from "@/app/[locale]/(app)/settings/work-categories/actions";
 import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -161,23 +161,23 @@ export function WorkCategoryDialog({
 	const isMutating = createMutation.isPending || updateMutation.isPending;
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="max-w-md">
-				<DialogHeader>
-					<DialogTitle>
+		<ActionPanel open={open} onOpenChange={onOpenChange}>
+			<ActionPanelContent>
+				<ActionPanelHeader>
+					<ActionPanelTitle>
 						{isEditing
 							? t("settings.workCategories.editCategory", "Edit Category")
 							: t("settings.workCategories.createCategory", "Create Category")}
-					</DialogTitle>
-					<DialogDescription>
+					</ActionPanelTitle>
+					<ActionPanelDescription>
 						{isEditing
 							? t("settings.workCategories.editCategoryDescription", "Update the category details")
 							: t(
 									"settings.workCategories.createCategoryDescription",
 									"Create a new work category that can be assigned to multiple sets",
 								)}
-					</DialogDescription>
-				</DialogHeader>
+					</ActionPanelDescription>
+				</ActionPanelHeader>
 
 				<form
 					onSubmit={(e) => {
@@ -267,7 +267,7 @@ export function WorkCategoryDialog({
 						</div>
 					</div>
 
-					<DialogFooter>
+					<ActionPanelFooter>
 						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
 							{t("common.cancel", "Cancel")}
 						</Button>
@@ -283,10 +283,10 @@ export function WorkCategoryDialog({
 								t("common.create", "Create")
 							)}
 						</Button>
-					</DialogFooter>
+					</ActionPanelFooter>
 				</form>
-			</DialogContent>
-		</Dialog>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }
 
