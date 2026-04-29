@@ -95,5 +95,13 @@ describe("useNotificationStream", () => {
 				unreadCount: 1,
 			}),
 		);
+
+		expect(setQueryDataMock).toHaveBeenCalledWith(
+			["notifications", "unread-count"],
+			expect.any(Function),
+		);
+
+		const updateUnreadCount = setQueryDataMock.mock.calls[0][1];
+		expect(updateUnreadCount({ count: 2 })).toEqual({ count: 3 });
 	});
 });

@@ -2,7 +2,11 @@
 
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { NotificationsListResponse, NotificationWithMeta } from "@/lib/notifications/types";
+import type {
+	NotificationsListResponse,
+	NotificationWithMeta,
+	UnreadCountResponse,
+} from "@/lib/notifications/types";
 import { queryKeys } from "@/lib/query/keys";
 
 interface UseNotificationStreamOptions {
@@ -102,6 +106,13 @@ export function useNotificationStream(options: UseNotificationStreamOptions = {}
 							};
 						},
 					);
+
+					if (!notification.isRead) {
+						queryClient.setQueryData<UnreadCountResponse>(
+							queryKeys.notifications.unreadCount(),
+							(oldData) => ({ count: (oldData?.count ?? 0) + 1 }),
+						);
+					}
 
 					onNewNotificationRef.current?.(notification);
 					reconnectAttempts.current = 0;
