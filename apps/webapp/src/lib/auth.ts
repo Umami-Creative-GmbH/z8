@@ -12,9 +12,10 @@ import { twoFactor } from "better-auth/plugins/two-factor";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import * as schema from "@/db/auth-schema";
-import { employee, scimProvisioningLog, teamPermissions } from "@/db/schema";
+import { employee, scimProvisioningLog } from "@/db/schema";
 import { env } from "@/env";
 import { resolveAuthSecrets } from "@/lib/auth/auth-secrets";
+import { ensureEmployeeForOrganizationMember } from "@/lib/auth/organization-member-provisioning";
 import { getDefaultAppBaseUrl, getOrganizationBaseUrl } from "./app-url";
 import { getDomainConfig } from "./domain/domain-service";
 import { sendEmail } from "./email/email-service";
@@ -507,7 +508,7 @@ export const auth = betterAuth({
 			},
 			organizationHooks: {
 				// Update user permissions when accepting invitation
-				afterAcceptInvitation: async ({ user, invitation }) => {
+				afterAcceptInvitation: async ({ user, invitation, member }) => {
 					// Fetch the full invitation record to get canCreateOrganizations
 					const invitationRecord = await db.query.invitation.findFirst({
 						where: eq(schema.invitation.id, invitation.id),
@@ -521,42 +522,21 @@ export const auth = betterAuth({
 							invitedVia: invitation.id,
 						})
 						.where(eq(schema.user.id, user.id));
+
+					await ensureEmployeeForOrganizationMember(db, {
+						userId: user.id,
+						organizationId: invitation.organizationId,
+						memberRole: member.role,
+					});
 				},
 
 				// Create employee record when user is added to organization
 				afterAddMember: async ({ member, user, organization }) => {
-					// Check if employee record already exists
-					const existingEmployee = await db.query.employee.findFirst({
-						where: (employee, { eq, and }) =>
-							and(eq(employee.userId, user.id), eq(employee.organizationId, organization.id)),
+					await ensureEmployeeForOrganizationMember(db, {
+						userId: user.id,
+						organizationId: organization.id,
+						memberRole: member.role,
 					});
-
-					if (!existingEmployee) {
-						// Create employee record
-						const [newEmployee] = await db
-							.insert(employee)
-							.values({
-								userId: user.id,
-								organizationId: organization.id,
-								role: member.role === "owner" || member.role === "admin" ? "admin" : "employee",
-								isActive: true,
-							})
-							.returning();
-
-						// Grant all team permissions to admins by default
-						if (member.role === "admin" || member.role === "owner") {
-							await db.insert(teamPermissions).values({
-								employeeId: newEmployee.id,
-								organizationId: organization.id,
-								teamId: null, // null = organization-wide permissions
-								canCreateTeams: true,
-								canManageTeamMembers: true,
-								canManageTeamSettings: true,
-								canApproveTeamRequests: true,
-								grantedBy: newEmployee.id,
-							});
-						}
-					}
 
 					await syncBillingSeats({
 						organizationId: organization.id,

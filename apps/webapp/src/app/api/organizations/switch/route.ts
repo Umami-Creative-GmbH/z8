@@ -6,6 +6,7 @@ import { member } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
 import { getDefaultAppBaseUrl } from "@/lib/app-url";
 import { auth } from "@/lib/auth";
+import { ensureEmployeeForOrganizationMember } from "@/lib/auth/organization-member-provisioning";
 import { getAuthRequestDiagnostics } from "@/lib/diagnostics";
 import { createLogger } from "@/lib/logger";
 
@@ -91,7 +92,7 @@ export async function POST(request: NextRequest) {
 		}
 
 		// Check if user has an employee record in this organization
-		const [employeeRecord] = await db
+		let [employeeRecord] = await db
 			.select()
 			.from(employee)
 			.where(
@@ -102,6 +103,14 @@ export async function POST(request: NextRequest) {
 				),
 			)
 			.limit(1);
+
+		if (!employeeRecord) {
+			employeeRecord = await ensureEmployeeForOrganizationMember(db, {
+				userId: session.user.id,
+				organizationId,
+				memberRole: membership.role,
+			});
+		}
 
 		// Update the session's active organization
 		await auth.api.setActiveOrganization({

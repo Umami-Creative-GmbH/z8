@@ -12,6 +12,7 @@ const mockState = vi.hoisted(() => {
 		headers: vi.fn(async () => mockState.resolvedHeaders),
 		getSession: vi.fn(),
 		setActiveOrganization: vi.fn(),
+		ensureEmployeeForOrganizationMember: vi.fn(),
 		select,
 		from,
 		where,
@@ -39,6 +40,10 @@ vi.mock("@/lib/auth", () => ({
 			setActiveOrganization: mockState.setActiveOrganization,
 		},
 	},
+}));
+
+vi.mock("@/lib/auth/organization-member-provisioning", () => ({
+	ensureEmployeeForOrganizationMember: mockState.ensureEmployeeForOrganizationMember,
 }));
 
 vi.mock("@/db", () => ({
@@ -93,7 +98,9 @@ describe("POST /api/organizations/switch bearer access", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockState.resolvedHeaders = new Headers();
-		mockState.limit.mockResolvedValueOnce([{ id: "member-1" }]).mockResolvedValueOnce([{ id: "emp-1" }]);
+		mockState.limit
+			.mockResolvedValueOnce([{ id: "member-1" }])
+			.mockResolvedValueOnce([{ id: "emp-1" }]);
 	});
 
 	it("allows bearer org switching when the user has any non-web app access even if X-Z8-App-Type is spoofed", async () => {
@@ -148,5 +155,27 @@ describe("POST /api/organizations/switch bearer access", () => {
 		expect(response.status).toBe(403);
 		expect(await response.json()).toEqual({ error: "Access denied" });
 		expect(mockState.setActiveOrganization).not.toHaveBeenCalled();
+	});
+
+	it("repairs a missing employee profile for an existing organization member", async () => {
+		mockState.limit.mockReset();
+		mockState.limit
+			.mockResolvedValueOnce([{ id: "member-1", role: "member" }])
+			.mockResolvedValueOnce([]);
+		mockState.getSession.mockResolvedValue({
+			user: {
+				id: "user-1",
+			},
+			session: {},
+		});
+
+		const response = await POST(createRequest({}, { organizationId: "org-2" }));
+
+		expect(response.status).toBe(200);
+		expect(mockState.ensureEmployeeForOrganizationMember).toHaveBeenCalledWith(expect.anything(), {
+			userId: "user-1",
+			organizationId: "org-2",
+			memberRole: "member",
+		});
 	});
 });

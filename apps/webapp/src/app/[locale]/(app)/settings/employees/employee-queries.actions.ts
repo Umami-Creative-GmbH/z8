@@ -4,6 +4,7 @@ import { and, asc, count, eq, ilike, inArray, notInArray, or, sql } from "drizzl
 import { Effect } from "effect";
 import { user } from "@/db/auth-schema";
 import { employee, employeeManagers, team } from "@/db/schema";
+import { ensureEmployeeProfilesForOrganizationMembers } from "@/lib/auth/organization-member-provisioning";
 import { NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
@@ -117,12 +118,19 @@ function loadEmployeePage(params: EmployeeListParams) {
 	return Effect.gen(function* (_) {
 		const actor = yield* _(getEmployeeSettingsActorContext());
 		const { dbService } = actor;
+		yield* _(
+			dbService.query("reconcileOrganizationEmployeeProfiles", async () => {
+				await ensureEmployeeProfilesForOrganizationMembers(dbService.db, actor.organizationId);
+			}),
+		);
 		const limit = params.limit ?? DEFAULT_LIMIT;
 		const offset = params.offset ?? 0;
 		const where = buildEmployeeFilters(actor.organizationId, {
 			...params,
 			managerId:
-				actor.accessTier === "manager" && actor.currentEmployee ? actor.currentEmployee.id : undefined,
+				actor.accessTier === "manager" && actor.currentEmployee
+					? actor.currentEmployee.id
+					: undefined,
 		});
 
 		const [totalResult, rows] = yield* _(
@@ -166,7 +174,9 @@ function loadSelectableEmployeePage(params: EmployeeSelectParams) {
 		const where = buildEmployeeFilters(actor.organizationId, {
 			...params,
 			managerId:
-				actor.accessTier === "manager" && actor.currentEmployee ? actor.currentEmployee.id : undefined,
+				actor.accessTier === "manager" && actor.currentEmployee
+					? actor.currentEmployee.id
+					: undefined,
 		});
 
 		const [totalResult, rows] = yield* _(
