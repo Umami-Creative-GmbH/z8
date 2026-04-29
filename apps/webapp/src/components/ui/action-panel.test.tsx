@@ -1,6 +1,8 @@
 /* @vitest-environment jsdom */
 
 import { render, screen } from "@testing-library/react";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
 	ActionPanel,
@@ -13,6 +15,16 @@ import {
 } from "./action-panel";
 
 describe("ActionPanel", () => {
+	it("composes the Sheet primitive instead of Radix dialog internals", () => {
+		const source = readFileSync(
+			join(process.cwd(), "src/components/ui/action-panel.tsx"),
+			"utf8",
+		);
+
+		expect(source).toContain("SheetContent");
+		expect(source).not.toContain("DialogPrimitive");
+	});
+
 	it("renders an accessible right-side panel shell", () => {
 		render(
 			<ActionPanel open>

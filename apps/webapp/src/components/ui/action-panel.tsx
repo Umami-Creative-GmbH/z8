@@ -1,12 +1,11 @@
 "use client";
 
-import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { XIcon } from "lucide-react";
 import type * as React from "react";
 
 import {
 	Sheet,
 	SheetClose,
+	SheetContent,
 	SheetDescription,
 	SheetFooter,
 	SheetHeader,
@@ -41,34 +40,27 @@ function ActionPanelContent({
 	size = "default",
 	showCloseButton = true,
 	...props
-}: React.ComponentProps<typeof DialogPrimitive.Content> & {
+}: React.ComponentProps<typeof SheetContent> & {
 	size?: ActionPanelSize;
 	showCloseButton?: boolean;
 }) {
 	return (
-		<DialogPrimitive.Portal data-slot="action-panel-portal">
-			<DialogPrimitive.Overlay
-				className="data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/50 motion-safe:data-[state=closed]:animate-out motion-safe:data-[state=open]:animate-in"
-				data-slot="action-panel-overlay"
-			/>
-			<DialogPrimitive.Content
-				className={cn(
-					"fixed inset-y-0 right-0 z-50 flex h-full w-[calc(100vw-1rem)] flex-col gap-0 overflow-hidden border-l bg-background p-0 shadow-lg transition ease-in-out motion-safe:data-[state=closed]:animate-out motion-safe:data-[state=open]:animate-in data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right data-[state=closed]:duration-300 data-[state=open]:duration-500 sm:w-3/4",
-					actionPanelSizes[size],
-					className,
-				)}
-				data-slot="action-panel-content"
-				{...props}
-			>
-				{children}
-				{showCloseButton && (
-					<DialogPrimitive.Close className="absolute right-4 top-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
-						<XIcon className="size-4" />
-						<span className="sr-only">Close</span>
-					</DialogPrimitive.Close>
-				)}
-			</DialogPrimitive.Content>
-		</DialogPrimitive.Portal>
+		<SheetContent
+			className={cn(
+				"w-[calc(100vw-1rem)] gap-0 overflow-hidden p-0 sm:w-3/4",
+				actionPanelSizes[size],
+				className,
+			)}
+			data-action-panel-hide-close={!showCloseButton ? "true" : undefined}
+			data-slot="action-panel-content"
+			side="right"
+			{...props}
+		>
+			{children}
+			{!showCloseButton && (
+				<style>{'[data-action-panel-hide-close="true"] > button:last-child { display: none; }'}</style>
+			)}
+		</SheetContent>
 	);
 }
 
